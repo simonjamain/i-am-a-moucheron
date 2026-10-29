@@ -1,0 +1,12 @@
+*
+!Dockerfile
+!package.json
+!package-lock.json
+!src/
+!src/**
+!server/
+!server/**
+!scripts/
+!scripts/assemble.mjs
+!vendor/
+!vendor/**

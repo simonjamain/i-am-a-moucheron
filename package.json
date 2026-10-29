@@ -1,0 +1,24 @@
+{
+  "name": "moucheron-flight-lab",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node scripts/assemble.mjs && node server/index.js",
+    "build": "node scripts/assemble.mjs && bash scripts/build.sh",
+    "test": "node scripts/assemble.mjs && node scripts/test.mjs && node scripts/test-flight.mjs && node scripts/test-network.mjs && node scripts/test-mouse-flight.mjs && node scripts/test-purgatory-physics.mjs && node scripts/test-audio.mjs && node scripts/test-boarding.mjs && node scripts/test-client-authority.mjs && node scripts/test-pointer-capture.mjs && node scripts/test-client-physics.mjs && node scripts/test-scene.mjs && node scripts/test-purgatory-queue.mjs && node scripts/test-controls.mjs && node scripts/test-cache.mjs && node scripts/test-insect-hits.mjs && node scripts/test-sorties.mjs && node scripts/test-fleet-scale.mjs && node scripts/test-swarm-weapons.mjs && node scripts/test-economy-ballistics.mjs && node scripts/test-backlog.mjs && node scripts/test-seat-contracts.mjs && node scripts/test-progression.mjs && node scripts/test-paper-feedback.mjs && node scripts/test-feedback.mjs && node scripts/diagnose-pistol.mjs && node scripts/test-logistics-contracts.mjs && node scripts/test-aircraft-fire.mjs && node scripts/test-ram-game.mjs && node scripts/test-udp-client.mjs && node scripts/test-udp-native.mjs",
+    "format": "prettier --write src server scripts docs package.json",
+    "format:check": "prettier --check src server scripts docs package.json",
+    "dev:sites": "node scripts/dev.mjs",
+    "start": "node scripts/assemble.mjs && node server/index.js",
+    "test:udp": "node scripts/assemble.mjs && node scripts/test-ram-game.mjs && node scripts/test-udp-client.mjs && node scripts/test-udp-native.mjs"
+  },
+  "devDependencies": {
+    "prettier": "3.9.10"
+  },
+  "dependencies": {
+    "node-datachannel": "0.33.6"
+  },
+  "engines": {
+    "node": ">=22.13"
+  }
+}

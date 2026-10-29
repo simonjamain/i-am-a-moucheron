@@ -1,0 +1,23 @@
+services:
+  moucheron:
+    image: i-am-a-moucheron:2026.10.29-udp.1
+    pull_policy: never
+    restart: unless-stopped
+    init: true
+    ports:
+      - '${HTTP_BIND:-127.0.0.1}:${HTTP_PORT:-3000}:3000/tcp'
+      - '41000-41099:41000-41099/udp'
+    environment:
+      PORT: '3000'
+      UDP_PORT_BEGIN: '41000'
+      UDP_PORT_END: '41099'
+      UDP_ADVERTISE_ADDRESS: "${UDP_ADVERTISE_ADDRESS:?Renseigner l'IP publique de la VM dans .env}"
+      STUN_SERVER: '${STUN_SERVER:-}'
+    read_only: true
+    tmpfs:
+      - /tmp:size=16m,mode=1777
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    stop_grace_period: 20s

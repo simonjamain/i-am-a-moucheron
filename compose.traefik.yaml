@@ -1,0 +1,15 @@
+services:
+  moucheron:
+    networks:
+      - reverse-proxy
+    labels:
+      traefik.enable: 'true'
+      traefik.docker.network: '${TRAEFIK_NETWORK:-reverse-proxy}'
+      traefik.http.routers.moucheron.rule: 'Host(`${GAME_HOST:?Renseigner GAME_HOST dans .env}`)'
+      traefik.http.routers.moucheron.entrypoints: '${TRAEFIK_ENTRYPOINT:-websecure}'
+      traefik.http.routers.moucheron.tls: 'true'
+      traefik.http.services.moucheron.loadbalancer.server.port: '3000'
+networks:
+  reverse-proxy:
+    external: true
+    name: '${TRAEFIK_NETWORK:-reverse-proxy}'
