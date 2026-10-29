@@ -139,11 +139,11 @@ rejoignent l’archive locale des signatures, sans envoyer leur image au serveur
 
 | Capital proposé | Taux fixe par vague | Nombre de vagues |
 | --------------- | ------------------- | ---------------- |
-| 12 $            | 4 %                 | 4                |
-| 18 $            | 3 %                 | 5                |
-| 24 $            | 5 %                 | 6                |
-| 30 $            | 4,5 %               | 7                |
-| 40 $            | 6 %                 | 8                |
+| 12 $            | 10 %                | 4                |
+| 18 $            | 12 %                | 5                |
+| 24 $            | 15 %                | 6                |
+| 30 $            | 18 %                | 7                |
+| 40 $            | 20 %                | 8                |
 
 Les calculs utilisent des centimes entiers. L’échéance théorique est celle d’un
 prêt amortissable à taux fixe, arrondie au centime ; chaque échéance sépare intérêts
@@ -177,7 +177,8 @@ synthétique de 128 bombes et 180 ennemis a donné typiquement 13–28 ms par ti
 chaud de 250 ms localement ; ce n’est pas une mesure de latence réseau ni une
 garantie de capacité. Les collisions utilisent une présélection spatiale.
 
-Le paquet Docker `2026.10.29-udp.2` contient ce lot complet. La version `.1`
+Le paquet Docker `2026.10.29-udp.2` contient uniquement le lot véhicules/banque,
+avant les [retours terrain](field-update.md), livrés en ZIP de sources. La version `.1`
 est antérieure au Stuka, au tank et aux interfaces intégrées. Voir [Docker](docker.md).
 
 ## HUD contextuel intégré
@@ -202,4 +203,6 @@ offre dans le composant réel, vérifié les cartes, le tableau et le rendu des 
 sur des données de démonstration. La connexion UDP et WebGL du navigateur distant
 ne permettent pas de conclure sur une partie WAN ; les tests natifs restent distincts.
 
-Capture du composant bancaire après signature : [interface livrée](ui-bank-integrated.jpg).
+Capture historique avant ECO-02 : [interface du lot précédent](ui-bank-integrated.jpg).
+Les réglages actuels de lunette/coaxiale, de prêts et de réapparition sont dans
+[retours terrain](field-update.md).

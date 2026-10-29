@@ -1,8 +1,8 @@
 # Serveur Node : RAM et UDP obligatoire
 
 Décision validée le 29 octobre 2026 : aucune base de données et aucun repli
-WebSocket/TCP pour les joueurs incompatibles. Une [image Docker](docker.md)
-est désormais disponible pour déployer ce runtime sur VM.
+WebSocket/TCP pour les joueurs incompatibles. La livraison courante est un ZIP des sources pour la VM. Le [guide Docker](docker.md)
+reste optionnel ; ses archives binaires historiques ne suivent pas chaque lot.
 
 ## Démarrage sur une VM
 

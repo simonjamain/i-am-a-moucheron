@@ -1,4 +1,4 @@
-import { stepFall } from './ballistics.js';
+import { stepWalkerFall, impactDamage } from './field-physics.js';
 import { MAP, ACTOR_UNIT, REFERENCE, FLAK } from './scale.js';
 // Small vehicles keep their original dimensions; furniture uses the enlarged room.
 import { OFFICE_LAYOUT, ROOM_SCALE } from './layout.js';
@@ -72,8 +72,6 @@ export function stepWalker(body, dt, colliders) {
   body.y ??= origin.deckY;
   body.vy ??= 0;
   const previousY = body.y;
-  stepFall(body, dt);
-  body.grounded = false;
   let top = 0;
   for (const box of colliders) {
     if (
@@ -85,11 +83,30 @@ export function stepWalker(body, dt, colliders) {
     )
       top = Math.max(top, box.max.y);
   }
-  if (body.y <= top + 0.05 * ACTOR_UNIT) {
-    body.y = top + 0.05 * ACTOR_UNIT;
+  let impact = null;
+  const contactY = top + 0.05 * ACTOR_UNIT;
+  const supported = body.grounded && Math.abs(previousY - contactY) < 0.15 * ACTOR_UNIT;
+  if (supported) {
+    body.y = contactY;
     body.vy = 0;
     body.parachute = false;
-    body.grounded = true;
+    body.canopyInflation = 0;
+  } else {
+    body.grounded = false;
+    const steps = Math.max(1, Math.ceil(dt * 240));
+    for (let step = 0; step < steps; step++) {
+      stepWalkerFall(body, dt / steps);
+      if (body.y <= contactY) {
+        const speed = Math.max(0, -body.vy);
+        impact = { speed, damage: impactDamage(speed) };
+        body.canopyInflation = 0;
+        body.y = contactY;
+        body.vy = 0;
+        body.parachute = false;
+        body.grounded = true;
+        break;
+      }
+    }
   }
   // Chest-height walls stop the walker. Walkable tabletops do not block it.
   for (const box of colliders) {
@@ -107,6 +124,7 @@ export function stepWalker(body, dt, colliders) {
   }
   body.x = (x - origin.originX) / ACTOR_UNIT;
   body.z = (origin.originZ - z) / ACTOR_UNIT;
+  return impact;
 }
 export function makeAntiaircraft(T, scene, graphics, stations = AA_STATIONS) {
   const { box, cyl } = graphics;

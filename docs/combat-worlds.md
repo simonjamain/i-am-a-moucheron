@@ -27,7 +27,8 @@ minimale de sécurité. Un projectile supprimé ne déclenche aucun second impac
 ## Autorité et persistance
 
 Les clients conservent leur autorité sur les mouvements et les impacts déclarés.
-D1 valide les opérations persistantes. `health_hits` déduplique par tireur, cible,
+Le serveur Node valide les opérations en RAM. Les noms de tables et transactions
+SQL cités ci-dessous décrivent le Worker historique, conservé séparément. `health_hits` déduplique par tireur, cible,
 tir et incarnation. Une transaction retire les PV une fois. Une transition de
 mort est conditionnée par l’incarnation courante, puis l’incrémente ; les retries
 ne peuvent pas réinitialiser le dossier d’une nouvelle vie. Les instantanés
@@ -65,3 +66,7 @@ vérifier les vagues, la physique locale, le réseau, les signatures et les acha
 Le navigateur de contrôle utilise le rendu logiciel et refuse Pointer Lock :
 le ressenti du tir, du pilotage et l’écoute multijoueur restent à confirmer sur
 des appareils réels.
+
+Les dégâts de chute, la remise à zéro du corps à la résurrection et les contrats
+de lit utilisent les règles de [retours terrain](field-update.md). Les deux
+purgatoires et leurs nombres de signatures restent inchangés.

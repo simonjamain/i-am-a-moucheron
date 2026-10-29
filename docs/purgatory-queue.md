@@ -6,8 +6,8 @@ guichet. Un PNJ déplacé conserve sa place et la rejoint par les allées latér
 Il attend derrière les joueurs et ne riposte jamais.
 
 Le service de Saint-Pierre exige trois secondes à son guichet. Le client hôte
-simule les PNJ lorsqu’un joueur est présent ; sinon le serveur les avance lors
-des requêtes. Les déplacements restent côté client, sans correction imposée au
+simule les PNJ lorsqu’un joueur est présent ; sinon le serveur Node les avance à son tick de maintenance (le Worker historique
+les avançait lors des requêtes). Les déplacements restent côté client, sans correction imposée au
 corps du joueur. Une âme libérée n’est jamais réintroduite par un ancien rapport.
 
 Les coups, gardes, esquives de combat et KO sont supprimés. Le pistolet utilise

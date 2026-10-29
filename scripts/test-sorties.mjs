@@ -1,3 +1,4 @@
+import { WALKER_FALL } from '../src/field-physics.js';
 import assert from 'node:assert/strict';
 import * as T from '../vendor/three.module.min.js';
 import { createOffice } from '../src/office.js';
@@ -70,23 +71,24 @@ console.log(
   'PASS: scale-aware soft/hard/inverted landing, deployed canopy touchdown, owned NPC service survives stale snapshots.',
 );
 
-const falling = { x: 0, z: 0, y: 2, vy: 0, r: 0.32, parachute: false };
-stepWalker(falling, 0.5, []);
-const firstDrop = 2 - falling.y,
+const falling = { x: 0, z: 0, y: 20, vy: 0, r: 0.32, parachute: false };
+stepWalker(falling, 0.1, []);
+const firstDrop = 20 - falling.y,
   firstSpeed = falling.vy;
-stepWalker(falling, 0.5, []);
-assert.ok(2 - falling.y - firstDrop > firstDrop * 2.5, 'free fall must accelerate');
+stepWalker(falling, 0.1, []);
+assert.ok(20 - falling.y - firstDrop > firstDrop * 2.5, 'free fall must accelerate');
 assert.ok(Math.abs(falling.vy) > Math.abs(firstSpeed) * 1.9);
-const terminal = MAP.metres(54),
-  gravity = MAP.metres(REFERENCE.gravity);
-const analyticY = 2 - ((terminal * terminal) / gravity) * Math.log(Math.cosh(gravity / terminal));
-assert.ok(Math.abs(falling.y - analyticY) < MAP.metres(0.003));
+const terminal = WALKER_FALL.terminal,
+  gravity = WALKER_FALL.gravity;
+const analyticY =
+  20 - ((terminal * terminal) / gravity) * Math.log(Math.cosh((gravity * 0.2) / terminal));
+assert.ok(Math.abs(falling.y - analyticY) < 0.001);
 const lowFps = { x: 0, z: 0, y: 2, vy: 0, r: 0.32, parachute: true },
   highFps = { ...lowFps };
 for (let i = 0; i < 30; i++) stepWalker(lowFps, 0.1, []);
 for (let i = 0; i < 360; i++) stepWalker(highFps, 1 / 120, []);
 assert.ok(Math.abs(lowFps.y - highFps.y) < 1e-9);
-assert.ok(Math.abs(lowFps.vy + MAP.metres(REFERENCE.parachute)) < MAP.metres(0.001));
+assert.ok(Math.abs(lowFps.vy + WALKER_FALL.canopyTerminal) < 0.001);
 const runner = createSoul({ id: 1, entity: 'runner', kind: 'player' }, 0, 1000);
 runner.x = 0;
 runner.z = 0;

@@ -19,7 +19,7 @@ FPS no longer discards visible simulation time at every frame. Long hidden-tab
 intervals still do not fast-forward the local aircraft.
 
 Reference tuning is deliberately a game model: fighter cap 70 m/s, bomber cap
-52.5 m/s with lower thrust and angular authority, raid speed 60 km/h. The raid
+52.5 m/s with lower thrust and angular authority. Enemy speed is calibrated to the previous effective per-wave routes; it is not a uniform 60 km/h. The raid
 is parameterized by arc length and shared by client and server, including its
 leak deadline. Weapon rounds use 820 m/s, shell rounds 800 m/s, all multiplied
 by the map ratio. The Anti-Aircraft Museum lists an 800 m/s muzzle velocity for
@@ -51,7 +51,7 @@ block the next document. Only confirmed documents enter the archive; there is
 no minimum animation wait. See [signature handling](economy-physics.md).
 
 Mission start schedules the first wave at +10 s. Finishing a wave schedules the
-next at +10 s. Manual start can shorten subsequent breaks; a conditional update
+next at +60 s on Node (the historical Worker retains +10 s). Manual start can shorten subsequent breaks; a conditional update
 serializes concurrent automatic starts. Poll-triggered transitions use a shared
 wall clock, with no unsupported server timer process. With no connected clients,
 the next polling request advances the due transition. Migration 0006 resets the
@@ -64,10 +64,9 @@ Camera-facing Sprite labels cannot intercept a shot or require a raycast camera.
 The regression includes the actual hull-plus-Sprite hierarchy that crashed.
 
 Ground controls target a 6 m/s reference run (18 mm/s on this map), retaining
-acceleration and braking. Falling integrates 9.81 m/s² reference gravity with
-quadratic drag in substeps no larger than 1/240 s; free-fall terminal speed is
-54 m/s and deployed-canopy terminal speed 5.5 m/s, all scaled. This keeps an
-accelerating trajectory and gives consistent descent across visible frame rates.
+acceleration and braking. The current character fall uses world-space gravity, gradual canopy inflation and
+vertical impact damage, described in [field updates](field-update.md#chute-et-parachute).
+Aircraft/projectile tuning remains separate from character gravity.
 
 The current raid uses seeded arc-length routes with preserved effective speed,
 aerial detours and obstacle-aware ground paths. See

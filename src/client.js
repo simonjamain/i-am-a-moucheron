@@ -1,3 +1,8 @@
+import { InteractionTiming } from '/interaction-timing.js';
+import { BedUI } from '/bed-ui.js';
+import { bedAccess } from '/beds.js';
+import { tankSight } from '/tank-view.js';
+import { shoulderView, aimPistol, muzzleAim } from '/personal-aim.js';
 import { BankUI } from '/bank-ui.js';
 import { ContextHUD, equipmentHUD } from '/hud.js';
 import { paintVehicle, updateInscriptions } from '/vehicle-livery.js';
@@ -162,6 +167,7 @@ const {
   makePlane,
   makeBomber,
   makeStuka,
+  makeBomb,
   makeTank,
   insect,
   humanoid,
@@ -268,10 +274,19 @@ async function chooseVehicle(vehicle, seat = vehicle?.entrySeat || 'pilot') {
   selectedSeat = seat;
   boardingOpen = false;
   boardingSelectionBusy = true;
+  const timing = beginBoardingFeedback('vehicle', seat);
   releaseMouse();
   renderPaper();
   try {
-    accept(await api('vehicle-select', { id, vehicle: vehicle.id, seat, ground: groundReport() }));
+    timing.mark('request');
+    const response = await api('vehicle-select', {
+      id,
+      vehicle: vehicle.id,
+      seat,
+      ground: groundReport(),
+    });
+    timing.mark('confirmed');
+    accept(response);
     const confirmed = snap.pilots.find((p) => p.id === id);
     boardingOpen =
       confirmed?.mode === 'foot' &&
@@ -285,6 +300,7 @@ async function chooseVehicle(vehicle, seat = vehicle?.entrySeat || 'pilot') {
   } finally {
     boardingSelectionBusy = false;
     renderPaper();
+    finishBoardingFeedback(timing, boardingOpen ? 'ready' : 'failed');
   }
 }
 function openBoarding() {
@@ -314,6 +330,7 @@ function groundActive() {
     ((onFoot && !myVehicle) || !!respawnAt) &&
     $('papers').classList.contains('hidden') &&
     $('help').classList.contains('hidden') &&
+    $('bedPanel').classList.contains('hidden') &&
     $('bank').classList.contains('hidden') &&
     $('shop').classList.contains('hidden') &&
     controlFocus.active
@@ -353,6 +370,12 @@ canvas.addEventListener('pointerdown', (e) => {
 canvas.addEventListener('pointermove', (e) => {
   if (groundView.pointer !== e.pointerId || !groundActive()) return;
   if ((turretIndex >= 0 || (myVehicle && crewSeat !== 'pilot')) && !respawnAt) {
+    if (myVehicle?.type === 'tank' && crewSeat === 'cannon' && keys.KeyC) {
+      lookDelta(freeLook, e.clientX - groundView.x, e.clientY - groundView.y);
+      groundView.x = e.clientX;
+      groundView.y = e.clientY;
+      return;
+    }
     turretAim.yaw -= (e.clientX - groundView.x) * 0.003 * currentFactors().aim;
     turretAim.pitch = T.MathUtils.clamp(
       turretAim.pitch - (e.clientY - groundView.y) * 0.003 * currentFactors().aim,
@@ -399,23 +422,21 @@ function groundCamera(cam, position, dt, purg = false) {
   }
   if (groundActive()) groundView.yaw -= pad.yaw * dt * 1.8;
   const viewScale = purg ? 1 : MAP.ratio;
-  const target = new T.Vector3(position.x, position.y + 1.35 * viewScale, position.z),
-    offset = new T.Vector3(
-      Math.sin(groundView.yaw) * Math.cos(groundView.pitch),
-      Math.sin(groundView.pitch),
-      Math.cos(groundView.yaw) * Math.cos(groundView.pitch),
-    ).multiplyScalar(groundView.distance * viewScale),
-    desired = target.clone().add(offset);
+  const {
+    target,
+    offset,
+    eye: desired,
+  } = shoulderView(T, position, groundView.yaw, groundView.pitch, groundView.distance, viewScale);
   // Pull the camera in before solid office furniture instead of looking through it.
-  if (!purg) {
+  {
     const ray = new T.Ray(target, offset.clone().normalize());
     let distance = offset.length();
-    for (const box of colliders) {
+    for (const box of purg ? purgColliders : colliders) {
       const hit = ray.intersectBox(box, new T.Vector3());
       if (hit)
         distance = Math.min(
           distance,
-          Math.max(0.6 * viewScale, target.distanceTo(hit) - 0.25 * viewScale),
+          Math.max(0.08 * viewScale, target.distanceTo(hit) - 0.08 * viewScale),
         );
     }
     desired.copy(target).addScaledVector(offset.normalize(), distance);
@@ -570,6 +591,8 @@ function resetMouseAim() {
   mousePrevious = null;
 }
 function clearControls() {
+  freeLook.yaw = 0;
+  freeLook.pitch = 0;
   holdZoom.reset();
   uiWeaponFire = false;
   mouseFire = false;
@@ -605,7 +628,8 @@ function canCapture() {
     $('papers').classList.contains('hidden') &&
     $('help').classList.contains('hidden') &&
     $('shop').classList.contains('hidden') &&
-    $('bank').classList.contains('hidden')
+    $('bank').classList.contains('hidden') &&
+    $('bedPanel').classList.contains('hidden')
   );
 }
 function toggleControl() {
@@ -639,6 +663,10 @@ addEventListener('pointermove', (event) => {
     return;
   const dx = event.movementX,
     dy = event.movementY;
+  if (myVehicle?.type === 'tank' && crewSeat === 'cannon' && keys.KeyC) {
+    lookDelta(freeLook, dx, dy);
+    return;
+  }
   if ((turretIndex >= 0 || (myVehicle && crewSeat !== 'pilot')) && !respawnAt) {
     turretAim.yaw -= dx * 0.003 * currentFactors().aim;
     turretAim.pitch = T.MathUtils.clamp(
@@ -825,6 +853,9 @@ function accept(s, force = false) {
   )
     aircraftFire.invalidate();
   if (worldChanged) {
+    baseArena = null;
+    baseRevision = -1;
+    if (self?.state.spawnMessage) notify(self.state.spawnMessage, 5);
     groundView.scene = '';
     soulArena = null;
     soulBody = null;
@@ -852,6 +883,7 @@ function accept(s, force = false) {
   }
   rewardQueue.observe(s.rewardCount, !!previous && previous.base?.epoch !== s.base?.epoch);
   snap = s;
+  bedUI.observe(self);
   renderCrew();
   reconcileEquipment([...(s.equipment || []), s.initialStation].filter(Boolean));
   renderShop();
@@ -1037,7 +1069,16 @@ $('form').addEventListener('submit', async (e) => {
   $('join').disabled = true;
   $('error').textContent = 'Connexion au salon…';
   try {
-    const r = await api('join', { name: $('name').value, code: $('code').value.toUpperCase() });
+    const code = $('code').value.toUpperCase();
+    let resumeKey;
+    try {
+      resumeKey = sessionStorage.getItem('moucheron-identity:' + code);
+    } catch {}
+    const r = await api('join', { name: $('name').value, code, resumeKey });
+    if (r.resumeKey)
+      try {
+        sessionStorage.setItem('moucheron-identity:' + code, r.resumeKey);
+      } catch {}
     id = r.id;
     if (!globalThis.MOUCHERON_UDP)
       peerMotion = new PeerMotion({
@@ -1095,7 +1136,7 @@ $('share').onclick = async () => {
 };
 $('helpButton').onclick = () => {
   releaseMouse();
-  if (bankUI.opened) return;
+  if (bankUI.opened || bedUI.opened) return;
   $('help').classList.remove('hidden');
 };
 $('closeHelp').onclick = () => {
@@ -1105,6 +1146,10 @@ $('closeHelp').onclick = () => {
 addEventListener('keydown', (event) => {
   if (!joined) return;
   if (event.code === 'Escape') {
+    if (bedUI.opened) {
+      bedUI.close();
+      return;
+    }
     if (bankUI.opened) {
       bankUI.close();
       return;
@@ -1128,7 +1173,7 @@ addEventListener('keydown', (event) => {
     toggleBank();
     return;
   }
-  if (bankUI.opened) return;
+  if (bankUI.opened || bedUI.opened) return;
   const exitAction = equipmentExitAction({
     key: interactionKey,
     repeat: event.repeat,
@@ -1160,6 +1205,7 @@ addEventListener('keydown', (event) => {
     turretIndex < 0 &&
     !respawnAt &&
     $('papers').classList.contains('hidden') &&
+    $('bedPanel').classList.contains('hidden') &&
     $('bank').classList.contains('hidden') &&
     $('shop').classList.contains('hidden') &&
     toggleParachute(selfBase())
@@ -1613,7 +1659,9 @@ function renderPaper() {
       index = pilot?.board_paper || 0;
       const v = snap.vehicles?.find((v) => v.id === selectedVehicle);
       eligible =
-        boardingOpen && !!v && vehicleAccess(baseWorld(selfBase() || { x: 1e6, z: 1e6 }), v);
+        boardingOpen &&
+        !!v &&
+        vehicleAccess(baseWorld(selfBase() || { x: 1e6, z: 1e6 }), v, selectedSeat);
     }
   }
   if (boardingBusy && paperSubmission) {
@@ -1622,7 +1670,11 @@ function renderPaper() {
     eligible = true;
   }
   const visible =
-    !bankUI.opened && !boardingSelectionBusy && eligible && index < documents[context]?.length;
+    !bankUI.opened &&
+    !bedUI.opened &&
+    !boardingSelectionBusy &&
+    eligible &&
+    index < documents[context]?.length;
   $('paperClose').disabled = boardingBusy;
   $('signClear').disabled = boardingBusy;
   $('paperTear').disabled = boardingBusy || soulBusy;
@@ -1802,10 +1854,14 @@ $('soulPaperButton').onclick = () => {
 $('boardButton').onclick = openBoarding;
 $('baseHelp').onclick = () => {
   releaseMouse();
-  if (bankUI.opened) return;
+  if (bankUI.opened || bedUI.opened) return;
   $('help').classList.remove('hidden');
 };
 const purgScene = new T.Scene();
+const purgColliders = [
+  new T.Box3(new T.Vector3(-3.5, 0, -2.9), new T.Vector3(3.5, 1.6, -0.9)),
+  new T.Box3(new T.Vector3(-100, -0.3, -100), new T.Vector3(100, -0.05, 200)),
+];
 purgScene.background = new T.Color('#172c39');
 purgScene.fog = new T.Fog('#172c39', 35, 85);
 purgScene.add(new T.HemisphereLight('#fff5dc', '#486975', 3));
@@ -1932,6 +1988,9 @@ function physicalPurgatory(dt, now) {
     }
   }
   for (const b of soulArena.bodies)
+    if (b.kind === 'player' && soulMeshes.has(b.id))
+      posePersonalWeapon(soulMeshes.get(b.id), b.entity === id, true);
+  for (const b of soulArena.bodies)
     if (b.kind === 'enemy' && !b.gone) {
       const g = soulMeshes.get(b.id);
       if (g) soulStatus.update(b.id, g, b.health, b.maxHealth || 100, purgCamera, now / 1000);
@@ -2001,8 +2060,12 @@ function reconcileEquipment(next) {
     gun.userData.kind = st.kind;
     gun.userData.slot = st.slot;
     const collider = new T.Box3(
-      new T.Vector3(st.x - MAP.metres(2), st.y, st.z - MAP.metres(1.4)),
-      new T.Vector3(st.x + MAP.metres(2), st.y + MAP.metres(0.8), st.z + MAP.metres(1.4)),
+      new T.Vector3(st.x - MAP.metres(st.kind === 'bed' ? 0.8 : 2), st.y, st.z - MAP.metres(1.4)),
+      new T.Vector3(
+        st.x + MAP.metres(st.kind === 'bed' ? 0.8 : 2),
+        st.y + MAP.metres(0.8),
+        st.z + MAP.metres(1.4),
+      ),
     );
     colliders.push(collider);
     gun.userData.collider = collider;
@@ -2018,7 +2081,7 @@ function reconcileEquipment(next) {
     const ring = entryRing.clone();
     ring.position.set(st.x + MAP.metres(3), st.y + ACTOR_UNIT * 0.12, st.z);
     ring.scale.setScalar(ACTOR_UNIT);
-    if (st.kind === 'dca') scene.add(ring);
+    if (st.kind === 'dca' || st.kind === 'bed') scene.add(ring);
     stationRings[i] = ring;
   }
 }
@@ -2134,7 +2197,21 @@ function optimisticExit() {
     optimisticExitPending = false;
   };
 }
+function nearestBed() {
+  const body = selfBase();
+  return body?.grounded && !myVehicle && turretIndex < 0 && !respawnAt
+    ? snap.equipment.find((bed) => bed.kind === 'bed' && bedAccess(baseWorld(body), bed))
+    : null;
+}
 function interactVehicle() {
+  const bed = nearestBed();
+  if (bed) {
+    bedUI.open(
+      bed,
+      snap.pilots.find((p) => p.id === id),
+    );
+    return;
+  }
   if (myVehicle) {
     vehicleAction('vehicle-exit', { state: localMotion() });
     return;
@@ -2155,10 +2232,14 @@ async function chooseEquipment(index) {
   selectedEquipment = index;
   boardingOpen = false;
   boardingSelectionBusy = true;
+  const timing = beginBoardingFeedback('dca', 'DCA');
   releaseMouse();
   renderPaper();
   try {
-    accept(await api('equipment-select', { id, station: index, ground: groundReport() }));
+    timing.mark('request');
+    const response = await api('equipment-select', { id, station: index, ground: groundReport() });
+    timing.mark('confirmed');
+    accept(response);
     boardingOpen = snap.pilots.find((p) => p.id === id)?.state.equipmentBoarding?.station === index;
     renderPaper();
   } catch (e) {
@@ -2168,6 +2249,7 @@ async function chooseEquipment(index) {
   } finally {
     boardingSelectionBusy = false;
     renderPaper();
+    finishBoardingFeedback(timing, boardingOpen ? 'ready' : 'failed');
   }
 }
 $('boardButton').onclick = interactVehicle;
@@ -2234,8 +2316,14 @@ function updateVehicles(dt) {
           : 'Échelle ' + MAP.numerator + '/' + MAP.denominator + ' · À pied';
   if (!visible) return;
   if (crew) {
-    if (myVehicle.type === 'tank' && crewSeat === 'cannon' && keys.KeyB) fireHeavy();
-    if (controlFocus.active) {
+    const observing =
+      myVehicle.type === 'tank' && crewSeat === 'cannon' && !!keys.KeyC && controlFocus.active;
+    if (myVehicle.type === 'tank' && crewSeat === 'cannon' && keys.KeyB && !observing) fireHeavy();
+    if (observing) {
+      freeLook.yaw -= pad.yaw * dt * 2;
+      freeLook.pitch = T.MathUtils.clamp(freeLook.pitch - pad.pitch * dt, -0.1, 1.2);
+    }
+    if (controlFocus.active && !observing) {
       turretAim.yaw -= pad.yaw * dt * currentFactors().aim;
       turretAim.pitch = T.MathUtils.clamp(
         turretAim.pitch - pad.pitch * dt * currentFactors().aim,
@@ -2247,13 +2335,19 @@ function updateVehicles(dt) {
       mount = me.userData.turrets[crewSeat === 'tail' || crewSeat === 'top' ? 1 : 0],
       up = new T.Vector3(0, 1, 0).applyQuaternion(me.quaternion);
     aimGun(T, mount, dir, me.quaternion);
-    const view = gunnerView(T, mount, dir, up);
+    const scoped = myVehicle.type === 'tank' && crewSeat === 'cannon';
+    const view = scoped
+      ? tankSight(T, mount, dir, up, observing ? freeLook : null)
+      : gunnerView(T, mount, dir, up);
+    if (scoped) me.visible = observing;
     camera.position.copy(view.eye);
     camera.up.copy(up);
     camera.lookAt(view.target);
     $('crosshair').classList.remove('hidden', 'offscreen');
     shooting =
-      ((controlFocus.active && (mouseFire || keys.Space || pad.fire)) || uiWeaponFire) && hasAmmo();
+      !observing &&
+      ((controlFocus.active && (mouseFire || keys.Space || pad.fire)) || uiWeaponFire) &&
+      hasAmmo();
     cooldown -= dt;
     while (shooting && cooldown <= 0) {
       cooldown +=
@@ -2369,7 +2463,15 @@ function updateBaseWorld(dt, now) {
   }
   remoteBodies(baseArena, 'base');
   advanceBase(baseArena, baseArena.time + dt * 1000, id);
-  if (body && onFoot && !respawnAt && turretIndex < 0) stepWalker(body, dt, colliders);
+  if (body && onFoot && !respawnAt && turretIndex < 0) {
+    const impact = stepWalker(body, dt, colliders);
+    if (impact?.damage)
+      action('fall-impact', {
+        speed: impact.speed,
+        shot: id + ':fall:' + ++shotSequence,
+        incarnation: snap.pilots.find((p) => p.id === id)?.incarnation,
+      });
+  }
   const active = new Set();
   for (const b of baseArena.bodies) {
     if (b.gone) continue;
@@ -2419,6 +2521,7 @@ function updateBaseWorld(dt, now) {
       (a, j) =>
         (a.pivot.rotation.x = Math.sin(now * 0.014 + j * Math.PI) * Math.min(0.25, speed * 0.08)),
     );
+    posePersonalWeapon(g, b.entity === id);
     if (!respawnAt && speed > 0.6)
       sound.play('step', w, {
         key: 'base-step:' + b.entity,
@@ -2463,20 +2566,23 @@ function updateBaseWorld(dt, now) {
     const g = basePeople.get(id),
       w = g?.position || baseWorld(body);
     groundCamera(camera, w, dt);
-    const station = nearestStation();
+    const station = nearestStation(),
+      bed = nearestBed();
     $('baseStatus').textContent = body.parachute
       ? 'Parachute déployé · Dirigez la descente'
-      : station
-        ? 'DCA ' + stations[station.index].name + ' · E pour signer le dossier'
-        : v
-          ? VEHICLES[v.type].name + ' · ' + SEAT_NAMES[v.entrySeat] + ' · E pour signer'
-          : 'Rejoignez une porte · Un chasseur et un bombardier prêts au départ';
+      : bed
+        ? 'Lit · E : contrat personnel de réapparition / résiliation'
+        : station
+          ? 'DCA ' + stations[station.index].name + ' · E pour signer le dossier'
+          : v
+            ? VEHICLES[v.type].name + ' · ' + SEAT_NAMES[v.entrySeat] + ' · E pour signer'
+            : 'Rejoignez une porte · Un chasseur et un bombardier prêts au départ';
     $('boardButton').textContent = station
       ? 'Signer · DCA · E'
       : v
         ? 'Embarquer · E'
         : 'Rejoindre un appareil';
-    $('boardButton').disabled = body.parachute || (!station && !v);
+    $('boardButton').disabled = body.parachute || (!bed && !station && !v);
     $('seatChoices').replaceChildren();
     renderPaper();
   }
@@ -2656,7 +2762,11 @@ function updateOthers(dt) {
               ((v.type === 'tank' ? TANK_MG[seat === 'cannon' ? 'coax' : seat].interval : 0.09) *
                 clauseFactors(gunner.contractClause).interval)
         ) {
-          const o = mount.userData.muzzle.getWorldPosition(new T.Vector3());
+          const o = (
+            v.type === 'tank' && seat === 'cannon'
+              ? mount.userData.coaxMuzzle
+              : mount.userData.muzzle
+          ).getWorldPosition(new T.Vector3());
           bullet(o, new T.Vector3().fromArray(m.turretDirection || [0, 0, -1]), '#91d9c4');
         }
       }
@@ -3425,6 +3535,7 @@ const ghosts = {
   dca: makeAntiaircraft(T, scene, { box, cyl }, [{ x: 0, y: 0, z: 0 }])[0],
   refuel: installationModel({ kind: 'refuel', x: 0, y: 0, z: 0 }),
   radar: installationModel({ kind: 'radar', x: 0, y: 0, z: 0 }),
+  bed: installationModel({ kind: 'bed', x: 0, y: 0, z: 0 }),
 };
 let ghost = ghosts.dca;
 for (const model of Object.values(ghosts)) {
@@ -3440,7 +3551,7 @@ for (const model of Object.values(ghosts)) {
   });
 }
 function toggleShop() {
-  if (bankUI.opened) return;
+  if (bankUI.opened || bedUI.opened) return;
   if (!joined || respawnAt || !$('papers').classList.contains('hidden')) return;
   if (placingEquipment) cancelPlacement();
   const open = $('shop').classList.contains('hidden');
@@ -3693,9 +3804,9 @@ function pistol() {
     cam = purg ? purgCamera : camera,
     scale = purg ? 1 : MAP.ratio;
   cam.updateMatrixWorld();
-  const dir = cam.getWorldDirection(new T.Vector3()),
+  let dir = cam.getWorldDirection(new T.Vector3()),
     origin = cam.position.clone();
-  const ray = new T.Raycaster(origin, dir, 0, 150 * scale);
+  let ray = new T.Raycaster(origin, dir, 0, 150 * scale);
   const shot = id + ':pistol:' + ++shotSequence;
   let hit = null;
   const consider = (model, meta) => {
@@ -3704,42 +3815,63 @@ function pistol() {
     const h = nearestMeshHit(ray, model);
     if (h && (!hit || h.distance < hit.distance)) hit = { ...h, ...meta };
   };
-  if (purg) {
-    for (const body of soulArena?.bodies || [])
-      if (!body.gone && body.entity !== id)
-        consider(
-          soulMeshes.get(body.id),
-          body.kind === 'enemy' ? { soul: body.id } : { target: body.entity },
-        );
-  } else {
-    const enemy = nearestInsectHit(
-      T,
-      origin,
-      dir,
-      new Map([...insects].filter(([i]) => !localKills.has(i))),
-      150 * scale,
-    );
-    if (enemy) hit = { ...enemy, enemy: enemy.id };
-    for (const v of snap.vehicles || []) consider(fleetModels.get(v.id), { vehicle: v.id });
-    for (const p of snap.pilots)
-      if (p.id !== id && p.life === 'alive' && !p.vehicle_id)
-        consider(
-          p.mode === 'turret' ? turrets[p.state.turret]?.userData.person : basePeople.get(p.id),
-          { target: p.id },
-        );
-    const solid = new T.Ray(origin, dir);
-    for (const box of colliders) {
-      const point = solid.intersectBox(box, new T.Vector3());
-      if (point && (!hit || point.distanceTo(origin) < hit.distance))
-        hit = { wall: true, point, distance: point.distanceTo(origin) };
+  const scan = () => {
+    hit = null;
+    if (purg) {
+      for (const body of soulArena?.bodies || [])
+        if (!body.gone && body.entity !== id)
+          consider(
+            soulMeshes.get(body.id),
+            body.kind === 'enemy' ? { soul: body.id } : { target: body.entity },
+          );
+      const wallRay = new T.Ray(origin, dir);
+      for (const box of purgColliders) {
+        const point = wallRay.intersectBox(box, new T.Vector3());
+        if (point && (!hit || point.distanceTo(origin) < hit.distance))
+          hit = { wall: true, point, distance: point.distanceTo(origin) };
+      }
+    } else {
+      const enemy = nearestInsectHit(
+        T,
+        origin,
+        dir,
+        new Map([...insects].filter(([i]) => !localKills.has(i))),
+        150 * scale,
+      );
+      if (enemy) hit = { ...enemy, enemy: enemy.id };
+      for (const v of snap.vehicles || []) consider(fleetModels.get(v.id), { vehicle: v.id });
+      for (const p of snap.pilots)
+        if (p.id !== id && p.life === 'alive' && !p.vehicle_id)
+          consider(
+            p.mode === 'turret' ? turrets[p.state.turret]?.userData.person : basePeople.get(p.id),
+            { target: p.id },
+          );
+      const solid = new T.Ray(origin, dir);
+      for (const box of colliders) {
+        const point = solid.intersectBox(box, new T.Vector3());
+        if (point && (!hit || point.distanceTo(origin) < hit.distance))
+          hit = { wall: true, point, distance: point.distanceTo(origin) };
+      }
     }
-  }
+  };
+  scan();
+  const target = (hit?.point || origin.clone().addScaledVector(dir, 150 * scale))
+      .clone()
+      .addScaledVector(dir, 0.01 * scale),
+    person = purg
+      ? soulMeshes.get(soulArena?.bodies.find((b) => b.entity === id && b.kind === 'player')?.id)
+      : basePeople.get(id);
+  if (!person?.userData.pistolMuzzle) return;
+  posePersonalWeapon(person, true, purg);
+  const shotAim = muzzleAim(T, cam, person.userData.pistolMuzzle, target, 150 * scale);
+  if (!shotAim) return;
+  origin = shotAim.origin;
+  dir = shotAim.direction;
+  ray = new T.Raycaster(origin, dir, 0, shotAim.range);
+  scan();
   sound.play('shot', origin, { ref: 12 });
   const end = hit?.point || origin.clone().addScaledVector(dir, 150 * scale),
-    geometry = new T.BufferGeometry().setFromPoints([
-      origin.clone().addScaledVector(dir, 0.4 * scale),
-      end,
-    ]);
+    geometry = new T.BufferGeometry().setFromPoints([origin.clone(), end]);
   const line = new T.Line(geometry, new T.LineBasicMaterial({ color: '#ffe48d' }));
   (purg ? purgScene : scene).add(line);
   setTimeout(() => {
@@ -3856,11 +3988,25 @@ function simulateVacantAircraft(dt) {
 }
 
 function equipPistolModel(person) {
+  if (person.userData.pistolMuzzle) return;
+  const arm = person.userData.arms?.[1];
+  if (!arm) return;
   const gun = new T.Group();
-  pm(gun, 0.14, 0.16, 0.42, '#3a4244', 0, 0, -0.12);
-  pm(gun, 0.1, 0.22, 0.12, '#795f42', 0, -0.13, 0);
-  gun.position.set(0.5, 1.05, -0.3);
-  person.add(gun);
+  pm(gun, 0.12, 0.38, 0.12, '#364638', 0, -0.42, 0.05);
+  pm(gun, 0.14, 0.12, 0.2, '#795f42', 0, -0.25, 0);
+  const muzzle = new T.Object3D();
+  muzzle.position.set(0, -0.64, 0.05);
+  gun.add(muzzle);
+  arm.elbow.add(gun);
+  person.userData.pistolMuzzle = muzzle;
+}
+function posePersonalWeapon(person, own, purg = false) {
+  const cam = purg ? purgCamera : camera;
+  const direction = own
+    ? cam.getWorldDirection(new T.Vector3())
+    : new T.Vector3(0, 0, 1).applyQuaternion(person.quaternion);
+  if (own) person.rotation.y = Math.atan2(direction.x, direction.z);
+  aimPistol(T, person, direction);
 }
 
 function remainingFuel() {
@@ -3879,6 +4025,13 @@ function installationModel(st) {
   g.scale.setScalar(MAP.ratio);
   scene.add(g);
   box(0, 0.15, 0, 4, 0.3, 3, st.kind === 'radar' ? '#527b87' : '#bb8c44', g);
+  if (st.kind === 'bed') {
+    box(0, 0.45, 0, 1.6, 0.35, 3, '#e2d6ad', g);
+    box(0, 0.7, -1, 1.35, 0.2, 0.65, '#f7edcb', g);
+    for (const x of [-0.65, 0.65])
+      for (const z of [-1.2, 1.2]) box(x, 0.15, z, 0.15, 0.3, 0.15, '#664e34', g);
+    return g;
+  }
   if (st.kind === 'radar') {
     cyl(0, 2, 0, 0.18, 0.25, 4, '#d3dbbf', g);
     box(0, 4, 0, 3, 1.5, 0.2, '#7fbdad', g);
@@ -3950,6 +4103,7 @@ async function fireHeavy(weapon = null) {
     !myVehicle ||
     heavyPending ||
     !controlFocus.active ||
+    (myVehicle.type === 'tank' && crewSeat === 'cannon' && keys.KeyC) ||
     performance.now() < nextHeavyAt
   )
     return;
@@ -3990,22 +4144,33 @@ function updateOrdnance(dt) {
     active.add(shot.shot);
     let model = ordnanceModels.get(shot.shot);
     if (!model) {
-      model = new T.Mesh(
-        new T.SphereGeometry(MAP.metres(shot.weapon === 'bomb' ? 0.5 : 0.2), 8, 6),
-        new T.MeshStandardMaterial({ color: shot.weapon === 'bomb' ? '#424939' : '#ffd07c' }),
-      );
+      model =
+        shot.weapon === 'bomb'
+          ? makeBomb()
+          : new T.Mesh(
+              new T.SphereGeometry(MAP.metres(0.2), 8, 6),
+              new T.MeshStandardMaterial({ color: '#ffd07c' }),
+            );
+      if (shot.weapon === 'bomb') model.scale.setScalar(MAP.metres(0.8));
       model.userData.projectileSolid = false;
       scene.add(model);
       ordnanceModels.set(shot.shot, model);
     }
     const lag = Math.max(0, Math.min(0.25, (Date.now() + clockOffset - shot.updated) / 1000));
     model.position.fromArray(shot.p).addScaledVector(new T.Vector3().fromArray(shot.v), lag);
+    if (shot.weapon === 'bomb' && Math.hypot(...shot.v) > 1e-8)
+      model.quaternion.setFromUnitVectors(
+        new T.Vector3(0, 0, -1),
+        new T.Vector3().fromArray(shot.v).normalize(),
+      );
   }
   for (const [id, model] of ordnanceModels)
     if (!active.has(id)) {
       scene.remove(model);
-      model.geometry.dispose();
-      model.material.dispose();
+      model.traverse((o) => {
+        o.geometry?.dispose();
+        o.material?.dispose();
+      });
       ordnanceModels.delete(id);
     }
 }
@@ -4072,8 +4237,52 @@ const bankUI = new BankUI({
   },
 });
 function toggleBank() {
+  if (bedUI.opened) return;
   if (!joined || boardingBusy || soulBusy || boardingSelectionBusy) return;
   if (bankUI.opened) bankUI.close();
   else bankUI.open();
 }
 $('bankOpen').onclick = toggleBank;
+
+const bedUI = new BedUI({
+  root: $('bedPanel'),
+  snapshot: () => snap,
+  command: (body) => api('bed-contract', { id, ...body }),
+  accept,
+  ground: groundReport,
+  onOpen: () => {
+    releaseMouse();
+    $('shop').classList.add('hidden');
+    $('help').classList.add('hidden');
+    renderPaper();
+  },
+  onClose: () => {
+    renderPaper();
+    captureMouse();
+  },
+  archive: (record) => {
+    paperArchive.push(record);
+    renderArchive();
+    try {
+      sessionStorage.setItem('moucheron-dossier:' + room, JSON.stringify(paperArchive));
+    } catch {}
+    notify('Contrat de réapparition enregistré', 3);
+  },
+});
+
+const interactionTiming = new InteractionTiming();
+function beginBoardingFeedback(kind, seat) {
+  const timing = interactionTiming.begin(kind);
+  $('boardingPending').textContent = 'Préparation du dossier · ' + (SEAT_NAMES[seat] || seat) + '…';
+  $('boardingPending').classList.remove('hidden');
+  timing.mark('feedback');
+  return timing;
+}
+function finishBoardingFeedback(timing, status) {
+  $('boardingPending').classList.add('hidden');
+  timing.finish(status);
+}
+// Read-only development diagnostics; no body positions, names or credentials.
+Object.defineProperty(globalThis, 'moucheronInteractionTimings', {
+  get: () => structuredClone(interactionTiming.records),
+});

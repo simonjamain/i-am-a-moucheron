@@ -22,7 +22,7 @@ protéger la poubelle contre les insectes ; les arrivées ennemies augmentent
 l’infestation. La mort conduit au purgatoire et à la paperasse de retour en jeu.
 
 La première vague démarre dix secondes après le lancement de la partie. Après
-chaque vague, la pause dure au maximum dix secondes ; le déclenchement manuel
+chaque vague, la pause dure au maximum soixante secondes ; le déclenchement manuel
 peut la raccourcir. Un budget de difficulté croissant compose des vagues variées
 avec des ennemis de résistances différentes. Le départ comporte six moucherons
 et dure environ une minute sans interception sur la graine de contrôle ; les types plus difficiles
@@ -135,7 +135,7 @@ Les noms flottants sont retirés. Les moucherons sont agrandis de 35 % ; les
 insectes blessés montrent leurs PV, de la fumée puis des flammes à 30 % de PV.
 Les morts aériennes ont un son de chute spatialisé. Voir
 [retours de partie](party-feedback.md) pour les seuils, les signatures fiabilisées
-et les apparitions périphériques, et le [diagnostic différé du pistolet](pistol-diagnosis.md).
+et les apparitions périphériques, et le [diagnostic et correction du pistolet](pistol-diagnosis.md).
 
 ## Identification, contrats et ravitaillement
 
@@ -151,3 +151,15 @@ vendus 4 $, puis +2 $ par exemplaire de leur type. Sans radar, aucun ennemi sur
 la carte ; chaque radar révèle ceux dans une sphère de 1 m, sans masquer la scène.
 Voir [logistique et contrats](logistics-contracts.md) pour les valeurs, garanties
 et limites de vérification.
+
+## Retours terrain intégrés
+
+Le pistolet tire depuis la main vers le point du réticule, avec caméra à l’épaule
+et obstacles revérifiés depuis le canon. La chute utilise les mètres du décor,
+un parachute progressif et des dégâts d’impact verticaux. Le retour après
+purgatoire se fait au départ, sauf contrat personnel de lit signé (E au lit).
+Les lits s’achètent 4 $, puis +2 $ ; plusieurs joueurs peuvent signer le même.
+Le tireur canon du tank utilise une lunette ; C maintenu observe sans tourner
+la tourelle et suspend les tirs. Les nouvelles offres de prêt sont à 10–20 %
+par vague ; les contrats signés gardent leurs conditions. Détails, valeurs,
+causes confirmées et tests : [retours terrain](field-update.md).

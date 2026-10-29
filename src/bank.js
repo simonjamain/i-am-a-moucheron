@@ -1,10 +1,10 @@
 // Amounts are integer cents; rates apply once per completed wave.
 export const LOAN_TERMS = Object.freeze([
-  { principal: 1200, rate: 0.04, waves: 4 },
-  { principal: 2400, rate: 0.05, waves: 6 },
-  { principal: 4000, rate: 0.06, waves: 8 },
-  { principal: 1800, rate: 0.03, waves: 5 },
-  { principal: 3000, rate: 0.045, waves: 7 },
+  { principal: 1200, rate: 0.1, waves: 4 },
+  { principal: 2400, rate: 0.15, waves: 6 },
+  { principal: 4000, rate: 0.2, waves: 8 },
+  { principal: 1800, rate: 0.12, waves: 5 },
+  { principal: 3000, rate: 0.18, waves: 7 },
 ]);
 export function amortization(principal, rate, waves) {
   if (

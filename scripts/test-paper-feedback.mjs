@@ -77,6 +77,8 @@ for (const seat of ['pilot', 'dorsal', 'tail']) {
       },
       api: () => response,
       groundReport: () => null,
+      beginBoardingFeedback: () => ({ mark() {} }),
+      finishBoardingFeedback() {},
       releaseMouse() {},
       notify() {},
       renderPaper() {},

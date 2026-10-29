@@ -1924,7 +1924,7 @@
       #aimRange small {
         font-size: 9px;
       }
-      #bank {
+      :is(#bank, #bedPanel) {
         position: fixed;
         inset: 0;
         z-index: 45;
@@ -1933,7 +1933,7 @@
         background: #09211bd6;
         padding: 20px;
       }
-      #bank > article {
+      :is(#bank, #bedPanel) > article {
         width: min(1080px, 100%);
         max-height: 90dvh;
         overflow: auto;
@@ -1944,28 +1944,28 @@
         box-shadow: 0 14px 60px #0007;
         font-family: Georgia, serif;
       }
-      #bank header {
+      :is(#bank, #bedPanel) header {
         position: static;
         display: flex;
         align-items: start;
         justify-content: space-between;
         gap: 20px;
       }
-      #bank h2 {
+      :is(#bank, #bedPanel) h2 {
         margin: 0 0 8px;
         font-size: 30px;
         font-style: italic;
         font-weight: 400;
       }
-      #bank h3 {
+      :is(#bank, #bedPanel) h3 {
         font-size: 32px;
         font-weight: 400;
         margin: 22px 0;
       }
-      #bank p {
+      :is(#bank, #bedPanel) p {
         line-height: 1.6;
       }
-      #bank button {
+      :is(#bank, #bedPanel) button {
         background: #294938;
         color: #f3edcf;
         padding: 10px 14px;
@@ -1973,37 +1973,37 @@
         border-radius: 4px;
         cursor: pointer;
       }
-      #bank button:disabled {
+      :is(#bank, #bedPanel) button:disabled {
         opacity: 0.5;
         cursor: default;
       }
-      #bank [data-bank-cards] {
+      :is(#bank, #bedPanel) [data-bank-cards] {
         display: grid;
         grid-template-columns: repeat(3, minmax(0, 1fr));
         gap: 16px;
         margin: 20px 0;
       }
-      #bank [data-bank-cards] article {
+      :is(#bank, #bedPanel) [data-bank-cards] article {
         padding: 18px;
         border: 1px solid #a7a17c;
         background: #fff8df55;
       }
-      #bank [data-bank-cards] button {
+      :is(#bank, #bedPanel) [data-bank-cards] button {
         display: block;
         width: 100%;
         margin-top: 14px;
       }
-      #bank [data-bank-cards] small {
+      :is(#bank, #bedPanel) [data-bank-cards] small {
         letter-spacing: 1px;
       }
-      #bank [data-bank-status] {
+      :is(#bank, #bedPanel) [data-bank-status] {
         min-height: 1.5em;
         font-weight: bold;
       }
-      #bank [data-bank-text] {
+      :is(#bank, #bedPanel) [data-bank-text] {
         white-space: pre-line;
       }
-      #bank canvas {
+      :is(#bank, #bedPanel) canvas {
         width: min(100%, 650px);
         height: 150px;
         touch-action: none;
@@ -2011,23 +2011,23 @@
         display: block;
         background: #fff9e5;
       }
-      #bank .bankTable {
+      :is(#bank, #bedPanel) .bankTable {
         overflow: auto;
         margin: 15px 0;
       }
-      #bank table {
+      :is(#bank, #bedPanel) table {
         width: 100%;
         border-collapse: collapse;
         font-size: 12px;
       }
-      #bank th,
-      #bank td {
+      :is(#bank, #bedPanel) th,
+      :is(#bank, #bedPanel) td {
         padding: 8px;
         text-align: left;
         border-bottom: 1px solid #b6b18c;
         white-space: nowrap;
       }
-      #bank .bankHint {
+      :is(#bank, #bedPanel) .bankHint {
         font-size: 12px;
       }
       @media (max-width: 700px) {
@@ -2065,14 +2065,73 @@
           top: 34px;
           bottom: auto;
         }
-        #bank {
+        :is(#bank, #bedPanel) {
           padding: 8px;
         }
-        #bank > article {
+        :is(#bank, #bedPanel) > article {
           padding: 14px;
         }
-        #bank [data-bank-cards] {
+        :is(#bank, #bedPanel) [data-bank-cards] {
           grid-template-columns: 1fr;
+        }
+      }
+      #sessionSummary {
+        position: absolute;
+        top: 76px;
+        left: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        max-width: calc(100vw - 40px);
+        align-items: flex-start;
+      }
+      #hud #sessionSummary .topstats,
+      #hud #sessionSummary #economyControls {
+        position: static;
+        flex-wrap: wrap;
+        max-width: 100%;
+        margin: 0;
+      }
+      #wallet {
+        overflow-wrap: anywhere;
+        min-width: 0;
+        max-width: 100%;
+      }
+      #hud #sessionSummary #economyControls {
+        gap: 6px;
+      }
+      #sessionSummary .stat {
+        flex: 0 1 auto;
+      }
+      #boardingPending {
+        position: fixed;
+        z-index: 34;
+        top: 185px;
+        left: 50%;
+        transform: translateX(-50%);
+        padding: 12px 18px;
+        background: #173b30ed;
+        border: 1px solid #c8df81;
+        border-radius: 6px;
+        max-width: 90vw;
+        font-size: 13px;
+      }
+      @media (max-width: 700px) {
+        #sessionSummary {
+          top: 65px;
+          left: 8px;
+          max-width: calc(100vw - 16px);
+        }
+        #hud #sessionSummary .topstats,
+        #hud #sessionSummary #economyControls {
+          position: static;
+        }
+        #roomTag {
+          top: 190px;
+          right: 8px;
+        }
+        #players {
+          display: none;
         }
       }
     </style>
@@ -2143,16 +2202,18 @@
     <div id="sceneLabel"><span>Zone de départ</span><strong>Base Alpha / Bureau 01</strong></div>
     <div id="hud" class="hidden">
       <span id="net">CONNEXION…</span>
-      <div class="topstats">
-        <div class="stat">
-          <label>Vague</label><b id="wave">00</b><small id="threat">MENACE 0</small>
+      <div id="sessionSummary">
+        <div class="topstats">
+          <div class="stat">
+            <label>Vague</label><b id="wave">00</b><small id="threat">MENACE 0</small>
+          </div>
+          <div class="stat"><label>Moucherons</label><b id="enemies">—</b></div>
+          <div class="stat"><label>Infestation</label><b class="lime" id="infest">0 / 20</b></div>
         </div>
-        <div class="stat"><label>Moucherons</label><b id="enemies">—</b></div>
-        <div class="stat"><label>Infestation</label><b class="lime" id="infest">0 / 20</b></div>
-      </div>
-      <div id="economyControls">
-        <span id="wallet">0 $</span><button id="shopOpen">Équipement · P</button
-        ><button id="bankOpen">Banquier · N</button>
+        <div id="economyControls">
+          <span id="wallet">0 $</span><button id="shopOpen">Équipement · P</button
+          ><button id="bankOpen">Banquier · N</button>
+        </div>
       </div>
       <div id="roomTag">
         <button id="share" title="Copier le lien de la partie">
@@ -2273,6 +2334,9 @@
       Tir · pistolet
     </button>
     <aside id="crewPanel" class="hidden" aria-label="Postes et échanges"></aside>
+    <div id="boardingPending" class="hidden" role="status" aria-live="polite">
+      Préparation du dossier…
+    </div>
     <div id="stampEcho" aria-hidden="true">SIGNÉ</div>
     <div id="paperBackdrop" class="hidden"></div>
     <section id="papers" class="hidden" aria-labelledby="paperTitle">
@@ -2313,6 +2377,24 @@
       <p id="paperMessage" role="status" aria-live="polite"></p>
       <p id="archiveCount"></p>
       <div id="signedPapers" aria-label="Documents déjà signés"></div>
+    </section>
+    <section
+      id="bedPanel"
+      class="hidden"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="bedTitle"
+    >
+      <article>
+        <header>
+          <h2 id="bedTitle">Contrat de réapparition</h2>
+          <button data-bed-close aria-label="Fermer le contrat de lit">✕</button>
+        </header>
+        <p data-bed-text></p>
+        <canvas width="800" height="200" aria-label="Signer le contrat personnel de lit"></canvas
+        ><button data-bed-clear>Effacer</button>
+        <p data-bed-status role="status" aria-live="polite"></p>
+      </article>
     </section>
     <section id="bank" class="hidden" role="dialog" aria-modal="true" aria-labelledby="bankTitle">
       <article>
@@ -2419,7 +2501,7 @@
           stick droit : viser. Molette, [ / ] ou boutons − / + : régler la fusée entre 100 et 1200
           mètres de référence. Clic / Espace : un obus toutes les 0,7 s, en alternance entre les
           deux tubes. Le cercle d’éclatement montre le rayon de 8 mètres de référence. Un obus qui
-          heurte un obstacle avant sa distance d’armement n’explose pas. E : quitter le canon. Les
+          heurte un obstacle avant sa distance d’armement n’explose pas. F : quitter le canon. Les
           tirs et éclatements peuvent endommager les alliés.
         </p>
         <p>
@@ -2429,16 +2511,17 @@
         </p>
         <p>
           <b>Vagues :</b> « Lancer la partie » démarre un compte à rebours de dix secondes. Ensuite,
-          chaque vague est suivie de dix secondes de pause maximum. Vous pouvez déclencher la
-          suivante plus tôt. Le départ est progressif : six moucherons pour la première vague, puis
-          de nouveaux types introduits petit à petit. Chaque vague survivante verse une prime
-          commune ; protégez la poubelle.
+          chaque vague est suivie de soixante secondes de préparation maximum. Vous pouvez
+          déclencher la suivante plus tôt. Le départ est progressif : six moucherons pour la
+          première vague, puis de nouveaux types introduits petit à petit. Chaque vague survivante
+          verse une prime commune ; protégez la poubelle.
         </p>
         <p>
           <b>Purgatoire :</b> les moucherons font la queue. Le pistolet inflige 10 dégâts par appui,
           sans recharge. Une âme tuée est libérée et rapporte un dollar commun, comme au guichet.
           Trois signatures ramènent au bureau. Mourir ici mène au super purgatoire : cinq contrats,
-          puis retour au dossier classique à recommencer. Chaque retour restaure 100 PV.
+          puis retour au dossier classique à recommencer. Chaque retour restaure 100 PV et recrée le
+          corps au départ, sauf contrat de lit actif.
         </p>
         <p>
           <b>Banquier :</b> N ou bouton Banquier, accessible aussi dans les purgatoires. Trois
@@ -2447,7 +2530,14 @@
         <p>
           <b>Armes lourdes :</b> B pour bombes ou canon ; Shift HE / Ctrl AP au tank. DCA : Shift
           augmente, Ctrl diminue la distance affichée en mètres réels près du viseur. Clic droit
-          maintenu : zoom.
+          maintenu : zoom. Au canon du tank, C maintenu permet d’observer sans déplacer la tourelle
+          ni tirer.
+        </p>
+        <p>
+          <b>Lits et chute :</b> achetez un lit à placer sur une surface dégagée, puis E au lit pour
+          signer le point personnel ou résilier le lit actif. Un lit impraticable renvoie au départ.
+          Les impacts rapides peuvent être mortels ; le parachute freine progressivement et peut
+          être ouvert/replié avec Espace.
         </p>
         <p>
           <b>Manette standard :</b> stick gauche pour marcher ou piloter ; stick droit pour regarder

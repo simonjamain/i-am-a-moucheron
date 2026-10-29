@@ -26,11 +26,17 @@ ou les sources sont indisponibles, l’indiquer et demander l’accès nécessai
 
 ## Repères techniques
 
-JavaScript ESM, Three.js embarqué, géométries procédurales, Web Audio spatialisé,
-Cloudflare Worker et D1. WebRTC natif pour les mouvements avec repli HTTP ; HTTP
-pour les opérations persistantes. La physique des joueurs est côté client dans
-un modèle coopératif, avec validation serveur des documents, sièges et achats.
-Le décor utilise les mètres ; le ratio de carte miniature est centralisé.
+JavaScript ESM, Three.js embarqué, géométries procédurales et Web Audio spatialisé.
+Le runtime actuel est Node, en RAM uniquement. Tous les événements de jeu passent
+par WebRTC sur UDP : mouvements sans retransmission, commandes importantes fiables.
+HTTP sert les fichiers et la négociation ; aucun repli WebSocket/TCP/HTTP de gameplay.
+Le Worker/D1 Sites est un backend historique distinct, toujours publié tant que
+le serveur Node n’est pas déployé sur la VM de l’utilisateur. Le dépôt se livre
+normalement en ZIP des sources, sans construire d’image Docker sur chaque lot.
+La physique reste coopérative côté client, avec règles et transactions côté serveur.
+Le décor est en mètres ; les modèles miniatures utilisent un ratio centralisé,
+alors que la chute du personnage utilise les mètres du décor. Voir les références
+actuelles du dépôt pour les règles exactes, tâches et limites de validation.
 
 ## Méthode de travail attendue
 
@@ -39,7 +45,9 @@ et distinguer ce qui est testé de ce qui reste à observer sur de vrais apparei
 À chaque changement, mettre à jour le document de référence concerné dans la même
 livraison. Vérifier les règles utilisées contre le code au début d’une session et
 avant publication. Retirer les doublons et règles remplacées ; conserver les
-archives clairement identifiées. Maintenir les documents concis et organisés.
+archives clairement identifiées. Maintenir les documents concis et organisés. Les agents traitent le backlog
+en continu ; `AGENTS.md` exige une revue finale de cohérence de tous les Markdown
+suivis, avec correction des informations erronées et état de reprise à jour.
 
 Ce fichier peut être joint aux fichiers du projet ChatGPT. Ses sections
 « Reprendre dans un autre chat » et « Méthode de travail attendue » peuvent aussi

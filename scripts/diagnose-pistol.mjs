@@ -1,4 +1,5 @@
-// Executes the unchanged pistol() function in a controlled Three.js scene.
+import { muzzleAim } from '../src/personal-aim.js';
+// Executes the current pistol() function in a controlled Three.js scene.
 import * as T from '../vendor/three.module.min.js';
 import vm from 'node:vm';
 import assert from 'node:assert/strict';
@@ -16,6 +17,12 @@ function shoot({ camera, target, colliders = [] }) {
   mesh.position.copy(target);
   scene.add(mesh);
   const actions = [];
+  const person = new T.Group(),
+    muzzle = new T.Object3D();
+  muzzle.position.set(0.003, 0.01, 0);
+  person.add(muzzle);
+  person.userData.pistolMuzzle = muzzle;
+  scene.add(person);
   const c = {
     T,
     MAP,
@@ -38,7 +45,9 @@ function shoot({ camera, target, colliders = [] }) {
     localKills: new Set(),
     snap: { vehicles: [], pilots: [] },
     fleetModels: new Map(),
-    basePeople: new Map(),
+    basePeople: new Map([['me', person]]),
+    muzzleAim,
+    posePersonalWeapon() {},
     turrets: [],
     colliders,
     nearestInsectHit,

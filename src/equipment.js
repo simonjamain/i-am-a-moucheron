@@ -1,5 +1,11 @@
 import { MAP } from './scale.js';
 export const SHOP = Object.freeze({
+  bed: {
+    name: 'Lit de réapparition',
+    cost: 4,
+    kind: 'placement',
+    description: 'Signez un contrat personnel au lit pour choisir votre retour après purgatoire.',
+  },
   refuel: {
     name: 'Station de ravitaillement',
     cost: 4,
@@ -50,7 +56,7 @@ export const SHOP = Object.freeze({
 export function shopPrice(key, upgrades = {}, installed = 0) {
   const item = SHOP[key];
   if (!item) return Infinity;
-  if (['dca', 'refuel', 'radar'].includes(key))
+  if (['dca', 'refuel', 'radar', 'bed'].includes(key))
     return key === 'dca'
       ? Math.min(40, item.cost + 2 * Math.max(0, installed))
       : item.cost + 2 * Math.max(0, installed);
@@ -79,8 +85,8 @@ export function placementAhead(body, distance = 5) {
 // The same footprint/support test runs in the browser and on generated office
 // colliders in the Worker. Full base support, free headroom and nearby placement.
 export function supportedPlacement(point, colliders, occupied = [], kind = 'dca') {
-  const rx = kind === 'refuel' ? 0.065 : MAP.metres(2.1),
-    rz = kind === 'refuel' ? 0.065 : MAP.metres(1.5),
+  const rx = kind === 'refuel' ? 0.065 : MAP.metres(kind === 'bed' ? 3 : 2.1),
+    rz = kind === 'refuel' ? 0.065 : MAP.metres(kind === 'bed' ? 2.1 : 1.5),
     height = MAP.metres(3.2),
     eps = 1e-5;
   const surfaces = colliders

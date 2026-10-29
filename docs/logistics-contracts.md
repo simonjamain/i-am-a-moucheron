@@ -173,3 +173,7 @@ les doublons concurrents et la validation des rapports. Ce sont des scénarios
 réseau déterministes, pas une mesure de latence WAN ou de charge maximale.
 Le modèle reste coopératif : positions et impacts sont déclarés par les clients.
 Recharger tous les clients après publication pour utiliser le même protocole.
+
+Les lits sont une installation supplémentaire, avec progression de prix indépendante
+4 $, 6 $, 8 $… et contrat personnel de réapparition. Ils ne ravitaillent pas et
+ne détectent pas d’ennemis. Voir [lits](field-update.md#départ-lits-et-contrats-personnels).

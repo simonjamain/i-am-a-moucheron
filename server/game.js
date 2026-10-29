@@ -1,8 +1,10 @@
+import { bedAccess, bedSpawn } from '../src/beds.js';
+import { impactDamage } from '../src/field-physics.js';
 import { randomUUID } from 'node:crypto';
 import { MAP, ACTOR_UNIT } from '../src/scale.js';
 import { OFFICE_LAYOUT, RAID_DURATION } from '../src/layout.js';
 import { VEHICLES, vehiclePad, vehicleEntry, vehicleAccess, leftVehiclePad } from '../src/fleet.js';
-import { baseWorld, reconcileBase } from '../src/base.js';
+import { baseWorld, baseBody, reconcileBase } from '../src/base.js';
 import {
   createSoul,
   advanceArena,
@@ -78,6 +80,8 @@ function roomState(code, now) {
     requests: new Map(),
     souls: new Map(),
     orders: new Map(),
+    bedContracts: new Map(),
+    identityTokens: new Map(),
     hits: new Set(),
     kills: new Set(),
     enemyDamage: {},
@@ -125,8 +129,22 @@ export class Game {
     requireGame(active.length < 100, 'La partie est complète (100 pilotes).');
     let bay = 0;
     while (used.has(bay)) bay++;
+    const resumeKey =
+      typeof b.resumeKey === 'string' && r.bedContracts.has(b.resumeKey) ? b.resumeKey : uid();
+    if (!r.bedContracts.has(resumeKey)) {
+      if (r.bedContracts.size >= 2048) {
+        const activeTokens = new Set(r.identityTokens.values());
+        for (const key of r.bedContracts.keys())
+          if (!activeTokens.has(key)) {
+            r.bedContracts.delete(key);
+            break;
+          }
+      }
+      r.bedContracts.set(resumeKey, null);
+    }
     const p = {
       id: uid(),
+      bedId: r.bedContracts.get(resumeKey),
       room: code,
       name:
         String(b.name || 'Pilote')
@@ -145,8 +163,9 @@ export class Game {
       state: initialState(),
     };
     r.pilots.set(p.id, p);
+    r.identityTokens.set(p.id, resumeKey);
     r.touched = this.now();
-    return clone({ id: p.id, state: p.state, snapshot: this.snapshot(r) });
+    return clone({ id: p.id, resumeKey, state: p.state, snapshot: this.snapshot(r) });
   }
   player(code, id) {
     const r = this.rooms.get(code),
@@ -318,6 +337,7 @@ export class Game {
         for (const s of r.souls.values())
           if (s.kind === 'player' && s.entity === id) s.status = 'gone';
         r.pilots.delete(id);
+        r.identityTokens.delete(id);
       }
     for (const q of r.requests.values())
       if (['signing', 'offered'].includes(q.status)) {
@@ -343,7 +363,7 @@ export class Game {
     if (r.phase === 'combat' && r.kills.size + escaped.length >= plan.roster.length) {
       r.infestation += escaped.reduce((n, e) => n + e.leak, 0);
       r.phase = r.infestation >= 20 ? 'lost' : 'prep';
-      r.next_wave_at = now + 10000;
+      r.next_wave_at = now + 60000;
       if (r.phase === 'prep') {
         const n = waveStipend(r.wave);
         r.dollars += n;
@@ -617,9 +637,12 @@ export class Game {
       } else if (r.phase === 'prep' && r.wave > 0) this.startWave(r);
     } else if (path === 'fan') r.fan = 1 - r.fan;
     else if (path === 'reset') {
-      const pilots = r.pilots;
+      const pilots = r.pilots,
+        identities = r.identityTokens;
       Object.assign(r, roomState(r.code, this.now()));
       r.pilots = pilots;
+      r.identityTokens = identities;
+      for (const token of identities.values()) r.bedContracts.set(token, null);
       for (const p of pilots.values())
         Object.assign(p, {
           life: 'alive',
@@ -631,6 +654,7 @@ export class Game {
           seat: null,
           board_paper: 0,
           state: initialState(),
+          bedId: null,
         });
     } else if (path === 'bank-sign' || path === 'bank-repay') {
       requireGame(
@@ -658,6 +682,50 @@ export class Game {
           100;
       } catch (e) {
         requireGame(false, e.message);
+      }
+    } else if (path === 'bed-contract') {
+      requireGame(
+        p.life === 'alive' &&
+          p.mode === 'foot' &&
+          b.incarnation === p.incarnation &&
+          b.epoch === r.base.epoch,
+        'Corps ou partie périmés.',
+      );
+      const bed = r.equipment.find((e) => e.kind === 'bed' && e.slot === b.bed),
+        body = this.base(r, p, b.ground);
+      requireGame(
+        bed && body && body.grounded && bedAccess(baseWorld(body), bed),
+        'Approchez du lit avant de signer.',
+      );
+      requireGame(signature(b.signature), 'Signez le contrat personnel.');
+      if (b.cancel) requireGame(p.bedId === bed.slot, 'Ce lit n’est pas votre point actif.');
+      else
+        requireGame(
+          bedSpawn(bed, this.solids, r.equipment, values(r.vehicles)),
+          'Lit impraticable.',
+        );
+      p.bedId = b.cancel ? null : bed.slot;
+      r.bedContracts.set(r.identityTokens.get(p.id), p.bedId);
+    } else if (path === 'fall-impact') {
+      requireGame(
+        p.life === 'alive' && p.mode === 'foot' && b.incarnation === p.incarnation,
+        'Corps périmé.',
+      );
+      requireGame(
+        typeof b.shot === 'string' &&
+          b.shot.length < 160 &&
+          Number.isFinite(b.speed) &&
+          b.speed >= 0 &&
+          b.speed <= 100,
+        'Impact invalide.',
+        400,
+      );
+      const impactKey = JSON.stringify(['fall', p.id, p.incarnation, b.shot]);
+      if (!r.hits.has(impactKey)) {
+        requireGame(r.hits.size < 128000, 'Registre d’impacts saturé.');
+        r.hits.add(impactKey);
+        p.health = Math.max(0, p.health - impactDamage(b.speed));
+        if (!p.health) this.kill(r, p, p.incarnation);
       }
     } else if (path === 'buy') this.buy(r, p, b);
     else if (['vehicle-select', 'vehicle-sign', 'vehicle-exit'].includes(path))
@@ -766,7 +834,7 @@ export class Game {
             Math.abs(v.state.p[1] - placement.y) < MAP.metres(4) &&
             Math.hypot(v.state.p[0] - placement.x, v.state.p[2] - placement.z) <
               (VEHICLES[v.type].span * ACTOR_UNIT) / 2 +
-                (b.item === 'refuel' ? 0.065 : MAP.metres(2.1)),
+                (b.item === 'refuel' ? 0.065 : MAP.metres(b.item === 'bed' ? 3 : 2.1)),
         ),
         'Éloignez l’installation des appareils garés.',
       );
@@ -1386,6 +1454,28 @@ export class Game {
       p.board_paper = 0;
       p.life = realm === 'super' ? 'dead' : 'alive';
       p.state = initialState();
+      if (realm !== 'super') {
+        const bed = r.equipment.find((e) => e.kind === 'bed' && e.slot === p.bedId),
+          destination = bedSpawn(bed, this.solids, r.equipment, values(r.vehicles));
+        const start = baseBody({ id: p.id, name: p.name, bay: p.bay }, this.now());
+        const spawn = destination || {
+          x: start.x,
+          z: start.z,
+          y: start.y,
+          airborne: false,
+          vy: 0,
+          vx: 0,
+          vz: 0,
+          parachute: false,
+        };
+        p.state.walkSpawn = spawn;
+        const w = baseWorld(spawn);
+        p.state.p = [w.x, w.y, w.z];
+        p.state.v = [0, 0, 0];
+        if (p.bedId !== null && p.bedId !== undefined && !destination)
+          p.state.spawnMessage = 'Lit absent ou impraticable : retour à la zone de départ.';
+      }
+      r.base.bodies = (r.base.bodies || []).filter((body) => body.entity !== p.id);
       if (realm === 'super') {
         p.state.realm = 'purgatory';
         this.soul(r, 'player', p.id, p.name);

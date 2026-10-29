@@ -9,6 +9,8 @@ implémentées, vérifiées et publiées. Aucune automatisation de développemen
 
 Lire `AGENTS.md`, `README.md` et `docs/gameplay.md`, puis confronter chaque tâche
 aux sources actuelles avant de commencer. Le dépôt reste la référence partagée.
+Pour traiter un lot sans interruption et livrer des releases intermédiaires,
+appliquer la section « Exécution du backlog » de `AGENTS.md`.
 
 États : **prêt**, **à préciser**, **en cours**, **bloqué**, **terminé**. Les dépendances doivent
 être terminées avant de commencer une tâche. L’ordre ci-dessous est un ordre
@@ -856,11 +858,11 @@ Le Site public historique n’est pas modifié.
 ## Nouveau lot — pilotage, véhicules et banque (29 octobre 2026)
 
 Décisions validées après NET-01 et DEP-01. Implémentation des mécaniques côté Node et vérification des sources effectuées ;
-les interfaces définitives restent soumises à la confirmation demandée ci-dessous. Préserver les livraisons
+les interfaces définitives ont été validées et intégrées (voir le suivi ci-dessous). Préserver les livraisons
 précédentes et confronter ces demandes aux sources avant développement. Les
 valeurs d’équilibrage non fixées ci-dessous sont à choisir et documenter lors de
-l’implémentation. Les écrans devront être présentés pour confirmation avant de
-développer leur interface définitive.
+l’implémentation. La confirmation des écrans est acquise ; aucune nouvelle
+validation utilisateur ne conditionne l’exécution de ce lot.
 
 | ID     | Tâche                                              | État    | Dépendances                    |
 | ------ | -------------------------------------------------- | ------- | ------------------------------ |
@@ -1003,7 +1005,8 @@ réglage, changement d’arme ou événement. Adapter le contenu au poste occup�
 Pour le pilote : vol/carburant à gauche, armes/munitions à droite ; pour une
 tourelle : réglages/portée d’un côté, armement de l’autre. Garder distance, jauge
 de portée et informations essentielles de visée près du curseur sans saturer le
-centre. Proposer les écrans et variantes pour confirmation avant leur réalisation.
+centre. Les écrans et variantes ont été confirmés (voir le suivi) ; les
+évolutions conformes à cette direction sont réalisées et vérifiées par l’agent.
 Critères : lisibilité en combat, aucune grande bannière persistante « attaque en
 cours », informations utiles accessibles sans masquer la cible, variantes avion,
 bombardier, DCA et trois postes du tank ; stocks et changements automatiques
@@ -1068,3 +1071,202 @@ et validation ESM ; signature d’une offre dans le composant navigateur de
 démonstration. Rendu WebGL et partie WAN restent à vérifier sur la VM.
 Sources poussées ; Site public Worker historique inchangé. Livraison VM via
 le nouveau paquet Docker `2026.10.29-udp.2`, suivant le guide Docker.
+
+## Nouveau lot — retours terrain, chutes et réapparition (29 octobre 2026)
+
+Cadrage validé puis intégration au backlog explicitement autorisée. Les tâches
+ci-dessous sont **prêtes**, non implémentées dans cette livraison documentaire.
+Les lots précédents et leurs validations sont conservés. **BUG-04 est prioritaire.**
+Cette demande autorise désormais la correction du pistolet auparavant différée
+par DIA-01. Les nouvelles valeurs remplacent les anciennes uniquement une fois
+les tâches correspondantes livrées ; la documentation actuelle décrit encore le
+comportement existant. Pas de nouvelle image Docker demandée : livrer les sources.
+
+| ID     | Tâche                                                    | État    | Dépendances |
+| ------ | -------------------------------------------------------- | ------- | ----------- |
+| BUG-04 | Embarquement fiable dans tous les postes — priorité      | terminé | —           |
+| ARM-02 | Corriger le pistolet et la visée à la troisième personne | terminé | —           |
+| BUG-05 | Diagnostiquer et réduire le délai après E                | terminé | —           |
+| HUD-02 | Supprimer le chevauchement en haut à gauche              | terminé | —           |
+| CHU-01 | Chute réaliste, dégâts et parachute progressif           | terminé | —           |
+| RES-01 | Réapparition par défaut au départ après purgatoire       | terminé | —           |
+| LIT-01 | Lits achetables et contrats personnels de réapparition   | terminé | RES-01      |
+| VAG-03 | Préparation d’une minute, passage anticipé conservé      | terminé | —           |
+| CAM-01 | Lunette du tank et observation temporaire avec C         | terminé | —           |
+| VIS-05 | Affiner le Stuka et la bombe                             | terminé | —           |
+| ECO-02 | Taux de prêt de 10 à 20 % par vague                      | terminé | —           |
+
+### BUG-04 — Accès aux postes autres que pilote
+
+Observation : sur les véhicules à plusieurs emplacements, seul le poste pilote
+semble réellement fonctionner. Les autres proposent la validation mais l’accès
+est peu fiable. Reproduire avant de conclure sur la cause ; revoir le parcours
+cercle → rôle → contrat → validation → attribution/occupation effective.
+Critères : pilote et chaque poste de bombardier/tank accessibles dès la première
+signature ; plusieurs joueurs sur des places différentes et concurrence sur une
+même place sans duplication ni blocage. Vérifier refus, nouvelle tentative,
+sortie/retour, échange et reconnexion. Documenter cause confirmée, correction et
+limites des vérifications. Ne pas considérer l’affichage du bouton comme preuve
+que l’embarquement a réussi.
+
+### ARM-02 — Pistolet cohérent avec le personnage et le viseur
+
+Observations : tirs dans le dos, pistolet désaligné du bras, corps masquant le
+viseur. Corriger effectivement ces défauts ; DIA-01 n’est plus limité au diagnostic.
+Conserver une **caméra à la troisième personne**, légèrement au-dessus de l’épaule.
+Arme/bras alignés, réticule dégagé ; viser le point sous le réticule mais faire
+partir le projectile du canon. Un obstacle entre arme et cible bloque le tir,
+même si la caméra voit derrière. Ne pas tirer à travers le corps ou le mobilier.
+Critères : orientations et distances variées, caméra près des murs, cibles proches,
+obstacles caméra/personnage/cible, animation du bras et trajectoire cohérentes ;
+dégâts partagés sans double impact. Vérifier les mondes où le pistolet est permis.
+
+### BUG-05 — Délai entre E et apparition de l’empreinte
+
+Observation : latence parfois importante après l’appui sur E avant l’apparition
+de l’empreinte. L’utilisateur demande d’en connaître la cause ; ne pas attribuer
+sans preuve ce délai au serveur. Mesurer les étapes d’entrée, interaction,
+préparation de document/empreinte, échanges réseau et premier affichage. Expliquer
+les échanges réellement nécessaires, supprimer attentes/allers-retours évitables
+et assurer un retour visuel rapide sans valider localement un droit non accordé.
+Critères : mesures avant/après sur le parcours concerné, réponse rapide/lente,
+échec et répétition de E ; pas de double document, signature ou attribution.
+Consigner cause confirmée, résultat mesuré et incertitudes WAN restantes.
+
+### HUD-02 — Encombrement en haut à gauche
+
+Corriger la superposition monnaie, clé d’équipement et accès au banquier.
+Préserver les repères contextuels validés. Critères : éléments distincts et
+utilisables dans les différents postes/mondes, avec grands montants, textes
+variables et tailles d’écran différentes ; menus et compte à rebours non masqués.
+
+### CHU-01 — Chute, impact et parachute
+
+Rendre la vitesse de chute plus réaliste ; les dégâts dépendent de la **vitesse
+verticale à l’impact**, avec petites chutes sans dégâts et impacts rapides mortels.
+Le parachute freine progressivement : une ouverture trop tardive ne garantit pas
+la survie. On peut ouvrir et refermer plusieurs fois pendant la même chute pour
+doser sa descente. Fixer/documenter accélération, vitesse limite, freinage et
+seuils de dégâts en cohérence avec les mètres du décor.
+Critères : chutes de hauteurs variées, parachute fermé/ouvert/tardif et plusieurs
+cycles ; absence de dégâts multiples sur un impact, cohérence entre clients,
+mort vers le purgatoire et nettoyage après résurrection/embarquement.
+
+### RES-01 — Destination après le purgatoire
+
+Après le purgatoire, réapparaître systématiquement dans la **zone de départ**
+par défaut, et non au lieu de mort. LIT-01 permet une exception contractuelle.
+Critères : parcours des deux purgatoires, positions de mort variées et clients
+reconnectés ; destination sûre, état de chute et caméra réinitialisés correctement.
+
+### LIT-01 — Lit et contrat de point de réapparition
+
+Installation achetée avec l’argent commun : premier lit **4 $**, puis **+2 $**
+par lit supplémentaire de ce type. Poser sur tout support solide suffisamment
+dégagé, y compris un meuble en hauteur ; réserver l’espace pour une résurrection
+sans collision. Un même lit peut servir à plusieurs joueurs ayant chacun signé.
+
+Activer le lit et signer un contrat personnel en fait le point de réapparition
+après purgatoire. **Un seul contrat de lit actif par joueur** : un nouveau remplace
+l’ancien. Au lit actif, pouvoir résilier pour rétablir la zone de départ comme
+point par défaut ; cela ne téléporte pas immédiatement le joueur. Si le lit a
+été supprimé ou est impraticable, réapparaître au départ et expliquer le repli
+par un message. Conserver la cohérence avec RES-01.
+Critères : achats concurrents et prix, pose sûre, contrats propres à chaque joueur,
+plusieurs signataires d’un lit, remplacement/résiliation, reconnexion et retour
+après purgatoire ; aucun personnage coincé ou double spawn, repli sûr si nécessaire.
+
+### VAG-03 — Une minute de préparation
+
+Porter à **60 secondes** le délai de préparation entre les vagues. Conserver le
+mécanisme actuel pour lancer la suivante immédiatement si les joueurs le veulent.
+Compte à rebours visible et discret. Critères : minute complète sans passage
+anticipé, déclenchement volontaire sans double vague, clients synchronisés et
+échéance de prêt prélevée une seule fois par fin de vague.
+
+### CAM-01 — Canon du tank et coaxiale
+
+Vue principale du tireur du canon en première personne **depuis une lunette de
+tir alignée avec le canon** ; positionnement de caméra correct, sans géométrie
+masquant la vue. La mitrailleuse coaxiale est physiquement légèrement décalée du
+canon : son origine de tir et sa trajectoire reflètent ce décalage.
+Maintenir **C** passe à une caméra d’observation à la troisième personne autour
+du tank ; rotation libre **sans déplacer canon ni tourelle**, et tir suspendu.
+Relâcher C ramène à la lunette. Critères : orientations/élévations variées,
+parallaxe à courte distance, obstacles, maintien/relâchement et changement de
+poste/mort/menu pendant C sans caméra ni tir bloqués.
+
+### VIS-05 — Stuka et bombe
+
+Le modèle général convient, mais revoir les éléments dépassant sous les ailes
+jugés incorrects ; affiner également l’apparence de la bombe. Examiner le modèle
+actuel et vérifier le résultat avec des vues comparables avant/après, jointes
+à la livraison lorsque disponibles ; ce contrôle incombe à l’agent et ne
+requiert pas une confirmation utilisateur. Préserver
+l’identité du Stuka, la lisibilité miniature, les points de largage et les règles
+de dégâts ; pas de changement d’équilibrage implicite par cette retouche visuelle.
+
+### ECO-02 — Intérêts plus élevés
+
+Les offres sont trop avantageuses. Proposer des taux fixes entre **10 et 20 %
+par vague**, appliqués au capital restant dû dans le prêt amortissable existant.
+Afficher avant signature taux/période, échéance et total à rembourser. Préserver
+les trois emplacements, échéances capital/intérêts, solde négatif et interdiction
+d’un nouvel emprunt à découvert. Conserver les conditions des contrats déjà
+signés ; les nouveaux taux concernent les nouvelles offres.
+Critères : calculs et arrondis à 10 et 20 %, amortissement intégral à terme,
+échéances uniques, offres stables et montant total cohérent avec les prélèvements.
+
+### Suivi de ce lot
+
+29 octobre 2026 : décisions du grill enregistrées après autorisation explicite.
+Validation documentaire uniquement : identifiants, dépendances, cohérence des
+règles et format. Aucun correctif ni nouvelle fonctionnalité revendiqué ici.
+
+### Exécution autonome — 29 octobre 2026
+
+L’utilisateur autorise le traitement continu des tâches prêtes, leur découpage
+et les releases intermédiaires avec ZIP des sources. Les confirmations visuelles
+des anciens lots sont acquises ; VIS-05 prévoit une vérification par l’agent.
+Les comptes rendus intermédiaires ne suspendent pas les tâches restantes.
+Règles de référence : `AGENTS.md`, section « Exécution du backlog ».
+
+### Livraison du lot retours terrain
+
+29 octobre 2026 : onze tâches implémentées sur Node RAM/UDP, sources livrées en
+ZIP. Aucun nouveau binaire Docker ni déploiement du client sur le Worker public.
+Les notes « prêt/non implémenté » du cadrage ci-dessus décrivent l’étape documentaire
+initiale ; les états du tableau et le présent suivi décrivent la livraison.
+
+BUG-04 : reproduction rouge sur l’éligibilité réelle du dossier dorsal, puis
+correction de `selectedSeat` dans le contrôle client ; six rôles et équipages
+complets vérifiés avec les commandes serveur. BUG-05 : un aller-retour nécessaire
+pour le jeton et les clauses, mais feedback désormais immédiat et sélection
+concurrente bloquée. Retard injecté de 250 ms : retour DOM ~251 ms avant, ~0,8 ms
+après ; feuille confirmée ~251 ms. Aucune conclusion de latence WAN ou de lenteur
+serveur sans mesure. Traces locales bornées disponibles pour diagnostic.
+
+ARM-02 : caméra à l’épaule, bras/main alignés, double rayon réticule puis bouche
+physique, obstacles du bureau et des purgatoires. CHU-01 : gravité en mètres du
+décor, gonflage progressif, dégâts verticaux dédupliqués et contact en sous-pas.
+RES/LIT-01 : corps recréé au départ ou côté libre d’un lit signé, résiliation
+personnelle, achats 4 $ puis +2 $, repli avec message et reprise du contrat par
+secret de session non publié. Les tests couvrent les deux purgatoires.
+
+VAG-03 : pauses Node de 60 s, premier départ toujours à 10 s, lancement anticipé
+unique conservé. CAM-01 : lunette alignée, coaxiale physiquement décalée, C observe
+sans tourner la tourelle ni tirer. VIS-05 : train/freins de Stuka affinés, bombe
+avec empennage ; [vues comparables](docs/models-before-after.png). ECO-02 : nouvelles
+offres 10–20 % par vague, tableaux signés conservés. HUD-02 : statistiques puis
+monnaie/atelier/banquier en mise en page fluide ; grand montant vérifié au navigateur.
+
+Validation : suite complète, tests additionnels `test-field-backlog.mjs` et
+`test-bed-ui.mjs`, deux clients natifs UDP, build et ESM. Navigateur : contrat de
+lit signé puis résiliation proposée, composants réels sur données de démonstration.
+WebGL et partie WAN ne sont pas validés dans cet environnement.
+
+Revue finale : inventaire de tous les Markdown, liens locaux et informations
+courantes contrôlés ; références erronées corrigées ou archivées. Liste et
+limites : [revue documentaire](docs/reference-audit.md). Les nouvelles consignes
+de `AGENTS.md` imposent ce contrôle à chaque fin de lot. Règles et mesures
+détaillées : [retours terrain](docs/field-update.md).

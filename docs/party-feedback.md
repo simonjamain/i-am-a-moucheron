@@ -1,7 +1,7 @@
 # Retours de partie — visibilité, signatures et entrées
 
 Livraison du lot suivant la version 025, 29 octobre 2026.
-Le diagnostic différé du pistolet est dans [pistol-diagnosis](pistol-diagnosis.md).
+Le diagnostic et la correction du pistolet est dans [pistol-diagnosis](pistol-diagnosis.md).
 
 ## Présentation et état des insectes
 
@@ -68,8 +68,9 @@ la corbeille, soit 1000 mètres de référence. Les deux portails terrestres tro
 proches ont été déplacés sur leurs murs. Les fourmis d’introduction empruntent
 le couloir depuis le mur gauche, sans raccourci débutant près de la cible.
 L’entrée reste au portail pendant deux secondes, puis rejoint le même parcours
-continu. Ce délai est inclus dans la durée de vie : la première vague reste
-bornée à 48,35 secondes sans interception.
+continu. Ce délai est inclus dans la durée de vie. Les parcours ont ensuite été allongés
+à vitesse conservée : première vague autour d’une minute sur la graine de contrôle,
+voir [trajets actuels](vehicles-bank.md#trajets-et-crashs).
 
 Le rendu des vagues utilise l’heure serveur prise à l’envoi de la réponse et
 un temps local monotone, plutôt que de déduire l’avancement d’un milieu d’aller-

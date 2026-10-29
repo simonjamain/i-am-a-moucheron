@@ -27,8 +27,8 @@ Les trajets comportent désormais des détours avant l’approche de la poubelle
 avec navigation statique autour du mobilier. La vitesse effective précédente est
 conservée et la durée découle de la longueur, sans l’ancien plafond de 145 secondes.
 La première vague dure environ une minute sans interception sur la graine de
-contrôle, et se termine plus tôt si tous les ennemis sont abattus. Les pauses
-de dix secondes restent séparées. Voir [trajets et crashs](vehicles-bank.md#trajets-et-crashs)
+contrôle, et se termine plus tôt si tous les ennemis sont abattus. Le lancement initial de dix secondes et les pauses entre vagues de soixante
+secondes restent séparés. Voir [trajets et crashs](vehicles-bank.md#trajets-et-crashs)
 pour la calibration et les limites de navigation.
 
 ## Revenus et prix
@@ -45,6 +45,7 @@ en supplément ; tuer dans le bureau ne crédite toujours rien directement.
 | Motorisation, niveaux 1 / 2 / 3 | 4 $ / 9 $ / 16 $                                         |
 | Munitions, niveaux 1 / 2 / 3    | 6 $ / 12 $ / 20 $                                        |
 | Stuka, chaque exemplaire        | 12 $                                                     |
+| Lit, exemplaires successifs     | 4 $, 6 $, 8 $…                                           |
 | Tank, chaque exemplaire         | 10 $                                                     |
 
 Sans revenu d’âme, un exemple d’achats après les douze premières vagues est :
@@ -73,3 +74,7 @@ Le ressenti des trajectoires et du combat reste à confirmer en partie réelle.
 
 Les portails restent à au moins trois mètres du décor de la corbeille ;
 [retours de partie](party-feedback.md) précise les premières images et la connexion tardive.
+
+Sur Node, les primes et commandes sont dédupliquées en RAM. Les noms de tables
+et migrations mentionnés plus haut décrivent la compatibilité Worker historique.
+La progression actuelle ne dépend pas de D1 et disparaît au redémarrage.

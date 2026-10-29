@@ -1,3 +1,4 @@
+import { tankBarrelOrigin } from './tank-view.js';
 import { MAP } from './scale.js';
 import { HEAVY } from './armament.js';
 export const add = (a, b) => a.map((v, i) => v + b[i]);
@@ -62,7 +63,7 @@ export function createOrdnance({ shot, weapon, vehicle, shooter, direction, now,
   const p =
     weapon === 'bomb'
       ? vehicle.state.p.map((v, i) => v + (i === 1 ? -MAP.metres(1.5) : 0))
-      : vehicle.state.p.map((v, i) => v + dir[i] * MAP.metres(5) + (i === 1 ? MAP.metres(2) : 0));
+      : tankBarrelOrigin(vehicle, dir);
   const v =
     weapon === 'bomb'
       ? [...vehicle.state.v]

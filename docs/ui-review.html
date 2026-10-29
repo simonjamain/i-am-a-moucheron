@@ -1914,7 +1914,7 @@
       #aimRange small {
         font-size: 9px;
       }
-      #bank {
+      :is(#bank, #bedPanel) {
         position: fixed;
         inset: 0;
         z-index: 45;
@@ -1923,7 +1923,7 @@
         background: #09211bd6;
         padding: 20px;
       }
-      #bank > article {
+      :is(#bank, #bedPanel) > article {
         width: min(1080px, 100%);
         max-height: 90dvh;
         overflow: auto;
@@ -1934,28 +1934,28 @@
         box-shadow: 0 14px 60px #0007;
         font-family: Georgia, serif;
       }
-      #bank header {
+      :is(#bank, #bedPanel) header {
         position: static;
         display: flex;
         align-items: start;
         justify-content: space-between;
         gap: 20px;
       }
-      #bank h2 {
+      :is(#bank, #bedPanel) h2 {
         margin: 0 0 8px;
         font-size: 30px;
         font-style: italic;
         font-weight: 400;
       }
-      #bank h3 {
+      :is(#bank, #bedPanel) h3 {
         font-size: 32px;
         font-weight: 400;
         margin: 22px 0;
       }
-      #bank p {
+      :is(#bank, #bedPanel) p {
         line-height: 1.6;
       }
-      #bank button {
+      :is(#bank, #bedPanel) button {
         background: #294938;
         color: #f3edcf;
         padding: 10px 14px;
@@ -1963,37 +1963,37 @@
         border-radius: 4px;
         cursor: pointer;
       }
-      #bank button:disabled {
+      :is(#bank, #bedPanel) button:disabled {
         opacity: 0.5;
         cursor: default;
       }
-      #bank [data-bank-cards] {
+      :is(#bank, #bedPanel) [data-bank-cards] {
         display: grid;
         grid-template-columns: repeat(3, minmax(0, 1fr));
         gap: 16px;
         margin: 20px 0;
       }
-      #bank [data-bank-cards] article {
+      :is(#bank, #bedPanel) [data-bank-cards] article {
         padding: 18px;
         border: 1px solid #a7a17c;
         background: #fff8df55;
       }
-      #bank [data-bank-cards] button {
+      :is(#bank, #bedPanel) [data-bank-cards] button {
         display: block;
         width: 100%;
         margin-top: 14px;
       }
-      #bank [data-bank-cards] small {
+      :is(#bank, #bedPanel) [data-bank-cards] small {
         letter-spacing: 1px;
       }
-      #bank [data-bank-status] {
+      :is(#bank, #bedPanel) [data-bank-status] {
         min-height: 1.5em;
         font-weight: bold;
       }
-      #bank [data-bank-text] {
+      :is(#bank, #bedPanel) [data-bank-text] {
         white-space: pre-line;
       }
-      #bank canvas {
+      :is(#bank, #bedPanel) canvas {
         width: min(100%, 650px);
         height: 150px;
         touch-action: none;
@@ -2001,23 +2001,23 @@
         display: block;
         background: #fff9e5;
       }
-      #bank .bankTable {
+      :is(#bank, #bedPanel) .bankTable {
         overflow: auto;
         margin: 15px 0;
       }
-      #bank table {
+      :is(#bank, #bedPanel) table {
         width: 100%;
         border-collapse: collapse;
         font-size: 12px;
       }
-      #bank th,
-      #bank td {
+      :is(#bank, #bedPanel) th,
+      :is(#bank, #bedPanel) td {
         padding: 8px;
         text-align: left;
         border-bottom: 1px solid #b6b18c;
         white-space: nowrap;
       }
-      #bank .bankHint {
+      :is(#bank, #bedPanel) .bankHint {
         font-size: 12px;
       }
       @media (max-width: 700px) {
@@ -2055,20 +2055,92 @@
           top: 34px;
           bottom: auto;
         }
-        #bank {
+        :is(#bank, #bedPanel) {
           padding: 8px;
         }
-        #bank > article {
+        :is(#bank, #bedPanel) > article {
           padding: 14px;
         }
-        #bank [data-bank-cards] {
+        :is(#bank, #bedPanel) [data-bank-cards] {
           grid-template-columns: 1fr;
         }
       }
+      #sessionSummary {
+        position: absolute;
+        top: 76px;
+        left: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        max-width: calc(100vw - 40px);
+        align-items: flex-start;
+      }
+      #hud #sessionSummary .topstats,
+      #hud #sessionSummary #economyControls {
+        position: static;
+        flex-wrap: wrap;
+        max-width: 100%;
+        margin: 0;
+      }
+      #wallet {
+        overflow-wrap: anywhere;
+        min-width: 0;
+        max-width: 100%;
+      }
+      #hud #sessionSummary #economyControls {
+        gap: 6px;
+      }
+      #sessionSummary .stat {
+        flex: 0 1 auto;
+      }
+      #boardingPending {
+        position: fixed;
+        z-index: 34;
+        top: 185px;
+        left: 50%;
+        transform: translateX(-50%);
+        padding: 12px 18px;
+        background: #173b30ed;
+        border: 1px solid #c8df81;
+        border-radius: 6px;
+        max-width: 90vw;
+        font-size: 13px;
+      }
+      @media (max-width: 700px) {
+        #sessionSummary {
+          top: 65px;
+          left: 8px;
+          max-width: calc(100vw - 16px);
+        }
+        #hud #sessionSummary .topstats,
+        #hud #sessionSummary #economyControls {
+          position: static;
+        }
+        #roomTag {
+          top: 190px;
+          right: 8px;
+        }
+        #players {
+          display: none;
+        }
+      }
     </style>
-  <style>body{background:linear-gradient(#879a81 0 55%,#c1af81 56% 80%,#656c48 81%);min-height:100dvh}nav{position:relative;z-index:50;display:flex;gap:6px;flex-wrap:wrap;padding:14px;background:#102b29}nav button{padding:8px;font-size:12px}.previewNote{position:fixed;bottom:12px;left:15px;right:15px;font-size:12px;color:#fff;background:#102b29b8;padding:9px;z-index:50}#bank>article{max-height:78dvh}#bank{padding-top:90px;padding-bottom:60px}</style>
-  <nav aria-label="Postes de démonstration"><button data-demo="0">Chasseur</button><button data-demo="1">Stuka</button><button data-demo="2">Bombardier</button><button data-demo="3">Tourelle</button><button data-demo="4">DCA</button><button data-demo="5">Tank · pilote</button><button data-demo="6">Tank · canon</button><button data-demo="7">Tank · supérieur</button><button data-demo="8">Banquier</button></nav>
-  <div id="hud"><div id="contextHUD" class="hidden" aria-label="Informations du poste">
+  <style>body{background:linear-gradient(#879a81 0 55%,#c1af81 56% 80%,#656c48 81%);min-height:100dvh}nav{position:relative;z-index:50;display:flex;gap:6px;flex-wrap:nowrap;overflow:auto;padding:14px;background:#102b29}nav button{padding:8px;font-size:12px}.previewNote{position:fixed;bottom:12px;left:15px;right:15px;font-size:12px;color:#fff;background:#102b29b8;padding:9px;z-index:50}#bank>article{max-height:78dvh}#bank{padding-top:90px;padding-bottom:60px}</style>
+  <nav aria-label="Postes de démonstration"><button data-demo="0">Chasseur</button><button data-demo="1">Stuka</button><button data-demo="2">Bombardier</button><button data-demo="3">Tourelle</button><button data-demo="4">DCA</button><button data-demo="5">Tank · pilote</button><button data-demo="6">Tank · canon</button><button data-demo="7">Tank · supérieur</button><button data-demo="8">Banquier</button><button data-demo="9">Lit</button></nav>
+  <div id="hud"><div id="sessionSummary">
+        <div class="topstats">
+          <div class="stat">
+            <label>Vague</label><b id="wave">00</b><small id="threat">MENACE 0</small>
+          </div>
+          <div class="stat"><label>Moucherons</label><b id="enemies">—</b></div>
+          <div class="stat"><label>Infestation</label><b class="lime" id="infest">0 / 20</b></div>
+        </div>
+        <div id="economyControls">
+          <span id="wallet">0 $</span><button id="shopOpen">Équipement · P</button
+          ><button id="bankOpen">Banquier · N</button>
+        </div>
+      </div>
+      <div id="contextHUD" class="hidden" aria-label="Informations du poste">
         <section class="contextRail left" tabindex="0" aria-label="État du poste">
           <small data-hud="left-0"></small><strong data-hud="left-1"></strong>
           <div class="railDetails">
@@ -2089,7 +2161,25 @@
         ><meter id="aimGauge" min="0" max="1" value="0" aria-label="Distance d’éclatement"></meter
         ><small>Shift + / Ctrl −</small>
       </div>
-      </div><section id="bank" class="hidden" role="dialog" aria-modal="true" aria-labelledby="bankTitle">
+      </div><section
+      id="bedPanel"
+      class="hidden"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="bedTitle"
+    >
+      <article>
+        <header>
+          <h2 id="bedTitle">Contrat de réapparition</h2>
+          <button data-bed-close aria-label="Fermer le contrat de lit">✕</button>
+        </header>
+        <p data-bed-text></p>
+        <canvas width="800" height="200" aria-label="Signer le contrat personnel de lit"></canvas
+        ><button data-bed-clear>Effacer</button>
+        <p data-bed-status role="status" aria-live="polite"></p>
+      </article>
+    </section>
+    <section id="bank" class="hidden" role="dialog" aria-modal="true" aria-labelledby="bankTitle">
       <article>
         <header>
           <div>
@@ -2133,15 +2223,22 @@
     </section>
     <p class="previewNote">Aperçu des composants intégrés · Données de démonstration · Aucune partie multijoueur ni transaction réelle. Les signatures fonctionnent sur une caisse temporaire réinitialisée au rechargement.</p>
   <script type="module">
+  import { BedUI } from '/bed-ui.js';
   import { BankUI } from '/bank-ui.js'; import { ContextHUD, equipmentHUD } from '/hud.js';
   import { newBank, signLoan, repayLoan } from '/bank.js';
   let snap = { dollars: 12, base: {epoch:'demo'}, bank: newBank(() => .05) };
   signLoan(snap.bank,1,snap.bank.slots[1].serial,1200,0);
   const root = document.getElementById('bank'), rails = document.getElementById('contextHUD'), hud = new ContextHUD(rails);
   const bank = new BankUI({root,document,snapshot:()=>snap,onOpen:()=>{rails.classList.add('hidden');document.getElementById('aimRange').classList.add('hidden')},onClose:()=>{},accept:s=>{snap=s},command:async(path,b)=>{const cash=Math.round(snap.dollars*100);snap.dollars=(cash+(path==='bank-sign'?signLoan(snap.bank,b.slot,b.serial,cash,0):-repayLoan(snap.bank,b.slot,b.serial,cash)))/100;return snap}});
+  const person={id:'demo',life:'alive',incarnation:0,bedId:null};
+  const bedUI=new BedUI({root:document.getElementById('bedPanel'),snapshot:()=>snap,ground:()=>null,command:async b=>{person.bedId=b.cancel?null:b.bed;return snap},accept:()=>{},onOpen:()=>{rails.classList.add('hidden');document.getElementById('aimRange').classList.add('hidden')},onClose:()=>{},archive:()=>{}});
+  document.getElementById('bankOpen').onclick=()=>display(8);
+  document.getElementById('wallet').textContent='123 456 789 012,67 $';
+  document.getElementById('wave').textContent='12';document.getElementById('enemies').textContent='180';document.getElementById('infest').textContent='10 / 20';
   let model;
   function display(index) {
-    if (bank.busy) return;
+    if (bank.busy || bedUI.busy) return;
+    bedUI.close(); if(index===9){model=null;bedUI.open({slot:1},person);return;}
     bank.close(); if(index===8){model=null;bank.open();return;}
     const type=index===1?'interceptor':index===2||index===3?'bomber':index>=5?'tank':'fighter';
     const seat=index===3?'dorsal':index===6?'cannon':index===7?'top':'pilot';
@@ -2152,5 +2249,5 @@
     if(read){document.getElementById('aimDistance').textContent=read.metres.toFixed(3)+' m';document.getElementById('aimGauge').value=read.fraction}
   }
   for(const button of document.querySelectorAll('[data-demo]'))button.onclick=()=>display(Number(button.dataset.demo));
-  display(0); setInterval(()=>{if(model&&!bank.opened)hud.update(model);bank.render()},100);
+  display(0); setInterval(()=>{if(model&&!bank.opened&&!bedUI.opened)hud.update(model);bank.render()},100);
   </script></html>

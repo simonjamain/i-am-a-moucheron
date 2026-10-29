@@ -70,7 +70,7 @@ human there, the existing client-hosted physical queue remains authoritative.
 
 The catalog is declarative in `equipment.js`:
 
-The initial DCA costs 4 dollars, Chasseur M2 12 dollars, motor levels 4/9/16,
+The initial DCA costs 4 dollars, Stuka 12 dollars per hull, tank 10 dollars, motor levels 4/9/16,
 and ammunition levels 6/12/20. DCA prices rise by 2 dollars per installed gun,
 up to 40 dollars. Completed, non-lost waves grant an immediate team stipend;
 soul releases remain worth one dollar. See [progression](progression.md) for
@@ -105,7 +105,7 @@ Routes are sampled by arc length for consistent speed and shared arrival timing.
 Most aerial waypoints are high, with variable altitude and low approaches. Ants
 unlock on wave 3 and roaches on wave 6. Their floor routes avoid the main furniture
 supports and finish by climbing toward the bin. They have walking legs instead
-of wings. Ground paths are designed corridors, not a general navigation mesh;
+of wings. Ground paths use static obstacle-aware A* and simplification, not a dynamic navigation mesh;
 arbitrary player-deployed equipment is not dynamically rerouted around.
 
 The bomber now has a rounded fuselage, glazed nose, side windows, engine cowls,
@@ -127,3 +127,11 @@ Les déchirures, annexes, dégâts fractionnaires, prix indépendants des instal
 et réserves des avions sont détaillés dans [logistique et contrats](logistics-contracts.md).
 La DCA conserve ses deux signatures obligatoires et ses munitions illimitées.
 La station gratuite d’Alpha ne fournit pas de DCA gratuite.
+
+## Current character fall and personal respawn
+
+The freefall/canopy reference values earlier in this historical section are
+replaced for the character by world-metre gravity, gradual inflation and impact
+damage in [field updates](field-update.md). Projectile and aircraft ballistics
+retain their separate miniature tuning. Beds use common funds and personal
+signed contracts; new loans use 10–20 % per wave without rewriting signed schedules.

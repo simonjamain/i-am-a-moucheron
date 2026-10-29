@@ -21,6 +21,41 @@ utiles dans `docs/archive/` avec un avertissement et un lien vers leur remplaça
 Une règle a une seule référence détaillée ; ailleurs, ajouter un lien. Garder
 les instructions de démarrage courtes et les détails accessibles par sujet.
 
+Avant de clôturer chaque lot du backlog, inventorier tous les Markdown suivis et
+vérifier leur cohérence avec le code livré : stack, démarrage, architecture,
+fonctionnalités, commandes, état des tâches et liens. Corriger les informations
+erronées et règles remplacées ; identifier les archives historiques. Vérifier que
+README, gameplay et carte du code donnent un parcours de reprise court et à jour.
+Consigner dans le suivi du lot les documents corrigés et les limites restantes ;
+exécuter aussi `npm run check:docs` pour les liens locaux. La livraison est
+complète lorsque cette revue documentaire est effectuée.
+
+## Exécution du backlog
+
+Quand l’utilisateur demande de traiter le backlog, prendre en charge toutes les
+tâches prêtes du périmètre demandé, dans l’ordre des dépendances et priorités,
+jusqu’à leur livraison vérifiée. Les décisions de conception consignées sont
+validées : passer directement à l’implémentation, aux contrôles et à la livraison,
+sans nouvelle étape de confirmation des maquettes ou résultats intermédiaires.
+Choisir les détails non spécifiés selon les conventions du jeu et documenter les
+hypothèses et arbitrages dans le suivi de tâche.
+
+Découper les tâches et produire des releases intermédiaires cohérentes est
+autorisé. Fournir au fil des releases un ZIP des sources déployables, les consignes
+nécessaires, les contrôles exécutés et les limites connues, pour permettre à
+l’utilisateur de déployer avant la fin du lot. Continuer automatiquement sur le
+reste du lot après chaque livraison, sans attendre de retour. Une image Docker
+n’est à produire que sur demande explicite. Ces livraisons ne provisionnent ni ne
+déploient un serveur externe à la place de l’utilisateur.
+
+Les mises à jour de progression informent sans demander d’accord pour continuer.
+En cas de blocage réel, chercher une solution dans le périmètre autorisé, consigner
+le blocage et poursuivre les tâches indépendantes. Solliciter l’utilisateur
+uniquement lorsqu’une information ou un accès indispensable reste introuvable,
+ou qu’une action exige une autorisation qui n’a pas été donnée ; les contrôles
+d’autorisation natifs restent applicables. Ne pas déclarer le lot terminé tant
+que des tâches restent incomplètes : donner leur état précis et la reprise utile.
+
 ## Livraison
 
 Modifier les sources, assembler les fichiers générés et effectuer les contrôles

@@ -29,7 +29,8 @@ npm ci
 npm start
 ```
 
-Pour installer l’image Docker livrée, suivre [le guide Docker](docs/docker.md).
+Livraison courante : ZIP des sources, avec ce README et `package-lock.json`.
+Le [guide Docker](docs/docker.md) reste disponible pour construire soi-même une image.
 
 Node 22.13+ ; HTTP sur le port 3000, UDP sur 41000–41099. En production,
 servir HTTP derrière HTTPS et exposer les ports UDP directement sur la VM.
@@ -86,7 +87,9 @@ L’identification des appareils, les annexes et les réserves partagées sont d
 dans [logistique et contrats](docs/logistics-contracts.md).
 
 Le lot [pilotage, véhicules et banque](docs/vehicles-bank.md) décrit Stuka, tank,
-armes lourdes, accès par poste et prêts. Les interfaces HUD/banquier sont intégrées après validation : rails par poste,
+armes lourdes, accès par poste et prêts. Les interfaces HUD/banquier ont été validées et intégrées : rails par poste,
 jauge DCA au viseur, prêts et remboursements signés. Banquier : bouton ou N.
 L’aperçu `/ui-review.html` utilise les composants réels avec des données temporaires.
-Le paquet Docker `2026.10.29-udp.2` remplace la première archive.
+Le lot [retours terrain](docs/field-update.md) décrit les accès corrigés, le pistolet
+à l’épaule, les chutes, les lits, la lunette du tank, la minute de préparation et
+les nouveaux taux de prêt. Les images Docker précédentes sont antérieures à ce lot.

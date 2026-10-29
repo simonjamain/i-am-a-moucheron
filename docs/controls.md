@@ -83,3 +83,13 @@ mondes. Signer dans son cadre puis relâcher dépose le contrat ; remboursement
 anticipé également signé. Échap ferme. La souris est libérée et les commandes
 neutralisées pendant la consultation ; la partie continue. Les rails contextuels
 s’ouvrent au réglage/événement et au survol/focus.
+
+## Retours terrain
+
+Au sol près d’un lit : E ouvre le contrat personnel ; E au lit actif propose la
+résiliation signée. Après purgatoire, retour au lit valide ou au départ.
+Au canon du tank : vue de lunette, **C maintenu** pour observer à la troisième
+personne sans déplacer le canon ; les tirs sont suspendus jusqu’au relâchement.
+Espace permet plusieurs cycles d’ouverture/fermeture du parachute ; une ouverture
+tardive ne supprime pas la vitesse instantanément. Les dégâts dépendent de la
+vitesse verticale à l’impact. Voir [retours terrain](field-update.md).

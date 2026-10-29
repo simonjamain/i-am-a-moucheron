@@ -143,13 +143,31 @@ export function createGraphics(T, scene) {
       inner.rotation.z = side * -0.18;
       const outer = box(side * 2.8, -0.16, 0.1, 2.1, 0.12, 0.85, color, g);
       outer.rotation.z = side * 0.1;
-      box(side * 1.25, -0.75, -0.55, 0.32, 0.9, 0.75, color, g);
-      box(side * 2.3, -0.3, -0.3, 1.4, 0.06, 0.4, '#526b56', g);
-      const bomb = ball(side * 1.6, -0.5, 0.1, 0.18, '#343d31', g);
-      bomb.scale.z = 3;
+      const strut = cyl(side * 1.25, -0.5, -0.55, 0.055, 0.055, 0.55, '#364438', g);
+      strut.rotation.z = side * 0.14;
+      const wheel = cyl(side * 1.29, -0.8, -0.55, 0.22, 0.22, 0.18, '#26352e', g);
+      wheel.rotation.z = Math.PI / 2;
+      const fairing = ball(side * 1.29, -0.74, -0.55, 0.2, color, g);
+      fairing.scale.set(0.55, 1, 1.7);
+      box(side * 2.3, -0.27, -0.25, 1.25, 0.035, 0.18, '#526b56', g);
+      const bomb = makeBomb();
+      bomb.scale.setScalar(0.32);
+      bomb.position.set(side * 1.6, -0.46, 0.1);
+      g.add(bomb);
     }
     box(0, 0.38, 0.15, 0.6, 0.4, 1.8, '#496565', g);
     g.userData.vehicleType = 'interceptor';
+    return g;
+  }
+  function makeBomb() {
+    const g = new T.Group();
+    const body = ball(0, 0, 0, 0.35, '#3c4937', g);
+    body.scale.set(1, 1, 2.6);
+    const nose = ball(0, 0, -0.65, 0.25, '#536044', g);
+    nose.scale.z = 1.3;
+    box(0, 0, 0.73, 0.9, 0.045, 0.5, '#59664b', g);
+    box(0, 0, 0.73, 0.045, 0.9, 0.5, '#59664b', g);
+    g.userData.projectileSolid = false;
     return g;
   }
   function makeTank(color) {
@@ -178,7 +196,11 @@ export function createGraphics(T, scene) {
       const muzzle = new T.Object3D();
       muzzle.position.set(0, 0, -length);
       pitch.add(muzzle);
-      mount.userData = { pitch, muzzle };
+      const coaxMuzzle = new T.Object3D();
+      coaxMuzzle.position.set(0.3, 0, -length);
+      pitch.add(coaxMuzzle);
+      if (turrets.length === 0) box(0.3, 0, -length / 2, 0.065, 0.065, length, '#293e31', pitch);
+      mount.userData = { pitch, muzzle, coaxMuzzle };
       turrets.push(mount);
     }
     box(0.7, 0.5, -2, 0.09, 0.09, 0.8, '#293e31', g);
@@ -313,6 +335,7 @@ export function createGraphics(T, scene) {
     makePlane,
     makeBomber,
     makeStuka,
+    makeBomb,
     makeTank,
     insect,
     humanoid,

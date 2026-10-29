@@ -68,7 +68,7 @@ snapshot test have been replaced, rather than layered onto client authority.
 Aircraft fuel and ammunition are persisted separately from client motion, with
 conditional elapsed-time updates and atomic projectile debits. Owner changes do
 not reset them. See [logistics and contracts](logistics-contracts.md), including
-the HTTP shot authorization and its latency limit.
+the immediate shot prediction and batched debits.
 
 ## Tirs d’avion
 
@@ -76,3 +76,10 @@ Les projectiles et le décompte local de munitions sont prédits sans attendre H
 Les débits sont rapportés par lots idempotents en arrière-plan ; les réponses ne
 créent pas de projectiles. Le modèle de confiance reste coopératif, comme les
 mouvements et impacts. Voir [logistique et contrats](logistics-contracts.md).
+
+## Incarnation, chute et retour courant
+
+Sur Node, une nouvelle incarnation recrée aussi le corps local du bureau pour
+éviter de conserver le lieu de mort. Un rapport d’impact vertical est dédupliqué
+par joueur/incarnation/tir. Les destinations signées et le secret privé de reprise
+du contrat de lit sont détaillés dans [retours terrain](field-update.md).

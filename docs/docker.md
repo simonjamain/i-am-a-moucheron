@@ -1,3 +1,8 @@
+> Paquet historique `.2`, antérieur au lot retours terrain. Les livraisons
+> actuelles sont des ZIP de sources (`npm ci`, `npm start`). Le Dockerfile peut
+> construire ces sources si souhaité ; aucun nouveau binaire Docker n’est fourni
+> automatiquement. Voir [exploitation](operations.md).
+
 # Installer l’image Docker
 
 Image livrée : `i-am-a-moucheron:2026.10.29-udp.2`, **Linux AMD64 / x86-64**.

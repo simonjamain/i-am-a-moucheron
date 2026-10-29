@@ -39,7 +39,7 @@ for (let slot = 0; slot < 3; slot++) cash += signLoan(bank, slot, slot + 1, cash
 assert.equal(cash, 3600);
 assert.throws(() => signLoan(bank, 0, 1, cash, 0));
 const debit = settleLoans(bank, 1, () => 0.3);
-assert.equal(debit, 993);
+assert.equal(debit, 1137);
 assert.equal(settleLoans(bank, 1), 0);
 for (let wave = 2; wave <= 4; wave++) cash -= settleLoans(bank, wave, () => 0.3);
 assert.ok(bank.slots.every((s) => s.status === 'offer'));

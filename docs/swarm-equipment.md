@@ -19,7 +19,7 @@ turntables rotate with azimuth; barrels and breeches rotate about the trunnion.
 F uses `equipmentExitAction` independently of flight/crew classification and
 pointer capture. It exits pilot, dorsal and tail seats, or a DCA, while ignoring
 text inputs, forms, repeats and dead players. A grounded aircraft still must be
-stopped. An airborne pilot exit ejects the crew in freefall with closed canopies.
+stopped. An airborne exit frees only that player, in freefall with a closed canopy. Other occupants remain aboard.
 
 ## Difficulty and flock flow
 
@@ -30,7 +30,7 @@ wave 4, guards on 8, brutes on 12. Ants (wave 3) and roaches (wave 6) add ground
 see `waves.js` for the complete catalog and `routes.js` for entry sources. They have distinct size, colour, speed and
 infestation cost. Budget is capped at 2400 and visible population at 180; at
 that ceiling, remaining budget is consolidated into one brute with its normal 800 PV. The
-first wave has six midges and finishes within fifty seconds without interception.
+first wave has six midges and lasts roughly one minute on the control seed, with timing derived from the actual route.
 See [progression](progression.md) for budgets, elite limits and timings. Later compositions
 vary randomly while sharing an exact budget across clients.
 
