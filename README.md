@@ -93,3 +93,7 @@ L’aperçu `/ui-review.html` utilise les composants réels avec des données te
 Le lot [retours terrain](docs/field-update.md) décrit les accès corrigés, le pistolet
 à l’épaule, les chutes, les lits, la lunette du tank, la minute de préparation et
 les nouveaux taux de prêt. Les images Docker précédentes sont antérieures à ce lot.
+
+Le lot [lisibilité, commandes, nettoyage et Spitfire](docs/clean-flight.md) ajoute
+les bons prépayés et pose par E, les touches physiques de poste, les bombes en
+continu, les projectiles teintés et la mire, les impacts uniques et le jet partagé.

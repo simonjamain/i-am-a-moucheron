@@ -23,22 +23,33 @@ base de données ni accès disque dans les opérations de jeu Node. Voir
 
 ## Modules de jeu
 
-| Domaine              | Modules et référence                                                                                              |
-| -------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| Unités/décor         | `scale.js`, `layout.js`, `office.js` ; [échelle](scale-fleet-weapons.md).                                         |
-| Géométrie            | `graphics.js`, modèles procéduraux ; `renderer.js` pour WebGL/secours.                                            |
-| Vol et entrée        | `flight.js`, `mouse-flight.js`, `input.js`, `control-focus.js`, `fleet.js`, `vacant-flight.js`.                   |
-| Corps et purgatoire  | `base.js`, `purgatory-physics.js`, `sortie.js` ; [file](purgatory-queue.md).                                      |
-| Chute actuelle       | `field-physics.js` : mètres du décor, gonflage, vitesse verticale et dégâts ; [retours terrain](field-update.md). |
-| Armes                | `ballistics.js`, `combat.js`, `armament.js`, `ordnance.js`, `aircraft-fire.js`, `tracers.js`, `insect-hits.js`.   |
-| Visée/caméras        | `personal-aim.js` pour épaule/main ; `tank-view.js` pour lunette, observation et bouche serveur.                  |
-| Vagues               | `waves.js`, `routes.js`, `route-speed.js`, `route-navigation.js`, `route-obstacles.js` généré.                    |
-| Économie/réserves    | `equipment.js`, `logistics.js`, `bank.js`, `rewards.js` ; [logistique](logistics-contracts.md).                   |
-| Contrats             | `contracts.js`, `malice.js`, gestion des papiers dans le client.                                                  |
-| Lits                 | `beds.js` : accès et support ; `bed-ui.js` : document personnel et signature.                                     |
-| HUD/banque           | `hud.js`, `equipment-controls.js`, `bank-ui.js` ; [véhicules et banque](vehicles-bank.md).                        |
-| Mesure d’interaction | `interaction-timing.js` : feedback immédiat et traces bornées de sélection.                                       |
-| Effets/son           | `insect-status.js`, `crash-effects.js`, `audio.js`, effets de combat et corps tombants du client.                 |
+| Domaine              | Modules et référence                                                                                                                               |
+| -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Unités/décor         | `scale.js`, `layout.js`, `office.js` ; [échelle](scale-fleet-weapons.md).                                                                          |
+| Géométrie            | `graphics.js`, modèles procéduraux ; `renderer.js` pour WebGL/secours.                                                                             |
+| Vol et entrée        | `flight.js`, `mouse-flight.js`, `input.js`, `control-focus.js`, `fleet.js`, `vacant-flight.js`.                                                    |
+| Corps et purgatoire  | `base.js`, `purgatory-physics.js`, `sortie.js` ; [file](purgatory-queue.md).                                                                       |
+| Chute actuelle       | `field-physics.js` : mètres du décor, gonflage, vitesse verticale et dégâts ; [retours terrain](field-update.md).                                  |
+| Armes                | `ballistics.js`, `combat.js`, `armament.js`, `ordnance.js`, `aircraft-fire.js`, `tracers.js`, `insect-hits.js`.                                    |
+| Visée/caméras        | `personal-aim.js` pour épaule/main ; `tank-reticle.js` pour les trajectoires de mire ; `tank-view.js` pour lunette, observation et bouche serveur. |
+| Vagues               | `waves.js`, `routes.js`, `route-speed.js`, `route-navigation.js`, `route-obstacles.js` généré.                                                     |
+| Économie/réserves    | `equipment.js`, `logistics.js`, `bank.js`, `rewards.js` ; [logistique](logistics-contracts.md).                                                    |
+| Contrats             | `contracts.js`, `malice.js`, gestion des papiers dans le client.                                                                                   |
+| Lits                 | `beds.js` : accès et support ; `bed-ui.js` : document personnel et signature.                                                                      |
+| HUD/banque           | `hud.js`, `equipment-controls.js`, `bank-ui.js` ; [véhicules et banque](vehicles-bank.md).                                                         |
+| Mesure d’interaction | `interaction-timing.js` : feedback immédiat et traces bornées de sélection.                                                                        |
+| Effets/son           | `insect-status.js`, `crash-effects.js`, `audio.js`, effets de combat et corps tombants du client.                                                  |
+
+## Dernier lot
+
+[Lisibilité et nettoyage](clean-flight.md) : `purchase-ui.js` réutilise les protections
+de signature de `BedUI` pour les bons. `equipment.js` calcule prix et compteurs
+prépayés ; `server/game.js` possède commandes personnelles, poses, contacts et
+salissure. `vehicle-care.js` porte dégâts et rayon du jet ; les effets décoratifs
+restent côté client. `tank-reticle.js` réutilise l’intégrateur autoritaire des obus.
+`fleet.js` / `graphics.js` / `logistics.js` décrivent le Spitfire S6 et ses réserves.
+`test-clean-flight.mjs` couvre ce lot ; les tests natifs UDP exercent ses commandes
+entre deux pairs. Le Worker conserve son ancien périmètre, sans Spitfire gratuit.
 
 ## Génération, tests et compatibilité
 

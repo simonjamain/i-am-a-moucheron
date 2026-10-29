@@ -49,6 +49,15 @@ VEHICLES.tank = {
   gear: 0.8 * ACTOR_UNIT,
   ground: true,
 };
+VEHICLES.spitfire = {
+  ...VEHICLES.fighter,
+  name: 'Spitfire S6',
+  maxSpeed: VEHICLES.fighter.maxSpeed * 1.75,
+  thrust: 70,
+  turn: VEHICLES.fighter.turn * 1.45,
+  span: 11.2,
+  length: 7,
+};
 export const SEAT_NAMES = {
   pilot: 'Pilote',
   dorsal: 'Mitrailleur dorsal',
@@ -61,7 +70,15 @@ export function vehiclePad(type) {
   return {
     p: [
       b.originX +
-        (type === 'tank' ? -21 : type === 'interceptor' ? 18 : type === 'bomber' ? 5 : -7) *
+        (type === 'spitfire'
+          ? 34
+          : type === 'tank'
+            ? -21
+            : type === 'interceptor'
+              ? 18
+              : type === 'bomber'
+                ? 5
+                : -7) *
           ACTOR_UNIT,
       b.deckY + VEHICLES[type].gear,
       b.originZ - 5 * ACTOR_UNIT,

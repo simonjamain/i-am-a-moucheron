@@ -134,7 +134,7 @@ for (const type of Object.keys(VEHICLES)) {
     advanceSupplies({ fuel: 100, ammo }, { ...state, engine: 0 }, type, [], 300).fuel,
     100,
   );
-  for (const seat of VEHICLES[type].seats.filter(() => type !== 'tank'))
+  for (const seat of VEHICLES[type].seats.filter(() => !['tank', 'spitfire'].includes(type)))
     assert.ok(
       !ammo[seat] ||
         Math.abs(ammoCapacity(type, seat) * (seat === 'pilot' ? 0.06 : 0.09) - 60) < 0.05,

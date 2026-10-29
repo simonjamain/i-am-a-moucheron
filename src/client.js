@@ -1,3 +1,8 @@
+import { PurchaseUI } from '/purchase-ui.js';
+import { purchaseCount } from '/equipment.js';
+import { vehicleHue } from '/logistics.js';
+import { WASH } from '/vehicle-care.js';
+import { ballisticMarks } from '/tank-reticle.js';
 import { InteractionTiming } from '/interaction-timing.js';
 import { BedUI } from '/bed-ui.js';
 import { bedAccess } from '/beds.js';
@@ -7,7 +12,7 @@ import { BankUI } from '/bank-ui.js';
 import { ContextHUD, equipmentHUD } from '/hud.js';
 import { paintVehicle, updateInscriptions } from '/vehicle-livery.js';
 import { AircraftFire } from '/aircraft-fire.js';
-import { inRadarCoverage, installationCount } from '/logistics.js';
+import { inRadarCoverage } from '/logistics.js';
 import { maliciousDocument, clauseFactors } from '/malice.js';
 import { InsectStatus, insectScale } from '/insect-status.js';
 import { stepVacantAircraft } from '/vacant-flight.js';
@@ -165,6 +170,7 @@ const {
   ball,
   textLabel,
   makePlane,
+  makeSpitfire,
   makeBomber,
   makeStuka,
   makeBomb,
@@ -331,6 +337,7 @@ function groundActive() {
     $('papers').classList.contains('hidden') &&
     $('help').classList.contains('hidden') &&
     $('bedPanel').classList.contains('hidden') &&
+    $('purchasePanel').classList.contains('hidden') &&
     $('bank').classList.contains('hidden') &&
     $('shop').classList.contains('hidden') &&
     controlFocus.active
@@ -629,7 +636,8 @@ function canCapture() {
     $('help').classList.contains('hidden') &&
     $('shop').classList.contains('hidden') &&
     $('bank').classList.contains('hidden') &&
-    $('bedPanel').classList.contains('hidden')
+    $('bedPanel').classList.contains('hidden') &&
+    $('purchasePanel').classList.contains('hidden')
   );
 }
 function toggleControl() {
@@ -645,8 +653,8 @@ function updateControlHUD() {
   $('captureMouse').textContent =
     document.pointerLockElement === canvas ? 'Libérer la souris · Échap' : 'Capturer la souris';
   $('flightKeys').innerHTML = mouse
-    ? 'Souris : direction · Clic / Espace : tir · C maintenu : regarder<br>ZQSD / flèches : tangage et roulis · A/E : gouverne · Maj/Ctrl : gaz · Échap : curseur'
-    : 'ZQSD / flèches : tangage et roulis · A/E : gouverne<br>Maj/Ctrl : gaz · C maintenu : regarder · Espace : tir · Échap : curseur';
+    ? 'Souris : direction · Clic : tir · Espace : bombes · C maintenu : regarder<br>ZQSD / flèches : tangage et roulis · A/E : gouverne · Maj/Ctrl : gaz · Échap : curseur'
+    : 'ZQSD / flèches : tangage et roulis · A/E : gouverne<br>Maj/Ctrl : gaz · C maintenu : regarder · Clic : tir · Espace : bombes · Échap : curseur';
 }
 async function captureMouse() {
   if (canCapture()) await controlFocus.capture();
@@ -884,6 +892,7 @@ function accept(s, force = false) {
   rewardQueue.observe(s.rewardCount, !!previous && previous.base?.epoch !== s.base?.epoch);
   snap = s;
   bedUI.observe(self);
+  purchaseUI.observe(self);
   renderCrew();
   reconcileEquipment([...(s.equipment || []), s.initialStation].filter(Boolean));
   renderShop();
@@ -957,6 +966,25 @@ function accept(s, force = false) {
         Date.now() + clockOffset,
         colliders,
       );
+    if (e.kind === 'clean' && !respawnAt) addCleanStars(e);
+    if (
+      e.kind === 'pistol-trace' &&
+      e.shooter !== id &&
+      Date.now() + clockOffset - e.at < 250 &&
+      e.realm === (respawnAt ? (isSuper() ? 'super' : 'purgatory') : 'office')
+    ) {
+      const targetScene = respawnAt ? purgScene : scene;
+      const line = makeTracer(
+        T,
+        targetScene,
+        new T.Vector3().fromArray(e.p),
+        new T.Vector3().fromArray(e.direction),
+        '#ffe48d',
+      );
+      if (respawnAt) line.scale.setScalar(1 / MAP.ratio);
+      line.userData.until = performance.now() + 90;
+      pistolTrails.push({ line, targetScene });
+    }
     if (e.kind === 'piercing') hitEffects.burst(new T.Vector3().fromArray(e.p), camera);
     if (e.kind === 'blast') {
       combatEffects.blast(new T.Vector3().fromArray(e.p));
@@ -1136,7 +1164,7 @@ $('share').onclick = async () => {
 };
 $('helpButton').onclick = () => {
   releaseMouse();
-  if (bankUI.opened || bedUI.opened) return;
+  if (bankUI.opened || bedUI.opened || purchaseUI.opened) return;
   $('help').classList.remove('hidden');
 };
 $('closeHelp').onclick = () => {
@@ -1146,6 +1174,10 @@ $('closeHelp').onclick = () => {
 addEventListener('keydown', (event) => {
   if (!joined) return;
   if (event.code === 'Escape') {
+    if (purchaseUI.opened) {
+      purchaseUI.close();
+      return;
+    }
     if (bedUI.opened) {
       bedUI.close();
       return;
@@ -1173,7 +1205,7 @@ addEventListener('keydown', (event) => {
     toggleBank();
     return;
   }
-  if (bankUI.opened || bedUI.opened) return;
+  if (bankUI.opened || bedUI.opened || purchaseUI.opened) return;
   const exitAction = equipmentExitAction({
     key: interactionKey,
     repeat: event.repeat,
@@ -1187,9 +1219,9 @@ addEventListener('keydown', (event) => {
     vehicleAction(exitAction, { state: localMotion() });
     return;
   }
-  if (placingEquipment && interactionKey === 'Enter' && !event.repeat) {
+  if (placingEquipment && ['KeyE', 'Enter'].includes(interactionKey)) {
     event.preventDefault();
-    purchase(placementKind);
+    if (!event.repeat && canCapture()) placePurchased();
     return;
   }
   if (interactionKey === 'KeyP' && !respawnAt && !event.repeat) {
@@ -1206,6 +1238,7 @@ addEventListener('keydown', (event) => {
     !respawnAt &&
     $('papers').classList.contains('hidden') &&
     $('bedPanel').classList.contains('hidden') &&
+    $('purchasePanel').classList.contains('hidden') &&
     $('bank').classList.contains('hidden') &&
     $('shop').classList.contains('hidden') &&
     toggleParachute(selfBase())
@@ -1218,6 +1251,14 @@ addEventListener('keydown', (event) => {
         : 'Chute libre · Espace pour ouvrir',
       2,
     );
+    return;
+  }
+  if (/^Digit[1-7]$/.test(event.code) && !event.repeat && canCapture() && myVehicle && !respawnAt) {
+    const seat = VEHICLES[myVehicle.type].seats[Number(event.code.slice(-1)) - 1];
+    if (seat && seat !== crewSeat) {
+      event.preventDefault();
+      action('seat-request', { seat });
+    }
     return;
   }
   if (!controlFocus.active) return;
@@ -1269,11 +1310,7 @@ addEventListener('keydown', (event) => {
   }
   if (code === 'KeyM' && !event.repeat && !respawnAt) toggleControl();
   if (code === 'KeyR' && !event.repeat) crash();
-  if (code === 'Space' && !event.repeat) pistol();
-  if (code === 'KeyB' && !event.repeat) {
-    contextHUD.reveal();
-    fireHeavy();
-  }
+  if (code === 'Space' && !event.repeat) contextHUD.reveal();
   if (code === 'KeyH' && !event.repeat) {
     releaseMouse();
     $('help').classList.toggle('hidden');
@@ -1289,7 +1326,6 @@ for (const b of document.querySelectorAll('[data-key]')) {
     e.preventDefault();
     b.setPointerCapture(e.pointerId);
     if (!canCapture()) return;
-    if (b.dataset.key === 'Space') pistol();
     if (controlFocus.touch && !controlFocus.active) controlFocus.capture();
     keys[b.dataset.key] = true;
   };
@@ -1672,6 +1708,7 @@ function renderPaper() {
   const visible =
     !bankUI.opened &&
     !bedUI.opened &&
+    !purchaseUI.opened &&
     !boardingSelectionBusy &&
     eligible &&
     index < documents[context]?.length;
@@ -1854,7 +1891,7 @@ $('soulPaperButton').onclick = () => {
 $('boardButton').onclick = openBoarding;
 $('baseHelp').onclick = () => {
   releaseMouse();
-  if (bankUI.opened || bedUI.opened) return;
+  if (bankUI.opened || bedUI.opened || purchaseUI.opened) return;
   $('help').classList.remove('hidden');
 };
 const purgScene = new T.Scene();
@@ -2299,7 +2336,7 @@ function updateVehicles(dt) {
             ? aircraftFire.available(myVehicle.id, crewSeat, myVehicle.supplies, currentAmmoKey())
             : '—') +
           (myVehicle.supplies?.ammo.bomb !== undefined
-            ? ' · Bombes ' + Math.floor(myVehicle.supplies.ammo.bomb) + ' · B'
+            ? ' · Bombes ' + Math.floor(myVehicle.supplies.ammo.bomb) + ' · Espace'
             : '') +
           (myVehicle.type === 'tank'
             ? ' · HE ' +
@@ -2308,7 +2345,7 @@ function updateVehicles(dt) {
               Math.floor(myVehicle.supplies.ammo.ap) +
               ' · Actif ' +
               (availableShell(myVehicle.supplies.ammo, selectedShell) || 'vide') +
-              ' · B : canon · Espace : MG'
+              ' · Clic : canon · Espace : coaxiale'
             : '') +
           (myVehicle.supplies?.servicing ? ' · Ravitaillement' : '')
         : selfBase()?.parachute
@@ -2318,7 +2355,14 @@ function updateVehicles(dt) {
   if (crew) {
     const observing =
       myVehicle.type === 'tank' && crewSeat === 'cannon' && !!keys.KeyC && controlFocus.active;
-    if (myVehicle.type === 'tank' && crewSeat === 'cannon' && keys.KeyB && !observing) fireHeavy();
+    if (
+      myVehicle.type === 'tank' &&
+      crewSeat === 'cannon' &&
+      (mouseFire || pad.fire || uiWeaponFire) &&
+      !observing &&
+      canCapture()
+    )
+      fireHeavy();
     if (observing) {
       freeLook.yaw -= pad.yaw * dt * 2;
       freeLook.pitch = T.MathUtils.clamp(freeLook.pitch - pad.pitch * dt, -0.1, 1.2);
@@ -2346,7 +2390,10 @@ function updateVehicles(dt) {
     $('crosshair').classList.remove('hidden', 'offscreen');
     shooting =
       !observing &&
-      ((controlFocus.active && (mouseFire || keys.Space || pad.fire)) || uiWeaponFire) &&
+      ((controlFocus.active &&
+        (scoped ? keys.Space || pad.heavy : mouseFire || keys.Space || pad.fire)) ||
+        (!scoped && uiWeaponFire)) &&
+      canCapture() &&
       hasAmmo();
     cooldown -= dt;
     while (shooting && cooldown <= 0) {
@@ -2691,13 +2738,15 @@ function vehicleModel(v) {
   let g = fleetModels.get(v.id);
   if (!g) {
     g =
-      v.type === 'tank'
-        ? makeTank('#8eb7c6')
-        : v.type === 'interceptor'
-          ? makeStuka('#8eb7c6')
-          : v.type === 'bomber'
-            ? makeBomber('#c5ba92')
-            : makePlane(v.type === 'interceptor' ? '#8eb7c6' : '#e3ebc0');
+      v.type === 'spitfire'
+        ? makeSpitfire('#e3ebc0')
+        : v.type === 'tank'
+          ? makeTank('#8eb7c6')
+          : v.type === 'interceptor'
+            ? makeStuka('#8eb7c6')
+            : v.type === 'bomber'
+              ? makeBomber('#c5ba92')
+              : makePlane(v.type === 'interceptor' ? '#8eb7c6' : '#e3ebc0');
     paintVehicle(
       T,
       g,
@@ -2767,7 +2816,7 @@ function updateOthers(dt) {
               ? mount.userData.coaxMuzzle
               : mount.userData.muzzle
           ).getWorldPosition(new T.Vector3());
-          bullet(o, new T.Vector3().fromArray(m.turretDirection || [0, 0, -1]), '#91d9c4');
+          bullet(o, new T.Vector3().fromArray(m.turretDirection || [0, 0, -1]), vehicleColor(v));
         }
       }
     if (
@@ -2776,8 +2825,22 @@ function updateOthers(dt) {
       motion.fire &&
       v.supplies?.ammo.pilot >= 1 &&
       Math.random() < dt / (FIRE_INTERVAL * clauseFactors(p?.contractClause).interval)
-    )
-      bullet(g.position, new T.Vector3(0, 0, -1).applyQuaternion(g.quaternion), '#91d9c4');
+    ) {
+      const direction = new T.Vector3(0, 0, -1).applyQuaternion(g.quaternion);
+      if (v.type === 'spitfire') {
+        g.updateWorldMatrix(true, true);
+        for (const node of g.userData.muzzles)
+          bullet(node.getWorldPosition(new T.Vector3()), direction, vehicleColor(v));
+      } else
+        bullet(
+          new T.Vector3(v.type === 'tank' ? 0.7 : (weaponBarrel++ % 2 ? 1 : -1) * 1.35, 0, -1.2)
+            .multiplyScalar(ACTOR_UNIT)
+            .applyQuaternion(g.quaternion)
+            .add(g.position),
+          direction,
+          vehicleColor(v),
+        );
+    }
   }
   for (const [k, g] of fleetModels)
     if (!active.has(k)) {
@@ -2793,7 +2856,8 @@ function updateOthers(dt) {
 }
 function bullet(pos, dir, color = '#f4efab', owned = false, aa = false) {
   if (owned && !aa && myVehicle) {
-    if (!hasAmmo()) return;
+    if (aircraftFire.available(myVehicle.id, crewSeat, myVehicle.supplies, currentAmmoKey()) < 1)
+      return;
     const launch = {
       vehicle: myVehicle.id,
       wave: snap?.wave,
@@ -2807,7 +2871,7 @@ function bullet(pos, dir, color = '#f4efab', owned = false, aa = false) {
       origin = pos.clone(),
       direction = dir.clone();
     if (aircraftFire.fire(vehicle, seat, myVehicle.supplies, currentAmmoKey()))
-      emitBullet(origin, direction, color, owned, aa, launch);
+      emitBullet(origin, direction, vehicleColor(myVehicle), owned, aa, launch);
     return;
   }
   emitBullet(pos, dir, color, owned, aa);
@@ -2836,7 +2900,7 @@ const aircraftFire = new AircraftFire(
 );
 function emitBullet(pos, dir, color, owned, aa, launch = null) {
   if (!respawnAt) sound.play(aa ? 'flak' : 'shot', pos, { ref: aa ? 35 : 12 });
-  const m = makeTracer(T, scene, pos, dir, aa ? '#ffbc59' : owned ? '#ffcc64' : '#91e2bf', aa);
+  const m = makeTracer(T, scene, pos, dir, color, aa);
   if (owned) combatEffects.muzzle(pos, dir);
   const velocity = dir.clone().multiplyScalar(MAP.metres(aa ? REFERENCE.shell : REFERENCE.bullet));
   if (launch) velocity.add(launch.velocity);
@@ -2864,6 +2928,19 @@ function emitBullet(pos, dir, color, owned, aa, launch = null) {
   }
 }
 function shoot(forward) {
+  if (myVehicle?.type === 'spitfire') {
+    if (aircraftFire.available(myVehicle.id, crewSeat, myVehicle.supplies, currentAmmoKey()) < 6)
+      return;
+    me.updateWorldMatrix(true, true);
+    for (const node of me.userData.muzzles)
+      bullet(
+        node.getWorldPosition(new T.Vector3()),
+        spreadDirection(T, forward),
+        vehicleColor(myVehicle),
+        true,
+      );
+    return;
+  }
   const side = myVehicle?.type === 'tank' ? 0.7 : (weaponBarrel++ % 2 ? 1 : -1) * 1.35;
   const muzzle = new T.Vector3(side, 0, -1.2)
     .multiplyScalar(ACTOR_UNIT)
@@ -3072,7 +3149,7 @@ function physics(dt) {
   }
   const active = controlFocus.active && canCapture();
   const manual = flightInput(keys, pad, active);
-  if (active && ((myVehicle.type === 'bomber' && (mouseFire || manual.fire)) || keys.KeyB))
+  if (active && (keys.Space || pad.heavy) && myVehicle.supplies.ammo.bomb !== undefined)
     fireHeavy('bomb');
   const assisted = active && controlMode === 'mouse' && performance.now() > padManualUntil;
   const auto = assisted
@@ -3196,15 +3273,6 @@ function physics(dt) {
     }
     if (hp < 35) engine = 0;
   }
-  for (const [enemyId, g] of insects)
-    if (damageCd <= 0 && insectContact(T, p, g, 0.3 * ACTOR_UNIT)) {
-      hp -= Math.min(70, 20 + currentRoster()[enemyId].cost * 4);
-      sound.play('impact', p, { ref: 10 });
-      vel.multiplyScalar(0.7);
-      damageCd = 1;
-      notify('Collision avec un moucheron', 1);
-      if (hp <= 0) crash();
-    }
 }
 const radar = $('radar').getContext('2d');
 function drawRadar() {
@@ -3322,7 +3390,7 @@ function updateAudio() {
         forward = new T.Vector3(0, 0, -1).applyQuaternion(g.quaternion),
         speed = new T.Vector3().fromArray(state.v).length() / MAP.ratio,
         intensity = diveIntensity(speed, forward.y, VEHICLES[v.type].maxSpeed);
-      if (intensity > 0.01) {
+      if (v.type === 'interceptor' && v.seats.length && intensity > 0.01) {
         const key = 'dive-' + v.id;
         keep.add(key);
         sound.loop(key, 'dive', g.position, {
@@ -3519,6 +3587,8 @@ function frame(now) {
     renderer.render(purgScene, purgCamera);
   } else renderer.render(scene, camera);
   updateAudio();
+  updateVehicleCare(dt);
+  updateTankReticle();
 }
 requestAnimationFrame(frame);
 addEventListener('resize', () => {
@@ -3530,7 +3600,8 @@ addEventListener('resize', () => {
 let placementKind = 'dca';
 let placingEquipment = false,
   placementCandidate = null,
-  purchaseBusy = false;
+  purchaseBusy = false,
+  placementToken = null;
 const ghosts = {
   dca: makeAntiaircraft(T, scene, { box, cyl }, [{ x: 0, y: 0, z: 0 }])[0],
   refuel: installationModel({ kind: 'refuel', x: 0, y: 0, z: 0 }),
@@ -3551,7 +3622,7 @@ for (const model of Object.values(ghosts)) {
   });
 }
 function toggleShop() {
-  if (bankUI.opened || bedUI.opened) return;
+  if (bankUI.opened || bedUI.opened || purchaseUI.opened) return;
   if (!joined || respawnAt || !$('papers').classList.contains('hidden')) return;
   if (placingEquipment) cancelPlacement();
   const open = $('shop').classList.contains('hidden');
@@ -3569,6 +3640,7 @@ function renderShop() {
     snap.dollars,
     snap.upgrades,
     snap.equipment?.length,
+    snap.purchases,
     !!myVehicle,
     turretIndex,
     selfBase()?.grounded,
@@ -3583,29 +3655,30 @@ function renderShop() {
       text = document.createElement('p'),
       button = document.createElement('button'),
       level = snap.upgrades?.[item] || 0,
-      price = shopPrice(item, snap.upgrades, installationCount(snap.equipment || [], item));
+      owned = snap.purchases?.find((o) => o.owner === id && o.item === item),
+      price = shopPrice(item, snap.upgrades, purchaseCount(snap, item));
     title.textContent = profile.name + (profile.max > 1 ? ' · ' + level + '/' + profile.max : '');
     text.textContent = profile.description;
     button.textContent =
       profile.max && level >= profile.max
         ? 'Acquis'
-        : price + ' $ · ' + (profile.kind === 'placement' ? 'Placer' : 'Acheter');
+        : owned
+          ? 'Déjà payé · Reprendre la pose'
+          : price + ' $ · ' + (profile.kind === 'placement' ? 'Signer le bon' : 'Acheter');
     button.disabled =
       purchaseBusy ||
-      snap.dollars < price ||
+      (!owned && snap.dollars < price) ||
       (profile.max && level >= profile.max) ||
       (profile.kind === 'placement' &&
         (!!myVehicle || turretIndex >= 0 || selfBase()?.grounded === false));
     button.onclick = () => {
       if (profile.kind === 'placement') {
-        ghost.visible = false;
-        placementKind = item;
-        ghost = ghosts[item];
-        placingEquipment = true;
-        $('shop').classList.add('hidden');
-        $('placementControls').classList.remove('hidden');
-        notify('Choisissez une surface. Confirmez la pose : ' + price + ' $.', 4);
-        captureMouse();
+        if (owned) beginPlacement(owned);
+        else
+          purchaseUI.open(
+            item,
+            snap.pilots.find((p) => p.id === id),
+          );
       } else purchase(item);
     };
     card.append(title, text, button);
@@ -3614,7 +3687,7 @@ function renderShop() {
 }
 async function purchase(item) {
   if (purchaseBusy) return;
-  if (SHOP[item]?.kind === 'placement' && !placementCandidate) return;
+  if (SHOP[item]?.kind === 'placement') return;
   purchaseBusy = true;
   renderShop();
   try {
@@ -3622,11 +3695,7 @@ async function purchase(item) {
       await api('buy', {
         id,
         item,
-        expectedPrice: shopPrice(
-          item,
-          snap.upgrades,
-          installationCount(snap.equipment || [], item),
-        ),
+        expectedPrice: shopPrice(item, snap.upgrades, purchaseCount(snap, item)),
         request:
           globalThis.crypto?.randomUUID?.() ||
           Date.now().toString(36) +
@@ -3639,7 +3708,6 @@ async function purchase(item) {
       }),
     );
     sound.play('board', camera.position, { ref: 8 });
-    if (SHOP[item]?.kind === 'placement') cancelPlacement();
   } catch (e) {
     notify(e.message, 4);
   } finally {
@@ -3650,6 +3718,7 @@ async function purchase(item) {
 function cancelPlacement() {
   placingEquipment = false;
   placementCandidate = null;
+  placementToken = null;
   ghost.visible = false;
   $('placementControls').classList.add('hidden');
 }
@@ -3688,20 +3757,15 @@ function updatePlacement() {
     if (o.isMesh) o.material.color.set(candidate ? '#badb84' : '#e87b68');
   });
   $('placeConfirm').disabled = !candidate || purchaseBusy;
+  $('placeConfirm').textContent = 'E · Poser · déjà payé';
   $('placementStatus').textContent = candidate
-    ? 'Surface libre · ' +
-      shopPrice(
-        placementKind,
-        snap?.upgrades,
-        installationCount(snap?.equipment || [], placementKind),
-      ) +
-      ' $ à la confirmation'
+    ? 'Surface libre · E : poser · déjà payé'
     : 'Surface trop petite, occupée ou hors de portée';
 }
 $('shopOpen').onclick = toggleShop;
 $('shopClose').onclick = toggleShop;
 $('placeCancel').onclick = cancelPlacement;
-$('placeConfirm').onclick = () => purchase(placementKind);
+$('placeConfirm').onclick = placePurchased;
 
 const fallingEnemies = [];
 function disposeCorpse(corpse) {
@@ -3870,15 +3934,22 @@ function pistol() {
   ray = new T.Raycaster(origin, dir, 0, shotAim.range);
   scan();
   sound.play('shot', origin, { ref: 12 });
-  const end = hit?.point || origin.clone().addScaledVector(dir, 150 * scale),
-    geometry = new T.BufferGeometry().setFromPoints([origin.clone(), end]);
-  const line = new T.Line(geometry, new T.LineBasicMaterial({ color: '#ffe48d' }));
-  (purg ? purgScene : scene).add(line);
-  setTimeout(() => {
-    (purg ? purgScene : scene).remove(line);
-    geometry.dispose();
-    line.material.dispose();
-  }, 90);
+  action('pistol-trace', {
+    shot,
+    origin: origin.toArray(),
+    direction: dir.toArray(),
+    incarnation: snap.pilots.find((p) => p.id === id)?.incarnation,
+  });
+  const targetScene = purg ? purgScene : scene;
+  const line = makeTracer(T, targetScene, origin, dir, '#ffe48d');
+  if (purg) line.scale.setScalar(scale / MAP.ratio);
+  line.userData.until = performance.now() + 90;
+  pistolTrails.push({ line, targetScene });
+  while (pistolTrails.length > 64) {
+    const old = pistolTrails.shift();
+    old.targetScene.remove(old.line);
+    old.line.userData.dispose();
+  }
   if (hit?.soul) action('soul-hit', { soul: hit.soul, shot });
   else if (hit?.target)
     action('friendly-hit', {
@@ -3890,6 +3961,10 @@ function pistol() {
   else if (hit?.enemy !== undefined) damageEnemy(hit.enemy, 10, shot, hit.point);
 }
 
+const pistolTrails = [];
+function vehicleColor(v) {
+  return new T.Color().setHSL(vehicleHue(v?.supplies?.sequence || 0) / 360, 0.58, 0.57);
+}
 let crewRenderKey = '';
 function renderCrew() {
   const self = snap?.pilots.find((p) => p.id === id),
@@ -3945,11 +4020,19 @@ function renderCrew() {
     }
   } else
     for (const seat of VEHICLES[vehicle.type].seats) {
-      if (seat === self.seat) continue;
       const occupant = vehicle.seats.find((s) => s.seat === seat),
         button = document.createElement('button');
       button.textContent =
-        SEAT_NAMES[seat] + (occupant ? ' · proposer un échange' : ' · changer de poste');
+        '[' +
+        (VEHICLES[vehicle.type].seats.indexOf(seat) + 1) +
+        '] ' +
+        SEAT_NAMES[seat] +
+        (occupant
+          ? ' · ' + (snap.pilots.find((p) => p.id === occupant.pilot)?.name || 'Occupé')
+          : ' · Libre') +
+        (seat === self.seat ? ' · Vous' : '');
+      button.disabled = seat === self.seat;
+      button.classList.toggle('currentSeat', seat === self.seat);
       button.onclick = () => action('seat-request', { seat });
       panel.append(button);
     }
@@ -4092,7 +4175,8 @@ function currentAmmoKey() {
 function hasAmmo() {
   return (
     !myVehicle ||
-    aircraftFire.available(myVehicle.id, crewSeat, myVehicle.supplies, currentAmmoKey()) >= 1
+    aircraftFire.available(myVehicle.id, crewSeat, myVehicle.supplies, currentAmmoKey()) >=
+      (myVehicle.type === 'spitfire' ? 6 : 1)
   );
 }
 let nextHeavyAt = 0;
@@ -4148,19 +4232,31 @@ function updateOrdnance(dt) {
         shot.weapon === 'bomb'
           ? makeBomb()
           : new T.Mesh(
-              new T.SphereGeometry(MAP.metres(0.2), 8, 6),
-              new T.MeshStandardMaterial({ color: '#ffd07c' }),
+              shot.weapon === 'ap'
+                ? new T.ConeGeometry(MAP.metres(0.22), MAP.metres(1.8), 8)
+                : new T.CylinderGeometry(MAP.metres(0.16), MAP.metres(0.32), MAP.metres(1.2), 8),
+              new T.MeshBasicMaterial({
+                color: new T.Color().setHSL(vehicleHue(shot.sequence || 0) / 360, 0.58, 0.57),
+              }),
             );
-      if (shot.weapon === 'bomb') model.scale.setScalar(MAP.metres(0.8));
+      if (shot.weapon === 'bomb') {
+        model.scale.setScalar(MAP.metres(0.8));
+        model.traverse((o) => {
+          if (o.isMesh) {
+            o.material = o.material.clone();
+            o.material.color.setHSL(vehicleHue(shot.sequence || 0) / 360, 0.58, 0.57);
+          }
+        });
+      }
       model.userData.projectileSolid = false;
       scene.add(model);
       ordnanceModels.set(shot.shot, model);
     }
     const lag = Math.max(0, Math.min(0.25, (Date.now() + clockOffset - shot.updated) / 1000));
     model.position.fromArray(shot.p).addScaledVector(new T.Vector3().fromArray(shot.v), lag);
-    if (shot.weapon === 'bomb' && Math.hypot(...shot.v) > 1e-8)
+    if (Math.hypot(...shot.v) > 1e-8)
       model.quaternion.setFromUnitVectors(
-        new T.Vector3(0, 0, -1),
+        shot.weapon === 'bomb' ? new T.Vector3(0, 0, -1) : new T.Vector3(0, 1, 0),
         new T.Vector3().fromArray(shot.v).normalize(),
       );
   }
@@ -4237,7 +4333,7 @@ const bankUI = new BankUI({
   },
 });
 function toggleBank() {
-  if (bedUI.opened) return;
+  if (bedUI.opened || purchaseUI.opened) return;
   if (!joined || boardingBusy || soulBusy || boardingSelectionBusy) return;
   if (bankUI.opened) bankUI.close();
   else bankUI.open();
@@ -4286,3 +4382,288 @@ function finishBoardingFeedback(timing, status) {
 Object.defineProperty(globalThis, 'moucheronInteractionTimings', {
   get: () => structuredClone(interactionTiming.records),
 });
+
+function beginPlacement(order) {
+  cancelPlacement();
+  placementToken = order.token;
+  placementKind = order.item;
+  ghost = ghosts[order.item];
+  placingEquipment = true;
+  $('shop').classList.add('hidden');
+  $('placementControls').classList.remove('hidden');
+  notify('Achat payé · E : poser · Échap : conserver pour plus tard', 4);
+  captureMouse();
+}
+async function placePurchased() {
+  if (!placementCandidate || !placementToken || purchaseBusy || !canCapture()) return;
+  purchaseBusy = true;
+  const token = placementToken;
+  try {
+    const self = snap.pilots.find((p) => p.id === id);
+    accept(
+      await api('place-purchase', {
+        id,
+        token,
+        epoch: snap.base.epoch,
+        incarnation: self.incarnation,
+        ground: groundReport(),
+        position: placementCandidate,
+      }),
+    );
+    cancelPlacement();
+    sound.play('board', camera.position, { ref: 8 });
+  } catch (e) {
+    notify(e.message, 4);
+  } finally {
+    purchaseBusy = false;
+    renderShop();
+  }
+}
+const purchaseUI = new PurchaseUI({
+  root: $('purchasePanel'),
+  snapshot: () => snap,
+  ground: groundReport,
+  command: (body) =>
+    api('purchase-sign', {
+      id,
+      ...body,
+      item: purchaseUI.item,
+      request: purchaseUI.request,
+      expectedPrice: purchaseUI.price,
+    }),
+  accept,
+  onOpen: () => {
+    releaseMouse();
+    $('shop').classList.add('hidden');
+    renderPaper();
+  },
+  onClose: () => {
+    renderPaper();
+    const order = snap?.purchases?.find((o) => o.token === purchaseUI.request && o.owner === id);
+    if (order && !purchaseUI.invalidated) beginPlacement(order);
+    else captureMouse();
+  },
+  archive: (record) => {
+    paperArchive.push({ ...record, title: 'Bon de commande · ' + SHOP[purchaseUI.item].name });
+    renderArchive();
+  },
+});
+
+let nextWashAt = 0,
+  washPending = false,
+  reticleKey = '';
+const sprays = new Map(),
+  cleanStars = [];
+function addCleanStars(e) {
+  if (Date.now() + clockOffset - e.at > 1500) return;
+  const positions = new Float32Array(24 * 3);
+  for (let i = 0; i < 24; i++) {
+    const a = i * 2.39996;
+    positions.set(
+      [
+        e.p[0] + Math.cos(a) * MAP.metres(3),
+        e.p[1] + MAP.metres(1 + (i % 4)),
+        e.p[2] + Math.sin(a) * MAP.metres(3),
+      ],
+      i * 3,
+    );
+  }
+  const geometry = new T.BufferGeometry().setAttribute(
+    'position',
+    new T.BufferAttribute(positions, 3),
+  );
+  const model = new T.Points(
+    geometry,
+    new T.PointsMaterial({
+      color: '#fff9a2',
+      size: MAP.metres(0.45),
+      transparent: true,
+      depthWrite: false,
+    }),
+  );
+  scene.add(model);
+  cleanStars.push({ model, life: 1 });
+  while (cleanStars.length > 16) {
+    const old = cleanStars.shift();
+    scene.remove(old.model);
+    old.model.geometry.dispose();
+    old.model.material.dispose();
+  }
+}
+function updateVehicleCare(dt) {
+  const now = performance.now();
+  while (pistolTrails.length > 64) {
+    const old = pistolTrails.shift();
+    old.targetScene.remove(old.line);
+    old.line.userData.dispose();
+  }
+  for (let i = pistolTrails.length - 1; i >= 0; i--)
+    if (now > pistolTrails[i].line.userData.until) {
+      const { line, targetScene } = pistolTrails.splice(i, 1)[0];
+      targetScene.remove(line);
+      line.userData.dispose();
+    }
+  for (const v of snap?.vehicles || []) {
+    const paint = fleetModels.get(v.id)?.userData.paint;
+    if (paint)
+      paint.color
+        .copy(vehicleColor(v))
+        .lerp(new T.Color('#5b5131'), Math.min(1, v.dirt || 0) * 0.8);
+  }
+  const dirt = !respawnAt && myVehicle ? myVehicle.dirt || 0 : 0;
+  $('dirtView').style.opacity = String(Math.min(1, dirt) * WASH.maxOpacity);
+  $('dirtWarning').classList.toggle('hidden', dirt < WASH.warning);
+  const local =
+    joined &&
+    !myVehicle &&
+    turretIndex < 0 &&
+    groundActive() &&
+    keys.Space &&
+    (respawnAt || selfBase()?.grounded !== false);
+  const active = new Map();
+  if (local) {
+    const origin = camera.position.clone();
+    const person = respawnAt
+      ? soulArena?.bodies.find((b) => b.entity === id && b.kind === 'player')
+      : selfBase();
+    const scale = respawnAt ? 1 : MAP.ratio;
+    if (person) {
+      const w = respawnAt ? person : baseWorld(person);
+      origin.set(w.x, (w.y || 0) + 0.9 * scale, w.z);
+    }
+    const direction = camera.getWorldDirection(new T.Vector3());
+    active.set(id, {
+      origin: origin.toArray(),
+      direction: direction.toArray(),
+      targetScene: respawnAt ? purgScene : scene,
+    });
+    if (!respawnAt && now >= nextWashAt && !washPending) {
+      nextWashAt = now + 200;
+      washPending = true;
+      const self = snap.pilots.find((p) => p.id === id);
+      api('wash', {
+        id,
+        direction: direction.toArray(),
+        ground: groundReport(),
+        epoch: snap.base.epoch,
+        incarnation: self.incarnation,
+      })
+        .then(accept)
+        .catch((e) => notify(e.message, 2))
+        .finally(() => {
+          washPending = false;
+        });
+    }
+  }
+  for (const p of snap?.pilots || [])
+    if (
+      p.id !== id &&
+      p.life === 'alive' &&
+      p.mode === 'foot' &&
+      p.state.washing &&
+      Date.now() + clockOffset - p.state.washing.at < 350
+    )
+      active.set(p.id, { ...p.state.washing, targetScene: scene });
+  for (const [key, stream] of active) {
+    let spray = sprays.get(key);
+    if (!spray || spray.parent !== stream.targetScene) {
+      if (spray) {
+        spray.parent.remove(spray);
+        spray.geometry.dispose();
+        spray.material.dispose();
+      }
+      const geometry = new T.BufferGeometry().setAttribute(
+        'position',
+        new T.BufferAttribute(new Float32Array(28 * 3), 3),
+      );
+      spray = new T.Points(
+        geometry,
+        new T.PointsMaterial({
+          color: '#f2dd73',
+          size: 0.001,
+          transparent: true,
+          opacity: 0.8,
+          depthWrite: false,
+        }),
+      );
+      stream.targetScene.add(spray);
+      sprays.set(key, spray);
+    }
+    const pos = spray.geometry.attributes.position;
+    const origin = new T.Vector3().fromArray(stream.origin),
+      direction = new T.Vector3().fromArray(stream.direction).normalize();
+    // Decorative particles stop at the first physical surface. Damage/cleaning remains server-owned.
+    let range = WASH.range;
+    const ray = new T.Ray(origin, direction);
+    for (const b of stream.targetScene === scene ? colliders : purgColliders) {
+      const hit = ray.intersectBox(b, new T.Vector3());
+      if (hit) range = Math.min(range, hit.distanceTo(origin));
+    }
+    for (let i = 0; i < 28; i++) {
+      const t = ((now / 180 + i / 28) % 1) * range;
+      const point = origin.clone().addScaledVector(direction, t);
+      pos.setXYZ(i, point.x, point.y, point.z);
+    }
+    pos.needsUpdate = true;
+    spray.geometry.computeBoundingSphere();
+  }
+  for (const [key, spray] of sprays)
+    if (!active.has(key)) {
+      spray.parent.remove(spray);
+      spray.geometry.dispose();
+      spray.material.dispose();
+      sprays.delete(key);
+    }
+  for (let i = cleanStars.length - 1; i >= 0; i--) {
+    const star = cleanStars[i];
+    star.life -= dt;
+    star.model.material.opacity = Math.max(0, star.life);
+    star.model.position.y += dt * MAP.metres(2);
+    if (star.life <= 0) {
+      scene.remove(star.model);
+      star.model.geometry.dispose();
+      star.model.material.dispose();
+      cleanStars.splice(i, 1);
+    }
+  }
+}
+function updateTankReticle() {
+  const shown =
+    joined &&
+    myVehicle?.type === 'tank' &&
+    crewSeat === 'cannon' &&
+    !keys.KeyC &&
+    !respawnAt &&
+    canCapture();
+  const root = $('tankReticle');
+  root.classList.toggle('hidden', !shown);
+  if (!shown) return;
+  const direction = weaponDirection(),
+    weapon = availableShell(myVehicle.supplies.ammo, selectedShell) || selectedShell;
+  const carrier = myVehicle.state.v,
+    key = JSON.stringify([
+      weapon,
+      direction.toArray().map((n) => Math.round(n * 100)),
+      carrier.map((n) => Math.round(n * 1000)),
+      camera.fov,
+      innerWidth,
+      innerHeight,
+    ]);
+  if (reticleKey === key) return;
+  reticleKey = key;
+  root.replaceChildren();
+  const origin = me.userData.turrets[0].userData.muzzle.getWorldPosition(new T.Vector3());
+  let previousLabelY = -Infinity;
+  for (const mark of ballisticMarks(weapon, direction.toArray(), carrier)) {
+    const projected = origin.clone().add(new T.Vector3().fromArray(mark.point)).project(camera);
+    if (Math.abs(projected.y) > 0.9 || Math.abs(projected.x) > 0.9 || projected.z > 1) continue;
+    const pixelY = ((50 - projected.y * 50) * innerHeight) / 100;
+    if (Math.abs(pixelY - innerHeight / 2) < 12 || Math.abs(pixelY - previousLabelY) < 14) continue;
+    previousLabelY = pixelY;
+    const tick = document.createElement('span');
+    tick.textContent = '— ' + mark.metres.toFixed(2) + ' m';
+    tick.style.left = 'calc(' + (50 + projected.x * 50) + '% + 12px)';
+    tick.style.top = 50 - projected.y * 50 + '%';
+    root.append(tick);
+  }
+}

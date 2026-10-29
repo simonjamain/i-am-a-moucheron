@@ -1,6 +1,6 @@
 import { MAP } from './scale.js';
 export const HEAVY = Object.freeze({
-  bomb: { interval: 3, damage: 240, edge: 60, radius: MAP.metres(20), speed: 0, lifetime: 35 },
+  bomb: { interval: 0.5, damage: 240, edge: 60, radius: MAP.metres(20), speed: 0, lifetime: 35 },
   he: {
     interval: 2,
     damage: 120,

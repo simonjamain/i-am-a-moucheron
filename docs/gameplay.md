@@ -36,7 +36,7 @@ avec le serveur pour l’arrivée à la poubelle. Le système est guidé et dét
 
 Un chasseur monoplace et un bombardier sont disponibles au départ. Le bombardier
 a un pilote, un mitrailleur dorsal et un mitrailleur de queue. Un exemplaire vivant
-par type initial est conservé ; sa destruction fournit un successeur gratuit. Les achats fournissent un Stuka
+par type initial est conservé ; sa destruction fournit un successeur gratuit. Les achats fournissent un Stuka, un Spitfire
 ou un tank dont la destruction est définitive. Les sièges sont exclusifs.
 
 Chaque accès publié aux équipements, y compris une nouvelle entrée, passe par un
@@ -53,8 +53,9 @@ Au sol, il faut l’arrêter pour en sortir. Toute sortie aérienne commence en 
 libre avec la vitesse héritée ; le parachute s’ouvre et se replie manuellement.
 
 Le tank a un pilote/MG avant, un tireur canon/coaxiale et un mitrailleur supérieur.
-Le Stuka et le pilote du bombardier peuvent larguer des bombes (B ; le bombardier
-utilise aussi le tir principal). Les stocks, commandes et dégâts sont détaillés
+Le Stuka et le pilote du bombardier larguent des bombes en maintenant Espace
+(0,5 s ; 6 et 50 bombes respectivement). Le clic gauche sert aux MG ; au canon du
+tank, clic gauche tire HE/AP et Espace la coaxiale. B est supprimé. Les stocks, commandes et dégâts sont détaillés
 dans [véhicules et banque](vehicles-bank.md). Le HUD utilise des rails latéraux contextuels avec détails temporaires et une
 jauge DCA près du viseur. Le banquier (bouton ou N) propose trois emplacements
 de prêts partagés, consultables et signables dans tous les postes et mondes.
@@ -84,7 +85,7 @@ libéré et rapporte un dollar commun une seule fois. Un ennemi abattu dans le
 bureau ne rapporte pas directement d’argent. Chaque dollar déclenche une courte
 sonnerie chez tous les joueurs présents, même dans les autres mondes. Le service des PNJ
 continue côté serveur sans joueur humain au purgatoire. Le menu P permet d’acheter
-une DCA, un radar ou une station à placer sur un support solide, un Stuka, un tank et des
+une DCA, un radar ou une station à placer sur un support solide, un Stuka, un Spitfire, un tank et des
 améliorations partagées de moteur ou de munitions. Prix et niveaux sont définis
 par `src/equipment.js` ; [économie](economy-physics.md) détaille les garanties.
 La remise à zéro efface monnaie, installations et améliorations : aucune
@@ -113,7 +114,8 @@ Le texte reste stable pendant la signature ; la variante immédiatement précéd
 est évitée pendant la session. Les contrats supérieurs sont nettement plus longs
 et leur corps est intégralement consultable par défilement.
 
-À bord d’un appareil à plusieurs places, Échap donne accès au panneau des postes.
+À bord d’un appareil à plusieurs places, les touches physiques Digit1–Digit7
+ou le panneau des postes demandent un changement contractuel. Échap libère le curseur.
 Un siège libre demande un contrat ; un siège occupé demande la signature initiale
 du demandeur puis celle du destinataire. Refuser, partir ou se déconnecter annule
 la demande. Les postes sont conservés jusqu’au transfert atomique et revalidés à
@@ -163,3 +165,14 @@ Le tireur canon du tank utilise une lunette ; C maintenu observe sans tourner
 la tourelle et suspend les tirs. Les nouvelles offres de prêt sont à 10–20 %
 par vague ; les contrats signés gardent leurs conditions. Détails, valeurs,
 causes confirmées et tests : [retours terrain](field-update.md).
+
+## Lisibilité, nettoyage et Spitfire
+
+Les installations passent par un bon payé à la signature, puis se posent avec E ;
+Échap conserve l’objet pour reprise depuis l’atelier. Les collisions avec un
+insecte coûtent 5 % de ses PV restants à la coque, une seule fois par impact, et
+la salissent pour tous ses occupants. À pied au sol, Espace maintient un jet qui
+nettoie à courte portée, plus vite à plusieurs. Le Spitfire acheté dispose de six
+MG simultanées et de 45 s de munitions. Les projectiles portent la couleur de leur
+coque ; seule la sirène de piqué du Stuka subsiste. Valeurs et limites :
+[lisibilité, commandes, nettoyage et Spitfire](clean-flight.md).

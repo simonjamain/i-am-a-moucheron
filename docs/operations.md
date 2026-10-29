@@ -26,7 +26,7 @@ skill Sites et son helper courant ; `/workspace/sites/moucheron-flight` est un
 chemin de cette session, pas une convention pour tous les agents.
 
 Le Site public Worker/D1 reste distinct du runtime Node/UDP. Les nouvelles
-commandes d’armes lourdes, banque, lits et impacts de chute ciblent Node. **Ne pas
+commandes d’armes lourdes, banque, lits, impacts de chute, bons prépayés et nettoyage ciblent Node. **Ne pas
 publier leur client sur le Worker**, qui ne possède pas ces opérations. Les
 sources sont poussées au dépôt, puis livrées en ZIP. Une installation sur VM
 n’est pas revendiquée sans accès et résultat vérifiés. La publication historique
@@ -53,8 +53,8 @@ La suite complète inclut les tests de règles Node, physique, signatures, asset
 interface et les deux clients natifs UDP. Les tests Worker utilisent SQLite pour
 la compatibilité historique ; cette dépendance n’est pas dans le serveur Node.
 `AGENTS.md` exige une revue sémantique finale des Markdown en plus du contrôle
-mécanique des liens. L’inventaire et les corrections du présent lot sont dans
-[revue des références](reference-audit.md).
+mécanique des liens. La [revue du 29 octobre 2026](archive/reference-audit-2026-10-29.md)
+reste une trace historique, pas une seconde référence métier.
 
 ## Vérification navigateur et limites
 
@@ -79,3 +79,7 @@ visée, chute, lits, résurrection, lunette et prêts. Les résultats mesurés a
 retard de réponse injecté ne sont pas des mesures de latence réseau réelle.
 Le ZIP final contient tous les fichiers nécessaires à `npm ci && npm start`,
 les tests, le backlog et les références à jour.
+
+Dernier lot : [lisibilité et nettoyage](clean-flight.md), incluant le Spitfire.
+Recharger tous les navigateurs après installation du nouveau ZIP ; le serveur
+Node conserve ses assets assemblés au démarrage et doit être redémarré après modification.

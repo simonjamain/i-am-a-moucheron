@@ -77,7 +77,8 @@ conditionnée à la révision lue pour gérer les accès concurrents.
   les deux canons ; ils partagent le stock du pilote.
 - Bombardier : **667 balles par mitrailleur**, une émission toutes les 0,09 s,
   soit environ 60 s. Les deux postes ont des compteurs indépendants. Le pilote
-  du bombardier possède désormais une réserve de bombes distincte.
+  du bombardier possède 50 bombes, le Stuka 6, à intervalle nominal de 0,5 s.
+- Spitfire : 4 500 balles, six émissions simultanées par salve, 45 s de tir nominal.
 - Bombes du Stuka et du bombardier, MG et obus du tank : réserves indépendantes
   détaillées dans [véhicules et banque](vehicles-bank.md#stocks-et-équilibre-initial).
 - DCA et pistolet : réserves illimitées.
@@ -125,7 +126,8 @@ Des cercles qui se recouvrent n’accélèrent pas le remplissage.
 
 Stations supplémentaires et radars coûtent chacun **4, 6, 8… dollars**, avec des
 compteurs séparés. Les DCA conservent leur propre progression. L’atelier affiche
-le prix courant et demande confirmation par la pose. Les trois installations
+le prix courant, fait signer le bon et débite une seule fois avant l’aperçu.
+E pose sans nouveau paiement ; Échap conserve l’achat pour reprise. Les trois installations
 utilisent une prévisualisation et un support solide ; le serveur contrôle aussi
 proximité, obstacles, appareils garés, chevauchements, fonds et prix concurrent.
 Une station exige une surface dégagée de 13 × 13 cm, suffisante pour l’envergure
@@ -177,3 +179,7 @@ Recharger tous les clients après publication pour utiliser le même protocole.
 Les lits sont une installation supplémentaire, avec progression de prix indépendante
 4 $, 6 $, 8 $… et contrat personnel de réapparition. Ils ne ravitaillent pas et
 ne détectent pas d’ennemis. Voir [lits](field-update.md#départ-lits-et-contrats-personnels).
+
+Les [prix prépayés, projectiles teintés et nettoyage](clean-flight.md) complètent ces règles.
+Les compteurs de prix et la limite d’installations incluent désormais les commandes
+payées non posées ; leurs tarifs ne sont pas débités une seconde fois à la pose.

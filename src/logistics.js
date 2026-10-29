@@ -11,7 +11,8 @@ export function ammoCapacity(type, seat) {
       : TANK_MG[seat]
         ? Math.round(90 / TANK_MG[seat].interval)
         : 0;
-  if (seat === 'bomb') return type === 'bomber' ? 12 : type === 'interceptor' ? 6 : 0;
+  if (seat === 'bomb') return type === 'bomber' ? 50 : type === 'interceptor' ? 6 : 0;
+  if (type === 'spitfire' && seat === 'pilot') return Math.round(45 / 0.06) * 6;
   if (!VEHICLES[type]?.seats.includes(seat)) return 0;
   return type === 'bomber' && seat === 'pilot'
     ? 0

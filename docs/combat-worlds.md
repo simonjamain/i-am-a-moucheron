@@ -70,3 +70,6 @@ des appareils réels.
 Les dégâts de chute, la remise à zéro du corps à la résurrection et les contrats
 de lit utilisent les règles de [retours terrain](field-update.md). Les deux
 purgatoires et leurs nombres de signatures restent inchangés.
+
+Le [lot suivant de lisibilité et nettoyage](clean-flight.md) précise les commandes
+contextuelles actuelles, les effets partagés et les nouvelles collisions de coque.

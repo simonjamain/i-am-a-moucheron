@@ -1,3 +1,5 @@
+import { collisionDamage, washTarget, WASH } from '../src/vehicle-care.js';
+import { purchaseCount } from '../src/equipment.js';
 import { bedAccess, bedSpawn } from '../src/beds.js';
 import { impactDamage } from '../src/field-physics.js';
 import { randomUUID } from 'node:crypto';
@@ -80,6 +82,7 @@ function roomState(code, now) {
     requests: new Map(),
     souls: new Map(),
     orders: new Map(),
+    purchases: new Map(),
     bedContracts: new Map(),
     identityTokens: new Map(),
     hits: new Set(),
@@ -228,6 +231,7 @@ export class Game {
       room: r.code,
       type,
       state,
+      dirt: 0,
       ready: 1,
       created: this.now(),
       seats: new Map(),
@@ -322,6 +326,7 @@ export class Game {
   advance(r) {
     const now = this.now();
     this.advanceOrdnance(r, now);
+    this.vehicleContacts(r, now);
     // A destroyed hull can arrive through motion before the client's death
     // command. Resolve its crew here even if that client disconnects.
     for (const v of r.vehicles.values())
@@ -338,6 +343,11 @@ export class Game {
           if (s.kind === 'player' && s.entity === id) s.status = 'gone';
         r.pilots.delete(id);
         r.identityTokens.delete(id);
+        for (const [token, order] of r.purchases)
+          if (order.owner === id && !order.placed) {
+            r.dollars += order.price;
+            r.purchases.delete(token);
+          }
       }
     for (const q of r.requests.values())
       if (['signing', 'offered'].includes(q.status)) {
@@ -460,13 +470,24 @@ export class Game {
       upgrades: r.upgrades,
       rewardCount: r.rewardCount,
       equipment: r.equipment,
+      pendingInstallations: Object.fromEntries(
+        Object.keys(SHOP).map((k) => [
+          k,
+          values(r.purchases).filter((o) => o.item === k && !o.placed).length,
+        ]),
+      ),
+      purchases: values(r.purchases)
+        .filter((o) => !o.placed)
+        .map(({ token, item, owner, price }) => ({ token, item, owner, price })),
       initialStation: initialStation(),
       kills: valuesSet(r.kills),
       pilots: this.live(r).map((p) => ({ ...p, contractClause: this.clause(r, p) })),
-      vehicles: values(r.vehicles).map(({ shots, updated, seats, ...v }) => ({
-        ...v,
-        seats: [...seats].map(([seat, pilot]) => ({ vehicle: v.id, seat, pilot })),
-      })),
+      vehicles: values(r.vehicles).map(
+        ({ shots, updated, seats, contacts, contactPosition, contactWave, ...v }) => ({
+          ...v,
+          seats: [...seats].map(([seat, pilot]) => ({ vehicle: v.id, seat, pilot })),
+        }),
+      ),
       dossiers: values(r.dossiers),
       seatRequests: values(r.requests),
       effects: r.effects.slice(-64),
@@ -630,6 +651,10 @@ export class Game {
     p.seen = this.now();
     r.touched = this.now();
     if (path === 'sync') this.sync(r, p, b);
+    else if (path === 'purchase-sign') this.purchaseSign(r, p, b);
+    else if (path === 'place-purchase') this.placePurchase(r, p, b);
+    else if (path === 'wash') this.wash(r, p, b);
+    else if (path === 'pistol-trace') this.pistolTrace(r, p, b);
     else if (path === 'start') {
       if (!r.mission_started) {
         r.mission_started = 1;
@@ -782,7 +807,165 @@ export class Game {
     );
     return result;
   }
-  buy(r, p, b) {
+  pistolTrace(r, p, b) {
+    requireGame(
+      p.mode === 'foot' && !p.vehicle_id && b.incarnation === p.incarnation,
+      'Pistolet indisponible.',
+    );
+    requireGame(
+      typeof b.shot === 'string' &&
+        b.shot.length <= 120 &&
+        ['origin', 'direction'].every(
+          (k) => Array.isArray(b[k]) && b[k].length === 3 && b[k].every(Number.isFinite),
+        ),
+      'Trace invalide.',
+    );
+    requireGame(Math.abs(Math.hypot(...b.direction) - 1) < 0.01, 'Direction invalide.');
+    const key = JSON.stringify(['pistol-trace', p.id, p.incarnation, b.shot]);
+    if (r.hits.has(key)) return;
+    this.once(r, key, () =>
+      r.effects.push({
+        id: ++r.effectSeq,
+        kind: 'pistol-trace',
+        shooter: p.id,
+        p: b.origin,
+        direction: b.direction,
+        realm: world(p),
+        at: this.now(),
+      }),
+    );
+  }
+  purchaseSnapshot(r) {
+    return {
+      equipment: r.equipment,
+      pendingInstallations: Object.fromEntries(
+        Object.keys(SHOP).map((k) => [
+          k,
+          values(r.purchases).filter((o) => o.item === k && !o.placed).length,
+        ]),
+      ),
+    };
+  }
+  purchaseSign(r, p, b) {
+    requireGame(
+      p.life === 'alive' &&
+        p.mode === 'foot' &&
+        b.epoch === r.base.epoch &&
+        b.incarnation === p.incarnation,
+      'Approchez à pied avec votre corps actuel.',
+    );
+    requireGame(
+      SHOP[b.item]?.kind === 'placement' && signature(b.signature),
+      'Signez le bon de commande.',
+    );
+    requireGame(
+      typeof b.request === 'string' && /^[a-zA-Z0-9:_-]{8,120}$/.test(b.request),
+      'Référence invalide.',
+    );
+    const existing = r.purchases.get(b.request);
+    if (existing) {
+      requireGame(existing.owner === p.id && existing.item === b.item, 'Commande déjà utilisée.');
+      return;
+    }
+    const pending = values(r.purchases).filter((o) => !o.placed);
+    requireGame(r.equipment.length + pending.length < 24, 'Limite de 24 équipements atteinte.');
+    const price = shopPrice(b.item, r.upgrades, purchaseCount(this.purchaseSnapshot(r), b.item));
+    requireGame(price === b.expectedPrice, 'Le tarif a changé. Relisez le bon.');
+    requireGame(r.dollars >= price, 'La caisse commune ne contient pas assez de dollars.');
+    r.dollars -= price;
+    r.purchases.set(b.request, {
+      token: b.request,
+      owner: p.id,
+      item: b.item,
+      price,
+      placed: false,
+    });
+  }
+  placePurchase(r, p, b) {
+    const order = r.purchases.get(b.token);
+    requireGame(order && order.owner === p.id, 'Cet achat ne vous appartient pas.');
+    if (order.placed) return;
+    requireGame(
+      b.epoch === r.base.epoch && b.incarnation === p.incarnation,
+      'Corps ou partie périmés.',
+    );
+    // Use exactly the same placement rules as ordinary purchases, with a private
+    // prepaid flag rather than crediting the wallet or temporarily removing an order.
+    this.buy(r, p, { ...b, item: order.item, request: 'place:' + b.token }, order);
+    order.placed = true;
+  }
+  vehicleContacts(r, now) {
+    if (r.phase !== 'combat') {
+      for (const v of r.vehicles.values()) {
+        v.contacts = [];
+        v.contactWave = r.wave;
+        v.contactPosition = [...v.state.p];
+      }
+      return;
+    }
+    const plan = wavePlan(r.code, r.wave, r.started),
+      frames = swarmFrame(plan.roster, (now - r.started) / 1000);
+    for (const v of r.vehicles.values()) {
+      if (v.state.hp <= 0) continue;
+      const previous = v.contactWave === r.wave ? v.contactPosition || v.state.p : v.state.p;
+      const contacts = [],
+        latched = new Set(v.contactWave === r.wave ? v.contacts : []);
+      frames.forEach((frame, i) => {
+        if (!frame || r.kills.has(i)) return;
+        const radius = MAP.metres(plan.roster[i].size * 0.7 + 0.3);
+        const touching = Math.hypot(...v.state.p.map((n, j) => n - frame.p[j])) <= radius;
+        const impact = touching || segmentSphere(previous, v.state.p, frame.p, radius) !== null;
+        if (impact && !latched.has(i)) {
+          v.state.hp = Math.max(
+            0,
+            v.state.hp - collisionDamage(plan.roster[i].hp, r.enemyDamage[i] || 0),
+          );
+          v.dirt = Math.min(1, (v.dirt || 0) + WASH.dirtPerImpact);
+        }
+        if (impact) contacts.push(i);
+      });
+      v.contacts = contacts;
+      v.contactWave = r.wave;
+      v.contactPosition = [...v.state.p];
+    }
+  }
+  wash(r, p, b) {
+    requireGame(
+      p.life === 'alive' &&
+        p.mode === 'foot' &&
+        b.epoch === r.base.epoch &&
+        b.incarnation === p.incarnation,
+      'Sortez du véhicule pour nettoyer.',
+    );
+    const body = this.base(r, p, b.ground),
+      w = body && baseWorld(body);
+    requireGame(
+      w &&
+        Array.isArray(b.direction) &&
+        b.direction.length === 3 &&
+        b.direction.every(Number.isFinite),
+      'Jet invalide.',
+    );
+    const origin = [w.x, w.y + MAP.metres(0.9), w.z];
+    const target = washTarget(origin, b.direction, values(r.vehicles), this.solids);
+    const elapsed =
+      p.washAt === undefined ? 0 : Math.max(0, Math.min(0.25, (this.now() - p.washAt) / 1000));
+    p.washAt = this.now();
+    p.state.washing = { origin, direction: b.direction, at: this.now() };
+    if (!target || !target.dirt) return;
+    const before = target.dirt;
+    target.dirt = Math.max(0, before - elapsed / WASH.seconds);
+    if (target.dirt < 1e-8) target.dirt = 0;
+    if (before > 0 && !target.dirt)
+      r.effects.push({
+        id: ++r.effectSeq,
+        kind: 'clean',
+        vehicle: target.id,
+        p: [...target.state.p],
+        at: this.now(),
+      });
+  }
+  buy(r, p, b, prepaid = null) {
     const item = SHOP[b.item],
       request = b.request;
     requireGame(
@@ -796,9 +979,15 @@ export class Game {
       requireGame(r.orders.get(request) === b.item, 'Référence d’achat déjà utilisée.');
       return;
     }
-    const price = shopPrice(b.item, r.upgrades, installationCount(r.equipment, b.item));
-    requireGame(b.expectedPrice === undefined || b.expectedPrice === price, 'Le tarif a changé.');
-    requireGame(r.dollars >= price, 'La caisse commune ne contient pas assez de dollars.');
+    const price = shopPrice(b.item, r.upgrades, purchaseCount(this.purchaseSnapshot(r), b.item));
+    requireGame(
+      prepaid || b.expectedPrice === undefined || b.expectedPrice === price,
+      'Le tarif a changé.',
+    );
+    requireGame(
+      prepaid || r.dollars >= price,
+      'La caisse commune ne contient pas assez de dollars.',
+    );
     requireGame(!item.max || (r.upgrades[b.item] || 0) < item.max, 'Amélioration déjà au maximum.');
     if (item.kind === 'placement') {
       requireGame(
@@ -816,7 +1005,11 @@ export class Game {
           Math.hypot(w.x - b.position.x, w.z - b.position.z) <= MAP.metres(9),
         'Placez l’équipement près de vous, depuis le sol.',
       );
-      requireGame(r.equipment.length < 24, 'Limite de 24 équipements atteinte.');
+      requireGame(
+        r.equipment.length + values(r.purchases).filter((o) => !o.placed && o !== prepaid).length <
+          24,
+        'Limite de 24 équipements atteinte.',
+      );
       const placement = supportedPlacement(
         { ...b.position, y: w.y },
         this.solids,
@@ -841,7 +1034,7 @@ export class Game {
       r.equipment.push({ ...placement, kind: b.item, name: item.name, slot: r.equipment.length });
     } else if (item.kind === 'vehicle') this.createVehicle(r, b.item);
     else r.upgrades[b.item] = (r.upgrades[b.item] || 0) + 1;
-    r.dollars -= price;
+    if (!prepaid) r.dollars -= price;
     r.orders.set(request, b.item);
   }
   vehicle(r, p, path, b) {

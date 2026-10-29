@@ -52,13 +52,13 @@ function equipmentModel({
         'CANON',
         active ? active.toUpperCase() : 'VIDE',
         `HE ${count(supplies.he)} / AP ${count(supplies.ap)}`,
-        `Shift HE / Ctrl AP · B : tirer · ${ready ? 'prêt' : 'recharge'}`,
+        `Shift HE / Ctrl AP · Clic : tirer · ${ready ? 'prêt' : 'recharge'}`,
       ],
       right: [
         'COAXIALE',
         `${count(ammo)}`,
         `Canon ${heavy} obus · ${health}`,
-        'Clic / Espace : MG · Clic droit : zoom',
+        'Espace : coaxiale · C maintenu : observer · Clic droit : zoom',
       ],
     };
   if (seat !== 'pilot')
@@ -80,8 +80,8 @@ function equipmentModel({
       supplies.bomb === undefined ? `${count(ammo)}` : `${count(supplies.bomb)} bombes`,
       supplies.bomb === undefined
         ? `Mitrailleuse · ${count(ammo)} balles`
-        : `B : largage · ${ready ? 'prêt' : 'recharge'}`,
-      supplies.pilot === undefined ? 'Clic / Espace : bombes' : `MG ${count(ammo)} · Clic / Espace`,
+        : `Espace : largage · ${ready ? 'prêt' : 'recharge'}`,
+      supplies.pilot === undefined ? 'Espace maintenu : bombes' : `MG ${count(ammo)} · Clic`,
     ],
   };
 }

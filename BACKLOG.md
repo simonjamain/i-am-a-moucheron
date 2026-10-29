@@ -1267,6 +1267,193 @@ WebGL et partie WAN ne sont pas validés dans cet environnement.
 
 Revue finale : inventaire de tous les Markdown, liens locaux et informations
 courantes contrôlés ; références erronées corrigées ou archivées. Liste et
-limites : [revue documentaire](docs/reference-audit.md). Les nouvelles consignes
+limites : [revue documentaire archivée](docs/archive/reference-audit-2026-10-29.md).
+Les nouvelles consignes
 de `AGENTS.md` imposent ce contrôle à chaque fin de lot. Règles et mesures
 détaillées : [retours terrain](docs/field-update.md).
+
+## Nouveau lot — lisibilité, commandes, nettoyage et Spitfire (29 octobre 2026)
+
+Cadrage du grill validé, puis intégration explicitement autorisée par l’utilisateur.
+Cadrage initial : tâches prêtes avant implémentation. Le suivi de livraison
+ci-dessous et les états du tableau décrivent maintenant les tâches terminées. Les règles
+ci-dessous remplacent les anciennes lors de leur livraison. Traiter le lot selon
+`AGENTS.md`, sans nouvelle validation utilisateur ; choisir et documenter les
+paramètres non fixés. ZIP intermédiaires autorisés, puis poursuite du lot.
+
+| ID     | Tâche                                                         | État | Dépendances    |
+| ------ | ------------------------------------------------------------- | ---- | -------------- |
+| ECO-03 | Prix affichés conformes aux transactions                      | terminé | —              |
+| INT-01 | Placement direct avec E après signature                       | terminé | ECO-03         |
+| SIE-04 | Raccourcis physiques de changement de poste et équipage       | terminé | —              |
+| ARM-03 | Commandes du canon/coaxiale et des bombes                     | terminé | —              |
+| BOM-01 | Bombardier 50 bombes et largage continu                       | terminé | ARM-03         |
+| VIS-06 | Projectiles visibles, cohérents et aux couleurs des véhicules | terminé | —              |
+| CAM-02 | Mire graduée selon la balistique des obus                     | terminé | —              |
+| COL-01 | Dégâts uniques de collision avec un insecte                   | terminé | —              |
+| NET-02 | Salissure partagée et nettoyage au jet                        | terminé | ARM-03, COL-01 |
+| SON-03 | Son de piqué exclusivement pour le Stuka                      | terminé | —              |
+| VEH-05 | Spitfire monoplace à six mitrailleuses                        | terminé | VIS-06, SON-03 |
+
+### ECO-03 — Vérifier tous les prix présentés au joueur
+
+Auditer les informations tarifaires affichées et les confronter au calcul réel
+serveur : magasin, contrats, aperçu, boutons de pose et messages. Corriger notamment
+le bouton annonçant à tort 30 $ lors d’une pose. Utiliser la même règle de prix
+que la transaction ; distinguer achat déjà payé et éventuel coût encore dû.
+Critères : prix cohérents pour chaque objet et achat successif, concurrence et
+solde insuffisant ; aucun prix codé en dur divergent ni double débit à la pose.
+
+### INT-01 — Poser directement avec E
+
+Après achat et signature, entrer directement en mode placement avec aperçu.
+E pose sur un emplacement valide ; Échap annule le placement. Ne plus obliger à
+sortir par Échap puis cliquer sur un bouton, ni demander une seconde signature.
+Un emplacement invalide empêche la pose et explique brièvement pourquoi.
+Conserver les garanties existantes d’annulation et de propriété de l’achat ;
+consigner le traitement de l’objet acheté lors d’une annulation.
+Critères : parcours clavier complet, E maintenu sans pose multiple, pose invalide,
+annulation/reprise, menus/signatures ne déclenchant pas involontairement la pose.
+
+### SIE-04 — Touches physiques et parcours contractuel inchangé
+
+Dans tous les véhicules à plusieurs postes, utiliser les positions physiques de
+la rangée supérieure 1 à 7 (`Digit1` à `Digit7`), indépendamment de Shift et de la
+disposition AZERTY/QWERTY. Afficher les raccourcis à côté des noms des postes en
+haut à droite et mettre en évidence le poste du joueur, notamment dans le tank.
+Les touches déclenchent **exactement le même parcours que le clic** : signatures
+pour les places libres, demande et acceptation contractuelles pour les échanges
+avec un occupant. Elles ne permettent aucun transfert direct contournant le contrat.
+Critères : tous les postes, AZERTY sans Shift, place libre/occupée, refus,
+concurrence, menus et saisie neutralisant les raccourcis, occupation atomique.
+
+### ARM-03 — Commandes contextuelles
+
+Tireur principal du tank : clic gauche pour le canon, Espace pour la coaxiale.
+Sur tous les avions équipés de bombes : Espace largue, supprimer B ; si Espace
+servait au tir principal, le tir principal reste au clic gauche. À pied, Espace
+ne tire plus le pistolet : il commande le jet de NET-02 ; pistolet au clic gauche.
+Mettre à jour aides, HUD et documentation des contrôles, sans déclenchements
+croisés. Préserver l’interdiction de tirer durant l’observation C du tank.
+Critères : chaque rôle et monde, pressions/maintiens/relâchements, menus, perte de
+focus et changement de poste sans action persistante ou simultanée indésirable.
+
+### BOM-01 — Réserves et largage continu
+
+Bombardier initial à trois places : capacité **50 bombes**. Tous les avions
+bombardiers, Stuka compris : intervalle **0,5 seconde**, maintien d’Espace pour
+larguer en continu jusqu’au relâchement ; appui bref = une bombe. Les autres
+avions conservent leur capacité. Recharge aux stations habituelles.
+Critères : cadence bornée, aucun stock négatif ni bombe gratuite, épuisement,
+recharge, relâchement/menu/sortie stoppant le largage et synchronisation réseau.
+
+### VIS-06 — Projectiles lisibles et identification de leur provenance
+
+Rapprocher l’apparence des projectiles du pistolet à pied de celle des traceurs
+classiques des mitrailleuses. Rendre les obus du tank nettement visibles, avec
+une forme distincte des balles ; différencier aussi explosifs et perforants.
+Les projectiles de toutes les armes de véhicule, bombes comprises, portent sa
+teinte persistante pour reconnaître leur provenance. Préserver des teintes
+distinctes entre véhicules ; différencier les types par la forme également.
+Critères : visibilité locale et distante, pluie de tirs lisible, cohérence des
+origines/couleurs après changement de poste et reconnexion ; particules bornées,
+sans modifier dégâts ou collisions pour obtenir seulement un effet visuel.
+
+### CAM-02 — Lunette et estimation de chute des obus
+
+Améliorer la mire du tank avec graduations en mètres correspondant à la trajectoire
+réelle du type d’obus sélectionné. Adapter les repères lors du changement de
+munition ; pas de correction automatique de la visée. Préserver C et la coaxiale.
+Critères : comparer repères et impacts à plusieurs distances et types d’obus,
+garder le centre lisible, prendre en compte les unités du décor et la gravité.
+
+### COL-01 — Une règle unique de dégâts à l’impact
+
+À chaque impact véhicule/insecte, retirer au véhicule **5 % des PV restants de
+l’insecte au moment de l’impact**. Remplacer les éventuels dégâts précédemment
+appliqués à cette collision, sans cumul avec l’ancienne règle. Appliquer une seule
+fois par impact ; un contact persistant ne crée pas un impact à chaque image.
+Critères : insecte sain/blessé, contact prolongé, nouvel impact après séparation,
+plusieurs clients, destruction ; pas de double application ni changement implicite
+des autres catégories de collision. La salissure de NET-02 s’ajoute à ces dégâts.
+
+### NET-02 — Salissure du véhicule et jet de nettoyage
+
+Les collisions avec les ennemis accumulent une salissure propre au véhicule,
+persistante entre occupants et visible extérieurement. Elle ternit la vision de
+**tous les occupants**, pas seulement du pilote, sans modifier les performances.
+Limiter l’opacité pour toujours permettre une manœuvre de retour/atterrissage.
+Au-delà d’un seuil, afficher discrètement : « Attention, nettoyez votre véhicule
+en urinant dessus. » Éviter une grande annonce centrale persistante.
+
+À pied, maintenir Espace fait uriner le personnage : jet de particules orienté
+par la visée, réserve illimitée, portée courte d’environ **2 mètres du décor**.
+Le jet nettoie progressivement uniquement s’il atteint le véhicule ; plusieurs
+joueurs accélèrent le nettoyage. Environ **10 secondes** de jet d’un joueur pour
+un véhicule entièrement sale. Il faut sortir pour nettoyer ; l’écran redevient
+dégagé à pied, sans effacer l’état du véhicule. Au passage sale → entièrement
+propre, produire des étoiles scintillantes autour du véhicule, une seule fois.
+
+Critères : accumulation plafonnée, tous postes et clients concernés, sortie et
+retour, jet hors portée/obstacle/mauvaise cible sans nettoyage, coopération,
+arrêt au relâchement/menu, transition propre unique, nettoyage après destruction
+et reset. État partagé cohérent avec l’autorité réseau existante ; ne pas
+multiplier les commandes fiables pour chaque particule décorative.
+
+### SON-03 — Identité sonore du Stuka
+
+Réserver exclusivement au Stuka le son supplémentaire de piqué à vitesse élevée.
+Les autres avions, Spitfire compris, ne l’émettent pas. Préserver leurs autres sons.
+Critères : comparaison des types en piqué, transitions et arrêt de boucle après
+sortie/destruction ; perception cohérente pour les joueurs distants.
+
+### VEH-05 — Spitfire
+
+Ajouter un chasseur **monoplace**, sans bombes, acheté au prix de **deux Stuka**.
+Équipement supplémentaire perdu définitivement à sa destruction, recharge aux
+stations habituelles. Vitesse maximale **+75 %** et capacité de rotation **+45 %**
+par rapport à l’avion de départ. Modèle procédural identifiable comme Spitfire.
+
+Trois mitrailleuses par aile, soit six, tirent simultanément au clic gauche,
+avec origines physiques distinctes et puissance par arme comparable à celle du
+chasseur initial. Réserves limitées pour environ **45 secondes de tir continu**
+aux six armes ; consommation simultanée, sans réserve illimitée implicite.
+Conserver la teinte propre et ses projectiles, contrats et accès, HUD des stocks,
+ravitaillement, physique partagée et nettoyage. Aucun son de piqué du Stuka.
+Critères : prix affiché/débité, achat concurrent, poste exclusif, vitesses et
+rotation mesurées contre la référence, six origines et dégâts sans doublons,
+autonomie/cadence, recharge, destruction/reset et observation à plusieurs clients.
+
+### Suivi du lot lisibilité, commandes, nettoyage et Spitfire
+
+29 octobre 2026 : décisions consolidées après grill, ajout au backlog autorisé.
+Les corrections finales de l’utilisateur prévalent : parcours contractuel pour
+les raccourcis, salissure pour tous les occupants, dégâts uniques remplaçant les
+anciens, autonomie Spitfire 45 s et multiplicateurs 1,75 / 1,45.
+Validation de cette livraison : identifiants uniques, dépendances, couverture des
+notes et décisions, liens locaux et format Markdown. Aucun code ni déploiement
+modifié ; les documents de gameplay actuel seront mis à jour avec l’implémentation.
+
+
+### Livraison de ce lot — Node RAM/UDP
+
+Les onze tâches sont terminées. [Référence détaillée](docs/clean-flight.md) :
+prix communs, bons prépayés et pose E sans nouveau débit, conservation/reprise
+et remboursement à expiration, commandes physiques de siège avec mêmes contrats,
+canon/coaxiale contextuels, 50 bombes et cadence 0,5 s, projectiles par teinte,
+mire partagée avec la balistique, impacts uniques et salissure commune, jet
+coopératif, sirène Stuka exclusive, Spitfire six MG / 45 s / 1,75 / 1,45.
+
+L’ID NET-01 du nettoyage doublonnait le serveur UDP historique ; cette tâche est
+renommée NET-02, sans changement de périmètre. Les nombres et choix non fixés
+(opacité, quantité de salissure, remboursement des objets non posés) sont consignés
+dans la référence. Le retrait SQL reste hors de cette volée ; aucun changement
+de stack ni déploiement du client sur le Worker historique.
+
+Contrôles : domaine, vrais gestionnaires clavier/signature/tir, intégration
+balistique, deux pairs natifs UDP et régressions complètes. Bon signé dans le
+navigateur sur données jetables, aides/HUD inspectés. La revue des Markdown est
+consignée dans [l’audit](docs/reference-audit.md). ZIP des sources livré ; WebGL,
+écoute, tactile physique, charge et WAN restent à vérifier sur VM. Les armes
+lourdes conservent leur confirmation unique en cours : en réseau lent, leur
+cadence effective peut être inférieure à la cadence nominale.

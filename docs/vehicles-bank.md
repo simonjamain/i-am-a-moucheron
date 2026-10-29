@@ -20,7 +20,7 @@ La valeur existante affiche désormais les mètres réels. La jauge près du vis
 de 0,300 et 3,600 m. Elle suit le viseur et disparaît hors DCA.
 Dans un tank, Shift sélectionne HE et Ctrl AP ; ces touches ne changent aucune
 fusée de DCA. La conduite utilise Z/S ou flèches pour avancer/reculer, Q/D pour
-tourner. Clic/Espace tirent la mitrailleuse du poste ; B utilise l’arme lourde.
+tourner. Au tireur canon, clic gauche tire HE/AP et Espace la coaxiale ; les autres postes gardent clic/Espace pour la MG. En avion, Espace maintient le largage des bombes. B ne tire plus.
 
 Chaque poste libre a son cercle au sol, avec une icône de rôle (P pilote,
 D dorsal, Q queue, C canon, M supérieur). Approcher puis presser E ouvre directement
@@ -51,8 +51,8 @@ Les changements de siège ne recréent aucune réserve.
 | Équipement / arme            | Réserve | Cadence nominale | Dégâts                    |
 | ---------------------------- | ------- | ---------------- | ------------------------- |
 | Stuka, mitrailleuses         | 1 000   | 0,06 s           | 75                        |
-| Stuka, bombes                | 6       | 3 s              | 240 au centre, 60 au bord |
-| Bombardier, bombes du pilote | 12      | 3 s              | mêmes bombes              |
+| Stuka, bombes                | 6       | 0,5 s            | 240 au centre, 60 au bord |
+| Bombardier, bombes du pilote | 50      | 0,5 s            | mêmes bombes              |
 | Tank, MG du pilote           | 1 000   | 0,09 s           | 25                        |
 | Tank, MG coaxiale            | 1 500   | 0,06 s           | 50                        |
 | Tank, MG supérieure          | 1 500   | 0,06 s           | 75                        |
@@ -206,3 +206,8 @@ ne permettent pas de conclure sur une partie WAN ; les tests natifs restent dist
 Capture historique avant ECO-02 : [interface du lot précédent](ui-bank-integrated.jpg).
 Les réglages actuels de lunette/coaxiale, de prêts et de réapparition sont dans
 [retours terrain](field-update.md).
+
+Le [lot lisibilité, nettoyage et Spitfire](clean-flight.md) ajoute le S6 acheté,
+les raccourcis physiques de poste, les projectiles aux couleurs de la coque,
+la mire balistique et la salissure commune. Il remplace les anciens dégâts
+de collision avec un insecte et les anciennes commandes d’armes lourdes.

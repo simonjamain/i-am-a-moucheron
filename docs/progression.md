@@ -46,6 +46,7 @@ en supplément ; tuer dans le bureau ne crédite toujours rien directement.
 | Munitions, niveaux 1 / 2 / 3    | 6 $ / 12 $ / 20 $                                        |
 | Stuka, chaque exemplaire        | 12 $                                                     |
 | Lit, exemplaires successifs     | 4 $, 6 $, 8 $…                                           |
+| Spitfire, chaque exemplaire     | 24 $                                                     |
 | Tank, chaque exemplaire         | 10 $                                                     |
 
 Sans revenu d’âme, un exemple d’achats après les douze premières vagues est :
@@ -55,7 +56,7 @@ C’est une possibilité vérifiée, pas une obligation d’achat ni une garanti
 joueur : la monnaie et les améliorations appartiennent à la salle.
 
 `shopPrice` est partagé entre affichage et serveur. La transaction revalide le
-niveau et le nombre d’installations avant de débiter : deux achats concurrents
+niveau et le nombre d’installations posées ou prépayées avant de débiter : deux achats concurrents
 ne peuvent pas obtenir le même ancien tarif. Un tarif affiché devenu obsolète
 est refusé avant débit pour laisser le joueur confirmer le nouveau prix. Un retry conserve sa transaction
 initiale. `wave_rewards` déduplique les primes ; leur somme est incluse dans le
@@ -78,3 +79,6 @@ Les portails restent à au moins trois mètres du décor de la corbeille ;
 Sur Node, les primes et commandes sont dédupliquées en RAM. Les noms de tables
 et migrations mentionnés plus haut décrivent la compatibilité Worker historique.
 La progression actuelle ne dépend pas de D1 et disparaît au redémarrage.
+
+Installations Node : le [bon signé](clean-flight.md#prix-bon-signé-et-pose) débite
+avant la pose ; annuler l’aperçu ne fait pas perdre l’objet payé.

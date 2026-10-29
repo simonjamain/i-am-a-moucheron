@@ -30,6 +30,12 @@ export const SHOP = Object.freeze({
     kind: 'vehicle',
     description: 'Un exemplaire avec 6 bombes ; remplacement payant après destruction.',
   },
+  spitfire: {
+    name: 'Spitfire S6',
+    cost: 24,
+    kind: 'vehicle',
+    description: 'Six mitrailleuses, 45 s de tir ; vitesse +75 %, rotation +45 %. Sans bombes.',
+  },
   tank: {
     name: 'Tank T3',
     cost: 10,
@@ -129,4 +135,12 @@ export function supportedPlacement(point, colliders, occupied = [], kind = 'dca'
     return { x: point.x, y: y + 0.00005, z: point.z };
   }
   return null;
+}
+
+// Include prepaid, unplaced installations in the next quote.
+export function purchaseCount(snapshot, kind) {
+  return (
+    (snapshot.equipment || []).filter((e) => e.kind === kind && !e.free).length +
+    (snapshot.pendingInstallations?.[kind] || 0)
+  );
 }

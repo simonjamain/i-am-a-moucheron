@@ -79,7 +79,7 @@ export function flightInput(keys, pad, active = true) {
       !!(keys.ControlLeft || keys.ControlRight),
       pad.throttle,
     ),
-    fire: !!keys.Space || pad.fire,
+    fire: pad.fire,
   };
 }
 export function lookDelta(look, dx, dy) {

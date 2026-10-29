@@ -222,7 +222,8 @@ async function ensureFleet(db, code, now) {
   const room = await db.prepare('SELECT upgrades FROM rooms WHERE code=?').bind(code).first();
   const unlocked = JSON.parse(room.upgrades || '{}');
   for (const type of Object.keys(VEHICLES).filter(
-    (type) => type !== 'tank' && (type !== 'interceptor' || unlocked.interceptor),
+    (type) =>
+      type !== 'spitfire' && type !== 'tank' && (type !== 'interceptor' || unlocked.interceptor),
   ))
     await db
       .prepare(

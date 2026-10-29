@@ -1726,6 +1726,47 @@
           clip-path: polygon(0 0, 100% 0, 100% 43%, 40% 50%, 100% 57%, 100% 100%, 0 100%);
         }
       }
+
+      #dirtView {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        z-index: 14;
+        opacity: 0;
+        background:
+          radial-gradient(ellipse at 22% 32%, #6b542c 0 8%, transparent 28%),
+          radial-gradient(ellipse at 78% 68%, #594a28 0 12%, transparent 35%),
+          linear-gradient(#76623d99, #68553255);
+        transition: opacity 0.2s;
+      }
+      #dirtWarning {
+        position: fixed;
+        right: 18px;
+        bottom: 85px;
+        font-size: 12px;
+        z-index: 20;
+        pointer-events: none;
+        max-width: 240px;
+      }
+      #tankReticle {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        z-index: 15;
+      }
+      #tankReticle span {
+        position: absolute;
+        color: #fff3bf;
+        font-size: 10px;
+        text-shadow: 0 1px 2px #000;
+        transform: translateY(-50%);
+      }
+      #crewPanel button.currentSeat {
+        background: #e6edb9;
+        color: #183b32;
+        opacity: 1;
+        border: 2px solid #fff5b1;
+      }
     </style>
     <style>
       #papers #paperBody {
@@ -1924,7 +1965,7 @@
       #aimRange small {
         font-size: 9px;
       }
-      :is(#bank, #bedPanel) {
+      :is(#bank, :is(#bedPanel, #purchasePanel)) {
         position: fixed;
         inset: 0;
         z-index: 45;
@@ -1933,7 +1974,7 @@
         background: #09211bd6;
         padding: 20px;
       }
-      :is(#bank, #bedPanel) > article {
+      :is(#bank, :is(#bedPanel, #purchasePanel)) > article {
         width: min(1080px, 100%);
         max-height: 90dvh;
         overflow: auto;
@@ -1944,28 +1985,28 @@
         box-shadow: 0 14px 60px #0007;
         font-family: Georgia, serif;
       }
-      :is(#bank, #bedPanel) header {
+      :is(#bank, :is(#bedPanel, #purchasePanel)) header {
         position: static;
         display: flex;
         align-items: start;
         justify-content: space-between;
         gap: 20px;
       }
-      :is(#bank, #bedPanel) h2 {
+      :is(#bank, :is(#bedPanel, #purchasePanel)) h2 {
         margin: 0 0 8px;
         font-size: 30px;
         font-style: italic;
         font-weight: 400;
       }
-      :is(#bank, #bedPanel) h3 {
+      :is(#bank, :is(#bedPanel, #purchasePanel)) h3 {
         font-size: 32px;
         font-weight: 400;
         margin: 22px 0;
       }
-      :is(#bank, #bedPanel) p {
+      :is(#bank, :is(#bedPanel, #purchasePanel)) p {
         line-height: 1.6;
       }
-      :is(#bank, #bedPanel) button {
+      :is(#bank, :is(#bedPanel, #purchasePanel)) button {
         background: #294938;
         color: #f3edcf;
         padding: 10px 14px;
@@ -1973,37 +2014,37 @@
         border-radius: 4px;
         cursor: pointer;
       }
-      :is(#bank, #bedPanel) button:disabled {
+      :is(#bank, :is(#bedPanel, #purchasePanel)) button:disabled {
         opacity: 0.5;
         cursor: default;
       }
-      :is(#bank, #bedPanel) [data-bank-cards] {
+      :is(#bank, :is(#bedPanel, #purchasePanel)) [data-bank-cards] {
         display: grid;
         grid-template-columns: repeat(3, minmax(0, 1fr));
         gap: 16px;
         margin: 20px 0;
       }
-      :is(#bank, #bedPanel) [data-bank-cards] article {
+      :is(#bank, :is(#bedPanel, #purchasePanel)) [data-bank-cards] article {
         padding: 18px;
         border: 1px solid #a7a17c;
         background: #fff8df55;
       }
-      :is(#bank, #bedPanel) [data-bank-cards] button {
+      :is(#bank, :is(#bedPanel, #purchasePanel)) [data-bank-cards] button {
         display: block;
         width: 100%;
         margin-top: 14px;
       }
-      :is(#bank, #bedPanel) [data-bank-cards] small {
+      :is(#bank, :is(#bedPanel, #purchasePanel)) [data-bank-cards] small {
         letter-spacing: 1px;
       }
-      :is(#bank, #bedPanel) [data-bank-status] {
+      :is(#bank, :is(#bedPanel, #purchasePanel)) [data-bank-status] {
         min-height: 1.5em;
         font-weight: bold;
       }
-      :is(#bank, #bedPanel) [data-bank-text] {
+      :is(#bank, :is(#bedPanel, #purchasePanel)) [data-bank-text] {
         white-space: pre-line;
       }
-      :is(#bank, #bedPanel) canvas {
+      :is(#bank, :is(#bedPanel, #purchasePanel)) canvas {
         width: min(100%, 650px);
         height: 150px;
         touch-action: none;
@@ -2011,23 +2052,23 @@
         display: block;
         background: #fff9e5;
       }
-      :is(#bank, #bedPanel) .bankTable {
+      :is(#bank, :is(#bedPanel, #purchasePanel)) .bankTable {
         overflow: auto;
         margin: 15px 0;
       }
-      :is(#bank, #bedPanel) table {
+      :is(#bank, :is(#bedPanel, #purchasePanel)) table {
         width: 100%;
         border-collapse: collapse;
         font-size: 12px;
       }
-      :is(#bank, #bedPanel) th,
-      :is(#bank, #bedPanel) td {
+      :is(#bank, :is(#bedPanel, #purchasePanel)) th,
+      :is(#bank, :is(#bedPanel, #purchasePanel)) td {
         padding: 8px;
         text-align: left;
         border-bottom: 1px solid #b6b18c;
         white-space: nowrap;
       }
-      :is(#bank, #bedPanel) .bankHint {
+      :is(#bank, :is(#bedPanel, #purchasePanel)) .bankHint {
         font-size: 12px;
       }
       @media (max-width: 700px) {
@@ -2065,13 +2106,13 @@
           top: 34px;
           bottom: auto;
         }
-        :is(#bank, #bedPanel) {
+        :is(#bank, :is(#bedPanel, #purchasePanel)) {
           padding: 8px;
         }
-        :is(#bank, #bedPanel) > article {
+        :is(#bank, :is(#bedPanel, #purchasePanel)) > article {
           padding: 14px;
         }
-        :is(#bank, #bedPanel) [data-bank-cards] {
+        :is(#bank, :is(#bedPanel, #purchasePanel)) [data-bank-cards] {
           grid-template-columns: 1fr;
         }
       }
@@ -2133,6 +2174,47 @@
         #players {
           display: none;
         }
+      }
+
+      #dirtView {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        z-index: 14;
+        opacity: 0;
+        background:
+          radial-gradient(ellipse at 22% 32%, #6b542c 0 8%, transparent 28%),
+          radial-gradient(ellipse at 78% 68%, #594a28 0 12%, transparent 35%),
+          linear-gradient(#76623d99, #68553255);
+        transition: opacity 0.2s;
+      }
+      #dirtWarning {
+        position: fixed;
+        right: 18px;
+        bottom: 85px;
+        font-size: 12px;
+        z-index: 20;
+        pointer-events: none;
+        max-width: 240px;
+      }
+      #tankReticle {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        z-index: 15;
+      }
+      #tankReticle span {
+        position: absolute;
+        color: #fff3bf;
+        font-size: 10px;
+        text-shadow: 0 1px 2px #000;
+        transform: translateY(-50%);
+      }
+      #crewPanel button.currentSeat {
+        background: #e6edb9;
+        color: #183b32;
+        opacity: 1;
+        border: 2px solid #fff5b1;
       }
     </style>
   </head>
@@ -2231,8 +2313,9 @@
         <h2>Votre avion vous attend.</h2>
         <p id="baseStatus"></p>
         <p class="small">
-          Flèches / ZQSD : courir · Espace en l’air : parachute.<br />Souris capturée / glisser :
-          regarder. Échap : curseur libre. Molette : zoom. Rejoignez le cercle vert pour signer.
+          Flèches / ZQSD : courir · Espace au sol : jet de nettoyage ; en l’air : parachute.<br />Souris
+          capturée / glisser : regarder. Échap : curseur libre. Molette : zoom. Rejoignez le cercle
+          vert pour signer.
         </p>
         <div id="seatChoices"></div>
         <button id="boardButton" class="primary" disabled>Dossier d’embarquement · E</button>
@@ -2284,8 +2367,8 @@
       </div>
       <div class="bottomkeys" id="flightKeys">
         <kbd>↑ ↓</kbd> Tangage &nbsp; <kbd>← →</kbd> Roulis &nbsp;
-        <kbd>A E / Q E</kbd> Gouverne<br /><kbd>W / S</kbd> Gaz &nbsp; <kbd>Espace</kbd> Tir &nbsp;
-        <kbd>R</kbd> Purgatoire &nbsp; <kbd>H</kbd> Aide
+        <kbd>A E / Q E</kbd> Gouverne<br /><kbd>W / S</kbd> Gaz &nbsp; <kbd>Clic</kbd> Tir /
+        <kbd>Espace</kbd> Bombes &nbsp; <kbd>R</kbd> Purgatoire &nbsp; <kbd>H</kbd> Aide
       </div>
       <canvas id="radar" width="220" height="220"></canvas>
       <div id="actions">
@@ -2302,7 +2385,7 @@
         <div style="display: flex; gap: 4px">
           <button data-key="KeyA">Gouv. ←</button><button data-key="KeyE">Gouv. →</button>
         </div>
-        <button class="touchFire" data-key="Space">TIR</button>
+        <button class="touchFire" data-key="Space">ARME SECONDAIRE</button>
       </div>
     </div>
     <section id="purgatory" class="hidden" aria-labelledby="soulTitle">
@@ -2333,6 +2416,9 @@
     >
       Tir · pistolet
     </button>
+    <div id="dirtView" aria-hidden="true"></div>
+    <p id="dirtWarning" class="hidden">Attention, nettoyez votre véhicule en urinant dessus.</p>
+    <div id="tankReticle" class="hidden" aria-label="Graduations balistiques en mètres"></div>
     <aside id="crewPanel" class="hidden" aria-label="Postes et échanges"></aside>
     <div id="boardingPending" class="hidden" role="status" aria-live="polite">
       Préparation du dossier…
@@ -2392,6 +2478,24 @@
         </header>
         <p data-bed-text></p>
         <canvas width="800" height="200" aria-label="Signer le contrat personnel de lit"></canvas
+        ><button data-bed-clear>Effacer</button>
+        <p data-bed-status role="status" aria-live="polite"></p>
+      </article>
+    </section>
+    <section
+      id="purchasePanel"
+      class="hidden"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="purchaseTitle"
+    >
+      <article>
+        <header>
+          <h2 id="purchaseTitle">Contrat de réapparition</h2>
+          <button data-bed-close aria-label="Fermer le bon de commande">✕</button>
+        </header>
+        <p data-bed-text></p>
+        <canvas width="800" height="200" aria-label="Signer le bon de commande"></canvas
         ><button data-bed-clear>Effacer</button>
         <p data-bed-status role="status" aria-live="polite"></p>
       </article>
@@ -2456,9 +2560,9 @@
     </section>
     <div id="placementControls" class="hidden">
       <p id="placementStatus"></p>
-      <button id="placeConfirm" disabled>Poser · 30 $</button>
+      <button id="placeConfirm" disabled>E · Poser · déjà payé</button>
       <button id="placeCancel">Annuler</button
-      ><small>Entrée : poser · Échap : annuler · Aucun débit avant la pose</small>
+      ><small>E : poser · Échap : conserver pour plus tard · Achat déjà payé</small>
     </div>
     <div id="help" class="hidden">
       <article>
@@ -2486,15 +2590,16 @@
         <p>
           <b>Pilotage :</b> la souris choisit une direction, l’avion la rejoint avec son inertie.
           Z/S ou ↑/↓ : tangage ; Q/D ou ←/→ : roulis ; A/E : gouverne. Maj augmente les gaz, Ctrl
-          les réduit et freine au sol. C maintenu : regard libre. M : pilotage manuel. Clic / Espace
-          : mitrailleuses du chasseur. Le bombardier est plus lent et ses armes sont servies par les
-          deux mitrailleurs.
+          les réduit et freine au sol. C maintenu : regard libre. M : pilotage manuel. Clic gauche :
+          mitrailleuses du chasseur. Espace : bombes sur les avions équipés. Le bombardier est plus
+          lent et ses armes sont servies par les deux mitrailleurs.
         </p>
         <p>
           <b>Se poser et sortir :</b> ailes à plat, vitesse inférieure à 100 km/h de référence et
           descente douce. Réduisez les gaz, puis immobilisez l’avion avant de sortir avec F. En vol,
-          F ouvre un parachute dirigeable. Si le pilote abandonne l’appareil en vol, les autres
-          occupants sautent aussi. E permet de remonter dans un appareil posé.
+          F commence une chute libre ; Espace ouvre/replie le parachute. Si le pilote abandonne
+          l’appareil en vol, les autres occupants sautent aussi. E permet de remonter dans un
+          appareil posé.
         </p>
         <p>
           <b>DCA :</b> rejoignez le cercle, appuyez sur E et signez les deux documents. Souris /
@@ -2528,10 +2633,10 @@
           offres ou prêts partagés ; lire puis signer dans le cadre. Échap ferme le guichet.
         </p>
         <p>
-          <b>Armes lourdes :</b> B pour bombes ou canon ; Shift HE / Ctrl AP au tank. DCA : Shift
-          augmente, Ctrl diminue la distance affichée en mètres réels près du viseur. Clic droit
-          maintenu : zoom. Au canon du tank, C maintenu permet d’observer sans déplacer la tourelle
-          ni tirer.
+          <b>Armes lourdes :</b> Clic gauche : canon du tank ; Espace : coaxiale ou bombes (0,5 s) ;
+          Shift HE / Ctrl AP au tank. DCA : Shift augmente, Ctrl diminue la distance affichée en
+          mètres réels près du viseur. Clic droit maintenu : zoom. Au canon du tank, C maintenu
+          permet d’observer sans déplacer la tourelle ni tirer.
         </p>
         <p>
           <b>Lits et chute :</b> achetez un lit à placer sur une surface dégagée, puis E au lit pour

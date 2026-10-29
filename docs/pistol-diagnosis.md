@@ -10,3 +10,6 @@ Référence actuelle, causes, valeurs et limites : [retours terrain](field-updat
 `node scripts/diagnose-pistol.mjs` exécute le vrai `pistol()` et ses raycasts ;
 `test-field-backlog.mjs` vérifie orientations, échelles, dégagement du torse et
 obstacles. L’ancienne analyse est [archivée](archive/pistol-before-arm02.md).
+
+Le [lot suivant de lisibilité et nettoyage](clean-flight.md) précise les commandes
+contextuelles actuelles, les effets partagés et les nouvelles collisions de coque.

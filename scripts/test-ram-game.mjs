@@ -58,7 +58,9 @@ function approach(id, vehicle, seat) {
 }
 function clearAnnex(id, token) {
   const d = room.dossiers.get(token);
-  if (d?.clause) call(id, 'dossier-choice', { token, choice: 'tear' });
+  const current = room.pilots.get(id);
+  const paper = current.state.boarding?.token === token ? current.board_paper : 0;
+  if (d?.clause && d.position <= paper) call(id, 'dossier-choice', { token, choice: 'tear' });
 }
 function board(id, vehicle, seat) {
   const ground = approach(id, vehicle, seat);

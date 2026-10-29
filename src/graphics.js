@@ -63,16 +63,46 @@ export function createGraphics(T, scene) {
     tailWheel.rotation.z = Math.PI / 2;
     const cowl = cyl(0, 0, -1.05, 0.41, 0.41, 1.1, '#b7c9a1', g);
     cowl.rotation.x = Math.PI / 2;
+    const gunMeshes = [];
     for (const x of [-1.35, 1.35]) {
-      box(x, 0.03, -0.9, 0.085, 0.085, 0.7, '#334a3b', g);
+      gunMeshes.push(box(x, 0.03, -0.9, 0.085, 0.085, 0.7, '#334a3b', g));
       box(x, -0.08, 0.2, 0.035, 0.12, 0.85, '#bcc998', g);
     }
     for (const x of [-0.44, 0.44])
       for (let i = 0; i < 4; i++) box(x, 0.12, -1.35 + i * 0.18, 0.1, 0.1, 0.1, '#5c6351', g);
     box(0, 0.47, -0.12, 0.52, 0.035, 0.035, '#c3d2ad', g);
     box(0, 0.47, -0.6, 0.52, 0.035, 0.035, '#c3d2ad', g);
-    g.userData = { wing, prop };
+    g.userData = { wing, prop, gunMeshes };
     scene.add(g);
+    return g;
+  }
+  function makeSpitfire(color) {
+    const g = makePlane(color);
+    g.userData.wing.visible = false;
+    for (const gun of g.userData.gunMeshes) gun.visible = false;
+    // Elliptical wings and six barrels distinguish the S6.
+    const outline = new T.Shape();
+    outline.absellipse(0, 0, 3.1, 0.7, 0, Math.PI * 2, false, 0);
+    const wing = new T.Mesh(
+      new T.ExtrudeGeometry(outline, { depth: 0.1, bevelEnabled: false, curveSegments: 24 }),
+      mat(color),
+    );
+    wing.rotation.x = Math.PI / 2;
+    wing.position.z = 0.15;
+    g.add(wing);
+    g.userData.wing = wing;
+    const muzzles = [];
+    for (const side of [-1, 1])
+      for (const x of [1.35, 1.95, 2.5]) {
+        const z = -0.55 * Math.sqrt(1 - (x / 3.1) ** 2) + 0.15;
+        box(side * x, 0.03, z - 0.17, 0.065, 0.065, 0.4, '#334a3b', g);
+        const muzzle = new T.Object3D();
+        muzzle.position.set(side * x, 0.03, z - 0.37);
+        g.add(muzzle);
+        muzzles.push(muzzle);
+      }
+    g.userData.muzzles = muzzles;
+    g.userData.vehicleType = 'spitfire';
     return g;
   }
   function makeBomber(color) {
@@ -333,6 +363,7 @@ export function createGraphics(T, scene) {
     ball,
     textLabel,
     makePlane,
+    makeSpitfire,
     makeBomber,
     makeStuka,
     makeBomb,

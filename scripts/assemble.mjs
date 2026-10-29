@@ -30,6 +30,9 @@ const files = {
   '/three.js': 'vendor/three.module.min.js',
   ...Object.fromEntries(
     [
+      'purchase-ui',
+      'vehicle-care',
+      'tank-reticle',
       'flight',
       'aircraft-fire',
       'logistics',

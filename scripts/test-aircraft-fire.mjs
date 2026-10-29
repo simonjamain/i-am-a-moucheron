@@ -153,6 +153,7 @@ const context = vm.createContext({
   },
   vel: new T.Vector3(),
   hasAmmo: () => true,
+  vehicleColor: () => '#abcdef',
   currentAmmoKey: () => 'pilot',
   currentFactors: () => ({ damage: 1 }),
   api: (path, body) => {

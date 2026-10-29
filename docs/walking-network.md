@@ -83,3 +83,6 @@ Sur Node, une nouvelle incarnation recrée aussi le corps local du bureau pour
 éviter de conserver le lieu de mort. Un rapport d’impact vertical est dédupliqué
 par joueur/incarnation/tir. Les destinations signées et le secret privé de reprise
 du contrat de lit sont détaillés dans [retours terrain](field-update.md).
+
+Le [lot suivant de lisibilité et nettoyage](clean-flight.md) précise les commandes
+contextuelles actuelles, les effets partagés et les nouvelles collisions de coque.

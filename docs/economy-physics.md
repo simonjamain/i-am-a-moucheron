@@ -26,7 +26,7 @@ local transition and rollback if the server refuses. Sync responses are held
 while that transition is pending, avoiding a stale snapshot moving the player
 back into the cockpit. Entry still waits for authoritative seat allocation;
 network round-trip time cannot honestly be removed. There is no added boarding
-or exit timer. P toggles the workshop, Enter confirms a placement, Escape cancels.
+or exit timer. P toggles the workshop; a signed prepaid order opens placement, E (Enter alias) places, Escape retains the order for later. See [current purchase flow](clean-flight.md#prix-bon-signé-et-pose).
 
 Space toggles the canopy whenever the on-foot body is airborne, including with
 a free cursor. All exits and forced ejections start without a parachute. Exit
@@ -70,13 +70,13 @@ human there, the existing client-hosted physical queue remains authoritative.
 
 The catalog is declarative in `equipment.js`:
 
-The initial DCA costs 4 dollars, Stuka 12 dollars per hull, tank 10 dollars, motor levels 4/9/16,
+The initial DCA costs 4 dollars, Stuka 12 dollars per hull, Spitfire 24 dollars, tank 10 dollars, motor levels 4/9/16,
 and ammunition levels 6/12/20. DCA prices rise by 2 dollars per installed gun,
 up to 40 dollars. Completed, non-lost waves grant an immediate team stipend;
 soul releases remain worth one dollar. See [progression](progression.md) for
 the single detailed reference, curve, validation and persistence guarantees.
 
-A purchase transaction conditionally inserts an order, debits once, adds the
+The historical direct-purchase transaction conditionally inserts an order, debits once, adds the
 installation/unlock/upgrade, then marks the order done. Retrying its request ID
 cannot debit twice. Competing purchases cannot overspend the room. Conflicting
 placements are checked again inside the transaction. A placement must be within
@@ -135,3 +135,6 @@ replaced for the character by world-metre gravity, gradual inflation and impact
 damage in [field updates](field-update.md). Projectile and aircraft ballistics
 retain their separate miniature tuning. Beds use common funds and personal
 signed contracts; new loans use 10–20 % per wave without rewriting signed schedules.
+
+Current Node installations use [signed prepaid orders](clean-flight.md#prix-bon-signé-et-pose),
+not payment at placement. Their pending counts participate in quotes and the 24-item cap.

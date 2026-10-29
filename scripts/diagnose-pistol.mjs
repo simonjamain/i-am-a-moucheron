@@ -1,3 +1,4 @@
+import { makeTracer } from '../src/tracers.js';
 import { muzzleAim } from '../src/personal-aim.js';
 // Executes the current pistol() function in a controlled Three.js scene.
 import * as T from '../vendor/three.module.min.js';
@@ -25,6 +26,8 @@ function shoot({ camera, target, colliders = [] }) {
   scene.add(person);
   const c = {
     T,
+    makeTracer,
+    performance,
     MAP,
     joined: true,
     controlFocus: { active: true },
@@ -53,7 +56,9 @@ function shoot({ camera, target, colliders = [] }) {
     nearestInsectHit,
     nearestMeshHit,
     sound: { play() {} },
-    action: (route, b) => actions.push({ route, ...b }),
+    action: (route, b) => {
+      if (route !== 'pistol-trace') actions.push({ route, ...b });
+    },
     damageEnemy: (enemy, amount) => actions.push({ enemy, amount }),
     setTimeout: (fn) => fn(),
   };

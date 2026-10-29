@@ -166,3 +166,6 @@ montre aussi un grand montant sans collision des trois commandes.
 Le navigateur de contrôle ne dispose pas de WebGL et son réseau UDP ne valide
 pas une partie WAN. Tactile physique, écoute et charge maximale restent à vérifier
 sur la VM. Aucun déploiement externe ni image Docker nouvelle dans ce lot.
+
+Le [lot suivant de lisibilité et nettoyage](clean-flight.md) précise les commandes
+contextuelles actuelles, les effets partagés et les nouvelles collisions de coque.

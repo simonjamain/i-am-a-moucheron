@@ -1,3 +1,5 @@
+import { ACTOR_UNIT, MAP } from '../src/scale.js';
+import { OFFICE_LAYOUT } from '../src/layout.js';
 import assert from 'node:assert/strict';
 import { PeerConnection, cleanup } from 'node-datachannel';
 import { createGameServer } from '../server/index.js';
@@ -105,10 +107,72 @@ try {
     direction: [0, 0, -1],
   });
   assert.equal(bomb.status, 200);
-  assert.equal(bomb.body.vehicles.find((v) => v.id === bomber.id).supplies.ammo.bomb, 11);
+  assert.equal(bomb.body.vehicles.find((v) => v.id === bomber.id).supplies.ammo.bomb, 49);
   assert.ok(bomb.body.ordnance.some((p) => p.shot === 'native-bomb'));
+  const person = gameRoom.pilots.get(bj.body.id);
+  app.game.release(gameRoom, person);
+  person.mode = 'foot';
+  gameRoom.dollars = 50;
+  const sign = await b.request('purchase-sign', {
+    item: 'radar',
+    request: 'native-radar-order',
+    expectedPrice: 4,
+    signature: true,
+    epoch: gameRoom.base.epoch,
+    incarnation: person.incarnation,
+  });
+  assert.equal(sign.status, 200);
+  assert.equal(sign.body.dollars, 46);
+  const observedOrder = await a.request('sync', { mode: 'foot', state });
+  assert.ok(observedOrder.body.purchases.some((o) => o.owner === person.id && o.item === 'radar'));
+  const purchased = await b.request('buy', {
+    item: 'spitfire',
+    request: 'native-spit-order',
+    expectedPrice: 24,
+  });
+  assert.equal(purchased.status, 200);
+  const spit = [...gameRoom.vehicles.values()].find((v) => v.type === 'spitfire');
+  spit.state.p = [1.5, 2, -0.5];
+  spit.state.landed = false;
+  spit.dirt = 0.001;
+  Object.assign(app.game.base(gameRoom, person), {
+    x: (1.5 - OFFICE_LAYOUT.base.originX) / ACTOR_UNIT,
+    z: OFFICE_LAYOUT.base.originZ / ACTOR_UNIT,
+    y: 2 - MAP.metres(0.9),
+    grounded: true,
+  });
+  const washBody = {
+    direction: [0, 0, -1],
+    epoch: gameRoom.base.epoch,
+    incarnation: person.incarnation,
+  };
+  assert.equal((await b.request('wash', washBody)).status, 200);
+  await new Promise((r) => setTimeout(r, 40));
+  assert.equal((await b.request('wash', washBody)).status, 200);
+  const washed = await a.request('sync', { mode: 'foot', state });
+  assert.equal(washed.body.vehicles.find((v) => v.id === spit.id).dirt, 0);
+  assert.equal(
+    washed.body.effects.filter((e) => e.kind === 'clean' && e.vehicle === spit.id).length,
+    1,
+  );
+  assert.equal(
+    (
+      await b.request('pistol-trace', {
+        shot: 'native-pistol',
+        origin: [1.5, 2, 0],
+        direction: [0, 0, -1],
+        incarnation: person.incarnation,
+      })
+    ).status,
+    200,
+  );
+  assert.ok(
+    (await a.request('sync', { mode: 'foot', state })).body.effects.some(
+      (e) => e.kind === 'pistol-trace' && e.shooter === person.id,
+    ),
+  );
   console.log(
-    'Native RTC: two clients, UDP confirmed, reliable commands/replay, lossy relay, HTTP gameplay refused.',
+    'Native RTC: two clients, UDP confirmed, reliable commands/replay, lossy relay, prepaid purchase, Spitfire, shared wash/sparkles/pistol trace, HTTP gameplay refused.',
   );
   // A closed negotiation must settle its HTTP request and release its slot.
   class NeverGathers {

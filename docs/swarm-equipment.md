@@ -7,7 +7,7 @@ additive halo and an 11-reference-metre streak. A bounded minimum projected widt
 improves distant readability; collision still uses the actual swept segment,
 not the exaggerated visual width/length. Shells have a shorter orange streak.
 Every tracer owns and disposes its materials/geometry. The existing 256-projectile
-cap remains. All players see the same style, with mint remote tracers.
+cap remains. Local and remote vehicle shots share their hull hue; personal pistol shots use the same luminous style. See [current projectile rules](clean-flight.md#provenance-et-mire).
 
 Bomber dorsal and tail turrets now have one barrel each, a yaw joint, a separate
 elevation joint and an explicit muzzle node. `aimGun` uses the parent's inverse
@@ -51,8 +51,7 @@ neighbours until wave end, so stale kill messages cannot shift the flock.
 shared health. Atomic batches insert a kill and one purgatory soul only after
 health is exhausted. Machine guns deal 75 base damage; direct flak hits deal 200 and
 airbursts fall from 80 to 20 damage. See [combat-worlds](combat-worlds.md). Hit reporting retains the game's existing client-trusted collision
-model; this is not competitive anti-cheat. Stronger types also cause more crash
-damage and infestation on arrival. The purgatory admits at most 24 NPC bodies at a time
+model; this is not competitive anti-cheat. Vehicle/insect impacts now cost the hull 5% of the insect’s remaining HP once per contact; stronger healthy types therefore cause more damage and infestation on arrival. The purgatory admits at most 24 NPC bodies at a time
 (with all player bodies); further souls wait persistently offstage so a large
 wave cannot flood its physical crowd simulation. Shared in-game purchases and upgrades are described in
 [economy-physics.md](economy-physics.md); no persistent cross-game progression exists.

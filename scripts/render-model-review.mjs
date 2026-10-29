@@ -68,3 +68,8 @@ function panel(model, x, y, size, title) {
 }
 const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800" viewBox="0 0 1200 800"><rect width="1200" height="800" fill="#15352c"/><g font-family="sans-serif"><text x="25" y="32" font-size="22" fill="#e6edcf">VIS-05 · Géométrie réelle · Même projection avant / après</text>${panel(stukaBefore, 20, 55, 4.6, 'Stuka — avant')}${panel(stukaAfter, 610, 55, 4.6, 'Stuka — après')}${panel(bombBefore, 20, 425, 1.2, 'Bombe — avant')}${panel(bombAfter, 610, 425, 1.2, 'Bombe — après')}</g></svg>`;
 await writeFile('docs/models-before-after.svg', svg);
+
+const spit = current.makeSpitfire('#a7ad7a');
+const fighter = current.makePlane('#a7ad7a');
+const spitSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="430" viewBox="0 0 1200 430"><rect width="1200" height="430" fill="#15352c"/><g font-family="sans-serif"><text x="25" y="32" font-size="22" fill="#e6edcf">VEH-05 · Géométrie réelle · Projection CPU sans WebGL</text>${panel(fighter, 20, 55, 3.8, 'Chasseur initial — deux armes alternées')}${panel(spit, 610, 55, 3.8, 'Spitfire S6 — ailes elliptiques, six armes')}</g></svg>`;
+await writeFile('docs/spitfire-model.svg', spitSvg);

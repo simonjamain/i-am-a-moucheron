@@ -36,7 +36,7 @@ flashes are short-lived, bounded geometry at the firing muzzle.
 The Node runtime owns shared hulls and exclusive seat leases in RAM. Only the
 pilot's lease can update a hull transform; gunners publish aim and fire independently.
 The fighter and bomber each have one living starter, replaced only on destruction.
-Purchased Stukas and tanks are not automatically replaced. Board selection binds
+Purchased Stukas, Spitfires and tanks are not automatically replaced. Board selection binds
 the two signatures to the exact vehicle and role. Exiting frees only that seat;
 other occupants and the hull remain. Destruction frees every occupant, including
 when the final motion arrives without a later client death command. Canopies start
@@ -52,9 +52,7 @@ no minimum animation wait. See [signature handling](economy-physics.md).
 
 Mission start schedules the first wave at +10 s. Finishing a wave schedules the
 next at +60 s on Node (the historical Worker retains +10 s). Manual start can shorten subsequent breaks; a conditional update
-serializes concurrent automatic starts. Poll-triggered transitions use a shared
-wall clock, with no unsupported server timer process. With no connected clients,
-the next polling request advances the due transition. Migration 0006 resets the
+serializes concurrent automatic starts. Node transitions use the shared wall clock and the maintenance tick. The historical Worker advances due transitions on requests. Migration 0006 resets the
 old arbitrary-coordinate sessions instead of reading their numbers as metres.
 
 ## Revision 020: collisions, movement and depth
@@ -82,3 +80,6 @@ Les réserves finies des avions, les teintes et inscriptions de carrosserie, les
 clauses d’armement et les radars sont décrits dans
 [logistique et contrats](logistics-contracts.md). La DCA et le pistolet restent
 à munitions illimitées ; la panne sèche supprime la poussée, sans figer le vol.
+
+Current [Spitfire, impacts and reticle](clean-flight.md) keep angular rates unscaled;
+cleaning range is explicitly two world metres, unlike miniature ballistic ranges.
