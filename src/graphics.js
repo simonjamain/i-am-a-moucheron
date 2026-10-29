@@ -135,6 +135,57 @@ export function createGraphics(T, scene) {
     scene.add(g);
     return g;
   }
+  function makeStuka(color) {
+    const g = makePlane(color);
+    g.userData.wing.visible = false;
+    for (const side of [-1, 1]) {
+      const inner = box(side * 1.1, -0.18, 0.1, 2.3, 0.16, 1.2, color, g);
+      inner.rotation.z = side * -0.18;
+      const outer = box(side * 2.8, -0.16, 0.1, 2.1, 0.12, 0.85, color, g);
+      outer.rotation.z = side * 0.1;
+      box(side * 1.25, -0.75, -0.55, 0.32, 0.9, 0.75, color, g);
+      box(side * 2.3, -0.3, -0.3, 1.4, 0.06, 0.4, '#526b56', g);
+      const bomb = ball(side * 1.6, -0.5, 0.1, 0.18, '#343d31', g);
+      bomb.scale.z = 3;
+    }
+    box(0, 0.38, 0.15, 0.6, 0.4, 1.8, '#496565', g);
+    g.userData.vehicleType = 'interceptor';
+    return g;
+  }
+  function makeTank(color) {
+    const g = new T.Group();
+    box(0, 0.05, 0, 2.6, 0.9, 3.8, color, g);
+    box(0, 0.55, 0, 2.15, 0.4, 3.2, color, g);
+    for (const side of [-1, 1]) {
+      box(side * 1.5, -0.1, 0, 0.55, 0.9, 4.1, '#28372e', g);
+      for (let i = 0; i < 7; i++) {
+        const wheel = cyl(side * 1.65, -0.1, -1.5 + i * 0.5, 0.32, 0.32, 0.18, '#59654b', g);
+        wheel.rotation.z = Math.PI / 2;
+      }
+    }
+    const turrets = [];
+    for (const [y, z, length] of [
+      [1, 0, 2.8],
+      [1.8, 0.7, 1.3],
+    ]) {
+      const mount = new T.Group();
+      mount.position.set(0, y, z);
+      g.add(mount);
+      box(0, 0, 0, 1.2, 0.55, 1.5, color, mount);
+      const pitch = new T.Group();
+      mount.add(pitch);
+      box(0, 0, -length / 2, 0.15, 0.15, length, '#364439', pitch);
+      const muzzle = new T.Object3D();
+      muzzle.position.set(0, 0, -length);
+      pitch.add(muzzle);
+      mount.userData = { pitch, muzzle };
+      turrets.push(mount);
+    }
+    box(0.7, 0.5, -2, 0.09, 0.09, 0.8, '#293e31', g);
+    g.userData = { turrets, prop: new T.Object3D(), wing: new T.Object3D() };
+    scene.add(g);
+    return g;
+  }
   function insect(type = 'midge') {
     const g = new T.Group();
     if (type === 'ant' || type === 'roach') {
@@ -253,5 +304,18 @@ export function createGraphics(T, scene) {
     return g;
   }
 
-  return { mat, box, cyl, ball, textLabel, makePlane, makeBomber, insect, humanoid, pm };
+  return {
+    mat,
+    box,
+    cyl,
+    ball,
+    textLabel,
+    makePlane,
+    makeBomber,
+    makeStuka,
+    makeTank,
+    insect,
+    humanoid,
+    pm,
+  };
 }

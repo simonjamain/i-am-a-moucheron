@@ -19,11 +19,16 @@ export const SHOP = Object.freeze({
     description: 'Un canon à poser sur une surface libre.',
   },
   interceptor: {
-    name: 'Chasseur M2',
+    name: 'Stuka d’attaque au sol',
     cost: 12,
-    kind: 'unlock',
-    max: 1,
-    description: 'Débloque un chasseur plus rapide au hangar.',
+    kind: 'vehicle',
+    description: 'Un exemplaire avec 6 bombes ; remplacement payant après destruction.',
+  },
+  tank: {
+    name: 'Tank T3',
+    cost: 10,
+    kind: 'vehicle',
+    description: 'Un exemplaire, trois postes indépendants ; toutes munitions limitées.',
   },
   engine: {
     name: 'Motorisation',

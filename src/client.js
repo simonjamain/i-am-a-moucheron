@@ -1,3 +1,5 @@
+import { BankUI } from '/bank-ui.js';
+import { ContextHUD, equipmentHUD } from '/hud.js';
 import { paintVehicle, updateInscriptions } from '/vehicle-livery.js';
 import { AircraftFire } from '/aircraft-fire.js';
 import { inRadarCoverage, installationCount } from '/logistics.js';
@@ -61,6 +63,10 @@ import {
 } from '/mouse-flight.js';
 import { PeerMotion, MotionTrack } from '/network.js';
 import { UdpClient } from '/udp-client.js';
+import { HoldZoom, contextKey, rangeReadout } from '/equipment-controls.js';
+import { HEAVY, TANK_MG, availableShell } from '/armament.js';
+import { stepTank } from '/tank.js';
+import { CrashEffects } from '/crash-effects.js';
 import * as T from '/three.js';
 import { stepFlight } from '/flight.js';
 import { readPad, neutralPad } from '/input.js';
@@ -129,12 +135,38 @@ audioHUD();
 const renderer = createRenderer(T, canvas);
 
 const camera = new T.PerspectiveCamera(62, innerWidth / innerHeight, 0.00005, 40);
+const holdZoom = new HoldZoom();
+const zoomScope = () =>
+  joined && !respawnAt && (myVehicle || turretIndex >= 0) && controlFocus.active
+    ? JSON.stringify([
+        myVehicle?.id,
+        crewSeat,
+        turretIndex,
+        snap?.pilots.find((p) => p.id === id)?.occupation,
+      ])
+    : null;
 camera.position.set(-1.65, 1.05, 2.6);
 const hitEffects = new HitEffects(T, scene, { scale: ACTOR_UNIT });
 const insectStatus = new InsectStatus(T, scene, { scale: INSECT_SCALE });
 const combatEffects = new CombatEffects(T, scene);
-const { mat, box, cyl, ball, textLabel, makePlane, makeBomber, insect, humanoid, pm } =
-  createGraphics(T, scene);
+const crashEffects = new CrashEffects(T, scene, {
+  sound: (kind, p) => sound.play(kind, p, { ref: 30 }),
+  blast: (p) => combatEffects.blast(p),
+});
+const {
+  mat,
+  box,
+  cyl,
+  ball,
+  textLabel,
+  makePlane,
+  makeBomber,
+  makeStuka,
+  makeTank,
+  insect,
+  humanoid,
+  pm,
+} = createGraphics(T, scene);
 const { colliders, fanGroup, rotor, winds } = createOffice(T, scene, {
   box,
   cyl,
@@ -177,6 +209,8 @@ let myVehicle = null,
   selectedVehicle = null,
   selectedSeat = 'pilot',
   flakRange = FLAK.range,
+  selectedShell = 'he',
+  heavyPending = false,
   weaponBarrel = 0;
 const fleetModels = new Map(),
   effectSeen = new Set();
@@ -214,7 +248,12 @@ function nearestVehicle() {
   const w = baseWorld(body);
   return (
     (snap?.vehicles || [])
-      .filter((v) => vehicleAccess(w, v))
+      .filter((v) => v.state.landed)
+      .flatMap((v) =>
+        VEHICLES[v.type].seats
+          .filter((seat) => !v.seats.some((s) => s.seat === seat) && vehicleAccess(w, v, seat))
+          .map((entrySeat) => ({ ...v, entrySeat })),
+      )
       .sort(
         (a, b) =>
           Math.hypot(w.x - a.state.p[0], w.z - a.state.p[2]) -
@@ -222,7 +261,7 @@ function nearestVehicle() {
       )[0] || null
   );
 }
-async function chooseVehicle(vehicle, seat = 'pilot') {
+async function chooseVehicle(vehicle, seat = vehicle?.entrySeat || 'pilot') {
   if (!vehicle || boardingBusy || boardingSelectionBusy) return;
   selectedEquipment = null;
   selectedVehicle = vehicle.id;
@@ -260,7 +299,7 @@ function openBoarding() {
     notify('Cet équipage est complet.', 2);
     return;
   }
-  chooseVehicle(v, seat);
+  chooseVehicle(v, v.entrySeat || seat);
 }
 let soulArena = null,
   soulArenaRevision = -1,
@@ -275,6 +314,7 @@ function groundActive() {
     ((onFoot && !myVehicle) || !!respawnAt) &&
     $('papers').classList.contains('hidden') &&
     $('help').classList.contains('hidden') &&
+    $('bank').classList.contains('hidden') &&
     $('shop').classList.contains('hidden') &&
     controlFocus.active
   );
@@ -316,7 +356,7 @@ canvas.addEventListener('pointermove', (e) => {
     turretAim.yaw -= (e.clientX - groundView.x) * 0.003 * currentFactors().aim;
     turretAim.pitch = T.MathUtils.clamp(
       turretAim.pitch - (e.clientY - groundView.y) * 0.003 * currentFactors().aim,
-      -0.1,
+      myVehicle?.type === 'tank' ? -0.65 : -0.1,
       1.35,
     );
     groundView.x = e.clientX;
@@ -530,6 +570,7 @@ function resetMouseAim() {
   mousePrevious = null;
 }
 function clearControls() {
+  holdZoom.reset();
   uiWeaponFire = false;
   mouseFire = false;
   shooting = false;
@@ -563,7 +604,8 @@ function canCapture() {
     joined &&
     $('papers').classList.contains('hidden') &&
     $('help').classList.contains('hidden') &&
-    $('shop').classList.contains('hidden')
+    $('shop').classList.contains('hidden') &&
+    $('bank').classList.contains('hidden')
   );
 }
 function toggleControl() {
@@ -601,7 +643,7 @@ addEventListener('pointermove', (event) => {
     turretAim.yaw -= dx * 0.003 * currentFactors().aim;
     turretAim.pitch = T.MathUtils.clamp(
       turretAim.pitch - dy * 0.003 * currentFactors().aim,
-      -0.1,
+      myVehicle?.type === 'tank' ? -0.65 : -0.1,
       1.35,
     );
     return;
@@ -624,6 +666,12 @@ canvas.addEventListener('pointerleave', () => {
   mousePrevious = null;
 });
 canvas.addEventListener('pointerdown', (event) => {
+  if (event.button === 2 && canCapture() && !respawnAt && (myVehicle || turretIndex >= 0)) {
+    event.preventDefault();
+    if (!controlFocus.active) captureMouse();
+    holdZoom.press(zoomScope());
+    return;
+  }
   const action = flightClickAction(event, { active: canCapture(), locked: controlFocus.active });
   if (action === 'capture') captureMouse();
   else if (action === 'fire' && (respawnAt || (onFoot && !myVehicle && turretIndex < 0))) pistol();
@@ -637,7 +685,9 @@ canvas.addEventListener('pointerdown', (event) => {
 });
 addEventListener('pointerup', (e) => {
   if (e.button === 0) mouseFire = false;
+  if (e.button === 2) holdZoom.reset();
 });
+canvas.addEventListener('contextmenu', (event) => event.preventDefault());
 canvas.addEventListener(
   'wheel',
   (e) => {
@@ -805,6 +855,7 @@ function accept(s, force = false) {
   renderCrew();
   reconcileEquipment([...(s.equipment || []), s.initialStation].filter(Boolean));
   renderShop();
+  bankUI.render();
   if (s.base && s.base.revision > baseRevision) {
     if (baseArena?.epoch !== s.base.epoch) baseAudioSeq = 0;
     baseArena = acceptGround(s.base, baseArena);
@@ -867,6 +918,14 @@ function accept(s, force = false) {
   for (const e of s.effects || []) {
     if (effectSeen.has(e.id) || effectSeen.has(e.shot)) continue;
     effectSeen.add(e.id);
+    if (e.kind === 'crash')
+      crashEffects.add(
+        e,
+        vehicleModel({ id: e.vehicle, type: e.type, supplies: { sequence: 0 } }),
+        Date.now() + clockOffset,
+        colliders,
+      );
+    if (e.kind === 'piercing') hitEffects.burst(new T.Vector3().fromArray(e.p), camera);
     if (e.kind === 'blast') {
       combatEffects.blast(new T.Vector3().fromArray(e.p));
       sound.play('crash', { x: e.p[0], y: e.p[1], z: e.p[2] }, { ref: 20 });
@@ -959,6 +1018,16 @@ function accept(s, force = false) {
       : s.phase === 'lost'
         ? 'Le bureau est envahi.'
         : 'Prêts ? Lancez la prochaine vague.';
+  $('phaseBox').classList.toggle('in-combat', s.phase === 'combat');
+  if (previous && (previous.phase !== s.phase || previous.wave !== s.wave))
+    notify(
+      s.phase === 'combat'
+        ? `Vague ${s.wave} · Interception`
+        : s.phase === 'lost'
+          ? 'Infestation critique'
+          : `Vague ${s.wave} terminée · Préparation`,
+      3,
+    );
   $('start').classList.toggle('hidden', s.phase === 'combat');
   $('start').textContent = s.phase === 'lost' ? 'Nouvelle partie →' : 'Lancer la vague →';
   updateCountdown();
@@ -1026,6 +1095,7 @@ $('share').onclick = async () => {
 };
 $('helpButton').onclick = () => {
   releaseMouse();
+  if (bankUI.opened) return;
   $('help').classList.remove('hidden');
 };
 $('closeHelp').onclick = () => {
@@ -1035,6 +1105,10 @@ $('closeHelp').onclick = () => {
 addEventListener('keydown', (event) => {
   if (!joined) return;
   if (event.code === 'Escape') {
+    if (bankUI.opened) {
+      bankUI.close();
+      return;
+    }
     cancelPlacement();
     $('shop').classList.add('hidden');
     releaseMouse();
@@ -1049,6 +1123,12 @@ addEventListener('keydown', (event) => {
   )
     return;
   const interactionKey = gameKey(event);
+  if (interactionKey === 'KeyN' && !event.repeat) {
+    event.preventDefault();
+    toggleBank();
+    return;
+  }
+  if (bankUI.opened) return;
   const exitAction = equipmentExitAction({
     key: interactionKey,
     repeat: event.repeat,
@@ -1080,6 +1160,7 @@ addEventListener('keydown', (event) => {
     turretIndex < 0 &&
     !respawnAt &&
     $('papers').classList.contains('hidden') &&
+    $('bank').classList.contains('hidden') &&
     $('shop').classList.contains('hidden') &&
     toggleParachute(selfBase())
   ) {
@@ -1095,6 +1176,13 @@ addEventListener('keydown', (event) => {
   }
   if (!controlFocus.active) return;
   const code = interactionKey;
+  const contextual = contextKey({ type: myVehicle?.type, turret: turretIndex >= 0 }, code);
+  if (contextual) {
+    event.preventDefault();
+    if (contextual.range) flakRange = fuseRange(flakRange + contextual.range);
+    else selectedShell = contextual.shell;
+    return;
+  }
   keyBindings.set(event.code, code);
   if (
     [
@@ -1136,6 +1224,10 @@ addEventListener('keydown', (event) => {
   if (code === 'KeyM' && !event.repeat && !respawnAt) toggleControl();
   if (code === 'KeyR' && !event.repeat) crash();
   if (code === 'Space' && !event.repeat) pistol();
+  if (code === 'KeyB' && !event.repeat) {
+    contextHUD.reveal();
+    fireHeavy();
+  }
   if (code === 'KeyH' && !event.repeat) {
     releaseMouse();
     $('help').classList.toggle('hidden');
@@ -1216,7 +1308,11 @@ async function submitDeath() {
   if (!deathPending) return;
   try {
     accept(
-      await api('death', { id, incarnation: snap?.pilots.find((p) => p.id === id)?.incarnation }),
+      await api('death', {
+        id,
+        incarnation: snap?.pilots.find((p) => p.id === id)?.incarnation,
+        state: localMotion(),
+      }),
     );
   } catch (e) {
     notify('Connexion au purgatoire…', 2);
@@ -1525,7 +1621,8 @@ function renderPaper() {
     index = paperSubmission.index;
     eligible = true;
   }
-  const visible = !boardingSelectionBusy && eligible && index < documents[context]?.length;
+  const visible =
+    !bankUI.opened && !boardingSelectionBusy && eligible && index < documents[context]?.length;
   $('paperClose').disabled = boardingBusy;
   $('signClear').disabled = boardingBusy;
   $('paperTear').disabled = boardingBusy || soulBusy;
@@ -1572,6 +1669,7 @@ function renderPaper() {
             ? activeTransfer.to_seat
             : activeTransfer.from_seat
           : selectedSeat,
+        snap?.vehicles.find((v) => v.id === (activeTransfer?.vehicle || selectedVehicle))?.type,
       ),
       index,
       key,
@@ -1704,6 +1802,7 @@ $('soulPaperButton').onclick = () => {
 $('boardButton').onclick = openBoarding;
 $('baseHelp').onclick = () => {
   releaseMouse();
+  if (bankUI.opened) return;
   $('help').classList.remove('hidden');
 };
 const purgScene = new T.Scene();
@@ -2101,8 +2200,7 @@ function updateVehicles(dt) {
   $('vehicleInteract').classList.toggle('hidden', turretIndex < 0);
   $('turretFire').classList.toggle('hidden', turretIndex < 0 && !crew);
   $('flakControls').classList.toggle('hidden', turretIndex < 0);
-  $('fuseDistance').textContent =
-    flakRange + ' m réf. · ' + MAP.metres(flakRange).toFixed(2) + ' m carte';
+  $('fuseDistance').textContent = rangeReadout(flakRange).metres.toFixed(3) + ' m · Shift / Ctrl';
   $('vehicleState').textContent =
     turretIndex >= 0
       ? 'DCA · ' + stations[turretIndex].name + ' · ' + Math.round(hp) + ' PV'
@@ -2115,25 +2213,38 @@ function updateVehicles(dt) {
           ' PV · Carburant ' +
           Math.ceil(remainingFuel()) +
           ' s · Munitions ' +
-          (myVehicle.supplies?.ammo[crewSeat] !== undefined
-            ? aircraftFire.available(myVehicle.id, crewSeat, myVehicle.supplies)
+          (myVehicle.supplies?.ammo[currentAmmoKey()] !== undefined
+            ? aircraftFire.available(myVehicle.id, crewSeat, myVehicle.supplies, currentAmmoKey())
             : '—') +
+          (myVehicle.supplies?.ammo.bomb !== undefined
+            ? ' · Bombes ' + Math.floor(myVehicle.supplies.ammo.bomb) + ' · B'
+            : '') +
+          (myVehicle.type === 'tank'
+            ? ' · HE ' +
+              Math.floor(myVehicle.supplies.ammo.he) +
+              ' / AP ' +
+              Math.floor(myVehicle.supplies.ammo.ap) +
+              ' · Actif ' +
+              (availableShell(myVehicle.supplies.ammo, selectedShell) || 'vide') +
+              ' · B : canon · Espace : MG'
+            : '') +
           (myVehicle.supplies?.servicing ? ' · Ravitaillement' : '')
         : selfBase()?.parachute
           ? 'Descente sous voile'
           : 'Échelle ' + MAP.numerator + '/' + MAP.denominator + ' · À pied';
   if (!visible) return;
   if (crew) {
+    if (myVehicle.type === 'tank' && crewSeat === 'cannon' && keys.KeyB) fireHeavy();
     if (controlFocus.active) {
       turretAim.yaw -= pad.yaw * dt * currentFactors().aim;
       turretAim.pitch = T.MathUtils.clamp(
         turretAim.pitch - pad.pitch * dt * currentFactors().aim,
-        -0.05,
+        myVehicle?.type === 'tank' ? -0.65 : -0.05,
         1.2,
       );
     }
     const dir = weaponDirection(),
-      mount = me.userData.turrets[crewSeat === 'tail' ? 1 : 0],
+      mount = me.userData.turrets[crewSeat === 'tail' || crewSeat === 'top' ? 1 : 0],
       up = new T.Vector3(0, 1, 0).applyQuaternion(me.quaternion);
     aimGun(T, mount, dir, me.quaternion);
     const view = gunnerView(T, mount, dir, up);
@@ -2145,7 +2256,9 @@ function updateVehicles(dt) {
       ((controlFocus.active && (mouseFire || keys.Space || pad.fire)) || uiWeaponFire) && hasAmmo();
     cooldown -= dt;
     while (shooting && cooldown <= 0) {
-      cooldown += 0.09 * currentFactors().interval;
+      cooldown +=
+        (myVehicle.type === 'tank' ? TANK_MG[currentAmmoKey()].interval : 0.09) *
+        currentFactors().interval;
       bullet(view.muzzle, spreadDirection(T, dir), '#f4efab', true);
     }
     if (!shooting) cooldown = Math.max(0, cooldown);
@@ -2214,6 +2327,30 @@ const entryRing = new T.Mesh(
 entryRing.rotation.x = -Math.PI / 2;
 entryRing.renderOrder = 5;
 const entryRings = new Map();
+function roleEntry(seat) {
+  const g = new T.Group();
+  g.add(entryRing.clone());
+  const c = document.createElement('canvas');
+  c.width = c.height = 128;
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = '#f2edc7';
+  ctx.font = 'bold 88px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText({ pilot: 'P', dorsal: 'D', tail: 'Q', cannon: 'C', top: 'M' }[seat] || 'P', 64, 98);
+  const texture = new T.CanvasTexture(c),
+    geometry = new T.PlaneGeometry(1, 1),
+    material = new T.MeshBasicMaterial({ map: texture, transparent: true, depthWrite: false });
+  const icon = new T.Mesh(geometry, material);
+  icon.rotation.x = -Math.PI / 2;
+  icon.position.y = 0.01;
+  g.add(icon);
+  g.userData.dispose = () => {
+    texture.dispose();
+    geometry.dispose();
+    material.dispose();
+  };
+  return g;
+}
 const stationRings = [];
 function updateBaseWorld(dt, now) {
   if (!baseArena || !snap) return;
@@ -2298,27 +2435,30 @@ function updateBaseWorld(dt, now) {
   for (const ring of stationRings.filter(Boolean))
     ring.visible = onFoot && !respawnAt && !myVehicle && turretIndex < 0;
   const visibleEntries = new Set();
-  // Every parked hull has its own doorway marker. A single reused ring used
-  // to jump to the bomber, making the fighter doorway disappear at spawn.
   for (const vehicle of snap.vehicles || []) {
     if (vehicle.state.hp <= 0 || !vehicle.state.landed) continue;
-    visibleEntries.add(vehicle.id);
-    let ring = entryRings.get(vehicle.id);
-    if (!ring) {
-      ring = entryRing.clone();
-      entryRings.set(vehicle.id, ring);
-      scene.add(ring);
+    for (const seat of VEHICLES[vehicle.type].seats) {
+      if (vehicle.seats.some((s) => s.seat === seat)) continue;
+      const key = vehicle.id + ':' + seat;
+      visibleEntries.add(key);
+      let ring = entryRings.get(key);
+      if (!ring) {
+        ring = roleEntry(seat);
+        entryRings.set(key, ring);
+        scene.add(ring);
+      }
+      const e = vehicleEntry(vehicle, seat);
+      ring.visible = onFoot && !respawnAt && !myVehicle && turretIndex < 0;
+      ring.position.set(e.x, e.y + ACTOR_UNIT * 0.12, e.z);
+      ring.scale.setScalar(ACTOR_UNIT);
     }
-    const e = vehicleEntry(vehicle);
-    ring.visible = onFoot && !respawnAt && !myVehicle && turretIndex < 0;
-    ring.position.set(e.x, e.y + ACTOR_UNIT * 0.12, e.z);
-    ring.scale.setScalar(ACTOR_UNIT);
   }
-  for (const [vehicleId, ring] of entryRings) {
-    if (visibleEntries.has(vehicleId)) continue;
-    scene.remove(ring);
-    entryRings.delete(vehicleId);
-  }
+  for (const [key, ring] of entryRings)
+    if (!visibleEntries.has(key)) {
+      scene.remove(ring);
+      ring.userData.dispose?.();
+      entryRings.delete(key);
+    }
   if (onFoot && !respawnAt && body && !myVehicle && turretIndex < 0) {
     const g = basePeople.get(id),
       w = g?.position || baseWorld(body);
@@ -2329,7 +2469,7 @@ function updateBaseWorld(dt, now) {
       : station
         ? 'DCA ' + stations[station.index].name + ' · E pour signer le dossier'
         : v
-          ? VEHICLES[v.type].name + ' · Choisissez votre poste'
+          ? VEHICLES[v.type].name + ' · ' + SEAT_NAMES[v.entrySeat] + ' · E pour signer'
           : 'Rejoignez une porte · Un chasseur et un bombardier prêts au départ';
     $('boardButton').textContent = station
       ? 'Signer · DCA · E'
@@ -2337,21 +2477,7 @@ function updateBaseWorld(dt, now) {
         ? 'Embarquer · E'
         : 'Rejoindre un appareil';
     $('boardButton').disabled = body.parachute || (!station && !v);
-    const choices = $('seatChoices'),
-      choicesKey = v && !station ? v.id + JSON.stringify(v.seats) : 'none';
-    if (choices.dataset.renderKey !== choicesKey) {
-      choices.dataset.renderKey = choicesKey;
-      choices.replaceChildren();
-      if (v && !station)
-        for (const seat of VEHICLES[v.type].seats) {
-          const button = document.createElement('button');
-          const occupant = v.seats.find((s) => s.seat === seat);
-          button.textContent = SEAT_NAMES[seat] + (occupant ? ' · occupé' : '');
-          button.disabled = !!occupant;
-          button.onclick = () => chooseVehicle(v, seat);
-          choices.append(button);
-        }
-    }
+    $('seatChoices').replaceChildren();
     renderPaper();
   }
 }
@@ -2459,14 +2585,22 @@ function vehicleModel(v) {
   let g = fleetModels.get(v.id);
   if (!g) {
     g =
-      v.type === 'bomber'
-        ? makeBomber('#c5ba92')
-        : makePlane(v.type === 'interceptor' ? '#8eb7c6' : '#e3ebc0');
+      v.type === 'tank'
+        ? makeTank('#8eb7c6')
+        : v.type === 'interceptor'
+          ? makeStuka('#8eb7c6')
+          : v.type === 'bomber'
+            ? makeBomber('#c5ba92')
+            : makePlane(v.type === 'interceptor' ? '#8eb7c6' : '#e3ebc0');
     paintVehicle(
       T,
       g,
       v.supplies?.sequence || 0,
-      v.type === 'bomber' ? '#c5ba92' : v.type === 'interceptor' ? '#8eb7c6' : '#e3ebc0',
+      v.type === 'bomber'
+        ? '#c5ba92'
+        : ['interceptor', 'tank'].includes(v.type)
+          ? '#8eb7c6'
+          : '#e3ebc0',
     );
     g.scale.setScalar(ACTOR_UNIT);
     g.userData.vehicleType = v.type;
@@ -2502,8 +2636,11 @@ function updateOthers(dt) {
           (v.state.engine && v.supplies?.fuel > 0 && v.seats.some((s) => s.seat === 'pilot')
             ? 45
             : 0);
-    if (v.type === 'bomber')
-      for (const [i, seat] of ['dorsal', 'tail'].entries()) {
+    if (v.type === 'bomber' || v.type === 'tank')
+      for (const [i, seat] of (v.type === 'tank'
+        ? ['cannon', 'top']
+        : ['dorsal', 'tail']
+      ).entries()) {
         const occ = v.seats.find((s) => s.seat === seat),
           gunner = snap.pilots.find((p) => p.id === occ?.pilot);
         if (!gunner) continue;
@@ -2513,8 +2650,11 @@ function updateOthers(dt) {
         if (
           gunner.id !== id &&
           m.fire &&
-          v.supplies?.ammo[seat] >= 1 &&
-          Math.random() < dt / (0.09 * clauseFactors(gunner.contractClause).interval)
+          v.supplies?.ammo[v.type === 'tank' && seat === 'cannon' ? 'coax' : seat] >= 1 &&
+          Math.random() <
+            dt /
+              ((v.type === 'tank' ? TANK_MG[seat === 'cannon' ? 'coax' : seat].interval : 0.09) *
+                clauseFactors(gunner.contractClause).interval)
         ) {
           const o = mount.userData.muzzle.getWorldPosition(new T.Vector3());
           bullet(o, new T.Vector3().fromArray(m.turretDirection || [0, 0, -1]), '#91d9c4');
@@ -2548,13 +2688,15 @@ function bullet(pos, dir, color = '#f4efab', owned = false, aa = false) {
       vehicle: myVehicle.id,
       wave: snap?.wave,
       damageFactor: currentFactors().damage,
+      weapon: currentAmmoKey(),
+      baseDamage: myVehicle.type === 'tank' ? TANK_MG[currentAmmoKey()].damage : 75,
       velocity: crewSeat === 'pilot' ? vel.clone() : new T.Vector3().fromArray(myVehicle.state.v),
     };
     const vehicle = myVehicle.id,
       seat = crewSeat,
       origin = pos.clone(),
       direction = dir.clone();
-    if (aircraftFire.fire(vehicle, seat, myVehicle.supplies))
+    if (aircraftFire.fire(vehicle, seat, myVehicle.supplies, currentAmmoKey()))
       emitBullet(origin, direction, color, owned, aa, launch);
     return;
   }
@@ -2602,6 +2744,8 @@ function emitBullet(pos, dir, color, owned, aa, launch = null) {
     shot: id + ':' + ++shotSequence,
     wave: launch?.wave ?? snap?.wave,
     damageFactor: launch?.damageFactor ?? currentFactors().damage,
+    baseDamage: launch?.baseDamage ?? 75,
+    weapon: launch?.weapon,
   });
   if (trails.length > 256) {
     const old = trails.shift();
@@ -2610,7 +2754,7 @@ function emitBullet(pos, dir, color, owned, aa, launch = null) {
   }
 }
 function shoot(forward) {
-  const side = (weaponBarrel++ % 2 ? 1 : -1) * 1.35;
+  const side = myVehicle?.type === 'tank' ? 0.7 : (weaponBarrel++ % 2 ? 1 : -1) * 1.35;
   const muzzle = new T.Vector3(side, 0, -1.2)
     .multiplyScalar(ACTOR_UNIT)
     .applyQuaternion(me.quaternion)
@@ -2752,12 +2896,14 @@ function stepProjectileSlice(dt) {
             key: b.shot,
           });
           sound.play('impact', hit.point, { ref: 12 });
-          if (hit.vehicle) action('friendly-hit', { vehicle: hit.vehicle, shot: b.shot });
-          else if (hit.target) action('friendly-hit', { target: hit.target, shot: b.shot });
+          if (hit.vehicle)
+            action('friendly-hit', { vehicle: hit.vehicle, shot: b.shot, weapon: b.weapon });
+          else if (hit.target)
+            action('friendly-hit', { target: hit.target, shot: b.shot, weapon: b.weapon });
           else if (!hit.wall && b.wave === snap.wave && !localKills.has(hit.id)) {
             damageEnemy(
               hit.id,
-              75 * (1 + (snap.upgrades?.weapons || 0)) * (b.damageFactor ?? 1),
+              b.baseDamage * (1 + (snap.upgrades?.weapons || 0)) * (b.damageFactor ?? 1),
               b.shot,
               hit.point,
             );
@@ -2782,8 +2928,42 @@ function stepProjectileSlice(dt) {
 // Fixed timestep flight: thrust, quadratic drag, gravity, angle-of-attack lift, wind-relative velocity.
 function physics(dt) {
   if (respawnAt || onFoot || !myVehicle) return;
+  if (myVehicle.type === 'tank') {
+    const active = controlFocus.active && canCapture(),
+      manual = flightInput(keys, pad, active);
+    const state = { ...localMotion(), fuelAvailable: remainingFuel() > 0 };
+    stepTank(
+      T,
+      state,
+      {
+        forward: -manual.pitch * currentFactors().controls,
+        turn: (manual.roll || -manual.yaw) * currentFactors().controls,
+      },
+      colliders,
+      dt,
+      VEHICLES.tank,
+    );
+    if (state.hp <= 0) {
+      crash();
+      return;
+    }
+    me.position.fromArray(state.p);
+    me.quaternion.fromArray(state.q);
+    vel.fromArray(state.v);
+    landed = state.landed;
+    gas = state.gas;
+    shooting = active && hasAmmo() && (mouseFire || manual.fire);
+    cooldown -= dt;
+    if (shooting && cooldown <= 0) {
+      cooldown = TANK_MG.pilot.interval * currentFactors().interval;
+      shoot(new T.Vector3(0, 0, -1).applyQuaternion(me.quaternion));
+    }
+    return;
+  }
   const active = controlFocus.active && canCapture();
   const manual = flightInput(keys, pad, active);
+  if (active && ((myVehicle.type === 'bomber' && (mouseFire || manual.fire)) || keys.KeyB))
+    fireHeavy('bomb');
   const assisted = active && controlMode === 'mouse' && performance.now() > padManualUntil;
   const auto = assisted
     ? mouseFlightControls(T, { q: me.quaternion, omega, direction: mouseDirection })
@@ -3101,8 +3281,14 @@ function frame(now) {
   requestAnimationFrame(frame);
   const dt = Math.min(Math.max(0, (now - prev) / 1000), 0.25);
   prev = now;
+  const zoomFov = holdZoom.fov(zoomScope());
+  if (camera.fov !== zoomFov) {
+    camera.fov = zoomFov;
+    camera.updateProjectionMatrix();
+  }
   hitEffects.update(dt, camera);
   combatEffects.update(dt, camera);
+  crashEffects.update(dt, colliders);
   previousPad = pad;
   try {
     pad = document.hasFocus() ? readPad(navigator.getGamepads?.()) : neutralPad();
@@ -3152,6 +3338,7 @@ function frame(now) {
   if (joined) {
     enemies(Date.now());
     updateOthers(dt);
+    updateOrdnance(dt);
     acc += dt;
     while (acc >= 1 / 120) {
       physics(1 / 120);
@@ -3216,6 +3403,7 @@ function frame(now) {
   updateVehicles(dt);
   updatePlacement();
   updateFallingEnemies(dt);
+  updateContextHUD();
   if (respawnAt && soulBody) {
     physicalPurgatory(dt, now);
     renderer.render(purgScene, purgCamera);
@@ -3252,6 +3440,7 @@ for (const model of Object.values(ghosts)) {
   });
 }
 function toggleShop() {
+  if (bankUI.opened) return;
   if (!joined || respawnAt || !$('papers').classList.contains('hidden')) return;
   if (placingEquipment) cancelPlacement();
   const open = $('shop').classList.contains('hidden');
@@ -3651,6 +3840,7 @@ function simulateVacantAircraft(dt) {
   const active = new Set();
   for (const v of snap.vehicles) {
     if (v.state.hp <= 0 || v.seats.some((s) => s.seat === 'pilot')) continue;
+
     active.add(v.id);
     let s = vacantAircraft.get(v.id);
     if (!s) {
@@ -3658,7 +3848,8 @@ function simulateVacantAircraft(dt) {
       vacantAircraft.set(v.id, s);
     }
     s.fuelAvailable = v.supplies?.fuel > 0;
-    stepVacantAircraft(T, s, upgradedVehicle(VEHICLES[v.type], snap.upgrades), colliders, dt);
+    if (v.type === 'tank') stepTank(T, s, { forward: 0, turn: 0 }, colliders, dt, VEHICLES.tank);
+    else stepVacantAircraft(T, s, upgradedVehicle(VEHICLES[v.type], snap.upgrades), colliders, dt);
     Object.assign(v.state, s);
   }
   for (const key of vacantAircraft.keys()) if (!active.has(key)) vacantAircraft.delete(key);
@@ -3742,6 +3933,147 @@ $('paperTear').onclick = async () => {
   }
 };
 
-function hasAmmo() {
-  return !myVehicle || aircraftFire.available(myVehicle.id, crewSeat, myVehicle.supplies) >= 1;
+function currentAmmoKey() {
+  return myVehicle?.type === 'tank' && crewSeat === 'cannon' ? 'coax' : crewSeat;
 }
+function hasAmmo() {
+  return (
+    !myVehicle ||
+    aircraftFire.available(myVehicle.id, crewSeat, myVehicle.supplies, currentAmmoKey()) >= 1
+  );
+}
+let nextHeavyAt = 0;
+async function fireHeavy(weapon = null) {
+  if (
+    !joined ||
+    respawnAt ||
+    !myVehicle ||
+    heavyPending ||
+    !controlFocus.active ||
+    performance.now() < nextHeavyAt
+  )
+    return;
+  weapon ??=
+    myVehicle.type === 'tank' && crewSeat === 'cannon'
+      ? availableShell(myVehicle.supplies.ammo, selectedShell)
+      : crewSeat === 'pilot'
+        ? 'bomb'
+        : null;
+  if (!weapon || !HEAVY[weapon] || (myVehicle.supplies.ammo[weapon] || 0) < 1) return;
+  const state = localMotion();
+  heavyPending = true;
+  nextHeavyAt = performance.now() + HEAVY[weapon].interval * 1000 * currentFactors().interval;
+  try {
+    accept(
+      await api('heavy-fire', {
+        id,
+        vehicle: myVehicle.id,
+        occupation: snap.pilots.find((p) => p.id === id).occupation,
+        state,
+        weapon,
+        shot: id + ':heavy:' + ++shotSequence,
+        direction: weaponDirection().toArray(),
+      }),
+    );
+    selectedShell = availableShell(myVehicle?.supplies?.ammo || {}, selectedShell) || selectedShell;
+    sound.play(weapon === 'bomb' ? 'exit' : 'flak', me.position, { ref: 25 });
+  } catch (e) {
+    notify(e.message, 2);
+  } finally {
+    heavyPending = false;
+  }
+}
+const ordnanceModels = new Map();
+function updateOrdnance(dt) {
+  const active = new Set();
+  for (const shot of snap?.ordnance || []) {
+    active.add(shot.shot);
+    let model = ordnanceModels.get(shot.shot);
+    if (!model) {
+      model = new T.Mesh(
+        new T.SphereGeometry(MAP.metres(shot.weapon === 'bomb' ? 0.5 : 0.2), 8, 6),
+        new T.MeshStandardMaterial({ color: shot.weapon === 'bomb' ? '#424939' : '#ffd07c' }),
+      );
+      model.userData.projectileSolid = false;
+      scene.add(model);
+      ordnanceModels.set(shot.shot, model);
+    }
+    const lag = Math.max(0, Math.min(0.25, (Date.now() + clockOffset - shot.updated) / 1000));
+    model.position.fromArray(shot.p).addScaledVector(new T.Vector3().fromArray(shot.v), lag);
+  }
+  for (const [id, model] of ordnanceModels)
+    if (!active.has(id)) {
+      scene.remove(model);
+      model.geometry.dispose();
+      model.material.dispose();
+      ordnanceModels.delete(id);
+    }
+}
+
+const contextHUD = new ContextHUD($('contextHUD'));
+function updateContextHUD() {
+  const modal = !canCapture();
+  const model =
+    joined && !modal
+      ? equipmentHUD({
+          vehicle: myVehicle,
+          seat: crewSeat,
+          turret: turretIndex >= 0,
+          dead: !!respawnAt,
+          hp,
+          speed: (vel.length() / MAP.ratio) * 3.6,
+          altitude: Math.max(0, me.position.y),
+          gas,
+          fuel: remainingFuel(),
+          ammo: myVehicle
+            ? aircraftFire.available(myVehicle.id, crewSeat, myVehicle.supplies, currentAmmoKey())
+            : 0,
+          shell: selectedShell,
+          range: flakRange,
+          ready:
+            turretIndex >= 0 ? cooldown <= 0 : performance.now() >= nextHeavyAt && !heavyPending,
+          stall: !$('stallWarning').classList.contains('hidden'),
+        })
+      : null;
+  contextHUD.update(model);
+  const range = model?.readout;
+  $('aimRange').classList.toggle('hidden', !range);
+  if (range) {
+    $('aimDistance').textContent = range.metres.toFixed(3) + ' m';
+    $('aimGauge').value = range.fraction;
+    $('aimRange').style.left = `calc(${$('crosshair').style.left || '50%'} + 25px)`;
+    $('aimRange').style.top = `calc(${$('crosshair').style.top || '50%'} + 18px)`;
+  }
+}
+const bankUI = new BankUI({
+  root: $('bank'),
+  document,
+  snapshot: () => snap,
+  command: (path, body) => api(path, { id, ...body }),
+  accept,
+  onOpen: () => {
+    releaseMouse();
+    cancelPlacement();
+    $('shop').classList.add('hidden');
+    $('help').classList.add('hidden');
+    renderPaper();
+  },
+  onClose: () => {
+    renderPaper();
+    captureMouse();
+  },
+  archive: (record) => {
+    paperArchive.push(record);
+    try {
+      sessionStorage.setItem('moucheron-dossier:' + room, JSON.stringify(paperArchive));
+    } catch {}
+    renderArchive();
+    sound.play('stamp', paperSource(), { ref: 6 });
+  },
+});
+function toggleBank() {
+  if (!joined || boardingBusy || soulBusy || boardingSelectionBusy) return;
+  if (bankUI.opened) bankUI.close();
+  else bankUI.open();
+}
+$('bankOpen').onclick = toggleBank;

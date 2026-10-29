@@ -8,5 +8,8 @@
 !server/**
 !scripts/
 !scripts/assemble.mjs
+!scripts/build-ui-preview.mjs
 !vendor/
 !vendor/**
+!docs/
+!docs/ui-review.html

@@ -1,4 +1,5 @@
 import { MAP } from './scale.js';
+import { baselineTravelSpeed } from './route-speed.js';
 import { enemyRoutePosition, routeDuration } from './routes.js';
 export const ENEMY_TYPES = Object.freeze({
   ant: {
@@ -95,7 +96,8 @@ export function wavePlan(room, wave, started = 0) {
     enemy.approach = wave <= 3 ? 'intro' : wave <= 6 ? 'short' : 'full';
     enemy.routeSeed = hash(key + ':route:' + (solo ? 'solo' + enemy.id : group));
     enemy.branch = enemy.id % 8 < 3 ? 1 : 0;
-    enemy.duration = Math.min(routeDuration(enemy), Math.min(145, 45 + 8 * Math.max(0, wave - 1)));
+    enemy.travelSpeed = baselineTravelSpeed(enemy, wave);
+    enemy.duration = enemy.entryHold + routeDuration(enemy);
   }
   const result = { budget: waveBudget(wave), roster };
   if (waveCache.size > 32) waveCache.delete(waveCache.keys().next().value);

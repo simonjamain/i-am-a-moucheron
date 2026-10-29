@@ -1,0 +1,7 @@
+dist/
+site.tar.gz
+
+.local/
+outputs/
+
+node_modules/

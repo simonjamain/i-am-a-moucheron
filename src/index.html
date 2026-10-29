@@ -1764,6 +1764,317 @@
           clip-path: polygon(0 0, 100% 0, 100% 43%, 40% 50%, 100% 57%, 100% 100%, 0 100%);
         }
       }
+
+      /* Validated contextual rails: keep the centre clear during combat. */
+      #hud .topstats {
+        top: 76px;
+        left: 20px;
+        background: #102b29b8;
+      }
+      #hud .stat {
+        padding: 6px 10px;
+      }
+      #hud .stat b {
+        font-size: 16px;
+      }
+      #hud .stat label {
+        font-size: 8px;
+        margin: 0 0 2px;
+      }
+      #hud #economyControls {
+        top: 127px;
+        left: 20px;
+        padding: 5px 8px;
+        margin: 0;
+        background: #102b29b8;
+      }
+      #hud #economyControls button {
+        padding: 6px 8px;
+        font-size: 11px;
+      }
+      #hud #phaseBox {
+        top: auto;
+        bottom: 24px;
+        left: 50%;
+        max-width: 330px;
+        padding: 8px 12px;
+        background: #102b29b8;
+      }
+      #hud #phaseBox strong {
+        font-size: 16px;
+      }
+      #hud #phaseBox p {
+        margin: 3px 0 7px;
+      }
+      #hud #phaseBox.in-combat {
+        top: 22px;
+        bottom: auto;
+        padding: 5px 12px;
+        border: 0;
+      }
+      #hud #phaseBox.in-combat strong {
+        font-size: 12px;
+      }
+      #hud #phaseBox.in-combat p {
+        display: none;
+      }
+      #hud #notice {
+        top: 180px;
+        max-width: min(440px, 85vw);
+        font:
+          13px 'Space Grotesk',
+          sans-serif;
+        text-transform: none;
+        background: #102b29c9;
+        padding: 7px 12px;
+        border-radius: 5px;
+      }
+      #hud #notice:empty {
+        display: none;
+      }
+      #hud #flight {
+        display: none;
+      }
+      #hud #flightKeys,
+      #hud #mouseHint {
+        display: none;
+      }
+      #vehicleState {
+        display: none;
+      }
+      #sortieControls {
+        bottom: 12px;
+        padding: 5px 8px;
+        background: #102b29ad;
+        max-width: min(520px, 90vw);
+      }
+      #sortieControls button {
+        padding: 5px 8px;
+        font-size: 11px;
+      }
+      #flakControls > small {
+        display: none;
+      }
+      #contextHUD .contextRail {
+        position: absolute;
+        top: 43%;
+        left: 20px;
+        width: 124px;
+        background: #102b29bd;
+        border-left: 3px solid #cfeb81b0;
+        border-radius: 6px;
+        padding: 10px;
+        font: 12px monospace;
+        pointer-events: auto;
+        transition:
+          width 0.18s,
+          background 0.18s;
+      }
+      #contextHUD .contextRail.right {
+        left: auto;
+        right: 20px;
+        border-left: 0;
+        border-right: 3px solid #cfeb81b0;
+      }
+      .contextRail small {
+        display: block;
+        font-size: 9px;
+        letter-spacing: 1px;
+        color: #d1dfa9;
+      }
+      .contextRail strong {
+        display: block;
+        margin-top: 9px;
+        font-size: 17px;
+        white-space: nowrap;
+      }
+      .contextRail .railDetails {
+        display: none;
+        line-height: 1.6;
+        margin-top: 9px;
+        color: #e0e7cc;
+      }
+      #contextHUD.expanded .contextRail,
+      #contextHUD .contextRail:hover,
+      #contextHUD .contextRail:focus {
+        width: 228px;
+        background: #102b29ed;
+      }
+      #contextHUD.expanded .railDetails,
+      .contextRail:hover .railDetails,
+      .contextRail:focus .railDetails {
+        display: block;
+      }
+      #aimRange {
+        position: absolute;
+        top: calc(50% + 18px);
+        left: calc(50% + 25px);
+        width: 132px;
+        font: 11px monospace;
+        color: #e4edc5;
+        text-shadow: 0 1px 3px #102b29;
+      }
+      #aimRange meter {
+        display: block;
+        width: 105px;
+        height: 6px;
+        margin: 5px 0;
+        accent-color: #d5ef73;
+      }
+      #aimRange small {
+        font-size: 9px;
+      }
+      #bank {
+        position: fixed;
+        inset: 0;
+        z-index: 45;
+        display: grid;
+        place-items: center;
+        background: #09211bd6;
+        padding: 20px;
+      }
+      #bank > article {
+        width: min(1080px, 100%);
+        max-height: 90dvh;
+        overflow: auto;
+        background: #ece3bf;
+        color: #253c2d;
+        padding: 28px;
+        border: 5px double #6d7756;
+        box-shadow: 0 14px 60px #0007;
+        font-family: Georgia, serif;
+      }
+      #bank header {
+        position: static;
+        display: flex;
+        align-items: start;
+        justify-content: space-between;
+        gap: 20px;
+      }
+      #bank h2 {
+        margin: 0 0 8px;
+        font-size: 30px;
+        font-style: italic;
+        font-weight: 400;
+      }
+      #bank h3 {
+        font-size: 32px;
+        font-weight: 400;
+        margin: 22px 0;
+      }
+      #bank p {
+        line-height: 1.6;
+      }
+      #bank button {
+        background: #294938;
+        color: #f3edcf;
+        padding: 10px 14px;
+        border: 0;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+      #bank button:disabled {
+        opacity: 0.5;
+        cursor: default;
+      }
+      #bank [data-bank-cards] {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 16px;
+        margin: 20px 0;
+      }
+      #bank [data-bank-cards] article {
+        padding: 18px;
+        border: 1px solid #a7a17c;
+        background: #fff8df55;
+      }
+      #bank [data-bank-cards] button {
+        display: block;
+        width: 100%;
+        margin-top: 14px;
+      }
+      #bank [data-bank-cards] small {
+        letter-spacing: 1px;
+      }
+      #bank [data-bank-status] {
+        min-height: 1.5em;
+        font-weight: bold;
+      }
+      #bank [data-bank-text] {
+        white-space: pre-line;
+      }
+      #bank canvas {
+        width: min(100%, 650px);
+        height: 150px;
+        touch-action: none;
+        border: 1px solid #8b9976;
+        display: block;
+        background: #fff9e5;
+      }
+      #bank .bankTable {
+        overflow: auto;
+        margin: 15px 0;
+      }
+      #bank table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+      }
+      #bank th,
+      #bank td {
+        padding: 8px;
+        text-align: left;
+        border-bottom: 1px solid #b6b18c;
+        white-space: nowrap;
+      }
+      #bank .bankHint {
+        font-size: 12px;
+      }
+      @media (max-width: 700px) {
+        #hud .topstats {
+          top: 65px;
+          left: 8px;
+        }
+        #hud #economyControls {
+          top: 119px;
+          left: 8px;
+        }
+        #contextHUD .contextRail {
+          left: 8px;
+          width: 102px;
+          padding: 7px;
+        }
+        #contextHUD .contextRail.right {
+          right: 8px;
+        }
+        #contextHUD.expanded .contextRail,
+        #contextHUD .contextRail:hover,
+        #contextHUD .contextRail:focus {
+          width: min(180px, 42vw);
+        }
+        .contextRail strong {
+          font-size: 14px;
+        }
+        .contextRail .railDetails {
+          font-size: 10px;
+        }
+        #hud #phaseBox {
+          bottom: 65px;
+        }
+        #hud #phaseBox.in-combat {
+          top: 34px;
+          bottom: auto;
+        }
+        #bank {
+          padding: 8px;
+        }
+        #bank > article {
+          padding: 14px;
+        }
+        #bank [data-bank-cards] {
+          grid-template-columns: 1fr;
+        }
+      }
     </style>
   </head>
   <body>
@@ -1840,7 +2151,8 @@
         <div class="stat"><label>Infestation</label><b class="lime" id="infest">0 / 20</b></div>
       </div>
       <div id="economyControls">
-        <span id="wallet">0 $</span><button id="shopOpen">Équipement · P</button>
+        <span id="wallet">0 $</span><button id="shopOpen">Équipement · P</button
+        ><button id="bankOpen">Banquier · N</button>
       </div>
       <div id="roomTag">
         <button id="share" title="Copier le lien de la partie">
@@ -1870,6 +2182,27 @@
         </div>
       </section>
       <div id="crosshair" aria-label="Direction des canons"></div>
+      <div id="contextHUD" class="hidden" aria-label="Informations du poste">
+        <section class="contextRail left" tabindex="0" aria-label="État du poste">
+          <small data-hud="left-0"></small><strong data-hud="left-1"></strong>
+          <div class="railDetails">
+            <p data-hud="left-2"></p>
+            <p data-hud="left-3"></p>
+          </div>
+        </section>
+        <section class="contextRail right" tabindex="0" aria-label="Armement">
+          <small data-hud="right-0"></small><strong data-hud="right-1"></strong>
+          <div class="railDetails">
+            <p data-hud="right-2"></p>
+            <p data-hud="right-3"></p>
+          </div>
+        </section>
+      </div>
+      <div id="aimRange" class="hidden">
+        <span id="aimDistance"></span
+        ><meter id="aimGauge" min="0" max="1" value="0" aria-label="Distance d’éclatement"></meter
+        ><small>Shift + / Ctrl −</small>
+      </div>
       <div id="mouseAim" class="hidden" aria-label="Direction demandée à la souris"></div>
       <div id="mouseHint" class="hidden">
         Souris : direction · C maintenu : regarder · Échap : interface · Clic pour reprendre
@@ -1981,6 +2314,48 @@
       <p id="archiveCount"></p>
       <div id="signedPapers" aria-label="Documents déjà signés"></div>
     </section>
+    <section id="bank" class="hidden" role="dialog" aria-modal="true" aria-labelledby="bankTitle">
+      <article>
+        <header>
+          <div>
+            <h2 id="bankTitle">Banque de la Dernière Volonté</h2>
+            <p>« Votre avenir est incertain. Vos échéances, beaucoup moins. »</p>
+          </div>
+          <button data-bank-close aria-label="Fermer le banquier">✕</button>
+        </header>
+        <div data-bank-cards></div>
+        <section data-bank-sheet class="hidden">
+          <button data-bank-back>← Les trois contrats</button>
+          <h3 data-bank-title></h3>
+          <p data-bank-text></p>
+          <details>
+            <summary>Tableau d’amortissement</summary>
+            <div class="bankTable">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Échéance</th>
+                    <th>Montant</th>
+                    <th>Intérêts</th>
+                    <th>Capital</th>
+                    <th>Restant</th>
+                  </tr>
+                </thead>
+                <tbody data-bank-schedule></tbody>
+              </table>
+            </div>
+          </details>
+          <p class="bankHint" data-bank-sign-hint></p>
+          <canvas width="800" height="200" aria-label="Signer le document bancaire"></canvas
+          ><button data-bank-clear>Effacer la signature</button>
+        </section>
+        <p data-bank-status role="status" aria-live="polite"></p>
+        <p data-bank-balance></p>
+        <p class="bankHint">
+          Échap : fermer · N : banquier · La partie continue pendant la consultation.
+        </p>
+      </article>
+    </section>
     <section id="shop" class="hidden" aria-label="Équipement et améliorations">
       <article>
         <header>
@@ -2014,10 +2389,11 @@
         </p>
         <p>
           <b>Embarquement :</b> un Chasseur M1 et un Bombardier B3 attendent au départ. Marchez avec
-          ZQSD / flèches, rejoignez le cercle de la porte, puis choisissez votre poste. Le
-          bombardier accueille un pilote, un mitrailleur dorsal et un mitrailleur de queue. Chaque
-          poste est réservé au terme des deux signatures. Quand l’appareil quitte sa zone, un nouvel
-          exemplaire apparaît. Les autres places d’un avion posé restent accessibles.
+          ZQSD / flèches, rejoignez le cercle de la porte, puis signez le dossier du poste choisi.
+          Le bombardier accueille un pilote, un mitrailleur dorsal et un mitrailleur de queue.
+          Chaque poste est réservé au terme des deux signatures. Seule sa destruction fournit un
+          remplaçant gratuit ; les appareils achetés ne sont pas remplacés. Les autres places d’un
+          avion posé restent accessibles.
         </p>
         <p>
           <b>Signature :</b> dessinez avec la souris ou au doigt, puis déposez le document. Le
@@ -2063,6 +2439,15 @@
           sans recharge. Une âme tuée est libérée et rapporte un dollar commun, comme au guichet.
           Trois signatures ramènent au bureau. Mourir ici mène au super purgatoire : cinq contrats,
           puis retour au dossier classique à recommencer. Chaque retour restaure 100 PV.
+        </p>
+        <p>
+          <b>Banquier :</b> N ou bouton Banquier, accessible aussi dans les purgatoires. Trois
+          offres ou prêts partagés ; lire puis signer dans le cadre. Échap ferme le guichet.
+        </p>
+        <p>
+          <b>Armes lourdes :</b> B pour bombes ou canon ; Shift HE / Ctrl AP au tank. DCA : Shift
+          augmente, Ctrl diminue la distance affichée en mètres réels près du viseur. Clic droit
+          maintenu : zoom.
         </p>
         <p>
           <b>Manette standard :</b> stick gauche pour marcher ou piloter ; stick droit pour regarder

@@ -1331,7 +1331,28 @@ export const CONTRACTS = {
     ],
   ],
 };
-export function contractKey(context, seat = 'pilot') {
+// Authored contexts for the independent tank stations.
+for (const [seat, role] of [
+  ['cannon', 'tireur principal du tank'],
+  ['top', 'mitrailleur supérieur du tank'],
+  ['tank-pilot', 'pilote du tank'],
+])
+  for (const context of ['boarding', 'change', 'exchange-request', 'exchange-accept']) {
+    const original = CONTRACTS[context + ':dorsal'];
+    if (original)
+      CONTRACTS[context + ':' + seat] = original.map((variants, index) =>
+        variants.map((doc, n) => ({
+          ...doc,
+          title: doc.title.replace(/mitrailleur dorsal/gi, role),
+          code: 'TANK-' + seat + '-' + context + '-' + index + '-' + n,
+          text:
+            doc.text.replace(/mitrailleur dorsal/gi, role) +
+            '\n\nLe char ne reconnaît pas les priorités à droite. Le signataire reconnaît en revanche la réserve limitée de chaque arme et le droit des deux autres postes à fonctionner sans son autorisation.',
+        })),
+      );
+  }
+export function contractKey(context, seat = 'pilot', type = null) {
+  if (type === 'tank' && seat === 'pilot') seat = 'tank-pilot';
   return (
     context +
     ':' +

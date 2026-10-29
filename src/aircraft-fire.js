@@ -27,33 +27,33 @@ export class AircraftFire {
     this.generation = 0;
   }
 
-  state(vehicle, seat, supplies) {
-    const key = JSON.stringify([vehicle, seat]);
+  state(vehicle, seat, supplies, weapon = seat) {
+    const key = JSON.stringify([vehicle, seat, weapon]);
     let state = this.states.get(key);
     if (!state) {
-      state = { vehicle, seat, ammo: 0, revision: -1, pending: 0, blocked: false };
+      state = { vehicle, seat, weapon, ammo: 0, revision: -1, pending: 0, blocked: false };
       this.states.set(key, state);
     }
     if (supplies && supplies.revision >= state.revision) {
-      state.ammo = Math.max(0, supplies.ammo?.[seat] || 0);
+      state.ammo = Math.max(0, supplies.ammo?.[weapon] || 0);
       state.revision = supplies.revision;
     }
     return state;
   }
 
-  available(vehicle, seat, supplies) {
-    const state = this.state(vehicle, seat, supplies);
+  available(vehicle, seat, supplies, weapon = seat) {
+    const state = this.state(vehicle, seat, supplies, weapon);
     return state.blocked ? 0 : Math.max(0, Math.floor(state.ammo - state.pending));
   }
 
-  fire(vehicle, seat, supplies) {
+  fire(vehicle, seat, supplies, weapon = seat) {
     if (
       this.scope() == null ||
       this.queue.length >= this.limit ||
-      this.available(vehicle, seat, supplies) < 1
+      this.available(vehicle, seat, supplies, weapon) < 1
     )
       return false;
-    const state = this.state(vehicle, seat);
+    const state = this.state(vehicle, seat, undefined, weapon);
     state.pending++;
     this.queue.push({
       state,
@@ -93,7 +93,12 @@ export class AircraftFire {
     this.inFlight = true;
     let retry = false;
     try {
-      const result = await this.request({ vehicle: state.vehicle, seat: state.seat, shots });
+      const result = await this.request({
+        vehicle: state.vehicle,
+        seat: state.seat,
+        ...(state.weapon !== state.seat ? { weapon: state.weapon } : {}),
+        shots,
+      });
       if (
         result.vehicle !== state.vehicle ||
         result.seat !== state.seat ||
@@ -101,7 +106,7 @@ export class AircraftFire {
         shots.some((shot) => !result.shots.includes(shot))
       )
         throw Error('Incomplete ammunition acknowledgement');
-      this.state(state.vehicle, state.seat, result);
+      this.state(state.vehicle, state.seat, result, state.weapon);
       const accepted = new Set(shots);
       this.queue = this.queue.filter((entry) => !accepted.has(entry.shot));
       state.pending -= batch.length;

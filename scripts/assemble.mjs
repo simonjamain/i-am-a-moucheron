@@ -1,12 +1,31 @@
+import { uiPreview } from './build-ui-preview.mjs';
 import * as T from '../vendor/three.module.min.js';
 import { createOffice } from '../src/office.js';
 import { createGraphics } from '../src/graphics.js';
 import { createHash } from 'node:crypto';
 import { readFile, writeFile } from 'node:fs/promises';
 
+const collisionScene = new T.Scene();
+const officeBounds = createOffice(T, collisionScene, {
+  ...createGraphics(T, collisionScene),
+  textLabel: () => new T.Group(),
+}).colliders;
+await writeFile(
+  'src/route-obstacles.js',
+  '// Generated from office colliders.\nexport const ROUTE_OBSTACLES=' +
+    JSON.stringify(
+      officeBounds.map((b) => ({
+        min: { x: b.min.x, y: b.min.y, z: b.min.z },
+        max: { x: b.max.x, y: b.max.y, z: b.max.z },
+      })),
+    ) +
+    ';\n',
+);
+await writeFile('docs/ui-review.html', uiPreview(await readFile('src/index.html', 'utf8')));
 // One asset manifest drives both browser module serving and Worker packaging.
 const files = {
   '/': 'src/index.html',
+  '/ui-review.html': 'docs/ui-review.html',
   '/client.js': 'src/client.js',
   '/three.js': 'vendor/three.module.min.js',
   ...Object.fromEntries(
@@ -19,6 +38,7 @@ const files = {
       'input',
       'insect-hits',
       'insect-status',
+      'crash-effects',
       'control-focus',
       'network',
       'udp-client',
@@ -34,6 +54,13 @@ const files = {
       'sortie',
       'scale',
       'fleet',
+      'tank',
+      'armament',
+      'ordnance',
+      'bank',
+      'bank-ui',
+      'hud',
+      'equipment-controls',
       'combat',
       'contracts',
       'vacant-flight',
@@ -43,6 +70,9 @@ const files = {
       'ballistics',
       'equipment',
       'routes',
+      'route-speed',
+      'route-navigation',
+      'route-obstacles',
     ].map((name) => ['/' + name + '.js', 'src/' + name + '.js']),
   ),
 };
@@ -81,11 +111,6 @@ const fleet = inline(assets['/fleet.js']);
 const ballistics = inline(assets['/ballistics.js']);
 const equipment = inline(assets['/equipment.js']);
 const sortie = inline(assets['/sortie.js']);
-const collisionScene = new T.Scene();
-const officeBounds = createOffice(T, collisionScene, {
-  ...createGraphics(T, collisionScene),
-  textLabel: () => new T.Group(),
-}).colliders;
 const server = await readFile('src/server.js', 'utf8');
 await writeFile(
   'worker/assets.js',
@@ -111,11 +136,15 @@ await writeFile(
     'const ASSETS=' + JSON.stringify(assets) + ';',
     scale,
     layout,
+    inline(assets['/route-obstacles.js']),
+    inline(assets['/route-navigation.js']),
     routes,
+    inline(assets['/route-speed.js']),
     waves,
     fleet,
     ballistics,
     equipment,
+    inline(assets['/armament.js']),
     inline(assets['/logistics.js']),
     inline(assets['/malice.js']),
     'const OFFICE_SOLIDS=' +

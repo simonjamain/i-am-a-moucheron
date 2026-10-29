@@ -84,3 +84,9 @@ Les [retours de partie](docs/party-feedback.md) et le
 
 L’identification des appareils, les annexes et les réserves partagées sont décrites
 dans [logistique et contrats](docs/logistics-contracts.md).
+
+Le lot [pilotage, véhicules et banque](docs/vehicles-bank.md) décrit Stuka, tank,
+armes lourdes, accès par poste et prêts. Les interfaces HUD/banquier sont intégrées après validation : rails par poste,
+jauge DCA au viseur, prêts et remboursements signés. Banquier : bouton ou N.
+L’aperçu `/ui-review.html` utilise les composants réels avec des données temporaires.
+Le paquet Docker `2026.10.29-udp.2` remplace la première archive.

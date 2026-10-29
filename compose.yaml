@@ -1,6 +1,6 @@
 services:
   moucheron:
-    image: i-am-a-moucheron:2026.10.29-udp.1
+    image: i-am-a-moucheron:2026.10.29-udp.2
     pull_policy: never
     restart: unless-stopped
     init: true

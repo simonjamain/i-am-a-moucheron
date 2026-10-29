@@ -1,6 +1,6 @@
 # Installer l’image Docker
 
-Image livrée : `i-am-a-moucheron:2026.10.29-udp.1`, **Linux AMD64 / x86-64**.
+Image livrée : `i-am-a-moucheron:2026.10.29-udp.2`, **Linux AMD64 / x86-64**.
 L’archive du paquet est une vraie image importable avec `docker load`, contenant
 la base officielle Node 24 Bookworm Slim et le serveur RAM/UDP. Aucun registry
 n’est nécessaire. Aucun registry distant n’a été alimenté par cette livraison.
@@ -12,7 +12,7 @@ et l’extraire. Dans le dossier `moucheron-docker` :
 
 ```sh
 sha256sum -c SHA256SUMS
-docker load -i i-am-a-moucheron-2026.10.29-udp.1-linux-amd64.tar.gz
+docker load -i i-am-a-moucheron-2026.10.29-udp.2-linux-amd64.tar.gz
 cp .env.example .env
 nano .env
 ```
@@ -84,7 +84,7 @@ réseaux distincts avant de conclure que l’installation fonctionne sur Interne
 Pour construire une nouvelle image depuis les sources du dépôt :
 
 ```sh
-docker build -t i-am-a-moucheron:2026.10.29-udp.1 .
+docker build -t i-am-a-moucheron:2026.10.29-udp.2 .
 ```
 
 Le Dockerfile assemble les assets pendant la construction ; le démarrage lance

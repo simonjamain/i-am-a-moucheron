@@ -1,0 +1,7 @@
+node_modules/
+vendor/
+worker/
+dist/
+.local/
+src/route-obstacles.js
+docs/ui-review.html

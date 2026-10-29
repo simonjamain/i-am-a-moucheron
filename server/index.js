@@ -239,7 +239,9 @@ export function createGameServer({
           : ASSETS[asset];
       res.writeHead(200, {
         'content-type':
-          asset === '/' ? 'text/html; charset=utf-8' : 'application/javascript; charset=utf-8',
+          asset === '/' || asset.endsWith('.html')
+            ? 'text/html; charset=utf-8'
+            : 'application/javascript; charset=utf-8',
         'cache-control': versioned ? 'public,max-age=31536000,immutable' : 'no-cache',
         'x-game-version': BUILD_VERSION,
       });

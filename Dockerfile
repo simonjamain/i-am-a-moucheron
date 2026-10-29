@@ -5,8 +5,9 @@ COPY package.json package-lock.json ./
 RUN npm ci --omit=dev && node -e "import('node-datachannel').then(m => { m.preload(); m.cleanup(); })"
 COPY src ./src
 COPY server ./server
-COPY scripts/assemble.mjs ./scripts/assemble.mjs
+COPY scripts/assemble.mjs scripts/build-ui-preview.mjs ./scripts/
 COPY vendor ./vendor
+COPY docs/ui-review.html ./docs/ui-review.html
 RUN mkdir worker && node scripts/assemble.mjs
 
 FROM ${NODE_IMAGE} AS runtime

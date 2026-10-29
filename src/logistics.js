@@ -1,15 +1,28 @@
 import { MAP } from './scale.js';
 import { VEHICLES } from './fleet.js';
+import { TANK_MG } from './armament.js';
 export const FUEL_SECONDS = 300;
 export const SERVICE_SECONDS = 10;
 export const SERVICE_RADIUS = 0.12;
 export function ammoCapacity(type, seat) {
+  if (type === 'tank')
+    return seat === 'he' || seat === 'ap'
+      ? 30
+      : TANK_MG[seat]
+        ? Math.round(90 / TANK_MG[seat].interval)
+        : 0;
+  if (seat === 'bomb') return type === 'bomber' ? 12 : type === 'interceptor' ? 6 : 0;
+  if (!VEHICLES[type]?.seats.includes(seat)) return 0;
   return type === 'bomber' && seat === 'pilot'
     ? 0
     : Math.round(60 / (seat === 'pilot' ? 0.06 : 0.09));
 }
 export function fullAmmo(type) {
-  return Object.fromEntries(VEHICLES[type].seats.map((s) => [s, ammoCapacity(type, s)]));
+  const keys =
+    type === 'tank'
+      ? ['pilot', 'top', 'coax', 'he', 'ap']
+      : [...VEHICLES[type].seats, ...(['interceptor', 'bomber'].includes(type) ? ['bomb'] : [])];
+  return Object.fromEntries(keys.map((s) => [s, ammoCapacity(type, s)]));
 }
 export function inRadarCoverage(position, installations) {
   return installations.some(
@@ -47,7 +60,7 @@ export function advanceSupplies(supply, state, type, installations, dt) {
   );
   const ammo = { ...supply.ammo };
   if (servicing)
-    for (const seat of VEHICLES[type].seats)
+    for (const seat of Object.keys(fullAmmo(type)))
       ammo[seat] = Math.min(
         ammoCapacity(type, seat),
         (ammo[seat] || 0) + (ammoCapacity(type, seat) * dt) / SERVICE_SECONDS,

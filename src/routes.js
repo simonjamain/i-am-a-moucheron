@@ -1,4 +1,5 @@
 import { MAP, REFERENCE } from './scale.js';
+import { floorPath, blockedSegment } from './route-navigation.js';
 export const MIN_SPAWN_DISTANCE = 3;
 export const PORTALS = Object.freeze({
   air: [
@@ -35,88 +36,75 @@ export function enemyRoute(enemy) {
       : Math.floor(random() * (enemy.ground ? 3 : 4));
   let points;
   if (enemy.ground) {
-    const starts = [
-      [
-        [-3.4, 0.0007, 2.65],
-        [-3.25, 0.0007, 0.1],
-        [-0.8, 0.0007, 0.25],
-      ],
-      [
-        [0.4, 0.0007, -2.8],
-        [0.3, 0.0007, -1.55],
-        [0.15, 0.0007, 0.1],
-      ],
-      [
-        [3.55, 0.0007, 1.0],
-        [3.3, 0.0007, 0.45],
-        [1.5, 0.0007, 0.2],
-      ],
-    ];
-    points = [
-      PORTALS.ground[portal],
-      ...starts[portal],
-      [1.4, 0.0007, -0.1],
-      [3.15, 0.0007, -0.55],
-      [3.12, 0.0007, -2.4],
-      [2.5, 0.0007, -2.49],
-      [2.5, 0.32, -2.7],
-    ];
-    points = points.map((p, i) =>
-      i === 0 || i > points.length - 3
-        ? p
-        : p.map((v, j) => (j === 1 ? v : v + (random() - 0.5) * 0.08)),
-    );
+    const checkpoints =
+      portal === 0
+        ? [
+            [-3.3, 0.0007, 2.7],
+            [-3.1, 0.0007, 0.1],
+            [0, 0.0007, 0.35],
+          ]
+        : portal === 1
+          ? [
+              [0.2, 0.0007, -2.9],
+              [0.1, 0.0007, 0.3],
+              [1.4, 0.0007, 0.3],
+            ]
+          : [
+              [3.6, 0.0007, 1.8],
+              [3.25, 0.0007, 0.4],
+              [1.4, 0.0007, 0.25],
+            ];
+    const goals = [...checkpoints, [3.0, 0.0007, -2.7]];
+    points = [PORTALS.ground[portal]];
+    for (const goal of goals) points.push(...floorPath(points.at(-1), goal).slice(1));
+    points.push([3.0, 0.38, -2.7], [2.5, 0.38, -2.7]);
   } else {
-    const source = PORTALS.air[portal];
-    const wander = Array.from({ length: 4 }, (_, i) => [
-      (random() - 0.5) * 6.1,
-      random() < 0.7 ? 2.35 + random() * 0.35 : 1.5 + random() * 0.5,
-      (random() - 0.5) * 5.2,
-    ]);
+    const source = PORTALS.air[portal],
+      jitter = (random() - 0.5) * 0.15;
+    const intro = [
+      [0.15 + jitter, 2.65, -3.0],
+      [1.2, 2.4, -2.85],
+      [2.55, 1.45, -2.8],
+    ];
+    const short = [
+      [source[0] * 0.7, 2.7, source[2] * 0.7],
+      [-0.5, 2.6, 0.2],
+      [1.6, 2.5, -1.8],
+      [2.8, 1.5, -2.6],
+    ];
+    const full = [
+      [source[0] * 0.7, 2.7, source[2] * 0.7],
+      [-2.9, 2.65, 2.6],
+      [-2.9, 2.7, -2.8],
+      [2.8, 2.65, -2.6],
+      [2.8, 2.5, 2.5],
+      [0, 2.2, 1.9],
+      [2.8, 1.5, -2.6],
+    ];
     points = [
       source,
-      [source[0] * 0.75, 2.55, source[2] * 0.75],
-      ...wander,
-      [2.9, 1.5, -1.9],
-      [2.5, 0.33, -2.7],
+      ...(enemy.approach === 'intro' ? intro : enemy.approach === 'short' ? short : full),
+      [2.5, 0.38, -2.7],
     ];
-    if (enemy.branch)
-      for (let i = 3; i < points.length - 2; i++) {
-        points[i][0] = Math.max(-3.3, Math.min(3.3, points[i][0] + 0.65));
-        points[i][1] = Math.max(1.4, points[i][1] - 0.45);
+    // Raise detours above static furniture; final descent is next to the bin.
+    for (let i = 1; i < points.length; i++)
+      if (blockedSegment(points[i - 1], points[i])) {
+        points.splice(
+          i,
+          0,
+          [points[i - 1][0], 2.82, points[i - 1][2]],
+          [points[i][0], 2.82, points[i][2]],
+        );
+        i += 2;
       }
   }
-  if (!enemy.ground && enemy.approach === 'intro')
-    points = [PORTALS.air[portal], [1.15, 2.05, -3.1], [2.15, 1.25, -2.9], [2.5, 0.33, -2.7]];
-  else if (!enemy.ground && enemy.approach === 'short')
-    points = [
-      PORTALS.air[portal],
-      points[1],
-      [1.3, 1.8, -1.5],
-      [2.9, 1.1, -1.9],
-      [2.5, 0.33, -2.7],
-    ];
   const samples = [{ p: points[0], distance: 0 }];
   for (let i = 0; i < points.length - 1; i++) {
-    const a = points[Math.max(0, i - 1)],
-      b = points[i],
-      c = points[i + 1],
-      d = points[Math.min(points.length - 1, i + 2)];
+    const b = points[i],
+      c = points[i + 1];
     for (let n = 1; n <= 48; n++) {
-      const t = n / 48,
-        t2 = t * t,
-        t3 = t2 * t;
-      const p = b.map(
-        (v, j) =>
-          0.5 *
-          (2 * v +
-            (-a[j] + c[j]) * t +
-            (2 * a[j] - 5 * v + 4 * c[j] - d[j]) * t2 +
-            (-a[j] + 3 * v - 3 * c[j] + d[j]) * t3),
-      );
-      p[0] = Math.max(-4.12, Math.min(4.12, p[0]));
-      p[1] = Math.max(0.0007, Math.min(2.8, p[1]));
-      p[2] = Math.max(-3.52, Math.min(3.4, p[2]));
+      const t = n / 48;
+      const p = b.map((v, j) => v + (c[j] - v) * t);
       const prev = samples.at(-1);
       samples.push({ p, distance: prev.distance + Math.hypot(...p.map((v, j) => v - prev.p[j])) });
     }
@@ -142,8 +130,7 @@ export function enemyRoutePosition(enemy, u) {
   return a.p.map((v, j) => v + (b.p[j] - v) * t);
 }
 export function routeDuration(enemy) {
-  return Math.max(
-    enemy.approach === 'intro' ? 30 : enemy.approach === 'short' ? 45 : enemy.ground ? 60 : 80,
-    enemyRoute(enemy).length / MAP.metres(REFERENCE.enemy * enemy.speed),
+  return (
+    enemyRoute(enemy).length / (enemy.travelSpeed || MAP.metres(REFERENCE.enemy * enemy.speed))
   );
 }
