@@ -1,3 +1,4 @@
+import { deliveryHeightAt } from '/delivery.js';
 import { reserveAlerts, missileStatus, ArrivalSignals } from '/reserve-feedback.js';
 import { controlHints, cursorStats, cursorAmmoText } from '/live-hud.js';
 import { identifyPlayer, disposePlayerIdentity } from '/player-livery.js';
@@ -1343,7 +1344,10 @@ addEventListener('keydown', (event) => {
   }
   if (!controlFocus.active) return;
   const code = interactionKey;
-  const contextual = contextKey({ type: myVehicle?.type, turret: turretIndex >= 0 }, code);
+  const contextual = contextKey(
+    { type: myVehicle?.type, seat: crewSeat, turret: turretIndex >= 0 },
+    code,
+  );
   if (contextual) {
     event.preventDefault();
     if (contextual.range) flakRange = fuseRange(flakRange + contextual.range);
@@ -3300,14 +3304,18 @@ function physics(dt) {
       fuelAvailable: remainingFuel() > 0,
     };
     const collective = active
-      ? Number(!!(keys.KeyZ || keys.KeyO || keys.KeyW || keys.ArrowUp)) -
-        Number(!!(keys.KeyS || keys.ArrowDown))
+      ? Number(!!(keys.ShiftLeft || keys.ShiftRight)) -
+        Number(!!(keys.ControlLeft || keys.ControlRight))
       : 0;
     stepHelicopter(
       T,
       state,
       {
         collective: collective * currentFactors().controls,
+        pitch: active
+          ? (Number(!!(keys.KeyS || keys.ArrowDown)) - Number(!!(keys.KeyZ || keys.ArrowUp))) *
+            currentFactors().controls
+          : 0,
         roll: active
           ? (Number(!!(keys.KeyQ || keys.ArrowLeft)) - Number(!!(keys.KeyD || keys.ArrowRight))) *
             currentFactors().controls
@@ -4333,7 +4341,11 @@ function renderDeliveries() {
       scene.add(model);
       deliveryModels.set(delivery.token, model);
     }
-    model.position.set(delivery.x, delivery.y, delivery.z);
+    model.position.set(
+      delivery.x,
+      deliveryHeightAt(delivery, Date.now() + clockOffset),
+      delivery.z,
+    );
   }
   for (const [token, model] of deliveryModels)
     if (!active.has(token)) {
@@ -4913,7 +4925,7 @@ const purchaseUI = new PurchaseUI({
     if (order && !purchaseUI.invalidated) beginPlacement(order);
     else {
       if (myVehicle && !purchaseUI.invalidated)
-        notify('Achat signé · livraison sous parachute en cours', 4);
+        notify('Colis en descente · 3 s/m de référence (1 mm/s dans la pièce)', 6);
       captureMouse();
     }
   },

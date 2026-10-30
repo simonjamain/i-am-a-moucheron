@@ -1,4 +1,13 @@
-# Commandes et poussée du H2 — version 39
+# Commandes et poussée du H2
+
+## Commandes actuelles — issue #16
+
+Pilote : Maj/Ctrl pour monter/descendre ; Z/S et Haut/Bas pour piquer/cabrer ;
+Q/D et Gauche/Droite pour le roulis. O/W ne sont plus des alias du pilote H2.
+Le copilote garde Maj/Ctrl pour ses armes. Mapping, vitesses et vérifications :
+[issues 15–17](issues-15-16-17.md#16--séparation-puissance-et-tangage-du-pilote-h2).
+
+## Historique — version 39
 
 Correctif demandé le 30 octobre 2026, sources Node/RAM/UDP.
 

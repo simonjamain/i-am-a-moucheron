@@ -2321,3 +2321,17 @@ cible à rattraper quand la souris s’arrête. Vitesse plafonnée conservée, s
 des grands mouvements préservé. Régression rouge avant/verte après ; détails
 et limites dans [commandes H2](docs/helicopter-controls.md#pointage-relatif-sans-rattrapage--issue-10-version-50).
 Essai humain du ressenti restant.
+
+## Issues #15, #16 et #17 — livraison groupée
+
+- #15 : descente affichée en continu sur le même temps absolu que le serveur ;
+  vitesse de trois secondes/mètre de référence conservée, réception/debit uniques.
+- #16 : Maj/Ctrl pour la montée/descente du pilote H2, Z/S et Haut/Bas pour le
+  tangage ; roulis conservé, O/W retirés et sélection d’armes copilote préservée.
+- #17 : fourmis encore deux fois plus lentes ; cafards plus lents que toutes les
+  fourmis de leur vague ; durées et arrivée serveur recalculées, tailles et PV conservés.
+
+Critères, valeurs avant/après et limites : [issues 15–17](docs/issues-15-16-17.md).
+Une seule PR utilise les références de fermeture automatique après fusion.
+Les issues #9 et #10 sont fermées, leurs PR #12 et #13 ayant été fusionnées.
+L’issue #11 reste ouverte avec son candidat en brouillon et ses mesures manquantes.
