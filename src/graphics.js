@@ -1,3 +1,4 @@
+import { GROUND_LEGS } from './scale.js';
 export function createGraphics(T, scene) {
   const materials = new Map();
   function mat(c) {
@@ -322,8 +323,17 @@ export function createGraphics(T, scene) {
       if (type === 'ant') ball(0, 0, 0.5, 0.3, '#d59b4d', g);
       for (const side of [-1, 1])
         for (let i = 0; i < 3; i++) {
-          const leg = box(side * 0.45, -0.1, (i - 1) * 0.3, 0.65, 0.035, 0.045, '#382c23', g);
-          leg.rotation.z = side * 0.3;
+          const leg = box(
+            side * 0.45,
+            GROUND_LEGS.y,
+            (i - 1) * 0.3,
+            GROUND_LEGS.length,
+            GROUND_LEGS.thickness,
+            0.045,
+            '#382c23',
+            g,
+          );
+          leg.rotation.z = side * GROUND_LEGS.tilt;
           legs.push(leg);
         }
       for (const x of [-0.12, 0.12]) {

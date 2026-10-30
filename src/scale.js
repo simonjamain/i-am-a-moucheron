@@ -23,6 +23,21 @@ export const MAP = MAPS.office;
 export const ACTOR_UNIT = MAP.metres(10.4 / 5.6);
 export const HUMAN_SCALE = MAP.metres(1.8 / 2.46);
 export const MIDGE_SIZE_FACTOR = 1.35 * 1.5 * 3;
+// Office presentation/hit geometry factors. Keep wave budget/HP independent.
+export const ENEMY_SIZE_FACTORS = Object.freeze({
+  ant: 12,
+  roach: 8,
+  midge: MIDGE_SIZE_FACTOR,
+  dart: 4,
+  guard: 3,
+  brute: 3,
+});
+export const enemySizeFactor = (type) => ENEMY_SIZE_FACTORS[type] ?? 1;
+export const GROUND_LEGS = Object.freeze({ y: -0.25, length: 0.65, thickness: 0.035, tilt: 0.3 });
+export const GROUND_FOOT_DEPTH =
+  -GROUND_LEGS.y +
+  (GROUND_LEGS.length * Math.sin(GROUND_LEGS.tilt)) / 2 +
+  (GROUND_LEGS.thickness * Math.cos(GROUND_LEGS.tilt)) / 2;
 export const INSECT_SCALE = MAP.metres(0.9 / 1.6);
 export const REFERENCE = Object.freeze({
   walk: 6,

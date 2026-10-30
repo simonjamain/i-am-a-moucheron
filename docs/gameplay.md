@@ -195,3 +195,8 @@ Valeurs, choix, garanties réseau et vérifications restantes :
 Le [correctif de visibilité](enemy-visibility.md) place les apparitions devant les
 aérations et recrée les bons modèles aux changements de vague. Les moucherons
 sont trois fois plus gros que dans la livraison précédente.
+
+Les six espèces utilisent désormais des dimensions contrôlées en pixels :
+[facteurs et mesures](enemy-visibility.md). Les terrestres sont relevés selon
+leurs pattes, avec une marge de navigation adaptée à leur corps élargi. Les PV,
+vitesses, primes et composition 4+4 de la première vague restent inchangés.

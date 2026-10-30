@@ -36,7 +36,8 @@ modèle initial, soit un volume théorique multiplié par 27 à forme constante.
 Les PV et dégâts restent inchangés. `MIDGE_SIZE_FACTOR` dans `scale.js` est
 partagé par le modèle, les effets de blessure et les volumes de collision serveur.
 La tolérance de visée supplémentaire de 20 % est conservée, sans empiler deux
-agrandissements côté client. Les autres insectes conservent leurs dimensions.
+agrandissements côté client. Dans ce premier correctif, les autres insectes conservaient leurs dimensions ;
+la reprise ci-dessous remplace cette règle.
 
 La vague 1 comporte maintenant **quatre fourmis et quatre moucherons**, au lieu
 de deux fourmis et six moucherons. Son budget reste 8 et sa prime reste 4 $.
@@ -61,3 +62,57 @@ Un ennemi peut naturellement être derrière un meuble ou hors du champ de camé
 aucune promesse de visibilité permanente à travers le décor n'est faite. La
 lisibilité subjective au sol et en vol reste à confirmer en partie sur la VM.
 Redémarrer le serveur et recharger les navigateurs après remplacement des sources.
+
+## Reprise après persistance du signalement : taille apparente des six espèces
+
+Le premier contrôle vérifiait l'existence et le placement des objets, mais pas
+leur lisibilité en pixels. Cela ne suffisait pas : sur une vue frontale à deux
+mètres du décor, champ vertical 62° et écran 1920×1080, la fourmi mesurait
+0,93×0,36 pixel et le cafard 1,39×0,46 pixel. Voltigeur, carapace et bourdon
+mesuraient respectivement 2,32×0,54, 3,83×0,88 et 5,19×1,20 pixels.
+`node scripts/test-enemy-readability.mjs` reproduit cet échec en projetant les
+bornes des vrais meshes Three.js, sans agrandir artificiellement un marqueur.
+
+| Espèce    | Facteur courant par rapport au modèle initial | Dimensions du décor L×H×P (mm) | Projection frontale à 2 m (pixels) |
+| --------- | --------------------------------------------: | ------------------------------ | ---------------------------------- |
+| Fourmi    |                                            12 | 24,81×10,74×30,92              | 11,23×4,86                         |
+| Cafard    |                                             8 | 24,81×9,93×29,54               | 11,23×4,49                         |
+| Moucheron | 6,075, inchangé depuis le correctif précédent | 36,91×8,51×15,89               | 16,65×3,84                         |
+| Voltigeur |                                             4 | 20,66×4,76×11,19               | 9,31×2,15                          |
+| Carapace  |                                             3 | 25,52×5,88×11,38               | 11,50×2,65                         |
+| Bourdon   |                                             3 | 34,63×7,98×15,45               | 15,62×3,60                         |
+
+Ces dimensions incluent ailes ou pattes et le profil de taille de l'espèce. Ce
+sont des choix de lisibilité du jeu, pas des proportions biologiques. Le seuil
+contrôlé est une silhouette frontale d'au moins 6×2 pixels dans cette vue.
+L'agrandissement n'est pas dépendant de la caméra : la géométrie visible, les
+tirs et les contacts conservent la même taille à plusieurs joueurs.
+`ENEMY_SIZE_FACTORS` et `enemySizeFactor()` dans `scale.js` centralisent les six
+facteurs. PV, dégâts, vitesse de déplacement, composition et primes restent
+inchangés. Les cinq espèces autres que le moucheron ne conservent donc **plus**
+leurs anciennes dimensions : cette reprise remplace la règle du premier correctif.
+
+Un agrandissement seul fait échouer le contrôle du sol : les meshes terrestres
+s'étendent sous leur origine. `swarmFrame()` relève maintenant les deux points
+utilisés pour position et tangente selon la profondeur réelle des pattes, multipliée par l'échelle
+réelle de l'espèce. Les pattes sont abaissées pour que leurs extrémités, plutôt
+que l'abdomen, forment le point bas du corps. `GROUND_LEGS` et
+`GROUND_FOOT_DEPTH` partagent ces dimensions entre géométrie et placement. Ainsi le corps et les pattes dégagent le plancher, y compris
+ses joints décoratifs hauts de 0,4 mm, sans déplacer la géométrie du décor.
+L'écart est identique côté client et serveur ; la tangente reste horizontale sur
+le sol plat. La marge de navigation terrestre passe à 25 mm (aériens : 18 mm),
+pour tenir compte des corps élargis et de leur léger mouvement de groupe.
+La montée finale vers la corbeille conserve sa mécanique guidée.
+
+Le nouveau test vérifie les six dimensions et leurs projections, puis les vrais
+modèles terrestres sur les positions de `swarmFrame()` en vagues 1, 2, 6 et 12 :
+apparition, parcours et montée finale, pattes au-dessus du sol et tangente correcte.
+Le test de visibilité existant conserve les contrôles d'aérations, de modèles
+entre vagues et d'absence de centre enfoui dans le mobilier. La suite complète
+inclut les tests de dégâts et les deux pairs UDP natifs.
+
+La projection géométrique n'est pas une observation du confort WebGL : à une
+distance plus grande, dans une autre orientation ou derrière un meuble, la taille
+apparente et l'occultation changent. Aucun affichage à travers les obstacles ni
+marqueur de remplacement n'est introduit. Le Site historique n'est pas redéployé ;
+le ZIP des sources Node/UDP doit être installé, puis serveur et clients relancés.

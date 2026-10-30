@@ -1,5 +1,17 @@
 # Revue des références
 
+## Reprise du diagnostic de visibilité — 30 octobre 2026
+
+Les 33 Markdown sont inventoriés : README, gameplay, carte du code, backlog,
+retours de partie/multijoueurs et nuées renvoient désormais aux six facteurs de
+lisibilité, au lieu de promettre des dimensions inchangées pour cinq espèces.
+`enemy-visibility.md` conserve la première reproduction puis précise sa limite
+(test d'existence insuffisant), les mesures avant/après, le relevage et le nouveau
+test de projection. Les références d'exploitation, d'économie et de réseau restent
+conformes : pas de changement de stack, PV, dégâts, composition, contrats ni ports.
+Les anciens lots et cinq archives gardent leurs chiffres datés ; liens locaux
+contrôlés. Aucune mesure CPU ou de projection n'est présentée comme un essai WAN.
+
 ## Correctif visibilité — 30 octobre 2026
 
 33 Markdown inventoriés. README, gameplay, carte du code, backlog et nouvelle

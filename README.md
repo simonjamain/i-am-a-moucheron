@@ -111,3 +111,6 @@ en cours, car le navigateur de contrôle ne peut pas joindre le jeu en UDP.
 Le [correctif de visibilité des ennemis](docs/enemy-visibility.md) corrige les
 aérations et transitions de vague, triple les moucherons et renforce les fourmis
 de la première vague.
+
+La [reprise du diagnostic de visibilité](docs/enemy-visibility.md#reprise-après-persistance-du-signalement--taille-apparente-des-six-espèces)
+agrandit aussi les cinq autres espèces trop petites et ajuste l’appui au sol.

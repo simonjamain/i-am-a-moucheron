@@ -12,7 +12,7 @@ import { purchaseCount } from '../src/equipment.js';
 import { bedAccess, bedSpawn } from '../src/beds.js';
 import { impactDamage } from '../src/field-physics.js';
 import { randomUUID } from 'node:crypto';
-import { MAP, ACTOR_UNIT, MIDGE_SIZE_FACTOR } from '../src/scale.js';
+import { MAP, ACTOR_UNIT, enemySizeFactor } from '../src/scale.js';
 import { OFFICE_LAYOUT, RAID_DURATION } from '../src/layout.js';
 import { VEHICLES, vehiclePad, vehicleEntry, vehicleAccess, leftVehiclePad } from '../src/fleet.js';
 import { baseWorld, baseBody, reconcileBase } from '../src/base.js';
@@ -983,8 +983,7 @@ export class Game {
       frames.forEach((frame, i) => {
         if (!frame || r.kills.has(i)) return;
         const radius = MAP.metres(
-          plan.roster[i].size * 0.7 * (plan.roster[i].type === 'midge' ? MIDGE_SIZE_FACTOR : 1) +
-            0.3,
+          plan.roster[i].size * 0.7 * enemySizeFactor(plan.roster[i].type) + 0.3,
         );
         const touching = Math.hypot(...v.state.p.map((n, j) => n - frame.p[j])) <= radius;
         const impact = touching || segmentSphere(previous, v.state.p, frame.p, radius) !== null;
@@ -1486,7 +1485,8 @@ export class Game {
                 MAP.metres(
                   plan.roster[i].size *
                     0.7 *
-                    (plan.roster[i].type === 'midge' ? MIDGE_SIZE_FACTOR * 1.2 : 1),
+                    (enemySizeFactor(plan.roster[i].type) *
+                      (plan.roster[i].type === 'midge' ? 1.2 : 1)),
                 ),
               ),
               {
@@ -1608,7 +1608,8 @@ export class Game {
             MAP.metres(
               plan.roster[i].size *
                 0.7 *
-                (plan.roster[i].type === 'midge' ? MIDGE_SIZE_FACTOR * 1.2 : 1),
+                (enemySizeFactor(plan.roster[i].type) *
+                  (plan.roster[i].type === 'midge' ? 1.2 : 1)),
             ),
           );
       });

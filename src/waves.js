@@ -1,4 +1,4 @@
-import { MAP } from './scale.js';
+import { MAP, INSECT_SCALE, enemySizeFactor, GROUND_FOOT_DEPTH } from './scale.js';
 import { baselineTravelSpeed } from './route-speed.js';
 import { enemyRoutePosition, routeDuration } from './routes.js';
 export const ENEMY_TYPES = Object.freeze({
@@ -133,8 +133,15 @@ export function swarmFrame(roster, time) {
     const u = Math.max(0, age - hold) / Math.max(0.001, e.duration - hold);
     if (u < 0 || u >= 1) return null;
     const p = enemyRoutePosition(e, u),
-      next = enemyRoutePosition(e, Math.min(1, u + 0.0001)),
-      tangent = next.map((v, j) => v - p[j]),
+      next = enemyRoutePosition(e, Math.min(1, u + 0.0001));
+    // Ground meshes extend below their origin: lift both path samples equally
+    // so their feet clear the support without corrupting the movement tangent.
+    if (e.ground) {
+      const lift = INSECT_SCALE * e.size * enemySizeFactor(e.type) * GROUND_FOOT_DEPTH;
+      p[1] += lift;
+      next[1] += lift;
+    }
+    const tangent = next.map((v, j) => v - p[j]),
       length = Math.hypot(...tangent) || 1,
       envelope = Math.min(1, u * 30, (1 - u) * 30),
       phase = e.phase,

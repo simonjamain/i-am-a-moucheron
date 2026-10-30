@@ -84,4 +84,4 @@ remain. The siren source is actually in the scaled office, replacing an obsolete
 pre-scale coordinate that made the old wave cue nearly inaudible.
 
 The [latest return lot](multiplayer-return.md) adds early ants, extended routes,
-player initials and midge-only extra 20% hit tolerance. Other enemy sizes remain unchanged.
+player initials and midge-only extra 20% hit tolerance. Other enemy sizes now follow the [readability correction](enemy-visibility.md).

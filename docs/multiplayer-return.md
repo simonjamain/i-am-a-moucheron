@@ -160,7 +160,7 @@ rayon visuel et dégâts doublés ensemble ; obstacles et déduplication conserv
 Le moucheron est encore agrandi de **50 %** : facteur visuel historique **2,025**, désormais **6,075** après le [correctif de visibilité](enemy-visibility.md) par
 rapport au modèle antérieur à VIS-02. Sa tolérance de tir est **1,2 ×** ce nouveau
 modèle. Les intersections ellipsoïdales ne modifient pas les meshes rendus ni les
-PV. Les autres types gardent leur taille et leur précision de collision.
+PV. Les autres espèces suivent désormais les [facteurs de visibilité](enemy-visibility.md) ; leurs tolérances de collision restent inchangées.
 
 Chaque joueur reçoit une teinte stable par identité de session et de grandes
 initiales contrastées sur poitrine et dos, dans le bureau et les purgatoires.

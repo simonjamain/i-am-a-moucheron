@@ -17,7 +17,7 @@ larger.scale.setScalar(insectScale('midge', INSECT_SCALE));
 const a = new T.Box3().setFromObject(old).getSize(new T.Vector3()),
   b = new T.Box3().setFromObject(larger).getSize(new T.Vector3());
 assert.ok(Math.abs(b.x / a.x - 1.35 * 1.5 * 3) < 1e-8);
-assert.equal(insectScale('brute', 2), 2);
+assert.equal(insectScale('brute', 2), 6);
 let oldHits = 0,
   newHits = 0;
 for (let x = -0.004; x <= 0.004; x += 0.0001)
@@ -93,7 +93,7 @@ for (let seed = 0; seed < 50; seed++)
     }
   }
 console.log(
-  'PASS: +35% actual model/hit area, other types unchanged, wound bars/smoke/flames, no HUD collisions, bounded effects, shared HP metadata and peripheral first-frame entries.',
+  'PASS: current actual model/hit area and species factors, wound bars/smoke/flames, no HUD collisions, bounded effects, shared HP metadata and peripheral first-frame entries.',
 );
 
 const intro = wavePlan('DISCOVERY', 1, 123).roster[0];

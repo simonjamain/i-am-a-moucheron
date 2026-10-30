@@ -94,3 +94,8 @@ les deux modèles, `contracts.js` leurs rôles, `hud.js` leurs panneaux.
 `routes.js` distingue portail décoratif et sortie visible ; `scale.js` centralise
 le facteur du moucheron ; `client.js` recrée les meshes par vague/espèce.
 `test-enemy-visibility.mjs` couvre la [visibilité courante](enemy-visibility.md).
+
+`scale.js` centralise les six facteurs d’insectes, partagés par géométrie et
+volumes de collision serveur. `waves.js` relève les corps terrestres au-dessus
+du support ; `route-navigation.js` adapte leur marge. `test-enemy-readability.mjs`
+mesure les silhouettes projetées et les vrais corps au sol.

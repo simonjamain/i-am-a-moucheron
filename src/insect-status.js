@@ -1,7 +1,7 @@
-import { MIDGE_SIZE_FACTOR } from './scale.js';
+import { enemySizeFactor } from './scale.js';
 // Presentation only: these meshes never enter the projectile collision surface.
 export function insectScale(type, base, size = 1) {
-  return base * size * (type === 'midge' ? MIDGE_SIZE_FACTOR : 1);
+  return base * size * enemySizeFactor(type);
 }
 export function woundState(health, maximum) {
   const fraction = Math.max(0, Math.min(1, health / Math.max(1, maximum)));

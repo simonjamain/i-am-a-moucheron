@@ -1,5 +1,6 @@
 import { ROUTE_OBSTACLES } from './route-obstacles.js';
-const clearance = 0.018;
+const clearance = 0.018,
+  groundClearance = 0.025;
 const boxes = ROUTE_OBSTACLES.filter((b) => {
   const size = [b.max.x - b.min.x, b.max.y - b.min.y, b.max.z - b.min.z];
   return !(Math.min(...size) < 0.025 && (Math.abs(b.min.x) > 4.09 || b.min.z < -3.49));
@@ -13,7 +14,7 @@ export function blockedSegment(a, b, ground = false) {
       hi = 1;
     for (let k = 0; k < 3; k++) {
       const key = ['x', 'y', 'z'][k],
-        pad = k === 1 ? 0 : clearance;
+        pad = k === 1 ? 0 : ground ? groundClearance : clearance;
       const min = box.min[key] - pad,
         max = box.max[key] + pad,
         d = b[k] - a[k];

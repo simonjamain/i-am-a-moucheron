@@ -1887,3 +1887,22 @@ précédente ; volume théorique ×27, pas dégâts ×3. Critères de scène, ap
 transition et taille vérifiés ; lisibilité subjective et WAN non revendiqués.
 Suite complète, tests UDP, build, format et liens vérifiés ; ZIP et dépôt actualisés.
 Les validations humaines HEL-06/DCM-03 du lot précédent restent en cours.
+
+## Reprise immédiate — ennemis encore imperceptibles (30 octobre 2026)
+
+| ID | Tâche | État | Dépendances |
+| --- | --- | --- | --- |
+| VIS-11 | Contrôler les six tailles apparentes et agrandir les espèces subpixel | terminé | VIS-09 |
+| VIS-12 | Relever les terrestres et adapter la marge de passage au corps élargi | terminé | VIS-11 |
+
+Cause reproduite : existence du mesh ne garantit pas lisibilité. Fourmi 0,93×0,36
+pixel et cafard 1,39×0,46 pixel à 2 m/1080p/62°. Les cinq espèces autres que le
+moucheron étaient restées trop petites. Facteurs : fourmi 12, cafard 8, voltigeur 4,
+carapace/bourdon 3 ; moucheron 6,075 inchangé. Un contrôle échoue ensuite sur les
+pattes enfouies si seule l'échelle change : position et tangente sont relevées
+ensemble, avec marge terrestre de 25 mm. Référence, mesures et limites :
+[visibilité](docs/enemy-visibility.md). Pas de changement de PV, dégâts, vitesse,
+composition, budget ou prime. Tests complets, vrais corps et pixels projetés,
+liens, format, build et validateur exécutés ; sources et ZIP actualisés.
+Le confort WebGL/WAN n'est pas revendiqué. Les autres tâches prêtes restent hors
+de ce correctif express consacré aux ennemis.

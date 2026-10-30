@@ -10,7 +10,7 @@ joueurs, postes et contrats conservent les identités ; les panneaux de lieux et
 les guichets restent dans la scène.
 
 Le modèle et la géométrie touchable du moucheron (`midge`) sont agrandis historiquement de 35 %, puis de 50 % supplémentaires dans VIS-07 (facteur historique 2,025), puis de nouveau ×3 le 30 octobre (facteur courant 6,075), avec tolérance de tir de 20 %.
-Les autres types, appareils et personnages gardent leur taille. Le test de rayons
+Les autres insectes sont désormais agrandis selon la [reprise de visibilité](enemy-visibility.md) ; appareils et personnages gardent leur taille. Le test de rayons
 sur un plan échantillonné retrouve une surface touchable accrue de plus de 50 %,
 sans changer les dégâts. Il ne remplace pas un essai de visée en partie.
 
