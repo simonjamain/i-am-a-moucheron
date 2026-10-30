@@ -54,19 +54,19 @@ function client(key) {
   );
   return c;
 }
-const o = client('KeyO');
+const o = client('ShiftLeft');
 for (let i = 0; i < 120; i++) vm.runInContext('physics(1/120)', o);
 assert.ok(
   o.me.position.y > 1.005,
-  'O must actually climb through the shipped client physics branch',
+  'Shift must actually climb through the shipped client physics branch',
 );
-const z = client('KeyZ');
+const z = client('ShiftLeft');
 for (let i = 0; i < 120; i++) vm.runInContext('physics(1/120)', z);
 assert.ok(
   Math.abs(o.me.position.y - z.me.position.y) < 1e-10,
-  'Z and O must have exactly the same effect',
+  'Left and right Shift must have exactly the same effect',
 );
-for (const key of ['KeyS', 'ArrowDown']) {
+for (const key of ['ControlLeft', 'ControlRight']) {
   const c = client(key);
   for (let i = 0; i < 120; i++) vm.runInContext('physics(1/120)', c);
   assert.ok(c.me.position.y < 0.995);
@@ -78,7 +78,7 @@ for (let i = 0; i < 1200; i++) vm.runInContext('physics(1/120)', z);
 assert.ok(Math.abs(z.vel.y) < 1e-6);
 assert.ok(Math.abs(z.gas - 0.5) < 1e-6, 'Release returns to hover power');
 // A delayed snapshot must not reset the owning pilot's instructor state.
-const delayed = client('KeyZ');
+const delayed = client('ShiftLeft');
 for (let i = 0; i < 120; i++) {
   if (i % 6 === 0) delayed.myVehicle.state.collective = 0;
   vm.runInContext('physics(1/120)', delayed);
@@ -88,9 +88,9 @@ assert.ok(
   'Snapshots cannot rewind the pilot collective',
 );
 console.log(
-  'H2 actual client: Z/O climb, S/down descent, progressive power, released hover and delayed-snapshot continuity.',
+  'H2 actual client: Shift climb, Ctrl descent, progressive power, released hover and delayed-snapshot continuity.',
 );
-for (const key of ['ArrowUp', 'KeyW']) {
+for (const key of ['ShiftRight']) {
   const c = client(key);
   for (let i = 0; i < 120; i++) vm.runInContext('physics(1/120)', c);
   assert.ok(Math.abs(c.me.position.y - o.me.position.y) < 1e-10);
@@ -164,13 +164,13 @@ console.log(
   'H2: retained aliases, inactive inputs, client/server rocket hull direction under yaw/pitch/roll and view mismatch passed.',
 );
 
-const down = client('KeyS');
+const down = client('ControlLeft');
 for (let i = 0; i < 120; i++) vm.runInContext('physics(1/120)', down);
 down.keys = {};
 for (let i = 0; i < 1200; i++) vm.runInContext('physics(1/120)', down);
 assert.ok(Math.abs(down.vel.y) < 1e-6);
 assert.ok(Math.abs(down.gas - 0.5) < 1e-6);
-const departing = client('KeyZ');
+const departing = client('ShiftLeft');
 departing.me.position.y = VEHICLES.helicopter.gear;
 departing.landed = true;
 for (let i = 0; i < 120; i++) vm.runInContext('physics(1/120)', departing);
@@ -227,4 +227,46 @@ for (let i = 0; i < 60; i++) vm.runInContext('physics(1/120)', copilot);
 assert.ok(copilot.me.quaternion.angleTo(new T.Quaternion()) < 1e-9, 'copilot cannot roll hull');
 console.log(
   'Issue #9: Q/D and Left/Right force signed roll with a still mouse; release/focus levels; copilot ignored.',
+);
+
+// #16: vertical power and pitch are separate; retired O/W do neither.
+for (const [key, sign] of [
+  ['KeyZ', -1],
+  ['ArrowUp', -1],
+  ['KeyS', 1],
+  ['ArrowDown', 1],
+]) {
+  const c = client(key);
+  for (let i = 0; i < 60; i++) vm.runInContext('physics(1/120)', c);
+  assert.ok(
+    new T.Euler().setFromQuaternion(c.me.quaternion, 'YXZ').x * sign > 0.5,
+    key + ' must force pitch',
+  );
+  assert.equal(c.me.position.y, 1, key + ' must not change collective altitude');
+}
+for (const key of ['KeyO', 'KeyW']) {
+  const c = client(key);
+  for (let i = 0; i < 60; i++) vm.runInContext('physics(1/120)', c);
+  assert.equal(c.me.position.y, 1);
+  assert.ok(c.me.quaternion.angleTo(new T.Quaternion()) < 1e-9);
+}
+const combined = client('ShiftLeft');
+combined.keys.KeyZ = true;
+combined.keys.KeyQ = true;
+for (let i = 0; i < 60; i++) vm.runInContext('physics(1/120)', combined);
+const combinedAngles = new T.Euler().setFromQuaternion(combined.me.quaternion, 'YXZ');
+assert.ok(combined.me.position.y > 1 && combinedAngles.x < 0 && combinedAngles.z > 0);
+const opposing = client('ShiftLeft');
+Object.assign(opposing.keys, {
+  ControlRight: true,
+  KeyZ: true,
+  KeyS: true,
+  KeyQ: true,
+  KeyD: true,
+});
+for (let i = 0; i < 60; i++) vm.runInContext('physics(1/120)', opposing);
+assert.equal(opposing.me.position.y, 1);
+assert.ok(opposing.me.quaternion.angleTo(new T.Quaternion()) < 1e-9);
+console.log(
+  '#16: pitch aliases, Shift/Ctrl vertical power, O/W retired, combined and opposing controls.',
 );

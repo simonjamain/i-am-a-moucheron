@@ -1,4 +1,4 @@
-import { deliveryStart, deliveryLanding, DELIVERY_SPEED } from '../src/delivery.js';
+import { deliveryStart, deliveryLanding, deliveryHeightAt } from '../src/delivery.js';
 import { HELI, rotateLocal, steerMissile } from '../src/helicopter.js';
 import {
   sweptVehicle,
@@ -997,7 +997,14 @@ export class Game {
       price,
       placed: !!drop,
     });
-    if (drop) r.deliveries.push({ ...drop, token: b.request, at: this.now() });
+    if (drop)
+      r.deliveries.push({
+        ...drop,
+        fromY: drop.y,
+        startedAt: this.now(),
+        token: b.request,
+        at: this.now(),
+      });
   }
   advanceDeliveries(r, now) {
     for (const delivery of r.deliveries) {
@@ -1013,7 +1020,10 @@ export class Game {
             clearance: (VEHICLES[v.type].span * ACTOR_UNIT) / 2,
           })),
       ]);
-      delivery.y -= DELIVERY_SPEED * Math.max(0, (now - delivery.at) / 1000);
+      delivery.fromY ??= delivery.y;
+      delivery.startedAt ??= delivery.at;
+      delivery.landingY = landing?.y ?? 0.00005;
+      delivery.y = deliveryHeightAt(delivery, now);
       delivery.at = now;
       if (!landing) {
         delivery.y = Math.max(0.00005, delivery.y);

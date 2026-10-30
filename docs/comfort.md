@@ -85,3 +85,6 @@ La suite complète conserve contrats, exclusivité et deux clients UDP natifs.
 Le navigateur de contrôle permet de vérifier l'interface ; WebGL, Pointer Lock,
 confort de tir et coopération WAN restent à confirmer sur VM. HEL-06/DCM-03
 conservent donc leur validation humaine en cours.
+
+Les [issues 15–17](issues-15-16-17.md) précisent la descente continue des colis,
+le mapping Maj/Ctrl et tangage du H2, et la réduction supplémentaire des vitesses terrestres.

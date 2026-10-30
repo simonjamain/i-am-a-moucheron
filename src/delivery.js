@@ -2,6 +2,16 @@ import { MAP, ACTOR_UNIT } from './scale.js';
 import { VEHICLES } from './fleet.js';
 import { supportedPlacement } from './equipment.js';
 export const DELIVERY_SPEED = MAP.metres(1 / 3);
+// Absolute server time is shared by simulation and rendering; no accumulated
+// snapshot deltas and no visual freeze while waiting for the next snapshot.
+export function deliveryHeightAt(delivery, now) {
+  const from = delivery.fromY ?? delivery.y;
+  const at = delivery.startedAt ?? delivery.at;
+  return Math.max(
+    delivery.landingY ?? 0.00005,
+    from - DELIVERY_SPEED * Math.max(0, (now - at) / 1000),
+  );
+}
 export function deliveryLanding(delivery, solids, occupied = []) {
   const allSolids = [
     ...solids,

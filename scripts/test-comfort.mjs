@@ -107,9 +107,18 @@ assert.equal(r.base.epoch, after);
 assert.equal(r.pilots.size, 2);
 assert.equal(r.pilots.get(a.id).name, 'Alpha');
 assert.equal(r.pilots.get(b.id).name, 'Bravo');
-for (const wave of [1, 2, 8])
-  for (const e of wavePlan('SLOW-ANTS', wave, 123).roster)
-    close(e.travelSpeed, baselineTravelSpeed(e, wave) * (e.type === 'ant' ? 0.5 : 1));
+for (const wave of [1, 2, 8]) {
+  const roster = wavePlan('SLOW-ANTS', wave, 123).roster;
+  for (const e of roster) {
+    if (e.type === 'ant' || !e.ground)
+      close(e.travelSpeed, baselineTravelSpeed(e, wave) * (e.type === 'ant' ? 0.25 : 1));
+    else
+      assert.ok(
+        e.travelSpeed <
+          Math.min(...roster.filter((a) => a.type === 'ant').map((a) => a.travelSpeed)),
+      );
+  }
+}
 assert.equal(ENEMY_SIZE_FACTORS.ant, 6);
 const scene = new T.Scene(),
   origin = new T.Vector3(),

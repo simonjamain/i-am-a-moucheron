@@ -129,7 +129,15 @@ export function wavePlan(room, wave, started = 0) {
     enemy.approach = wave <= 3 ? 'intro' : wave <= 6 ? 'short' : 'full';
     enemy.routeSeed = hash(key + ':route:' + (solo ? 'solo' + enemy.id : group));
     enemy.branch = enemy.id % 8 < 3 ? 1 : 0;
-    enemy.travelSpeed = baselineTravelSpeed(enemy, wave) * (enemy.type === 'ant' ? 0.5 : 1);
+    enemy.travelSpeed = baselineTravelSpeed(enemy, wave) * (enemy.type === 'ant' ? 0.25 : 1);
+  }
+  const ants = roster.filter((e) => e.type === 'ant');
+  const slowestAnt = Math.min(...ants.map((e) => e.travelSpeed));
+  const antSize = ENEMY_TYPES.ant.size * enemySizeFactor('ant');
+  for (const enemy of roster) {
+    if (enemy.ground && enemy.type !== 'ant')
+      enemy.travelSpeed =
+        slowestAnt * Math.min(1, antSize / (enemy.size * enemySizeFactor(enemy.type)));
     enemy.duration = enemy.entryHold + routeDuration(enemy);
   }
   const result = { budget: waveBudget(wave), roster: expandMidgeSwarms(roster) };
