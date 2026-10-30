@@ -2245,3 +2245,53 @@ la cadence de REP-01.
 Critères : reproduire une panne sur chaque modèle concerné, réparer puis remettre
 les gaz et redécoller ; plein déjà fait, réparation interrompue, dégâts répétés,
 état partagé entre occupants et observateurs, aucune résurrection d'épave.
+
+## Nouveau lot — missiles guidés du copilote H2 (30 octobre 2026)
+
+Cadrage validé par l'utilisateur ; ajout documentaire autorisé avec PR et fusion.
+Aucun bug reproduit ni correctif de gameplay livré dans cette intégration.
+Référence du fonctionnement actuel : [véhicules d'appui](docs/support-vehicles.md).
+
+| ID | Tâche | État | Dépendances |
+| --- | --- | --- | --- |
+| HEL-09 | Stabiliser le guidage des missiles à distance et près des obstacles | prêt | — |
+| HUD-10 | Indiquer vol, rechargement et épuisement des missiles H2 | prêt | — |
+
+### HEL-09 — Trajectoire des missiles guidés
+
+Signalement : le missile du copilote fonctionne normalement, puis semble partir
+dans des directions erratiques lorsqu'il est loin ou approche d'un obstacle.
+Ces conditions sont des observations à reproduire, pas des causes confirmées.
+Diagnostiquer puis corriger le guidage pour conserver une trajectoire cohérente
+avec la direction demandée par le copilote, jusqu'à la fin du vol. Aucun évitement
+automatique des obstacles ni nouvelle limite de distance.
+
+Conserver les règles validées : explosion à l'impact ou sur commande ; durée de
+vie maximale de **10 secondes**, puis disparition sans explosion. Préserver les
+limites angulaires, dégâts, stocks, exclusivité d'un missile en vol et perte du
+guidage à la sortie du poste selon les règles existantes.
+
+Critères : reproduire et documenter la cause ; tester visée proche/lointaine,
+obstacle approché de face ou en tangente, changements de visée et vol jusqu'à
+expiration. Pas de retournement ou divergence inexpliqués ; impact unique,
+détonation manuelle et expiration sans dégâts cohérents entre clients. Séparer
+preuves automatisées et essai réel WebGL/UDP, sans revendiquer le confort non testé.
+
+### HUD-10 — États du missile au poste copilote
+
+Afficher au copilote **« Missile en vol »** pendant le vol ; après sa fin,
+**« Missile en cours de rechargement »** pendant le délai avant le prochain tir
+(**2 secondes après la destruction du précédent**, règle actuelle). Retirer le
+message de rechargement dès que le prochain missile est disponible. Sans
+munitions disponibles, afficher **« Missiles épuisés »** ; si le dernier missile
+est encore en vol, son état de vol reste prioritaire jusqu'à sa fin.
+
+Employer le style discret des alertes de réserves faibles, sans chevauchement
+entre messages ni masquage du viseur. Coordonner avec HUD-09 du lot précédent,
+sans conditionner le guidage à l'interface. Ne pas afficher un rechargement
+pendant que le missile est encore en vol.
+
+Critères : lancement, impact, détonation manuelle, expiration, délai complet,
+dernière munition, ravitaillement, changement d'arme/poste, mort et reset ; aucun
+message périmé, état cohérent avec l'autorisation réelle de tirer. Vérifier les
+alertes simultanées carburant/PV/munitions et le zoom au poste copilote.
