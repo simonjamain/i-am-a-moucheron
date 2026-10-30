@@ -135,3 +135,9 @@ radar à pied, remise à zéro, fourmis et projectiles du pistolet courants.
 
 La [correction des commandes H2](helicopter-controls.md) détaille les défauts
 reproduits, le collectif local, la jauge au neutre et les tests de roquettes.
+
+## Accès après pose du H2
+
+Un H2 neuf conserve son état posé malgré la marge de pose de 0,05 mm : la
+physique recale les patins au support proche avant de masquer les cercles des
+deux postes. Cette tolérance ne rappelle pas au sol un hélicoptère en vol.

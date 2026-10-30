@@ -1109,27 +1109,23 @@ export class Game {
       const placement = supportedPlacement(
         { ...b.position, y: w.y },
         this.solids,
-        [...r.equipment, initialStation()],
+        [
+          ...r.equipment,
+          initialStation(),
+          ...values(r.vehicles)
+            .filter((v) => v.state.landed)
+            .map((v) => ({
+              x: v.state.p[0],
+              y: v.state.p[1],
+              z: v.state.p[2],
+              clearance: (VEHICLES[v.type].span * ACTOR_UNIT) / 2,
+            })),
+        ],
         b.item,
       );
       requireGame(
         placement && Math.abs(placement.y - b.position.y) <= 0.0003,
         'La base entière doit reposer sur une surface libre.',
-      );
-      requireGame(
-        !values(r.vehicles).some(
-          (v) =>
-            v.state.landed &&
-            Math.abs(v.state.p[1] - placement.y) < MAP.metres(4) &&
-            Math.hypot(v.state.p[0] - placement.x, v.state.p[2] - placement.z) <
-              (VEHICLES[v.type].span * ACTOR_UNIT) / 2 +
-                (VEHICLES[b.item]
-                  ? MAP.metres(VEHICLES[b.item].span / 2 + 1)
-                  : b.item === 'refuel'
-                    ? 0.065
-                    : MAP.metres(b.item === 'bed' ? 3 : 2.1)),
-        ),
-        'Éloignez l’installation des appareils garés.',
       );
       if (item.kind === 'vehicle') this.createVehicle(r, b.item, 'purchase', placement);
       else

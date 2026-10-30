@@ -93,7 +93,7 @@ export function stepHelicopter(T, state, controls, colliders, dt, profile) {
     )
       support = Math.max(support, b.max.y);
   let landed = false;
-  if (p.y - profile.gear <= support + 1e-9 && v.y <= 0) {
+  if (p.y - profile.gear <= support + (state.landed ? MAP.metres(0.03) : 1e-9) && v.y <= 0) {
     if (v.y < -MAP.metres(8)) state.hp = 0;
     p.y = support + profile.gear;
     v.y = 0;
