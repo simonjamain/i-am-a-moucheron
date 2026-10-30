@@ -2321,3 +2321,11 @@ cible à rattraper quand la souris s’arrête. Vitesse plafonnée conservée, s
 des grands mouvements préservé. Régression rouge avant/verte après ; détails
 et limites dans [commandes H2](docs/helicopter-controls.md#pointage-relatif-sans-rattrapage--issue-10-version-50).
 Essai humain du ressenti restant.
+
+## Issue #11 — candidat d’ombres, version 51
+
+Solution implémentée avec inventaire de scène inchangé et comparateur WebGL
+avant/après. **En cours, validation bloquée** : pas de Chromium/WebGL de mesure
+disponible ici. Ne pas accepter/fusionner tant que les comparaisons visuelles et
+la non-régression mesurée n’ont pas été vérifiées. Référence :
+[ombres](docs/shadow-visibility.md), [reprise](docs/tasks/issue-11-shadows.md).

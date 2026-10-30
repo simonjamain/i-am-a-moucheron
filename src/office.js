@@ -1,3 +1,4 @@
+import { applyShadowPreset } from './shadow-settings.js';
 import { PORTALS } from './routes.js';
 import { OFFICE_LAYOUT } from './layout.js';
 import { ACTOR_UNIT } from './scale.js';
@@ -20,6 +21,7 @@ export function createOffice(T, scene, { box, cyl, ball, mat, textLabel }) {
   Object.assign(sun.shadow.camera, { left: -5, right: 5, top: 5, bottom: -5, near: 0.01, far: 15 });
   sun.shadow.bias = -0.00001;
   scene.add(sun);
+  applyShadowPreset(T, null, scene);
   solid(0, -0.04, 0, 8.4, 0.08, 7.2, '#7b8675');
   solid(0, 1.5, -3.6, 8.4, 3, 0.08, '#b7c0ac');
   solid(-4.2, 1.5, 0, 0.08, 3, 7.2, '#b4c6b7');
