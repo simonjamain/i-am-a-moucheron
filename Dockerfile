@@ -3,6 +3,7 @@ FROM ${NODE_IMAGE} AS build
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev && node -e "import('node-datachannel').then(m => { m.preload(); m.cleanup(); })"
+COPY VERSION ./VERSION
 COPY src ./src
 COPY server ./server
 COPY scripts/assemble.mjs scripts/build-ui-preview.mjs ./scripts/
