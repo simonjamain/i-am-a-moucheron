@@ -7,22 +7,15 @@ quitter le purgatoire de Saint Pierre.
 
 ## Reprendre dans un autre chat
 
-Le Site existant porte l’identifiant :
-`appgprj_6ae1e591360481919010bdf89f8da3f0`.
+Le dépôt courant est https://github.com/simonjamain/i-am-a-moucheron.
+Lire `AGENTS.md`, `README.md` et `CONTRIBUTING.md`, puis les références utiles
+à la tâche. Pour reprendre un travail interrompu, consulter sa note dans
+`docs/tasks/`, la PR et le diff actuel.
 
-Avec les outils et le skill Sites disponibles, retrouver ce Site par cet
-identifiant, consulter sa configuration actuelle et ouvrir son dépôt source lié.
-Conserver son identité et son audience. Lire ensuite, dans cet ordre :
-
-1. `AGENTS.md` : règles de travail et entretien documentaire.
-2. `README.md` : démarrage et index des références.
-3. `docs/gameplay.md` : fonctionnement actuel et interactions.
-4. Selon la tâche, `docs/code-structure.md` et `docs/operations.md`.
-
-Le dépôt est la référence maintenue. Ce fichier sert de point d’accès et ne
-remplace pas la lecture des sources actuelles. Un fichier joint dans ChatGPT est
-une copie : vérifier sa fraîcheur lorsqu’il diverge du dépôt. Si les outils Sites
-ou les sources sont indisponibles, l’indiquer et demander l’accès nécessaire.
+Le Site historique `appgprj_6ae1e591360481919010bdf89f8da3f0` reste accessible
+via Sites pour une intervention explicite sur ce backend. Le développement
+courant ne nécessite pas Sites. Une pièce jointe ChatGPT est une copie : vérifier
+sa fraîcheur contre le dépôt. Signaler une source inaccessible sans inventer son état.
 
 ## Repères techniques
 
@@ -31,8 +24,8 @@ Le runtime actuel est Node, en RAM uniquement. Tous les événements de jeu pass
 par WebRTC sur UDP : mouvements sans retransmission, commandes importantes fiables.
 HTTP sert les fichiers et la négociation ; aucun repli WebSocket/TCP/HTTP de gameplay.
 Le Worker/D1 Sites est un backend historique distinct, toujours publié tant que
-le serveur Node n’est pas déployé sur la VM de l’utilisateur. Le dépôt se livre
-normalement en ZIP des sources, sans construire d’image Docker sur chaque lot.
+le serveur Node n’est pas déployé sur la VM de l’utilisateur. Les contributions sont livrées en PR ; ZIP et images Docker dépendent de la
+livraison demandée.
 La physique reste coopérative côté client, avec règles et transactions côté serveur.
 Le décor est en mètres ; les modèles miniatures utilisent un ratio centralisé.
 La chute du personnage convertit aussi la gravité humaine avec ce ratio (CHU-02). Voir les références
@@ -45,14 +38,14 @@ et distinguer ce qui est testé de ce qui reste à observer sur de vrais apparei
 À chaque changement, mettre à jour le document de référence concerné dans la même
 livraison. Vérifier les règles utilisées contre le code au début d’une session et
 avant publication. Retirer les doublons et règles remplacées ; conserver les
-archives clairement identifiées. Maintenir les documents concis et organisés. Les agents traitent le backlog
-en continu ; `AGENTS.md` exige une revue finale de cohérence de tous les Markdown
-suivis, avec correction des informations erronées et état de reprise à jour.
+archives clairement identifiées. Vérifier les documents concernés par le changement
+et maintenir une note de reprise par tâche lorsque nécessaire. Les règles de
+collaboration et l’état des environnements temporaires figurent dans CONTRIBUTING.
 
 Ce fichier peut être joint aux fichiers du projet ChatGPT. Ses sections
 « Reprendre dans un autre chat » et « Méthode de travail attendue » peuvent aussi
 servir d’instructions du projet. L’ajout à ChatGPT doit être effectué dans son
 interface ; une mise à jour du dépôt ne l’attache pas automatiquement.
 
-Consolidation : 29 octobre 2026. Les détails évolutifs et l’état de publication
-sont à retrouver dans le dépôt et les outils Sites, plutôt qu’à recopier ici.
+Consolidation : 30 octobre 2026. Les détails évolutifs et l’état de publication
+sont à retrouver dans le dépôt et les outils de déploiement concernés, plutôt qu’à recopier ici.

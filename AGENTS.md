@@ -1,84 +1,76 @@
 # Travail sur Flight Lab
 
-Lire `README.md`, puis `docs/gameplay.md` avant une première modification.
-Pour le réseau ou la physique partagée, lire aussi `docs/walking-network.md`.
-Pour les achats, signatures ou chutes, lire `docs/economy-physics.md`.
-Pour publier ou vérifier un résultat, lire `docs/operations.md` et le skill Sites
-actuellement disponible. Identifier le Site depuis `.openai/hosting.json`.
+## Contexte utile
 
-## Entretien de la documentation
+Le dépôt GitHub est la référence ; développer dans une branche dédiée et livrer
+une pull request. Lire [README](README.md), puis les documents liés à la tâche.
+Pour le gameplay, lire [gameplay](docs/gameplay.md) ; pour le réseau ou la physique
+partagée, [walking-network](docs/walking-network.md) ; pour les achats, signatures
+ou chutes, [economy-physics](docs/economy-physics.md). Pour les vérifications et
+l'exploitation, lire [operations](docs/operations.md).
+Lire [CONTRIBUTING](CONTRIBUTING.md) avant de prendre une tâche ou préparer une PR.
+Pour reprendre une tâche interrompue, lire sa note dans `docs/tasks/`, la discussion
+GitHub et le diff ; vérifier les affirmations contre l'état de la branche.
 
-À chaque changement de comportement, modifier dans la même livraison le document
-qui en est responsable et les contrôles concernés. À chaque début de session,
-vérifier que les références utilisées correspondent au code actuel. Avant une
-publication, revoir les documents touchés et leurs liens pour retirer les règles
-remplacées. À chaque évolution de stack, d’autorité réseau ou de boucle de jeu,
-revoir aussi README, gameplay et carte du code.
+## Boucle de travail
 
-Décrire l’état actuel dans les documents actifs. Conserver les raisons encore
-utiles ; Git conserve le détail des changements. Mettre les anciennes descriptions
-utiles dans `docs/archive/` avec un avertissement et un lien vers leur remplaçant.
-Une règle a une seule référence détaillée ; ailleurs, ajouter un lien. Garder
-les instructions de démarrage courtes et les détails accessibles par sujet.
+1. Définir le résultat observable et le périmètre depuis la demande. Reproduire
+   un bug avant correction quand possible ; consigner une reproduction impossible.
+   Repérer les systèmes touchés et les contributions susceptibles d'interagir.
+2. Implémenter par étapes ciblées. Après chaque étape significative, exécuter le
+   contrôle pertinent, lire son résultat et corriger la cause d'un échec.
+   Choisir les tests selon le risque ; pour un bug reproductible automatiquement,
+   ajouter une régression qui échoue avant correction. Préserver la portée des
+   contrôles : un test rouge se diagnostique, ses attentes ne sont pas affaiblies
+   pour rendre le changement vert.
+3. Après plusieurs tentatives sans progrès, revenir à la reproduction et aux
+   observations ; changer d'hypothèse ou documenter le blocage. Continuer les
+   tâches indépendantes du périmètre autorisé.
+4. Relire le diff final contre la demande : régressions, interactions réseau,
+   code généré, secrets, changements hors périmètre. Vérifier les commandes utiles
+   de `package.json` et suivre les contrôles de `docs/operations.md`.
+5. Livrer les preuves et limites dans la PR. Une compilation, un aperçu HUD ou un
+   test local ne prouve pas une partie WebGL/UDP/WAN ni le confort du pilotage.
+   Une optimisation demande un scénario et des mesures comparables avant/après.
 
-Avant de clôturer chaque lot du backlog, inventorier tous les Markdown suivis et
-vérifier leur cohérence avec le code livré : stack, démarrage, architecture,
-fonctionnalités, commandes, état des tâches et liens. Corriger les informations
-erronées et règles remplacées ; identifier les archives historiques. Vérifier que
-README, gameplay et carte du code donnent un parcours de reprise court et à jour.
-Consigner dans le suivi du lot les documents corrigés et les limites restantes ;
-exécuter aussi `npm run check:docs` pour les liens locaux. La livraison est
-complète lorsque cette revue documentaire est effectuée.
+## Contexte persistant et documentation
 
-## Exécution du backlog
+Mettre à jour, dans la même PR, les références dont le comportement change ;
+conserver une référence détaillée par sujet, avec des liens ailleurs. Pour une
+évolution de stack, d'autorité réseau ou de boucle de jeu, revoir aussi README,
+gameplay et carte du code. Vérifier les documents concernés et leurs liens avec
+`npm run check:docs`. Réserver l'audit global à une tâche documentaire explicite.
 
-Quand l’utilisateur demande de traiter le backlog, prendre en charge toutes les
-tâches prêtes du périmètre demandé, dans l’ordre des dépendances et priorités,
-jusqu’à leur livraison vérifiée. Les décisions de conception consignées sont
-validées : passer directement à l’implémentation, aux contrôles et à la livraison,
-sans nouvelle étape de confirmation des maquettes ou résultats intermédiaires.
-Choisir les détails non spécifiés selon les conventions du jeu et documenter les
-hypothèses et arbitrages dans le suivi de tâche.
+Pour un travail long, interrompu ou à transmettre, maintenir une note par tâche
+selon [le modèle de reprise](docs/tasks/README.md). Y conserver l'état actuel,
+les preuves et la prochaine action ; reporter les décisions durables dans leur
+référence métier. Git garde l'historique. Les tâches courtes terminées dans une
+session peuvent se contenter de leur PR ; aucun journal central à alimenter.
 
-Découper les tâches et produire des releases intermédiaires cohérentes est
-autorisé. Fournir au fil des releases un ZIP des sources déployables, les consignes
-nécessaires, les contrôles exécutés et les limites connues, pour permettre à
-l’utilisateur de déployer avant la fin du lot. Continuer automatiquement sur le
-reste du lot après chaque livraison, sans attendre de retour. Une image Docker
-n’est à produire que sur demande explicite. Ces livraisons ne provisionnent ni ne
-déploient un serveur externe à la place de l’utilisateur.
+## Livraison et autonomie
 
-Les mises à jour de progression informent sans demander d’accord pour continuer.
-En cas de blocage réel, chercher une solution dans le périmètre autorisé, consigner
-le blocage et poursuivre les tâches indépendantes. Solliciter l’utilisateur
-uniquement lorsqu’une information ou un accès indispensable reste introuvable,
-ou qu’une action exige une autorisation qui n’a pas été donnée ; les contrôles
-d’autorisation natifs restent applicables. Ne pas déclarer le lot terminé tant
-que des tâches restent incomplètes : donner leur état précis et la reprise utile.
+Traiter le périmètre autorisé jusqu'à une livraison vérifiée ; choisir les détails
+courants selon les conventions et consigner les hypothèses utiles. Demander une
+précision seulement si une décision ou un accès indispensable manque.
+Une tâche a un responsable ; plusieurs tâches peuvent avancer en parallèle.
+L'auteur maintient sa branche et résout ses conflits jusqu'à la fusion. Après
+intégration de changements concurrents, refaire les contrôles concernés et
+signaler les essais humains à renouveler. La fusion appartient aux personnes
+habilitées sur GitHub ; créer une PR ne vaut pas autorisation de la fusionner.
 
-## Livraison
+Les déploiements temporaires relèvent de GitHub Actions, selon l'état décrit dans
+CONTRIBUTING. Vérifier le résultat réellement retourné ; signaler un environnement
+absent ou en échec. Garder secrets et administration du VPS hors des contributions.
+Le runtime Node/UDP et le Site historique Worker/D1 sont distincts : publier le
+client Node sur le Worker est incompatible. Sites n'est pas requis pour coder ;
+le consulter seulement pour une intervention explicite sur le Site historique.
+Générer ZIP ou image Docker uniquement si la livraison demandée le nécessite.
 
-Modifier les sources, assembler les fichiers générés et effectuer les contrôles
-adaptés au changement. Pour une modification documentaire, vérifier liens,
-cohérence et formatage ; une nouvelle validation complète du gameplay n’est pas
-nécessaire si aucun code n’a changé. Pour une évolution fonctionnelle, utiliser
-les tests pertinents et le parcours navigateur lorsque disponible.
+## Version
 
-Séparer dans le compte rendu les vérifications exécutées et leurs limites.
-Conserver l’identifiant et l’audience du Site. Ajouter une nouvelle migration pour
-toute évolution de schéma déjà publié. Conserver les secrets hors des documents.
-
-Le fichier d’accueil ChatGPT remis à l’utilisateur pointe vers ce dépôt. Le mettre
-à jour si l’identité, l’accès aux sources ou le parcours de reprise change ; les
-règles détaillées restent dans le dépôt.
-
-
-## Version à chaque commit
-
-La valeur entière dans `VERSION` est la référence unique du numéro de jeu.
-Cette règle entre en vigueur avec la version 36. Avant chaque commit suivant,
-y compris documentaire, augmenter cette valeur de 1 dans le même commit.
-Après synchronisation ou fusion, utiliser un numéro supérieur à la dernière
-version intégrée et vérifier l'incrément avant de pousser. L'affichage, les assets
-assemblés et les livraisons doivent reprendre cette valeur ; VER-01 dans
-`BACKLOG.md` suit l'ajout de l'affichage et du contrôle automatique.
+`VERSION` reste la référence entière du jeu. Avant chaque commit, y compris
+documentaire, augmenter sa valeur ; après synchronisation, utiliser un numéro
+supérieur à la dernière version intégrée. Utiliser `npm run version:next` et
+`npm run check:version` selon leurs options et vérifier les assets assemblés.
+Cette convention reste en vigueur en attendant une évolution dédiée du
+versionnement pour les branches parallèles.

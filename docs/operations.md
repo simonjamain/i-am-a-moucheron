@@ -21,9 +21,9 @@ Les archives Docker `.1` et `.2` sont historiques, antérieures aux retours terr
 ## Sources et Site historique
 
 Identité conservée : `appgprj_6ae1e591360481919010bdf89f8da3f0`, déclarée dans
-`.openai/hosting.json`. Audience publique conservée. Le dépôt se rouvre avec le
-skill Sites et son helper courant ; `/workspace/sites/moucheron-flight` est un
-chemin de cette session, pas une convention pour tous les agents.
+`.openai/hosting.json`. Audience publique conservée. Le dépôt GitHub est la référence du développement courant.
+Le skill Sites reste utile pour intervenir explicitement sur le Site historique ;
+il ne constitue pas une étape obligatoire des contributions GitHub.
 
 Le Site public Worker/D1 reste distinct du runtime Node/UDP. Les nouvelles
 commandes d’armes lourdes, banque, lits, impacts de chute, bons prépayés et nettoyage ciblent Node. **Ne pas
@@ -52,8 +52,8 @@ Le build/validateur ESM vérifie le paquet Worker historique, pas un déploiemen
 La suite complète inclut les tests de règles Node, physique, signatures, assets,
 interface et les deux clients natifs UDP. Les tests Worker utilisent SQLite pour
 la compatibilité historique ; cette dépendance n’est pas dans le serveur Node.
-`AGENTS.md` exige une revue sémantique finale des Markdown en plus du contrôle
-mécanique des liens. La [revue du 29 octobre 2026](archive/reference-audit-2026-10-29.md)
+`AGENTS.md` exige une revue des documents concernés par la modification en plus
+du contrôle mécanique des liens. Un audit global fait l’objet d’une tâche dédiée. La [revue du 29 octobre 2026](archive/reference-audit-2026-10-29.md)
 reste une trace historique, pas une seconde référence métier.
 
 ## Vérification navigateur et limites
@@ -106,3 +106,11 @@ et utilisent une grille spatiale pour le voisinage.
 
 La [correction des commandes H2](helicopter-controls.md) couvre Z/O/Haut, S/Bas,
 stationnaire, poussée locale et axe des roquettes.
+
+## Contributions GitHub
+
+Le [guide de contribution](../CONTRIBUTING.md) décrit les branches parallèles,
+la revue, les essais et la décision de fusion. Les environnements temporaires
+GitHub Actions ne sont pas encore configurés ; leur fonctionnement cible et
+leurs contraintes UDP y sont consignés. Aucun déploiement VPS automatique
+n’est revendiqué par la seule présence de ces instructions.

@@ -15,6 +15,13 @@ Le dépôt est la référence maintenue. Les conversations expliquent les demand
 mais ne constituent pas une spécification exhaustive de l’état actuel.
 Les notes dans `docs/archive/` sont historiques.
 
+## Contributions
+
+Le développement collaboratif passe par GitHub :
+[contribuer](CONTRIBUTING.md), proposer une PR et
+[transmettre une tâche](docs/tasks/README.md). Les environnements temporaires
+par PR restent à configurer ; voir CONTRIBUTING pour leur état et la cible.
+
 ## Stack et démarrage
 
 JavaScript ESM natif, Three.js embarqué dans `vendor/`, modèles procéduraux et
