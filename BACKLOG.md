@@ -1466,8 +1466,8 @@ Suivre l’exécution autonome de `AGENTS.md`, sans nouvelle confirmation ; livr
 intermédiaires en ZIP autorisées. Les règles ci-dessous remplacent les précédentes
 lors de leur implémentation ; préserver les suivis des lots déjà livrés.
 
-| ID      | Tâche                                                       | État | Dépendances |
-| ------- | ----------------------------------------------------------- | ---- | ----------- |
+| ID      | Tâche                                                       | État    | Dépendances |
+| ------- | ----------------------------------------------------------- | ------- | ----------- |
 | MORT-01 | Observation après mort avant accès volontaire au purgatoire | terminé | —           |
 | HUD-03  | Statistiques des avions près du viseur                      | terminé | —           |
 | HUD-04  | Aide permanente des commandes en bas à gauche               | terminé | HUD-03      |
@@ -1617,7 +1617,6 @@ Livraison documentaire seulement ; états courants conservés dans leurs référ
 jusqu’à implémentation. Vérifier liens, format, identifiants et dépendances. Les
 paramètres non imposés sont à choisir et documenter par l’agent sans interruption.
 
-
 ### Livraison du lot retours multijoueurs
 
 Les 14 tâches sont terminées sur Node/RAM/UDP. [Référence courante](docs/multiplayer-return.md),
@@ -1639,7 +1638,6 @@ revus, détails dans [audit](docs/reference-audit.md). ZIP des sources livré ;
 Site public historique inchangé. WebGL, écoute, tactile physique et partie sur
 Internet restent à vérifier sur VM.
 
-
 ## Nouveau lot — hélicoptère et DCA mobile (30 octobre 2026)
 
 Décisions validées dans la conversation, intégration au backlog autorisée le
@@ -1648,17 +1646,17 @@ en cours. Voir la livraison détaillée ci-dessous. Les lots terminés restent i
 Les détails non fixés sont à choisir et documenter selon les conventions du jeu,
 sans transformer ces choix en recommandations déjà validées.
 
-| ID | Tâche | État | Dépendances |
-| --- | --- | --- | --- |
-| HEL-01 | Hélicoptère biplace, achat et postes | terminé | INT-02, SIE-02 |
-| HEL-02 | Pilotage souris, poussée et stationnaire assisté | terminé | HEL-01 |
-| HEL-03 | Roquettes du pilote | terminé | HEL-02 |
-| HEL-04 | Tourelle mitrailleuse du copilote | terminé | HEL-01 |
-| HEL-05 | Missile guidé manuellement et détonation | terminé | HEL-04 |
-| HEL-06 | HUD, ravitaillement et validation coopérative | en cours | HEL-03, HEL-05 |
-| DCM-01 | Poids lourd et semi-remorque DCA à deux postes | terminé | INT-02, SIE-02 |
-| DCM-02 | Obus à fusée de proximité et armement différé | terminé | DCM-01 |
-| DCM-03 | Réglage, stocks, HUD et validation coopérative | en cours | DCM-02 |
+| ID     | Tâche                                            | État     | Dépendances    |
+| ------ | ------------------------------------------------ | -------- | -------------- |
+| HEL-01 | Hélicoptère biplace, achat et postes             | terminé  | INT-02, SIE-02 |
+| HEL-02 | Pilotage souris, poussée et stationnaire assisté | terminé  | HEL-01         |
+| HEL-03 | Roquettes du pilote                              | terminé  | HEL-02         |
+| HEL-04 | Tourelle mitrailleuse du copilote                | terminé  | HEL-01         |
+| HEL-05 | Missile guidé manuellement et détonation         | terminé  | HEL-04         |
+| HEL-06 | HUD, ravitaillement et validation coopérative    | en cours | HEL-03, HEL-05 |
+| DCM-01 | Poids lourd et semi-remorque DCA à deux postes   | terminé  | INT-02, SIE-02 |
+| DCM-02 | Obus à fusée de proximité et armement différé    | terminé  | DCM-01         |
+| DCM-03 | Réglage, stocks, HUD et validation coopérative   | en cours | DCM-02         |
 
 ### HEL-01 — Appareil, achat et équipage
 
@@ -1819,17 +1817,16 @@ formatage, liens et audit des 32 Markdown, build et validateur ESM. Les temps CP
 synthétiques sont consignés dans la référence du lot, sans prétendre mesurer les
 FPS ou la charge Internet. Sources poussées au dépôt et ZIP déployable actualisé.
 
-
 ## Correctifs signalés en partie — 30 octobre 2026
 
 Ajout au backlog demandé par l'utilisateur. Signalements à reproduire : aucune
 cause technique ni correction n'est encore confirmée. Les validations historiques
 restent conservées ; ces anomalies rouvrent le besoin par deux tâches distinctes.
 
-| ID | Tâche | État | Dépendances |
-| --- | --- | --- | --- |
-| BUG-06 | Rétablir les cercles et l'embarquement dans l'hélicoptère H2 | terminé | — |
-| ARM-06 | Rendre visible le projectile du pistolet pendant son trajet | terminé | — |
+| ID     | Tâche                                                        | État    | Dépendances |
+| ------ | ------------------------------------------------------------ | ------- | ----------- |
+| BUG-06 | Rétablir les cercles et l'embarquement dans l'hélicoptère H2 | terminé | —           |
+| ARM-06 | Rendre visible le projectile du pistolet pendant son trajet  | terminé | —           |
 
 ### BUG-06 — Hélicoptère inaccessible après placement
 
@@ -1872,11 +1869,11 @@ limites ; HEL-06 reste notamment soumis à la validation d'embarquement réelle.
 
 ## Correctif immédiat — visibilité des ennemis (30 octobre 2026)
 
-| ID | Tâche | État | Dépendances |
-| --- | --- | --- | --- |
-| VIS-09 | Sorties d'aérations visibles et modèles propres à chaque vague/espèce | terminé | — |
-| VIS-10 | Moucherons trois fois plus grands, collisions et effets cohérents | terminé | — |
-| VAG-06 | Quatre fourmis dès la première vague, terrestres plus contrastés | terminé | — |
+| ID     | Tâche                                                                 | État    | Dépendances |
+| ------ | --------------------------------------------------------------------- | ------- | ----------- |
+| VIS-09 | Sorties d'aérations visibles et modèles propres à chaque vague/espèce | terminé | —           |
+| VIS-10 | Moucherons trois fois plus grands, collisions et effets cohérents     | terminé | —           |
+| VAG-06 | Quatre fourmis dès la première vague, terrestres plus contrastés      | terminé | —           |
 
 Deux défauts reproduits puis corrigés par le même test exécutable : corps nés
 au centre des panneaux pleins ; modèle d'une espèce précédente conservé si le
@@ -1890,10 +1887,10 @@ Les validations humaines HEL-06/DCM-03 du lot précédent restent en cours.
 
 ## Reprise immédiate — ennemis encore imperceptibles (30 octobre 2026)
 
-| ID | Tâche | État | Dépendances |
-| --- | --- | --- | --- |
-| VIS-11 | Contrôler les six tailles apparentes et agrandir les espèces subpixel | terminé | VIS-09 |
-| VIS-12 | Relever les terrestres et adapter la marge de passage au corps élargi | terminé | VIS-11 |
+| ID     | Tâche                                                                 | État    | Dépendances |
+| ------ | --------------------------------------------------------------------- | ------- | ----------- |
+| VIS-11 | Contrôler les six tailles apparentes et agrandir les espèces subpixel | terminé | VIS-09      |
+| VIS-12 | Relever les terrestres et adapter la marge de passage au corps élargi | terminé | VIS-11      |
 
 Cause reproduite : existence du mesh ne garantit pas lisibilité. Fourmi 0,93×0,36
 pixel et cafard 1,39×0,46 pixel à 2 m/1080p/62°. Les cinq espèces autres que le
@@ -1907,23 +1904,22 @@ liens, format, build et validateur exécutés ; sources et ZIP actualisés.
 Le confort WebGL/WAN n'est pas revendiqué. Les autres tâches prêtes restent hors
 de ce correctif express consacré aux ennemis.
 
-
 ## Nouveau lot — confort de jeu et version 36 (30 octobre 2026)
 
 Grill intégralement validé, puis intégration autorisée. Cette livraison est
 documentaire : règles à implémenter, états historiques conservés. `VERSION`
 initialise le compteur à 36 ; le prochain commit sera 37, même documentaire.
 
-| ID | Tâche | État | Dépendances |
-| --- | --- | --- | --- |
-| VER-01 | Affichage de version et contrôle de l'incrément par commit | terminé | — |
-| REP-01 | Réparation progressive dans les stations | terminé | — |
-| ARM-07 | Tir pendant le zoom dans tous les véhicules | terminé | — |
-| HUD-05 | Carburant et gaz près du viseur | terminé | — |
-| RAD-03 | Carte radar visible à pied | terminé | — |
-| RST-01 | Bouton permanent de nouvelle partie commune | terminé | — |
-| VAG-07 | Fourmis deux fois plus lentes et deux fois plus petites | terminé | — |
-| HUD-06 | Présence d'ennemis plutôt que compteur de moucherons | terminé | — |
+| ID     | Tâche                                                      | État    | Dépendances |
+| ------ | ---------------------------------------------------------- | ------- | ----------- |
+| VER-01 | Affichage de version et contrôle de l'incrément par commit | terminé | —           |
+| REP-01 | Réparation progressive dans les stations                   | terminé | —           |
+| ARM-07 | Tir pendant le zoom dans tous les véhicules                | terminé | —           |
+| HUD-05 | Carburant et gaz près du viseur                            | terminé | —           |
+| RAD-03 | Carte radar visible à pied                                 | terminé | —           |
+| RST-01 | Bouton permanent de nouvelle partie commune                | terminé | —           |
+| VAG-07 | Fourmis deux fois plus lentes et deux fois plus petites    | terminé | —           |
+| HUD-06 | Présence d'ennemis plutôt que compteur de moucherons       | terminé | —           |
 
 ### VER-01 — Version visible et incrément vérifié
 
@@ -2047,9 +2043,9 @@ Aucun déploiement externe ni client Node publié sur le Worker historique.
 
 ## Nuées de moucherons — version 38, 30 octobre 2026
 
-| ID | Tâche | État | Dépendances |
-| --- | --- | --- | --- |
-| VAG-08 | Multiplier les moucherons par cinq en conservant les nuées | terminé | — |
+| ID     | Tâche                                                      | État    | Dépendances |
+| ------ | ---------------------------------------------------------- | ------- | ----------- |
+| VAG-08 | Multiplier les moucherons par cinq en conservant les nuées | terminé | —           |
 
 Référence : [nuées densifiées](docs/dense-swarms.md). Première vague 20 moucherons
 et 4 fourmis ; autres espèces, PV, tailles, cadences et prime de vague conservés.
@@ -2067,9 +2063,9 @@ Livraison en ZIP Node/UDP ; HEL-06/DCM-03 restent en validation humaine.
 
 ## Correctif H2 — version 39, 30 octobre 2026
 
-| ID | Tâche | État | Dépendances |
-| --- | --- | --- | --- |
-| HEL-07 | Corriger montée/descente et vérifier les roquettes dans l'axe | terminé | — |
+| ID     | Tâche                                                         | État    | Dépendances |
+| ------ | ------------------------------------------------------------- | ------- | ----------- |
+| HEL-07 | Corriger montée/descente et vérifier les roquettes dans l'axe | terminé | —           |
 
 Attendu, causes reproduites et contrôles : [commandes H2](docs/helicopter-controls.md).
 O ajouté aux alias Z/Haut/W ; S/Bas pour descendre. Collectif du pilote conservé
@@ -2088,23 +2084,23 @@ Lot documentaire : les demandes ci-dessous sont enregistrées, aucun correctif
 n'est revendiqué. Vérifier les sources actuelles avant chaque implémentation.
 Les tâches antérieures terminées gardent leur historique.
 
-| ID | Tâche | État | Dépendances |
-| --- | --- | --- | --- |
-| SON-03 | Son H2 audible au poste copilote | prêt | — |
-| BUG-07 | Signature parfois ignorée | à préciser | — |
-| HEL-08 | Rotor et chute du H2 inoccupé | prêt | — |
-| VOL-01 | Décollage depuis une surface et contact des roues | prêt | — |
-| SON-04 | Moucherons audibles de plus loin et mixage plafonné | prêt | — |
-| SON-05 | Signal partagé à chaque arrivée à la panière | prêt | — |
-| HUD-07 | Jauges fonctionnelles et valeurs mises en évidence | prêt | — |
-| HUD-08 | Aide de sortie/parachute dans le récapitulatif | prêt | — |
-| NET-01 | Retirer entièrement le ventilateur | prêt | — |
-| VOL-02 | Conserver uniquement le pilotage souris des avions | prêt | — |
-| ACH-01 | Livraison des achats sous parachute depuis un appareil | prêt | — |
-| PUR-03 | Apparition à côté de la file et marche vers le guichet | prêt | — |
-| HUD-09 | Alertes carburant, munitions et PV à 25 % | prêt | — |
-| VAG-09 | Ennemis spéciaux dès la deuxième vague | prêt | — |
-| REP-02 | Réparation fonctionnelle des appareils en panne | prêt | REP-01 |
+| ID     | Tâche                                                  | État       | Dépendances |
+| ------ | ------------------------------------------------------ | ---------- | ----------- |
+| SON-03 | Son H2 audible au poste copilote                       | en cours   | —           |
+| BUG-07 | Signature parfois ignorée                              | à préciser | —           |
+| HEL-08 | Rotor et chute du H2 inoccupé                          | en cours   | —           |
+| VOL-01 | Décollage depuis une surface et contact des roues      | en cours   | —           |
+| SON-04 | Moucherons audibles de plus loin et mixage plafonné    | en cours   | —           |
+| SON-05 | Signal partagé à chaque arrivée à la panière           | en cours   | —           |
+| HUD-07 | Jauges fonctionnelles et valeurs mises en évidence     | en cours   | —           |
+| HUD-08 | Aide de sortie/parachute dans le récapitulatif         | en cours   | —           |
+| NET-01 | Retirer entièrement le ventilateur                     | terminé    | —           |
+| VOL-02 | Conserver uniquement le pilotage souris des avions     | terminé    | —           |
+| ACH-01 | Livraison des achats sous parachute depuis un appareil | en cours   | —           |
+| PUR-03 | Apparition à côté de la file et marche vers le guichet | en cours   | —           |
+| HUD-09 | Alertes carburant, munitions et PV à 25 %              | en cours   | —           |
+| VAG-09 | Ennemis spéciaux dès la deuxième vague                 | terminé    | —           |
+| REP-02 | Réparation fonctionnelle des appareils en panne        | en cours   | REP-01      |
 
 ### SON-03 — Son H2 au copilote
 
@@ -2252,10 +2248,10 @@ Cadrage validé par l'utilisateur ; ajout documentaire autorisé avec PR et fusi
 Aucun bug reproduit ni correctif de gameplay livré dans cette intégration.
 Référence du fonctionnement actuel : [véhicules d'appui](docs/support-vehicles.md).
 
-| ID | Tâche | État | Dépendances |
-| --- | --- | --- | --- |
-| HEL-09 | Stabiliser le guidage des missiles à distance et près des obstacles | prêt | — |
-| HUD-10 | Indiquer vol, rechargement et épuisement des missiles H2 | prêt | — |
+| ID     | Tâche                                                               | État     | Dépendances |
+| ------ | ------------------------------------------------------------------- | -------- | ----------- |
+| HEL-09 | Stabiliser le guidage des missiles à distance et près des obstacles | en cours | —           |
+| HUD-10 | Indiquer vol, rechargement et épuisement des missiles H2            | en cours | —           |
 
 ### HEL-09 — Trajectoire des missiles guidés
 
@@ -2295,3 +2291,18 @@ Critères : lancement, impact, détonation manuelle, expiration, délai complet,
 dernière munition, ravitaillement, changement d'arme/poste, mort et reset ; aucun
 message périmé, état cohérent avec l'autorisation réelle de tirer. Vérifier les
 alertes simultanées carburant/PV/munitions et le zoom au poste copilote.
+
+## Livraison des retours — version 48
+
+Les seize tâches prêtes des deux derniers lots sont implémentées dans le runtime
+Node. Référence et scénarios : [retours du 30 octobre](docs/returns-30-october.md).
+NET-01, VOL-02 et VAG-09 sont terminées après contrôles automatisés. Les autres
+restent **en cours pour validation en partie** : le code et les contrôles de
+domaine sont livrés, mais écoute, rendu WebGL et confort à deux joueurs ne sont
+pas revendiqués. BUG-07 reste à préciser et aucun changement de signature n'est
+présenté comme sa correction.
+
+Validation : `scripts/test-backlog-return.mjs`, suites existantes, assemblage,
+contrôles documentaires et de version ; résultats finaux et build Docker consignés
+dans la PR. La note [de reprise](docs/tasks/backlog-30-octobre.md) liste les essais
+restants. Les anciens états et critères restent conservés.

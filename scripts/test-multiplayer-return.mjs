@@ -347,7 +347,7 @@ assert.deepEqual(
 const source = readFileSync('src/client.js', 'utf8');
 const canCapture = source.slice(
   source.indexOf('function canCapture() {'),
-  source.indexOf('function toggleControl()'),
+  source.indexOf('function updateControlHUD()'),
 );
 assert.equal(
   vm.runInNewContext(canCapture + ';canCapture()', { joined: true, spectating: true }),

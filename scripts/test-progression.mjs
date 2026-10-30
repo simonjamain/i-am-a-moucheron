@@ -24,10 +24,10 @@ for (let seed = 0; seed < 40; seed++)
     }
     for (const [type, unlock] of Object.entries({
       ant: 1,
-      dart: 4,
-      roach: 6,
-      guard: 8,
-      brute: 12,
+      dart: 2,
+      roach: 3,
+      guard: 5,
+      brute: 8,
     })) {
       const count = p.roster.filter((e) => e.type === type).length;
       if (wave < unlock) assert.equal(count, 0);

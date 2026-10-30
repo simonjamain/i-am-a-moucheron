@@ -92,7 +92,17 @@ export function inDeskZone(b) {
 export function deskOccupant(a, now = a.time) {
   return (
     a.bodies
-      .filter((b) => inDeskZone(b) && b.koUntil <= now)
+      .filter(
+        (b) =>
+          inDeskZone(b) &&
+          b.koUntil <= now &&
+          (!a.respectQueue ||
+            b.kind !== 'player' ||
+            !a.bodies.some(
+              (other) =>
+                other.kind === 'enemy' && !other.gone && Math.abs(other.x) < 1.1 && other.id < b.id,
+            )),
+      )
       .sort(
         (x, y) => x.x * x.x + (x.z - 1.1) ** 2 - (y.x * y.x + (y.z - 1.1) ** 2) || x.id - y.id,
       )[0] || null
@@ -205,6 +215,20 @@ export function advanceArena(a, to, owner = null) {
           collide(a.bodies[i], a.bodies[j], owned, now, a.verticalUnit || 1);
       for (const b of a.bodies) {
         if (!owned(b)) continue;
+        // The side aisle is an entrance, not a shortcut past waiting insects.
+        if (a.respectQueue && b.kind === 'player' && Math.abs(b.x) < 1.1) {
+          const earlier = a.bodies.filter(
+            (other) =>
+              other.kind === 'enemy' && !other.gone && Math.abs(other.x) < 1.1 && other.id < b.id,
+          );
+          if (earlier.length) {
+            const tail = Math.max(...earlier.map((other) => other.z)) + QUEUE_SPACING;
+            if (b.z < tail) {
+              b.z = tail;
+              b.vz = Math.max(0, b.vz);
+            }
+          }
+        }
         const bounds = a.bounds || {
           minX: -10,
           maxX: 10,

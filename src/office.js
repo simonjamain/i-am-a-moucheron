@@ -103,35 +103,6 @@ export function createOffice(T, scene, { box, cyl, ball, mat, textLabel }) {
     register(
       ball(Math.sin(i * 2.4) * 0.09, 0.315, Math.cos(i * 2.4) * 0.09, 0.033, '#c6c5a3', bin),
     );
-  const fanGroup = new T.Group();
-  fanGroup.position.set(...OFFICE_LAYOUT.fan.position);
-  scene.add(fanGroup);
-  const foot = round(0, -0.4025, 0, 0.12, 0.14, 0.035, '#365c4d', fanGroup);
-  const stand = solid(0, -0.1925, 0, 0.026, 0.385, 0.026, '#365c4d', fanGroup);
-  const fanRing = new T.Mesh(new T.TorusGeometry(0.18, 0.012, 10, 40), mat('#4f785f'));
-  fanRing.rotation.y = Math.PI / 2;
-  fanGroup.add(fanRing);
-  register(fanRing);
-  const rotor = new T.Group();
-  fanGroup.add(rotor);
-  for (let i = 0; i < 4; i++) {
-    const a = (i * Math.PI) / 2,
-      blade = box(0, Math.cos(a) * 0.075, Math.sin(a) * 0.075, 0.018, 0.14, 0.05, '#cddab6', rotor);
-    blade.rotation.x = a;
-  }
-  register(ball(0, 0, 0, 0.035, '#d5ef73', fanGroup));
-  // Cage rods surround the moving blades; the collision volume stays stable.
-  for (let i = 0; i < 8; i++) {
-    const a = (i * Math.PI) / 4;
-    solid(0.018, Math.cos(a) * 0.085, Math.sin(a) * 0.085, 0.012, 0.17, 0.007, '#64836b', fanGroup);
-  }
-  const bounds = new T.Box3().setFromCenterAndSize(
-    new T.Vector3(...OFFICE_LAYOUT.fan.position),
-    new T.Vector3(0.07, 0.38, 0.38),
-  );
-  colliders.push(bounds);
-  const winds = [];
-  for (let i = 0; i < 16; i++) winds.push(box(0, 0, 0, 0.025, 0.001, 0.001, '#d0e2b4'));
   for (const [x, y, z] of PORTALS.air) {
     const side = Math.abs(x) > 4;
     const panel = solid(x, y, z, side ? 0.018 : 0.34, 0.24, side ? 0.34 : 0.018, '#304a43');
@@ -184,5 +155,5 @@ export function createOffice(T, scene, { box, cyl, ball, mat, textLabel }) {
   const label = textLabel('BASE ALPHA · 3 / 1000', '#e2f1bd', 28 * u);
   label.position.set(b.originX, b.deckY + 5 * u, b.originZ + 2 * u);
   scene.add(label);
-  return { colliders, solidObjects, fanGroup, rotor, winds };
+  return { colliders, solidObjects };
 }

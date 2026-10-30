@@ -15,8 +15,7 @@ const profiles = {
   flak: { duration: 0.45, level: 0.38 },
   dive: { duration: 1, level: 0.22 },
   engine: { duration: 1, level: 0.16 },
-  fan: { duration: 2, level: 0.18 },
-  insect: { duration: 1, level: 0.045 },
+  insect: { duration: 1, level: 0.12 },
   shot: { duration: 0.13, level: 0.28 },
   impact: { duration: 0.24, level: 0.35 },
   crash: { duration: 0.8, level: 0.4 },
@@ -72,8 +71,6 @@ export function synthesize(kind, sampleRate = 24000) {
         low * 0.7 * (0.7 + 0.3 * Math.sin(t * 24 * Math.PI * 2));
     else if (kind === 'dive')
       v = 0.4 * Math.sin(2 * Math.PI * 420 * t) + 0.2 * Math.sin(2 * Math.PI * 840 * t) + low * 0.2;
-    else if (kind === 'fan')
-      v = low * 1.4 + 0.13 * Math.sin(t * 40 * Math.PI * 2) + 0.08 * Math.sin(t * 80 * Math.PI * 2);
     else if (kind === 'insect')
       v =
         0.3 * Math.sin(t * 210 * Math.PI * 2) + 0.12 * Math.sin(t * 420 * Math.PI * 2) + low * 0.25;

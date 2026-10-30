@@ -34,6 +34,8 @@ const files = {
       'helicopter',
       'mobile-flak',
       'live-hud',
+      'reserve-feedback',
+      'delivery',
       'salvos',
       'player-livery',
       'purchase-ui',

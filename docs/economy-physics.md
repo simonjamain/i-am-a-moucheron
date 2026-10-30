@@ -103,7 +103,7 @@ in the office. A seeded director generates smooth three-dimensional routes per
 cluster, with isolated individuals and mid-route branches that later rejoin.
 Routes are sampled by arc length for consistent speed and shared arrival timing.
 Most aerial waypoints are high, with variable altitude and low approaches. Ants
-unlock on wave 3 and roaches on wave 6. Their floor routes avoid the main furniture
+unlock on wave 1 and roaches on wave 3. Their floor routes avoid the main furniture
 supports and finish by climbing toward the bin. They have walking legs instead
 of wings. Ground paths use static obstacle-aware A* and simplification, not a dynamic navigation mesh;
 arbitrary player-deployed equipment is not dynamically rerouted around.

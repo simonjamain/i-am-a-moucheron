@@ -108,3 +108,6 @@ et utilisent une grille spatiale pour le voisinage.
 
 La [correction des commandes H2](helicopter-controls.md) couvre Z/O/Haut, S/Bas,
 stationnaire, poussée locale et axe des roquettes.
+
+Le [lot de retours du 30 octobre, version 48](returns-30-october.md) décrit les correctifs
+physiques, sons/HUD, livraisons sous parachute et parcours du purgatoire.
