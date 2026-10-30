@@ -63,7 +63,8 @@ CONTRIBUTING. Vérifier le résultat réellement retourné ; signaler un environ
 absent ou en échec. Garder secrets et administration du VPS hors des contributions.
 Le runtime Node/UDP et le Site historique Worker/D1 sont distincts : publier le
 client Node sur le Worker est incompatible. Sites n'est pas requis pour coder ;
-le consulter seulement pour une intervention explicite sur le Site historique.
+le consulter seulement pour une intervention explicite sur le Site historique,
+depuis son ancien dépôt distinct. Ce dépôt ne porte plus de manifeste Sites.
 Générer ZIP ou image Docker uniquement si la livraison demandée le nécessite.
 
 ## Version

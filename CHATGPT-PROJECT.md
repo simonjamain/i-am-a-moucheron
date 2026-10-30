@@ -13,7 +13,8 @@ Lire `AGENTS.md`, `README.md` et `CONTRIBUTING.md`, puis les références utiles
 `docs/tasks/`, la PR et le diff actuel.
 
 Le Site historique `appgprj_6ae1e591360481919010bdf89f8da3f0` reste accessible
-via Sites pour une intervention explicite sur ce backend. Le développement
+via Sites et son ancien dépôt pour une intervention explicite sur ce backend.
+Le dépôt GitHub courant ne contient plus de manifeste de publication Sites. Le développement
 courant ne nécessite pas Sites. Une pièce jointe ChatGPT est une copie : vérifier
 sa fraîcheur contre le dépôt. Signaler une source inaccessible sans inventer son état.
 

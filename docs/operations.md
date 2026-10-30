@@ -20,10 +20,11 @@ Les archives Docker `.1` et `.2` sont historiques, antérieures aux retours terr
 
 ## Sources et Site historique
 
-Identité conservée : `appgprj_6ae1e591360481919010bdf89f8da3f0`, déclarée dans
-`.openai/hosting.json`. Audience publique conservée. Le dépôt GitHub est la référence du développement courant.
-Le skill Sites reste utile pour intervenir explicitement sur le Site historique ;
-il ne constitue pas une étape obligatoire des contributions GitHub.
+Le Site historique `appgprj_6ae1e591360481919010bdf89f8da3f0` est indépendant.
+Son identité et sa configuration ne font plus partie du paquet courant.
+Le dépôt GitHub est la référence ; le build et sa validation ciblent Node sur VPS.
+Une intervention sur le Site historique utilise son ancien dépôt via Sites,
+sans réintroduire ses instructions ou son manifeste dans le runtime Node.
 
 Le Site public Worker/D1 reste distinct du runtime Node/UDP. Les nouvelles
 commandes d’armes lourdes, banque, lits, impacts de chute, bons prépayés et nettoyage ciblent Node. **Ne pas
@@ -48,7 +49,10 @@ npm run build
 node scripts/validate-artifact.mjs
 ```
 
-Le build/validateur ESM vérifie le paquet Worker historique, pas un déploiement Node.
+Le build produit `dist/` avec serveur, modules partagés, assets et manifestes npm.
+Dans ce répertoire : `npm ci --omit=dev && npm start`. Le validateur vérifie
+la syntaxe ESM du serveur, les imports locaux du runtime et les assets UDP.
+Il ne prouve ni l’installation des dépendances natives ni un déploiement WAN.
 La suite complète inclut les tests de règles Node, physique, signatures, assets,
 interface et les deux clients natifs UDP. Les tests Worker utilisent SQLite pour
 la compatibilité historique ; cette dépendance n’est pas dans le serveur Node.
@@ -95,8 +99,8 @@ Git ; les benchmarks historiques demandent leur référence Git.
 locaux et deux pairs UDP vérifiés. HEL-06/DCM-03 restent en cours pour les essais
 humains WebGL/WAN. Le navigateur de contrôle charge le client mais refuse UDP ;
 les quatre HUD sont également consultables dans l’aperçu sans réseau.
-`test-support-vehicles.mjs` fait partie de `npm test`. Les sources du Site restent
-synchronisées au dépôt, sans publier le client Node sur le Worker historique.
+`test-support-vehicles.mjs` fait partie de `npm test`. Le dépôt GitHub évolue indépendamment du Site historique ; le client Node
+ne doit pas être publié sur le Worker historique.
 
 Le [lot confort de jeu, version 37](comfort.md) précise réparation, zoom, jauges,
 radar à pied, remise à zéro, fourmis et projectiles du pistolet courants.
