@@ -2754,8 +2754,17 @@ function enemies(now) {
     active.add(i);
     const profile = roster[i];
     let g = insects.get(i);
+    if (g && (g.userData.enemyWave !== snap.wave || g.userData.enemyType !== profile.type)) {
+      scene.remove(g);
+      g.traverse((o) => o.geometry?.dispose());
+      for (const material of g.userData.disposables || []) material.dispose();
+      insects.delete(i);
+      g = null;
+    }
     if (!g) {
       g = insect(profile.type);
+      g.userData.enemyWave = snap.wave;
+      g.userData.enemyType = profile.type;
       g.userData.entryStatus = entryStatus(profile, t);
       if (g.userData.entryStatus === 'in-flight' && entryNoticeWave !== snap.wave) {
         entryNoticeWave = snap.wave;
@@ -2804,7 +2813,7 @@ function enemies(now) {
         profile.hp,
         camera,
         performance.now() / 1000,
-        profile.size * (profile.type === 'midge' ? 1.35 * 1.5 : 1),
+        insectScale(profile.type, 1, profile.size),
       );
     }
   insectStatus.keep(active);

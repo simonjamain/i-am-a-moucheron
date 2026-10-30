@@ -1,6 +1,14 @@
 import { MAP, REFERENCE } from './scale.js';
 import { floorPath, blockedSegment } from './route-navigation.js';
 export const MIN_SPAWN_DISTANCE = 3;
+// Portals describe the decorative vent/hole, not the first living position.
+export const VISIBLE_SPAWN_INSET = 0.04;
+export function portalExit(portal) {
+  const p = [...portal];
+  if (Math.abs(p[0]) > 4) p[0] -= Math.sign(p[0]) * VISIBLE_SPAWN_INSET;
+  else if (p[2] < -3.4) p[2] += VISIBLE_SPAWN_INSET;
+  return p;
+}
 export const PORTALS = Object.freeze({
   air: [
     [-4.11, 2.35, -1.8],
@@ -45,11 +53,11 @@ export function enemyRoute(enemy) {
       [1.4, 0.0007, 0.3],
     ];
     const goals = [...checkpoints, [3.0, 0.0007, -2.7]];
-    points = [PORTALS.ground[portal]];
+    points = [portalExit(PORTALS.ground[portal])];
     for (const goal of goals) points.push(...floorPath(points.at(-1), goal).slice(1));
     points.push([3.0, 0.38, -2.7], [2.5, 0.38, -2.7]);
   } else {
-    const source = PORTALS.air[portal],
+    const source = portalExit(PORTALS.air[portal]),
       jitter = (random() - 0.5) * 0.15;
     const intro = [
       [0.15 + jitter, 2.65, -3.0],

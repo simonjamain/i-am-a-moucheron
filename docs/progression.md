@@ -8,7 +8,7 @@ armes restent ceux de [combat-worlds](combat-worlds.md).
 
 | Vague | Budget | Prime commune immédiate | Nouveauté autorisée             |
 | ----- | -----: | ----------------------: | ------------------------------- |
-| 1     |      8 |                     4 $ | 6 moucherons + 2 fourmis        |
+| 1     |      8 |                     4 $ | 4 moucherons + 4 fourmis        |
 | 2     |     10 |                     5 $ | Fourmis garanties               |
 | 3     |     14 |                     6 $ | Présence terrestre régulière    |
 | 4     |     18 |                     7 $ | Premier voltigeur possible      |
@@ -26,7 +26,7 @@ Un budget n’est pas un nombre d’ennemis : les plus résistants coûtent dava
 Les trajets comportent désormais des détours avant l’approche de la poubelle,
 avec navigation statique autour du mobilier. La vitesse effective précédente est
 conservée et la durée découle de la longueur, sans l’ancien plafond de 145 secondes.
-La première vague mêle six moucherons et deux fourmis, avec parcours sur toute la
+La première vague mêle quatre moucherons et quatre fourmis, avec parcours sur toute la
 pièce et durées plus longues à vitesse conservée, et se termine plus tôt si tous les ennemis sont abattus. Le lancement initial de dix secondes et les pauses entre vagues de soixante
 secondes restent séparés. Voir [trajets et crashs](vehicles-bank.md#trajets-et-crashs)
 pour la calibration et les limites de navigation.
@@ -84,7 +84,7 @@ Installations Node : le [bon signé](clean-flight.md#prix-bon-signé-et-pose) d�
 avant la pose ; annuler l’aperçu ne fait pas perdre l’objet payé.
 
 VAG-04/VAG-05 : [parcours et budget actuels](multiplayer-return.md#parcours-et-fourmis-précoces),
-budget initial 8, deux fourmis garanties à chaque vague, coûts/PV inchangés.
+budget initial 8, quatre fourmis en vague 1 puis au moins deux par vague, coûts/PV inchangés.
 Les achats de chasseur et bombardier supplémentaires coûtent 8 $ et 16 $.
 
 Le H2 coûte 30 $, le camion D2 20 $, sans remplacement gratuit. Voir

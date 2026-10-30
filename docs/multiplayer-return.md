@@ -116,7 +116,7 @@ sol **10,31 → 36,84 m** et **84,89 → 319,74 s**. L’exemple aérien initial
 Le temps d’arrivée serveur découle de la nouvelle longueur ; aucune attente
 artificielle distincte du déplacement. Les mouvements de groupe restent les mêmes.
 
-La première vague comporte **six moucherons et deux fourmis de 100 PV**, sans cafard
+La première vague comporte **quatre moucherons et quatre fourmis de 100 PV**, sans cafard
 ni élite. Le budget commence à 8 au lieu de 6 et garde la courbe précédente +2.
 Deux fourmis sont garanties aux vagues suivantes, puis le directeur compose le
 reste ; plafonds d’élites conservés. Leur présence allonge l’approche terrestre,
@@ -157,7 +157,7 @@ contre 20 / 0,06 pour le Stuka. Le facteur voyage avec le projectile et son év�
 d’explosion, même si la coque disparaît. Dégâts centre 240 et bord 60 inchangés,
 rayon visuel et dégâts doublés ensemble ; obstacles et déduplication conservés.
 
-Le moucheron est encore agrandi de **50 %** : facteur visuel total **2,025** par
+Le moucheron est encore agrandi de **50 %** : facteur visuel historique **2,025**, désormais **6,075** après le [correctif de visibilité](enemy-visibility.md) par
 rapport au modèle antérieur à VIS-02. Sa tolérance de tir est **1,2 ×** ce nouveau
 modèle. Les intersections ellipsoïdales ne modifient pas les meshes rendus ni les
 PV. Les autres types gardent leur taille et leur précision de collision.

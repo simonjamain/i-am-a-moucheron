@@ -228,7 +228,7 @@ const midge = graphics.insect('midge');
 midge.scale.setScalar(insectScale('midge', INSECT_SCALE));
 midge.position.set(0, 0, -0.1);
 assert.equal(midge.userData.hitTolerance, 1.2);
-assert.equal(insectScale('midge', 1), 2.0250000000000004);
+assert.equal(insectScale('midge', 1), 1.35 * 1.5 * 3);
 let tolerant = 0,
   exact = 0;
 for (let x = -0.008; x <= 0.008; x += 0.0001) {
@@ -267,15 +267,15 @@ for (const y of [0, 3.2, 100]) {
   assert.ok(!inRadarCoverage({ x: 2.0001, y, z: 0 }, [{ kind: 'radar', x: 0, y: 0.9, z: 0 }]));
 }
 console.log(
-  'Presentation: 50% further midge scale, extra 20% tolerance only for midges, bounded reusable tracers, stable contrasting initials, radar horizontal 2m at all altitudes.',
+  'Presentation: current threefold further midge scale, extra 20% tolerance only for midges, bounded reusable tracers, stable contrasting initials, radar horizontal 2m at all altitudes.',
 );
 
 for (let seed = 0; seed < 8; seed++)
   for (const wave of [1, 4, 8]) {
     const plan = wavePlan('EXTENT' + seed, wave, 1234);
     if (wave === 1) {
-      assert.equal(plan.roster.filter((e) => e.type === 'midge').length, 6);
-      assert.equal(plan.roster.filter((e) => e.type === 'ant').length, 2);
+      assert.equal(plan.roster.filter((e) => e.type === 'midge').length, 4);
+      assert.equal(plan.roster.filter((e) => e.type === 'ant').length, 4);
     }
     for (const enemy of [
       plan.roster.find((e) => e.ground),

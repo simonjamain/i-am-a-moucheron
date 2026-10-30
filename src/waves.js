@@ -54,14 +54,15 @@ export function wavePlan(room, wave, started = 0) {
     seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
     return seed / 4294967296;
   };
-  const roster = [0, 1].map((id) => ({
+  const initialAnts = wave === 1 ? 4 : 2;
+  const roster = Array.from({ length: initialAnts }, (_, id) => ({
       id,
       type: 'ant',
       ...ENEMY_TYPES.ant,
       phase: random() * Math.PI * 2,
     })),
-    counts = { ant: 2 };
-  remaining -= 2;
+    counts = { ant: initialAnts };
+  remaining -= initialAnts;
   const unlock = { ant: 1, roach: 6, dart: 4, guard: 8, brute: 12 };
   let eliteSpent = 0;
   while (remaining > 0 && roster.length < 180) {

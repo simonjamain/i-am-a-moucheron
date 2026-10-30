@@ -24,7 +24,7 @@ l’infestation. La mort ouvre une observation à caméra fixe ; un clic volonta
 La première vague démarre dix secondes après le lancement de la partie. Après
 chaque vague, la pause dure au maximum soixante secondes ; le déclenchement manuel
 peut la raccourcir. Un budget de difficulté croissant compose des vagues variées
-avec des ennemis de résistances différentes. Le départ comporte six moucherons et deux fourmis faciles, avec des parcours
+avec des ennemis de résistances différentes. Le départ comporte quatre moucherons et quatre fourmis faciles, avec des parcours
 étendus dans toute la pièce à vitesse conservée ; les types plus difficiles
 sont débloqués progressivement. Voir [progression](progression.md). Des groupes aériens arrivent depuis
 plusieurs aérations, se séparent et se rejoignent ; fourmis et cafards empruntent
@@ -36,7 +36,7 @@ avec le serveur pour l’arrivée à la poubelle. Le système est guidé et dét
 
 Un chasseur monoplace et un bombardier sont disponibles au départ. Le bombardier
 a un pilote, un mitrailleur dorsal et un mitrailleur de queue. Un exemplaire de réserve prêt
-par type initial est conservé ; dès son décollage, un successeur gratuit apparaît sans supprimer les avions utilisés. Les achats fournissent un Stuka, un Spitfire
+par type initial est conservé ; dès son décollage, un successeur gratuit apparaît sans supprimer les avions utilisés. Les achats fournissent un Stuka, un Spitfire,
 un tank, un hélicoptère biplace ou une DCA mobile, dont la destruction est définitive. Les sièges sont exclusifs.
 
 Chaque accès publié aux équipements, y compris une nouvelle entrée, passe par un
@@ -133,7 +133,7 @@ Voir [combat et mondes](combat-worlds.md) pour les valeurs et garanties réseau.
 
 ## Retours de partie après 025
 
-Les noms flottants sont retirés. Les moucherons sont agrandis d’un facteur total de 2,025, avec tolérance de tir supplémentaire de 20 % ; les
+Les noms flottants sont retirés. Les moucherons sont agrandis d’un facteur total de 6,075, avec tolérance de tir supplémentaire de 20 % ; les
 insectes blessés montrent leurs PV, de la fumée puis des flammes à 30 % de PV.
 Les morts aériennes ont un son de chute spatialisé. Voir
 [retours de partie](party-feedback.md) pour les seuils, les signatures fiabilisées
@@ -191,3 +191,7 @@ second clic. D2 : conducteur et tireur sur semi-remorque, obus à fusée armée 
 0,3 s uniquement ; proximité réglée à la molette, sans explosion d’impact propre.
 Valeurs, choix, garanties réseau et vérifications restantes :
 [référence du lot](support-vehicles.md).
+
+Le [correctif de visibilité](enemy-visibility.md) place les apparitions devant les
+aérations et recrée les bons modèles aux changements de vague. Les moucherons
+sont trois fois plus gros que dans la livraison précédente.

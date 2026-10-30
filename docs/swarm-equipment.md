@@ -30,7 +30,7 @@ wave 4, guards on 8, brutes on 12. Ants (from wave 1) and roaches (wave 6) add g
 see `waves.js` for the complete catalog and `routes.js` for entry sources. They have distinct size, colour, speed and
 infestation cost. Budget is capped at 2400 and visible population at 180; at
 that ceiling, remaining budget is consolidated into one brute with its normal 800 PV. The
-first wave has six midges plus two ants and follows extended room-wide routes, with timing derived from the actual route.
+first wave has four midges plus four ants and follows extended room-wide routes, with timing derived from the actual route.
 See [progression](progression.md) for budgets, elite limits and timings. Later compositions
 vary randomly while sharing an exact budget across clients.
 

@@ -107,3 +107,7 @@ Le lot [hélicoptère et DCA mobile](docs/support-vehicles.md) ajoute le H2 bipl
 et le camion D2, avec roquettes, missile guidé et fusée de proximité. Le code et
 les contrôles locaux sont livrés ; HEL-06/DCM-03 conservent leur validation finale
 en cours, car le navigateur de contrôle ne peut pas joindre le jeu en UDP.
+
+Le [correctif de visibilité des ennemis](docs/enemy-visibility.md) corrige les
+aérations et transitions de vague, triple les moucherons et renforce les fourmis
+de la première vague.

@@ -17,8 +17,8 @@ for (let seed = 0; seed < 40; seed++)
     );
     if (wave === 1) {
       assert.equal(p.roster.length, 8);
-      assert.equal(p.roster.filter((e) => e.type === 'midge').length, 6);
-      assert.equal(p.roster.filter((e) => e.type === 'ant').length, 2);
+      assert.equal(p.roster.filter((e) => e.type === 'midge').length, 4);
+      assert.equal(p.roster.filter((e) => e.type === 'ant').length, 4);
       assert.ok(Math.max(...p.roster.map((e) => e.spawn + e.duration)) > 100);
     }
     for (const [type, unlock] of Object.entries({

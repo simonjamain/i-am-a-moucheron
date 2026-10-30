@@ -9,7 +9,7 @@ Les noms flottants des véhicules et personnages sont supprimés. Les listes de
 joueurs, postes et contrats conservent les identités ; les panneaux de lieux et
 les guichets restent dans la scène.
 
-Le modèle et la géométrie touchable du moucheron (`midge`) sont agrandis historiquement de 35 %, puis de 50 % supplémentaires dans VIS-07 (facteur total 2,025), avec tolérance de tir de 20 %.
+Le modèle et la géométrie touchable du moucheron (`midge`) sont agrandis historiquement de 35 %, puis de 50 % supplémentaires dans VIS-07 (facteur historique 2,025), puis de nouveau ×3 le 30 octobre (facteur courant 6,075), avec tolérance de tir de 20 %.
 Les autres types, appareils et personnages gardent leur taille. Le test de rayons
 sur un plan échantillonné retrouve une surface touchable accrue de plus de 50 %,
 sans changer les dégâts. Il ne remplace pas un essai de visée en partie.
@@ -83,3 +83,6 @@ corbeille : ce n’est pas une nouvelle apparition. Le client distingue l’éta
 replace pas cet ennemi au mur et ne décale pas son arrivée serveur.
 `test-feedback.mjs` couvre les positions effectivement rendues pendant les deux
 premières secondes sur 50 graines et cinq paliers de vagues, sol et air compris.
+
+Le [correctif du 30 octobre](enemy-visibility.md) remplace les points d’apparition
+masqués par les aérations et corrige les modèles réutilisés entre vagues.

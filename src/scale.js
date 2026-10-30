@@ -22,6 +22,7 @@ export const MAPS = Object.freeze({ office: mapScale(3, 1000), purgatory: mapSca
 export const MAP = MAPS.office;
 export const ACTOR_UNIT = MAP.metres(10.4 / 5.6);
 export const HUMAN_SCALE = MAP.metres(1.8 / 2.46);
+export const MIDGE_SIZE_FACTOR = 1.35 * 1.5 * 3;
 export const INSECT_SCALE = MAP.metres(0.9 / 1.6);
 export const REFERENCE = Object.freeze({
   walk: 6,

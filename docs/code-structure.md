@@ -90,3 +90,7 @@ le [lot courant](multiplayer-return.md), complété par les vrais pairs UDP.
 les deux modèles, `contracts.js` leurs rôles, `hud.js` leurs panneaux.
 `test-support-vehicles.mjs` et les pairs natifs UDP couvrent le lot. Voir
 [état de validation et limites](support-vehicles.md).
+
+`routes.js` distingue portail décoratif et sortie visible ; `scale.js` centralise
+le facteur du moucheron ; `client.js` recrée les meshes par vague/espèce.
+`test-enemy-visibility.mjs` couvre la [visibilité courante](enemy-visibility.md).

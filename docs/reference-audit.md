@@ -1,5 +1,17 @@
 # Revue des références
 
+## Correctif visibilité — 30 octobre 2026
+
+33 Markdown inventoriés. README, gameplay, carte du code, backlog et nouvelle
+référence `enemy-visibility.md` précisent le correctif, sa reproduction et ses
+limites. Progression, véhicules/banque, nuées, retours de partie et retours
+multijoueurs sont mis à jour : première vague 4+4, agrandissement courant 6,075.
+Les chiffres des audits anciens et archives restent datés. Transport, économie,
+contrats, armes, stockage en RAM et déploiement Node/UDP restent identiques ;
+aucune règle du Worker historique n'est présentée comme déployée avec ce lot.
+Les autres références communes ont été inventoriées et leurs liens contrôlés.
+Le parcours de reprise et les consignes AGENTS restent applicables sans modification.
+
 ## Lot hélicoptère et DCA mobile — 30 octobre 2026
 
 32 Markdown inventoriés, dont la nouvelle référence [véhicules d’appui](support-vehicles.md).

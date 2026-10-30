@@ -16,7 +16,7 @@ old.scale.setScalar(INSECT_SCALE);
 larger.scale.setScalar(insectScale('midge', INSECT_SCALE));
 const a = new T.Box3().setFromObject(old).getSize(new T.Vector3()),
   b = new T.Box3().setFromObject(larger).getSize(new T.Vector3());
-assert.ok(Math.abs(b.x / a.x - 1.35 * 1.5) < 1e-8);
+assert.ok(Math.abs(b.x / a.x - 1.35 * 1.5 * 3) < 1e-8);
 assert.equal(insectScale('brute', 2), 2);
 let oldHits = 0,
   newHits = 0;
@@ -86,7 +86,7 @@ for (let seed = 0; seed < 50; seed++)
         assert.ok(point);
         assert.ok(Math.hypot(...point.map((v, i) => v - target[i])) >= MIN_SPAWN_DISTANCE);
         assert.ok(
-          Math.abs(point[0]) > 4 || Math.abs(point[2]) > 3.5,
+          Math.abs(point[0]) > 4 || Math.abs(point[2]) > 3.45,
           'first visible entry stays on perimeter',
         );
       }

@@ -313,13 +313,13 @@ export function createGraphics(T, scene) {
         0,
         0,
         type === 'roach' ? 0.55 : 0.35,
-        type === 'roach' ? '#775033' : '#4f3026',
+        type === 'roach' ? '#ba8850' : '#c5843b',
         g,
       );
       shell.scale.set(0.7, 0.45, 1.3);
-      const head = ball(0, 0, -0.55, 0.25, '#392c21', g),
+      const head = ball(0, 0, -0.55, 0.25, '#e0bc72', g),
         legs = [];
-      if (type === 'ant') ball(0, 0, 0.5, 0.3, '#5e3b29', g);
+      if (type === 'ant') ball(0, 0, 0.5, 0.3, '#d59b4d', g);
       for (const side of [-1, 1])
         for (let i = 0; i < 3; i++) {
           const leg = box(side * 0.45, -0.1, (i - 1) * 0.3, 0.65, 0.035, 0.045, '#382c23', g);

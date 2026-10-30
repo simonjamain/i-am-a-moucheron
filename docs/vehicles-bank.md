@@ -105,7 +105,7 @@ libre ; les aériens font des détours en altitude avant la descente vers la pou
 Les obstacles de navigation sont générés depuis les colliders du bureau.
 Les grilles d’aération décoratives sont les points de sortie, pas des obstacles
 fermant leur propre apparition. Les éléments achetés en cours de partie ne
-modifient pas cette navigation statique. La première vague garde six moucherons ;
+modifient pas cette navigation statique. La première vague garde quatre moucherons ;
 sur la graine de contrôle DOC, sa dernière arrivée passe autour de 58 s.
 
 Une destruction publie un seul événement de crash avec la pose, la vitesse et

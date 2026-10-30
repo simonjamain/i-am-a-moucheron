@@ -1818,3 +1818,72 @@ Contrôles : suite complète, tests des véhicules d’appui et deux pairs UDP n
 formatage, liens et audit des 32 Markdown, build et validateur ESM. Les temps CPU
 synthétiques sont consignés dans la référence du lot, sans prétendre mesurer les
 FPS ou la charge Internet. Sources poussées au dépôt et ZIP déployable actualisé.
+
+
+## Correctifs signalés en partie — 30 octobre 2026
+
+Ajout au backlog demandé par l'utilisateur. Signalements à reproduire : aucune
+cause technique ni correction n'est encore confirmée. Les validations historiques
+restent conservées ; ces anomalies rouvrent le besoin par deux tâches distinctes.
+
+| ID | Tâche | État | Dépendances |
+| --- | --- | --- | --- |
+| BUG-06 | Rétablir les cercles et l'embarquement dans l'hélicoptère H2 | prêt | — |
+| ARM-06 | Rendre visible le projectile du pistolet pendant son trajet | prêt | — |
+
+### BUG-06 — Hélicoptère inaccessible après placement
+
+Signalement : le nouvel hélicoptère n'a pas ses cercles d'accès au sol et il est
+impossible d'y monter. Reproduire sur un H2 acheté et posé ; vérifier ensemble
+création/position/visibilité des zones d'accès, proximité du personnage, sélection
+du véhicule et du poste, interaction E et parcours de signature. Ne pas conclure
+que le défaut est uniquement graphique : l'embarquement doit fonctionner.
+Rétablir les accès aux deux postes, pilote et copilote, selon les conventions
+des autres véhicules, sans contourner contrats ni exclusivité des sièges.
+Critères : cercles visibles et accessibles sur support valide, entrée à chaque
+poste après signature, sortie puis réembarquement, deux joueurs sur postes
+séparés, concurrence sur un même poste, connexion tardive et reset ; vérifier
+que les accès des avions, du tank et de la DCA mobile restent fonctionnels.
+Repères : `src/client.js`, zones d'accès et rendu des équipements ; référence
+[des véhicules d'appui](docs/support-vehicles.md). Cause à établir par reproduction.
+
+### ARM-06 — Projectile du pistolet invisible au loin
+
+Signalement : à pied au sol, les balles vont désormais dans la bonne direction,
+mais on ne voit pas le projectile partir et poursuivre son trajet au loin.
+Conserver la direction correcte ; examiner création, déplacement, durée de vie,
+échelle, luminosité, masquage et recyclage du traceur depuis la bouche du pistolet.
+Ne pas confondre un flash/segment immobile avec un projectile visible en déplacement,
+ni prolonger artificiellement le tir à travers un obstacle pour améliorer sa visibilité.
+Critères : caméra à l'épaule, tir vers le vide puis cible proche/lointaine, plusieurs
+orientations et angles verticaux ; projectile perceptible depuis le départ et
+sur sa trajectoire jusqu'à impact ou expiration normale, cohérent avec le point
+visé et les obstacles. Vérifier tirs successifs, observation distante, absence de
+traînée derrière le tireur, double projectile, effet résiduel ou régression des
+dégâts. Distinguer validation géométrique et observation réelle du rendu WebGL.
+Repères : `src/client.js`, `src/tracers.js`, [diagnostic du pistolet](docs/pistol-diagnosis.md).
+
+### Suivi de l'ajout des correctifs
+
+Deux tâches prêtes ajoutées sans modifier le code ni déclarer les bugs corrigés.
+Vérification des identifiants, dépendances et liens locaux. Le correctif livré
+devra mettre à jour ses références métier avec cause reproduite, contrôles et
+limites ; HEL-06 reste notamment soumis à la validation d'embarquement réelle.
+
+## Correctif immédiat — visibilité des ennemis (30 octobre 2026)
+
+| ID | Tâche | État | Dépendances |
+| --- | --- | --- | --- |
+| VIS-09 | Sorties d'aérations visibles et modèles propres à chaque vague/espèce | terminé | — |
+| VIS-10 | Moucherons trois fois plus grands, collisions et effets cohérents | terminé | — |
+| VAG-06 | Quatre fourmis dès la première vague, terrestres plus contrastés | terminé | — |
+
+Deux défauts reproduits puis corrigés par le même test exécutable : corps nés
+au centre des panneaux pleins ; modèle d'une espèce précédente conservé si le
+client ne rend pas la préparation. Paramètres et limites :
+[visibilité des ennemis](docs/enemy-visibility.md). Première vague 4+4, budget 8,
+prime 4 $, PV inchangés. Dimension du moucheron ×3 par rapport à la livraison
+précédente ; volume théorique ×27, pas dégâts ×3. Critères de scène, apparition,
+transition et taille vérifiés ; lisibilité subjective et WAN non revendiqués.
+Suite complète, tests UDP, build, format et liens vérifiés ; ZIP et dépôt actualisés.
+Les validations humaines HEL-06/DCM-03 du lot précédent restent en cours.
