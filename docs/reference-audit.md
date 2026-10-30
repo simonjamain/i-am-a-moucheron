@@ -1,5 +1,24 @@
 # Revue des références
 
+## Commandes H2 — version 39
+
+Revue des 35 Markdown suivis et ajout de `helicopter-controls.md` : O ajouté,
+collectif local, 50 % au stationnaire et roquettes sur axe de coque explicités.
+README, gameplay, carte, contrôles, appui, confort, exploitation et backlog
+actualisés ; transports, données en RAM, carburant et postes inchangés.
+Les anciennes livraisons et archives restent datées. Liens contrôlés, essai
+client/serveur distinct du confort WebGL/WAN encore non validé sur VM.
+
+## Nuées densifiées — version 38
+
+Revue des 34 Markdown suivis et ajout de `dense-swarms.md`. Composition courante
+20 moucherons + 4 fourmis, budget sources distinct de la population finale,
+plafond 900 et grille spatiale explicités dans les références gameplay, progression,
+nuées, carte du code, exploitation et README. Les chiffres des anciens lots
+restent datés ; les tests courants utilisent la nouvelle population. Stack,
+contrats, règles de dégâts, ports et statut du Worker historique inchangés.
+Liens locaux contrôlés ; aucune mesure CPU présentée comme un essai WebGL/WAN.
+
 ## Confort — version 37, 30 octobre 2026
 
 Inventaire des 33 Markdown suivis et ajout de `comfort.md` : règles Node/RAM/UDP,

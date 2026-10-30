@@ -117,3 +117,9 @@ agrandit aussi les cinq autres espèces trop petites et ajuste l’appui au sol.
 
 Le [lot confort de jeu, version 37](docs/comfort.md) précise réparation, zoom, jauges,
 radar à pied, remise à zéro, fourmis et projectiles du pistolet courants.
+
+Les [nuées densifiées](docs/dense-swarms.md) multiplient les moucherons par cinq
+et utilisent une grille spatiale pour le voisinage.
+
+La [correction des commandes H2](docs/helicopter-controls.md) couvre Z/O/Haut, S/Bas,
+stationnaire, poussée locale et axe des roquettes.

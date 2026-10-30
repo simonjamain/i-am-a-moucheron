@@ -118,7 +118,7 @@ export function stepHelicopter(T, state, controls, colliders, dt, profile) {
     v: v.toArray(),
     landed,
     collective,
-    gas: powered && !landed ? 1 : 0,
+    gas: powered ? (collective + 1) / 2 : 0,
     omega: [0, 0, 0],
   });
   return state;

@@ -1,5 +1,8 @@
 # Retours multijoueurs, HUD et déploiement au sol
 
+La composition de vague décrite dans ce lot a ensuite été densifiée : voir
+[les nuées de version 38](dense-swarms.md), 20 moucherons et 4 fourmis au départ.
+
 Lot MORT-01 à RAD-02, Node/RAM/UDP, 29 octobre 2026. Source livrée en ZIP ; le
 Worker historique n’héberge pas ces nouvelles règles. Les spécifications du backlog
 sont les décisions validées ; ce document décrit leur réalisation et ses limites.

@@ -115,7 +115,7 @@ console.log(
 
 const first = wavePlan('VISIBLE', 1, 1000);
 assert.equal(first.roster.filter((e) => e.ground).length, 4);
-assert.equal(first.roster.filter((e) => e.type === 'midge').length, 4);
+assert.equal(first.roster.filter((e) => e.type === 'midge').length, 20);
 const oldModel = graphics.insect('midge'),
   newModel = graphics.insect('midge');
 oldModel.scale.setScalar(INSECT_SCALE * 1.35 * 1.5);

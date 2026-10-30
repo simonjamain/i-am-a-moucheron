@@ -1,5 +1,8 @@
 # Visibilité des ennemis — correctif du 30 octobre 2026
 
+La composition de vague décrite dans ce lot a ensuite été densifiée : voir
+[les nuées de version 38](dense-swarms.md), 20 moucherons et 4 fourmis au départ.
+
 Le correctif cible le runtime Node/UDP et se livre en sources. Le Site public
 Worker historique n'est pas redéployé avec ce client.
 

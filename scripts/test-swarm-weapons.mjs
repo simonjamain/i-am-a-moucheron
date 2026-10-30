@@ -14,14 +14,15 @@ import worker from '../worker/index.js';
 for (const wave of [1, 2, 3, 5, 10, 30, 100, 1000]) {
   const plan = wavePlan('SWARM', wave, 1234);
   assert.equal(
-    plan.roster.reduce((s, e) => s + e.cost, 0),
+    plan.roster.reduce((s, e) => s + e.cost, 0) -
+      (plan.roster.filter((e) => e.type === 'midge').length / 5) * 4,
     waveBudget(wave),
   );
-  assert.ok(plan.roster.length <= 180);
+  assert.ok(plan.roster.length <= 900);
   assert.deepEqual(plan, wavePlan('SWARM', wave, 1234));
   if (wave > 1) assert.ok(plan.budget >= waveBudget(wave - 1));
 }
-assert.equal(wavePlan('SWARM', 1, 1).roster.length, 8);
+assert.equal(wavePlan('SWARM', 1, 1).roster.length, 24);
 assert.notDeepEqual(wavePlan('SWARM', 8, 1).roster, wavePlan('SWARM', 8, 2).roster);
 const plan = wavePlan('SWARM', 10, 1),
   frame = swarmFrame(plan.roster, 100),

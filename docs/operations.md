@@ -100,3 +100,9 @@ synchronisées au dépôt, sans publier le client Node sur le Worker historique.
 
 Le [lot confort de jeu, version 37](comfort.md) précise réparation, zoom, jauges,
 radar à pied, remise à zéro, fourmis et projectiles du pistolet courants.
+
+Les [nuées densifiées](dense-swarms.md) multiplient les moucherons par cinq
+et utilisent une grille spatiale pour le voisinage.
+
+La [correction des commandes H2](helicopter-controls.md) couvre Z/O/Haut, S/Bas,
+stationnaire, poussée locale et axe des roquettes.

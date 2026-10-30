@@ -109,8 +109,9 @@ Voir [retours multijoueurs](multiplayer-return.md).
 
 ## Hélicoptère et DCA mobile
 
-Hélicoptère, pilote : souris pour incliner, Z/Haut et S/Bas pour la poussée,
-C maintenu pour le regard libre (sans roquettes), clic maintenu pour les roquettes.
+Hélicoptère, pilote : souris pour incliner, Z/O/Haut pour monter et S/Bas pour descendre,
+relâchement pour revenir progressivement au stationnaire. C maintenu pour le
+regard libre (sans roquettes), clic maintenu pour les roquettes dans l’axe du H2.
 Copilote : souris pour viser, Maj choisit la MG, Ctrl les missiles. Clic : tirer ;
 second appui distinct : détoner le missile. Aucun changement d’arme pendant son vol.
 Camion : conduite Z/S et Q/D au conducteur ; souris et clic au tireur, molette

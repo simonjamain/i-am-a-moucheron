@@ -28,9 +28,9 @@ time builds a roster from an increasing integer budget. Aerial costs are 1 / 3 /
 health is 100 / 200 / 400 / 800 PV for midge / dart / guard / brute. Darts unlock on
 wave 4, guards on 8, brutes on 12. Ants (from wave 1) and roaches (wave 6) add ground variants;
 see `waves.js` for the complete catalog and `routes.js` for entry sources. They have distinct size, colour, speed and
-infestation cost. Budget is capped at 2400 and visible population at 180; at
+infestation cost. Budget is capped at 2400 and the source population at 180; at
 that ceiling, remaining budget is consolidated into one brute with its normal 800 PV. The
-first wave has four midges plus four ants and follows extended room-wide routes, with timing derived from the actual route.
+first wave has twenty midges plus four ants and follows extended room-wide routes, with timing derived from the actual route.
 See [progression](progression.md) for budgets, elite limits and timings. Later compositions
 vary randomly while sharing an exact budget across clients.
 
@@ -41,8 +41,8 @@ smooth individual wandering, local separation, cohesion and heading alignment.
 It evaluates offsets directly from absolute game time rather than integrating
 chaotic steering from each client's frame history. Late joiners therefore get
 the same positions without a new real-time authoritative swarm server. This is
-not an unrestricted Boids simulation. Local neighbour scans are bounded at 180
-entities; route offsets fade at entry/bin so the server's arrival deadline stays
+not an unrestricted Boids simulation. A spatial grid locates exact neighbours within the same radius, over at most
+900 final entities after fivefold midge expansion; route offsets fade at entry/bin so the server's arrival deadline stays
 consistent. Rendered heading follows actual displacement; wings have individual
 phase and type-dependent cadence. All clients retain the same ghost steering
 neighbours until wave end, so stale kill messages cannot shift the flock.
@@ -85,3 +85,6 @@ pre-scale coordinate that made the old wave cue nearly inaudible.
 
 The [latest return lot](multiplayer-return.md) adds early ants, extended routes,
 player initials and midge-only extra 20% hit tolerance. Other enemy sizes now follow the [readability correction](enemy-visibility.md).
+
+Current fivefold midge population, source budgets, clustered timing, spatial
+calculation and limits: [dense swarms](dense-swarms.md).

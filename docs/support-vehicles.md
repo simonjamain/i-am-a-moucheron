@@ -31,9 +31,9 @@ Les améliorations de moteur s'appliquent au H2 comme aux avions.
 
 Le modèle procédural montre un cockpit avant bas, un second cockpit plus haut,
 un rotor, une queue et deux lanceurs latéraux. Pilote devant, copilote derrière.
-La souris demande le cap et l'inclinaison ; Z/Haut augmente la poussée et S/Bas la
+La souris demande le cap et l'inclinaison ; Z/O/Haut augmente la poussée et S/Bas la
 diminue. Q/D et A/E n'ajoutent pas de translation ou de commande verticale.
-Au relâchement de Z/S, la poussée revient progressivement au neutre ; l'assistance
+Au relâchement des touches verticales, la poussée revient progressivement au neutre ; l'assistance
 amortit la vitesse verticale et freine le mouvement horizontal. Sans pilote ou
 pointeur actif, l'assistance redresse et freine, sans trajectoire automatique.
 La physique est un modèle assisté de jeu, pas une simulation aérodynamique de rotor.
@@ -132,3 +132,6 @@ de poste et les morts, l'écoute et le confort visuel des modèles et du pilotag
 
 Le [lot confort de jeu, version 37](comfort.md) précise réparation, zoom, jauges,
 radar à pied, remise à zéro, fourmis et projectiles du pistolet courants.
+
+La [correction des commandes H2](helicopter-controls.md) détaille les défauts
+reproduits, le collectif local, la jauge au neutre et les tests de roquettes.

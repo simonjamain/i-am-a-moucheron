@@ -274,7 +274,7 @@ for (let seed = 0; seed < 8; seed++)
   for (const wave of [1, 4, 8]) {
     const plan = wavePlan('EXTENT' + seed, wave, 1234);
     if (wave === 1) {
-      assert.equal(plan.roster.filter((e) => e.type === 'midge').length, 4);
+      assert.equal(plan.roster.filter((e) => e.type === 'midge').length, 20);
       assert.equal(plan.roster.filter((e) => e.type === 'ant').length, 4);
     }
     for (const enemy of [

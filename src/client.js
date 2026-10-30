@@ -219,6 +219,7 @@ let joined = false,
   hp = 100,
   wing = 1,
   engine = 1,
+  heliCollective = 0,
   gas = 0.65,
   cooldown = 0,
   shooting = false,
@@ -532,7 +533,10 @@ function localMotion() {
     v: vel.toArray(),
     hp: Math.max(0, Math.min(myVehicle?.type === 'helicopter' ? 200 : 100, hp)),
     type: myVehicle?.type,
-    collective: myVehicle?.state.collective || 0,
+    collective:
+      myVehicle?.type === 'helicopter' && crewSeat === 'pilot'
+        ? heliCollective
+        : myVehicle?.state.collective || 0,
     wing,
     engine,
     fire: !respawnAt && shooting,
@@ -985,6 +989,7 @@ function accept(s, force = false) {
         engine = myVehicle.state.engine;
         landed = !!myVehicle.state.landed;
         gas = myVehicle.state.gas ?? (landed ? 0 : 0.65);
+        heliCollective = myVehicle.state.collective || 0;
         boardingOpen = false;
         groundView.scene = '';
         turretAim.yaw = crewSeat === 'tail' ? Math.PI : 0;
@@ -1365,6 +1370,7 @@ addEventListener('keydown', (event) => {
       'ArrowRight',
       'Space',
       'KeyZ',
+      'KeyO',
       'KeyW',
       'KeyS',
       'KeyQ',
@@ -2231,6 +2237,8 @@ function turretDirection() {
   );
 }
 function weaponDirection() {
+  if (myVehicle?.type === 'helicopter' && crewSeat === 'pilot')
+    return new T.Vector3(0, 0, -1).applyQuaternion(me.quaternion);
   if (myVehicle?.type === 'helicopter' && crewSeat === 'copilot') clampHeliAim(turretAim);
   const d = turretDirection();
   return myVehicle && crewSeat !== 'pilot' ? d.applyQuaternion(me.quaternion) : d;
@@ -3289,9 +3297,14 @@ function physics(dt) {
   if (respawnAt || onFoot || !myVehicle) return;
   if (myVehicle.type === 'helicopter') {
     const active = controlFocus.active && canCapture();
-    const state = { ...localMotion(), fuelAvailable: remainingFuel() > 0 };
+    const state = {
+      ...localMotion(),
+      collective: heliCollective,
+      fuelAvailable: remainingFuel() > 0,
+    };
     const collective = active
-      ? Number(!!(keys.KeyZ || keys.KeyW || keys.ArrowUp)) - Number(!!(keys.KeyS || keys.ArrowDown))
+      ? Number(!!(keys.KeyZ || keys.KeyO || keys.KeyW || keys.ArrowUp)) -
+        Number(!!(keys.KeyS || keys.ArrowDown))
       : 0;
     stepHelicopter(
       T,
@@ -3312,6 +3325,7 @@ function physics(dt) {
     me.position.fromArray(state.p);
     me.quaternion.fromArray(state.q);
     vel.fromArray(state.v);
+    heliCollective = state.collective;
     myVehicle.state.collective = state.collective;
     landed = state.landed;
     gas = state.gas;
@@ -4376,7 +4390,13 @@ function remainingFuel() {
   if (!supply) return 300;
   if (supply.servicing) return supply.fuel;
   const age = Math.max(0, (performance.now() - (snap.receivedAt || performance.now())) / 1000);
-  return Math.max(0, supply.fuel - (engine ? gas * age : 0));
+  const consumption =
+    myVehicle.type === 'helicopter'
+      ? (crewSeat === 'pilot' ? landed : myVehicle.state.landed)
+        ? 0
+        : 1
+      : gas;
+  return Math.max(0, supply.fuel - (engine ? consumption * age : 0));
 }
 function currentFactors() {
   return clauseFactors(snap?.pilots.find((p) => p.id === id)?.contractClause);

@@ -21,7 +21,7 @@ now += 10000;
 s = call(a.id, 'sync', { state: a.state, mode: 'foot' });
 assert.equal(s.phase, 'combat');
 assert.equal(s.wave, 1);
-assert.equal(s.total, 8);
+assert.equal(s.total, 24);
 for (let enemy = 0; enemy < s.total; enemy++) {
   call(a.id, 'hit', { wave: 1, enemy, amount: 75, shot: 'one' });
   call(a.id, 'hit', { wave: 1, enemy, amount: 75, shot: 'one' });
@@ -30,8 +30,8 @@ for (let enemy = 0; enemy < s.total; enemy++) {
 s = game.snapshot(room);
 assert.equal(s.phase, 'prep');
 assert.equal(s.dollars, 4);
-assert.equal(s.kills.length, 8);
-assert.equal(s.souls.length, 8);
+assert.equal(s.kills.length, 24);
+assert.equal(s.souls.length, 24);
 assert.equal(s.enemyDamage[0], 150);
 room.dollars = 30;
 s = call(a.id, 'buy', { item: 'engine', request: 'purchase-engine', expectedPrice: 4 });

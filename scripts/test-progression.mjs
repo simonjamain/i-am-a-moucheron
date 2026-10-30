@@ -12,12 +12,13 @@ for (let seed = 0; seed < 40; seed++)
   for (let wave = 1; wave <= 12; wave++) {
     const p = wavePlan('CURVE' + seed, wave, seed);
     assert.equal(
-      p.roster.reduce((n, e) => n + e.cost, 0),
+      p.roster.reduce((n, e) => n + e.cost, 0) -
+        (p.roster.filter((e) => e.type === 'midge').length / 5) * 4,
       p.budget,
     );
     if (wave === 1) {
-      assert.equal(p.roster.length, 8);
-      assert.equal(p.roster.filter((e) => e.type === 'midge').length, 4);
+      assert.equal(p.roster.length, 24);
+      assert.equal(p.roster.filter((e) => e.type === 'midge').length, 20);
       assert.equal(p.roster.filter((e) => e.type === 'ant').length, 4);
       assert.ok(Math.max(...p.roster.map((e) => e.spawn + e.duration)) > 100);
     }
@@ -81,7 +82,7 @@ const a = (await api('join', { name: 'A', code: 'PROGRESS' })).body,
 await DB.prepare("UPDATE rooms SET phase='combat',wave=1,started=? WHERE code='PROGRESS'")
   .bind(now)
   .run();
-for (let enemy = 0; enemy < 8; enemy++) {
+for (let enemy = 0; enemy < 24; enemy++) {
   const r = await api('hit', { id: a.id, wave: 1, enemy, shot: 'clear' + enemy, amount: 800 });
   assert.equal(r.status, 200);
 }
@@ -135,8 +136,13 @@ s = (await api('sync', { id: a.id, state: a.state })).body;
 assert.equal(s.rewardCount, 0);
 assert.equal(s.dollars, 0);
 await DB.prepare("UPDATE rooms SET phase='combat',wave=1,started=? WHERE code='PROGRESS'")
-  .bind(now - 2000000)
+  .bind(now)
   .run();
+// Leave eight enemies to arrive, below defeat; a completely missed 24-enemy
+// first wave now correctly exceeds the unchanged infestation limit.
+for (let enemy = 8; enemy < 24; enemy++)
+  await api('hit', { id: a.id, wave: 1, enemy, shot: 'partial' + enemy, amount: 800 });
+now += 2000000;
 s = (await api('sync', { id: a.id, state: a.state })).body;
 assert.equal(s.phase, 'prep');
 assert.equal(s.infestation, 8);

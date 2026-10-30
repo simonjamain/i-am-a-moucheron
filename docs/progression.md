@@ -8,7 +8,7 @@ armes restent ceux de [combat-worlds](combat-worlds.md).
 
 | Vague | Budget | Prime commune immédiate | Nouveauté autorisée             |
 | ----- | -----: | ----------------------: | ------------------------------- |
-| 1     |      8 |                     4 $ | 4 moucherons + 4 fourmis        |
+| 1     |      8 |                     4 $ | 20 moucherons + 4 fourmis       |
 | 2     |     10 |                     5 $ | Fourmis garanties               |
 | 3     |     14 |                     6 $ | Présence terrestre régulière    |
 | 4     |     18 |                     7 $ | Premier voltigeur possible      |
@@ -22,11 +22,14 @@ Les ennemis coûtant plus d’un point occupent au maximum 40 % du budget et son
 limités par type à un exemplaire lors du déblocage, puis un supplémentaire toutes
 les trois vagues. Le tirage est déterministe pour une salle et un départ donnés.
 Un budget n’est pas un nombre d’ennemis : les plus résistants coûtent davantage.
+Depuis la version 38, il définit la composition avant multiplication des seuls
+moucherons par cinq : [nuées densifiées](dense-swarms.md). Les autres espèces,
+les déblocages et les primes sont conservés.
 
 Les trajets comportent désormais des détours avant l’approche de la poubelle,
 avec navigation statique autour du mobilier. La vitesse effective précédente est
 conservée sauf pour les fourmis ralenties par [VAG-07](comfort.md) et la durée découle de la longueur, sans l’ancien plafond de 145 secondes.
-La première vague mêle quatre moucherons et quatre fourmis, avec parcours sur toute la
+La première vague mêle vingt moucherons et quatre fourmis, avec parcours sur toute la
 pièce et durées plus longues à vitesse conservée, et se termine plus tôt si tous les ennemis sont abattus. Le lancement initial de dix secondes et les pauses entre vagues de soixante
 secondes restent séparés. Voir [trajets et crashs](vehicles-bank.md#trajets-et-crashs)
 pour la calibration et les limites de navigation.

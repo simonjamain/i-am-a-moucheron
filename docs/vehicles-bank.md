@@ -1,5 +1,8 @@
 # Pilotage, véhicules, armement et banque
 
+La composition de vague décrite dans ce lot a ensuite été densifiée : voir
+[les nuées de version 38](dense-swarms.md), 20 moucherons et 4 fourmis au départ.
+
 État du lot du 29 octobre 2026, pour le **serveur Node RAM/UDP**. Le Worker Sites
 reste historique : ce lot ne doit pas être publié sur son backend D1.
 Les écrans HUD et banquier ont été validés puis intégrés au jeu. L’aperçu

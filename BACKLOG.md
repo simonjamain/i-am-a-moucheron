@@ -2044,3 +2044,40 @@ Limites : BUG-06 couvre un défaut numérique reproduit, sans preuve qu'il expli
 tous les cas signalés sur VM. Le test humain d'embarquement, WebGL, Pointer Lock
 et WAN reste dans HEL-06 ; DCM-03 reste aussi en cours pour sa validation humaine.
 Aucun déploiement externe ni client Node publié sur le Worker historique.
+
+## Nuées de moucherons — version 38, 30 octobre 2026
+
+| ID | Tâche | État | Dépendances |
+| --- | --- | --- | --- |
+| VAG-08 | Multiplier les moucherons par cinq en conservant les nuées | terminé | — |
+
+Référence : [nuées densifiées](docs/dense-swarms.md). Première vague 20 moucherons
+et 4 fourmis ; autres espèces, PV, tailles, cadences et prime de vague conservés.
+Chaque source moucheron produit cinq identifiants indépendants sur son trajet,
+avec départs regroupés. Plafond final 900, issu du plafond de 180 sources.
+La grille spatiale remplace la comparaison globale de toutes les paires.
+
+Contrôles : parité exacte avec le calcul exhaustif, composition multi-graines et
+multi-vagues, dégâts aux indices élevés, dernier ennemi, récompenses et messages
+découpés ; suite complète incluant visibilité et deux pairs UDP. Revue des Markdown
+suivis : références courantes gameplay/progression/nuées/architecture/exploitation
+et README actualisées, rapports datés et archives conservés. Liens vérifiés.
+Limite inchangée : pas de mesure FPS WebGL ni de ressenti de tir/WAN sur VM.
+Livraison en ZIP Node/UDP ; HEL-06/DCM-03 restent en validation humaine.
+
+## Correctif H2 — version 39, 30 octobre 2026
+
+| ID | Tâche | État | Dépendances |
+| --- | --- | --- | --- |
+| HEL-07 | Corriger montée/descente et vérifier les roquettes dans l'axe | terminé | — |
+
+Attendu, causes reproduites et contrôles : [commandes H2](docs/helicopter-controls.md).
+O ajouté aux alias Z/Haut/W ; S/Bas pour descendre. Collectif du pilote conservé
+localement face aux réponses retardées ; jauge 50 % au stationnaire, progression
+en montée/descente. Roquettes dans l'axe de coque côté client comme serveur.
+Test de la vraie branche client, contrôles serveur sous plusieurs orientations,
+suite complète et pairs UDP ; build, format et liens vérifiés. Revue des Markdown
+suivis : README, gameplay, carte du code, contrôles, appui, confort et exploitation
+mis à jour ; archives et anciens lots datés conservés. Aucun changement de stack,
+PV, consommation ou armes copilote. WebGL/Pointer Lock/WAN restent à observer
+sur VM ; HEL-06/DCM-03 conservent leur validation humaine en cours.

@@ -35,6 +35,21 @@ export const ENEMY_TYPES = Object.freeze({
     color: '#d0a14b',
   },
 });
+export const MIDGE_SWARM_MULTIPLIER = 5;
+export const MAX_WAVE_POPULATION = 180 * MIDGE_SWARM_MULTIPLIER;
+// Keep the director's composition and timetable, densify only the midge groups.
+export function expandMidgeSwarms(roster) {
+  return roster
+    .flatMap((enemy) =>
+      Array.from({ length: enemy.type === 'midge' ? MIDGE_SWARM_MULTIPLIER : 1 }, (_, member) => ({
+        ...enemy,
+        sourceId: enemy.id,
+        spawn: enemy.spawn + member * 0.07,
+        phase: enemy.phase + (member * Math.PI * 2) / MIDGE_SWARM_MULTIPLIER,
+      })),
+    )
+    .map((enemy, id) => ({ ...enemy, id }));
+}
 export function waveBudget(wave) {
   const n = Math.max(1, Math.floor(Number(wave) || 1));
   return Math.min(2400, 8 + 2 * (n - 1) + Math.floor((n - 1) ** 2 / 2));
@@ -107,7 +122,7 @@ export function wavePlan(room, wave, started = 0) {
     enemy.travelSpeed = baselineTravelSpeed(enemy, wave) * (enemy.type === 'ant' ? 0.5 : 1);
     enemy.duration = enemy.entryHold + routeDuration(enemy);
   }
-  const result = { budget: waveBudget(wave), roster };
+  const result = { budget: waveBudget(wave), roster: expandMidgeSwarms(roster) };
   if (waveCache.size > 32) waveCache.delete(waveCache.keys().next().value);
   waveCache.set(key, result);
   return result;
@@ -154,11 +169,29 @@ export function swarmFrame(roster, time) {
             Math.sin(time * 0.23 + phase * 2 + j) * 0.35);
     return { p, dir: tangent.map((v) => v / length), envelope };
   });
+  // A spatial grid keeps fivefold populations from multiplying global pair scans.
+  const radius = MAP.metres(24),
+    buckets = new Map();
+  const cell = (p) => p.map((v) => Math.floor(v / radius));
+  for (let i = 0; i < samples.length; i++) {
+    if (!samples[i]) continue;
+    const key = cell(samples[i].p).join(':');
+    if (!buckets.has(key)) buckets.set(key, []);
+    buckets.get(key).push(i);
+  }
   return samples.map((s, i) => {
     if (!s) return null;
     const correction = [0, 0, 0];
     let neighbours = 0;
-    for (let j = 0; j < samples.length; j++) {
+    const [cx, cy, cz] = cell(s.p),
+      candidates = [];
+    for (let dx = -1; dx <= 1; dx++)
+      for (let dy = -1; dy <= 1; dy++)
+        for (let dz = -1; dz <= 1; dz++)
+          candidates.push(...(buckets.get([cx + dx, cy + dy, cz + dz].join(':')) || []));
+    // Preserve summation order across clients and relative to the former scan.
+    candidates.sort((a, b) => a - b);
+    for (const j of candidates) {
       const b = samples[j];
       if (!b || j === i) continue;
       const delta = s.p.map((v, k) => v - b.p[k]),

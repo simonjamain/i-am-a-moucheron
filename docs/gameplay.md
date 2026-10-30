@@ -24,7 +24,7 @@ l’infestation. La mort ouvre une observation à caméra fixe ; un clic volonta
 La première vague démarre dix secondes après le lancement de la partie. Après
 chaque vague, la pause dure au maximum soixante secondes ; le déclenchement manuel
 peut la raccourcir. Un budget de difficulté croissant compose des vagues variées
-avec des ennemis de résistances différentes. Le départ comporte quatre moucherons et quatre fourmis faciles, avec des parcours
+avec des ennemis de résistances différentes. Le départ comporte vingt moucherons et quatre fourmis, avec des parcours
 étendus dans toute la pièce à vitesse conservée ; les types plus difficiles
 sont débloqués progressivement. Voir [progression](progression.md). Des groupes aériens arrivent depuis
 plusieurs aérations, se séparent et se rejoignent ; fourmis et cafards empruntent
@@ -184,7 +184,7 @@ et une couleur propre. [Référence du dernier lot](multiplayer-return.md).
 
 ## Hélicoptère et camion DCA
 
-H2 : pilote et copilote, souris pour incliner, Z/S pour la poussée et retour
+H2 : pilote et copilote, souris pour incliner, Z/O/Haut pour monter, S/Bas pour descendre et retour
 assisté au stationnaire. C observe et suspend les roquettes. Le copilote dispose
 d’une MG et d’un missile guidé manuellement depuis son poste, avec détonation au
 second clic. D2 : conducteur et tireur sur semi-remorque, obus à fusée armée à
@@ -198,8 +198,15 @@ sont trois fois plus gros que dans la livraison précédente.
 
 Les six espèces utilisent désormais des dimensions contrôlées en pixels :
 [facteurs et mesures](enemy-visibility.md). Les terrestres sont relevés selon
-leurs pattes, avec une marge de navigation adaptée à leur corps élargi. Les PV, primes et composition 4+4 de la première vague restent inchangés ;
+leurs pattes, avec une marge de navigation adaptée à leur corps élargi. Les PV et primes restent inchangés ; la composition de départ est désormais
+20 moucherons + 4 fourmis selon [les nuées densifiées](dense-swarms.md) ;
 VAG-07 réduit ensuite taille et vitesse des fourmis, selon le lot confort.
 
 Le [lot confort de jeu, version 37](comfort.md) précise réparation, zoom, jauges,
 radar à pied, remise à zéro, fourmis et projectiles du pistolet courants.
+
+Les [nuées densifiées](dense-swarms.md) multiplient les seuls moucherons par cinq,
+avec mêmes groupes de trajets et calcul de voisinage spatial.
+
+Les [commandes H2 corrigées](helicopter-controls.md) précisent les touches,
+le retour au stationnaire et les roquettes alignées sur la coque.

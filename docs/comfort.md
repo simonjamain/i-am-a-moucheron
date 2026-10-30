@@ -27,9 +27,9 @@ les PV du pilote et des appareils sans pilote.
 
 Deux petites jauges au viseur indiquent carburant (fraction des 300 secondes)
 et commande moteur en pourcentage ; les autres postes lisent les gaz partagés
-du pilote. Le H2 conserve son indicateur de moteur alimenté (100 % en vol,
-0 % posé), distinct du collectif vertical : son carburant ne dépend pas du
-collectif. Aucun indicateur moteur n'est ajouté à la DCA fixe.
+du pilote. Le H2 affiche désormais sa [commande verticale corrigée](helicopter-controls.md) :
+50 % au stationnaire, plus pour monter et moins pour descendre. Son carburant
+ne dépend pas du collectif. Aucun indicateur moteur n'est ajouté à la DCA fixe.
 
 ## Zoom et tir
 
