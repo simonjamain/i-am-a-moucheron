@@ -142,3 +142,11 @@ not payment at placement. Their pending counts participate in quotes and the 24-
 Les [retours multijoueurs](multiplayer-return.md) remplacent le déploiement direct
 des appareils achetés, la gravité non miniature et les parcours courts. Les achats
 de véhicules se signent et se posent à pied, notamment sur le plancher.
+
+## Pose dans une zone de service
+
+La zone de ravitaillement et de réparation n’est pas un obstacle de placement.
+Une station peut se poser près d’un appareil immobilisé, et un équipement dans
+sa zone de service. Seul le socle de la station réserve une emprise physique
+(4 × 3 mètres de référence, avec marge). Le client et Node utilisent le même
+contrôle de support et d’occupation ; les coques garées restent protégées.

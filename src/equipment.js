@@ -121,12 +121,12 @@ export function supportedPlacement(point, colliders, occupied = [], kind = 'dca'
   const rx = profile
       ? MAP.metres(profile.span / 2 + 1)
       : kind === 'refuel'
-        ? 0.065
+        ? MAP.metres(2.1)
         : MAP.metres(kind === 'bed' ? 3 : 2.1),
     rz = profile
       ? MAP.metres(profile.length / 2 + 1)
       : kind === 'refuel'
-        ? 0.065
+        ? MAP.metres(2.1)
         : MAP.metres(kind === 'bed' ? 2.1 : 1.5),
     height = MAP.metres(profile ? 4 : 3.2),
     eps = 1e-5;
@@ -162,7 +162,7 @@ export function supportedPlacement(point, colliders, occupied = [], kind = 'dca'
             (s.clearance
               ? s.clearance + rx
               : kind === 'refuel' || s.kind === 'refuel'
-                ? 0.08
+                ? MAP.metres(2.6) + rx
                 : MAP.metres(5)),
       )
     )
