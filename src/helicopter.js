@@ -4,15 +4,29 @@ import { OFFICE_LAYOUT } from './layout.js';
 export const HELI = Object.freeze({
   gunInterval: 1 / 15,
   gunDamage: 75,
-  yawLimit: Math.PI / 2,
+  maxTilt: (85 * Math.PI) / 180,
+  turretSpeed: Math.PI,
+  descentSpeed: 30,
   minPitch: -1.45,
   maxPitch: 0,
   missileTurn: 1.2,
 });
 export function clampHeliAim(aim) {
-  aim.yaw = Math.max(-HELI.yawLimit, Math.min(HELI.yawLimit, aim.yaw));
+  aim.yaw = Math.atan2(Math.sin(aim.yaw), Math.cos(aim.yaw));
   aim.pitch = Math.max(HELI.minPitch, Math.min(HELI.maxPitch, aim.pitch));
   return aim;
+}
+// Desired pointer aim and actual mount aim are distinct. Advance once per frame;
+// shots, guidance and camera all use the same actual orientation.
+export function stepHeliAim(actual, desired, dt) {
+  clampHeliAim(desired);
+  const yaw = Math.atan2(Math.sin(desired.yaw - actual.yaw), Math.cos(desired.yaw - actual.yaw));
+  const pitch = desired.pitch - actual.pitch;
+  const distance = Math.hypot(yaw, pitch);
+  const fraction = distance ? Math.min(1, (HELI.turretSpeed * Math.max(0, dt)) / distance) : 0;
+  actual.yaw += yaw * fraction;
+  actual.pitch += pitch * fraction;
+  return clampHeliAim(actual);
 }
 export function rotateLocal(q, [x, y, z]) {
   const [qx, qy, qz, qw] = q,
@@ -58,12 +72,15 @@ export function stepHelicopter(T, state, controls, colliders, dt, profile) {
     ? Math.atan2(-dir.x, -dir.z)
     : new T.Euler().setFromQuaternion(q, 'YXZ').y;
   const pitch = controls.direction
-    ? Math.max(-0.4, Math.min(0.4, Math.asin(Math.max(-1, Math.min(1, dir.y)))))
+    ? Math.max(-HELI.maxTilt, Math.min(HELI.maxTilt, Math.asin(Math.max(-1, Math.min(1, dir.y)))))
     : 0;
   const roll = controls.direction
     ? Math.max(
-        -0.35,
-        Math.min(0.35, new T.Vector3(0, 0, -1).applyQuaternion(q).cross(dir).y * -0.6),
+        -HELI.maxTilt,
+        Math.min(
+          HELI.maxTilt,
+          new T.Vector3(0, 0, -1).applyQuaternion(q).cross(dir).y * -HELI.maxTilt,
+        ),
       )
     : 0;
   const target = new T.Quaternion().setFromEuler(new T.Euler(pitch, yaw, roll, 'YXZ'));
@@ -72,7 +89,8 @@ export function stepHelicopter(T, state, controls, colliders, dt, profile) {
   if (powered) {
     v.x += (up.x * MAP.metres(30) - v.x * 0.28) * dt;
     v.z += (up.z * MAP.metres(30) - v.z * 0.28) * dt;
-    v.y += (collective * MAP.metres(8) - v.y) * Math.min(1, dt * 2);
+    v.y +=
+      (collective * MAP.metres(collective < 0 ? HELI.descentSpeed : 8) - v.y) * Math.min(1, dt * 2);
   } else v.y -= MAP.metres(9.81) * dt;
   const max = MAP.metres(profile.maxSpeed),
     horizontal = Math.hypot(v.x, v.z);

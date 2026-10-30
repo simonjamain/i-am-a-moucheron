@@ -90,7 +90,7 @@ state.fuelAvailable = false;
 stepHelicopter(T, state, { collective: 1 }, [], 1 / 120, VEHICLES.helicopter);
 assert.ok(state.v[1] < 0);
 const aim = clampHeliAim({ yaw: 3, pitch: 1 });
-assert.equal(aim.yaw, Math.PI / 2);
+assert.equal(aim.yaw, 3);
 assert.equal(aim.pitch, 0);
 const guided = { p: [0, 1, 0], v: [0, 0, -1] };
 steerMissile(guided, [10, 1, 0], 0.1);
