@@ -65,7 +65,12 @@ Le runtime Node/UDP et le Site historique Worker/D1 sont distincts : publier le
 client Node sur le Worker est incompatible. Sites n'est pas requis pour coder ;
 le consulter seulement pour une intervention explicite sur le Site historique,
 depuis son ancien dépôt distinct. Ce dépôt ne porte plus de manifeste Sites.
-Générer ZIP ou image Docker uniquement si la livraison demandée le nécessite.
+Générer un ZIP uniquement si la livraison demandée le nécessite.
+Avant toute livraison de contribution, construire systématiquement l’image Docker
+selon [le guide Docker](docs/docker.md), même sans livrer d’image. Après les
+dernières modifications ou une synchronisation, refaire ce build et consigner
+commande, résultat et commit testé dans la PR. Si Docker est indisponible, le
+signaler et vérifier le contrôle GitHub Actions `Docker build` avant la fusion.
 
 ## Version
 

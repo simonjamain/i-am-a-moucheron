@@ -34,3 +34,30 @@ Les fichiers Compose et l’exemple Traefik du dépôt restent liés à l’anci
 image importable `2026.10.29-udp.2`. Ses instructions sont conservées dans
 [l’archive du paquet Docker](archive/docker-package-2026-10-29.md) ; elles ne
 doivent pas être prises pour une livraison de l’état courant.
+
+## Contrôle de contribution et protection de main
+
+Chaque contribution construit l’image complète avec la commande `docker build`
+ci-dessus. Rapporter le résultat et le commit testé dans la PR. Si Docker manque
+localement, le signaler et attendre le résultat de GitHub Actions.
+
+Le workflow [Docker build validation](../.github/workflows/docker-build.yml)
+exécute le contrôle **Docker build** sur toutes les PR, les pushs sur `main` et
+les groupes de fusion. Il construit et charge l’image `linux/amd64` sans la
+publier ni utiliser de secrets de déploiement. Aucun filtre de fichiers ne saute
+le contrôle sur les contributions documentaires. Le workflow de publication
+GHCR reste distinct.
+
+Pour bloquer effectivement la fusion, un administrateur doit configurer dans
+GitHub une protection ou un ruleset actif sur `main` : exiger une PR et le
+status check **Docker build** (application GitHub Actions), avec une branche à
+jour avant fusion. Conserver les autres protections existantes. Appliquer la
+règle aux administrateurs et éviter les exceptions de contournement si toutes
+les fusions doivent être bloquées en cas d’échec. Le fichier de workflow seul
+ne peut pas rendre un contrôle obligatoire.
+
+L’intégration GitHub utilisée pour cette contribution ne dispose pas des droits
+d’administration : cette protection n’a pas pu être lue ni modifiée (HTTP 403).
+Son activation reste donc à vérifier dans les paramètres du dépôt.
+
+Référence : [contrôles obligatoires GitHub](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches#require-status-checks-before-merging).
