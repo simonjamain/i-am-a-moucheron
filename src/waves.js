@@ -104,7 +104,7 @@ export function wavePlan(room, wave, started = 0) {
     enemy.approach = wave <= 3 ? 'intro' : wave <= 6 ? 'short' : 'full';
     enemy.routeSeed = hash(key + ':route:' + (solo ? 'solo' + enemy.id : group));
     enemy.branch = enemy.id % 8 < 3 ? 1 : 0;
-    enemy.travelSpeed = baselineTravelSpeed(enemy, wave);
+    enemy.travelSpeed = baselineTravelSpeed(enemy, wave) * (enemy.type === 'ant' ? 0.5 : 1);
     enemy.duration = enemy.entryHold + routeDuration(enemy);
   }
   const result = { budget: waveBudget(wave), roster };

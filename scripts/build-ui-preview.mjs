@@ -43,7 +43,7 @@ export function uiPreview(html) {
   const purchaseUI=new PurchaseUI({root:document.getElementById('purchasePanel'),snapshot:()=>snap,ground:()=>null,command:async()=>{snap.dollars-=purchaseUI.price;return snap},accept:()=>{},onOpen:()=>{rails.classList.add('hidden');document.getElementById('aimRange').classList.add('hidden')},onClose:()=>{},archive:()=>{document.querySelector('.previewNote').textContent='Bon signé dans la démonstration · En jeu, passage direct à la pose par E, achat déjà payé.'}});
   document.getElementById('bankOpen').onclick=()=>display(8);
   document.getElementById('wallet').textContent='123 456 789 012,67 $';
-  document.getElementById('wave').textContent='12';document.getElementById('enemies').textContent='180';document.getElementById('infest').textContent='10 / 20';
+  document.getElementById('wave').textContent='12';document.getElementById('enemies').textContent='Ennemis restants';document.getElementById('infest').textContent='10 / 20';
   let model;
   function display(index) {
     if (bank.busy || bedUI.busy || purchaseUI.busy) return;
@@ -60,7 +60,7 @@ export function uiPreview(html) {
     hud.update(model); const read=model.readout;
     const vehicle=index===4?null:{type,supplies:{ammo,fuel:240}};
     document.getElementById('commandHelp').textContent=controlHints({vehicle,seat,turret:index===4});
-    if(vehicle){const stats=cursorStats({vehicle,seat,hp:87,speed:145,ammo:index===11?1000:730});document.getElementById('cursorStats').classList.remove('hidden');document.getElementById('cursorStats').style.left='calc(50% + 30px)';document.getElementById('cursorStats').style.top='calc(50% + 22px)';document.getElementById('cursorSpeed').textContent=stats.speed+' km/h';document.getElementById('cursorHealth').textContent=stats.hp+' PV';document.getElementById('cursorHPbar').value=stats.hp;document.getElementById('cursorAmmo').textContent=cursorAmmoText({vehicle,seat,ammo:stats.ammo,proximity:5});}
+    if(vehicle){const stats=cursorStats({vehicle,seat,hp:87,speed:145,ammo:index===11?1000:730});document.getElementById('cursorStats').classList.remove('hidden');document.getElementById('cursorStats').style.left='calc(50% + 30px)';document.getElementById('cursorStats').style.top='calc(50% + 22px)';document.getElementById('cursorSpeed').textContent=stats.speed+' km/h';document.getElementById('cursorHealth').textContent=stats.hp+' PV';document.getElementById('cursorHPbar').value=stats.hp;document.getElementById('cursorFuel').value=80;document.getElementById('cursorFuelLabel').textContent='Carburant 80 %';document.getElementById('cursorGas').value=65;document.getElementById('cursorGasLabel').textContent='Gaz 65 %';document.getElementById('cursorAmmo').textContent=cursorAmmoText({vehicle,seat,ammo:stats.ammo,proximity:5});}
 
     document.getElementById('aimRange').classList.toggle('hidden',!read);
     if(read){document.getElementById('aimDistance').textContent=read.metres.toFixed(3)+' m';document.getElementById('aimGauge').value=read.fraction}

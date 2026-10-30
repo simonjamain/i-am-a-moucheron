@@ -76,7 +76,7 @@ export function cursorStats({ vehicle, seat, hp, speed, ammo }) {
 export function cursorAmmoText({ vehicle, seat, ammo, proximity = 5, guiding = false }) {
   const count = (value) => Math.max(0, Math.floor(value || 0));
   const stock = vehicle.supplies?.ammo || {};
-  const fuel = ' · ' + Math.ceil(vehicle.supplies?.fuel || 0) + ' s carburant';
+  const fuel = ''; // Dedicated percentage gauge beside the crosshair.
   if (vehicle.type === 'helicopter')
     return (
       (seat === 'pilot'

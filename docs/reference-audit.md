@@ -1,5 +1,17 @@
 # Revue des références
 
+## Confort — version 37, 30 octobre 2026
+
+Inventaire des 33 Markdown suivis et ajout de `comfort.md` : règles Node/RAM/UDP,
+ZIP et archives toujours distinctes du Worker historique. README, gameplay, carte
+du code, contrôles, logistique, exploitation, progression et références pistolet/H2
+renvoient au lot courant. Le tableau des dimensions et la vitesse des fourmis sont
+corrigés ; les tests de visibilité gardent une exception explicite de demi-taille.
+Backlog : dix tâches livrées, HEL-06/DCM-03 restent en validation humaine. La
+reproduction numérique H2 ne prouve pas toutes les causes possibles sur la VM.
+Liens, formatage, suite complète et deux pairs UDP sont contrôlés séparément du
+rendu subjectif WebGL/WAN. Aucune publication incompatible du client sur Sites.
+
 ## Reprise du diagnostic de visibilité — 30 octobre 2026
 
 Les 33 Markdown sont inventoriés : README, gameplay, carte du code, backlog,

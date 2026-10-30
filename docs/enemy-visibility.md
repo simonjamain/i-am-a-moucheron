@@ -75,7 +75,7 @@ bornes des vrais meshes Three.js, sans agrandir artificiellement un marqueur.
 
 | Espèce    | Facteur courant par rapport au modèle initial | Dimensions du décor L×H×P (mm) | Projection frontale à 2 m (pixels) |
 | --------- | --------------------------------------------: | ------------------------------ | ---------------------------------- |
-| Fourmi    |                                            12 | 24,81×10,74×30,92              | 11,23×4,86                         |
+| Fourmi    |                                             6 | 12,40×5,37×15,46               | 5,60×2,42                          |
 | Cafard    |                                             8 | 24,81×9,93×29,54               | 11,23×4,49                         |
 | Moucheron | 6,075, inchangé depuis le correctif précédent | 36,91×8,51×15,89               | 16,65×3,84                         |
 | Voltigeur |                                             4 | 20,66×4,76×11,19               | 9,31×2,15                          |
@@ -84,12 +84,13 @@ bornes des vrais meshes Three.js, sans agrandir artificiellement un marqueur.
 
 Ces dimensions incluent ailes ou pattes et le profil de taille de l'espèce. Ce
 sont des choix de lisibilité du jeu, pas des proportions biologiques. Le seuil
-contrôlé est une silhouette frontale d'au moins 6×2 pixels dans cette vue.
+contrôlé est de 6×2 pixels, avec exception fourmi à 5×1,7 pixels après la demande
+VAG-07 de demi-taille. Voir [confort](comfort.md) pour ce changement validé.
 L'agrandissement n'est pas dépendant de la caméra : la géométrie visible, les
 tirs et les contacts conservent la même taille à plusieurs joueurs.
 `ENEMY_SIZE_FACTORS` et `enemySizeFactor()` dans `scale.js` centralisent les six
-facteurs. PV, dégâts, vitesse de déplacement, composition et primes restent
-inchangés. Les cinq espèces autres que le moucheron ne conservent donc **plus**
+facteurs. PV, dégâts, composition et primes restent inchangés ; VAG-07 divise
+ensuite par deux la vitesse effective des seules fourmis. Les cinq espèces autres que le moucheron ne conservent donc **plus**
 leurs anciennes dimensions : cette reprise remplace la règle du premier correctif.
 
 Un agrandissement seul fait échouer le contrôle du sol : les meshes terrestres

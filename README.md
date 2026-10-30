@@ -114,3 +114,6 @@ de la première vague.
 
 La [reprise du diagnostic de visibilité](docs/enemy-visibility.md#reprise-après-persistance-du-signalement--taille-apparente-des-six-espèces)
 agrandit aussi les cinq autres espèces trop petites et ajuste l’appui au sol.
+
+Le [lot confort de jeu, version 37](docs/comfort.md) précise réparation, zoom, jauges,
+radar à pied, remise à zéro, fourmis et projectiles du pistolet courants.

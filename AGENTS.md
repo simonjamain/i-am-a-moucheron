@@ -71,3 +71,14 @@ toute évolution de schéma déjà publié. Conserver les secrets hors des docum
 Le fichier d’accueil ChatGPT remis à l’utilisateur pointe vers ce dépôt. Le mettre
 à jour si l’identité, l’accès aux sources ou le parcours de reprise change ; les
 règles détaillées restent dans le dépôt.
+
+
+## Version à chaque commit
+
+La valeur entière dans `VERSION` est la référence unique du numéro de jeu.
+Cette règle entre en vigueur avec la version 36. Avant chaque commit suivant,
+y compris documentaire, augmenter cette valeur de 1 dans le même commit.
+Après synchronisation ou fusion, utiliser un numéro supérieur à la dernière
+version intégrée et vérifier l'incrément avant de pousser. L'affichage, les assets
+assemblés et les livraisons doivent reprendre cette valeur ; VER-01 dans
+`BACKLOG.md` suit l'ajout de l'affichage et du contrôle automatique.

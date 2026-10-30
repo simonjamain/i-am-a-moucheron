@@ -2342,7 +2342,9 @@
           <div class="stat">
             <label>Vague</label><b id="wave">00</b><small id="threat">MENACE 0</small>
           </div>
-          <div class="stat"><label>Moucherons</label><b id="enemies">—</b></div>
+          <div class="stat">
+            <label>Présence ennemie</label><b id="enemies">Aucun ennemi restant</b>
+          </div>
           <div class="stat"><label>Infestation</label><b class="lime" id="infest">0 / 20</b></div>
         </div>
         <div id="economyControls">
@@ -2477,6 +2479,8 @@
     <div id="cursorStats" class="hidden">
       <span id="cursorSpeed"></span> · <span id="cursorHealth"></span
       ><progress id="cursorHPbar" max="100" value="100"></progress><span id="cursorAmmo"></span>
+      <span id="cursorFuelLabel"></span><progress id="cursorFuel" max="100"></progress>
+      <span id="cursorGasLabel"></span><progress id="cursorGas" max="100"></progress>
     </div>
     <div id="dirtView" aria-hidden="true"></div>
     <p id="dirtWarning" class="hidden">Attention, nettoyez votre véhicule en urinant dessus.</p>
@@ -2735,5 +2739,32 @@
       ><button id="turretFire" class="hidden">Tirer</button>
     </div>
     <script type="module" src="/client.js"></script>
+    <span
+      id="gameVersion"
+      style="
+        position: fixed;
+        left: 8px;
+        top: 4px;
+        z-index: 200;
+        pointer-events: none;
+        font-size: 11px;
+        opacity: 0.8;
+      "
+      >v__GAME_VERSION__</span
+    >
+    <button
+      id="restartGame"
+      style="
+        position: fixed;
+        right: 8px;
+        top: 4px;
+        z-index: 200;
+        font-size: 11px;
+        padding: 4px 8px;
+        opacity: 0.8;
+      "
+    >
+      Recommencer la partie
+    </button>
   </body>
 </html>

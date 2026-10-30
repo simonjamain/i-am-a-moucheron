@@ -1828,8 +1828,8 @@ restent conservées ; ces anomalies rouvrent le besoin par deux tâches distinct
 
 | ID | Tâche | État | Dépendances |
 | --- | --- | --- | --- |
-| BUG-06 | Rétablir les cercles et l'embarquement dans l'hélicoptère H2 | prêt | — |
-| ARM-06 | Rendre visible le projectile du pistolet pendant son trajet | prêt | — |
+| BUG-06 | Rétablir les cercles et l'embarquement dans l'hélicoptère H2 | terminé | — |
+| ARM-06 | Rendre visible le projectile du pistolet pendant son trajet | terminé | — |
 
 ### BUG-06 — Hélicoptère inaccessible après placement
 
@@ -1906,3 +1906,141 @@ composition, budget ou prime. Tests complets, vrais corps et pixels projetés,
 liens, format, build et validateur exécutés ; sources et ZIP actualisés.
 Le confort WebGL/WAN n'est pas revendiqué. Les autres tâches prêtes restent hors
 de ce correctif express consacré aux ennemis.
+
+
+## Nouveau lot — confort de jeu et version 36 (30 octobre 2026)
+
+Grill intégralement validé, puis intégration autorisée. Cette livraison est
+documentaire : règles à implémenter, états historiques conservés. `VERSION`
+initialise le compteur à 36 ; le prochain commit sera 37, même documentaire.
+
+| ID | Tâche | État | Dépendances |
+| --- | --- | --- | --- |
+| VER-01 | Affichage de version et contrôle de l'incrément par commit | terminé | — |
+| REP-01 | Réparation progressive dans les stations | terminé | — |
+| ARM-07 | Tir pendant le zoom dans tous les véhicules | terminé | — |
+| HUD-05 | Carburant et gaz près du viseur | terminé | — |
+| RAD-03 | Carte radar visible à pied | terminé | — |
+| RST-01 | Bouton permanent de nouvelle partie commune | terminé | — |
+| VAG-07 | Fourmis deux fois plus lentes et deux fois plus petites | terminé | — |
+| HUD-06 | Présence d'ennemis plutôt que compteur de moucherons | terminé | — |
+
+### VER-01 — Version visible et incrément vérifié
+
+Afficher discrètement en haut à gauche la valeur centralisée de `VERSION`, sur
+tous les écrans et contextes du jeu. La règle par commit est dans `AGENTS.md`.
+Ajouter un contrôle empêchant l'oubli d'incrément, y compris pour les commits
+documentaires, et documenter la commande de préparation/vérification. Reprendre
+la version centralisée dans le client et la livraison ; aucun numéro maintenu
+manuellement à plusieurs endroits. La première version du présent lot est 36 ;
+l'implémentation continuera au numéro suivant, sans retour à 36.
+Critères : affichage cohérent à pied, à bord, menus, mort et purgatoires ; contrôle
+refusant un commit sans incrément, acceptant le suivant, et reprise correcte après
+synchronisation concurrente. Vérifier le numéro des assets réellement servis.
+
+### REP-01 — Stations réparatrices
+
+Tous les véhicules vivants, posés et arrêtés dans une station, récupèrent
+gratuitement **10 % de leurs PV maximum par seconde**, en même temps que le
+ravitaillement. Réparer aussi lorsque carburant et munitions sont déjà pleins.
+Plafonner aux PV maximum ; interruption dès départ ou sortie de zone. Les stations
+superposées n'accélèrent pas la réparation. Un véhicule détruit reste perdu.
+Critères : dégâts partiels, dix secondes pour récupérer l'équivalent de toute la
+coque, plein déjà fait, départ/reprise, stations superposées, dégâts reçus pendant
+réparation, tous modèles et cohérence multijoueur sans multiplication par occupant.
+
+### ARM-07 — Zoom compatible avec les armes
+
+À tous les postes armés de tous les véhicules, autoriser pendant le zoom les armes
+normalement accessibles : mitrailleuses, canons, bombes, roquettes et missiles
+selon le poste. Conserver cadence, stocks, origines et trajectoires cohérentes
+avec la visée zoomée. Zoomer/dézoomer pendant un tir ne l'interrompt pas et ne
+déclenche aucun tir supplémentaire. C reste une observation distincte avec les
+suspensions de tir déjà prévues. Préserver les règles de guidage et de fusée.
+Critères : matrice modèles/postes/armes, appui/maintien, transitions de zoom,
+rechargement/épuisement, C, menus et perte de focus ; pas de tirs doublés ni de
+régression de visée, dégâts ou autorisations. Inclure H2, D2 et tank.
+
+### HUD-05 — Carburant et puissance demandée
+
+Compléter les informations près du viseur, à chaque poste des véhicules concernés,
+avec deux petites jauges et pourcentages : **carburant restant** et **gaz/puissance
+demandée**. Réutiliser les indicateurs présents sans doublon. Les gaz représentent
+la commande moteur actuelle, distincte de la vitesse ; les tireurs voient aussi
+le réglage du pilote. Aucun indicateur artificiel pour un équipement sans moteur
+ou carburant. Rester discret et cohérent avec PV/munitions et aide permanente.
+Critères : tous postes, variation des gaz, consommation/recharge, zéro/plein,
+changement de siège, absence de pilote et état distant actualisé ; lisibilité
+avec et sans zoom, sans masquer le viseur ni la version.
+
+### RAD-03 — Carte à pied et sous parachute
+
+Dans le bureau, garder la carte radar visible hors équipement : marche, chute et
+parachute, avec position et orientation du joueur. Seuls les ennemis couverts
+par les radars installés sont révélés, avec les mêmes règles qu'à bord. Sans
+radar, afficher la carte et ses repères mais aucun ennemi. Ne pas afficher la
+carte du bureau dans les purgatoires.
+Critères : entrée/sortie des véhicules, chute/parachute, aucun radar, couverture
+partielle, achat/destruction/reset des radars et changement de monde ; pas de
+révélation indue ni disparition lors d'un changement de contexte dans le bureau.
+
+### RST-01 — Recommencer pour tous
+
+Petit bouton « Recommencer la partie » permanent et discret, accessible à tous
+les joueurs, y compris à bord, après la mort et aux purgatoires. Demander
+confirmation « Recommencer pour tout le monde ? ». Annuler ne change rien.
+Confirmer réinitialise vagues, caisse, prêts, achats, véhicules, ennemis, contrats
+et joueurs, tout en conservant la salle et les pseudos ; reprendre le démarrage
+habituel. Réutiliser la remise à zéro commune et son autorité serveur.
+Critères : confirmation/annulation depuis chaque contexte, deux demandes
+concurrentes sans double reset, nettoyage des projectiles/effets/contrats en cours,
+retour cohérent de tous les joueurs et connexion tardive au nouvel état. Bouton
+accessible après libération du pointeur sans déclencher un tir involontaire.
+
+### VAG-07 — Taille et vitesse des fourmis divisées par deux
+
+Par rapport à l'état livré au début de ce lot, diviser par **deux la vitesse** et
+les **dimensions linéaires** des fourmis, modèle et hitbox ajustés ensemble.
+Cette demande remplace pour les fourmis la taille du correctif de visibilité
+récent ; elle ne rétablit pas une ancienne taille antérieure à cet agrandissement.
+Conserver parcours, PV, dégâts, composition et autres caractéristiques ; autres
+espèces inchangées. Adapter leur temps d'arrivée serveur et la fin de vague pour
+respecter leur déplacement réellement plus lent. Conserver l'assise au sol et
+la cohérence des marges de passage avec le nouveau corps.
+Critères : comparaison chiffrée taille/vitesse avant-après, fourmis visibles et
+non enfouies, hitbox conforme, trajet complet et arrivée non anticipée à la
+poubelle, première vague et suivantes, cohérence multijoueur.
+
+### HUD-06 — Indiquer seulement s'il reste des ennemis
+
+Remplacer le compteur libellé « moucherons » par un état sans nombre :
+**« Ennemis restants »** ou **« Aucun ennemi restant »**. Prendre en compte tous
+les types, aériens et terrestres, indépendamment de leur visibilité radar.
+Critères : vagues mixtes, derniers ennemis terrestres/aériens, morts et arrivées,
+intervague/reset et synchronisation ; le texte ne prétend pas qu'une vague est
+terminée si des ennemis restent encore à apparaître. Conserver les règles de fin
+de vague et distinguer cette information du marqueur de présence demandé.
+
+### Suivi de cette intégration
+
+Huit tâches prêtes ajoutées ; `AGENTS.md` formalise le compteur `VERSION` initialisé
+à 36. Les bugs BUG-06/ARM-06 et les validations HEL-06/DCM-03 gardent leurs états
+propres. Aucun comportement du jeu modifié ni correctif revendiqué. Liens locaux,
+format du diff, unicité des nouveaux identifiants et couverture des décisions
+vérifiés ; l'implémentation mettra à jour les références du gameplay réellement livré.
+
+## Livraison confort — version 37, 30 octobre 2026
+
+Les huit tâches de confort et les correctifs BUG-06/ARM-06 sont implémentés.
+Référence unique : [confort](docs/comfort.md). Vérifications : suite complète,
+réparations de tous les modèles, contact numérique H2 et ses deux accès, reset
+concurrent, fourmis et effet mobile du pistolet. Contrôle d'incrément sur index Git.
+Les chiffres de visibilité des fourmis sont actualisés. Revue des Markdown et
+liens exécutée ; README, gameplay, carte du code, contrôles, logistique,
+exploitation et références des véhicules/pistolet/progression donnent les règles
+courantes. Les livraisons antérieures et archives gardent leur contexte daté.
+
+Limites : BUG-06 couvre un défaut numérique reproduit, sans preuve qu'il explique
+tous les cas signalés sur VM. Le test humain d'embarquement, WebGL, Pointer Lock
+et WAN reste dans HEL-06 ; DCM-03 reste aussi en cours pour sa validation humaine.
+Aucun déploiement externe ni client Node publié sur le Worker historique.

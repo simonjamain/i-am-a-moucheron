@@ -114,6 +114,10 @@ for (const url of Object.keys(assets)) {
       },
     );
 }
+assets['/'] = assets['/'].replaceAll(
+  '__GAME_VERSION__',
+  (await readFile('VERSION', 'utf8')).trim(),
+);
 assets['/'] = assets['/'].replace('src="/client.js"', 'src="/assets/' + version + '/client.js"');
 const inline = (source) => source.replace(/^import .*;$/gm, '').replace(/^export /gm, '');
 const arena = inline(assets['/purgatory-physics.js']);

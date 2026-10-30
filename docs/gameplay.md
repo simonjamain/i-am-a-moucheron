@@ -198,5 +198,8 @@ sont trois fois plus gros que dans la livraison précédente.
 
 Les six espèces utilisent désormais des dimensions contrôlées en pixels :
 [facteurs et mesures](enemy-visibility.md). Les terrestres sont relevés selon
-leurs pattes, avec une marge de navigation adaptée à leur corps élargi. Les PV,
-vitesses, primes et composition 4+4 de la première vague restent inchangés.
+leurs pattes, avec une marge de navigation adaptée à leur corps élargi. Les PV, primes et composition 4+4 de la première vague restent inchangés ;
+VAG-07 réduit ensuite taille et vitesse des fourmis, selon le lot confort.
+
+Le [lot confort de jeu, version 37](comfort.md) précise réparation, zoom, jauges,
+radar à pied, remise à zéro, fourmis et projectiles du pistolet courants.

@@ -195,3 +195,6 @@ proportionnel au collectif. D2 : consommation proportionnelle à la conduite.
 Stocks et cadences : [hélicoptère et DCA mobile](support-vehicles.md).
 La DCA **fixe** reste illimitée ; la DCA mobile possède 100 obus.
 Le catalogue courant comprend 600 variantes, avec quatre rôles supplémentaires.
+
+Le [lot confort de jeu, version 37](comfort.md) précise réparation, zoom, jauges,
+radar à pied, remise à zéro, fourmis et projectiles du pistolet courants.

@@ -116,3 +116,28 @@ export class TracerPool {
     this.free = [];
   }
 }
+
+// Presentation of the existing hitscan: forward motion stops at its resolved hit.
+export function moveShotTrace(T, trace, origin, direction, scale, distance, now) {
+  Object.assign(trace.userData, {
+    shotOrigin: origin.clone(),
+    shotDirection: direction.clone(),
+    shotDistance: distance,
+    shotScale: scale,
+    born: now,
+    until: now + (distance / (820 * scale)) * 1000,
+  });
+  trace.position.copy(origin);
+  trace.scale.z = 0;
+}
+export function advanceShotTrace(T, trace, now, camera) {
+  const d = trace.userData;
+  const travelled = Math.min(
+    d.shotDistance,
+    Math.max(0, ((now - d.born) / 1000) * 820 * d.shotScale),
+  );
+  trace.position.copy(d.shotOrigin).addScaledVector(d.shotDirection, travelled);
+  updateTracer(T, trace, d.shotDirection, camera);
+  trace.scale.z = Math.min(11 * d.shotScale, travelled) / d.length;
+  return now < d.until;
+}

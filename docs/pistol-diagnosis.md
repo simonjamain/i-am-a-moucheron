@@ -17,3 +17,6 @@ contextuelles actuelles, les effets partagés et les nouvelles collisions de coq
 ARM-05 a reproduit un défaut visuel absent des anciens tests de dégâts : une
 traînée immobile s’étendait derrière la bouche. Le [nouveau diagnostic](multiplayer-return.md#gravité-parachute-et-pistolet)
 mesure son axe et corrige son ancrage ; `diagnose-rear-trace.mjs` le verrouille.
+
+Le [lot confort de jeu, version 37](comfort.md) précise réparation, zoom, jauges,
+radar à pied, remise à zéro, fourmis et projectiles du pistolet courants.

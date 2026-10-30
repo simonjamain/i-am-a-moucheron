@@ -116,3 +116,6 @@ second appui distinct : détoner le missile. Aucun changement d’arme pendant s
 Camion : conduite Z/S et Q/D au conducteur ; souris et clic au tireur, molette
 pour la proximité en mètres de référence. 1/2 : mutations signées.
 Les réserves, butées et unités sont détaillées dans [véhicules d’appui](support-vehicles.md).
+
+Le [lot confort de jeu, version 37](comfort.md) précise réparation, zoom, jauges,
+radar à pied, remise à zéro, fourmis et projectiles du pistolet courants.

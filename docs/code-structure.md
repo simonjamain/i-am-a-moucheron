@@ -99,3 +99,6 @@ le facteur du moucheron ; `client.js` recrée les meshes par vague/espèce.
 volumes de collision serveur. `waves.js` relève les corps terrestres au-dessus
 du support ; `route-navigation.js` adapte leur marge. `test-enemy-readability.mjs`
 mesure les silhouettes projetées et les vrais corps au sol.
+
+Le [lot confort de jeu, version 37](comfort.md) précise réparation, zoom, jauges,
+radar à pied, remise à zéro, fourmis et projectiles du pistolet courants.

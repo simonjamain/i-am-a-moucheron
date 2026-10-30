@@ -332,7 +332,7 @@ assert.match(
     vehicle: { type: 'helicopter', supplies: { fuel: 240, ammo: fullAmmo('helicopter') } },
     seat: 'pilot',
   }),
-  /30 roquettes.*240 s carburant/,
+  /30 roquettes/,
 );
 assert.match(
   cursorAmmoText({

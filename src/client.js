@@ -2,7 +2,7 @@ import { controlHints, cursorStats, cursorAmmoText } from '/live-hud.js';
 import { identifyPlayer, disposePlayerIdentity } from '/player-livery.js';
 import { GunSalvos } from '/salvos.js';
 import { ammoCapacity } from '/logistics.js';
-import { makeShotTrace, TracerPool } from '/tracers.js';
+import { moveShotTrace, advanceShotTrace, makeShotTrace, TracerPool } from '/tracers.js';
 import { PurchaseUI } from '/purchase-ui.js';
 import { purchaseCount } from '/equipment.js';
 import { vehicleHue } from '/logistics.js';
@@ -725,14 +725,17 @@ addEventListener('pointermove', (event) => {
 canvas.addEventListener('pointerleave', () => {
   mousePrevious = null;
 });
-canvas.addEventListener('pointerdown', (event) => {
+canvas.addEventListener('mousedown', (event) => {
   if (event.button === 2 && canCapture() && !respawnAt && (myVehicle || turretIndex >= 0)) {
     event.preventDefault();
     if (!controlFocus.active) captureMouse();
     holdZoom.press(zoomScope());
     return;
   }
-  const action = flightClickAction(event, { active: canCapture(), locked: controlFocus.active });
+  const action = flightClickAction(
+    { button: event.button, pointerType: 'mouse' },
+    { active: canCapture(), locked: controlFocus.active },
+  );
   if (action === 'capture') captureMouse();
   else if (action === 'fire' && (respawnAt || (onFoot && !myVehicle && turretIndex < 0))) pistol();
   else if (
@@ -743,7 +746,7 @@ canvas.addEventListener('pointerdown', (event) => {
   )
     mouseFire = true;
 });
-addEventListener('pointerup', (e) => {
+addEventListener('mouseup', (e) => {
   if (e.button === 0) mouseFire = false;
   if (e.button === 2) holdZoom.reset();
 });
@@ -874,7 +877,21 @@ function accept(s, force = false) {
   if (snap && s.now < snap.now) return;
   if (globalThis.MOUCHERON_UDP) peerMotion?.observe(s, id);
   const previous = snap;
-  if (previous?.mission_started && !s.mission_started) {
+  if (previous && previous.base?.epoch !== s.base?.epoch) {
+    for (const { line, targetScene } of pistolTrails) {
+      targetScene.remove(line);
+      line.userData.dispose();
+    }
+    pistolTrails.length = 0;
+    gunSalvos.clear();
+    clearControls();
+    for (const b of trails) {
+      scene.remove(b.m);
+      b.m.userData.dispose();
+    }
+    trails.length = 0;
+    aircraftFire.invalidate();
+    vacantAircraft.clear();
     entryNoticeWave = -1;
     paperArchive.length = 0;
     renderArchive();
@@ -978,7 +995,7 @@ function accept(s, force = false) {
         sound.play('board', me.position, { ref: 10 });
         notify(VEHICLES[myVehicle.type].name + ' · ' + SEAT_NAMES[crewSeat], 3);
       }
-      hp = Math.min(hp, myVehicle.state.hp);
+      hp = myVehicle.state.hp;
       if (hp <= 0 && crewSeat === 'pilot') crash();
     }
     if (foot && !onFoot) {
@@ -1030,7 +1047,15 @@ function accept(s, force = false) {
         respawnAt ? 1 : MAP.ratio,
       );
 
-      line.userData.until = performance.now() + 90;
+      moveShotTrace(
+        T,
+        line,
+        new T.Vector3().fromArray(e.p),
+        new T.Vector3().fromArray(e.direction),
+        respawnAt ? 1 : MAP.ratio,
+        e.distance ?? 150 * (respawnAt ? 1 : MAP.ratio),
+        performance.now() - Math.max(0, Date.now() + clockOffset - e.at),
+      );
       pistolTrails.push({ line, targetScene });
     }
     if (e.kind === 'piercing') hitEffects.burst(new T.Vector3().fromArray(e.p), camera);
@@ -1200,6 +1225,17 @@ async function action(path, extra = {}) {
     notify(e.message, 3);
   }
 }
+$('restartGame').onclick = async () => {
+  if (!joined) return;
+  releaseMouse();
+  const epoch = snap.base.epoch;
+  if (!confirm('Recommencer pour tout le monde ?')) return;
+  try {
+    await action('reset', { epoch });
+  } catch (error) {
+    notify(error.message, 3);
+  }
+};
 $('start').onclick = () => action(snap?.phase === 'lost' ? 'reset' : 'start');
 $('fan').onclick = () => action('fan');
 $('share').onclick = async () => {
@@ -1490,7 +1526,10 @@ function renderPurgatory() {
   for (const x of ['crosshair', 'flight', 'radar'])
     $(x).classList.toggle(
       'hidden',
-      spectating || (x === 'crosshair' ? false : dead || (onFoot && turretIndex < 0 && !myVehicle)),
+      spectating ||
+        (x === 'crosshair'
+          ? false
+          : dead || (x !== 'radar' && onFoot && turretIndex < 0 && !myVehicle)),
     );
   if (turretIndex >= 0 || (myVehicle && crewSeat !== 'pilot')) $('flight').classList.add('hidden');
   for (const x of ['phaseBox', 'actions', 'players'])
@@ -2825,7 +2864,9 @@ function enemies(now) {
       insects.delete(i);
     }
   $('enemies').textContent =
-    snap.phase === 'combat' ? Math.max(0, snap.total - snap.kills.length - snap.leaked) : '—';
+    snap.phase === 'combat' && snap.total > snap.kills.length + snap.leaked
+      ? 'Ennemis restants'
+      : 'Aucun ennemi restant';
 }
 function vehicleModel(v) {
   let g = fleetModels.get(v.id);
@@ -3491,6 +3532,15 @@ function drawRadar() {
     '#d5ef73',
     4,
   );
+  const playerPosition = onFoot && selfBase() ? baseWorld(selfBase()) : me.position;
+  const heading = onFoot ? groundView.yaw : new T.Euler().setFromQuaternion(me.quaternion, 'YXZ').y;
+  const px = 110 + playerPosition.x / 0.04,
+    pz = 110 + (playerPosition.z / 0.04) * 0.88;
+  radar.strokeStyle = '#d5ef73';
+  radar.beginPath();
+  radar.moveTo(px, pz);
+  radar.lineTo(px - Math.sin(heading) * 10, pz - Math.cos(heading) * 10);
+  radar.stroke();
   radar.font = '10px sans-serif';
   radar.fillStyle = '#9fb9a5';
   radar.fillText('RADAR / BUREAU 01', 9, 15);
@@ -4147,6 +4197,7 @@ function pistol() {
     shot,
     origin: origin.toArray(),
     direction: dir.toArray(),
+    distance: hit?.distance ?? 150 * scale,
     incarnation: snap.pilots.find((p) => p.id === id)?.incarnation,
   });
   const targetScene = purg ? purgScene : scene;
@@ -4160,7 +4211,7 @@ function pistol() {
     hit?.distance || 150 * scale,
   );
 
-  line.userData.until = performance.now() + 90;
+  moveShotTrace(T, line, origin, dir, scale, hit?.distance ?? 150 * scale, performance.now());
   pistolTrails.push({ line, targetScene });
   while (pistolTrails.length > 64) {
     const old = pistolTrails.shift();
@@ -4279,6 +4330,7 @@ function simulateVacantAircraft(dt) {
       s = structuredClone(v.state);
       vacantAircraft.set(v.id, s);
     }
+    s.hp = v.state.hp;
     s.fuelAvailable = v.supplies?.fuel > 0;
     if (v.type === 'helicopter')
       stepHelicopter(
@@ -4621,6 +4673,15 @@ function updateContextHUD() {
     });
     $('cursorHPbar').max = myVehicle?.type === 'helicopter' ? 200 : 100;
     $('cursorHPbar').value = stats.hp;
+    const fuelPercent = Math.max(0, Math.min(100, (remainingFuel() / 300) * 100));
+    const power = Math.max(
+      0,
+      Math.min(100, (crewSeat === 'pilot' ? gas : myVehicle.state.gas || 0) * 100),
+    );
+    $('cursorFuel').value = fuelPercent;
+    $('cursorFuelLabel').textContent = 'Carburant ' + Math.round(fuelPercent) + ' %';
+    $('cursorGas').value = power;
+    $('cursorGasLabel').textContent = 'Gaz ' + Math.round(power) + ' %';
     $('cursorStats').style.left = 'calc(' + ($('crosshair').style.left || '50%') + ' + 30px)';
     $('cursorStats').style.top = 'calc(' + ($('crosshair').style.top || '50%') + ' + 22px)';
   }
@@ -4836,7 +4897,7 @@ function updateVehicleCare(dt) {
     old.line.userData.dispose();
   }
   for (let i = pistolTrails.length - 1; i >= 0; i--)
-    if (now > pistolTrails[i].line.userData.until) {
+    if (!advanceShotTrace(T, pistolTrails[i].line, now, respawnAt ? purgCamera : camera)) {
       const { line, targetScene } = pistolTrails.splice(i, 1)[0];
       targetScene.remove(line);
       line.userData.dispose();

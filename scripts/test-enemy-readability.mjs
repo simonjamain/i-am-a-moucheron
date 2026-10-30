@@ -36,11 +36,14 @@ for (const [type, profile] of Object.entries(ENEMY_TYPES)) {
   });
 }
 console.table(rows);
-const unreadable = rows.filter((row) => row.pixelsX < 6 || row.pixelsY < 2);
+const unreadable = rows.filter(
+  (row) =>
+    row.pixelsX < (row.type === 'ant' ? 5 : 6) || row.pixelsY < (row.type === 'ant' ? 1.7 : 2),
+);
 assert.deepEqual(
   unreadable.map((r) => r.type),
   [],
-  'All enemy silhouettes must exceed 6×2 pixels at 2 m / 1080p without zoom',
+  'Ants meet the requested half-size; other enemy silhouettes exceed 6×2 pixels at 2 m / 1080p without zoom',
 );
 
 // Use the real swarm positions and complete ground meshes, including feet.

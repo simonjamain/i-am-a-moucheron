@@ -25,7 +25,7 @@ Un budget n’est pas un nombre d’ennemis : les plus résistants coûtent dava
 
 Les trajets comportent désormais des détours avant l’approche de la poubelle,
 avec navigation statique autour du mobilier. La vitesse effective précédente est
-conservée et la durée découle de la longueur, sans l’ancien plafond de 145 secondes.
+conservée sauf pour les fourmis ralenties par [VAG-07](comfort.md) et la durée découle de la longueur, sans l’ancien plafond de 145 secondes.
 La première vague mêle quatre moucherons et quatre fourmis, avec parcours sur toute la
 pièce et durées plus longues à vitesse conservée, et se termine plus tôt si tous les ennemis sont abattus. Le lancement initial de dix secondes et les pauses entre vagues de soixante
 secondes restent séparés. Voir [trajets et crashs](vehicles-bank.md#trajets-et-crashs)
@@ -89,3 +89,6 @@ Les achats de chasseur et bombardier supplémentaires coûtent 8 $ et 16 $.
 
 Le H2 coûte 30 $, le camion D2 20 $, sans remplacement gratuit. Voir
 [les véhicules d’appui](support-vehicles.md) pour les choix d’équilibrage.
+
+Le [lot confort de jeu, version 37](comfort.md) précise réparation, zoom, jauges,
+radar à pied, remise à zéro, fourmis et projectiles du pistolet courants.

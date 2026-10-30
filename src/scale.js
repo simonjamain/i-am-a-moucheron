@@ -25,7 +25,7 @@ export const HUMAN_SCALE = MAP.metres(1.8 / 2.46);
 export const MIDGE_SIZE_FACTOR = 1.35 * 1.5 * 3;
 // Office presentation/hit geometry factors. Keep wave budget/HP independent.
 export const ENEMY_SIZE_FACTORS = Object.freeze({
-  ant: 12,
+  ant: 6,
   roach: 8,
   midge: MIDGE_SIZE_FACTOR,
   dart: 4,

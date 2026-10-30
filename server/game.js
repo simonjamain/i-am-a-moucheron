@@ -238,6 +238,11 @@ export class Game {
         ),
         revision: v.supplies.revision + 1,
       };
+      if (v.supplies.servicing && v.state.hp > 0)
+        v.state.hp = Math.min(
+          VEHICLES[v.type].maxHP || 100,
+          v.state.hp + ((VEHICLES[v.type].maxHP || 100) * 0.1 * (now - v.updated)) / 1000,
+        );
       v.updated = now;
     }
   }
@@ -675,7 +680,12 @@ export class Game {
     p.state = safe;
     const v = r.vehicles.get(p.vehicle_id);
     if (v && p.seat === 'pilot' && flying) {
-      v.state = { ...safe, hp: Math.min(v.state.hp, safe.hp), type: v.type };
+      v.state = {
+        ...safe,
+        hp: safe.hp === v.reportedHP ? v.state.hp : Math.min(v.state.hp, safe.hp),
+        type: v.type,
+      };
+      v.reportedHP = safe.hp;
       if (!v.state.landed || v.state.hp <= 0) v.ready = 0;
     }
     const host = this.live(r)
@@ -685,7 +695,11 @@ export class Game {
       for (const report of (Array.isArray(b.vacant) ? b.vacant : []).slice(0, 100)) {
         const v = r.vehicles.get(report.id);
         if (!v || v.seats.has('pilot') || !validMotion(report.state)) continue;
-        v.state = { ...report.state, hp: Math.min(v.state.hp, report.state.hp) };
+        v.state = {
+          ...report.state,
+          hp: report.state.hp === v.reportedHP ? v.state.hp : Math.min(v.state.hp, report.state.hp),
+        };
+        v.reportedHP = report.state.hp;
         if (!v.state.landed || v.state.hp <= 0) v.ready = 0;
         if (v.state.hp <= 0)
           for (const id of [...v.seats.values()]) {
@@ -724,6 +738,7 @@ export class Game {
       } else if (r.phase === 'prep' && r.wave > 0) this.startWave(r);
     } else if (path === 'fan') r.fan = 1 - r.fan;
     else if (path === 'reset') {
+      if (b.epoch !== undefined && b.epoch !== r.base.epoch) return this.snapshot(r);
       const pilots = r.pilots,
         identities = r.identityTokens;
       Object.assign(r, roomState(r.code, this.now()));
@@ -900,6 +915,15 @@ export class Game {
         shooter: p.id,
         p: b.origin,
         direction: b.direction,
+        distance: Math.max(
+          0,
+          Math.min(
+            150 * (world(p) === 'office' ? MAP.ratio : 1),
+            Number.isFinite(b.distance)
+              ? b.distance
+              : 150 * (world(p) === 'office' ? MAP.ratio : 1),
+          ),
+        ),
         realm: world(p),
         at: this.now(),
       }),

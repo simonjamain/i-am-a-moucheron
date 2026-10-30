@@ -97,3 +97,6 @@ humains WebGL/WAN. Le navigateur de contrôle charge le client mais refuse UDP ;
 les quatre HUD sont également consultables dans l’aperçu sans réseau.
 `test-support-vehicles.mjs` fait partie de `npm test`. Les sources du Site restent
 synchronisées au dépôt, sans publier le client Node sur le Worker historique.
+
+Le [lot confort de jeu, version 37](comfort.md) précise réparation, zoom, jauges,
+radar à pied, remise à zéro, fourmis et projectiles du pistolet courants.

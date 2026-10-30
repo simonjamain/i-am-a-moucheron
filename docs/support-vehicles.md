@@ -129,3 +129,6 @@ puis pilote/copilote, une conduite/tir simultanés, l'entrée tardive, les chang
 de poste et les morts, l'écoute et le confort visuel des modèles et du pilotage.
 **Aucune VM externe n'a été provisionnée ni déployée.** Installer le ZIP selon
 [le guide UDP](udp-server.md), puis recharger les navigateurs après redémarrage.
+
+Le [lot confort de jeu, version 37](comfort.md) précise réparation, zoom, jauges,
+radar à pied, remise à zéro, fourmis et projectiles du pistolet courants.
