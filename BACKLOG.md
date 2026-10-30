@@ -2313,3 +2313,11 @@ Commande pilote Q/D et Gauche/Droite implémentée ; critères et stabilisation
 décrits dans [commandes H2](docs/helicopter-controls.md#roulis-pilote-au-clavier--issue-9-version-49).
 Régression automatique rouge avant correction (Q sans souris), verte après
 pour les quatre touches, focus et copilote. Essai humain multijoueur restant.
+
+## Issue #10 — pointage sans réserve, version 50
+
+Pointage du copilote H2 devenu relatif, consommé à chaque mise à jour : plus de
+cible à rattraper quand la souris s’arrête. Vitesse plafonnée conservée, sens
+des grands mouvements préservé. Régression rouge avant/verte après ; détails
+et limites dans [commandes H2](docs/helicopter-controls.md#pointage-relatif-sans-rattrapage--issue-10-version-50).
+Essai humain du ressenti restant.

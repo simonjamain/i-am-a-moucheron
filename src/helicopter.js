@@ -16,17 +16,20 @@ export function clampHeliAim(aim) {
   aim.pitch = Math.max(HELI.minPitch, Math.min(HELI.maxPitch, aim.pitch));
   return aim;
 }
-// Desired pointer aim and actual mount aim are distinct. Advance once per frame;
-// shots, guidance and camera all use the same actual orientation.
-export function stepHeliAim(actual, desired, dt) {
-  clampHeliAim(desired);
-  const yaw = Math.atan2(Math.sin(desired.yaw - actual.yaw), Math.cos(desired.yaw - actual.yaw));
-  const pitch = desired.pitch - actual.pitch;
+// Pending relative input is consumed once. Excess mouse motion is discarded,
+// never carried as a target to chase after the pointer stops.
+export function stepHeliAim(actual, pending, dt) {
+  const yaw = pending.yaw - actual.yaw;
+  const pitch = Math.max(HELI.minPitch, Math.min(HELI.maxPitch, pending.pitch)) - actual.pitch;
   const distance = Math.hypot(yaw, pitch);
-  const fraction = distance ? Math.min(1, (HELI.turretSpeed * Math.max(0, dt)) / distance) : 0;
-  actual.yaw += yaw * fraction;
-  actual.pitch += pitch * fraction;
-  return clampHeliAim(actual);
+  if (distance > 0) {
+    const fraction = Math.min(1, (HELI.turretSpeed * Math.max(0, dt)) / distance);
+    actual.yaw += yaw * fraction;
+    actual.pitch += pitch * fraction;
+    clampHeliAim(actual);
+  }
+  Object.assign(pending, actual);
+  return actual;
 }
 export function rotateLocal(q, [x, y, z]) {
   const [qx, qy, qz, qw] = q,
