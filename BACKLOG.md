@@ -2306,3 +2306,10 @@ Validation : `scripts/test-backlog-return.mjs`, suites existantes, assemblage,
 contrôles documentaires et de version ; résultats finaux et build Docker consignés
 dans la PR. La note [de reprise](docs/tasks/backlog-30-octobre.md) liste les essais
 restants. Les anciens états et critères restent conservés.
+
+## Issue #9 — roulis H2, version 49
+
+Commande pilote Q/D et Gauche/Droite implémentée ; critères et stabilisation
+décrits dans [commandes H2](docs/helicopter-controls.md#roulis-pilote-au-clavier--issue-9-version-49).
+Régression automatique rouge avant correction (Q sans souris), verte après
+pour les quatre touches, focus et copilote. Essai humain multijoueur restant.

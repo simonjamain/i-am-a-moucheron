@@ -3287,6 +3287,7 @@ function stepProjectileSlice(dt) {
 function physics(dt) {
   if (respawnAt || onFoot || !myVehicle) return;
   if (myVehicle.type === 'helicopter') {
+    if (crewSeat !== 'pilot') return;
     const active = controlFocus.active && canCapture();
     const state = {
       ...localMotion(),
@@ -3303,6 +3304,10 @@ function physics(dt) {
       state,
       {
         collective: collective * currentFactors().controls,
+        roll: active
+          ? (Number(!!(keys.KeyQ || keys.ArrowLeft)) - Number(!!(keys.KeyD || keys.ArrowRight))) *
+            currentFactors().controls
+          : 0,
         direction: active ? mouseDirection.toArray() : null,
         factor: currentFactors().controls,
       },
