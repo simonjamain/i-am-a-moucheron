@@ -1,6 +1,7 @@
 # Backlog — i am a moucheron
 
-Spécification validée par l’utilisateur le 29 octobre 2026.
+Spécification initiale validée par l’utilisateur le 29 octobre 2026.
+Compléments validés le 30 octobre 2026 : hélicoptère et DCA mobile.
 Ce document décrit le travail demandé, pas les fonctionnalités déjà livrées.
 Exécution autorisée le 29 octobre 2026. Le suivi ci-dessous distingue les tâches
 implémentées, vérifiées et publiées. Aucune automatisation de développement.
@@ -1637,3 +1638,183 @@ et bouton d’observation dans la démonstration navigateur. Les 31 Markdown son
 revus, détails dans [audit](docs/reference-audit.md). ZIP des sources livré ;
 Site public historique inchangé. WebGL, écoute, tactile physique et partie sur
 Internet restent à vérifier sur VM.
+
+
+## Nouveau lot — hélicoptère et DCA mobile (30 octobre 2026)
+
+Décisions validées dans la conversation, intégration au backlog autorisée le
+30 octobre 2026. Le code du lot est implémenté ; les essais humains finaux HEL-06/DCM-03 restent
+en cours. Voir la livraison détaillée ci-dessous. Les lots terminés restent inchangés.
+Les détails non fixés sont à choisir et documenter selon les conventions du jeu,
+sans transformer ces choix en recommandations déjà validées.
+
+| ID | Tâche | État | Dépendances |
+| --- | --- | --- | --- |
+| HEL-01 | Hélicoptère biplace, achat et postes | terminé | INT-02, SIE-02 |
+| HEL-02 | Pilotage souris, poussée et stationnaire assisté | terminé | HEL-01 |
+| HEL-03 | Roquettes du pilote | terminé | HEL-02 |
+| HEL-04 | Tourelle mitrailleuse du copilote | terminé | HEL-01 |
+| HEL-05 | Missile guidé manuellement et détonation | terminé | HEL-04 |
+| HEL-06 | HUD, ravitaillement et validation coopérative | en cours | HEL-03, HEL-05 |
+| DCM-01 | Poids lourd et semi-remorque DCA à deux postes | terminé | INT-02, SIE-02 |
+| DCM-02 | Obus à fusée de proximité et armement différé | terminé | DCM-01 |
+| DCM-03 | Réglage, stocks, HUD et validation coopérative | en cours | DCM-02 |
+
+### HEL-01 — Appareil, achat et équipage
+
+Hélicoptère procédural biplace d'inspiration Hind, avec pilote devant et copilote
+plus haut derrière, conformément au choix de l'utilisateur. Deux postes exclusifs,
+contrats et changements de siège habituels. Décollage en solo autorisé : chaque
+poste garde ses armes, aucun transfert implicite au pilote. Sans pilote au poste,
+l'assistance stabilise l'appareil mais personne ne le dirige.
+Prix : **1,25 fois celui du Spitfire**. Vitesse maximale : **60 % de celle du
+chasseur initial** ; coque : **deux fois ses PV**. Carburant : **cinq minutes en
+vol**. Achat à pied, bon signé, aperçu et pose par E sur support solide dégagé ;
+aucune réserve gratuite. Perte définitive à la destruction.
+Critères : prix affiché et débit unique, pose/annulation/reprise, accès concurrents,
+postes exclusifs, changement contractuel, destruction et reset ; modèle et places
+reconnaissables, caractéristiques mesurées contre leurs références.
+
+### HEL-02 — Pilotage et vue libre
+
+Souris pour l'inclinaison, selon le modèle de pilotage des avions. Haut/Z augmente
+la poussée ; Bas/S la diminue. Pas de commandes dédiées de translation latérale
+ou montée/descente ajoutées au cadrage validé. Au relâchement, poussée revenant
+progressivement au stationnaire, redressement, freinage et maintien d'altitude
+assistés ; pas d'arrêt instantané. C maintenu permet de regarder librement sans
+modifier l'orientation demandée ; retour à la caméra de pilotage au relâchement,
+roquettes suspendues pendant l'observation.
+Critères : décollage/atterrissage, inclinaison et déplacement cohérents, retour au
+stationnaire, maintien d'altitude, C, changement de poste et absence de pilote,
+perte de focus, carburant épuisé, collisions et observation distante.
+
+### HEL-03 — Roquettes du pilote
+
+Clic gauche, maintien autorisé : **30 roquettes au total**, intervalle **0,3 s**,
+départs alternés gauche/droite depuis les lanceurs. Tir dans l'axe de l'appareil,
+sans suivre indépendamment la souris. Petites explosions reprenant les dégâts
+et le rayon d'un obus explosif de tank ; effet visuel représentant ce rayon.
+Critères : alternance, origine et axe en toutes attitudes, cadence bornée, stock
+exact et épuisement, suspension avec C/menu/sortie, dégâts uniques et cohérence réseau.
+
+### HEL-04 — Mitrailleuse du copilote
+
+Tourelle sous l'appareil couvrant avant, côtés et dessous, sans couverture arrière
+ni tir à travers le fuselage ; butées mécaniques. Vue première personne liée à
+la visée, mitrailleuse visible à côté. **Shift sélectionne la mitrailleuse**,
+**Ctrl sélectionne les missiles** ; clic gauche utilise l'arme sélectionnée.
+Mitrailleuse : **1 000 balles**, **15 balles/s**. Les dégâts par balle et angles
+exacts, non fixés, suivent l'équilibrage existant et sont documentés à la livraison.
+Critères : butées, visée et origines, aucune traversée de coque, stocks/cadence,
+changement de siège, arrêt des entrées et observation à deux clients.
+
+### HEL-05 — Missile guidé et explosion manuelle
+
+**10 missiles**, un seul en vol à la fois par hélicoptère. Départ latéral ; caméra
+restant au poste du copilote dans la même vue que la mitrailleuse. Le missile
+cherche le point visé à la souris avec vitesse de rotation limitée, **sans
+verrouillage automatique ni caméra embarquée dans le missile**. Le copilote reste
+en guidage jusqu'à destruction ; changement d'arme interdit pendant ce temps.
+Second clic : détonation en vol ; impact : explosion également. Rayon et modèle
+de dégâts d'un obus DCA, effets visuels cohérents. Tir suivant disponible **2 s
+après destruction du précédent**. Si le copilote sort ou meurt, le missile continue
+tout droit, sans guidage ni détonation à distance. Durée maximale **10 s**, puis
+suppression sans explosion. Ne pas lui appliquer les règles de fusée DCM-02.
+Critères : trajectoire manuelle, rotation bornée, clic de lancement distinct de la
+détonation, impact/explosion unique, expiration, stock/recharge, changement de poste,
+mort/déconnexion, destruction de coque et reset sans missile orphelin ni double dégâts.
+
+### HEL-06 — Intégration et coopération
+
+Recharge aux stations habituelles ; carburant, roquettes, balles et missiles
+visibles selon le poste. Aide permanente en bas à gauche, statistiques près du
+viseur selon les conventions HUD-03/HUD-04. Appareil plus lent et résistant que
+le Spitfire, spécialisé dans l'appui à deux ; stationnaire exposé aux attaques.
+Conserver teinte persistante, projectiles identifiables, dégâts alliés, nettoyage,
+contrats et autorité réseau actuels. Synchroniser les commandes importantes et
+les stocks, sans multiplier les messages fiables pour les effets décoratifs.
+Critères : partie solo puis pilote/copilote à deux clients, entrée tardive,
+recharge/épuisement, départ/mort du pilote et copilote, perte de coque, reset,
+commandes et HUD par poste ; mesurer le coût des projectiles/effets et consigner
+les limites WebGL, écoute et réseau effectivement non vérifiées.
+
+### DCM-01 — Camion DCA mobile
+
+Poids lourd avec **semi-remorque portant une DCA à canon unique**. Deux postes :
+conducteur et tireur ; changement contractuel possible en solo. Le conducteur
+conduit ; le tireur vise et règle la fusée. Tir autorisé pendant le roulage.
+Conserver achat et placement des véhicules, accès, teinte et nettoyage existants.
+Prix, PV, vitesse, éventuel carburant, débattements et comportement d'articulation
+non fixés : choisir et documenter des valeurs cohérentes avec le jeu.
+Critères : pose dégagée au sol, conduite/virage et semi-remorque cohérentes,
+postes exclusifs, changement solo, tir en mouvement, collisions, destruction et
+représentation cohérente à plusieurs clients.
+
+### DCM-02 — Obus à fusée de proximité uniquement
+
+Vitesse initiale des obus : **70 % de celle de la DCA fixe actuelle**. Cadence
+maximale : **un tir toutes les 0,8 s**. **100 obus en stock**.
+Explosion déclenchée **uniquement par la fusée de proximité**, armée **0,3 s après
+le départ**. Elle détecte **tous les objets**, pas seulement les ennemis : décor,
+sol, mobilier, joueurs et véhicules, sans filtrage ami/ennemi. Aucune explosion
+spécifique à l'impact. Un impact avant armement détruit l'obus **sans explosion ni
+dégâts**. Après armement, un objet dans la zone déclenche la fusée ; cela comprend
+un objet déjà proche à l'instant d'armement. Ne pas ignorer implicitement le
+camion tireur après ce délai. Si aucun objet ne déclenche la fusée, borner la durée
+de vie puis supprimer sans explosion ; durée à choisir et documenter.
+Rayon de détection réglable **0,5 à 20 m avant conversion d'échelle**, via la
+conversion centralisée : au ratio bureau 0,003, **0,0015 à 0,06 m du décor**.
+Ne pas confondre ces unités avec les 2 m du décor du radar.
+Le **rayon des dégâts est constant, identique à celui de la DCA fixe**, indépendant
+du réglage de proximité. Un grand réglage peut déclencher trop loin de la cible.
+Critères : 0,299/0,300/0,301 s, objet déjà proche à l'armement, sol/mobilier/allié/
+ennemi/camion, impact précoce, limite et hors rayon, objets fins et obus rapides
+sans traversée entre deux pas de simulation, expiration, dégâts appliqués une
+seule fois et mêmes résultats entre clients. Réutiliser les conventions actuelles
+pour les paramètres de dégâts non modifiés explicitement.
+
+### DCM-03 — Réglage et intégration
+
+Le tireur règle la proximité **à la molette** ; valeur visible près du viseur,
+exprimée en mètres avant conversion. Réglage mémorisé **au départ de chaque obus** :
+modifier ensuite la valeur ne change pas ceux déjà en vol. Bornes 0,5–20 m ; pas
+et valeur initiale à choisir/documenter. Afficher stock et commandes par poste,
+sans conflit avec zoom, menus ou autre usage de la molette. Recharge selon les
+stations habituelles et intégration aux règles communes des équipements.
+Critères : bornes et affichage/unités, réglage en tir continu, obus simultanés avec
+valeurs différentes, cadence 0,8 s, 100 tirs sans réserve négative, recharge,
+concurrence et commandes du seul tireur autorisé ; clients tardifs, changement de
+poste, destruction/reset et coût des recherches de proximité à plusieurs joueurs.
+
+### Suivi du lot hélicoptère et DCA mobile
+
+30 octobre 2026 : neuf tâches prêtes avec dépendances et critères de vérification.
+Les dernières corrections de l'utilisateur prévalent : détection de tous les objets,
+armement à 0,3 s, explosion par fusée uniquement, impact précoce sans dégâts.
+Cette livraison complète seulement le backlog ; les documents du gameplay actuel
+restent des références du code livré. Aucun code, build de jeu ou déploiement
+public modifié. L'implémentation devra mettre à jour les références concernées et
+consigner les paramètres choisis ainsi que les contrôles et limites réels.
+
+### Livraison sources — véhicules d’appui du 30 octobre 2026
+
+Implémentation des neuf tâches sur Node/RAM/UDP, référence unique :
+[hélicoptère et DCA mobile](docs/support-vehicles.md). HEL-01 à HEL-05, DCM-01 et
+DCM-02 : contrôles de domaine, achats/pose génériques, géométrie procédurale et
+règles réseau vérifiés. Prix D2 choisi : 20 $, 100 PV, 10 m/s ; réglage initial
+5 m par pas de 0,5 m, durée maximale six secondes. H2 : 30 $, MG 75 dégâts,
+butées ±90°/−83° à 0°, guidage limité à 1,2 rad/s. Contrats : 600 variantes.
+
+HEL-06 et DCM-03 : code, HUD, stocks/recharge et échanges entre deux vrais pairs
+UDP locaux implémentés et vérifiés. **En cours pour la validation humaine finale** :
+le navigateur de contrôle affiche « UDP indisponible sur ce réseau ». Reste sur
+une VM joignable : pilotage/atterrissage et confort visuel/sonore, équipe à deux
+navigateurs, conduite et tir simultanés, entrée tardive et essai WAN. Aucun accès
+VM n'est disponible ici ; aucune installation externe ni publication du client
+Node sur le Site historique n'est revendiquée. Ce reste ne nécessite aucune
+nouvelle décision de conception et le ZIP permet déjà son déploiement.
+
+Contrôles : suite complète, tests des véhicules d’appui et deux pairs UDP natifs,
+formatage, liens et audit des 32 Markdown, build et validateur ESM. Les temps CPU
+synthétiques sont consignés dans la référence du lot, sans prétendre mesurer les
+FPS ou la charge Internet. Sources poussées au dépôt et ZIP déployable actualisé.

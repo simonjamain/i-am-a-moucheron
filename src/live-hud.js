@@ -22,6 +22,22 @@ export function controlHints({
         ? 'ZQSD / flèches : marcher · Clic : pistolet · Espace : jet · E : interagir'
         : 'ZQSD / flèches : diriger · Espace : parachute · Clic : pistolet') + common
     );
+  if (vehicle.type === 'helicopter')
+    return (
+      (seat === 'pilot'
+        ? 'Souris : incliner · Z/S : poussée · C : vue libre · Clic : roquettes'
+        : 'Souris : viser · Maj : MG · Ctrl : missile · Clic : tir / détonation') +
+      ' · 1/2 : postes (contrats) · F : sortir' +
+      common
+    );
+  if (vehicle.type === 'flaktruck')
+    return (
+      (seat === 'pilot'
+        ? 'Z/S : avancer/reculer · Q/D : tourner'
+        : 'Souris : canon · Clic : obus · Molette : proximité 0,5–20 m') +
+      ' · 1/2 : postes (contrats) · F : sortir' +
+      common
+    );
   const posts =
     vehicle.type === 'tank' || vehicle.type === 'bomber' ? ' · 1/2/3 : postes (contrats)' : '';
   if (vehicle.type === 'tank')
@@ -51,8 +67,35 @@ export function cursorStats({ vehicle, seat, hp, speed, ammo }) {
   const bombs = seat === 'pilot' ? vehicle.supplies?.ammo.bomb : undefined;
   return {
     speed: Math.round(speed),
-    hp: Math.max(0, Math.min(100, hp)),
+    hp: Math.max(0, Math.min(vehicle.type === 'helicopter' ? 200 : 100, hp)),
     ammo: Math.max(0, Math.floor(ammo || 0)),
     bombs: bombs === undefined ? null : Math.floor(bombs),
   };
+}
+
+export function cursorAmmoText({ vehicle, seat, ammo, proximity = 5, guiding = false }) {
+  const count = (value) => Math.max(0, Math.floor(value || 0));
+  const stock = vehicle.supplies?.ammo || {};
+  const fuel = ' · ' + Math.ceil(vehicle.supplies?.fuel || 0) + ' s carburant';
+  if (vehicle.type === 'helicopter')
+    return (
+      (seat === 'pilot'
+        ? count(stock.rocket) + ' roquettes'
+        : count(stock.copilot) +
+          ' balles · ' +
+          count(stock.missile) +
+          ' missiles' +
+          (guiding ? ' · GUIDAGE' : '')) + fuel
+    );
+  if (vehicle.type === 'flaktruck')
+    return (
+      (seat === 'cannon'
+        ? count(stock.proximity) + ' obus · ' + proximity.toFixed(1) + ' m'
+        : 'Conducteur') + fuel
+    );
+  return (
+    count(ammo) +
+    ' balles' +
+    (seat === 'pilot' && stock.bomb !== undefined ? ' · ' + count(stock.bomb) + ' bombes' : '')
+  );
 }

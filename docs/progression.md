@@ -86,3 +86,6 @@ avant la pose ; annuler l’aperçu ne fait pas perdre l’objet payé.
 VAG-04/VAG-05 : [parcours et budget actuels](multiplayer-return.md#parcours-et-fourmis-précoces),
 budget initial 8, deux fourmis garanties à chaque vague, coûts/PV inchangés.
 Les achats de chasseur et bombardier supplémentaires coûtent 8 $ et 16 $.
+
+Le H2 coûte 30 $, le camion D2 20 $, sans remplacement gratuit. Voir
+[les véhicules d’appui](support-vehicles.md) pour les choix d’équilibrage.

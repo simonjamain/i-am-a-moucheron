@@ -88,3 +88,12 @@ Lot courant : [retours multijoueurs](multiplayer-return.md). Les mesures CPU
 comparatives sont reproductibles avec `node scripts/review-return-performance.mjs`
 dans un clone Git contenant le commit de référence. Le ZIP permet de jouer sans
 Git ; les benchmarks historiques demandent leur référence Git.
+
+## Lot véhicules d’appui
+
+[Hélicoptère et DCA mobile](support-vehicles.md) : code livré en ZIP, contrôles
+locaux et deux pairs UDP vérifiés. HEL-06/DCM-03 restent en cours pour les essais
+humains WebGL/WAN. Le navigateur de contrôle charge le client mais refuse UDP ;
+les quatre HUD sont également consultables dans l’aperçu sans réseau.
+`test-support-vehicles.mjs` fait partie de `npm test`. Les sources du Site restent
+synchronisées au dépôt, sans publier le client Node sur le Worker historique.

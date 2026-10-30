@@ -238,6 +238,72 @@ export function createGraphics(T, scene) {
     scene.add(g);
     return g;
   }
+  function makeHelicopter(color) {
+    const g = new T.Group();
+    box(0, 0, 0, 1.5, 1.3, 4.6, color, g);
+    box(0, 0.6, -1.8, 0.95, 0.7, 1.4, '#254b47', g);
+    box(0, 1.05, -0.7, 1, 0.7, 1.1, '#254b47', g);
+    box(0, 0.25, 3, 0.4, 0.45, 3.5, color, g);
+    box(0, 0.9, 4.6, 0.12, 1.7, 0.8, color, g);
+    box(0, 0, 0.2, 5.4, 0.17, 0.9, color, g);
+    for (const side of [-1, 1]) {
+      const pod = cyl(side * 2.15, -0.25, -0.4, 0.4, 0.4, 1.8, '#364439', g);
+      pod.rotation.x = Math.PI / 2;
+      box(side * 0.65, -0.75, 0, 0.2, 0.5, 2.5, '#28372e', g);
+    }
+    cyl(0, 1.15, 0, 0.12, 0.12, 1, color, g);
+    const rotor = new T.Group();
+    rotor.position.y = 1.7;
+    g.add(rotor);
+    box(0, 0, 0, 8.6, 0.06, 0.18, '#28372e', rotor);
+    box(0, 0, 0, 0.18, 0.06, 8.6, '#28372e', rotor);
+    const mount = new T.Group();
+    mount.position.set(0, -0.65, -2);
+    g.add(mount);
+    const pitch = new T.Group();
+    mount.add(pitch);
+    box(0.15, 0, -0.6, 0.12, 0.12, 1.2, '#364439', pitch);
+    const muzzle = new T.Object3D();
+    muzzle.position.set(0.15, 0, -1.2);
+    pitch.add(muzzle);
+    mount.userData = { pitch, muzzle };
+    g.userData = { turrets: [mount], rotor, prop: new T.Object3D(), wing: new T.Object3D() };
+    scene.add(g);
+    return g;
+  }
+  function makeFlakTruck(color) {
+    const g = new T.Group();
+    box(0, 0, -2.5, 1.65, 0.5, 3.6, color, g);
+    box(0, 0.9, -3.1, 1.8, 1.5, 1.6, color, g);
+    box(0, 1.12, -3.92, 1.5, 0.55, 0.04, '#254b47', g);
+    const trailer = new T.Group();
+    trailer.position.z = -0.7;
+    g.add(trailer);
+    box(0, 0.15, 2.3, 2.1, 0.4, 5.4, color, trailer);
+    for (const [parent, zs] of [
+      [g, [-3.3, -1.4]],
+      [trailer, [3.2, 4.1]],
+    ])
+      for (const z of zs)
+        for (const side of [-1, 1]) {
+          const wheel = cyl(side * 1, -0.25, z, 0.5, 0.5, 0.3, '#28372e', parent);
+          wheel.rotation.z = Math.PI / 2;
+        }
+    const mount = new T.Group();
+    mount.position.set(0, 1, 3.2);
+    trailer.add(mount);
+    cyl(0, -0.3, 0, 0.75, 0.9, 0.6, color, mount);
+    const pitch = new T.Group();
+    mount.add(pitch);
+    box(0, 0, -1.4, 0.16, 0.16, 2.8, '#364439', pitch);
+    const muzzle = new T.Object3D();
+    muzzle.position.z = -2.8;
+    pitch.add(muzzle);
+    mount.userData = { pitch, muzzle, coaxMuzzle: muzzle };
+    g.userData = { turrets: [mount], trailer, prop: new T.Object3D(), wing: new T.Object3D() };
+    scene.add(g);
+    return g;
+  }
   function insect(type = 'midge') {
     const g = new T.Group();
     g.userData.hitTolerance = type === 'midge' ? 1.2 : 1;
@@ -372,6 +438,8 @@ export function createGraphics(T, scene) {
     makeStuka,
     makeBomb,
     makeTank,
+    makeFlakTruck,
+    makeHelicopter,
     insect,
     humanoid,
     pm,

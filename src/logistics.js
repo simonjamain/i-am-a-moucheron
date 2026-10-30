@@ -5,6 +5,9 @@ export const FUEL_SECONDS = 300;
 export const SERVICE_SECONDS = 10;
 export const SERVICE_RADIUS = 0.12;
 export function ammoCapacity(type, seat) {
+  if (type === 'helicopter')
+    return seat === 'rocket' ? 30 : seat === 'missile' ? 10 : seat === 'copilot' ? 1000 : 0;
+  if (type === 'flaktruck') return seat === 'proximity' ? 100 : 0;
   if (type === 'tank')
     return seat === 'he' || seat === 'ap'
       ? 30
@@ -20,9 +23,16 @@ export function ammoCapacity(type, seat) {
 }
 export function fullAmmo(type) {
   const keys =
-    type === 'tank'
-      ? ['pilot', 'top', 'coax', 'he', 'ap']
-      : [...VEHICLES[type].seats, ...(['interceptor', 'bomber'].includes(type) ? ['bomb'] : [])];
+    type === 'helicopter'
+      ? ['rocket', 'missile', 'copilot']
+      : type === 'flaktruck'
+        ? ['proximity']
+        : type === 'tank'
+          ? ['pilot', 'top', 'coax', 'he', 'ap']
+          : [
+              ...VEHICLES[type].seats,
+              ...(['interceptor', 'bomber'].includes(type) ? ['bomb'] : []),
+            ];
   return Object.fromEntries(keys.map((s) => [s, ammoCapacity(type, s)]));
 }
 export function inRadarCoverage(position, installations) {
@@ -53,7 +63,11 @@ export function advanceSupplies(supply, state, type, installations, dt) {
         (servicing
           ? FUEL_SECONDS / SERVICE_SECONDS
           : state.engine
-            ? -Math.max(0, Math.min(1, state.gas ?? (state.landed ? 0 : 0.65)))
+            ? type === 'helicopter'
+              ? state.landed
+                ? 0
+                : -1
+              : -Math.max(0, Math.min(1, state.gas ?? (state.landed ? 0 : 0.65)))
             : 0) *
           dt,
     ),

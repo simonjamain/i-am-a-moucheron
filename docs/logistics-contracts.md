@@ -81,7 +81,7 @@ conditionnée à la révision lue pour gérer les accès concurrents.
 - Spitfire : 1 000 balles, six départs légèrement décalés par salve et fin de réserve partielle.
 - Bombes du Stuka et du bombardier, MG et obus du tank : réserves indépendantes
   détaillées dans [véhicules et banque](vehicles-bank.md#stocks-et-équilibre-initial).
-- DCA et pistolet : réserves illimitées.
+- DCA fixe et pistolet : réserves illimitées ; DCA mobile limitée, voir plus bas.
 
 Les tirs d’avion sont simulés **immédiatement dans le navigateur**, avec son,
 traceur et trajectoire créés à l’appui, sans attendre le serveur. `aircraft-fire.js`
@@ -151,7 +151,7 @@ probabilité sur 10 000 points, stabilité du dossier, concurrence signer/déchi
 progression normale obligatoire, effets propres au poste, dégâts réels 37,5/75,
 fin au transfert, doubles requêtes de tir, réserves indépendantes du bombardier,
 panne après cinq minutes, reconnexion, plein de dix secondes de plusieurs avions,
-prix séparés, refus de pose/prix périmé et couverture sphérique. Il exerce aussi
+prix séparés, refus de pose/prix périmé et couverture cylindrique. Il exerce aussi
 le vrai gestionnaire de déchirure (double action et erreur réseau), les meshes
 peints, le remplacement et la libération des textures d’inscription.
 
@@ -186,3 +186,12 @@ payées non posées ; leurs tarifs ne sont pas débités une seconde fois à la 
 
 La parabole tourne et sa couverture circulaire apparaît sur la carte ; ce balayage
 ne ralentit pas la détection. Voir [retours multijoueurs](multiplayer-return.md).
+
+## Réserves des véhicules d’appui
+
+H2 et D2 partagent les stations et les garanties des bons et occupations. Le H2
+compte 300 secondes de **vol**, y compris en stationnaire, plutôt qu’un temps
+proportionnel au collectif. D2 : consommation proportionnelle à la conduite.
+Stocks et cadences : [hélicoptère et DCA mobile](support-vehicles.md).
+La DCA **fixe** reste illimitée ; la DCA mobile possède 100 obus.
+Le catalogue courant comprend 600 variantes, avec quatre rôles supplémentaires.

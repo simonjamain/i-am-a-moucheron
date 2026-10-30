@@ -36,7 +36,7 @@ flashes are short-lived, bounded geometry at the firing muzzle.
 The Node runtime owns shared hulls and exclusive seat leases in RAM. Only the
 pilot's lease can update a hull transform; gunners publish aim and fire independently.
 The fighter and bomber each have one ready reserve, renewed on takeoff or destruction without deleting used hulls.
-Purchased Stukas, Spitfires and tanks are not automatically replaced. Board selection binds
+Purchased Stukas, Spitfires, tanks, helicopters and mobile flak trucks are not automatically replaced. Board selection binds
 the two signatures to the exact vehicle and role. Exiting frees only that seat;
 other occupants and the hull remain. Destruction frees every occupant, including
 when the final motion arrives without a later client death command. Canopies start
@@ -78,8 +78,13 @@ solid-object occlusion rather than appearing through furniture.
 
 Les réserves finies des avions, les teintes et inscriptions de carrosserie, les
 clauses d’armement et les radars sont décrits dans
-[logistique et contrats](logistics-contracts.md). La DCA et le pistolet restent
+[logistique et contrats](logistics-contracts.md). La DCA fixe et le pistolet restent
 à munitions illimitées ; la panne sèche supprime la poussée, sans figer le vol.
 
 Current [Spitfire, impacts and reticle](clean-flight.md) keep angular rates unscaled;
 cleaning range is explicitly two world metres, unlike miniature ballistic ranges.
+
+Le H2 et le D2 sont décrits dans [véhicules d’appui](support-vehicles.md).
+La proximité D2 est exprimée en mètres de référence (0,5–20), contrairement au
+radar en mètres du décor ; elle ne modifie pas le rayon de dégâts. Les nouvelles
+coques et stocks utilisent le même ratio centralisé.

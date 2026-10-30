@@ -79,3 +79,14 @@ et initiales corporelles. `salvos.js` : départs décalés et annulation d’occ
 `server/game.js` : observation avant âme, réserve renouvelée et véhicules prépayés
 à poser. `test-multiplayer-return.mjs` et `review-return-performance.mjs` couvrent
 le [lot courant](multiplayer-return.md), complété par les vrais pairs UDP.
+
+## Véhicules d’appui
+
+`helicopter.js` porte le pilotage assisté, butées, origines et guidage borné.
+`mobile-flak.js` porte unités de proximité et enveloppes de coque orientées ;
+`swept-geometry.js` centralise les intersections balayées exactes ; `tank.js` réutilise ces balayages pour le long camion articulé.
+`server/game.js` possède lancement/débit, armement différé et détonation fiable ;
+`ordnance.js` conserve les paramètres de chaque départ. `graphics.js` produit
+les deux modèles, `contracts.js` leurs rôles, `hud.js` leurs panneaux.
+`test-support-vehicles.mjs` et les pairs natifs UDP couvrent le lot. Voir
+[état de validation et limites](support-vehicles.md).

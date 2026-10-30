@@ -14,7 +14,7 @@ export function validMotion(s) {
     finiteArray(s.v, 3) &&
     Number.isFinite(s.hp) &&
     s.hp >= 0 &&
-    s.hp <= 100 &&
+    s.hp <= (s.type === 'helicopter' ? 200 : 100) &&
     [0, 1].includes(s.wing) &&
     [0, 1].includes(s.engine) &&
     typeof s.fire === 'boolean' &&

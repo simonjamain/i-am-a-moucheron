@@ -34,6 +34,34 @@ function equipmentModel({
       readout,
     };
   }
+  if (vehicle.type === 'helicopter' || vehicle.type === 'flaktruck') {
+    const a = vehicle.supplies?.ammo || {};
+    return {
+      scope: vehicle.id + ':' + seat,
+      left: [
+        seat === 'pilot' ? 'CONDUITE' : 'VISÉE',
+        `${Math.round(speed)} km/h`,
+        health,
+        `Carburant ${Math.ceil(fuel)} s`,
+      ],
+      right:
+        vehicle.type === 'flaktruck'
+          ? ['PROXIMITÉ', `${count(a.proximity)} obus`, 'Fusée armée à 0,3 s', 'Molette : 0,5–20 m']
+          : seat === 'pilot'
+            ? [
+                'ROQUETTES',
+                `${count(a.rocket)}`,
+                'Clic : tirer · C : observer',
+                'Stationnaire assisté',
+              ]
+            : [
+                'COPILOTE',
+                `${count(a.copilot)} balles · ${count(a.missile)} missiles`,
+                'Maj MG / Ctrl missile',
+                'Clic : tir / détonation',
+              ],
+    };
+  }
   const tank = vehicle.type === 'tank',
     supplies = vehicle.supplies?.ammo || {},
     service = vehicle.supplies?.servicing ? 'Ravitaillement en cours' : health,

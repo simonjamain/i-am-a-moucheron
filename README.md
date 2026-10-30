@@ -102,3 +102,8 @@ Le [dernier lot multijoueur](docs/multiplayer-return.md) ajoute l’observation 
 purgatoire, l’aide permanente, les véhicules achetés à poser au sol, la réserve
 gratuite au décollage, les fourmis précoces, la gravité miniature, le radar de 2 m
 et les personnages identifiés. Le Spitfire a 1 000 balles ; les tirs sont optimisés.
+
+Le lot [hélicoptère et DCA mobile](docs/support-vehicles.md) ajoute le H2 biplace
+et le camion D2, avec roquettes, missile guidé et fusée de proximité. Le code et
+les contrôles locaux sont livrés ; HEL-06/DCM-03 conservent leur validation finale
+en cours, car le navigateur de contrôle ne peut pas joindre le jeu en UDP.

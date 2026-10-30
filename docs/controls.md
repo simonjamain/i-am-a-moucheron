@@ -106,3 +106,13 @@ reprendre les contrôles. Même attente avant le super purgatoire. Le regard à
 pied va presque à ±87°, sans retournement. Tous les véhicules achetés passent
 par signature puis pose E ; annulation/reprise identique aux installations.
 Voir [retours multijoueurs](multiplayer-return.md).
+
+## Hélicoptère et DCA mobile
+
+Hélicoptère, pilote : souris pour incliner, Z/Haut et S/Bas pour la poussée,
+C maintenu pour le regard libre (sans roquettes), clic maintenu pour les roquettes.
+Copilote : souris pour viser, Maj choisit la MG, Ctrl les missiles. Clic : tirer ;
+second appui distinct : détoner le missile. Aucun changement d’arme pendant son vol.
+Camion : conduite Z/S et Q/D au conducteur ; souris et clic au tireur, molette
+pour la proximité en mètres de référence. 1/2 : mutations signées.
+Les réserves, butées et unités sont détaillées dans [véhicules d’appui](support-vehicles.md).

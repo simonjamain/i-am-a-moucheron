@@ -109,6 +109,9 @@ try {
   const gameRoom = app.game.rooms.get('NATIVE'),
     bomber = [...gameRoom.vehicles.values()].find((v) => v.type === 'bomber');
   app.game.assign(gameRoom, gameRoom.pilots.get(bj.body.id), bomber, 'pilot', null);
+  // Place the airborne fixture clear of the pad furniture, so a 1 ms clock
+  // advance cannot legitimately consume the bomb before this snapshot assertion.
+  bomber.state.p = [2, 2, 2];
   bomber.state.landed = false;
   const bomb = await b.request('heavy-fire', {
     weapon: 'bomb',
@@ -200,6 +203,79 @@ try {
   );
   console.log(
     'Native RTC: two clients, UDP confirmed, reliable commands/replay, lossy relay, prepaid purchase, Spitfire, shared wash/sparkles/pistol trace, HTTP gameplay refused.',
+  );
+  // New vehicles share the same native UDP sessions and command leases.
+  await a.request('reset');
+  const driver = gameRoom.pilots.get(aj.body.id),
+    operator = gameRoom.pilots.get(bj.body.id);
+  const helicopter = app.game.createVehicle(gameRoom, 'helicopter');
+  helicopter.state.p = [2, 2, 2];
+  helicopter.state.q = [0, 0, 0, 1];
+  app.game.assign(gameRoom, driver, helicopter, 'pilot', null);
+  app.game.assign(gameRoom, operator, helicopter, 'copilot', null);
+  const rocket = await a.request('heavy-fire', {
+    weapon: 'rocket',
+    shot: 'udp-rocket',
+    occupation: driver.occupation,
+    vehicle: helicopter.id,
+    direction: [0, 0, -1],
+  });
+  assert.equal(rocket.status, 200);
+  assert.equal(rocket.body.vehicles.find((v) => v.id === helicopter.id).supplies.ammo.rocket, 29);
+  const launch = await b.request('heavy-fire', {
+    weapon: 'missile',
+    shot: 'udp-missile',
+    occupation: operator.occupation,
+    vehicle: helicopter.id,
+    direction: [0, 0, -1],
+  });
+  assert.equal(launch.status, 200);
+  const observer = await a.request('sync', {
+    mode: 'flight',
+    occupation: driver.occupation,
+    state: { ...helicopter.state, vehicle: helicopter.id, seat: 'pilot' },
+  });
+  assert.equal(observer.status, 200);
+  assert.equal(observer.body.vehicles.find((v) => v.id === helicopter.id).state.hp, 200);
+  assert.ok(observer.body.ordnance.some((s) => s.shot === 'udp-missile'));
+  assert.equal(
+    (await b.request('missile-detonate', { shot: 'udp-missile', occupation: operator.occupation }))
+      .status,
+    200,
+  );
+  const truck = app.game.createVehicle(gameRoom, 'flaktruck');
+  truck.state.p = [-2, 2, 2];
+  truck.state.q = [0, 0, 0, 1];
+  app.game.assign(gameRoom, driver, truck, 'pilot', null);
+  app.game.assign(gameRoom, operator, truck, 'cannon', null);
+  const proximity = await b.request('heavy-fire', {
+    weapon: 'proximity',
+    shot: 'udp-proximity',
+    occupation: operator.occupation,
+    vehicle: truck.id,
+    direction: [0, 0, -1],
+    proximity: 12.5,
+  });
+  assert.equal(proximity.status, 200);
+  const view = await a.request('sync', {
+    mode: 'flight',
+    occupation: driver.occupation,
+    state: { ...truck.state, vehicle: truck.id, seat: 'pilot' },
+  });
+  assert.equal(view.body.vehicles.find((v) => v.id === truck.id).supplies.ammo.proximity, 99);
+  assert.ok(view.body.ordnance.some((s) => s.shot === 'udp-proximity' && s.proximity === 12.5));
+  assert.equal(
+    (
+      await a.request('heavy-fire', {
+        weapon: 'proximity',
+        shot: 'udp-driver-blocked',
+        direction: [0, 0, -1],
+      })
+    ).status,
+    409,
+  );
+  console.log(
+    'Support vehicles over two native UDP peers: H2 200 HP/rockets/missile/detonation, D2 settings/stocks, observer snapshots and seat authorization.',
   );
   // A closed negotiation must settle its HTTP request and release its slot.
   class NeverGathers {

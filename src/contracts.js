@@ -1351,7 +1351,26 @@ for (const [seat, role] of [
         })),
       );
   }
+for (const [type, seat, role] of [
+  ['helicopter', 'pilot', 'pilote d’hélicoptère'],
+  ['helicopter', 'copilot', 'copilote armement'],
+  ['flaktruck', 'pilot', 'conducteur de DCA mobile'],
+  ['flaktruck', 'cannon', 'tireur de DCA mobile'],
+])
+  for (const context of ['boarding', 'change', 'exchange-request', 'exchange-accept'])
+    CONTRACTS[context + ':' + type + '-' + seat] = CONTRACTS[context + ':dorsal'].map(
+      (variants, index) =>
+        variants.map((doc, n) => ({
+          ...doc,
+          title: doc.title.replace(/mitrailleur dorsal/gi, role),
+          code: type + '-' + seat + '-' + context + '-' + index + '-' + n,
+          text:
+            doc.text.replace(/mitrailleur dorsal/gi, role) +
+            '\n\nLe bureau rappelle que changer de poste exige une signature, et ne transfère aucune arme au voisin. La pénurie de munitions ne constitue pas un cas de force administrative.',
+        })),
+    );
 export function contractKey(context, seat = 'pilot', type = null) {
+  if (['helicopter', 'flaktruck'].includes(type)) seat = type + '-' + seat;
   if (type === 'tank' && seat === 'pilot') seat = 'tank-pilot';
   return (
     context +

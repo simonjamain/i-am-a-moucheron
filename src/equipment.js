@@ -50,6 +50,18 @@ export const SHOP = Object.freeze({
     description:
       'Six mitrailleuses, 1 000 balles au total ; vitesse +75 %, rotation +45 %. Sans bombes.',
   },
+  helicopter: {
+    name: 'Hélicoptère H2',
+    cost: 30,
+    kind: 'vehicle',
+    description: 'Deux postes, 200 PV, stationnaire assisté, 30 roquettes et 10 missiles guidés.',
+  },
+  flaktruck: {
+    name: 'DCA mobile D2',
+    cost: 20,
+    kind: 'vehicle',
+    description: 'Conducteur et canon de proximité, 100 obus ; fusée 0,5–20 m, armée à 0,3 s.',
+  },
   tank: {
     name: 'Tank T3',
     cost: 10,

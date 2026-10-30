@@ -90,3 +90,8 @@ contextuelles actuelles, les effets partagés et les nouvelles collisions de coq
 La mort possède un état [d’observation sans corps](multiplayer-return.md#mort-et-observation-volontaire),
 avec snapshots maintenus mais commandes neutralisées. La gravité du personnage
 est maintenant mise à l’échelle ; le serveur garde les impacts dédupliqués.
+
+Les [véhicules d’appui](support-vehicles.md) ajoutent l’angle d’articulation et le
+collectif aux mouvements partagés, ainsi que le point visé du copilote. Lancement
+et détonation restent fiables ; guidage et effets ne multiplient pas les commandes.
+Le transport et l’autorité coopérative demeurent inchangés.

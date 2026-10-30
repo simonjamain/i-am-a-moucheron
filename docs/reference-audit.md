@@ -1,5 +1,36 @@
 # Revue des références
 
+## Lot hélicoptère et DCA mobile — 30 octobre 2026
+
+32 Markdown inventoriés, dont la nouvelle référence [véhicules d’appui](support-vehicles.md).
+Revue du parcours de reprise, de la stack et des liens ; le runtime reste Node/RAM/UDP.
+
+- `AGENTS.md` et `CHATGPT-PROJECT.md` : accès au dépôt, continuité et livraison ZIP
+  toujours exacts ; aucun changement d’identité ni de procédure de reprise.
+- `README.md`, `gameplay`, `code-structure`, `operations` : flotte H2/D2, modules,
+  catalogue courant 600 variantes, rôle distinct du Site historique et limites.
+- `controls`, `logistics-contracts`, `scale-fleet-weapons`, `vehicles-bank`,
+  `progression`, `walking-network` : commandes, stocks, carburant, unités de
+  proximité et assistance du H2 ajoutés ; DCA fixe et mobile explicitement distinguées.
+  L’ancienne mention de couverture sphérique du test logistique est corrigée.
+- `combat-worlds`, `economy-physics`, `clean-flight`, `field-update`,
+  `multiplayer-return`, `party-feedback`, `pistol-diagnosis`, `purgatory-queue`,
+  `swarm-equipment` : règles communes conservées, chiffres des anciens lots
+  identifiés par leur contexte daté. La référence d’appui précise les exceptions
+  de carburant, guidage, dégâts et physique sans recopier ces règles ailleurs.
+- `udp-server`, `docker` : commandes, ports, moteur Node et limites inchangés.
+- `NETWORK-RESEARCH.md` et les cinq fichiers de `archive/` : avertissements datés
+  conservés ; aucune ancienne règle remise dans le gameplay courant.
+- `BACKLOG.md` : sept tâches métier terminées ; HEL-06 et DCM-03 en cours pour
+  validation humaine finale, code et vérifications locales livrés. Aucun travail
+  manuel WebGL/WAN non réalisé n’est présenté comme vérifié.
+
+Contrôles : format, liens, suite complète, deux vrais pairs UDP avec les nouvelles
+armes et coques, build et validateur. Le navigateur charge le jeu mais ne rejoint
+pas UDP ; l’aperçu séparé expose les quatre nouveaux HUD. Mesure CPU reproductible
+sur boîtes statiques, sans allégation de FPS ni charge Internet. Dépôt synchronisé,
+ZIP actualisé, aucune publication incompatible sur le Worker historique.
+
 ## Lot retours multijoueurs, HUD et déploiement au sol
 
 Revue du 29 octobre 2026 après les 14 tâches MORT-01 à RAD-02 : **31 Markdown**

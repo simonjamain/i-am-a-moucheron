@@ -215,3 +215,9 @@ de collision avec un insecte et les anciennes commandes d’armes lourdes.
 Le [dernier lot](multiplayer-return.md) remplace les rails par statistiques au
 viseur et aide permanente, étend la réserve gratuite et déploie tous les achats
 de véhicules à l’emplacement choisi. Le Spitfire a désormais 1 000 balles.
+
+## Véhicules d’appui du 30 octobre
+
+Le [H2 et le D2](support-vehicles.md) complètent cette flotte. L’assistance sans
+pilote du H2 est spécifique ; les avions continuent leur physique neutre.
+Les quatre rôles supplémentaires portent le catalogue courant à 600 variantes.

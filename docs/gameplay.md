@@ -1,6 +1,6 @@
 # Gameplay actuel
 
-Référence consolidée le 29 octobre 2026, comportement de la livraison du backlog du 29 octobre 2026.
+Référence consolidée le 30 octobre 2026, comportement du runtime Node courant.
 Mettre à jour les sections concernées lorsque le comportement change.
 
 ## Session réseau
@@ -37,7 +37,7 @@ avec le serveur pour l’arrivée à la poubelle. Le système est guidé et dét
 Un chasseur monoplace et un bombardier sont disponibles au départ. Le bombardier
 a un pilote, un mitrailleur dorsal et un mitrailleur de queue. Un exemplaire de réserve prêt
 par type initial est conservé ; dès son décollage, un successeur gratuit apparaît sans supprimer les avions utilisés. Les achats fournissent un Stuka, un Spitfire
-ou un tank dont la destruction est définitive. Les sièges sont exclusifs.
+un tank, un hélicoptère biplace ou une DCA mobile, dont la destruction est définitive. Les sièges sont exclusifs.
 
 Chaque accès publié aux équipements, y compris une nouvelle entrée, passe par un
 cercle au sol et un dossier de deux documents obligatoires, avec parfois une annexe. La signature s’effectue à la souris
@@ -107,7 +107,7 @@ secours permet un diagnostic, sans garantir le rendu WebGL final.
 ## Contrats, changements de poste et récidive
 
 Le titre affiché est « i am a moucheron ». Le catalogue embarqué contient dix
-variantes pour chacun de 40 documents/contextes, soit 400 variantes de documents, avec les contrats adaptés aux trois postes du tank :
+variantes pour chacun de 60 documents/contextes, soit 600 variantes de documents, avec les contrats adaptés aux trois postes du tank :
 pilote, mitrailleurs dorsal et arrière, DCA, trois documents classiques, cinq
 supérieurs et mutation/demande/acceptation d’échange pour chaque poste embarqué.
 Le texte reste stable pendant la signature ; la variante immédiatement précédente
@@ -119,8 +119,8 @@ ou le panneau des postes demandent un changement contractuel. Échap libère le 
 Un siège libre demande un contrat ; un siège occupé demande la signature initiale
 du demandeur puis celle du destinataire. Refuser, partir ou se déconnecter annule
 la demande. Les postes sont conservés jusqu’au transfert atomique et revalidés à
-cet instant. Au sol comme en vol, quitter le cockpit pour un autre poste ne crée
-aucun pilote automatique : un client désigné continue la physique avec commandes
+cet instant. Au sol comme en vol, quitter le cockpit pour un autre poste d’avion ne crée
+aucun pilote automatique (l’hélicoptère possède sa propre assistance au stationnaire) : un client désigné continue la physique avec commandes
 neutres et les derniers gaz, jusqu’à reprise des commandes ou crash.
 
 Mourir au purgatoire ouvre aussi une observation avant le bouton d’accès au super
@@ -181,3 +181,13 @@ Les achats de tous les véhicules utilisent désormais le bon signé et la pose 
 au sol ou sur mobilier, avec chasseur 8 $ et bombardier 16 $. Les bombes du B3
 ont le double du rayon de celles du Stuka ; les personnages portent leurs initiales
 et une couleur propre. [Référence du dernier lot](multiplayer-return.md).
+
+## Hélicoptère et camion DCA
+
+H2 : pilote et copilote, souris pour incliner, Z/S pour la poussée et retour
+assisté au stationnaire. C observe et suspend les roquettes. Le copilote dispose
+d’une MG et d’un missile guidé manuellement depuis son poste, avec détonation au
+second clic. D2 : conducteur et tireur sur semi-remorque, obus à fusée armée à
+0,3 s uniquement ; proximité réglée à la molette, sans explosion d’impact propre.
+Valeurs, choix, garanties réseau et vérifications restantes :
+[référence du lot](support-vehicles.md).

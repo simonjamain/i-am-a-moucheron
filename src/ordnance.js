@@ -1,3 +1,6 @@
+export { segmentBox } from './swept-geometry.js';
+import { heliWeaponOrigin } from './helicopter.js';
+import { mobileBarrelOrigin, clampProximity } from './mobile-flak.js';
 import { tankBarrelOrigin } from './tank-view.js';
 import { MAP } from './scale.js';
 import { HEAVY } from './armament.js';
@@ -19,27 +22,16 @@ export function segmentSphere(a, b, centre, radius) {
     );
   return Math.hypot(...sub(p, centre)) <= radius ? t : null;
 }
-export function segmentBox(a, b, box) {
-  let lo = 0,
-    hi = 1;
-  for (let i = 0; i < 3; i++) {
-    const k = ['x', 'y', 'z'][i],
-      d = b[i] - a[i];
-    if (Math.abs(d) < 1e-12) {
-      if (a[i] < box.min[k] || a[i] > box.max[k]) return null;
-    } else {
-      let x = (box.min[k] - a[i]) / d,
-        y = (box.max[k] - a[i]) / d;
-      if (x > y) [x, y] = [y, x];
-      lo = Math.max(lo, x);
-      hi = Math.min(hi, y);
-      if (lo > hi) return null;
-    }
-  }
-  return lo;
-}
 export function integrateOrdnance(projectile, dt) {
   const before = [...projectile.p];
+  if (['rocket', 'missile'].includes(projectile.weapon)) {
+    projectile.p = add(
+      projectile.p,
+      projectile.v.map((v) => v * dt),
+    );
+    projectile.age += dt;
+    return before;
+  }
   projectile.v[1] -= MAP.metres(9.81) * dt;
   const drag = 1 / (1 + ((Math.hypot(...projectile.v) * 0.00015) / MAP.ratio) * dt);
   projectile.v = projectile.v.map((v) => v * drag);
@@ -59,11 +51,15 @@ export function createOrdnance({ shot, weapon, vehicle, shooter, direction, now,
     -(1 - 2 * (q[0] * q[0] + q[1] * q[1])),
   ];
   const n = Math.hypot(...direction) || 1,
-    dir = direction.map((v) => v / n);
+    dir = weapon === 'rocket' ? forward : direction.map((v) => v / n);
   const p =
     weapon === 'bomb'
       ? vehicle.state.p.map((v, i) => v + (i === 1 ? -MAP.metres(1.5) : 0))
-      : tankBarrelOrigin(vehicle, dir);
+      : vehicle.type === 'helicopter'
+        ? heliWeaponOrigin(vehicle, weapon, vehicle.rocketSide || 1)
+        : vehicle.type === 'flaktruck'
+          ? mobileBarrelOrigin(vehicle, dir)
+          : tankBarrelOrigin(vehicle, dir);
   const v =
     weapon === 'bomb'
       ? [...vehicle.state.v]
@@ -73,8 +69,10 @@ export function createOrdnance({ shot, weapon, vehicle, shooter, direction, now,
     weapon,
     vehicle: vehicle.id,
     sequence: vehicle.supplies.sequence,
+    proximity: weapon === 'proximity' ? clampProximity(vehicle.proximity ?? 5) : undefined,
     radiusFactor: weapon === 'bomb' && vehicle.type === 'bomber' ? 2 : 1,
     shooter,
+    occupation: vehicle.seats?.get?.('copilot') === shooter ? vehicle.missileOccupation : undefined,
     p,
     v,
     age: 0,

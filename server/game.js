@@ -1,3 +1,12 @@
+import { HELI, rotateLocal, steerMissile } from '../src/helicopter.js';
+import {
+  sweptVehicle,
+  clampProximity,
+  proximityRadius,
+  fuseSegment,
+  sweptBoxProximity,
+  sweptSphereProximity,
+} from '../src/mobile-flak.js';
 import { collisionDamage, washTarget, WASH } from '../src/vehicle-care.js';
 import { purchaseCount } from '../src/equipment.js';
 import { bedAccess, bedSpawn } from '../src/beds.js';
@@ -631,7 +640,12 @@ export class Game {
       p: flying ? s.p : old.p,
       q: flying ? s.q : old.q,
       v: flying ? s.v : old.v,
-      hp: Math.max(0, Math.min(100, s.hp)),
+      hp: Math.max(
+        0,
+        Math.min(r.vehicles.get(p.vehicle_id)?.type === 'helicopter' ? 200 : 100, s.hp),
+      ),
+      type: r.vehicles.get(p.vehicle_id)?.type,
+      collective: Number.isFinite(s.collective) ? Math.max(-1, Math.min(1, s.collective)) : 0,
       wing: s.wing,
       engine: s.engine,
       fire: (flying || ['crew', 'turret'].includes(p.mode)) && s.fire,
@@ -641,7 +655,16 @@ export class Game {
         Array.isArray(s.omega) && s.omega.length === 3 && s.omega.every(Number.isFinite)
           ? s.omega
           : old.omega || [0, 0, 0],
+      trailerAngle: Number.isFinite(s.trailerAngle)
+        ? Math.max(-0.65, Math.min(0.65, s.trailerAngle))
+        : 0,
       landed: flying ? !!s.landed : !!old.landed,
+      aimPoint:
+        Array.isArray(s.aimPoint) &&
+        s.aimPoint.length === 3 &&
+        s.aimPoint.every((v) => Number.isFinite(v) && Math.abs(v) < 10000)
+          ? [...s.aimPoint]
+          : undefined,
       turretDirection:
         Array.isArray(s.turretDirection) &&
         s.turretDirection.length === 3 &&
@@ -803,6 +826,7 @@ export class Game {
     else if (path === 'dossier-choice') this.choice(r, p, b);
     else if (['seat-request', 'seat-sign', 'seat-reject'].includes(path)) this.seat(r, p, path, b);
     else if (path === 'aircraft-fire') return clone(this.fire(r, p, b));
+    else if (path === 'missile-detonate') this.detonateMissile(r, p, b);
     else if (path === 'heavy-fire') this.heavyFire(r, p, b);
     else if (path === 'hit') this.hit(r, p, b);
     else if (path === 'friendly-hit') this.friendly(r, p, b);
@@ -1323,6 +1347,14 @@ export class Game {
       'Poste modifié.',
     );
     if (b.state) this.sync(r, p, { state: b.state, mode: p.mode, occupation: p.occupation });
+    if (weapon === 'missile') {
+      requireGame(
+        !r.ordnance.some((s) => !s.done && s.vehicle === v.id && s.weapon === 'missile'),
+        'Un missile est déjà en vol.',
+      );
+      requireGame(this.now() >= (v.nextMissileAt || 0), 'Missile en recharge.');
+      v.missileOccupation = p.occupation;
+    }
     const selected =
       weapon === 'he' || weapon === 'ap' ? availableShell(v.supplies.ammo, weapon) : weapon;
     requireGame(selected && v.supplies.ammo[selected] >= 1, 'Réserve vide.');
@@ -1331,7 +1363,12 @@ export class Game {
     v.lastHeavy ??= {};
     requireGame(
       this.now() >=
-        (v.lastHeavy[lane] ?? -Infinity) + HEAVY[selected].interval * 1000 * factors.interval,
+        (v.lastHeavy[lane] ?? -Infinity) +
+          HEAVY[selected].interval *
+            1000 *
+            (['proximity', 'rocket'].includes(selected)
+              ? Math.max(1, factors.interval)
+              : factors.interval),
       'Arme en recharge.',
     );
     requireGame(
@@ -1348,6 +1385,15 @@ export class Game {
       'Visée invalide.',
       400,
     );
+    if (selected === 'rocket') v.rocketSide = -(v.rocketSide || -1);
+    if (selected === 'proximity') v.proximity = clampProximity(b.proximity);
+    if (selected === 'missile') {
+      const local = rotateLocal(
+        [-v.state.q[0], -v.state.q[1], -v.state.q[2], v.state.q[3]],
+        direction,
+      );
+      requireGame(local[2] <= 1e-8 && local[1] <= 1e-8, 'Butée du copilote atteinte.');
+    }
     v.supplies.ammo[selected]--;
     v.supplies.revision++;
     v.lastHeavy[lane] = this.now();
@@ -1375,6 +1421,15 @@ export class Game {
       return frameCache.get(at);
     };
     for (const projectile of r.ordnance) {
+      if (projectile.weapon === 'proximity') {
+        this.advanceProximity(r, projectile, now, plan, framesAt);
+        continue;
+      }
+      const vehicle = r.vehicles.get(projectile.vehicle);
+      if (projectile.weapon === 'missile' && (!vehicle || vehicle.state.hp <= 0)) {
+        projectile.done = true;
+        continue;
+      }
       const profile = HEAVY[projectile.weapon],
         end = Math.min(now, projectile.at + profile.lifetime * 1000);
       const horizon = Math.max(0, (end - projectile.updated) / 1000);
@@ -1391,8 +1446,25 @@ export class Game {
         ),
       );
       while (projectile.updated < end && !projectile.done) {
-        const dt = Math.min(1 / 120, (end - projectile.updated) / 1000),
-          a = integrateOrdnance(projectile, dt),
+        const dt = Math.min(1 / 120, (end - projectile.updated) / 1000);
+        if (projectile.weapon === 'missile') {
+          const owner = r.pilots.get(projectile.shooter);
+          if (
+            owner?.life === 'alive' &&
+            owner.vehicle_id === projectile.vehicle &&
+            owner.seat === 'copilot' &&
+            owner.occupation === projectile.occupation
+          ) {
+            const direction = owner.state.turretDirection || [0, 0, -1];
+            const origin = vehicle.state.p;
+            steerMissile(
+              projectile,
+              owner.state.aimPoint || origin.map((v, i) => v + direction[i] * MAP.metres(250)),
+              dt,
+            );
+          }
+        }
+        const a = integrateOrdnance(projectile, dt),
           b = projectile.p;
         projectile.updated += dt * 1000;
         let hit = null;
@@ -1441,7 +1513,125 @@ export class Game {
       )
         projectile.done = true;
     }
+    for (const shot of r.ordnance)
+      if (shot.done && shot.weapon === 'missile') {
+        const v = r.vehicles.get(shot.vehicle);
+        if (v) v.nextMissileAt = now + 2000;
+      }
     r.ordnance = r.ordnance.filter((p) => !p.done);
+  }
+  detonateMissile(r, p, b) {
+    const v = r.vehicles.get(p.vehicle_id);
+    requireGame(
+      p.life === 'alive' &&
+        v?.type === 'helicopter' &&
+        p.seat === 'copilot' &&
+        b.occupation === p.occupation,
+      'Guidage indisponible.',
+    );
+    const shot = r.ordnance.find(
+      (s) =>
+        s.weapon === 'missile' &&
+        s.vehicle === v.id &&
+        s.shooter === p.id &&
+        s.occupation === p.occupation &&
+        s.shot === b.shot,
+    );
+    requireGame(shot, 'Missile absent.');
+    const plan = wavePlan(r.code, r.wave, r.started);
+    const frames =
+      r.phase === 'combat' && shot.wave === r.wave
+        ? swarmFrame(plan.roster, (this.now() - r.started) / 1000)
+        : [];
+    this.ordnanceImpact(r, shot, {}, frames, shot.p);
+    r.ordnance = r.ordnance.filter((s) => s !== shot);
+    v.nextMissileAt = this.now() + 2000;
+  }
+  advanceProximity(r, projectile, now, plan, framesAt) {
+    const profile = HEAVY.proximity,
+      end = Math.min(now, projectile.at + profile.lifetime * 1000);
+    const radius = proximityRadius(projectile.proximity);
+    const horizon = Math.max(0, (end - projectile.updated) / 1000);
+    const nearby = this.solids.filter((box) =>
+      ['x', 'y', 'z'].every((key, i) => {
+        const reach =
+          Math.abs(projectile.v[i]) * horizon +
+          (i === 1 ? MAP.metres(9.81) * horizon * horizon : 0) +
+          radius;
+        return box.max[key] >= projectile.p[i] - reach && box.min[key] <= projectile.p[i] + reach;
+      }),
+    );
+    while (projectile.updated < end && !projectile.done) {
+      const ageBefore = projectile.age;
+      const dt = Math.min(
+        1 / 120,
+        (end - projectile.updated) / 1000,
+        ageBefore < 0.3 - 1e-12 ? 0.3 - ageBefore : Infinity,
+      );
+      const a = integrateOrdnance(projectile, dt),
+        b = projectile.p;
+      projectile.updated += dt * 1000;
+      const frames =
+        r.phase === 'combat' && projectile.wave === r.wave ? framesAt(projectile.updated) : [];
+      const armed = fuseSegment(a, b, ageBefore, projectile.age);
+      let hit = null;
+      const consider = (t, kind) => {
+        if (t !== null && (!hit || t < hit.t)) hit = { t, kind };
+      };
+      const solid = (box) => {
+        const impact = segmentBox(a, b, box);
+        // A contact strictly before arming is inert, including on thin geometry.
+        if (impact !== null && (!armed || impact < armed.t - 1e-12)) consider(impact, 'inert');
+        if (armed) {
+          const t = sweptBoxProximity(armed.a, b, box, radius);
+          if (t !== null) consider(armed.t + t * (1 - armed.t), 'fuse');
+        }
+      };
+      for (const box of nearby) solid(box);
+      solid({ min: { x: -100, y: -100, z: -100 }, max: { x: 100, y: 0, z: 100 } });
+      const sphere = (centre, size, own = false) => {
+        const impact = sweptSphereProximity(a, b, centre, size);
+        if (!own && impact !== null && (!armed || impact < armed.t - 1e-12))
+          consider(impact, 'inert');
+        if (armed) {
+          const t = sweptSphereProximity(armed.a, b, centre, size + radius);
+          if (t !== null) consider(armed.t + t * (1 - armed.t), 'fuse');
+        }
+      };
+      frames.forEach((f, i) => {
+        if (f && !r.kills.has(i))
+          sphere(
+            f.p,
+            MAP.metres(plan.roster[i].size * 0.7 * (plan.roster[i].type === 'midge' ? 2.43 : 1)),
+          );
+      });
+      for (const v of r.vehicles.values())
+        if (v.state.hp > 0) {
+          const impact = sweptVehicle(a, b, v, 0);
+          if (
+            v.id !== projectile.vehicle &&
+            impact !== null &&
+            (!armed || impact < armed.t - 1e-12)
+          )
+            consider(impact, 'inert');
+          if (armed) {
+            const t = sweptVehicle(armed.a, b, v, radius);
+            if (t !== null) consider(armed.t + t * (1 - armed.t), 'fuse');
+          }
+        }
+      for (const p of r.pilots.values())
+        if (p.life === 'alive' && !p.vehicle_id) {
+          const point = this.playerPosition(r, p);
+          if (point) sphere(point, MAP.metres(0.6));
+        }
+      for (const e of r.equipment) sphere([e.x, e.y + MAP.metres(1), e.z], MAP.metres(1));
+      if (hit) {
+        projectile.done = true;
+        projectile.p = a.map((v, i) => v + (b[i] - v) * hit.t);
+        if (hit.kind === 'fuse') this.ordnanceImpact(r, projectile, {}, frames, projectile.p);
+      }
+    }
+    if (projectile.updated >= projectile.at + profile.lifetime * 1000) projectile.done = true;
   }
   ordnanceImpact(r, projectile, hit, frames, point) {
     const weapon = projectile.weapon,
@@ -1554,6 +1744,17 @@ export class Game {
         ammoCapacity(v.type, weapon),
       'Poste armé requis.',
     );
+    if (v.type === 'helicopter')
+      requireGame(
+        !r.ordnance.some(
+          (s) =>
+            s.weapon === 'missile' &&
+            s.vehicle === v.id &&
+            s.shooter === p.id &&
+            s.occupation === p.occupation,
+        ),
+        'Guidage en cours.',
+      );
     let allowed = false;
     for (const shot of shots) {
       const key = p.id + ':' + shot;

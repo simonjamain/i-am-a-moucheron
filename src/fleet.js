@@ -58,8 +58,34 @@ VEHICLES.spitfire = {
   span: 11.2,
   length: 7,
 };
+VEHICLES.helicopter = {
+  ...VEHICLES.fighter,
+  name: 'Hélicoptère H2',
+  seats: ['pilot', 'copilot'],
+  span: 16,
+  length: 14,
+  maxSpeed: VEHICLES.fighter.maxSpeed * 0.6,
+  gear: 1.1 * ACTOR_UNIT,
+  helicopter: true,
+  maxHP: 200,
+};
+VEHICLES.flaktruck = {
+  name: 'DCA mobile D2',
+  seats: ['pilot', 'cannon'],
+  span: 5,
+  length: 16,
+  maxSpeed: 10,
+  thrust: 3,
+  drag: 0.1,
+  liftBase: 0,
+  turn: 0.45,
+  gear: 0.8 * ACTOR_UNIT,
+  ground: true,
+  articulated: true,
+};
 export const SEAT_NAMES = {
   pilot: 'Pilote',
+  copilot: 'Copilote armement',
   dorsal: 'Mitrailleur dorsal',
   tail: 'Mitrailleur de queue',
   cannon: 'Tireur principal',
@@ -85,7 +111,8 @@ export function vehiclePad(type) {
     ],
     q: [0, 1, 0, 0],
     v: [0, 0, 0],
-    hp: 100,
+    hp: VEHICLES[type].maxHP || 100,
+    type,
     wing: 1,
     engine: 1,
     fire: false,
@@ -129,6 +156,8 @@ export function leftVehiclePad(v) {
   );
 }
 export function seatMount(type, seat) {
+  if (type === 'helicopter') return seat === 'pilot' ? [0, 0.6, -2] : [0, 1.1, -0.8];
+  if (type === 'flaktruck') return seat === 'cannon' ? [0, 1.8, 2.5] : [0, 1.5, -3.1];
   if (type === 'tank')
     return seat === 'cannon' ? [0, 1.3, 0] : seat === 'top' ? [0, 2.3, 1] : [0, 0.7, -1.5];
   if (type === 'bomber')

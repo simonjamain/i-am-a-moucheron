@@ -1,4 +1,5 @@
-import { MAP } from './scale.js';
+import { sweptBoxProximity } from './mobile-flak.js';
+import { ACTOR_UNIT, MAP } from './scale.js';
 // A tank follows support surfaces; gravity handles falling off a desk. No lift,
 // automatic turret rotation or dependency on a driver for the other stations.
 export function stepTank(T, state, controls, colliders, dt, profile) {
@@ -38,6 +39,31 @@ export function stepTank(T, state, controls, colliders, dt, profile) {
       break;
     }
   }
+  if (profile.articulated) {
+    const points = [
+      [0, -3.1],
+      [0, -1.4],
+    ];
+    const angle = state.trailerAngle || 0;
+    for (const z of [0.2, 1.4, 2.6, 3.8, 5])
+      points.push([Math.sin(angle) * z, -0.7 + Math.cos(angle) * z]);
+    const blocked = points.some(([x, z]) => {
+      const offset = new T.Vector3(x * ACTOR_UNIT, 0, z * ACTOR_UNIT).applyQuaternion(q);
+      const a = before.clone().add(offset).toArray(),
+        b = p.clone().add(offset).toArray();
+      return colliders.some(
+        (box) =>
+          box.max.y > bottom + MAP.metres(0.2) &&
+          box.min.y < p.y + MAP.metres(3) &&
+          sweptBoxProximity(a, b, box, 1.2 * ACTOR_UNIT) !== null,
+      );
+    });
+    if (blocked) {
+      p.x = before.x;
+      p.z = before.z;
+      v.x = v.z = 0;
+    }
+  }
   let support = 0;
   for (const box of colliders)
     if (
@@ -56,6 +82,11 @@ export function stepTank(T, state, controls, colliders, dt, profile) {
   } else {
     v.y -= MAP.metres(9.81) * dt;
     state.landed = false;
+  }
+  if (profile.articulated) {
+    const turn = (controls.turn || 0) * dt * profile.turn;
+    state.trailerAngle = Math.max(-0.65, Math.min(0.65, (state.trailerAngle || 0) - turn));
+    state.trailerAngle *= Math.exp((-Math.abs(next) / Math.max(MAP.metres(6), 1e-9)) * dt);
   }
   Object.assign(state, {
     p: p.toArray(),

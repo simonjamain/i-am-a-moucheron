@@ -1,4 +1,4 @@
-import { controlHints, cursorStats } from '/live-hud.js';
+import { controlHints, cursorStats, cursorAmmoText } from '/live-hud.js';
 import { identifyPlayer, disposePlayerIdentity } from '/player-livery.js';
 import { GunSalvos } from '/salvos.js';
 import { ammoCapacity } from '/logistics.js';
@@ -7,6 +7,8 @@ import { PurchaseUI } from '/purchase-ui.js';
 import { purchaseCount } from '/equipment.js';
 import { vehicleHue } from '/logistics.js';
 import { WASH } from '/vehicle-care.js';
+import { HELI, clampHeliAim, stepHelicopter } from '/helicopter.js';
+import { clampProximity, MOBILE_FUSE } from '/mobile-flak.js';
 import { ballisticMarks } from '/tank-reticle.js';
 import { InteractionTiming } from '/interaction-timing.js';
 import { BedUI } from '/bed-ui.js';
@@ -180,6 +182,8 @@ const {
   makeStuka,
   makeBomb,
   makeTank,
+  makeFlakTruck,
+  makeHelicopter,
   insect,
   humanoid,
   pm,
@@ -230,6 +234,9 @@ let myVehicle = null,
   selectedSeat = 'pilot',
   flakRange = FLAK.range,
   selectedShell = 'he',
+  heliWeapon = 'copilot',
+  missilePressed = false,
+  mobileProximity = MOBILE_FUSE.initial,
   heavyPending = false,
   weaponBarrel = 0;
 const fleetModels = new Map(),
@@ -395,7 +402,7 @@ canvas.addEventListener('pointermove', (e) => {
     turretAim.yaw -= (e.clientX - groundView.x) * 0.003 * currentFactors().aim;
     turretAim.pitch = T.MathUtils.clamp(
       turretAim.pitch - (e.clientY - groundView.y) * 0.003 * currentFactors().aim,
-      myVehicle?.type === 'tank' ? -0.65 : -0.1,
+      myVehicle?.type === 'helicopter' ? -1.45 : myVehicle?.type === 'tank' ? -0.65 : -0.1,
       1.35,
     );
     groundView.x = e.clientX;
@@ -523,7 +530,9 @@ function localMotion() {
     p: me.position.toArray(),
     q: me.quaternion.toArray(),
     v: vel.toArray(),
-    hp: Math.max(0, Math.min(100, hp)),
+    hp: Math.max(0, Math.min(myVehicle?.type === 'helicopter' ? 200 : 100, hp)),
+    type: myVehicle?.type,
+    collective: myVehicle?.state.collective || 0,
     wing,
     engine,
     fire: !respawnAt && shooting,
@@ -532,9 +541,12 @@ function localMotion() {
     soul: respawnAt ? soulBody : null,
     landed,
     gas,
+    trailerAngle: myVehicle?.state.trailerAngle || 0,
     omega: omega.toArray(),
     turret: turretIndex,
     turretDirection: weaponDirection().toArray(),
+    aimPoint:
+      myVehicle?.type === 'helicopter' && crewSeat === 'copilot' ? heliAimPoint() : undefined,
     ground: self
       ? {
           scene: respawnAt ? (isSuper() ? 'super' : 'soul') : 'base',
@@ -691,7 +703,7 @@ addEventListener('pointermove', (event) => {
     turretAim.yaw -= dx * 0.003 * currentFactors().aim;
     turretAim.pitch = T.MathUtils.clamp(
       turretAim.pitch - dy * 0.003 * currentFactors().aim,
-      myVehicle?.type === 'tank' ? -0.65 : -0.1,
+      myVehicle?.type === 'helicopter' ? -1.45 : myVehicle?.type === 'tank' ? -0.65 : -0.1,
       1.35,
     );
     return;
@@ -739,6 +751,16 @@ canvas.addEventListener('contextmenu', (event) => event.preventDefault());
 canvas.addEventListener(
   'wheel',
   (e) => {
+    if (
+      myVehicle?.type === 'flaktruck' &&
+      crewSeat === 'cannon' &&
+      controlFocus.active &&
+      canCapture()
+    ) {
+      e.preventDefault();
+      mobileProximity = clampProximity(mobileProximity - Math.sign(e.deltaY) * MOBILE_FUSE.step);
+      return;
+    }
     if (turretIndex >= 0 && controlFocus.active) {
       e.preventDefault();
       flakRange = fuseRange(flakRange - Math.sign(e.deltaY) * FLAK.step);
@@ -949,7 +971,9 @@ function accept(s, force = false) {
         boardingOpen = false;
         groundView.scene = '';
         turretAim.yaw = crewSeat === 'tail' ? Math.PI : 0;
-        turretAim.pitch = 0.15;
+        turretAim.pitch = myVehicle.type === 'helicopter' ? -0.1 : 0.15;
+        missilePressed = false;
+        heliWeapon = 'copilot';
         resetMouseAim();
         sound.play('board', me.position, { ref: 10 });
         notify(VEHICLES[myVehicle.type].name + ' · ' + SEAT_NAMES[crewSeat], 3);
@@ -1291,7 +1315,9 @@ addEventListener('keydown', (event) => {
   if (contextual) {
     event.preventDefault();
     if (contextual.range) flakRange = fuseRange(flakRange + contextual.range);
-    else selectedShell = contextual.shell;
+    else if (contextual.heliWeapon) {
+      if (!activeMissile()) heliWeapon = contextual.heliWeapon;
+    } else selectedShell = contextual.shell;
     return;
   }
   keyBindings.set(event.code, code);
@@ -2166,6 +2192,7 @@ function turretDirection() {
   );
 }
 function weaponDirection() {
+  if (myVehicle?.type === 'helicopter' && crewSeat === 'copilot') clampHeliAim(turretAim);
   const d = turretDirection();
   return myVehicle && crewSeat !== 'pilot' ? d.applyQuaternion(me.quaternion) : d;
 }
@@ -2389,10 +2416,16 @@ function updateVehicles(dt) {
           : 'Échelle ' + MAP.numerator + '/' + MAP.denominator + ' · À pied';
   if (!visible) return;
   if (crew) {
+    if (myVehicle.type === 'helicopter' && crewSeat === 'copilot') {
+      const pressed =
+        !!(mouseFire || pad.fire || uiWeaponFire) && controlFocus.active && canCapture();
+      if (pressed && !missilePressed && heliWeapon === 'missile') useHeliMissile();
+      missilePressed = pressed;
+    } else missilePressed = false;
     const observing =
       myVehicle.type === 'tank' && crewSeat === 'cannon' && !!keys.KeyC && controlFocus.active;
     if (
-      myVehicle.type === 'tank' &&
+      ['tank', 'flaktruck'].includes(myVehicle.type) &&
       crewSeat === 'cannon' &&
       (mouseFire || pad.fire || uiWeaponFire) &&
       !observing &&
@@ -2407,24 +2440,30 @@ function updateVehicles(dt) {
       turretAim.yaw -= pad.yaw * dt * currentFactors().aim;
       turretAim.pitch = T.MathUtils.clamp(
         turretAim.pitch - pad.pitch * dt * currentFactors().aim,
-        myVehicle?.type === 'tank' ? -0.65 : -0.05,
+        myVehicle?.type === 'helicopter' ? -1.45 : myVehicle?.type === 'tank' ? -0.65 : -0.05,
         1.2,
       );
     }
     const dir = weaponDirection(),
       mount = me.userData.turrets[crewSeat === 'tail' || crewSeat === 'top' ? 1 : 0],
       up = new T.Vector3(0, 1, 0).applyQuaternion(me.quaternion);
-    aimGun(T, mount, dir, me.quaternion);
-    const scoped = myVehicle.type === 'tank' && crewSeat === 'cannon';
-    const view = scoped
-      ? tankSight(T, mount, dir, up, observing ? freeLook : null)
-      : gunnerView(T, mount, dir, up);
+    aimGun(T, mount, dir, mount.parent.getWorldQuaternion(new T.Quaternion()));
+    const scoped = ['tank', 'flaktruck'].includes(myVehicle.type) && crewSeat === 'cannon';
+    const view =
+      myVehicle.type === 'helicopter'
+        ? heliGunnerView(mount, dir, up)
+        : scoped
+          ? tankSight(T, mount, dir, up, observing ? freeLook : null)
+          : gunnerView(T, mount, dir, up);
     if (scoped) me.visible = observing;
+    else if (myVehicle.type === 'helicopter') me.visible = true;
     camera.position.copy(view.eye);
     camera.up.copy(up);
     camera.lookAt(view.target);
     $('crosshair').classList.remove('hidden', 'offscreen');
     shooting =
+      myVehicle.type !== 'flaktruck' &&
+      (myVehicle.type !== 'helicopter' || (heliWeapon === 'copilot' && !activeMissile())) &&
       !observing &&
       ((controlFocus.active &&
         (scoped ? keys.Space || pad.heavy : mouseFire || keys.Space || pad.fire)) ||
@@ -2434,8 +2473,11 @@ function updateVehicles(dt) {
     cooldown -= dt;
     while (shooting && cooldown <= 0) {
       cooldown +=
-        (myVehicle.type === 'tank' ? TANK_MG[currentAmmoKey()].interval : 0.09) *
-        currentFactors().interval;
+        (myVehicle.type === 'helicopter'
+          ? HELI.gunInterval
+          : myVehicle.type === 'tank'
+            ? TANK_MG[currentAmmoKey()].interval
+            : 0.09) * currentFactors().interval;
       bullet(view.muzzle, spreadDirection(T, dir), '#f4efab', true);
     }
     if (!shooting) cooldown = Math.max(0, cooldown);
@@ -2780,15 +2822,19 @@ function vehicleModel(v) {
   let g = fleetModels.get(v.id);
   if (!g) {
     g =
-      v.type === 'spitfire'
-        ? makeSpitfire('#e3ebc0')
-        : v.type === 'tank'
-          ? makeTank('#8eb7c6')
-          : v.type === 'interceptor'
-            ? makeStuka('#8eb7c6')
-            : v.type === 'bomber'
-              ? makeBomber('#c5ba92')
-              : makePlane(v.type === 'interceptor' ? '#8eb7c6' : '#e3ebc0');
+      v.type === 'helicopter'
+        ? makeHelicopter('#8eb7c6')
+        : v.type === 'flaktruck'
+          ? makeFlakTruck('#8eb7c6')
+          : v.type === 'spitfire'
+            ? makeSpitfire('#e3ebc0')
+            : v.type === 'tank'
+              ? makeTank('#8eb7c6')
+              : v.type === 'interceptor'
+                ? makeStuka('#8eb7c6')
+                : v.type === 'bomber'
+                  ? makeBomber('#c5ba92')
+                  : makePlane(v.type === 'interceptor' ? '#8eb7c6' : '#e3ebc0');
     paintVehicle(
       T,
       g,
@@ -2823,6 +2869,9 @@ function updateOthers(dt) {
       else g.position.lerp(pos, 1 - Math.exp(-24 * dt));
       g.quaternion.slerp(new T.Quaternion().fromArray(motion.q), 1 - Math.exp(-24 * dt));
     }
+    if (g.userData.trailer) g.userData.trailer.rotation.y = motion.trailerAngle || 0;
+    if (g.userData.rotor)
+      g.userData.rotor.rotation.y += dt * (v.state.engine && v.supplies.fuel > 0 ? 35 : 0);
     updateInscriptions(T, g, v, snap.pilots);
     g.visible = v.state.hp > 0;
     g.userData.wing.scale.x = v.state.wing ? 1 : 0.52;
@@ -2833,24 +2882,37 @@ function updateOthers(dt) {
           (v.state.engine && v.supplies?.fuel > 0 && v.seats.some((s) => s.seat === 'pilot')
             ? 45
             : 0);
-    if (v.type === 'bomber' || v.type === 'tank')
-      for (const [i, seat] of (v.type === 'tank'
-        ? ['cannon', 'top']
-        : ['dorsal', 'tail']
+    if (['bomber', 'tank', 'flaktruck', 'helicopter'].includes(v.type))
+      for (const [i, seat] of (v.type === 'helicopter'
+        ? ['copilot']
+        : v.type === 'flaktruck'
+          ? ['cannon']
+          : v.type === 'tank'
+            ? ['cannon', 'top']
+            : ['dorsal', 'tail']
       ).entries()) {
         const occ = v.seats.find((s) => s.seat === seat),
           gunner = snap.pilots.find((p) => p.id === occ?.pilot);
         if (!gunner) continue;
         const m = gunner.id === id ? localMotion() : remoteMotion(gunner);
         const mount = g.userData.turrets[i];
-        aimGun(T, mount, new T.Vector3().fromArray(m.turretDirection || [0, 0, -1]), g.quaternion);
+        aimGun(
+          T,
+          mount,
+          new T.Vector3().fromArray(m.turretDirection || [0, 0, -1]),
+          mount.parent.getWorldQuaternion(new T.Quaternion()),
+        );
         if (
           gunner.id !== id &&
           m.fire &&
           v.supplies?.ammo[v.type === 'tank' && seat === 'cannon' ? 'coax' : seat] >= 1 &&
           Math.random() <
             dt /
-              ((v.type === 'tank' ? TANK_MG[seat === 'cannon' ? 'coax' : seat].interval : 0.09) *
+              ((v.type === 'helicopter'
+                ? HELI.gunInterval
+                : v.type === 'tank'
+                  ? TANK_MG[seat === 'cannon' ? 'coax' : seat].interval
+                  : 0.09) *
                 clauseFactors(gunner.contractClause).interval)
         ) {
           const o = (
@@ -3175,7 +3237,39 @@ function stepProjectileSlice(dt) {
 // Fixed timestep flight: thrust, quadratic drag, gravity, angle-of-attack lift, wind-relative velocity.
 function physics(dt) {
   if (respawnAt || onFoot || !myVehicle) return;
-  if (myVehicle.type === 'tank') {
+  if (myVehicle.type === 'helicopter') {
+    const active = controlFocus.active && canCapture();
+    const state = { ...localMotion(), fuelAvailable: remainingFuel() > 0 };
+    const collective = active
+      ? Number(!!(keys.KeyZ || keys.KeyW || keys.ArrowUp)) - Number(!!(keys.KeyS || keys.ArrowDown))
+      : 0;
+    stepHelicopter(
+      T,
+      state,
+      {
+        collective: collective * currentFactors().controls,
+        direction: active ? mouseDirection.toArray() : null,
+        factor: currentFactors().controls,
+      },
+      colliders,
+      dt,
+      upgradedVehicle(VEHICLES.helicopter, snap?.upgrades),
+    );
+    if (state.hp <= 0) {
+      crash();
+      return;
+    }
+    me.position.fromArray(state.p);
+    me.quaternion.fromArray(state.q);
+    vel.fromArray(state.v);
+    myVehicle.state.collective = state.collective;
+    landed = state.landed;
+    gas = state.gas;
+    shooting = false;
+    if (active && !keys.KeyC && (mouseFire || pad.fire)) fireHeavy('rocket');
+    return;
+  }
+  if (VEHICLES[myVehicle.type].ground) {
     const active = controlFocus.active && canCapture(),
       manual = flightInput(keys, pad, active);
     const state = { ...localMotion(), fuelAvailable: remainingFuel() > 0 };
@@ -3188,7 +3282,7 @@ function physics(dt) {
       },
       colliders,
       dt,
-      VEHICLES.tank,
+      VEHICLES[myVehicle.type],
     );
     if (state.hp <= 0) {
       crash();
@@ -3197,9 +3291,11 @@ function physics(dt) {
     me.position.fromArray(state.p);
     me.quaternion.fromArray(state.q);
     vel.fromArray(state.v);
+    myVehicle.state.trailerAngle = state.trailerAngle || 0;
+    if (me.userData.trailer) me.userData.trailer.rotation.y = state.trailerAngle || 0;
     landed = state.landed;
     gas = state.gas;
-    shooting = active && hasAmmo() && (mouseFire || manual.fire);
+    shooting = myVehicle.type === 'tank' && active && hasAmmo() && (mouseFire || manual.fire);
     cooldown -= dt;
     if (shooting && cooldown <= 0) {
       cooldown = TANK_MG.pilot.interval * currentFactors().interval;
@@ -3636,8 +3732,8 @@ function frame(now) {
     $('speed').textContent = ((vel.length() / MAP.ratio) * 3.6).toFixed(0);
     $('alt').textContent = Math.max(0, me.position.y).toFixed(2);
     $('gas').textContent = Math.round(gas * 100);
-    $('health').textContent = Math.max(0, Math.round(hp)) + ' %';
-    $('hpbar').style.width = hp + '%';
+    $('health').textContent = Math.max(0, Math.round(hp)) + ' PV';
+    $('hpbar').style.width = (hp / (myVehicle?.type === 'helicopter' ? 200 : 100)) * 100 + '%';
     networkStatus();
     drawRadar();
     updateCountdown();
@@ -3710,6 +3806,8 @@ const ghosts = {
   fighter: makePlane('#badb84'),
   bomber: makeBomber('#badb84'),
   interceptor: makeStuka('#badb84'),
+  helicopter: makeHelicopter('#badb84'),
+  flaktruck: makeFlakTruck('#badb84'),
   tank: makeTank('#badb84'),
   spitfire: makeSpitfire('#badb84'),
 };
@@ -4173,7 +4271,17 @@ function simulateVacantAircraft(dt) {
       vacantAircraft.set(v.id, s);
     }
     s.fuelAvailable = v.supplies?.fuel > 0;
-    if (v.type === 'tank') stepTank(T, s, { forward: 0, turn: 0 }, colliders, dt, VEHICLES.tank);
+    if (v.type === 'helicopter')
+      stepHelicopter(
+        T,
+        s,
+        { collective: 0 },
+        colliders,
+        dt,
+        upgradedVehicle(VEHICLES.helicopter, snap?.upgrades),
+      );
+    else if (VEHICLES[v.type].ground)
+      stepTank(T, s, { forward: 0, turn: 0 }, colliders, dt, VEHICLES[v.type]);
     else stepVacantAircraft(T, s, upgradedVehicle(VEHICLES[v.type], snap.upgrades), colliders, dt);
     Object.assign(v.state, s);
   }
@@ -4289,7 +4397,51 @@ $('paperTear').onclick = async () => {
   }
 };
 
+function heliAimPoint() {
+  const direction = weaponDirection(),
+    origin = camera.position.clone(),
+    ray = new T.Ray(origin, direction);
+  let distance = MAP.metres(250);
+  for (const box of colliders) {
+    const p = ray.intersectBox(box, new T.Vector3());
+    if (p) distance = Math.min(distance, p.distanceTo(origin));
+  }
+  return origin.addScaledVector(direction, distance).toArray();
+}
+function activeMissile() {
+  return snap?.ordnance?.find((s) => s.weapon === 'missile' && s.vehicle === myVehicle?.id);
+}
+async function useHeliMissile() {
+  const missile = activeMissile();
+  if (missile) {
+    const self = snap.pilots.find((p) => p.id === id);
+    if (missile.shooter !== id || missile.occupation !== self?.occupation) return;
+    try {
+      accept(
+        await api('missile-detonate', { id, shot: missile.shot, occupation: self.occupation }),
+      );
+    } catch (e) {
+      notify(e.message, 2);
+    }
+  } else fireHeavy('missile');
+}
+function heliGunnerView(mount, dir, up) {
+  mount.updateWorldMatrix(true, true);
+  const muzzle = mount.userData.muzzle.getWorldPosition(new T.Vector3());
+  const right = dir.clone().cross(up).normalize();
+  return {
+    eye: muzzle
+      .clone()
+      .addScaledVector(dir, -MAP.metres(0.7))
+      .addScaledVector(right, -MAP.metres(0.25))
+      .addScaledVector(up, MAP.metres(0.15)),
+    target: muzzle.clone().addScaledVector(dir, MAP.metres(250)),
+    muzzle,
+  };
+}
 function currentAmmoKey() {
+  if (myVehicle?.type === 'helicopter') return crewSeat === 'pilot' ? 'rocket' : heliWeapon;
+  if (myVehicle?.type === 'flaktruck') return 'proximity';
   return myVehicle?.type === 'tank' && crewSeat === 'cannon' ? 'coax' : crewSeat;
 }
 function hasAmmo() {
@@ -4306,20 +4458,30 @@ async function fireHeavy(weapon = null) {
     !myVehicle ||
     heavyPending ||
     !controlFocus.active ||
+    !canCapture() ||
+    (myVehicle.type === 'helicopter' && crewSeat === 'pilot' && keys.KeyC) ||
     (myVehicle.type === 'tank' && crewSeat === 'cannon' && keys.KeyC) ||
     performance.now() < nextHeavyAt
   )
     return;
   weapon ??=
-    myVehicle.type === 'tank' && crewSeat === 'cannon'
-      ? availableShell(myVehicle.supplies.ammo, selectedShell)
-      : crewSeat === 'pilot'
-        ? 'bomb'
-        : null;
+    myVehicle.type === 'flaktruck' && crewSeat === 'cannon'
+      ? 'proximity'
+      : myVehicle.type === 'tank' && crewSeat === 'cannon'
+        ? availableShell(myVehicle.supplies.ammo, selectedShell)
+        : crewSeat === 'pilot'
+          ? 'bomb'
+          : null;
   if (!weapon || !HEAVY[weapon] || (myVehicle.supplies.ammo[weapon] || 0) < 1) return;
   const state = localMotion();
   heavyPending = true;
-  nextHeavyAt = performance.now() + HEAVY[weapon].interval * 1000 * currentFactors().interval;
+  nextHeavyAt =
+    performance.now() +
+    HEAVY[weapon].interval *
+      1000 *
+      (['rocket', 'proximity'].includes(weapon)
+        ? Math.max(1, currentFactors().interval)
+        : currentFactors().interval);
   try {
     accept(
       await api('heavy-fire', {
@@ -4328,6 +4490,7 @@ async function fireHeavy(weapon = null) {
         occupation: snap.pilots.find((p) => p.id === id).occupation,
         state,
         weapon,
+        proximity: mobileProximity,
         shot: id + ':heavy:' + ++shotSequence,
         direction: weaponDirection().toArray(),
       }),
@@ -4400,7 +4563,7 @@ function updateContextHUD() {
           seat: crewSeat,
           turret: turretIndex >= 0,
           dead: !!respawnAt,
-          hp,
+          hp: crewSeat === 'pilot' ? hp : (myVehicle?.state.hp ?? hp),
           speed: (vel.length() / MAP.ratio) * 3.6,
           altitude: Math.max(0, me.position.y),
           gas,
@@ -4440,8 +4603,14 @@ function updateContextHUD() {
   if (stats) {
     $('cursorSpeed').textContent = stats.speed + ' km/h';
     $('cursorHealth').textContent = Math.ceil(stats.hp) + ' PV';
-    $('cursorAmmo').textContent =
-      stats.ammo + ' balles' + (stats.bombs !== null ? ' · ' + stats.bombs + ' bombes' : '');
+    $('cursorAmmo').textContent = cursorAmmoText({
+      vehicle: myVehicle,
+      seat: crewSeat,
+      ammo: stats.ammo,
+      proximity: mobileProximity,
+      guiding: !!activeMissile(),
+    });
+    $('cursorHPbar').max = myVehicle?.type === 'helicopter' ? 200 : 100;
     $('cursorHPbar').value = stats.hp;
     $('cursorStats').style.left = 'calc(' + ($('crosshair').style.left || '50%') + ' + 30px)';
     $('cursorStats').style.top = 'calc(' + ($('crosshair').style.top || '50%') + ' + 22px)';

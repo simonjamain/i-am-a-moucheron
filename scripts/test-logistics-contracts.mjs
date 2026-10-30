@@ -128,13 +128,15 @@ for (const type of Object.keys(VEHICLES)) {
   assert.ok(supply.fuel < 1e-8);
   assert.equal(
     advanceSupplies({ fuel: 300, ammo }, { ...state, gas: 0.5 }, type, [], 300).fuel,
-    150,
+    type === 'helicopter' ? 0 : 150,
   );
   assert.equal(
     advanceSupplies({ fuel: 100, ammo }, { ...state, engine: 0 }, type, [], 300).fuel,
     100,
   );
-  for (const seat of VEHICLES[type].seats.filter(() => !['tank', 'spitfire'].includes(type)))
+  for (const seat of VEHICLES[type].seats.filter(
+    () => !['tank', 'spitfire', 'helicopter', 'flaktruck'].includes(type),
+  ))
     assert.ok(
       !ammo[seat] ||
         Math.abs(ammoCapacity(type, seat) * (seat === 'pilot' ? 0.06 : 0.09) - 60) < 0.05,

@@ -223,7 +223,8 @@ async function ensureFleet(db, code, now) {
   const unlocked = JSON.parse(room.upgrades || '{}');
   for (const type of Object.keys(VEHICLES).filter(
     (type) =>
-      type !== 'spitfire' && type !== 'tank' && (type !== 'interceptor' || unlocked.interceptor),
+      !['spitfire', 'tank', 'helicopter', 'flaktruck'].includes(type) &&
+      (type !== 'interceptor' || unlocked.interceptor),
   ))
     await db
       .prepare(

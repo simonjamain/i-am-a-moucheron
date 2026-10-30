@@ -170,7 +170,7 @@ salvo.enqueue('s', 200, 4);
 salvo.update('new-role', 300, (i) => departures.push(i));
 assert.equal(departures.length, 6, 'occupation invalidates pending guns');
 console.log(
-  'Vehicle shop: all five types sign/prepay/place on floor, ownership/replay, complete footprint, no automatic pad spawn; six staggered barrels and partial salvos.',
+  'Vehicle shop: all seven types sign/prepay/place on floor, ownership/replay, complete footprint, no automatic pad spawn; six staggered barrels and partial salvos.',
 );
 
 assert.equal(WALKER_FALL.gravity, 0.02943);

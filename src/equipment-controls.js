@@ -5,9 +5,11 @@ export function contextKey({ type, turret = false }, key) {
   const shift = key.startsWith('Shift');
   return turret
     ? { range: shift ? FLAK.step : -FLAK.step }
-    : type === 'tank'
-      ? { shell: shift ? 'he' : 'ap' }
-      : null;
+    : type === 'helicopter'
+      ? { heliWeapon: shift ? 'copilot' : 'missile' }
+      : type === 'tank'
+        ? { shell: shift ? 'he' : 'ap' }
+        : null;
 }
 export function rangeReadout(range) {
   return {
