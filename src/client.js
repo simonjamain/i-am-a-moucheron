@@ -7,7 +7,7 @@ import { PurchaseUI } from '/purchase-ui.js';
 import { purchaseCount } from '/equipment.js';
 import { vehicleHue } from '/logistics.js';
 import { WASH } from '/vehicle-care.js';
-import { HELI, clampHeliAim, stepHelicopter } from '/helicopter.js';
+import { HELI, stepHeliAim, stepHelicopter } from '/helicopter.js';
 import { clampProximity, MOBILE_FUSE } from '/mobile-flak.js';
 import { ballisticMarks } from '/tank-reticle.js';
 import { InteractionTiming } from '/interaction-timing.js';
@@ -248,6 +248,7 @@ let turretIndex = -1,
   damageSeen = 0,
   shotSequence = 0;
 const turretAim = { yaw: 0, pitch: 0.2 };
+const heliTurretAim = { yaw: 0, pitch: -0.1 };
 let selectedEquipment = null;
 let optimisticExitPending = false;
 let onFoot = true,
@@ -994,6 +995,7 @@ function accept(s, force = false) {
         groundView.scene = '';
         turretAim.yaw = crewSeat === 'tail' ? Math.PI : 0;
         turretAim.pitch = myVehicle.type === 'helicopter' ? -0.1 : 0.15;
+        Object.assign(heliTurretAim, turretAim);
         missilePressed = false;
         heliWeapon = 'copilot';
         resetMouseAim();
@@ -2229,18 +2231,19 @@ function reconcileEquipment(next) {
     stationRings[i] = ring;
   }
 }
-function turretDirection() {
+function turretDirection(aim = turretAim) {
   return new T.Vector3(
-    -Math.sin(turretAim.yaw) * Math.cos(turretAim.pitch),
-    Math.sin(turretAim.pitch),
-    -Math.cos(turretAim.yaw) * Math.cos(turretAim.pitch),
+    -Math.sin(aim.yaw) * Math.cos(aim.pitch),
+    Math.sin(aim.pitch),
+    -Math.cos(aim.yaw) * Math.cos(aim.pitch),
   );
 }
 function weaponDirection() {
   if (myVehicle?.type === 'helicopter' && crewSeat === 'pilot')
     return new T.Vector3(0, 0, -1).applyQuaternion(me.quaternion);
-  if (myVehicle?.type === 'helicopter' && crewSeat === 'copilot') clampHeliAim(turretAim);
-  const d = turretDirection();
+  const d = turretDirection(
+    myVehicle?.type === 'helicopter' && crewSeat === 'copilot' ? heliTurretAim : turretAim,
+  );
   return myVehicle && crewSeat !== 'pilot' ? d.applyQuaternion(me.quaternion) : d;
 }
 function nearestStation() {
@@ -2491,6 +2494,8 @@ function updateVehicles(dt) {
         1.2,
       );
     }
+    if (myVehicle.type === 'helicopter' && crewSeat === 'copilot')
+      stepHeliAim(heliTurretAim, turretAim, dt);
     const dir = weaponDirection(),
       mount = me.userData.turrets[crewSeat === 'tail' || crewSeat === 'top' ? 1 : 0],
       up = new T.Vector3(0, 1, 0).applyQuaternion(me.quaternion);

@@ -58,3 +58,19 @@ Rendu WebGL, Pointer Lock physique et confort de pilotage restent à observer su
 la VM : le navigateur de contrôle ne joint pas UDP. HEL-06/DCM-03 gardent leurs
 validations humaines en cours. Livraison ZIP, serveur à redémarrer et navigateurs
 à recharger ; aucune publication incompatible sur le Worker historique.
+
+## Pilotage étendu et tourelle — version 45
+
+La souris peut demander jusqu’à 85° de tangage ; le virage peut incliner le H2
+jusqu’à 85° de roulis. Le pilote gère ces fortes inclinaisons. La descente
+commandée atteint progressivement 30 m/s de référence, contre 8 auparavant ;
+la montée reste à 8 m/s et le relâchement freine vers le stationnaire. Les chocs
+verticaux à plus de 8 m/s restent destructeurs : anticiper le freinage.
+
+Le copilote dispose d’un tour complet sous la cabine. Sa tourelle se déplace
+au plus à π rad/s (180° en une seconde), avec budget commun au lacet et au
+tangage, chemin court au passage de ±180° et limites verticales conservées.
+La caméra, les tirs et le guidage suivent la position réelle de la tourelle.
+`test-heli-handling.mjs` contrôle inclinaison, descente, freinage, tour complet,
+franchissement de l’arrière et limite de vitesse à 30/60/144 Hz. Le confort
+WebGL et le pilotage à deux restent à essayer par les joueurs.

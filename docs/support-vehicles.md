@@ -52,9 +52,10 @@ indépendamment de la poussée collective demandée.
 
 Les roquettes alternent leurs origines gauche/droite et partent dans l'axe du
 véhicule, sans viser indépendamment avec la souris. Le copilote vise avec une
-vue première personne où la MG reste visible. Butées choisies : ±90° horizontal,
-de −83° environ à 0° vertical, depuis la tourelle sous le nez, sans couverture
-arrière ni élévation à travers le fuselage. Maj choisit la MG, Ctrl les missiles.
+vue première personne où la MG reste visible. Rotation horizontale complète sur 360°,
+de −83° environ à 0° vertical, depuis la tourelle sous le nez, avec couverture arrière sous la cabine, sans élévation à travers le fuselage.
+La tourelle suit la souris avec une vitesse plafonnée à 180°/s ; caméra, MG
+et guidage utilisent sa direction réelle, pas une direction de souris instantanée. Maj choisit la MG, Ctrl les missiles.
 Le clic utilise l'arme choisie ; maintenir le clic tire la MG ou les roquettes.
 
 Le missile part latéralement. Le pilote ne récupère aucune arme du copilote.
