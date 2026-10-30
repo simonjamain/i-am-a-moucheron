@@ -74,3 +74,19 @@ La caméra, les tirs et le guidage suivent la position réelle de la tourelle.
 `test-heli-handling.mjs` contrôle inclinaison, descente, freinage, tour complet,
 franchissement de l’arrière et limite de vitesse à 30/60/144 Hz. Le confort
 WebGL et le pilotage à deux restent à essayer par les joueurs.
+
+## Roulis pilote au clavier — issue #9, version 49
+
+Q/flèche gauche forcent le roulis à gauche, D/flèche droite à droite, jusqu’à
+85°, même avec une souris immobile. Les alias simultanés ne cumulent pas leur
+effet ; les directions opposées se neutralisent. Le roulis clavier prend la
+priorité sur l’inclinaison latérale demandée par la souris pendant l’appui.
+La montée/descente et la direction souris restent disponibles.
+
+Au relâchement, l’assistance retrouve la consigne souris (ou revient à plat sans
+consigne active). Menu et perte de focus neutralisent l’entrée ; l’inclinaison
+physique se stabilise progressivement, sans rotation résiduelle commandée.
+Seul le pilote commande la coque ; le quaternion existant partage ce mouvement
+avec les occupants et observateurs. Les tests exécutent la vraie branche client
+pour les quatre touches, le relâchement/focus et le refus depuis le copilote.
+Le ressenti et la visualisation à deux restent à essayer en partie.

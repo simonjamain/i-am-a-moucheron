@@ -77,15 +77,17 @@ export function stepHelicopter(T, state, controls, colliders, dt, profile) {
   const pitch = controls.direction
     ? Math.max(-HELI.maxTilt, Math.min(HELI.maxTilt, Math.asin(Math.max(-1, Math.min(1, dir.y)))))
     : 0;
-  const roll = controls.direction
-    ? Math.max(
-        -HELI.maxTilt,
-        Math.min(
-          HELI.maxTilt,
-          new T.Vector3(0, 0, -1).applyQuaternion(q).cross(dir).y * -HELI.maxTilt,
-        ),
-      )
-    : 0;
+  const roll = controls.roll
+    ? Math.max(-1, Math.min(1, controls.roll)) * HELI.maxTilt
+    : controls.direction
+      ? Math.max(
+          -HELI.maxTilt,
+          Math.min(
+            HELI.maxTilt,
+            new T.Vector3(0, 0, -1).applyQuaternion(q).cross(dir).y * -HELI.maxTilt,
+          ),
+        )
+      : 0;
   const target = new T.Quaternion().setFromEuler(new T.Euler(pitch, yaw, roll, 'YXZ'));
   q.slerp(target, 1 - Math.exp(-dt * 2));
   const up = new T.Vector3(0, 1, 0).applyQuaternion(q);

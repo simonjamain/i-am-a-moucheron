@@ -201,3 +201,30 @@ for (const seat of ['pilot', 'copilot']) {
   );
 }
 console.log('H2: return from descent, takeoff and fuel prediction at hover passed.');
+
+// Issue #9: drive the shipped physics branch, with a still mouse.
+for (const [key, sign] of [
+  ['KeyQ', 1],
+  ['ArrowLeft', 1],
+  ['KeyD', -1],
+  ['ArrowRight', -1],
+]) {
+  const c = client(key);
+  for (let i = 0; i < 60; i++) vm.runInContext('physics(1/120)', c);
+  const roll = new T.Euler().setFromQuaternion(c.me.quaternion, 'YXZ').z;
+  assert.ok(roll * sign > 0.5, `${key} must force roll without mouse motion`);
+  c.keys = {};
+  c.controlFocus.active = false;
+  for (let i = 0; i < 360; i++) vm.runInContext('physics(1/120)', c);
+  assert.ok(
+    Math.abs(new T.Euler().setFromQuaternion(c.me.quaternion, 'YXZ').z) < 0.005,
+    'focus loss releases roll and levels',
+  );
+}
+const copilot = client('KeyQ');
+copilot.crewSeat = 'copilot';
+for (let i = 0; i < 60; i++) vm.runInContext('physics(1/120)', copilot);
+assert.ok(copilot.me.quaternion.angleTo(new T.Quaternion()) < 1e-9, 'copilot cannot roll hull');
+console.log(
+  'Issue #9: Q/D and Left/Right force signed roll with a still mouse; release/focus levels; copilot ignored.',
+);
