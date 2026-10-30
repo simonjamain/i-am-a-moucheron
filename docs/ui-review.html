@@ -2224,6 +2224,25 @@
         pointer-events: none;
         z-index: 22;
       }
+      #reserveAlerts {
+        position: fixed;
+        left: calc(50% + 40px);
+        top: calc(50% + 100px);
+        color: rgba(255, 95, 95, 0.8);
+        pointer-events: none;
+        font-size: 12px;
+        animation: reserve-pulse 2s ease-in-out infinite;
+      }
+      @keyframes reserve-pulse {
+        50% {
+          opacity: 0.45;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        #reserveAlerts {
+          animation: none;
+        }
+      }
       #cursorStats {
         position: fixed;
         z-index: 18;
@@ -2232,6 +2251,15 @@
         color: #fff8dc;
         text-shadow: 0 1px 3px #000;
         max-width: 180px;
+      }
+      #cursorStats {
+        font-weight: 400;
+      }
+      #cursorStats strong,
+      #cursorHealth,
+      #cursorSpeed,
+      #cursorAmmo {
+        font-weight: 700;
       }
       #cursorStats progress {
         display: block;
@@ -2377,11 +2405,13 @@
       </article>
     </section>
     <div id="commandHelp" class="hidden"></div>
+    <div id="reserveAlerts" aria-live="polite"></div>
     <div id="cursorStats" class="hidden">
       <span id="cursorSpeed"></span> · <span id="cursorHealth"></span
-      ><progress id="cursorHPbar" max="100" value="100"></progress><span id="cursorAmmo"></span>
-      <span id="cursorFuelLabel"></span><progress id="cursorFuel" max="100"></progress>
-      <span id="cursorGasLabel"></span><progress id="cursorGas" max="100"></progress>
+      ><progress id="cursorHPbar" max="100" value="100"></progress><span id="cursorAmmo"></span
+      ><progress id="cursorAmmoBar" max="1" value="1"></progress> <span id="cursorFuelLabel"></span
+      ><progress id="cursorFuel" max="100"></progress> <span id="cursorGasLabel"></span
+      ><progress id="cursorGas" max="100"></progress>
     </div>
     <div id="deathWatch" class="hidden" role="dialog" aria-label="Observation après décès">
       <p>Vous êtes mort. La partie continue.</p>

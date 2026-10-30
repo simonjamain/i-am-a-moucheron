@@ -11,11 +11,7 @@ const scene = new T.Scene(),
   graphics = createGraphics(T, scene);
 const office = createOffice(T, scene, { ...graphics, textLabel: () => new T.Group() });
 scene.updateMatrixWorld(true);
-const support = new T.Box3().setFromObject(office.fanGroup.children[0]);
-assert.ok(Math.abs(support.min.y - OFFICE_LAYOUT.fan.floorY) < 1e-5, 'fan foot rests on the floor');
-const stem = new T.Box3().setFromObject(office.fanGroup.children[1]);
-assert.ok(Math.abs(stem.min.y - support.max.y) < 1e-5, 'stand touches the foot');
-assert.ok(Math.abs(stem.max.y - office.fanGroup.position.y) < 1e-5, 'stand reaches the motor');
+assert.equal(office.fanGroup, undefined, 'fan geometry is removed');
 for (let i = 0; i < 12; i++) {
   const parked = aircraftPose(i),
     departure = aircraftPose(i, true),
@@ -54,5 +50,5 @@ for (const name of ['office', 'graphics', 'renderer', 'layout'])
     200,
   );
 console.log(
-  'PASS: grounded fan stand, parked landing gear, clear outward departure, aligned nose/velocity and packaged scene modules',
+  'PASS: fan removed, parked landing gear, clear outward departure, aligned nose/velocity and packaged scene modules',
 );

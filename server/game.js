@@ -1,3 +1,4 @@
+import { deliveryStart, deliveryLanding, DELIVERY_SPEED } from '../src/delivery.js';
 import { HELI, rotateLocal, steerMissile } from '../src/helicopter.js';
 import {
   sweptVehicle,
@@ -83,7 +84,6 @@ function roomState(code, now) {
     wave: 0,
     started: 0,
     phase: 'prep',
-    fan: 0,
     infestation: 0,
     mission_started: 0,
     next_wave_at: 0,
@@ -100,6 +100,7 @@ function roomState(code, now) {
     playerColors: new Map(),
     playerSequence: 0,
     purchases: new Map(),
+    deliveries: [],
     bedContracts: new Map(),
     identityTokens: new Map(),
     hits: new Set(),
@@ -116,8 +117,8 @@ function roomState(code, now) {
     soulSeq: 0,
     effectSeq: 0,
     base: { epoch: uid() },
-    purgatory: { epoch: uid() },
-    super: { epoch: uid() },
+    purgatory: { epoch: uid(), respectQueue: true },
+    super: { epoch: uid(), respectQueue: true },
   };
 }
 
@@ -238,11 +239,14 @@ export class Game {
         ),
         revision: v.supplies.revision + 1,
       };
-      if (v.supplies.servicing && v.state.hp > 0)
+      if (v.supplies.servicing && v.state.hp > 0) {
+        v.state.engine = 1;
+        v.state.wing = 1;
         v.state.hp = Math.min(
           VEHICLES[v.type].maxHP || 100,
           v.state.hp + ((VEHICLES[v.type].maxHP || 100) * 0.1 * (now - v.updated)) / 1000,
         );
+      }
       v.updated = now;
     }
   }
@@ -330,7 +334,11 @@ export class Game {
     a.time ??= now;
     for (const [i, s] of shown.entries()) {
       let b = a.bodies.find((b) => b.id === s.id);
-      if (!b) a.bodies.push((b = createSoul(s, i, now)));
+      if (!b) {
+        b = createSoul(s, i, now);
+        if (s.kind === 'player') Object.assign(b, { x: 3.2, z: Math.max(3.2, 1.1 + i * 1.85) });
+        a.bodies.push(b);
+      }
       b.paper = s.paper;
       b.maxHealth = s.kind === 'enemy' ? ENEMY_TYPES[s.enemy_type].hp : 100;
       b.health =
@@ -412,6 +420,7 @@ export class Game {
       }
       r.dollars = Math.round(r.dollars * 100 - settleLoans(r.bank, r.wave)) / 100;
     }
+    this.advanceDeliveries(r, now);
     this.fleet(r);
     this.base(r);
     this.arena(r, 'purgatory');
@@ -492,7 +501,6 @@ export class Game {
       wave: r.wave,
       started: r.started,
       phase: r.phase,
-      fan: r.fan,
       infestation: r.infestation,
       mission_started: r.mission_started,
       next_wave_at: r.next_wave_at,
@@ -501,6 +509,7 @@ export class Game {
       upgrades: r.upgrades,
       rewardCount: r.rewardCount,
       equipment: r.equipment,
+      deliveries: r.deliveries,
       pendingInstallations: Object.fromEntries(
         Object.keys(SHOP).map((k) => [
           k,
@@ -530,6 +539,9 @@ export class Game {
       raidDuration: RAID_DURATION,
       mapScale: { numerator: MAP.numerator, denominator: MAP.denominator },
       total: plan.roster.length,
+      arrived: plan.roster
+        .filter((e, i) => !r.kills.has(i) && (now - r.started) / 1000 >= e.spawn + e.duration)
+        .map((e) => e.id),
       leaked:
         r.phase === 'combat'
           ? plan.roster.filter(
@@ -650,6 +662,7 @@ export class Game {
         Math.min(r.vehicles.get(p.vehicle_id)?.type === 'helicopter' ? 200 : 100, s.hp),
       ),
       type: r.vehicles.get(p.vehicle_id)?.type,
+      rotorPower: Number.isFinite(s.rotorPower) ? Math.max(0, Math.min(1, s.rotorPower)) : 1,
       collective: Number.isFinite(s.collective) ? Math.max(-1, Math.min(1, s.collective)) : 0,
       wing: s.wing,
       engine: s.engine,
@@ -736,8 +749,7 @@ export class Game {
         r.mission_started = 1;
         r.next_wave_at = this.now() + 10000;
       } else if (r.phase === 'prep' && r.wave > 0) this.startWave(r);
-    } else if (path === 'fan') r.fan = 1 - r.fan;
-    else if (path === 'reset') {
+    } else if (path === 'reset') {
       if (b.epoch !== undefined && b.epoch !== r.base.epoch) return this.snapshot(r);
       const pilots = r.pilots,
         identities = r.identityTokens;
@@ -932,6 +944,7 @@ export class Game {
   purchaseSnapshot(r) {
     return {
       equipment: r.equipment,
+      deliveries: r.deliveries,
       pendingInstallations: Object.fromEntries(
         Object.keys(SHOP).map((k) => [
           k,
@@ -943,7 +956,7 @@ export class Game {
   purchaseSign(r, p, b) {
     requireGame(
       p.life === 'alive' &&
-        p.mode === 'foot' &&
+        (p.mode === 'foot' || !!r.vehicles.get(p.vehicle_id)) &&
         b.epoch === r.base.epoch &&
         b.incarnation === p.incarnation,
       'Approchez à pied avec votre corps actuel.',
@@ -962,7 +975,17 @@ export class Game {
       return;
     }
     const pending = values(r.purchases).filter((o) => !o.placed);
-    requireGame(r.equipment.length + pending.length < 24, 'Limite de 24 équipements atteinte.');
+    if (p.mode === 'foot')
+      requireGame(r.equipment.length + pending.length < 24, 'Limite de 24 équipements atteinte.');
+    const carrier = r.vehicles.get(p.vehicle_id);
+    const drop =
+      carrier &&
+      deliveryStart(carrier, b.item, r.deliveries.length, this.solids, [
+        ...r.equipment,
+        ...r.deliveries,
+        ...values(r.vehicles).map((v) => ({ x: v.state.p[0], y: v.state.p[1], z: v.state.p[2] })),
+      ]);
+    requireGame(!carrier || drop, 'Aucune colonne de livraison libre près de cet appareil.');
     const price = shopPrice(b.item, r.upgrades, purchaseCount(this.purchaseSnapshot(r), b.item));
     requireGame(price === b.expectedPrice, 'Le tarif a changé. Relisez le bon.');
     requireGame(r.dollars >= price, 'La caisse commune ne contient pas assez de dollars.');
@@ -972,8 +995,42 @@ export class Game {
       owner: p.id,
       item: b.item,
       price,
-      placed: false,
+      placed: !!drop,
     });
+    if (drop) r.deliveries.push({ ...drop, token: b.request, at: this.now() });
+  }
+  advanceDeliveries(r, now) {
+    for (const delivery of r.deliveries) {
+      const landing = deliveryLanding(delivery, this.solids, [
+        ...r.equipment,
+        initialStation(),
+        ...values(r.vehicles)
+          .filter((v) => v.state.landed)
+          .map((v) => ({
+            x: v.state.p[0],
+            y: v.state.p[1],
+            z: v.state.p[2],
+            clearance: (VEHICLES[v.type].span * ACTOR_UNIT) / 2,
+          })),
+      ]);
+      delivery.y -= DELIVERY_SPEED * Math.max(0, (now - delivery.at) / 1000);
+      delivery.at = now;
+      if (!landing) {
+        delivery.y = Math.max(0.00005, delivery.y);
+        continue;
+      }
+      if (delivery.y > landing.y) continue;
+      if (VEHICLES[delivery.item]) this.createVehicle(r, delivery.item, 'purchase', landing);
+      else
+        r.equipment.push({
+          ...landing,
+          kind: delivery.item,
+          name: SHOP[delivery.item].name,
+          slot: r.equipment.length,
+        });
+      delivery.done = true;
+    }
+    r.deliveries = r.deliveries.filter((d) => !d.done);
   }
   placePurchase(r, p, b) {
     const order = r.purchases.get(b.token);
@@ -1460,10 +1517,12 @@ export class Game {
           (i === 1 ? MAP.metres(9.81) * horizon * horizon : 0),
       );
       const upper = projectile.p.map((v, i) => v + Math.max(0, projectile.v[i]) * horizon);
-      const nearbySolids = this.solids.filter((box) =>
-        ['x', 'y', 'z'].every(
-          (key, i) => box.max[key] >= lower[i] - 0.001 && box.min[key] <= upper[i] + 0.001,
-        ),
+      const nearbySolids = this.solids.filter(
+        (box) =>
+          projectile.weapon === 'missile' ||
+          ['x', 'y', 'z'].every(
+            (key, i) => box.max[key] >= lower[i] - 0.001 && box.min[key] <= upper[i] + 0.001,
+          ),
       );
       while (projectile.updated < end && !projectile.done) {
         const dt = Math.min(1 / 120, (end - projectile.updated) / 1000);
@@ -1476,10 +1535,11 @@ export class Game {
             owner.occupation === projectile.occupation
           ) {
             const direction = owner.state.turretDirection || [0, 0, -1];
-            const origin = vehicle.state.p;
+            // Directional guidance must not chase a fixed point behind the missile.
+            const length = Math.hypot(...direction) || 1;
             steerMissile(
               projectile,
-              owner.state.aimPoint || origin.map((v, i) => v + direction[i] * MAP.metres(250)),
+              projectile.p.map((v, i) => v + direction[i] / length),
               dt,
             );
           }

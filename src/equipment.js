@@ -176,6 +176,7 @@ export function supportedPlacement(point, colliders, occupied = [], kind = 'dca'
 export function purchaseCount(snapshot, kind) {
   return (
     (snapshot.equipment || []).filter((e) => e.kind === kind && !e.free).length +
+    (snapshot.deliveries || []).filter((d) => d.item === kind).length +
     (snapshot.pendingInstallations?.[kind] || 0)
   );
 }

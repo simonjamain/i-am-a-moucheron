@@ -16,7 +16,7 @@ export const AA_STATIONS = [
   { x: b.originX + 32 * ACTOR_UNIT, y: b.deckY, z: b.originZ + 1 * ACTOR_UNIT, name: 'Alpha Est' },
   { x: 1.7, y: 0.90005, z: -1.02, name: 'Bureau Bravo' },
   { x: 0.85, y: 0.206, z: 2.35, name: 'Carton' },
-  { x: 0.1, y: 0.00005, z: -0.8, name: 'Ventilateur' },
+  { x: 0.1, y: 0.00005, z: -0.8, name: 'Sol central' },
   { x: 2.2, y: 0.00005, z: -2.65, name: 'Poubelle' },
 ];
 export function stationAccess(p, station, radius = MAP.metres(3.4)) {
@@ -51,8 +51,8 @@ export function resolveLanding(T, state, previous, colliders, dt) {
     const y = box.max.y + gear;
     if (previous.y >= y - 0.12 * ACTOR_UNIT && p.y <= y + 0.1 * ACTOR_UNIT && y > top) top = y;
   }
-  if (!Number.isFinite(top)) return { landed: false, contact: false };
-  const safe = up.y > 0.88 && vel.y > -MAP.metres(5) && Math.hypot(vel.x, vel.z) < MAP.metres(28);
+  if (!Number.isFinite(top) || vel.y > 0) return { landed: false, contact: false };
+  const safe = up.y > 0.88 && vel.y > -MAP.metres(5);
   if (!safe) return { landed: false, contact: true, hard: true };
   p.y = top;
   vel.y = 0;

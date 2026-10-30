@@ -15,6 +15,6 @@ export class PurchaseUI extends BedUI {
     this.price = shopPrice(item, this.snapshot().upgrades, purchaseCount(this.snapshot(), item));
     this.root.querySelector('h2').textContent = 'Bon de commande · ' + SHOP[item].name;
     this.root.querySelector('[data-bed-text]').textContent =
-      `Je commande ${SHOP[item].name} pour ${this.price} $. La caisse commune sera débitée une fois à la signature. E posera ensuite cet objet sans autre paiement ni signature. Échap conserve l’achat pour reprise dans l’atelier pendant cette connexion ; une déconnexion prolongée rembourse les objets non posés, une remise à zéro les supprime. Le ministère ne rembourse pas les hésitations décoratives.`;
+      `Je commande ${SHOP[item].name} pour ${this.price} $. La caisse commune sera débitée une fois à la signature. Depuis un appareil, le colis descend sous parachute ; à pied, E posera cet objet sans autre paiement ni signature. Échap conserve l’achat pour reprise dans l’atelier pendant cette connexion ; une déconnexion prolongée rembourse les objets non posés, une remise à zéro les supprime. Le ministère ne rembourse pas les hésitations décoratives.`;
   }
 }

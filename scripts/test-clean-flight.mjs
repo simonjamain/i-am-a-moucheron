@@ -645,3 +645,28 @@ assert.ok(!kept.has('dive-interceptor'));
 console.log(
   'Actual visuals/audio: typed HE/AP meshes, persistent bomb/shell hues, disposal, Stuka-only dive and loop cleanup on exit/destruction.',
 );
+
+// Copilot audio follows shared engine state, even when local pilot globals disagree.
+const heliAudio = {
+  id: 'audio-h2',
+  type: 'helicopter',
+  state: { hp: 200, engine: 1, gas: 0.5, rotorPower: 1, v: [0, 0, 0] },
+  supplies: { fuel: 300 },
+  seats: [{ seat: 'copilot' }],
+};
+Object.assign(audioContext, {
+  myVehicle: heliAudio,
+  crewSeat: 'copilot',
+  engine: 0,
+  gas: 0,
+  remainingFuel: () => 300,
+  me: new T.Group(),
+});
+audioContext.snap.vehicles.push(heliAudio);
+vm.runInContext('updateAudio()', audioContext);
+assert.ok(kept.has('engine-self'));
+heliAudio.state.engine = 0;
+audioContext.engine = 1;
+vm.runInContext('updateAudio()', audioContext);
+assert.ok(!kept.has('engine-self'));
+console.log('Copilot engine audio: shared engine on/off overrides stale local pilot state.');

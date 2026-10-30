@@ -6,9 +6,9 @@ mapping, including modifier changes while a key is held.
 
 | Input                      | Flight action                                                                            |
 | -------------------------- | ---------------------------------------------------------------------------------------- |
-| Z / Up, S / Down           | Force pitch, overriding mouse assistance on that axis.                                   |
-| Q / Left, D / Right        | Force roll, overriding mouse assistance on that axis.                                    |
-| A / E                      | Rudder.                                                                                  |
+| Z / Up, S / Down           | No airplane pitch override; H2 vertical command remains.                                 |
+| Q / Left, D / Right        | No airplane roll override; ground movement remains.                                      |
+| A / E                      | No airplane rudder override.                                                             |
 | Shift / Control            | Increase / decrease throttle.                                                            |
 | C held + mouse             | Free camera look; mouse aim is unchanged.                                                |
 | Left click                 | Machine guns; Space holds bomb release when equipped.                                    |
@@ -32,7 +32,7 @@ mapping, including modifier changes while a key is held.
 | Paperwork              | Release valid ink stroke       | Submit and stamp automatically           |
 | General                | H                              | Help                                     |
 
-E only selects equipment on foot; A/E remain rudder controls in flight. F is the
+E only selects equipment on foot; airplane steering uses the mouse only. F is the
 exit key for aircraft pilots, gunners and DCA occupants. Forms and text inputs
 suspend gameplay shortcuts. Touch UI supplies contextual actions.
 

@@ -80,10 +80,10 @@ try {
   // Replaying the same command ID returns its original result, without another player.
   const duplicate = await a.request('join', { code: 'NATIVE', name: 'Spoof' }, aj.id);
   assert.equal(duplicate.body.id, aj.body.id);
-  const fan = await a.request('fan', { id: bj.body.id });
-  assert.equal(fan.body.fan, 1);
-  await a.request('fan', {}, fan.id);
-  assert.equal(app.game.rooms.get('NATIVE').fan, 1);
+  const replay = await a.request('start', { id: bj.body.id });
+  assert.equal(replay.body.mission_started, 1);
+  await a.request('start', {}, replay.id);
+  assert.equal(app.game.rooms.get('NATIVE').mission_started, 1);
   const state = aj.body.state;
   a.motion.sendMessage(
     JSON.stringify({ v: PROTOCOL, seq: 2, incarnation: 0, occupation: 0, mode: 'foot', state }),

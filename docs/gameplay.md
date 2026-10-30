@@ -210,3 +210,6 @@ avec mêmes groupes de trajets et calcul de voisinage spatial.
 
 Les [commandes H2 corrigées](helicopter-controls.md) précisent les touches,
 le retour au stationnaire et les roquettes alignées sur la coque.
+
+Le [lot de retours du 30 octobre, version 48](returns-30-october.md) décrit les correctifs
+physiques, sons/HUD, livraisons sous parachute et parcours du purgatoire.

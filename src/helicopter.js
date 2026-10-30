@@ -56,6 +56,9 @@ export function stepHelicopter(T, state, controls, colliders, dt, profile) {
     v = new T.Vector3().fromArray(state.v),
     q = new T.Quaternion().fromArray(state.q);
   const powered = state.engine && state.fuelAvailable !== false;
+  let rotorPower = state.rotorPower ?? 1;
+  const rotorTarget = powered && controls.occupied !== false ? 1 : 0;
+  rotorPower += (rotorTarget - rotorPower) * (1 - Math.exp(-dt * (rotorTarget ? 2 : 0.8)));
   const input = powered ? Math.max(-1, Math.min(1, controls.collective || 0)) : 0;
   let collective = Number.isFinite(state.collective) ? state.collective : 0;
   collective += (input - collective) * (1 - Math.exp(-dt * 2.5));
@@ -90,8 +93,10 @@ export function stepHelicopter(T, state, controls, colliders, dt, profile) {
     v.x += (up.x * MAP.metres(30) - v.x * 0.28) * dt;
     v.z += (up.z * MAP.metres(30) - v.z * 0.28) * dt;
     v.y +=
-      (collective * MAP.metres(collective < 0 ? HELI.descentSpeed : 8) - v.y) * Math.min(1, dt * 2);
+      (collective * MAP.metres(collective < 0 ? HELI.descentSpeed : 8) - v.y) *
+      Math.min(1, dt * 2 * rotorPower);
   } else v.y -= MAP.metres(9.81) * dt;
+  if (powered) v.y -= MAP.metres(9.81) * (1 - rotorPower) * dt;
   const max = MAP.metres(profile.maxSpeed),
     horizontal = Math.hypot(v.x, v.z);
   if (horizontal > max) {
@@ -136,6 +141,7 @@ export function stepHelicopter(T, state, controls, colliders, dt, profile) {
     v: v.toArray(),
     landed,
     collective,
+    rotorPower,
     gas: powered ? (collective + 1) / 2 : 0,
     omega: [0, 0, 0],
   });

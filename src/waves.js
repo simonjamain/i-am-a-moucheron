@@ -78,8 +78,18 @@ export function wavePlan(room, wave, started = 0) {
     })),
     counts = { ant: initialAnts };
   remaining -= initialAnts;
-  const unlock = { ant: 1, roach: 6, dart: 4, guard: 8, brute: 12 };
-  let eliteSpent = 0;
+  const unlock = { ant: 1, roach: 3, dart: 2, guard: 5, brute: 8 };
+  if (wave >= 2) {
+    roster.push({
+      id: roster.length,
+      type: 'dart',
+      ...ENEMY_TYPES.dart,
+      phase: random() * Math.PI * 2,
+    });
+    remaining -= ENEMY_TYPES.dart.cost;
+    counts.dart = 1;
+  }
+  let eliteSpent = wave >= 2 ? ENEMY_TYPES.dart.cost : 0;
   while (remaining > 0 && roster.length < 180) {
     const unlocked = Object.entries(ENEMY_TYPES).filter(
       ([name, t]) =>

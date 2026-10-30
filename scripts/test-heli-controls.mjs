@@ -36,6 +36,7 @@ function client(key) {
     landed: false,
     gas: 0.5,
     heliCollective: 0,
+    heliRotorPower: 1,
     mouseDirection: new T.Vector3(0, 0, -1),
     currentFactors: () => ({ controls: 1 }),
     colliders: [],
@@ -183,7 +184,7 @@ for (const seat of ['pilot', 'copilot']) {
   const c = vm.createContext({
     myVehicle: {
       type: 'helicopter',
-      state: { landed: false },
+      state: { landed: false, engine: 1 },
       supplies: { fuel: 300, servicing: false },
     },
     snap: { receivedAt: 1000 },

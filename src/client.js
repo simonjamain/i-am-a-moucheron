@@ -1,3 +1,4 @@
+import { reserveAlerts, missileStatus, ArrivalSignals } from '/reserve-feedback.js';
 import { controlHints, cursorStats, cursorAmmoText } from '/live-hud.js';
 import { identifyPlayer, disposePlayerIdentity } from '/player-livery.js';
 import { GunSalvos } from '/salvos.js';
@@ -188,7 +189,7 @@ const {
   humanoid,
   pm,
 } = createGraphics(T, scene);
-const { colliders, fanGroup, rotor, winds } = createOffice(T, scene, {
+const { colliders } = createOffice(T, scene, {
   box,
   cyl,
   ball,
@@ -220,6 +221,7 @@ let joined = false,
   wing = 1,
   engine = 1,
   heliCollective = 0,
+  heliRotorPower = 1,
   gas = 0.65,
   cooldown = 0,
   shooting = false,
@@ -247,6 +249,7 @@ let turretIndex = -1,
   vehicleBusy = false,
   damageSeen = 0,
   shotSequence = 0;
+const arrivalSignals = new ArrivalSignals();
 const turretAim = { yaw: 0, pitch: 0.2 };
 const heliTurretAim = { yaw: 0, pitch: -0.1 };
 let selectedEquipment = null;
@@ -538,6 +541,7 @@ function localMotion() {
       myVehicle?.type === 'helicopter' && crewSeat === 'pilot'
         ? heliCollective
         : myVehicle?.state.collective || 0,
+    rotorPower: heliRotorPower,
     wing,
     engine,
     fire: !respawnAt && shooting,
@@ -612,11 +616,9 @@ const vel = new T.Vector3(0, 0, 0),
   keys = {},
   spawnPos = new T.Vector3(-48, 16, 62),
   upWorld = new T.Vector3(0, 1, 0);
-let controlMode = matchMedia('(pointer:coarse)').matches ? 'manual' : 'mouse',
-  mouseFire = false,
+let mouseFire = false,
   uiWeaponFire = false,
-  mousePrevious = null,
-  padManualUntil = 0;
+  mousePrevious = null;
 const mouseDirection = new T.Vector3(0, 0, -1),
   mouseCameraQ = new T.Quaternion();
 function resetMouseAim() {
@@ -669,26 +671,16 @@ function canCapture() {
     $('purchasePanel').classList.contains('hidden')
   );
 }
-function toggleControl() {
-  controlMode = controlMode === 'mouse' ? 'manual' : 'mouse';
-  resetMouseAim();
-  updateControlHUD();
-}
 function updateControlHUD() {
-  const mouse = controlMode === 'mouse';
-  $('controlMode').textContent = mouse ? 'Pilotage : souris' : 'Pilotage : manuel';
-  $('controlMode').setAttribute('aria-pressed', String(mouse));
   $('captureMouse').classList.remove('hidden');
   $('captureMouse').textContent =
     document.pointerLockElement === canvas ? 'Libérer la souris · Échap' : 'Capturer la souris';
-  $('flightKeys').innerHTML = mouse
-    ? 'Souris : direction · Clic : tir · Espace : bombes · C maintenu : regarder<br>ZQSD / flèches : tangage et roulis · A/E : gouverne · Maj/Ctrl : gaz · Échap : curseur'
-    : 'ZQSD / flèches : tangage et roulis · A/E : gouverne<br>Maj/Ctrl : gaz · C maintenu : regarder · Clic : tir · Espace : bombes · Échap : curseur';
+  $('flightKeys').textContent =
+    'Souris : direction · Clic : tir · Espace : bombes · C : regard libre · Maj/Ctrl : gaz · Échap : curseur';
 }
 async function captureMouse() {
   if (canCapture()) await controlFocus.capture();
 }
-$('controlMode').onclick = toggleControl;
 $('captureMouse').onclick = () => (controlFocus.active ? releaseMouse() : captureMouse());
 addEventListener('pointermove', (event) => {
   if (
@@ -722,9 +714,8 @@ addEventListener('pointermove', (event) => {
     lookDelta(freeLook, dx, dy);
     return;
   }
-  if (controlMode === 'mouse') {
+  {
     rotateMouseAim(T, mouseDirection, camera.quaternion, dx, dy);
-    padManualUntil = 0;
   }
 });
 canvas.addEventListener('pointerleave', () => {
@@ -743,12 +734,7 @@ canvas.addEventListener('mousedown', (event) => {
   );
   if (action === 'capture') captureMouse();
   else if (action === 'fire' && (respawnAt || (onFoot && !myVehicle && turretIndex < 0))) pistol();
-  else if (
-    action === 'fire' &&
-    (!onFoot || turretIndex >= 0 || !!myVehicle) &&
-    !respawnAt &&
-    (controlMode === 'mouse' || turretIndex >= 0 || (myVehicle && crewSeat !== 'pilot'))
-  )
+  else if (action === 'fire' && (!onFoot || turretIndex >= 0 || !!myVehicle) && !respawnAt)
     mouseFire = true;
 });
 addEventListener('mouseup', (e) => {
@@ -783,14 +769,7 @@ canvas.addEventListener(
 addEventListener('blur', releaseMouse);
 function updateAimHUD() {
   const enabled =
-    joined &&
-    !spectating &&
-    !respawnAt &&
-    !onFoot &&
-    turretIndex < 0 &&
-    controlMode === 'mouse' &&
-    controlFocus.active &&
-    performance.now() > padManualUntil;
+    joined && !spectating && !respawnAt && !onFoot && turretIndex < 0 && controlFocus.active;
   const aim = $('mouseAim'),
     gun = $('crosshair');
   aim.classList.toggle('hidden', !enabled);
@@ -991,6 +970,7 @@ function accept(s, force = false) {
         landed = !!myVehicle.state.landed;
         gas = myVehicle.state.gas ?? (landed ? 0 : 0.65);
         heliCollective = myVehicle.state.collective || 0;
+        heliRotorPower = myVehicle.state.rotorPower ?? 1;
         boardingOpen = false;
         groundView.scene = '';
         turretAim.yaw = crewSeat === 'tail' ? Math.PI : 0;
@@ -1003,6 +983,10 @@ function accept(s, force = false) {
         notify(VEHICLES[myVehicle.type].name + ' · ' + SEAT_NAMES[crewSeat], 3);
       }
       hp = myVehicle.state.hp;
+      if (myVehicle.supplies?.servicing) {
+        engine = myVehicle.state.engine;
+        wing = myVehicle.state.wing;
+      }
       if (hp <= 0 && crewSeat === 'pilot') crash();
     }
     if (foot && !onFoot) {
@@ -1138,7 +1122,11 @@ function accept(s, force = false) {
   $('threat').textContent = 'MENACE ' + s.difficulty;
   $('wave').textContent = String(s.wave).padStart(2, '0');
   $('infest').textContent = s.infestation + s.leaked + ' / 20';
-  $('fan').textContent = 'Ventilateur : ' + (s.fan ? 'ON' : 'OFF');
+  for (const arrived of arrivalSignals.update(
+    s.code + ':' + s.base?.epoch + ':' + s.wave,
+    s.arrived || [],
+  ))
+    sound.play('tick', camera.position, { ref: 1000, key: 'arrival:' + s.wave + ':' + arrived });
   $('players').replaceChildren(
     ...s.pilots.map((p) => {
       const e = document.createElement('div');
@@ -1244,7 +1232,6 @@ $('restartGame').onclick = async () => {
   }
 };
 $('start').onclick = () => action(snap?.phase === 'lost' ? 'reset' : 'start');
-$('fan').onclick = () => action('fan');
 $('share').onclick = async () => {
   try {
     await navigator.clipboard.writeText(location.href);
@@ -1402,7 +1389,6 @@ addEventListener('keydown', (event) => {
   if (turretIndex >= 0 && ['BracketLeft', 'BracketRight'].includes(code)) {
     flakRange = fuseRange(flakRange + (code === 'BracketRight' ? FLAK.step : -FLAK.step));
   }
-  if (code === 'KeyM' && !event.repeat && !respawnAt) toggleControl();
   if (code === 'KeyR' && !event.repeat) crash();
   if (code === 'Space' && !event.repeat) contextHUD.reveal();
   if (code === 'KeyH' && !event.repeat) {
@@ -2426,9 +2412,8 @@ function updateVehicles(dt) {
   $('parachuteToggle').textContent = selfBase()?.parachute
     ? 'Replier · Espace'
     : 'Parachute · Espace';
-  $('leavePlane').classList.toggle('hidden', !myVehicle);
-  $('leavePlane').textContent =
-    landed || myVehicle?.state.landed ? 'Sortir de l’avion · F' : 'Sauter · F · Espace : parachute';
+  $('leavePlane').classList.toggle('hidden', !myVehicle || !controlFocus.touch);
+  $('leavePlane').textContent = landed ? 'Sortir' : 'Sauter';
   $('vehicleInteract').classList.toggle('hidden', turretIndex < 0);
   $('turretFire').classList.toggle('hidden', turretIndex < 0 && !crew);
   $('flakControls').classList.toggle('hidden', turretIndex < 0);
@@ -2934,7 +2919,8 @@ function updateOthers(dt) {
     }
     if (g.userData.trailer) g.userData.trailer.rotation.y = motion.trailerAngle || 0;
     if (g.userData.rotor)
-      g.userData.rotor.rotation.y += dt * (v.state.engine && v.supplies.fuel > 0 ? 35 : 0);
+      g.userData.rotor.rotation.y +=
+        dt * (v.state.engine && v.supplies.fuel > 0 ? 35 * (motion.rotorPower ?? 1) : 0);
     updateInscriptions(T, g, v, snap.pilots);
     g.visible = v.state.hp > 0;
     g.userData.wing.scale.x = v.state.wing ? 1 : 0.52;
@@ -3305,6 +3291,7 @@ function physics(dt) {
     const state = {
       ...localMotion(),
       collective: heliCollective,
+      rotorPower: heliRotorPower,
       fuelAvailable: remainingFuel() > 0,
     };
     const collective = active
@@ -3331,6 +3318,7 @@ function physics(dt) {
     me.quaternion.fromArray(state.q);
     vel.fromArray(state.v);
     heliCollective = state.collective;
+    heliRotorPower = state.rotorPower;
     myVehicle.state.collective = state.collective;
     landed = state.landed;
     gas = state.gas;
@@ -3376,24 +3364,16 @@ function physics(dt) {
   const manual = flightInput(keys, pad, active);
   if (active && (keys.Space || pad.heavy) && myVehicle.supplies.ammo.bomb !== undefined)
     fireHeavy('bomb');
-  const assisted = active && controlMode === 'mouse' && performance.now() > padManualUntil;
+  const assisted = active;
   const auto = assisted
     ? mouseFlightControls(T, { q: me.quaternion, omega, direction: mouseDirection })
     : { pitch: 0, roll: 0, yaw: 0 };
   const inversion = currentFactors().controls;
-  const pitch = (manual.pitch || auto.pitch) * inversion,
-    roll = (manual.roll || auto.roll) * inversion,
-    yaw = (manual.yaw || auto.yaw) * inversion;
+  const pitch = auto.pitch * inversion,
+    roll = auto.roll * inversion,
+    yaw = auto.yaw * inversion;
   gas = T.MathUtils.clamp(gas + manual.throttle * currentFactors().controls * dt * 0.4, 0, 1);
   const wind = new T.Vector3();
-  const fan = OFFICE_LAYOUT.fan.position;
-  if (snap?.fan && Math.abs(me.position.x - fan[0]) < 0.65) {
-    const strength = Math.max(
-      0,
-      1 - Math.hypot(me.position.y - fan[1], me.position.z - fan[2]) / 0.2,
-    );
-    wind.x = MAP.metres(20) * strength;
-  }
   const { forward, stall } = stepFlight(
     T,
     {
@@ -3437,8 +3417,8 @@ function physics(dt) {
       const speed = vel.length();
       vel.multiplyScalar(Math.max(0, 1 - (MAP.metres(6) * dt) / Math.max(1e-9, speed)));
     }
-    me.rotateY(-manual.yaw * inversion * dt * 0.7);
-    if (manual.pitch * inversion > 0 && vel.length() > MAP.metres(18)) {
+    me.rotateY(-yaw * dt * 0.7);
+    if (pitch > 0 && vel.length() > MAP.metres(18)) {
       me.rotateX(dt * 0.7);
       vel.y = MAP.metres(2);
       me.position.y += 0.16 * ACTOR_UNIT;
@@ -3594,11 +3574,16 @@ function updateAudio() {
     if (seconds !== lastCountdownTick && seconds > 0 && seconds <= 3)
       sound.play('tick', camera.position, { ref: 8 });
     lastCountdownTick = seconds;
-    if (!onFoot && me.visible && hp > 0 && engine && remainingFuel() > 0) {
+    if (
+      myVehicle &&
+      myVehicle.state.hp > 0 &&
+      (crewSeat === 'pilot' ? engine : myVehicle.state.engine) &&
+      remainingFuel() > 0
+    ) {
       keep.add('engine-self');
       sound.loop('engine-self', 'engine', me.position, {
-        rate: 0.65 + gas * 1.2,
-        level: 0.65,
+        rate: 0.65 + (crewSeat === 'pilot' ? gas : myVehicle.state.gas || 0) * 1.2,
+        level: 0.65 * (myVehicle.type === 'helicopter' ? (myVehicle.state.rotorPower ?? 1) : 1),
         ref: 14,
       });
     }
@@ -3606,8 +3591,8 @@ function updateAudio() {
       .filter(
         ([key, g]) =>
           g.visible &&
-          (!myVehicle || crewSeat !== 'pilot' || key !== myVehicle.id) &&
-          snap?.vehicles.find((v) => v.id === key)?.seats.some((s) => s.seat === 'pilot'),
+          key !== myVehicle?.id &&
+          snap?.vehicles.find((v) => v.id === key)?.seats.length > 0,
       )
       .sort(
         (a, b) =>
@@ -3647,10 +3632,6 @@ function updateAudio() {
         });
       }
     }
-    if (snap?.fan) {
-      keep.add('fan');
-      sound.loop('fan', 'fan', fanGroup.position, { ref: 60 });
-    }
     const bugs = [...insects.entries()]
       .sort(
         (a, b) =>
@@ -3662,7 +3643,11 @@ function updateAudio() {
       if (g.position.distanceTo(activeCamera.position) < 55) {
         const key = 'bug-' + id;
         keep.add(key);
-        sound.loop(key, 'insect', g.position, { ref: 5, rate: 0.9 + (id % 4) * 0.07 });
+        sound.loop(key, 'insect', g.position, {
+          ref: 20,
+          level: 1 / Math.sqrt(Math.max(1, bugs.length)),
+          rate: 0.9 + (id % 4) * 0.07,
+        });
       }
   } else {
     for (const b of (soulArena?.bodies || [])
@@ -3727,15 +3712,6 @@ function frame(now) {
     joined &&
     !spectating &&
     controlFocus.active &&
-    Math.max(Math.abs(pad.pitch), Math.abs(pad.roll), Math.abs(pad.yaw)) > 0.05
-  ) {
-    padManualUntil = now + 1500;
-    mouseDirection.set(0, 0, -1).applyQuaternion(me.quaternion);
-  }
-  if (
-    joined &&
-    !spectating &&
-    controlFocus.active &&
     onFoot &&
     !myVehicle &&
     turretIndex < 0 &&
@@ -3755,14 +3731,8 @@ function frame(now) {
     releaseMouse();
     $('help').classList.toggle('hidden');
   }
-  rotor.rotation.x += dt * (snap?.fan === 0 ? 0 : 28);
-  winds.forEach((w, i) => {
-    const f = OFFICE_LAYOUT.fan.position,
-      t = (now * 0.0001 + i * 0.07) % 0.65;
-    w.position.set(f[0] + t, f[1] + Math.sin(i * 2.2) * 0.12, f[2] + Math.cos(i * 2.2) * 0.12);
-    w.visible = snap?.fan !== 0;
-  });
   if (joined) {
+    renderDeliveries();
     enemies(Date.now());
     updateOthers(dt);
     updateOrdnance(dt);
@@ -3781,9 +3751,9 @@ function frame(now) {
         ? ''
         : 'Curseur libre · Cliquez dans le décor pour reprendre';
     if (!onFoot && !respawnAt) {
-      const assisted = controlMode === 'mouse' && now > padManualUntil;
+      const assisted = true;
       if (assisted) mouseCameraRotation(T, mouseDirection, mouseCameraQ, dt);
-      else if (controlMode === 'mouse' && controlFocus.active && !keys.KeyC) {
+      else if (controlFocus.active && !keys.KeyC) {
         mouseDirection.set(0, 0, -1).applyQuaternion(me.quaternion);
         mouseCameraQ.copy(me.quaternion);
       }
@@ -3937,7 +3907,7 @@ function renderShop() {
       text = document.createElement('p'),
       button = document.createElement('button'),
       level = snap.upgrades?.[item] || 0,
-      owned = snap.purchases?.find((o) => o.owner === id && o.item === item),
+      owned = !myVehicle && snap.purchases?.find((o) => o.owner === id && o.item === item),
       price = shopPrice(item, snap.upgrades, purchaseCount(snap, item));
     title.textContent = profile.name + (profile.max > 1 ? ' · ' + level + '/' + profile.max : '');
     text.textContent = profile.description;
@@ -3954,7 +3924,8 @@ function renderShop() {
       (!owned && snap.dollars < price) ||
       (profile.max && level >= profile.max) ||
       (['placement', 'vehicle'].includes(profile.kind) &&
-        (!!myVehicle || turretIndex >= 0 || selfBase()?.grounded === false));
+        !myVehicle &&
+        (turretIndex >= 0 || selfBase()?.grounded === false));
     button.onclick = () => {
       if (['placement', 'vehicle'].includes(profile.kind)) {
         if (owned) beginPlacement(owned);
@@ -4331,6 +4302,40 @@ $('personalFire').onpointerdown = (e) => {
   pistol();
 };
 
+const deliveryModels = new Map();
+function renderDeliveries() {
+  const active = new Set();
+  for (const delivery of snap?.deliveries || []) {
+    active.add(delivery.token);
+    let model = deliveryModels.get(delivery.token);
+    if (!model) {
+      model = new T.Group();
+      const crate = new T.Mesh(
+        new T.BoxGeometry(MAP.metres(4), MAP.metres(3), MAP.metres(4)),
+        new T.MeshStandardMaterial({ color: '#bb8c44' }),
+      );
+      model.add(crate);
+      const canopy = new T.Mesh(
+        new T.SphereGeometry(MAP.metres(5), 12, 6, 0, Math.PI * 2, 0, Math.PI / 2),
+        new T.MeshStandardMaterial({ color: '#e2d6ad', side: T.DoubleSide }),
+      );
+      canopy.position.y = MAP.metres(7);
+      model.add(canopy);
+      scene.add(model);
+      deliveryModels.set(delivery.token, model);
+    }
+    model.position.set(delivery.x, delivery.y, delivery.z);
+  }
+  for (const [token, model] of deliveryModels)
+    if (!active.has(token)) {
+      scene.remove(model);
+      model.traverse((o) => {
+        o.geometry?.dispose();
+        o.material?.dispose();
+      });
+      deliveryModels.delete(token);
+    }
+}
 const vacantAircraft = new Map();
 function simulateVacantAircraft(dt) {
   if (!snap) return;
@@ -4350,12 +4355,14 @@ function simulateVacantAircraft(dt) {
       vacantAircraft.set(v.id, s);
     }
     s.hp = v.state.hp;
+    s.engine = v.state.engine;
+    s.wing = v.state.wing;
     s.fuelAvailable = v.supplies?.fuel > 0;
     if (v.type === 'helicopter')
       stepHelicopter(
         T,
         s,
-        { collective: 0 },
+        { collective: 0, occupied: v.seats.length > 0 },
         colliders,
         dt,
         upgradedVehicle(VEHICLES.helicopter, snap?.upgrades),
@@ -4400,8 +4407,11 @@ function remainingFuel() {
       ? (crewSeat === 'pilot' ? landed : myVehicle.state.landed)
         ? 0
         : 1
-      : gas;
-  return Math.max(0, supply.fuel - (engine ? consumption * age : 0));
+      : crewSeat === 'pilot'
+        ? gas
+        : myVehicle.state.gas || 0;
+  const powered = crewSeat === 'pilot' ? engine : myVehicle.state.engine;
+  return Math.max(0, supply.fuel - (powered ? consumption * age : 0));
 }
 function currentFactors() {
   return clauseFactors(snap?.pilots.find((p) => p.id === id)?.contractClause);
@@ -4685,6 +4695,27 @@ function updateContextHUD() {
             : 0,
         })
       : null;
+  const alerts =
+    myVehicle && !respawnAt
+      ? reserveAlerts({
+          ...myVehicle,
+          state: { ...myVehicle.state, hp: stats?.hp ?? myVehicle.state.hp },
+          supplies: { ...myVehicle.supplies, fuel: remainingFuel() },
+        })
+      : [];
+  if (turretIndex >= 0 && !respawnAt)
+    alerts.push(...reserveAlerts({ type: 'dca', state: { hp }, supplies: { ammo: {} } }));
+  if (myVehicle?.type === 'helicopter' && crewSeat === 'copilot') {
+    const status = missileStatus(myVehicle, snap?.ordnance || [], Date.now() + clockOffset);
+    if (status) alerts.push(status);
+  }
+  $('reserveAlerts').replaceChildren(
+    ...alerts.map((text) => {
+      const line = document.createElement('div');
+      line.textContent = text;
+      return line;
+    }),
+  );
   $('cursorStats').classList.toggle('hidden', !stats);
   if (stats) {
     $('cursorSpeed').textContent = stats.speed + ' km/h';
@@ -4698,15 +4729,21 @@ function updateContextHUD() {
     });
     $('cursorHPbar').max = myVehicle?.type === 'helicopter' ? 200 : 100;
     $('cursorHPbar').value = stats.hp;
+    $('cursorAmmoBar').max = Math.max(1, ammoCapacity(myVehicle.type, currentAmmoKey()));
+    $('cursorAmmoBar').value = stats.ammo;
+    $('cursorAmmoBar').classList.toggle(
+      'hidden',
+      ammoCapacity(myVehicle.type, currentAmmoKey()) <= 0,
+    );
     const fuelPercent = Math.max(0, Math.min(100, (remainingFuel() / 300) * 100));
     const power = Math.max(
       0,
       Math.min(100, (crewSeat === 'pilot' ? gas : myVehicle.state.gas || 0) * 100),
     );
     $('cursorFuel').value = fuelPercent;
-    $('cursorFuelLabel').textContent = 'Carburant ' + Math.round(fuelPercent) + ' %';
+    setGaugeLabel($('cursorFuelLabel'), 'Carburant ', Math.round(fuelPercent) + ' %');
     $('cursorGas').value = power;
-    $('cursorGasLabel').textContent = 'Gaz ' + Math.round(power) + ' %';
+    setGaugeLabel($('cursorGasLabel'), 'Gaz ', Math.round(power) + ' %');
     $('cursorStats').style.left = 'calc(' + ($('crosshair').style.left || '50%') + ' + 30px)';
     $('cursorStats').style.top = 'calc(' + ($('crosshair').style.top || '50%') + ' + 22px)';
   }
@@ -4865,7 +4902,11 @@ const purchaseUI = new PurchaseUI({
     renderPaper();
     const order = snap?.purchases?.find((o) => o.token === purchaseUI.request && o.owner === id);
     if (order && !purchaseUI.invalidated) beginPlacement(order);
-    else captureMouse();
+    else {
+      if (myVehicle && !purchaseUI.invalidated)
+        notify('Achat signé · livraison sous parachute en cours', 4);
+      captureMouse();
+    }
   },
   archive: (record) => {
     paperArchive.push({ ...record, title: 'Bon de commande · ' + SHOP[purchaseUI.item].name });
@@ -5051,6 +5092,11 @@ function updateVehicleCare(dt) {
       cleanStars.splice(i, 1);
     }
   }
+}
+function setGaugeLabel(element, label, value) {
+  const strong = document.createElement('strong');
+  strong.textContent = value;
+  element.replaceChildren(label, strong);
 }
 function updateTankReticle() {
   const shown =

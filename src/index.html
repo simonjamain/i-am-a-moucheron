@@ -2234,6 +2234,25 @@
         pointer-events: none;
         z-index: 22;
       }
+      #reserveAlerts {
+        position: fixed;
+        left: calc(50% + 40px);
+        top: calc(50% + 100px);
+        color: rgba(255, 95, 95, 0.8);
+        pointer-events: none;
+        font-size: 12px;
+        animation: reserve-pulse 2s ease-in-out infinite;
+      }
+      @keyframes reserve-pulse {
+        50% {
+          opacity: 0.45;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        #reserveAlerts {
+          animation: none;
+        }
+      }
       #cursorStats {
         position: fixed;
         z-index: 18;
@@ -2242,6 +2261,15 @@
         color: #fff8dc;
         text-shadow: 0 1px 3px #000;
         max-width: 180px;
+      }
+      #cursorStats {
+        font-weight: 400;
+      }
+      #cursorStats strong,
+      #cursorHealth,
+      #cursorSpeed,
+      #cursorAmmo {
+        font-weight: 700;
       }
       #cursorStats progress {
         display: block;
@@ -2421,15 +2449,12 @@
         <div class="bar"><i id="hpbar"></i></div>
       </div>
       <div class="bottomkeys" id="flightKeys">
-        <kbd>↑ ↓</kbd> Tangage &nbsp; <kbd>← →</kbd> Roulis &nbsp;
-        <kbd>A E / Q E</kbd> Gouverne<br /><kbd>W / S</kbd> Gaz &nbsp; <kbd>Clic</kbd> Tir /
-        <kbd>Espace</kbd> Bombes &nbsp; <kbd>R</kbd> Purgatoire &nbsp; <kbd>H</kbd> Aide
+        Souris : direction · Maj/Ctrl : gaz · Clic : tir · Espace : bombes · C : regard libre
       </div>
       <canvas id="radar" width="220" height="220"></canvas>
       <div id="actions">
-        <button id="controlMode" aria-pressed="true">Pilotage : souris</button
-        ><button id="captureMouse">Capturer la souris</button
-        ><button id="fan">Ventilateur : ON</button><button id="helpButton">Commandes ?</button>
+        <button id="captureMouse">Capturer la souris</button
+        ><button id="helpButton">Commandes ?</button>
       </div>
       <div id="touch">
         <div class="dir">
@@ -2476,11 +2501,13 @@
       <button id="enterPurgatory">Accéder au purgatoire</button>
     </div>
     <div id="commandHelp" class="hidden"></div>
+    <div id="reserveAlerts" aria-live="polite"></div>
     <div id="cursorStats" class="hidden">
       <span id="cursorSpeed"></span> · <span id="cursorHealth"></span
-      ><progress id="cursorHPbar" max="100" value="100"></progress><span id="cursorAmmo"></span>
-      <span id="cursorFuelLabel"></span><progress id="cursorFuel" max="100"></progress>
-      <span id="cursorGasLabel"></span><progress id="cursorGas" max="100"></progress>
+      ><progress id="cursorHPbar" max="100" value="100"></progress><span id="cursorAmmo"></span
+      ><progress id="cursorAmmoBar" max="1" value="1"></progress> <span id="cursorFuelLabel"></span
+      ><progress id="cursorFuel" max="100"></progress> <span id="cursorGasLabel"></span
+      ><progress id="cursorGas" max="100"></progress>
     </div>
     <div id="dirtView" aria-hidden="true"></div>
     <p id="dirtWarning" class="hidden">Attention, nettoyez votre véhicule en urinant dessus.</p>
@@ -2654,18 +2681,17 @@
           paperasse.
         </p>
         <p>
-          <b>Pilotage :</b> la souris choisit une direction, l’avion la rejoint avec son inertie.
-          Z/S ou ↑/↓ : tangage ; Q/D ou ←/→ : roulis ; A/E : gouverne. Maj augmente les gaz, Ctrl
-          les réduit et freine au sol. C maintenu : regard libre. M : pilotage manuel. Clic gauche :
-          mitrailleuses du chasseur. Espace : bombes sur les avions équipés. Le bombardier est plus
-          lent et ses armes sont servies par les deux mitrailleurs.
+          <b>Pilotage :</b> la souris choisit une direction, l’avion la rejoint avec son inertie. Le
+          pilotage des avions utilise uniquement la souris. Maj augmente les gaz, Ctrl les réduit et
+          freine au sol. C maintenu : regard libre. Clic gauche : mitrailleuses du chasseur. Espace
+          : bombes sur les avions équipés. Le bombardier est plus lent et ses armes sont servies par
+          les deux mitrailleurs.
         </p>
         <p>
-          <b>Se poser et sortir :</b> ailes à plat, vitesse inférieure à 100 km/h de référence et
-          descente douce. Réduisez les gaz, puis immobilisez l’avion avant de sortir avec F. En vol,
-          F commence une chute libre ; Espace ouvre/replie le parachute. Si le pilote abandonne
-          l’appareil en vol, les autres occupants sautent aussi. E permet de remonter dans un
-          appareil posé.
+          <b>Se poser et sortir :</b> ailes à plat et descente douce. Réduisez les gaz, puis
+          immobilisez l’avion avant de sortir avec F. En vol, F commence une chute libre ; Espace
+          ouvre/replie le parachute. Si le pilote abandonne l’appareil en vol, les autres occupants
+          sautent aussi. E permet de remonter dans un appareil posé.
         </p>
         <p>
           <b>DCA :</b> rejoignez le cercle, appuyez sur E et signez les deux documents. Souris /
@@ -2734,7 +2760,7 @@
         ><small>Molette / [ ] · rayon 8 m réf.</small>
       </div>
       <button id="parachuteToggle" class="hidden">Parachute · Espace</button
-      ><button id="leavePlane">Sauter en parachute · F</button
+      ><button id="leavePlane">Sauter</button
       ><button id="vehicleInteract" class="hidden">Quitter la DCA · F</button
       ><button id="turretFire" class="hidden">Tirer</button>
     </div>

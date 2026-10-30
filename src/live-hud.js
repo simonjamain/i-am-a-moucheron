@@ -13,7 +13,7 @@ export function controlHints({
   const common = ' · N : banque · H : aide · Échap : curseur';
   if (turret)
     return (
-      'Souris : viser · Clic / Espace : obus · Maj/Ctrl : fusée · Molette : distance · F : sortir · Clic droit : zoom' +
+      'Souris : viser · Clic / Espace : obus · Maj/Ctrl : fusée · Molette : distance · F : sauter / sortir · Espace en chute : parachute · Clic droit : zoom' +
       common
     );
   if (!vehicle)
@@ -27,7 +27,7 @@ export function controlHints({
       (seat === 'pilot'
         ? 'Souris : incliner · Z/O/Haut : monter · S/Bas : descendre · Relâcher : stationnaire · C : vue libre · Clic : roquettes'
         : 'Souris : viser · Maj : MG · Ctrl : missile · Clic : tir / détonation') +
-      ' · 1/2 : postes (contrats) · F : sortir' +
+      ' · 1/2 : postes (contrats) · F : sauter / sortir · Espace en chute : parachute' +
       common
     );
   if (vehicle.type === 'flaktruck')
@@ -35,7 +35,7 @@ export function controlHints({
       (seat === 'pilot'
         ? 'Z/S : avancer/reculer · Q/D : tourner'
         : 'Souris : canon · Clic : obus · Molette : proximité 0,5–20 m') +
-      ' · 1/2 : postes (contrats) · F : sortir' +
+      ' · 1/2 : postes (contrats) · F : sauter / sortir · Espace en chute : parachute' +
       common
     );
   const posts =
@@ -47,17 +47,17 @@ export function controlHints({
         : seat === 'cannon'
           ? 'Souris : tourelle · Clic : canon · Espace : coaxiale · Maj HE / Ctrl AP · C : observer'
           : 'Souris : tourelle · Clic / Espace : MG') +
-      ' · F : sortir · Clic droit : zoom' +
+      ' · F : sauter / sortir · Espace en chute : parachute · Clic droit : zoom' +
       posts +
       common
     );
   return (
     (seat === 'pilot'
-      ? 'Souris : cap · Z/S : tangage · Q/D : roulis · A/E : gouverne · Maj/Ctrl : gaz · C : regard libre · M : manuel' +
+      ? 'Souris : cap · Maj/Ctrl : gaz · C : regard libre' +
         (vehicle.type === 'bomber' ? '' : ' · Clic : MG') +
         (vehicle.supplies?.ammo.bomb !== undefined ? ' · Espace : bombes' : '')
       : 'Souris : tourelle · Clic / Espace : MG') +
-    ' · F : sortir · Clic droit : zoom' +
+    ' · F : sauter / sortir · Espace en chute : parachute · Clic droit : zoom' +
     posts +
     common
   );

@@ -118,3 +118,6 @@ la revue, les essais et la décision de fusion. Les environnements temporaires
 GitHub Actions ne sont pas encore configurés ; leur fonctionnement cible et
 leurs contraintes UDP y sont consignés. Aucun déploiement VPS automatique
 n’est revendiqué par la seule présence de ces instructions.
+
+Le [lot de retours du 30 octobre, version 48](returns-30-october.md) décrit les correctifs
+physiques, sons/HUD, livraisons sous parachute et parcours du purgatoire.
