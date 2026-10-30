@@ -627,6 +627,8 @@ function resetMouseAim() {
   mousePrevious = null;
 }
 function clearControls() {
+  if (myVehicle?.type === 'helicopter' && crewSeat === 'copilot')
+    Object.assign(turretAim, heliTurretAim);
   gunSalvos.clear();
   freeLook.yaw = 0;
   freeLook.pitch = 0;
@@ -2479,8 +2481,10 @@ function updateVehicles(dt) {
         1.2,
       );
     }
-    if (myVehicle.type === 'helicopter' && crewSeat === 'copilot')
-      stepHeliAim(heliTurretAim, turretAim, dt);
+    if (myVehicle.type === 'helicopter' && crewSeat === 'copilot') {
+      if (controlFocus.active && canCapture()) stepHeliAim(heliTurretAim, turretAim, dt);
+      else Object.assign(turretAim, heliTurretAim);
+    }
     const dir = weaponDirection(),
       mount = me.userData.turrets[crewSeat === 'tail' || crewSeat === 'top' ? 1 : 0],
       up = new T.Vector3(0, 1, 0).applyQuaternion(me.quaternion);

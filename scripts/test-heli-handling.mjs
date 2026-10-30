@@ -10,19 +10,25 @@ const near = (a, b) => assert.ok(Math.abs(a - b) < 1e-7, `${a} != ${b}`);
 for (const hz of [30, 60, 144]) {
   const actual = { yaw: 0, pitch: 0 },
     desired = { yaw: Math.PI, pitch: 0 };
-  for (let i = 0; i < hz / 2; i++) stepHeliAim(actual, desired, 1 / hz);
+  for (let i = 0; i < hz / 2; i++) {
+    Object.assign(desired, { yaw: actual.yaw + 100, pitch: 0 });
+    stepHeliAim(actual, desired, 1 / hz);
+  }
   near(actual.yaw, Math.PI / 2);
-  for (let i = 0; i < hz / 2; i++) stepHeliAim(actual, desired, 1 / hz);
+  for (let i = 0; i < hz / 2; i++) {
+    Object.assign(desired, { yaw: actual.yaw + 100, pitch: 0 });
+    stepHeliAim(actual, desired, 1 / hz);
+  }
   near(Math.abs(actual.yaw), Math.PI);
 }
 const wrapped = { yaw: Math.PI - 0.1, pitch: -0.2 };
-stepHeliAim(wrapped, { yaw: -Math.PI + 0.1, pitch: -0.2 }, 0.1);
+stepHeliAim(wrapped, { yaw: Math.PI + 0.1, pitch: -0.2 }, 0.1);
 near(wrapped.yaw, -Math.PI + 0.1);
 const diagonal = { yaw: 0, pitch: 0 };
 stepHeliAim(diagonal, { yaw: 2, pitch: -1 }, 0.1);
 near(Math.hypot(diagonal.yaw, diagonal.pitch), Math.PI * 0.1);
 const down = { yaw: 0, pitch: 0 };
-stepHeliAim(down, { yaw: 8 * Math.PI + 0.7, pitch: -4 }, 2);
+stepHeliAim(down, { yaw: 0.7, pitch: -4 }, 2);
 near(down.yaw, 0.7);
 near(down.pitch, HELI.minPitch);
 // Actual physics: near-vertical pitch and fast descent, then released hover.

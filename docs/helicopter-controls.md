@@ -90,3 +90,20 @@ Seul le pilote commande la coque ; le quaternion existant partage ce mouvement
 avec les occupants et observateurs. Les tests exécutent la vraie branche client
 pour les quatre touches, le relâchement/focus et le refus depuis le copilote.
 Le ressenti et la visualisation à deux restent à essayer en partie.
+
+## Pointage relatif sans rattrapage — issue #10, version 50
+
+Au poste copilote H2 seulement, chaque mise à jour consomme le déplacement de
+souris reçu depuis la précédente. Le budget commun lacet/tangage reste π rad/s
+(180°/s) : l’excédent est abandonné, sans cible persistante à poursuivre. Une
+souris immobile arrête donc la commande dès la prochaine mise à jour. La reprise
+et l’inversion partent de l’orientation réelle, y compris au passage de ±180°.
+Une commande très ample conserve le sens demandé, sans détour par le chemin
+court d’une ancienne cible absolue.
+
+Menus et perte de focus abandonnent le déplacement en attente. Un changement de
+poste initialise les deux orientations ensemble. La manette reste une commande
+continue bornée ; les autres armes conservent leur visée actuelle. Rotation 360°,
+butées verticales, caméra/canon/tirs alignés et guidage missile sont conservés.
+La régression automatique couvre les cadences 30/60/144 Hz, arrêt/reprise et
+inversion après grande impulsion ; le ressenti en partie reste à essayer.
