@@ -2081,3 +2081,167 @@ suivis : README, gameplay, carte du code, contrôles, appui, confort et exploita
 mis à jour ; archives et anciens lots datés conservés. Aucun changement de stack,
 PV, consommation ou armes copilote. WebGL/Pointer Lock/WAN restent à observer
 sur VM ; HEL-06/DCM-03 conservent leur validation humaine en cours.
+
+## Retours de partie validés — 30 octobre 2026
+
+Lot documentaire : les demandes ci-dessous sont enregistrées, aucun correctif
+n'est revendiqué. Vérifier les sources actuelles avant chaque implémentation.
+Les tâches antérieures terminées gardent leur historique.
+
+| ID | Tâche | État | Dépendances |
+| --- | --- | --- | --- |
+| SON-03 | Son H2 audible au poste copilote | prêt | — |
+| BUG-07 | Signature parfois ignorée | à préciser | — |
+| HEL-08 | Rotor et chute du H2 inoccupé | prêt | — |
+| VOL-01 | Décollage depuis une surface et contact des roues | prêt | — |
+| SON-04 | Moucherons audibles de plus loin et mixage plafonné | prêt | — |
+| SON-05 | Signal partagé à chaque arrivée à la panière | prêt | — |
+| HUD-07 | Jauges fonctionnelles et valeurs mises en évidence | prêt | — |
+| HUD-08 | Aide de sortie/parachute dans le récapitulatif | prêt | — |
+| NET-01 | Retirer entièrement le ventilateur | prêt | — |
+| VOL-02 | Conserver uniquement le pilotage souris des avions | prêt | — |
+| ACH-01 | Livraison des achats sous parachute depuis un appareil | prêt | — |
+| PUR-03 | Apparition à côté de la file et marche vers le guichet | prêt | — |
+| HUD-09 | Alertes carburant, munitions et PV à 25 % | prêt | — |
+| VAG-09 | Ennemis spéciaux dès la deuxième vague | prêt | — |
+| REP-02 | Réparation fonctionnelle des appareils en panne | prêt | REP-01 |
+
+### SON-03 — Son H2 au copilote
+
+Conserver le son de moteur/rotor au poste copilote, selon l'état réel du H2.
+Critères : embarquement, changement de siège, pilote absent, sortie et arrêt
+moteur sans silence indu, double boucle ou son persistant ; respecter volume/muet.
+Vérifier l'écoute aux deux postes en partie.
+
+### BUG-07 — Signature parfois ignorée
+
+Signalement : une signature semble parfois nécessiter un clic supplémentaire.
+Le geste exact, le formulaire et la reproduction restent à préciser ; Mac est
+une hypothèse, pas une cause établie. Ne pas confondre avec BUG-02 déjà livré.
+Examiner trait, relâchement et validation ; conserver un formulaire utilisable
+sans effacement ni clic de rattrapage. Ne pas inventer une reproduction réussie.
+Critères : documenter le scénario, puis vérifier signatures successives, refus,
+réouverture et absence de double validation sur les périphériques concernés.
+
+### HEL-08 — Hélicoptère vide
+
+Quand le dernier occupant quitte le H2, ralentir progressivement le rotor et
+réduire la portance : l'appareil descend et peut s'écraser. Un appareil déjà
+posé reste intact ; dégâts en chute selon le choc. Reprendre le poste pilote
+avant l'impact permet de relancer le moteur et de sauver l'appareil.
+Critères : dernier occupant, copilote seul, récupération en vol, posé, crash,
+reconnexion et état partagé ; aucun stationnaire artificiel sans occupant.
+
+### VOL-01 — Décollage et crash au contact des roues
+
+Permettre le décollage dès que la vitesse et la portance sont suffisantes,
+depuis le sol ou le milieu d'un bureau, sans devoir quitter son rebord.
+Pour un avion correctement orienté dont les roues touchent la surface, évaluer
+le choc selon la vitesse verticale relative à cette surface : une vitesse
+horizontale élevée ne suffit pas à déclencher un crash. Préserver les collisions
+avec obstacles, coque et mauvaises orientations.
+Critères : avion de départ et Spitfire, décollage au sol/bureau, roulage rapide,
+atterrissage doux ou brutal, pente/orientation et obstacle ; cohérence réseau.
+Documenter les seuils retenus et vérifier le ressenti en partie.
+
+### SON-04 — Moucherons plus audibles
+
+Augmenter leur présence sonore et leur portée, avec atténuation progressive et
+plafonnement du mélange lors des grosses vagues. Le volume de base et la portée
+exacts sont à régler en écoute : la proposition de portée doublée seule ne
+remplace pas la demande validée de moucherons plus forts et audibles de plus loin.
+Critères : comparaison près/loin, grosses nuées, muet et nettoyage des sources.
+
+### SON-05 — Arrivées à la panière
+
+Chaque insecte qui rejoint la panière déclenche un signal bref audible par tous
+les joueurs. Une arrivée produit un événement unique ; ne pas rejouer les
+anciennes arrivées à une connexion tardive. Respecter le mixage et le muet.
+Critères : arrivées simultanées, deux clients, reconnexion et changement de vague.
+
+### HUD-07 — Jauges et valeurs
+
+Toutes les jauges présentes près du viseur suivent leurs valeurs en temps réel,
+y compris carburant, gaz, PV et munitions selon le poste. Faire ressortir les
+valeurs davantage que les intitulés tout en conservant le style actuel.
+Critères : zéro/plein, consommation, recharge/réparation, changement de siège et
+zoom ; accord entre barre et valeur, sans doublon ni masque sur le viseur.
+
+### HUD-08 — Rappels des touches
+
+Déplacer « F : sauter / Espace : parachute » dans le récapitulatif existant en
+bas à gauche. Adapter les touches au poste ; supprimer le rappel superposé aux
+boutons, notamment au lancement de partie.
+Critères : à pied, avion, H2, chute, parachute, menus et petites fenêtres.
+
+### NET-01 — Suppression du ventilateur
+
+Retirer le ventilateur, ses commandes, indications et effets physiques.
+Critères : aucune force résiduelle ni commande/interface restante ; nettoyer les
+références courantes et tests concernés sans modifier les autres obstacles.
+
+### VOL-02 — Pilotage souris uniquement
+
+Supprimer le mode manuel des avions, le bouton de bascule et son éventuel
+raccourci. Conserver le pilotage souris et les commandes de gaz actuelles.
+Critères : aucun chemin actif de bascule, aide et documentation cohérentes ;
+préserver les autres véhicules, la vue libre et le zoom.
+
+### ACH-01 — Achat et largage depuis un appareil
+
+Depuis un appareil, acheter sans quitter son poste, aux prix et avec la signature
+habituels. Chaque achat crée un colis distinct à côté de l'appareil sans collision
+initiale avec celui-ci ni son parachute. Tous les équipements achetables sont
+concernés : véhicules, armes fixes, radars et stations. Aucune limite de nombre
+par joueur : seule la capacité financière limite les achats. Achats au sol inchangés.
+
+Retenir la dernière vitesse explicitement demandée par l'utilisateur :
+**trois secondes par mètre**, avant conversion d'échelle ; la contre-proposition
+d'une seconde par mètre n'a pas été validée. Descente visible sous parachute,
+pose sans dégâts ni rebond sur la première surface capable de soutenir
+l'équipement (sol, bureau, meuble). Un contact latéral ne constitue pas une pose.
+Inutilisable avant la pose ; le parachute disparaît ensuite.
+Critères : achats répétés, paiement/signature unique, différents équipements,
+obstacles et surfaces, aucun chevauchement initial, synchronisation et nettoyage
+au reset. Documenter la conversion d'échelle employée.
+
+### PUR-03 — Entrée à côté de la file
+
+Toujours apparaître à côté de la file, hors de la zone de signature, puis marcher
+jusqu'au guichet, même si la file est vide. Respecter l'ordre des insectes déjà
+présents ; les collisions empêchent de passer devant avant qu'une place se libère.
+La destination est la zone de signature. File vide : signer dès l'arrivée, sans
+attente artificielle.
+Critères : file vide/longue, plusieurs joueurs, libération des places, morts et
+retours successifs ; aucune apparition directe prête à signer en tête de file.
+
+### HUD-09 — Alertes de réserves faibles
+
+À 25 % ou moins, afficher une alerte par réserve concernée : carburant,
+munitions et PV. Tous les occupants voient les réserves de leur équipement.
+Textes rouges semi-transparents à clignotement lent, visibles mais discrets,
+sans se chevaucher ni masquer le viseur ; persistance tant que le niveau reste
+faible. À zéro, afficher un état « épuisé » adapté à la réserve.
+Critères : franchissement du seuil dans les deux sens, plusieurs alertes,
+réapprovisionnement/réparation, changement de siège et équipements sans réserve
+concernée ; ne pas inventer de jauge moteur pour un équipement sans moteur.
+
+### VAG-09 — Spéciaux dès la vague 2
+
+Introduire au moins un ennemi autre qu'un moucheron ou une fourmi dès la deuxième
+vague. Augmenter ensuite variété et nombre en remplaçant une partie des ennemis
+ordinaires pour conserver la difficulté ; ne pas simplement ajouter une surcharge.
+Critères : vague 1 préservée, vague 2 avec spécial pour plusieurs graines,
+progression suivante, budget, récompenses et fin de vague cohérents.
+
+### REP-02 — Réparer réellement un appareil
+
+Signalement : la station restaure les PV mais l'appareil reste cassé, incapable
+de remettre les gaz et de reprendre le vol. Pour un appareil encore réparable,
+restaurer aussi les états de fonctionnement : moteur, propulsion, remise des gaz
+et capacité à redécoller. Les effets de dégâts suivent les PV restaurés.
+Un véhicule définitivement détruit reste perdu ; préserver les conditions et
+la cadence de REP-01.
+Critères : reproduire une panne sur chaque modèle concerné, réparer puis remettre
+les gaz et redécoller ; plein déjà fait, réparation interrompue, dégâts répétés,
+état partagé entre occupants et observateurs, aucune résurrection d'épave.
