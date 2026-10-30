@@ -2,8 +2,10 @@
 
 La livraison courante reste le ZIP des sources décrit dans
 [l’exploitation](operations.md). Le dépôt fournit aussi un `Dockerfile` pour
-construire localement la même version du serveur Node/UDP. Aucune image
-préconstruite ni aucun registre distant ne sont maintenus.
+construire localement la même version du serveur Node/UDP. Le workflow de
+[publication](../.github/workflows/docker.yml) construit et publie sur GHCR à
+chaque push sur `main` : `ghcr.io/simonjamain/i-am-a-moucheron:latest` et un
+tag `sha-<SHA complet>` pour retrouver le commit publié.
 
 ## Construction et démarrage
 
@@ -42,11 +44,14 @@ ci-dessus. Rapporter le résultat et le commit testé dans la PR. Si Docker manq
 localement, le signaler et attendre le résultat de GitHub Actions.
 
 Le workflow [Docker build validation](../.github/workflows/docker-build.yml)
-exécute le contrôle **Docker build** sur toutes les PR, les pushs sur `main` et
-les groupes de fusion. Il construit et charge l’image `linux/amd64` sans la
+exécute le contrôle **Docker build** sur toutes les PR et les groupes de fusion. Il construit et charge l’image `linux/amd64` sans la
 publier ni utiliser de secrets de déploiement. Aucun filtre de fichiers ne saute
 le contrôle sur les contributions documentaires. Le workflow de publication
-GHCR reste distinct.
+GHCR reste distinct et ne se déclenche que sur les pushs sur `main` : les
+branches de contribution et les tags Git ne publient aucune image. Sur `main`,
+seul le workflow de publication reconstruit l’image, sans doubler le build de
+vérification. Les exécutions de publication ne sont pas annulées par les pushs
+suivants ; leur succès et le tag SHA permettent de vérifier chaque livraison.
 
 Pour bloquer effectivement la fusion, un administrateur doit configurer dans
 GitHub une protection ou un ruleset actif sur `main` : exiger une PR et le

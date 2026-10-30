@@ -1,12 +1,9 @@
-
 name: Build and publish Docker image
 
 on:
   push:
     branches:
-      - '**'
-    tags:
-      - '**'
+      - main
 
 permissions:
   contents: read
@@ -14,11 +11,15 @@ permissions:
 
 jobs:
   docker:
+    name: Build and publish to GHCR
     runs-on: ubuntu-latest
+    timeout-minutes: 20
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -36,13 +37,15 @@ jobs:
         with:
           images: ghcr.io/${{ github.repository }}
           tags: |
-            type=raw,value=latest,enable=${{ !startsWith(github.ref, 'refs/tags/') }}
-            type=ref,event=tag
+            type=raw,value=latest
+            type=sha,format=long
 
       - name: Build and push
         uses: docker/build-push-action@v6
         with:
           context: .
+          file: Dockerfile
+          platforms: linux/amd64
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
