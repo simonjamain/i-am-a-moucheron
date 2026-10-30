@@ -1,7 +1,11 @@
 dist/
-site.tar.gz
 
 .local/
 outputs/
 
 node_modules/
+
+# Local state from historical Sites tooling is not project configuration.
+.openai/
+.sites-checkout/
+.sites-runtime/

@@ -15,6 +15,13 @@ Le dépôt est la référence maintenue. Les conversations expliquent les demand
 mais ne constituent pas une spécification exhaustive de l’état actuel.
 Les notes dans `docs/archive/` sont historiques.
 
+## Contributions
+
+Le développement collaboratif passe par GitHub :
+[contribuer](CONTRIBUTING.md), proposer une PR et
+[transmettre une tâche](docs/tasks/README.md). Les environnements temporaires
+par PR restent à configurer ; voir CONTRIBUTING pour leur état et la cible.
+
 ## Stack et démarrage
 
 JavaScript ESM natif, Three.js embarqué dans `vendor/`, modèles procéduraux et
@@ -37,10 +44,10 @@ servir HTTP derrière HTTPS et exposer les ports UDP directement sur la VM.
 Voir [le guide du serveur UDP](docs/udp-server.md) pour les variables et les tests.
 `npm run dev` lance ce même serveur ; redémarrer après modification.
 
-Le Site public existant reste sur son backend Worker/D1 historique, incapable
+Le Site public historique utilise un backend Worker/D1 distinct, incapable
 d'héberger ce processus UDP. `npm run dev:sites` permet de reproduire ce backend.
-La bascule publique exige le déploiement du serveur Node sur une VM ; aucun
-serveur ni domaine externe n'est provisionné par ce changement. Le serveur Node
+La cible de déploiement courante est le VPS Node/UDP. Le dépôt ne configure
+plus de publication Sites ; aucun serveur externe n’est provisionné par le build. Le serveur Node
 n'importe pas le Worker ni son adaptateur SQLite. Les anciens tests D1 restent
 pour vérifier la version historique pendant cette transition.
 
@@ -53,6 +60,8 @@ node scripts/validate-artifact.mjs
 
 Modifier `src/` et `scripts/`, puis assembler. `worker/index.js` et `dist/` sont
 générés. Les migrations publiées dans `drizzle/` restent immuables.
+`npm run build` produit un runtime Node autonome dans `dist/` : y exécuter
+`npm ci --omit=dev && npm start`. Le validateur contrôle ce paquet Node.
 
 Le [backlog](BACKLOG.md) suit les tâches validées et leurs vérifications.
 
