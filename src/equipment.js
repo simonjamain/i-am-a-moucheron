@@ -1,5 +1,18 @@
+import { VEHICLES } from './fleet.js';
 import { MAP } from './scale.js';
 export const SHOP = Object.freeze({
+  fighter: {
+    name: 'Chasseur M1 supplémentaire',
+    cost: 8,
+    kind: 'vehicle',
+    description: 'Achat à poser, en plus de la réserve gratuite.',
+  },
+  bomber: {
+    name: 'Bombardier B3 supplémentaire',
+    cost: 16,
+    kind: 'vehicle',
+    description: 'Trois postes et 50 bombes ; achat à poser.',
+  },
   bed: {
     name: 'Lit de réapparition',
     cost: 4,
@@ -16,7 +29,7 @@ export const SHOP = Object.freeze({
     name: 'Radar',
     cost: 4,
     kind: 'placement',
-    description: 'Révèle les ennemis dans une sphère de 1 m sur la carte.',
+    description: 'Révèle les ennemis dans un cylindre de rayon 2 m sur la carte.',
   },
   dca: {
     name: 'DCA à déployer',
@@ -34,7 +47,8 @@ export const SHOP = Object.freeze({
     name: 'Spitfire S6',
     cost: 24,
     kind: 'vehicle',
-    description: 'Six mitrailleuses, 45 s de tir ; vitesse +75 %, rotation +45 %. Sans bombes.',
+    description:
+      'Six mitrailleuses, 1 000 balles au total ; vitesse +75 %, rotation +45 %. Sans bombes.',
   },
   tank: {
     name: 'Tank T3',
@@ -91,9 +105,18 @@ export function placementAhead(body, distance = 5) {
 // The same footprint/support test runs in the browser and on generated office
 // colliders in the Worker. Full base support, free headroom and nearby placement.
 export function supportedPlacement(point, colliders, occupied = [], kind = 'dca') {
-  const rx = kind === 'refuel' ? 0.065 : MAP.metres(kind === 'bed' ? 3 : 2.1),
-    rz = kind === 'refuel' ? 0.065 : MAP.metres(kind === 'bed' ? 2.1 : 1.5),
-    height = MAP.metres(3.2),
+  const profile = VEHICLES[kind];
+  const rx = profile
+      ? MAP.metres(profile.span / 2 + 1)
+      : kind === 'refuel'
+        ? 0.065
+        : MAP.metres(kind === 'bed' ? 3 : 2.1),
+    rz = profile
+      ? MAP.metres(profile.length / 2 + 1)
+      : kind === 'refuel'
+        ? 0.065
+        : MAP.metres(kind === 'bed' ? 2.1 : 1.5),
+    height = MAP.metres(profile ? 4 : 3.2),
     eps = 1e-5;
   const surfaces = colliders
     .filter(

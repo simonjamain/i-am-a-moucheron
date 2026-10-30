@@ -87,7 +87,7 @@ L’identification des appareils, les annexes et les réserves partagées sont d
 dans [logistique et contrats](docs/logistics-contracts.md).
 
 Le lot [pilotage, véhicules et banque](docs/vehicles-bank.md) décrit Stuka, tank,
-armes lourdes, accès par poste et prêts. Les interfaces HUD/banquier ont été validées et intégrées : rails par poste,
+armes lourdes, accès par poste et prêts. Les interfaces HUD/banquier ont été validées et intégrées : informations au viseur et aide permanente,
 jauge DCA au viseur, prêts et remboursements signés. Banquier : bouton ou N.
 L’aperçu `/ui-review.html` utilise les composants réels avec des données temporaires.
 Le lot [retours terrain](docs/field-update.md) décrit les accès corrigés, le pistolet
@@ -97,3 +97,8 @@ les nouveaux taux de prêt. Les images Docker précédentes sont antérieures à
 Le lot [lisibilité, commandes, nettoyage et Spitfire](docs/clean-flight.md) ajoute
 les bons prépayés et pose par E, les touches physiques de poste, les bombes en
 continu, les projectiles teintés et la mire, les impacts uniques et le jet partagé.
+
+Le [dernier lot multijoueur](docs/multiplayer-return.md) ajoute l’observation avant
+purgatoire, l’aide permanente, les véhicules achetés à poser au sol, la réserve
+gratuite au décollage, les fourmis précoces, la gravité miniature, le radar de 2 m
+et les personnages identifiés. Le Spitfire a 1 000 balles ; les tirs sont optimisés.

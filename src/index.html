@@ -2216,6 +2216,59 @@
         opacity: 1;
         border: 2px solid #fff5b1;
       }
+
+      #contextHUD,
+      .bottomkeys,
+      #flightKeys {
+        display: none !important;
+      }
+      #commandHelp {
+        position: fixed;
+        left: 14px;
+        bottom: 14px;
+        max-width: min(440px, 65vw);
+        color: #fff;
+        font-size: 12px;
+        line-height: 1.55;
+        text-shadow: 0 1px 3px #102b26;
+        pointer-events: none;
+        z-index: 22;
+      }
+      #cursorStats {
+        position: fixed;
+        z-index: 18;
+        pointer-events: none;
+        font-size: 11px;
+        color: #fff8dc;
+        text-shadow: 0 1px 3px #000;
+        max-width: 180px;
+      }
+      #cursorStats progress {
+        display: block;
+        width: 95px;
+        height: 4px;
+        accent-color: #c0e27d;
+      }
+      #cursorAmmo {
+        display: block;
+      }
+      #deathWatch {
+        position: fixed;
+        right: 20px;
+        bottom: 105px;
+        z-index: 80;
+        padding: 14px;
+        background: #18382ce8;
+        border: 1px solid #d6dfa8;
+        border-radius: 8px;
+        font-size: 13px;
+      }
+      #baseActions {
+        bottom: 110px;
+      }
+      #placementControls {
+        bottom: 100px;
+      }
     </style>
   </head>
   <body>
@@ -2416,6 +2469,15 @@
     >
       Tir · pistolet
     </button>
+    <div id="deathWatch" class="hidden" role="dialog" aria-label="Observation après décès">
+      <p>Vous êtes mort. La partie continue.</p>
+      <button id="enterPurgatory">Accéder au purgatoire</button>
+    </div>
+    <div id="commandHelp" class="hidden"></div>
+    <div id="cursorStats" class="hidden">
+      <span id="cursorSpeed"></span> · <span id="cursorHealth"></span
+      ><progress id="cursorHPbar" max="100" value="100"></progress><span id="cursorAmmo"></span>
+    </div>
     <div id="dirtView" aria-hidden="true"></div>
     <p id="dirtWarning" class="hidden">Attention, nettoyez votre véhicule en urinant dessus.</p>
     <div id="tankReticle" class="hidden" aria-label="Graduations balistiques en mètres"></div>

@@ -1,3 +1,8 @@
+import { controlHints, cursorStats } from '/live-hud.js';
+import { identifyPlayer, disposePlayerIdentity } from '/player-livery.js';
+import { GunSalvos } from '/salvos.js';
+import { ammoCapacity } from '/logistics.js';
+import { makeShotTrace, TracerPool } from '/tracers.js';
 import { PurchaseUI } from '/purchase-ui.js';
 import { purchaseCount } from '/equipment.js';
 import { vehicleHue } from '/logistics.js';
@@ -201,6 +206,9 @@ let joined = false,
   room = '',
   pending = false,
   respawnAt = 0,
+  spectating = false,
+  observationCamera = null,
+  observationRealm = 'office',
   deathPending = false,
   soulBusy = false,
   punchAt = 0,
@@ -333,6 +341,7 @@ const groundView = { yaw: 0, pitch: 0.24, distance: 5.8, scene: '', pointer: nul
 function groundActive() {
   return (
     joined &&
+    !spectating &&
     ((onFoot && !myVehicle) || !!respawnAt) &&
     $('papers').classList.contains('hidden') &&
     $('help').classList.contains('hidden') &&
@@ -344,7 +353,7 @@ function groundActive() {
   );
 }
 function soulIntent() {
-  if (!groundActive()) return { x: 0, z: 0, guard: false };
+  if (!groundActive() || spectating) return { x: 0, z: 0, guard: false };
   let x =
       Number(!!(keys.ArrowRight || keys.KeyD)) -
       Number(!!(keys.ArrowLeft || keys.KeyA || keys.KeyQ)) -
@@ -396,8 +405,8 @@ canvas.addEventListener('pointermove', (e) => {
   groundView.yaw -= (e.clientX - groundView.x) * 0.005;
   groundView.pitch = T.MathUtils.clamp(
     groundView.pitch + (e.clientY - groundView.y) * 0.004,
-    -0.12,
-    0.85,
+    -1.52,
+    1.52,
   );
   groundView.x = e.clientX;
   groundView.y = e.clientY;
@@ -452,6 +461,7 @@ function groundCamera(cam, position, dt, purg = false) {
   else cam.position.lerp(desired, 1 - Math.exp(-14 * dt));
   cam.up.set(0, 1, 0);
   cam.lookAt(target);
+  cam.updateMatrixWorld();
   cam.aspect = innerWidth / innerHeight;
   cam.updateProjectionMatrix();
 }
@@ -598,6 +608,7 @@ function resetMouseAim() {
   mousePrevious = null;
 }
 function clearControls() {
+  gunSalvos.clear();
   freeLook.yaw = 0;
   freeLook.pitch = 0;
   holdZoom.reset();
@@ -632,6 +643,7 @@ function releaseMouse() {
 function canCapture() {
   return (
     joined &&
+    !spectating &&
     $('papers').classList.contains('hidden') &&
     $('help').classList.contains('hidden') &&
     $('shop').classList.contains('hidden') &&
@@ -686,7 +698,7 @@ addEventListener('pointermove', (event) => {
   }
   if (onFoot || respawnAt) {
     groundView.yaw -= dx * 0.005;
-    groundView.pitch = T.MathUtils.clamp(groundView.pitch + dy * 0.004, -0.12, 0.85);
+    groundView.pitch = T.MathUtils.clamp(groundView.pitch + dy * 0.004, -1.52, 1.52);
     return;
   }
   if (keys.KeyC) {
@@ -742,6 +754,7 @@ addEventListener('blur', releaseMouse);
 function updateAimHUD() {
   const enabled =
     joined &&
+    !spectating &&
     !respawnAt &&
     !onFoot &&
     turretIndex < 0 &&
@@ -871,11 +884,21 @@ function accept(s, force = false) {
     paperContext = '';
     paperSuppressed = false;
   }
-  if (self?.state.realm === 'super' && self.life === 'dead') {
+  if (self?.state.realm === 'super' && self.life === 'dead' && !self.state.awaitingPurgatory) {
     s.arena = s.superArena;
     s.souls = s.superSouls;
   }
   if (self && (worldChanged || self.mode === 'foot')) hp = self.health;
+  if (self?.state.awaitingPurgatory && !spectating)
+    freezeObservation(
+      previousSelf?.state?.realm === 'super'
+        ? 'super'
+        : previousSelf?.life === 'dead'
+          ? 'purgatory'
+          : 'office',
+    );
+  if (!self?.state.awaitingPurgatory && !deathPending) spectating = false;
+  $('deathWatch').classList.toggle('hidden', !spectating);
   if (self?.life === 'dead') {
     respawnAt = 1;
     hp = self.health ?? 100;
@@ -974,20 +997,21 @@ function accept(s, force = false) {
       e.realm === (respawnAt ? (isSuper() ? 'super' : 'purgatory') : 'office')
     ) {
       const targetScene = respawnAt ? purgScene : scene;
-      const line = makeTracer(
+      const line = makeShotTrace(
         T,
         targetScene,
         new T.Vector3().fromArray(e.p),
         new T.Vector3().fromArray(e.direction),
         '#ffe48d',
+        respawnAt ? 1 : MAP.ratio,
       );
-      if (respawnAt) line.scale.setScalar(1 / MAP.ratio);
+
       line.userData.until = performance.now() + 90;
       pistolTrails.push({ line, targetScene });
     }
     if (e.kind === 'piercing') hitEffects.burst(new T.Vector3().fromArray(e.p), camera);
     if (e.kind === 'blast') {
-      combatEffects.blast(new T.Vector3().fromArray(e.p));
+      combatEffects.blast(new T.Vector3().fromArray(e.p), e.radius || MAP.metres(FLAK.radius));
       sound.play('crash', { x: e.p[0], y: e.p[1], z: e.p[2] }, { ref: 20 });
     }
   }
@@ -1172,7 +1196,7 @@ $('closeHelp').onclick = () => {
   captureMouse();
 };
 addEventListener('keydown', (event) => {
-  if (!joined) return;
+  if (!joined || spectating) return;
   if (event.code === 'Escape') {
     if (purchaseUI.opened) {
       purchaseUI.close();
@@ -1378,9 +1402,11 @@ function notify(m, t = 2) {
 }
 function crash() {
   if (deathPending) return;
+  if (!spectating) freezeObservation('office');
   respawnAt = 1;
   deathPending = true;
   aircraftFire.invalidate();
+  gunSalvos.clear();
   hp = 0;
   shooting = false;
   me.visible = false;
@@ -1421,21 +1447,24 @@ function respawn() {
   notify('De retour à pied à la base', 2);
 }
 function renderPurgatory() {
-  const dead = !!respawnAt;
+  const dead = !!respawnAt && !spectating;
   $('personalFire').classList.toggle(
     'hidden',
-    !joined || (!dead && (!onFoot || myVehicle || turretIndex >= 0)),
+    spectating || !joined || (!dead && (!onFoot || myVehicle || turretIndex >= 0)),
   );
   if (dead || onFoot) $('crosshair').classList.remove('hidden');
   $('purgatory').classList.toggle('hidden', !dead);
   $('touch').classList.toggle('inPurgatory', dead);
   document.querySelector('.bottomkeys').classList.toggle('hidden', dead || onFoot);
-  $('baseActions').classList.toggle('hidden', !onFoot || dead || turretIndex >= 0 || !!myVehicle);
+  $('baseActions').classList.toggle(
+    'hidden',
+    spectating || !onFoot || dead || turretIndex >= 0 || !!myVehicle,
+  );
   $('touch').classList.toggle('inPurgatory', dead || onFoot);
   for (const x of ['crosshair', 'flight', 'radar'])
     $(x).classList.toggle(
       'hidden',
-      x === 'crosshair' ? false : dead || (onFoot && turretIndex < 0 && !myVehicle),
+      spectating || (x === 'crosshair' ? false : dead || (onFoot && turretIndex < 0 && !myVehicle)),
     );
   if (turretIndex >= 0 || (myVehicle && crewSeat !== 'pilot')) $('flight').classList.add('hidden');
   for (const x of ['phaseBox', 'actions', 'players'])
@@ -2025,8 +2054,14 @@ function physicalPurgatory(dt, now) {
     }
   }
   for (const b of soulArena.bodies)
-    if (b.kind === 'player' && soulMeshes.has(b.id))
+    if (b.kind === 'player' && soulMeshes.has(b.id)) {
+      identifyPlayer(
+        T,
+        soulMeshes.get(b.id),
+        snap.pilots.find((p) => p.id === b.entity) || { name: '?', colorSequence: 0 },
+      );
       posePersonalWeapon(soulMeshes.get(b.id), b.entity === id, true);
+    }
   for (const b of soulArena.bodies)
     if (b.kind === 'enemy' && !b.gone) {
       const g = soulMeshes.get(b.id);
@@ -2038,6 +2073,7 @@ function physicalPurgatory(dt, now) {
   for (const [k, g] of soulMeshes)
     if (!active.has(k)) {
       purgScene.remove(g);
+      disposePlayerIdentity(g);
       g.traverse((o) => {
         o.geometry?.dispose();
         if (o.material?.map) o.material.map.dispose();
@@ -2568,6 +2604,11 @@ function updateBaseWorld(dt, now) {
       (a, j) =>
         (a.pivot.rotation.x = Math.sin(now * 0.014 + j * Math.PI) * Math.min(0.25, speed * 0.08)),
     );
+    identifyPlayer(
+      T,
+      g,
+      snap.pilots.find((p) => p.id === b.entity) || { name: '?', colorSequence: 0 },
+    );
     posePersonalWeapon(g, b.entity === id);
     if (!respawnAt && speed > 0.6)
       sound.play('step', w, {
@@ -2579,6 +2620,7 @@ function updateBaseWorld(dt, now) {
   for (const [id, g] of basePeople)
     if (!active.has(id)) {
       scene.remove(g);
+      disposePlayerIdentity(g);
       basePeople.delete(id);
     }
   const v = nearestVehicle();
@@ -2720,7 +2762,7 @@ function enemies(now) {
         profile.hp,
         camera,
         performance.now() / 1000,
-        profile.size * (profile.type === 'midge' ? 1.35 : 1),
+        profile.size * (profile.type === 'midge' ? 1.35 * 1.5 : 1),
       );
     }
   insectStatus.keep(active);
@@ -2829,8 +2871,12 @@ function updateOthers(dt) {
       const direction = new T.Vector3(0, 0, -1).applyQuaternion(g.quaternion);
       if (v.type === 'spitfire') {
         g.updateWorldMatrix(true, true);
-        for (const node of g.userData.muzzles)
-          bullet(node.getWorldPosition(new T.Vector3()), direction, vehicleColor(v));
+        g.userData.remoteSalvos ??= new GunSalvos();
+        g.userData.remoteSalvos.enqueue(
+          v.id,
+          performance.now(),
+          Math.min(6, Math.floor(v.supplies.ammo.pilot)),
+        );
       } else
         bullet(
           new T.Vector3(v.type === 'tank' ? 0.7 : (weaponBarrel++ % 2 ? 1 : -1) * 1.35, 0, -1.2)
@@ -2841,6 +2887,17 @@ function updateOthers(dt) {
           vehicleColor(v),
         );
     }
+    if (v.type === 'spitfire' && g.userData.remoteSalvos)
+      g.userData.remoteSalvos.update(
+        !isSelf && motion.fire ? v.id : null,
+        performance.now(),
+        (index) =>
+          bullet(
+            g.userData.muzzles[index].getWorldPosition(new T.Vector3()),
+            new T.Vector3(0, 0, -1).applyQuaternion(g.quaternion),
+            vehicleColor(v),
+          ),
+      );
   }
   for (const [k, g] of fleetModels)
     if (!active.has(k)) {
@@ -2876,6 +2933,9 @@ function bullet(pos, dir, color = '#f4efab', owned = false, aa = false) {
   }
   emitBullet(pos, dir, color, owned, aa);
 }
+const tracerPool = new TracerPool(T, scene);
+const gunSalvos = new GunSalvos();
+let spitSoundAt = -Infinity;
 const aircraftFire = new AircraftFire(
   (request) => api('aircraft-fire', { id, ...request }),
   () => {
@@ -2899,9 +2959,20 @@ const aircraftFire = new AircraftFire(
   },
 );
 function emitBullet(pos, dir, color, owned, aa, launch = null) {
-  if (!respawnAt) sound.play(aa ? 'flak' : 'shot', pos, { ref: aa ? 35 : 12 });
-  const m = makeTracer(T, scene, pos, dir, color, aa);
-  if (owned) combatEffects.muzzle(pos, dir);
+  const stamp = performance.now(),
+    cue = stamp - spitSoundAt >= 40 || aa;
+  if (!respawnAt && cue) {
+    sound.play(aa ? 'flak' : 'shot', pos, { ref: aa ? 35 : 12 });
+    spitSoundAt = stamp;
+  }
+  if (trails.length >= 256) {
+    const old = trails.shift();
+    scene.remove(old.m);
+    old.m.userData.dispose();
+  }
+  const m = tracerPool.acquire(pos, dir, color, aa);
+  if (!m) return;
+  if (owned && cue) combatEffects.muzzle(pos, dir);
   const velocity = dir.clone().multiplyScalar(MAP.metres(aa ? REFERENCE.shell : REFERENCE.bullet));
   if (launch) velocity.add(launch.velocity);
   else if (!aa && owned && myVehicle)
@@ -2929,16 +3000,11 @@ function emitBullet(pos, dir, color, owned, aa, launch = null) {
 }
 function shoot(forward) {
   if (myVehicle?.type === 'spitfire') {
-    if (aircraftFire.available(myVehicle.id, crewSeat, myVehicle.supplies, currentAmmoKey()) < 6)
-      return;
-    me.updateWorldMatrix(true, true);
-    for (const node of me.userData.muzzles)
-      bullet(
-        node.getWorldPosition(new T.Vector3()),
-        spreadDirection(T, forward),
-        vehicleColor(myVehicle),
-        true,
-      );
+    const count = Math.min(
+      6,
+      aircraftFire.available(myVehicle.id, crewSeat, myVehicle.supplies, currentAmmoKey()),
+    );
+    if (count) gunSalvos.enqueue(myVehicle.id + ':' + crewSeat, performance.now(), count);
     return;
   }
   const side = myVehicle?.type === 'tank' ? 0.7 : (weaponBarrel++ % 2 ? 1 : -1) * 1.35;
@@ -3029,13 +3095,7 @@ function stepProjectileSlice(dt) {
       fused = true;
     }
     if (b.owned && !respawnAt) {
-      let hit = nearestInsectHit(
-        T,
-        origin,
-        dir,
-        new Map([...insects].filter(([id]) => !localKills.has(id))),
-        distance,
-      );
+      let hit = nearestInsectHit(T, origin, dir, insects, distance, localKills);
       const ray = new T.Raycaster(origin, dir, 0, distance);
       for (const v of snap?.vehicles || []) {
         if (v.id === b.originVehicle) continue;
@@ -3302,6 +3362,19 @@ function drawRadar() {
     radar.arc(110 + p.x / 0.04, 110 + (p.z / 0.04) * 0.88, r, 0, Math.PI * 2);
     radar.fill();
   }
+  for (const station of stations.filter((s) => s.kind === 'radar')) {
+    const x = 110 + station.x / 0.04,
+      z = 110 + (station.z / 0.04) * 0.88;
+    radar.strokeStyle = '#a1d7bd65';
+    radar.beginPath();
+    radar.ellipse(x, z, 2 / 0.04, (2 / 0.04) * 0.88, 0, 0, Math.PI * 2);
+    radar.stroke();
+    const angle = performance.now() * 0.0006;
+    radar.beginPath();
+    radar.moveTo(x, z);
+    radar.lineTo(x + Math.cos(angle) * 50, z + Math.sin(angle) * 44);
+    radar.stroke();
+  }
   dot(new T.Vector3(OFFICE_LAYOUT.bin.x, 0, OFFICE_LAYOUT.bin.z), '#eee5ae', 5);
   for (const g of insects.values())
     if (inRadarCoverage(g.position, stations)) dot(g.position, '#efaa74', 3);
@@ -3320,7 +3393,7 @@ function drawRadar() {
 let lastCountdownTick = null;
 function updateAudio() {
   if (!joined) return;
-  const purg = !!respawnAt,
+  const purg = spectating ? observationRealm !== 'office' : !!respawnAt,
     activeCamera = purg ? purgCamera : camera,
     sceneName = purg ? 'purgatory' : 'flight',
     changed = sound.scene !== sceneName;
@@ -3478,6 +3551,7 @@ function frame(now) {
     : '🎮 Appuyez sur un bouton de votre manette';
   if (
     joined &&
+    !spectating &&
     controlFocus.active &&
     Math.max(Math.abs(pad.pitch), Math.abs(pad.roll), Math.abs(pad.yaw)) > 0.05
   ) {
@@ -3486,6 +3560,7 @@ function frame(now) {
   }
   if (
     joined &&
+    !spectating &&
     controlFocus.active &&
     onFoot &&
     !myVehicle &&
@@ -3580,13 +3655,34 @@ function frame(now) {
   if (joined) updateBaseWorld(dt, now);
   updateVehicles(dt);
   updatePlacement();
+  for (const model of turrets)
+    if (model?.userData.dish) model.userData.dish.rotation.y = now * 0.001;
   updateFallingEnemies(dt);
   updateContextHUD();
-  if (respawnAt && soulBody) {
+  if (spectating && observationCamera) {
+    if (observationRealm !== 'office') observedPurgatory();
+    renderer.render(observationRealm === 'office' ? scene : purgScene, observationCamera);
+  } else if (respawnAt && soulBody) {
     physicalPurgatory(dt, now);
     renderer.render(purgScene, purgCamera);
   } else renderer.render(scene, camera);
   updateAudio();
+  gunSalvos.update(
+    !spectating && canCapture() && myVehicle?.type === 'spitfire' && !respawnAt
+      ? myVehicle.id + ':' + crewSeat
+      : null,
+    now,
+    (index) => {
+      const node = me.userData.muzzles[index];
+      me.updateWorldMatrix(true, true);
+      bullet(
+        node.getWorldPosition(new T.Vector3()),
+        spreadDirection(T, new T.Vector3(0, 0, -1).applyQuaternion(me.quaternion)),
+        vehicleColor(myVehicle),
+        true,
+      );
+    },
+  );
   updateVehicleCare(dt);
   updateTankReticle();
 }
@@ -3594,6 +3690,10 @@ requestAnimationFrame(frame);
 addEventListener('resize', () => {
   camera.aspect = innerWidth / innerHeight;
   camera.updateProjectionMatrix();
+  if (observationCamera) {
+    observationCamera.aspect = camera.aspect;
+    observationCamera.updateProjectionMatrix();
+  }
   renderer.setSize(innerWidth, innerHeight);
 });
 
@@ -3607,9 +3707,15 @@ const ghosts = {
   refuel: installationModel({ kind: 'refuel', x: 0, y: 0, z: 0 }),
   radar: installationModel({ kind: 'radar', x: 0, y: 0, z: 0 }),
   bed: installationModel({ kind: 'bed', x: 0, y: 0, z: 0 }),
+  fighter: makePlane('#badb84'),
+  bomber: makeBomber('#badb84'),
+  interceptor: makeStuka('#badb84'),
+  tank: makeTank('#badb84'),
+  spitfire: makeSpitfire('#badb84'),
 };
 let ghost = ghosts.dca;
-for (const model of Object.values(ghosts)) {
+for (const [kind, model] of Object.entries(ghosts)) {
+  if (VEHICLES[kind]) model.scale.setScalar(ACTOR_UNIT);
   model.visible = false;
   model.traverse((o) => {
     if (o.isMesh) {
@@ -3664,15 +3770,17 @@ function renderShop() {
         ? 'Acquis'
         : owned
           ? 'Déjà payé · Reprendre la pose'
-          : price + ' $ · ' + (profile.kind === 'placement' ? 'Signer le bon' : 'Acheter');
+          : price +
+            ' $ · ' +
+            (['placement', 'vehicle'].includes(profile.kind) ? 'Signer le bon' : 'Acheter');
     button.disabled =
       purchaseBusy ||
       (!owned && snap.dollars < price) ||
       (profile.max && level >= profile.max) ||
-      (profile.kind === 'placement' &&
+      (['placement', 'vehicle'].includes(profile.kind) &&
         (!!myVehicle || turretIndex >= 0 || selfBase()?.grounded === false));
     button.onclick = () => {
-      if (profile.kind === 'placement') {
+      if (['placement', 'vehicle'].includes(profile.kind)) {
         if (owned) beginPlacement(owned);
         else
           purchaseUI.open(
@@ -3752,7 +3860,7 @@ function updatePlacement() {
         : null;
   placementCandidate = candidate;
   ghost.visible = true;
-  ghost.position.set(p.x, candidate?.y ?? w.y, p.z);
+  ghost.position.set(p.x, (candidate?.y ?? w.y) + (VEHICLES[placementKind]?.gear || 0), p.z);
   ghost.traverse((o) => {
     if (o.isMesh) o.material.color.set(candidate ? '#badb84' : '#e87b68');
   });
@@ -3895,13 +4003,7 @@ function pistol() {
           hit = { wall: true, point, distance: point.distanceTo(origin) };
       }
     } else {
-      const enemy = nearestInsectHit(
-        T,
-        origin,
-        dir,
-        new Map([...insects].filter(([i]) => !localKills.has(i))),
-        150 * scale,
-      );
+      const enemy = nearestInsectHit(T, origin, dir, insects, 150 * scale, localKills);
       if (enemy) hit = { ...enemy, enemy: enemy.id };
       for (const v of snap.vehicles || []) consider(fleetModels.get(v.id), { vehicle: v.id });
       for (const p of snap.pilots)
@@ -3941,8 +4043,16 @@ function pistol() {
     incarnation: snap.pilots.find((p) => p.id === id)?.incarnation,
   });
   const targetScene = purg ? purgScene : scene;
-  const line = makeTracer(T, targetScene, origin, dir, '#ffe48d');
-  if (purg) line.scale.setScalar(scale / MAP.ratio);
+  const line = makeShotTrace(
+    T,
+    targetScene,
+    origin,
+    dir,
+    '#ffe48d',
+    scale,
+    hit?.distance || 150 * scale,
+  );
+
   line.userData.until = performance.now() + 90;
   pistolTrails.push({ line, targetScene });
   while (pistolTrails.length > 64) {
@@ -4117,7 +4227,17 @@ function installationModel(st) {
   }
   if (st.kind === 'radar') {
     cyl(0, 2, 0, 0.18, 0.25, 4, '#d3dbbf', g);
-    box(0, 4, 0, 3, 1.5, 0.2, '#7fbdad', g);
+    const dish = new T.Group();
+    dish.position.y = 4;
+    g.add(dish);
+    const bowl = new T.Mesh(
+      new T.SphereGeometry(1.65, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2),
+      new T.MeshStandardMaterial({ color: '#7fbdad', side: T.DoubleSide }),
+    );
+    bowl.rotation.x = Math.PI / 2;
+    dish.add(bowl);
+    box(0, 0, -1, 0.12, 0.12, 2.5, '#d3dbbf', dish);
+    g.userData.dish = dish;
   } else {
     cyl(-1, 0.9, 0, 0.6, 0.6, 1.5, '#d9b958', g);
     box(0.8, 1, 0, 1, 1.7, 0.9, '#557a69', g);
@@ -4175,8 +4295,7 @@ function currentAmmoKey() {
 function hasAmmo() {
   return (
     !myVehicle ||
-    aircraftFire.available(myVehicle.id, crewSeat, myVehicle.supplies, currentAmmoKey()) >=
-      (myVehicle.type === 'spitfire' ? 6 : 1)
+    aircraftFire.available(myVehicle.id, crewSeat, myVehicle.supplies, currentAmmoKey()) >= 1
   );
 }
 let nextHeavyAt = 0;
@@ -4297,6 +4416,46 @@ function updateContextHUD() {
         })
       : null;
   contextHUD.update(model);
+  const stats =
+    !modal && !respawnAt
+      ? cursorStats({
+          vehicle: myVehicle,
+          seat: crewSeat,
+          hp:
+            crewSeat === 'pilot'
+              ? Math.min(hp, myVehicle?.state.hp ?? hp)
+              : (myVehicle?.state.hp ?? hp),
+          speed:
+            (Math.hypot(
+              ...(crewSeat === 'pilot' ? vel.toArray() : myVehicle?.state.v || [0, 0, 0]),
+            ) /
+              MAP.ratio) *
+            3.6,
+          ammo: myVehicle
+            ? aircraftFire.available(myVehicle.id, crewSeat, myVehicle.supplies, currentAmmoKey())
+            : 0,
+        })
+      : null;
+  $('cursorStats').classList.toggle('hidden', !stats);
+  if (stats) {
+    $('cursorSpeed').textContent = stats.speed + ' km/h';
+    $('cursorHealth').textContent = Math.ceil(stats.hp) + ' PV';
+    $('cursorAmmo').textContent =
+      stats.ammo + ' balles' + (stats.bombs !== null ? ' · ' + stats.bombs + ' bombes' : '');
+    $('cursorHPbar').value = stats.hp;
+    $('cursorStats').style.left = 'calc(' + ($('crosshair').style.left || '50%') + ' + 30px)';
+    $('cursorStats').style.top = 'calc(' + ($('crosshair').style.top || '50%') + ' + 22px)';
+  }
+  $('commandHelp').classList.toggle('hidden', !joined);
+  $('commandHelp').textContent = controlHints({
+    vehicle: myVehicle,
+    seat: crewSeat,
+    turret: turretIndex >= 0,
+    dead: !!respawnAt,
+    airborne: selfBase()?.grounded === false,
+    placing: placingEquipment,
+    observing: spectating,
+  });
   const range = model?.readout;
   $('aimRange').classList.toggle('hidden', !range);
   if (range) {
@@ -4333,6 +4492,7 @@ const bankUI = new BankUI({
   },
 });
 function toggleBank() {
+  if (spectating) return;
   if (bedUI.opened || purchaseUI.opened) return;
   if (!joined || boardingBusy || soulBusy || boardingSelectionBusy) return;
   if (bankUI.opened) bankUI.close();
@@ -4515,6 +4675,7 @@ function updateVehicleCare(dt) {
   $('dirtWarning').classList.toggle('hidden', dirt < WASH.warning);
   const local =
     joined &&
+    !spectating &&
     !myVehicle &&
     turretIndex < 0 &&
     groundActive() &&
@@ -4630,6 +4791,7 @@ function updateVehicleCare(dt) {
 function updateTankReticle() {
   const shown =
     joined &&
+    !spectating &&
     myVehicle?.type === 'tank' &&
     crewSeat === 'cannon' &&
     !keys.KeyC &&
@@ -4666,4 +4828,66 @@ function updateTankReticle() {
     tick.style.top = 50 - projected.y * 50 + '%';
     root.append(tick);
   }
+}
+
+function freezeObservation(realm) {
+  observationRealm = realm;
+  observationCamera = (realm === 'office' ? camera : purgCamera).clone();
+  observationCamera.updateMatrixWorld();
+  spectating = true;
+  clearControls();
+  releaseMouse();
+  gunSalvos.clear();
+  for (const name of [
+    'papers',
+    'paperBackdrop',
+    'bank',
+    'bedPanel',
+    'purchasePanel',
+    'shop',
+    'help',
+  ])
+    $(name).classList.add('hidden');
+  $('deathWatch').classList.remove('hidden');
+}
+let enteringPurgatory = false;
+$('enterPurgatory').onclick = async () => {
+  if (enteringPurgatory || !snap?.pilots.find((p) => p.id === id)?.state.awaitingPurgatory) return;
+  enteringPurgatory = true;
+  $('enterPurgatory').disabled = true;
+  try {
+    accept(
+      await api('enter-purgatory', {
+        id,
+        incarnation: snap.pilots.find((p) => p.id === id).incarnation,
+      }),
+    );
+  } catch (e) {
+    notify(e.message, 3);
+  } finally {
+    enteringPurgatory = false;
+    $('enterPurgatory').disabled = false;
+  }
+};
+function observedPurgatory() {
+  const arena = observationRealm === 'super' ? snap?.superArena : snap?.arena;
+  const active = new Set();
+  for (const body of arena?.bodies || []) {
+    if (body.entity === id || body.gone) continue;
+    active.add(body.id);
+    let model = soulMeshes.get(body.id);
+    if (!model) {
+      model = body.kind === 'player' ? humanoid('#8bc9d6') : insect(body.enemyType || 'midge');
+      purgScene.add(model);
+      soulMeshes.set(body.id, model);
+    }
+    model.position.set(body.x, 0, body.z);
+    model.rotation.y = body.face || 0;
+  }
+  for (const [key, model] of soulMeshes)
+    if (!active.has(key)) {
+      purgScene.remove(model);
+      disposePlayerIdentity(model);
+      soulMeshes.delete(key);
+    }
 }

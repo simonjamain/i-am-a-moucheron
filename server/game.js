@@ -37,7 +37,13 @@ function requireGame(ok, message, status = 409) {
   if (!ok) throw Object.assign(new Error(message), { status });
 }
 const world = (p) =>
-  p.life === 'alive' ? 'office' : p.state.realm === 'super' ? 'super' : 'purgatory';
+  p.state.awaitingPurgatory
+    ? 'observation'
+    : p.life === 'alive'
+      ? 'office'
+      : p.state.realm === 'super'
+        ? 'super'
+        : 'purgatory';
 const signature = (s) => s === true;
 const initialState = () => ({
   p: [OFFICE_LAYOUT.base.originX, OFFICE_LAYOUT.base.departureY, OFFICE_LAYOUT.base.originZ - 8],
@@ -82,6 +88,8 @@ function roomState(code, now) {
     requests: new Map(),
     souls: new Map(),
     orders: new Map(),
+    playerColors: new Map(),
+    playerSequence: 0,
     purchases: new Map(),
     bedContracts: new Map(),
     identityTokens: new Map(),
@@ -140,6 +148,7 @@ export class Game {
         for (const key of r.bedContracts.keys())
           if (!activeTokens.has(key)) {
             r.bedContracts.delete(key);
+            r.playerColors.delete(key);
             break;
           }
       }
@@ -154,6 +163,9 @@ export class Game {
           .trim()
           .slice(0, 20) || 'Pilote',
       bay,
+      colorSequence:
+        r.playerColors.get(resumeKey) ||
+        (r.playerColors.set(resumeKey, ++r.playerSequence), r.playerSequence),
       seen: this.now(),
       life: 'alive',
       mode: 'foot',
@@ -196,9 +208,12 @@ export class Game {
       if (!this.live(r).length && this.now() - r.touched > this.roomTTL) this.rooms.delete(code);
   }
   fleet(r) {
+    for (const vehicle of r.vehicles.values()) if (!vehicle.state.landed) vehicle.ready = 0;
     for (const type of ['fighter', 'bomber'])
       if (
-        !values(r.vehicles).some((v) => v.type === type && v.origin === 'starter' && v.state.hp > 0)
+        !values(r.vehicles).some(
+          (v) => v.type === type && v.origin === 'starter' && v.ready && v.state.hp > 0,
+        )
       )
         this.createVehicle(r, type, 'starter');
     for (const v of r.vehicles.values()) {
@@ -217,11 +232,13 @@ export class Game {
       v.updated = now;
     }
   }
-  createVehicle(r, type, origin = 'purchase') {
+  createVehicle(r, type, origin = 'purchase', placement = null) {
     const id = uid(),
       state = vehiclePad(type);
     const near = values(r.vehicles).filter((v) => v.type === type && v.state.hp > 0).length;
-    if (near) {
+    if (placement) {
+      state.p = [placement.x, placement.y + VEHICLES[type].gear, placement.z];
+    } else if (near && origin !== 'starter') {
       state.p[0] += (near % 4) * MAP.metres(VEHICLES[type].span + 5);
       state.p[2] += Math.ceil(near / 4) * MAP.metres(VEHICLES[type].length + 5);
     }
@@ -573,10 +590,15 @@ export class Game {
     this.activate(r, p, token);
   }
   kill(r, p, incarnation) {
+    if (p.state.awaitingPurgatory) return;
     if (incarnation !== undefined && incarnation !== null && incarnation !== p.incarnation) return;
     if (incarnation == null && p.life === 'dead') return;
-    const realm = world(p) === 'office' ? 'purgatory' : 'super';
+    const before = world(p),
+      realm = before === 'office' ? 'purgatory' : 'super';
+    const deathPosition = this.playerPosition(r, p) || p.state.p;
     this.release(r, p);
+    for (const arena of [r.base, r.purgatory, r.super])
+      if (arena.bodies) arena.bodies = arena.bodies.filter((b) => b.entity !== p.id);
     for (const s of r.souls.values())
       if (s.kind === 'player' && s.entity === p.id) s.status = 'gone';
     p.life = 'dead';
@@ -584,10 +606,17 @@ export class Game {
     p.incarnation++;
     p.mode = 'foot';
     p.board_paper = 0;
-    p.state = { ...initialState(), realm };
-    this.soul(r, 'player', p.id, p.name, realm);
+    p.state = {
+      ...initialState(),
+      realm,
+      awaitingPurgatory: before !== 'super',
+      observationRealm: before,
+      deathPosition,
+    };
+    if (before === 'super') this.soul(r, 'player', p.id, p.name, realm);
   }
   sync(r, p, b) {
+    if (p.state.awaitingPurgatory) return;
     if (
       (b.incarnation !== undefined && b.incarnation !== p.incarnation) ||
       (b.occupation !== undefined && b.occupation !== p.occupation)
@@ -624,7 +653,7 @@ export class Game {
     const v = r.vehicles.get(p.vehicle_id);
     if (v && p.seat === 'pilot' && flying) {
       v.state = { ...safe, hp: Math.min(v.state.hp, safe.hp), type: v.type };
-      if (leftVehiclePad(v) || v.state.hp <= 0) v.ready = 0;
+      if (!v.state.landed || v.state.hp <= 0) v.ready = 0;
     }
     const host = this.live(r)
       .map((p) => p.id)
@@ -634,7 +663,7 @@ export class Game {
         const v = r.vehicles.get(report.id);
         if (!v || v.seats.has('pilot') || !validMotion(report.state)) continue;
         v.state = { ...report.state, hp: Math.min(v.state.hp, report.state.hp) };
-        if (leftVehiclePad(v) || v.state.hp <= 0) v.ready = 0;
+        if (!v.state.landed || v.state.hp <= 0) v.ready = 0;
         if (v.state.hp <= 0)
           for (const id of [...v.seats.values()]) {
             const mate = r.pilots.get(id);
@@ -650,7 +679,17 @@ export class Game {
     requireGame(r.pilots.has(id), 'Connexion expirée. Rechargez la page.', 401);
     p.seen = this.now();
     r.touched = this.now();
-    if (path === 'sync') this.sync(r, p, b);
+    requireGame(
+      !p.state.awaitingPurgatory || ['sync', 'enter-purgatory', 'reset'].includes(path),
+      'Accédez au purgatoire avant d’agir.',
+    );
+    if (path === 'enter-purgatory') {
+      requireGame(b.incarnation === p.incarnation && p.life === 'dead', 'Décès périmé.');
+      if (p.state.awaitingPurgatory) {
+        p.state.awaitingPurgatory = false;
+        this.soul(r, 'player', p.id, p.name, p.state.realm);
+      }
+    } else if (path === 'sync') this.sync(r, p, b);
     else if (path === 'purchase-sign') this.purchaseSign(r, p, b);
     else if (path === 'place-purchase') this.placePurchase(r, p, b);
     else if (path === 'wash') this.wash(r, p, b);
@@ -667,6 +706,8 @@ export class Game {
       Object.assign(r, roomState(r.code, this.now()));
       r.pilots = pilots;
       r.identityTokens = identities;
+      r.playerSequence = Math.max(0, ...values(pilots).map((p) => p.colorSequence || 0));
+      for (const p of pilots.values()) r.playerColors.set(identities.get(p.id), p.colorSequence);
       for (const token of identities.values()) r.bedContracts.set(token, null);
       for (const p of pilots.values())
         Object.assign(p, {
@@ -752,8 +793,10 @@ export class Game {
         p.health = Math.max(0, p.health - impactDamage(b.speed));
         if (!p.health) this.kill(r, p, p.incarnation);
       }
-    } else if (path === 'buy') this.buy(r, p, b);
-    else if (['vehicle-select', 'vehicle-sign', 'vehicle-exit'].includes(path))
+    } else if (path === 'buy') {
+      requireGame(SHOP[b.item]?.kind !== 'vehicle', 'Signez le bon puis posez le véhicule.');
+      this.buy(r, p, b);
+    } else if (['vehicle-select', 'vehicle-sign', 'vehicle-exit'].includes(path))
       this.vehicle(r, p, path, b);
     else if (['equipment-select', 'equipment-sign', 'turret'].includes(path))
       this.equipment(r, p, path, b);
@@ -809,7 +852,10 @@ export class Game {
   }
   pistolTrace(r, p, b) {
     requireGame(
-      p.mode === 'foot' && !p.vehicle_id && b.incarnation === p.incarnation,
+      !p.state.awaitingPurgatory &&
+        p.mode === 'foot' &&
+        !p.vehicle_id &&
+        b.incarnation === p.incarnation,
       'Pistolet indisponible.',
     );
     requireGame(
@@ -855,7 +901,7 @@ export class Game {
       'Approchez à pied avec votre corps actuel.',
     );
     requireGame(
-      SHOP[b.item]?.kind === 'placement' && signature(b.signature),
+      ['placement', 'vehicle'].includes(SHOP[b.item]?.kind) && signature(b.signature),
       'Signez le bon de commande.',
     );
     requireGame(
@@ -912,7 +958,9 @@ export class Game {
         latched = new Set(v.contactWave === r.wave ? v.contacts : []);
       frames.forEach((frame, i) => {
         if (!frame || r.kills.has(i)) return;
-        const radius = MAP.metres(plan.roster[i].size * 0.7 + 0.3);
+        const radius = MAP.metres(
+          plan.roster[i].size * 0.7 * (plan.roster[i].type === 'midge' ? 2.025 : 1) + 0.3,
+        );
         const touching = Math.hypot(...v.state.p.map((n, j) => n - frame.p[j])) <= radius;
         const impact = touching || segmentSphere(previous, v.state.p, frame.p, radius) !== null;
         if (impact && !latched.has(i)) {
@@ -989,7 +1037,7 @@ export class Game {
       'La caisse commune ne contient pas assez de dollars.',
     );
     requireGame(!item.max || (r.upgrades[b.item] || 0) < item.max, 'Amélioration déjà au maximum.');
-    if (item.kind === 'placement') {
+    if (item.kind === 'placement' || (item.kind === 'vehicle' && prepaid)) {
       requireGame(
         p.mode === 'foot' &&
           b.position &&
@@ -1027,11 +1075,17 @@ export class Game {
             Math.abs(v.state.p[1] - placement.y) < MAP.metres(4) &&
             Math.hypot(v.state.p[0] - placement.x, v.state.p[2] - placement.z) <
               (VEHICLES[v.type].span * ACTOR_UNIT) / 2 +
-                (b.item === 'refuel' ? 0.065 : MAP.metres(b.item === 'bed' ? 3 : 2.1)),
+                (VEHICLES[b.item]
+                  ? MAP.metres(VEHICLES[b.item].span / 2 + 1)
+                  : b.item === 'refuel'
+                    ? 0.065
+                    : MAP.metres(b.item === 'bed' ? 3 : 2.1)),
         ),
         'Éloignez l’installation des appareils garés.',
       );
-      r.equipment.push({ ...placement, kind: b.item, name: item.name, slot: r.equipment.length });
+      if (item.kind === 'vehicle') this.createVehicle(r, b.item, 'purchase', placement);
+      else
+        r.equipment.push({ ...placement, kind: b.item, name: item.name, slot: r.equipment.length });
     } else if (item.kind === 'vehicle') this.createVehicle(r, b.item);
     else r.upgrades[b.item] = (r.upgrades[b.item] || 0) + 1;
     if (!prepaid) r.dollars -= price;
@@ -1351,9 +1405,19 @@ export class Game {
           r.phase === 'combat' && projectile.wave === r.wave ? framesAt(projectile.updated) : [];
         for (let i = 0; i < frames.length; i++)
           if (frames[i] && !r.kills.has(i))
-            consider(segmentSphere(a, b, frames[i].p, MAP.metres(plan.roster[i].size * 0.7)), {
-              enemy: i,
-            });
+            consider(
+              segmentSphere(
+                a,
+                b,
+                frames[i].p,
+                MAP.metres(
+                  plan.roster[i].size * 0.7 * (plan.roster[i].type === 'midge' ? 2.43 : 1),
+                ),
+              ),
+              {
+                enemy: i,
+              },
+            );
         for (const v of r.vehicles.values())
           if (v.id !== projectile.vehicle && v.state.hp > 0)
             consider(segmentSphere(a, b, v.state.p, MAP.metres(VEHICLES[v.type].span * 0.3)), {
@@ -1387,6 +1451,7 @@ export class Game {
       kind: weapon === 'ap' ? 'piercing' : 'blast',
       p: point,
       shot: projectile.shot,
+      radius: profile.radius * (projectile.radiusFactor || 1),
       at: this.now(),
     });
     const enemy = (index, damage) => {
@@ -1419,7 +1484,7 @@ export class Game {
     }
     const damage = (position) => {
       const distance = Math.hypot(...point.map((v, i) => v - position[i]));
-      if (distance > profile.radius) return 0;
+      if (distance > profile.radius * (projectile.radiusFactor || 1)) return 0;
       const obstructed = this.solids.some((box) => {
         const t = segmentBox(
           point.map((v, i) => v + (i === 1 ? MAP.metres(0.05) : 0)),
@@ -1428,7 +1493,9 @@ export class Game {
         );
         return t !== null && t > 0.001 && t < 0.999;
       });
-      return obstructed ? 0 : heavyDamage(weapon, distance, projectile.bonus);
+      return obstructed
+        ? 0
+        : heavyDamage(weapon, distance, projectile.bonus, projectile.radiusFactor || 1);
     };
     frames.forEach((f, i) => {
       if (f) {

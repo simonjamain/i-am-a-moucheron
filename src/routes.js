@@ -36,24 +36,14 @@ export function enemyRoute(enemy) {
       : Math.floor(random() * (enemy.ground ? 3 : 4));
   let points;
   if (enemy.ground) {
-    const checkpoints =
-      portal === 0
-        ? [
-            [-3.3, 0.0007, 2.7],
-            [-3.1, 0.0007, 0.1],
-            [0, 0.0007, 0.35],
-          ]
-        : portal === 1
-          ? [
-              [0.2, 0.0007, -2.9],
-              [0.1, 0.0007, 0.3],
-              [1.4, 0.0007, 0.3],
-            ]
-          : [
-              [3.6, 0.0007, 1.8],
-              [3.25, 0.0007, 0.4],
-              [1.4, 0.0007, 0.25],
-            ];
+    const checkpoints = [
+      [-3.35, 0.0007, 2.7],
+      [3.35, 0.0007, 2.7],
+      [3.35, 0.0007, -2.9],
+      [-3.35, 0.0007, -2.9],
+      [-3.1, 0.0007, 0.3],
+      [1.4, 0.0007, 0.3],
+    ];
     const goals = [...checkpoints, [3.0, 0.0007, -2.7]];
     points = [PORTALS.ground[portal]];
     for (const goal of goals) points.push(...floorPath(points.at(-1), goal).slice(1));
@@ -74,18 +64,14 @@ export function enemyRoute(enemy) {
     ];
     const full = [
       [source[0] * 0.7, 2.7, source[2] * 0.7],
-      [-2.9, 2.65, 2.6],
+      [-2.9 + jitter, 2.65, 2.6],
       [-2.9, 2.7, -2.8],
       [2.8, 2.65, -2.6],
       [2.8, 2.5, 2.5],
-      [0, 2.2, 1.9],
+      [0 + jitter, 1.65, 1.9],
       [2.8, 1.5, -2.6],
     ];
-    points = [
-      source,
-      ...(enemy.approach === 'intro' ? intro : enemy.approach === 'short' ? short : full),
-      [2.5, 0.38, -2.7],
-    ];
+    points = [source, ...full, [2.5, 0.38, -2.7]];
     // Raise detours above static furniture; final descent is next to the bin.
     for (let i = 1; i < points.length; i++)
       if (blockedSegment(points[i - 1], points[i])) {

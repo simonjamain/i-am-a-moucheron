@@ -1,6 +1,6 @@
 # Retours terrain : accès, visée, chutes et réapparition
 
-Référence actuelle du lot BUG-04 à ECO-02, serveur **Node RAM/UDP**.
+Référence technique du lot BUG-04 à ECO-02, serveur **Node RAM/UDP**.
 Les sources se livrent en ZIP ; l’ancienne image Docker `.2` ne contient pas ce lot.
 Le Site public Worker reste historique et n’est pas remplacé par ce client Node.
 
@@ -50,8 +50,7 @@ Un premier rayon trouve le point sous le réticule. Un second part du canon vers
 ce point et contrôle à nouveau cibles et obstacles. Une légère pénétration du
 point visé de 1 cm de référence évite les ratés numériques sur un sommet de triangle.
 Un point situé derrière la bouche n’entraîne pas de tir dans le dos. Mobilier du
-bureau, guichet et sol des purgatoires bloquent le tir. Les traceurs suivent le
-second rayon. Portée conservée : 150 m de référence, soit 0,45 m au bureau et
+bureau, guichet et sol des purgatoires bloquent le tir. Les rayons suivent le second rayon ; le traceur immobile a ensuite nécessité une correction spécifique ARM-05, décrite dans le dernier lot. Portée conservée : 150 m de référence, soit 0,45 m au bureau et
 150 m au purgatoire ; 10 dégâts, semi-automatique, sans recharge, interdit en poste.
 
 `personal-aim.js`, le diagnostic exécutant le vrai `pistol()` et les tests géométriques
@@ -60,34 +59,10 @@ ressenti avec Pointer Lock réel reste à observer sur une machine équipée de 
 
 ## Chute et parachute
 
-La chute du personnage utilise désormais les **mètres réels du décor**, sans
-multiplier la gravité par le ratio miniature. Les avions et projectiles gardent
-leurs réglages propres. `field-physics.js` possède les valeurs du personnage :
-
-| Quantité                         |                Valeur de jeu |
-| -------------------------------- | ---------------------------: |
-| Gravité                          |           9,81 m/s² du décor |
-| Vitesse limite sans voile        |               6 m/s du décor |
-| Vitesse cible sous voile gonflée |           0,045 m/s du décor |
-| Gonflage complet                 |                       0,25 s |
-| Décélération maximale de voile   |                      24 m/s² |
-| Impact sans dégâts               | vitesse verticale ≤ 0,60 m/s |
-| Impact mortel                    |    vitesse verticale ≥ 2 m/s |
-
-Entre les seuils, dégâts = arrondi supérieur de
-`100 × ((v − 0,60) / (2 − 0,60))²`. Seule la vitesse descendante à l’impact compte.
-Le ralentissement est progressif, avec sous-pas de 1/240 s. Espace ouvre/replie
-plusieurs fois ; le gonflage se résorbe en 0,125 s après fermeture. Le contact est résolu dans les sous-pas pour éviter un impact majoré à faible
-cadence ; un corps déjà posé ne subit pas de dégâts en restant immobile. Le contact
-replie la voile et remet son gonflage à zéro. Ces réglages sont un modèle de jeu,
-pas une simulation biologique du personnage miniature.
-
-Sur une chute de 0,90 m : environ 0,45 s et 3,74 m/s à l’impact sans voile, donc
-mortelle ; ouverture immédiate : 0 dégât ; ouverture à 0,37 s : encore mortelle.
-Les tests comparent plusieurs cadences et cycles. Un impact possède un identifiant
-lié au joueur et à son incarnation ; le serveur déduit les dégâts une seule fois
-et déclenche le purgatoire. Les rapports de vitesse restent sous la confiance
-coopérative du jeu ; aucune promesse anti-triche n’est ajoutée.
+Les valeurs CHU-01 de cette livraison ont été remplacées par CHU-02 : gravité
+9,81 × 0,003 = 0,02943 m/s², vitesses et seuils adaptés au ratio. La résolution
+par sous-pas, le parachute progressif et la déduplication restent. Constantes,
+mesures de chute et origine du changement : [physique actuelle](multiplayer-return.md#gravité-parachute-et-pistolet).
 
 ## Départ, lits et contrats personnels
 

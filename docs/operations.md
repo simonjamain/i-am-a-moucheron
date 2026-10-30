@@ -83,3 +83,8 @@ les tests, le backlog et les références à jour.
 Dernier lot : [lisibilité et nettoyage](clean-flight.md), incluant le Spitfire.
 Recharger tous les navigateurs après installation du nouveau ZIP ; le serveur
 Node conserve ses assets assemblés au démarrage et doit être redémarré après modification.
+
+Lot courant : [retours multijoueurs](multiplayer-return.md). Les mesures CPU
+comparatives sont reproductibles avec `node scripts/review-return-performance.mjs`
+dans un clone Git contenant le commit de référence. Le ZIP permet de jouer sans
+Git ; les benchmarks historiques demandent leur référence Git.

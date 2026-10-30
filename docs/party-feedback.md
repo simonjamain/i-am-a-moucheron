@@ -9,7 +9,7 @@ Les noms flottants des véhicules et personnages sont supprimés. Les listes de
 joueurs, postes et contrats conservent les identités ; les panneaux de lieux et
 les guichets restent dans la scène.
 
-Le modèle et la géométrie touchable du moucheron (`midge`) sont agrandis de 35 %.
+Le modèle et la géométrie touchable du moucheron (`midge`) sont agrandis historiquement de 35 %, puis de 50 % supplémentaires dans VIS-07 (facteur total 2,025), avec tolérance de tir de 20 %.
 Les autres types, appareils et personnages gardent leur taille. Le test de rayons
 sur un plan échantillonné retrouve une surface touchable accrue de plus de 50 %,
 sans changer les dégâts. Il ne remplace pas un essai de visée en partie.
@@ -69,7 +69,7 @@ proches ont été déplacés sur leurs murs. Les fourmis d’introduction emprun
 le couloir depuis le mur gauche, sans raccourci débutant près de la cible.
 L’entrée reste au portail pendant deux secondes, puis rejoint le même parcours
 continu. Ce délai est inclus dans la durée de vie. Les parcours ont ensuite été allongés
-à vitesse conservée : première vague autour d’une minute sur la graine de contrôle,
+à vitesse conservée : première vague désormais étendue à toute la pièce avec deux fourmis supplémentaires,
 voir [trajets actuels](vehicles-bank.md#trajets-et-crashs).
 
 Le rendu des vagues utilise l’heure serveur prise à l’envoi de la réponse et

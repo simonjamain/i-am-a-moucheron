@@ -34,9 +34,9 @@ protections existantes ; aucun effacement préalable n’est nécessaire.
 ## Cycle des véhicules
 
 Le chasseur initial et le bombardier initial ont l’origine `starter`. Il n’y a
-qu’un exemplaire vivant de chaque origine/type : sa destruction en fournit un
-nouveau. Décoller ne crée plus un autre appareil gratuit. Les exemplaires achetés
-ont l’origine `purchase`, apparaissent une fois par achat idempotent et ne sont
+qu’un exemplaire prêt de chaque origine/type : son décollage ou sa destruction
+fournit un nouveau prêt, sans supprimer les coques utilisées. Un retour ne recrée pas de réserve supplémentaire. Les exemplaires achetés
+ont l’origine `purchase`, sont posés une fois après bon signé et achat idempotent et ne sont
 pas remplacés gratuitement. Acheter à nouveau est permis.
 
 Quitter un poste libère seulement ce siège. L’appareil, son équipage et ses stocks
@@ -73,8 +73,8 @@ le tank 10 $. Le bombardier conserve ses deux postes de mitrailleurs.
 Les bombes héritent de la vitesse de l’avion et subissent la gravité. Un piqué
 dont la direction avant descend de plus de 0,65 applique un facteur **1,35** aux
 dégâts, soit 324 au centre : il permet notamment d’abattre un cafard de 300 PV
-avec une bombe bien placée. Le rayon d’une bombe est de 20 m de référence
-(0,060 m du décor), celui d’un HE de 12 m (0,036 m). Les AP sont des projectiles
+avec une bombe bien placée. Le rayon d’une bombe Stuka est de 20 m de référence
+(0,060 m du décor), celui du gros bombardier de 40 m (0,120 m), celui d’un HE de 12 m (0,036 m). Les AP sont des projectiles
 directs sans dégâts de zone. Le décor bloque trajectoires et explosions.
 
 Les stations habituelles rechargent toutes les réserves en dix secondes selon
@@ -181,7 +181,7 @@ Le paquet Docker `2026.10.29-udp.2` contient uniquement le lot véhicules/banque
 avant les [retours terrain](field-update.md), livrés en ZIP de sources. La version `.1`
 est antérieure au Stuka, au tank et aux interfaces intégrées. Voir [Docker](docker.md).
 
-## HUD contextuel intégré
+## Ancien HUD contextuel, remplacé
 
 Les pilotes ont le vol/conduite à gauche et l’armement à droite ; les tireurs
 ont la visée ou le canon à gauche et leur MG à droite. Le tank affiche le type
@@ -211,3 +211,7 @@ Le [lot lisibilité, nettoyage et Spitfire](clean-flight.md) ajoute le S6 achet�
 les raccourcis physiques de poste, les projectiles aux couleurs de la coque,
 la mire balistique et la salissure commune. Il remplace les anciens dégâts
 de collision avec un insecte et les anciennes commandes d’armes lourdes.
+
+Le [dernier lot](multiplayer-return.md) remplace les rails par statistiques au
+viseur et aide permanente, étend la réserve gratuite et déploie tous les achats
+de véhicules à l’emplacement choisi. Le Spitfire a désormais 1 000 balles.

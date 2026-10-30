@@ -6,7 +6,7 @@ import worker from '../worker/index.js';
 import { localDB } from './local-db.mjs';
 assert.deepEqual(
   Array.from({ length: 8 }, (_, i) => waveBudget(i + 1)),
-  [6, 8, 12, 16, 22, 28, 36, 44],
+  [8, 10, 14, 18, 24, 30, 38, 46],
 );
 for (let seed = 0; seed < 40; seed++)
   for (let wave = 1; wave <= 12; wave++) {
@@ -16,12 +16,13 @@ for (let seed = 0; seed < 40; seed++)
       p.budget,
     );
     if (wave === 1) {
-      assert.equal(p.roster.length, 6);
-      assert.ok(p.roster.every((e) => e.type === 'midge'));
-      assert.ok(Math.max(...p.roster.map((e) => e.spawn + e.duration)) < 100);
+      assert.equal(p.roster.length, 8);
+      assert.equal(p.roster.filter((e) => e.type === 'midge').length, 6);
+      assert.equal(p.roster.filter((e) => e.type === 'ant').length, 2);
+      assert.ok(Math.max(...p.roster.map((e) => e.spawn + e.duration)) > 100);
     }
     for (const [type, unlock] of Object.entries({
-      ant: 3,
+      ant: 1,
       dart: 4,
       roach: 6,
       guard: 8,
@@ -80,7 +81,7 @@ const a = (await api('join', { name: 'A', code: 'PROGRESS' })).body,
 await DB.prepare("UPDATE rooms SET phase='combat',wave=1,started=? WHERE code='PROGRESS'")
   .bind(now)
   .run();
-for (let enemy = 0; enemy < 6; enemy++) {
+for (let enemy = 0; enemy < 8; enemy++) {
   const r = await api('hit', { id: a.id, wave: 1, enemy, shot: 'clear' + enemy, amount: 800 });
   assert.equal(r.status, 200);
 }
@@ -118,12 +119,12 @@ assert.equal(
   (await api('buy', { id: a.id, item: 'engine', request: 'engine-level-two' })).status,
   200,
 );
-// A fully missed first wave still ends in <50s and pays a consolation stipend;
+// A fully missed extended wave reaches its shared arrival deadline and pays a consolation stipend;
 // a lost wave never pays one. Neither branch needs real waiting.
 await DB.prepare(
   "UPDATE rooms SET phase='combat',wave=2,started=?,infestation=19 WHERE code='PROGRESS'",
 )
-  .bind(now - 100000)
+  .bind(now - 2000000)
   .run();
 s = (await api('sync', { id: a.id, state: a.state })).body;
 assert.equal(s.phase, 'lost');
@@ -134,13 +135,13 @@ s = (await api('sync', { id: a.id, state: a.state })).body;
 assert.equal(s.rewardCount, 0);
 assert.equal(s.dollars, 0);
 await DB.prepare("UPDATE rooms SET phase='combat',wave=1,started=? WHERE code='PROGRESS'")
-  .bind(now - 100000)
+  .bind(now - 2000000)
   .run();
 s = (await api('sync', { id: a.id, state: a.state })).body;
 assert.equal(s.phase, 'prep');
-assert.equal(s.infestation, 6);
+assert.equal(s.infestation, 8);
 assert.equal(s.dollars, 4);
 Date.now = realNow;
 console.log(
-  'PASS: gentle seeded waves, first-wave deadline <100s, later elite caps, twelve affordable purchase rounds, exact-once completion stipends, tier pricing, failure and reset.',
+  'PASS: gentle seeded waves, extended mixed first wave, later elite caps, twelve affordable purchase rounds, exact-once completion stipends, tier pricing, failure and reset.',
 );

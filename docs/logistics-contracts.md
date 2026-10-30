@@ -78,7 +78,7 @@ conditionnée à la révision lue pour gérer les accès concurrents.
 - Bombardier : **667 balles par mitrailleur**, une émission toutes les 0,09 s,
   soit environ 60 s. Les deux postes ont des compteurs indépendants. Le pilote
   du bombardier possède 50 bombes, le Stuka 6, à intervalle nominal de 0,5 s.
-- Spitfire : 4 500 balles, six émissions simultanées par salve, 45 s de tir nominal.
+- Spitfire : 1 000 balles, six départs légèrement décalés par salve et fin de réserve partielle.
 - Bombes du Stuka et du bombardier, MG et obus du tank : réserves indépendantes
   détaillées dans [véhicules et banque](vehicles-bank.md#stocks-et-équilibre-initial).
 - DCA et pistolet : réserves illimitées.
@@ -138,8 +138,8 @@ La station gratuite demeure après une remise à zéro ; les achats sont effacé
 
 Aucun radar au départ. Sans radar, la carte garde ses repères, alliés et
 installations et ne montre aucun ennemi. Un radar révèle les ennemis aériens et
-terrestres dans une **sphère de 1 m réel**, sans obstruction du mobilier. Les
-sphères se réunissent sans doubler les contacts ; la sortie de couverture retire
+terrestres dans un **cylindre vertical de rayon 2 m du décor**, sans obstruction du mobilier. Les
+couvertures se réunissent sans doubler les contacts ; la sortie de couverture retire
 immédiatement le point. La scène 3D, les PV et les effets de dégâts ne sont jamais
 masqués. Détection et positions dépendent des mêmes installations persistantes
 et des trajectoires partagées ; aucune dernière position ennemie n’est stockée.
@@ -183,3 +183,6 @@ ne détectent pas d’ennemis. Voir [lits](field-update.md#départ-lits-et-contr
 Les [prix prépayés, projectiles teintés et nettoyage](clean-flight.md) complètent ces règles.
 Les compteurs de prix et la limite d’installations incluent désormais les commandes
 payées non posées ; leurs tarifs ne sont pas débités une seconde fois à la pose.
+
+La parabole tourne et sa couverture circulaire apparaît sur la carte ; ce balayage
+ne ralentit pas la détection. Voir [retours multijoueurs](multiplayer-return.md).

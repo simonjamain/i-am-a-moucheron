@@ -76,7 +76,12 @@ const game = new Game({ now: () => now, solids: OFFICE_SOLIDS }),
   join = game.join({ code: 'NEXT' }),
   r = game.rooms.get('NEXT'),
   p = r.pilots.get(join.id);
-const call = (path, b = {}) => game.command('NEXT', p.id, path, b);
+// These pre-existing weapon tests seed hulls through the internal domain helper.
+// Public signed placement is covered by test-multiplayer-return.
+const call = (path, b = {}) =>
+  path === 'buy' && VEHICLES[b.item]
+    ? (game.buy(r, p, b), game.snapshot(r))
+    : game.command('NEXT', p.id, path, b);
 // Hull destruction must free every crew member without relying on a later
 // client death command, including a disconnected driver's final motion.
 const wreckGame = new Game({ now: () => now, solids: OFFICE_SOLIDS });
@@ -98,15 +103,16 @@ assert.deepEqual(
   incarnations,
 );
 assert.equal(wreckRoom.effects.filter((event) => event.kind === 'crash').length, 1);
-assert.equal([...wreckRoom.souls.values()].filter((soul) => soul.kind === 'player').length, 2);
+assert.equal([...wreckRoom.souls.values()].filter((soul) => soul.kind === 'player').length, 0);
+assert.ok(crew.every((p) => p.state.awaitingPurgatory));
 const fighter = [...r.vehicles.values()].find((v) => v.type === 'fighter');
 fighter.state.landed = false;
 fighter.ready = 0;
 game.fleet(r);
 assert.equal(
   [...r.vehicles.values()].filter((v) => v.type === 'fighter').length,
-  1,
-  'departure does not duplicate starter',
+  2,
+  'takeoff renews one free starter',
 );
 fighter.state.hp = 0;
 game.advance(r);
@@ -254,7 +260,7 @@ for (let seed = 0; seed < 8; seed++)
       assert.ok(Math.abs((e.duration - e.entryHold) * e.travelSpeed - route.length) < 1e-8);
       for (let i = 1; i < route.points.length; i++)
         assert.equal(blockedSegment(route.points[i - 1], route.points[i], e.ground), false);
-      if (wave === 1) assert.ok(e.spawn + e.duration < 100);
+      if (wave === 1) assert.ok(e.spawn + e.duration > 100);
     }
 // Heavy damage and soul release are authoritative, independently of visuals.
 const targetJoin = game.join({ code: 'GROUND' }),

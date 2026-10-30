@@ -240,6 +240,7 @@ export function createGraphics(T, scene) {
   }
   function insect(type = 'midge') {
     const g = new T.Group();
+    g.userData.hitTolerance = type === 'midge' ? 1.2 : 1;
     if (type === 'ant' || type === 'roach') {
       const shell = ball(
         0,
@@ -263,7 +264,7 @@ export function createGraphics(T, scene) {
         const antenna = box(x, 0.06, -0.87, 0.025, 0.025, 0.5, '#49362b', g);
         antenna.rotation.y = x * 3;
       }
-      g.userData = { wings: [], legs, hitParts: [shell, head], disposables: [] };
+      g.userData = { wings: [], legs, hitParts: [shell, head], disposables: [], hitTolerance: 1 };
       scene.add(g);
       return g;
     }
@@ -319,7 +320,8 @@ export function createGraphics(T, scene) {
     const g = new T.Group(),
       rig = new T.Group();
     g.add(rig);
-    pm(rig, 0.8, 1.05, 0.5, color, 0, 1.3);
+    const shirt = pm(rig, 0.8, 1.05, 0.5, color, 0, 1.3);
+    shirt.userData.personalCloth = true;
     const head = ball(0, 2.12, 0, 0.34, '#edc7a0', rig);
     for (const x of [-0.13, 0.13]) ball(x, 2.17, 0.3, 0.045, '#263a43', rig);
     pm(rig, 0.12, 0.13, 0.13, '#d5aa88', 0, 2.02, 0.34);
@@ -337,11 +339,13 @@ export function createGraphics(T, scene) {
       const pivot = new T.Group();
       pivot.position.set(x, 1.7, 0.1);
       rig.add(pivot);
-      pm(pivot, 0.26, 0.42, 0.28, color, 0, -0.2);
+      const sleeve = pm(pivot, 0.26, 0.42, 0.28, color, 0, -0.2);
+      sleeve.userData.personalCloth = true;
       const elbow = new T.Group();
       elbow.position.y = -0.4;
       pivot.add(elbow);
-      pm(elbow, 0.24, 0.36, 0.26, color, 0, -0.18);
+      const forearm = pm(elbow, 0.24, 0.36, 0.26, color, 0, -0.18);
+      forearm.userData.personalCloth = true;
       ball(0, -0.43, 0.05, 0.2, saint ? '#edc7a0' : '#e5b75c', elbow);
       arms.push({ pivot, elbow });
     }

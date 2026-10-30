@@ -19,3 +19,6 @@ Voir [combat et mondes](combat-worlds.md) et [gameplay](gameplay.md).
 `test-purgatory-queue.mjs` vérifie la file de douze PNJ, le démêlage d’un ancien
 attroupement, l’attente derrière le signataire et le retour à la place après
 bousculade. Les tests de combat sont dans `test-backlog.mjs`.
+
+Les joueurs morts ne rejoignent la file qu’après [accès volontaire](multiplayer-return.md#mort-et-observation-volontaire).
+L’observation ne réserve aucune place ni corps au guichet.

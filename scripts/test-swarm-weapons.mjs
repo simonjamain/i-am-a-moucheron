@@ -21,7 +21,7 @@ for (const wave of [1, 2, 3, 5, 10, 30, 100, 1000]) {
   assert.deepEqual(plan, wavePlan('SWARM', wave, 1234));
   if (wave > 1) assert.ok(plan.budget >= waveBudget(wave - 1));
 }
-assert.equal(wavePlan('SWARM', 1, 1).roster.length, 6);
+assert.equal(wavePlan('SWARM', 1, 1).roster.length, 8);
 assert.notDeepEqual(wavePlan('SWARM', 8, 1).roster, wavePlan('SWARM', 8, 2).roster);
 const plan = wavePlan('SWARM', 10, 1),
   frame = swarmFrame(plan.roster, 100),

@@ -35,7 +35,7 @@ flashes are short-lived, bounded geometry at the firing muzzle.
 
 The Node runtime owns shared hulls and exclusive seat leases in RAM. Only the
 pilot's lease can update a hull transform; gunners publish aim and fire independently.
-The fighter and bomber each have one living starter, replaced only on destruction.
+The fighter and bomber each have one ready reserve, renewed on takeoff or destruction without deleting used hulls.
 Purchased Stukas, Spitfires and tanks are not automatically replaced. Board selection binds
 the two signatures to the exact vehicle and role. Exiting frees only that seat;
 other occupants and the hull remain. Destruction frees every occupant, including
@@ -62,8 +62,8 @@ Camera-facing Sprite labels cannot intercept a shot or require a raycast camera.
 The regression includes the actual hull-plus-Sprite hierarchy that crashed.
 
 Ground controls target a 6 m/s reference run (18 mm/s on this map), retaining
-acceleration and braking. The current character fall uses world-space gravity, gradual canopy inflation and
-vertical impact damage, described in [field updates](field-update.md#chute-et-parachute).
+acceleration and braking. The current character fall uses miniature-scaled human gravity, gradual canopy inflation and
+vertical impact damage, described in [current fall model](multiplayer-return.md#gravité-parachute-et-pistolet).
 Aircraft/projectile tuning remains separate from character gravity.
 
 The current raid uses seeded arc-length routes with preserved effective speed,

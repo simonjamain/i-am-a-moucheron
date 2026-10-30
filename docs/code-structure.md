@@ -29,7 +29,7 @@ base de données ni accès disque dans les opérations de jeu Node. Voir
 | Géométrie            | `graphics.js`, modèles procéduraux ; `renderer.js` pour WebGL/secours.                                                                             |
 | Vol et entrée        | `flight.js`, `mouse-flight.js`, `input.js`, `control-focus.js`, `fleet.js`, `vacant-flight.js`.                                                    |
 | Corps et purgatoire  | `base.js`, `purgatory-physics.js`, `sortie.js` ; [file](purgatory-queue.md).                                                                       |
-| Chute actuelle       | `field-physics.js` : mètres du décor, gonflage, vitesse verticale et dégâts ; [retours terrain](field-update.md).                                  |
+| Chute actuelle       | `field-physics.js` : gravité humaine convertie au ratio, gonflage, impact ; [physique actuelle](multiplayer-return.md).                            |
 | Armes                | `ballistics.js`, `combat.js`, `armament.js`, `ordnance.js`, `aircraft-fire.js`, `tracers.js`, `insect-hits.js`.                                    |
 | Visée/caméras        | `personal-aim.js` pour épaule/main ; `tank-reticle.js` pour les trajectoires de mire ; `tank-view.js` pour lunette, observation et bouche serveur. |
 | Vagues               | `waves.js`, `routes.js`, `route-speed.js`, `route-navigation.js`, `route-obstacles.js` généré.                                                     |
@@ -69,3 +69,13 @@ exécutent les modules, les gestionnaires UI et le domaine, avec tests natifs UD
 et compatibilité Worker séparés. `test-field-backlog.mjs` et `test-bed-ui.mjs`
 couvrent le dernier lot. `check-docs.mjs` inventorie les Markdown et contrôle
 leurs liens locaux ; leur exactitude fonctionnelle reste une revue sémantique.
+
+## Retours multijoueurs courants
+
+`live-hud.js` : valeurs au viseur et aide permanente ; `player-livery.js` : couleurs
+et initiales corporelles. `salvos.js` : départs décalés et annulation d’occupation.
+`tracers.js` : pool borné et effet personnel orienté vers l’avant ;
+`insect-hits.js` : phase large puis intersections, avec tolérance du seul moucheron.
+`server/game.js` : observation avant âme, réserve renouvelée et véhicules prépayés
+à poser. `test-multiplayer-return.mjs` et `review-return-performance.mjs` couvrent
+le [lot courant](multiplayer-return.md), complété par les vrais pairs UDP.

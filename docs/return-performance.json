@@ -1,0 +1,1650 @@
+{
+  "baseline": "94c54a4cd98f4956a0bc9c48a8a630cd5fbc5936",
+  "method": "CPU median of 3 runs. Controlled misses on 180 actual insect models. clients repeats ray work, not simultaneous browsers or WAN. Tracer allocations are replayed creation/release, not GPU rendering.",
+  "rays": [
+    {
+      "clients": 1,
+      "rays": 3000,
+      "targets": 180,
+      "beforeMs": 405.175262,
+      "afterMs": 9.810557000000017,
+      "speedup": 41.29992435699617
+    },
+    {
+      "clients": 3,
+      "rays": 9000,
+      "targets": 180,
+      "beforeMs": 1197.9776590000001,
+      "afterMs": 29.16081900000063,
+      "speedup": 41.081756277146205
+    }
+  ],
+  "tracers": {
+    "count": 1000,
+    "beforeMs": 26.884556999999404,
+    "afterMs": 0.7127559999998994,
+    "allocatedMeshes": 1
+  },
+  "routes": [
+    {
+      "room": "ROOM0",
+      "wave": 1,
+      "type": "midge",
+      "beforeLength": 4.345935466339008,
+      "afterLength": 32.64504507750165,
+      "beforeSeconds": 55.61597485999102,
+      "afterSeconds": 404.74319067444446,
+      "beforeExtent": {
+        "x": 2.4130333359120413,
+        "z": 0.8099999999999996
+      },
+      "afterExtent": {
+        "x": 5.713033335912041,
+        "z": 6.11
+      },
+      "speed": 0.08105672754599125
+    },
+    {
+      "room": "ROOM0",
+      "wave": 1,
+      "type": "midge",
+      "beforeLength": 4.345935466339008,
+      "afterLength": 32.64504507750165,
+      "beforeSeconds": 55.61597485999102,
+      "afterSeconds": 404.74319067444446,
+      "beforeExtent": {
+        "x": 2.4130333359120413,
+        "z": 0.8099999999999996
+      },
+      "afterExtent": {
+        "x": 5.713033335912041,
+        "z": 6.11
+      },
+      "speed": 0.08105672754599125
+    },
+    {
+      "room": "ROOM0",
+      "wave": 1,
+      "type": "midge",
+      "beforeLength": 4.345935466339008,
+      "afterLength": 32.64504507750165,
+      "beforeSeconds": 55.61597485999102,
+      "afterSeconds": 404.74319067444446,
+      "beforeExtent": {
+        "x": 2.4130333359120413,
+        "z": 0.8099999999999996
+      },
+      "afterExtent": {
+        "x": 5.713033335912041,
+        "z": 6.11
+      },
+      "speed": 0.08105672754599125
+    },
+    {
+      "room": "ROOM0",
+      "wave": 1,
+      "type": "midge",
+      "beforeLength": 4.345935466339008,
+      "afterLength": 32.64504507750165,
+      "beforeSeconds": 55.61597485999102,
+      "afterSeconds": 404.74319067444446,
+      "beforeExtent": {
+        "x": 2.4130333359120413,
+        "z": 0.8099999999999996
+      },
+      "afterExtent": {
+        "x": 5.713033335912041,
+        "z": 6.11
+      },
+      "speed": 0.08105672754599125
+    },
+    {
+      "room": "ROOM0",
+      "wave": 1,
+      "type": "midge",
+      "beforeLength": 4.345935466339008,
+      "afterLength": 32.64504507750165,
+      "beforeSeconds": 55.61597485999102,
+      "afterSeconds": 404.74319067444446,
+      "beforeExtent": {
+        "x": 2.4130333359120413,
+        "z": 0.8099999999999996
+      },
+      "afterExtent": {
+        "x": 5.713033335912041,
+        "z": 6.11
+      },
+      "speed": 0.08105672754599125
+    },
+    {
+      "room": "ROOM0",
+      "wave": 1,
+      "type": "midge",
+      "beforeLength": 4.345935466339008,
+      "afterLength": 32.64504507750165,
+      "beforeSeconds": 55.61597485999102,
+      "afterSeconds": 404.74319067444446,
+      "beforeExtent": {
+        "x": 2.4130333359120413,
+        "z": 0.8099999999999996
+      },
+      "afterExtent": {
+        "x": 5.713033335912041,
+        "z": 6.11
+      },
+      "speed": 0.08105672754599125
+    },
+    {
+      "room": "ROOM0",
+      "wave": 4,
+      "type": "midge",
+      "beforeLength": 10.002693432310414,
+      "afterLength": 30.96159876395602,
+      "beforeSeconds": 78.85199276062089,
+      "afterSeconds": 239.88198450416678,
+      "beforeExtent": {
+        "x": 6.91,
+        "z": 2.9000000000000004
+      },
+      "afterExtent": {
+        "x": 6.91,
+        "z": 5.4
+      },
+      "speed": 0.13015529035749107
+    },
+    {
+      "room": "ROOM0",
+      "wave": 4,
+      "type": "midge",
+      "beforeLength": 10.002693432310414,
+      "afterLength": 30.956881395042217,
+      "beforeSeconds": 78.85199276062089,
+      "afterSeconds": 239.84574034612413,
+      "beforeExtent": {
+        "x": 6.91,
+        "z": 2.9000000000000004
+      },
+      "afterExtent": {
+        "x": 6.91,
+        "z": 5.4
+      },
+      "speed": 0.13015529035749107
+    },
+    {
+      "room": "ROOM0",
+      "wave": 4,
+      "type": "ant",
+      "beforeLength": 12.43533172777383,
+      "afterLength": 32.14391364100136,
+      "beforeSeconds": 65.9328493024731,
+      "afterSeconds": 167.25912068851133,
+      "beforeExtent": {
+        "x": 7.15,
+        "z": 5.4
+      },
+      "afterExtent": {
+        "x": 7.460000000000001,
+        "z": 5.6
+      },
+      "speed": 0.19450613985528714
+    },
+    {
+      "room": "ROOM0",
+      "wave": 4,
+      "type": "ant",
+      "beforeLength": 12.43533172777383,
+      "afterLength": 32.14391364100136,
+      "beforeSeconds": 65.9328493024731,
+      "afterSeconds": 167.25912068851133,
+      "beforeExtent": {
+        "x": 7.15,
+        "z": 5.4
+      },
+      "afterExtent": {
+        "x": 7.460000000000001,
+        "z": 5.6
+      },
+      "speed": 0.19450613985528714
+    },
+    {
+      "room": "ROOM0",
+      "wave": 4,
+      "type": "dart",
+      "beforeLength": 10.002693432310414,
+      "afterLength": 30.956881395042217,
+      "beforeSeconds": 78.85199276062089,
+      "afterSeconds": 239.84574034612413,
+      "beforeExtent": {
+        "x": 6.91,
+        "z": 2.9000000000000004
+      },
+      "afterExtent": {
+        "x": 6.91,
+        "z": 5.4
+      },
+      "speed": 0.13015529035749107
+    },
+    {
+      "room": "ROOM0",
+      "wave": 4,
+      "type": "midge",
+      "beforeLength": 10.002693432310414,
+      "afterLength": 30.956881395042217,
+      "beforeSeconds": 78.85199276062089,
+      "afterSeconds": 239.84574034612413,
+      "beforeExtent": {
+        "x": 6.91,
+        "z": 2.9000000000000004
+      },
+      "afterExtent": {
+        "x": 6.91,
+        "z": 5.4
+      },
+      "speed": 0.13015529035749107
+    },
+    {
+      "room": "ROOM0",
+      "wave": 4,
+      "type": "ant",
+      "beforeLength": 8.889726687347805,
+      "afterLength": 39.58439522652194,
+      "beforeSeconds": 72.36138809529457,
+      "afterSeconds": 315.30693203592597,
+      "beforeExtent": {
+        "x": 2.7100000000000004,
+        "z": 4.5
+      },
+      "afterExtent": {
+        "x": 7.470000000000001,
+        "z": 5.6
+      },
+      "speed": 0.1263438219170424
+    },
+    {
+      "room": "ROOM0",
+      "wave": 4,
+      "type": "midge",
+      "beforeLength": 10.002693432310414,
+      "afterLength": 30.956881395042217,
+      "beforeSeconds": 78.85199276062089,
+      "afterSeconds": 239.84574034612413,
+      "beforeExtent": {
+        "x": 6.91,
+        "z": 2.9000000000000004
+      },
+      "afterExtent": {
+        "x": 6.91,
+        "z": 5.4
+      },
+      "speed": 0.13015529035749107
+    },
+    {
+      "room": "ROOM0",
+      "wave": 4,
+      "type": "midge",
+      "beforeLength": 9.614763050252622,
+      "afterLength": 32.61790880099877,
+      "beforeSeconds": 113.33759248063133,
+      "afterSeconds": 379.7107577872739,
+      "beforeExtent": {
+        "x": 3.3,
+        "z": 3.71
+      },
+      "afterExtent": {
+        "x": 5.699999999999999,
+        "z": 6.11
+      },
+      "speed": 0.08635684350661021
+    },
+    {
+      "room": "ROOM0",
+      "wave": 4,
+      "type": "ant",
+      "beforeLength": 10.520224666919555,
+      "afterLength": 38.106523284415076,
+      "beforeSeconds": 67.95422634106497,
+      "afterSeconds": 240.90043619261357,
+      "beforeExtent": {
+        "x": 4.04,
+        "z": 3.8099999999999996
+      },
+      "afterExtent": {
+        "x": 6.71,
+        "z": 6.21
+      },
+      "speed": 0.15950796864050795
+    },
+    {
+      "room": "ROOM0",
+      "wave": 4,
+      "type": "ant",
+      "beforeLength": 10.520224666919555,
+      "afterLength": 38.106523284415076,
+      "beforeSeconds": 67.95422634106497,
+      "afterSeconds": 240.90043619261357,
+      "beforeExtent": {
+        "x": 4.04,
+        "z": 3.8099999999999996
+      },
+      "afterExtent": {
+        "x": 6.71,
+        "z": 6.21
+      },
+      "speed": 0.15950796864050795
+    },
+    {
+      "room": "ROOM0",
+      "wave": 4,
+      "type": "ant",
+      "beforeLength": 12.43533172777383,
+      "afterLength": 32.14391364100136,
+      "beforeSeconds": 65.36267824887061,
+      "afterSeconds": 165.78529357164695,
+      "beforeExtent": {
+        "x": 7.15,
+        "z": 5.4
+      },
+      "afterExtent": {
+        "x": 7.460000000000001,
+        "z": 5.6
+      },
+      "speed": 0.19625640947390793
+    },
+    {
+      "room": "ROOM0",
+      "wave": 8,
+      "type": "roach",
+      "beforeLength": 8.889726687347805,
+      "afterLength": 39.58439522652194,
+      "beforeSeconds": 105.86013205522231,
+      "afterSeconds": 464.4709690348471,
+      "beforeExtent": {
+        "x": 2.7100000000000004,
+        "z": 4.5
+      },
+      "afterExtent": {
+        "x": 7.470000000000001,
+        "z": 5.6
+      },
+      "speed": 0.08559325422984392
+    },
+    {
+      "room": "ROOM0",
+      "wave": 8,
+      "type": "guard",
+      "beforeLength": 33.39172280880156,
+      "afterLength": 33.62777084493205,
+      "beforeSeconds": 161.57378151143448,
+      "afterSeconds": 162.70181788018874,
+      "beforeExtent": {
+        "x": 7.01,
+        "z": 5.4
+      },
+      "afterExtent": {
+        "x": 7.081076425956562,
+        "z": 5.4
+      },
+      "speed": 0.20925569659705553
+    },
+    {
+      "room": "ROOM0",
+      "wave": 8,
+      "type": "dart",
+      "beforeLength": 33.39172280880156,
+      "afterLength": 33.62777084493205,
+      "beforeSeconds": 161.57378151143448,
+      "afterSeconds": 162.70181788018874,
+      "beforeExtent": {
+        "x": 7.01,
+        "z": 5.4
+      },
+      "afterExtent": {
+        "x": 7.081076425956562,
+        "z": 5.4
+      },
+      "speed": 0.20925569659705553
+    },
+    {
+      "room": "ROOM0",
+      "wave": 8,
+      "type": "ant",
+      "beforeLength": 8.889726687347805,
+      "afterLength": 39.58439522652194,
+      "beforeSeconds": 105.86013205522231,
+      "afterSeconds": 464.4709690348471,
+      "beforeExtent": {
+        "x": 2.7100000000000004,
+        "z": 4.5
+      },
+      "afterExtent": {
+        "x": 7.470000000000001,
+        "z": 5.6
+      },
+      "speed": 0.08559325422984392
+    },
+    {
+      "room": "ROOM0",
+      "wave": 8,
+      "type": "ant",
+      "beforeLength": 8.889726687347805,
+      "afterLength": 39.58439522652194,
+      "beforeSeconds": 105.86013205522231,
+      "afterSeconds": 464.4709690348471,
+      "beforeExtent": {
+        "x": 2.7100000000000004,
+        "z": 4.5
+      },
+      "afterExtent": {
+        "x": 7.470000000000001,
+        "z": 5.6
+      },
+      "speed": 0.08559325422984392
+    },
+    {
+      "room": "ROOM0",
+      "wave": 8,
+      "type": "dart",
+      "beforeLength": 33.39172280880156,
+      "afterLength": 33.62777084493205,
+      "beforeSeconds": 160.2296372985397,
+      "afterSeconds": 161.3481718334549,
+      "beforeExtent": {
+        "x": 7.01,
+        "z": 5.4
+      },
+      "afterExtent": {
+        "x": 7.081076425956562,
+        "z": 5.4
+      },
+      "speed": 0.21103330184470903
+    },
+    {
+      "room": "ROOM0",
+      "wave": 8,
+      "type": "ant",
+      "beforeLength": 8.889726687347805,
+      "afterLength": 39.58439522652194,
+      "beforeSeconds": 105.86013205522231,
+      "afterSeconds": 464.4709690348471,
+      "beforeExtent": {
+        "x": 2.7100000000000004,
+        "z": 4.5
+      },
+      "afterExtent": {
+        "x": 7.470000000000001,
+        "z": 5.6
+      },
+      "speed": 0.08559325422984392
+    },
+    {
+      "room": "ROOM0",
+      "wave": 8,
+      "type": "ant",
+      "beforeLength": 8.889726687347805,
+      "afterLength": 39.58439522652194,
+      "beforeSeconds": 105.86013205522231,
+      "afterSeconds": 464.4709690348471,
+      "beforeExtent": {
+        "x": 2.7100000000000004,
+        "z": 4.5
+      },
+      "afterExtent": {
+        "x": 7.470000000000001,
+        "z": 5.6
+      },
+      "speed": 0.08559325422984392
+    },
+    {
+      "room": "ROOM0",
+      "wave": 8,
+      "type": "midge",
+      "beforeLength": 32.1676474976426,
+      "afterLength": 32.29829187943086,
+      "beforeSeconds": 181.49098969833878,
+      "afterSeconds": 182.2199671402677,
+      "beforeExtent": {
+        "x": 5.699999999999999,
+        "z": 6.11
+      },
+      "afterExtent": {
+        "x": 5.739010384341237,
+        "z": 6.11
+      },
+      "speed": 0.17921594589068288
+    },
+    {
+      "room": "ROOM0",
+      "wave": 8,
+      "type": "midge",
+      "beforeLength": 33.39172280880156,
+      "afterLength": 33.54982703312643,
+      "beforeSeconds": 181.92501144529626,
+      "afterSeconds": 182.77692629060346,
+      "beforeExtent": {
+        "x": 7.01,
+        "z": 5.4
+      },
+      "afterExtent": {
+        "x": 7.048989502401092,
+        "z": 5.4
+      },
+      "speed": 0.18558688722914912
+    },
+    {
+      "room": "ROOM0",
+      "wave": 8,
+      "type": "ant",
+      "beforeLength": 8.889726687347805,
+      "afterLength": 39.58439522652194,
+      "beforeSeconds": 106.01189242427763,
+      "afterSeconds": 465.1467313658711,
+      "beforeExtent": {
+        "x": 2.7100000000000004,
+        "z": 4.5
+      },
+      "afterExtent": {
+        "x": 7.470000000000001,
+        "z": 5.6
+      },
+      "speed": 0.08546836789667751
+    },
+    {
+      "room": "ROOM0",
+      "wave": 8,
+      "type": "ant",
+      "beforeLength": 8.889726687347805,
+      "afterLength": 39.58439522652194,
+      "beforeSeconds": 106.01189242427763,
+      "afterSeconds": 465.1467313658711,
+      "beforeExtent": {
+        "x": 2.7100000000000004,
+        "z": 4.5
+      },
+      "afterExtent": {
+        "x": 7.470000000000001,
+        "z": 5.6
+      },
+      "speed": 0.08546836789667751
+    },
+    {
+      "room": "ROOM1",
+      "wave": 1,
+      "type": "midge",
+      "beforeLength": 4.3048544923636145,
+      "afterLength": 32.56749085915239,
+      "beforeSeconds": 55.10915728643324,
+      "afterSeconds": 403.7864012666158,
+      "beforeExtent": {
+        "x": 2.3738142425310795,
+        "z": 0.8099999999999996
+      },
+      "afterExtent": {
+        "x": 5.699999999999999,
+        "z": 6.11
+      },
+      "speed": 0.08105672754599125
+    },
+    {
+      "room": "ROOM1",
+      "wave": 1,
+      "type": "midge",
+      "beforeLength": 4.309022159244459,
+      "afterLength": 32.57559662147564,
+      "beforeSeconds": 55.16057395482118,
+      "afterSeconds": 403.88640237162775,
+      "beforeExtent": {
+        "x": 2.3779311356018296,
+        "z": 0.8099999999999996
+      },
+      "afterExtent": {
+        "x": 5.699999999999999,
+        "z": 6.11
+      },
+      "speed": 0.08105672754599125
+    },
+    {
+      "room": "ROOM1",
+      "wave": 1,
+      "type": "midge",
+      "beforeLength": 4.370045123757024,
+      "afterLength": 32.688403922794755,
+      "beforeSeconds": 55.91341664117243,
+      "afterSeconds": 405.2781104350344,
+      "beforeExtent": {
+        "x": 2.4347969404421743,
+        "z": 0.8099999999999996
+      },
+      "afterExtent": {
+        "x": 5.734796940442175,
+        "z": 6.11
+      },
+      "speed": 0.08105672754599125
+    },
+    {
+      "room": "ROOM1",
+      "wave": 1,
+      "type": "midge",
+      "beforeLength": 4.3048544923636145,
+      "afterLength": 32.56749085915239,
+      "beforeSeconds": 55.10915728643324,
+      "afterSeconds": 403.7864012666158,
+      "beforeExtent": {
+        "x": 2.3738142425310795,
+        "z": 0.8099999999999996
+      },
+      "afterExtent": {
+        "x": 5.699999999999999,
+        "z": 6.11
+      },
+      "speed": 0.08105672754599125
+    },
+    {
+      "room": "ROOM1",
+      "wave": 1,
+      "type": "midge",
+      "beforeLength": 4.3048544923636145,
+      "afterLength": 32.56749085915239,
+      "beforeSeconds": 55.10915728643324,
+      "afterSeconds": 403.7864012666158,
+      "beforeExtent": {
+        "x": 2.3738142425310795,
+        "z": 0.8099999999999996
+      },
+      "afterExtent": {
+        "x": 5.699999999999999,
+        "z": 6.11
+      },
+      "speed": 0.08105672754599125
+    },
+    {
+      "room": "ROOM1",
+      "wave": 1,
+      "type": "midge",
+      "beforeLength": 4.3048544923636145,
+      "afterLength": 32.56749085915239,
+      "beforeSeconds": 55.10915728643324,
+      "afterSeconds": 403.7864012666158,
+      "beforeExtent": {
+        "x": 2.3738142425310795,
+        "z": 0.8099999999999996
+      },
+      "afterExtent": {
+        "x": 5.699999999999999,
+        "z": 6.11
+      },
+      "speed": 0.08105672754599125
+    },
+    {
+      "room": "ROOM1",
+      "wave": 4,
+      "type": "ant",
+      "beforeLength": 12.43533172777383,
+      "afterLength": 32.14391364100136,
+      "beforeSeconds": 66.09360236878452,
+      "afterSeconds": 167.6746490229505,
+      "beforeExtent": {
+        "x": 7.15,
+        "z": 5.4
+      },
+      "afterExtent": {
+        "x": 7.460000000000001,
+        "z": 5.6
+      },
+      "speed": 0.19401829930268055
+    },
+    {
+      "room": "ROOM1",
+      "wave": 4,
+      "type": "midge",
+      "beforeLength": 10.002693432310414,
+      "afterLength": 30.803423810015794,
+      "beforeSeconds": 78.85199276062089,
+      "afterSeconds": 238.66670578974976,
+      "beforeExtent": {
+        "x": 6.91,
+        "z": 2.9000000000000004
+      },
+      "afterExtent": {
+        "x": 6.91,
+        "z": 5.4
+      },
+      "speed": 0.13015529035749107
+    },
+    {
+      "room": "ROOM1",
+      "wave": 4,
+      "type": "dart",
+      "beforeLength": 10.88780706652712,
+      "afterLength": 33.60549284131089,
+      "beforeSeconds": 99.26009612929263,
+      "afterSeconds": 302.1957551458245,
+      "beforeExtent": {
+        "x": 4.61,
+        "z": 3.5
+      },
+      "afterExtent": {
+        "x": 7.071921502253973,
+        "z": 5.4
+      },
+      "speed": 0.11194526326658594
+    },
+    {
+      "room": "ROOM1",
+      "wave": 4,
+      "type": "ant",
+      "beforeLength": 12.43533172777383,
+      "afterLength": 32.14391364100136,
+      "beforeSeconds": 66.09360236878452,
+      "afterSeconds": 167.6746490229505,
+      "beforeExtent": {
+        "x": 7.15,
+        "z": 5.4
+      },
+      "afterExtent": {
+        "x": 7.460000000000001,
+        "z": 5.6
+      },
+      "speed": 0.19401829930268055
+    },
+    {
+      "room": "ROOM1",
+      "wave": 4,
+      "type": "midge",
+      "beforeLength": 10.002693432310414,
+      "afterLength": 30.803423810015794,
+      "beforeSeconds": 78.85199276062089,
+      "afterSeconds": 238.66670578974976,
+      "beforeExtent": {
+        "x": 6.91,
+        "z": 2.9000000000000004
+      },
+      "afterExtent": {
+        "x": 6.91,
+        "z": 5.4
+      },
+      "speed": 0.13015529035749107
+    },
+    {
+      "room": "ROOM1",
+      "wave": 4,
+      "type": "ant",
+      "beforeLength": 12.43533172777383,
+      "afterLength": 32.14391364100136,
+      "beforeSeconds": 66.09360236878452,
+      "afterSeconds": 167.6746490229505,
+      "beforeExtent": {
+        "x": 7.15,
+        "z": 5.4
+      },
+      "afterExtent": {
+        "x": 7.460000000000001,
+        "z": 5.6
+      },
+      "speed": 0.19401829930268055
+    },
+    {
+      "room": "ROOM1",
+      "wave": 4,
+      "type": "midge",
+      "beforeLength": 10.002693432310414,
+      "afterLength": 30.803423810015794,
+      "beforeSeconds": 78.85199276062089,
+      "afterSeconds": 238.66670578974976,
+      "beforeExtent": {
+        "x": 6.91,
+        "z": 2.9000000000000004
+      },
+      "afterExtent": {
+        "x": 6.91,
+        "z": 5.4
+      },
+      "speed": 0.13015529035749107
+    },
+    {
+      "room": "ROOM1",
+      "wave": 4,
+      "type": "ant",
+      "beforeLength": 12.43533172777383,
+      "afterLength": 32.14391364100136,
+      "beforeSeconds": 66.09360236878452,
+      "afterSeconds": 167.6746490229505,
+      "beforeExtent": {
+        "x": 7.15,
+        "z": 5.4
+      },
+      "afterExtent": {
+        "x": 7.460000000000001,
+        "z": 5.6
+      },
+      "speed": 0.19401829930268055
+    },
+    {
+      "room": "ROOM1",
+      "wave": 4,
+      "type": "midge",
+      "beforeLength": 9.614763050252622,
+      "afterLength": 32.52921691047814,
+      "beforeSeconds": 113.33759248063133,
+      "afterSeconds": 378.6837182740263,
+      "beforeExtent": {
+        "x": 3.3,
+        "z": 3.71
+      },
+      "afterExtent": {
+        "x": 5.699999999999999,
+        "z": 6.11
+      },
+      "speed": 0.08635684350661021
+    },
+    {
+      "room": "ROOM1",
+      "wave": 4,
+      "type": "midge",
+      "beforeLength": 10.002693432310414,
+      "afterLength": 30.849451905950414,
+      "beforeSeconds": 78.85199276062089,
+      "afterSeconds": 239.02034562880814,
+      "beforeExtent": {
+        "x": 6.91,
+        "z": 2.9000000000000004
+      },
+      "afterExtent": {
+        "x": 6.91,
+        "z": 5.4
+      },
+      "speed": 0.13015529035749107
+    },
+    {
+      "room": "ROOM1",
+      "wave": 4,
+      "type": "midge",
+      "beforeLength": 9.614763050252622,
+      "afterLength": 32.71756376029477,
+      "beforeSeconds": 113.33759248063133,
+      "afterSeconds": 380.86474808207174,
+      "beforeExtent": {
+        "x": 3.3,
+        "z": 3.71
+      },
+      "afterExtent": {
+        "x": 5.749369328061585,
+        "z": 6.11
+      },
+      "speed": 0.08635684350661021
+    },
+    {
+      "room": "ROOM1",
+      "wave": 4,
+      "type": "ant",
+      "beforeLength": 12.43533172777383,
+      "afterLength": 32.14391364100136,
+      "beforeSeconds": 65.80436257372212,
+      "afterSeconds": 166.92699715506654,
+      "beforeExtent": {
+        "x": 7.15,
+        "z": 5.4
+      },
+      "afterExtent": {
+        "x": 7.460000000000001,
+        "z": 5.6
+      },
+      "speed": 0.1948978287088998
+    },
+    {
+      "room": "ROOM1",
+      "wave": 8,
+      "type": "dart",
+      "beforeLength": 32.1676474976426,
+      "afterLength": 32.12736040535591,
+      "beforeSeconds": 148.0577275695957,
+      "afterSeconds": 147.87480337067154,
+      "beforeExtent": {
+        "x": 5.699999999999999,
+        "z": 6.11
+      },
+      "afterExtent": {
+        "x": 5.699999999999999,
+        "z": 6.11
+      },
+      "speed": 0.22023927136833546
+    },
+    {
+      "room": "ROOM1",
+      "wave": 8,
+      "type": "roach",
+      "beforeLength": 8.889726687347805,
+      "afterLength": 39.58439522652194,
+      "beforeSeconds": 105.79328373356365,
+      "afterSeconds": 464.17330517207256,
+      "beforeExtent": {
+        "x": 2.7100000000000004,
+        "z": 4.5
+      },
+      "afterExtent": {
+        "x": 7.470000000000001,
+        "z": 5.6
+      },
+      "speed": 0.0856483807773887
+    },
+    {
+      "room": "ROOM1",
+      "wave": 8,
+      "type": "dart",
+      "beforeLength": 32.1676474976426,
+      "afterLength": 32.12736040535591,
+      "beforeSeconds": 148.0577275695957,
+      "afterSeconds": 147.87480337067154,
+      "beforeExtent": {
+        "x": 5.699999999999999,
+        "z": 6.11
+      },
+      "afterExtent": {
+        "x": 5.699999999999999,
+        "z": 6.11
+      },
+      "speed": 0.22023927136833546
+    },
+    {
+      "room": "ROOM1",
+      "wave": 8,
+      "type": "ant",
+      "beforeLength": 8.889726687347805,
+      "afterLength": 39.58439522652194,
+      "beforeSeconds": 105.79328373356365,
+      "afterSeconds": 464.17330517207256,
+      "beforeExtent": {
+        "x": 2.7100000000000004,
+        "z": 4.5
+      },
+      "afterExtent": {
+        "x": 7.470000000000001,
+        "z": 5.6
+      },
+      "speed": 0.0856483807773887
+    },
+    {
+      "room": "ROOM1",
+      "wave": 8,
+      "type": "midge",
+      "beforeLength": 32.1676474976426,
+      "afterLength": 32.12736040535591,
+      "beforeSeconds": 142.03252108307964,
+      "afterSeconds": 141.85714291467534,
+      "beforeExtent": {
+        "x": 5.699999999999999,
+        "z": 6.11
+      },
+      "afterExtent": {
+        "x": 5.699999999999999,
+        "z": 6.11
+      },
+      "speed": 0.22971554927985557
+    },
+    {
+      "room": "ROOM1",
+      "wave": 8,
+      "type": "guard",
+      "beforeLength": 32.1676474976426,
+      "afterLength": 32.12736040535591,
+      "beforeSeconds": 142.03252108307964,
+      "afterSeconds": 141.85714291467534,
+      "beforeExtent": {
+        "x": 5.699999999999999,
+        "z": 6.11
+      },
+      "afterExtent": {
+        "x": 5.699999999999999,
+        "z": 6.11
+      },
+      "speed": 0.22971554927985557
+    },
+    {
+      "room": "ROOM1",
+      "wave": 8,
+      "type": "ant",
+      "beforeLength": 10.520224666919555,
+      "afterLength": 38.106523284415076,
+      "beforeSeconds": 99.13759000345762,
+      "afterSeconds": 353.85330660267994,
+      "beforeExtent": {
+        "x": 4.04,
+        "z": 3.8099999999999996
+      },
+      "afterExtent": {
+        "x": 6.71,
+        "z": 6.21
+      },
+      "speed": 0.10830230260545981
+    },
+    {
+      "room": "ROOM1",
+      "wave": 8,
+      "type": "midge",
+      "beforeLength": 32.1676474976426,
+      "afterLength": 32.12736040535591,
+      "beforeSeconds": 142.03252108307964,
+      "afterSeconds": 141.85714291467534,
+      "beforeExtent": {
+        "x": 5.699999999999999,
+        "z": 6.11
+      },
+      "afterExtent": {
+        "x": 5.699999999999999,
+        "z": 6.11
+      },
+      "speed": 0.22971554927985557
+    },
+    {
+      "room": "ROOM1",
+      "wave": 8,
+      "type": "midge",
+      "beforeLength": 33.39172280880156,
+      "afterLength": 33.38392913870552,
+      "beforeSeconds": 190.47195795568786,
+      "afterSeconds": 190.4279683636841,
+      "beforeExtent": {
+        "x": 7.01,
+        "z": 5.4
+      },
+      "afterExtent": {
+        "x": 7.01,
+        "z": 5.4
+      },
+      "speed": 0.17717077474545245
+    },
+    {
+      "room": "ROOM1",
+      "wave": 8,
+      "type": "midge",
+      "beforeLength": 32.1676474976426,
+      "afterLength": 32.15360198994006,
+      "beforeSeconds": 170.23638208129708,
+      "afterSeconds": 170.1629242569242,
+      "beforeExtent": {
+        "x": 5.699999999999999,
+        "z": 6.11
+      },
+      "afterExtent": {
+        "x": 5.699999999999999,
+        "z": 6.11
+      },
+      "speed": 0.19120505980744512
+    },
+    {
+      "room": "ROOM1",
+      "wave": 8,
+      "type": "ant",
+      "beforeLength": 10.520224666919555,
+      "afterLength": 38.106523284415076,
+      "beforeSeconds": 99.80218915932693,
+      "afterSeconds": 356.2606281200209,
+      "beforeExtent": {
+        "x": 4.04,
+        "z": 3.8099999999999996
+      },
+      "afterExtent": {
+        "x": 6.71,
+        "z": 6.21
+      },
+      "speed": 0.10756635160570219
+    },
+    {
+      "room": "ROOM1",
+      "wave": 8,
+      "type": "midge",
+      "beforeLength": 32.1676474976426,
+      "afterLength": 32.13063606479245,
+      "beforeSeconds": 116.65685953666198,
+      "afterSeconds": 116.5249377149664,
+      "beforeExtent": {
+        "x": 5.699999999999999,
+        "z": 6.11
+      },
+      "afterExtent": {
+        "x": 5.699999999999999,
+        "z": 6.11
+      },
+      "speed": 0.28055580475197706
+    },
+    {
+      "room": "ROOM2",
+      "wave": 1,
+      "type": "midge",
+      "beforeLength": 4.313658325972082,
+      "afterLength": 32.5845462573794,
+      "beforeSeconds": 55.21777052403862,
+      "afterSeconds": 403.99681437782033,
+      "beforeExtent": {
+        "x": 2.382471750571858,
+        "z": 0.8099999999999996
+      },
+      "afterExtent": {
+        "x": 5.699999999999999,
+        "z": 6.11
+      },
+      "speed": 0.08105672754599125
+    },
+    {
+      "room": "ROOM2",
+      "wave": 1,
+      "type": "midge",
+      "beforeLength": 4.324830401493562,
+      "afterLength": 32.60583324299268,
+      "beforeSeconds": 55.35560085422486,
+      "afterSeconds": 404.2594327471741,
+      "beforeExtent": {
+        "x": 2.3932512990664687,
+        "z": 0.8099999999999996
+      },
+      "afterExtent": {
+        "x": 5.699999999999999,
+        "z": 6.11
+      },
+      "speed": 0.08105672754599125
+    },
+    {
+      "room": "ROOM2",
+      "wave": 1,
+      "type": "midge",
+      "beforeLength": 4.324830401493562,
+      "afterLength": 32.60583324299268,
+      "beforeSeconds": 55.35560085422486,
+      "afterSeconds": 404.2594327471741,
+      "beforeExtent": {
+        "x": 2.3932512990664687,
+        "z": 0.8099999999999996
+      },
+      "afterExtent": {
+        "x": 5.699999999999999,
+        "z": 6.11
+      },
+      "speed": 0.08105672754599125
+    },
+    {
+      "room": "ROOM2",
+      "wave": 1,
+      "type": "midge",
+      "beforeLength": 4.324830401493562,
+      "afterLength": 32.60583324299268,
+      "beforeSeconds": 55.35560085422486,
+      "afterSeconds": 404.2594327471741,
+      "beforeExtent": {
+        "x": 2.3932512990664687,
+        "z": 0.8099999999999996
+      },
+      "afterExtent": {
+        "x": 5.699999999999999,
+        "z": 6.11
+      },
+      "speed": 0.08105672754599125
+    },
+    {
+      "room": "ROOM2",
+      "wave": 1,
+      "type": "midge",
+      "beforeLength": 4.324830401493562,
+      "afterLength": 32.60583324299268,
+      "beforeSeconds": 55.35560085422486,
+      "afterSeconds": 404.2594327471741,
+      "beforeExtent": {
+        "x": 2.3932512990664687,
+        "z": 0.8099999999999996
+      },
+      "afterExtent": {
+        "x": 5.699999999999999,
+        "z": 6.11
+      },
+      "speed": 0.08105672754599125
+    },
+    {
+      "room": "ROOM2",
+      "wave": 1,
+      "type": "midge",
+      "beforeLength": 4.324830401493562,
+      "afterLength": 32.60583324299268,
+      "beforeSeconds": 55.35560085422486,
+      "afterSeconds": 404.2594327471741,
+      "beforeExtent": {
+        "x": 2.3932512990664687,
+        "z": 0.8099999999999996
+      },
+      "afterExtent": {
+        "x": 5.699999999999999,
+        "z": 6.11
+      },
+      "speed": 0.08105672754599125
+    },
+    {
+      "room": "ROOM2",
+      "wave": 4,
+      "type": "midge",
+      "beforeLength": 10.88780706652712,
+      "afterLength": 33.48794649030048,
+      "beforeSeconds": 99.26009612929263,
+      "afterSeconds": 301.1457209810873,
+      "beforeExtent": {
+        "x": 4.61,
+        "z": 3.5
+      },
+      "afterExtent": {
+        "x": 7.023400976906997,
+        "z": 5.4
+      },
+      "speed": 0.11194526326658594
+    },
+    {
+      "room": "ROOM2",
+      "wave": 4,
+      "type": "midge",
+      "beforeLength": 10.099576317827902,
+      "afterLength": 32.1572971147398,
+      "beforeSeconds": 90.2665571193785,
+      "afterSeconds": 283.04286885506286,
+      "beforeExtent": {
+        "x": 5.199999999999999,
+        "z": 3.71
+      },
+      "afterExtent": {
+        "x": 5.699999999999999,
+        "z": 6.11
+      },
+      "speed": 0.11442132385619681
+    },
+    {
+      "room": "ROOM2",
+      "wave": 4,
+      "type": "dart",
+      "beforeLength": 10.099576317827902,
+      "afterLength": 32.1572971147398,
+      "beforeSeconds": 90.2665571193785,
+      "afterSeconds": 283.04286885506286,
+      "beforeExtent": {
+        "x": 5.199999999999999,
+        "z": 3.71
+      },
+      "afterExtent": {
+        "x": 5.699999999999999,
+        "z": 6.11
+      },
+      "speed": 0.11442132385619681
+    },
+    {
+      "room": "ROOM2",
+      "wave": 4,
+      "type": "midge",
+      "beforeLength": 10.099576317827902,
+      "afterLength": 32.163326523103564,
+      "beforeSeconds": 90.2665571193785,
+      "afterSeconds": 283.09556365145716,
+      "beforeExtent": {
+        "x": 5.199999999999999,
+        "z": 3.71
+      },
+      "afterExtent": {
+        "x": 5.699999999999999,
+        "z": 6.11
+      },
+      "speed": 0.11442132385619681
+    },
+    {
+      "room": "ROOM2",
+      "wave": 4,
+      "type": "ant",
+      "beforeLength": 8.889726687347805,
+      "afterLength": 39.58439522652194,
+      "beforeSeconds": 72.72028071408607,
+      "afterSeconds": 316.9050179800466,
+      "beforeExtent": {
+        "x": 2.7100000000000004,
+        "z": 4.5
+      },
+      "afterExtent": {
+        "x": 7.470000000000001,
+        "z": 5.6
+      },
+      "speed": 0.12570264989880262
+    },
+    {
+      "room": "ROOM2",
+      "wave": 4,
+      "type": "ant",
+      "beforeLength": 8.889726687347805,
+      "afterLength": 39.58439522652194,
+      "beforeSeconds": 72.72028071408607,
+      "afterSeconds": 316.9050179800466,
+      "beforeExtent": {
+        "x": 2.7100000000000004,
+        "z": 4.5
+      },
+      "afterExtent": {
+        "x": 7.470000000000001,
+        "z": 5.6
+      },
+      "speed": 0.12570264989880262
+    },
+    {
+      "room": "ROOM2",
+      "wave": 4,
+      "type": "ant",
+      "beforeLength": 8.889726687347805,
+      "afterLength": 39.58439522652194,
+      "beforeSeconds": 72.57287564707423,
+      "afterSeconds": 316.2486490458595,
+      "beforeExtent": {
+        "x": 2.7100000000000004,
+        "z": 4.5
+      },
+      "afterExtent": {
+        "x": 7.470000000000001,
+        "z": 5.6
+      },
+      "speed": 0.1259652041359937
+    },
+    {
+      "room": "ROOM2",
+      "wave": 4,
+      "type": "ant",
+      "beforeLength": 8.889726687347805,
+      "afterLength": 39.58439522652194,
+      "beforeSeconds": 72.72028071408607,
+      "afterSeconds": 316.9050179800466,
+      "beforeExtent": {
+        "x": 2.7100000000000004,
+        "z": 4.5
+      },
+      "afterExtent": {
+        "x": 7.470000000000001,
+        "z": 5.6
+      },
+      "speed": 0.12570264989880262
+    },
+    {
+      "room": "ROOM2",
+      "wave": 4,
+      "type": "ant",
+      "beforeLength": 12.43533172777383,
+      "afterLength": 32.14391364100136,
+      "beforeSeconds": 66.22725622885221,
+      "afterSeconds": 168.02012900127767,
+      "beforeExtent": {
+        "x": 7.15,
+        "z": 5.4
+      },
+      "afterExtent": {
+        "x": 7.460000000000001,
+        "z": 5.6
+      },
+      "speed": 0.19361455646594508
+    },
+    {
+      "room": "ROOM2",
+      "wave": 4,
+      "type": "midge",
+      "beforeLength": 10.002693432310414,
+      "afterLength": 31.020829050220776,
+      "beforeSeconds": 78.85199276062089,
+      "afterSeconds": 240.33705848619297,
+      "beforeExtent": {
+        "x": 6.91,
+        "z": 2.9000000000000004
+      },
+      "afterExtent": {
+        "x": 6.91,
+        "z": 5.4
+      },
+      "speed": 0.13015529035749107
+    },
+    {
+      "room": "ROOM2",
+      "wave": 4,
+      "type": "midge",
+      "beforeLength": 10.002693432310414,
+      "afterLength": 31.020829050220776,
+      "beforeSeconds": 78.85199276062089,
+      "afterSeconds": 240.33705848619297,
+      "beforeExtent": {
+        "x": 6.91,
+        "z": 2.9000000000000004
+      },
+      "afterExtent": {
+        "x": 6.91,
+        "z": 5.4
+      },
+      "speed": 0.13015529035749107
+    },
+    {
+      "room": "ROOM2",
+      "wave": 4,
+      "type": "ant",
+      "beforeLength": 12.43533172777383,
+      "afterLength": 32.14391364100136,
+      "beforeSeconds": 66.22725622885221,
+      "afterSeconds": 168.02012900127767,
+      "beforeExtent": {
+        "x": 7.15,
+        "z": 5.4
+      },
+      "afterExtent": {
+        "x": 7.460000000000001,
+        "z": 5.6
+      },
+      "speed": 0.19361455646594508
+    },
+    {
+      "room": "ROOM2",
+      "wave": 8,
+      "type": "guard",
+      "beforeLength": 32.1676474976426,
+      "afterLength": 32.32084199027023,
+      "beforeSeconds": 229.3426613543531,
+      "afterSeconds": 230.425353014082,
+      "beforeExtent": {
+        "x": 5.699999999999999,
+        "z": 6.11
+      },
+      "afterExtent": {
+        "x": 5.752085758955218,
+        "z": 6.11
+      },
+      "speed": 0.1414941098428672
+    },
+    {
+      "room": "ROOM2",
+      "wave": 8,
+      "type": "midge",
+      "beforeLength": 32.1676474976426,
+      "afterLength": 32.32084199027023,
+      "beforeSeconds": 229.3426613543531,
+      "afterSeconds": 230.425353014082,
+      "beforeExtent": {
+        "x": 5.699999999999999,
+        "z": 6.11
+      },
+      "afterExtent": {
+        "x": 5.752085758955218,
+        "z": 6.11
+      },
+      "speed": 0.1414941098428672
+    },
+    {
+      "room": "ROOM2",
+      "wave": 8,
+      "type": "roach",
+      "beforeLength": 8.889726687347805,
+      "afterLength": 39.58439522652194,
+      "beforeSeconds": 103.10023882724661,
+      "afterSeconds": 452.1816480960292,
+      "beforeExtent": {
+        "x": 2.7100000000000004,
+        "z": 4.5
+      },
+      "afterExtent": {
+        "x": 7.470000000000001,
+        "z": 5.6
+      },
+      "speed": 0.08792982875676467
+    },
+    {
+      "room": "ROOM2",
+      "wave": 8,
+      "type": "midge",
+      "beforeLength": 32.1676474976426,
+      "afterLength": 32.32084199027023,
+      "beforeSeconds": 230.9964431584939,
+      "afterSeconds": 232.08701075209143,
+      "beforeExtent": {
+        "x": 5.699999999999999,
+        "z": 6.11
+      },
+      "afterExtent": {
+        "x": 5.752085758955218,
+        "z": 6.11
+      },
+      "speed": 0.14047225823231937
+    },
+    {
+      "room": "ROOM2",
+      "wave": 8,
+      "type": "ant",
+      "beforeLength": 8.889726687347805,
+      "afterLength": 39.58439522652194,
+      "beforeSeconds": 103.10023882724661,
+      "afterSeconds": 452.1816480960292,
+      "beforeExtent": {
+        "x": 2.7100000000000004,
+        "z": 4.5
+      },
+      "afterExtent": {
+        "x": 7.470000000000001,
+        "z": 5.6
+      },
+      "speed": 0.08792982875676467
+    },
+    {
+      "room": "ROOM2",
+      "wave": 8,
+      "type": "midge",
+      "beforeLength": 32.1676474976426,
+      "afterLength": 32.32084199027023,
+      "beforeSeconds": 230.9964431584939,
+      "afterSeconds": 232.08701075209143,
+      "beforeExtent": {
+        "x": 5.699999999999999,
+        "z": 6.11
+      },
+      "afterExtent": {
+        "x": 5.752085758955218,
+        "z": 6.11
+      },
+      "speed": 0.14047225823231937
+    },
+    {
+      "room": "ROOM2",
+      "wave": 8,
+      "type": "ant",
+      "beforeLength": 8.889726687347805,
+      "afterLength": 39.58439522652194,
+      "beforeSeconds": 103.10023882724661,
+      "afterSeconds": 452.1816480960292,
+      "beforeExtent": {
+        "x": 2.7100000000000004,
+        "z": 4.5
+      },
+      "afterExtent": {
+        "x": 7.470000000000001,
+        "z": 5.6
+      },
+      "speed": 0.08792982875676467
+    },
+    {
+      "room": "ROOM2",
+      "wave": 8,
+      "type": "dart",
+      "beforeLength": 32.1676474976426,
+      "afterLength": 32.32084199027023,
+      "beforeSeconds": 230.9964431584939,
+      "afterSeconds": 232.08701075209143,
+      "beforeExtent": {
+        "x": 5.699999999999999,
+        "z": 6.11
+      },
+      "afterExtent": {
+        "x": 5.752085758955218,
+        "z": 6.11
+      },
+      "speed": 0.14047225823231937
+    },
+    {
+      "room": "ROOM2",
+      "wave": 8,
+      "type": "midge",
+      "beforeLength": 30.846428702682726,
+      "afterLength": 30.939925597823468,
+      "beforeSeconds": 145.82593689800157,
+      "afterSeconds": 146.26187969936393,
+      "beforeExtent": {
+        "x": 6.91,
+        "z": 5.4
+      },
+      "afterExtent": {
+        "x": 6.91,
+        "z": 5.4
+      },
+      "speed": 0.21447055634032397
+    },
+    {
+      "room": "ROOM2",
+      "wave": 8,
+      "type": "ant",
+      "beforeLength": 12.43533172777383,
+      "afterLength": 32.14391364100136,
+      "beforeSeconds": 96.42146272236548,
+      "afterSeconds": 246.0687076184725,
+      "beforeExtent": {
+        "x": 7.15,
+        "z": 5.4
+      },
+      "afterExtent": {
+        "x": 7.460000000000001,
+        "z": 5.6
+      },
+      "speed": 0.1317002656942349
+    },
+    {
+      "room": "ROOM2",
+      "wave": 8,
+      "type": "midge",
+      "beforeLength": 30.846428702682726,
+      "afterLength": 30.939925597823468,
+      "beforeSeconds": 145.82593689800157,
+      "afterSeconds": 146.26187969936393,
+      "beforeExtent": {
+        "x": 6.91,
+        "z": 5.4
+      },
+      "afterExtent": {
+        "x": 6.91,
+        "z": 5.4
+      },
+      "speed": 0.21447055634032397
+    },
+    {
+      "room": "ROOM2",
+      "wave": 8,
+      "type": "midge",
+      "beforeLength": 30.846428702682726,
+      "afterLength": 30.939925597823468,
+      "beforeSeconds": 142.07096971351353,
+      "afterSeconds": 142.4955310425995,
+      "beforeExtent": {
+        "x": 6.91,
+        "z": 5.4
+      },
+      "afterExtent": {
+        "x": 6.91,
+        "z": 5.4
+      },
+      "speed": 0.2202199982321303
+    }
+  ]
+}

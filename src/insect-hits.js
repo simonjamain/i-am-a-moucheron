@@ -11,13 +11,49 @@ export function nearestMeshHit(ray, model) {
 
 // Use the rendered triangles, including animated wings, instead of a distance-
 // dependent aim cone. Returned distance is measured from the gun muzzle.
-export function nearestInsectHit(T, origin, direction, insects, maxDistance = 60) {
+export function nearestInsectHit(T, origin, direction, insects, maxDistance = 60, excluded = null) {
   if (!Number.isFinite(direction.lengthSq()) || direction.lengthSq() < 1e-12) return null;
-  const ray = new T.Raycaster(origin, direction.clone().normalize(), 0, maxDistance);
-  let nearest = null;
+  const norm = Math.sqrt(direction.lengthSq());
+  let ray = null,
+    nearest = null;
   for (const [id, model] of insects) {
-    if (!model.visible) continue;
-    const hit = nearestMeshHit(ray, model);
+    if (!model.visible || excluded?.has(id)) continue;
+    // Broad phase uses a conservative world sphere before any matrix/mesh work.
+    const direct = !model.parent || model.parent.isScene;
+    const centre = direct ? model.position : model.getWorldPosition(new T.Vector3());
+    const size = direct ? model.scale : model.getWorldScale(new T.Vector3());
+    const radius =
+      3 *
+      Math.max(Math.abs(size.x), Math.abs(size.y), Math.abs(size.z)) *
+      (model.userData.hitTolerance || 1);
+    const dx = centre.x - origin.x,
+      dy = centre.y - origin.y,
+      dz = centre.z - origin.z;
+    const along = (dx * direction.x + dy * direction.y + dz * direction.z) / norm;
+    if (
+      along < -radius ||
+      along > maxDistance + radius ||
+      dx * dx + dy * dy + dz * dz - along * along > radius * radius
+    )
+      continue;
+    ray ??= new T.Raycaster(origin, direction.clone().normalize(), 0, maxDistance);
+    let hit;
+    if ((model.userData.hitTolerance || 1) > 1) {
+      model.updateWorldMatrix(true, true);
+      for (const part of model.userData.hitParts || []) {
+        const r = part.geometry.parameters.radius;
+        if (!r) continue;
+        const local = ray.ray.clone().applyMatrix4(new T.Matrix4().copy(part.matrixWorld).invert());
+        const point = local.intersectSphere(
+          new T.Sphere(new T.Vector3(), r * model.userData.hitTolerance),
+          new T.Vector3(),
+        );
+        if (!point) continue;
+        point.applyMatrix4(part.matrixWorld);
+        const distance = point.distanceTo(origin);
+        if (distance <= maxDistance && (!hit || distance < hit.distance)) hit = { point, distance };
+      }
+    } else hit = nearestMeshHit(ray, model);
     if (hit && (!nearest || hit.distance < nearest.distance))
       nearest = { id, distance: hit.distance, point: hit.point };
   }

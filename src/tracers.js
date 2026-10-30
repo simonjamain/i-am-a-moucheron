@@ -53,3 +53,66 @@ export function updateTracer(T, root, direction, camera) {
   const scale = Math.max(1, Math.min(8, (pixel * 1.4) / root.userData.width));
   root.scale.set(scale, scale, 1);
 }
+
+// Static hitscan effects use the same trailing shape, with the head placed in
+// front of the muzzle. Moving bullets retain their ordinary rearward tail.
+export function makeShotTrace(
+  T,
+  scene,
+  origin,
+  direction,
+  color,
+  scale = MAP.ratio,
+  distance = 150 * scale,
+) {
+  const trace = makeTracer(T, scene, origin, direction, color);
+  const length = Math.min(11 * scale, distance);
+  trace.scale.set(scale / MAP.ratio, scale / MAP.ratio, length / trace.userData.length);
+  trace.position.addScaledVector(direction, length);
+  return trace;
+}
+export class TracerPool {
+  constructor(T, scene, limit = 256) {
+    Object.assign(this, { T, scene, limit });
+    this.free = [];
+    this.all = new Set();
+  }
+  acquire(position, direction, color, shell = false) {
+    let model = this.free.find((m) => m.userData.shell === shell);
+    if (model) this.free.splice(this.free.indexOf(model), 1);
+    else {
+      if (this.all.size >= this.limit) {
+        const old = this.free.pop();
+        if (!old) return null;
+        old.userData.destroy();
+        this.all.delete(old);
+      }
+      model = makeTracer(this.T, this.scene, position, direction, color, shell);
+      const destroy = model.userData.dispose;
+      model.userData.destroy = destroy;
+      model.userData.shell = shell;
+      model.userData.dispose = () => {
+        if (!model.userData.released) {
+          model.userData.released = true;
+          this.scene.remove(model);
+          this.free.push(model);
+        }
+      };
+      this.all.add(model);
+    }
+    model.userData.released = false;
+    model.userData.halo.material.color.set(color);
+    model.position.copy(position);
+    model.scale.set(1, 1, 1);
+    this.scene.add(model);
+    return model;
+  }
+  dispose() {
+    for (const model of this.all) {
+      this.scene.remove(model);
+      model.userData.destroy();
+    }
+    this.all.clear();
+    this.free = [];
+  }
+}

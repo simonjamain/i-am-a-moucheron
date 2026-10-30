@@ -1281,8 +1281,8 @@ ci-dessous remplacent les anciennes lors de leur livraison. Traiter le lot selon
 `AGENTS.md`, sans nouvelle validation utilisateur ; choisir et documenter les
 paramètres non fixés. ZIP intermédiaires autorisés, puis poursuite du lot.
 
-| ID     | Tâche                                                         | État | Dépendances    |
-| ------ | ------------------------------------------------------------- | ---- | -------------- |
+| ID     | Tâche                                                         | État    | Dépendances    |
+| ------ | ------------------------------------------------------------- | ------- | -------------- |
 | ECO-03 | Prix affichés conformes aux transactions                      | terminé | —              |
 | INT-01 | Placement direct avec E après signature                       | terminé | ECO-03         |
 | SIE-04 | Raccourcis physiques de changement de poste et équipage       | terminé | —              |
@@ -1434,7 +1434,6 @@ Validation de cette livraison : identifiants uniques, dépendances, couverture d
 notes et décisions, liens locaux et format Markdown. Aucun code ni déploiement
 modifié ; les documents de gameplay actuel seront mis à jour avec l’implémentation.
 
-
 ### Livraison de ce lot — Node RAM/UDP
 
 Les onze tâches sont terminées. [Référence détaillée](docs/clean-flight.md) :
@@ -1457,3 +1456,184 @@ consignée dans [l’audit](docs/reference-audit.md). ZIP des sources livré ; W
 écoute, tactile physique, charge et WAN restent à vérifier sur VM. Les armes
 lourdes conservent leur confirmation unique en cours : en réseau lent, leur
 cadence effective peut être inférieure à la cadence nominale.
+
+## Nouveau lot — retours multijoueurs, HUD et déploiement au sol (29 octobre 2026)
+
+Toutes les recommandations du grill ont été validées, puis leur intégration
+explicitement autorisée. Cadrage initial : tâches prêtes. Les états du tableau et le suivi final décrivent maintenant leur livraison.
+Suivre l’exécution autonome de `AGENTS.md`, sans nouvelle confirmation ; livraisons
+intermédiaires en ZIP autorisées. Les règles ci-dessous remplacent les précédentes
+lors de leur implémentation ; préserver les suivis des lots déjà livrés.
+
+| ID      | Tâche                                                       | État | Dépendances |
+| ------- | ----------------------------------------------------------- | ---- | ----------- |
+| MORT-01 | Observation après mort avant accès volontaire au purgatoire | terminé | —           |
+| HUD-03  | Statistiques des avions près du viseur                      | terminé | —           |
+| HUD-04  | Aide permanente des commandes en bas à gauche               | terminé | HUD-03      |
+| VEH-06  | Réserve gratuite renouvelée au décollage                    | terminé | —           |
+| INT-02  | Achat et placement de tous les véhicules                    | terminé | —           |
+| ARM-04  | Spitfire : 1 000 balles, décalage et performances           | terminé | —           |
+| VAG-04  | Parcours étendus dans toute la pièce                        | terminé | —           |
+| VAG-05  | Fourmis faciles dès la première vague                       | terminé | VAG-04      |
+| CHU-02  | Chute à la gravité mise à l’échelle du personnage           | terminé | —           |
+| ARM-05  | Corriger les tirs arrière et élargir le regard vertical     | terminé | —           |
+| BOM-02  | Doubler le rayon des bombes du gros bombardier              | terminé | —           |
+| VIS-07  | Moucherons agrandis et tolérance de hitbox                  | terminé | —           |
+| VIS-08  | Couleurs personnelles et initiales sur les personnages      | terminé | —           |
+| RAD-02  | Radar cylindrique de 2 m, carte et parabole animée          | terminé | —           |
+
+### MORT-01 — Observer après la mort
+
+Au décès, conserver une caméra fixe au lieu de mort et le rendu vivant de la
+partie, sans limite de temps. Petite fenêtre et bouton « Accéder au purgatoire » :
+le clic déclenche le passage, pas le décès seul. Le mort ne peut plus agir et
+libère immédiatement son poste. Même attente avant le super purgatoire ; mourir
+au super purgatoire conserve sa règle actuelle de réapparition.
+Critères : décès à pied/à bord, commandes neutralisées, siège disponible, scène
+synchronisée, clic unique et répété, reset/reconnexion sans duplication de mort
+ou résurrection. Ne pas garder un corps actif pour permettre l’observation.
+
+### HUD-03 — Informations au curseur des avions
+
+Afficher en permanence près du curseur vitesse de l’appareil, PV du véhicule et
+balles restantes du poste occupé, dans tous les postes d’avion. Petites valeurs,
+barres et couleurs synthétiques, sans masquer la cible, sur le principe DCA.
+Ajouter les bombes pour les pilotes concernés. Ne pas confondre PV joueur et
+véhicule. Critères : tous les modèles/postes, réserves vides, dégâts, recharge,
+zoom et tailles d’écran ; valeurs actuelles sans dépendre d’un survol.
+
+### HUD-04 — Commandes toujours disponibles
+
+Remplacer les panneaux repliables par une aide permanente en bas à gauche :
+texte blanc discret avec légère ombre, sans fond ou fond extrêmement léger.
+Adapter les touches au poste, à la marche et au parachute ; aucun survol requis.
+Les statistiques essentielles restent près du viseur. Critères : aides complètes
+et conformes aux commandes réelles, changements de contexte immédiats, aucun
+chevauchement avec monnaie/banque et lisibilité pendant le combat.
+
+### VEH-06 — Avions initiaux réellement illimités
+
+Maintenir à la station un exemplaire disponible de chacun des deux modèles
+initiaux. Dès que cet exemplaire décolle, fournir son remplaçant gratuit, sans
+attendre sa destruction ni supprimer les avions utilisés. Un seul exemplaire de
+réserve par modèle ; pas de génération continue à chaque mise à jour.
+Critères : décollages successifs et concurrents, appareils encore vivants,
+retour/atterrissage, destruction et reset sans doublons de remplacement.
+
+### INT-02 — Placement de tous les achats de véhicules
+
+Ajouter aussi les deux modèles de départ au marchand, en supplément de leur
+réserve gratuite. Tous les achats de véhicules/avions passent par achat et
+signature, aperçu puis E pour poser sur support solide suffisamment dégagé,
+comme les installations. Achat à pied ; aucun spawn automatique à la station.
+Permet notamment de descendre en parachute puis acheter/poser un tank au sol.
+Choisir et documenter les prix non fixés selon l’économie existante.
+Critères : tous les modèles, sol et mobilier, encombrement, annulation/reprise,
+concurrence et prix affichés/débités cohérents, ni double débit ni pose multiple.
+
+### ARM-04 — Réserve et salves du Spitfire
+
+Remplacer l’autonomie de 45 secondes par **1 000 balles au total**, partagées entre
+les six mitrailleuses : chaque projectile consomme une balle. Très léger décalage
+des six départs de chaque salve, globalement synchronisés, sans réduire la cadence
+individuelle. Améliorer ainsi rendu et artefacts audio. Mesurer et rechercher
+également la cause des ralentissements locaux/distants en tir soutenu ; la baisse
+de stock seule ne constitue pas une correction de performance.
+Critères : stock exact et fin de réserve partielle, recharge, six origines,
+cadence conservée, sons sans accumulation, mesures avant/après et charge multijoueur.
+Conserver les caractéristiques de pilotage déjà livrées.
+
+### VAG-04 — Exploiter toute la pièce avant la corbeille
+
+Allonger nettement les parcours globaux aériens et terrestres : traverser plusieurs
+zones éloignées avant l’approche finale. Conserver les vitesses et les mouvements
+individuels/de groupe appréciés. Utiliser les hauteurs en vol et des supports
+accessibles au sol ; éviter les chemins directs vers la poubelle. Intégrer leur
+durée au rythme des vagues et aux arrivées serveur, sans attente désynchronisée.
+Critères : plusieurs graines/types, visualiser les chemins et mesurer leur
+étendue/durée avant/après, pas de traversée du mobilier ni ennemi bloqué.
+
+### VAG-05 — Ennemis terrestres précoces
+
+Ajouter dès la première vague un petit groupe de fourmis faciles en supplément
+des moucherons, puis une présence régulière dans les suivantes. Pas d’ennemis
+terrestres résistants immédiatement. Choisir/documenter le nombre et l’équilibrage.
+Critères : première vague mixte reproductible, trajets terrestres étendus,
+progression jouable et arrivée/récompense/fin de vague cohérentes.
+
+### CHU-02 — Remplacer la gravité non mise à l’échelle
+
+Appliquer la gravité humaine de référence multipliée par le ratio du personnage :
+**9,81 × 0,003 = 0,02943 m/s²** dans le décor du bureau. Remplace explicitement le
+choix précédent des mètres directs du décor. Adapter ensemble vitesse limite,
+freinage du parachute et seuils de dégâts ; centraliser les conversions et
+respecter les autres mondes. Critères : durée/vitesse mesurées à plusieurs hauteurs,
+parachute tardif et cycles, impact unique, sorties d’avion et cohérence réseau.
+
+### ARM-05 — Pistolet encore défectueux et regard vertical
+
+Reproduire le tir partant derrière le joueur avant de conclure sur sa cause ;
+corriger effectivement le défaut malgré les validations précédentes. Conserver
+la caméra à l’épaule, permettre de regarder/viser presque verticalement sans
+retournement. Projectile depuis l’arme vers le point visé ; obstacles bloquants.
+Critères : toutes orientations et angles verticaux, cibles proches/lointaines,
+obstacles et mondes autorisés, observation distante, origine/direction/dégâts
+cohérents ; documenter cause prouvée et limites de reproduction.
+
+### BOM-02 — Rayon du bombardier initial
+
+Doubler le rayon de dégâts **et l’effet visuel** des bombes du gros bombardier à
+trois places. Dégâts centraux inchangés ; Stuka inchangé. Critères : centre,
+bord et hors rayon, visibilité de l’explosion, dégâts uniques et cohérence clients.
+
+### VIS-07 — Taille et compensation des moucherons
+
+Augmenter les dimensions linéaires du modèle de **50 % par rapport à l’état actuel**,
+puis élargir la hitbox de **20 % supplémentaires** par rapport au nouveau modèle.
+Seulement les moucherons ; PV inchangés. Critères : comparaison avant/après,
+tirs au centre/bord/hors tolérance, géométrie cohérente entre clients.
+
+### VIS-08 — Identification sur le corps
+
+Grandes initiales du pseudo sur l’avant et le dos, couleur personnelle distincte
+et stable pendant la partie, y compris aux purgatoires. Contraste lisible ; ne
+pas réintroduire les noms flottants. Critères : pseudos variés/initiales identiques,
+connexion tardive, mort/retour et distinction des joueurs en partie.
+
+### RAD-02 — Couverture et modèle du radar
+
+Passer à **2 mètres de rayon du décor**, en cylindre vertical du sol au plafond,
+plutôt qu’en sphère : détecter au plafond et au sol même depuis un bureau.
+Afficher la couverture circulaire sur la carte avec balayage léger. Améliorer le
+modèle et animer la rotation de la parabole. Critères : limites horizontales,
+altitudes extrêmes, radars superposés, suppression/reset et rendu distant ; le
+balayage décoratif ne change pas implicitement la cadence réelle de détection.
+
+### Suivi de cette vague
+
+29 octobre 2026 : toutes les recommandations validées puis ajout autorisé.
+Livraison documentaire seulement ; états courants conservés dans leurs références
+jusqu’à implémentation. Vérifier liens, format, identifiants et dépendances. Les
+paramètres non imposés sont à choisir et documenter par l’agent sans interruption.
+
+
+### Livraison du lot retours multijoueurs
+
+Les 14 tâches sont terminées sur Node/RAM/UDP. [Référence courante](docs/multiplayer-return.md),
+mesures brutes et limites incluses. RAD-02 remplace l’identifiant RAD-01 doublonné
+avec l’ancien lot radar ; le périmètre reste celui validé. Les prix non fixés sont
+8 $ pour le chasseur supplémentaire et 16 $ pour le bombardier supplémentaire.
+
+Cause reproduite du tir arrière : traînée immobile derrière la bouche, corrigée
+sans inverser le rayon de dégâts. Optimisation mesurée : filtrage large avant
+matrices/intersections, suppression des Maps par segment, pool de traceurs, sons
+regroupés et départs décalés. Mesures CPU et comparaison de 90 chemins jointes ;
+ni FPS WebGL ni charge WAN revendiqués. Les attentes historiques des tests ont
+été adaptées aux nouvelles décisions explicites (stock, budget, chute et décès).
+
+Contrôles : suite complète, vrais gestionnaires et commandes, chaque type acheté
+et posé au sol, observation et accès idempotent, deux pairs UDP natifs, HUD/aide
+et bouton d’observation dans la démonstration navigateur. Les 31 Markdown sont
+revus, détails dans [audit](docs/reference-audit.md). ZIP des sources livré ;
+Site public historique inchangé. WebGL, écoute, tactile physique et partie sur
+Internet restent à vérifier sur VM.

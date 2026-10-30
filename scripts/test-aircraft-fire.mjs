@@ -1,3 +1,5 @@
+import { TracerPool } from '../src/tracers.js';
+import { GunSalvos } from '../src/salvos.js';
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import { readFileSync } from 'node:fs';
@@ -139,6 +141,9 @@ const context = vm.createContext({
     return timer;
   },
   clearTimeout: (id) => callbacks.delete(id),
+  TracerPool,
+  GunSalvos,
+  scene: new T.Scene(),
   joined: true,
   respawnAt: 0,
   deathPending: false,

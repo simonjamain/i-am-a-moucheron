@@ -52,8 +52,8 @@ projectile collision sweeps run at most 1/120 s per segment. Small arms inherit
 carrier velocity. Visual tracer width never enlarges the collision ray.
 
 Projectiles expire after 2 s (small arms), 3 s (shells), collision or fuse, with
-an additional 256-active-projectile cap. Geometries/materials are disposed on
-both expiry and capacity eviction. Fallen enemies tumble and fade over 4 s,
+an additional 256-active-projectile cap. Vehicle tracer geometries/materials are now recycled in a bounded pool of 256;
+expiry and capacity eviction return them to that pool. Other finite effects dispose their own resources. Fallen enemies tumble and fade over 4 s,
 collide with the office tops/floor, then dispose their own cloned materials and
 geometry; their list is capped at 80. Active hit queries exclude corpses. Flak
 has a brief warm flash, dark lobed smoke for 4.8 s and falling metal fragments;
@@ -138,3 +138,7 @@ signed contracts; new loans use 10–20 % per wave without rewriting signed sche
 
 Current Node installations use [signed prepaid orders](clean-flight.md#prix-bon-signé-et-pose),
 not payment at placement. Their pending counts participate in quotes and the 24-item cap.
+
+Les [retours multijoueurs](multiplayer-return.md) remplacent le déploiement direct
+des appareils achetés, la gravité non miniature et les parcours courts. Les achats
+de véhicules se signent et se posent à pied, notamment sur le plancher.

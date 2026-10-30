@@ -1,6 +1,6 @@
 // Presentation only: these meshes never enter the projectile collision surface.
 export function insectScale(type, base, size = 1) {
-  return base * size * (type === 'midge' ? 1.35 : 1);
+  return base * size * (type === 'midge' ? 1.35 * 1.5 : 1);
 }
 export function woundState(health, maximum) {
   const fraction = Math.max(0, Math.min(1, health / Math.max(1, maximum)));

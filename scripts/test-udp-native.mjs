@@ -1,3 +1,5 @@
+import { supportedPlacement } from '../src/equipment.js';
+import { OFFICE_SOLIDS } from '../worker/assets.js';
 import { ACTOR_UNIT, MAP } from '../src/scale.js';
 import { OFFICE_LAYOUT } from '../src/layout.js';
 import assert from 'node:assert/strict';
@@ -95,6 +97,13 @@ try {
   assert.equal(b.packets.length, 1, 'stale motion discarded');
   const dead = await a.request('death', { incarnation: 0 });
   assert.equal(dead.body.pilots.find((p) => p.id === aj.body.id).life, 'dead');
+  assert.equal(dead.body.pilots.find((p) => p.id === aj.body.id).state.awaitingPurgatory, true);
+  assert.ok(!dead.body.souls.some((s) => s.entity === aj.body.id));
+  assert.equal((await a.request('fan')).status, 409);
+  const entry = await a.request('enter-purgatory', { incarnation: 1 });
+  assert.equal(entry.status, 200);
+  const repeatEntry = await a.request('enter-purgatory', { incarnation: 1 });
+  assert.equal(repeatEntry.body.souls.filter((s) => s.entity === aj.body.id).length, 1);
   const snap = await b.request('sync', { mode: 'foot', state });
   assert.equal(snap.body.pilots.find((p) => p.id === aj.body.id).life, 'dead');
   const gameRoom = app.game.rooms.get('NATIVE'),
@@ -125,12 +134,30 @@ try {
   assert.equal(sign.body.dollars, 46);
   const observedOrder = await a.request('sync', { mode: 'foot', state });
   assert.ok(observedOrder.body.purchases.some((o) => o.owner === person.id && o.item === 'radar'));
-  const purchased = await b.request('buy', {
+  const purchased = await b.request('purchase-sign', {
     item: 'spitfire',
     request: 'native-spit-order',
     expectedPrice: 24,
+    signature: true,
+    epoch: gameRoom.base.epoch,
+    incarnation: person.incarnation,
   });
   assert.equal(purchased.status, 200);
+  const position = supportedPlacement({ x: 1.5, y: 0, z: 2.8 }, OFFICE_SOLIDS, [], 'spitfire');
+  assert.ok(position);
+  Object.assign(app.game.base(gameRoom, person), {
+    x: (position.x - OFFICE_LAYOUT.base.originX) / ACTOR_UNIT,
+    z: (OFFICE_LAYOUT.base.originZ - position.z) / ACTOR_UNIT,
+    y: position.y,
+    grounded: true,
+  });
+  const placed = await b.request('place-purchase', {
+    token: 'native-spit-order',
+    position,
+    epoch: gameRoom.base.epoch,
+    incarnation: person.incarnation,
+  });
+  assert.equal(placed.status, 200);
   const spit = [...gameRoom.vehicles.values()].find((v) => v.type === 'spitfire');
   spit.state.p = [1.5, 2, -0.5];
   spit.state.landed = false;

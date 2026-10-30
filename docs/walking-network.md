@@ -86,3 +86,7 @@ du contrat de lit sont détaillés dans [retours terrain](field-update.md).
 
 Le [lot suivant de lisibilité et nettoyage](clean-flight.md) précise les commandes
 contextuelles actuelles, les effets partagés et les nouvelles collisions de coque.
+
+La mort possède un état [d’observation sans corps](multiplayer-return.md#mort-et-observation-volontaire),
+avec snapshots maintenus mais commandes neutralisées. La gravité du personnage
+est maintenant mise à l’échelle ; le serveur garde les impacts dédupliqués.

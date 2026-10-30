@@ -21,7 +21,7 @@ now += 10000;
 s = call(a.id, 'sync', { state: a.state, mode: 'foot' });
 assert.equal(s.phase, 'combat');
 assert.equal(s.wave, 1);
-assert.equal(s.total, 6);
+assert.equal(s.total, 8);
 for (let enemy = 0; enemy < s.total; enemy++) {
   call(a.id, 'hit', { wave: 1, enemy, amount: 75, shot: 'one' });
   call(a.id, 'hit', { wave: 1, enemy, amount: 75, shot: 'one' });
@@ -30,8 +30,8 @@ for (let enemy = 0; enemy < s.total; enemy++) {
 s = game.snapshot(room);
 assert.equal(s.phase, 'prep');
 assert.equal(s.dollars, 4);
-assert.equal(s.kills.length, 6);
-assert.equal(s.souls.length, 6);
+assert.equal(s.kills.length, 8);
+assert.equal(s.souls.length, 8);
 assert.equal(s.enemyDamage[0], 150);
 room.dollars = 30;
 s = call(a.id, 'buy', { item: 'engine', request: 'purchase-engine', expectedPrice: 4 });
@@ -130,10 +130,13 @@ call(a.id, 'friendly-hit', { target: b.id, incarnation: 0, shot: 'p9' });
 assert.equal(room.pilots.get(b.id).life, 'dead');
 assert.equal(room.pilots.get(b.id).health, 100);
 call(a.id, 'death', { incarnation: 0 });
+call(a.id, 'enter-purgatory', { incarnation: room.pilots.get(a.id).incarnation });
+call(b.id, 'enter-purgatory', { incarnation: room.pilots.get(b.id).incarnation });
 for (let i = 0; i < 10; i++)
   call(a.id, 'friendly-hit', { target: b.id, incarnation: 1, shot: 's' + i });
 assert.equal(room.pilots.get(b.id).state.realm, 'super');
-call(b.id, 'death', { incarnation: 1 });
+assert.throws(() => call(b.id, 'death', { incarnation: 1 }), /purgatoire/);
+call(b.id, 'enter-purgatory', { incarnation: room.pilots.get(b.id).incarnation });
 assert.equal(room.pilots.get(b.id).incarnation, 2, 'old death discarded');
 function signAll(id, realm, count) {
   for (let form = 1; form <= count; form++) {

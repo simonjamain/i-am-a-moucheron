@@ -1,3 +1,5 @@
+import { TracerPool } from '../src/tracers.js';
+import { GunSalvos } from '../src/salvos.js';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
@@ -170,13 +172,13 @@ assert.equal(shopPrice('spitfire'), 2 * shopPrice('interceptor'));
 game.release(r, pilot);
 pilot.mode = 'foot';
 r.dollars = 100;
-command('buy', { item: 'spitfire', request: 'spitfire-buy' }, pilot);
+game.buy(r, pilot, { item: 'spitfire', request: 'spitfire-buy' }); // Internal fixture: public signed placement has its own regression.
 const spit = [...r.vehicles.values()].find((v) => v.type === 'spitfire');
 assert.ok(spit);
 assert.equal(r.dollars, 76);
 assert.deepEqual(VEHICLES.spitfire.seats, ['pilot']);
 assert.equal(fullAmmo('spitfire').bomb, undefined);
-assert.equal(fullAmmo('spitfire').pilot, 4500);
+assert.equal(fullAmmo('spitfire').pilot, 1000);
 const model = createGraphics(T, new T.Scene()).makeSpitfire('#fff');
 model.scale.setScalar(ACTOR_UNIT);
 model.updateWorldMatrix(true, true);
@@ -198,14 +200,15 @@ const fire = new AircraftFire(
   () => 'occupation',
   { schedule: () => null, session: 'test' },
 );
-for (let salvo = 0; salvo < 750; salvo++) {
-  for (let gun = 0; gun < 6; gun++) assert.ok(fire.fire(spit.id, 'pilot', supplies));
+for (let salvo = 0; salvo < 167; salvo++) {
+  for (let gun = 0; gun < Math.min(6, 1000 - salvo * 6); gun++)
+    assert.ok(fire.fire(spit.id, 'pilot', supplies));
   await fire.flush();
 }
-assert.equal(spent, 4500);
+assert.equal(spent, 1000);
 assert.equal(fire.available(spit.id, 'pilot', supplies), 0);
 assert.ok(!fire.fire(spit.id, 'pilot', supplies));
-assert.equal(750 * 0.06, 45);
+assert.equal(Math.ceil(1000 / 6), 167);
 function flight(profile, speed) {
   const state = {
     q: new T.Quaternion(),
@@ -239,7 +242,7 @@ assert.equal(
   0,
 );
 console.log(
-  'Weapons: 50 bombs, bounded 500ms authority cadence, repeat/empty/refill; Spitfire 24$, six barrels, 4500 rounds/45s and measured 1.75/1.45 physics ratios.',
+  'Weapons: 50 bombs, bounded 500ms authority cadence, repeat/empty/refill; Spitfire 24$, six barrels, 1000 rounds/partial final salvo and measured 1.75/1.45 physics ratios.',
 );
 
 // Impact uses enemy remaining health once, all vehicle roles share the same dirt.
@@ -377,6 +380,7 @@ const requests = [];
 const c = {
   addEventListener: (_, h) => (handler = h),
   $: () => ({ classList: { contains: () => true } }),
+  spectating: false,
   joined: true,
   purchaseUI: { opened: false },
   bedUI: { opened: false },
@@ -491,6 +495,11 @@ const fireContext = {
   T,
   MAP,
   ACTOR_UNIT,
+  performance,
+  gunSalvos: new GunSalvos(),
+  TracerPool,
+  GunSalvos,
+  scene: new T.Scene(),
   myVehicle: {
     id: 's6',
     type: 'spitfire',
@@ -515,7 +524,10 @@ vm.runInContext(
     source.slice(source.indexOf('function shoot('), source.indexOf('function explosion(')),
   fireContext,
 );
-vm.runInContext('shoot(new T.Vector3(0,0,-1))', fireContext);
+vm.runInContext(
+  'shoot(new T.Vector3(0,0,-1));gunSalvos.update("s6:pilot",performance.now()+20,index=>bullet(me.userData.muzzles[index].getWorldPosition(new T.Vector3()),new T.Vector3(0,0,-1),"#fff",true))',
+  fireContext,
+);
 assert.equal(emitted, 6);
 assert.equal(realFire.available('s6', 'pilot', fireContext.myVehicle.supplies), 0);
 console.log(
@@ -589,6 +601,7 @@ const audioContext = {
   ACTOR_UNIT,
   VEHICLES,
   diveIntensity,
+  spectating: false,
   joined: true,
   respawnAt: 0,
   camera: new T.PerspectiveCamera(),

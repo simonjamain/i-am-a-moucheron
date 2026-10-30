@@ -24,7 +24,7 @@ caisse commune. Un reset efface commandes et monnaie. Ce stock ne possède pas l
 secret de reconnexion des contrats de lit : une reconnexion créant un nouvel ID
 ne reprend pas l’ancienne commande ; son remboursement intervient à l’expiration.
 Les bons et la pose sont dédupliqués côté domaine, en plus du protocole fiable.
-Les achats directs d’appareils et améliorations restent ceux de l’atelier.
+Les améliorations restent achetées directement ; les appareils passent désormais par le même bon et aperçu, voir [déploiement courant](multiplayer-return.md#réserves-gratuites-et-achats-de-véhicules).
 
 ## Postes et commandes d’armes
 
@@ -62,8 +62,9 @@ de leur véhicule, indépendamment de son occupant. Les six armes du Spitfire on
 six bouches distinctes ; les traceurs distants utilisent ces mêmes points.
 Le pistolet utilise le cœur lumineux/halo des traceurs, avec un effet distant
 sans dégâts supplémentaires. Les HE sont des cylindres trapus, les AP des cônes
-allongés ; les bombes gardent leur corps à empennages. Les tailles visuelles ne
-changent ni rayons de collision, ni dégâts.
+allongés ; les bombes gardent leur corps à empennages. Les tailles visuelles des projectiles ne changent ni rayons de collision, ni dégâts.
+BOM-02 double explicitement le rayon visuel et de dégâts des bombes du B3,
+contrairement à celles du Stuka, dans le [dernier lot](multiplayer-return.md).
 
 `ballisticMarks` utilise **le même `integrateOrdnance`** à pas de 1/120 s que le
 serveur, avec vitesse de l’obus sélectionné, gravité miniature, traînée et vitesse
@@ -114,9 +115,9 @@ Vitesse plafonnée à **122,5 m/s de référence** contre 70 ; facteur de rotati
 **1,45** contre 1. La poussée est réglée à 70 pour atteindre le nouveau plafond,
 sans prétention de modèle historique. À vitesse égale, les réponses angulaires
 mesurées sont multipliées par 1,45. Les améliorations et clauses restent applicables.
-Chaque arme tire 75 dégâts de base simultanément toutes les 0,06 s : **4 500 balles**
-communes, soit 750 salves complètes et **45 s** de tir nominal. Moins de six balles
-n’autorise aucune salve partielle ; le HUD conserve le compte de balles total.
+Chaque arme tire 75 dégâts de base toutes les 0,06 s. ARM-04 remplace le stock
+initial par **1 000 balles communes**, avec petits décalages et dernière salve
+partielle. [Règle et mesures actuelles](multiplayer-return.md#spitfire-et-performance-des-tirs).
 Accès, contrats, teinte, stations, dégâts et nettoyage suivent les autres avions.
 
 La sirène supplémentaire de piqué ne concerne que le Stuka occupé, selon sa vitesse

@@ -19,13 +19,13 @@ et utilisent une caméra à la troisième personne. Ils rejoignent physiquement 
 équipement, remplissent son dossier et en prennent un siège. Les avions ont du carburant et
 des munitions limités, à compléter en se posant et s’arrêtant dans une station. L’objectif est de
 protéger la poubelle contre les insectes ; les arrivées ennemies augmentent
-l’infestation. La mort conduit au purgatoire et à la paperasse de retour en jeu.
+l’infestation. La mort ouvre une observation à caméra fixe ; un clic volontaire donne accès au purgatoire et à la paperasse de retour en jeu.
 
 La première vague démarre dix secondes après le lancement de la partie. Après
 chaque vague, la pause dure au maximum soixante secondes ; le déclenchement manuel
 peut la raccourcir. Un budget de difficulté croissant compose des vagues variées
-avec des ennemis de résistances différentes. Le départ comporte six moucherons
-et dure environ une minute sans interception sur la graine de contrôle ; les types plus difficiles
+avec des ennemis de résistances différentes. Le départ comporte six moucherons et deux fourmis faciles, avec des parcours
+étendus dans toute la pièce à vitesse conservée ; les types plus difficiles
 sont débloqués progressivement. Voir [progression](progression.md). Des groupes aériens arrivent depuis
 plusieurs aérations, se séparent et se rejoignent ; fourmis et cafards empruntent
 des parcours terrestres depuis des trous. La durée des trajets dépend de leur longueur à vitesse conservée et est partagée
@@ -35,8 +35,8 @@ avec le serveur pour l’arrivée à la poubelle. Le système est guidé et dét
 ## Équipements et combat
 
 Un chasseur monoplace et un bombardier sont disponibles au départ. Le bombardier
-a un pilote, un mitrailleur dorsal et un mitrailleur de queue. Un exemplaire vivant
-par type initial est conservé ; sa destruction fournit un successeur gratuit. Les achats fournissent un Stuka, un Spitfire
+a un pilote, un mitrailleur dorsal et un mitrailleur de queue. Un exemplaire de réserve prêt
+par type initial est conservé ; dès son décollage, un successeur gratuit apparaît sans supprimer les avions utilisés. Les achats fournissent un Stuka, un Spitfire
 ou un tank dont la destruction est définitive. Les sièges sont exclusifs.
 
 Chaque accès publié aux équipements, y compris une nouvelle entrée, passe par un
@@ -56,8 +56,8 @@ Le tank a un pilote/MG avant, un tireur canon/coaxiale et un mitrailleur supéri
 Le Stuka et le pilote du bombardier larguent des bombes en maintenant Espace
 (0,5 s ; 6 et 50 bombes respectivement). Le clic gauche sert aux MG ; au canon du
 tank, clic gauche tire HE/AP et Espace la coaxiale. B est supprimé. Les stocks, commandes et dégâts sont détaillés
-dans [véhicules et banque](vehicles-bank.md). Le HUD utilise des rails latéraux contextuels avec détails temporaires et une
-jauge DCA près du viseur. Le banquier (bouton ou N) propose trois emplacements
+dans [véhicules et banque](vehicles-bank.md). Le HUD affiche les statistiques de coque près du viseur et une aide permanente
+en bas à gauche. Les anciens panneaux repliables sont masqués ; la jauge DCA reste. Le banquier (bouton ou N) propose trois emplacements
 de prêts partagés, consultables et signables dans tous les postes et mondes.
 
 Les mitrailleuses tirent des traceurs légèrement dispersés depuis leurs canons.
@@ -123,8 +123,8 @@ cet instant. Au sol comme en vol, quitter le cockpit pour un autre poste ne cré
 aucun pilote automatique : un client désigné continue la physique avec commandes
 neutres et les derniers gaz, jusqu’à reprise des commandes ou crash.
 
-Mourir au purgatoire conduit au super purgatoire, réservé aux joueurs, avec super
-Saint-Pierre. Cinq signatures ramènent au purgatoire classique, dont les trois
+Mourir au purgatoire ouvre aussi une observation avant le bouton d’accès au super
+purgatoire, réservé aux joueurs, avec super Saint-Pierre. Cinq signatures ramènent au purgatoire classique, dont les trois
 signatures sont à refaire. Mourir au super purgatoire recrée le corps au même
 endroit et réinitialise les cinq documents, sans monde supplémentaire. Chaque
 transition restaure 100 PV ; tuer un joueur ne rapporte jamais d’argent.
@@ -133,7 +133,7 @@ Voir [combat et mondes](combat-worlds.md) pour les valeurs et garanties réseau.
 
 ## Retours de partie après 025
 
-Les noms flottants sont retirés. Les moucherons sont agrandis de 35 % ; les
+Les noms flottants sont retirés. Les moucherons sont agrandis d’un facteur total de 2,025, avec tolérance de tir supplémentaire de 20 % ; les
 insectes blessés montrent leurs PV, de la fumée puis des flammes à 30 % de PV.
 Les morts aériennes ont un son de chute spatialisé. Voir
 [retours de partie](party-feedback.md) pour les seuils, les signatures fiabilisées
@@ -150,14 +150,14 @@ Les avions disposent de cinq minutes de carburant à plein gaz et d’environ un
 minute de tir par poste armé. Une station gratuite à Alpha remplit les réserves
 en dix secondes, avion posé et arrêté. Stations supplémentaires et radars sont
 vendus 4 $, puis +2 $ par exemplaire de leur type. Sans radar, aucun ennemi sur
-la carte ; chaque radar révèle ceux dans une sphère de 1 m, sans masquer la scène.
+la carte ; chaque radar révèle ceux dans un cylindre de rayon 2 m, à toutes hauteurs, sans masquer la scène.
 Voir [logistique et contrats](logistics-contracts.md) pour les valeurs, garanties
 et limites de vérification.
 
 ## Retours terrain intégrés
 
 Le pistolet tire depuis la main vers le point du réticule, avec caméra à l’épaule
-et obstacles revérifiés depuis le canon. La chute utilise les mètres du décor,
+et obstacles revérifiés depuis le canon. La chute utilise la gravité humaine multipliée par le ratio du personnage,
 un parachute progressif et des dégâts d’impact verticaux. Le retour après
 purgatoire se fait au départ, sauf contrat personnel de lit signé (E au lit).
 Les lits s’achètent 4 $, puis +2 $ ; plusieurs joueurs peuvent signer le même.
@@ -173,6 +173,11 @@ Les installations passent par un bon payé à la signature, puis se posent avec 
 insecte coûtent 5 % de ses PV restants à la coque, une seule fois par impact, et
 la salissent pour tous ses occupants. À pied au sol, Espace maintient un jet qui
 nettoie à courte portée, plus vite à plusieurs. Le Spitfire acheté dispose de six
-MG simultanées et de 45 s de munitions. Les projectiles portent la couleur de leur
+MG avec de petits décalages et de 1 000 balles communes, dernière salve partielle comprise. Les projectiles portent la couleur de leur
 coque ; seule la sirène de piqué du Stuka subsiste. Valeurs et limites :
 [lisibilité, commandes, nettoyage et Spitfire](clean-flight.md).
+
+Les achats de tous les véhicules utilisent désormais le bon signé et la pose par E,
+au sol ou sur mobilier, avec chasseur 8 $ et bombardier 16 $. Les bombes du B3
+ont le double du rayon de celles du Stuka ; les personnages portent leurs initiales
+et une couleur propre. [Référence du dernier lot](multiplayer-return.md).

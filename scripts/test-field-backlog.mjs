@@ -115,7 +115,7 @@ function fall(height, openAt = null, dt = 1 / 120) {
   };
   let elapsed = 0,
     impact;
-  while (elapsed < 20) {
+  while (elapsed < 120) {
     if (openAt !== null && elapsed >= openAt) body.parachute = true;
     impact = stepWalker(body, dt, []);
     elapsed += dt;
@@ -123,15 +123,15 @@ function fall(height, openAt = null, dt = 1 / 120) {
   }
   return { body, impact, elapsed };
 }
-assert.equal(impactDamage(0.3), 0);
+assert.equal(impactDamage(0.01), 0);
 assert.equal(impactDamage(2), 100);
 const noChute = fall(0.9),
   early = fall(0.9, 0),
-  late = fall(0.9, 0.37);
+  late = fall(0.9, 9);
 assert.equal(noChute.impact.damage, 100);
 assert.ok(early.impact.damage < noChute.impact.damage);
 assert.equal(late.impact.damage, 100);
-assert.ok(noChute.elapsed < 0.6, 'world-gravity drop from desk is below a second');
+assert.ok(noChute.elapsed > 7, 'miniature gravity creates a long visible fall');
 const repeated = { y: 5, vy: -2, parachute: true, grounded: false };
 const { stepWalkerFall } = await import('../src/field-physics.js');
 stepWalkerFall(repeated, 0.02);
@@ -286,7 +286,11 @@ assert.ok(
 );
 function revive(p, superFirst = false) {
   bedGame.kill(bedRoom, p, p.incarnation);
-  if (superFirst) bedGame.kill(bedRoom, p, p.incarnation);
+  bedGame.command('BEDS', p.id, 'enter-purgatory', { incarnation: p.incarnation });
+  if (superFirst) {
+    bedGame.kill(bedRoom, p, p.incarnation);
+    bedGame.command('BEDS', p.id, 'enter-purgatory', { incarnation: p.incarnation });
+  }
   for (const realm of superFirst ? ['super', 'purgatory'] : ['purgatory']) {
     bedGame.arena(bedRoom, realm);
     const b = bedRoom[realm].bodies.find((b) => b.entity === p.id);
@@ -326,7 +330,7 @@ const impactGame = new Game(),
   impactJoin = impactGame.join({ code: 'FALL' }),
   impactRoom = impactGame.rooms.get('FALL'),
   impactPlayer = impactRoom.pilots.get(impactJoin.id);
-const impactReport = { shot: 'impact-one', speed: 1.3, incarnation: impactPlayer.incarnation };
+const impactReport = { shot: 'impact-one', speed: 0.039, incarnation: impactPlayer.incarnation };
 impactGame.command('FALL', impactPlayer.id, 'fall-impact', impactReport);
 const remaining = impactPlayer.health;
 impactGame.command('FALL', impactPlayer.id, 'fall-impact', impactReport);

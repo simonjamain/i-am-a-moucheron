@@ -160,7 +160,8 @@ for (const type of Object.keys(VEHICLES)) {
 const radar = { kind: 'radar', x: 0, y: 0, z: 0 };
 assert.ok(!inRadarCoverage({ x: 0, y: 0, z: 0 }, []));
 assert.ok(inRadarCoverage({ x: 0, y: 1, z: 0 }, [radar]));
-assert.ok(!inRadarCoverage({ x: 0, y: 1.0001, z: 0 }, [radar]));
+assert.ok(inRadarCoverage({ x: 0, y: 100, z: 0 }, [radar]));
+assert.ok(!inRadarCoverage({ x: 2.0001, y: 0, z: 0 }, [radar]));
 assert.ok(inRadarCoverage({ x: 1.5, y: 0, z: 0 }, [radar, { ...radar, x: 1 }]));
 assert.equal(shopPrice('refuel', {}, 2), 8);
 assert.equal(shopPrice('radar', {}, 0), 4);

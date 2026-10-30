@@ -1,5 +1,44 @@
 # Revue des références
 
+## Lot retours multijoueurs, HUD et déploiement au sol
+
+Revue du 29 octobre 2026 après les 14 tâches MORT-01 à RAD-02 : **31 Markdown**
+inventoriés, confrontés à leurs sources ou à leur périmètre historique.
+
+- `AGENTS.md` : consignes d’exécution et revue finale relues, conservées.
+- `README.md`, `docs/gameplay.md`, `docs/code-structure.md`, `docs/operations.md` :
+  référence de reprise actualisée, nouveaux modules, règles et limites de tests.
+- `BACKLOG.md` : 14 états terminés, prix choisis, causes reproduites et mesures ;
+  radar renommé RAD-02 pour ne pas doubler RAD-01 de l’ancien lot.
+- `docs/multiplayer-return.md` : référence détaillée nouvelle, 90 chemins et
+  comparaison CPU reproductibles, distinction explicite des limites GPU/WAN.
+- `docs/field-update.md`, `docs/scale-fleet-weapons.md`, `docs/economy-physics.md`,
+  `docs/walking-network.md` : ancienne gravité du personnage retirée des règles
+  courantes ou identifiée comme remplacée par CHU-02 ; déduplication conservée.
+- `docs/clean-flight.md`, `docs/vehicles-bank.md`, `docs/logistics-contracts.md` :
+  stock 1 000 balles et salves partielles, véhicules achetés à poser, réserve
+  renouvelée au décollage, radar cylindrique et bombes spécifiques du B3.
+- `docs/controls.md` : aide permanente, observation, entrée volontaire et regard
+  presque vertical ; anciennes touches B et pistolet/Espace non réintroduites.
+- `docs/combat-worlds.md`, `docs/purgatory-queue.md`, `docs/pistol-diagnosis.md` :
+  état sans corps avant l’âme et nouvelle cause visuelle du tir arrière.
+- `docs/progression.md`, `docs/swarm-equipment.md`, `docs/party-feedback.md` :
+  six moucherons/deux fourmis, longues approches, taille 2,025 et tolérance 1,2.
+- `CHATGPT-PROJECT.md` : gravité miniature corrigée aussi dans le fichier d’accueil
+  pour éviter une reprise sur l’ancienne décision ; parcours d’accès inchangé.
+- `docs/udp-server.md` et `docs/docker.md` : transport, ports et procédure de
+  construction inchangés ; le dernier lot se livre toujours en ZIP, sans nouveau
+  binaire Docker ni publication du client Node sur le Worker.
+- `NETWORK-RESEARCH.md` et les cinq documents de `docs/archive/` : contexte daté
+  et avertissements conservés ; les liens pointent vers les références actives.
+- Le présent audit garde ci-dessous les traces des deux lots précédents.
+
+Contrôles : format, liens, suite complète, deux pairs natifs UDP, compilation et
+validateur ESM. Le navigateur a chargé le client et vérifié aide, compteurs et
+bouton d’observation sur données jetables ; [capture du HUD](ui-return-hud.jpg). WebGL est indisponible ; les figures
+sont des projections CPU ou des chemins calculés, sans prétention de capture 3D.
+Les mesures synthétiques ne sont pas des tests WAN ni de trois navigateurs réels.
+
 ## Lot lisibilité, commandes, nettoyage et Spitfire
 
 Revue du 29 octobre 2026 après ECO-03 à VEH-05 : **30 Markdown** inventoriés.

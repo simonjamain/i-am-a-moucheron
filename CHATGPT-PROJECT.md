@@ -34,8 +34,8 @@ Le Worker/D1 Sites est un backend historique distinct, toujours publié tant que
 le serveur Node n’est pas déployé sur la VM de l’utilisateur. Le dépôt se livre
 normalement en ZIP des sources, sans construire d’image Docker sur chaque lot.
 La physique reste coopérative côté client, avec règles et transactions côté serveur.
-Le décor est en mètres ; les modèles miniatures utilisent un ratio centralisé,
-alors que la chute du personnage utilise les mètres du décor. Voir les références
+Le décor est en mètres ; les modèles miniatures utilisent un ratio centralisé.
+La chute du personnage convertit aussi la gravité humaine avec ce ratio (CHU-02). Voir les références
 actuelles du dépôt pour les règles exactes, tâches et limites de validation.
 
 ## Méthode de travail attendue

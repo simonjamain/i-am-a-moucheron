@@ -1,4 +1,4 @@
-import { makeTracer } from '../src/tracers.js';
+import { makeTracer, makeShotTrace } from '../src/tracers.js';
 import { muzzleAim } from '../src/personal-aim.js';
 // Executes the current pistol() function in a controlled Three.js scene.
 import * as T from '../vendor/three.module.min.js';
@@ -27,6 +27,7 @@ function shoot({ camera, target, colliders = [] }) {
   const c = {
     T,
     makeTracer,
+    makeShotTrace,
     performance,
     MAP,
     joined: true,

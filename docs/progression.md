@@ -8,16 +8,16 @@ armes restent ceux de [combat-worlds](combat-worlds.md).
 
 | Vague | Budget | Prime commune immédiate | Nouveauté autorisée             |
 | ----- | -----: | ----------------------: | ------------------------------- |
-| 1     |      6 |                     4 $ | 6 moucherons seulement          |
-| 2     |      8 |                     5 $ | Même famille                    |
-| 3     |     12 |                     6 $ | Fourmis                         |
-| 4     |     16 |                     7 $ | Premier voltigeur possible      |
-| 5     |     22 |                     8 $ | Consolidation                   |
-| 6     |     28 |                     9 $ | Premier cafard possible         |
-| 8     |     44 |                    11 $ | Première carapace possible      |
-| 12    |     88 |                    15 $ | Premier bourdon blindé possible |
+| 1     |      8 |                     4 $ | 6 moucherons + 2 fourmis        |
+| 2     |     10 |                     5 $ | Fourmis garanties               |
+| 3     |     14 |                     6 $ | Présence terrestre régulière    |
+| 4     |     18 |                     7 $ | Premier voltigeur possible      |
+| 5     |     24 |                     8 $ | Consolidation                   |
+| 6     |     30 |                     9 $ | Premier cafard possible         |
+| 8     |     46 |                    11 $ | Première carapace possible      |
+| 12    |     90 |                    15 $ | Premier bourdon blindé possible |
 
-Le budget est `6 + 2 × (n−1) + floor((n−1)² / 2)`, plafonné à 2400.
+Le budget est `8 + 2 × (n−1) + floor((n−1)² / 2)`, plafonné à 2400.
 Les ennemis coûtant plus d’un point occupent au maximum 40 % du budget et sont
 limités par type à un exemplaire lors du déblocage, puis un supplémentaire toutes
 les trois vagues. Le tirage est déterministe pour une salle et un départ donnés.
@@ -26,8 +26,8 @@ Un budget n’est pas un nombre d’ennemis : les plus résistants coûtent dava
 Les trajets comportent désormais des détours avant l’approche de la poubelle,
 avec navigation statique autour du mobilier. La vitesse effective précédente est
 conservée et la durée découle de la longueur, sans l’ancien plafond de 145 secondes.
-La première vague dure environ une minute sans interception sur la graine de
-contrôle, et se termine plus tôt si tous les ennemis sont abattus. Le lancement initial de dix secondes et les pauses entre vagues de soixante
+La première vague mêle six moucherons et deux fourmis, avec parcours sur toute la
+pièce et durées plus longues à vitesse conservée, et se termine plus tôt si tous les ennemis sont abattus. Le lancement initial de dix secondes et les pauses entre vagues de soixante
 secondes restent séparés. Voir [trajets et crashs](vehicles-bank.md#trajets-et-crashs)
 pour la calibration et les limites de navigation.
 
@@ -82,3 +82,7 @@ La progression actuelle ne dépend pas de D1 et disparaît au redémarrage.
 
 Installations Node : le [bon signé](clean-flight.md#prix-bon-signé-et-pose) débite
 avant la pose ; annuler l’aperçu ne fait pas perdre l’objet payé.
+
+VAG-04/VAG-05 : [parcours et budget actuels](multiplayer-return.md#parcours-et-fourmis-précoces),
+budget initial 8, deux fourmis garanties à chaque vague, coûts/PV inchangés.
+Les achats de chasseur et bombardier supplémentaires coûtent 8 $ et 16 $.

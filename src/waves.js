@@ -37,7 +37,7 @@ export const ENEMY_TYPES = Object.freeze({
 });
 export function waveBudget(wave) {
   const n = Math.max(1, Math.floor(Number(wave) || 1));
-  return Math.min(2400, 6 + 2 * (n - 1) + Math.floor((n - 1) ** 2 / 2));
+  return Math.min(2400, 8 + 2 * (n - 1) + Math.floor((n - 1) ** 2 / 2));
 }
 function hash(text) {
   let h = 2166136261;
@@ -54,9 +54,15 @@ export function wavePlan(room, wave, started = 0) {
     seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
     return seed / 4294967296;
   };
-  const roster = [],
-    counts = {};
-  const unlock = { ant: 3, roach: 6, dart: 4, guard: 8, brute: 12 };
+  const roster = [0, 1].map((id) => ({
+      id,
+      type: 'ant',
+      ...ENEMY_TYPES.ant,
+      phase: random() * Math.PI * 2,
+    })),
+    counts = { ant: 2 };
+  remaining -= 2;
+  const unlock = { ant: 1, roach: 6, dart: 4, guard: 8, brute: 12 };
   let eliteSpent = 0;
   while (remaining > 0 && roster.length < 180) {
     const unlocked = Object.entries(ENEMY_TYPES).filter(
@@ -64,6 +70,7 @@ export function wavePlan(room, wave, started = 0) {
         t.cost <= remaining &&
         (name === 'midge' ||
           (wave >= unlock[name] &&
+            !(wave === 1 && name === 'ant') &&
             (t.cost === 1 ||
               ((counts[name] || 0) < 1 + Math.floor((wave - unlock[name]) / 3) &&
                 eliteSpent + t.cost <= Math.floor(waveBudget(wave) * 0.4))))),

@@ -12,7 +12,7 @@ export function ammoCapacity(type, seat) {
         ? Math.round(90 / TANK_MG[seat].interval)
         : 0;
   if (seat === 'bomb') return type === 'bomber' ? 50 : type === 'interceptor' ? 6 : 0;
-  if (type === 'spitfire' && seat === 'pilot') return Math.round(45 / 0.06) * 6;
+  if (type === 'spitfire' && seat === 'pilot') return 1000;
   if (!VEHICLES[type]?.seats.includes(seat)) return 0;
   return type === 'bomber' && seat === 'pilot'
     ? 0
@@ -27,8 +27,7 @@ export function fullAmmo(type) {
 }
 export function inRadarCoverage(position, installations) {
   return installations.some(
-    (s) =>
-      s.kind === 'radar' && Math.hypot(position.x - s.x, position.y - s.y, position.z - s.z) <= 1,
+    (s) => s.kind === 'radar' && Math.hypot(position.x - s.x, position.z - s.z) <= 2,
   );
 }
 export function serviceEligible(state, installations, type) {

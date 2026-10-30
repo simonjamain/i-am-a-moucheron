@@ -21,10 +21,13 @@ export function availableShell(ammo, selected = 'he') {
   const other = selected === 'he' ? 'ap' : 'he';
   return (ammo[other] || 0) >= 1 ? other : null;
 }
-export function heavyDamage(weapon, distance, bonus = 1) {
+export function heavyDamage(weapon, distance, bonus = 1, radiusFactor = 1) {
   const p = HEAVY[weapon];
-  return p && distance <= p.radius
-    ? Math.round((p.damage - ((p.damage - p.edge) * distance) / Math.max(p.radius, 1e-9)) * bonus)
+  return p && distance <= p.radius * radiusFactor
+    ? Math.round(
+        (p.damage - ((p.damage - p.edge) * distance) / Math.max(p.radius * radiusFactor, 1e-9)) *
+          bonus,
+      )
     : 0;
 }
 export function canUseWeapon(type, seat, key) {

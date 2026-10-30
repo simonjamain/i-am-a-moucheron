@@ -73,3 +73,6 @@ purgatoires et leurs nombres de signatures restent inchangés.
 
 Le [lot suivant de lisibilité et nettoyage](clean-flight.md) précise les commandes
 contextuelles actuelles, les effets partagés et les nouvelles collisions de coque.
+
+Avant création d’une âme de joueur, une [observation volontaire](multiplayer-return.md#mort-et-observation-volontaire)
+neutralise les actions sans conserver de corps actif. La récidive super → super reste immédiate.

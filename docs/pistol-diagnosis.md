@@ -13,3 +13,7 @@ obstacles. L’ancienne analyse est [archivée](archive/pistol-before-arm02.md).
 
 Le [lot suivant de lisibilité et nettoyage](clean-flight.md) précise les commandes
 contextuelles actuelles, les effets partagés et les nouvelles collisions de coque.
+
+ARM-05 a reproduit un défaut visuel absent des anciens tests de dégâts : une
+traînée immobile s’étendait derrière la bouche. Le [nouveau diagnostic](multiplayer-return.md#gravité-parachute-et-pistolet)
+mesure son axe et corrige son ancrage ; `diagnose-rear-trace.mjs` le verrouille.

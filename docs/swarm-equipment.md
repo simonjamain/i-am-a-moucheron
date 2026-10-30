@@ -26,11 +26,11 @@ stopped. An airborne exit frees only that player, in freefall with a closed cano
 `waves.js` is shared with the Worker. A seeded PRNG keyed by room, wave and start
 time builds a roster from an increasing integer budget. Aerial costs are 1 / 3 / 6 / 12;
 health is 100 / 200 / 400 / 800 PV for midge / dart / guard / brute. Darts unlock on
-wave 4, guards on 8, brutes on 12. Ants (wave 3) and roaches (wave 6) add ground variants;
+wave 4, guards on 8, brutes on 12. Ants (from wave 1) and roaches (wave 6) add ground variants;
 see `waves.js` for the complete catalog and `routes.js` for entry sources. They have distinct size, colour, speed and
 infestation cost. Budget is capped at 2400 and visible population at 180; at
 that ceiling, remaining budget is consolidated into one brute with its normal 800 PV. The
-first wave has six midges and lasts roughly one minute on the control seed, with timing derived from the actual route.
+first wave has six midges plus two ants and follows extended room-wide routes, with timing derived from the actual route.
 See [progression](progression.md) for budgets, elite limits and timings. Later compositions
 vary randomly while sharing an exact budget across clients.
 
@@ -82,3 +82,6 @@ boarding/exiting cues, armour impacts, kill confirmation, heavier flak reports,
 wave-clear and defeat motifs. Mute, gain, scene isolation and hidden-tab cleanup
 remain. The siren source is actually in the scaled office, replacing an obsolete
 pre-scale coordinate that made the old wave cue nearly inaudible.
+
+The [latest return lot](multiplayer-return.md) adds early ants, extended routes,
+player initials and midge-only extra 20% hit tolerance. Other enemy sizes remain unchanged.
