@@ -20,6 +20,7 @@
 <script type="module">
   import * as T from '../vendor/three.module.min.js';
   import { TracerPool, updateTracer } from '../src/tracers.js';
+  import { createGraphics } from '../src/graphics.js';
   const result = document.querySelector('#result');
   document.querySelector('#run').onclick = async () => {
     try {
@@ -36,6 +37,31 @@
       for (const instanced of [false, true]) {
         const scene = new T.Scene(),
           pool = new TracerPool(T, scene, 256, { instanced });
+        scene.add(new T.AmbientLight('#ffffff', 2));
+        const blocker = new T.Mesh(
+          new T.BoxGeometry(0.06, 0.1, 0.02),
+          new T.MeshBasicMaterial({ color: '#5f8976' }),
+        );
+        blocker.position.set(-0.06, 0, -0.01);
+        scene.add(blocker);
+        const smoke = new T.Mesh(
+          new T.PlaneGeometry(0.2, 0.2),
+          new T.MeshBasicMaterial({
+            color: '#43484a',
+            transparent: true,
+            opacity: 0.45,
+            depthWrite: false,
+            side: T.DoubleSide,
+          }),
+        );
+        smoke.position.set(0.06, 0, -0.04);
+        scene.add(smoke);
+        const graphics = createGraphics(T, scene);
+        for (let n = 0; n < 3; n++) {
+          const bug = graphics.insect('midge');
+          bug.scale.setScalar(0.02);
+          bug.position.set(-0.08 + n * 0.08, 0.04, -0.02 - n * 0.04);
+        }
         for (let i = 0; i < 256; i++) {
           const direction = new T.Vector3(Math.sin(i) * 0.3, Math.cos(i) * 0.2, -1).normalize();
           const m = pool.acquire(

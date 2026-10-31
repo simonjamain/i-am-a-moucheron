@@ -50,7 +50,7 @@ ne changent pas. Les traceurs personnels restent sur leur chemin actuel.
 Le renderer logiciel conserve les meshes ordinaires, car il ne gère pas les
 instances. Les lots vides ont zéro instance ; les ressources sont libérées avec
 le pool. Les lots sont exclus du culling global pour ne pas masquer un tir actif
-à cause d'une ancienne enveloppe ; ils ne comportent que 256 instances au total.
+à cause d'une ancienne enveloppe ; ils comportent au plus 256 traceurs, soit 512 instances halo/cœur.
 
 `node scripts/benchmark-tracers.mjs` inventorie les vrais objets de scène et les
 triangles, puis mesure la préparation CPU des matrices (échauffement + médiane
@@ -68,3 +68,10 @@ images. Cette page est un outil local, absent des assets de jeu. Elle ne remplac
 pas l'essai en rafales, les impacts et le confort en vraie partie. Le navigateur
 de contrôle de cette session ne joint pas le serveur local (connexion refusée) :
 aucune parité de pixels ni mesure GPU n'a été observée ici.
+
+Le tri des halos instanciés par rapport aux autres surfaces transparentes n'est
+pas identique au tri objet par objet. Le comparateur inclut donc un obstacle
+opaque, une surface alpha et les ailes de vrais insectes. Une différence de
+composition doit être jugée visuellement ; la parité de matrices/couleurs ne
+suffit pas. Cette contribution reste candidate tant que cette observation et
+les mesures de rendu réel sont indisponibles.
