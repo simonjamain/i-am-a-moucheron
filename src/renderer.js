@@ -1,3 +1,4 @@
+import { applyShadowPreset } from './shadow-settings.js';
 export function createRenderer(T, canvas) {
   // A lightweight software renderer keeps the prototype playable without WebGL.
   class SoftwareRenderer {
@@ -106,8 +107,7 @@ export function createRenderer(T, canvas) {
   }
   renderer.setPixelRatio(Math.min(devicePixelRatio, 1.6));
   renderer.setSize(innerWidth, innerHeight);
-  renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = T.PCFSoftShadowMap;
+  applyShadowPreset(T, renderer, null);
   renderer.outputColorSpace = T.SRGBColorSpace;
   renderer.toneMapping = T.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.1;

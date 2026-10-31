@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="fr">
+  <meta charset="utf-8" />
+  <title>Issue 11 — comparaison WebGL des ombres</title>
+  <style>
+    body {
+      margin: 0;
+      background: #183832;
+      color: #f7efda;
+      font: 14px system-ui;
+    }
+    canvas {
+      display: block;
+    }
+    header {
+      position: fixed;
+      top: 8px;
+      left: 8px;
+      right: 8px;
+      background: #183832e8;
+      padding: 10px;
+      z-index: 1;
+    }
+    button,
+    select,
+    input {
+      font: inherit;
+      margin: 4px;
+    }
+    pre {
+      max-height: 36vh;
+      overflow: auto;
+      white-space: pre-wrap;
+    }
+    .error {
+      color: #ffb6a4;
+    }
+  </style>
+  <header>
+    <b>Issue #11 · scène et caméra identiques, sans réseau</b><br />
+    <label
+      >Surface
+      <select id="surface">
+        <option value="desk">Bureau</option>
+        <option value="floor">Sol</option>
+      </select></label
+    >
+    <label
+      >Hauteur <input id="height" type="range" min="0.006" max="0.25" step="0.001" value="0.04"
+    /></label>
+    <button id="before">Avant</button><button id="after">Candidat</button>
+    <button id="run">Mesurer A/B/B/A · environ 1 minute</button
+    ><button id="save" disabled>Exporter JSON</button>
+    <div id="status">Initialisation…</div>
+    <pre id="report"></pre>
+  </header>
+  <canvas id="scene"></canvas>
+  <script type="module">
+    import * as T from '../vendor/three.module.min.js';
+    import { createRenderer } from '../src/renderer.js';
+    import { createOffice } from '../src/office.js';
+    import { createGraphics } from '../src/graphics.js';
+    import { applyShadowPreset } from '../src/shadow-settings.js';
+    import { ACTOR_UNIT, INSECT_SCALE } from '../src/scale.js';
+    import { insectScale } from '../src/insect-status.js';
+    const $ = (id) => document.getElementById(id),
+      scene = new T.Scene();
+    const renderer = createRenderer(T, $('scene'));
+    if (!renderer.isWebGLRenderer) {
+      $('status').className = 'error';
+      $('status').textContent =
+        'WebGL indisponible : comparaison visuelle et performance NON VALIDÉES.';
+      $('run').disabled = true;
+      throw Error('Real WebGL renderer required for shadow acceptance');
+    }
+    scene.background = new T.Color('#829f91');
+    const graphics = createGraphics(T, scene);
+    createOffice(T, scene, graphics);
+    const camera = new T.PerspectiveCamera(50, innerWidth / innerHeight, 0.001, 30);
+    const makers = [
+      'makeHelicopter',
+      'makePlane',
+      'makeSpitfire',
+      'makeBomber',
+      'makeStuka',
+      'makeTank',
+      'makeFlakTruck',
+    ];
+    const fleet = makers.map((name) => {
+      const g = graphics[name]('#acc7ac');
+      g.scale.setScalar(ACTOR_UNIT);
+      scene.add(g);
+      return g;
+    });
+    const insects = Array.from({ length: 120 }, () => {
+      const g = graphics.insect('midge');
+      g.scale.setScalar(insectScale('midge', INSECT_SCALE, 1));
+      scene.add(g);
+      return g;
+    });
+    let variant = 'landing',
+      running = false,
+      result = null,
+      renderFrame = 0;
+    const gl = renderer.getContext(),
+      timer = gl.getExtension('EXT_disjoint_timer_query_webgl2');
+    let query = null,
+      querySamples = null;
+    function preset(name) {
+      variant = name;
+      applyShadowPreset(T, renderer, scene, name);
+      scene.traverse((o) => {
+        for (const m of Array.isArray(o.material) ? o.material : [o.material])
+          if (m) m.needsUpdate = true;
+      });
+      $('status').textContent =
+        name === 'baseline'
+          ? 'Avant : PCF doux, ambiance 2,5, soleil 3'
+          : 'Candidat : ombres franches, ambiance 1,5, soleil 4';
+    }
+    function pose(frame, manual = false) {
+      const floor = $('surface').value === 'floor',
+        base = { x: floor ? 0 : -1.8, y: floor ? 0 : 0.90005, z: floor ? 0 : 1.6 };
+      const h = manual
+        ? Number($('height').value)
+        : 0.006 + (0.12 * (1 + Math.sin((frame * Math.PI * 2) / 600))) / 2;
+      fleet.forEach((g, i) => {
+        g.position.set(
+          base.x + (i % 4) * 0.1,
+          base.y + (i === 0 ? h : 0.007),
+          base.z + Math.floor(i / 4) * 0.1,
+        );
+        g.rotation.set(0, 0, 0);
+      });
+      insects.forEach((g, i) => {
+        const t = (frame / 600) * Math.PI * 2 + i * 2.39996;
+        g.position.set(
+          base.x + Math.cos(t) * 0.3,
+          base.y + 0.1 + (i % 7) * 0.015,
+          base.z + Math.sin(t) * 0.3,
+        );
+      });
+      camera.position.set(base.x + 0.16, base.y + 0.22, base.z + 0.42);
+      camera.lookAt(base.x + 0.1, base.y + 0.025, base.z + 0.04);
+    }
+    function draw(frame, stats = null) {
+      if (gl.isContextLost()) throw Error('WebGL context lost; measurements invalid');
+      pose(frame, !running);
+      let startedQuery = false;
+      if (query && gl.getQueryParameter(query, gl.QUERY_RESULT_AVAILABLE)) {
+        if (!gl.getParameter(timer.GPU_DISJOINT_EXT))
+          querySamples?.push(gl.getQueryParameter(query, gl.QUERY_RESULT) / 1e6);
+        gl.deleteQuery(query);
+        query = null;
+        querySamples = null;
+      }
+      if (timer && stats && !query && frame % 10 === 0) {
+        query = gl.createQuery();
+        querySamples = stats.gpu;
+        gl.beginQuery(timer.TIME_ELAPSED_EXT, query);
+        startedQuery = true;
+      }
+      const began = performance.now();
+      renderer.render(scene, camera);
+      const elapsed = performance.now() - began;
+      if (startedQuery) gl.endQuery(timer.TIME_ELAPSED_EXT);
+      if (stats) {
+        stats.cpu.push(elapsed);
+        stats.calls.push(renderer.info.render.calls);
+        stats.triangles.push(renderer.info.render.triangles);
+      }
+    }
+    const next = () => new Promise((resolve) => requestAnimationFrame(resolve));
+    const summary = (values) => {
+      if (!values.length) return null;
+      const v = [...values].sort((a, b) => a - b);
+      return {
+        n: v.length,
+        median: v[Math.floor(v.length / 2)],
+        p95: v[Math.floor(v.length * 0.95)],
+        min: v[0],
+        max: v.at(-1),
+      };
+    };
+    async function benchmark() {
+      if (running) return;
+      running = true;
+      result = null;
+      $('save').disabled = true;
+      for (const id of ['surface', 'height', 'before', 'after', 'run']) $(id).disabled = true;
+      const trials = [];
+      for (const name of ['baseline', 'landing', 'landing', 'baseline']) {
+        preset(name);
+        for (let f = 0; f < 120; f++) {
+          await next();
+          draw(f);
+        }
+        const stats = { cpu: [], gpu: [], calls: [], triangles: [], frame: [] };
+        let previous = await next();
+        for (let f = 0; f < 600; f++) {
+          const now = await next();
+          stats.frame.push(now - previous);
+          previous = now;
+          draw(f, stats);
+        }
+        // Drain the final GPU sample before changing trial labels.
+        for (let drain = 0; query && drain < 120; drain++) {
+          await next();
+          draw(601);
+        }
+        if (query) {
+          gl.deleteQuery(query);
+          query = null;
+          querySamples = null;
+        }
+        trials.push({
+          preset: name,
+          frameMs: summary(stats.frame),
+          cpuSubmitMs: summary(stats.cpu),
+          gpuMs: summary(stats.gpu),
+          calls: summary(stats.calls),
+          triangles: summary(stats.triangles),
+        });
+      }
+      const info = gl.getExtension('WEBGL_debug_renderer_info');
+      result = {
+        issue: 11,
+        version: '51-candidate',
+        accepted: false,
+        validation:
+          'À analyser : aucune acceptation automatique. Comparer variabilité et refaire les essais si bruit.',
+        browser: navigator.userAgent,
+        gpu: info ? gl.getParameter(info.UNMASKED_RENDERER_WEBGL) : 'non exposé',
+        resolution: [renderer.domElement.width, renderer.domElement.height],
+        pixelRatio: renderer.getPixelRatio(),
+        surface: $('surface').value,
+        fleet: 7,
+        insects: 120,
+        order: 'ABBA',
+        warmupFrames: 120,
+        sampleFrames: 600,
+        trials,
+      };
+      $('report').textContent = JSON.stringify(result, null, 2);
+      $('save').disabled = false;
+      running = false;
+      for (const id of ['surface', 'height', 'before', 'after', 'run']) $(id).disabled = false;
+      $('status').textContent =
+        'Mesures terminées ; contrôler les ombres aux trois hauteurs et analyser la variabilité avant acceptation.';
+    }
+    $('before').onclick = () => preset('baseline');
+    $('after').onclick = () => preset('landing');
+    $('run').onclick = () =>
+      benchmark().catch((e) => {
+        $('status').textContent = e.stack;
+        running = false;
+        for (const id of ['surface', 'height', 'before', 'after', 'run']) $(id).disabled = false;
+      });
+    $('save').onclick = () => {
+      const url = URL.createObjectURL(
+        new Blob([JSON.stringify(result, null, 2)], { type: 'application/json' }),
+      );
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'issue-11-shadows.json';
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    };
+    function frame() {
+      if (!running) draw(renderFrame++);
+      requestAnimationFrame(frame);
+    }
+    preset('landing');
+    frame();
+    addEventListener('resize', () => {
+      if (running) return;
+      camera.aspect = innerWidth / innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(innerWidth, innerHeight);
+    });
+  </script>
+</html>

@@ -1,0 +1,53 @@
+{
+  "kind": "summary-transcribed-from-comparator-output",
+  "sourceTree": "53e0520776785fc20271534136a11d0aa163011a",
+  "browser": "HeadlessChrome/153.0.8010.0",
+  "renderer": "ANGLE Vulkan SwiftShader (software)",
+  "resolution": [640, 480],
+  "surface": "desk",
+  "fleet": 7,
+  "insects": 120,
+  "warmupFrames": 120,
+  "sampleFrames": 600,
+  "order": "ABBA",
+  "accepted": false,
+  "note": "Rounded summary; original temporary JSON unavailable after environment change. WebGL timer queries use software rendering, not physical GPU timings.",
+  "trials": [
+    {
+      "preset": "baseline",
+      "frameMedianMs": 99.9,
+      "frameP95Ms": 166.6,
+      "cpuSubmitMedianMs": 17.3,
+      "softwareGpuQueryMedianMs": 89.930332,
+      "drawCallsMedian": 849,
+      "trianglesMedian": 70230
+    },
+    {
+      "preset": "landing",
+      "frameMedianMs": 83.3,
+      "frameP95Ms": 116.6,
+      "cpuSubmitMedianMs": 17.8,
+      "softwareGpuQueryMedianMs": 73.268444,
+      "drawCallsMedian": 849,
+      "trianglesMedian": 70230
+    },
+    {
+      "preset": "landing",
+      "frameMedianMs": 83.2,
+      "frameP95Ms": 133.3,
+      "cpuSubmitMedianMs": 17.8,
+      "softwareGpuQueryMedianMs": 73.053085,
+      "drawCallsMedian": 849,
+      "trianglesMedian": 70230
+    },
+    {
+      "preset": "baseline",
+      "frameMedianMs": 99.9,
+      "frameP95Ms": 166.6,
+      "cpuSubmitMedianMs": 18,
+      "softwareGpuQueryMedianMs": 89.011374,
+      "drawCallsMedian": 849,
+      "trianglesMedian": 70230
+    }
+  ]
+}
