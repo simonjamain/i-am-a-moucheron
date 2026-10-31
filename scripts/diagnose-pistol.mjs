@@ -6,7 +6,7 @@ import vm from 'node:vm';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { MAP } from '../src/scale.js';
-import { nearestInsectHit, nearestMeshHit } from '../src/insect-hits.js';
+import { InsectIndex, nearestInsectHit, nearestMeshHit } from '../src/insect-hits.js';
 const source = readFileSync('src/client.js', 'utf8'),
   pistol = source.slice(
     source.indexOf('function pistol()'),
@@ -64,6 +64,7 @@ function shoot({ camera, target, colliders = [] }) {
     damageEnemy: (enemy, amount) => actions.push({ enemy, amount }),
     setTimeout: (fn) => fn(),
   };
+  c.insectIndex = new InsectIndex(T, c.insects);
   vm.createContext(c);
   vm.runInContext(pistol, c);
   vm.runInContext('pistol()', c);

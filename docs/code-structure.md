@@ -111,3 +111,9 @@ stationnaire, poussée locale et axe des roquettes.
 
 Le [lot de retours du 30 octobre, version 48](returns-30-october.md) décrit les correctifs
 physiques, sons/HUD, livraisons sous parachute et parcours du purgatoire.
+
+`delivery.js` partage désormais le calcul de hauteur absolue entre serveur et
+client ; les [issues 15–17](issues-15-16-17.md) décrivent ce contrat et les nouvelles commandes/vitesses.
+
+La [référence performance](performance.md) décrit la sélection spatiale des
+cibles des tirs, ses replis conservateurs et le benchmark CPU reproductible.

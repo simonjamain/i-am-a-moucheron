@@ -84,3 +84,6 @@ Un test de domaine ne valide pas l'écoute, WebGL, Pointer Lock, lisibilité du 
 ni le confort de décollage. Ces essais restent à réaliser en partie, idéalement
 avec deux joueurs, en suivant les critères détaillés du BACKLOG. Aucun déploiement
 VPS ni validation humaine n'est revendiqué par ce document.
+
+Les [issues 15–17](issues-15-16-17.md) précisent la descente continue des colis,
+le mapping Maj/Ctrl et tangage du H2, et la réduction supplémentaire des vitesses terrestres.

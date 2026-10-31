@@ -25,7 +25,7 @@ export function controlHints({
   if (vehicle.type === 'helicopter')
     return (
       (seat === 'pilot'
-        ? 'Souris : incliner · Q/D/Gauche/Droite : roulis · Z/O/Haut : monter · S/Bas : descendre · Relâcher : stationnaire · C : vue libre · Clic : roquettes'
+        ? 'Souris : incliner · Q/D/Gauche/Droite : roulis · Z/S/Haut/Bas : tangage · Maj : monter · Ctrl : descendre · Relâcher : stationnaire · C : vue libre · Clic : roquettes'
         : 'Souris : viser · Maj : MG · Ctrl : missile · Clic : tir / détonation') +
       ' · 1/2 : postes (contrats) · F : sauter / sortir · Espace en chute : parachute' +
       common

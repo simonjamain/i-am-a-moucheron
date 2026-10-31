@@ -1,7 +1,8 @@
 import { FLAK, MAP } from './scale.js';
 import { fuseRange } from './combat.js';
-export function contextKey({ type, turret = false }, key) {
+export function contextKey({ type, seat, turret = false }, key) {
   if (!['ShiftLeft', 'ShiftRight', 'ControlLeft', 'ControlRight'].includes(key)) return null;
+  if (type === 'helicopter' && seat === 'pilot' && !turret) return null;
   const shift = key.startsWith('Shift');
   return turret
     ? { range: shift ? FLAK.step : -FLAK.step }

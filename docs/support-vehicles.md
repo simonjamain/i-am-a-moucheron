@@ -31,8 +31,9 @@ Les améliorations de moteur s'appliquent au H2 comme aux avions.
 
 Le modèle procédural montre un cockpit avant bas, un second cockpit plus haut,
 un rotor, une queue et deux lanceurs latéraux. Pilote devant, copilote derrière.
-La souris demande le cap et l'inclinaison ; Z/O/Haut augmente la poussée et S/Bas la
-diminue. Q/D et A/E n'ajoutent pas de translation ou de commande verticale.
+La souris demande le cap et l'inclinaison ; Maj augmente la poussée et Ctrl la
+diminue. Z/S et Haut/Bas forcent le tangage ; Q/D et Gauche/Droite forcent le roulis.
+O/W ne sont plus des commandes pilote.
 Au relâchement des touches verticales, la poussée revient progressivement au neutre ; l'assistance
 amortit la vitesse verticale et freine le mouvement horizontal. Sans pilote ou
 pointeur actif, l'assistance redresse et freine, sans trajectoire automatique.

@@ -213,3 +213,6 @@ le retour au stationnaire et les roquettes alignées sur la coque.
 
 Le [lot de retours du 30 octobre, version 48](returns-30-october.md) décrit les correctifs
 physiques, sons/HUD, livraisons sous parachute et parcours du purgatoire.
+
+Les [issues 15–17](issues-15-16-17.md) précisent la descente continue des colis,
+le mapping Maj/Ctrl et tangage du H2, et la réduction supplémentaire des vitesses terrestres.

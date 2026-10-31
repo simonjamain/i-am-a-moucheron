@@ -95,3 +95,6 @@ Le H2 coûte 30 $, le camion D2 20 $, sans remplacement gratuit. Voir
 
 Le [lot confort de jeu, version 37](comfort.md) précise réparation, zoom, jauges,
 radar à pied, remise à zéro, fourmis et projectiles du pistolet courants.
+
+Les [issues 15–17](issues-15-16-17.md) précisent la descente continue des colis,
+le mapping Maj/Ctrl et tangage du H2, et la réduction supplémentaire des vitesses terrestres.

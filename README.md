@@ -135,3 +135,6 @@ stationnaire, poussée locale et axe des roquettes.
 
 Le [lot de retours du 30 octobre, version 48](docs/returns-30-october.md) décrit les correctifs
 physiques, sons/HUD, livraisons sous parachute et parcours du purgatoire.
+
+Les [correctifs des issues 15–17](docs/issues-15-16-17.md) couvrent la descente
+continue des colis, le nouveau mapping H2 et le ralentissement terrestre supplémentaire.
