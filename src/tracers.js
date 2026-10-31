@@ -72,8 +72,9 @@ export function makeShotTrace(
   return trace;
 }
 export class TracerPool {
-  constructor(T, scene, limit = 256) {
-    Object.assign(this, { T, scene, limit });
+  constructor(T, scene, limit = 256, { instanced = false } = {}) {
+    Object.assign(this, { T, scene, limit, instanced });
+    this.batches = new Map();
     this.free = [];
     this.all = new Set();
   }
@@ -104,10 +105,62 @@ export class TracerPool {
     model.userData.halo.material.color.set(color);
     model.position.copy(position);
     model.scale.set(1, 1, 1);
-    this.scene.add(model);
+    if (this.instanced) {
+      this.scene.remove(model);
+      this.prepareBatch(model);
+    } else this.scene.add(model);
     return model;
   }
+  prepareBatch(model) {
+    const shell = model.userData.shell;
+    if (this.batches.has(shell)) return;
+    const T = this.T;
+    const parts = ['halo', 'core'].map((part) => {
+      const source = model.userData[part];
+      const material = source.material.clone();
+      // Color belongs to each instance, not to the shared halo material.
+      if (part === 'halo') material.color.set('#ffffff');
+      const mesh = new T.InstancedMesh(source.geometry.clone(), material, this.limit);
+      mesh.instanceMatrix.setUsage(T.DynamicDrawUsage);
+      mesh.count = 0;
+      mesh.frustumCulled = false;
+      mesh.userData = { shell, part };
+      this.scene.add(mesh);
+      return mesh;
+    });
+    this.batches.set(shell, parts);
+  }
+  // Submit only once after all ballistic substeps, immediately before rendering.
+  flush() {
+    if (!this.instanced) return;
+    for (const [shell, parts] of this.batches) {
+      let count = 0;
+      for (const model of this.all) {
+        if (model.userData.released || model.userData.shell !== shell) continue;
+        model.updateWorldMatrix(true, true);
+        for (const mesh of parts) {
+          const source = model.userData[mesh.userData.part];
+          mesh.setMatrixAt(count, source.matrixWorld);
+          if (mesh.userData.part === 'halo') mesh.setColorAt(count, source.material.color);
+        }
+        count++;
+      }
+      for (const mesh of parts) {
+        mesh.count = count;
+        mesh.instanceMatrix.needsUpdate = true;
+        if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+      }
+    }
+  }
   dispose() {
+    for (const parts of this.batches.values())
+      for (const mesh of parts) {
+        this.scene.remove(mesh);
+        mesh.geometry.dispose();
+        mesh.material.dispose();
+        mesh.dispose();
+      }
+    this.batches.clear();
     for (const model of this.all) {
       this.scene.remove(model);
       model.userData.destroy();

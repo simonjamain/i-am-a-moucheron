@@ -142,6 +142,7 @@ const context = vm.createContext({
   },
   clearTimeout: (id) => callbacks.delete(id),
   TracerPool,
+  renderer: { isWebGLRenderer: true },
   GunSalvos,
   scene: new T.Scene(),
   joined: true,
