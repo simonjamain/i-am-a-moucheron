@@ -1,3 +1,4 @@
+import { InsectIndex } from '../src/insect-hits.js';
 import assert from 'node:assert/strict';
 import * as T from '../vendor/three.module.min.js';
 import { createGraphics } from '../src/graphics.js';
@@ -73,6 +74,7 @@ const state = {
   T,
   scene,
   insects: models,
+  insectIndex: new InsectIndex(T, models),
   insect: graphics.insect,
   snap: {
     wave: 1,
