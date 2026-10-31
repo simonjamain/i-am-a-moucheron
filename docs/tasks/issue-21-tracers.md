@@ -23,3 +23,23 @@
 - Référence durable : [performances](../performance.md). Le rendu instancié des
   ennemis, Workers, WASM/SIMD, WebGPU et deltas de snapshots ne sont pas implémentés
   ici ; leur choix demande un profilage sur les appareils ciblés.
+
+## Reprise du 31 octobre 2026 — comparaison WebGL
+
+Head testé : `d9847eb4958ad82c15a5e2c8838c5f90936178a1`.
+Suite complète `npm test`, build et validateur du paquet, liens : succès.
+Docker absent localement ; contrôle Docker build du head réussi (run 41194270655).
+
+Chromium 153 obtenu via le paquet temporaire @sparticuz/chromium 153.0.0,
+Playwright, rendu SwiftShader logiciel, viewport 1280 × 800 ; comparateur
+640 × 360, 256 tirs, obstacle opaque, surface alpha et modèles d'insectes.
+533 → 25 appels de dessin pour la scène complète ; 13 248 triangles inchangés.
+Soumission CPU d'une exécution : 2,758 → 0,333 ms. Mesure statique, ordre A/B
+unique : pas un temps GPU, un FPS de partie ni une mesure sur GPU matériel.
+
+Différence : 1 205 canaux RGBA sur 921 600, écart maximal 76/255.
+Le rendu n'est donc pas identique ; la capture confirme des différences
+localisées autour des traceurs et des surfaces. L'acceptabilité en mouvement
+et en partie reste à vérifier. Le gain en appels de dessin est établi pour
+ce scénario, mais la parité visuelle et le bénéfice sur les machines ciblées
+ne sont pas acquis. Pas de fusion ni de fermeture automatique de l'issue.
