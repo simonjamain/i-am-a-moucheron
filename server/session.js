@@ -1,4 +1,4 @@
-import { PROTOCOL, MAX_COMMAND_BYTES, encodeReply } from '../src/udp-protocol.js';
+import { PROTOCOL, MAX_COMMAND_BYTES, encodeReply, encodeReplyText } from '../src/udp-protocol.js';
 import { validMotion } from '../src/network.js';
 
 // Session identity comes from its DTLS connection, never from a player ID supplied
@@ -100,7 +100,9 @@ export class GameSession {
   }
   output(value, id) {
     try {
-      for (const chunk of encodeReply(typeof value === 'string' ? JSON.parse(value) : value, id))
+      for (const chunk of typeof value === 'string'
+        ? encodeReplyText(value, id)
+        : encodeReply(value, id))
         this.send(chunk);
     } catch {
       this.stop();

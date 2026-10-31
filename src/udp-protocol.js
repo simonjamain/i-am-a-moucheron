@@ -8,7 +8,12 @@ export const MAX_REPLY_BYTES = 4 * 1024 * 1024;
 
 // Chunk large snapshots below browser/native SCTP message size limits.
 export function encodeReply(value, id) {
-  const text = JSON.stringify(value);
+  return encodeReplyText(JSON.stringify(value), id);
+}
+// Internal fast path for immutable JSON already serialized by GameSession.
+// It intentionally does not parse the text; callers supply JSON.stringify output.
+export function encodeReplyText(text, id) {
+  if (typeof text !== 'string') throw Error('Réponse JSON attendue.');
   if (text.length > MAX_REPLY_BYTES) throw Error('État de salle trop volumineux.');
   const count = Math.ceil(text.length / CHUNK_BYTES) || 1;
   return Array.from({ length: count }, (_, part) =>
