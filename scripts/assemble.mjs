@@ -61,6 +61,7 @@ const files = {
       'base',
       'layout',
       'renderer',
+      'shadow-settings',
       'graphics',
       'office',
       'sortie',
