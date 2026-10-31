@@ -3060,7 +3060,7 @@ function bullet(pos, dir, color = '#f4efab', owned = false, aa = false) {
   }
   emitBullet(pos, dir, color, owned, aa);
 }
-const tracerPool = new TracerPool(T, scene);
+const tracerPool = new TracerPool(T, scene, 256, { instanced: renderer.isWebGLRenderer === true });
 const gunSalvos = new GunSalvos();
 let spitSoundAt = -Infinity;
 const aircraftFire = new AircraftFire(
@@ -3828,6 +3828,7 @@ function frame(now) {
     if (model?.userData.dish) model.userData.dish.rotation.y = now * 0.001;
   updateFallingEnemies(dt);
   updateContextHUD();
+  tracerPool.flush();
   if (spectating && observationCamera) {
     if (observationRealm !== 'office') observedPurgatory();
     renderer.render(observationRealm === 'office' ? scene : purgScene, observationCamera);

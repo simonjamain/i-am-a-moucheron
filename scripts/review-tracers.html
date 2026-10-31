@@ -1,0 +1,121 @@
+<!doctype html><meta charset="utf-8" /><title>Comparaison des traceurs</title>
+<style>
+  body {
+    background: #18231f;
+    color: white;
+    font: 16px system-ui;
+  }
+  canvas {
+    width: 640px;
+    height: 360px;
+  }
+  pre {
+    white-space: pre-wrap;
+  }
+</style>
+<h1>Traceurs : référence / instances</h1>
+<button id="run">Comparer 256 tirs</button>
+<pre id="result">Prêt</pre>
+<div id="views"></div>
+<script type="module">
+  import * as T from '../vendor/three.module.min.js';
+  import { TracerPool, updateTracer } from '../src/tracers.js';
+  import { createGraphics } from '../src/graphics.js';
+  const result = document.querySelector('#result');
+  document.querySelector('#run').onclick = async () => {
+    try {
+      document.querySelector('#views').replaceChildren();
+      const renderer = new T.WebGLRenderer({ antialias: false, preserveDrawingBuffer: true });
+      renderer.setSize(640, 360);
+      renderer.setPixelRatio(1);
+      renderer.setClearColor('#18231f');
+      const camera = new T.PerspectiveCamera(50, 640 / 360, 0.001, 10);
+      camera.position.set(0, 0, 0.8);
+      camera.lookAt(0, 0, 0);
+      camera.updateMatrixWorld();
+      const outputs = [];
+      for (const instanced of [false, true]) {
+        const scene = new T.Scene(),
+          pool = new TracerPool(T, scene, 256, { instanced });
+        scene.add(new T.AmbientLight('#ffffff', 2));
+        const blocker = new T.Mesh(
+          new T.BoxGeometry(0.06, 0.1, 0.02),
+          new T.MeshBasicMaterial({ color: '#5f8976' }),
+        );
+        blocker.position.set(-0.06, 0, -0.01);
+        scene.add(blocker);
+        const smoke = new T.Mesh(
+          new T.PlaneGeometry(0.2, 0.2),
+          new T.MeshBasicMaterial({
+            color: '#43484a',
+            transparent: true,
+            opacity: 0.45,
+            depthWrite: false,
+            side: T.DoubleSide,
+          }),
+        );
+        smoke.position.set(0.06, 0, -0.04);
+        scene.add(smoke);
+        const graphics = createGraphics(T, scene);
+        for (let n = 0; n < 3; n++) {
+          const bug = graphics.insect('midge');
+          bug.scale.setScalar(0.02);
+          bug.position.set(-0.08 + n * 0.08, 0.04, -0.02 - n * 0.04);
+        }
+        for (let i = 0; i < 256; i++) {
+          const direction = new T.Vector3(Math.sin(i) * 0.3, Math.cos(i) * 0.2, -1).normalize();
+          const m = pool.acquire(
+            new T.Vector3(
+              ((i % 16) - 7.5) * 0.025,
+              (Math.floor(i / 16) - 7.5) * 0.018,
+              -(i % 7) * 0.015,
+            ),
+            direction,
+            i % 2 ? '#12a4ef' : '#ef3421',
+            i % 3 === 0,
+          );
+          updateTracer(T, m, direction, camera);
+        }
+        pool.flush();
+        for (let n = 0; n < 30; n++) renderer.render(scene, camera);
+        const start = performance.now();
+        for (let n = 0; n < 120; n++) renderer.render(scene, camera);
+        const ms = (performance.now() - start) / 120;
+        const gl = renderer.getContext(),
+          pixels = new Uint8Array(640 * 360 * 4);
+        gl.readPixels(0, 0, 640, 360, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+        const img = new Image();
+        img.src = renderer.domElement.toDataURL();
+        document.querySelector('#views').append(img);
+        outputs.push({
+          instanced,
+          drawCalls: renderer.info.render.calls,
+          triangles: renderer.info.render.triangles,
+          cpuSubmitMs: ms,
+          pixels,
+        });
+        pool.dispose();
+      }
+      let different = 0,
+        maxDelta = 0;
+      for (let i = 0; i < outputs[0].pixels.length; i++) {
+        const d = Math.abs(outputs[0].pixels[i] - outputs[1].pixels[i]);
+        if (d) different++;
+        maxDelta = Math.max(maxDelta, d);
+      }
+      result.textContent = JSON.stringify(
+        {
+          results: outputs.map(({ pixels, ...o }) => o),
+          differentChannels: different,
+          maxChannelDelta: maxDelta,
+          note: 'Static frame only; CPU submission is not GPU time or gameplay FPS.',
+        },
+        null,
+        2,
+      );
+      renderer.dispose();
+    } catch (e) {
+      result.textContent = 'ÉCHEC WebGL : ' + e.message;
+    }
+  };
+</script>

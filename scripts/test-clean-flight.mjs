@@ -498,6 +498,7 @@ const fireContext = {
   performance,
   gunSalvos: new GunSalvos(),
   TracerPool,
+  renderer: { isWebGLRenderer: true },
   GunSalvos,
   scene: new T.Scene(),
   myVehicle: {

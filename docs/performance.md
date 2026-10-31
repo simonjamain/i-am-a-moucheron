@@ -59,3 +59,41 @@ après échauffement. Le premier envoi inclut la sérialisation initiale commune
 le rejeu utilise la chaîne déjà en cache. Exemple local Node 24, réponse de
 91 766 caractères : premier envoi 1,19 → 0,50 ms ; rejeu 0,89 → 0,22 ms.
 Ce sont des temps CPU d'encodage, pas la latence réseau ni le coût total serveur.
+
+## Traceurs instanciés
+
+Sur WebGL, `TracerPool` conserve les objets de calcul des tirs mais les retire de
+la scène. `flush()` recopie les matrices exactes du halo/cœur dans deux lots par
+calibre, une seule fois après les sous-étapes balistiques et avant le rendu. Les
+halos utilisent leur couleur individuelle ; les cœurs conservent leur matériau.
+Géométrie, longueur, largeur minimale projetée, mélange additif et profondeur
+restent identiques. La balistique, les collisions et le plafond de 256 traceurs
+ne changent pas. Les traceurs personnels restent sur leur chemin actuel.
+Le renderer logiciel conserve les meshes ordinaires, car il ne gère pas les
+instances. Les lots vides ont zéro instance ; les ressources sont libérées avec
+le pool. Les lots sont exclus du culling global pour ne pas masquer un tir actif
+à cause d'une ancienne enveloppe ; ils comportent au plus 256 traceurs, soit 512 instances halo/cœur.
+
+`node scripts/benchmark-tracers.mjs` inventorie les vrais objets de scène et les
+triangles, puis mesure la préparation CPU des matrices (échauffement + médiane
+sur 100 passages). Pour 256 tirs et deux calibres, 512 objets de rendu deviennent
+4 lots ; le nombre de triangles est conservé. C'est un inventaire CPU, pas une
+mesure de draw calls réels ni une promesse de FPS. Le coût de copie des matrices
+reste présent.
+
+Le comparateur `scripts/review-tracers.html` sert la même scène statique, les mêmes
+256 tirs et la même caméra avec et sans instances ; il rapporte draw calls,
+triangles, temps CPU de soumission et différences des pixels lus au GPU. Le temps
+CPU ne constitue pas une mesure GPU. Depuis la racine, `python -m http.server 8089`
+puis ouvrir `http://localhost:8089/scripts/review-tracers.html` et comparer les deux
+images. Cette page est un outil local, absent des assets de jeu. Elle ne remplace
+pas l'essai en rafales, les impacts et le confort en vraie partie. Le navigateur
+de contrôle de cette session ne joint pas le serveur local (connexion refusée) :
+aucune parité de pixels ni mesure GPU n'a été observée ici.
+
+Le tri des halos instanciés par rapport aux autres surfaces transparentes n'est
+pas identique au tri objet par objet. Le comparateur inclut donc un obstacle
+opaque, une surface alpha et les ailes de vrais insectes. Une différence de
+composition doit être jugée visuellement ; la parité de matrices/couleurs ne
+suffit pas. Cette contribution reste candidate tant que cette observation et
+les mesures de rendu réel sont indisponibles.
