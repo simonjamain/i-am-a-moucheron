@@ -41,3 +41,56 @@ assert.throws(() => encodeReplyText({}, 1), /JSON/);
 console.log(
   'PASS: serialized UDP reply chunks preserve exact packets, errors, Unicode, boundaries, reverse assembly and size limits.',
 );
+
+// Place the high surrogate at the last UTF-16 unit of the first chunk.
+const splitText = '{"x":"' + 'a'.repeat(CHUNK_BYTES - 7) + '🦟"}';
+assert.equal(splitText.indexOf('🦟'), CHUNK_BYTES - 1);
+const splitChunks = encodeReplyText(splitText, 18);
+assert.deepEqual(splitChunks, encodeReplyV1(JSON.parse(splitText), 18));
+const splitAssembler = new ReplyAssembler();
+let splitResult;
+for (const packet of splitChunks.toReversed())
+  splitResult = splitAssembler.receive(JSON.parse(packet)) ?? splitResult;
+assert.deepEqual(splitResult, JSON.parse(splitText));
+
+// Exercise the session boundary, including its immutable cache rather than just
+// invoking the encoder twice with the same object.
+const { GameSession } = await import('../server/session.js');
+let executions = 0;
+const packets = [];
+const body = {
+  id: 'pilot',
+  snapshot: { code: 'REPLAY', roster: ['initial'], note: '🦟'.repeat(7000) },
+};
+const session = new GameSession(
+  {
+    join() {
+      executions++;
+      return body;
+    },
+  },
+  { send: (packet) => packets.push(packet), now: () => 100000, close() {} },
+);
+const request = JSON.stringify({
+  v: 1,
+  id: 1,
+  path: 'join',
+  body: { code: 'REPLAY', name: 'Player' },
+});
+session.command(request);
+assert.equal(executions, 1);
+const initial = packets.splice(0);
+assert.ok(initial.length > 1);
+assert.deepEqual(initial, encodeReplyV1({ status: 200, body }, 1));
+body.snapshot.roster.push('must never appear in replay');
+body.snapshot.note = 'mutated';
+session.command(request);
+assert.equal(executions, 1);
+assert.deepEqual(
+  packets,
+  initial,
+  'replay preserves the whole original reply after source mutation',
+);
+console.log(
+  'PASS: split Unicode surrogate pairs and full immutable multi-chunk session replay after domain mutation.',
+);
