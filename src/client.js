@@ -59,7 +59,13 @@ import {
   makeAntiaircraft,
   GEAR_HEIGHT,
 } from '/sortie.js';
-import { nearestInsectHit, nearestMeshHit, HitEffects, insectContact } from '/insect-hits.js';
+import {
+  InsectIndex,
+  nearestInsectHit,
+  nearestMeshHit,
+  HitEffects,
+  insectContact,
+} from '/insect-hits.js';
 import {
   ControlFocus,
   equipmentExitAction,
@@ -203,6 +209,7 @@ me.visible = false;
 const others = new Map(),
   insects = new Map(),
   trails = [];
+const insectIndex = new InsectIndex(T, insects);
 me.position.fromArray(aircraftPose(0).p);
 let joined = false,
   id = '',
@@ -2869,6 +2876,7 @@ function enemies(now) {
       for (const material of g.userData.disposables || []) material.dispose();
       insects.delete(i);
     }
+  insectIndex.invalidate();
   $('enemies').textContent =
     snap.phase === 'combat' && snap.total > snap.kills.length + snap.leaked
       ? 'Ennemis restants'
@@ -3214,7 +3222,7 @@ function stepProjectileSlice(dt) {
       fused = true;
     }
     if (b.owned && !respawnAt) {
-      let hit = nearestInsectHit(T, origin, dir, insects, distance, localKills);
+      let hit = nearestInsectHit(T, origin, dir, insects, distance, localKills, insectIndex);
       const ray = new T.Raycaster(origin, dir, 0, distance);
       for (const v of snap?.vehicles || []) {
         if (v.id === b.originVehicle) continue;
@@ -4167,7 +4175,7 @@ function pistol() {
           hit = { wall: true, point, distance: point.distanceTo(origin) };
       }
     } else {
-      const enemy = nearestInsectHit(T, origin, dir, insects, 150 * scale, localKills);
+      const enemy = nearestInsectHit(T, origin, dir, insects, 150 * scale, localKills, insectIndex);
       if (enemy) hit = { ...enemy, enemy: enemy.id };
       for (const v of snap.vehicles || []) consider(fleetModels.get(v.id), { vehicle: v.id });
       for (const p of snap.pilots)
