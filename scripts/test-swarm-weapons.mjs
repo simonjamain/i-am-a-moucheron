@@ -148,8 +148,14 @@ const claims = await Promise.all(
 );
 assert.deepEqual(claims.map((x) => x.status).sort(), [200, 409]);
 const gunner = claims[0].status === 200 ? p : q;
+// The roster seed includes started: wall-clock seeds do not always include an
+// elite in wave 8. Establish the resistant-target precondition explicitly.
+let combatAt = Date.now();
+for (let n = 0; n < 1000 && !wavePlan('ARSENAL', 8, combatAt).roster.some((e) => e.hp >= 400); n++)
+  combatAt++;
+assert.ok(wavePlan('ARSENAL', 8, combatAt).roster.some((e) => e.hp >= 400));
 await DB.prepare("UPDATE rooms SET phase='combat',wave=8,started=? WHERE code='ARSENAL'")
-  .bind(Date.now())
+  .bind(combatAt)
   .run();
 const state = (await api('sync', { id: gunner.id, state: gunner.state })).body;
 const heavy = state.roster.find((e) => e.hp >= 400);

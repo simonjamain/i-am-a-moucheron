@@ -37,3 +37,25 @@ Essai en jeu : une rafale dans et autour d'une nuée, puis un tir personnel sur
 chaque espèce ; vérifier les impacts, les alliés, le mobilier et les fins de vague.
 L'environnement temporaire est indisponible ; utiliser `npm ci && npm start`
 et le réseau UDP décrit dans [l'exploitation](operations.md).
+
+## Encodage des réponses UDP
+
+`GameSession` conserve les réponses JSON immuables pour rejouer une commande.
+`encodeReplyText()` découpe désormais ce texte directement, au lieu de le parser
+puis de le resérialiser. `encodeReply()` garde son interface objet. Le format v1,
+les identifiants, le découpage à 12 000 caractères et la limite de 4 Mio de
+caractères sont conservés ; ce changement n'économise aucun octet réseau.
+Le chemin texte est interne et attend du JSON déjà produit par `JSON.stringify`.
+Les requêtes entrantes restent validées comme avant.
+
+`node scripts/test-udp-reply-encoding.mjs` compare les paquets à un encodeur v1
+figé, indépendant du code de production : erreurs, Unicode, frontières de blocs,
+réassemblage inversé et dépassement de limite. Les tests de session et deux pairs
+UDP couvrent le rejeu sans réexécuter une commande et l'immuabilité de la réponse.
+
+`npm run bench:udp-replies` compare les mêmes réponses de vagues réelles (24, 288
+et 300 ennemis), avec l'encodeur historique figé : 12 lots alternés de 100 envois
+après échauffement. Le premier envoi inclut la sérialisation initiale commune ;
+le rejeu utilise la chaîne déjà en cache. Exemple local Node 24, réponse de
+91 766 caractères : premier envoi 1,19 → 0,50 ms ; rejeu 0,89 → 0,22 ms.
+Ce sont des temps CPU d'encodage, pas la latence réseau ni le coût total serveur.
