@@ -75,6 +75,37 @@ try {
   assert.equal(aj.status, 200);
   assert.equal(bj.status, 200);
   assert.equal(app.game.rooms.get('NATIVE').pilots.size, 2);
+  const roomSnapshot = aj.body.snapshot;
+  const tuned = await a.request('balance', {
+    epoch: roomSnapshot.base.epoch,
+    revision: 0,
+    values: { damage: 2, enemySpeed: 1.5 },
+  });
+  assert.equal(tuned.status, 200);
+  const observed = await b.request('sync', { state: bj.body.state, mode: 'foot' });
+  assert.equal(observed.body.balance.damage, 2);
+  assert.equal(observed.body.balance.enemySpeed, 1.5);
+  assert.equal(
+    (
+      await b.request('balance', {
+        epoch: roomSnapshot.base.epoch,
+        revision: 1,
+        values: { damage: 3 },
+      })
+    ).status,
+    403,
+  );
+  assert.equal(
+    (
+      await a.request('balance', {
+        epoch: roomSnapshot.base.epoch,
+        revision: 1,
+        values: roomSnapshot.balance,
+      })
+    ).status,
+    200,
+  );
+
   const started = await a.request('start');
   assert.equal(started.body.mission_started, 1);
   // Replaying the same command ID returns its original result, without another player.

@@ -216,3 +216,6 @@ physiques, sons/HUD, livraisons sous parachute et parcours du purgatoire.
 
 Les [issues 15–17](issues-15-16-17.md) précisent la descente continue des colis,
 le mapping Maj/Ctrl et tangage du H2, et la réduction supplémentaire des vitesses terrestres.
+
+Les [réglages d’équilibrage par room](room-balance.md) sont consultables par tous et
+modifiables à tout moment par le créateur de la room.

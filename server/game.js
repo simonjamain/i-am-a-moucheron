@@ -1,3 +1,10 @@
+import {
+  DEFAULT_BALANCE,
+  validateBalance,
+  money,
+  scaleRoster,
+  retimeRoster,
+} from '../src/balance.js';
 import { deliveryStart, deliveryLanding, deliveryHeightAt } from '../src/delivery.js';
 import { HELI, rotateLocal, steerMissile } from '../src/helicopter.js';
 import {
@@ -79,6 +86,10 @@ export function initialStation() {
 function roomState(code, now) {
   return {
     code,
+    balance: { ...DEFAULT_BALANCE },
+    balanceRevision: 0,
+    balanceOwnerToken: null,
+    plan: null,
     created: now,
     touched: now,
     wave: 0,
@@ -156,7 +167,7 @@ export class Game {
       if (r.bedContracts.size >= 2048) {
         const activeTokens = new Set(r.identityTokens.values());
         for (const key of r.bedContracts.keys())
-          if (!activeTokens.has(key)) {
+          if (key !== r.balanceOwnerToken && !activeTokens.has(key)) {
             r.bedContracts.delete(key);
             r.playerColors.delete(key);
             break;
@@ -187,6 +198,7 @@ export class Game {
       occupation: 0,
       state: initialState(),
     };
+    r.balanceOwnerToken ??= resumeKey;
     r.pilots.set(p.id, p);
     r.identityTokens.set(p.id, resumeKey);
     r.touched = this.now();
@@ -236,6 +248,7 @@ export class Game {
           v.type,
           [...r.equipment, initialStation()],
           (now - v.updated) / 1000,
+          r.balance,
         ),
         revision: v.supplies.revision + 1,
       };
@@ -273,8 +286,8 @@ export class Game {
       updated: this.now(),
       shots: new Set(),
       supplies: {
-        fuel: FUEL_SECONDS,
-        ammo: fullAmmo(type),
+        fuel: FUEL_SECONDS * r.balance.fuel,
+        ammo: fullAmmo(type, r.balance),
         sequence: ++r.sequence,
         revision: 0,
       },
@@ -314,10 +327,14 @@ export class Game {
   releaseSoul(r, s) {
     if (s.status !== 'waiting') return;
     s.status = 'gone';
-    if (s.kind === 'enemy') {
-      r.dollars++;
-      r.rewardCount++;
-    }
+    if (s.kind === 'enemy') this.reward(r, 1);
+  }
+  reward(r, amount) {
+    const credit = money(amount, r.balance.rewards);
+    r.dollars = money(r.dollars + credit);
+    const accumulated = money((r.rewardFraction || 0) + credit);
+    r.rewardCount += Math.floor(accumulated);
+    r.rewardFraction = money(accumulated % 1);
   }
   arena(r, realm, p = null, report = null) {
     const a = r[realm],
@@ -405,19 +422,15 @@ export class Game {
       }
     if (r.phase === 'prep' && r.mission_started && r.next_wave_at && now >= r.next_wave_at)
       this.startWave(r);
-    const plan = wavePlan(r.code, r.wave, r.started);
+    const plan = this.plan(r);
     const escaped = plan.roster.filter(
       (e, i) => !r.kills.has(i) && (now - r.started) / 1000 >= e.spawn + e.duration,
     );
     if (r.phase === 'combat' && r.kills.size + escaped.length >= plan.roster.length) {
       r.infestation += escaped.reduce((n, e) => n + e.leak, 0);
       r.phase = r.infestation >= 20 ? 'lost' : 'prep';
-      r.next_wave_at = now + 60000;
-      if (r.phase === 'prep') {
-        const n = waveStipend(r.wave);
-        r.dollars += n;
-        r.rewardCount += n;
-      }
+      r.next_wave_at = now + r.balance.pause * 1000;
+      if (r.phase === 'prep') this.reward(r, waveStipend(r.wave));
       r.dollars = Math.round(r.dollars * 100 - settleLoans(r.bank, r.wave)) / 100;
     }
     this.advanceDeliveries(r, now);
@@ -471,10 +484,61 @@ export class Game {
         r.dossiers.delete(token);
     }
   }
+  plan(r) {
+    return r.plan || wavePlan(r.code, r.wave, r.started);
+  }
+  setBalance(r, p, b) {
+    requireGame(
+      r.identityTokens.get(p.id) === r.balanceOwnerToken,
+      'Seul le créateur de la room peut modifier les réglages.',
+      403,
+    );
+    requireGame(
+      b.epoch === r.base.epoch && b.revision === r.balanceRevision,
+      'Les réglages ou la partie ont changé. Relisez les valeurs.',
+    );
+    let patch;
+    try {
+      patch = validateBalance(b.values);
+    } catch (error) {
+      requireGame(false, error.message, 400);
+    }
+    const old = r.balance,
+      next = { ...old, ...patch };
+    const time = (this.now() - r.started) / 1000;
+    if (r.plan) {
+      retimeRoster(r.plan.roster, time, next.enemySpeed / old.enemySpeed);
+      for (const enemy of r.plan.roster) {
+        enemy.hp *= next.enemyHP / old.enemyHP;
+        if (r.enemyDamage[enemy.id]) r.enemyDamage[enemy.id] *= next.enemyHP / old.enemyHP;
+      }
+    }
+    for (const v of r.vehicles.values()) {
+      v.supplies.fuel *= next.fuel / old.fuel;
+      for (const key of Object.keys(v.supplies.ammo)) {
+        const before = ammoCapacity(v.type, key, old),
+          after = ammoCapacity(v.type, key, next);
+        if (before) v.supplies.ammo[key] = Math.min(after, (v.supplies.ammo[key] * after) / before);
+      }
+      v.supplies.revision++;
+    }
+    const delay = r.wave === 0 ? 'initialDelay' : 'pause';
+    if (r.phase === 'prep' && r.next_wave_at && old[delay] !== next[delay])
+      r.next_wave_at = Math.max(
+        this.now() + 5000,
+        r.next_wave_at + (next[delay] - old[delay]) * 1000,
+      );
+    r.balance = next;
+    r.balanceRevision++;
+  }
   startWave(r) {
     r.phase = 'combat';
     r.wave++;
     r.started = this.now();
+    r.plan = scaleRoster(
+      wavePlan(r.code, 1 + Math.round((r.wave - 1) * r.balance.progression), r.started),
+      r.balance,
+    );
     r.next_wave_at = 0;
     r.kills.clear();
     r.enemyDamage = {};
@@ -483,7 +547,7 @@ export class Game {
   snapshot(r) {
     this.advance(r);
     const now = this.now(),
-      plan = wavePlan(r.code, r.wave, r.started);
+      plan = this.plan(r);
     const souls = (realm) =>
       values(r.souls)
         .filter(
@@ -498,6 +562,11 @@ export class Game {
         });
     return clone({
       code: r.code,
+      balance: r.balance,
+      balanceRevision: r.balanceRevision,
+      balanceOwner: this.live(r)
+        .filter((p) => r.identityTokens.get(p.id) === r.balanceOwnerToken)
+        .map((p) => p.id),
       wave: r.wave,
       started: r.started,
       phase: r.phase,
@@ -532,7 +601,7 @@ export class Game {
       seatRequests: values(r.requests),
       effects: r.effects.slice(-64),
       ordnance: r.ordnance,
-      waveReward: waveStipend(r.wave),
+      waveReward: money(waveStipend(r.wave), r.balance.rewards),
       roster: plan.roster,
       difficulty: r.wave ? plan.budget : 0,
       enemyDamage: r.enemyDamage,
@@ -730,7 +799,7 @@ export class Game {
     p.seen = this.now();
     r.touched = this.now();
     requireGame(
-      !p.state.awaitingPurgatory || ['sync', 'enter-purgatory', 'reset'].includes(path),
+      !p.state.awaitingPurgatory || ['sync', 'enter-purgatory', 'reset', 'balance'].includes(path),
       'Accédez au purgatoire avant d’agir.',
     );
     if (path === 'enter-purgatory') {
@@ -739,7 +808,8 @@ export class Game {
         p.state.awaitingPurgatory = false;
         this.soul(r, 'player', p.id, p.name, p.state.realm);
       }
-    } else if (path === 'sync') this.sync(r, p, b);
+    } else if (path === 'balance') this.setBalance(r, p, b);
+    else if (path === 'sync') this.sync(r, p, b);
     else if (path === 'purchase-sign') this.purchaseSign(r, p, b);
     else if (path === 'place-purchase') this.placePurchase(r, p, b);
     else if (path === 'wash') this.wash(r, p, b);
@@ -747,13 +817,20 @@ export class Game {
     else if (path === 'start') {
       if (!r.mission_started) {
         r.mission_started = 1;
-        r.next_wave_at = this.now() + 10000;
+        r.next_wave_at = this.now() + r.balance.initialDelay * 1000;
       } else if (r.phase === 'prep' && r.wave > 0) this.startWave(r);
     } else if (path === 'reset') {
       if (b.epoch !== undefined && b.epoch !== r.base.epoch) return this.snapshot(r);
       const pilots = r.pilots,
-        identities = r.identityTokens;
+        identities = r.identityTokens,
+        balance = r.balance,
+        owner = r.balanceOwnerToken,
+        revision = r.balanceRevision;
       Object.assign(r, roomState(r.code, this.now()));
+      r.balance = balance;
+      r.balanceOwnerToken = owner;
+      r.balanceRevision = revision + 1;
+      r.dollars = balance.startingMoney;
       r.pilots = pilots;
       r.identityTokens = identities;
       r.playerSequence = Math.max(0, ...values(pilots).map((p) => p.colorSequence || 0));
@@ -986,10 +1063,15 @@ export class Game {
         ...values(r.vehicles).map((v) => ({ x: v.state.p[0], y: v.state.p[1], z: v.state.p[2] })),
       ]);
     requireGame(!carrier || drop, 'Aucune colonne de livraison libre près de cet appareil.');
-    const price = shopPrice(b.item, r.upgrades, purchaseCount(this.purchaseSnapshot(r), b.item));
+    const price = shopPrice(
+      b.item,
+      r.upgrades,
+      purchaseCount(this.purchaseSnapshot(r), b.item),
+      r.balance,
+    );
     requireGame(price === b.expectedPrice, 'Le tarif a changé. Relisez le bon.');
     requireGame(r.dollars >= price, 'La caisse commune ne contient pas assez de dollars.');
-    r.dollars -= price;
+    r.dollars = money(r.dollars - price);
     r.purchases.set(b.request, {
       token: b.request,
       owner: p.id,
@@ -1064,7 +1146,7 @@ export class Game {
       }
       return;
     }
-    const plan = wavePlan(r.code, r.wave, r.started),
+    const plan = this.plan(r),
       frames = swarmFrame(plan.roster, (now - r.started) / 1000);
     for (const v of r.vehicles.values()) {
       if (v.state.hp <= 0) continue;
@@ -1142,7 +1224,12 @@ export class Game {
       requireGame(r.orders.get(request) === b.item, 'Référence d’achat déjà utilisée.');
       return;
     }
-    const price = shopPrice(b.item, r.upgrades, purchaseCount(this.purchaseSnapshot(r), b.item));
+    const price = shopPrice(
+      b.item,
+      r.upgrades,
+      purchaseCount(this.purchaseSnapshot(r), b.item),
+      r.balance,
+    );
     requireGame(
       prepaid || b.expectedPrice === undefined || b.expectedPrice === price,
       'Le tarif a changé.',
@@ -1199,7 +1286,7 @@ export class Game {
         r.equipment.push({ ...placement, kind: b.item, name: item.name, slot: r.equipment.length });
     } else if (item.kind === 'vehicle') this.createVehicle(r, b.item);
     else r.upgrades[b.item] = (r.upgrades[b.item] || 0) + 1;
-    if (!prepaid) r.dollars -= price;
+    if (!prepaid) r.dollars = money(r.dollars - price);
     r.orders.set(request, b.item);
   }
   vehicle(r, p, path, b) {
@@ -1451,7 +1538,7 @@ export class Game {
     requireGame(
       this.now() >=
         (v.lastHeavy[lane] ?? -Infinity) +
-          HEAVY[selected].interval *
+          (HEAVY[selected].interval / r.balance.fireRate) *
             1000 *
             (['proximity', 'rocket'].includes(selected)
               ? Math.max(1, factors.interval)
@@ -1496,11 +1583,11 @@ export class Game {
         wave: r.wave,
       }),
     );
-    r.ordnance.at(-1).bonus *= factors.damage;
+    r.ordnance.at(-1).bonus *= factors.damage * r.balance.damage;
   }
   advanceOrdnance(r, now) {
     if (!r.ordnance.length) return;
-    const plan = wavePlan(r.code, r.wave, r.started);
+    const plan = this.plan(r);
     const frameCache = new Map();
     const framesAt = (time) => {
       const at = Math.round(time / 50) * 50;
@@ -1609,7 +1696,7 @@ export class Game {
     for (const shot of r.ordnance)
       if (shot.done && shot.weapon === 'missile') {
         const v = r.vehicles.get(shot.vehicle);
-        if (v) v.nextMissileAt = now + 2000;
+        if (v) v.nextMissileAt = now + 2000 / r.balance.fireRate;
       }
     r.ordnance = r.ordnance.filter((p) => !p.done);
   }
@@ -1631,14 +1718,14 @@ export class Game {
         s.shot === b.shot,
     );
     requireGame(shot, 'Missile absent.');
-    const plan = wavePlan(r.code, r.wave, r.started);
+    const plan = this.plan(r);
     const frames =
       r.phase === 'combat' && shot.wave === r.wave
         ? swarmFrame(plan.roster, (this.now() - r.started) / 1000)
         : [];
     this.ordnanceImpact(r, shot, {}, frames, shot.p);
     r.ordnance = r.ordnance.filter((s) => s !== shot);
-    v.nextMissileAt = this.now() + 2000;
+    v.nextMissileAt = this.now() + 2000 / r.balance.fireRate;
   }
   advanceProximity(r, projectile, now, plan, framesAt) {
     const profile = HEAVY.proximity,
@@ -1743,7 +1830,7 @@ export class Game {
       at: this.now(),
     });
     const enemy = (index, damage) => {
-      const e = wavePlan(r.code, r.wave, r.started).roster[index];
+      const e = this.plan(r).roster[index];
       if (!e || r.kills.has(index)) return;
       r.enemyDamage[index] = (r.enemyDamage[index] || 0) + damage;
       if (r.enemyDamage[index] >= e.hp) {
@@ -1888,7 +1975,7 @@ export class Game {
     ledger.add(key);
   }
   hit(r, p, b) {
-    const e = wavePlan(r.code, r.wave, r.started).roster[b.enemy];
+    const e = this.plan(r).roster[b.enemy];
     if (
       p.life !== 'alive' ||
       r.phase !== 'combat' ||
@@ -1897,7 +1984,7 @@ export class Game {
       !e
     )
       return;
-    const amount = Math.max(1, Math.min(800, Number(b.amount) || 75));
+    const amount = Math.max(1, Math.min(800, Number(b.amount) || 75)) * r.balance.damage;
     this.once(
       r,
       JSON.stringify(['enemy', r.wave, b.enemy, p.id, String(b.shot || 'legacy').slice(0, 120)]),
@@ -1924,7 +2011,9 @@ export class Game {
         ? 10
         : p.mode === 'turret'
           ? Math.max(0, Math.min(200, Math.round(Number(b.amount) || 80)))
-          : (tankDamage ?? 75)) * (p.mode === 'foot' ? 1 : clauseFactors(this.clause(r, p)).damage);
+          : (tankDamage ?? 75)) *
+      (p.mode === 'foot' ? 1 : clauseFactors(this.clause(r, p)).damage) *
+      r.balance.damage;
     if (b.vehicle) {
       const v = r.vehicles.get(b.vehicle);
       requireGame(world(p) === 'office' && v, 'Appareil hors de cet espace.');
@@ -1973,7 +2062,7 @@ export class Game {
     requireGame(s?.kind === 'enemy' && s.realm === world(p), 'Âme absente.');
     this.once(r, JSON.stringify(['soul', s.id, p.id, b.shot]), () => {
       if (s.status === 'waiting') {
-        s.damage += 10;
+        s.damage += 10 * r.balance.damage;
         if (s.damage >= ENEMY_TYPES[s.enemy_type].hp) this.releaseSoul(r, s);
       }
     });

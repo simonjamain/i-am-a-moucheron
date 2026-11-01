@@ -107,9 +107,8 @@ snapshot = game.snapshot(r);
 assert.equal(snapshot.phase, 'prep');
 assert.equal(snapshot.dollars, 4);
 assert.equal(snapshot.souls.length, 24);
-r.wave = 100;
-r.phase = 'combat';
-r.started = now;
+r.wave = 99;
+game.startWave(r); // Build the room-local plan through the same transition as a real wave.
 snapshot = game.snapshot(r);
 assert.ok(snapshot.total > 180);
 const high = snapshot.total - 1;

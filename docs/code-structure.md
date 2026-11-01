@@ -117,3 +117,6 @@ client ; les [issues 15–17](issues-15-16-17.md) décrivent ce contrat et les n
 
 La [référence performance](performance.md) décrit la sélection spatiale des
 cibles des tirs, ses replis conservateurs et le benchmark CPU reproductible.
+
+Les [réglages d’équilibrage par room](room-balance.md) sont consultables par tous et
+modifiables à tout moment par le créateur de la room.
