@@ -1767,6 +1767,38 @@
         opacity: 1;
         border: 2px solid #fff5b1;
       }
+      #balancePanel {
+        z-index: 100;
+      }
+      #balancePanel [data-balance-fields] {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(min(270px, 100%), 1fr));
+        gap: 16px;
+        margin: 20px 0;
+      }
+      #balancePanel label {
+        display: grid;
+        gap: 6px;
+      }
+      #balancePanel input {
+        width: 100%;
+        padding: 8px;
+        color: #253c2d;
+        background: #fffbea;
+        border: 1px solid #6d7756;
+        font: inherit;
+      }
+      #balancePanel small {
+        font: 13px/1.4 sans-serif;
+      }
+      #balancePanel footer {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+      #balancePanel [data-balance-status] {
+        min-height: 2em;
+      }
     </style>
     <style>
       #papers #paperBody {
@@ -1965,7 +1997,7 @@
       #aimRange small {
         font-size: 9px;
       }
-      :is(#bank, :is(#bedPanel, #purchasePanel)) {
+      :is(#bank, :is(#bedPanel, #purchasePanel, #balancePanel)) {
         position: fixed;
         inset: 0;
         z-index: 45;
@@ -1974,7 +2006,7 @@
         background: #09211bd6;
         padding: 20px;
       }
-      :is(#bank, :is(#bedPanel, #purchasePanel)) > article {
+      :is(#bank, :is(#bedPanel, #purchasePanel, #balancePanel)) > article {
         width: min(1080px, 100%);
         max-height: 90dvh;
         overflow: auto;
@@ -1985,28 +2017,28 @@
         box-shadow: 0 14px 60px #0007;
         font-family: Georgia, serif;
       }
-      :is(#bank, :is(#bedPanel, #purchasePanel)) header {
+      :is(#bank, :is(#bedPanel, #purchasePanel, #balancePanel)) header {
         position: static;
         display: flex;
         align-items: start;
         justify-content: space-between;
         gap: 20px;
       }
-      :is(#bank, :is(#bedPanel, #purchasePanel)) h2 {
+      :is(#bank, :is(#bedPanel, #purchasePanel, #balancePanel)) h2 {
         margin: 0 0 8px;
         font-size: 30px;
         font-style: italic;
         font-weight: 400;
       }
-      :is(#bank, :is(#bedPanel, #purchasePanel)) h3 {
+      :is(#bank, :is(#bedPanel, #purchasePanel, #balancePanel)) h3 {
         font-size: 32px;
         font-weight: 400;
         margin: 22px 0;
       }
-      :is(#bank, :is(#bedPanel, #purchasePanel)) p {
+      :is(#bank, :is(#bedPanel, #purchasePanel, #balancePanel)) p {
         line-height: 1.6;
       }
-      :is(#bank, :is(#bedPanel, #purchasePanel)) button {
+      :is(#bank, :is(#bedPanel, #purchasePanel, #balancePanel)) button {
         background: #294938;
         color: #f3edcf;
         padding: 10px 14px;
@@ -2014,37 +2046,37 @@
         border-radius: 4px;
         cursor: pointer;
       }
-      :is(#bank, :is(#bedPanel, #purchasePanel)) button:disabled {
+      :is(#bank, :is(#bedPanel, #purchasePanel, #balancePanel)) button:disabled {
         opacity: 0.5;
         cursor: default;
       }
-      :is(#bank, :is(#bedPanel, #purchasePanel)) [data-bank-cards] {
+      :is(#bank, :is(#bedPanel, #purchasePanel, #balancePanel)) [data-bank-cards] {
         display: grid;
         grid-template-columns: repeat(3, minmax(0, 1fr));
         gap: 16px;
         margin: 20px 0;
       }
-      :is(#bank, :is(#bedPanel, #purchasePanel)) [data-bank-cards] article {
+      :is(#bank, :is(#bedPanel, #purchasePanel, #balancePanel)) [data-bank-cards] article {
         padding: 18px;
         border: 1px solid #a7a17c;
         background: #fff8df55;
       }
-      :is(#bank, :is(#bedPanel, #purchasePanel)) [data-bank-cards] button {
+      :is(#bank, :is(#bedPanel, #purchasePanel, #balancePanel)) [data-bank-cards] button {
         display: block;
         width: 100%;
         margin-top: 14px;
       }
-      :is(#bank, :is(#bedPanel, #purchasePanel)) [data-bank-cards] small {
+      :is(#bank, :is(#bedPanel, #purchasePanel, #balancePanel)) [data-bank-cards] small {
         letter-spacing: 1px;
       }
-      :is(#bank, :is(#bedPanel, #purchasePanel)) [data-bank-status] {
+      :is(#bank, :is(#bedPanel, #purchasePanel, #balancePanel)) [data-bank-status] {
         min-height: 1.5em;
         font-weight: bold;
       }
-      :is(#bank, :is(#bedPanel, #purchasePanel)) [data-bank-text] {
+      :is(#bank, :is(#bedPanel, #purchasePanel, #balancePanel)) [data-bank-text] {
         white-space: pre-line;
       }
-      :is(#bank, :is(#bedPanel, #purchasePanel)) canvas {
+      :is(#bank, :is(#bedPanel, #purchasePanel, #balancePanel)) canvas {
         width: min(100%, 650px);
         height: 150px;
         touch-action: none;
@@ -2052,23 +2084,23 @@
         display: block;
         background: #fff9e5;
       }
-      :is(#bank, :is(#bedPanel, #purchasePanel)) .bankTable {
+      :is(#bank, :is(#bedPanel, #purchasePanel, #balancePanel)) .bankTable {
         overflow: auto;
         margin: 15px 0;
       }
-      :is(#bank, :is(#bedPanel, #purchasePanel)) table {
+      :is(#bank, :is(#bedPanel, #purchasePanel, #balancePanel)) table {
         width: 100%;
         border-collapse: collapse;
         font-size: 12px;
       }
-      :is(#bank, :is(#bedPanel, #purchasePanel)) th,
-      :is(#bank, :is(#bedPanel, #purchasePanel)) td {
+      :is(#bank, :is(#bedPanel, #purchasePanel, #balancePanel)) th,
+      :is(#bank, :is(#bedPanel, #purchasePanel, #balancePanel)) td {
         padding: 8px;
         text-align: left;
         border-bottom: 1px solid #b6b18c;
         white-space: nowrap;
       }
-      :is(#bank, :is(#bedPanel, #purchasePanel)) .bankHint {
+      :is(#bank, :is(#bedPanel, #purchasePanel, #balancePanel)) .bankHint {
         font-size: 12px;
       }
       @media (max-width: 700px) {
@@ -2106,13 +2138,13 @@
           top: 34px;
           bottom: auto;
         }
-        :is(#bank, :is(#bedPanel, #purchasePanel)) {
+        :is(#bank, :is(#bedPanel, #purchasePanel, #balancePanel)) {
           padding: 8px;
         }
-        :is(#bank, :is(#bedPanel, #purchasePanel)) > article {
+        :is(#bank, :is(#bedPanel, #purchasePanel, #balancePanel)) > article {
           padding: 14px;
         }
-        :is(#bank, :is(#bedPanel, #purchasePanel)) [data-bank-cards] {
+        :is(#bank, :is(#bedPanel, #purchasePanel, #balancePanel)) [data-bank-cards] {
           grid-template-columns: 1fr;
         }
       }
@@ -2297,6 +2329,38 @@
       #placementControls {
         bottom: 100px;
       }
+      #balancePanel {
+        z-index: 100;
+      }
+      #balancePanel [data-balance-fields] {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(min(270px, 100%), 1fr));
+        gap: 16px;
+        margin: 20px 0;
+      }
+      #balancePanel label {
+        display: grid;
+        gap: 6px;
+      }
+      #balancePanel input {
+        width: 100%;
+        padding: 8px;
+        color: #253c2d;
+        background: #fffbea;
+        border: 1px solid #6d7756;
+        font: inherit;
+      }
+      #balancePanel small {
+        font: 13px/1.4 sans-serif;
+      }
+      #balancePanel footer {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+      #balancePanel [data-balance-status] {
+        min-height: 2em;
+      }
     </style>
   </head>
   <body>
@@ -2381,6 +2445,7 @@
         </div>
       </div>
       <div id="roomTag">
+        <button id="balanceOpen">Équilibrage</button>
         <button id="share" title="Copier le lien de la partie">
           ↗ <span id="roomCode">BUREAU</span>
         </button>
@@ -2591,6 +2656,33 @@
         <canvas width="800" height="200" aria-label="Signer le bon de commande"></canvas
         ><button data-bed-clear>Effacer</button>
         <p data-bed-status role="status" aria-live="polite"></p>
+      </article>
+    </section>
+    <section
+      id="balancePanel"
+      class="hidden"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="balanceTitle"
+    >
+      <article>
+        <header>
+          <div>
+            <h2 id="balanceTitle">Équilibrage de la room</h2>
+            <p>
+              Réglages partagés, modifiables à tout moment par le créateur. La partie continue
+              pendant les ajustements.
+            </p>
+          </div>
+          <button data-balance-close aria-label="Fermer l’équilibrage">✕</button>
+        </header>
+        <div data-balance-fields></div>
+        <p data-balance-status role="status" aria-live="polite"></p>
+        <footer>
+          <button data-balance-save>Appliquer à la room</button>
+          <button data-balance-defaults>Valeurs par défaut</button>
+          <button data-balance-reload>Recharger les valeurs</button>
+        </footer>
       </article>
     </section>
     <section id="bank" class="hidden" role="dialog" aria-modal="true" aria-labelledby="bankTitle">

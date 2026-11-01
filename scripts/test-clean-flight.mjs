@@ -385,6 +385,7 @@ const c = {
   purchaseUI: { opened: false },
   bedUI: { opened: false },
   bankUI: { opened: false },
+  balanceUI: { opened: false },
   myVehicle: { type: 'tank' },
   respawnAt: 0,
   crewSeat: 'pilot',
@@ -479,6 +480,11 @@ ui.canvas.onpointerup({ ...e, clientX: 90 });
 await new Promise((r) => setImmediate(r));
 assert.equal(submitted, 1);
 assert.equal(archived, 1);
+ss.balance = { prices: 2 };
+ui.open('radar', { life: 'alive', incarnation: 0 });
+assert.equal(ui.price, 8, 'signed order must use the same scaled quote as the workshop and server');
+assert.match(root.querySelector('[data-bed-text]').textContent, /8 \$/);
+ui.close();
 console.log(
   'Purchase UI: live price, actual pointer cancel and release, single signed command and ACK archive.',
 );

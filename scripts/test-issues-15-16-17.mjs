@@ -98,6 +98,7 @@ const input = {
   purchaseUI: { opened: false },
   bedUI: { opened: false },
   bankUI: { opened: false },
+  balanceUI: { opened: false },
   myVehicle: { type: 'helicopter' },
   crewSeat: 'pilot',
   respawnAt: 0,

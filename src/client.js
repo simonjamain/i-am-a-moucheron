@@ -1,3 +1,4 @@
+import { BalanceUI } from '/balance-ui.js';
 import { deliveryHeightAt } from '/delivery.js';
 import { reserveAlerts, missileStatus, ArrivalSignals } from '/reserve-feedback.js';
 import { controlHints, cursorStats, cursorAmmoText } from '/live-hud.js';
@@ -367,6 +368,7 @@ function groundActive() {
     $('help').classList.contains('hidden') &&
     $('bedPanel').classList.contains('hidden') &&
     $('purchasePanel').classList.contains('hidden') &&
+    $('balancePanel').classList.contains('hidden') &&
     $('bank').classList.contains('hidden') &&
     $('shop').classList.contains('hidden') &&
     controlFocus.active
@@ -676,6 +678,7 @@ function canCapture() {
     $('papers').classList.contains('hidden') &&
     $('help').classList.contains('hidden') &&
     $('shop').classList.contains('hidden') &&
+    $('balancePanel').classList.contains('hidden') &&
     $('bank').classList.contains('hidden') &&
     $('bedPanel').classList.contains('hidden') &&
     $('purchasePanel').classList.contains('hidden')
@@ -868,7 +871,12 @@ function accept(s, force = false) {
     signalSince = Math.max(signalSince, ...s.signals.map((m) => m.id));
     peerMotion?.receive(s.signals);
   }
-  if (snap && s.now < snap.now) return;
+  if (
+    snap &&
+    (s.now < snap.now ||
+      (s.now === snap.now && (s.balanceRevision ?? 0) < (snap.balanceRevision ?? 0)))
+  )
+    return;
   if (globalThis.MOUCHERON_UDP) peerMotion?.observe(s, id);
   const previous = snap;
   if (previous && previous.base?.epoch !== s.base?.epoch) {
@@ -946,6 +954,14 @@ function accept(s, force = false) {
     respawn();
   }
   rewardQueue.observe(s.rewardCount, !!previous && previous.base?.epoch !== s.base?.epoch);
+  if (
+    previous?.balance &&
+    previous.balance.enemyHP !== s.balance?.enemyHP &&
+    previous.wave === s.wave
+  ) {
+    const ratio = s.balance.enemyHP / previous.balance.enemyHP;
+    for (const [enemy, damage] of localEnemyDamage) localEnemyDamage.set(enemy, damage * ratio);
+  }
   snap = s;
   bedUI.observe(self);
   purchaseUI.observe(self);
@@ -953,6 +969,7 @@ function accept(s, force = false) {
   reconcileEquipment([...(s.equipment || []), s.initialStation].filter(Boolean));
   renderShop();
   bankUI.render();
+  balanceUI.render();
   if (s.base && s.base.revision > baseRevision) {
     if (baseArena?.epoch !== s.base.epoch) baseAudioSeq = 0;
     baseArena = acceptGround(s.base, baseArena);
@@ -1252,7 +1269,7 @@ $('share').onclick = async () => {
 };
 $('helpButton').onclick = () => {
   releaseMouse();
-  if (bankUI.opened || bedUI.opened || purchaseUI.opened) return;
+  if (balanceUI.opened || bankUI.opened || bedUI.opened || purchaseUI.opened) return;
   $('help').classList.remove('hidden');
 };
 $('closeHelp').onclick = () => {
@@ -1260,6 +1277,10 @@ $('closeHelp').onclick = () => {
   captureMouse();
 };
 addEventListener('keydown', (event) => {
+  if (event.code === 'Escape' && balanceUI.opened) {
+    balanceUI.close();
+    return;
+  }
   if (!joined || spectating) return;
   if (event.code === 'Escape') {
     if (purchaseUI.opened) {
@@ -1293,7 +1314,7 @@ addEventListener('keydown', (event) => {
     toggleBank();
     return;
   }
-  if (bankUI.opened || bedUI.opened || purchaseUI.opened) return;
+  if (balanceUI.opened || bankUI.opened || bedUI.opened || purchaseUI.opened) return;
   const exitAction = equipmentExitAction({
     key: interactionKey,
     repeat: event.repeat,
@@ -1327,6 +1348,7 @@ addEventListener('keydown', (event) => {
     $('papers').classList.contains('hidden') &&
     $('bedPanel').classList.contains('hidden') &&
     $('purchasePanel').classList.contains('hidden') &&
+    $('balancePanel').classList.contains('hidden') &&
     $('bank').classList.contains('hidden') &&
     $('shop').classList.contains('hidden') &&
     toggleParachute(selfBase())
@@ -1807,6 +1829,7 @@ function renderPaper() {
     eligible = true;
   }
   const visible =
+    !balanceUI.opened &&
     !bankUI.opened &&
     !bedUI.opened &&
     !purchaseUI.opened &&
@@ -1992,7 +2015,7 @@ $('soulPaperButton').onclick = () => {
 $('boardButton').onclick = openBoarding;
 $('baseHelp').onclick = () => {
   releaseMouse();
-  if (bankUI.opened || bedUI.opened || purchaseUI.opened) return;
+  if (balanceUI.opened || bankUI.opened || bedUI.opened || purchaseUI.opened) return;
   $('help').classList.remove('hidden');
 };
 const purgScene = new T.Scene();
@@ -2529,7 +2552,8 @@ function updateVehicles(dt) {
           ? HELI.gunInterval
           : myVehicle.type === 'tank'
             ? TANK_MG[currentAmmoKey()].interval
-            : 0.09) * currentFactors().interval;
+            : 0.09) *
+        (currentFactors().interval / (snap?.balance?.fireRate ?? 1));
       bullet(view.muzzle, spreadDirection(T, dir), '#f4efab', true);
     }
     if (!shooting) cooldown = Math.max(0, cooldown);
@@ -2567,13 +2591,19 @@ function updateVehicles(dt) {
       shooting = (controlFocus.active && (mouseFire || keys.Space || pad.fire)) || uiWeaponFire;
       if (shooting && performance.now() > gun.userData.shotAt) {
         gun.userData.shotAt =
-          performance.now() + FLAK.interval * 1000 * (self ? currentFactors().interval : 1);
+          performance.now() +
+          FLAK.interval *
+            1000 *
+            ((self ? currentFactors().interval : 1) / (snap?.balance?.fireRate ?? 1));
         gun.userData.barrel++;
         bullet(muzzle, dir, '#ffe49b', true, true);
       }
     } else if (motion.fire && performance.now() > gun.userData.shotAt) {
       gun.userData.shotAt =
-        performance.now() + FLAK.interval * 1000 * (self ? currentFactors().interval : 1);
+        performance.now() +
+        FLAK.interval *
+          1000 *
+          ((self ? currentFactors().interval : 1) / (snap?.balance?.fireRate ?? 1));
       gun.userData.barrel++;
       bullet(muzzle, dir, '#91d9c4', false, true);
     }
@@ -2777,7 +2807,9 @@ function damageEnemy(enemy, amount, shot, point) {
   if (localKills.has(enemy)) return;
   const profile = currentRoster()[enemy];
   if (!profile) return;
-  const damage = (localEnemyDamage.get(enemy) || 0) + amount;
+  const damage =
+    (localEnemyDamage.get(enemy) || 0) +
+    Math.max(1, Math.min(800, amount)) * (snap.balance?.damage ?? 1);
   localEnemyDamage.set(enemy, damage);
   action('hit', { wave: snap.wave, enemy, amount, shot });
   if (damage >= profile.hp) {
@@ -2978,7 +3010,7 @@ function updateOthers(dt) {
                 : v.type === 'tank'
                   ? TANK_MG[seat === 'cannon' ? 'coax' : seat].interval
                   : 0.09) *
-                clauseFactors(gunner.contractClause).interval)
+                (clauseFactors(gunner.contractClause).interval / (snap?.balance?.fireRate ?? 1)))
         ) {
           const o = (
             v.type === 'tank' && seat === 'cannon'
@@ -2993,7 +3025,10 @@ function updateOthers(dt) {
       v.type !== 'bomber' &&
       motion.fire &&
       v.supplies?.ammo.pilot >= 1 &&
-      Math.random() < dt / (FIRE_INTERVAL * clauseFactors(p?.contractClause).interval)
+      Math.random() <
+        dt /
+          (FIRE_INTERVAL *
+            (clauseFactors(p?.contractClause).interval / (snap?.balance?.fireRate ?? 1)))
     ) {
       const direction = new T.Vector3(0, 0, -1).applyQuaternion(g.quaternion);
       if (v.type === 'spitfire') {
@@ -3380,7 +3415,8 @@ function physics(dt) {
     shooting = myVehicle.type === 'tank' && active && hasAmmo() && (mouseFire || manual.fire);
     cooldown -= dt;
     if (shooting && cooldown <= 0) {
-      cooldown = TANK_MG.pilot.interval * currentFactors().interval;
+      cooldown =
+        TANK_MG.pilot.interval * (currentFactors().interval / (snap?.balance?.fireRate ?? 1));
       shoot(new T.Vector3(0, 0, -1).applyQuaternion(me.quaternion));
     }
     return;
@@ -3458,7 +3494,7 @@ function physics(dt) {
   shooting =
     active && myVehicle && myVehicle.type !== 'bomber' && hasAmmo() && (manual.fire || mouseFire);
   if (shooting && cooldown <= 0 && hp > 0) {
-    cooldown += FIRE_INTERVAL * currentFactors().interval;
+    cooldown += FIRE_INTERVAL * (currentFactors().interval / (snap?.balance?.fireRate ?? 1));
     shoot(forward);
   }
   if (!shooting) cooldown = Math.max(0, cooldown);
@@ -3900,7 +3936,7 @@ for (const [kind, model] of Object.entries(ghosts)) {
   });
 }
 function toggleShop() {
-  if (bankUI.opened || bedUI.opened || purchaseUI.opened) return;
+  if (balanceUI.opened || bankUI.opened || bedUI.opened || purchaseUI.opened) return;
   if (!joined || respawnAt || !$('papers').classList.contains('hidden')) return;
   if (placingEquipment) cancelPlacement();
   const open = $('shop').classList.contains('hidden');
@@ -3934,7 +3970,7 @@ function renderShop() {
       button = document.createElement('button'),
       level = snap.upgrades?.[item] || 0,
       owned = !myVehicle && snap.purchases?.find((o) => o.owner === id && o.item === item),
-      price = shopPrice(item, snap.upgrades, purchaseCount(snap, item));
+      price = shopPrice(item, snap.upgrades, purchaseCount(snap, item), snap.balance);
     title.textContent = profile.name + (profile.max > 1 ? ' · ' + level + '/' + profile.max : '');
     text.textContent = profile.description;
     button.textContent =
@@ -3976,7 +4012,7 @@ async function purchase(item) {
       await api('buy', {
         id,
         item,
-        expectedPrice: shopPrice(item, snap.upgrades, purchaseCount(snap, item)),
+        expectedPrice: shopPrice(item, snap.upgrades, purchaseCount(snap, item), snap.balance),
         request:
           globalThis.crypto?.randomUUID?.() ||
           Date.now().toString(36) +
@@ -4606,8 +4642,8 @@ async function fireHeavy(weapon = null) {
     HEAVY[weapon].interval *
       1000 *
       (['rocket', 'proximity'].includes(weapon)
-        ? Math.max(1, currentFactors().interval)
-        : currentFactors().interval);
+        ? Math.max(1, currentFactors().interval) / (snap?.balance?.fireRate ?? 1)
+        : currentFactors().interval / (snap?.balance?.fireRate ?? 1));
   try {
     accept(
       await api('heavy-fire', {
@@ -4759,13 +4795,19 @@ function updateContextHUD() {
     });
     $('cursorHPbar').max = myVehicle?.type === 'helicopter' ? 200 : 100;
     $('cursorHPbar').value = stats.hp;
-    $('cursorAmmoBar').max = Math.max(1, ammoCapacity(myVehicle.type, currentAmmoKey()));
+    $('cursorAmmoBar').max = Math.max(
+      1,
+      ammoCapacity(myVehicle.type, currentAmmoKey(), snap.balance),
+    );
     $('cursorAmmoBar').value = stats.ammo;
     $('cursorAmmoBar').classList.toggle(
       'hidden',
-      ammoCapacity(myVehicle.type, currentAmmoKey()) <= 0,
+      ammoCapacity(myVehicle.type, currentAmmoKey(), snap.balance) <= 0,
     );
-    const fuelPercent = Math.max(0, Math.min(100, (remainingFuel() / 300) * 100));
+    const fuelPercent = Math.max(
+      0,
+      Math.min(100, (remainingFuel() / (300 * (snap.balance?.fuel ?? 1))) * 100),
+    );
     const power = Math.max(
       0,
       Math.min(100, (crewSeat === 'pilot' ? gas : myVehicle.state.gas || 0) * 100),
@@ -4796,6 +4838,39 @@ function updateContextHUD() {
     $('aimRange').style.top = `calc(${$('crosshair').style.top || '50%'} + 18px)`;
   }
 }
+const balanceUI = new BalanceUI({
+  root: $('balancePanel'),
+  document,
+  snapshot: () => snap,
+  player: () => id,
+  command: (body) => api('balance', { id, ...body }),
+  accept,
+  onOpen: () => {
+    releaseMouse();
+    clearControls();
+    cancelPlacement();
+    $('shop').classList.add('hidden');
+    $('help').classList.add('hidden');
+    renderPaper();
+  },
+  onClose: () => {
+    renderPaper();
+    captureMouse();
+  },
+});
+$('balanceOpen').onclick = () => {
+  if (
+    !joined ||
+    bankUI.opened ||
+    bedUI.opened ||
+    purchaseUI.opened ||
+    boardingBusy ||
+    soulBusy ||
+    boardingSelectionBusy
+  )
+    return;
+  balanceUI.open();
+};
 const bankUI = new BankUI({
   root: $('bank'),
   document,
@@ -4824,7 +4899,7 @@ const bankUI = new BankUI({
 });
 function toggleBank() {
   if (spectating) return;
-  if (bedUI.opened || purchaseUI.opened) return;
+  if (balanceUI.opened || bedUI.opened || purchaseUI.opened) return;
   if (!joined || boardingBusy || soulBusy || boardingSelectionBusy) return;
   if (bankUI.opened) bankUI.close();
   else bankUI.open();

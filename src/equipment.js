@@ -85,7 +85,8 @@ export const SHOP = Object.freeze({
     description: '+75 dégâts des mitrailleuses par niveau ; pistolet inchangé.',
   },
 });
-export function shopPrice(key, upgrades = {}, installed = 0) {
+export function shopPrice(key, upgrades = {}, installed = 0, balance = null) {
+  if (balance) return Math.round(shopPrice(key, upgrades, installed) * balance.prices * 100) / 100;
   const item = SHOP[key];
   if (!item) return Infinity;
   if (['dca', 'refuel', 'radar', 'bed'].includes(key))

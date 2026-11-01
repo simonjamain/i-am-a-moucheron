@@ -4,7 +4,8 @@ import { TANK_MG } from './armament.js';
 export const FUEL_SECONDS = 300;
 export const SERVICE_SECONDS = 10;
 export const SERVICE_RADIUS = 0.12;
-export function ammoCapacity(type, seat) {
+export function ammoCapacity(type, seat, balance = null) {
+  if (balance) return Math.round(ammoCapacity(type, seat) * balance.ammo);
   if (type === 'helicopter')
     return seat === 'rocket' ? 30 : seat === 'missile' ? 10 : seat === 'copilot' ? 1000 : 0;
   if (type === 'flaktruck') return seat === 'proximity' ? 100 : 0;
@@ -21,7 +22,7 @@ export function ammoCapacity(type, seat) {
     ? 0
     : Math.round(60 / (seat === 'pilot' ? 0.06 : 0.09));
 }
-export function fullAmmo(type) {
+export function fullAmmo(type, balance = null) {
   const keys =
     type === 'helicopter'
       ? ['rocket', 'missile', 'copilot']
@@ -33,7 +34,7 @@ export function fullAmmo(type) {
               ...VEHICLES[type].seats,
               ...(['interceptor', 'bomber'].includes(type) ? ['bomb'] : []),
             ];
-  return Object.fromEntries(keys.map((s) => [s, ammoCapacity(type, s)]));
+  return Object.fromEntries(keys.map((s) => [s, ammoCapacity(type, s, balance)]));
 }
 export function inRadarCoverage(position, installations) {
   return installations.some(
@@ -53,15 +54,16 @@ export function serviceEligible(state, installations, type) {
     )
   );
 }
-export function advanceSupplies(supply, state, type, installations, dt) {
+export function advanceSupplies(supply, state, type, installations, dt, balance = null) {
+  const capacity = FUEL_SECONDS * (balance?.fuel ?? 1);
   const servicing = serviceEligible(state, installations, type);
   const fuel = Math.max(
     0,
     Math.min(
-      FUEL_SECONDS,
+      capacity,
       supply.fuel +
         (servicing
-          ? FUEL_SECONDS / SERVICE_SECONDS
+          ? capacity / SERVICE_SECONDS
           : state.engine
             ? type === 'helicopter'
               ? state.landed
@@ -74,10 +76,10 @@ export function advanceSupplies(supply, state, type, installations, dt) {
   );
   const ammo = { ...supply.ammo };
   if (servicing)
-    for (const seat of Object.keys(fullAmmo(type)))
+    for (const seat of Object.keys(fullAmmo(type, balance)))
       ammo[seat] = Math.min(
-        ammoCapacity(type, seat),
-        (ammo[seat] || 0) + (ammoCapacity(type, seat) * dt) / SERVICE_SECONDS,
+        ammoCapacity(type, seat, balance),
+        (ammo[seat] || 0) + (ammoCapacity(type, seat, balance) * dt) / SERVICE_SECONDS,
       );
   return { fuel, ammo, servicing };
 }

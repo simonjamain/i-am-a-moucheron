@@ -138,3 +138,6 @@ physiques, sons/HUD, livraisons sous parachute et parcours du purgatoire.
 
 Les [correctifs des issues 15–17](docs/issues-15-16-17.md) couvrent la descente
 continue des colis, le nouveau mapping H2 et le ralentissement terrestre supplémentaire.
+
+Les [réglages d’équilibrage par room](docs/room-balance.md) sont consultables par tous et
+modifiables à tout moment par le créateur de la room.
