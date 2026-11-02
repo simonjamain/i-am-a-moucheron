@@ -44,6 +44,7 @@ import { stationAccess } from '../src/sortie.js';
 import { validMotion } from '../src/network.js';
 import { newBank, signLoan, settleLoans, repayLoan } from '../src/bank.js';
 import { canUseWeapon, HEAVY, TANK_MG, availableShell } from '../src/armament.js';
+import { sweptSphereMayTouch } from '../src/swept-broadphase.js';
 import { createOrdnance, integrateOrdnance, segmentSphere, segmentBox } from '../src/ordnance.js';
 import { heavyDamage } from '../src/armament.js';
 
@@ -1173,6 +1174,8 @@ export class Game {
         const radius = MAP.metres(
           plan.roster[i].size * 0.7 * enemySizeFactor(plan.roster[i].type) + 0.3,
         );
+        // Fast conservative swept AABB reject; never skip an exact contact.
+        if (!sweptSphereMayTouch(previous, v.state.p, frame.p, radius)) return;
         const touching = Math.hypot(...v.state.p.map((n, j) => n - frame.p[j])) <= radius;
         const impact = touching || segmentSphere(previous, v.state.p, frame.p, radius) !== null;
         if (impact && !latched.has(i)) {

@@ -85,3 +85,26 @@ jobs:
         run: node scripts/assemble.mjs
       - name: Connect 50 real WebRTC UDP peers
         run: node scripts/test-udp-capacity-50.mjs
+
+  physics-regression:
+    name: Physics contact regression and 50x900 benchmark
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Check conservative collision broad phase
+        run: node scripts/test-swept-broadphase.mjs
+      - name: Benchmark 50 vehicles and 900 enemies
+        run: npm run bench:swarm-50
+      - name: Check formatting
+        run: npx prettier --check src/swept-broadphase.js server/game.js scripts/test-swept-broadphase.mjs scripts/benchmark-swept-broadphase.mjs
