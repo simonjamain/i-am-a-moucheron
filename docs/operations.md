@@ -132,3 +132,19 @@ n’est revendiqué par la seule présence de ces instructions.
 
 Le [lot de retours du 30 octobre, version 48](returns-30-october.md) décrit les correctifs
 physiques, sons/HUD, livraisons sous parachute et parcours du purgatoire.
+
+## Mesure reproductible des snapshots (50 joueurs)
+
+Après `npm ci`, exécuter `node scripts/benchmark-snapshot-50.mjs` depuis un
+clone Git complet. Le script compare l'implémentation avant l'optimisation
+(commit `2f02d128997b8ffadfc9f4ba43afd1b6ebfe3442`) à l'implémentation
+courante sur un même état de salle : 50 pilotes, des commandes en attente et
+une file de PNJ. Il neutralise `advance()` pour isoler **la construction des
+snapshots** et vérifie que leurs contenus restent identiques. Il affiche
+les médianes CPU et un ratio, sans prétendre mesurer le réseau, la physique,
+le rendu WebGL ou 50 utilisateurs réels.
+
+La CI des PR exécute ce benchmark et le test de domaine de 50 participants
+en plus de la construction Docker. Pour une validation de capacité, instrumenter
+une partie UDP avec 50 clients indépendants et relever FPS, délai des commandes,
+débit, CPU et mémoire.

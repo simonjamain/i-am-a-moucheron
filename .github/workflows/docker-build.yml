@@ -36,3 +36,27 @@ jobs:
           tags: i-am-a-moucheron:check
           cache-from: type=gha,scope=docker-validation
           cache-to: type=gha,scope=docker-validation,mode=max
+
+  snapshot-benchmark:
+    name: 50-player snapshot comparison
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout full history for baseline comparison
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Build game assets
+        run: node scripts/assemble.mjs
+      - name: Run 50-player snapshot regression
+        run: node scripts/test-ram-game.mjs
+      - name: Compare baseline and current snapshot CPU time
+        run: node scripts/benchmark-snapshot-50.mjs
