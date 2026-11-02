@@ -25,6 +25,7 @@ import { AircraftFire } from '/aircraft-fire.js';
 import { inRadarCoverage } from '/logistics.js';
 import { maliciousDocument, clauseFactors } from '/malice.js';
 import { InsectStatus, insectScale } from '/insect-status.js';
+import { BloodEffects } from '/blood-effects.js';
 import { stepVacantAircraft } from '/vacant-flight.js';
 import { CONTRACTS, ContractBook, contractKey } from '/contracts.js';
 import { RewardQueue } from '/rewards.js';
@@ -173,6 +174,7 @@ const zoomScope = () =>
     : null;
 camera.position.set(-1.65, 1.05, 2.6);
 const hitEffects = new HitEffects(T, scene, { scale: ACTOR_UNIT });
+const bloodEffects = new BloodEffects(T, scene);
 const insectStatus = new InsectStatus(T, scene, { scale: INSECT_SCALE });
 const combatEffects = new CombatEffects(T, scene);
 const crashEffects = new CrashEffects(T, scene, {
@@ -1091,11 +1093,38 @@ function accept(s, force = false) {
     notify('Tir allié ! −' + event.amount + ' PV', 1);
     if (hp <= 0) crash();
   }
+  // Cumulative server damage reveals hits by other players without replaying
+  // already rendered local impacts or old damage on a late join.
+  const replicatedBlood = new Set();
+  if (!respawnAt && previous && s.wave === previous.wave && s.base?.epoch === previous.base?.epoch)
+    for (const [enemy, damage] of Object.entries(s.enemyDamage || {})) {
+      const index = Number(enemy);
+      if (
+        damage <= (previous.enemyDamage?.[enemy] || 0) ||
+        damage <= (localEnemyDamage.get(index) || 0)
+      )
+        continue;
+      const model = insects.get(index);
+      const profile = s.roster?.[index];
+      if (model && profile) {
+        bloodEffects.burst(model.position, {
+          size: insectScale(profile.type, INSECT_SCALE, profile.size),
+        });
+        replicatedBlood.add(index);
+      }
+    }
   if (!respawnAt && previous && s.wave === previous.wave)
     for (const killed of s.kills)
       if (!previous.kills.includes(killed)) {
         const pos = insects.get(killed)?.position;
         if (pos) {
+          if (!replicatedBlood.has(killed)) {
+            const profile = s.roster?.[killed];
+            if (profile)
+              bloodEffects.burst(pos, {
+                size: insectScale(profile.type, INSECT_SCALE, profile.size),
+              });
+          }
           fallEnemy(killed);
           sound.play('impact', pos, { key: 'kill:' + s.wave + ':' + killed, cooldown: 2, ref: 9 });
         }
@@ -1135,6 +1164,7 @@ function accept(s, force = false) {
     notify('Vague en cours · ces ennemis sont déjà en route', 4);
   if (s.wave !== lastWave) {
     hitEffects.clear();
+    bloodEffects.clear();
     insectStatus.clear();
     for (const c of fallingEnemies) disposeCorpse(c);
     fallingEnemies.length = 0;
@@ -2811,16 +2841,14 @@ function damageEnemy(enemy, amount, shot, point) {
     (localEnemyDamage.get(enemy) || 0) +
     Math.max(1, Math.min(800, amount)) * (snap.balance?.damage ?? 1);
   localEnemyDamage.set(enemy, damage);
+  bloodEffects.burst(point, { size: insectScale(profile.type, INSECT_SCALE, profile.size) });
   action('hit', { wave: snap.wave, enemy, amount, shot });
   if (damage >= profile.hp) {
     localKills.add(enemy);
     fallEnemy(enemy);
     sound.play('confirm', point, { ref: 10, cooldown: 0.06, key: 'kill' });
     notify(profile.name + ' intercepté', 0.7);
-  } else {
-    hitEffects.burst(point, camera);
-    sound.play('ricochet', point, { ref: 10 });
-  }
+  } else sound.play('ricochet', point, { ref: 10 });
 }
 let entryNoticeWave = -1;
 function enemies(now) {
@@ -3289,7 +3317,7 @@ function stepProjectileSlice(dt) {
           const impact = shellImpact(hit, b.travelled + hit.distance, MAP.metres(FLAK.minRange));
           if (impact.kind === 'blast') explosion(b, hit.point);
           else if (impact.kind === 'direct') {
-            hitEffects.burst(hit.point, camera);
+            if (hit.id === undefined || b.wave !== snap.wave) hitEffects.burst(hit.point, camera);
             if (hit.vehicle || hit.target)
               action('friendly-hit', {
                 vehicle: hit.vehicle,
@@ -3301,15 +3329,15 @@ function stepProjectileSlice(dt) {
               damageEnemy(hit.id, impact.damage * (b.damageFactor ?? 1), b.shot, hit.point);
           } else hitEffects.burst(hit.point, camera);
         } else {
-          hitEffects.burst(hit.point, camera, {
-            key: b.shot,
-          });
+          const enemyHit =
+            !hit.wall && hit.id !== undefined && b.wave === snap.wave && !localKills.has(hit.id);
+          if (!enemyHit) hitEffects.burst(hit.point, camera, { key: b.shot });
           sound.play('impact', hit.point, { ref: 12 });
           if (hit.vehicle)
             action('friendly-hit', { vehicle: hit.vehicle, shot: b.shot, weapon: b.weapon });
           else if (hit.target)
             action('friendly-hit', { target: hit.target, shot: b.shot, weapon: b.weapon });
-          else if (!hit.wall && b.wave === snap.wave && !localKills.has(hit.id)) {
+          else if (enemyHit) {
             damageEnemy(
               hit.id,
               b.baseDamage * (1 + (snap.upgrades?.weapons || 0)) * (b.damageFactor ?? 1),
@@ -3758,6 +3786,7 @@ function frame(now) {
     camera.updateProjectionMatrix();
   }
   hitEffects.update(dt, camera);
+  bloodEffects.update(dt);
   combatEffects.update(dt, camera);
   crashEffects.update(dt, colliders);
   previousPad = pad;

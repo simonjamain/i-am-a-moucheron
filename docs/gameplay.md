@@ -62,6 +62,13 @@ dans [véhicules et banque](vehicles-bank.md). Le HUD affiche les statistiques d
 en bas à gauche. Les anciens panneaux repliables sont masqués ; la jauge DCA reste. Le banquier (bouton ou N) propose trois emplacements
 de prêts partagés, consultables et signables dans tous les postes et mondes.
 
+Chaque impact infligeant des dégâts à un insecte déclenche une gerbe de grosses gouttes
+rouges, y compris sur un coup fatal. Cet effet purement visuel fonctionne aussi à partir
+des augmentations de dégâts reçues des autres joueurs (une gerbe au maximum par
+actualisation serveur), sans modifier les PV, le réseau ni la balistique.
+Les gouttes retombent, disparaissent rapidement et sont regroupées dans un seul
+maillage instancié plafonné à 240 particules. Les murs et les véhicules gardent
+leurs effets d'étincelles habituels ; aucun sang n'est ajouté aux joueurs.
 Les mitrailleuses tirent des traceurs légèrement dispersés depuis leurs canons.
 Les projectiles subissent gravité et traînée et sont supprimés après impact ou
 expiration. La DCA tire des obus à éclatement réglable en distance, à cadence
