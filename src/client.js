@@ -216,6 +216,9 @@ const others = new Map(),
   trails = [];
 const insectIndex = new InsectIndex(T, insects);
 const midgeBatch = new MidgeBatch(T, scene, { enabled: !!renderer.isWebGLRenderer });
+const midgeForward = new T.Vector3(0, 0, -1);
+const midgeHeading = new T.Vector3();
+const midgeTarget = new T.Quaternion();
 me.position.fromArray(aircraftPose(0).p);
 let joined = false,
   id = '',
@@ -882,6 +885,10 @@ function accept(s, force = false) {
       (s.now === snap.now && (s.balanceRevision ?? 0) < (snap.balanceRevision ?? 0)))
   )
     return;
+  // GameSession omits unchanged rosters on repeated sync replies.
+  // Reuse the previously acknowledged roster before any snapshot consumer runs.
+  if (!s.roster && snap && s.wave === snap.wave && s.started === snap.started)
+    s.roster = snap.roster;
   if (globalThis.MOUCHERON_UDP) peerMotion?.observe(s, id);
   const previous = snap;
   if (previous && previous.base?.epoch !== s.base?.epoch) {
@@ -2899,9 +2906,9 @@ function enemies(now) {
       const velocity = g.userData.velocity || (g.userData.velocity = new T.Vector3());
       velocity.set(dx / dt, dy / dt, dz / dt);
       if (g.userData.hasPosition && dx * dx + dy * dy + dz * dz > 1e-12) {
-        const forward = new T.Vector3(0, 0, -1);
-        const direction = new T.Vector3(dx, dy, dz).normalize();
-        g.quaternion.slerp(new T.Quaternion().setFromUnitVectors(forward, direction), 0.25);
+        midgeHeading.set(dx, dy, dz).normalize();
+        midgeTarget.setFromUnitVectors(midgeForward, midgeHeading);
+        g.quaternion.slerp(midgeTarget, 0.25);
       }
       g.position.set(x, y, z);
       g.userData.lastMoveAt = now;
