@@ -73,7 +73,10 @@ assert.equal(small.length, 10);
 assert.equal(large.length, 1000, 'debug counts stay exact');
 assert.ok(flocks.size >= 12, 'a thousand midges must form several flocks');
 assert.ok([...flocks.values()].every((members) => members.length <= 64));
-assert.equal(new Set([...flocks.values()].map((members) => enemyRoute(members[0]).portal)).size, 4);
+assert.equal(
+  new Set([...flocks.values()].map((members) => enemyRoute(members[0]).portal)).size,
+  4,
+);
 assert.ok(
   [...flocks.values()].every((members) =>
     members.every(

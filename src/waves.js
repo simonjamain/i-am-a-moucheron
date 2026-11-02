@@ -89,7 +89,8 @@ export function debugSwarmRoster(counts, { room, wave, started, now, balance, fi
         const ant = { ...enemy, ...ENEMY_TYPES.ant, type: 'ant' };
         const antSpeed = baselineTravelSpeed(ant, wave) * 0.25;
         const antSize = ENEMY_TYPES.ant.size * enemySizeFactor('ant');
-        enemy.travelSpeed = antSpeed * Math.min(1, antSize / (enemy.size * enemySizeFactor(type)));
+        enemy.travelSpeed =
+          antSpeed * Math.min(1, antSize / (enemy.size * enemySizeFactor(type)));
       }
       enemy.duration = enemy.entryHold + routeDuration(enemy);
       enemy.entryHold /= balance.enemySpeed;
@@ -119,16 +120,18 @@ export function assignMidgeSwarmSizes(roster) {
 }
 // Keep the director's composition and timetable, densify only the midge groups.
 export function expandMidgeSwarms(roster) {
-  return assignMidgeSwarmSizes(roster
-    .flatMap((enemy) =>
-      Array.from({ length: enemy.type === 'midge' ? MIDGE_SWARM_MULTIPLIER : 1 }, (_, member) => ({
-        ...enemy,
-        sourceId: enemy.id,
-        spawn: enemy.spawn + member * 0.07,
-        phase: enemy.phase + (member * Math.PI * 2) / MIDGE_SWARM_MULTIPLIER,
-      })),
-    )
-    .map((enemy, id) => ({ ...enemy, id })));
+  return assignMidgeSwarmSizes(
+    roster
+      .flatMap((enemy) =>
+        Array.from({ length: enemy.type === 'midge' ? MIDGE_SWARM_MULTIPLIER : 1 }, (_, member) => ({
+          ...enemy,
+          sourceId: enemy.id,
+          spawn: enemy.spawn + member * 0.07,
+          phase: enemy.phase + (member * Math.PI * 2) / MIDGE_SWARM_MULTIPLIER,
+        })),
+      )
+      .map((enemy, id) => ({ ...enemy, id })),
+  );
 }
 export function waveBudget(wave) {
   const n = Math.max(1, Math.floor(Number(wave) || 1));
