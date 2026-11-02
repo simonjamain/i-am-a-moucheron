@@ -55,8 +55,8 @@ les livraisons en cours. La limite des 24 installations reste propre à la pose
 à pied ; elle ne bloque pas les commandes aériennes. Des colonnes libres sont
 recherchées près du véhicule, hors de sa coque, pour le colis et sa voile.
 La descente constante valait alors **MAP.metres(1/3) = 0,001 m du monde/s** :
-trois secondes par mètre de référence (cadence remplacée en version 69,
-voir [correction des livraisons](issues-15-16-17.md#correction-de-la-vitesse-après-retour-en-jeu-version-69)).
+trois secondes par mètre de référence (cadence remplacée en version 70,
+voir [correction des livraisons](issues-15-16-17.md#correction-de-la-vitesse-après-retour-en-jeu-version-70)).
 La première surface portant toute l'emprise et gardant
 la hauteur libre reçoit l'objet, sans dégâts ni rebond. Les contacts latéraux
 ne constituent pas une réception. Les autres appareils et installations sont
