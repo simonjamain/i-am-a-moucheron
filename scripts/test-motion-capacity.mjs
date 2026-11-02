@@ -24,7 +24,7 @@ for (const count of [2, 39, 40, 50]) {
   });
   session.player = { code: room.code, id: player.id };
   for (let seq = 1; seq <= 20; seq++) {
-    const state = { ...vehicle.state, p: [seq / 100, 1, 0], fire: false };
+    const state = { ...vehicle.state, vehicle: vehicle.id, seat: 'pilot', p: [seq / 100, 1, 0], fire: false };
     session.motion(
       JSON.stringify({
         v: PROTOCOL,
