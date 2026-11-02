@@ -2,7 +2,9 @@ import assert from 'node:assert/strict';
 import { Game } from '../server/game.js';
 import { GameSession } from '../server/session.js';
 import { PROTOCOL, ReplyAssembler } from '../src/udp-protocol.js';
-let now = 123000, id = 0, chunks = [];
+let now = 123000,
+  id = 0,
+  chunks = [];
 const game = new Game({ now: () => now });
 const session = new GameSession(game, {
   now: () => now,
