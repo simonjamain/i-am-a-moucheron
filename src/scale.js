@@ -39,6 +39,8 @@ export const GROUND_FOOT_DEPTH =
   (GROUND_LEGS.length * Math.sin(GROUND_LEGS.tilt)) / 2 +
   (GROUND_LEGS.thickness * Math.cos(GROUND_LEGS.tilt)) / 2;
 export const INSECT_SCALE = MAP.metres(0.9 / 1.6);
+// Radius in unscaled midge-model coordinates; used by hitscan and the GPU batch.
+export const MIDGE_SPHERE_RADIUS = 1.5;
 export const REFERENCE = Object.freeze({
   walk: 6,
   enemy: 60 / 3.6,

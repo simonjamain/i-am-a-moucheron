@@ -154,6 +154,28 @@ export function entryStatus(enemy, time) {
         ? 'entry'
         : 'in-flight';
 }
+// Procedural midge offsets are independent of flock membership and frame history.
+function unitHash(id, seed) {
+  let h = Math.imul((id + 1) ^ (seed >>> 0), 0x9e3779b1) >>> 0;
+  h ^= h >>> 16;
+  h = Math.imul(h, 0x7feb352d) >>> 0;
+  h ^= h >>> 15;
+  h = Math.imul(h, 0x846ca68b) >>> 0;
+  return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
+}
+export function midgeDisplacement(enemy, time, envelope = 1) {
+  const id = enemy.id ?? 0;
+  const seed = enemy.routeSeed || 1;
+  const angle = unitHash(id, seed) * Math.PI * 2 + time * (0.14 + unitHash(id + 41, seed) * 0.16);
+  const radius = MAP.metres(4) * Math.sqrt(unitHash(id + 7, seed)) * envelope;
+  const vertical = (unitHash(id + 17, seed) - 0.5) * MAP.metres(5) * envelope;
+  return [
+    Math.cos(angle) * radius,
+    vertical + Math.sin(time * 0.9 + id * 0.37) * MAP.metres(0.75) * envelope,
+    Math.sin(angle) * radius,
+  ];
+}
+
 // Bounded, deterministic flock flow inspired by Reynolds' separation/cohesion/
 // alignment rules. No frame-history dependency: late joiners see the same flock.
 // The route guides each cluster; local steering offsets cannot skip the bin.
@@ -184,6 +206,10 @@ export function swarmFrame(roster, time) {
           amplitude *
           (Math.sin(time * (0.75 + j * 0.17) + phase + j * 2) * 0.65 +
             Math.sin(time * 0.23 + phase * 2 + j) * 0.35);
+    if (e.type === 'midge') {
+      const offset = midgeDisplacement(e, time, envelope);
+      for (let j = 0; j < 3; j++) p[j] += offset[j];
+    }
     return { p, dir: tangent.map((v) => v / length), envelope };
   });
   // A spatial grid keeps fivefold populations from multiplying global pair scans.
@@ -191,13 +217,14 @@ export function swarmFrame(roster, time) {
     buckets = new Map();
   const cell = (p) => p.map((v) => Math.floor(v / radius));
   for (let i = 0; i < samples.length; i++) {
-    if (!samples[i]) continue;
+    if (!samples[i] || roster[i].type === 'midge') continue;
     const key = cell(samples[i].p).join(':');
     if (!buckets.has(key)) buckets.set(key, []);
     buckets.get(key).push(i);
   }
   return samples.map((s, i) => {
     if (!s) return null;
+    if (roster[i].type === 'midge') return { p: s.p, dir: s.dir };
     const correction = [0, 0, 0];
     let neighbours = 0;
     const [cx, cy, cz] = cell(s.p),

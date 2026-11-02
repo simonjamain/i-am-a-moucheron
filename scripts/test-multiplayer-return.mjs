@@ -231,7 +231,7 @@ assert.equal(midge.userData.hitTolerance, 1.2);
 assert.equal(insectScale('midge', 1), 1.35 * 1.5 * 3);
 let tolerant = 0,
   exact = 0;
-for (let x = -0.008; x <= 0.008; x += 0.0001) {
+for (let x = -0.018; x <= 0.018; x += 0.0002) {
   const point = new T.Vector3(x, 0, 0);
   midge.userData.hitTolerance = 1;
   exact += !!nearestInsectHit(T, point, dir, new Map([[0, midge]]), 1);

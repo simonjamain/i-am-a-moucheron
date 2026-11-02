@@ -1,4 +1,4 @@
-import { GROUND_LEGS } from './scale.js';
+import { GROUND_LEGS, MIDGE_SPHERE_RADIUS } from './scale.js';
 export function createGraphics(T, scene) {
   const materials = new Map();
   function mat(c) {
@@ -380,6 +380,7 @@ export function createGraphics(T, scene) {
     g.userData.disposables = [wm];
     g.userData.wings = wings;
     g.userData.hitParts = [body, head, ...wings];
+    if (type === 'midge') g.userData.sphereRadius = MIDGE_SPHERE_RADIUS;
     scene.add(g);
     return g;
   }

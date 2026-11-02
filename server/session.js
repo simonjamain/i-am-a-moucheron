@@ -20,6 +20,7 @@ export class GameSession {
     this.count = 0;
     this.motionCount = 0;
     this.lastAt = now();
+    this.lastRosterKey = null;
   }
   rate(motion = false) {
     const now = this.now();
@@ -78,6 +79,16 @@ export class GameSession {
       } else {
         if (!this.player) throw Object.assign(Error('Rejoignez une salle.'), { status: 401 });
         body = this.game.command(this.player.code, this.player.id, m.path, m.body);
+      }
+      // Positions are reconstructed locally; do not resend the full (possibly
+      // 10k-element) immutable wave roster on every reliable sync request.
+      // A wave or balance revision always sends an authoritative new roster.
+      if (m.path === 'sync' && body?.roster) {
+        const key = [body.wave, body.started, body.balanceRevision].join(':');
+        if (key === this.lastRosterKey) {
+          body = { ...body };
+          delete body.roster;
+        } else this.lastRosterKey = key;
       }
       reply = { status: 200, body };
     } catch (e) {

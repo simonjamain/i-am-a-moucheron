@@ -50,3 +50,51 @@ n'impose plus les anciennes quantités 20 + 4 : deux fourmis restent garanties,
 les autres sources sont tirées au sort avec le budget 8, puis les moucherons sont
 multipliés par cinq. Les groupes suivent la même cadence à toutes les vagues.
 Voir [progression](progression.md) ; les nombres ci-dessus décrivent la version 38.
+
+## Nuées procédurales indépendantes — première version intégrée
+
+L'issue #39 décrit l'objectif de montée à **1 000, 5 000 puis 10 000 moucherons
+actifs**, sans promettre des FPS mesurés sur le navigateur ou le VPS.
+
+- `swarmFrame()` conserve le trajet initial des sources, mais la position de
+  chaque moucheron ajoute un décalage mathématique issu de son ID stable et de
+  `routeSeed`, avec une phase dépendant du temps et une enveloppe décroissant
+  aux extrémités du trajet. Les moucherons ne dépendent plus du voisinage des
+  autres insectes. Supprimer un individu ne décale aucun survivant.
+- Les autres espèces gardent leur steering de voisinage sur grille, entre
+  elles uniquement. Le mouvement est reproductible à temps et roster donnés
+  et ne nécessite pas d'état par frame ni d'envoi de positions réseau.
+- Les moucherons ont une sphère de collision commune, en coordonnées locales
+  de modèle (rayon `MIDGE_SPHERE_RADIUS` dans `scale.js`). Les tirs légers et
+  la présélection `InsectIndex` utilisent l'intersection rayon–sphère exacte.
+  Les projectiles lourds serveur utilisent le même rayon et écartent les
+  candidats impossibles avec une boîte englobante balayée.
+- Sur WebGL, `MidgeBatch` rassemble le corps, la tête et les deux ailes dans
+  **trois meshes instanciés** pour tous les moucherons vivants. Chaque ennemi
+  conserve un objet léger avec son identifiant, sa position, son mouvement,
+  ses PV et ses effets ; seuls les corps tombants (plafond 80) recréent un
+  modèle complet. Le moteur de secours 2D conserve les modèles ordinaires.
+- Les réponses fiables UDP envoient le roster complet à la première
+  synchronisation, après changement de vague ou de révision d'équilibrage.
+  Les réponses `sync` intermédiaires l'omettent et le navigateur réutilise
+  le roster du snapshot précédent. Les morts, dégâts, achats et autres états
+  partagés restent transmis normalement.
+
+### Contrôles et limites
+
+`node scripts/test-dense-swarms.mjs` compare le voisinage restant à son
+parcours exhaustif, vérifie l'invariance des positions après suppression
+d'un moucheron et exécute des échantillons CPU de 1k/5k/10k.
+
+`node scripts/test-midge-batch.mjs` couvre les instances 10k, leurs matrices,
+les collisions et suppressions. `node scripts/test-roster-sync.mjs` vérifie
+l'omission des rosters inchangés et la resynchronisation après révision/vague.
+La suite `npm test` couvre aussi les dégâts, les projectiles, l'équilibrage
+de room et les deux clients UDP natifs.
+
+**Ne pas confondre benchmark CPU et débit réellement jouable** : avec 10 000
+ennemis, la taille du premier snapshot, les effets des blessures, la charge
+du navigateur, le débit des armes lourdes, la réception et le rendu GPU
+demandent encore des mesures en conditions réelles et plusieurs joueurs.
+Le comportement de pilotage et des tourelles multijoueurs ne change pas dans
+ce chantier. Il n'y a pas de nouveau plafond imposé au réglage de population.

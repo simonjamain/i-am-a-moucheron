@@ -16,7 +16,7 @@ en charge continue du backlog et la revue finale des documents.
 | `src/client.js`                            | Orchestration de la scène, état local, entrées, interfaces et envoi des commandes.             |
 | `src/network.js`                           | Validation de mouvement et interpolation ; `PeerMotion` est le transport historique des pairs. |
 
-Le navigateur possède ses mouvements et raycasts dans un modèle coopératif.
+Les moucherons de grande nuée utilisent \`src/midge-batch.js\` (trois meshes instanciés WebGL et proxies logiques légers), \`waves.js\` (trajectoires indépendantes) et \`insect-hits.js\` (collisions sphériques). Le navigateur possède ses mouvements et raycasts dans un modèle coopératif.
 Le serveur possède les transactions et simule les armes lourdes. Il n’y a ni
 base de données ni accès disque dans les opérations de jeu Node. Voir
 [réseau](walking-network.md) et [serveur UDP](udp-server.md).

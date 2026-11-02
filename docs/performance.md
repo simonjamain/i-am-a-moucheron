@@ -122,3 +122,29 @@ et des contacts aux limites contre `segmentSphere`. Ce test et le benchmark
 sont contrôlés par GitHub Actions. Les mesures CPU ne valent pas garantie
 de FPS avec 50 joueurs ; vérifier en partie des vagues denses, collisions
 avec plusieurs avions, dégâts, latence et fluidité.
+
+## Nuées procédurales à forte population
+
+`src/waves.js` saute le voisinage de groupe pour les moucherons : positions
+calculées directement depuis ID, route et temps, avec une complexité
+essentiellement linéaire par trame moucheron. Les autres espèces conservent
+la grille de voisinage existante. `src/midge-batch.js` réduit les meshes
+WebGL **vivants** des moucherons à trois lots instanciés, sans rendre les
+collisions dépendantes du rendu. `src/insect-hits.js` utilise le rayon
+mathématique de la sphère pour les intersections et le même index spatial.
+Le serveur ajoute un rejet AABB rapide avant les intersections segment–sphère
+des armes lourdes. Aucun changement d'autorité des impacts.
+
+`server/session.js` omet `roster` des réponses `sync` répétées
+avec le même `wave`, `started` et `balanceRevision`. Les réponses
+sur nouvelle vague ou nouvelle révision transmettent toujours le roster,
+et `client.js` reconstitue le champ omis depuis l'état précédent.
+Une nouvelle connexion reçoit le roster entier.
+
+Les tests `test-dense-swarms`, `test-midge-batch` et
+`test-roster-sync` sont des tests CPU/règles, pas des mesures GPU,
+de débit UDP réel ou de fluidité à 10k sur appareil joueur. Tester
+indépendamment 1 000, 5 000 et 10 000 ennemis visibles, tirs soutenus,
+reconnexion, réseau perturbé et parties à plusieurs postes. Les effets
+cosmétiques des ennemis blessés et la taille d'un snapshot initial très
+dense peuvent rester limitants.
