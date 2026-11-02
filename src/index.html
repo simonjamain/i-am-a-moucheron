@@ -1770,7 +1770,8 @@
       #balancePanel {
         z-index: 100;
       }
-      #balancePanel [data-balance-fields] {
+      #balancePanel [data-balance-fields],
+      #balancePanel [data-spawn-fields] {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(min(270px, 100%), 1fr));
         gap: 16px;
@@ -1796,7 +1797,8 @@
         flex-wrap: wrap;
         gap: 10px;
       }
-      #balancePanel [data-balance-status] {
+      #balancePanel [data-balance-status],
+      #balancePanel [data-spawn-status] {
         min-height: 2em;
       }
     </style>
@@ -2332,7 +2334,8 @@
       #balancePanel {
         z-index: 100;
       }
-      #balancePanel [data-balance-fields] {
+      #balancePanel [data-balance-fields],
+      #balancePanel [data-spawn-fields] {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(min(270px, 100%), 1fr));
         gap: 16px;
@@ -2358,7 +2361,8 @@
         flex-wrap: wrap;
         gap: 10px;
       }
-      #balancePanel [data-balance-status] {
+      #balancePanel [data-balance-status],
+      #balancePanel [data-spawn-status] {
         min-height: 2em;
       }
     </style>
@@ -2445,7 +2449,7 @@
         </div>
       </div>
       <div id="roomTag">
-        <button id="balanceOpen">Équilibrage</button>
+        <button id="balanceOpen">Équilibrage et nuées</button>
         <button id="share" title="Copier le lien de la partie">
           ↗ <span id="roomCode">BUREAU</span>
         </button>
@@ -2670,7 +2674,7 @@
           <div>
             <h2 id="balanceTitle">Équilibrage de la room</h2>
             <p>
-              Réglages partagés, modifiables à tout moment par le créateur. La partie continue
+              Réglages partagés, modifiables à tout moment par tous les joueurs. La partie continue
               pendant les ajustements.
             </p>
           </div>
@@ -2683,6 +2687,12 @@
           <button data-balance-defaults>Valeurs par défaut</button>
           <button data-balance-reload>Recharger les valeurs</button>
         </footer>
+        <hr />
+        <h3>Génération de nuées (debug)</h3>
+        <p>Choisissez le nombre exact d’insectes de chaque espèce à lancer dans cette room.</p>
+        <div data-spawn-fields></div>
+        <button data-spawn-send>Envoyer la nuée</button>
+        <p data-spawn-status role="status" aria-live="polite"></p>
       </article>
     </section>
     <section id="bank" class="hidden" role="dialog" aria-modal="true" aria-labelledby="bankTitle">
@@ -2774,12 +2784,11 @@
         </p>
         <p>
           <b>Pilotage :</b> la souris choisit une direction, l’avion la rejoint avec son inertie.
-          Z/S ou Haut/Bas : tangage ; Q/D ou Gauche/Droite : roulis ; A/E : gouverne.
-          Ces commandes sont prioritaires sur l’assistance à la souris tant qu’elles sont maintenues.
-          Maj augmente les gaz, Ctrl les réduit et freine au sol. C maintenu : regard libre.
-          Clic gauche : mitrailleuses du chasseur. Espace
-          : bombes sur les avions équipés. Le bombardier est plus lent et ses armes sont servies par
-          les deux mitrailleurs.
+          Z/S ou Haut/Bas : tangage ; Q/D ou Gauche/Droite : roulis ; A/E : gouverne. Ces commandes
+          sont prioritaires sur l’assistance à la souris tant qu’elles sont maintenues. Maj augmente
+          les gaz, Ctrl les réduit et freine au sol. C maintenu : regard libre. Clic gauche :
+          mitrailleuses du chasseur. Espace : bombes sur les avions équipés. Le bombardier est plus
+          lent et ses armes sont servies par les deux mitrailleurs.
         </p>
         <p>
           <b>Se poser et sortir :</b> ailes à plat et descente douce. Réduisez les gaz, puis

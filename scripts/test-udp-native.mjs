@@ -93,13 +93,13 @@ try {
         values: { damage: 3 },
       })
     ).status,
-    403,
+    200,
   );
   assert.equal(
     (
       await a.request('balance', {
         epoch: roomSnapshot.base.epoch,
-        revision: 1,
+        revision: 2,
         values: roomSnapshot.balance,
       })
     ).status,
@@ -108,6 +108,15 @@ try {
 
   const started = await a.request('start');
   assert.equal(started.body.mission_started, 1);
+  const guestSpawn = await b.request('debug-spawn', {
+    epoch: roomSnapshot.base.epoch,
+    counts: { midge: 8, ant: 2 },
+  });
+  assert.equal(guestSpawn.status, 200);
+  assert.equal(guestSpawn.body.total, 10);
+  const seenSpawn = await a.request('sync', { state: aj.body.state, mode: 'foot' });
+  assert.equal(seenSpawn.body.total, 10);
+  assert.equal(seenSpawn.body.rosterRevision, 1);
   // Replaying the same command ID returns its original result, without another player.
   const duplicate = await a.request('join', { code: 'NATIVE', name: 'Spoof' }, aj.id);
   assert.equal(duplicate.body.id, aj.body.id);

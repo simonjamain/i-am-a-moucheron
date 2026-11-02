@@ -34,6 +34,11 @@ des parcours terrestres depuis des trous. La durée des trajets dépend de leur 
 avec le serveur pour l’arrivée à la poubelle. Le système est guidé et déterministe, sans navigation générale
 évitant tous les équipements placés par les joueurs.
 
+Le panneau **Équilibrage et nuées** permet à tous les joueurs de modifier les
+paramètres de la room et d'envoyer des lots d'ennemis par espèce, y compris hors
+combat. Une nuée de debug rejoint la vague courante ou démarre une vague de test
+sans composition automatique, selon la phase. Voir [équilibrage par room](room-balance.md).
+
 ## Équipements et combat
 
 Un chasseur monoplace et un bombardier sont disponibles au départ. Le bombardier

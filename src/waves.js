@@ -35,6 +35,63 @@ export const ENEMY_TYPES = Object.freeze({
     color: '#d0a14b',
   },
 });
+// Technical bounds prevent anonymous UDP commands from exhausting memory or
+// generating an untransportable reliable snapshot. Counts are exact, without
+// the regular director's population multiplier.
+export const MAX_DEBUG_SPAWN_BATCH = 5000;
+export const MAX_DEBUG_ROOM_ENEMIES = 10000;
+export function validateDebugSpawn(counts) {
+  if (!counts || typeof counts !== 'object' || Array.isArray(counts))
+    throw Error('Quantités de nuée invalides.');
+  let total = 0;
+  for (const [type, count] of Object.entries(counts)) {
+    if (!Object.hasOwn(ENEMY_TYPES, type) || !Number.isSafeInteger(count) || count < 0)
+      throw Error('Quantité invalide : ' + type);
+    total += count;
+  }
+  if (!Number.isSafeInteger(total) || total > MAX_DEBUG_SPAWN_BATCH)
+    throw Error('Maximum ' + MAX_DEBUG_SPAWN_BATCH + ' insectes par envoi.');
+  if (total === 0) throw Error('Renseignez au moins un insecte.');
+  return total;
+}
+
+// Append a fresh, deterministic swarm to the active room-local roster.
+// Existing enemy indices never change, including their damage and kills.
+export function debugSwarmRoster(counts, { room, wave, started, now, balance, firstId, revision }) {
+  const roster = [];
+  const elapsed = (now - started) / 1000;
+  for (const [type, count] of Object.entries(counts)) {
+    const profile = ENEMY_TYPES[type];
+    for (let i = 0; i < count; i++) {
+      const group = Math.floor(i / 12);
+      const enemy = {
+        id: firstId + roster.length,
+        type,
+        ...profile,
+        hp: profile.hp * balance.enemyHP,
+        phase: ((i % 12) * Math.PI * 2) / 12,
+        spawn: elapsed + (roster.length % 40) * 0.03,
+        entryHold: 2,
+        approach: wave <= 3 ? 'intro' : wave <= 6 ? 'short' : 'full',
+        routeSeed: hash(room + ':debug:' + wave + ':' + revision + ':' + type + ':' + group),
+        branch: group % 8 < 3 ? 1 : 0,
+      };
+      enemy.travelSpeed = baselineTravelSpeed(enemy, wave) * (type === 'ant' ? 0.25 : 1);
+      if (enemy.ground && type !== 'ant') {
+        const ant = { ...enemy, ...ENEMY_TYPES.ant, type: 'ant' };
+        const antSpeed = baselineTravelSpeed(ant, wave) * 0.25;
+        const antSize = ENEMY_TYPES.ant.size * enemySizeFactor('ant');
+        enemy.travelSpeed = antSpeed * Math.min(1, antSize / (enemy.size * enemySizeFactor(type)));
+      }
+      enemy.duration = enemy.entryHold + routeDuration(enemy);
+      enemy.entryHold /= balance.enemySpeed;
+      enemy.duration /= balance.enemySpeed;
+      enemy.travelSpeed *= balance.enemySpeed;
+      roster.push(enemy);
+    }
+  }
+  return roster;
+}
 export const MIDGE_SWARM_MULTIPLIER = 5;
 export const MAX_WAVE_POPULATION = 180 * MIDGE_SWARM_MULTIPLIER;
 // Keep the director's composition and timetable, densify only the midge groups.
