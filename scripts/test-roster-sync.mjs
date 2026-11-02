@@ -51,4 +51,6 @@ const added = sync();
 assert.equal(added.rosterRevision, 1);
 assert.equal(added.roster.length, newWave.roster.length + 13);
 assert.ok(!Object.hasOwn(sync(), 'roster'), 'unchanged debug roster is omitted');
-console.log('PASS: first sync, omitted unchanged rosters, balance and debug revisions and wave transitions.');
+console.log(
+  'PASS: first sync, omitted unchanged rosters, balance and debug revisions and wave transitions.',
+);

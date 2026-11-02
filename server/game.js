@@ -869,7 +869,8 @@ export class Game {
     p.seen = this.now();
     r.touched = this.now();
     requireGame(
-      !p.state.awaitingPurgatory || ['sync', 'enter-purgatory', 'reset', 'balance', 'debug-spawn'].includes(path),
+      !p.state.awaitingPurgatory ||
+        ['sync', 'enter-purgatory', 'reset', 'balance', 'debug-spawn'].includes(path),
       'Accédez au purgatoire avant d’agir.',
     );
     if (path === 'enter-purgatory') {

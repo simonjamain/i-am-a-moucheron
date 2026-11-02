@@ -81,8 +81,7 @@ export function debugSwarmRoster(counts, { room, wave, started, now, balance, fi
         const ant = { ...enemy, ...ENEMY_TYPES.ant, type: 'ant' };
         const antSpeed = baselineTravelSpeed(ant, wave) * 0.25;
         const antSize = ENEMY_TYPES.ant.size * enemySizeFactor('ant');
-        enemy.travelSpeed =
-          antSpeed * Math.min(1, antSize / (enemy.size * enemySizeFactor(type)));
+        enemy.travelSpeed = antSpeed * Math.min(1, antSize / (enemy.size * enemySizeFactor(type)));
       }
       enemy.duration = enemy.entryHold + routeDuration(enemy);
       enemy.entryHold /= balance.enemySpeed;

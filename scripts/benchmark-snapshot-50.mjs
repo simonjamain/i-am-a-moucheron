@@ -28,8 +28,7 @@ for (let i = 0; i < 75; i++)
     price: 4,
     placed: false,
   });
-for (let i = 0; i < 80; i++)
-  fixture.soul(room, 'enemy', 'enemy-' + i, 'Moucheron');
+for (let i = 0; i < 80; i++) fixture.soul(room, 'enemy', 'enemy-' + i, 'Moucheron');
 fixture.arena(room, 'purgatory');
 const before = new PreviousGame({ now: clock });
 const after = new Game({ now: clock });
@@ -63,15 +62,17 @@ for (let i = 0; i < 11; i++) {
 const median = (a) => a.sort((x, y) => x - y)[Math.floor(a.length / 2)];
 const beforeMs = median(times.before);
 const afterMs = median(times.after);
-console.log(JSON.stringify({
-  baseline,
-  players: 50,
-  pendingPurchases: room.purchases.size,
-  souls: room.souls.size,
-  samples: 11,
-  snapshotsPerSample: 100,
-  baselineMsPerSnapshot: +(beforeMs / 100).toFixed(4),
-  currentMsPerSnapshot: +(afterMs / 100).toFixed(4),
-  speedup: +(beforeMs / afterMs).toFixed(2),
-  scope: 'CPU snapshot only, no UDP, physics advance or WebGL',
-}));
+console.log(
+  JSON.stringify({
+    baseline,
+    players: 50,
+    pendingPurchases: room.purchases.size,
+    souls: room.souls.size,
+    samples: 11,
+    snapshotsPerSample: 100,
+    baselineMsPerSnapshot: +(beforeMs / 100).toFixed(4),
+    currentMsPerSnapshot: +(afterMs / 100).toFixed(4),
+    speedup: +(beforeMs / afterMs).toFixed(2),
+    scope: 'CPU snapshot only, no UDP, physics advance or WebGL',
+  }),
+);

@@ -390,9 +390,8 @@ assert.ok([...ui.fields.values()].every((input) => !input.disabled));
 ui.close();
 assert.equal(closed, 1);
 console.log(
-  'Room balance: isolated settings, atomic validation, creator/resume, wave timing, continuous routes, HP/supplies ratios, combat/economy, reset, late joins and UI handlers.',
+  'Room balance: isolated settings, atomic validation, all-player edits, wave timing, continuous routes, HP/supplies ratios, combat/economy, reset, late joins and UI handlers.',
 );
-
 
 // Cooperative debug tool: every connected player can spawn exact counts.
 const swarmGame = new Game({ now: () => now });
@@ -442,7 +441,10 @@ assert.equal(more.total, 21);
 assert.equal(more.rosterRevision, 2);
 assert.deepEqual(more.roster.slice(0, 16), existing);
 assert.equal(swarmRoom.enemyDamage[0], damageBeforeSpawn);
-assert.deepEqual(more.roster.slice(16).map((e) => e.id), [16, 17, 18, 19, 20]);
+assert.deepEqual(
+  more.roster.slice(16).map((e) => e.id),
+  [16, 17, 18, 19, 20],
+);
 const guestSnapshot = swarmGame.command('SWARMDBG', guest.id, 'sync', {
   mode: 'foot',
   state: swarmRoom.pilots.get(guest.id).state,
@@ -519,26 +521,7 @@ await sending;
 assert.ok([...uiSpawn.spawnFields.values()].every((input) => input.value === '0'));
 assert.equal(uiSpawn.spawnSend.disabled, false);
 uiSpawn.close();
-console.log('PASS: every-player room balance and debug spawn, exact species counts, epochs, UI and live roster.');
+console.log(
+  'PASS: every-player room balance and debug spawn, exact species counts, epochs, UI and live roster.',
+);
 
-if (process.env.GITHUB_ACTIONS) {
-  const { execFileSync } = await import('node:child_process');
-  const files = [
-    'src/waves.js',
-    'server/game.js',
-    'server/session.js',
-    'src/balance-ui.js',
-    'src/client.js',
-    'src/index.html',
-    'scripts/test-room-balance.mjs',
-    'scripts/test-roster-sync.mjs',
-    'scripts/test-udp-native.mjs',
-    'scripts/benchmark-snapshot-50.mjs',
-    'docs/room-balance.md',
-    'docs/gameplay.md',
-    'README.md',
-  ];
-  execFileSync('npx', ['prettier', '--write', ...files], { stdio: 'ignore' });
-  const diff = execFileSync('git', ['diff', '--', ...files], { encoding: 'utf8' });
-  console.log('FORMAT_DIAG_START\n' + diff + '\nFORMAT_DIAG_END');
-}
