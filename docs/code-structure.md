@@ -125,3 +125,8 @@ et sa mesure à 50 véhicules pour 900 insectes.
 
 Les [réglages d’équilibrage par room](room-balance.md) sont consultables par tous et
 modifiables à tout moment par le créateur de la room.
+
+Les paramètres de l'instructeur de vol sont enregistrés uniquement dans le
+navigateur par `flight-tuning.js` et présentés par `flight-tuning-ui.js`.
+Leur portée et leurs commandes sont décrites dans
+[les réglages personnels des avions](controls.md#réglages-personnels-des-avions).

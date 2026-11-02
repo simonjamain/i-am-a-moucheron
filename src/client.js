@@ -98,6 +98,8 @@ import { stepTank } from '/tank.js';
 import { CrashEffects } from '/crash-effects.js';
 import * as T from '/three.js';
 import { stepFlight } from '/flight.js';
+import { loadFlightTuning } from '/flight-tuning.js';
+import { FlightTuningUI } from '/flight-tuning-ui.js';
 import { readPad, neutralPad } from '/input.js';
 const $ = (id) => document.getElementById(id),
   canvas = $('view'),
@@ -111,6 +113,13 @@ try {
     ...JSON.parse(localStorage.getItem('moucheron-audio') || '{}'),
   };
 } catch {}
+let flightStorage;
+try {
+  flightStorage = localStorage;
+} catch {
+  // Private browsing may disable localStorage entirely.
+}
+let flightTuning = loadFlightTuning(flightStorage);
 const sound = new SpatialAudio(audioSettings);
 const rewardQueue = new RewardQueue(() => sound.play('dollar', camera.position, { ref: 100000 }));
 setInterval(() => rewardQueue.tick(performance.now()), 40);
@@ -377,6 +386,7 @@ function groundActive() {
     $('bedPanel').classList.contains('hidden') &&
     $('purchasePanel').classList.contains('hidden') &&
     $('balancePanel').classList.contains('hidden') &&
+    $('flightSettingsPanel').classList.contains('hidden') &&
     $('bank').classList.contains('hidden') &&
     $('shop').classList.contains('hidden') &&
     controlFocus.active
@@ -687,6 +697,7 @@ function canCapture() {
     $('help').classList.contains('hidden') &&
     $('shop').classList.contains('hidden') &&
     $('balancePanel').classList.contains('hidden') &&
+    $('flightSettingsPanel').classList.contains('hidden') &&
     $('bank').classList.contains('hidden') &&
     $('bedPanel').classList.contains('hidden') &&
     $('purchasePanel').classList.contains('hidden')
@@ -736,7 +747,14 @@ addEventListener('pointermove', (event) => {
     return;
   }
   {
-    rotateMouseAim(T, mouseDirection, camera.quaternion, dx, dy);
+    rotateMouseAim(
+      T,
+      mouseDirection,
+      camera.quaternion,
+      dx,
+      flightTuning.invertY ? -dy : dy,
+      0.0026 * flightTuning.mouseSensitivity,
+    );
   }
 });
 canvas.addEventListener('pointerleave', () => {
@@ -1309,7 +1327,14 @@ $('share').onclick = async () => {
 };
 $('helpButton').onclick = () => {
   releaseMouse();
-  if (balanceUI.opened || bankUI.opened || bedUI.opened || purchaseUI.opened) return;
+  if (
+    flightTuningUI.opened ||
+    balanceUI.opened ||
+    bankUI.opened ||
+    bedUI.opened ||
+    purchaseUI.opened
+  )
+    return;
   $('help').classList.remove('hidden');
 };
 $('closeHelp').onclick = () => {
@@ -1317,6 +1342,10 @@ $('closeHelp').onclick = () => {
   captureMouse();
 };
 addEventListener('keydown', (event) => {
+  if (event.code === 'Escape' && flightTuningUI.opened) {
+    flightTuningUI.close(false);
+    return;
+  }
   if (event.code === 'Escape' && balanceUI.opened) {
     balanceUI.close();
     return;
@@ -1354,7 +1383,14 @@ addEventListener('keydown', (event) => {
     toggleBank();
     return;
   }
-  if (balanceUI.opened || bankUI.opened || bedUI.opened || purchaseUI.opened) return;
+  if (
+    flightTuningUI.opened ||
+    balanceUI.opened ||
+    bankUI.opened ||
+    bedUI.opened ||
+    purchaseUI.opened
+  )
+    return;
   const exitAction = equipmentExitAction({
     key: interactionKey,
     repeat: event.repeat,
@@ -1389,6 +1425,7 @@ addEventListener('keydown', (event) => {
     $('bedPanel').classList.contains('hidden') &&
     $('purchasePanel').classList.contains('hidden') &&
     $('balancePanel').classList.contains('hidden') &&
+    $('flightSettingsPanel').classList.contains('hidden') &&
     $('bank').classList.contains('hidden') &&
     $('shop').classList.contains('hidden') &&
     toggleParachute(selfBase())
@@ -2055,7 +2092,14 @@ $('soulPaperButton').onclick = () => {
 $('boardButton').onclick = openBoarding;
 $('baseHelp').onclick = () => {
   releaseMouse();
-  if (balanceUI.opened || bankUI.opened || bedUI.opened || purchaseUI.opened) return;
+  if (
+    flightTuningUI.opened ||
+    balanceUI.opened ||
+    bankUI.opened ||
+    bedUI.opened ||
+    purchaseUI.opened
+  )
+    return;
   $('help').classList.remove('hidden');
 };
 const purgScene = new T.Scene();
@@ -3488,7 +3532,7 @@ function physics(dt) {
     fireHeavy('bomb');
   const assisted = active;
   const auto = assisted
-    ? mouseFlightControls(T, { q: me.quaternion, omega, direction: mouseDirection })
+    ? mouseFlightControls(T, { q: me.quaternion, omega, direction: mouseDirection }, flightTuning)
     : { pitch: 0, roll: 0, yaw: 0 };
   const steering = airplaneSteering(auto, manual);
   const inversion = currentFactors().controls;
@@ -4007,7 +4051,14 @@ for (const [kind, model] of Object.entries(ghosts)) {
   });
 }
 function toggleShop() {
-  if (balanceUI.opened || bankUI.opened || bedUI.opened || purchaseUI.opened) return;
+  if (
+    flightTuningUI.opened ||
+    balanceUI.opened ||
+    bankUI.opened ||
+    bedUI.opened ||
+    purchaseUI.opened
+  )
+    return;
   if (!joined || respawnAt || !$('papers').classList.contains('hidden')) return;
   if (placingEquipment) cancelPlacement();
   const open = $('shop').classList.contains('hidden');
@@ -4918,6 +4969,41 @@ function updateContextHUD() {
     $('aimRange').style.top = `calc(${$('crosshair').style.top || '50%'} + 18px)`;
   }
 }
+const flightTuningUI = new FlightTuningUI({
+  root: $('flightSettingsPanel'),
+  document,
+  storage: flightStorage,
+  initial: flightTuning,
+  onChange: (settings) => {
+    flightTuning = settings;
+  },
+  onOpen: () => {
+    releaseMouse();
+    clearControls();
+    cancelPlacement();
+    $('shop').classList.add('hidden');
+    $('help').classList.add('hidden');
+    renderPaper();
+  },
+  onClose: (resume) => {
+    renderPaper();
+    if (resume) captureMouse();
+  },
+});
+$('flightSettingsOpen').onclick = () => {
+  if (
+    !joined ||
+    balanceUI.opened ||
+    bankUI.opened ||
+    bedUI.opened ||
+    purchaseUI.opened ||
+    boardingBusy ||
+    soulBusy ||
+    boardingSelectionBusy
+  )
+    return;
+  flightTuningUI.open();
+};
 const balanceUI = new BalanceUI({
   root: $('balancePanel'),
   document,
@@ -4941,6 +5027,7 @@ const balanceUI = new BalanceUI({
 $('balanceOpen').onclick = () => {
   if (
     !joined ||
+    flightTuningUI.opened ||
     bankUI.opened ||
     bedUI.opened ||
     purchaseUI.opened ||
@@ -4979,7 +5066,7 @@ const bankUI = new BankUI({
 });
 function toggleBank() {
   if (spectating) return;
-  if (balanceUI.opened || bedUI.opened || purchaseUI.opened) return;
+  if (flightTuningUI.opened || balanceUI.opened || bedUI.opened || purchaseUI.opened) return;
   if (!joined || boardingBusy || soulBusy || boardingSelectionBusy) return;
   if (bankUI.opened) bankUI.close();
   else bankUI.open();
