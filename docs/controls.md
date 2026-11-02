@@ -6,9 +6,9 @@ mapping, including modifier changes while a key is held.
 
 | Input                      | Flight action                                                                            |
 | -------------------------- | ---------------------------------------------------------------------------------------- |
-| Z / Up, S / Down           | No airplane pitch override; H2 vertical command remains.                                 |
-| Q / Left, D / Right        | No airplane roll override; ground movement remains.                                      |
-| A / E                      | No airplane rudder override.                                                             |
+| Z / Up, S / Down           | Airplane pitch down / up while held; H2 pitch remains.                                   |
+| Q / Left, D / Right        | Airplane roll left / right while held; ground movement remains.                          |
+| A / E                      | Airplane rudder left / right while held.                                                 |
 | Shift / Control            | Increase / decrease throttle.                                                            |
 | C held + mouse             | Free camera look; mouse aim is unchanged.                                                |
 | Left click                 | Machine guns; Space holds bomb release when equipped.                                    |
@@ -32,8 +32,11 @@ mapping, including modifier changes while a key is held.
 | Paperwork              | Release valid ink stroke       | Submit and stamp automatically           |
 | General                | H                              | Help                                     |
 
-E only selects equipment on foot; airplane steering uses the mouse only. F is the
-exit key for aircraft pilots, gunners and DCA occupants. Forms and text inputs
+E only selects equipment on foot; in an airplane pilot seat A/E control the
+rudder, not equipment interaction. Manual input overrides the mouse instructor
+on its axis only (including gamepad); the remaining axes stay assisted, and
+mouse assistance resumes on release. F is the exit key for aircraft pilots,
+gunners and DCA occupants. Forms and text inputs
 suspend gameplay shortcuts. Touch UI supplies contextual actions.
 
 Captured mouse movement directly orbits the ground character camera. Touch drag
@@ -49,8 +52,9 @@ resume capture; intermediate signatures retain the free cursor.
 
 `control-focus.js` owns this lifecycle and the testable keyboard mapping. Flight
 physics continues with neutral control surfaces while UI owns the pointer.
-`test-controls.mjs` covers AZERTY mapping, throttle separation, suspended inputs,
-capture/release, and the pending-capture/form race.
+`test-controls.mjs` covers AZERTY mapping, throttle separation, airplane manual
+overrides and client integration, suspended inputs, capture/release, and the
+pending-capture/form race.
 
 ## Pistolet et postes
 
