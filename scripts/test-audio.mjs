@@ -1,6 +1,11 @@
 import './normal-dossiers.mjs';
 import assert from 'node:assert/strict';
-import { SpatialAudio, synthesize, AUDIO_PROFILES, swarmAudioGroups } from '../src/audio.js';
+import {
+  SpatialAudio,
+  synthesize,
+  AUDIO_PROFILES,
+  swarmAudioGroups,
+} from '../src/audio.js';
 import worker from '../worker/index.js';
 for (const kind of Object.keys(AUDIO_PROFILES)) {
   const b = synthesize(kind);
@@ -25,7 +30,10 @@ assert.ok(grouped.some((group) => group.position.x > 0));
 assert.ok(grouped.every((group) => group.level <= 1.5));
 const keys = new Set(grouped.map((group) => group.key));
 midges.delete(0);
-const reduced = swarmAudioGroups(midges, listener, { ...options, preferred: keys });
+const reduced = swarmAudioGroups(midges, listener, {
+  ...options,
+  preferred: keys,
+});
 assert.deepEqual(
   new Set(reduced.map((group) => group.key)),
   keys,
@@ -35,11 +43,10 @@ assert.equal(reduced.reduce((n, group) => n + group.count, 0), 9999);
 midges.set('far', { visible: true, position: { x: 100, y: 0, z: 0 } });
 midges.set('hidden', { visible: false, position: { x: 0, y: 0, z: 0 } });
 midges.set('invalid', { visible: true, position: { x: NaN, y: 0, z: 0 } });
-assert.equal(
-  swarmAudioGroups(midges, listener, options).reduce((n, group) => n + group.count, 0),
-  9999,
-);
-assert.equal(swarmAudioGroups(midges, listener, { ...options, maxSources: 2 }).length, 2);
+const validGroups = swarmAudioGroups(midges, listener, options);
+assert.equal(validGroups.reduce((n, group) => n + group.count, 0), 9999);
+const twoSources = swarmAudioGroups(midges, listener, { ...options, maxSources: 2 });
+assert.equal(twoSources.length, 2);
 assert.deepEqual(swarmAudioGroups(new Map(), listener, options), []);
 const benchStart = performance.now();
 for (let i = 0; i < 20; i++) swarmAudioGroups(midges, listener, options);
