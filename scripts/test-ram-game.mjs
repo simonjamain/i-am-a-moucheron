@@ -19,6 +19,29 @@ const extra = new Game({ now: () => now });
 for (let i = 0; i < 50; i++) extra.join({ code: 'SNAP50', name: 'Pilot ' + i });
 const snapshot50 = extra.snapshot(extra.rooms.get('SNAP50'));
 assert.equal(snapshot50.pilots.length, 50);
+// Rapid motion updates must not recompute the vacant-aircraft host when none
+// were submitted; a real vacant report still elects the first active pilot.
+const motionRoom = extra.rooms.get('SNAP50');
+const flightPilot = [...motionRoom.pilots.values()][0];
+const flightVehicle = extra.createVehicle(motionRoom, 'fighter', 'purchase');
+flightPilot.mode = 'flight';
+flightPilot.vehicle_id = flightVehicle.id;
+flightPilot.seat = 'pilot';
+flightVehicle.seats.set('pilot', flightPilot.id);
+const originalLive = extra.live;
+extra.live = () => {
+  throw Error('motion-only sync must not elect a vacant-aircraft host');
+};
+extra.sync(motionRoom, flightPilot, { mode: 'flight', state: flightVehicle.state });
+extra.live = originalLive;
+const emptyVehicle = extra.createVehicle(motionRoom, 'fighter', 'purchase');
+const elected = [...motionRoom.pilots.values()].sort((x, y) => x.id.localeCompare(y.id))[0];
+const nonElected = [...motionRoom.pilots.values()].find((p) => p.id !== elected.id);
+const vacantState = { ...emptyVehicle.state, p: [0.25, 0.8, 0.2] };
+extra.sync(motionRoom, nonElected, { mode: nonElected.mode, state: nonElected.state, vacant: [{ id: emptyVehicle.id, state: vacantState }] });
+assert.notDeepEqual(emptyVehicle.state.p, vacantState.p, 'non-host cannot control a vacant hull');
+extra.sync(motionRoom, elected, { mode: elected.mode, state: elected.state, vacant: [{ id: emptyVehicle.id, state: vacantState }] });
+assert.deepEqual(emptyVehicle.state.p, vacantState.p, 'lexical first live host still controls vacant hull');
 assert.equal(snapshot50.souls.length, 0);
 assert.equal(snapshot50.superSouls.length, 0);
 assert.equal(snapshot50.leaked, 0);
