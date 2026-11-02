@@ -54,9 +54,7 @@ export class SpiderlingBatch {
   }
   flush(insects) {
     if (!this.enabled) return;
-    const alive = [...insects.values()].filter(
-      (g) => g.userData.instancedSpiderling && g.visible,
-    );
+    const alive = [...insects.values()].filter((g) => g.userData.instancedSpiderling && g.visible);
     this.ensure(alive.length);
     const [bodies, heads, legs] = this.meshes;
     for (const [i, model] of alive.entries()) {
@@ -69,16 +67,17 @@ export class SpiderlingBatch {
       this.scale.set(0.34, 0.34, 0.34);
       this.local.compose(this.position, this.rotation, this.scale);
       heads.setMatrixAt(i, this.result.multiplyMatrices(this.world, this.local));
-      for (const side of [-1, 1]) for (let j = 0; j < 4; j++) {
-        this.position.set(side * 0.64, -0.24, (j - 1.5) * 0.3);
-        this.rotation.setFromAxisAngle(new this.T.Vector3(0, 0, 1), side * 0.38);
-        this.scale.set(0.82, 0.055, 0.055);
-        this.local.compose(this.position, this.rotation, this.scale);
-        legs.setMatrixAt(
-          i * 8 + (side === -1 ? 0 : 4) + j,
-          this.result.multiplyMatrices(this.world, this.local),
-        );
-      }
+      for (const side of [-1, 1])
+        for (let j = 0; j < 4; j++) {
+          this.position.set(side * 0.64, -0.14, (j - 1.5) * 0.3);
+          this.rotation.setFromAxisAngle(new this.T.Vector3(0, 0, 1), side * 0.38);
+          this.scale.set(0.82, 0.055, 0.055);
+          this.local.compose(this.position, this.rotation, this.scale);
+          legs.setMatrixAt(
+            i * 8 + (side === -1 ? 0 : 4) + j,
+            this.result.multiplyMatrices(this.world, this.local),
+          );
+        }
       this.rotation.identity();
     }
     for (const [i, mesh] of this.meshes.entries()) {

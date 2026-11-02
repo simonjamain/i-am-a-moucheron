@@ -40,9 +40,7 @@ export function enemyRoute(enemy) {
   };
   const portalCount = enemy.ground ? PORTALS.ground.length : PORTALS.air.length;
   const portal =
-    Number.isInteger(enemy.portalIndex) &&
-    enemy.portalIndex >= 0 &&
-    enemy.portalIndex < portalCount
+    Number.isInteger(enemy.portalIndex) && enemy.portalIndex >= 0 && enemy.portalIndex < portalCount
       ? enemy.portalIndex
       : enemy.approach === 'intro'
         ? enemy.ground

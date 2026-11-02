@@ -1734,7 +1734,10 @@ export class Game {
           const enemy = plan.roster[i];
           const radius =
             enemy.type === 'midge' || enemy.type === 'spiderling'
-              ? INSECT_SCALE * enemy.size * enemySizeFactor(enemy.type) * (enemy.type === 'midge' ? MIDGE_SPHERE_RADIUS : 1.2)
+              ? INSECT_SCALE *
+                enemy.size *
+                enemySizeFactor(enemy.type) *
+                (enemy.type === 'midge' ? MIDGE_SPHERE_RADIUS : 1.2)
               : MAP.metres(enemy.size * 0.7 * enemySizeFactor(enemy.type));
           // Cheap swept-AABB rejection before the exact segment/sphere calculation.
           if (!sweptSphereMayTouch(a, b, frames[i].p, radius)) continue;
@@ -2043,7 +2046,8 @@ export class Game {
   }
   defeatEnemy(r, index, position = null) {
     if (r.kills.has(index)) return false;
-    const plan = this.plan(r), e = plan.roster[index];
+    const plan = this.plan(r),
+      e = plan.roster[index];
     if (!e) return false;
     r.kills.add(index);
     if (!e.offspringOnly) this.soul(r, 'enemy', r.wave + ':' + index, e.name, 'purgatory', e.type);
@@ -2052,7 +2056,12 @@ export class Game {
       const location = position || swarmFrame(plan.roster, at)[index]?.p;
       if (location) {
         const children = spawnOffspring(
-          e, location, at, r.balance, plan.roster.length, r.wave,
+          e,
+          location,
+          at,
+          r.balance,
+          plan.roster.length,
+          r.wave,
           Math.max(0, MAX_OFFSPRING_ROSTER - plan.roster.length),
         );
         if (children.length) {

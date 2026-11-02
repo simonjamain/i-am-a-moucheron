@@ -317,7 +317,7 @@ export function createGraphics(T, scene) {
         const ear = ball(side * 0.34, 0.37, -0.7, 0.24, '#bc8b94', g);
         ear.scale.z = 0.38;
         for (const z of [-0.37, 0.74]) {
-          const paw = ball(side * 0.48, -0.35, z, 0.19, '#766052', g);
+          const paw = ball(side * 0.48, -0.18, z, 0.19, '#766052', g);
           paw.scale.set(0.9, 0.6, 1.4);
         }
         for (const z of [-1.02, -0.93]) {
@@ -339,23 +339,18 @@ export function createGraphics(T, scene) {
       body.scale.set(0.9, 0.72, 1.12);
       const head = ball(0, 0.02, -0.48, 0.34, '#342e2b', g);
       const legs = [];
-      for (const side of [-1, 1]) for (let i = 0; i < 4; i++) {
-        const leg = box(
-          side * 0.64,
-          -0.24,
-          (i - 1.5) * 0.3,
-          0.82,
-          0.055,
-          0.055,
-          '#382d28',
-          g,
-        );
-        leg.rotation.z = side * 0.38;
-        legs.push(leg);
-      }
+      for (const side of [-1, 1])
+        for (let i = 0; i < 4; i++) {
+          const leg = box(side * 0.64, -0.14, (i - 1.5) * 0.3, 0.82, 0.055, 0.055, '#382d28', g);
+          leg.rotation.z = side * 0.38;
+          legs.push(leg);
+        }
       for (const side of [-1, 1]) ball(side * 0.17, 0.18, -0.71, 0.09, '#d28b47', g);
       g.userData = {
-        wings: [], legs, hitParts: [body, head], disposables: [],
+        wings: [],
+        legs,
+        hitParts: [body, head],
+        disposables: [],
         ...(large ? {} : { sphereRadius: 1.2 }),
       };
       scene.add(g);
@@ -404,7 +399,13 @@ export function createGraphics(T, scene) {
       0.18,
       -0.55,
       0.3,
-      { midge: '#c6b96e', dart: '#d78253', guard: '#729d8b', brute: '#d0a14b', mosquito: '#73918d' }[type],
+      {
+        midge: '#c6b96e',
+        dart: '#d78253',
+        guard: '#729d8b',
+        brute: '#d0a14b',
+        mosquito: '#73918d',
+      }[type],
       g,
     );
     const wm = new T.MeshStandardMaterial({

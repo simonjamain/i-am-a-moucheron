@@ -108,13 +108,6 @@ jobs:
         run: npm run bench:swarm-50
       - name: Check formatting
         run: npx prettier --check src/swept-broadphase.js server/game.js scripts/test-swept-broadphase.mjs scripts/benchmark-swept-broadphase.mjs
-      - name: Diagnostic temporary formatter diff
-        if: failure()
-        run: |
-          npx prettier --write src/waves.js src/routes.js src/scale.js src/graphics.js src/client.js src/spiderling-batch.js server/game.js src/balance-ui.js scripts/assemble.mjs scripts/test-enemy-bestiary.mjs scripts/test-backlog.mjs docs/gameplay.md docs/room-balance.md docs/code-structure.md docs/combat-worlds.md docs/enemy-bestiary.md package.json
-          echo '===BEGIN-PRETTIER-DIFF==='
-          git diff -- src/waves.js src/routes.js src/scale.js src/graphics.js src/client.js src/spiderling-batch.js server/game.js src/balance-ui.js scripts/assemble.mjs scripts/test-enemy-bestiary.mjs scripts/test-backlog.mjs docs/gameplay.md docs/room-balance.md docs/code-structure.md docs/combat-worlds.md docs/enemy-bestiary.md package.json
-          echo '===END-PRETTIER-DIFF==='
 
   game-regression:
     name: Full game regression and formatting

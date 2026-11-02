@@ -26,21 +26,45 @@ export const ENEMY_TYPES = Object.freeze({
   dart: { name: 'Voltigeur', cost: 3, hp: 200, size: 0.85, speed: 1.15, leak: 1, color: '#d78253' },
   guard: { name: 'Carapace', cost: 6, hp: 400, size: 1.4, speed: 0.85, leak: 2, color: '#729d8b' },
   mosquito: {
-    name: 'Moustique', cost: 2, hp: 70, size: 0.58, speed: 1.5,
-    leak: 1, color: '#6b807e',
+    name: 'Moustique',
+    cost: 2,
+    hp: 70,
+    size: 0.58,
+    speed: 1.5,
+    leak: 1,
+    color: '#6b807e',
   },
   rat: {
-    name: 'Rat', cost: 40, hp: 5000, size: 4, speed: 0.55,
-    leak: 8, color: '#86705c', ground: true,
+    name: 'Rat',
+    cost: 40,
+    hp: 5000,
+    size: 4,
+    speed: 0.55,
+    leak: 8,
+    color: '#86705c',
+    ground: true,
   },
   spider: {
-    name: 'Araignée pondeuse', cost: 22, hp: 1200, size: 2.3, speed: 0.48,
-    leak: 3, color: '#453b35', ground: true,
+    name: 'Araignée pondeuse',
+    cost: 22,
+    hp: 1200,
+    size: 2.3,
+    speed: 0.48,
+    leak: 3,
+    color: '#453b35',
+    ground: true,
     onDeath: { spawn: 'spiderling', count: 100 },
   },
   spiderling: {
-    name: 'Bébé araignée', cost: 0, hp: 20, size: 0.3, speed: 2.4,
-    leak: 1, color: '#51463d', ground: true, offspringOnly: true,
+    name: 'Bébé araignée',
+    cost: 0,
+    hp: 20,
+    size: 0.3,
+    speed: 2.4,
+    leak: 1,
+    color: '#51463d',
+    ground: true,
+    offspringOnly: true,
   },
   brute: {
     name: 'Bourdon blindé',
@@ -62,7 +86,12 @@ export function validateDebugSpawn(counts) {
     throw Error('Quantités de nuée invalides.');
   let total = 0;
   for (const [type, count] of Object.entries(counts)) {
-    if (!Object.hasOwn(ENEMY_TYPES, type) || ENEMY_TYPES[type].offspringOnly || !Number.isSafeInteger(count) || count < 0)
+    if (
+      !Object.hasOwn(ENEMY_TYPES, type) ||
+      ENEMY_TYPES[type].offspringOnly ||
+      !Number.isSafeInteger(count) ||
+      count < 0
+    )
       throw Error('Quantité invalide : ' + type);
     total += count;
   }
@@ -102,7 +131,9 @@ export function debugSwarmRoster(counts, { room, wave, started, now, balance, fi
         branch: routeSeed % 2,
         debugFlock: true,
       };
-      enemy.travelSpeed = baselineTravelSpeed(enemy, wave) * (type === 'ant' ? 0.25 : type === 'rat' ? 0.6 : type === 'spider' ? 0.55 : 1);
+      enemy.travelSpeed =
+        baselineTravelSpeed(enemy, wave) *
+        (type === 'ant' ? 0.25 : type === 'rat' ? 0.6 : type === 'spider' ? 0.55 : 1);
       if (enemy.ground && !['ant', 'rat', 'spider', 'spiderling'].includes(type)) {
         const ant = { ...enemy, ...ENEMY_TYPES.ant, type: 'ant' };
         const antSpeed = baselineTravelSpeed(ant, wave) * 0.25;
@@ -183,7 +214,16 @@ export function wavePlan(room, wave, started = 0) {
     })),
     counts = { ant: initialAnts };
   remaining -= initialAnts;
-  const unlock = { ant: 1, roach: 3, dart: 2, mosquito: 3, guard: 5, brute: 8, spider: 11, rat: 15 };
+  const unlock = {
+    ant: 1,
+    roach: 3,
+    dart: 2,
+    mosquito: 3,
+    guard: 5,
+    brute: 8,
+    spider: 11,
+    rat: 15,
+  };
   if (wave >= 2) {
     roster.push({
       id: roster.length,
@@ -198,7 +238,8 @@ export function wavePlan(room, wave, started = 0) {
   while (remaining > 0 && roster.length < 180) {
     const unlocked = Object.entries(ENEMY_TYPES).filter(
       ([name, t]) =>
-        !t.offspringOnly && t.cost <= remaining &&
+        !t.offspringOnly &&
+        t.cost <= remaining &&
         (name === 'midge' ||
           (wave >= unlock[name] &&
             (t.cost === 1 ||
@@ -233,7 +274,15 @@ export function wavePlan(room, wave, started = 0) {
     enemy.approach = wave <= 3 ? 'intro' : wave <= 6 ? 'short' : 'full';
     enemy.routeSeed = hash(key + ':route:' + (solo ? 'solo' + enemy.id : group));
     enemy.branch = enemy.id % 8 < 3 ? 1 : 0;
-    enemy.travelSpeed = baselineTravelSpeed(enemy, wave) * (enemy.type === 'ant' ? 0.25 : enemy.type === 'rat' ? 0.6 : enemy.type === 'spider' ? 0.55 : 1);
+    enemy.travelSpeed =
+      baselineTravelSpeed(enemy, wave) *
+      (enemy.type === 'ant'
+        ? 0.25
+        : enemy.type === 'rat'
+          ? 0.6
+          : enemy.type === 'spider'
+            ? 0.55
+            : 1);
   }
   const ants = roster.filter((e) => e.type === 'ant');
   const slowestAnt = Math.min(...ants.map((e) => e.travelSpeed));
@@ -375,7 +424,12 @@ export function swarmFrame(roster, time) {
     buckets = new Map();
   const cell = (p) => p.map((v) => Math.floor(v / radius));
   for (let i = 0; i < samples.length; i++) {
-    if (!samples[i] || ['midge', 'spiderling', 'mosquito'].includes(roster[i].type) || roster[i].debugFlock) continue;
+    if (
+      !samples[i] ||
+      ['midge', 'spiderling', 'mosquito'].includes(roster[i].type) ||
+      roster[i].debugFlock
+    )
+      continue;
     const key = cell(samples[i].p).join(':');
     if (!buckets.has(key)) buckets.set(key, []);
     buckets.get(key).push(i);

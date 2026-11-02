@@ -30,8 +30,15 @@ assert.equal(r.plan.roster.length, 3);
 command('hit', { wave: r.wave, enemy: 0, amount: 800, shot: 'two' });
 assert.equal(r.plan.roster.length, 103);
 assert.equal(r.rosterRevision, 2);
-assert.deepEqual(r.plan.roster.slice(3).map((e) => e.id), Array.from({ length: 100 }, (_, i) => i + 3));
-assert.ok(r.plan.roster.slice(3).every((e) => e.type === 'spiderling' && e.leak === 1 && e.offspringOf === 0));
+assert.deepEqual(
+  r.plan.roster.slice(3).map((e) => e.id),
+  Array.from({ length: 100 }, (_, i) => i + 3),
+);
+assert.ok(
+  r.plan.roster
+    .slice(3)
+    .every((e) => e.type === 'spiderling' && e.leak === 1 && e.offspringOf === 0),
+);
 command('hit', { wave: r.wave, enemy: 0, amount: 800, shot: 'three' });
 assert.equal(r.plan.roster.length, 103);
 assert.equal(r.souls.size, 1);
