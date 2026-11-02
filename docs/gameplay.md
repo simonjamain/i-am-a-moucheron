@@ -253,3 +253,6 @@ modifiables à tout moment par le créateur de la room.
 ## Rat, moustique et araignée pondeuse
 
 Le rat géant possède 5 000 PV et avance lentement. Le moustique possède 70 PV et esquive selon des oscillations déterministes. L'araignée pondeuse possède 1 200 PV : elle libère **100 bébés araignées** de 20 PV à sa mort, au lieu du site de décès, avec une trajectoire dispersée et rapide vers la poubelle. Chaque bébé survivant compte **1 point d'infestation**, soit 100 possibles pour la portée complète (défaite à 20). Les bébés morts ne créent pas d'âmes rémunérées. Moustique dès vague 3, pondeuse dès vague 11, rat dès vague 15. Voir [bestiaire](enemy-bestiary.md).
+
+
+Les [vitesses physiques des espèces](enemy-bestiary.md#vitesse-physique-dans-la-pièce) sont explicites en m/s dans le bureau, indépendantes de la taille des insectes et du nombre de membres de la nuée. L'accélération cachée des bébés araignées et les oscillations trop rapides des moustiques ont été corrigées.

@@ -142,3 +142,5 @@ continue des colis, le nouveau mapping H2 et le ralentissement terrestre supplé
 Les [réglages d’équilibrage et la génération de nuées de debug par room](docs/room-balance.md)
 sont disponibles pour tous les joueurs connectés, à tout moment (hors partie perdue
 pour la génération d’insectes).
+
+Le [bestiaire et ses vitesses physiques](docs/enemy-bestiary.md#vitesse-physique-dans-la-pièce) spécifient des mètres de la pièce par seconde, indépendants de la taille des modèles et de l'effectif des nuées.
