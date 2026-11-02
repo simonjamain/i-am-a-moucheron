@@ -14,6 +14,7 @@ import { OFFICE_LAYOUT } from '../src/layout.js';
 import { OFFICE_SOLIDS } from '../worker/assets.js';
 import { createGraphics } from '../src/graphics.js';
 import { stepFlight } from '../src/flight.js';
+import { swarmAudioGroups } from '../src/audio.js';
 import { AircraftFire } from '../src/aircraft-fire.js';
 import { wavePlan, swarmFrame } from '../src/waves.js';
 import { collisionDamage, washTarget, WASH } from '../src/vehicle-care.js';
@@ -608,6 +609,8 @@ const audioContext = {
   ACTOR_UNIT,
   VEHICLES,
   diveIntensity,
+  swarmAudioGroups,
+  performance: { now: () => 1000 },
   spectating: false,
   joined: true,
   respawnAt: 0,

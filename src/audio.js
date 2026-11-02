@@ -138,7 +138,7 @@ export function swarmAudioGroups(
     const p = model?.position;
     if (model?.visible === false || !p) continue;
     const { x, y, z } = p;
-    if (![x, y, z].every(Number.isFinite)) continue;
+    if (!Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(z)) continue;
     const dx = x - listener.x,
       dy = y - listener.y,
       dz = z - listener.z;
