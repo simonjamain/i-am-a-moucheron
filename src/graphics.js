@@ -434,6 +434,11 @@ export function createGraphics(T, scene) {
       for (const side of [-1, 1]) {
         const feeler = box(side * 0.07, 0.1, -1.1, 0.025, 0.025, 0.6, '#4d6c69', g);
         feeler.rotation.y = side * 0.15;
+        for (const z of [-0.35, 0, 0.35]) {
+          const leg = box(side * 0.35, -0.45, z, 0.04, 0.65, 0.04, '#4d6c69', g);
+          leg.rotation.z = side * 0.25;
+          leg.userData.projectileSolid = false;
+        }
       }
     }
     if (type === 'dart') {
