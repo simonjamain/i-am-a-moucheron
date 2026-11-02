@@ -26,6 +26,14 @@ const call = (id, path, body = {}) => {
 const change = (values) =>
   call(a.id, 'balance', { epoch: r.base.epoch, revision: r.balanceRevision, values });
 assert.deepEqual(a.snapshot.balance, DEFAULT_BALANCE);
+for (const key of Object.keys(BALANCE_FIELDS)) {
+  assert.doesNotThrow(
+    () => validateBalance({ [key]: 10000 }),
+    key + ' has no gameplay upper limit',
+  );
+  assert.ok(!Object.hasOwn(BALANCE_FIELDS[key], 'max'));
+}
+
 assert.deepEqual(a.snapshot.balanceOwner, [a.id]);
 assert.ok(
   !JSON.stringify(a.snapshot).includes(a.resumeKey),
@@ -230,7 +238,7 @@ assert.equal(
     },
     { ...DEFAULT_BALANCE, population: 3 },
   ).roster.length,
-  900,
+  1200,
 );
 const doubled = scaleRoster(wavePlan('COPIES', 1, now), {
   ...DEFAULT_BALANCE,
@@ -246,6 +254,35 @@ assert.notDeepEqual(
   doubledFrame[0].p,
   doubledFrame[1].p,
   'additional population must not be stacked invisibly',
+);
+const unlimitedGame = new Game({ now: () => now });
+const unlimited = unlimitedGame.join({ code: 'UNLIMITED' });
+const unlimitedRoom = unlimitedGame.rooms.get('UNLIMITED');
+const unrestricted = unlimitedGame.command('UNLIMITED', unlimited.id, 'balance', {
+  epoch: unlimitedRoom.base.epoch,
+  revision: 0,
+  values: {
+    population: 50,
+    progression: 10,
+    damage: 100,
+    fireRate: 10,
+    enemySpeed: 10,
+    enemyHP: 100,
+    ammo: 10,
+    fuel: 10,
+    prices: 100,
+    rewards: 100,
+    startingMoney: 100000,
+    initialDelay: 600,
+    pause: 600,
+  },
+});
+assert.equal(unrestricted.balance.damage, 100, 'server accepts values above the former bounds');
+unlimitedGame.startWave(unlimitedRoom);
+assert.equal(
+  unlimitedGame.snapshot(unlimitedRoom).total,
+  1200,
+  'actual wave exceeds former 900-enemy ceiling',
 );
 // Real component handlers: preserve edits on polling, reject stale saves, retry errors.
 class Element {
@@ -290,6 +327,7 @@ const ui = new BalanceUI({
   player: () => who,
   command: (body) => {
     calls++;
+    if (calls === 1) assert.equal(body.values.damage, 100, 'form submits above former ceiling');
     assert.equal(body.epoch, snapshot.base.epoch);
     return new Promise((yes, no) => {
       pending = yes;
@@ -306,9 +344,13 @@ const ui = new BalanceUI({
 ui.open();
 assert.equal(opened, 1);
 assert.equal(ui.fields.size, Object.keys(BALANCE_FIELDS).length);
-ui.fields.get('damage').value = '2';
+assert.ok(
+  [...ui.fields.values()].every((input) => !input.max),
+  'inputs have no max attribute',
+);
+ui.fields.get('damage').value = '100';
 ui.render();
-assert.equal(ui.fields.get('damage').value, '2', 'polling must not overwrite edits');
+assert.equal(ui.fields.get('damage').value, '100', 'polling must not overwrite edits');
 let submitted = ui.submit();
 assert.equal(calls, 1);
 assert.equal(ui.save.disabled, true);
@@ -317,7 +359,7 @@ assert.equal(calls, 1, 'no double submission');
 pending({
   ...snapshot,
   balanceRevision: snapshot.balanceRevision + 1,
-  balance: { ...snapshot.balance, damage: 2 },
+  balance: { ...snapshot.balance, damage: 100 },
 });
 await submitted;
 assert.equal(ui.save.disabled, false);

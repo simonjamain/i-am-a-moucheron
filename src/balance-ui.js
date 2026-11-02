@@ -18,12 +18,11 @@ export class BalanceUI {
       const input = document.createElement('input');
       input.type = 'number';
       input.min = field.min;
-      input.max = field.max;
       input.step = field.step;
       input.required = true;
       input.dataset.balanceKey = key;
       const hint = document.createElement('small');
-      hint.textContent = `${field.when} · défaut : ${field.value}${field.value === 1 && field.max <= 5 ? ' ×' : ''}`;
+      hint.textContent = `${field.when} · défaut : ${field.value}${field.value === 1 ? ' ×' : ''}`;
       label.append(title, input, hint);
       container.append(label);
       this.fields.set(key, input);

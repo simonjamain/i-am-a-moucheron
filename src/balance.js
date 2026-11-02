@@ -3,15 +3,13 @@ export const BALANCE_FIELDS = Object.freeze({
   population: {
     label: 'Quantité d’ennemis',
     min: 0.25,
-    max: 3,
     step: 0.25,
     value: 1,
-    when: 'Prochaine vague (900 ennemis maximum)',
+    when: 'Prochaine vague',
   },
   progression: {
     label: 'Progression de la difficulté',
     min: 0.25,
-    max: 3,
     step: 0.25,
     value: 1,
     when: 'Prochaine vague, déblocages compris',
@@ -19,7 +17,6 @@ export const BALANCE_FIELDS = Object.freeze({
   enemyHP: {
     label: 'PV des ennemis du bureau',
     min: 0.25,
-    max: 5,
     step: 0.25,
     value: 1,
     when: 'Immédiat, proportion de vie conservée',
@@ -27,7 +24,6 @@ export const BALANCE_FIELDS = Object.freeze({
   enemySpeed: {
     label: 'Vitesse des ennemis',
     min: 0.25,
-    max: 3,
     step: 0.25,
     value: 1,
     when: 'Immédiat, sans déplacement brusque',
@@ -35,7 +31,6 @@ export const BALANCE_FIELDS = Object.freeze({
   damage: {
     label: 'Dégâts des armes',
     min: 0.25,
-    max: 5,
     step: 0.25,
     value: 1,
     when: 'Prochain impact léger / prochain tir lourd, alliés compris',
@@ -43,7 +38,6 @@ export const BALANCE_FIELDS = Object.freeze({
   fireRate: {
     label: 'Cadence des armes automatiques et lourdes',
     min: 0.25,
-    max: 3,
     step: 0.25,
     value: 1,
     when: 'Prochain tir (pistolet semi-automatique inchangé)',
@@ -51,7 +45,6 @@ export const BALANCE_FIELDS = Object.freeze({
   ammo: {
     label: 'Capacité des munitions',
     min: 0.25,
-    max: 5,
     step: 0.25,
     value: 1,
     when: 'Immédiat, proportion restante conservée',
@@ -59,7 +52,6 @@ export const BALANCE_FIELDS = Object.freeze({
   fuel: {
     label: 'Capacité de carburant',
     min: 0.25,
-    max: 5,
     step: 0.25,
     value: 1,
     when: 'Immédiat, proportion restante conservée',
@@ -67,7 +59,6 @@ export const BALANCE_FIELDS = Object.freeze({
   prices: {
     label: 'Prix des achats',
     min: 0.25,
-    max: 5,
     step: 0.25,
     value: 1,
     when: 'Prochain achat, bons payés inchangés',
@@ -75,7 +66,6 @@ export const BALANCE_FIELDS = Object.freeze({
   rewards: {
     label: 'Récompenses en dollars',
     min: 0.25,
-    max: 5,
     step: 0.25,
     value: 1,
     when: 'Prochain gain, prêts signés inchangés',
@@ -83,7 +73,6 @@ export const BALANCE_FIELDS = Object.freeze({
   startingMoney: {
     label: 'Argent de départ ($)',
     min: 0,
-    max: 1000,
     step: 1,
     value: 0,
     when: 'Prochaine remise à zéro de la partie',
@@ -91,7 +80,6 @@ export const BALANCE_FIELDS = Object.freeze({
   initialDelay: {
     label: 'Délai initial (secondes)',
     min: 5,
-    max: 300,
     step: 1,
     value: 10,
     when: 'Compte à rebours initial, préavis minimum de 5 secondes',
@@ -99,7 +87,6 @@ export const BALANCE_FIELDS = Object.freeze({
   pause: {
     label: 'Pause entre vagues (secondes)',
     min: 5,
-    max: 300,
     step: 1,
     value: 60,
     when: 'Pause en cours, préavis minimum de 5 secondes',
@@ -117,7 +104,6 @@ export function validateBalance(patch) {
       !field ||
       !Number.isFinite(value) ||
       value < field.min ||
-      value > field.max ||
       Math.abs((value - field.min) / field.step - Math.round((value - field.min) / field.step)) >
         1e-7
     )
@@ -128,7 +114,7 @@ export function validateBalance(patch) {
 export const money = (value, factor = 1) => Math.round(value * factor * 100) / 100;
 export function scaleRoster(plan, balance) {
   const original = plan.roster;
-  const count = Math.min(900, Math.max(1, Math.round(original.length * balance.population)));
+  const count = Math.max(1, Math.round(original.length * balance.population));
   // Spread reduced populations across the original composition rather than removing late species.
   return {
     budget: plan.budget,
