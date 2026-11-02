@@ -298,7 +298,10 @@ export function swarmFrame(roster, time) {
       // A size-scaled fade duration limits expansion/retreat velocity, even
       // at the start and end of a very large flock's journey.
       fadeSeconds = Math.max(0.6, swarmSpread(e) * 0.6),
-      flockEnvelope = Math.max(0, Math.min(1, (age - hold) / fadeSeconds, (e.duration - age) / fadeSeconds)),
+      flockEnvelope = Math.max(
+        0,
+        Math.min(1, (age - hold) / fadeSeconds, (e.duration - age) / fadeSeconds),
+      ),
       phase = e.phase,
       amplitude = MAP.metres(e.ground ? 1.5 : e.type === 'dart' ? 6 : 4) * envelope;
     for (let j = 0; j < 3; j++)

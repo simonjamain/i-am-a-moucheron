@@ -96,7 +96,8 @@ const localSpeed = (e, t, dt = 0.05) => {
   return Math.hypot(...after.map((v, i) => v - before[i])) / dt;
 };
 assert.ok(
-  Math.abs(localSpeed({ ...small[0], id: 37 }, 20) - localSpeed({ ...large[0], id: 37 }, 20)) < 1e-12,
+  Math.abs(localSpeed({ ...small[0], id: 37 }, 20) - localSpeed({ ...large[0], id: 37 }, 20)) <
+    1e-12,
   'local insect flight speed cannot increase with population',
 );
 const frameSpeed = (flock, t, dt = 0.05) => {
@@ -162,7 +163,15 @@ const reference = new Function(
   'midgeDisplacement',
   'swarmSpread',
   exhaustive + '; return exhaustiveFrame;',
-)(MAP, INSECT_SCALE, enemySizeFactor, GROUND_FOOT_DEPTH, enemyRoutePosition, midgeDisplacement, swarmSpread);
+)(
+  MAP,
+  INSECT_SCALE,
+  enemySizeFactor,
+  GROUND_FOOT_DEPTH,
+  enemyRoutePosition,
+  midgeDisplacement,
+  swarmSpread,
+);
 const roster = wavePlan('DENSE-BENCH', 100, 123).roster;
 for (const time of [1, 4, 20, 75, 125]) {
   const result = swarmFrame(roster, time),

@@ -129,11 +129,6 @@ jobs:
         run: npm test
       - name: Check modified-file formatting
         run: npx prettier --check src/client.js src/insect-hits.js src/midge-batch.js src/waves.js src/graphics.js src/scale.js server/game.js server/session.js scripts/test-dense-swarms.mjs scripts/test-insect-hits.mjs scripts/test-midge-batch.mjs scripts/test-roster-sync.mjs src/audio.js scripts/test-audio.mjs scripts/test-clean-flight.mjs docs/dense-swarms.md docs/performance.md docs/code-structure.md
-      - name: Show exact formatting differences
-        if: failure()
-        run: |
-          npx prettier --write src/waves.js scripts/test-dense-swarms.mjs
-          git diff -- src/waves.js scripts/test-dense-swarms.mjs
       - name: Check documentation
         run: npm run check:docs
       - name: Build distributable
