@@ -20,7 +20,7 @@ import { purchaseCount } from '../src/equipment.js';
 import { bedAccess, bedSpawn } from '../src/beds.js';
 import { impactDamage } from '../src/field-physics.js';
 import { randomUUID } from 'node:crypto';
-import { MAP, ACTOR_UNIT, enemySizeFactor } from '../src/scale.js';
+import { MAP, ACTOR_UNIT, enemySizeFactor, INSECT_SCALE, MIDGE_SPHERE_RADIUS } from '../src/scale.js';
 import { OFFICE_LAYOUT, RAID_DURATION } from '../src/layout.js';
 import { VEHICLES, vehiclePad, vehicleEntry, vehicleAccess, leftVehiclePad } from '../src/fleet.js';
 import { baseWorld, baseBody, reconcileBase } from '../src/base.js';
@@ -1676,12 +1676,14 @@ export class Game {
                 a,
                 b,
                 frames[i].p,
-                MAP.metres(
-                  plan.roster[i].size *
-                    0.7 *
-                    (enemySizeFactor(plan.roster[i].type) *
-                      (plan.roster[i].type === 'midge' ? 1.2 : 1)),
-                ),
+                plan.roster[i].type === 'midge'
+                  ? INSECT_SCALE *
+                    plan.roster[i].size *
+                    enemySizeFactor('midge') *
+                    MIDGE_SPHERE_RADIUS
+                  : MAP.metres(
+                      plan.roster[i].size * 0.7 * enemySizeFactor(plan.roster[i].type),
+                    ),
               ),
               {
                 enemy: i,
