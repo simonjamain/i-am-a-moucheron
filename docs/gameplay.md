@@ -57,6 +57,11 @@ peut rouler et se poser si sa vitesse, sa descente et son attitude le permettent
 Au sol, il faut l’arrêter pour en sortir. Toute sortie aérienne commence en chute
 libre avec la vitesse héritée ; le parachute s’ouvre et se replie manuellement.
 
+Les équipements commandés depuis un appareil descendent dans un colis sous
+parachute à **10 cm/s dans le décor**, jusqu'à une surface porteuse disponible.
+Le serveur y déploie l'équipement une seule fois ; le colis n'est pas utilisable
+en vol. Voir [livraisons](issues-15-16-17.md#correction-de-la-vitesse-après-retour-en-jeu-version-69).
+
 Le tank a un pilote/MG avant, un tireur canon/coaxiale et un mitrailleur supérieur.
 Le Stuka et le pilote du bombardier larguent des bombes en maintenant Espace
 (0,5 s ; 6 et 50 bombes respectivement). Le clic gauche sert aux MG ; au canon du
