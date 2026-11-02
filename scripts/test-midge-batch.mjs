@@ -19,7 +19,10 @@ add(1, 0.05, 0, -2);
 batch.flush(insects, 300);
 assert.equal(scene.children.length, 3, 'body, head and both wings share three draws');
 assert.ok(scene.children.every((o) => o.isInstancedMesh && !o.userData.projectileSolid));
-assert.deepEqual(scene.children.map((o) => o.count), [2, 2, 4]);
+assert.deepEqual(
+  scene.children.map((o) => o.count),
+  [2, 2, 4],
+);
 const matrix = new T.Matrix4();
 batch.meshes[0].getMatrixAt(0, matrix);
 assert.ok(Math.abs(matrix.elements[14] + 1) < 1e-6, 'body matrix is positioned correctly');
@@ -36,7 +39,8 @@ assert.equal(
 // Check that a packed ray still returns the earliest midge, independent of insertion order.
 for (let id = 2; id < 300; id++) add(id, 0, 0, -1.5 - id * 0.01);
 const indexed = new InsectIndex(T, insects);
-const origin = new T.Vector3(0, 0, 0), direction = new T.Vector3(0, 0, -1);
+const origin = new T.Vector3(0, 0, 0),
+  direction = new T.Vector3(0, 0, -1);
 assert.equal(nearestInsectHit(T, origin, direction, insects, 6, null, indexed)?.id, 0);
 insects.delete(0);
 batch.flush(insects, 350);
@@ -53,10 +57,14 @@ assert.equal(batch.meshes[0].count, 9999);
 assert.equal(batch.meshes[1].count, 9999);
 assert.equal(batch.meshes[2].count, 19998);
 assert.equal(scene.children.length, 3);
-console.log(JSON.stringify({
-  instancedMidges: 9999, drawBatches: scene.children.length,
-  flushCpuMs: +cpuMs.toFixed(2), note: 'CPU only, not rendered GPU FPS',
-}));
+console.log(
+  JSON.stringify({
+    instancedMidges: 9999,
+    drawBatches: scene.children.length,
+    flushCpuMs: +cpuMs.toFixed(2),
+    note: 'CPU only, not rendered GPU FPS',
+  }),
+);
 batch.dispose();
 assert.equal(scene.children.length, 0);
 const fallback = new MidgeBatch(T, scene, { enabled: false });
@@ -64,4 +72,6 @@ fallback.flush(insects);
 assert.equal(scene.children.length, 0);
 fallback.dispose();
 assert.equal(first.parent, null, 'proxies never enter the Three.js scene');
-console.log('PASS: shared instanced meshes, independent hit spheres, indexed hits, batch growth and disposal.');
+console.log(
+  'PASS: shared instanced meshes, independent hit spheres, indexed hits, batch growth and disposal.',
+);
