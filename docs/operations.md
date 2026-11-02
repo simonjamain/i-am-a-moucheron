@@ -149,6 +149,20 @@ et la visée doivent être vérifiées en jeu. Le test
 `scripts/test-motion-capacity.mjs` vérifie les deux cadences et la prise en
 compte de tous les mouvements.
 
+## Validation native de 50 connexions UDP
+
+`npm run test:capacity` démarre un serveur local et établit 50 connexions
+WebRTC/UDP natives distinctes en petits lots, toutes dans une même room.
+Le test vérifie la présence des 50 pilotes, les deux canaux UDP ouverts,
+puis émet plusieurs mouvements par pilote en mesurant le relais et la
+mémoire du processus. Le test est également exécuté en CI.
+
+Les chiffres de ce test local sont des mesures sur `127.0.0.1`, avec pairs
+`node-datachannel`, **pas** des FPS WebGL, du trafic WAN ni des garanties de
+fluidité avec 50 navigateurs réels. La validation finale doit rester
+effectuée dans un navigateur sur le VPS, avec la latence et la charge GPU
+réelles.
+
 ## Contributions GitHub
 
 Le [guide de contribution](../CONTRIBUTING.md) décrit les branches parallèles,

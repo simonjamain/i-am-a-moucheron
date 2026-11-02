@@ -16,6 +16,7 @@
     "check:version": "node scripts/check-version.mjs",
     "prepare:version": "git config core.hooksPath .githooks",
     "version:next": "node scripts/next-version.mjs",
+    "test:capacity": "node scripts/assemble.mjs && node scripts/test-udp-capacity-50.mjs",
     "bench:collisions": "node scripts/benchmark-insect-index.mjs",
     "bench:udp-replies": "node scripts/benchmark-udp-replies.mjs",
     "bench:tracers": "node scripts/benchmark-tracers.mjs"
