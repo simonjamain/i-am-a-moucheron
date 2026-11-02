@@ -311,7 +311,7 @@ export function createGraphics(T, scene) {
     if (type === 'rat') {
       const body = ball(0, 0.06, 0.35, 0.65, '#887363', g);
       body.scale.set(0.75, 0.55, 1.65);
-      const head = ball(0, 0.02, -0.65, 0.43, '#988071', g);
+      const head = ball(0, 0.11, -0.65, 0.43, '#988071', g);
       const nose = ball(0, -0.1, -1.03, 0.16, '#bc8b94', g);
       for (const side of [-1, 1]) {
         const ear = ball(side * 0.34, 0.37, -0.7, 0.24, '#bc8b94', g);
