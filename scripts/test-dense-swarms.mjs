@@ -3,7 +3,13 @@ import { readFileSync } from 'node:fs';
 import { performance } from 'node:perf_hooks';
 import { MAP, INSECT_SCALE, enemySizeFactor, GROUND_FOOT_DEPTH } from '../src/scale.js';
 import { enemyRoutePosition } from '../src/routes.js';
-import { wavePlan, expandMidgeSwarms, swarmFrame, midgeDisplacement, MAX_WAVE_POPULATION } from '../src/waves.js';
+import {
+  wavePlan,
+  expandMidgeSwarms,
+  swarmFrame,
+  midgeDisplacement,
+  MAX_WAVE_POPULATION,
+} from '../src/waves.js';
 import { Game } from '../server/game.js';
 import { encodeReply, ReplyAssembler } from '../src/udp-protocol.js';
 const input = [
@@ -81,22 +87,41 @@ for (const removed of [0, 5, 20, midges.length - 1]) {
   const positions = new Map(without.map((e, i) => [e.id, swarmFrame(without, 75)[i]]));
   for (let i = 0; i < midges.length; i++) {
     if (i === removed) continue;
-    assert.deepEqual(positions.get(midges[i].id), withAll[i], 'neighbour removed: fixed ID and time');
+    assert.deepEqual(
+      positions.get(midges[i].id),
+      withAll[i],
+      'neighbour removed: fixed ID and time',
+    );
   }
 }
 // Realistic stress input: distinct stable IDs and hit points, one source route.
 const exemplar = midges[0];
 for (const size of [1000, 5000, 10000]) {
   const mass = Array.from({ length: size }, (_, id) => ({
-    ...exemplar, id, sourceId: exemplar.sourceId,
-    spawn: 0, entryHold: 0, duration: 150, phase: exemplar.phase + id * 0.01,
+    ...exemplar,
+    id,
+    sourceId: exemplar.sourceId,
+    spawn: 0,
+    entryHold: 0,
+    duration: 150,
+    phase: exemplar.phase + id * 0.01,
   }));
   const begin = performance.now();
   const positions = swarmFrame(mass, 75);
   assert.equal(positions.filter(Boolean).length, size);
   assert.notDeepEqual(positions[0].p, positions[1].p);
-  assert.deepEqual(swarmFrame(mass.slice(1), 75)[0], positions[1], 'first ID removal is independent');
-  console.log(JSON.stringify({proceduralMidges: size, cpuMs: +(performance.now() - begin).toFixed(2), note: 'CPU only'}));
+  assert.deepEqual(
+    swarmFrame(mass.slice(1), 75)[0],
+    positions[1],
+    'first ID removal is independent',
+  );
+  console.log(
+    JSON.stringify({
+      proceduralMidges: size,
+      cpuMs: +(performance.now() - begin).toFixed(2),
+      note: 'CPU only',
+    }),
+  );
 }
 const run = (fn) => {
   const start = performance.now();
