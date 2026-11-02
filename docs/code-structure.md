@@ -38,7 +38,10 @@ base de données ni accès disque dans les opérations de jeu Node. Voir
 | Lits                 | `beds.js` : accès et support ; `bed-ui.js` : document personnel et signature.                                                                      |
 | HUD/banque           | `hud.js`, `equipment-controls.js`, `bank-ui.js` ; [véhicules et banque](vehicles-bank.md).                                                         |
 | Mesure d’interaction | `interaction-timing.js` : feedback immédiat et traces bornées de sélection.                                                                        |
-| Effets/son           | `insect-status.js`, `blood-effects.js` (sang instancié à chaque impact), `crash-effects.js`, `audio.js`, effets de combat et corps tombants du client.                                                  |
+| Effets/son           | `insect-status.js`, `crash-effects.js`, `audio.js`, effets de combat et corps tombants du client.                                                  |
+
+Les gerbes de sang purement visuelles sont gérées dans `blood-effects.js`,
+avec un seul rendu instancié borné et une intégration aux impacts dans `client.js`.
 
 ## Dernier lot
 
