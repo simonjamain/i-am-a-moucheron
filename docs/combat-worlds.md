@@ -76,3 +76,5 @@ contextuelles actuelles, les effets partagés et les nouvelles collisions de coq
 
 Avant création d’une âme de joueur, une [observation volontaire](multiplayer-return.md#mort-et-observation-volontaire)
 neutralise les actions sans conserver de corps actif. La récidive super → super reste immédiate.
+
+Nouveaux PV : moustique 70, rat 5 000, araignée pondeuse 1 200, bébé araignée 20. Voir [bestiaire](enemy-bestiary.md) pour la naissance et les conséquences des 100 points potentiels d'infestation.

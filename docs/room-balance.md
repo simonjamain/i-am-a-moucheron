@@ -37,8 +37,8 @@ ravitaillement ; il faut toujours une unité entière pour tirer.
 
 ## Génération de nuées (debug)
 
-Dans le même panneau, **six champs** permettent de saisir des quantités entières
-de fourmis, cafards, moucherons, voltigeurs, carapaces et bourdons blindés.
+Dans le même panneau, **neuf champs** permettent de saisir des quantités entières
+de fourmis, cafards, moucherons, voltigeurs, carapaces, bourdons blindés, moustiques, rats et araignées pondeuses.
 **Envoyer la nuée** crée exactement le nombre demandé de chaque type, sans
 application du multiplicateur de population ni du multiplicateur ×5 des
 moucherons du directeur. Les autres joueurs voient les nouveaux ennemis lors
@@ -105,3 +105,5 @@ validation atomique, révisions, vagues, continuité de trajectoire, PV, réserv
 une modification par un pair, son observation par l’autre et un refus d’écriture.
 Un test humain WebGL sur deux navigateurs reste nécessaire pour apprécier le
 pilotage et la lisibilité ; aucun environnement temporaire Actions n’est configuré.
+
+Les bébés araignées ne sont pas générables directement : tuer une araignée pondeuse fait éclore jusqu'à 100 bébés, avec un plafond technique de 20 000 ennemis dans le roster pour les naissances de debug. Chacun compte 1 point d'infestation s'il atteint la poubelle. Les changements sont synchronisés par révision de roster.

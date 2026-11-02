@@ -130,3 +130,5 @@ Les paramètres de l'instructeur de vol sont enregistrés uniquement dans le
 navigateur par `flight-tuning.js` et présentés par `flight-tuning-ui.js`.
 Leur portée et leurs commandes sont décrites dans
 [les réglages personnels des avions](controls.md#réglages-personnels-des-avions).
+
+Le [bestiaire](enemy-bestiary.md) s'appuie sur `waves.js` et `routes.js` (profils, origine de naissance, trajectoires), `server/game.js` (mort unique et roster révisé), `graphics.js` (animaux procéduraux) et `spiderling-batch.js` (trois meshes instanciés).
