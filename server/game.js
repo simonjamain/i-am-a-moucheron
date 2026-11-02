@@ -1672,9 +1672,10 @@ export class Game {
         for (let i = 0; i < frames.length; i++) {
           if (!frames[i] || r.kills.has(i)) continue;
           const enemy = plan.roster[i];
-          const radius = enemy.type === 'midge'
-            ? INSECT_SCALE * enemy.size * enemySizeFactor('midge') * MIDGE_SPHERE_RADIUS
-            : MAP.metres(enemy.size * 0.7 * enemySizeFactor(enemy.type));
+          const radius =
+            enemy.type === 'midge'
+              ? INSECT_SCALE * enemy.size * enemySizeFactor('midge') * MIDGE_SPHERE_RADIUS
+              : MAP.metres(enemy.size * 0.7 * enemySizeFactor(enemy.type));
           // Cheap swept-AABB rejection before the exact segment/sphere calculation.
           if (!sweptSphereMayTouch(a, b, frames[i].p, radius)) continue;
           consider(segmentSphere(a, b, frames[i].p, radius), { enemy: i });
