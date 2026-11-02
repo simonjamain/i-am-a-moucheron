@@ -20,7 +20,13 @@ import { purchaseCount } from '../src/equipment.js';
 import { bedAccess, bedSpawn } from '../src/beds.js';
 import { impactDamage } from '../src/field-physics.js';
 import { randomUUID } from 'node:crypto';
-import { MAP, ACTOR_UNIT, enemySizeFactor, INSECT_SCALE, MIDGE_SPHERE_RADIUS } from '../src/scale.js';
+import {
+  MAP,
+  ACTOR_UNIT,
+  enemySizeFactor,
+  INSECT_SCALE,
+  MIDGE_SPHERE_RADIUS,
+} from '../src/scale.js';
 import { OFFICE_LAYOUT, RAID_DURATION } from '../src/layout.js';
 import { VEHICLES, vehiclePad, vehicleEntry, vehicleAccess, leftVehiclePad } from '../src/fleet.js';
 import { baseWorld, baseBody, reconcileBase } from '../src/base.js';
