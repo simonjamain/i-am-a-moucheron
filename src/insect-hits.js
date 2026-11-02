@@ -136,7 +136,9 @@ export function nearestInsectHit(
     const size = direct ? model.scale : model.getWorldScale(new T.Vector3());
     const radius =
       Math.max(Math.abs(size.x), Math.abs(size.y), Math.abs(size.z)) *
-      (model.userData.sphereRadius || 3 * (model.userData.hitTolerance || 1));
+      (model.userData.sphereRadius
+        ? (model.userData.sphereRadius * (model.userData.hitTolerance || 1)) / 1.2
+        : 3 * (model.userData.hitTolerance || 1));
     const dx = centre.x - origin.x,
       dy = centre.y - origin.y,
       dz = centre.z - origin.z;
@@ -194,7 +196,8 @@ export function insectContact(T, point, model, padding = 0.3) {
     size = model.getWorldScale(new T.Vector3());
   if (model.userData.sphereRadius) {
     const r =
-      model.userData.sphereRadius * Math.max(Math.abs(size.x), Math.abs(size.y), Math.abs(size.z)) +
+      ((model.userData.sphereRadius * (model.userData.hitTolerance || 1)) / 1.2) *
+        Math.max(Math.abs(size.x), Math.abs(size.y), Math.abs(size.z)) +
       padding;
     return point.distanceToSquared(centre) <= r * r;
   }
