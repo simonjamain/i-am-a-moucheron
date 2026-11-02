@@ -1669,26 +1669,16 @@ export class Game {
         if (b[1] <= 0) consider(a[1] / Math.max(1e-12, a[1] - b[1]), { solid: true });
         const frames =
           r.phase === 'combat' && projectile.wave === r.wave ? framesAt(projectile.updated) : [];
-        for (let i = 0; i < frames.length; i++)
-          if (frames[i] && !r.kills.has(i))
-            consider(
-              segmentSphere(
-                a,
-                b,
-                frames[i].p,
-                plan.roster[i].type === 'midge'
-                  ? INSECT_SCALE *
-                    plan.roster[i].size *
-                    enemySizeFactor('midge') *
-                    MIDGE_SPHERE_RADIUS
-                  : MAP.metres(
-                      plan.roster[i].size * 0.7 * enemySizeFactor(plan.roster[i].type),
-                    ),
-              ),
-              {
-                enemy: i,
-              },
-            );
+        for (let i = 0; i < frames.length; i++) {
+          if (!frames[i] || r.kills.has(i)) continue;
+          const enemy = plan.roster[i];
+          const radius = enemy.type === 'midge'
+            ? INSECT_SCALE * enemy.size * enemySizeFactor('midge') * MIDGE_SPHERE_RADIUS
+            : MAP.metres(enemy.size * 0.7 * enemySizeFactor(enemy.type));
+          // Cheap swept-AABB rejection before the exact segment/sphere calculation.
+          if (!sweptSphereMayTouch(a, b, frames[i].p, radius)) continue;
+          consider(segmentSphere(a, b, frames[i].p, radius), { enemy: i });
+        }
         for (const v of r.vehicles.values())
           if (v.id !== projectile.vehicle && v.state.hp > 0)
             consider(segmentSphere(a, b, v.state.p, MAP.metres(VEHICLES[v.type].span * 0.3)), {
