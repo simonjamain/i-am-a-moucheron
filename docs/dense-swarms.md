@@ -98,3 +98,28 @@ du navigateur, le débit des armes lourdes, la réception et le rendu GPU
 demandent encore des mesures en conditions réelles et plusieurs joueurs.
 Le comportement de pilotage et des tourelles multijoueurs ne change pas dans
 ce chantier. Il n'y a pas de nouveau plafond imposé au réglage de population.
+
+## Dispersion adaptative et entrées multiples
+
+La dispersion procédurale de chaque moucheron dépend maintenant de la
+population **initiale de son groupe de trajet** (`swarmSize`, calculée une fois
+lors de la construction du roster). Le rayon horizontal et l'étendue verticale
+progressent comme la racine carrée de cette population, avec une borne à 3,5 fois
+le rayon de référence. Les pertes en combat ne recentrent pas les survivants.
+`swarmFrame()` reste sans voisinage pour les moucherons, sans nouvelle boucle
+quadratique ni positions envoyées par UDP. Les vagues ordinaires et leurs
+multiplicateurs de population recalculent la taille des groupes après expansion.
+
+Les commandes de debug répartissent séparément chaque espèce en groupes
+d'au plus **64 insectes**, avec décalage court des départs, une graine de trajet
+propre à chaque groupe et une alternance déterministe entre les **quatre**
+entrées aériennes ou les **trois** entrées terrestres. Les petites commandes
+restent sur une seule entrée. Le nombre demandé ne change pas ; aucune
+multiplication ×5 supplémentaire n'est appliquée aux créations de debug.
+Cette répartition utilise les points d'apparition réels et reste stable entre
+clients et pour les nouveaux arrivants. La forme finale et l'espacement
+des groupes demandent une vérification humaine WebGL en conditions de jeu.
+
+`test-dense-swarms.mjs` contrôle les 1 000 moucherons de debug, l'effectif
+exact, la répartition par entrées, le rayon croissant, le déterminisme, les
+groupes terrestres et l'expansion normale de population.

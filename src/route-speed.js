@@ -7,6 +7,7 @@ function baselineRoute(enemy) {
   const key = [
     enemy.routeSeed || 1,
     enemy.branch || 0,
+    enemy.portalIndex ?? -1,
     !!enemy.ground,
     enemy.approach || 'full',
   ].join(':');
@@ -16,12 +17,17 @@ function baselineRoute(enemy) {
     seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
     return seed / 4294967296;
   };
+  const portalCount = enemy.ground ? PORTALS.ground.length : PORTALS.air.length;
   const portal =
-    enemy.approach === 'intro'
-      ? enemy.ground
-        ? 0
-        : 1
-      : Math.floor(random() * (enemy.ground ? 3 : 4));
+    Number.isInteger(enemy.portalIndex) &&
+    enemy.portalIndex >= 0 &&
+    enemy.portalIndex < portalCount
+      ? enemy.portalIndex
+      : enemy.approach === 'intro'
+        ? enemy.ground
+          ? 0
+          : 1
+        : Math.floor(random() * portalCount);
   let points;
   if (enemy.ground) {
     const starts = [

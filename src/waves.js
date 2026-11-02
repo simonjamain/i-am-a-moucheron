@@ -57,24 +57,32 @@ export function validateDebugSpawn(counts) {
 
 // Append a fresh, deterministic swarm to the active room-local roster.
 // Existing enemy indices never change, including their damage and kills.
+// Debug requests are distributed over several small flocks, not a single
+// overcrowded entrance. Every flock keeps a stable route, portal and size.
 export function debugSwarmRoster(counts, { room, wave, started, now, balance, firstId, revision }) {
   const roster = [];
   const elapsed = (now - started) / 1000;
   for (const [type, count] of Object.entries(counts)) {
     const profile = ENEMY_TYPES[type];
+    const targetSize = Math.min(64, Math.max(12, Math.round(Math.sqrt(count) * 1.6)));
+    const flockCount = Math.ceil(count / targetSize);
+    const flockSize = Math.ceil(count / Math.max(1, flockCount));
     for (let i = 0; i < count; i++) {
-      const group = Math.floor(i / 12);
+      const group = Math.floor(i / flockSize);
+      const member = i % flockSize;
       const enemy = {
         id: firstId + roster.length,
         type,
         ...profile,
         hp: profile.hp * balance.enemyHP,
-        phase: ((i % 12) * Math.PI * 2) / 12,
-        spawn: elapsed + (roster.length % 40) * 0.03,
+        phase: (member * Math.PI * 2) / flockSize,
+        spawn: elapsed + (group % 32) * 0.075 + member * 0.012,
         entryHold: 2,
-        approach: wave <= 3 ? 'intro' : wave <= 6 ? 'short' : 'full',
+        // Debug swarms can use all portals even during the introductory waves.
+        approach: 'full',
         routeSeed: hash(room + ':debug:' + wave + ':' + revision + ':' + type + ':' + group),
-        branch: group % 8 < 3 ? 1 : 0,
+        portalIndex: group % (profile.ground ? 3 : 4),
+        branch: group % 2,
       };
       enemy.travelSpeed = baselineTravelSpeed(enemy, wave) * (type === 'ant' ? 0.25 : 1);
       if (enemy.ground && type !== 'ant') {
@@ -90,13 +98,28 @@ export function debugSwarmRoster(counts, { room, wave, started, now, balance, fi
       roster.push(enemy);
     }
   }
-  return roster;
+  return assignMidgeSwarmSizes(roster);
 }
 export const MIDGE_SWARM_MULTIPLIER = 5;
 export const MAX_WAVE_POPULATION = 180 * MIDGE_SWARM_MULTIPLIER;
+
+// Store flock population once when a roster is built, never by scanning live
+// neighbours each frame. Kills do not shrink or reshuffle surviving insects.
+export function assignMidgeSwarmSizes(roster) {
+  const sizes = new Map();
+  const key = (e) => [e.routeSeed || 1, e.branch || 0, e.portalIndex ?? -1].join(':');
+  for (const enemy of roster)
+    if (enemy.type === 'midge') {
+      const group = key(enemy);
+      sizes.set(group, (sizes.get(group) || 0) + 1);
+    }
+  for (const enemy of roster)
+    if (enemy.type === 'midge') enemy.swarmSize = sizes.get(key(enemy));
+  return roster;
+}
 // Keep the director's composition and timetable, densify only the midge groups.
 export function expandMidgeSwarms(roster) {
-  return roster
+  return assignMidgeSwarmSizes(roster
     .flatMap((enemy) =>
       Array.from({ length: enemy.type === 'midge' ? MIDGE_SWARM_MULTIPLIER : 1 }, (_, member) => ({
         ...enemy,
@@ -105,7 +128,7 @@ export function expandMidgeSwarms(roster) {
         phase: enemy.phase + (member * Math.PI * 2) / MIDGE_SWARM_MULTIPLIER,
       })),
     )
-    .map((enemy, id) => ({ ...enemy, id }));
+    .map((enemy, id) => ({ ...enemy, id })));
 }
 export function waveBudget(wave) {
   const n = Math.max(1, Math.floor(Number(wave) || 1));
@@ -224,8 +247,11 @@ export function midgeDisplacement(enemy, time, envelope = 1) {
   const id = enemy.id ?? 0;
   const seed = enemy.routeSeed || 1;
   const angle = unitHash(id, seed) * Math.PI * 2 + time * (0.14 + unitHash(id + 41, seed) * 0.16);
-  const radius = MAP.metres(4) * Math.sqrt(unitHash(id + 7, seed)) * envelope;
-  const vertical = (unitHash(id + 17, seed) - 0.5) * MAP.metres(5) * envelope;
+  // A larger flock needs more room, but stays near its safe route.
+  // The upper bound keeps movement inside a small corridor around furniture.
+  const spread = Math.min(3.5, Math.max(0.45, Math.sqrt((enemy.swarmSize || 1) / 5)));
+  const radius = MAP.metres(4) * spread * Math.sqrt(unitHash(id + 7, seed)) * envelope;
+  const vertical = (unitHash(id + 17, seed) - 0.5) * MAP.metres(5) * spread * envelope;
   return [
     Math.cos(angle) * radius,
     vertical + Math.sin(time * 0.9 + id * 0.37) * MAP.metres(0.75) * envelope,

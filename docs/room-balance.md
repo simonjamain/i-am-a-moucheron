@@ -43,8 +43,16 @@ de fourmis, cafards, moucherons, voltigeurs, carapaces et bourdons blindés.
 application du multiplicateur de population ni du multiplicateur ×5 des
 moucherons du directeur. Les autres joueurs voient les nouveaux ennemis lors
 de leur prochaine synchronisation fiable ; un nouvel arrivant reçoit le même
-état. Les insectes apparaissent progressivement sur environ une seconde, suivent
-les entrées et trajets habituels, et conservent les réglages de PV et de vitesse.
+état. Les insectes apparaissent progressivement sur quelques secondes, suivent
+les trajets habituels et conservent les réglages de PV et de vitesse.
+Une demande importante est répartie automatiquement en plusieurs nuées de
+taille limitée (jusqu'à 64 insectes par groupe), avec des départs décalés et
+des entrées alternées : quatre aériennes ou trois terrestres selon l'espèce.
+Ce fonctionnement s'applique aussi aux vagues de debug de début de partie,
+sans forcer tous les groupes vers la même aération. Les moucherons disposent
+d'une dispersion proportionnelle à la racine carrée du nombre de membres
+de leur groupe (avec une borne de sécurité) ; aucune taille de modèle, PV
+ou quantité demandée n'est modifiée. Voir [nuées densifiées](dense-swarms.md).
 
 L'action est ouverte à tous les joueurs connectés à la room et disponible pendant
 la préparation ou un combat. En combat, les ennemis sont ajoutés à la vague
