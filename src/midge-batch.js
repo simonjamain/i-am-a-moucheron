@@ -30,10 +30,14 @@ export class MidgeBatch {
     this.partEuler = new T.Euler();
     this.localParts = [
       new T.Matrix4().compose(
-        new T.Vector3(0, 0, 0), new T.Quaternion(), new T.Vector3(0.35, 0.35, 0.7),
+        new T.Vector3(0, 0, 0),
+        new T.Quaternion(),
+        new T.Vector3(0.35, 0.35, 0.7),
       ),
       new T.Matrix4().compose(
-        new T.Vector3(0, 0.18, -0.55), new T.Quaternion(), new T.Vector3(0.3, 0.3, 0.3),
+        new T.Vector3(0, 0.18, -0.55),
+        new T.Quaternion(),
+        new T.Vector3(0.3, 0.3, 0.3),
       ),
     ];
     this.ensure(capacity);
@@ -44,7 +48,11 @@ export class MidgeBatch {
     while (capacity < needed) capacity *= 2;
     for (const mesh of this.meshes) this.scene.remove(mesh);
     this.meshes = this.materials.map((material, part) => {
-      const mesh = new this.T.InstancedMesh(this.geometry, material, capacity * (part === 2 ? 2 : 1));
+      const mesh = new this.T.InstancedMesh(
+        this.geometry,
+        material,
+        capacity * (part === 2 ? 2 : 1),
+      );
       mesh.count = 0;
       mesh.instanceMatrix.setUsage(this.T.DynamicDrawUsage);
       mesh.frustumCulled = false;
