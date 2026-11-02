@@ -80,6 +80,7 @@ import {
 import { createRenderer } from '/renderer.js';
 import { createGraphics } from '/graphics.js';
 import { MidgeBatch } from '/midge-batch.js';
+import { SpiderlingBatch } from '/spiderling-batch.js';
 import { createOffice } from '/office.js';
 import { aircraftBay, baseBody, baseWorld, baseAccess, advanceBase, aircraftPose } from '/base.js';
 import { SpatialAudio, swarmAudioGroups } from '/audio.js';
@@ -225,6 +226,7 @@ const others = new Map(),
   trails = [];
 const insectIndex = new InsectIndex(T, insects);
 const midgeBatch = new MidgeBatch(T, scene, { enabled: !!renderer.isWebGLRenderer });
+const spiderlingBatch = new SpiderlingBatch(T, scene, { enabled: !!renderer.isWebGLRenderer });
 const midgeForward = new T.Vector3(0, 0, -1);
 const midgeHeading = new T.Vector3();
 const midgeTarget = new T.Quaternion();
@@ -2937,7 +2939,9 @@ function enemies(now) {
       g =
         profile.type === 'midge' && midgeBatch.enabled
           ? midgeBatch.create(profile.phase)
-          : insect(profile.type);
+          : profile.type === 'spiderling' && spiderlingBatch.enabled
+            ? spiderlingBatch.create()
+            : insect(profile.type);
       g.userData.enemyWave = snap.wave;
       g.userData.enemyType = profile.type;
       g.userData.entryStatus = entryStatus(profile, t);
@@ -2950,7 +2954,7 @@ function enemies(now) {
     }
     // An instanced midge has no meshes or animation hierarchy in the scene.
     // Update only its inexpensive logical transform used by impacts, audio and HUD.
-    if (g.userData.instancedMidge) {
+    if (g.userData.instancedMidge || g.userData.instancedSpiderling) {
       const [x, y, z] = state.p;
       const dx = x - g.position.x,
         dy = y - g.position.y,
@@ -3985,6 +3989,7 @@ function frame(now) {
   updateFallingEnemies(dt);
   updateContextHUD();
   midgeBatch.flush(insects, now);
+  spiderlingBatch.flush(insects);
   tracerPool.flush();
   if (spectating && observationCamera) {
     if (observationRealm !== 'office') observedPurgatory();
@@ -4224,9 +4229,9 @@ function fallEnemy(enemy) {
   if (!g) return;
   insects.delete(enemy);
   insectStatus.remove(enemy);
-  if (g.userData.instancedMidge) {
+  if (g.userData.instancedMidge || g.userData.instancedSpiderling) {
     // Only up to 80 fallen bodies need real meshes; living insects stay batched.
-    const corpse = insect('midge');
+    const corpse = insect(g.userData.instancedSpiderling ? 'spiderling' : 'midge');
     corpse.position.copy(g.position);
     corpse.quaternion.copy(g.quaternion);
     corpse.scale.copy(g.scale);

@@ -54,6 +54,7 @@ const files = {
       'interaction-timing',
       'insect-hits',
       'midge-batch',
+      'spiderling-batch',
       'insect-status',
       'blood-effects',
       'crash-effects',
