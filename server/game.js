@@ -41,6 +41,9 @@ import {
   ENEMY_TYPES,
   swarmFrame,
   debugSwarmRoster,
+  spawnOffspring,
+  assignMidgeSwarmSizes,
+  MAX_OFFSPRING_ROSTER,
   validateDebugSpawn,
   MAX_DEBUG_ROOM_ENEMIES,
 } from '../src/waves.js';
@@ -1730,8 +1733,11 @@ export class Game {
           if (!frames[i] || r.kills.has(i)) continue;
           const enemy = plan.roster[i];
           const radius =
-            enemy.type === 'midge'
-              ? INSECT_SCALE * enemy.size * enemySizeFactor('midge') * MIDGE_SPHERE_RADIUS
+            enemy.type === 'midge' || enemy.type === 'spiderling'
+              ? INSECT_SCALE *
+                enemy.size *
+                enemySizeFactor(enemy.type) *
+                (enemy.type === 'midge' ? MIDGE_SPHERE_RADIUS : 1.2)
               : MAP.metres(enemy.size * 0.7 * enemySizeFactor(enemy.type));
           // Cheap swept-AABB rejection before the exact segment/sphere calculation.
           if (!sweptSphereMayTouch(a, b, frames[i].p, radius)) continue;
@@ -1900,10 +1906,7 @@ export class Game {
       const e = this.plan(r).roster[index];
       if (!e || r.kills.has(index)) return;
       r.enemyDamage[index] = (r.enemyDamage[index] || 0) + damage;
-      if (r.enemyDamage[index] >= e.hp) {
-        r.kills.add(index);
-        this.soul(r, 'enemy', r.wave + ':' + index, e.name, 'purgatory', e.type);
-      }
+      if (r.enemyDamage[index] >= e.hp) this.defeatEnemy(r, index, frames[index]?.p);
     };
     const hull = (id, damage) => {
       const v = r.vehicles.get(id);
@@ -2041,6 +2044,35 @@ export class Game {
     action();
     ledger.add(key);
   }
+  defeatEnemy(r, index, position = null) {
+    if (r.kills.has(index)) return false;
+    const plan = this.plan(r),
+      e = plan.roster[index];
+    if (!e) return false;
+    r.kills.add(index);
+    if (!e.offspringOnly) this.soul(r, 'enemy', r.wave + ':' + index, e.name, 'purgatory', e.type);
+    if (e.onDeath?.spawn) {
+      const at = (this.now() - r.started) / 1000;
+      const location = position || swarmFrame(plan.roster, at)[index]?.p;
+      if (location) {
+        const children = spawnOffspring(
+          e,
+          location,
+          at,
+          r.balance,
+          plan.roster.length,
+          r.wave,
+          Math.max(0, MAX_OFFSPRING_ROSTER - plan.roster.length),
+        );
+        if (children.length) {
+          plan.roster.push(...children);
+          assignMidgeSwarmSizes(plan.roster);
+          r.rosterRevision++;
+        }
+      }
+    }
+    return true;
+  }
   hit(r, p, b) {
     const e = this.plan(r).roster[b.enemy];
     if (
@@ -2051,16 +2083,14 @@ export class Game {
       !e
     )
       return;
+    if (r.kills.has(b.enemy)) return;
     const amount = Math.max(1, Math.min(800, Number(b.amount) || 75)) * r.balance.damage;
     this.once(
       r,
       JSON.stringify(['enemy', r.wave, b.enemy, p.id, String(b.shot || 'legacy').slice(0, 120)]),
       () => {
         r.enemyDamage[b.enemy] = (r.enemyDamage[b.enemy] || 0) + amount;
-        if (r.enemyDamage[b.enemy] >= e.hp && !r.kills.has(b.enemy)) {
-          r.kills.add(b.enemy);
-          this.soul(r, 'enemy', r.wave + ':' + b.enemy, e.name, 'purgatory', e.type);
-        }
+        if (r.enemyDamage[b.enemy] >= e.hp) this.defeatEnemy(r, b.enemy);
       },
       r.enemyHits,
     );

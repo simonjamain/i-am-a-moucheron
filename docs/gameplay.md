@@ -249,3 +249,7 @@ le mapping Maj/Ctrl et tangage du H2, et la réduction supplémentaire des vites
 
 Les [réglages d’équilibrage par room](room-balance.md) sont consultables par tous et
 modifiables à tout moment par le créateur de la room.
+
+## Rat, moustique et araignée pondeuse
+
+Le rat géant possède 5 000 PV et avance lentement. Le moustique possède 70 PV et esquive selon des oscillations déterministes. L'araignée pondeuse possède 1 200 PV : elle libère **100 bébés araignées** de 20 PV à sa mort, au lieu du site de décès, avec une trajectoire dispersée et rapide vers la poubelle. Chaque bébé survivant compte **1 point d'infestation**, soit 100 possibles pour la portée complète (défaite à 20). Les bébés morts ne créent pas d'âmes rémunérées. Moustique dès vague 3, pondeuse dès vague 11, rat dès vague 15. Voir [bestiaire](enemy-bestiary.md).

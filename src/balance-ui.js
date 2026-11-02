@@ -34,6 +34,7 @@ export class BalanceUI {
     this.spawnSend = root.querySelector('[data-spawn-send]');
     this.spawnStatus = root.querySelector('[data-spawn-status]');
     for (const [key, profile] of Object.entries(ENEMY_TYPES)) {
+      if (profile.offspringOnly) continue;
       const label = document.createElement('label');
       const title = document.createElement('span');
       title.textContent = profile.name;

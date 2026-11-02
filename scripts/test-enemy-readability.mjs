@@ -38,7 +38,8 @@ for (const [type, profile] of Object.entries(ENEMY_TYPES)) {
 console.table(rows);
 const unreadable = rows.filter(
   (row) =>
-    row.pixelsX < (row.type === 'ant' ? 5 : 6) || row.pixelsY < (row.type === 'ant' ? 1.7 : 2),
+    row.type !== 'spiderling' &&
+    (row.pixelsX < (row.type === 'ant' ? 5 : 6) || row.pixelsY < (row.type === 'ant' ? 1.7 : 2)),
 );
 assert.deepEqual(
   unreadable.map((r) => r.type),

@@ -499,6 +499,9 @@ const uiSpawn = new BalanceUI({
       dart: 0,
       guard: 0,
       brute: 1,
+      mosquito: 0,
+      rat: 0,
+      spider: 0,
     });
     return new Promise((yes) => (resolveSpawn = yes));
   },
@@ -507,7 +510,7 @@ const uiSpawn = new BalanceUI({
   onClose() {},
 });
 uiSpawn.open();
-assert.equal(uiSpawn.spawnFields.size, Object.keys(ENEMY_TYPES).length);
+assert.equal(uiSpawn.spawnFields.size, Object.keys(ENEMY_TYPES).filter((key) => !ENEMY_TYPES[key].offspringOnly).length);
 uiSpawn.spawnFields.get('midge').value = '2.5';
 await uiSpawn.submitSpawn();
 assert.equal(sendCount, 0);

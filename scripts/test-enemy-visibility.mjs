@@ -13,7 +13,7 @@ for (const type of Object.keys(ENEMY_TYPES)) {
   if (model.parent !== scene) missing.push(type);
 }
 assert.deepEqual(missing, [], 'Every living enemy model must be attached to the rendered scene');
-console.log('All six enemy types attached to the scene.');
+console.log('All enemy types attached to the scene.');
 for (const wave of [1, 2, 4, 6, 8, 12]) {
   const plan = wavePlan('VISIBLE', wave, 1000);
   assert.ok(plan.roster.some((e) => e.ground));
@@ -79,6 +79,7 @@ const state = {
   // This isolated VM exercises the non-WebGL fallback; its renderer does not
   // instantiate MidgeBatch, and all species must still have visible meshes.
   midgeBatch: { enabled: false },
+  spiderlingBatch: { enabled: false },
   midgeForward: new T.Vector3(0, 0, -1),
   midgeHeading: new T.Vector3(),
   midgeTarget: new T.Quaternion(),
@@ -141,9 +142,13 @@ for (const type of Object.keys(ENEMY_TYPES)) {
   if (ENEMY_TYPES[type].ground)
     assert.ok(
       new T.Box3().setFromObject(model).min.y >= 0,
-      'Ground enemy geometry above the floor',
+      'Ground enemy geometry above the floor: ' +
+        type +
+        ' (' +
+        new T.Box3().setFromObject(model).min.y +
+        ')',
     );
 }
 console.log(
-  'At least two ants from wave one, exact threefold midge dimensions, all six actual client models and terrestrial geometry above the floor.',
+  'At least two ants from wave one, exact threefold midge dimensions, all actual client models and terrestrial geometry above the floor.',
 );

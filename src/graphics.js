@@ -308,6 +308,56 @@ export function createGraphics(T, scene) {
   function insect(type = 'midge') {
     const g = new T.Group();
     g.userData.hitTolerance = type === 'midge' ? 1.2 : 1;
+    if (type === 'rat') {
+      const body = ball(0, 0.06, 0.35, 0.65, '#887363', g);
+      body.scale.set(0.75, 0.55, 1.65);
+      const head = ball(0, 0.11, -0.65, 0.43, '#988071', g);
+      const nose = ball(0, -0.1, -1.03, 0.16, '#bc8b94', g);
+      const paws = [];
+      for (const side of [-1, 1]) {
+        const ear = ball(side * 0.34, 0.37, -0.7, 0.24, '#bc8b94', g);
+        ear.scale.z = 0.38;
+        for (const z of [-0.37, 0.74]) {
+          const paw = ball(side * 0.48, -0.22, z, 0.19, '#766052', g);
+          paws.push(paw);
+          paw.scale.set(0.9, 0.6, 1.4);
+        }
+        for (const z of [-1.02, -0.93]) {
+          const whisker = box(side * 0.43, -0.08 + (z + 1), z, 0.76, 0.025, 0.025, '#dfb5a7', g);
+          whisker.rotation.z = side * 0.2;
+        }
+      }
+      const tail = new T.Mesh(new T.CylinderGeometry(0.07, 0.045, 2.2, 8), mat('#b58b88'));
+      tail.rotation.x = Math.PI / 2;
+      tail.position.set(0, -0.05, 1.9);
+      g.add(tail);
+      g.userData = { wings: [], legs: paws, hitParts: [body, head, nose], disposables: [] };
+      scene.add(g);
+      return g;
+    }
+    if (type === 'spider' || type === 'spiderling') {
+      const large = type === 'spider';
+      const body = ball(0, 0.06, 0.38, 0.56, large ? '#48362f' : '#66544c', g);
+      body.scale.set(0.9, 0.72, 1.12);
+      const head = ball(0, 0.02, -0.48, 0.34, '#342e2b', g);
+      const legs = [];
+      for (const side of [-1, 1])
+        for (let i = 0; i < 4; i++) {
+          const leg = box(side * 0.64, -0.17, (i - 1.5) * 0.3, 0.82, 0.055, 0.055, '#382d28', g);
+          leg.rotation.z = side * 0.38;
+          legs.push(leg);
+        }
+      for (const side of [-1, 1]) ball(side * 0.17, 0.18, -0.71, 0.09, '#d28b47', g);
+      g.userData = {
+        wings: [],
+        legs,
+        hitParts: [body, head],
+        disposables: [],
+        ...(large ? {} : { sphereRadius: 1.2 }),
+      };
+      scene.add(g);
+      return g;
+    }
     if (type === 'ant' || type === 'roach') {
       const shell = ball(
         0,
@@ -351,7 +401,13 @@ export function createGraphics(T, scene) {
       0.18,
       -0.55,
       0.3,
-      { midge: '#c6b96e', dart: '#d78253', guard: '#729d8b', brute: '#d0a14b' }[type],
+      {
+        midge: '#c6b96e',
+        dart: '#d78253',
+        guard: '#729d8b',
+        brute: '#d0a14b',
+        mosquito: '#73918d',
+      }[type],
       g,
     );
     const wm = new T.MeshStandardMaterial({
@@ -372,6 +428,18 @@ export function createGraphics(T, scene) {
       const shell = ball(0, 0.12, 0.12, 0.53, type === 'brute' ? '#be8c3d' : '#527e70', g);
       shell.scale.set(0.76, 0.55, 1.2);
       for (const z of [-0.2, 0.15, 0.5]) box(0, 0.36, z, 0.72, 0.05, 0.1, '#273d33', g);
+    }
+    if (type === 'mosquito') {
+      body.scale.set(0.42, 0.38, 1.7);
+      for (const side of [-1, 1]) {
+        const feeler = box(side * 0.07, 0.1, -1.1, 0.025, 0.025, 0.6, '#4d6c69', g);
+        feeler.rotation.y = side * 0.15;
+        for (const z of [-0.35, 0, 0.35]) {
+          const leg = box(side * 0.35, -0.45, z, 0.04, 0.65, 0.04, '#4d6c69', g);
+          leg.rotation.z = side * 0.25;
+          leg.userData.projectileSolid = false;
+        }
+      }
     }
     if (type === 'dart') {
       body.scale.z = 1.8;

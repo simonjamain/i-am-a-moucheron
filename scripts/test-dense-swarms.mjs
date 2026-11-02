@@ -152,7 +152,7 @@ exhaustive = exhaustive.replace(
 // the exhaustive reference must use the same candidate species.
 exhaustive = exhaustive.replace(
   'const b = samples[j];',
-  "if (roster[j].type === 'midge' || roster[j].debugFlock) continue; const b = samples[j];",
+  "if (['midge', 'spiderling', 'mosquito'].includes(roster[j].type) || roster[j].debugFlock) continue; const b = samples[j];",
 );
 const reference = new Function(
   'MAP',
