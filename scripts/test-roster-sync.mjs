@@ -43,4 +43,12 @@ const newWave = sync();
 assert.ok(newWave.roster?.length > 0, 'a different wave forces a fresh roster');
 assert.notEqual(newWave.wave, first.wave);
 assert.ok(!Object.hasOwn(sync(), 'roster'));
-console.log('PASS: first sync, omitted unchanged rosters, balance revisions and wave transitions.');
+command('debug-spawn', {
+  epoch: room.base.epoch,
+  counts: { midge: 12, ant: 1 },
+});
+const added = sync();
+assert.equal(added.rosterRevision, 1);
+assert.equal(added.roster.length, newWave.roster.length + 13);
+assert.ok(!Object.hasOwn(sync(), 'roster'), 'unchanged debug roster is omitted');
+console.log('PASS: first sync, omitted unchanged rosters, balance and debug revisions and wave transitions.');

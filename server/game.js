@@ -36,7 +36,14 @@ import {
   relayBodyReport,
   deskOccupant,
 } from '../src/purgatory-physics.js';
-import { wavePlan, ENEMY_TYPES, swarmFrame } from '../src/waves.js';
+import {
+  wavePlan,
+  ENEMY_TYPES,
+  swarmFrame,
+  debugSwarmRoster,
+  validateDebugSpawn,
+  MAX_DEBUG_ROOM_ENEMIES,
+} from '../src/waves.js';
 import { SHOP, shopPrice, supportedPlacement, waveStipend } from '../src/equipment.js';
 import {
   fullAmmo,
@@ -95,6 +102,7 @@ function roomState(code, now) {
     code,
     balance: { ...DEFAULT_BALANCE },
     balanceRevision: 0,
+    rosterRevision: 0,
     balanceOwnerToken: null,
     plan: null,
     created: now,
@@ -495,11 +503,7 @@ export class Game {
     return r.plan || wavePlan(r.code, r.wave, r.started);
   }
   setBalance(r, p, b) {
-    requireGame(
-      r.identityTokens.get(p.id) === r.balanceOwnerToken,
-      'Seul le créateur de la room peut modifier les réglages.',
-      403,
-    );
+    // Any connected player may tune this shared room, including spectators.
     requireGame(
       b.epoch === r.base.epoch && b.revision === r.balanceRevision,
       'Les réglages ou la partie ont changé. Relisez les valeurs.',
@@ -538,6 +542,49 @@ export class Game {
     r.balance = next;
     r.balanceRevision++;
   }
+  spawnDebug(r, b) {
+    requireGame(b.epoch === r.base.epoch, 'La partie a changé. Réessayez.', 409);
+    requireGame(r.phase !== 'lost', 'Partie perdue : remettez à zéro avant de générer.', 409);
+    let total;
+    try {
+      total = validateDebugSpawn(b.counts);
+    } catch (error) {
+      requireGame(false, error.message, 400);
+    }
+    const current = r.phase === 'combat' ? r.plan.roster.length : 0;
+    requireGame(
+      current + total <= MAX_DEBUG_ROOM_ENEMIES,
+      'Limite technique de ' + MAX_DEBUG_ROOM_ENEMIES + ' ennemis par combat.',
+      400,
+    );
+    if (r.phase === 'prep') {
+      // A debug-only wave must not inherit the dead roster of the last wave
+      // or automatically add the director's normal enemy composition.
+      r.phase = 'combat';
+      r.wave++;
+      r.started = this.now();
+      r.plan = { budget: 0, roster: [] };
+      r.next_wave_at = 0;
+      r.mission_started = 1;
+      r.kills.clear();
+      r.enemyDamage = {};
+      r.enemyHits.clear();
+      r.rosterRevision = 0;
+    }
+    const firstId = r.plan.roster.length;
+    r.plan.roster.push(
+      ...debugSwarmRoster(b.counts, {
+        room: r.code,
+        wave: r.wave,
+        started: r.started,
+        now: this.now(),
+        balance: r.balance,
+        firstId,
+        revision: r.rosterRevision + 1,
+      }),
+    );
+    r.rosterRevision++;
+  }
   startWave(r) {
     r.phase = 'combat';
     r.wave++;
@@ -546,6 +593,7 @@ export class Game {
       wavePlan(r.code, 1 + Math.round((r.wave - 1) * r.balance.progression), r.started),
       r.balance,
     );
+    r.rosterRevision = 0;
     r.next_wave_at = 0;
     r.kills.clear();
     r.enemyDamage = {};
@@ -591,6 +639,7 @@ export class Game {
       code: r.code,
       balance: r.balance,
       balanceRevision: r.balanceRevision,
+      rosterRevision: r.rosterRevision,
       balanceOwner: activePilots
         .filter((p) => r.identityTokens.get(p.id) === r.balanceOwnerToken)
         .map((p) => p.id),
@@ -820,7 +869,7 @@ export class Game {
     p.seen = this.now();
     r.touched = this.now();
     requireGame(
-      !p.state.awaitingPurgatory || ['sync', 'enter-purgatory', 'reset', 'balance'].includes(path),
+      !p.state.awaitingPurgatory || ['sync', 'enter-purgatory', 'reset', 'balance', 'debug-spawn'].includes(path),
       'Accédez au purgatoire avant d’agir.',
     );
     if (path === 'enter-purgatory') {
@@ -830,6 +879,7 @@ export class Game {
         this.soul(r, 'player', p.id, p.name, p.state.realm);
       }
     } else if (path === 'balance') this.setBalance(r, p, b);
+    else if (path === 'debug-spawn') this.spawnDebug(r, b);
     else if (path === 'sync') this.sync(r, p, b);
     else if (path === 'purchase-sign') this.purchaseSign(r, p, b);
     else if (path === 'place-purchase') this.placePurchase(r, p, b);
