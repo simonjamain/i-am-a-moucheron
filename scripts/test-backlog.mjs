@@ -23,6 +23,10 @@ assert.deepEqual(Object.fromEntries(Object.entries(ENEMY_TYPES).map(([k, v]) => 
   dart: 200,
   guard: 400,
   brute: 800,
+  mosquito: 70,
+  rat: 5000,
+  spider: 1200,
+  spiderling: 20,
 });
 assert.equal(blastDamage(0, 10), 80);
 assert.equal(blastDamage(10, 10), 20);
