@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import {
   ControlFocus,
+  airplaneSteering,
   equipmentExitAction,
   equipmentEnterAllowed,
   gameKey,
@@ -32,6 +34,43 @@ assert.deepEqual(
   flightInput({ KeyZ: true, ShiftLeft: true, Space: true }, { ...pad, roll: 1, fire: true }, false),
   { pitch: 0, roll: 0, yaw: 0, throttle: 0, fire: false },
 );
+// Regression: client previously read manual input but sent mouse-only axes to flight physics.
+const assisted = { pitch: 0.4, roll: -0.6, yaw: 0.7 };
+assert.deepEqual(airplaneSteering(assisted, flightInput({}, pad)), assisted);
+for (const [key, axis] of [
+  ['KeyZ', 'pitch'],
+  ['ArrowUp', 'pitch'],
+  ['KeyS', 'pitch'],
+  ['ArrowDown', 'pitch'],
+  ['KeyQ', 'roll'],
+  ['ArrowLeft', 'roll'],
+  ['KeyD', 'roll'],
+  ['ArrowRight', 'roll'],
+  ['KeyA', 'yaw'],
+  ['KeyE', 'yaw'],
+]) {
+  const manual = flightInput({ [key]: true }, pad);
+  const steering = airplaneSteering(assisted, manual);
+  assert.equal(steering[axis], manual[axis], key + ' must override mouse assistance');
+  for (const other of ['pitch', 'roll', 'yaw'].filter((name) => name !== axis))
+    assert.equal(steering[other], assisted[other], other + ' remains assisted');
+}
+assert.deepEqual(
+  airplaneSteering(assisted, flightInput({ KeyZ: true, KeyA: true }, pad, false)),
+  assisted,
+  'released pointer/form input cannot steer',
+);
+assert.deepEqual(
+  airplaneSteering(assisted, flightInput({}, { ...pad, pitch: -0.25, roll: 0.75, yaw: -0.5 })),
+  { pitch: -0.25, roll: 0.75, yaw: -0.5 },
+);
+assert.ok(
+  readFileSync(new URL('../src/client.js', import.meta.url), 'utf8').includes(
+    'const steering = airplaneSteering(auto, manual);',
+  ),
+  'client flight integration must use manual axes',
+);
+console.log('PASS: airplane keyboard, arrows and gamepad override mouse steering per axis.');
 const handlers = new Map();
 let changes = [],
   allowed = true,

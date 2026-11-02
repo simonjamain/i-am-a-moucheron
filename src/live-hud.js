@@ -53,7 +53,7 @@ export function controlHints({
     );
   return (
     (seat === 'pilot'
-      ? 'Souris : cap · Maj/Ctrl : gaz · C : regard libre' +
+      ? 'Souris : cap · Z/S : tangage · Q/D : roulis · A/E : gouverne · Maj/Ctrl : gaz · C : regard libre' +
         (vehicle.type === 'bomber' ? '' : ' · Clic : MG') +
         (vehicle.supplies?.ammo.bomb !== undefined ? ' · Espace : bombes' : '')
       : 'Souris : tourelle · Clic / Espace : MG') +

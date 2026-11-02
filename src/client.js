@@ -70,6 +70,7 @@ import {
 } from '/insect-hits.js';
 import {
   ControlFocus,
+  airplaneSteering,
   equipmentExitAction,
   equipmentEnterAllowed,
   gameKey,
@@ -3457,10 +3458,11 @@ function physics(dt) {
   const auto = assisted
     ? mouseFlightControls(T, { q: me.quaternion, omega, direction: mouseDirection })
     : { pitch: 0, roll: 0, yaw: 0 };
+  const steering = airplaneSteering(auto, manual);
   const inversion = currentFactors().controls;
-  const pitch = auto.pitch * inversion,
-    roll = auto.roll * inversion,
-    yaw = auto.yaw * inversion;
+  const pitch = steering.pitch * inversion,
+    roll = steering.roll * inversion,
+    yaw = steering.yaw * inversion;
   gas = T.MathUtils.clamp(gas + manual.throttle * currentFactors().controls * dt * 0.4, 0, 1);
   const wind = new T.Vector3();
   const { forward, stall } = stepFlight(

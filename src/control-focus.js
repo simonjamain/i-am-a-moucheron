@@ -82,6 +82,15 @@ export function flightInput(keys, pad, active = true) {
     fire: pad.fire,
   };
 }
+// Manual keyboard or gamepad input overrides the mouse instructor on its axis.
+// On release the mouse takes over that axis again.
+export function airplaneSteering(assisted, manual) {
+  return {
+    pitch: manual.pitch !== 0 ? manual.pitch : assisted.pitch,
+    roll: manual.roll !== 0 ? manual.roll : assisted.roll,
+    yaw: manual.yaw !== 0 ? manual.yaw : assisted.yaw,
+  };
+}
 export function lookDelta(look, dx, dy) {
   if (!Number.isFinite(dx) || !Number.isFinite(dy)) return;
   look.yaw -= Math.max(-250, Math.min(250, dx)) * 0.003;
