@@ -73,10 +73,7 @@ assert.equal(small.length, 10);
 assert.equal(large.length, 1000, 'debug counts stay exact');
 assert.ok(flocks.size >= 12, 'a thousand midges must form several flocks');
 assert.ok([...flocks.values()].every((members) => members.length <= 64));
-assert.equal(
-  new Set([...flocks.values()].map((members) => enemyRoute(members[0]).portal)).size,
-  4,
-);
+assert.equal(new Set([...flocks.values()].map((members) => enemyRoute(members[0]).portal)).size, 4);
 assert.ok(
   [...flocks.values()].every((members) =>
     members.every(
@@ -92,8 +89,7 @@ assert.deepEqual(large, debugSwarmRoster({ midge: 1000 }, debugParams));
 const smallOffset = midgeDisplacement({ ...small[0], id: 37, swarmSize: 10 }, 20);
 const largeOffset = midgeDisplacement({ ...small[0], id: 37, swarmSize: 50 }, 20);
 assert.ok(
-  Math.hypot(largeOffset[0], largeOffset[2]) >
-    2 * Math.hypot(smallOffset[0], smallOffset[2]),
+  Math.hypot(largeOffset[0], largeOffset[2]) > 2 * Math.hypot(smallOffset[0], smallOffset[2]),
   'flock radius grows with its population',
 );
 const groundFlocks = debugSwarmRoster({ ant: 120 }, debugParams);
