@@ -24,8 +24,10 @@ l’infestation. La mort ouvre une observation à caméra fixe ; un clic volonta
 La première vague démarre dix secondes après le lancement de la partie. Après
 chaque vague, la pause dure au maximum soixante secondes ; le déclenchement manuel
 peut la raccourcir. Un budget de difficulté croissant compose des vagues variées
-avec des ennemis de résistances différentes. Le départ comporte vingt moucherons et quatre fourmis, avec des parcours
-étendus dans toute la pièce à vitesse conservée ; les types plus difficiles
+avec des ennemis de résistances différentes. Dès la première vague, deux fourmis sont garanties ; le reste du budget est tiré
+entre fourmis et moucherons, puis les moucherons sont multipliés par cinq.
+Les groupes suivent la même cadence pour toutes les vagues, sans changer les
+parcours ni les points d'entrée. Les types plus difficiles
 sont débloqués progressivement. Voir [progression](progression.md). Des groupes aériens arrivent depuis
 plusieurs aérations, se séparent et se rejoignent ; fourmis et cafards empruntent
 des parcours terrestres depuis des trous. La durée des trajets dépend de leur longueur à vitesse conservée et est partagée
@@ -198,9 +200,10 @@ sont trois fois plus gros que dans la livraison précédente.
 
 Les six espèces utilisent désormais des dimensions contrôlées en pixels :
 [facteurs et mesures](enemy-visibility.md). Les terrestres sont relevés selon
-leurs pattes, avec une marge de navigation adaptée à leur corps élargi. Les PV et primes restent inchangés ; la composition de départ est désormais
-20 moucherons + 4 fourmis selon [les nuées densifiées](dense-swarms.md) ;
-VAG-07 réduit ensuite taille et vitesse des fourmis, selon le lot confort.
+leurs pattes, avec une marge de navigation adaptée à leur corps élargi. Les PV et primes restent inchangés ; la première vague suit maintenant le même
+tirage que les suivantes, avec au moins deux fourmis et des moucherons en nuées ×5.
+L'ancienne composition fixe 20 + 4 est décrite dans [les nuées densifiées](dense-swarms.md).
+VAG-07 réduit taille et vitesse des fourmis, selon le lot confort.
 
 Le [lot confort de jeu, version 37](comfort.md) précise réparation, zoom, jauges,
 radar à pied, remise à zéro, fourmis et projectiles du pistolet courants.

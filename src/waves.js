@@ -69,7 +69,7 @@ export function wavePlan(room, wave, started = 0) {
     seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
     return seed / 4294967296;
   };
-  const initialAnts = wave === 1 ? 4 : 2;
+  const initialAnts = 2;
   const roster = Array.from({ length: initialAnts }, (_, id) => ({
       id,
       type: 'ant',
@@ -96,7 +96,6 @@ export function wavePlan(room, wave, started = 0) {
         t.cost <= remaining &&
         (name === 'midge' ||
           (wave >= unlock[name] &&
-            !(wave === 1 && name === 'ant') &&
             (t.cost === 1 ||
               ((counts[name] || 0) < 1 + Math.floor((wave - unlock[name]) / 3) &&
                 eliteSpent + t.cost <= Math.floor(waveBudget(wave) * 0.4))))),
@@ -123,7 +122,7 @@ export function wavePlan(room, wave, started = 0) {
   }
   for (const enemy of roster) {
     enemy.entryHold = 2;
-    enemy.spawn = Math.floor(enemy.id / 4) * (wave <= 3 ? 3 : 2.4) + (enemy.id % 4) * 0.35;
+    enemy.spawn = Math.floor(enemy.id / 4) * 2.4 + (enemy.id % 4) * 0.35;
     const group = Math.floor(enemy.id / 8),
       solo = random() < 0.18;
     enemy.approach = wave <= 3 ? 'intro' : wave <= 6 ? 'short' : 'full';

@@ -8,7 +8,7 @@ armes restent ceux de [combat-worlds](combat-worlds.md).
 
 | Vague | Budget | Prime commune immédiate | Nouveauté autorisée             |
 | ----- | -----: | ----------------------: | ------------------------------- |
-| 1     |      8 |                     4 $ | 20 moucherons + 4 fourmis       |
+| 1     |      8 |                     4 $ | Fourmis/moucherons au hasard    |
 | 2     |     10 |                     5 $ | Fourmis garanties               |
 | 3     |     14 |                     6 $ | Présence terrestre régulière    |
 | 4     |     18 |                     7 $ | Premier voltigeur possible      |
@@ -29,8 +29,14 @@ les déblocages et les primes sont conservés.
 Les trajets comportent désormais des détours avant l’approche de la poubelle,
 avec navigation statique autour du mobilier. La vitesse effective précédente est
 conservée sauf pour les fourmis ralenties par [VAG-07](comfort.md) et la durée découle de la longueur, sans l’ancien plafond de 145 secondes.
-La première vague mêle vingt moucherons et quatre fourmis, avec parcours sur toute la
-pièce et durées plus longues à vitesse conservée, et se termine plus tôt si tous les ennemis sont abattus. Le lancement initial de dix secondes et les pauses entre vagues de soixante
+Dès la première vague, deux fourmis sont garanties, puis les six points de budget
+restants sont tirés entre fourmis et moucherons ; chaque source de moucherons est
+multipliée par cinq. Le calendrier de départ est le même pour toutes les vagues :
+quatre sources par groupe, une nouvelle série toutes les 2,4 secondes, 0,35 seconde
+entre sources, et 0,07 seconde entre membres d'une nuée. Les trajectoires et leurs
+points d'entrée ne changent pas : les trois premières vagues conservent l'approche
+« intro ». La vague se termine plus tôt si tous les ennemis sont abattus.
+Le lancement initial de dix secondes et les pauses entre vagues de soixante
 secondes restent séparés. Voir [trajets et crashs](vehicles-bank.md#trajets-et-crashs)
 pour la calibration et les limites de navigation.
 
@@ -86,8 +92,9 @@ La progression actuelle ne dépend pas de D1 et disparaît au redémarrage.
 Installations Node : le [bon signé](clean-flight.md#prix-bon-signé-et-pose) débite
 avant la pose ; annuler l’aperçu ne fait pas perdre l’objet payé.
 
-VAG-04/VAG-05 : [parcours et budget actuels](multiplayer-return.md#parcours-et-fourmis-précoces),
-budget initial 8, quatre fourmis en vague 1 puis au moins deux par vague, coûts/PV inchangés.
+Historique VAG-04/VAG-05 : [parcours et budget](multiplayer-return.md#parcours-et-fourmis-précoces),
+budget initial 8, autrefois quatre fourmis en vague 1 ; le directeur courant garantit
+deux fourmis à toutes les vagues, avec coûts/PV inchangés.
 Les achats de chasseur et bombardier supplémentaires coûtent 8 $ et 16 $.
 
 Le H2 coûte 30 $, le camion D2 20 $, sans remplacement gratuit. Voir

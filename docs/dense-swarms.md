@@ -44,3 +44,9 @@ UDP natifs. Le confort de tir et les FPS restent à observer en partie sur la VM
 Livraison Node/RAM/UDP en ZIP ; aucune publication du client sur le Worker
 historique. Installer les sources, redémarrer le serveur puis recharger les
 navigateurs, comme décrit dans [l'exploitation](operations.md).
+
+Depuis l'uniformisation ultérieure de la génération des vagues, la première vague
+n'impose plus les anciennes quantités 20 + 4 : deux fourmis restent garanties,
+les autres sources sont tirées au sort avec le budget 8, puis les moucherons sont
+multipliés par cinq. Les groupes suivent la même cadence à toutes les vagues.
+Voir [progression](progression.md) ; les nombres ci-dessus décrivent la version 38.
