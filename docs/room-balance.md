@@ -14,20 +14,20 @@ les valeurs ; **Appliquer à la room** les enregistre. La partie continue pendan
 l’édition. Un changement concurrent ou une remise à zéro impose de recharger
 les valeurs avant envoi ; les champs saisis ne sont pas écrasés par le polling.
 
-| Réglage                        | Application                                                                                                                 |
-| ------------------------------ | --------------------------------------------------------------------------------------------------------------------------- |
-| Quantité (×0,25–3)             | Prochaine vague, population totale plafonnée à 900                                                                          |
-| Progression (×0,25–3)          | Prochaine vague ; modifie le numéro de difficulté utilisé par le directeur, déblocages compris                              |
-| PV ennemis (×0,25–5)           | Ennemis du bureau, immédiatement ; dégâts accumulés et PV sont multipliés ensemble, morts conservés                         |
-| Vitesse ennemis (×0,25–3)      | Immédiatement ; âge et durée de trajet recalés ensemble, sans changer la position ; futurs départs conservés                |
-| Dégâts (×0,25–5)               | Prochain impact déclaré pour armes légères/pistolet/DCA, prochain lancement pour armes lourdes ; tirs alliés compris        |
-| Cadence (×0,25–3)              | Prochain intervalle de tir automatique/lourd ; pistolet semi-automatique inchangé                                           |
-| Munitions, carburant (×0,25–5) | Capacité et stock multipliés proportionnellement ; consommation unitaire inchangée ; ravitaillement toujours en 10 secondes |
-| Prix (×0,25–5)                 | Prochain achat ; un bon déjà payé garde son prix et son remboursement                                                       |
-| Récompenses (×0,25–5)          | Prochaine prime de vague ou libération d’âme ; arrondi au centime, caisse actuelle et prêts signés inchangés                |
-| Argent initial (0–1000 $)      | Prochaine remise à zéro, sans crédit immédiat                                                                               |
-| Délai initial (5–300 s)        | Prochain lancement ou compte à rebours initial en cours                                                                     |
-| Pause (5–300 s)                | Prochaine pause ou pause en cours                                                                                           |
+| Réglage                              | Application                                                                                                                 |
+| ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------- |
+| Quantité (×0,25 et plus)             | Prochaine vague, sans plafond de population                                                                                 |
+| Progression (×0,25 et plus)          | Prochaine vague ; modifie le numéro de difficulté utilisé par le directeur, déblocages compris                              |
+| PV ennemis (×0,25 et plus)           | Ennemis du bureau, immédiatement ; dégâts accumulés et PV sont multipliés ensemble, morts conservés                         |
+| Vitesse ennemis (×0,25 et plus)      | Immédiatement ; âge et durée de trajet recalés ensemble, sans changer la position ; futurs départs conservés                |
+| Dégâts (×0,25 et plus)               | Prochain impact déclaré pour armes légères/pistolet/DCA, prochain lancement pour armes lourdes ; tirs alliés compris        |
+| Cadence (×0,25 et plus)              | Prochain intervalle de tir automatique/lourd ; pistolet semi-automatique inchangé                                           |
+| Munitions, carburant (×0,25 et plus) | Capacité et stock multipliés proportionnellement ; consommation unitaire inchangée ; ravitaillement toujours en 10 secondes |
+| Prix (×0,25 et plus)                 | Prochain achat ; un bon déjà payé garde son prix et son remboursement                                                       |
+| Récompenses (×0,25 et plus)          | Prochaine prime de vague ou libération d’âme ; arrondi au centime, caisse actuelle et prêts signés inchangés                |
+| Argent initial (0 $ et plus)         | Prochaine remise à zéro, sans crédit immédiat                                                                               |
+| Délai initial (5 s et plus)          | Prochain lancement ou compte à rebours initial en cours                                                                     |
+| Pause (5 s et plus)                  | Prochaine pause ou pause en cours                                                                                           |
 
 Les délais en cours sont ajustés de la différence entre ancienne et nouvelle
 durée, avec au moins cinq secondes restantes après modification. Le lancement
@@ -37,7 +37,10 @@ ravitaillement ; il faut toujours une unité entière pour tirer.
 
 ## Autorité et limites
 
-`src/balance.js` définit les champs, bornes et règles de transformation.
+`src/balance.js` définit les champs, minima et règles de transformation. Aucun réglage n’a de
+plafond supérieur de gameplay, côté formulaire comme côté serveur. Les nombres
+doivent rester finis ; les limites techniques du navigateur, de la mémoire et
+des messages réseau continuent naturellement à s’appliquer.
 `server/game.js` valide identité, epoch et révision avant toute mutation.
 Le plan actif est une copie propre à la room ; le cache déterministe partagé de
 `waves.js` reste inchangé. L’autorité coopérative des mouvements et des impacts
