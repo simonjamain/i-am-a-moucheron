@@ -64,6 +64,12 @@ exhaustive = exhaustive.replace(
   'for (const j of candidates)',
   'for (let j = 0; j < samples.length; j++)',
 );
+// The optimized grid intentionally excludes procedurally independent midges;
+// the exhaustive reference must use the same candidate species.
+exhaustive = exhaustive.replace(
+  'const b = samples[j];',
+  "if (roster[j].type === 'midge') continue; const b = samples[j];",
+);
 const reference = new Function(
   'MAP',
   'INSECT_SCALE',
