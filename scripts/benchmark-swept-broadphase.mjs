@@ -3,10 +3,10 @@ import assert from 'node:assert/strict';
 import { segmentSphere } from '../src/ordnance.js';
 import { sweptSphereMayTouch } from '../src/swept-broadphase.js';
 
-// CPU-only, same 50 vehicle segments × 900 enemy centers. One iteration is
-// a collision scan (not a full game frame, network workload or GPU rendering).
+// CPU-only: same vehicle contact path, 50 segments by 900 enemies.
 let seed = 167;
-const rand = () => ((seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0) / 2 ** 32);
+const rand = () =>
+  ((seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0) / 2 ** 32);
 const enemies = Array.from({ length: 900 }, () => ({
   position: Array.from({ length: 3 }, () => (rand() - 0.5) * 4),
   radius: 0.002 + rand() * 0.018,
@@ -21,11 +21,13 @@ function scan(optimized) {
   for (const v of vehicles)
     for (const e of enemies) {
       if (optimized && !sweptSphereMayTouch(v.start, v.end, e.position, e.radius)) continue;
-      if (segmentSphere(v.start, v.end, e.position, e.radius) !== null) hits++;
+      const touching = Math.hypot(...v.end.map((n, i) => n - e.position[i])) <= e.radius;
+      const impact = touching || segmentSphere(v.start, v.end, e.position, e.radius) !== null;
+      if (impact) hits++;
     }
   return hits;
 }
-assert.equal(scan(false), scan(true), 'optimized query must preserve exact hit count');
+assert.equal(scan(false), scan(true), 'exact hit counts must remain identical');
 for (let i = 0; i < 4; i++) {
   scan(false);
   scan(true);
@@ -33,21 +35,22 @@ for (let i = 0; i < 4; i++) {
 const direct = [],
   indexed = [];
 for (let i = 0; i < 12; i++) {
-  for (const [optimized, times] of i % 2 ? [[true, indexed], [false, direct]] : [[false, direct], [true, indexed]]) {
+  for (const optimized of (i % 2 ? [true, false] : [false, true])) {
+    const samples = optimized ? indexed : direct;
     const start = performance.now();
     const hits = scan(optimized);
-    times.push(performance.now() - start);
-    assert.equal(hits, scan(!optimized), 'all hits must be identical');
+    samples.push(performance.now() - start);
+    assert.equal(hits, scan(!optimized));
   }
 }
 console.log(
   JSON.stringify({
-    players: vehicles.length,
+    vehicles: vehicles.length,
     enemies: enemies.length,
     checks: vehicles.length * enemies.length,
     directMs: +median(direct).toFixed(3),
     broadPhaseMs: +median(indexed).toFixed(3),
     hits: scan(false),
-    note: 'CPU-only narrow-phase benchmark; not 50 real connected players',
+    note: 'CPU-only vehicle/insect contact scan, not full game FPS',
   }),
 );

@@ -98,25 +98,30 @@ composition doit être jugée visuellement ; la parité de matrices/couleurs ne
 suffit pas. Cette contribution reste candidate tant que cette observation et
 les mesures de rendu réel sont indisponibles.
 
-## Montée en charge vers 50 joueurs — collisions physiques serveur (version 71)
+## Montée en charge vers 50 joueurs — collisions physiques serveur (version 72)
 
-Le serveur relaie les mouvements ; chaque navigateur simule sa propre physique.
-Les collisions serveur entre les véhicules, les insectes et les armes lourdes
-appellent en revanche `segmentSphere` pour de nombreux candidats. Le nouveau
-`sweptSphereMayTouch()` rejette les sphères entièrement hors du rectangle 3D
-englobant le déplacement, élargi du rayon de collision. Un vrai impact ne peut
-pas être rejeté ; les tests exacts `segmentSphere`, les dégâts et l'ordre des
-impacts restent inchangés. L'optimisation est appliquée aux contacts
-véhicule/insecte et aux projectiles lourds contre les insectes.
+Le serveur relaie les mouvements : la physique du joueur est simulée par son
+navigateur. Pour les contacts véhicule/insecte, le serveur calculait la
+distance euclidienne de chaque paire avant de vérifier l'intersection exacte,
+même quand un insecte était loin de la trajectoire du véhicule.
 
-`node scripts/test-swept-broadphase.mjs` compare 45 000 segments/rayons
-déterministes et plusieurs cas limites contre l'intersection précise.
-`npm run bench:swarm-50` mesure le calcul pur avec 50 véhicules et 900
-positions d'ennemis (45 000 paires par balayage), avant/après, avec mêmes
-candidats, 12 passages alternés et médiane après échauffement.
-Cette mesure ne compte ni `swarmFrame()`, ni réseau WebRTC, ni rendu WebGL.
-Elle n'est pas une garantie de 50 joueurs réels à 60 FPS.
+`sweptSphereMayTouch()` effectue un rejet conservateur par boîtes englobantes
+avant `Math.hypot` et `segmentSphere`. Les contacts valides, dégâts et ordre
+des impacts restent confiés à la phase précise. Un segment qui touche
+réellement la sphère ne peut pas être rejeté.
 
-Vérification en jeu à prévoir : partie réelle 50 joueurs, vagues denses,
-plusieurs avions et obus, FPS et latence, collisions et dégâts identiques.
-L'environnement de PR temporaire demeure indisponible.
+`node scripts/test-swept-broadphase.mjs` teste 45 000 couples géométriques
+déterministes et les cas limites contre `segmentSphere`.
+`npm run bench:swarm-50` compare le parcours des contacts de **50 véhicules
+et 900 insectes**, 45 000 paires, avant/après, 12 échantillons alternés,
+avec échauffement et nombre de collisions identique.
+
+Le premier essai de broad phase des projectiles n'a montré aucun gain :
+`segmentSphere` contient déjà exactement le même filtre AABB. Mesures du
+premier essai : 0,406 ms en direct contre 0,414 ms avec la vérification
+redondante. Ce doublon a été supprimé du correctif final.
+
+Le benchmark de contacts est **CPU uniquement**, sans `swarmFrame()`,
+WebGL, WebRTC ni véritables joueurs. Il ne garantit pas 50 joueurs fluides :
+la mesure de partie complète, le trafic réseau, les FPS clients et la
+latence restent à établir après déploiement. Prévisualisation PR indisponible.

@@ -1664,8 +1664,7 @@ export class Game {
                 (enemySizeFactor(plan.roster[i].type) *
                   (plan.roster[i].type === 'midge' ? 1.2 : 1)),
             );
-            if (sweptSphereMayTouch(a, b, frames[i].p, radius))
-              consider(segmentSphere(a, b, frames[i].p, radius), { enemy: i });
+            consider(segmentSphere(a, b, frames[i].p, radius), { enemy: i });
           }
         for (const v of r.vehicles.values())
           if (v.id !== projectile.vehicle && v.state.hp > 0)
