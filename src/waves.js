@@ -134,11 +134,17 @@ export function debugSwarmRoster(counts, { room, wave, started, now, balance, fi
       enemy.travelSpeed =
         baselineTravelSpeed(enemy, wave) *
         (type === 'ant' ? 0.25 : type === 'rat' ? 0.6 : type === 'spider' ? 0.55 : 1);
-      if (enemy.ground && !['ant', 'rat', 'spider', 'spiderling'].includes(type)) {
+      if (enemy.ground && type !== 'ant' && type !== 'spiderling') {
         const ant = { ...enemy, ...ENEMY_TYPES.ant, type: 'ant' };
         const antSpeed = baselineTravelSpeed(ant, wave) * 0.25;
         const antSize = ENEMY_TYPES.ant.size * enemySizeFactor('ant');
-        enemy.travelSpeed = antSpeed * Math.min(1, antSize / (enemy.size * enemySizeFactor(type)));
+        enemy.travelSpeed =
+          antSpeed *
+          (type === 'rat'
+            ? 0.7
+            : type === 'spider'
+              ? 0.8
+              : Math.min(1, antSize / (enemy.size * enemySizeFactor(type))));
       }
       enemy.duration = enemy.entryHold + routeDuration(enemy);
       enemy.entryHold /= balance.enemySpeed;
@@ -288,9 +294,14 @@ export function wavePlan(room, wave, started = 0) {
   const slowestAnt = Math.min(...ants.map((e) => e.travelSpeed));
   const antSize = ENEMY_TYPES.ant.size * enemySizeFactor('ant');
   for (const enemy of roster) {
-    if (enemy.ground && !['ant', 'rat', 'spider', 'spiderling'].includes(enemy.type))
+    if (enemy.ground && enemy.type !== 'ant' && enemy.type !== 'spiderling')
       enemy.travelSpeed =
-        slowestAnt * Math.min(1, antSize / (enemy.size * enemySizeFactor(enemy.type)));
+        slowestAnt *
+        (enemy.type === 'rat'
+          ? 0.7
+          : enemy.type === 'spider'
+            ? 0.8
+            : Math.min(1, antSize / (enemy.size * enemySizeFactor(enemy.type))));
     enemy.duration = enemy.entryHold + routeDuration(enemy);
   }
   const result = { budget: waveBudget(wave), roster: expandMidgeSwarms(roster) };
