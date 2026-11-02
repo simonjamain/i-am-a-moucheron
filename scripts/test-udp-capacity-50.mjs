@@ -44,6 +44,7 @@ async function joinPeer(index) {
     portRangeBegin: 44400,
     portRangeEnd: 44799,
   });
+  const slot = peers.length;
   peers.push({ pc, ready: false });
   const commands = pc.createDataChannel(COMMAND_CHANNEL, { unordered: false });
   const motion = pc.createDataChannel(MOTION_CHANNEL, { unordered: true, maxRetransmits: 0 });
@@ -74,7 +75,7 @@ async function joinPeer(index) {
   const result = replies.get(1);
   assert.equal(result.status, 200, 'native join: ' + JSON.stringify(result.body));
   const peer = { pc, commands, motion, state: result.body.state, motionSeq: 0, ready: true, get received() { return received; } };
-  peers[peers.length - 1] = peer;
+  peers[slot] = peer;
   return peer;
 }
 try {
