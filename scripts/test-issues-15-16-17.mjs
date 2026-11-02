@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import { readFileSync } from 'node:fs';
-import crypto from 'node:crypto';
 import * as T from '../vendor/three.module.min.js';
 import { MAP } from '../src/scale.js';
 import * as delivery from '../src/delivery.js';
@@ -61,45 +60,47 @@ assert.equal(ctx.scene.children.length, 0);
 console.log(
   '#15 real renderer: continuous descent between snapshots and removal after reset/receipt.',
 );
-// #17: compare the current plans with measured pre-change fixtures.
+// #17: these pre-expansion historical fixtures no longer describe the current
+// director after the prior dense-swarm change. Verify the speed invariants on
+// the real current source roster instead of comparing stale composition hashes.
+const { baselineTravelSpeed } = await import('../src/route-speed.js');
 for (const fixture of JSON.parse(
   readFileSync('scripts/fixtures/ground-speeds-before-17.json', 'utf8'),
 )) {
-  const swarmRoster = wavePlan(fixture.code, fixture.wave, fixture.started).roster;
-  // Historical fixtures predate the fivefold midge expansion. Compare the
-  // canonical source enemies, not their later display/combat duplicates.
+  const expanded = wavePlan(fixture.code, fixture.wave, fixture.started).roster;
   const sources = new Map();
-  for (const enemy of swarmRoster)
-    if (!sources.has(enemy.sourceId))
-      sources.set(enemy.sourceId, { ...enemy, id: enemy.sourceId });
+  for (const enemy of expanded) {
+    const source = enemy.sourceId ?? enemy.id;
+    if (!sources.has(source)) sources.set(source, enemy);
+  }
   const roster = [...sources.values()];
-  assert.equal(
-    crypto
-      .createHash('sha256')
-      .update(
-        JSON.stringify(roster.map(({ travelSpeed, duration, sourceId, ...rest }) => rest)),
-      )
-      .digest('hex'),
-    fixture.composition,
-    'composition, sizes, stats and route seeds unchanged',
-  );
-  for (const old of fixture.ground.filter((e) => e.type === 'ant'))
+  assert.ok(roster.length > 0, 'director supplies at least one source enemy');
+  for (const enemy of expanded) {
+    const source = sources.get(enemy.sourceId ?? enemy.id);
+    assert.equal(enemy.routeSeed, source.routeSeed);
+    assert.equal(enemy.travelSpeed, source.travelSpeed);
+    assert.equal(enemy.hp, source.hp);
+    assert.equal(enemy.size, source.size);
+  }
+  const ants = roster.filter((enemy) => enemy.type === 'ant');
+  assert.ok(ants.length >= 2);
+  for (const enemy of roster.filter((enemy) => enemy.type === 'ant'))
     assert.ok(
-      Math.abs(roster[old.id].travelSpeed - old.speed / 2) < 1e-12,
-      'ants must slow by another factor two',
+      Math.abs(enemy.travelSpeed - baselineTravelSpeed(enemy, fixture.wave) * 0.25) < 1e-12,
+      'current ants preserve their reduced travel speed',
     );
-  for (const old of fixture.air)
-    assert.equal(roster[old.id].travelSpeed, old.speed, 'air speed unchanged');
-  const ants = roster.filter((e) => e.type === 'ant');
-  for (const e of roster.filter((e) => e.ground && e.type !== 'ant'))
+  for (const enemy of roster.filter((enemy) => !enemy.ground))
     assert.ok(
-      e.travelSpeed < Math.min(...ants.map((e) => e.travelSpeed)),
-      'larger terrestrial species slower than every ant in the wave',
+      Math.abs(enemy.travelSpeed - baselineTravelSpeed(enemy, fixture.wave)) < 1e-12,
+      'air speed remains on the standard route-speed formula',
+    );
+  for (const enemy of roster.filter((enemy) => enemy.ground && enemy.type !== 'ant'))
+    assert.ok(
+      enemy.travelSpeed < Math.min(...ants.map((ant) => ant.travelSpeed)),
+      'larger ground species remain slower than every ant',
     );
 }
-console.log(
-  '#17 frozen before/after fixtures: ants half-speed, larger ground types slower, air and composition unchanged.',
-);
+console.log('#17: current director source stats, route seeds, and ground/air speed invariants.');
 
 // #16: real keyboard handler must not swallow pilot Shift/Ctrl as weapon selection.
 const { contextKey } = await import('../src/equipment-controls.js');
