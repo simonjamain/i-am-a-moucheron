@@ -122,6 +122,20 @@ Il ne s'agit pas d'une preuve de capacité réelle à 50 clients : pour la valid
 mesurer CPU, mémoire, durée de snapshot, débit UDP, perte de paquets et FPS client
 dans une salle de 50 navigateurs réellement connectés.
 
+## Traitement des mouvements dans une grande salle
+
+`Game.sync()` recevait à 20 Hz un message de mouvement par joueur. Même sans
+rapport d'appareil abandonné, il recalculait à chaque fois le pilote hôte via
+`live().map().sort()`. Désormais, l'élection n'a lieu **que si une liste non
+vide d'appareils abandonnés est transmise** ; elle utilise une recherche linéaire
+du premier ID actif. Les mouvements, la mise à jour de l'état et les validations
+du serveur ne sont pas supprimés ni ralentis.
+
+`node scripts/benchmark-motion-sync-50.mjs` compare la durée CPU de `sync()`
+à 50 joueurs avec les sources de la version 72 ; la CI exécute ce scénario.
+L'effet réel sur 50 navigateurs UDP et les frais de distribution réseau restent
+à mesurer séparément.
+
 ## Contributions GitHub
 
 Le [guide de contribution](../CONTRIBUTING.md) décrit les branches parallèles,

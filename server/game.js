@@ -778,25 +778,32 @@ export class Game {
       v.reportedHP = safe.hp;
       if (!v.state.landed || v.state.hp <= 0) v.ready = 0;
     }
-    const host = this.live(r)
-      .map((p) => p.id)
-      .sort()[0];
-    if (p.id === host)
-      for (const report of (Array.isArray(b.vacant) ? b.vacant : []).slice(0, 100)) {
-        const v = r.vehicles.get(report.id);
-        if (!v || v.seats.has('pilot') || !validMotion(report.state)) continue;
-        v.state = {
-          ...report.state,
-          hp: report.state.hp === v.reportedHP ? v.state.hp : Math.min(v.state.hp, report.state.hp),
-        };
-        v.reportedHP = report.state.hp;
-        if (!v.state.landed || v.state.hp <= 0) v.ready = 0;
-        if (v.state.hp <= 0)
-          for (const id of [...v.seats.values()]) {
-            const mate = r.pilots.get(id);
-            if (mate) this.kill(r, mate, mate.incarnation);
-          }
-      }
+    // Motion reports have no vacant aircraft. Avoid sorting all connected pilots
+    // 20 times/second per player just to iterate over an empty report list.
+    const vacant = Array.isArray(b.vacant) ? b.vacant : [];
+    if (vacant.length) {
+      let host = null;
+      const liveSince = this.now() - 12000;
+      for (const candidate of r.pilots.values())
+        if (candidate.seen > liveSince && (host === null || candidate.id < host))
+          host = candidate.id;
+      if (p.id === host)
+        for (const report of vacant.slice(0, 100)) {
+          const v = r.vehicles.get(report.id);
+          if (!v || v.seats.has('pilot') || !validMotion(report.state)) continue;
+          v.state = {
+            ...report.state,
+            hp: report.state.hp === v.reportedHP ? v.state.hp : Math.min(v.state.hp, report.state.hp),
+          };
+          v.reportedHP = report.state.hp;
+          if (!v.state.landed || v.state.hp <= 0) v.ready = 0;
+          if (v.state.hp <= 0)
+            for (const id of [...v.seats.values()]) {
+              const mate = r.pilots.get(id);
+              if (mate) this.kill(r, mate, mate.incarnation);
+            }
+        }
+    }
     if (p.life === 'alive' && p.mode === 'foot') this.base(r, p, b.ground);
     if (p.life === 'dead') this.arena(r, world(p), p, b.ground);
   }

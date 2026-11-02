@@ -60,3 +60,5 @@ jobs:
         run: node scripts/test-ram-game.mjs
       - name: Compare baseline and current snapshot CPU time
         run: node scripts/benchmark-snapshot-50.mjs
+      - name: Compare 50-player motion handling CPU time
+        run: node scripts/benchmark-motion-sync-50.mjs
