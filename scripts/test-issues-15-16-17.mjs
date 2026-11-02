@@ -65,11 +65,20 @@ console.log(
 for (const fixture of JSON.parse(
   readFileSync('scripts/fixtures/ground-speeds-before-17.json', 'utf8'),
 )) {
-  const roster = wavePlan(fixture.code, fixture.wave, fixture.started).roster;
+  const swarmRoster = wavePlan(fixture.code, fixture.wave, fixture.started).roster;
+  // Historical fixtures predate the fivefold midge expansion. Compare the
+  // canonical source enemies, not their later display/combat duplicates.
+  const sources = new Map();
+  for (const enemy of swarmRoster)
+    if (!sources.has(enemy.sourceId))
+      sources.set(enemy.sourceId, { ...enemy, id: enemy.sourceId });
+  const roster = [...sources.values()];
   assert.equal(
     crypto
       .createHash('sha256')
-      .update(JSON.stringify(roster.map(({ travelSpeed, duration, ...rest }) => rest)))
+      .update(
+        JSON.stringify(roster.map(({ travelSpeed, duration, sourceId, ...rest }) => rest)),
+      )
       .digest('hex'),
     fixture.composition,
     'composition, sizes, stats and route seeds unchanged',
