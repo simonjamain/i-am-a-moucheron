@@ -21,7 +21,7 @@ function command(path, body = {}) {
   assert.equal(reply?.status, 200, 'command succeeds: ' + path);
   return reply.body;
 }
-const joined = command('join', { code: 'ROSTER-BATCH', name: 'Test' });
+const joined = command('join', { code: 'ROSTERBCH', name: 'Test' });
 const state = joined.snapshot.pilots.find((p) => p.id === joined.id).state;
 const sync = () => command('sync', { state, mode: 'foot' });
 const first = sync();
@@ -29,7 +29,7 @@ assert.ok(first.roster?.length > 0, 'first sync sends canonical roster');
 const second = sync();
 assert.ok(!Object.hasOwn(second, 'roster'), 'same roster omitted from subsequent sync');
 assert.equal(second.total, first.total);
-const room = game.rooms.get('ROSTER-BATCH');
+const room = game.rooms.get('ROSTERBCH');
 command('balance', {
   epoch: room.base.epoch,
   revision: room.balanceRevision,
