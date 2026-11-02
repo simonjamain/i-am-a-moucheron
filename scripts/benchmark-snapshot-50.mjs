@@ -38,7 +38,9 @@ before.advance = () => {};
 after.advance = () => {};
 const original = before.snapshot(room);
 const optimized = after.snapshot(room);
-assert.deepEqual(optimized, original, 'snapshot wire structure and values must match baseline');
+const { rosterRevision, ...comparable } = optimized;
+assert.equal(rosterRevision, 0, 'new roster revision defaults to zero');
+assert.deepEqual(comparable, original, 'snapshot wire structure and values must match baseline');
 const sample = (engine) => {
   const t0 = performance.now();
   for (let i = 0; i < 100; i++) engine.snapshot(room);

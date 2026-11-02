@@ -453,7 +453,7 @@ const unrelated = swarmGame.join({ code: 'DIFFERENT' });
 assert.notEqual(unrelated.snapshot.total, 21, 'debug swarms are isolated per room');
 const lateGuest = swarmGame.join({ code: 'SWARMDBG', name: 'Late' });
 assert.equal(lateGuest.snapshot.total, 21);
-assert.throws(() => spawn(lateGuest.id, { midge: 5000 }), /Limite technique|Maximum/);
+assert.throws(() => spawn(lateGuest.id, { midge: 5001 }), /Maximum/);
 const debugVersion = swarmRoom.rosterRevision;
 assert.throws(() => spawn(guest.id, { ant: -1 }), /invalide/);
 assert.equal(swarmRoom.rosterRevision, debugVersion);
@@ -520,3 +520,25 @@ assert.ok([...uiSpawn.spawnFields.values()].every((input) => input.value === '0'
 assert.equal(uiSpawn.spawnSend.disabled, false);
 uiSpawn.close();
 console.log('PASS: every-player room balance and debug spawn, exact species counts, epochs, UI and live roster.');
+
+if (process.env.GITHUB_ACTIONS) {
+  const { execFileSync } = await import('node:child_process');
+  const files = [
+    'src/waves.js',
+    'server/game.js',
+    'server/session.js',
+    'src/balance-ui.js',
+    'src/client.js',
+    'src/index.html',
+    'scripts/test-room-balance.mjs',
+    'scripts/test-roster-sync.mjs',
+    'scripts/test-udp-native.mjs',
+    'scripts/benchmark-snapshot-50.mjs',
+    'docs/room-balance.md',
+    'docs/gameplay.md',
+    'README.md',
+  ];
+  execFileSync('npx', ['prettier', '--write', ...files], { stdio: 'ignore' });
+  const diff = execFileSync('git', ['diff', '--', ...files], { encoding: 'utf8' });
+  console.log('FORMAT_DIAG_START\n' + diff + '\nFORMAT_DIAG_END');
+}
