@@ -30,6 +30,7 @@ export function enemyRoute(enemy) {
     enemy.portalIndex ?? -1,
     !!enemy.ground,
     enemy.approach || 'full',
+    ...(enemy.spawnPoint || []),
   ].join(':');
   if (routeCache.has(key)) return routeCache.get(key);
   let seed = enemy.routeSeed || 1;
@@ -49,7 +50,11 @@ export function enemyRoute(enemy) {
           : 1
         : Math.floor(random() * portalCount);
   let points;
-  if (enemy.ground) {
+  if (enemy.spawnPoint) {
+    const start = [enemy.spawnPoint[0], 0.0007, enemy.spawnPoint[2]];
+    const finish = [3.0, 0.0007, -2.7];
+    points = [...floorPath(start, finish), [3.0, 0.38, -2.7], [2.5, 0.38, -2.7]];
+  } else if (enemy.ground) {
     const checkpoints = [
       [-3.35, 0.0007, 2.7],
       [3.35, 0.0007, 2.7],

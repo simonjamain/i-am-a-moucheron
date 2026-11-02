@@ -25,6 +25,23 @@ export const ENEMY_TYPES = Object.freeze({
   midge: { name: 'Moucheron', cost: 1, hp: 100, size: 1, speed: 1, leak: 1, color: '#bfb36c' },
   dart: { name: 'Voltigeur', cost: 3, hp: 200, size: 0.85, speed: 1.15, leak: 1, color: '#d78253' },
   guard: { name: 'Carapace', cost: 6, hp: 400, size: 1.4, speed: 0.85, leak: 2, color: '#729d8b' },
+  mosquito: {
+    name: 'Moustique', cost: 2, hp: 70, size: 0.58, speed: 1.5,
+    leak: 1, color: '#6b807e',
+  },
+  rat: {
+    name: 'Rat', cost: 40, hp: 5000, size: 4, speed: 0.55,
+    leak: 8, color: '#86705c', ground: true,
+  },
+  spider: {
+    name: 'Araignée pondeuse', cost: 22, hp: 1200, size: 2.3, speed: 0.48,
+    leak: 3, color: '#453b35', ground: true,
+    onDeath: { spawn: 'spiderling', count: 100 },
+  },
+  spiderling: {
+    name: 'Bébé araignée', cost: 0, hp: 20, size: 0.3, speed: 2.4,
+    leak: 1, color: '#51463d', ground: true, offspringOnly: true,
+  },
   brute: {
     name: 'Bourdon blindé',
     cost: 12,
@@ -45,7 +62,7 @@ export function validateDebugSpawn(counts) {
     throw Error('Quantités de nuée invalides.');
   let total = 0;
   for (const [type, count] of Object.entries(counts)) {
-    if (!Object.hasOwn(ENEMY_TYPES, type) || !Number.isSafeInteger(count) || count < 0)
+    if (!Object.hasOwn(ENEMY_TYPES, type) || ENEMY_TYPES[type].offspringOnly || !Number.isSafeInteger(count) || count < 0)
       throw Error('Quantité invalide : ' + type);
     total += count;
   }
@@ -85,8 +102,8 @@ export function debugSwarmRoster(counts, { room, wave, started, now, balance, fi
         branch: routeSeed % 2,
         debugFlock: true,
       };
-      enemy.travelSpeed = baselineTravelSpeed(enemy, wave) * (type === 'ant' ? 0.25 : 1);
-      if (enemy.ground && type !== 'ant') {
+      enemy.travelSpeed = baselineTravelSpeed(enemy, wave) * (type === 'ant' ? 0.25 : type === 'rat' ? 0.6 : type === 'spider' ? 0.55 : 1);
+      if (enemy.ground && !['ant', 'rat', 'spider', 'spiderling'].includes(type)) {
         const ant = { ...enemy, ...ENEMY_TYPES.ant, type: 'ant' };
         const antSpeed = baselineTravelSpeed(ant, wave) * 0.25;
         const antSize = ENEMY_TYPES.ant.size * enemySizeFactor('ant');
@@ -103,12 +120,13 @@ export function debugSwarmRoster(counts, { room, wave, started, now, balance, fi
 }
 export const MIDGE_SWARM_MULTIPLIER = 5;
 export const MAX_WAVE_POPULATION = 180 * MIDGE_SWARM_MULTIPLIER;
+export const MAX_OFFSPRING_ROSTER = 20000;
 
 // Stable flock size is metadata on the roster, not the live neighbour count.
 // The debug group may mix flying species, whereas director swarms group midges.
 export function assignMidgeSwarmSizes(roster) {
   const sizes = new Map();
-  const eligible = (e) => e.type === 'midge' || e.debugFlock;
+  const eligible = (e) => e.type === 'midge' || e.type === 'spiderling' || e.debugFlock;
   const key = (e) =>
     [e.routeSeed || 1, e.branch || 0, e.portalIndex ?? -1, !!e.ground, !!e.debugFlock].join(':');
   for (const enemy of roster)
@@ -165,7 +183,7 @@ export function wavePlan(room, wave, started = 0) {
     })),
     counts = { ant: initialAnts };
   remaining -= initialAnts;
-  const unlock = { ant: 1, roach: 3, dart: 2, guard: 5, brute: 8 };
+  const unlock = { ant: 1, roach: 3, dart: 2, mosquito: 3, guard: 5, brute: 8, spider: 11, rat: 15 };
   if (wave >= 2) {
     roster.push({
       id: roster.length,
@@ -180,7 +198,7 @@ export function wavePlan(room, wave, started = 0) {
   while (remaining > 0 && roster.length < 180) {
     const unlocked = Object.entries(ENEMY_TYPES).filter(
       ([name, t]) =>
-        t.cost <= remaining &&
+        !t.offspringOnly && t.cost <= remaining &&
         (name === 'midge' ||
           (wave >= unlock[name] &&
             (t.cost === 1 ||
@@ -215,13 +233,13 @@ export function wavePlan(room, wave, started = 0) {
     enemy.approach = wave <= 3 ? 'intro' : wave <= 6 ? 'short' : 'full';
     enemy.routeSeed = hash(key + ':route:' + (solo ? 'solo' + enemy.id : group));
     enemy.branch = enemy.id % 8 < 3 ? 1 : 0;
-    enemy.travelSpeed = baselineTravelSpeed(enemy, wave) * (enemy.type === 'ant' ? 0.25 : 1);
+    enemy.travelSpeed = baselineTravelSpeed(enemy, wave) * (enemy.type === 'ant' ? 0.25 : enemy.type === 'rat' ? 0.6 : enemy.type === 'spider' ? 0.55 : 1);
   }
   const ants = roster.filter((e) => e.type === 'ant');
   const slowestAnt = Math.min(...ants.map((e) => e.travelSpeed));
   const antSize = ENEMY_TYPES.ant.size * enemySizeFactor('ant');
   for (const enemy of roster) {
-    if (enemy.ground && enemy.type !== 'ant')
+    if (enemy.ground && !['ant', 'rat', 'spider', 'spiderling'].includes(enemy.type))
       enemy.travelSpeed =
         slowestAnt * Math.min(1, antSize / (enemy.size * enemySizeFactor(enemy.type)));
     enemy.duration = enemy.entryHold + routeDuration(enemy);
@@ -230,6 +248,37 @@ export function wavePlan(room, wave, started = 0) {
   if (waveCache.size > 32) waveCache.delete(waveCache.keys().next().value);
   waveCache.set(key, result);
   return result;
+}
+// Server-only secondary spawn. Immutable IDs, point of death and departure times.
+export function spawnOffspring(parent, position, time, balance, firstId, wave, limit = 100) {
+  const ability = parent.onDeath;
+  if (!ability || !ENEMY_TYPES[ability.spawn] || limit <= 0) return [];
+  const profile = ENEMY_TYPES[ability.spawn];
+  const count = Math.min(ability.count, limit);
+  const origin = [position[0], 0.0007, position[2]];
+  const routeSeed = hash(parent.routeSeed + ':brood:' + parent.id);
+  const children = Array.from({ length: count }, (_, i) => {
+    const child = {
+      ...profile,
+      type: ability.spawn,
+      id: firstId + i,
+      sourceId: parent.id,
+      offspringOf: parent.id,
+      hp: profile.hp * balance.enemyHP,
+      spawnPoint: origin,
+      routeSeed,
+      branch: parent.branch,
+      portalIndex: -1,
+      approach: 'brood',
+      phase: (i * Math.PI * 2) / count,
+      spawn: time + i * 0.012,
+      entryHold: 0.15 / balance.enemySpeed,
+    };
+    child.travelSpeed = baselineTravelSpeed(child, wave) * 1.8 * balance.enemySpeed;
+    child.duration = child.entryHold + routeDuration(child);
+    return child;
+  });
+  return assignMidgeSwarmSizes(children);
 }
 export function entryStatus(enemy, time) {
   const age = time - enemy.spawn;
@@ -310,9 +359,14 @@ export function swarmFrame(roster, time) {
           amplitude *
           (Math.sin(time * (0.75 + j * 0.17) + phase + j * 2) * 0.65 +
             Math.sin(time * 0.23 + phase * 2 + j) * 0.35);
-    if (e.type === 'midge' || e.debugFlock) {
+    if (e.type === 'midge' || e.type === 'spiderling' || e.debugFlock) {
       const offset = midgeDisplacement(e, time, flockEnvelope);
       for (let j = 0; j < 3; j++) if (!e.ground || j !== 1) p[j] += offset[j];
+    }
+    if (e.type === 'mosquito') {
+      p[0] += MAP.metres(5) * envelope * Math.sin(time * 6.7 + phase * 3);
+      p[1] += MAP.metres(3) * envelope * Math.sin(time * 5.3 + phase * 2);
+      p[2] += MAP.metres(4) * envelope * Math.cos(time * 7.1 + phase * 5);
     }
     return { p, dir: tangent.map((v) => v / length), envelope };
   });
@@ -321,7 +375,7 @@ export function swarmFrame(roster, time) {
     buckets = new Map();
   const cell = (p) => p.map((v) => Math.floor(v / radius));
   for (let i = 0; i < samples.length; i++) {
-    if (!samples[i] || roster[i].type === 'midge' || roster[i].debugFlock) continue;
+    if (!samples[i] || ['midge', 'spiderling', 'mosquito'].includes(roster[i].type) || roster[i].debugFlock) continue;
     const key = cell(samples[i].p).join(':');
     if (!buckets.has(key)) buckets.set(key, []);
     buckets.get(key).push(i);

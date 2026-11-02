@@ -31,6 +31,10 @@ export const ENEMY_SIZE_FACTORS = Object.freeze({
   dart: 4,
   guard: 3,
   brute: 3,
+  mosquito: 4,
+  rat: 8,
+  spider: 6,
+  spiderling: 5,
 });
 export const enemySizeFactor = (type) => ENEMY_SIZE_FACTORS[type] ?? 1;
 export const GROUND_LEGS = Object.freeze({ y: -0.25, length: 0.65, thickness: 0.035, tilt: 0.3 });
@@ -41,6 +45,7 @@ export const GROUND_FOOT_DEPTH =
 export const INSECT_SCALE = MAP.metres(0.9 / 1.6);
 // Radius in unscaled midge-model coordinates; used by hitscan and the GPU batch.
 export const MIDGE_SPHERE_RADIUS = 1.5;
+export const SPIDERLING_SPHERE_RADIUS = 1.2;
 export const REFERENCE = Object.freeze({
   walk: 6,
   enemy: 60 / 3.6,
