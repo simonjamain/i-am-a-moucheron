@@ -166,8 +166,7 @@ function unitHash(id, seed) {
 export function midgeDisplacement(enemy, time, envelope = 1) {
   const id = enemy.id ?? 0;
   const seed = enemy.routeSeed || 1;
-  const angle = unitHash(id, seed) * Math.PI * 2 +
-    time * (0.14 + unitHash(id + 41, seed) * 0.16);
+  const angle = unitHash(id, seed) * Math.PI * 2 + time * (0.14 + unitHash(id + 41, seed) * 0.16);
   const radius = MAP.metres(4) * Math.sqrt(unitHash(id + 7, seed)) * envelope;
   const vertical = (unitHash(id + 17, seed) - 0.5) * MAP.metres(5) * envelope;
   return [
