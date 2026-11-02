@@ -58,6 +58,8 @@ jobs:
         run: node scripts/assemble.mjs
       - name: Run 50-player snapshot regression
         run: node scripts/test-ram-game.mjs
+      - name: Verify crowded-room motion relay behavior
+        run: node scripts/test-motion-capacity.mjs
       - name: Compare baseline and current snapshot CPU time
         run: node scripts/benchmark-snapshot-50.mjs
       - name: Compare 50-player motion handling CPU time

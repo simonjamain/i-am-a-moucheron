@@ -1,7 +1,11 @@
 # Transport actuel et corps partagés
 
 Le serveur Node est en RAM et reçoit tous les événements de jeu par WebRTC/UDP.
-Le canal `motion-v2` est sans retransmission, non ordonné, à 20 Hz ; le canal
+Le canal `motion-v2` est sans retransmission, non ordonné, envoyé à 20 Hz par
+chaque navigateur ; à partir de 40 pilotes présents dans la room serveur, une
+mise à jour sur deux est relayée, soit 10 Hz vers les autres joueurs. Le serveur
+continue de valider et d'appliquer les 20 mises à jour/s. Cela réduit le débit
+relayé, avec une interpolation distante moins fréquente ; le canal
 `commands-v1` est fiable et ordonné. Le serveur relaie les mouvements, sans
 maillage entre navigateurs. Les commandes portent un identifiant croissant et
 reçoivent leur résultat d'exécution. Identité de session, incarnation et numéro
@@ -35,8 +39,9 @@ that trusted position for proximity checks, validates signature acknowledgement 
 and serializes signatures/boarding as before. This deliberately trusts players
 rather than attempting to prevent movement cheating.
 
-Remote player bodies use the existing 20 Hz lossy RTC motion channel and its
-interpolation, with HTTP fallback. They are kinematic proxies in the local
+Remote player bodies use the lossy RTC motion channel and its
+interpolation: 20 Hz normally, 10 Hz relayed in rooms with at least 40 pilots
+(the sender still transmits 20 Hz). No gameplay HTTP fallback is provided. They are kinematic proxies in the local
 integrator: collision response moves only the locally owned body. This permits
 approximate shared pushing, not a globally deterministic rigid-body simulation.
 

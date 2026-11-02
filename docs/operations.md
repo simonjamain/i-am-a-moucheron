@@ -136,6 +136,19 @@ du serveur ne sont pas supprimés ni ralentis.
 L'effet réel sur 50 navigateurs UDP et les frais de distribution réseau restent
 à mesurer séparément.
 
+## Diffusion des mouvements à 50 joueurs
+
+Pour éviter environ 49 000 diffusions par seconde (50 émetteurs × 20 Hz ×
+49 destinataires), le serveur relaie un mouvement sur deux à partir de 40
+pilotes dans la salle, tout en validant et appliquant chaque message reçu.
+Dans le scénario théorique de 50 joueurs envoyant tous à 20 Hz, le total
+des relays passe de **49 000 à 24 500 messages/s**. Ce sont des volumes
+calculés, non des observations WAN ni une garantie de débit ou de FPS.
+L'interpolation distante passe à 10 Hz dans ces grandes salles ; la latence
+et la visée doivent être vérifiées en jeu. Le test
+`scripts/test-motion-capacity.mjs` vérifie les deux cadences et la prise en
+compte de tous les mouvements.
+
 ## Contributions GitHub
 
 Le [guide de contribution](../CONTRIBUTING.md) décrit les branches parallèles,
