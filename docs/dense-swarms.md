@@ -99,27 +99,37 @@ demandent encore des mesures en conditions réelles et plusieurs joueurs.
 Le comportement de pilotage et des tourelles multijoueurs ne change pas dans
 ce chantier. Il n'y a pas de nouveau plafond imposé au réglage de population.
 
-## Dispersion adaptative et entrées multiples
+## Nuée manuelle unique et vitesse indépendante de l'effectif
 
-La dispersion procédurale de chaque moucheron dépend maintenant de la
-population **initiale de son groupe de trajet** (`swarmSize`, calculée une fois
-lors de la construction du roster). Le rayon horizontal et l'étendue verticale
-progressent comme la racine carrée de cette population, avec une borne à 3,5 fois
-le rayon de référence. Les pertes en combat ne recentrent pas les survivants.
-`swarmFrame()` reste sans voisinage pour les moucherons, sans nouvelle boucle
-quadratique ni positions envoyées par UDP. Les vagues ordinaires et leurs
-multiplicateurs de population recalculent la taille des groupes après expansion.
+Lorsqu'un joueur envoie des insectes avec le panneau d'équilibrage, il
+obtient **une seule nuée par environnement de déplacement**, même pour
+une commande de 5 000 individus. Les espèces volantes partagent une seule
+graine de trajet, entrée et branche ; les espèces terrestres, si présentes
+dans le même envoi, empruntent leur propre chemin au sol. Une nouvelle
+commande est indépendante de la précédente. Les vagues automatiques restent
+constituées de plusieurs groupes de tailles variées.
 
-Les commandes de debug répartissent séparément chaque espèce en groupes
-d'au plus **64 insectes**, avec décalage court des départs, une graine de trajet
-propre à chaque groupe et une alternance déterministe entre les **quatre**
-entrées aériennes ou les **trois** entrées terrestres. Les petites commandes
-restent sur une seule entrée. Le nombre demandé ne change pas ; aucune
-multiplication ×5 supplémentaire n'est appliquée aux créations de debug.
-Cette répartition utilise les points d'apparition réels et reste stable entre
-clients et pour les nouveaux arrivants. La forme finale et l'espacement
-des groupes demandent une vérification humaine WebGL en conditions de jeu.
+L'étendue des groupes grandit selon la racine carrée de leur population
+initiale, jusqu'à un rayon de référence ×20 dans les airs et ×8 au sol.
+Cette population est calculée lors de la création du roster (y compris
+après multiplication de la population d'une vague ordinaire) et demeure
+fixe lorsque des ennemis meurent.
 
-`test-dense-swarms.mjs` contrôle les 1 000 moucherons de debug, l'effectif
-exact, la répartition par entrées, le rayon croissant, le déterminisme, les
-groupes terrestres et l'expansion normale de population.
+**Correctif de vitesse :** auparavant l'oscillation angulaire était
+multipliée par le rayon de formation, de sorte que la vitesse linéaire
+augmentait mécaniquement avec l'effectif. Maintenant la dispersion
+initiale est une position stable autour du trajet ; une petite oscillation
+de fréquence et d'amplitude fixes apporte du mouvement sans amplification
+liée à l'effectif. La formation s'ouvre et se referme avec un fondu dont
+la durée est proportionnelle à son rayon, afin de limiter aussi sa vitesse
+aux entrées et sorties. La vitesse de parcours déterminée par l'espèce
+et le réglage de la room ne dépend pas du nombre d'individus. Les
+insectes terrestres ne prennent pas de décalage vertical.
+
+Le calcul procédural indépendant s'applique aussi aux autres espèces
+des nuées de debug, sans voisinage quadratique. Les autres insectes
+des vagues automatiques conservent leur steering spatial. Les contrôles
+dans `scripts/test-dense-swarms.mjs` comparent petites et grandes
+nuées, effectifs jusqu'à 5 000, entrées communes, vitesse de
+parcours, vitesse d'oscillation et formation mixte. Une validation
+humaine WebGL et des mesures GPU/UDP réelles restent nécessaires.

@@ -57,32 +57,33 @@ export function validateDebugSpawn(counts) {
 
 // Append a fresh, deterministic swarm to the active room-local roster.
 // Existing enemy indices never change, including their damage and kills.
-// Debug requests are distributed over several small flocks, not a single
-// overcrowded entrance. Every flock keeps a stable route, portal and size.
+// One manual command represents one flock. Aerial and ground species cannot
+// share a physical route, so a mixed command has at most one of each.
 export function debugSwarmRoster(counts, { room, wave, started, now, balance, firstId, revision }) {
   const roster = [];
   const elapsed = (now - started) / 1000;
+  const seed = hash(room + ':debug:' + wave + ':' + revision);
+  const airSeed = hash(seed + ':air');
+  const groundSeed = hash(seed + ':ground');
   for (const [type, count] of Object.entries(counts)) {
     const profile = ENEMY_TYPES[type];
-    const targetSize = Math.min(64, Math.max(12, Math.round(Math.sqrt(count) * 1.6)));
-    const flockCount = Math.ceil(count / targetSize);
-    const flockSize = Math.ceil(count / Math.max(1, flockCount));
+    const routeSeed = profile.ground ? groundSeed : airSeed;
+    const portalIndex = routeSeed % (profile.ground ? 3 : 4);
+    const departureWindow = Math.min(2.5, Math.max(0.15, Math.sqrt(count) * 0.08));
     for (let i = 0; i < count; i++) {
-      const group = Math.floor(i / flockSize);
-      const member = i % flockSize;
       const enemy = {
         id: firstId + roster.length,
         type,
         ...profile,
         hp: profile.hp * balance.enemyHP,
-        phase: (member * Math.PI * 2) / flockSize,
-        spawn: elapsed + (group % 32) * 0.075 + member * 0.012,
+        phase: (i * Math.PI * 2) / count,
+        spawn: elapsed + (i / Math.max(1, count - 1)) * departureWindow,
         entryHold: 2,
-        // Debug swarms can use all portals even during the introductory waves.
         approach: 'full',
-        routeSeed: hash(room + ':debug:' + wave + ':' + revision + ':' + type + ':' + group),
-        portalIndex: group % (profile.ground ? 3 : 4),
-        branch: group % 2,
+        routeSeed,
+        portalIndex,
+        branch: routeSeed % 2,
+        debugFlock: true,
       };
       enemy.travelSpeed = baselineTravelSpeed(enemy, wave) * (type === 'ant' ? 0.25 : 1);
       if (enemy.ground && type !== 'ant') {
@@ -103,17 +104,19 @@ export function debugSwarmRoster(counts, { room, wave, started, now, balance, fi
 export const MIDGE_SWARM_MULTIPLIER = 5;
 export const MAX_WAVE_POPULATION = 180 * MIDGE_SWARM_MULTIPLIER;
 
-// Store flock population once when a roster is built, never by scanning live
-// neighbours each frame. Kills do not shrink or reshuffle surviving insects.
+// Stable flock size is metadata on the roster, not the live neighbour count.
+// The debug group may mix flying species, whereas director swarms group midges.
 export function assignMidgeSwarmSizes(roster) {
   const sizes = new Map();
-  const key = (e) => [e.routeSeed || 1, e.branch || 0, e.portalIndex ?? -1].join(':');
+  const eligible = (e) => e.type === 'midge' || e.debugFlock;
+  const key = (e) =>
+    [e.routeSeed || 1, e.branch || 0, e.portalIndex ?? -1, !!e.ground, !!e.debugFlock].join(':');
   for (const enemy of roster)
-    if (enemy.type === 'midge') {
+    if (eligible(enemy)) {
       const group = key(enemy);
       sizes.set(group, (sizes.get(group) || 0) + 1);
     }
-  for (const enemy of roster) if (enemy.type === 'midge') enemy.swarmSize = sizes.get(key(enemy));
+  for (const enemy of roster) if (eligible(enemy)) enemy.swarmSize = sizes.get(key(enemy));
   return roster;
 }
 // Keep the director's composition and timetable, densify only the midge groups.
@@ -247,19 +250,26 @@ function unitHash(id, seed) {
   h = Math.imul(h, 0x846ca68b) >>> 0;
   return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
 }
+// Extent depends on population; individual local motion does NOT.
+// At most 20x the base radius for aerial groups, 8x for ground movement.
+export function swarmSpread(enemy) {
+  return Math.min(enemy.ground ? 8 : 20, Math.max(0.45, Math.sqrt((enemy.swarmSize || 1) / 5)));
+}
 export function midgeDisplacement(enemy, time, envelope = 1) {
   const id = enemy.id ?? 0;
   const seed = enemy.routeSeed || 1;
-  const angle = unitHash(id, seed) * Math.PI * 2 + time * (0.14 + unitHash(id + 41, seed) * 0.16);
-  // A larger flock needs more room, but stays near its safe route.
-  // The upper bound keeps movement inside a small corridor around furniture.
-  const spread = Math.min(3.5, Math.max(0.45, Math.sqrt((enemy.swarmSize || 1) / 5)));
+  const angle = unitHash(id, seed) * Math.PI * 2;
+  const spread = swarmSpread(enemy);
   const radius = MAP.metres(4) * spread * Math.sqrt(unitHash(id + 7, seed)) * envelope;
   const vertical = (unitHash(id + 17, seed) - 0.5) * MAP.metres(5) * spread * envelope;
+  // Only this small oscillation changes position over time. Its amplitude and
+  // frequency are independent of the number of insects in the flock.
+  const frequency = 0.14 + unitHash(id + 41, seed) * 0.16;
+  const flutter = MAP.metres(1.5) * envelope;
   return [
-    Math.cos(angle) * radius,
+    Math.cos(angle) * radius + Math.cos(angle + time * frequency) * flutter,
     vertical + Math.sin(time * 0.9 + id * 0.37) * MAP.metres(0.75) * envelope,
-    Math.sin(angle) * radius,
+    Math.sin(angle) * radius + Math.sin(angle + time * frequency) * flutter,
   ];
 }
 
@@ -285,6 +295,10 @@ export function swarmFrame(roster, time) {
     const tangent = next.map((v, j) => v - p[j]),
       length = Math.hypot(...tangent) || 1,
       envelope = Math.min(1, u * 30, (1 - u) * 30),
+      // A size-scaled fade duration limits expansion/retreat velocity, even
+      // at the start and end of a very large flock's journey.
+      fadeSeconds = Math.max(0.6, swarmSpread(e) * 0.6),
+      flockEnvelope = Math.max(0, Math.min(1, (age - hold) / fadeSeconds, (e.duration - age) / fadeSeconds)),
       phase = e.phase,
       amplitude = MAP.metres(e.ground ? 1.5 : e.type === 'dart' ? 6 : 4) * envelope;
     for (let j = 0; j < 3; j++)
@@ -293,9 +307,9 @@ export function swarmFrame(roster, time) {
           amplitude *
           (Math.sin(time * (0.75 + j * 0.17) + phase + j * 2) * 0.65 +
             Math.sin(time * 0.23 + phase * 2 + j) * 0.35);
-    if (e.type === 'midge') {
-      const offset = midgeDisplacement(e, time, envelope);
-      for (let j = 0; j < 3; j++) p[j] += offset[j];
+    if (e.type === 'midge' || e.debugFlock) {
+      const offset = midgeDisplacement(e, time, flockEnvelope);
+      for (let j = 0; j < 3; j++) if (!e.ground || j !== 1) p[j] += offset[j];
     }
     return { p, dir: tangent.map((v) => v / length), envelope };
   });
@@ -304,14 +318,14 @@ export function swarmFrame(roster, time) {
     buckets = new Map();
   const cell = (p) => p.map((v) => Math.floor(v / radius));
   for (let i = 0; i < samples.length; i++) {
-    if (!samples[i] || roster[i].type === 'midge') continue;
+    if (!samples[i] || roster[i].type === 'midge' || roster[i].debugFlock) continue;
     const key = cell(samples[i].p).join(':');
     if (!buckets.has(key)) buckets.set(key, []);
     buckets.get(key).push(i);
   }
   return samples.map((s, i) => {
     if (!s) return null;
-    if (roster[i].type === 'midge') return { p: s.p, dir: s.dir };
+    if (roster[i].type === 'midge' || roster[i].debugFlock) return { p: s.p, dir: s.dir };
     const correction = [0, 0, 0];
     let neighbours = 0;
     const [cx, cy, cz] = cell(s.p),

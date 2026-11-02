@@ -228,8 +228,11 @@ VAG-07 réduit taille et vitesse des fourmis, selon le lot confort.
 Le [lot confort de jeu, version 37](comfort.md) précise réparation, zoom, jauges,
 radar à pied, remise à zéro, fourmis et projectiles du pistolet courants.
 
-Les commandes de nuées de debug répartissent les demandes nombreuses entre
-plusieurs groupes et entrées ; leur étendue augmente avec l'effectif du groupe.
+Une commande manuelle de debug crée une nuée unique sur un trajet et à une
+entrée commune, même avec plusieurs milliers d'individus (les espèces au sol
+gardent leur parcours terrestre propre). L'étendue spatiale croît avec
+l'effectif, sans accélérer les insectes ; les vagues automatiques restent
+réparties en plusieurs groupes.
 Voir [nuées densifiées](dense-swarms.md) et [équilibrage](room-balance.md).
 
 Les [nuées densifiées](dense-swarms.md) multiplient les seuls moucherons par cinq,

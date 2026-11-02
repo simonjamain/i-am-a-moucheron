@@ -9,6 +9,7 @@ import {
   expandMidgeSwarms,
   swarmFrame,
   midgeDisplacement,
+  swarmSpread,
   debugSwarmRoster,
   MAX_WAVE_POPULATION,
 } from '../src/waves.js';
@@ -56,7 +57,7 @@ for (const wave of [1, 2, 6, 12, 30, 100, 1000])
 const first = wavePlan('DENSE', 1, 123);
 assert.ok(first.roster.filter((e) => e.type === 'ant').length >= 2);
 assert.ok(first.roster.every((e) => ['ant', 'midge'].includes(e.type)));
-// Debug flocks must scale spatially and emerge from several real portals.
+// Manual requests always make ONE flock of the full requested population.
 const debugParams = {
   room: 'DEBUG-FLOCKS',
   wave: 1,
@@ -68,32 +69,65 @@ const debugParams = {
 };
 const small = debugSwarmRoster({ midge: 10 }, debugParams);
 const large = debugSwarmRoster({ midge: 1000 }, debugParams);
-const flocks = Map.groupBy(large, (e) => e.routeSeed);
+const maximum = debugSwarmRoster({ midge: 5000 }, debugParams);
 assert.equal(small.length, 10);
-assert.equal(large.length, 1000, 'debug counts stay exact');
-assert.ok(flocks.size >= 12, 'a thousand midges must form several flocks');
-assert.ok([...flocks.values()].every((members) => members.length <= 64));
-assert.equal(new Set([...flocks.values()].map((members) => enemyRoute(members[0]).portal)).size, 4);
-assert.ok(
-  [...flocks.values()].every((members) =>
-    members.every(
-      (e) =>
-        e.portalIndex === members[0].portalIndex &&
-        e.swarmSize === members.length &&
-        e.duration === members[0].duration,
-    ),
-  ),
-);
-assert.ok(large.every((e) => e.spawn >= 0 && e.spawn < 4));
+assert.equal(large.length, 1000);
+assert.equal(maximum.length, 5000);
+for (const flock of [small, large, maximum]) {
+  assert.equal(new Set(flock.map((e) => e.routeSeed)).size, 1, 'one manual route per command');
+  assert.equal(new Set(flock.map((e) => enemyRoute(e).portal)).size, 1, 'one entrance');
+  assert.ok(flock.every((e) => e.swarmSize === flock.length && e.debugFlock));
+  assert.ok(flock.every((e) => e.spawn >= 0 && e.spawn < 3));
+  assert.equal(new Set(flock.map((e) => e.travelSpeed)).size, 1, 'stable individual route speed');
+}
+assert.equal(small[0].routeSeed, large[0].routeSeed, 'population never selects another route');
+assert.equal(small[0].travelSpeed, large[0].travelSpeed, 'population never changes route speed');
 assert.deepEqual(large, debugSwarmRoster({ midge: 1000 }, debugParams));
-const smallOffset = midgeDisplacement({ ...small[0], id: 37, swarmSize: 10 }, 20);
-const largeOffset = midgeDisplacement({ ...small[0], id: 37, swarmSize: 50 }, 20);
+assert.ok(swarmSpread(large[0]) > 6 * swarmSpread(small[0]));
+const smallOffset = midgeDisplacement({ ...small[0], id: 37 }, 20);
+const largeOffset = midgeDisplacement({ ...large[0], id: 37 }, 20);
 assert.ok(
-  Math.hypot(largeOffset[0], largeOffset[2]) > 2 * Math.hypot(smallOffset[0], smallOffset[2]),
-  'flock radius grows with its population',
+  Math.hypot(largeOffset[0], largeOffset[2]) > 5 * Math.hypot(smallOffset[0], smallOffset[2]),
+  'larger flocks must occupy more space',
 );
-const groundFlocks = debugSwarmRoster({ ant: 120 }, debugParams);
-assert.equal(new Set(groundFlocks.map((e) => enemyRoute(e).portal)).size, 3);
+const localSpeed = (e, t, dt = 0.05) => {
+  const before = midgeDisplacement(e, t);
+  const after = midgeDisplacement(e, t + dt);
+  return Math.hypot(...after.map((v, i) => v - before[i])) / dt;
+};
+assert.ok(
+  Math.abs(localSpeed({ ...small[0], id: 37 }, 20) - localSpeed({ ...large[0], id: 37 }, 20)) < 1e-12,
+  'local insect flight speed cannot increase with population',
+);
+const frameSpeed = (flock, t, dt = 0.05) => {
+  const before = swarmFrame([flock[0]], t)[0].p;
+  const after = swarmFrame([flock[0]], t + dt)[0].p;
+  return Math.hypot(...after.map((v, i) => v - before[i])) / dt;
+};
+const midflight = Math.min(small[0].entryHold + 20, small[0].duration - 20);
+assert.ok(
+  Math.abs(frameSpeed(small, midflight) - frameSpeed(large, midflight)) < 1e-10,
+  'same insect on the same route must travel at the same speed in a large flock',
+);
+for (const count of [10, 1000]) {
+  const testFlock = debugSwarmRoster({ midge: count }, debugParams);
+  assert.ok(
+    swarmFrame([testFlock[0]], testFlock[0].entryHold + 0.15)[0].p.every(Number.isFinite),
+    'safe finite positions during entrance fade',
+  );
+}
+const ground = debugSwarmRoster({ ant: 120, roach: 240 }, debugParams);
+assert.equal(new Set(ground.map((e) => e.routeSeed)).size, 1, 'one ground route');
+assert.equal(new Set(ground.map((e) => enemyRoute(e).portal)).size, 1);
+assert.ok(ground.every((e) => e.swarmSize === ground.length));
+const mixed = debugSwarmRoster({ midge: 1000, dart: 200, ant: 40 }, debugParams);
+assert.equal(new Set(mixed.filter((e) => !e.ground).map((e) => e.routeSeed)).size, 1);
+assert.equal(new Set(mixed.filter((e) => e.ground).map((e) => e.routeSeed)).size, 1);
+assert.ok(mixed.filter((e) => !e.ground).every((e) => e.swarmSize === 1200));
+assert.ok(mixed.filter((e) => e.ground).every((e) => e.swarmSize === 40));
+const brutes = debugSwarmRoster({ brute: 1000 }, debugParams);
+const bruteFrame = swarmFrame(brutes, brutes[0].entryHold + 15);
+assert.equal(bruteFrame.filter(Boolean).length, 1000, 'other flying species support a large flock');
 const natural = wavePlan('DENSE-SCALE', 50, 123);
 const multiplied = scaleRoster(natural, { ...DEFAULT_BALANCE, population: 3 }).roster;
 const midgeFlocks = Map.groupBy(
@@ -117,7 +151,7 @@ exhaustive = exhaustive.replace(
 // the exhaustive reference must use the same candidate species.
 exhaustive = exhaustive.replace(
   'const b = samples[j];',
-  "if (roster[j].type === 'midge') continue; const b = samples[j];",
+  "if (roster[j].type === 'midge' || roster[j].debugFlock) continue; const b = samples[j];",
 );
 const reference = new Function(
   'MAP',
@@ -126,8 +160,9 @@ const reference = new Function(
   'GROUND_FOOT_DEPTH',
   'enemyRoutePosition',
   'midgeDisplacement',
+  'swarmSpread',
   exhaustive + '; return exhaustiveFrame;',
-)(MAP, INSECT_SCALE, enemySizeFactor, GROUND_FOOT_DEPTH, enemyRoutePosition, midgeDisplacement);
+)(MAP, INSECT_SCALE, enemySizeFactor, GROUND_FOOT_DEPTH, enemyRoutePosition, midgeDisplacement, swarmSpread);
 const roster = wavePlan('DENSE-BENCH', 100, 123).roster;
 for (const time of [1, 4, 20, 75, 125]) {
   const result = swarmFrame(roster, time),

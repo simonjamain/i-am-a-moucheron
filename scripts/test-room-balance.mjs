@@ -428,6 +428,8 @@ assert.deepEqual(
 );
 assert.ok(debugStart.roster.every((e, i) => e.id === i));
 assert.ok(debugStart.roster.every((e) => e.spawn >= 0 && e.duration > e.entryHold));
+assert.equal(new Set(debugStart.roster.filter((e) => !e.ground).map((e) => e.routeSeed)).size, 1);
+assert.equal(new Set(debugStart.roster.filter((e) => e.ground).map((e) => e.routeSeed)).size, 1);
 const existing = structuredClone(debugStart.roster);
 swarmGame.command('SWARMDBG', lead.id, 'hit', {
   wave: swarmRoom.wave,
