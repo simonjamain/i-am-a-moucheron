@@ -82,7 +82,7 @@ import { createGraphics } from '/graphics.js';
 import { MidgeBatch } from '/midge-batch.js';
 import { createOffice } from '/office.js';
 import { aircraftBay, baseBody, baseWorld, baseAccess, advanceBase, aircraftPose } from '/base.js';
-import { SpatialAudio } from '/audio.js';
+import { SpatialAudio, swarmAudioGroups } from '/audio.js';
 import { advanceArena, deskOccupant, bodyMotion, mergeOwnedArena } from '/purgatory-physics.js';
 import {
   flightClickAction,
@@ -3668,6 +3668,8 @@ function drawRadar() {
   radar.fillText('RADAR / BUREAU 01', 9, 15);
 }
 let lastCountdownTick = null;
+let lastSwarmAudioAt = -Infinity;
+let activeSwarmAudioKeys = new Set();
 function updateAudio() {
   if (!joined) return;
   const purg = spectating ? observationRealm !== 'office' : !!respawnAt,
@@ -3755,24 +3757,29 @@ function updateAudio() {
         });
       }
     }
-    const bugs = [...insects.entries()]
-      .sort(
-        (a, b) =>
-          a[1].position.distanceToSquared(activeCamera.position) -
-          b[1].position.distanceToSquared(activeCamera.position),
-      )
-      .slice(0, 6);
-    for (const [id, g] of bugs)
-      if (g.position.distanceTo(activeCamera.position) < 55) {
-        const key = 'bug-' + id;
-        keep.add(key);
-        sound.loop(key, 'insect', g.position, {
+    // Stable audio regions for dense swarms: refresh positions/gain at 10 Hz.
+    // Existing HRTF panners smooth motion between audio refreshes.
+    const audioTime = performance.now();
+    if (changed || audioTime - lastSwarmAudioAt >= 100) {
+      lastSwarmAudioAt = audioTime;
+      const sources = swarmAudioGroups(insects, activeCamera.position, {
+        cellSize: MAP.metres(40),
+        maxDistance: MAP.metres(1500),
+        maxSources: 5,
+        preferred: activeSwarmAudioKeys,
+      });
+      activeSwarmAudioKeys = new Set(sources.map((source) => source.key));
+      for (const source of sources)
+        sound.loop(source.key, 'insect', source.position, {
           ref: 20,
-          level: 1 / Math.sqrt(Math.max(1, bugs.length)),
-          rate: 0.9 + (id % 4) * 0.07,
+          level: source.level,
+          rate: source.rate,
         });
-      }
+    }
+    for (const key of activeSwarmAudioKeys) keep.add(key);
   } else {
+    activeSwarmAudioKeys.clear();
+    lastSwarmAudioAt = -Infinity;
     for (const b of (soulArena?.bodies || [])
       .filter((b) => b.kind === 'enemy' && !b.gone)
       .sort(

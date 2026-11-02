@@ -148,3 +148,25 @@ indépendamment 1 000, 5 000 et 10 000 ennemis visibles, tirs soutenus,
 reconnexion, réseau perturbé et parties à plusieurs postes. Les effets
 cosmétiques des ennemis blessés et la taille d'un snapshot initial très
 dense peuvent rester limitants.
+
+## Son des grandes nuées
+
+`swarmAudioGroups()` regroupe les insectes vivants par cellule spatiale de
+40 mètres (échelle du bureau), puis retient au plus **5 sources HRTF** selon
+leur proximité et la densité de leur cellule. Le niveau du bourdonnement croît
+de façon logarithmique et est plafonné ; les clés spatiales stables évitent
+qu'une mort isolée ne coupe les sons des autres individus. Une préférence pour
+les cellules déjà audibles réduit les changements brusques de sources.
+
+Le regroupement et les positions/gains audio sont calculés côté client
+**10 fois par seconde** (et après tout changement de scène), au lieu de trier
+tous les insectes à chaque image. La complexité du regroupement est linéaire
+en fonction du nombre d'insectes. Le cache des échantillons Web Audio,
+l'atténuation spatiale, la limite des boucles et les sons de morts/chutes
+individuels sont conservés. Aucun message réseau n'est ajouté.
+
+`scripts/test-audio.mjs` inclut un test CPU à **10 000 individus**, vérifiant
+le nombre de sources, les morts, la spatialisation gauche/droite, les exclusions,
+le plafond de gain et le budget de voix. Ces tests ne valident pas la perception
+sonore en navigateur, notamment lors du franchissement des frontières de cellules,
+avec une nuée entourant la caméra ou plusieurs moteurs d'avions simultanés.
