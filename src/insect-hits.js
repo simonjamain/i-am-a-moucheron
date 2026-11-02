@@ -36,7 +36,9 @@ export class InsectIndex {
       const size = direct ? model.scale : model.getWorldScale(this.size);
       const r =
         Math.max(Math.abs(size.x), Math.abs(size.y), Math.abs(size.z)) *
-          (model.userData.sphereRadius || 3 * (model.userData.hitTolerance || 1)) +
+          (model.userData.sphereRadius
+            ? (model.userData.sphereRadius * (model.userData.hitTolerance || 1)) / 1.2
+            : 3 * (model.userData.hitTolerance || 1)) +
         this.cellSize * 1e-9;
       const min = ['x', 'y', 'z'].map((a) => Math.floor((centre[a] - r) / this.cellSize));
       const max = ['x', 'y', 'z'].map((a) => Math.floor((centre[a] + r) / this.cellSize));
