@@ -69,7 +69,7 @@ export class MidgeBatch {
       instancedMidge: true,
       sphereRadius: MIDGE_SPHERE_RADIUS,
       phase,
-      hitTolerance: 1,
+      hitTolerance: 1.2,
       wings: [],
       legs: [],
       disposables: [],
