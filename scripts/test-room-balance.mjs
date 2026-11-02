@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { Game } from '../server/game.js';
 import { DEFAULT_BALANCE, BALANCE_FIELDS, validateBalance, scaleRoster } from '../src/balance.js';
 import { BalanceUI } from '../src/balance-ui.js';
-import { wavePlan, swarmFrame } from '../src/waves.js';
+import { wavePlan, swarmFrame, ENEMY_TYPES } from '../src/waves.js';
 import { ammoCapacity, advanceSupplies, fullAmmo, FUEL_SECONDS } from '../src/logistics.js';
 import { shopPrice } from '../src/equipment.js';
 import { HEAVY } from '../src/armament.js';
@@ -39,7 +39,13 @@ assert.ok(
   !JSON.stringify(a.snapshot).includes(a.resumeKey),
   'owner secret never appears in snapshots',
 );
-assert.throws(() => call(b.id, 'balance', { values: { damage: 2 } }), /créateur/);
+assert.doesNotThrow(() =>
+  call(b.id, 'balance', {
+    epoch: r.base.epoch,
+    revision: r.balanceRevision,
+    values: { damage: 1 },
+  }),
+);
 for (const values of [
   { damage: 0 },
   { pause: 1 },
@@ -379,10 +385,143 @@ assert.equal(ui.status.textContent, 'Réessayer');
 assert.equal(ui.save.disabled, false);
 who = b.id;
 ui.render();
-assert.equal(ui.save.disabled, true);
-assert.ok([...ui.fields.values()].every((input) => input.disabled));
+assert.equal(ui.save.disabled, false, 'guests may now edit balance');
+assert.ok([...ui.fields.values()].every((input) => !input.disabled));
 ui.close();
 assert.equal(closed, 1);
 console.log(
-  'Room balance: isolated settings, atomic validation, creator/resume, wave timing, continuous routes, HP/supplies ratios, combat/economy, reset, late joins and UI handlers.',
+  'Room balance: isolated settings, atomic validation, all-player edits, wave timing, continuous routes, HP/supplies ratios, combat/economy, reset, late joins and UI handlers.',
 );
+
+// Cooperative debug tool: every connected player can spawn exact counts.
+const swarmGame = new Game({ now: () => now });
+const lead = swarmGame.join({ code: 'SWARMDBG', name: 'Alpha' });
+const guest = swarmGame.join({ code: 'SWARMDBG', name: 'Bravo' });
+const swarmRoom = swarmGame.rooms.get('SWARMDBG');
+const spawn = (id, counts, epoch = swarmRoom.base.epoch) =>
+  swarmGame.command('SWARMDBG', id, 'debug-spawn', { epoch, counts });
+const initialEpoch = swarmRoom.base.epoch;
+const beforeInvalid = swarmRoom.wave;
+for (const counts of [
+  null,
+  [],
+  {},
+  { ant: -1 },
+  { midge: 0 },
+  { midge: 1.5 },
+  { midge: '10' },
+  { roach: 5001 },
+  { unknown: 1 },
+]) {
+  assert.throws(() => spawn(guest.id, counts), /invalide|Maximum|Renseignez/);
+  assert.equal(swarmRoom.wave, beforeInvalid, 'invalid input must not start a debug wave');
+}
+assert.throws(() => spawn(guest.id, { ant: 1 }, 'stale'), /changé/);
+const debugStart = spawn(guest.id, { ant: 2, midge: 13, roach: 1 });
+assert.equal(debugStart.phase, 'combat');
+assert.equal(debugStart.wave, 1);
+assert.equal(debugStart.total, 16, 'midge counts are exact, not ×5');
+assert.equal(debugStart.rosterRevision, 1);
+assert.deepEqual(
+  debugStart.roster.reduce((acc, e) => ({ ...acc, [e.type]: (acc[e.type] || 0) + 1 }), {}),
+  { ant: 2, midge: 13, roach: 1 },
+);
+assert.ok(debugStart.roster.every((e, i) => e.id === i));
+assert.ok(debugStart.roster.every((e) => e.spawn >= 0 && e.duration > e.entryHold));
+const existing = structuredClone(debugStart.roster);
+swarmGame.command('SWARMDBG', lead.id, 'hit', {
+  wave: swarmRoom.wave,
+  enemy: 0,
+  amount: 25,
+  shot: 'debug-hit',
+});
+const damageBeforeSpawn = swarmRoom.enemyDamage[0];
+const more = spawn(lead.id, { dart: 3, brute: 2 });
+assert.equal(more.total, 21);
+assert.equal(more.rosterRevision, 2);
+assert.deepEqual(more.roster.slice(0, 16), existing);
+assert.equal(swarmRoom.enemyDamage[0], damageBeforeSpawn);
+assert.deepEqual(
+  more.roster.slice(16).map((e) => e.id),
+  [16, 17, 18, 19, 20],
+);
+const guestSnapshot = swarmGame.command('SWARMDBG', guest.id, 'sync', {
+  mode: 'foot',
+  state: swarmRoom.pilots.get(guest.id).state,
+});
+assert.equal(guestSnapshot.total, 21);
+assert.equal(guestSnapshot.rosterRevision, 2);
+const unrelated = swarmGame.join({ code: 'DIFFERENT' });
+assert.notEqual(unrelated.snapshot.total, 21, 'debug swarms are isolated per room');
+const lateGuest = swarmGame.join({ code: 'SWARMDBG', name: 'Late' });
+assert.equal(lateGuest.snapshot.total, 21);
+assert.throws(() => spawn(lateGuest.id, { midge: 5001 }), /Maximum/);
+const debugVersion = swarmRoom.rosterRevision;
+assert.throws(() => spawn(guest.id, { ant: -1 }), /invalide/);
+assert.equal(swarmRoom.rosterRevision, debugVersion);
+const testAfterReset = swarmGame.command('SWARMDBG', lead.id, 'reset', {
+  epoch: initialEpoch,
+});
+assert.equal(testAfterReset.wave, 0);
+assert.equal(testAfterReset.rosterRevision, 0);
+assert.throws(() => spawn(guest.id, { ant: 1 }, initialEpoch), /changé/);
+const afterReset = spawn(guest.id, { guard: 2 });
+assert.equal(afterReset.total, 2, 'guest may restart debug after reset');
+for (const enemy of swarmRoom.plan.roster) swarmRoom.kills.add(enemy.id);
+swarmGame.command('SWARMDBG', guest.id, 'sync', {
+  mode: 'foot',
+  state: swarmRoom.pilots.get(guest.id).state,
+});
+assert.equal(swarmRoom.phase, 'prep');
+const debugAgain = spawn(lead.id, { midge: 1 });
+assert.equal(debugAgain.total, 1, 'prep creates a clean debug-only wave');
+assert.equal(debugAgain.wave, 2);
+assert.equal(debugAgain.roster[0].id, 0);
+
+// True UI handlers: all species, validation, pending sends and retry.
+const rootSpawn = new Element();
+let latestSpawn = debugAgain;
+let sendCount = 0;
+let resolveSpawn;
+const uiSpawn = new BalanceUI({
+  root: rootSpawn,
+  document: { createElement: (tag) => new Element(tag) },
+  snapshot: () => latestSpawn,
+  command: async () => latestSpawn,
+  spawnCommand: (body) => {
+    sendCount++;
+    assert.deepEqual(body.counts, {
+      ant: 0,
+      roach: 0,
+      midge: 24,
+      dart: 0,
+      guard: 0,
+      brute: 1,
+    });
+    return new Promise((yes) => (resolveSpawn = yes));
+  },
+  accept: (s) => (latestSpawn = s),
+  onOpen() {},
+  onClose() {},
+});
+uiSpawn.open();
+assert.equal(uiSpawn.spawnFields.size, Object.keys(ENEMY_TYPES).length);
+uiSpawn.spawnFields.get('midge').value = '2.5';
+await uiSpawn.submitSpawn();
+assert.equal(sendCount, 0);
+assert.match(uiSpawn.spawnStatus.textContent, /invalide/);
+uiSpawn.spawnFields.get('midge').value = '24';
+uiSpawn.spawnFields.get('brute').value = '1';
+const sending = uiSpawn.submitSpawn();
+assert.equal(uiSpawn.spawnSend.disabled, true);
+await uiSpawn.submitSpawn();
+assert.equal(sendCount, 1, 'no double debug spawn');
+resolveSpawn({ ...latestSpawn, rosterRevision: latestSpawn.rosterRevision + 1 });
+await sending;
+assert.ok([...uiSpawn.spawnFields.values()].every((input) => input.value === '0'));
+assert.equal(uiSpawn.spawnSend.disabled, false);
+uiSpawn.close();
+console.log(
+  'PASS: every-player room balance and debug spawn, exact species counts, epochs, UI and live roster.',
+);
+

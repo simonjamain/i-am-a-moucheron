@@ -905,7 +905,13 @@ function accept(s, force = false) {
     return;
   // GameSession omits unchanged rosters on repeated sync replies.
   // Reuse the previously acknowledged roster before any snapshot consumer runs.
-  if (!s.roster && snap && s.wave === snap.wave && s.started === snap.started)
+  if (
+    !s.roster &&
+    snap &&
+    s.wave === snap.wave &&
+    s.started === snap.started &&
+    s.rosterRevision === snap.rosterRevision
+  )
     s.roster = snap.roster;
   if (globalThis.MOUCHERON_UDP) peerMotion?.observe(s, id);
   const previous = snap;
@@ -5010,6 +5016,7 @@ const balanceUI = new BalanceUI({
   snapshot: () => snap,
   player: () => id,
   command: (body) => api('balance', { id, ...body }),
+  spawnCommand: (body) => api('debug-spawn', { id, ...body }),
   accept,
   onOpen: () => {
     releaseMouse();

@@ -84,7 +84,7 @@ export class GameSession {
       // 10k-element) immutable wave roster on every reliable sync request.
       // A wave or balance revision always sends an authoritative new roster.
       if (m.path === 'sync' && body?.roster) {
-        const key = [body.wave, body.started, body.balanceRevision].join(':');
+        const key = [body.wave, body.started, body.balanceRevision, body.rosterRevision].join(':');
         if (key === this.lastRosterKey) {
           body = { ...body };
           delete body.roster;
