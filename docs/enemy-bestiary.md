@@ -16,3 +16,17 @@ Le panneau d'équilibrage expose les trois espèces nouvelles, pas les bébés. 
 ## Vérification
 
 `node scripts/test-enemy-bestiary.mjs` vérifie éclosions, identifiants, doublons, infestations et profils. Les contrôles Docker et la suite de tests Node sont complétés par un essai manuel WebGL/UDP, nécessaire pour l'animation, la fluidité et la navigation des gros animaux.
+
+## Vitesse physique dans la pièce
+
+Chaque profil possède `speedMps`, vitesse de progression en **mètres de la pièce par seconde**. Ce nombre ne dépend pas de la taille du modèle 3D, de l'effectif de la nuée, du numéro de vague, ni de la longueur d'un ancien parcours. Seul le multiplicateur « Vitesse ennemis » de la room le modifie. La durée se calcule sur le trajet effectivement emprunté : distance / vitesse.
+
+| Espèce | Vitesse m/s | Espèce | Vitesse m/s |
+| --- | ---: | --- | ---: |
+| Fourmi | 0,170 | Cafard | 0,125 |
+| Moucheron | 0,220 | Voltigeur | 0,260 |
+| Carapace | 0,175 | Bourdon blindé | 0,140 |
+| Moustique | 0,230 | Rat géant | 0,095 |
+| Araignée pondeuse | 0,110 | Bébé araignée | 0,150 |
+
+Les bébés araignées n'ont plus de multiplicateur caché ×1,8. Les moustiques restent imprévisibles mais leurs oscillations locales ont été ralenties. Les mouvements secondaires de groupe sont des petits écarts autour de la progression à vitesse fixe, pas une deuxième vitesse liée aux dimensions du modèle. `scripts/test-enemy-speeds.mjs` vérifie les valeurs, le chemin réel, les nuées de 10 à 5 000 ennemis, les bébés et le multiplicateur de room. Les sensations de jeu et les FPS WebGL nécessitent une validation en partie réelle.

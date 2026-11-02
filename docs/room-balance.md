@@ -107,3 +107,7 @@ Un test humain WebGL sur deux navigateurs reste nécessaire pour apprécier le
 pilotage et la lisibilité ; aucun environnement temporaire Actions n’est configuré.
 
 Les bébés araignées ne sont pas générables directement : tuer une araignée pondeuse fait éclore jusqu'à 100 bébés, avec un plafond technique de 20 000 ennemis dans le roster pour les naissances de debug. Chacun compte 1 point d'infestation s'il atteint la poubelle. Les changements sont synchronisés par révision de roster.
+
+## Unités des vitesses
+
+Les espèces disposent de `speedMps` en mètres parcourus dans le bureau par seconde (voir [bestiaire](enemy-bestiary.md)). Le réglage de room « Vitesse ennemis » est l'unique multiplicateur de cette vitesse : à ×2, chaque espèce se déplace deux fois plus vite, quelle que soit sa taille ou la population de la nuée. Le recalage en cours de vague reste sans téléportation.

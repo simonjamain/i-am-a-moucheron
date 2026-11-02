@@ -63,7 +63,6 @@ console.log(
 // #17: these pre-expansion historical fixtures no longer describe the current
 // director after the prior dense-swarm change. Verify the speed invariants on
 // the real current source roster instead of comparing stale composition hashes.
-const { baselineTravelSpeed } = await import('../src/route-speed.js');
 for (const fixture of JSON.parse(
   readFileSync('scripts/fixtures/ground-speeds-before-17.json', 'utf8'),
 )) {
@@ -84,15 +83,10 @@ for (const fixture of JSON.parse(
   }
   const ants = roster.filter((enemy) => enemy.type === 'ant');
   assert.ok(ants.length >= 2);
-  for (const enemy of roster.filter((enemy) => enemy.type === 'ant'))
+  for (const enemy of roster)
     assert.ok(
-      Math.abs(enemy.travelSpeed - baselineTravelSpeed(enemy, fixture.wave) * 0.25) < 1e-12,
-      'current ants preserve their reduced travel speed',
-    );
-  for (const enemy of roster.filter((enemy) => !enemy.ground))
-    assert.ok(
-      Math.abs(enemy.travelSpeed - baselineTravelSpeed(enemy, fixture.wave)) < 1e-12,
-      'air speed remains on the standard route-speed formula',
+      Math.abs(enemy.travelSpeed - enemy.speedMps) < 1e-12,
+      'all species use explicit room-metre speeds independently of wave and model size',
     );
   for (const enemy of roster.filter((enemy) => enemy.ground && enemy.type !== 'ant'))
     assert.ok(
@@ -100,7 +94,7 @@ for (const fixture of JSON.parse(
       'larger ground species remain slower than every ant',
     );
 }
-console.log('#17: current director source stats, route seeds, and ground/air speed invariants.');
+console.log('#17: current director source stats, route seeds, and fixed room-metre speeds.');
 
 // #16: real keyboard handler must not swallow pilot Shift/Ctrl as weapon selection.
 const { contextKey } = await import('../src/equipment-controls.js');

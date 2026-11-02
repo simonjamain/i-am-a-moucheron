@@ -133,3 +133,8 @@ dans `scripts/test-dense-swarms.mjs` comparent petites et grandes
 nuées, effectifs jusqu'à 5 000, entrées communes, vitesse de
 parcours, vitesse d'oscillation et formation mixte. Une validation
 humaine WebGL et des mesures GPU/UDP réelles restent nécessaires.
+
+## Correction de la vitesse physique — suite au retour de partie
+
+La vitesse de progression est désormais fixée par espèce dans `ENEMY_TYPES.speedMps` : mètres de la pièce/seconde, quelle que soit la taille de l'insecte ou de sa formation. Les anciennes calibrations sur la longueur des itinéraires historiques ne gouvernent plus la durée des vagues ; la durée d'un ennemi vient de la longueur de **son trajet réel** divisée par sa vitesse explicite. Les oscillations locales restent petites, et le moustique utilise une fréquence d'esquive réduite. Les bébés araignées utilisent leur propre vitesse, sans accélération cachée.
+Voir [bestiaire](enemy-bestiary.md) et `scripts/test-enemy-speeds.mjs`.

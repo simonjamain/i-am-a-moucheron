@@ -8,7 +8,6 @@ import { stepHelicopter } from '../src/helicopter.js';
 import { fullAmmo } from '../src/logistics.js';
 import { MAP, ENEMY_SIZE_FACTORS } from '../src/scale.js';
 import { wavePlan } from '../src/waves.js';
-import { baselineTravelSpeed } from '../src/route-speed.js';
 import { makeShotTrace, moveShotTrace, advanceShotTrace } from '../src/tracers.js';
 const close = (a, b) => assert.ok(Math.abs(a - b) < 1e-8, `${a} != ${b}`);
 // The rounded subtraction really fails before the H2 landing fix.
@@ -110,9 +109,8 @@ assert.equal(r.pilots.get(b.id).name, 'Bravo');
 for (const wave of [1, 2, 8]) {
   const roster = wavePlan('SLOW-ANTS', wave, 123).roster;
   for (const e of roster) {
-    if (e.type === 'ant' || !e.ground)
-      close(e.travelSpeed, baselineTravelSpeed(e, wave) * (e.type === 'ant' ? 0.25 : 1));
-    else
+    close(e.travelSpeed, e.speedMps);
+    if (e.ground && e.type !== 'ant')
       assert.ok(
         e.travelSpeed <
           Math.min(...roster.filter((a) => a.type === 'ant').map((a) => a.travelSpeed)),
@@ -143,7 +141,7 @@ assert.match(client, /addEventListener\('mouseup'/);
 assert.match(client, /Recommencer pour tout le monde/);
 assert.match(client, /x !== 'radar'/);
 console.log(
-  'Comfort: rounded H2 landing/access, repairs all hulls/overlap/full/departure/destruction, concurrent reset, ant speeds and moving shot endpoints passed.',
+  'Comfort: rounded H2 landing/access, repairs all hulls/overlap/full/departure/destruction, concurrent reset, explicit enemy speeds and moving shot endpoints passed.',
 );
 // Exercise the real staged-index guard in a disposable repository.
 const { mkdtempSync, writeFileSync, rmSync } = await import('node:fs');
