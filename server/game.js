@@ -42,6 +42,7 @@ import {
 import { drawClause, clauseFactors } from '../src/malice.js';
 import { stationAccess } from '../src/sortie.js';
 import { validMotion } from '../src/network.js';
+import { sweptSphereMayTouch } from '../src/swept-broadphase.js';
 import { newBank, signLoan, settleLoans, repayLoan } from '../src/bank.js';
 import { canUseWeapon, HEAVY, TANK_MG, availableShell } from '../src/armament.js';
 import { createOrdnance, integrateOrdnance, segmentSphere, segmentBox } from '../src/ordnance.js';
@@ -1158,6 +1159,9 @@ export class Game {
         const radius = MAP.metres(
           plan.roster[i].size * 0.7 * enemySizeFactor(plan.roster[i].type) + 0.3,
         );
+        // Reject spheres outside the swept AABB before expensive exact geometry.
+        // This is conservative: all true contacts still pass the narrow phase.
+        if (!sweptSphereMayTouch(previous, v.state.p, frame.p, radius)) return;
         const touching = Math.hypot(...v.state.p.map((n, j) => n - frame.p[j])) <= radius;
         const impact = touching || segmentSphere(previous, v.state.p, frame.p, radius) !== null;
         if (impact && !latched.has(i)) {
@@ -1653,23 +1657,16 @@ export class Game {
         const frames =
           r.phase === 'combat' && projectile.wave === r.wave ? framesAt(projectile.updated) : [];
         for (let i = 0; i < frames.length; i++)
-          if (frames[i] && !r.kills.has(i))
-            consider(
-              segmentSphere(
-                a,
-                b,
-                frames[i].p,
-                MAP.metres(
-                  plan.roster[i].size *
-                    0.7 *
-                    (enemySizeFactor(plan.roster[i].type) *
-                      (plan.roster[i].type === 'midge' ? 1.2 : 1)),
-                ),
-              ),
-              {
-                enemy: i,
-              },
+          if (frames[i] && !r.kills.has(i)) {
+            const radius = MAP.metres(
+              plan.roster[i].size *
+                0.7 *
+                (enemySizeFactor(plan.roster[i].type) *
+                  (plan.roster[i].type === 'midge' ? 1.2 : 1)),
             );
+            if (sweptSphereMayTouch(a, b, frames[i].p, radius))
+              consider(segmentSphere(a, b, frames[i].p, radius), { enemy: i });
+          }
         for (const v of r.vehicles.values())
           if (v.id !== projectile.vehicle && v.state.hp > 0)
             consider(segmentSphere(a, b, v.state.p, MAP.metres(VEHICLES[v.type].span * 0.3)), {

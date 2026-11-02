@@ -118,8 +118,8 @@ physiques, sons/HUD, livraisons sous parachute et parcours du purgatoire.
 `delivery.js` partage désormais le calcul de hauteur absolue entre serveur et
 client ; les [issues 15–17](issues-15-16-17.md) décrivent ce contrat et les nouvelles commandes/vitesses.
 
-La [référence performance](performance.md) décrit la sélection spatiale des
-cibles des tirs, ses replis conservateurs et le benchmark CPU reproductible.
+La [référence performance](performance.md) décrit les accélérations conservatrices
+des collisions client et serveur, leurs replis et leurs benchmarks CPU reproductibles.
 
 Les [réglages d’équilibrage par room](room-balance.md) sont consultables par tous et
 modifiables à tout moment par le créateur de la room.

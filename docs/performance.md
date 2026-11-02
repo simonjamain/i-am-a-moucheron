@@ -97,3 +97,26 @@ opaque, une surface alpha et les ailes de vrais insectes. Une différence de
 composition doit être jugée visuellement ; la parité de matrices/couleurs ne
 suffit pas. Cette contribution reste candidate tant que cette observation et
 les mesures de rendu réel sont indisponibles.
+
+## Montée en charge vers 50 joueurs — collisions physiques serveur (version 71)
+
+Le serveur relaie les mouvements ; chaque navigateur simule sa propre physique.
+Les collisions serveur entre les véhicules, les insectes et les armes lourdes
+appellent en revanche `segmentSphere` pour de nombreux candidats. Le nouveau
+`sweptSphereMayTouch()` rejette les sphères entièrement hors du rectangle 3D
+englobant le déplacement, élargi du rayon de collision. Un vrai impact ne peut
+pas être rejeté ; les tests exacts `segmentSphere`, les dégâts et l'ordre des
+impacts restent inchangés. L'optimisation est appliquée aux contacts
+véhicule/insecte et aux projectiles lourds contre les insectes.
+
+`node scripts/test-swept-broadphase.mjs` compare 45 000 segments/rayons
+déterministes et plusieurs cas limites contre l'intersection précise.
+`npm run bench:swarm-50` mesure le calcul pur avec 50 véhicules et 900
+positions d'ennemis (45 000 paires par balayage), avant/après, avec mêmes
+candidats, 12 passages alternés et médiane après échauffement.
+Cette mesure ne compte ni `swarmFrame()`, ni réseau WebRTC, ni rendu WebGL.
+Elle n'est pas une garantie de 50 joueurs réels à 60 FPS.
+
+Vérification en jeu à prévoir : partie réelle 50 joueurs, vagues denses,
+plusieurs avions et obus, FPS et latence, collisions et dégâts identiques.
+L'environnement de PR temporaire demeure indisponible.

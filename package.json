@@ -17,6 +17,7 @@
     "prepare:version": "git config core.hooksPath .githooks",
     "version:next": "node scripts/next-version.mjs",
     "bench:collisions": "node scripts/benchmark-insect-index.mjs",
+    "bench:swarm-50": "node scripts/benchmark-swept-broadphase.mjs",
     "bench:udp-replies": "node scripts/benchmark-udp-replies.mjs",
     "bench:tracers": "node scripts/benchmark-tracers.mjs"
   },
