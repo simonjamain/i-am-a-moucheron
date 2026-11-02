@@ -52,6 +52,7 @@ const files = {
       'interaction-timing',
       'insect-hits',
       'insect-status',
+      'blood-effects',
       'crash-effects',
       'control-focus',
       'network',

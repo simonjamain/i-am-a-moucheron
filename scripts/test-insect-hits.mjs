@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import * as T from '../vendor/three.module.min.js';
 import { createGraphics } from '../src/graphics.js';
 import { nearestInsectHit, nearestMeshHit, insectContact, HitEffects } from '../src/insect-hits.js';
+import { BloodEffects } from '../src/blood-effects.js';
 const scene = new T.Scene(),
   graphics = createGraphics(T, scene),
   bug = graphics.insect(),
@@ -57,6 +58,32 @@ effects.dispose();
 console.log(
   'PASS: model-sized ray hits, far near misses, nearest target/range/rotation, tighter body contact and bounded deduplicated impact effects with cleanup',
 );
+
+// Insect gore stays cosmetic, prominent, and batched even under dense fire.
+const blood = new BloodEffects(T, scene, { capacity: 32, particlesPerHit: 18 });
+const impact = new T.Vector3(0.2, 0.6, -0.4);
+assert.equal(blood.burst(impact, { size: 0.013 }), true);
+assert.equal(blood.mesh.count, 18);
+assert.ok(blood.mesh.isInstancedMesh);
+assert.equal(blood.mesh.userData.projectileSolid, false);
+assert.equal(blood.mesh.material.depthWrite, false);
+const originMatrix = new T.Matrix4();
+blood.mesh.getMatrixAt(0, originMatrix);
+blood.update(0.15);
+const movedMatrix = new T.Matrix4();
+blood.mesh.getMatrixAt(0, movedMatrix);
+assert.notDeepEqual(movedMatrix.elements, originMatrix.elements, 'droplets travel after impact');
+for (let i = 0; i < 5; i++) blood.burst(impact, { size: 0.02 });
+assert.equal(blood.mesh.count, 32, 'impact particles are bounded across repeated hits');
+assert.equal(scene.children.filter((item) => item.isInstancedMesh).length, 1);
+blood.update(2);
+assert.equal(blood.mesh.count, 0, 'old blood droplets expire');
+blood.burst(impact);
+blood.clear();
+assert.equal(blood.mesh.count, 0, 'wave change clears all gore');
+blood.dispose();
+assert.equal(scene.children.filter((item) => item.isInstancedMesh).length, 0);
+console.log('PASS: large blood droplets on every hit, batched in one draw call, capped and cleaned.');
 
 // Real projectile call pattern: aircraft / avatars contain camera-facing labels.
 // Neither labels nor invisible geometry may intercept a projectile.

@@ -40,6 +40,9 @@ base de données ni accès disque dans les opérations de jeu Node. Voir
 | Mesure d’interaction | `interaction-timing.js` : feedback immédiat et traces bornées de sélection.                                                                        |
 | Effets/son           | `insect-status.js`, `crash-effects.js`, `audio.js`, effets de combat et corps tombants du client.                                                  |
 
+Les gerbes de sang purement visuelles sont gérées dans `blood-effects.js`,
+avec un seul rendu instancié borné et une intégration aux impacts dans `client.js`.
+
 ## Dernier lot
 
 [Lisibilité et nettoyage](clean-flight.md) : `purchase-ui.js` réutilise les protections
