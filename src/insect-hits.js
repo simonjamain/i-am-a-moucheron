@@ -35,9 +35,8 @@ export class InsectIndex {
       const centre = direct ? model.position : model.getWorldPosition(this.centre);
       const size = direct ? model.scale : model.getWorldScale(this.size);
       const r =
-        3 *
-          Math.max(Math.abs(size.x), Math.abs(size.y), Math.abs(size.z)) *
-          (model.userData.hitTolerance || 1) +
+        Math.max(Math.abs(size.x), Math.abs(size.y), Math.abs(size.z)) *
+          (model.userData.sphereRadius || 3 * (model.userData.hitTolerance || 1)) +
         this.cellSize * 1e-9;
       const min = ['x', 'y', 'z'].map((a) => Math.floor((centre[a] - r) / this.cellSize));
       const max = ['x', 'y', 'z'].map((a) => Math.floor((centre[a] + r) / this.cellSize));
@@ -134,9 +133,8 @@ export function nearestInsectHit(
     const centre = direct ? model.position : model.getWorldPosition(new T.Vector3());
     const size = direct ? model.scale : model.getWorldScale(new T.Vector3());
     const radius =
-      3 *
       Math.max(Math.abs(size.x), Math.abs(size.y), Math.abs(size.z)) *
-      (model.userData.hitTolerance || 1);
+      (model.userData.sphereRadius || 3 * (model.userData.hitTolerance || 1));
     const dx = centre.x - origin.x,
       dy = centre.y - origin.y,
       dz = centre.z - origin.z;
@@ -147,6 +145,21 @@ export function nearestInsectHit(
       dx * dx + dy * dy + dz * dz - along * along > radius * radius
     )
       continue;
+    // Fast, exact ray/sphere intersection for an individual midge. No triangles
+    // or mesh-world updates are needed, including for instanced render proxies.
+    if (model.userData.sphereRadius) {
+      const perpendicularSq = Math.max(0, dx * dx + dy * dy + dz * dz - along * along);
+      const depth = Math.sqrt(Math.max(0, radius * radius - perpendicularSq));
+      let distance = along - depth;
+      if (distance < 0) distance = along + depth;
+      if (distance >= 0 && distance <= maxDistance && (!nearest || distance < nearest.distance))
+        nearest = {
+          id,
+          distance,
+          point: origin.clone().addScaledVector(direction, distance / norm),
+        };
+      continue;
+    }
     ray ??= new T.Raycaster(origin, direction.clone().normalize(), 0, maxDistance);
     let hit;
     if ((model.userData.hitTolerance || 1) > 1) {
@@ -177,6 +190,13 @@ export function insectContact(T, point, model, padding = 0.3) {
   model.updateWorldMatrix(true, true);
   const centre = model.getWorldPosition(new T.Vector3()),
     size = model.getWorldScale(new T.Vector3());
+  if (model.userData.sphereRadius) {
+    const r =
+      model.userData.sphereRadius *
+        Math.max(Math.abs(size.x), Math.abs(size.y), Math.abs(size.z)) +
+      padding;
+    return point.distanceToSquared(centre) <= r * r;
+  }
   if (point.distanceToSquared(centre) > (2 * Math.max(size.x, size.y, size.z) + padding) ** 2)
     return false;
   for (const part of model.userData.hitParts || []) {
