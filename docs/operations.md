@@ -111,6 +111,17 @@ et utilisent une grille spatiale pour le voisinage.
 La [correction des commandes H2](helicopter-controls.md) couvre Z/O/Haut, S/Bas,
 stationnaire, poussée locale et axe des roquettes.
 
+## Performance et capacité
+
+Les snapshots serveur évitent désormais les recherches répétées dans les achats,
+les dossiers et les corps du purgatoire : une seule traversée par collection,
+avec index temporaire pour l'association des corps. Le calcul des arrivées
+est partagé entre les champs `arrived` et `leaked`.
+La suite `test-ram-game.mjs` inclut un scénario de 50 participants.
+Il ne s'agit pas d'une preuve de capacité réelle à 50 clients : pour la valider,
+mesurer CPU, mémoire, durée de snapshot, débit UDP, perte de paquets et FPS client
+dans une salle de 50 navigateurs réellement connectés.
+
 ## Contributions GitHub
 
 Le [guide de contribution](../CONTRIBUTING.md) décrit les branches parallèles,
