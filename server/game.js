@@ -44,6 +44,7 @@ import { stationAccess } from '../src/sortie.js';
 import { validMotion } from '../src/network.js';
 import { newBank, signLoan, settleLoans, repayLoan } from '../src/bank.js';
 import { canUseWeapon, HEAVY, TANK_MG, availableShell } from '../src/armament.js';
+import { sweptSphereMayTouch } from '../src/swept-broadphase.js';
 import { createOrdnance, integrateOrdnance, segmentSphere, segmentBox } from '../src/ordnance.js';
 import { heavyDamage } from '../src/armament.js';
 
@@ -560,8 +561,7 @@ export class Game {
         purchases.push({ token, item, owner, price });
       }
     for (const dossier of r.dossiers.values())
-      if (dossier.active && !clauses.has(dossier.pilot))
-        clauses.set(dossier.pilot, dossier.clause);
+      if (dossier.active && !clauses.has(dossier.pilot)) clauses.set(dossier.pilot, dossier.clause);
     const bodies = {
       purgatory: new Map(r.purgatory.bodies.map((b) => [b.id, b])),
       super: new Map(r.super.bodies.map((b) => [b.id, b])),
@@ -580,8 +580,7 @@ export class Game {
     }
     const elapsed = (now - r.started) / 1000;
     for (const [index, enemy] of plan.roster.entries())
-      if (!r.kills.has(index) && elapsed >= enemy.spawn + enemy.duration)
-        arrived.push(enemy.id);
+      if (!r.kills.has(index) && elapsed >= enemy.spawn + enemy.duration) arrived.push(enemy.id);
     return clone({
       code: r.code,
       balance: r.balance,
@@ -793,7 +792,8 @@ export class Game {
           if (!v || v.seats.has('pilot') || !validMotion(report.state)) continue;
           v.state = {
             ...report.state,
-            hp: report.state.hp === v.reportedHP ? v.state.hp : Math.min(v.state.hp, report.state.hp),
+            hp:
+              report.state.hp === v.reportedHP ? v.state.hp : Math.min(v.state.hp, report.state.hp),
           };
           v.reportedHP = report.state.hp;
           if (!v.state.landed || v.state.hp <= 0) v.ready = 0;
@@ -1173,6 +1173,8 @@ export class Game {
         const radius = MAP.metres(
           plan.roster[i].size * 0.7 * enemySizeFactor(plan.roster[i].type) + 0.3,
         );
+        // Fast conservative swept AABB reject; never skip an exact contact.
+        if (!sweptSphereMayTouch(previous, v.state.p, frame.p, radius)) return;
         const touching = Math.hypot(...v.state.p.map((n, j) => n - frame.p[j])) <= radius;
         const impact = touching || segmentSphere(previous, v.state.p, frame.p, radius) !== null;
         if (impact && !latched.has(i)) {

@@ -119,7 +119,9 @@ physiques, sons/HUD, livraisons sous parachute et parcours du purgatoire.
 client ; les [issues 15–17](issues-15-16-17.md) décrivent ce contrat et les nouvelles commandes/vitesses.
 
 La [référence performance](performance.md) décrit la sélection spatiale des
-cibles des tirs, ses replis conservateurs et le benchmark CPU reproductible.
+cibles des tirs, ses replis conservateurs et le benchmark CPU reproductible,
+ainsi que le rejet conservateur des collisions véhicule–ennemi côté serveur
+et sa mesure à 50 véhicules pour 900 insectes.
 
 Les [réglages d’équilibrage par room](room-balance.md) sont consultables par tous et
 modifiables à tout moment par le créateur de la room.

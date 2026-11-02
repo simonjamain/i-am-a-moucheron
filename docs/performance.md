@@ -97,3 +97,28 @@ opaque, une surface alpha et les ailes de vrais insectes. Une différence de
 composition doit être jugée visuellement ; la parité de matrices/couleurs ne
 suffit pas. Cette contribution reste candidate tant que cette observation et
 les mesures de rendu réel sont indisponibles.
+
+## Montée en charge : collisions véhicule–ennemi (version 78)
+
+Le serveur calcule les contacts entre les véhicules et les ennemis des vagues.
+Dans le parcours précédent, il effectuait une distance euclidienne avant une
+intersection précise pour chaque paire, même très éloignée. La fonction
+`sweptSphereMayTouch()` rejette désormais les sphères sans chevauchement avec
+la boîte englobante du segment parcouru par le véhicule, élargie du rayon de
+la cible. **Tout vrai contact passe toujours le calcul exact**, et les dégâts,
+les `contacts` et l'ordre des collisions sont conservés.
+
+Ce correctif reprend les résultats géométriques de la contribution #32,
+dont la branche était antérieure aux autres optimisations. Le benchmark CPU
+déterministe (`npm run bench:swarm-50`) compare 50 segments véhicules contre
+900 sphères, soit 45 000 paires, sans WebGL, réseau, gravité ni trafic des
+clients. Le jeu de référence de #32 mesurait sur GitHub Actions 7,017 ms en
+parcours direct contre 0,415 ms après rejet conservateur, sur un jeu dispersé
+sans impacts. La version courante inclut **au moins un impact vérifié**.
+Les résultats CI de la version courante font foi pour cette révision.
+
+`scripts/test-swept-broadphase.mjs` vérifie 45 000 couples pseudoaléatoires
+et des contacts aux limites contre `segmentSphere`. Ce test et le benchmark
+sont contrôlés par GitHub Actions. Les mesures CPU ne valent pas garantie
+de FPS avec 50 joueurs ; vérifier en partie des vagues denses, collisions
+avec plusieurs avions, dégâts, latence et fluidité.
