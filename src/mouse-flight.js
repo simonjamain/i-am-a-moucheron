@@ -10,7 +10,7 @@ export function rotateMouseAim(T, direction, cameraQ, dx, dy, sensitivity = 0.00
     .applyAxisAngle(up, -T.MathUtils.clamp(dx, -200, 200) * sensitivity)
     .normalize();
 }
-export function mouseFlightControls(T, { q, omega, direction }) {
+export function mouseFlightControls(T, { q, omega, direction }, tuning = {}) {
   const local = direction.clone().normalize().applyQuaternion(q.clone().invert());
   const yawError = Math.atan2(local.x, -local.z);
   const pitchError = Math.atan2(local.y, Math.max(0.05, -local.z));
@@ -19,11 +19,31 @@ export function mouseFlightControls(T, { q, omega, direction }) {
   const bank = Math.atan2(-right.y, up.y);
   // Bank into horizontal turns; progressively prefer wings-level as the target aligns.
   // Do not change the quaternion here: these are ordinary control-surface commands.
-  const desiredBank = T.MathUtils.clamp(yawError * 1.35, -1.25, 1.25);
+  const desiredBank = T.MathUtils.clamp(yawError * 1.35 * (tuning.bankStrength ?? 1), -1.25, 1.25);
+  const rollError = bank - desiredBank;
+  // A bounded boost near zero compensates for the slow final phase of proportional control.
+  const closeBoost = (error) =>
+    1 + ((tuning.nearTargetBoost ?? 1.4) - 1) * Math.exp(-Math.abs(error) / 0.22);
+  const damping = tuning.damping ?? 1;
   return {
-    pitch: T.MathUtils.clamp(pitchError * 2.8 - omega.x * 0.45, -1, 1),
-    roll: T.MathUtils.clamp((bank - desiredBank) * 1.8 - omega.z * 0.45, -1, 1),
-    yaw: T.MathUtils.clamp(yawError * 0.9 + omega.y * 0.35, -1, 1),
+    pitch: T.MathUtils.clamp(
+      pitchError * 2.8 * (tuning.pitchResponse ?? 1) * closeBoost(pitchError) -
+        omega.x * 0.45 * damping,
+      -1,
+      1,
+    ),
+    roll: T.MathUtils.clamp(
+      rollError * 1.8 * (tuning.rollResponse ?? 1) * closeBoost(rollError) -
+        omega.z * 0.45 * damping,
+      -1,
+      1,
+    ),
+    yaw: T.MathUtils.clamp(
+      yawError * 0.9 * (tuning.yawResponse ?? 1) * closeBoost(yawError) +
+        omega.y * 0.35 * damping,
+      -1,
+      1,
+    ),
   };
 }
 export function mouseCameraRotation(T, direction, previous, dt) {

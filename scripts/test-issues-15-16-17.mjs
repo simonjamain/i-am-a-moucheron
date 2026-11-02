@@ -116,6 +116,7 @@ const input = {
   bedUI: { opened: false },
   bankUI: { opened: false },
   balanceUI: { opened: false },
+  flightTuningUI: { opened: false },
   myVehicle: { type: 'helicopter' },
   crewSeat: 'pilot',
   respawnAt: 0,

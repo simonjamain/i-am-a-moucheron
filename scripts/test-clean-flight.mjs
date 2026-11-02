@@ -387,6 +387,7 @@ const c = {
   bedUI: { opened: false },
   bankUI: { opened: false },
   balanceUI: { opened: false },
+  flightTuningUI: { opened: false },
   myVehicle: { type: 'tank' },
   respawnAt: 0,
   crewSeat: 'pilot',

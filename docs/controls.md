@@ -126,3 +126,34 @@ Le [lot confort de jeu, version 37](comfort.md) précise réparation, zoom, jaug
 radar à pied, remise à zéro, fourmis et projectiles du pistolet courants.
 
 Le [mapping pilote H2 actuel](issues-15-16-17.md#16--séparation-puissance-et-tangage-du-pilote-h2) retire les anciens alias O/W sans changer les armes du copilote.
+
+## Réglages personnels des avions
+
+Depuis une room, ouvrir **Pilotage** à côté d’**Équilibrage**. Tous les joueurs
+peuvent configurer leurs propres avions, indépendamment de l'équilibrage partagé.
+Le bouton **Enregistrer et appliquer** applique immédiatement les préférences,
+sauvegardées dans le `localStorage` du navigateur (`moucheron-flight-tuning:v1`).
+Elles persistent entre rooms et rechargements sur le même profil navigateur,
+sans compte ni synchronisation serveur. L’échec du stockage est signalé ; les
+valeurs restent alors actives pour la session. **Valeurs par défaut** prépare la
+réinitialisation, à confirmer avec le bouton d’enregistrement.
+
+Les curseurs multiplient la sensibilité souris, les réponses de tangage,
+roulis et lacet de l'instructeur, l'inclinaison automatique en virage et le
+freinage de rotation. **Rattrapage final du viseur**, à **1,4 × par défaut**,
+renforce progressivement les commandes quand l'écart au point visé se réduit,
+sans téléporter l'avion ni toucher à sa physique. Régler à **1 ×** retrouve
+le comportement de l'instructeur avant cette amélioration.
+L’option d’inversion verticale ne touche que la visée souris en avion.
+
+Ces réglages ne modifient **ni les commandes manuelles clavier/manette**,
+ni le pilotage H2, les véhicules terrestres, les tourelles, les autres joueurs,
+l’autorité du serveur ou l’équilibrage de la room. Le menu relâche le pointeur
+et neutralise les commandes maintenues ; **Échap** le ferme sans recapture
+automatique, tandis que le bouton fermer peut reprendre la capture. La partie
+continue pendant l'ouverture du panneau.
+
+Sources : `flight-tuning.js` (plages et stockage), `flight-tuning-ui.js`
+(panneau), `mouse-flight.js` (instructeur) et
+`test-flight-tuning.mjs` (régression). La sensation du pilotage reste à
+valider dans une vraie partie WebGL/UDP.

@@ -32,6 +32,8 @@ const files = {
     [
       'balance',
       'balance-ui',
+      'flight-tuning',
+      'flight-tuning-ui',
       'swept-geometry',
       'helicopter',
       'mobile-flak',
