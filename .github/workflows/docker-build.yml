@@ -108,3 +108,28 @@ jobs:
         run: npm run bench:swarm-50
       - name: Check formatting
         run: npx prettier --check src/swept-broadphase.js server/game.js scripts/test-swept-broadphase.mjs scripts/benchmark-swept-broadphase.mjs
+
+  game-regression:
+    name: Full game regression and formatting
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Check formatting
+        run: npm run format:check
+      - name: Run game tests including 10k procedural swarms
+        run: npm test
+      - name: Check documentation
+        run: npm run check:docs
+      - name: Build distributable
+        run: npm run build && node scripts/validate-artifact.mjs
