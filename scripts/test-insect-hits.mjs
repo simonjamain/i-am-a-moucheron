@@ -83,7 +83,9 @@ blood.clear();
 assert.equal(blood.mesh.count, 0, 'wave change clears all gore');
 blood.dispose();
 assert.equal(scene.children.filter((item) => item.isInstancedMesh).length, 0);
-console.log('PASS: large blood droplets on every hit, batched in one draw call, capped and cleaned.');
+console.log(
+  'PASS: large blood droplets on every hit, batched in one draw call, capped and cleaned.',
+);
 
 // Real projectile call pattern: aircraft / avatars contain camera-facing labels.
 // Neither labels nor invisible geometry may intercept a projectile.
