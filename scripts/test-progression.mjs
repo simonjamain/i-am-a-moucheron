@@ -17,10 +17,22 @@ for (let seed = 0; seed < 40; seed++)
       p.budget,
     );
     if (wave === 1) {
-      assert.equal(p.roster.length, 24);
-      assert.equal(p.roster.filter((e) => e.type === 'midge').length, 20);
-      assert.equal(p.roster.filter((e) => e.type === 'ant').length, 4);
+      const ants = p.roster.filter((e) => e.type === 'ant').length;
+      const midges = p.roster.filter((e) => e.type === 'midge').length;
+      assert.ok(ants >= 2, 'all waves guarantee two ants');
+      assert.equal(ants + midges / 5, p.budget, 'first wave uses its full budget');
+      assert.ok(p.roster.every((e) => ['ant', 'midge'].includes(e.type)));
       assert.ok(Math.max(...p.roster.map((e) => e.spawn + e.duration)) > 100);
+    }
+    if (seed < 4 && [1, 2, 3, 4, 8].includes(wave)) {
+      for (const [source, group] of Map.groupBy(p.roster, (e) => e.sourceId)) {
+        const start = Math.floor(source / 4) * 2.4 + (source % 4) * 0.35;
+        for (const [member, enemy] of group.entries())
+          assert.ok(
+            Math.abs(enemy.spawn - start - (enemy.type === 'midge' ? member * 0.07 : 0)) < 1e-8,
+            'group spacing stays identical for every wave',
+          );
+      }
     }
     for (const [type, unlock] of Object.entries({
       ant: 1,
@@ -38,6 +50,14 @@ for (let seed = 0; seed < 40; seed++)
         Math.floor(p.budget * 0.4),
     );
   }
+assert.ok(
+  new Set(
+    Array.from({ length: 40 }, (_, seed) =>
+      wavePlan('CURVE' + seed, 1, seed).roster.filter((e) => e.type === 'ant').length,
+    ),
+  ).size > 1,
+  'first-wave compositions vary with the seed',
+);
 // With zero Saint-Pierre income, wave stipends alone fund a useful purchase
 // after each of the first twelve clears. Better interception adds real choice.
 let cash = 0,
@@ -82,7 +102,8 @@ const a = (await api('join', { name: 'A', code: 'PROGRESS' })).body,
 await DB.prepare("UPDATE rooms SET phase='combat',wave=1,started=? WHERE code='PROGRESS'")
   .bind(now)
   .run();
-for (let enemy = 0; enemy < 24; enemy++) {
+const firstPopulation = wavePlan('PROGRESS', 1, now).roster.length;
+for (let enemy = 0; enemy < firstPopulation; enemy++) {
   const r = await api('hit', { id: a.id, wave: 1, enemy, shot: 'clear' + enemy, amount: 800 });
   assert.equal(r.status, 200);
 }
@@ -138,9 +159,8 @@ assert.equal(s.dollars, 0);
 await DB.prepare("UPDATE rooms SET phase='combat',wave=1,started=? WHERE code='PROGRESS'")
   .bind(now)
   .run();
-// Leave eight enemies to arrive, below defeat; a completely missed 24-enemy
-// first wave now correctly exceeds the unchanged infestation limit.
-for (let enemy = 8; enemy < 24; enemy++)
+// Leave eight enemies to arrive, below defeat, regardless of the seed.
+for (let enemy = 8; enemy < firstPopulation; enemy++)
   await api('hit', { id: a.id, wave: 1, enemy, shot: 'partial' + enemy, amount: 800 });
 now += 2000000;
 s = (await api('sync', { id: a.id, state: a.state })).body;
@@ -149,5 +169,5 @@ assert.equal(s.infestation, 8);
 assert.equal(s.dollars, 4);
 Date.now = realNow;
 console.log(
-  'PASS: gentle seeded waves, extended mixed first wave, later elite caps, twelve affordable purchase rounds, exact-once completion stipends, tier pricing, failure and reset.',
+  'PASS: seeded first-wave variety and uniform group spacing, later elite caps, twelve affordable purchase rounds, exact-once completion stipends, tier pricing, failure and reset.',
 );

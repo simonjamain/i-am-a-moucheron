@@ -73,7 +73,7 @@ assert.equal(r.next_wave_at, now + 5000, 'shortening gives 5 seconds notice');
 now += 5000;
 let s = call(a.id, 'sync');
 assert.equal(s.wave, 1);
-assert.equal(s.total, 24);
+assert.equal(s.total, wavePlan(r.code, 1, r.started).roster.length);
 assert.deepEqual(s.roster, scaleRoster(wavePlan(r.code, 1, r.started), DEFAULT_BALANCE).roster);
 const originalCache = structuredClone(wavePlan(r.code, 1, r.started));
 now += 4000;
@@ -84,7 +84,7 @@ const beforeRoster = structuredClone(r.plan.roster);
 const beforeDamage = r.enemyDamage[0];
 change({ enemySpeed: 2, enemyHP: 2, population: 2, progression: 2 });
 const afterFrame = swarmFrame(r.plan.roster, (now - r.started) / 1000);
-assert.equal(r.plan.roster.length, 24, 'composition is frozen until next wave');
+assert.equal(r.plan.roster.length, beforeRoster.length, 'composition is frozen until next wave');
 assert.equal(r.plan.roster[0].hp, beforeRoster[0].hp * 2);
 assert.equal(r.enemyDamage[0], beforeDamage * 2);
 for (let i = 0; i < beforeFrame.length; i++) {
@@ -262,7 +262,7 @@ const unrestricted = unlimitedGame.command('UNLIMITED', unlimited.id, 'balance',
   epoch: unlimitedRoom.base.epoch,
   revision: 0,
   values: {
-    population: 50,
+    population: 200,
     progression: 10,
     damage: 100,
     fireRate: 10,
@@ -279,11 +279,13 @@ const unrestricted = unlimitedGame.command('UNLIMITED', unlimited.id, 'balance',
 });
 assert.equal(unrestricted.balance.damage, 100, 'server accepts values above the former bounds');
 unlimitedGame.startWave(unlimitedRoom);
+const unlimitedTotal = unlimitedGame.snapshot(unlimitedRoom).total;
 assert.equal(
-  unlimitedGame.snapshot(unlimitedRoom).total,
-  1200,
-  'actual wave exceeds former 900-enemy ceiling',
+  unlimitedTotal,
+  wavePlan(unlimitedRoom.code, 1, unlimitedRoom.started).roster.length * 200,
+  'the unlimited room uses its own seeded composition',
 );
+assert.ok(unlimitedTotal > 900, 'actual wave exceeds former 900-enemy ceiling');
 // Real component handlers: preserve edits on polling, reject stale saves, retry errors.
 class Element {
   constructor(tag = '') {
