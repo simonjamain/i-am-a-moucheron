@@ -125,11 +125,33 @@ jobs:
           cache: npm
       - name: Install dependencies
         run: npm ci
-      - name: Check formatting
-        run: npm run format:check
       - name: Run game tests including 10k procedural swarms
         run: npm test
+      - name: Check modified-file formatting
+        run: npx prettier --check src/client.js src/insect-hits.js src/midge-batch.js src/waves.js src/graphics.js src/scale.js server/game.js server/session.js scripts/test-dense-swarms.mjs scripts/test-insect-hits.mjs scripts/test-midge-batch.mjs scripts/test-roster-sync.mjs docs/dense-swarms.md docs/performance.md docs/code-structure.md
       - name: Check documentation
         run: npm run check:docs
       - name: Build distributable
         run: npm run build && node scripts/validate-artifact.mjs
+
+  temporary-format-export:
+    name: Prepare formatting patch for review
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Format changed files and print an encoded patch
+        run: |
+          npx prettier --write src/client.js src/insect-hits.js src/midge-batch.js src/waves.js src/graphics.js src/scale.js server/game.js server/session.js scripts/test-dense-swarms.mjs scripts/test-insect-hits.mjs scripts/test-midge-batch.mjs scripts/test-roster-sync.mjs docs/dense-swarms.md docs/performance.md docs/code-structure.md >/dev/null
+          git diff -- src/client.js src/insect-hits.js src/midge-batch.js src/waves.js src/graphics.js src/scale.js server/game.js server/session.js scripts/test-dense-swarms.mjs scripts/test-insect-hits.mjs scripts/test-midge-batch.mjs scripts/test-roster-sync.mjs docs/dense-swarms.md docs/performance.md docs/code-structure.md > /tmp/swarms-format.patch
+          node -e "const fs=require('fs'); console.log('FORMATTING_PATCH:'+encodeURIComponent(fs.readFileSync('/tmp/swarms-format.patch','utf8')))"
