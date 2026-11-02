@@ -2,12 +2,14 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { performance } from 'node:perf_hooks';
 import { MAP, INSECT_SCALE, enemySizeFactor, GROUND_FOOT_DEPTH } from '../src/scale.js';
-import { enemyRoutePosition } from '../src/routes.js';
+import { enemyRoute, enemyRoutePosition } from '../src/routes.js';
+import { scaleRoster, DEFAULT_BALANCE } from '../src/balance.js';
 import {
   wavePlan,
   expandMidgeSwarms,
   swarmFrame,
   midgeDisplacement,
+  debugSwarmRoster,
   MAX_WAVE_POPULATION,
 } from '../src/waves.js';
 import { Game } from '../server/game.js';
@@ -54,6 +56,53 @@ for (const wave of [1, 2, 6, 12, 30, 100, 1000])
 const first = wavePlan('DENSE', 1, 123);
 assert.ok(first.roster.filter((e) => e.type === 'ant').length >= 2);
 assert.ok(first.roster.every((e) => ['ant', 'midge'].includes(e.type)));
+// Debug flocks must scale spatially and emerge from several real portals.
+const debugParams = {
+  room: 'DEBUG-FLOCKS',
+  wave: 1,
+  started: 0,
+  now: 0,
+  balance: DEFAULT_BALANCE,
+  firstId: 0,
+  revision: 1,
+};
+const small = debugSwarmRoster({ midge: 10 }, debugParams);
+const large = debugSwarmRoster({ midge: 1000 }, debugParams);
+const flocks = Map.groupBy(large, (e) => e.routeSeed);
+assert.equal(small.length, 10);
+assert.equal(large.length, 1000, 'debug counts stay exact');
+assert.ok(flocks.size >= 12, 'a thousand midges must form several flocks');
+assert.ok([...flocks.values()].every((members) => members.length <= 64));
+assert.equal(new Set([...flocks.values()].map((members) => enemyRoute(members[0]).portal)).size, 4);
+assert.ok(
+  [...flocks.values()].every((members) =>
+    members.every(
+      (e) =>
+        e.portalIndex === members[0].portalIndex &&
+        e.swarmSize === members.length &&
+        e.duration === members[0].duration,
+    ),
+  ),
+);
+assert.ok(large.every((e) => e.spawn >= 0 && e.spawn < 4));
+assert.deepEqual(large, debugSwarmRoster({ midge: 1000 }, debugParams));
+const smallOffset = midgeDisplacement({ ...small[0], id: 37, swarmSize: 10 }, 20);
+const largeOffset = midgeDisplacement({ ...small[0], id: 37, swarmSize: 50 }, 20);
+assert.ok(
+  Math.hypot(largeOffset[0], largeOffset[2]) > 2 * Math.hypot(smallOffset[0], smallOffset[2]),
+  'flock radius grows with its population',
+);
+const groundFlocks = debugSwarmRoster({ ant: 120 }, debugParams);
+assert.equal(new Set(groundFlocks.map((e) => enemyRoute(e).portal)).size, 3);
+const natural = wavePlan('DENSE-SCALE', 50, 123);
+const multiplied = scaleRoster(natural, { ...DEFAULT_BALANCE, population: 3 }).roster;
+const midgeFlocks = Map.groupBy(
+  multiplied.filter((e) => e.type === 'midge'),
+  (e) => [e.routeSeed || 1, e.branch || 0, e.portalIndex ?? -1].join(':'),
+);
+assert.ok(midgeFlocks.size > 0);
+for (const members of midgeFlocks.values())
+  assert.ok(members.every((e) => e.swarmSize === members.length));
 // Compare the exact spatial algorithm with the previous exhaustive neighbour
 // loop, on sparse and dense frames. No visual approximation or skipped peers.
 const source = readFileSync('src/waves.js', 'utf8');

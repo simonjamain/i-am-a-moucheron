@@ -1,3 +1,5 @@
+import { assignMidgeSwarmSizes } from './waves.js';
+
 // Room-local settings. No mutable module-level gameplay configuration.
 export const BALANCE_FIELDS = Object.freeze({
   population: {
@@ -116,24 +118,22 @@ export function scaleRoster(plan, balance) {
   const original = plan.roster;
   const count = Math.max(1, Math.round(original.length * balance.population));
   // Spread reduced populations across the original composition rather than removing late species.
-  return {
-    budget: plan.budget,
-    roster: Array.from({ length: count }, (_, id) => {
-      const sourceIndex = Math.floor((id * original.length) / count);
-      const source = original[sourceIndex];
-      const member = id - Math.ceil((sourceIndex * count) / original.length);
-      return {
-        ...source,
-        id,
-        hp: source.hp * balance.enemyHP,
-        phase: source.phase + (member * Math.PI * 2) / Math.ceil(count / original.length),
-        spawn: source.spawn + member * 0.07,
-        duration: source.duration / balance.enemySpeed,
-        entryHold: source.entryHold / balance.enemySpeed,
-        travelSpeed: source.travelSpeed * balance.enemySpeed,
-      };
-    }),
-  };
+  const roster = Array.from({ length: count }, (_, id) => {
+    const sourceIndex = Math.floor((id * original.length) / count);
+    const source = original[sourceIndex];
+    const member = id - Math.ceil((sourceIndex * count) / original.length);
+    return {
+      ...source,
+      id,
+      hp: source.hp * balance.enemyHP,
+      phase: source.phase + (member * Math.PI * 2) / Math.ceil(count / original.length),
+      spawn: source.spawn + member * 0.07,
+      duration: source.duration / balance.enemySpeed,
+      entryHold: source.entryHold / balance.enemySpeed,
+      travelSpeed: source.travelSpeed * balance.enemySpeed,
+    };
+  });
+  return { budget: plan.budget, roster: assignMidgeSwarmSizes(roster) };
 }
 export function retimeRoster(roster, time, ratio) {
   for (const enemy of roster) {
