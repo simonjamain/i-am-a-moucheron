@@ -59,7 +59,7 @@ export class SpiderlingBatch {
     const [bodies, heads, legs] = this.meshes;
     for (const [i, model] of alive.entries()) {
       this.world.compose(model.position, model.quaternion, model.scale);
-      this.position.set(0, 0.03, 0.38);
+      this.position.set(0, 0.06, 0.38);
       this.scale.set(0.5, 0.4, 0.63);
       this.local.compose(this.position, this.rotation, this.scale);
       bodies.setMatrixAt(i, this.result.multiplyMatrices(this.world, this.local));

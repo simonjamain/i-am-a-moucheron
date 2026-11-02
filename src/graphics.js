@@ -335,7 +335,7 @@ export function createGraphics(T, scene) {
     }
     if (type === 'spider' || type === 'spiderling') {
       const large = type === 'spider';
-      const body = ball(0, 0.03, 0.38, 0.56, large ? '#48362f' : '#66544c', g);
+      const body = ball(0, 0.06, 0.38, 0.56, large ? '#48362f' : '#66544c', g);
       body.scale.set(0.9, 0.72, 1.12);
       const head = ball(0, 0.02, -0.48, 0.34, '#342e2b', g);
       const legs = [];
