@@ -141,7 +141,7 @@ assert.equal(
   room.deliveries.length,
   Object.values(SHOP).filter((x) => ['placement', 'vehicle'].includes(x.kind)).length,
 );
-assert.equal(DELIVERY_SPEED, MAP.metres(1 / 3));
+assert.equal(DELIVERY_SPEED, 1, 'airdrop speed is 1 world metre per second');
 assert.equal(
   deliveryLanding({ item: 'dca', x: 0, y: 1, z: 0 }, [
     floor,
@@ -149,7 +149,7 @@ assert.equal(
   ]).y,
   0.50005,
 );
-now += 4000000;
+now += 6000;
 game.advanceDeliveries(room, now);
 assert.equal(room.deliveries.length, 0);
 assert.ok(room.equipment.length > 0);

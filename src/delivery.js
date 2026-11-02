@@ -1,7 +1,9 @@
 import { MAP, ACTOR_UNIT } from './scale.js';
 import { VEHICLES } from './fleet.js';
 import { supportedPlacement } from './equipment.js';
-export const DELIVERY_SPEED = MAP.metres(1 / 3);
+// World-space metres per second: the previous scaled 1 mm/s looked stationary
+// for several minutes after a drop from a plane above the office furniture.
+export const DELIVERY_SPEED = 1;
 // Absolute server time is shared by simulation and rendering; no accumulated
 // snapshot deltas and no visual freeze while waiting for the next snapshot.
 export function deliveryHeightAt(delivery, now) {

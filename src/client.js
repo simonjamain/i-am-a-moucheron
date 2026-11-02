@@ -5040,7 +5040,7 @@ const purchaseUI = new PurchaseUI({
     if (order && !purchaseUI.invalidated) beginPlacement(order);
     else {
       if (myVehicle && !purchaseUI.invalidated)
-        notify('Colis en descente · 3 s/m de référence (1 mm/s dans la pièce)', 6);
+        notify('Colis en descente · 1 m/s dans la pièce', 6);
       captureMouse();
     }
   },

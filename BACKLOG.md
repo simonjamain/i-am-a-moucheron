@@ -2201,6 +2201,13 @@ Critères : achats répétés, paiement/signature unique, différents équipemen
 obstacles et surfaces, aucun chevauchement initial, synchronisation et nettoyage
 au reset. Documenter la conversion d'échelle employée.
 
+Correction ultérieure en version 70 : le ratio d'échelle appliqué
+à la cadence ci-dessus rendait les colis visuellement immobiles en jeu
+(1 mm/s). Nouvelle vitesse de **1 m du décor/s**, dix fois la proposition
+intermédiaire non fusionnée de 0,1 m/s ; la référence actuelle et ses tests
+sont dans [les issues 15–17](docs/issues-15-16-17.md).
+La cadence ci-dessus est conservée comme décision historique du lot ACH-01.
+
 ### PUR-03 — Entrée à côté de la file
 
 Toujours apparaître à côté de la file, hors de la zone de signature, puis marcher

@@ -17,9 +17,9 @@ const snapshot = {
       token: 'crate',
       item: 'radar',
       x: 0,
-      y: 0.95,
+      y: 1.25,
       z: 0,
-      fromY: 0.95,
+      fromY: 1.25,
       startedAt: now,
       at: now,
       landingY: 0.90005,
@@ -41,12 +41,19 @@ vm.runInContext(
   ctx,
 );
 vm.runInContext('renderDeliveries()', ctx);
-now += 3000;
+now += 200;
 vm.runInContext('renderDeliveries()', ctx);
 const visualY = vm.runInContext("deliveryModels.get('crate').position.y", ctx);
 assert.ok(
-  Math.abs(visualY - 0.947) < 1e-8,
-  'crate must visibly descend between snapshots at the reference speed',
+  Math.abs(visualY - 1.05) < 1e-8,
+  'crate must visibly descend by 20 cm in 200 ms between snapshots',
+);
+// The parachute stops exactly at the support, never under or through the desk.
+now += 200;
+vm.runInContext('renderDeliveries()', ctx);
+assert.ok(
+  Math.abs(vm.runInContext("deliveryModels.get('crate').position.y", ctx) - 0.90005) < 1e-8,
+  'crate must stop at the published landing height',
 );
 snapshot.deliveries = [];
 vm.runInContext('renderDeliveries()', ctx);
@@ -152,7 +159,7 @@ for (const surfaceY of [0, 0.9]) {
     peer = room.pilots.get(b.id);
   const carrier = game.createVehicle(room, 'helicopter', 'purchase', {
     x: 0,
-    y: surfaceY + 0.03,
+    y: surfaceY + 0.3,
     z: 0,
   });
   carrier.state.landed = false;
@@ -172,10 +179,10 @@ for (const surfaceY of [0, 0.9]) {
   const balance = s.dollars;
   game.command(room.code, p.id, 'purchase-sign', order);
   assert.equal(room.dollars, balance);
-  now += 3000;
+  now += 200;
   let owner = game.command(room.code, p.id, 'sync', { mode: 'flight', state: carrier.state });
   let observer = game.command(room.code, peer.id, 'sync', { mode: 'foot', state: peer.state });
-  assert.ok(Math.abs(owner.deliveries[0].y - (initial - 0.003)) < 1e-9);
+  assert.ok(Math.abs(owner.deliveries[0].y - (initial - 0.2)) < 1e-9);
   assert.equal(owner.deliveries[0].y, observer.deliveries[0].y);
   assert.equal(room.equipment.length, 0, 'no deployment in flight');
   for (let tick = 0; tick < 500 && room.deliveries.length; tick++) {
@@ -194,7 +201,7 @@ for (const surfaceY of [0, 0.9]) {
   assert.equal(room.equipment.length, 0);
 }
 console.log(
-  '#15 signed purchases: slow but real descent, two client snapshots, ground/table receipt, once-only debit/deploy and reset.',
+  '#15 signed purchases: visible descent, two client snapshots, ground/table receipt, once-only debit/deploy and reset.',
 );
 
 // #17: old arrival time must no longer complete the wave or leak early.
