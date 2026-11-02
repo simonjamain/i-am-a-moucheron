@@ -1,11 +1,6 @@
 import './normal-dossiers.mjs';
 import assert from 'node:assert/strict';
-import {
-  SpatialAudio,
-  synthesize,
-  AUDIO_PROFILES,
-  swarmAudioGroups,
-} from '../src/audio.js';
+import { SpatialAudio, synthesize, AUDIO_PROFILES, swarmAudioGroups } from '../src/audio.js';
 import worker from '../worker/index.js';
 for (const kind of Object.keys(AUDIO_PROFILES)) {
   const b = synthesize(kind);
@@ -24,7 +19,10 @@ const listener = { x: 0, y: 0, z: 0 };
 const options = { cellSize: 0.12, maxDistance: 5, maxSources: 5 };
 const grouped = swarmAudioGroups(midges, listener, options);
 assert.equal(grouped.length, 3);
-assert.equal(grouped.reduce((n, group) => n + group.count, 0), 10000);
+assert.equal(
+  grouped.reduce((n, group) => n + group.count, 0),
+  10000,
+);
 assert.ok(grouped.some((group) => group.position.x < 0));
 assert.ok(grouped.some((group) => group.position.x > 0));
 assert.ok(grouped.every((group) => group.level <= 1.5));
@@ -39,12 +37,18 @@ assert.deepEqual(
   keys,
   'a removed insect must not restart surviving swarm sounds',
 );
-assert.equal(reduced.reduce((n, group) => n + group.count, 0), 9999);
+assert.equal(
+  reduced.reduce((n, group) => n + group.count, 0),
+  9999,
+);
 midges.set('far', { visible: true, position: { x: 100, y: 0, z: 0 } });
 midges.set('hidden', { visible: false, position: { x: 0, y: 0, z: 0 } });
 midges.set('invalid', { visible: true, position: { x: NaN, y: 0, z: 0 } });
 const validGroups = swarmAudioGroups(midges, listener, options);
-assert.equal(validGroups.reduce((n, group) => n + group.count, 0), 9999);
+assert.equal(
+  validGroups.reduce((n, group) => n + group.count, 0),
+  9999,
+);
 const twoSources = swarmAudioGroups(midges, listener, { ...options, maxSources: 2 });
 assert.equal(twoSources.length, 2);
 assert.deepEqual(swarmAudioGroups(new Map(), listener, options), []);
