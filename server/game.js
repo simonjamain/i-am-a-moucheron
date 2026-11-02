@@ -561,8 +561,7 @@ export class Game {
         purchases.push({ token, item, owner, price });
       }
     for (const dossier of r.dossiers.values())
-      if (dossier.active && !clauses.has(dossier.pilot))
-        clauses.set(dossier.pilot, dossier.clause);
+      if (dossier.active && !clauses.has(dossier.pilot)) clauses.set(dossier.pilot, dossier.clause);
     const bodies = {
       purgatory: new Map(r.purgatory.bodies.map((b) => [b.id, b])),
       super: new Map(r.super.bodies.map((b) => [b.id, b])),
@@ -581,8 +580,7 @@ export class Game {
     }
     const elapsed = (now - r.started) / 1000;
     for (const [index, enemy] of plan.roster.entries())
-      if (!r.kills.has(index) && elapsed >= enemy.spawn + enemy.duration)
-        arrived.push(enemy.id);
+      if (!r.kills.has(index) && elapsed >= enemy.spawn + enemy.duration) arrived.push(enemy.id);
     return clone({
       code: r.code,
       balance: r.balance,
@@ -794,7 +792,8 @@ export class Game {
           if (!v || v.seats.has('pilot') || !validMotion(report.state)) continue;
           v.state = {
             ...report.state,
-            hp: report.state.hp === v.reportedHP ? v.state.hp : Math.min(v.state.hp, report.state.hp),
+            hp:
+              report.state.hp === v.reportedHP ? v.state.hp : Math.min(v.state.hp, report.state.hp),
           };
           v.reportedHP = report.state.hp;
           if (!v.state.landed || v.state.hp <= 0) v.ready = 0;

@@ -11,7 +11,7 @@ const cases = [
   [[0, 0, 0], [0, 0, 0], [4, 0, 0], 0.01],
 ];
 let seed = 0x1234abcd;
-const rand = () => ((seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0) / 2 ** 32);
+const rand = () => (seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0) / 2 ** 32;
 for (let i = 0; i < 50 * 900; i++) {
   const a = Array.from({ length: 3 }, () => (rand() - 0.5) * 4);
   const b = a.map((v) => v + (rand() - 0.5) * 0.4);

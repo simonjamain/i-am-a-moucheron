@@ -107,7 +107,4 @@ jobs:
       - name: Benchmark 50 vehicles and 900 enemies
         run: npm run bench:swarm-50
       - name: Check formatting
-        run: |
-          npx prettier --write src/swept-broadphase.js server/game.js scripts/test-swept-broadphase.mjs scripts/benchmark-swept-broadphase.mjs
-          git diff -- src/swept-broadphase.js server/game.js scripts/test-swept-broadphase.mjs scripts/benchmark-swept-broadphase.mjs
-          git diff --exit-code -- src/swept-broadphase.js server/game.js scripts/test-swept-broadphase.mjs scripts/benchmark-swept-broadphase.mjs
+        run: npx prettier --check src/swept-broadphase.js server/game.js scripts/test-swept-broadphase.mjs scripts/benchmark-swept-broadphase.mjs

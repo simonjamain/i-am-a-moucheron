@@ -5,7 +5,7 @@ import { sweptSphereMayTouch } from '../src/swept-broadphase.js';
 
 // CPU-only: same vehicle contact path, 50 segments by 900 enemies.
 let seed = 167;
-const rand = () => ((seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0) / 2 ** 32);
+const rand = () => (seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0) / 2 ** 32;
 const enemies = Array.from({ length: 900 }, () => ({
   position: Array.from({ length: 3 }, () => (rand() - 0.5) * 4),
   radius: 0.002 + rand() * 0.018,
@@ -38,7 +38,7 @@ for (let i = 0; i < 4; i++) {
 const direct = [],
   indexed = [];
 for (let i = 0; i < 12; i++) {
-  for (const optimized of (i % 2 ? [true, false] : [false, true])) {
+  for (const optimized of i % 2 ? [true, false] : [false, true]) {
     const samples = optimized ? indexed : direct;
     const start = performance.now();
     const hits = scan(optimized);
