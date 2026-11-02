@@ -1,4 +1,3 @@
-import { MAP, REFERENCE } from './scale.js';
 import { floorPath, blockedSegment } from './route-navigation.js';
 export const MIN_SPAWN_DISTANCE = 3;
 // Portals describe the decorative vent/hole, not the first living position.
@@ -133,7 +132,7 @@ export function enemyRoutePosition(enemy, u) {
   return a.p.map((v, j) => v + (b.p[j] - v) * t);
 }
 export function routeDuration(enemy) {
-  return (
-    enemyRoute(enemy).length / (enemy.travelSpeed || MAP.metres(REFERENCE.enemy * enemy.speed))
-  );
+  const speed = enemy.travelSpeed ?? enemy.speedMps;
+  if (!Number.isFinite(speed) || speed <= 0) throw Error('Vitesse ennemie invalide.');
+  return enemyRoute(enemy).length / speed;
 }

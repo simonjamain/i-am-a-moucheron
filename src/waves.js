@@ -1,5 +1,4 @@
 import { MAP, INSECT_SCALE, enemySizeFactor, GROUND_FOOT_DEPTH } from './scale.js';
-import { baselineTravelSpeed } from './route-speed.js';
 import { enemyRoutePosition, routeDuration } from './routes.js';
 export const ENEMY_TYPES = Object.freeze({
   ant: {
@@ -7,7 +6,7 @@ export const ENEMY_TYPES = Object.freeze({
     cost: 1,
     hp: 100,
     size: 0.8,
-    speed: 0.6,
+    speedMps: 0.17,
     leak: 1,
     color: '#6e4432',
     ground: true,
@@ -17,20 +16,20 @@ export const ENEMY_TYPES = Object.freeze({
     cost: 4,
     hp: 300,
     size: 1.2,
-    speed: 0.75,
+    speedMps: 0.125,
     leak: 2,
     color: '#a36f42',
     ground: true,
   },
-  midge: { name: 'Moucheron', cost: 1, hp: 100, size: 1, speed: 1, leak: 1, color: '#bfb36c' },
-  dart: { name: 'Voltigeur', cost: 3, hp: 200, size: 0.85, speed: 1.15, leak: 1, color: '#d78253' },
-  guard: { name: 'Carapace', cost: 6, hp: 400, size: 1.4, speed: 0.85, leak: 2, color: '#729d8b' },
+  midge: { name: 'Moucheron', cost: 1, hp: 100, size: 1, speedMps: 0.22, leak: 1, color: '#bfb36c' },
+  dart: { name: 'Voltigeur', cost: 3, hp: 200, size: 0.85, speedMps: 0.26, leak: 1, color: '#d78253' },
+  guard: { name: 'Carapace', cost: 6, hp: 400, size: 1.4, speedMps: 0.175, leak: 2, color: '#729d8b' },
   mosquito: {
     name: 'Moustique',
     cost: 2,
     hp: 70,
     size: 0.58,
-    speed: 1.5,
+    speedMps: 0.23,
     leak: 1,
     color: '#6b807e',
   },
@@ -39,7 +38,7 @@ export const ENEMY_TYPES = Object.freeze({
     cost: 40,
     hp: 5000,
     size: 4,
-    speed: 0.55,
+    speedMps: 0.095,
     leak: 8,
     color: '#86705c',
     ground: true,
@@ -49,7 +48,7 @@ export const ENEMY_TYPES = Object.freeze({
     cost: 22,
     hp: 1200,
     size: 2.3,
-    speed: 0.48,
+    speedMps: 0.11,
     leak: 3,
     color: '#453b35',
     ground: true,
@@ -60,7 +59,7 @@ export const ENEMY_TYPES = Object.freeze({
     cost: 0,
     hp: 20,
     size: 0.3,
-    speed: 2.4,
+    speedMps: 0.15,
     leak: 1,
     color: '#51463d',
     ground: true,
@@ -71,7 +70,7 @@ export const ENEMY_TYPES = Object.freeze({
     cost: 12,
     hp: 800,
     size: 1.9,
-    speed: 0.7,
+    speedMps: 0.14,
     leak: 3,
     color: '#d0a14b',
   },
@@ -79,6 +78,13 @@ export const ENEMY_TYPES = Object.freeze({
 // Technical bounds prevent anonymous UDP commands from exhausting memory or
 // generating an untransportable reliable snapshot. Counts are exact, without
 // the regular director's population multiplier.
+// Coordinates in the office are metres. Speed is metres travelled across the
+// room per second, NOT scaled by insect model dimensions or by route length.
+export function enemyTravelSpeed(enemy, roomMultiplier = 1) {
+  const speed = enemy.speedMps * roomMultiplier;
+  if (!Number.isFinite(speed) || speed <= 0) throw Error('Vitesse ennemie invalide.');
+  return speed;
+}
 export const MAX_DEBUG_SPAWN_BATCH = 5000;
 export const MAX_DEBUG_ROOM_ENEMIES = 10000;
 export function validateDebugSpawn(counts) {
@@ -131,25 +137,9 @@ export function debugSwarmRoster(counts, { room, wave, started, now, balance, fi
         branch: routeSeed % 2,
         debugFlock: true,
       };
-      enemy.travelSpeed =
-        baselineTravelSpeed(enemy, wave) *
-        (type === 'ant' ? 0.25 : type === 'rat' ? 0.6 : type === 'spider' ? 0.55 : 1);
-      if (enemy.ground && type !== 'ant' && type !== 'spiderling') {
-        const ant = { ...enemy, ...ENEMY_TYPES.ant, type: 'ant' };
-        const antSpeed = baselineTravelSpeed(ant, wave) * 0.25;
-        const antSize = ENEMY_TYPES.ant.size * enemySizeFactor('ant');
-        enemy.travelSpeed =
-          antSpeed *
-          (type === 'rat'
-            ? 0.7
-            : type === 'spider'
-              ? 0.8
-              : Math.min(1, antSize / (enemy.size * enemySizeFactor(type))));
-      }
-      enemy.duration = enemy.entryHold + routeDuration(enemy);
+      enemy.travelSpeed = enemyTravelSpeed(enemy, balance.enemySpeed);
       enemy.entryHold /= balance.enemySpeed;
-      enemy.duration /= balance.enemySpeed;
-      enemy.travelSpeed *= balance.enemySpeed;
+      enemy.duration = enemy.entryHold + routeDuration(enemy);
       roster.push(enemy);
     }
   }
@@ -280,28 +270,7 @@ export function wavePlan(room, wave, started = 0) {
     enemy.approach = wave <= 3 ? 'intro' : wave <= 6 ? 'short' : 'full';
     enemy.routeSeed = hash(key + ':route:' + (solo ? 'solo' + enemy.id : group));
     enemy.branch = enemy.id % 8 < 3 ? 1 : 0;
-    enemy.travelSpeed =
-      baselineTravelSpeed(enemy, wave) *
-      (enemy.type === 'ant'
-        ? 0.25
-        : enemy.type === 'rat'
-          ? 0.6
-          : enemy.type === 'spider'
-            ? 0.55
-            : 1);
-  }
-  const ants = roster.filter((e) => e.type === 'ant');
-  const slowestAnt = Math.min(...ants.map((e) => e.travelSpeed));
-  const antSize = ENEMY_TYPES.ant.size * enemySizeFactor('ant');
-  for (const enemy of roster) {
-    if (enemy.ground && enemy.type !== 'ant' && enemy.type !== 'spiderling')
-      enemy.travelSpeed =
-        slowestAnt *
-        (enemy.type === 'rat'
-          ? 0.7
-          : enemy.type === 'spider'
-            ? 0.8
-            : Math.min(1, antSize / (enemy.size * enemySizeFactor(enemy.type))));
+    enemy.travelSpeed = enemyTravelSpeed(enemy);
     enemy.duration = enemy.entryHold + routeDuration(enemy);
   }
   const result = { budget: waveBudget(wave), roster: expandMidgeSwarms(roster) };
@@ -334,7 +303,7 @@ export function spawnOffspring(parent, position, time, balance, firstId, wave, l
       spawn: time + i * 0.012,
       entryHold: 0.15 / balance.enemySpeed,
     };
-    child.travelSpeed = baselineTravelSpeed(child, wave) * 1.8 * balance.enemySpeed;
+    child.travelSpeed = enemyTravelSpeed(child, balance.enemySpeed);
     child.duration = child.entryHold + routeDuration(child);
     return child;
   });
@@ -424,9 +393,10 @@ export function swarmFrame(roster, time) {
       for (let j = 0; j < 3; j++) if (!e.ground || j !== 1) p[j] += offset[j];
     }
     if (e.type === 'mosquito') {
-      p[0] += MAP.metres(5) * envelope * Math.sin(time * 6.7 + phase * 3);
-      p[1] += MAP.metres(3) * envelope * Math.sin(time * 5.3 + phase * 2);
-      p[2] += MAP.metres(4) * envelope * Math.cos(time * 7.1 + phase * 5);
+      // Local dodges remain erratic without dominating the travel speed.
+      p[0] += MAP.metres(5) * envelope * Math.sin(time * 2.4 + phase * 3);
+      p[1] += MAP.metres(3) * envelope * Math.sin(time * 1.9 + phase * 2);
+      p[2] += MAP.metres(4) * envelope * Math.cos(time * 2.7 + phase * 5);
     }
     return { p, dir: tangent.map((v) => v / length), envelope };
   });
