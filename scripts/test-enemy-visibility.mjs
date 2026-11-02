@@ -13,7 +13,7 @@ for (const type of Object.keys(ENEMY_TYPES)) {
   if (model.parent !== scene) missing.push(type);
 }
 assert.deepEqual(missing, [], 'Every living enemy model must be attached to the rendered scene');
-console.log('All six enemy types attached to the scene.');
+console.log('All enemy types attached to the scene.');
 for (const wave of [1, 2, 4, 6, 8, 12]) {
   const plan = wavePlan('VISIBLE', wave, 1000);
   assert.ok(plan.roster.some((e) => e.ground));
@@ -150,5 +150,5 @@ for (const type of Object.keys(ENEMY_TYPES)) {
     );
 }
 console.log(
-  'At least two ants from wave one, exact threefold midge dimensions, all six actual client models and terrestrial geometry above the floor.',
+  'At least two ants from wave one, exact threefold midge dimensions, all actual client models and terrestrial geometry above the floor.',
 );

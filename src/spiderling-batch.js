@@ -69,7 +69,7 @@ export class SpiderlingBatch {
       heads.setMatrixAt(i, this.result.multiplyMatrices(this.world, this.local));
       for (const side of [-1, 1])
         for (let j = 0; j < 4; j++) {
-          this.position.set(side * 0.64, -0.14, (j - 1.5) * 0.3);
+          this.position.set(side * 0.64, -0.17, (j - 1.5) * 0.3);
           this.rotation.setFromAxisAngle(new this.T.Vector3(0, 0, 1), side * 0.38);
           this.scale.set(0.82, 0.055, 0.055);
           this.local.compose(this.position, this.rotation, this.scale);

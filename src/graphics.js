@@ -313,11 +313,13 @@ export function createGraphics(T, scene) {
       body.scale.set(0.75, 0.55, 1.65);
       const head = ball(0, 0.11, -0.65, 0.43, '#988071', g);
       const nose = ball(0, -0.1, -1.03, 0.16, '#bc8b94', g);
+      const paws = [];
       for (const side of [-1, 1]) {
         const ear = ball(side * 0.34, 0.37, -0.7, 0.24, '#bc8b94', g);
         ear.scale.z = 0.38;
         for (const z of [-0.37, 0.74]) {
-          const paw = ball(side * 0.48, -0.18, z, 0.19, '#766052', g);
+          const paw = ball(side * 0.48, -0.22, z, 0.19, '#766052', g);
+          paws.push(paw);
           paw.scale.set(0.9, 0.6, 1.4);
         }
         for (const z of [-1.02, -0.93]) {
@@ -329,7 +331,7 @@ export function createGraphics(T, scene) {
       tail.rotation.x = Math.PI / 2;
       tail.position.set(0, -0.05, 1.9);
       g.add(tail);
-      g.userData = { wings: [], legs: [], hitParts: [body, head, nose], disposables: [] };
+      g.userData = { wings: [], legs: paws, hitParts: [body, head, nose], disposables: [] };
       scene.add(g);
       return g;
     }
@@ -341,7 +343,7 @@ export function createGraphics(T, scene) {
       const legs = [];
       for (const side of [-1, 1])
         for (let i = 0; i < 4; i++) {
-          const leg = box(side * 0.64, -0.14, (i - 1.5) * 0.3, 0.82, 0.055, 0.055, '#382d28', g);
+          const leg = box(side * 0.64, -0.17, (i - 1.5) * 0.3, 0.82, 0.055, 0.055, '#382d28', g);
           leg.rotation.z = side * 0.38;
           legs.push(leg);
         }
