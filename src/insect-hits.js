@@ -192,8 +192,7 @@ export function insectContact(T, point, model, padding = 0.3) {
     size = model.getWorldScale(new T.Vector3());
   if (model.userData.sphereRadius) {
     const r =
-      model.userData.sphereRadius *
-        Math.max(Math.abs(size.x), Math.abs(size.y), Math.abs(size.z)) +
+      model.userData.sphereRadius * Math.max(Math.abs(size.x), Math.abs(size.y), Math.abs(size.z)) +
       padding;
     return point.distanceToSquared(centre) <= r * r;
   }
