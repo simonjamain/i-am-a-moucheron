@@ -79,6 +79,7 @@ import {
 } from '/control-focus.js';
 import { createRenderer } from '/renderer.js';
 import { createGraphics } from '/graphics.js';
+import { MidgeBatch } from '/midge-batch.js';
 import { createOffice } from '/office.js';
 import { aircraftBay, baseBody, baseWorld, baseAccess, advanceBase, aircraftPose } from '/base.js';
 import { SpatialAudio } from '/audio.js';
@@ -214,6 +215,7 @@ const others = new Map(),
   insects = new Map(),
   trails = [];
 const insectIndex = new InsectIndex(T, insects);
+const midgeBatch = new MidgeBatch(T, scene, { enabled: !!renderer.isWebGLRenderer });
 me.position.fromArray(aircraftPose(0).p);
 let joined = false,
   id = '',
@@ -2875,7 +2877,9 @@ function enemies(now) {
       g = null;
     }
     if (!g) {
-      g = insect(profile.type);
+      g = profile.type === 'midge' && midgeBatch.enabled
+        ? midgeBatch.create(profile.phase)
+        : insect(profile.type);
       g.userData.enemyWave = snap.wave;
       g.userData.enemyType = profile.type;
       g.userData.entryStatus = entryStatus(profile, t);
@@ -2885,6 +2889,24 @@ function enemies(now) {
       }
       g.scale.setScalar(insectScale(profile.type, INSECT_SCALE, profile.size));
       insects.set(i, g);
+    }
+    // An instanced midge has no meshes or animation hierarchy in the scene.
+    // Update only its inexpensive logical transform used by impacts, audio and HUD.
+    if (g.userData.instancedMidge) {
+      const [x, y, z] = state.p;
+      const dx = x - g.position.x, dy = y - g.position.y, dz = z - g.position.z;
+      const dt = Math.max(0.01, (now - (g.userData.lastMoveAt || now - 16)) / 1000);
+      const velocity = g.userData.velocity || (g.userData.velocity = new T.Vector3());
+      velocity.set(dx / dt, dy / dt, dz / dt);
+      if (g.userData.hasPosition && dx * dx + dy * dy + dz * dz > 1e-12) {
+        const forward = new T.Vector3(0, 0, -1);
+        const direction = new T.Vector3(dx, dy, dz).normalize();
+        g.quaternion.slerp(new T.Quaternion().setFromUnitVectors(forward, direction), 0.25);
+      }
+      g.position.set(x, y, z);
+      g.userData.lastMoveAt = now;
+      g.userData.hasPosition = true;
+      continue;
     }
     const next = new T.Vector3().fromArray(state.p),
       delta = next.clone().sub(g.position);
@@ -3895,6 +3917,7 @@ function frame(now) {
     if (model?.userData.dish) model.userData.dish.rotation.y = now * 0.001;
   updateFallingEnemies(dt);
   updateContextHUD();
+  midgeBatch.flush(insects, now);
   tracerPool.flush();
   if (spectating && observationCamera) {
     if (observationRealm !== 'office') observedPurgatory();
@@ -4123,10 +4146,19 @@ function disposeCorpse(corpse) {
   for (const m of corpse.materials) m.dispose();
 }
 function fallEnemy(enemy) {
-  const g = insects.get(enemy);
+  let g = insects.get(enemy);
   if (!g) return;
   insects.delete(enemy);
   insectStatus.remove(enemy);
+  if (g.userData.instancedMidge) {
+    // Only up to 80 fallen bodies need real meshes; living insects stay batched.
+    const corpse = insect('midge');
+    corpse.position.copy(g.position);
+    corpse.quaternion.copy(g.quaternion);
+    corpse.scale.copy(g.scale);
+    corpse.userData.velocity = g.userData.velocity;
+    g = corpse;
+  }
   const clones = new Map();
   g.traverse((o) => {
     if (o.isMesh) {
