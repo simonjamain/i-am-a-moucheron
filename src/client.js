@@ -2884,9 +2884,10 @@ function enemies(now) {
       g = null;
     }
     if (!g) {
-      g = profile.type === 'midge' && midgeBatch.enabled
-        ? midgeBatch.create(profile.phase)
-        : insect(profile.type);
+      g =
+        profile.type === 'midge' && midgeBatch.enabled
+          ? midgeBatch.create(profile.phase)
+          : insect(profile.type);
       g.userData.enemyWave = snap.wave;
       g.userData.enemyType = profile.type;
       g.userData.entryStatus = entryStatus(profile, t);
@@ -2901,7 +2902,9 @@ function enemies(now) {
     // Update only its inexpensive logical transform used by impacts, audio and HUD.
     if (g.userData.instancedMidge) {
       const [x, y, z] = state.p;
-      const dx = x - g.position.x, dy = y - g.position.y, dz = z - g.position.z;
+      const dx = x - g.position.x,
+        dy = y - g.position.y,
+        dz = z - g.position.z;
       const dt = Math.max(0.01, (now - (g.userData.lastMoveAt || now - 16)) / 1000);
       const velocity = g.userData.velocity || (g.userData.velocity = new T.Vector3());
       velocity.set(dx / dt, dy / dt, dz / dt);
