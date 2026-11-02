@@ -14,6 +14,15 @@ const a = game.join({ code: 'RAMTEST', name: 'Alpha' }),
 let room = game.rooms.get('RAMTEST');
 const call = (id, path, body = {}) => game.command('RAMTEST', id, path, body);
 assert.equal(room.pilots.size, 2);
+// Snapshot shape must remain compatible with many players and signed purchases.
+const extra = new Game({ now: () => now });
+for (let i = 0; i < 50; i++) extra.join({ code: 'SNAP50', name: 'Pilot ' + i });
+const snapshot50 = extra.snapshot(extra.rooms.get('SNAP50'));
+assert.equal(snapshot50.pilots.length, 50);
+assert.equal(snapshot50.souls.length, 0);
+assert.equal(snapshot50.superSouls.length, 0);
+assert.equal(snapshot50.leaked, 0);
+assert.ok(Object.values(snapshot50.pendingInstallations).every((count) => count === 0));
 assert.equal(new Game().rooms.size, 0, 'restarting has no state to restore');
 let s = call(a.id, 'start');
 assert.equal(s.next_wave_at, now + 10000);

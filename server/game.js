@@ -547,24 +547,46 @@ export class Game {
   snapshot(r) {
     this.advance(r);
     const now = this.now(),
-      plan = this.plan(r);
-    const souls = (realm) =>
-      values(r.souls)
-        .filter(
-          (s) =>
-            s.realm === realm &&
-            s.status === 'waiting' &&
-            r[realm].bodies.some((b) => b.id === s.id),
-        )
-        .map((s) => {
-          const b = r[realm].bodies.find((b) => b.id === s.id);
-          return { ...s, ...(b ? { hp: b.health, stunned_until: b.koUntil, body: b } : {}) };
+      plan = this.plan(r),
+      activePilots = this.live(r),
+      pendingInstallations = Object.fromEntries(Object.keys(SHOP).map((item) => [item, 0])),
+      purchases = [],
+      clauses = new Map(),
+      arrived = [];
+    for (const order of r.purchases.values())
+      if (!order.placed) {
+        pendingInstallations[order.item]++;
+        const { token, item, owner, price } = order;
+        purchases.push({ token, item, owner, price });
+      }
+    for (const dossier of r.dossiers.values())
+      if (dossier.active && !clauses.has(dossier.pilot))
+        clauses.set(dossier.pilot, dossier.clause);
+    const bodies = {
+      purgatory: new Map(r.purgatory.bodies.map((b) => [b.id, b])),
+      super: new Map(r.super.bodies.map((b) => [b.id, b])),
+    };
+    const souls = { purgatory: [], super: [] };
+    for (const soul of r.souls.values()) {
+      if (soul.status !== 'waiting') continue;
+      const body = bodies[soul.realm]?.get(soul.id);
+      if (body)
+        souls[soul.realm].push({
+          ...soul,
+          hp: body.health,
+          stunned_until: body.koUntil,
+          body,
         });
+    }
+    const elapsed = (now - r.started) / 1000;
+    for (const [index, enemy] of plan.roster.entries())
+      if (!r.kills.has(index) && elapsed >= enemy.spawn + enemy.duration)
+        arrived.push(enemy.id);
     return clone({
       code: r.code,
       balance: r.balance,
       balanceRevision: r.balanceRevision,
-      balanceOwner: this.live(r)
+      balanceOwner: activePilots
         .filter((p) => r.identityTokens.get(p.id) === r.balanceOwnerToken)
         .map((p) => p.id),
       wave: r.wave,
@@ -579,18 +601,11 @@ export class Game {
       rewardCount: r.rewardCount,
       equipment: r.equipment,
       deliveries: r.deliveries,
-      pendingInstallations: Object.fromEntries(
-        Object.keys(SHOP).map((k) => [
-          k,
-          values(r.purchases).filter((o) => o.item === k && !o.placed).length,
-        ]),
-      ),
-      purchases: values(r.purchases)
-        .filter((o) => !o.placed)
-        .map(({ token, item, owner, price }) => ({ token, item, owner, price })),
+      pendingInstallations,
+      purchases,
       initialStation: initialStation(),
       kills: valuesSet(r.kills),
-      pilots: this.live(r).map((p) => ({ ...p, contractClause: this.clause(r, p) })),
+      pilots: activePilots.map((p) => ({ ...p, contractClause: clauses.get(p.id) || null })),
       vehicles: values(r.vehicles).map(
         ({ shots, updated, seats, contacts, contactPosition, contactWave, ...v }) => ({
           ...v,
@@ -608,20 +623,13 @@ export class Game {
       raidDuration: RAID_DURATION,
       mapScale: { numerator: MAP.numerator, denominator: MAP.denominator },
       total: plan.roster.length,
-      arrived: plan.roster
-        .filter((e, i) => !r.kills.has(i) && (now - r.started) / 1000 >= e.spawn + e.duration)
-        .map((e) => e.id),
-      leaked:
-        r.phase === 'combat'
-          ? plan.roster.filter(
-              (e, i) => !r.kills.has(i) && (now - r.started) / 1000 >= e.spawn + e.duration,
-            ).length
-          : 0,
+      arrived,
+      leaked: r.phase === 'combat' ? arrived.length : 0,
       now,
       sentAt: now,
-      souls: souls('purgatory'),
+      souls: souls.purgatory,
       arena: r.purgatory,
-      superSouls: souls('super'),
+      superSouls: souls.super,
       superArena: r.super.bodies.length ? r.super : null,
       base: r.base,
       damage: [],
