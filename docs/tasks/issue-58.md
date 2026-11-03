@@ -48,3 +48,8 @@
 - Nouveau `src/ground-creatures.js` : déplacement par cellule suivante d'un champ mutualisé, cible d'appât par insecte, repas non répétable par type, effet de ruban traversé, et possibilité pour certaines espèces d'attaquer un mur lorsqu'aucun chemin n'existe.
 - `src/ground-defense.js` expose `nextStep` (accès constant à la cellule suivante) pour éviter une recherche complète par insecte et par frame ; `groundFlow` accepte un objectif de nourriture secondaire.
 - **Moteur non relié au serveur ni au rendu** : son comportement en jeu, l'ordre des mises à jour et la compatibilité avec les vagues ne sont pas encore validés. Tests de domaine ajoutés, puis intégration à réaliser sur le prochain jalon.
+
+### Précisions de collision (v140)
+
+- Le balayage géométrique de la colle vérifie également le recouvrement des projections de segments colinéaires, pour ne pas signaler une traversée à distance.
+- Un insecte immobilisé garde la trace de la bande traversée pendant une courte zone de sortie ; celle-ci ne le fige plus en boucle sur la même bande après expiration du délai.

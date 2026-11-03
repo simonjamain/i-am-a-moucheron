@@ -29,6 +29,7 @@ assert.ok(unit.p[0] > old[0], 'an ant moves toward the bin');
 assert.ok(!unit.arrived);
 assert.ok(crossedSticky([0, 0], [0.1, 0], { a: [0.05, -0.1], b: [0.05, 0.1], width: 0.03 }));
 assert.ok(!crossedSticky([0, 0], [0.1, 0], { a: [0.5, -0.1], b: [0.5, 0.1], width: 0.03 }));
+assert.ok(!crossedSticky([0, 0], [0.1, 0], { a: [0.5, 0], b: [0.7, 0], width: 0.03 }), 'separated collinear segments do not intersect');
 assert.equal(GROUND_ATTACK_DAMAGE.ant, undefined);
 assert.ok(GROUND_ATTACK_DAMAGE.roach > 0 && GROUND_ATTACK_DAMAGE.rat > GROUND_ATTACK_DAMAGE.roach);
 console.log('Ground creature navigation: OK');

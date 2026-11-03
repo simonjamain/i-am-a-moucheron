@@ -46,7 +46,11 @@ export function crossedSticky(a, b, tape) {
   const width = tape.width / 2;
   if (
     cross(a, b, c) * cross(a, b, d) <= 0 &&
-    cross(c, d, a) * cross(c, d, b) <= 0
+    cross(c, d, a) * cross(c, d, b) <= 0 &&
+    Math.max(Math.min(a[0], b[0]), Math.min(c[0], d[0])) <=
+      Math.min(Math.max(a[0], b[0]), Math.max(c[0], d[0])) &&
+    Math.max(Math.min(a[1], b[1]), Math.min(c[1], d[1])) <=
+      Math.min(Math.max(a[1], b[1]), Math.max(c[1], d[1]))
   )
     return true;
   return (
@@ -134,9 +138,13 @@ export function advanceGroundUnit(unit, enemy, elapsed, dt, world) {
     const delta = dist(unit.p, next);
     if (delta < 0.000001) break;
     const direction = [(next[0] - unit.p[0]) / delta, (next[1] - unit.p[1]) / delta];
-    const contact = tapes.filter((tape) => distanceToSegment(unit.p, tape.a, tape.b) <= tape.width / 2);
-    const inside = contact.map((tape) => tape.id);
-    unit.stickyInside = unit.stickyInside.filter((id) => inside.includes(id));
+    const contact = tapes.filter(
+      (tape) => distanceToSegment(unit.p, tape.a, tape.b) <= tape.width / 2,
+    );
+    const nearby = tapes.filter(
+      (tape) => distanceToSegment(unit.p, tape.a, tape.b) <= tape.width / 2 + 0.05,
+    );
+    unit.stickyInside = unit.stickyInside.filter((id) => nearby.some((tape) => tape.id === id));
     const effect = stickyTraversal(size);
     let multiplier = contact.length ? effect.speedMultiplier : 1;
     const step = Math.min(delta, speed * remaining * multiplier);
