@@ -49,6 +49,20 @@ npm run build
 node scripts/validate-artifact.mjs
 ```
 
+Pour la boucle locale rapide sur le runtime **Node/RAM/WebRTC-UDP**, lancer
+`npm run test:core` : assemblage des assets, règles de salle, roster, équilibre,
+snapshots et connexion de deux vrais pairs UDP. C'est une **présélection ciblée**
+et non un substitut à `npm test` avant PR. Lancer directement
+`node scripts/test-<sujet>.mjs` après assemblage pour un retour encore plus ciblé.
+Les tests historiques Worker/D1 restent dans la suite complète et ne prouvent
+pas le gameplay du serveur courant.
+
+La CI construit l'image Docker puis lance le conteneur obtenu pour vérifier
+`/healthz` (RAM + WebRTC-UDP) et le refus HTTP 410 des anciennes routes
+`/api/`. Ce smoke test vérifie l'**image exécutable** mais ni les pairs UDP
+dans ce conteneur, ni WebGL, ni un déploiement sur réseau externe. Les tests
+natifs UDP, distincts, conservent cette partie de la couverture.
+
 Le build produit `dist/` avec serveur, modules partagés, assets et manifestes npm.
 Dans ce répertoire : `npm ci --omit=dev && npm start`. Le validateur vérifie
 la syntaxe ESM du serveur, les imports locaux du runtime et les assets UDP.
