@@ -53,3 +53,7 @@
 
 - Le balayage géométrique de la colle vérifie également le recouvrement des projections de segments colinéaires, pour ne pas signaler une traversée à distance.
 - Un insecte immobilisé garde la trace de la bande traversée pendant une courte zone de sortie ; celle-ci ne le fige plus en boucle sur la même bande après expiration du délai.
+
+### Portails en bordure de carte (v141)
+
+- La grille de navigation couvre désormais aussi les sorties des trous de fourmis/cafards (x ≈ ±4,07 m, z ≈ −3,47 m), qui étaient hors des limites initialement retenues. Le goal et la géométrie aérienne sont inchangés.

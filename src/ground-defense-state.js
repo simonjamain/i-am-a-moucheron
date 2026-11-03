@@ -1,7 +1,7 @@
 import { ROUTE_OBSTACLES } from './route-obstacles.js';
 import { splitBarricade, buildGroundFlow, distanceToSegment, STICKY_WIDTH } from './ground-defense.js';
 
-export const GROUND_BOUNDS = Object.freeze([-4, -3.4, 4, 3.4]);
+export const GROUND_BOUNDS = Object.freeze([-4.12, -3.51, 4.12, 3.51]);
 export const GROUND_GOAL = Object.freeze([3, -2.7]);
 export const GROUND_CELL = 0.05;
 export const GROUND_LIMIT = 512;
