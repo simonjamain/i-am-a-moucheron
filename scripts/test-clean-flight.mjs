@@ -548,7 +548,9 @@ console.log(
 const { vehicleHue } = await import('../src/logistics.js');
 const renderScene = new T.Scene();
 const graphics = createGraphics(T, renderScene);
+const { MissileExhaust } = await import('../src/missile-exhaust.js');
 const visualContext = {
+  MissileExhaust,
   T,
   MAP,
   scene: renderScene,
