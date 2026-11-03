@@ -1,0 +1,53 @@
+import assert from 'node:assert/strict';
+import {
+  splitBarricade,
+  buildGroundFlow,
+  chooseBait,
+  finishMeal,
+  stickyTraversal,
+  STICKY_WIDTH,
+} from '../src/ground-defense.js';
+const wall = splitBarricade([0.2, 0.5], [0.8, 0.5], 'wall');
+assert.equal(wall.length, 4);
+assert.ok(
+  wall.every((part) => Math.hypot(part.b[0] - part.a[0], part.b[1] - part.a[1]) <= 0.2 + 1e-12),
+);
+assert.deepEqual(wall[0].a, [0.2, 0.5]);
+assert.deepEqual(wall.at(-1).b, [0.8, 0.5]);
+const config = { bounds: [0, 0, 1, 1], cellSize: 0.05, goal: [0.95, 0.95] };
+const open = buildGroundFlow(config);
+assert.ok(open.route([0.05, 0.05]));
+const detour = buildGroundFlow({ ...config, barricades: wall });
+const path = detour.route([0.5, 0.05]);
+assert.ok(path && path.length > 2);
+assert.ok(
+  path.every((point) => !(point[0] > 0.2 && point[0] < 0.8 && Math.abs(point[1] - 0.5) < 0.02)),
+);
+const closed = buildGroundFlow({
+  ...config,
+  barricades: splitBarricade([0, 0.5], [1, 0.5], 'closed'),
+});
+assert.equal(closed.route([0.5, 0.05]), null);
+assert.ok(closed.route([0.9, 0.9]));
+assert.ok(buildGroundFlow({ ...config, barricades: wall.slice(1) }).route([0.5, 0.05]));
+const goalBlocked = buildGroundFlow({
+  ...config,
+  barricades: splitBarricade([0.9, 0.925], [1, 0.925], 'sealed'),
+});
+assert.equal(
+  goalBlocked.route([0.05, 0.05]),
+  null,
+  'a barricade may seal the bin without crashing the grid',
+);
+const baits = [
+  { id: 'b', type: 'sugar', position: [0.1, 0], radius: 1 },
+  { id: 'a', type: 'sugar', position: [-0.1, 0], radius: 1 },
+  { id: 'c', type: 'fruit', position: [0.2, 0], radius: 1 },
+];
+assert.equal(chooseBait([0, 0], baits).id, 'a');
+assert.equal(chooseBait([0, 0], baits, ['sugar']).id, 'c');
+assert.deepEqual(finishMeal(['sugar'], 'sugar'), ['sugar']);
+assert.equal(STICKY_WIDTH, 0.03);
+assert.equal(stickyTraversal('small').stopSeconds, 3);
+assert.ok(stickyTraversal('medium').speedMultiplier < stickyTraversal('large').speedMultiplier);
+console.log('Ground defense primitives: OK');

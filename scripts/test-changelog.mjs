@@ -60,7 +60,7 @@ mountChangelog({
 });
 const items = list.children[0].children;
 assert.equal(items.length, PLAYER_CHANGELOG.length);
-assert.equal(items[0].children[0].textContent, 'Version ' + currentVersion);
+assert.equal(items[0].children[0].textContent, 'Version ' + PLAYER_CHANGELOG[0].version);
 assert.equal(items[0].children[1].children[0].textContent, PLAYER_CHANGELOG[0].changes[0]);
 trigger.emit('click');
 trigger.emit('click');

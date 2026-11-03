@@ -257,5 +257,20 @@ modifiables à tout moment par le créateur de la room.
 
 Le rat géant possède 5 000 PV et avance lentement. Le moustique possède 70 PV et esquive selon des oscillations déterministes. L'araignée pondeuse possède 1 200 PV : elle libère **100 bébés araignées** de 20 PV à sa mort, au lieu du site de décès, avec une trajectoire dispersée et rapide vers la poubelle. Chaque bébé survivant compte **1 point d'infestation**, soit 100 possibles pour la portée complète (défaite à 20). Les bébés morts ne créent pas d'âmes rémunérées. Moustique dès vague 3, pondeuse dès vague 11, rat dès vague 15. Voir [bestiaire](enemy-bestiary.md).
 
-
 Les [vitesses physiques des espèces](enemy-bestiary.md#vitesse-physique-dans-la-pièce) sont explicites en m/s dans le bureau, indépendantes de la taille des insectes et du nombre de membres de la nuée. L'accélération cachée des bébés araignées et les oscillations trop rapides des moustiques ont été corrigées.
+
+## Tower defense terrestre — chantier de l'issue #58, non livré
+
+Sur la branche de développement, un registre côté serveur prépare les barricades segmentées, sachets de sucre et bandes collantes. Les placements, prix, PV et réparations sont vérifiés côté serveur et inclus dans les snapshots. **Il n'existe pas encore d'interface de pose et les insectes empruntent toujours leurs parcours précédents.** Aucune fonctionnalité joueur n'est annoncée comme livrée dans `main`.
+
+Le moteur de défense en cours d'intégration ne prend le contrôle des insectes terrestres
+qu'après la création d'une construction dans une room. Les positions, la satiété et
+les arrivées deviennent alors des états serveur transmis aux clients ; les volants
+restent inchangés. Cette fonction est encore **expérimentale sur la branche de PR**,
+sans commande joueur accessible dans l'interface ; elle ne décrit pas `main`.
+
+La PR propose aussi une **carte de construction expérimentale** accessible à pied
+pour dessiner des barricades, étirer des rubans et poser du sucre. Les constructions
+sont visibles dans la pièce et les rayons du sucre s'affichent au sol et sur le
+radar. La carte de pose ne remplace pas encore le geste de placement directement
+dans la scène 3D prévu par l'issue.
