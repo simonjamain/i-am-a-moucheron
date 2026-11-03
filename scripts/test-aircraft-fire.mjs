@@ -293,4 +293,6 @@ for (const fps of [20, 30, 60, 120]) {
 assert.equal(advanceAutomaticFire(0, 0.25, 0.001, true).shots, 8);
 assert.equal(advanceAutomaticFire(0, 0.25, 0.001, false).shots, 0);
 assert.equal(advanceAutomaticFire(0, 1, 0, true).shots, 0);
-console.log('PASS: uninterrupted sustained fire under simulated RTT/loss, bounded catch-up at 20–120 FPS');
+console.log(
+  'PASS: uninterrupted sustained fire under simulated RTT/loss, bounded catch-up at 20–120 FPS',
+);

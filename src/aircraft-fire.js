@@ -96,15 +96,15 @@ export class AircraftFire {
     }
     this.timer = this.schedule(() => {
       this.timer = null;
-      void this.flush();
+      void this.flush(false);
     }, wait);
     this.timer?.unref?.();
   }
 
-  async flush() {
+  async flush(force = true) {
     if (this.inFlight >= this.maxInFlight) return;
     const current = this.now();
-    const first = this.queue.find((entry) => !entry.sending && entry.retryAt <= current);
+    const first = this.queue.find((entry) => !entry.sending && (force || entry.retryAt <= current));
     if (!first) {
       this.scheduleFlush(0);
       return;
@@ -115,7 +115,7 @@ export class AircraftFire {
     }
     const state = first.state;
     const batch = this.queue
-      .filter((entry) => !entry.sending && entry.retryAt <= current && entry.state === state)
+      .filter((entry) => !entry.sending && (force || entry.retryAt <= current) && entry.state === state)
       .slice(0, 32);
     const shots = batch.map((entry) => entry.shot);
     for (const entry of batch) entry.sending = true;
