@@ -6,6 +6,7 @@ import {
   retimeRoster,
 } from '../src/balance.js';
 import { deliveryStart, deliveryLanding, deliveryHeightAt } from '../src/delivery.js';
+import { newGroundDefense, groundCommand, groundSnapshot } from '../src/ground-defense-state.js';
 import { HELI, rotateLocal, steerMissile } from '../src/helicopter.js';
 import {
   sweptVehicle,
@@ -138,6 +139,7 @@ function roomState(code, now) {
     kills: new Set(),
     enemyDamage: {},
     equipment: [],
+    groundDefense: newGroundDefense(),
     effects: [],
     ordnance: [],
     ordnanceShots: new Set(),
@@ -659,6 +661,7 @@ export class Game {
       upgrades: r.upgrades,
       rewardCount: r.rewardCount,
       equipment: r.equipment,
+      groundDefense: groundSnapshot(r.groundDefense),
       deliveries: r.deliveries,
       pendingInstallations,
       purchases,
@@ -892,6 +895,7 @@ export class Game {
       }
     } else if (path === 'balance') this.setBalance(r, p, b);
     else if (path === 'debug-spawn') this.spawnDebug(r, b);
+    else if (path === 'ground-defense') this.groundDefenseCommand(r, p, b);
     else if (path === 'sync') this.sync(r, p, b);
     else if (path === 'purchase-sign') this.purchaseSign(r, p, b);
     else if (path === 'place-purchase') this.placePurchase(r, p, b);
@@ -1060,6 +1064,21 @@ export class Game {
       ),
     );
     return result;
+  }
+  groundDefenseCommand(r, p, b) {
+    requireGame(p.life === 'alive' && p.mode === 'foot', 'Construction réservée aux joueurs à pied.');
+    requireGame(b?.epoch === r.base.epoch, 'La partie a changé ; recommencez la pose.');
+    const body = this.base(r, p, b.ground);
+    requireGame(body && body.grounded && !body.parachute && body.y < 0.025,
+      'Rejoignez le sol du bureau pour construire.');
+    const w = baseWorld(body);
+    let transaction;
+    try {
+      transaction = groundCommand(r.groundDefense, b, [w.x, w.z], r.dollars);
+    } catch (error) {
+      requireGame(false, error.message, 400);
+    }
+    r.dollars = money(r.dollars - transaction.price);
   }
   pistolTrace(r, p, b) {
     requireGame(

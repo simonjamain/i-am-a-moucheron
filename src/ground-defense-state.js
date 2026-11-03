@@ -48,7 +48,7 @@ export function groundCommand(state, command, foot, dollars) {
       fail('Emplacement de construction invalide.');
     if (!nearFoot(a, foot)) fail('Construisez à proximité de votre personnage.');
     const distance = kind === 'sugar' ? 0 : length(a, b);
-    if (kind !== 'sugar' && (distance < 0.002 || !nearFoot(b, foot) && distance > 0.54))
+    if (kind !== 'sugar' && distance < 0.002)
       fail('Tracez la construction depuis votre position.');
     const count = kind === 'barricade' ? Math.ceil(distance / 0.2) : 1;
     if (state.structures.length + count > GROUND_LIMIT)

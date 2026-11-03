@@ -259,3 +259,8 @@ Le rat géant possède 5 000 PV et avance lentement. Le moustique possède 70 PV
 
 
 Les [vitesses physiques des espèces](enemy-bestiary.md#vitesse-physique-dans-la-pièce) sont explicites en m/s dans le bureau, indépendantes de la taille des insectes et du nombre de membres de la nuée. L'accélération cachée des bébés araignées et les oscillations trop rapides des moustiques ont été corrigées.
+
+
+## Tower defense terrestre — chantier de l'issue #58, non livré
+
+Sur la branche de développement, un registre côté serveur prépare les barricades segmentées, sachets de sucre et bandes collantes. Les placements, prix, PV et réparations sont vérifiés côté serveur et inclus dans les snapshots. **Il n'existe pas encore d'interface de pose et les insectes empruntent toujours leurs parcours précédents.** Aucune fonctionnalité joueur n'est annoncée comme livrée dans `main`.
