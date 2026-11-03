@@ -1,3 +1,4 @@
+import { feedingPoint } from '../src/ground-defense-state.js';
 import {
   DEFAULT_BALANCE,
   validateBalance,
@@ -438,7 +439,7 @@ export class Game {
       if (!r.groundBaitFlows.has(bait.id)) {
         let path = null;
         try {
-          path = groundFlow(r.groundDefense, bait.position);
+          path = groundFlow(r.groundDefense, feedingPoint(bait));
         } catch {
           // An obstructed sachet cannot be reached: creatures resume their bin goal.
         }

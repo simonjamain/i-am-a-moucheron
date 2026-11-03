@@ -17,6 +17,10 @@ export const GROUND_WALL_HP = 100;
 export const GROUND_WALL_COST_PER_SEGMENT = 1;
 export const GROUND_STICKY_COST_PER_20CM = 1;
 
+export function feedingPoint(bait) {
+  const angle = bait.angle || 0;
+  return [bait.position[0] + Math.sin(angle) * 0.024, bait.position[1] + Math.cos(angle) * 0.024];
+}
 export function newGroundDefense() {
   return { revision: 0, navigationRevision: 0, nextId: 0, structures: [] };
 }
@@ -104,7 +108,18 @@ export function groundCommand(state, command, foot, dollars) {
           }))
         : kind === 'sticky'
           ? [{ id, kind, a: [...a], b: [...b], width: STICKY_WIDTH }]
-          : [{ id, kind, position: [...a], type: 'sugar', radius: GROUND_BAIT_TYPES.sugar.radius }];
+          : [
+              {
+                id,
+                kind,
+                position: [...a],
+                angle: Number.isFinite(command.angle) ? command.angle % (2 * Math.PI) : 0,
+                type: 'sugar',
+                radius: GROUND_BAIT_TYPES.sugar.radius,
+              },
+            ];
+    if (kind === 'sugar' && !finitePoint(feedingPoint(items[0])))
+      fail('Les cristaux dépassent du bureau.');
     // Validate collisions with existing barricades, preserving adjacent segments
     // of the same stroke; bail out before spending anything.
     for (const item of items) {

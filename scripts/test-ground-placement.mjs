@@ -98,6 +98,16 @@ assert.equal(commands.length, 1, 'no duplicate purchase during pending request')
 resolve();
 await pending;
 assert.equal(ui.active, true, 'continue building while walking');
+ui.press();
+foot.x += 0.57;
+ui.release();
+assert.equal(commands.length, 2);
+const stroke = newGroundDefense();
+assert.equal(groundCommand(stroke, commands[1], [foot.x, foot.z], 20).price, 3);
+assert.equal(stroke.structures.length, 3);
+assert.deepEqual(stroke.structures[0].b, stroke.structures[1].a);
+resolve();
+await Promise.resolve();
 enabled = false;
 ui.update();
 assert.equal(ui.preview.visible, false);

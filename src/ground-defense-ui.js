@@ -74,7 +74,7 @@ export class GroundDefenseUI {
     this.buttons.querySelector('button').style.fontWeight = 'bold';
     this.hint = document.createElement('p');
     this.hint.textContent =
-      'Choisissez un outil puis marchez : E pour poser devant vous, R pour tourner, Échap pour quitter. Barricade / ruban : 1 $, sucre : 3 $, réparation : 1 $.';
+      'Maintenez le clic et marchez pour étirer un mur ou un ruban. Relâchez pour poser. Pose courte : E pour poser devant vous, R pour tourner, Échap pour quitter. Barricade / ruban : 1 $ par tranche de 20 cm, sucre : 3 $, réparation : 1 $.';
     this.panel.append(top, this.buttons, this.hint);
     this.status = document.createElement('button');
     this.status.style.cssText =
@@ -95,6 +95,7 @@ export class GroundDefenseUI {
     this.trigger.onclick = () => this.setOpen(!this.opened);
   }
   setOpen(open) {
+    this.anchor = null;
     this.opened = open && this.available();
     this.panel.style.display = this.opened ? 'block' : 'none';
     if (this.opened) {
@@ -108,11 +109,23 @@ export class GroundDefenseUI {
     this.preview.visible = false;
     this.status.style.display = 'none';
   }
+  press() {
+    if (!this.enabled() || this.busy) return;
+    this.update();
+    if (this.active && this.candidate?.center && ['barricade', 'sticky'].includes(this.mode))
+      this.anchor = this.candidate.center;
+    else this.confirm();
+  }
+  release() {
+    if (!this.anchor) return;
+    this.confirm();
+    this.anchor = null;
+  }
   async confirm() {
     if (!this.active || this.busy || !this.enabled()) return;
     this.update();
     const candidate = this.candidate;
-    if (!candidate || candidate.error) return;
+    if (!this.active || !candidate || candidate.error) return;
     this.busy = true;
     try {
       const { id, ...body } = candidate.command;
@@ -134,8 +147,12 @@ export class GroundDefenseUI {
     }
     this.preview.visible = false;
     this.status.style.display = this.active && this.enabled() ? 'block' : 'none';
-    if (!this.active || !this.enabled()) return;
+    if (!this.active || !this.enabled()) {
+      this.anchor = null;
+      return;
+    }
     const c = (this.candidate = groundPlacement({
+      anchor: this.anchor,
       foot: this.foot(),
       mode: this.mode,
       rotation: this.rotation,
@@ -163,7 +180,7 @@ export class GroundDefenseUI {
       kind === 'sticky' || kind === 'sugar' ? 0.002 : 0.02,
       kind === 'sticky' || kind === 'sugar' ? 0.03 : 0.008,
     );
-    this.preview.rotation.y = a && b ? -Math.atan2(b[1] - a[1], b[0] - a[0]) : 0;
+    this.preview.rotation.y = a && b ? -Math.atan2(b[1] - a[1], b[0] - a[0]) : shape?.angle || 0;
     this.preview.material.color.set(c.error ? '#ed665b' : '#a7ece0');
     this.preview.visible = true;
   }
@@ -184,18 +201,26 @@ export class GroundDefenseUI {
           new T.BoxGeometry(0.042, 0.002, 0.03),
           new T.MeshBasicMaterial({ color: '#f5ece2' }),
         );
-        paper.position.set(x, 0.002, z);
+        paper.position.set(0, 0.002, 0);
+        group.position.set(x, 0, z);
+        group.rotation.y = structure.angle || 0;
         group.add(paper);
+        // Two printed stripes and a lifted paper lip mark the torn opening.
+        for (const offset of [-0.008, -0.004, 0.014]) {
+          const fold = new T.Mesh(
+            new T.BoxGeometry(0.04, 0.001, 0.003),
+            new T.MeshBasicMaterial({ color: offset > 0 ? '#c8ae88' : '#548ba1' }),
+          );
+          fold.position.set(0, 0.0035, offset);
+          if (offset > 0) fold.rotation.x = -0.55;
+          group.add(fold);
+        }
         for (let i = 0; i < 6; i++) {
           const grain = new T.Mesh(
             new T.BoxGeometry(0.002, 0.002, 0.002),
             new T.MeshBasicMaterial({ color: '#faf9ed' }),
           );
-          grain.position.set(
-            x - 0.015 + (i % 3) * 0.009,
-            0.003,
-            z + 0.02 + Math.floor(i / 3) * 0.006,
-          );
+          grain.position.set(-0.015 + (i % 3) * 0.009, 0.003, 0.02 + Math.floor(i / 3) * 0.006);
           group.add(grain);
         }
         const ring = new T.Mesh(
@@ -208,7 +233,7 @@ export class GroundDefenseUI {
           }),
         );
         ring.rotation.x = -Math.PI / 2;
-        ring.position.set(x, 0.002, z);
+        ring.position.set(0, 0.002, 0);
         group.add(ring);
       } else {
         const dx = structure.b[0] - structure.a[0];
@@ -233,6 +258,30 @@ export class GroundDefenseUI {
         mesh.rotation.y = -Math.atan2(dz, dx);
         mesh.visible = intact;
         group.add(mesh);
+        if (structure.kind === 'barricade' && intact) {
+          // Cardboard braced with wooden matches, red heads and tape bindings.
+          for (const along of [-0.36, 0.36]) {
+            for (const [height, size, color] of [
+              [0, 0.024, '#dec291'],
+              [0.013, 0.005, '#a44637'],
+              [0.002, 0.003, '#dfd5ae'],
+            ]) {
+              const part = new T.Mesh(
+                new T.BoxGeometry(Math.min(length * 0.15, 0.004), size, 0.004),
+                new T.MeshBasicMaterial({ color }),
+              );
+              part.position.set(length * along, height, 0.005);
+              mesh.add(part);
+            }
+          }
+        } else if (structure.kind === 'sticky') {
+          const sheen = new T.Mesh(
+            new T.BoxGeometry(length, 0.0002, 0.003),
+            new T.MeshBasicMaterial({ color: '#f8efcf' }),
+          );
+          sheen.position.set(0, 0.0006, 0.01);
+          mesh.add(sheen);
+        }
       }
       this.models.add(group);
     }

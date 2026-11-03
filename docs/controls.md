@@ -163,3 +163,5 @@ valider dans une vraie partie WebGL/UDP.
 Bouton « Défense » à pied, puis choix d’un outil : aperçu devant le personnage
 pendant la marche, E ou clic gauche pour valider, R pour tourner de 45°, Échap
 pour quitter. Prix, conditions et navigation : [gameplay](gameplay.md#défenses-terrestres).
+
+Maintenir le clic gauche en marchant étire la barricade ou le ruban. Relâcher confirme au prix affiché.
