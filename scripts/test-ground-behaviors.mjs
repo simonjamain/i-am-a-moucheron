@@ -1,3 +1,4 @@
+import { feedingPoint } from '../src/ground-defense-state.js';
 import assert from 'node:assert/strict';
 import { advanceGroundUnit } from '../src/ground-creatures.js';
 import { newGroundDefense, groundFlow } from '../src/ground-defense-state.js';
@@ -82,7 +83,7 @@ const meal = unit([3, -3]);
 const world = {
   structures: state.structures,
   goalFlow: groundFlow(state),
-  baitFlow: () => groundFlow(state, bait.position),
+  baitFlow: () => groundFlow(state, feedingPoint(bait)),
   damageWall: () => assert.fail('no wall during meal'),
 };
 let firstTarget = null;

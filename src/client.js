@@ -782,13 +782,16 @@ canvas.addEventListener('mousedown', (event) => {
     { active: canCapture(), locked: controlFocus.active },
   );
   if (action === 'capture') captureMouse();
-  else if (action === 'fire' && groundDefenseUI.active) groundDefenseUI.confirm();
+  else if (action === 'fire' && groundDefenseUI.active) groundDefenseUI.press();
   else if (action === 'fire' && (respawnAt || (onFoot && !myVehicle && turretIndex < 0))) pistol();
   else if (action === 'fire' && (!onFoot || turretIndex >= 0 || !!myVehicle) && !respawnAt)
     mouseFire = true;
 });
 addEventListener('mouseup', (e) => {
-  if (e.button === 0) mouseFire = false;
+  if (e.button === 0) {
+    groundDefenseUI.release();
+    mouseFire = false;
+  }
   if (e.button === 2) holdZoom.reset();
 });
 canvas.addEventListener('contextmenu', (event) => event.preventDefault());

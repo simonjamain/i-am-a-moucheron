@@ -1,6 +1,6 @@
 import { chooseBait, distanceToSegment, finishMeal, stickyTraversal } from './ground-defense.js';
 import { enemyRoutePosition } from './routes.js';
-import { GROUND_BAIT_TYPES, GROUND_GOAL } from './ground-defense-state.js';
+import { feedingPoint, GROUND_BAIT_TYPES, GROUND_GOAL } from './ground-defense-state.js';
 
 export const GROUND_BODY_SIZES = Object.freeze({
   ant: 'small',
@@ -99,8 +99,8 @@ export function advanceGroundUnit(unit, enemy, elapsed, dt, world) {
       if (selected) unit.baitId = selected.id;
     }
     const bait = baits.find((item) => item.id === unit.baitId);
-    const goal = bait ? bait.position : GROUND_GOAL;
-    if (dist(unit.p, goal) < 0.025) {
+    const goal = bait ? feedingPoint(bait) : GROUND_GOAL;
+    if (dist(unit.p, goal) < (bait ? 0.003 : 0.025)) {
       if (bait) {
         unit.eatingUntil = time + (GROUND_BAIT_TYPES[bait.type]?.mealSeconds ?? 4);
         continue;

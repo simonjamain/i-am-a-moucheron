@@ -1,6 +1,12 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 153,
+    changes: [
+      'Maintenez le clic et marchez pour étirer vos barricades et rubans. Tournez le sachet de sucre pour orienter ses cristaux.',
+    ],
+  },
+  {
     version: 152,
     changes: [
       'Posez vos défenses directement devant votre personnage en marchant, avec un aperçu et une rotation.',
