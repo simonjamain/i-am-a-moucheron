@@ -3084,7 +3084,12 @@ function vehicleModel(v) {
 }
 function remoteShotCount(model, role, dt, interval, firing) {
   model.userData.remoteCooldowns ??= new Map();
-  const result = advanceAutomaticFire(model.userData.remoteCooldowns.get(role) || 0, dt, interval, firing);
+  const result = advanceAutomaticFire(
+    model.userData.remoteCooldowns.get(role) || 0,
+    dt,
+    interval,
+    firing,
+  );
   model.userData.remoteCooldowns.set(role, result.cooldown);
   return result.shots;
 }
