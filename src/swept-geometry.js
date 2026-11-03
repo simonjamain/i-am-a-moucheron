@@ -19,7 +19,7 @@ export function segmentBox(a, b, box) {
 }
 // Exact swept sphere against an axis-aligned box: piecewise quadratic distance
 // to the box, split at its faces. Unlike expanded AABBs this keeps round corners.
-export function sweptBoxProximity(a, b, box, radius) {
+export function sweptBoxProximity(a, b, box, radius, closest = false) {
   const keys = ['x', 'y', 'z'];
   for (let i = 0; i < 3; i++) {
     const key = keys[i];
@@ -56,6 +56,17 @@ export function sweptBoxProximity(a, b, box, radius) {
       C += m * m;
     }
     const f = (t) => (A * t + B) * t + C;
+    if (closest) {
+      // Distance to a convex box is piecewise quadratic. A zero-distance
+      // contact is already optimal; otherwise wait until the minimum is passed.
+      if (A <= 1e-20) {
+        if (C <= -radius * radius + 1e-20) return lo;
+        continue;
+      }
+      const t = Math.max(lo, -B / (2 * A));
+      if (t < hi && f(t) <= 1e-14) return t;
+      continue;
+    }
     if (f(lo) <= 1e-14) return lo;
     if (A > 1e-20) {
       const discriminant = B * B - 4 * A * C;
@@ -65,7 +76,7 @@ export function sweptBoxProximity(a, b, box, radius) {
       }
     }
   }
-  return segmentBox(a, b, box);
+  return closest ? null : segmentBox(a, b, box);
 }
 // Swept entry time (not closest approach) avoids tunnelling and orders triggers.
 export function sweptSphereProximity(a, b, centre, radius) {
@@ -80,4 +91,22 @@ export function sweptSphereProximity(a, b, centre, radius) {
   if (disc < 0) return null;
   const t = (-B - Math.sqrt(disc)) / (2 * A);
   return t >= 0 && t <= 1 ? t : null;
+}
+
+// Relative motion can be supplied by subtracting target displacement from b.
+export function closestSphereProximity(a, b, centre, size, radius) {
+  const d = b.map((v, i) => v - a[i]);
+  const m = a.map((v, i) => v - centre[i]);
+  const A = d.reduce((sum, v) => sum + v * v, 0);
+  const distance2 = m.reduce((sum, v) => sum + v * v, 0);
+  if (distance2 <= size * size) return 0;
+  if (A < 1e-20) return null;
+  const contact = sweptSphereProximity(a, b, centre, size);
+  if (contact !== null) return contact;
+  const t = Math.max(0, -d.reduce((sum, v, i) => sum + v * m[i], 0) / A);
+  if (t >= 1) return null;
+  const nearest2 = m.reduce((sum, v, i) => sum + (v + t * d[i]) ** 2, 0);
+  if (nearest2 > (size + radius) ** 2) return null;
+  // A direct contact reaches the minimum surface distance before centre passage.
+  return t;
 }

@@ -1760,7 +1760,8 @@
       #balancePanel {
         z-index: 100;
       }
-      #balancePanel [data-balance-fields] {
+      #balancePanel [data-balance-fields],
+      #balancePanel [data-spawn-fields] {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(min(270px, 100%), 1fr));
         gap: 16px;
@@ -1786,7 +1787,8 @@
         flex-wrap: wrap;
         gap: 10px;
       }
-      #balancePanel [data-balance-status] {
+      #balancePanel [data-balance-status],
+      #balancePanel [data-spawn-status] {
         min-height: 2em;
       }
     </style>
@@ -1987,7 +1989,7 @@
       #aimRange small {
         font-size: 9px;
       }
-      :is(#bank, :is(#bedPanel, #purchasePanel, #balancePanel)) {
+      :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel) {
         position: fixed;
         inset: 0;
         z-index: 45;
@@ -1996,7 +1998,7 @@
         background: #09211bd6;
         padding: 20px;
       }
-      :is(#bank, :is(#bedPanel, #purchasePanel, #balancePanel)) > article {
+      :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel) > article {
         width: min(1080px, 100%);
         max-height: 90dvh;
         overflow: auto;
@@ -2007,28 +2009,28 @@
         box-shadow: 0 14px 60px #0007;
         font-family: Georgia, serif;
       }
-      :is(#bank, :is(#bedPanel, #purchasePanel, #balancePanel)) header {
+      :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel) header {
         position: static;
         display: flex;
         align-items: start;
         justify-content: space-between;
         gap: 20px;
       }
-      :is(#bank, :is(#bedPanel, #purchasePanel, #balancePanel)) h2 {
+      :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel) h2 {
         margin: 0 0 8px;
         font-size: 30px;
         font-style: italic;
         font-weight: 400;
       }
-      :is(#bank, :is(#bedPanel, #purchasePanel, #balancePanel)) h3 {
+      :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel) h3 {
         font-size: 32px;
         font-weight: 400;
         margin: 22px 0;
       }
-      :is(#bank, :is(#bedPanel, #purchasePanel, #balancePanel)) p {
+      :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel) p {
         line-height: 1.6;
       }
-      :is(#bank, :is(#bedPanel, #purchasePanel, #balancePanel)) button {
+      :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel) button {
         background: #294938;
         color: #f3edcf;
         padding: 10px 14px;
@@ -2036,37 +2038,37 @@
         border-radius: 4px;
         cursor: pointer;
       }
-      :is(#bank, :is(#bedPanel, #purchasePanel, #balancePanel)) button:disabled {
+      :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel) button:disabled {
         opacity: 0.5;
         cursor: default;
       }
-      :is(#bank, :is(#bedPanel, #purchasePanel, #balancePanel)) [data-bank-cards] {
+      :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel) [data-bank-cards] {
         display: grid;
         grid-template-columns: repeat(3, minmax(0, 1fr));
         gap: 16px;
         margin: 20px 0;
       }
-      :is(#bank, :is(#bedPanel, #purchasePanel, #balancePanel)) [data-bank-cards] article {
+      :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel) [data-bank-cards] article {
         padding: 18px;
         border: 1px solid #a7a17c;
         background: #fff8df55;
       }
-      :is(#bank, :is(#bedPanel, #purchasePanel, #balancePanel)) [data-bank-cards] button {
+      :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel) [data-bank-cards] button {
         display: block;
         width: 100%;
         margin-top: 14px;
       }
-      :is(#bank, :is(#bedPanel, #purchasePanel, #balancePanel)) [data-bank-cards] small {
+      :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel) [data-bank-cards] small {
         letter-spacing: 1px;
       }
-      :is(#bank, :is(#bedPanel, #purchasePanel, #balancePanel)) [data-bank-status] {
+      :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel) [data-bank-status] {
         min-height: 1.5em;
         font-weight: bold;
       }
-      :is(#bank, :is(#bedPanel, #purchasePanel, #balancePanel)) [data-bank-text] {
+      :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel) [data-bank-text] {
         white-space: pre-line;
       }
-      :is(#bank, :is(#bedPanel, #purchasePanel, #balancePanel)) canvas {
+      :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel) canvas {
         width: min(100%, 650px);
         height: 150px;
         touch-action: none;
@@ -2074,23 +2076,23 @@
         display: block;
         background: #fff9e5;
       }
-      :is(#bank, :is(#bedPanel, #purchasePanel, #balancePanel)) .bankTable {
+      :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel) .bankTable {
         overflow: auto;
         margin: 15px 0;
       }
-      :is(#bank, :is(#bedPanel, #purchasePanel, #balancePanel)) table {
+      :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel) table {
         width: 100%;
         border-collapse: collapse;
         font-size: 12px;
       }
-      :is(#bank, :is(#bedPanel, #purchasePanel, #balancePanel)) th,
-      :is(#bank, :is(#bedPanel, #purchasePanel, #balancePanel)) td {
+      :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel) th,
+      :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel) td {
         padding: 8px;
         text-align: left;
         border-bottom: 1px solid #b6b18c;
         white-space: nowrap;
       }
-      :is(#bank, :is(#bedPanel, #purchasePanel, #balancePanel)) .bankHint {
+      :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel) .bankHint {
         font-size: 12px;
       }
       @media (max-width: 700px) {
@@ -2128,13 +2130,13 @@
           top: 34px;
           bottom: auto;
         }
-        :is(#bank, :is(#bedPanel, #purchasePanel, #balancePanel)) {
+        :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel) {
           padding: 8px;
         }
-        :is(#bank, :is(#bedPanel, #purchasePanel, #balancePanel)) > article {
+        :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel) > article {
           padding: 14px;
         }
-        :is(#bank, :is(#bedPanel, #purchasePanel, #balancePanel)) [data-bank-cards] {
+        :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel) [data-bank-cards] {
           grid-template-columns: 1fr;
         }
       }
@@ -2322,7 +2324,8 @@
       #balancePanel {
         z-index: 100;
       }
-      #balancePanel [data-balance-fields] {
+      #balancePanel [data-balance-fields],
+      #balancePanel [data-spawn-fields] {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(min(270px, 100%), 1fr));
         gap: 16px;
@@ -2348,8 +2351,113 @@
         flex-wrap: wrap;
         gap: 10px;
       }
-      #balancePanel [data-balance-status] {
+      #balancePanel [data-balance-status],
+      #balancePanel [data-spawn-status] {
         min-height: 2em;
+      }
+      #flightSettingsPanel {
+        z-index: 101;
+      }
+      #flightSettingsPanel [data-flight-fields] {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(min(250px, 100%), 1fr));
+        gap: 16px;
+        margin: 20px 0;
+      }
+      #flightSettingsPanel label {
+        display: grid;
+        gap: 6px;
+      }
+      #flightSettingsPanel input[type='range'] {
+        width: 100%;
+        accent-color: #294938;
+      }
+      #flightSettingsPanel input[type='checkbox'] {
+        width: 20px;
+        height: 20px;
+      }
+      #flightSettingsPanel small {
+        font: 13px/1.4 sans-serif;
+      }
+      #flightSettingsPanel output {
+        min-height: 1em;
+        font-size: 14px;
+        font-weight: bold;
+      }
+      #flightSettingsPanel footer {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+      #flightSettingsPanel [data-flight-status] {
+        min-height: 2em;
+      }
+      /* Petit historique accessible depuis l'accueil comme en partie. */
+      #changelogOpen {
+        position: fixed;
+        left: 52px;
+        top: 4px;
+        z-index: 200;
+        padding: 4px 8px;
+        font-size: 11px;
+      }
+      #changelogDialog {
+        width: min(420px, calc(100vw - 24px));
+        max-height: min(68dvh, 520px);
+        padding: 0;
+        overflow: hidden;
+        color: var(--cream);
+        background: #132f29;
+        border: 1px solid #627f6b;
+        border-radius: 10px;
+        box-shadow: 0 16px 55px #0009;
+      }
+      #changelogDialog::backdrop {
+        background: #041311c7;
+      }
+      #changelogDialog header {
+        position: static;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 14px 18px;
+        border-bottom: 1px solid var(--line);
+      }
+      #changelogDialog h2 {
+        margin: 0;
+        font: 25px 'Barlow Condensed', sans-serif;
+      }
+      #changelogClose {
+        padding: 4px 9px;
+      }
+      #changelogEntries {
+        max-height: calc(min(68dvh, 520px) - 62px);
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        padding: 0 18px 12px;
+      }
+      #changelogEntries section {
+        padding: 12px 0;
+        border-bottom: 1px solid var(--line);
+      }
+      #changelogEntries h3 {
+        color: var(--acid);
+        margin: 0 0 5px;
+        font-size: 13px;
+      }
+      #changelogEntries ul {
+        margin: 0;
+        padding-left: 19px;
+        line-height: 1.5;
+      }
+      #changelogEntries li {
+        margin: 0 0 4px;
+      }
+      @media (max-width: 350px) {
+        #changelogOpen {
+          top: 34px;
+          left: 8px;
+        }
       }
     </style>
   <style>body{background:linear-gradient(#879a81 0 55%,#c1af81 56% 80%,#656c48 81%);min-height:100dvh}nav{position:relative;z-index:50;display:flex;gap:6px;flex-wrap:nowrap;overflow:auto;padding:14px;background:#102b29}nav button{padding:8px;font-size:12px}.previewNote{position:fixed;top:210px;bottom:auto;left:15px;right:auto;max-width:320px;font-size:12px;color:#fff;background:#102b29b8;padding:9px;z-index:50}#bank>article{max-height:78dvh}#bank{padding-top:90px;padding-bottom:60px}</style>
@@ -2427,6 +2535,33 @@
       </article>
     </section>
     <section
+      id="flightSettingsPanel"
+      class="hidden"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="flightSettingsTitle"
+    >
+      <article>
+        <header>
+          <div>
+            <h2 id="flightSettingsTitle">Réglages personnels de pilotage</h2>
+            <p>
+              Ces préférences concernent votre pilotage des avions uniquement, pas
+              l’hélicoptère ni les réglages partagés de la room.
+              La partie continue pendant vos ajustements.
+            </p>
+          </div>
+          <button data-flight-close aria-label="Fermer les réglages de pilotage">✕</button>
+        </header>
+        <div data-flight-fields></div>
+        <p data-flight-status role="status" aria-live="polite"></p>
+        <footer>
+          <button data-flight-save>Enregistrer et appliquer</button>
+          <button data-flight-defaults>Valeurs par défaut</button>
+        </footer>
+      </article>
+    </section>
+    <section
       id="balancePanel"
       class="hidden"
       role="dialog"
@@ -2438,7 +2573,7 @@
           <div>
             <h2 id="balanceTitle">Équilibrage de la room</h2>
             <p>
-              Réglages partagés, modifiables à tout moment par le créateur. La partie continue
+              Réglages partagés, modifiables à tout moment par tous les joueurs. La partie continue
               pendant les ajustements.
             </p>
           </div>
@@ -2451,6 +2586,12 @@
           <button data-balance-defaults>Valeurs par défaut</button>
           <button data-balance-reload>Recharger les valeurs</button>
         </footer>
+        <hr />
+        <h3>Génération de nuées (debug)</h3>
+        <p>Choisissez le nombre exact d’insectes de chaque espèce à lancer dans cette room.</p>
+        <div data-spawn-fields></div>
+        <button data-spawn-send>Envoyer la nuée</button>
+        <p data-spawn-status role="status" aria-live="polite"></p>
       </article>
     </section>
     <section id="bank" class="hidden" role="dialog" aria-modal="true" aria-labelledby="bankTitle">
