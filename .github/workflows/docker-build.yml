@@ -37,6 +37,27 @@ jobs:
           cache-from: type=gha,scope=docker-validation
           cache-to: type=gha,scope=docker-validation,mode=max
 
+      - name: Smoke-test built Node/UDP image
+        shell: bash
+        run: |
+          set -euo pipefail
+          cid="$(docker run --rm -d -p 127.0.0.1::3000/tcp i-am-a-moucheron:check)"
+          trap 'docker logs "$cid" || true; docker rm -f "$cid" >/dev/null 2>&1 || true' EXIT
+          port="$(docker port "$cid" 3000/tcp | sed -n '1s/.*://p')"
+          test -n "$port"
+          ready=0
+          for attempt in {1..30}; do
+            if curl -fsS "http://127.0.0.1:$port/healthz" -o "$RUNNER_TEMP/moucheron-health.json"; then
+              ready=1
+              break
+            fi
+            sleep 1
+          done
+          test "$ready" -eq 1
+          node -e 'const assert = require("node:assert/strict"); const fs = require("node:fs"); const h = JSON.parse(fs.readFileSync(process.env.RUNNER_TEMP + "/moucheron-health.json", "utf8")); assert.deepEqual([h.ok, h.storage, h.transport], [true, "ram", "webrtc-udp"]);'
+          response="$(curl -sS -o /dev/null -w '%{http_code}' -X POST "http://127.0.0.1:$port/api/join")"
+          test "$response" = "410"
+
   snapshot-benchmark:
     name: 50-player snapshot comparison
     runs-on: ubuntu-latest
