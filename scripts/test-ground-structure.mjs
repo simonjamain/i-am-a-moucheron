@@ -18,7 +18,7 @@ assert.throws(() => build({ action: 'build', kind: 'sticky', a: [0, 0], b: [0.2,
 const sugar = build({ action: 'build', kind: 'sugar', a: [0.1, 0.1] });
 assert.equal(sugar.price, 3);
 assert.equal(state.structures.at(-1).radius, 0.15);
-const tape = build({ action: 'build', kind: 'sticky', a: [0, 0], b: [0.7, 0] });
+const tape = build({ action: 'build', kind: 'sticky', a: [0, 0.15], b: [0.7, 0.15] });
 assert.equal(tape.price, 4);
 assert.equal(state.structures.at(-1).width, 0.03);
 assert.equal(state.navigationRevision, 1, 'tape and bait do not alter obstacles');

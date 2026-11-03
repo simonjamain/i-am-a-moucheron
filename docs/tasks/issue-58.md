@@ -29,3 +29,7 @@
 - Le nouveau champ `groundDefense` provoquait la divergence attendue avec le benchmark historique de snapshots. La comparaison conserve l'égalité complète de tous les champs historiques et vérifie séparément l'état initial du nouveau champ.
 - Le test de la fenêtre « Nouveautés » ne doit pas exiger une entrée de changelog à chaque incrément de version purement technique : il vérifie la dernière version réellement documentée dans `PLAYER_CHANGELOG`, toujours inférieure ou égale à `VERSION`.
 - Un contrôle de format signalait aussi `server/game.js` ; mise en forme manuelle des lignes ajoutées. Les suites restent à relancer.
+
+### Contrôle de régression des structures (v136)
+
+- Le test construisait une bande collante exactement sur le segment de barricade déjà posé ; la validation serveur l'a correctement refusée. Le scénario a été corrigé pour poser la bande à côté du mur. Les assertions du test ont été rejouées dans un interpréteur JavaScript isolé ; la suite Node réelle reste à confirmer en CI.
