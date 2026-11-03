@@ -17,3 +17,9 @@
 - Nouveau `scripts/test-ground-structure.mjs` inscrit dans `npm test` ; tests locaux, Docker et CI à contrôler.
 - Hypothèses d'équilibrage provisoires : 100 PV par segment, 1 $ par segment, réparation 1 $, sachet de sucre 3 $ avec rayon 15 cm, bande de 3 cm à 1 $ par 20 cm.
 - À faire : trajectoires serveur, arrivée au but, attaquants, satiété, rendu, minimap, test deux joueurs et benchmark.
+
+### Correction de validation (v134)
+
+- Réparation et démontage exigent la proximité du **segment précis**, pas celle du début de la barricade. Le test utilise maintenant la position du joueur près du segment concerné.
+- Le champ de navigation tient compte des obstacles fixes bas du décor à partir des colliders existants ; les bandes restent traversables et ignorées de la recherche de chemin.
+- Les tableaux de coordonnées du snapshot ne partagent plus de mémoire mutable avec les structures serveur.

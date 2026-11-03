@@ -22,7 +22,7 @@ export function distanceToSegment(p, a, b) {
 }
 const NEIGHBOURS = [[0, -1], [-1, 0], [1, 0], [0, 1], [-1, -1], [1, -1], [-1, 1], [1, 1]];
 // Rebuild only when geometry changes; every insect reads the same flow field.
-export function buildGroundFlow({ bounds, cellSize, goal, barricades = [] }) {
+export function buildGroundFlow({ bounds, cellSize, goal, barricades = [], staticObstacles = [] }) {
   if (!Number.isFinite(cellSize) || cellSize <= 0) throw Error('Invalid cell size');
   const [minX, minZ, maxX, maxZ] = bounds;
   if (![...bounds, ...goal].every(Number.isFinite) || minX >= maxX || minZ >= maxZ) throw Error('Invalid ground bounds');
@@ -36,7 +36,9 @@ export function buildGroundFlow({ bounds, cellSize, goal, barricades = [] }) {
   const blocked = new Uint8Array(width * height);
   for (let z = 0; z < height; z++) for (let x = 0; x < width; x++) {
     const p = center(x, z);
-    if (barricades.some((wall) => distanceToSegment(p, wall.a, wall.b) <= (wall.thickness ?? cellSize) / 2)) blocked[index(x, z)] = 1;
+    if (barricades.some((wall) => distanceToSegment(p, wall.a, wall.b) <= (wall.thickness ?? cellSize) / 2) ||
+        staticObstacles.some((box) => p[0] >= box.min.x - 0.02 && p[0] <= box.max.x + 0.02 &&
+          p[1] >= box.min.z - 0.02 && p[1] <= box.max.z + 0.02)) blocked[index(x, z)] = 1;
   }
   const [gx, gz] = cell(goal);
   if (!inside(gx, gz) || blocked[index(gx, gz)]) throw Error('Ground goal is blocked');
