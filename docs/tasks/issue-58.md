@@ -78,3 +78,7 @@
 
 - Le champ de navigation accepte une destination couverte par une barricade, sans exception ; aucun chemin n'est trouvé et les espèces destructrices pourront chercher un mur à ouvrir.
 - Les appâts dont le champ ne fournit aucune cellule suivante depuis l'insecte ne sont pas sélectionnés en boucle. Scénarios ajoutés aux tests de navigation.
+
+### Précision des tests (v146)
+
+- Vérifie la cellule exacte recouverte lorsque l'objectif est scellé. La régression de l'appât inaccessible inspecte l'insecte réellement simulé, et vérifie qu'il continue vers la poubelle.

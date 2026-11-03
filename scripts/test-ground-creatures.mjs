@@ -25,12 +25,14 @@ const world = {
 };
 const old = [...unit.p];
 const baits = [{ id: 'remote', kind: 'sugar', type: 'sugar', radius: 4, position: [1, 1] }];
-advanceGroundUnit({ ...unit, p: [...unit.p] }, example, 1, 0.01, {
+const unreachableUnit = { ...unit, p: [...unit.p] };
+advanceGroundUnit(unreachableUnit, example, 1, 0.01, {
   ...world,
   structures: baits,
   baitFlow: () => ({ nextStep: () => null }),
 });
-assert.equal(unit.baitId, null, 'unreachable bait cannot acquire a target');
+assert.equal(unreachableUnit.baitId, null, 'unreachable bait cannot acquire a target');
+assert.notDeepEqual(unreachableUnit.p, unit.p, 'unreachable bait does not freeze the journey');
 advanceGroundUnit(unit, example, 1, 1, world);
 assert.ok(unit.p[1] > old[1], 'an ant moves toward the bin');
 assert.ok(!unit.arrived);
