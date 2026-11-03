@@ -86,3 +86,7 @@
 ### Régression d'objectif totalement bloqué (v149)
 
 - La vérification utilise désormais la cellule contenant réellement le centre de l'objectif sur la grille de 5 cm, plutôt qu'une cellule voisine. Un mur qui couvre l'objectif doit renvoyer un champ sans itinéraire et jamais une exception.
+
+### Vérification des comportements transversaux (v150)
+
+- Nouveau scénario `scripts/test-ground-behaviors.mjs` dans la suite Node : immobilisation temporaire des petits, ralentissement des moyens et faible effet sur les gros, capacité destructrice par espèce, repas de sucre avec satiété unique et retour à la poubelle. Ce test utilise le moteur de déplacement réel, mais pas de rendu WebGL.
