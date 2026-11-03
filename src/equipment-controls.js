@@ -1,4 +1,4 @@
-import { FLAK, MAP } from './scale.js';
+import { FLAK } from './scale.js';
 import { fuseRange } from './combat.js';
 export function contextKey({ type, seat, turret = false }, key) {
   if (!['ShiftLeft', 'ShiftRight', 'ControlLeft', 'ControlRight'].includes(key)) return null;
@@ -14,7 +14,7 @@ export function contextKey({ type, seat, turret = false }, key) {
 }
 export function rangeReadout(range) {
   return {
-    metres: MAP.metres(range),
+    metres: fuseRange(range),
     fraction: (fuseRange(range) - FLAK.minRange) / (FLAK.maxRange - FLAK.minRange),
   };
 }
