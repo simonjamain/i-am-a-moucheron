@@ -62,7 +62,7 @@ export const ENEMY_TYPES = Object.freeze({
     cost: 40,
     hp: 5000,
     size: 4,
-    speedMps: 0.0475,
+    speedMps: 0.08075,
     leak: 8,
     color: '#86705c',
     ground: true,

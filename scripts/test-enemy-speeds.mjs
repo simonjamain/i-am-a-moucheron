@@ -18,7 +18,7 @@ const expected = {
   dart: 0.13,
   guard: 0.0875,
   mosquito: 0.115,
-  rat: 0.0475,
+  rat: 0.08075,
   spider: 0.055,
   spiderling: 0.075,
   brute: 0.07,
