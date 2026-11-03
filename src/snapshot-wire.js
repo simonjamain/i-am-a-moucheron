@@ -1,8 +1,12 @@
 // Compact immutable insect rosters by consecutive swarms. All individual
 // IDs and trajectory parameters remain exact; only repeated object fields
 // are stored once per run. This is a wire format, not gameplay authority.
+export function snapshotRosterCore(s) {
+  return [s.code, s.base?.epoch, s.wave, s.started, s.balanceRevision].join(':');
+}
+
 export function snapshotRosterKey(s) {
-  return [s.code, s.base?.epoch, s.wave, s.started, s.balanceRevision, s.rosterRevision].join(':');
+  return [snapshotRosterCore(s), s.rosterRevision].join(':');
 }
 
 const same = (a, b) =>
@@ -93,6 +97,10 @@ export function encodeSnapshotForWire(snapshot, previous = null) {
     snapshot.rosterGroups = packRoster(snapshot.roster);
     delete snapshot.roster;
   }
+  if (snapshot.rosterAdd) {
+    snapshot.rosterAddGroups = packRoster(snapshot.rosterAdd);
+    delete snapshot.rosterAdd;
+  }
   return next;
 }
 
@@ -102,6 +110,14 @@ export function decodeSnapshotFromWire(snapshot, previous = null) {
     snapshot.roster = unpackRoster(snapshot.rosterGroups);
     delete snapshot.rosterGroups;
   }
+  if (snapshot.rosterAddGroups) {
+    if (previous?.core !== snapshotRosterCore(snapshot) || !previous.roster)
+      throw Error('Ajout de nuée sans roster initial.');
+    snapshot.roster = [...previous.roster, ...unpackRoster(snapshot.rosterAddGroups)];
+    delete snapshot.rosterAddGroups;
+  }
+  if (!snapshot.roster && previous?.key !== key)
+    throw Error('Roster manquant pour une nouvelle révision.');
   if (Object.hasOwn(snapshot, 'killsAdded')) {
     if (previous?.key !== key || !Object.hasOwn(snapshot, 'enemyDamageChanged'))
       throw Error('Synchronisation différentielle sans état initial.');
@@ -110,5 +126,11 @@ export function decodeSnapshotFromWire(snapshot, previous = null) {
     delete snapshot.killsAdded;
     delete snapshot.enemyDamageChanged;
   }
-  return { key, kills: new Set(snapshot.kills), damage: { ...snapshot.enemyDamage } };
+  return {
+    key,
+    core: snapshotRosterCore(snapshot),
+    roster: snapshot.roster || previous?.roster,
+    kills: new Set(snapshot.kills),
+    damage: { ...snapshot.enemyDamage },
+  };
 }

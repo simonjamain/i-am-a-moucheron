@@ -67,6 +67,14 @@ assert.ok(Object.hasOwn(sent, 'rosterGroups'));
 receiver = decodeSnapshotFromWire(JSON.parse(JSON.stringify(sent)), receiver);
 assert.deepEqual([...receiver.kills], []);
 assert.deepEqual(receiver.damage, {});
+sent = create(2);
+delete sent.roster;
+sent.rosterAdd = [{ id: 1, type: 'midge', hp: 100 }];
+sender = encodeSnapshotForWire(sent, sender);
+assert.ok(Object.hasOwn(sent, 'rosterAddGroups'), 'spawn appends a compact roster delta');
+receiver = decodeSnapshotFromWire(JSON.parse(JSON.stringify(sent)), receiver);
+assert.equal(receiver.roster.length, 2);
+assert.equal(receiver.roster[1].id, 1);
 assert.throws(
   () =>
     decodeSnapshotFromWire(

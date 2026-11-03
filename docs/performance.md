@@ -171,7 +171,7 @@ le plafond de gain et le budget de voix. Ces tests ne valident pas la perception
 sonore en navigateur, notamment lors du franchissement des frontières de cellules,
 avec une nuée entourant la caméra ou plusieurs moteurs d'avions simultanés.
 
-## Trafic UDP des grandes nuées — états différentiels (version 113)
+## Trafic UDP des grandes nuées — états différentiels (version 114)
 
 Le roster immuable est désormais omis **avant** la copie `structuredClone`
 dans `Game.snapshot()` pour toutes les commandes, et pas seulement pour
@@ -185,9 +185,9 @@ Entre ces changements, les confirmations ne contiennent plus la liste
 des insectes. Les listes de morts et les dégâts n'envoient que les nouveaux
 indices et les valeurs modifiées ; le réassemblage côté navigateur restitue
 les champs historiques `kills` et `enemyDamage` avant traitement du snapshot.
-Les apparitions sont incluses dans une nouvelle révision de roster ; elles
-déclenchent pour l'instant un renvoi compact **du roster complet** (pas encore
-un ajout incrémental). Les positions restent calculées localement.
+Les apparitions ajoutées à un roster existant sont transmises comme un **ajout de nuée**
+compact, si la vague et l'équilibrage sont inchangés. Une révision qui ne consiste pas
+en ajout repart d'un roster entier. Les positions restent calculées localement.
 
 Contrôles : `node scripts/test-roster-sync.mjs` et
 `node scripts/test-snapshot-wire.mjs` (parité des objets, 10 000 insectes,

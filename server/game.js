@@ -58,7 +58,7 @@ import {
 import { drawClause, clauseFactors } from '../src/malice.js';
 import { stationAccess } from '../src/sortie.js';
 import { validMotion } from '../src/network.js';
-import { snapshotRosterKey } from '../src/snapshot-wire.js';
+import { snapshotRosterCore, snapshotRosterKey } from '../src/snapshot-wire.js';
 import { newBank, signLoan, settleLoans, repayLoan } from '../src/bank.js';
 import { canUseWeapon, HEAVY, TANK_MG, availableShell } from '../src/armament.js';
 import { sweptSphereMayTouch } from '../src/swept-broadphase.js';
@@ -603,7 +603,7 @@ export class Game {
     r.enemyDamage = {};
     r.enemyHits.clear();
   }
-  snapshot(r, { rosterKey = null } = {}) {
+  snapshot(r, { rosterKey = null, rosterMeta = null } = {}) {
     this.advance(r);
     const now = this.now(),
       plan = this.plan(r),
@@ -675,7 +675,13 @@ export class Game {
       effects: r.effects.slice(-64),
       ordnance: r.ordnance,
       waveReward: money(waveStipend(r.wave), r.balance.rewards),
-      ...(rosterKey === snapshotRosterKey(r) ? {} : { roster: plan.roster }),
+      ...(rosterKey === snapshotRosterKey(r)
+        ? {}
+        : rosterMeta?.core === snapshotRosterCore(r) &&
+            rosterMeta.revision < r.rosterRevision &&
+            rosterMeta.total < plan.roster.length
+          ? { rosterAdd: plan.roster.slice(rosterMeta.total) }
+          : { roster: plan.roster }),
       difficulty: r.wave ? plan.budget : 0,
       enemyDamage: r.enemyDamage,
       raidDuration: RAID_DURATION,
