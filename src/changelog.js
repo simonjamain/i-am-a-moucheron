@@ -1,6 +1,6 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
-  { version: 127, changes: ['Les distances et altitudes affichées correspondent désormais à l’échelle réelle.'] },
+  { version: 128, changes: ['Les distances et altitudes affichées correspondent désormais à l’échelle réelle.'] },
   {
     version: 126,
     changes: [
