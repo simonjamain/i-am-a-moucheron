@@ -1,7 +1,11 @@
 import { rotateLocal } from './helicopter.js';
 import { VEHICLES } from './fleet.js';
 import { MAP, ACTOR_UNIT } from './scale.js';
-export { sweptBoxProximity, sweptSphereProximity } from './swept-geometry.js';
+export {
+  sweptBoxProximity,
+  sweptSphereProximity,
+  closestSphereProximity,
+} from './swept-geometry.js';
 import { sweptBoxProximity } from './swept-geometry.js';
 export const MOBILE_FUSE = Object.freeze({
   min: 0.5,
@@ -48,7 +52,7 @@ export const proximityRadius = (value) => MAP.metres(clampProximity(value));
 
 // Physical hull envelopes; decorative labels and projectiles are not colliders.
 // Test in local coordinates so an articulated trailer follows its own axis.
-export function sweptVehicle(a, b, vehicle, radius = 0) {
+export function sweptVehicle(a, b, vehicle, radius = 0, closest = false) {
   const q = vehicle.state.q,
     inverse = [-q[0], -q[1], -q[2], q[3]];
   const local = (p) =>
@@ -76,12 +80,19 @@ export function sweptVehicle(a, b, vehicle, radius = 0) {
         },
       },
       radius,
+      closest,
     );
   const scale = (lo, hi) => ({
     min: { x: lo[0] * ACTOR_UNIT, y: lo[1] * ACTOR_UNIT, z: lo[2] * ACTOR_UNIT },
     max: { x: hi[0] * ACTOR_UNIT, y: hi[1] * ACTOR_UNIT, z: hi[2] * ACTOR_UNIT },
   });
-  const tractor = sweptBoxProximity(A, B, scale([-1.15, -0.8, -4], [1.15, 1.7, -0.6]), radius);
+  const tractor = sweptBoxProximity(
+    A,
+    B,
+    scale([-1.15, -0.8, -4], [1.15, 1.7, -0.6]),
+    radius,
+    closest,
+  );
   const angle = -(vehicle.state.trailerAngle || 0),
     c = Math.cos(angle),
     sn = Math.sin(angle);
@@ -94,6 +105,7 @@ export function sweptVehicle(a, b, vehicle, radius = 0) {
     trailer(B),
     scale([-1.2, -0.8, -0.4], [1.2, 1.7, 5]),
     radius,
+    closest,
   );
   return tractor === null ? t : t === null ? tractor : Math.min(tractor, t);
 }

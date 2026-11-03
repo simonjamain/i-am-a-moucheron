@@ -14,6 +14,7 @@ import {
   fuseSegment,
   sweptBoxProximity,
   sweptSphereProximity,
+  closestSphereProximity,
 } from '../src/mobile-flak.js';
 import { collisionDamage, washTarget, WASH } from '../src/vehicle-care.js';
 import { purchaseCount } from '../src/equipment.js';
@@ -1843,18 +1844,21 @@ export class Game {
         // A contact strictly before arming is inert, including on thin geometry.
         if (impact !== null && (!armed || impact < armed.t - 1e-12)) consider(impact, 'inert');
         if (armed) {
-          const t = sweptBoxProximity(armed.a, b, box, radius);
+          const t = sweptBoxProximity(armed.a, b, box, radius, true);
           if (t !== null) consider(armed.t + t * (1 - armed.t), 'fuse');
         }
       };
       for (const box of nearby) solid(box);
       solid({ min: { x: -100, y: -100, z: -100 }, max: { x: 100, y: 0, z: 100 } });
-      const sphere = (centre, size, own = false) => {
+      const previousFrames = armed && frames.length ? framesAt(projectile.updated - dt * 1000) : [];
+      const sphere = (centre, size, own = false, previous = centre) => {
         const impact = sweptSphereProximity(a, b, centre, size);
         if (!own && impact !== null && (!armed || impact < armed.t - 1e-12))
           consider(impact, 'inert');
         if (armed) {
-          const t = sweptSphereProximity(armed.a, b, centre, size + radius);
+          const start = previous.map((v, i) => v + (centre[i] - v) * armed.t);
+          const relativeEnd = b.map((v, i) => v - (centre[i] - start[i]));
+          const t = closestSphereProximity(armed.a, relativeEnd, start, size, radius);
           if (t !== null) consider(armed.t + t * (1 - armed.t), 'fuse');
         }
       };
@@ -1868,6 +1872,8 @@ export class Game {
                 (enemySizeFactor(plan.roster[i].type) *
                   (plan.roster[i].type === 'midge' ? 1.2 : 1)),
             ),
+            false,
+            previousFrames[i]?.p || f.p,
           );
       });
       for (const v of r.vehicles.values())
@@ -1880,7 +1886,7 @@ export class Game {
           )
             consider(impact, 'inert');
           if (armed) {
-            const t = sweptVehicle(armed.a, b, v, radius);
+            const t = sweptVehicle(armed.a, b, v, radius, true);
             if (t !== null) consider(armed.t + t * (1 - armed.t), 'fuse');
           }
         }

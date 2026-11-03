@@ -88,9 +88,12 @@ intervalle minimum **0,8 s**, durée maximale **6 s**. L'obus hérite aussi de l
 vitesse du camion. Le réglage est copié au départ de chaque projectile.
 
 La fusée s'arme à **0,300 s**. Avant : impact inerte, sans explosion ni dégâts.
-Après : présence dans le rayon d'un objet physique, y compris sol, mobilier,
-installations, ennemis, joueurs, véhicules alliés et camion tireur, déclenche
-l'explosion. Le camion tireur est exclu uniquement des impacts avant l'armement
+Après : entrée dans le rayon d’un objet physique, y compris sol, mobilier,
+installations, ennemis, joueurs, véhicules alliés et camion tireur, ne déclenche pas encore
+l’explosion : l’obus attend que sa distance à cet objet commence à augmenter.
+Le premier passage au plus près rencontré déclenche l’explosion, même avec
+plusieurs objets dans le rayon. Un contact direct après armement est déjà une
+distance minimale et provoque l’explosion. Le camion tireur est exclu uniquement des impacts avant l'armement
 pour laisser l'obus sortir de son canon ; il redevient détectable à 0,3 s.
 Sans déclenchement : expiration inerte. Aucun impact direct à 200 dégâts ni
 éclatement programmé en distance n'est hérité de la DCA fixe.
@@ -100,12 +103,13 @@ avec 80 au centre, 20 au bord, zéro au-delà, occultation du décor et dégâts
 Un grand réglage peut donc déclencher loin de la cible sans la blesser.
 
 Le segment est coupé à l'instant d'armement. La détection balaie la trajectoire,
-avec distance exacte aux boîtes du décor (coins arrondis) ; les coques utilisent
+avec recherche du minimum de distance aux boîtes du décor (coins arrondis) ; les coques utilisent
 des enveloppes orientées, articulées pour le camion, et les personnages/insectes
 des volumes simplifiés comme les autres armes. Les éléments décoratifs et labels
 ne sont pas des objets physiques. Un filtrage spatial élimine d'abord les
-obstacles hors de portée du segment. Les mouvements des cibles restent ceux des
-snapshots coopératifs, sans historique continu de toutes les géométries.
+obstacles hors de portée du segment. Le déplacement des insectes est pris en compte entre les deux instants du pas
+par mouvement relatif. Les autres objets utilisent les derniers snapshots
+coopératifs, sans historique continu de toutes les géométries.
 
 ## Vérifications et reprise
 

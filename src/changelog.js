@@ -1,18 +1,48 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
+  {
+    version: 126,
+    changes: [
+      'Les obus de la DCA mobile attendent de passer au plus près des objets détectés pour exploser.',
+    ],
+  },
   { version: 125, changes: ['Les rats géants se déplacent 70 % plus vite.'] },
   { version: 124, changes: ['Tous les ennemis se déplacent deux fois moins vite.'] },
-  { version: 122, changes: ['Les roquettes et missiles laissent une traînée de fumée et une petite flamme.'] },
-  { version: 119, changes: ['Un bouton « Nouveautés » permet de retrouver les changements du jeu.'] },
-  { version: 117, changes: ['Les grandes nuées se synchronisent plus efficacement en multijoueur.'] },
+  {
+    version: 122,
+    changes: ['Les roquettes et missiles laissent une traînée de fumée et une petite flamme.'],
+  },
+  {
+    version: 119,
+    changes: ['Un bouton « Nouveautés » permet de retrouver les changements du jeu.'],
+  },
+  {
+    version: 117,
+    changes: ['Les grandes nuées se synchronisent plus efficacement en multijoueur.'],
+  },
   { version: 112, changes: ['Les insectes ont des vitesses adaptées à chaque espèce.'] },
-  { version: 109, changes: ['Le rat, le moustique et l’araignée pondeuse rejoignent le bestiaire.'] },
-  { version: 97, changes: ['Les nuées créées manuellement avancent à vitesse constante, même très nombreuses.'] },
+  {
+    version: 109,
+    changes: ['Le rat, le moustique et l’araignée pondeuse rejoignent le bestiaire.'],
+  },
+  {
+    version: 97,
+    changes: ['Les nuées créées manuellement avancent à vitesse constante, même très nombreuses.'],
+  },
   { version: 94, changes: ['Les nuées s’adaptent à leur taille et empruntent plusieurs entrées.'] },
-  { version: 90, changes: ['Les réglages personnels de pilotage sont enregistrés sur votre appareil.'] },
-  { version: 89, changes: ['L’équilibrage et la génération de nuées sont accessibles aux joueurs de la room.'] },
+  {
+    version: 90,
+    changes: ['Les réglages personnels de pilotage sont enregistrés sur votre appareil.'],
+  },
+  {
+    version: 89,
+    changes: ['L’équilibrage et la génération de nuées sont accessibles aux joueurs de la room.'],
+  },
   { version: 86, changes: ['Le bourdonnement des nuées se déplace avec elles dans le son 3D.'] },
-  { version: 81, changes: ['Le rendu des nuées est optimisé pour afficher beaucoup de moucherons.'] },
+  {
+    version: 81,
+    changes: ['Le rendu des nuées est optimisé pour afficher beaucoup de moucherons.'],
+  },
 ];
 
 // Utiliser uniquement du texte, jamais du HTML provenant du changelog.

@@ -20,6 +20,7 @@ import {
   fuseSegment,
   sweptBoxProximity,
   sweptSphereProximity,
+  closestSphereProximity,
   proximityRadius,
 } from '../src/mobile-flak.js';
 import { createGraphics } from '../src/graphics.js';
@@ -117,6 +118,20 @@ near(fuseSegment([0, 0, 0], [1, 0, 0], 0.299, 0.301).t, 0.5);
 near(fuseSegment([0, 0, 0], [1, 0, 0], 0.299, 0.3).t, 1);
 near(proximityRadius(0.5), 0.0015);
 near(proximityRadius(20), 0.06);
+// Entering the detection radius must not trigger while still approaching.
+assert.equal(
+  closestSphereProximity([-0.08, 0.02, 0], [-0.03, 0.02, 0], [0, 0, 0], 0.001, 0.06),
+  null,
+);
+near(closestSphereProximity([-0.03, 0.02, 0], [0.03, 0.02, 0], [0, 0, 0], 0.001, 0.06), 0.5);
+assert.equal(
+  closestSphereProximity([-0.03, 0.08, 0], [0.03, 0.08, 0], [0, 0, 0], 0.001, 0.06),
+  null,
+);
+near(closestSphereProximity([0.01, 0.02, 0], [0.03, 0.02, 0], [0, 0, 0], 0.001, 0.06), 0);
+const closestBox = { min: { x: 0, y: 0, z: 0 }, max: { x: 0.01, y: 0.01, z: 0.01 } };
+assert.equal(sweptBoxProximity([-0.05, 0.03, 0], [-0.02, 0.03, 0], closestBox, 0.06, true), null);
+near(sweptBoxProximity([-0.02, 0.03, 0], [0.02, 0.03, 0], closestBox, 0.06, true), 0.75);
 let now = 100000;
 const game = new Game({ now: () => now, solids: [] });
 const joined = game.join({ code: 'SUPPORT', name: 'Pilote' }),
@@ -192,6 +207,19 @@ game.advanceOrdnance(room, now + 10);
 assert.equal(room.effects.length, effects + 1);
 game.solids = [];
 room.ordnance = [];
+// A near miss across a thin box waits through approach and the distance plateau.
+game.solids = [{ min: { x: 1, y: 1, z: 1 }, max: { x: 1.01, y: 1.01, z: 1.01 } }];
+shot = makeShot(0.301, [0.96, 1.03, 1.005], [1, 0, 0]);
+room.ordnance = [shot];
+effects = room.effects.length;
+game.advanceOrdnance(room, now + 20);
+assert.equal(room.effects.length, effects, 'no explosion on radius entry');
+game.advanceOrdnance(room, now + 80);
+assert.equal(room.effects.length, effects + 1, 'one explosion at closest passage');
+assert.ok(Math.abs(shot.p[0] - 1.01) < 0.0001, 'closest passage includes gravity');
+game.advanceOrdnance(room, now + 100);
+assert.equal(room.effects.length, effects + 1);
+game.solids = [];
 // Own hull remains eligible after arm. Explosion applies only once.
 truck.state.hp = 100;
 shot = makeShot(0.3, truck.state.p);
