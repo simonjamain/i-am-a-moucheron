@@ -53,6 +53,11 @@ Le contrat de cadence double cet intervalle. Stocks et délai restent validés p
 `heavy-fire` côté serveur ; un envoi en cours est unique. En cas de latence élevée,
 l’attente de cette confirmation peut réduire la cadence effective des armes
 lourdes. Les MG restent prédites immédiatement et réglées par lots idempotents.
+La cadence rattrape les images retardées, avec un plafond de huit intervalles
+par pas pour éviter une surcharge après une longue pause. Les traceurs des
+armes automatiques des autres joueurs suivent désormais une cadence temporisée
+plutôt qu'une probabilité aléatoire par image ; des pertes de mouvements peuvent
+encore rendre leur représentation approximative. Voir [les lots réseau MG](vehicles-bank.md#stocks-et-équilibre-initial).
 Le ravitaillement habituel remplit ces nouvelles capacités en dix secondes.
 
 ## Provenance et mire

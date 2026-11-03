@@ -87,7 +87,14 @@ conservés ; tirer exige au moins une munition complète. Carburant : cinq minut
 Les clauses malicieuses continuent de modifier commandes, visée, cadence et dégâts,
 y compris les armes lourdes et le pilote du tank.
 
-Les MG restent prédites localement puis débitées par lots idempotents. Les armes
+Les MG restent prédites localement puis débitées par lots idempotents. Les rapports
+sont regroupés pendant 50 ms (32 tirs maximum par lot), avec jusqu'à huit lots
+simultanément en attente de réponse. Une file bornée à 512 tirs protège la
+mémoire en cas de connexion durablement saturée ; les identifiants sont repris
+à l'identique après une confirmation perdue. Le tir normal ne s'arrête donc
+plus à cause de l'ancien délai fixe entre confirmations.
+Une rupture réseau durable peut encore remplir la file et interrompre le tir.
+Les armes
 lourdes passent par `heavy-fire` sur le canal UDP fiable ; le serveur débite,
 applique le délai, simule les projectiles et produit les impacts communs. Leurs
 réponses ne créent pas de deuxième projectile. Les snapshots décrivent les

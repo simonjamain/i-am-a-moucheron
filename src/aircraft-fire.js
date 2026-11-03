@@ -1,29 +1,33 @@
-// Local prediction owns firing; HTTP only settles ammunition in bounded batches.
+// Local prediction owns firing; reliable network replies settle ammunition in bounded batches.
 // A reply must never create geometry, sound or a second projectile.
 export class AircraftFire {
   constructor(
     request,
     scope,
     {
-      limit = 128,
-      interval = 250,
+      limit = 512,
+      interval = 50,
+      maxInFlight = 8,
       session = globalThis.crypto.randomUUID(),
       schedule = (callback, delay) => setTimeout(callback, delay),
       cancel = (timer) => clearTimeout(timer),
+      now = () => Date.now(),
     } = {},
   ) {
     this.request = request;
     this.scope = scope;
     this.limit = limit;
     this.interval = interval;
+    this.maxInFlight = maxInFlight;
     this.session = session;
     this.schedule = schedule;
     this.cancel = cancel;
+    this.now = now;
     this.sequence = 0;
     this.states = new Map();
     this.queue = [];
     this.timer = null;
-    this.inFlight = false;
+    this.inFlight = 0;
     this.generation = 0;
   }
 
@@ -59,8 +63,13 @@ export class AircraftFire {
       state,
       generation: this.generation,
       shot: this.session + ':' + ++this.sequence,
+      sending: false,
+      retryAt: 0,
     });
-    this.scheduleFlush(this.interval);
+    // Full batches flush immediately; short bursts are coalesced for 50 ms.
+    if (this.queue.filter((e) => !e.sending && e.retryAt <= this.now()).length >= 32)
+      this.scheduleFlush(0, true);
+    else this.scheduleFlush(this.interval);
     return true;
   }
 
@@ -72,26 +81,46 @@ export class AircraftFire {
     void this.flush();
   }
 
-  scheduleFlush(delay) {
-    if (this.timer !== null || this.inFlight || !this.queue.length) return;
+  scheduleFlush(delay, expedite = false) {
+    if (this.inFlight >= this.maxInFlight) return;
+    const unsent = this.queue.filter((entry) => !entry.sending);
+    if (!unsent.length) return;
+    const current = this.now();
+    const ready = unsent.some((entry) => entry.retryAt <= current);
+    const retryDelay = ready ? 0 : Math.max(0, Math.min(...unsent.map((e) => e.retryAt)) - current);
+    const wait = Math.max(delay, retryDelay);
+    if (this.timer !== null) {
+      if (!expedite) return;
+      this.cancel(this.timer);
+      this.timer = null;
+    }
     this.timer = this.schedule(() => {
       this.timer = null;
-      void this.flush();
-    }, delay);
+      void this.flush(false);
+    }, wait);
     this.timer?.unref?.();
   }
 
-  async flush() {
-    if (this.inFlight || !this.queue.length) return;
+  async flush(force = true) {
+    if (this.inFlight >= this.maxInFlight) return;
+    const current = this.now();
+    const first = this.queue.find((entry) => !entry.sending && (force || entry.retryAt <= current));
+    if (!first) {
+      this.scheduleFlush(0);
+      return;
+    }
     if (this.timer !== null) {
       this.cancel(this.timer);
       this.timer = null;
     }
-    const state = this.queue[0].state;
-    const batch = this.queue.filter((entry) => entry.state === state).slice(0, 32);
+    const state = first.state;
+    const batch = this.queue
+      .filter((entry) => !entry.sending && (force || entry.retryAt <= current) && entry.state === state)
+      .slice(0, 32);
     const shots = batch.map((entry) => entry.shot);
-    this.inFlight = true;
-    let retry = false;
+    for (const entry of batch) entry.sending = true;
+    this.inFlight++;
+    this.scheduleFlush(this.interval);
     try {
       const result = await this.request({
         vehicle: state.vehicle,
@@ -112,17 +141,22 @@ export class AircraftFire {
       state.pending -= batch.length;
     } catch (error) {
       if (error.status >= 400 && error.status < 500 && error.status !== 429) {
-        // Definitive rejection (e.g. post left before the report arrived).
-        // Stop prediction for this occupation; never blindly refund shots.
+        // Definitive refusal: never replay a rejected report or refund rounds.
         const rejected = new Set(shots);
         this.queue = this.queue.filter((entry) => !rejected.has(entry.shot));
         state.pending -= batch.length;
         if (batch.some((entry) => entry.generation === this.generation) && this.scope() != null)
           state.blocked = true;
-      } else retry = true; // Unknown outcome: retry the same IDs, never spend twice.
+      } else {
+        // Outcome unknown: retry identical IDs, while other slots can progress.
+        for (const entry of batch) {
+          entry.sending = false;
+          entry.retryAt = this.now() + 1000;
+        }
+      }
     } finally {
-      this.inFlight = false;
-      this.scheduleFlush(retry ? 1000 : this.interval);
+      this.inFlight--;
+      this.scheduleFlush(0);
     }
   }
 }

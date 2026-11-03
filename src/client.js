@@ -4,7 +4,7 @@ import { deliveryHeightAt } from '/delivery.js';
 import { reserveAlerts, missileStatus, ArrivalSignals } from '/reserve-feedback.js';
 import { controlHints, cursorStats, cursorAmmoText } from '/live-hud.js';
 import { identifyPlayer, disposePlayerIdentity } from '/player-livery.js';
-import { GunSalvos } from '/salvos.js';
+import { GunSalvos, advanceAutomaticFire } from '/salvos.js';
 import { ammoCapacity } from '/logistics.js';
 import { moveShotTrace, advanceShotTrace, makeShotTrace, TracerPool } from '/tracers.js';
 import { PurchaseUI } from '/purchase-ui.js';
@@ -2653,18 +2653,20 @@ function updateVehicles(dt) {
         (!scoped && uiWeaponFire)) &&
       canCapture() &&
       hasAmmo();
-    cooldown -= dt;
-    while (shooting && cooldown <= 0) {
-      cooldown +=
-        (myVehicle.type === 'helicopter'
-          ? HELI.gunInterval
-          : myVehicle.type === 'tank'
-            ? TANK_MG[currentAmmoKey()].interval
-            : 0.09) *
-        (currentFactors().interval / (snap?.balance?.fireRate ?? 1));
+    const burst = advanceAutomaticFire(
+      cooldown,
+      dt,
+      (myVehicle.type === 'helicopter'
+        ? HELI.gunInterval
+        : myVehicle.type === 'tank'
+          ? TANK_MG[currentAmmoKey()].interval
+          : 0.09) *
+        (currentFactors().interval / (snap?.balance?.fireRate ?? 1)),
+      shooting,
+    );
+    cooldown = burst.cooldown;
+    for (let shot = 0; shot < burst.shots; shot++)
       bullet(view.muzzle, spreadDirection(T, dir), '#f4efab', true);
-    }
-    if (!shooting) cooldown = Math.max(0, cooldown);
   }
   for (let index = 0; index < turrets.length; index++) {
     const gun = turrets[index];
@@ -3080,6 +3082,17 @@ function vehicleModel(v) {
   }
   return g;
 }
+function remoteShotCount(model, role, dt, interval, firing) {
+  model.userData.remoteCooldowns ??= new Map();
+  const result = advanceAutomaticFire(
+    model.userData.remoteCooldowns.get(role) || 0,
+    dt,
+    interval,
+    firing,
+  );
+  model.userData.remoteCooldowns.set(role, result.cooldown);
+  return result.shots;
+}
 function updateOthers(dt) {
   if (!snap) return;
   const active = new Set();
@@ -3130,19 +3143,23 @@ function updateOthers(dt) {
           new T.Vector3().fromArray(m.turretDirection || [0, 0, -1]),
           mount.parent.getWorldQuaternion(new T.Quaternion()),
         );
-        if (
-          gunner.id !== id &&
-          m.fire &&
-          v.supplies?.ammo[v.type === 'tank' && seat === 'cannon' ? 'coax' : seat] >= 1 &&
-          Math.random() <
-            dt /
-              ((v.type === 'helicopter'
-                ? HELI.gunInterval
-                : v.type === 'tank'
-                  ? TANK_MG[seat === 'cannon' ? 'coax' : seat].interval
-                  : 0.09) *
-                (clauseFactors(gunner.contractClause).interval / (snap?.balance?.fireRate ?? 1)))
-        ) {
+        const remoteRounds =
+          gunner.id === id
+            ? 0
+            : remoteShotCount(
+                g,
+                seat + ':' + gunner.id,
+                dt,
+                (v.type === 'helicopter'
+                  ? HELI.gunInterval
+                  : v.type === 'tank'
+                    ? TANK_MG[seat === 'cannon' ? 'coax' : seat].interval
+                    : 0.09) *
+                  (clauseFactors(gunner.contractClause).interval / (snap?.balance?.fireRate ?? 1)),
+                !!m.fire &&
+                  v.supplies?.ammo[v.type === 'tank' && seat === 'cannon' ? 'coax' : seat] >= 1,
+              );
+        for (let shot = 0; shot < remoteRounds; shot++) {
           const o = (
             v.type === 'tank' && seat === 'cannon'
               ? mount.userData.coaxMuzzle
@@ -3151,16 +3168,18 @@ function updateOthers(dt) {
           bullet(o, new T.Vector3().fromArray(m.turretDirection || [0, 0, -1]), vehicleColor(v));
         }
       }
-    if (
-      !isSelf &&
-      v.type !== 'bomber' &&
-      motion.fire &&
-      v.supplies?.ammo.pilot >= 1 &&
-      Math.random() <
-        dt /
-          (FIRE_INTERVAL *
-            (clauseFactors(p?.contractClause).interval / (snap?.balance?.fireRate ?? 1)))
-    ) {
+    const remotePilotRounds =
+      !isSelf && v.type !== 'bomber'
+        ? remoteShotCount(
+            g,
+            'pilot:' + (p?.id || ''),
+            dt,
+            FIRE_INTERVAL *
+              (clauseFactors(p?.contractClause).interval / (snap?.balance?.fireRate ?? 1)),
+            !!motion.fire && v.supplies?.ammo.pilot >= 1,
+          )
+        : 0;
+    for (let shot = 0; shot < remotePilotRounds; shot++) {
       const direction = new T.Vector3(0, 0, -1).applyQuaternion(g.quaternion);
       if (v.type === 'spitfire') {
         g.updateWorldMatrix(true, true);
@@ -3544,12 +3563,15 @@ function physics(dt) {
     landed = state.landed;
     gas = state.gas;
     shooting = myVehicle.type === 'tank' && active && hasAmmo() && (mouseFire || manual.fire);
-    cooldown -= dt;
-    if (shooting && cooldown <= 0) {
-      cooldown =
-        TANK_MG.pilot.interval * (currentFactors().interval / (snap?.balance?.fireRate ?? 1));
+    const burst = advanceAutomaticFire(
+      cooldown,
+      dt,
+      TANK_MG.pilot.interval * (currentFactors().interval / (snap?.balance?.fireRate ?? 1)),
+      shooting,
+    );
+    cooldown = burst.cooldown;
+    for (let shot = 0; shot < burst.shots; shot++)
       shoot(new T.Vector3(0, 0, -1).applyQuaternion(me.quaternion));
-    }
     return;
   }
   const active = controlFocus.active && canCapture();
@@ -3622,14 +3644,16 @@ function physics(dt) {
   for (const prop of me.userData.props || [me.userData.prop])
     prop.rotation.z += dt * gas * (engine && remainingFuel() > 0 ? 70 : 0);
   $('stallWarning').classList.toggle('hidden', stall > 0.8);
-  cooldown -= dt;
   shooting =
     active && myVehicle && myVehicle.type !== 'bomber' && hasAmmo() && (manual.fire || mouseFire);
-  if (shooting && cooldown <= 0 && hp > 0) {
-    cooldown += FIRE_INTERVAL * (currentFactors().interval / (snap?.balance?.fireRate ?? 1));
-    shoot(forward);
-  }
-  if (!shooting) cooldown = Math.max(0, cooldown);
+  const burst = advanceAutomaticFire(
+    cooldown,
+    dt,
+    FIRE_INTERVAL * (currentFactors().interval / (snap?.balance?.fireRate ?? 1)),
+    shooting && hp > 0,
+  );
+  cooldown = burst.cooldown;
+  for (let shot = 0; shot < burst.shots; shot++) shoot(forward);
   damageCd -= dt;
   const p = me.position;
   let collision =
