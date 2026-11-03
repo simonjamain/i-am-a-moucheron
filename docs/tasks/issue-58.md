@@ -33,3 +33,8 @@
 ### Contrôle de régression des structures (v136)
 
 - Le test construisait une bande collante exactement sur le segment de barricade déjà posé ; la validation serveur l'a correctement refusée. Le scénario a été corrigé pour poser la bande à côté du mur. Les assertions du test ont été rejouées dans un interpréteur JavaScript isolé ; la suite Node réelle reste à confirmer en CI.
+
+### Synchronisation et refus serveur (v137)
+
+- Test Node `scripts/test-ground-room.mjs` : deux membres d'une même room observent le même état, une autre room reste isolée ; coût atomique, doublon refusé, commande de dégâts interdite aux joueurs, pose hors portée refusée, reset et ancienne époque invalidée.
+- Test de l'intégration serveur sans navigateur : les corps à pied du scénario sont placés artificiellement au sol. Il reste à vérifier les interactions réelles à plusieurs clients WebRTC et la navigation des insectes.
