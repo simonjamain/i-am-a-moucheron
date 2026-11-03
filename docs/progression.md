@@ -6,39 +6,11 @@ armes restent ceux de [combat-worlds](combat-worlds.md).
 
 ## Départ et montée en difficulté
 
-| Vague | Budget | Prime commune immédiate | Nouveauté autorisée             |
-| ----- | -----: | ----------------------: | ------------------------------- |
-| 1     |      8 |                     4 $ | Fourmis/moucherons au hasard    |
-| 2     |     10 |                     5 $ | Fourmis garanties               |
-| 3     |     14 |                     6 $ | Présence terrestre régulière    |
-| 4     |     18 |                     7 $ | Premier voltigeur possible      |
-| 5     |     24 |                     8 $ | Consolidation                   |
-| 6     |     30 |                     9 $ | Premier cafard possible         |
-| 8     |     46 |                    11 $ | Première carapace possible      |
-| 12    |     90 |                    15 $ | Premier bourdon blindé possible |
+Le directeur Node tire la composition **avant le vote**. Chaque insecte consomme son coût individuel du bestiaire. Le budget est `min(2400, round(32 × 1,5^(n−1)))` avant réglages de room. À population normale, les vagues 1, 2, 5 et 10 coûtent 32, 48, 162 et 1 230 points. Dès la première, une colonne de fourmis sort à 0 s et une nuée aérienne entre 2 et 5 s. Les groupes suivants peuvent arriver ensemble. Le tirage conserve les déblocages du bestiaire et borne à 900 la population avant le multiplicateur de room. La difficulté affichée additionne les coûts du roster réellement envoyé. La progression seule ne modifie ni les PV individuels ni les dégâts.
 
-Le budget est `8 + 2 × (n−1) + floor((n−1)² / 2)`, plafonné à 2400.
-Les ennemis coûtant plus d’un point occupent au maximum 40 % du budget et sont
-limités par type à un exemplaire lors du déblocage, puis un supplémentaire toutes
-les trois vagues. Le tirage est déterministe pour une salle et un départ donnés.
-Un budget n’est pas un nombre d’ennemis : les plus résistants coûtent davantage.
-Depuis la version 38, il définit la composition avant multiplication des seuls
-moucherons par cinq : [nuées densifiées](dense-swarms.md). Les autres espèces,
-les déblocages et les primes sont conservés.
+Le lancement et les pauses durent 60 secondes par défaut. Le bandeau affiche la prochaine vague. Les trois cartes sont communes, chaque joueur peut changer de voix jusqu'au dépouillement. Quand tous ont voté, le plan est disponible et chacun peut lancer la vague. À l'échéance, la majorité des voix exprimées l'emporte, les premiers ex æquo sont départagés au hasard et la vague démarre. Sans voix, les trois cartes participent au tirage.
 
-Les trajets comportent désormais des détours avant l’approche de la poubelle,
-avec navigation statique autour du mobilier. La vitesse effective précédente est
-conservée sauf pour les fourmis ralenties par [VAG-07](comfort.md) et la durée découle de la longueur, sans l’ancien plafond de 145 secondes.
-Dès la première vague, deux fourmis sont garanties, puis les six points de budget
-restants sont tirés entre fourmis et moucherons ; chaque source de moucherons est
-multipliée par cinq. Le calendrier de départ est le même pour toutes les vagues :
-quatre sources par groupe, une nouvelle série toutes les 2,4 secondes, 0,35 seconde
-entre sources, et 0,07 seconde entre membres d'une nuée. Les trajectoires et leurs
-points d'entrée ne changent pas : les trois premières vagues conservent l'approche
-« intro ». La vague se termine plus tôt si tous les ennemis sont abattus.
-Le lancement initial de dix secondes et les pauses entre vagues de soixante
-secondes restent séparés. Voir [trajets et crashs](vehicles-bank.md#trajets-et-crashs)
-pour la calibration et les limites de navigation.
+Chaque victoire au vote débloque un niveau de plan pour toute la partie. La caisse paie séparément chaque amélioration sur l'objet choisi. Le sucre parfumé (+10 cm de rayon, 2 $) regroupe les terrestres devant une passe de tir. Les balles traversantes (3 $) traversent un insecte de plus par niveau et perdent la moitié des dégâts à chaque traversée. Le renfort ajoute 100 PV au segment (2 $). La colle renforcée immobilise les petits insectes une seconde de plus par niveau (2 $). Les plans de base restent accessibles. La caisse initiale vaut 0 $ par défaut. Dès la première préparation, l’équipe peut signer l’une des trois offres de la banque (12 à 40 $) pour financer ses premières constructions et améliorations. Les échéances restent dues à chaque fin de vague. La remise à zéro efface les plans et les objets.
 
 ## Revenus et prix
 
@@ -93,7 +65,7 @@ Installations Node : le [bon signé](clean-flight.md#prix-bon-signé-et-pose) d�
 avant la pose ; annuler l’aperçu ne fait pas perdre l’objet payé.
 
 Historique VAG-04/VAG-05 : [parcours et budget](multiplayer-return.md#parcours-et-fourmis-précoces),
-budget initial 8, autrefois quatre fourmis en vague 1 ; le directeur courant garantit
+budget initial 8, autrefois quatre fourmis en vague 1 ; le directeur historique garantissait
 deux fourmis à toutes les vagues, avec coûts/PV inchangés.
 Les achats de chasseur et bombardier supplémentaires coûtent 8 $ et 16 $.
 

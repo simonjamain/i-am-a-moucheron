@@ -244,9 +244,10 @@ const game = new Game({ now: () => now });
 const a = game.join({ code: 'DENSENET', name: 'A' });
 const r = game.rooms.get('DENSENET');
 game.command(r.code, a.id, 'start');
-now += 10000;
+now += 60000;
+r.pilots.get(a.id).seen = now;
 let snapshot = game.command(r.code, a.id, 'sync', { mode: 'foot', state: a.state });
-const firstTotal = wavePlan(r.code, 1, r.started).roster.length;
+const firstTotal = r.plan.roster.length;
 assert.equal(snapshot.total, firstTotal);
 for (let enemy = 0; enemy < firstTotal - 1; enemy++)
   game.command(r.code, a.id, 'hit', { wave: 1, enemy, amount: 800, shot: 'kill' + enemy });
@@ -259,11 +260,13 @@ assert.equal(snapshot.phase, 'prep');
 assert.equal(snapshot.dollars, 4);
 assert.equal(snapshot.souls.length, Math.min(firstTotal, 24));
 r.wave = 99;
+r.balance.population = 4; // Even the most expensive possible composition exceeds 180 enemies.
 game.startWave(r); // Build the room-local plan through the same transition as a real wave.
 snapshot = game.snapshot(r);
 assert.ok(snapshot.total > 180);
 const high = snapshot.total - 1;
-game.command(r.code, a.id, 'hit', { wave: 100, enemy: high, amount: 800, shot: 'high-id' });
+for (let hit = 0; hit < Math.ceil(r.plan.roster[high].hp / 800); hit++)
+  game.command(r.code, a.id, 'hit', { wave: 100, enemy: high, amount: 800, shot: 'high-id' + hit });
 assert.ok(r.kills.has(high));
 const chunks = encodeReply(game.snapshot(r), 1),
   assembler = new ReplyAssembler();

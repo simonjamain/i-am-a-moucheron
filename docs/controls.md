@@ -158,6 +158,21 @@ Sources : `flight-tuning.js` (plages et stockage), `flight-tuning-ui.js`
 `test-flight-tuning.mjs` (régression). La sensation du pilotage reste à
 valider dans une vraie partie WebGL/UDP.
 
+## Conseil de vague
+
+Ouvrez le bandeau **Vague** en haut de l’écran, ou appuyez sur **V**. La frise
+regroupe les arrivées simultanées dans une même colonne. Les repères **S** (sol)
+et **A** (air) et les silhouettes reprennent ceux des entrées dans le bureau.
+Le trajet terrestre confirmé apparaît en ocre. Pendant la pose d’une barricade,
+le tracé clair montre le détour proposé avant le clic de validation.
+
+Choisissez une des trois cartes. Vous pouvez changer de voix tant que le vote
+est ouvert. Une fois le plan débloqué, sélectionnez l’objet à améliorer dans
+**Équiper un objet** et dépensez le prix affiché depuis la caisse commune.
+**Replier** ou **Échap** permet de repartir construire. Les plans restent
+accessibles pendant le combat. **Lancer la vague maintenant** est une action
+séparée, disponible après le vote.
+
 ## Défenses terrestres
 
 Bouton « Défense » à pied, puis choix d’un outil : aperçu devant le personnage

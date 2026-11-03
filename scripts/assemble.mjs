@@ -30,12 +30,17 @@ const files = {
   '/three.js': 'vendor/three.module.min.js',
   ...Object.fromEntries(
     [
+      'wave-blueprints',
       'balance',
       'balance-ui',
       'ground-defense-ui',
       'ground-placement',
       'air-current',
       'air-trails',
+      'wave-council-ui',
+      'wave-forecast-scene',
+      'wave-ground-paths',
+      'wave-ground-worker',
       'ground-defense-state',
       'ground-defense',
       'route-obstacles',

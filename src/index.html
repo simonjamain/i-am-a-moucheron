@@ -2469,6 +2469,86 @@
           left: 8px;
         }
       }
+      #waveCouncilOpen {
+        align-self: flex-start;
+        border-color: #c8df81;
+        padding: 5px 10px;
+      }
+      #waveCouncil {
+        width: min(42rem, 92vw);
+        max-height: 80dvh;
+        color: #e7f1df;
+        background: #102822;
+        border: 1px solid #789980;
+        border-radius: 10px;
+        padding: 16px;
+        overflow: auto;
+      }
+      #waveCouncil::backdrop {
+        background: #071410aa;
+      }
+      #waveCouncil h2 {
+        margin: 0;
+        font-size: 1.35rem;
+      }
+      #waveCouncil h3 {
+        margin: 12px 0 4px;
+      }
+      #waveCouncilClose {
+        float: right;
+      }
+      #waveTimeline {
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+        overflow-x: auto;
+      }
+      #waveTimeline div,
+      #waveCards button {
+        display: grid;
+        gap: 4px;
+        padding: 8px;
+        border: 1px solid #54776a;
+      }
+      #waveTimeline span {
+        white-space: nowrap;
+        font-size: 12px;
+      }
+      #waveCards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(135px, 1fr));
+        gap: 8px;
+        margin: 12px 0;
+      }
+      #waveCards button {
+        text-align: left;
+        color: #edf4e8;
+        background: #25493e;
+      }
+      #waveCards button[aria-pressed='true'] {
+        border-color: #d7ef91;
+      }
+      #waveCards button:disabled {
+        opacity: 0.85;
+        cursor: default;
+      }
+      #waveCards small {
+        color: #d7ef91;
+      }
+      #waveWorkshop > div {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-wrap: wrap;
+        margin: 6px 0;
+      }
+      #waveWorkshop select {
+        max-width: 100%;
+      }
+      #waveCouncil [hidden],
+      #waveCouncilOpen[hidden] {
+        display: none;
+      }
     </style>
   </head>
   <body>
@@ -2535,6 +2615,15 @@
     </main>
     <footer id="foot">PROTOTYPE EXPÉRIMENTAL · LE BUREAU / CARTE 01</footer>
     <div id="sceneLabel"><span>Zone de départ</span><strong>Base Alpha / Bureau 01</strong></div>
+    <dialog id="waveCouncil" aria-labelledby="waveCouncilTitle">
+      <button id="waveCouncilClose">Replier</button>
+      <h2 id="waveCouncilTitle">Conseil de vague</h2>
+      <p id="waveCouncilClock"></p>
+      <div id="waveTimeline" aria-label="Frise des entrées prévues"></div>
+      <div id="waveCards" aria-label="Plans proposés au vote"></div>
+      <button id="waveCouncilLaunch" hidden>Lancer la vague maintenant</button>
+      <section id="waveWorkshop" aria-label="Plans débloqués"></section>
+    </dialog>
     <div id="hud" class="hidden">
       <span id="net">CONNEXION…</span>
       <div id="sessionSummary">
@@ -2547,6 +2636,9 @@
           </div>
           <div class="stat"><label>Infestation</label><b class="lime" id="infest">0 / 20</b></div>
         </div>
+        <button id="waveCouncilOpen" hidden aria-haspopup="dialog" title="Conseil de vague (V)">
+          Préparer la vague
+        </button>
         <div id="economyControls">
           <span id="wallet">0 $</span><button id="shopOpen">Équipement · P</button
           ><button id="bankOpen">Banquier · N</button>

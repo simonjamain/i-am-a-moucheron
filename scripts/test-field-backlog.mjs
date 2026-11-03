@@ -349,12 +349,11 @@ const waveGame = new Game({ now: () => waveNow }),
   waveRoom = waveGame.rooms.get('MINUTE'),
   wavePlayer = waveRoom.pilots.get(waveJoin.id);
 waveGame.command('MINUTE', wavePlayer.id, 'start');
-waveNow += 10000;
+waveNow += 60000;
 wavePlayer.seen = waveNow;
 waveGame.advance(waveRoom);
 assert.equal(waveRoom.wave, 1);
-const { wavePlan } = await import('../src/waves.js');
-const roster = wavePlan(waveRoom.code, waveRoom.wave, waveRoom.started).roster;
+const roster = waveRoom.plan.roster;
 roster.forEach((_, i) => waveRoom.kills.add(i));
 waveGame.advance(waveRoom);
 assert.equal(waveRoom.phase, 'prep');
@@ -367,9 +366,15 @@ waveNow++;
 wavePlayer.seen = waveNow;
 waveGame.advance(waveRoom);
 assert.equal(waveRoom.wave, 2);
-waveRoom.phase = 'prep';
-waveGame.command('MINUTE', wavePlayer.id, 'start');
-waveGame.command('MINUTE', wavePlayer.id, 'start');
+waveRoom.plan.roster.forEach((e) => waveRoom.kills.add(e.id));
+waveGame.advance(waveRoom);
+const prep = waveRoom.preparation;
+waveGame.command('MINUTE', wavePlayer.id, 'wave-vote', {
+  preparation: prep.id,
+  card: prep.cards[0],
+});
+waveGame.command('MINUTE', wavePlayer.id, 'start', { preparation: prep.id });
+waveGame.command('MINUTE', wavePlayer.id, 'start', { preparation: prep.id });
 assert.equal(waveRoom.wave, 3);
 console.log(
   'Authority: deduplicated fall damage, purgatory death, 60-second pause, automatic/manual wave start without duplication.',

@@ -1,12 +1,13 @@
 import { airField } from '../src/air-current.js';
-import { feedingPoint } from '../src/ground-defense-state.js';
 import {
-  DEFAULT_BALANCE,
-  validateBalance,
-  money,
-  scaleRoster,
-  retimeRoster,
-} from '../src/balance.js';
+  prepareRoster,
+  forecast,
+  drawCards,
+  resolveVote,
+  equipBlueprint,
+} from './wave-preparation.js';
+import { feedingPoint } from '../src/ground-defense-state.js';
+import { DEFAULT_BALANCE, validateBalance, money, retimeRoster } from '../src/balance.js';
 import { deliveryStart, deliveryLanding, deliveryHeightAt } from '../src/delivery.js';
 import {
   newGroundDefense,
@@ -120,6 +121,9 @@ function roomState(code, now) {
     rosterRevision: 0,
     balanceOwnerToken: null,
     plan: null,
+    upcomingPlan: null,
+    preparation: null,
+    blueprintLevels: {},
     created: now,
     touched: now,
     wave: 0,
@@ -515,6 +519,7 @@ export class Game {
         )
           q.status = 'cancelled';
       }
+    if (r.preparation) resolveVote(r);
     if (r.phase === 'prep' && r.mission_started && r.next_wave_at && now >= r.next_wave_at)
       this.startWave(r);
     const plan = this.plan(r);
@@ -529,7 +534,10 @@ export class Game {
       r.infestation += escaped.reduce((n, e) => n + e.leak, 0);
       r.phase = r.infestation >= 20 ? 'lost' : 'prep';
       r.next_wave_at = now + r.balance.pause * 1000;
-      if (r.phase === 'prep') this.reward(r, waveStipend(r.wave));
+      if (r.phase === 'prep') {
+        this.reward(r, waveStipend(r.wave));
+        this.prepareWave(r);
+      }
       r.dollars = Math.round(r.dollars * 100 - settleLoans(r.bank, r.wave)) / 100;
     }
     this.advanceDeliveries(r, now);
@@ -601,6 +609,14 @@ export class Game {
     const old = r.balance,
       next = { ...old, ...patch };
     const time = (this.now() - r.started) / 1000;
+    if (r.upcomingPlan) {
+      for (const e of r.upcomingPlan.roster) {
+        e.hp *= next.enemyHP / old.enemyHP;
+        e.duration *= old.enemySpeed / next.enemySpeed;
+        e.entryHold *= old.enemySpeed / next.enemySpeed;
+        e.travelSpeed *= next.enemySpeed / old.enemySpeed;
+      }
+    }
     if (r.plan) {
       retimeRoster(r.plan.roster, time, next.enemySpeed / old.enemySpeed);
       for (const enemy of r.plan.roster) {
@@ -648,6 +664,7 @@ export class Game {
       r.wave++;
       r.started = this.now();
       r.plan = { budget: 0, roster: [] };
+      r.upcomingPlan = r.preparation = null;
       r.next_wave_at = 0;
       r.mission_started = 1;
       r.kills.clear();
@@ -669,14 +686,25 @@ export class Game {
     );
     r.rosterRevision++;
   }
+  prepareWave(r) {
+    r.upcomingPlan = prepareRoster(r.wave + 1, r.balance);
+    r.preparation = {
+      id: uid(),
+      wave: r.wave + 1,
+      groups: forecast(r.upcomingPlan.roster),
+      cards: drawCards(r.blueprintLevels),
+      votes: {},
+      winner: null,
+    };
+  }
   startWave(r) {
+    if (r.preparation?.wave !== r.wave + 1) this.prepareWave(r);
+    resolveVote(r, true);
     r.phase = 'combat';
     r.wave++;
     r.started = this.now();
-    r.plan = scaleRoster(
-      wavePlan(r.code, 1 + Math.round((r.wave - 1) * r.balance.progression), r.started),
-      r.balance,
-    );
+    r.plan = r.upcomingPlan;
+    r.upcomingPlan = r.preparation = null;
     r.rosterRevision = 0;
     r.next_wave_at = 0;
     r.kills.clear();
@@ -739,6 +767,11 @@ export class Game {
       infestation: r.infestation,
       mission_started: r.mission_started,
       next_wave_at: r.next_wave_at,
+      preparation: r.preparation,
+      blueprints: Object.keys(r.blueprintLevels),
+      blueprintLevels: r.blueprintLevels,
+      groundNavigationActive:
+        r.groundEnabled || r.groundDefense.structures.some((s) => s.kind !== 'fan'),
       dollars: r.dollars,
       bank: r.bank,
       upgrades: r.upgrades,
@@ -968,7 +1001,16 @@ export class Game {
     r.touched = this.now();
     requireGame(
       !p.state.awaitingPurgatory ||
-        ['sync', 'enter-purgatory', 'reset', 'balance', 'debug-spawn'].includes(path),
+        [
+          'sync',
+          'enter-purgatory',
+          'reset',
+          'balance',
+          'debug-spawn',
+          'wave-vote',
+          'wave-equip',
+          'start',
+        ].includes(path),
       'Accédez au purgatoire avant d’agir.',
     );
     if (path === 'enter-purgatory') {
@@ -985,11 +1027,26 @@ export class Game {
     else if (path === 'place-purchase') this.placePurchase(r, p, b);
     else if (path === 'wash') this.wash(r, p, b);
     else if (path === 'pistol-trace') this.pistolTrace(r, p, b);
-    else if (path === 'start') {
-      if (!r.mission_started) {
+    else if (path === 'wave-vote') {
+      const prep = r.preparation;
+      requireGame(prep && b.preparation === prep.id && !prep.winner, 'Ce vote est clos.');
+      requireGame(prep.cards.includes(b.card), 'Carte inconnue.');
+      prep.votes[p.id] = b.card;
+      resolveVote(r);
+    } else if (path === 'wave-equip') {
+      requireGame(b.epoch === r.base.epoch, 'Partie périmée.');
+      try {
+        equipBlueprint(r, b);
+      } catch (error) {
+        requireGame(false, error.message);
+      }
+    } else if (path === 'start') {
+      if (!r.mission_started && !b.preparation) {
         r.mission_started = 1;
         r.next_wave_at = this.now() + r.balance.initialDelay * 1000;
-      } else if (r.phase === 'prep' && r.wave > 0) this.startWave(r);
+        this.prepareWave(r);
+      } else if (r.phase === 'prep' && r.preparation?.winner && b.preparation === r.preparation.id)
+        this.startWave(r);
     } else if (path === 'reset') {
       if (b.epoch !== undefined && b.epoch !== r.base.epoch) return this.snapshot(r, options);
       const pilots = r.pilots,

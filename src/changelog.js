@@ -1,6 +1,12 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 157,
+    changes: [
+      'Repérez les prochaines entrées et votez pour un plan commun. Équipez vos défenses avant de lancer une vague plus coriace.',
+    ],
+  },
+  {
     version: 156,
     changes: [
       'Repérez les couloirs de vol grâce aux phéromones. Posez et orientez des ventilateurs pour dévier les insectes vers vos défenses.',

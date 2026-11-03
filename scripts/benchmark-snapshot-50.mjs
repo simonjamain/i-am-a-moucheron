@@ -37,7 +37,20 @@ before.advance = () => {};
 after.advance = () => {};
 const original = before.snapshot(room);
 const optimized = after.snapshot(room);
-const { rosterRevision, groundDefense, groundAgents, ...comparable } = optimized;
+const {
+  rosterRevision,
+  groundDefense,
+  groundAgents,
+  preparation,
+  blueprints,
+  blueprintLevels,
+  groundNavigationActive,
+  ...comparable
+} = optimized;
+assert.equal(preparation, null, 'before mission launch there is no forecast or vote');
+assert.deepEqual(blueprints, []);
+assert.deepEqual(blueprintLevels, {});
+assert.equal(groundNavigationActive, false);
 assert.deepEqual(groundAgents, {}, 'a room without constructions keeps legacy enemy routes');
 assert.equal(rosterRevision, 0, 'new roster revision defaults to zero');
 assert.deepEqual(
