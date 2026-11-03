@@ -1,6 +1,8 @@
 ## Changement
 
-Tâche liée, problème et comportement obtenu. Critères d'acceptation couverts.
+<!-- Issue terminée par cette PR : Closes #123. Travail partiel : Refs #123.
+     Remplacer le numéro et placer la référence hors de ce commentaire. -->
+Problème, comportement obtenu et critères d'acceptation couverts.
 
 ## Vérifications
 

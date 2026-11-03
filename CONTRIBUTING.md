@@ -37,6 +37,18 @@ La personne ayant les droits de fusion décide de l'intégration avec les résul
 des contrôles et les retours des joueurs. Il n'y a pas de circuit de validation
 supplémentaire extérieur à GitHub.
 
+## Clôturer une issue à la fusion
+
+Quand une PR vers `main` termine une issue, écrire `Closes #123` dans la
+description de la PR, en remplaçant 123 par son numéro. Pour plusieurs issues,
+répéter le mot-clé pour chacune. Pour une contribution partielle, écrire
+`Refs #123` et indiquer dans l’issue les critères qui restent à couvrir.
+
+Après la fusion, vérifier sur GitHub que chaque issue livrée est fermée. Si elle
+est encore ouverte, la fermer comme terminée après avoir vérifié le contenu de
+`main`. Mentionner la PR fusionnée et conserver les limites des essais dans la PR.
+Voir la [documentation GitHub sur les liens entre PR et issues](https://docs.github.com/fr/issues/tracking-your-work-with-issues/using-issues/linking-a-pull-request-to-an-issue).
+
 ## Environnements temporaires : cible à configurer
 
 Le dépôt ne fournit pas encore de workflow de déploiement temporaire. Jusqu'à
