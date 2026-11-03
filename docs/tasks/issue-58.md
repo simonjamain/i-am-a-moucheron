@@ -61,3 +61,9 @@
 ### Vérification du chemin près de la poubelle (v142)
 
 - Le premier scénario de déplacement partait d'une cellule occupée par un obstacle fixe (`[2.5, -2.7]`) et s'arrêtait correctement. Il utilise désormais une cellule libre et atteignable (`[3, -3]`) pour vérifier l'avancée vers la poubelle. La cellule barrée reste un cas de validation séparé à couvrir.
+
+### Moteur raccordé à la room (v143)
+
+- `Game.advanceGround` active les déplacements autoritaires lorsqu'une construction terrestre est présente ; chaque insecte terrestre reçoit un état persistant individuel et suit le champ partagé. Les champs sont recalculés à une modification de topologie. Les champs secondaires d'appât sont mémorisés par sachet. Le mouvement sans constructions reste inchangé.
+- La fin de parcours, le snapshot et les calculs de contact serveur tiennent compte des positions terrestres après activation. `swarmFrame` accepte un état autoritaire facultatif, transmis à l'unique appel du rendu client ; les volants conservent leur traitement précédent.
+- Limites importantes : envoi d'un état par terrestre à chaque snapshot (non optimisé), pas encore d'interface de pose, ni benchmark 5 000 terrestres en vraie room. Les trajectoires sans constructions continuent le comportement historique. Vérification WebGL/UDP indispensable.

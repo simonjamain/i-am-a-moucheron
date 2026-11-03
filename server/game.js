@@ -6,7 +6,14 @@ import {
   retimeRoster,
 } from '../src/balance.js';
 import { deliveryStart, deliveryLanding, deliveryHeightAt } from '../src/delivery.js';
-import { newGroundDefense, groundCommand, groundSnapshot } from '../src/ground-defense-state.js';
+import {
+  newGroundDefense,
+  groundCommand,
+  groundSnapshot,
+  groundFlow,
+  damageBarricade,
+} from '../src/ground-defense-state.js';
+import { groundUnit, advanceGroundUnit } from '../src/ground-creatures.js';
 import { HELI, rotateLocal, steerMissile } from '../src/helicopter.js';
 import {
   sweptVehicle,
@@ -140,6 +147,13 @@ function roomState(code, now) {
     enemyDamage: {},
     equipment: [],
     groundDefense: newGroundDefense(),
+    groundEnabled: false,
+    groundAgents: {},
+    groundWave: -1,
+    groundAt: 0,
+    groundNavigation: null,
+    groundNavRevision: -1,
+    groundBaitFlows: new Map(),
     effects: [],
     ordnance: [],
     ordnanceShots: new Set(),
@@ -401,8 +415,59 @@ export class Game {
     a.revision = (a.revision || 0) + 1;
     return body;
   }
+  advanceGround(r, now) {
+    if (!r.groundEnabled && !r.groundDefense.structures.length) return;
+    if (r.phase !== 'combat') return;
+    const elapsed = (now - r.started) / 1000;
+    if (r.groundWave !== r.wave) {
+      r.groundAgents = {};
+      r.groundWave = r.wave;
+      r.groundAt = r.groundEnabled ? 0 : elapsed;
+      r.groundNavigation = null;
+      r.groundNavRevision = -1;
+    }
+    r.groundEnabled = true;
+    if (r.groundNavRevision !== r.groundDefense.navigationRevision) {
+      r.groundNavigation = groundFlow(r.groundDefense);
+      r.groundBaitFlows = new Map();
+      r.groundNavRevision = r.groundDefense.navigationRevision;
+    }
+    const previous = Math.min(elapsed, r.groundAt);
+    r.groundAt = elapsed;
+    const baitFlow = (bait) => {
+      if (!r.groundBaitFlows.has(bait.id)) {
+        let path = null;
+        try {
+          path = groundFlow(r.groundDefense, bait.position);
+        } catch {
+          // An obstructed sachet cannot be reached: creatures resume their bin goal.
+        }
+        r.groundBaitFlows.set(bait.id, path);
+      }
+      return r.groundBaitFlows.get(bait.id);
+    };
+    const world = {
+      structures: r.groundDefense.structures,
+      goalFlow: r.groundNavigation,
+      baitFlow,
+      damageWall: (id, amount) => damageBarricade(r.groundDefense, id, amount),
+    };
+    const roster = this.plan(r).roster;
+    for (let i = 0; i < roster.length; i++) {
+      const enemy = roster[i];
+      if (!enemy.ground || r.kills.has(i)) continue;
+      const availableAt = enemy.spawn + (enemy.entryHold || 0);
+      if (elapsed < availableAt) continue;
+      const unit =
+        r.groundAgents[enemy.id] ||
+        (r.groundAgents[enemy.id] = groundUnit(enemy, Math.max(previous, availableAt)));
+      if (unit.arrived) continue;
+      advanceGroundUnit(unit, enemy, elapsed, Math.max(0, elapsed - Math.max(previous, availableAt)), world);
+    }
+  }
   advance(r) {
     const now = this.now();
+    this.advanceGround(r, now);
     this.advanceOrdnance(r, now);
     this.vehicleContacts(r, now);
     // A destroyed hull can arrive through motion before the client's death
@@ -446,7 +511,11 @@ export class Game {
       this.startWave(r);
     const plan = this.plan(r);
     const escaped = plan.roster.filter(
-      (e, i) => !r.kills.has(i) && (now - r.started) / 1000 >= e.spawn + e.duration,
+      (e, i) =>
+        !r.kills.has(i) &&
+        (e.ground && r.groundEnabled
+          ? r.groundAgents[e.id]?.arrived === true
+          : (now - r.started) / 1000 >= e.spawn + e.duration),
     );
     if (r.phase === 'combat' && r.kills.size + escaped.length >= plan.roster.length) {
       r.infestation += escaped.reduce((n, e) => n + e.leak, 0);
@@ -641,7 +710,13 @@ export class Game {
     }
     const elapsed = (now - r.started) / 1000;
     for (const [index, enemy] of plan.roster.entries())
-      if (!r.kills.has(index) && elapsed >= enemy.spawn + enemy.duration) arrived.push(enemy.id);
+      if (
+        !r.kills.has(index) &&
+        (enemy.ground && r.groundEnabled
+          ? r.groundAgents[enemy.id]?.arrived === true
+          : elapsed >= enemy.spawn + enemy.duration)
+      )
+        arrived.push(enemy.id);
     return clone({
       code: r.code,
       balance: r.balance,
@@ -662,6 +737,7 @@ export class Game {
       rewardCount: r.rewardCount,
       equipment: r.equipment,
       groundDefense: groundSnapshot(r.groundDefense),
+      groundAgents: r.groundEnabled ? r.groundAgents : {},
       deliveries: r.deliveries,
       pendingInstallations,
       purchases,
@@ -1254,7 +1330,7 @@ export class Game {
       return;
     }
     const plan = this.plan(r),
-      frames = swarmFrame(plan.roster, (now - r.started) / 1000);
+      frames = swarmFrame(plan.roster, (now - r.started) / 1000, r.groundAgents);
     for (const v of r.vehicles.values()) {
       if (v.state.hp <= 0) continue;
       const previous = v.contactWave === r.wave ? v.contactPosition || v.state.p : v.state.p;
@@ -1700,7 +1776,7 @@ export class Game {
     const frameCache = new Map();
     const framesAt = (time) => {
       const at = Math.round(time / 50) * 50;
-      if (!frameCache.has(at)) frameCache.set(at, swarmFrame(plan.roster, (at - r.started) / 1000));
+      if (!frameCache.has(at)) frameCache.set(at, swarmFrame(plan.roster, (at - r.started) / 1000, r.groundAgents));
       return frameCache.get(at);
     };
     for (const projectile of r.ordnance) {
@@ -1826,7 +1902,7 @@ export class Game {
     const plan = this.plan(r);
     const frames =
       r.phase === 'combat' && shot.wave === r.wave
-        ? swarmFrame(plan.roster, (this.now() - r.started) / 1000)
+        ? swarmFrame(plan.roster, (this.now() - r.started) / 1000, r.groundAgents)
         : [];
     this.ordnanceImpact(r, shot, {}, frames, shot.p);
     r.ordnance = r.ordnance.filter((s) => s !== shot);
@@ -2090,7 +2166,7 @@ export class Game {
     if (!e.offspringOnly) this.soul(r, 'enemy', r.wave + ':' + index, e.name, 'purgatory', e.type);
     if (e.onDeath?.spawn) {
       const at = (this.now() - r.started) / 1000;
-      const location = position || swarmFrame(plan.roster, at)[index]?.p;
+      const location = position || swarmFrame(plan.roster, at, r.groundAgents)[index]?.p;
       if (location) {
         const children = spawnOffspring(
           e,

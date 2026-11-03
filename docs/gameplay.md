@@ -264,3 +264,10 @@ Les [vitesses physiques des espèces](enemy-bestiary.md#vitesse-physique-dans-la
 ## Tower defense terrestre — chantier de l'issue #58, non livré
 
 Sur la branche de développement, un registre côté serveur prépare les barricades segmentées, sachets de sucre et bandes collantes. Les placements, prix, PV et réparations sont vérifiés côté serveur et inclus dans les snapshots. **Il n'existe pas encore d'interface de pose et les insectes empruntent toujours leurs parcours précédents.** Aucune fonctionnalité joueur n'est annoncée comme livrée dans `main`.
+
+
+Le moteur de défense en cours d'intégration ne prend le contrôle des insectes terrestres
+qu'après la création d'une construction dans une room. Les positions, la satiété et
+les arrivées deviennent alors des états serveur transmis aux clients ; les volants
+restent inchangés. Cette fonction est encore **expérimentale sur la branche de PR**,
+sans commande joueur accessible dans l'interface ; elle ne décrit pas `main`.

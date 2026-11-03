@@ -2939,7 +2939,7 @@ function enemies(now) {
         snap.started) /
       1000,
     roster = currentRoster(),
-    frame = snap.phase === 'combat' ? swarmFrame(roster, t) : [];
+    frame = snap.phase === 'combat' ? swarmFrame(roster, t, snap.groundAgents) : [];
   for (let i = 0; i < frame.length; i++) {
     const state = frame[i];
     if (!state || localKills.has(i)) continue;

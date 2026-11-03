@@ -378,8 +378,19 @@ export function midgeDisplacement(enemy, time, envelope = 1) {
 // Bounded, deterministic flock flow inspired by Reynolds' separation/cohesion/
 // alignment rules. No frame-history dependency: late joiners see the same flock.
 // The route guides each cluster; local steering offsets cannot skip the bin.
-export function swarmFrame(roster, time) {
+export function swarmFrame(roster, time, groundAgents = null) {
   const samples = roster.map((e) => {
+    const ground = e.ground && groundAgents?.[e.id];
+    if (ground) {
+      if (ground.arrived) return null;
+      const lift = INSECT_SCALE * e.size * enemySizeFactor(e.type) * GROUND_FOOT_DEPTH;
+      return {
+        p: [ground.p[0], 0.0007 + lift, ground.p[1]],
+        dir: [ground.dir[0], 0, ground.dir[1]],
+        envelope: 1,
+        authoritative: true,
+      };
+    }
     const age = time - e.spawn;
     if (age < 0 || age >= e.duration) return null;
     const hold = e.entryHold || 0;
@@ -441,7 +452,8 @@ export function swarmFrame(roster, time) {
   }
   return samples.map((s, i) => {
     if (!s) return null;
-    if (roster[i].type === 'midge' || roster[i].debugFlock) return { p: s.p, dir: s.dir };
+    if (s.authoritative || roster[i].type === 'midge' || roster[i].debugFlock)
+      return { p: s.p, dir: s.dir };
     const correction = [0, 0, 0];
     let neighbours = 0;
     const [cx, cy, cz] = cell(s.p),

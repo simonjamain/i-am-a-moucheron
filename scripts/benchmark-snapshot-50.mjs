@@ -37,7 +37,8 @@ before.advance = () => {};
 after.advance = () => {};
 const original = before.snapshot(room);
 const optimized = after.snapshot(room);
-const { rosterRevision, groundDefense, ...comparable } = optimized;
+const { rosterRevision, groundDefense, groundAgents, ...comparable } = optimized;
+assert.deepEqual(groundAgents, {}, 'a room without constructions keeps legacy enemy routes');
 assert.equal(rosterRevision, 0, 'new roster revision defaults to zero');
 assert.deepEqual(groundDefense, { revision: 0, navigationRevision: 0, structures: [] },
   'new ground state is isolated and initially empty');
