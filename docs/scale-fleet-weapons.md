@@ -32,6 +32,11 @@ occlusion, and can damage teammates and shared hulls. Two separate yaw/pitch
 joints keep the DCA trunnion anchored; alternating muzzle objects determine the
 actual projectile origin. Fighter rounds use a small uniform angular cone;
 flashes are short-lived, bounded geometry at the firing muzzle.
+For the fighter, Stuka, Spitfire and tank pilot guns, the visible barrel itself
+carries the muzzle node at its front face. Local and remote bullet presentation
+uses that transformed node rather than hard-coded hull offsets. The Spitfire
+retains its six individual salvo origins; bomber, tank and helicopter turret
+muzzles and both stationary DCA barrels keep their existing articulated origins.
 
 The Node runtime owns shared hulls and exclusive seat leases in RAM. Only the
 pilot's lease can update a hull transform; gunners publish aim and fire independently.
