@@ -38,3 +38,7 @@
 
 - Test Node `scripts/test-ground-room.mjs` : deux membres d'une même room observent le même état, une autre room reste isolée ; coût atomique, doublon refusé, commande de dégâts interdite aux joueurs, pose hors portée refusée, reset et ancienne époque invalidée.
 - Test de l'intégration serveur sans navigateur : les corps à pied du scénario sont placés artificiellement au sol. Il reste à vérifier les interactions réelles à plusieurs clients WebRTC et la navigation des insectes.
+
+### Correction du test réseau de domaine (v138)
+
+- `Game.command(..., 'sync')` exige le rapport de mouvement `state` et `mode` ; le test d'isolation inter-salles fournit désormais ce contrat au lieu d'appeler `sync` à vide. Les tests précédents de transactions ont réussi en CI ; le nouveau test multi-joueurs reste à revalider.

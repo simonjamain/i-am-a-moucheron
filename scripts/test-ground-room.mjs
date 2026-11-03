@@ -28,9 +28,19 @@ let reply = action(a.id, { action: 'build', kind: 'barricade', a: [0, 0], b: [0.
 assert.equal(reply.dollars, 18);
 assert.equal(reply.groundDefense.structures.length, 2);
 assert.equal(reply.groundDefense.navigationRevision, 1);
-const second = game.command('GROUND', b.id, 'sync');
+const second = game.command('GROUND', b.id, 'sync', {
+  state: r.pilots.get(b.id).state,
+  mode: r.pilots.get(b.id).mode,
+});
 assert.deepEqual(second.groundDefense, reply.groundDefense, 'another player observes same constructions');
-assert.equal(game.command('ANOTHER', other.id, 'sync').groundDefense.structures.length, 0);
+const anotherRoom = game.rooms.get('ANOTHER');
+assert.equal(
+  game.command('ANOTHER', other.id, 'sync', {
+    state: anotherRoom.pilots.get(other.id).state,
+    mode: anotherRoom.pilots.get(other.id).mode,
+  }).groundDefense.structures.length,
+  0,
+);
 assert.throws(
   () => action(b.id, { action: 'build', kind: 'barricade', a: [0, 0], b: [0.4, 0] }),
   /occupé/,
