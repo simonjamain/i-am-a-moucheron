@@ -72,6 +72,18 @@ dernières modifications ou une synchronisation, refaire ce build et consigner
 commande, résultat et commit testé dans la PR. Si Docker est indisponible, le
 signaler et vérifier le contrôle GitHub Actions `Docker build` avant la fusion.
 
+## Nouveautés visibles par les joueurs
+
+Tenir `src/changelog.js` à jour **dans la même PR** pour chaque fonctionnalité ou
+correction perceptible en jeu. Ajouter une entrée pour le nouveau numéro de
+`VERSION` (ou regrouper les nouveautés de ce numéro), dans l'ordre décroissant.
+Écrire une ou deux phrases très courtes en français courant, sans vocabulaire
+technique : expliquer **ce qui change pour le joueur**, pas les fichiers, tests,
+performances internes ou CI. Ne rien ajouter pour une contribution uniquement
+technique. Ne pas inventer de version historique ni annoncer une fonctionnalité
+non livrée. Le bouton « Nouveautés » est accessible dans l'accueil et en partie ;
+`npm test` vérifie le format et le rendu de l'historique.
+
 ## Version
 
 `VERSION` reste la référence entière du jeu. Avant chaque commit, y compris

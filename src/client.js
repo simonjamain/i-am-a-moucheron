@@ -1,4 +1,5 @@
 import { BalanceUI } from '/balance-ui.js';
+import { mountChangelog } from '/changelog.js';
 import { deliveryHeightAt } from '/delivery.js';
 import { reserveAlerts, missileStatus, ArrivalSignals } from '/reserve-feedback.js';
 import { controlHints, cursorStats, cursorAmmoText } from '/live-hud.js';
@@ -385,6 +386,7 @@ function groundActive() {
     ((onFoot && !myVehicle) || !!respawnAt) &&
     $('papers').classList.contains('hidden') &&
     $('help').classList.contains('hidden') &&
+    !$('changelogDialog').open &&
     $('bedPanel').classList.contains('hidden') &&
     $('purchasePanel').classList.contains('hidden') &&
     $('balancePanel').classList.contains('hidden') &&
@@ -697,6 +699,7 @@ function canCapture() {
     !spectating &&
     $('papers').classList.contains('hidden') &&
     $('help').classList.contains('hidden') &&
+    !$('changelogDialog').open &&
     $('shop').classList.contains('hidden') &&
     $('balancePanel').classList.contains('hidden') &&
     $('flightSettingsPanel').classList.contains('hidden') &&
@@ -1313,6 +1316,17 @@ async function action(path, extra = {}) {
     notify(e.message, 3);
   }
 }
+mountChangelog({
+  dialog: $('changelogDialog'),
+  trigger: $('changelogOpen'),
+  close: $('changelogClose'),
+  list: $('changelogEntries'),
+  document,
+  onOpen: () => {
+    releaseMouse();
+    clearControls();
+  },
+});
 $('restartGame').onclick = async () => {
   if (!joined) return;
   releaseMouse();
@@ -1350,6 +1364,7 @@ $('closeHelp').onclick = () => {
   captureMouse();
 };
 addEventListener('keydown', (event) => {
+  if ($('changelogDialog').open) return; // Escape closes the native dialog.
   if (event.code === 'Escape' && flightTuningUI.opened) {
     flightTuningUI.close(false);
     return;
