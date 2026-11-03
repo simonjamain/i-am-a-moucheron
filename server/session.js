@@ -1,5 +1,10 @@
 import { PROTOCOL, MAX_COMMAND_BYTES, encodeReply, encodeReplyText } from '../src/udp-protocol.js';
 import { validMotion } from '../src/network.js';
+import {
+  encodeSnapshotForWire,
+  snapshotRosterCore,
+  snapshotRosterKey,
+} from '../src/snapshot-wire.js';
 
 // Session identity comes from its DTLS connection, never from a player ID supplied
 // in a command. Old command IDs can never execute again after cache eviction.
@@ -21,6 +26,8 @@ export class GameSession {
     this.motionCount = 0;
     this.lastAt = now();
     this.lastRosterKey = null;
+    this.lastRosterMeta = null;
+    this.lastWireSnapshot = null;
   }
   rate(motion = false) {
     const now = this.now();
@@ -78,19 +85,29 @@ export class GameSession {
         this.player = { code: body.snapshot.code, id: body.id };
       } else {
         if (!this.player) throw Object.assign(Error('Rejoignez une salle.'), { status: 401 });
-        body = this.game.command(this.player.code, this.player.id, m.path, m.body);
+        body = this.game.command(this.player.code, this.player.id, m.path, m.body, {
+          rosterKey: this.lastRosterKey,
+          rosterMeta: this.lastRosterMeta,
+        });
       }
-      // Positions are reconstructed locally; do not resend the full (possibly
-      // 10k-element) immutable wave roster on every reliable sync request.
-      // A wave or balance revision always sends an authoritative new roster.
-      if (m.path === 'sync' && body?.roster) {
-        const key = [body.wave, body.started, body.balanceRevision, body.rosterRevision].join(':');
-        if (key === this.lastRosterKey) {
-          body = { ...body };
-          delete body.roster;
-        } else this.lastRosterKey = key;
+      // All commands (not only sync) share one roster baseline. Omit it
+      // BEFORE snapshot cloning, then compact initial rosters and event deltas.
+      const snapshot = { ...(m.path === 'join' ? body.snapshot : body) };
+      const key = snapshotRosterKey(snapshot);
+      this.lastWireSnapshot = encodeSnapshotForWire(snapshot, this.lastWireSnapshot);
+      if (snapshot.rosterGroups || snapshot.rosterAddGroups) {
+        this.lastRosterKey = key;
+        this.lastRosterMeta = {
+          core: snapshotRosterCore(snapshot),
+          revision: snapshot.rosterRevision,
+          total: snapshot.total,
+        };
       }
-      reply = { status: 200, body };
+      // Do not mutate the domain object or the response retained by a caller.
+      reply = {
+        status: 200,
+        body: m.path === 'join' ? { ...body, snapshot } : snapshot,
+      };
     } catch (e) {
       reply = {
         status: e.status || 500,
@@ -172,6 +189,8 @@ export class GameSession {
     this.closed = true;
     if (this.player) this.game.disconnect(this.player.code, this.player.id);
     this.replies.clear();
+    this.lastWireSnapshot = null;
+    this.lastRosterMeta = null;
     this.close?.();
   }
 }

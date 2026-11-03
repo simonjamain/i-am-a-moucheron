@@ -58,6 +58,7 @@ import {
 import { drawClause, clauseFactors } from '../src/malice.js';
 import { stationAccess } from '../src/sortie.js';
 import { validMotion } from '../src/network.js';
+import { snapshotRosterCore, snapshotRosterKey } from '../src/snapshot-wire.js';
 import { newBank, signLoan, settleLoans, repayLoan } from '../src/bank.js';
 import { canUseWeapon, HEAVY, TANK_MG, availableShell } from '../src/armament.js';
 import { sweptSphereMayTouch } from '../src/swept-broadphase.js';
@@ -602,7 +603,7 @@ export class Game {
     r.enemyDamage = {};
     r.enemyHits.clear();
   }
-  snapshot(r) {
+  snapshot(r, { rosterKey = null, rosterMeta = null } = {}) {
     this.advance(r);
     const now = this.now(),
       plan = this.plan(r),
@@ -674,7 +675,13 @@ export class Game {
       effects: r.effects.slice(-64),
       ordnance: r.ordnance,
       waveReward: money(waveStipend(r.wave), r.balance.rewards),
-      roster: plan.roster,
+      ...(rosterKey === snapshotRosterKey(r)
+        ? {}
+        : rosterMeta?.core === snapshotRosterCore(r) &&
+            rosterMeta.revision < r.rosterRevision &&
+            rosterMeta.total < plan.roster.length
+          ? { rosterAdd: plan.roster.slice(rosterMeta.total) }
+          : { roster: plan.roster }),
       difficulty: r.wave ? plan.budget : 0,
       enemyDamage: r.enemyDamage,
       raidDuration: RAID_DURATION,
@@ -865,7 +872,7 @@ export class Game {
     if (p.life === 'alive' && p.mode === 'foot') this.base(r, p, b.ground);
     if (p.life === 'dead') this.arena(r, world(p), p, b.ground);
   }
-  command(code, id, path, b = {}) {
+  command(code, id, path, b = {}, options = {}) {
     const { r, p } = this.player(code, id);
     this.advance(r);
     requireGame(r.pilots.has(id), 'Connexion expirée. Rechargez la page.', 401);
@@ -895,7 +902,7 @@ export class Game {
         r.next_wave_at = this.now() + r.balance.initialDelay * 1000;
       } else if (r.phase === 'prep' && r.wave > 0) this.startWave(r);
     } else if (path === 'reset') {
-      if (b.epoch !== undefined && b.epoch !== r.base.epoch) return this.snapshot(r);
+      if (b.epoch !== undefined && b.epoch !== r.base.epoch) return this.snapshot(r, options);
       const pilots = r.pilots,
         identities = r.identityTokens,
         balance = r.balance,
@@ -1044,7 +1051,7 @@ export class Game {
       this.kill(r, p, b.incarnation);
     } else if (path === 'sign') this.sign(r, p, b);
     else requireGame(false, 'Action inconnue.', 404);
-    const result = this.snapshot(r);
+    const result = this.snapshot(r, options);
     result.damage = clone(
       r.damageEvents.filter(
         (e) =>

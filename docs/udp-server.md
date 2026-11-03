@@ -124,3 +124,22 @@ vérifie le refus, sans valider une partie navigateur sur Internet.
 Références : [WebRTC Data Channels, RFC 8831](https://www.rfc-editor.org/rfc/rfc8831),
 [API node-datachannel](https://github.com/murat-dogan/node-datachannel/blob/master/API.md),
 [configuration des canaux navigateur](https://www.w3.org/TR/webrtc/#dom-rtcdatachannelinit).
+
+## Snapshots et saturation du canal fiable
+
+Le protocole applicatif garde les deux canaux WebRTC ; le contenu du canal
+fiable utilise désormais des groupes de roster compacts et des mises à jour
+différentielles des morts/dégâts, par connexion. Le changement de vague,
+d'équilibrage ou de liste d'ennemis réinitialise la base de synchronisation.
+Toute nouvelle connexion reçoit l'état complet. Une apparition peut ajouter seulement la tranche d'insectes nouvellement créés,
+sans renvoyer les membres précédents si le roster est append-only. Une liste
+inchangée n'est pas copiée pour les commandes courantes.
+
+Cette optimisation réduit la charge attendue, mais les limites de file, de
+message, les délais de confirmation et l'obligation UDP restent inchangés.
+Pour diagnostiquer une coupure, distinguer erreur d'encodage/saturation,
+expiration de commande, perte de connexion ICE ou charge CPU du serveur.
+
+Une réponse ancienne rejouée par identifiant de commande n'abaisse jamais
+la base différentielle du réassembleur ; les réponses inédites gardent l'ordre
+du canal fiable. La confirmation rejouée n'applique pas de nouveau changement.

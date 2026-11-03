@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { Game } from '../server/game.js';
 import { GameSession } from '../server/session.js';
 import { PROTOCOL, ReplyAssembler } from '../src/udp-protocol.js';
+
 let now = 123000,
   id = 0,
   chunks = [];
@@ -12,45 +13,52 @@ const session = new GameSession(game, {
   relay() {},
   close() {},
 });
+const assembler = new ReplyAssembler();
 function command(path, body = {}) {
   chunks = [];
   session.command(JSON.stringify({ v: PROTOCOL, id: ++id, path, body }));
-  const assembler = new ReplyAssembler();
   let reply;
   for (const packet of chunks) reply = assembler.receive(JSON.parse(packet)) || reply;
   assert.equal(reply?.status, 200, 'command succeeds: ' + path);
   return reply.body;
 }
 const joined = command('join', { code: 'ROSTERBCH', name: 'Test' });
+assert.ok(joined.snapshot.roster?.length > 0, 'join sends canonical roster');
 const state = joined.snapshot.pilots.find((p) => p.id === joined.id).state;
 const sync = () => command('sync', { state, mode: 'foot' });
 const first = sync();
-assert.ok(first.roster?.length > 0, 'first sync sends canonical roster');
+assert.ok(!Object.hasOwn(first, 'roster'), 'join established roster baseline');
+assert.deepEqual(first.kills, joined.snapshot.kills);
 const second = sync();
-assert.ok(!Object.hasOwn(second, 'roster'), 'same roster omitted from subsequent sync');
+assert.ok(!Object.hasOwn(second, 'roster'), 'same roster omitted from all syncs');
 assert.equal(second.total, first.total);
 const room = game.rooms.get('ROSTERBCH');
-command('balance', {
+const modified = command('balance', {
   epoch: room.base.epoch,
   revision: room.balanceRevision,
   values: { damage: 2 },
 });
-const modified = sync();
-assert.ok(modified.roster?.length > 0, 'balance revision forces a fresh roster');
+assert.ok(modified.roster?.length > 0, 'balance command sends fresh roster');
 assert.ok(!Object.hasOwn(sync(), 'roster'));
 game.startWave(room);
 const newWave = sync();
 assert.ok(newWave.roster?.length > 0, 'a different wave forces a fresh roster');
 assert.notEqual(newWave.wave, first.wave);
 assert.ok(!Object.hasOwn(sync(), 'roster'));
-command('debug-spawn', {
+const added = command('debug-spawn', {
   epoch: room.base.epoch,
   counts: { midge: 12, ant: 1 },
 });
-const added = sync();
 assert.equal(added.rosterRevision, 1);
 assert.equal(added.roster.length, newWave.roster.length + 13);
-assert.ok(!Object.hasOwn(sync(), 'roster'), 'unchanged debug roster is omitted');
-console.log(
-  'PASS: first sync, omitted unchanged rosters, balance and debug revisions and wave transitions.',
+assert.ok(session.replies.get(id).includes('rosterAddGroups'), 'spawn sends only appended insects');
+assert.ok(!Object.hasOwn(sync(), 'roster'), 'unchanged debug roster omitted');
+const hit = command('hit', { wave: room.wave, enemy: 0, amount: 30, shot: 'roster-test' });
+assert.ok(!Object.hasOwn(hit, 'roster'), 'hit must not resend thousands of insects');
+assert.equal(hit.enemyDamage[0], 60, 'damage has the room multiplier applied');
+assert.equal(sync().enemyDamage[0], 60, 'unchanged damage reconstructed from prior response');
+assert.ok(
+  session.replies.get(id).includes('enemyDamageChanged'),
+  'wire transmits changes instead of full damage map',
 );
+console.log('PASS: join, shared roster, delta damage, balance, wave and debug revisions.');

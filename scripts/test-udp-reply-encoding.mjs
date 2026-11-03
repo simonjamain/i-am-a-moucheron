@@ -81,7 +81,7 @@ session.command(request);
 assert.equal(executions, 1);
 const initial = packets.splice(0);
 assert.ok(initial.length > 1);
-assert.deepEqual(initial, encodeReplyV1({ status: 200, body }, 1));
+assert.deepEqual(body.snapshot.roster, ['initial'], 'session does not mutate domain output');
 body.snapshot.roster.push('must never appear in replay');
 body.snapshot.note = 'mutated';
 session.command(request);

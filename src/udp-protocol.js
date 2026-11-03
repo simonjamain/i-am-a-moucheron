@@ -1,3 +1,5 @@
+import { decodeSnapshotFromWire } from './snapshot-wire.js';
+
 export const PROTOCOL = 1;
 export const COMMAND_CHANNEL = 'commands-v1';
 export const MOTION_CHANNEL = 'motion-v2';
@@ -29,6 +31,8 @@ export function encodeReplyText(text, id) {
 export class ReplyAssembler {
   constructor() {
     this.messages = new Map();
+    this.lastSnapshot = null;
+    this.lastAppliedId = 0;
   }
   receive(packet) {
     if (
@@ -58,10 +62,23 @@ export class ReplyAssembler {
     if (m.size > MAX_REPLY_BYTES) throw Error('Réponse réseau trop volumineuse.');
     if (m.parts.size !== m.count) return null;
     this.messages.delete(packet.id);
-    return JSON.parse(Array.from({ length: m.count }, (_, i) => m.parts.get(i)).join(''));
+    const reply = JSON.parse(Array.from({ length: m.count }, (_, i) => m.parts.get(i)).join(''));
+    // A replayed command can return an older snapshot. Never roll the
+    // differential baseline backwards; new replies remain ordered by ID.
+    if (packet.id > this.lastAppliedId) {
+      if (reply.status < 400 && reply.body) {
+        const snapshot = reply.body.snapshot || reply.body;
+        if (snapshot.rosterRevision !== undefined)
+          this.lastSnapshot = decodeSnapshotFromWire(snapshot, this.lastSnapshot);
+      }
+      this.lastAppliedId = packet.id;
+    }
+    return reply;
   }
   clear() {
     this.messages.clear();
+    this.lastSnapshot = null;
+    this.lastAppliedId = 0;
   }
 }
 export function udpCandidate(candidate) {

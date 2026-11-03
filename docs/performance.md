@@ -170,3 +170,27 @@ le nombre de sources, les morts, la spatialisation gauche/droite, les exclusions
 le plafond de gain et le budget de voix. Ces tests ne valident pas la perception
 sonore en navigateur, notamment lors du franchissement des frontières de cellules,
 avec une nuée entourant la caméra ou plusieurs moteurs d'avions simultanés.
+
+## Trafic UDP des grandes nuées — états différentiels (version 114)
+
+Le roster immuable est désormais omis **avant** la copie `structuredClone`
+dans `Game.snapshot()` pour toutes les commandes, et pas seulement pour
+`sync`. Le serveur et le client mémorisent une base de synchronisation propre
+à chaque connexion fiable. Le premier état et chaque changement de vague,
+d'équilibrage ou de roster transmettent la liste complète, regroupée par
+segments de nuée avec propriétés communes et colonnes de valeurs individuelles.
+La reconstruction restitue les mêmes identifiants et trajectoires.
+
+Entre ces changements, les confirmations ne contiennent plus la liste
+des insectes. Les listes de morts et les dégâts n'envoient que les nouveaux
+indices et les valeurs modifiées ; le réassemblage côté navigateur restitue
+les champs historiques `kills` et `enemyDamage` avant traitement du snapshot.
+Les apparitions ajoutées à un roster existant sont transmises comme un **ajout de nuée**
+compact, si la vague et l'équilibrage sont inchangés. Une révision qui ne consiste pas
+en ajout repart d'un roster entier. Les positions restent calculées localement.
+
+Contrôles : `node scripts/test-roster-sync.mjs` et
+`node scripts/test-snapshot-wire.mjs` (parité des objets, 10 000 insectes,
+révisions et deltas). Les économies de volume ne garantissent ni l'absence de
+déconnexions ni les FPS sur WAN. Mesurer les débits, la saturation du canal
+fiable, les temps CPU, les délais de confirmations et les fermetures ICE/DTLS.
