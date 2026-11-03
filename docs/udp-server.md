@@ -139,3 +139,7 @@ Cette optimisation réduit la charge attendue, mais les limites de file, de
 message, les délais de confirmation et l'obligation UDP restent inchangés.
 Pour diagnostiquer une coupure, distinguer erreur d'encodage/saturation,
 expiration de commande, perte de connexion ICE ou charge CPU du serveur.
+
+Une réponse ancienne rejouée par identifiant de commande n'abaisse jamais
+la base différentielle du réassembleur ; les réponses inédites gardent l'ordre
+du canal fiable. La confirmation rejouée n'applique pas de nouveau changement.

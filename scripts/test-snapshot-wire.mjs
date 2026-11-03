@@ -79,10 +79,7 @@ assert.throws(
   () =>
     decodeSnapshotFromWire(
       {
-        ...create(2),
-        roster: undefined,
-        kills: undefined,
-        enemyDamage: undefined,
+        ...create(3),
         killsAdded: [0],
         enemyDamageChanged: {},
       },
