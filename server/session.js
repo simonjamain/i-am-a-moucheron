@@ -92,7 +92,7 @@ export class GameSession {
       }
       // All commands (not only sync) share one roster baseline. Omit it
       // BEFORE snapshot cloning, then compact initial rosters and event deltas.
-      const snapshot = m.path === 'join' ? body.snapshot : body;
+      const snapshot = { ...(m.path === 'join' ? body.snapshot : body) };
       const key = snapshotRosterKey(snapshot);
       this.lastWireSnapshot = encodeSnapshotForWire(snapshot, this.lastWireSnapshot);
       if (snapshot.rosterGroups || snapshot.rosterAddGroups) {
@@ -103,7 +103,11 @@ export class GameSession {
           total: snapshot.total,
         };
       }
-      reply = { status: 200, body };
+      // Do not mutate the domain object or the response retained by a caller.
+      reply = {
+        status: 200,
+        body: m.path === 'join' ? { ...body, snapshot } : snapshot,
+      };
     } catch (e) {
       reply = {
         status: e.status || 500,
