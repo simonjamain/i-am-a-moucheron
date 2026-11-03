@@ -10,6 +10,7 @@ const html = await page.text();
 assert.ok(html.includes('/assets/' + version + '/client.js'));
 for (const file of [
   'client',
+  'changelog',
   'aircraft-fire',
   'insect-hits',
   'three',

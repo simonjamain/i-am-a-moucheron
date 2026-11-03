@@ -2402,6 +2402,73 @@
       #flightSettingsPanel [data-flight-status] {
         min-height: 2em;
       }
+      /* Petit historique accessible depuis l'accueil comme en partie. */
+      #changelogOpen {
+        position: fixed;
+        left: 52px;
+        top: 4px;
+        z-index: 200;
+        padding: 4px 8px;
+        font-size: 11px;
+      }
+      #changelogDialog {
+        width: min(420px, calc(100vw - 24px));
+        max-height: min(68dvh, 520px);
+        padding: 0;
+        overflow: hidden;
+        color: var(--cream);
+        background: #132f29;
+        border: 1px solid #627f6b;
+        border-radius: 10px;
+        box-shadow: 0 16px 55px #0009;
+      }
+      #changelogDialog::backdrop {
+        background: #041311c7;
+      }
+      #changelogDialog header {
+        position: static;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 14px 18px;
+        border-bottom: 1px solid var(--line);
+      }
+      #changelogDialog h2 {
+        margin: 0;
+        font: 25px 'Barlow Condensed', sans-serif;
+      }
+      #changelogClose {
+        padding: 4px 9px;
+      }
+      #changelogEntries {
+        max-height: calc(min(68dvh, 520px) - 62px);
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        padding: 0 18px 12px;
+      }
+      #changelogEntries section {
+        padding: 12px 0;
+        border-bottom: 1px solid var(--line);
+      }
+      #changelogEntries h3 {
+        color: var(--acid);
+        margin: 0 0 5px;
+        font-size: 13px;
+      }
+      #changelogEntries ul {
+        margin: 0;
+        padding-left: 19px;
+        line-height: 1.5;
+      }
+      #changelogEntries li {
+        margin: 0 0 4px;
+      }
+      @media (max-width: 350px) {
+        #changelogOpen {
+          top: 34px;
+          left: 8px;
+        }
+      }
     </style>
   </head>
   <body>
@@ -2946,6 +3013,16 @@
       "
       >v__GAME_VERSION__</span
     >
+    <button id="changelogOpen" type="button" aria-haspopup="dialog" aria-controls="changelogDialog">
+      Nouveautés
+    </button>
+    <dialog id="changelogDialog" aria-labelledby="changelogTitle">
+      <header>
+        <h2 id="changelogTitle">Nouveautés du jeu</h2>
+        <button id="changelogClose" type="button" aria-label="Fermer les nouveautés">✕</button>
+      </header>
+      <div id="changelogEntries" tabindex="0" aria-label="Historique des versions"></div>
+    </dialog>
     <button
       id="restartGame"
       style="
