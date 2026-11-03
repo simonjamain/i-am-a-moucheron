@@ -1,3 +1,4 @@
+import { airField } from '../src/air-current.js';
 import { InsectIndex } from '../src/insect-hits.js';
 import assert from 'node:assert/strict';
 import * as T from '../vendor/three.module.min.js';
@@ -98,6 +99,7 @@ const state = {
   clockOffset: 0,
   currentRoster: () => state.snap.roster,
   swarmFrame,
+  airField,
   localKills: new Set(),
   entryStatus: () => 'in-flight',
   entryNoticeWave: -1,

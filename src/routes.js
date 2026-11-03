@@ -23,21 +23,8 @@ export const PORTALS = Object.freeze({
 });
 const routeCache = new Map();
 export function enemyRoute(enemy) {
-  const key = [
-    enemy.routeSeed || 1,
-    enemy.branch || 0,
-    enemy.portalIndex ?? -1,
-    !!enemy.ground,
-    enemy.approach || 'full',
-    ...(enemy.spawnPoint || []),
-  ].join(':');
-  if (routeCache.has(key)) return routeCache.get(key);
-  let seed = enemy.routeSeed || 1;
-  const random = () => {
-    seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
-    return seed / 4294967296;
-  };
   const portalCount = enemy.ground ? PORTALS.ground.length : PORTALS.air.length;
+  const seed = (Math.imul(enemy.routeSeed || 1, 1664525) + 1013904223) >>> 0;
   const portal =
     Number.isInteger(enemy.portalIndex) && enemy.portalIndex >= 0 && enemy.portalIndex < portalCount
       ? enemy.portalIndex
@@ -45,7 +32,11 @@ export function enemyRoute(enemy) {
         ? enemy.ground
           ? 0
           : 1
-        : Math.floor(random() * portalCount);
+        : Math.floor((seed / 4294967296) * portalCount);
+  const key = enemy.spawnPoint
+    ? 'brood:' + enemy.spawnPoint.join(':')
+    : (enemy.ground ? 'ground:' : 'air:') + portal;
+  if (routeCache.has(key)) return routeCache.get(key);
   let points;
   if (enemy.spawnPoint) {
     const start = [enemy.spawnPoint[0], 0.0007, enemy.spawnPoint[2]];
@@ -65,29 +56,29 @@ export function enemyRoute(enemy) {
     for (const goal of goals) points.push(...floorPath(points.at(-1), goal).slice(1));
     points.push([3.0, 0.38, -2.7], [2.5, 0.38, -2.7]);
   } else {
-    const source = portalExit(PORTALS.air[portal]),
-      jitter = (random() - 0.5) * 0.15;
-    const intro = [
-      [0.15 + jitter, 2.65, -3.0],
-      [1.2, 2.4, -2.85],
-      [2.55, 1.45, -2.8],
-    ];
-    const short = [
+    const source = portalExit(PORTALS.air[portal]);
+    // Two crossing corridors fed by the four vents. Their altitude separates
+    // the crossing and keeps the course predictable before an insect spawns.
+    const high = portal % 2 === 0;
+    const lane = high
+      ? [
+          [-2.85, 2.65, 2.55],
+          [2.75, 2.55, -2.6],
+          [2.8, 2.5, 2.5],
+        ]
+      : [
+          [2.7, 1.85, 2.5],
+          [-2.8, 1.9, -2.6],
+          [-2.8, 2.2, 2.5],
+        ];
+    points = [
+      source,
       [source[0] * 0.7, 2.7, source[2] * 0.7],
-      [-0.5, 2.6, 0.2],
-      [1.6, 2.5, -1.8],
+      ...lane,
+      [0, 1.65, 1.9],
       [2.8, 1.5, -2.6],
+      [2.5, 0.38, -2.7],
     ];
-    const full = [
-      [source[0] * 0.7, 2.7, source[2] * 0.7],
-      [-2.9 + jitter, 2.65, 2.6],
-      [-2.9, 2.7, -2.8],
-      [2.8, 2.65, -2.6],
-      [2.8, 2.5, 2.5],
-      [0 + jitter, 1.65, 1.9],
-      [2.8, 1.5, -2.6],
-    ];
-    points = [source, ...full, [2.5, 0.38, -2.7]];
     // Raise detours above static furniture; final descent is next to the bin.
     for (let i = 1; i < points.length; i++)
       if (blockedSegment(points[i - 1], points[i])) {

@@ -1,3 +1,4 @@
+import { FAN_COST, FAN_FADE_MS } from './air-current.js';
 import { ROUTE_OBSTACLES } from './route-obstacles.js';
 import {
   splitBarricade,
@@ -22,7 +23,7 @@ export function feedingPoint(bait) {
   return [bait.position[0] + Math.sin(angle) * 0.024, bait.position[1] + Math.cos(angle) * 0.024];
 }
 export function newGroundDefense() {
-  return { revision: 0, navigationRevision: 0, nextId: 0, structures: [] };
+  return { revision: 0, navigationRevision: 0, nextId: 0, structures: [], retiringFans: [] };
 }
 function finitePoint(p) {
   return (
@@ -48,11 +49,13 @@ function nearFoot(point, foot) {
 function fail(message) {
   throw new Error(message);
 }
-export function groundSnapshot(state) {
+export function groundSnapshot(state, now = Date.now()) {
+  state.retiringFans = (state.retiringFans || []).filter((f) => now < f.removedAt + FAN_FADE_MS);
   return {
     revision: state.revision,
     navigationRevision: state.navigationRevision,
     structures: structuredClone(state.structures),
+    ...(state.retiringFans.length ? { retiringFans: structuredClone(state.retiringFans) } : {}),
   };
 }
 export function groundFlow(state, goal = GROUND_GOAL) {
@@ -72,30 +75,33 @@ export function groundFlow(state, goal = GROUND_GOAL) {
 }
 // One synchronous command is an atomic room transaction. Never accept costs, HP,
 // owners, revision numbers or placement identities from network clients.
-export function groundCommand(state, command, foot, dollars) {
+export function groundCommand(state, command, foot, dollars, now = Date.now()) {
   if (!state || !command || typeof command !== 'object' || !Number.isFinite(dollars))
     fail('Commande de défense invalide.');
   const action = command.action;
   if (action === 'build') {
     const { kind, a, b } = command;
+    const pointItem = kind === 'sugar' || kind === 'fan';
     if (
-      !['barricade', 'sticky', 'sugar'].includes(kind) ||
+      !['barricade', 'sticky', 'sugar', 'fan'].includes(kind) ||
       !finitePoint(a) ||
-      (kind !== 'sugar' && !finitePoint(b))
+      (!pointItem && !finitePoint(b))
     )
       fail('Emplacement de construction invalide.');
     if (!nearFoot(a, foot)) fail('Construisez à proximité de votre personnage.');
-    const distance = kind === 'sugar' ? 0 : length(a, b);
-    if (kind !== 'sugar' && distance < 0.002) fail('Tracez la construction depuis votre position.');
+    const distance = pointItem ? 0 : length(a, b);
+    if (!pointItem && distance < 0.002) fail('Tracez la construction depuis votre position.');
     const count = kind === 'barricade' ? Math.ceil(distance / 0.2) : 1;
     if (state.structures.length + count > GROUND_LIMIT)
       fail('Trop de constructions dans la salle.');
     const price =
-      kind === 'sugar'
-        ? GROUND_BAIT_TYPES.sugar.cost
-        : kind === 'barricade'
-          ? count * GROUND_WALL_COST_PER_SEGMENT
-          : Math.ceil(distance / 0.2) * GROUND_STICKY_COST_PER_20CM;
+      kind === 'fan'
+        ? FAN_COST
+        : kind === 'sugar'
+          ? GROUND_BAIT_TYPES.sugar.cost
+          : kind === 'barricade'
+            ? count * GROUND_WALL_COST_PER_SEGMENT
+            : Math.ceil(distance / 0.2) * GROUND_STICKY_COST_PER_20CM;
     if (dollars + 1e-8 < price) fail('Caisse commune insuffisante.');
     const id = String(state.nextId + 1);
     const items =
@@ -114,8 +120,9 @@ export function groundCommand(state, command, foot, dollars) {
                 kind,
                 position: [...a],
                 angle: Number.isFinite(command.angle) ? command.angle % (2 * Math.PI) : 0,
-                type: 'sugar',
-                radius: GROUND_BAIT_TYPES.sugar.radius,
+                ...(kind === 'fan'
+                  ? { placedAt: now }
+                  : { type: 'sugar', radius: GROUND_BAIT_TYPES.sugar.radius }),
               },
             ];
     if (kind === 'sugar' && !finitePoint(feedingPoint(items[0])))
@@ -123,10 +130,9 @@ export function groundCommand(state, command, foot, dollars) {
     // Validate collisions with existing barricades, preserving adjacent segments
     // of the same stroke; bail out before spending anything.
     for (const item of items) {
-      const sample =
-        item.kind === 'sugar'
-          ? item.position
-          : [(item.a[0] + item.b[0]) / 2, (item.a[1] + item.b[1]) / 2];
+      const sample = item.position
+        ? item.position
+        : [(item.a[0] + item.b[0]) / 2, (item.a[1] + item.b[1]) / 2];
       if (
         state.structures.some((existing) => {
           if (existing.kind !== 'barricade' || existing.hp <= 0) return false;
@@ -155,6 +161,10 @@ export function groundCommand(state, command, foot, dollars) {
     item.hp = item.maxHp;
     state.revision++;
     return { price: 1, ids: [item.id] };
+  }
+  if (item.kind === 'fan') {
+    state.retiringFans = (state.retiringFans || []).filter((f) => now < f.removedAt + FAN_FADE_MS);
+    state.retiringFans.push({ ...item, removedAt: now });
   }
   state.structures.splice(index, 1);
   state.revision++;

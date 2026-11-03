@@ -277,3 +277,18 @@ la navigation serveur qui tient compte des barricades, appâts et rubans ; les
 volants gardent leurs parcours. Le radar conserve les constructions et rayons
 d’appât ; il ne sert pas à construire. Le rendu et le confort de pose demandent
 encore un essai WebGL/UDP en partie réelle.
+
+## Défense aérienne
+
+Quatre aérations alimentent deux couloirs qui se croisent à des altitudes différentes.
+Le nuage de phéromones de chaque entrée apparaît en couleur avant le passage des
+insectes. Les volants conservent une dispersion propre autour du couloir.
+
+Au sol, sélectionnez **Ventilateur** dans la roue de construction. La flèche montre
+la direction du souffle. Tournez avec **R** et regardez la traînée se déplacer avant
+de confirmer la pose (4 $). Le ventilateur forme une colonne d’air de 1,8 m de rayon.
+Le déplacement latéral culmine à environ un mètre en son centre. Des ventilateurs
+opposés se compensent, des ventilateurs voisins combinent leur souffle. Les
+insectes déjà engagés rejoignent le nouveau tracé en 2,5 secondes en continuant
+d’avancer. Retirez un ventilateur avec **Enlever** pour rétablir progressivement
+le parcours. Le départ et l’arrivée restent fixes.

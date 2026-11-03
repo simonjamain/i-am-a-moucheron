@@ -112,9 +112,9 @@ await Promise.resolve();
 assert.equal(ui.openWheel(), true);
 ui.finishWheel();
 assert.equal(ui.active, false);
-for (let i = 0; i < 5; i++) {
+for (let i = 0; i < ui.tools.length; i++) {
   ui.openWheel();
-  const angle = (i * 2 * Math.PI) / 5;
+  const angle = (i * 2 * Math.PI) / ui.tools.length;
   ui.moveWheel(80 * Math.sin(angle), -80 * Math.cos(angle));
   ui.finishWheel();
   assert.equal(ui.mode, ui.tools[i][0]);

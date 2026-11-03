@@ -32,6 +32,24 @@ export function createRenderer(T, canvas) {
         near = Math.max(0.000001, camera.near),
         light = new T.Vector3(-0.4, 0.85, 0.3).normalize();
       scene.traverseVisible((o) => {
+        if (o.userData.softwareTrail) {
+          const a = o.geometry.attributes.position;
+          const p = new T.Vector3();
+          for (let i = 0; i < a.count; i += 15) {
+            p.fromBufferAttribute(a, i).applyMatrix4(o.matrixWorld).applyMatrix4(view);
+            const distance = -p.z;
+            if (distance < near) continue;
+            p.applyMatrix4(proj);
+            if (Math.abs(p.x) > 1 || Math.abs(p.y) > 1) continue;
+            faces.push({
+              dot: [(p.x * 0.5 + 0.5) * w, (-p.y * 0.5 + 0.5) * h],
+              distance,
+              color: o.material.color.getStyle(),
+              alpha: 0.52,
+            });
+          }
+          return;
+        }
         if (!o.isMesh || !o.geometry?.attributes.position) return;
         const a = o.geometry.attributes.position,
           idx = o.geometry.index,
@@ -89,6 +107,12 @@ export function createRenderer(T, canvas) {
       });
       faces.sort((a, b) => b.distance - a.distance);
       for (const f of faces) {
+        if (f.dot) {
+          ctx.fillStyle = f.color;
+          ctx.globalAlpha = f.alpha;
+          ctx.fillRect(f.dot[0], f.dot[1], 2, 2);
+          continue;
+        }
         ctx.beginPath();
         f.points.forEach((p, i) => (i ? ctx.lineTo(...p) : ctx.moveTo(...p)));
         ctx.closePath();

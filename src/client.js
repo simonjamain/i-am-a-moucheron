@@ -42,6 +42,7 @@ import {
 } from '/equipment.js';
 import { stepBallisticVelocity, toggleParachute } from '/ballistics.js';
 import { makeTracer, updateTracer } from '/tracers.js';
+import { airField } from '/air-current.js';
 import { wavePlan, swarmFrame, entryStatus } from '/waves.js';
 import { MAP, ACTOR_UNIT, HUMAN_SCALE, INSECT_SCALE, REFERENCE, FLAK } from '/scale.js';
 import { VEHICLES, SEAT_NAMES, vehiclePad, vehicleEntry, vehicleAccess } from '/fleet.js';
@@ -2986,7 +2987,15 @@ function enemies(now) {
         snap.started) /
       1000,
     roster = currentRoster(),
-    frame = snap.phase === 'combat' ? swarmFrame(roster, t, snap.groundAgents) : [];
+    frame =
+      snap.phase === 'combat'
+        ? swarmFrame(
+            roster,
+            t,
+            snap.groundAgents,
+            airField(snap.groundDefense, snap.started + t * 1000),
+          )
+        : [];
   for (let i = 0; i < frame.length; i++) {
     const state = frame[i];
     if (!state || localKills.has(i)) continue;
