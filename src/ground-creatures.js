@@ -98,7 +98,8 @@ export function advanceGroundUnit(unit, enemy, elapsed, dt, world) {
     if (!previouslyTargeted) unit.baitId = null;
     if (!unit.baitId) {
       const eligible = baits.filter(
-        (bait) => !unit.tasted.includes(bait.type) && world.baitFlow(bait),
+        (bait) =>
+          !unit.tasted.includes(bait.type) && world.baitFlow(bait)?.nextStep(unit.p),
       );
       const selected = chooseBait(unit.p, eligible, unit.tasted);
       if (selected) unit.baitId = selected.id;

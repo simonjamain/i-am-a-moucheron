@@ -16,6 +16,8 @@ const closed = buildGroundFlow({ ...config, barricades: splitBarricade([0, 0.5],
 assert.equal(closed.route([0.5, 0.05]), null);
 assert.ok(closed.route([0.9, 0.9]));
 assert.ok(buildGroundFlow({ ...config, barricades: wall.slice(1) }).route([0.5, 0.05]));
+const goalBlocked = buildGroundFlow({ ...config, barricades: splitBarricade([0.9, 0.95], [1, 0.95], 'sealed') });
+assert.equal(goalBlocked.route([0.05, 0.05]), null, 'a barricade may seal the bin without crashing the grid');
 const baits = [{ id: 'b', type: 'sugar', position: [0.1, 0], radius: 1 }, { id: 'a', type: 'sugar', position: [-0.1, 0], radius: 1 }, { id: 'c', type: 'fruit', position: [0.2, 0], radius: 1 }];
 assert.equal(chooseBait([0, 0], baits).id, 'a');
 assert.equal(chooseBait([0, 0], baits, ['sugar']).id, 'c');

@@ -41,7 +41,7 @@ export function buildGroundFlow({ bounds, cellSize, goal, barricades = [], stati
           p[1] >= box.min.z - 0.02 && p[1] <= box.max.z + 0.02)) blocked[index(x, z)] = 1;
   }
   const [gx, gz] = cell(goal);
-  if (!inside(gx, gz) || blocked[index(gx, gz)]) throw Error('Ground goal is blocked');
+  if (!inside(gx, gz)) throw Error('Ground goal is outside the grid');
   const costs = new Float64Array(width * height).fill(Infinity);
   const next = new Int32Array(width * height).fill(-1);
   const heap = [];
@@ -69,7 +69,12 @@ export function buildGroundFlow({ bounds, cellSize, goal, barricades = [], stati
     return first;
   };
   const target = index(gx, gz);
-  costs[target] = 0; push(target, 0);
+  // A player may close the goal completely. Keep a valid unreachable field
+  // so destructive species can open a breach rather than crashing the room.
+  if (!blocked[target]) {
+    costs[target] = 0;
+    push(target, 0);
+  }
   while (heap.length) {
     const [cost, current] = pop();
     if (cost !== costs[current]) continue;

@@ -73,3 +73,8 @@
 - Ajout de `src/ground-defense-ui.js` : bouton « Défense » à pied, plan de pose au pointeur, murs/rubans étirables, pose de sucre, réparation et suppression par sélection de segment. Utilise la commande fiable `ground-defense` et son prix serveur.
 - Modèles procéduraux temporaires (carton, sachet de sucre et cristaux, ruban plat), cercle d'attraction toujours visible au sol et sur le radar. Synchronisation à partir des snapshots de room.
 - Limites à tester humainement : échelle de la carte et accès du joueur aux zones de pose, distinction dessin 2D vs pose directe au sol dans le monde, lisibilité et confort sur écran tactile, fluidité WebGL avec un grand nombre d'objets.
+
+### Cas limites de navigation (v145)
+
+- Le champ de navigation accepte une destination couverte par une barricade, sans exception ; aucun chemin n'est trouvé et les espèces destructrices pourront chercher un mur à ouvrir.
+- Les appâts dont le champ ne fournit aucune cellule suivante depuis l'insecte ne sont pas sélectionnés en boucle. Scénarios ajoutés aux tests de navigation.

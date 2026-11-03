@@ -24,6 +24,13 @@ const world = {
   damageWall: () => { throw Error('No barricade should be hit'); },
 };
 const old = [...unit.p];
+const baits = [{ id: 'remote', kind: 'sugar', type: 'sugar', radius: 4, position: [1, 1] }];
+advanceGroundUnit({ ...unit, p: [...unit.p] }, example, 1, 0.01, {
+  ...world,
+  structures: baits,
+  baitFlow: () => ({ nextStep: () => null }),
+});
+assert.equal(unit.baitId, null, 'unreachable bait cannot acquire a target');
 advanceGroundUnit(unit, example, 1, 1, world);
 assert.ok(unit.p[1] > old[1], 'an ant moves toward the bin');
 assert.ok(!unit.arrived);
