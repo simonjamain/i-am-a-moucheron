@@ -1155,7 +1155,12 @@ export class Game {
     const w = baseWorld(body);
     let transaction;
     try {
-      transaction = groundCommand(r.groundDefense, b, [w.x, w.z], r.dollars);
+      transaction = groundCommand(
+        r.groundDefense,
+        { ...b, id: b.target },
+        [w.x, w.z],
+        r.dollars,
+      );
     } catch (error) {
       requireGame(false, error.message, 400);
     }

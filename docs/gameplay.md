@@ -271,3 +271,10 @@ qu'après la création d'une construction dans une room. Les positions, la sati�
 les arrivées deviennent alors des états serveur transmis aux clients ; les volants
 restent inchangés. Cette fonction est encore **expérimentale sur la branche de PR**,
 sans commande joueur accessible dans l'interface ; elle ne décrit pas `main`.
+
+
+La PR propose aussi une **carte de construction expérimentale** accessible à pied
+pour dessiner des barricades, étirer des rubans et poser du sucre. Les constructions
+sont visibles dans la pièce et les rayons du sucre s'affichent au sol et sur le
+radar. La carte de pose ne remplace pas encore le geste de placement directement
+dans la scène 3D prévu par l'issue.

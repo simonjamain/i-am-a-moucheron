@@ -1,3 +1,4 @@
+import { GroundDefenseUI } from '/ground-defense-ui.js';
 import { BalanceUI } from '/balance-ui.js';
 import { mountChangelog } from '/changelog.js';
 import { deliveryHeightAt } from '/delivery.js';
@@ -1317,6 +1318,16 @@ async function action(path, extra = {}) {
     notify(e.message, 3);
   }
 }
+const groundDefenseUI = new GroundDefenseUI({
+  T,
+  scene,
+  document,
+  snapshot: () => snap,
+  available: () => joined && onFoot && !myVehicle && !spectating && !respawnAt,
+  command: (body) => action('ground-defense', { epoch: snap.base.epoch, ...body }),
+  notify,
+  releaseMouse,
+});
 mountChangelog({
   dialog: $('changelogDialog'),
   trigger: $('changelogOpen'),
@@ -3708,6 +3719,7 @@ function drawRadar() {
         (box.max.x - box.min.x) / 0.04,
         ((box.max.z - box.min.z) / 0.04) * 0.88,
       );
+  groundDefenseUI.drawRadar(radar, snap?.groundDefense);
   radar.strokeStyle = '#77988740';
   radar.lineWidth = 1;
   for (let i = 22; i < 220; i += 44) {
@@ -3920,6 +3932,7 @@ function frame(now) {
     camera.fov = zoomFov;
     camera.updateProjectionMatrix();
   }
+  groundDefenseUI.update();
   hitEffects.update(dt, camera);
   bloodEffects.update(dt);
   combatEffects.update(dt, camera);

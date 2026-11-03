@@ -67,3 +67,9 @@
 - `Game.advanceGround` active les déplacements autoritaires lorsqu'une construction terrestre est présente ; chaque insecte terrestre reçoit un état persistant individuel et suit le champ partagé. Les champs sont recalculés à une modification de topologie. Les champs secondaires d'appât sont mémorisés par sachet. Le mouvement sans constructions reste inchangé.
 - La fin de parcours, le snapshot et les calculs de contact serveur tiennent compte des positions terrestres après activation. `swarmFrame` accepte un état autoritaire facultatif, transmis à l'unique appel du rendu client ; les volants conservent leur traitement précédent.
 - Limites importantes : envoi d'un état par terrestre à chaque snapshot (non optimisé), pas encore d'interface de pose, ni benchmark 5 000 terrestres en vraie room. Les trajectoires sans constructions continuent le comportement historique. Vérification WebGL/UDP indispensable.
+
+### Interface tactique et représentation visuelle (v144)
+
+- Ajout de `src/ground-defense-ui.js` : bouton « Défense » à pied, plan de pose au pointeur, murs/rubans étirables, pose de sucre, réparation et suppression par sélection de segment. Utilise la commande fiable `ground-defense` et son prix serveur.
+- Modèles procéduraux temporaires (carton, sachet de sucre et cristaux, ruban plat), cercle d'attraction toujours visible au sol et sur le radar. Synchronisation à partir des snapshots de room.
+- Limites à tester humainement : échelle de la carte et accès du joueur aux zones de pose, distinction dessin 2D vs pose directe au sol dans le monde, lisibilité et confort sur écran tactile, fluidité WebGL avec un grand nombre d'objets.

@@ -1,6 +1,10 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 144,
+    changes: ['Une carte de défense permet de poser des barricades, du sucre et des bandes collantes.'],
+  },
+  {
     version: 131,
     changes: ['Les mitrailleuses tirent plus régulièrement lorsque la connexion ou les images ralentissent.'],
   },

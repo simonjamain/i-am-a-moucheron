@@ -32,6 +32,7 @@ const files = {
     [
       'balance',
       'balance-ui',
+      'ground-defense-ui',
       'changelog',
       'flight-tuning',
       'flight-tuning-ui',
