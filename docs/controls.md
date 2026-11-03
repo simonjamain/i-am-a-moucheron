@@ -157,3 +157,9 @@ Sources : `flight-tuning.js` (plages et stockage), `flight-tuning-ui.js`
 (panneau), `mouse-flight.js` (instructeur) et
 `test-flight-tuning.mjs` (régression). La sensation du pilotage reste à
 valider dans une vraie partie WebGL/UDP.
+
+## Défenses terrestres
+
+Bouton « Défense » à pied, puis choix d’un outil : aperçu devant le personnage
+pendant la marche, E ou clic gauche pour valider, R pour tourner de 45°, Échap
+pour quitter. Prix, conditions et navigation : [gameplay](gameplay.md#défenses-terrestres).

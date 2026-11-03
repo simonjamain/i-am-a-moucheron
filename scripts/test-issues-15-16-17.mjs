@@ -106,6 +106,7 @@ const input = {
   $: () => ({ classList: { contains: () => true } }),
   spectating: false,
   joined: true,
+  groundDefenseUI: { active: false },
   purchaseUI: { opened: false },
   bedUI: { opened: false },
   bankUI: { opened: false },

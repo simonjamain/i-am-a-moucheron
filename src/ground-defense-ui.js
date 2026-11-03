@@ -1,6 +1,24 @@
-// Compact tactical construction surface; the server validates every command.
+import { groundPlacement } from './ground-placement.js';
 export class GroundDefenseUI {
-  constructor({ T, scene, document, command, snapshot, available, notify, releaseMouse }) {
+  constructor({
+    T,
+    scene,
+    document,
+    command,
+    snapshot,
+    available,
+    notify,
+    releaseMouse,
+    captureMouse,
+    foot,
+    enabled,
+  }) {
+    this.foot = foot;
+    this.enabled = enabled;
+    this.captureMouse = captureMouse;
+    this.rotation = 0;
+    this.active = false;
+    this.busy = false;
     this.T = T;
     this.scene = scene;
     this.command = command;
@@ -10,8 +28,6 @@ export class GroundDefenseUI {
     this.releaseMouse = releaseMouse;
     this.mode = 'barricade';
     this.opened = false;
-    this.start = null;
-    this.pointer = null;
     this.key = '';
     this.models = new T.Group();
     scene.add(this.models);
@@ -46,174 +62,118 @@ export class GroundDefenseUI {
       button.textContent = label;
       button.onclick = () => {
         this.mode = kind;
-        this.start = null;
         this.buttons.querySelectorAll('button').forEach((b) => {
           b.style.fontWeight = b === button ? 'bold' : 'normal';
         });
-        this.paint();
+        this.active = true;
+        this.setOpen(false);
+        this.captureMouse();
       };
       this.buttons.append(button);
     }
     this.buttons.querySelector('button').style.fontWeight = 'bold';
-    this.canvas = document.createElement('canvas');
-    this.canvas.width = 420;
-    this.canvas.height = 350;
-    this.canvas.style.cssText =
-      'width:100%;height:auto;background:#223935;border:1px solid #6f8b81;touch-action:none';
     this.hint = document.createElement('p');
-    this.hint.style.cssText = 'font-size:12px;line-height:1.4;margin:8px 0 0';
     this.hint.textContent =
-      'Au sol : cliquez et étirez les murs ou rubans. Cliquez pour poser du sucre ou agir sur un segment.';
-    this.panel.append(top, this.buttons, this.canvas, this.hint);
-    document.body.append(this.trigger, this.panel);
+      'Choisissez un outil puis marchez : E pour poser devant vous, R pour tourner, Échap pour quitter. Barricade / ruban : 1 $, sucre : 3 $, réparation : 1 $.';
+    this.panel.append(top, this.buttons, this.hint);
+    this.status = document.createElement('button');
+    this.status.style.cssText =
+      'position:fixed;bottom:65px;left:50%;transform:translateX(-50%);z-index:18;padding:10px;display:none';
+    this.status.onclick = () => this.confirm();
+    document.body.append(this.trigger, this.panel, this.status);
+    this.preview = new T.Mesh(
+      new T.BoxGeometry(1, 1, 1),
+      new T.MeshBasicMaterial({
+        color: '#a7ece0',
+        transparent: true,
+        opacity: 0.55,
+        depthWrite: false,
+      }),
+    );
+    this.preview.visible = false;
+    scene.add(this.preview);
     this.trigger.onclick = () => this.setOpen(!this.opened);
-    this.canvas.addEventListener('pointerdown', (e) => this.down(e));
-    this.canvas.addEventListener('pointermove', (e) => this.move(e));
-    this.canvas.addEventListener('pointerup', (e) => this.up(e));
-    this.canvas.addEventListener('pointercancel', () => {
-      this.start = null;
-      this.pointer = null;
-      this.paint();
-    });
   }
   setOpen(open) {
     this.opened = open && this.available();
     this.panel.style.display = this.opened ? 'block' : 'none';
-    if (this.opened) this.releaseMouse();
-    else this.start = null;
-    this.paint();
-  }
-  point(event) {
-    const rect = this.canvas.getBoundingClientRect();
-    const x = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width));
-    const z = Math.max(0, Math.min(1, (event.clientY - rect.top) / rect.height));
-    return [-4.12 + x * 8.24, -3.51 + z * 7.02];
-  }
-  screen(position) {
-    return [((position[0] + 4.12) / 8.24) * 420, ((position[1] + 3.51) / 7.02) * 350];
-  }
-  down(event) {
-    if (!this.opened) return;
-    event.preventDefault();
-    this.canvas.setPointerCapture(event.pointerId);
-    this.pointer = event.pointerId;
-    this.start = this.point(event);
-    this.end = this.start;
-    this.paint();
-  }
-  move(event) {
-    if (this.pointer !== event.pointerId) return;
-    this.end = this.point(event);
-    this.paint();
-  }
-  async up(event) {
-    if (this.pointer !== event.pointerId) return;
-    event.preventDefault();
-    this.pointer = null;
-    const a = this.start;
-    const b = this.point(event);
-    this.start = null;
-    this.paint();
-    if (!this.snapshot()?.base?.epoch) return;
-    if (this.mode === 'repair' || this.mode === 'remove') {
-      const target = this.nearest(b);
-      if (!target) {
-        this.notify('Aucune construction à proximité de ce point.', 2);
-        return;
-      }
-      await this.command({ action: this.mode, target: target.id });
-    } else if (this.mode === 'sugar') {
-      await this.command({ action: 'build', kind: 'sugar', a });
-    } else if (Math.hypot(b[0] - a[0], b[1] - a[1]) > 0.002) {
-      await this.command({ action: 'build', kind: this.mode, a, b });
+    if (this.opened) {
+      this.active = false;
+      this.releaseMouse();
     }
   }
-  nearest(point) {
-    const structures = this.snapshot()?.groundDefense?.structures || [];
-    return structures
-      .map((s) => ({
-        structure: s,
-        distance: Math.hypot(
-          point[0] - (s.position?.[0] ?? (s.a[0] + s.b[0]) / 2),
-          point[1] - (s.position?.[1] ?? (s.a[1] + s.b[1]) / 2),
-        ),
-      }))
-      .filter((s) => s.distance < 0.15)
-      .sort((a, b) => a.distance - b.distance)[0]?.structure;
+  cancel() {
+    this.active = false;
+    this.setOpen(false);
+    this.preview.visible = false;
+    this.status.style.display = 'none';
   }
-  paint() {
-    if (!this.opened) return;
-    const ctx = this.canvas.getContext('2d');
-    ctx.clearRect(0, 0, 420, 350);
-    ctx.fillStyle = '#273c37';
-    ctx.fillRect(0, 0, 420, 350);
-    ctx.strokeStyle = '#45655d';
-    for (let x = 0; x <= 420; x += 42) {
-      ctx.beginPath();
-      ctx.moveTo(x, 0);
-      ctx.lineTo(x, 350);
-      ctx.stroke();
+  async confirm() {
+    if (!this.active || this.busy || !this.enabled()) return;
+    this.update();
+    const candidate = this.candidate;
+    if (!candidate || candidate.error) return;
+    this.busy = true;
+    try {
+      const { id, ...body } = candidate.command;
+      await this.command({ ...body, ...(id ? { target: id } : {}) });
+    } finally {
+      this.busy = false;
     }
-    for (let y = 0; y <= 350; y += 35) {
-      ctx.beginPath();
-      ctx.moveTo(0, y);
-      ctx.lineTo(420, y);
-      ctx.stroke();
-    }
-    for (const s of this.snapshot()?.groundDefense?.structures || []) {
-      const point = s.position ? this.screen(s.position) : null;
-      if (s.kind === 'sugar') {
-        ctx.strokeStyle = '#e8d68a';
-        ctx.beginPath();
-        ctx.arc(...point, (s.radius / 8.24) * 420, 0, Math.PI * 2);
-        ctx.stroke();
-        ctx.fillStyle = '#f9eee2';
-        ctx.fillRect(point[0] - 4, point[1] - 4, 8, 8);
-      } else {
-        const a = this.screen(s.a);
-        const b = this.screen(s.b);
-        ctx.beginPath();
-        ctx.moveTo(...a);
-        ctx.lineTo(...b);
-        ctx.lineWidth = s.kind === 'sticky' ? 5 : 3;
-        ctx.strokeStyle = s.kind === 'sticky' ? '#ded0a8' : s.hp ? '#cba36b' : '#614b37';
-        ctx.stroke();
-        ctx.lineWidth = 1;
-      }
-    }
-    if (this.start && this.end) {
-      const a = this.screen(this.start);
-      const b = this.screen(this.end);
-      ctx.strokeStyle = '#a7ece0';
-      ctx.lineWidth = 3;
-      ctx.beginPath();
-      ctx.moveTo(...a);
-      ctx.lineTo(...b);
-      ctx.stroke();
-      ctx.lineWidth = 1;
-    }
-    const bin = this.screen([3, -2.7]);
-    ctx.fillStyle = '#fff0a2';
-    ctx.beginPath();
-    ctx.arc(...bin, 5, 0, Math.PI * 2);
-    ctx.fill();
   }
   update() {
     const snap = this.snapshot();
     this.trigger.hidden = !this.available();
-    if (!this.available() && this.opened) this.setOpen(false);
-    if (!snap) return;
-    const key = [snap.code, snap.base?.epoch, snap.groundDefense?.revision].join(':');
+    if (!this.available()) this.cancel();
+    const key = [snap?.code, snap?.base?.epoch, snap?.groundDefense?.revision].join(':');
     if (key !== this.key) {
+      if (this.roomKey !== [snap?.code, snap?.base?.epoch].join(':')) this.cancel();
+      this.roomKey = [snap?.code, snap?.base?.epoch].join(':');
       this.key = key;
-      this.paint();
-      this.rebuild(snap.groundDefense?.structures || []);
+      this.rebuild(snap?.groundDefense?.structures || []);
     }
+    this.preview.visible = false;
+    this.status.style.display = this.active && this.enabled() ? 'block' : 'none';
+    if (!this.active || !this.enabled()) return;
+    const c = (this.candidate = groundPlacement({
+      foot: this.foot(),
+      mode: this.mode,
+      rotation: this.rotation,
+      defense: snap.groundDefense,
+      dollars: snap.dollars,
+    }));
+    this.status.textContent =
+      c.error ||
+      (this.busy
+        ? 'Envoi…'
+        : `E · ${this.mode === 'repair' ? 'Réparer' : this.mode === 'remove' ? 'Enlever' : 'Poser'} · ${c.price} $ · R : tourner · Échap : quitter`);
+    this.status.disabled = !!c.error || this.busy;
+    if (!c.center) return;
+    const cmd = c.command;
+    const target = cmd?.id && snap.groundDefense.structures.find((s) => s.id === cmd.id);
+    const shape = target || cmd;
+    const a = shape?.a,
+      b = shape?.b;
+    const x = a && b ? (a[0] + b[0]) / 2 : (target?.position || c.center)[0];
+    const z = a && b ? (a[1] + b[1]) / 2 : (target?.position || c.center)[1];
+    const kind = target?.kind || this.mode;
+    this.preview.position.set(x, kind === 'sugar' ? 0.002 : kind === 'sticky' ? 0.001 : 0.01, z);
+    this.preview.scale.set(
+      a && b ? Math.hypot(b[0] - a[0], b[1] - a[1]) : 0.042,
+      kind === 'sticky' || kind === 'sugar' ? 0.002 : 0.02,
+      kind === 'sticky' || kind === 'sugar' ? 0.03 : 0.008,
+    );
+    this.preview.rotation.y = a && b ? -Math.atan2(b[1] - a[1], b[0] - a[0]) : 0;
+    this.preview.material.color.set(c.error ? '#ed665b' : '#a7ece0');
+    this.preview.visible = true;
   }
   rebuild(structures) {
     for (const child of [...this.models.children]) {
       this.models.remove(child);
-      child.traverse((part) => part.geometry?.dispose());
+      child.traverse((part) => {
+        part.geometry?.dispose();
+        part.material?.dispose();
+      });
     }
     const T = this.T;
     for (const structure of structures) {

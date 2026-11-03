@@ -90,3 +90,12 @@
 ### Vérification des comportements transversaux (v150)
 
 - Nouveau scénario `scripts/test-ground-behaviors.mjs` dans la suite Node : immobilisation temporaire des petits, ralentissement des moyens et faible effet sur les gros, capacité destructrice par espèce, repas de sucre avec satiété unique et retour à la poubelle. Ce test utilise le moteur de déplacement réel, mais pas de rendu WebGL.
+
+## Remplacement du plan de pose — 3 novembre 2026
+
+- Branche `fix/third-person-ground-placement`, issue #58 conservée ouverte pour le reste du chantier.
+- À la demande du joueur, remplacement de la carte de construction par un menu d'outils puis une pose répétable devant le personnage en troisième personne. Morceaux de 12 cm, rotation R, validation E/clic, aperçu coloré, prix et refus, réparation/suppression sur la cible devant soi. Le radar reste informatif.
+- La commande inclut le rapport de marche courant ; les coûts et validations restent dans le serveur. Le pathfinding existant n'est pas remplacé.
+- Régression dédiée `scripts/test-ground-placement.mjs` : position/orientation, absence de mutation par l'aperçu, prix/refus, ciblage, contrôleur réel Three.js sans GPU, achat en attente, annulation au reset et changement de poste. Harnesses des commandes et du pistolet adaptés au nouvel état de construction.
+- Contrôles locaux et CI : voir la PR de cette branche. Docker absent localement : attendre `Docker build` sur son commit avant fusion.
+- Essai humain restant : deux joueurs WebGL/UDP, poser en avançant puis contourner les défenses avec des terrestres ; vérifier rotation, cible de réparation/suppression et annulation. Pas d'environnement temporaire configuré.

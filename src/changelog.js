@@ -1,6 +1,12 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 152,
+    changes: [
+      'Posez vos défenses directement devant votre personnage en marchant, avec un aperçu et une rotation.',
+    ],
+  },
+  {
     version: 144,
     changes: [
       'Une carte de défense permet de poser des barricades, du sucre et des bandes collantes.',

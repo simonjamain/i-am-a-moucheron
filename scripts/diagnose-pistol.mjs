@@ -33,6 +33,7 @@ function shoot({ camera, target, colliders = [] }) {
     MAP,
     joined: true,
     controlFocus: { active: true },
+    groundDefenseUI: { active: false },
     boardingBusy: false,
     soulBusy: false,
     canCapture: () => true,

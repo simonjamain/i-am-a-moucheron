@@ -390,6 +390,7 @@ function groundActive() {
     $('papers').classList.contains('hidden') &&
     $('help').classList.contains('hidden') &&
     !$('changelogDialog').open &&
+    !groundDefenseUI.opened &&
     $('bedPanel').classList.contains('hidden') &&
     $('purchasePanel').classList.contains('hidden') &&
     $('balancePanel').classList.contains('hidden') &&
@@ -703,6 +704,7 @@ function canCapture() {
     $('papers').classList.contains('hidden') &&
     $('help').classList.contains('hidden') &&
     !$('changelogDialog').open &&
+    !groundDefenseUI.opened &&
     $('shop').classList.contains('hidden') &&
     $('balancePanel').classList.contains('hidden') &&
     $('flightSettingsPanel').classList.contains('hidden') &&
@@ -780,6 +782,7 @@ canvas.addEventListener('mousedown', (event) => {
     { active: canCapture(), locked: controlFocus.active },
   );
   if (action === 'capture') captureMouse();
+  else if (action === 'fire' && groundDefenseUI.active) groundDefenseUI.confirm();
   else if (action === 'fire' && (respawnAt || (onFoot && !myVehicle && turretIndex < 0))) pistol();
   else if (action === 'fire' && (!onFoot || turretIndex >= 0 || !!myVehicle) && !respawnAt)
     mouseFire = true;
@@ -1324,8 +1327,15 @@ const groundDefenseUI = new GroundDefenseUI({
   scene,
   document,
   snapshot: () => snap,
+  foot: () => {
+    const b = selfBase();
+    return b && { ...b, ...baseWorld(b) };
+  },
+  enabled: () => canCapture() && !placingEquipment,
+  captureMouse,
   available: () => joined && onFoot && !myVehicle && !spectating && !respawnAt,
-  command: (body) => action('ground-defense', { epoch: snap.base.epoch, ...body }),
+  command: (body) =>
+    action('ground-defense', { epoch: snap.base.epoch, ground: groundReport(), ...body }),
   notify,
   releaseMouse,
 });
@@ -1388,6 +1398,7 @@ addEventListener('keydown', (event) => {
   }
   if (!joined || spectating) return;
   if (event.code === 'Escape') {
+    groundDefenseUI.cancel();
     if (purchaseUI.opened) {
       purchaseUI.close();
       return;
@@ -1427,6 +1438,16 @@ addEventListener('keydown', (event) => {
     purchaseUI.opened
   )
     return;
+  if (groundDefenseUI.active && canCapture()) {
+    if (interactionKey === 'KeyR' || interactionKey === 'KeyE' || interactionKey === 'Enter') {
+      event.preventDefault();
+      if (!event.repeat) {
+        if (interactionKey === 'KeyR') groundDefenseUI.rotation += Math.PI / 4;
+        else groundDefenseUI.confirm();
+      }
+      return;
+    }
+  }
   const exitAction = equipmentExitAction({
     key: interactionKey,
     repeat: event.repeat,
@@ -4360,6 +4381,7 @@ function pistol() {
   if (
     !joined ||
     !controlFocus.active ||
+    groundDefenseUI.active ||
     boardingBusy ||
     soulBusy ||
     !canCapture() ||
