@@ -1,3 +1,4 @@
+import { GroundDefenseUI } from '/ground-defense-ui.js';
 import { BalanceUI } from '/balance-ui.js';
 import { mountChangelog } from '/changelog.js';
 import { deliveryHeightAt } from '/delivery.js';
@@ -6,6 +7,7 @@ import { controlHints, cursorStats, cursorAmmoText } from '/live-hud.js';
 import { identifyPlayer, disposePlayerIdentity } from '/player-livery.js';
 import { GunSalvos } from '/salvos.js';
 import { nextPilotMuzzle } from '/muzzle.js';
+import { advanceAutomaticFire } from '/salvos.js';
 import { ammoCapacity } from '/logistics.js';
 import { moveShotTrace, advanceShotTrace, makeShotTrace, TracerPool } from '/tracers.js';
 import { PurchaseUI } from '/purchase-ui.js';
@@ -1317,6 +1319,16 @@ async function action(path, extra = {}) {
     notify(e.message, 3);
   }
 }
+const groundDefenseUI = new GroundDefenseUI({
+  T,
+  scene,
+  document,
+  snapshot: () => snap,
+  available: () => joined && onFoot && !myVehicle && !spectating && !respawnAt,
+  command: (body) => action('ground-defense', { epoch: snap.base.epoch, ...body }),
+  notify,
+  releaseMouse,
+});
 mountChangelog({
   dialog: $('changelogDialog'),
   trigger: $('changelogOpen'),
@@ -2561,7 +2573,7 @@ function updateVehicles(dt) {
   $('vehicleInteract').classList.toggle('hidden', turretIndex < 0);
   $('turretFire').classList.toggle('hidden', turretIndex < 0 && !crew);
   $('flakControls').classList.toggle('hidden', turretIndex < 0);
-  $('fuseDistance').textContent = rangeReadout(flakRange).metres.toFixed(3) + ' m · Shift / Ctrl';
+  $('fuseDistance').textContent = rangeReadout(flakRange).metres.toFixed(0) + ' m · Shift / Ctrl';
   $('vehicleState').textContent =
     turretIndex >= 0
       ? 'DCA · ' + stations[turretIndex].name + ' · ' + Math.round(hp) + ' PV'
@@ -2653,18 +2665,20 @@ function updateVehicles(dt) {
         (!scoped && uiWeaponFire)) &&
       canCapture() &&
       hasAmmo();
-    cooldown -= dt;
-    while (shooting && cooldown <= 0) {
-      cooldown +=
-        (myVehicle.type === 'helicopter'
-          ? HELI.gunInterval
-          : myVehicle.type === 'tank'
-            ? TANK_MG[currentAmmoKey()].interval
-            : 0.09) *
-        (currentFactors().interval / (snap?.balance?.fireRate ?? 1));
+    const burst = advanceAutomaticFire(
+      cooldown,
+      dt,
+      (myVehicle.type === 'helicopter'
+        ? HELI.gunInterval
+        : myVehicle.type === 'tank'
+          ? TANK_MG[currentAmmoKey()].interval
+          : 0.09) *
+        (currentFactors().interval / (snap?.balance?.fireRate ?? 1)),
+      shooting,
+    );
+    cooldown = burst.cooldown;
+    for (let shot = 0; shot < burst.shots; shot++)
       bullet(view.muzzle, spreadDirection(T, dir), '#f4efab', true);
-    }
-    if (!shooting) cooldown = Math.max(0, cooldown);
   }
   for (let index = 0; index < turrets.length; index++) {
     const gun = turrets[index];
@@ -2937,7 +2951,7 @@ function enemies(now) {
         snap.started) /
       1000,
     roster = currentRoster(),
-    frame = snap.phase === 'combat' ? swarmFrame(roster, t) : [];
+    frame = snap.phase === 'combat' ? swarmFrame(roster, t, snap.groundAgents) : [];
   for (let i = 0; i < frame.length; i++) {
     const state = frame[i];
     if (!state || localKills.has(i)) continue;
@@ -3080,6 +3094,17 @@ function vehicleModel(v) {
   }
   return g;
 }
+function remoteShotCount(model, role, dt, interval, firing) {
+  model.userData.remoteCooldowns ??= new Map();
+  const result = advanceAutomaticFire(
+    model.userData.remoteCooldowns.get(role) || 0,
+    dt,
+    interval,
+    firing,
+  );
+  model.userData.remoteCooldowns.set(role, result.cooldown);
+  return result.shots;
+}
 function updateOthers(dt) {
   if (!snap) return;
   const active = new Set();
@@ -3130,19 +3155,23 @@ function updateOthers(dt) {
           new T.Vector3().fromArray(m.turretDirection || [0, 0, -1]),
           mount.parent.getWorldQuaternion(new T.Quaternion()),
         );
-        if (
-          gunner.id !== id &&
-          m.fire &&
-          v.supplies?.ammo[v.type === 'tank' && seat === 'cannon' ? 'coax' : seat] >= 1 &&
-          Math.random() <
-            dt /
-              ((v.type === 'helicopter'
-                ? HELI.gunInterval
-                : v.type === 'tank'
-                  ? TANK_MG[seat === 'cannon' ? 'coax' : seat].interval
-                  : 0.09) *
-                (clauseFactors(gunner.contractClause).interval / (snap?.balance?.fireRate ?? 1)))
-        ) {
+        const remoteRounds =
+          gunner.id === id
+            ? 0
+            : remoteShotCount(
+                g,
+                seat + ':' + gunner.id,
+                dt,
+                (v.type === 'helicopter'
+                  ? HELI.gunInterval
+                  : v.type === 'tank'
+                    ? TANK_MG[seat === 'cannon' ? 'coax' : seat].interval
+                    : 0.09) *
+                  (clauseFactors(gunner.contractClause).interval / (snap?.balance?.fireRate ?? 1)),
+                !!m.fire &&
+                  v.supplies?.ammo[v.type === 'tank' && seat === 'cannon' ? 'coax' : seat] >= 1,
+              );
+        for (let shot = 0; shot < remoteRounds; shot++) {
           const o = (
             v.type === 'tank' && seat === 'cannon'
               ? mount.userData.coaxMuzzle
@@ -3151,16 +3180,18 @@ function updateOthers(dt) {
           bullet(o, new T.Vector3().fromArray(m.turretDirection || [0, 0, -1]), vehicleColor(v));
         }
       }
-    if (
-      !isSelf &&
-      v.type !== 'bomber' &&
-      motion.fire &&
-      v.supplies?.ammo.pilot >= 1 &&
-      Math.random() <
-        dt /
-          (FIRE_INTERVAL *
-            (clauseFactors(p?.contractClause).interval / (snap?.balance?.fireRate ?? 1)))
-    ) {
+    const remotePilotRounds =
+      !isSelf && v.type !== 'bomber'
+        ? remoteShotCount(
+            g,
+            'pilot:' + (p?.id || ''),
+            dt,
+            FIRE_INTERVAL *
+              (clauseFactors(p?.contractClause).interval / (snap?.balance?.fireRate ?? 1)),
+            !!motion.fire && v.supplies?.ammo.pilot >= 1,
+          )
+        : 0;
+    for (let shot = 0; shot < remotePilotRounds; shot++) {
       const direction = new T.Vector3(0, 0, -1).applyQuaternion(g.quaternion);
       if (v.type === 'spitfire') {
         g.updateWorldMatrix(true, true);
@@ -3535,12 +3566,15 @@ function physics(dt) {
     landed = state.landed;
     gas = state.gas;
     shooting = myVehicle.type === 'tank' && active && hasAmmo() && (mouseFire || manual.fire);
-    cooldown -= dt;
-    if (shooting && cooldown <= 0) {
-      cooldown =
-        TANK_MG.pilot.interval * (currentFactors().interval / (snap?.balance?.fireRate ?? 1));
+    const burst = advanceAutomaticFire(
+      cooldown,
+      dt,
+      TANK_MG.pilot.interval * (currentFactors().interval / (snap?.balance?.fireRate ?? 1)),
+      shooting,
+    );
+    cooldown = burst.cooldown;
+    for (let shot = 0; shot < burst.shots; shot++)
       shoot(new T.Vector3(0, 0, -1).applyQuaternion(me.quaternion));
-    }
     return;
   }
   const active = controlFocus.active && canCapture();
@@ -3613,14 +3647,16 @@ function physics(dt) {
   for (const prop of me.userData.props || [me.userData.prop])
     prop.rotation.z += dt * gas * (engine && remainingFuel() > 0 ? 70 : 0);
   $('stallWarning').classList.toggle('hidden', stall > 0.8);
-  cooldown -= dt;
   shooting =
     active && myVehicle && myVehicle.type !== 'bomber' && hasAmmo() && (manual.fire || mouseFire);
-  if (shooting && cooldown <= 0 && hp > 0) {
-    cooldown += FIRE_INTERVAL * (currentFactors().interval / (snap?.balance?.fireRate ?? 1));
-    shoot(forward);
-  }
-  if (!shooting) cooldown = Math.max(0, cooldown);
+  const burst = advanceAutomaticFire(
+    cooldown,
+    dt,
+    FIRE_INTERVAL * (currentFactors().interval / (snap?.balance?.fireRate ?? 1)),
+    shooting && hp > 0,
+  );
+  cooldown = burst.cooldown;
+  for (let shot = 0; shot < burst.shots; shot++) shoot(forward);
   damageCd -= dt;
   const p = me.position;
   let collision =
@@ -3675,6 +3711,7 @@ function drawRadar() {
         (box.max.x - box.min.x) / 0.04,
         ((box.max.z - box.min.z) / 0.04) * 0.88,
       );
+  groundDefenseUI.drawRadar(radar, snap?.groundDefense);
   radar.strokeStyle = '#77988740';
   radar.lineWidth = 1;
   for (let i = 22; i < 220; i += 44) {
@@ -3887,6 +3924,7 @@ function frame(now) {
     camera.fov = zoomFov;
     camera.updateProjectionMatrix();
   }
+  groundDefenseUI.update();
   hitEffects.update(dt, camera);
   bloodEffects.update(dt);
   combatEffects.update(dt, camera);
@@ -3970,7 +4008,7 @@ function frame(now) {
     }
     updateAimHUD();
     $('speed').textContent = ((vel.length() / MAP.ratio) * 3.6).toFixed(0);
-    $('alt').textContent = Math.max(0, me.position.y).toFixed(2);
+    $('alt').textContent = Math.max(0, MAP.reference(me.position.y)).toFixed(2);
     $('gas').textContent = Math.round(gas * 100);
     $('health').textContent = Math.max(0, Math.round(hp)) + ' PV';
     $('hpbar').style.width = (hp / (myVehicle?.type === 'helicopter' ? 200 : 100)) * 100 + '%';
@@ -4887,7 +4925,7 @@ function updateContextHUD() {
           dead: !!respawnAt,
           hp: crewSeat === 'pilot' ? hp : (myVehicle?.state.hp ?? hp),
           speed: (vel.length() / MAP.ratio) * 3.6,
-          altitude: Math.max(0, me.position.y),
+          altitude: Math.max(0, MAP.reference(me.position.y)),
           gas,
           fuel: remainingFuel(),
           ammo: myVehicle
@@ -4992,7 +5030,7 @@ function updateContextHUD() {
   const range = model?.readout;
   $('aimRange').classList.toggle('hidden', !range);
   if (range) {
-    $('aimDistance').textContent = range.metres.toFixed(3) + ' m';
+    $('aimDistance').textContent = range.metres.toFixed(0) + ' m';
     $('aimGauge').value = range.fraction;
     $('aimRange').style.left = `calc(${$('crosshair').style.left || '50%'} + 25px)`;
     $('aimRange').style.top = `calc(${$('crosshair').style.top || '50%'} + 18px)`;
@@ -5435,7 +5473,7 @@ function updateTankReticle() {
     if (Math.abs(pixelY - innerHeight / 2) < 12 || Math.abs(pixelY - previousLabelY) < 14) continue;
     previousLabelY = pixelY;
     const tick = document.createElement('span');
-    tick.textContent = '— ' + mark.metres.toFixed(2) + ' m';
+    tick.textContent = '— ' + MAP.reference(mark.metres).toFixed(0) + ' m';
     tick.style.left = 'calc(' + (50 + projected.x * 50) + '% + 12px)';
     tick.style.top = 50 - projected.y * 50 + '%';
     root.append(tick);

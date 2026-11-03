@@ -20,3 +20,14 @@ export class GunSalvos {
     this.pending = [];
   }
 }
+
+// Catch up rounds due inside a slow frame instead of tying cadence to FPS.
+// Bound the work after a stall or extreme room tuning; do not replay a hidden tab.
+export function advanceAutomaticFire(cooldown, dt, interval, shooting, maxShots = 8) {
+  const remaining = cooldown - Math.max(0, dt);
+  if (!shooting) return { cooldown: Math.max(0, remaining), shots: 0 };
+  if (!(interval > 0) || !Number.isFinite(interval)) return { cooldown: 0, shots: 0 };
+  if (remaining > 0) return { cooldown: remaining, shots: 0 };
+  const shots = Math.min(maxShots, Math.floor(-remaining / interval) + 1);
+  return { cooldown: Math.max(0, remaining + shots * interval), shots };
+}

@@ -1,0 +1,58 @@
+import assert from 'node:assert/strict';
+import {
+  newGroundDefense,
+  groundCommand,
+  groundFlow,
+  groundSnapshot,
+  damageBarricade,
+} from '../src/ground-defense-state.js';
+
+const state = newGroundDefense(),
+  foot = [0, 0],
+  cash = 100;
+const build = (command, dollars = cash, position = foot) =>
+  groundCommand(state, command, position, dollars);
+const first = build({ action: 'build', kind: 'barricade', a: [0, 0], b: [0.6, 0] });
+assert.equal(first.price, 3);
+assert.equal(first.ids.length, 3);
+assert.equal(state.navigationRevision, 1);
+assert.equal(new Set(first.ids).size, 3);
+assert.equal(state.structures.length, 3);
+assert.equal(state.structures[0].hp, 100);
+assert.equal(state.structures[0].a[0], 0);
+assert.throws(
+  () => build({ action: 'build', kind: 'barricade', a: [0, 0], b: [0.6, 0] }),
+  /occupé/,
+);
+assert.equal(state.revision, 1, 'rejected overlap leaves state unchanged');
+assert.throws(() => build({ action: 'build', kind: 'sugar', a: [0.3, 0.3] }), /proximité/);
+assert.throws(
+  () => build({ action: 'build', kind: 'sticky', a: [0, 0], b: [0.2, 0] }, 0),
+  /insuffisante/,
+);
+const sugar = build({ action: 'build', kind: 'sugar', a: [0.1, 0.1] });
+assert.equal(sugar.price, 3);
+assert.equal(state.structures.at(-1).radius, 0.15);
+const tape = build({ action: 'build', kind: 'sticky', a: [0, 0.15], b: [0.7, 0.15] });
+assert.equal(tape.price, 4);
+assert.equal(state.structures.at(-1).width, 0.03);
+assert.equal(state.navigationRevision, 1, 'tape and bait do not alter obstacles');
+const id = first.ids[1];
+assert.equal(damageBarricade(state, id, 40), false);
+assert.equal(state.navigationRevision, 1);
+assert.equal(state.structures.find((s) => s.id === id).hp, 60);
+assert.equal(build({ action: 'repair', id }, cash, [0.3, 0]).price, 1);
+assert.equal(state.structures.find((s) => s.id === id).hp, 100);
+assert.equal(damageBarricade(state, id, 100), true);
+assert.equal(state.navigationRevision, 2);
+assert.throws(() => build({ action: 'repair', id }, cash, [0.3, 0]), /réparé/);
+assert.equal(build({ action: 'remove', id }, cash, [0.3, 0]).price, 0);
+assert.equal(state.navigationRevision, 3);
+const snapshot = groundSnapshot(state);
+snapshot.structures[0].hp = -1;
+snapshot.structures[0].a[0] = 99;
+assert.equal(state.structures[0].hp, 100);
+const flow = groundFlow(state);
+assert.ok(flow.route([-1, 0]));
+assert.ok(flow.route([2.9, -2.7]));
+console.log('Ground structure transactions: OK');

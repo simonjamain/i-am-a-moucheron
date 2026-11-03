@@ -111,6 +111,15 @@ et utilisent une grille spatiale pour le voisinage.
 La [correction des commandes H2](helicopter-controls.md) couvre Z/O/Haut, S/Bas,
 stationnaire, poussée locale et axe des roquettes.
 
+## Tir automatique avec latence simulée
+
+`node scripts/test-aircraft-fire.mjs` reproduit un tir continu à 100 balles/s
+avec 200 ms de réponse et 5 % de confirmations perdues après traitement
+serveur, puis des scénarios à 500 et 1 000 balles/s. Il vérifie qu'aucun tir
+local n'est refusé, que les rapports restent idempotents et que la cadence
+reste stable à 20, 30, 60 et 120 FPS. Cette simulation n'est pas une mesure
+WAN ni une validation WebGL ; une partie sur le VPS reste nécessaire.
+
 ## Performance et capacité
 
 Les snapshots serveur évitent désormais les recherches répétées dans les achats,

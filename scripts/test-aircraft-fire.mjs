@@ -1,5 +1,5 @@
 import { TracerPool } from '../src/tracers.js';
-import { GunSalvos } from '../src/salvos.js';
+import { GunSalvos, advanceAutomaticFire } from '../src/salvos.js';
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import { readFileSync } from 'node:fs';
@@ -45,7 +45,7 @@ const reply = (request, ammo, revision) => ({
 for (let i = 0; i < 4; i++) assert.equal(fire.fire('v', 'pilot', supply), true);
 assert.equal(requests.length, 0);
 assert.equal(timers.size, 1, 'one batched report, not one timer per bullet');
-assert.equal([...timers.values()][0].delay, 250);
+assert.equal([...timers.values()][0].delay, 50);
 assert.equal(fire.available('v', 'pilot', supply), 996);
 const firstFlush = fire.flush();
 assert.equal(requests.length, 1);
@@ -213,4 +213,86 @@ assert.equal(minute.fire('v', 'pilot', supply), false);
 assert.equal(minute.available('v', 'pilot', supply), 0);
 console.log(
   'PASS: immediate client shots before HTTP, local depletion, batched reports, bounded slow links, retry IDs and late-reply safety',
+);
+
+
+// Previously, 128 local slots and a fixed 250 ms pause made sustained 100/s
+// bursts stop under 200 ms RTT. Test the exact failure scenario and faster
+// tuned rooms without a live network. Every 20th acknowledgement is lost
+// *after* the server spent the rounds, to exercise idempotent retries.
+async function sustainedFire({ latency, rate, seconds }) {
+  let clock = 0, timerID = 0, requests = 0, serverAmmo = 1_000_000, blocked = 0;
+  const timers = new Map(), seen = new Set();
+  const schedule = (fn, delay) => {
+    const id = ++timerID;
+    timers.set(id, { at: clock + delay, fn });
+    return id;
+  };
+  const cancel = (id) => timers.delete(id);
+  const request = ({ vehicle, seat, shots }) =>
+    new Promise((resolve, reject) => {
+      const nth = ++requests;
+      schedule(() => {
+        for (const shot of shots)
+          if (!seen.has(shot)) {
+            seen.add(shot);
+            serverAmmo--;
+          }
+        if (nth % 20 === 0) reject(Error('lost confirmation'));
+        else resolve({ vehicle, seat, shots, ammo: { pilot: serverAmmo }, revision: seen.size });
+      }, latency);
+    });
+  const gun = new AircraftFire(request, () => 'flight', {
+    session: 'lag-test',
+    schedule,
+    cancel,
+    now: () => clock,
+  });
+  const supply = { ammo: { pilot: 1_000_000 }, revision: -1 };
+  async function advance(until) {
+    while (true) {
+      let next = null;
+      for (const [id, timer] of timers)
+        if (timer.at <= until && (!next || timer.at < next[1].at)) next = [id, timer];
+      if (!next) break;
+      timers.delete(next[0]);
+      clock = next[1].at;
+      next[1].fn();
+      await Promise.resolve();
+      await Promise.resolve();
+      await Promise.resolve();
+    }
+    clock = until;
+  }
+  for (let i = 0; i < rate * seconds; i++) {
+    await advance(((i + 1) * 1000) / rate);
+    if (!gun.fire('v', 'pilot', supply)) blocked++;
+  }
+  await advance(seconds * 1000 + 4000);
+  assert.equal(blocked, 0, 'a delayed confirmation must not interrupt a local burst');
+  assert.equal(gun.queue.length, 0, 'all shot reports eventually settle');
+  assert.equal(seen.size, rate * seconds, 'a lost reply must not debit twice');
+  assert.equal(serverAmmo, 1_000_000 - rate * seconds);
+}
+for (const scenario of [
+  { latency: 200, rate: 100, seconds: 30 },
+  { latency: 200, rate: 500, seconds: 10 },
+  { latency: 100, rate: 1000, seconds: 5 },
+])
+  await sustainedFire(scenario);
+
+for (const fps of [20, 30, 60, 120]) {
+  let cooldown = 0, shots = 0;
+  for (let i = 0; i < fps * 30; i++) {
+    const result = advanceAutomaticFire(cooldown, 1 / fps, 0.06, true);
+    cooldown = result.cooldown;
+    shots += result.shots;
+  }
+  assert.ok(Math.abs(shots - 500) <= 1, '60 ms cadence at ' + fps + ' FPS: ' + shots);
+}
+assert.equal(advanceAutomaticFire(0, 0.25, 0.001, true).shots, 8);
+assert.equal(advanceAutomaticFire(0, 0.25, 0.001, false).shots, 0);
+assert.equal(advanceAutomaticFire(0, 1, 0, true).shots, 0);
+console.log(
+  'PASS: uninterrupted sustained fire under simulated RTT/loss, bounded catch-up at 20–120 FPS',
 );
