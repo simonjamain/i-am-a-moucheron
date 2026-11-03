@@ -98,6 +98,7 @@ import { HoldZoom, contextKey, rangeReadout } from '/equipment-controls.js';
 import { HEAVY, TANK_MG, availableShell } from '/armament.js';
 import { stepTank } from '/tank.js';
 import { CrashEffects } from '/crash-effects.js';
+import { MissileExhaust } from '/missile-exhaust.js';
 import * as T from '/three.js';
 import { stepFlight } from '/flight.js';
 import { loadFlightTuning } from '/flight-tuning.js';
@@ -4823,8 +4824,10 @@ async function fireHeavy(weapon = null) {
   }
 }
 const ordnanceModels = new Map();
+const missileExhaust = new MissileExhaust(T, scene);
 function updateOrdnance(dt) {
   const active = new Set();
+  const exhaustPositions = new Map();
   for (const shot of snap?.ordnance || []) {
     active.add(shot.shot);
     let model = ordnanceModels.get(shot.shot);
@@ -4852,21 +4855,30 @@ function updateOrdnance(dt) {
       model.userData.projectileSolid = false;
       scene.add(model);
       ordnanceModels.set(shot.shot, model);
+      if (shot.weapon === 'rocket' || shot.weapon === 'missile')
+        missileExhaust.attach(shot.shot, model);
     }
     const lag = Math.max(0, Math.min(0.25, (Date.now() + clockOffset - shot.updated) / 1000));
     model.position.fromArray(shot.p).addScaledVector(new T.Vector3().fromArray(shot.v), lag);
+    if (shot.weapon === 'rocket' || shot.weapon === 'missile')
+      exhaustPositions.set(shot.shot, model.position);
     if (Math.hypot(...shot.v) > 1e-8)
       model.quaternion.setFromUnitVectors(
         shot.weapon === 'bomb' ? new T.Vector3(0, 0, -1) : new T.Vector3(0, 1, 0),
         new T.Vector3().fromArray(shot.v).normalize(),
       );
   }
+  missileExhaust.update(dt, exhaustPositions);
   for (const [id, model] of ordnanceModels)
     if (!active.has(id)) {
+      const hasExhaust = missileExhaust.emitters.has(id);
+      missileExhaust.detach(id);
       scene.remove(model);
       model.traverse((o) => {
-        o.geometry?.dispose();
-        o.material?.dispose();
+        if (!hasExhaust || o === model) {
+          o.geometry?.dispose();
+          o.material?.dispose();
+        }
       });
       ordnanceModels.delete(id);
     }
