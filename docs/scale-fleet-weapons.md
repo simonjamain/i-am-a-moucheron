@@ -88,3 +88,7 @@ Le H2 et le D2 sont décrits dans [véhicules d’appui](support-vehicles.md).
 La proximité D2 est exprimée en mètres de référence (0,5–20), contrairement au
 radar en mètres du décor ; elle ne modifie pas le rayon de dégâts. Les nouvelles
 coques et stocks utilisent le même ratio centralisé.
+
+## Effets visuels des missiles et roquettes (version 120)
+
+Le client affiche une flamme orange avec un cœur lumineux derrière chaque roquette et missile, ainsi qu'une traînée de fumée qui se dissipe. L'effet est local au rendu : aucun message UDP supplémentaire ni changement de collision. Les fumées sont plafonnées à 320 éléments, les ressources des flammes sont partagées et les émissions sont interrompues à la disparition du projectile.

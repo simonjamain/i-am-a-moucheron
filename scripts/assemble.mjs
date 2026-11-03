@@ -59,6 +59,7 @@ const files = {
       'insect-status',
       'blood-effects',
       'crash-effects',
+      'missile-exhaust',
       'control-focus',
       'network',
       'udp-client',

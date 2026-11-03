@@ -1,5 +1,6 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
+  { version: 120, changes: ['Les roquettes et missiles laissent une traînée de fumée et une petite flamme.'] },
   { version: 119, changes: ['Un bouton « Nouveautés » permet de retrouver les changements du jeu.'] },
   { version: 117, changes: ['Les grandes nuées se synchronisent plus efficacement en multijoueur.'] },
   { version: 112, changes: ['Les insectes ont des vitesses adaptées à chaque espèce.'] },
