@@ -259,18 +259,21 @@ Le rat géant possède 5 000 PV et avance lentement. Le moustique possède 70 PV
 
 Les [vitesses physiques des espèces](enemy-bestiary.md#vitesse-physique-dans-la-pièce) sont explicites en m/s dans le bureau, indépendantes de la taille des insectes et du nombre de membres de la nuée. L'accélération cachée des bébés araignées et les oscillations trop rapides des moustiques ont été corrigées.
 
-## Tower defense terrestre — chantier de l'issue #58, non livré
+## Défenses terrestres
 
-Sur la branche de développement, un registre côté serveur prépare les barricades segmentées, sachets de sucre et bandes collantes. Les placements, prix, PV et réparations sont vérifiés côté serveur et inclus dans les snapshots. **Il n'existe pas encore d'interface de pose et les insectes empruntent toujours leurs parcours précédents.** Aucune fonctionnalité joueur n'est annoncée comme livrée dans `main`.
+À pied au sol du bureau, ouvrir « Défense » puis choisir barricade, sucre, ruban,
+réparation ou suppression. Le menu se ferme et la caméra reste en troisième
+personne. Un aperçu suit le personnage devant lui pendant ses déplacements :
+E ou clic gauche valide, R tourne le segment par pas de 45°, Échap quitte.
+Le mode reste actif après une pose pour construire en avançant.
+Le bouton de confirmation permet aussi de poser avec le curseur libéré.
 
-Le moteur de défense en cours d'intégration ne prend le contrôle des insectes terrestres
-qu'après la création d'une construction dans une room. Les positions, la satiété et
-les arrivées deviennent alors des états serveur transmis aux clients ; les volants
-restent inchangés. Cette fonction est encore **expérimentale sur la branche de PR**,
-sans commande joueur accessible dans l'interface ; elle ne décrit pas `main`.
-
-La PR propose aussi une **carte de construction expérimentale** accessible à pied
-pour dessiner des barricades, étirer des rubans et poser du sucre. Les constructions
-sont visibles dans la pièce et les rayons du sucre s'affichent au sol et sur le
-radar. La carte de pose ne remplace pas encore le geste de placement directement
-dans la scène 3D prévu par l'issue.
+Les barricades et rubans sont posés par morceaux de 12 cm (1 $) ; le sucre coûte
+3 $, une réparation 1 $, la suppression est gratuite. L’aperçu rouge et le message
+signalent un refus ; le serveur revalide position, caisse et occupation avant
+paiement. La pose exige le sol du bureau, sans parachute. Les défenses sont
+partagées par room et effacées à sa remise à zéro. Les terrestres utilisent alors
+la navigation serveur qui tient compte des barricades, appâts et rubans ; les
+volants gardent leurs parcours. Le radar conserve les constructions et rayons
+d’appât ; il ne sert pas à construire. Le rendu et le confort de pose demandent
+encore un essai WebGL/UDP en partie réelle.
