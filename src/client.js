@@ -420,6 +420,7 @@ function soulIntent() {
   };
 }
 canvas.style.touchAction = 'none';
+addEventListener('blur', () => groundDefenseUI.cancel());
 canvas.addEventListener('contextmenu', (e) => {
   if (joined && (onFoot || respawnAt)) e.preventDefault();
 });
@@ -725,6 +726,10 @@ async function captureMouse() {
 }
 $('captureMouse').onclick = () => (controlFocus.active ? releaseMouse() : captureMouse());
 addEventListener('pointermove', (event) => {
+  if (groundDefenseUI.radial) {
+    groundDefenseUI.moveWheel(event.movementX, event.movementY);
+    return;
+  }
   if (
     !canCapture() ||
     !controlFocus.active ||
@@ -771,6 +776,11 @@ canvas.addEventListener('pointerleave', () => {
   mousePrevious = null;
 });
 canvas.addEventListener('mousedown', (event) => {
+  if (event.button === 1 && groundDefenseUI.openWheel()) {
+    event.preventDefault();
+    return;
+  }
+  if (groundDefenseUI.radial) return;
   if (event.button === 2 && canCapture() && !respawnAt && (myVehicle || turretIndex >= 0)) {
     event.preventDefault();
     if (!controlFocus.active) captureMouse();
@@ -789,11 +799,12 @@ canvas.addEventListener('mousedown', (event) => {
 });
 addEventListener('mouseup', (e) => {
   if (e.button === 0) {
-    groundDefenseUI.release();
     mouseFire = false;
   }
+  if (e.button === 1 && groundDefenseUI.radial) groundDefenseUI.finishWheel();
   if (e.button === 2) holdZoom.reset();
 });
+addEventListener('blur', () => groundDefenseUI.cancel());
 canvas.addEventListener('contextmenu', (event) => event.preventDefault());
 canvas.addEventListener(
   'wheel',

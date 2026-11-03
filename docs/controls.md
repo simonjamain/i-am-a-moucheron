@@ -164,4 +164,4 @@ Bouton « Défense » à pied, puis choix d’un outil : aperçu devant le perso
 pendant la marche, E ou clic gauche pour valider, R pour tourner de 45°, Échap
 pour quitter. Prix, conditions et navigation : [gameplay](gameplay.md#défenses-terrestres).
 
-Maintenir le clic gauche en marchant étire la barricade ou le ruban. Relâcher confirme au prix affiché.
+Molette maintenue : orienter vers un secteur puis relâcher pour choisir. Clic gauche : ancrer un mur ou un ruban, marcher, puis cliquer à nouveau pour poser. Le sucre, la réparation et la suppression demandent un seul clic.

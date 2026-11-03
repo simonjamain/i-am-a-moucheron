@@ -51,13 +51,14 @@ export class GroundDefenseUI {
     top.append(heading, close);
     this.buttons = document.createElement('div');
     this.buttons.style.cssText = 'display:flex;gap:5px;flex-wrap:wrap;margin:8px 0';
-    for (const [kind, label] of [
+    this.tools = [
       ['barricade', 'Barricade'],
       ['sugar', 'Sucre'],
       ['sticky', 'Ruban'],
       ['repair', 'Réparer'],
       ['remove', 'Enlever'],
-    ]) {
+    ];
+    for (const [kind, label] of this.tools) {
       const button = document.createElement('button');
       button.textContent = label;
       button.onclick = () => {
@@ -72,9 +73,29 @@ export class GroundDefenseUI {
       this.buttons.append(button);
     }
     this.buttons.querySelector('button').style.fontWeight = 'bold';
+    this.wheel = document.createElement('div');
+    this.wheel.style.cssText =
+      'display:none;position:fixed;z-index:40;left:50%;top:50%;transform:translate(-50%,-50%);width:240px;height:240px;border-radius:50%;border:2px solid #cbdca3;pointer-events:none;color:white;text-align:center';
+    this.tools.forEach(([, label], i) => {
+      const angle = (i * 2 * Math.PI) / this.tools.length;
+      const item = document.createElement('strong');
+      item.textContent = label;
+      item.style.cssText =
+        'position:absolute;transform:translate(-50%,-50%);font-size:14px;left:' +
+        (50 + 32 * Math.sin(angle)) +
+        '%;top:' +
+        (50 - 32 * Math.cos(angle)) +
+        '%';
+      this.wheel.append(item);
+    });
+    this.dot = document.createElement('span');
+    this.dot.style.cssText =
+      'position:absolute;width:8px;height:8px;border-radius:50%;background:white;transform:translate(-50%,-50%)';
+    this.wheel.append(this.dot);
+    document.body.append(this.wheel);
     this.hint = document.createElement('p');
     this.hint.textContent =
-      'Maintenez le clic et marchez pour étirer un mur ou un ruban. Relâchez pour poser. Pose courte : E pour poser devant vous, R pour tourner, Échap pour quitter. Barricade / ruban : 1 $ par tranche de 20 cm, sucre : 3 $, réparation : 1 $.';
+      'Cliquez pour ancrer un mur ou un ruban, marchez puis cliquez pour terminer. Pose courte : E pour poser devant vous, R pour tourner, Échap pour quitter. Barricade / ruban : 1 $ par tranche de 20 cm, sucre : 3 $, réparation : 1 $.';
     this.panel.append(top, this.buttons, this.hint);
     this.status = document.createElement('button');
     this.status.style.cssText =
@@ -94,6 +115,50 @@ export class GroundDefenseUI {
     scene.add(this.preview);
     this.trigger.onclick = () => this.setOpen(!this.opened);
   }
+  openWheel() {
+    if (!this.available() || !this.enabled() || this.busy) return false;
+    this.cancel();
+    this.radial = true;
+    this.dx = this.dy = 0;
+    this.wheel.style.display = 'block';
+    this.moveWheel(0, 0);
+    return true;
+  }
+  moveWheel(dx, dy) {
+    this.dx += dx;
+    this.dy += dy;
+    const length = Math.hypot(this.dx, this.dy);
+    if (length > 108) {
+      this.dx *= 108 / length;
+      this.dy *= 108 / length;
+    }
+    const n = this.tools.length;
+    this.sector =
+      length < 18 ? -1 : (Math.round((Math.atan2(this.dx, -this.dy) * n) / (2 * Math.PI)) + n) % n;
+    this.dot.style.left = 120 + this.dx + 'px';
+    this.dot.style.top = 120 + this.dy + 'px';
+    const sectors = this.tools.map(
+      (_, i) =>
+        (i === this.sector ? '#53754d' : '#19352fee') +
+        ' ' +
+        (i * 360) / n +
+        'deg ' +
+        (((i + 1) * 360) / n - 1) +
+        'deg, #90a78a ' +
+        (((i + 1) * 360) / n - 1) +
+        'deg ' +
+        ((i + 1) * 360) / n +
+        'deg',
+    );
+    this.wheel.style.background = 'conic-gradient(from -36deg,' + sectors.join(',') + ')';
+  }
+  finishWheel() {
+    const index = this.sector;
+    this.radial = false;
+    this.wheel.style.display = 'none';
+    if (index >= 0 && this.available() && this.enabled())
+      this.buttons.querySelectorAll('button')[index].onclick();
+  }
   setOpen(open) {
     this.anchor = null;
     this.opened = open && this.available();
@@ -104,6 +169,8 @@ export class GroundDefenseUI {
     }
   }
   cancel() {
+    this.radial = false;
+    this.wheel.style.display = 'none';
     this.active = false;
     this.setOpen(false);
     this.preview.visible = false;
@@ -112,20 +179,21 @@ export class GroundDefenseUI {
   press() {
     if (!this.enabled() || this.busy) return;
     this.update();
-    if (this.active && this.candidate?.center && ['barricade', 'sticky'].includes(this.mode))
+    if (
+      !this.anchor &&
+      this.active &&
+      this.candidate?.center &&
+      ['barricade', 'sticky'].includes(this.mode)
+    )
       this.anchor = this.candidate.center;
     else this.confirm();
-  }
-  release() {
-    if (!this.anchor) return;
-    this.confirm();
-    this.anchor = null;
   }
   async confirm() {
     if (!this.active || this.busy || !this.enabled()) return;
     this.update();
     const candidate = this.candidate;
     if (!this.active || !candidate || candidate.error) return;
+    this.anchor = null;
     this.busy = true;
     try {
       const { id, ...body } = candidate.command;
@@ -137,7 +205,7 @@ export class GroundDefenseUI {
   update() {
     const snap = this.snapshot();
     this.trigger.hidden = !this.available();
-    if (!this.available()) this.cancel();
+    if (!this.available() || (this.radial && !this.enabled())) this.cancel();
     const key = [snap?.code, snap?.base?.epoch, snap?.groundDefense?.revision].join(':');
     if (key !== this.key) {
       if (this.roomKey !== [snap?.code, snap?.base?.epoch].join(':')) this.cancel();
@@ -163,7 +231,7 @@ export class GroundDefenseUI {
       c.error ||
       (this.busy
         ? 'Envoi…'
-        : `E · ${this.mode === 'repair' ? 'Réparer' : this.mode === 'remove' ? 'Enlever' : 'Poser'} · ${c.price} $ · R : tourner · Échap : quitter`);
+        : `${this.anchor ? 'Clic pour terminer' : ['sticky', 'barricade'].includes(this.mode) ? 'Clic pour commencer · E' : 'Clic'} · ${this.mode === 'repair' ? 'Réparer' : this.mode === 'remove' ? 'Enlever' : 'Poser'} · ${c.price} $ · R : tourner · Échap : quitter`);
     this.status.disabled = !!c.error || this.busy;
     if (!c.center) return;
     const cmd = c.command;

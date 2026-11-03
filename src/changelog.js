@@ -1,6 +1,12 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 154,
+    changes: [
+      'Maintenez la molette et relâchez vers votre outil. Deux clics posent un mur ou un ruban, un seul suffit pour le sucre.',
+    ],
+  },
+  {
     version: 153,
     changes: [
       'Maintenez le clic et marchez pour étirer vos barricades et rubans. Tournez le sachet de sucre pour orienter ses cristaux.',
