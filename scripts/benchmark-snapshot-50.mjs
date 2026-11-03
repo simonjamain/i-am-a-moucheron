@@ -37,8 +37,10 @@ before.advance = () => {};
 after.advance = () => {};
 const original = before.snapshot(room);
 const optimized = after.snapshot(room);
-const { rosterRevision, ...comparable } = optimized;
+const { rosterRevision, groundDefense, ...comparable } = optimized;
 assert.equal(rosterRevision, 0, 'new roster revision defaults to zero');
+assert.deepEqual(groundDefense, { revision: 0, navigationRevision: 0, structures: [] },
+  'new ground state is isolated and initially empty');
 assert.deepEqual(comparable, original, 'snapshot wire structure and values must match baseline');
 const sample = (engine) => {
   const t0 = performance.now();

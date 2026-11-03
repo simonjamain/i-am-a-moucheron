@@ -1066,11 +1066,16 @@ export class Game {
     return result;
   }
   groundDefenseCommand(r, p, b) {
-    requireGame(p.life === 'alive' && p.mode === 'foot', 'Construction réservée aux joueurs à pied.');
+    requireGame(
+      p.life === 'alive' && p.mode === 'foot',
+      'Construction réservée aux joueurs à pied.',
+    );
     requireGame(b?.epoch === r.base.epoch, 'La partie a changé ; recommencez la pose.');
     const body = this.base(r, p, b.ground);
-    requireGame(body && body.grounded && !body.parachute && body.y < 0.025,
-      'Rejoignez le sol du bureau pour construire.');
+    requireGame(
+      body && body.grounded && !body.parachute && body.y < 0.025,
+      'Rejoignez le sol du bureau pour construire.',
+    );
     const w = baseWorld(body);
     let transaction;
     try {

@@ -23,3 +23,9 @@
 - Réparation et démontage exigent la proximité du **segment précis**, pas celle du début de la barricade. Le test utilise maintenant la position du joueur près du segment concerné.
 - Le champ de navigation tient compte des obstacles fixes bas du décor à partir des colliders existants ; les bandes restent traversables et ignorées de la recherche de chemin.
 - Les tableaux de coordonnées du snapshot ne partagent plus de mémoire mutable avec les structures serveur.
+
+### Contrôles CI et compatibilité (v135)
+
+- Le nouveau champ `groundDefense` provoquait la divergence attendue avec le benchmark historique de snapshots. La comparaison conserve l'égalité complète de tous les champs historiques et vérifie séparément l'état initial du nouveau champ.
+- Le test de la fenêtre « Nouveautés » ne doit pas exiger une entrée de changelog à chaque incrément de version purement technique : il vérifie la dernière version réellement documentée dans `PLAYER_CHANGELOG`, toujours inférieure ou égale à `VERSION`.
+- Un contrôle de format signalait aussi `server/game.js` ; mise en forme manuelle des lignes ajoutées. Les suites restent à relancer.
