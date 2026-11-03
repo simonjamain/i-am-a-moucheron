@@ -62,6 +62,7 @@ const files = {
       'network',
       'udp-client',
       'udp-protocol',
+      'snapshot-wire',
       'mouse-flight',
       'purgatory-physics',
       'audio',
