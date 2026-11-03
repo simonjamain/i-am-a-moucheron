@@ -12,16 +12,16 @@ import { DEFAULT_BALANCE, retimeRoster, scaleRoster } from '../src/balance.js';
 
 // The game office is in world metres, not creature-scaled dimensions.
 const expected = {
-  ant: 0.17,
-  roach: 0.125,
-  midge: 0.22,
-  dart: 0.26,
-  guard: 0.175,
-  mosquito: 0.23,
-  rat: 0.095,
-  spider: 0.11,
-  spiderling: 0.15,
-  brute: 0.14,
+  ant: 0.085,
+  roach: 0.0625,
+  midge: 0.11,
+  dart: 0.13,
+  guard: 0.0875,
+  mosquito: 0.115,
+  rat: 0.0475,
+  spider: 0.055,
+  spiderling: 0.075,
+  brute: 0.07,
 };
 assert.deepEqual(
   Object.fromEntries(Object.entries(ENEMY_TYPES).map(([type, profile]) => [type, profile.speedMps])),
