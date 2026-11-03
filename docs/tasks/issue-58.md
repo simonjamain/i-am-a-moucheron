@@ -82,3 +82,7 @@
 ### Précision des tests (v146)
 
 - Vérifie la cellule exacte recouverte lorsque l'objectif est scellé. La régression de l'appât inaccessible inspecte l'insecte réellement simulé, et vérifie qu'il continue vers la poubelle.
+
+### Régression d'objectif totalement bloqué (v149)
+
+- La vérification utilise désormais la cellule contenant réellement le centre de l'objectif sur la grille de 5 cm, plutôt qu'une cellule voisine. Un mur qui couvre l'objectif doit renvoyer un champ sans itinéraire et jamais une exception.

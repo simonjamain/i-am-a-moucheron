@@ -32,7 +32,7 @@ assert.ok(closed.route([0.9, 0.9]));
 assert.ok(buildGroundFlow({ ...config, barricades: wall.slice(1) }).route([0.5, 0.05]));
 const goalBlocked = buildGroundFlow({
   ...config,
-  barricades: splitBarricade([0.9, 0.975], [1, 0.975], 'sealed'),
+  barricades: splitBarricade([0.9, 0.925], [1, 0.925], 'sealed'),
 });
 assert.equal(
   goalBlocked.route([0.05, 0.05]),
