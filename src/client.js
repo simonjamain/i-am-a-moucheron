@@ -5,7 +5,9 @@ import { deliveryHeightAt } from '/delivery.js';
 import { reserveAlerts, missileStatus, ArrivalSignals } from '/reserve-feedback.js';
 import { controlHints, cursorStats, cursorAmmoText } from '/live-hud.js';
 import { identifyPlayer, disposePlayerIdentity } from '/player-livery.js';
-import { GunSalvos, advanceAutomaticFire } from '/salvos.js';
+import { GunSalvos } from '/salvos.js';
+import { nextPilotMuzzle } from '/muzzle.js';
+import { advanceAutomaticFire } from '/salvos.js';
 import { ammoCapacity } from '/logistics.js';
 import { moveShotTrace, advanceShotTrace, makeShotTrace, TracerPool } from '/tracers.js';
 import { PurchaseUI } from '/purchase-ui.js';
@@ -271,8 +273,7 @@ let myVehicle = null,
   heliWeapon = 'copilot',
   missilePressed = false,
   mobileProximity = MOBILE_FUSE.initial,
-  heavyPending = false,
-  weaponBarrel = 0;
+  heavyPending = false;
 const fleetModels = new Map(),
   effectSeen = new Set();
 let turretIndex = -1,
@@ -3200,15 +3201,10 @@ function updateOthers(dt) {
           performance.now(),
           Math.min(6, Math.floor(v.supplies.ammo.pilot)),
         );
-      } else
-        bullet(
-          new T.Vector3(v.type === 'tank' ? 0.7 : (weaponBarrel++ % 2 ? 1 : -1) * 1.35, 0, -1.2)
-            .multiplyScalar(ACTOR_UNIT)
-            .applyQuaternion(g.quaternion)
-            .add(g.position),
-          direction,
-          vehicleColor(v),
-        );
+      } else {
+        const muzzle = nextPilotMuzzle(T, g);
+        if (muzzle) bullet(muzzle, direction, vehicleColor(v));
+      }
     }
     if (v.type === 'spitfire' && g.userData.remoteSalvos)
       g.userData.remoteSalvos.update(
@@ -3330,12 +3326,8 @@ function shoot(forward) {
     if (count) gunSalvos.enqueue(myVehicle.id + ':' + crewSeat, performance.now(), count);
     return;
   }
-  const side = myVehicle?.type === 'tank' ? 0.7 : (weaponBarrel++ % 2 ? 1 : -1) * 1.35;
-  const muzzle = new T.Vector3(side, 0, -1.2)
-    .multiplyScalar(ACTOR_UNIT)
-    .applyQuaternion(me.quaternion)
-    .add(me.position);
-  bullet(muzzle, spreadDirection(T, forward), '#f4efab', true);
+  const muzzle = nextPilotMuzzle(T, me);
+  if (muzzle) bullet(muzzle, spreadDirection(T, forward), '#f4efab', true);
 }
 function explosion(b, point) {
   combatEffects.blast(point);

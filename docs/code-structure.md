@@ -30,7 +30,7 @@ base de données ni accès disque dans les opérations de jeu Node. Voir
 | Vol et entrée        | `flight.js`, `mouse-flight.js`, `input.js`, `control-focus.js`, `fleet.js`, `vacant-flight.js`.                                                    |
 | Corps et purgatoire  | `base.js`, `purgatory-physics.js`, `sortie.js` ; [file](purgatory-queue.md).                                                                       |
 | Chute actuelle       | `field-physics.js` : gravité humaine convertie au ratio, gonflage, impact ; [physique actuelle](multiplayer-return.md).                            |
-| Armes                | `ballistics.js`, `combat.js`, `armament.js`, `ordnance.js`, `aircraft-fire.js`, `tracers.js`, `insect-hits.js`.                                    |
+| Armes                | `ballistics.js`, `combat.js`, `armament.js`, `ordnance.js`, `aircraft-fire.js`, `tracers.js`, `muzzle.js`, `insect-hits.js`.                       |
 | Visée/caméras        | `personal-aim.js` pour épaule/main ; `tank-reticle.js` pour les trajectoires de mire ; `tank-view.js` pour lunette, observation et bouche serveur. |
 | Vagues               | `waves.js`, `routes.js`, `route-speed.js`, `route-navigation.js`, `route-obstacles.js` généré.                                                     |
 | Économie/réserves    | `equipment.js`, `logistics.js`, `bank.js`, `rewards.js` ; [logistique](logistics-contracts.md).                                                    |

@@ -14,7 +14,10 @@ export const PLAYER_CHANGELOG = [
   },
   {
     version: 128,
-    changes: ['Les distances et altitudes affichées correspondent désormais à l’échelle réelle.'],
+    changes: [
+      'Les éclairs de tir apparaissent au bout des canons des mitrailleuses.',
+      'Les distances et altitudes affichées correspondent désormais à l’échelle réelle.',
+    ],
   },
   {
     version: 126,

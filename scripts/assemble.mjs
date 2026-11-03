@@ -43,6 +43,7 @@ const files = {
       'reserve-feedback',
       'delivery',
       'salvos',
+      'muzzle',
       'player-livery',
       'purchase-ui',
       'vehicle-care',
