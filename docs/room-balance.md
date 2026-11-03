@@ -16,8 +16,8 @@ les valeurs avant envoi ; les champs saisis ne sont pas écrasés par le polling
 
 | Réglage                              | Application                                                                                                                 |
 | ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------- |
-| Quantité (×0,25 et plus)             | Prochaine vague, sans plafond de population                                                                                 |
-| Progression (×0,25 et plus)          | Prochaine vague ; modifie le numéro de difficulté utilisé par le directeur, déblocages compris                              |
+| Quantité (×0,25 et plus)             | Prochaine vague encore à tirer, sans modifier les effectifs annoncés                                                        |
+| Progression (×0,25 et plus)          | Prochaine vague encore à tirer ; modifie le numéro de difficulté utilisé par le directeur, déblocages compris               |
 | PV ennemis (×0,25 et plus)           | Ennemis du bureau, immédiatement ; dégâts accumulés et PV sont multipliés ensemble, morts conservés                         |
 | Vitesse ennemis (×0,25 et plus)      | Immédiatement ; âge et durée de trajet recalés ensemble, sans changer la position ; futurs départs conservés                |
 | Dégâts (×0,25 et plus)               | Prochain impact déclaré pour armes légères/pistolet/DCA, prochain lancement pour armes lourdes ; tirs alliés compris        |
@@ -30,9 +30,7 @@ les valeurs avant envoi ; les champs saisis ne sont pas écrasés par le polling
 | Pause (5 s et plus)                  | Prochaine pause ou pause en cours                                                                                           |
 
 Les délais en cours sont ajustés de la différence entre ancienne et nouvelle
-durée, avec au moins cinq secondes restantes après modification. Le lancement
-manuel garde son comportement. Les réglages par défaut reproduisent le jeu
-précédent. Les réserves peuvent être fractionnaires comme lors d’un
+durée, avec au moins cinq secondes restantes après modification. Le lancement manuel devient disponible dès que le vote est résolu. Les réserves peuvent être fractionnaires comme lors d’un
 ravitaillement ; il faut toujours une unité entière pour tirer.
 
 ## Génération de nuées (debug)

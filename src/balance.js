@@ -7,14 +7,14 @@ export const BALANCE_FIELDS = Object.freeze({
     min: 0.25,
     step: 0.25,
     value: 1,
-    when: 'Prochaine vague',
+    when: 'Prochaine vague encore à tirer',
   },
   progression: {
     label: 'Progression de la difficulté',
     min: 0.25,
     step: 0.25,
     value: 1,
-    when: 'Prochaine vague, déblocages compris',
+    when: 'Prochaine vague encore à tirer, déblocages compris',
   },
   enemyHP: {
     label: 'PV des ennemis du bureau',
@@ -83,7 +83,7 @@ export const BALANCE_FIELDS = Object.freeze({
     label: 'Délai initial (secondes)',
     min: 5,
     step: 1,
-    value: 10,
+    value: 60,
     when: 'Compte à rebours initial, préavis minimum de 5 secondes',
   },
   pause: {

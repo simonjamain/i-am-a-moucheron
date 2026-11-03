@@ -72,6 +72,7 @@ assert.throws(
   /changé/,
 );
 call(a.id, 'start');
+const originalUpcoming = structuredClone(r.upcomingPlan);
 assert.equal(r.next_wave_at, now + 20000);
 now += 1000;
 change({ initialDelay: 5 });
@@ -79,8 +80,8 @@ assert.equal(r.next_wave_at, now + 5000, 'shortening gives 5 seconds notice');
 now += 5000;
 let s = call(a.id, 'sync');
 assert.equal(s.wave, 1);
-assert.equal(s.total, wavePlan(r.code, 1, r.started).roster.length);
-assert.deepEqual(s.roster, scaleRoster(wavePlan(r.code, 1, r.started), DEFAULT_BALANCE).roster);
+assert.equal(s.total, originalUpcoming.roster.length);
+assert.deepEqual(s.roster, originalUpcoming.roster);
 const originalCache = structuredClone(wavePlan(r.code, 1, r.started));
 now += 4000;
 s = call(a.id, 'sync');
@@ -198,14 +199,14 @@ assert.equal(s.dollars, balanceBeforeReward + 8);
 assert.equal(s.next_wave_at, now + 90000);
 change({ pause: 5 });
 assert.equal(r.next_wave_at, now + 5000);
-call(a.id, 'start');
+const announced = structuredClone(r.upcomingPlan);
+const ticket = { preparation: r.preparation.id, card: r.preparation.cards[0] };
+call(a.id, 'wave-vote', ticket);
+call(b.id, 'wave-vote', ticket);
+call(a.id, 'start', ticket);
 assert.equal(r.wave, 2);
-assert.equal(
-  r.plan.budget,
-  wavePlan(r.code, 3, r.started).budget,
-  'progression affects next director plan',
-);
-assert.equal(r.plan.roster.length, wavePlan(r.code, 3, r.started).roster.length * 2);
+assert.equal(r.plan.budget, 72 * 2, 'progression affects next director plan');
+assert.deepEqual(r.plan.roster, announced.roster);
 assert.deepEqual(game.rooms.get('OTHER').balance, DEFAULT_BALANCE);
 assert.equal(other.snapshot.balanceRevision, 0);
 const late = game.join({ code: 'BALANCE' });
@@ -286,11 +287,7 @@ const unrestricted = unlimitedGame.command('UNLIMITED', unlimited.id, 'balance',
 assert.equal(unrestricted.balance.damage, 100, 'server accepts values above the former bounds');
 unlimitedGame.startWave(unlimitedRoom);
 const unlimitedTotal = unlimitedGame.snapshot(unlimitedRoom).total;
-assert.equal(
-  unlimitedTotal,
-  wavePlan(unlimitedRoom.code, 1, unlimitedRoom.started).roster.length * 200,
-  'the unlimited room uses its own seeded composition',
-);
+assert.equal(unlimitedTotal, 32 * 200, 'the unlimited room uses its own seeded composition');
 assert.ok(unlimitedTotal > 900, 'actual wave exceeds former 900-enemy ceiling');
 // Real component handlers: preserve edits on polling, reject stale saves, retry errors.
 class Element {
@@ -510,7 +507,10 @@ const uiSpawn = new BalanceUI({
   onClose() {},
 });
 uiSpawn.open();
-assert.equal(uiSpawn.spawnFields.size, Object.keys(ENEMY_TYPES).filter((key) => !ENEMY_TYPES[key].offspringOnly).length);
+assert.equal(
+  uiSpawn.spawnFields.size,
+  Object.keys(ENEMY_TYPES).filter((key) => !ENEMY_TYPES[key].offspringOnly).length,
+);
 uiSpawn.spawnFields.get('midge').value = '2.5';
 await uiSpawn.submitSpawn();
 assert.equal(sendCount, 0);
@@ -529,4 +529,3 @@ uiSpawn.close();
 console.log(
   'PASS: every-player room balance and debug spawn, exact species counts, epochs, UI and live roster.',
 );
-

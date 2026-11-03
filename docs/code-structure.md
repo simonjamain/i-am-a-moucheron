@@ -23,22 +23,25 @@ base de données ni accès disque dans les opérations de jeu Node. Voir
 
 ## Modules de jeu
 
-| Domaine              | Modules et référence                                                                                                                               |
-| -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Unités/décor         | `scale.js`, `layout.js`, `office.js` ; [échelle](scale-fleet-weapons.md).                                                                          |
-| Géométrie            | `graphics.js`, modèles procéduraux ; `renderer.js` pour WebGL/secours.                                                                             |
-| Vol et entrée        | `flight.js`, `mouse-flight.js`, `input.js`, `control-focus.js`, `fleet.js`, `vacant-flight.js`.                                                    |
-| Corps et purgatoire  | `base.js`, `purgatory-physics.js`, `sortie.js` ; [file](purgatory-queue.md).                                                                       |
-| Chute actuelle       | `field-physics.js` : gravité humaine convertie au ratio, gonflage, impact ; [physique actuelle](multiplayer-return.md).                            |
-| Armes                | `ballistics.js`, `combat.js`, `armament.js`, `ordnance.js`, `aircraft-fire.js`, `tracers.js`, `muzzle.js`, `insect-hits.js`.                       |
-| Visée/caméras        | `personal-aim.js` pour épaule/main ; `tank-reticle.js` pour les trajectoires de mire ; `tank-view.js` pour lunette, observation et bouche serveur. |
-| Vagues               | `waves.js`, `routes.js`, `air-current.js`, `air-trails.js`, `route-speed.js`, `route-navigation.js`, `route-obstacles.js` généré.                  |
-| Économie/réserves    | `equipment.js`, `logistics.js`, `bank.js`, `rewards.js` ; [logistique](logistics-contracts.md).                                                    |
-| Contrats             | `contracts.js`, `malice.js`, gestion des papiers dans le client.                                                                                   |
-| Lits                 | `beds.js` : accès et support ; `bed-ui.js` : document personnel et signature.                                                                      |
-| HUD/banque           | `hud.js`, `equipment-controls.js`, `bank-ui.js` ; [véhicules et banque](vehicles-bank.md).                                                         |
-| Mesure d’interaction | `interaction-timing.js` : feedback immédiat et traces bornées de sélection.                                                                        |
-| Effets/son           | `insect-status.js`, `crash-effects.js`, `audio.js`, effets de combat et corps tombants du client.                                                  |
+| Domaine              | Modules et référence                                                                                                                                                                                                                                                         |
+| -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Unités/décor         | `scale.js`, `layout.js`, `office.js` ; [échelle](scale-fleet-weapons.md).                                                                                                                                                                                                    |
+| Géométrie            | `graphics.js`, modèles procéduraux ; `renderer.js` pour WebGL/secours.                                                                                                                                                                                                       |
+| Vol et entrée        | `flight.js`, `mouse-flight.js`, `input.js`, `control-focus.js`, `fleet.js`, `vacant-flight.js`.                                                                                                                                                                              |
+| Corps et purgatoire  | `base.js`, `purgatory-physics.js`, `sortie.js` ; [file](purgatory-queue.md).                                                                                                                                                                                                 |
+| Chute actuelle       | `field-physics.js` : gravité humaine convertie au ratio, gonflage, impact ; [physique actuelle](multiplayer-return.md).                                                                                                                                                      |
+| Armes                | `ballistics.js`, `combat.js`, `armament.js`, `ordnance.js`, `aircraft-fire.js`, `tracers.js`, `muzzle.js`, `insect-hits.js`.                                                                                                                                                 |
+| Visée/caméras        | `personal-aim.js` pour épaule/main ; `tank-reticle.js` pour les trajectoires de mire ; `tank-view.js` pour lunette, observation et bouche serveur.                                                                                                                           |
+| Vagues               | `server/wave-preparation.js` tire et conserve la vague annoncée, résout le vote et valide les achats par objet. `src/wave-blueprints.js` partage le catalogue avec le client. `waves.js`, `routes.js`, `route-speed.js`, `route-navigation.js`, `route-obstacles.js` généré. |
+| Économie/réserves    | `equipment.js`, `logistics.js`, `bank.js`, `rewards.js` ; [logistique](logistics-contracts.md).                                                                                                                                                                              |
+| Contrats             | `contracts.js`, `malice.js`, gestion des papiers dans le client.                                                                                                                                                                                                             |
+| Lits                 | `beds.js` : accès et support ; `bed-ui.js` : document personnel et signature.                                                                                                                                                                                                |
+| HUD/banque           | `hud.js`, `equipment-controls.js`, `bank-ui.js` ; [véhicules et banque](vehicles-bank.md).                                                                                                                                                                                   |
+| Mesure d’interaction | `interaction-timing.js` : feedback immédiat et traces bornées de sélection.                                                                                                                                                                                                  |
+| Effets/son           | `insect-status.js`, `crash-effects.js`, `audio.js`, effets de combat et corps tombants du client.                                                                                                                                                                            |
+
+Les couloirs aériens et leur déformation sont partagés entre serveur et client dans
+`routes.js` et `air-current.js`. Le client les affiche avec `air-trails.js`.
 
 Les gerbes de sang purement visuelles sont gérées dans `blood-effects.js`,
 avec un seul rendu instancié borné et une intégration aux impacts dans `client.js`.

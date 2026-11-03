@@ -216,9 +216,10 @@ const timingGame = new Game({ now: () => now });
 const join = timingGame.join({ code: 'TIMING17', name: 'Timing' });
 const timingRoom = timingGame.rooms.get('TIMING17');
 timingGame.command(timingRoom.code, join.id, 'start');
-now += 10000;
+now += 60000;
+timingRoom.pilots.get(join.id).seen = now;
 timingGame.advance(timingRoom);
-const plan = wavePlan(timingRoom.code, timingRoom.wave, timingRoom.started),
+const plan = timingRoom.plan,
   ant = plan.roster.find((e) => e.type === 'ant');
 for (const e of plan.roster) if (e.id !== ant.id) timingRoom.kills.add(e.id);
 now =

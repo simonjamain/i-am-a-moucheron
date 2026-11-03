@@ -1,3 +1,5 @@
+import { WaveCouncilUI } from '/wave-council-ui.js';
+import { WaveForecastScene } from '/wave-forecast-scene.js';
 import { GroundDefenseUI } from '/ground-defense-ui.js';
 import { BalanceUI } from '/balance-ui.js';
 import { mountChangelog } from '/changelog.js';
@@ -391,6 +393,7 @@ function groundActive() {
     $('papers').classList.contains('hidden') &&
     $('help').classList.contains('hidden') &&
     !$('changelogDialog').open &&
+    !$('waveCouncil').open &&
     !groundDefenseUI.opened &&
     $('bedPanel').classList.contains('hidden') &&
     $('purchasePanel').classList.contains('hidden') &&
@@ -706,6 +709,7 @@ function canCapture() {
     $('papers').classList.contains('hidden') &&
     $('help').classList.contains('hidden') &&
     !$('changelogDialog').open &&
+    !$('waveCouncil').open &&
     !groundDefenseUI.opened &&
     $('shop').classList.contains('hidden') &&
     $('balancePanel').classList.contains('hidden') &&
@@ -1275,6 +1279,7 @@ function accept(s, force = false) {
     );
   $('start').classList.toggle('hidden', s.phase === 'combat');
   $('start').textContent = s.phase === 'lost' ? 'Nouvelle partie →' : 'Lancer la vague →';
+  waveCouncil.accept(s, id);
   updateCountdown();
 }
 $('form').addEventListener('submit', async (e) => {
@@ -1337,6 +1342,8 @@ async function action(path, extra = {}) {
     notify(e.message, 3);
   }
 }
+const waveCouncil = new WaveCouncilUI({ document, command: action, releaseMouse });
+const forecastScene = new WaveForecastScene(T, scene, textLabel);
 const groundDefenseUI = new GroundDefenseUI({
   T,
   scene,
@@ -1376,7 +1383,12 @@ $('restartGame').onclick = async () => {
     notify(error.message, 3);
   }
 };
-$('start').onclick = () => action(snap?.phase === 'lost' ? 'reset' : 'start');
+function launchWave() {
+  if (snap?.phase === 'lost') return action('reset', { epoch: snap.base.epoch });
+  if (!snap?.mission_started) return action('start');
+  if (snap.preparation?.winner) return action('start', { preparation: snap.preparation.id });
+}
+$('start').onclick = launchWave;
 $('share').onclick = async () => {
   try {
     await navigator.clipboard.writeText(location.href);
@@ -1402,7 +1414,7 @@ $('closeHelp').onclick = () => {
   captureMouse();
 };
 addEventListener('keydown', (event) => {
-  if ($('changelogDialog').open) return; // Escape closes the native dialog.
+  if ($('changelogDialog').open || $('waveCouncil').open) return; // Escape closes the native dialog.
   if (event.code === 'Escape' && flightTuningUI.opened) {
     flightTuningUI.close(false);
     return;
@@ -1440,6 +1452,11 @@ addEventListener('keydown', (event) => {
   )
     return;
   const interactionKey = gameKey(event);
+  if (interactionKey === 'KeyV' && !event.repeat && !waveCouncil.button.hidden && canCapture()) {
+    event.preventDefault();
+    waveCouncil.button.click();
+    return;
+  }
   if (interactionKey === 'KeyN' && !event.repeat) {
     event.preventDefault();
     toggleBank();
@@ -3348,6 +3365,7 @@ function emitBullet(pos, dir, color, owned, aa, launch = null) {
     travelled: 0,
     fuse: MAP.metres(flakRange),
     originVehicle: launch?.vehicle || myVehicle?.id || null,
+    pierce: owned && !aa ? myVehicle?.blueprints?.filter((id) => id === 'piercing').length || 0 : 0,
     owned,
     shot: id + ':' + ++shotSequence,
     wave: launch?.wave ?? snap?.wave,
@@ -3454,7 +3472,7 @@ function stepProjectileSlice(dt) {
       fused = true;
     }
     if (b.owned && !respawnAt) {
-      let hit = nearestInsectHit(T, origin, dir, insects, distance, localKills, insectIndex);
+      let hit = null;
       const ray = new T.Raycaster(origin, dir, 0, distance);
       for (const v of snap?.vehicles || []) {
         if (v.id === b.originVehicle) continue;
@@ -3481,6 +3499,40 @@ function stepProjectileSlice(dt) {
           if (d <= distance && (!hit || d < hit.distance)) hit = { point, distance: d, wall: true };
         }
       }
+      const blocker = hit;
+      const excluded = b.pierced
+        ? { has: (id) => localKills.has(id) || b.pierced.has(id) }
+        : localKills;
+      let insect = nearestInsectHit(
+        T,
+        origin,
+        dir,
+        insects,
+        blocker?.distance ?? distance,
+        excluded,
+        insectIndex,
+      );
+      while (insect && b.pierce > 0 && b.wave === snap.wave) {
+        damageEnemy(
+          insect.id,
+          b.baseDamage * (1 + (snap.upgrades?.weapons || 0)) * (b.damageFactor ?? 1),
+          b.shot,
+          insect.point,
+        );
+        (b.pierced ??= new Set()).add(insect.id);
+        b.pierce--;
+        b.baseDamage *= 0.5;
+        insect = nearestInsectHit(
+          T,
+          origin,
+          dir,
+          insects,
+          blocker?.distance ?? distance,
+          { has: (id) => localKills.has(id) || b.pierced.has(id) },
+          insectIndex,
+        );
+      }
+      hit = insect || blocker;
       if (hit) {
         if (b.shell) {
           const impact = shellImpact(hit, b.travelled + hit.distance, MAP.metres(FLAK.minRange));
@@ -3941,23 +3993,27 @@ function updateAudio() {
 let prev = performance.now(),
   acc = 0;
 function updateCountdown() {
+  const seconds = Math.max(
+    0,
+    Math.ceil(((snap?.next_wave_at || 0) - Date.now() - clockOffset) / 1000),
+  );
+  waveCouncil.countdown(seconds);
   if (snap?.phase !== 'prep') {
     $('start').disabled = false;
     return;
   }
-  const seconds = Math.max(0, Math.ceil((snap.next_wave_at - Date.now() - clockOffset) / 1000));
   $('phaseText').textContent = snap.mission_started
     ? (snap.wave > 0 ? 'Prime de vague : +' + snap.waveReward + ' $ · ' : '') +
       'Prochaine vague dans ' +
       seconds +
       ' s'
-    : 'Lancez la partie : première vague dans 10 s.';
+    : 'Lancez la préparation de la première vague.';
   $('start').textContent = !snap.mission_started
     ? 'Lancer la partie →'
-    : snap.wave === 0
-      ? 'Décollage dans ' + seconds + ' s'
+    : !snap.preparation?.winner
+      ? 'Vote en cours'
       : 'Lancer la vague maintenant →';
-  $('start').disabled = !!snap.mission_started && snap.wave === 0;
+  $('start').disabled = !!snap.mission_started && !snap.preparation?.winner;
 }
 function frame(now) {
   requestAnimationFrame(frame);
@@ -3969,6 +4025,11 @@ function frame(now) {
     camera.updateProjectionMatrix();
   }
   groundDefenseUI.update();
+  forecastScene.update(
+    snap,
+    groundDefenseUI.active && groundDefenseUI.enabled() ? groundDefenseUI.candidate : null,
+    now,
+  );
   hitEffects.update(dt, camera);
   bloodEffects.update(dt);
   combatEffects.update(dt, camera);
@@ -3999,8 +4060,7 @@ function frame(now) {
     renderPaper();
   }
   if (joined && controlFocus.active && pad.fire && !previousPad.fire) pistol();
-  if (joined && pad.start && !previousPad.start && !respawnAt)
-    action(snap?.phase === 'lost' ? 'reset' : 'start');
+  if (joined && pad.start && !previousPad.start && !respawnAt) launchWave();
   if (joined && pad.help && !previousPad.help) {
     releaseMouse();
     $('help').classList.toggle('hidden');

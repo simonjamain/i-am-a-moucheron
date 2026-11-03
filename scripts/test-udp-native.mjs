@@ -108,6 +108,14 @@ try {
 
   const started = await a.request('start');
   assert.equal(started.body.mission_started, 1);
+  const prep = started.body.preparation;
+  const vote = { preparation: prep.id, card: prep.cards[0] };
+  assert.equal((await a.request('wave-vote', vote)).body.preparation.winner, null);
+  const voted = await b.request('wave-vote', vote);
+  assert.equal(voted.body.preparation.winner, vote.card);
+  assert.equal(voted.body.phase, 'prep');
+  const shared = await a.request('sync', { state: aj.body.state, mode: 'foot' });
+  assert.deepEqual(shared.body.preparation, voted.body.preparation);
   const guestSpawn = await b.request('debug-spawn', {
     epoch: roomSnapshot.base.epoch,
     counts: { midge: 8, ant: 2 },

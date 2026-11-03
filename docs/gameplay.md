@@ -21,14 +21,7 @@ des munitions limités, à compléter en se posant et s’arrêtant dans une sta
 protéger la poubelle contre les insectes ; les arrivées ennemies augmentent
 l’infestation. La mort ouvre une observation à caméra fixe ; un clic volontaire donne accès au purgatoire et à la paperasse de retour en jeu.
 
-La première vague démarre dix secondes après le lancement de la partie. Après
-chaque vague, la pause dure au maximum soixante secondes ; le déclenchement manuel
-peut la raccourcir. Un budget de difficulté croissant compose des vagues variées
-avec des ennemis de résistances différentes. Dès la première vague, deux fourmis sont garanties ; le reste du budget est tiré
-entre fourmis et moucherons, puis les moucherons sont multipliés par cinq.
-Les groupes suivent la même cadence pour toutes les vagues, sans changer les
-parcours ni les points d'entrée. Les types plus difficiles
-sont débloqués progressivement. Voir [progression](progression.md). Des groupes aériens arrivent depuis
+Avant chaque vague, le serveur annonce les entrées et les horaires des groupes. La préparation dure une minute par défaut. Votez pour un plan commun, puis équipez les objets compatibles. Une fois le vote résolu, tout joueur peut lancer la vague avant la fin du compte à rebours. La première vague combine fourmis et moucherons, puis le budget des vagues augmente de moitié à chaque étape, jusqu'à 2 400 points. Voir [progression](progression.md). Des groupes aériens arrivent depuis
 plusieurs aérations, se séparent et se rejoignent ; fourmis et cafards empruntent
 des parcours terrestres depuis des trous. La durée des trajets dépend de leur longueur à vitesse conservée et est partagée
 avec le serveur pour l’arrivée à la poubelle. Le système est guidé et déterministe, sans navigation générale

@@ -1,5 +1,7 @@
 # Nuées de moucherons — version 38
 
+Le directeur Node compte désormais chaque individu dans le [budget annoncé](progression.md). Les sections de version qui suivent décrivent les états historiques du directeur.
+
 Demande du 30 octobre 2026 : cinq fois plus de moucherons, toujours regroupés.
 Le directeur compose sa vague initiale selon le budget et les déblocages habituels,
 puis chaque moucheron devient un groupe de cinq. Les fourmis et les autres espèces
