@@ -59,4 +59,6 @@ const source = readFileSync('src/client.js', 'utf8');
 assert.match(source, /nextPilotMuzzle\(T, me\)/, 'local pilot firing uses the barrel');
 assert.match(source, /nextPilotMuzzle\(T, g\)/, 'remote pilot firing uses the barrel');
 assert.doesNotMatch(source, /weaponBarrel|new T\.Vector3\(side, 0, -1\.2\)/);
-console.log('PASS: pilot muzzle flashes use actual barrel tips, alternating in local and remote firing.');
+console.log(
+  'PASS: pilot muzzle flashes use actual barrel tips, alternating in local and remote firing.',
+);

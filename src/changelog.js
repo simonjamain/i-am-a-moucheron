@@ -1,6 +1,9 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
-  { version: 127, changes: ['Les éclairs de tir apparaissent au bout des canons des mitrailleuses.'] },
+  {
+    version: 128,
+    changes: ['Les éclairs de tir apparaissent au bout des canons des mitrailleuses.'],
+  },
   {
     version: 126,
     changes: [
