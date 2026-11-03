@@ -2561,7 +2561,7 @@ function updateVehicles(dt) {
   $('vehicleInteract').classList.toggle('hidden', turretIndex < 0);
   $('turretFire').classList.toggle('hidden', turretIndex < 0 && !crew);
   $('flakControls').classList.toggle('hidden', turretIndex < 0);
-  $('fuseDistance').textContent = rangeReadout(flakRange).metres.toFixed(3) + ' m · Shift / Ctrl';
+  $('fuseDistance').textContent = rangeReadout(flakRange).metres.toFixed(0) + ' m · Shift / Ctrl';
   $('vehicleState').textContent =
     turretIndex >= 0
       ? 'DCA · ' + stations[turretIndex].name + ' · ' + Math.round(hp) + ' PV'
@@ -3979,7 +3979,7 @@ function frame(now) {
     }
     updateAimHUD();
     $('speed').textContent = ((vel.length() / MAP.ratio) * 3.6).toFixed(0);
-    $('alt').textContent = Math.max(0, me.position.y).toFixed(2);
+    $('alt').textContent = Math.max(0, MAP.reference(me.position.y)).toFixed(2);
     $('gas').textContent = Math.round(gas * 100);
     $('health').textContent = Math.max(0, Math.round(hp)) + ' PV';
     $('hpbar').style.width = (hp / (myVehicle?.type === 'helicopter' ? 200 : 100)) * 100 + '%';
@@ -4896,7 +4896,7 @@ function updateContextHUD() {
           dead: !!respawnAt,
           hp: crewSeat === 'pilot' ? hp : (myVehicle?.state.hp ?? hp),
           speed: (vel.length() / MAP.ratio) * 3.6,
-          altitude: Math.max(0, me.position.y),
+          altitude: Math.max(0, MAP.reference(me.position.y)),
           gas,
           fuel: remainingFuel(),
           ammo: myVehicle
@@ -5001,7 +5001,7 @@ function updateContextHUD() {
   const range = model?.readout;
   $('aimRange').classList.toggle('hidden', !range);
   if (range) {
-    $('aimDistance').textContent = range.metres.toFixed(3) + ' m';
+    $('aimDistance').textContent = range.metres.toFixed(0) + ' m';
     $('aimGauge').value = range.fraction;
     $('aimRange').style.left = `calc(${$('crosshair').style.left || '50%'} + 25px)`;
     $('aimRange').style.top = `calc(${$('crosshair').style.top || '50%'} + 18px)`;
@@ -5444,7 +5444,7 @@ function updateTankReticle() {
     if (Math.abs(pixelY - innerHeight / 2) < 12 || Math.abs(pixelY - previousLabelY) < 14) continue;
     previousLabelY = pixelY;
     const tick = document.createElement('span');
-    tick.textContent = '— ' + mark.metres.toFixed(2) + ' m';
+    tick.textContent = '— ' + MAP.reference(mark.metres).toFixed(0) + ' m';
     tick.style.left = 'calc(' + (50 + projected.x * 50) + '% + 12px)';
     tick.style.top = 50 - projected.y * 50 + '%';
     root.append(tick);

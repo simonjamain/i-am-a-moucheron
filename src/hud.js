@@ -24,7 +24,7 @@ function equipmentModel({
     const readout = rangeReadout(range);
     return {
       scope: 'dca',
-      left: ['FUSÉE', `${readout.metres.toFixed(3)} m`, 'Shift + / Ctrl −', health],
+      left: ['FUSÉE', `${readout.metres.toFixed(0)} m`, 'Shift + / Ctrl −', health],
       right: [
         'ARMEMENT',
         ready ? 'PRÊT' : 'RECHARGE',
