@@ -26,7 +26,7 @@ Chaque profil possède `speedMps`, vitesse de progression en **mètres de la pi�
 | Fourmi | 0,085 | Cafard | 0,0625 |
 | Moucheron | 0,11 | Voltigeur | 0,13 |
 | Carapace | 0,0875 | Bourdon blindé | 0,07 |
-| Moustique | 0,115 | Rat géant | 0,0475 |
+| Moustique | 0,115 | Rat géant | 0,08075 |
 | Araignée pondeuse | 0,055 | Bébé araignée | 0,075 |
 
 Les bébés araignées n'ont plus de multiplicateur caché ×1,8. Les moustiques restent imprévisibles mais leurs oscillations locales ont été ralenties. Les mouvements secondaires de groupe sont des petits écarts autour de la progression à vitesse fixe, pas une deuxième vitesse liée aux dimensions du modèle. `scripts/test-enemy-speeds.mjs` vérifie les valeurs, le chemin réel, les nuées de 10 à 5 000 ennemis, les bébés et le multiplicateur de room. Les sensations de jeu et les FPS WebGL nécessitent une validation en partie réelle.
@@ -34,3 +34,7 @@ Les bébés araignées n'ont plus de multiplicateur caché ×1,8. Les moustiques
 ## Ralentissement général (version 123)
 
 La vitesse de progression de toutes les espèces, y compris les bébés araignées et les ennemis générés manuellement, est réduite de 50 % par rapport aux valeurs précédentes. Le multiplicateur « Vitesse ennemis » de la room continue de s'appliquer normalement aux nouvelles vitesses de base. Les durées des trajets sont recalculées sur la distance réelle.
+
+## Rats plus rapides (version 125)
+
+Les rats géants progressent désormais à 0,08075 m/s, soit 70 % plus vite que leur vitesse précédente de 0,0475 m/s. Les autres espèces sont inchangées. Le multiplicateur de vitesse de la room reste applicable aux rats comme aux autres ennemis.

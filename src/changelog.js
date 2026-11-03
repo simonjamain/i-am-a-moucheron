@@ -1,5 +1,6 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
+  { version: 125, changes: ['Les rats géants se déplacent 70 % plus vite.'] },
   { version: 124, changes: ['Tous les ennemis se déplacent deux fois moins vite.'] },
   { version: 122, changes: ['Les roquettes et missiles laissent une traînée de fumée et une petite flamme.'] },
   { version: 119, changes: ['Un bouton « Nouveautés » permet de retrouver les changements du jeu.'] },
