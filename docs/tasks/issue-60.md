@@ -1,0 +1,7 @@
+# Issue 60 — Routes aériennes et ventilateurs
+
+- [Issue 60](https://github.com/simonjamain/i-am-a-moucheron/issues/60), branche `feat/air-routes-fans`, version 156, base `6bff92f`.
+- Les quatre aérations alimentent deux couloirs qui se croisent. Un lot de particules par entrée matérialise la trajectoire. Le serveur et les clients échantillonnent le même champ de souffle. Les règles de pose, de prix et d’orientation se trouvent dans le [gameplay](../gameplay.md).
+- Vérifié localement avec `npm test`, `npm run build`, `node scripts/validate-artifact.mjs` et `npm run check:docs`. Le scénario CPU de 10 000 individus est dans `scripts/test-air-fans.mjs`. Il contrôle également le retour continu au retrait, l’annulation par deux ventilateurs opposés et la correspondance de l’aperçu avec le tracé établi.
+- Essai automatisé sur deux clients Chromium WebGL (SwiftShader) reliés au serveur local par WebRTC/UDP. Avec 20 $ et un joueur au sol, la roue/panneau propose le ventilateur, R tourne de 45°, l’aperçu accepte la pose à 4 $. La validation avec E débite 4 $ et le second client reçoit le ventilateur ; le retrait se réplique aussi.
+- Hypothèses de réglage : rayon 1,8 m, déformation horizontale maximale 1 m, transition de 2,5 s. Essais humains de lisibilité des croisements et de placement en combat sur GPU matériel/WAN encore à faire. Docker local indisponible ; contrôler le job de PR avant la fusion.

@@ -1,3 +1,4 @@
+import { bendAirPoint } from './air-current.js';
 import { MAP, INSECT_SCALE, enemySizeFactor, GROUND_FOOT_DEPTH } from './scale.js';
 import { enemyRoutePosition, routeDuration } from './routes.js';
 export const ENEMY_TYPES = Object.freeze({
@@ -378,7 +379,7 @@ export function midgeDisplacement(enemy, time, envelope = 1) {
 // Bounded, deterministic flock flow inspired by Reynolds' separation/cohesion/
 // alignment rules. No frame-history dependency: late joiners see the same flock.
 // The route guides each cluster; local steering offsets cannot skip the bin.
-export function swarmFrame(roster, time, groundAgents = null) {
+export function swarmFrame(roster, time, groundAgents = null, field = null) {
   const samples = roster.map((e) => {
     const ground = e.ground && groundAgents?.[e.id];
     if (ground) {
@@ -398,6 +399,10 @@ export function swarmFrame(roster, time, groundAgents = null) {
     if (u < 0 || u >= 1) return null;
     const p = enemyRoutePosition(e, u),
       next = enemyRoutePosition(e, Math.min(1, u + 0.0001));
+    if (!e.ground && field) {
+      bendAirPoint(p, u, field);
+      bendAirPoint(next, Math.min(1, u + 0.0001), field);
+    }
     // Ground meshes extend below their origin: lift both path samples equally
     // so their feet clear the support without corrupting the movement tangent.
     if (e.ground) {

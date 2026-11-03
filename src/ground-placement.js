@@ -19,7 +19,7 @@ export function groundPlacement({ foot, mode, rotation = 0, anchor, defense, dol
       .sort((a, b) => a.d - b.d)[0]?.s;
     if (!target) return { center, error: 'Visez une construction proche devant vous.' };
     command = { action: mode, id: target.id };
-  } else if (mode === 'sugar')
+  } else if (mode === 'sugar' || mode === 'fan')
     command = { action: 'build', kind: mode, a: center, angle: rotation };
   else if (anchor && Math.hypot(center[0] - anchor[0], center[1] - anchor[1]) >= 0.002) {
     command = { action: 'build', kind: mode, a: center, b: anchor };

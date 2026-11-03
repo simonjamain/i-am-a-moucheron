@@ -138,3 +138,12 @@ humaine WebGL et des mesures GPU/UDP réelles restent nécessaires.
 
 La vitesse de progression est désormais fixée par espèce dans `ENEMY_TYPES.speedMps` : mètres de la pièce/seconde, quelle que soit la taille de l'insecte ou de sa formation. Les anciennes calibrations sur la longueur des itinéraires historiques ne gouvernent plus la durée des vagues ; la durée d'un ennemi vient de la longueur de **son trajet réel** divisée par sa vitesse explicite. Les oscillations locales restent petites, et le moustique utilise une fréquence d'esquive réduite. Les bébés araignées utilisent leur propre vitesse, sans accélération cachée.
 Voir [bestiaire](enemy-bestiary.md) et `scripts/test-enemy-speeds.mjs`.
+
+## Souffle des ventilateurs
+
+Le serveur et les clients interpolent le même champ horizontal à partir des
+positions et horodatages de la salle. Un champ stabilisé est partagé par toute
+la nuée. Seule la déformation des coordonnées du parcours change, sans modifier
+l’identité, la dispersion ou le temps d’arrivée individuel. Le test
+`node scripts/test-air-fans.mjs` compare une trame CPU de 10 000 moucherons
+avec et sans souffle et contrôle la pose, le retrait et l’aperçu.

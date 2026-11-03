@@ -1,3 +1,4 @@
+import { AirTrails } from './air-trails.js';
 import { groundPlacement } from './ground-placement.js';
 export class GroundDefenseUI {
   constructor({
@@ -29,6 +30,7 @@ export class GroundDefenseUI {
     this.mode = 'barricade';
     this.opened = false;
     this.key = '';
+    this.airTrails = new AirTrails(T, scene);
     this.models = new T.Group();
     scene.add(this.models);
     this.trigger = document.createElement('button');
@@ -57,6 +59,7 @@ export class GroundDefenseUI {
       ['sticky', 'Ruban'],
       ['repair', 'Réparer'],
       ['remove', 'Enlever'],
+      ['fan', 'Ventilateur'],
     ];
     for (const [kind, label] of this.tools) {
       const button = document.createElement('button');
@@ -95,7 +98,7 @@ export class GroundDefenseUI {
     document.body.append(this.wheel);
     this.hint = document.createElement('p');
     this.hint.textContent =
-      'Cliquez pour ancrer un mur ou un ruban, marchez puis cliquez pour terminer. Pose courte : E pour poser devant vous, R pour tourner, Échap pour quitter. Barricade / ruban : 1 $ par tranche de 20 cm, sucre : 3 $, réparation : 1 $.';
+      'Cliquez pour ancrer un mur ou un ruban, marchez puis cliquez pour terminer. Pose courte : E pour poser devant vous, R pour tourner, Échap pour quitter. Barricade / ruban : 1 $ par tranche de 20 cm, sucre : 3 $, ventilateur : 4 $, réparation : 1 $.';
     this.panel.append(top, this.buttons, this.hint);
     this.status = document.createElement('button');
     this.status.style.cssText =
@@ -112,7 +115,16 @@ export class GroundDefenseUI {
       }),
     );
     this.preview.visible = false;
-    scene.add(this.preview);
+    this.fanArrow = new T.ArrowHelper(
+      new T.Vector3(0, 0, 1),
+      new T.Vector3(),
+      0.08,
+      0x92effd,
+      0.025,
+      0.017,
+    );
+    this.fanArrow.visible = false;
+    scene.add(this.preview, this.fanArrow);
     this.trigger.onclick = () => this.setOpen(!this.opened);
   }
   openWheel() {
@@ -150,7 +162,8 @@ export class GroundDefenseUI {
         ((i + 1) * 360) / n +
         'deg',
     );
-    this.wheel.style.background = 'conic-gradient(from -36deg,' + sectors.join(',') + ')';
+    this.wheel.style.background =
+      'conic-gradient(from ' + -180 / n + 'deg,' + sectors.join(',') + ')';
   }
   finishWheel() {
     const index = this.sector;
@@ -174,6 +187,7 @@ export class GroundDefenseUI {
     this.active = false;
     this.setOpen(false);
     this.preview.visible = false;
+    this.fanArrow.visible = false;
     this.status.style.display = 'none';
   }
   press() {
@@ -214,9 +228,11 @@ export class GroundDefenseUI {
       this.rebuild(snap?.groundDefense?.structures || []);
     }
     this.preview.visible = false;
+    this.fanArrow.visible = false;
     this.status.style.display = this.active && this.enabled() ? 'block' : 'none';
     if (!this.active || !this.enabled()) {
       this.anchor = null;
+      this.airTrails.update(snap);
       return;
     }
     const c = (this.candidate = groundPlacement({
@@ -227,6 +243,12 @@ export class GroundDefenseUI {
       defense: snap.groundDefense,
       dollars: snap.dollars,
     }));
+    this.airTrails.update(
+      snap,
+      this.mode === 'fan' && c.command && !c.error
+        ? { position: c.command.a, angle: c.command.angle, placedAt: 0 }
+        : undefined,
+    );
     this.status.textContent =
       c.error ||
       (this.busy
@@ -251,6 +273,11 @@ export class GroundDefenseUI {
     this.preview.rotation.y = a && b ? -Math.atan2(b[1] - a[1], b[0] - a[0]) : shape?.angle || 0;
     this.preview.material.color.set(c.error ? '#ed665b' : '#a7ece0');
     this.preview.visible = true;
+    if (this.mode === 'fan' && cmd) {
+      this.fanArrow.visible = true;
+      this.fanArrow.position.set(x, 0.02, z);
+      this.fanArrow.setDirection(new this.T.Vector3(Math.sin(cmd.angle), 0, Math.cos(cmd.angle)));
+    }
   }
   rebuild(structures) {
     for (const child of [...this.models.children]) {
@@ -263,7 +290,35 @@ export class GroundDefenseUI {
     const T = this.T;
     for (const structure of structures) {
       const group = new T.Group();
-      if (structure.kind === 'sugar') {
+      if (structure.kind === 'fan') {
+        group.position.set(structure.position[0], 0.032, structure.position[1]);
+        group.rotation.y = structure.angle;
+        const hoop = new T.Mesh(
+          new T.TorusGeometry(0.027, 0.002, 6, 20),
+          new T.MeshBasicMaterial({ color: '#71a2a7' }),
+        );
+        group.add(hoop);
+        for (let i = 0; i < 3; i++) {
+          const blade = new T.Mesh(
+            new T.BoxGeometry(0.024, 0.009, 0.004),
+            new T.MeshBasicMaterial({ color: '#dcdfcf' }),
+          );
+          blade.rotation.z = (i * 2 * Math.PI) / 3;
+          blade.position.set(
+            0.013 * Math.cos(blade.rotation.z),
+            0.013 * Math.sin(blade.rotation.z),
+            0,
+          );
+          group.add(blade);
+        }
+        const nose = new T.Mesh(
+          new T.ConeGeometry(0.008, 0.018, 6),
+          new T.MeshBasicMaterial({ color: '#e9ad58' }),
+        );
+        nose.rotation.x = Math.PI / 2;
+        nose.position.z = 0.01;
+        group.add(nose);
+      } else if (structure.kind === 'sugar') {
         const [x, z] = structure.position;
         const paper = new T.Mesh(
           new T.BoxGeometry(0.042, 0.002, 0.03),
@@ -356,7 +411,10 @@ export class GroundDefenseUI {
   }
   drawRadar(ctx, defense) {
     for (const s of defense?.structures || []) {
-      if (s.kind === 'sugar') {
+      if (s.kind === 'fan') {
+        ctx.fillStyle = '#75eaf1';
+        ctx.fillRect(108 + s.position[0] / 0.04, 108 + (s.position[1] / 0.04) * 0.88, 4, 4);
+      } else if (s.kind === 'sugar') {
         ctx.strokeStyle = '#e9d487bb';
         ctx.beginPath();
         ctx.ellipse(

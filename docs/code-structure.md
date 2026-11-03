@@ -32,7 +32,7 @@ base de données ni accès disque dans les opérations de jeu Node. Voir
 | Chute actuelle       | `field-physics.js` : gravité humaine convertie au ratio, gonflage, impact ; [physique actuelle](multiplayer-return.md).                            |
 | Armes                | `ballistics.js`, `combat.js`, `armament.js`, `ordnance.js`, `aircraft-fire.js`, `tracers.js`, `muzzle.js`, `insect-hits.js`.                       |
 | Visée/caméras        | `personal-aim.js` pour épaule/main ; `tank-reticle.js` pour les trajectoires de mire ; `tank-view.js` pour lunette, observation et bouche serveur. |
-| Vagues               | `waves.js`, `routes.js`, `route-speed.js`, `route-navigation.js`, `route-obstacles.js` généré.                                                     |
+| Vagues               | `waves.js`, `routes.js`, `air-current.js`, `air-trails.js`, `route-speed.js`, `route-navigation.js`, `route-obstacles.js` généré.                  |
 | Économie/réserves    | `equipment.js`, `logistics.js`, `bank.js`, `rewards.js` ; [logistique](logistics-contracts.md).                                                    |
 | Contrats             | `contracts.js`, `malice.js`, gestion des papiers dans le client.                                                                                   |
 | Lits                 | `beds.js` : accès et support ; `bed-ui.js` : document personnel et signature.                                                                      |

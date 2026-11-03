@@ -1,3 +1,4 @@
+import { airField } from '../src/air-current.js';
 import { feedingPoint } from '../src/ground-defense-state.js';
 import {
   DEFAULT_BALANCE,
@@ -417,7 +418,7 @@ export class Game {
     return body;
   }
   advanceGround(r, now) {
-    if (!r.groundEnabled && !r.groundDefense.structures.length) return;
+    if (!r.groundEnabled && !r.groundDefense.structures.some((s) => s.kind !== 'fan')) return;
     if (r.phase !== 'combat') return;
     const elapsed = (now - r.started) / 1000;
     if (r.groundWave !== r.wave) {
@@ -743,7 +744,7 @@ export class Game {
       upgrades: r.upgrades,
       rewardCount: r.rewardCount,
       equipment: r.equipment,
-      groundDefense: groundSnapshot(r.groundDefense),
+      groundDefense: groundSnapshot(r.groundDefense, this.now()),
       groundAgents: r.groundEnabled ? r.groundAgents : {},
       deliveries: r.deliveries,
       pendingInstallations,
@@ -1162,7 +1163,13 @@ export class Game {
     const w = baseWorld(body);
     let transaction;
     try {
-      transaction = groundCommand(r.groundDefense, { ...b, id: b.target }, [w.x, w.z], r.dollars);
+      transaction = groundCommand(
+        r.groundDefense,
+        { ...b, id: b.target },
+        [w.x, w.z],
+        r.dollars,
+        this.now(),
+      );
     } catch (error) {
       requireGame(false, error.message, 400);
     }
@@ -1337,7 +1344,12 @@ export class Game {
       return;
     }
     const plan = this.plan(r),
-      frames = swarmFrame(plan.roster, (now - r.started) / 1000, r.groundAgents);
+      frames = swarmFrame(
+        plan.roster,
+        (now - r.started) / 1000,
+        r.groundAgents,
+        airField(r.groundDefense, now),
+      );
     for (const v of r.vehicles.values()) {
       if (v.state.hp <= 0) continue;
       const previous = v.contactWave === r.wave ? v.contactPosition || v.state.p : v.state.p;
@@ -1784,7 +1796,15 @@ export class Game {
     const framesAt = (time) => {
       const at = Math.round(time / 50) * 50;
       if (!frameCache.has(at))
-        frameCache.set(at, swarmFrame(plan.roster, (at - r.started) / 1000, r.groundAgents));
+        frameCache.set(
+          at,
+          swarmFrame(
+            plan.roster,
+            (at - r.started) / 1000,
+            r.groundAgents,
+            airField(r.groundDefense, at),
+          ),
+        );
       return frameCache.get(at);
     };
     for (const projectile of r.ordnance) {
@@ -1910,7 +1930,12 @@ export class Game {
     const plan = this.plan(r);
     const frames =
       r.phase === 'combat' && shot.wave === r.wave
-        ? swarmFrame(plan.roster, (this.now() - r.started) / 1000, r.groundAgents)
+        ? swarmFrame(
+            plan.roster,
+            (this.now() - r.started) / 1000,
+            r.groundAgents,
+            airField(r.groundDefense, this.now()),
+          )
         : [];
     this.ordnanceImpact(r, shot, {}, frames, shot.p);
     r.ordnance = r.ordnance.filter((s) => s !== shot);
@@ -2174,7 +2199,14 @@ export class Game {
     if (!e.offspringOnly) this.soul(r, 'enemy', r.wave + ':' + index, e.name, 'purgatory', e.type);
     if (e.onDeath?.spawn) {
       const at = (this.now() - r.started) / 1000;
-      const location = position || swarmFrame(plan.roster, at, r.groundAgents)[index]?.p;
+      const location =
+        position ||
+        swarmFrame(
+          plan.roster,
+          at,
+          r.groundAgents,
+          airField(r.groundDefense, r.started + at * 1000),
+        )[index]?.p;
       if (location) {
         const children = spawnOffspring(
           e,

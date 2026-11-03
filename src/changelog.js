@@ -1,6 +1,12 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 156,
+    changes: [
+      'Repérez les couloirs de vol grâce aux phéromones. Posez et orientez des ventilateurs pour dévier les insectes vers vos défenses.',
+    ],
+  },
+  {
     version: 154,
     changes: [
       'Maintenez la molette et relâchez vers votre outil. Deux clics posent un mur ou un ruban, un seul suffit pour le sucre.',
