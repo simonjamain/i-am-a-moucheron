@@ -42,3 +42,9 @@
 ### Correction du test réseau de domaine (v138)
 
 - `Game.command(..., 'sync')` exige le rapport de mouvement `state` et `mode` ; le test d'isolation inter-salles fournit désormais ce contrat au lieu d'appeler `sync` à vide. Les tests précédents de transactions ont réussi en CI ; le nouveau test multi-joueurs reste à revalider.
+
+### Navigation des terrestres — moteur isolé (v139)
+
+- Nouveau `src/ground-creatures.js` : déplacement par cellule suivante d'un champ mutualisé, cible d'appât par insecte, repas non répétable par type, effet de ruban traversé, et possibilité pour certaines espèces d'attaquer un mur lorsqu'aucun chemin n'existe.
+- `src/ground-defense.js` expose `nextStep` (accès constant à la cellule suivante) pour éviter une recherche complète par insecte et par frame ; `groundFlow` accepte un objectif de nourriture secondaire.
+- **Moteur non relié au serveur ni au rendu** : son comportement en jeu, l'ordre des mises à jour et la compatibilité avec les vagues ne sont pas encore validés. Tests de domaine ajoutés, puis intégration à réaliser sur le prochain jalon.

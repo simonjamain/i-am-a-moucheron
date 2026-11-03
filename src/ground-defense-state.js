@@ -32,9 +32,9 @@ export function groundSnapshot(state) {
   return { revision: state.revision, navigationRevision: state.navigationRevision,
     structures: structuredClone(state.structures) };
 }
-export function groundFlow(state) {
+export function groundFlow(state, goal = GROUND_GOAL) {
   return buildGroundFlow({ bounds: GROUND_BOUNDS, cellSize: GROUND_CELL,
-    goal: GROUND_GOAL, barricades: state.structures.filter((s) => s.kind === 'barricade' && s.hp > 0),
+    goal, barricades: state.structures.filter((s) => s.kind === 'barricade' && s.hp > 0),
     staticObstacles: ROUTE_OBSTACLES.filter((box) => box.min.y < 0.01 && box.max.y > 0.01 &&
       box.max.x - box.min.x < 2 && box.max.z - box.min.z < 2) });
 }

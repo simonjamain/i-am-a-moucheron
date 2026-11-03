@@ -101,7 +101,17 @@ export function buildGroundFlow({ bounds, cellSize, goal, barricades = [], stati
     points.push(goal);
     return points;
   }
-  return { width, height, blocked, costs, route, reachable: (p) => route(p) !== null };
+  function nextStep(from) {
+    const [x, z] = cell(from);
+    if (!inside(x, z)) return null;
+    const here = index(x, z);
+    if (!Number.isFinite(costs[here])) return null;
+    const nextCell = next[here];
+    return nextCell === -1
+      ? goal
+      : center(nextCell % width, Math.floor(nextCell / width));
+  }
+  return { width, height, blocked, costs, route, nextStep, reachable: (p) => route(p) !== null };
 }
 // Attraction is deterministic; an insect cannot switch targets mid-meal.
 export function chooseBait(position, baits, tasted = []) {
