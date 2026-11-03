@@ -7,7 +7,7 @@ const goalFlow = groundFlow(state);
 const example = { id: 1, type: 'ant', speedMps: 0.1, travelSpeed: 0.1 };
 const unit = {
   id: 1,
-  p: [2.5, -2.7],
+  p: [3, -3],
   dir: [0, 0],
   tasted: [],
   baitId: null,
@@ -25,7 +25,7 @@ const world = {
 };
 const old = [...unit.p];
 advanceGroundUnit(unit, example, 1, 1, world);
-assert.ok(unit.p[0] > old[0], 'an ant moves toward the bin');
+assert.ok(unit.p[1] > old[1], 'an ant moves toward the bin');
 assert.ok(!unit.arrived);
 assert.ok(crossedSticky([0, 0], [0.1, 0], { a: [0.05, -0.1], b: [0.05, 0.1], width: 0.03 }));
 assert.ok(!crossedSticky([0, 0], [0.1, 0], { a: [0.5, -0.1], b: [0.5, 0.1], width: 0.03 }));

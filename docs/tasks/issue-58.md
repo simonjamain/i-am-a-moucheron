@@ -57,3 +57,7 @@
 ### Portails en bordure de carte (v141)
 
 - La grille de navigation couvre désormais aussi les sorties des trous de fourmis/cafards (x ≈ ±4,07 m, z ≈ −3,47 m), qui étaient hors des limites initialement retenues. Le goal et la géométrie aérienne sont inchangés.
+
+### Vérification du chemin près de la poubelle (v142)
+
+- Le premier scénario de déplacement partait d'une cellule occupée par un obstacle fixe (`[2.5, -2.7]`) et s'arrêtait correctement. Il utilise désormais une cellule libre et atteignable (`[3, -3]`) pour vérifier l'avancée vers la poubelle. La cellule barrée reste un cas de validation séparé à couvrir.
