@@ -231,12 +231,21 @@ export class GroundDefenseUI {
             new T.BoxGeometry(0.002, 0.002, 0.002),
             new T.MeshBasicMaterial({ color: '#faf9ed' }),
           );
-          grain.position.set(x - 0.015 + (i % 3) * 0.009, 0.003, z + 0.02 + Math.floor(i / 3) * 0.006);
+          grain.position.set(
+            x - 0.015 + (i % 3) * 0.009,
+            0.003,
+            z + 0.02 + Math.floor(i / 3) * 0.006,
+          );
           group.add(grain);
         }
         const ring = new T.Mesh(
           new T.RingGeometry(structure.radius - 0.002, structure.radius, 56),
-          new T.MeshBasicMaterial({ color: '#e9d487', side: T.DoubleSide, transparent: true, opacity: 0.55 }),
+          new T.MeshBasicMaterial({
+            color: '#e9d487',
+            side: T.DoubleSide,
+            transparent: true,
+            opacity: 0.55,
+          }),
         );
         ring.rotation.x = -Math.PI / 2;
         ring.position.set(x, 0.002, z);
@@ -249,7 +258,11 @@ export class GroundDefenseUI {
         const z = (structure.a[1] + structure.b[1]) / 2;
         const intact = structure.kind !== 'barricade' || structure.hp > 0;
         const mesh = new T.Mesh(
-          new T.BoxGeometry(length, structure.kind === 'sticky' ? 0.001 : 0.02, structure.kind === 'sticky' ? 0.03 : 0.008),
+          new T.BoxGeometry(
+            length,
+            structure.kind === 'sticky' ? 0.001 : 0.02,
+            structure.kind === 'sticky' ? 0.03 : 0.008,
+          ),
           new T.MeshBasicMaterial({
             color: structure.kind === 'sticky' ? '#dcd3a8' : intact ? '#ab8354' : '#574637',
             transparent: structure.kind === 'sticky',

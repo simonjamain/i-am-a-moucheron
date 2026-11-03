@@ -1,9 +1,4 @@
-import {
-  chooseBait,
-  distanceToSegment,
-  finishMeal,
-  stickyTraversal,
-} from './ground-defense.js';
+import { chooseBait, distanceToSegment, finishMeal, stickyTraversal } from './ground-defense.js';
 import { enemyRoutePosition } from './routes.js';
 import { GROUND_BAIT_TYPES, GROUND_GOAL } from './ground-defense-state.js';
 
@@ -98,8 +93,7 @@ export function advanceGroundUnit(unit, enemy, elapsed, dt, world) {
     if (!previouslyTargeted) unit.baitId = null;
     if (!unit.baitId) {
       const eligible = baits.filter(
-        (bait) =>
-          !unit.tasted.includes(bait.type) && world.baitFlow(bait)?.nextStep(unit.p),
+        (bait) => !unit.tasted.includes(bait.type) && world.baitFlow(bait)?.nextStep(unit.p),
       );
       const selected = chooseBait(unit.p, eligible, unit.tasted);
       if (selected) unit.baitId = selected.id;
@@ -130,10 +124,7 @@ export function advanceGroundUnit(unit, enemy, elapsed, dt, world) {
         remaining = 0;
         break;
       }
-      const middle = [
-        (wall.item.a[0] + wall.item.b[0]) / 2,
-        (wall.item.a[1] + wall.item.b[1]) / 2,
-      ];
+      const middle = [(wall.item.a[0] + wall.item.b[0]) / 2, (wall.item.a[1] + wall.item.b[1]) / 2];
       next = middle;
     } else unit.attackId = null;
     const delta = dist(unit.p, next);
@@ -161,10 +152,7 @@ export function advanceGroundUnit(unit, enemy, elapsed, dt, world) {
     }
     if (swept.length) multiplier = Math.min(multiplier, effect.speedMultiplier);
     const travelled = Math.min(delta, speed * remaining * multiplier);
-    unit.p = [
-      unit.p[0] + direction[0] * travelled,
-      unit.p[1] + direction[1] * travelled,
-    ];
+    unit.p = [unit.p[0] + direction[0] * travelled, unit.p[1] + direction[1] * travelled];
     unit.dir = direction;
     remaining -= travelled / (speed * multiplier);
     if (travelled < delta - 0.000001) break;

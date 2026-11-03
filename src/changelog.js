@@ -2,13 +2,20 @@
 export const PLAYER_CHANGELOG = [
   {
     version: 144,
-    changes: ['Une carte de défense permet de poser des barricades, du sucre et des bandes collantes.'],
+    changes: [
+      'Une carte de défense permet de poser des barricades, du sucre et des bandes collantes.',
+    ],
   },
   {
     version: 131,
-    changes: ['Les mitrailleuses tirent plus régulièrement lorsque la connexion ou les images ralentissent.'],
+    changes: [
+      'Les mitrailleuses tirent plus régulièrement lorsque la connexion ou les images ralentissent.',
+    ],
   },
-  { version: 128, changes: ['Les distances et altitudes affichées correspondent désormais à l’échelle réelle.'] },
+  {
+    version: 128,
+    changes: ['Les distances et altitudes affichées correspondent désormais à l’échelle réelle.'],
+  },
   {
     version: 126,
     changes: [

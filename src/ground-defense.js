@@ -15,17 +15,30 @@ export function splitBarricade(a, b, id) {
   }));
 }
 export function distanceToSegment(p, a, b) {
-  const dx = b[0] - a[0], dz = b[1] - a[1];
+  const dx = b[0] - a[0],
+    dz = b[1] - a[1];
   const lengthSquared = dx * dx + dz * dz;
-  const t = lengthSquared ? Math.max(0, Math.min(1, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dz) / lengthSquared)) : 0;
+  const t = lengthSquared
+    ? Math.max(0, Math.min(1, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dz) / lengthSquared))
+    : 0;
   return Math.hypot(p[0] - (a[0] + t * dx), p[1] - (a[1] + t * dz));
 }
-const NEIGHBOURS = [[0, -1], [-1, 0], [1, 0], [0, 1], [-1, -1], [1, -1], [-1, 1], [1, 1]];
+const NEIGHBOURS = [
+  [0, -1],
+  [-1, 0],
+  [1, 0],
+  [0, 1],
+  [-1, -1],
+  [1, -1],
+  [-1, 1],
+  [1, 1],
+];
 // Rebuild only when geometry changes; every insect reads the same flow field.
 export function buildGroundFlow({ bounds, cellSize, goal, barricades = [], staticObstacles = [] }) {
   if (!Number.isFinite(cellSize) || cellSize <= 0) throw Error('Invalid cell size');
   const [minX, minZ, maxX, maxZ] = bounds;
-  if (![...bounds, ...goal].every(Number.isFinite) || minX >= maxX || minZ >= maxZ) throw Error('Invalid ground bounds');
+  if (![...bounds, ...goal].every(Number.isFinite) || minX >= maxX || minZ >= maxZ)
+    throw Error('Invalid ground bounds');
   const width = Math.ceil((maxX - minX) / cellSize);
   const height = Math.ceil((maxZ - minZ) / cellSize);
   if (width * height > 100000) throw Error('Ground grid budget exceeded');
@@ -34,12 +47,23 @@ export function buildGroundFlow({ bounds, cellSize, goal, barricades = [], stati
   const cell = (p) => [Math.floor((p[0] - minX) / cellSize), Math.floor((p[1] - minZ) / cellSize)];
   const center = (x, z) => [minX + (x + 0.5) * cellSize, minZ + (z + 0.5) * cellSize];
   const blocked = new Uint8Array(width * height);
-  for (let z = 0; z < height; z++) for (let x = 0; x < width; x++) {
-    const p = center(x, z);
-    if (barricades.some((wall) => distanceToSegment(p, wall.a, wall.b) <= (wall.thickness ?? cellSize) / 2) ||
-        staticObstacles.some((box) => p[0] >= box.min.x - 0.02 && p[0] <= box.max.x + 0.02 &&
-          p[1] >= box.min.z - 0.02 && p[1] <= box.max.z + 0.02)) blocked[index(x, z)] = 1;
-  }
+  for (let z = 0; z < height; z++)
+    for (let x = 0; x < width; x++) {
+      const p = center(x, z);
+      if (
+        barricades.some(
+          (wall) => distanceToSegment(p, wall.a, wall.b) <= (wall.thickness ?? cellSize) / 2,
+        ) ||
+        staticObstacles.some(
+          (box) =>
+            p[0] >= box.min.x - 0.02 &&
+            p[0] <= box.max.x + 0.02 &&
+            p[1] >= box.min.z - 0.02 &&
+            p[1] <= box.max.z + 0.02,
+        )
+      )
+        blocked[index(x, z)] = 1;
+    }
   const [gx, gz] = cell(goal);
   if (!inside(gx, gz)) throw Error('Ground goal is outside the grid');
   const costs = new Float64Array(width * height).fill(Infinity);
@@ -50,20 +74,24 @@ export function buildGroundFlow({ bounds, cellSize, goal, barricades = [], stati
     for (let i = heap.length - 1; i > 0;) {
       const parent = (i - 1) >> 1;
       if (heap[parent][0] <= heap[i][0]) break;
-      [heap[parent], heap[i]] = [heap[i], heap[parent]]; i = parent;
+      [heap[parent], heap[i]] = [heap[i], heap[parent]];
+      i = parent;
     }
   };
   const pop = () => {
-    const first = heap[0], tail = heap.pop();
+    const first = heap[0],
+      tail = heap.pop();
     if (heap.length) {
       heap[0] = tail;
-      for (let i = 0;;) {
-        const l = i * 2 + 1, r = l + 1;
+      for (let i = 0; ;) {
+        const l = i * 2 + 1,
+          r = l + 1;
         let smallest = i;
         if (l < heap.length && heap[l][0] < heap[smallest][0]) smallest = l;
         if (r < heap.length && heap[r][0] < heap[smallest][0]) smallest = r;
         if (smallest === i) break;
-        [heap[i], heap[smallest]] = [heap[smallest], heap[i]]; i = smallest;
+        [heap[i], heap[smallest]] = [heap[smallest], heap[i]];
+        i = smallest;
       }
     }
     return first;
@@ -78,9 +106,11 @@ export function buildGroundFlow({ bounds, cellSize, goal, barricades = [], stati
   while (heap.length) {
     const [cost, current] = pop();
     if (cost !== costs[current]) continue;
-    const x = current % width, z = Math.floor(current / width);
+    const x = current % width,
+      z = Math.floor(current / width);
     for (const [dx, dz] of NEIGHBOURS) {
-      const nx = x + dx, nz = z + dz;
+      const nx = x + dx,
+        nz = z + dz;
       if (!inside(nx, nz) || blocked[index(nx, nz)]) continue;
       if (dx && dz && (blocked[index(x + dx, z)] || blocked[index(x, z + dz)])) continue;
       const neighbour = index(nx, nz);
@@ -112,18 +142,29 @@ export function buildGroundFlow({ bounds, cellSize, goal, barricades = [], stati
     const here = index(x, z);
     if (!Number.isFinite(costs[here])) return null;
     const nextCell = next[here];
-    return nextCell === -1
-      ? goal
-      : center(nextCell % width, Math.floor(nextCell / width));
+    return nextCell === -1 ? goal : center(nextCell % width, Math.floor(nextCell / width));
   }
   return { width, height, blocked, costs, route, nextStep, reachable: (p) => route(p) !== null };
 }
 // Attraction is deterministic; an insect cannot switch targets mid-meal.
 export function chooseBait(position, baits, tasted = []) {
   const excluded = new Set(tasted);
-  return baits.filter((bait) => !excluded.has(bait.type) && Math.hypot(position[0] - bait.position[0], position[1] - bait.position[1]) <= bait.radius)
-    .map((bait) => ({ bait, distance: Math.hypot(position[0] - bait.position[0], position[1] - bait.position[1]) }))
-    .sort((a, b) => a.distance - b.distance || String(a.bait.id).localeCompare(String(b.bait.id), 'en'))[0]?.bait ?? null;
+  return (
+    baits
+      .filter(
+        (bait) =>
+          !excluded.has(bait.type) &&
+          Math.hypot(position[0] - bait.position[0], position[1] - bait.position[1]) <= bait.radius,
+      )
+      .map((bait) => ({
+        bait,
+        distance: Math.hypot(position[0] - bait.position[0], position[1] - bait.position[1]),
+      }))
+      .sort(
+        (a, b) =>
+          a.distance - b.distance || String(a.bait.id).localeCompare(String(b.bait.id), 'en'),
+      )[0]?.bait ?? null
+  );
 }
 export function finishMeal(tasted, type) {
   return [...new Set([...tasted, type])];

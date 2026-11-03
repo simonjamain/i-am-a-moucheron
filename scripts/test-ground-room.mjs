@@ -32,7 +32,11 @@ const second = game.command('GROUND', b.id, 'sync', {
   state: r.pilots.get(b.id).state,
   mode: r.pilots.get(b.id).mode,
 });
-assert.deepEqual(second.groundDefense, reply.groundDefense, 'another player observes same constructions');
+assert.deepEqual(
+  second.groundDefense,
+  reply.groundDefense,
+  'another player observes same constructions',
+);
 const anotherRoom = game.rooms.get('ANOTHER');
 assert.equal(
   game.command('ANOTHER', other.id, 'sync', {
@@ -50,10 +54,7 @@ assert.throws(
   () => action(a.id, { action: 'damage', id: reply.groundDefense.structures[0].id }),
   /inconnue/,
 );
-assert.throws(
-  () => action(a.id, { action: 'build', kind: 'sugar', a: [3, 3] }),
-  /proximité/,
-);
+assert.throws(() => action(a.id, { action: 'build', kind: 'sugar', a: [3, 3] }), /proximité/);
 assert.throws(
   () => action(a.id, { action: 'build', kind: 'sugar', a: [0, 0], epoch: 'stale' }),
   /changé/,
@@ -68,7 +69,15 @@ assert.equal(r.groundDefense.structures.length, 0);
 assert.equal(r.dollars, r.balance.startingMoney);
 assert.notEqual(r.base.epoch, epoch);
 assert.throws(
-  () => game.command('GROUND', a.id, 'ground-defense', { epoch, action: 'build', kind: 'sugar', a: [0, 0] }),
+  () =>
+    game.command('GROUND', a.id, 'ground-defense', {
+      epoch,
+      action: 'build',
+      kind: 'sugar',
+      a: [0, 0],
+    }),
   /changé/,
 );
-console.log('PASS: ground room state, shared placement, collision and cost authority, reset and stale epoch.');
+console.log(
+  'PASS: ground room state, shared placement, collision and cost authority, reset and stale epoch.',
+);

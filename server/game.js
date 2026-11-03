@@ -462,7 +462,13 @@ export class Game {
         r.groundAgents[enemy.id] ||
         (r.groundAgents[enemy.id] = groundUnit(enemy, Math.max(previous, availableAt)));
       if (unit.arrived) continue;
-      advanceGroundUnit(unit, enemy, elapsed, Math.max(0, elapsed - Math.max(previous, availableAt)), world);
+      advanceGroundUnit(
+        unit,
+        enemy,
+        elapsed,
+        Math.max(0, elapsed - Math.max(previous, availableAt)),
+        world,
+      );
     }
   }
   advance(r) {
@@ -1155,12 +1161,7 @@ export class Game {
     const w = baseWorld(body);
     let transaction;
     try {
-      transaction = groundCommand(
-        r.groundDefense,
-        { ...b, id: b.target },
-        [w.x, w.z],
-        r.dollars,
-      );
+      transaction = groundCommand(r.groundDefense, { ...b, id: b.target }, [w.x, w.z], r.dollars);
     } catch (error) {
       requireGame(false, error.message, 400);
     }
@@ -1781,7 +1782,8 @@ export class Game {
     const frameCache = new Map();
     const framesAt = (time) => {
       const at = Math.round(time / 50) * 50;
-      if (!frameCache.has(at)) frameCache.set(at, swarmFrame(plan.roster, (at - r.started) / 1000, r.groundAgents));
+      if (!frameCache.has(at))
+        frameCache.set(at, swarmFrame(plan.roster, (at - r.started) / 1000, r.groundAgents));
       return frameCache.get(at);
     };
     for (const projectile of r.ordnance) {

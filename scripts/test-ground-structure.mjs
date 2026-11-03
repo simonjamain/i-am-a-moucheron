@@ -1,8 +1,17 @@
 import assert from 'node:assert/strict';
-import { newGroundDefense, groundCommand, groundFlow, groundSnapshot, damageBarricade } from '../src/ground-defense-state.js';
+import {
+  newGroundDefense,
+  groundCommand,
+  groundFlow,
+  groundSnapshot,
+  damageBarricade,
+} from '../src/ground-defense-state.js';
 
-const state = newGroundDefense(), foot = [0, 0], cash = 100;
-const build = (command, dollars = cash, position = foot) => groundCommand(state, command, position, dollars);
+const state = newGroundDefense(),
+  foot = [0, 0],
+  cash = 100;
+const build = (command, dollars = cash, position = foot) =>
+  groundCommand(state, command, position, dollars);
 const first = build({ action: 'build', kind: 'barricade', a: [0, 0], b: [0.6, 0] });
 assert.equal(first.price, 3);
 assert.equal(first.ids.length, 3);
@@ -11,10 +20,16 @@ assert.equal(new Set(first.ids).size, 3);
 assert.equal(state.structures.length, 3);
 assert.equal(state.structures[0].hp, 100);
 assert.equal(state.structures[0].a[0], 0);
-assert.throws(() => build({ action: 'build', kind: 'barricade', a: [0, 0], b: [0.6, 0] }), /occupé/);
+assert.throws(
+  () => build({ action: 'build', kind: 'barricade', a: [0, 0], b: [0.6, 0] }),
+  /occupé/,
+);
 assert.equal(state.revision, 1, 'rejected overlap leaves state unchanged');
 assert.throws(() => build({ action: 'build', kind: 'sugar', a: [0.3, 0.3] }), /proximité/);
-assert.throws(() => build({ action: 'build', kind: 'sticky', a: [0, 0], b: [0.2, 0] }, 0), /insuffisante/);
+assert.throws(
+  () => build({ action: 'build', kind: 'sticky', a: [0, 0], b: [0.2, 0] }, 0),
+  /insuffisante/,
+);
 const sugar = build({ action: 'build', kind: 'sugar', a: [0.1, 0.1] });
 assert.equal(sugar.price, 3);
 assert.equal(state.structures.at(-1).radius, 0.15);
