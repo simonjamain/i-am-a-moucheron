@@ -1,5 +1,6 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
+  { version: 129, changes: ['Les mitrailleuses tirent plus régulièrement lorsque la connexion ou les images ralentissent.'] },
   { version: 128, changes: ['Les distances et altitudes affichées correspondent désormais à l’échelle réelle.'] },
   {
     version: 126,

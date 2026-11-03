@@ -83,6 +83,9 @@ Les gouttes retombent, disparaissent rapidement et sont regroupées dans un seul
 maillage instancié plafonné à 240 particules. Les murs et les véhicules gardent
 leurs effets d'étincelles habituels ; aucun sang n'est ajouté aux joueurs.
 Les mitrailleuses tirent des traceurs légèrement dispersés depuis leurs canons.
+La cadence locale rattrape les images retardées sans attendre les confirmations
+réseau ; les rafales vues à distance suivent une cadence approximative plutôt
+qu'un tir aléatoire à chaque image. Voir [stocks et réseau](vehicles-bank.md).
 Les projectiles subissent gravité et traînée et sont supprimés après impact ou
 expiration. La DCA tire des obus à éclatement réglable en distance, à cadence
 réduite, avec fumée noire persistante. Le tir allié inflige des dégâts. Les joueurs ont 100 PV ; une résurrection restaure tous les PV. Les insectes
