@@ -268,7 +268,7 @@ E ou clic gauche valide, R tourne le segment par pas de 45°, Échap quitte.
 Le mode reste actif après une pose pour construire en avançant.
 Le bouton de confirmation permet aussi de poser avec le curseur libéré.
 
-Maintenez le clic gauche et marchez pour étirer librement une barricade ou un ruban. Relâchez pour confirmer au prix affiché (1 $ par tranche de 20 cm). Un clic bref ou E pose un morceau de 12 cm. Les longs murs sont découpés en segments réparables. R oriente aussi le sachet de sucre, dont les cristaux marquent le point de repas. Le sucre coûte
+Maintenez le bouton de la molette, dirigez la souris vers un outil puis relâchez pour le sélectionner. Au centre, le choix est annulé. Cliquez une fois pour ancrer une barricade ou un ruban, marchez puis cliquez de nouveau pour confirmer au prix affiché (1 $ par tranche de 20 cm). E pose un morceau de 12 cm. Les longs murs sont découpés en segments réparables. R oriente aussi le sachet de sucre, dont les cristaux marquent le point de repas. Le sucre coûte
 3 $, une réparation 1 $, la suppression est gratuite. L’aperçu rouge et le message
 signalent un refus ; le serveur revalide position, caisse et occupation avant
 paiement. La pose exige le sol du bureau, sans parachute. Les défenses sont
