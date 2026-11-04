@@ -39,6 +39,8 @@ const files = {
       'placement-aim',
       'brick-wall',
       'meshy-brick-data',
+      'meshy-m1-data',
+      'm1-model',
       'air-current',
       'air-trails',
       'wave-council-ui',
