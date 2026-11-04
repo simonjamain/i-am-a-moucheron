@@ -15,7 +15,7 @@ export const VEHICLES = {
   },
   bomber: {
     name: 'Bombardier B3',
-    seats: ['pilot', 'dorsal', 'tail'],
+    seats: ['pilot', 'dorsal', 'tail', 'ventral'],
     span: 21,
     length: 14,
     maxSpeed: 52.5,
@@ -88,6 +88,7 @@ export const SEAT_NAMES = {
   copilot: 'Copilote armement',
   dorsal: 'Mitrailleur dorsal',
   tail: 'Mitrailleur de queue',
+  ventral: 'Mitrailleur ventral',
   cannon: 'Tireur principal',
   top: 'Mitrailleur supérieur',
 };
@@ -124,15 +125,17 @@ export function vehicleEntry(v, seat = 'pilot') {
     q = v.state.q,
     s =
       (VEHICLES[v.type].span / 2 + 1.8) *
-      (v.type === 'fighter' || seat === 'tail' || seat === 'top' ? -1 : 1),
+      (v.type === 'fighter' || seat === 'tail' || seat === 'top' || seat === 'ventral' ? -1 : 1),
     along =
       VEHICLES[v.type].seats.length < 2
         ? 0
-        : seat === 'pilot'
-          ? -4
-          : seat === 'dorsal' || seat === 'cannon'
-            ? 4
-            : 0;
+        : seat === 'ventral'
+          ? -6
+          : seat === 'pilot'
+            ? -4
+            : seat === 'dorsal' || seat === 'cannon'
+              ? 4
+              : 0;
   const x = 1 - 2 * (q[1] * q[1] + q[2] * q[2]),
     z = 2 * (q[0] * q[2] - q[3] * q[1]);
   return {
@@ -161,6 +164,12 @@ export function seatMount(type, seat) {
   if (type === 'tank')
     return seat === 'cannon' ? [0, 1.3, 0] : seat === 'top' ? [0, 2.3, 1] : [0, 0.7, -1.5];
   if (type === 'bomber')
-    return seat === 'tail' ? [0, 1, 5.5] : seat === 'dorsal' ? [0, 1.3, 0.1] : [0, 0.7, -3.6];
+    return seat === 'ventral'
+      ? [0, -0.85, -0.18]
+      : seat === 'tail'
+        ? [0, 0.49, 4.28]
+        : seat === 'dorsal'
+          ? [0, 1.3, -1.73]
+          : [0, 0.7, -3.6];
   return [0, 0.5, -0.5];
 }

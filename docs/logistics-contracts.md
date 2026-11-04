@@ -75,8 +75,8 @@ conditionnée à la révision lue pour gérer les accès concurrents.
   commandes continuent. Les gaz peuvent être ramenés à zéro.
 - Chasseur : **1 000 balles**, une émission toutes les 0,06 s, en alternance entre
   les deux canons ; ils partagent le stock du pilote.
-- Bombardier : **667 balles par mitrailleur**, une émission toutes les 0,09 s,
-  soit environ 60 s. Les deux postes ont des compteurs indépendants. Le pilote
+- Bombardier : **667 balles par mitrailleur** (dorsal, queue et ventral), une émission toutes les 0,09 s,
+  soit environ 60 s. Les trois postes ont des compteurs indépendants. Le pilote
   du bombardier possède 50 bombes, le Stuka 6, à intervalle nominal de 0,5 s.
 - Spitfire : 1 000 balles, six départs légèrement décalés par salve et fin de réserve partielle.
 - Bombes du Stuka et du bombardier, MG et obus du tank : réserves indépendantes
@@ -198,3 +198,5 @@ Le catalogue courant comprend 600 variantes, avec quatre rôles supplémentaires
 
 Le [lot confort de jeu, version 37](comfort.md) précise réparation, zoom, jauges,
 radar à pied, remise à zéro, fourmis et projectiles du pistolet courants.
+
+Le [B3 texturé](b3-model.md) porte la teinte d’identification sur un disque au-dessus de la coque ; son camouflage reste fixe.

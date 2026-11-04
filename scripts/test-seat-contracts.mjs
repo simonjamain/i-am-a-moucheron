@@ -122,9 +122,9 @@ for (const [key, forms] of Object.entries(CONTRACTS))
           3 * Math.max(...CONTRACTS['purgatory:soul'].flat().map((v) => v.text.length)),
       );
   }
-assert.equal(docs, 60);
+assert.equal(docs, 65);
 console.log(
-  'PASS: free/airborne seat changes, ordered two-party atomic exchange, refusal, competing claims, disconnect cancellation, reward sounds and 600 contract variants.',
+  'PASS: free/airborne seat changes, ordered two-party atomic exchange, refusal, competing claims, disconnect cancellation, reward sounds and 650 contract variants.',
 );
 const T = await import('../vendor/three.module.min.js');
 const { stepVacantAircraft } = await import('../src/vacant-flight.js');

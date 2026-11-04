@@ -1,6 +1,13 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 166,
+    changes: [
+      'Le bombardier accueille un quatrième joueur dans sa tourelle ventrale.',
+      'Son nouveau modèle conserve son camouflage et se repère grâce à un rond coloré au-dessus de lui.',
+    ],
+  },
+  {
     version: 165,
     changes: [
       'Le H2 adopte le croquis inspiré du Mi-24, avec deux verrières, un train à roues et ses deux rotors animés.',

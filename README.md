@@ -24,7 +24,7 @@ par PR restent à configurer ; voir CONTRIBUTING pour leur état et la cible.
 
 ## Stack et démarrage
 
-JavaScript ESM natif, Three.js embarqué dans `vendor/`, modèles procéduraux et
+JavaScript ESM natif, Three.js embarqué dans `vendor/`, modèles procéduraux et Meshy embarqués, et
 sons Web Audio. Le serveur Node utilise **uniquement la RAM**, sans base de
 données. Les joueurs se connectent en étoile par WebRTC sur UDP : mouvements
 sans retransmission, commandes importantes fiables avec confirmations.
@@ -144,3 +144,5 @@ sont disponibles pour tous les joueurs connectés, à tout moment (hors partie p
 pour la génération d’insectes).
 
 Le [bestiaire et ses vitesses physiques](docs/enemy-bestiary.md#vitesse-physique-dans-la-pièce) spécifient des mètres de la pièce par seconde, indépendants de la taille des modèles et de l'effectif des nuées.
+
+Le [bombardier B3](docs/b3-model.md) accueille quatre joueurs et conserve son camouflage texturé.

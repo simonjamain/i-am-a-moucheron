@@ -1331,6 +1331,18 @@ export const CONTRACTS = {
     ],
   ],
 };
+// The ventral station has its own boarding and transfer forms.
+for (const context of ['boarding', 'change', 'exchange-request', 'exchange-accept'])
+  CONTRACTS[context + ':ventral'] = CONTRACTS[context + ':dorsal'].map((variants, index) =>
+    variants.map((doc, n) => ({
+      ...doc,
+      title: doc.title.replace(/mitrailleur dorsal/gi, 'mitrailleur ventral'),
+      code: 'VENTRAL-' + context + '-' + index + '-' + n,
+      text:
+        doc.text.replace(/dorsale/gi, 'ventrale').replace(/dorsal/gi, 'ventral') +
+        '\n\nLe poste ventral couvre le dessous de l’appareil. Ses munitions et sa signature restent indépendantes des autres postes.',
+    })),
+  );
 // Authored contexts for the independent tank stations.
 for (const [seat, role] of [
   ['cannon', 'tireur principal du tank'],

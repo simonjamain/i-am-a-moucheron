@@ -43,6 +43,8 @@ const files = {
       'm1-model',
       'meshy-h2-data',
       'h2-model',
+      'b3-model',
+      'meshy-b3-data',
       'air-current',
       'air-trails',
       'wave-council-ui',
