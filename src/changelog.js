@@ -1,7 +1,7 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
-    version: 159,
+    version: 160,
     changes: [
       'Les ennemis au sol avancent plus régulièrement, sans petits bonds entre leurs déplacements.',
     ],

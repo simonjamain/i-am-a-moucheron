@@ -381,10 +381,12 @@ export function midgeDisplacement(enemy, time, envelope = 1) {
 // The route guides each cluster; local steering offsets cannot skip the bin.
 // A sampled ground pose can be provided instead of a static snapshot map.
 export function swarmFrame(roster, time, groundAgents = null, field = null) {
+  const groundAt = (id) => {
+    if (typeof groundAgents === 'function') return groundAgents(id);
+    return groundAgents?.[id];
+  };
   const samples = roster.map((e) => {
-    const ground =
-      e.ground &&
-      (typeof groundAgents === 'function' ? groundAgents(e.id) : groundAgents?.[e.id]);
+    const ground = e.ground && groundAt(e.id);
     if (ground) {
       if (ground.arrived) return null;
       const lift = INSECT_SCALE * e.size * enemySizeFactor(e.type) * GROUND_FOOT_DEPTH;

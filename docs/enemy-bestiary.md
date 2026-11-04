@@ -39,7 +39,7 @@ La vitesse de progression de toutes les espèces, y compris les bébés araigné
 
 Les rats géants progressent désormais à 0,08075 m/s, soit 70 % plus vite que leur vitesse précédente de 0,0475 m/s. Les autres espèces sont inchangées. Le multiplicateur de vitesse de la room reste applicable aux rats comme aux autres ennemis.
 
-## Fluidité des ennemis terrestres (version 159)
+## Fluidité des ennemis terrestres (version 160)
 
 Le serveur conserve l'autorité sur les positions, le contournement, les attaques
 et les arrêts sur colle ou sucre. Le navigateur recevait des positions de

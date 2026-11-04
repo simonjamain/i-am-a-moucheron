@@ -3001,10 +3001,9 @@ function damageEnemy(enemy, amount, shot, point) {
 let entryNoticeWave = -1;
 function enemies(now) {
   if (!snap) return;
+  const elapsedSinceSnapshot = performance.now() - snap.receivedAt;
+  const serverNow = snap.sentAt ? snap.sentAt + elapsedSinceSnapshot : now + clockOffset;
   const active = new Set(),
-    serverNow = snap.sentAt
-      ? snap.sentAt + performance.now() - snap.receivedAt
-      : now + clockOffset,
     t = (serverNow - snap.started) / 1000,
     roster = currentRoster(),
     frame =
