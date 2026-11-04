@@ -1,6 +1,13 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 159,
+    changes: [
+      'Visez avec la caméra pour poser tous vos objets.',
+      'Tracez vos barricades entre deux points : le nombre de briques s’adapte à leur longueur.',
+    ],
+  },
+  {
     version: 157,
     changes: [
       'Repérez les prochaines entrées et votez pour un plan commun. Équipez vos défenses avant de lancer une vague plus coriace.',

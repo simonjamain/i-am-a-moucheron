@@ -5,36 +5,30 @@ const defense = newGroundDefense();
 const foot = { x: 0, z: 0, y: 0, face: 0, grounded: true };
 const make = (overrides = {}) =>
   groundPlacement({ foot, mode: 'barricade', defense, dollars: 20, ...overrides });
+const aim = { x: 0, y: 0, z: -0.045 };
 const before = structuredClone(defense);
-const first = make();
+assert.equal(make({ aim }).startOnly, true);
+assert.deepEqual(defense, before, 'preview does not mutate the room');
+assert.match(make().error, /Visez/);
+const first = make({ aim, anchor: [0.12, -0.045] });
 assert.equal(first.price, 1);
-assert.deepEqual(defense, before, 'preview must not charge or mutate room');
 assert.deepEqual(first.center, [0, -0.045]);
-assert.equal(
-  Math.hypot(first.command.a[0] - first.command.b[0], first.command.a[1] - first.command.b[1]),
-  0.12,
+assert.deepEqual(
+  make({ aim, anchor: [0.12, -0.045], foot: { ...foot, face: 2 } }).command,
+  first.command,
 );
-const moved = make({ foot: { ...foot, x: 1, face: Math.PI / 2 } });
-assert.ok(Math.abs(moved.center[0] - 1.045) < 1e-10);
-const rotated = make({ rotation: Math.PI / 2 });
-assert.ok(Math.abs(rotated.command.a[0] - rotated.command.b[0]) < 1e-10);
-assert.match(make({ dollars: 0 }).error, /insuffisante/);
-assert.match(make({ foot: { ...foot, grounded: false } }).error, /sol/);
-assert.match(make({ foot: { ...foot, y: 0.1 } }).error, /sol/);
-assert.match(make({ foot: { ...foot, x: 5 } }).error, /invalide/);
-assert.equal(make({ mode: 'sugar' }).price, 3);
-assert.equal(make({ mode: 'sticky' }).price, 1);
+assert.deepEqual(make({ aim, anchor: [0.12, -0.045], rotation: 2 }).command, first.command);
+assert.match(make({ aim, anchor: [0.12, -0.045], dollars: 0 }).error, /insuffisante/);
+assert.match(make({ aim, foot: { ...foot, grounded: false } }).error, /sol/);
+assert.match(make({ aim, foot: { ...foot, y: 0.1 } }).error, /sol/);
+assert.match(make({ aim, anchor: [aim.x, aim.z] }).error, /distance/);
+assert.equal(make({ aim, mode: 'sugar' }).price, 3);
+assert.equal(make({ aim, mode: 'sticky', anchor: [0.12, -0.045] }).price, 1);
 groundCommand(defense, first.command, [0, 0], 20);
-assert.match(make().error, /occupé/);
-const remove = make({ mode: 'remove' });
-assert.equal(remove.command.id, defense.structures[0].id);
-assert.equal(remove.price, 0);
+assert.equal(make({ aim, mode: 'remove' }).command.id, defense.structures[0].id);
 defense.structures[0].hp = 50;
-assert.equal(make({ mode: 'repair' }).price, 1);
-assert.match(make({ mode: 'remove', foot: { ...foot, x: 1 } }).error, /Visez/);
-console.log(
-  'Third-person ground placement: movement, rotation, validation, costs and targeting OK',
-);
+assert.equal(make({ aim, mode: 'repair' }).price, 1);
+console.log('Camera placement: anchors, direction independence, validation and targeting OK');
 
 // Exercise the actual controller with Three.js, without requiring a GPU.
 const T = await import('../vendor/three.module.min.js');
@@ -63,6 +57,7 @@ let allowed = true,
   captures = 0,
   releases = 0,
   resolve;
+let target = { ...aim };
 const commands = [];
 const ui = new GroundDefenseUI({
   T,
@@ -70,6 +65,7 @@ const ui = new GroundDefenseUI({
   document,
   snapshot: () => snap,
   foot: () => foot,
+  aim: () => target,
   available: () => allowed,
   enabled: () => enabled,
   captureMouse: () => captures++,
@@ -92,6 +88,9 @@ assert.equal(ui.opened, false);
 assert.equal(captures, 1);
 ui.update();
 assert.equal(ui.preview.visible, true);
+ui.press();
+assert.equal(commands.length, 0, 'first click only anchors');
+target = { ...target, x: 0.12 };
 const pending = ui.confirm();
 await ui.confirm();
 assert.equal(commands.length, 1, 'no duplicate purchase during pending request');
@@ -100,6 +99,7 @@ await pending;
 assert.equal(ui.active, true, 'continue building while walking');
 ui.press();
 foot.x += 0.57;
+target = { ...target, x: target.x + 0.57 };
 assert.equal(commands.length, 1, 'first click only anchors');
 ui.press();
 assert.equal(commands.length, 2);
@@ -140,3 +140,62 @@ ui.update();
 assert.equal(ui.active, false, 'entering a vehicle or dying cancels placement');
 assert.equal(ui.preview.visible, false);
 console.log('Ground placement UI: menu, ghost, pending command, modal suspension and reset OK');
+
+const { placementAim } = await import('../src/placement-aim.js');
+const { brickLayout, createBrickWall } = await import('../src/brick-wall.js');
+const floor = { min: { x: -4, y: -0.1, z: -4 }, max: { x: 4, y: 0, z: 4 } };
+const eye = { x: 0, y: 0.04, z: 0.04 };
+const direction = { x: 0, y: -1, z: -2 };
+const body = { x: 0, y: 0, z: 0, face: 0, grounded: true };
+const aimed = placementAim(body, eye, direction, [floor], 0.24);
+assert.deepEqual(aimed, { x: 0, y: 0, z: -0.04 });
+assert.deepEqual(placementAim({ ...body, face: 2 }, eye, direction, [floor], 0.24), aimed);
+assert.equal(placementAim(body, eye, { x: 0, y: 1, z: 0 }, [floor], 0.24), null);
+assert.equal(placementAim(body, eye, { x: 1, y: 0, z: 0 }, [floor], 0.24), null);
+assert.equal(placementAim(body, eye, direction, [floor], 0.027), null);
+const obstruction = { min: { x: -0.01, y: 0, z: 0 }, max: { x: 0.01, y: 0.03, z: 0.01 } };
+assert.equal(
+  placementAim(body, eye, direction, [floor, obstruction], 0.24),
+  null,
+  'side blocks target behind it',
+);
+assert.ok(
+  placementAim(
+    body,
+    { x: 0, y: 0.04, z: 0.005 },
+    { x: 0, y: -1, z: 0 },
+    [floor, obstruction],
+    0.24,
+  ),
+);
+for (const mode of ['sugar', 'fan', 'repair', 'remove']) {
+  const a = groundPlacement({ foot: body, mode, aim: aimed, defense, dollars: 100 });
+  const b = groundPlacement({
+    foot: { ...body, face: Math.PI },
+    mode,
+    aim: aimed,
+    defense,
+    dollars: 100,
+  });
+  assert.deepEqual(a, b, mode + ' ignores movement heading');
+}
+assert.ok(brickLayout(0.2).length > brickLayout(0.04).length);
+for (const length of [0.002, 0.04, 0.2]) {
+  for (const brick of brickLayout(length))
+    assert.ok(Math.abs(brick.x) + brick.width / 2 <= length / 2 + 1e-8);
+  const wall = createBrickWall(T, { a: [0, 0], b: [length, 0], hp: 100 });
+  assert.equal(wall.count, brickLayout(length).length);
+  assert.ok(wall.instanceColor);
+  assert.equal(wall.visible, true);
+  wall.geometry.dispose();
+  wall.material.dispose();
+}
+ui.buttons.children[0].onclick();
+allowed = true;
+ui.update();
+assert.equal(ui.preview.scale.x, 0.008, 'unanchored preview has no wall orientation');
+target = null;
+ui.press();
+assert.equal(ui.anchor, null, 'invalid aim cannot anchor');
+assert.equal(commands.length, 3, 'invalid aim cannot purchase');
+console.log('Camera ray: surfaces, occlusion, reach; Meshy wall: variable count and bounds OK');

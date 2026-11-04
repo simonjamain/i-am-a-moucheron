@@ -38,10 +38,22 @@ const emptyVehicle = extra.createVehicle(motionRoom, 'fighter', 'purchase');
 const elected = [...motionRoom.pilots.values()].sort((x, y) => x.id.localeCompare(y.id))[0];
 const nonElected = [...motionRoom.pilots.values()].find((p) => p.id !== elected.id);
 const vacantState = { ...emptyVehicle.state, p: [0.25, 0.8, 0.2] };
-extra.sync(motionRoom, nonElected, { mode: nonElected.mode, state: nonElected.state, vacant: [{ id: emptyVehicle.id, state: vacantState }] });
+extra.sync(motionRoom, nonElected, {
+  mode: nonElected.mode,
+  state: nonElected.state,
+  vacant: [{ id: emptyVehicle.id, state: vacantState }],
+});
 assert.notDeepEqual(emptyVehicle.state.p, vacantState.p, 'non-host cannot control a vacant hull');
-extra.sync(motionRoom, elected, { mode: elected.mode, state: elected.state, vacant: [{ id: emptyVehicle.id, state: vacantState }] });
-assert.deepEqual(emptyVehicle.state.p, vacantState.p, 'lexical first live host still controls vacant hull');
+extra.sync(motionRoom, elected, {
+  mode: elected.mode,
+  state: elected.state,
+  vacant: [{ id: emptyVehicle.id, state: vacantState }],
+});
+assert.deepEqual(
+  emptyVehicle.state.p,
+  vacantState.p,
+  'lexical first live host still controls vacant hull',
+);
 assert.equal(snapshot50.souls.length, 0);
 assert.equal(snapshot50.superSouls.length, 0);
 assert.equal(snapshot50.leaked, 0);
@@ -50,7 +62,7 @@ assert.equal(new Game().rooms.size, 0, 'restarting has no state to restore');
 let s = call(a.id, 'start');
 assert.equal(s.next_wave_at, now + 60000);
 now += 60000;
-for(const p of room.pilots.values()) p.seen=now;
+for (const p of room.pilots.values()) p.seen = now;
 s = call(a.id, 'sync', { state: a.state, mode: 'foot' });
 assert.equal(s.phase, 'combat');
 assert.equal(s.wave, 1);

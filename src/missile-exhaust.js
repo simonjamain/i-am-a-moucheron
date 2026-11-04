@@ -11,12 +11,17 @@ export class MissileExhaust {
     this.geometry = new T.IcosahedronGeometry(MAP.metres(0.17), 1);
     this.flameGeometry = new T.ConeGeometry(MAP.metres(0.13), MAP.metres(0.65), 7);
     this.flameMaterial = new T.MeshBasicMaterial({
-      color: 0xffa333, transparent: true, opacity: 0.94,
-      blending: T.AdditiveBlending, depthWrite: false,
+      color: 0xffa333,
+      transparent: true,
+      opacity: 0.94,
+      blending: T.AdditiveBlending,
+      depthWrite: false,
     });
     this.coreGeometry = new T.ConeGeometry(MAP.metres(0.07), MAP.metres(0.38), 7);
     this.coreMaterial = new T.MeshBasicMaterial({
-      color: 0xfff1ac, blending: T.AdditiveBlending, depthWrite: false,
+      color: 0xfff1ac,
+      blending: T.AdditiveBlending,
+      depthWrite: false,
     });
   }
   attach(id, model) {
@@ -40,7 +45,9 @@ export class MissileExhaust {
     const T = this.T;
     const material = new T.MeshBasicMaterial({
       color: seed % 4 === 0 ? 0xb6b5a7 : 0x777b77,
-      transparent: true, opacity: 0.35, depthWrite: false,
+      transparent: true,
+      opacity: 0.35,
+      depthWrite: false,
     });
     const mesh = new T.Mesh(this.geometry, material);
     mesh.position.copy(position);

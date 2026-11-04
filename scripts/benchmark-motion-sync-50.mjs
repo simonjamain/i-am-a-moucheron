@@ -6,7 +6,10 @@ import { Game } from '../server/game.js';
 
 const baseline = '187c5228ce2fd945d63f1dacbf73c04556a2f094';
 const temporary = new URL('../server/.motion-baseline-benchmark.mjs', import.meta.url);
-writeFileSync(temporary, execFileSync('git', ['show', baseline + ':server/game.js'], { encoding: 'utf8' }));
+writeFileSync(
+  temporary,
+  execFileSync('git', ['show', baseline + ':server/game.js'], { encoding: 'utf8' }),
+);
 let PreviousGame;
 try {
   ({ Game: PreviousGame } = await import(temporary.href));
@@ -28,8 +31,7 @@ const before = new PreviousGame({ now });
 const after = new Game({ now });
 const invoke = (engine, count) => {
   const start = performance.now();
-  for (let i = 0; i < count; i++)
-    engine.sync(room, player, { mode: 'flight', state });
+  for (let i = 0; i < count; i++) engine.sync(room, player, { mode: 'flight', state });
   return performance.now() - start;
 };
 invoke(before, 500);
@@ -49,13 +51,15 @@ const baselineMs = median(samples.before) / 1000;
 const currentMs = median(samples.after) / 1000;
 assert.equal(room.pilots.size, 50);
 assert.deepEqual(vehicle.state.p, state.p, 'motion sync preserves vehicle position');
-console.log(JSON.stringify({
-  players: room.pilots.size,
-  baseline,
-  updatesPerSample: 1000,
-  samples: 11,
-  baselineMsPerUpdate: +baselineMs.toFixed(5),
-  currentMsPerUpdate: +currentMs.toFixed(5),
-  speedup: +(baselineMs / currentMs).toFixed(2),
-  scope: 'CPU game.sync on valid pilot flight motion without vacant reports; not network or GPU',
-}));
+console.log(
+  JSON.stringify({
+    players: room.pilots.size,
+    baseline,
+    updatesPerSample: 1000,
+    samples: 11,
+    baselineMsPerUpdate: +baselineMs.toFixed(5),
+    currentMsPerUpdate: +currentMs.toFixed(5),
+    speedup: +(baselineMs / currentMs).toFixed(2),
+    scope: 'CPU game.sync on valid pilot flight motion without vacant reports; not network or GPU',
+  }),
+);

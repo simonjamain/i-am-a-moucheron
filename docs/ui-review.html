@@ -2048,20 +2048,27 @@
         gap: 16px;
         margin: 20px 0;
       }
-      :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel) [data-bank-cards] article {
+      :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel)
+        [data-bank-cards]
+        article {
         padding: 18px;
         border: 1px solid #a7a17c;
         background: #fff8df55;
       }
-      :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel) [data-bank-cards] button {
+      :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel)
+        [data-bank-cards]
+        button {
         display: block;
         width: 100%;
         margin-top: 14px;
       }
-      :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel) [data-bank-cards] small {
+      :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel)
+        [data-bank-cards]
+        small {
         letter-spacing: 1px;
       }
-      :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel) [data-bank-status] {
+      :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel)
+        [data-bank-status] {
         min-height: 1.5em;
         font-weight: bold;
       }
@@ -2136,7 +2143,8 @@
         :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel) > article {
           padding: 14px;
         }
-        :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel) [data-bank-cards] {
+        :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel)
+          [data-bank-cards] {
           grid-template-columns: 1fr;
         }
       }
@@ -2425,7 +2433,9 @@
       }
       #changelogDialog h2 {
         margin: 0;
-        font: 25px 'Barlow Condensed', sans-serif;
+        font:
+          25px 'Barlow Condensed',
+          sans-serif;
       }
       #changelogClose {
         padding: 4px 9px;
@@ -2459,6 +2469,86 @@
           left: 8px;
         }
       }
+      #waveCouncilOpen {
+        align-self: flex-start;
+        border-color: #c8df81;
+        padding: 5px 10px;
+      }
+      #waveCouncil {
+        width: min(42rem, 92vw);
+        max-height: 80dvh;
+        color: #e7f1df;
+        background: #102822;
+        border: 1px solid #789980;
+        border-radius: 10px;
+        padding: 16px;
+        overflow: auto;
+      }
+      #waveCouncil::backdrop {
+        background: #071410aa;
+      }
+      #waveCouncil h2 {
+        margin: 0;
+        font-size: 1.35rem;
+      }
+      #waveCouncil h3 {
+        margin: 12px 0 4px;
+      }
+      #waveCouncilClose {
+        float: right;
+      }
+      #waveTimeline {
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+        overflow-x: auto;
+      }
+      #waveTimeline div,
+      #waveCards button {
+        display: grid;
+        gap: 4px;
+        padding: 8px;
+        border: 1px solid #54776a;
+      }
+      #waveTimeline span {
+        white-space: nowrap;
+        font-size: 12px;
+      }
+      #waveCards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(135px, 1fr));
+        gap: 8px;
+        margin: 12px 0;
+      }
+      #waveCards button {
+        text-align: left;
+        color: #edf4e8;
+        background: #25493e;
+      }
+      #waveCards button[aria-pressed='true'] {
+        border-color: #d7ef91;
+      }
+      #waveCards button:disabled {
+        opacity: 0.85;
+        cursor: default;
+      }
+      #waveCards small {
+        color: #d7ef91;
+      }
+      #waveWorkshop > div {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-wrap: wrap;
+        margin: 6px 0;
+      }
+      #waveWorkshop select {
+        max-width: 100%;
+      }
+      #waveCouncil [hidden],
+      #waveCouncilOpen[hidden] {
+        display: none;
+      }
     </style>
   <style>body{background:linear-gradient(#879a81 0 55%,#c1af81 56% 80%,#656c48 81%);min-height:100dvh}nav{position:relative;z-index:50;display:flex;gap:6px;flex-wrap:nowrap;overflow:auto;padding:14px;background:#102b29}nav button{padding:8px;font-size:12px}.previewNote{position:fixed;top:210px;bottom:auto;left:15px;right:auto;max-width:320px;font-size:12px;color:#fff;background:#102b29b8;padding:9px;z-index:50}#bank>article{max-height:78dvh}#bank{padding-top:90px;padding-bottom:60px}</style>
   <nav aria-label="Postes de démonstration"><button data-demo="0">Chasseur</button><button data-demo="1">Stuka</button><button data-demo="2">Bombardier</button><button data-demo="3">Tourelle</button><button data-demo="4">DCA</button><button data-demo="5">Tank · pilote</button><button data-demo="6">Tank · canon</button><button data-demo="7">Tank · supérieur</button><button data-demo="8">Banquier</button><button data-demo="9">Lit</button><button data-demo="10">Bon de commande</button><button data-demo="11">Spitfire</button><button data-demo="12">Observation</button><button data-demo="13">Marche</button><button data-demo="14">Parachute</button><button data-demo="15">Placement</button><button data-demo="16">Hélicoptère · pilote</button><button data-demo="17">Hélicoptère · copilote</button><button data-demo="18">DCA mobile · conducteur</button><button data-demo="19">DCA mobile · tireur</button><button data-demo="20">Équilibrage</button></nav>
@@ -2472,6 +2562,9 @@
           </div>
           <div class="stat"><label>Infestation</label><b class="lime" id="infest">0 / 20</b></div>
         </div>
+        <button id="waveCouncilOpen" hidden aria-haspopup="dialog" title="Conseil de vague (V)">
+          Préparer la vague
+        </button>
         <div id="economyControls">
           <span id="wallet">0 $</span><button id="shopOpen">Équipement · P</button
           ><button id="bankOpen">Banquier · N</button>
@@ -2546,9 +2639,8 @@
           <div>
             <h2 id="flightSettingsTitle">Réglages personnels de pilotage</h2>
             <p>
-              Ces préférences concernent votre pilotage des avions uniquement, pas
-              l’hélicoptère ni les réglages partagés de la room.
-              La partie continue pendant vos ajustements.
+              Ces préférences concernent votre pilotage des avions uniquement, pas l’hélicoptère ni
+              les réglages partagés de la room. La partie continue pendant vos ajustements.
             </p>
           </div>
           <button data-flight-close aria-label="Fermer les réglages de pilotage">✕</button>
