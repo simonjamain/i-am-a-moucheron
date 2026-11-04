@@ -41,6 +41,8 @@ const files = {
       'meshy-brick-data',
       'meshy-m1-data',
       'm1-model',
+      'meshy-h2-data',
+      'h2-model',
       'air-current',
       'air-trails',
       'wave-council-ui',

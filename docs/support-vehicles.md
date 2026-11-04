@@ -147,3 +147,6 @@ reproduits, le collectif local, la jauge au neutre et les tests de roquettes.
 Un H2 neuf conserve son état posé malgré la marge de pose de 0,05 mm : la
 physique recale les patins au support proche avant de masquer les cercles des
 deux postes. Cette tolérance ne rappelle pas au sol un hélicoptère en vol.
+
+Le [modèle visuel H2 issu du croquis](h2-model.md) précise la provenance Meshy,
+les rotors animés et les limites des vérifications de rendu.

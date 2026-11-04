@@ -1,6 +1,12 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 165,
+    changes: [
+      'Le H2 adopte le croquis inspiré du Mi-24, avec deux verrières, un train à roues et ses deux rotors animés.',
+    ],
+  },
+  {
     version: 163,
     changes: [
       'Le chasseur M1 prend les formes du croquis : ailes hautes, cockpit vitré et livrée bicolore.',
