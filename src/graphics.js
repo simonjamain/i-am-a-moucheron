@@ -1,3 +1,4 @@
+import { makeM1 } from './m1-model.js';
 import { GROUND_LEGS, MIDGE_SPHERE_RADIUS } from './scale.js';
 export function createGraphics(T, scene) {
   const materials = new Map();
@@ -46,6 +47,10 @@ export function createGraphics(T, scene) {
     return s;
   }
   function makePlane(color) {
+    return makeM1(T, scene, color, box, mat);
+  }
+  // Legacy base shared by the Stuka and Spitfire; keep their silhouettes intact.
+  function makeLegacyPlane(color) {
     const g = new T.Group();
     box(0, 0, 0, 0.8, 0.65, 3.3, color, g);
     const wing = box(0, 0, 0.2, 5.6, 0.13, 0.95, color, g);
@@ -84,7 +89,7 @@ export function createGraphics(T, scene) {
     return g;
   }
   function makeSpitfire(color) {
-    const g = makePlane(color);
+    const g = makeLegacyPlane(color);
     g.userData.wing.visible = false;
     for (const gun of g.userData.gunMeshes) gun.visible = false;
     // Elliptical wings and six barrels distinguish the S6.
@@ -174,7 +179,7 @@ export function createGraphics(T, scene) {
     return g;
   }
   function makeStuka(color) {
-    const g = makePlane(color);
+    const g = makeLegacyPlane(color);
     g.userData.wing.visible = false;
     for (const side of [-1, 1]) {
       const inner = box(side * 1.1, -0.18, 0.1, 2.3, 0.16, 1.2, color, g);

@@ -1,5 +1,8 @@
 # Map units, fleet and weapons
 
+Le [modèle Meshy du M1](m1-model.md) décrit sa provenance, sa conversion et les
+limites de validation du rendu.
+
 `src/scale.js` is the only miniature-ratio declaration. `MAPS.office` is 3/1000;
 `MAPS.purgatory` is 1/1. A designer can use `mapScale(1,1000)`, `(2,1000)` or
 `(100,1000)`. The world and office furniture use SI metres. Actor reference

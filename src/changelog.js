@@ -1,6 +1,12 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 163,
+    changes: [
+      'Le chasseur M1 prend les formes du croquis : ailes hautes, cockpit vitré et livrée bicolore.',
+    ],
+  },
+  {
     version: 161,
     changes: [
       'Les ennemis au sol avancent plus régulièrement, sans petits bonds entre leurs déplacements.',
