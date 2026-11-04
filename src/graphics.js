@@ -1,3 +1,4 @@
+import { addFleetHull } from './meshy-fleet.js';
 import { makeB3 } from './b3-model.js';
 import { makeH2 } from './h2-model.js';
 import { makeM1 } from './m1-model.js';
@@ -51,101 +52,55 @@ export function createGraphics(T, scene) {
   function makePlane(color) {
     return makeM1(T, scene, color, box, mat);
   }
-  // Legacy base shared by the Stuka and Spitfire; keep their silhouettes intact.
-  function makeLegacyPlane(color) {
+  function makeFleetPlane(color, type) {
     const g = new T.Group();
-    box(0, 0, 0, 0.8, 0.65, 3.3, color, g);
-    const wing = box(0, 0, 0.2, 5.6, 0.13, 0.95, color, g);
-    box(0, 0.25, 1.2, 1.9, 0.1, 0.6, color, g);
-    box(0, 0.6, 1.2, 0.12, 0.8, 0.7, color, g);
-    box(0, 0.42, -0.35, 0.5, 0.32, 0.9, '#254b47', g);
-    const prop = box(0, 0, -1.9, 2.1, 0.12, 0.1, '#263d32', g);
-    ball(0, 0, -1.7, 0.35, '#e4e5c3', g);
-    // Fixed miniature landing gear rests on the deck at the shared parked pose.
-    for (const x of [-0.5, 0.5]) {
-      box(x, -0.5, -0.6, 0.1, 0.5, 0.1, '#465f51', g);
-      const wheel = cyl(x, -0.75, -0.6, 0.3, 0.3, 0.16, '#263d32', g);
-      wheel.rotation.z = Math.PI / 2;
+    const wing = new T.Group();
+    g.add(wing);
+    addFleetHull(T, type, { body: g, wing }, mat(color));
+    const isStuka = type === 'stuka';
+    const prop = new T.Group();
+    prop.position.set(0, isStuka ? -0.1 : 0.25, isStuka ? -2.32 : -1.92);
+    g.add(prop);
+    box(0, 0, 0, 1.65, 0.1, 0.07, '#263d32', prop);
+    box(0, 0, 0, 0.1, 1.65, 0.07, '#263d32', prop);
+    const pilotMuzzles = [],
+      gunMeshes = [];
+    for (const side of [-1, 1]) {
+      for (const x of isStuka ? [1.35] : [1.35, 1.95, 2.5]) {
+        const z = isStuka ? -0.95 : -0.55 * Math.sqrt(1 - (x / 3.1) ** 2) - 0.2;
+        const barrel = box(side * x, -0.22, z, 0.065, 0.065, 0.55, '#334a3b', wing);
+        const muzzle = new T.Object3D();
+        muzzle.position.z = -0.275;
+        barrel.add(muzzle);
+        pilotMuzzles.push(muzzle);
+        gunMeshes.push(barrel);
+      }
+      if (isStuka) {
+        const bomb = makeBomb();
+        bomb.scale.setScalar(0.32);
+        bomb.position.set(side * 1.6, -0.46, 0.1);
+        g.add(bomb);
+      }
     }
-    const tailWheel = cyl(0, -0.88, 1.25, 0.17, 0.17, 0.12, '#263d32', g);
-    tailWheel.rotation.z = Math.PI / 2;
-    const cowl = cyl(0, 0, -1.05, 0.41, 0.41, 1.1, '#b7c9a1', g);
-    cowl.rotation.x = Math.PI / 2;
-    const gunMeshes = [],
-      pilotMuzzles = [];
-    for (const x of [-1.35, 1.35]) {
-      const barrel = box(x, 0.03, -0.9, 0.085, 0.085, 0.7, '#334a3b', g);
-      gunMeshes.push(barrel);
-      const muzzle = new T.Object3D();
-      muzzle.position.z = -0.35;
-      barrel.add(muzzle);
-      pilotMuzzles.push(muzzle);
-      box(x, -0.08, 0.2, 0.035, 0.12, 0.85, '#bcc998', g);
-    }
-    for (const x of [-0.44, 0.44])
-      for (let i = 0; i < 4; i++) box(x, 0.12, -1.35 + i * 0.18, 0.1, 0.1, 0.1, '#5c6351', g);
-    box(0, 0.47, -0.12, 0.52, 0.035, 0.035, '#c3d2ad', g);
-    box(0, 0.47, -0.6, 0.52, 0.035, 0.035, '#c3d2ad', g);
-    g.userData = { wing, prop, gunMeshes, pilotMuzzles };
+    g.userData = {
+      wing,
+      prop,
+      gunMeshes,
+      pilotMuzzles,
+      muzzles: pilotMuzzles,
+      vehicleType: isStuka ? 'interceptor' : 'spitfire',
+    };
     scene.add(g);
     return g;
   }
   function makeSpitfire(color) {
-    const g = makeLegacyPlane(color);
-    g.userData.wing.visible = false;
-    for (const gun of g.userData.gunMeshes) gun.visible = false;
-    // Elliptical wings and six barrels distinguish the S6.
-    const outline = new T.Shape();
-    outline.absellipse(0, 0, 3.1, 0.7, 0, Math.PI * 2, false, 0);
-    const wing = new T.Mesh(
-      new T.ExtrudeGeometry(outline, { depth: 0.1, bevelEnabled: false, curveSegments: 24 }),
-      mat(color),
-    );
-    wing.rotation.x = Math.PI / 2;
-    wing.position.z = 0.15;
-    g.add(wing);
-    g.userData.wing = wing;
-    const muzzles = [];
-    for (const side of [-1, 1])
-      for (const x of [1.35, 1.95, 2.5]) {
-        const z = -0.55 * Math.sqrt(1 - (x / 3.1) ** 2) + 0.15;
-        const barrel = box(side * x, 0.03, z - 0.17, 0.065, 0.065, 0.4, '#334a3b', g);
-        const muzzle = new T.Object3D();
-        muzzle.position.z = -0.2;
-        barrel.add(muzzle);
-        muzzles.push(muzzle);
-      }
-    g.userData.muzzles = muzzles;
-    g.userData.pilotMuzzles = muzzles;
-    g.userData.vehicleType = 'spitfire';
-    return g;
+    return makeFleetPlane(color, 'spitfire');
   }
   function makeBomber() {
     return makeB3(T, scene, box);
   }
   function makeStuka(color) {
-    const g = makeLegacyPlane(color);
-    g.userData.wing.visible = false;
-    for (const side of [-1, 1]) {
-      const inner = box(side * 1.1, -0.18, 0.1, 2.3, 0.16, 1.2, color, g);
-      inner.rotation.z = side * -0.18;
-      const outer = box(side * 2.8, -0.16, 0.1, 2.1, 0.12, 0.85, color, g);
-      outer.rotation.z = side * 0.1;
-      const strut = cyl(side * 1.25, -0.5, -0.55, 0.055, 0.055, 0.55, '#364438', g);
-      strut.rotation.z = side * 0.14;
-      const wheel = cyl(side * 1.29, -0.8, -0.55, 0.22, 0.22, 0.18, '#26352e', g);
-      wheel.rotation.z = Math.PI / 2;
-      const fairing = ball(side * 1.29, -0.74, -0.55, 0.2, color, g);
-      fairing.scale.set(0.55, 1, 1.7);
-      box(side * 2.3, -0.27, -0.25, 1.25, 0.035, 0.18, '#526b56', g);
-      const bomb = makeBomb();
-      bomb.scale.setScalar(0.32);
-      bomb.position.set(side * 1.6, -0.46, 0.1);
-      g.add(bomb);
-    }
-    box(0, 0.38, 0.15, 0.6, 0.4, 1.8, '#496565', g);
-    g.userData.vehicleType = 'interceptor';
-    return g;
+    return makeFleetPlane(color, 'stuka');
   }
   function makeBomb() {
     const g = new T.Group();
@@ -160,15 +115,7 @@ export function createGraphics(T, scene) {
   }
   function makeTank(color) {
     const g = new T.Group();
-    box(0, 0.05, 0, 2.6, 0.9, 3.8, color, g);
-    box(0, 0.55, 0, 2.15, 0.4, 3.2, color, g);
-    for (const side of [-1, 1]) {
-      box(side * 1.5, -0.1, 0, 0.55, 0.9, 4.1, '#28372e', g);
-      for (let i = 0; i < 7; i++) {
-        const wheel = cyl(side * 1.65, -0.1, -1.5 + i * 0.5, 0.32, 0.32, 0.18, '#59654b', g);
-        wheel.rotation.z = Math.PI / 2;
-      }
-    }
+    addFleetHull(T, 'tank', { body: g }, mat(color));
     const turrets = [];
     for (const [y, z, length] of [
       [1, 0, 2.8],
@@ -177,7 +124,15 @@ export function createGraphics(T, scene) {
       const mount = new T.Group();
       mount.position.set(0, y, z);
       g.add(mount);
-      box(0, 0, 0, 1.2, 0.55, 1.5, color, mount);
+      const main = turrets.length === 0;
+      const armor = new T.Mesh(
+        new T.CylinderGeometry(main ? 0.7 : 0.34, main ? 0.9 : 0.42, main ? 0.55 : 0.4, 8),
+        mat(color),
+      );
+      armor.scale.z = main ? 1.1 : 1.25;
+      armor.castShadow = armor.receiveShadow = true;
+      mount.add(armor);
+      if (!main) cyl(0, -0.4, 0, 0.25, 0.3, 0.45, '#364439', mount);
       const pitch = new T.Group();
       mount.add(pitch);
       box(0, 0, -length / 2, 0.15, 0.15, length, '#364439', pitch);
@@ -209,22 +164,10 @@ export function createGraphics(T, scene) {
   }
   function makeFlakTruck(color) {
     const g = new T.Group();
-    box(0, 0, -2.5, 1.65, 0.5, 3.6, color, g);
-    box(0, 0.9, -3.1, 1.8, 1.5, 1.6, color, g);
-    box(0, 1.12, -3.92, 1.5, 0.55, 0.04, '#254b47', g);
     const trailer = new T.Group();
     trailer.position.z = -0.7;
     g.add(trailer);
-    box(0, 0.15, 2.3, 2.1, 0.4, 5.4, color, trailer);
-    for (const [parent, zs] of [
-      [g, [-3.3, -1.4]],
-      [trailer, [3.2, 4.1]],
-    ])
-      for (const z of zs)
-        for (const side of [-1, 1]) {
-          const wheel = cyl(side * 1, -0.25, z, 0.5, 0.5, 0.3, '#28372e', parent);
-          wheel.rotation.z = Math.PI / 2;
-        }
+    addFleetHull(T, 'flaktruck', { body: g, trailer }, mat(color));
     const mount = new T.Group();
     mount.position.set(0, 1, 3.2);
     trailer.add(mount);

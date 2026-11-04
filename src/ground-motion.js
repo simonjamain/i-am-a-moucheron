@@ -22,14 +22,10 @@ export class GroundMotionTrack {
     }
     if (snapshot.phase !== 'combat') return;
     const time = snapshot.sentAt ?? snapshot.now;
-    if (!Number.isFinite(time) || (this.frames.length && time <= this.frames.at(-1).time))
-      return;
+    if (!Number.isFinite(time) || (this.frames.length && time <= this.frames.at(-1).time)) return;
     // Retain the parsed snapshot, not another deep copy of every ground agent.
     this.frames.push({ time, units: snapshot.groundAgents || {} });
-    while (
-      this.frames.length > 2 &&
-      (this.frames.length > 12 || this.frames[1].time < time - 1000)
-    )
+    while (this.frames.length > 2 && (this.frames.length > 12 || this.frames[1].time < time - 1000))
       this.frames.shift();
   }
 
