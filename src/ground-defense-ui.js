@@ -1,3 +1,4 @@
+import { createBrickWall } from './brick-wall.js';
 import { AirTrails } from './air-trails.js';
 import { groundPlacement } from './ground-placement.js';
 export class GroundDefenseUI {
@@ -12,9 +13,11 @@ export class GroundDefenseUI {
     releaseMouse,
     captureMouse,
     foot,
+    aim,
     enabled,
   }) {
     this.foot = foot;
+    this.aim = aim;
     this.enabled = enabled;
     this.captureMouse = captureMouse;
     this.rotation = 0;
@@ -98,12 +101,12 @@ export class GroundDefenseUI {
     document.body.append(this.wheel);
     this.hint = document.createElement('p');
     this.hint.textContent =
-      'Cliquez pour ancrer un mur ou un ruban, marchez puis cliquez pour terminer. Pose courte : E pour poser devant vous, R pour tourner, Échap pour quitter. Barricade / ruban : 1 $ par tranche de 20 cm, sucre : 3 $, ventilateur : 4 $, réparation : 1 $.';
+      'Cliquez pour ancrer un mur ou un ruban, visez la fin puis cliquez pour terminer. E confirme aussi, R oriente les objets ponctuels, Échap pour quitter. Barricade / ruban : 1 $ par tranche de 20 cm, sucre : 3 $, ventilateur : 4 $, réparation : 1 $.';
     this.panel.append(top, this.buttons, this.hint);
     this.status = document.createElement('button');
     this.status.style.cssText =
       'position:fixed;bottom:65px;left:50%;transform:translateX(-50%);z-index:18;padding:10px;display:none';
-    this.status.onclick = () => this.confirm();
+    this.status.onclick = () => this.press();
     document.body.append(this.trigger, this.panel, this.status);
     this.preview = new T.Mesh(
       new T.BoxGeometry(1, 1, 1),
@@ -206,7 +209,7 @@ export class GroundDefenseUI {
     if (!this.active || this.busy || !this.enabled()) return;
     this.update();
     const candidate = this.candidate;
-    if (!this.active || !candidate || candidate.error) return;
+    if (!this.active || !candidate || candidate.error || candidate.startOnly) return;
     this.anchor = null;
     this.busy = true;
     try {
@@ -238,6 +241,7 @@ export class GroundDefenseUI {
     const c = (this.candidate = groundPlacement({
       anchor: this.anchor,
       foot: this.foot(),
+      aim: this.aim?.(),
       mode: this.mode,
       rotation: this.rotation,
       defense: snap.groundDefense,
@@ -253,9 +257,19 @@ export class GroundDefenseUI {
       c.error ||
       (this.busy
         ? 'Envoi…'
-        : `${this.anchor ? 'Clic pour terminer' : ['sticky', 'barricade'].includes(this.mode) ? 'Clic pour commencer · E' : 'Clic'} · ${this.mode === 'repair' ? 'Réparer' : this.mode === 'remove' ? 'Enlever' : 'Poser'} · ${c.price} $ · R : tourner · Échap : quitter`);
+        : `${this.anchor ? 'Clic pour terminer' : ['sticky', 'barricade'].includes(this.mode) ? 'Clic pour commencer' : 'Clic'} · ${this.mode === 'repair' ? 'Réparer' : this.mode === 'remove' ? 'Enlever' : 'Poser'} · ${c.price} $ · Échap : quitter`);
     this.status.disabled = !!c.error || this.busy;
     if (!c.center) return;
+    if (!this.anchor && ['barricade', 'sticky'].includes(this.mode)) {
+      this.preview.position.set(c.center[0], 0.005, c.center[1]);
+      this.preview.scale.set(0.008, 0.01, 0.008);
+      this.preview.rotation.y = 0;
+      this.preview.material.color.set('#a7ece0');
+      this.preview.visible = true;
+      this.status.textContent = 'Clic ou E : fixer le début · Échap : quitter';
+      this.status.disabled = this.busy;
+      return;
+    }
     const cmd = c.command;
     const target = cmd?.id && snap.groundDefense.structures.find((s) => s.id === cmd.id);
     const shape = target || cmd;
@@ -283,6 +297,7 @@ export class GroundDefenseUI {
     for (const child of [...this.models.children]) {
       this.models.remove(child);
       child.traverse((part) => {
+        if (part.isInstancedMesh) part.dispose();
         part.geometry?.dispose();
         part.material?.dispose();
       });
@@ -358,6 +373,8 @@ export class GroundDefenseUI {
         ring.rotation.x = -Math.PI / 2;
         ring.position.set(0, 0.002, 0);
         group.add(ring);
+      } else if (structure.kind === 'barricade') {
+        group.add(createBrickWall(T, structure));
       } else {
         const dx = structure.b[0] - structure.a[0];
         const dz = structure.b[1] - structure.a[1];
@@ -381,23 +398,7 @@ export class GroundDefenseUI {
         mesh.rotation.y = -Math.atan2(dz, dx);
         mesh.visible = intact;
         group.add(mesh);
-        if (structure.kind === 'barricade' && intact) {
-          // Cardboard braced with wooden matches, red heads and tape bindings.
-          for (const along of [-0.36, 0.36]) {
-            for (const [height, size, color] of [
-              [0, 0.024, '#dec291'],
-              [0.013, 0.005, '#a44637'],
-              [0.002, 0.003, '#dfd5ae'],
-            ]) {
-              const part = new T.Mesh(
-                new T.BoxGeometry(Math.min(length * 0.15, 0.004), size, 0.004),
-                new T.MeshBasicMaterial({ color }),
-              );
-              part.position.set(length * along, height, 0.005);
-              mesh.add(part);
-            }
-          }
-        } else if (structure.kind === 'sticky') {
+        if (structure.kind === 'sticky') {
           const sheen = new T.Mesh(
             new T.BoxGeometry(length, 0.0002, 0.003),
             new T.MeshBasicMaterial({ color: '#f8efcf' }),

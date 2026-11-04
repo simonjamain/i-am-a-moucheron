@@ -22,7 +22,8 @@ const app = createGameServer({
 });
 await new Promise((resolve) => app.server.listen(0, '127.0.0.1', resolve));
 const base = 'http://127.0.0.1:' + app.server.address().port;
-let heartbeat, acceptedRelays = 0;
+let heartbeat,
+  acceptedRelays = 0;
 function sendMotion(peer) {
   if (!peer.ready || !peer.motion.isOpen()) return;
   peer.motion.sendMessage(
@@ -69,12 +70,27 @@ async function joinPeer(index) {
   await until(() => commands.isOpen() && motion.isOpen());
   assert.equal(pc.getSelectedCandidatePair().local.transportType.toLowerCase(), 'udp');
   commands.sendMessage(
-    JSON.stringify({ v: PROTOCOL, id: 1, path: 'join', body: { code: 'CAPACITY50', name: 'Peer ' + index } }),
+    JSON.stringify({
+      v: PROTOCOL,
+      id: 1,
+      path: 'join',
+      body: { code: 'CAPACITY50', name: 'Peer ' + index },
+    }),
   );
   await until(() => replies.has(1));
   const result = replies.get(1);
   assert.equal(result.status, 200, 'native join: ' + JSON.stringify(result.body));
-  const peer = { pc, commands, motion, state: result.body.state, motionSeq: 0, ready: true, get received() { return received; } };
+  const peer = {
+    pc,
+    commands,
+    motion,
+    state: result.body.state,
+    motionSeq: 0,
+    ready: true,
+    get received() {
+      return received;
+    },
+  };
   peers[slot] = peer;
   return peer;
 }
@@ -112,17 +128,19 @@ try {
   const activeReceivers = peers.filter((p) => p.received > 0).length;
   assert.equal(app.connections.size, 50, 'all native RTC sessions remain established');
   assert.ok(receivedPackets > 0, 'at least one real UDP relay must reach a remote peer');
-  console.log(JSON.stringify({
-    peers: 50,
-    transport: 'native WebRTC UDP on 127.0.0.1',
-    connectedMs: +connectedMs.toFixed(1),
-    relaysAccepted: acceptedRelays,
-    receivedMotionPackets: receivedPackets,
-    peersWithRemoteMotion: activeReceivers,
-    motionTestMs: +(performance.now() - startMotion).toFixed(1),
-    rssMiB: +(process.memoryUsage().rss / (1024 * 1024)).toFixed(1),
-    scope: 'loopback native peers only; no browsers/GPU/WAN',
-  }));
+  console.log(
+    JSON.stringify({
+      peers: 50,
+      transport: 'native WebRTC UDP on 127.0.0.1',
+      connectedMs: +connectedMs.toFixed(1),
+      relaysAccepted: acceptedRelays,
+      receivedMotionPackets: receivedPackets,
+      peersWithRemoteMotion: activeReceivers,
+      motionTestMs: +(performance.now() - startMotion).toFixed(1),
+      rssMiB: +(process.memoryUsage().rss / (1024 * 1024)).toFixed(1),
+      scope: 'loopback native peers only; no browsers/GPU/WAN',
+    }),
+  );
 } finally {
   if (heartbeat) clearInterval(heartbeat);
   for (const peer of peers) peer.pc.close();

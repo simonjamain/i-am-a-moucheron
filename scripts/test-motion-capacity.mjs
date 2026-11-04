@@ -6,8 +6,7 @@ import { PROTOCOL } from '../src/udp-protocol.js';
 const now = () => 100000;
 for (const count of [2, 39, 40, 50]) {
   const game = new Game({ now });
-  for (let i = 0; i < count; i++)
-    game.join({ code: 'MOTION50', name: 'Pilot ' + i });
+  for (let i = 0; i < count; i++) game.join({ code: 'MOTION50', name: 'Pilot ' + i });
   const room = game.rooms.get('MOTION50');
   const player = [...room.pilots.values()][0];
   const vehicle = [...room.vehicles.values()][0];
@@ -24,7 +23,13 @@ for (const count of [2, 39, 40, 50]) {
   });
   session.player = { code: room.code, id: player.id };
   for (let seq = 1; seq <= 20; seq++) {
-    const state = { ...vehicle.state, vehicle: vehicle.id, seat: 'pilot', p: [seq / 100, 1, 0], fire: false };
+    const state = {
+      ...vehicle.state,
+      vehicle: vehicle.id,
+      seat: 'pilot',
+      p: [seq / 100, 1, 0],
+      fire: false,
+    };
     session.motion(
       JSON.stringify({
         v: PROTOCOL,

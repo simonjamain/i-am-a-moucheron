@@ -115,7 +115,9 @@ export class AircraftFire {
     }
     const state = first.state;
     const batch = this.queue
-      .filter((entry) => !entry.sending && (force || entry.retryAt <= current) && entry.state === state)
+      .filter(
+        (entry) => !entry.sending && (force || entry.retryAt <= current) && entry.state === state,
+      )
       .slice(0, 32);
     const shots = batch.map((entry) => entry.shot);
     for (const entry of batch) entry.sending = true;

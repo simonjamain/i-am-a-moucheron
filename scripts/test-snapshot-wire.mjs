@@ -87,4 +87,6 @@ assert.throws(
     ),
   /sans état initial/,
 );
-console.log('PASS: 10k roster wire grouping, exact reassembly, damage/kill deltas and revision reset.');
+console.log(
+  'PASS: 10k roster wire grouping, exact reassembly, damage/kill deltas and revision reset.',
+);

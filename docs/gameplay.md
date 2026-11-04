@@ -256,12 +256,21 @@ Les [vitesses physiques des espèces](enemy-bestiary.md#vitesse-physique-dans-la
 
 À pied au sol du bureau, ouvrir « Défense » puis choisir barricade, sucre, ruban,
 réparation ou suppression. Le menu se ferme et la caméra reste en troisième
-personne. Un aperçu suit le personnage devant lui pendant ses déplacements :
-E ou clic gauche valide, R tourne le segment par pas de 45°, Échap quitte.
-Le mode reste actif après une pose pour construire en avançant.
-Le bouton de confirmation permet aussi de poser avec le curseur libéré.
+personne. Un aperçu suit le point visé au centre de la caméra, indépendamment de la direction
+de marche. Visez une surface proche ; une paroi ou un point hors de portée ne
+permet pas de poser. Ce principe s'applique aussi aux équipements et véhicules
+achetés. Échap quitte le mode de pose.
 
-Maintenez le bouton de la molette, dirigez la souris vers un outil puis relâchez pour le sélectionner. Au centre, le choix est annulé. Cliquez une fois pour ancrer une barricade ou un ruban, marchez puis cliquez de nouveau pour confirmer au prix affiché (1 $ par tranche de 20 cm). E pose un morceau de 12 cm. Les longs murs sont découpés en segments réparables. R oriente aussi le sachet de sucre, dont les cristaux marquent le point de repas. Le sucre coûte
+Maintenez le bouton de la molette, dirigez la souris vers un outil puis relâchez
+pour le sélectionner. Au centre, le choix est annulé. Pour une barricade ou un
+ruban, le premier clic (ou E) fixe le début indiqué par un petit repère sans
+orientation. Visez ensuite la fin, en marchant si nécessaire, puis cliquez de
+nouveau (ou E). Les deux points déterminent seuls la longueur et l'orientation.
+Le bouton de confirmation suit ces mêmes deux étapes. Le coût reste de 1 $ par
+tranche de 20 cm ; les longs murs sont découpés en segments réparables. La
+barricade est composée de briques colorées en trois rangées décalées, plus ou
+moins nombreuses selon sa longueur. R oriente le sucre et le ventilateur.
+Le sucre coûte
 3 $, une réparation 1 $, la suppression est gratuite. L’aperçu rouge et le message
 signalent un refus ; le serveur revalide position, caisse et occupation avant
 paiement. La pose exige le sol du bureau, sans parachute. Les défenses sont
