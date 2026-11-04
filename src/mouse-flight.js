@@ -39,8 +39,7 @@ export function mouseFlightControls(T, { q, omega, direction }, tuning = {}) {
       1,
     ),
     yaw: T.MathUtils.clamp(
-      yawError * 0.9 * (tuning.yawResponse ?? 1) * closeBoost(yawError) +
-        omega.y * 0.35 * damping,
+      yawError * 0.9 * (tuning.yawResponse ?? 1) * closeBoost(yawError) + omega.y * 0.35 * damping,
       -1,
       1,
     ),

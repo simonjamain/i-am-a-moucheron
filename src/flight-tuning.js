@@ -67,7 +67,9 @@ export const FLIGHT_TUNING_FIELDS = Object.freeze({
 });
 
 export const DEFAULT_FLIGHT_TUNING = Object.freeze(
-  Object.fromEntries(Object.entries(FLIGHT_TUNING_FIELDS).map(([key, field]) => [key, field.value])),
+  Object.fromEntries(
+    Object.entries(FLIGHT_TUNING_FIELDS).map(([key, field]) => [key, field.value]),
+  ),
 );
 
 export function normalizeFlightTuning(value) {

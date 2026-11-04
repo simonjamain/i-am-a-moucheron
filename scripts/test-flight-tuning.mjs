@@ -45,7 +45,10 @@ const state = { q: new T.Quaternion(), omega: new T.Vector3(), direction };
 const baseline = mouseFlightControls(T, state, { ...DEFAULT_FLIGHT_TUNING, nearTargetBoost: 1 });
 const quicker = mouseFlightControls(T, state, DEFAULT_FLIGHT_TUNING);
 assert.ok(quicker.yaw > baseline.yaw, 'default near-target boost speeds up final yaw convergence');
-assert.ok(quicker.pitch > baseline.pitch, 'default near-target boost speeds up final pitch convergence');
+assert.ok(
+  quicker.pitch > baseline.pitch,
+  'default near-target boost speeds up final pitch convergence',
+);
 const sensitive = mouseFlightControls(T, state, { ...DEFAULT_FLIGHT_TUNING, yawResponse: 2 });
 assert.ok(sensitive.yaw > quicker.yaw);
 const damped = mouseFlightControls(

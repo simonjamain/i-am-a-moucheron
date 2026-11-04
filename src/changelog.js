@@ -1,9 +1,16 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
-    version: 160,
+    version: 161,
     changes: [
       'Les ennemis au sol avancent plus régulièrement, sans petits bonds entre leurs déplacements.',
+    ],
+  },
+  {
+    version: 159,
+    changes: [
+      'Visez avec la caméra pour poser tous vos objets.',
+      'Tracez vos barricades entre deux points : le nombre de briques s’adapte à leur longueur.',
     ],
   },
   {

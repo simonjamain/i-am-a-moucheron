@@ -1,3 +1,4 @@
+import { placementAim } from '/placement-aim.js';
 import { WaveCouncilUI } from '/wave-council-ui.js';
 import { WaveForecastScene } from '/wave-forecast-scene.js';
 import { GroundDefenseUI } from '/ground-defense-ui.js';
@@ -36,13 +37,7 @@ import { BloodEffects } from '/blood-effects.js';
 import { stepVacantAircraft } from '/vacant-flight.js';
 import { CONTRACTS, ContractBook, contractKey } from '/contracts.js';
 import { RewardQueue } from '/rewards.js';
-import {
-  SHOP,
-  shopPrice,
-  upgradedVehicle,
-  placementAhead,
-  supportedPlacement,
-} from '/equipment.js';
+import { SHOP, shopPrice, upgradedVehicle, supportedPlacement } from '/equipment.js';
 import { stepBallisticVelocity, toggleParachute } from '/ballistics.js';
 import { makeTracer, updateTracer } from '/tracers.js';
 import { airField } from '/air-current.js';
@@ -1352,6 +1347,7 @@ const groundDefenseUI = new GroundDefenseUI({
   scene,
   document,
   snapshot: () => snap,
+  aim: () => cameraPlacement(0.24),
   foot: () => {
     const b = selfBase();
     return b && { ...b, ...baseWorld(b) };
@@ -1478,7 +1474,7 @@ addEventListener('keydown', (event) => {
       event.preventDefault();
       if (!event.repeat) {
         if (interactionKey === 'KeyR') groundDefenseUI.rotation += Math.PI / 4;
-        else groundDefenseUI.confirm();
+        else groundDefenseUI.press();
       }
       return;
     }
@@ -4323,6 +4319,19 @@ function cancelPlacement() {
   ghost.visible = false;
   $('placementControls').classList.add('hidden');
 }
+function cameraPlacement(reach) {
+  const b = selfBase();
+  return (
+    b &&
+    placementAim(
+      baseWorld(b),
+      camera.position,
+      camera.getWorldDirection(new T.Vector3()),
+      colliders,
+      reach,
+    )
+  );
+}
 function updatePlacement() {
   if (!placingEquipment) return;
   const body = selfBase();
@@ -4331,9 +4340,9 @@ function updatePlacement() {
     return;
   }
   const w = { ...baseWorld(body), face: body.face };
-  const p = placementAhead(w),
+  const p = cameraPlacement(MAP.metres(9)),
     candidate =
-      body.grounded !== false
+      body.grounded !== false && p
         ? supportedPlacement(
             p,
             colliders,
@@ -4352,8 +4361,8 @@ function updatePlacement() {
           )
         : null;
   placementCandidate = candidate;
-  ghost.visible = true;
-  ghost.position.set(p.x, (candidate?.y ?? w.y) + (VEHICLES[placementKind]?.gear || 0), p.z);
+  ghost.visible = !!p;
+  if (p) ghost.position.set(p.x, (candidate?.y ?? w.y) + (VEHICLES[placementKind]?.gear || 0), p.z);
   ghost.traverse((o) => {
     if (o.isMesh) o.material.color.set(candidate ? '#badb84' : '#e87b68');
   });
@@ -5303,6 +5312,7 @@ function beginPlacement(order) {
   captureMouse();
 }
 async function placePurchased() {
+  updatePlacement();
   if (!placementCandidate || !placementToken || purchaseBusy || !canCapture()) return;
   purchaseBusy = true;
   const token = placementToken;

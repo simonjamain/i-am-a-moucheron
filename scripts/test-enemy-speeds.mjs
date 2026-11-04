@@ -24,7 +24,9 @@ const expected = {
   brute: 0.07,
 };
 assert.deepEqual(
-  Object.fromEntries(Object.entries(ENEMY_TYPES).map(([type, profile]) => [type, profile.speedMps])),
+  Object.fromEntries(
+    Object.entries(ENEMY_TYPES).map(([type, profile]) => [type, profile.speedMps]),
+  ),
   expected,
 );
 for (const [type, profile] of Object.entries(ENEMY_TYPES)) {
@@ -40,9 +42,14 @@ assert.throws(() => enemyTravelSpeed({ speedMps: 0.2 }, Infinity), /invalide/);
 for (const wave of [1, 2, 4, 12, 20, 100]) {
   const roster = wavePlan('SPEED-CHECK', wave, 123).roster;
   for (const enemy of roster) {
-    assert.equal(enemy.travelSpeed, expected[enemy.type], 'director speed independent of wave/route');
+    assert.equal(
+      enemy.travelSpeed,
+      expected[enemy.type],
+      'director speed independent of wave/route',
+    );
     assert.ok(
-      Math.abs((enemy.duration - enemy.entryHold) * enemy.travelSpeed - enemyRoute(enemy).length) < 1e-8,
+      Math.abs((enemy.duration - enemy.entryHold) * enemy.travelSpeed - enemyRoute(enemy).length) <
+        1e-8,
       'duration follows real active route length at constant metres/second',
     );
   }
@@ -71,8 +78,15 @@ const faster = debugSwarmRoster(
   { ...params, balance: { ...DEFAULT_BALANCE, enemySpeed: 2 } },
 );
 assert.ok(faster.every((e) => e.travelSpeed === expected[e.type] * 2));
-assert.ok(faster.every((e) => Math.abs(e.duration - e.entryHold - enemyRoute(e).length / e.travelSpeed) < 1e-8));
-const scaled = scaleRoster(wavePlan('SPEED-SCALE', 6, 123), { ...DEFAULT_BALANCE, enemySpeed: 1.5 });
+assert.ok(
+  faster.every(
+    (e) => Math.abs(e.duration - e.entryHold - enemyRoute(e).length / e.travelSpeed) < 1e-8,
+  ),
+);
+const scaled = scaleRoster(wavePlan('SPEED-SCALE', 6, 123), {
+  ...DEFAULT_BALANCE,
+  enemySpeed: 1.5,
+});
 assert.ok(scaled.roster.every((e) => Math.abs(e.travelSpeed - expected[e.type] * 1.5) < 1e-9));
 const retimed = structuredClone(mixed);
 retimeRoster(retimed, 10, 0.5);
@@ -81,7 +95,9 @@ const mother = mixed.find((e) => e.type === 'spider');
 const children = spawnOffspring(mother, [0.3, 0.01, 0.7], 7, DEFAULT_BALANCE, 200, 12);
 assert.equal(children.length, 100);
 assert.ok(children.every((e) => e.travelSpeed === expected.spiderling));
-assert.ok(children.every((e) => Math.abs(routeDuration(e) * e.travelSpeed - enemyRoute(e).length) < 1e-8));
+assert.ok(
+  children.every((e) => Math.abs(routeDuration(e) * e.travelSpeed - enemyRoute(e).length) < 1e-8),
+);
 
 // Measure actual progress on the route, not only stored constants. The
 // parametrisation is arc-length based, regardless of insect size.
@@ -105,7 +121,13 @@ const instantaneous = (enemy, t, dt = 0.05) => {
   const b = swarmFrame([enemy], t + dt)[0].p;
   return Math.hypot(...a.map((x, i) => x - b[i])) / dt;
 };
-for (const enemy of [small[0], big[0], huge[0], children[0], mixed.find((e) => e.type === 'mosquito')]) {
+for (const enemy of [
+  small[0],
+  big[0],
+  huge[0],
+  children[0],
+  mixed.find((e) => e.type === 'mosquito'),
+]) {
   const t = enemy.spawn + enemy.entryHold + (enemy.duration - enemy.entryHold) * 0.45;
   const speed = instantaneous(enemy, t);
   assert.ok(speed < 1.6 * enemy.travelSpeed, enemy.type + ' effective speed: ' + speed);

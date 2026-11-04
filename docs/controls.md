@@ -175,8 +175,8 @@ séparée, disponible après le vote.
 
 ## Défenses terrestres
 
-Bouton « Défense » à pied, puis choix d’un outil : aperçu devant le personnage
-pendant la marche, E ou clic gauche pour valider, R pour tourner de 45°, Échap
+Bouton « Défense » à pied, puis choix d’un outil : aperçu au point visé par la caméra
+indépendamment de la marche, E ou clic gauche pour valider, R pour orienter le sucre ou le ventilateur, Échap
 pour quitter. Prix, conditions et navigation : [gameplay](gameplay.md#défenses-terrestres).
 
-Molette maintenue : orienter vers un secteur puis relâcher pour choisir. Clic gauche : ancrer un mur ou un ruban, marcher, puis cliquer à nouveau pour poser. Le sucre, la réparation et la suppression demandent un seul clic.
+Molette maintenue : orienter vers un secteur puis relâcher pour choisir. Clic gauche : fixer un début sans orientation, viser la fin (en marchant si nécessaire), puis cliquer à nouveau pour poser le mur ou le ruban. Le sucre, la réparation et la suppression demandent un seul clic.

@@ -215,14 +215,18 @@ console.log(
   'PASS: immediate client shots before HTTP, local depletion, batched reports, bounded slow links, retry IDs and late-reply safety',
 );
 
-
 // Previously, 128 local slots and a fixed 250 ms pause made sustained 100/s
 // bursts stop under 200 ms RTT. Test the exact failure scenario and faster
 // tuned rooms without a live network. Every 20th acknowledgement is lost
 // *after* the server spent the rounds, to exercise idempotent retries.
 async function sustainedFire({ latency, rate, seconds }) {
-  let clock = 0, timerID = 0, requests = 0, serverAmmo = 1_000_000, blocked = 0;
-  const timers = new Map(), seen = new Set();
+  let clock = 0,
+    timerID = 0,
+    requests = 0,
+    serverAmmo = 1_000_000,
+    blocked = 0;
+  const timers = new Map(),
+    seen = new Set();
   const schedule = (fn, delay) => {
     const id = ++timerID;
     timers.set(id, { at: clock + delay, fn });
@@ -282,7 +286,8 @@ for (const scenario of [
   await sustainedFire(scenario);
 
 for (const fps of [20, 30, 60, 120]) {
-  let cooldown = 0, shots = 0;
+  let cooldown = 0,
+    shots = 0;
   for (let i = 0; i < fps * 30; i++) {
     const result = advanceAutomaticFire(cooldown, 1 / fps, 0.06, true);
     cooldown = result.cooldown;

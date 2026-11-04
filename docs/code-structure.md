@@ -138,7 +138,10 @@ Leur portée et leurs commandes sont décrites dans
 Le [bestiaire](enemy-bestiary.md) s'appuie sur `waves.js` et `routes.js` (profils, origine de naissance, trajectoires), `server/game.js` (mort unique et roster révisé), `graphics.js` (animaux procéduraux) et `spiderling-batch.js` (trois meshes instanciés).
 
 `ground-defense-ui.js` affiche le menu, l’aperçu de pose en troisième personne et
-les constructions ; `ground-placement.js` calcule les morceaux devant le joueur
+les constructions ; `placement-aim.js` calcule la surface visée pour les défenses et les achats.
+`ground-placement.js` détermine les deux extrémités depuis ce point
 et prévalide sur une copie de l’état avec `ground-defense-state.js`. La commande
 fiable `ground-defense` reste autoritaire dans `server/game.js` ; le déplacement
 des terrestres reste dans `ground-creatures.js`. Voir [gameplay](gameplay.md#défenses-terrestres).
+
+`brick-wall.js` répète en instances les briques de `meshy-brick-data.js` selon la longueur des segments, sans modifier les collisions ni le coût serveur.

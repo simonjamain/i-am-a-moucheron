@@ -52,8 +52,9 @@ for (let seed = 0; seed < 40; seed++)
   }
 assert.ok(
   new Set(
-    Array.from({ length: 40 }, (_, seed) =>
-      wavePlan('CURVE' + seed, 1, seed).roster.filter((e) => e.type === 'ant').length,
+    Array.from(
+      { length: 40 },
+      (_, seed) => wavePlan('CURVE' + seed, 1, seed).roster.filter((e) => e.type === 'ant').length,
     ),
   ).size > 1,
   'first-wave compositions vary with the seed',

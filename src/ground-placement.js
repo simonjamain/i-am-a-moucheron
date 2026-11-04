@@ -1,11 +1,26 @@
-import { groundCommand } from './ground-defense-state.js';
+import { GROUND_BOUNDS, groundCommand } from './ground-defense-state.js';
 import { distanceToSegment } from './ground-defense.js';
 
-// Fixed, affordable pieces follow the walking character in office metres.
-export function groundPlacement({ foot, mode, rotation = 0, anchor, defense, dollars }) {
+// Preview commands use the camera target, never the walking direction.
+export function groundPlacement({ foot, mode, rotation = 0, anchor, defense, dollars, aim }) {
   if (!foot || !foot.grounded || foot.parachute || foot.y >= 0.025)
     return { error: 'Rejoignez le sol du bureau.' };
-  const center = [foot.x + Math.sin(foot.face) * 0.045, foot.z - Math.cos(foot.face) * 0.045];
+  if (
+    !aim ||
+    ![aim.x, aim.y, aim.z].every(Number.isFinite) ||
+    Math.abs(aim.y) > 0.0003 ||
+    aim.x < GROUND_BOUNDS[0] ||
+    aim.x > GROUND_BOUNDS[2] ||
+    aim.z < GROUND_BOUNDS[1] ||
+    aim.z > GROUND_BOUNDS[3]
+  )
+    return { error: 'Visez une surface proche au sol.' };
+  const center = [aim.x, aim.z];
+  if (['barricade', 'sticky'].includes(mode)) {
+    if (!anchor) return { center, startOnly: true };
+    if (Math.hypot(center[0] - anchor[0], center[1] - anchor[1]) < 0.002)
+      return { center, error: 'Visez la fin du mur, à distance du début.' };
+  }
   let command;
   if (mode === 'repair' || mode === 'remove') {
     const target = (defense?.structures || [])
@@ -21,19 +36,8 @@ export function groundPlacement({ foot, mode, rotation = 0, anchor, defense, dol
     command = { action: mode, id: target.id };
   } else if (mode === 'sugar' || mode === 'fan')
     command = { action: 'build', kind: mode, a: center, angle: rotation };
-  else if (anchor && Math.hypot(center[0] - anchor[0], center[1] - anchor[1]) >= 0.002) {
-    command = { action: 'build', kind: mode, a: center, b: anchor };
-  } else {
-    const angle = foot.face + rotation;
-    const dx = Math.cos(angle) * 0.06,
-      dz = Math.sin(angle) * 0.06;
-    command = {
-      action: 'build',
-      kind: mode,
-      a: [center[0] - dx, center[1] - dz],
-      b: [center[0] + dx, center[1] + dz],
-    };
-  }
+  else command = { action: 'build', kind: mode, a: center, b: anchor };
+
   try {
     const result = groundCommand(structuredClone(defense), command, [foot.x, foot.z], dollars);
     return { center, command, price: result.price };

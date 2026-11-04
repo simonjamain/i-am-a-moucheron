@@ -19,7 +19,7 @@ const same = (a, b) =>
 
 export function packRoster(roster) {
   const groups = [];
-  for (let start = 0; start < roster.length; ) {
+  for (let start = 0; start < roster.length;) {
     const keys = Object.keys(roster[start]);
     const signature = keys.join('\0');
     let end = start + 1;
