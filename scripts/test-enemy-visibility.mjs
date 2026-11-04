@@ -1,4 +1,5 @@
 import { airField } from '../src/air-current.js';
+import { GroundMotionTrack } from '../src/ground-motion.js';
 import { InsectIndex } from '../src/insect-hits.js';
 import assert from 'node:assert/strict';
 import * as T from '../vendor/three.module.min.js';
@@ -76,6 +77,7 @@ const state = {
   scene,
   insects: models,
   insectIndex: new InsectIndex(T, models),
+  groundMotion: new GroundMotionTrack(),
   insect: graphics.insect,
   // This isolated VM exercises the non-WebGL fallback; its renderer does not
   // instantiate MidgeBatch, and all species must still have visible meshes.

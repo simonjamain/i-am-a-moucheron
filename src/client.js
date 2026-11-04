@@ -2,6 +2,7 @@ import { placementAim } from '/placement-aim.js';
 import { WaveCouncilUI } from '/wave-council-ui.js';
 import { WaveForecastScene } from '/wave-forecast-scene.js';
 import { GroundDefenseUI } from '/ground-defense-ui.js';
+import { GroundMotionTrack } from '/ground-motion.js';
 import { BalanceUI } from '/balance-ui.js';
 import { mountChangelog } from '/changelog.js';
 import { deliveryHeightAt } from '/delivery.js';
@@ -228,6 +229,7 @@ const others = new Map(),
   insects = new Map(),
   trails = [];
 const insectIndex = new InsectIndex(T, insects);
+const groundMotion = new GroundMotionTrack();
 const midgeBatch = new MidgeBatch(T, scene, { enabled: !!renderer.isWebGLRenderer });
 const spiderlingBatch = new SpiderlingBatch(T, scene, { enabled: !!renderer.isWebGLRenderer });
 const midgeForward = new T.Vector3(0, 0, -1);
@@ -1023,6 +1025,7 @@ function accept(s, force = false) {
     const ratio = s.balance.enemyHP / previous.balance.enemyHP;
     for (const [enemy, damage] of localEnemyDamage) localEnemyDamage.set(enemy, damage * ratio);
   }
+  groundMotion.observe(s);
   snap = s;
   bedUI.observe(self);
   purchaseUI.observe(self);
@@ -2994,18 +2997,17 @@ function damageEnemy(enemy, amount, shot, point) {
 let entryNoticeWave = -1;
 function enemies(now) {
   if (!snap) return;
+  const elapsedSinceSnapshot = performance.now() - snap.receivedAt;
+  const serverNow = snap.sentAt ? snap.sentAt + elapsedSinceSnapshot : now + clockOffset;
   const active = new Set(),
-    t =
-      ((snap.sentAt ? snap.sentAt + performance.now() - snap.receivedAt : now + clockOffset) -
-        snap.started) /
-      1000,
+    t = (serverNow - snap.started) / 1000,
     roster = currentRoster(),
     frame =
       snap.phase === 'combat'
         ? swarmFrame(
             roster,
             t,
-            snap.groundAgents,
+            groundMotion.sample(serverNow),
             airField(snap.groundDefense, snap.started + t * 1000),
           )
         : [];

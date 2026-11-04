@@ -1,6 +1,12 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 161,
+    changes: [
+      'Les ennemis au sol avancent plus régulièrement, sans petits bonds entre leurs déplacements.',
+    ],
+  },
+  {
     version: 159,
     changes: [
       'Visez avec la caméra pour poser tous vos objets.',
