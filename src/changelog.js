@@ -1,6 +1,12 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 158,
+    changes: [
+      'Les ennemis au sol avancent plus régulièrement, sans petits bonds entre leurs déplacements.',
+    ],
+  },
+  {
     version: 157,
     changes: [
       'Repérez les prochaines entrées et votez pour un plan commun. Équipez vos défenses avant de lancer une vague plus coriace.',

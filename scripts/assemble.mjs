@@ -34,6 +34,7 @@ const files = {
       'balance',
       'balance-ui',
       'ground-defense-ui',
+      'ground-motion',
       'ground-placement',
       'air-current',
       'air-trails',

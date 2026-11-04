@@ -38,3 +38,23 @@ La vitesse de progression de toutes les espèces, y compris les bébés araigné
 ## Rats plus rapides (version 125)
 
 Les rats géants progressent désormais à 0,08075 m/s, soit 70 % plus vite que leur vitesse précédente de 0,0475 m/s. Les autres espèces sont inchangées. Le multiplicateur de vitesse de la room reste applicable aux rats comme aux autres ennemis.
+
+## Fluidité des ennemis terrestres (version 158)
+
+Le serveur conserve l'autorité sur les positions, le contournement, les attaques
+et les arrêts sur colle ou sucre. Le navigateur recevait des positions de
+`groundAgents` environ toutes les 100 ms à pied et 250 ms dans un véhicule,
+puis les affectait directement aux modèles à chaque image : ceux-ci restaient
+immobiles entre deux réponses avant de bondir à la suivante.
+
+Le client affiche maintenant une interpolation linéaire sur 300 ms d'historique
+horodaté de positions serveur, avec une mémoire bornée. En l'absence de nouvelle
+réponse, la dernière position connue est conservée sans extrapolation : il n'y
+a pas de traversée spéculative des barricades. Les nouvelles créatures sont
+initialisées à leur vraie position, et l'historique est réinitialisé au changement
+de vague, de monde ou de phase. Les routes aériennes ne sont pas modifiées.
+
+`node scripts/test-ground-motion.mjs` simule des réponses espacées de 250 ms et
+contrôle les sauts de position, l'immobilisation, les arrivées et les changements
+de vague. Cette régression numérique ne remplace pas un essai WebGL/UDP réel,
+notamment pour juger de la latence de présentation et des FPS sous forte charge.

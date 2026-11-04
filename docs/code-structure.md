@@ -15,6 +15,7 @@ en charge continue du backlog et la revue finale des documents.
 | `src/udp-client.js`, `src/udp-protocol.js` | Canaux navigateur, refus hors UDP, limites, files et réassemblage.                             |
 | `src/client.js`                            | Orchestration de la scène, état local, entrées, interfaces et envoi des commandes.             |
 | `src/network.js`                           | Validation de mouvement et interpolation ; `PeerMotion` est le transport historique des pairs. |
+| `src/ground-motion.js`                     | Historique et interpolation visuelle des positions des ennemis terrestres reçues du serveur.   |
 
 Les moucherons de grande nuée utilisent \`src/midge-batch.js\` (trois meshes instanciés WebGL et proxies logiques légers), \`waves.js\` (trajectoires indépendantes) et \`insect-hits.js\` (collisions sphériques). Le navigateur possède ses mouvements et raycasts dans un modèle coopératif.
 Le serveur possède les transactions et simule les armes lourdes. Il n’y a ni
