@@ -39,7 +39,11 @@ export function controlHints({
       common
     );
   const posts =
-    vehicle.type === 'tank' || vehicle.type === 'bomber' ? ' · 1/2/3 : postes (contrats)' : '';
+    vehicle.type === 'bomber'
+      ? ' · 1/2/3/4 : postes (contrats)'
+      : vehicle.type === 'tank'
+        ? ' · 1/2/3 : postes (contrats)'
+        : '';
   if (vehicle.type === 'tank')
     return (
       (seat === 'pilot'

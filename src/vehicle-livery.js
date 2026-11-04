@@ -1,6 +1,21 @@
 import { vehicleHue } from './logistics.js';
-// Meshes fixed to the hull, with ordinary depth testing. No camera-facing labels.
+// Liveries and the B3 identification disk retain ordinary depth testing.
 export function paintVehicle(T, model, sequence, baseColor) {
+  if (model.userData.preserveTexture) {
+    const color = new T.Color().setHSL(vehicleHue(sequence) / 360, 0.58, 0.57);
+    if (!model.userData.identification) {
+      const marker = new T.Mesh(
+        new T.CircleGeometry(0.32, 20),
+        new T.MeshBasicMaterial({ color, side: T.DoubleSide }),
+      );
+      marker.position.set(0, 2.5, 0);
+      marker.userData.projectileSolid = false;
+      marker.userData.excludeBounds = true;
+      model.add(marker);
+      model.userData.identification = marker;
+    } else model.userData.identification.material.color.copy(color);
+    return;
+  }
   const old = new T.Color(baseColor);
   const paint = new T.MeshStandardMaterial({
     color: new T.Color().setHSL(vehicleHue(sequence) / 360, 0.58, 0.57),
@@ -59,7 +74,15 @@ export function updateInscriptions(
       mesh.position.set(
         side * (vehicle.type === 'bomber' ? 0.665 : 0.405),
         -0.12,
-        vehicle.type === 'bomber' ? (seat === 'pilot' ? -1.7 : seat === 'tail' ? 2.2 : 0) : 0.2,
+        vehicle.type === 'bomber'
+          ? seat === 'pilot'
+            ? -1.7
+            : seat === 'tail'
+              ? 2.2
+              : seat === 'ventral'
+                ? 1
+                : 0
+          : 0.2,
       );
       mesh.userData.projectileSolid = false;
       model.add(mesh);

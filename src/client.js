@@ -445,8 +445,14 @@ canvas.addEventListener('pointermove', (e) => {
     turretAim.yaw -= (e.clientX - groundView.x) * 0.003 * currentFactors().aim;
     turretAim.pitch = T.MathUtils.clamp(
       turretAim.pitch - (e.clientY - groundView.y) * 0.003 * currentFactors().aim,
-      myVehicle?.type === 'helicopter' ? -1.45 : myVehicle?.type === 'tank' ? -0.65 : -0.1,
-      1.35,
+      crewSeat === 'ventral'
+        ? -1.5
+        : myVehicle?.type === 'helicopter'
+          ? -1.45
+          : myVehicle?.type === 'tank'
+            ? -0.65
+            : -0.1,
+      crewSeat === 'ventral' ? -0.05 : 1.35,
     );
     groundView.x = e.clientX;
     groundView.y = e.clientY;
@@ -749,8 +755,14 @@ addEventListener('pointermove', (event) => {
     turretAim.yaw -= dx * 0.003 * currentFactors().aim;
     turretAim.pitch = T.MathUtils.clamp(
       turretAim.pitch - dy * 0.003 * currentFactors().aim,
-      myVehicle?.type === 'helicopter' ? -1.45 : myVehicle?.type === 'tank' ? -0.65 : -0.1,
-      1.35,
+      crewSeat === 'ventral'
+        ? -1.5
+        : myVehicle?.type === 'helicopter'
+          ? -1.45
+          : myVehicle?.type === 'tank'
+            ? -0.65
+            : -0.1,
+      crewSeat === 'ventral' ? -0.05 : 1.35,
     );
     return;
   }
@@ -1065,7 +1077,8 @@ function accept(s, force = false) {
         boardingOpen = false;
         groundView.scene = '';
         turretAim.yaw = crewSeat === 'tail' ? Math.PI : 0;
-        turretAim.pitch = myVehicle.type === 'helicopter' ? -0.1 : 0.15;
+        turretAim.pitch =
+          crewSeat === 'ventral' ? -0.65 : myVehicle.type === 'helicopter' ? -0.1 : 0.15;
         Object.assign(heliTurretAim, turretAim);
         missilePressed = false;
         heliWeapon = 'copilot';
@@ -2683,8 +2696,14 @@ function updateVehicles(dt) {
       turretAim.yaw -= pad.yaw * dt * currentFactors().aim;
       turretAim.pitch = T.MathUtils.clamp(
         turretAim.pitch - pad.pitch * dt * currentFactors().aim,
-        myVehicle?.type === 'helicopter' ? -1.45 : myVehicle?.type === 'tank' ? -0.65 : -0.05,
-        1.2,
+        crewSeat === 'ventral'
+          ? -1.5
+          : myVehicle?.type === 'helicopter'
+            ? -1.45
+            : myVehicle?.type === 'tank'
+              ? -0.65
+              : -0.05,
+        crewSeat === 'ventral' ? -0.05 : 1.2,
       );
     }
     if (myVehicle.type === 'helicopter' && crewSeat === 'copilot') {
@@ -2692,7 +2711,10 @@ function updateVehicles(dt) {
       else Object.assign(turretAim, heliTurretAim);
     }
     const dir = weaponDirection(),
-      mount = me.userData.turrets[crewSeat === 'tail' || crewSeat === 'top' ? 1 : 0],
+      mount =
+        me.userData.turrets[
+          crewSeat === 'ventral' ? 2 : crewSeat === 'tail' || crewSeat === 'top' ? 1 : 0
+        ],
       up = new T.Vector3(0, 1, 0).applyQuaternion(me.quaternion);
     aimGun(T, mount, dir, mount.parent.getWorldQuaternion(new T.Quaternion()));
     const scoped = ['tank', 'flaktruck'].includes(myVehicle.type) && crewSeat === 'cannon';
@@ -2701,7 +2723,7 @@ function updateVehicles(dt) {
         ? heliGunnerView(mount, dir, up)
         : scoped
           ? tankSight(T, mount, dir, up, observing ? freeLook : null)
-          : gunnerView(T, mount, dir, up);
+          : gunnerView(T, mount, dir, up, crewSeat === 'ventral');
     if (scoped) me.visible = observing;
     else if (myVehicle.type === 'helicopter') me.visible = true;
     camera.position.copy(view.eye);
@@ -2811,7 +2833,11 @@ function roleEntry(seat) {
   ctx.fillStyle = '#f2edc7';
   ctx.font = 'bold 88px sans-serif';
   ctx.textAlign = 'center';
-  ctx.fillText({ pilot: 'P', dorsal: 'D', tail: 'Q', cannon: 'C', top: 'M' }[seat] || 'P', 64, 98);
+  ctx.fillText(
+    { pilot: 'P', dorsal: 'D', tail: 'Q', ventral: 'V', cannon: 'C', top: 'M' }[seat] || 'P',
+    64,
+    98,
+  );
   const texture = new T.CanvasTexture(c),
     geometry = new T.PlaneGeometry(1, 1),
     material = new T.MeshBasicMaterial({ map: texture, transparent: true, depthWrite: false });
@@ -3187,6 +3213,12 @@ function updateOthers(dt) {
       g.userData.rotor.rotation.y += rotation;
       if (g.userData.tailRotor) g.userData.tailRotor.rotation.x += rotation * 4;
     }
+    if (g.userData.identification) {
+      g.userData.identification.position
+        .set(0, 2.5, 0)
+        .applyQuaternion(g.quaternion.clone().invert());
+      g.userData.identification.quaternion.copy(g.quaternion).invert().multiply(camera.quaternion);
+    }
     updateInscriptions(T, g, v, snap.pilots);
     g.visible = v.state.hp > 0;
     g.userData.wing.scale.x = v.state.wing ? 1 : 0.52;
@@ -3204,7 +3236,7 @@ function updateOthers(dt) {
           ? ['cannon']
           : v.type === 'tank'
             ? ['cannon', 'top']
-            : ['dorsal', 'tail']
+            : ['dorsal', 'tail', 'ventral']
       ).entries()) {
         const occ = v.seats.find((s) => s.seat === seat),
           gunner = snap.pilots.find((p) => p.id === occ?.pilot);

@@ -145,3 +145,5 @@ fiable `ground-defense` reste autoritaire dans `server/game.js` ; le déplacemen
 des terrestres reste dans `ground-creatures.js`. Voir [gameplay](gameplay.md#défenses-terrestres).
 
 `brick-wall.js` répète en instances les briques de `meshy-brick-data.js` selon la longueur des segments, sans modifier les collisions ni le coût serveur.
+
+`b3-model.js` et `meshy-b3-data.js` portent le [B3 texturé à quatre places](b3-model.md) ; `fleet.js` définit ses quatre postes et `vehicle-livery.js` son repère coloré.

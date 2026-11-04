@@ -117,7 +117,7 @@ personnage de référence de 1,80 m mesure donc 5,4 mm. Le purgatoire utilise so
 propre ratio. Les durées et vitesses angulaires ne se multiplient pas par ce ratio.
 
 Les modèles sont des géométries procédurales Three.js ; les sons sont synthétisés
-avec Web Audio et spatialisés. Aucun pack de modèles ou d’enregistrements externes
+avec Web Audio et spatialisés. Les modèles Meshy sont embarqués localement ; aucun enregistrement sonore externe
 n’est actuellement intégré. Les événements importants ont des indications sonores,
 dont les vagues, les signatures et les tirs. La prise en charge graphique de
 secours permet un diagnostic, sans garantir le rendu WebGL final.
@@ -125,8 +125,8 @@ secours permet un diagnostic, sans garantir le rendu WebGL final.
 ## Contrats, changements de poste et récidive
 
 Le titre affiché est « i am a moucheron ». Le catalogue embarqué contient dix
-variantes pour chacun de 60 documents/contextes, soit 600 variantes de documents, avec les contrats adaptés aux trois postes du tank :
-pilote, mitrailleurs dorsal et arrière, DCA, trois documents classiques, cinq
+variantes pour chacun de 65 documents/contextes, soit 650 variantes de documents, avec les contrats adaptés aux trois postes du tank :
+pilote, mitrailleurs dorsal, arrière et ventral, DCA, trois documents classiques, cinq
 supérieurs et mutation/demande/acceptation d’échange pour chaque poste embarqué.
 Le texte reste stable pendant la signature ; la variante immédiatement précédente
 est évitée pendant la session. Les contrats supérieurs sont nettement plus longs
@@ -294,3 +294,5 @@ opposés se compensent, des ventilateurs voisins combinent leur souffle. Les
 insectes déjà engagés rejoignent le nouveau tracé en 2,5 secondes en continuant
 d’avancer. Retirez un ventilateur avec **Enlever** pour rétablir progressivement
 le parcours. Le départ et l’arrivée restent fixes.
+
+Le [bombardier B3 à quatre places](b3-model.md) conserve son camouflage Meshy ; un disque coloré au-dessus identifie l’appareil.

@@ -171,7 +171,7 @@ export function aimGun(T, mount, worldDirection, parentQuaternion = null) {
   mount.userData.pitch.rotation.set(Math.asin(Math.max(-1, Math.min(1, d.y))), 0, 0);
   mount.updateWorldMatrix(true, true);
 }
-export function gunnerView(T, mount, direction, up) {
+export function gunnerView(T, mount, direction, up, ventral = false) {
   const right = direction.clone().cross(up).normalize(),
     horizontal = direction.clone().addScaledVector(up, -direction.dot(up)).normalize(),
     origin = mount.getWorldPosition(new T.Vector3()),
@@ -180,6 +180,6 @@ export function gunnerView(T, mount, direction, up) {
       .clone()
       .addScaledVector(horizontal, -MAP.metres(2.1))
       .addScaledVector(right, MAP.metres(0.85))
-      .addScaledVector(up, MAP.metres(1.2));
+      .addScaledVector(up, MAP.metres(ventral ? -1.2 : 1.2));
   return { eye, muzzle, target: muzzle.clone().addScaledVector(direction, MAP.metres(100)) };
 }
