@@ -3181,9 +3181,12 @@ function updateOthers(dt) {
       g.quaternion.slerp(new T.Quaternion().fromArray(motion.q), 1 - Math.exp(-24 * dt));
     }
     if (g.userData.trailer) g.userData.trailer.rotation.y = motion.trailerAngle || 0;
-    if (g.userData.rotor)
-      g.userData.rotor.rotation.y +=
+    if (g.userData.rotor) {
+      const rotation =
         dt * (v.state.engine && v.supplies.fuel > 0 ? 35 * (motion.rotorPower ?? 1) : 0);
+      g.userData.rotor.rotation.y += rotation;
+      if (g.userData.tailRotor) g.userData.tailRotor.rotation.x += rotation * 4;
+    }
     updateInscriptions(T, g, v, snap.pilots);
     g.visible = v.state.hp > 0;
     g.userData.wing.scale.x = v.state.wing ? 1 : 0.52;
