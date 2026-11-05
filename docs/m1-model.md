@@ -2,7 +2,8 @@
 
 Le M1 utilise désormais le croquis « Chasseur M1.png » : aile haute haubanée,
 fuselage olive et crème, cockpit bleu gris, nez jaune et train fixe. Les zones
-olive prennent la couleur propre à chaque appareil via la livrée existante.
+olive conservent leur couleur de base ; la couleur propre à chaque appareil
+apparaît seulement dans un petit disque flottant au-dessus de lui.
 Les couleurs fixes sont intégrées aux sommets ; aucune texture ni requête Meshy
 n’est nécessaire pendant une partie.
 
@@ -38,14 +39,14 @@ L’hélice garde son pivot indépendant ; l’état d’aile endommagée rédui
 correspondant. Les règles de vol, de dégâts et les volumes physiques restent
 ceux de la [flotte](scale-fleet-weapons.md).
 
-Le Stuka et le Spitfire conservent leur ancienne base procédurale. Le nouveau
+Le Stuka et le Spitfire utilisent désormais aussi des coques Meshy simplifiées. Le nouveau
 module et les données sont inscrits au manifeste de l’assembleur pour Node,
 le paquet autonome et la compatibilité Worker historique.
 
 ## Vérification
 
 `node scripts/test-m1-model.mjs` vérifie les dimensions, le partage des buffers,
-le budget de triangles/meshes, les valeurs finies, les livrées, la rotation de
+le budget de triangles/meshes, les valeurs finies, le disque coloré, la rotation de
 l’hélice et l’affichage des dégâts. `scripts/test-scene.mjs` vérifie l’appui
 sur le bureau ; `scripts/test-muzzle-alignment.mjs` vérifie les sorties des tirs.
 
