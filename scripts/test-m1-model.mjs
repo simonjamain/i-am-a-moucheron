@@ -20,9 +20,13 @@ a.traverse((mesh) => {
     if (attribute) assert.ok(attribute.array.every(Number.isFinite), key);
   }
 });
-assert.ok(triangles <= 2900, 'bounded browser geometry');
+assert.ok(triangles >= 27000 && triangles <= 30000, 'original UV geometry budget');
 assert.ok(draws <= 8, 'bounded draw calls');
 assert.equal(a.children[2].geometry, b.children[2].geometry, 'share immutable buffers');
+assert.ok(a.children[2].geometry.attributes.uv, 'Meshy UVs preserved');
+assert.ok(a.children[2].material.map, 'actual Meshy atlas retained');
+assert.equal(a.children[2].material.map.colorSpace, T.SRGBColorSpace);
+assert.equal(a.children[2].material.map.flipY, false);
 assert.notEqual(a.userData.prop, b.userData.prop, 'independent animation');
 const blade = a.userData.prop.children[0];
 a.updateMatrixWorld(true);
@@ -35,12 +39,22 @@ assert.equal(b.userData.prop.rotation.z, 0);
 const fullSpan = new T.Box3().setFromObject(a.userData.wing).getSize(new T.Vector3()).x;
 a.userData.wing.scale.x = 0.52;
 assert.ok(new T.Box3().setFromObject(a.userData.wing).getSize(new T.Vector3()).x < fullSpan * 0.53);
+const originalMeshes = [];
+a.traverse((mesh) => {
+  if (mesh.isMesh) originalMeshes.push([mesh, mesh.material]);
+});
 paintVehicle(T, a, 7, '#7b8155');
-assert.ok(a.userData.paint);
-assert.ok(
-  a.children.some((mesh) => mesh.material === a.userData.paint),
-  'livery remains visible',
-);
+assert.ok(a.userData.preserveTexture);
+assert.ok(a.userData.identification, 'colored marker replaces hull paint');
+assert.ok(a.userData.identification.position.y > new T.Box3().setFromObject(b).max.y);
+assert.equal(a.userData.identification.userData.projectileSolid, false);
+for (const [mesh, originalMaterial] of originalMeshes)
+  assert.equal(mesh.material, originalMaterial, 'Meshed camouflage stays unchanged');
+const marker = a.userData.identification;
+const originalColor = marker.material.color.clone();
+paintVehicle(T, a, 8, '#7b8155');
+assert.equal(a.userData.identification, marker, 'reuse marker on sequence updates');
+assert.ok(!marker.material.color.equals(originalColor));
 console.log(
   `PASS: M1 Meshy ${triangles} triangles, ${draws} draws, shared buffers, livery, wing damage and prop animation.`,
 );

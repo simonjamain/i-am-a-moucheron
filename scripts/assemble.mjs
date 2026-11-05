@@ -39,6 +39,7 @@ const files = {
       'placement-aim',
       'brick-wall',
       'meshy-brick-data',
+      'meshy-texture',
       'meshy-m1-data',
       'meshy-fleet',
       'meshy-stuka-data',

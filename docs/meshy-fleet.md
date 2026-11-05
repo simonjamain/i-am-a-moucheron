@@ -1,72 +1,63 @@
-# Visuels Meshy : Stuka, Spitfire S6, Tank T3 et DCA mobile D2
+# Visuels Meshy texturés : Stuka, Spitfire S6, Tank T3 et DCA mobile D2
 
-Les quatre véhicules utilisent une coque Meshy avec couleurs intégrées aux triangles.
-Le M1, le B3 et le H2 conservent leurs modèles existants. La DCA fixe n'est pas
-un véhicule et n'est pas modifiée dans ce lot.
+Les quatre véhicules utilisent le maillage et les véritables UV des GLB Meshy.
+Leur atlas JPEG de 1 024 pixels est intégré dans les modules du jeu ; la texture
+est commune à tous les exemplaires d'un même véhicule. Les surfaces ne changent
+plus de couleur selon l'appareil : seule une pastille colorée flottante porte
+l'identification. Le M1, le H2 et le bombardier B3 suivent le même principe.
 
 ## Références et provenance
 
-Les images de [référence](vehicle-references/) ont été générées pour cette contribution :
-un objet entier en vue trois-quarts sur fond blanc, formes simples, camouflage
-olive/sable, sans texte ni planche multivue. Les hélices et armes mobiles sont
-exclues des images pour rester animées par le moteur. Le D2 présente son attelage
-aligné et un raccord étroit entre tracteur et remorque.
+Les images [de référence](vehicle-references/) ont servi à produire les modèles.
+Les GLB originaux ont été fournis dans la Bibliothèque du projet le 5 novembre 2026 ;
+leurs empreintes sont vérifiées avant toute conversion. Aucun nouvel appel Meshy.
 
-| Véhicule      | Image                                             | Tâche Meshy                            | Triangles source | Triangles coque livrée |
-| ------------- | ------------------------------------------------- | -------------------------------------- | ---------------: | ---------------------: |
-| Stuka         | [stuka.png](vehicle-references/stuka.png)         | `01a1a8ed-4589-75ee-9c0f-1bc3ea25e52a` |           28 192 |                  2 999 |
-| Spitfire S6   | [spitfire.png](vehicle-references/spitfire.png)   | `01a1a8ed-9b2d-76c7-9b3c-1eab9d5ba005` |           28 723 |                  3 000 |
-| Tank T3       | [tank.png](vehicle-references/tank.png)           | `01a1a8ed-d517-7384-9784-d5d7d810c3aa` |           26 940 |                  2 999 |
-| DCA mobile D2 | [flaktruck.png](vehicle-references/flaktruck.png) | `01a1a8ee-118f-77a9-a1ac-2b776b385189` |           26 943 |                  3 000 |
+| Véhicule | Image de référence | Tâche Meshy | Triangles intégrés |
+| --- | --- | --- | ---: |
+| Stuka | [stuka.png](vehicle-references/stuka.png) | `01a1a8ed-4589-75ee-9c0f-1bc3ea25e52a` | 28 192 |
+| Spitfire S6 | [spitfire.png](vehicle-references/spitfire.png) | `01a1a8ed-9b2d-76c7-9b3c-1eab9d5ba005` | 28 723 |
+| Tank T3 | [tank.png](vehicle-references/tank.png) | `01a1a8ed-d517-7384-9784-d5d7d810c3aa` | 26 940 |
+| DCA mobile D2 | [flaktruck.png](vehicle-references/flaktruck.png) | `01a1a8ee-118f-77a9-a1ac-2b776b385189` | 26 943 |
 
-Paramètres Meshy : image-to-3D, texture activée, remesh activé, triangles,
-PBR désactivé, modèle par défaut. Coût retourné : 30 crédits par génération,
-120 crédits pour ce lot. Un téléchargement GLB par véhicule.
-Les GLB originaux restent récupérables via leurs tâches Meshy ; les données de
-rendu finales sont embarquées dans le dépôt, sans appel Meshy en jeu.
-
-SHA-256 des GLB utilisés :
+SHA-256 des GLB sources, dans l'ordre du tableau :
 
 - Stuka : `a98ad764232edf10d892e2eb4496a062cc82f4ea6147c17a2873e6ca7e029d95`
 - S6 : `8e3bf0b0d947cb57e74deb0ce713c67acdecd8ed22790de6cf23fdbb735785f9`
 - T3 : `6aca60a17506abd27334d3450392b6df3d0a3b6d2250e608aaefc0fcda0eb0bb`
 - D2 : `d8ec0b4f3f0e1e205c0bff1f8cd2b18dedd52dec93521e283d8f3e6ef7067bac`
 
-## Conversion et animation
+## Import, textures et mouvements
 
-`scripts/import-meshy-fleet.py NOM SOURCE.glb` applique les transformations
-spécifiques aux quatre exports inspectés : nez -X vers -Z, dimensions adaptées
-aux véhicules existants, roues au niveau du train de référence. Dépendances hors
-ligne : trimesh 5.2.0, fast-simplification 0.2.0, scipy, pillow et shapely.
-Formater ensuite les modules produits avec Prettier.
+`python3 scripts/import-meshy-textures.py NOM SOURCE.glb` recrée
+`src/meshy-NOM-data.js` pour `stuka`, `spitfire`, `tank` ou `flaktruck`.
+Dépendances Python hors ligne : NumPy, trimesh, Pillow (SciPy requis pour H2).
+Les positions et UV sont quantifiés sur 16 bits, les faces restent indexées
+avec leurs séparations de texture. Le matériau utilise la carte de couleur d'origine,
+une rugosité uniforme et un éclairage standard ; les autres cartes PBR ne sont pas
+chargées. Aucun GLB ni service Meshy n'est requis dans le navigateur.
 
-La simplification quadratique vise au plus 3 000 triangles par coque. Les couleurs
-sont échantillonnées depuis le modèle source et converties de sRGB en RGB linéaire.
-Les parties olive restent recolorables pour identifier les véhicules ; le sable,
-les pneus et les verrières conservent leurs couleurs. Aucun atlas, PBR, chargeur
-GLTF ou décodeur supplémentaire n'est chargé par le navigateur.
+`src/meshy-texture.js` partage les buffers, matériaux et atlas entre véhicules.
+Les hélices et canons restent pilotés par le jeu, et les ailes des deux avions se
+rétractent visuellement avec les dégâts. Le T3 garde ses deux tourelles orientables
+et le D2 son attelage : sa remorque suit le pivot existant à z = −0,7.
+Le placement, les tirs, les sièges et les règles réseau n'ont pas changé.
 
-`src/meshy-fleet.js` partage les géométries et matériaux fixes entre exemplaires.
-Les groupes d'animation restent propres à chaque véhicule. Les ailes des avions
-réagissent aux dégâts et les hélices tournent indépendamment. Les canons visibles
-portent leurs bouches de tir, y compris les six armes du S6. Le T3 conserve deux
-tourelles orientables ; leurs habillages sont des volumes octogonaux légers.
-Le D2 est découpé au raccord de remorque, sur le pivot existant z=-0,7. La remorque
-et son canon suivent les transformations déjà pilotées par le jeu.
-Les règles de mouvement, sièges, munitions et réseau ne changent pas.
+La conversion antérieure de `scripts/import-meshy-fleet.py` (3 000 triangles par
+coque, couleurs peintes par face) reste dans l'historique. Le nouveau rendu
+**privilégie la texture Meshy réelle**, comme le B3 : il charge environ
+27 000–29 000 triangles par véhicule. Il ne faut pas présenter cette variante
+comme une optimisation de FPS ; mesurer le coût sur plusieurs appareils en WebGL
+avant de prétendre qu'elle convient à une flotte nombreuse.
 
-## Vérifications et limites
+## Vérifications
 
-`node scripts/test-meshy-fleet.mjs` vérifie les budgets des coques, les attributs
-finis, le partage des buffers, les livrées, le contact au sol, les ailes, hélices
-et la remorque. `scripts/test-muzzle-alignment.mjs` vérifie les origines des tirs.
-Ces tests font partie de `npm test`.
+`node scripts/test-meshy-fleet.mjs` contrôle maillages, UV, partage des buffers,
+terrain, pastilles colorées, ailes et remorque.
+`node scripts/test-meshy-textures.mjs` contrôle atlas JPEG et indices/UV.
+`node scripts/test-muzzle-alignment.mjs` vérifie les bouches de tir.
 
-`node scripts/review-meshy-fleet.mjs` produit `tmp/meshy/fleet-review.svg`.
-La [projection CPU](meshy-fleet-review.png) montre les géométries réelles assemblées,
-pas une capture WebGL. Les petites armes ajoutent des triangles au budget des
-coques ; le budget annoncé n'est pas celui du véhicule complet.
-La réduction face au GLB source n'est pas une mesure de gain de FPS face aux
-anciens modèles procéduraux. Aucun essai multijoueur/WebGL/WAN n'est revendiqué.
-Tester en jeu : achats et embarquement, vues de chaque poste, tirs, dégâts des
-ailes, virages du D2 et proximité entre plusieurs véhicules.
+La [projection CPU historique](meshy-fleet-review.png) illustre la géométrie
+**simplifiée précédente**, pas l'atlas actuel. Les nouveaux modèles doivent être
+vérifiés visuellement en jeu : silhouette, texture, repère, chaque poste et ses
+armes, remorque D2, collision et fluidité avec plusieurs véhicules.
+Une compilation et un test sans GPU ne constituent pas cet essai.

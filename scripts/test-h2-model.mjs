@@ -19,13 +19,17 @@ a.traverse((o) => {
   for (const attribute of Object.values(o.geometry.attributes))
     assert.ok(attribute.array.every(Number.isFinite));
 });
-assert.ok(triangles <= 3650);
+assert.ok(triangles >= 27000 && triangles <= 30000);
 assert.ok(draws <= 8);
 const bMeshes = [];
 b.traverse((o) => {
   if (o.isMesh) bMeshes.push(o);
 });
 assert.equal(meshes[0].geometry, bMeshes[0].geometry, 'shared immutable geometry');
+assert.ok(meshes[0].geometry.attributes.uv, 'Meshy UVs retained');
+assert.ok(meshes[0].material.map, 'original Meshy atlas retained');
+assert.equal(meshes[0].material.map.colorSpace, T.SRGBColorSpace);
+assert.equal(meshes[0].material.map.flipY, false);
 for (const [name, axis] of [
   ['rotor', 'y'],
   ['tailRotor', 'x'],
@@ -60,8 +64,20 @@ assert.ok(
   muzzle.getWorldPosition(new T.Vector3()).distanceTo(tip) > 0.1,
   'muzzle follows articulated barrel',
 );
+const originalMaterials = meshes.map((o) => o.material);
 paintVehicle(T, a, 7, '#7b8155');
-assert.ok(meshes.some((o) => o.material === a.userData.paint));
+assert.ok(a.userData.preserveTexture);
+assert.ok(a.userData.identification, 'colored marker replaces hull paint');
+assert.ok(a.userData.identification.position.y > new T.Box3().setFromObject(b).max.y);
+assert.equal(a.userData.identification.userData.projectileSolid, false);
+meshes.forEach((mesh, i) =>
+  assert.equal(mesh.material, originalMaterials[i], 'original Meshy colors stay unchanged'),
+);
+const marker = a.userData.identification;
+const color = marker.material.color.clone();
+paintVehicle(T, a, 8, '#7b8155');
+assert.equal(a.userData.identification, marker);
+assert.ok(!marker.material.color.equals(color));
 b.scale.setScalar(ACTOR_UNIT);
 b.position.y = VEHICLES.helicopter.gear;
 assert.ok(Math.abs(new T.Box3().setFromObject(b).min.y) < 1e-5);

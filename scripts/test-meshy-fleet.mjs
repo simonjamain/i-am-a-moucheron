@@ -21,24 +21,34 @@ for (const [type, factory] of [
   b.traverse((o) => {
     if (o.name.startsWith('meshy-')) other.push(o);
   });
-  assert.ok(parts.length >= 2);
+  assert.ok(parts.length >= 1);
   let count = 0;
   for (const [i, mesh] of parts.entries()) {
     assert.equal(mesh.geometry, other[i].geometry, 'shared GPU geometry');
     const geometry = mesh.geometry;
-    count += geometry.attributes.position.count / 3;
+    count += (geometry.index?.count || geometry.attributes.position.count) / 3;
     for (const attribute of Object.values(geometry.attributes))
       assert.ok(attribute.array.every(Number.isFinite));
   }
-  assert.ok(count <= 3000 && count >= 2900, 'hull triangle budget');
-  const fixed = parts.find((o) => o.material.vertexColors);
-  const fixedMaterial = fixed.material;
+  assert.ok(count >= 26000 && count <= 30000, 'indexed textured hull budget');
+  assert.ok(parts.every((part) => part.geometry.attributes.uv && part.material.map), 'actual Meshy UV atlas');
+  assert.ok(parts.every((part) => part.material.map.colorSpace === T.SRGBColorSpace && part.material.map.flipY === false));
+  const originalMaterials = parts.map((o) => o.material);
   paintVehicle(T, a, 4, '#7f8844');
-  assert.equal(fixed.material, fixedMaterial, 'camouflage accents remain unchanged');
-  assert.ok(
-    parts.some((o) => o.material === a.userData.paint),
-    'livery still identifies vehicle',
+  assert.ok(a.userData.preserveTexture);
+  parts.forEach((mesh, i) =>
+    assert.equal(mesh.material, originalMaterials[i], 'Meshy hull colors stay unchanged'),
   );
+  const marker = a.userData.identification;
+  assert.ok(marker, 'colored identifier');
+  assert.ok(marker.position.y > new T.Box3().setFromObject(b).max.y, 'above vehicle');
+  assert.equal(marker.userData.projectileSolid, false, 'marker cannot block shots');
+  assert.equal(marker.userData.excludeBounds, true);
+  const priorColor = marker.material.color.clone();
+  paintVehicle(T, a, 5, '#7f8844');
+  assert.equal(marker, a.userData.identification, 'marker is reused');
+  assert.ok(!priorColor.equals(marker.material.color), 'sequence changes only disk color');
+  parts.forEach((mesh, i) => assert.equal(mesh.material, originalMaterials[i]));
   if (type === 'interceptor' || type === 'spitfire') {
     const span = new T.Box3().setFromObject(a.userData.wing).getSize(new T.Vector3()).x;
     a.userData.wing.scale.x = 0.52;

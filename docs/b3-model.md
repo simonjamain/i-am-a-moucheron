@@ -38,7 +38,8 @@ et identification sont propres à chaque appareil. Aucun chargement Meshy ou CDN
 n’est nécessaire en jeu. La réduction géométrique sans contraintes UV a été écartée
 car elle altérait le camouflage ; ce modèle reste plus détaillé que M1 et H2.
 
-Le petit disque au-dessus du bombardier porte la teinte d’identification actuelle,
+Comme sur les autres véhicules Meshy, le disque au-dessus du bombardier porte
+la teinte d’identification actuelle,
 reste face à la caméra et respecte l’occlusion du décor. Il ne participe pas aux
 collisions des tirs. Les noms des occupants restent inscrits sur la coque.
 

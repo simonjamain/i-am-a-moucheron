@@ -3149,18 +3149,18 @@ function vehicleModel(v) {
   if (!g) {
     g =
       v.type === 'helicopter'
-        ? makeHelicopter('#8eb7c6')
+        ? makeHelicopter('#7b8155')
         : v.type === 'flaktruck'
-          ? makeFlakTruck('#8eb7c6')
+          ? makeFlakTruck('#7b8155')
           : v.type === 'spitfire'
-            ? makeSpitfire('#e3ebc0')
+            ? makeSpitfire('#7b8155')
             : v.type === 'tank'
-              ? makeTank('#8eb7c6')
+              ? makeTank('#7b8155')
               : v.type === 'interceptor'
-                ? makeStuka('#8eb7c6')
+                ? makeStuka('#7b8155')
                 : v.type === 'bomber'
                   ? makeBomber('#c5ba92')
-                  : makePlane(v.type === 'interceptor' ? '#8eb7c6' : '#e3ebc0');
+                  : makePlane('#7b8155');
     paintVehicle(
       T,
       g,
@@ -3215,7 +3215,7 @@ function updateOthers(dt) {
     }
     if (g.userData.identification) {
       g.userData.identification.position
-        .set(0, 2.5, 0)
+        .set(0, g.userData.identificationHeight ?? 2.5, 0)
         .applyQuaternion(g.quaternion.clone().invert());
       g.userData.identification.quaternion.copy(g.quaternion).invert().multiply(camera.quaternion);
     }

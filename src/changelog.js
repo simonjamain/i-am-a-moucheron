@@ -1,6 +1,18 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 169,
+    changes: [
+      'Les chasseurs, le H2, le tank et la DCA mobile retrouvent les détails de leurs camouflages d’origine.',
+    ],
+  },
+  {
+    version: 168,
+    changes: [
+      'Les véhicules gardent leurs couleurs ; un petit rond coloré au-dessus de chacun permet de les reconnaître.',
+    ],
+  },
+  {
     version: 167,
     changes: [
       'Le Stuka, le Spitfire, le tank et la DCA mobile adoptent de nouvelles silhouettes militaires et leur camouflage.',
