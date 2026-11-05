@@ -2,7 +2,8 @@
 
 Le H2 reprend la fiche « Hélicoptère H2.png », vue trois quarts : silhouette
 inspirée du Mi-24, verrières en tandem, ailes courtes, fuselage olive et crème,
-train à roues. Les surfaces olive suivent les livrées des véhicules.
+train à roues. La couleur d'identification varie uniquement sur un disque coloré
+au-dessus du H2 ; la coque garde ses couleurs intégrées.
 
 ![Projection CPU du H2 intégré, sans WebGL](h2-model-review.png)
 
@@ -42,7 +43,7 @@ ces origines historiques. Les autres modèles restent inchangés.
 
 `node scripts/test-h2-model.mjs` vérifie le budget, les coordonnées finies,
 le partage des buffers, l'appui au sol, la rotation indépendante des deux rotors,
-les livrées et le canon articulé. Le manifeste de l'assembleur inclut les deux
+l'absence de recoloration de la coque, le disque coloré et le canon articulé. Le manifeste de l'assembleur inclut les deux
 nouveaux modules pour Node, le paquet autonome et le Worker historique.
 
 Essai humain restant : parking, décollage, vue cockpit/extérieure, deux joueurs
