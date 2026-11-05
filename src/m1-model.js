@@ -43,7 +43,14 @@ export function makeM1(T, scene, color, box, mat) {
     gunMeshes.push(barrel);
     pilotMuzzles.push(muzzle);
   }
-  model.userData = { wing, prop, gunMeshes, pilotMuzzles, vehicleType: 'fighter' };
+  model.userData = {
+    preserveTexture: true,
+    wing,
+    prop,
+    gunMeshes,
+    pilotMuzzles,
+    vehicleType: 'fighter',
+  };
   scene.add(model);
   return model;
 }
