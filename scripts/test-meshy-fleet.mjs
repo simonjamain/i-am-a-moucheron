@@ -26,7 +26,7 @@ for (const [type, factory] of [
   for (const [i, mesh] of parts.entries()) {
     assert.equal(mesh.geometry, other[i].geometry, 'shared GPU geometry');
     const geometry = mesh.geometry;
-    count += geometry.attributes.position.count / 3;
+    count += (geometry.index?.count || geometry.attributes.position.count) / 3;
     for (const attribute of Object.values(geometry.attributes))
       assert.ok(attribute.array.every(Number.isFinite));
   }
