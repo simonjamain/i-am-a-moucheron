@@ -42,8 +42,12 @@ Formater ensuite les modules produits avec Prettier.
 
 La simplification quadratique vise au plus 3 000 triangles par coque. Les couleurs
 sont échantillonnées depuis le modèle source et converties de sRGB en RGB linéaire.
-Les parties olive restent recolorables pour identifier les véhicules ; le sable,
-les pneus et les verrières conservent leurs couleurs. Aucun atlas, PBR, chargeur
+Les zones olive conservent maintenant leur teinte de base, comme les autres
+surfaces ; la couleur propre à chaque véhicule est portée uniquement par un
+petit disque au-dessus de lui. La coque n'est plus recolorée par appareil.
+Les couleurs actuellement intégrées aux triangles sont une approximation des
+textures Meshy : contrairement au B3, les atlas UV originaux ne sont pas embarqués.
+Pour retrouver ces détails à l'identique, il faut les GLB originaux texturés. Aucun atlas, PBR, chargeur
 GLTF ou décodeur supplémentaire n'est chargé par le navigateur.
 
 `src/meshy-fleet.js` partage les géométries et matériaux fixes entre exemplaires.
