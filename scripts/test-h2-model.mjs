@@ -19,13 +19,17 @@ a.traverse((o) => {
   for (const attribute of Object.values(o.geometry.attributes))
     assert.ok(attribute.array.every(Number.isFinite));
 });
-assert.ok(triangles <= 3650);
+assert.ok(triangles >= 27000 && triangles <= 30000);
 assert.ok(draws <= 8);
 const bMeshes = [];
 b.traverse((o) => {
   if (o.isMesh) bMeshes.push(o);
 });
 assert.equal(meshes[0].geometry, bMeshes[0].geometry, 'shared immutable geometry');
+assert.ok(meshes[0].geometry.attributes.uv, 'Meshy UVs retained');
+assert.ok(meshes[0].material.map, 'original Meshy atlas retained');
+assert.equal(meshes[0].material.map.colorSpace, T.SRGBColorSpace);
+assert.equal(meshes[0].material.map.flipY, false);
 for (const [name, axis] of [
   ['rotor', 'y'],
   ['tailRotor', 'x'],

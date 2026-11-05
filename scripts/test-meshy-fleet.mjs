@@ -21,7 +21,7 @@ for (const [type, factory] of [
   b.traverse((o) => {
     if (o.name.startsWith('meshy-')) other.push(o);
   });
-  assert.ok(parts.length >= 2);
+  assert.ok(parts.length >= 1);
   let count = 0;
   for (const [i, mesh] of parts.entries()) {
     assert.equal(mesh.geometry, other[i].geometry, 'shared GPU geometry');
@@ -30,7 +30,9 @@ for (const [type, factory] of [
     for (const attribute of Object.values(geometry.attributes))
       assert.ok(attribute.array.every(Number.isFinite));
   }
-  assert.ok(count <= 3000 && count >= 2900, 'hull triangle budget');
+  assert.ok(count >= 26000 && count <= 30000, 'indexed textured hull budget');
+  assert.ok(parts.every((part) => part.geometry.attributes.uv && part.material.map), 'actual Meshy UV atlas');
+  assert.ok(parts.every((part) => part.material.map.colorSpace === T.SRGBColorSpace && part.material.map.flipY === false));
   const originalMaterials = parts.map((o) => o.material);
   paintVehicle(T, a, 4, '#7f8844');
   assert.ok(a.userData.preserveTexture);

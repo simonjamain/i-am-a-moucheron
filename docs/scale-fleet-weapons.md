@@ -107,4 +107,6 @@ Les distances et vitesses de simulation restent inchangées. Les instruments des
 
 Le [B3 à quatre places](b3-model.md) possède une tourelle ventrale indépendante et conserve son atlas de camouflage.
 
-Les [quatre autres véhicules Meshy](meshy-fleet.md) utilisent des coques simplifiées et conservent leurs armes articulées.
+Les [quatre autres véhicules Meshy](meshy-fleet.md) conservent les UV et textures
+réelles de leurs GLB, avec armes et remorque articulées. Chaque véhicule se
+repère par une pastille flottante colorée plutôt que par la couleur de sa coque.
