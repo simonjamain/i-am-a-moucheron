@@ -1,14 +1,18 @@
 import { vehicleHue } from './logistics.js';
-// Liveries and the B3 identification disk retain ordinary depth testing.
+// Meshy models retain their stored colors; the identifier keeps ordinary depth testing.
 export function paintVehicle(T, model, sequence, baseColor) {
   if (model.userData.preserveTexture) {
     const color = new T.Color().setHSL(vehicleHue(sequence) / 360, 0.58, 0.57);
     if (!model.userData.identification) {
+      // Determine clearance before adding the marker itself to the bounds.
+      const bounds = new T.Box3().setFromObject(model);
+      const height = Math.max(2.5, bounds.max.y + 0.35);
+      model.userData.identificationHeight = height;
       const marker = new T.Mesh(
         new T.CircleGeometry(0.32, 20),
         new T.MeshBasicMaterial({ color, side: T.DoubleSide }),
       );
-      marker.position.set(0, 2.5, 0);
+      marker.position.set(0, height, 0);
       marker.userData.projectileSolid = false;
       marker.userData.excludeBounds = true;
       model.add(marker);
