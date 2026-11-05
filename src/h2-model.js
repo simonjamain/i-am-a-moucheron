@@ -44,6 +44,7 @@ export function makeH2(T, scene, color, box, mat) {
   barrel.add(muzzle);
   mount.userData = { pitch, muzzle };
   model.userData = {
+    preserveTexture: true,
     turrets: [mount],
     rotor,
     tailRotor,
