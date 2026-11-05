@@ -106,3 +106,5 @@ Le client affiche une flamme orange avec un cœur lumineux derrière chaque roqu
 Les distances et vitesses de simulation restent inchangées. Les instruments des véhicules affichent la vitesse de référence en km/h (`v / MAP.ratio * 3,6`) et l'altitude de référence en mètres (`MAP.reference(y)`). Les réglages et graduations de la DCA fixe présentent la portée réelle en mètres (100 à 1 200 m), sans convertir une seconde fois les valeurs de commande en mètres miniatures. Les graduations de visée du char convertissent leur distance physique de la pièce avec `MAP.reference`. Le rayon de proximité de la DCA mobile est déjà exprimé en mètres de référence ; aucun équilibrage ni protocole réseau n'est modifié.
 
 Le [B3 à quatre places](b3-model.md) possède une tourelle ventrale indépendante et conserve son atlas de camouflage.
+
+Les [quatre autres véhicules Meshy](meshy-fleet.md) utilisent des coques simplifiées et conservent leurs armes articulées.

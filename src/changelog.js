@@ -1,6 +1,12 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 167,
+    changes: [
+      'Le Stuka, le Spitfire, le tank et la DCA mobile adoptent de nouvelles silhouettes militaires et leur camouflage.',
+    ],
+  },
+  {
     version: 166,
     changes: [
       'Le bombardier accueille un quatrième joueur dans sa tourelle ventrale.',
