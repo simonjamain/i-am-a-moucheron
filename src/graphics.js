@@ -89,6 +89,7 @@ export function createGraphics(T, scene) {
       pilotMuzzles,
       muzzles: pilotMuzzles,
       vehicleType: isStuka ? 'interceptor' : 'spitfire',
+      preserveTexture: true,
     };
     scene.add(g);
     return g;
@@ -151,6 +152,7 @@ export function createGraphics(T, scene) {
     pilotMuzzle.position.z = -0.4;
     pilotBarrel.add(pilotMuzzle);
     g.userData = {
+      preserveTexture: true,
       turrets,
       pilotMuzzles: [pilotMuzzle],
       prop: new T.Object3D(),
@@ -179,7 +181,13 @@ export function createGraphics(T, scene) {
     muzzle.position.z = -2.8;
     pitch.add(muzzle);
     mount.userData = { pitch, muzzle, coaxMuzzle: muzzle };
-    g.userData = { turrets: [mount], trailer, prop: new T.Object3D(), wing: new T.Object3D() };
+    g.userData = {
+      preserveTexture: true,
+      turrets: [mount],
+      trailer,
+      prop: new T.Object3D(),
+      wing: new T.Object3D(),
+    };
     scene.add(g);
     return g;
   }
