@@ -24,9 +24,9 @@ docker compose -f compose.assets.yaml run --rm optimizer \
 
 Par défaut, les noms de parties tels que `turret`, `rotor`, `prop`, `wheel`
 et `canon` sont **exclus de la simplification** ; on peut fournir un motif
-`--protect 'rotor|tail|gun'`. Pour un GLB monobloc, l'outil refuse le traitement
-sans `--allow-monobloc` : cette option **n'est utilisable que pour une
-exploration**, pas pour déclarer validées les pièces mobiles d'un véhicule.
+`--protect 'rotor|tail|gun'`. Pour un GLB monobloc, l'outil exige des boîtes de protection explicites
+(`--regions /assets/originals/zones.json`), sinon `--allow-monobloc` n'est
+utilisable que pour une exploration sans validation des pièces mobiles.
 
 `--ratio 0.5` demande de conserver environ 50 % des triangles ; la réduction
 réelle peut être moindre. `--error 0.001` limite la déformation géométrique
@@ -85,3 +85,21 @@ Documentation amont :
 - [glTF Transform](https://gltf-transform.dev/)
 - [meshoptimizer](https://github.com/zeux/meshoptimizer)
 - [Docker Compose run](https://docs.docker.com/reference/cli/docker/compose/run/)
+
+## Protection des régions dans un GLB monobloc
+
+Placer un fichier `zones.json` dans le dossier des originaux. Exemple (à
+recalibrer sur **les coordonnées du GLB**, pas celles du jeu) :
+
+```json
+{"regions":[
+  {"name":"rotor","mesh":"body","min":[-0.3,0.1,-0.2],"max":[0.3,0.5,0.2]},
+  {"name":"canon","min":[-0.1,-0.2,0.6],"max":[0.1,0.2,1.0]}
+]}
+```
+
+Les triangles dont la boîte englobante chevauche une région sont copiés
+**à l'identique**, tandis que les autres triangles sont simplifiés avec leurs
+frontières verrouillées. Valider le résultat avec le même argument `--regions`.
+Les boîtes doivent être établies/revues pour chaque modèle : elles ne remplacent
+pas une segmentation réelle des meshes articulés ni une inspection visuelle.

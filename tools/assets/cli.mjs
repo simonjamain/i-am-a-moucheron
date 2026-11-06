@@ -22,7 +22,7 @@ const TOOL_VERSION = '1.0.0';
 
 function usage() {
   console.log(`Usage:
-  optimize INPUT.glb OUTPUT.glb [--ratio 0.5] [--error 0.001] [--protect REGEX] [--overwrite] [--allow-monobloc]
+  optimize INPUT.glb OUTPUT.glb [--ratio 0.5] [--error 0.001] [--protect REGEX] [--overwrite] [--allow-monobloc] [--regions BOXES.json]
   inspect INPUT.glb
   validate ORIGINAL.glb OPTIMIZED.glb
   selftest
@@ -37,13 +37,13 @@ mesh; it is NOT evidence that a Meshy weapon/rotor was preserved.
 }
 
 function parse(args) {
-  const flags = { ratio: 0.5, error: 0.001, protect: DEFAULT_PROTECTED, overwrite: false, allowMonobloc: false };
+  const flags = { ratio: 0.5, error: 0.001, protect: DEFAULT_PROTECTED, overwrite: false, allowMonobloc: false, regions: null };
   const paths = [];
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
     if (arg === '--overwrite') flags.overwrite = true;
     else if (arg === '--allow-monobloc') flags.allowMonobloc = true;
-    else if (['--ratio', '--error', '--protect'].includes(arg)) {
+    else if (['--ratio', '--error', '--protect', '--regions'].includes(arg)) {
       if (!args[i + 1]) throw Error(`Missing value for ${arg}`);
       flags[arg.slice(2)] = args[++i];
     } else if (arg.startsWith('--')) throw Error(`Unknown option: ${arg}`);
@@ -128,6 +128,57 @@ function checkEquivalent(original, variant) {
   return { sourceTriangles, targetTriangles };
 }
 
+// A region conservatively protects every triangle whose AABB overlaps its box.
+async function readRegions(file) {
+  if(!file)return [];
+  const config=JSON.parse(await readFile(file,'utf8'));
+  if(!Array.isArray(config.regions)||!config.regions.length)throw Error('Expected non-empty regions array');
+  return config.regions.map((r,i)=>{
+    if(!Array.isArray(r.min)||!Array.isArray(r.max)||r.min.length!==3||r.max.length!==3||
+       r.min.some((v,k)=>!Number.isFinite(v)||!Number.isFinite(r.max[k])||r.max[k]<v))
+      throw Error('Invalid region bounding box at index '+i);
+    return {name:r.name||String(i),mesh:r.mesh||null,min:r.min,max:r.max};
+  });
+}
+function partition(indices, positions, regions) {
+  const locked=[], free=[];
+  for(let i=0;i<indices.length;i+=3) {
+    const low=[Infinity,Infinity,Infinity],high=[-Infinity,-Infinity,-Infinity];
+    for(let t=0;t<3;t++) for(let axis=0;axis<3;axis++){
+      const value=positions[indices[i+t]*3+axis];
+      low[axis]=Math.min(low[axis],value); high[axis]=Math.max(high[axis],value);
+    }
+    const protect=regions.some((r)=>low.every((v,k)=>v<=r.max[k]&&high[k]>=r.min[k]));
+    (protect?locked:free).push(indices[i],indices[i+1],indices[i+2]);
+  }
+  return {locked:Uint32Array.from(locked),free:Uint32Array.from(free)};
+}
+function assertProtected(original,optimized,regions){
+  if(!regions.length)return;
+  const a=original.getRoot().listMeshes(),b=optimized.getRoot().listMeshes();
+  for(let i=0;i<a.length;i++){
+    const zones=regions.filter((r)=>!r.mesh||r.mesh===a[i].getName());
+    if(!zones.length)continue;
+    const before=a[i].listPrimitives(),after=b[i].listPrimitives();
+    for(let j=0;j<before.length;j++){
+      if(before[j].getMode()!==TRIANGLES)continue;
+      const originalIndices=before[j].getIndices()?.getArray();
+      if(!originalIndices)throw Error('Regions require indexed primitives');
+      const locked=partition(originalIndices,before[j].getAttribute('POSITION').getArray(),zones).locked;
+      const target=after[j].getIndices().getArray();
+      const counts=new Map();
+      for(let k=0;k<target.length;k+=3){
+        const key=Array.from(target.slice(k,k+3)).join(',');
+        counts.set(key,(counts.get(key)||0)+1);
+      }
+      for(let k=0;k<locked.length;k+=3){
+        const key=Array.from(locked.slice(k,k+3)).join(',');
+        if(!counts.get(key))throw Error('A protected triangle was removed: '+key);
+        counts.set(key,counts.get(key)-1);
+      }
+    }
+  }
+}
 function protectedMeshNames(document, regex) {
   const guarded = new Set();
   for (const mesh of document.getRoot().listMeshes()) if (regex.test(mesh.getName())) guarded.add(mesh);
@@ -143,7 +194,8 @@ async function optimize(input, output, flags) {
   const doc = await io.read(input);
   const baseline = await io.read(input);
   const root = doc.getRoot();
-  if (root.listMeshes().length === 1 && !flags.allowMonobloc) throw Error('Single-mesh input: separate critical moving parts first, or pass --allow-monobloc for exploratory use');
+  const regions=await readRegions(flags.regions);
+  if (root.listMeshes().length === 1 && !flags.allowMonobloc && !regions.length) throw Error('Single-mesh input: define --regions for critical parts, or pass --allow-monobloc for exploratory use');
   if (!root.listMeshes().length) throw Error('Input contains no meshes');
   const protectedMeshes = protectedMeshNames(doc, flags.protect);
   const report = {
@@ -152,6 +204,7 @@ async function optimize(input, output, flags) {
     originalSha256: sha(originalBytes),
     ratio: flags.ratio, error: flags.error, protectedPattern: flags.protect.source,
     monoblocOverride: flags.allowMonobloc,
+    regions,
     before: countTriangles(doc),
     preservedMeshes: [], modifiedMeshes: [], warnings: [],
   };
@@ -174,17 +227,24 @@ async function optimize(input, output, flags) {
       const indices = rawIndices ? Uint32Array.from(rawIndices) : Uint32Array.from({length: count}, (_,i) => i);
       if (indices.length % 3) throw Error('Non-triangle index count');
       if (indices.length <= 3) continue;
-      const target = Math.max(3, Math.floor(indices.length * flags.ratio / 3) * 3);
-      const [simplified, measuredError] = MeshoptSimplifier.simplify(indices, array, 3, target, flags.error, ['LockBorder']);
-      if (simplified.length && simplified.length < indices.length) {
-        const narrowed = count <= 65535 ? Uint16Array.from(simplified) : simplified;
+      const applicable=regions.filter((r)=>!r.mesh||r.mesh===mesh.getName());
+      if(applicable.length&&!rawIndices)throw Error('Region protection needs indexed triangles');
+      const {locked,free}=partition(indices,array,applicable);
+      const target=Math.max(3,Math.floor(free.length*flags.ratio/3)*3);
+      const [simplified,measuredError]=free.length>3
+        ? MeshoptSimplifier.simplify(free,array,3,target,flags.error,['LockBorder'])
+        : [free,0];
+      const kept=Uint32Array.from([...locked,...simplified]);
+      if(kept.length && kept.length < indices.length){
+        const narrowed=count<=65535?Uint16Array.from(kept):kept;
         prim.setIndices(doc.createAccessor().setBuffer(root.listBuffers()[0]).setType('SCALAR').setArray(narrowed));
-        report.modifiedMeshes.push({name:mesh.getName(), trianglesBefore:indices.length/3, trianglesAfter:simplified.length/3, measuredError});
+        report.modifiedMeshes.push({name:mesh.getName(), trianglesBefore:indices.length/3, trianglesAfter:kept.length/3, lockedTriangles:locked.length/3, measuredError});
       }
     }
   }
   report.after = countTriangles(doc);
   checkEquivalent(baseline, doc);
+  assertProtected(baseline,doc,regions);
   if (report.after.triangles >= report.before.triangles) report.warnings.push('No geometry reduction achieved within constraints');
   // Write candidate to a temporary file; do not replace an existing output until validated.
   await mkdir(path.dirname(output), { recursive: true });
@@ -193,6 +253,7 @@ async function optimize(input, output, flags) {
     await io.write(tmp, doc);
     const roundtrip = await io.read(tmp);
     report.validation = checkEquivalent(baseline, roundtrip);
+    assertProtected(baseline,roundtrip,regions);
     if (protectedMeshes.size) {
       const beforeMeshes = baseline.getRoot().listMeshes();
       const afterMeshes = roundtrip.getRoot().listMeshes();
@@ -227,7 +288,9 @@ async function run(argv) {
     return console.log(JSON.stringify({sha256:sha(await readFile(paths[0])), bytes:(await stat(paths[0])).size, ...countTriangles(doc), meshes:doc.getRoot().listMeshes().map((m)=>({name:m.getName(), triangles:m.listPrimitives().reduce((n,p)=>n+(p.getIndices()?.getCount()||0)/3,0)}))},null,2));
   }
   if (cmd === 'validate' && paths.length === 2) {
-    const result=checkEquivalent(await io.read(paths[0]), await io.read(paths[1]));
+    const original=await io.read(paths[0]),optimized=await io.read(paths[1]);
+    const result=checkEquivalent(original,optimized);
+    assertProtected(original,optimized,await readRegions(flags.regions));
     return console.log(JSON.stringify({valid:true,...result}));
   }
   if (cmd === 'optimize' && paths.length === 2) return optimize(paths[0],paths[1],flags);
