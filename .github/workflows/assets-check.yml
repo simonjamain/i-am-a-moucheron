@@ -27,5 +27,7 @@ jobs:
           tags: i-am-a-moucheron-asset-tools:local
       - name: Exercise textured GLB optimization in the container
         run: docker run --rm --network none --read-only --tmpfs /tmp --cap-drop ALL --security-opt no-new-privileges i-am-a-moucheron-asset-tools:local selftest
+      - name: Verify original and optimized Meshy SHA-256 provenance
+        run: python3 scripts/test-meshy-provenance.py
       - name: Validate Compose config
         run: docker compose -f compose.assets.yaml config --quiet

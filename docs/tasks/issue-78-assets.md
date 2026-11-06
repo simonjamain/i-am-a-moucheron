@@ -14,8 +14,9 @@ défaut. Le jeu et la flotte existante ne changent pas dans cette PR.
 - Le lockfile npm complet est maintenant conservé, et l'image utilise npm ci.
 - Compléter un essai sur un véritable GLB Meshy segmenté, mesure visuelle et
   repères/animations avant toute activation en jeu.
-- Évaluer l'adaptation contrôlée des importeurs Python Meshy vers un dérivé
-  optimisé, sans retirer leurs vérifications SHA d'origine.
+- Les deux importeurs acceptent désormais, sur demande explicite, une variante
+  accompagnée de son original et du rapport de provenance ; valider en vraie
+  situation avant de substituer un module intégré au jeu.
 - Contrôler `npm test`, `npm run check:docs`, `npm run check:version`, la
   construction Docker du jeu sur la même révision ; noter toute limite.
 - Ne pas fusionner sans accord explicite de l'utilisateur.

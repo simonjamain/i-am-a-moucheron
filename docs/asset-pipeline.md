@@ -103,3 +103,24 @@ Les triangles dont la boîte englobante chevauche une région sont copiés
 frontières verrouillées. Valider le résultat avec le même argument `--regions`.
 Les boîtes doivent être établies/revues pour chaque modèle : elles ne remplacent
 pas une segmentation réelle des meshes articulés ni une inspection visuelle.
+
+## Réintégrer un dérivé dans les scripts Python du jeu
+
+Un fichier `optimisé.glb` n'est accepté par un importeur Meshy que si son
+`optimisé.glb.report.json` correspond aux empreintes du dérivé **et de l'original
+approuvé**, et si les régions critiques d'un GLB monobloc ont été déclarées.
+La variante exploratoire `--allow-monobloc` est refusée par les importeurs.
+Le GLB original demeure requis lors d'une intégration :
+
+```sh
+python3 scripts/import-meshy-textures.py stuka assets/optimized/stuka.glb \
+  /tmp/meshy-stuka-data.js assets/originals/stuka.glb
+python3 scripts/import-meshy-b3.py assets/optimized/b3.glb assets/originals/b3.glb
+```
+
+Les dépendances Python `trimesh`, NumPy et Pillow restent nécessaires **pour
+l'importation vers le jeu uniquement** ; Docker + Compose suffisent pour produire
+et valider le GLB. Les masques d'extraction des pièces du modèle d'origine
+peuvent toujours nécessiter un réajustement spécifique après simplification.
+Ne pas remplacer les modules d'une flotte validée sans comparaison visuelle,
+vérification des pivots/armes et tests de régression. Le nouvel import est opt-in.

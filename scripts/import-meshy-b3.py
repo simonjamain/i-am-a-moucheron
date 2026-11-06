@@ -1,5 +1,5 @@
 """Convert the reviewed B3 GLB, preserving its actual texture and projected UVs.
-Usage: python3 scripts/import-meshy-b3.py model.glb
+Usage: python3 scripts/import-meshy-b3.py model.glb [ORIGINAL.glb]
 Offline dependencies: trimesh==5.2.0 pillow numpy.
 The masks below are specific to Meshy task 01a1a87e-d709-73c8-b5d8-3fe935a944b8.
 """
@@ -12,8 +12,12 @@ from pathlib import Path
 
 import numpy as np
 import trimesh
+from meshy_provenance import verify_meshy_source
 
 source = Path(sys.argv[1])
+EXPECTED_SHA256 = "8afb8b5e60ab03282a4dbaed35ca05be728a5e278d8299c622f3deccf3cfe6d9"
+# Original input remains accepted; derived files must be tied to an approved original.
+verify_meshy_source(source,EXPECTED_SHA256,Path(sys.argv[2]) if len(sys.argv)>2 else None)
 scene = trimesh.load(source, force="scene")
 assert len(scene.geometry) == 1, "Review transforms and masks for a different asset"
 original = scene.to_mesh()
