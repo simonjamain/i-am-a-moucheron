@@ -3232,7 +3232,9 @@ function updateOthers(dt) {
       aimGun(
         T,
         mount,
-        isSelf ? mouseDirection.clone() : new T.Vector3().fromArray(motion.turretDirection || [0, 0, -1]),
+        isSelf
+          ? mouseDirection.clone()
+          : new T.Vector3().fromArray(motion.turretDirection || [0, 0, -1]),
         mount.parent.getWorldQuaternion(new T.Quaternion()),
       );
     }

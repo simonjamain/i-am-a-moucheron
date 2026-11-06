@@ -30,3 +30,5 @@
 - Première CI PR #79 : la compatibilité Worker/D1 créait le Castor gratuitement à la connexion car sa boucle historique énumérait toutes les entrées de `VEHICLES`. Exclusion explicite : **le Castor relève uniquement des achats Node/UDP**. Remise du `server/game.js` historique : PV inchangés à 100, pas de changement d'autorité santé nécessaire dans ce lot. Le build Docker et les tests doivent être relancés sur le commit de correction.
 
 - CI complémentaire : les tests de durée standard des munitions sont désormais exclus pour le Castor : sa MG 500 balles a volontairement une cadence réduite, avec couverture dédiée dans `test-castor.mjs`.
+
+- Les tests Node, y compris celui du Castor, passent sur la CI précédente. Reste un contrôle de formatage de `src/client.js` et `docs/code-structure.md` à corriger, puis réexécution complète.
