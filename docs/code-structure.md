@@ -60,11 +60,15 @@ entre deux pairs. Le Worker conserve son ancien périmètre, sans Spitfire gratu
 
 ## Génération, tests et compatibilité
 
-`scripts/assemble.mjs` utilise la géométrie réelle du bureau pour générer les
-colliders et le graphe d’assets à URL de contenu. `worker/assets.js` est utilisé
-par Node. `worker/index.js` et `dist/` sont les sorties du backend Worker
-historique ; `src/server.js`, `drizzle/` et `scripts/local-db.mjs` restent sa
-compatibilité SQL. Ils ne sont pas importés par le runtime Node.
+`scripts/assemble.mjs` génère `src/route-obstacles.js` depuis les colliders du
+bureau, `docs/ui-review.html`, ainsi que `worker/assets.js` (manifeste d’assets
+partagé) et `worker/index.js` (point d’entrée du Worker historique). Le serveur
+Node utilise `worker/assets.js`, mais n’importe pas `worker/index.js`.
+`scripts/build.sh` construit séparément `dist/`, distribution autonome du runtime
+Node : `server/`, `src/`, `worker/assets.js`, manifestes npm et `VERSION`.
+`src/server.js`, `drizzle/` et `scripts/local-db.mjs` concernent la compatibilité
+SQL du Worker/D1 historique et ne sont pas chargés par le runtime Node.
+Voir [l’exploitation](operations.md) pour les commandes et les contrôles.
 
 `scripts/build-ui-preview.mjs` extrait HTML/CSS réels et les composants HUD,
 banque et lit pour `/ui-review.html`. La page utilise une caisse de démonstration
