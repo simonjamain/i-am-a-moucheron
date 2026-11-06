@@ -2386,6 +2386,7 @@ function physicalPurgatory(dt, now) {
     if (age > 0.55) {
       purgScene.remove(e.group);
       e.group.traverse((o) => {
+        if (o.userData.meshyShared) return;
         o.geometry?.dispose();
         o.material?.map?.dispose();
       });
