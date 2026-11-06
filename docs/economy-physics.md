@@ -150,3 +150,11 @@ Une station peut se poser près d’un appareil immobilisé, et un équipement d
 sa zone de service. Seul le socle de la station réserve une emprise physique
 (4 × 3 mètres de référence, avec marge). Le client et Node utilisent le même
 contrôle de support et d’occupation ; les coques garées restent protégées.
+
+## Tarification automatique des stations (lot préparatoire G1 Castor)
+
+Sur Node, Alpha et les stations achetées réparent et ravitaillent désormais automatiquement les véhicules à proximité, même lorsqu'ils roulent ou volent. Les services sont payants et débitent la caisse commune : **1 $ pour 100 PV**, **1 $ pour 1 000 balles**, **1 $ pour 60 s de carburant**, **1 $ pour 10 obus/roquettes**, **1 $ pour 5 bombes**, **1 $ pour 2 missiles**. Les composants moteur/aile utilisent le tarif PV. Les valeurs restent à équilibrer.
+
+Le budget est partagé équitablement entre les véhicules éligibles quand la caisse ne peut tout régler ; le calcul s'effectue côté serveur, une fois par seconde, par quantité effectivement fournie. Aucune munition ou réparation ne doit être délivrée lorsque la caisse est vide. La portée de la station reste celle de l'ancienne zone de service, mais le service n'exige plus d'être posé ni arrêté.
+
+**Limites de ce premier lot** : le Castor, la recharge des pistolets et DCA fixes, la réparation automatique des barricades et les défenses exclusives restent à implémenter dans l'[issue #76](https://github.com/simonjamain/i-am-a-moucheron/issues/76). Le helper historique `advanceSupplies()` reste utilisé par les tests d'ancienne logique, mais Node n'y passe plus les stations. Le nouveau prélèvement est dans `advancePaidService()`.

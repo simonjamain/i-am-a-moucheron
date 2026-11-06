@@ -147,6 +147,9 @@ for (const seat of VEHICLES.tank.seats) {
 // one cannon cooldown spans both ammunition types.
 game.assign(r, p, tank, 'cannon', null);
 tank.state.landed = false;
+// Away from Alpha: service now works for aircraft and tanks in movement.
+tank.state.p = [...tank.state.p];
+tank.state.p[0] += 0.3;
 assert.equal(tank.seats.has('pilot'), false);
 const he = tank.supplies.ammo.he;
 call('heavy-fire', { weapon: 'he', shot: 'he-1', direction: [0, 0, -1] });

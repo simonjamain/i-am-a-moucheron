@@ -1,6 +1,12 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 172,
+    changes: [
+      'Les stations réparent et rechargent automatiquement les véhicules à proximité, même en mouvement, en utilisant la caisse commune.',
+    ],
+  },
+  {
     version: 169,
     changes: [
       'Les chasseurs, le H2, le tank et la DCA mobile retrouvent les détails de leurs camouflages d’origine.',
