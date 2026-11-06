@@ -178,7 +178,7 @@ async function optimize(input, output, flags) {
       const [simplified, measuredError] = MeshoptSimplifier.simplify(indices, array, 3, target, flags.error, ['LockBorder']);
       if (simplified.length && simplified.length < indices.length) {
         const narrowed = count <= 65535 ? Uint16Array.from(simplified) : simplified;
-        prim.setIndices(doc.createAccessor().setType('SCALAR').setArray(narrowed));
+        prim.setIndices(doc.createAccessor().setBuffer(root.listBuffers()[0]).setType('SCALAR').setArray(narrowed));
         report.modifiedMeshes.push({name:mesh.getName(), trianglesBefore:indices.length/3, trianglesAfter:simplified.length/3, measuredError});
       }
     }

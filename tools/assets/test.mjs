@@ -13,6 +13,7 @@ const run = (...args) => spawnSync(process.execPath,[bin,...args],{encoding:'utf
 const original=path.join(root,'original.glb'),result=path.join(root,'optimized.glb');
 try {
   const document = new Document();
+  const buffer = document.createBuffer('fixture');
   const scene = document.createScene('fixture');
   const texture = document.createTexture('Atlas').setMimeType('image/png').setImage(Buffer.from(
     'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4z8DwHwAFgAI/ScLttAAAAABJRU5ErkJggg==','base64'
@@ -28,14 +29,14 @@ try {
   }
   const body = document.createMesh('fuselage').addPrimitive(document.createPrimitive()
     .setMaterial(material)
-    .setAttribute('POSITION',document.createAccessor().setType('VEC3').setArray(new Float32Array(vertices)))
-    .setAttribute('TEXCOORD_0',document.createAccessor().setType('VEC2').setArray(new Float32Array(uv)))
-    .setIndices(document.createAccessor().setType('SCALAR').setArray(new Uint16Array(indices))));
+    .setAttribute('POSITION',document.createAccessor().setBuffer(buffer).setType('VEC3').setArray(new Float32Array(vertices)))
+    .setAttribute('TEXCOORD_0',document.createAccessor().setBuffer(buffer).setType('VEC2').setArray(new Float32Array(uv)))
+    .setIndices(document.createAccessor().setBuffer(buffer).setType('SCALAR').setArray(new Uint16Array(indices))));
   const turret = document.createMesh('turret').addPrimitive(document.createPrimitive()
     .setMaterial(material)
-    .setAttribute('POSITION',document.createAccessor().setType('VEC3').setArray(new Float32Array([0,0,1,1,0,1,0,1,1])))
-    .setAttribute('TEXCOORD_0',document.createAccessor().setType('VEC2').setArray(new Float32Array([0,0,1,0,0,1])))
-    .setIndices(document.createAccessor().setType('SCALAR').setArray(new Uint16Array([0,1,2]))));
+    .setAttribute('POSITION',document.createAccessor().setBuffer(buffer).setType('VEC3').setArray(new Float32Array([0,0,1,1,0,1,0,1,1])))
+    .setAttribute('TEXCOORD_0',document.createAccessor().setBuffer(buffer).setType('VEC2').setArray(new Float32Array([0,0,1,0,0,1])))
+    .setIndices(document.createAccessor().setBuffer(buffer).setType('SCALAR').setArray(new Uint16Array([0,1,2]))));
   scene.addChild(document.createNode('body').setMesh(body));
   scene.addChild(document.createNode('turret mount').setMesh(turret));
   await io.write(original,document);
