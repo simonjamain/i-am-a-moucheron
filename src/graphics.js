@@ -161,6 +161,61 @@ export function createGraphics(T, scene) {
     scene.add(g);
     return g;
   }
+  // Temporary low-poly body. The Meshy exports have separate hull, gun and wheel,
+  // but cannot be imported until their actual GLB files are accessible.
+  function makeCastor() {
+    const g = new T.Group();
+    const olive = '#647a4d';
+    const dark = '#2c4138';
+    box(0, 0.15, 0, 4.4, 1.05, 8.5, olive, g);
+    box(0, 1, -2.15, 3.9, 1.7, 3.35, olive, g);
+    box(0, 1.23, -3.84, 3.25, 0.83, 0.09, '#94bbbf', g);
+    box(0, 1.15, 1.9, 3.3, 1.2, 3.5, dark, g);
+    for (const x of [-1.1, 1.1]) box(x, 1.83, 1.8, 0.7, 0.55, 1.3, '#d6ae53', g);
+    box(0, 1.89, 2.3, 1.4, 0.65, 1.25, '#8fa17b', g);
+    box(0, 1, 4.16, 2.8, 0.5, 0.36, '#d8af53', g);
+    for (const x of [-1.6, 1.6]) box(x, 0.46, -4.28, 0.45, 0.3, 0.1, '#ede8b5', g);
+    const wheels = [];
+    const wheelGeometry = new T.CylinderGeometry(0.85, 0.85, 0.65, 10);
+    for (const z of [-2.6, 0.3, 2.7]) {
+      for (const x of [-2.37, 2.37]) {
+        const axle = new T.Group();
+        axle.position.set(x, -0.32, z);
+        const tyre = new T.Mesh(wheelGeometry, mat('#202b2a'));
+        tyre.rotation.z = Math.PI / 2;
+        tyre.castShadow = true;
+        axle.add(tyre);
+        const hub = cyl(0, 0, 0, 0.37, 0.37, 0.7, '#b6ad75', axle);
+        hub.rotation.z = Math.PI / 2;
+        g.add(axle);
+        wheels.push(axle);
+      }
+    }
+    const mount = new T.Group();
+    mount.position.set(0, 2.2, -1.05);
+    g.add(mount);
+    cyl(0, 0, 0, 0.6, 0.65, 0.28, dark, mount);
+    const pitch = new T.Group();
+    pitch.position.y = 0.2;
+    mount.add(pitch);
+    box(0, 0, -0.25, 0.85, 0.55, 0.9, olive, pitch);
+    box(0, -0.03, -1.02, 0.14, 0.14, 1.2, '#303c39', pitch);
+    const muzzle = new T.Object3D();
+    muzzle.position.set(0, -0.03, -1.65);
+    pitch.add(muzzle);
+    mount.userData = { pitch, muzzle, coaxMuzzle: muzzle };
+    g.userData = {
+      preserveTexture: true,
+      wheels,
+      turrets: [mount],
+      pilotMuzzles: [muzzle],
+      muzzles: [muzzle],
+      prop: new T.Object3D(),
+      wing: new T.Object3D(),
+    };
+    scene.add(g);
+    return g;
+  }
   function makeHelicopter(color) {
     return makeH2(T, scene, color, box, mat);
   }
@@ -404,6 +459,7 @@ export function createGraphics(T, scene) {
     makeBomb,
     makeTank,
     makeFlakTruck,
+    makeCastor,
     makeHelicopter,
     insect,
     humanoid,

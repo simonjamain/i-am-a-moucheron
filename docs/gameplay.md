@@ -300,3 +300,10 @@ d’avancer. Retirez un ventilateur avec **Enlever** pour rétablir progressivem
 le parcours. Le départ et l’arrivée restent fixes.
 
 Le [bombardier B3 à quatre places](b3-model.md) conserve son camouflage Meshy ; un disque coloré au-dessus identifie l’appareil.
+
+
+## G1 Castor (première étape, version 179)
+
+Le **G1 Castor** est un camion monoplace à six roues, achetable pour **12 $** avec le bon signé des véhicules. Z/S et Q/D permettent de conduire ; la souris vise sa mitrailleuse légère (500 balles, recharges payantes). **V** bascule une vue tactique surélevée. Plus rapide que le tank, il possède un rayon de soutien sphérique de **50 cm** qui peut soigner et ravitailler les alliés en mouvement ou en vol et se réapprovisionner lui-même. Le service utilise la caisse commune.
+
+**La construction en roulant n'est pas encore disponible dans ce premier lot.** Le modèle basse définition est **provisoire**, les trois modèles texturés Meshy (châssis, tourelle et roue) attendent leur import. Voir [l'issue #76](https://github.com/simonjamain/i-am-a-moucheron/issues/76) et [la note de reprise](tasks/g1-castor.md).

@@ -210,6 +210,7 @@ const {
   makeBomb,
   makeTank,
   makeFlakTruck,
+  makeCastor,
   makeHelicopter,
   insect,
   humanoid,
@@ -285,6 +286,7 @@ const arrivalSignals = new ArrivalSignals();
 const turretAim = { yaw: 0, pitch: 0.2 };
 const heliTurretAim = { yaw: 0, pitch: -0.1 };
 let selectedEquipment = null;
+let castorTacticalView = false;
 let optimisticExitPending = false;
 let onFoot = true,
   baseArena = null,
@@ -579,7 +581,7 @@ function localMotion() {
     p: me.position.toArray(),
     q: me.quaternion.toArray(),
     v: vel.toArray(),
-    hp: Math.max(0, Math.min(myVehicle?.type === 'helicopter' ? 200 : 100, hp)),
+    hp: Math.max(0, Math.min(VEHICLES[myVehicle?.type]?.maxHP || 100, hp)),
     type: myVehicle?.type,
     collective:
       myVehicle?.type === 'helicopter' && crewSeat === 'pilot'
@@ -870,7 +872,12 @@ function updateAimHUD() {
   }
   camera.updateMatrixWorld();
   place(aim, mouseDirection);
-  place(gun, new T.Vector3(0, 0, -1).applyQuaternion(me.quaternion));
+  place(
+    gun,
+    myVehicle?.type === 'castor'
+      ? mouseDirection
+      : new T.Vector3(0, 0, -1).applyQuaternion(me.quaternion),
+  );
 }
 updateControlHUD();
 const params = new URLSearchParams(location.search);
@@ -1491,6 +1498,12 @@ addEventListener('keydown', (event) => {
       }
       return;
     }
+  }
+  if (interactionKey === 'KeyV' && myVehicle?.type === 'castor' && !event.repeat) {
+    event.preventDefault();
+    castorTacticalView = !castorTacticalView;
+    notify(castorTacticalView ? 'Vue tactique du Castor' : 'Vue de conduite du Castor', 2);
+    return;
   }
   const exitAction = equipmentExitAction({
     key: interactionKey,
@@ -2446,6 +2459,7 @@ function turretDirection(aim = turretAim) {
   );
 }
 function weaponDirection() {
+  if (myVehicle?.type === 'castor' && crewSeat === 'pilot') return mouseDirection.clone();
   if (myVehicle?.type === 'helicopter' && crewSeat === 'pilot')
     return new T.Vector3(0, 0, -1).applyQuaternion(me.quaternion);
   const d = turretDirection(
@@ -3148,19 +3162,21 @@ function vehicleModel(v) {
   let g = fleetModels.get(v.id);
   if (!g) {
     g =
-      v.type === 'helicopter'
-        ? makeHelicopter('#7b8155')
-        : v.type === 'flaktruck'
-          ? makeFlakTruck('#7b8155')
-          : v.type === 'spitfire'
-            ? makeSpitfire('#7b8155')
-            : v.type === 'tank'
-              ? makeTank('#7b8155')
-              : v.type === 'interceptor'
-                ? makeStuka('#7b8155')
-                : v.type === 'bomber'
-                  ? makeBomber('#c5ba92')
-                  : makePlane('#7b8155');
+      v.type === 'castor'
+        ? makeCastor()
+        : v.type === 'helicopter'
+          ? makeHelicopter('#7b8155')
+          : v.type === 'flaktruck'
+            ? makeFlakTruck('#7b8155')
+            : v.type === 'spitfire'
+              ? makeSpitfire('#7b8155')
+              : v.type === 'tank'
+                ? makeTank('#7b8155')
+                : v.type === 'interceptor'
+                  ? makeStuka('#7b8155')
+                  : v.type === 'bomber'
+                    ? makeBomber('#c5ba92')
+                    : makePlane('#7b8155');
     paintVehicle(
       T,
       g,
@@ -3207,6 +3223,21 @@ function updateOthers(dt) {
       g.quaternion.slerp(new T.Quaternion().fromArray(motion.q), 1 - Math.exp(-24 * dt));
     }
     if (g.userData.trailer) g.userData.trailer.rotation.y = motion.trailerAngle || 0;
+    if (g.userData.wheels) {
+      const speed = new T.Vector3().fromArray(motion.v).length() / ACTOR_UNIT;
+      for (const wheel of g.userData.wheels) wheel.rotation.x += speed * dt * 0.35;
+    }
+    if (v.type === 'castor') {
+      const mount = g.userData.turrets[0];
+      aimGun(
+        T,
+        mount,
+        isSelf
+          ? mouseDirection.clone()
+          : new T.Vector3().fromArray(motion.turretDirection || [0, 0, -1]),
+        mount.parent.getWorldQuaternion(new T.Quaternion()),
+      );
+    }
     if (g.userData.rotor) {
       const rotation =
         dt * (v.state.engine && v.supplies.fuel > 0 ? 35 * (motion.rotorPower ?? 1) : 0);
@@ -3280,13 +3311,16 @@ function updateOthers(dt) {
             g,
             'pilot:' + (p?.id || ''),
             dt,
-            FIRE_INTERVAL *
+            (v.type === 'castor' ? 0.16 : FIRE_INTERVAL) *
               (clauseFactors(p?.contractClause).interval / (snap?.balance?.fireRate ?? 1)),
             !!motion.fire && v.supplies?.ammo.pilot >= 1,
           )
         : 0;
     for (let shot = 0; shot < remotePilotRounds; shot++) {
-      const direction = new T.Vector3(0, 0, -1).applyQuaternion(g.quaternion);
+      const direction =
+        v.type === 'castor'
+          ? new T.Vector3().fromArray(motion.turretDirection || [0, 0, -1]).normalize()
+          : new T.Vector3(0, 0, -1).applyQuaternion(g.quaternion);
       if (v.type === 'spitfire') {
         g.updateWorldMatrix(true, true);
         g.userData.remoteSalvos ??= new GunSalvos();
@@ -3333,7 +3367,12 @@ function bullet(pos, dir, color = '#f4efab', owned = false, aa = false) {
       wave: snap?.wave,
       damageFactor: currentFactors().damage,
       weapon: currentAmmoKey(),
-      baseDamage: myVehicle.type === 'tank' ? TANK_MG[currentAmmoKey()].damage : 75,
+      baseDamage:
+        myVehicle.type === 'castor'
+          ? 20
+          : myVehicle.type === 'tank'
+            ? TANK_MG[currentAmmoKey()].damage
+            : 75,
       velocity: crewSeat === 'pilot' ? vel.clone() : new T.Vector3().fromArray(myVehicle.state.v),
     };
     const vehicle = myVehicle.id,
@@ -3694,16 +3733,25 @@ function physics(dt) {
     if (me.userData.trailer) me.userData.trailer.rotation.y = state.trailerAngle || 0;
     landed = state.landed;
     gas = state.gas;
-    shooting = myVehicle.type === 'tank' && active && hasAmmo() && (mouseFire || manual.fire);
+    shooting =
+      ['tank', 'castor'].includes(myVehicle.type) &&
+      active &&
+      hasAmmo() &&
+      (mouseFire || manual.fire);
     const burst = advanceAutomaticFire(
       cooldown,
       dt,
-      TANK_MG.pilot.interval * (currentFactors().interval / (snap?.balance?.fireRate ?? 1)),
+      (myVehicle.type === 'castor' ? 0.16 : TANK_MG.pilot.interval) *
+        (currentFactors().interval / (snap?.balance?.fireRate ?? 1)),
       shooting,
     );
     cooldown = burst.cooldown;
     for (let shot = 0; shot < burst.shots; shot++)
-      shoot(new T.Vector3(0, 0, -1).applyQuaternion(me.quaternion));
+      shoot(
+        myVehicle.type === 'castor'
+          ? mouseDirection.clone()
+          : new T.Vector3(0, 0, -1).applyQuaternion(me.quaternion),
+      );
     return;
   }
   const active = controlFocus.active && canCapture();
@@ -4134,7 +4182,13 @@ function frame(now) {
         .multiply(
           new T.Quaternion().setFromEuler(new T.Euler(freeLook.pitch, freeLook.yaw, 0, 'YXZ')),
         );
-      const offset = new T.Vector3(0, 3.5, 11).multiplyScalar(ACTOR_UNIT).applyQuaternion(orbit);
+      const offset = new T.Vector3(
+        0,
+        myVehicle?.type === 'castor' ? (castorTacticalView ? 32 : 6) : 3.5,
+        myVehicle?.type === 'castor' ? (castorTacticalView ? 15 : 11) : 11,
+      )
+        .multiplyScalar(ACTOR_UNIT)
+        .applyQuaternion(orbit);
       camera.position.lerp(me.position.clone().add(offset), 1 - Math.exp(-10 * dt));
       camera.up.set(0, 1, 0).applyQuaternion(orbit);
       camera.lookAt(
@@ -4226,6 +4280,7 @@ const ghosts = {
   interceptor: makeStuka('#badb84'),
   helicopter: makeHelicopter('#badb84'),
   flaktruck: makeFlakTruck('#badb84'),
+  castor: makeCastor(),
   tank: makeTank('#badb84'),
   spitfire: makeSpitfire('#badb84'),
 };

@@ -182,3 +182,6 @@ pour quitter. Prix, conditions et navigation : [gameplay](gameplay.md#défenses-
 Molette maintenue : orienter vers un secteur puis relâcher pour choisir. Clic gauche : fixer un début sans orientation, viser la fin (en marchant si nécessaire), puis cliquer à nouveau pour poser le mur ou le ruban. Le sucre, la réparation et la suppression demandent un seul clic.
 
 Sur le [bombardier B3](b3-model.md), **4** demande le poste ventral avec signature ; **1 / 2 / 3** restent pilote, dorsal et queue.
+
+
+G1 Castor : Z/S avancer/reculer, Q/D tourner, souris et clic gauche pour tirer avec la mitrailleuse légère, **V** bascule la caméra tactique surélevée. Le soutien à 50 cm est automatique et payant. La construction depuis le camion sera ajoutée dans un lot ultérieur.

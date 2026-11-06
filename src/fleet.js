@@ -83,6 +83,21 @@ VEHICLES.flaktruck = {
   ground: true,
   articulated: true,
 };
+// Fast single-seat construction and resupply truck; Meshy art follows later.
+VEHICLES.castor = {
+  name: 'G1 Castor',
+  seats: ['pilot'],
+  span: 6,
+  length: 9,
+  maxSpeed: 26,
+  thrust: 6,
+  drag: 0.1,
+  liftBase: 0,
+  turn: 1.1,
+  gear: 0.8 * ACTOR_UNIT,
+  ground: true,
+};
+
 export const SEAT_NAMES = {
   pilot: 'Pilote',
   copilot: 'Copilote armement',

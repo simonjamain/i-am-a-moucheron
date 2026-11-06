@@ -8,6 +8,7 @@ export function ammoCapacity(type, seat, balance = null) {
   if (balance) return Math.round(ammoCapacity(type, seat) * balance.ammo);
   if (type === 'helicopter')
     return seat === 'rocket' ? 30 : seat === 'missile' ? 10 : seat === 'copilot' ? 1000 : 0;
+  if (type === 'castor') return seat === 'pilot' ? 500 : 0;
   if (type === 'flaktruck') return seat === 'proximity' ? 100 : 0;
   if (type === 'tank')
     return seat === 'he' || seat === 'ap'

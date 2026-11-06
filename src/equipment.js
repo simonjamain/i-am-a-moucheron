@@ -68,6 +68,12 @@ export const SHOP = Object.freeze({
     kind: 'vehicle',
     description: 'Un exemplaire, trois postes indépendants ; toutes munitions limitées.',
   },
+  castor: {
+    name: 'G1 Castor · génie mobile',
+    cost: 12,
+    kind: 'vehicle',
+    description: 'Camion monoplace rapide avec mitrailleuse et ravitaillement mobile dans un rayon de 50 cm.',
+  },
   engine: {
     name: 'Motorisation',
     cost: 4,

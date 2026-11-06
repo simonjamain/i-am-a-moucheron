@@ -20,3 +20,17 @@
 - Cinquième CI : test-paid-service a révélé que les capacités de munitions appliquaient un multiplicateur `undefined` lorsqu'on passe une balance partielle vide. Le service utilise désormais les capacités de base en l'absence de `balance.ammo`.
 
 - Contrôle de dette : les prêts peuvent laisser la caisse négative. Ne pas annuler cette dette lors d'un tick de service : aucun service si solde négatif, mais conserver le solde réel.
+
+## Lot 2 — pilotage et soutien
+- Branche : `feat/castor-drivable-support`, issue #76 partiellement couverte.
+- Fait dans la branche : Castor signé à 12 $, conduite monoplace, mitrailleuse légère (500 balles), vue tactique V, soutien sphérique mobile 50 cm incluant son propre entretien. Maquette 6 roues articulées et tourelle, **pas les exports Meshy**.
+- Restant : import des 3 modèles texturés Meshy, construction continue en roulant, service des barricades/pistolets/DCA fixes, défenses exclusives et cartes ; essai WebGL/UDP humain.
+- Contrôles à effectuer sur le commit final : suite complète, format, documentation, build/artefact, GitHub Actions Docker build ; pas de Docker ni clone GitHub réseau direct dans cet environnement.
+
+- Première CI PR #79 : la compatibilité Worker/D1 créait le Castor gratuitement à la connexion car sa boucle historique énumérait toutes les entrées de `VEHICLES`. Exclusion explicite : **le Castor relève uniquement des achats Node/UDP**. Remise du `server/game.js` historique : PV inchangés à 100, pas de changement d'autorité santé nécessaire dans ce lot. Le build Docker et les tests doivent être relancés sur le commit de correction.
+
+- CI complémentaire : les tests de durée standard des munitions sont désormais exclus pour le Castor : sa MG 500 balles a volontairement une cadence réduite, avec couverture dédiée dans `test-castor.mjs`.
+
+- Les tests Node, y compris celui du Castor, passent sur la CI précédente. Reste un contrôle de formatage de `src/client.js` et `docs/code-structure.md` à corriger, puis réexécution complète.
+
+- Diagnostic temporaire de formatage Prettier exécuté dans CI, puis retiré du test : seul le retrait d'une ligne blanche et l'alignement d'une chaîne de ternaires étaient nécessaires. Les tests de domaine et la suite complète avaient passé ; attendre les cinq jobs sur le dernier SHA avant fusion.
