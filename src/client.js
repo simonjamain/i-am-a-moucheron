@@ -1362,21 +1362,60 @@ async function action(path, extra = {}) {
 }
 const waveCouncil = new WaveCouncilUI({ document, command: action, releaseMouse });
 const forecastScene = new WaveForecastScene(T, scene, textLabel);
+function castorBuilder() {
+  if (myVehicle?.type !== 'castor' || crewSeat !== 'pilot' || respawnAt) return null;
+  const rear = new T.Vector3(0, 0, VEHICLES.castor.length * 0.5 * ACTOR_UNIT)
+    .applyQuaternion(me.quaternion)
+    .add(me.position);
+  return {
+    x: me.position.x,
+    y: me.position.y - VEHICLES.castor.gear,
+    z: me.position.z,
+    grounded: landed,
+    parachute: false,
+    rear: [rear.x, rear.z],
+  };
+}
 const groundDefenseUI = new GroundDefenseUI({
   T,
   scene,
   document,
   snapshot: () => snap,
-  aim: () => cameraPlacement(0.24),
+  aim: () => {
+    const builder = castorBuilder();
+    return builder
+      ? placementAim(
+          builder,
+          camera.position,
+          camera.getWorldDirection(new T.Vector3()),
+          colliders,
+          0.24,
+        )
+      : cameraPlacement(0.24);
+  },
   foot: () => {
+    const builder = castorBuilder();
+    if (builder) return builder;
     const b = selfBase();
     return b && { ...b, ...baseWorld(b) };
   },
+  builder: castorBuilder,
   enabled: () => canCapture() && !placingEquipment,
   captureMouse,
-  available: () => joined && onFoot && !myVehicle && !spectating && !respawnAt,
-  command: (body) =>
-    action('ground-defense', { epoch: snap.base.epoch, ground: groundReport(), ...body }),
+  available: () =>
+    joined &&
+    !spectating &&
+    !respawnAt &&
+    ((onFoot && !myVehicle) || !!castorBuilder()),
+  command: async (body) => {
+    try {
+      accept(await api('ground-defense', { id, epoch: snap.base.epoch, ground: groundReport(), ...body }));
+      return true;
+    } catch (error) {
+      notify(error.message, 3);
+      return false;
+    }
+  },
   notify,
   releaseMouse,
 });

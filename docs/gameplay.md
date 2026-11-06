@@ -307,3 +307,8 @@ Le [bombardier B3 à quatre places](b3-model.md) conserve son camouflage Meshy ;
 Le **G1 Castor** est un camion monoplace à six roues, achetable pour **12 $** avec le bon signé des véhicules. Z/S et Q/D permettent de conduire ; la souris vise sa mitrailleuse légère (500 balles, recharges payantes). **V** bascule une vue tactique surélevée. Plus rapide que le tank, il possède un rayon de soutien sphérique de **50 cm** qui peut soigner et ravitailler les alliés en mouvement ou en vol et se réapprovisionner lui-même. Le service utilise la caisse commune.
 
 **La construction en roulant n'est pas encore disponible dans ce premier lot.** Le modèle basse définition est **provisoire**, les trois modèles texturés Meshy (châssis, tourelle et roue) attendent leur import. Voir [l'issue #76](https://github.com/simonjamain/i-am-a-moucheron/issues/76) et [la note de reprise](tasks/g1-castor.md).
+
+
+### Construction depuis le Castor (version 185)
+
+Sur le sol du bureau, le conducteur du G1 Castor ouvre la roue de défense par **clic molette**. Pour les **barricades LEGO** et les **rubans**, un clic gauche engage la dépose continue **derrière le camion** pendant qu'il roule et un autre clic arrête. La pose est interrompue en cas d'impossibilité (caisse vide, obstacle, écart trop grand), de changement de conducteur ou de zone. Les segments sont facturés un par un, au tarif de 1 $ chacun, sans achat anticipé ; le chemin peut donc être préparé en mouvement. Les pièges ponctuels (sucre, ventilateur), la réparation et le retrait utilisent la visée de caméra comme à pied. Le placement conserve les contraintes du bureau et la validation autoritaire Node ; il ne permet pas de construire depuis un bureau surélevé ou à distance.

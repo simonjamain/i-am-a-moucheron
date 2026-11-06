@@ -185,3 +185,6 @@ Sur le [bombardier B3](b3-model.md), **4** demande le poste ventral avec signatu
 
 
 G1 Castor : Z/S avancer/reculer, Q/D tourner, souris et clic gauche pour tirer avec la mitrailleuse légère, **V** bascule la caméra tactique surélevée. Le soutien à 50 cm est automatique et payant. La construction depuis le camion sera ajoutée dans un lot ultérieur.
+
+
+Castor au sol : clic molette ouvre la roue de construction, clic gauche active/arrête la pose continue de mur LEGO ou de ruban pendant la conduite (1 $ par segment). Les outils ponctuels se posent au point visé comme à pied. Échap interrompt la construction, la conduite reste disponible ; V élève la caméra.

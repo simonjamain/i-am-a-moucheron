@@ -156,3 +156,8 @@ G1 Castor (issue #76) : `fleet.js` définit le véhicule monoplace,
 `graphics.js` fournit la maquette provisoire à six roues et tourelle mobile, et
 `client.js` la conduite, la visée et la caméra surélevée. Les trois imports Meshy
 restent à intégrer.
+
+La construction embarquée dans le Castor partage `GroundDefenseUI` et
+`groundPlacement` avec les piétons. `server/game.js` vérifie le véhicule et
+les coordonnées de chaque segment par rapport à sa position, facture chaque
+pose et déduplique les requêtes grâce à un identifiant par action.

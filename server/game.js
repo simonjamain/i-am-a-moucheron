@@ -154,6 +154,7 @@ function roomState(code, now) {
     enemyDamage: {},
     equipment: [],
     groundDefense: newGroundDefense(),
+    groundDefenseOrders: new Map(),
     groundEnabled: false,
     groundAgents: {},
     groundWave: -1,
@@ -1206,17 +1207,51 @@ export class Game {
     return result;
   }
   groundDefenseCommand(r, p, b) {
+    // The pilot may place a defense while driving, but the server uses only
+    // its accepted vehicle position (never coordinates supplied by the client).
+    const vehicle = r.vehicles.get(p.vehicle_id);
+    const castor =
+      p.life === 'alive' &&
+      p.mode === 'flight' &&
+      p.seat === 'pilot' &&
+      vehicle?.type === 'castor' &&
+      vehicle.seats.get('pilot') === p.id &&
+      vehicle.state.hp > 0;
     requireGame(
-      p.life === 'alive' && p.mode === 'foot',
-      'Construction réservée aux joueurs à pied.',
+      (p.life === 'alive' && p.mode === 'foot') || castor,
+      'Construction réservée aux joueurs à pied et au conducteur du Castor.',
     );
     requireGame(b?.epoch === r.base.epoch, 'La partie a changé ; recommencez la pose.');
-    const body = this.base(r, p, b.ground);
-    requireGame(
-      body && body.grounded && !body.parachute && body.y < 0.025,
-      'Rejoignez le sol du bureau pour construire.',
-    );
-    const w = baseWorld(body);
+    const token = b.request;
+    if (token !== undefined)
+      requireGame(
+        typeof token === 'string' && /^[a-zA-Z0-9:_-]{8,120}$/.test(token),
+        'Identifiant de construction invalide.',
+      );
+    const key = token && p.id + ':' + token;
+    if (key && r.groundDefenseOrders.has(key)) return;
+    let w;
+    if (castor) {
+      requireGame(
+        vehicle.state.landed &&
+          Math.abs(vehicle.state.p[1] - VEHICLES.castor.gear) < 0.025,
+        'Le Castor doit rouler sur le sol du bureau.',
+      );
+      w = { x: vehicle.state.p[0], z: vehicle.state.p[2] };
+      if (b.action === 'build' && Array.isArray(b.b) && b.b.length === 2)
+        requireGame(
+          b.b.every(Number.isFinite) &&
+            Math.hypot(b.b[0] - w.x, b.b[1] - w.z) <= 0.27,
+          'Le Castor doit rester près de la construction.',
+        );
+    } else {
+      const body = this.base(r, p, b.ground);
+      requireGame(
+        body && body.grounded && !body.parachute && body.y < 0.025,
+        'Rejoignez le sol du bureau pour construire.',
+      );
+      w = baseWorld(body);
+    }
     let transaction;
     try {
       transaction = groundCommand(
@@ -1230,6 +1265,11 @@ export class Game {
       requireGame(false, error.message, 400);
     }
     r.dollars = money(r.dollars - transaction.price);
+    if (key) {
+      r.groundDefenseOrders.set(key, true);
+      if (r.groundDefenseOrders.size > 2048)
+        r.groundDefenseOrders.delete(r.groundDefenseOrders.keys().next().value);
+    }
   }
   pistolTrace(r, p, b) {
     requireGame(

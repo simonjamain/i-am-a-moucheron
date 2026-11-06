@@ -34,3 +34,9 @@
 - Les tests Node, y compris celui du Castor, passent sur la CI précédente. Reste un contrôle de formatage de `src/client.js` et `docs/code-structure.md` à corriger, puis réexécution complète.
 
 - Diagnostic temporaire de formatage Prettier exécuté dans CI, puis retiré du test : seul le retrait d'une ligne blanche et l'alignement d'une chaîne de ternaires étaient nécessaires. Les tests de domaine et la suite complète avaient passé ; attendre les cinq jobs sur le dernier SHA avant fusion.
+
+## Lot 3 — construction embarquée
+- Branche : `feat/castor-rolling-construction`, issue #76 partiellement couverte.
+- Ajouts : construction dans le Castor (pilotage toujours disponible), tracé automatique de segments derrière la roue arrière lorsque le camion roule, possibilité de poser sucre, ventilateur, réparer et supprimer depuis la caméra ; vérification serveur du pilote, distance, sol et budget ; jetons de pose dédupliqués. Échec et déconnexion interrompent la pose.
+- Limites : cette pose est encore prototype : segment de 7,5 à 10 cm / 1 $ ; pas de bonus de vitesse ni de défenses exclusives pour le moment. Pas de test de ressenti WebGL/WAN ni intégration des GLB Meshy.
+- À vérifier : `scripts/test-castor-building.mjs`, suite complète, format, documentation, artefact, Docker build GitHub Actions, puis essai de jeu humain.
