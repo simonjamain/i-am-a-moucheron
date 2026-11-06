@@ -11,7 +11,7 @@ défaut. Le jeu et la flotte existante ne changent pas dans cette PR.
 
 ## Prochaines actions
 - Vérifier l'exécution du job **Asset tool Docker and UV tests** sur le commit.
-- Ajouter un lockfile complet npm pour rendre la construction figée.
+- Le lockfile npm complet est maintenant conservé, et l'image utilise npm ci.
 - Compléter un essai sur un véritable GLB Meshy segmenté, mesure visuelle et
   repères/animations avant toute activation en jeu.
 - Évaluer l'adaptation contrôlée des importeurs Python Meshy vers un dérivé

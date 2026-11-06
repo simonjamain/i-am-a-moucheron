@@ -25,13 +25,6 @@ jobs:
           load: true
           push: false
           tags: i-am-a-moucheron-asset-tools:local
-      - name: Export generated lockfile to logs (temporary bootstrap)
-        run: |
-          docker run --rm --entrypoint cat i-am-a-moucheron-asset-tools:local /opt/assets/package-lock.json > /tmp/asset-lock.json
-          echo ASSET_LOCK_BEGIN
-          base64 -w0 /tmp/asset-lock.json
-          echo
-          echo ASSET_LOCK_END
       - name: Exercise textured GLB optimization in the container
         run: docker run --rm --network none --read-only --tmpfs /tmp --cap-drop ALL --security-opt no-new-privileges i-am-a-moucheron-asset-tools:local selftest
       - name: Validate Compose config
