@@ -26,6 +26,8 @@ const noMoney = advancePaidService([a], [station], 0);
 assert.equal(noMoney.spent, 0);
 assert.equal(a.state.hp, 50);
 assert.equal(a.supplies.fuel, 0);
+assert.equal(advancePaidService([a], [station], -5).dollars, -5, 'existing bank debt survives');
+assert.equal(a.state.hp, 50, 'no service can be bought while in debt');
 const limited = advancePaidService([a, b], [station], 0.1);
 assert.ok(Math.abs(limited.spent - 0.1) < 1e-9);
 assert.equal(limited.dollars, 0);

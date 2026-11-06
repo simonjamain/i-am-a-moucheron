@@ -18,3 +18,5 @@
 - Quatrième CI : test-backlog-return initialise maintenant la caisse pour un service payant, et exige la réparation progressive du moteur/des ailes (plutôt que leur remise instantanée et gratuite).
 
 - Cinquième CI : test-paid-service a révélé que les capacités de munitions appliquaient un multiplicateur `undefined` lorsqu'on passe une balance partielle vide. Le service utilise désormais les capacités de base en l'absence de `balance.ammo`.
+
+- Contrôle de dette : les prêts peuvent laisser la caisse négative. Ne pas annuler cette dette lors d'un tick de service : aucun service si solde négatif, mais conserver le solde réel.

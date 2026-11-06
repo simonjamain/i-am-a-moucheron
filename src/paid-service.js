@@ -107,7 +107,7 @@ export function advancePaidService(fleet, installations, dollars, balance = {}, 
     spent += paid;
   }
   return {
-    dollars: Math.max(0, Math.round((dollars - spent) * 1e6) / 1e6),
+    dollars: Math.round((dollars - spent) * 1e6) / 1e6,
     spent,
     recipients: jobs.length,
   };
