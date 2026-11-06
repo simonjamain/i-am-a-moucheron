@@ -285,14 +285,7 @@ export class Game {
       const now = Math.max(this.now(), v.updated);
       v.supplies = {
         ...v.supplies,
-        ...advanceSupplies(
-          v.supplies,
-          v.state,
-          v.type,
-          [],
-          (now - v.updated) / 1000,
-          r.balance,
-        ),
+        ...advanceSupplies(v.supplies, v.state, v.type, [], (now - v.updated) / 1000, r.balance),
         revision: v.supplies.revision + 1,
       };
       v.updated = now;

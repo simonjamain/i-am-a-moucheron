@@ -10,3 +10,5 @@
 - Prochaine action : vérifier CI du premier lot, corriger si nécessaire, puis prendre l'intégration du Castor et des GLB Meshy dans une branche dédiée. Les tests réseau et pilotage réel resteront à mener.
 
 - Correctif après première CI : le test d'absence de ravitaillement déplace désormais l'avion hors de la zone (le service en vol est devenu intentionnel). Ajustement du test de période (le tick est borné à 5 s). Le résultat dépend de la nouvelle CI.
+
+- Deuxième CI : le test du tank doit aussi quitter le rayon d'Alpha, sinon le rechargement payant en vol annule le débit d'un obus. Le formatage du nouveau bloc serveur est corrigé.
