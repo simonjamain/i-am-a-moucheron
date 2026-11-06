@@ -14,3 +14,5 @@
 - Deuxième CI : le test du tank doit aussi quitter le rayon d'Alpha, sinon le rechargement payant en vol annule le débit d'un obus. Le formatage du nouveau bloc serveur est corrigé.
 
 - Troisième CI : la régression de réparation (test-comfort) reposait sur la gratuité, l'immobilisation et 10 s en un seul appel ; elle prévoit désormais le service payant, réparation même en mouvement, et les 5 s bornées par tick.
+
+- Quatrième CI : test-backlog-return initialise maintenant la caisse pour un service payant, et exige la réparation progressive du moteur/des ailes (plutôt que leur remise instantanée et gratuite).

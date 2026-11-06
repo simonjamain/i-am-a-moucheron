@@ -52,6 +52,7 @@ const game = new Game({ now: () => now, solids: [floor] });
 const joined = game.join({ code: 'RETURNS', name: 'Tester' });
 const room = game.rooms.get('RETURNS');
 const pilot = room.pilots.get(joined.id);
+room.dollars = 1000;
 for (const type of Object.keys(VEHICLES)) {
   const v = game.createVehicle(room, type, 'purchase', { x: 0, y: 0, z: 0 });
   v.state.hp = 20;
@@ -60,10 +61,12 @@ for (const type of Object.keys(VEHICLES)) {
   v.supplies = { ...v.supplies, fuel: 300, ammo: fullAmmo(type) };
   room.equipment = [{ kind: 'refuel', x: 0, y: 0, z: 0 }];
   now += 1000;
+  const beforeCash = room.dollars;
   game.fleet(room);
-  assert.ok(v.state.hp > 20);
-  assert.equal(v.state.engine, 1);
-  assert.equal(v.state.wing, 1);
+  assert.ok(v.state.hp > 20, 'paid station restores hull');
+  assert.ok(room.dollars < beforeCash, 'repair is billed');
+  assert.equal(v.state.engine, 0.1, 'motor repaired progressively');
+  assert.equal(v.state.wing, 0.1, 'wing repaired progressively');
 }
 const v = game.createVehicle(room, 'helicopter', 'purchase', { x: 1, y: 1, z: 0 });
 pilot.vehicle_id = v.id;
