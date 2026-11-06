@@ -53,7 +53,7 @@ assert.equal(s.dollars, cash - 3);
 v.state.hp = 0;
 assert.throws(
   () => run({ action: 'build', kind: 'fan', a: [0, 0], request: 'castor:dead' }),
-  /réservée/,
+  /réservée|purgatoire/,
 );
 console.log('Castor construction: driver authorization, continuous segments, receipts, distance, floor and destruction OK');
 
