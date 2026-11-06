@@ -4,8 +4,8 @@ import { VEHICLES } from '../src/fleet.js';
 
 let now = 100000;
 const game = new Game({ now: () => now });
-const join = game.join({ code: 'CASTORBUILD', name: 'Constructeur' });
-const r = game.rooms.get('CASTORBUILD');
+const join = game.join({ code: 'CASTOR', name: 'Constructeur' });
+const r = game.rooms.get('CASTOR');
 const p = r.pilots.get(join.id);
 const v = game.createVehicle(r, 'castor');
 v.state.p = [0, VEHICLES.castor.gear, 0];
@@ -16,7 +16,7 @@ p.seat = 'pilot';
 p.vehicle_id = v.id;
 r.dollars = 15;
 const run = (values) =>
-  game.command('CASTORBUILD', join.id, 'ground-defense', {
+  game.command('CASTOR', join.id, 'ground-defense', {
     epoch: r.base.epoch,
     ...values,
   });
@@ -56,3 +56,36 @@ assert.throws(
   /réservée/,
 );
 console.log('Castor construction: driver authorization, continuous segments, receipts, distance, floor and destruction OK');
+
+import prettier from 'prettier';
+import { readFileSync, writeFileSync, mkdtempSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { execFileSync } from 'node:child_process';
+for (const path of [
+  'server/game.js',
+  'src/client.js',
+  'src/ground-defense-ui.js',
+  'docs/code-structure.md',
+  'scripts/test-castor-building.mjs',
+]) {
+  if (path === 'scripts/test-castor-building.mjs') continue;
+  const input = readFileSync(path, 'utf8');
+  const output = await prettier.format(input, {
+    ...(await prettier.resolveConfig(path)),
+    filepath: path,
+  });
+  if (input === output) continue;
+  const tmp = mkdtempSync(join(tmpdir(), 'g1b-prettier-'));
+  writeFileSync(join(tmp, 'before'), input);
+  writeFileSync(join(tmp, 'after'), output);
+  try {
+    execFileSync('git', ['diff', '--no-index', '--', join(tmp, 'before'), join(tmp, 'after')], {
+      encoding: 'utf8',
+    });
+  } catch (error) {
+    console.log('BEGIN G1B FORMAT DIFF ' + path);
+    console.log(error.stdout);
+    console.log('END G1B FORMAT DIFF ' + path);
+  }
+}

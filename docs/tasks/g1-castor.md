@@ -40,3 +40,5 @@
 - Ajouts : construction dans le Castor (pilotage toujours disponible), tracé automatique de segments derrière la roue arrière lorsque le camion roule, possibilité de poser sucre, ventilateur, réparer et supprimer depuis la caméra ; vérification serveur du pilote, distance, sol et budget ; jetons de pose dédupliqués. Échec et déconnexion interrompent la pose.
 - Limites : cette pose est encore prototype : segment de 7,5 à 10 cm / 1 $ ; pas de bonus de vitesse ni de défenses exclusives pour le moment. Pas de test de ressenti WebGL/WAN ni intégration des GLB Meshy.
 - À vérifier : `scripts/test-castor-building.mjs`, suite complète, format, documentation, artefact, Docker build GitHub Actions, puis essai de jeu humain.
+
+- CI initiale PR #80 : le test de domaine utilisait un code de salle de 11 caractères, au-delà de la limite 10 ; correction à 6 caractères. Diagnostic temporaire du formatage dans le test, à retirer après inspection de CI.
