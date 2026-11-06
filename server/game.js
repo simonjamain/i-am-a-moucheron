@@ -920,7 +920,7 @@ export class Game {
       v: flying ? s.v : old.v,
       hp: Math.max(
         0,
-        Math.min(VEHICLES[r.vehicles.get(p.vehicle_id)?.type]?.maxHP || 100, s.hp),
+        Math.min(r.vehicles.get(p.vehicle_id)?.type === 'helicopter' ? 200 : 100, s.hp),
       ),
       type: r.vehicles.get(p.vehicle_id)?.type,
       rotorPower: Number.isFinite(s.rotorPower) ? Math.max(0, Math.min(1, s.rotorPower)) : 1,
