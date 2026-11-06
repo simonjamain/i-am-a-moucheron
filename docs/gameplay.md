@@ -165,8 +165,12 @@ obligatoire ; une annexe présente dans 5 % des dossiers peut être déchirée s
 accepter sa clause. La signer applique son effet pendant l’occupation du poste.
 
 Les avions disposent de cinq minutes de carburant à plein gaz et d’environ une
-minute de tir par poste armé. Une station gratuite à Alpha remplit les réserves
-en dix secondes, avion posé et arrêté. Stations supplémentaires et radars sont
+minute de tir par poste armé. Une station initiale à Alpha répare et recharge les véhicules
+à portée, automatiquement et contre paiement, même en mouvement ou en vol. Les
+stations achetées fournissent le même service. La caisse commune paie au prorata
+les PV, le carburant et chaque catégorie de munitions ; en cas de fonds insuffisants,
+la somme est répartie équitablement entre les véhicules éligibles.
+Voir [le tarif et les limites du lot G1](economy-physics.md#tarification-automatique-des-stations-lot-préparatoire-g1-castor). Stations supplémentaires et radars sont
 vendus 4 $, puis +2 $ par exemplaire de leur type. Sans radar, aucun ennemi sur
 la carte ; chaque radar révèle ceux dans un cylindre de rayon 2 m, à toutes hauteurs, sans masquer la scène.
 Voir [logistique et contrats](logistics-contracts.md) pour les valeurs, garanties

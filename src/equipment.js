@@ -23,7 +23,7 @@ export const SHOP = Object.freeze({
     name: 'Station de ravitaillement',
     cost: 4,
     kind: 'placement',
-    description: 'Plein gratuit en dix secondes, avion posé et arrêté.',
+    description: 'Répare et recharge automatiquement les véhicules proches, même en mouvement, contre paiement.',
   },
   radar: {
     name: 'Radar',

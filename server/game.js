@@ -60,6 +60,7 @@ import {
   MAX_DEBUG_ROOM_ENEMIES,
 } from '../src/waves.js';
 import { SHOP, shopPrice, supportedPlacement, waveStipend } from '../src/equipment.js';
+import { advancePaidService } from '../src/paid-service.js';
 import {
   fullAmmo,
   ammoCapacity,
@@ -288,21 +289,26 @@ export class Game {
           v.supplies,
           v.state,
           v.type,
-          [...r.equipment, initialStation()],
+          [],
           (now - v.updated) / 1000,
           r.balance,
         ),
         revision: v.supplies.revision + 1,
       };
-      if (v.supplies.servicing && v.state.hp > 0) {
-        v.state.engine = 1;
-        v.state.wing = 1;
-        v.state.hp = Math.min(
-          VEHICLES[v.type].maxHP || 100,
-          v.state.hp + ((VEHICLES[v.type].maxHP || 100) * 0.1 * (now - v.updated)) / 1000,
-        );
-      }
       v.updated = now;
+    }
+    const now = this.now();
+    const elapsed = Math.max(0, now - (r.lastPaidServiceAt ?? r.created));
+    if (elapsed >= 1000) {
+      const result = advancePaidService(
+        values(r.vehicles),
+        [...r.equipment, initialStation()],
+        r.dollars,
+        r.balance,
+        Math.min(5, Math.floor(elapsed / 1000)),
+      );
+      r.dollars = result.dollars;
+      r.lastPaidServiceAt = now;
     }
   }
   createVehicle(r, type, origin = 'purchase', placement = null) {
