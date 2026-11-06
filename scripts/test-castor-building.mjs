@@ -60,7 +60,7 @@ console.log('Castor construction: driver authorization, continuous segments, rec
 import prettier from 'prettier';
 import { readFileSync, writeFileSync, mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join as pathJoin } from 'node:path';
 import { execFileSync } from 'node:child_process';
 for (const path of [
   'server/game.js',
@@ -76,11 +76,11 @@ for (const path of [
     filepath: path,
   });
   if (input === output) continue;
-  const tmp = mkdtempSync(join(tmpdir(), 'g1b-prettier-'));
-  writeFileSync(join(tmp, 'before'), input);
-  writeFileSync(join(tmp, 'after'), output);
+  const tmp = mkdtempSync(pathJoin(tmpdir(), 'g1b-prettier-'));
+  writeFileSync(pathJoin(tmp, 'before'), input);
+  writeFileSync(pathJoin(tmp, 'after'), output);
   try {
-    execFileSync('git', ['diff', '--no-index', '--', join(tmp, 'before'), join(tmp, 'after')], {
+    execFileSync('git', ['diff', '--no-index', '--', pathJoin(tmp, 'before'), pathJoin(tmp, 'after')], {
       encoding: 'utf8',
     });
   } catch (error) {
