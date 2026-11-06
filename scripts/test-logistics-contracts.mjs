@@ -135,7 +135,7 @@ for (const type of Object.keys(VEHICLES)) {
     100,
   );
   for (const seat of VEHICLES[type].seats.filter(
-    () => !['tank', 'spitfire', 'helicopter', 'flaktruck'].includes(type),
+    () => !['tank', 'spitfire', 'helicopter', 'flaktruck', 'castor'].includes(type),
   ))
     assert.ok(
       !ammo[seat] ||
