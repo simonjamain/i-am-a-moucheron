@@ -1,6 +1,10 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 185,
+    changes: ['Le Castor adopte son vrai modèle détaillé, avec ses couleurs, sa tourelle et ses six roues animées.'],
+  },
+  {
     version: 179,
     changes: ['Le G1 Castor rejoint le garage : un camion rapide qui soigne et ravitaille ses alliés tout en roulant.'],
   },

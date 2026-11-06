@@ -34,3 +34,11 @@
 - Les tests Node, y compris celui du Castor, passent sur la CI précédente. Reste un contrôle de formatage de `src/client.js` et `docs/code-structure.md` à corriger, puis réexécution complète.
 
 - Diagnostic temporaire de formatage Prettier exécuté dans CI, puis retiré du test : seul le retrait d'une ligne blanche et l'alignement d'une chaîne de ternaires étaient nécessaires. Les tests de domaine et la suite complète avaient passé ; attendre les cinq jobs sur le dernier SHA avant fusion.
+
+
+## Lot 4 — vrais modèles Meshy (branche feat/castor-real-meshy)
+- Issue : #76, PR consacrée aux graphismes uniquement (en parallèle de la #80).
+- Source : les trois tâches Meshy texturées ci-dessus, export GLB téléchargé pour conversion sur un runner GitHub Actions temporaire. Aucune URL Meshy expirante ne doit être conservée dans la PR finale.
+- Cible : modules intégrés hors ligne, VRAM partagée, pivots séparés, tests source/UV/roues/tourelle. Conserver les textures et couleurs originales.
+- Risques : orientation et roues doublées dans la coque à vérifier en jeu, FPS avec plusieurs Castor, absence de visualisation WebGL dans les contrôles automatisés.
+- Suivi : tester `npm test`, format, docs et Docker build sur le commit final ; ne pas fermer l'issue.
