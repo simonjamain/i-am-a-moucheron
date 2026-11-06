@@ -40,6 +40,27 @@ try {
   scene.addChild(document.createNode('body').setMesh(body));
   scene.addChild(document.createNode('turret mount').setMesh(turret));
   await io.write(original,document);
+  // A Meshy-style single-mesh asset may be reduced only with protected zones.
+  const mono=new Document(), bufferMono=mono.createBuffer('buffer');
+  const texMono=mono.createTexture('Atlas').setMimeType('image/png').setImage(Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4z8DwHwAFgAI/ScLttAAAAABJRU5ErkJggg==','base64'));
+  const matMono=mono.createMaterial('paint').setBaseColorTexture(texMono);
+  const meshMono=mono.createMesh('body').addPrimitive(mono.createPrimitive().setMaterial(matMono)
+    .setAttribute('POSITION',mono.createAccessor().setBuffer(bufferMono).setType('VEC3').setArray(new Float32Array(vertices)))
+    .setAttribute('TEXCOORD_0',mono.createAccessor().setBuffer(bufferMono).setType('VEC2').setArray(new Float32Array(uv)))
+    .setIndices(mono.createAccessor().setBuffer(bufferMono).setType('SCALAR').setArray(new Uint16Array(indices))));
+  mono.createScene('test').addChild(mono.createNode('main').setMesh(meshMono));
+  const monoInput=path.join(root,'single.glb'),monoOut=path.join(root,'single-opt.glb');
+  const boxes=path.join(root,'boxes.json');
+  await io.write(monoInput,mono);
+  await writeFile(boxes, JSON.stringify({regions:[{name:'critical corner',mesh:'body',min:[0,0,-0.1],max:[0.24,0.24,0.1]}]}));
+  assert.equal(run('optimize',monoInput,monoOut).status,1,'monobloc is blocked without boxes');
+  const guarded=run('optimize',monoInput,monoOut,'--regions',boxes,'--ratio','0.25','--error','1');
+  assert.equal(guarded.status,0,guarded.stderr);
+  assert.equal(run('validate',monoInput,monoOut,'--regions',boxes).status,0,'critical region intact');
+  const monoReport=JSON.parse(await readFile(monoOut+'.report.json','utf8'));
+  assert.ok(monoReport.modifiedMeshes[0].lockedTriangles>0,'critical faces kept');
+  assert.ok(monoReport.after.triangles<monoReport.before.triangles,'reduction outside critical region');
   const a=run('optimize',original,result,'--ratio','0.25','--error','1');
   assert.equal(a.status,0,a.stderr);
   const b=run('validate',original,result);
@@ -53,5 +74,5 @@ try {
   const bad=path.join(root,'broken.glb');
   await writeFile(bad,Buffer.from('not glb'));
   assert.equal(run('inspect',bad).status,1,'reject invalid GLB');
-  console.log('PASS: GLB roundtrip, UV/atlas and named turret unchanged; geometry reduced; immutability enforced');
+  console.log('PASS: GLB UV/atlas, named turret, monobloc protected zones, reduced triangles and immutability');
 } finally { await rm(root,{recursive:true,force:true}); }
