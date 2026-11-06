@@ -31,7 +31,9 @@ const game = new Game({ now: () => now });
 const a = game.join({ code: 'COMFORT', name: 'Alpha' }),
   b = game.join({ code: 'COMFORT', name: 'Bravo' });
 const r = game.rooms.get('COMFORT');
-// Every model, already-full stocks, two overlapping stations: one server repair clock.
+// Every model, already-full stocks, two overlapping stations: one paid server
+// repair clock. Moving vehicles keep receiving service while within range.
+r.dollars = 1000;
 for (const type of Object.keys(VEHICLES)) {
   const v = game.createVehicle(r, type);
   v.state.hp = 1;
@@ -52,9 +54,12 @@ for (const type of Object.keys(VEHICLES)) {
   v.state.v = [0.1, 0, 0];
   now += 1000;
   game.fleet(r);
-  close(v.state.hp, (VEHICLES[type].maxHP || 100) * 0.2);
+  close(v.state.hp, (VEHICLES[type].maxHP || 100) * 0.3);
   v.state.v = [0, 0, 0];
-  now += 10000;
+  now += 5000;
+  game.fleet(r);
+  close(v.state.hp, (VEHICLES[type].maxHP || 100) * 0.8);
+  now += 5000;
   game.fleet(r);
   close(v.state.hp, VEHICLES[type].maxHP || 100);
   v.state.hp = 0;

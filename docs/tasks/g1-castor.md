@@ -12,3 +12,5 @@
 - Correctif après première CI : le test d'absence de ravitaillement déplace désormais l'avion hors de la zone (le service en vol est devenu intentionnel). Ajustement du test de période (le tick est borné à 5 s). Le résultat dépend de la nouvelle CI.
 
 - Deuxième CI : le test du tank doit aussi quitter le rayon d'Alpha, sinon le rechargement payant en vol annule le débit d'un obus. Le formatage du nouveau bloc serveur est corrigé.
+
+- Troisième CI : la régression de réparation (test-comfort) reposait sur la gratuité, l'immobilisation et 10 s en un seul appel ; elle prévoit désormais le service payant, réparation même en mouvement, et les 5 s bornées par tick.
