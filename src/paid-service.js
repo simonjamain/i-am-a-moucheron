@@ -29,14 +29,18 @@ export function withinService(v, installations, fleet = []) {
       .filter((s) => s.type === 'castor' && s.state.hp > 0)
       .map((s) => ({ p: s.state.p, radius: 0.5 })),
   ];
-  return sources.some(({ p, radius }) => Math.hypot(...v.state.p.map((n, i) => n - p[i])) <= radius);
+  return sources.some(
+    ({ p, radius }) => Math.hypot(...v.state.p.map((n, i) => n - p[i])) <= radius,
+  );
 }
 
 // Max-min fairness by dollars spent per recipient, not by number of guns.
 export function fairServiceShares(needs, dollars) {
   const shares = needs.map(() => 0);
   let budget = Math.max(0, Number.isFinite(dollars) ? dollars : 0);
-  let active = needs.map((cost, index) => ({ cost: Math.max(0, cost), index })).filter((v) => v.cost > 0);
+  let active = needs
+    .map((cost, index) => ({ cost: Math.max(0, cost), index }))
+    .filter((v) => v.cost > 0);
   while (active.length && budget > 1e-10) {
     const share = budget / active.length;
     const small = active.filter(({ cost, index }) => cost - shares[index] <= share);
@@ -66,7 +70,8 @@ export function advancePaidService(fleet, installations, dollars, balance = {}, 
     const needs = [];
     const maxHP = VEHICLES[v.type]?.maxHP || 100;
     const hp = Math.min(Math.max(0, maxHP - v.state.hp), maxHP * dt * 0.1);
-    if (hp > 0) needs.push({ cost: hp * SERVICE_RATES.hp, apply: (f) => (v.state.hp += hp * f) });
+    if (hp > 0)
+      needs.push({ cost: hp * SERVICE_RATES.hp, apply: (f) => (v.state.hp += hp * f) });
     for (const key of ['engine', 'wing']) {
       if (!Number.isFinite(v.state[key])) continue;
       const change = Math.min(Math.max(0, 1 - v.state[key]), dt * 0.1);
@@ -79,7 +84,10 @@ export function advancePaidService(fleet, installations, dollars, balance = {}, 
       needs.push({ cost: fuel * SERVICE_RATES.fuel, apply: (f) => (v.supplies.fuel += fuel * f) });
     for (const [key, current] of Object.entries(v.supplies.ammo || {})) {
       const capAmmo = ammoCapacity(v.type, key, balance);
-      const amount = Math.min(Math.max(0, capAmmo - current), (capAmmo * dt) / SERVICE_SECONDS);
+      const amount = Math.min(
+        Math.max(0, capAmmo - current),
+        (capAmmo * dt) / SERVICE_SECONDS,
+      );
       if (amount > 0)
         needs.push({
           cost: amount * ammoServiceRate(key),

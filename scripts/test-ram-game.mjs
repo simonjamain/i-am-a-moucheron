@@ -152,6 +152,10 @@ assert.equal(bomber.supplies.ammo.tail, ammo - 3);
 // No refuel and no backwards clock double debit.
 bomber.state.landed = false;
 bomber.state.gas = 1;
+// An aircraft now receives paid service while flying through a station's sphere.
+// Move it away to test fuel consumption with no available service.
+bomber.state.p = [...bomber.state.p];
+bomber.state.p[0] += 0.3;
 const fuel = bomber.supplies.fuel;
 now += 1000;
 call(a.id, 'aircraft-fire', { shots: ['d'] });

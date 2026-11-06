@@ -9,7 +9,7 @@ const vehicle = (id, p = [0, 0.03, 0], type = 'fighter') => ({
   state: { p, landed: false, hp: 50, engine: 1, wing: 1, v: [2, 0, 0] },
   supplies: {
     fuel: 0,
-    ammo: Object.fromEntries(Object.keys(fullAmmo(type)).map((key) => [key, 0])),
+    ammo: Object.fromEntries((type === 'castor' ? [] : Object.keys(fullAmmo(type))).map((key) => [key, 0])),
     revision: 0,
   },
 });
@@ -35,11 +35,12 @@ const outside = vehicle('outside', [2, 0, 0]);
 assert.equal(advancePaidService([outside], [station], 20).spent, 0);
 assert.equal(outside.state.hp, 50);
 const solo = vehicle('solo');
-const full = advancePaidService([solo], [station], 20, {}, 10);
+const partial = advancePaidService([solo], [station], 20, {}, 5);
+const full = advancePaidService([solo], [station], 20 - partial.spent, {}, 5);
 assert.equal(solo.state.hp, 100);
 assert.equal(solo.supplies.fuel, FUEL_SECONDS);
 assert.equal(solo.supplies.ammo.pilot, fullAmmo('fighter').pilot);
-assert.ok(full.spent > 0 && full.spent < 20);
+assert.ok(partial.spent + full.spent > 0 && partial.spent + full.spent < 20);
 const mobile = vehicle('mobile', [0, 0.3, 0]);
 const castor = vehicle('castor', [0, 0.3, 0], 'castor');
 assert.ok(withinService(mobile, [], [castor]));
