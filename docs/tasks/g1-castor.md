@@ -32,3 +32,5 @@
 - CI complémentaire : les tests de durée standard des munitions sont désormais exclus pour le Castor : sa MG 500 balles a volontairement une cadence réduite, avec couverture dédiée dans `test-castor.mjs`.
 
 - Les tests Node, y compris celui du Castor, passent sur la CI précédente. Reste un contrôle de formatage de `src/client.js` et `docs/code-structure.md` à corriger, puis réexécution complète.
+
+- Diagnostic temporaire de formatage Prettier exécuté dans CI, puis retiré du test : seul le retrait d'une ligne blanche et l'alignement d'une chaîne de ternaires étaient nécessaires. Les tests de domaine et la suite complète avaient passé ; attendre les cinq jobs sur le dernier SHA avant fusion.

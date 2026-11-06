@@ -3166,17 +3166,17 @@ function vehicleModel(v) {
         ? makeCastor()
         : v.type === 'helicopter'
           ? makeHelicopter('#7b8155')
-        : v.type === 'flaktruck'
-          ? makeFlakTruck('#7b8155')
-          : v.type === 'spitfire'
-            ? makeSpitfire('#7b8155')
-            : v.type === 'tank'
-              ? makeTank('#7b8155')
-              : v.type === 'interceptor'
-                ? makeStuka('#7b8155')
-                : v.type === 'bomber'
-                  ? makeBomber('#c5ba92')
-                  : makePlane('#7b8155');
+          : v.type === 'flaktruck'
+            ? makeFlakTruck('#7b8155')
+            : v.type === 'spitfire'
+              ? makeSpitfire('#7b8155')
+              : v.type === 'tank'
+                ? makeTank('#7b8155')
+                : v.type === 'interceptor'
+                  ? makeStuka('#7b8155')
+                  : v.type === 'bomber'
+                    ? makeBomber('#c5ba92')
+                    : makePlane('#7b8155');
     paintVehicle(
       T,
       g,

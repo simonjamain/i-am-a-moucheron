@@ -151,7 +151,6 @@ Les six autres véhicules Meshy utilisent `meshy-texture.js` pour le décodage
 commun des maillages UV et des atlas, `m1-model.js`, `h2-model.js` et
 `meshy-fleet.js` pour les articulations et leurs ressources partagées.
 
-
 G1 Castor (issue #76) : `fleet.js` définit le véhicule monoplace,
 `tank.js` sa physique de sol, `paid-service.js` son rayon de soutien et ses coûts,
 `graphics.js` fournit la maquette provisoire à six roues et tourelle mobile, et

@@ -55,28 +55,3 @@ assert.ok(plane.state.hp > 50 && plane.supplies.ammo.pilot > 0);
 assert.ok(truck.supplies.ammo.pilot > 0);
 console.log('Castor: shopping, seat, wheels, gun, movement and mobile support OK');
 
-import prettier from 'prettier';
-import { readFileSync, writeFileSync, mkdtempSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
-import { execFileSync } from 'node:child_process';
-for (const path of ['src/client.js', 'docs/code-structure.md']) {
-  const input = readFileSync(path, 'utf8');
-  const output = await prettier.format(input, {
-    ...(await prettier.resolveConfig(path)),
-    filepath: path,
-  });
-  if (input === output) continue;
-  const tmp = mkdtempSync(join(tmpdir(), 'g1-prettier-'));
-  writeFileSync(join(tmp, 'before'), input);
-  writeFileSync(join(tmp, 'after'), output);
-  try {
-    execFileSync('git', ['diff', '--no-index', '--', join(tmp, 'before'), join(tmp, 'after')], {
-      encoding: 'utf8',
-    });
-  } catch (error) {
-    console.log('BEGIN G1 FORMAT DIFF ' + path);
-    console.log(error.stdout);
-    console.log('END G1 FORMAT DIFF ' + path);
-  }
-}
