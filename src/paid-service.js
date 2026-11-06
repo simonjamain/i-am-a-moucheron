@@ -83,7 +83,7 @@ export function advancePaidService(fleet, installations, dollars, balance = {}, 
     if (fuel > 0)
       needs.push({ cost: fuel * SERVICE_RATES.fuel, apply: (f) => (v.supplies.fuel += fuel * f) });
     for (const [key, current] of Object.entries(v.supplies.ammo || {})) {
-      const capAmmo = ammoCapacity(v.type, key, balance);
+      const capAmmo = ammoCapacity(v.type, key, balance.ammo === undefined ? null : balance);
       const amount = Math.min(
         Math.max(0, capAmmo - current),
         (capAmmo * dt) / SERVICE_SECONDS,

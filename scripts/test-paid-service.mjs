@@ -9,7 +9,9 @@ const vehicle = (id, p = [0, 0.03, 0], type = 'fighter') => ({
   state: { p, landed: false, hp: 50, engine: 1, wing: 1, v: [2, 0, 0] },
   supplies: {
     fuel: 0,
-    ammo: Object.fromEntries((type === 'castor' ? [] : Object.keys(fullAmmo(type))).map((key) => [key, 0])),
+    ammo: Object.fromEntries(
+      (type === 'castor' ? [] : Object.keys(fullAmmo(type))).map((key) => [key, 0]),
+    ),
     revision: 0,
   },
 });
