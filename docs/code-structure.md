@@ -127,8 +127,9 @@ cibles des tirs, ses replis conservateurs et le benchmark CPU reproductible,
 ainsi que le rejet conservateur des collisions véhicule–ennemi côté serveur
 et sa mesure à 50 véhicules pour 900 insectes.
 
-Les [réglages d’équilibrage par room](room-balance.md) sont consultables par tous et
-modifiables à tout moment par le créateur de la room.
+Les règles d’équilibrage sont fixes (`DEFAULT_BALANCE`, `src/balance.js`) ; l’ancien
+outil de [réglage par room](room-balance.md) est retiré au profit du
+[mode debug](laboratory.md) (`lab-ui.js`, commande serveur `lab`).
 
 Les paramètres de l'instructeur de vol sont enregistrés uniquement dans le
 navigateur par `flight-tuning.js` et présentés par `flight-tuning-ui.js`.

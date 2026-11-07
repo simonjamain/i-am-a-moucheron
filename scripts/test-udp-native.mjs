@@ -76,35 +76,16 @@ try {
   assert.equal(bj.status, 200);
   assert.equal(app.game.rooms.get('NATIVE').pilots.size, 2);
   const roomSnapshot = aj.body.snapshot;
-  const tuned = await a.request('balance', {
-    epoch: roomSnapshot.base.epoch,
-    revision: 0,
-    values: { damage: 2, enemySpeed: 1.5 },
+  // The room-wide debug switch travels over UDP (separate room: exiting resets it).
+  const debugClient = await client();
+  const dj = await debugClient.request('join', { code: 'NATIVEDBG', name: 'Debug' });
+  const debug = await debugClient.request('lab', {
+    epoch: dj.body.snapshot.base.epoch,
+    action: 'enable',
   });
-  assert.equal(tuned.status, 200);
-  const observed = await b.request('sync', { state: bj.body.state, mode: 'foot' });
-  assert.equal(observed.body.balance.damage, 2);
-  assert.equal(observed.body.balance.enemySpeed, 1.5);
-  assert.equal(
-    (
-      await b.request('balance', {
-        epoch: roomSnapshot.base.epoch,
-        revision: 1,
-        values: { damage: 3 },
-      })
-    ).status,
-    200,
-  );
-  assert.equal(
-    (
-      await a.request('balance', {
-        epoch: roomSnapshot.base.epoch,
-        revision: 2,
-        values: roomSnapshot.balance,
-      })
-    ).status,
-    200,
-  );
+  assert.equal(debug.status, 200);
+  assert.equal(debug.body.lab.enabled, true);
+  assert.equal(app.game.rooms.get('NATIVE').lab.enabled, false, 'other rooms stay normal');
 
   const started = await a.request('start');
   assert.equal(started.body.mission_started, 1);
@@ -116,15 +97,6 @@ try {
   assert.equal(voted.body.phase, 'prep');
   const shared = await a.request('sync', { state: aj.body.state, mode: 'foot' });
   assert.deepEqual(shared.body.preparation, voted.body.preparation);
-  const guestSpawn = await b.request('debug-spawn', {
-    epoch: roomSnapshot.base.epoch,
-    counts: { midge: 8, ant: 2 },
-  });
-  assert.equal(guestSpawn.status, 200);
-  assert.equal(guestSpawn.body.total, 10);
-  const seenSpawn = await a.request('sync', { state: aj.body.state, mode: 'foot' });
-  assert.equal(seenSpawn.body.total, 10);
-  assert.equal(seenSpawn.body.rosterRevision, 1);
   // Replaying the same command ID returns its original result, without another player.
   const duplicate = await a.request('join', { code: 'NATIVE', name: 'Spoof' }, aj.id);
   assert.equal(duplicate.body.id, aj.body.id);

@@ -8,7 +8,7 @@ import {
   equipPurchased,
 } from './wave-preparation.js';
 import { feedingPoint } from '../src/ground-defense-state.js';
-import { DEFAULT_BALANCE, validateBalance, money, retimeRoster } from '../src/balance.js';
+import { DEFAULT_BALANCE, money } from '../src/balance.js';
 import { BLUEPRINTS } from '../src/wave-blueprints.js';
 import { deliveryStart, deliveryLanding, deliveryHeightAt } from '../src/delivery.js';
 import {
@@ -55,12 +55,9 @@ import {
   wavePlan,
   ENEMY_TYPES,
   swarmFrame,
-  debugSwarmRoster,
   spawnOffspring,
   assignMidgeSwarmSizes,
   MAX_OFFSPRING_ROSTER,
-  validateDebugSpawn,
-  MAX_DEBUG_ROOM_ENEMIES,
 } from '../src/waves.js';
 import { SHOP, shopPrice, supportedPlacement, waveStipend } from '../src/equipment.js';
 import { advancePaidService } from '../src/paid-service.js';
@@ -601,7 +598,8 @@ export class Game {
     );
     if (r.phase === 'combat' && r.kills.size + escaped.length >= plan.roster.length) {
       r.infestation += escaped.reduce((n, e) => n + e.leak, 0);
-      r.phase = r.infestation >= 20 ? 'lost' : 'prep';
+      // Debug mode: bin damage keeps counting, but the room cannot be lost.
+      r.phase = r.infestation >= 20 && !r.lab.enabled ? 'lost' : 'prep';
       r.next_wave_at = now + r.balance.pause * 1000;
       if (r.phase === 'prep') {
         this.reward(r, waveStipend(r.wave));
@@ -726,10 +724,10 @@ export class Game {
     this.prepareWave(r);
   }
   labCommand(r, b) {
-    requireGame(b.epoch === r.base.epoch, 'La partie a changé ; rechargez le laboratoire.', 409);
+    requireGame(b.epoch === r.base.epoch, 'La partie a changé ; rouvrez le mode debug.', 409);
     const action = b.action;
     if (action === 'enable') {
-      requireGame(!r.lab.enabled, 'Le laboratoire est déjà actif.');
+      requireGame(!r.lab.enabled, 'Le mode debug est déjà actif.');
       r.lab.enabled = true;
       r.dollars = LAB_FUNDS;
       for (const card of Object.keys(BLUEPRINTS))
@@ -737,7 +735,7 @@ export class Game {
       if (!r.mission_started) this.setLabWave(r, 1);
       return;
     }
-    requireGame(r.lab.enabled, 'Activez d’abord le laboratoire.');
+    requireGame(r.lab.enabled, 'Activez d’abord le mode debug.');
     if (action === 'exit') {
       this.resetRoom(r, { enabled: false, scenarios: [] });
     } else if (action === 'unlock') {
@@ -820,98 +818,6 @@ export class Game {
   }
   plan(r) {
     return r.plan || wavePlan(r.code, r.wave, r.started);
-  }
-  setBalance(r, p, b) {
-    // Any connected player may tune this shared room, including spectators.
-    requireGame(
-      b.epoch === r.base.epoch && b.revision === r.balanceRevision,
-      'Les réglages ou la partie ont changé. Relisez les valeurs.',
-    );
-    let patch;
-    try {
-      patch = validateBalance(b.values);
-    } catch (error) {
-      requireGame(false, error.message, 400);
-    }
-    const old = r.balance,
-      next = { ...old, ...patch };
-    const time = (this.now() - r.started) / 1000;
-    if (r.upcomingPlan) {
-      for (const e of r.upcomingPlan.roster) {
-        e.hp *= next.enemyHP / old.enemyHP;
-        e.duration *= old.enemySpeed / next.enemySpeed;
-        e.entryHold *= old.enemySpeed / next.enemySpeed;
-        e.travelSpeed *= next.enemySpeed / old.enemySpeed;
-      }
-    }
-    if (r.plan) {
-      retimeRoster(r.plan.roster, time, next.enemySpeed / old.enemySpeed);
-      for (const enemy of r.plan.roster) {
-        enemy.hp *= next.enemyHP / old.enemyHP;
-        if (r.enemyDamage[enemy.id]) r.enemyDamage[enemy.id] *= next.enemyHP / old.enemyHP;
-      }
-    }
-    for (const v of r.vehicles.values()) {
-      v.supplies.fuel *= next.fuel / old.fuel;
-      for (const key of Object.keys(v.supplies.ammo)) {
-        const before = ammoCapacity(v.type, key, old),
-          after = ammoCapacity(v.type, key, next);
-        if (before) v.supplies.ammo[key] = Math.min(after, (v.supplies.ammo[key] * after) / before);
-      }
-      v.supplies.revision++;
-    }
-    const delay = r.wave === 0 ? 'initialDelay' : 'pause';
-    if (r.phase === 'prep' && r.next_wave_at && old[delay] !== next[delay])
-      r.next_wave_at = Math.max(
-        this.now() + 5000,
-        r.next_wave_at + (next[delay] - old[delay]) * 1000,
-      );
-    r.balance = next;
-    r.balanceRevision++;
-  }
-  spawnDebug(r, b) {
-    requireGame(b.epoch === r.base.epoch, 'La partie a changé. Réessayez.', 409);
-    requireGame(r.phase !== 'lost', 'Partie perdue : remettez à zéro avant de générer.', 409);
-    let total;
-    try {
-      total = validateDebugSpawn(b.counts);
-    } catch (error) {
-      requireGame(false, error.message, 400);
-    }
-    const current = r.phase === 'combat' ? r.plan.roster.length : 0;
-    requireGame(
-      current + total <= MAX_DEBUG_ROOM_ENEMIES,
-      'Limite technique de ' + MAX_DEBUG_ROOM_ENEMIES + ' ennemis par combat.',
-      400,
-    );
-    if (r.phase === 'prep') {
-      // A debug-only wave must not inherit the dead roster of the last wave
-      // or automatically add the director's normal enemy composition.
-      r.phase = 'combat';
-      r.wave++;
-      r.started = this.now();
-      r.plan = { budget: 0, roster: [] };
-      r.upcomingPlan = r.preparation = null;
-      r.next_wave_at = 0;
-      r.mission_started = 1;
-      r.kills.clear();
-      r.enemyDamage = {};
-      r.enemyHits.clear();
-      r.rosterRevision = 0;
-    }
-    const firstId = r.plan.roster.length;
-    r.plan.roster.push(
-      ...debugSwarmRoster(b.counts, {
-        room: r.code,
-        wave: r.wave,
-        started: r.started,
-        now: this.now(),
-        balance: r.balance,
-        firstId,
-        revision: r.rosterRevision + 1,
-      }),
-    );
-    r.rosterRevision++;
   }
   prepareWave(r) {
     r.upcomingPlan = prepareRoster(r.wave + 1, r.balance);
@@ -1243,17 +1149,9 @@ export class Game {
     r.touched = this.now();
     requireGame(
       !p.state.awaitingPurgatory ||
-        [
-          'sync',
-          'enter-purgatory',
-          'reset',
-          'balance',
-          'lab',
-          'debug-spawn',
-          'wave-vote',
-          'wave-buy',
-          'start',
-        ].includes(path),
+        ['sync', 'enter-purgatory', 'reset', 'lab', 'wave-vote', 'wave-buy', 'start'].includes(
+          path,
+        ),
       'Accédez au purgatoire avant d’agir.',
     );
     if (path === 'enter-purgatory') {
@@ -1262,9 +1160,7 @@ export class Game {
         p.state.awaitingPurgatory = false;
         this.soul(r, 'player', p.id, p.name, p.state.realm);
       }
-    } else if (path === 'balance') this.setBalance(r, p, b);
-    else if (path === 'lab') this.labCommand(r, b);
-    else if (path === 'debug-spawn') this.spawnDebug(r, b);
+    } else if (path === 'lab') this.labCommand(r, b);
     else if (path === 'ground-defense') this.groundDefenseCommand(r, p, b);
     else if (path === 'sync') this.sync(r, p, b);
     else if (path === 'purchase-sign') this.purchaseSign(r, p, b);
@@ -1363,7 +1259,8 @@ export class Game {
       if (!r.hits.has(impactKey)) {
         requireGame(r.hits.size < 128000, 'Registre d’impacts saturé.');
         r.hits.add(impactKey);
-        p.health = Math.max(0, p.health - impactDamage(b.speed));
+        // Debug mode: falls never hurt (issue #100).
+        if (!r.lab.enabled) p.health = Math.max(0, p.health - impactDamage(b.speed));
         if (!p.health) this.kill(r, p, p.incarnation);
       }
     } else if (path === 'buy') {

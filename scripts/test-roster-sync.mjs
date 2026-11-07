@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { Game } from '../server/game.js';
 import { GameSession } from '../server/session.js';
 import { PROTOCOL, ReplyAssembler } from '../src/udp-protocol.js';
+import { debugSwarmRoster } from '../src/waves.js';
 
 let now = 123000,
   id = 0,
@@ -33,22 +34,28 @@ const second = sync();
 assert.ok(!Object.hasOwn(second, 'roster'), 'same roster omitted from all syncs');
 assert.equal(second.total, first.total);
 const room = game.rooms.get('ROSTERBCH');
-const modified = command('balance', {
-  epoch: room.base.epoch,
-  revision: room.balanceRevision,
-  values: { damage: 2 },
-});
-assert.ok(modified.roster?.length > 0, 'balance command sends fresh roster');
-assert.ok(!Object.hasOwn(sync(), 'roster'));
 game.startWave(room);
 const newWave = sync();
 assert.ok(newWave.roster?.length > 0, 'a different wave forces a fresh roster');
 assert.notEqual(newWave.wave, first.wave);
 assert.ok(!Object.hasOwn(sync(), 'roster'));
-const added = command('debug-spawn', {
-  epoch: room.base.epoch,
-  counts: { midge: 12, ant: 1 },
-});
+// Mid-wave roster growth (as brood offspring do): only appended insects are sent.
+room.plan.roster.push(
+  ...debugSwarmRoster(
+    { midge: 12, ant: 1 },
+    {
+      room: room.code,
+      wave: room.wave,
+      started: room.started,
+      now: room.started,
+      balance: room.balance,
+      firstId: room.plan.roster.length,
+      revision: room.rosterRevision + 1,
+    },
+  ),
+);
+room.rosterRevision++;
+const added = sync();
 assert.equal(added.rosterRevision, 1);
 assert.equal(added.roster.length, newWave.roster.length + 13);
 assert.ok(session.replies.get(id).includes('rosterAddGroups'), 'spawn sends only appended insects');
@@ -61,10 +68,10 @@ command('pistol-trace', {
 });
 const hit = command('hit', { wave: room.wave, enemy: 0, amount: 30, shot: 'roster-test' });
 assert.ok(!Object.hasOwn(hit, 'roster'), 'hit must not resend thousands of insects');
-assert.equal(hit.enemyDamage[0], 60, 'damage has the room multiplier applied');
-assert.equal(sync().enemyDamage[0], 60, 'unchanged damage reconstructed from prior response');
+assert.equal(hit.enemyDamage[0], 30, 'damage uses the fixed default multiplier');
+assert.equal(sync().enemyDamage[0], 30, 'unchanged damage reconstructed from prior response');
 assert.ok(
   session.replies.get(id).includes('enemyDamageChanged'),
   'wire transmits changes instead of full damage map',
 );
-console.log('PASS: join, shared roster, delta damage, balance, wave and debug revisions.');
+console.log('PASS: join, shared roster, delta damage, wave and appended-roster revisions.');

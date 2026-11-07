@@ -31,14 +31,17 @@ de trous et marchent vers la poubelle par le chemin le plus direct qui contourne
 mobilier, les barricades et les bunkers (voir [navigation terrestre](#navigation-terrestre)).
 La durée nominale des trajets dépend de leur longueur à vitesse conservée.
 
-Le panneau **Équilibrage et nuées** permet à tous les joueurs de modifier les
-paramètres de la room et d'envoyer des lots d'ennemis par espèce, y compris hors
-combat. Une nuée de debug rejoint la vague courante ou démarre une vague de test
-sans composition automatique, selon la phase. Voir [équilibrage par room](room-balance.md).
+Les règles de la room sont fixes : l'ancien panneau **Équilibrage et nuées** est retiré
+(voir [historique](room-balance.md)).
 
-## Laboratoire de test
+## Mode debug
 
-Le bouton **Laboratoire** dans le HUD active un mode de test commun à la room, avec plans disponibles, caisse virtuelle, choix de cartes et de vagues. Un scénario mémorise les équipements déjà posés et la vague à rejouer, sans conserver les joueurs embarqués. Quitter le laboratoire réinitialise la partie et efface ses scénarios. Voir [laboratoire](laboratory.md).
+Le bouton **Debug** du HUD est un interrupteur unique, commun à la room : argent
+illimité, toutes les constructions et améliorations débloquées, aucun dégât de chute
+et défaite impossible. Les dégâts de la poubelle restent calculés et le HUD affiche
+ses PV, même négatifs (« -75 / 20 PV »). Des outils de cartes, de vagues et de
+scénarios restent disponibles. Désactiver réinitialise la partie aux règles normales.
+Voir [mode debug](laboratory.md).
 
 ## Équipements et combat
 

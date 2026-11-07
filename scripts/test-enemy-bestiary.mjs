@@ -1,6 +1,12 @@
 import assert from 'node:assert/strict';
 import { Game } from '../server/game.js';
-import { ENEMY_TYPES, swarmFrame, validateDebugSpawn, wavePlan } from '../src/waves.js';
+import {
+  ENEMY_TYPES,
+  debugSwarmRoster,
+  swarmFrame,
+  validateDebugSpawn,
+  wavePlan,
+} from '../src/waves.js';
 
 assert.equal(ENEMY_TYPES.rat.hp, 5000);
 assert.equal(ENEMY_TYPES.mosquito.hp, 70);
@@ -27,7 +33,17 @@ const pistolShot = (shot) =>
     origin: [0, 0, 0],
     direction: [0, 0, -1],
   });
-command('debug-spawn', { epoch: r.base.epoch, counts: { spider: 1, rat: 1, mosquito: 1 } });
+// Exact test roster (the in-game manual swarm tool was removed by issue #100).
+Object.assign(r, { phase: 'combat', wave: 1, started: now, mission_started: 1, next_wave_at: 0 });
+r.upcomingPlan = r.preparation = null;
+r.plan = {
+  budget: 0,
+  roster: debugSwarmRoster(
+    { spider: 1, rat: 1, mosquito: 1 },
+    { room: r.code, wave: 1, started: now, now, balance: r.balance, firstId: 0, revision: 1 },
+  ),
+};
+r.rosterRevision = 1;
 assert.equal(r.plan.roster.length, 3);
 const mother = r.plan.roster[0];
 assert.deepEqual(swarmFrame(r.plan.roster, 5), swarmFrame(r.plan.roster, 5));

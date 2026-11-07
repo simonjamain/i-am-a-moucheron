@@ -5,7 +5,6 @@ import { WaveCouncilUI } from '/wave-council-ui.js';
 import { WaveForecastScene } from '/wave-forecast-scene.js';
 import { GroundDefenseUI } from '/ground-defense-ui.js';
 import { GroundMotionTrack } from '/ground-motion.js';
-import { BalanceUI } from '/balance-ui.js';
 import { LabUI } from '/lab-ui.js';
 import { mountChangelog } from '/changelog.js';
 import { deliveryHeightAt } from '/delivery.js';
@@ -403,7 +402,6 @@ function groundActive() {
     !groundDefenseUI.opened &&
     $('bedPanel').classList.contains('hidden') &&
     $('purchasePanel').classList.contains('hidden') &&
-    $('balancePanel').classList.contains('hidden') &&
     $('labPanel').classList.contains('hidden') &&
     $('flightSettingsPanel').classList.contains('hidden') &&
     $('bank').classList.contains('hidden') &&
@@ -725,7 +723,6 @@ function canCapture() {
     !$('waveCouncil').open &&
     !groundDefenseUI.opened &&
     $('shop').classList.contains('hidden') &&
-    $('balancePanel').classList.contains('hidden') &&
     $('labPanel').classList.contains('hidden') &&
     $('flightSettingsPanel').classList.contains('hidden') &&
     $('bank').classList.contains('hidden') &&
@@ -1062,7 +1059,6 @@ function accept(s, force = false) {
   reconcileEquipment([...(s.equipment || []), s.initialStation].filter(Boolean));
   renderShop();
   bankUI.render();
-  balanceUI.render();
   labUI.render();
   if (s.base && s.base.revision > baseRevision) {
     if (baseArena?.epoch !== s.base.epoch) baseAudioSeq = 0;
@@ -1271,7 +1267,11 @@ function accept(s, force = false) {
   networkStatus();
   $('threat').textContent = 'MENACE ' + s.difficulty;
   $('wave').textContent = String(s.wave).padStart(2, '0');
-  $('infest').textContent = s.infestation + s.leaked + ' / 20';
+  // Debug mode cannot be lost: show the bin's remaining HP, even negative.
+  $('infest').textContent = s.lab?.enabled
+    ? 20 - (s.infestation + s.leaked) + ' / 20 PV'
+    : s.infestation + s.leaked + ' / 20';
+  $('infest').previousElementSibling.textContent = s.lab?.enabled ? 'Poubelle' : 'Infestation';
   for (const arrived of arrivalSignals.update(
     s.code + ':' + s.base?.epoch + ':' + s.wave,
     s.arrived || [],
@@ -1475,14 +1475,7 @@ $('share').onclick = async () => {
 };
 $('helpButton').onclick = () => {
   releaseMouse();
-  if (
-    flightTuningUI.opened ||
-    balanceUI.opened ||
-    bankUI.opened ||
-    bedUI.opened ||
-    purchaseUI.opened
-  )
-    return;
+  if (flightTuningUI.opened || bankUI.opened || bedUI.opened || purchaseUI.opened) return;
   $('help').classList.remove('hidden');
 };
 $('closeHelp').onclick = () => {
@@ -1497,10 +1490,6 @@ addEventListener('keydown', (event) => {
   }
   if (event.code === 'Escape' && labUI.opened) {
     labUI.close();
-    return;
-  }
-  if (event.code === 'Escape' && balanceUI.opened) {
-    balanceUI.close();
     return;
   }
   if (!joined || spectating) return;
@@ -1548,14 +1537,7 @@ addEventListener('keydown', (event) => {
     toggleBank();
     return;
   }
-  if (
-    flightTuningUI.opened ||
-    balanceUI.opened ||
-    bankUI.opened ||
-    bedUI.opened ||
-    purchaseUI.opened
-  )
-    return;
+  if (flightTuningUI.opened || bankUI.opened || bedUI.opened || purchaseUI.opened) return;
   if (interactionKey === 'KeyG') {
     if (groundDefenseUI.handleWheelKey(interactionKey, true, event.repeat)) event.preventDefault();
     return;
@@ -1609,7 +1591,6 @@ addEventListener('keydown', (event) => {
     $('papers').classList.contains('hidden') &&
     $('bedPanel').classList.contains('hidden') &&
     $('purchasePanel').classList.contains('hidden') &&
-    $('balancePanel').classList.contains('hidden') &&
     $('labPanel').classList.contains('hidden') &&
     $('flightSettingsPanel').classList.contains('hidden') &&
     $('bank').classList.contains('hidden') &&
@@ -2097,7 +2078,6 @@ function renderPaper() {
     eligible = true;
   }
   const visible =
-    !balanceUI.opened &&
     !bankUI.opened &&
     !bedUI.opened &&
     !purchaseUI.opened &&
@@ -2283,14 +2263,7 @@ $('soulPaperButton').onclick = () => {
 $('boardButton').onclick = openBoarding;
 $('baseHelp').onclick = () => {
   releaseMouse();
-  if (
-    flightTuningUI.opened ||
-    balanceUI.opened ||
-    bankUI.opened ||
-    bedUI.opened ||
-    purchaseUI.opened
-  )
-    return;
+  if (flightTuningUI.opened || bankUI.opened || bedUI.opened || purchaseUI.opened) return;
   $('help').classList.remove('hidden');
 };
 const purgScene = new T.Scene();
@@ -4443,14 +4416,7 @@ for (const [kind, model] of Object.entries(ghosts)) {
   });
 }
 function toggleShop() {
-  if (
-    flightTuningUI.opened ||
-    balanceUI.opened ||
-    bankUI.opened ||
-    bedUI.opened ||
-    purchaseUI.opened
-  )
-    return;
+  if (flightTuningUI.opened || bankUI.opened || bedUI.opened || purchaseUI.opened) return;
   if (!joined || respawnAt || !$('papers').classList.contains('hidden')) return;
   if (placingEquipment) cancelPlacement();
   const open = $('shop').classList.contains('hidden');
@@ -5445,7 +5411,6 @@ const flightTuningUI = new FlightTuningUI({
 $('flightSettingsOpen').onclick = () => {
   if (
     !joined ||
-    balanceUI.opened ||
     bankUI.opened ||
     bedUI.opened ||
     purchaseUI.opened ||
@@ -5456,27 +5421,6 @@ $('flightSettingsOpen').onclick = () => {
     return;
   flightTuningUI.open();
 };
-const balanceUI = new BalanceUI({
-  root: $('balancePanel'),
-  document,
-  snapshot: () => snap,
-  player: () => id,
-  command: (body) => api('balance', { id, ...body }),
-  spawnCommand: (body) => api('debug-spawn', { id, ...body }),
-  accept,
-  onOpen: () => {
-    releaseMouse();
-    clearControls();
-    cancelPlacement();
-    $('shop').classList.add('hidden');
-    $('help').classList.add('hidden');
-    renderPaper();
-  },
-  onClose: () => {
-    renderPaper();
-    captureMouse();
-  },
-});
 const labUI = new LabUI({
   root: $('labPanel'),
   document,
@@ -5500,7 +5444,6 @@ const labUI = new LabUI({
 $('labOpen').onclick = () => {
   if (
     !joined ||
-    balanceUI.opened ||
     flightTuningUI.opened ||
     bankUI.opened ||
     bedUI.opened ||
@@ -5511,20 +5454,6 @@ $('labOpen').onclick = () => {
   )
     return;
   labUI.open();
-};
-$('balanceOpen').onclick = () => {
-  if (
-    !joined ||
-    flightTuningUI.opened ||
-    bankUI.opened ||
-    bedUI.opened ||
-    purchaseUI.opened ||
-    boardingBusy ||
-    soulBusy ||
-    boardingSelectionBusy
-  )
-    return;
-  balanceUI.open();
 };
 const bankUI = new BankUI({
   root: $('bank'),
@@ -5554,7 +5483,7 @@ const bankUI = new BankUI({
 });
 function toggleBank() {
   if (spectating) return;
-  if (flightTuningUI.opened || balanceUI.opened || bedUI.opened || purchaseUI.opened) return;
+  if (flightTuningUI.opened || bedUI.opened || purchaseUI.opened) return;
   if (!joined || boardingBusy || soulBusy || boardingSelectionBusy) return;
   if (bankUI.opened) bankUI.close();
   else bankUI.open();

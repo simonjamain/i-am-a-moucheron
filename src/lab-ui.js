@@ -10,7 +10,6 @@ export class LabUI {
     this.state = root.querySelector('[data-lab-state]');
     this.enable = root.querySelector('[data-lab-enable]');
     this.exit = root.querySelector('[data-lab-exit]');
-    this.unlock = root.querySelector('[data-lab-unlock]');
     this.card = root.querySelector('[data-lab-card]');
     this.wave = root.querySelector('[data-lab-wave]');
     this.start = root.querySelector('[data-lab-start]');
@@ -28,14 +27,17 @@ export class LabUI {
     }
     root.querySelector('[data-lab-close]').onclick = () => this.close();
     this.enable.onclick = () => {
-      if (this.confirm('Activer le laboratoire pour tous les joueurs de cette room ?'))
+      if (this.confirm('Activer le mode debug pour tous les joueurs de cette room ?'))
         this.send('enable');
     };
     this.exit.onclick = () => {
-      if (this.confirm('Quitter le laboratoire ? La partie et ses scénarios seront effacés pour toute la room.'))
+      if (
+        this.confirm(
+          'Désactiver le mode debug ? La partie et ses scénarios seront réinitialisés pour toute la room.',
+        )
+      )
         this.send('exit');
     };
-    this.unlock.onclick = () => this.send('unlock');
     root.querySelector('[data-lab-card-add]').onclick = () =>
       this.send('card', { card: this.card.value });
     root.querySelector('[data-lab-wave-go]').onclick = () => {
@@ -80,14 +82,13 @@ export class LabUI {
     const enabled = !!snap?.lab?.enabled;
     const scenarios = snap?.lab?.scenarios || [];
     this.state.textContent = enabled
-      ? 'Laboratoire actif pour toute la room · achats libres et plans disponibles.'
-      : 'Partie normale · activer le laboratoire modifie toute la room.';
+      ? 'Mode debug actif pour toute la room.'
+      : 'Partie normale · activer le mode debug modifie toute la room.';
     this.enable.hidden = enabled;
     this.exit.hidden = !enabled;
     this.enable.disabled = this.busy;
     this.exit.disabled = this.busy;
     for (const control of [
-      this.unlock,
       this.card,
       this.wave,
       this.start,
@@ -133,9 +134,8 @@ export class LabUI {
       const result = await this.command({ epoch: snap.base.epoch, action, ...payload });
       this.accept(result);
       const names = {
-        enable: 'laboratoire activé',
+        enable: 'mode debug activé',
         exit: 'retour à une partie normale',
-        unlock: 'tous les plans débloqués',
         card: 'plan ajouté',
         wave: 'vague préparée',
         start: 'vague lancée',
