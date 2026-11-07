@@ -43,6 +43,21 @@ for (let i = 0; i < a.length; i++) {
   assert.equal(a[i].material.map.colorSpace, T.SRGBColorSpace);
   assert.equal(a[i].material.map.flipY, false);
 }
+// No second row of sculpted wheels in the source hull and no detached
+// giant wheels outside the body: pivots are aligned to the actual Meshy axles.
+const maskedHull = a.filter((o) => o.name === 'meshy-castor-body');
+const hidden = maskedHull.reduce(
+  (sum, o) => sum + o.geometry.userData.embeddedWheelTrianglesRemoved,
+  0,
+);
+assert.ok(hidden > 9000 && hidden < 16000, 'six embedded wheels are hidden');
+const box = new T.Box3().setFromObject(first);
+assert.ok(box.getSize(new T.Vector3()).x < 2.8, 'wheels stay under truck');
+for (const wheel of first.userData.wheels) {
+  assert.ok(Math.abs(wheel.position.x) < 1.25, 'wheel aligned with hull width');
+  assert.ok(wheel.position.y > -0.4 && wheel.position.y < -0.1);
+  assert.ok(wheel.children[0].scale.x < 0.8, 'wheel scaled to original radius');
+}
 assert.equal(first.userData.wheels.length, 6);
 const ownWheel = first.userData.wheels[0];
 ownWheel.rotation.x = 1;

@@ -1,6 +1,10 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 186,
+    changes: ['Les roues du Castor sont repositionnées et ne se superposent plus à celles du châssis.'],
+  },
+  {
     version: 185,
     changes: ['Le Castor adopte son vrai modèle détaillé, avec ses couleurs, sa tourelle et ses six roues animées.'],
   },
