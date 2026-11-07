@@ -149,7 +149,7 @@ export function groundCommand(state, command, foot, dollars, now = Date.now(), a
           if (existing.kind === 'sentry' && existing.hp > 0)
             return Math.hypot(sample[0] - existing.position[0], sample[1] - existing.position[1]) < 0.06;
           if (existing.kind !== 'barricade' || existing.hp <= 0) return false;
-          return distanceToSegment(sample, existing.a, existing.b) < 0.04;
+          return distanceToSegment(sample, existing.a, existing.b) < 0.02;
         })
       )
         fail('Emplacement déjà occupé par une barricade.');
