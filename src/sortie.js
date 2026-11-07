@@ -1,3 +1,4 @@
+import { isFortification } from './ground-fortifications.js';
 import { stepWalkerFall, impactDamage } from './field-physics.js';
 import { MAP, ACTOR_UNIT, REFERENCE, FLAK } from './scale.js';
 // Small vehicles keep their original dimensions; furniture uses the enlarged room.
@@ -19,12 +20,24 @@ export const AA_STATIONS = [
   { x: 0.1, y: 0.00005, z: -0.8, name: 'Sol central' },
   { x: 2.2, y: 0.00005, z: -2.65, name: 'Poubelle' },
 ];
-export function stationAccess(p, station, radius = MAP.metres(3.4)) {
+export function stationAccess(
+  p,
+  station,
+  radius = isFortification(station?.kind) ? 0.09 : MAP.metres(3.4),
+) {
   return (
     !!p &&
+    !!station &&
     Math.abs(p.y - station.y) < MAP.metres(2.5) &&
     Math.hypot(p.x - station.x, p.z - station.z) < radius
   );
+}
+export function stationExit(station) {
+  return {
+    x: station.x + (isFortification(station.kind) ? 0.09 : MAP.metres(3)),
+    y: station.y + 0.05 * ACTOR_UNIT,
+    z: station.z,
+  };
 }
 // Swept contact with horizontal surfaces. Hard, inverted and side-on arrivals
 // remain crashes; a gentle wheels-first touchdown becomes rolling contact.

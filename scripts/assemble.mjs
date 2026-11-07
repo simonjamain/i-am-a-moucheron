@@ -184,7 +184,7 @@ const scale = inline(assets['/scale.js']);
 const fleet = inline(assets['/fleet.js']);
 const ballistics = inline(assets['/ballistics.js']);
 const equipment = inline(assets['/equipment.js']);
-const sortie = inline(assets['/sortie.js']);
+const sortie = inline(assets['/ground-fortifications.js']) + '\n' + inline(assets['/sortie.js']);
 const server = await readFile('src/server.js', 'utf8');
 await writeFile(
   'worker/assets.js',

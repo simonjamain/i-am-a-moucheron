@@ -2,6 +2,9 @@ import assert from 'node:assert/strict';
 import { Game } from '../server/game.js';
 import { VEHICLES } from '../src/fleet.js';
 import { FORTIFICATIONS } from '../src/ground-fortifications.js';
+import { stationAccess, stationExit } from '../src/sortie.js';
+import { ACTOR_UNIT } from '../src/scale.js';
+import { OFFICE_LAYOUT } from '../src/layout.js';
 import { advancePaidService } from '../src/paid-service.js';
 
 let now = 100000;
@@ -44,6 +47,56 @@ const gun = room.groundDefense.structures.find((s) => s.kind === 'antitank');
 assert.equal(gun.ammo, FORTIFICATIONS.antitank.ammo);
 assert.equal(room.equipment[gun.slot], gun);
 
+// The visible access ring is 8 cm from the centre, outside the old 1.02 cm
+// paper-dialog radius. All stages must accept that same reachable position.
+for (const kind of ['bunker', 'antitank']) {
+  const station = room.groundDefense.structures.find((s) => s.kind === kind);
+  const position = { x: station.x + 0.08, y: station.y, z: station.z };
+  assert.ok(stationAccess(position, station), `${kind}: signature visible at access ring`);
+  assert.ok(!stationAccess({ ...position, x: station.x + 0.091 }, station));
+  assert.ok(!stationAccess({ ...position, y: station.y + 0.02 }, station));
+  const members = ['Premier', 'Second'].map((name) => {
+    const joined = game.join({ code: 'FORTIFY', name });
+    const member = room.pilots.get(joined.id);
+    const body = game.base(room, member);
+    Object.assign(body, {
+      x: (position.x - OFFICE_LAYOUT.base.originX) / ACTOR_UNIT,
+      z: (OFFICE_LAYOUT.base.originZ - position.z) / ACTOR_UNIT,
+      y: position.y,
+      parachute: false,
+    });
+    game.command('FORTIFY', member.id, 'equipment-select', { station: station.slot });
+    // Any optional annex is independent of access and covered by contract tests.
+    room.dossiers.get(member.state.equipmentBoarding.token).clause = null;
+    game.command('FORTIFY', member.id, 'equipment-sign', {
+      station: station.slot,
+      form: 1,
+      signature: true,
+    });
+    return member;
+  });
+  const sign = (member) =>
+    game.command('FORTIFY', member.id, 'equipment-sign', {
+      station: station.slot,
+      form: 2,
+      signature: true,
+    });
+  sign(members[0]);
+  assert.equal(members[0].mode, 'turret');
+  assert.equal(members[0].state.turret, station.slot);
+  assert.throws(() => sign(members[1]), /occupée/);
+  game.command('FORTIFY', members[0].id, 'turret', {});
+  assert.equal(members[0].mode, 'foot');
+  assert.equal(members[0].state.turret, null);
+  const exit = stationExit(station);
+  assert.equal(exit.x, station.x + 0.09);
+  assert.equal(members[0].state.walkSpawn.x, (exit.x - OFFICE_LAYOUT.base.originX) / ACTOR_UNIT);
+  assert.equal(members[0].state.walkSpawn.y, exit.y);
+  sign(members[1]);
+  game.command('FORTIFY', members[1].id, 'turret', {});
+}
+assert.ok(!stationAccess({ x: 0.08, y: 0, z: 0 }, { kind: 'dca', x: 0, y: 0, z: 0 }));
+
 const fire = (member, station, shot) =>
   game.command('FORTIFY', member.id, 'fixed-dca-fire', {
     station: station.slot,
@@ -85,7 +138,13 @@ const removed = game.command('FORTIFY', p.id, 'ground-defense', {
   request: 'fort:remove',
 });
 assert.equal(removed.dollars, 16);
-assert.equal(room.equipment[bunker.slot].kind, 'retired', 'retired slot does not shift gun indices');
+assert.equal(
+  room.equipment[bunker.slot].kind,
+  'retired',
+  'retired slot does not shift gun indices',
+);
 assert.equal(room.equipment[gun.slot], gun);
 
-console.log('Castor fortifications: unlocks, buy, room slots, ammunition, cadence, local paid service, removal OK');
+console.log(
+  'Castor fortifications: unlocks, buy, room slots, ammunition, cadence, local paid service, removal OK',
+);
