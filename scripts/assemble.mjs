@@ -215,6 +215,7 @@ await writeFile(
     layout,
     inline(assets['/route-obstacles.js']),
     inline(assets['/route-navigation.js']),
+    inline(assets['/ground-defense.js']),
     routes,
     inline(assets['/air-current.js']),
     inline(assets['/route-speed.js']),

@@ -1,4 +1,5 @@
 import { floorPath, blockedSegment } from './route-navigation.js';
+import { staticGroundFlow } from './ground-defense.js';
 export const MIN_SPAWN_DISTANCE = 3;
 // Portals describe the decorative vent/hole, not the first living position.
 export const VISIBLE_SPAWN_INSET = 0.04;
@@ -38,22 +39,17 @@ export function enemyRoute(enemy) {
     : (enemy.ground ? 'ground:' : 'air:') + portal;
   if (routeCache.has(key)) return routeCache.get(key);
   let points;
-  if (enemy.spawnPoint) {
-    const start = [enemy.spawnPoint[0], 0.0007, enemy.spawnPoint[2]];
-    const finish = [3.0, 0.0007, -2.7];
-    points = [...floorPath(start, finish), [3.0, 0.38, -2.7], [2.5, 0.38, -2.7]];
-  } else if (enemy.ground) {
-    const checkpoints = [
-      [-3.35, 0.0007, 2.7],
-      [3.35, 0.0007, 2.7],
-      [3.35, 0.0007, -2.9],
-      [-3.35, 0.0007, -2.9],
-      [-3.1, 0.0007, 0.3],
-      [1.4, 0.0007, 0.3],
-    ];
-    const goals = [...checkpoints, [3.0, 0.0007, -2.7]];
-    points = [portalExit(PORTALS.ground[portal])];
-    for (const goal of goals) points.push(...floorPath(points.at(-1), goal).slice(1));
+  if (enemy.ground || enemy.spawnPoint) {
+    // Most direct floor path to the bin around furniture: the same smoothed flow
+    // field the server walks (ground-creatures.js) and the forecast draws.
+    const start = enemy.spawnPoint
+      ? [enemy.spawnPoint[0], 0.0007, enemy.spawnPoint[2]]
+      : portalExit(PORTALS.ground[portal]);
+    const floor = staticGroundFlow()
+      .smoothRoute([start[0], start[2]])
+      ?.map(([x, z]) => [x, 0.0007, z]);
+    points = floor || floorPath(start, [3.0, 0.0007, -2.7]);
+    points[0] = start;
     points.push([3.0, 0.38, -2.7], [2.5, 0.38, -2.7]);
   } else {
     const source = portalExit(PORTALS.air[portal]);

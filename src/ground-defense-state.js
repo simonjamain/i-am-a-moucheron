@@ -1,17 +1,18 @@
 import { FAN_COST, FAN_FADE_MS } from './air-current.js';
 import { SENTRY } from './ground-sentry.js';
 import { FORTIFICATIONS, isFortification } from './ground-fortifications.js';
-import { ROUTE_OBSTACLES } from './route-obstacles.js';
 import {
   splitBarricade,
   buildGroundFlow,
   distanceToSegment,
   STICKY_WIDTH,
+  GROUND_BOUNDS,
+  GROUND_GOAL,
+  GROUND_CELL,
+  GROUND_STATIC_OBSTACLES,
 } from './ground-defense.js';
+export { GROUND_BOUNDS, GROUND_GOAL, GROUND_CELL };
 
-export const GROUND_BOUNDS = Object.freeze([-4.12, -3.51, 4.12, 3.51]);
-export const GROUND_GOAL = Object.freeze([3, -2.7]);
-export const GROUND_CELL = 0.05;
 export const GROUND_LIMIT = 512;
 export const GROUND_BAIT_TYPES = Object.freeze({
   sugar: { radius: 0.15, cost: 3, mealSeconds: 4 },
@@ -60,19 +61,35 @@ export function groundSnapshot(state, now = Date.now()) {
     ...(state.retiringFans.length ? { retiringFans: structuredClone(state.retiringFans) } : {}),
   };
 }
+// Structures that block ground movement (and that ground insects may break).
+export const BLOCKING_KINDS = Object.freeze(['barricade', 'bunker']);
+export function navigationStructures(structures = []) {
+  return structures.filter((s) => BLOCKING_KINDS.includes(s.kind) && s.hp > 0);
+}
+export function bunkerSegment(position) {
+  return { a: [position[0] - 0.045, position[1]], b: [position[0] + 0.045, position[1]] };
+}
+// Blocking pieces a local build draft would add, mirroring groundCommand.
+export function previewStructures(command) {
+  if (command?.kind === 'barricade' && command.a && command.b)
+    return splitBarricade(command.a, command.b, 'preview').map((piece) => ({
+      ...piece,
+      kind: 'barricade',
+      hp: GROUND_WALL_HP,
+    }));
+  if (command?.kind === 'bunker' && command.a)
+    return [
+      { id: 'preview', kind: 'bunker', hp: FORTIFICATIONS.bunker.hp, ...bunkerSegment(command.a) },
+    ];
+  return [];
+}
 export function groundFlow(state, goal = GROUND_GOAL) {
   return buildGroundFlow({
     bounds: GROUND_BOUNDS,
     cellSize: GROUND_CELL,
     goal,
-    barricades: state.structures.filter((s) => ['barricade', 'bunker'].includes(s.kind) && s.hp > 0),
-    staticObstacles: ROUTE_OBSTACLES.filter(
-      (box) =>
-        box.min.y < 0.01 &&
-        box.max.y > 0.01 &&
-        box.max.x - box.min.x < 2 &&
-        box.max.z - box.min.z < 2,
-    ),
+    barricades: navigationStructures(state.structures),
+    staticObstacles: GROUND_STATIC_OBSTACLES,
   });
 }
 // One synchronous command is an atomic room transaction. Never accept costs, HP,
@@ -83,7 +100,8 @@ export function groundCommand(state, command, foot, dollars, now = Date.now(), a
   const action = command.action;
   if (action === 'build') {
     const { kind, a, b } = command;
-    const pointItem = kind === 'sugar' || kind === 'fan' || kind === 'sentry' || isFortification(kind);
+    const pointItem =
+      kind === 'sugar' || kind === 'fan' || kind === 'sentry' || isFortification(kind);
     if (isFortification(kind)) {
       if (!access.castor || !access.blueprintLevels?.[kind])
         fail('Cette défense occupable exige le Castor et son plan collectif.');
@@ -108,18 +126,17 @@ export function groundCommand(state, command, foot, dollars, now = Date.now(), a
     const count = kind === 'barricade' ? Math.ceil(distance / 0.2) : 1;
     if (state.structures.length + count > GROUND_LIMIT)
       fail('Trop de constructions dans la salle.');
-    const price =
-      isFortification(kind)
-        ? FORTIFICATIONS[kind].cost
-        : kind === 'sentry'
-          ? SENTRY.cost
+    const price = isFortification(kind)
+      ? FORTIFICATIONS[kind].cost
+      : kind === 'sentry'
+        ? SENTRY.cost
         : kind === 'fan'
-        ? FAN_COST
-        : kind === 'sugar'
-          ? GROUND_BAIT_TYPES.sugar.cost
-          : kind === 'barricade'
-            ? count * GROUND_WALL_COST_PER_SEGMENT
-            : Math.ceil(distance / 0.2) * GROUND_STICKY_COST_PER_20CM;
+          ? FAN_COST
+          : kind === 'sugar'
+            ? GROUND_BAIT_TYPES.sugar.cost
+            : kind === 'barricade'
+              ? count * GROUND_WALL_COST_PER_SEGMENT
+              : Math.ceil(distance / 0.2) * GROUND_STICKY_COST_PER_20CM;
     if (dollars + 1e-8 < price) fail('Caisse commune insuffisante.');
     const id = String(state.nextId + 1);
     const items =
@@ -147,9 +164,7 @@ export function groundCommand(state, command, foot, dollars, now = Date.now(), a
                           hp: FORTIFICATIONS[kind].hp,
                           maxHp: FORTIFICATIONS[kind].hp,
                           ammo: FORTIFICATIONS[kind].ammo,
-                          ...(kind === 'bunker'
-                            ? { a: [a[0] - 0.045, a[1]], b: [a[0] + 0.045, a[1]] }
-                            : {}),
+                          ...(kind === 'bunker' ? bunkerSegment(a) : {}),
                         }
                       : { type: 'sugar', radius: GROUND_BAIT_TYPES.sugar.radius }),
               },
@@ -165,7 +180,9 @@ export function groundCommand(state, command, foot, dollars, now = Date.now(), a
       if (
         state.structures.some((existing) => {
           if (['sentry', 'bunker', 'antitank'].includes(existing.kind) && existing.hp > 0)
-            return Math.hypot(sample[0] - existing.position[0], sample[1] - existing.position[1]) < 0.07;
+            return (
+              Math.hypot(sample[0] - existing.position[0], sample[1] - existing.position[1]) < 0.07
+            );
           if (existing.kind !== 'barricade' || existing.hp <= 0) return false;
           return distanceToSegment(sample, existing.a, existing.b) < 0.02;
         })
@@ -186,7 +203,11 @@ export function groundCommand(state, command, foot, dollars, now = Date.now(), a
   const position = item.position || [(item.a[0] + item.b[0]) / 2, (item.a[1] + item.b[1]) / 2];
   if (!nearFoot(position, foot)) fail('Approchez-vous de la construction.');
   if (action === 'repair') {
-    if (!['barricade', 'bunker', 'sentry', 'antitank'].includes(item.kind) || item.hp <= 0 || item.hp >= item.maxHp)
+    if (
+      !['barricade', 'bunker', 'sentry', 'antitank'].includes(item.kind) ||
+      item.hp <= 0 ||
+      item.hp >= item.maxHp
+    )
       fail('Ce segment ne peut pas être réparé.');
     if (dollars < 1) fail('Caisse commune insuffisante.');
     item.hp = item.maxHp;
@@ -205,7 +226,9 @@ export function groundCommand(state, command, foot, dollars, now = Date.now(), a
 // Invoked by authoritative server combat only; never expose as a network command.
 export function damageBarricade(state, id, damage) {
   if (!Number.isFinite(damage) || damage <= 0) fail('Dégâts invalides.');
-  const item = state.structures.find((s) => s.id === id && ['barricade', 'bunker'].includes(s.kind));
+  const item = state.structures.find(
+    (s) => s.id === id && ['barricade', 'bunker'].includes(s.kind),
+  );
   if (!item || item.hp <= 0) return false;
   item.hp = Math.max(0, item.hp - damage);
   state.revision++;

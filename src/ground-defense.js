@@ -1,5 +1,15 @@
+import { ROUTE_OBSTACLES } from './route-obstacles.js';
 // Deterministic, room-shared ground navigation primitives (office metres).
-// These are independent of the airborne route system.
+// These are independent of the airborne route system. Keep this module free of
+// heavy imports: routes.js (and the historical Worker bundle) inline it.
+export const GROUND_BOUNDS = Object.freeze([-4.12, -3.51, 4.12, 3.51]);
+export const GROUND_GOAL = Object.freeze([3, -2.7]);
+export const GROUND_CELL = 0.05;
+// Furniture footprints that block insects on the floor (desk legs, boxes…).
+export const GROUND_STATIC_OBSTACLES = ROUTE_OBSTACLES.filter(
+  (box) =>
+    box.min.y < 0.01 && box.max.y > 0.01 && box.max.x - box.min.x < 2 && box.max.z - box.min.z < 2,
+);
 export const MAX_BARRICADE_SEGMENT = 0.2;
 export const STICKY_WIDTH = 0.03;
 
@@ -136,6 +146,53 @@ export function buildGroundFlow({ bounds, cellSize, goal, barricades = [], stati
     points.push(goal);
     return points;
   }
+  // Any-angle smoothing over the flow field: from a position, keep the furthest
+  // successor on the downhill chain that is still in straight, unobstructed view.
+  // The preview and the server both chain these waypoints, so the drawn path is
+  // exactly the one walked while the map does not change.
+  const sample = cellSize / 4;
+  function clear(a, b) {
+    const distance = Math.hypot(b[0] - a[0], b[1] - a[1]);
+    const steps = Math.max(1, Math.ceil(distance / sample));
+    for (let i = 0; i <= steps; i++) {
+      const t = i / steps;
+      // Conservative corridor: the 2×2 cells nearest to the sample must be free,
+      // keeping roughly half a cell of extra margin from furniture and walls.
+      const fx = (a[0] + (b[0] - a[0]) * t - minX) / cellSize - 0.5,
+        fz = (a[1] + (b[1] - a[1]) * t - minZ) / cellSize - 0.5;
+      for (const x of [Math.floor(fx), Math.ceil(fx)])
+        for (const z of [Math.floor(fz), Math.ceil(fz)])
+          if (!inside(x, z) || blocked[index(x, z)]) return false;
+    }
+    return true;
+  }
+  function waypoint(from) {
+    const [x, z] = cell(from);
+    if (!inside(x, z)) return null;
+    let n = index(x, z);
+    if (!Number.isFinite(costs[n])) return null;
+    if (n === target) return goal;
+    let best = null;
+    for (let steps = 0; steps < 512; steps++) {
+      n = next[n];
+      if (n < 0) return best;
+      const point = n === target ? goal : center(n % width, Math.floor(n / width));
+      if (best && !clear(from, point)) return best;
+      best = point;
+      if (n === target) return goal;
+    }
+    return best;
+  }
+  function smoothRoute(from) {
+    if (!route(from)) return null;
+    const points = [from];
+    for (let p = from, guard = 0; p !== goal && guard < costs.length; guard++) {
+      p = waypoint(p);
+      if (!p) return null;
+      points.push(p);
+    }
+    return points;
+  }
   function nextStep(from) {
     const [x, z] = cell(from);
     if (!inside(x, z)) return null;
@@ -144,7 +201,17 @@ export function buildGroundFlow({ bounds, cellSize, goal, barricades = [], stati
     const nextCell = next[here];
     return nextCell === -1 ? goal : center(nextCell % width, Math.floor(nextCell / width));
   }
-  return { width, height, blocked, costs, route, nextStep, reachable: (p) => route(p) !== null };
+  return {
+    width,
+    height,
+    blocked,
+    costs,
+    route,
+    smoothRoute,
+    waypoint,
+    nextStep,
+    reachable: (p) => route(p) !== null,
+  };
 }
 // Attraction is deterministic; an insect cannot switch targets mid-meal.
 export function chooseBait(position, baits, tasted = []) {
@@ -175,4 +242,15 @@ export function stickyTraversal(gabarit) {
   if (gabarit === 'medium') return { stopSeconds: 0, speedMultiplier: 0.3 };
   if (gabarit === 'large') return { stopSeconds: 0, speedMultiplier: 0.9 };
   throw Error('Unknown ground insect size');
+}
+
+let emptyFlow = null;
+// Flow field of an undefended desk, shared by nominal routes and their timing.
+export function staticGroundFlow() {
+  return (emptyFlow ||= buildGroundFlow({
+    bounds: GROUND_BOUNDS,
+    cellSize: GROUND_CELL,
+    goal: GROUND_GOAL,
+    staticObstacles: GROUND_STATIC_OBSTACLES,
+  }));
 }

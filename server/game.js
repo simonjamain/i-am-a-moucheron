@@ -441,7 +441,8 @@ export class Game {
     return body;
   }
   advanceGround(r, now) {
-    if (!r.groundEnabled && !r.groundDefense.structures.some((s) => s.kind !== 'fan')) return;
+    // Ground insects always walk the shared flow field, with or without defenses,
+    // so the preparation forecast is the path walked during the wave.
     if (r.phase !== 'combat') return;
     const elapsed = (now - r.started) / 1000;
     if (r.groundWave !== r.wave) {

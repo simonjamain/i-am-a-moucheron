@@ -106,8 +106,8 @@ Git `94c54a4`, données brutes [JSON](return-performance.json).
 
 Les parcours font le tour de plusieurs zones éloignées, aussi pour les premières
 vagues. Les routes aériennes utilisent le haut de la pièce et une traversée plus
-basse ; les routes terrestres parcourent les couloirs du plancher puis rejoignent
-la corbeille par son approche existante. A* et contrôles de segments évitent le
+basse. Depuis la version 225, les routes terrestres vont directement à la corbeille
+par le champ de navigation partagé ([navigation terrestre](gameplay.md#navigation-terrestre)). A* et contrôles de segments évitent le
 mobilier statique ; aucun obstacle dynamique nouvellement posé ne provoque un
 recalcul de navigation général.
 

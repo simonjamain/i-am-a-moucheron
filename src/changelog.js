@@ -1,6 +1,13 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 225,
+    changes: [
+      'Fourmis et cafards marchent tout droit vers la poubelle en contournant meubles et défenses.',
+      'Le trajet montré pendant la préparation est exactement celui suivi pendant la vague.',
+    ],
+  },
+  {
     version: 224,
     changes: [
       'L’aide en bas à gauche montre les vraies commandes du Castor, des postes de défense et de la construction.',

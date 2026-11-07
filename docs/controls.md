@@ -178,7 +178,8 @@ Ouvrez le bandeau **Vague** en haut de l’écran, ou appuyez sur **V** (sauf au
 volant du Castor, où V bascule la vue tactique). La frise
 regroupe les arrivées simultanées dans une même colonne. Les repères **S** (sol)
 et **A** (air) et les silhouettes reprennent ceux des entrées dans le bureau.
-Le trajet terrestre confirmé apparaît en ocre. Pendant la pose d’une barricade,
+Le trajet terrestre confirmé apparaît en ocre : c'est le chemin réellement marché
+tant que la carte ne change pas. Pendant la pose d’une barricade ou d’un bunker,
 le tracé clair montre le détour proposé avant le clic de validation.
 
 Choisissez une des trois cartes. Vous pouvez changer de voix tant que le vote

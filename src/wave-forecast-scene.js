@@ -45,17 +45,16 @@ export class WaveForecastScene {
     if (
       cmd?.action === 'repair' ||
       (cmd?.action === 'remove' &&
-        !snap.groundDefense.structures.some((s) => s.id === cmd.id && s.kind === 'barricade'))
+        !snap.groundDefense.structures.some(
+          (s) => s.id === cmd.id && ['barricade', 'bunker'].includes(s.kind),
+        ))
     )
       cmd = null;
     // While walking, coalesce requests. The expensive navigation grid is built
     // off the render thread; stale snapshots and stale drafts never overwrite it.
-    const key = [
-      prep.id,
-      snap.groundDefense.navigationRevision,
-      +snap.groundNavigationActive,
-      JSON.stringify(cmd || null),
-    ].join(':');
+    const key = [prep.id, snap.groundDefense.navigationRevision, JSON.stringify(cmd || null)].join(
+      ':',
+    );
     this.key = key;
     if (this.busy || this.rendered === key || now < (this.nextAt || 0)) return;
     if (!this.worker) {
@@ -76,8 +75,7 @@ export class WaveForecastScene {
     this.worker.postMessage({
       key,
       groups: this.entrances,
-      walls: snap.groundDefense.structures.filter((s) => s.kind === 'barricade' && s.hp > 0),
-      active: snap.groundNavigationActive,
+      walls: snap.groundDefense.structures.filter((s) => ['barricade', 'bunker'].includes(s.kind)),
       command: cmd || null,
     });
   }

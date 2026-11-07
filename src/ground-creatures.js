@@ -11,6 +11,8 @@ export const GROUND_BODY_SIZES = Object.freeze({
 });
 export const GROUND_ATTACK_DAMAGE = Object.freeze({ roach: 6, spider: 10, rat: 30 });
 
+// Server-only steering memory; kept out of the serialized unit snapshot.
+const waypoints = new WeakMap();
 const dist = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]);
 
 export function groundUnit(enemy, elapsed) {
@@ -109,7 +111,18 @@ export function advanceGroundUnit(unit, enemy, elapsed, dt, world) {
       break;
     }
     const flow = bait ? world.baitFlow(bait) : world.goalFlow;
-    let next = flow?.nextStep(unit.p);
+    // Hold the current smoothed waypoint until it is reached or the map/target
+    // changes, so the walked polyline is the forecast polyline.
+    const held = waypoints.get(unit);
+    const target = bait ? 'bait:' + bait.id : 'goal';
+    let next;
+    if (held && held.target === target && held.flow === flow && dist(unit.p, held.point) > 0.000001)
+      next = held.point;
+    else {
+      next = flow?.waypoint ? flow.waypoint(unit.p) : flow?.nextStep(unit.p);
+      if (next) waypoints.set(unit, { target, flow, point: next });
+      else waypoints.delete(unit);
+    }
     if (!next) {
       if (bait) {
         unit.baitId = null;

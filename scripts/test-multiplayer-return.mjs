@@ -284,9 +284,19 @@ for (let seed = 0; seed < 8; seed++)
       const route = enemyRoute(enemy),
         xs = route.samples.map((s) => s.p[0]),
         zs = route.samples.map((s) => s.p[2]);
-      assert.ok(Math.max(...xs) - Math.min(...xs) > 5.5);
-      assert.ok(Math.max(...zs) - Math.min(...zs) > 5);
-      assert.ok(enemy.duration > 100);
+      if (enemy.ground) {
+        // Issue #97: ground insects take the most direct floor path to the bin.
+        const floor = route.points.filter((p) => p[1] < 0.01);
+        const walked = floor
+          .slice(1)
+          .reduce((sum, p, i) => sum + Math.hypot(p[0] - floor[i][0], p[2] - floor[i][2]), 0);
+        const straight = Math.hypot(floor[0][0] - 3, floor[0][2] + 2.7);
+        assert.ok(walked <= straight * 1.08, enemy.type + ' ground route detours');
+      } else {
+        assert.ok(Math.max(...xs) - Math.min(...xs) > 5.5);
+        assert.ok(Math.max(...zs) - Math.min(...zs) > 5);
+        assert.ok(enemy.duration > 100);
+      }
       for (let i = 1; i < route.samples.length - 2; i++)
         assert.ok(
           !blockedSegment(route.samples[i - 1].p, route.samples[i].p, !!enemy.ground),
