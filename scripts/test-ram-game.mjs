@@ -13,6 +13,16 @@ const a = game.join({ code: 'RAMTEST', name: 'Alpha' }),
   b = game.join({ code: 'RAMTEST', name: 'Bravo' });
 let room = game.rooms.get('RAMTEST');
 const call = (id, path, body = {}) => game.command('RAMTEST', id, path, body);
+// Register pistol ammunition through the same authoritative command as the client.
+function pistolShot(id, shot) {
+  const shooter = room.pilots.get(id);
+  return call(id, 'pistol-trace', {
+    shot,
+    incarnation: shooter.incarnation,
+    origin: [0, 0, 0],
+    direction: [0, 0, -1],
+  });
+}
 assert.equal(room.pilots.size, 2);
 // Snapshot shape must remain compatible with many players and signed purchases.
 const extra = new Game({ now: () => now });
@@ -69,9 +79,13 @@ assert.equal(s.wave, 1);
 const firstTotal = s.total;
 assert.ok(firstTotal >= 8, 'first wave has its full budget');
 for (let enemy = 0; enemy < s.total; enemy++) {
-  call(a.id, 'hit', { wave: 1, enemy, amount: 75, shot: 'one' });
-  call(a.id, 'hit', { wave: 1, enemy, amount: 75, shot: 'one' });
-  call(a.id, 'hit', { wave: 1, enemy, amount: 75, shot: 'two' });
+  const one = 'wave1:' + enemy + ':one';
+  const two = 'wave1:' + enemy + ':two';
+  pistolShot(a.id, one);
+  call(a.id, 'hit', { wave: 1, enemy, amount: 75, shot: one });
+  call(a.id, 'hit', { wave: 1, enemy, amount: 75, shot: one });
+  pistolShot(a.id, two);
+  call(a.id, 'hit', { wave: 1, enemy, amount: 75, shot: two });
 }
 s = game.snapshot(room);
 assert.equal(s.phase, 'prep');
@@ -171,19 +185,24 @@ assert.equal(room.pilots.get(b.id).mode, 'foot');
 assert.equal(room.vehicles.has(bomber.id), true);
 call(a.id, 'vehicle-exit');
 assert.equal(room.pilots.get(a.id).state.walkSpawn.parachute, false);
-for (let i = 0; i < 9; i++)
+for (let i = 0; i < 9; i++) {
+  pistolShot(a.id, 'p' + i);
   call(a.id, 'friendly-hit', { target: b.id, incarnation: 0, shot: 'p' + i });
+}
 assert.equal(room.pilots.get(b.id).health, 10);
 call(a.id, 'friendly-hit', { target: b.id, incarnation: 0, shot: 'p8' });
 assert.equal(room.pilots.get(b.id).health, 10);
+pistolShot(a.id, 'p9');
 call(a.id, 'friendly-hit', { target: b.id, incarnation: 0, shot: 'p9' });
 assert.equal(room.pilots.get(b.id).life, 'dead');
 assert.equal(room.pilots.get(b.id).health, 100);
 call(a.id, 'death', { incarnation: 0 });
 call(a.id, 'enter-purgatory', { incarnation: room.pilots.get(a.id).incarnation });
 call(b.id, 'enter-purgatory', { incarnation: room.pilots.get(b.id).incarnation });
-for (let i = 0; i < 10; i++)
+for (let i = 0; i < 10; i++) {
+  pistolShot(a.id, 's' + i);
   call(a.id, 'friendly-hit', { target: b.id, incarnation: 1, shot: 's' + i });
+}
 assert.equal(room.pilots.get(b.id).state.realm, 'super');
 assert.throws(() => call(b.id, 'death', { incarnation: 1 }), /purgatoire/);
 call(b.id, 'enter-purgatory', { incarnation: room.pilots.get(b.id).incarnation });
@@ -212,7 +231,10 @@ assert.equal(room.pilots.get(b.id).life, 'alive');
 assert.equal(room.pilots.get(b.id).health, 100);
 const enemy = [...room.souls.values()].find((s) => s.kind === 'enemy' && s.status === 'waiting');
 const dollars = room.dollars;
-for (let i = 0; i < 10; i++) call(a.id, 'soul-hit', { soul: enemy.id, shot: 'soul' + i });
+for (let i = 0; i < 10; i++) {
+  pistolShot(a.id, 'soul' + i);
+  call(a.id, 'soul-hit', { soul: enemy.id, shot: 'soul' + i });
+}
 call(a.id, 'soul-hit', { soul: enemy.id, shot: 'soul9' });
 assert.equal(room.dollars, dollars + 1);
 const epoch = room.base.epoch;

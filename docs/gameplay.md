@@ -349,3 +349,15 @@ une **station de ravitaillement ou un Castor vivant** est à sa portée. Le tari
 est le même que pour les autres obus, **1 $ pour 10 unités** ; en cas de manque
 d'argent, elle reçoit une part équitable avec les véhicules et les barricades.
 Une DCA isolée reste à sec jusqu'à l'installation ou au passage d'un soutien.
+
+
+### Pistolet à munitions limitées (version 198)
+
+Chaque nouvelle incarnation reçoit un pistolet avec **120 balles**. Un tir est
+décompté par le serveur avant de pouvoir blesser un insecte, un allié ou une âme :
+un impact ne peut utiliser qu'une fois le même identifiant de tir. Dans le bureau,
+le rechargement est automatique dans la zone d'une station ou du Castor, au tarif
+de **1 $ pour 1 000 balles réellement fournies**, partagé équitablement avec les
+autres demandes de maintenance. Un joueur hors de portée ne recharge pas.
+Au purgatoire, la réserve reste limitée sans station à distance ; la paperasse
+reste le moyen alternatif de progression lorsque les munitions sont épuisées.
