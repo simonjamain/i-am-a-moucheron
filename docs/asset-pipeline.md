@@ -57,6 +57,41 @@ La commande `validate` relit les deux fichiers et compare nœuds, matériaux,
 octets des images, attributs de sommets et intégrité des indices. Ce contrôle
 ne remplace PAS une comparaison visuelle à angles équivalents ni un essai en jeu.
 
+## Règle pour tout nouveau modèle Meshy
+
+Cette règle s'applique **avant** l'outillage décrit ci-dessus et le complète
+([issue #109](https://github.com/simonjamain/i-am-a-moucheron/issues/109), outillage
+de l'[issue #78](https://github.com/simonjamain/i-am-a-moucheron/issues/78)).
+
+1. **Propositions visuelles validées.** Présenter des images dans la direction
+   artistique du jeu (low-poly, couleurs militaires lisibles à l'échelle miniature,
+   cohérence avec la flotte existante). Aucune génération Meshy (modèle, texture,
+   rig) n'est lancée sans l'accord explicite de l'utilisateur sur ces images ;
+   consigner le lien ou la référence de cette validation dans la PR.
+2. **Une référence isolée par pièce.** Chaque pièce mobile (châssis, roue, rotor,
+   tourelle, canon, capteur…) dispose de sa propre image de référence, avec les
+   vues utiles (face, profil, dessus, 3/4). Ne jamais envoyer une planche
+   multi-vues ou multi-pièces comme une seule pièce.
+3. **Articulations séparées dès la génération.** Générer les pièces mobiles comme
+   des modèles distincts, puis documenter pour chacune : pivot (point de rotation
+   dans le repère du modèle), axe(s) et amplitude, dimensions réelles visées et
+   échelle d'import, origine des projectiles ou effets (bouche de canon).
+4. **Conserver et vérifier.** Garder UV, textures et sources originales (tâche
+   Meshy, SHA-256), puis vérifier le rendu sous plusieurs angles, chaque pièce
+   mobile à ses butées, l'intégration en jeu (collision, aperçu de pose, tir) et
+   les performances avec plusieurs exemplaires. Une simplification n'est adoptée
+   qu'après ces contrôles (voir ci-dessous).
+
+### Checklist de PR pour un asset Meshy
+
+- [ ] Images proposées et **validées par l'utilisateur** avant génération (référence).
+- [ ] Une image de référence isolée par pièce mobile.
+- [ ] Tâches Meshy et SHA-256 des sources conservés.
+- [ ] Pivots, axes, amplitudes et dimensions documentés par pièce.
+- [ ] UV et textures d'origine préservées ; rendu comparé sous plusieurs angles.
+- [ ] Pièces mobiles testées à leurs butées ; origine de tir à la vraie bouche.
+- [ ] Mesures avant/après (triangles, octets, FPS si possible) et essai en jeu.
+
 ## Intégration Meshy au jeu
 
 1. Télécharger le modèle Meshy **approuvé** et en conserver l'original/empreinte.
@@ -93,6 +128,7 @@ l'image sur GHCR après push sur `main` touchant les outils ; pas avant.
 La CI ne valide pas la qualité visuelle de tous les modèles Meshy.
 
 Documentation amont :
+
 - [glTF Transform](https://gltf-transform.dev/)
 - [meshoptimizer](https://github.com/zeux/meshoptimizer)
 - [Docker Compose run](https://docs.docker.com/reference/cli/docker/compose/run/)
@@ -103,10 +139,12 @@ Placer un fichier `zones.json` dans le dossier des originaux. Exemple (à
 recalibrer sur **les coordonnées du GLB**, pas celles du jeu) :
 
 ```json
-{"regions":[
-  {"name":"rotor","mesh":"body","min":[-0.3,0.1,-0.2],"max":[0.3,0.5,0.2]},
-  {"name":"canon","min":[-0.1,-0.2,0.6],"max":[0.1,0.2,1.0]}
-]}
+{
+  "regions": [
+    { "name": "rotor", "mesh": "body", "min": [-0.3, 0.1, -0.2], "max": [0.3, 0.5, 0.2] },
+    { "name": "canon", "min": [-0.1, -0.2, 0.6], "max": [0.1, 0.2, 1.0] }
+  ]
+}
 ```
 
 Les triangles dont la boîte englobante chevauche une région sont copiés

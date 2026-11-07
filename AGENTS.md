@@ -104,6 +104,17 @@ versionnement pour les branches parallèles.
 
 ## Nouveaux assets Meshy — outil 3D
 
+Règle pérenne pour tout nouveau modèle Meshy (détails et checklist dans
+[le pipeline d'assets](docs/asset-pipeline.md#règle-pour-tout-nouveau-modèle-meshy)) :
+1. proposer des visuels dans la direction artistique du jeu et obtenir la
+   **validation de l'utilisateur avant toute génération** ;
+2. une image de référence isolée, aux vues adaptées, par pièce mobile — jamais une
+   planche entière envoyée comme une seule pièce ;
+3. générer séparément roues, rotor, tourelle, canon et autres articulations ;
+   documenter pivots, axes et dimensions ;
+4. conserver UV, textures et sources, puis vérifier rendu, pièces mobiles,
+   intégration et performances avant adoption.
+
 Pour chaque nouvel asset Meshy, consulter [le pipeline d'assets](docs/asset-pipeline.md)
 et utiliser l'image Docker d'optimisation avant import quand une réduction sûre
 est possible. Conserver la source approuvée, les UV/textures, les pièces mobiles,
