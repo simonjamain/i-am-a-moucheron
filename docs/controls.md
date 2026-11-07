@@ -184,4 +184,4 @@ Molette maintenue : orienter vers un secteur puis relâcher pour choisir. Clic g
 Sur le [bombardier B3](b3-model.md), **4** demande le poste ventral avec signature ; **1 / 2 / 3** restent pilote, dorsal et queue.
 
 
-G1 Castor : Z/S avancer/reculer, Q/D tourner, souris et clic gauche pour tirer avec la mitrailleuse légère, **V** bascule la caméra tactique surélevée. Le soutien à 50 cm est automatique et payant. La construction depuis le camion sera ajoutée dans un lot ultérieur.
+G1 Castor : Z/S avancer/reculer, Q/D tourner, souris et clic gauche pour tirer avec la mitrailleuse légère, **V** bascule la caméra tactique surélevée. Le soutien à 50 cm est automatique et payant. Pendant la conduite, le clic molette ouvre la roue de construction. Clic gauche démarre/arrête la dépose des murs LEGO et rubans (1 $ par 20 cm) ; les autres pièges se posent au point visé. Échap interrompt la construction.

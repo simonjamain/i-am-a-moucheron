@@ -306,4 +306,21 @@ Le [bombardier B3 à quatre places](b3-model.md) conserve son camouflage Meshy ;
 
 Le **G1 Castor** est un camion monoplace à six roues, achetable pour **12 $** avec le bon signé des véhicules. Z/S et Q/D permettent de conduire ; la souris vise sa mitrailleuse légère (500 balles, recharges payantes). **V** bascule une vue tactique surélevée. Plus rapide que le tank, il possède un rayon de soutien sphérique de **50 cm** qui peut soigner et ravitailler les alliés en mouvement ou en vol et se réapprovisionner lui-même. Le service utilise la caisse commune.
 
-**La construction en roulant n'est pas encore disponible dans ce premier lot.** Le Castor utilise désormais **ses trois modèles Meshy texturés** : châssis, tourelle et roues indépendantes. Les couleurs originales sont préservées ; seule la pastille d’identification change selon l’appareil. Voir [l'issue #76](https://github.com/simonjamain/i-am-a-moucheron/issues/76) et [la note de reprise](tasks/g1-castor.md).
+**La construction en roulant est disponible depuis la version 188.** Le Castor utilise désormais **ses trois modèles Meshy texturés** : châssis, tourelle et roues indépendantes. Les couleurs originales sont préservées ; seule la pastille d’identification change selon l’appareil. Voir [l'issue #76](https://github.com/simonjamain/i-am-a-moucheron/issues/76) et [la note de reprise](tasks/g1-castor.md).
+
+
+### Construction depuis le Castor (version 188)
+
+Au sol, le pilote du Castor ouvre la roue des défenses par **clic molette**.
+Pour les murs **LEGO** et les **rubans**, un clic gauche démarre la pose en
+continu **derrière le véhicule** pendant la conduite ; un deuxième clic l'arrête.
+Le Castor construit des segments de 20 cm au tarif existant de 1 $ par segment.
+Le serveur vérifie chaque pose, les collisions et les fonds de la caisse commune.
+Un changement de poste, une sortie, un échec de placement ou un déplacement trop
+brutal interrompt la construction. Les autres pièges, la réparation et la
+suppression restent ponctuels, avec la visée de caméra depuis la cabine.
+
+Ce système conserve la validation serveur et ne permet pas de construire sur les
+surfaces surélevées depuis le Castor dans cette première version. Les véritables
+modèles Meshy du châssis, de la tourelle et des roues sont déjà intégrés ; la
+correction des six roues est conservée.
