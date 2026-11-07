@@ -1,6 +1,6 @@
 import { VEHICLES } from './fleet.js';
 import { distanceToSegment } from './ground-defense.js';
-import { FIXED_DCA_AMMO } from './ground-ammo.js';
+import { FIXED_DCA_AMMO, PISTOL_CAPACITY } from './ground-ammo.js';
 import { ammoCapacity, FUEL_SECONDS, SERVICE_RADIUS, SERVICE_SECONDS } from './logistics.js';
 
 export const SERVICE_RATES = Object.freeze({
@@ -74,6 +74,7 @@ export function advancePaidService(
   balance = {},
   seconds = 1,
   groundDefense = null,
+  infantry = [],
 ) {
   const dt = Math.max(0, Math.min(5, Number.isFinite(seconds) ? seconds : 0));
   const jobs = [];
@@ -109,6 +110,39 @@ export function advancePaidService(
     }
     const cost = needs.reduce((sum, n) => sum + n.cost, 0);
     if (cost > 0) jobs.push({ needs, cost, mark: () => v.supplies.revision++ });
+  }
+  // A character on foot only receives rounds at a physical service source.
+  // The purgatories have no service stations; each new incarnation starts
+  // with a finite magazine and must use the paperwork exit if it runs dry.
+  if (dt && infantry.length) {
+    const sources = serviceSources(installations, fleet);
+    for (const { pilot, position } of infantry) {
+      if (
+        pilot.life !== 'alive' ||
+        pilot.mode !== 'foot' ||
+        !Array.isArray(position) ||
+        !Number.isFinite(pilot.pistolAmmo)
+      )
+        continue;
+      if (
+        !sources.some(
+          ({ p, radius }) =>
+            Math.hypot(...position.map((n, i) => n - p[i])) <= radius,
+        )
+      )
+        continue;
+      const amount = Math.min(
+        Math.max(0, PISTOL_CAPACITY - pilot.pistolAmmo),
+        (PISTOL_CAPACITY * dt) / SERVICE_SECONDS,
+      );
+      const cost = amount * SERVICE_RATES.machineGun;
+      if (cost > 0)
+        jobs.push({
+          cost,
+          needs: [{ cost, apply: (fraction) => (pilot.pistolAmmo += amount * fraction) }],
+          mark: () => {},
+        });
+    }
   }
   // Fixed DCA guns also compete for the same budget; no remote top-ups.
   // A shell requires a real supply source near the fixed emplacement.

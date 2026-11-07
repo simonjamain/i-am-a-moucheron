@@ -12,7 +12,7 @@ const source = readFileSync('src/client.js', 'utf8'),
     source.indexOf('function pistol()'),
     source.indexOf('let crewRenderKey', source.indexOf('function pistol()')),
   );
-function shoot({ camera, target, colliders = [] }) {
+async function shoot({ camera, target, colliders = [] }) {
   const scene = new T.Scene(),
     mesh = new T.Mesh(new T.SphereGeometry(0.002, 12, 8), new T.MeshBasicMaterial());
   mesh.position.copy(target);
@@ -69,6 +69,8 @@ function shoot({ camera, target, colliders = [] }) {
   vm.createContext(c);
   vm.runInContext(pistol, c);
   vm.runInContext('pistol()', c);
+  await Promise.resolve();
+  await Promise.resolve();
   return actions;
 }
 const camera = new T.PerspectiveCamera();
@@ -84,10 +86,10 @@ const horizontal = new T.PerspectiveCamera();
 horizontal.position.set(0, 0.01, 0.02);
 horizontal.lookAt(0, 0.01, -1);
 horizontal.updateMatrixWorld();
-assert.equal(shoot({ camera: horizontal, target: new T.Vector3(0, 0.01, -0.2) }).length, 1);
-assert.equal(shoot({ camera: horizontal, target: new T.Vector3(0, 0.01, -0.5) }).length, 0);
+assert.equal(await shoot({ camera: horizontal, target: new T.Vector3(0, 0.01, -0.2) }).length, 1);
+assert.equal(await shoot({ camera: horizontal, target: new T.Vector3(0, 0.01, -0.5) }).length, 0);
 assert.equal(
-  shoot({
+  await shoot({
     camera: horizontal,
     target: new T.Vector3(0, 0.01, -0.2),
     colliders: [new T.Box3(new T.Vector3(-0.01, 0, 0.005), new T.Vector3(0.01, 0.03, 0.015))],

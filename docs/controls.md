@@ -191,3 +191,9 @@ DCA fixe : le nombre d'obus restants (sur 120) est affiché près de l'état du
 poste. Un clic gauche ou Espace déclenche un tir tant qu'il reste des munitions.
 Rechargement automatique auprès d'une station ou d'un Castor à portée, depuis
 la caisse commune ; aucun achat de munitions à distance.
+
+
+Le pistolet possède **120 balles** par incarnation. Les munitions restantes sont
+affichées à pied ; tirer à vide n'inflige pas de dégâts. Le rechargement automatique
+payant nécessite de rejoindre une station ou le Castor. Au purgatoire, la réserve
+reste finie et la sortie par les formulaires demeure disponible.

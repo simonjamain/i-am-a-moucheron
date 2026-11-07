@@ -1,6 +1,12 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 198,
+    changes: [
+      'Le pistolet possède désormais une réserve de 120 balles, rechargée automatiquement près des stations et du Castor.',
+    ],
+  },
+  {
     version: 193,
     changes: [
       'Les DCA fixes disposent maintenant de 120 obus et se rechargent automatiquement près d’une station ou du Castor.',

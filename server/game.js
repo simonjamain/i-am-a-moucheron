@@ -62,7 +62,7 @@ import {
 } from '../src/waves.js';
 import { SHOP, shopPrice, supportedPlacement, waveStipend } from '../src/equipment.js';
 import { advancePaidService } from '../src/paid-service.js';
-import { FIXED_DCA_AMMO } from '../src/ground-ammo.js';
+import { FIXED_DCA_AMMO, PISTOL_CAPACITY } from '../src/ground-ammo.js';
 import {
   fullAmmo,
   ammoCapacity,
@@ -152,6 +152,7 @@ function roomState(code, now) {
     bedContracts: new Map(),
     identityTokens: new Map(),
     hits: new Set(),
+    pistolImpacts: new Set(),
     kills: new Set(),
     enemyDamage: {},
     equipment: [],
@@ -238,6 +239,7 @@ export class Game {
       life: 'alive',
       mode: 'foot',
       health: 100,
+      pistolAmmo: PISTOL_CAPACITY,
       incarnation: 0,
       board_paper: 0,
       vehicle_id: null,
@@ -304,6 +306,12 @@ export class Game {
         r.balance,
         Math.min(5, Math.floor(elapsed / 1000)),
         r.groundDefense,
+        values(r.pilots).map((pilot) => ({
+          pilot,
+          position: pilot.life === 'alive' && pilot.mode === 'foot'
+            ? this.playerPosition(r, pilot)
+            : null,
+        })),
       );
       r.dollars = result.dollars;
       r.lastPaidServiceAt = now;
@@ -895,6 +903,7 @@ export class Game {
       if (s.kind === 'player' && s.entity === p.id) s.status = 'gone';
     p.life = 'dead';
     p.health = 100;
+    p.pistolAmmo = PISTOL_CAPACITY;
     p.incarnation++;
     p.mode = 'foot';
     p.board_paper = 0;
@@ -1073,6 +1082,7 @@ export class Game {
         Object.assign(p, {
           life: 'alive',
           health: 100,
+          pistolAmmo: PISTOL_CAPACITY,
           incarnation: p.incarnation + 1,
           occupation: p.occupation + 1,
           mode: 'foot',
@@ -1305,6 +1315,21 @@ export class Game {
     gun.lastShotAt = this.now();
     r.fixedDcaShots.add(key);
   }
+  pistolImpact(r, p, shot) {
+    // A foot soldier has no other damaging firearm. Require a validated
+    // trace and allow only one impact (enemy, friendly or soul) per shot.
+    if (p.mode !== 'foot') return true;
+    requireGame(
+      typeof shot === 'string' &&
+        r.hits.has(JSON.stringify(['pistol-trace', p.id, p.incarnation, shot])),
+      'Tir de pistolet non validé.',
+    );
+    const key = JSON.stringify(['pistol-impact', p.id, p.incarnation, shot]);
+    if (r.pistolImpacts.has(key)) return false;
+    requireGame(r.pistolImpacts.size < 128000, 'Trop de tirs enregistrés.', 429);
+    r.pistolImpacts.add(key);
+    return true;
+  }
   pistolTrace(r, p, b) {
     requireGame(
       !p.state.awaitingPurgatory &&
@@ -1324,7 +1349,9 @@ export class Game {
     requireGame(Math.abs(Math.hypot(...b.direction) - 1) < 0.01, 'Direction invalide.');
     const key = JSON.stringify(['pistol-trace', p.id, p.incarnation, b.shot]);
     if (r.hits.has(key)) return;
-    this.once(r, key, () =>
+    requireGame(p.pistolAmmo >= 1, 'Pistolet à court de munitions.');
+    this.once(r, key, () => {
+      p.pistolAmmo--;
       r.effects.push({
         id: ++r.effectSeq,
         kind: 'pistol-trace',
@@ -1342,8 +1369,8 @@ export class Game {
         ),
         realm: world(p),
         at: this.now(),
-      }),
-    );
+      });
+    });
   }
   purchaseSnapshot(r) {
     return {
@@ -2373,6 +2400,7 @@ export class Game {
     )
       return;
     if (r.kills.has(b.enemy)) return;
+    if (!this.pistolImpact(r, p, b.shot)) return;
     const amount = Math.max(1, Math.min(800, Number(b.amount) || 75)) * r.balance.damage;
     this.once(
       r,
@@ -2403,6 +2431,7 @@ export class Game {
     if (b.vehicle) {
       const v = r.vehicles.get(b.vehicle);
       requireGame(world(p) === 'office' && v, 'Appareil hors de cet espace.');
+      if (!this.pistolImpact(r, p, b.shot)) return;
       this.once(r, JSON.stringify(['hull', v.id, p.id, b.shot]), () => {
         v.state.hp = Math.max(0, v.state.hp - amount);
       });
@@ -2423,6 +2452,7 @@ export class Game {
         (b.incarnation === undefined || b.incarnation === target.incarnation),
       'Cible absente de cet espace.',
     );
+    if (!this.pistolImpact(r, p, b.shot)) return;
     this.once(r, JSON.stringify(['health', target.id, target.incarnation, p.id, b.shot]), () => {
       r.damageEvents.push({
         id: ++r.damageSeq,
@@ -2446,6 +2476,7 @@ export class Game {
     if (r.hits.has(JSON.stringify(['soul', Number(b.soul), p.id, b.shot]))) return;
     const s = r.souls.get(Number(b.soul));
     requireGame(s?.kind === 'enemy' && s.realm === world(p), 'Âme absente.');
+    if (!this.pistolImpact(r, p, b.shot)) return;
     this.once(r, JSON.stringify(['soul', s.id, p.id, b.shot]), () => {
       if (s.status === 'waiting') {
         s.damage += 10 * r.balance.damage;
@@ -2483,6 +2514,7 @@ export class Game {
       s.status = 'gone';
       body.gone = true;
       p.health = 100;
+      p.pistolAmmo = PISTOL_CAPACITY;
       p.incarnation++;
       p.mode = 'foot';
       p.board_paper = 0;

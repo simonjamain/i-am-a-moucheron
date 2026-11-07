@@ -100,3 +100,20 @@
 - Première CI PR #87 : l'assemblage n'incluait pas encore le nouveau module navigateur `ground-ammo.js` et le formatage de l'expression de cadence du serveur échouait. Corrigés sur le commit suivant, puis CI complète à relancer.
 
 - Dernier diagnostic CI : Prettier exigeait deux retours à la ligne dans `src/client.js` (HUD du canon et expression de tir). Appliquer ces deux corrections, supprimer le diagnostic temporaire et relancer les cinq contrôles sur le SHA final.
+
+
+## Lot 7 — pistolet personnel fini
+
+- Branche : `feat/castor-finite-pistol-ammo` ; PR dédiée à #76.
+- Chaque incarnation reçoit 120 balles, frappes validées à partir d'un tir
+  déjà accepté, un impact maximum par identifiant et coût unique par tir.
+- Le client affiche les cartouches et attend la validation de la réserve avant
+  d'émettre un impact ; le tracé visuel immédiat reste optimiste. Les stations et
+  le Castor rechargent automatiquement, payant à 0,001 $/balle et sous la même
+  répartition équitable que les autres installations.
+- Purgatoire : réserve finie par incarnation, sans recharge à distance ; la
+  paperasse reste accessible. Essai humain du ressenti non couvert.
+- Vérifications attendues : tests ciblés + suite complète GitHub Actions,
+  Docker build, format et docs, puis revue et fusion si tous verts.
+- **Restant** : les trois défenses exclusives Castor et leurs cartes, modèles et
+  contrôles, test manuel WebGL/UDP et FPS avec plusieurs Castor.

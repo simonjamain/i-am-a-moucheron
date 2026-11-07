@@ -13,7 +13,7 @@ import { GunSalvos } from '/salvos.js';
 import { nextPilotMuzzle } from '/muzzle.js';
 import { advanceAutomaticFire } from '/salvos.js';
 import { ammoCapacity } from '/logistics.js';
-import { FIXED_DCA_AMMO } from '/ground-ammo.js';
+import { FIXED_DCA_AMMO, PISTOL_CAPACITY } from '/ground-ammo.js';
 import { moveShotTrace, advanceShotTrace, makeShotTrace, TracerPool } from '/tracers.js';
 import { PurchaseUI } from '/purchase-ui.js';
 import { purchaseCount } from '/equipment.js';
@@ -1000,6 +1000,7 @@ function accept(s, force = false) {
   if (worldChanged) {
     baseArena = null;
     baseRevision = -1;
+    pendingPistolShots.clear();
     if (self?.state.spawnMessage) notify(self.state.spawnMessage, 5);
     groundView.scene = '';
     soulArena = null;
@@ -1357,8 +1358,10 @@ $('form').addEventListener('submit', async (e) => {
 async function action(path, extra = {}) {
   try {
     accept(await api(path, { id, ...extra }));
+    return true;
   } catch (e) {
     notify(e.message, 3);
+    return false;
   }
 }
 const waveCouncil = new WaveCouncilUI({ document, command: action, releaseMouse });
@@ -2741,7 +2744,14 @@ function updateVehicles(dt) {
           (myVehicle.supplies?.servicing ? ' · Ravitaillement' : '')
         : selfBase()?.parachute
           ? 'Descente sous voile'
-          : 'Échelle ' + MAP.numerator + '/' + MAP.denominator + ' · À pied';
+          : 'Échelle ' +
+            MAP.numerator +
+            '/' +
+            MAP.denominator +
+            ' · À pied · Pistolet ' +
+            Math.floor(snap?.pilots.find((p) => p.id === id)?.pistolAmmo ?? PISTOL_CAPACITY) +
+            '/' +
+            PISTOL_CAPACITY;
   if (!visible) return;
   if (crew) {
     if (myVehicle.type === 'helicopter' && crewSeat === 'copilot') {
@@ -4626,6 +4636,7 @@ function updateFallingEnemies(dt) {
   }
 }
 
+const pendingPistolShots = new Set();
 function pistol() {
   if (
     !joined ||
@@ -4639,6 +4650,11 @@ function pistol() {
     (!onFoot && !respawnAt)
   )
     return;
+  const self = snap?.pilots.find((p) => p.id === id);
+  if (!self || (self.pistolAmmo ?? PISTOL_CAPACITY) - pendingPistolShots.size < 1) {
+    notify('Pistolet vide · rejoignez une station ou le Castor.', 2);
+    return;
+  }
   const purg = !!respawnAt,
     cam = purg ? purgCamera : camera,
     scale = purg ? 1 : MAP.ratio;
@@ -4703,12 +4719,13 @@ function pistol() {
   ray = new T.Raycaster(origin, dir, 0, shotAim.range);
   scan();
   sound.play('shot', origin, { ref: 12 });
-  action('pistol-trace', {
+  pendingPistolShots.add(shot);
+  const confirmed = action('pistol-trace', {
     shot,
     origin: origin.toArray(),
     direction: dir.toArray(),
     distance: hit?.distance ?? 150 * scale,
-    incarnation: snap.pilots.find((p) => p.id === id)?.incarnation,
+    incarnation: self.incarnation,
   });
   const targetScene = purg ? purgScene : scene;
   const line = makeShotTrace(
@@ -4728,15 +4745,23 @@ function pistol() {
     old.targetScene.remove(old.line);
     old.line.userData.dispose();
   }
-  if (hit?.soul) action('soul-hit', { soul: hit.soul, shot });
-  else if (hit?.target)
-    action('friendly-hit', {
-      target: hit.target,
-      shot,
-      incarnation: snap.pilots.find((p) => p.id === hit.target)?.incarnation,
-    });
-  else if (hit?.vehicle) action('friendly-hit', { vehicle: hit.vehicle, shot });
-  else if (hit?.enemy !== undefined) damageEnemy(hit.enemy, 10, shot, hit.point);
+  // Keep the muzzle flash immediate but never apply damage until the server
+  // confirms a round was actually available and consumed. This also orders
+  // the trace receipt before the UDP hit command.
+  Promise.resolve(confirmed)
+    .then((allowed) => {
+      if (allowed === false) return;
+      if (hit?.soul) action('soul-hit', { soul: hit.soul, shot });
+      else if (hit?.target)
+        action('friendly-hit', {
+          target: hit.target,
+          shot,
+          incarnation: snap.pilots.find((p) => p.id === hit.target)?.incarnation,
+        });
+      else if (hit?.vehicle) action('friendly-hit', { vehicle: hit.vehicle, shot });
+      else if (hit?.enemy !== undefined) damageEnemy(hit.enemy, 10, shot, hit.point);
+    })
+    .finally(() => pendingPistolShots.delete(shot));
 }
 
 const pistolTrails = [];
