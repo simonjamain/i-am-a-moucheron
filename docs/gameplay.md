@@ -36,6 +36,10 @@ paramètres de la room et d'envoyer des lots d'ennemis par espèce, y compris ho
 combat. Une nuée de debug rejoint la vague courante ou démarre une vague de test
 sans composition automatique, selon la phase. Voir [équilibrage par room](room-balance.md).
 
+## Laboratoire de test
+
+Le bouton **Laboratoire** dans le HUD active un mode de test commun à la room, avec plans disponibles, caisse virtuelle, choix de cartes et de vagues. Un scénario mémorise les équipements déjà posés et la vague à rejouer, sans conserver les joueurs embarqués. Quitter le laboratoire réinitialise la partie et efface ses scénarios. Voir [laboratoire](laboratory.md).
+
 ## Équipements et combat
 
 Un chasseur monoplace et un bombardier sont disponibles au départ. Le bombardier

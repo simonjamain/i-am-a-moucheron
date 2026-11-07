@@ -4,6 +4,7 @@ import { WaveForecastScene } from '/wave-forecast-scene.js';
 import { GroundDefenseUI } from '/ground-defense-ui.js';
 import { GroundMotionTrack } from '/ground-motion.js';
 import { BalanceUI } from '/balance-ui.js';
+import { LabUI } from '/lab-ui.js';
 import { mountChangelog } from '/changelog.js';
 import { deliveryHeightAt } from '/delivery.js';
 import { reserveAlerts, missileStatus, ArrivalSignals } from '/reserve-feedback.js';
@@ -399,6 +400,7 @@ function groundActive() {
     $('bedPanel').classList.contains('hidden') &&
     $('purchasePanel').classList.contains('hidden') &&
     $('balancePanel').classList.contains('hidden') &&
+    $('labPanel').classList.contains('hidden') &&
     $('flightSettingsPanel').classList.contains('hidden') &&
     $('bank').classList.contains('hidden') &&
     $('shop').classList.contains('hidden') &&
@@ -720,6 +722,7 @@ function canCapture() {
     !groundDefenseUI.opened &&
     $('shop').classList.contains('hidden') &&
     $('balancePanel').classList.contains('hidden') &&
+    $('labPanel').classList.contains('hidden') &&
     $('flightSettingsPanel').classList.contains('hidden') &&
     $('bank').classList.contains('hidden') &&
     $('bedPanel').classList.contains('hidden') &&
@@ -1056,6 +1059,7 @@ function accept(s, force = false) {
   renderShop();
   bankUI.render();
   balanceUI.render();
+  labUI.render();
   if (s.base && s.base.revision > baseRevision) {
     if (baseArena?.epoch !== s.base.epoch) baseAudioSeq = 0;
     baseArena = acceptGround(s.base, baseArena);
@@ -1486,6 +1490,10 @@ addEventListener('keydown', (event) => {
     flightTuningUI.close(false);
     return;
   }
+  if (event.code === 'Escape' && labUI.opened) {
+    labUI.close();
+    return;
+  }
   if (event.code === 'Escape' && balanceUI.opened) {
     balanceUI.close();
     return;
@@ -1591,6 +1599,7 @@ addEventListener('keydown', (event) => {
     $('bedPanel').classList.contains('hidden') &&
     $('purchasePanel').classList.contains('hidden') &&
     $('balancePanel').classList.contains('hidden') &&
+    $('labPanel').classList.contains('hidden') &&
     $('flightSettingsPanel').classList.contains('hidden') &&
     $('bank').classList.contains('hidden') &&
     $('shop').classList.contains('hidden') &&
@@ -4456,10 +4465,13 @@ function toggleShop() {
 }
 function renderShop() {
   if (!snap) return;
-  $('wallet').textContent = snap.dollars + ' $';
-  $('shopBalance').textContent = snap.dollars + ' $ · Caisse commune';
+  $('wallet').textContent = snap.lab?.enabled ? '∞ $ · LAB' : snap.dollars + ' $';
+  $('shopBalance').textContent = snap.lab?.enabled
+    ? 'Ressources illimitées · Laboratoire'
+    : snap.dollars + ' $ · Caisse commune';
   const key = JSON.stringify([
     snap.dollars,
+    snap.lab?.enabled,
     snap.upgrades,
     snap.equipment?.length,
     snap.purchases,
@@ -5457,6 +5469,41 @@ const balanceUI = new BalanceUI({
     captureMouse();
   },
 });
+const labUI = new LabUI({
+  root: $('labPanel'),
+  document,
+  snapshot: () => snap,
+  command: (body) => api('lab', { id, ...body }),
+  accept,
+  confirm: (message) => confirm(message),
+  onOpen: () => {
+    releaseMouse();
+    clearControls();
+    cancelPlacement();
+    $('shop').classList.add('hidden');
+    $('help').classList.add('hidden');
+    renderPaper();
+  },
+  onClose: () => {
+    renderPaper();
+    captureMouse();
+  },
+});
+$('labOpen').onclick = () => {
+  if (
+    !joined ||
+    balanceUI.opened ||
+    flightTuningUI.opened ||
+    bankUI.opened ||
+    bedUI.opened ||
+    purchaseUI.opened ||
+    boardingBusy ||
+    soulBusy ||
+    boardingSelectionBusy
+  )
+    return;
+  labUI.open();
+};
 $('balanceOpen').onclick = () => {
   if (
     !joined ||

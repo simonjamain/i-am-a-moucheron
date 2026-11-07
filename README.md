@@ -145,6 +145,8 @@ pour la génération d’insectes).
 
 Le [bestiaire et ses vitesses physiques](docs/enemy-bestiary.md#vitesse-physique-dans-la-pièce) spécifient des mètres de la pièce par seconde, indépendants de la taille des modèles et de l'effectif des nuées.
 
+Le [laboratoire par room](docs/laboratory.md) permet de tester les constructions, les cartes et les vagues sans progression imposée.
+
 Le [bombardier B3](docs/b3-model.md) accueille quatre joueurs et conserve son camouflage texturé.
 Les [sept véhicules Meshy](docs/meshy-fleet.md) gardent les couleurs de leur modèle
 original ; seul un rond flottant indique la couleur propre à chaque véhicule.
