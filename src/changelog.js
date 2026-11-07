@@ -1,6 +1,12 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 189,
+    changes: [
+      'Le Castor construit les murs LEGO et les rubans en roulant, en déposant chaque section derrière lui.',
+    ],
+  },
+  {
     version: 186,
     changes: ['Les roues du Castor sont repositionnées et ne se superposent plus à celles du châssis.'],
   },
