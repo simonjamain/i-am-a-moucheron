@@ -42,6 +42,7 @@ assert.equal(
   1,
 );
 assert.deepEqual(hits, [1]);
+assert.deepEqual(sentry.aimTarget, [0.1, 0, 0], 'server exposes last sentry target for animation');
 assert.equal(sentry.ammo, SENTRY.ammo - 1);
 assert.equal(
   fireGroundSentries(defense.structures, [{ id: 1, p: [0.1, 0, 0] }], 1100, () => {}),

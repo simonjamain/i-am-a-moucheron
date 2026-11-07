@@ -135,3 +135,12 @@ et valider le GLB. Les masques d'extraction des pièces du modèle d'origine
 peuvent toujours nécessiter un réajustement spécifique après simplification.
 Ne pas remplacer les modules d'une flotte validée sans comparaison visuelle,
 vérification des pivots/armes et tests de régression. Le nouvel import est opt-in.
+
+## Exemple concret : tourelle T-01 du Castor
+
+[Quatre modules Meshy T-01 et leur import contrôlé](t01-asset.md) : import
+depuis quatre GLB originaux au SHA-256 vérifié, textures source 2K
+rééchantillonnées en WebP 1K pour l'exécution. La géométrie reste intacte
+(13 626 triangles au total) : les pivots indépendants et les UV sont prioritaires
+sur un taux de réduction arbitraire. Toute simplification supplémentaire doit
+être mesurée et validée sur une copie avant substitution.

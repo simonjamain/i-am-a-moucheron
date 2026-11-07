@@ -1,6 +1,7 @@
 import { createBrickWall } from './brick-wall.js';
 import { AirTrails } from './air-trails.js';
 import { groundPlacement } from './ground-placement.js';
+import { createSentryModel, sentryAimAngles, sentryAngleDelta, SENTRY_MUZZLE_HEIGHT } from './sentry-model.js';
 export class GroundDefenseUI {
   constructor({
     T,
@@ -39,6 +40,8 @@ export class GroundDefenseUI {
     this.key = '';
     this.airTrails = new AirTrails(T, scene);
     this.models = new T.Group();
+    this.sentries = new Map();
+    this.lastSentryFrame = 0;
     scene.add(this.models);
     this.trigger = document.createElement('button');
     this.trigger.textContent = 'Défense';
@@ -300,11 +303,16 @@ export class GroundDefenseUI {
     if (!this.available() || (this.radial && !this.enabled())) this.cancel();
     const key = [snap?.code, snap?.base?.epoch, snap?.groundDefense?.revision].join(':');
     if (key !== this.key) {
-      if (this.roomKey !== [snap?.code, snap?.base?.epoch].join(':')) this.cancel();
+      if (this.roomKey !== [snap?.code, snap?.base?.epoch].join(':')) {
+        this.cancel();
+        this.sentries.clear();
+        this.lastSentryFrame = 0;
+      }
       this.roomKey = [snap?.code, snap?.base?.epoch].join(':');
       this.key = key;
       this.rebuild(snap?.groundDefense?.structures || []);
     }
+    this.updateSentryAim(snap);
     this.preview.visible = false;
     this.fanArrow.visible = false;
     this.status.style.display = this.active && this.enabled() ? 'block' : 'none';
@@ -379,10 +387,54 @@ export class GroundDefenseUI {
       this.fanArrow.setDirection(new this.T.Vector3(Math.sin(cmd.angle), 0, Math.cos(cmd.angle)));
     }
   }
+  updateSentryAim(snap) {
+    const now = performance.now();
+    const dt = this.lastSentryFrame ? Math.min(0.1, (now - this.lastSentryFrame) / 1000) : 1 / 60;
+    this.lastSentryFrame = now;
+    const weight = 1 - Math.exp(-12 * Math.max(0, dt));
+    for (const structure of snap?.groundDefense?.structures || []) {
+      if (structure.kind !== 'sentry') continue;
+      const model = this.sentries.get(String(structure.id));
+      if (!model) continue;
+      if (
+        structure.hp > 0 &&
+        Array.isArray(structure.aimTarget) &&
+        structure.aimTarget.length === 3 &&
+        structure.aimTarget.every(Number.isFinite)
+      ) {
+        const { yaw, pitch } = sentryAimAngles(
+          [structure.position[0], SENTRY_MUZZLE_HEIGHT, structure.position[1]],
+          structure.aimTarget,
+        );
+        model.targetYaw = yaw - (structure.angle || 0);
+        model.targetPitch = pitch;
+      }
+      model.yaw.rotation.y +=
+        sentryAngleDelta(model.yaw.rotation.y, model.targetYaw) * weight;
+      model.pitch.rotation.x += (model.targetPitch - model.pitch.rotation.x) * weight;
+      model.lens.material.color.set(structure.ammo > 0 ? '#1ecbd9' : '#87574c');
+    }
+  }
   rebuild(structures) {
+    // Keep articulated sentries alive across shot/ammo revisions. Rebuilding
+    // dozens of meshes and resetting their pivots every 500 ms is expensive.
+    const retained = new Map();
+    for (const structure of structures) {
+      if (structure.kind !== 'sentry') continue;
+      const existing = this.sentries.get(String(structure.id));
+      if (!existing) continue;
+      existing.container.position.set(structure.position[0], 0, structure.position[1]);
+      existing.container.rotation.y = structure.angle || 0;
+      retained.set(String(structure.id), existing);
+    }
+    const keep = new Set([...retained.values()].map((s) => s.container));
+    this.sentries = retained;
     for (const child of [...this.models.children]) {
+      if (keep.has(child)) continue;
       this.models.remove(child);
       child.traverse((part) => {
+        // Meshy T-01 geometry/atlases are cached across all turrets.
+        if (part.userData?.meshyShared) return;
         if (part.isInstancedMesh) part.dispose();
         part.geometry?.dispose();
         part.material?.dispose();
@@ -462,28 +514,18 @@ export class GroundDefenseUI {
         ring.position.set(0, 0.002, 0);
         group.add(ring);
       } else if (structure.kind === 'sentry') {
+        if (this.sentries.has(String(structure.id))) continue;
         const [x, z] = structure.position;
         group.position.set(x, 0, z);
         group.rotation.y = structure.angle || 0;
-        const base = new T.Mesh(
-          new T.BoxGeometry(0.042, 0.024, 0.042),
-          new T.MeshBasicMaterial({ color: '#4a6253' }),
-        );
-        base.position.y = 0.012;
-        group.add(base);
-        const head = new T.Mesh(
-          new T.BoxGeometry(0.034, 0.014, 0.034),
-          new T.MeshBasicMaterial({ color: structure.ammo > 0 ? '#7e9474' : '#554b43' }),
-        );
-        head.position.y = 0.029;
-        group.add(head);
-        const barrel = new T.Mesh(
-          new T.CylinderGeometry(0.004, 0.006, 0.045, 6),
-          new T.MeshBasicMaterial({ color: '#283834' }),
-        );
-        barrel.rotation.x = Math.PI / 2;
-        barrel.position.set(0, 0.03, -0.032);
-        group.add(barrel);
+        const sentry = createSentryModel(T);
+        this.sentries.set(String(structure.id), {
+          ...sentry,
+          container: group,
+          targetYaw: 0,
+          targetPitch: 0,
+        });
+        group.add(sentry.group);
       } else if (structure.kind === 'barricade') {
         group.add(createBrickWall(T, structure));
       } else {
