@@ -138,7 +138,7 @@ export class WaveCouncilUI {
       snap.blueprintLevels,
       offers.map(([card, targets]) => [
         card,
-        snap.dollars >= BLUEPRINTS[card].cost,
+        snap.lab?.enabled || snap.dollars >= BLUEPRINTS[card].cost,
         targets.map((t) => [t.id, equippedLevel(t, card)]),
       ]),
     ]);
@@ -167,7 +167,7 @@ export class WaveCouncilUI {
           select.append(option);
         }
         const buy = this.element('button', 'Équiper');
-        buy.disabled = snap.dollars < plan.cost;
+        buy.disabled = !snap.lab?.enabled && snap.dollars < plan.cost;
         buy.onclick = () =>
           this.command('wave-equip', {
             blueprint: card,
