@@ -19,6 +19,13 @@ Problème, comportement obtenu et critères d'acceptation couverts.
 - Nombre de joueurs / navigateurs nécessaires :
 - Retours des joueurs et points restant à observer :
 
+## Assets Meshy (si concernés)
+
+Voir la [checklist du pipeline](../docs/asset-pipeline.md#checklist-de-pr-pour-un-asset-meshy) :
+validation des images avant génération, une référence par pièce mobile, pivots et
+dimensions documentés, UV/sources conservées, rendu, articulations et performances
+vérifiés.
+
 ## Intégration
 
 Interactions avec d'autres PR, conflits résolus et contrôles refaits.
