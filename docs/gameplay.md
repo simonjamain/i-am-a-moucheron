@@ -327,7 +327,12 @@ Le [bombardier B3 à quatre places](b3-model.md) conserve son camouflage Meshy ;
 
 ## G1 Castor (première étape, version 179)
 
-Le **G1 Castor** est un camion monoplace à six roues, achetable pour **12 $** avec le bon signé des véhicules. Z/S et Q/D permettent de conduire ; la souris vise sa mitrailleuse légère (500 balles, recharges payantes). **V** bascule une vue tactique surélevée. Plus rapide que le tank, il possède un rayon de soutien sphérique de **50 cm** qui peut soigner et ravitailler les alliés en mouvement ou en vol et se réapprovisionner lui-même. Le service utilise la caisse commune.
+Le **G1 Castor** est un camion monoplace à six roues, achetable pour **12 $** avec le bon signé des véhicules. Z/S et Q/D permettent de conduire ; la souris vise sa mitrailleuse légère (500 balles, recharges payantes). **V** bascule une vue tactique surélevée. Vitesse maximale 52 (deux fois le
+réglage initial), avec une accélération forte au départ qui décroît près du
+maximum. Les six roues roulent à la vitesse du sol de leur côté (sens, marche
+arrière et arrêt compris) ; au pivot sur place, gauche et droite tournent en sens
+opposés et les roues avant braquent selon la vitesse de rotation
+(`src/castor-wheels.js`, `scripts/test-castor-wheels.mjs`). Plus rapide que le tank, il possède un rayon de soutien sphérique de **50 cm** qui peut soigner et ravitailler les alliés en mouvement ou en vol et se réapprovisionner lui-même. Le service utilise la caisse commune.
 
 **La construction en roulant est disponible depuis la version 188.** Le Castor utilise désormais **ses trois modèles Meshy texturés** : châssis, tourelle et roues indépendantes. Les couleurs originales sont préservées ; seule la pastille d’identification change selon l’appareil. Voir [l'issue #76](https://github.com/simonjamain/i-am-a-moucheron/issues/76) et [la note de reprise](tasks/g1-castor.md).
 

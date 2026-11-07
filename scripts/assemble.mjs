@@ -82,6 +82,7 @@ const files = {
       'helicopter',
       'mobile-flak',
       'live-hud',
+      'castor-wheels',
       'reserve-feedback',
       'delivery',
       'salvos',

@@ -17,7 +17,7 @@ export function stepTank(T, state, controls, colliders, dt, profile) {
   const forward = new T.Vector3(0, 0, -1).applyQuaternion(q),
     target = throttle * MAP.metres(profile.maxSpeed);
   const speed = v.dot(forward),
-    next = speed + (target - speed) * Math.min(1, dt * 4);
+    next = speed + (target - speed) * Math.min(1, dt * (profile.response ?? 4));
   v.x = forward.x * next;
   v.z = forward.z * next;
   const before = p.clone();

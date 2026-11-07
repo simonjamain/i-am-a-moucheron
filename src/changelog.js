@@ -1,6 +1,13 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 228,
+    changes: [
+      'Castor : deux fois plus rapide, avec un démarrage vif.',
+      'Ses roues tournent dans le bon sens, braquent à l’avant et tournent en sens opposés quand il pivote sur place.',
+    ],
+  },
+  {
     version: 227,
     changes: [
       'Char : la lunette du canon gradue maintenant jusqu’à l’autre bout de la pièce, et les obus vont jusque-là.',
