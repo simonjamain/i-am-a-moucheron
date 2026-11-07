@@ -62,6 +62,7 @@ const files = {
       'wave-ground-paths',
       'wave-ground-worker',
       'ground-defense-state',
+      'ground-sentry',
       'ground-defense',
       'route-obstacles',
       'changelog',
