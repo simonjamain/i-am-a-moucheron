@@ -969,10 +969,19 @@ export class Game {
     return clone({
       code: r.code,
       balance: r.balance,
-      lab: {
-        enabled: r.lab.enabled,
-        scenarios: r.lab.scenarios.map(({ id, name, wave, phase }) => ({ id, name, wave, phase })),
-      },
+      ...(r.lab.enabled
+        ? {
+            lab: {
+              enabled: true,
+              scenarios: r.lab.scenarios.map(({ id, name, wave, phase }) => ({
+                id,
+                name,
+                wave,
+                phase,
+              })),
+            },
+          }
+        : {}),
       balanceRevision: r.balanceRevision,
       rosterRevision: r.rosterRevision,
       balanceOwner: activePilots

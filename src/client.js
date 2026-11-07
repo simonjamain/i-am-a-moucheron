@@ -1471,7 +1471,7 @@ $('helpButton').onclick = () => {
   releaseMouse();
   if (
     flightTuningUI.opened ||
-    balanceUI.opened || labUI.opened ||
+    balanceUI.opened ||
     bankUI.opened ||
     bedUI.opened ||
     purchaseUI.opened
@@ -1538,7 +1538,7 @@ addEventListener('keydown', (event) => {
   }
   if (
     flightTuningUI.opened ||
-    balanceUI.opened || labUI.opened ||
+    balanceUI.opened ||
     bankUI.opened ||
     bedUI.opened ||
     purchaseUI.opened
@@ -2270,7 +2270,7 @@ $('baseHelp').onclick = () => {
   releaseMouse();
   if (
     flightTuningUI.opened ||
-    balanceUI.opened || labUI.opened ||
+    balanceUI.opened ||
     bankUI.opened ||
     bedUI.opened ||
     purchaseUI.opened
@@ -4385,7 +4385,7 @@ for (const [kind, model] of Object.entries(ghosts)) {
 function toggleShop() {
   if (
     flightTuningUI.opened ||
-    balanceUI.opened || labUI.opened ||
+    balanceUI.opened ||
     bankUI.opened ||
     bedUI.opened ||
     purchaseUI.opened
@@ -5374,7 +5374,7 @@ const flightTuningUI = new FlightTuningUI({
 $('flightSettingsOpen').onclick = () => {
   if (
     !joined ||
-    balanceUI.opened || labUI.opened ||
+    balanceUI.opened ||
     bankUI.opened ||
     bedUI.opened ||
     purchaseUI.opened ||
@@ -5483,7 +5483,7 @@ const bankUI = new BankUI({
 });
 function toggleBank() {
   if (spectating) return;
-  if (flightTuningUI.opened || balanceUI.opened || labUI.opened || bedUI.opened || purchaseUI.opened) return;
+  if (flightTuningUI.opened || balanceUI.opened || bedUI.opened || purchaseUI.opened) return;
   if (!joined || boardingBusy || soulBusy || boardingSelectionBusy) return;
   if (bankUI.opened) bankUI.close();
   else bankUI.open();
