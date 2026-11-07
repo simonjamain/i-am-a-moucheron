@@ -1,5 +1,6 @@
 import { VEHICLES } from './fleet.js';
 import { distanceToSegment } from './ground-defense.js';
+import { FIXED_DCA_AMMO } from './ground-ammo.js';
 import { ammoCapacity, FUEL_SECONDS, SERVICE_RADIUS, SERVICE_SECONDS } from './logistics.js';
 
 export const SERVICE_RATES = Object.freeze({
@@ -108,6 +109,33 @@ export function advancePaidService(
     }
     const cost = needs.reduce((sum, n) => sum + n.cost, 0);
     if (cost > 0) jobs.push({ needs, cost, mark: () => v.supplies.revision++ });
+  }
+  // Fixed DCA guns also compete for the same budget; no remote top-ups.
+  // A shell requires a real supply source near the fixed emplacement.
+  if (dt) {
+    const sources = serviceSources(installations, fleet);
+    for (const gun of installations) {
+      if (gun.kind !== 'dca' || !Number.isFinite(gun.ammo) || gun.ammo >= FIXED_DCA_AMMO)
+        continue;
+      if (
+        !sources.some(
+          ({ p, radius }) =>
+            Math.hypot(gun.x - p[0], gun.y - p[1], gun.z - p[2]) <= radius,
+        )
+      )
+        continue;
+      const quantity = Math.min(
+        FIXED_DCA_AMMO - gun.ammo,
+        (FIXED_DCA_AMMO * dt) / SERVICE_SECONDS,
+      );
+      const cost = quantity * SERVICE_RATES.shell;
+      if (cost > 0)
+        jobs.push({
+          cost,
+          needs: [{ cost, apply: (fraction) => (gun.ammo += quantity * fraction) }],
+          mark: () => {},
+        });
+    }
   }
   // Barricades compete in the same fair, paid allocation as vehicles; the
   // nearest point of a segment (not just its center) must be within the

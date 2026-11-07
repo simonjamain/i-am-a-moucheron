@@ -337,3 +337,15 @@ progressives, à **10 % des PV maximum du segment par seconde**, et coûtent
 partagent équitablement l'argent disponible. Sans argent, rien n'est réparé.
 Un segment entièrement détruit reste détruit : la réparation automatique ne
 réinstalle pas d'obstacle disparu, conformément aux règles de navigation.
+
+
+### Munitions limitées des DCA fixes (version 193)
+
+Les **DCA fixes** disposent désormais de **120 obus maximum**, contre des tirs
+précédemment illimités. Chaque coup consomme un obus validé par le serveur ; les
+tirs réémis avec le même identifiant ne sont pas facturés deux fois. Une DCA
+vidée ne peut plus tirer. Elle récupère ses obus automatiquement seulement si
+une **station de ravitaillement ou un Castor vivant** est à sa portée. Le tarif
+est le même que pour les autres obus, **1 $ pour 10 unités** ; en cas de manque
+d'argent, elle reçoit une part équitable avec les véhicules et les barricades.
+Une DCA isolée reste à sec jusqu'à l'installation ou au passage d'un soutien.

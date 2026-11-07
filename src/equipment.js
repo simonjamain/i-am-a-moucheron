@@ -35,7 +35,7 @@ export const SHOP = Object.freeze({
     name: 'DCA à déployer',
     cost: 4,
     kind: 'placement',
-    description: 'Un canon à poser sur une surface libre.',
+    description: 'Canon fixe avec réserve de 120 obus, rechargeable automatiquement à proximité d’une station ou d’un Castor.'
   },
   interceptor: {
     name: 'Stuka d’attaque au sol',

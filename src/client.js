@@ -13,6 +13,7 @@ import { GunSalvos } from '/salvos.js';
 import { nextPilotMuzzle } from '/muzzle.js';
 import { advanceAutomaticFire } from '/salvos.js';
 import { ammoCapacity } from '/logistics.js';
+import { FIXED_DCA_AMMO } from '/ground-ammo.js';
 import { moveShotTrace, advanceShotTrace, makeShotTrace, TracerPool } from '/tracers.js';
 import { PurchaseUI } from '/purchase-ui.js';
 import { purchaseCount } from '/equipment.js';
@@ -2705,7 +2706,14 @@ function updateVehicles(dt) {
   $('fuseDistance').textContent = rangeReadout(flakRange).metres.toFixed(0) + ' m · Shift / Ctrl';
   $('vehicleState').textContent =
     turretIndex >= 0
-      ? 'DCA · ' + stations[turretIndex].name + ' · ' + Math.round(hp) + ' PV'
+      ? 'DCA · ' +
+        stations[turretIndex].name +
+        ' · ' +
+        Math.round(hp) +
+        ' PV · Obus ' +
+        Math.floor(stations[turretIndex].ammo ?? 0) +
+        '/' +
+        FIXED_DCA_AMMO
       : myVehicle
         ? VEHICLES[myVehicle.type].name +
           ' · ' +
@@ -2848,7 +2856,9 @@ function updateVehicles(dt) {
       camera.position.set(station.x, station.y + MAP.metres(1.8), station.z);
       camera.up.set(0, 1, 0);
       camera.lookAt(camera.position.clone().addScaledVector(dir, MAP.metres(100)));
-      shooting = (controlFocus.active && (mouseFire || keys.Space || pad.fire)) || uiWeaponFire;
+      shooting =
+        ((controlFocus.active && (mouseFire || keys.Space || pad.fire)) || uiWeaponFire) &&
+        (station.ammo ?? 0) >= 1;
       if (shooting && performance.now() > gun.userData.shotAt) {
         gun.userData.shotAt =
           performance.now() +
@@ -2856,9 +2866,13 @@ function updateVehicles(dt) {
             1000 *
             ((self ? currentFactors().interval : 1) / (snap?.balance?.fireRate ?? 1));
         gun.userData.barrel++;
-        bullet(muzzle, dir, '#ffe49b', true, true);
+        const shot = bullet(muzzle, dir, '#ffe49b', true, true);
+        if (shot) {
+          const incarnation = snap.pilots.find((p) => p.id === id)?.incarnation;
+          action('fixed-dca-fire', { station: index, shot, incarnation });
+        }
       }
-    } else if (motion.fire && performance.now() > gun.userData.shotAt) {
+    } else if (motion.fire && (station.ammo ?? 0) >= 1 && performance.now() > gun.userData.shotAt) {
       gun.userData.shotAt =
         performance.now() +
         FLAK.interval *
@@ -3433,7 +3447,7 @@ function bullet(pos, dir, color = '#f4efab', owned = false, aa = false) {
       emitBullet(origin, direction, vehicleColor(myVehicle), owned, aa, launch);
     return;
   }
-  emitBullet(pos, dir, color, owned, aa);
+  return emitBullet(pos, dir, color, owned, aa);
 }
 const tracerPool = new TracerPool(T, scene, 256, { instanced: renderer.isWebGLRenderer === true });
 const gunSalvos = new GunSalvos();
@@ -3500,6 +3514,7 @@ function emitBullet(pos, dir, color, owned, aa, launch = null) {
     scene.remove(old.m);
     old.m.userData.dispose();
   }
+  return trails.at(-1).shot;
 }
 function shoot(forward) {
   if (myVehicle?.type === 'spitfire') {
@@ -5224,7 +5239,13 @@ function updateContextHUD() {
         })
       : [];
   if (turretIndex >= 0 && !respawnAt)
-    alerts.push(...reserveAlerts({ type: 'dca', state: { hp }, supplies: { ammo: {} } }));
+    alerts.push(
+      ...reserveAlerts({
+        type: 'dca',
+        state: { hp },
+        supplies: { ammo: { cannon: stations[turretIndex]?.ammo ?? 0 } },
+      }),
+    );
   if (myVehicle?.type === 'helicopter' && crewSeat === 'copilot') {
     const status = missileStatus(myVehicle, snap?.ordnance || [], Date.now() + clockOffset);
     if (status) alerts.push(status);
