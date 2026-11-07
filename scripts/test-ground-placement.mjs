@@ -53,6 +53,7 @@ class Element {
 const document = { createElement: (tag) => new Element(tag), body: new Element('body') };
 let snap = { code: 'ROOM', base: { epoch: 1 }, groundDefense: newGroundDefense(), dollars: 20 };
 let allowed = true,
+  context = 'foot',
   enabled = true,
   captures = 0,
   releases = 0,
@@ -66,7 +67,7 @@ const ui = new GroundDefenseUI({
   snapshot: () => snap,
   foot: () => foot,
   aim: () => target,
-  available: () => allowed,
+  available: () => allowed && ['foot', 'castor'].includes(context),
   enabled: () => enabled,
   captureMouse: () => captures++,
   releaseMouse: () => releases++,
@@ -117,16 +118,40 @@ for (let i = 0; i < ui.tools.length; i++) {
   const angle = (i * 2 * Math.PI) / ui.tools.length;
   ui.moveWheel(80 * Math.sin(angle), -80 * Math.cos(angle));
   ui.finishWheel();
-  assert.equal(ui.mode, ui.tools[i][0]);
+  if (['sentry', 'bunker', 'antitank'].includes(ui.tools[i][0]))
+    assert.equal(ui.mode, 'fan', 'Castor-only locked tools cannot be selected on foot');
+  else assert.equal(ui.mode, ui.tools[i][0]);
 }
 assert.equal(commands.length, 2, 'selecting a sector never builds');
 ui.openWheel();
-ui.moveWheel(80, -25);
+ui.moveWheel(80 * Math.sin((2 * Math.PI) / ui.tools.length), -80 * Math.cos((2 * Math.PI) / ui.tools.length));
 ui.finishWheel();
 ui.press();
 assert.equal(commands[2].kind, 'sugar');
 resolve();
 await Promise.resolve();
+ui.cancel();
+assert.equal(ui.handleWheelKey('KeyG', true), true, 'G opens the wheel on foot');
+assert.equal(ui.wheelSource, 'keyboard');
+assert.equal(ui.handleWheelKey('KeyG', true, true), true, 'key repeats keep the same wheel');
+ui.moveWheel(0, -80);
+assert.equal(ui.handleWheelKey('KeyG', false), true, 'releasing G selects the sector');
+assert.equal(ui.mode, 'barricade');
+assert.equal(ui.active, true);
+assert.equal(ui.radial, false);
+ui.cancel();
+context = 'castor';
+assert.equal(ui.handleWheelKey('KeyG', true), true, 'G opens the wheel as Castor driver');
+ui.moveWheel(80, 0);
+assert.equal(ui.finishWheel(), false, 'middle mouse release must not end the G wheel');
+assert.equal(ui.radial, true);
+assert.equal(ui.handleWheelKey('KeyG', false), true);
+assert.equal(ui.mode, 'sticky');
+ui.cancel();
+assert.equal(ui.handleWheelKey('KeyG', false), false, 'keyup after cancel is ignored');
+context = 'aircraft';
+assert.equal(ui.handleWheelKey('KeyG', true), false, 'no building in unauthorized vehicles');
+context = 'foot';
 enabled = false;
 ui.update();
 assert.equal(ui.preview.visible, false);

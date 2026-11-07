@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdtemp, readFile, writeFile, rm } from 'node:fs/promises';
+import { mkdtemp, readFile, writeFile, rm, mkdir, copyFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
@@ -74,5 +74,12 @@ try {
   const bad=path.join(root,'broken.glb');
   await writeFile(bad,Buffer.from('not glb'));
   assert.equal(run('inspect',bad).status,1,'reject invalid GLB');
+  const exportIndex = process.argv.indexOf('--export-fixture');
+  if (exportIndex >= 0) {
+    const destination = process.argv[exportIndex + 1];
+    if (!destination || destination.startsWith('--')) throw Error('Missing fixture output path');
+    await mkdir(path.dirname(destination), { recursive: true });
+    await copyFile(original, destination);
+  }
   console.log('PASS: GLB UV/atlas, named turret, monobloc protected zones, reduced triangles and immutability');
 } finally { await rm(root,{recursive:true,force:true}); }

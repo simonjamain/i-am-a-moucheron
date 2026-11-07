@@ -130,13 +130,15 @@ export class WaveCouncilUI {
       }
     }
     this.launch.hidden = !prep?.winner;
-    const offers = (snap.blueprints || []).map((card) => [card, equipmentTargets(snap, card)]);
+    const offers = (snap.blueprints || [])
+      .filter((card) => BLUEPRINTS[card].kind !== 'unlock')
+      .map((card) => [card, equipmentTargets(snap, card)]);
     const key = JSON.stringify([
       snap.base.epoch,
       snap.blueprintLevels,
       offers.map(([card, targets]) => [
         card,
-        snap.dollars >= BLUEPRINTS[card].cost,
+        snap.lab?.enabled || snap.dollars >= BLUEPRINTS[card].cost,
         targets.map((t) => [t.id, equippedLevel(t, card)]),
       ]),
     ]);
@@ -165,7 +167,7 @@ export class WaveCouncilUI {
           select.append(option);
         }
         const buy = this.element('button', 'Équiper');
-        buy.disabled = snap.dollars < plan.cost;
+        buy.disabled = !snap.lab?.enabled && snap.dollars < plan.cost;
         buy.onclick = () =>
           this.command('wave-equip', {
             blueprint: card,

@@ -3,6 +3,10 @@
 Référence consolidée le 30 octobre 2026, comportement du runtime Node courant.
 Mettre à jour les sections concernées lorsque le comportement change.
 
+Deux cartes supplémentaires permettent de construire, avec le Castor, un bunker LEGO (10 $) et un canon antichar lourd (14 $). Le bunker protège son occupant d’une grande partie des impacts et possède sa propre mitrailleuse ; le canon est prévu pour les boss terrestres. Les deux postes demandent la signature d’un dossier, disposent de munitions finies et se rechargent uniquement auprès des sources de service payantes.
+
+La carte « Tourelle automatique du Castor » débloque une construction de 9 $ au volant du G1. Elle tire automatiquement (180 balles finies) et se recharge contre paiement auprès du Castor ou des stations. Aucun tir ni achat à distance ; un plan non remporté ne permet pas de la poser.
+
 ## Session réseau
 
 Le serveur Node utilise WebRTC sur UDP uniquement. Les mouvements sont locaux,
@@ -31,6 +35,10 @@ Le panneau **Équilibrage et nuées** permet à tous les joueurs de modifier les
 paramètres de la room et d'envoyer des lots d'ennemis par espèce, y compris hors
 combat. Une nuée de debug rejoint la vague courante ou démarre une vague de test
 sans composition automatique, selon la phase. Voir [équilibrage par room](room-balance.md).
+
+## Laboratoire de test
+
+Le bouton **Laboratoire** dans le HUD active un mode de test commun à la room, avec plans disponibles, caisse virtuelle, choix de cartes et de vagues. Un scénario mémorise les équipements déjà posés et la vague à rejouer, sans conserver les joueurs embarqués. Quitter le laboratoire réinitialise la partie et efface ses scénarios. Voir [laboratoire](laboratory.md).
 
 ## Équipements et combat
 
@@ -306,4 +314,58 @@ Le [bombardier B3 à quatre places](b3-model.md) conserve son camouflage Meshy ;
 
 Le **G1 Castor** est un camion monoplace à six roues, achetable pour **12 $** avec le bon signé des véhicules. Z/S et Q/D permettent de conduire ; la souris vise sa mitrailleuse légère (500 balles, recharges payantes). **V** bascule une vue tactique surélevée. Plus rapide que le tank, il possède un rayon de soutien sphérique de **50 cm** qui peut soigner et ravitailler les alliés en mouvement ou en vol et se réapprovisionner lui-même. Le service utilise la caisse commune.
 
-**La construction en roulant n'est pas encore disponible dans ce premier lot.** Le modèle basse définition est **provisoire**, les trois modèles texturés Meshy (châssis, tourelle et roue) attendent leur import. Voir [l'issue #76](https://github.com/simonjamain/i-am-a-moucheron/issues/76) et [la note de reprise](tasks/g1-castor.md).
+**La construction en roulant est disponible depuis la version 188.** Le Castor utilise désormais **ses trois modèles Meshy texturés** : châssis, tourelle et roues indépendantes. Les couleurs originales sont préservées ; seule la pastille d’identification change selon l’appareil. Voir [l'issue #76](https://github.com/simonjamain/i-am-a-moucheron/issues/76) et [la note de reprise](tasks/g1-castor.md).
+
+
+### Construction depuis le Castor (version 188)
+
+Au sol, le pilote du Castor ouvre la roue des défenses par **clic molette**.
+Pour les murs **LEGO** et les **rubans**, un clic gauche démarre la pose en
+continu **derrière le véhicule** pendant la conduite ; un deuxième clic l'arrête.
+Le Castor construit des segments de 20 cm au tarif existant de 1 $ par segment.
+Le serveur vérifie chaque pose, les collisions et les fonds de la caisse commune.
+Un changement de poste, une sortie, un échec de placement ou un déplacement trop
+brutal interrompt la construction. Les autres pièges, la réparation et la
+suppression restent ponctuels, avec la visée de caméra depuis la cabine.
+
+Ce système conserve la validation serveur et ne permet pas de construire sur les
+surfaces surélevées depuis le Castor dans cette première version. Les véritables
+modèles Meshy du châssis, de la tourelle et des roues sont déjà intégrés ; la
+correction des six roues est conservée.
+
+
+### Réparation automatique des barricades (version 192)
+
+Les stations fixes et les Castor en état de marche réparent désormais les **murs
+LEGO endommagés** dans leur zone de soutien : 12 cm autour d'une station et 50 cm
+autour d'un Castor. Pour chaque segment, le serveur cherche la portion du mur la
+plus proche, même si le centre du segment est plus loin. Les réparations sont
+progressives, à **10 % des PV maximum du segment par seconde**, et coûtent
+**1 $ par 100 PV réellement rendus**. Les véhicules et les barricades se
+partagent équitablement l'argent disponible. Sans argent, rien n'est réparé.
+Un segment entièrement détruit reste détruit : la réparation automatique ne
+réinstalle pas d'obstacle disparu, conformément aux règles de navigation.
+
+
+### Munitions limitées des DCA fixes (version 193)
+
+Les **DCA fixes** disposent désormais de **120 obus maximum**, contre des tirs
+précédemment illimités. Chaque coup consomme un obus validé par le serveur ; les
+tirs réémis avec le même identifiant ne sont pas facturés deux fois. Une DCA
+vidée ne peut plus tirer. Elle récupère ses obus automatiquement seulement si
+une **station de ravitaillement ou un Castor vivant** est à sa portée. Le tarif
+est le même que pour les autres obus, **1 $ pour 10 unités** ; en cas de manque
+d'argent, elle reçoit une part équitable avec les véhicules et les barricades.
+Une DCA isolée reste à sec jusqu'à l'installation ou au passage d'un soutien.
+
+
+### Pistolet à munitions limitées (version 198)
+
+Chaque nouvelle incarnation reçoit un pistolet avec **120 balles**. Un tir est
+décompté par le serveur avant de pouvoir blesser un insecte, un allié ou une âme :
+un impact ne peut utiliser qu'une fois le même identifiant de tir. Dans le bureau,
+le rechargement est automatique dans la zone d'une station ou du Castor, au tarif
+de **1 $ pour 1 000 balles réellement fournies**, partagé équitablement avec les
+autres demandes de maintenance. Un joueur hors de portée ne recharge pas.
+Au purgatoire, la réserve reste limitée sans station à distance ; la paperasse
+reste le moyen alternatif de progression lorsque les munitions sont épuisées.

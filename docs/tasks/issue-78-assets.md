@@ -1,6 +1,6 @@
 # Reprise — issue #78 : outils GLB Meshy
 
-État : candidat en PR, non fusionné. Branche `feat/issue-78-meshy-asset-tooling`.
+État : PR #81 actualisée sur la branche `feat/issue-78-meshy-asset-tooling` ; vérifications GitHub Actions finales obligatoires avant fusion.
 
 ## Décisions
 Image Node séparée de l'image du jeu, lancée à la demande par
@@ -19,7 +19,14 @@ défaut. Le jeu et la flotte existante ne changent pas dans cette PR.
   situation avant de substituer un module intégré au jeu.
 - Contrôler `npm test`, `npm run check:docs`, `npm run check:version`, la
   construction Docker du jeu sur la même révision ; noter toute limite.
-- Ne pas fusionner sans accord explicite de l'utilisateur.
+- L'utilisateur a autorisé la livraison autonome de l'issue #78 le 7 novembre 2026. Ne pas présenter un essai visuel sur un vrai GLB Meshy comme réalisé sans exécution et preuve.
 
 Références : [issue #78](https://github.com/simonjamain/i-am-a-moucheron/issues/78),
 [guide assets](../asset-pipeline.md).
+
+## Ajustement du 7 novembre 2026
+
+- Synchronisation avec `main` après les défenses Castor : garder les versions et les ajouts récents de `README.md`.
+- Sélection de profil conservateur à 75 % par défaut, `error` à 0,001 ; la réduction réelle reste dépendante du modèle.
+- Le job CI doit vérifier l'écriture réelle dans les volumes Compose, puis publier le rapport JSON de la fixture.
+- Essai visuel et métriques sur un **GLB Meshy réel du jeu** non réalisés dans ce contexte : conserver les sources existantes tant que ce point n'est pas vérifié.

@@ -1999,7 +1999,7 @@
       #aimRange small {
         font-size: 9px;
       }
-      :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel) {
+      :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel, #labPanel) {
         position: fixed;
         inset: 0;
         z-index: 45;
@@ -2008,7 +2008,7 @@
         background: #09211bd6;
         padding: 20px;
       }
-      :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel) > article {
+      :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel, #labPanel) > article {
         width: min(1080px, 100%);
         max-height: 90dvh;
         overflow: auto;
@@ -2019,28 +2019,28 @@
         box-shadow: 0 14px 60px #0007;
         font-family: Georgia, serif;
       }
-      :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel) header {
+      :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel, #labPanel) header {
         position: static;
         display: flex;
         align-items: start;
         justify-content: space-between;
         gap: 20px;
       }
-      :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel) h2 {
+      :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel, #labPanel) h2 {
         margin: 0 0 8px;
         font-size: 30px;
         font-style: italic;
         font-weight: 400;
       }
-      :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel) h3 {
+      :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel, #labPanel) h3 {
         font-size: 32px;
         font-weight: 400;
         margin: 22px 0;
       }
-      :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel) p {
+      :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel, #labPanel) p {
         line-height: 1.6;
       }
-      :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel) button {
+      :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel, #labPanel) button {
         background: #294938;
         color: #f3edcf;
         padding: 10px 14px;
@@ -2048,44 +2048,44 @@
         border-radius: 4px;
         cursor: pointer;
       }
-      :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel) button:disabled {
+      :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel, #labPanel) button:disabled {
         opacity: 0.5;
         cursor: default;
       }
-      :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel) [data-bank-cards] {
+      :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel, #labPanel) [data-bank-cards] {
         display: grid;
         grid-template-columns: repeat(3, minmax(0, 1fr));
         gap: 16px;
         margin: 20px 0;
       }
-      :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel)
+      :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel, #labPanel)
         [data-bank-cards]
         article {
         padding: 18px;
         border: 1px solid #a7a17c;
         background: #fff8df55;
       }
-      :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel)
+      :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel, #labPanel)
         [data-bank-cards]
         button {
         display: block;
         width: 100%;
         margin-top: 14px;
       }
-      :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel)
+      :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel, #labPanel)
         [data-bank-cards]
         small {
         letter-spacing: 1px;
       }
-      :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel)
+      :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel, #labPanel)
         [data-bank-status] {
         min-height: 1.5em;
         font-weight: bold;
       }
-      :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel) [data-bank-text] {
+      :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel, #labPanel) [data-bank-text] {
         white-space: pre-line;
       }
-      :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel) canvas {
+      :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel, #labPanel) canvas {
         width: min(100%, 650px);
         height: 150px;
         touch-action: none;
@@ -2093,23 +2093,23 @@
         display: block;
         background: #fff9e5;
       }
-      :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel) .bankTable {
+      :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel, #labPanel) .bankTable {
         overflow: auto;
         margin: 15px 0;
       }
-      :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel) table {
+      :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel, #labPanel) table {
         width: 100%;
         border-collapse: collapse;
         font-size: 12px;
       }
-      :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel) th,
-      :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel) td {
+      :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel, #labPanel) th,
+      :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel, #labPanel) td {
         padding: 8px;
         text-align: left;
         border-bottom: 1px solid #b6b18c;
         white-space: nowrap;
       }
-      :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel) .bankHint {
+      :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel, #labPanel) .bankHint {
         font-size: 12px;
       }
       @media (max-width: 700px) {
@@ -2147,13 +2147,13 @@
           top: 34px;
           bottom: auto;
         }
-        :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel) {
+        :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel, #labPanel) {
           padding: 8px;
         }
-        :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel) > article {
+        :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel, #labPanel) > article {
           padding: 14px;
         }
-        :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel)
+        :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel, #labPanel)
           [data-bank-cards] {
           grid-template-columns: 1fr;
         }
@@ -2372,6 +2372,40 @@
       #balancePanel [data-balance-status],
       #balancePanel [data-spawn-status] {
         min-height: 2em;
+      }
+      #labPanel {
+        z-index: 102;
+      }
+      /* Ne pas utiliser footer ici : le footer global est positionné en fixed. */
+      #labPanel .lab-actions {
+        position: static;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: end;
+        gap: 12px;
+        margin: 12px 0 20px;
+      }
+      #labPanel .lab-actions > button { min-height: 42px; }
+      #labPanel .lab-actions > label { flex: 1 1 220px; min-width: 0; }
+      #labPanel .lab-actions :is(select, input) { width: 100%; box-sizing: border-box; }
+      #labPanel h3 { font-size: 23px; margin: 22px 0 8px; border-top: 1px solid #b6b18c; padding-top: 16px; }
+      #labPanel p { margin: 8px 0; }
+      @media (max-width: 600px) {
+        #labPanel .lab-actions { display: grid; grid-template-columns: minmax(0, 1fr); }
+        #labPanel .lab-actions > button, #labPanel .lab-actions > label { width: 100%; min-width: 0; }
+      }
+      #labPanel label {
+        display: grid;
+        gap: 6px;
+      }
+      #labPanel :is(select, input) {
+        min-width: min(220px, 70vw);
+        max-width: 100%;
+        padding: 8px;
+        color: #253c2d;
+        background: #fffbea;
+        border: 1px solid #6d7756;
+        font: inherit;
       }
       #flightSettingsPanel {
         z-index: 101;
@@ -2657,6 +2691,7 @@
       <div id="roomTag">
         <button id="flightSettingsOpen">Pilotage</button>
         <button id="balanceOpen">Équilibrage et nuées</button>
+        <button id="labOpen">Laboratoire</button>
         <button id="share" title="Copier le lien de la partie">
           ↗ <span id="roomCode">BUREAU</span>
         </button>
@@ -2926,6 +2961,65 @@
         <div data-spawn-fields></div>
         <button data-spawn-send>Envoyer la nuée</button>
         <p data-spawn-status role="status" aria-live="polite"></p>
+      </article>
+    </section>
+    <section
+      id="labPanel"
+      class="hidden"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="labTitle"
+    >
+      <article>
+        <header>
+          <div>
+            <h2 id="labTitle">Laboratoire · Room de test</h2>
+            <p>Outils partagés : les actions changent la partie de tous les joueurs connectés.</p>
+          </div>
+          <button data-lab-close aria-label="Fermer le laboratoire">✕</button>
+        </header>
+        <p data-lab-state></p>
+        <div class="lab-actions">
+          <button data-lab-enable>Activer le laboratoire</button>
+          <button data-lab-exit hidden>Quitter et réinitialiser la partie</button>
+        </div>
+        <h3>Plans et ressources</h3>
+        <div class="lab-actions">
+          <button data-lab-unlock>Débloquer tous les plans</button>
+          <label>Carte précise <select data-lab-card></select></label>
+          <button data-lab-card-add>Ajouter un niveau de cette carte</button>
+        </div>
+        <p>
+          La caisse est illimitée. Les achats et les placements conservent leurs règles.
+        </p>
+        <h3>Vagues</h3>
+        <div class="lab-actions">
+          <label
+            >Vague à préparer
+            <input data-lab-wave type="number" min="1" max="100" step="1" value="1"
+          /></label>
+          <button data-lab-wave-go>Préparer</button>
+          <button data-lab-start>Lancer immédiatement</button>
+          <button data-lab-finish>Terminer sans infestation</button>
+        </div>
+        <h3>Scénarios</h3>
+        <p>
+          Sauvegardez et rejouez jusqu’à cinq configurations temporaires.
+        </p>
+        <div class="lab-actions">
+          <label
+            >Nom du scénario <input data-lab-name maxlength="50" value="Essai de construction"
+          /></label>
+          <button data-lab-save>Enregistrer l’état</button>
+        </div>
+        <div class="lab-actions">
+          <label
+            >Scénario <select data-lab-scenarios aria-label="Scénario enregistré"></select
+          ></label>
+          <button data-lab-load>Recharger</button>
+          <button data-lab-delete>Supprimer</button>
+        </div>
+        <p data-lab-status role="status" aria-live="polite"></p>
       </article>
     </section>
     <section id="bank" class="hidden" role="dialog" aria-modal="true" aria-labelledby="bankTitle">

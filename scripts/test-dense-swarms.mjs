@@ -243,17 +243,28 @@ let now = 100000;
 const game = new Game({ now: () => now });
 const a = game.join({ code: 'DENSENET', name: 'A' });
 const r = game.rooms.get('DENSENET');
+function pistolShot(shot) {
+  return game.command(r.code, a.id, 'pistol-trace', {
+    shot,
+    incarnation: r.pilots.get(a.id).incarnation,
+    origin: [0, 0, 0],
+    direction: [0, 0, -1],
+  });
+}
 game.command(r.code, a.id, 'start');
 now += 60000;
 r.pilots.get(a.id).seen = now;
 let snapshot = game.command(r.code, a.id, 'sync', { mode: 'foot', state: a.state });
 const firstTotal = r.plan.roster.length;
 assert.equal(snapshot.total, firstTotal);
-for (let enemy = 0; enemy < firstTotal - 1; enemy++)
+for (let enemy = 0; enemy < firstTotal - 1; enemy++) {
+  pistolShot('kill' + enemy);
   game.command(r.code, a.id, 'hit', { wave: 1, enemy, amount: 800, shot: 'kill' + enemy });
+}
 snapshot = game.snapshot(r);
 assert.equal(snapshot.phase, 'combat');
 assert.equal(snapshot.kills.length, firstTotal - 1);
+pistolShot('last');
 game.command(r.code, a.id, 'hit', { wave: 1, enemy: firstTotal - 1, amount: 800, shot: 'last' });
 snapshot = game.snapshot(r);
 assert.equal(snapshot.phase, 'prep');
@@ -265,8 +276,10 @@ game.startWave(r); // Build the room-local plan through the same transition as a
 snapshot = game.snapshot(r);
 assert.ok(snapshot.total > 180);
 const high = snapshot.total - 1;
-for (let hit = 0; hit < Math.ceil(r.plan.roster[high].hp / 800); hit++)
+for (let hit = 0; hit < Math.ceil(r.plan.roster[high].hp / 800); hit++) {
+  pistolShot('high-id' + hit);
   game.command(r.code, a.id, 'hit', { wave: 100, enemy: high, amount: 800, shot: 'high-id' + hit });
+}
 assert.ok(r.kills.has(high));
 const chunks = encodeReply(game.snapshot(r), 1),
   assembler = new ReplyAssembler();

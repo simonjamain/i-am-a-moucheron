@@ -2,7 +2,7 @@ import { GROUND_BOUNDS, groundCommand } from './ground-defense-state.js';
 import { distanceToSegment } from './ground-defense.js';
 
 // Preview commands use the camera target, never the walking direction.
-export function groundPlacement({ foot, mode, rotation = 0, anchor, defense, dollars, aim }) {
+export function groundPlacement({ foot, mode, rotation = 0, anchor, defense, dollars, aim, blueprintLevels, castor = false }) {
   if (!foot || !foot.grounded || foot.parachute || foot.y >= 0.025)
     return { error: 'Rejoignez le sol du bureau.' };
   if (
@@ -34,12 +34,15 @@ export function groundPlacement({ foot, mode, rotation = 0, anchor, defense, dol
       .sort((a, b) => a.d - b.d)[0]?.s;
     if (!target) return { center, error: 'Visez une construction proche devant vous.' };
     command = { action: mode, id: target.id };
-  } else if (mode === 'sugar' || mode === 'fan')
+  } else if (['sugar', 'fan', 'sentry', 'bunker', 'antitank'].includes(mode))
     command = { action: 'build', kind: mode, a: center, angle: rotation };
   else command = { action: 'build', kind: mode, a: center, b: anchor };
 
   try {
-    const result = groundCommand(structuredClone(defense), command, [foot.x, foot.z], dollars);
+    const result = groundCommand(structuredClone(defense), command, [foot.x, foot.z], dollars, Date.now(), {
+      castor,
+      blueprintLevels,
+    });
     return { center, command, price: result.price };
   } catch (error) {
     return { center, command, error: error.message };

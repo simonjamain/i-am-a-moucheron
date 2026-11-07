@@ -153,6 +153,20 @@ commun des maillages UV et des atlas, `m1-model.js`, `h2-model.js` et
 
 G1 Castor (issue #76) : `fleet.js` définit le véhicule monoplace,
 `tank.js` sa physique de sol, `paid-service.js` son rayon de soutien et ses coûts,
-`graphics.js` fournit la maquette provisoire à six roues et tourelle mobile, et
+`castor-model.js` assemble les trois vrais modèles Meshy texturés à six roues et tourelle mobile, et
 `client.js` la conduite, la visée et la caméra surélevée. Les trois imports Meshy
-restent à intégrer.
+sont générés hors ligne par `scripts/import-meshy-castor.py`.
+
+La construction embarquée dans le Castor (PR #80) partage
+`GroundDefenseUI`, `groundPlacement` et `placement-aim` avec les piétons.
+`server/game.js` vérifie le pilote, la position du Castor et chaque segment,
+retire les coûts de la caisse et déduplique les requêtes identifiées.
+
+Les cartes d’ingénierie (`wave-blueprints.js`) débloquent séparément les trois
+constructions propres au Castor : la tourelle automatique (`ground-sentry.js`),
+le bunker LEGO et le canon antichar occupables (`ground-fortifications.js`).
+`ground-defense-state.js` contrôle leur placement et les collisions ;
+`server/game.js` crée les postes occupables, vérifie les signatures et les tirs,
+et conserve des réserves finies. `paid-service.js` les répare et recharge uniquement
+près du Castor ou des stations, en débitant la caisse commune. `client.js` affiche
+leurs modèles et postes 3D. Voir [note de reprise Castor](tasks/g1-castor.md).

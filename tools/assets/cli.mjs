@@ -37,7 +37,7 @@ mesh; it is NOT evidence that a Meshy weapon/rotor was preserved.
 }
 
 function parse(args) {
-  const flags = { ratio: 0.5, error: 0.001, protect: DEFAULT_PROTECTED, overwrite: false, allowMonobloc: false, regions: null };
+  const flags = { ratio: 0.75, error: 0.001, protect: DEFAULT_PROTECTED, overwrite: false, allowMonobloc: false, regions: null };
   const paths = [];
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];

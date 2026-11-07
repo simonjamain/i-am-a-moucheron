@@ -5,6 +5,8 @@ services:
     build:
       context: ./tools/assets
     network_mode: none
+    # Override with ASSETS_UID/GID for bind mounts owned by another host user.
+    user: "${ASSETS_UID:-1000}:${ASSETS_GID:-1000}"
     read_only: true
     tmpfs:
       - /tmp

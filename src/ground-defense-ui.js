@@ -14,9 +14,13 @@ export class GroundDefenseUI {
     captureMouse,
     foot,
     aim,
+    builder = () => null,
     enabled,
   }) {
     this.foot = foot;
+    this.builder = builder;
+    this.trailAnchor = null;
+    this.trailSequence = 0;
     this.aim = aim;
     this.enabled = enabled;
     this.captureMouse = captureMouse;
@@ -63,11 +67,22 @@ export class GroundDefenseUI {
       ['repair', 'Réparer'],
       ['remove', 'Enlever'],
       ['fan', 'Ventilateur'],
+      ['sentry', 'Tourelle auto'],
+      ['bunker', 'Bunker LEGO'],
+      ['antitank', 'Canon lourd'],
     ];
     for (const [kind, label] of this.tools) {
       const button = document.createElement('button');
       button.textContent = label;
       button.onclick = () => {
+        if (
+          ['sentry', 'bunker', 'antitank'].includes(kind) &&
+          (!this.builder() || !this.snapshot()?.blueprintLevels?.[kind])
+        ) {
+          this.notify('Débloquez ce plan par une carte et conduisez le Castor.', 3);
+          return;
+        }
+        this.trailAnchor = null;
         this.mode = kind;
         this.buttons.querySelectorAll('button').forEach((b) => {
           b.style.fontWeight = b === button ? 'bold' : 'normal';
@@ -81,13 +96,13 @@ export class GroundDefenseUI {
     this.buttons.querySelector('button').style.fontWeight = 'bold';
     this.wheel = document.createElement('div');
     this.wheel.style.cssText =
-      'display:none;position:fixed;z-index:40;left:50%;top:50%;transform:translate(-50%,-50%);width:240px;height:240px;border-radius:50%;border:2px solid #cbdca3;pointer-events:none;color:white;text-align:center';
+      'display:none;position:fixed;z-index:40;left:50%;top:50%;transform:translate(-50%,-50%);width:340px;height:340px;border-radius:50%;border:2px solid #cbdca3;pointer-events:none;color:white;text-align:center';
     this.tools.forEach(([, label], i) => {
       const angle = (i * 2 * Math.PI) / this.tools.length;
       const item = document.createElement('strong');
       item.textContent = label;
       item.style.cssText =
-        'position:absolute;transform:translate(-50%,-50%);font-size:14px;left:' +
+        'position:absolute;transform:translate(-50%,-50%);font-size:12px;left:' +
         (50 + 32 * Math.sin(angle)) +
         '%;top:' +
         (50 - 32 * Math.cos(angle)) +
@@ -130,10 +145,11 @@ export class GroundDefenseUI {
     scene.add(this.preview, this.fanArrow);
     this.trigger.onclick = () => this.setOpen(!this.opened);
   }
-  openWheel() {
-    if (!this.available() || !this.enabled() || this.busy) return false;
+  openWheel(source = 'mouse') {
+    if (this.radial || !this.available() || !this.enabled() || this.busy) return false;
     this.cancel();
     this.radial = true;
+    this.wheelSource = source;
     this.dx = this.dy = 0;
     this.wheel.style.display = 'block';
     this.moveWheel(0, 0);
@@ -168,15 +184,28 @@ export class GroundDefenseUI {
     this.wheel.style.background =
       'conic-gradient(from ' + -180 / n + 'deg,' + sectors.join(',') + ')';
   }
-  finishWheel() {
+  finishWheel(source = 'mouse') {
+    if (!this.radial || this.wheelSource !== source) return false;
     const index = this.sector;
     this.radial = false;
+    this.wheelSource = null;
     this.wheel.style.display = 'none';
     if (index >= 0 && this.available() && this.enabled())
       this.buttons.querySelectorAll('button')[index].onclick();
+    return true;
+  }
+  handleWheelKey(code, pressed, repeat = false) {
+    if (code !== 'KeyG') return false;
+    if (pressed) {
+      if (repeat) return this.radial && this.wheelSource === 'keyboard';
+      return this.openWheel('keyboard');
+    }
+    if (!this.radial || this.wheelSource !== 'keyboard') return false;
+    return this.finishWheel('keyboard');
   }
   setOpen(open) {
     this.anchor = null;
+    if (open) this.trailAnchor = null;
     this.opened = open && this.available();
     this.panel.style.display = this.opened ? 'block' : 'none';
     if (this.opened) {
@@ -185,7 +214,9 @@ export class GroundDefenseUI {
     }
   }
   cancel() {
+    this.trailAnchor = null;
     this.radial = false;
+    this.wheelSource = null;
     this.wheel.style.display = 'none';
     this.active = false;
     this.setOpen(false);
@@ -195,6 +226,11 @@ export class GroundDefenseUI {
   }
   press() {
     if (!this.enabled() || this.busy) return;
+    const castor = this.builder();
+    if (castor && ['barricade', 'sticky'].includes(this.mode)) {
+      this.trailAnchor = this.trailAnchor ? null : castor.rear;
+      return;
+    }
     this.update();
     if (
       !this.anchor &&
@@ -219,6 +255,45 @@ export class GroundDefenseUI {
       this.busy = false;
     }
   }
+  async advanceTrail() {
+    const castor = this.builder();
+    if (
+      !castor ||
+      !castor.grounded ||
+      castor.y >= 0.025 ||
+      !this.enabled() ||
+      !this.trailAnchor ||
+      this.busy
+    )
+      return;
+    const from = this.trailAnchor;
+    const distance = Math.hypot(castor.rear[0] - from[0], castor.rear[1] - from[1]);
+    // Preserve the existing tariff: one dollar per 20 cm of wall or tape.
+    if (distance < 0.18) return;
+    if (distance > 0.25) {
+      this.trailAnchor = null;
+      this.notify('Trajet de construction interrompu : trop éloigné.', 3);
+      return;
+    }
+    const to = from.map((n, i) => n + ((castor.rear[i] - n) * Math.min(0.2, distance)) / distance);
+    this.busy = true;
+    try {
+      const request =
+        'castor:' +
+        (globalThis.crypto?.randomUUID?.() || Date.now().toString(36) + ':' + ++this.trailSequence);
+      const accepted = await this.command({
+        action: 'build',
+        kind: this.mode,
+        a: from,
+        b: to,
+        request,
+      });
+      if (accepted === false) this.trailAnchor = null;
+      else this.trailAnchor = to;
+    } finally {
+      this.busy = false;
+    }
+  }
   update() {
     const snap = this.snapshot();
     this.trigger.hidden = !this.available();
@@ -238,6 +313,15 @@ export class GroundDefenseUI {
       this.airTrails.update(snap);
       return;
     }
+    if (this.trailAnchor && this.builder()) {
+      this.candidate = null;
+      this.status.disabled = false;
+      this.status.textContent =
+        'Castor · ' + this.mode + ' en continu · 1 $ / 20 cm · Cliquez pour arrêter';
+      this.airTrails.update(snap);
+      this.advanceTrail();
+      return;
+    }
     const c = (this.candidate = groundPlacement({
       anchor: this.anchor,
       foot: this.foot(),
@@ -246,6 +330,8 @@ export class GroundDefenseUI {
       rotation: this.rotation,
       defense: snap.groundDefense,
       dollars: snap.dollars,
+      blueprintLevels: snap.blueprintLevels,
+      castor: !!this.builder(),
     }));
     this.airTrails.update(
       snap,
@@ -304,6 +390,8 @@ export class GroundDefenseUI {
     }
     const T = this.T;
     for (const structure of structures) {
+      // Occupied fortifications are already rendered with their articulated gun and operator.
+      if (structure.kind === 'bunker' || structure.kind === 'antitank') continue;
       const group = new T.Group();
       if (structure.kind === 'fan') {
         group.position.set(structure.position[0], 0.032, structure.position[1]);
@@ -373,6 +461,29 @@ export class GroundDefenseUI {
         ring.rotation.x = -Math.PI / 2;
         ring.position.set(0, 0.002, 0);
         group.add(ring);
+      } else if (structure.kind === 'sentry') {
+        const [x, z] = structure.position;
+        group.position.set(x, 0, z);
+        group.rotation.y = structure.angle || 0;
+        const base = new T.Mesh(
+          new T.BoxGeometry(0.042, 0.024, 0.042),
+          new T.MeshBasicMaterial({ color: '#4a6253' }),
+        );
+        base.position.y = 0.012;
+        group.add(base);
+        const head = new T.Mesh(
+          new T.BoxGeometry(0.034, 0.014, 0.034),
+          new T.MeshBasicMaterial({ color: structure.ammo > 0 ? '#7e9474' : '#554b43' }),
+        );
+        head.position.y = 0.029;
+        group.add(head);
+        const barrel = new T.Mesh(
+          new T.CylinderGeometry(0.004, 0.006, 0.045, 6),
+          new T.MeshBasicMaterial({ color: '#283834' }),
+        );
+        barrel.rotation.x = Math.PI / 2;
+        barrel.position.set(0, 0.03, -0.032);
+        group.add(barrel);
       } else if (structure.kind === 'barricade') {
         group.add(createBrickWall(T, structure));
       } else {
@@ -415,6 +526,12 @@ export class GroundDefenseUI {
       if (s.kind === 'fan') {
         ctx.fillStyle = '#75eaf1';
         ctx.fillRect(108 + s.position[0] / 0.04, 108 + (s.position[1] / 0.04) * 0.88, 4, 4);
+      } else if (s.kind === 'bunker' || s.kind === 'antitank') {
+        ctx.fillStyle = s.kind === 'bunker' ? '#c6a355' : '#9eb9a0';
+        ctx.fillRect(108 + s.position[0] / 0.04, 108 + (s.position[1] / 0.04) * 0.88, 7, 7);
+      } else if (s.kind === 'sentry') {
+        ctx.fillStyle = s.ammo > 0 ? '#a0c89b' : '#6e6660';
+        ctx.fillRect(108 + s.position[0] / 0.04, 108 + (s.position[1] / 0.04) * 0.88, 5, 5);
       } else if (s.kind === 'sugar') {
         ctx.strokeStyle = '#e9d487bb';
         ctx.beginPath();

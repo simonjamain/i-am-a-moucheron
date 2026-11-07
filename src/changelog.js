@@ -1,6 +1,66 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 211,
+    changes: [
+      'Les cartes débloquent désormais le bunker LEGO et le canon antichar du Castor : deux postes occupables à munitions finies.',
+    ],
+  },
+  {
+    version: 210,
+    changes: ['Les boutons du laboratoire sont mieux rangés et restent accessibles sur petit écran.'],
+  },
+  {
+    version: 209,
+    changes: [
+      'Un laboratoire permet de débloquer les plans, choisir les vagues et retrouver vos scénarios de test.',
+    ],
+  },
+  {
+    version: 204,
+    changes: [
+      'Après avoir débloqué son plan, le Castor peut poser des tourelles automatiques avec une réserve de balles limitée.',
+    ],
+  },
+  {
+    version: 198,
+    changes: [
+      'Le pistolet possède désormais une réserve de 120 balles, rechargée automatiquement près des stations et du Castor.',
+    ],
+  },
+  {
+    version: 193,
+    changes: [
+      'Les DCA fixes disposent maintenant de 120 obus et se rechargent automatiquement près d’une station ou du Castor.',
+    ],
+  },
+  {
+    version: 192,
+    changes: [
+      'Le Castor et les stations réparent maintenant automatiquement les barricades endommagées à proximité.',
+    ],
+  },
+  {
+    version: 191,
+    changes: [
+      'À pied ou au volant du Castor, maintenez G pour choisir une défense, puis relâchez pour la sélectionner.',
+    ],
+  },
+  {
+    version: 189,
+    changes: [
+      'Le Castor construit les murs LEGO et les rubans en roulant, en déposant chaque section derrière lui.',
+    ],
+  },
+  {
+    version: 186,
+    changes: ['Les roues du Castor sont repositionnées et ne se superposent plus à celles du châssis.'],
+  },
+  {
+    version: 185,
+    changes: ['Le Castor adopte son vrai modèle détaillé, avec ses couleurs, sa tourelle et ses six roues animées.'],
+  },
+  {
     version: 179,
     changes: ['Le G1 Castor rejoint le garage : un camion rapide qui soigne et ravitaille ses alliés tout en roulant.'],
   },

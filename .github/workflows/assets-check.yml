@@ -27,10 +27,20 @@ jobs:
           tags: i-am-a-moucheron-asset-tools:local
       - name: Exercise textured GLB optimization in the container
         run: docker run --rm --network none --read-only --tmpfs /tmp --cap-drop ALL --security-opt no-new-privileges i-am-a-moucheron-asset-tools:local selftest
-      - name: Exercise the actual Compose one-shot developer command
+      - name: Exercise Compose optimization and validation across actual bind mounts
         run: |
           mkdir -p assets/originals assets/optimized
-          docker compose -f compose.assets.yaml run --rm optimizer selftest
+          export ASSETS_UID="$(id -u)" ASSETS_GID="$(id -g)"
+          docker compose -f compose.assets.yaml run --rm optimizer selftest --export-fixture /assets/optimized/fixture.glb
+          cp assets/optimized/fixture.glb assets/originals/fixture.glb
+          docker compose -f compose.assets.yaml run --rm optimizer optimize /assets/originals/fixture.glb /assets/optimized/optimized.glb --ratio 0.25 --error 1
+          docker compose -f compose.assets.yaml run --rm optimizer validate /assets/originals/fixture.glb /assets/optimized/optimized.glb
+          test -s assets/optimized/optimized.glb.report.json
+      - name: Publish measured GLB fixture report
+        uses: actions/upload-artifact@v4
+        with:
+          name: meshy-fixture-comparison
+          path: assets/optimized/optimized.glb.report.json
       - name: Verify original and optimized Meshy SHA-256 provenance
         run: python3 scripts/test-meshy-provenance.py
       - name: Validate Compose config

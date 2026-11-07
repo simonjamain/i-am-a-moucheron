@@ -28,12 +28,19 @@ et `canon` sont **exclus de la simplification** ; on peut fournir un motif
 (`--regions /assets/originals/zones.json`), sinon `--allow-monobloc` n'est
 utilisable que pour une exploration sans validation des pièces mobiles.
 
-`--ratio 0.5` demande de conserver environ 50 % des triangles ; la réduction
-réelle peut être moindre. `--error 0.001` limite la déformation géométrique
+Le profil prudent par défaut cible **75 % des triangles restants**
+(`--ratio 0.75`, `--error 0.001`). Pour comparer d’autres variantes,
+essayer `--ratio 0.5` ou `--ratio 0.25` sur des copies ; la réduction
+réelle peut être moindre et n’est jamais garantie. `--error 0.001` limite la déformation géométrique
 relative ; les bordures sont verrouillées. Pas de modification des coordonnées
 UV, positions, normales, textures ou matériaux : seul le tableau des indices
 des triangles peut changer. Il est possible qu'aucune simplification ne soit
 réalisable dans ces contraintes. Les textures ne sont pas recompressées.
+
+Sur Linux, si votre UID/GID hôte diffère de 1000, exécuter
+`export ASSETS_UID=$(id -u) ASSETS_GID=$(id -g)` avant les commandes Compose.
+Le conteneur conserve un utilisateur non-root et écrit avec les droits du
+propriétaire du répertoire de sortie, sans modifier les originaux.
 
 Les originaux sont montés en lecture seule. Les sorties sont créées dans
 `assets/optimized` et ne remplacent pas des fichiers existants (sauf demande
@@ -76,7 +83,9 @@ actuel refuse ces fichiers par défaut, volontairement.
 
 `assets-check.yml` construit **la même image Docker** que Compose et exécute
 son `selftest` : fixture texturée, tourelle protégée, réduction effective,
-conservation des UV et des images, refus des sorties dangereuses. Les PR ne
+conservation des UV et des images, refus des sorties dangereuses. Le job Compose
+exporte aussi cette fixture vers les volumes réels, exécute `optimize` et
+`validate`, puis conserve le rapport JSON comme artifact GitHub Actions. Les PR ne
 poussent aucun fichier ni image. `assets-publish.yml` publie séparément
 l'image sur GHCR après push sur `main` touchant les outils ; pas avant.
 La CI ne valide pas la qualité visuelle de tous les modèles Meshy.

@@ -4,6 +4,7 @@ import { WaveForecastScene } from '/wave-forecast-scene.js';
 import { GroundDefenseUI } from '/ground-defense-ui.js';
 import { GroundMotionTrack } from '/ground-motion.js';
 import { BalanceUI } from '/balance-ui.js';
+import { LabUI } from '/lab-ui.js';
 import { mountChangelog } from '/changelog.js';
 import { deliveryHeightAt } from '/delivery.js';
 import { reserveAlerts, missileStatus, ArrivalSignals } from '/reserve-feedback.js';
@@ -13,6 +14,8 @@ import { GunSalvos } from '/salvos.js';
 import { nextPilotMuzzle } from '/muzzle.js';
 import { advanceAutomaticFire } from '/salvos.js';
 import { ammoCapacity } from '/logistics.js';
+import { FIXED_DCA_AMMO, PISTOL_CAPACITY } from '/ground-ammo.js';
+import { FORTIFICATIONS, isFortification } from '/ground-fortifications.js';
 import { moveShotTrace, advanceShotTrace, makeShotTrace, TracerPool } from '/tracers.js';
 import { PurchaseUI } from '/purchase-ui.js';
 import { purchaseCount } from '/equipment.js';
@@ -397,6 +400,7 @@ function groundActive() {
     $('bedPanel').classList.contains('hidden') &&
     $('purchasePanel').classList.contains('hidden') &&
     $('balancePanel').classList.contains('hidden') &&
+    $('labPanel').classList.contains('hidden') &&
     $('flightSettingsPanel').classList.contains('hidden') &&
     $('bank').classList.contains('hidden') &&
     $('shop').classList.contains('hidden') &&
@@ -718,6 +722,7 @@ function canCapture() {
     !groundDefenseUI.opened &&
     $('shop').classList.contains('hidden') &&
     $('balancePanel').classList.contains('hidden') &&
+    $('labPanel').classList.contains('hidden') &&
     $('flightSettingsPanel').classList.contains('hidden') &&
     $('bank').classList.contains('hidden') &&
     $('bedPanel').classList.contains('hidden') &&
@@ -999,6 +1004,7 @@ function accept(s, force = false) {
   if (worldChanged) {
     baseArena = null;
     baseRevision = -1;
+    pendingPistolShots.clear();
     if (self?.state.spawnMessage) notify(self.state.spawnMessage, 5);
     groundView.scene = '';
     soulArena = null;
@@ -1053,6 +1059,7 @@ function accept(s, force = false) {
   renderShop();
   bankUI.render();
   balanceUI.render();
+  labUI.render();
   if (s.base && s.base.revision > baseRevision) {
     if (baseArena?.epoch !== s.base.epoch) baseAudioSeq = 0;
     baseArena = acceptGround(s.base, baseArena);
@@ -1356,27 +1363,72 @@ $('form').addEventListener('submit', async (e) => {
 async function action(path, extra = {}) {
   try {
     accept(await api(path, { id, ...extra }));
+    return true;
   } catch (e) {
     notify(e.message, 3);
+    return false;
   }
 }
 const waveCouncil = new WaveCouncilUI({ document, command: action, releaseMouse });
 const forecastScene = new WaveForecastScene(T, scene, textLabel);
+function castorBuilder() {
+  if (myVehicle?.type !== 'castor' || crewSeat !== 'pilot' || respawnAt) return null;
+  const rear = new T.Vector3(0, 0, VEHICLES.castor.length * 0.5 * ACTOR_UNIT)
+    .applyQuaternion(me.quaternion)
+    .add(me.position);
+  return {
+    x: me.position.x,
+    y: me.position.y - VEHICLES.castor.gear,
+    z: me.position.z,
+    grounded: landed,
+    parachute: false,
+    rear: [rear.x, rear.z],
+  };
+}
 const groundDefenseUI = new GroundDefenseUI({
   T,
   scene,
   document,
   snapshot: () => snap,
-  aim: () => cameraPlacement(0.24),
+  aim: () => {
+    const builder = castorBuilder();
+    return builder
+      ? placementAim(
+          builder,
+          camera.position,
+          camera.getWorldDirection(new T.Vector3()),
+          colliders,
+          0.24,
+        )
+      : cameraPlacement(0.24);
+  },
   foot: () => {
+    const builder = castorBuilder();
+    if (builder) return builder;
     const b = selfBase();
     return b && { ...b, ...baseWorld(b) };
   },
+  builder: castorBuilder,
   enabled: () => canCapture() && !placingEquipment,
   captureMouse,
-  available: () => joined && onFoot && !myVehicle && !spectating && !respawnAt,
-  command: (body) =>
-    action('ground-defense', { epoch: snap.base.epoch, ground: groundReport(), ...body }),
+  available: () =>
+    joined && !spectating && !respawnAt && ((onFoot && !myVehicle) || !!castorBuilder()),
+  command: async (body) => {
+    try {
+      accept(
+        await api('ground-defense', {
+          id,
+          epoch: snap.base.epoch,
+          ground: groundReport(),
+          ...body,
+        }),
+      );
+      return true;
+    } catch (error) {
+      notify(error.message, 3);
+      return false;
+    }
+  },
   notify,
   releaseMouse,
 });
@@ -1438,6 +1490,10 @@ addEventListener('keydown', (event) => {
     flightTuningUI.close(false);
     return;
   }
+  if (event.code === 'Escape' && labUI.opened) {
+    labUI.close();
+    return;
+  }
   if (event.code === 'Escape' && balanceUI.opened) {
     balanceUI.close();
     return;
@@ -1489,6 +1545,10 @@ addEventListener('keydown', (event) => {
     purchaseUI.opened
   )
     return;
+  if (interactionKey === 'KeyG') {
+    if (groundDefenseUI.handleWheelKey(interactionKey, true, event.repeat)) event.preventDefault();
+    return;
+  }
   if (groundDefenseUI.active && canCapture()) {
     if (interactionKey === 'KeyR' || interactionKey === 'KeyE' || interactionKey === 'Enter') {
       event.preventDefault();
@@ -1539,6 +1599,7 @@ addEventListener('keydown', (event) => {
     $('bedPanel').classList.contains('hidden') &&
     $('purchasePanel').classList.contains('hidden') &&
     $('balancePanel').classList.contains('hidden') &&
+    $('labPanel').classList.contains('hidden') &&
     $('flightSettingsPanel').classList.contains('hidden') &&
     $('bank').classList.contains('hidden') &&
     $('shop').classList.contains('hidden') &&
@@ -1623,7 +1684,9 @@ addEventListener('keydown', (event) => {
   }
 });
 addEventListener('keyup', (event) => {
-  keys[keyBindings.get(event.code) || gameKey(event)] = false;
+  const code = keyBindings.get(event.code) || gameKey(event);
+  if (groundDefenseUI.handleWheelKey(code, false)) event.preventDefault();
+  keys[code] = false;
   keyBindings.delete(event.code);
 });
 addEventListener('blur', clearControls);
@@ -2386,6 +2449,7 @@ function physicalPurgatory(dt, now) {
     if (age > 0.55) {
       purgScene.remove(e.group);
       e.group.traverse((o) => {
+        if (o.userData.meshyShared) return;
         o.geometry?.dispose();
         o.material?.map?.dispose();
       });
@@ -2400,6 +2464,66 @@ function physicalPurgatory(dt, now) {
 }
 const turrets = [];
 let stations = [];
+function makeFortificationStation(st) {
+  // Build 3D field fortifications in the same scaled reference coordinates as DCA.
+  const root = new T.Group();
+  root.position.set(st.x, st.y, st.z);
+  root.scale.setScalar(MAP.ratio);
+  scene.add(root);
+  if (st.kind === 'bunker') {
+    const bricks = new T.InstancedMesh(
+      new T.BoxGeometry(6.6, 2.5, 3.8),
+      new T.MeshStandardMaterial({ color: '#cba45c', roughness: 0.88 }),
+      100,
+    );
+    const dummy = new T.Object3D();
+    let count = 0;
+    for (let layer = 0; layer < 4; layer++)
+      for (let index = -3; index <= 3; index++)
+        for (const side of [0, 1, 2]) {
+          dummy.position.set(
+            side === 2 ? index * 6.7 : side === 0 ? -23 : 23,
+            layer * 2.5 + 1.25,
+            side === 2 ? -21 : index * 6.7,
+          );
+          dummy.rotation.set(0, side === 2 ? 0 : Math.PI / 2, 0);
+          dummy.updateMatrix();
+          bricks.setMatrixAt(count++, dummy.matrix);
+        }
+    bricks.count = count;
+    root.add(bricks);
+    box(0, 11.5, 0, 54, 2.2, 47, '#b48e4c', root);
+    box(0, 9, 22, 16, 3, 5, '#4a593f', root);
+  } else {
+    box(0, 1.2, 0, 19, 2.4, 15, '#566b50', root);
+    for (const x of [-8, 8]) cyl(x, 2.2, 4, 3, 3, 3, '#283c35', root);
+    box(0, 4, 2, 9, 5, 10, '#6b7c5a', root);
+  }
+  const yaw = new T.Group();
+  yaw.position.y = st.kind === 'bunker' ? 12.5 : 5;
+  root.add(yaw);
+  const pitch = new T.Group();
+  yaw.add(pitch);
+  const large = st.kind === 'antitank';
+  const tube = cyl(
+    0,
+    0,
+    -7,
+    large ? 1.3 : 0.6,
+    large ? 1.3 : 0.6,
+    large ? 21 : 14,
+    '#293e36',
+    pitch,
+  );
+  tube.rotation.x = Math.PI / 2;
+  box(0, 0, -1, large ? 9 : 5, large ? 6 : 4, large ? 9 : 6, '#607359', yaw);
+  const muzzle = new T.Object3D();
+  muzzle.position.set(0, 0, large ? -19 : -14);
+  pitch.add(muzzle);
+  root.userData = { yaw, pitch, muzzles: [muzzle, muzzle], barrel: 0 };
+  return root;
+}
+
 function reconcileEquipment(next) {
   // Stable slot indices are assigned transactionally by the shared room.
   for (let i = 0; i < turrets.length; i++)
@@ -2420,17 +2544,26 @@ function reconcileEquipment(next) {
     }
   stations = next;
   for (const [i, st] of stations.entries()) {
-    if (turrets[i]) continue;
+    if (turrets[i] || st.kind === 'retired') continue;
     const gun =
-      st.kind === 'dca' ? makeAntiaircraft(T, scene, { box, cyl }, [st])[0] : installationModel(st);
+      st.kind === 'dca'
+        ? makeAntiaircraft(T, scene, { box, cyl }, [st])[0]
+        : isFortification(st.kind)
+          ? makeFortificationStation(st)
+          : installationModel(st);
     gun.userData.kind = st.kind;
     gun.userData.slot = st.slot;
+    const radius = isFortification(st.kind)
+      ? st.kind === 'bunker'
+        ? 0.075
+        : 0.035
+      : MAP.metres(st.kind === 'bed' ? 0.8 : 2);
     const collider = new T.Box3(
-      new T.Vector3(st.x - MAP.metres(st.kind === 'bed' ? 0.8 : 2), st.y, st.z - MAP.metres(1.4)),
+      new T.Vector3(st.x - radius, st.y, st.z - radius),
       new T.Vector3(
-        st.x + MAP.metres(st.kind === 'bed' ? 0.8 : 2),
-        st.y + MAP.metres(0.8),
-        st.z + MAP.metres(1.4),
+        st.x + radius,
+        st.y + (isFortification(st.kind) ? 0.04 : MAP.metres(0.8)),
+        st.z + radius,
       ),
     );
     colliders.push(collider);
@@ -2445,9 +2578,13 @@ function reconcileEquipment(next) {
     gun.userData.shotAt = 0;
     turrets[i] = gun;
     const ring = entryRing.clone();
-    ring.position.set(st.x + MAP.metres(3), st.y + ACTOR_UNIT * 0.12, st.z);
+    ring.position.set(
+      st.x + (isFortification(st.kind) ? 0.08 : MAP.metres(3)),
+      st.y + ACTOR_UNIT * 0.12,
+      st.z,
+    );
     ring.scale.setScalar(ACTOR_UNIT);
-    if (st.kind === 'dca' || st.kind === 'bed') scene.add(ring);
+    if (st.kind === 'dca' || st.kind === 'bed' || isFortification(st.kind)) scene.add(ring);
     stationRings[i] = ring;
   }
 }
@@ -2473,7 +2610,10 @@ function nearestStation() {
   const w = baseWorld(b);
   let nearest = null;
   stations.forEach((s, index) => {
-    if (s.kind === 'dca' && stationAccess(w, s)) {
+    if (
+      (s.kind === 'dca' || (isFortification(s.kind) && s.hp > 0)) &&
+      stationAccess(w, s, isFortification(s.kind) ? 0.09 : MAP.metres(3.4))
+    ) {
       const d = Math.hypot(w.x - s.x, w.z - s.z);
       if (!nearest || d < nearest.distance) nearest = { index, distance: d };
     }
@@ -2603,7 +2743,7 @@ async function chooseEquipment(index) {
   selectedEquipment = index;
   boardingOpen = false;
   boardingSelectionBusy = true;
-  const timing = beginBoardingFeedback('dca', 'DCA');
+  const timing = beginBoardingFeedback('dca', stations[index]?.name || 'DCA');
   releaseMouse();
   renderPaper();
   try {
@@ -2651,11 +2791,28 @@ function updateVehicles(dt) {
   $('leavePlane').textContent = landed ? 'Sortir' : 'Sauter';
   $('vehicleInteract').classList.toggle('hidden', turretIndex < 0);
   $('turretFire').classList.toggle('hidden', turretIndex < 0 && !crew);
-  $('flakControls').classList.toggle('hidden', turretIndex < 0);
+  $('flakControls').classList.toggle(
+    'hidden',
+    turretIndex < 0 || stations[turretIndex]?.kind === 'bunker',
+  );
   $('fuseDistance').textContent = rangeReadout(flakRange).metres.toFixed(0) + ' m · Shift / Ctrl';
+  const occupiedStation = turretIndex >= 0 ? stations[turretIndex] : null;
+  const occupiedName =
+    occupiedStation?.kind === 'dca'
+      ? 'DCA'
+      : FORTIFICATIONS[occupiedStation?.kind]?.name || 'Défense';
   $('vehicleState').textContent =
     turretIndex >= 0
-      ? 'DCA · ' + stations[turretIndex].name + ' · ' + Math.round(hp) + ' PV'
+      ? occupiedName +
+        ' · ' +
+        occupiedStation.name +
+        ' · ' +
+        Math.round(occupiedStation.hp ?? hp) +
+        ' PV · ' +
+        (occupiedStation.kind === 'bunker' ? 'Balles ' : 'Obus ') +
+        Math.floor(occupiedStation.ammo ?? 0) +
+        '/' +
+        (FORTIFICATIONS[occupiedStation.kind]?.ammo ?? FIXED_DCA_AMMO)
       : myVehicle
         ? VEHICLES[myVehicle.type].name +
           ' · ' +
@@ -2683,7 +2840,14 @@ function updateVehicles(dt) {
           (myVehicle.supplies?.servicing ? ' · Ravitaillement' : '')
         : selfBase()?.parachute
           ? 'Descente sous voile'
-          : 'Échelle ' + MAP.numerator + '/' + MAP.denominator + ' · À pied';
+          : 'Échelle ' +
+            MAP.numerator +
+            '/' +
+            MAP.denominator +
+            ' · À pied · Pistolet ' +
+            Math.floor(snap?.pilots.find((p) => p.id === id)?.pistolAmmo ?? PISTOL_CAPACITY) +
+            '/' +
+            PISTOL_CAPACITY;
   if (!visible) return;
   if (crew) {
     if (myVehicle.type === 'helicopter' && crewSeat === 'copilot') {
@@ -2775,7 +2939,7 @@ function updateVehicles(dt) {
       occupant = snap?.pilots.find(
         (p) => p.life === 'alive' && p.mode === 'turret' && p.state.turret === index,
       );
-    gun.userData.person.visible = !!occupant;
+    gun.userData.person.visible = !!occupant && station.kind === 'dca';
     if (!occupant) continue;
     const self = occupant.id === id,
       motion = self ? localMotion() : remoteMotion(occupant),
@@ -2795,27 +2959,44 @@ function updateVehicles(dt) {
           1.35,
         );
       }
-      camera.position.set(station.x, station.y + MAP.metres(1.8), station.z);
+      camera.position.set(
+        station.x,
+        station.y + MAP.metres(station.kind === 'bunker' ? 17 : 5),
+        station.z,
+      );
       camera.up.set(0, 1, 0);
       camera.lookAt(camera.position.clone().addScaledVector(dir, MAP.metres(100)));
-      shooting = (controlFocus.active && (mouseFire || keys.Space || pad.fire)) || uiWeaponFire;
+      shooting =
+        ((controlFocus.active && (mouseFire || keys.Space || pad.fire)) || uiWeaponFire) &&
+        (station.ammo ?? 0) >= 1;
       if (shooting && performance.now() > gun.userData.shotAt) {
         gun.userData.shotAt =
           performance.now() +
-          FLAK.interval *
+          (FORTIFICATIONS[station.kind]?.interval ?? FLAK.interval) *
             1000 *
             ((self ? currentFactors().interval : 1) / (snap?.balance?.fireRate ?? 1));
         gun.userData.barrel++;
-        bullet(muzzle, dir, '#ffe49b', true, true);
+        const fort = FORTIFICATIONS[station.kind];
+        const shot = fort
+          ? emitBullet(muzzle, dir, '#ffe49b', true, station.kind === 'antitank', {
+              wave: snap.wave,
+              baseDamage: fort.damage,
+              velocity: new T.Vector3(),
+            })
+          : bullet(muzzle, dir, '#ffe49b', true, true);
+        if (shot) {
+          const incarnation = snap.pilots.find((p) => p.id === id)?.incarnation;
+          action('fixed-dca-fire', { station: index, shot, incarnation });
+        }
       }
-    } else if (motion.fire && performance.now() > gun.userData.shotAt) {
+    } else if (motion.fire && (station.ammo ?? 0) >= 1 && performance.now() > gun.userData.shotAt) {
       gun.userData.shotAt =
         performance.now() +
         FLAK.interval *
           1000 *
           ((self ? currentFactors().interval : 1) / (snap?.balance?.fireRate ?? 1));
       gun.userData.barrel++;
-      bullet(muzzle, dir, '#91d9c4', false, true);
+      bullet(muzzle, dir, '#91d9c4', false, station.kind !== 'bunker');
     }
   }
 }
@@ -3383,7 +3564,7 @@ function bullet(pos, dir, color = '#f4efab', owned = false, aa = false) {
       emitBullet(origin, direction, vehicleColor(myVehicle), owned, aa, launch);
     return;
   }
-  emitBullet(pos, dir, color, owned, aa);
+  return emitBullet(pos, dir, color, owned, aa);
 }
 const tracerPool = new TracerPool(T, scene, 256, { instanced: renderer.isWebGLRenderer === true });
 const gunSalvos = new GunSalvos();
@@ -3450,6 +3631,7 @@ function emitBullet(pos, dir, color, owned, aa, launch = null) {
     scene.remove(old.m);
     old.m.userData.dispose();
   }
+  return trails.at(-1).shot;
 }
 function shoot(forward) {
   if (myVehicle?.type === 'spitfire') {
@@ -4318,10 +4500,13 @@ function toggleShop() {
 }
 function renderShop() {
   if (!snap) return;
-  $('wallet').textContent = snap.dollars + ' $';
-  $('shopBalance').textContent = snap.dollars + ' $ · Caisse commune';
+  $('wallet').textContent = snap.lab?.enabled ? '∞ $ · LAB' : snap.dollars + ' $';
+  $('shopBalance').textContent = snap.lab?.enabled
+    ? 'Ressources illimitées · Laboratoire'
+    : snap.dollars + ' $ · Caisse commune';
   const key = JSON.stringify([
     snap.dollars,
+    snap.lab?.enabled,
     snap.upgrades,
     snap.equipment?.length,
     snap.purchases,
@@ -4561,6 +4746,7 @@ function updateFallingEnemies(dt) {
   }
 }
 
+const pendingPistolShots = new Set();
 function pistol() {
   if (
     !joined ||
@@ -4574,6 +4760,11 @@ function pistol() {
     (!onFoot && !respawnAt)
   )
     return;
+  const self = snap?.pilots.find((p) => p.id === id);
+  if (!self || (self.pistolAmmo ?? PISTOL_CAPACITY) - pendingPistolShots.size < 1) {
+    notify('Pistolet vide · rejoignez une station ou le Castor.', 2);
+    return;
+  }
   const purg = !!respawnAt,
     cam = purg ? purgCamera : camera,
     scale = purg ? 1 : MAP.ratio;
@@ -4638,12 +4829,13 @@ function pistol() {
   ray = new T.Raycaster(origin, dir, 0, shotAim.range);
   scan();
   sound.play('shot', origin, { ref: 12 });
-  action('pistol-trace', {
+  pendingPistolShots.add(shot);
+  const confirmed = action('pistol-trace', {
     shot,
     origin: origin.toArray(),
     direction: dir.toArray(),
     distance: hit?.distance ?? 150 * scale,
-    incarnation: snap.pilots.find((p) => p.id === id)?.incarnation,
+    incarnation: self.incarnation,
   });
   const targetScene = purg ? purgScene : scene;
   const line = makeShotTrace(
@@ -4663,15 +4855,23 @@ function pistol() {
     old.targetScene.remove(old.line);
     old.line.userData.dispose();
   }
-  if (hit?.soul) action('soul-hit', { soul: hit.soul, shot });
-  else if (hit?.target)
-    action('friendly-hit', {
-      target: hit.target,
-      shot,
-      incarnation: snap.pilots.find((p) => p.id === hit.target)?.incarnation,
-    });
-  else if (hit?.vehicle) action('friendly-hit', { vehicle: hit.vehicle, shot });
-  else if (hit?.enemy !== undefined) damageEnemy(hit.enemy, 10, shot, hit.point);
+  // Keep the muzzle flash immediate but never apply damage until the server
+  // confirms a round was actually available and consumed. This also orders
+  // the trace receipt before the UDP hit command.
+  Promise.resolve(confirmed)
+    .then((allowed) => {
+      if (allowed === false) return;
+      if (hit?.soul) action('soul-hit', { soul: hit.soul, shot });
+      else if (hit?.target)
+        action('friendly-hit', {
+          target: hit.target,
+          shot,
+          incarnation: snap.pilots.find((p) => p.id === hit.target)?.incarnation,
+        });
+      else if (hit?.vehicle) action('friendly-hit', { vehicle: hit.vehicle, shot });
+      else if (hit?.enemy !== undefined) damageEnemy(hit.enemy, 10, shot, hit.point);
+    })
+    .finally(() => pendingPistolShots.delete(shot));
 }
 
 const pistolTrails = [];
@@ -5174,7 +5374,13 @@ function updateContextHUD() {
         })
       : [];
   if (turretIndex >= 0 && !respawnAt)
-    alerts.push(...reserveAlerts({ type: 'dca', state: { hp }, supplies: { ammo: {} } }));
+    alerts.push(
+      ...reserveAlerts({
+        type: 'dca',
+        state: { hp },
+        supplies: { ammo: { cannon: stations[turretIndex]?.ammo ?? 0 } },
+      }),
+    );
   if (myVehicle?.type === 'helicopter' && crewSeat === 'copilot') {
     const status = missileStatus(myVehicle, snap?.ordnance || [], Date.now() + clockOffset);
     if (status) alerts.push(status);
@@ -5298,6 +5504,41 @@ const balanceUI = new BalanceUI({
     captureMouse();
   },
 });
+const labUI = new LabUI({
+  root: $('labPanel'),
+  document,
+  snapshot: () => snap,
+  command: (body) => api('lab', { id, ...body }),
+  accept,
+  confirm: (message) => confirm(message),
+  onOpen: () => {
+    releaseMouse();
+    clearControls();
+    cancelPlacement();
+    $('shop').classList.add('hidden');
+    $('help').classList.add('hidden');
+    renderPaper();
+  },
+  onClose: () => {
+    renderPaper();
+    captureMouse();
+  },
+});
+$('labOpen').onclick = () => {
+  if (
+    !joined ||
+    balanceUI.opened ||
+    flightTuningUI.opened ||
+    bankUI.opened ||
+    bedUI.opened ||
+    purchaseUI.opened ||
+    boardingBusy ||
+    soulBusy ||
+    boardingSelectionBusy
+  )
+    return;
+  labUI.open();
+};
 $('balanceOpen').onclick = () => {
   if (
     !joined ||
