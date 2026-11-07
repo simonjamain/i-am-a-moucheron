@@ -202,3 +202,11 @@ Le pistolet possède **120 balles** par incarnation. Les munitions restantes son
 affichées à pied ; tirer à vide n'inflige pas de dégâts. Le rechargement automatique
 payant nécessite de rejoindre une station ou le Castor. Au purgatoire, la réserve
 reste finie et la sortie par les formulaires demeure disponible.
+
+## Aperçu de pose
+
+Les constructions montrent leur vrai modèle transparent avant confirmation, avec
+un état rouge si la pose est refusée. Les véhicules font face au personnage ;
+leur orientation est conservée par le serveur. La surface porteuse est vérifiée
+avec l’emprise tournée du véhicule. Les constructions à pied et depuis le Castor
+emploient les mêmes modèles que les objets posés.

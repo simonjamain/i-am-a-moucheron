@@ -1,6 +1,12 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 223,
+    changes: [
+      'Les constructions montrent leur vrai modèle avant la pose. Les véhicules gardent leur orientation, face à votre personnage.',
+    ],
+  },
+  {
     version: 222,
     changes: [
       'Le canon antichar et le bunker sont accessibles depuis leur cercle d’entrée ; leur sortie vous replace à côté du poste.',

@@ -1,3 +1,5 @@
+import { makeFortificationStation } from '/fortification-model.js';
+import { placementFacing } from '/placement-aim.js';
 import { placementAim } from '/placement-aim.js';
 import { WaveCouncilUI } from '/wave-council-ui.js';
 import { WaveForecastScene } from '/wave-forecast-scene.js';
@@ -1410,6 +1412,7 @@ const groundDefenseUI = new GroundDefenseUI({
     return b && { ...b, ...baseWorld(b) };
   },
   builder: castorBuilder,
+  fortificationModel: (st) => makeFortificationStation(T, st, { box, cyl }),
   enabled: () => canCapture() && !placingEquipment,
   captureMouse,
   available: () =>
@@ -2465,65 +2468,6 @@ function physicalPurgatory(dt, now) {
 }
 const turrets = [];
 let stations = [];
-function makeFortificationStation(st) {
-  // Build 3D field fortifications in the same scaled reference coordinates as DCA.
-  const root = new T.Group();
-  root.position.set(st.x, st.y, st.z);
-  root.scale.setScalar(MAP.ratio);
-  scene.add(root);
-  if (st.kind === 'bunker') {
-    const bricks = new T.InstancedMesh(
-      new T.BoxGeometry(6.6, 2.5, 3.8),
-      new T.MeshStandardMaterial({ color: '#cba45c', roughness: 0.88 }),
-      100,
-    );
-    const dummy = new T.Object3D();
-    let count = 0;
-    for (let layer = 0; layer < 4; layer++)
-      for (let index = -3; index <= 3; index++)
-        for (const side of [0, 1, 2]) {
-          dummy.position.set(
-            side === 2 ? index * 6.7 : side === 0 ? -23 : 23,
-            layer * 2.5 + 1.25,
-            side === 2 ? -21 : index * 6.7,
-          );
-          dummy.rotation.set(0, side === 2 ? 0 : Math.PI / 2, 0);
-          dummy.updateMatrix();
-          bricks.setMatrixAt(count++, dummy.matrix);
-        }
-    bricks.count = count;
-    root.add(bricks);
-    box(0, 11.5, 0, 54, 2.2, 47, '#b48e4c', root);
-    box(0, 9, 22, 16, 3, 5, '#4a593f', root);
-  } else {
-    box(0, 1.2, 0, 19, 2.4, 15, '#566b50', root);
-    for (const x of [-8, 8]) cyl(x, 2.2, 4, 3, 3, 3, '#283c35', root);
-    box(0, 4, 2, 9, 5, 10, '#6b7c5a', root);
-  }
-  const yaw = new T.Group();
-  yaw.position.y = st.kind === 'bunker' ? 12.5 : 5;
-  root.add(yaw);
-  const pitch = new T.Group();
-  yaw.add(pitch);
-  const large = st.kind === 'antitank';
-  const tube = cyl(
-    0,
-    0,
-    -7,
-    large ? 1.3 : 0.6,
-    large ? 1.3 : 0.6,
-    large ? 21 : 14,
-    '#293e36',
-    pitch,
-  );
-  tube.rotation.x = Math.PI / 2;
-  box(0, 0, -1, large ? 9 : 5, large ? 6 : 4, large ? 9 : 6, '#607359', yaw);
-  const muzzle = new T.Object3D();
-  muzzle.position.set(0, 0, large ? -19 : -14);
-  pitch.add(muzzle);
-  root.userData = { yaw, pitch, muzzles: [muzzle, muzzle], barrel: 0 };
-  return root;
-}
 
 function reconcileEquipment(next) {
   // Stable slot indices are assigned transactionally by the shared room.
@@ -2550,8 +2494,10 @@ function reconcileEquipment(next) {
       st.kind === 'dca'
         ? makeAntiaircraft(T, scene, { box, cyl }, [st])[0]
         : isFortification(st.kind)
-          ? makeFortificationStation(st)
+          ? makeFortificationStation(T, st, { box, cyl })
           : installationModel(st);
+    scene.add(gun);
+    gun.rotation.y = st.angle || 0;
     gun.userData.kind = st.kind;
     gun.userData.slot = st.slot;
     const radius = isFortification(st.kind)
@@ -2941,7 +2887,7 @@ function updateVehicles(dt) {
         ? turretDirection()
         : new T.Vector3().fromArray(motion.turretDirection || [0, 0.3, -1]).normalize();
     gun.userData.yaw.userData.pitch = gun.userData.pitch;
-    aimGun(T, gun.userData.yaw, dir);
+    aimGun(T, gun.userData.yaw, dir, gun.quaternion);
     gun.updateWorldMatrix(true, true);
     const muzzle = gun.userData.muzzles[gun.userData.barrel % 2].getWorldPosition(new T.Vector3());
     if (self) {
@@ -4613,7 +4559,7 @@ function updatePlacement() {
     candidate =
       body.grounded !== false && p
         ? supportedPlacement(
-            p,
+            { ...p, angle: placementFacing(w, p) },
             colliders,
             [
               ...stations,
@@ -4631,6 +4577,7 @@ function updatePlacement() {
         : null;
   placementCandidate = candidate;
   ghost.visible = !!p;
+  if (p) ghost.rotation.y = candidate?.angle ?? placementFacing(w, p);
   if (p) ghost.position.set(p.x, (candidate?.y ?? w.y) + (VEHICLES[placementKind]?.gear || 0), p.z);
   ghost.traverse((o) => {
     if (o.isMesh) o.material.color.set(candidate ? '#badb84' : '#e87b68');
