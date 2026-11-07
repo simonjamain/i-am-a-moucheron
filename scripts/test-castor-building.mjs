@@ -27,10 +27,10 @@ let s = run({
   b: [0.08, 0],
   request: 'castor:one',
 });
-assert.equal(s.dollars, 14);
+assert.equal(s.dollars, 14.6, '8 cm billed 0,40 $ (issue #99)');
 assert.equal(s.groundDefense.structures.length, 1);
 s = run({ action: 'build', kind: 'barricade', a: [0, 0], b: [0.08, 0], request: 'castor:one' });
-assert.equal(s.dollars, 14, 'retry must not charge twice');
+assert.equal(s.dollars, 14.6, 'retry must not charge twice');
 assert.equal(s.groundDefense.structures.length, 1);
 s = run({
   action: 'build',
@@ -39,7 +39,7 @@ s = run({
   b: [0.16, 0],
   request: 'castor:two',
 });
-assert.equal(s.dollars, 13);
+assert.equal(s.dollars, 14.2);
 assert.equal(s.groundDefense.structures.length, 2);
 assert.throws(
   () => run({ action: 'build', kind: 'sugar', a: [1, 1], request: 'castor:far' }),
@@ -50,10 +50,7 @@ assert.throws(
   /près/,
 );
 v.state.landed = false;
-assert.throws(
-  () => run({ action: 'build', kind: 'fan', a: [0, 0], request: 'castor:air' }),
-  /sol/,
-);
+assert.throws(() => run({ action: 'build', kind: 'fan', a: [0, 0], request: 'castor:air' }), /sol/);
 v.state.landed = true;
 const cash = r.dollars;
 s = run({ action: 'build', kind: 'sugar', a: [0, 0.2], request: 'castor:sugar' });
@@ -63,7 +60,4 @@ assert.throws(
   () => run({ action: 'build', kind: 'fan', a: [0, 0], request: 'castor:dead' }),
   /réservée|purgatoire/,
 );
-console.log(
-  'Castor construction: pilot validation, costs, retry, range, floor and destruction OK',
-);
-
+console.log('Castor construction: pilot validation, costs, retry, range, floor and destruction OK');

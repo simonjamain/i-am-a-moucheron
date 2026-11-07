@@ -2,7 +2,14 @@ import { createGroundModel } from './ground-model.js';
 import { ModelPreview } from './model-preview.js';
 import { AirTrails } from './air-trails.js';
 import { groundPlacement } from './ground-placement.js';
+import { lengthPrice } from './ground-defense-state.js';
 import { sentryAimAngles, sentryAngleDelta, SENTRY_MUZZLE_HEIGHT } from './sentry-model.js';
+// One LEGO brick of the wall model (brick-wall.js), and the trail section bounds.
+export const BRICK_PITCH = 0.024;
+export const TRAIL_MIN = 0.01;
+export const TRAIL_MAX = 0.25;
+export const trailBricks = (length) => Math.floor(Math.max(0, length) / BRICK_PITCH);
+
 export class GroundDefenseUI {
   constructor({
     T,
@@ -122,7 +129,7 @@ export class GroundDefenseUI {
     document.body.append(this.wheel);
     this.hint = document.createElement('p');
     this.hint.textContent =
-      'Cliquez pour ancrer un mur ou un ruban, visez la fin puis cliquez pour terminer. E confirme aussi, R oriente les objets ponctuels, Échap pour quitter. Barricade / ruban : 1 $ par tranche de 20 cm, sucre : 3 $, ventilateur : 4 $, réparation : 1 $.';
+      'Cliquez pour ancrer un mur ou un ruban, visez la fin puis cliquez pour terminer. E confirme aussi, R oriente les objets ponctuels, Échap pour quitter. Barricade / ruban : 1 $ pour 20 cm, au prorata de la longueur, sucre : 3 $, ventilateur : 4 $, réparation : 1 $.';
     this.panel.append(top, this.buttons, this.hint);
     this.status = document.createElement('button');
     this.status.style.cssText =
@@ -227,7 +234,8 @@ export class GroundDefenseUI {
     if (!this.enabled() || this.busy) return;
     const castor = this.builder();
     if (castor && ['barricade', 'sticky'].includes(this.mode)) {
-      this.trailAnchor = this.trailAnchor ? null : castor.rear;
+      if (this.trailAnchor) this.finishTrail(castor);
+      else this.trailAnchor = castor.rear;
       return;
     }
     this.update();
@@ -254,6 +262,32 @@ export class GroundDefenseUI {
       this.busy = false;
     }
   }
+  // Stopping keeps the section already laid behind the truck, billed pro rata.
+  async finishTrail(castor) {
+    const from = this.trailAnchor;
+    this.trailAnchor = null;
+    this.previewModel.clear();
+    const distance = Math.hypot(castor.rear[0] - from[0], castor.rear[1] - from[1]);
+    if (distance < TRAIL_MIN || distance > TRAIL_MAX || this.busy || !this.enabled()) return;
+    this.busy = true;
+    try {
+      await this.command({
+        action: 'build',
+        kind: this.mode,
+        a: from,
+        b: [...castor.rear],
+        request: this.trailRequest(),
+      });
+    } finally {
+      this.busy = false;
+    }
+  }
+  trailRequest() {
+    return (
+      'castor:' +
+      (globalThis.crypto?.randomUUID?.() || Date.now().toString(36) + ':' + ++this.trailSequence)
+    );
+  }
   async advanceTrail() {
     const castor = this.builder();
     if (
@@ -267,9 +301,10 @@ export class GroundDefenseUI {
       return;
     const from = this.trailAnchor;
     const distance = Math.hypot(castor.rear[0] - from[0], castor.rear[1] - from[1]);
-    // Preserve the existing tariff: one dollar per 20 cm of wall or tape.
-    if (distance < 0.18) return;
-    if (distance > 0.25) {
+    // Commit 20 cm sections (billed pro rata); the bricks in between are shown
+    // one by one by the trail preview.
+    if (distance < 0.2) return;
+    if (distance > TRAIL_MAX) {
       this.trailAnchor = null;
       this.notify('Trajet de construction interrompu : trop éloigné.', 3);
       return;
@@ -277,9 +312,7 @@ export class GroundDefenseUI {
     const to = from.map((n, i) => n + ((castor.rear[i] - n) * Math.min(0.2, distance)) / distance);
     this.busy = true;
     try {
-      const request =
-        'castor:' +
-        (globalThis.crypto?.randomUUID?.() || Date.now().toString(36) + ':' + ++this.trailSequence);
+      const request = this.trailRequest();
       const accepted = await this.command({
         action: 'build',
         kind: this.mode,
@@ -320,8 +353,13 @@ export class GroundDefenseUI {
     if (this.trailAnchor && this.builder()) {
       this.candidate = null;
       this.status.disabled = false;
+      const laid = this.showTrail(this.builder());
       this.status.textContent =
-        'Castor · ' + this.mode + ' en continu · 1 $ / 20 cm · Cliquez pour arrêter';
+        'Castor · ' +
+        (this.mode === 'sticky' ? 'ruban' : 'mur LEGO') +
+        ' en continu · ' +
+        laid.toFixed(2).replace('.', ',') +
+        ' $ en cours · 1 $ / 20 cm au prorata · Cliquez pour arrêter';
       this.airTrails.update(snap);
       this.advanceTrail();
       return;
@@ -388,6 +426,38 @@ export class GroundDefenseUI {
       this.fanArrow.position.set(position[0], 0.02, position[1]);
       this.fanArrow.setDirection(new this.T.Vector3(Math.sin(angle), 0, Math.cos(angle)));
     }
+  }
+
+  // Live section between the last committed point and the truck's rear. The
+  // brick count only grows by whole bricks, so bricks appear one at a time and
+  // the instanced preview is rebuilt only when a brick is added.
+  showTrail(castor) {
+    const a = this.trailAnchor,
+      b = castor.rear;
+    const length = Math.min(TRAIL_MAX, Math.hypot(b[0] - a[0], b[1] - a[1]));
+    const bricks = trailBricks(length);
+    if (!bricks) {
+      this.preview.visible = false;
+      return 0;
+    }
+    const shown = bricks * BRICK_PITCH;
+    const angle = Math.atan2(b[1] - a[1], b[0] - a[0]);
+    const end = [a[0] + Math.cos(angle) * shown, a[1] + Math.sin(angle) * shown];
+    this.previewModel.show(
+      'trail:' + this.mode + ':' + bricks,
+      () =>
+        createGroundModel(this.T, {
+          kind: this.mode,
+          position: [0, 0],
+          angle: 0,
+          hp: 100,
+          a: [-shown / 2, 0],
+          b: [shown / 2, 0],
+        }),
+      { x: (a[0] + end[0]) / 2, y: 0, z: (a[1] + end[1]) / 2, angle: -angle },
+      true,
+    );
+    return lengthPrice(this.mode, length);
   }
 
   updateSentryAim(snap) {
