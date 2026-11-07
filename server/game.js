@@ -1149,15 +1149,9 @@ export class Game {
     r.touched = this.now();
     requireGame(
       !p.state.awaitingPurgatory ||
-        [
-          'sync',
-          'enter-purgatory',
-          'reset',
-          'lab',
-          'wave-vote',
-          'wave-buy',
-          'start',
-        ].includes(path),
+        ['sync', 'enter-purgatory', 'reset', 'lab', 'wave-vote', 'wave-buy', 'start'].includes(
+          path,
+        ),
       'Accédez au purgatoire avant d’agir.',
     );
     if (path === 'enter-purgatory') {

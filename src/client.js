@@ -1475,13 +1475,7 @@ $('share').onclick = async () => {
 };
 $('helpButton').onclick = () => {
   releaseMouse();
-  if (
-    flightTuningUI.opened ||
-    bankUI.opened ||
-    bedUI.opened ||
-    purchaseUI.opened
-  )
-    return;
+  if (flightTuningUI.opened || bankUI.opened || bedUI.opened || purchaseUI.opened) return;
   $('help').classList.remove('hidden');
 };
 $('closeHelp').onclick = () => {
@@ -1543,13 +1537,7 @@ addEventListener('keydown', (event) => {
     toggleBank();
     return;
   }
-  if (
-    flightTuningUI.opened ||
-    bankUI.opened ||
-    bedUI.opened ||
-    purchaseUI.opened
-  )
-    return;
+  if (flightTuningUI.opened || bankUI.opened || bedUI.opened || purchaseUI.opened) return;
   if (interactionKey === 'KeyG') {
     if (groundDefenseUI.handleWheelKey(interactionKey, true, event.repeat)) event.preventDefault();
     return;
@@ -2090,7 +2078,7 @@ function renderPaper() {
     eligible = true;
   }
   const visible =
-        !bankUI.opened &&
+    !bankUI.opened &&
     !bedUI.opened &&
     !purchaseUI.opened &&
     !boardingSelectionBusy &&
@@ -2275,13 +2263,7 @@ $('soulPaperButton').onclick = () => {
 $('boardButton').onclick = openBoarding;
 $('baseHelp').onclick = () => {
   releaseMouse();
-  if (
-    flightTuningUI.opened ||
-    bankUI.opened ||
-    bedUI.opened ||
-    purchaseUI.opened
-  )
-    return;
+  if (flightTuningUI.opened || bankUI.opened || bedUI.opened || purchaseUI.opened) return;
   $('help').classList.remove('hidden');
 };
 const purgScene = new T.Scene();
@@ -4434,13 +4416,7 @@ for (const [kind, model] of Object.entries(ghosts)) {
   });
 }
 function toggleShop() {
-  if (
-    flightTuningUI.opened ||
-    bankUI.opened ||
-    bedUI.opened ||
-    purchaseUI.opened
-  )
-    return;
+  if (flightTuningUI.opened || bankUI.opened || bedUI.opened || purchaseUI.opened) return;
   if (!joined || respawnAt || !$('papers').classList.contains('hidden')) return;
   if (placingEquipment) cancelPlacement();
   const open = $('shop').classList.contains('hidden');
