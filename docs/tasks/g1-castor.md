@@ -1,5 +1,13 @@
 # G1 Castor — issue #76
 
+## Lot 8 — première défense exclusive (branche feat/issue-76-castor-defenses)
+
+- Carte de plan « Tourelle automatique du Castor », construction ponctuelle depuis le conducteur pour 9 $, plafond de 12 installations par salle.
+- Ciblage et dégâts calculés par Node (30 dégâts, 0,42 m, 1 tir/0,5 s), 180 balles finies et recharge payante seulement à portée d’une station ou du Castor, via le répartiteur commun. Maquette low-poly de tourelle dans le client.
+- Tests de domaine et serveur : `node scripts/test-ground-sentry.mjs` dans la suite ; contrôles GitHub Actions `Docker build` obligatoires avant fusion. Aucun essai WebGL/FPS réel revendiqué.
+- **Restant pour clôturer #76** : bunker LEGO occupable, canon antichar lourd occupable, essais réels WebGL/UDP et FPS de plusieurs Castor ; ne pas fermer l’issue lors de la fusion de ce lot.
+
+
 - Issue : https://github.com/simonjamain/i-am-a-moucheron/issues/76.
 - Branche du premier lot : `feat/castor-paid-service` ; **ne clôture pas l'issue**.
 - Contexte : main VERSION 171 à la prise en charge. Modèles Meshy générés et texturés (châssis `01a1afc9-29f8-771d-8efc-493296643670`, tourelle `01a1afc9-3823-7324-ae2b-56cd8adf4c34`, roue `01a1afc9-4756-727e-8b75-cf19b054f6d4`). Les fichiers GLB n'ont pas été intégrés dans ce lot.

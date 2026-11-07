@@ -130,7 +130,9 @@ export class WaveCouncilUI {
       }
     }
     this.launch.hidden = !prep?.winner;
-    const offers = (snap.blueprints || []).map((card) => [card, equipmentTargets(snap, card)]);
+    const offers = (snap.blueprints || [])
+      .filter((card) => BLUEPRINTS[card].kind !== 'unlock')
+      .map((card) => [card, equipmentTargets(snap, card)]);
     const key = JSON.stringify([
       snap.base.epoch,
       snap.blueprintLevels,

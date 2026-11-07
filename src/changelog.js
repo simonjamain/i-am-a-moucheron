@@ -1,6 +1,12 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 204,
+    changes: [
+      'Après avoir débloqué son plan, le Castor peut poser des tourelles automatiques avec une réserve de balles limitée.',
+    ],
+  },
+  {
     version: 198,
     changes: [
       'Le pistolet possède désormais une réserve de 120 balles, rechargée automatiquement près des stations et du Castor.',

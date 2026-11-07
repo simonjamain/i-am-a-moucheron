@@ -132,6 +132,7 @@ export function equipBlueprint(room, request) {
   if (!Object.hasOwn(room.blueprintLevels, id) || !Object.hasOwn(BLUEPRINTS, id))
     throw Error('Plan non débloqué.');
   const profile = BLUEPRINTS[id];
+  if (profile.kind === 'unlock') throw Error('Ce plan donne accès à une construction du Castor.');
   const item =
     profile.kind === 'vehicle'
       ? room.vehicles.get(target)

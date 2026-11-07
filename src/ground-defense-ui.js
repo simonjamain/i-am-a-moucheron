@@ -67,11 +67,16 @@ export class GroundDefenseUI {
       ['repair', 'Réparer'],
       ['remove', 'Enlever'],
       ['fan', 'Ventilateur'],
+      ['sentry', 'Tourelle auto'],
     ];
     for (const [kind, label] of this.tools) {
       const button = document.createElement('button');
       button.textContent = label;
       button.onclick = () => {
+        if (kind === 'sentry' && (!this.builder() || !this.snapshot()?.blueprintLevels?.sentry)) {
+          this.notify('Débloquez la tourelle par une carte et prenez le volant du Castor.', 3);
+          return;
+        }
         this.trailAnchor = null;
         this.mode = kind;
         this.buttons.querySelectorAll('button').forEach((b) => {
@@ -320,6 +325,8 @@ export class GroundDefenseUI {
       rotation: this.rotation,
       defense: snap.groundDefense,
       dollars: snap.dollars,
+      blueprintLevels: snap.blueprintLevels,
+      castor: !!this.builder(),
     }));
     this.airTrails.update(
       snap,
@@ -447,6 +454,29 @@ export class GroundDefenseUI {
         ring.rotation.x = -Math.PI / 2;
         ring.position.set(0, 0.002, 0);
         group.add(ring);
+      } else if (structure.kind === 'sentry') {
+        const [x, z] = structure.position;
+        group.position.set(x, 0, z);
+        group.rotation.y = structure.angle || 0;
+        const base = new T.Mesh(
+          new T.BoxGeometry(0.042, 0.024, 0.042),
+          new T.MeshBasicMaterial({ color: '#4a6253' }),
+        );
+        base.position.y = 0.012;
+        group.add(base);
+        const head = new T.Mesh(
+          new T.BoxGeometry(0.034, 0.014, 0.034),
+          new T.MeshBasicMaterial({ color: structure.ammo > 0 ? '#7e9474' : '#554b43' }),
+        );
+        head.position.y = 0.029;
+        group.add(head);
+        const barrel = new T.Mesh(
+          new T.CylinderGeometry(0.004, 0.006, 0.045, 6),
+          new T.MeshBasicMaterial({ color: '#283834' }),
+        );
+        barrel.rotation.x = Math.PI / 2;
+        barrel.position.set(0, 0.03, -0.032);
+        group.add(barrel);
       } else if (structure.kind === 'barricade') {
         group.add(createBrickWall(T, structure));
       } else {
@@ -489,6 +519,9 @@ export class GroundDefenseUI {
       if (s.kind === 'fan') {
         ctx.fillStyle = '#75eaf1';
         ctx.fillRect(108 + s.position[0] / 0.04, 108 + (s.position[1] / 0.04) * 0.88, 4, 4);
+      } else if (s.kind === 'sentry') {
+        ctx.fillStyle = s.ammo > 0 ? '#a0c89b' : '#6e6660';
+        ctx.fillRect(108 + s.position[0] / 0.04, 108 + (s.position[1] / 0.04) * 0.88, 5, 5);
       } else if (s.kind === 'sugar') {
         ctx.strokeStyle = '#e9d487bb';
         ctx.beginPath();
