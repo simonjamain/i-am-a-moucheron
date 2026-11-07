@@ -82,3 +82,17 @@
 - Restant : limitation des munitions pistolets et DCA fixes, défenses exclusives
   (plans de cartes, bunkers occupables, canon antichar, tourelle automatique),
   visuel/FPS du Castor en situation et vérification humaine du placement.
+
+
+## Lot 6 — stocks finis DCA fixes (PR dédiée)
+
+- Branche : `feat/finite-fixed-dca-ammo`, référence #76.
+- Chaque DCA est posée avec 120 obus ; tir serveur dédupliqué et cadencé, HUD
+  munitions du poste et tir distant supprimé si stock épuisé.
+- Le ravitaillement des DCA exige une station ou le Castor à portée et coûte
+  1 $/10 obus avec répartition de la caisse entre tous les bénéficiaires.
+- Tests : `test-fixed-dca-ammo.mjs` intégré à `npm test`, formats/docs/build
+  et GitHub Actions Docker à vérifier. L'effet visuel d'un tir est immédiat ;
+  un tir rejeté tardivement par le serveur peut avoir été aperçu localement.
+- Restant : pistolets limités avec approvisionnement au sol et purgatoire,
+  défenses exclusives (bunker, canon, tourelle automatique), essais WebGL/WAN.

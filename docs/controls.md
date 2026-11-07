@@ -185,3 +185,9 @@ Sur le [bombardier B3](b3-model.md), **4** demande le poste ventral avec signatu
 
 
 G1 Castor : Z/S avancer/reculer, Q/D tourner, souris et clic gauche pour tirer avec la mitrailleuse légère, **V** bascule la caméra tactique surélevée. Le soutien à 50 cm est automatique et payant. Pendant la conduite, **G** ou le clic molette ouvre la roue de construction. Clic gauche démarre/arrête la dépose des murs LEGO et rubans (1 $ par 20 cm) ; les autres pièges se posent au point visé. Échap interrompt la construction.
+
+
+DCA fixe : le nombre d'obus restants (sur 120) est affiché près de l'état du
+poste. Un clic gauche ou Espace déclenche un tir tant qu'il reste des munitions.
+Rechargement automatique auprès d'une station ou d'un Castor à portée, depuis
+la caisse commune ; aucun achat de munitions à distance.

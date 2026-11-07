@@ -35,6 +35,7 @@ import { randomUUID } from 'node:crypto';
 import {
   MAP,
   ACTOR_UNIT,
+  FLAK,
   enemySizeFactor,
   INSECT_SCALE,
   MIDGE_SPHERE_RADIUS,
@@ -61,6 +62,7 @@ import {
 } from '../src/waves.js';
 import { SHOP, shopPrice, supportedPlacement, waveStipend } from '../src/equipment.js';
 import { advancePaidService } from '../src/paid-service.js';
+import { FIXED_DCA_AMMO } from '../src/ground-ammo.js';
 import {
   fullAmmo,
   ammoCapacity,
@@ -165,6 +167,7 @@ function roomState(code, now) {
     effects: [],
     ordnance: [],
     ordnanceShots: new Set(),
+    fixedDcaShots: new Set(),
     damageEvents: [],
     damageSeq: 0,
     enemyHits: new Set(),
@@ -1028,6 +1031,7 @@ export class Game {
     else if (path === 'place-purchase') this.placePurchase(r, p, b);
     else if (path === 'wash') this.wash(r, p, b);
     else if (path === 'pistol-trace') this.pistolTrace(r, p, b);
+    else if (path === 'fixed-dca-fire') this.fixedDcaFire(r, p, b);
     else if (path === 'wave-vote') {
       const prep = r.preparation;
       requireGame(prep && b.preparation === prep.id && !prep.winner, 'Ce vote est clos.');
@@ -1269,6 +1273,36 @@ export class Game {
       if (r.groundDefenseOrders.size > 2048)
         r.groundDefenseOrders.delete(r.groundDefenseOrders.keys().next().value);
     }
+  }
+  fixedDcaFire(r, p, b) {
+    const gun = r.equipment[b.station];
+    requireGame(
+      p.life === 'alive' &&
+        p.mode === 'turret' &&
+        Number.isInteger(b.station) &&
+        p.state.turret === b.station &&
+        gun?.kind === 'dca' &&
+        p.incarnation === b.incarnation,
+      'Occupez cette DCA pour tirer.',
+    );
+    requireGame(
+      typeof b.shot === 'string' && b.shot.length > 0 && b.shot.length <= 120,
+      'Identifiant de tir invalide.',
+      400,
+    );
+    const key = p.id + ':' + p.incarnation + ':' + b.shot;
+    if (r.fixedDcaShots.has(key)) return;
+    requireGame(gun.ammo >= 1, 'La DCA est à court de munitions.');
+    const interval = (FLAK.interval * 1000 * clauseFactors(this.clause(r, p)).interval) /
+      (r.balance.fireRate || 1);
+    requireGame(
+      this.now() >= (gun.lastShotAt ?? -Infinity) + interval,
+      'La DCA recharge son canon.',
+    );
+    requireGame(r.fixedDcaShots.size < 128000, 'Trop de tirs enregistrés.', 429);
+    gun.ammo -= 1;
+    gun.lastShotAt = this.now();
+    r.fixedDcaShots.add(key);
   }
   pistolTrace(r, p, b) {
     requireGame(
@@ -1582,7 +1616,13 @@ export class Game {
       );
       if (item.kind === 'vehicle') this.createVehicle(r, b.item, 'purchase', placement);
       else
-        r.equipment.push({ ...placement, kind: b.item, name: item.name, slot: r.equipment.length });
+        r.equipment.push({
+          ...placement,
+          kind: b.item,
+          name: item.name,
+          slot: r.equipment.length,
+          ...(b.item === 'dca' ? { ammo: FIXED_DCA_AMMO } : {}),
+        });
     } else if (item.kind === 'vehicle') this.createVehicle(r, b.item);
     else r.upgrades[b.item] = (r.upgrades[b.item] || 0) + 1;
     if (!prepaid) r.dollars = money(r.dollars - price);

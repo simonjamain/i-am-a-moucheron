@@ -1,6 +1,12 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 193,
+    changes: [
+      'Les DCA fixes disposent maintenant de 120 obus et se rechargent automatiquement près d’une station ou du Castor.',
+    ],
+  },
+  {
     version: 192,
     changes: [
       'Le Castor et les stations réparent maintenant automatiquement les barricades endommagées à proximité.',
