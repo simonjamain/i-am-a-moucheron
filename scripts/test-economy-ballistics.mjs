@@ -73,7 +73,8 @@ for (const e of rosters) {
   const route = enemyRoute(e),
     end = enemyRoutePosition(e, 1);
   assert.ok(Math.hypot(end[0] - 2.5, end[2] + 2.7) < 1e-8);
-  assert.ok(e.duration >= 60);
+  // Ground insects walk directly to the bin (issue #97); flights keep long lanes.
+  assert.ok(e.ground ? e.duration > 0 : e.duration >= 60);
   for (const { p } of route.samples) {
     assert.ok(p.every(Number.isFinite));
     assert.ok(p[1] >= 0.0006 && p[1] <= 2.81);

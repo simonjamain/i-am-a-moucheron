@@ -13,9 +13,15 @@ assert.deepEqual(timelineColumns(groups), [
   [1, [groups[1]]],
   [6, [groups[0], groups[2]]],
 ]);
-const request = { groups: [groups[0]], walls: [], active: false };
+const request = { groups: [groups[0]], walls: [] };
 const original = predictedGroundPaths(request)[0];
-assert.equal(original.points.length, enemyRoute(groups[0]).points.length);
+// Undefended desk: the forecast is the nominal route, which is the walked one.
+assert.deepEqual(
+  original.points.map(([x, , z]) => [x, z]),
+  enemyRoute(groups[0])
+    .points.filter((p) => p[1] < 0.01)
+    .map(([x, , z]) => [x, z]),
+);
 const defense = newGroundDefense();
 const flow = groundFlow(defense);
 const [x, , z] = portalExit(PORTALS.ground[1]);
@@ -24,7 +30,7 @@ const [cx, cz] = before[6];
 const command = { kind: 'barricade', action: 'build', a: [cx - 0.1, cz], b: [cx + 0.1, cz] };
 const preview = predictedGroundPaths({ ...request, command })[0];
 groundCommand(defense, command, command.a, 10);
-const confirmed = predictedGroundPaths({ ...request, walls: defense.structures, active: true })[0];
+const confirmed = predictedGroundPaths({ ...request, walls: defense.structures })[0];
 assert.deepEqual(preview, confirmed);
 assert.notDeepEqual(
   confirmed.points.map(([x, , z]) => [x, z]),

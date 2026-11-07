@@ -26,10 +26,10 @@ protéger la poubelle contre les insectes ; les arrivées ennemies augmentent
 l’infestation. La mort ouvre une observation à caméra fixe ; un clic volontaire donne accès au purgatoire et à la paperasse de retour en jeu.
 
 Avant chaque vague, le serveur annonce les entrées et les horaires des groupes. La préparation dure une minute par défaut. Votez pour un plan commun, puis équipez les objets compatibles. Une fois le vote résolu, tout joueur peut lancer la vague avant la fin du compte à rebours. La première vague combine fourmis et moucherons, puis le budget des vagues augmente de moitié à chaque étape, jusqu'à 2 400 points. Voir [progression](progression.md). Des groupes aériens arrivent depuis
-plusieurs aérations, se séparent et se rejoignent ; fourmis et cafards empruntent
-des parcours terrestres depuis des trous. La durée des trajets dépend de leur longueur à vitesse conservée et est partagée
-avec le serveur pour l’arrivée à la poubelle. Le système est guidé et déterministe, sans navigation générale
-évitant tous les équipements placés par les joueurs.
+plusieurs aérations, se séparent et se rejoignent ; fourmis et cafards sortent
+de trous et marchent vers la poubelle par le chemin le plus direct qui contourne le
+mobilier, les barricades et les bunkers (voir [navigation terrestre](#navigation-terrestre)).
+La durée nominale des trajets dépend de leur longueur à vitesse conservée.
 
 Le panneau **Équilibrage et nuées** permet à tous les joueurs de modifier les
 paramètres de la room et d'envoyer des lots d'ennemis par espèce, y compris hors
@@ -286,11 +286,27 @@ Le sucre coûte
 3 $, une réparation 1 $, la suppression est gratuite. L’aperçu rouge et le message
 signalent un refus ; le serveur revalide position, caisse et occupation avant
 paiement. La pose exige le sol du bureau, sans parachute. Les défenses sont
-partagées par room et effacées à sa remise à zéro. Les terrestres utilisent alors
-la navigation serveur qui tient compte des barricades, appâts et rubans ; les
-volants gardent leurs parcours. Le radar conserve les constructions et rayons
+partagées par room et effacées à sa remise à zéro. Les terrestres utilisent
+toujours la navigation serveur, qui tient compte des barricades, bunkers, appâts
+et rubans ; les volants gardent leurs parcours. Le radar conserve les constructions et rayons
 d’appât ; il ne sert pas à construire. Le rendu et le confort de pose demandent
 encore un essai WebGL/UDP en partie réelle.
+
+### Navigation terrestre
+
+Le serveur simule chaque insecte terrestre dès le début du combat, avec ou sans
+défense. Une grille de 5 cm (`buildGroundFlow`, `src/ground-defense.js`) bloque le
+mobilier au sol, les barricades et les bunkers ; elle n'est reconstruite qu'à un
+changement de `navigationRevision`. Le trajet est lissé à angle libre : depuis sa
+position, l'insecte vise le point le plus lointain de la descente encore visible
+en ligne droite, avec une marge d'environ une demi-case, et garde ce point jusqu'à
+l'atteindre. L'aperçu du conseil de vague (`smoothRoute`) enchaîne les mêmes points :
+à carte inchangée, le tracé ocre est le chemin marché. Un brouillon de barricade ou
+de bunker montre le détour avant validation. Sans chemin, l'aperçu affiche
+« Passage fermé » ; les cafards, araignées et rats attaquent alors la barricade la
+plus proche. Le sucre détourne seulement les insectes entrés dans son rayon et
+n'est pas tracé. La route nominale (`enemyRoute`) suit aussi ce champ sur un bureau
+vide, ce qui fixe la durée de vague. `scripts/test-ground-paths.mjs` couvre ces cas.
 
 ## Défense aérienne
 
@@ -309,13 +325,11 @@ le parcours. Le départ et l’arrivée restent fixes.
 
 Le [bombardier B3 à quatre places](b3-model.md) conserve son camouflage Meshy ; un disque coloré au-dessus identifie l’appareil.
 
-
 ## G1 Castor (première étape, version 179)
 
 Le **G1 Castor** est un camion monoplace à six roues, achetable pour **12 $** avec le bon signé des véhicules. Z/S et Q/D permettent de conduire ; la souris vise sa mitrailleuse légère (500 balles, recharges payantes). **V** bascule une vue tactique surélevée. Plus rapide que le tank, il possède un rayon de soutien sphérique de **50 cm** qui peut soigner et ravitailler les alliés en mouvement ou en vol et se réapprovisionner lui-même. Le service utilise la caisse commune.
 
 **La construction en roulant est disponible depuis la version 188.** Le Castor utilise désormais **ses trois modèles Meshy texturés** : châssis, tourelle et roues indépendantes. Les couleurs originales sont préservées ; seule la pastille d’identification change selon l’appareil. Voir [l'issue #76](https://github.com/simonjamain/i-am-a-moucheron/issues/76) et [la note de reprise](tasks/g1-castor.md).
-
 
 ### Construction depuis le Castor (version 188)
 
@@ -333,7 +347,6 @@ surfaces surélevées depuis le Castor dans cette première version. Les vérita
 modèles Meshy du châssis, de la tourelle et des roues sont déjà intégrés ; la
 correction des six roues est conservée.
 
-
 ### Réparation automatique des barricades (version 192)
 
 Les stations fixes et les Castor en état de marche réparent désormais les **murs
@@ -346,7 +359,6 @@ partagent équitablement l'argent disponible. Sans argent, rien n'est réparé.
 Un segment entièrement détruit reste détruit : la réparation automatique ne
 réinstalle pas d'obstacle disparu, conformément aux règles de navigation.
 
-
 ### Munitions limitées des DCA fixes (version 193)
 
 Les **DCA fixes** disposent désormais de **120 obus maximum**, contre des tirs
@@ -357,7 +369,6 @@ une **station de ravitaillement ou un Castor vivant** est à sa portée. Le tari
 est le même que pour les autres obus, **1 $ pour 10 unités** ; en cas de manque
 d'argent, elle reçoit une part équitable avec les véhicules et les barricades.
 Une DCA isolée reste à sec jusqu'à l'installation ou au passage d'un soutien.
-
 
 ### Pistolet à munitions limitées (version 198)
 

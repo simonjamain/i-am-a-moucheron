@@ -263,7 +263,7 @@ for (let seed = 0; seed < 8; seed++)
       assert.ok(Math.abs((e.duration - e.entryHold) * e.travelSpeed - route.length) < 1e-8);
       for (let i = 1; i < route.points.length; i++)
         assert.equal(blockedSegment(route.points[i - 1], route.points[i], e.ground), false);
-      if (wave === 1) assert.ok(e.spawn + e.duration > 100);
+      if (wave === 1 && !e.ground) assert.ok(e.spawn + e.duration > 100);
     }
 // Heavy damage and soul release are authoritative, independently of visuals.
 const targetJoin = game.join({ code: 'GROUND' }),
