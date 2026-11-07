@@ -55,8 +55,17 @@ précision seulement si une décision ou un accès indispensable manque.
 Une tâche a un responsable ; plusieurs tâches peuvent avancer en parallèle.
 L'auteur maintient sa branche et résout ses conflits jusqu'à la fusion. Après
 intégration de changements concurrents, refaire les contrôles concernés et
-signaler les essais humains à renouveler. La fusion appartient aux personnes
-habilitées sur GitHub ; créer une PR ne vaut pas autorisation de la fusionner.
+signaler les essais humains à renouveler. Par défaut, l'agent auteur fusionne lui-même sa PR dès qu'il estime la contribution
+terminée **et** que les contrôles requis sont réussis. L'utilisateur n'a pas à
+redemander la fusion ni à fournir une revue manuelle préalable. Avant toute fusion,
+relire le diff, vérifier les critères d'acceptation, les contrôles GitHub Actions
+(y compris `Docker build`), l'absence de conflit et les protections de `main`.
+Si Docker n'est pas disponible localement, attendre la réussite du contrôle
+`Docker build` de la PR. Utiliser une fusion **squash** lorsque GitHub l'autorise.
+Ne jamais contourner une protection ni déclarer réussi un essai non exécuté :
+en cas d'échec, de contrôle absent, de conflit ou de permission insuffisante,
+laisser la PR ouverte, documenter précisément le blocage et le signaler.
+Après fusion, vérifier l'état de `main` et la fermeture des issues liées.
 
 Les déploiements temporaires relèvent de GitHub Actions, selon l'état décrit dans
 CONTRIBUTING. Vérifier le résultat réellement retourné ; signaler un environnement
