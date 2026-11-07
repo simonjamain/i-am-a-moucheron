@@ -13,11 +13,10 @@ export function spreadDirection(T, direction, random = Math.random, angle = 0.00
     .addScaledVector(up, r * Math.sin(a))
     .normalize();
 }
+// Continuous within bounds: held Shift/Ctrl reaches any distance (issue #102).
 export function fuseRange(value) {
-  return Math.max(
-    FLAK.minRange,
-    Math.min(FLAK.maxRange, Math.round(value / FLAK.step) * FLAK.step),
-  );
+  if (!Number.isFinite(value)) return FLAK.range;
+  return Math.max(FLAK.minRange, Math.min(FLAK.maxRange, value));
 }
 export function blastDamage(distance, radius = MAP.metres(FLAK.radius)) {
   return distance > radius ? 0 : Math.round(80 - (60 * Math.max(0, distance)) / radius);

@@ -102,7 +102,7 @@ import {
 } from '/mouse-flight.js';
 import { PeerMotion, MotionTrack } from '/network.js';
 import { UdpClient } from '/udp-client.js';
-import { HoldZoom, contextKey, rangeReadout } from '/equipment-controls.js';
+import { HoldZoom, advanceFuse, contextKey, rangeReadout } from '/equipment-controls.js';
 import { HEAVY, TANK_MG, availableShell } from '/armament.js';
 import { stepTank } from '/tank.js';
 import { CrashEffects } from '/crash-effects.js';
@@ -1641,8 +1641,11 @@ addEventListener('keydown', (event) => {
   );
   if (contextual) {
     event.preventDefault();
-    if (contextual.range) flakRange = fuseRange(flakRange + contextual.range);
-    else if (contextual.heliWeapon) {
+    if (contextual.fuse) {
+      // Held key: advanceFuse() sweeps the distance every frame until release.
+      keyBindings.set(event.code, code);
+      keys[code] = true;
+    } else if (contextual.heliWeapon) {
       if (!activeMissile()) heliWeapon = contextual.heliWeapon;
     } else selectedShell = contextual.shell;
     return;
@@ -2898,6 +2901,7 @@ function updateVehicles(dt) {
     const muzzle = gun.userData.muzzles[gun.userData.barrel % 2].getWorldPosition(new T.Vector3());
     if (self) {
       if (controlFocus.active) {
+        if (station.kind === 'dca') flakRange = advanceFuse(flakRange, keys, dt);
         turretAim.yaw -= pad.yaw * dt * currentFactors().aim * 1.5;
         turretAim.pitch = T.MathUtils.clamp(
           turretAim.pitch - pad.pitch * dt * currentFactors().aim,

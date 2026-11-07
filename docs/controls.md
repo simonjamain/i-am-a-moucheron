@@ -25,7 +25,7 @@ mapping, including modifier changes while a key is held.
 | Airborne character     | Space                          | Open / retract parachute                 |
 | Alive                  | P                              | Open / close purchase menu               |
 | Placement preview      | E (Enter alias) / Escape       | Confirm / cancel                         |
-| DCA                    | [ / ]                          | Decrease / increase airburst distance    |
+| DCA                    | [ / ], Shift / Ctrl held       | Step / continuous airburst distance      |
 | On foot / purgatories  | Click / grounded Space         | Pistol / continuous cleaning jet         |
 | Multi-seat vehicle     | Physical Digit1–Digit7 / panel | Contractual change or exchange           |
 | Purgatory              | E                              | Open paperwork when physically eligible  |
@@ -74,8 +74,11 @@ des gaz jusqu’au départ. Voir [logistique et contrats](logistics-contracts.md
 ## Nouveau lot Node : zoom et armes lourdes
 
 Clic droit maintenu : zoom dans un poste avec pointeur capturé ; relâcher restaure
-la vue. DCA : Shift augmente la fusée, Ctrl la réduit, avec affichage en mètres
-réels. Tank : Z/S ou flèches pour avancer/reculer, Q/D pour tourner ; Shift choisit
+la vue. DCA : Shift maintenu augmente la fusée en continu, Ctrl maintenu la réduit
+(environ 360 m de référence par seconde, entre 100 et 1 200), relâcher arrête
+aussitôt et les deux touches ensemble s'annulent ; affichage en mètres en direct.
+`advanceFuse()` (`src/equipment-controls.js`) porte ce réglage, couvert par
+`scripts/test-fuse-continuous.mjs`. Molette et [ ] gardent des pas de 25 m. Tank : Z/S ou flèches pour avancer/reculer, Q/D pour tourner ; Shift choisit
 HE, Ctrl AP. Au tireur principal, clic gauche tire le canon et Espace la coaxiale. Aux pilotes,
 clic gauche tire la MG et Espace maintenu largue les bombes disponibles toutes les
 0,5 s. B est supprimé. Les autres mitrailleurs et DCA gardent clic/Espace pour tirer. E signe depuis
