@@ -24,6 +24,21 @@ export const BLUEPRINTS = Object.freeze({
     cost: 2,
     kind: 'sticky',
   },
+  castorBunker: {
+    name: 'Plan de bunker LEGO',
+    description: 'Débloque les bunkers LEGO occupables construits par le Castor.',
+    cost: 0, kind: 'unlock',
+  },
+  castorAntitank: {
+    name: 'Plan de canon antichar',
+    description: 'Débloque les canons lourds contre les boss terrestres du Castor.',
+    cost: 0, kind: 'unlock',
+  },
+  castorAutoturret: {
+    name: 'Plan de tourelle automatique',
+    description: 'Débloque les tourelles autonomes à munitions limitées du Castor.',
+    cost: 0, kind: 'unlock',
+  },
 });
 
 export function supportsBlueprint(id, object) {
