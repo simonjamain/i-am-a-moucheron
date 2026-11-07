@@ -1,6 +1,10 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 210,
+    changes: ['Les boutons du laboratoire sont mieux rangés et restent accessibles sur petit écran.'],
+  },
+  {
     version: 209,
     changes: [
       'Un laboratoire permet de débloquer les plans, choisir les vagues et retrouver vos scénarios de test.',
