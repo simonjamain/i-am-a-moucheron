@@ -117,3 +117,5 @@
   Docker build, format et docs, puis revue et fusion si tous verts.
 - **Restant** : les trois défenses exclusives Castor et leurs cartes, modèles et
   contrôles, test manuel WebGL/UDP et FPS avec plusieurs Castor.
+
+- Première CI PR #88 : test de combat RAM et de nuées utilisaient des impacts fictifs sans coup préalable ; conservés après ajout de reçus de tirs simulés via la vraie commande serveur. Diagnostic du pistolet mis à jour pour son caractère asynchrone. Formatage du serveur corrigé. Poursuivre par la CI complète et traiter les éventuels scénarios historiques équivalents.

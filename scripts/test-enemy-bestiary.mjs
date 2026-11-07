@@ -20,13 +20,22 @@ const game = new Game({ now: () => now });
 const a = game.join({ code: 'BROOD', name: 'Joueur' });
 const r = game.rooms.get('BROOD');
 const command = (path, b) => game.command('BROOD', a.id, path, b);
+const pistolShot = (shot) =>
+  command('pistol-trace', {
+    shot,
+    incarnation: r.pilots.get(a.id).incarnation,
+    origin: [0, 0, 0],
+    direction: [0, 0, -1],
+  });
 command('debug-spawn', { epoch: r.base.epoch, counts: { spider: 1, rat: 1, mosquito: 1 } });
 assert.equal(r.plan.roster.length, 3);
 const mother = r.plan.roster[0];
 assert.deepEqual(swarmFrame(r.plan.roster, 5), swarmFrame(r.plan.roster, 5));
 now = r.started + (mother.spawn + mother.entryHold + 1) * 1000;
+pistolShot('one');
 command('hit', { wave: r.wave, enemy: 0, amount: 800, shot: 'one' });
 assert.equal(r.plan.roster.length, 3);
+pistolShot('two');
 command('hit', { wave: r.wave, enemy: 0, amount: 800, shot: 'two' });
 assert.equal(r.plan.roster.length, 103);
 assert.equal(r.rosterRevision, 2);
@@ -39,6 +48,7 @@ assert.ok(
     .slice(3)
     .every((e) => e.type === 'spiderling' && e.leak === 1 && e.offspringOf === 0),
 );
+pistolShot('three');
 command('hit', { wave: r.wave, enemy: 0, amount: 800, shot: 'three' });
 assert.equal(r.plan.roster.length, 103);
 assert.equal(r.souls.size, 1);
