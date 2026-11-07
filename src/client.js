@@ -2706,7 +2706,11 @@ function updateVehicles(dt) {
   $('fuseDistance').textContent = rangeReadout(flakRange).metres.toFixed(0) + ' m · Shift / Ctrl';
   $('vehicleState').textContent =
     turretIndex >= 0
-      ? 'DCA · ' + stations[turretIndex].name + ' · ' + Math.round(hp) + ' PV · Obus ' +
+      ? 'DCA · ' +
+        stations[turretIndex].name +
+        ' · ' +
+        Math.round(hp) +
+        ' PV · Obus ' +
         Math.floor(stations[turretIndex].ammo ?? 0) +
         '/' +
         FIXED_DCA_AMMO
@@ -2852,7 +2856,8 @@ function updateVehicles(dt) {
       camera.position.set(station.x, station.y + MAP.metres(1.8), station.z);
       camera.up.set(0, 1, 0);
       camera.lookAt(camera.position.clone().addScaledVector(dir, MAP.metres(100)));
-      shooting = ((controlFocus.active && (mouseFire || keys.Space || pad.fire)) || uiWeaponFire) &&
+      shooting =
+        ((controlFocus.active && (mouseFire || keys.Space || pad.fire)) || uiWeaponFire) &&
         (station.ammo ?? 0) >= 1;
       if (shooting && performance.now() > gun.userData.shotAt) {
         gun.userData.shotAt =

@@ -63,28 +63,3 @@ assert.throws(() => fire('round-unauthorized'), /Occupez/);
 assert.equal(positioned.ammo, 0);
 console.log('Fixed DCA: finite ammo, charged shot idempotence, cooldown, no remote reload, shared budget OK');
 
-import prettier from 'prettier';
-import { readFileSync, writeFileSync, mkdtempSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join as pathJoin } from 'node:path';
-import { execFileSync } from 'node:child_process';
-const path = 'src/client.js';
-const source = readFileSync(path, 'utf8');
-const formatted = await prettier.format(source, {
-  ...(await prettier.resolveConfig(path)),
-  filepath: path,
-});
-if (source !== formatted) {
-  const dir = mkdtempSync(pathJoin(tmpdir(), 'dca-prettier-'));
-  writeFileSync(pathJoin(dir, 'before'), source);
-  writeFileSync(pathJoin(dir, 'after'), formatted);
-  try {
-    execFileSync('git', ['diff', '--no-index', '--', pathJoin(dir, 'before'), pathJoin(dir, 'after')], {
-      encoding: 'utf8',
-    });
-  } catch (error) {
-    console.log('BEGIN DCA PRETTIER DIFF');
-    console.log(error.stdout);
-    console.log('END DCA PRETTIER DIFF');
-  }
-}

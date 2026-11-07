@@ -98,3 +98,5 @@
   défenses exclusives (bunker, canon, tourelle automatique), essais WebGL/WAN.
 
 - Première CI PR #87 : l'assemblage n'incluait pas encore le nouveau module navigateur `ground-ammo.js` et le formatage de l'expression de cadence du serveur échouait. Corrigés sur le commit suivant, puis CI complète à relancer.
+
+- Dernier diagnostic CI : Prettier exigeait deux retours à la ligne dans `src/client.js` (HUD du canon et expression de tir). Appliquer ces deux corrections, supprimer le diagnostic temporaire et relancer les cinq contrôles sur le SHA final.
