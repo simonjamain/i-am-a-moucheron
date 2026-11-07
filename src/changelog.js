@@ -1,6 +1,12 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 226,
+    changes: [
+      'DCA fixe : maintenez Maj ou Ctrl pour régler la distance de fusée en continu ; relâchez pour arrêter.',
+    ],
+  },
+  {
     version: 225,
     changes: [
       'Fourmis et cafards marchent tout droit vers la poubelle en contournant meubles et défenses.',
