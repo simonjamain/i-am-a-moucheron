@@ -1,11 +1,18 @@
 # G1 Castor — issue #76
 
+## Lot 9 — défenses occupables (branche feat/issue-76-manned-defenses)
+
+- Ajout des plans exclusifs du bunker LEGO et du canon antichar ; placement ponctuel avec le Castor, achat partagé (10 $ et 14 $) et postes occupables par signature (un tireur par poste).
+- Bunker construit en briques LEGO instanciées ; mitrailleuse du poste (240 balles, 18 dégâts) et absorption de 85 % des tirs amis jusqu’à destruction des murs. Canon antichar lourd (24 obus, 225 dégâts) destiné aux gros ennemis terrestres. Les postes utilisent le parcours et les entrées de DCA fixe, avec leurs propres cadences.
+- Accès, remboursement, réserve et réparation validés côté serveur ; recharge seulement à portée des stations ou du Castor et payante. Suppression retire le poste sans décaler les index, déconnexion et destruction gérées par le cycle de vie partagé.
+- Suite de régression dédiée `scripts/test-castor-fortifications.mjs` ; contrôles Actions et `Docker build` obligatoires avant fusion. Vérification visuelle en navigateur/UDP/FPS à mener : la simulation Node ne peut pas la remplacer.
+
 ## Lot 8 — première défense exclusive (branche feat/issue-76-castor-defenses)
 
 - Carte de plan « Tourelle automatique du Castor », construction ponctuelle depuis le conducteur pour 9 $, plafond de 12 installations par salle.
 - Ciblage et dégâts calculés par Node (30 dégâts, 0,42 m, 1 tir/0,5 s), 180 balles finies et recharge payante seulement à portée d’une station ou du Castor, via le répartiteur commun. Maquette low-poly de tourelle dans le client.
 - Tests de domaine et serveur : `node scripts/test-ground-sentry.mjs` dans la suite ; contrôles GitHub Actions `Docker build` obligatoires avant fusion. Aucun essai WebGL/FPS réel revendiqué.
-- **Restant pour clôturer #76** : bunker LEGO occupable, canon antichar lourd occupable, essais réels WebGL/UDP et FPS de plusieurs Castor ; ne pas fermer l’issue lors de la fusion de ce lot.
+- À la fin du lot 8, le bunker et le canon antichar restaient à faire ; ils sont couverts par le lot 9 ci-dessus. Les essais interactifs WebGL/UDP et la mesure de FPS de plusieurs Castor demeurent à vérifier avant clôture complète de #76.
 
 
 - Issue : https://github.com/simonjamain/i-am-a-moucheron/issues/76.

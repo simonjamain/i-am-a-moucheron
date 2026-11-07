@@ -1,5 +1,6 @@
 import { FAN_COST, FAN_FADE_MS } from './air-current.js';
 import { SENTRY } from './ground-sentry.js';
+import { FORTIFICATIONS, isFortification } from './ground-fortifications.js';
 import { ROUTE_OBSTACLES } from './route-obstacles.js';
 import {
   splitBarricade,
@@ -64,7 +65,7 @@ export function groundFlow(state, goal = GROUND_GOAL) {
     bounds: GROUND_BOUNDS,
     cellSize: GROUND_CELL,
     goal,
-    barricades: state.structures.filter((s) => s.kind === 'barricade' && s.hp > 0),
+    barricades: state.structures.filter((s) => ['barricade', 'bunker'].includes(s.kind) && s.hp > 0),
     staticObstacles: ROUTE_OBSTACLES.filter(
       (box) =>
         box.min.y < 0.01 &&
@@ -82,7 +83,13 @@ export function groundCommand(state, command, foot, dollars, now = Date.now(), a
   const action = command.action;
   if (action === 'build') {
     const { kind, a, b } = command;
-    const pointItem = kind === 'sugar' || kind === 'fan' || kind === 'sentry';
+    const pointItem = kind === 'sugar' || kind === 'fan' || kind === 'sentry' || isFortification(kind);
+    if (isFortification(kind)) {
+      if (!access.castor || !access.blueprintLevels?.[kind])
+        fail('Cette défense occupable exige le Castor et son plan collectif.');
+      if (state.structures.filter((s) => s.kind === kind).length >= FORTIFICATIONS[kind].maxPerRoom)
+        fail('Nombre maximal de défenses occupables atteint.');
+    }
     if (kind === 'sentry') {
       if (!access.castor || !access.blueprintLevels?.sentry)
         fail('Cette tourelle exige le Castor et le plan débloqué par les cartes.');
@@ -90,7 +97,7 @@ export function groundCommand(state, command, foot, dollars, now = Date.now(), a
         fail('Nombre maximal de tourelles atteint.');
     }
     if (
-      !['barricade', 'sticky', 'sugar', 'fan', 'sentry'].includes(kind) ||
+      !['barricade', 'sticky', 'sugar', 'fan', 'sentry', 'bunker', 'antitank'].includes(kind) ||
       !finitePoint(a) ||
       (!pointItem && !finitePoint(b))
     )
@@ -102,8 +109,10 @@ export function groundCommand(state, command, foot, dollars, now = Date.now(), a
     if (state.structures.length + count > GROUND_LIMIT)
       fail('Trop de constructions dans la salle.');
     const price =
-      kind === 'sentry'
-        ? SENTRY.cost
+      isFortification(kind)
+        ? FORTIFICATIONS[kind].cost
+        : kind === 'sentry'
+          ? SENTRY.cost
         : kind === 'fan'
         ? FAN_COST
         : kind === 'sugar'
@@ -133,7 +142,16 @@ export function groundCommand(state, command, foot, dollars, now = Date.now(), a
                   ? { placedAt: now }
                   : kind === 'sentry'
                     ? { hp: SENTRY.hp, maxHp: SENTRY.hp, ammo: SENTRY.ammo }
-                    : { type: 'sugar', radius: GROUND_BAIT_TYPES.sugar.radius }),
+                    : isFortification(kind)
+                      ? {
+                          hp: FORTIFICATIONS[kind].hp,
+                          maxHp: FORTIFICATIONS[kind].hp,
+                          ammo: FORTIFICATIONS[kind].ammo,
+                          ...(kind === 'bunker'
+                            ? { a: [a[0] - 0.045, a[1]], b: [a[0] + 0.045, a[1]] }
+                            : {}),
+                        }
+                      : { type: 'sugar', radius: GROUND_BAIT_TYPES.sugar.radius }),
               },
             ];
     if (kind === 'sugar' && !finitePoint(feedingPoint(items[0])))
@@ -146,8 +164,8 @@ export function groundCommand(state, command, foot, dollars, now = Date.now(), a
         : [(item.a[0] + item.b[0]) / 2, (item.a[1] + item.b[1]) / 2];
       if (
         state.structures.some((existing) => {
-          if (existing.kind === 'sentry' && existing.hp > 0)
-            return Math.hypot(sample[0] - existing.position[0], sample[1] - existing.position[1]) < 0.06;
+          if (['sentry', 'bunker', 'antitank'].includes(existing.kind) && existing.hp > 0)
+            return Math.hypot(sample[0] - existing.position[0], sample[1] - existing.position[1]) < 0.07;
           if (existing.kind !== 'barricade' || existing.hp <= 0) return false;
           return distanceToSegment(sample, existing.a, existing.b) < 0.02;
         })
@@ -157,7 +175,7 @@ export function groundCommand(state, command, foot, dollars, now = Date.now(), a
     state.nextId++;
     state.structures.push(...items);
     state.revision++;
-    if (kind === 'barricade') state.navigationRevision++;
+    if (kind === 'barricade' || kind === 'bunker') state.navigationRevision++;
     return { price, ids: items.map((item) => item.id) };
   }
   if (!['repair', 'remove'].includes(action)) fail('Action de défense inconnue.');
@@ -168,7 +186,7 @@ export function groundCommand(state, command, foot, dollars, now = Date.now(), a
   const position = item.position || [(item.a[0] + item.b[0]) / 2, (item.a[1] + item.b[1]) / 2];
   if (!nearFoot(position, foot)) fail('Approchez-vous de la construction.');
   if (action === 'repair') {
-    if (item.kind !== 'barricade' || item.hp <= 0 || item.hp >= item.maxHp)
+    if (!['barricade', 'bunker', 'sentry', 'antitank'].includes(item.kind) || item.hp <= 0 || item.hp >= item.maxHp)
       fail('Ce segment ne peut pas être réparé.');
     if (dollars < 1) fail('Caisse commune insuffisante.');
     item.hp = item.maxHp;
@@ -181,13 +199,13 @@ export function groundCommand(state, command, foot, dollars, now = Date.now(), a
   }
   state.structures.splice(index, 1);
   state.revision++;
-  if (item.kind === 'barricade') state.navigationRevision++;
+  if (item.kind === 'barricade' || item.kind === 'bunker') state.navigationRevision++;
   return { price: 0, ids: [item.id] };
 }
 // Invoked by authoritative server combat only; never expose as a network command.
 export function damageBarricade(state, id, damage) {
   if (!Number.isFinite(damage) || damage <= 0) fail('Dégâts invalides.');
-  const item = state.structures.find((s) => s.id === id && s.kind === 'barricade');
+  const item = state.structures.find((s) => s.id === id && ['barricade', 'bunker'].includes(s.kind));
   if (!item || item.hp <= 0) return false;
   item.hp = Math.max(0, item.hp - damage);
   state.revision++;

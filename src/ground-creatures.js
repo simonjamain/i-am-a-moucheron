@@ -57,7 +57,7 @@ export function crossedSticky(a, b, tape) {
 }
 function closestWall(p, structures) {
   return structures
-    .filter((s) => s.kind === 'barricade' && s.hp > 0)
+    .filter((s) => ['barricade', 'bunker'].includes(s.kind) && s.hp > 0)
     .map((s) => ({ item: s, d: distanceToSegment(p, s.a, s.b) }))
     .sort((a, b) => a.d - b.d || (a.item.id < b.item.id ? -1 : 1))[0];
 }

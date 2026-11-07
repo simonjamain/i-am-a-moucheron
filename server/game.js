@@ -64,6 +64,7 @@ import {
 import { SHOP, shopPrice, supportedPlacement, waveStipend } from '../src/equipment.js';
 import { advancePaidService } from '../src/paid-service.js';
 import { SENTRY, fireGroundSentries } from '../src/ground-sentry.js';
+import { FORTIFICATIONS, isFortification } from '../src/ground-fortifications.js';
 import { FIXED_DCA_AMMO, PISTOL_CAPACITY } from '../src/ground-ammo.js';
 import {
   fullAmmo,
@@ -541,6 +542,11 @@ export class Game {
     this.vehicleContacts(r, now);
     // A destroyed hull can arrive through motion before the client's death
     // command. Resolve its crew here even if that client disconnects.
+    for (const p of r.pilots.values()) {
+      if (p.mode !== 'turret' || p.life !== 'alive') continue;
+      const station = r.equipment[p.state.turret];
+      if (isFortification(station?.kind) && station.hp <= 0) this.kill(r, p, p.incarnation);
+    }
     for (const v of r.vehicles.values())
       if (v.state.hp <= 0)
         for (const id of [...v.seats.values()]) {
@@ -1467,6 +1473,34 @@ export class Game {
       requireGame(false, error.message, 400);
     }
     r.dollars = money(r.dollars - transaction.price);
+    if (b.action === 'build' && isFortification(b.kind)) {
+      const structure = r.groundDefense.structures.find((s) => s.id === transaction.ids[0]);
+      structure.slot = r.equipment.length;
+      structure.x = structure.position[0];
+      structure.y = 0.00005;
+      structure.z = structure.position[1];
+      structure.name = FORTIFICATIONS[b.kind].name;
+      r.equipment.push(structure);
+    }
+    if (b.action === 'remove') {
+      const station = r.equipment.find((s) => isFortification(s.kind) && s.id === b.target);
+      if (station) {
+        for (const occupant of r.pilots.values())
+          if (
+            occupant.life === 'alive' &&
+            occupant.mode === 'turret' &&
+            occupant.state.turret === station.slot
+          )
+            this.equipment(r, occupant, 'turret', {});
+        r.equipment[station.slot] = {
+          kind: 'retired',
+          slot: station.slot,
+          x: station.x,
+          y: station.y,
+          z: station.z,
+        };
+      }
+    }
     if (key) {
       r.groundDefenseOrders.set(key, true);
       if (r.groundDefenseOrders.size > 2048)
@@ -1480,7 +1514,7 @@ export class Game {
         p.mode === 'turret' &&
         Number.isInteger(b.station) &&
         p.state.turret === b.station &&
-        gun?.kind === 'dca' &&
+        (gun?.kind === 'dca' || (isFortification(gun?.kind) && gun.hp > 0)) &&
         p.incarnation === b.incarnation,
       'Occupez cette DCA pour tirer.',
     );
@@ -1491,13 +1525,15 @@ export class Game {
     );
     const key = p.id + ':' + p.incarnation + ':' + b.shot;
     if (r.fixedDcaShots.has(key)) return;
-    requireGame(gun.ammo >= 1, 'La DCA est à court de munitions.');
+    requireGame(gun.ammo >= 1, 'Cette arme est à court de munitions.');
     const interval =
-      (FLAK.interval * 1000 * clauseFactors(this.clause(r, p)).interval) /
+      ((FORTIFICATIONS[gun.kind]?.interval ?? FLAK.interval) *
+        1000 *
+        clauseFactors(this.clause(r, p)).interval) /
       (r.balance.fireRate || 1);
     requireGame(
       this.now() >= (gun.lastShotAt ?? -Infinity) + interval,
-      'La DCA recharge son canon.',
+      'Cette arme recharge son canon.',
     );
     requireGame(r.fixedDcaShots.size < 128000, 'Trop de tirs enregistrés.', 429);
     gun.ammo -= 1;
@@ -1908,12 +1944,13 @@ export class Game {
     else p.board_paper = 1;
   }
   equipment(r, p, path, b) {
-    requireGame(p.life === 'alive', 'Revenez à la vie avant de servir une DCA.');
+    requireGame(p.life === 'alive', 'Revenez à la vie avant de servir une défense.');
     if (p.mode === 'turret') {
       const s = r.equipment[p.state.turret];
       requireGame(s, 'Poste invalide.');
+      const exitOffset = isFortification(s.kind) ? 0.09 : MAP.metres(3);
       p.state.walkSpawn = {
-        x: (s.x + MAP.metres(3) - OFFICE_LAYOUT.base.originX) / ACTOR_UNIT,
+        x: (s.x + exitOffset - OFFICE_LAYOUT.base.originX) / ACTOR_UNIT,
         z: (OFFICE_LAYOUT.base.originZ - s.z) / ACTOR_UNIT,
         y: s.y + 0.05 * ACTOR_UNIT,
         parachute: false,
@@ -1926,14 +1963,15 @@ export class Game {
     }
     const s = r.equipment[b.station],
       body = this.base(r, p, b.ground);
+    const stationRadius = isFortification(s?.kind) ? 0.09 : MAP.metres(3.4);
     requireGame(
       p.mode === 'foot' &&
         Number.isInteger(b.station) &&
-        s?.kind === 'dca' &&
+        (s?.kind === 'dca' || (isFortification(s?.kind) && s.hp > 0)) &&
         body &&
         !body.parachute &&
-        stationAccess(baseWorld(body), s),
-      'Approchez de la DCA à pied.',
+        stationAccess(baseWorld(body), s, stationRadius),
+      'Approchez de la défense à pied.',
     );
     if (path === 'equipment-select') {
       if (p.state.equipmentBoarding?.station === b.station) return;
@@ -1958,7 +1996,7 @@ export class Game {
     }
     requireGame(
       !this.live(r).some((x) => x.mode === 'turret' && x.state.turret === b.station),
-      'Cette DCA est déjà occupée.',
+      'Cette défense est déjà occupée.',
     );
     this.activate(r, p, current.token);
     p.mode = 'turret';
@@ -2650,7 +2688,16 @@ export class Game {
         amount,
         at: this.now(),
       });
-      target.health = Math.max(0, target.health - amount);
+      const shelter = target.mode === 'turret' ? r.equipment[target.state.turret] : null;
+      let toBody = amount;
+      if (shelter?.kind === 'bunker' && shelter.hp > 0) {
+        const absorbed = Math.min(shelter.hp, amount * 0.85);
+        shelter.hp = Math.max(0, shelter.hp - absorbed);
+        toBody -= absorbed;
+        r.groundDefense.revision++;
+        if (shelter.hp === 0) r.groundDefense.navigationRevision++;
+      }
+      target.health = Math.max(0, target.health - toBody);
       if (!target.health) this.kill(r, target, target.incarnation);
     });
   }

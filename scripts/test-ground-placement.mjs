@@ -118,13 +118,13 @@ for (let i = 0; i < ui.tools.length; i++) {
   const angle = (i * 2 * Math.PI) / ui.tools.length;
   ui.moveWheel(80 * Math.sin(angle), -80 * Math.cos(angle));
   ui.finishWheel();
-  if (ui.tools[i][0] === 'sentry')
-    assert.equal(ui.mode, 'fan', 'Castor-only locked tool cannot be selected on foot');
+  if (['sentry', 'bunker', 'antitank'].includes(ui.tools[i][0]))
+    assert.equal(ui.mode, 'fan', 'Castor-only locked tools cannot be selected on foot');
   else assert.equal(ui.mode, ui.tools[i][0]);
 }
 assert.equal(commands.length, 2, 'selecting a sector never builds');
 ui.openWheel();
-ui.moveWheel(80, -25);
+ui.moveWheel(80 * Math.sin((2 * Math.PI) / ui.tools.length), -80 * Math.cos((2 * Math.PI) / ui.tools.length));
 ui.finishWheel();
 ui.press();
 assert.equal(commands[2].kind, 'sugar');

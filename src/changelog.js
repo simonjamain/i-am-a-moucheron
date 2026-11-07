@@ -1,6 +1,12 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 211,
+    changes: [
+      'Les cartes débloquent désormais le bunker LEGO et le canon antichar du Castor : deux postes occupables à munitions finies.',
+    ],
+  },
+  {
     version: 210,
     changes: ['Les boutons du laboratoire sont mieux rangés et restent accessibles sur petit écran.'],
   },

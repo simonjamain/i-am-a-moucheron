@@ -1,5 +1,6 @@
 import { VEHICLES } from './fleet.js';
 import { SENTRY } from './ground-sentry.js';
+import { FORTIFICATIONS } from './ground-fortifications.js';
 import { distanceToSegment } from './ground-defense.js';
 import { FIXED_DCA_AMMO, PISTOL_CAPACITY } from './ground-ammo.js';
 import { ammoCapacity, FUEL_SECONDS, SERVICE_RADIUS, SERVICE_SECONDS } from './logistics.js';
@@ -150,7 +151,9 @@ export function advancePaidService(
   if (dt) {
     const sources = serviceSources(installations, fleet);
     for (const gun of installations) {
-      if (gun.kind !== 'dca' || !Number.isFinite(gun.ammo) || gun.ammo >= FIXED_DCA_AMMO)
+      const fortification = FORTIFICATIONS[gun.kind];
+      const capacity = fortification?.ammo ?? FIXED_DCA_AMMO;
+      if ((gun.kind !== 'dca' && !fortification) || !Number.isFinite(gun.ammo) || gun.ammo >= capacity || gun.hp === 0)
         continue;
       if (
         !sources.some(
@@ -160,10 +163,10 @@ export function advancePaidService(
       )
         continue;
       const quantity = Math.min(
-        FIXED_DCA_AMMO - gun.ammo,
-        (FIXED_DCA_AMMO * dt) / SERVICE_SECONDS,
+        capacity - gun.ammo,
+        (capacity * dt) / SERVICE_SECONDS,
       );
-      const cost = quantity * SERVICE_RATES.shell;
+      const cost = quantity * (gun.kind === 'bunker' ? SERVICE_RATES.machineGun : SERVICE_RATES.shell);
       if (cost > 0)
         jobs.push({
           cost,
@@ -181,7 +184,7 @@ export function advancePaidService(
     const sources = serviceSources(installations, fleet);
     for (const wall of groundDefense.structures) {
       if (
-        !['barricade', 'sentry'].includes(wall.kind) ||
+        !['barricade', 'sentry', 'bunker', 'antitank'].includes(wall.kind) ||
         !Number.isFinite(wall.hp) ||
         !Number.isFinite(wall.maxHp) ||
         wall.hp <= 0 ||
@@ -190,7 +193,7 @@ export function advancePaidService(
         continue;
       if (
         !sources.some(({ p, radius }) =>
-          wall.kind === 'sentry'
+          ['sentry', 'bunker', 'antitank'].includes(wall.kind)
             ? Math.hypot(wall.position[0] - p[0], p[1] - 0.025, wall.position[1] - p[2]) <= radius
             : Math.hypot(distanceToSegment([p[0], p[2]], wall.a, wall.b), p[1] - 0.01) <= radius,
         )

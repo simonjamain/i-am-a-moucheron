@@ -68,13 +68,18 @@ export class GroundDefenseUI {
       ['remove', 'Enlever'],
       ['fan', 'Ventilateur'],
       ['sentry', 'Tourelle auto'],
+      ['bunker', 'Bunker LEGO'],
+      ['antitank', 'Canon lourd'],
     ];
     for (const [kind, label] of this.tools) {
       const button = document.createElement('button');
       button.textContent = label;
       button.onclick = () => {
-        if (kind === 'sentry' && (!this.builder() || !this.snapshot()?.blueprintLevels?.sentry)) {
-          this.notify('Débloquez la tourelle par une carte et prenez le volant du Castor.', 3);
+        if (
+          ['sentry', 'bunker', 'antitank'].includes(kind) &&
+          (!this.builder() || !this.snapshot()?.blueprintLevels?.[kind])
+        ) {
+          this.notify('Débloquez ce plan par une carte et conduisez le Castor.', 3);
           return;
         }
         this.trailAnchor = null;
@@ -91,13 +96,13 @@ export class GroundDefenseUI {
     this.buttons.querySelector('button').style.fontWeight = 'bold';
     this.wheel = document.createElement('div');
     this.wheel.style.cssText =
-      'display:none;position:fixed;z-index:40;left:50%;top:50%;transform:translate(-50%,-50%);width:240px;height:240px;border-radius:50%;border:2px solid #cbdca3;pointer-events:none;color:white;text-align:center';
+      'display:none;position:fixed;z-index:40;left:50%;top:50%;transform:translate(-50%,-50%);width:340px;height:340px;border-radius:50%;border:2px solid #cbdca3;pointer-events:none;color:white;text-align:center';
     this.tools.forEach(([, label], i) => {
       const angle = (i * 2 * Math.PI) / this.tools.length;
       const item = document.createElement('strong');
       item.textContent = label;
       item.style.cssText =
-        'position:absolute;transform:translate(-50%,-50%);font-size:14px;left:' +
+        'position:absolute;transform:translate(-50%,-50%);font-size:12px;left:' +
         (50 + 32 * Math.sin(angle)) +
         '%;top:' +
         (50 - 32 * Math.cos(angle)) +
@@ -385,6 +390,8 @@ export class GroundDefenseUI {
     }
     const T = this.T;
     for (const structure of structures) {
+      // Occupied fortifications are already rendered with their articulated gun and operator.
+      if (structure.kind === 'bunker' || structure.kind === 'antitank') continue;
       const group = new T.Group();
       if (structure.kind === 'fan') {
         group.position.set(structure.position[0], 0.032, structure.position[1]);
@@ -519,6 +526,9 @@ export class GroundDefenseUI {
       if (s.kind === 'fan') {
         ctx.fillStyle = '#75eaf1';
         ctx.fillRect(108 + s.position[0] / 0.04, 108 + (s.position[1] / 0.04) * 0.88, 4, 4);
+      } else if (s.kind === 'bunker' || s.kind === 'antitank') {
+        ctx.fillStyle = s.kind === 'bunker' ? '#c6a355' : '#9eb9a0';
+        ctx.fillRect(108 + s.position[0] / 0.04, 108 + (s.position[1] / 0.04) * 0.88, 7, 7);
       } else if (s.kind === 'sentry') {
         ctx.fillStyle = s.ammo > 0 ? '#a0c89b' : '#6e6660';
         ctx.fillRect(108 + s.position[0] / 0.04, 108 + (s.position[1] / 0.04) * 0.88, 5, 5);
