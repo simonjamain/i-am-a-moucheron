@@ -17,3 +17,14 @@
   Il ne modifie pas les fichiers runtime ; il ne teste pas la qualité de l'atlas
   Meshy de 2K ni les fichiers GLB d'origine bit à bit. Consulter l'artifact
   `t01-meshy-geometry-optimization` du job avant d'en annoncer les résultats.
+
+- **Essai CI observé sur le commit `9bea73f` :** succès du job
+  `Asset tool Docker and UV tests` avec les quatre variantes,
+  soit 13 626 triangles source et 10 216 triangles d'essai (25 %).
+  Les quatre GLB optimisés ont grossi en taille malgré la réduction
+  géométrique : **conserver les données géométriques originales dans
+  le runtime** en attendant un contrôle visuel et un scénario FPS comparables.
+  Voir [le tableau mesuré](../t01-asset.md#mesures-réelles-de-simplification-github-actions).
+- Une capture **CPU** des vrais modules assemblés à 0° et +90° est
+  versionnée dans `docs/assets/t01-assembly-preview.jpg`, sans
+  prétention de validation WebGL.

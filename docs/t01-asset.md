@@ -52,3 +52,34 @@ géométrie/UV. Les **vraies couleurs et textures WebP du jeu ne sont pas modifi
 Les variantes d'optimisation CI sont exploratoires et ne sont **pas** utilisées
 dans le runtime automatiquement, même en cas de réduction mesurée : il faut
 valider le rendu visuel des articulations avant de substituer un maillage.
+
+## Mesures réelles de simplification (GitHub Actions)
+
+Le job **Asset tool Docker and UV tests** du commit
+`9bea73f2ab15e9df19cd6912d45c639b2b3ebb09` a réellement lancé
+glTF Transform / meshoptimizer sur les **géométries et UV des quatre
+modules importés**, reconstruits en GLB de test. Paramètres : ratio
+`0.75`, erreur `0.005` ; aucun fichier du jeu n'a été remplacé.
+
+| Module | Triangles source | Variante de test | Gain |
+| --- | ---: | ---: | ---: |
+| Socle | 3 149 | 2 361 | 25 % |
+| Tête | 4 380 | 3 284 | 25 % |
+| Canon | 3 684 | 2 762 | 25 % |
+| Capteur | 2 413 | 1 809 | 25 % |
+| **Total** | **13 626** | **10 216** | **25 %** |
+
+Les quatre sorties ont passé `validate` (attributs, indices, UV,
+nœuds, texture de test), mais **chacun des GLB optimisés était plus gros
+que son GLB de test initial**. L'essai ne permet pas d'affirmer un gain
+de téléchargement ou de FPS. Aucune variante simplifiée n'est activée
+dans le runtime : **il reste à vérifier les petits détails et les
+articulations en WebGL**, avec les véritables textures, avant substitution.
+
+## Prévisualisation hors navigateur
+
+![T-01 assemblée avec les quatre modèles Meshy à 0° et +90°](assets/t01-assembly-preview.jpg)
+
+*Aperçu de validation CPU, deux points de vue et deux élévations,
+avec les vrais UV/textures Meshy ; pas une capture du moteur Three.js.
+Le support radar est décalé latéralement pour laisser passer le canon.*
