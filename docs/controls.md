@@ -175,13 +175,13 @@ séparée, disponible après le vote.
 
 ## Défenses terrestres
 
-Bouton « Défense » à pied, puis choix d’un outil : aperçu au point visé par la caméra
+Bouton « Défense » à pied ou au poste conducteur du Castor au sol, puis choix d’un outil : aperçu au point visé par la caméra
 indépendamment de la marche, E ou clic gauche pour valider, R pour orienter le sucre ou le ventilateur, Échap
 pour quitter. Prix, conditions et navigation : [gameplay](gameplay.md#défenses-terrestres).
 
-Molette maintenue : orienter vers un secteur puis relâcher pour choisir. Clic gauche : fixer un début sans orientation, viser la fin (en marchant si nécessaire), puis cliquer à nouveau pour poser le mur ou le ruban. Le sucre, la réparation et la suppression demandent un seul clic.
+Maintenir **G** ou le **clic molette** : orienter vers un secteur puis relâcher pour choisir, à pied ou au volant du Castor au sol. Les autres postes de véhicule ne peuvent pas construire. Clic gauche : fixer un début sans orientation, viser la fin (en marchant si nécessaire), puis cliquer à nouveau pour poser le mur ou le ruban. Le sucre, la réparation et la suppression demandent un seul clic.
 
 Sur le [bombardier B3](b3-model.md), **4** demande le poste ventral avec signature ; **1 / 2 / 3** restent pilote, dorsal et queue.
 
 
-G1 Castor : Z/S avancer/reculer, Q/D tourner, souris et clic gauche pour tirer avec la mitrailleuse légère, **V** bascule la caméra tactique surélevée. Le soutien à 50 cm est automatique et payant. Pendant la conduite, le clic molette ouvre la roue de construction. Clic gauche démarre/arrête la dépose des murs LEGO et rubans (1 $ par 20 cm) ; les autres pièges se posent au point visé. Échap interrompt la construction.
+G1 Castor : Z/S avancer/reculer, Q/D tourner, souris et clic gauche pour tirer avec la mitrailleuse légère, **V** bascule la caméra tactique surélevée. Le soutien à 50 cm est automatique et payant. Pendant la conduite, **G** ou le clic molette ouvre la roue de construction. Clic gauche démarre/arrête la dépose des murs LEGO et rubans (1 $ par 20 cm) ; les autres pièges se posent au point visé. Échap interrompt la construction.

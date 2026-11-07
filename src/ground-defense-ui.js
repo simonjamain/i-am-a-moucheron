@@ -135,10 +135,11 @@ export class GroundDefenseUI {
     scene.add(this.preview, this.fanArrow);
     this.trigger.onclick = () => this.setOpen(!this.opened);
   }
-  openWheel() {
-    if (!this.available() || !this.enabled() || this.busy) return false;
+  openWheel(source = 'mouse') {
+    if (this.radial || !this.available() || !this.enabled() || this.busy) return false;
     this.cancel();
     this.radial = true;
+    this.wheelSource = source;
     this.dx = this.dy = 0;
     this.wheel.style.display = 'block';
     this.moveWheel(0, 0);
@@ -173,12 +174,24 @@ export class GroundDefenseUI {
     this.wheel.style.background =
       'conic-gradient(from ' + -180 / n + 'deg,' + sectors.join(',') + ')';
   }
-  finishWheel() {
+  finishWheel(source = 'mouse') {
+    if (!this.radial || this.wheelSource !== source) return false;
     const index = this.sector;
     this.radial = false;
+    this.wheelSource = null;
     this.wheel.style.display = 'none';
     if (index >= 0 && this.available() && this.enabled())
       this.buttons.querySelectorAll('button')[index].onclick();
+    return true;
+  }
+  handleWheelKey(code, pressed, repeat = false) {
+    if (code !== 'KeyG') return false;
+    if (pressed) {
+      if (repeat) return this.radial && this.wheelSource === 'keyboard';
+      return this.openWheel('keyboard');
+    }
+    if (!this.radial || this.wheelSource !== 'keyboard') return false;
+    return this.finishWheel('keyboard');
   }
   setOpen(open) {
     this.anchor = null;
@@ -193,6 +206,7 @@ export class GroundDefenseUI {
   cancel() {
     this.trailAnchor = null;
     this.radial = false;
+    this.wheelSource = null;
     this.wheel.style.display = 'none';
     this.active = false;
     this.setOpen(false);

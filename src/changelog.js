@@ -1,6 +1,12 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 191,
+    changes: [
+      'À pied ou au volant du Castor, maintenez G pour choisir une défense, puis relâchez pour la sélectionner.',
+    ],
+  },
+  {
     version: 189,
     changes: [
       'Le Castor construit les murs LEGO et les rubans en roulant, en déposant chaque section derrière lui.',
