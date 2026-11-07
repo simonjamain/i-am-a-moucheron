@@ -139,13 +139,12 @@ physiques, sons/HUD, livraisons sous parachute et parcours du purgatoire.
 Les [correctifs des issues 15–17](docs/issues-15-16-17.md) couvrent la descente
 continue des colis, le nouveau mapping H2 et le ralentissement terrestre supplémentaire.
 
-Les [réglages d’équilibrage et la génération de nuées de debug par room](docs/room-balance.md)
-sont disponibles pour tous les joueurs connectés, à tout moment (hors partie perdue
-pour la génération d’insectes).
+Les anciens [réglages d’équilibrage et la génération de nuées par room](docs/room-balance.md)
+sont retirés : les règles sont fixes et un seul interrupteur de mode debug les remplace.
 
 Le [bestiaire et ses vitesses physiques](docs/enemy-bestiary.md#vitesse-physique-dans-la-pièce) spécifient des mètres de la pièce par seconde, indépendants de la taille des modèles et de l'effectif des nuées.
 
-Le [laboratoire par room](docs/laboratory.md) permet de tester les constructions, les cartes et les vagues sans progression imposée.
+Le [mode debug par room](docs/laboratory.md) (bouton **Debug**) donne argent illimité, plans débloqués, aucun dégât de chute et défaite impossible, avec des outils de vagues et de scénarios.
 
 Le [bombardier B3](docs/b3-model.md) accueille quatre joueurs et conserve son camouflage texturé.
 Les [sept véhicules Meshy](docs/meshy-fleet.md) gardent les couleurs de leur modèle

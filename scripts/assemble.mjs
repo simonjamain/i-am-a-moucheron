@@ -32,7 +32,6 @@ const files = {
     [
       'wave-blueprints',
       'balance',
-      'balance-ui',
       'lab-ui',
       'ground-defense-ui',
       'ground-motion',

@@ -149,8 +149,8 @@ Le [mapping pilote H2 actuel](issues-15-16-17.md#16--séparation-puissance-et-ta
 
 ## Réglages personnels des avions
 
-Depuis une room, ouvrir **Pilotage** à côté d’**Équilibrage**. Tous les joueurs
-peuvent configurer leurs propres avions, indépendamment de l'équilibrage partagé.
+Depuis une room, ouvrir **Pilotage** à côté de **Debug**. Tous les joueurs
+peuvent configurer leurs propres avions, indépendamment des règles de la room.
 Le bouton **Enregistrer et appliquer** applique immédiatement les préférences,
 sauvegardées dans le `localStorage` du navigateur (`moucheron-flight-tuning:v1`).
 Elles persistent entre rooms et rechargements sur le même profil navigateur,

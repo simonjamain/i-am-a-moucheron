@@ -31,7 +31,8 @@ const fire = new AircraftFire(
     return request.promise;
   },
   () => scope,
-  { session: 'test', schedule, cancel, limit: 128 },
+  // Frozen clock: a real millisecond tick made the 1000 ms retry read 999 ms.
+  { session: 'test', schedule, cancel, limit: 128, now: () => 1_000_000 },
 );
 const supply = { ammo: { pilot: 1000 }, revision: 0 };
 const reply = (request, ammo, revision) => ({

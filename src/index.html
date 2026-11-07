@@ -1767,40 +1767,6 @@
         opacity: 1;
         border: 2px solid #fff5b1;
       }
-      #balancePanel {
-        z-index: 100;
-      }
-      #balancePanel [data-balance-fields],
-      #balancePanel [data-spawn-fields] {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(min(270px, 100%), 1fr));
-        gap: 16px;
-        margin: 20px 0;
-      }
-      #balancePanel label {
-        display: grid;
-        gap: 6px;
-      }
-      #balancePanel input {
-        width: 100%;
-        padding: 8px;
-        color: #253c2d;
-        background: #fffbea;
-        border: 1px solid #6d7756;
-        font: inherit;
-      }
-      #balancePanel small {
-        font: 13px/1.4 sans-serif;
-      }
-      #balancePanel footer {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
-      }
-      #balancePanel [data-balance-status],
-      #balancePanel [data-spawn-status] {
-        min-height: 2em;
-      }
     </style>
     <style>
       #papers #paperBody {
@@ -1999,7 +1965,7 @@
       #aimRange small {
         font-size: 9px;
       }
-      :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel, #labPanel) {
+      :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel, #labPanel) {
         position: fixed;
         inset: 0;
         z-index: 45;
@@ -2008,7 +1974,7 @@
         background: #09211bd6;
         padding: 20px;
       }
-      :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel, #labPanel) > article {
+      :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel, #labPanel) > article {
         width: min(1080px, 100%);
         max-height: 90dvh;
         overflow: auto;
@@ -2019,28 +1985,28 @@
         box-shadow: 0 14px 60px #0007;
         font-family: Georgia, serif;
       }
-      :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel, #labPanel) header {
+      :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel, #labPanel) header {
         position: static;
         display: flex;
         align-items: start;
         justify-content: space-between;
         gap: 20px;
       }
-      :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel, #labPanel) h2 {
+      :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel, #labPanel) h2 {
         margin: 0 0 8px;
         font-size: 30px;
         font-style: italic;
         font-weight: 400;
       }
-      :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel, #labPanel) h3 {
+      :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel, #labPanel) h3 {
         font-size: 32px;
         font-weight: 400;
         margin: 22px 0;
       }
-      :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel, #labPanel) p {
+      :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel, #labPanel) p {
         line-height: 1.6;
       }
-      :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel, #labPanel) button {
+      :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel, #labPanel) button {
         background: #294938;
         color: #f3edcf;
         padding: 10px 14px;
@@ -2048,44 +2014,44 @@
         border-radius: 4px;
         cursor: pointer;
       }
-      :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel, #labPanel) button:disabled {
+      :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel, #labPanel) button:disabled {
         opacity: 0.5;
         cursor: default;
       }
-      :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel, #labPanel) [data-bank-cards] {
+      :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel, #labPanel) [data-bank-cards] {
         display: grid;
         grid-template-columns: repeat(3, minmax(0, 1fr));
         gap: 16px;
         margin: 20px 0;
       }
-      :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel, #labPanel)
+      :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel, #labPanel)
         [data-bank-cards]
         article {
         padding: 18px;
         border: 1px solid #a7a17c;
         background: #fff8df55;
       }
-      :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel, #labPanel)
+      :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel, #labPanel)
         [data-bank-cards]
         button {
         display: block;
         width: 100%;
         margin-top: 14px;
       }
-      :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel, #labPanel)
+      :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel, #labPanel)
         [data-bank-cards]
         small {
         letter-spacing: 1px;
       }
-      :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel, #labPanel)
+      :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel, #labPanel)
         [data-bank-status] {
         min-height: 1.5em;
         font-weight: bold;
       }
-      :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel, #labPanel) [data-bank-text] {
+      :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel, #labPanel) [data-bank-text] {
         white-space: pre-line;
       }
-      :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel, #labPanel) canvas {
+      :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel, #labPanel) canvas {
         width: min(100%, 650px);
         height: 150px;
         touch-action: none;
@@ -2093,23 +2059,23 @@
         display: block;
         background: #fff9e5;
       }
-      :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel, #labPanel) .bankTable {
+      :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel, #labPanel) .bankTable {
         overflow: auto;
         margin: 15px 0;
       }
-      :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel, #labPanel) table {
+      :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel, #labPanel) table {
         width: 100%;
         border-collapse: collapse;
         font-size: 12px;
       }
-      :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel, #labPanel) th,
-      :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel, #labPanel) td {
+      :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel, #labPanel) th,
+      :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel, #labPanel) td {
         padding: 8px;
         text-align: left;
         border-bottom: 1px solid #b6b18c;
         white-space: nowrap;
       }
-      :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel, #labPanel) .bankHint {
+      :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel, #labPanel) .bankHint {
         font-size: 12px;
       }
       @media (max-width: 700px) {
@@ -2147,13 +2113,13 @@
           top: 34px;
           bottom: auto;
         }
-        :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel, #labPanel) {
+        :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel, #labPanel) {
           padding: 8px;
         }
-        :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel, #labPanel) > article {
+        :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel, #labPanel) > article {
           padding: 14px;
         }
-        :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel, #labPanel)
+        :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel, #labPanel)
           [data-bank-cards] {
           grid-template-columns: 1fr;
         }
@@ -2338,40 +2304,6 @@
       }
       #placementControls {
         bottom: 100px;
-      }
-      #balancePanel {
-        z-index: 100;
-      }
-      #balancePanel [data-balance-fields],
-      #balancePanel [data-spawn-fields] {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(min(270px, 100%), 1fr));
-        gap: 16px;
-        margin: 20px 0;
-      }
-      #balancePanel label {
-        display: grid;
-        gap: 6px;
-      }
-      #balancePanel input {
-        width: 100%;
-        padding: 8px;
-        color: #253c2d;
-        background: #fffbea;
-        border: 1px solid #6d7756;
-        font: inherit;
-      }
-      #balancePanel small {
-        font: 13px/1.4 sans-serif;
-      }
-      #balancePanel footer {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
-      }
-      #balancePanel [data-balance-status],
-      #balancePanel [data-spawn-status] {
-        min-height: 2em;
       }
       #labPanel {
         z-index: 102;
@@ -2690,8 +2622,7 @@
       </div>
       <div id="roomTag">
         <button id="flightSettingsOpen">Pilotage</button>
-        <button id="balanceOpen">Équilibrage et nuées</button>
-        <button id="labOpen">Laboratoire</button>
+        <button id="labOpen" title="Mode debug commun à la room">Debug</button>
         <button id="share" title="Copier le lien de la partie">
           ↗ <span id="roomCode">BUREAU</span>
         </button>
@@ -2931,39 +2862,6 @@
       </article>
     </section>
     <section
-      id="balancePanel"
-      class="hidden"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="balanceTitle"
-    >
-      <article>
-        <header>
-          <div>
-            <h2 id="balanceTitle">Équilibrage de la room</h2>
-            <p>
-              Réglages partagés, modifiables à tout moment par tous les joueurs. La partie continue
-              pendant les ajustements.
-            </p>
-          </div>
-          <button data-balance-close aria-label="Fermer l’équilibrage">✕</button>
-        </header>
-        <div data-balance-fields></div>
-        <p data-balance-status role="status" aria-live="polite"></p>
-        <footer>
-          <button data-balance-save>Appliquer à la room</button>
-          <button data-balance-defaults>Valeurs par défaut</button>
-          <button data-balance-reload>Recharger les valeurs</button>
-        </footer>
-        <hr />
-        <h3>Génération de nuées (debug)</h3>
-        <p>Choisissez le nombre exact d’insectes de chaque espèce à lancer dans cette room.</p>
-        <div data-spawn-fields></div>
-        <button data-spawn-send>Envoyer la nuée</button>
-        <p data-spawn-status role="status" aria-live="polite"></p>
-      </article>
-    </section>
-    <section
       id="labPanel"
       class="hidden"
       role="dialog"
@@ -2973,25 +2871,26 @@
       <article>
         <header>
           <div>
-            <h2 id="labTitle">Laboratoire · Room de test</h2>
-            <p>Outils partagés : les actions changent la partie de tous les joueurs connectés.</p>
+            <h2 id="labTitle">Mode debug</h2>
+            <p>Un interrupteur commun à la room : il change la partie de tous les joueurs connectés.</p>
           </div>
-          <button data-lab-close aria-label="Fermer le laboratoire">✕</button>
+          <button data-lab-close aria-label="Fermer le mode debug">✕</button>
         </header>
         <p data-lab-state></p>
         <div class="lab-actions">
-          <button data-lab-enable>Activer le laboratoire</button>
-          <button data-lab-exit hidden>Quitter et réinitialiser la partie</button>
+          <button data-lab-enable>Activer le mode debug</button>
+          <button data-lab-exit hidden>Désactiver et réinitialiser la partie</button>
         </div>
-        <h3>Plans et ressources</h3>
+        <p>
+          Actif : argent illimité, toutes les constructions et améliorations débloquées,
+          aucun dégât de chute, défaite impossible (les PV de la poubelle restent comptés,
+          même négatifs).
+        </p>
+        <h3>Outils de test</h3>
         <div class="lab-actions">
-          <button data-lab-unlock>Débloquer tous les plans</button>
           <label>Carte précise <select data-lab-card></select></label>
           <button data-lab-card-add>Ajouter un niveau de cette carte</button>
         </div>
-        <p>
-          La caisse est illimitée. Les achats et les placements conservent leurs règles.
-        </p>
         <h3>Vagues</h3>
         <div class="lab-actions">
           <label

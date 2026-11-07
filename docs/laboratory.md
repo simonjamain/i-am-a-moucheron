@@ -1,14 +1,16 @@
-# Laboratoire de test par room
+# Mode debug par room
 
-Le bouton **Laboratoire** est disponible dans chaque salle connectée au runtime Node/UDP. Un joueur connecté peut activer ce mode pour **toute la room** ; aucun accès administratif extérieur n'est prévu. Le mode est visible par tous les membres. Les autres rooms restent normales.
+Le bouton **Debug** est disponible dans chaque salle connectée au runtime Node/UDP. C'est un **interrupteur unique** : un joueur connecté peut l'activer pour **toute la room** ; aucun accès administratif extérieur n'est prévu. Le mode est visible par tous les membres. Les autres rooms restent normales. Le code interne garde le nom `lab` (commande serveur, `lab-ui.js`).
 
 ## Ce que permet le mode
 
-- L'activation ouvre la préparation de la première vague si la mission n'a pas commencé, et débloque une fois tous les plans de construction et d'amélioration du conseil, y compris la tourelle du Castor.
+- L'activation ouvre la préparation de la première vague si la mission n'a pas commencé, et débloque tous les plans de construction et d'amélioration du conseil, y compris la tourelle du Castor.
+- **Aucun dégât de chute** : les impacts au sol (`fall-impact`) sont ignorés.
+- **Défaite impossible** : la poubelle continue de compter ses dégâts (`infestation`), mais la fin de vague ouvre toujours la préparation suivante. Le HUD remplace « Infestation » par « Poubelle » et affiche ses PV restants, même négatifs (par exemple « -75 / 20 PV »).
 - Le bouton **Ajouter un niveau** permet d'obtenir n'importe quelle carte précise sans attendre un tirage au sort ; il augmente le niveau du plan pour la room.
 - La caisse est réapprovisionnée à 1 milliard de dollars lors de chaque traitement serveur. Le HUD indique « ∞ » : les achats, poses, réparations et services restent soumis à leurs signatures, à leurs validations et aux limites physiques/techniques, mais l'argent ne constitue pas un obstacle.
 - **Préparer** choisit une vague entre 1 et 100, sans lancer de chronomètre. **Lancer immédiatement** démarre cette vague. **Terminer** marque tous ses ennemis vaincus pour tester la suite sans infestation.
-- Le panneau existant **Équilibrage et nuées** continue de gérer les multiplicateurs et les apparitions manuelles. Il n'est pas dupliqué.
+- L'ancien panneau **Équilibrage et nuées** est retiré ([historique](room-balance.md)) : les règles sont fixes.
 
 ## Scénarios
 
@@ -26,4 +28,4 @@ Les commandes sont réparties en trois sections (plans et ressources, vagues, sc
 
 ## Vérifier
 
-`node scripts/test-laboratory.mjs` et `npm test`. Tester manuellement avec deux navigateurs connectés dans une room, puis un troisième dans une room différente. Contrôler les achats, les poses, les cartes, l'interruption/reprise de vague et le rechargement d'un scénario avec véhicules et barricades. Le réseau WAN WebRTC, le rendu WebGL et les sensations de placement nécessitent un essai sur la VM réelle.
+`node scripts/test-laboratory.mjs`, `node scripts/test-debug-mode.mjs` et `npm test`. Tester manuellement avec deux navigateurs connectés dans une room, puis un troisième dans une room différente. Contrôler les achats, les poses, les cartes, l'interruption/reprise de vague et le rechargement d'un scénario avec véhicules et barricades. Le réseau WAN WebRTC, le rendu WebGL et les sensations de placement nécessitent un essai sur la VM réelle.

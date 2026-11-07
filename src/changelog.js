@@ -1,6 +1,13 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 231,
+    changes: [
+      'Le bouton Debug remplace l’équilibrage et l’envoi manuel d’insectes : un seul interrupteur pour toute la partie.',
+      'En debug : argent illimité, plans débloqués, aucune blessure de chute et pas de défaite.',
+    ],
+  },
+  {
     version: 229,
     changes: [
       'Les plans gagnés au vote s’achètent une seule fois pour toute l’équipe.',
