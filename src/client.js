@@ -2482,7 +2482,7 @@ function makeFortificationStation(st) {
       for (let index = -3; index <= 3; index++)
         for (const side of [0, 1, 2]) {
           dummy.position.set(
-            side === 2 ? index * 6.7 : (side === 0 ? -23 : 23),
+            side === 2 ? index * 6.7 : side === 0 ? -23 : 23,
             layer * 2.5 + 1.25,
             side === 2 ? -21 : index * 6.7,
           );
@@ -2505,8 +2505,17 @@ function makeFortificationStation(st) {
   const pitch = new T.Group();
   yaw.add(pitch);
   const large = st.kind === 'antitank';
-  cyl(0, 0, -7, large ? 1.3 : 0.6, large ? 1.3 : 0.6, large ? 21 : 14, '#293e36', pitch)
-    .rotation.x = Math.PI / 2;
+  const tube = cyl(
+    0,
+    0,
+    -7,
+    large ? 1.3 : 0.6,
+    large ? 1.3 : 0.6,
+    large ? 21 : 14,
+    '#293e36',
+    pitch,
+  );
+  tube.rotation.x = Math.PI / 2;
   box(0, 0, -1, large ? 9 : 5, large ? 6 : 4, large ? 9 : 6, '#607359', yaw);
   const muzzle = new T.Object3D();
   muzzle.position.set(0, 0, large ? -19 : -14);
@@ -2544,10 +2553,18 @@ function reconcileEquipment(next) {
           : installationModel(st);
     gun.userData.kind = st.kind;
     gun.userData.slot = st.slot;
-    const radius = isFortification(st.kind) ? (st.kind === 'bunker' ? 0.075 : 0.035) : MAP.metres(st.kind === 'bed' ? 0.8 : 2);
+    const radius = isFortification(st.kind)
+      ? st.kind === 'bunker'
+        ? 0.075
+        : 0.035
+      : MAP.metres(st.kind === 'bed' ? 0.8 : 2);
     const collider = new T.Box3(
       new T.Vector3(st.x - radius, st.y, st.z - radius),
-      new T.Vector3(st.x + radius, st.y + (isFortification(st.kind) ? 0.04 : MAP.metres(0.8)), st.z + radius),
+      new T.Vector3(
+        st.x + radius,
+        st.y + (isFortification(st.kind) ? 0.04 : MAP.metres(0.8)),
+        st.z + radius,
+      ),
     );
     colliders.push(collider);
     gun.userData.collider = collider;
@@ -2561,7 +2578,11 @@ function reconcileEquipment(next) {
     gun.userData.shotAt = 0;
     turrets[i] = gun;
     const ring = entryRing.clone();
-    ring.position.set(st.x + (isFortification(st.kind) ? 0.08 : MAP.metres(3)), st.y + ACTOR_UNIT * 0.12, st.z);
+    ring.position.set(
+      st.x + (isFortification(st.kind) ? 0.08 : MAP.metres(3)),
+      st.y + ACTOR_UNIT * 0.12,
+      st.z,
+    );
     ring.scale.setScalar(ACTOR_UNIT);
     if (st.kind === 'dca' || st.kind === 'bed' || isFortification(st.kind)) scene.add(ring);
     stationRings[i] = ring;
@@ -2590,7 +2611,7 @@ function nearestStation() {
   let nearest = null;
   stations.forEach((s, index) => {
     if (
-      (s.kind === 'dca' || isFortification(s.kind) && s.hp > 0) &&
+      (s.kind === 'dca' || (isFortification(s.kind) && s.hp > 0)) &&
       stationAccess(w, s, isFortification(s.kind) ? 0.09 : MAP.metres(3.4))
     ) {
       const d = Math.hypot(w.x - s.x, w.z - s.z);
@@ -2770,18 +2791,28 @@ function updateVehicles(dt) {
   $('leavePlane').textContent = landed ? 'Sortir' : 'Sauter';
   $('vehicleInteract').classList.toggle('hidden', turretIndex < 0);
   $('turretFire').classList.toggle('hidden', turretIndex < 0 && !crew);
-  $('flakControls').classList.toggle('hidden', turretIndex < 0 || stations[turretIndex]?.kind === 'bunker');
+  $('flakControls').classList.toggle(
+    'hidden',
+    turretIndex < 0 || stations[turretIndex]?.kind === 'bunker',
+  );
   $('fuseDistance').textContent = rangeReadout(flakRange).metres.toFixed(0) + ' m · Shift / Ctrl';
+  const occupiedStation = turretIndex >= 0 ? stations[turretIndex] : null;
+  const occupiedName =
+    occupiedStation?.kind === 'dca'
+      ? 'DCA'
+      : FORTIFICATIONS[occupiedStation?.kind]?.name || 'Défense';
   $('vehicleState').textContent =
     turretIndex >= 0
-      ? (stations[turretIndex].kind === 'dca' ? 'DCA' : FORTIFICATIONS[stations[turretIndex].kind]?.name || 'Défense') + ' · ' +
-        stations[turretIndex].name +
+      ? occupiedName +
+        ' · ' +
+        occupiedStation.name +
         ' · ' +
         Math.round(hp) +
-        ' PV · Obus ' +
-        Math.floor(stations[turretIndex].ammo ?? 0) +
+        ' PV · ' +
+        (occupiedStation.kind === 'bunker' ? 'Balles ' : 'Obus ') +
+        Math.floor(occupiedStation.ammo ?? 0) +
         '/' +
-        (FORTIFICATIONS[stations[turretIndex].kind]?.ammo ?? FIXED_DCA_AMMO)
+        (FORTIFICATIONS[occupiedStation.kind]?.ammo ?? FIXED_DCA_AMMO)
       : myVehicle
         ? VEHICLES[myVehicle.type].name +
           ' · ' +
@@ -2928,7 +2959,11 @@ function updateVehicles(dt) {
           1.35,
         );
       }
-      camera.position.set(station.x, station.y + MAP.metres(station.kind === 'bunker' ? 17 : 5), station.z);
+      camera.position.set(
+        station.x,
+        station.y + MAP.metres(station.kind === 'bunker' ? 17 : 5),
+        station.z,
+      );
       camera.up.set(0, 1, 0);
       camera.lookAt(camera.position.clone().addScaledVector(dir, MAP.metres(100)));
       shooting =
