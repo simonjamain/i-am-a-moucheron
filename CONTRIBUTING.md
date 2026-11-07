@@ -33,9 +33,17 @@ L'auteur est responsable des corrections et de l'adaptation de sa branche jusqu'
 la fusion. Après une mise à jour depuis `main` ou une résolution de conflit,
 relancer les contrôles concernés ; si le comportement testé change, renouveler
 l'essai en jeu. Identifier le commit testé pour éviter une validation périmée.
-La personne ayant les droits de fusion décide de l'intégration avec les résultats
-des contrôles et les retours des joueurs. Il n'y a pas de circuit de validation
-supplémentaire extérieur à GitHub.
+La fusion est autonome par défaut : l'agent qui a réalisé la contribution
+fusionne sa PR dès qu'elle est prête, sans demander de validation manuelle à
+l'utilisateur. Avant cela, il doit constater la réussite des contrôles requis
+sur le dernier commit (notamment `Docker build`), relire le diff et les critères
+d'acceptation, et vérifier l'absence de conflit. Utiliser **squash** si autorisé.
+Les essais humains impossibles à réaliser sont décrits honnêtement dans la PR ;
+ils ne doivent pas être présentés comme exécutés. Si un contrôle requis échoue,
+reste absent ou si GitHub bloque la fusion, laisser la PR ouverte et signaler
+le blocage. Ne jamais contourner les protections ni les permissions GitHub.
+Après fusion, vérifier la fermeture des issues concernées et le résultat sur `main`.
+Il n'y a pas de circuit de validation supplémentaire extérieur à GitHub.
 
 ## Clôturer une issue à la fusion
 
