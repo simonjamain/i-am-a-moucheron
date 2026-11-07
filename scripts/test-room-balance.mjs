@@ -23,6 +23,13 @@ const call = (id, path, body = {}) => {
       : body,
   );
 };
+const pistolShot = (shot) =>
+  call(a.id, 'pistol-trace', {
+    shot,
+    incarnation: r.pilots.get(a.id).incarnation,
+    origin: [0, 0, 0],
+    direction: [0, 0, -1],
+  });
 const change = (values) =>
   call(a.id, 'balance', { epoch: r.base.epoch, revision: r.balanceRevision, values });
 assert.deepEqual(a.snapshot.balance, DEFAULT_BALANCE);
@@ -85,6 +92,7 @@ assert.deepEqual(s.roster, originalUpcoming.roster);
 const originalCache = structuredClone(wavePlan(r.code, 1, r.started));
 now += 4000;
 s = call(a.id, 'sync');
+pistolShot('wounded');
 call(a.id, 'hit', { wave: 1, enemy: 0, amount: 25, shot: 'wounded' });
 const beforeFrame = swarmFrame(r.plan.roster, (now - r.started) / 1000);
 const beforeRoster = structuredClone(r.plan.roster);
@@ -134,11 +142,13 @@ assert.equal(fullAmmo('bomber', r.balance).bomb, 100);
 assert.equal(FUEL_SECONDS, 300, 'global default unchanged');
 change({ damage: 2, prices: 2, rewards: 2 });
 const damageBefore = r.enemyDamage[0];
+pistolShot('scaled');
 call(a.id, 'hit', { wave: 1, enemy: 0, amount: 10, shot: 'scaled' });
 assert.equal(r.enemyDamage[0], damageBefore + 20);
 call(a.id, 'hit', { wave: 1, enemy: 0, amount: 10, shot: 'scaled' });
 assert.equal(r.enemyDamage[0], damageBefore + 20, 'idempotent damage');
 const p = r.pilots.get(a.id);
+pistolShot('friendly-scaled');
 game.friendly(r, p, { target: b.id, shot: 'friendly-scaled' });
 assert.equal(r.pilots.get(b.id).health, 80);
 const soul = game.soul(r, 'enemy', 'test', 'Test');
@@ -428,6 +438,12 @@ assert.ok(debugStart.roster.every((e) => e.spawn >= 0 && e.duration > e.entryHol
 assert.equal(new Set(debugStart.roster.filter((e) => !e.ground).map((e) => e.routeSeed)).size, 1);
 assert.equal(new Set(debugStart.roster.filter((e) => e.ground).map((e) => e.routeSeed)).size, 1);
 const existing = structuredClone(debugStart.roster);
+swarmGame.command('SWARMDBG', lead.id, 'pistol-trace', {
+  shot: 'debug-hit',
+  incarnation: swarmRoom.pilots.get(lead.id).incarnation,
+  origin: [0, 0, 0],
+  direction: [0, 0, -1],
+});
 swarmGame.command('SWARMDBG', lead.id, 'hit', {
   wave: swarmRoom.wave,
   enemy: 0,
