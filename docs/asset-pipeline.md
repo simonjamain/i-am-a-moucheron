@@ -35,7 +35,9 @@ réelle peut être moindre et n’est jamais garantie. `--error 0.001` limite la
 relative ; les bordures sont verrouillées. Pas de modification des coordonnées
 UV, positions, normales, textures ou matériaux : seul le tableau des indices
 des triangles peut changer. Il est possible qu'aucune simplification ne soit
-réalisable dans ces contraintes. Les textures ne sont pas recompressées.
+réalisable dans ces contraintes. Les textures ne sont pas recompressées. Un fichier GLB peut **grossir**, même
+avec moins de triangles (en-têtes et représentation des buffers) : le rapport
+le signale et aucun gain de taille ou de FPS n'est garanti.
 
 Sur Linux, si votre UID/GID hôte diffère de 1000, exécuter
 `export ASSETS_UID=$(id -u) ASSETS_GID=$(id -g)` avant les commandes Compose.

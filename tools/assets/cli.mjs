@@ -269,6 +269,8 @@ async function optimize(input, output, flags) {
     const fs = await import('node:fs/promises');
     await fs.rename(tmp, output);
     report.bytes = {before:originalBytes.byteLength, after:(await stat(output)).size};
+    if (report.bytes.after > report.bytes.before)
+      report.warnings.push('Optimized GLB is larger than the source; compare both before adoption');
     report.optimizedSha256 = sha(await readFile(output));
     await writeFile(`${output}.report.json`, JSON.stringify(report,null,2)+'\n');
     console.log(JSON.stringify(report, null, 2));

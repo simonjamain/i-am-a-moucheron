@@ -30,3 +30,17 @@ Références : [issue #78](https://github.com/simonjamain/i-am-a-moucheron/issue
 - Sélection de profil conservateur à 75 % par défaut, `error` à 0,001 ; la réduction réelle reste dépendante du modèle.
 - Le job CI doit vérifier l'écriture réelle dans les volumes Compose, puis publier le rapport JSON de la fixture.
 - Essai visuel et métriques sur un **GLB Meshy réel du jeu** non réalisés dans ce contexte : conserver les sources existantes tant que ce point n'est pas vérifié.
+
+## Vérification de la fixture dans GitHub Actions
+
+- PR #81, workflow `Meshy asset tooling validation` :
+  https://github.com/simonjamain/i-am-a-moucheron/actions/runs/42356879595
+- Docker Compose a généré une fixture texturée à deux sous-maillages, a optimisé
+  puis validé le GLB en préservant la tourelle protégée.
+- Mesures **sur la fixture synthétique seulement**, paramètres `ratio=0.25`,
+  `error=1` : **289 → 73 triangles**, **6 800 → 7 360 octets**.
+  La taille augmente malgré la baisse des triangles ; il ne s'agit pas d'une
+  mesure FPS ni d'un essai sur un véritable export Meshy.
+- Le rapport JSON est disponible dans l'artifact GitHub Actions
+  `meshy-fixture-comparison`. Tester un export Meshy réel et les articulations
+  avant de remplacer une géométrie du jeu.
