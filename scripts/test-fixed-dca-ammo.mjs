@@ -66,7 +66,7 @@ console.log('Fixed DCA: finite ammo, charged shot idempotence, cooldown, no remo
 import prettier from 'prettier';
 import { readFileSync, writeFileSync, mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join as pathJoin } from 'node:path';
 import { execFileSync } from 'node:child_process';
 const path = 'src/client.js';
 const source = readFileSync(path, 'utf8');
@@ -75,11 +75,11 @@ const formatted = await prettier.format(source, {
   filepath: path,
 });
 if (source !== formatted) {
-  const dir = mkdtempSync(join(tmpdir(), 'dca-prettier-'));
-  writeFileSync(join(dir, 'before'), source);
-  writeFileSync(join(dir, 'after'), formatted);
+  const dir = mkdtempSync(pathJoin(tmpdir(), 'dca-prettier-'));
+  writeFileSync(pathJoin(dir, 'before'), source);
+  writeFileSync(pathJoin(dir, 'after'), formatted);
   try {
-    execFileSync('git', ['diff', '--no-index', '--', join(dir, 'before'), join(dir, 'after')], {
+    execFileSync('git', ['diff', '--no-index', '--', pathJoin(dir, 'before'), pathJoin(dir, 'after')], {
       encoding: 'utf8',
     });
   } catch (error) {
