@@ -1,0 +1,68 @@
+import assert from 'node:assert/strict';
+import { Game } from '../server/game.js';
+import { BLUEPRINTS } from '../src/wave-blueprints.js';
+
+let now = 100000;
+const game = new Game({ now: () => now });
+const a = game.join({ code: 'LAB', name: 'Testeur' });
+const b = game.join({ code: 'LAB', name: 'Coéquipier' });
+const other = game.join({ code: 'NORMAL', name: 'Autre' });
+const room = game.rooms.get('LAB');
+const regular = game.rooms.get('NORMAL');
+const send = (action, extra = {}, id = a.id) =>
+  game.command('LAB', id, 'lab', { epoch: room.base.epoch, action, ...extra });
+assert.equal(a.snapshot.lab.enabled, false);
+assert.equal(other.snapshot.lab.enabled, false);
+assert.throws(() => send('card', { card: 'piercing' }), /Activez/);
+assert.throws(() => send('enable', { epoch: 'obsolete' }), /changé/);
+assert.equal(send('enable', {}, b.id).lab.enabled, true);
+assert.equal(regular.lab.enabled, false, 'isolated room');
+for (const card of Object.keys(BLUEPRINTS)) assert.equal(room.blueprintLevels[card], 1);
+assert.equal(room.dollars, 1000000000);
+const before = room.blueprintLevels.reinforced;
+send('card', { card: 'reinforced' });
+assert.equal(room.blueprintLevels.reinforced, before + 1);
+assert.throws(() => send('card', { card: '__proto__' }), /inconnu/);
+assert.throws(() => send('wave', { wave: 0 }), /Vague/);
+assert.throws(() => send('wave', { wave: 1.5 }), /Vague/);
+send('wave', { wave: 7 });
+assert.equal(room.wave, 6);
+assert.equal(room.preparation.wave, 7);
+const first = send('start');
+assert.equal(first.wave, 7);
+assert.equal(first.phase, 'combat');
+game.createVehicle(room, 'helicopter');
+room.equipment.push({ kind: 'radar', x: 0.1, y: 0, z: -0.1, slot: 0 });
+const savedPlan = structuredClone(room.plan);
+send('save', { name: 'Bureau tourelles' });
+assert.equal(room.lab.scenarios.length, 1);
+const scenarioId = room.lab.scenarios[0].id;
+assert.ok(
+  !JSON.stringify(send('wave', { wave: 9 }).lab).includes('data'),
+  'no saved room state on wire',
+);
+send('load', { scenario: scenarioId });
+assert.equal(room.phase, 'prep');
+assert.equal(room.wave, 6);
+assert.deepEqual(room.upcomingPlan, savedPlan);
+assert.equal(room.equipment[0].kind, 'radar');
+assert.equal([...room.vehicles.values()].some((v) => v.type === 'helicopter'), true);
+assert.equal(room.pilots.size, 2, 'connected players preserved');
+assert.ok([...room.pilots.values()].every((p) => p.mode === 'foot'), 'crew cleared');
+assert.equal(send('start').wave, 7, 'captured wave can be replayed');
+send('finish');
+assert.equal(room.phase, 'prep');
+send('delete', { scenario: scenarioId });
+assert.equal(room.lab.scenarios.length, 0);
+send('save', { name: 'Après combat' });
+game.command('LAB', a.id, 'reset', { epoch: room.base.epoch });
+assert.equal(room.lab.enabled, true, 'normal reset keeps laboratory');
+assert.equal(room.lab.scenarios.length, 1, 'normal reset keeps scenarios');
+const afterExit = send('exit');
+assert.equal(afterExit.lab.enabled, false);
+assert.equal(room.lab.scenarios.length, 0);
+assert.equal(room.wave, 0);
+assert.equal(room.blueprintLevels.piercing, undefined);
+assert.equal(room.dollars, room.balance.startingMoney);
+assert.equal(regular.lab.enabled, false);
+console.log('PASS: laboratoire, progression, scénario, isolation et sortie.');
