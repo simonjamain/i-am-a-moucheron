@@ -1,6 +1,12 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 227,
+    changes: [
+      'Char : la lunette du canon gradue maintenant jusqu’à l’autre bout de la pièce, et les obus vont jusque-là.',
+    ],
+  },
+  {
     version: 226,
     changes: [
       'DCA fixe : maintenez Maj ou Ctrl pour régler la distance de fusée en continu ; relâchez pour arrêter.',
