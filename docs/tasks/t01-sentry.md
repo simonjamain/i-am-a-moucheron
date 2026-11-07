@@ -10,3 +10,5 @@
 - Vérifier sur PR : \`node scripts/test-sentry-model.mjs\`, \`node scripts/test-ground-sentry.mjs\`, \`npm run format:check\`, \`npm test\`, \`npm run check:docs\`, \`npm run build\`, \`node scripts/validate-artifact.mjs\`, \`npm run check:version\`, \`Docker build\` sur Actions.
 - Tests non couverts automatiquement : apparence WebGL finale, confort de rotation avec la latence, FPS pour 12 tourelles, intégration UV Meshy ; ne pas déduire des tests Node une validation graphique humaine.
 - Références : [documentation](../asset-pipeline.md) et [issue #76](https://github.com/simonjamain/i-am-a-moucheron/issues/76). **Ne pas clôturer #76 sur cette PR partielle.**
+
+- Sur les snapshots de munitions/tirs, les groupes T-01 sont désormais réutilisés sans libérer/recréer leurs géométries ; l'animation conserve ses pivots et le test de régression vérifie ce comportement.

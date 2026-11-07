@@ -303,7 +303,11 @@ export class GroundDefenseUI {
     if (!this.available() || (this.radial && !this.enabled())) this.cancel();
     const key = [snap?.code, snap?.base?.epoch, snap?.groundDefense?.revision].join(':');
     if (key !== this.key) {
-      if (this.roomKey !== [snap?.code, snap?.base?.epoch].join(':')) this.cancel();
+      if (this.roomKey !== [snap?.code, snap?.base?.epoch].join(':')) {
+        this.cancel();
+        this.sentries.clear();
+        this.lastSentryFrame = 0;
+      }
       this.roomKey = [snap?.code, snap?.base?.epoch].join(':');
       this.key = key;
       this.rebuild(snap?.groundDefense?.structures || []);
@@ -412,9 +416,21 @@ export class GroundDefenseUI {
     }
   }
   rebuild(structures) {
-    const previousSentries = this.sentries;
-    this.sentries = new Map();
+    // Keep articulated sentries alive across shot/ammo revisions. Rebuilding
+    // dozens of meshes and resetting their pivots every 500 ms is expensive.
+    const retained = new Map();
+    for (const structure of structures) {
+      if (structure.kind !== 'sentry') continue;
+      const existing = this.sentries.get(String(structure.id));
+      if (!existing) continue;
+      existing.container.position.set(structure.position[0], 0, structure.position[1]);
+      existing.container.rotation.y = structure.angle || 0;
+      retained.set(String(structure.id), existing);
+    }
+    const keep = new Set([...retained.values()].map((s) => s.container));
+    this.sentries = retained;
     for (const child of [...this.models.children]) {
+      if (keep.has(child)) continue;
       this.models.remove(child);
       child.traverse((part) => {
         if (part.isInstancedMesh) part.dispose();
@@ -496,19 +512,16 @@ export class GroundDefenseUI {
         ring.position.set(0, 0.002, 0);
         group.add(ring);
       } else if (structure.kind === 'sentry') {
+        if (this.sentries.has(String(structure.id))) continue;
         const [x, z] = structure.position;
         group.position.set(x, 0, z);
         group.rotation.y = structure.angle || 0;
         const sentry = createSentryModel(T);
-        const previous = previousSentries.get(String(structure.id));
-        if (previous) {
-          sentry.yaw.rotation.y = previous.yaw.rotation.y;
-          sentry.pitch.rotation.x = previous.pitch.rotation.x;
-        }
         this.sentries.set(String(structure.id), {
           ...sentry,
-          targetYaw: previous?.targetYaw || 0,
-          targetPitch: previous?.targetPitch || 0,
+          container: group,
+          targetYaw: 0,
+          targetPitch: 0,
         });
         group.add(sentry.group);
       } else if (structure.kind === 'barricade') {

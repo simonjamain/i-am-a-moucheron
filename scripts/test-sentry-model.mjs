@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import * as T from '../vendor/three.module.min.js';
+import { GroundDefenseUI } from '../src/ground-defense-ui.js';
 import {
   createSentryModel,
   sentryAimAngles,
@@ -45,3 +46,28 @@ group.traverse((part) => {
 });
 assert.ok(triangles < 3500, 'low polygon fallback, with separate pivot nodes');
 console.log('T-01: autonomous yaw, -10°..+90° pitch, single barrel and low-poly hierarchy OK');
+
+
+// Animation instances should survive snapshot revisions for ammunition/shots.
+const ui = Object.create(GroundDefenseUI.prototype);
+ui.T = T;
+ui.models = new T.Group();
+ui.sentries = new Map();
+ui.lastSentryFrame = 0;
+const placed = { id: 't01', kind: 'sentry', position: [0, 0], ammo: 180, hp: 150 };
+ui.rebuild([placed]);
+const first = ui.sentries.get('t01');
+assert.equal(ui.models.children.length, 1);
+ui.rebuild([{ ...placed, ammo: 179, aimTarget: [0, 1, 0] }]);
+assert.equal(ui.sentries.get('t01'), first, 'preserve turret mesh and articulation across shots');
+assert.equal(ui.models.children.length, 1, 'do not duplicate turret geometries');
+for (let i = 0; i < 25; i++) {
+  ui.lastSentryFrame = performance.now() - 50;
+  ui.updateSentryAim({
+    groundDefense: { structures: [{ ...placed, aimTarget: [0, 2, 0] }] },
+  });
+}
+assert.ok(first.pitch.rotation.x > 1.4, 'visible pivot nearly vertical after smoothing');
+ui.rebuild([]);
+assert.equal(ui.models.children.length, 0);
+assert.equal(ui.sentries.size, 0, 'remove retired turrets');
