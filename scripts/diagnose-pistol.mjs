@@ -49,7 +49,10 @@ async function shoot({ camera, target, colliders = [] }) {
     shotSequence: 0,
     insects: new Map([[0, mesh]]),
     localKills: new Set(),
-    snap: { vehicles: [], pilots: [] },
+    snap: { vehicles: [], pilots: [{ id: 'me', incarnation: 0, pistolAmmo: 120 }] },
+    pendingPistolShots: new Set(),
+    PISTOL_CAPACITY: 120,
+    notify() {},
     fleetModels: new Map(),
     basePeople: new Map([['me', person]]),
     muzzleAim,
@@ -61,6 +64,7 @@ async function shoot({ camera, target, colliders = [] }) {
     sound: { play() {} },
     action: (route, b) => {
       if (route !== 'pistol-trace') actions.push({ route, ...b });
+      return true;
     },
     damageEnemy: (enemy, amount) => actions.push({ enemy, amount }),
     setTimeout: (fn) => fn(),
@@ -86,14 +90,14 @@ const horizontal = new T.PerspectiveCamera();
 horizontal.position.set(0, 0.01, 0.02);
 horizontal.lookAt(0, 0.01, -1);
 horizontal.updateMatrixWorld();
-assert.equal(await shoot({ camera: horizontal, target: new T.Vector3(0, 0.01, -0.2) }).length, 1);
-assert.equal(await shoot({ camera: horizontal, target: new T.Vector3(0, 0.01, -0.5) }).length, 0);
+assert.equal((await shoot({ camera: horizontal, target: new T.Vector3(0, 0.01, -0.2) })).length, 1);
+assert.equal((await shoot({ camera: horizontal, target: new T.Vector3(0, 0.01, -0.5) })).length, 0);
 assert.equal(
-  await shoot({
+  (await shoot({
     camera: horizontal,
     target: new T.Vector3(0, 0.01, -0.2),
     colliders: [new T.Box3(new T.Vector3(-0.01, 0, 0.005), new T.Vector3(0.01, 0.03, 0.015))],
-  }).length,
+  })).length,
   0,
 );
 console.log(
