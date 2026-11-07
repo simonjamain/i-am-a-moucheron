@@ -20,6 +20,10 @@ Maximum **5 scénarios par room** (le plus ancien est remplacé au sixième). Le
 
 La commande fiable UDP `lab` exige une session rattachée à la room et une epoch courante ; toutes les mutations ont lieu exclusivement sur le serveur. Toute action de laboratoire autre que l'activation exige le mode actif. Une sortie désactive le mode **et réinitialise intégralement la partie** afin qu'aucune progression de test ne pollue la partie normale. La commande habituelle de remise à zéro conserve le mode actif et ses scénarios. Les limites de placement, populations maximales, collisions, contrats et physiques ne sont pas contournées.
 
+## Interface
+
+Les commandes sont réparties en trois sections (plans et ressources, vagues, scénarios). Les groupes de commandes utilisent des conteneurs locaux plutôt que des `footer`, réservés au pied de page global. Sur écran étroit, les commandes passent en une colonne et le panneau reste défilable.
+
 ## Vérifier
 
 `node scripts/test-laboratory.mjs` et `npm test`. Tester manuellement avec deux navigateurs connectés dans une room, puis un troisième dans une room différente. Contrôler les achats, les poses, les cartes, l'interruption/reprise de vague et le rechargement d'un scénario avec véhicules et barricades. Le réseau WAN WebRTC, le rendu WebGL et les sensations de placement nécessitent un essai sur la VM réelle.
