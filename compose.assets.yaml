@@ -1,0 +1,19 @@
+# One-shot developer tool; never deployed with the UDP game.
+services:
+  optimizer:
+    image: i-am-a-moucheron-asset-tools:local
+    build:
+      context: ./tools/assets
+    network_mode: none
+    # Override with ASSETS_UID/GID for bind mounts owned by another host user.
+    user: "${ASSETS_UID:-1000}:${ASSETS_GID:-1000}"
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    volumes:
+      - ${ASSETS_ORIGINALS:-./assets/originals}:/assets/originals:ro
+      - ${ASSETS_OUTPUTS:-./assets/optimized}:/assets/optimized

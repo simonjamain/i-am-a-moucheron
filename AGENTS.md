@@ -92,3 +92,13 @@ supérieur à la dernière version intégrée. Utiliser `npm run version:next` e
 `npm run check:version` selon leurs options et vérifier les assets assemblés.
 Cette convention reste en vigueur en attendant une évolution dédiée du
 versionnement pour les branches parallèles.
+
+## Nouveaux assets Meshy — outil 3D
+
+Pour chaque nouvel asset Meshy, consulter [le pipeline d'assets](docs/asset-pipeline.md)
+et utiliser l'image Docker d'optimisation avant import quand une réduction sûre
+est possible. Conserver la source approuvée, les UV/textures, les pièces mobiles,
+la provenance SHA-256 et les mesures avant/après ; ne jamais simplifier aveuglément
+un GLB monobloc contenant des articulations. Un échec de simplification ne bloque
+pas l'intégration de l'original après justification. Tester visuellement les
+pièces mobiles avant adoption d'une variante.

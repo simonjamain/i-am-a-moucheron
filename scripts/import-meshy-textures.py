@@ -1,7 +1,7 @@
 """Convert the seven *reviewed* Meshy GLBs into indexed textured browser meshes.
 
 Usage: python3 scripts/import-meshy-textures.py m1|h2|stuka|spitfire|tank|flaktruck SOURCE.glb [OUT]
-The accepted GLB hashes are pinned to the original reviewed models. No Meshy call,
+The accepted GLB hashes are pinned to the original reviewed models.\nFor an optimized derivative, supply OUT and the verified ORIGINAL.glb as fourth argument. No Meshy call,
 network or runtime GLTF dependency is needed. Python deps: trimesh, numpy, Pillow.
 We preserve UV seams and animations rather than running non-texture-aware decimation.
 """
@@ -9,6 +9,7 @@ import base64
 import hashlib
 import io
 import json
+from meshy_provenance import verify_meshy_source
 from pathlib import Path
 import sys
 
@@ -134,7 +135,9 @@ def main():
     source=Path(sys.argv[2])
     expected,filename,export=CONFIG[name]
     digest=hashlib.sha256(source.read_bytes()).hexdigest()
-    if digest!=expected:raise RuntimeError(f'Wrong GLB for {name}: {digest}')
+    # Optional verified derivative input: name INPUT.glb OUT.js ORIGINAL.glb
+    original_source=Path(sys.argv[4]) if len(sys.argv)>4 else None
+    verify_meshy_source(source,expected,original_source)
     scene=trimesh.load(source,force='scene')
     assert len(scene.geometry)==1
     mesh=scene.to_mesh()

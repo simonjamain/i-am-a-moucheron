@@ -9,3 +9,7 @@ node_modules/
 .openai/
 .sites-checkout/
 .sites-runtime/
+
+# Private Meshy originals and temporary optimization candidates
+/assets/originals/
+/assets/optimized/

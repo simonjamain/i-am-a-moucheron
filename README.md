@@ -150,3 +150,10 @@ Le [laboratoire par room](docs/laboratory.md) permet de tester les constructions
 Le [bombardier B3](docs/b3-model.md) accueille quatre joueurs et conserve son camouflage texturé.
 Les [sept véhicules Meshy](docs/meshy-fleet.md) gardent les couleurs de leur modèle
 original ; seul un rond flottant indique la couleur propre à chaque véhicule.
+
+## Outillage de modèles Meshy
+
+[Optimisation géométrique GLB gratuite, Docker Compose et CI](docs/asset-pipeline.md) :
+un outil **de développement** ponctuel séparé du serveur de jeu, qui conserve
+UV, textures et pièces protégées. Les fichiers monoblocs nécessitent d'abord
+une séparation des pièces mobiles ; aucune conversion automatique de la flotte.

@@ -54,3 +54,5 @@ Une [projection CPU de la géométrie texturée](b3-model-review.png) a servi à
 Ces contrôles ne prouvent pas une partie WebGL/UDP ni la fluidité avec plusieurs
 bombardiers : vérifier à quatre joueurs les vues, les tirs, les échanges et la
 lisibilité du repère lors du test en jeu.
+
+Pour une variante de GLB B3, suivre le [pipeline d’optimisation Meshy](asset-pipeline.md), puis revérifier les quatre postes, les pivots et le camouflage avant tout remplacement.

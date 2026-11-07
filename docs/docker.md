@@ -66,3 +66,11 @@ d’administration : cette protection n’a pas pu être lue ni modifiée (HTTP 
 Son activation reste donc à vérifier dans les paramètres du dépôt.
 
 Référence : [contrôles obligatoires GitHub](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches#require-status-checks-before-merging).
+
+## Outillage de modèles GLB (hors VPS de jeu)
+
+L'image Docker de développement Meshy est distincte de l'image du serveur.
+Elle est construite et utilisée à la demande par `compose.assets.yaml`.
+La CI vérifie le même outil sur une fixture texturée et GHCR le publiera
+après fusion sur `main`, sans aucun service permanent.
+Voir [pipeline d'assets](asset-pipeline.md).

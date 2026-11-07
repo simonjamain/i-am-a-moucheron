@@ -1,0 +1,15 @@
+{
+  "name": "moucheron-asset-tools",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Offline, UV-safe Meshy GLB triangle reduction for game assets",
+  "engines": { "node": ">=22.13" },
+  "scripts": {
+    "test": "node test.mjs"
+  },
+  "dependencies": {
+    "@gltf-transform/core": "4.5.1",
+    "meshoptimizer": "1.3.0"
+  }
+}
