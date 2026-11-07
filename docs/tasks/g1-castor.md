@@ -1,5 +1,12 @@
 # G1 Castor — issue #76
 
+## Lot 9 — défenses occupables (branche feat/issue-76-manned-defenses)
+
+- Ajout des plans exclusifs du bunker LEGO et du canon antichar ; placement ponctuel avec le Castor, achat partagé (10 $ et 14 $) et postes occupables par signature (un tireur par poste).
+- Bunker construit en briques LEGO instanciées ; mitrailleuse du poste (240 balles, 18 dégâts) et absorption de 85 % des tirs amis jusqu’à destruction des murs. Canon antichar lourd (24 obus, 225 dégâts) destiné aux gros ennemis terrestres. Les postes utilisent le parcours et les entrées de DCA fixe, avec leurs propres cadences.
+- Accès, remboursement, réserve et réparation validés côté serveur ; recharge seulement à portée des stations ou du Castor et payante. Suppression retire le poste sans décaler les index, déconnexion et destruction gérées par le cycle de vie partagé.
+- Suite de régression dédiée `scripts/test-castor-fortifications.mjs` ; contrôles Actions et `Docker build` obligatoires avant fusion. Vérification visuelle en navigateur/UDP/FPS à mener : la simulation Node ne peut pas la remplacer.
+
 ## Lot 8 — première défense exclusive (branche feat/issue-76-castor-defenses)
 
 - Carte de plan « Tourelle automatique du Castor », construction ponctuelle depuis le conducteur pour 9 $, plafond de 12 installations par salle.

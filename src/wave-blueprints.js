@@ -18,6 +18,18 @@ export const BLUEPRINTS = Object.freeze({
     cost: 2,
     kind: 'barricade',
   },
+  bunker: {
+    name: 'Bunker LEGO du Castor',
+    description: 'Débloque un bunker LEGO occupable et protégé, avec mitrailleuse à munitions finies.',
+    cost: 0,
+    kind: 'unlock',
+  },
+  antitank: {
+    name: 'Canon antichar du Castor',
+    description: 'Débloque un canon lourd occupable, efficace contre les boss terrestres.',
+    cost: 0,
+    kind: 'unlock',
+  },
   sentry: {
     name: 'Tourelle automatique du Castor',
     description: 'Débloque la construction d’une tourelle qui défend le bureau avec des balles limitées.',

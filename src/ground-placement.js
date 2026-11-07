@@ -34,7 +34,7 @@ export function groundPlacement({ foot, mode, rotation = 0, anchor, defense, dol
       .sort((a, b) => a.d - b.d)[0]?.s;
     if (!target) return { center, error: 'Visez une construction proche devant vous.' };
     command = { action: mode, id: target.id };
-  } else if (mode === 'sugar' || mode === 'fan' || mode === 'sentry')
+  } else if (['sugar', 'fan', 'sentry', 'bunker', 'antitank'].includes(mode))
     command = { action: 'build', kind: mode, a: center, angle: rotation };
   else command = { action: 'build', kind: mode, a: center, b: anchor };
 

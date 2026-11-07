@@ -14,6 +14,7 @@ import { nextPilotMuzzle } from '/muzzle.js';
 import { advanceAutomaticFire } from '/salvos.js';
 import { ammoCapacity } from '/logistics.js';
 import { FIXED_DCA_AMMO, PISTOL_CAPACITY } from '/ground-ammo.js';
+import { FORTIFICATIONS, isFortification } from '/ground-fortifications.js';
 import { moveShotTrace, advanceShotTrace, makeShotTrace, TracerPool } from '/tracers.js';
 import { PurchaseUI } from '/purchase-ui.js';
 import { purchaseCount } from '/equipment.js';
@@ -2454,6 +2455,57 @@ function physicalPurgatory(dt, now) {
 }
 const turrets = [];
 let stations = [];
+function makeFortificationStation(st) {
+  // Build 3D field fortifications in the same scaled reference coordinates as DCA.
+  const root = new T.Group();
+  root.position.set(st.x, st.y, st.z);
+  root.scale.setScalar(MAP.ratio);
+  scene.add(root);
+  if (st.kind === 'bunker') {
+    const bricks = new T.InstancedMesh(
+      new T.BoxGeometry(6.6, 2.5, 3.8),
+      new T.MeshStandardMaterial({ color: '#cba45c', roughness: 0.88 }),
+      100,
+    );
+    const dummy = new T.Object3D();
+    let count = 0;
+    for (let layer = 0; layer < 4; layer++)
+      for (let index = -3; index <= 3; index++)
+        for (const side of [0, 1, 2]) {
+          dummy.position.set(
+            side === 2 ? index * 6.7 : (side === 0 ? -23 : 23),
+            layer * 2.5 + 1.25,
+            side === 2 ? -21 : index * 6.7,
+          );
+          dummy.rotation.set(0, side === 2 ? 0 : Math.PI / 2, 0);
+          dummy.updateMatrix();
+          bricks.setMatrixAt(count++, dummy.matrix);
+        }
+    bricks.count = count;
+    root.add(bricks);
+    box(0, 11.5, 0, 54, 2.2, 47, '#b48e4c', root);
+    box(0, 9, 22, 16, 3, 5, '#4a593f', root);
+  } else {
+    box(0, 1.2, 0, 19, 2.4, 15, '#566b50', root);
+    for (const x of [-8, 8]) cyl(x, 2.2, 4, 3, 3, 3, '#283c35', root);
+    box(0, 4, 2, 9, 5, 10, '#6b7c5a', root);
+  }
+  const yaw = new T.Group();
+  yaw.position.y = st.kind === 'bunker' ? 12.5 : 5;
+  root.add(yaw);
+  const pitch = new T.Group();
+  yaw.add(pitch);
+  const large = st.kind === 'antitank';
+  cyl(0, 0, -7, large ? 1.3 : 0.6, large ? 1.3 : 0.6, large ? 21 : 14, '#293e36', pitch)
+    .rotation.x = Math.PI / 2;
+  box(0, 0, -1, large ? 9 : 5, large ? 6 : 4, large ? 9 : 6, '#607359', yaw);
+  const muzzle = new T.Object3D();
+  muzzle.position.set(0, 0, large ? -19 : -14);
+  pitch.add(muzzle);
+  root.userData = { yaw, pitch, muzzles: [muzzle, muzzle], barrel: 0 };
+  return root;
+}
+
 function reconcileEquipment(next) {
   // Stable slot indices are assigned transactionally by the shared room.
   for (let i = 0; i < turrets.length; i++)
@@ -2476,16 +2528,17 @@ function reconcileEquipment(next) {
   for (const [i, st] of stations.entries()) {
     if (turrets[i]) continue;
     const gun =
-      st.kind === 'dca' ? makeAntiaircraft(T, scene, { box, cyl }, [st])[0] : installationModel(st);
+      st.kind === 'dca'
+        ? makeAntiaircraft(T, scene, { box, cyl }, [st])[0]
+        : isFortification(st.kind)
+          ? makeFortificationStation(st)
+          : installationModel(st);
     gun.userData.kind = st.kind;
     gun.userData.slot = st.slot;
+    const radius = isFortification(st.kind) ? (st.kind === 'bunker' ? 0.075 : 0.035) : MAP.metres(st.kind === 'bed' ? 0.8 : 2);
     const collider = new T.Box3(
-      new T.Vector3(st.x - MAP.metres(st.kind === 'bed' ? 0.8 : 2), st.y, st.z - MAP.metres(1.4)),
-      new T.Vector3(
-        st.x + MAP.metres(st.kind === 'bed' ? 0.8 : 2),
-        st.y + MAP.metres(0.8),
-        st.z + MAP.metres(1.4),
-      ),
+      new T.Vector3(st.x - radius, st.y, st.z - radius),
+      new T.Vector3(st.x + radius, st.y + (isFortification(st.kind) ? 0.04 : MAP.metres(0.8)), st.z + radius),
     );
     colliders.push(collider);
     gun.userData.collider = collider;
@@ -2499,9 +2552,9 @@ function reconcileEquipment(next) {
     gun.userData.shotAt = 0;
     turrets[i] = gun;
     const ring = entryRing.clone();
-    ring.position.set(st.x + MAP.metres(3), st.y + ACTOR_UNIT * 0.12, st.z);
+    ring.position.set(st.x + (isFortification(st.kind) ? 0.08 : MAP.metres(3)), st.y + ACTOR_UNIT * 0.12, st.z);
     ring.scale.setScalar(ACTOR_UNIT);
-    if (st.kind === 'dca' || st.kind === 'bed') scene.add(ring);
+    if (st.kind === 'dca' || st.kind === 'bed' || isFortification(st.kind)) scene.add(ring);
     stationRings[i] = ring;
   }
 }
@@ -2527,7 +2580,10 @@ function nearestStation() {
   const w = baseWorld(b);
   let nearest = null;
   stations.forEach((s, index) => {
-    if (s.kind === 'dca' && stationAccess(w, s)) {
+    if (
+      (s.kind === 'dca' || isFortification(s.kind) && s.hp > 0) &&
+      stationAccess(w, s, isFortification(s.kind) ? 0.09 : MAP.metres(3.4))
+    ) {
       const d = Math.hypot(w.x - s.x, w.z - s.z);
       if (!nearest || d < nearest.distance) nearest = { index, distance: d };
     }
@@ -2657,7 +2713,7 @@ async function chooseEquipment(index) {
   selectedEquipment = index;
   boardingOpen = false;
   boardingSelectionBusy = true;
-  const timing = beginBoardingFeedback('dca', 'DCA');
+  const timing = beginBoardingFeedback('dca', stations[index]?.name || 'DCA');
   releaseMouse();
   renderPaper();
   try {
@@ -2705,18 +2761,18 @@ function updateVehicles(dt) {
   $('leavePlane').textContent = landed ? 'Sortir' : 'Sauter';
   $('vehicleInteract').classList.toggle('hidden', turretIndex < 0);
   $('turretFire').classList.toggle('hidden', turretIndex < 0 && !crew);
-  $('flakControls').classList.toggle('hidden', turretIndex < 0);
+  $('flakControls').classList.toggle('hidden', turretIndex < 0 || stations[turretIndex]?.kind === 'bunker');
   $('fuseDistance').textContent = rangeReadout(flakRange).metres.toFixed(0) + ' m · Shift / Ctrl';
   $('vehicleState').textContent =
     turretIndex >= 0
-      ? 'DCA · ' +
+      ? (stations[turretIndex].kind === 'dca' ? 'DCA' : FORTIFICATIONS[stations[turretIndex].kind]?.name || 'Défense') + ' · ' +
         stations[turretIndex].name +
         ' · ' +
         Math.round(hp) +
         ' PV · Obus ' +
         Math.floor(stations[turretIndex].ammo ?? 0) +
         '/' +
-        FIXED_DCA_AMMO
+        (FORTIFICATIONS[stations[turretIndex].kind]?.ammo ?? FIXED_DCA_AMMO)
       : myVehicle
         ? VEHICLES[myVehicle.type].name +
           ' · ' +
@@ -2843,7 +2899,7 @@ function updateVehicles(dt) {
       occupant = snap?.pilots.find(
         (p) => p.life === 'alive' && p.mode === 'turret' && p.state.turret === index,
       );
-    gun.userData.person.visible = !!occupant;
+    gun.userData.person.visible = !!occupant && station.kind === 'dca';
     if (!occupant) continue;
     const self = occupant.id === id,
       motion = self ? localMotion() : remoteMotion(occupant),
@@ -2863,7 +2919,7 @@ function updateVehicles(dt) {
           1.35,
         );
       }
-      camera.position.set(station.x, station.y + MAP.metres(1.8), station.z);
+      camera.position.set(station.x, station.y + MAP.metres(station.kind === 'bunker' ? 17 : 5), station.z);
       camera.up.set(0, 1, 0);
       camera.lookAt(camera.position.clone().addScaledVector(dir, MAP.metres(100)));
       shooting =
@@ -2872,11 +2928,18 @@ function updateVehicles(dt) {
       if (shooting && performance.now() > gun.userData.shotAt) {
         gun.userData.shotAt =
           performance.now() +
-          FLAK.interval *
+          (FORTIFICATIONS[station.kind]?.interval ?? FLAK.interval) *
             1000 *
             ((self ? currentFactors().interval : 1) / (snap?.balance?.fireRate ?? 1));
         gun.userData.barrel++;
-        const shot = bullet(muzzle, dir, '#ffe49b', true, true);
+        const fort = FORTIFICATIONS[station.kind];
+        const shot = fort
+          ? emitBullet(muzzle, dir, '#ffe49b', true, station.kind === 'antitank', {
+              wave: snap.wave,
+              baseDamage: fort.damage,
+              velocity: new T.Vector3(),
+            })
+          : bullet(muzzle, dir, '#ffe49b', true, true);
         if (shot) {
           const incarnation = snap.pilots.find((p) => p.id === id)?.incarnation;
           action('fixed-dca-fire', { station: index, shot, incarnation });
@@ -2889,7 +2952,7 @@ function updateVehicles(dt) {
           1000 *
           ((self ? currentFactors().interval : 1) / (snap?.balance?.fireRate ?? 1));
       gun.userData.barrel++;
-      bullet(muzzle, dir, '#91d9c4', false, true);
+      bullet(muzzle, dir, '#91d9c4', false, station.kind !== 'bunker');
     }
   }
 }

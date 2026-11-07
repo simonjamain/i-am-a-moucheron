@@ -1,6 +1,12 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 209,
+    changes: [
+      'Les cartes du Castor permettent désormais de construire un bunker LEGO protégé et un canon antichar occupable. Les deux postes utilisent des munitions limitées.',
+    ],
+  },
+  {
     version: 204,
     changes: [
       'Après avoir débloqué son plan, le Castor peut poser des tourelles automatiques avec une réserve de balles limitée.',
