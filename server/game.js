@@ -494,7 +494,8 @@ export class Game {
     if (
       r.phase !== 'combat' ||
       !r.groundDefense.structures.some((s) => s.kind === 'sentry' && s.hp > 0 && s.ammo >= 1)
-    ) return;
+    )
+      return;
     if (now - r.sentryClock < SENTRY.intervalMs) return;
     r.sentryClock = now;
     const plan = this.plan(r);
@@ -509,18 +510,23 @@ export class Game {
         ? { id: index, p: frame.p, dead: false }
         : null,
     );
-    const fired = fireGroundSentries(r.groundDefense.structures, targets, now, (target, sentry, damage) => {
-      const id = target.id;
-      r.enemyDamage[id] = (r.enemyDamage[id] || 0) + damage * r.balance.damage;
-      if (r.enemyDamage[id] >= plan.roster[id].hp) this.defeatEnemy(r, id, target.p);
-      r.effects.push({
-        id: ++r.effectSeq,
-        kind: 'sentry-shot',
-        p: [sentry.position[0], 0.03, sentry.position[1]],
-        target: target.p,
-        at: now,
-      });
-    });
+    const fired = fireGroundSentries(
+      r.groundDefense.structures,
+      targets,
+      now,
+      (target, sentry, damage) => {
+        const id = target.id;
+        r.enemyDamage[id] = (r.enemyDamage[id] || 0) + damage * r.balance.damage;
+        if (r.enemyDamage[id] >= plan.roster[id].hp) this.defeatEnemy(r, id, target.p);
+        r.effects.push({
+          id: ++r.effectSeq,
+          kind: 'sentry-shot',
+          p: [sentry.position[0], 0.03, sentry.position[1]],
+          target: target.p,
+          at: now,
+        });
+      },
+    );
     if (fired) r.groundDefense.revision++;
   }
   advance(r) {

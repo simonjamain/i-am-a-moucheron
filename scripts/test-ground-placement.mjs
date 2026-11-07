@@ -118,7 +118,9 @@ for (let i = 0; i < ui.tools.length; i++) {
   const angle = (i * 2 * Math.PI) / ui.tools.length;
   ui.moveWheel(80 * Math.sin(angle), -80 * Math.cos(angle));
   ui.finishWheel();
-  assert.equal(ui.mode, ui.tools[i][0]);
+  if (ui.tools[i][0] === 'sentry')
+    assert.equal(ui.mode, 'fan', 'Castor-only locked tool cannot be selected on foot');
+  else assert.equal(ui.mode, ui.tools[i][0]);
 }
 assert.equal(commands.length, 2, 'selecting a sector never builds');
 ui.openWheel();
