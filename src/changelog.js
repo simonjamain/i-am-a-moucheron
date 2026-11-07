@@ -1,6 +1,13 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 233,
+    changes: [
+      'Castor : le mur LEGO se construit brique par brique derrière le camion, et l’arrêt garde la partie commencée.',
+      'Murs et rubans coûtent exactement 1 $ pour 20 cm, au centime près.',
+    ],
+  },
+  {
     version: 231,
     changes: [
       'Le bouton Debug remplace l’équilibrage et l’envoi manuel d’insectes : un seul interrupteur pour toute la partie.',

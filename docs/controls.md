@@ -210,7 +210,7 @@ Maintenir **G** ou le **clic molette** : orienter vers un secteur puis relâcher
 
 Sur le [bombardier B3](b3-model.md), **4** demande le poste ventral avec signature ; **1 / 2 / 3** restent pilote, dorsal et queue.
 
-G1 Castor : Z/S avancer/reculer, Q/D tourner, souris et clic gauche pour tirer avec la mitrailleuse légère, **V** bascule la caméra tactique surélevée. Le soutien à 50 cm est automatique et payant. Pendant la conduite, **G** ou le clic molette ouvre la roue de construction. Clic gauche démarre/arrête la dépose des murs LEGO et rubans (1 $ par 20 cm) ; les autres pièges se posent au point visé. Échap interrompt la construction.
+G1 Castor : Z/S avancer/reculer, Q/D tourner, souris et clic gauche pour tirer avec la mitrailleuse légère, **V** bascule la caméra tactique surélevée. Le soutien à 50 cm est automatique et payant. Pendant la conduite, **G** ou le clic molette ouvre la roue de construction. Clic gauche démarre/arrête la dépose des murs LEGO et rubans : les briques apparaissent une à une derrière le camion (hauteur fixe de trois rangs), chaque section de 20 cm est validée par le serveur et l’arrêt conserve la section commencée. Facturation au prorata de la longueur réelle : 1 $ pour 20 cm, au centime près ; les autres pièges se posent au point visé. Échap interrompt la construction.
 
 DCA fixe : le nombre d'obus restants (sur 120) est affiché près de l'état du
 poste. Un clic gauche ou Espace déclenche un tir tant qu'il reste des munitions.

@@ -281,8 +281,8 @@ pour le sélectionner. Au centre, le choix est annulé. Pour une barricade ou un
 ruban, le premier clic (ou E) fixe le début indiqué par un petit repère sans
 orientation. Visez ensuite la fin, en marchant si nécessaire, puis cliquez de
 nouveau (ou E). Les deux points déterminent seuls la longueur et l'orientation.
-Le bouton de confirmation suit ces mêmes deux étapes. Le coût reste de 1 $ par
-tranche de 20 cm ; les longs murs sont découpés en segments réparables. La
+Le bouton de confirmation suit ces mêmes deux étapes. Le coût est de 1 $ pour
+20 cm, au prorata exact de la longueur et au centime près (`lengthPrice`, version 233) ; les longs murs sont découpés en segments réparables. La
 barricade est composée de briques colorées en trois rangées décalées, plus ou
 moins nombreuses selon sa longueur. R oriente le sucre et le ventilateur.
 Le sucre coûte
@@ -344,7 +344,10 @@ opposés et les roues avant braquent selon la vitesse de rotation
 Au sol, le pilote du Castor ouvre la roue des défenses par **clic molette**.
 Pour les murs **LEGO** et les **rubans**, un clic gauche démarre la pose en
 continu **derrière le véhicule** pendant la conduite ; un deuxième clic l'arrête.
-Le Castor construit des segments de 20 cm au tarif existant de 1 $ par segment.
+Le Castor valide des sections de 20 cm (1 $) ; entre deux validations, l'aperçu
+ajoute les briques une à une derrière le camion, à hauteur fixe de trois rangs.
+L'arrêt valide la section commencée, facturée au prorata (`scripts/test-castor-trail.mjs`).
+Le visuel Meshy des briques reste à refaire après validation des images.
 Le serveur vérifie chaque pose, les collisions et les fonds de la caisse commune.
 Un changement de poste, une sortie, un échec de placement ou un déplacement trop
 brutal interrompt la construction. Les autres pièges, la réparation et la

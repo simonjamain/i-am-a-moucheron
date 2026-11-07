@@ -20,6 +20,12 @@ export const GROUND_BAIT_TYPES = Object.freeze({
 export const GROUND_WALL_HP = 100;
 export const GROUND_WALL_COST_PER_SEGMENT = 1;
 export const GROUND_STICKY_COST_PER_20CM = 1;
+// Issue #99: walls and tape are billed pro rata to their real office length,
+// 1 $ per 20 cm, to the cent (no rounding up to whole 20 cm segments).
+export function lengthPrice(kind, distance) {
+  const rate = kind === 'barricade' ? GROUND_WALL_COST_PER_SEGMENT : GROUND_STICKY_COST_PER_20CM;
+  return Math.max(0.01, Math.round((distance / 0.2) * rate * 100) / 100);
+}
 
 export function feedingPoint(bait) {
   const angle = bait.angle || 0;
@@ -134,9 +140,7 @@ export function groundCommand(state, command, foot, dollars, now = Date.now(), a
           ? FAN_COST
           : kind === 'sugar'
             ? GROUND_BAIT_TYPES.sugar.cost
-            : kind === 'barricade'
-              ? count * GROUND_WALL_COST_PER_SEGMENT
-              : Math.ceil(distance / 0.2) * GROUND_STICKY_COST_PER_20CM;
+            : lengthPrice(kind, distance);
     if (dollars + 1e-8 < price) fail('Caisse commune insuffisante.');
     const id = String(state.nextId + 1);
     const items =
