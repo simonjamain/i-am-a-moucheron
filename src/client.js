@@ -1531,7 +1531,13 @@ addEventListener('keydown', (event) => {
   )
     return;
   const interactionKey = gameKey(event);
-  if (interactionKey === 'KeyV' && !event.repeat && !waveCouncil.button.hidden && canCapture()) {
+  if (
+    interactionKey === 'KeyV' &&
+    !event.repeat &&
+    !waveCouncil.button.hidden &&
+    canCapture() &&
+    myVehicle?.type !== 'castor'
+  ) {
     event.preventDefault();
     waveCouncil.button.click();
     return;
@@ -5371,14 +5377,24 @@ function updateContextHUD() {
     $('cursorStats').style.top = 'calc(' + ($('crosshair').style.top || '50%') + ' + 22px)';
   }
   $('commandHelp').classList.toggle('hidden', !joined);
+  const castorBuilding = !!castorBuilder();
   $('commandHelp').textContent = controlHints({
     vehicle: myVehicle,
     seat: crewSeat,
-    turret: turretIndex >= 0,
+    station: turretIndex >= 0 ? stations[turretIndex]?.kind || 'dca' : null,
     dead: !!respawnAt,
     airborne: selfBase()?.grounded === false,
     placing: placingEquipment,
     observing: spectating,
+    build: groundDefenseUI.available(),
+    wheel: !!groundDefenseUI.radial,
+    building: groundDefenseUI.active
+      ? {
+          mode: groundDefenseUI.mode,
+          castor: castorBuilding,
+          anchored: !!(castorBuilding ? groundDefenseUI.trailAnchor : groundDefenseUI.anchor),
+        }
+      : null,
   });
   const range = model?.readout;
   $('aimRange').classList.toggle('hidden', !range);

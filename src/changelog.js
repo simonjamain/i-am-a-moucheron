@@ -1,6 +1,14 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 224,
+    changes: [
+      'L’aide en bas à gauche montre les vraies commandes du Castor, des postes de défense et de la construction.',
+      'À pied, l’aide rappelle le zoom à la molette et la roue de construction.',
+      'Au volant du Castor, V bascule de nouveau la vue tactique.',
+    ],
+  },
+  {
     version: 223,
     changes: [
       'Les constructions montrent leur vrai modèle avant la pose. Les véhicules gardent leur orientation, face à votre personnage.',
