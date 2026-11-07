@@ -74,7 +74,7 @@ import {
   installationCount,
 } from '../src/logistics.js';
 import { drawClause, clauseFactors } from '../src/malice.js';
-import { stationAccess } from '../src/sortie.js';
+import { stationAccess, stationExit } from '../src/sortie.js';
 import { validMotion } from '../src/network.js';
 import { snapshotRosterCore, snapshotRosterKey } from '../src/snapshot-wire.js';
 import { newBank, signLoan, settleLoans, repayLoan } from '../src/bank.js';
@@ -1948,11 +1948,11 @@ export class Game {
     if (p.mode === 'turret') {
       const s = r.equipment[p.state.turret];
       requireGame(s, 'Poste invalide.');
-      const exitOffset = isFortification(s.kind) ? 0.09 : MAP.metres(3);
+      const exit = stationExit(s);
       p.state.walkSpawn = {
-        x: (s.x + exitOffset - OFFICE_LAYOUT.base.originX) / ACTOR_UNIT,
-        z: (OFFICE_LAYOUT.base.originZ - s.z) / ACTOR_UNIT,
-        y: s.y + 0.05 * ACTOR_UNIT,
+        x: (exit.x - OFFICE_LAYOUT.base.originX) / ACTOR_UNIT,
+        z: (OFFICE_LAYOUT.base.originZ - exit.z) / ACTOR_UNIT,
+        y: exit.y,
         parachute: false,
       };
       this.release(r, p);
@@ -1963,14 +1963,13 @@ export class Game {
     }
     const s = r.equipment[b.station],
       body = this.base(r, p, b.ground);
-    const stationRadius = isFortification(s?.kind) ? 0.09 : MAP.metres(3.4);
     requireGame(
       p.mode === 'foot' &&
         Number.isInteger(b.station) &&
         (s?.kind === 'dca' || (isFortification(s?.kind) && s.hp > 0)) &&
         body &&
         !body.parachute &&
-        stationAccess(baseWorld(body), s, stationRadius),
+        stationAccess(baseWorld(body), s),
       'Approchez de la défense à pied.',
     );
     if (path === 'equipment-select') {

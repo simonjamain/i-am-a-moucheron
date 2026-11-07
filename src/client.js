@@ -62,6 +62,7 @@ import {
   BULLET_SPEED,
   FIRE_INTERVAL,
   stationAccess,
+  stationExit,
   resolveLanding,
   stepWalker,
   makeAntiaircraft,
@@ -2610,10 +2611,7 @@ function nearestStation() {
   const w = baseWorld(b);
   let nearest = null;
   stations.forEach((s, index) => {
-    if (
-      (s.kind === 'dca' || (isFortification(s.kind) && s.hp > 0)) &&
-      stationAccess(w, s, isFortification(s.kind) ? 0.09 : MAP.metres(3.4))
-    ) {
+    if ((s.kind === 'dca' || (isFortification(s.kind) && s.hp > 0)) && stationAccess(w, s)) {
       const d = Math.hypot(w.x - s.x, w.z - s.z);
       if (!nearest || d < nearest.distance) nearest = { index, distance: d };
     }
@@ -2665,11 +2663,7 @@ function optimisticExit() {
       ? grounded
         ? vehicleEntry({ ...vehicle, state: pose })
         : { x: pose.p[0], y: pose.p[1], z: pose.p[2] }
-      : {
-          x: stations[turretIndex].x + MAP.metres(3),
-          y: stations[turretIndex].y,
-          z: stations[turretIndex].z,
-        };
+      : stationExit(stations[turretIndex]);
   const walkSpawn = {
     x: (p.x - OFFICE_LAYOUT.base.originX) / ACTOR_UNIT,
     z: (OFFICE_LAYOUT.base.originZ - p.z) / ACTOR_UNIT,

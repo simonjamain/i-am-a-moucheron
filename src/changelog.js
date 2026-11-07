@@ -1,6 +1,12 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 222,
+    changes: [
+      'Le canon antichar et le bunker sont accessibles depuis leur cercle d’entrée ; leur sortie vous replace à côté du poste.',
+    ],
+  },
+  {
     version: 217,
     changes: [
       'La tourelle automatique du Castor possède maintenant ses vrais modèles 3D texturés, avec un canon orientable jusqu’à la verticale.',
@@ -20,7 +26,9 @@ export const PLAYER_CHANGELOG = [
   },
   {
     version: 210,
-    changes: ['Les boutons du laboratoire sont mieux rangés et restent accessibles sur petit écran.'],
+    changes: [
+      'Les boutons du laboratoire sont mieux rangés et restent accessibles sur petit écran.',
+    ],
   },
   {
     version: 209,
@@ -66,15 +74,21 @@ export const PLAYER_CHANGELOG = [
   },
   {
     version: 186,
-    changes: ['Les roues du Castor sont repositionnées et ne se superposent plus à celles du châssis.'],
+    changes: [
+      'Les roues du Castor sont repositionnées et ne se superposent plus à celles du châssis.',
+    ],
   },
   {
     version: 185,
-    changes: ['Le Castor adopte son vrai modèle détaillé, avec ses couleurs, sa tourelle et ses six roues animées.'],
+    changes: [
+      'Le Castor adopte son vrai modèle détaillé, avec ses couleurs, sa tourelle et ses six roues animées.',
+    ],
   },
   {
     version: 179,
-    changes: ['Le G1 Castor rejoint le garage : un camion rapide qui soigne et ravitaille ses alliés tout en roulant.'],
+    changes: [
+      'Le G1 Castor rejoint le garage : un camion rapide qui soigne et ravitaille ses alliés tout en roulant.',
+    ],
   },
   {
     version: 172,
