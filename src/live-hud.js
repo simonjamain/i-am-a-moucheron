@@ -10,7 +10,7 @@ const ORIENTED_TOOLS = ['sugar', 'fan'];
 const STATIONS = {
   dca: ['Clic / Espace : obus', 'Maj/Ctrl, [ ] ou molette : fusée'],
   bunker: ['Clic / Espace : balles'],
-  antitank: ['Clic / Espace : obus antichar'],
+  antitank: ['Clic / Espace : obus anti-matériel'],
 };
 
 function postsHint(type) {

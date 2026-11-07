@@ -93,23 +93,6 @@
         font-weight: 700;
         letter-spacing: -0.4px;
       }
-      .mark {
-        width: 35px;
-        height: 35px;
-        display: grid;
-        place-items: center;
-        background: var(--acid);
-        color: var(--dark);
-        font-size: 24px;
-        border-radius: 50%;
-      }
-      .badge {
-        border: 1px solid #ffffff35;
-        border-radius: 30px;
-        padding: 7px 12px;
-        font-size: 10px;
-        letter-spacing: 2px;
-      }
       .lobby {
         position: fixed;
         left: 7vw;
@@ -130,12 +113,6 @@
       h1 em {
         font-style: normal;
         color: var(--acid);
-      }
-      .intro {
-        color: #b4c6be;
-        max-width: 350px;
-        line-height: 1.7;
-        font-size: 15px;
       }
       .formbox {
         margin-top: 28px;
@@ -187,20 +164,6 @@
         color: var(--muted);
         font-size: 11px;
         line-height: 1.6;
-      }
-      .features {
-        display: flex;
-        gap: 22px;
-        margin-top: 22px;
-        font-size: 10px;
-        letter-spacing: 1.2px;
-        color: #bdcfc1;
-        text-transform: uppercase;
-      }
-      .features span:before {
-        content: '+';
-        color: var(--acid);
-        margin-right: 7px;
       }
       footer {
         position: fixed;
@@ -524,18 +487,8 @@
         h1 {
           font-size: 76px;
         }
-        .intro {
-          font-size: 13px;
-        }
         #sceneLabel {
           display: none;
-        }
-        .features {
-          gap: 12px;
-          font-size: 9px;
-        }
-        .badge {
-          font-size: 8px;
         }
         .topstats {
           left: 12px;
@@ -885,46 +838,7 @@
           padding: 8px 4px;
         }
       }
-      #audioControls {
-        position: fixed;
-        z-index: 8;
-        right: 32px;
-        top: 51px;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        background: #0c211ecf;
-        padding: 4px 8px;
-        border: 1px solid #ffffff20;
-        border-radius: 5px;
-      }
-      #audioControls button {
-        font-size: 10px;
-        padding: 4px 7px;
-      }
-      #audioControls label {
-        margin: 0;
-        font-size: 8px;
-      }
-      #audioControls input {
-        width: 72px;
-        padding: 0;
-        accent-color: #d5ef73;
-        cursor: pointer;
-      }
       @media (max-width: 700px) {
-        #audioControls {
-          top: 13px;
-          right: 12px;
-          gap: 4px;
-          padding: 3px;
-        }
-        #audioControls label {
-          display: none;
-        }
-        #audioControls input {
-          width: 50px;
-        }
         #soundToggle {
           font-size: 0 !important;
           width: 28px;
@@ -939,9 +853,6 @@
         header .brand {
           max-width: 45%;
           font-size: 11px;
-        }
-        header .badge {
-          display: none;
         }
       }
       #baseActions {
@@ -2379,11 +2290,16 @@
       /* Petit historique accessible depuis l'accueil comme en partie. */
       #changelogOpen {
         position: fixed;
-        left: 52px;
+        left: 8px;
         top: 4px;
         z-index: 200;
-        padding: 4px 8px;
+        padding: 2px 6px;
         font-size: 11px;
+        opacity: 0.8;
+        background: transparent;
+        border: 0;
+        text-decoration: underline dotted;
+        cursor: pointer;
       }
       #changelogDialog {
         width: min(420px, calc(100vw - 24px));
@@ -2441,7 +2357,7 @@
       }
       @media (max-width: 350px) {
         #changelogOpen {
-          top: 34px;
+          top: 4px;
           left: 8px;
         }
       }
@@ -2530,29 +2446,8 @@
   <body>
     <canvas id="view" aria-label="Jeu aérien en trois dimensions"></canvas>
     <div id="shade"></div>
-    <aside id="audioControls" aria-label="Réglages audio">
-      <button id="soundToggle" aria-pressed="true">🔈 Activer le son</button
-      ><label for="soundVolume">Volume</label
-      ><input
-        id="soundVolume"
-        type="range"
-        min="0"
-        max="100"
-        value="55"
-        aria-label="Volume des effets sonores"
-      />
-    </aside>
-    <header>
-      <div class="brand"><span class="mark">✳</span>i am a moucheron</div>
-      <span class="badge" id="build">BUREAU DES AFFAIRES VOLANTES</span>
-    </header>
     <main id="lobby" class="lobby">
-      <div class="eyebrow">Coopération à échelle miniature</div>
-      <h1>Petit avion.<br /><em>Gros bureau.</em></h1>
-      <p class="intro">
-        Le bureau est votre terrain de vol.<br />Interceptez les moucherons. Protégez la
-        poubelle.<br />Et méfiez-vous du ventilateur.
-      </p>
+      <h1>I am Moucheron</h1>
       <form id="form" class="formbox">
         <div class="fields">
           <div>
@@ -2580,16 +2475,9 @@
         </div>
         <button id="join" class="primary" type="submit">Rejoindre la base <span>↗</span></button>
         <p id="error" role="alert"></p>
-        <div class="small">
-          Même code, même partie. Rejoignez votre avion à pied. Aucun compte.<br />Clavier
-          recommandé · commandes tactiles disponibles
-        </div>
+        <div class="small">Même code, même partie.</div>
       </form>
-      <div class="features">
-        <span>Multijoueur</span><span>Vol physique</span><span>Vagues coop</span>
-      </div>
     </main>
-    <footer id="foot">PROTOTYPE EXPÉRIMENTAL · LE BUREAU / CARTE 01</footer>
     <div id="sceneLabel"><span>Zone de départ</span><strong>Base Alpha / Bureau 01</strong></div>
     <dialog id="waveCouncil" aria-labelledby="waveCouncilTitle">
       <button id="waveCouncilClose">Replier</button>
@@ -3094,21 +2982,15 @@
       ><button id="turretFire" class="hidden">Tirer</button>
     </div>
     <script type="module" src="/client.js"></script>
-    <span
-      id="gameVersion"
-      style="
-        position: fixed;
-        left: 8px;
-        top: 4px;
-        z-index: 200;
-        pointer-events: none;
-        font-size: 11px;
-        opacity: 0.8;
-      "
-      >v__GAME_VERSION__</span
+    <button
+      id="changelogOpen"
+      type="button"
+      aria-haspopup="dialog"
+      aria-controls="changelogDialog"
+      title="Nouveautés"
+      aria-label="Version __GAME_VERSION__ · ouvrir les nouveautés"
     >
-    <button id="changelogOpen" type="button" aria-haspopup="dialog" aria-controls="changelogDialog">
-      Nouveautés
+      v__GAME_VERSION__
     </button>
     <dialog id="changelogDialog" aria-labelledby="changelogTitle">
       <header>
@@ -3119,6 +3001,7 @@
     </dialog>
     <button
       id="restartGame"
+      hidden
       style="
         position: fixed;
         right: 8px;

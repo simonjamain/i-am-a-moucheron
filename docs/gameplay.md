@@ -43,6 +43,21 @@ ses PV, même négatifs (« -75 / 20 PV »). Des outils de cartes, de vagues et 
 scénarios restent disponibles. Désactiver réinitialise la partie aux règles normales.
 Voir [mode debug](laboratory.md).
 
+## Accueil et noms
+
+L'accueil affiche le titre **I am Moucheron**, le formulaire et l'indication « Base
+Alpha », sur le bureau 3D animé ; aucun slogan, badge ni mention de prototype, et
+plus d'étiquette flottante « BASE ALPHA · 3 / 1000 » dans la scène. Le numéro de
+version, en haut à gauche, ouvre les **Nouveautés**. « Recommencer la partie »
+n'apparaît que dans une room. Il n'y a plus de réglage audio visible : le son
+démarre au volume standard dès la première interaction autorisée par le navigateur.
+
+Noms validés : **M1 Chasseur léger**, **B3 Bombardier moyen**, **H2 Hélicoptère
+d’attaque au sol**, **T3 Char moyen**, **G1 Castor**, **D2 Anti-air mobile**, DCA fixe
+**Canon Flak**, canon lourd **Canon anti-matériel** ; la tourelle automatique, le Stuka
+et le Spitfire gardent leur nom (`src/fleet.js`, `src/equipment.js`,
+`src/ground-fortifications.js`). Aucun « filet de leurre » n'existe dans le jeu.
+
 ## Équipements et combat
 
 Un chasseur monoplace et un bombardier sont disponibles au départ. Le bombardier
