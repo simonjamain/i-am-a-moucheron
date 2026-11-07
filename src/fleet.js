@@ -2,7 +2,7 @@ import { MAP, ACTOR_UNIT } from './scale.js';
 import { OFFICE_LAYOUT } from './layout.js';
 export const VEHICLES = {
   fighter: {
-    name: 'Chasseur M1',
+    name: 'M1 Chasseur léger',
     seats: ['pilot'],
     span: 10.4,
     length: 6.2,
@@ -14,7 +14,7 @@ export const VEHICLES = {
     gear: 1.05 * ACTOR_UNIT,
   },
   bomber: {
-    name: 'Bombardier B3',
+    name: 'B3 Bombardier moyen',
     seats: ['pilot', 'dorsal', 'tail', 'ventral'],
     span: 21,
     length: 14,
@@ -37,7 +37,7 @@ VEHICLES.interceptor = {
   length: 8.5,
 };
 VEHICLES.tank = {
-  name: 'Tank T3',
+  name: 'T3 Char moyen',
   seats: ['pilot', 'cannon', 'top'],
   span: 6,
   length: 8,
@@ -60,7 +60,7 @@ VEHICLES.spitfire = {
 };
 VEHICLES.helicopter = {
   ...VEHICLES.fighter,
-  name: 'Hélicoptère H2',
+  name: 'H2 Hélicoptère d’attaque au sol',
   seats: ['pilot', 'copilot'],
   span: 16,
   length: 14,
@@ -70,7 +70,7 @@ VEHICLES.helicopter = {
   maxHP: 200,
 };
 VEHICLES.flaktruck = {
-  name: 'DCA mobile D2',
+  name: 'D2 Anti-air mobile',
   seats: ['pilot', 'cannon'],
   span: 5,
   length: 16,

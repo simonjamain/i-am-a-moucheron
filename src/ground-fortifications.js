@@ -10,7 +10,7 @@ export const FORTIFICATIONS = Object.freeze({
     maxPerRoom: 8,
   }),
   antitank: Object.freeze({
-    name: 'Canon antichar',
+    name: 'Canon anti-matériel',
     cost: 14,
     hp: 180,
     ammo: 24,

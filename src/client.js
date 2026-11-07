@@ -117,13 +117,9 @@ const $ = (id) => document.getElementById(id),
   scene = new T.Scene();
 scene.background = new T.Color('#829f91');
 scene.fog = new T.FogExp2('#829f91', 0.035);
-let audioSettings = { volume: 0.55, muted: false };
-try {
-  audioSettings = {
-    ...audioSettings,
-    ...JSON.parse(localStorage.getItem('moucheron-audio') || '{}'),
-  };
-} catch {}
+// Issue #104: no visible audio controls. Sound starts at the standard volume as
+// soon as the browser allows it (first user gesture); old saved settings ignored.
+const audioSettings = { volume: 0.55, muted: false };
 let flightStorage;
 try {
   flightStorage = localStorage;
@@ -134,53 +130,18 @@ let flightTuning = loadFlightTuning(flightStorage);
 const sound = new SpatialAudio(audioSettings);
 const rewardQueue = new RewardQueue(() => sound.play('dollar', camera.position, { ref: 100000 }));
 setInterval(() => rewardQueue.tick(performance.now()), 40);
-function audioHUD() {
-  $('soundToggle').textContent = sound.muted
-    ? '🔇 Son coupé'
-    : sound.status() === 'actif'
-      ? '🔊 Son actif'
-      : sound.status() === 'indisponible'
-        ? 'Son indisponible'
-        : '🔈 Activer le son';
-  $('soundToggle').setAttribute('aria-pressed', String(!sound.muted));
-  $('soundToggle').title = 'Effets 3D · ' + sound.status();
-  $('soundVolume').value = String(Math.round(sound.volume * 100));
-}
-function saveAudio() {
-  try {
-    localStorage.setItem(
-      'moucheron-audio',
-      JSON.stringify({ volume: sound.volume, muted: sound.muted }),
-    );
-  } catch {}
-  audioHUD();
-}
-$('soundToggle').onclick = async () => {
-  const wasActive = sound.status() === 'actif';
-  await sound.unlock();
-  if (wasActive) sound.setMuted(!sound.muted);
-  else sound.setMuted(false);
-  saveAudio();
-};
-$('soundVolume').oninput = (e) => {
-  sound.setVolume(Number(e.target.value) / 100);
-  saveAudio();
-};
 for (const event of ['pointerdown', 'keydown'])
   addEventListener(
     event,
     (e) => {
-      if (e.target.closest?.('#soundToggle')) return;
-      if (!document.hidden) sound.unlock().then(audioHUD);
+      if (!document.hidden) sound.unlock();
     },
     { capture: true },
   );
 document.addEventListener('visibilitychange', () => {
   sound.visibility(document.hidden);
-  audioHUD();
 });
 addEventListener('pagehide', () => sound.close());
-audioHUD();
 const renderer = createRenderer(T, canvas);
 
 const camera = new T.PerspectiveCamera(62, innerWidth / innerHeight, 0.00005, 40);
@@ -1349,9 +1310,8 @@ $('form').addEventListener('submit', async (e) => {
     accept(r.snapshot);
     $('lobby').classList.add('hidden');
     $('shade').classList.add('hidden');
-    $('foot').classList.add('hidden');
     $('sceneLabel').classList.add('hidden');
-    $('build').classList.add('hidden');
+    $('restartGame').hidden = false;
     $('hud').classList.remove('hidden');
     $('touch').classList.add('playing');
     $('roomCode').textContent = room;
@@ -2666,7 +2626,7 @@ async function chooseEquipment(index) {
   selectedEquipment = index;
   boardingOpen = false;
   boardingSelectionBusy = true;
-  const timing = beginBoardingFeedback('dca', stations[index]?.name || 'DCA');
+  const timing = beginBoardingFeedback('dca', stations[index]?.name || 'Canon Flak');
   releaseMouse();
   renderPaper();
   try {
@@ -2722,7 +2682,7 @@ function updateVehicles(dt) {
   const occupiedStation = turretIndex >= 0 ? stations[turretIndex] : null;
   const occupiedName =
     occupiedStation?.kind === 'dca'
-      ? 'DCA'
+      ? 'Canon Flak'
       : FORTIFICATIONS[occupiedStation?.kind]?.name || 'Défense';
   $('vehicleState').textContent =
     turretIndex >= 0
@@ -4186,7 +4146,6 @@ function updateAudio() {
     }
   }
   sound.keep(keep);
-  audioHUD();
 }
 let prev = performance.now(),
   acc = 0;

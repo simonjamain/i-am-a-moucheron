@@ -154,8 +154,5 @@ export function createOffice(T, scene, { box, cyl, ball, mat, textLabel }) {
         polygonOffsetUnits: -2,
       });
     }
-  const label = textLabel('BASE ALPHA · 3 / 1000', '#e2f1bd', 28 * u);
-  label.position.set(b.originX, b.deckY + 5 * u, b.originZ + 2 * u);
-  scene.add(label);
   return { colliders, solidObjects };
 }

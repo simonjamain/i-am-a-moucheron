@@ -2,13 +2,13 @@ import { VEHICLES } from './fleet.js';
 import { MAP } from './scale.js';
 export const SHOP = Object.freeze({
   fighter: {
-    name: 'Chasseur M1 supplémentaire',
+    name: 'M1 Chasseur léger supplémentaire',
     cost: 8,
     kind: 'vehicle',
     description: 'Achat à poser, en plus de la réserve gratuite.',
   },
   bomber: {
-    name: 'Bombardier B3 supplémentaire',
+    name: 'B3 Bombardier moyen supplémentaire',
     cost: 16,
     kind: 'vehicle',
     description: 'Trois postes et 50 bombes ; achat à poser.',
@@ -33,7 +33,7 @@ export const SHOP = Object.freeze({
     description: 'Révèle les ennemis dans un cylindre de rayon 2 m sur la carte.',
   },
   dca: {
-    name: 'DCA à déployer',
+    name: 'Canon Flak',
     cost: 4,
     kind: 'placement',
     description:
@@ -53,25 +53,25 @@ export const SHOP = Object.freeze({
       'Six mitrailleuses, 1 000 balles au total ; vitesse +75 %, rotation +45 %. Sans bombes.',
   },
   helicopter: {
-    name: 'Hélicoptère H2',
+    name: 'H2 Hélicoptère d’attaque au sol',
     cost: 30,
     kind: 'vehicle',
     description: 'Deux postes, 200 PV, stationnaire assisté, 30 roquettes et 10 missiles guidés.',
   },
   flaktruck: {
-    name: 'DCA mobile D2',
+    name: 'D2 Anti-air mobile',
     cost: 20,
     kind: 'vehicle',
     description: 'Conducteur et canon de proximité, 100 obus ; fusée 0,5–20 m, armée à 0,3 s.',
   },
   tank: {
-    name: 'Tank T3',
+    name: 'T3 Char moyen',
     cost: 10,
     kind: 'vehicle',
     description: 'Un exemplaire, trois postes indépendants ; toutes munitions limitées.',
   },
   castor: {
-    name: 'G1 Castor · génie mobile',
+    name: 'G1 Castor',
     cost: 12,
     kind: 'vehicle',
     description:

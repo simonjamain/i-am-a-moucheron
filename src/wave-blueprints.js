@@ -25,7 +25,7 @@ export const BLUEPRINTS = Object.freeze({
     kind: 'unlock',
   },
   antitank: {
-    name: 'Canon antichar du Castor',
+    name: 'Canon anti-matériel du Castor',
     description: 'Débloque un canon lourd occupable, efficace contre les boss terrestres.',
     cost: 0,
     kind: 'unlock',

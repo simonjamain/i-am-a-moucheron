@@ -58,7 +58,7 @@ for (const station of ['bunker', 'antitank']) {
   assert.match(text, /F : sortir/);
 }
 assert.match(controlHints({ station: 'bunker' }), /balles/);
-assert.match(controlHints({ station: 'antitank' }), /obus antichar/);
+assert.match(controlHints({ station: 'antitank' }), /obus anti-matériel/);
 
 // Every seat of every vehicle has a dedicated, non-empty help and the right seat range.
 for (const [type, spec] of Object.entries(VEHICLES))

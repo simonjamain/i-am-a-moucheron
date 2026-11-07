@@ -82,7 +82,7 @@ export class GroundDefenseUI {
       ['fan', 'Ventilateur'],
       ['sentry', 'Tourelle auto'],
       ['bunker', 'Bunker LEGO'],
-      ['antitank', 'Canon lourd'],
+      ['antitank', 'Canon anti-matériel'],
     ];
     for (const [kind, label] of this.tools) {
       const button = document.createElement('button');

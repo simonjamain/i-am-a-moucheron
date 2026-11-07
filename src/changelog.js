@@ -1,6 +1,14 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 234,
+    changes: [
+      'Accueil épuré : titre I am Moucheron, et le numéro de version ouvre les nouveautés.',
+      'Nouveaux noms : M1 Chasseur léger, B3 Bombardier moyen, T3 Char moyen, D2 Anti-air mobile, Canon Flak…',
+      'Le son démarre tout seul au premier clic, sans réglage à l’écran.',
+    ],
+  },
+  {
     version: 233,
     changes: [
       'Castor : le mur LEGO se construit brique par brique derrière le camion, et l’arrêt garde la partie commencée.',
