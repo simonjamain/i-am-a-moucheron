@@ -1,6 +1,12 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 209,
+    changes: [
+      'Un laboratoire permet de débloquer les plans, choisir les vagues et retrouver vos scénarios de test.',
+    ],
+  },
+  {
     version: 204,
     changes: [
       'Après avoir débloqué son plan, le Castor peut poser des tourelles automatiques avec une réserve de balles limitée.',
