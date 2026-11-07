@@ -50,6 +50,8 @@ const fire = (member, station, shot) =>
     shot,
     incarnation: member.incarnation,
   });
+// Isolate finite-ammunition assertions from the automatic paid Castor service.
+room.dollars = 0;
 p.mode = 'turret';
 p.state.turret = gun.slot;
 fire(p, gun, 'shell-1');
