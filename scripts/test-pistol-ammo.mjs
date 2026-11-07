@@ -56,3 +56,26 @@ game.command('PISTOL', p.id, 'reset', { epoch: r.base.epoch });
 assert.equal(p.incarnation, before + 1);
 assert.equal(p.pistolAmmo, PISTOL_CAPACITY);
 console.log('Pistol: finite magazine, idempotence, impact receipts, paid infantry service, afterlife/reset OK');
+
+import prettier from 'prettier';
+import { readFileSync, writeFileSync, mkdtempSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join as pathJoin } from 'node:path';
+import { execFileSync } from 'node:child_process';
+const fmtPath = 'server/game.js';
+const beforeFormat = readFileSync(fmtPath, 'utf8');
+const afterFormat = await prettier.format(beforeFormat, {
+  ...(await prettier.resolveConfig(fmtPath)), filepath: fmtPath,
+});
+if (beforeFormat !== afterFormat) {
+  const dir = mkdtempSync(pathJoin(tmpdir(), 'pistol-prettier-'));
+  writeFileSync(pathJoin(dir, 'before'), beforeFormat);
+  writeFileSync(pathJoin(dir, 'after'), afterFormat);
+  try {
+    execFileSync('git', ['diff', '--no-index', '--', pathJoin(dir, 'before'), pathJoin(dir, 'after')], { encoding: 'utf8' });
+  } catch (error) {
+    console.log('BEGIN PISTOL FORMAT DIFF');
+    console.log(error.stdout);
+    console.log('END PISTOL FORMAT DIFF');
+  }
+}
