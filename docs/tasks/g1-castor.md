@@ -119,3 +119,5 @@
   contrôles, test manuel WebGL/UDP et FPS avec plusieurs Castor.
 
 - Première CI PR #88 : test de combat RAM et de nuées utilisaient des impacts fictifs sans coup préalable ; conservés après ajout de reçus de tirs simulés via la vraie commande serveur. Diagnostic du pistolet mis à jour pour son caractère asynchrone. Formatage du serveur corrigé. Poursuivre par la CI complète et traiter les éventuels scénarios historiques équivalents.
+
+- CI sur le commit de diagnostic : suite complète et test de synchronisation réseau passent. Une seule différence Prettier restait dans l'expression `position` de `server/game.js`; elle est corrigée et le diagnostic temporaire retiré. Vérifier les cinq jobs Actions et Docker sur le SHA final.

@@ -309,9 +309,7 @@ export class Game {
         values(r.pilots).map((pilot) => ({
           pilot,
           position:
-            pilot.life === 'alive' && pilot.mode === 'foot'
-              ? this.playerPosition(r, pilot)
-              : null,
+            pilot.life === 'alive' && pilot.mode === 'foot' ? this.playerPosition(r, pilot) : null,
         })),
       );
       r.dollars = result.dollars;
