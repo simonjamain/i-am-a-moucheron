@@ -9,3 +9,11 @@
 - **Optimisation :** les fichiers font 13 626 triangles cumulés. L'import conserve leurs triangles (pas de décimation volontaire, puisque la topologie est déjà légère). L'outil Docker glTF Transform est disponible dans le dépôt mais n'a pas été lancé localement sur ces GLB (Docker et npm CLI hors réseau indisponibles). La compression texture WebP / 1K est distincte d'une réduction géométrique.
 - **Vérifications attendues :** CI de PR sur le dernier commit : `Full game regression and formatting` (dont `test-sentry-meshy` et `test-sentry-model`), build Docker du jeu, outil d'assets, 50 pairs UDP, etc. Sans Docker local, utiliser le job `Docker build` de GitHub Actions. Vérifier le numéro VERSION et `npm run check:docs`.
 - **Restant :** inspection réelle en navigateur, FPS, collisions optiques/armes et alignement des tracers ; demander le retour de l'utilisateur avant fusion de #93.
+
+- **Essai d'optimisation mesuré en CI :** `tools/assets/test-t01-optimizer.mjs`
+  réexporte les quatre maillages Meshy embarqués en GLB temporaires (UV exacts,
+  atlas de test PNG 1 pixel), lance le véritable outil du conteneur avec
+  `--ratio 0.75 --error 0.005`, valide les sorties et archive les chiffres.
+  Il ne modifie pas les fichiers runtime ; il ne teste pas la qualité de l'atlas
+  Meshy de 2K ni les fichiers GLB d'origine bit à bit. Consulter l'artifact
+  `t01-meshy-geometry-optimization` du job avant d'en annoncer les résultats.

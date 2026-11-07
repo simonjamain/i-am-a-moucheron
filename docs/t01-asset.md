@@ -35,3 +35,20 @@ Dans `src/sentry-model.js`, le socle reste immobile. La tête et son radar suive
 Le code partage les géométries et matériaux des modèles entre toutes les tourelles d'une salle, mais chaque tourelle possède ses pivots d'animation propres. Leur orientation visuelle suit les cibles que le serveur a déjà choisies. Les règles serveur de tirs, dégâts, portée, achat, munitions et recharge ne changent pas. 
 
 **Vérifications automatisées :** tests de SHA, comptage des triangles, présence des UV/images, hiérarchie et écart des pivots à +90°, absence de duplication des ressources et régressions réseau. **Reste à valider manuellement :** qualité des textures en WebGL sur les deux côtés, dégagement du radar pendant toutes les élévations, effet de tir au bout du canon, échelle avec les ennemis, confort de suivi et FPS avec 12 tourelles.
+
+## Expérimentation CI de l'optimiseur sur la T-01
+
+Le job GitHub Actions `Asset tool Docker and UV tests` reconstruit temporairement
+des GLB à partir des **positions, indices et UV réellement issus des quatre GLB
+Meshy** déjà intégrés dans `src/meshy-t01-*-data.js`. Il lance le conteneur
+glTF Transform + meshoptimizer avec `--ratio 0.75 --error 0.005`, puis
+compare et valide chaque variante. Il publie
+l'artifact `t01-meshy-geometry-optimization` avec les nombres mesurés.
+
+Cette expérience porte sur les **maillages Meshy reconditionnés**, pas sur les
+fichiers GLB source exacts : les originaux ne sont pas versionnés dans Git, et la
+texture du GLB de test est un PNG de 1 pixel pour isoler le contrôle
+géométrie/UV. Les **vraies couleurs et textures WebP du jeu ne sont pas modifiées**.
+Les variantes d'optimisation CI sont exploratoires et ne sont **pas** utilisées
+dans le runtime automatiquement, même en cas de réduction mesurée : il faut
+valider le rendu visuel des articulations avant de substituer un maillage.

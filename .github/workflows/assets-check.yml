@@ -36,6 +36,19 @@ jobs:
           docker compose -f compose.assets.yaml run --rm optimizer optimize /assets/originals/fixture.glb /assets/optimized/optimized.glb --ratio 0.25 --error 1
           docker compose -f compose.assets.yaml run --rm optimizer validate /assets/originals/fixture.glb /assets/optimized/optimized.glb
           test -s assets/optimized/optimized.glb.report.json
+      - name: Evaluate four T-01 Meshy-derived geometries with the actual optimizer
+        run: |
+          mkdir -p assets/optimized
+          docker run --rm --network none --read-only --tmpfs /tmp --cap-drop ALL --security-opt no-new-privileges \
+            --user "$(id -u):$(id -g)" \
+            --mount type=bind,source="$PWD/src",target=/game-src,readonly \
+            --mount type=bind,source="$PWD/assets/optimized",target=/assets/optimized \
+            --entrypoint node i-am-a-moucheron-asset-tools:local /opt/assets/test-t01-optimizer.mjs
+      - name: Publish T-01 optimization experiment report
+        uses: actions/upload-artifact@v4
+        with:
+          name: t01-meshy-geometry-optimization
+          path: assets/optimized/t01-optimizer-summary.json
       - name: Publish measured GLB fixture report
         uses: actions/upload-artifact@v4
         with:
