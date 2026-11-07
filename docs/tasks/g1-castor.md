@@ -12,7 +12,7 @@
 - Carte de plan « Tourelle automatique du Castor », construction ponctuelle depuis le conducteur pour 9 $, plafond de 12 installations par salle.
 - Ciblage et dégâts calculés par Node (30 dégâts, 0,42 m, 1 tir/0,5 s), 180 balles finies et recharge payante seulement à portée d’une station ou du Castor, via le répartiteur commun. Maquette low-poly de tourelle dans le client.
 - Tests de domaine et serveur : `node scripts/test-ground-sentry.mjs` dans la suite ; contrôles GitHub Actions `Docker build` obligatoires avant fusion. Aucun essai WebGL/FPS réel revendiqué.
-- **Restant pour clôturer #76** : bunker LEGO occupable, canon antichar lourd occupable, essais réels WebGL/UDP et FPS de plusieurs Castor ; ne pas fermer l’issue lors de la fusion de ce lot.
+- À la fin du lot 8, le bunker et le canon antichar restaient à faire ; ils sont couverts par le lot 9 ci-dessus. Les essais interactifs WebGL/UDP et la mesure de FPS de plusieurs Castor demeurent à vérifier avant clôture complète de #76.
 
 
 - Issue : https://github.com/simonjamain/i-am-a-moucheron/issues/76.

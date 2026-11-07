@@ -2544,7 +2544,7 @@ function reconcileEquipment(next) {
     }
   stations = next;
   for (const [i, st] of stations.entries()) {
-    if (turrets[i]) continue;
+    if (turrets[i] || st.kind === 'retired') continue;
     const gun =
       st.kind === 'dca'
         ? makeAntiaircraft(T, scene, { box, cyl }, [st])[0]
@@ -2807,7 +2807,7 @@ function updateVehicles(dt) {
         ' · ' +
         occupiedStation.name +
         ' · ' +
-        Math.round(hp) +
+        Math.round(occupiedStation.hp ?? hp) +
         ' PV · ' +
         (occupiedStation.kind === 'bunker' ? 'Balles ' : 'Obus ') +
         Math.floor(occupiedStation.ammo ?? 0) +
