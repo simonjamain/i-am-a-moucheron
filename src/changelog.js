@@ -1,6 +1,12 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 214,
+    changes: [
+      'La tourelle automatique du Castor suit sa cible avec une tête orientable et un canon pouvant viser à la verticale.',
+    ],
+  },
+  {
     version: 211,
     changes: [
       'Les cartes débloquent désormais le bunker LEGO et le canon antichar du Castor : deux postes occupables à munitions finies.',

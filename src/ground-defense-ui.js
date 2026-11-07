@@ -1,6 +1,7 @@
 import { createBrickWall } from './brick-wall.js';
 import { AirTrails } from './air-trails.js';
 import { groundPlacement } from './ground-placement.js';
+import { createSentryModel, sentryAimAngles, sentryAngleDelta, SENTRY_MUZZLE_HEIGHT } from './sentry-model.js';
 export class GroundDefenseUI {
   constructor({
     T,
@@ -39,6 +40,8 @@ export class GroundDefenseUI {
     this.key = '';
     this.airTrails = new AirTrails(T, scene);
     this.models = new T.Group();
+    this.sentries = new Map();
+    this.lastSentryFrame = 0;
     scene.add(this.models);
     this.trigger = document.createElement('button');
     this.trigger.textContent = 'Défense';
@@ -305,6 +308,7 @@ export class GroundDefenseUI {
       this.key = key;
       this.rebuild(snap?.groundDefense?.structures || []);
     }
+    this.updateSentryAim(snap);
     this.preview.visible = false;
     this.fanArrow.visible = false;
     this.status.style.display = this.active && this.enabled() ? 'block' : 'none';
@@ -379,7 +383,37 @@ export class GroundDefenseUI {
       this.fanArrow.setDirection(new this.T.Vector3(Math.sin(cmd.angle), 0, Math.cos(cmd.angle)));
     }
   }
+  updateSentryAim(snap) {
+    const now = performance.now();
+    const dt = this.lastSentryFrame ? Math.min(0.1, (now - this.lastSentryFrame) / 1000) : 1 / 60;
+    this.lastSentryFrame = now;
+    const weight = 1 - Math.exp(-12 * Math.max(0, dt));
+    for (const structure of snap?.groundDefense?.structures || []) {
+      if (structure.kind !== 'sentry') continue;
+      const model = this.sentries.get(String(structure.id));
+      if (!model) continue;
+      if (
+        structure.hp > 0 &&
+        Array.isArray(structure.aimTarget) &&
+        structure.aimTarget.length === 3 &&
+        structure.aimTarget.every(Number.isFinite)
+      ) {
+        const { yaw, pitch } = sentryAimAngles(
+          [structure.position[0], SENTRY_MUZZLE_HEIGHT, structure.position[1]],
+          structure.aimTarget,
+        );
+        model.targetYaw = yaw - (structure.angle || 0);
+        model.targetPitch = pitch;
+      }
+      model.yaw.rotation.y +=
+        sentryAngleDelta(model.yaw.rotation.y, model.targetYaw) * weight;
+      model.pitch.rotation.x += (model.targetPitch - model.pitch.rotation.x) * weight;
+      model.lens.material.color.set(structure.ammo > 0 ? '#1ecbd9' : '#87574c');
+    }
+  }
   rebuild(structures) {
+    const previousSentries = this.sentries;
+    this.sentries = new Map();
     for (const child of [...this.models.children]) {
       this.models.remove(child);
       child.traverse((part) => {
@@ -465,25 +499,18 @@ export class GroundDefenseUI {
         const [x, z] = structure.position;
         group.position.set(x, 0, z);
         group.rotation.y = structure.angle || 0;
-        const base = new T.Mesh(
-          new T.BoxGeometry(0.042, 0.024, 0.042),
-          new T.MeshBasicMaterial({ color: '#4a6253' }),
-        );
-        base.position.y = 0.012;
-        group.add(base);
-        const head = new T.Mesh(
-          new T.BoxGeometry(0.034, 0.014, 0.034),
-          new T.MeshBasicMaterial({ color: structure.ammo > 0 ? '#7e9474' : '#554b43' }),
-        );
-        head.position.y = 0.029;
-        group.add(head);
-        const barrel = new T.Mesh(
-          new T.CylinderGeometry(0.004, 0.006, 0.045, 6),
-          new T.MeshBasicMaterial({ color: '#283834' }),
-        );
-        barrel.rotation.x = Math.PI / 2;
-        barrel.position.set(0, 0.03, -0.032);
-        group.add(barrel);
+        const sentry = createSentryModel(T);
+        const previous = previousSentries.get(String(structure.id));
+        if (previous) {
+          sentry.yaw.rotation.y = previous.yaw.rotation.y;
+          sentry.pitch.rotation.x = previous.pitch.rotation.x;
+        }
+        this.sentries.set(String(structure.id), {
+          ...sentry,
+          targetYaw: previous?.targetYaw || 0,
+          targetPitch: previous?.targetPitch || 0,
+        });
+        group.add(sentry.group);
       } else if (structure.kind === 'barricade') {
         group.add(createBrickWall(T, structure));
       } else {

@@ -31,6 +31,8 @@ export function fireGroundSentries(structures, targets, now, hit) {
       }
     }
     if (!selected) continue;
+    // Replicate only the last authoritative target for articulated client visuals.
+    sentry.aimTarget = [...selected.p];
     sentry.ammo--;
     sentry.lastShotAt = now;
     hit(selected, sentry, SENTRY.damage);
