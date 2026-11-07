@@ -189,8 +189,9 @@ tant que la carte ne change pas. Pendant la pose d’une barricade ou d’un bun
 le tracé clair montre le détour proposé avant le clic de validation.
 
 Choisissez une des trois cartes. Vous pouvez changer de voix tant que le vote
-est ouvert. Une fois le plan débloqué, sélectionnez l’objet à améliorer dans
-**Équiper un objet** et dépensez le prix affiché depuis la caisse commune.
+est ouvert. Une fois le plan débloqué, activez son niveau dans **Améliorations de l’équipe** :
+le prix affiché est payé une fois par la caisse commune et le bonus s’applique à
+tous les objets compatibles, présents et futurs ([progression](progression.md)).
 **Replier** ou **Échap** permet de repartir construire. Les plans restent
 accessibles pendant le combat. **Lancer la vague maintenant** est une action
 séparée, disponible après le vote.

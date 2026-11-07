@@ -5,7 +5,7 @@ import {
   forecast,
   directorBudget,
   resolveVote,
-  equipBlueprint,
+  purchaseBlueprint,
 } from '../server/wave-preparation.js';
 import { DEFAULT_BALANCE } from '../src/balance.js';
 import { ENEMY_TYPES } from '../src/waves.js';
@@ -107,12 +107,13 @@ const fixture = {
   groundDefense: { revision: 0, structures: [sugar] },
   vehicles: new Map([['v', vehicle]]),
 };
-equipBlueprint(fixture, { blueprint: 'lure', target: 's', level: 1 });
+purchaseBlueprint(fixture, { blueprint: 'lure', level: 1 });
 assert.equal(sugar.radius, 0.25);
-assert.throws(() => equipBlueprint(fixture, { blueprint: 'lure', target: 's', level: 1 }));
-equipBlueprint(fixture, { blueprint: 'piercing', target: 'v', level: 1 });
+assert.throws(() => purchaseBlueprint(fixture, { blueprint: 'lure', level: 1 }));
+purchaseBlueprint(fixture, { blueprint: 'piercing', level: 1 });
 assert.equal(fixture.dollars, 0);
 assert.deepEqual(vehicle.blueprints, ['piercing']);
+assert.deepEqual(fixture.activeBlueprints, { lure: 1, piercing: 1 });
 assert.equal(request(a.id, 'reset', { epoch: room.base.epoch }).blueprints.length, 0);
 console.log(
   'Forecast, budget, tie, silence, early and deadline start, team plans, repeat purchases and reset passed.',

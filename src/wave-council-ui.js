@@ -1,4 +1,4 @@
-import { BLUEPRINTS, supportsBlueprint, equippedLevel } from './wave-blueprints.js';
+import { BLUEPRINTS, supportsBlueprint } from './wave-blueprints.js';
 import { ENEMY_TYPES } from './waves.js';
 import { VEHICLES } from './fleet.js';
 import { speciesSymbols, entranceLabel } from './wave-forecast-scene.js';
@@ -12,14 +12,13 @@ export function timelineColumns(groups) {
   return [...columns].sort(([a], [b]) => a - b);
 }
 
-const groundNames = { barricade: 'Barricade', sticky: 'Ruban', sugar: 'Sucre' };
-function equipmentTargets(snap, card) {
-  const level = snap.blueprintLevels?.[card] || 1;
+// Objects that a purchased plan currently improves (all players, issue #101).
+export function compatibleCount(snap, card) {
   const objects =
-    BLUEPRINTS[card].kind === 'vehicle' ? snap.vehicles : snap.groundDefense.structures;
-  return objects.filter(
-    (object) => supportsBlueprint(card, object) && equippedLevel(object, card) < level,
-  );
+    BLUEPRINTS[card].kind === 'vehicle'
+      ? snap.vehicles || []
+      : snap.groundDefense?.structures || [];
+  return objects.filter((object) => supportsBlueprint(card, object)).length;
 }
 
 export class WaveCouncilUI {
@@ -130,57 +129,45 @@ export class WaveCouncilUI {
       }
     }
     this.launch.hidden = !prep?.winner;
-    const offers = (snap.blueprints || [])
-      .filter((card) => BLUEPRINTS[card].kind !== 'unlock')
-      .map((card) => [card, equipmentTargets(snap, card)]);
+    const offers = (snap.blueprints || []).filter((card) => BLUEPRINTS[card].kind !== 'unlock');
+    const active = snap.activeBlueprints || {};
     const key = JSON.stringify([
       snap.base.epoch,
       snap.blueprintLevels,
-      offers.map(([card, targets]) => [
+      active,
+      offers.map((card) => [
         card,
         snap.lab?.enabled || snap.dollars >= BLUEPRINTS[card].cost,
-        targets.map((t) => [t.id, equippedLevel(t, card)]),
+        compatibleCount(snap, card),
       ]),
     ]);
     if (this.shopKey === key) return;
     this.shopKey = key;
     this.workshop.replaceChildren();
     if (!offers.length) return;
-    this.workshop.append(this.element('h3', 'Équiper un objet'));
-    for (const [card, targets] of offers) {
+    this.workshop.append(this.element('h3', 'Améliorations de l’équipe'));
+    for (const card of offers) {
       const plan = BLUEPRINTS[card];
+      const owned = active[card] || 0,
+        unlocked = snap.blueprintLevels?.[card] || 1;
       const row = this.element('div', '');
-      row.append(this.element('strong', plan.name + ' · ' + plan.cost + ' $'));
-      if (targets.length) {
-        const select = this.element('select', '');
-        select.setAttribute('aria-label', 'Objet pour ' + plan.name);
-        for (const target of targets) {
-          const option = this.element(
-            'option',
-            (groundNames[target.kind] || VEHICLES[target.type]?.name || 'Objet') +
-              ' · ' +
-              target.id +
-              ' · niv. ' +
-              (equippedLevel(target, card) + 1),
-          );
-          option.value = target.id;
-          select.append(option);
-        }
-        const buy = this.element('button', 'Équiper');
+      row.append(
+        this.element('strong', plan.name + ' · niv. ' + owned + ' / ' + unlocked),
+        this.element(
+          'span',
+          compatibleCount(snap, card) + ' objet(s) déjà concernés · s’applique aussi aux prochains',
+        ),
+      );
+      if (owned < unlocked) {
+        const buy = this.element(
+          'button',
+          'Activer le niv. ' + (owned + 1) + ' · ' + plan.cost + ' $',
+        );
         buy.disabled = !snap.lab?.enabled && snap.dollars < plan.cost;
         buy.onclick = () =>
-          this.command('wave-equip', {
-            blueprint: card,
-            target: select.value,
-            level:
-              equippedLevel(
-                targets.find((t) => t.id === select.value),
-                card,
-              ) + 1,
-            epoch: snap.base.epoch,
-          });
-        row.append(select, buy);
-      } else row.append(this.element('span', 'Aucun objet compatible à équiper.'));
+          this.command('wave-buy', { blueprint: card, level: owned + 1, epoch: snap.base.epoch });
+        row.append(buy);
+      } else row.append(this.element('span', 'Actif pour toute l’équipe.'));
       this.workshop.append(row);
     }
   }
