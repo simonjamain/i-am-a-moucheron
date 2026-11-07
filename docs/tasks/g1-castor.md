@@ -42,3 +42,11 @@
 - Cible : modules intégrés hors ligne, VRAM partagée, pivots séparés, tests source/UV/roues/tourelle. Conserver les textures et couleurs originales.
 - Risques : orientation et roues doublées dans la coque à vérifier en jeu, FPS avec plusieurs Castor, absence de visualisation WebGL dans les contrôles automatisés.
 - Suivi : tester `npm test`, format, docs et Docker build sur le commit final ; ne pas fermer l'issue.
+
+
+## Correctif des roues (#76, capture utilisateur du 7 novembre)
+
+- Observation en jeu : doubles roues géantes flottantes autour du Castor (le GLB du châssis possède déjà ses roues sculptées ; celles importées séparément avaient les pivots trop éloignés, et une échelle excessive).
+- Correction ciblée `fix/castor-wheel-overlap` : filtrage au rendu des triangles des roues intégrées et réemploi des six vrais modèles de roue, centrés et mis à l'échelle, avec pivots animés.
+- Test d'encombrement et de suppression de faces ajouté à `scripts/test-castor-meshy.mjs`.
+- Restant : vérification visuelle de découpe, performances GPU, construction en roulant (PR #80 toujours distincte).
