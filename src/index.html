@@ -2376,12 +2376,23 @@
       #labPanel {
         z-index: 102;
       }
-      #labPanel footer {
+      /* Ne pas utiliser footer ici : le footer global est positionné en fixed. */
+      #labPanel .lab-actions {
+        position: static;
         display: flex;
         flex-wrap: wrap;
         align-items: end;
         gap: 12px;
-        margin: 12px 0;
+        margin: 12px 0 20px;
+      }
+      #labPanel .lab-actions > button { min-height: 42px; }
+      #labPanel .lab-actions > label { flex: 1 1 220px; min-width: 0; }
+      #labPanel .lab-actions :is(select, input) { width: 100%; box-sizing: border-box; }
+      #labPanel h3 { font-size: 23px; margin: 22px 0 8px; border-top: 1px solid #b6b18c; padding-top: 16px; }
+      #labPanel p { margin: 8px 0; }
+      @media (max-width: 600px) {
+        #labPanel .lab-actions { display: grid; grid-template-columns: minmax(0, 1fr); }
+        #labPanel .lab-actions > button, #labPanel .lab-actions > label { width: 100%; min-width: 0; }
       }
       #labPanel label {
         display: grid;
@@ -2968,22 +2979,21 @@
           <button data-lab-close aria-label="Fermer le laboratoire">✕</button>
         </header>
         <p data-lab-state></p>
-        <footer>
+        <div class="lab-actions">
           <button data-lab-enable>Activer le laboratoire</button>
           <button data-lab-exit hidden>Quitter et réinitialiser la partie</button>
-        </footer>
-        <h3>Progression libre</h3>
-        <footer>
+        </div>
+        <h3>Plans et ressources</h3>
+        <div class="lab-actions">
           <button data-lab-unlock>Débloquer tous les plans</button>
           <label>Carte précise <select data-lab-card></select></label>
           <button data-lab-card-add>Ajouter un niveau de cette carte</button>
-        </footer>
+        </div>
         <p>
-          Les achats restent signés et les constructions respectent les collisions et limites
-          techniques ; la caisse est réapprovisionnée automatiquement.
+          La caisse est illimitée. Les achats et les placements conservent leurs règles.
         </p>
-        <h3>Contrôle des vagues</h3>
-        <footer>
+        <h3>Vagues</h3>
+        <div class="lab-actions">
           <label
             >Vague à préparer
             <input data-lab-wave type="number" min="1" max="100" step="1" value="1"
@@ -2991,26 +3001,24 @@
           <button data-lab-wave-go>Préparer</button>
           <button data-lab-start>Lancer immédiatement</button>
           <button data-lab-finish>Terminer sans infestation</button>
-        </footer>
-        <h3>Scénarios de test</h3>
+        </div>
+        <h3>Scénarios</h3>
         <p>
-          Enregistrez les équipements placés, les plans, l’équilibrage et la vague à rejouer.
-          Jusqu’à cinq scénarios par room, perdus à la fermeture de la room ou au redémarrage
-          du serveur.
+          Sauvegardez et rejouez jusqu’à cinq configurations temporaires.
         </p>
-        <footer>
+        <div class="lab-actions">
           <label
             >Nom du scénario <input data-lab-name maxlength="50" value="Essai de construction"
           /></label>
           <button data-lab-save>Enregistrer l’état</button>
-        </footer>
-        <footer>
+        </div>
+        <div class="lab-actions">
           <label
             >Scénario <select data-lab-scenarios aria-label="Scénario enregistré"></select
           ></label>
           <button data-lab-load>Recharger</button>
           <button data-lab-delete>Supprimer</button>
-        </footer>
+        </div>
         <p data-lab-status role="status" aria-live="polite"></p>
       </article>
     </section>
