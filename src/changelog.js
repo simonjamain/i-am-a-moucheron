@@ -3,7 +3,7 @@ export const PLAYER_CHANGELOG = [
   {
     version: 209,
     changes: [
-      'Les cartes du Castor permettent désormais de construire un bunker LEGO protégé et un canon antichar occupable. Les deux postes utilisent des munitions limitées.',
+      'Les cartes débloquent désormais le bunker LEGO et le canon antichar du Castor : deux postes occupables à munitions finies.',
     ],
   },
   {

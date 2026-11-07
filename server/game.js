@@ -1339,9 +1339,19 @@ export class Game {
       const station = r.equipment.find((s) => isFortification(s.kind) && s.id === b.target);
       if (station) {
         for (const occupant of r.pilots.values())
-          if (occupant.life === 'alive' && occupant.mode === 'turret' && occupant.state.turret === station.slot)
+          if (
+            occupant.life === 'alive' &&
+            occupant.mode === 'turret' &&
+            occupant.state.turret === station.slot
+          )
             this.equipment(r, occupant, 'turret', {});
-        r.equipment[station.slot] = { kind: 'retired', slot: station.slot, x: station.x, y: station.y, z: station.z };
+        r.equipment[station.slot] = {
+          kind: 'retired',
+          slot: station.slot,
+          x: station.x,
+          y: station.y,
+          z: station.z,
+        };
       }
     }
     if (key) {
@@ -1791,8 +1801,9 @@ export class Game {
     if (p.mode === 'turret') {
       const s = r.equipment[p.state.turret];
       requireGame(s, 'Poste invalide.');
+      const exitOffset = isFortification(s.kind) ? 0.09 : MAP.metres(3);
       p.state.walkSpawn = {
-        x: (s.x + (isFortification(s.kind) ? 0.09 : MAP.metres(3)) - OFFICE_LAYOUT.base.originX) / ACTOR_UNIT,
+        x: (s.x + exitOffset - OFFICE_LAYOUT.base.originX) / ACTOR_UNIT,
         z: (OFFICE_LAYOUT.base.originZ - s.z) / ACTOR_UNIT,
         y: s.y + 0.05 * ACTOR_UNIT,
         parachute: false,
@@ -1805,13 +1816,14 @@ export class Game {
     }
     const s = r.equipment[b.station],
       body = this.base(r, p, b.ground);
+    const stationRadius = isFortification(s?.kind) ? 0.09 : MAP.metres(3.4);
     requireGame(
       p.mode === 'foot' &&
         Number.isInteger(b.station) &&
         (s?.kind === 'dca' || (isFortification(s?.kind) && s.hp > 0)) &&
         body &&
         !body.parachute &&
-        stationAccess(baseWorld(body), s, isFortification(s.kind) ? 0.09 : MAP.metres(3.4)),
+        stationAccess(baseWorld(body), s, stationRadius),
       'Approchez de la défense à pied.',
     );
     if (path === 'equipment-select') {
@@ -2529,8 +2541,7 @@ export class Game {
         amount,
         at: this.now(),
       });
-      const shelter =
-        target.mode === 'turret' ? r.equipment[target.state.turret] : null;
+      const shelter = target.mode === 'turret' ? r.equipment[target.state.turret] : null;
       let toBody = amount;
       if (shelter?.kind === 'bunker' && shelter.hp > 0) {
         const absorbed = Math.min(shelter.hp, amount * 0.85);
