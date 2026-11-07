@@ -79,7 +79,10 @@ la vue. DCA : Shift maintenu augmente la fusée en continu, Ctrl maintenu la ré
 aussitôt et les deux touches ensemble s'annulent ; affichage en mètres en direct.
 `advanceFuse()` (`src/equipment-controls.js`) porte ce réglage, couvert par
 `scripts/test-fuse-continuous.mjs`. Molette et [ ] gardent des pas de 25 m. Tank : Z/S ou flèches pour avancer/reculer, Q/D pour tourner ; Shift choisit
-HE, Ctrl AP. Au tireur principal, clic gauche tire le canon et Espace la coaxiale. Aux pilotes,
+HE, Ctrl AP. Au tireur principal, clic gauche tire le canon et Espace la coaxiale. Les graduations
+de la lunette vont de 50 à 3 000 m de référence (environ 9 m de bureau, l'autre bout
+de la pièce), échantillonnées sur la trajectoire réelle de l'obus choisi (HE/AP,
+même intégration que le serveur) ; obus HE 13 s et AP 8 s de vol maximal. Aux pilotes,
 clic gauche tire la MG et Espace maintenu largue les bombes disponibles toutes les
 0,5 s. B est supprimé. Les autres mitrailleurs et DCA gardent clic/Espace pour tirer. E signe depuis
 le cercle du poste approché ; la liste des postes n’est plus nécessaire à pied.

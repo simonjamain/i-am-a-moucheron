@@ -31,9 +31,10 @@ export const HEAVY = Object.freeze({
     edge: 30,
     radius: MAP.metres(12),
     speed: MAP.metres(320),
-    lifetime: 6,
+    // Long enough to cross the whole office (issue #103); walls still stop it.
+    lifetime: 13,
   },
-  ap: { interval: 2, damage: 320, edge: 0, radius: 0, speed: MAP.metres(600), lifetime: 4 },
+  ap: { interval: 2, damage: 320, edge: 0, radius: 0, speed: MAP.metres(600), lifetime: 8 },
 });
 export const TANK_MG = Object.freeze({
   pilot: { interval: 0.09, damage: 25 },
