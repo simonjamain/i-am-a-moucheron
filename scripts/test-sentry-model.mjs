@@ -44,7 +44,7 @@ group.traverse((part) => {
   const index = part.geometry.getIndex();
   triangles += (index?.count || part.geometry.attributes.position.count) / 3;
 });
-assert.ok(triangles < 3500, 'low polygon fallback, with separate pivot nodes');
+assert.ok(triangles < 14000, 'four textured Meshy modules with articulated pivots');
 console.log('T-01: autonomous yaw, -10°..+90° pitch, single barrel and low-poly hierarchy OK');
 
 

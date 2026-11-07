@@ -1,6 +1,12 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 217,
+    changes: [
+      'La tourelle automatique du Castor possède maintenant ses vrais modèles 3D texturés, avec un canon orientable jusqu’à la verticale.',
+    ],
+  },
+  {
     version: 214,
     changes: [
       'La tourelle automatique du Castor suit sa cible avec une tête orientable et un canon pouvant viser à la verticale.',

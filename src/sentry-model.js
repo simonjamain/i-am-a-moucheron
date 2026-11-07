@@ -1,9 +1,14 @@
-// Low-poly fallback for the T-01 automatic turret.
-// Fixed base, yaw housing and pitchable single cannon are independent nodes.
-// The approved textured Meshy GLB must be inspected and imported separately.
+import { MODEL_DATA as SOCLE } from './meshy-t01-socle-data.js';
+import { MODEL_DATA as TETE } from './meshy-t01-tete-data.js';
+import { MODEL_DATA as CANON } from './meshy-t01-canon-data.js';
+import { MODEL_DATA as CAPTEUR } from './meshy-t01-capteur-data.js';
+import { texturedMeshyParts } from './meshy-texture.js';
+
+// Approved G1 Castor T-01: four independent Meshy textured modules, preserved UVs.
+// Original meshes use different front axes; normalize them at the assembly pivots.
 export const SENTRY_MIN_ELEVATION = (-10 * Math.PI) / 180;
 export const SENTRY_MAX_ELEVATION = Math.PI / 2;
-export const SENTRY_MUZZLE_HEIGHT = 0.033;
+export const SENTRY_MUZZLE_HEIGHT = 0.036;
 
 export function sentryAimAngles(origin, target) {
   if (
@@ -18,7 +23,7 @@ export function sentryAimAngles(origin, target) {
   const dx = target[0] - origin[0];
   const dy = target[1] - origin[1];
   const dz = target[2] - origin[2];
-  // The gun's zero-elevation forward axis is local -Z.
+  // The assembled cannon points along local -Z at zero elevation.
   const yaw = Math.atan2(-dx, -dz);
   const pitch = Math.max(
     SENTRY_MIN_ELEVATION,
@@ -31,142 +36,70 @@ export function sentryAngleDelta(from, to) {
   return Math.atan2(Math.sin(to - from), Math.cos(to - from));
 }
 
-export function createSentryModel(T) {
-  const model = new T.Group();
-  model.name = 't01';
-  const olive = new T.MeshStandardMaterial({
-    color: '#687747',
-    roughness: 0.9,
-    metalness: 0.08,
-    flatShading: true,
-  });
-  const oliveDark = new T.MeshStandardMaterial({
-    color: '#40523b',
-    roughness: 0.9,
-    metalness: 0.08,
-    flatShading: true,
-  });
-  const sand = new T.MeshStandardMaterial({
-    color: '#c5ab7b',
-    roughness: 0.92,
-    flatShading: true,
-  });
-  const dark = new T.MeshStandardMaterial({
-    color: '#303538',
-    roughness: 0.68,
-    metalness: 0.35,
-    flatShading: true,
-  });
-  const yellow = new T.MeshStandardMaterial({
-    color: '#f5c22c',
-    roughness: 0.86,
-    flatShading: true,
-  });
-  const orange = new T.MeshStandardMaterial({
-    color: '#e37e30',
-    roughness: 0.9,
-    flatShading: true,
-  });
-  const eye = new T.MeshStandardMaterial({
-    color: '#1ecbd9',
-    roughness: 0.23,
-    metalness: 0.2,
-    emissive: '#073d45',
-    flatShading: true,
-  });
+// Geometry + materials are shared by all T-01 instances, but these groups and
+// their animated pivots are distinct for each installed sentry.
+function addMeshy(T, data, parent, name, size, rotation, position) {
+  const parts = texturedMeshyParts(T, data);
+  if (parts.length !== 1) throw new Error(`Unexpected Meshy T-01 part count for ${name}`);
+  const { geometry, material } = parts[0];
+  const mesh = new T.Mesh(geometry, material);
+  mesh.name = name;
+  mesh.position.set(...position);
+  mesh.scale.setScalar(size);
+  mesh.rotation.y = rotation;
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
+  mesh.userData.meshyShared = true;
+  parent.add(mesh);
+  return mesh;
+}
 
-  function mesh(parent, geometry, material, x, y, z, name) {
-    const part = new T.Mesh(geometry, material);
-    part.position.set(x, y, z);
-    part.name = name;
-    part.castShadow = true;
-    part.receiveShadow = true;
-    parent.add(part);
-    return part;
-  }
-  function box(parent, size, location, material, name) {
-    return mesh(parent, new T.BoxGeometry(...size), material, ...location, name);
-  }
-  // Ground-anchored reinforced polygonal plinth, four sand-colored feet.
-  mesh(model, new T.CylinderGeometry(0.025, 0.027, 0.012, 8), olive, 0, 0.007, 0, 'socle');
-  mesh(model, new T.CylinderGeometry(0.019, 0.019, 0.006, 8), dark, 0, 0.016, 0, 'pivot-yaw');
-  for (const x of [-1, 1])
-    for (const z of [-1, 1]) {
-      box(model, [0.015, 0.008, 0.015], [x * 0.021, 0.005, z * 0.021], sand, 'patte');
-      box(model, [0.012, 0.003, 0.012], [x * 0.021, 0.01, z * 0.021], oliveDark, 'patte-boulon');
-    }
-  // Two yellow warning inserts read clearly even when the miniature is distant.
-  for (const x of [-0.012, 0.012]) {
-    const marker = box(model, [0.006, 0.004, 0.0015], [x, 0.01, -0.023], yellow, 'warning');
-    marker.rotation.z = 0.35;
-  }
+export function createSentryModel(T) {
+  const group = new T.Group();
+  group.name = 't01';
+  // The Meshy base lies horizontally in X/Z, and is deliberately not animated.
+  addMeshy(T, SOCLE, group, 'socle-fixe', 0.059, 0, [0, 0.0068, 0]);
+
   const yaw = new T.Group();
   yaw.name = 'rotation-horizontale';
-  yaw.position.y = 0.02;
-  model.add(yaw);
-
-  box(yaw, [0.035, 0.018, 0.033], [0, 0.009, 0], olive, 'carter');
-  for (const x of [-1, 1]) {
-    const plate = box(
-      yaw,
-      [0.005, 0.014, 0.032],
-      [x * 0.019, 0.009, 0],
-      sand,
-      'blindage-lateral',
-    );
-    plate.rotation.z = x * 0.12;
-    box(yaw, [0.007, 0.008, 0.006], [x * 0.015, 0.012, -0.017], yellow, 'carenage-avant');
-  }
-  box(yaw, [0.02, 0.003, 0.023], [0, 0.02, 0], oliveDark, 'toit');
-  // Explicitly visible optical sight and independent radar antenna.
-  box(yaw, [0.012, 0.011, 0.009], [-0.005, 0.025, -0.008], dark, 'optique');
-  const lens = mesh(
-    yaw,
-    new T.CylinderGeometry(0.0039, 0.0039, 0.0015, 8),
-    eye,
-    -0.005,
-    0.025,
-    -0.013,
-    'lentille',
-  );
-  lens.rotation.x = Math.PI / 2;
-  const radar = new T.Group();
-  radar.name = 'radar-independant';
-  radar.position.set(0.003, 0.032, 0.002);
-  yaw.add(radar);
-  box(radar, [0.004, 0.009, 0.004], [0, 0.003, 0], dark, 'support');
-  const panel = box(radar, [0.018, 0.005, 0.013], [0, 0.009, 0], sand, 'capteur-superieur');
-  panel.rotation.x = -0.18;
-
-  box(yaw, [0.002, 0.02, 0.002], [0.017, 0.025, 0.009], dark, 'antenne');
-  mesh(yaw, new T.SphereGeometry(0.0025, 6, 4), yellow, 0.017, 0.036, 0.009, 'balise');
-  box(yaw, [0.004, 0.006, 0.015], [-0.019, 0.006, 0.008], orange, 'cable');
+  yaw.position.y = 0.014;
+  group.add(yaw);
+  // Head faces +X in the original, so +90° Y turns it toward game -Z.
+  addMeshy(T, TETE, yaw, 'tete-meshy', 0.054, Math.PI / 2, [0, 0.0162, 0]);
 
   const pitch = new T.Group();
   pitch.name = 'elevation-canon';
-  pitch.position.set(0.006, 0.011, -0.015);
+  pitch.position.set(0, 0.022, -0.005);
   yaw.add(pitch);
-  box(pitch, [0.015, 0.013, 0.017], [0, 0, -0.005], dark, 'culasse');
-  box(pitch, [0.011, 0.009, 0.013], [0, 0, -0.013], sand, 'cache-canon');
-  const barrel = mesh(
-    pitch,
-    new T.CylinderGeometry(0.0026, 0.0035, 0.042, 8),
-    dark,
-    0,
-    0,
-    -0.033,
-    'canon-unique',
+  // Cannon's source barrel faces -X; -90° Y makes that game -Z.
+  addMeshy(T, CANON, pitch, 'canon-unique', 0.052, -Math.PI / 2, [0, 0, -0.015]);
+  const muzzle = new T.Group();
+  muzzle.name = 'bouche-canon';
+  muzzle.position.set(0, 0, -0.041);
+  pitch.add(muzzle);
+
+  // Separate optical/radar module faces +Z in Meshy; 180° Y makes -Z.
+  // Mount to the side of the gun: at +90° elevation the barrel clears the radar.
+  const radar = new T.Group();
+  radar.name = 'radar-independant';
+  radar.position.set(0.019, 0.042, 0.006);
+  yaw.add(radar);
+  addMeshy(T, CAPTEUR, radar, 'capteur-meshy', 0.024, Math.PI, [0, 0, 0]);
+  // Small support under the offset sensor; not a recoloring of its Meshy atlas.
+  const support = new T.Mesh(
+    new T.BoxGeometry(0.004, 0.010, 0.004),
+    new T.MeshStandardMaterial({ color: '#35393d', roughness: 0.8 }),
   );
-  barrel.rotation.x = Math.PI / 2;
-  const muzzle = mesh(
-    pitch,
-    new T.CylinderGeometry(0.0041, 0.0041, 0.006, 8),
-    oliveDark,
-    0,
-    0,
-    -0.054,
-    'frein-de-bouche',
+  support.name = 'support-capteur';
+  support.position.set(0, -0.009, 0);
+  radar.add(support);
+  // Ammo status is a tiny independent light; Meshy textures stay unchanged.
+  const led = new T.Mesh(
+    new T.SphereGeometry(0.0018, 6, 4),
+    new T.MeshBasicMaterial({ color: '#1ecbd9' }),
   );
-  muzzle.rotation.x = Math.PI / 2;
-  return { group: model, yaw, pitch, radar, lens, muzzle };
+  led.name = 'temoin-munitions';
+  led.position.set(0.005, -0.003, -0.010);
+  radar.add(led);
+  return { group, yaw, pitch, radar, lens: led, muzzle };
 }

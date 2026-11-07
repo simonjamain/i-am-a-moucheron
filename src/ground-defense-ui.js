@@ -433,6 +433,8 @@ export class GroundDefenseUI {
       if (keep.has(child)) continue;
       this.models.remove(child);
       child.traverse((part) => {
+        // Meshy T-01 geometry/atlases are cached across all turrets.
+        if (part.userData?.meshyShared) return;
         if (part.isInstancedMesh) part.dispose();
         part.geometry?.dispose();
         part.material?.dispose();
