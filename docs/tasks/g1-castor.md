@@ -50,3 +50,20 @@
 - Correction ciblée `fix/castor-wheel-overlap` : filtrage au rendu des triangles des roues intégrées et réemploi des six vrais modèles de roue, centrés et mis à l'échelle, avec pivots animés.
 - Test d'encombrement et de suppression de faces ajouté à `scripts/test-castor-meshy.mjs`.
 - Restant : vérification visuelle de découpe, performances GPU, construction en roulant (PR #80 toujours distincte).
+
+
+## Lot 3 — reprise de la PR #80 après les vrais Meshy et les roues corrigées
+
+- Branche : `feat/castor-rolling-construction` ; la PR #80 conserve son numéro.
+- Reprise depuis `main` après les PR #82 (vrais Meshy) et #85 (roues).
+- Contributions : poser les murs LEGO/rubans en roulant en segments de 20 cm,
+  utiliser les outils ponctuels à bord, vérifier le pilote et la distance côté
+  serveur, empêcher les doubles facturations de messages réémis, maintenir la
+  caisse commune et les collisions.
+- Reprise ciblée : conserver `meshyShared` dans `client.js` pour ne pas détruire
+  les ressources Meshy partagées ; conserver les modèles et roues corrigées.
+- Tests : le script provisoire de diagnostic Prettier est retiré. Exécuter
+  `test-castor-building.mjs` dans `npm test` ; suivre les cinq jobs GitHub
+  Actions avant fusion. Les essais WebGL du ressenti restent indisponibles.
+- **Restant après la PR** : réparation automatique des murs, munitions finies du
+  pistolet et des DCA fixes, bunkers/canons/tourelles exclusifs.

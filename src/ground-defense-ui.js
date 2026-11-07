@@ -14,9 +14,13 @@ export class GroundDefenseUI {
     captureMouse,
     foot,
     aim,
+    builder = () => null,
     enabled,
   }) {
     this.foot = foot;
+    this.builder = builder;
+    this.trailAnchor = null;
+    this.trailSequence = 0;
     this.aim = aim;
     this.enabled = enabled;
     this.captureMouse = captureMouse;
@@ -68,6 +72,7 @@ export class GroundDefenseUI {
       const button = document.createElement('button');
       button.textContent = label;
       button.onclick = () => {
+        this.trailAnchor = null;
         this.mode = kind;
         this.buttons.querySelectorAll('button').forEach((b) => {
           b.style.fontWeight = b === button ? 'bold' : 'normal';
@@ -177,6 +182,7 @@ export class GroundDefenseUI {
   }
   setOpen(open) {
     this.anchor = null;
+    if (open) this.trailAnchor = null;
     this.opened = open && this.available();
     this.panel.style.display = this.opened ? 'block' : 'none';
     if (this.opened) {
@@ -185,6 +191,7 @@ export class GroundDefenseUI {
     }
   }
   cancel() {
+    this.trailAnchor = null;
     this.radial = false;
     this.wheel.style.display = 'none';
     this.active = false;
@@ -195,6 +202,11 @@ export class GroundDefenseUI {
   }
   press() {
     if (!this.enabled() || this.busy) return;
+    const castor = this.builder();
+    if (castor && ['barricade', 'sticky'].includes(this.mode)) {
+      this.trailAnchor = this.trailAnchor ? null : castor.rear;
+      return;
+    }
     this.update();
     if (
       !this.anchor &&
@@ -219,6 +231,45 @@ export class GroundDefenseUI {
       this.busy = false;
     }
   }
+  async advanceTrail() {
+    const castor = this.builder();
+    if (
+      !castor ||
+      !castor.grounded ||
+      castor.y >= 0.025 ||
+      !this.enabled() ||
+      !this.trailAnchor ||
+      this.busy
+    )
+      return;
+    const from = this.trailAnchor;
+    const distance = Math.hypot(castor.rear[0] - from[0], castor.rear[1] - from[1]);
+    // Preserve the existing tariff: one dollar per 20 cm of wall or tape.
+    if (distance < 0.18) return;
+    if (distance > 0.25) {
+      this.trailAnchor = null;
+      this.notify('Trajet de construction interrompu : trop éloigné.', 3);
+      return;
+    }
+    const to = from.map((n, i) => n + ((castor.rear[i] - n) * Math.min(0.2, distance)) / distance);
+    this.busy = true;
+    try {
+      const request =
+        'castor:' +
+        (globalThis.crypto?.randomUUID?.() || Date.now().toString(36) + ':' + ++this.trailSequence);
+      const accepted = await this.command({
+        action: 'build',
+        kind: this.mode,
+        a: from,
+        b: to,
+        request,
+      });
+      if (accepted === false) this.trailAnchor = null;
+      else this.trailAnchor = to;
+    } finally {
+      this.busy = false;
+    }
+  }
   update() {
     const snap = this.snapshot();
     this.trigger.hidden = !this.available();
@@ -236,6 +287,15 @@ export class GroundDefenseUI {
     if (!this.active || !this.enabled()) {
       this.anchor = null;
       this.airTrails.update(snap);
+      return;
+    }
+    if (this.trailAnchor && this.builder()) {
+      this.candidate = null;
+      this.status.disabled = false;
+      this.status.textContent =
+        'Castor · ' + this.mode + ' en continu · 1 $ / 20 cm · Cliquez pour arrêter';
+      this.airTrails.update(snap);
+      this.advanceTrail();
       return;
     }
     const c = (this.candidate = groundPlacement({

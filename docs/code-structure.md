@@ -156,3 +156,8 @@ G1 Castor (issue #76) : `fleet.js` définit le véhicule monoplace,
 `castor-model.js` assemble les trois vrais modèles Meshy texturés à six roues et tourelle mobile, et
 `client.js` la conduite, la visée et la caméra surélevée. Les trois imports Meshy
 sont générés hors ligne par `scripts/import-meshy-castor.py`.
+
+La construction embarquée dans le Castor (PR #80) partage
+`GroundDefenseUI`, `groundPlacement` et `placement-aim` avec les piétons.
+`server/game.js` vérifie le pilote, la position du Castor et chaque segment,
+retire les coûts de la caisse et déduplique les requêtes identifiées.
