@@ -101,6 +101,20 @@ vitesse verticale à l’impact. Voir [retours terrain](field-update.md).
 Le [lot lisibilité et nettoyage](clean-flight.md) détaille les bons signés, la pose par E,
 les touches physiques, le jet et les nouvelles commandes du Spitfire.
 
+## Aide contextuelle
+
+`controlHintItems()` dans `src/live-hud.js` est la source unique de l’aide affichée
+en bas à gauche (`#commandHelp`). `client.js` lui transmet le véhicule et le siège,
+le type de poste fixe occupé (DCA, bunker LEGO, canon antichar), l’état à pied,
+en chute ou au purgatoire, la disponibilité de la construction, la roue ouverte
+et l’outil actif (avec son point d’ancrage). L’aide change donc à l’entrée, à la
+sortie et au changement de poste. À pied : molette pour le zoom caméra, **G** ou
+clic molette pour la roue de construction. Au Castor : conduite Z/S Q/D, clic
+pour la mitrailleuse, **G**/clic molette, **V** vue tactique (prioritaire sur le
+raccourci du conseil de vague pour le conducteur), **F** pour sortir. Les postes
+fixes et véhicules terrestres n’affichent ni parachute ni « sauter ».
+`scripts/test-control-hints.mjs` vérifie chaque rôle et chaque siège de `VEHICLES`.
+
 ## HUD et observation courants
 
 Les informations de coque et munitions sont près du viseur ; l’aide de contexte
@@ -160,7 +174,8 @@ valider dans une vraie partie WebGL/UDP.
 
 ## Conseil de vague
 
-Ouvrez le bandeau **Vague** en haut de l’écran, ou appuyez sur **V**. La frise
+Ouvrez le bandeau **Vague** en haut de l’écran, ou appuyez sur **V** (sauf au
+volant du Castor, où V bascule la vue tactique). La frise
 regroupe les arrivées simultanées dans une même colonne. Les repères **S** (sol)
 et **A** (air) et les silhouettes reprennent ceux des entrées dans le bureau.
 Le trajet terrestre confirmé apparaît en ocre. Pendant la pose d’une barricade,
@@ -179,7 +194,6 @@ Après déblocage des cartes correspondantes, le conducteur du Castor peut poser
 
 Après déblocage de la carte correspondante, le conducteur du Castor peut choisir « Tourelle auto » dans la roue de construction et la poser d’un clic (9 $). La tourelle consomme ses 180 balles ; le service de recharge est payant et local.
 
-
 Bouton « Défense » à pied ou au poste conducteur du Castor au sol, puis choix d’un outil : aperçu au point visé par la caméra
 indépendamment de la marche, E ou clic gauche pour valider, R pour orienter le sucre ou le ventilateur, Échap
 pour quitter. Prix, conditions et navigation : [gameplay](gameplay.md#défenses-terrestres).
@@ -188,15 +202,12 @@ Maintenir **G** ou le **clic molette** : orienter vers un secteur puis relâcher
 
 Sur le [bombardier B3](b3-model.md), **4** demande le poste ventral avec signature ; **1 / 2 / 3** restent pilote, dorsal et queue.
 
-
 G1 Castor : Z/S avancer/reculer, Q/D tourner, souris et clic gauche pour tirer avec la mitrailleuse légère, **V** bascule la caméra tactique surélevée. Le soutien à 50 cm est automatique et payant. Pendant la conduite, **G** ou le clic molette ouvre la roue de construction. Clic gauche démarre/arrête la dépose des murs LEGO et rubans (1 $ par 20 cm) ; les autres pièges se posent au point visé. Échap interrompt la construction.
-
 
 DCA fixe : le nombre d'obus restants (sur 120) est affiché près de l'état du
 poste. Un clic gauche ou Espace déclenche un tir tant qu'il reste des munitions.
 Rechargement automatique auprès d'une station ou d'un Castor à portée, depuis
 la caisse commune ; aucun achat de munitions à distance.
-
 
 Le pistolet possède **120 balles** par incarnation. Les munitions restantes sont
 affichées à pied ; tirer à vide n'inflige pas de dégâts. Le rechargement automatique
