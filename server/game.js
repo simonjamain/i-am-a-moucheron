@@ -1293,7 +1293,8 @@ export class Game {
     const key = p.id + ':' + p.incarnation + ':' + b.shot;
     if (r.fixedDcaShots.has(key)) return;
     requireGame(gun.ammo >= 1, 'La DCA est à court de munitions.');
-    const interval = (FLAK.interval * 1000 * clauseFactors(this.clause(r, p)).interval) /
+    const interval =
+      (FLAK.interval * 1000 * clauseFactors(this.clause(r, p)).interval) /
       (r.balance.fireRate || 1);
     requireGame(
       this.now() >= (gun.lastShotAt ?? -Infinity) + interval,

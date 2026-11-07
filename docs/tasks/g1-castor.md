@@ -96,3 +96,5 @@
   un tir rejeté tardivement par le serveur peut avoir été aperçu localement.
 - Restant : pistolets limités avec approvisionnement au sol et purgatoire,
   défenses exclusives (bunker, canon, tourelle automatique), essais WebGL/WAN.
+
+- Première CI PR #87 : l'assemblage n'incluait pas encore le nouveau module navigateur `ground-ammo.js` et le formatage de l'expression de cadence du serveur échouait. Corrigés sur le commit suivant, puis CI complète à relancer.

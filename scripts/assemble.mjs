@@ -82,6 +82,7 @@ const files = {
       'flight',
       'aircraft-fire',
       'logistics',
+      'ground-ammo',
       'malice',
       'vehicle-livery',
       'input',
