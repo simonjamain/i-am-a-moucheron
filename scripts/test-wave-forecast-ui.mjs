@@ -111,13 +111,9 @@ ui.accept(snap, 'p');
 assert.equal(ui.cards.children[1].disabled, true);
 assert.equal(ui.launch.hidden, false);
 const [row] = ui.workshop.children.slice(1);
-const [, select, buy] = row.children;
-select.value = defense.structures[0].id;
+const [, , buy] = row.children;
 buy.onclick();
-assert.deepEqual(commands.pop(), [
-  'wave-equip',
-  { blueprint: 'reinforced', target: select.value, level: 1, epoch: 'e' },
-]);
+assert.deepEqual(commands.pop(), ['wave-buy', { blueprint: 'reinforced', level: 1, epoch: 'e' }]);
 assert.equal(commands.length, 0, 'last vote does not launch the wave');
 ui.launch.onclick();
 assert.deepEqual(commands.pop(), ['start', { preparation: 'e1' }]);
@@ -125,5 +121,5 @@ ui.accept({ ...snap, preparation: null }, 'p');
 assert.equal(ui.dialog.open, false);
 assert.equal(ui.button.hidden, false, 'team plans remain accessible during combat');
 console.log(
-  'PASS frise simultanée, vote modifiable, achat ciblé, départ explicite, détour simulé puis confirmé',
+  'PASS frise simultanée, vote modifiable, achat pour l’équipe, départ explicite, détour simulé puis confirmé',
 );

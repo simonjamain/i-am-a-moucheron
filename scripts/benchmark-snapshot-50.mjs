@@ -44,12 +44,14 @@ const {
   preparation,
   blueprints,
   blueprintLevels,
+  activeBlueprints,
   groundNavigationActive,
   ...comparable
 } = optimized;
 assert.equal(preparation, null, 'before mission launch there is no forecast or vote');
 assert.deepEqual(blueprints, []);
 assert.deepEqual(blueprintLevels, {});
+assert.deepEqual(activeBlueprints, {}, 'no team upgrade bought before launch');
 assert.equal(groundNavigationActive, false);
 assert.deepEqual(groundAgents, {}, 'a room without constructions keeps legacy enemy routes');
 assert.equal(rosterRevision, 0, 'new roster revision defaults to zero');

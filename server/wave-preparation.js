@@ -127,27 +127,45 @@ export function resolveVote(room, force = false, draw = randomInt) {
   room.blueprintLevels[prep.winner] = (room.blueprintLevels[prep.winner] || 0) + 1;
 }
 
-export function equipBlueprint(room, request) {
-  const { blueprint: id, target } = request;
-  if (!Object.hasOwn(room.blueprintLevels, id) || !Object.hasOwn(BLUEPRINTS, id))
-    throw Error('Plan non débloqué.');
-  const profile = BLUEPRINTS[id];
-  if (profile.kind === 'unlock') throw Error('Ce plan donne accès à une construction du Castor.');
-  const item =
-    profile.kind === 'vehicle'
-      ? room.vehicles.get(target)
-      : room.groundDefense.structures.find((s) => s.id === target);
-  if (!supportsBlueprint(id, item)) throw Error('Objet incompatible.');
-  const level = equippedLevel(item, id);
-  if (level >= room.blueprintLevels[id] || request.level !== level + 1)
-    throw Error('Niveau déjà acquis ou périmé.');
-  if (room.dollars < profile.cost) throw Error('Caisse commune insuffisante.');
-  room.dollars -= profile.cost;
+// One level of a plan's effect on one object (existing behaviour per level).
+function applyLevel(item, id) {
   (item.blueprints ??= []).push(id);
   if (id === 'reinforced') {
     item.hp += 100;
     item.maxHp += 100;
   }
   if (id === 'lure') item.radius += 0.1;
+}
+
+// Bring one object up to the room's purchased levels. Called for every
+// compatible object after a purchase and for every object created later.
+export function equipPurchased(room, item) {
+  let changed = false;
+  for (const [id, level] of Object.entries(room.activeBlueprints || {}))
+    while (supportsBlueprint(id, item) && equippedLevel(item, id) < level) {
+      applyLevel(item, id);
+      changed = true;
+    }
+  return changed;
+}
+
+// Issue #101: a voted plan is bought once, level by level, from the common
+// bank and applies to every compatible object of every player, now and later.
+export function purchaseBlueprint(room, request) {
+  const { blueprint: id } = request;
+  if (!Object.hasOwn(room.blueprintLevels, id) || !Object.hasOwn(BLUEPRINTS, id))
+    throw Error('Plan non débloqué.');
+  const profile = BLUEPRINTS[id];
+  if (profile.kind === 'unlock') throw Error('Ce plan donne accès à une construction du Castor.');
+  room.activeBlueprints ??= {};
+  const level = room.activeBlueprints[id] || 0;
+  if (level >= room.blueprintLevels[id] || request.level !== level + 1)
+    throw Error('Niveau déjà acquis ou périmé.');
+  if (room.dollars < profile.cost) throw Error('Caisse commune insuffisante.');
+  room.dollars -= profile.cost;
+  room.activeBlueprints[id] = level + 1;
+  const objects =
+    profile.kind === 'vehicle' ? [...room.vehicles.values()] : room.groundDefense.structures;
+  for (const item of objects) equipPurchased(room, item);
   if (profile.kind !== 'vehicle') room.groundDefense.revision++;
 }

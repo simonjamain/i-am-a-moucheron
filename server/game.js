@@ -4,7 +4,8 @@ import {
   forecast,
   drawCards,
   resolveVote,
-  equipBlueprint,
+  purchaseBlueprint,
+  equipPurchased,
 } from './wave-preparation.js';
 import { feedingPoint } from '../src/ground-defense-state.js';
 import { DEFAULT_BALANCE, validateBalance, money, retimeRoster } from '../src/balance.js';
@@ -143,6 +144,7 @@ function roomState(code, now) {
     dollars: 0,
     rewardCount: 0,
     upgrades: {},
+    activeBlueprints: {},
     bank: newBank(),
     pilots: new Map(),
     vehicles: new Map(),
@@ -353,6 +355,7 @@ export class Game {
         revision: 0,
       },
     };
+    equipPurchased(r, vehicle);
     r.vehicles.set(id, vehicle);
     return vehicle;
   }
@@ -768,6 +771,7 @@ export class Game {
         phase: r.phase,
         balance: r.balance,
         blueprintLevels: r.blueprintLevels,
+        activeBlueprints: r.activeBlueprints,
         upgrades: r.upgrades,
         equipment: r.equipment,
         groundDefense: r.groundDefense,
@@ -785,6 +789,7 @@ export class Game {
       this.resetRoom(r);
       r.balance = saved.balance;
       r.blueprintLevels = saved.blueprintLevels;
+      r.activeBlueprints = saved.activeBlueprints || {};
       r.upgrades = saved.upgrades;
       r.equipment = saved.equipment;
       r.groundDefense = saved.groundDefense;
@@ -1005,6 +1010,7 @@ export class Game {
       preparation: r.preparation,
       blueprints: Object.keys(r.blueprintLevels),
       blueprintLevels: r.blueprintLevels,
+      activeBlueprints: r.activeBlueprints,
       groundNavigationActive:
         r.groundEnabled || r.groundDefense.structures.some((s) => s.kind !== 'fan'),
       dollars: r.dollars,
@@ -1245,7 +1251,7 @@ export class Game {
           'lab',
           'debug-spawn',
           'wave-vote',
-          'wave-equip',
+          'wave-buy',
           'start',
         ].includes(path),
       'Accédez au purgatoire avant d’agir.',
@@ -1272,10 +1278,10 @@ export class Game {
       requireGame(prep.cards.includes(b.card), 'Carte inconnue.');
       prep.votes[p.id] = b.card;
       resolveVote(r);
-    } else if (path === 'wave-equip') {
+    } else if (path === 'wave-buy') {
       requireGame(b.epoch === r.base.epoch, 'Partie périmée.');
       try {
-        equipBlueprint(r, b);
+        purchaseBlueprint(r, b);
       } catch (error) {
         requireGame(false, error.message);
       }
@@ -1476,6 +1482,10 @@ export class Game {
       requireGame(false, error.message, 400);
     }
     r.dollars = money(r.dollars - transaction.price);
+    if (b.action === 'build')
+      for (const structure of r.groundDefense.structures)
+        if (transaction.ids.includes(structure.id) && equipPurchased(r, structure))
+          r.groundDefense.revision++;
     if (b.action === 'build' && isFortification(b.kind)) {
       const structure = r.groundDefense.structures.find((s) => s.id === transaction.ids[0]);
       structure.slot = r.equipment.length;

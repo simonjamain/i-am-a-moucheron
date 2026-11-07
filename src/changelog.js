@@ -1,6 +1,13 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 229,
+    changes: [
+      'Les plans gagnés au vote s’achètent une seule fois pour toute l’équipe.',
+      'Le bonus s’applique à tous les objets compatibles, même ceux posés plus tard.',
+    ],
+  },
+  {
     version: 228,
     changes: [
       'Castor : deux fois plus rapide, avec un démarrage vif.',
