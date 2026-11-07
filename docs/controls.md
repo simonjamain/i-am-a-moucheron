@@ -175,6 +175,9 @@ séparée, disponible après le vote.
 
 ## Défenses terrestres
 
+Après déblocage de la carte correspondante, le conducteur du Castor peut choisir « Tourelle auto » dans la roue de construction et la poser d’un clic (9 $). La tourelle consomme ses 180 balles ; le service de recharge est payant et local.
+
+
 Bouton « Défense » à pied ou au poste conducteur du Castor au sol, puis choix d’un outil : aperçu au point visé par la caméra
 indépendamment de la marche, E ou clic gauche pour valider, R pour orienter le sucre ou le ventilateur, Échap
 pour quitter. Prix, conditions et navigation : [gameplay](gameplay.md#défenses-terrestres).

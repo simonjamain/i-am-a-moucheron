@@ -62,6 +62,7 @@ import {
 } from '../src/waves.js';
 import { SHOP, shopPrice, supportedPlacement, waveStipend } from '../src/equipment.js';
 import { advancePaidService } from '../src/paid-service.js';
+import { SENTRY, fireGroundSentries } from '../src/ground-sentry.js';
 import { FIXED_DCA_AMMO, PISTOL_CAPACITY } from '../src/ground-ammo.js';
 import {
   fullAmmo,
@@ -158,6 +159,7 @@ function roomState(code, now) {
     equipment: [],
     groundDefense: newGroundDefense(),
     groundDefenseOrders: new Map(),
+    sentryClock: 0,
     groundEnabled: false,
     groundAgents: {},
     groundWave: -1,
@@ -488,9 +490,49 @@ export class Game {
       );
     }
   }
+  advanceSentries(r, now) {
+    if (
+      r.phase !== 'combat' ||
+      !r.groundDefense.structures.some((s) => s.kind === 'sentry' && s.hp > 0 && s.ammo >= 1)
+    )
+      return;
+    if (now - r.sentryClock < SENTRY.intervalMs) return;
+    r.sentryClock = now;
+    const plan = this.plan(r);
+    const frames = swarmFrame(
+      plan.roster,
+      (now - r.started) / 1000,
+      r.groundAgents,
+      airField(r.groundDefense, now),
+    );
+    const targets = frames.map((frame, index) =>
+      frame && !r.kills.has(index) && (r.enemyDamage[index] || 0) < plan.roster[index].hp
+        ? { id: index, p: frame.p, dead: false }
+        : null,
+    );
+    const fired = fireGroundSentries(
+      r.groundDefense.structures,
+      targets,
+      now,
+      (target, sentry, damage) => {
+        const id = target.id;
+        r.enemyDamage[id] = (r.enemyDamage[id] || 0) + damage * r.balance.damage;
+        if (r.enemyDamage[id] >= plan.roster[id].hp) this.defeatEnemy(r, id, target.p);
+        r.effects.push({
+          id: ++r.effectSeq,
+          kind: 'sentry-shot',
+          p: [sentry.position[0], 0.03, sentry.position[1]],
+          target: target.p,
+          at: now,
+        });
+      },
+    );
+    if (fired) r.groundDefense.revision++;
+  }
   advance(r) {
     const now = this.now();
     this.advanceGround(r, now);
+    this.advanceSentries(r, now);
     this.advanceOrdnance(r, now);
     this.vehicleContacts(r, now);
     // A destroyed hull can arrive through motion before the client's death
@@ -1272,6 +1314,7 @@ export class Game {
         [w.x, w.z],
         r.dollars,
         this.now(),
+        { castor, blueprintLevels: r.blueprintLevels },
       );
     } catch (error) {
       requireGame(false, error.message, 400);

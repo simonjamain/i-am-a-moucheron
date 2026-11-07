@@ -1,4 +1,5 @@
 import { VEHICLES } from './fleet.js';
+import { SENTRY } from './ground-sentry.js';
 import { distanceToSegment } from './ground-defense.js';
 import { FIXED_DCA_AMMO, PISTOL_CAPACITY } from './ground-ammo.js';
 import { ammoCapacity, FUEL_SECONDS, SERVICE_RADIUS, SERVICE_SECONDS } from './logistics.js';
@@ -180,7 +181,7 @@ export function advancePaidService(
     const sources = serviceSources(installations, fleet);
     for (const wall of groundDefense.structures) {
       if (
-        wall.kind !== 'barricade' ||
+        !['barricade', 'sentry'].includes(wall.kind) ||
         !Number.isFinite(wall.hp) ||
         !Number.isFinite(wall.maxHp) ||
         wall.hp <= 0 ||
@@ -188,10 +189,10 @@ export function advancePaidService(
       )
         continue;
       if (
-        !sources.some(
-          ({ p, radius }) =>
-            Math.hypot(distanceToSegment([p[0], p[2]], wall.a, wall.b), p[1] - 0.01) <=
-            radius,
+        !sources.some(({ p, radius }) =>
+          wall.kind === 'sentry'
+            ? Math.hypot(wall.position[0] - p[0], p[1] - 0.025, wall.position[1] - p[2]) <= radius
+            : Math.hypot(distanceToSegment([p[0], p[2]], wall.a, wall.b), p[1] - 0.01) <= radius,
         )
       )
         continue;
@@ -208,6 +209,22 @@ export function advancePaidService(
             },
           },
         ],
+        mark: () => {},
+      });
+    }
+    for (const sentry of groundDefense.structures) {
+      if (sentry.kind !== 'sentry' || sentry.hp <= 0 || sentry.ammo >= SENTRY.ammo) continue;
+      if (!sources.some(({ p, radius }) =>
+        Math.hypot(sentry.position[0] - p[0], p[1] - 0.025, sentry.position[1] - p[2]) <= radius,
+      )) continue;
+      const amount = Math.min(SENTRY.ammo - sentry.ammo, (SENTRY.ammo * dt) / SERVICE_SECONDS);
+      const cost = amount * SERVICE_RATES.machineGun;
+      if (cost > 0) jobs.push({
+        cost,
+        needs: [{ cost, apply: (fraction) => {
+          sentry.ammo += amount * fraction;
+          groundDefense.revision++;
+        } }],
         mark: () => {},
       });
     }

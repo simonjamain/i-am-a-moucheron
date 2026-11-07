@@ -1,4 +1,5 @@
 import { FAN_COST, FAN_FADE_MS } from './air-current.js';
+import { SENTRY } from './ground-sentry.js';
 import { ROUTE_OBSTACLES } from './route-obstacles.js';
 import {
   splitBarricade,
@@ -75,15 +76,21 @@ export function groundFlow(state, goal = GROUND_GOAL) {
 }
 // One synchronous command is an atomic room transaction. Never accept costs, HP,
 // owners, revision numbers or placement identities from network clients.
-export function groundCommand(state, command, foot, dollars, now = Date.now()) {
+export function groundCommand(state, command, foot, dollars, now = Date.now(), access = {}) {
   if (!state || !command || typeof command !== 'object' || !Number.isFinite(dollars))
     fail('Commande de défense invalide.');
   const action = command.action;
   if (action === 'build') {
     const { kind, a, b } = command;
-    const pointItem = kind === 'sugar' || kind === 'fan';
+    const pointItem = kind === 'sugar' || kind === 'fan' || kind === 'sentry';
+    if (kind === 'sentry') {
+      if (!access.castor || !access.blueprintLevels?.sentry)
+        fail('Cette tourelle exige le Castor et le plan débloqué par les cartes.');
+      if (state.structures.filter((s) => s.kind === 'sentry').length >= SENTRY.maxPerRoom)
+        fail('Nombre maximal de tourelles atteint.');
+    }
     if (
-      !['barricade', 'sticky', 'sugar', 'fan'].includes(kind) ||
+      !['barricade', 'sticky', 'sugar', 'fan', 'sentry'].includes(kind) ||
       !finitePoint(a) ||
       (!pointItem && !finitePoint(b))
     )
@@ -95,7 +102,9 @@ export function groundCommand(state, command, foot, dollars, now = Date.now()) {
     if (state.structures.length + count > GROUND_LIMIT)
       fail('Trop de constructions dans la salle.');
     const price =
-      kind === 'fan'
+      kind === 'sentry'
+        ? SENTRY.cost
+        : kind === 'fan'
         ? FAN_COST
         : kind === 'sugar'
           ? GROUND_BAIT_TYPES.sugar.cost
@@ -122,7 +131,9 @@ export function groundCommand(state, command, foot, dollars, now = Date.now()) {
                 angle: Number.isFinite(command.angle) ? command.angle % (2 * Math.PI) : 0,
                 ...(kind === 'fan'
                   ? { placedAt: now }
-                  : { type: 'sugar', radius: GROUND_BAIT_TYPES.sugar.radius }),
+                  : kind === 'sentry'
+                    ? { hp: SENTRY.hp, maxHp: SENTRY.hp, ammo: SENTRY.ammo }
+                    : { type: 'sugar', radius: GROUND_BAIT_TYPES.sugar.radius }),
               },
             ];
     if (kind === 'sugar' && !finitePoint(feedingPoint(items[0])))
@@ -135,6 +146,8 @@ export function groundCommand(state, command, foot, dollars, now = Date.now()) {
         : [(item.a[0] + item.b[0]) / 2, (item.a[1] + item.b[1]) / 2];
       if (
         state.structures.some((existing) => {
+          if (existing.kind === 'sentry' && existing.hp > 0)
+            return Math.hypot(sample[0] - existing.position[0], sample[1] - existing.position[1]) < 0.06;
           if (existing.kind !== 'barricade' || existing.hp <= 0) return false;
           return distanceToSegment(sample, existing.a, existing.b) < 0.02;
         })

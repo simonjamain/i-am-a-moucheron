@@ -3,6 +3,8 @@
 Référence consolidée le 30 octobre 2026, comportement du runtime Node courant.
 Mettre à jour les sections concernées lorsque le comportement change.
 
+La carte « Tourelle automatique du Castor » débloque une construction de 9 $ au volant du G1. Elle tire automatiquement (180 balles finies) et se recharge contre paiement auprès du Castor ou des stations. Aucun tir ni achat à distance ; un plan non remporté ne permet pas de la poser.
+
 ## Session réseau
 
 Le serveur Node utilise WebRTC sur UDP uniquement. Les mouvements sont locaux,

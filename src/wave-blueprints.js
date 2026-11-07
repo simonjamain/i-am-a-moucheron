@@ -18,6 +18,12 @@ export const BLUEPRINTS = Object.freeze({
     cost: 2,
     kind: 'barricade',
   },
+  sentry: {
+    name: 'Tourelle automatique du Castor',
+    description: 'Débloque la construction d’une tourelle qui défend le bureau avec des balles limitées.',
+    cost: 0,
+    kind: 'unlock',
+  },
   adhesive: {
     name: 'Colle renforcée',
     description: 'Ce ruban immobilise les petits insectes une seconde de plus par niveau.',
@@ -28,6 +34,7 @@ export const BLUEPRINTS = Object.freeze({
 
 export function supportsBlueprint(id, object) {
   const kind = BLUEPRINTS[id]?.kind;
+  if (kind === 'unlock') return false;
   if (kind === 'vehicle')
     return (
       !!object?.state &&
