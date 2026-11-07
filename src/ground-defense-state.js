@@ -1,5 +1,6 @@
 import { FAN_COST, FAN_FADE_MS } from './air-current.js';
 import { ROUTE_OBSTACLES } from './route-obstacles.js';
+import { fortificationProxy } from './castor-fortifications.js';
 import {
   splitBarricade,
   buildGroundFlow,
@@ -58,12 +59,15 @@ export function groundSnapshot(state, now = Date.now()) {
     ...(state.retiringFans.length ? { retiringFans: structuredClone(state.retiringFans) } : {}),
   };
 }
-export function groundFlow(state, goal = GROUND_GOAL) {
+export function groundFlow(state, goal = GROUND_GOAL, installations = []) {
   return buildGroundFlow({
     bounds: GROUND_BOUNDS,
     cellSize: GROUND_CELL,
     goal,
-    barricades: state.structures.filter((s) => s.kind === 'barricade' && s.hp > 0),
+    barricades: [
+      ...state.structures.filter((s) => s.kind === 'barricade' && s.hp > 0),
+      ...installations.map(fortificationProxy).filter(Boolean),
+    ],
     staticObstacles: ROUTE_OBSTACLES.filter(
       (box) =>
         box.min.y < 0.01 &&

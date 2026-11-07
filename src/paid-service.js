@@ -1,5 +1,6 @@
 import { VEHICLES } from './fleet.js';
 import { distanceToSegment } from './ground-defense.js';
+import { CASTOR_FORTIFICATIONS } from './castor-fortifications.js';
 import { FIXED_DCA_AMMO, PISTOL_CAPACITY } from './ground-ammo.js';
 import { ammoCapacity, FUEL_SECONDS, SERVICE_RADIUS, SERVICE_SECONDS } from './logistics.js';
 
@@ -149,7 +150,8 @@ export function advancePaidService(
   if (dt) {
     const sources = serviceSources(installations, fleet);
     for (const gun of installations) {
-      if (gun.kind !== 'dca' || !Number.isFinite(gun.ammo) || gun.ammo >= FIXED_DCA_AMMO)
+      const profile = CASTOR_FORTIFICATIONS[gun.kind];
+      if (gun.kind !== 'dca' && (!profile || !Number.isFinite(gun.hp) || gun.hp <= 0))
         continue;
       if (
         !sources.some(
@@ -158,17 +160,27 @@ export function advancePaidService(
         )
       )
         continue;
-      const quantity = Math.min(
-        FIXED_DCA_AMMO - gun.ammo,
-        (FIXED_DCA_AMMO * dt) / SERVICE_SECONDS,
-      );
-      const cost = quantity * SERVICE_RATES.shell;
-      if (cost > 0)
+      const capacity = profile?.ammo ?? FIXED_DCA_AMMO;
+      if (Number.isFinite(gun.ammo) && gun.ammo < capacity) {
+        const quantity = Math.min(capacity - gun.ammo, (capacity * dt) / SERVICE_SECONDS);
+        const cost = quantity * (profile?.shell || gun.kind === 'dca'
+          ? SERVICE_RATES.shell : SERVICE_RATES.machineGun);
+        if (cost > 0)
+          jobs.push({
+            cost,
+            needs: [{ cost, apply: (fraction) => (gun.ammo += quantity * fraction) }],
+            mark: () => {},
+          });
+      }
+      if (profile && gun.hp < profile.hp) {
+        const hp = Math.min(profile.hp - gun.hp, profile.hp * dt * 0.1);
+        const cost = hp * SERVICE_RATES.hp;
         jobs.push({
           cost,
-          needs: [{ cost, apply: (fraction) => (gun.ammo += quantity * fraction) }],
+          needs: [{ cost, apply: (fraction) => (gun.hp += hp * fraction) }],
           mark: () => {},
         });
+      }
     }
   }
   // Barricades compete in the same fair, paid allocation as vehicles; the

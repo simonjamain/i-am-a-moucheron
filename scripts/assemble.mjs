@@ -83,6 +83,7 @@ const files = {
       'aircraft-fire',
       'logistics',
       'ground-ammo',
+      'castor-fortifications',
       'malice',
       'vehicle-livery',
       'input',

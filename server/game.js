@@ -6,7 +6,7 @@ import {
   resolveVote,
   equipBlueprint,
 } from './wave-preparation.js';
-import { feedingPoint } from '../src/ground-defense-state.js';
+import { feedingPoint, GROUND_GOAL } from '../src/ground-defense-state.js';
 import { DEFAULT_BALANCE, validateBalance, money, retimeRoster } from '../src/balance.js';
 import { deliveryStart, deliveryLanding, deliveryHeightAt } from '../src/delivery.js';
 import {
@@ -63,6 +63,9 @@ import {
 import { SHOP, shopPrice, supportedPlacement, waveStipend } from '../src/equipment.js';
 import { advancePaidService } from '../src/paid-service.js';
 import { FIXED_DCA_AMMO, PISTOL_CAPACITY } from '../src/ground-ammo.js';
+import {
+  CASTOR_FORTIFICATIONS, castorFortificationPlacement, fortificationProxy,
+} from '../src/castor-fortifications.js';
 import {
   fullAmmo,
   ammoCapacity,
@@ -169,6 +172,7 @@ function roomState(code, now) {
     ordnance: [],
     ordnanceShots: new Set(),
     fixedDcaShots: new Set(),
+    fortificationShots: new Set(),
     damageEvents: [],
     damageSeq: 0,
     enemyHits: new Set(),
@@ -433,7 +437,11 @@ export class Game {
     return body;
   }
   advanceGround(r, now) {
-    if (!r.groundEnabled && !r.groundDefense.structures.some((s) => s.kind !== 'fan')) return;
+    if (
+      !r.groundEnabled &&
+      !r.groundDefense.structures.some((s) => s.kind !== 'fan') &&
+      !r.equipment.some((s) => CASTOR_FORTIFICATIONS[s.kind] && s.hp > 0)
+    ) return;
     if (r.phase !== 'combat') return;
     const elapsed = (now - r.started) / 1000;
     if (r.groundWave !== r.wave) {
@@ -445,7 +453,7 @@ export class Game {
     }
     r.groundEnabled = true;
     if (r.groundNavRevision !== r.groundDefense.navigationRevision) {
-      r.groundNavigation = groundFlow(r.groundDefense);
+      r.groundNavigation = groundFlow(r.groundDefense, GROUND_GOAL, r.equipment);
       r.groundBaitFlows = new Map();
       r.groundNavRevision = r.groundDefense.navigationRevision;
     }
@@ -455,7 +463,7 @@ export class Game {
       if (!r.groundBaitFlows.has(bait.id)) {
         let path = null;
         try {
-          path = groundFlow(r.groundDefense, feedingPoint(bait));
+          path = groundFlow(r.groundDefense, feedingPoint(bait), r.equipment);
         } catch {
           // An obstructed sachet cannot be reached: creatures resume their bin goal.
         }
@@ -464,10 +472,20 @@ export class Game {
       return r.groundBaitFlows.get(bait.id);
     };
     const world = {
-      structures: r.groundDefense.structures,
+      structures: [
+        ...r.groundDefense.structures,
+        ...r.equipment.map(fortificationProxy).filter(Boolean),
+      ],
       goalFlow: r.groundNavigation,
       baitFlow,
-      damageWall: (id, amount) => damageBarricade(r.groundDefense, id, amount),
+      damageWall: (id, amount) => {
+        if (!id.startsWith('fort:')) return damageBarricade(r.groundDefense, id, amount);
+        const target = r.equipment[Number(id.slice(5))];
+        if (!CASTOR_FORTIFICATIONS[target?.kind] || target.hp <= 0) return false;
+        target.hp = Math.max(0, target.hp - amount);
+        if (target.hp === 0) r.groundDefense.navigationRevision++;
+        return target.hp === 0;
+      },
     };
     const roster = this.plan(r).roster;
     for (let i = 0; i < roster.length; i++) {
@@ -491,8 +509,12 @@ export class Game {
   advance(r) {
     const now = this.now();
     this.advanceGround(r, now);
+    this.advanceFortifications(r, now);
     this.advanceOrdnance(r, now);
     this.vehicleContacts(r, now);
+    for (const p of r.pilots.values())
+      if (p.mode === 'turret' && r.equipment[p.state.turret]?.hp === 0)
+        this.kill(r, p, p.incarnation);
     // A destroyed hull can arrive through motion before the client's death
     // command. Resolve its crew here even if that client disconnects.
     for (const v of r.vehicles.values())
@@ -1040,6 +1062,7 @@ export class Game {
     else if (path === 'wash') this.wash(r, p, b);
     else if (path === 'pistol-trace') this.pistolTrace(r, p, b);
     else if (path === 'fixed-dca-fire') this.fixedDcaFire(r, p, b);
+    else if (path === 'fortification-fire') this.fortificationFire(r, p, b);
     else if (path === 'wave-vote') {
       const prep = r.preparation;
       requireGame(prep && b.preparation === prep.id && !prep.winner, 'Ce vote est clos.');
@@ -1264,6 +1287,35 @@ export class Game {
       );
       w = baseWorld(body);
     }
+    if (b.action === 'build' && CASTOR_FORTIFICATIONS[b.kind]) {
+      requireGame(castor, 'Cette défense requiert le conducteur du Castor.');
+      let result;
+      try {
+        result = castorFortificationPlacement(
+          b.kind, b.a, [w.x, w.z], r.dollars,
+          r.blueprintLevels, r.equipment, r.groundDefense.structures,
+        );
+      } catch (error) {
+        requireGame(false, error.message, 400);
+      }
+      const profile = result.profile;
+      const slot = r.equipment.length;
+      r.equipment.push({
+        slot, kind: b.kind, name: profile.name,
+        x: b.a[0], y: 0.00005, z: b.a[1],
+        angle: Number.isFinite(b.angle) ? b.angle % (Math.PI * 2) : 0,
+        hp: profile.hp, maxHp: profile.hp, ammo: profile.ammo,
+      });
+      r.dollars = money(r.dollars - result.price);
+      r.groundDefense.navigationRevision++;
+      r.groundDefense.revision++;
+      if (key) {
+        r.groundDefenseOrders.set(key, true);
+        if (r.groundDefenseOrders.size > 2048)
+          r.groundDefenseOrders.delete(r.groundDefenseOrders.keys().next().value);
+      }
+      return;
+    }
     let transaction;
     try {
       transaction = groundCommand(
@@ -1281,6 +1333,72 @@ export class Game {
       r.groundDefenseOrders.set(key, true);
       if (r.groundDefenseOrders.size > 2048)
         r.groundDefenseOrders.delete(r.groundDefenseOrders.keys().next().value);
+    }
+  }
+  advanceFortifications(r, now) {
+    if (r.phase !== 'combat') return;
+    for (const gun of r.equipment) {
+      const profile = CASTOR_FORTIFICATIONS[gun.kind];
+      if (!profile || gun.kind !== 'autoturret' || gun.hp <= 0 || gun.ammo < 1 ||
+        now < (gun.lastShotAt ?? -Infinity) + profile.interval * 1000 / (r.balance.fireRate || 1))
+        continue;
+      const range = profile.range;
+      let best = null;
+      for (const [id, unit] of Object.entries(r.groundAgents)) {
+        const enemy = this.plan(r).roster[Number(id)];
+        if (!enemy?.ground || unit.arrived || r.kills.has(Number(id))) continue;
+        const distance = Math.hypot(unit.p[0] - gun.x, unit.p[1] - gun.z);
+        if (distance <= range && (!best || distance < best.distance))
+          best = { enemy: Number(id), unit, distance };
+      }
+      if (!best) continue;
+      gun.ammo -= 1;
+      gun.lastShotAt = now;
+      gun.aim = [(best.unit.p[0] - gun.x) / Math.max(best.distance, 1e-6),
+        0, (best.unit.p[1] - gun.z) / Math.max(best.distance, 1e-6)];
+      const enemy = this.plan(r).roster[best.enemy];
+      r.enemyDamage[best.enemy] = (r.enemyDamage[best.enemy] || 0) +
+        profile.damage * r.balance.damage;
+      if (r.enemyDamage[best.enemy] >= enemy.hp) this.defeatEnemy(r, best.enemy);
+      r.effects.push({
+        id: ++r.effectSeq, kind: 'fortification-shot',
+        p: [gun.x, gun.y + MAP.metres(2), gun.z], direction: gun.aim,
+        station: gun.slot, at: now,
+      });
+    }
+  }
+  fortificationFire(r, p, b) {
+    const gun = r.equipment[b.station];
+    const profile = CASTOR_FORTIFICATIONS[gun?.kind];
+    requireGame(
+      p.life === 'alive' && p.mode === 'turret' && profile?.occupied &&
+      p.state.turret === b.station && p.incarnation === b.incarnation &&
+      gun.hp > 0, 'Occupez cette défense pour tirer.',
+    );
+    requireGame(typeof b.shot === 'string' && b.shot.length > 0 && b.shot.length <= 120,
+      'Identifiant de tir invalide.', 400);
+    const key = p.id + ':' + p.incarnation + ':' + b.shot;
+    if (r.fortificationShots.has(key)) return;
+    requireGame(gun.ammo >= 1, 'Réserve de la défense épuisée.');
+    requireGame(this.now() >= (gun.lastShotAt ?? -Infinity) +
+      profile.interval * 1000 / (r.balance.fireRate || 1), 'Canon en recharge.');
+    const enemy = this.plan(r).roster[b.enemy];
+    const unit = r.groundAgents[enemy?.id];
+    if (b.enemy !== null && b.enemy !== undefined)
+      requireGame(
+        r.phase === 'combat' && Number.isInteger(b.enemy) && enemy?.ground &&
+        unit && !unit.arrived && !r.kills.has(b.enemy) &&
+        Math.hypot(unit.p[0] - gun.x, unit.p[1] - gun.z) <= profile.range,
+        'Cible terrestre hors de portée.',
+      );
+    requireGame(r.fortificationShots.size < 128000, 'Trop de tirs enregistrés.', 429);
+    gun.ammo -= 1;
+    gun.lastShotAt = this.now();
+    r.fortificationShots.add(key);
+    if (enemy?.ground && unit) {
+      r.enemyDamage[b.enemy] = (r.enemyDamage[b.enemy] || 0) +
+        profile.damage * r.balance.damage;
+      if (r.enemyDamage[b.enemy] >= enemy.hp) this.defeatEnemy(r, b.enemy);
     }
   }
   fixedDcaFire(r, p, b) {
@@ -1739,7 +1857,8 @@ export class Game {
     requireGame(
       p.mode === 'foot' &&
         Number.isInteger(b.station) &&
-        s?.kind === 'dca' &&
+        ['dca', 'bunker', 'antitank'].includes(s?.kind) &&
+        (s.hp === undefined || s.hp > 0) &&
         body &&
         !body.parachute &&
         stationAccess(baseWorld(body), s),
@@ -2453,6 +2572,12 @@ export class Game {
     );
     if (!this.pistolImpact(r, p, b.shot)) return;
     this.once(r, JSON.stringify(['health', target.id, target.incarnation, p.id, b.shot]), () => {
+      const cover = target.mode === 'turret' ? r.equipment[target.state.turret] : null;
+      if (cover?.kind === 'bunker' && cover.hp > 0) {
+        cover.hp = Math.max(0, cover.hp - amount);
+        if (cover.hp === 0) r.groundDefense.navigationRevision++;
+        return;
+      }
       r.damageEvents.push({
         id: ++r.damageSeq,
         target: target.id,
