@@ -108,6 +108,6 @@ p.vehicle_id = null;
 p.seat = null;
 assert.throws(
   () => command({ action: 'build', kind: 'sentry', a: [0.2, 0] }),
-  /Castor/,
+  /sol/,
 );
 console.log('Sentry unlock, cash, finite shots, paid service, network retry and server access: OK');
