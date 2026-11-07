@@ -1532,6 +1532,10 @@ addEventListener('keydown', (event) => {
     purchaseUI.opened
   )
     return;
+  if (interactionKey === 'KeyG') {
+    if (groundDefenseUI.handleWheelKey(interactionKey, true, event.repeat)) event.preventDefault();
+    return;
+  }
   if (groundDefenseUI.active && canCapture()) {
     if (interactionKey === 'KeyR' || interactionKey === 'KeyE' || interactionKey === 'Enter') {
       event.preventDefault();
@@ -1666,7 +1670,9 @@ addEventListener('keydown', (event) => {
   }
 });
 addEventListener('keyup', (event) => {
-  keys[keyBindings.get(event.code) || gameKey(event)] = false;
+  const code = keyBindings.get(event.code) || gameKey(event);
+  if (groundDefenseUI.handleWheelKey(code, false)) event.preventDefault();
+  keys[code] = false;
   keyBindings.delete(event.code);
 });
 addEventListener('blur', clearControls);
