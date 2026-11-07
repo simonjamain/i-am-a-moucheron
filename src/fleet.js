@@ -89,7 +89,10 @@ VEHICLES.castor = {
   seats: ['pilot'],
   span: 6,
   length: 9,
-  maxSpeed: 26,
+  // Twice the first tuning (issue #98); first-order approach: strong
+  // acceleration from a standstill that fades near top speed.
+  maxSpeed: 52,
+  response: 4,
   thrust: 6,
   drag: 0.1,
   liftBase: 0,

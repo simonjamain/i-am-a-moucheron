@@ -105,6 +105,7 @@ import { UdpClient } from '/udp-client.js';
 import { HoldZoom, advanceFuse, contextKey, rangeReadout } from '/equipment-controls.js';
 import { HEAVY, TANK_MG, availableShell } from '/armament.js';
 import { stepTank } from '/tank.js';
+import { animateCastorWheels, trackGroundMotion } from '/castor-wheels.js';
 import { CrashEffects } from '/crash-effects.js';
 import { MissileExhaust } from '/missile-exhaust.js';
 import * as T from '/three.js';
@@ -3355,8 +3356,19 @@ function updateOthers(dt) {
     }
     if (g.userData.trailer) g.userData.trailer.rotation.y = motion.trailerAngle || 0;
     if (g.userData.wheels) {
-      const speed = new T.Vector3().fromArray(motion.v).length() / ACTOR_UNIT;
-      for (const wheel of g.userData.wheels) wheel.rotation.x += speed * dt * 0.35;
+      const forward = new T.Vector3(0, 0, -1).applyQuaternion(g.quaternion);
+      const velocity = isSelf ? vel : new T.Vector3().fromArray(motion.v);
+      animateCastorWheels(
+        g.userData.wheels,
+        trackGroundMotion(
+          (g.userData.wheelMemory ??= {}),
+          Math.atan2(-forward.x, -forward.z),
+          velocity.dot(forward),
+          dt,
+        ),
+        { scale: ACTOR_UNIT, turnRate: VEHICLES[v.type].turn },
+        dt,
+      );
     }
     if (v.type === 'castor') {
       const mount = g.userData.turrets[0];
