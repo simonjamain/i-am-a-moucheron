@@ -8,6 +8,7 @@ import {
 } from './wave-preparation.js';
 import { feedingPoint } from '../src/ground-defense-state.js';
 import { DEFAULT_BALANCE, validateBalance, money, retimeRoster } from '../src/balance.js';
+import { BLUEPRINTS } from '../src/wave-blueprints.js';
 import { deliveryStart, deliveryLanding, deliveryHeightAt } from '../src/delivery.js';
 import {
   newGroundDefense,
@@ -83,6 +84,7 @@ import { heavyDamage } from '../src/armament.js';
 
 const uid = () => randomUUID();
 const values = (m) => [...m.values()];
+const LAB_FUNDS = 1000000000;
 const clone = (x) => structuredClone(x);
 function requireGame(ok, message, status = 409) {
   if (!ok) throw Object.assign(new Error(message), { status });
@@ -121,6 +123,7 @@ function roomState(code, now) {
   return {
     code,
     balance: { ...DEFAULT_BALANCE },
+    lab: { enabled: false, scenarios: [] },
     balanceRevision: 0,
     rosterRevision: 0,
     balanceOwnerToken: null,
@@ -530,6 +533,7 @@ export class Game {
     if (fired) r.groundDefense.revision++;
   }
   advance(r) {
+    if (r.lab.enabled) r.dollars = LAB_FUNDS;
     const now = this.now();
     this.advanceGround(r, now);
     this.advanceSentries(r, now);
@@ -642,6 +646,162 @@ export class Game {
         !values(r.requests).some((q) => token === q.id + ':' + p?.id)
       )
         r.dossiers.delete(token);
+    }
+    if (r.lab.enabled) r.dollars = LAB_FUNDS;
+  }
+  resetRoom(r, lab = r.lab) {
+    const pilots = r.pilots;
+    const identities = r.identityTokens;
+    const balance = r.balance;
+    const owner = r.balanceOwnerToken;
+    const revision = r.balanceRevision;
+    Object.assign(r, roomState(r.code, this.now()));
+    r.balance = balance;
+    r.balanceOwnerToken = owner;
+    r.balanceRevision = revision + 1;
+    r.lab = lab;
+    r.dollars = lab.enabled ? LAB_FUNDS : balance.startingMoney;
+    r.pilots = pilots;
+    r.identityTokens = identities;
+    r.playerSequence = Math.max(0, ...values(pilots).map((pilot) => pilot.colorSequence || 0));
+    for (const pilot of pilots.values())
+      r.playerColors.set(identities.get(pilot.id), pilot.colorSequence);
+    for (const token of identities.values()) r.bedContracts.set(token, null);
+    for (const pilot of pilots.values())
+      Object.assign(pilot, {
+        life: 'alive',
+        health: 100,
+        pistolAmmo: PISTOL_CAPACITY,
+        incarnation: pilot.incarnation + 1,
+        occupation: pilot.occupation + 1,
+        mode: 'foot',
+        vehicle_id: null,
+        seat: null,
+        board_paper: 0,
+        state: initialState(),
+        bedId: null,
+      });
+    if (lab.enabled)
+      for (const card of Object.keys(BLUEPRINTS))
+        r.blueprintLevels[card] = Math.max(1, r.blueprintLevels[card] || 0);
+  }
+  setLabWave(r, wave) {
+    requireGame(
+      Number.isSafeInteger(wave) && wave >= 1 && wave <= 100,
+      'Vague : entier de 1 à 100.',
+      400,
+    );
+    r.wave = wave - 1;
+    r.phase = 'prep';
+    r.plan = { budget: 0, roster: [] };
+    r.upcomingPlan = null;
+    r.preparation = null;
+    r.started = 0;
+    r.mission_started = 1;
+    r.next_wave_at = 0;
+    r.infestation = 0;
+    r.kills.clear();
+    r.enemyDamage = {};
+    r.enemyHits.clear();
+    r.rosterRevision = 0;
+    r.groundEnabled = false;
+    r.groundAgents = {};
+    r.groundWave = -1;
+    r.groundAt = 0;
+    r.ordnance = [];
+    r.ordnanceShots.clear();
+    r.fixedDcaShots.clear();
+    this.prepareWave(r);
+  }
+  labCommand(r, b) {
+    requireGame(b.epoch === r.base.epoch, 'La partie a changé ; rechargez le laboratoire.', 409);
+    const action = b.action;
+    if (action === 'enable') {
+      requireGame(!r.lab.enabled, 'Le laboratoire est déjà actif.');
+      r.lab.enabled = true;
+      r.dollars = LAB_FUNDS;
+      for (const card of Object.keys(BLUEPRINTS))
+        r.blueprintLevels[card] = Math.max(1, r.blueprintLevels[card] || 0);
+      if (!r.mission_started) this.setLabWave(r, 1);
+      return;
+    }
+    requireGame(r.lab.enabled, 'Activez d’abord le laboratoire.');
+    if (action === 'exit') {
+      this.resetRoom(r, { enabled: false, scenarios: [] });
+    } else if (action === 'unlock') {
+      for (const card of Object.keys(BLUEPRINTS))
+        r.blueprintLevels[card] = Math.max(1, r.blueprintLevels[card] || 0);
+    } else if (action === 'card') {
+      requireGame(
+        typeof b.card === 'string' && Object.hasOwn(BLUEPRINTS, b.card),
+        'Plan inconnu.',
+        400,
+      );
+      r.blueprintLevels[b.card] = Math.min(100, (r.blueprintLevels[b.card] || 0) + 1);
+    } else if (action === 'wave') {
+      this.setLabWave(r, b.wave);
+    } else if (action === 'start') {
+      requireGame(r.phase === 'prep', 'Une vague est déjà en cours.');
+      this.startWave(r);
+    } else if (action === 'finish') {
+      requireGame(r.phase === 'combat', 'Aucune vague à terminer.');
+      for (let i = 0; i < this.plan(r).roster.length; i++) r.kills.add(i);
+      this.advance(r);
+    } else if (action === 'save') {
+      const name = typeof b.name === 'string' ? b.name.trim() : '';
+      requireGame(
+        name.length >= 1 && name.length <= 50,
+        'Nom de scénario : 1 à 50 caractères.',
+        400,
+      );
+      const data = clone({
+        wave: r.wave,
+        phase: r.phase,
+        balance: r.balance,
+        blueprintLevels: r.blueprintLevels,
+        upgrades: r.upgrades,
+        equipment: r.equipment,
+        groundDefense: r.groundDefense,
+        vehicles: r.vehicles,
+        plan: r.phase === 'combat' ? r.plan : null,
+        upcomingPlan: r.phase === 'prep' ? r.upcomingPlan : null,
+        preparation: r.phase === 'prep' ? r.preparation : null,
+      });
+      r.lab.scenarios.push({ id: uid(), name, wave: r.wave, phase: r.phase, data });
+      if (r.lab.scenarios.length > 5) r.lab.scenarios.shift();
+    } else if (action === 'load') {
+      const scenario = r.lab.scenarios.find((item) => item.id === b.scenario);
+      requireGame(scenario, 'Scénario introuvable.', 404);
+      const saved = clone(scenario.data);
+      this.resetRoom(r);
+      r.balance = saved.balance;
+      r.blueprintLevels = saved.blueprintLevels;
+      r.upgrades = saved.upgrades;
+      r.equipment = saved.equipment;
+      r.groundDefense = saved.groundDefense;
+      r.vehicles = saved.vehicles;
+      for (const vehicle of r.vehicles.values()) {
+        vehicle.seats = new Map();
+        vehicle.updated = this.now();
+        vehicle.contacts = [];
+        vehicle.contactPosition = [...vehicle.state.p];
+      }
+      r.lastPaidServiceAt = this.now();
+      this.setLabWave(r, Math.max(1, saved.phase === 'combat' ? saved.wave : saved.wave + 1));
+      const replay = saved.phase === 'combat' ? saved.plan : saved.upcomingPlan;
+      if (replay?.roster) {
+        r.upcomingPlan = replay;
+        r.preparation.groups = forecast(replay.roster);
+      }
+      if (saved.phase === 'prep' && saved.preparation?.winner)
+        r.preparation.winner = saved.preparation.winner;
+      r.dollars = LAB_FUNDS;
+    } else if (action === 'delete') {
+      const index = r.lab.scenarios.findIndex((item) => item.id === b.scenario);
+      requireGame(index !== -1, 'Scénario introuvable.', 404);
+      r.lab.scenarios.splice(index, 1);
+    } else {
+      requireGame(false, 'Action de laboratoire inconnue.', 400);
     }
   }
   plan(r) {
@@ -809,6 +969,19 @@ export class Game {
     return clone({
       code: r.code,
       balance: r.balance,
+      ...(r.lab.enabled
+        ? {
+            lab: {
+              enabled: true,
+              scenarios: r.lab.scenarios.map(({ id, name, wave, phase }) => ({
+                id,
+                name,
+                wave,
+                phase,
+              })),
+            },
+          }
+        : {}),
       balanceRevision: r.balanceRevision,
       rosterRevision: r.rosterRevision,
       balanceOwner: activePilots
@@ -1060,6 +1233,7 @@ export class Game {
           'enter-purgatory',
           'reset',
           'balance',
+          'lab',
           'debug-spawn',
           'wave-vote',
           'wave-equip',
@@ -1074,6 +1248,7 @@ export class Game {
         this.soul(r, 'player', p.id, p.name, p.state.realm);
       }
     } else if (path === 'balance') this.setBalance(r, p, b);
+    else if (path === 'lab') this.labCommand(r, b);
     else if (path === 'debug-spawn') this.spawnDebug(r, b);
     else if (path === 'ground-defense') this.groundDefenseCommand(r, p, b);
     else if (path === 'sync') this.sync(r, p, b);
@@ -1104,35 +1279,7 @@ export class Game {
         this.startWave(r);
     } else if (path === 'reset') {
       if (b.epoch !== undefined && b.epoch !== r.base.epoch) return this.snapshot(r, options);
-      const pilots = r.pilots,
-        identities = r.identityTokens,
-        balance = r.balance,
-        owner = r.balanceOwnerToken,
-        revision = r.balanceRevision;
-      Object.assign(r, roomState(r.code, this.now()));
-      r.balance = balance;
-      r.balanceOwnerToken = owner;
-      r.balanceRevision = revision + 1;
-      r.dollars = balance.startingMoney;
-      r.pilots = pilots;
-      r.identityTokens = identities;
-      r.playerSequence = Math.max(0, ...values(pilots).map((p) => p.colorSequence || 0));
-      for (const p of pilots.values()) r.playerColors.set(identities.get(p.id), p.colorSequence);
-      for (const token of identities.values()) r.bedContracts.set(token, null);
-      for (const p of pilots.values())
-        Object.assign(p, {
-          life: 'alive',
-          health: 100,
-          pistolAmmo: PISTOL_CAPACITY,
-          incarnation: p.incarnation + 1,
-          occupation: p.occupation + 1,
-          mode: 'foot',
-          vehicle_id: null,
-          seat: null,
-          board_paper: 0,
-          state: initialState(),
-          bedId: null,
-        });
+      this.resetRoom(r);
     } else if (path === 'bank-sign' || path === 'bank-repay') {
       requireGame(
         b.epoch === undefined || b.epoch === r.base.epoch,
