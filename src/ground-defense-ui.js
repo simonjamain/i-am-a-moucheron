@@ -1,7 +1,8 @@
-import { createBrickWall } from './brick-wall.js';
+import { createGroundModel } from './ground-model.js';
+import { ModelPreview } from './model-preview.js';
 import { AirTrails } from './air-trails.js';
 import { groundPlacement } from './ground-placement.js';
-import { createSentryModel, sentryAimAngles, sentryAngleDelta, SENTRY_MUZZLE_HEIGHT } from './sentry-model.js';
+import { sentryAimAngles, sentryAngleDelta, SENTRY_MUZZLE_HEIGHT } from './sentry-model.js';
 export class GroundDefenseUI {
   constructor({
     T,
@@ -16,9 +17,11 @@ export class GroundDefenseUI {
     foot,
     aim,
     builder = () => null,
+    fortificationModel,
     enabled,
   }) {
     this.foot = foot;
+    this.fortificationModel = fortificationModel;
     this.builder = builder;
     this.trailAnchor = null;
     this.trailSequence = 0;
@@ -126,15 +129,8 @@ export class GroundDefenseUI {
       'position:fixed;bottom:65px;left:50%;transform:translateX(-50%);z-index:18;padding:10px;display:none';
     this.status.onclick = () => this.press();
     document.body.append(this.trigger, this.panel, this.status);
-    this.preview = new T.Mesh(
-      new T.BoxGeometry(1, 1, 1),
-      new T.MeshBasicMaterial({
-        color: '#a7ece0',
-        transparent: true,
-        opacity: 0.55,
-        depthWrite: false,
-      }),
-    );
+    this.previewModel = new ModelPreview(T, scene);
+    this.preview = this.previewModel.root;
     this.preview.visible = false;
     this.fanArrow = new T.ArrowHelper(
       new T.Vector3(0, 0, 1),
@@ -354,39 +350,46 @@ export class GroundDefenseUI {
         : `${this.anchor ? 'Clic pour terminer' : ['sticky', 'barricade'].includes(this.mode) ? 'Clic pour commencer' : 'Clic'} · ${this.mode === 'repair' ? 'Réparer' : this.mode === 'remove' ? 'Enlever' : 'Poser'} · ${c.price} $ · Échap : quitter`);
     this.status.disabled = !!c.error || this.busy;
     if (!c.center) return;
-    if (!this.anchor && ['barricade', 'sticky'].includes(this.mode)) {
-      this.preview.position.set(c.center[0], 0.005, c.center[1]);
-      this.preview.scale.set(0.008, 0.01, 0.008);
-      this.preview.rotation.y = 0;
-      this.preview.material.color.set('#a7ece0');
-      this.preview.visible = true;
-      this.status.textContent = 'Clic ou E : fixer le début · Échap : quitter';
-      this.status.disabled = this.busy;
-      return;
-    }
     const cmd = c.command;
     const target = cmd?.id && snap.groundDefense.structures.find((s) => s.id === cmd.id);
-    const shape = target || cmd;
-    const a = shape?.a,
-      b = shape?.b;
-    const x = a && b ? (a[0] + b[0]) / 2 : (target?.position || c.center)[0];
-    const z = a && b ? (a[1] + b[1]) / 2 : (target?.position || c.center)[1];
     const kind = target?.kind || this.mode;
-    this.preview.position.set(x, kind === 'sugar' ? 0.002 : kind === 'sticky' ? 0.001 : 0.01, z);
-    this.preview.scale.set(
-      a && b ? Math.hypot(b[0] - a[0], b[1] - a[1]) : 0.042,
-      kind === 'sticky' || kind === 'sugar' ? 0.002 : 0.02,
-      kind === 'sticky' || kind === 'sugar' ? 0.03 : 0.008,
+    if (['repair', 'remove'].includes(kind)) return;
+    const shape = target || cmd;
+    const a = shape?.a || c.center;
+    const b = shape?.b || (['barricade', 'sticky'].includes(kind) ? [a[0] + 0.024, a[1]] : null);
+    const position = target?.position || (b ? [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2] : c.center);
+    const length = b ? Math.hypot(b[0] - a[0], b[1] - a[1]) : 0;
+    const angle = b ? -Math.atan2(b[1] - a[1], b[0] - a[0]) : shape?.angle || 0;
+    const previewKey = kind + ':' + length.toFixed(4);
+    this.previewModel.show(
+      previewKey,
+      () => {
+        if (kind === 'bunker' || kind === 'antitank')
+          return this.fortificationModel?.({ kind, x: 0, y: 0.00005, z: 0, angle: 0 });
+        return createGroundModel(this.T, {
+          kind,
+          position: [0, 0],
+          angle: 0,
+          hp: 100,
+          radius: target?.radius || 0.15,
+          a: [-length / 2, 0],
+          b: [length / 2, 0],
+        });
+      },
+      { x: position[0], y: 0, z: position[1], angle },
+      !c.error,
     );
-    this.preview.rotation.y = a && b ? -Math.atan2(b[1] - a[1], b[0] - a[0]) : shape?.angle || 0;
-    this.preview.material.color.set(c.error ? '#ed665b' : '#a7ece0');
-    this.preview.visible = true;
-    if (this.mode === 'fan' && cmd) {
+    if (c.startOnly) {
+      this.status.textContent = 'Clic ou E : fixer le début · Échap : quitter';
+      this.status.disabled = this.busy;
+    }
+    if (kind === 'fan' && cmd) {
       this.fanArrow.visible = true;
-      this.fanArrow.position.set(x, 0.02, z);
-      this.fanArrow.setDirection(new this.T.Vector3(Math.sin(cmd.angle), 0, Math.cos(cmd.angle)));
+      this.fanArrow.position.set(position[0], 0.02, position[1]);
+      this.fanArrow.setDirection(new this.T.Vector3(Math.sin(angle), 0, Math.cos(angle)));
     }
   }
+
   updateSentryAim(snap) {
     const now = performance.now();
     const dt = this.lastSentryFrame ? Math.min(0.1, (now - this.lastSentryFrame) / 1000) : 1 / 60;
@@ -409,8 +412,7 @@ export class GroundDefenseUI {
         model.targetYaw = yaw - (structure.angle || 0);
         model.targetPitch = pitch;
       }
-      model.yaw.rotation.y +=
-        sentryAngleDelta(model.yaw.rotation.y, model.targetYaw) * weight;
+      model.yaw.rotation.y += sentryAngleDelta(model.yaw.rotation.y, model.targetYaw) * weight;
       model.pitch.rotation.x += (model.targetPitch - model.pitch.rotation.x) * weight;
       model.lens.material.color.set(structure.ammo > 0 ? '#1ecbd9' : '#87574c');
     }
@@ -444,122 +446,15 @@ export class GroundDefenseUI {
     for (const structure of structures) {
       // Occupied fortifications are already rendered with their articulated gun and operator.
       if (structure.kind === 'bunker' || structure.kind === 'antitank') continue;
-      const group = new T.Group();
-      if (structure.kind === 'fan') {
-        group.position.set(structure.position[0], 0.032, structure.position[1]);
-        group.rotation.y = structure.angle;
-        const hoop = new T.Mesh(
-          new T.TorusGeometry(0.027, 0.002, 6, 20),
-          new T.MeshBasicMaterial({ color: '#71a2a7' }),
-        );
-        group.add(hoop);
-        for (let i = 0; i < 3; i++) {
-          const blade = new T.Mesh(
-            new T.BoxGeometry(0.024, 0.009, 0.004),
-            new T.MeshBasicMaterial({ color: '#dcdfcf' }),
-          );
-          blade.rotation.z = (i * 2 * Math.PI) / 3;
-          blade.position.set(
-            0.013 * Math.cos(blade.rotation.z),
-            0.013 * Math.sin(blade.rotation.z),
-            0,
-          );
-          group.add(blade);
-        }
-        const nose = new T.Mesh(
-          new T.ConeGeometry(0.008, 0.018, 6),
-          new T.MeshBasicMaterial({ color: '#e9ad58' }),
-        );
-        nose.rotation.x = Math.PI / 2;
-        nose.position.z = 0.01;
-        group.add(nose);
-      } else if (structure.kind === 'sugar') {
-        const [x, z] = structure.position;
-        const paper = new T.Mesh(
-          new T.BoxGeometry(0.042, 0.002, 0.03),
-          new T.MeshBasicMaterial({ color: '#f5ece2' }),
-        );
-        paper.position.set(0, 0.002, 0);
-        group.position.set(x, 0, z);
-        group.rotation.y = structure.angle || 0;
-        group.add(paper);
-        // Two printed stripes and a lifted paper lip mark the torn opening.
-        for (const offset of [-0.008, -0.004, 0.014]) {
-          const fold = new T.Mesh(
-            new T.BoxGeometry(0.04, 0.001, 0.003),
-            new T.MeshBasicMaterial({ color: offset > 0 ? '#c8ae88' : '#548ba1' }),
-          );
-          fold.position.set(0, 0.0035, offset);
-          if (offset > 0) fold.rotation.x = -0.55;
-          group.add(fold);
-        }
-        for (let i = 0; i < 6; i++) {
-          const grain = new T.Mesh(
-            new T.BoxGeometry(0.002, 0.002, 0.002),
-            new T.MeshBasicMaterial({ color: '#faf9ed' }),
-          );
-          grain.position.set(-0.015 + (i % 3) * 0.009, 0.003, 0.02 + Math.floor(i / 3) * 0.006);
-          group.add(grain);
-        }
-        const ring = new T.Mesh(
-          new T.RingGeometry(structure.radius - 0.002, structure.radius, 56),
-          new T.MeshBasicMaterial({
-            color: '#e9d487',
-            side: T.DoubleSide,
-            transparent: true,
-            opacity: 0.55,
-          }),
-        );
-        ring.rotation.x = -Math.PI / 2;
-        ring.position.set(0, 0.002, 0);
-        group.add(ring);
-      } else if (structure.kind === 'sentry') {
-        if (this.sentries.has(String(structure.id))) continue;
-        const [x, z] = structure.position;
-        group.position.set(x, 0, z);
-        group.rotation.y = structure.angle || 0;
-        const sentry = createSentryModel(T);
+      if (structure.kind === 'sentry' && this.sentries.has(String(structure.id))) continue;
+      const group = createGroundModel(T, structure);
+      if (group.userData.sentry)
         this.sentries.set(String(structure.id), {
-          ...sentry,
+          ...group.userData.sentry,
           container: group,
           targetYaw: 0,
           targetPitch: 0,
         });
-        group.add(sentry.group);
-      } else if (structure.kind === 'barricade') {
-        group.add(createBrickWall(T, structure));
-      } else {
-        const dx = structure.b[0] - structure.a[0];
-        const dz = structure.b[1] - structure.a[1];
-        const length = Math.hypot(dx, dz);
-        const x = (structure.a[0] + structure.b[0]) / 2;
-        const z = (structure.a[1] + structure.b[1]) / 2;
-        const intact = structure.kind !== 'barricade' || structure.hp > 0;
-        const mesh = new T.Mesh(
-          new T.BoxGeometry(
-            length,
-            structure.kind === 'sticky' ? 0.001 : 0.02,
-            structure.kind === 'sticky' ? 0.03 : 0.008,
-          ),
-          new T.MeshBasicMaterial({
-            color: structure.kind === 'sticky' ? '#dcd3a8' : intact ? '#ab8354' : '#574637',
-            transparent: structure.kind === 'sticky',
-            opacity: structure.kind === 'sticky' ? 0.6 : 1,
-          }),
-        );
-        mesh.position.set(x, structure.kind === 'sticky' ? 0.001 : 0.01, z);
-        mesh.rotation.y = -Math.atan2(dz, dx);
-        mesh.visible = intact;
-        group.add(mesh);
-        if (structure.kind === 'sticky') {
-          const sheen = new T.Mesh(
-            new T.BoxGeometry(length, 0.0002, 0.003),
-            new T.MeshBasicMaterial({ color: '#f8efcf' }),
-          );
-          sheen.position.set(0, 0.0006, 0.01);
-          mesh.add(sheen);
-        }
-      }
       this.models.add(group);
     }
   }

@@ -124,7 +124,10 @@ for (let i = 0; i < ui.tools.length; i++) {
 }
 assert.equal(commands.length, 2, 'selecting a sector never builds');
 ui.openWheel();
-ui.moveWheel(80 * Math.sin((2 * Math.PI) / ui.tools.length), -80 * Math.cos((2 * Math.PI) / ui.tools.length));
+ui.moveWheel(
+  80 * Math.sin((2 * Math.PI) / ui.tools.length),
+  -80 * Math.cos((2 * Math.PI) / ui.tools.length),
+);
 ui.finishWheel();
 ui.press();
 assert.equal(commands[2].kind, 'sugar');
@@ -218,7 +221,11 @@ for (const length of [0.002, 0.04, 0.2]) {
 ui.buttons.children[0].onclick();
 allowed = true;
 ui.update();
-assert.equal(ui.preview.scale.x, 0.008, 'unanchored preview has no wall orientation');
+assert.equal(
+  ui.preview.children[0].children[0].isInstancedMesh,
+  true,
+  'unanchored preview shows real bricks',
+);
 target = null;
 ui.press();
 assert.equal(ui.anchor, null, 'invalid aim cannot anchor');

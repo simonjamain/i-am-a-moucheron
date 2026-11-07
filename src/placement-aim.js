@@ -42,3 +42,8 @@ export function placementAim(body, origin, direction, colliders, reach) {
   }
   return point && Math.hypot(point.x - body.x, point.z - body.z) <= reach + 1e-8 ? point : null;
 }
+
+// All vehicle model roots face local -Z. Turn that axis toward the builder.
+export function placementFacing(builder, position) {
+  return Math.atan2(position.x - builder.x, position.z - builder.z);
+}

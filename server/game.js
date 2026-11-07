@@ -328,6 +328,8 @@ export class Game {
     const near = values(r.vehicles).filter((v) => v.type === type && v.state.hp > 0).length;
     if (placement) {
       state.p = [placement.x, placement.y + VEHICLES[type].gear, placement.z];
+      if (Number.isFinite(placement.angle))
+        state.q = [0, Math.sin(placement.angle / 2), 0, Math.cos(placement.angle / 2)];
     } else if (near && origin !== 'starter') {
       state.p[0] += (near % 4) * MAP.metres(VEHICLES[type].span + 5);
       state.p[2] += Math.ceil(near / 4) * MAP.metres(VEHICLES[type].length + 5);
@@ -1829,7 +1831,8 @@ export class Game {
       requireGame(
         p.mode === 'foot' &&
           b.position &&
-          ['x', 'y', 'z'].every((k) => Number.isFinite(b.position[k])),
+          ['x', 'y', 'z'].every((k) => Number.isFinite(b.position[k])) &&
+          (b.position.angle === undefined || Number.isFinite(b.position.angle)),
         'Posez cet équipement à pied.',
       );
       const body = this.base(r, p, b.ground),

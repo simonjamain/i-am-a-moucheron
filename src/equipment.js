@@ -23,7 +23,8 @@ export const SHOP = Object.freeze({
     name: 'Station de ravitaillement',
     cost: 4,
     kind: 'placement',
-    description: 'Répare et recharge automatiquement les véhicules proches, même en mouvement, contre paiement.',
+    description:
+      'Répare et recharge automatiquement les véhicules proches, même en mouvement, contre paiement.',
   },
   radar: {
     name: 'Radar',
@@ -35,7 +36,8 @@ export const SHOP = Object.freeze({
     name: 'DCA à déployer',
     cost: 4,
     kind: 'placement',
-    description: 'Canon fixe avec réserve de 120 obus, rechargeable automatiquement à proximité d’une station ou d’un Castor.'
+    description:
+      'Canon fixe avec réserve de 120 obus, rechargeable automatiquement à proximité d’une station ou d’un Castor.',
   },
   interceptor: {
     name: 'Stuka d’attaque au sol',
@@ -72,7 +74,8 @@ export const SHOP = Object.freeze({
     name: 'G1 Castor · génie mobile',
     cost: 12,
     kind: 'vehicle',
-    description: 'Camion monoplace rapide avec mitrailleuse et ravitaillement mobile dans un rayon de 50 cm.',
+    description:
+      'Camion monoplace rapide avec mitrailleuse et ravitaillement mobile dans un rayon de 50 cm.',
   },
   engine: {
     name: 'Motorisation',
@@ -125,18 +128,21 @@ export function placementAhead(body, distance = 5) {
 // colliders in the Worker. Full base support, free headroom and nearby placement.
 export function supportedPlacement(point, colliders, occupied = [], kind = 'dca') {
   const profile = VEHICLES[kind];
-  const rx = profile
+  const localRx = profile
       ? MAP.metres(profile.span / 2 + 1)
       : kind === 'refuel'
         ? MAP.metres(2.1)
         : MAP.metres(kind === 'bed' ? 3 : 2.1),
-    rz = profile
+    localRz = profile
       ? MAP.metres(profile.length / 2 + 1)
       : kind === 'refuel'
         ? MAP.metres(2.1)
         : MAP.metres(kind === 'bed' ? 2.1 : 1.5),
     height = MAP.metres(profile ? 4 : 3.2),
     eps = 1e-5;
+  const angle = Number.isFinite(point.angle) ? point.angle : 0;
+  const rx = Math.abs(Math.cos(angle)) * localRx + Math.abs(Math.sin(angle)) * localRz;
+  const rz = Math.abs(Math.sin(angle)) * localRx + Math.abs(Math.cos(angle)) * localRz;
   const surfaces = colliders
     .filter(
       (box) =>
@@ -174,7 +180,12 @@ export function supportedPlacement(point, colliders, occupied = [], kind = 'dca'
       )
     )
       continue;
-    return { x: point.x, y: y + 0.00005, z: point.z };
+    return {
+      x: point.x,
+      y: y + 0.00005,
+      z: point.z,
+      ...(Number.isFinite(point.angle) ? { angle } : {}),
+    };
   }
   return null;
 }

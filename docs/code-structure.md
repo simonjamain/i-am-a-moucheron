@@ -170,3 +170,8 @@ le bunker LEGO et le canon antichar occupables (`ground-fortifications.js`).
 et conserve des réserves finies. `paid-service.js` les répare et recharge uniquement
 près du Castor ou des stations, en débitant la caisse commune. `client.js` affiche
 leurs modèles et postes 3D. Voir [note de reprise Castor](tasks/g1-castor.md).
+
+Les modèles de constructions sont partagés entre le rendu final et l’aperçu :
+`ground-model.js` pour les défenses, `fortification-model.js` pour les postes
+occupables. `model-preview.js` gère les matériaux transparents et leur durée de
+vie sans libérer les géométries/textures Meshy partagées.
