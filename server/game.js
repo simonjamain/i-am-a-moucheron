@@ -300,6 +300,7 @@ export class Game {
         r.dollars,
         r.balance,
         Math.min(5, Math.floor(elapsed / 1000)),
+        r.groundDefense,
       );
       r.dollars = result.dollars;
       r.lastPaidServiceAt = now;

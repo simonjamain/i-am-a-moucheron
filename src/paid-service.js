@@ -1,4 +1,5 @@
 import { VEHICLES } from './fleet.js';
+import { distanceToSegment } from './ground-defense.js';
 import { ammoCapacity, FUEL_SECONDS, SERVICE_RADIUS, SERVICE_SECONDS } from './logistics.js';
 
 export const SERVICE_RATES = Object.freeze({
@@ -18,10 +19,8 @@ export function ammoServiceRate(key) {
 }
 
 // No landed/velocity checks: stations work for aircraft in flight.
-export function withinService(v, installations, fleet = []) {
-  if (v.state.hp <= 0) return false;
-  if (v.type === 'castor') return true;
-  const sources = [
+function serviceSources(installations, fleet) {
+  return [
     ...installations
       .filter((s) => s.kind === 'refuel')
       .map((s) => ({ p: [s.x, s.y, s.z], radius: SERVICE_RADIUS })),
@@ -29,6 +28,12 @@ export function withinService(v, installations, fleet = []) {
       .filter((s) => s.type === 'castor' && s.state.hp > 0)
       .map((s) => ({ p: s.state.p, radius: 0.5 })),
   ];
+}
+
+export function withinService(v, installations, fleet = []) {
+  if (v.state.hp <= 0) return false;
+  if (v.type === 'castor') return true;
+  const sources = serviceSources(installations, fleet);
   return sources.some(
     ({ p, radius }) => Math.hypot(...v.state.p.map((n, i) => n - p[i])) <= radius,
   );
@@ -61,7 +66,14 @@ export function fairServiceShares(needs, dollars) {
 
 // Server-only transaction: all sources and consumers share the same room budget.
 // Called once per second by the authoritative room, never per client snapshot.
-export function advancePaidService(fleet, installations, dollars, balance = {}, seconds = 1) {
+export function advancePaidService(
+  fleet,
+  installations,
+  dollars,
+  balance = {},
+  seconds = 1,
+  groundDefense = null,
+) {
   const dt = Math.max(0, Math.min(5, Number.isFinite(seconds) ? seconds : 0));
   const jobs = [];
   for (const v of fleet) {
@@ -95,7 +107,48 @@ export function advancePaidService(fleet, installations, dollars, balance = {}, 
         });
     }
     const cost = needs.reduce((sum, n) => sum + n.cost, 0);
-    if (cost > 0) jobs.push({ v, needs, cost });
+    if (cost > 0) jobs.push({ needs, cost, mark: () => v.supplies.revision++ });
+  }
+  // Barricades compete in the same fair, paid allocation as vehicles; the
+  // nearest point of a segment (not just its center) must be within the
+  // spherical service zone. Ruined segments (0 HP) stay ruined, preserving
+  // ground navigation; rebuilding one requires a future explicit action.
+  let wallsChanged = false;
+  if (dt && groundDefense?.structures?.length) {
+    const sources = serviceSources(installations, fleet);
+    for (const wall of groundDefense.structures) {
+      if (
+        wall.kind !== 'barricade' ||
+        !Number.isFinite(wall.hp) ||
+        !Number.isFinite(wall.maxHp) ||
+        wall.hp <= 0 ||
+        wall.hp >= wall.maxHp
+      )
+        continue;
+      if (
+        !sources.some(
+          ({ p, radius }) =>
+            Math.hypot(distanceToSegment([p[0], p[2]], wall.a, wall.b), p[1] - 0.01) <=
+            radius,
+        )
+      )
+        continue;
+      const amount = Math.min(wall.maxHp - wall.hp, wall.maxHp * dt * 0.1);
+      const cost = amount * SERVICE_RATES.hp;
+      jobs.push({
+        cost,
+        needs: [
+          {
+            cost,
+            apply: (fraction) => {
+              wall.hp = Math.min(wall.maxHp, wall.hp + amount * fraction);
+              wallsChanged = true;
+            },
+          },
+        ],
+        mark: () => {},
+      });
+    }
   }
   const shares = fairServiceShares(jobs.map((job) => job.cost), dollars);
   let spent = 0;
@@ -103,9 +156,10 @@ export function advancePaidService(fleet, installations, dollars, balance = {}, 
     const paid = Math.min(job.cost, shares[index]);
     if (paid <= 0) continue;
     for (const need of job.needs) need.apply(paid / job.cost);
-    job.v.supplies.revision++;
+    job.mark();
     spent += paid;
   }
+  if (wallsChanged) groundDefense.revision++;
   return {
     dollars: Math.round((dollars - spent) * 1e6) / 1e6,
     spent,
