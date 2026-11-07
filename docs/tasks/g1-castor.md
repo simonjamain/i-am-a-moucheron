@@ -67,3 +67,18 @@
   Actions avant fusion. Les essais WebGL du ressenti restent indisponibles.
 - **Restant après la PR** : réparation automatique des murs, munitions finies du
   pistolet et des DCA fixes, bunkers/canons/tourelles exclusifs.
+
+
+## Lot 5 — réparation automatique des barricades (branche feat/castor-automatic-wall-repair)
+
+- Issue #76 partiellement couverte : stations fixes et Castor ont le même service
+  progressif et payant pour les barricades existantes à portée ; le budget est
+  partagé équitablement avec les véhicules, sans facturation gratuite.
+- Les segments détruits (0 PV) restent détruits, le pathfinding n'est pas recalculé
+  si seul un segment encore debout est réparé. Aucun nouvel équipement n'est ajouté.
+- Vérifications : nouveau test de domaine `test-castor-repair.mjs` dans `npm test`,
+  CI Docker/build/format/docs et test de synchronisation serveur. Pas de test
+  visuel WebGL/WAN dans l'environnement d'agent.
+- Restant : limitation des munitions pistolets et DCA fixes, défenses exclusives
+  (plans de cartes, bunkers occupables, canon antichar, tourelle automatique),
+  visuel/FPS du Castor en situation et vérification humaine du placement.

@@ -324,3 +324,16 @@ Ce système conserve la validation serveur et ne permet pas de construire sur le
 surfaces surélevées depuis le Castor dans cette première version. Les véritables
 modèles Meshy du châssis, de la tourelle et des roues sont déjà intégrés ; la
 correction des six roues est conservée.
+
+
+### Réparation automatique des barricades (version 192)
+
+Les stations fixes et les Castor en état de marche réparent désormais les **murs
+LEGO endommagés** dans leur zone de soutien : 12 cm autour d'une station et 50 cm
+autour d'un Castor. Pour chaque segment, le serveur cherche la portion du mur la
+plus proche, même si le centre du segment est plus loin. Les réparations sont
+progressives, à **10 % des PV maximum du segment par seconde**, et coûtent
+**1 $ par 100 PV réellement rendus**. Les véhicules et les barricades se
+partagent équitablement l'argent disponible. Sans argent, rien n'est réparé.
+Un segment entièrement détruit reste détruit : la réparation automatique ne
+réinstalle pas d'obstacle disparu, conformément aux règles de navigation.

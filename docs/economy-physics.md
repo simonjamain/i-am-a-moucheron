@@ -158,3 +158,18 @@ Sur Node, Alpha et les stations achetées réparent et ravitaillent désormais a
 Le budget est partagé équitablement entre les véhicules éligibles quand la caisse ne peut tout régler ; le calcul s'effectue côté serveur, une fois par seconde, par quantité effectivement fournie. Aucune munition ou réparation ne doit être délivrée lorsque la caisse est vide. La portée de la station reste celle de l'ancienne zone de service, mais le service n'exige plus d'être posé ni arrêté.
 
 **Limites de ce premier lot** : le Castor, la recharge des pistolets et DCA fixes, la réparation automatique des barricades et les défenses exclusives restent à implémenter dans l'[issue #76](https://github.com/simonjamain/i-am-a-moucheron/issues/76). Le helper historique `advanceSupplies()` reste utilisé par les tests d'ancienne logique, mais Node n'y passe plus les stations. Le nouveau prélèvement est dans `advancePaidService()`.
+
+
+### Réparation payante des barricades à portée
+
+Le moteur `advancePaidService()` accepte l'état de défense terrestre de la room.
+Il inclut les segments de barricade encore intacts mais endommagés dans le même
+budget d'entretien que les véhicules et applique le même tarif proportionnel
+`SERVICE_RATES.hp` (**1 $ / 100 PV**). Une station de service répare dans une
+sphère de 0,12 m et un Castor vivant dans une sphère de 0,50 m, distance mesurée
+jusqu'au point le plus proche du segment. La réparation va au plus à 10 % des PV
+max par seconde, sans dépasser la santé maximale ni la caisse commune.
+La révision de défense est incrémentée seulement lorsqu'au moins un PV est rendu ;
+la révision de navigation reste inchangée, puisque les segments détruits à 0 PV
+ne sont pas automatiquement reconstruits. Le mécanisme fonctionne sur le serveur
+Node seulement, au maximum une fois par seconde de temps de room.
