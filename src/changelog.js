@@ -1,6 +1,13 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 244,
+    changes: [
+      'Le canon lourd devient un vrai obusier à taille humaine : il pivote lentement sur ses roues et s’élève jusqu’à 40°.',
+      'À chaque tir, son tube recule et l’affût tressaille.',
+    ],
+  },
+  {
     version: 243,
     changes: [
       'Au bureau, on se promène sans arme : le personnage marche et court les mains libres. Le pistolet reste au purgatoire.',

@@ -186,7 +186,11 @@ export function groundCommand(state, command, foot, dollars, now = Date.now(), a
           if (['sentry', 'bunker', 'antitank'].includes(existing.kind) && existing.hp > 0)
             return (
               Math.hypot(sample[0] - existing.position[0], sample[1] - existing.position[1]) <
-              (existing.kind === 'sentry' ? SENTRY.footprint : 0.07)
+              (existing.kind === 'sentry'
+                ? SENTRY.footprint
+                : existing.kind === 'antitank'
+                  ? FORTIFICATIONS.antitank.footprint
+                  : 0.07)
             );
           if (existing.kind !== 'barricade' || existing.hp <= 0) return false;
           return distanceToSegment(sample, existing.a, existing.b) < 0.02;

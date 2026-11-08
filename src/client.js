@@ -16,6 +16,7 @@ import { advanceAutomaticFire } from '/salvos.js';
 import { ammoCapacity } from '/logistics.js';
 import { FIXED_DCA_AMMO, PISTOL_CAPACITY } from '/ground-ammo.js';
 import { FORTIFICATIONS, isFortification } from '/ground-fortifications.js';
+import { HOWITZER } from '/howitzer-model.js';
 import { moveShotTrace, advanceShotTrace, makeShotTrace, TracerPool } from '/tracers.js';
 import { PurchaseUI } from '/purchase-ui.js';
 import { purchaseCount } from '/equipment.js';
@@ -2440,7 +2441,8 @@ function reconcileEquipment(next) {
       const gun = turrets[i];
       if (!gun) continue;
       scene.remove(gun);
-      gun.traverse((o) => o.geometry?.dispose());
+      // Meshy geometry (howitzer, Castor parts) is shared by every instance.
+      gun.traverse((o) => o.userData.meshyShared || o.geometry?.dispose());
       const at = colliders.indexOf(gun.userData.collider);
       if (at >= 0) colliders.splice(at, 1);
       scene.remove(stationRings[i]);
@@ -2463,13 +2465,18 @@ function reconcileEquipment(next) {
     const radius = isFortification(st.kind)
       ? st.kind === 'bunker'
         ? 0.075
-        : 0.035
+        : FORTIFICATIONS.antitank.footprint
       : MAP.metres(st.kind === 'bed' ? 0.8 : 2);
     const collider = new T.Box3(
       new T.Vector3(st.x - radius, st.y, st.z - radius),
       new T.Vector3(
         st.x + radius,
-        st.y + (isFortification(st.kind) ? 0.04 : MAP.metres(0.8)),
+        st.y +
+          (st.kind === 'antitank'
+            ? MAP.metres(2.2)
+            : isFortification(st.kind)
+              ? 0.04
+              : MAP.metres(0.8)),
         st.z + radius,
       ),
     );
@@ -2835,14 +2842,21 @@ function updateVehicles(dt) {
       );
     gun.userData.person.visible = !!occupant && station.kind === 'dca';
     if (gun.userData.person.visible) gun.userData.person.userData.animate?.(dt, { seated: true });
+    const howitzer = gun.userData.howitzer;
+    howitzer?.tick(dt); // recoil keeps returning to battery after the gunner leaves
     if (!occupant) continue;
     const self = occupant.id === id,
-      motion = self ? localMotion() : remoteMotion(occupant),
-      dir = self
-        ? turretDirection()
-        : new T.Vector3().fromArray(motion.turretDirection || [0, 0.3, -1]).normalize();
-    gun.userData.yaw.userData.pitch = gun.userData.pitch;
-    aimGun(T, gun.userData.yaw, dir, gun.quaternion);
+      motion = self ? localMotion() : remoteMotion(occupant);
+    let dir = self
+      ? turretDirection()
+      : new T.Vector3().fromArray(motion.turretDirection || [0, 0.3, -1]).normalize();
+    // Issue #113: the howitzer slews at its traverse/elevation rates and fires
+    // where its barrel really points; other guns follow the aim directly.
+    if (howitzer) dir = howitzer.aim(dt, dir, gun.quaternion);
+    else {
+      gun.userData.yaw.userData.pitch = gun.userData.pitch;
+      aimGun(T, gun.userData.yaw, dir, gun.quaternion);
+    }
     gun.updateWorldMatrix(true, true);
     const muzzle = gun.userData.muzzles[gun.userData.barrel % 2].getWorldPosition(new T.Vector3());
     if (self) {
@@ -2851,17 +2865,27 @@ function updateVehicles(dt) {
         turretAim.yaw -= pad.yaw * dt * currentFactors().aim * 1.5;
         turretAim.pitch = T.MathUtils.clamp(
           turretAim.pitch - pad.pitch * dt * currentFactors().aim,
-          -0.1,
-          1.35,
+          howitzer ? HOWITZER.minPitch : -0.1,
+          howitzer ? HOWITZER.maxPitch : 1.35,
         );
       }
-      camera.position.set(
-        station.x,
-        station.y + MAP.metres(station.kind === 'bunker' ? 17 : 5),
-        station.z,
-      );
       camera.up.set(0, 1, 0);
-      camera.lookAt(camera.position.clone().addScaledVector(dir, MAP.metres(100)));
+      if (howitzer) {
+        // Gunner's view from behind the breech, looking where the crew aims.
+        const aim = turretDirection(),
+          back = new T.Vector3(aim.x, 0, aim.z).normalize();
+        camera.position
+          .set(station.x, station.y + MAP.metres(2.6), station.z)
+          .addScaledVector(back, -MAP.metres(4.5));
+        camera.lookAt(camera.position.clone().addScaledVector(aim, MAP.metres(100)));
+      } else {
+        camera.position.set(
+          station.x,
+          station.y + MAP.metres(station.kind === 'bunker' ? 17 : 5),
+          station.z,
+        );
+        camera.lookAt(camera.position.clone().addScaledVector(dir, MAP.metres(100)));
+      }
       shooting =
         ((controlFocus.active && (mouseFire || keys.Space || pad.fire)) || uiWeaponFire) &&
         (station.ammo ?? 0) >= 1;
@@ -2872,6 +2896,7 @@ function updateVehicles(dt) {
             1000 *
             ((self ? currentFactors().interval : 1) / (snap?.balance?.fireRate ?? 1));
         gun.userData.barrel++;
+        howitzer?.fire();
         const fort = FORTIFICATIONS[station.kind];
         const shot = fort
           ? emitBullet(muzzle, dir, '#ffe49b', true, station.kind === 'antitank', {
@@ -2892,6 +2917,7 @@ function updateVehicles(dt) {
           1000 *
           ((self ? currentFactors().interval : 1) / (snap?.balance?.fireRate ?? 1));
       gun.userData.barrel++;
+      howitzer?.fire();
       bullet(muzzle, dir, '#91d9c4', false, station.kind !== 'bunker');
     }
   }
