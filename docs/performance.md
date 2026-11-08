@@ -255,3 +255,44 @@ une phase suivante du [plan](tasks/scaling-plan.md).
 `test-snapshot-patch.mjs` vérifie 5 000 cas aléatoires (clés retirées, listes
 raccourcies, `undefined`, `NaN`, changements de type) et une vraie session dont
 chaque réponse décodée égale la base enregistrée par le serveur.
+
+## Snapshot partagé et positions distantes à 1 Hz (version 249)
+
+**Snapshot partagé.** `Game.snapshot()` construisait et clonait la salle pour
+chaque `sync` de chaque joueur. Avec `snapshotShareMs` (50 ms en production,
+`SNAPSHOT_SHARE_MS` dans `server/index.js`), les `sync` d'une salle réutilisent
+la partie « salle » construite au plus 50 ms plus tôt ; seuls le roster, les
+dégâts reçus et l'heure (`now`, `sentAt`, toujours exacts) sont propres à
+chaque réponse. Toute autre commande (achat, signature, tir, mort...) et tout
+changement de clé de roster (vague, révision, équilibrage, époque) reconstruit
+aussitôt la salle. Une modification issue d'un `sync` d'un autre joueur ou du
+tick peut donc apparaître jusqu'à 50 ms plus tard. Le partage est désactivé par
+défaut dans `Game`, pour les tests de domaine exacts.
+
+**Positions distantes à 1 Hz.** Dans les réponses fiables, la position des
+autres joueurs (`pilots[].state` : `p`, `q`, `v`, `omega`, visée, rotor,
+remorque, `ground` ; leur `seen` ; l'état de leur véhicule ; leur corps dans
+`base`) n'est rafraîchie qu'une fois par seconde (`MOTION_REFRESH_MS`).
+Elle reste transmise à 20 Hz sur le canal de mouvement et ne sert, dans le
+snapshot, que de secours quand ce canal se tait plus de 750 ms. Les champs de
+jeu (PV, tir, mode, vie, sièges...), les données du joueur lui-même et toute
+discontinuité (nouvelle vie, siège, mode ou véhicule) ne sont jamais retenus.
+
+`npm run bench:room-sync` utilise désormais une horloge simulée : 4 `sync`/s
+par joueur, régulièrement espacés, joueurs en mouvement toutes les 250 ms.
+Trois séries, médiane ms par `sync` et taille d'un `sync` courant :
+
+| Joueurs / ennemis | v248 (même banc) | v249         |
+| ----------------- | ---------------- | ------------ |
+| 10 / 900          | 2,9 – 4,3 ms     | 3,0 – 3,7 ms |
+| 30 / 900          | 2,1 – 3,0 ms     | 1,8 – 2,1 ms |
+| 50 / 900          | 2,5 – 3,1 ms     | 1,7 – 2,0 ms |
+| 50 / 900, taille  | 14 – 15 Ko       | 8 – 10 Ko    |
+
+Le gain croît avec le nombre de joueurs : à 10 joueurs, peu de `sync` tombent
+dans la même fenêtre. Le reste du volume est surtout `groundAgents` (position
+et direction des insectes au sol, simulées par le serveur) ; voir le
+[plan](tasks/scaling-plan.md). `test-shared-snapshot.mjs` vérifie la fenêtre,
+l'heure exacte, la reconstruction après commande et nouvelle vague, le partage
+désactivé par défaut, la rétention des positions, les champs immédiats et les
+discontinuités.

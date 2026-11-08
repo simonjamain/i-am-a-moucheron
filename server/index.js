@@ -2,7 +2,7 @@ import http from 'node:http';
 import { pathToFileURL } from 'node:url';
 import { PeerConnection } from 'node-datachannel';
 import { ASSETS, BUILD_VERSION, OFFICE_SOLIDS } from '../worker/assets.js';
-import { Game } from './game.js';
+import { Game, SNAPSHOT_SHARE_MS } from './game.js';
 import { GameSession } from './session.js';
 import {
   COMMAND_CHANNEL,
@@ -14,7 +14,7 @@ import {
 
 export function createGameServer({
   Peer = PeerConnection,
-  game = new Game({ solids: OFFICE_SOLIDS }),
+  game = new Game({ solids: OFFICE_SOLIDS, snapshotShareMs: SNAPSHOT_SHARE_MS }),
   portBegin = 41000,
   portEnd = 41099,
   advertiseAddress = '',

@@ -2,6 +2,7 @@ import { PROTOCOL, MAX_COMMAND_BYTES, encodeReply, encodeReplyText } from '../sr
 import { validMotion } from '../src/network.js';
 import {
   encodeSnapshotForWire,
+  MOTION_REFRESH_MS,
   snapshotRosterCore,
   snapshotRosterKey,
 } from '../src/snapshot-wire.js';
@@ -28,6 +29,7 @@ export class GameSession {
     this.lastRosterKey = null;
     this.lastRosterMeta = null;
     this.lastWireSnapshot = null;
+    this.motionRefreshAt = -Infinity;
   }
   rate(motion = false) {
     const now = this.now();
@@ -107,7 +109,12 @@ export class GameSession {
           revision: snapshot.rosterRevision,
           total: snapshot.total,
         };
-      this.lastWireSnapshot = encodeSnapshotForWire(snapshot, this.lastWireSnapshot);
+      // Other players' positions in reliable replies: refreshed at 1 Hz only.
+      const refresh = this.now() - this.motionRefreshAt >= MOTION_REFRESH_MS;
+      if (refresh) this.motionRefreshAt = this.now();
+      this.lastWireSnapshot = encodeSnapshotForWire(snapshot, this.lastWireSnapshot, {
+        holdMotionOf: refresh ? undefined : this.player?.id,
+      });
       if (snapshot.rosterGroups || snapshot.rosterAddGroups) {
         this.lastRosterKey = key;
         this.lastRosterMeta = meta;

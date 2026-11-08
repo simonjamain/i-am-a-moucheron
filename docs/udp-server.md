@@ -146,6 +146,11 @@ Depuis la version 248, les autres champs du snapshot voyagent eux aussi en
 patch contre la réponse précédente de la connexion (`$patch`) ; voir
 [performances](performance.md#réponses-sync-en-patchs-structurels-version-248).
 
+Depuis la version 249, les `sync` d'une salle partagent un snapshot construit
+au plus 50 ms plus tôt, et la position des autres joueurs n'y est rafraîchie
+qu'à 1 Hz (elle circule à 20 Hz sur `motion-v2`) ; voir
+[performances](performance.md#snapshot-partagé-et-positions-distantes-à-1-hz-version-249).
+
 Cette optimisation réduit la charge attendue, mais les limites de file, de
 message, les délais de confirmation et l'obligation UDP restent inchangés.
 Pour diagnostiquer une coupure, distinguer erreur d'encodage/saturation,

@@ -76,13 +76,17 @@ WebTransport (Go ou Rust) et/ou TURN UDP ; règles conservées en JS.
 
 ## État réel
 
-- Phase 0 : fusionnée (version 247, PR #139).
-- Phase 1, premier lot (version 248) : réponses `sync` en patchs structurels
-  par connexion ; 60 Ko → 9,5 Ko à 50 joueurs en mouvement, CPU inchangé.
-- Phase 1, reste : construire et sérialiser l'état commun une fois par tick
-  (le `structuredClone` de `Game.snapshot()` reste le premier poste CPU, une
-  fois par joueur et par `sync`) ; retirer des réponses fiables les positions
-  déjà portées par le canal de mouvement, après vérification des usages client.
+- Phase 0 : fusionnée (version 247).
+- Phase 1 : terminée.
+  - Version 248 : réponses `sync` en patchs structurels par connexion.
+  - Version 249 : snapshot de salle partagé 50 ms entre les `sync` ; position
+    des autres joueurs à 1 Hz dans les réponses fiables.
+  - 50 joueurs / 900 ennemis, banc à horloge réaliste : ~1,8 ms et ~9 Ko par
+    `sync` (v246 : 5–15 ms et ~72 Ko).
+- Reste identifié : `groundAgents` (insectes au sol simulés par le serveur)
+  domine le volume restant. Les calculer chez chaque client de façon
+  déterministe, comme les nuées, ou les envoyer sur le canal non fiable.
 - Essais navigateur et WAN : non effectués.
-- Prochaine action : partager le snapshot de salle entre les sessions d'un
-  même tick, avec invalidation par compteur de mutation de la salle.
+- Prochaine action : phase 2 (état sur le canal non fiable, événements
+  importants en fiable non ordonné, reprise de session sans rechargement),
+  en commençant par `groundAgents`.
