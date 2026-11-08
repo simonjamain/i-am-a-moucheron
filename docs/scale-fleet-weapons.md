@@ -103,7 +103,7 @@ Le client affiche une flamme orange avec un cœur lumineux derrière chaque roqu
 
 ## Affichage des unités (version 127)
 
-Les distances et vitesses de simulation restent inchangées. Les instruments des véhicules affichent la vitesse de référence en km/h (`v / MAP.ratio * 3,6`) et l'altitude de référence en mètres (`MAP.reference(y)`). Les réglages et graduations de la DCA fixe présentent la portée réelle en mètres (100 à 1 200 m), sans convertir une seconde fois les valeurs de commande en mètres miniatures. Les graduations de visée du char convertissent leur distance physique de la pièce avec `MAP.reference`. Le rayon de proximité de la DCA mobile est déjà exprimé en mètres de référence ; aucun équilibrage ni protocole réseau n'est modifié.
+Les distances et vitesses de simulation restent inchangées. Depuis la version 237 ([issue #105](https://github.com/simonjamain/i-am-a-moucheron/issues/105)), le HUD affiche les **valeurs réelles du bureau** via `src/units.js` : vitesses en cm/s ou m/s (`formatSpeed(v)`, `v` en m/s du décor), altitude et distances en mm, cm ou m (`formatDistance`). Les réglages exprimés en mètres de référence (fusée DCA 100–1 200, proximité D2 0,5–20, rayon d'éclatement 8) sont convertis par `MAP.metres` pour l'affichage : 30 cm–3,60 m, 1,5 mm–6,0 cm, 2,4 cm. Les graduations du char sont définies directement en mètres du décor (15 cm à 9 m). `scripts/test-units.mjs` vérifie ces conversions contre les dimensions du décor ; aucun équilibrage ni protocole réseau n'est modifié.
 
 Le [B3 à quatre places](b3-model.md) possède une tourelle ventrale indépendante et conserve son atlas de camouflage.
 

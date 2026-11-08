@@ -75,13 +75,12 @@ des gaz jusqu’au départ. Voir [logistique et contrats](logistics-contracts.md
 
 Clic droit maintenu : zoom dans un poste avec pointeur capturé ; relâcher restaure
 la vue. DCA : Shift maintenu augmente la fusée en continu, Ctrl maintenu la réduit
-(environ 360 m de référence par seconde, entre 100 et 1 200), relâcher arrête
-aussitôt et les deux touches ensemble s'annulent ; affichage en mètres en direct.
+(de 30 cm à 3,60 m du bureau en environ 3 s), relâcher arrête aussitôt et les deux
+touches ensemble s'annulent ; distance réelle affichée en direct.
 `advanceFuse()` (`src/equipment-controls.js`) porte ce réglage, couvert par
 `scripts/test-fuse-continuous.mjs`. Molette et [ ] gardent des pas de 25 m. Tank : Z/S ou flèches pour avancer/reculer, Q/D pour tourner ; Shift choisit
 HE, Ctrl AP. Au tireur principal, clic gauche tire le canon et Espace la coaxiale. Les graduations
-de la lunette vont de 50 à 3 000 m de référence (environ 9 m de bureau, l'autre bout
-de la pièce), échantillonnées sur la trajectoire réelle de l'obus choisi (HE/AP,
+de la lunette vont de 15 cm à 9 m du bureau (l'autre bout de la pièce), échantillonnées sur la trajectoire réelle de l'obus choisi (HE/AP,
 même intégration que le serveur) ; obus HE 13 s et AP 8 s de vol maximal. Aux pilotes,
 clic gauche tire la MG et Espace maintenu largue les bombes disponibles toutes les
 0,5 s. B est supprimé. Les autres mitrailleurs et DCA gardent clic/Espace pour tirer. E signe depuis
@@ -139,7 +138,7 @@ regard libre (sans roquettes), clic maintenu pour les roquettes dans l’axe du 
 Copilote : souris pour viser, Maj choisit la MG, Ctrl les missiles. Clic : tirer ;
 second appui distinct : détoner le missile. Aucun changement d’arme pendant son vol.
 Camion : conduite Z/S et Q/D au conducteur ; souris et clic au tireur, molette
-pour la proximité en mètres de référence. 1/2 : mutations signées.
+pour la proximité (1,5 mm à 6 cm du bureau). 1/2 : mutations signées.
 Les réserves, butées et unités sont détaillées dans [véhicules d’appui](support-vehicles.md).
 
 Le [lot confort de jeu, version 37](comfort.md) précise réparation, zoom, jauges,

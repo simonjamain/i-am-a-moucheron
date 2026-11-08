@@ -154,7 +154,7 @@ assert.equal(equipmentHUD({ vehicle, seat: 'pilot', dead: true }), null);
 assert.equal(equipmentHUD({}), null);
 model = equipmentHUD({ turret: true, range: 300 });
 assert.equal(model.readout.metres, 300);
-assert.equal(model.left[1], '300 m');
+assert.equal(model.left[1], '90 cm', '300 reference metres shown as their real 90 cm');
 assert.ok(Math.abs(model.readout.fraction - 2 / 11) < 1e-10);
 let now = 0;
 const rails = new Element(),

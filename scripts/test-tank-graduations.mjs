@@ -10,7 +10,7 @@ import { MAP } from '../src/scale.js';
 const width = GROUND_BOUNDS[2] - GROUND_BOUNDS[0],
   depth = GROUND_BOUNDS[3] - GROUND_BOUNDS[1];
 const farEnd = Math.max(width, depth);
-assert.ok(MAP.metres(TANK_MARKS.at(-1)) >= farEnd, 'graduations reach across the office');
+assert.ok(TANK_MARKS.at(-1) >= farEnd, 'graduations reach across the office');
 assert.deepEqual(
   [...TANK_MARKS].sort((a, b) => a - b),
   [...TANK_MARKS],
@@ -31,7 +31,7 @@ for (const weapon of ['he', 'ap']) {
     assert.equal(marks.length, TANK_MARKS.length, weapon + ' shows every graduation at ' + pitch);
     marks.forEach((mark, i) => {
       assert.ok(
-        Math.abs(MAP.reference(mark.metres) - TANK_MARKS[i]) < 1e-9,
+        Math.abs(mark.metres - TANK_MARKS[i]) < 1e-9,
         'label is the distance',
       );
       // Independent replay of the trajectory up to the mark's along-axis distance.
@@ -69,4 +69,4 @@ assert.ok(
   Math.abs(ballisticMarks('he').at(-1).point[1]) > Math.abs(ballisticMarks('ap').at(-1).point[1]),
   'slower HE drops more than AP',
 );
-console.log('Tank graduations: 50 to 3000 m on the real HE/AP trajectories, far wall reachable.');
+console.log('Tank graduations: 15 cm to 9 m (real office metres) on the real HE/AP trajectories, far wall reachable.');

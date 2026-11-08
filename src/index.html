@@ -2567,8 +2567,8 @@
       <div id="notice" role="status"></div>
       <div id="flight">
         <div class="gauges">
-          <div><label>Vitesse</label><b id="speed">0</b><small> km/h réf.</small></div>
-          <div><label>Altitude</label><b id="alt">0</b><small> u</small></div>
+          <div><label>Vitesse</label><b id="speed">0 cm/s</b></div>
+          <div><label>Altitude</label><b id="alt">0 cm</b></div>
           <div><label>Gaz</label><b id="gas">65</b><small> %</small></div>
         </div>
         <div id="stallWarning" class="hidden" style="color: #ffb59c; font-weight: bold">
@@ -2878,9 +2878,9 @@
         <h2>Miniatures, grandeur réelle.</h2>
         <p>
           <b>Échelle de la carte :</b> 3/1000. Le décor est exprimé en mètres : bureau de 90 cm,
-          personnage de référence de 1,80 m, soit 5,4 mm sur la carte. Les vitesses affichées en
-          km/h sont celles des modèles de référence. Tailles, déplacements, portées et sons
-          utilisent le même ratio.
+          personnage de référence de 1,80 m, soit 5,4 mm sur la carte. Le HUD affiche les
+          distances et vitesses réelles du bureau (mm, cm, m ; cm/s ou m/s). Tailles,
+          déplacements, portées et sons utilisent le même ratio.
         </p>
         <p>
           <b>Embarquement :</b> un Chasseur M1 et un Bombardier B3 attendent au départ. Marchez avec
@@ -2912,9 +2912,9 @@
         </p>
         <p>
           <b>DCA :</b> rejoignez le cercle, appuyez sur E et signez les deux documents. Souris /
-          stick droit : viser. Molette, [ / ] ou boutons − / + : régler la fusée entre 100 et 1200
-          mètres de référence. Clic / Espace : un obus toutes les 0,7 s, en alternance entre les
-          deux tubes. Le cercle d’éclatement montre le rayon de 8 mètres de référence. Un obus qui
+          stick droit : viser. Molette, [ / ] ou boutons − / + : régler la fusée entre 30 cm et
+          3,6 m. Clic / Espace : un obus toutes les 0,7 s, en alternance entre les
+          deux tubes. Le cercle d’éclatement montre son rayon de 2,4 cm. Un obus qui
           heurte un obstacle avant sa distance d’armement n’explose pas. F : quitter le canon. Les
           tirs et éclatements peuvent endommager les alliés.
         </p>
@@ -2974,7 +2974,7 @@
         <button id="fuseMinus" aria-label="Rapprocher l’éclatement">−</button
         ><span id="fuseDistance"></span
         ><button id="fusePlus" aria-label="Éloigner l’éclatement">+</button
-        ><small>Molette / [ ] · rayon 8 m réf.</small>
+        ><small>Molette / [ ] · rayon 2,4 cm</small>
       </div>
       <button id="parachuteToggle" class="hidden">Parachute · Espace</button
       ><button id="leavePlane">Sauter</button
