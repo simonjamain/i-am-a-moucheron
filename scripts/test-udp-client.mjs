@@ -129,6 +129,35 @@ assert.equal(client.assembler.messages.size, 0);
 assert.equal(errors.length, 1);
 await assert.rejects(client.request('sync', {}), /indisponible/);
 assert.equal(fetches, 2, 'no HTTP fallback after failure');
+// A transient ICE 'disconnected' state must not end the game; a long one must.
+{
+  const closes = [];
+  const flaky = new UdpClient({
+    Peer,
+    fetcher,
+    disconnectGrace: 40,
+    onClose: (e) => closes.push(e),
+  });
+  await flaky.connect();
+  flaky.pc.connectionState = 'disconnected';
+  flaky.pc.onconnectionstatechange();
+  flaky.pc.connectionState = 'connected';
+  flaky.pc.onconnectionstatechange();
+  await new Promise((resolve) => setTimeout(resolve, 80));
+  assert.equal(flaky.closed, false, 'a recovered disconnection keeps the connection');
+  assert.equal(closes.length, 0);
+  flaky.pc.connectionState = 'disconnected';
+  flaky.pc.onconnectionstatechange();
+  assert.equal(flaky.closed, false, 'the grace period starts before closing');
+  await new Promise((resolve) => setTimeout(resolve, 80));
+  assert.equal(flaky.closed, true, 'a lasting disconnection closes the connection');
+  assert.equal(closes.length, 1);
+  const failed = new UdpClient({ Peer, fetcher, disconnectGrace: 10000 });
+  await failed.connect();
+  failed.pc.connectionState = 'failed';
+  failed.pc.onconnectionstatechange();
+  assert.equal(failed.closed, true, "'failed' still closes at once");
+}
 protocol = 'tcp';
 const incompatible = new UdpClient({ Peer, fetcher });
 await assert.rejects(incompatible.connect(), /UDP non confirmé|UDP non confirmé|UDP non confirm/);

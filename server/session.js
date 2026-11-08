@@ -41,10 +41,13 @@ export class GameSession {
   }
   command(raw) {
     if (this.closed) return;
-    if (typeof raw !== 'string' || raw.length > MAX_COMMAND_BYTES || !this.rate()) {
+    if (typeof raw !== 'string' || raw.length > MAX_COMMAND_BYTES) {
       this.stop();
       return;
     }
+    // A burst above the command rate is refused, not fatal: the command is not
+    // executed (its ID stays usable) and the client receives a 429 reply.
+    const allowed = this.rate();
     let m;
     try {
       m = JSON.parse(raw);
@@ -64,6 +67,10 @@ export class GameSession {
       return;
     }
     this.lastAt = this.now();
+    if (!allowed) {
+      this.output({ status: 429, body: { error: 'Trop de commandes ; réessayez.' } }, m.id);
+      return;
+    }
     if (this.replies.has(m.id)) {
       this.output(this.replies.get(m.id), m.id);
       return;

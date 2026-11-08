@@ -194,3 +194,33 @@ Contrôles : `node scripts/test-roster-sync.mjs` et
 révisions et deltas). Les économies de volume ne garantissent ni l'absence de
 déconnexions ni les FPS sur WAN. Mesurer les débits, la saturation du canal
 fiable, les temps CPU, les délais de confirmations et les fermetures ICE/DTLS.
+
+## Coût des `sync` en salle chargée (version 247)
+
+`advance()` s'exécute à chaque commande, deux fois par `sync`. Sa partie
+`vehicleContacts()` recalculait la position de toute la nuée (`swarmFrame()`)
+à chaque appel : le coût serveur croissait comme joueurs × ennemis.
+`Game.contactFrames()` réutilise désormais ces positions **au plus 50 ms**
+(`CONTACT_FRAME_MS`), soit un calcul de nuée à 20 Hz au maximum par salle.
+Le segment parcouru par chaque véhicule reste balayé exactement à chaque appel ;
+seule la position des ennemis peut dater de moins de 50 ms. Le cache est
+invalidé par un changement de roster, de révision, de vague, d'ennemis au sol
+ou un recul de l'horloge. `benchmark-snapshot-50` neutralise `advance()` et
+ne pouvait pas voir ce coût.
+
+`npm run bench:room-sync` mesure la réponse `sync` complète (commande,
+simulation, snapshot, encodage différentiel, JSON, découpage) pour N joueurs
+et E ennemis, sans WebRTC, navigateur ni WAN. Trois séries alternées,
+conteneur de développement, Node 22 (médiane ms par `sync`) :
+
+| Joueurs / ennemis | Avant (v246) | Après (v247) |
+| ----------------- | ------------ | ------------ |
+| 30 / 900          | 6,7 – 9,7    | 1,3 – 1,5    |
+| 50 / 900          | 5,0 – 7,8    | 1,9 – 2,0    |
+
+À 50 joueurs envoyant 4 `sync`/s, le besoin passe d'environ 1 à 1,5 cœur à
+environ 0,4 cœur. La taille d'un `sync` courant reste ~60 Ko à 50 joueurs
+(`pilots`, `base`, `groundAgents`) : c'est la phase suivante du
+[plan de montée en charge](tasks/scaling-plan.md). `test-contact-frames.mjs`
+vérifie la parité avec un calcul direct, la fenêtre, les invalidations et un
+contact balayé à partir de positions en cache.

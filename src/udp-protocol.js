@@ -7,6 +7,9 @@ export const MOTION_OPTIONS = { ordered: false, maxRetransmits: 0 };
 export const MAX_COMMAND_BYTES = 131072;
 export const CHUNK_BYTES = 12000;
 export const MAX_REPLY_BYTES = 4 * 1024 * 1024;
+// A WebRTC 'disconnected' state usually recovers by itself; wait this long
+// before treating it as a lost game connection (client and server).
+export const DISCONNECT_GRACE_MS = 10000;
 
 // Chunk large snapshots below browser/native SCTP message size limits.
 export function encodeReply(value, id) {

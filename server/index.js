@@ -4,7 +4,13 @@ import { PeerConnection } from 'node-datachannel';
 import { ASSETS, BUILD_VERSION, OFFICE_SOLIDS } from '../worker/assets.js';
 import { Game } from './game.js';
 import { GameSession } from './session.js';
-import { COMMAND_CHANNEL, MOTION_CHANNEL, PROTOCOL, udpDescription } from '../src/udp-protocol.js';
+import {
+  COMMAND_CHANNEL,
+  DISCONNECT_GRACE_MS,
+  MOTION_CHANNEL,
+  PROTOCOL,
+  udpDescription,
+} from '../src/udp-protocol.js';
 
 export function createGameServer({
   Peer = PeerConnection,
@@ -16,6 +22,7 @@ export function createGameServer({
   iceServers = [],
   maxConnections = 128,
   offerTimeout = 20000,
+  disconnectGrace = DISCONNECT_GRACE_MS,
 } = {}) {
   if (
     !Number.isInteger(portBegin) ||
@@ -102,6 +109,7 @@ export function createGameServer({
             if (!connections.delete(c)) return;
             clearTimeout(c.connectTimer);
             clearTimeout(c.answerTimer);
+            clearTimeout(c.graceTimer);
             clearInterval(c.pump);
             c.rejectAnswer?.(Error('Connexion UDP fermée pendant la négociation.'));
             c.session.stop();
@@ -190,8 +198,21 @@ export function createGameServer({
             dc.onClosed(close);
             dc.onError(close);
           });
+          // 'disconnected' often recovers (consent checks, network switch):
+          // close only on failure, or after a disconnection outlasting the grace.
           pc.onStateChange((state) => {
-            if (['failed', 'closed', 'disconnected'].includes(state)) close();
+            c.peerState = state;
+            if (state === 'disconnected') {
+              c.graceTimer ??= setTimeout(() => {
+                c.graceTimer = null;
+                if (c.peerState === 'disconnected') close();
+              }, disconnectGrace);
+              c.graceTimer.unref?.();
+              return;
+            }
+            clearTimeout(c.graceTimer);
+            c.graceTimer = null;
+            if (['failed', 'closed'].includes(state)) close();
           });
           const answer = await new Promise((resolve, reject) => {
             c.rejectAnswer = reject;

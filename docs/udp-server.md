@@ -68,6 +68,13 @@ Achats, tirs et impacts ont également leurs identifiants métier. Une commande
 sans confirmation ferme la connexion après 20 s : son résultat peut être incertain,
 il n'y a pas de réessai automatique sur une nouvelle session.
 
+L'état WebRTC `disconnected` est souvent transitoire (contrôles ICE perdus,
+changement de réseau). Client et serveur attendent `DISCONNECT_GRACE_MS`
+(10 s) avant de fermer ; `failed` et `closed` ferment immédiatement. Au-delà de
+120 commandes/s, une commande est refusée avec le statut 429, sans exécution
+ni mise en cache, au lieu de fermer la session ; le client garde la connexion
+et réessaie au `sync` suivant. Un message malformé ou trop gros ferme toujours.
+
 Les réponses volumineuses sont découpées puis réassemblées. Les files, messages,
 cadences et caches sont bornés ; la saturation ne déclenche aucun autre transport.
 Les paquets de mouvement dépassés sont ignorés ; incarnation, poste et génération

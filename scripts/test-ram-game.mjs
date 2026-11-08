@@ -323,6 +323,43 @@ session.stop();
 game.disconnect('RAMTEST', a.id);
 game.disconnect('RAMTEST', b.id);
 now += 31000;
+// Command bursts above the rate limit are refused (429), never fatal and never executed.
+{
+  const sent = [];
+  let closed = 0;
+  const burst = new GameSession(new Game({ now: () => now }), {
+    send: (p) => sent.push(p),
+    relay: () => {},
+    close: () => closed++,
+    now: () => now,
+  });
+  // One assembler per connection: snapshot deltas depend on earlier replies.
+  const assembler = new ReplyAssembler(),
+    replies = new Map();
+  let read = 0;
+  const decode = (id) => {
+    for (; read < sent.length; read++) {
+      const reply = assembler.receive(JSON.parse(sent[read]));
+      if (reply) replies.set(JSON.parse(sent[read]).id, reply);
+    }
+    return replies.get(id);
+  };
+  burst.command(JSON.stringify({ v: 1, id: 1, path: 'join', body: { code: 'BURST' } }));
+  for (let id = 2; id <= 125; id++)
+    burst.command(JSON.stringify({ v: 1, id, path: 'sync', body: {} }));
+  assert.equal(burst.closed, false, 'a command burst keeps the session open');
+  assert.equal(closed, 0);
+  assert.equal(decode(125).status, 429, 'commands over the rate are refused with 429');
+  assert.ok(!burst.replies.has(125), 'a refused command is not cached as executed');
+  now += 1000;
+  decode(125);
+  replies.delete(125);
+  burst.command(
+    JSON.stringify({ v: 1, id: 125, path: 'sync', body: { incarnation: -1, state: {} } }),
+  );
+  assert.notEqual(decode(125)?.status, 429);
+  burst.stop();
+}
 game.sweep();
 assert.equal(game.rooms.size, 0);
 console.log(
