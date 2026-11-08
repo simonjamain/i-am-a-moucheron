@@ -368,5 +368,5 @@ assert.match(
     seat: 'cannon',
     proximity: 0.5,
   }),
-  /100 obus.*0.5 m/,
+  /100 obus · 1,5 mm/,
 );

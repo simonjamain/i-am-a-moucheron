@@ -73,8 +73,8 @@ contrairement à celles du Stuka, dans le [dernier lot](multiplayer-return.md).
 
 `ballisticMarks` utilise **le même `integrateOrdnance`** à pas de 1/120 s que le
 serveur, avec vitesse de l’obus sélectionné, gravité miniature, traînée et vitesse
-héritée du tank. Repères `TANK_MARKS` de 50 à 3 000 m de référence (0,15 à
-9 mètres du décor, l'autre bout de la pièce depuis la version 227), projetés depuis
+héritée du tank. Repères `TANK_MARKS` de 15 cm à 9 m du décor (l'autre bout de
+la pièce depuis la version 227, libellés en mesures réelles depuis la version 237), projetés depuis
 le canon ; durées de vol HE 13 s et AP 8 s pour les atteindre réellement. Les graduations hors écran ou trop rapprochées du centre/entre elles sont masquées ; HE/AP et zoom
 actualisent la projection. C masque la mire. Aucun ajustement automatique du canon.
 

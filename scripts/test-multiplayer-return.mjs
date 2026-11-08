@@ -352,7 +352,7 @@ assert.deepEqual(
     speed: 123.4,
     ammo: 0,
   }),
-  { speed: 123, hp: 67, ammo: 0, bombs: 50 },
+  { speed: 123.4, hp: 67, ammo: 0, bombs: 50 },
 );
 const source = readFileSync('src/client.js', 'utf8');
 const canCapture = source.slice(

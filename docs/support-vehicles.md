@@ -78,8 +78,8 @@ leurs effets ; elles ne peuvent accélérer les roquettes au-delà du maximum va
 
 Le conducteur conduit sans arme. Le tireur vise un canon unique, utilisable en
 roulant ; molette : proximité, pas de **0,5 m**, valeur initiale **5 m**, bornes
-**0,5–20 m de référence**. Le curseur affiche cette unité, et non les mètres du
-décor. À l'échelle actuelle : 0,0015–0,06 m du décor. La molette du tireur ne
+**0,5–20 m de référence** en interne. Le curseur affiche la distance réelle du
+décor (1,5 mm–6,0 cm, version 237). La molette du tireur ne
 change ni les gaz ni le zoom. Les limites de visée choisies suivent les tourelles
 ordinaires : azimut libre, élévation de −0,1 à 1,35 rad.
 

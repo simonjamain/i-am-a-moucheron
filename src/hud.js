@@ -1,5 +1,8 @@
 import { availableShell } from './armament.js';
 import { rangeReadout } from './equipment-controls.js';
+import { MAP } from './scale.js';
+import { MOBILE_FUSE } from './mobile-flak.js';
+import { formatDistance, formatSpeed } from './units.js';
 
 const count = (value) => Math.max(0, Math.floor(value || 0));
 function equipmentModel({
@@ -24,7 +27,7 @@ function equipmentModel({
     const readout = rangeReadout(range);
     return {
       scope: 'dca',
-      left: ['FUSÉE', `${readout.metres.toFixed(0)} m`, 'Shift + / Ctrl −', health],
+      left: ['FUSÉE', formatDistance(MAP.metres(readout.metres)), 'Shift + / Ctrl −', health],
       right: [
         'ARMEMENT',
         ready ? 'PRÊT' : 'RECHARGE',
@@ -40,13 +43,18 @@ function equipmentModel({
       scope: vehicle.id + ':' + seat,
       left: [
         seat === 'pilot' ? 'CONDUITE' : 'VISÉE',
-        `${Math.round(speed)} km/h`,
+        formatSpeed(speed),
         health,
         `Carburant ${Math.ceil(fuel)} s`,
       ],
       right:
         vehicle.type === 'flaktruck'
-          ? ['PROXIMITÉ', `${count(a.proximity)} obus`, 'Fusée armée à 0,3 s', 'Molette : 0,5–20 m']
+          ? [
+              'PROXIMITÉ',
+              `${count(a.proximity)} obus`,
+              'Fusée armée à 0,3 s',
+              `Molette : ${formatDistance(MAP.metres(MOBILE_FUSE.min))}–${formatDistance(MAP.metres(MOBILE_FUSE.max))}`,
+            ]
           : seat === 'pilot'
             ? [
                 'ROQUETTES',
@@ -67,8 +75,8 @@ function equipmentModel({
     service = vehicle.supplies?.servicing ? 'Ravitaillement en cours' : health,
     flight = [
       tank ? 'CONDUITE' : 'VOL',
-      `${Math.round(speed)} km/h`,
-      `Altitude ${altitude.toFixed(2)} m · Gaz ${Math.round(gas * 100)} %`,
+      formatSpeed(speed),
+      `Altitude ${formatDistance(altitude)} · Gaz ${Math.round(gas * 100)} %`,
       `Carburant ${Math.ceil(fuel)} s · ${stall && !tank ? 'DÉCROCHAGE' : service}`,
     ],
     active = availableShell(supplies, shell),

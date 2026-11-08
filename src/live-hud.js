@@ -1,3 +1,5 @@
+import { MAP } from './scale.js';
+import { formatDistance } from './units.js';
 import { VEHICLES } from './fleet.js';
 
 // Single source of the bottom-left command help. Each context lists only the inputs
@@ -171,7 +173,7 @@ export function cursorStats({ vehicle, seat, hp, speed, ammo }) {
   if (!vehicle) return null;
   const bombs = seat === 'pilot' ? vehicle.supplies?.ammo.bomb : undefined;
   return {
-    speed: Math.round(speed),
+    speed: Math.max(0, speed),
     hp: Math.max(0, Math.min(vehicle.type === 'helicopter' ? 200 : 100, hp)),
     ammo: Math.max(0, Math.floor(ammo || 0)),
     bombs: bombs === undefined ? null : Math.floor(bombs),
@@ -195,7 +197,7 @@ export function cursorAmmoText({ vehicle, seat, ammo, proximity = 5, guiding = f
   if (vehicle.type === 'flaktruck')
     return (
       (seat === 'cannon'
-        ? count(stock.proximity) + ' obus · ' + proximity.toFixed(1) + ' m'
+        ? count(stock.proximity) + ' obus · ' + formatDistance(MAP.metres(proximity))
         : 'Conducteur') + fuel
     );
   return (

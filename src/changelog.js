@@ -1,6 +1,12 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 237,
+    changes: [
+      'Vitesses, altitudes et distances s’affichent en vraies mesures du bureau : cm/s, cm ou m.',
+    ],
+  },
+  {
     version: 236,
     changes: [
       'Les murs du Castor sont faits de vraies briques 2×4 avec leurs tenons, aux couleurs du jeu.',
