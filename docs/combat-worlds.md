@@ -16,6 +16,8 @@ son multiplicateur relatif : 75 × (1 + niveau), jusqu’au niveau 3 ; elle ne
 s’applique pas au pistolet. Celui-ci inflige toujours 10 dégâts à pied, un tir
 par appui, sans délai entre deux appuis distincts. Maintenir ne répète pas le tir.
 Le corps visible du personnage porte le pistolet ; le rayon vise le réticule.
+Le personnage est un modèle animé (repos, marche, course, assis, chute) ;
+voir le [pipeline d'assets](asset-pipeline.md#personnage-joueur-meshy--mixamo).
 
 Un obus de DCA au contact direct inflige 200 dégâts à sa seule cible et disparaît,
 sans explosion. Sa fusée programmée, en l’absence d’impact précédent, explose :

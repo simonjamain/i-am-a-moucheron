@@ -43,6 +43,8 @@ const files = {
       'meshy-m1-data',
       'meshy-fleet',
       'castor-model',
+      'character-model',
+      'character-data',
       'meshy-castor-body-data',
       'meshy-castor-turret-data',
       'meshy-castor-wheel-data',

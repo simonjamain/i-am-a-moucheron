@@ -110,6 +110,26 @@ Premier asset passé par la règle ci-dessus ([issue #99](https://github.com/sim
   l'empreinte et écrit `src/meshy-brick-data.js` ; `scripts/test-brick-model.mjs`
   contrôle provenance, orientation et proportions.
 
+## Personnage joueur (Meshy + Mixamo)
+
+Modèle fourni et validé par l'utilisateur ([issue #111](https://github.com/simonjamain/i-am-a-moucheron/issues/111)) ;
+tous les joueurs sont identiques pour l'instant, le modèle sera affiné.
+
+- Original : `assets/originals/character/cowboy-boy.glb` (hors dépôt), SHA-256
+  `29cbb213…ed0d`. Squelette Mixamo de 44 os, 1 556 triangles, texture 1024 px,
+  clips `Idle_12`, `Walking`, `Running` (sur place).
+- Import : `PYTHONPATH=scripts python3 scripts/import-character.py <GLB>` vérifie
+  l'empreinte et écrit `src/character-data.js` (493 Ko) : positions/UV float32,
+  poids sur 8 bits, rotations quantifiées en int16, translation des hanches seule.
+- Rendu : `src/character-model.js` partage géométrie, matériau et clips ; chaque
+  joueur possède ses os et son mixeur. Allure : repos sous 0,35 m/s, course dès
+  3 m/s, vitesse de lecture liée à la vitesse réelle. Les poses absentes
+  (pistolet, assis en DCA, chute ou parachute) orientent les os en espace monde.
+- Intégration : `graphics.humanoid()` garde le cadre invisible `arms`/`legs`/`rig`.
+  Le bras du pistolet part de l'épaule du modèle et sa longueur place la crosse
+  dans la paume ; balistique, dégâts et règles de tir sont inchangés. Les initiales
+  sont portées par la colonne. `scripts/test-character.mjs` couvre ces points.
+
 ## Intégration Meshy au jeu
 
 1. Télécharger le modèle Meshy **approuvé** et en conserver l'original/empreinte.

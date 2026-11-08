@@ -1,6 +1,12 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 242,
+    changes: [
+      'Nouveau personnage animé : il marche, court, vise au pistolet, s’assoit dans la DCA et lève les bras en chute.',
+    ],
+  },
+  {
     version: 241,
     changes: [
       'La tourelle automatique du Castor est à la bonne taille : son canon a la même taille que celui du Castor.',
