@@ -1667,6 +1667,8 @@ setInterval(async () => {
       }),
     );
   } catch (e) {
+    // A refused burst (429) is not a lost connection: the next sync retries.
+    if (e.status === 429) return;
     $('net').textContent = globalThis.MOUCHERON_UDP
       ? '● UDP INTERROMPU — RECHARGEZ'
       : '● RECONNEXION…';

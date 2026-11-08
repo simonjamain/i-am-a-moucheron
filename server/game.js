@@ -86,6 +86,8 @@ const uid = () => randomUUID();
 const values = (m) => [...m.values()];
 const LAB_FUNDS = 1000000000;
 const clone = (x) => structuredClone(x);
+// Maximum age of cached enemy positions used for vehicle contacts (≤ 20 Hz).
+export const CONTACT_FRAME_MS = 50;
 function requireGame(ok, message, status = 409) {
   if (!ok) throw Object.assign(new Error(message), { status });
 }
@@ -1608,6 +1610,43 @@ export class Game {
     this.buy(r, p, { ...b, item: order.item, request: 'place:' + b.token }, order);
     order.placed = true;
   }
+  // Enemy positions for vehicle contacts. advance() runs on every command of
+  // every player (twice per sync); recomputing the whole swarm each time made
+  // server cost grow as players × enemies. Positions are reused for at most
+  // CONTACT_FRAME_MS, and recomputed at once if the roster, wave or clock
+  // goes back. Vehicle segments are still swept exactly on every call.
+  contactFrames(r, plan, now) {
+    const c = r.contactFrameCache;
+    if (
+      c &&
+      c.roster === plan.roster &&
+      c.revision === r.rosterRevision &&
+      c.wave === r.wave &&
+      c.started === r.started &&
+      c.ground === r.groundAgents &&
+      c.agents === Object.keys(r.groundAgents).length &&
+      now >= c.at &&
+      now - c.at < CONTACT_FRAME_MS
+    )
+      return c.frames;
+    const frames = swarmFrame(
+      plan.roster,
+      (now - r.started) / 1000,
+      r.groundAgents,
+      airField(r.groundDefense, now),
+    );
+    r.contactFrameCache = {
+      roster: plan.roster,
+      revision: r.rosterRevision,
+      wave: r.wave,
+      started: r.started,
+      ground: r.groundAgents,
+      agents: Object.keys(r.groundAgents).length,
+      at: now,
+      frames,
+    };
+    return frames;
+  }
   vehicleContacts(r, now) {
     if (r.phase !== 'combat') {
       for (const v of r.vehicles.values()) {
@@ -1618,12 +1657,7 @@ export class Game {
       return;
     }
     const plan = this.plan(r),
-      frames = swarmFrame(
-        plan.roster,
-        (now - r.started) / 1000,
-        r.groundAgents,
-        airField(r.groundDefense, now),
-      );
+      frames = this.contactFrames(r, plan, now);
     for (const v of r.vehicles.values()) {
       if (v.state.hp <= 0) continue;
       const previous = v.contactWave === r.wave ? v.contactPosition || v.state.p : v.state.p;

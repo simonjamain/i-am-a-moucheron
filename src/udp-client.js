@@ -6,6 +6,7 @@ import {
   ReplyAssembler,
   udpDescription,
   MAX_COMMAND_BYTES,
+  DISCONNECT_GRACE_MS,
 } from './udp-protocol.js';
 import { validMotion } from './network.js';
 
@@ -16,12 +17,15 @@ export class UdpClient {
     onMotion = () => {},
     onClose = () => {},
     timeout = 20000,
+    disconnectGrace = DISCONNECT_GRACE_MS,
   } = {}) {
     this.Peer = Peer;
     this.fetcher = fetcher;
     this.onMotion = onMotion;
     this.onClose = onClose;
     this.timeout = timeout;
+    this.disconnectGrace = disconnectGrace;
+    this.graceTimer = null;
     this.pending = new Map();
     this.assembler = new ReplyAssembler();
     this.seq = 0;
@@ -81,8 +85,22 @@ export class UdpClient {
         this.onMotion(m.peer, m.state, performance.now(), m.seq);
       } catch {}
     };
+    // 'disconnected' is often transient in WebRTC (lost consent checks, Wi-Fi
+    // hiccup) and recovers by itself. Only 'failed'/'closed', or a disconnection
+    // lasting longer than the grace period, end the game connection.
     pc.onconnectionstatechange = () => {
-      if (['failed', 'closed', 'disconnected'].includes(pc.connectionState))
+      const state = pc.connectionState;
+      if (state === 'disconnected') {
+        this.graceTimer ??= setTimeout(() => {
+          this.graceTimer = null;
+          if (pc.connectionState === 'disconnected')
+            this.fail(Error('Connexion UDP interrompue. Rechargez pour rejoindre la partie.'));
+        }, this.disconnectGrace);
+        return;
+      }
+      clearTimeout(this.graceTimer);
+      this.graceTimer = null;
+      if (['failed', 'closed'].includes(state))
         this.fail(Error('Connexion UDP interrompue. Rechargez pour rejoindre la partie.'));
     };
     try {
@@ -245,6 +263,8 @@ export class UdpClient {
   stop() {
     if (this.closed) return;
     this.closed = true;
+    clearTimeout(this.graceTimer);
+    this.graceTimer = null;
     this.protocol = '';
     for (const p of this.pending.values()) {
       clearTimeout(p.timer);

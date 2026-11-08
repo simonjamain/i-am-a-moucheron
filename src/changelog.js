@@ -1,6 +1,13 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 247,
+    changes: [
+      'La connexion résiste aux courtes coupures du réseau au lieu de s’interrompre aussitôt.',
+      'Les parties chargées, avec beaucoup de joueurs et d’ennemis, restent plus réactives.',
+    ],
+  },
+  {
     version: 246,
     changes: [
       'Les personnages se croisent et passent entre les meubles sans rester coincés.',
