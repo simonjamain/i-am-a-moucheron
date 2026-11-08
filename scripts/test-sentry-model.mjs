@@ -8,6 +8,7 @@ import {
   SENTRY_MIN_ELEVATION,
   SENTRY_MAX_ELEVATION,
   SENTRY_MUZZLE_HEIGHT,
+  SENTRY_SCALE,
 } from '../src/sentry-model.js';
 
 const origin = [0, SENTRY_MUZZLE_HEIGHT, 0];
@@ -32,7 +33,7 @@ const initial = muzzle.getWorldPosition(new T.Vector3());
 pitch.rotation.x = Math.PI / 2;
 world.updateMatrixWorld(true);
 const raised = muzzle.getWorldPosition(new T.Vector3());
-assert.ok(raised.y > initial.y + 0.03, 'barrel visibly elevates to 90°');
+assert.ok(raised.y > initial.y + 0.03 * SENTRY_SCALE, 'barrel visibly elevates to 90°');
 assert.equal(
   group.getObjectByName('canon-unique')?.parent,
   pitch,
@@ -46,7 +47,6 @@ group.traverse((part) => {
 });
 assert.ok(triangles < 14000, 'four textured Meshy modules with articulated pivots');
 console.log('T-01: autonomous yaw, -10°..+90° pitch, single barrel and low-poly hierarchy OK');
-
 
 // Animation instances should survive snapshot revisions for ammunition/shots.
 const ui = Object.create(GroundDefenseUI.prototype);

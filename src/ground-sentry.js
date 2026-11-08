@@ -7,6 +7,8 @@ export const SENTRY = Object.freeze({
   intervalMs: 500,
   damage: 30,
   maxPerRoom: 12,
+  // Ground footprint radius used for placement spacing (scaled T-01, #110).
+  footprint: 0.02,
 });
 
 export function fireGroundSentries(structures, targets, now, hit) {

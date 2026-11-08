@@ -8,7 +8,12 @@ import { texturedMeshyParts } from './meshy-texture.js';
 // Original meshes use different front axes; normalize them at the assembly pivots.
 export const SENTRY_MIN_ELEVATION = (-10 * Math.PI) / 180;
 export const SENTRY_MAX_ELEVATION = Math.PI / 2;
-export const SENTRY_MUZZLE_HEIGHT = 0.036;
+// Issue #110: the assembled T-01 was ~4.6× too big. One uniform scale on the
+// root keeps pivots, axes, muzzle and textures coherent, and calibrates the
+// barrel (pivot→muzzle 41 mm unscaled) on the Castor's gun (~9 mm).
+export const SENTRY_SCALE = 0.22;
+// Elevation pivot height (yaw 14 mm + pitch 22 mm unscaled), in office metres.
+export const SENTRY_MUZZLE_HEIGHT = 0.036 * SENTRY_SCALE;
 
 export function sentryAimAngles(origin, target) {
   if (
@@ -57,6 +62,7 @@ function addMeshy(T, data, parent, name, size, rotation, position) {
 export function createSentryModel(T) {
   const group = new T.Group();
   group.name = 't01';
+  group.scale.setScalar(SENTRY_SCALE);
   // The Meshy base lies horizontally in X/Z, and is deliberately not animated.
   addMeshy(T, SOCLE, group, 'socle-fixe', 0.059, 0, [0, 0.0068, 0]);
 
@@ -87,7 +93,7 @@ export function createSentryModel(T) {
   addMeshy(T, CAPTEUR, radar, 'capteur-meshy', 0.024, Math.PI, [0, 0, 0]);
   // Small support under the offset sensor; not a recoloring of its Meshy atlas.
   const support = new T.Mesh(
-    new T.BoxGeometry(0.004, 0.010, 0.004),
+    new T.BoxGeometry(0.004, 0.01, 0.004),
     new T.MeshStandardMaterial({ color: '#35393d', roughness: 0.8 }),
   );
   support.name = 'support-capteur';
@@ -99,7 +105,7 @@ export function createSentryModel(T) {
     new T.MeshBasicMaterial({ color: '#1ecbd9' }),
   );
   led.name = 'temoin-munitions';
-  led.position.set(0.005, -0.003, -0.010);
+  led.position.set(0.005, -0.003, -0.01);
   radar.add(led);
   return { group, yaw, pitch, radar, lens: led, muzzle };
 }

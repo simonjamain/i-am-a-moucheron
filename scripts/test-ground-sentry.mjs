@@ -26,19 +26,18 @@ assert.throws(
   () =>
     groundCommand(
       defense,
-      { action: 'build', kind: 'sentry', a: [0, 0.02] },
+      { action: 'build', kind: 'sentry', a: [0, 0.01] },
       [0, 0],
       20,
       1000,
       options,
     ),
   /occupé/,
+  'overlapping footprints are refused (scaled T-01, #110)',
 );
 const hits = [];
 assert.equal(
-  fireGroundSentries(defense.structures, [{ id: 1, p: [0.1, 0, 0] }], 1000, (t) =>
-    hits.push(t.id),
-  ),
+  fireGroundSentries(defense.structures, [{ id: 1, p: [0.1, 0, 0] }], 1000, (t) => hits.push(t.id)),
   1,
 );
 assert.deepEqual(hits, [1]);
@@ -55,24 +54,10 @@ assert.equal(
 const off = advancePaidService([], [], 10, {}, 1, defense);
 assert.equal(off.spent, 0, 'isolated sentry never refills');
 assert.equal(sentry.ammo, SENTRY.ammo - 1);
-const on = advancePaidService(
-  [],
-  [{ kind: 'refuel', x: 0, y: 0, z: 0 }],
-  10,
-  {},
-  1,
-  defense,
-);
+const on = advancePaidService([], [{ kind: 'refuel', x: 0, y: 0, z: 0 }], 10, {}, 1, defense);
 assert.ok(on.spent > 0 && on.spent <= 0.0010001);
 assert.equal(sentry.ammo, SENTRY.ammo);
-const empty = advancePaidService(
-  [],
-  [{ kind: 'refuel', x: 0, y: 0, z: 0 }],
-  0,
-  {},
-  1,
-  defense,
-);
+const empty = advancePaidService([], [{ kind: 'refuel', x: 0, y: 0, z: 0 }], 0, {}, 1, defense);
 assert.equal(empty.spent, 0);
 
 let now = 100000;
@@ -107,8 +92,5 @@ assert.equal(snap.groundDefense.structures.length, 1);
 p.mode = 'foot';
 p.vehicle_id = null;
 p.seat = null;
-assert.throws(
-  () => command({ action: 'build', kind: 'sentry', a: [0.2, 0] }),
-  /sol/,
-);
+assert.throws(() => command({ action: 'build', kind: 'sentry', a: [0.2, 0] }), /sol/);
 console.log('Sentry unlock, cash, finite shots, paid service, network retry and server access: OK');
