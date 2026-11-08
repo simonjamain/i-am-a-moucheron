@@ -1,6 +1,12 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 236,
+    changes: [
+      'Les murs du Castor sont faits de vraies briques 2×4 avec leurs tenons, aux couleurs du jeu.',
+    ],
+  },
+  {
     version: 234,
     changes: [
       'Accueil épuré : titre I am Moucheron, et le numéro de version ouvre les nouveautés.',

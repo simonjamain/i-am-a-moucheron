@@ -92,6 +92,24 @@ de l'[issue #78](https://github.com/simonjamain/i-am-a-moucheron/issues/78)).
 - [ ] Pièces mobiles testées à leurs butées ; origine de tir à la vraie bouche.
 - [ ] Mesures avant/après (triangles, octets, FPS si possible) et essai en jeu.
 
+## Brique LEGO 2×4 du mur Castor
+
+Premier asset passé par la règle ci-dessus ([issue #99](https://github.com/simonjamain/i-am-a-moucheron/issues/99)).
+
+- Référence : image unique d'une brique 2×4 rouge isolée, vue 3/4, **validée par
+  l'utilisateur** (SHA-256 `67e97d4a…c425`, conservée hors dépôt dans
+  `assets/originals/brick-2x4/`). Pièce sans articulation : une seule référence suffit.
+- Génération : Meshy image-to-3D, tâche `01a1ba16-7dde-758d-82fb-74eb5b54fa80`,
+  `smart-topology` cible 1 000 triangles, **sans texture** (le jeu colore chaque
+  instance), 5 crédits. GLB d'origine SHA-256 `42c02791…65c7`, 844 triangles,
+  505 sommets ; aucune simplification nécessaire (rendu instancié).
+- Axes et dimensions : tenons vers +Y, longueur X, profondeur Z (rapport 2:1).
+  En jeu : pas `BRICK_PITCH` = 24 mm, rangée `BRICK_ROW` = 6 mm (corps), profondeur
+  `BRICK_DEPTH` = 12 mm ; tenons visibles sur la rangée supérieure.
+- Import : `PYTHONPATH=scripts python3 scripts/import-meshy-brick.py <GLB>` vérifie
+  l'empreinte et écrit `src/meshy-brick-data.js` ; `scripts/test-brick-model.mjs`
+  contrôle provenance, orientation et proportions.
+
 ## Intégration Meshy au jeu
 
 1. Télécharger le modèle Meshy **approuvé** et en conserver l'original/empreinte.

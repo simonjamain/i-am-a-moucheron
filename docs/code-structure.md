@@ -145,7 +145,7 @@ et prévalide sur une copie de l’état avec `ground-defense-state.js`. La comm
 fiable `ground-defense` reste autoritaire dans `server/game.js` ; le déplacement
 des terrestres reste dans `ground-creatures.js`. Voir [gameplay](gameplay.md#défenses-terrestres).
 
-`brick-wall.js` répète en instances les briques de `meshy-brick-data.js` selon la longueur des segments, sans modifier les collisions ni le coût serveur.
+`brick-wall.js` répète en instances la brique 2×4 de `meshy-brick-data.js` (tenons vers +Y, dimensions `BRICK_PITCH`/`BRICK_ROW`/`BRICK_DEPTH`) selon la longueur des segments, recolorée par instance, sans modifier les collisions ni le coût serveur.
 
 `b3-model.js` et `meshy-b3-data.js` portent le [B3 texturé à quatre places](b3-model.md) ; `fleet.js` définit ses quatre postes et `vehicle-livery.js` son repère coloré.
 Les six autres véhicules Meshy utilisent `meshy-texture.js` pour le décodage
