@@ -1,6 +1,12 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 248,
+    changes: [
+      'Les parties à plusieurs consomment bien moins de connexion : le jeu reste plus stable quand beaucoup de joueurs sont présents.',
+    ],
+  },
+  {
     version: 247,
     changes: [
       'La connexion résiste aux courtes coupures du réseau au lieu de s’interrompre aussitôt.',

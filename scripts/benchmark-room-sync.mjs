@@ -54,7 +54,19 @@ for (const [players, enemies] of cases) {
   const firstKB = bytes / players / 1024;
   const samples = [];
   bytes = 0;
+  // Every player moves between rounds, as motion reports do in a real game:
+  // pilot states and on-foot bodies change for everyone.
+  const move = (round) => {
+    for (const p of r.pilots.values())
+      p.state = { ...p.state, p: [round * 0.01, 1 + round * 0.01, -round * 0.02], q: [0, 0, 0, 1] };
+    for (const body of r.base.bodies || []) {
+      body.x += 0.01;
+      body.z -= 0.01;
+      body.vx = 0.3;
+    }
+  };
   for (let round = 0; round < 12; round++) {
+    move(round + 1);
     const start = performance.now();
     for (const s of sessions) {
       s.window = s.now(); // benchmark bursts: stay under the per-second rate limit

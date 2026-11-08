@@ -76,6 +76,106 @@ export function unpackRoster(groups) {
   return roster;
 }
 
+// Structural patches between two JSON values. A snapshot repeats almost all of
+// its content from one reply to the next (pilots, arenas, bank, equipment...):
+// only changed values cross the wire. Node shapes:
+//   { $: value }                       replace (or set) a value
+//   { o: { key: node }, d: [keys] }    patch an object; d lists removed keys
+//   { a: { index: node }, n: length }  patch an array; n is the new length
+// JSON semantics apply: undefined is absent, the receiver works on parsed JSON.
+const plain = (v) => v !== null && typeof v === 'object';
+const absent = (v) => v === undefined || typeof v === 'function';
+export function diffValue(prev, next) {
+  if (absent(next)) return absent(prev) ? undefined : { $: null };
+  if (Object.is(prev, next)) return undefined;
+  if (!plain(next) || !plain(prev) || Array.isArray(next) !== Array.isArray(prev))
+    return { $: next };
+  if (Array.isArray(next)) {
+    // Vectors and other lists of plain values are cheaper to resend whole.
+    if (!next.some(plain)) {
+      if (next.length !== prev.length) return { $: next };
+      for (let i = 0; i < next.length; i++)
+        if (!Object.is(absent(prev[i]) ? null : prev[i], absent(next[i]) ? null : next[i]))
+          return { $: next };
+      return undefined;
+    }
+    const a = {};
+    let changed = next.length !== prev.length;
+    for (let i = 0; i < next.length; i++) {
+      // Array holes and undefined entries are null in JSON.
+      const d = diffValue(
+        i < prev.length ? (absent(prev[i]) ? null : prev[i]) : undefined,
+        absent(next[i]) ? null : next[i],
+      );
+      if (d) {
+        a[i] = d;
+        changed = true;
+      }
+    }
+    return changed ? { a, n: next.length } : undefined;
+  }
+  const o = {},
+    d = [];
+  let changed = false;
+  for (const key of Object.keys(next)) {
+    const node = absent(next[key])
+      ? absent(prev[key])
+        ? undefined
+        : (d.push(key), undefined)
+      : diffValue(prev[key], next[key]);
+    if (node) {
+      o[key] = node;
+      changed = true;
+    }
+  }
+  for (const key of Object.keys(prev))
+    if (!absent(prev[key]) && !Object.hasOwn(next, key)) d.push(key);
+  if (d.length) changed = true;
+  if (!changed) return undefined;
+  return d.length ? { o, d } : { o };
+}
+const MAX_PATCH_DEPTH = 64;
+export function applyPatch(prev, node, depth = 0) {
+  if (depth > MAX_PATCH_DEPTH || !plain(node)) throw Error('Patch de snapshot invalide.');
+  if (Object.hasOwn(node, '$')) return structuredClone(node.$);
+  if (node.a) {
+    if (!Array.isArray(prev) || !Number.isSafeInteger(node.n) || node.n < 0 || node.n > 1e6)
+      throw Error('Patch de liste invalide.');
+    const out = prev.slice(0, node.n);
+    while (out.length < node.n) out.push(null);
+    for (const [index, child] of Object.entries(node.a)) {
+      const i = Number(index);
+      if (!Number.isSafeInteger(i) || i < 0 || i >= node.n) throw Error('Patch de liste invalide.');
+      out[i] = applyPatch(i < prev.length ? prev[i] : undefined, child, depth + 1);
+    }
+    return out;
+  }
+  if (!plain(node.o) || !plain(prev) || Array.isArray(prev)) throw Error('Patch d’objet invalide.');
+  if (Object.hasOwn(node.o, '__proto__')) throw Error('Patch d’objet invalide.');
+  const out = { ...prev };
+  for (const key of node.d || []) delete out[key];
+  for (const [key, child] of Object.entries(node.o))
+    out[key] = applyPatch(Object.hasOwn(prev, key) ? prev[key] : undefined, child, depth + 1);
+  return out;
+}
+// Roster, kills and damage keep their dedicated encoding above.
+const UNPATCHED = new Set([
+  'roster',
+  'rosterAdd',
+  'rosterGroups',
+  'rosterAddGroups',
+  'kills',
+  'enemyDamage',
+  'killsAdded',
+  'enemyDamageChanged',
+]);
+function patchable(snapshot) {
+  const fields = {};
+  for (const [key, value] of Object.entries(snapshot))
+    if (!UNPATCHED.has(key) && !absent(value)) fields[key] = value;
+  return fields;
+}
+
 // Keep only changes after an acknowledged state on this ordered reliable
 // connection. Changes to wave/balance/roster reset the baseline.
 export function encodeSnapshotForWire(snapshot, previous = null) {
@@ -101,10 +201,29 @@ export function encodeSnapshotForWire(snapshot, previous = null) {
     snapshot.rosterAddGroups = packRoster(snapshot.rosterAdd);
     delete snapshot.rosterAdd;
   }
+  // Every other field travels as a patch against the previous reply's fields.
+  // The snapshot is already a private copy (Game.snapshot clones the room) and
+  // is never mutated after encoding, so its values serve as the baseline.
+  // diffValue applies JSON semantics (undefined absent, NaN as sent).
+  const fields = patchable(snapshot);
+  next.fields = fields;
+  if (previous?.fields) {
+    for (const key of Object.keys(fields)) delete snapshot[key];
+    snapshot.$patch = diffValue(previous.fields, fields) || { o: {} };
+  }
   return next;
 }
 
 export function decodeSnapshotFromWire(snapshot, previous = null) {
+  if (Object.hasOwn(snapshot, '$patch')) {
+    if (!previous?.fields) throw Error('Patch de snapshot sans état initial.');
+    const fields = applyPatch(previous.fields, snapshot.$patch);
+    delete snapshot.$patch;
+    for (const [field, value] of Object.entries(fields))
+      if (!UNPATCHED.has(field)) snapshot[field] = value;
+  }
+  // Keep a private copy: the game mutates the snapshot it receives.
+  const fields = structuredClone(patchable(snapshot));
   const key = snapshotRosterKey(snapshot);
   if (snapshot.rosterGroups) {
     snapshot.roster = unpackRoster(snapshot.rosterGroups);
@@ -128,6 +247,7 @@ export function decodeSnapshotFromWire(snapshot, previous = null) {
   }
   return {
     key,
+    fields,
     core: snapshotRosterCore(snapshot),
     roster: snapshot.roster || previous?.roster,
     kills: new Set(snapshot.kills),

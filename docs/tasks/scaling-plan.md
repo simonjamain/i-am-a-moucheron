@@ -76,7 +76,13 @@ WebTransport (Go ou Rust) et/ou TURN UDP ; règles conservées en JS.
 
 ## État réel
 
-- Phase 0 : implémentée et testée localement ; essai WAN et navigateur réel non
-  effectués.
-- Prochaine action : phase 1, en commençant par déplacer `advance()` hors de
-  `snapshot()` et par versionner `base` et `pilots`.
+- Phase 0 : fusionnée (version 247, PR #139).
+- Phase 1, premier lot (version 248) : réponses `sync` en patchs structurels
+  par connexion ; 60 Ko → 9,5 Ko à 50 joueurs en mouvement, CPU inchangé.
+- Phase 1, reste : construire et sérialiser l'état commun une fois par tick
+  (le `structuredClone` de `Game.snapshot()` reste le premier poste CPU, une
+  fois par joueur et par `sync`) ; retirer des réponses fiables les positions
+  déjà portées par le canal de mouvement, après vérification des usages client.
+- Essais navigateur et WAN : non effectués.
+- Prochaine action : partager le snapshot de salle entre les sessions d'un
+  même tick, avec invalidation par compteur de mutation de la salle.

@@ -71,7 +71,7 @@ export class ReplyAssembler {
     if (packet.id > this.lastAppliedId) {
       if (reply.status < 400 && reply.body) {
         const snapshot = reply.body.snapshot || reply.body;
-        if (snapshot.rosterRevision !== undefined)
+        if (snapshot.rosterRevision !== undefined || Object.hasOwn(snapshot, '$patch'))
           this.lastSnapshot = decodeSnapshotFromWire(snapshot, this.lastSnapshot);
       }
       this.lastAppliedId = packet.id;

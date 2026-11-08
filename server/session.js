@@ -100,15 +100,17 @@ export class GameSession {
       // All commands (not only sync) share one roster baseline. Omit it
       // BEFORE snapshot cloning, then compact initial rosters and event deltas.
       const snapshot = { ...(m.path === 'join' ? body.snapshot : body) };
-      const key = snapshotRosterKey(snapshot);
-      this.lastWireSnapshot = encodeSnapshotForWire(snapshot, this.lastWireSnapshot);
-      if (snapshot.rosterGroups || snapshot.rosterAddGroups) {
-        this.lastRosterKey = key;
-        this.lastRosterMeta = {
+      // Read roster metadata before encoding: most fields then move into $patch.
+      const key = snapshotRosterKey(snapshot),
+        meta = {
           core: snapshotRosterCore(snapshot),
           revision: snapshot.rosterRevision,
           total: snapshot.total,
         };
+      this.lastWireSnapshot = encodeSnapshotForWire(snapshot, this.lastWireSnapshot);
+      if (snapshot.rosterGroups || snapshot.rosterAddGroups) {
+        this.lastRosterKey = key;
+        this.lastRosterMeta = meta;
       }
       // Do not mutate the domain object or the response retained by a caller.
       reply = {
