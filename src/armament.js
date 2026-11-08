@@ -35,6 +35,18 @@ export const HEAVY = Object.freeze({
     lifetime: 13,
   },
   ap: { interval: 2, damage: 320, edge: 0, radius: 0, speed: MAP.metres(600), lifetime: 8 },
+  // Fixed anti-materiel howitzer (#113): ballistic like the tank shells, faster
+  // than both, more damage than HE on a small 5 m blast.
+  antitank: {
+    // Same values as FORTIFICATIONS.antitank (no import: the legacy Worker
+    // bundle concatenates modules; scripts/test-howitzer.mjs checks they match).
+    interval: 1.8,
+    damage: 360,
+    edge: 90,
+    radius: MAP.metres(5),
+    speed: MAP.metres(750),
+    lifetime: 8,
+  },
 });
 export const TANK_MG = Object.freeze({
   pilot: { interval: 0.09, damage: 25 },

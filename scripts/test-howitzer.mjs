@@ -8,6 +8,7 @@ import { createHowitzer, HOWITZER, HOWITZER_SCALE } from '../src/howitzer-model.
 import { makeFortificationStation } from '../src/fortification-model.js';
 import { FORTIFICATIONS } from '../src/ground-fortifications.js';
 import { MAP } from '../src/scale.js';
+import { howitzerMuzzle, HOWITZER_LIMITS } from '../src/howitzer-geometry.js';
 
 const near = (a, b, eps, label) => assert.ok(Math.abs(a - b) <= eps, `${label}: ${a} vs ${b}`);
 const world = (o) => o.getWorldPosition(new T.Vector3());
@@ -159,6 +160,37 @@ for (const pitch of [HOWITZER.minPitch, HOWITZER.maxPitch]) {
 }
 assert.ok(sweep > 3 && sweep < 3.6, 'muzzle reach ~3.4 m: ' + sweep);
 assert.ok(MAP.metres(sweep) <= FORTIFICATIONS.antitank.footprint, 'footprint covers the sweep');
+// 8. The server shell starts at the model's real muzzle (shared geometry).
+assert.equal(HOWITZER.minPitch, HOWITZER_LIMITS.minPitch);
+assert.equal(HOWITZER.maxPitch, HOWITZER_LIMITS.maxPitch);
+const fort = makeFortificationStation(
+  T,
+  { kind: 'antitank', x: 0.3, y: 0.2, z: -0.4, angle: 0.9 },
+  { box() {}, cyl() {} },
+);
+fort.rotation.y = 0.9;
+for (const [yaw, pitch] of [
+  [0, 0],
+  [2.1, 25 * DEG],
+  [-1, -5 * DEG],
+  [3, 40 * DEG],
+]) {
+  const h = fort.userData.howitzer;
+  const aim = new T.Vector3(
+    -Math.sin(yaw) * Math.cos(pitch),
+    Math.sin(pitch),
+    -Math.cos(yaw) * Math.cos(pitch),
+  );
+  h.pose(0, 0);
+  h.aim(100, aim, fort.quaternion);
+  fort.updateMatrixWorld(true);
+  const model = world(h.muzzle),
+    server = new T.Vector3(...howitzerMuzzle({ x: 0.3, y: 0.2, z: -0.4 }, aim.toArray()));
+  assert.ok(
+    model.distanceTo(server) < MAP.metres(0.02),
+    'server muzzle = model muzzle at ' + [yaw, pitch] + ': ' + model.distanceTo(server) / MAP.ratio,
+  );
+}
 console.log(
   'Howitzer: Meshy split (5 parts), 1.1 m wheels at player scale, -5°..+40° elevation, 45°/s traverse with counter-rotating wheels, tube recoil and jolt, shared resources.',
 );

@@ -1,4 +1,5 @@
 import { HOWITZER_DATA as D } from './howitzer-data.js';
+import { HOWITZER_LIMITS } from './howitzer-geometry.js';
 
 // Issue #113: the anti-materiel gun is the user-supplied Meshy howitzer, split
 // offline into carriage, two wheels, cradle (with the shield) and tube.
@@ -11,8 +12,8 @@ import { HOWITZER_DATA as D } from './howitzer-data.js';
 const DEG = Math.PI / 180;
 export const HOWITZER = Object.freeze({
   wheelDiameter: 1.1, // reference metres, so the gun is ~6.4 m long next to a 1.8 m player
-  minPitch: -5 * DEG,
-  maxPitch: 40 * DEG,
+  minPitch: HOWITZER_LIMITS.minPitch,
+  maxPitch: HOWITZER_LIMITS.maxPitch,
   traverseRate: 45 * DEG, // rad/s, whole gun
   elevationRate: 30 * DEG, // rad/s, cradle
   recoil: 0.3, // fraction of the tube length

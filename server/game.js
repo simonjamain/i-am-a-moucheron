@@ -73,6 +73,7 @@ import {
 } from '../src/logistics.js';
 import { drawClause, clauseFactors } from '../src/malice.js';
 import { stationAccess, stationExit } from '../src/sortie.js';
+import { howitzerMuzzle, howitzerPitchAllowed } from '../src/howitzer-geometry.js';
 import { validMotion } from '../src/network.js';
 import { snapshotRosterCore, snapshotRosterKey } from '../src/snapshot-wire.js';
 import { newBank, signLoan, settleLoans, repayLoan } from '../src/bank.js';
@@ -1164,6 +1165,7 @@ export class Game {
     else if (path === 'wash') this.wash(r, p, b);
     else if (path === 'pistol-trace') this.pistolTrace(r, p, b);
     else if (path === 'fixed-dca-fire') this.fixedDcaFire(r, p, b);
+    else if (path === 'antitank-fire') this.antitankFire(r, p, b);
     else if (path === 'wave-vote') {
       const prep = r.preparation;
       requireGame(prep && b.preparation === prep.id && !prep.winner, 'Ce vote est clos.');
@@ -1422,8 +1424,10 @@ export class Game {
         p.state.turret === b.station &&
         (gun?.kind === 'dca' || (isFortification(gun?.kind) && gun.hp > 0)) &&
         p.incarnation === b.incarnation,
-      'Occupez cette DCA pour tirer.',
+      'Occupez ce poste pour tirer.',
     );
+    // The heavy gun fires server shells only (antitank-fire), never client rounds.
+    requireGame(gun.kind !== 'antitank', 'Le canon lourd tire des obus.');
     requireGame(
       typeof b.shot === 'string' && b.shot.length > 0 && b.shot.length <= 120,
       'Identifiant de tir invalide.',
@@ -1445,6 +1449,72 @@ export class Game {
     gun.ammo -= 1;
     gun.lastShotAt = this.now();
     r.fixedDcaShots.add(key);
+  }
+  // Issue #113: the anti-materiel howitzer fires a server-simulated shell, like
+  // the tank cannon, from its real muzzle along the barrel direction.
+  antitankFire(r, p, b) {
+    const gun = r.equipment[b.station];
+    requireGame(
+      p.life === 'alive' &&
+        p.mode === 'turret' &&
+        Number.isInteger(b.station) &&
+        p.state.turret === b.station &&
+        gun?.kind === 'antitank' &&
+        gun.hp > 0 &&
+        p.incarnation === b.incarnation,
+      'Occupez ce canon lourd pour tirer.',
+    );
+    requireGame(
+      typeof b.shot === 'string' && b.shot.length > 0 && b.shot.length <= 120,
+      'Identifiant de tir invalide.',
+      400,
+    );
+    const key = p.id + ':' + p.incarnation + ':' + b.shot;
+    if (r.ordnanceShots.has(key)) return;
+    const direction = b.direction;
+    requireGame(
+      Array.isArray(direction) &&
+        direction.length === 3 &&
+        direction.every(Number.isFinite) &&
+        Math.hypot(...direction) > 0.5 &&
+        howitzerPitchAllowed(direction),
+      'Visée invalide.',
+      400,
+    );
+    requireGame(gun.ammo >= 1, 'Ce canon est à court d’obus.');
+    const profile = HEAVY.antitank,
+      factors = clauseFactors(this.clause(r, p));
+    requireGame(
+      this.now() >=
+        (gun.lastShotAt ?? -Infinity) +
+          (profile.interval * 1000 * factors.interval) / (r.balance.fireRate || 1),
+      'Ce canon recharge.',
+    );
+    requireGame(
+      r.ordnance.length < 128 && r.ordnanceShots.size < 128000,
+      'Trop de projectiles actifs.',
+      429,
+    );
+    const n = Math.hypot(...direction),
+      dir = direction.map((v) => v / n);
+    gun.ammo -= 1;
+    gun.lastShotAt = this.now();
+    r.ordnanceShots.add(key);
+    r.ordnance.push({
+      shot: b.shot,
+      weapon: 'antitank',
+      vehicle: null,
+      station: b.station,
+      shooter: p.id,
+      p: howitzerMuzzle(gun, dir),
+      v: dir.map((v) => v * profile.speed),
+      age: 0,
+      at: this.now(),
+      updated: this.now(),
+      wave: r.wave,
+      radiusFactor: 1,
+      bonus: factors.damage * r.balance.damage,
+    });
   }
   pistolImpact(r, p, shot) {
     // A foot soldier has no other damaging firearm. Require a validated
@@ -2183,7 +2253,8 @@ export class Game {
               vehicle: v.id,
             });
         for (const p of r.pilots.values())
-          if (p.life === 'alive' && !p.vehicle_id) {
+          // A fixed gun's own crew stands behind the muzzle, never in its path.
+          if (p.life === 'alive' && !p.vehicle_id && p.id !== projectile.shooter) {
             const point = this.playerPosition(r, p);
             if (point) consider(segmentSphere(a, b, point, MAP.metres(0.6)), { player: p.id });
           }
@@ -2386,14 +2457,19 @@ export class Game {
         ? 0
         : heavyDamage(weapon, distance, projectile.bonus, projectile.radiusFactor || 1);
     };
+    // The heavy gun's small blast is narrower than a large insect: the target it
+    // strikes takes the full charge, the blast only reaches the others.
+    const direct = weapon === 'antitank';
+    if (direct && hit.enemy !== undefined) enemy(hit.enemy, profile.damage * projectile.bonus);
+    if (direct && hit.vehicle) hull(hit.vehicle, profile.damage * projectile.bonus);
     frames.forEach((f, i) => {
-      if (f) {
+      if (f && !(direct && hit.enemy === i)) {
         const n = damage(f.p);
         if (n) enemy(i, n);
       }
     });
     for (const v of r.vehicles.values())
-      if (v.state.hp > 0) {
+      if (v.state.hp > 0 && !(direct && hit.vehicle === v.id)) {
         const n = damage(v.state.p);
         if (n) hull(v.id, n);
       }
