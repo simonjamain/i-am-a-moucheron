@@ -1,6 +1,12 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 239,
+    changes: [
+      'Les trajets des insectes au sol sont des pistes de phéromones orange bien visibles, avec des flèches vers la poubelle.',
+    ],
+  },
+  {
     version: 238,
     changes: [
       'Plus de pastilles de couleur au-dessus des véhicules : chacun garde ses vraies couleurs.',

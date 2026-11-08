@@ -1,4 +1,5 @@
 import { PORTALS, portalExit } from './routes.js';
+import { PheromoneTrails } from './pheromone-trail.js';
 
 export const speciesSymbols = {
   ant: '🐜',
@@ -30,6 +31,7 @@ export class WaveForecastScene {
     this.markers = new T.Group();
     this.lines = new T.Group();
     scene.add(this.markers, this.lines);
+    this.trails = new PheromoneTrails(T, scene);
   }
   update(snap, candidate, now) {
     const prep = snap?.preparation;
@@ -39,8 +41,10 @@ export class WaveForecastScene {
       this.key = null;
       this.rendered = null;
       dispose(this.lines);
+      this.trails.clear();
     }
     if (!prep || !this.entrances.length) return;
+    this.trails.animate(now / 1000);
     let cmd = !candidate?.error && candidate?.command;
     if (
       cmd?.action === 'repair' ||
@@ -102,23 +106,15 @@ export class WaveForecastScene {
   }
   drawPaths(paths) {
     dispose(this.lines);
-    const T = this.T;
+    this.trails.set(
+      paths.filter((path) => path.points.length).map((path) => path.points),
+      this.draft,
+    );
     for (const path of paths) {
-      if (!path.points.length) {
-        const label = this.textLabel('Passage fermé', '#ffb08f', 0.8);
-        label.position.set(path.origin[0], path.origin[1] + 0.19, path.origin[2]);
-        this.lines.add(label);
-        continue;
-      }
-      const geometry = new T.BufferGeometry().setFromPoints(
-        path.points.map((p) => new T.Vector3(...p)),
-      );
-      const material = new T.LineBasicMaterial({
-        color: this.draft ? '#fef8e5' : '#efbb62',
-        transparent: true,
-        opacity: 0.85,
-      });
-      this.lines.add(new T.Line(geometry, material));
+      if (path.points.length) continue;
+      const label = this.textLabel('Passage fermé', '#ffb08f', 0.8);
+      label.position.set(path.origin[0], path.origin[1] + 0.19, path.origin[2]);
+      this.lines.add(label);
     }
   }
 }

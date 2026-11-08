@@ -319,7 +319,7 @@ changement de `navigationRevision`. Le trajet est lissé à angle libre : depuis
 position, l'insecte vise le point le plus lointain de la descente encore visible
 en ligne droite, avec une marge d'environ une demi-case, et garde ce point jusqu'à
 l'atteindre. L'aperçu du conseil de vague (`smoothRoute`) enchaîne les mêmes points :
-à carte inchangée, le tracé ocre est le chemin marché. Un brouillon de barricade ou
+à carte inchangée, la piste de phéromones orange (chevrons vers la poubelle) est le chemin marché. Un brouillon de barricade ou
 de bunker montre le détour avant validation. Sans chemin, l'aperçu affiche
 « Passage fermé » ; les cafards, araignées et rats attaquent alors la barricade la
 plus proche. Le sucre détourne seulement les insectes entrés dans son rayon et
