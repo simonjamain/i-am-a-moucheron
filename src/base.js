@@ -12,6 +12,9 @@ export function baseWorld(p) {
   const b = OFFICE_LAYOUT.base;
   return { x: b.originX + p.x * ACTOR_UNIT, y: p.y ?? b.deckY, z: b.originZ - p.z * ACTOR_UNIT };
 }
+// Walking collision radius in actor units, for players and furniture alike.
+// Issue #135: half the former 0.32; shot hit volumes are separate.
+export const BASE_WALK_RADIUS = 0.16;
 export function baseBody(p, now) {
   const bay = aircraftBay(p.bay);
   return {
@@ -24,10 +27,15 @@ export function baseBody(p, now) {
     vx: (p.walkSpawn?.vx ?? 0) / ACTOR_UNIT,
     vz: -(p.walkSpawn?.vz ?? 0) / ACTOR_UNIT,
     parachute: !!p.walkSpawn?.parachute,
-    r: 0.32,
+    r: BASE_WALK_RADIUS,
     face: Math.PI,
     paper: p.board_paper,
   };
+}
+// Footsteps only while walking on a support: never in free fall or under the
+// parachute (issue #135), whatever the horizontal speed.
+export function footstepsAudible(body, speed, minimum = 0.6) {
+  return !!body && body.grounded !== false && !body.parachute && speed > minimum;
 }
 export function baseAccess(body, bay) {
   return (
@@ -62,6 +70,7 @@ export function reconcileBase(a, pilots, now) {
       a.bodies.push(b);
     }
     b.paper = p.board_paper;
+    b.r = BASE_WALK_RADIUS; // bodies created before an update keep walking freely
   }
   // Legacy parked bodies still support old clients. Shared fleet hulls are
   // supplied by the scene, instead of creating one invisible hull per player.

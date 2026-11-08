@@ -47,33 +47,14 @@ export class GroundDefenseUI {
     this.notify = notify;
     this.releaseMouse = releaseMouse;
     this.mode = 'barricade';
-    this.opened = false;
     this.key = '';
     this.airTrails = new AirTrails(T, scene);
     this.models = new T.Group();
     this.sentries = new Map();
     this.lastSentryFrame = 0;
     scene.add(this.models);
-    this.trigger = document.createElement('button');
-    this.trigger.textContent = 'Défense';
-    this.trigger.setAttribute('aria-label', 'Construire les défenses terrestres');
-    this.trigger.style.cssText =
-      'position:fixed;right:16px;bottom:16px;z-index:18;padding:10px 15px;cursor:pointer';
-    this.panel = document.createElement('section');
-    this.panel.style.cssText =
-      'position:fixed;right:16px;bottom:62px;z-index:20;background:#17252beF;color:white;' +
-      'border:1px solid #7f9b93;padding:12px;border-radius:8px;width:min(450px,90vw);' +
-      'box-shadow:0 8px 36px #0009;display:none';
-    const top = document.createElement('div');
-    top.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:10px';
-    const heading = document.createElement('strong');
-    heading.textContent = 'Défense de la poubelle';
-    const close = document.createElement('button');
-    close.textContent = 'Fermer';
-    close.onclick = () => this.setOpen(false);
-    top.append(heading, close);
-    this.buttons = document.createElement('div');
-    this.buttons.style.cssText = 'display:flex;gap:5px;flex-wrap:wrap;margin:8px 0';
+    // Issue #135: no HUD "Défense" button or tool panel; the G / middle-click
+    // wheel is the tool selector (and the only entry into building mode).
     this.tools = [
       ['barricade', 'Barricade'],
       ['sugar', 'Sucre'],
@@ -85,29 +66,6 @@ export class GroundDefenseUI {
       ['bunker', 'Bunker LEGO'],
       ['antitank', 'Canon anti-matériel'],
     ];
-    for (const [kind, label] of this.tools) {
-      const button = document.createElement('button');
-      button.textContent = label;
-      button.onclick = () => {
-        if (
-          ['sentry', 'bunker', 'antitank'].includes(kind) &&
-          (!this.builder() || !this.snapshot()?.blueprintLevels?.[kind])
-        ) {
-          this.notify('Débloquez ce plan par une carte et conduisez le Castor.', 3);
-          return;
-        }
-        this.trailAnchor = null;
-        this.mode = kind;
-        this.buttons.querySelectorAll('button').forEach((b) => {
-          b.style.fontWeight = b === button ? 'bold' : 'normal';
-        });
-        this.active = true;
-        this.setOpen(false);
-        this.captureMouse();
-      };
-      this.buttons.append(button);
-    }
-    this.buttons.querySelector('button').style.fontWeight = 'bold';
     this.wheel = document.createElement('div');
     this.wheel.style.cssText =
       'display:none;position:fixed;z-index:40;left:50%;top:50%;transform:translate(-50%,-50%);width:340px;height:340px;border-radius:50%;border:2px solid #cbdca3;pointer-events:none;color:white;text-align:center';
@@ -128,15 +86,11 @@ export class GroundDefenseUI {
       'position:absolute;width:8px;height:8px;border-radius:50%;background:white;transform:translate(-50%,-50%)';
     this.wheel.append(this.dot);
     document.body.append(this.wheel);
-    this.hint = document.createElement('p');
-    this.hint.textContent =
-      'Cliquez pour ancrer un mur ou un ruban, visez la fin puis cliquez pour terminer. E confirme aussi, R oriente les objets ponctuels, Échap pour quitter. Barricade / ruban : 1 $ pour 20 cm, au prorata de la longueur, sucre : 3 $, ventilateur : 4 $, réparation : 1 $.';
-    this.panel.append(top, this.buttons, this.hint);
     this.status = document.createElement('button');
     this.status.style.cssText =
       'position:fixed;bottom:65px;left:50%;transform:translateX(-50%);z-index:18;padding:10px;display:none';
     this.status.onclick = () => this.press();
-    document.body.append(this.trigger, this.panel, this.status);
+    document.body.append(this.status);
     this.previewModel = new ModelPreview(T, scene);
     this.preview = this.previewModel.root;
     this.preview.visible = false;
@@ -150,7 +104,6 @@ export class GroundDefenseUI {
     );
     this.fanArrow.visible = false;
     scene.add(this.preview, this.fanArrow);
-    this.trigger.onclick = () => this.setOpen(!this.opened);
   }
   openWheel(source = 'mouse') {
     if (this.radial || !this.available() || !this.enabled() || this.busy) return false;
@@ -197,8 +150,7 @@ export class GroundDefenseUI {
     this.radial = false;
     this.wheelSource = null;
     this.wheel.style.display = 'none';
-    if (index >= 0 && this.available() && this.enabled())
-      this.buttons.querySelectorAll('button')[index].onclick();
+    if (index >= 0 && this.available() && this.enabled()) this.selectTool(this.tools[index][0]);
     return true;
   }
   handleWheelKey(code, pressed, repeat = false) {
@@ -210,15 +162,21 @@ export class GroundDefenseUI {
     if (!this.radial || this.wheelSource !== 'keyboard') return false;
     return this.finishWheel('keyboard');
   }
-  setOpen(open) {
-    this.anchor = null;
-    if (open) this.trailAnchor = null;
-    this.opened = open && this.available();
-    this.panel.style.display = this.opened ? 'block' : 'none';
-    if (this.opened) {
-      this.active = false;
-      this.releaseMouse();
+  // Enter building mode with one tool (Castor-only plans need their card).
+  selectTool(kind) {
+    if (
+      ['sentry', 'bunker', 'antitank'].includes(kind) &&
+      (!this.builder() || !this.snapshot()?.blueprintLevels?.[kind])
+    ) {
+      this.notify('Débloquez ce plan par une carte et conduisez le Castor.', 3);
+      return false;
     }
+    this.anchor = null;
+    this.trailAnchor = null;
+    this.mode = kind;
+    this.active = true;
+    this.captureMouse();
+    return true;
   }
   cancel() {
     this.trailAnchor = null;
@@ -226,7 +184,7 @@ export class GroundDefenseUI {
     this.wheelSource = null;
     this.wheel.style.display = 'none';
     this.active = false;
-    this.setOpen(false);
+    this.anchor = null;
     this.preview.visible = false;
     this.fanArrow.visible = false;
     this.status.style.display = 'none';
@@ -329,7 +287,6 @@ export class GroundDefenseUI {
   }
   update() {
     const snap = this.snapshot();
-    this.trigger.hidden = !this.available();
     if (!this.available() || (this.radial && !this.enabled())) this.cancel();
     const key = [snap?.code, snap?.base?.epoch, snap?.groundDefense?.revision].join(':');
     if (key !== this.key) {

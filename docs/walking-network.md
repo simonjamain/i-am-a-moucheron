@@ -54,6 +54,18 @@ Combat damage is persisted separately from body motion, with an incarnation
 identifier and idempotent hit ledger. Movement reports cannot reset damage or
 restore retired melee actions. See [combat and worlds](combat-worlds.md).
 
+## Collisions de marche et pas (issue #135)
+
+Le rayon de déplacement des personnages est réduit de moitié : `BASE_WALK_RADIUS`
+= 0,16 unité d'acteur au bureau (au lieu de 0,32), `SOUL_RADIUS` = 0,24 au
+purgatoire (au lieu de 0,48). Il sert aux collisions entre joueurs (qui restent
+solides, jamais traversables) et avec le mobilier (`stepWalker`). Les volumes de
+tir sont distincts (maillages, sphères de `playerPosition`) et inchangés. Les corps
+existants reprennent ce rayon à la prochaine réconciliation. Les sons de pas ne se
+jouent qu'avec un appui au sol (`footstepsAudible`) : jamais en chute libre ni sous
+parachute. `scripts/test-walk-collisions.mjs` vérifie croisement, solidité, mobilier
+et pas.
+
 ## Verification
 
 - `scripts/test-client-authority.mjs`: old snapshots delayed by 40/160/320/1500 ms

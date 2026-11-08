@@ -1,6 +1,11 @@
+// Issue #135: the room debug mode is a plain ON/OFF toggle. Its effects stay
+// (unlimited funds, every plan unlocked, room isolation, reset on exit); the
+// former test tools (cards, waves, scenarios) are refused.
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { Game } from '../server/game.js';
 import { BLUEPRINTS } from '../src/wave-blueprints.js';
+import { LabUI } from '../src/lab-ui.js';
 
 let now = 100000;
 const game = new Game({ now: () => now });
@@ -13,56 +18,61 @@ const send = (action, extra = {}, id = a.id) =>
   game.command('LAB', id, 'lab', { epoch: room.base.epoch, action, ...extra });
 assert.equal(a.snapshot.lab?.enabled ?? false, false);
 assert.equal(other.snapshot.lab?.enabled ?? false, false);
-assert.throws(() => send('card', { card: 'piercing' }), /Activez/);
+assert.throws(() => send('exit'), /inactif/);
 assert.throws(() => send('enable', { epoch: 'obsolete' }), /changé/);
-assert.equal(send('enable', {}, b.id).lab.enabled, true);
+assert.deepEqual(send('enable', {}, b.id).lab, { enabled: true }, 'no scenario list on wire');
+assert.throws(() => send('enable'), /déjà actif/);
 assert.equal(regular.lab.enabled, false, 'isolated room');
 for (const card of Object.keys(BLUEPRINTS)) assert.equal(room.blueprintLevels[card], 1);
 assert.equal(room.dollars, 1000000000);
-const before = room.blueprintLevels.reinforced;
-send('card', { card: 'reinforced' });
-assert.equal(room.blueprintLevels.reinforced, before + 1);
-assert.throws(() => send('card', { card: '__proto__' }), /inconnu/);
-assert.throws(() => send('wave', { wave: 0 }), /Vague/);
-assert.throws(() => send('wave', { wave: 1.5 }), /Vague/);
-send('wave', { wave: 7 });
-assert.equal(room.wave, 6);
-assert.equal(room.preparation.wave, 7);
-const first = send('start');
-assert.equal(first.wave, 7);
-assert.equal(first.phase, 'combat');
-game.createVehicle(room, 'helicopter');
-room.equipment.push({ kind: 'radar', x: 0.1, y: 0, z: -0.1, slot: 0 });
-const savedPlan = structuredClone(room.plan);
-send('save', { name: 'Bureau tourelles' });
-assert.equal(room.lab.scenarios.length, 1);
-const scenarioId = room.lab.scenarios[0].id;
-assert.ok(
-  !JSON.stringify(send('wave', { wave: 9 }).lab).includes('data'),
-  'no saved room state on wire',
-);
-send('load', { scenario: scenarioId });
-assert.equal(room.phase, 'prep');
-assert.equal(room.wave, 6);
-assert.deepEqual(room.upcomingPlan, savedPlan);
-assert.equal(room.equipment[0].kind, 'radar');
-assert.equal([...room.vehicles.values()].some((v) => v.type === 'helicopter'), true);
-assert.equal(room.pilots.size, 2, 'connected players preserved');
-assert.ok([...room.pilots.values()].every((p) => p.mode === 'foot'), 'crew cleared');
-assert.equal(send('start').wave, 7, 'captured wave can be replayed');
-send('finish');
-assert.equal(room.phase, 'prep');
-send('delete', { scenario: scenarioId });
-assert.equal(room.lab.scenarios.length, 0);
-send('save', { name: 'Après combat' });
+assert.equal(room.phase, 'prep', 'enabling opens the first preparation');
+for (const action of ['card', 'unlock', 'wave', 'start', 'finish', 'save', 'load', 'delete'])
+  assert.throws(() => send(action, { card: 'reinforced', wave: 7, name: 'x' }), /inconnue/);
 game.command('LAB', a.id, 'reset', { epoch: room.base.epoch });
-assert.equal(room.lab.enabled, true, 'normal reset keeps laboratory');
-assert.equal(room.lab.scenarios.length, 1, 'normal reset keeps scenarios');
+assert.equal(room.lab.enabled, true, 'normal reset keeps debug mode');
 const afterExit = send('exit');
 assert.equal(afterExit.lab?.enabled ?? false, false);
-assert.equal(room.lab.scenarios.length, 0);
 assert.equal(room.wave, 0);
 assert.equal(room.blueprintLevels.piercing, undefined);
-assert.equal(room.dollars, room.balance.startingMoney);
+assert.equal(room.dollars, room.balance.startingMoney, 'exit resets the game');
 assert.equal(regular.lab.enabled, false);
-console.log('PASS: laboratoire, progression, scénario, isolation et sortie.');
+
+// Client: one click enables, the next disables, without confirmation or panel.
+let snap = { base: { epoch: 'e1' }, lab: null };
+const requests = [];
+const button = {
+  classes: new Set(),
+  attributes: {},
+  classList: {
+    toggle(name, on) {
+      if (on) button.classes.add(name);
+      else button.classes.delete(name);
+    },
+  },
+  setAttribute(name, value) {
+    this.attributes[name] = value;
+  },
+};
+const ui = new LabUI({
+  button,
+  snapshot: () => snap,
+  command: async (body) => {
+    requests.push(body);
+    return { lab: body.action === 'enable' ? { enabled: true } : undefined };
+  },
+  accept: (next) => (snap = { ...snap, lab: next.lab || null }),
+  notify() {},
+});
+assert.equal(button.textContent, 'Debug : OFF');
+assert.equal(button.attributes['aria-pressed'], 'false');
+await button.onclick();
+assert.deepEqual(requests.at(-1), { epoch: 'e1', action: 'enable' });
+assert.equal(button.textContent, 'Debug : ON');
+assert.equal(button.classes.has('debugOn'), true, 'active state is visible');
+await button.onclick();
+assert.deepEqual(requests.at(-1), { epoch: 'e1', action: 'exit' });
+assert.equal(button.textContent, 'Debug : OFF');
+assert.equal(requests.length, 2);
+const html = readFileSync('src/index.html', 'utf8');
+assert.doesNotMatch(html, /labPanel|data-lab-|Outils de test|Scénarios/, 'no debug panel');
+console.log('PASS: interrupteur debug, effets conservés, outils retirés, isolation et sortie.');

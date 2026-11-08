@@ -1,5 +1,7 @@
 // Client-owned 2.5D locomotion, collisions and physical queue. Combat uses shared hit points.
-export const SOUL_RADIUS = 0.48,
+// Movement radius only (hits use meshes/spheres elsewhere). Issue #135 halved
+// it so the slimmer character no longer snags on other players and furniture.
+export const SOUL_RADIUS = 0.24,
   STEP = 1 / 60;
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 export const QUEUE_SPACING = 1.85,

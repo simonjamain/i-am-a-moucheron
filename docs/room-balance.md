@@ -9,6 +9,6 @@ reste la référence des multiplicateurs (dégâts, vitesses, prix, pauses, cais
 initiale…), appliqués à toutes les rooms. Les tests se servent directement de
 `debugSwarmRoster` (`src/waves.js`) pour composer un roster exact.
 
-Pour tester sans contraintes de jeu, utiliser l’interrupteur unique du
-[mode debug](laboratory.md). `scripts/test-debug-mode.mjs` vérifie que les deux
+Pour tester sans contraintes de jeu, utiliser l’interrupteur direct du
+[mode debug](laboratory.md) (Debug : ON / OFF, sans panneau d’outils depuis l’issue #135). `scripts/test-debug-mode.mjs` vérifie que les deux
 commandes retirées sont refusées par le serveur.

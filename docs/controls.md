@@ -30,7 +30,6 @@ mapping, including modifier changes while a key is held.
 | Multi-seat vehicle     | Physical Digit1–Digit7 / panel | Contractual change or exchange           |
 | Purgatory              | E                              | Open paperwork when physically eligible  |
 | Paperwork              | Release valid ink stroke       | Submit and stamp automatically           |
-| General                | H                              | Help                                     |
 
 E only selects equipment on foot; in an airplane pilot seat A/E control the
 rudder, not equipment interaction. Manual input overrides the mouse instructor
@@ -106,6 +105,17 @@ vitesse verticale à l’impact. Voir [retours terrain](field-update.md).
 
 Le [lot lisibilité et nettoyage](clean-flight.md) détaille les bons signés, la pose par E,
 les touches physiques, le jet et les nouvelles commandes du Spitfire.
+
+## HUD épuré (issue #135)
+
+Plus de panneau d'instructions à pied à gauche, ni d'aide plein écran (bouton
+« Aide », « Commandes ? », touche H et bouton d'aide de manette retirés), ni de
+bouton « Défense », « Recommencer la partie » ou nom de room copiant le lien. Le
+lien d'invitation reste celui de la barre d'adresse (`?room=`). Sur écran tactile,
+seuls les boutons de marche et d'interaction (E) restent affichés à pied, sans texte.
+Le radar, ancré en haut et à droite, est agrandi vers le bas et la gauche dans
+l'espace libéré (211 px au lieu de 150, même carré). Le bouton **Debug : OFF / ON**
+est un interrupteur direct ([mode debug](laboratory.md)).
 
 ## Aide contextuelle
 
@@ -205,7 +215,7 @@ Après déblocage des cartes correspondantes, le conducteur du Castor peut poser
 
 Après déblocage de la carte correspondante, le conducteur du Castor peut choisir « Tourelle auto » dans la roue de construction et la poser d’un clic (9 $). La tourelle consomme ses 180 balles ; le service de recharge est payant et local.
 
-Bouton « Défense » à pied ou au poste conducteur du Castor au sol, puis choix d’un outil : aperçu au point visé par la caméra
+**G** ou clic molette (roue de construction) à pied ou au poste conducteur du Castor au sol, puis choix d’un outil ; il n’y a plus de bouton « Défense » (issue #135) : aperçu au point visé par la caméra
 indépendamment de la marche, E ou clic gauche pour valider, R pour orienter le sucre ou le ventilateur, Échap
 pour quitter. Prix, conditions et navigation : [gameplay](gameplay.md#défenses-terrestres).
 

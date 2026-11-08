@@ -39,7 +39,9 @@ const before = inventory();
 assert.equal(renderer.shadowMap.type, T.PCFSoftShadowMap);
 applyShadowPreset(T, renderer, scene, 'landing');
 assert.deepEqual(inventory(), before, 'no added mesh, caster, receiver or shadow-map resolution');
-assert.equal(renderer.shadowMap.type, T.BasicShadowMap);
+// Issue #135: slightly soft edges (PCF, 1-texel blur) on the same dark shadows.
+assert.equal(renderer.shadowMap.type, T.PCFShadowMap);
+assert.equal(scene.children.find((o) => o.isDirectionalLight).shadow.radius, 1);
 assert.equal(scene.children.find((o) => o.isHemisphereLight).intensity, 1.5);
 assert.equal(scene.children.find((o) => o.isDirectionalLight).intensity, 4);
 assert.equal(before.shadowMap[0], 2048);

@@ -5,6 +5,7 @@ import {
   deskOccupant,
   bodyMotion,
   relayBodyReport,
+  SOUL_RADIUS,
 } from '../src/purgatory-physics.js';
 const make = (id, x = 0, z = 8) => ({
   ...createSoul({ id, entity: 'p' + id, kind: 'player' }, 0, 1000),
@@ -13,7 +14,10 @@ const make = (id, x = 0, z = 8) => ({
 });
 let a = { time: 1000, events: [], bodies: [make(1), make(2)] };
 advanceArena(a, 1050);
-assert.ok(Math.hypot(a.bodies[0].x - a.bodies[1].x, a.bodies[0].z - a.bodies[1].z) > 0.95);
+// Overlapping souls separate to their contact distance (2 × movement radius).
+assert.ok(
+  Math.hypot(a.bodies[0].x - a.bodies[1].x, a.bodies[0].z - a.bodies[1].z) > 2 * SOUL_RADIUS * 0.99,
+);
 a = { epoch: 'e', time: 1000, events: [], bodies: [make(1, 0, 1.1), make(2, 0, 4)] };
 assert.equal(deskOccupant(a).id, 1);
 a.bodies[0].x = 5;

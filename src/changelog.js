@@ -1,6 +1,16 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 246,
+    changes: [
+      'Les personnages se croisent et passent entre les meubles sans rester coincés.',
+      'Plus de bruits de pas pendant la chute ou sous le parachute.',
+      'Écran plus épuré : fini le panneau d’aide à gauche et les boutons Défense, Recommencer et nom de partie.',
+      'Le bouton Debug s’active et se désactive d’un simple clic.',
+      'Le radar est plus grand et les ombres ont des bords un peu plus doux.',
+    ],
+  },
+  {
     version: 245,
     changes: [
       'Le canon lourd tire de vrais obus, rapides et puissants, à petite explosion, et peut enfin tirer à l’horizontale.',

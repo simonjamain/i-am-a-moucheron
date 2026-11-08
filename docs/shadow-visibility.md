@@ -3,6 +3,14 @@
 **Validation WebGL et performance ouverte. Ne pas fusionner ce candidat avant
 la comparaison demandée dans l’issue #11.**
 
+## Mise à jour issue #135
+
+Les bords francs de BasicShadowMap étaient trop nets et crénelés. Le préréglage
+`landing` utilise désormais PCFShadowMap avec un rayon de flou de 1 texel : bords
+légèrement adoucis, mêmes intensités (ambiance 1,5, soleil 4), donc ombres toujours
+sombres sous les appareils. Des gros plans rendus (swiftshader) ont montré qu'un
+rayon de 1,5 ou 2 éclaircissait trop les petites ombres ; à confirmer en WebGL réel.
+
 ## Solution préparée
 
 Le candidat conserve la même scène, le même soleil et la shadow map 2048 × 2048.

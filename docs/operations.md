@@ -60,7 +60,7 @@ la compatibilité historique ; cette dépendance n’est pas dans le serveur Nod
 du contrôle mécanique des liens. Un audit global fait l’objet d’une tâche dédiée. La [revue du 29 octobre 2026](archive/reference-audit-2026-10-29.md)
 reste une trace historique, pas une seconde référence métier.
 
-Le test ciblé `node scripts/test-laboratory.mjs` couvre l’isolation des rooms, les autorisations, le déblocage, les vagues, la restauration des constructions et le retour à une partie normale. Les scénarios de laboratoire résident exclusivement dans la mémoire de la room.
+Le test ciblé `node scripts/test-laboratory.mjs` couvre l’interrupteur debug (activation, désactivation), l’isolation des rooms, les autorisations, le déblocage, le refus des anciens outils de test et le retour à une partie normale.
 
 ## Vérification navigateur et limites
 

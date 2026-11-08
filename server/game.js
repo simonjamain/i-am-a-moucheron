@@ -123,7 +123,7 @@ function roomState(code, now) {
   return {
     code,
     balance: { ...DEFAULT_BALANCE },
-    lab: { enabled: false, scenarios: [] },
+    lab: { enabled: false },
     balanceRevision: 0,
     rosterRevision: 0,
     balanceOwnerToken: null,
@@ -732,86 +732,12 @@ export class Game {
       if (!r.mission_started) this.setLabWave(r, 1);
       return;
     }
-    requireGame(r.lab.enabled, 'Activez d’abord le mode debug.');
-    if (action === 'exit') {
-      this.resetRoom(r, { enabled: false, scenarios: [] });
-    } else if (action === 'unlock') {
-      for (const card of Object.keys(BLUEPRINTS))
-        r.blueprintLevels[card] = Math.max(1, r.blueprintLevels[card] || 0);
-    } else if (action === 'card') {
-      requireGame(
-        typeof b.card === 'string' && Object.hasOwn(BLUEPRINTS, b.card),
-        'Plan inconnu.',
-        400,
-      );
-      r.blueprintLevels[b.card] = Math.min(100, (r.blueprintLevels[b.card] || 0) + 1);
-    } else if (action === 'wave') {
-      this.setLabWave(r, b.wave);
-    } else if (action === 'start') {
-      requireGame(r.phase === 'prep', 'Une vague est déjà en cours.');
-      this.startWave(r);
-    } else if (action === 'finish') {
-      requireGame(r.phase === 'combat', 'Aucune vague à terminer.');
-      for (let i = 0; i < this.plan(r).roster.length; i++) r.kills.add(i);
-      this.advance(r);
-    } else if (action === 'save') {
-      const name = typeof b.name === 'string' ? b.name.trim() : '';
-      requireGame(
-        name.length >= 1 && name.length <= 50,
-        'Nom de scénario : 1 à 50 caractères.',
-        400,
-      );
-      const data = clone({
-        wave: r.wave,
-        phase: r.phase,
-        balance: r.balance,
-        blueprintLevels: r.blueprintLevels,
-        activeBlueprints: r.activeBlueprints,
-        upgrades: r.upgrades,
-        equipment: r.equipment,
-        groundDefense: r.groundDefense,
-        vehicles: r.vehicles,
-        plan: r.phase === 'combat' ? r.plan : null,
-        upcomingPlan: r.phase === 'prep' ? r.upcomingPlan : null,
-        preparation: r.phase === 'prep' ? r.preparation : null,
-      });
-      r.lab.scenarios.push({ id: uid(), name, wave: r.wave, phase: r.phase, data });
-      if (r.lab.scenarios.length > 5) r.lab.scenarios.shift();
-    } else if (action === 'load') {
-      const scenario = r.lab.scenarios.find((item) => item.id === b.scenario);
-      requireGame(scenario, 'Scénario introuvable.', 404);
-      const saved = clone(scenario.data);
-      this.resetRoom(r);
-      r.balance = saved.balance;
-      r.blueprintLevels = saved.blueprintLevels;
-      r.activeBlueprints = saved.activeBlueprints || {};
-      r.upgrades = saved.upgrades;
-      r.equipment = saved.equipment;
-      r.groundDefense = saved.groundDefense;
-      r.vehicles = saved.vehicles;
-      for (const vehicle of r.vehicles.values()) {
-        vehicle.seats = new Map();
-        vehicle.updated = this.now();
-        vehicle.contacts = [];
-        vehicle.contactPosition = [...vehicle.state.p];
-      }
-      r.lastPaidServiceAt = this.now();
-      this.setLabWave(r, Math.max(1, saved.phase === 'combat' ? saved.wave : saved.wave + 1));
-      const replay = saved.phase === 'combat' ? saved.plan : saved.upcomingPlan;
-      if (replay?.roster) {
-        r.upcomingPlan = replay;
-        r.preparation.groups = forecast(replay.roster);
-      }
-      if (saved.phase === 'prep' && saved.preparation?.winner)
-        r.preparation.winner = saved.preparation.winner;
-      r.dollars = LAB_FUNDS;
-    } else if (action === 'delete') {
-      const index = r.lab.scenarios.findIndex((item) => item.id === b.scenario);
-      requireGame(index !== -1, 'Scénario introuvable.', 404);
-      r.lab.scenarios.splice(index, 1);
-    } else {
-      requireGame(false, 'Action de laboratoire inconnue.', 400);
-    }
+    // Issue #135: debug is a plain toggle. Only enable/exit exist; the former
+    // test tools (cards, waves, scenarios) are gone. Leaving resets the game so
+    // no test progress leaks into a normal game.
+    requireGame(action === 'exit', 'Action de debug inconnue.', 400);
+    requireGame(r.lab.enabled, 'Le mode debug est déjà inactif.');
+    this.resetRoom(r, { enabled: false });
   }
   plan(r) {
     return r.plan || wavePlan(r.code, r.wave, r.started);
@@ -886,19 +812,7 @@ export class Game {
     return clone({
       code: r.code,
       balance: r.balance,
-      ...(r.lab.enabled
-        ? {
-            lab: {
-              enabled: true,
-              scenarios: r.lab.scenarios.map(({ id, name, wave, phase }) => ({
-                id,
-                name,
-                wave,
-                phase,
-              })),
-            },
-          }
-        : {}),
+      ...(r.lab.enabled ? { lab: { enabled: true } } : {}),
       balanceRevision: r.balanceRevision,
       rosterRevision: r.rosterRevision,
       balanceOwner: activePilots

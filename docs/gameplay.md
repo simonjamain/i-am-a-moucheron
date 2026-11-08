@@ -36,11 +36,11 @@ Les règles de la room sont fixes : l'ancien panneau **Équilibrage et nuées** 
 
 ## Mode debug
 
-Le bouton **Debug** du HUD est un interrupteur unique, commun à la room : argent
-illimité, toutes les constructions et améliorations débloquées, aucun dégât de chute
-et défaite impossible. Les dégâts de la poubelle restent calculés et le HUD affiche
-ses PV, même négatifs (« -75 / 20 PV »). Des outils de cartes, de vagues et de
-scénarios restent disponibles. Désactiver réinitialise la partie aux règles normales.
+Le bouton **Debug : OFF / ON** du HUD est un interrupteur direct, commun à la room :
+un clic l'active, le suivant le désactive. Actif : argent illimité, toutes les
+constructions et améliorations débloquées, aucun dégât de chute et défaite
+impossible. Les dégâts de la poubelle restent calculés et le HUD affiche ses PV,
+même négatifs (« -75 / 20 PV »). Désactiver réinitialise la partie aux règles normales.
 Voir [mode debug](laboratory.md).
 
 ## Accueil et noms
@@ -48,8 +48,7 @@ Voir [mode debug](laboratory.md).
 L'accueil affiche le titre **I am Moucheron**, le formulaire et l'indication « Base
 Alpha », sur le bureau 3D animé ; aucun slogan, badge ni mention de prototype, et
 plus d'étiquette flottante « BASE ALPHA · 3 / 1000 » dans la scène. Le numéro de
-version, en haut à gauche, ouvre les **Nouveautés**. « Recommencer la partie »
-n'apparaît que dans une room. Il n'y a plus de réglage audio visible : le son
+version, en haut à gauche, ouvre les **Nouveautés**. Il n'y a plus de réglage audio visible : le son
 démarre au volume standard dès la première interaction autorisée par le navigateur.
 
 Noms validés : **M1 Chasseur léger**, **B3 Bombardier moyen**, **H2 Hélicoptère
@@ -283,9 +282,9 @@ Les [vitesses physiques des espèces](enemy-bestiary.md#vitesse-physique-dans-la
 
 ## Défenses terrestres
 
-À pied au sol du bureau, ouvrir « Défense » puis choisir barricade, sucre, ruban,
-réparation ou suppression. Le menu se ferme et la caméra reste en troisième
-personne. Un aperçu suit le point visé au centre de la caméra, indépendamment de la direction
+À pied au sol du bureau, maintenir **G** (ou le clic molette) pour la roue de
+construction puis choisir barricade, sucre, ruban, réparation ou suppression. La
+caméra reste en troisième personne. Un aperçu suit le point visé au centre de la caméra, indépendamment de la direction
 de marche. Visez une surface proche ; une paroi ou un point hors de portée ne
 permet pas de poser. Ce principe s'applique aussi aux équipements et véhicules
 achetés. Échap quitte le mode de pose.
