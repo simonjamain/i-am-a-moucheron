@@ -3,9 +3,10 @@ import { ModelPreview } from './model-preview.js';
 import { AirTrails } from './air-trails.js';
 import { groundPlacement } from './ground-placement.js';
 import { lengthPrice } from './ground-defense-state.js';
+import { BRICK_PITCH } from './brick-wall.js';
 import { sentryAimAngles, sentryAngleDelta, SENTRY_MUZZLE_HEIGHT } from './sentry-model.js';
 // One LEGO brick of the wall model (brick-wall.js), and the trail section bounds.
-export const BRICK_PITCH = 0.024;
+export { BRICK_PITCH };
 export const TRAIL_MIN = 0.01;
 export const TRAIL_MAX = 0.25;
 export const trailBricks = (length) => Math.floor(Math.max(0, length) / BRICK_PITCH);

@@ -362,7 +362,9 @@ continu **derrière le véhicule** pendant la conduite ; un deuxième clic l'arr
 Le Castor valide des sections de 20 cm (1 $) ; entre deux validations, l'aperçu
 ajoute les briques une à une derrière le camion, à hauteur fixe de trois rangs.
 L'arrêt valide la section commencée, facturée au prorata (`scripts/test-castor-trail.mjs`).
-Le visuel Meshy des briques reste à refaire après validation des images.
+Les briques sont des 2×4 LEGO (image de référence validée par l'utilisateur, modèle
+Meshy non texturé recoloré en jeu, tenons vers le haut, profondeur moitié de la
+longueur) ; voir [pipeline d'assets](asset-pipeline.md#brique-lego-2×4-du-mur-castor).
 Le serveur vérifie chaque pose, les collisions et les fonds de la caisse commune.
 Un changement de poste, une sortie, un échec de placement ou un déplacement trop
 brutal interrompt la construction. Les autres pièges, la réparation et la

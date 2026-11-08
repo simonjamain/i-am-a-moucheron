@@ -1,11 +1,20 @@
-import { BRICK_POSITIONS, BRICK_INDICES } from './meshy-brick-data.js';
+import { BRICK_POSITIONS, BRICK_INDICES, BRICK_SOURCE } from './meshy-brick-data.js';
 
-// Convert the Meshy front-facing studs to the top, then normalize one brick.
+// Office metres. A row is one brick body tall; the 2×4 brick is half as deep as
+// it is long (issue #99, approved reference). Studs rise above the body.
+export const BRICK_ROW = 0.006;
+export const BRICK_PITCH = 0.024;
+export const BRICK_DEPTH = BRICK_PITCH / 2;
+// Share of the normalized model height taken by the body, below the studs.
+const BODY_SHARE = 0.787;
+export const BRICK_HEIGHT = BRICK_ROW / BODY_SHARE;
+
+// Normalize one brick to a unit box resting on y = 0, studs up.
 export function brickGeometry(T) {
   const geometry = new T.BufferGeometry();
   geometry.setAttribute('position', new T.Float32BufferAttribute(BRICK_POSITIONS, 3));
   geometry.setIndex(BRICK_INDICES);
-  geometry.rotateX(-Math.PI / 2);
+  if (BRICK_SOURCE?.up !== 'y') geometry.rotateX(-Math.PI / 2);
   geometry.computeBoundingBox();
   const box = geometry.boundingBox;
   const size = box.getSize(new T.Vector3());
@@ -18,7 +27,7 @@ export function brickGeometry(T) {
 
 // Integer columns fill the chosen length; half bricks stagger alternate rows.
 export function brickLayout(length) {
-  const columns = Math.max(1, Math.ceil(length / 0.024));
+  const columns = Math.max(1, Math.ceil(length / BRICK_PITCH));
   const pitch = length / columns;
   const bricks = [];
   for (let row = 0; row < 3; row++) {
@@ -29,7 +38,7 @@ export function brickLayout(length) {
     for (let i = 0; i < edges.length - 1; i++)
       bricks.push({
         x: (edges[i] + edges[i + 1]) / 2 - length / 2,
-        y: row * 0.006,
+        y: row * BRICK_ROW,
         width: Math.max(0.0001, edges[i + 1] - edges[i] - 0.0002),
         color: (i + row * 2) % 4,
       });
@@ -44,7 +53,7 @@ export function createBrickWall(T, structure) {
   const palette = ['#cc4938', '#e5b63e', '#417dab', '#609254'];
   bricks.forEach((brick, i) => {
     transform.position.set(brick.x, brick.y, 0);
-    transform.scale.set(brick.width, 0.007, 0.008);
+    transform.scale.set(brick.width, BRICK_HEIGHT, BRICK_DEPTH);
     transform.updateMatrix();
     mesh.setMatrixAt(i, transform.matrix);
     mesh.setColorAt(i, new T.Color(palette[brick.color]));
