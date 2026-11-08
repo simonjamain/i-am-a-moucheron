@@ -224,3 +224,34 @@ environ 0,4 cœur. La taille d'un `sync` courant reste ~60 Ko à 50 joueurs
 [plan de montée en charge](tasks/scaling-plan.md). `test-contact-frames.mjs`
 vérifie la parité avec un calcul direct, la fenêtre, les invalidations et un
 contact balayé à partir de positions en cache.
+
+## Réponses `sync` en patchs structurels (version 248)
+
+Chaque réponse fiable ne transporte plus les champs inchangés du snapshot.
+`encodeSnapshotForWire()` compare les champs (hors roster, morts et dégâts,
+qui gardent leur encodage dédié) à ceux de la réponse précédente de la même
+connexion et envoie un `$patch` : valeur remplacée, objet modifié avec clés
+retirées, ou liste modifiée avec sa nouvelle longueur. Une liste de valeurs
+simples (un vecteur `p`, `q`, `v`) est renvoyée entière dès qu'elle change.
+La première réponse d'une connexion reste complète. Le canal `commands-v1`
+étant fiable et ordonné, la base du client est toujours la réponse précédente ;
+`ReplyAssembler` reconstruit le snapshot complet avant de le donner au jeu.
+Une réponse rejouée (identifiant déjà appliqué) ne modifie jamais cette base.
+
+`npm run bench:room-sync`, joueurs à pied qui bougent tous entre deux `sync`,
+conteneur de développement, Node 22 :
+
+| Joueurs / ennemis | `sync` courant v247 | v248   | CPU par `sync` v247 → v248 |
+| ----------------- | ------------------- | ------ | -------------------------- |
+| 10 / 900          | 16 Ko               | 2,3 Ko | 0,9 → 1,0 ms               |
+| 30 / 900          | 38 Ko               | 5,8 Ko | 1,5 → 1,5 ms               |
+| 50 / 900          | 60 Ko               | 9,5 Ko | 2,1 → 2,3 ms               |
+
+À 50 joueurs et 4 `sync`/s, le débit descendant fiable passe d'environ
+240 Ko/s à 38 Ko/s par joueur, et le débit sortant du serveur d'environ 12 Mo/s
+à 1,9 Mo/s. Le reste est surtout la position des joueurs (`pilots`, `base`),
+déjà portée par le canal de mouvement : elle sortira des réponses fiables dans
+une phase suivante du [plan](tasks/scaling-plan.md).
+`test-snapshot-patch.mjs` vérifie 5 000 cas aléatoires (clés retirées, listes
+raccourcies, `undefined`, `NaN`, changements de type) et une vraie session dont
+chaque réponse décodée égale la base enregistrée par le serveur.

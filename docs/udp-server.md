@@ -142,6 +142,10 @@ Toute nouvelle connexion reçoit l'état complet. Une apparition peut ajouter se
 sans renvoyer les membres précédents si le roster est append-only. Une liste
 inchangée n'est pas copiée pour les commandes courantes.
 
+Depuis la version 248, les autres champs du snapshot voyagent eux aussi en
+patch contre la réponse précédente de la connexion (`$patch`) ; voir
+[performances](performance.md#réponses-sync-en-patchs-structurels-version-248).
+
 Cette optimisation réduit la charge attendue, mais les limites de file, de
 message, les délais de confirmation et l'obligation UDP restent inchangés.
 Pour diagnostiquer une coupure, distinguer erreur d'encodage/saturation,
