@@ -45,16 +45,11 @@ a.traverse((mesh) => {
 });
 paintVehicle(T, a, 7, '#7b8155');
 assert.ok(a.userData.preserveTexture);
-assert.ok(a.userData.identification, 'colored marker replaces hull paint');
-assert.ok(a.userData.identification.position.y > new T.Box3().setFromObject(b).max.y);
-assert.equal(a.userData.identification.userData.projectileSolid, false);
+assert.equal(a.userData.identification, undefined, 'no floating colour marker (#106)');
 for (const [mesh, originalMaterial] of originalMeshes)
   assert.equal(mesh.material, originalMaterial, 'Meshed camouflage stays unchanged');
-const marker = a.userData.identification;
-const originalColor = marker.material.color.clone();
 paintVehicle(T, a, 8, '#7b8155');
-assert.equal(a.userData.identification, marker, 'reuse marker on sequence updates');
-assert.ok(!marker.material.color.equals(originalColor));
+assert.equal(a.userData.identification, undefined, 'sequence updates add no marker');
 console.log(
   `PASS: M1 Meshy ${triangles} triangles, ${draws} draws, shared buffers, livery, wing damage and prop animation.`,
 );

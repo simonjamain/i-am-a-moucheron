@@ -97,6 +97,7 @@ const files = {
       'ground-ammo',
       'malice',
       'vehicle-livery',
+      'seat-icons',
       'input',
       'interaction-timing',
       'insect-hits',

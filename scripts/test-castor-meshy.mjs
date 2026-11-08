@@ -6,7 +6,11 @@ import { MODEL_DATA as WHEEL } from '../src/meshy-castor-wheel-data.js';
 import { createGraphics } from '../src/graphics.js';
 import { paintVehicle } from '../src/vehicle-livery.js';
 
-for (const [name, data] of [['body', BODY], ['turret', TURRET], ['wheel', WHEEL]]) {
+for (const [name, data] of [
+  ['body', BODY],
+  ['turret', TURRET],
+  ['wheel', WHEEL],
+]) {
   assert.match(data.sourceTask, /^01a1afc9-/);
   assert.match(data.sourceSha256, /^[a-f0-9]{64}$/);
   assert.match(data.texture, /^data:image\/jpeg;base64,\/9j\//);
@@ -30,10 +34,13 @@ const first = graphics.makeCastor();
 const second = graphics.makeCastor();
 const parts = (g) => {
   const meshes = [];
-  g.traverse((o) => { if (o.name.startsWith('meshy-castor-')) meshes.push(o); });
+  g.traverse((o) => {
+    if (o.name.startsWith('meshy-castor-')) meshes.push(o);
+  });
   return meshes;
 };
-const a = parts(first), b = parts(second);
+const a = parts(first),
+  b = parts(second);
 assert.ok(a.length >= 8, 'separate mesh instances for the six wheels, turret and hull');
 assert.equal(a.length, b.length);
 for (let i = 0; i < a.length; i++) {
@@ -68,7 +75,6 @@ assert.equal(second.userData.turrets[0].rotation.y, 0);
 assert.ok(gun.userData.muzzle.parent === gun.userData.pitch);
 const originals = a.map((x) => x.material);
 paintVehicle(T, first, 7, '#647a4d');
-assert.ok(first.userData.identification);
-assert.ok(first.userData.identificationHeight > 2);
+assert.equal(first.userData.identification, undefined, 'no floating colour marker (#106)');
 a.forEach((o, i) => assert.equal(o.material, originals[i], 'no random body recoloring'));
 console.log('Castor Meshy: real UV textures, separate articulated components, shared resources OK');

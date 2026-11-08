@@ -20,7 +20,6 @@ import { FORTIFICATIONS, isFortification } from '/ground-fortifications.js';
 import { moveShotTrace, advanceShotTrace, makeShotTrace, TracerPool } from '/tracers.js';
 import { PurchaseUI } from '/purchase-ui.js';
 import { purchaseCount } from '/equipment.js';
-import { vehicleHue } from '/logistics.js';
 import { WASH } from '/vehicle-care.js';
 import { HELI, stepHeliAim, stepHelicopter } from '/helicopter.js';
 import { clampProximity, MOBILE_FUSE } from '/mobile-flak.js';
@@ -33,6 +32,7 @@ import { shoulderView, aimPistol, muzzleAim } from '/personal-aim.js';
 import { BankUI } from '/bank-ui.js';
 import { ContextHUD, equipmentHUD } from '/hud.js';
 import { paintVehicle, updateInscriptions } from '/vehicle-livery.js';
+import { drawSeatIcon, seatRole } from '/seat-icons.js';
 import { AircraftFire } from '/aircraft-fire.js';
 import { inRadarCoverage } from '/logistics.js';
 import { maliciousDocument, clauseFactors } from '/malice.js';
@@ -2905,20 +2905,12 @@ const entryRing = new T.Mesh(
 entryRing.rotation.x = -Math.PI / 2;
 entryRing.renderOrder = 5;
 const entryRings = new Map();
-function roleEntry(seat) {
+function roleEntry(type, seat) {
   const g = new T.Group();
   g.add(entryRing.clone());
   const c = document.createElement('canvas');
   c.width = c.height = 128;
-  const ctx = c.getContext('2d');
-  ctx.fillStyle = '#f2edc7';
-  ctx.font = 'bold 88px sans-serif';
-  ctx.textAlign = 'center';
-  ctx.fillText(
-    { pilot: 'P', dorsal: 'D', tail: 'Q', ventral: 'V', cannon: 'C', top: 'M' }[seat] || 'P',
-    64,
-    98,
-  );
+  drawSeatIcon(c.getContext('2d'), seatRole(type, seat), 128);
   const texture = new T.CanvasTexture(c),
     geometry = new T.PlaneGeometry(1, 1),
     material = new T.MeshBasicMaterial({ map: texture, transparent: true, depthWrite: false });
@@ -3040,7 +3032,7 @@ function updateBaseWorld(dt, now) {
       visibleEntries.add(key);
       let ring = entryRings.get(key);
       if (!ring) {
-        ring = roleEntry(seat);
+        ring = roleEntry(vehicle.type, seat);
         entryRings.set(key, ring);
         scene.add(ring);
       }
@@ -3321,12 +3313,6 @@ function updateOthers(dt) {
         dt * (v.state.engine && v.supplies.fuel > 0 ? 35 * (motion.rotorPower ?? 1) : 0);
       g.userData.rotor.rotation.y += rotation;
       if (g.userData.tailRotor) g.userData.tailRotor.rotation.x += rotation * 4;
-    }
-    if (g.userData.identification) {
-      g.userData.identification.position
-        .set(0, g.userData.identificationHeight ?? 2.5, 0)
-        .applyQuaternion(g.quaternion.clone().invert());
-      g.userData.identification.quaternion.copy(g.quaternion).invert().multiply(camera.quaternion);
     }
     updateInscriptions(T, g, v, snap.pilots);
     g.visible = v.state.hp > 0;
@@ -4765,8 +4751,10 @@ function pistol() {
 }
 
 const pistolTrails = [];
-function vehicleColor(v) {
-  return new T.Color().setHSL(vehicleHue(v?.supplies?.sequence || 0) / 360, 0.58, 0.57);
+// Issue #106: tracers no longer carry a per-vehicle colour.
+const TRACER_COLOR = '#f4efab';
+function vehicleColor() {
+  return new T.Color(TRACER_COLOR);
 }
 let crewRenderKey = '';
 function renderCrew() {
@@ -5148,6 +5136,8 @@ async function fireHeavy(weapon = null) {
     heavyPending = false;
   }
 }
+// Neutral shell colours by weapon, identical for every player (issue #106).
+const SHELL_COLORS = { he: '#e0a33c', ap: '#cfd6dc', rocket: '#e0a33c', missile: '#e6e1cf' };
 const ordnanceModels = new Map();
 const missileExhaust = new MissileExhaust(T, scene);
 function updateOrdnance(dt) {
@@ -5164,19 +5154,9 @@ function updateOrdnance(dt) {
               shot.weapon === 'ap'
                 ? new T.ConeGeometry(MAP.metres(0.22), MAP.metres(1.8), 8)
                 : new T.CylinderGeometry(MAP.metres(0.16), MAP.metres(0.32), MAP.metres(1.2), 8),
-              new T.MeshBasicMaterial({
-                color: new T.Color().setHSL(vehicleHue(shot.sequence || 0) / 360, 0.58, 0.57),
-              }),
+              new T.MeshBasicMaterial({ color: SHELL_COLORS[shot.weapon] || SHELL_COLORS.he }),
             );
-      if (shot.weapon === 'bomb') {
-        model.scale.setScalar(MAP.metres(0.8));
-        model.traverse((o) => {
-          if (o.isMesh) {
-            o.material = o.material.clone();
-            o.material.color.setHSL(vehicleHue(shot.sequence || 0) / 360, 0.58, 0.57);
-          }
-        });
-      }
+      if (shot.weapon === 'bomb') model.scale.setScalar(MAP.metres(0.8));
       model.userData.projectileSolid = false;
       scene.add(model);
       ordnanceModels.set(shot.shot, model);
@@ -5617,10 +5597,10 @@ function updateVehicleCare(dt) {
       line.userData.dispose();
     }
   for (const v of snap?.vehicles || []) {
-    const paint = fleetModels.get(v.id)?.userData.paint;
-    if (paint)
-      paint.color
-        .copy(vehicleColor(v))
+    const model = fleetModels.get(v.id);
+    if (model?.userData.paint)
+      model.userData.paint.color
+        .copy(model.userData.baseColor)
         .lerp(new T.Color('#5b5131'), Math.min(1, v.dirt || 0) * 0.8);
   }
   const dirt = !respawnAt && myVehicle ? myVehicle.dirt || 0 : 0;

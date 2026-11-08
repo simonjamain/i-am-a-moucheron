@@ -67,17 +67,12 @@ assert.ok(
 const originalMaterials = meshes.map((o) => o.material);
 paintVehicle(T, a, 7, '#7b8155');
 assert.ok(a.userData.preserveTexture);
-assert.ok(a.userData.identification, 'colored marker replaces hull paint');
-assert.ok(a.userData.identification.position.y > new T.Box3().setFromObject(b).max.y);
-assert.equal(a.userData.identification.userData.projectileSolid, false);
+assert.equal(a.userData.identification, undefined, 'no floating colour marker (#106)');
 meshes.forEach((mesh, i) =>
   assert.equal(mesh.material, originalMaterials[i], 'original Meshy colors stay unchanged'),
 );
-const marker = a.userData.identification;
-const color = marker.material.color.clone();
 paintVehicle(T, a, 8, '#7b8155');
-assert.equal(a.userData.identification, marker);
-assert.ok(!marker.material.color.equals(color));
+assert.equal(a.userData.identification, undefined, 'sequence changes add no marker');
 b.scale.setScalar(ACTOR_UNIT);
 b.position.y = VEHICLES.helicopter.gear;
 assert.ok(Math.abs(new T.Box3().setFromObject(b).min.y) < 1e-5);

@@ -31,23 +31,26 @@ for (const [type, factory] of [
       assert.ok(attribute.array.every(Number.isFinite));
   }
   assert.ok(count >= 26000 && count <= 30000, 'indexed textured hull budget');
-  assert.ok(parts.every((part) => part.geometry.attributes.uv && part.material.map), 'actual Meshy UV atlas');
-  assert.ok(parts.every((part) => part.material.map.colorSpace === T.SRGBColorSpace && part.material.map.flipY === false));
+  assert.ok(
+    parts.every((part) => part.geometry.attributes.uv && part.material.map),
+    'actual Meshy UV atlas',
+  );
+  assert.ok(
+    parts.every(
+      (part) =>
+        part.material.map.colorSpace === T.SRGBColorSpace && part.material.map.flipY === false,
+    ),
+  );
   const originalMaterials = parts.map((o) => o.material);
   paintVehicle(T, a, 4, '#7f8844');
   assert.ok(a.userData.preserveTexture);
   parts.forEach((mesh, i) =>
     assert.equal(mesh.material, originalMaterials[i], 'Meshy hull colors stay unchanged'),
   );
-  const marker = a.userData.identification;
-  assert.ok(marker, 'colored identifier');
-  assert.ok(marker.position.y > new T.Box3().setFromObject(b).max.y, 'above vehicle');
-  assert.equal(marker.userData.projectileSolid, false, 'marker cannot block shots');
-  assert.equal(marker.userData.excludeBounds, true);
-  const priorColor = marker.material.color.clone();
+  // Issue #106: no floating colour identifier, whatever the sequence.
+  assert.equal(a.userData.identification, undefined, 'no colored identifier');
   paintVehicle(T, a, 5, '#7f8844');
-  assert.equal(marker, a.userData.identification, 'marker is reused');
-  assert.ok(!priorColor.equals(marker.material.color), 'sequence changes only disk color');
+  assert.equal(a.userData.identification, undefined);
   parts.forEach((mesh, i) => assert.equal(mesh.material, originalMaterials[i]));
   if (type === 'interceptor' || type === 'spitfire') {
     const span = new T.Box3().setFromObject(a.userData.wing).getSize(new T.Vector3()).x;
