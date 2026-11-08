@@ -88,6 +88,8 @@ const LAB_FUNDS = 1000000000;
 const clone = (x) => structuredClone(x);
 // Maximum age of cached enemy positions used for vehicle contacts (≤ 20 Hz).
 export const CONTACT_FRAME_MS = 50;
+// Production sharing window of sync snapshots between players of a room.
+export const SNAPSHOT_SHARE_MS = 50;
 function requireGame(ok, message, status = 409) {
   if (!ok) throw Object.assign(new Error(message), { status });
 }
@@ -192,9 +194,18 @@ function roomState(code, now) {
 // One synchronous domain operation is one atomic turn of Node's event loop.
 // No SQL adapter, database, disk state or asynchronous transaction boundary.
 export class Game {
-  constructor({ now = Date.now, solids = [], roomTTL = 30 * 60_000, maxRooms = 128 } = {}) {
+  constructor({
+    now = Date.now,
+    solids = [],
+    roomTTL = 30 * 60_000,
+    maxRooms = 128,
+    snapshotShareMs = 0,
+  } = {}) {
     this.rooms = new Map();
     this.now = now;
+    // > 0: `sync` replies of one room share a snapshot built at most this many
+    // ms earlier (see snapshot()). 0 keeps one exact snapshot per command.
+    this.snapshotShareMs = snapshotShareMs;
     this.solids = solids;
     this.roomTTL = roomTTL;
     this.maxRooms = maxRooms;
@@ -769,8 +780,45 @@ export class Game {
     r.enemyDamage = {};
     r.enemyHits.clear();
   }
-  snapshot(r, { rosterKey = null, rosterMeta = null } = {}) {
-    this.advance(r);
+  // Room snapshot for one reply. The room part (everything but the roster) is
+  // cloned once; with snapshotShareMs and `share`, sync replies of all players
+  // reuse it for at most that long instead of rebuilding and cloning the room
+  // per player. Any other command rebuilds it, so its effects are seen at once.
+  snapshot(r, { rosterKey = null, rosterMeta = null, share = false } = {}) {
+    const now = this.now(),
+      cached = r.sharedSnapshot;
+    let room;
+    if (
+      share &&
+      this.snapshotShareMs > 0 &&
+      cached &&
+      cached.key === snapshotRosterKey(r) &&
+      now >= cached.at &&
+      now - cached.at < this.snapshotShareMs
+    )
+      room = cached.room;
+    else {
+      this.advance(r);
+      room = this.roomSnapshot(r);
+      r.sharedSnapshot =
+        this.snapshotShareMs > 0 ? { at: now, key: snapshotRosterKey(r), room } : null;
+    }
+    const plan = this.plan(r);
+    return {
+      ...room,
+      ...(rosterKey === snapshotRosterKey(r)
+        ? {}
+        : rosterMeta?.core === snapshotRosterCore(r) &&
+            rosterMeta.revision < r.rosterRevision &&
+            rosterMeta.total < plan.roster.length
+          ? { rosterAdd: clone(plan.roster.slice(rosterMeta.total)) }
+          : { roster: clone(plan.roster) }),
+      // The reply time stays exact: clients time the swarm from it.
+      now,
+      sentAt: now,
+    };
+  }
+  roomSnapshot(r) {
     const now = this.now(),
       plan = this.plan(r),
       activePilots = this.live(r),
@@ -856,13 +904,6 @@ export class Game {
       effects: r.effects.slice(-64),
       ordnance: r.ordnance,
       waveReward: money(waveStipend(r.wave), r.balance.rewards),
-      ...(rosterKey === snapshotRosterKey(r)
-        ? {}
-        : rosterMeta?.core === snapshotRosterCore(r) &&
-            rosterMeta.revision < r.rosterRevision &&
-            rosterMeta.total < plan.roster.length
-          ? { rosterAdd: plan.roster.slice(rosterMeta.total) }
-          : { roster: plan.roster }),
       difficulty: r.wave ? plan.budget : 0,
       enemyDamage: r.enemyDamage,
       raidDuration: RAID_DURATION,
@@ -1226,7 +1267,7 @@ export class Game {
       this.kill(r, p, b.incarnation);
     } else if (path === 'sign') this.sign(r, p, b);
     else requireGame(false, 'Action inconnue.', 404);
-    const result = this.snapshot(r, options);
+    const result = this.snapshot(r, { ...options, share: path === 'sync' });
     result.damage = clone(
       r.damageEvents.filter(
         (e) =>

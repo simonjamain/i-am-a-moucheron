@@ -176,9 +176,86 @@ function patchable(snapshot) {
   return fields;
 }
 
+// Positions of other players already travel at 20 Hz on the lossy motion
+// channel; in reliable replies they only serve as a fallback when that channel
+// goes quiet (see client accept()). Between refreshes, these values are copied
+// from the previous reply so that the patch omits them. Gameplay fields (hp,
+// fire, seats, mode, life...) are never held.
+export const MOTION_REFRESH_MS = 1000;
+const PILOT_MOTION = [
+  'p',
+  'q',
+  'v',
+  'omega',
+  'aimPoint',
+  'turretDirection',
+  'rotorPower',
+  'collective',
+  'trailerAngle',
+  'ground',
+];
+const BODY_MOTION = ['x', 'z', 'y', 'vx', 'vz', 'vy', 'face', 'input', 'inputAt'];
+function holdKeys(next, prev, keys) {
+  let out = null;
+  for (const key of keys)
+    if (Object.hasOwn(prev, key) && !Object.is(prev[key], next[key])) {
+      out ||= { ...next };
+      out[key] = prev[key];
+    }
+  return out || next;
+}
+// Returns fields with other players' motion held at the previous values. Never
+// mutates `fields`, which may be shared between connections.
+export function holdRemoteMotion(fields, previous, self) {
+  if (!previous) return fields;
+  const out = { ...fields };
+  if (Array.isArray(fields.pilots) && Array.isArray(previous.pilots)) {
+    const before = new Map(previous.pilots.map((p) => [p?.id, p]));
+    out.pilots = fields.pilots.map((p) => {
+      const old = before.get(p?.id);
+      // A new life, seat or mode is a discontinuity: send it at once.
+      if (
+        !old ||
+        p.id === self ||
+        old.incarnation !== p.incarnation ||
+        old.occupation !== p.occupation ||
+        old.mode !== p.mode ||
+        old.vehicle_id !== p.vehicle_id ||
+        !old.state ||
+        !p.state
+      )
+        return p;
+      const state = holdKeys(p.state, old.state, PILOT_MOTION);
+      return state === p.state && old.seen === p.seen ? p : { ...p, state, seen: old.seen };
+    });
+  }
+  if (Array.isArray(fields.vehicles) && Array.isArray(previous.vehicles)) {
+    const before = new Map(previous.vehicles.map((v) => [v?.id, v]));
+    out.vehicles = fields.vehicles.map((v) => {
+      const old = before.get(v?.id);
+      const crew = Array.isArray(v?.seats) ? v.seats.map((seat) => seat.pilot) : [];
+      if (!old?.state || !v.state || !crew.length || crew.includes(self)) return v;
+      const state = holdKeys(v.state, old.state, PILOT_MOTION);
+      return state === v.state ? v : { ...v, state };
+    });
+  }
+  if (Array.isArray(fields.base?.bodies) && Array.isArray(previous.base?.bodies)) {
+    const before = new Map(previous.base.bodies.map((b) => [b?.id, b]));
+    out.base = {
+      ...fields.base,
+      bodies: fields.base.bodies.map((b) => {
+        const old = before.get(b?.id);
+        if (!old || b.kind !== 'player' || b.entity === self || old.entity !== b.entity) return b;
+        return holdKeys(b, old, BODY_MOTION);
+      }),
+    };
+  }
+  return out;
+}
+
 // Keep only changes after an acknowledged state on this ordered reliable
 // connection. Changes to wave/balance/roster reset the baseline.
-export function encodeSnapshotForWire(snapshot, previous = null) {
+export function encodeSnapshotForWire(snapshot, previous = null, { holdMotionOf } = {}) {
   const key = snapshotRosterKey(snapshot);
   const next = {
     key,
@@ -205,7 +282,12 @@ export function encodeSnapshotForWire(snapshot, previous = null) {
   // The snapshot is already a private copy (Game.snapshot clones the room) and
   // is never mutated after encoding, so its values serve as the baseline.
   // diffValue applies JSON semantics (undefined absent, NaN as sent).
-  const fields = patchable(snapshot);
+  let fields = patchable(snapshot);
+  // holdMotionOf: this connection's player ID, when its motion refresh is not due.
+  if (holdMotionOf !== undefined && previous?.fields) {
+    fields = holdRemoteMotion(fields, previous.fields, holdMotionOf);
+    Object.assign(snapshot, fields);
+  }
   next.fields = fields;
   if (previous?.fields) {
     for (const key of Object.keys(fields)) delete snapshot[key];

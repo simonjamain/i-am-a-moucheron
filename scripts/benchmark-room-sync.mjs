@@ -2,7 +2,7 @@
 // CPU-only (no WebRTC, no WAN, no browser): Game + GameSession + wire encoding.
 // Usage: node scripts/benchmark-room-sync.mjs [players enemies] ...
 import { performance } from 'node:perf_hooks';
-import { Game } from '../server/game.js';
+import { Game, SNAPSHOT_SHARE_MS } from '../server/game.js';
 import { GameSession } from '../server/session.js';
 import { PROTOCOL } from '../src/udp-protocol.js';
 
@@ -17,12 +17,16 @@ const cases = args.length
     ];
 const median = (a) => [...a].sort((x, y) => x - y)[Math.floor(a.length / 2)];
 for (const [players, enemies] of cases) {
-  const game = new Game();
+  // Simulated clock: each player syncs 4 times per second, evenly spread, as
+  // in a real room; players move every 250 ms. CPU time is measured for real.
+  let clock = 1_000_000;
+  const now = () => clock;
+  const game = new Game({ now, snapshotShareMs: SNAPSHOT_SHARE_MS });
   const ids = [];
   for (let i = 0; i < players; i++) ids.push(game.join({ code: 'BENCH', name: 'P' + i }).id);
   const r = game.rooms.get('BENCH');
   game.command('BENCH', ids[0], 'start', {});
-  r.next_wave_at = Date.now() - 1;
+  r.next_wave_at = clock - 1;
   game.advance(r);
   // Inflate the real first-wave roster to E enemies, a third killed, some damaged.
   const base = r.plan.roster;
@@ -36,7 +40,12 @@ for (const [players, enemies] of cases) {
   let bytes = 0,
     seq = 1;
   const sessions = ids.map((id) => {
-    const s = new GameSession(game, { send: (d) => (bytes += d.length), relay() {}, close() {} });
+    const s = new GameSession(game, {
+      now,
+      send: (d) => (bytes += d.length),
+      relay() {},
+      close() {},
+    });
     s.player = { code: 'BENCH', id };
     return s;
   });
@@ -67,13 +76,14 @@ for (const [players, enemies] of cases) {
   };
   for (let round = 0; round < 12; round++) {
     move(round + 1);
-    const start = performance.now();
+    let spent = 0;
     for (const s of sessions) {
-      s.window = s.now(); // benchmark bursts: stay under the per-second rate limit
-      s.count = 0;
+      clock += 250 / players;
+      const start = performance.now();
       sync(s);
+      spent += performance.now() - start;
     }
-    samples.push((performance.now() - start) / players);
+    samples.push(spent / players);
   }
   const ms = median(samples);
   console.log(
