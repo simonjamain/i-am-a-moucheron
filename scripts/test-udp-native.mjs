@@ -205,6 +205,7 @@ try {
     washed.body.effects.filter((e) => e.kind === 'clean' && e.vehicle === spit.id).length,
     1,
   );
+  // No pistol on foot in the office: the command is refused and nothing is relayed.
   assert.equal(
     (
       await b.request('pistol-trace', {
@@ -214,15 +215,15 @@ try {
         incarnation: person.incarnation,
       })
     ).status,
-    200,
+    409,
   );
   assert.ok(
-    (await a.request('sync', { mode: 'foot', state })).body.effects.some(
+    !(await a.request('sync', { mode: 'foot', state })).body.effects.some(
       (e) => e.kind === 'pistol-trace' && e.shooter === person.id,
     ),
   );
   console.log(
-    'Native RTC: two clients, UDP confirmed, reliable commands/replay, lossy relay, prepaid purchase, Spitfire, shared wash/sparkles/pistol trace, HTTP gameplay refused.',
+    'Native RTC: two clients, UDP confirmed, reliable commands/replay, lossy relay, prepaid purchase, Spitfire, shared wash/sparkles, office pistol refused, HTTP gameplay refused.',
   );
   // New vehicles share the same native UDP sessions and command leases.
   await a.request('reset');

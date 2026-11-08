@@ -60,12 +60,8 @@ assert.equal(added.rosterRevision, 1);
 assert.equal(added.roster.length, newWave.roster.length + 13);
 assert.ok(session.replies.get(id).includes('rosterAddGroups'), 'spawn sends only appended insects');
 assert.ok(!Object.hasOwn(sync(), 'roster'), 'unchanged debug roster omitted');
-command('pistol-trace', {
-  shot: 'roster-test',
-  incarnation: room.pilots.get(joined.id).incarnation,
-  origin: [0, 0, 0],
-  direction: [0, 0, -1],
-});
+// Nobody fires on foot in the office: the hit comes from a fixed gun operator.
+room.pilots.get(joined.id).mode = 'turret';
 const hit = command('hit', { wave: room.wave, enemy: 0, amount: 30, shot: 'roster-test' });
 assert.ok(!Object.hasOwn(hit, 'roster'), 'hit must not resend thousands of insects');
 assert.equal(hit.enemyDamage[0], 30, 'damage uses the fixed default multiplier');

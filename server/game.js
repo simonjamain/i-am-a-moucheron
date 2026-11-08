@@ -311,11 +311,6 @@ export class Game {
         r.balance,
         Math.min(5, Math.floor(elapsed / 1000)),
         r.groundDefense,
-        values(r.pilots).map((pilot) => ({
-          pilot,
-          position:
-            pilot.life === 'alive' && pilot.mode === 'foot' ? this.playerPosition(r, pilot) : null,
-        })),
       );
       r.dollars = result.dollars;
       r.lastPaidServiceAt = now;
@@ -1467,6 +1462,8 @@ export class Game {
     return true;
   }
   pistolTrace(r, p, b) {
+    // The pistol only exists in purgatory: nobody fires on foot in the office.
+    requireGame(world(p) !== 'office', 'Aucune arme à pied dans le bureau.');
     requireGame(
       !p.state.awaitingPurgatory &&
         p.mode === 'foot' &&

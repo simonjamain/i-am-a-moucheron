@@ -90,7 +90,6 @@ const files = {
       'delivery',
       'salvos',
       'muzzle',
-      'player-livery',
       'purchase-ui',
       'vehicle-care',
       'tank-reticle',

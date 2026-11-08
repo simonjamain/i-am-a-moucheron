@@ -12,7 +12,6 @@ import {
 } from '../src/character-model.js';
 import { createGraphics } from '../src/graphics.js';
 import { aimPistol } from '../src/personal-aim.js';
-import { identifyPlayer, disposePlayerIdentity } from '../src/player-livery.js';
 import { HUMAN_SCALE, MAP } from '../src/scale.js';
 
 const near = (a, b, eps, label) => assert.ok(Math.abs(a - b) < eps, label + ': ' + a + ' vs ' + b);
@@ -98,19 +97,20 @@ assert.ok(world(grip).distanceTo(hand) < 0.12 * metre, 'grip in the right hand')
 const shot = world(muzzle).sub(world(human.userData.arms[1].pivot)).normalize();
 assert.ok(shot.dot(direction) > 0.995, 'muzzle on the aim line');
 
-// 6. Initials ride the torso and are released with the player.
-identifyPlayer(T, human, { name: 'Jean Dupont', colorSequence: 2 }, () => ({
-  getContext: () => ({ fillRect() {}, fillText() {} }),
-}));
-const plates = human.userData.initials;
-assert.equal(plates.length, 2);
-for (const plate of plates) assert.ok(plate.parent?.parent?.isBone, 'plate held by the spine');
-disposePlayerIdentity(human);
-assert.ok(
-  plates.every((plate) => !plate.parent),
-  'plates released',
-);
+// 6. Office walkers carry no pistol: their arms keep the run clip (within the
+// clip blending noise); section 5 shows an armed soul's arm along the aim.
+const unarmed = graphics.humanoid('#8bc9d6'),
+  reference = createCharacter(T);
+for (let i = 0; i < 6; i++) {
+  unarmed.userData.animate(0.05, { speed: 6 });
+  reference.update(0.05, { speed: 6 });
+}
+assert.equal(unarmed.userData.pistolMuzzle, undefined);
+const drift = (person, name) =>
+  person.userData.character.bones[name].quaternion.angleTo(reference.bones[name].quaternion);
+for (const name of ['mixamorigRightArm', 'mixamorigRightForeArm', 'mixamorigLeftArm'])
+  assert.ok(drift(unarmed, name) < 0.05, name + ' follows the clip');
 assert.ok(LEGACY_HEIGHT > CHARACTER_HEIGHT);
 console.log(
-  'Character: Meshy/Mixamo skeleton, shared resources, idle/walk/run gait, seated/falling/aim poses, pistol grip in hand, initials on the torso.',
+  'Character: Meshy/Mixamo skeleton, shared resources, idle/walk/run gait, seated/falling/aim poses, pistol grip in hand (purgatory), unarmed clip in the office.',
 );

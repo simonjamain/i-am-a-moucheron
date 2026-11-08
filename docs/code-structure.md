@@ -79,8 +79,7 @@ leurs liens locaux ; leur exactitude fonctionnelle reste une revue sémantique.
 
 ## Retours multijoueurs courants
 
-`live-hud.js` : valeurs au viseur et aide permanente ; `player-livery.js` : couleurs
-et initiales corporelles. `salvos.js` : départs décalés et annulation d’occupation.
+`live-hud.js` : valeurs au viseur et aide permanente. `salvos.js` : départs décalés et annulation d’occupation.
 `tracers.js` : pool borné et effet personnel orienté vers l’avant ;
 `insect-hits.js` : phase large puis intersections, avec tolérance du seul moucheron.
 `server/game.js` : observation avant âme, réserve renouvelée et véhicules prépayés

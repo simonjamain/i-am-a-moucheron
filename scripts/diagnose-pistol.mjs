@@ -6,18 +6,19 @@ import vm from 'node:vm';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { MAP } from '../src/scale.js';
-import { InsectIndex, nearestInsectHit, nearestMeshHit } from '../src/insect-hits.js';
+import { nearestMeshHit } from '../src/insect-hits.js';
 const source = readFileSync('src/client.js', 'utf8'),
   pistol = source.slice(
     source.indexOf('function pistol()'),
     source.indexOf('let crewRenderKey', source.indexOf('function pistol()')),
   );
-async function shoot({ camera, target, colliders = [] }) {
+async function shoot({ camera, target, colliders = [], office = false }) {
   const scene = new T.Scene(),
-    mesh = new T.Mesh(new T.SphereGeometry(0.002, 12, 8), new T.MeshBasicMaterial());
+    mesh = new T.Mesh(new T.SphereGeometry(0.4, 12, 8), new T.MeshBasicMaterial());
   mesh.position.copy(target);
   scene.add(mesh);
-  const actions = [];
+  const actions = [],
+    traces = [];
   const person = new T.Group(),
     muzzle = new T.Object3D();
   muzzle.position.set(0.003, 0.01, 0);
@@ -40,42 +41,45 @@ async function shoot({ camera, target, colliders = [] }) {
     myVehicle: null,
     turretIndex: -1,
     onFoot: true,
-    respawnAt: 0,
+    respawnAt: office ? 0 : 1,
     camera,
     purgCamera: camera,
     scene,
     purgScene: scene,
     id: 'me',
     shotSequence: 0,
-    insects: new Map([[0, mesh]]),
-    localKills: new Set(),
+    soulArena: {
+      bodies: [
+        { id: 7, kind: 'enemy', entity: null },
+        { id: 1, kind: 'player', entity: 'me' },
+      ],
+    },
+    soulMeshes: new Map([
+      [7, mesh],
+      [1, person],
+    ]),
+    purgColliders: colliders,
     snap: { vehicles: [], pilots: [{ id: 'me', incarnation: 0, pistolAmmo: 120 }] },
     pendingPistolShots: new Set(),
     PISTOL_CAPACITY: 120,
     notify() {},
-    fleetModels: new Map(),
-    basePeople: new Map([['me', person]]),
     muzzleAim,
     posePersonalWeapon() {},
-    turrets: [],
-    colliders,
-    nearestInsectHit,
     nearestMeshHit,
     sound: { play() {} },
     action: (route, b) => {
-      if (route !== 'pistol-trace') actions.push({ route, ...b });
+      if (route === 'pistol-trace') traces.push(b);
+      else actions.push({ route, ...b });
       return true;
     },
-    damageEnemy: (enemy, amount) => actions.push({ enemy, amount }),
     setTimeout: (fn) => fn(),
   };
-  c.insectIndex = new InsectIndex(T, c.insects);
   vm.createContext(c);
   vm.runInContext(pistol, c);
   vm.runInContext('pistol()', c);
   await Promise.resolve();
   await Promise.resolve();
-  return actions;
+  return office ? traces : actions;
 }
 const camera = new T.PerspectiveCamera();
 camera.position.set(0, MAP.metres(1.35 + 5.2 * Math.sin(0.24)), MAP.metres(5.2 * Math.cos(0.24)));
@@ -87,19 +91,25 @@ const dir = camera.getWorldDirection(new T.Vector3()),
 assert.ok(groundPoint && Math.abs(groundPoint.z) < 0.03);
 assert.ok(dir.y < 0);
 const horizontal = new T.PerspectiveCamera();
-horizontal.position.set(0, 0.01, 0.02);
-horizontal.lookAt(0, 0.01, -1);
+horizontal.position.set(0, 1, 2);
+horizontal.lookAt(0, 1, -100);
 horizontal.updateMatrixWorld();
-assert.equal((await shoot({ camera: horizontal, target: new T.Vector3(0, 0.01, -0.2) })).length, 1);
-assert.equal((await shoot({ camera: horizontal, target: new T.Vector3(0, 0.01, -0.5) })).length, 0);
+// Purgatory (scale 1, 150 units of range): hits a soul, misses beyond range, walls block.
+const sphere = (z) => new T.Vector3(0, 1, z);
+assert.equal((await shoot({ camera: horizontal, target: sphere(-20) })).length, 1);
+assert.equal((await shoot({ camera: horizontal, target: sphere(-200) })).length, 0);
 assert.equal(
-  (await shoot({
-    camera: horizontal,
-    target: new T.Vector3(0, 0.01, -0.2),
-    colliders: [new T.Box3(new T.Vector3(-0.01, 0, 0.005), new T.Vector3(0.01, 0.03, 0.015))],
-  })).length,
+  (
+    await shoot({
+      camera: horizontal,
+      target: sphere(-20),
+      colliders: [new T.Box3(new T.Vector3(-1, 0, -6), new T.Vector3(1, 3, -5))],
+    })
+  ).length,
   0,
 );
+// Office: no weapon on foot, not even a trace request.
+assert.equal((await shoot({ camera: horizontal, target: sphere(-20), office: true })).length, 0);
 console.log(
   JSON.stringify(
     {
@@ -107,11 +117,12 @@ console.log(
         directionY: dir.y,
         groundHitReferenceMetres: MAP.reference(Math.abs(groundPoint.z)),
       },
-      rangeWorldMetres: 150 * MAP.ratio,
+      purgatoryRange: 150,
       tests: {
-        nearTarget: 'hit: 10 PV',
-        beyond45cm: 'no hit',
-        obstacleBehindActorButInFrontOfCamera: 'shot blocked',
+        purgatorySoul: 'hit',
+        beyondRange: 'no hit',
+        purgatoryWall: 'shot blocked',
+        office: 'no pistol',
       },
     },
     null,

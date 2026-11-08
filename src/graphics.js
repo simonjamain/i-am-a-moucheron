@@ -356,34 +356,6 @@ export function createGraphics(T, scene) {
   // below stay as an invisible frame (`arms`, `legs`, `rig`) so the pistol, its
   // muzzle (shot origin) and every existing caller keep exactly the same API.
   const PALM = 0.08; // wrist to grip, model metres
-  // Player initials plates on the chest and back of the bind-pose torso, held
-  // by the upper spine so they follow the animation (anchors carry rig units).
-  const BADGE = 0.24;
-  let chestDepth = null;
-  function chestBadge(rig, spine, y, geometry) {
-    const k = LEGACY_HEIGHT / CHARACTER_HEIGHT;
-    if (!chestDepth) {
-      const position = geometry.attributes.position;
-      chestDepth = [0, 0];
-      for (let i = 0; i < position.count; i++)
-        if (
-          Math.abs(position.getY(i) * k - y) < BADGE / 2 &&
-          Math.abs(position.getX(i) * k) < BADGE / 2
-        ) {
-          chestDepth[0] = Math.max(chestDepth[0], position.getZ(i) * k);
-          chestDepth[1] = Math.min(chestDepth[1], position.getZ(i) * k);
-        }
-    }
-    const anchors = [chestDepth[1] - 0.02, chestDepth[0] + 0.02].map((z, i) => {
-      const anchor = new T.Object3D();
-      anchor.position.set(0, y, z);
-      if (i === 0) anchor.rotation.y = Math.PI;
-      rig.add(anchor);
-      spine.attach(anchor);
-      return anchor;
-    });
-    return { anchors, size: BADGE };
-  }
   function humanoid(color, saint = false) {
     if (saint) return legacyHumanoid(color, true);
     const g = new T.Group(),
@@ -417,12 +389,6 @@ export function createGraphics(T, scene) {
     const down = new T.Vector3(0, -1, 0);
     g.userData = {
       rig,
-      badge: chestBadge(
-        rig,
-        character.bones.mixamorigSpine1,
-        at('Spine1').y - 0.06,
-        character.mesh.geometry,
-      ),
       legs,
       arms,
       lean: 0,

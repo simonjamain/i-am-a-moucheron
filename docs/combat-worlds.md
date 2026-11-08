@@ -13,9 +13,10 @@
 
 Une mitrailleuse inflige 75 dégâts de base. L’amélioration existante conserve
 son multiplicateur relatif : 75 × (1 + niveau), jusqu’au niveau 3 ; elle ne
-s’applique pas au pistolet. Celui-ci inflige toujours 10 dégâts à pied, un tir
-par appui, sans délai entre deux appuis distincts. Maintenir ne répète pas le tir.
-Le corps visible du personnage porte le pistolet ; le rayon vise le réticule.
+s’applique pas au pistolet, qui n'existe qu'au purgatoire. Celui-ci inflige
+toujours 10 dégâts, un tir par appui, sans délai entre deux appuis distincts.
+Maintenir ne répète pas le tir. Le corps visible de l'âme porte le pistolet ; le
+rayon vise le réticule. Au bureau, le personnage n'a pas d'arme à pied.
 Le personnage est un modèle animé (repos, marche, course, assis, chute) ;
 voir le [pipeline d'assets](asset-pipeline.md#personnage-joueur-meshy--mixamo).
 

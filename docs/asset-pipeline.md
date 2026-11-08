@@ -124,11 +124,12 @@ tous les joueurs sont identiques pour l'instant, le modèle sera affiné.
 - Rendu : `src/character-model.js` partage géométrie, matériau et clips ; chaque
   joueur possède ses os et son mixeur. Allure : repos sous 0,35 m/s, course dès
   3 m/s, vitesse de lecture liée à la vitesse réelle. Les poses absentes
-  (pistolet, assis en DCA, chute ou parachute) orientent les os en espace monde.
+  (pistolet au purgatoire, assis en DCA, chute ou parachute) orientent les os en
+  espace monde ; au bureau, les joueurs n'ont pas d'arme et gardent les clips.
 - Intégration : `graphics.humanoid()` garde le cadre invisible `arms`/`legs`/`rig`.
   Le bras du pistolet part de l'épaule du modèle et sa longueur place la crosse
-  dans la paume ; balistique, dégâts et règles de tir sont inchangés. Les initiales
-  sont portées par la colonne. `scripts/test-character.mjs` couvre ces points.
+  dans la paume ; balistique, dégâts et règles de tir sont inchangés. Aucune
+  initiale ni teinte par joueur. `scripts/test-character.mjs` couvre ces points.
 
 ## Intégration Meshy au jeu
 
