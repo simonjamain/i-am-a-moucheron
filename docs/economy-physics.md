@@ -159,7 +159,6 @@ Le budget est partagé équitablement entre les véhicules éligibles quand la c
 
 **Limites de ce premier lot** : le Castor, la recharge des pistolets et DCA fixes, la réparation automatique des barricades et les défenses exclusives restent à implémenter dans l'[issue #76](https://github.com/simonjamain/i-am-a-moucheron/issues/76). Le helper historique `advanceSupplies()` reste utilisé par les tests d'ancienne logique, mais Node n'y passe plus les stations. Le nouveau prélèvement est dans `advancePaidService()`.
 
-
 ### Réparation payante des barricades à portée
 
 Le moteur `advancePaidService()` accepte l'état de défense terrestre de la room.
@@ -174,7 +173,6 @@ la révision de navigation reste inchangée, puisque les segments détruits à 0
 ne sont pas automatiquement reconstruits. Le mécanisme fonctionne sur le serveur
 Node seulement, au maximum une fois par seconde de temps de room.
 
-
 ### Stocks des DCA fixes
 
 Un canon DCA fixe est installé avec **120 obus**. Les coups validés par
@@ -185,14 +183,10 @@ par obus**, au débit maximal de 12 obus/seconde. Sans station ou Castor présen
 à portée, la DCA ne se recharge pas ; plusieurs demandes partagent équitablement
 la caisse commune. Cette règle concerne le runtime Node/UDP.
 
-
 ### Pistolet personnel
 
-Chaque incarnation dispose de 120 balles. Le serveur déduit chaque tir identifié
-avec `pistol-trace` et exige son accusé avant tout impact (un impact maximum par
-tir, à travers les voies de dégâts aux insectes, véhicules, joueurs et âmes).
-Seuls les joueurs vivants à pied dans le bureau et à portée réelle d'une station
-ou du Castor bénéficient du service : 12 cartouches/seconde maximum, **0,001 $
-par cartouche**, avec répartition `fairServiceShares`. À zéro dollar, aucune
-recharge. Les nouveaux personnages obtiennent le stock initial de leur incarnation ;
-le purgatoire conserve une réserve limitée et n'héberge pas de station de service.
+Le pistolet n'existe qu'au purgatoire : le serveur refuse `pistol-trace` dans le
+bureau, et sans trace aucun impact à pied n'y est accepté. Chaque incarnation
+dispose de 120 balles ; le serveur déduit chaque tir identifié et exige son accusé
+avant tout impact (un impact maximum par tir, joueurs et âmes). Aucun service ne
+vend de cartouches : les stations et le Castor ne rechargent plus les piétons.

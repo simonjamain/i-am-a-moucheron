@@ -58,9 +58,10 @@ pending-capture/form race.
 
 ## Pistolet et postes
 
-À pied, clic gauche, bouton tactile « Tir · pistolet » ou A/Croix :
-un tir par appui, sans rechargement. Espace en chute conserve la commande de
-parachute. Le pistolet est interdit dans les équipements, à tous les postes.
+Au bureau, personne ne porte d'arme à pied : le personnage marche et court les
+mains libres. Le pistolet n'existe qu'au purgatoire : clic gauche, bouton tactile
+« Tir · pistolet » ou A/Croix, un tir par appui, sans rechargement. Espace en
+chute conserve la commande de parachute.
 E / Y-Triangle ouvre le dossier au guichet ou près d’un équipement.
 Touches physiques Digit1–Digit7 ou panneau « Postes » : même contrat pour changer de siège ou proposer un
 échange. Espace au sol maintient un jet ; en chute, il garde le parachute. Le destinataire signe pour accepter ou utilise « Refuser l’échange ».
@@ -219,10 +220,9 @@ poste. Un clic gauche ou Espace déclenche un tir tant qu'il reste des munitions
 Rechargement automatique auprès d'une station ou d'un Castor à portée, depuis
 la caisse commune ; aucun achat de munitions à distance.
 
-Le pistolet possède **120 balles** par incarnation. Les munitions restantes sont
-affichées à pied ; tirer à vide n'inflige pas de dégâts. Le rechargement automatique
-payant nécessite de rejoindre une station ou le Castor. Au purgatoire, la réserve
-reste finie et la sortie par les formulaires demeure disponible.
+Le pistolet du purgatoire possède **120 balles** par incarnation ; tirer à vide
+n'inflige pas de dégâts. Aucune recharge : la réserve reste finie et la sortie par
+les formulaires demeure disponible. Chaque nouvelle incarnation repart à 120.
 
 ## Aperçu de pose
 

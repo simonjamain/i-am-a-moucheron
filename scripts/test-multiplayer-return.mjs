@@ -13,7 +13,6 @@ import { WALKER_FALL, stepWalkerFall, impactDamage } from '../src/field-physics.
 import { createGraphics } from '../src/graphics.js';
 import { insectScale } from '../src/insect-status.js';
 import { nearestInsectHit } from '../src/insect-hits.js';
-import { playerInitials, identifyPlayer } from '../src/player-livery.js';
 import { controlHints, cursorStats } from '../src/live-hud.js';
 import { GunSalvos } from '../src/salvos.js';
 import { makeShotTrace, TracerPool } from '../src/tracers.js';
@@ -250,24 +249,12 @@ for (let i = 0; i < 1000; i++) {
 assert.equal(pool.all.size, 1);
 pool.dispose();
 assert.equal(pool.all.size, 0);
-assert.equal(playerInitials('Jean Dupont'), 'JD');
-assert.equal(playerInitials('Élodie'), 'ÉL');
-assert.equal(playerInitials(''), '?');
-function canvas() {
-  return { width: 0, height: 0, getContext: () => ({ fillRect() {}, fillText() {} }) };
-}
-const human = graphics.humanoid('#abc');
-identifyPlayer(T, human, { name: 'Jean Dupont', colorSequence: 3 }, canvas);
-const identity = human.userData.initials;
-identifyPlayer(T, human, { name: 'Jean Dupont', colorSequence: 3 }, canvas);
-assert.equal(human.userData.initials, identity);
-assert.equal(identity.length, 2);
 for (const y of [0, 3.2, 100]) {
   assert.ok(inRadarCoverage({ x: 2, y, z: 0 }, [{ kind: 'radar', x: 0, y: 0.9, z: 0 }]));
   assert.ok(!inRadarCoverage({ x: 2.0001, y, z: 0 }, [{ kind: 'radar', x: 0, y: 0.9, z: 0 }]));
 }
 console.log(
-  'Presentation: current threefold further midge scale, extra 20% tolerance only for midges, bounded reusable tracers, stable contrasting initials, radar horizontal 2m at all altitudes.',
+  'Presentation: current threefold further midge scale, extra 20% tolerance only for midges, bounded reusable tracers, radar horizontal 2m at all altitudes.',
 );
 
 for (let seed = 0; seed < 8; seed++)

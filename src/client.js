@@ -10,7 +10,6 @@ import { mountChangelog } from '/changelog.js';
 import { deliveryHeightAt } from '/delivery.js';
 import { reserveAlerts, missileStatus, ArrivalSignals } from '/reserve-feedback.js';
 import { controlHints, cursorStats, cursorAmmoText } from '/live-hud.js';
-import { identifyPlayer, disposePlayerIdentity } from '/player-livery.js';
 import { GunSalvos } from '/salvos.js';
 import { nextPilotMuzzle } from '/muzzle.js';
 import { advanceAutomaticFire } from '/salvos.js';
@@ -781,7 +780,7 @@ canvas.addEventListener('mousedown', (event) => {
   );
   if (action === 'capture') captureMouse();
   else if (action === 'fire' && groundDefenseUI.active) groundDefenseUI.press();
-  else if (action === 'fire' && (respawnAt || (onFoot && !myVehicle && turretIndex < 0))) pistol();
+  else if (action === 'fire' && respawnAt) pistol();
   else if (action === 'fire' && (!onFoot || turretIndex >= 0 || !!myVehicle) && !respawnAt)
     mouseFire = true;
 });
@@ -1769,10 +1768,7 @@ function respawn() {
 }
 function renderPurgatory() {
   const dead = !!respawnAt && !spectating;
-  $('personalFire').classList.toggle(
-    'hidden',
-    spectating || !joined || (!dead && (!onFoot || myVehicle || turretIndex >= 0)),
-  );
+  $('personalFire').classList.toggle('hidden', spectating || !joined || !dead);
   if (dead || onFoot) $('crosshair').classList.remove('hidden');
   $('purgatory').classList.toggle('hidden', !dead);
   $('touch').classList.toggle('inPurgatory', dead);
@@ -2379,12 +2375,7 @@ function physicalPurgatory(dt, now) {
   }
   for (const b of soulArena.bodies)
     if (b.kind === 'player' && soulMeshes.has(b.id)) {
-      identifyPlayer(
-        T,
-        soulMeshes.get(b.id),
-        snap.pilots.find((p) => p.id === b.entity) || { name: '?', colorSequence: 0 },
-      );
-      posePersonalWeapon(soulMeshes.get(b.id), b.entity === id, true);
+      posePersonalWeapon(soulMeshes.get(b.id), b.entity === id);
       soulMeshes.get(b.id).userData.animate?.(dt, {
         speed: Math.hypot(b.vx, b.vz) * SOUL_METRES,
         falling: b.koUntil > soulArena.time,
@@ -2401,8 +2392,9 @@ function physicalPurgatory(dt, now) {
   for (const [k, g] of soulMeshes)
     if (!active.has(k)) {
       purgScene.remove(g);
-      disposePlayerIdentity(g);
       g.traverse((o) => {
+        // The player character's geometry and texture are shared by everyone.
+        if (o.userData.meshyShared) return;
         o.geometry?.dispose();
         if (o.material?.map) o.material.map.dispose();
       });
@@ -2749,14 +2741,7 @@ function updateVehicles(dt) {
           (myVehicle.supplies?.servicing ? ' · Ravitaillement' : '')
         : selfBase()?.parachute
           ? 'Descente sous voile'
-          : 'Échelle ' +
-            MAP.numerator +
-            '/' +
-            MAP.denominator +
-            ' · À pied · Pistolet ' +
-            Math.floor(snap?.pilots.find((p) => p.id === id)?.pistolAmmo ?? PISTOL_CAPACITY) +
-            '/' +
-            PISTOL_CAPACITY;
+          : 'Échelle ' + MAP.numerator + '/' + MAP.denominator + ' · À pied';
   if (!visible) return;
   if (crew) {
     if (myVehicle.type === 'helicopter' && crewSeat === 'copilot') {
@@ -2984,7 +2969,6 @@ function updateBaseWorld(dt, now) {
     let g = basePeople.get(b.entity);
     if (!g) {
       g = humanoid(b.entity === id ? '#d5ef73' : '#8bc9d6');
-      equipPistolModel(g);
       g.scale.setScalar(HUMAN_SCALE);
 
       scene.add(g);
@@ -3019,19 +3003,7 @@ function updateBaseWorld(dt, now) {
     }
     g.userData.chute.visible = !!b.parachute;
     const speed = Math.hypot(b.vx, b.vz);
-    g.userData.legs.forEach(
-      (l, j) => (l.rotation.x = Math.sin(now * 0.014 + j * Math.PI) * Math.min(0.7, speed * 0.18)),
-    );
-    g.userData.arms.forEach(
-      (a, j) =>
-        (a.pivot.rotation.x = Math.sin(now * 0.014 + j * Math.PI) * Math.min(0.25, speed * 0.08)),
-    );
-    identifyPlayer(
-      T,
-      g,
-      snap.pilots.find((p) => p.id === b.entity) || { name: '?', colorSequence: 0 },
-    );
-    posePersonalWeapon(g, b.entity === id);
+    // No weapon in the office: the character keeps its own idle/walk/run animation.
     g.userData.animate?.(dt, {
       speed: speed * BASE_METRES,
       falling: !!b.parachute || b.grounded === false,
@@ -3046,7 +3018,6 @@ function updateBaseWorld(dt, now) {
   for (const [id, g] of basePeople)
     if (!active.has(id)) {
       scene.remove(g);
-      disposePlayerIdentity(g);
       basePeople.delete(id);
     }
   const v = nearestVehicle();
@@ -4662,17 +4633,16 @@ function pistol() {
     !canCapture() ||
     myVehicle ||
     turretIndex >= 0 ||
-    (!onFoot && !respawnAt)
+    !respawnAt // the pistol only exists in purgatory, not in the office
   )
     return;
   const self = snap?.pilots.find((p) => p.id === id);
   if (!self || (self.pistolAmmo ?? PISTOL_CAPACITY) - pendingPistolShots.size < 1) {
-    notify('Pistolet vide · rejoignez une station ou le Castor.', 2);
+    notify('Pistolet vide · les formulaires restent possibles.', 2);
     return;
   }
-  const purg = !!respawnAt,
-    cam = purg ? purgCamera : camera,
-    scale = purg ? 1 : MAP.ratio;
+  const cam = purgCamera,
+    scale = 1;
   cam.updateMatrixWorld();
   let dir = cam.getWorldDirection(new T.Vector3()),
     origin = cam.position.clone();
@@ -4687,46 +4657,28 @@ function pistol() {
   };
   const scan = () => {
     hit = null;
-    if (purg) {
-      for (const body of soulArena?.bodies || [])
-        if (!body.gone && body.entity !== id)
-          consider(
-            soulMeshes.get(body.id),
-            body.kind === 'enemy' ? { soul: body.id } : { target: body.entity },
-          );
-      const wallRay = new T.Ray(origin, dir);
-      for (const box of purgColliders) {
-        const point = wallRay.intersectBox(box, new T.Vector3());
-        if (point && (!hit || point.distanceTo(origin) < hit.distance))
-          hit = { wall: true, point, distance: point.distanceTo(origin) };
-      }
-    } else {
-      const enemy = nearestInsectHit(T, origin, dir, insects, 150 * scale, localKills, insectIndex);
-      if (enemy) hit = { ...enemy, enemy: enemy.id };
-      for (const v of snap.vehicles || []) consider(fleetModels.get(v.id), { vehicle: v.id });
-      for (const p of snap.pilots)
-        if (p.id !== id && p.life === 'alive' && !p.vehicle_id)
-          consider(
-            p.mode === 'turret' ? turrets[p.state.turret]?.userData.person : basePeople.get(p.id),
-            { target: p.id },
-          );
-      const solid = new T.Ray(origin, dir);
-      for (const box of colliders) {
-        const point = solid.intersectBox(box, new T.Vector3());
-        if (point && (!hit || point.distanceTo(origin) < hit.distance))
-          hit = { wall: true, point, distance: point.distanceTo(origin) };
-      }
+    for (const body of soulArena?.bodies || [])
+      if (!body.gone && body.entity !== id)
+        consider(
+          soulMeshes.get(body.id),
+          body.kind === 'enemy' ? { soul: body.id } : { target: body.entity },
+        );
+    const wallRay = new T.Ray(origin, dir);
+    for (const box of purgColliders) {
+      const point = wallRay.intersectBox(box, new T.Vector3());
+      if (point && (!hit || point.distanceTo(origin) < hit.distance))
+        hit = { wall: true, point, distance: point.distanceTo(origin) };
     }
   };
   scan();
   const target = (hit?.point || origin.clone().addScaledVector(dir, 150 * scale))
       .clone()
       .addScaledVector(dir, 0.01 * scale),
-    person = purg
-      ? soulMeshes.get(soulArena?.bodies.find((b) => b.entity === id && b.kind === 'player')?.id)
-      : basePeople.get(id);
+    person = soulMeshes.get(
+      soulArena?.bodies.find((b) => b.entity === id && b.kind === 'player')?.id,
+    );
   if (!person?.userData.pistolMuzzle) return;
-  posePersonalWeapon(person, true, purg);
+  posePersonalWeapon(person, true);
   const shotAim = muzzleAim(T, cam, person.userData.pistolMuzzle, target, 150 * scale);
   if (!shotAim) return;
   origin = shotAim.origin;
@@ -4742,7 +4694,7 @@ function pistol() {
     distance: hit?.distance ?? 150 * scale,
     incarnation: self.incarnation,
   });
-  const targetScene = purg ? purgScene : scene;
+  const targetScene = purgScene;
   const line = makeShotTrace(
     T,
     targetScene,
@@ -4773,8 +4725,6 @@ function pistol() {
           shot,
           incarnation: snap.pilots.find((p) => p.id === hit.target)?.incarnation,
         });
-      else if (hit?.vehicle) action('friendly-hit', { vehicle: hit.vehicle, shot });
-      else if (hit?.enemy !== undefined) damageEnemy(hit.enemy, 10, shot, hit.point);
     })
     .finally(() => pendingPistolShots.delete(shot));
 }
@@ -4954,8 +4904,8 @@ function equipPistolModel(person) {
   arm.elbow.add(gun);
   person.userData.pistolMuzzle = muzzle;
 }
-function posePersonalWeapon(person, own, purg = false) {
-  const cam = purg ? purgCamera : camera;
+function posePersonalWeapon(person, own) {
+  const cam = purgCamera;
   const direction = own
     ? cam.getWorldDirection(new T.Vector3())
     : new T.Vector3(0, 0, 1).applyQuaternion(person.quaternion);
@@ -5857,7 +5807,6 @@ function observedPurgatory(dt) {
   for (const [key, model] of soulMeshes)
     if (!active.has(key)) {
       purgScene.remove(model);
-      disposePlayerIdentity(model);
       soulMeshes.delete(key);
     }
 }

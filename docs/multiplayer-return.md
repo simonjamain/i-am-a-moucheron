@@ -165,10 +165,9 @@ rapport au modèle antérieur à VIS-02. Sa tolérance de tir est **1,2 ×** ce 
 modèle. Les intersections ellipsoïdales ne modifient pas les meshes rendus ni les
 PV. Les autres espèces suivent désormais les [facteurs de visibilité](enemy-visibility.md) ; leurs tolérances de collision restent inchangées.
 
-Chaque joueur reçoit une teinte stable par identité de session et de grandes
-initiales contrastées sur poitrine et dos, dans le bureau et les purgatoires.
-Deux pseudos identiques conservent des teintes distinctes. Pas de nom flottant.
-Les textures ne sont recréées que si identité ou pseudo change.
+Les teintes et initiales corporelles des joueurs ont été retirées avec l'arrivée
+du [personnage animé](asset-pipeline.md#personnage-joueur-meshy--mixamo) : tous
+les joueurs sont identiques pour l'instant. Pas de nom flottant.
 
 Le radar couvre un **cylindre de rayon 2 m**, à toutes les hauteurs de la pièce.
 La carte affiche son cercle et un balayage léger ; le modèle a une parabole dont
@@ -180,7 +179,7 @@ unissent leur couverture ; suppression/reset retirent le radar et son effet.
 
 `test-multiplayer-return.mjs` exerce les 14 tâches : vrais états et commandes
 Node, réserve, chaque modèle posé au sol, stocks et décalages, chutes, visée,
-intersections, cache visuel, initiales, couverture, parcours et rayons d’explosion.
+intersections, cache visuel, couverture, parcours et rayons d’explosion.
 `test-udp-native.mjs` utilise deux vrais pairs UDP, avec refus d’action en observation,
 accès volontaire répété sans deuxième âme, achat/pose et effets communs.
 La suite complète conserve les anciens parcours, avec attentes adaptées aux
@@ -188,7 +187,7 @@ nouvelles règles demandées, plutôt que l’ancien budget, rayon ou temps de c
 
 Le navigateur a chargé le client et exercé les composants HUD, aide contextuelle
 et observation sur données de démonstration. Il n’a pas de contexte WebGL ; le
-ressenti en combat, la lecture des couleurs/initiales à distance, l’écoute, les
+ressenti en combat, l’écoute, les
 écrans tactiles réels et le WAN restent à vérifier sur la VM. Aucun déploiement
 externe ni nouveau Docker n’est revendiqué.
 

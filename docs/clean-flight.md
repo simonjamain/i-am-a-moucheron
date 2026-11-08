@@ -40,8 +40,9 @@ surligné. Les saisies et formulaires neutralisent les raccourcis.
 | Tireur canon du tank                 | Canon HE/AP                | Coaxiale                                              |
 | Pilote d’avion                       | Mitrailleuses si présentes | Bombes si présentes                                   |
 | Autres postes de mitrailleurs et DCA | Tir                        | Tir, raccourci conservé                               |
-| À pied au sol, bureau et purgatoires | Pistolet semi-automatique  | Jet de nettoyage                                      |
-| Personnage en chute                  | Pistolet                   | Ouverture/repli du parachute, un changement par appui |
+| À pied au bureau                     | —                          | Jet de nettoyage                                      |
+| À pied au purgatoire                 | Pistolet semi-automatique  | —                                                     |
+| Personnage en chute                  | —                          | Ouverture/repli du parachute, un changement par appui |
 
 B n’a plus d’action d’arme. C maintenu au canon du tank conserve l’observation
 sans tourner la tourelle et interdit les deux armes. Relâchement, menu, perte de

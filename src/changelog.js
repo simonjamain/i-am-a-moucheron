@@ -1,6 +1,13 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 243,
+    changes: [
+      'Au bureau, on se promène sans arme : le personnage marche et court les mains libres. Le pistolet reste au purgatoire.',
+      'Les initiales ne sont plus affichées sur les personnages.',
+    ],
+  },
+  {
     version: 242,
     changes: [
       'Nouveau personnage animé : il marche, court, vise au pistolet, s’assoit dans la DCA et lève les bras en chute.',

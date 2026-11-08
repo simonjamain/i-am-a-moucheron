@@ -78,15 +78,23 @@ assert.equal(s.phase, 'combat');
 assert.equal(s.wave, 1);
 const firstTotal = s.total;
 assert.ok(firstTotal >= 8, 'first wave has its full budget');
+// Nobody fires on foot in the office: neither a trace nor an impact is accepted.
+assert.throws(() => pistolShot(a.id, 'office'), /bureau/);
+assert.throws(
+  () => call(a.id, 'hit', { wave: 1, enemy: 0, amount: 75, shot: 'office' }),
+  /pistolet/,
+);
+assert.equal(game.snapshot(room).enemyDamage[0] ?? 0, 0);
+// A fixed gun operator reports the wave hits instead; each shot counts once.
+room.pilots.get(a.id).mode = 'turret';
 for (let enemy = 0; enemy < s.total; enemy++) {
   const one = 'wave1:' + enemy + ':one';
   const two = 'wave1:' + enemy + ':two';
-  pistolShot(a.id, one);
   call(a.id, 'hit', { wave: 1, enemy, amount: 75, shot: one });
   call(a.id, 'hit', { wave: 1, enemy, amount: 75, shot: one });
-  pistolShot(a.id, two);
   call(a.id, 'hit', { wave: 1, enemy, amount: 75, shot: two });
 }
+room.pilots.get(a.id).mode = 'foot';
 s = game.snapshot(room);
 assert.equal(s.phase, 'prep');
 assert.equal(s.dollars, 4);
@@ -185,15 +193,14 @@ assert.equal(room.pilots.get(b.id).mode, 'foot');
 assert.equal(room.vehicles.has(bomber.id), true);
 call(a.id, 'vehicle-exit');
 assert.equal(room.pilots.get(a.id).state.walkSpawn.parachute, false);
-for (let i = 0; i < 9; i++) {
-  pistolShot(a.id, 'p' + i);
-  call(a.id, 'friendly-hit', { target: b.id, incarnation: 0, shot: 'p' + i });
-}
-assert.equal(room.pilots.get(b.id).health, 10);
-call(a.id, 'friendly-hit', { target: b.id, incarnation: 0, shot: 'p8' });
-assert.equal(room.pilots.get(b.id).health, 10);
-pistolShot(a.id, 'p9');
-call(a.id, 'friendly-hit', { target: b.id, incarnation: 0, shot: 'p9' });
+// No pistol in the office: a walker cannot hurt another walker.
+assert.throws(() => pistolShot(a.id, 'p0'), /bureau/);
+assert.throws(
+  () => call(a.id, 'friendly-hit', { target: b.id, incarnation: 0, shot: 'p0' }),
+  /pistolet/,
+);
+assert.equal(room.pilots.get(b.id).health, 100);
+call(b.id, 'death', { incarnation: 0 });
 assert.equal(room.pilots.get(b.id).life, 'dead');
 assert.equal(room.pilots.get(b.id).health, 100);
 call(a.id, 'death', { incarnation: 0 });

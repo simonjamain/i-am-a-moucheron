@@ -151,13 +151,11 @@ export function controlHintItems({
       'Espace : jet',
       'E : formulaires',
     ];
-  else if (airborne)
-    items = ['ZQSD / flèches : diriger', 'Espace : parachute', 'Clic : pistolet', 'Molette : zoom'];
+  else if (airborne) items = ['ZQSD / flèches : diriger', 'Espace : parachute', 'Molette : zoom'];
   else
     items = [
       'ZQSD / flèches : marcher',
       'Molette : zoom',
-      'Clic : pistolet',
       'Espace : jet',
       'E : interagir',
       'P : achats',

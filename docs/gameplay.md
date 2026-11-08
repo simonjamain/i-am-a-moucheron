@@ -116,8 +116,8 @@ et [armement](scale-fleet-weapons.md).
 L’accès au bureau de Saint Pierre dépend de la présence physique dans sa zone.
 L’ordre de la file guide les PNJ sans donner une priorité abstraite de signature.
 Les collisions permettent de se bousculer. Le combat à mains nues est supprimé ;
-à pied, chacun utilise son pistolet semi-automatique à 10 dégâts fixes, sans
-chargeur ni rechargement, dans le bureau et les deux purgatoires. Les armes
+au purgatoire, chacun utilise son pistolet semi-automatique à 10 dégâts fixes,
+sans chargeur ni rechargement. Dans le bureau, personne ne porte d'arme à pied. Les armes
 personnelles sont inutilisables dans tous les équipements. Les PNJ ne ripostent
 pas et conservent leurs dégâts sans régénération. Voir [file physique](purgatory-queue.md).
 
@@ -204,8 +204,8 @@ et limites de vérification.
 
 ## Retours terrain intégrés
 
-Le pistolet tire depuis la main vers le point du réticule, avec caméra à l’épaule
-et obstacles revérifiés depuis le canon. La chute utilise la gravité humaine multipliée par le ratio du personnage,
+Au purgatoire, le pistolet tire depuis la main vers le point du réticule, avec
+caméra à l’épaule et obstacles revérifiés depuis le canon. La chute utilise la gravité humaine multipliée par le ratio du personnage,
 un parachute progressif et des dégâts d’impact verticaux. Le retour après
 purgatoire se fait au départ, sauf contrat personnel de lit signé (E au lit).
 Les lits s’achètent 4 $, puis +2 $ ; plusieurs joueurs peuvent signer le même.
@@ -227,8 +227,7 @@ coque ; seule la sirène de piqué du Stuka subsiste. Valeurs et limites :
 
 Les achats de tous les véhicules utilisent désormais le bon signé et la pose par E,
 au sol ou sur mobilier, avec chasseur 8 $ et bombardier 16 $. Les bombes du B3
-ont le double du rayon de celles du Stuka ; les personnages portent leurs initiales
-et une couleur propre. [Référence du dernier lot](multiplayer-return.md).
+ont le double du rayon de celles du Stuka. [Référence du dernier lot](multiplayer-return.md).
 
 ## Hélicoptère et camion DCA
 
@@ -402,9 +401,6 @@ Une DCA isolée reste à sec jusqu'à l'installation ou au passage d'un soutien.
 
 Chaque nouvelle incarnation reçoit un pistolet avec **120 balles**. Un tir est
 décompté par le serveur avant de pouvoir blesser un insecte, un allié ou une âme :
-un impact ne peut utiliser qu'une fois le même identifiant de tir. Dans le bureau,
-le rechargement est automatique dans la zone d'une station ou du Castor, au tarif
-de **1 $ pour 1 000 balles réellement fournies**, partagé équitablement avec les
-autres demandes de maintenance. Un joueur hors de portée ne recharge pas.
-Au purgatoire, la réserve reste limitée sans station à distance ; la paperasse
-reste le moyen alternatif de progression lorsque les munitions sont épuisées.
+un impact ne peut utiliser qu'une fois le même identifiant de tir. Depuis la
+version 243, le pistolet n'existe plus qu'au purgatoire et rien ne le recharge :
+la paperasse reste le moyen de progression lorsque les munitions sont épuisées.
