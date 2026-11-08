@@ -1,6 +1,13 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 240,
+    changes: [
+      'Les roquettes et le missile du H2 laissent une fumée plus marquée et brillent de loin.',
+      'La tourelle automatique du Castor montre enfin ses tirs : traceurs, éclair et recul, pour tous les joueurs.',
+    ],
+  },
+  {
     version: 239,
     changes: [
       'Les trajets des insectes au sol sont des pistes de phéromones orange bien visibles, avec des flèches vers la poubelle.',

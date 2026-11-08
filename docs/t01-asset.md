@@ -4,12 +4,12 @@ La tourelle automatique du **G1 Castor** est un assemblage de quatre modèles Me
 
 ## Origines contrôlées
 
-| Pièce | Tâche Meshy | Triangles | SHA-256 original |
-| --- | --- | ---: | --- |
-| Socle fixe | `01a1b589-f91a-74d7-9cfd-af1e09fc7fcf` | 3 149 | `cadf161689f2adb53caa3ac8c8968d5393a6f53fface5cc9b6cc07dfe889c695` |
-| Tête rotative | `01a1b58b-8015-7247-b17b-351c9946a143` | 4 380 | `105bef2d800728dd5e208a404a95f4e45b8a66b428c46b99f91efc90e6779472` |
-| Bloc canon | `01a1b58b-8f11-7588-92a6-80bdb540bbe5` | 3 684 | `b29849fbb1b7bb3e9d837462977d6934808e59535f13340e452684cd3eeaa743` |
-| Capteur/radar | `01a1b58b-9c0b-74a9-bb5c-269a36d9169c` | 2 413 | `5f5882e848d834f8b3e9bdba71ab63f0c67e74b632909f433021c38908f1467c` |
+| Pièce         | Tâche Meshy                            | Triangles | SHA-256 original                                                   |
+| ------------- | -------------------------------------- | --------: | ------------------------------------------------------------------ |
+| Socle fixe    | `01a1b589-f91a-74d7-9cfd-af1e09fc7fcf` |     3 149 | `cadf161689f2adb53caa3ac8c8968d5393a6f53fface5cc9b6cc07dfe889c695` |
+| Tête rotative | `01a1b58b-8015-7247-b17b-351c9946a143` |     4 380 | `105bef2d800728dd5e208a404a95f4e45b8a66b428c46b99f91efc90e6779472` |
+| Bloc canon    | `01a1b58b-8f11-7588-92a6-80bdb540bbe5` |     3 684 | `b29849fbb1b7bb3e9d837462977d6934808e59535f13340e452684cd3eeaa743` |
+| Capteur/radar | `01a1b58b-9c0b-74a9-bb5c-269a36d9169c` |     2 413 | `5f5882e848d834f8b3e9bdba71ab63f0c67e74b632909f433021c38908f1467c` |
 
 Les exportations GLB Meshy portent des noms à horodatage, qui **ne suivent pas l'ordre de génération**. Correspondance vérifiée visuellement et contre les liens d'export des tâches : socle `...102715.glb`, tête `...103356.glb`, canon `...103334.glb`, capteur `...103241.glb`.
 
@@ -30,9 +30,11 @@ Pour explorer une réduction **supplémentaire** avec l'outillage gratuit, voir 
 
 ## Articulation et intégration
 
-Dans `src/sentry-model.js`, le socle reste immobile. La tête et son radar suivent un groupe *yaw* (360°) ; le canon possède un groupe *pitch* distinct (−10° à +90°). Chaque fichier Meshy avait son propre axe avant : l'assemblage aligne la tête (+X source), le canon (−X source) et le radar (+Z source) vers −Z du jeu par des transformations **propres à chaque module**. Les échelles et pivots sont fixes et documentés dans le code. Le radar est monté latéralement pour éviter le passage du canon à +90° ; sa position doit être contrôlée en WebGL et peut être ajustée sans regénérer le modèle.
+Dans `src/sentry-model.js`, le socle reste immobile. La tête et son radar suivent un groupe _yaw_ (360°) ; le canon possède un groupe _pitch_ distinct (−10° à +90°). Chaque fichier Meshy avait son propre axe avant : l'assemblage aligne la tête (+X source), le canon (−X source) et le radar (+Z source) vers −Z du jeu par des transformations **propres à chaque module**. Les échelles et pivots sont fixes et documentés dans le code. Le radar est monté latéralement pour éviter le passage du canon à +90° ; sa position doit être contrôlée en WebGL et peut être ajustée sans regénérer le modèle.
 
-Le code partage les géométries et matériaux des modèles entre toutes les tourelles d'une salle, mais chaque tourelle possède ses pivots d'animation propres. Leur orientation visuelle suit les cibles que le serveur a déjà choisies. Les règles serveur de tirs, dégâts, portée, achat, munitions et recharge ne changent pas. 
+Le code partage les géométries et matériaux des modèles entre toutes les tourelles d'une salle, mais chaque tourelle possède ses pivots d'animation propres. Leur orientation visuelle suit les cibles que le serveur a déjà choisies. Les règles serveur de tirs, dégâts, portée, achat, munitions et recharge ne changent pas.
+
+**Effets de tir (version 240, [issue #108](https://github.com/simonjamain/i-am-a-moucheron/issues/108)).** Chaque tir serveur publie un effet `sentry-shot` portant l'identifiant de la tourelle. Tous les clients orientent alors le canon vers la cible, tirent un traceur depuis la vraie bouche (`bouche-canon` du modèle) avec un éclair de bouche, et appliquent un recul de 3 mm qui s'amortit. Les tirs restaient auparavant invisibles : l'effet n'était pas consommé côté client.
 
 **Vérifications automatisées :** tests de SHA, comptage des triangles, présence des UV/images, hiérarchie et écart des pivots à +90°, absence de duplication des ressources et régressions réseau. **Reste à valider manuellement :** qualité des textures en WebGL sur les deux côtés, dégagement du radar pendant toutes les élévations, effet de tir au bout du canon, échelle avec les ennemis, confort de suivi et FPS avec 12 tourelles.
 
@@ -61,13 +63,13 @@ glTF Transform / meshoptimizer sur les **géométries et UV des quatre
 modules importés**, reconstruits en GLB de test. Paramètres : ratio
 `0.75`, erreur `0.005` ; aucun fichier du jeu n'a été remplacé.
 
-| Module | Triangles source | Variante de test | Gain |
-| --- | ---: | ---: | ---: |
-| Socle | 3 149 | 2 361 | 25 % |
-| Tête | 4 380 | 3 284 | 25 % |
-| Canon | 3 684 | 2 762 | 25 % |
-| Capteur | 2 413 | 1 809 | 25 % |
-| **Total** | **13 626** | **10 216** | **25 %** |
+| Module    | Triangles source | Variante de test |     Gain |
+| --------- | ---------------: | ---------------: | -------: |
+| Socle     |            3 149 |            2 361 |     25 % |
+| Tête      |            4 380 |            3 284 |     25 % |
+| Canon     |            3 684 |            2 762 |     25 % |
+| Capteur   |            2 413 |            1 809 |     25 % |
+| **Total** |       **13 626** |       **10 216** | **25 %** |
 
 Les quatre sorties ont passé `validate` (attributs, indices, UV,
 nœuds, texture de test), mais **chacun des GLB optimisés était plus gros
@@ -80,6 +82,6 @@ articulations en WebGL**, avec les véritables textures, avant substitution.
 
 ![T-01 assemblée avec les quatre modèles Meshy à 0° et +90°](assets/t01-assembly-preview.jpg)
 
-*Aperçu de validation CPU, deux points de vue et deux élévations,
+_Aperçu de validation CPU, deux points de vue et deux élévations,
 avec les vrais UV/textures Meshy ; pas une capture du moteur Three.js.
-Le support radar est décalé latéralement pour laisser passer le canon.*
+Le support radar est décalé latéralement pour laisser passer le canon._

@@ -528,6 +528,7 @@ export class Game {
         r.effects.push({
           id: ++r.effectSeq,
           kind: 'sentry-shot',
+          sentry: sentry.id,
           p: [sentry.position[0], 0.03, sentry.position[1]],
           target: target.p,
           at: now,

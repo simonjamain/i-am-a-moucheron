@@ -74,6 +74,15 @@ et détonation utilisent les commandes fiables, liées à la génération d'occu
 Les effets ne produisent aucun second impact. Les clauses compatibles conservent
 leurs effets ; elles ne peuvent accélérer les roquettes au-delà du maximum validé.
 
+### Effets des roquettes et du missile (version 240)
+
+`src/missile-exhaust.js` applique un profil par projectile (`EXHAUST_PROFILES`) : fumée
+plus sombre et plus épaisse qu'auparavant, flamme plus grande et plus vive, et halo
+additif de taille constante à l'écran, visible de loin. Le missile guidé a la traînée la
+plus dense et un halo plus grand qui pulse. Cadences, dégâts, guidage et vitesses sont
+inchangés ([issue #108](https://github.com/simonjamain/i-am-a-moucheron/issues/108),
+`scripts/test-shot-effects.mjs`).
+
 ## DCA mobile
 
 Le conducteur conduit sans arme. Le tireur vise un canon unique, utilisable en
