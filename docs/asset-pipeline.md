@@ -131,6 +131,32 @@ tous les joueurs sont identiques pour l'instant, le modèle sera affiné.
   dans la paume ; balistique, dégâts et règles de tir sont inchangés. Aucune
   initiale ni teinte par joueur. `scripts/test-character.mjs` couvre ces points.
 
+## Canon anti-matériel (obusier Meshy)
+
+Modèle fourni par l'utilisateur pour l'[issue #113](https://github.com/simonjamain/i-am-a-moucheron/issues/113)
+(volet canon anti-matériel ; la DCA mobile D2 reste à faire).
+
+- Original : `assets/originals/howitzer/field-howitzer.glb` (hors dépôt), SHA-256
+  `5d30ba36…6c5c`, un seul maillage « topologie intelligente » de 2 922 triangles,
+  texture PNG 2K. Axes du modèle : tube vers −X, essieu selon Z, Y vers le haut.
+- Découpage sans coupe : le maillage contient 77 coques déconnectées, chacune
+  affectée entière à une pièce par `scripts/import-howitzer.py` (règles par boîte
+  englobante, comptes verrouillés) : affût fixe (flèches, berceau en U, essieu)
+  1 315 triangles, roue gauche 356, roue droite 372, berceau élevable (culasse,
+  cylindres de recul, anneau des tourillons et bouclier) 558, tube reculant avec
+  frein de bouche 321. Normales et UV d'origine conservés, texture en JPEG 1K
+  (167 Ko), module `src/howitzer-data.js` de 399 Ko.
+- Pivots : milieu de l'essieu (rotation horizontale de tout le canon, roues de
+  rayon 0,082 en sens inverse, sans glissement), tourillons en (0,157 ; 0,045)
+  dans le berceau en U, bouche au centre de la face du frein de bouche.
+- Échelle joueur : roues de 1,10 m (mètres de référence), soit un canon d'environ
+  6,4 m de long et 2 m de haut à côté du joueur de 1,80 m ; emprise de pose et
+  collision 0,0105 (rayon balayé par la bouche, 3,4 m).
+- Mouvements (`src/howitzer-model.js`) : pointage 45°/s, élévation 30°/s entre
+  −5° et +40° (au-delà, la culasse traverserait les flèches) ; le tir part dans la
+  direction réelle du tube. Recul de 30 % du tube en 0,06 s, retour en 0,6 s,
+  secousse de 6 cm de l'affût. `scripts/test-howitzer.mjs` couvre ces points.
+
 ## Intégration Meshy au jeu
 
 1. Télécharger le modèle Meshy **approuvé** et en conserver l'original/empreinte.

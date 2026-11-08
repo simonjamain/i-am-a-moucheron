@@ -167,6 +167,9 @@ retire les coûts de la caisse et déduplique les requêtes identifiées.
 Les cartes d’ingénierie (`wave-blueprints.js`) débloquent séparément les trois
 constructions propres au Castor : la tourelle automatique (`ground-sentry.js`),
 le bunker LEGO et le canon antichar occupables (`ground-fortifications.js`).
+`fortification-model.js` dessine ces postes ; le canon antichar est l'obusier
+Meshy articulé de `howitzer-model.js` / `howitzer-data.js` (pointage lent, roues
+contrarotatives, élévation et recul, [pipeline d'assets](asset-pipeline.md#canon-anti-matériel-obusier-meshy)).
 `ground-defense-state.js` contrôle leur placement et les collisions ;
 `server/game.js` crée les postes occupables, vérifie les signatures et les tirs,
 et conserve des réserves finies. `paid-service.js` les répare et recharge uniquement

@@ -73,6 +73,8 @@ const files = {
       'ground-fortifications',
       'ground-model',
       'fortification-model',
+      'howitzer-model',
+      'howitzer-data',
       'model-preview',
       'ground-defense',
       'route-obstacles',
