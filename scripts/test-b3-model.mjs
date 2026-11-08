@@ -32,11 +32,10 @@ for (const part of B3_DATA.parts)
   assert.equal(b3Attribute(part.uv).length / 2, b3Attribute(part.positions).length / 3);
 paintVehicle(T, a, 7, '#ffffff');
 assert.equal(meshes[0].material, material, 'original atlas remains untouched');
-assert.ok(a.userData.identification.position.y > new T.Box3().setFromObject(b).max.y);
-assert.equal(a.userData.identification.userData.projectileSolid, false);
-const color = a.userData.identification.material.color.clone();
+// Issue #106: no floating colour marker, whatever the vehicle sequence.
+assert.equal(a.userData.identification, undefined);
 paintVehicle(T, a, 8, '#ffffff');
-assert.ok(!a.userData.identification.material.color.equals(color));
+assert.equal(a.userData.identification, undefined);
 assert.equal(meshes[0].material, material);
 const ventral = a.userData.turrets[2];
 assert.ok(ventral.position.y < 0);
@@ -53,5 +52,5 @@ b.scale.setScalar(ACTOR_UNIT);
 b.position.y = VEHICLES.bomber.gear;
 assert.ok(Math.abs(new T.Box3().setFromObject(b).min.y) < 1e-5, 'wheel contact');
 console.log(
-  `PASS B3: ${triangles} triangles, actual UV atlas, shared geometry, independent turret and marker, ventral camera, wheel contact.`,
+  `PASS B3: ${triangles} triangles, actual UV atlas, shared geometry, independent turret, no marker, ventral camera, wheel contact.`,
 );

@@ -3,8 +3,12 @@
 Les quatre véhicules utilisent le maillage et les véritables UV des GLB Meshy.
 Leur atlas JPEG de 1 024 pixels est intégré dans les modules du jeu ; la texture
 est commune à tous les exemplaires d'un même véhicule. Les surfaces ne changent
-plus de couleur selon l'appareil : seule une pastille colorée flottante porte
-l'identification. Le M1, le H2 et le bombardier B3 suivent le même principe.
+pas de couleur selon l'appareil et, depuis la version 238 ([issue #106](https://github.com/simonjamain/i-am-a-moucheron/issues/106)),
+aucune pastille flottante ni couleur par joueur ou par appareil n'est ajoutée : traceurs
+et obus ont des couleurs neutres par arme. Le M1, le H2 et le bombardier B3 suivent le même principe.
+Les cercles d'accès au sol des postes libres portent un pictogramme blanc par rôle
+(`src/seat-icons.js`) : volant (conducteur), avion (pilote), avion à deux places
+(copilote), viseur (mitrailleur) et tourelle (canon du char).
 
 ## Références et provenance
 
@@ -12,12 +16,12 @@ Les images [de référence](vehicle-references/) ont servi à produire les modè
 Les GLB originaux ont été fournis dans la Bibliothèque du projet le 5 novembre 2026 ;
 leurs empreintes sont vérifiées avant toute conversion. Aucun nouvel appel Meshy.
 
-| Véhicule | Image de référence | Tâche Meshy | Triangles intégrés |
-| --- | --- | --- | ---: |
-| Stuka | [stuka.png](vehicle-references/stuka.png) | `01a1a8ed-4589-75ee-9c0f-1bc3ea25e52a` | 28 192 |
-| Spitfire S6 | [spitfire.png](vehicle-references/spitfire.png) | `01a1a8ed-9b2d-76c7-9b3c-1eab9d5ba005` | 28 723 |
-| Tank T3 | [tank.png](vehicle-references/tank.png) | `01a1a8ed-d517-7384-9784-d5d7d810c3aa` | 26 940 |
-| DCA mobile D2 | [flaktruck.png](vehicle-references/flaktruck.png) | `01a1a8ee-118f-77a9-a1ac-2b776b385189` | 26 943 |
+| Véhicule      | Image de référence                                | Tâche Meshy                            | Triangles intégrés |
+| ------------- | ------------------------------------------------- | -------------------------------------- | -----------------: |
+| Stuka         | [stuka.png](vehicle-references/stuka.png)         | `01a1a8ed-4589-75ee-9c0f-1bc3ea25e52a` |             28 192 |
+| Spitfire S6   | [spitfire.png](vehicle-references/spitfire.png)   | `01a1a8ed-9b2d-76c7-9b3c-1eab9d5ba005` |             28 723 |
+| Tank T3       | [tank.png](vehicle-references/tank.png)           | `01a1a8ed-d517-7384-9784-d5d7d810c3aa` |             26 940 |
+| DCA mobile D2 | [flaktruck.png](vehicle-references/flaktruck.png) | `01a1a8ee-118f-77a9-a1ac-2b776b385189` |             26 943 |
 
 SHA-256 des GLB sources, dans l'ordre du tableau :
 
@@ -52,7 +56,8 @@ avant de prétendre qu'elle convient à une flotte nombreuse.
 ## Vérifications
 
 `node scripts/test-meshy-fleet.mjs` contrôle maillages, UV, partage des buffers,
-terrain, pastilles colorées, ailes et remorque.
+terrain, absence de pastille, ailes et remorque ; `node scripts/test-vehicle-identity.mjs`
+contrôle couleurs d'origine et pictogrammes de postes.
 `node scripts/test-meshy-textures.mjs` contrôle atlas JPEG et indices/UV.
 `node scripts/test-muzzle-alignment.mjs` vérifie les bouches de tir.
 
@@ -61,7 +66,6 @@ La [projection CPU historique](meshy-fleet-review.png) illustre la géométrie
 vérifiés visuellement en jeu : silhouette, texture, repère, chaque poste et ses
 armes, remorque D2, collision et fluidité avec plusieurs véhicules.
 Une compilation et un test sans GPU ne constituent pas cet essai.
-
 
 ## Castor G1 : châssis, tourelle et roues Meshy
 
@@ -72,7 +76,6 @@ Les trois modèles Meshy de l'issue [#76](https://github.com/simonjamain/i-am-a-
 `src/castor-model.js` crée six pivots de roue et un pivot de tourelle/élévation sans rigging Meshy. Les géométries, matériaux et atlas sont partagés entre plusieurs exemplaires pour éviter les copies GPU inutiles. Aucune dépendance réseau ni import GLB au navigateur. Les couleurs Meshy restent originales, avec un rond d'identification séparé.
 
 **Vérification visuelle requise en WebGL** : sens de marche, face des roues, absence de roues doublées dans la coque Meshy, sortie de la bouche du canon et performances à plusieurs exemplaires. Les éventuelles roues déjà moulées dans le châssis sont conservées à cette étape (pas de découpage aveugle de la géométrie). Une CI verte ne constitue pas cet essai.
-
 
 ### Correction de l'assemblage des roues G1 (version 186)
 

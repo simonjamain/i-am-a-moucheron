@@ -352,7 +352,7 @@ arrière et arrêt compris) ; au pivot sur place, gauche et droite tournent en s
 opposés et les roues avant braquent selon la vitesse de rotation
 (`src/castor-wheels.js`, `scripts/test-castor-wheels.mjs`). Plus rapide que le tank, il possède un rayon de soutien sphérique de **50 cm** qui peut soigner et ravitailler les alliés en mouvement ou en vol et se réapprovisionner lui-même. Le service utilise la caisse commune.
 
-**La construction en roulant est disponible depuis la version 188.** Le Castor utilise désormais **ses trois modèles Meshy texturés** : châssis, tourelle et roues indépendantes. Les couleurs originales sont préservées ; seule la pastille d’identification change selon l’appareil. Voir [l'issue #76](https://github.com/simonjamain/i-am-a-moucheron/issues/76) et [la note de reprise](tasks/g1-castor.md).
+**La construction en roulant est disponible depuis la version 188.** Le Castor utilise désormais **ses trois modèles Meshy texturés** : châssis, tourelle et roues indépendantes. Les couleurs originales sont préservées, sans pastille d’identification ([flotte Meshy](meshy-fleet.md)). Voir [l'issue #76](https://github.com/simonjamain/i-am-a-moucheron/issues/76) et [la note de reprise](tasks/g1-castor.md).
 
 ### Construction depuis le Castor (version 188)
 

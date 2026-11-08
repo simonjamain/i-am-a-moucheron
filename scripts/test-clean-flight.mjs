@@ -571,21 +571,19 @@ const visualContext = {
 };
 vm.createContext(visualContext);
 vm.runInContext(
-  source.slice(
-    source.indexOf('const ordnanceModels = new Map();'),
-    source.indexOf('const contextHUD ='),
-  ),
+  source.slice(source.indexOf('const SHELL_COLORS ='), source.indexOf('const contextHUD =')),
   visualContext,
 );
 vm.runInContext('updateOrdnance(0)', visualContext);
 const visualModels = vm.runInContext('ordnanceModels', visualContext);
 assert.equal(visualModels.get('he').geometry.type, 'CylinderGeometry');
 assert.equal(visualModels.get('ap').geometry.type, 'ConeGeometry');
-for (const [i, type] of ['he', 'ap', 'bomb'].entries()) {
-  const expected = new T.Color().setHSL(vehicleHue(i + 4) / 360, 0.58, 0.57);
-  visualModels.get(type).traverse((o) => {
-    if (o.isMesh) assert.ok(o.material.color.equals(expected));
-  });
+// Issue #106: shell colours are neutral per weapon, never per vehicle.
+const shellColors = vm.runInContext('SHELL_COLORS', visualContext);
+for (const type of ['he', 'ap']) {
+  const expected = new T.Color(shellColors[type]);
+  assert.ok(visualModels.get(type).material.color.equals(expected));
+  assert.ok(!new T.Color().setHSL(vehicleHue(4) / 360, 0.58, 0.57).equals(expected));
 }
 visualContext.snap.ordnance = [];
 vm.runInContext('updateOrdnance(0)', visualContext);

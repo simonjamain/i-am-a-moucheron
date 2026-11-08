@@ -1,6 +1,13 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 238,
+    changes: [
+      'Plus de pastilles de couleur au-dessus des véhicules : chacun garde ses vraies couleurs.',
+      'Les cercles d’accès aux postes montrent une icône blanche : volant, pilote, copilote, viseur ou canon.',
+    ],
+  },
+  {
     version: 237,
     changes: [
       'Vitesses, altitudes et distances s’affichent en vraies mesures du bureau : cm/s, cm ou m.',
