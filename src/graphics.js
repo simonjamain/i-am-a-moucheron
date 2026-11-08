@@ -3,6 +3,7 @@ import { makeB3 } from './b3-model.js';
 import { makeH2 } from './h2-model.js';
 import { makeM1 } from './m1-model.js';
 import { makeCastorMeshy } from './castor-model.js';
+import { createCharacter, CHARACTER_HEIGHT, LEGACY_HEIGHT } from './character-model.js';
 import { GROUND_LEGS, MIDGE_SPHERE_RADIUS } from './scale.js';
 export function createGraphics(T, scene) {
   const materials = new Map();
@@ -351,7 +352,95 @@ export function createGraphics(T, scene) {
     parent.add(m);
     return m;
   }
+  // Issue #111: players use the Meshy/Mixamo character. The procedural pivots
+  // below stay as an invisible frame (`arms`, `legs`, `rig`) so the pistol, its
+  // muzzle (shot origin) and every existing caller keep exactly the same API.
+  const PALM = 0.08; // wrist to grip, model metres
+  // Player initials plates on the chest and back of the bind-pose torso, held
+  // by the upper spine so they follow the animation (anchors carry rig units).
+  const BADGE = 0.24;
+  let chestDepth = null;
+  function chestBadge(rig, spine, y, geometry) {
+    const k = LEGACY_HEIGHT / CHARACTER_HEIGHT;
+    if (!chestDepth) {
+      const position = geometry.attributes.position;
+      chestDepth = [0, 0];
+      for (let i = 0; i < position.count; i++)
+        if (
+          Math.abs(position.getY(i) * k - y) < BADGE / 2 &&
+          Math.abs(position.getX(i) * k) < BADGE / 2
+        ) {
+          chestDepth[0] = Math.max(chestDepth[0], position.getZ(i) * k);
+          chestDepth[1] = Math.min(chestDepth[1], position.getZ(i) * k);
+        }
+    }
+    const anchors = [chestDepth[1] - 0.02, chestDepth[0] + 0.02].map((z, i) => {
+      const anchor = new T.Object3D();
+      anchor.position.set(0, y, z);
+      if (i === 0) anchor.rotation.y = Math.PI;
+      rig.add(anchor);
+      spine.attach(anchor);
+      return anchor;
+    });
+    return { anchors, size: BADGE };
+  }
   function humanoid(color, saint = false) {
+    if (saint) return legacyHumanoid(color, true);
+    const g = new T.Group(),
+      rig = new T.Group();
+    g.add(rig);
+    const character = createCharacter(T);
+    character.container.scale.setScalar(LEGACY_HEIGHT / CHARACTER_HEIGHT);
+    rig.add(character.container);
+    const legs = [-0.23, 0.23].map((x) => {
+      const pivot = new T.Group();
+      pivot.position.set(x, 0.85, 0);
+      rig.add(pivot);
+      return pivot;
+    });
+    // Pistol frame on the character's own shoulders: the grip (0.25 below the
+    // elbow, see equipPistolModel) lands in the palm when the arm is straight.
+    rig.updateMatrixWorld(true);
+    const at = (n) =>
+      rig.worldToLocal(character.bones['mixamorig' + n].getWorldPosition(new T.Vector3()));
+    const arms = ['Left', 'Right'].map((side) => {
+      const shoulder = at(side + 'Arm'),
+        reach = shoulder.distanceTo(at(side + 'Hand')) + PALM * (LEGACY_HEIGHT / CHARACTER_HEIGHT);
+      const pivot = new T.Group();
+      pivot.position.copy(shoulder);
+      rig.add(pivot);
+      const elbow = new T.Group();
+      elbow.position.y = 0.25 - reach;
+      pivot.add(elbow);
+      return { pivot, elbow };
+    });
+    const down = new T.Vector3(0, -1, 0);
+    g.userData = {
+      rig,
+      badge: chestBadge(
+        rig,
+        character.bones.mixamorigSpine1,
+        at('Spine1').y - 0.06,
+        character.mesh.geometry,
+      ),
+      legs,
+      arms,
+      lean: 0,
+      leanV: 0,
+      character,
+      // state: { speed, seated, falling, aim }; aim defaults to the pistol arm.
+      animate(dt, state = {}) {
+        let aim = state.aim;
+        if (aim === undefined && g.userData.pistolMuzzle) {
+          arms[1].pivot.updateWorldMatrix(true, false);
+          aim = down.clone().applyQuaternion(arms[1].pivot.getWorldQuaternion(new T.Quaternion()));
+        }
+        character.update(dt, { ...state, aim });
+      },
+    };
+    return g;
+  }
+  function legacyHumanoid(color, saint = false) {
     const g = new T.Group(),
       rig = new T.Group();
     g.add(rig);

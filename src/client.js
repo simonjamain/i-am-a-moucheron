@@ -157,6 +157,10 @@ const zoomScope = () =>
       ])
     : null;
 camera.position.set(-1.65, 1.05, 2.6);
+// Ground speeds in m/s for the character gait: office arena units are actor
+// units (10.4/5.6 m); purgatory souls are 2.46-unit humanoids, about 1.8 m tall.
+const BASE_METRES = 10.4 / 5.6,
+  SOUL_METRES = 1.8 / 2.46;
 const hitEffects = new HitEffects(T, scene, { scale: ACTOR_UNIT });
 const bloodEffects = new BloodEffects(T, scene);
 const insectStatus = new InsectStatus(T, scene, { scale: INSECT_SCALE });
@@ -2381,6 +2385,10 @@ function physicalPurgatory(dt, now) {
         snap.pilots.find((p) => p.id === b.entity) || { name: '?', colorSequence: 0 },
       );
       posePersonalWeapon(soulMeshes.get(b.id), b.entity === id, true);
+      soulMeshes.get(b.id).userData.animate?.(dt, {
+        speed: Math.hypot(b.vx, b.vz) * SOUL_METRES,
+        falling: b.koUntil > soulArena.time,
+      });
     }
   for (const b of soulArena.bodies)
     if (b.kind === 'enemy' && !b.gone) {
@@ -2841,6 +2849,7 @@ function updateVehicles(dt) {
         (p) => p.life === 'alive' && p.mode === 'turret' && p.state.turret === index,
       );
     gun.userData.person.visible = !!occupant && station.kind === 'dca';
+    if (gun.userData.person.visible) gun.userData.person.userData.animate?.(dt, { seated: true });
     if (!occupant) continue;
     const self = occupant.id === id,
       motion = self ? localMotion() : remoteMotion(occupant),
@@ -3023,6 +3032,10 @@ function updateBaseWorld(dt, now) {
       snap.pilots.find((p) => p.id === b.entity) || { name: '?', colorSequence: 0 },
     );
     posePersonalWeapon(g, b.entity === id);
+    g.userData.animate?.(dt, {
+      speed: speed * BASE_METRES,
+      falling: !!b.parachute || b.grounded === false,
+    });
     if (!respawnAt && speed > 0.6)
       sound.play('step', w, {
         key: 'base-step:' + b.entity,
@@ -4308,7 +4321,7 @@ function frame(now) {
   spiderlingBatch.flush(insects);
   tracerPool.flush();
   if (spectating && observationCamera) {
-    if (observationRealm !== 'office') observedPurgatory();
+    if (observationRealm !== 'office') observedPurgatory(dt);
     renderer.render(observationRealm === 'office' ? scene : purgScene, observationCamera);
   } else if (respawnAt && soulBody) {
     physicalPurgatory(dt, now);
@@ -5823,7 +5836,7 @@ $('enterPurgatory').onclick = async () => {
     $('enterPurgatory').disabled = false;
   }
 };
-function observedPurgatory() {
+function observedPurgatory(dt) {
   const arena = observationRealm === 'super' ? snap?.superArena : snap?.arena;
   const active = new Set();
   for (const body of arena?.bodies || []) {
@@ -5837,6 +5850,9 @@ function observedPurgatory() {
     }
     model.position.set(body.x, 0, body.z);
     model.rotation.y = body.face || 0;
+    model.userData.animate?.(dt, {
+      speed: Math.hypot(body.vx || 0, body.vz || 0) * SOUL_METRES,
+    });
   }
   for (const [key, model] of soulMeshes)
     if (!active.has(key)) {

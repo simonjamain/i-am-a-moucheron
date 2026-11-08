@@ -147,6 +147,8 @@ des terrestres reste dans `ground-creatures.js`. Voir [gameplay](gameplay.md#dé
 
 `brick-wall.js` répète en instances la brique 2×4 de `meshy-brick-data.js` (tenons vers +Y, dimensions `BRICK_PITCH`/`BRICK_ROW`/`BRICK_DEPTH`) selon la longueur des segments, recolorée par instance, sans modifier les collisions ni le coût serveur.
 
+`character-model.js` anime le personnage joueur de `character-data.js` (squelette Mixamo, repos/marche/course, poses procédurales assis, chute et pistolet) ; `graphics.humanoid()` l'enveloppe dans le cadre invisible du pistolet ([pipeline d'assets](asset-pipeline.md#personnage-joueur-meshy--mixamo)).
+
 `b3-model.js` et `meshy-b3-data.js` portent le [B3 texturé à quatre places](b3-model.md) ; `fleet.js` définit ses quatre postes et `vehicle-livery.js` son repère coloré.
 Les six autres véhicules Meshy utilisent `meshy-texture.js` pour le décodage
 commun des maillages UV et des atlas, `m1-model.js`, `h2-model.js` et

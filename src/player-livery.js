@@ -26,7 +26,7 @@ export function identifyPlayer(
   const key = String(player.colorSequence) + ':' + player.name;
   if (person.userData.identity === key) return;
   for (const mesh of person.userData.initials || []) {
-    person.userData.rig.remove(mesh);
+    mesh.removeFromParent();
     mesh.material.map.dispose();
     mesh.material.dispose();
     mesh.geometry.dispose();
@@ -48,10 +48,12 @@ export function identifyPlayer(
   ctx.font = 'bold 148px sans-serif';
   ctx.fillText(playerInitials(player.name), 128, 181, 240);
   const meshes = [];
+  // Humanoids may give their own torso placement (issue #111 character).
+  const badge = person.userData.badge;
   for (const side of [-1, 1]) {
     const texture = new T.CanvasTexture(canvas);
     const mesh = new T.Mesh(
-      new T.PlaneGeometry(0.68, 0.68),
+      new T.PlaneGeometry(badge?.size ?? 0.68, badge?.size ?? 0.68),
       new T.MeshBasicMaterial({
         map: texture,
         polygonOffset: true,
@@ -59,10 +61,13 @@ export function identifyPlayer(
         polygonOffsetUnits: -2,
       }),
     );
-    mesh.position.set(0, 1.35, side * 0.256);
-    if (side < 0) mesh.rotation.y = Math.PI;
     mesh.userData.projectileSolid = false;
-    person.userData.rig.add(mesh);
+    if (badge) badge.anchors[side < 0 ? 0 : 1].add(mesh);
+    else {
+      mesh.position.set(0, 1.35, side * 0.256);
+      if (side < 0) mesh.rotation.y = Math.PI;
+      person.userData.rig.add(mesh);
+    }
     meshes.push(mesh);
   }
   person.userData.initials = meshes;
@@ -71,7 +76,7 @@ export function identifyPlayer(
 
 export function disposePlayerIdentity(person) {
   for (const mesh of person?.userData.initials || []) {
-    person.userData.rig.remove(mesh);
+    mesh.removeFromParent();
     mesh.geometry.dispose();
     mesh.material.map.dispose();
     mesh.material.dispose();
