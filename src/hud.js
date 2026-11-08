@@ -1,4 +1,5 @@
-import { availableShell } from './armament.js';
+import { availableShell, HEAVY } from './armament.js';
+import { FORTIFICATIONS } from './ground-fortifications.js';
 import { rangeReadout } from './equipment-controls.js';
 import { MAP } from './scale.js';
 import { MOBILE_FUSE } from './mobile-flak.js';
@@ -9,6 +10,8 @@ function equipmentModel({
   vehicle,
   seat,
   turret = false,
+  station = 'dca',
+  stationAmmo = 0,
   dead = false,
   hp = 100,
   speed = 0,
@@ -23,6 +26,32 @@ function equipmentModel({
 }) {
   if (dead || (!vehicle && !turret)) return null;
   const health = `${Math.round(hp)} PV`;
+  if (turret && station === 'antitank') {
+    const fort = FORTIFICATIONS.antitank;
+    return {
+      scope: 'antitank',
+      left: ['CANON LOURD', 'Élévation −5° à +40°', 'Pointage 45°/s', health],
+      right: [
+        'ARMEMENT',
+        ready ? 'PRÊT' : 'RECHARGE',
+        `Obus ${count(stationAmmo)}/${fort.ammo}`,
+        `Impact : ${fort.damage} dégâts · rayon ${formatDistance(HEAVY.antitank.radius)}`,
+      ],
+    };
+  }
+  if (turret && station === 'bunker') {
+    const fort = FORTIFICATIONS.bunker;
+    return {
+      scope: 'bunker',
+      left: ['BUNKER LEGO', health],
+      right: [
+        'ARMEMENT',
+        ready ? 'PRÊT' : 'RECHARGE',
+        `Balles ${count(stationAmmo)}/${fort.ammo}`,
+        `${fort.damage} dégâts par balle`,
+      ],
+    };
+  }
   if (turret) {
     const readout = rangeReadout(range);
     return {

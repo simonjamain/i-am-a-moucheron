@@ -1,6 +1,13 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 245,
+    changes: [
+      'Le canon lourd tire de vrais obus, rapides et puissants, à petite explosion, et peut enfin tirer à l’horizontale.',
+      'Son cercle d’accès est tout près du canon, avec son icône, et ses textes ne parlent plus de DCA.',
+    ],
+  },
+  {
     version: 244,
     changes: [
       'Le canon lourd devient un vrai obusier à taille humaine : il pivote lentement sur ses roues et s’élève jusqu’à 40°.',

@@ -15,7 +15,9 @@ export const FORTIFICATIONS = Object.freeze({
     hp: 180,
     ammo: 24,
     interval: 1.8,
-    damage: 225,
+    // Server shell (HEAVY.antitank): faster and harder-hitting than the tank HE
+    // shell, with a much smaller blast.
+    damage: 360,
     maxPerRoom: 8,
     // Map-unit radius swept by the player-scale howitzer (muzzle 3.4 m from the
     // axle, #113): placement spacing and collision box.

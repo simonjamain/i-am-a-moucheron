@@ -67,7 +67,10 @@ for (const role of Object.keys(SEAT_ROLE_NAMES)) {
 const client = readFileSync('src/client.js', 'utf8');
 assert.doesNotMatch(client, /vehicleHue|userData\.identification/);
 assert.doesNotMatch(client, /pilot: 'P', dorsal: 'D'/, 'no seat letters');
-assert.match(client, /drawSeatIcon\(c\.getContext\('2d'\), seatRole\(type, seat\), 128\)/);
+assert.match(client, /function roleEntry\(type, seat, role = seatRole\(type, seat\)\)/);
+assert.match(client, /drawSeatIcon\(c\.getContext\('2d'\), role, 128\)/);
+// Occupiable equipment circles carry an icon too: canon for the heavy gun.
+assert.match(client, /roleEntry\(null, null, st\.kind === 'antitank' \? 'cannon' : 'gunner'\)/);
 assert.match(client, /ring = roleEntry\(vehicle\.type, seat\)/);
 console.log(
   'Vehicle identity: no colour markers, original colours, white role icons for every seat.',

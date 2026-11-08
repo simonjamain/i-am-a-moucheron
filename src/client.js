@@ -63,6 +63,7 @@ import {
   BULLET_SPEED,
   FIRE_INTERVAL,
   stationAccess,
+  stationEntryOffset,
   stationExit,
   resolveLanding,
   stepWalker,
@@ -1082,8 +1083,16 @@ function accept(s, force = false) {
       boardingOpen = false;
       sound.play('board', camera.position, { ref: 8 });
       turretAim.yaw = 0;
-      turretAim.pitch = 0.2;
-      notify('DCA · Molette / [ ] : fusée · Clic : obus · F : sortir', 4);
+      const kind = stations[turretIndex]?.kind;
+      turretAim.pitch = kind === 'antitank' ? 0.05 : 0.2;
+      notify(
+        kind === 'antitank'
+          ? 'Canon lourd · Souris : pointer (lent) · Clic : obus · F : sortir'
+          : kind === 'bunker'
+            ? 'Bunker LEGO · Clic : balles · F : sortir'
+            : 'DCA · Molette / [ ] : fusée · Clic : obus · F : sortir',
+        4,
+      );
     }
     if (previousVehicle && !myVehicle) {
       hp = self.state.hp ?? 100;
@@ -2108,7 +2117,9 @@ function renderPaper() {
             ? activeTransfer.to_seat
             : activeTransfer.from_seat
           : selectedSeat,
-        snap?.vehicles.find((v) => v.id === (activeTransfer?.vehicle || selectedVehicle))?.type,
+        context === 'equipment'
+          ? stations[selectedEquipment]?.kind
+          : snap?.vehicles.find((v) => v.id === (activeTransfer?.vehicle || selectedVehicle))?.type,
       ),
       index,
       key,
@@ -2128,7 +2139,7 @@ function renderPaper() {
   $('paperVehicle').textContent = activeTransfer
     ? SEAT_NAMES[activeTransfer.from_seat] + ' ↔ ' + SEAT_NAMES[activeTransfer.to_seat]
     : context === 'equipment'
-      ? 'DCA · ' + stations[selectedEquipment].name
+      ? stationLabel(stations[selectedEquipment])
       : context === 'boarding'
         ? (VEHICLES[snap.vehicles?.find((v) => v.id === selectedVehicle)?.type]?.name ||
             'Appareil') +
@@ -2446,6 +2457,7 @@ function reconcileEquipment(next) {
       const at = colliders.indexOf(gun.userData.collider);
       if (at >= 0) colliders.splice(at, 1);
       scene.remove(stationRings[i]);
+      stationRings[i]?.userData.dispose?.();
       stationRings[i] = null;
       turrets[i] = null;
     }
@@ -2491,12 +2503,12 @@ function reconcileEquipment(next) {
     gun.userData.person = person;
     gun.userData.shotAt = 0;
     turrets[i] = gun;
-    const ring = entryRing.clone();
-    ring.position.set(
-      st.x + (isFortification(st.kind) ? 0.08 : MAP.metres(3)),
-      st.y + ACTOR_UNIT * 0.12,
-      st.z,
-    );
+    // Occupiable equipment circles carry their role icon (issue #106).
+    const ring =
+      st.kind === 'dca' || isFortification(st.kind)
+        ? roleEntry(null, null, st.kind === 'antitank' ? 'cannon' : 'gunner')
+        : entryRing.clone();
+    ring.position.set(st.x + stationEntryOffset(st), st.y + ACTOR_UNIT * 0.12, st.z);
     ring.scale.setScalar(ACTOR_UNIT);
     if (st.kind === 'dca' || st.kind === 'bed' || isFortification(st.kind)) scene.add(ring);
     stationRings[i] = ring;
@@ -2517,6 +2529,18 @@ function weaponDirection() {
     myVehicle?.type === 'helicopter' && crewSeat === 'copilot' ? heliTurretAim : turretAim,
   );
   return myVehicle && crewSeat !== 'pilot' ? d.applyQuaternion(me.quaternion) : d;
+}
+// Player-facing names: only real DCA posts are called DCA.
+function stationShortName(st) {
+  return st?.kind === 'antitank' ? 'Canon lourd' : st?.kind === 'bunker' ? 'Bunker' : 'DCA';
+}
+function stationLabel(st) {
+  if (!st) return 'Poste';
+  return st.kind === 'dca'
+    ? 'DCA ' + st.name
+    : st.kind === 'antitank'
+      ? 'Canon lourd anti-matériel'
+      : st.name || FORTIFICATIONS[st.kind]?.name || 'Poste';
 }
 function nearestStation() {
   const b = selfBase();
@@ -2698,22 +2722,18 @@ function updateVehicles(dt) {
   $('leavePlane').textContent = landed ? 'Sortir' : 'Sauter';
   $('vehicleInteract').classList.toggle('hidden', turretIndex < 0);
   $('turretFire').classList.toggle('hidden', turretIndex < 0 && !crew);
+  // Only the DCA has a time fuse; bunker and heavy gun have none.
   $('flakControls').classList.toggle(
     'hidden',
-    turretIndex < 0 || stations[turretIndex]?.kind === 'bunker',
+    turretIndex < 0 || stations[turretIndex]?.kind !== 'dca',
   );
   $('fuseDistance').textContent =
     formatDistance(MAP.metres(rangeReadout(flakRange).metres)) + ' · Shift / Ctrl';
   const occupiedStation = turretIndex >= 0 ? stations[turretIndex] : null;
-  const occupiedName =
-    occupiedStation?.kind === 'dca'
-      ? 'Canon Flak'
-      : FORTIFICATIONS[occupiedStation?.kind]?.name || 'Défense';
   $('vehicleState').textContent =
     turretIndex >= 0
-      ? occupiedName +
-        ' · ' +
-        occupiedStation.name +
+      ? (occupiedStation.kind === 'dca' ? 'Canon Flak · ' : '') +
+        stationLabel(occupiedStation) +
         ' · ' +
         Math.round(occupiedStation.hp ?? hp) +
         ' PV · ' +
@@ -2896,29 +2916,43 @@ function updateVehicles(dt) {
             1000 *
             ((self ? currentFactors().interval : 1) / (snap?.balance?.fireRate ?? 1));
         gun.userData.barrel++;
-        howitzer?.fire();
-        const fort = FORTIFICATIONS[station.kind];
-        const shot = fort
-          ? emitBullet(muzzle, dir, '#ffe49b', true, station.kind === 'antitank', {
-              wave: snap.wave,
-              baseDamage: fort.damage,
-              velocity: new T.Vector3(),
-            })
-          : bullet(muzzle, dir, '#ffe49b', true, true);
-        if (shot) {
-          const incarnation = snap.pilots.find((p) => p.id === id)?.incarnation;
-          action('fixed-dca-fire', { station: index, shot, incarnation });
+        const incarnation = snap.pilots.find((p) => p.id === id)?.incarnation;
+        if (howitzer) {
+          // Issue #113: a server shell (like the tank's), from the real barrel.
+          howitzer.fire();
+          combatEffects.muzzle(muzzle, dir);
+          sound.play('flak', muzzle, { ref: 35 });
+          action('antitank-fire', {
+            station: index,
+            shot: id + ':antitank:' + ++shotSequence,
+            incarnation,
+            direction: dir.toArray(),
+          });
+        } else {
+          const fort = FORTIFICATIONS[station.kind];
+          const shot = fort
+            ? emitBullet(muzzle, dir, '#ffe49b', true, false, {
+                wave: snap.wave,
+                baseDamage: fort.damage,
+                velocity: new T.Vector3(),
+              })
+            : bullet(muzzle, dir, '#ffe49b', true, true);
+          if (shot) action('fixed-dca-fire', { station: index, shot, incarnation });
         }
       }
     } else if (motion.fire && (station.ammo ?? 0) >= 1 && performance.now() > gun.userData.shotAt) {
       gun.userData.shotAt =
         performance.now() +
-        FLAK.interval *
+        (FORTIFICATIONS[station.kind]?.interval ?? FLAK.interval) *
           1000 *
           ((self ? currentFactors().interval : 1) / (snap?.balance?.fireRate ?? 1));
       gun.userData.barrel++;
-      howitzer?.fire();
-      bullet(muzzle, dir, '#91d9c4', false, station.kind !== 'bunker');
+      if (howitzer) {
+        // The shell itself arrives with the server ordnance.
+        howitzer.fire();
+        combatEffects.muzzle(muzzle, dir);
+        sound.play('flak', muzzle, { ref: 35 });
+      } else bullet(muzzle, dir, '#91d9c4', false, station.kind !== 'bunker');
     }
   }
 }
@@ -2941,12 +2975,12 @@ const entryRing = new T.Mesh(
 entryRing.rotation.x = -Math.PI / 2;
 entryRing.renderOrder = 5;
 const entryRings = new Map();
-function roleEntry(type, seat) {
+function roleEntry(type, seat, role = seatRole(type, seat)) {
   const g = new T.Group();
   g.add(entryRing.clone());
   const c = document.createElement('canvas');
   c.width = c.height = 128;
-  drawSeatIcon(c.getContext('2d'), seatRole(type, seat), 128);
+  drawSeatIcon(c.getContext('2d'), role, 128);
   const texture = new T.CanvasTexture(c),
     geometry = new T.PlaneGeometry(1, 1),
     material = new T.MeshBasicMaterial({ map: texture, transparent: true, depthWrite: false });
@@ -3085,12 +3119,12 @@ function updateBaseWorld(dt, now) {
       : bed
         ? 'Lit · E : contrat personnel de réapparition / résiliation'
         : station
-          ? 'DCA ' + stations[station.index].name + ' · E pour signer le dossier'
+          ? stationLabel(stations[station.index]) + ' · E pour signer le dossier'
           : v
             ? VEHICLES[v.type].name + ' · ' + SEAT_NAMES[v.entrySeat] + ' · E pour signer'
             : 'Rejoignez une porte · Un chasseur et un bombardier prêts au départ';
     $('boardButton').textContent = station
-      ? 'Signer · DCA · E'
+      ? 'Signer · ' + stationShortName(stations[station.index]) + ' · E'
       : v
         ? 'Embarquer · E'
         : 'Rejoindre un appareil';
@@ -5142,7 +5176,13 @@ async function fireHeavy(weapon = null) {
   }
 }
 // Neutral shell colours by weapon, identical for every player (issue #106).
-const SHELL_COLORS = { he: '#e0a33c', ap: '#cfd6dc', rocket: '#e0a33c', missile: '#e6e1cf' };
+const SHELL_COLORS = {
+  he: '#e0a33c',
+  ap: '#cfd6dc',
+  antitank: '#d9b45a',
+  rocket: '#e0a33c',
+  missile: '#e6e1cf',
+};
 const ordnanceModels = new Map();
 const missileExhaust = new MissileExhaust(T, scene);
 function updateOrdnance(dt) {
@@ -5203,6 +5243,8 @@ function updateContextHUD() {
           vehicle: myVehicle,
           seat: crewSeat,
           turret: turretIndex >= 0,
+          station: stations[turretIndex]?.kind || 'dca',
+          stationAmmo: stations[turretIndex]?.ammo ?? 0,
           dead: !!respawnAt,
           hp: crewSeat === 'pilot' ? hp : (myVehicle?.state.hp ?? hp),
           speed: vel.length(),
@@ -5215,7 +5257,11 @@ function updateContextHUD() {
           shell: selectedShell,
           range: flakRange,
           ready:
-            turretIndex >= 0 ? cooldown <= 0 : performance.now() >= nextHeavyAt && !heavyPending,
+            turretIndex >= 0
+              ? stations[turretIndex]?.kind === 'dca'
+                ? cooldown <= 0
+                : performance.now() >= (turrets[turretIndex]?.userData.shotAt ?? 0)
+              : performance.now() >= nextHeavyAt && !heavyPending,
           stall: !$('stallWarning').classList.contains('hidden'),
         })
       : null;

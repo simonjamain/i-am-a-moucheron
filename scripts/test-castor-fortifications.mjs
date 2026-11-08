@@ -2,8 +2,8 @@ import assert from 'node:assert/strict';
 import { Game } from '../server/game.js';
 import { VEHICLES } from '../src/fleet.js';
 import { FORTIFICATIONS } from '../src/ground-fortifications.js';
-import { stationAccess, stationExit } from '../src/sortie.js';
-import { ACTOR_UNIT } from '../src/scale.js';
+import { stationAccess, stationEntryOffset, stationExit } from '../src/sortie.js';
+import { ACTOR_UNIT, MAP } from '../src/scale.js';
 import { OFFICE_LAYOUT } from '../src/layout.js';
 import { advancePaidService } from '../src/paid-service.js';
 
@@ -47,13 +47,18 @@ const gun = room.groundDefense.structures.find((s) => s.kind === 'antitank');
 assert.equal(gun.ammo, FORTIFICATIONS.antitank.ammo);
 assert.equal(room.equipment[gun.slot], gun);
 
-// The visible access ring is 8 cm from the centre, outside the old 1.02 cm
-// paper-dialog radius. All stages must accept that same reachable position.
+// The visible access ring sits beside the post: 8 cm for the bunker, just
+// outside the 3.4 m sweep of the player-scale heavy gun (#113). All stages
+// must accept that same reachable position.
+const reach = { bunker: 0.09, antitank: MAP.metres(6) };
+assert.equal(stationEntryOffset({ kind: 'bunker' }), 0.08);
+assert.equal(stationEntryOffset({ kind: 'antitank' }), MAP.metres(4.5));
+assert.ok(MAP.metres(4.5) > FORTIFICATIONS.antitank.footprint, 'ring outside the gun sweep');
 for (const kind of ['bunker', 'antitank']) {
   const station = room.groundDefense.structures.find((s) => s.kind === kind);
-  const position = { x: station.x + 0.08, y: station.y, z: station.z };
+  const position = { x: station.x + stationEntryOffset(station), y: station.y, z: station.z };
   assert.ok(stationAccess(position, station), `${kind}: signature visible at access ring`);
-  assert.ok(!stationAccess({ ...position, x: station.x + 0.091 }, station));
+  assert.ok(!stationAccess({ ...position, x: station.x + reach[kind] * 1.01 }, station));
   assert.ok(!stationAccess({ ...position, y: station.y + 0.02 }, station));
   const members = ['Premier', 'Second'].map((name) => {
     const joined = game.join({ code: 'FORTIFY', name });
@@ -89,7 +94,7 @@ for (const kind of ['bunker', 'antitank']) {
   assert.equal(members[0].mode, 'foot');
   assert.equal(members[0].state.turret, null);
   const exit = stationExit(station);
-  assert.equal(exit.x, station.x + 0.09);
+  assert.equal(exit.x, station.x + (kind === 'antitank' ? MAP.metres(4.5) : 0.09));
   assert.equal(members[0].state.walkSpawn.x, (exit.x - OFFICE_LAYOUT.base.originX) / ACTOR_UNIT);
   assert.equal(members[0].state.walkSpawn.y, exit.y);
   sign(members[1]);
@@ -97,19 +102,34 @@ for (const kind of ['bunker', 'antitank']) {
 }
 assert.ok(!stationAccess({ x: 0.08, y: 0, z: 0 }, { kind: 'dca', x: 0, y: 0, z: 0 }));
 
-const fire = (member, station, shot) =>
-  game.command('FORTIFY', member.id, 'fixed-dca-fire', {
+// Issue #113: the heavy gun fires server shells along the barrel direction.
+const fire = (member, station, shot, direction = [0, 0.05, -1]) =>
+  game.command('FORTIFY', member.id, 'antitank-fire', {
     station: station.slot,
     shot,
     incarnation: member.incarnation,
+    direction,
   });
 // Isolate finite-ammunition assertions from the automatic paid Castor service.
 room.dollars = 0;
 p.mode = 'turret';
 p.state.turret = gun.slot;
+assert.throws(
+  () =>
+    game.command('FORTIFY', p.id, 'fixed-dca-fire', {
+      station: gun.slot,
+      shot: 'flak-shell',
+      incarnation: p.incarnation,
+    }),
+  /obus/,
+  'no DCA flak round from the heavy gun',
+);
+assert.throws(() => fire(p, gun, 'too-high', [0, 2, -1]), /Visée/, 'elevation above +40°');
+assert.throws(() => fire(p, gun, 'too-low', [0, -0.3, -1]), /Visée/, 'depression below -5°');
 fire(p, gun, 'shell-1');
 fire(p, gun, 'shell-1');
 assert.equal(gun.ammo, FORTIFICATIONS.antitank.ammo - 1, 'idempotent artillery round');
+assert.equal(room.ordnance.filter((o) => o.weapon === 'antitank').length, 1, 'one server shell');
 assert.throws(() => fire(p, gun, 'shell-too-fast'), /recharge/);
 now += 2000;
 fire(p, gun, 'shell-2');

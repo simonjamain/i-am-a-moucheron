@@ -20,10 +20,24 @@ export const AA_STATIONS = [
   { x: 0.1, y: 0.00005, z: -0.8, name: 'Sol central' },
   { x: 2.2, y: 0.00005, z: -2.65, name: 'Poubelle' },
 ];
+// Where the entry circle sits, beside the station (+X), inside its access
+// radius. The player-scale howitzer (#113) sweeps 3.4 m around its axle: its
+// circle stands just outside that sweep; the large bunker keeps its distances.
+export function stationEntryOffset(station) {
+  return station?.kind === 'antitank'
+    ? MAP.metres(4.5)
+    : isFortification(station?.kind)
+      ? 0.08
+      : MAP.metres(3);
+}
 export function stationAccess(
   p,
   station,
-  radius = isFortification(station?.kind) ? 0.09 : MAP.metres(3.4),
+  radius = station?.kind === 'antitank'
+    ? MAP.metres(6)
+    : isFortification(station?.kind)
+      ? 0.09
+      : MAP.metres(3.4),
 ) {
   return (
     !!p &&
@@ -34,7 +48,13 @@ export function stationAccess(
 }
 export function stationExit(station) {
   return {
-    x: station.x + (isFortification(station.kind) ? 0.09 : MAP.metres(3)),
+    x:
+      station.x +
+      (station.kind === 'antitank'
+        ? stationEntryOffset(station)
+        : isFortification(station.kind)
+          ? 0.09
+          : MAP.metres(3)),
     y: station.y + 0.05 * ACTOR_UNIT,
     z: station.z,
   };

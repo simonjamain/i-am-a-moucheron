@@ -1381,13 +1381,65 @@ for (const [type, seat, role] of [
             '\n\nLe bureau rappelle que changer de poste exige une signature, et ne transfère aucune arme au voisin. La pénurie de munitions ne constitue pas un cas de force administrative.',
         })),
     );
+// Fixed fortifications sign their own forms: only real DCA posts talk of fuses.
+// Ten variants per form: one commitment, five clauses, two closings.
+const FORTIFICATION_FORMS = {
+  antitank: {
+    name: 'canon lourd anti-matériel',
+    take: 'Je prends en charge le canon lourd, son pointage lent et son élévation limitée entre moins cinq et quarante degrés. Je reconnais que la pièce tourne sur ses roues à son rythme et non au mien.',
+    fire: 'Je réponds de chaque obus tiré, de sa trajectoire courbe et de sa courte explosion. Je vérifie qu’aucun allié ne se tient devant la bouche.',
+    clauses: [
+      'Je laisse le tube reculer à chaque tir et je n’y range ni tasse ni formulaire.',
+      'J’accepte que l’obus parte là où le tube pointe vraiment, et non là où mon intention se trouvait une seconde plus tôt. Le service balistique ne lit pas dans les pensées.',
+      'Je réserve ce canon aux cibles terrestres sérieuses. Vingt-quatre obus ne constituent pas une réserve illimitée, même rangés avec optimisme.',
+      'Je reçois la pièce flèches posées et roues propres. Toute rayure postérieure à ma signature sera réputée héroïque, donc à ma charge.',
+      'Je ne demanderai pas au canon de tirer plus vite en lui parlant gentiment. Le chargement obéit au règlement, pas à la politesse.',
+    ],
+  },
+  bunker: {
+    name: 'bunker LEGO',
+    take: 'Je prends en charge le bunker LEGO et sa mitrailleuse. Je m’engage à ne démonter aucune brique pour améliorer la vue.',
+    fire: 'Je réponds de chaque rafale tirée depuis les meurtrières. Je contrôle les obstacles et les alliés avant de tirer.',
+    clauses: [
+      'Je reconnais que les murs absorbent une partie des impacts et que le reste me concerne personnellement.',
+      'Toute brique manquante sera déclarée au service des petits éléments, ouvert sous le canapé.',
+      'J’accepte que les balles soient comptées une à une. Le bureau des munitions ne reconnaît pas les rafales imaginaires.',
+      'Je réserve la mitrailleuse aux insectes. Les briques voisines ne sont pas des cibles d’entraînement, même mal alignées.',
+      'Je signalerai mon départ du bunker. Un casque posé sur une brique ne vaut pas occupation du poste.',
+    ],
+  },
+};
+const FORTIFICATION_CLOSINGS = [
+  'Le dossier sera relié avec une agrafe immatérielle. Si cette agrafe tombe, merci de ne pas la chercher au sol : elle dépend du service des fournitures théoriques, ouvert seulement lorsque personne ne le consulte.',
+  'Le bureau des exceptions ne traite que les cas ordinaires afin de préserver ses statistiques. Le caractère exceptionnel de votre situation lui interdit donc de la recevoir.',
+];
+for (const [kind, forms] of Object.entries(FORTIFICATION_FORMS))
+  CONTRACTS['equipment:' + kind] = [
+    ['take', 'Prise de poste'],
+    ['fire', 'Autorisation de tir'],
+  ].map(([form, title], index) =>
+    forms.clauses.flatMap((clause, c) =>
+      FORTIFICATION_CLOSINGS.map((closing, k) => ({
+        title: title + ' · ' + forms.name,
+        code: 'EQUIPMENT–' + (index + 1) + '-' + kind + '-' + (c * 2 + k),
+        text: forms[form] + '\n\n' + clause + '\n\n' + closing,
+      })),
+    ),
+  );
+// For the 'equipment' context, `type` is the station kind (dca, bunker, antitank).
 export function contractKey(context, seat = 'pilot', type = null) {
   if (['helicopter', 'flaktruck'].includes(type)) seat = type + '-' + seat;
   if (type === 'tank' && seat === 'pilot') seat = 'tank-pilot';
   return (
     context +
     ':' +
-    (context === 'equipment' ? 'dca' : ['purgatory', 'super'].includes(context) ? 'soul' : seat)
+    (context === 'equipment'
+      ? CONTRACTS['equipment:' + type]
+        ? type
+        : 'dca'
+      : ['purgatory', 'super'].includes(context)
+        ? 'soul'
+        : seat)
   );
 }
 export class ContractBook {

@@ -74,6 +74,7 @@ const files = {
       'ground-model',
       'fortification-model',
       'howitzer-model',
+      'howitzer-geometry',
       'howitzer-data',
       'model-preview',
       'ground-defense',

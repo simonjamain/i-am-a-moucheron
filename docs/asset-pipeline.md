@@ -156,6 +156,10 @@ Modèle fourni par l'utilisateur pour l'[issue #113](https://github.com/simonjam
   −5° et +40° (au-delà, la culasse traverserait les flèches) ; le tir part dans la
   direction réelle du tube. Recul de 30 % du tube en 0,06 s, retour en 0,6 s,
   secousse de 6 cm de l'affût. `scripts/test-howitzer.mjs` couvre ces points.
+- Tir : `src/howitzer-geometry.js` (sans three.js) reprend les pivots mesurés sur
+  le modèle pour que le serveur lance l'obus `HEAVY.antitank` depuis la vraie
+  bouche ; le test vérifie l'écart modèle/serveur (< 2 cm). `scripts/test-antitank-shell.mjs`
+  couvre la balistique serveur, la sortie de bouche à l'horizontale et l'impact.
 
 ## Intégration Meshy au jeu
 
