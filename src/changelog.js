@@ -1,6 +1,12 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 241,
+    changes: [
+      'La tourelle automatique du Castor est à la bonne taille : son canon a la même taille que celui du Castor.',
+    ],
+  },
+  {
     version: 240,
     changes: [
       'Les roquettes et le missile du H2 laissent une fumée plus marquée et brillent de loin.',

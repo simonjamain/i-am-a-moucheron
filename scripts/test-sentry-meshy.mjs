@@ -8,18 +8,26 @@ import {
   createSentryModel,
   SENTRY_MAX_ELEVATION,
   SENTRY_MIN_ELEVATION,
+  SENTRY_SCALE,
 } from '../src/sentry-model.js';
 
 const assets = [SOCLE, TETE, CANON, CAPTEUR];
 const expected = [3149, 4380, 3684, 2413];
-assert.equal(new Set(assets.map((a) => a.sourceSha256)).size, 4, 'distinct approved Meshy originals');
+assert.equal(
+  new Set(assets.map((a) => a.sourceSha256)).size,
+  4,
+  'distinct approved Meshy originals',
+);
 for (let i = 0; i < assets.length; i++) {
   const a = assets[i];
   assert.equal(a.parts.length, 1, 'each piece is generated independently');
   assert.equal(a.triangles, expected[i]);
   assert.deepEqual(a.sourceTextureResolution, [2048, 2048]);
   assert.deepEqual(a.atlasResolution, [1024, 1024]);
-  assert.ok(a.texture.startsWith('data:image/webp;base64,'), 'Meshy base colors kept in a WebP atlas');
+  assert.ok(
+    a.texture.startsWith('data:image/webp;base64,'),
+    'Meshy base colors kept in a WebP atlas',
+  );
   assert.equal(a.parts[0].pivot.length, 3);
   assert.equal(Buffer.from(a.parts[0].positions, 'base64').byteLength, a.vertices * 3 * 2);
   assert.equal(Buffer.from(a.parts[0].uv, 'base64').byteLength, a.vertices * 2 * 2);
@@ -53,7 +61,7 @@ const horizontal = muzzle.getWorldPosition(new T.Vector3());
 pitch.rotation.x = Math.PI / 2;
 world.updateMatrixWorld(true);
 const vertical = muzzle.getWorldPosition(new T.Vector3());
-assert.ok(vertical.y - horizontal.y > 0.04, 'gun barrel points vertically to +90°');
+assert.ok(vertical.y - horizontal.y > 0.04 * SENTRY_SCALE, 'gun barrel points vertically to +90°');
 const a = createSentryModel(T);
 const b = createSentryModel(T);
 assert.notEqual(a.pitch, b.pitch, 'independent pivots per sentry');
