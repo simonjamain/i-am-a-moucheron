@@ -231,6 +231,11 @@
       .stat b.lime {
         color: var(--acid);
       }
+      #labOpen.debugOn {
+        background: #d5ef73;
+        color: #132e23;
+        font-weight: bold;
+      }
       #roomTag {
         position: absolute;
         right: 32px;
@@ -361,7 +366,7 @@
       #actions {
         position: absolute;
         right: 32px;
-        bottom: 32px;
+        bottom: 251px; /* just above the enlarged radar (issue #135) */
         display: flex;
         gap: 7px;
       }
@@ -390,44 +395,18 @@
         color: var(--acid);
         letter-spacing: 1px;
       }
+      /* Issue #135: top and right edges unchanged (243 px from the bottom, 32 px
+         from the right); the bottom edge moves down into the freed corner and
+         the square grows to the left (same 1:1 ratio as the 220×220 canvas). */
       #radar {
         position: absolute;
         right: 32px;
-        bottom: 93px;
-        width: 150px;
-        height: 150px;
+        bottom: 32px;
+        width: 211px;
+        height: 211px;
         background: #0c211ecf;
         border: 1px solid var(--line);
         border-radius: 7px;
-      }
-      #help {
-        position: fixed;
-        z-index: 9;
-        inset: 0;
-        background: #041311cc;
-        display: grid;
-        place-items: center;
-        backdrop-filter: blur(10px);
-      }
-      #help article {
-        max-width: 560px;
-        padding: 30px;
-        background: #132f29;
-        border: 1px solid #50675b;
-        border-radius: 10px;
-        margin: 20px;
-        line-height: 1.7;
-      }
-      #help h2 {
-        font:
-          35px 'Barlow Condensed',
-          sans-serif;
-        text-transform: uppercase;
-        margin: 0 0 20px;
-      }
-      #help p {
-        color: #b5c7bd;
-        font-size: 13px;
       }
       #touch {
         position: absolute;
@@ -455,9 +434,21 @@
         background: #d5ef73bb !important;
         color: #132e23 !important;
       }
+      #footTouch {
+        display: none;
+      }
       @media (pointer: coarse) {
         #touch.playing {
           display: flex;
+        }
+        #footTouch:not(.hidden) {
+          position: absolute;
+          left: 10px;
+          bottom: 10px;
+          display: flex;
+          gap: 8px;
+          align-items: end;
+          pointer-events: auto;
         }
         .bottomkeys {
           display: none;
@@ -470,7 +461,10 @@
           bottom: 175px;
         }
         #radar {
+          /* Touch controls own the bottom: keep the former size and place. */
           bottom: 225px;
+          width: 150px;
+          height: 150px;
         }
       }
       @media (max-width: 700px) {
@@ -542,6 +536,17 @@
         }
         footer {
           left: 20px;
+        }
+      }
+      @media (max-width: 700px) and (pointer: fine) {
+        /* Narrow desktop windows: top edge kept (208 px), bigger square. */
+        #radar {
+          bottom: 32px;
+          width: 176px;
+          height: 176px;
+        }
+        #actions {
+          bottom: 216px;
         }
       }
       #purgatory {
@@ -782,10 +787,6 @@
         width: 42vw;
         line-height: 1.7;
       }
-      #help article {
-        max-height: 90vh;
-        overflow: auto;
-      }
       @media (max-width: 700px) {
         #actions {
           max-width: 260px;
@@ -854,29 +855,6 @@
           max-width: 45%;
           font-size: 11px;
         }
-      }
-      #baseActions {
-        position: absolute;
-        left: 22px;
-        bottom: 22px;
-        width: 330px;
-        background: #0c211ee8;
-        border: 1px solid #d5ef7340;
-        border-radius: 10px;
-        padding: 18px;
-        pointer-events: auto;
-      }
-      #baseActions h2 {
-        font:
-          29px 'Barlow Condensed',
-          sans-serif;
-        margin: 8px 0;
-      }
-      #baseActions p {
-        line-height: 1.6;
-      }
-      #baseActions .soulControls {
-        margin-top: 10px;
       }
       #papers {
         position: fixed;
@@ -1054,15 +1032,6 @@
         margin: 0;
       }
       @media (max-width: 700px) {
-        #baseActions {
-          left: 10px;
-          bottom: 10px;
-          width: 280px;
-          padding: 12px;
-        }
-        #baseActions h2 {
-          font-size: 23px;
-        }
         #papers {
           left: 10px;
           right: 10px;
@@ -1123,9 +1092,6 @@
           right: 10px;
           bottom: 155px;
           max-width: 210px;
-        }
-        #baseActions {
-          width: 260px;
         }
       }
       /* The signed sheet is the centre of the game: paper, ink, stamp, archive. */
@@ -1267,16 +1233,6 @@
         border: 1px solid #287c51;
         transform: rotate(-12deg);
         padding: 2px;
-      }
-      #seatChoices {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 6px;
-        margin: 10px 0;
-      }
-      #seatChoices button {
-        font-size: 11px;
-        padding: 7px 9px;
       }
       #flakControls {
         width: 100%;
@@ -1876,7 +1832,7 @@
       #aimRange small {
         font-size: 9px;
       }
-      :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel, #labPanel) {
+      :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel) {
         position: fixed;
         inset: 0;
         z-index: 45;
@@ -1885,7 +1841,7 @@
         background: #09211bd6;
         padding: 20px;
       }
-      :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel, #labPanel) > article {
+      :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel) > article {
         width: min(1080px, 100%);
         max-height: 90dvh;
         overflow: auto;
@@ -1896,28 +1852,28 @@
         box-shadow: 0 14px 60px #0007;
         font-family: Georgia, serif;
       }
-      :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel, #labPanel) header {
+      :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel) header {
         position: static;
         display: flex;
         align-items: start;
         justify-content: space-between;
         gap: 20px;
       }
-      :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel, #labPanel) h2 {
+      :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel) h2 {
         margin: 0 0 8px;
         font-size: 30px;
         font-style: italic;
         font-weight: 400;
       }
-      :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel, #labPanel) h3 {
+      :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel) h3 {
         font-size: 32px;
         font-weight: 400;
         margin: 22px 0;
       }
-      :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel, #labPanel) p {
+      :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel) p {
         line-height: 1.6;
       }
-      :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel, #labPanel) button {
+      :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel) button {
         background: #294938;
         color: #f3edcf;
         padding: 10px 14px;
@@ -1925,44 +1881,37 @@
         border-radius: 4px;
         cursor: pointer;
       }
-      :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel, #labPanel) button:disabled {
+      :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel) button:disabled {
         opacity: 0.5;
         cursor: default;
       }
-      :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel, #labPanel) [data-bank-cards] {
+      :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel) [data-bank-cards] {
         display: grid;
         grid-template-columns: repeat(3, minmax(0, 1fr));
         gap: 16px;
         margin: 20px 0;
       }
-      :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel, #labPanel)
-        [data-bank-cards]
-        article {
+      :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel) [data-bank-cards] article {
         padding: 18px;
         border: 1px solid #a7a17c;
         background: #fff8df55;
       }
-      :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel, #labPanel)
-        [data-bank-cards]
-        button {
+      :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel) [data-bank-cards] button {
         display: block;
         width: 100%;
         margin-top: 14px;
       }
-      :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel, #labPanel)
-        [data-bank-cards]
-        small {
+      :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel) [data-bank-cards] small {
         letter-spacing: 1px;
       }
-      :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel, #labPanel)
-        [data-bank-status] {
+      :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel) [data-bank-status] {
         min-height: 1.5em;
         font-weight: bold;
       }
-      :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel, #labPanel) [data-bank-text] {
+      :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel) [data-bank-text] {
         white-space: pre-line;
       }
-      :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel, #labPanel) canvas {
+      :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel) canvas {
         width: min(100%, 650px);
         height: 150px;
         touch-action: none;
@@ -1970,23 +1919,23 @@
         display: block;
         background: #fff9e5;
       }
-      :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel, #labPanel) .bankTable {
+      :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel) .bankTable {
         overflow: auto;
         margin: 15px 0;
       }
-      :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel, #labPanel) table {
+      :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel) table {
         width: 100%;
         border-collapse: collapse;
         font-size: 12px;
       }
-      :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel, #labPanel) th,
-      :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel, #labPanel) td {
+      :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel) th,
+      :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel) td {
         padding: 8px;
         text-align: left;
         border-bottom: 1px solid #b6b18c;
         white-space: nowrap;
       }
-      :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel, #labPanel) .bankHint {
+      :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel) .bankHint {
         font-size: 12px;
       }
       @media (max-width: 700px) {
@@ -2024,14 +1973,13 @@
           top: 34px;
           bottom: auto;
         }
-        :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel, #labPanel) {
+        :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel) {
           padding: 8px;
         }
-        :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel, #labPanel) > article {
+        :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel) > article {
           padding: 14px;
         }
-        :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel, #labPanel)
-          [data-bank-cards] {
+        :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel) [data-bank-cards] {
           grid-template-columns: 1fr;
         }
       }
@@ -2210,45 +2158,8 @@
         border-radius: 8px;
         font-size: 13px;
       }
-      #baseActions {
-        bottom: 110px;
-      }
       #placementControls {
         bottom: 100px;
-      }
-      #labPanel {
-        z-index: 102;
-      }
-      /* Ne pas utiliser footer ici : le footer global est positionné en fixed. */
-      #labPanel .lab-actions {
-        position: static;
-        display: flex;
-        flex-wrap: wrap;
-        align-items: end;
-        gap: 12px;
-        margin: 12px 0 20px;
-      }
-      #labPanel .lab-actions > button { min-height: 42px; }
-      #labPanel .lab-actions > label { flex: 1 1 220px; min-width: 0; }
-      #labPanel .lab-actions :is(select, input) { width: 100%; box-sizing: border-box; }
-      #labPanel h3 { font-size: 23px; margin: 22px 0 8px; border-top: 1px solid #b6b18c; padding-top: 16px; }
-      #labPanel p { margin: 8px 0; }
-      @media (max-width: 600px) {
-        #labPanel .lab-actions { display: grid; grid-template-columns: minmax(0, 1fr); }
-        #labPanel .lab-actions > button, #labPanel .lab-actions > label { width: 100%; min-width: 0; }
-      }
-      #labPanel label {
-        display: grid;
-        gap: 6px;
-      }
-      #labPanel :is(select, input) {
-        min-width: min(220px, 70vw);
-        max-width: 100%;
-        padding: 8px;
-        color: #253c2d;
-        background: #fffbea;
-        border: 1px solid #6d7756;
-        font: inherit;
       }
       #flightSettingsPanel {
         z-index: 101;
@@ -2510,9 +2421,8 @@
       </div>
       <div id="roomTag">
         <button id="flightSettingsOpen">Pilotage</button>
-        <button id="labOpen" title="Mode debug commun à la room">Debug</button>
-        <button id="share" title="Copier le lien de la partie">
-          ↗ <span id="roomCode">BUREAU</span>
+        <button id="labOpen" aria-pressed="false" title="Mode debug commun à la room">
+          Debug : OFF
         </button>
       </div>
       <div id="players"></div>
@@ -2521,23 +2431,15 @@
         <p id="phaseText">Les pilotes prennent position.</p>
         <button id="start" class="primary">Lancer la vague →</button>
       </div>
-      <section id="baseActions" class="hidden">
-        <div class="eyebrow">Base Alpha · À pied</div>
-        <h2>Votre avion vous attend.</h2>
-        <p id="baseStatus"></p>
-        <p class="small">
-          Flèches / ZQSD : courir · Espace au sol : jet de nettoyage ; en l’air : parachute.<br />Souris
-          capturée / glisser : regarder. Échap : curseur libre. Molette : zoom. Rejoignez le cercle
-          vert pour signer.
-        </p>
-        <div id="seatChoices"></div>
-        <button id="boardButton" class="primary" disabled>Dossier d’embarquement · E</button>
-        <button id="baseHelp">Aide</button>
+      <!-- Issue #135: no on-foot help panel. Touch screens keep only the controls
+           that have no physical key there: walk arrows and the interaction (E). -->
+      <div id="footTouch" class="hidden">
         <div class="soulControls">
           <button data-key="ArrowLeft">←</button><button data-key="ArrowUp">↑</button
           ><button data-key="ArrowDown">↓</button><button data-key="ArrowRight">→</button>
         </div>
-      </section>
+        <button id="boardButton" class="primary" disabled aria-label="Interagir (E)">E</button>
+      </div>
       <div id="crosshair" aria-label="Direction des canons"></div>
       <div id="contextHUD" class="hidden" aria-label="Informations du poste">
         <section class="contextRail left" tabindex="0" aria-label="État du poste">
@@ -2583,8 +2485,7 @@
       </div>
       <canvas id="radar" width="220" height="220"></canvas>
       <div id="actions">
-        <button id="captureMouse">Capturer la souris</button
-        ><button id="helpButton">Commandes ?</button>
+        <button id="captureMouse">Capturer la souris</button>
       </div>
       <div id="touch">
         <div class="dir">
@@ -2749,66 +2650,6 @@
         </footer>
       </article>
     </section>
-    <section
-      id="labPanel"
-      class="hidden"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="labTitle"
-    >
-      <article>
-        <header>
-          <div>
-            <h2 id="labTitle">Mode debug</h2>
-            <p>Un interrupteur commun à la room : il change la partie de tous les joueurs connectés.</p>
-          </div>
-          <button data-lab-close aria-label="Fermer le mode debug">✕</button>
-        </header>
-        <p data-lab-state></p>
-        <div class="lab-actions">
-          <button data-lab-enable>Activer le mode debug</button>
-          <button data-lab-exit hidden>Désactiver et réinitialiser la partie</button>
-        </div>
-        <p>
-          Actif : argent illimité, toutes les constructions et améliorations débloquées,
-          aucun dégât de chute, défaite impossible (les PV de la poubelle restent comptés,
-          même négatifs).
-        </p>
-        <h3>Outils de test</h3>
-        <div class="lab-actions">
-          <label>Carte précise <select data-lab-card></select></label>
-          <button data-lab-card-add>Ajouter un niveau de cette carte</button>
-        </div>
-        <h3>Vagues</h3>
-        <div class="lab-actions">
-          <label
-            >Vague à préparer
-            <input data-lab-wave type="number" min="1" max="100" step="1" value="1"
-          /></label>
-          <button data-lab-wave-go>Préparer</button>
-          <button data-lab-start>Lancer immédiatement</button>
-          <button data-lab-finish>Terminer sans infestation</button>
-        </div>
-        <h3>Scénarios</h3>
-        <p>
-          Sauvegardez et rejouez jusqu’à cinq configurations temporaires.
-        </p>
-        <div class="lab-actions">
-          <label
-            >Nom du scénario <input data-lab-name maxlength="50" value="Essai de construction"
-          /></label>
-          <button data-lab-save>Enregistrer l’état</button>
-        </div>
-        <div class="lab-actions">
-          <label
-            >Scénario <select data-lab-scenarios aria-label="Scénario enregistré"></select
-          ></label>
-          <button data-lab-load>Recharger</button>
-          <button data-lab-delete>Supprimer</button>
-        </div>
-        <p data-lab-status role="status" aria-live="polite"></p>
-      </article>
-    </section>
     <section id="bank" class="hidden" role="dialog" aria-modal="true" aria-labelledby="bankTitle">
       <article>
         <header>
@@ -2873,101 +2714,6 @@
       <button id="placeCancel">Annuler</button
       ><small>E : poser · Échap : conserver pour plus tard · Achat déjà payé</small>
     </div>
-    <div id="help" class="hidden">
-      <article>
-        <h2>Miniatures, grandeur réelle.</h2>
-        <p>
-          <b>Échelle de la carte :</b> 3/1000. Le décor est exprimé en mètres : bureau de 90 cm,
-          personnage de référence de 1,80 m, soit 5,4 mm sur la carte. Le HUD affiche les
-          distances et vitesses réelles du bureau (mm, cm, m ; cm/s ou m/s). Tailles,
-          déplacements, portées et sons utilisent le même ratio.
-        </p>
-        <p>
-          <b>Embarquement :</b> un Chasseur M1 et un Bombardier B3 attendent au départ. Marchez avec
-          ZQSD / flèches, rejoignez le cercle de la porte, puis signez le dossier du poste choisi.
-          Le bombardier accueille un pilote, un mitrailleur dorsal, un mitrailleur de queue et un
-          mitrailleur ventral. Chaque poste est réservé au terme des deux signatures. Seule sa
-          destruction fournit un remplaçant gratuit ; les appareils achetés ne sont pas remplacés.
-          Les autres places d’un avion posé restent accessibles.
-        </p>
-        <p>
-          <b>Signature :</b> dessinez avec la souris ou au doigt, puis déposez le document. Le
-          tampon réagit dès le clic ; les feuilles validées sont classées en bas du dossier. Vous
-          pouvez effacer la signature entière avant de valider. Le curseur est libéré pendant la
-          paperasse.
-        </p>
-        <p>
-          <b>Pilotage :</b> la souris choisit une direction, l’avion la rejoint avec son inertie.
-          Z/S ou Haut/Bas : tangage ; Q/D ou Gauche/Droite : roulis ; A/E : gouverne. Ces commandes
-          sont prioritaires sur l’assistance à la souris tant qu’elles sont maintenues. Maj augmente
-          les gaz, Ctrl les réduit et freine au sol. C maintenu : regard libre. Clic gauche :
-          mitrailleuses du chasseur. Espace : bombes sur les avions équipés. Le bombardier est plus
-          lent et ses armes sont servies par les deux mitrailleurs.
-        </p>
-        <p>
-          <b>Se poser et sortir :</b> ailes à plat et descente douce. Réduisez les gaz, puis
-          immobilisez l’avion avant de sortir avec F. En vol, F commence une chute libre ; Espace
-          ouvre/replie le parachute. Si le pilote abandonne l’appareil en vol, les autres occupants
-          sautent aussi. E permet de remonter dans un appareil posé.
-        </p>
-        <p>
-          <b>DCA :</b> rejoignez le cercle, appuyez sur E et signez les deux documents. Souris /
-          stick droit : viser. Molette, [ / ] ou boutons − / + : régler la fusée entre 30 cm et
-          3,6 m. Clic / Espace : un obus toutes les 0,7 s, en alternance entre les
-          deux tubes. Le cercle d’éclatement montre son rayon de 2,4 cm. Un obus qui
-          heurte un obstacle avant sa distance d’armement n’explose pas. F : quitter le canon. Les
-          tirs et éclatements peuvent endommager les alliés.
-        </p>
-        <p>
-          <b>Mitrailleurs :</b> souris / stick droit pour orienter la tourelle, clic / Espace pour
-          tirer. F ou le bouton de sortie pour quitter le poste. Échap libère le curseur et
-          neutralise les commandes ; l’action continue. Cliquez dans le décor pour reprendre.
-        </p>
-        <p>
-          <b>Vagues :</b> « Lancer la partie » démarre un compte à rebours de dix secondes. Ensuite,
-          chaque vague est suivie de soixante secondes de préparation maximum. Vous pouvez
-          déclencher la suivante plus tôt. Le départ est progressif : six moucherons pour la
-          première vague, puis de nouveaux types introduits petit à petit. Chaque vague survivante
-          verse une prime commune ; protégez la poubelle.
-        </p>
-        <p>
-          <b>Purgatoire :</b> les moucherons font la queue. Le pistolet inflige 10 dégâts par appui,
-          sans recharge. Une âme tuée est libérée et rapporte un dollar commun, comme au guichet.
-          Trois signatures ramènent au bureau. Mourir ici mène au super purgatoire : cinq contrats,
-          puis retour au dossier classique à recommencer. Chaque retour restaure 100 PV et recrée le
-          corps au départ, sauf contrat de lit actif.
-        </p>
-        <p>
-          <b>Banquier :</b> N ou bouton Banquier, accessible aussi dans les purgatoires. Trois
-          offres ou prêts partagés ; lire puis signer dans le cadre. Échap ferme le guichet.
-        </p>
-        <p>
-          <b>Armes lourdes :</b> Clic gauche : canon du tank ; Espace : coaxiale ou bombes (0,5 s) ;
-          Shift HE / Ctrl AP au tank. DCA : Shift augmente, Ctrl diminue la distance affichée en
-          mètres réels près du viseur. Clic droit maintenu : zoom. Au canon du tank, C maintenu
-          permet d’observer sans déplacer la tourelle ni tirer.
-        </p>
-        <p>
-          <b>Lits et chute :</b> achetez un lit à placer sur une surface dégagée, puis E au lit pour
-          signer le point personnel ou résilier le lit actif. Un lit impraticable renvoie au départ.
-          Les impacts rapides peuvent être mortels ; le parachute freine progressivement et peut
-          être ouvert/replié avec Espace.
-        </p>
-        <p>
-          <b>Manette standard :</b> stick gauche pour marcher ou piloter ; stick droit pour regarder
-          / gouverne en vol ; RT/LT pour les gaz ; A/Croix pour tirer (au purgatoire, un appui
-          par balle au pistolet), Y/Triangle pour ouvrir un dossier. Signature à la souris ou au toucher. H :
-          aide, R : retour volontaire au purgatoire.
-        </p>
-        <p>
-          <b>Son :</b> moteurs, tirs, souffle et sirène de piqué sont spatialisés. La sirène monte
-          lorsque le chasseur plonge rapidement. Volume et coupure restent disponibles. Casque
-          conseillé.
-        </p>
-        <p id="networkDetails" class="small"></p>
-        <button id="closeHelp" class="primary">Retour au vol →</button>
-      </article>
-    </div>
     <div id="sortieControls" class="hidden">
       <div id="vehicleState"></div>
       <div id="flakControls" class="hidden">
@@ -2999,20 +2745,5 @@
       </header>
       <div id="changelogEntries" tabindex="0" aria-label="Historique des versions"></div>
     </dialog>
-    <button
-      id="restartGame"
-      hidden
-      style="
-        position: fixed;
-        right: 8px;
-        top: 4px;
-        z-index: 200;
-        font-size: 11px;
-        padding: 4px 8px;
-        opacity: 0.8;
-      "
-    >
-      Recommencer la partie
-    </button>
   </body>
 </html>

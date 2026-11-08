@@ -61,10 +61,9 @@ pattes restent relevées. Marge terrestre de 25 mm conservée pour les cafards,
 ce qui garde aussi un passage dégagé pour les fourmis plus petites. Composition,
 PV, dégâts et récompenses inchangés.
 
-Le bouton permanent « Recommencer la partie » libère le curseur et demande
-« Recommencer pour tout le monde ? ». Annuler ne change pas la salle. Confirmer
-réutilise la remise à zéro serveur, avec l'epoch de départ pour dédupliquer deux
-confirmations concurrentes. Les pseudos et la salle restent ; monnaie, prêts,
+Le bouton « Recommencer la partie » a été retiré du HUD (issue #135). La remise à
+zéro serveur reste utilisée par « Lancer » après une défaite et par la sortie du
+mode debug, avec l'epoch de départ pour dédupliquer deux demandes concurrentes. Les pseudos et la salle restent ; monnaie, prêts,
 installations, véhicules, vagues et contrats sont recréés. Projectiles personnels,
 salves et rapports d'appareils sans pilote sont nettoyés côté client.
 

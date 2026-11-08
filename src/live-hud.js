@@ -133,7 +133,7 @@ export function controlHintItems({
   if (building) return buildingHints(building);
   if (placing)
     return ['ZQSD / flèches : marcher', 'Souris : orienter', 'E : poser', 'Échap : conserver'];
-  const common = ['N : banque', 'H : aide', 'Échap : curseur'];
+  const common = ['N : banque', 'Échap : curseur'];
   let items;
   if (station)
     items = [

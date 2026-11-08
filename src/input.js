@@ -8,7 +8,6 @@ export const neutralPad = () => ({
   dash: false,
   guard: false,
   start: false,
-  help: false,
   connected: false,
   label: '',
 });
@@ -32,6 +31,5 @@ export function readPad(pads) {
     dash: button(1) > 0.5,
     guard: button(4) > 0.5,
     start: button(9) > 0.5,
-    help: button(8) > 0.5,
   };
 }

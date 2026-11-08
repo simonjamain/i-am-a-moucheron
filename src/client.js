@@ -91,7 +91,15 @@ import { createGraphics } from '/graphics.js';
 import { MidgeBatch } from '/midge-batch.js';
 import { SpiderlingBatch } from '/spiderling-batch.js';
 import { createOffice } from '/office.js';
-import { aircraftBay, baseBody, baseWorld, baseAccess, advanceBase, aircraftPose } from '/base.js';
+import {
+  aircraftBay,
+  baseBody,
+  baseWorld,
+  baseAccess,
+  advanceBase,
+  aircraftPose,
+  footstepsAudible,
+} from '/base.js';
 import { SpatialAudio, swarmAudioGroups } from '/audio.js';
 import { advanceArena, deskOccupant, bodyMotion, mergeOwnedArena } from '/purgatory-physics.js';
 import {
@@ -363,13 +371,10 @@ function groundActive() {
     !spectating &&
     ((onFoot && !myVehicle) || !!respawnAt) &&
     $('papers').classList.contains('hidden') &&
-    $('help').classList.contains('hidden') &&
     !$('changelogDialog').open &&
     !$('waveCouncil').open &&
-    !groundDefenseUI.opened &&
     $('bedPanel').classList.contains('hidden') &&
     $('purchasePanel').classList.contains('hidden') &&
-    $('labPanel').classList.contains('hidden') &&
     $('flightSettingsPanel').classList.contains('hidden') &&
     $('bank').classList.contains('hidden') &&
     $('shop').classList.contains('hidden') &&
@@ -600,7 +605,6 @@ function networkStatus() {
     $('net').title =
       'Serveur en mémoire · mouvements à 20 Hz · commandes fiables sur UDP' +
       (s?.error ? ' · ' + s.error : '');
-    $('networkDetails').textContent = $('net').textContent + ' — ' + $('net').title;
     return;
   }
   const s = peerMotion?.stats(),
@@ -628,7 +632,6 @@ function networkStatus() {
     (!s?.enabled ? ' · WebRTC indisponible dans ce navigateur' : '') +
     (s?.udp ? ' · UDP confirmé sur ' + s.udp + ' liaison(s)' : '') +
     (s?.error ? ' · RTC : ' + s.error : '');
-  $('networkDetails').textContent = $('net').textContent + ' — ' + $('net').title;
 }
 const vel = new T.Vector3(0, 0, 0),
   omega = new T.Vector3(),
@@ -685,12 +688,9 @@ function canCapture() {
     joined &&
     !spectating &&
     $('papers').classList.contains('hidden') &&
-    $('help').classList.contains('hidden') &&
     !$('changelogDialog').open &&
     !$('waveCouncil').open &&
-    !groundDefenseUI.opened &&
     $('shop').classList.contains('hidden') &&
-    $('labPanel').classList.contains('hidden') &&
     $('flightSettingsPanel').classList.contains('hidden') &&
     $('bank').classList.contains('hidden') &&
     $('bedPanel').classList.contains('hidden') &&
@@ -1341,10 +1341,8 @@ $('form').addEventListener('submit', async (e) => {
     $('lobby').classList.add('hidden');
     $('shade').classList.add('hidden');
     $('sceneLabel').classList.add('hidden');
-    $('restartGame').hidden = false;
     $('hud').classList.remove('hidden');
     $('touch').classList.add('playing');
-    $('roomCode').textContent = room;
     history.replaceState({}, '', '?room=' + room);
     camera.position.copy(me.position).add(new T.Vector3(0, 4, 12).multiplyScalar(ACTOR_UNIT));
     captureMouse();
@@ -1438,48 +1436,16 @@ mountChangelog({
     clearControls();
   },
 });
-$('restartGame').onclick = async () => {
-  if (!joined) return;
-  releaseMouse();
-  const epoch = snap.base.epoch;
-  if (!confirm('Recommencer pour tout le monde ?')) return;
-  try {
-    await action('reset', { epoch });
-  } catch (error) {
-    notify(error.message, 3);
-  }
-};
 function launchWave() {
   if (snap?.phase === 'lost') return action('reset', { epoch: snap.base.epoch });
   if (!snap?.mission_started) return action('start');
   if (snap.preparation?.winner) return action('start', { preparation: snap.preparation.id });
 }
 $('start').onclick = launchWave;
-$('share').onclick = async () => {
-  try {
-    await navigator.clipboard.writeText(location.href);
-    notify('Lien de partie copié', 2);
-  } catch (e) {
-    notify('Code de partie : ' + room, 3);
-  }
-};
-$('helpButton').onclick = () => {
-  releaseMouse();
-  if (flightTuningUI.opened || bankUI.opened || bedUI.opened || purchaseUI.opened) return;
-  $('help').classList.remove('hidden');
-};
-$('closeHelp').onclick = () => {
-  $('help').classList.add('hidden');
-  captureMouse();
-};
 addEventListener('keydown', (event) => {
   if ($('changelogDialog').open || $('waveCouncil').open) return; // Escape closes the native dialog.
   if (event.code === 'Escape' && flightTuningUI.opened) {
     flightTuningUI.close(false);
-    return;
-  }
-  if (event.code === 'Escape' && labUI.opened) {
-    labUI.close();
     return;
   }
   if (!joined || spectating) return;
@@ -1581,7 +1547,6 @@ addEventListener('keydown', (event) => {
     $('papers').classList.contains('hidden') &&
     $('bedPanel').classList.contains('hidden') &&
     $('purchasePanel').classList.contains('hidden') &&
-    $('labPanel').classList.contains('hidden') &&
     $('flightSettingsPanel').classList.contains('hidden') &&
     $('bank').classList.contains('hidden') &&
     $('shop').classList.contains('hidden') &&
@@ -1663,10 +1628,6 @@ addEventListener('keydown', (event) => {
   }
   if (code === 'KeyR' && !event.repeat) crash();
   if (code === 'Space' && !event.repeat) contextHUD.reveal();
-  if (code === 'KeyH' && !event.repeat) {
-    releaseMouse();
-    $('help').classList.toggle('hidden');
-  }
 });
 addEventListener('keyup', (event) => {
   const code = keyBindings.get(event.code) || gameKey(event);
@@ -1783,7 +1744,7 @@ function renderPurgatory() {
   $('purgatory').classList.toggle('hidden', !dead);
   $('touch').classList.toggle('inPurgatory', dead);
   document.querySelector('.bottomkeys').classList.toggle('hidden', dead || onFoot);
-  $('baseActions').classList.toggle(
+  $('footTouch').classList.toggle(
     'hidden',
     spectating || !onFoot || dead || turretIndex >= 0 || !!myVehicle,
   );
@@ -2250,11 +2211,6 @@ $('soulPaperButton').onclick = () => {
   renderPaper();
 };
 $('boardButton').onclick = openBoarding;
-$('baseHelp').onclick = () => {
-  releaseMouse();
-  if (flightTuningUI.opened || bankUI.opened || bedUI.opened || purchaseUI.opened) return;
-  $('help').classList.remove('hidden');
-};
 const purgScene = new T.Scene();
 const purgColliders = [
   new T.Box3(new T.Vector3(-3.5, 0, -2.9), new T.Vector3(3.5, 1.6, -0.9)),
@@ -2531,9 +2487,6 @@ function weaponDirection() {
   return myVehicle && crewSeat !== 'pilot' ? d.applyQuaternion(me.quaternion) : d;
 }
 // Player-facing names: only real DCA posts are called DCA.
-function stationShortName(st) {
-  return st?.kind === 'antitank' ? 'Canon lourd' : st?.kind === 'bunker' ? 'Bunker' : 'DCA';
-}
 function stationLabel(st) {
   if (!st) return 'Poste';
   return st.kind === 'dca'
@@ -3068,7 +3021,7 @@ function updateBaseWorld(dt, now) {
       speed: speed * BASE_METRES,
       falling: !!b.parachute || b.grounded === false,
     });
-    if (!respawnAt && speed > 0.6)
+    if (!respawnAt && footstepsAudible(b, speed))
       sound.play('step', w, {
         key: 'base-step:' + b.entity,
         cooldown: Math.max(0.18, 0.95 / speed),
@@ -3114,22 +3067,8 @@ function updateBaseWorld(dt, now) {
     groundCamera(camera, w, dt);
     const station = nearestStation(),
       bed = nearestBed();
-    $('baseStatus').textContent = body.parachute
-      ? 'Parachute déployé · Dirigez la descente'
-      : bed
-        ? 'Lit · E : contrat personnel de réapparition / résiliation'
-        : station
-          ? stationLabel(stations[station.index]) + ' · E pour signer le dossier'
-          : v
-            ? VEHICLES[v.type].name + ' · ' + SEAT_NAMES[v.entrySeat] + ' · E pour signer'
-            : 'Rejoignez une porte · Un chasseur et un bombardier prêts au départ';
-    $('boardButton').textContent = station
-      ? 'Signer · ' + stationShortName(stations[station.index]) + ' · E'
-      : v
-        ? 'Embarquer · E'
-        : 'Rejoindre un appareil';
+    // Touch-only interaction button (no physical E key); no guidance text.
     $('boardButton').disabled = body.parachute || (!bed && !station && !v);
-    $('seatChoices').replaceChildren();
     renderPaper();
   }
 }
@@ -4266,10 +4205,6 @@ function frame(now) {
   }
   if (joined && controlFocus.active && pad.fire && !previousPad.fire) pistol();
   if (joined && pad.start && !previousPad.start && !respawnAt) launchWave();
-  if (joined && pad.help && !previousPad.help) {
-    releaseMouse();
-    $('help').classList.toggle('hidden');
-  }
   if (joined) {
     renderDeliveries();
     enemies(Date.now());
@@ -5389,7 +5324,6 @@ const flightTuningUI = new FlightTuningUI({
     clearControls();
     cancelPlacement();
     $('shop').classList.add('hidden');
-    $('help').classList.add('hidden');
     renderPaper();
   },
   onClose: (resume) => {
@@ -5411,39 +5345,12 @@ $('flightSettingsOpen').onclick = () => {
   flightTuningUI.open();
 };
 const labUI = new LabUI({
-  root: $('labPanel'),
-  document,
-  snapshot: () => snap,
+  button: $('labOpen'),
+  snapshot: () => (joined ? snap : null),
   command: (body) => api('lab', { id, ...body }),
   accept,
-  confirm: (message) => confirm(message),
-  onOpen: () => {
-    releaseMouse();
-    clearControls();
-    cancelPlacement();
-    $('shop').classList.add('hidden');
-    $('help').classList.add('hidden');
-    renderPaper();
-  },
-  onClose: () => {
-    renderPaper();
-    captureMouse();
-  },
+  notify,
 });
-$('labOpen').onclick = () => {
-  if (
-    !joined ||
-    flightTuningUI.opened ||
-    bankUI.opened ||
-    bedUI.opened ||
-    purchaseUI.opened ||
-    boardingBusy ||
-    soulBusy ||
-    boardingSelectionBusy
-  )
-    return;
-  labUI.open();
-};
 const bankUI = new BankUI({
   root: $('bank'),
   document,
@@ -5454,7 +5361,6 @@ const bankUI = new BankUI({
     releaseMouse();
     cancelPlacement();
     $('shop').classList.add('hidden');
-    $('help').classList.add('hidden');
     renderPaper();
   },
   onClose: () => {
@@ -5488,7 +5394,6 @@ const bedUI = new BedUI({
   onOpen: () => {
     releaseMouse();
     $('shop').classList.add('hidden');
-    $('help').classList.add('hidden');
     renderPaper();
   },
   onClose: () => {
@@ -5827,15 +5732,7 @@ function freezeObservation(realm) {
   clearControls();
   releaseMouse();
   gunSalvos.clear();
-  for (const name of [
-    'papers',
-    'paperBackdrop',
-    'bank',
-    'bedPanel',
-    'purchasePanel',
-    'shop',
-    'help',
-  ])
+  for (const name of ['papers', 'paperBackdrop', 'bank', 'bedPanel', 'purchasePanel', 'shop'])
     $(name).classList.add('hidden');
   $('deathWatch').classList.remove('hidden');
 }

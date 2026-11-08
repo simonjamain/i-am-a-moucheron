@@ -30,7 +30,7 @@ for (const path of ['balance', 'debug-spawn'])
 assert.equal(existsSync('src/balance-ui.js'), false);
 const html = readFileSync('src/index.html', 'utf8');
 assert.doesNotMatch(html, /balanceOpen|balancePanel|data-spawn-fields/);
-assert.match(html, /<button id="labOpen"[^>]*>Debug<\/button>/);
+assert.match(html, /<button id="labOpen" aria-pressed="false"[^>]*>\s*Debug : OFF\s*<\/button>/);
 assert.deepEqual(r.balance, DEFAULT_BALANCE, 'fixed default rules');
 
 // Normal rules first: a hard fall hurts.

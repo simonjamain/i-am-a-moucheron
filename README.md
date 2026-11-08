@@ -144,7 +144,7 @@ sont retirés : les règles sont fixes et un seul interrupteur de mode debug les
 
 Le [bestiaire et ses vitesses physiques](docs/enemy-bestiary.md#vitesse-physique-dans-la-pièce) spécifient des mètres de la pièce par seconde, indépendants de la taille des modèles et de l'effectif des nuées.
 
-Le [mode debug par room](docs/laboratory.md) (bouton **Debug**) donne argent illimité, plans débloqués, aucun dégât de chute et défaite impossible, avec des outils de vagues et de scénarios.
+Le [mode debug par room](docs/laboratory.md) (interrupteur **Debug : OFF / ON**) donne argent illimité, plans débloqués, aucun dégât de chute et défaite impossible, sans panneau d'outils.
 
 Le [bombardier B3](docs/b3-model.md) accueille quatre joueurs et conserve son camouflage texturé.
 Les [sept véhicules Meshy](docs/meshy-fleet.md) gardent les couleurs de leur modèle

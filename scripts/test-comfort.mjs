@@ -143,7 +143,9 @@ trace.userData.dispose();
 const client = readFileSync('src/client.js', 'utf8');
 assert.match(client, /canvas.addEventListener\('mousedown'/);
 assert.match(client, /addEventListener\('mouseup'/);
-assert.match(client, /Recommencer pour tout le monde/);
+// Issue #135 removed the HUD restart button (a lost game still restarts from « Lancer »).
+assert.doesNotMatch(client, /Recommencer pour tout le monde/);
+assert.match(client, /phase === 'lost'\) return action\('reset'/);
 assert.match(client, /x !== 'radar'/);
 console.log(
   'Comfort: rounded H2 landing/access, repairs all hulls/overlap/full/departure/destruction, concurrent reset, explicit enemy speeds and moving shot endpoints passed.',

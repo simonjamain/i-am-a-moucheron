@@ -33,8 +33,11 @@ const versionButton = html.slice(
 );
 assert.match(versionButton, /v__GAME_VERSION__/, 'the version number opens the changelog');
 assert.doesNotMatch(versionButton, /Nouveautés\s*$/);
-assert.match(html, /id="restartGame"\s+hidden/, 'restart hidden outside a room');
-assert.match(client, /\$\('restartGame'\)\.hidden = false;/);
+// Issue #135: no "Recommencer la partie" nor room-name/share button in the HUD;
+// the room still comes from the link (?room=) and stays in the address bar.
+assert.doesNotMatch(html, /id="restartGame"|Recommencer la partie|id="share"|id="roomCode"/);
+assert.doesNotMatch(client, /restartGame|\$\('share'\)|roomCode/);
+assert.match(client, /history\.replaceState\(\{\}, '', '\?room=' \+ room\)/);
 assert.match(client, /const audioSettings = \{ volume: 0\.55, muted: false \};/);
 assert.doesNotMatch(client, /soundToggle|soundVolume|moucheron-audio/);
 assert.match(

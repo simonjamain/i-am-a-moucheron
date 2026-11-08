@@ -78,15 +78,25 @@ const ui = new GroundDefenseUI({
   },
 });
 ui.update();
-ui.setOpen(true);
-assert.equal(releases, 1);
+// Issue #135: no HUD button or tool panel; the wheel selects the tool.
+assert.equal(
+  document.body.children.some((e) => e.tag === 'button' && /Défense/.test(e.textContent || '')),
+  false,
+  'no Défense button',
+);
+assert.equal(ui.trigger, undefined);
+assert.equal(ui.panel, undefined);
 assert.equal(
   document.body.children.some((e) => e.tag === 'canvas'),
   false,
 );
-ui.buttons.children[0].onclick();
-assert.equal(ui.opened, false);
+assert.equal(ui.handleWheelKey('KeyG', true), true, 'G opens the tool wheel');
+ui.moveWheel(0, -60); // first sector (barricade) is at the top
+assert.equal(ui.handleWheelKey('KeyG', false), true);
+assert.equal(ui.mode, 'barricade');
+assert.equal(ui.active, true);
 assert.equal(captures, 1);
+assert.equal(releases, 0);
 ui.update();
 assert.equal(ui.preview.visible, true);
 ui.press();
@@ -166,12 +176,12 @@ enabled = true;
 snap = { ...snap, base: { epoch: 2 } };
 ui.update();
 assert.equal(ui.active, false, 'reset cancels stale placement');
-ui.buttons.children[0].onclick();
+ui.selectTool('barricade');
 allowed = false;
 ui.update();
 assert.equal(ui.active, false, 'entering a vehicle or dying cancels placement');
 assert.equal(ui.preview.visible, false);
-console.log('Ground placement UI: menu, ghost, pending command, modal suspension and reset OK');
+console.log('Ground placement UI: wheel, ghost, pending command, modal suspension and reset OK');
 
 const { placementAim } = await import('../src/placement-aim.js');
 const { brickLayout, createBrickWall } = await import('../src/brick-wall.js');
@@ -222,7 +232,7 @@ for (const length of [0.002, 0.04, 0.2]) {
   wall.geometry.dispose();
   wall.material.dispose();
 }
-ui.buttons.children[0].onclick();
+ui.selectTool('barricade');
 allowed = true;
 ui.update();
 assert.equal(
