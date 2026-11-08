@@ -1130,6 +1130,22 @@ function accept(s, force = false) {
       pistolTrails.push({ line, targetScene });
     }
     if (e.kind === 'piercing') hitEffects.burst(new T.Vector3().fromArray(e.p), camera);
+    // Issue #108: Castor auto-turret shots are visible to everyone, from the
+    // model's real muzzle: tracer, flash and recoil.
+    if (e.kind === 'sentry-shot' && !respawnAt && Date.now() + clockOffset - e.at < 400) {
+      const shot = groundDefenseUI.sentryShot(e.sentry, e.target);
+      const origin = shot?.position || new T.Vector3().fromArray(e.p);
+      const direction =
+        shot?.direction ||
+        new T.Vector3()
+          .fromArray(e.target || e.p)
+          .sub(origin)
+          .normalize();
+      if (direction.lengthSq() > 0) {
+        emitBullet(origin, direction, TRACER_COLOR, false, false);
+        combatEffects.muzzle(origin, direction);
+      }
+    }
     if (e.kind === 'blast') {
       combatEffects.blast(new T.Vector3().fromArray(e.p), e.radius || MAP.metres(FLAK.radius));
       sound.play('crash', { x: e.p[0], y: e.p[1], z: e.p[2] }, { ref: 20 });
@@ -5161,7 +5177,7 @@ function updateOrdnance(dt) {
       scene.add(model);
       ordnanceModels.set(shot.shot, model);
       if (shot.weapon === 'rocket' || shot.weapon === 'missile')
-        missileExhaust.attach(shot.shot, model);
+        missileExhaust.attach(shot.shot, model, shot.weapon);
     }
     const lag = Math.max(0, Math.min(0.25, (Date.now() + clockOffset - shot.updated) / 1000));
     model.position.fromArray(shot.p).addScaledVector(new T.Vector3().fromArray(shot.v), lag);

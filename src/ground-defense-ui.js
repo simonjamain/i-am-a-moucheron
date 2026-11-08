@@ -484,9 +484,36 @@ export class GroundDefenseUI {
         model.targetPitch = pitch;
       }
       model.yaw.rotation.y += sentryAngleDelta(model.yaw.rotation.y, model.targetYaw) * weight;
+      // Short barrel recoil after each authoritative shot (issue #108).
+      model.recoil = (model.recoil || 0) * Math.exp(-18 * Math.max(0, dt));
+      model.pitch.position.z = (model.basePitchZ ??= model.pitch.position.z) + model.recoil * 0.003;
       model.pitch.rotation.x += (model.targetPitch - model.pitch.rotation.x) * weight;
       model.lens.material.color.set(structure.ammo > 0 ? '#1ecbd9' : '#87574c');
     }
+  }
+  // World position and direction of a turret's real muzzle, and recoil kick.
+  sentryShot(id, target) {
+    const model = this.sentries.get(String(id));
+    if (!model?.muzzle) return null;
+    const T = this.T;
+    if (target) {
+      // Snap toward the server's target so the tracer leaves along the barrel.
+      const origin = model.container.position;
+      const angles = sentryAimAngles([origin.x, SENTRY_MUZZLE_HEIGHT, origin.z], target);
+      if (angles) {
+        model.targetYaw = angles.yaw - (model.container.rotation.y || 0);
+        model.targetPitch = angles.pitch;
+      }
+    }
+    model.recoil = 1;
+    model.container.updateMatrixWorld(true);
+    const position = model.muzzle.getWorldPosition(new T.Vector3());
+    const direction = target
+      ? new T.Vector3().fromArray(target).sub(position).normalize()
+      : new T.Vector3(0, 0, -1).applyQuaternion(
+          model.muzzle.getWorldQuaternion(new T.Quaternion()),
+        );
+    return { position, direction };
   }
   rebuild(structures) {
     // Keep articulated sentries alive across shot/ammo revisions. Rebuilding
