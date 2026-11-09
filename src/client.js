@@ -875,7 +875,8 @@ async function api(path, body) {
         // A stuck connection is replaced by a fresh one well before the
         // server forgets this pilot (see reconnect()).
         disconnectGrace: RECONNECT_AFTER_MS,
-        onMotion: (peer, state, time, seq) => track(peer).push(state, time, seq, 'rtc'),
+        onMotion: (peer, state, time, seq, captured) =>
+          track(peer).push(state, time, seq, 'rtc', captured),
         onClose: (error) => {
           $('net').textContent = '● UDP INTERROMPU';
           $('net').title = error.message;
@@ -1335,7 +1336,8 @@ $('form').addEventListener('submit', async (e) => {
       peerMotion = new PeerMotion({
         self: id,
         signal: (to, message) => api('signal', { id, to, message }),
-        onMotion: (peer, state, time, seq) => track(peer).push(state, time, seq, 'rtc'),
+        onMotion: (peer, state, time, seq, captured) =>
+          track(peer).push(state, time, seq, 'rtc', captured),
       });
     room = r.snapshot.code;
     paperArchive.length = 0;

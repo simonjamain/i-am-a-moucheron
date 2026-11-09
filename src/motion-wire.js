@@ -374,8 +374,9 @@ export function decodeMotionState(bytes) {
 
 // Batch: 'M', version, server time (float64 ms), entry count, then per entry
 // the peer ID, its motion sequence, the age of the state in the batch (ms,
-// time since the server accepted it) and the encoded state.
-export const MOTION_BATCH_VERSION = 1;
+// time since the server accepted it), the capture time on the sender's clock
+// (flag + float64) and the encoded state.
+export const MOTION_BATCH_VERSION = 2;
 export const MOTION_BATCH_BYTES = 1100;
 const MAGIC = 0x4d;
 export function encodeMotionBatch(time, entries, maxBytes = MOTION_BATCH_BYTES) {
@@ -394,6 +395,11 @@ export function encodeMotionBatch(time, entries, maxBytes = MOTION_BATCH_BYTES) 
     writeString(body, entry.peer);
     writeNumber(body, entry.seq, true);
     body.u16(Math.max(0, Math.min(65535, Math.round(time - entry.at))));
+    // Capture time on the sender's clock (version 2), when known.
+    if (Number.isFinite(entry.captured)) {
+      body.u8(1);
+      body.f64(entry.captured);
+    } else body.u8(0);
     body.u16(entry.bytes.length);
     body.raw(entry.bytes);
     const piece = body.done();
@@ -426,8 +432,9 @@ export function decodeMotionBatch(data) {
     const peer = readString(r),
       seq = readNumber(r),
       age = r.u16(),
+      captured = r.u8() ? nanToNull(r.f64()) : null,
       state = decodeMotionState(r.raw(r.u16()));
-    entries.push({ peer, seq, age, state });
+    entries.push({ peer, seq, age, captured, state });
   }
   if (r.offset !== bytes.length) throw RangeError('Lot de mouvements de longueur invalide.');
   return { time, entries };

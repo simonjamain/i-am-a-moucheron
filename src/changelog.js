@@ -1,6 +1,13 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 256,
+    changes: [
+      'Les autres joueurs se déplacent de façon fluide, sans sauts.',
+      'À plusieurs dans un même appareil, la vue du mitrailleur ne tremble plus.',
+    ],
+  },
+  {
     version: 255,
     changes: ['Les nuées et les insectes au sol avancent de façon régulière, sans à-coups.'],
   },

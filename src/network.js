@@ -1,3 +1,4 @@
+import { ServerClock } from './server-clock.js';
 // Ephemeral motion uses a lossy unordered RTC channel; game rules stay on HTTP.
 export const CHANNEL_OPTIONS = { ordered: false, maxRetransmits: 0 };
 export const RTC_HZ = 20,
@@ -51,6 +52,19 @@ function quaternion(a, b, t) {
     n = Math.hypot(...q);
   return q.map((v) => v / n);
 }
+// Remote motion is drawn a little in the past, between two real samples.
+// With `captured` (sender clock at capture), samples are placed at their
+// capture times mapped to the local clock: the transit variation no longer
+// distorts their spacing. The mapping keeps the fastest transit seen (see
+// ServerClock). The display delay then adapts to the sample interval and to
+// the measured lateness, so that drawing rarely runs past the latest sample.
+export const MOTION_DELAY_MIN_MS = 60;
+export const MOTION_DELAY_MAX_MS = 350;
+const quantile = (values, q) => {
+  if (!values.length) return 0;
+  const sorted = [...values].sort((a, b) => a - b);
+  return sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * q))];
+};
 export class MotionTrack {
   constructor({ teleportDistance = 35 } = {}) {
     this.teleportDistance = teleportDistance;
@@ -58,8 +72,13 @@ export class MotionTrack {
     this.source = 'http';
     this.seq = -1;
     this.lastReceived = -Infinity;
+    this.clock = new ServerClock({ window: 10000 });
+    this.lateness = [];
+    this.intervals = [];
+    this.delay = null;
+    this.delayAt = null;
   }
-  push(state, time, seq, source) {
+  push(state, time, seq, source, captured) {
     if (!validMotion(state) || !Number.isFinite(time) || !Number.isFinite(seq)) return false;
     if (source === this.source && seq <= this.seq) return false;
     if (source !== this.source) {
@@ -68,6 +87,20 @@ export class MotionTrack {
     }
     this.seq = seq;
     this.lastReceived = time;
+    if (source === 'rtc' && Number.isFinite(captured)) {
+      // Sender clock -> local clock, with the fastest transit of the window.
+      this.clock.observe(captured, time);
+      const mapped = captured - (this.clock.now(time) - time);
+      const previous = this.samples.at(-1);
+      if (previous?.captured) {
+        const interval = mapped - previous.time;
+        if (interval > 0 && interval < 1000) this.intervals.push(interval);
+      }
+      this.lateness.push(Math.max(0, time - mapped));
+      if (this.lateness.length > 60) this.lateness.shift();
+      if (this.intervals.length > 60) this.intervals.shift();
+      time = mapped;
+    }
     const last = this.samples.at(-1);
     if (last && time <= last.time) time = last.time + 0.01;
     if (
@@ -77,14 +110,38 @@ export class MotionTrack {
         state.hp <= 0 !== last.state.hp <= 0)
     )
       this.samples = [];
-    this.samples.push({ state: structuredClone(state), time });
+    this.samples.push({
+      state: structuredClone(state),
+      time,
+      captured: source === 'rtc' && Number.isFinite(captured),
+    });
     if (this.samples.length > 32) this.samples.shift();
     return true;
+  }
+  // Display delay: one usual interval plus the usual lateness (95th
+  // percentile), slewed at 5 % of elapsed time so that it never jumps.
+  displayDelay(now) {
+    if (this.source !== 'rtc') return 160;
+    if (!this.samples.at(-1)?.captured || this.lateness.length < 5) return 100;
+    const target = Math.max(
+      MOTION_DELAY_MIN_MS,
+      Math.min(
+        MOTION_DELAY_MAX_MS,
+        quantile(this.intervals, 0.5) + quantile(this.lateness, 0.95) + 15,
+      ),
+    );
+    if (this.delay === null) this.delay = target;
+    else {
+      const step = Math.max(0, now - (this.delayAt ?? now)) * 0.05;
+      this.delay += Math.max(-step, Math.min(step, target - this.delay));
+    }
+    this.delayAt = now;
+    return this.delay;
   }
   sample(now) {
     const list = this.samples;
     if (!list.length) return null;
-    const target = now - (this.source === 'rtc' ? 100 : 160);
+    const target = now - this.displayDelay(now);
     let a = list[0],
       b = list[0];
     for (const s of list) {

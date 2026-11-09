@@ -92,11 +92,16 @@ try {
     const { decodeMotionBatch } = await import('/motion-wire.js');
     const found = new Set();
     for (const data of motionMessages)
-      for (const entry of decodeMotionBatch(data).entries) found.add(entry.peer);
+      for (const entry of decodeMotionBatch(data).entries)
+        // Senders attach their capture time; receivers space samples by it.
+        if (Number.isFinite(entry.captured)) found.add(entry.peer);
     return [...found];
   });
   const bravo = ids.find((id) => room.pilots.get(id).name === 'Bravo');
-  assert.ok(peers.includes(bravo), 'Alpha receives Bravo motion in shared batches');
+  assert.ok(
+    peers.includes(bravo),
+    'Alpha receives Bravo motion, with its capture time, in shared batches',
+  );
   const sizes = await pages[0].evaluate(() => motionMessages.map((m) => m.byteLength));
   assert.ok(Math.max(...sizes) <= 1100, 'batches fit the UDP payload');
   for (const page of pages) assert.deepEqual(page.errors, [], 'no page error');
