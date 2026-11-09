@@ -344,3 +344,24 @@ angles (environ 1e-6 relatif), quaternion à 4,6e-5 près ; identifiants,
 horodatages, entiers et chaînes exacts. `npm run e2e:motion` a vérifié dans deux
 Chromium réels la réception (lots de 225 octets au plus à deux joueurs) et le
 décodage par le module du jeu.
+
+## Horloge serveur lissée pour les ennemis (version 253)
+
+Les positions des nuées et des insectes au sol sont calculées par chaque
+navigateur à partir de l'heure du serveur. `enemies()` la recalait sur chaque
+réponse (`sentAt + temps écoulé depuis la réception`) : la variation du temps de
+trajet d'une réponse à l'autre faisait **sauter toute la nuée**, en avant ou en
+arrière, 4 à 10 fois par seconde. `ServerClock` (`src/server-clock.js`) garde,
+sur 6 s, l'échantillon au trajet le plus court et s'en rapproche d'au plus 5 %
+du temps écoulé : l'heure ne recule jamais et ne saute jamais, sauf pour se
+resynchroniser au-delà de 500 ms d'écart (première réponse, onglet endormi).
+
+`test-server-clock.mjs` simule des réponses toutes les 250 ms, un trajet de 20 à
+120 ms (5 % à 300 ms) et un affichage à 60 images/s, sur 17 s mesurées :
+
+| Horloge des ennemis | Retours en arrière | Sauts > 4 ms/image | Pire écart | Retard    |
+| ------------------- | ------------------ | ------------------ | ---------- | --------- |
+| Recalage (v252)     | 25                 | 66                 | 266 ms     | 20–300 ms |
+| Lissée (v253)       | 0                  | 0                  | 0,8 ms     | 20–31 ms  |
+
+Ce sont des mesures de simulation ; le ressenti doit être confirmé en partie.

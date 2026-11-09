@@ -1,6 +1,10 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 253,
+    changes: ['Les nuées et les insectes au sol avancent de façon régulière, sans à-coups.'],
+  },
+  {
     version: 250,
     changes: [
       'Après une coupure réseau, le jeu se reconnecte tout seul : on retrouve son personnage et sa place sans recharger.',

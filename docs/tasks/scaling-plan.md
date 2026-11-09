@@ -98,6 +98,13 @@ WebTransport (Go ou Rust) et/ou TURN UDP ; règles conservées en JS.
   âge par entrée). 49 joueurs vers un destinataire : 42 Ko en 49 messages ->
   12 Ko en 13 messages par relais. Vérifié dans deux Chromium réels
   (`npm run e2e:motion`). L'envoi navigateur -> serveur reste en JSON.
+- Phase 4, retour des joueurs : pas de problème d'images par seconde sur des
+  portables classiques, mais ennemis et autres joueurs qui « sautent »
+  (surtout gênant pour un mitrailleur dans l'avion d'un autre). Causes : heure
+  serveur recalée à chaque réponse ; mouvements datés à leur arrivée et délai
+  d'affichage fixe.
+  - Version 253 : horloge serveur lissée et monotone pour les ennemis.
+  - Suivant : interpolation des joueurs (heure de capture de l'émetteur,
+    tampon adaptatif).
 - Essais WAN et parties réelles : non effectués.
-- Prochaine action : phase 4, profiler le rendu dans une vraie partie (saccades
-  d'affichage), puis décider des chantiers de rendu.
+- Prochaine action : interpolation des joueurs distants.
