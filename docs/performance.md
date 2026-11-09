@@ -317,3 +317,30 @@ et ses dégâts gardent l'état complet et non arrondi.
 
 CPU par `sync` inchangé (1,5–2,1 ms dans les deux cas). `test-ground-view.mjs`
 vérifie les champs envoyés, la précision et l'état complet du serveur.
+
+## Mouvements relayés en lots binaires partagés (version 252)
+
+Le relais des mouvements était devenu le premier poste réseau : un message JSON
+de 630 à 820 octets par joueur et par destinataire, soit, à 50 joueurs (10 Hz
+relayés à partir de 40), environ 49 messages et 34 Ko par destinataire et par
+relais, et environ 17 Mo/s émis par le serveur. Désormais, chaque mouvement
+accepté est encodé une fois en binaire, et la salle reçoit toutes les 50 ms les
+mêmes lots, découpés sous 1 100 octets ([détails](udp-server.md#transport-et-fiabilité)).
+
+Mesures :
+
+| Scénario                                    | Avant (v251)       | Après (v252)          |
+| ------------------------------------------- | ------------------ | --------------------- |
+| État à pied / en vol / âme                  | 903 / 674 / 475 o  | 245 / 189 / 121 o     |
+| 49 joueurs vers un destinataire, un relais  | 42 Ko, 49 messages | 12 Ko, 13 messages    |
+| `test:capacity`, paquets reçus par 50 pairs | ~3 500             | 400                   |
+| Encodages par mouvement accepté             | 1 par destinataire | 1 pour toute la salle |
+
+Les deux premières lignes viennent de `test-motion-wire.mjs` (états
+représentatifs, JSON sans le champ `v`), la troisième de `npm run test:capacity`
+(mêmes mouvements envoyés, boucle locale). Ce sont des volumes, pas des mesures
+WAN ni de fluidité. Précision : flottants 32 bits pour positions, vitesses et
+angles (environ 1e-6 relatif), quaternion à 4,6e-5 près ; identifiants,
+horodatages, entiers et chaînes exacts. `npm run e2e:motion` a vérifié dans deux
+Chromium réels la réception (lots de 225 octets au plus à deux joueurs) et le
+décodage par le module du jeu.

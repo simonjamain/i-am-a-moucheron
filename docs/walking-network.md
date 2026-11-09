@@ -7,7 +7,10 @@ mise à jour sur deux est relayée, soit 10 Hz vers les autres joueurs. Le serve
 continue de valider et d'appliquer les 20 mises à jour/s. Cela réduit le débit
 relayé, avec une interpolation distante moins fréquente ; le canal
 `commands-v1` est fiable et ordonné. Le serveur relaie les mouvements, sans
-maillage entre navigateurs. Les commandes portent un identifiant croissant et
+maillage entre navigateurs : depuis la version 252, toutes les 50 ms, il envoie
+à tous les joueurs d'une salle les mêmes lots binaires (`src/motion-wire.js`)
+contenant les mouvements acceptés depuis le lot précédent ; chacun ignore sa
+propre entrée. Le navigateur envoie toujours son mouvement en JSON. Les commandes portent un identifiant croissant et
 reçoivent leur résultat d'exécution. Identité de session, incarnation et numéro
 d'occupation empêchent une ancienne position de modifier un nouveau corps ou
 un nouveau poste. Aucun repli HTTP, TCP ou WebSocket ne transporte du gameplay.

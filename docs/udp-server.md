@@ -52,8 +52,21 @@ SCTP/DTLS sur UDP :
 
 | Canal         | Livraison                        | Contenu                                                                                         |
 | ------------- | -------------------------------- | ----------------------------------------------------------------------------------------------- |
-| `motion-v2`   | non ordonné, zéro retransmission | positions, orientation et visée à 20 Hz                                                         |
+| `motion-v2`   | non ordonné, zéro retransmission | positions, orientation et visée à 20 Hz (lots binaires partagés vers les navigateurs)           |
 | `commands-v1` | fiable et ordonné                | entrée en salle, synchronisations, signatures, achats, dégâts, réserves et changements de monde |
+
+**Relais des mouvements en lots binaires (version 252).** Chaque navigateur
+envoie son mouvement en JSON à 20 Hz. Le serveur valide puis encode une seule
+fois chaque mouvement accepté (`encodeMotionState`) : masque de présence sur un
+schéma de champs, flottants 32 bits pour positions et vitesses, quaternion en
+entiers 16 bits, nombres entiers et horodatages exacts, UUID sur 16 octets, et
+complément JSON pour tout champ inconnu ou valeur hors schéma (aucune perte de
+champ). Toutes les 50 ms (`MOTION_FLUSH_MS`), les mouvements de la salle reçus
+depuis le lot précédent partent à **tous** ses joueurs dans les mêmes paquets
+binaires, découpés sous 1 100 octets pour éviter la fragmentation UDP ; chaque
+entrée indique son âge dans le lot, retranché par le navigateur de l'heure de
+réception. Un destinataire dont la file dépasse 64 Ko saute le lot. La règle
+des 10 Hz à partir de 40 pilotes s'applique toujours.
 
 Le serveur désactive ICE/TCP et filtre les candidats TCP du SDP. Client et serveur
 contrôlent le protocole de la paire sélectionnée. En cas de changement vers un
@@ -137,7 +150,9 @@ refus TCP, fermeture et absence de repli HTTP. `test-udp-native.mjs` connecte
 deux vrais pairs natifs au serveur HTTP/UDP local, contrôle la paire UDP,
 la réplication, les confirmations idempotentes et la reprise d'un pilote par une
 nouvelle connexion. `test-resume.mjs` couvre les règles de reprise du domaine.
-`npm run e2e:resume` (manuel, Playwright requis) fait rejoindre un vrai Chromium,
+`test-motion-wire.mjs` vérifie le codec et les lots. `npm run e2e:motion`
+(manuel) fait rejoindre deux Chromium et vérifie la réception et le décodage des
+lots binaires dans la page. `npm run e2e:resume` (manuel, Playwright requis) fait rejoindre un vrai Chromium,
 coupe sa connexion côté serveur et vérifie la reprise du même pilote puis
 `leave` ; dans un conteneur dont l'interface n'est pas `127.0.0.1`, passer son
 adresse : `node scripts/e2e-browser-resume.mjs 192.0.2.2`. Les tests Worker/D1 continuent

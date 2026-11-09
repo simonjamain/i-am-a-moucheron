@@ -93,7 +93,11 @@ WebTransport (Go ou Rust) et/ou TURN UDP ; règles conservées en JS.
 - Rejeté : rejouer la simulation au sol chez chaque client. Elle est à état
   (appâts, repas, rubans, dégâts aux barricades) et dépend du découpage du
   temps ; les écarts entre clients seraient inévitables.
+- Phase 3 (version 252) : mouvements relayés en lots binaires partagés par
+  salle (un encodage par mouvement, mêmes paquets pour tous, sous 1 100 octets,
+  âge par entrée). 49 joueurs vers un destinataire : 42 Ko en 49 messages ->
+  12 Ko en 13 messages par relais. Vérifié dans deux Chromium réels
+  (`npm run e2e:motion`). L'envoi navigateur -> serveur reste en JSON.
 - Essais WAN et parties réelles : non effectués.
-- Prochaine action : phase 3 (format binaire et paquet de mouvements groupé par
-  destinataire), qui réduira aussi les positions restantes ; puis phase 4
-  (profilage du rendu dans une vraie partie).
+- Prochaine action : phase 4, profiler le rendu dans une vraie partie (saccades
+  d'affichage), puis décider des chantiers de rendu.
