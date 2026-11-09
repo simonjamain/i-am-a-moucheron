@@ -9,6 +9,7 @@ import {
   DISCONNECT_GRACE_MS,
 } from './udp-protocol.js';
 import { validMotion } from './network.js';
+import { decodeMotionBatch } from './motion-wire.js';
 
 export class UdpClient {
   constructor({
@@ -65,9 +66,11 @@ export class UdpClient {
         this.fail(e);
       }
     };
+    this.motion.binaryType = 'arraybuffer';
     this.motion.onmessage = (e) => {
       try {
-        if (typeof e.data !== 'string' || e.data.length > 4096) return;
+        if (typeof e.data !== 'string') return this.receiveBatch(e.data);
+        if (e.data.length > 4096) return;
         const m = JSON.parse(e.data);
         if (
           m.v !== PROTOCOL ||
@@ -201,7 +204,36 @@ export class UdpClient {
       } catch {}
     this.stop();
   }
+  // Shared binary batch from the server: every player of the room receives the
+  // same chunks, including its own entry, which is skipped. The entry age (time
+  // spent in the server batch) is removed from the receive time.
+  receiveBatch(data) {
+    if (!(data instanceof ArrayBuffer) || data.byteLength > 4096) return;
+    let batch;
+    try {
+      batch = decodeMotionBatch(data);
+    } catch {
+      return;
+    }
+    const now = performance.now();
+    for (const { peer, seq, age, state } of batch.entries) {
+      if (
+        peer === this.self ||
+        !this.members.has(peer) ||
+        !Number.isSafeInteger(seq) ||
+        seq < 0 ||
+        seq <= (this.remoteSeq.get(peer) ?? -1) ||
+        !validMotion(state)
+      )
+        continue;
+      this.remoteSeq.set(peer, seq);
+      this.freshAt.set(peer, now);
+      this.received++;
+      this.onMotion(peer, state, now - Math.min(age, 1000), seq);
+    }
+  }
   observe(snapshot, self) {
+    this.self = self;
     const p = snapshot?.pilots?.find((p) => p.id === self);
     if (p) {
       this.incarnation = p.incarnation;

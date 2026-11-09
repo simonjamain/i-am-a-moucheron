@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { UdpClient } from '../src/udp-client.js';
+import { encodeMotionBatch, encodeMotionState } from '../src/motion-wire.js';
 import {
   encodeReply,
   ReplyAssembler,
@@ -173,6 +174,47 @@ assert.doesNotMatch(
   ),
   / TCP /,
 );
+// Shared binary motion batches: own entry skipped, members only, newer
+// sequences only, server batch age removed from the receive time.
+{
+  protocol = 'udp';
+  const seen = [];
+  const batchClient = new UdpClient({
+    Peer,
+    fetcher,
+    onMotion: (peer, motion, time, seq) => seen.push({ peer, seq, time }),
+  });
+  await batchClient.connect();
+  const me = '11111111-1111-4111-8111-111111111111',
+    other = '22222222-2222-4222-8222-222222222222',
+    stranger = '33333333-3333-4333-8333-333333333333';
+  batchClient.observe({ pilots: [{ id: me, incarnation: 0, occupation: 0, mode: 'foot' }] }, me);
+  batchClient.reconcile([me, other]);
+  const bytes = encodeMotionState(state);
+  const send = (entries) => {
+    for (const chunk of encodeMotionBatch(10000, entries))
+      batchClient.motion.onmessage({
+        data: chunk.buffer.slice(chunk.byteOffset, chunk.byteOffset + chunk.length),
+      });
+  };
+  const before = performance.now();
+  send([
+    { peer: me, seq: 5, at: 10000, bytes },
+    { peer: other, seq: 7, at: 9900, bytes },
+    { peer: stranger, seq: 1, at: 10000, bytes },
+  ]);
+  assert.deepEqual(
+    seen.map((e) => e.peer),
+    [other],
+    'only other room members are applied',
+  );
+  assert.ok(seen[0].time <= before - 99 + 5, 'the batch age is removed from the receive time');
+  send([{ peer: other, seq: 6, at: 10000, bytes }]);
+  assert.equal(seen.length, 1, 'older sequences are ignored');
+  batchClient.motion.onmessage({ data: new Uint8Array([0x4d, 1, 2]).buffer });
+  assert.equal(batchClient.closed, false, 'a malformed batch is dropped, not fatal');
+  batchClient.stop();
+}
 console.log(
   'Browser transport contract: UDP gate, reliable/lossy options, chunks, command errors, congestion, no HTTP fallback.',
 );

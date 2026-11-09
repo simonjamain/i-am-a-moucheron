@@ -190,15 +190,11 @@ export class GameSession {
       // Large rooms cannot afford 20 broadcasts/s × every sender × every peer.
       // Process every accepted state but halve only the lossy relay rate at 40+ pilots.
       if (r.pilots.size < 40 || m.seq % 2 === 0)
-        this.relay(
-          this.player,
-          JSON.stringify({
-            v: PROTOCOL,
-            peer: p.id,
-            seq: m.seq,
-            state: { ...m.state, fire: p.state.fire },
-          }),
-        );
+        this.relay(this.player, {
+          peer: p.id,
+          seq: m.seq,
+          state: { ...m.state, fire: p.state.fire },
+        });
     } catch (e) {
       if (e.status === 401) this.stop();
     }

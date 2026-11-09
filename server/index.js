@@ -4,6 +4,11 @@ import { PeerConnection } from 'node-datachannel';
 import { ASSETS, BUILD_VERSION, OFFICE_SOLIDS } from '../worker/assets.js';
 import { Game, SNAPSHOT_SHARE_MS } from './game.js';
 import { GameSession } from './session.js';
+import { encodeMotionBatch, encodeMotionState } from '../src/motion-wire.js';
+
+// Shared motion batches: flush period and per-receiver congestion limit.
+export const MOTION_FLUSH_MS = 50;
+const MOTION_BUFFER_LIMIT = 64 * 1024;
 import {
   COMMAND_CHANNEL,
   DISCONNECT_GRACE_MS,
@@ -35,6 +40,8 @@ export function createGameServer({
   if (advertiseAddress && !/^[a-fA-F0-9:.]+$/.test(advertiseAddress))
     throw Error('UDP_ADVERTISE_ADDRESS doit être une adresse IP.');
   const connections = new Set();
+  // Room code -> pilot ID -> latest accepted motion not yet flushed.
+  const roomMotion = new Map();
   let negotiating = 0;
   const json = (res, status, value) => {
     res.writeHead(status, { 'content-type': 'application/json', 'cache-control': 'no-store' });
@@ -133,17 +140,17 @@ export function createGameServer({
               c.queuedBytes += bytes;
               drain();
             },
-            relay: (player, data) => {
-              for (const target of connections)
-                if (
-                  target !== c &&
-                  target.session.player?.code === player.code &&
-                  target.motion?.isOpen() &&
-                  target.motion.bufferedAmount() < 4096
-                )
-                  try {
-                    target.motion.sendMessage(data);
-                  } catch {}
+            // Accepted motion is encoded once, then flushed with the room's
+            // other updates in shared binary batches (see flushMotion()).
+            relay: (player, entry) => {
+              let pending = roomMotion.get(player.code);
+              if (!pending) roomMotion.set(player.code, (pending = new Map()));
+              pending.set(entry.peer, {
+                peer: entry.peer,
+                seq: entry.seq,
+                at: Date.now(),
+                bytes: encodeMotionState(entry.state),
+              });
             },
             close,
             onJoin: (player) => {
@@ -281,6 +288,31 @@ export function createGameServer({
       else res.end();
     }
   });
+  // Every MOTION_FLUSH_MS, each room's new motion goes to all its players as
+  // the same binary chunks (a player skips its own entry). A congested
+  // receiver misses this tick instead of queuing stale motion.
+  const flushMotion = () => {
+    const now = Date.now();
+    for (const [code, pending] of roomMotion) {
+      if (!pending.size) {
+        roomMotion.delete(code);
+        continue;
+      }
+      const chunks = encodeMotionBatch(now, [...pending.values()]);
+      pending.clear();
+      for (const target of connections)
+        if (
+          target.session.player?.code === code &&
+          target.motion?.isOpen() &&
+          target.motion.bufferedAmount() < MOTION_BUFFER_LIMIT
+        )
+          try {
+            for (const chunk of chunks) target.motion.sendMessageBinary(Buffer.from(chunk));
+          } catch {}
+    }
+  };
+  const motionTimer = setInterval(flushMotion, MOTION_FLUSH_MS);
+  motionTimer.unref();
   const tick = setInterval(() => {
     const rooms = new Set();
     for (const c of connections) {
@@ -302,8 +334,10 @@ export function createGameServer({
     server,
     game,
     connections,
+    flushMotion,
     close: async () => {
       clearInterval(tick);
+      clearInterval(motionTimer);
       for (const c of [...connections]) c.close();
       await new Promise((resolve) => server.close(resolve));
     },

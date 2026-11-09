@@ -13,6 +13,7 @@ en charge continue du backlog et la revue finale des documents.
 | `server/session.js`                        | Identité liée à DTLS, commandes fiables, confirmations/rejeu, mouvements sans retransmission.  |
 | `server/game.js`                           | Salles, joueurs, vagues, sièges, contrats, achats, dégâts, réserve et réapparition en RAM.     |
 | `src/udp-client.js`, `src/udp-protocol.js` | Canaux navigateur, refus hors UDP, limites, files et réassemblage.                             |
+| `src/motion-wire.js`                       | Codec binaire des mouvements et lots partagés relayés par le serveur.                          |
 | `src/client.js`                            | Orchestration de la scène, état local, entrées, interfaces et envoi des commandes.             |
 | `src/network.js`                           | Validation de mouvement et interpolation ; `PeerMotion` est le transport historique des pairs. |
 | `src/ground-motion.js`                     | Historique et interpolation visuelle des positions des ennemis terrestres reçues du serveur.   |

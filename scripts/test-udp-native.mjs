@@ -5,6 +5,7 @@ import { OFFICE_LAYOUT } from '../src/layout.js';
 import assert from 'node:assert/strict';
 import { PeerConnection, cleanup } from 'node-datachannel';
 import { createGameServer } from '../server/index.js';
+import { decodeMotionBatch } from '../src/motion-wire.js';
 import { ReplyAssembler, PROTOCOL, COMMAND_CHANNEL, MOTION_CHANNEL } from '../src/udp-protocol.js';
 
 const app = createGameServer({
@@ -41,7 +42,11 @@ async function client() {
       v = assembler.receive(p);
     if (v) replies.set(p.id, v);
   });
-  motion.onMessage((raw) => packets.push(JSON.parse(String(raw))));
+  // The server relays motion as shared binary batches (src/motion-wire.js).
+  motion.onMessage((raw) => {
+    if (typeof raw === 'string') packets.push(JSON.parse(raw));
+    else for (const entry of decodeMotionBatch(raw).entries) packets.push(entry);
+  });
   clients.push(pc);
   await until(() => pc.gatheringState() === 'complete');
   const response = await fetch(base + '/rtc/offer', {
