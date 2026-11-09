@@ -19,29 +19,14 @@ import {
   damageBarricade,
 } from '../src/ground-defense-state.js';
 import { groundUnit, advanceGroundUnit } from '../src/ground-creatures.js';
-import { HELI, rotateLocal, steerMissile } from '../src/helicopter.js';
-import {
-  sweptVehicle,
-  clampProximity,
-  proximityRadius,
-  fuseSegment,
-  sweptBoxProximity,
-  sweptSphereProximity,
-  closestSphereProximity,
-} from '../src/mobile-flak.js';
+import { HELI, rotateLocal } from '../src/helicopter.js';
+import { clampProximity } from '../src/mobile-flak.js';
 import { collisionDamage, washTarget, WASH } from '../src/vehicle-care.js';
 import { purchaseCount } from '../src/equipment.js';
 import { bedAccess, bedSpawn } from '../src/beds.js';
 import { impactDamage } from '../src/field-physics.js';
 import { randomUUID } from 'node:crypto';
-import {
-  MAP,
-  ACTOR_UNIT,
-  FLAK,
-  enemySizeFactor,
-  INSECT_SCALE,
-  MIDGE_SPHERE_RADIUS,
-} from '../src/scale.js';
+import { MAP, ACTOR_UNIT, FLAK, enemySizeFactor } from '../src/scale.js';
 import { OFFICE_LAYOUT, RAID_DURATION } from '../src/layout.js';
 import { VEHICLES, vehiclePad, vehicleEntry, vehicleAccess, leftVehiclePad } from '../src/fleet.js';
 import { baseWorld, baseBody, reconcileBase } from '../src/base.js';
@@ -79,8 +64,7 @@ import { snapshotRosterCore, snapshotRosterKey } from '../src/snapshot-wire.js';
 import { newBank, signLoan, settleLoans, repayLoan } from '../src/bank.js';
 import { canUseWeapon, HEAVY, TANK_MG, availableShell } from '../src/armament.js';
 import { sweptSphereMayTouch } from '../src/swept-broadphase.js';
-import { createOrdnance, integrateOrdnance, segmentSphere, segmentBox } from '../src/ordnance.js';
-import { heavyDamage } from '../src/armament.js';
+import { createOrdnance, segmentSphere } from '../src/ordnance.js';
 
 const uid = () => randomUUID();
 const values = (m) => [...m.values()];
@@ -95,6 +79,12 @@ export const PRESENCE_MS = 12000;
 // Resumable games keep a silent pilot (hidden after PRESENCE_MS) and its seat
 // this long, so that a reconnecting player gets it back. 'leave' ends it at once.
 export const RESUME_MS = 30000;
+// A launch whose impact has not been reported is forgotten this long after
+// the end of its lifetime.
+export const IMPACT_GRACE_MS = 3000;
+// The shooter's browser fires on its own cadence without waiting for a reply;
+// network jitter can bring two launches closer on arrival.
+export const HEAVY_CADENCE_TOLERANCE_MS = 100;
 function requireGame(ok, message, status = 409) {
   if (!ok) throw Object.assign(new Error(message), { status });
 }
@@ -605,7 +595,7 @@ export class Game {
     const now = this.now();
     this.advanceGround(r, now);
     this.advanceSentries(r, now);
-    this.advanceOrdnance(r, now);
+    this.expireOrdnance(r, now);
     this.vehicleContacts(r, now);
     // A destroyed hull can arrive through motion before the client's death
     // command. Resolve its crew here even if that client disconnects.
@@ -1166,6 +1156,8 @@ export class Game {
           'wave-buy',
           'start',
           'leave',
+          // A shell still in flight when its shooter dies keeps its effect.
+          'heavy-impact',
         ].includes(path),
       'Accédez au purgatoire avant d’agir.',
     );
@@ -1293,7 +1285,7 @@ export class Game {
     else if (path === 'dossier-choice') this.choice(r, p, b);
     else if (['seat-request', 'seat-sign', 'seat-reject'].includes(path)) this.seat(r, p, path, b);
     else if (path === 'aircraft-fire') return clone(this.fire(r, p, b));
-    else if (path === 'missile-detonate') this.detonateMissile(r, p, b);
+    else if (path === 'heavy-impact') this.heavyImpact(r, p, b);
     else if (path === 'heavy-fire') this.heavyFire(r, p, b);
     else if (path === 'hit') this.hit(r, p, b);
     else if (path === 'friendly-hit') this.friendly(r, p, b);
@@ -1507,7 +1499,7 @@ export class Game {
     const profile = HEAVY.antitank,
       factors = clauseFactors(this.clause(r, p));
     requireGame(
-      this.now() >=
+      this.now() + HEAVY_CADENCE_TOLERANCE_MS >=
         (gun.lastShotAt ?? -Infinity) +
           (profile.interval * 1000 * factors.interval) / (r.balance.fireRate || 1),
       'Ce canon recharge.',
@@ -2162,7 +2154,7 @@ export class Game {
     const factors = clauseFactors(this.clause(r, p));
     v.lastHeavy ??= {};
     requireGame(
-      this.now() >=
+      this.now() + HEAVY_CADENCE_TOLERANCE_MS >=
         (v.lastHeavy[lane] ?? -Infinity) +
           (HEAVY[selected].interval / r.balance.fireRate) *
             1000 *
@@ -2211,331 +2203,99 @@ export class Game {
     );
     r.ordnance.at(-1).bonus *= factors.damage * r.balance.damage;
   }
-  advanceOrdnance(r, now) {
+  // Heavy weapons are simulated by their shooter (src/heavy-sim.js): the room
+  // keeps each launch (origin, velocity, time) for the other players' display
+  // and forgets it on its impact report or after its lifetime plus a delay.
+  expireOrdnance(r, now) {
     if (!r.ordnance.length) return;
-    const plan = this.plan(r);
-    const frameCache = new Map();
-    const framesAt = (time) => {
-      const at = Math.round(time / 50) * 50;
-      if (!frameCache.has(at))
-        frameCache.set(
-          at,
-          swarmFrame(
-            plan.roster,
-            (at - r.started) / 1000,
-            r.groundAgents,
-            airField(r.groundDefense, at),
-          ),
-        );
-      return frameCache.get(at);
-    };
-    for (const projectile of r.ordnance) {
-      if (projectile.weapon === 'proximity') {
-        this.advanceProximity(r, projectile, now, plan, framesAt);
-        continue;
-      }
-      const vehicle = r.vehicles.get(projectile.vehicle);
-      if (projectile.weapon === 'missile' && (!vehicle || vehicle.state.hp <= 0)) {
-        projectile.done = true;
-        continue;
-      }
-      const profile = HEAVY[projectile.weapon],
-        end = Math.min(now, projectile.at + profile.lifetime * 1000);
-      const horizon = Math.max(0, (end - projectile.updated) / 1000);
-      const lower = projectile.p.map(
-        (v, i) =>
-          v +
-          Math.min(0, projectile.v[i]) * horizon -
-          (i === 1 ? MAP.metres(9.81) * horizon * horizon : 0),
-      );
-      const upper = projectile.p.map((v, i) => v + Math.max(0, projectile.v[i]) * horizon);
-      const nearbySolids = this.solids.filter(
-        (box) =>
-          projectile.weapon === 'missile' ||
-          ['x', 'y', 'z'].every(
-            (key, i) => box.max[key] >= lower[i] - 0.001 && box.min[key] <= upper[i] + 0.001,
-          ),
-      );
-      while (projectile.updated < end && !projectile.done) {
-        const dt = Math.min(1 / 120, (end - projectile.updated) / 1000);
-        if (projectile.weapon === 'missile') {
-          const owner = r.pilots.get(projectile.shooter);
-          if (
-            owner?.life === 'alive' &&
-            owner.vehicle_id === projectile.vehicle &&
-            owner.seat === 'copilot' &&
-            owner.occupation === projectile.occupation
-          ) {
-            const direction = owner.state.turretDirection || [0, 0, -1];
-            // Directional guidance must not chase a fixed point behind the missile.
-            const length = Math.hypot(...direction) || 1;
-            steerMissile(
-              projectile,
-              projectile.p.map((v, i) => v + direction[i] / length),
-              dt,
-            );
-          }
-        }
-        const a = integrateOrdnance(projectile, dt),
-          b = projectile.p;
-        projectile.updated += dt * 1000;
-        let hit = null;
-        const consider = (t, target) => {
-          if (t !== null && t >= 0 && t <= 1 && (!hit || t < hit.t)) hit = { t, ...target };
-        };
-        for (const solid of nearbySolids) consider(segmentBox(a, b, solid), { solid: true });
-        if (b[1] <= 0) consider(a[1] / Math.max(1e-12, a[1] - b[1]), { solid: true });
-        const frames =
-          r.phase === 'combat' && projectile.wave === r.wave ? framesAt(projectile.updated) : [];
-        for (let i = 0; i < frames.length; i++) {
-          if (!frames[i] || r.kills.has(i)) continue;
-          const enemy = plan.roster[i];
-          const radius =
-            enemy.type === 'midge' || enemy.type === 'spiderling'
-              ? INSECT_SCALE *
-                enemy.size *
-                enemySizeFactor(enemy.type) *
-                (enemy.type === 'midge' ? MIDGE_SPHERE_RADIUS : 1.2)
-              : MAP.metres(enemy.size * 0.7 * enemySizeFactor(enemy.type));
-          // Cheap swept-AABB rejection before the exact segment/sphere calculation.
-          if (!sweptSphereMayTouch(a, b, frames[i].p, radius)) continue;
-          consider(segmentSphere(a, b, frames[i].p, radius), { enemy: i });
-        }
-        for (const v of r.vehicles.values())
-          if (v.id !== projectile.vehicle && v.state.hp > 0)
-            consider(segmentSphere(a, b, v.state.p, MAP.metres(VEHICLES[v.type].span * 0.3)), {
-              vehicle: v.id,
-            });
-        for (const p of r.pilots.values())
-          // A fixed gun's own crew stands behind the muzzle, never in its path.
-          if (p.life === 'alive' && !p.vehicle_id && p.id !== projectile.shooter) {
-            const point = this.playerPosition(r, p);
-            if (point) consider(segmentSphere(a, b, point, MAP.metres(0.6)), { player: p.id });
-          }
-        if (hit) {
-          const point = a.map((v, i) => v + (b[i] - v) * hit.t);
-          projectile.p = point;
-          projectile.done = true;
-          this.ordnanceImpact(r, projectile, hit, frames, point);
-        }
-      }
-      if (
-        projectile.age >= profile.lifetime ||
-        projectile.updated >= projectile.at + profile.lifetime * 1000
-      )
-        projectile.done = true;
-    }
-    for (const shot of r.ordnance)
-      if (shot.done && shot.weapon === 'missile') {
-        const v = r.vehicles.get(shot.vehicle);
-        if (v) v.nextMissileAt = now + 2000 / r.balance.fireRate;
-      }
-    r.ordnance = r.ordnance.filter((p) => !p.done);
-  }
-  detonateMissile(r, p, b) {
-    const v = r.vehicles.get(p.vehicle_id);
-    requireGame(
-      p.life === 'alive' &&
-        v?.type === 'helicopter' &&
-        p.seat === 'copilot' &&
-        b.occupation === p.occupation,
-      'Guidage indisponible.',
-    );
-    const shot = r.ordnance.find(
-      (s) =>
-        s.weapon === 'missile' &&
-        s.vehicle === v.id &&
-        s.shooter === p.id &&
-        s.occupation === p.occupation &&
-        s.shot === b.shot,
-    );
-    requireGame(shot, 'Missile absent.');
-    const plan = this.plan(r);
-    const frames =
-      r.phase === 'combat' && shot.wave === r.wave
-        ? swarmFrame(
-            plan.roster,
-            (this.now() - r.started) / 1000,
-            r.groundAgents,
-            airField(r.groundDefense, this.now()),
-          )
-        : [];
-    this.ordnanceImpact(r, shot, {}, frames, shot.p);
-    r.ordnance = r.ordnance.filter((s) => s !== shot);
-    v.nextMissileAt = this.now() + 2000 / r.balance.fireRate;
-  }
-  advanceProximity(r, projectile, now, plan, framesAt) {
-    const profile = HEAVY.proximity,
-      end = Math.min(now, projectile.at + profile.lifetime * 1000);
-    const radius = proximityRadius(projectile.proximity);
-    const horizon = Math.max(0, (end - projectile.updated) / 1000);
-    const nearby = this.solids.filter((box) =>
-      ['x', 'y', 'z'].every((key, i) => {
-        const reach =
-          Math.abs(projectile.v[i]) * horizon +
-          (i === 1 ? MAP.metres(9.81) * horizon * horizon : 0) +
-          radius;
-        return box.max[key] >= projectile.p[i] - reach && box.min[key] <= projectile.p[i] + reach;
-      }),
-    );
-    while (projectile.updated < end && !projectile.done) {
-      const ageBefore = projectile.age;
-      const dt = Math.min(
-        1 / 120,
-        (end - projectile.updated) / 1000,
-        ageBefore < 0.3 - 1e-12 ? 0.3 - ageBefore : Infinity,
-      );
-      const a = integrateOrdnance(projectile, dt),
-        b = projectile.p;
-      projectile.updated += dt * 1000;
-      const frames =
-        r.phase === 'combat' && projectile.wave === r.wave ? framesAt(projectile.updated) : [];
-      const armed = fuseSegment(a, b, ageBefore, projectile.age);
-      let hit = null;
-      const consider = (t, kind) => {
-        if (t !== null && (!hit || t < hit.t)) hit = { t, kind };
-      };
-      const solid = (box) => {
-        const impact = segmentBox(a, b, box);
-        // A contact strictly before arming is inert, including on thin geometry.
-        if (impact !== null && (!armed || impact < armed.t - 1e-12)) consider(impact, 'inert');
-        if (armed) {
-          const t = sweptBoxProximity(armed.a, b, box, radius, true);
-          if (t !== null) consider(armed.t + t * (1 - armed.t), 'fuse');
-        }
-      };
-      for (const box of nearby) solid(box);
-      solid({ min: { x: -100, y: -100, z: -100 }, max: { x: 100, y: 0, z: 100 } });
-      const previousFrames = armed && frames.length ? framesAt(projectile.updated - dt * 1000) : [];
-      const sphere = (centre, size, own = false, previous = centre) => {
-        const impact = sweptSphereProximity(a, b, centre, size);
-        if (!own && impact !== null && (!armed || impact < armed.t - 1e-12))
-          consider(impact, 'inert');
-        if (armed) {
-          const start = previous.map((v, i) => v + (centre[i] - v) * armed.t);
-          const relativeEnd = b.map((v, i) => v - (centre[i] - start[i]));
-          const t = closestSphereProximity(armed.a, relativeEnd, start, size, radius);
-          if (t !== null) consider(armed.t + t * (1 - armed.t), 'fuse');
-        }
-      };
-      frames.forEach((f, i) => {
-        if (f && !r.kills.has(i))
-          sphere(
-            f.p,
-            MAP.metres(
-              plan.roster[i].size *
-                0.7 *
-                (enemySizeFactor(plan.roster[i].type) *
-                  (plan.roster[i].type === 'midge' ? 1.2 : 1)),
-            ),
-            false,
-            previousFrames[i]?.p || f.p,
-          );
-      });
-      for (const v of r.vehicles.values())
-        if (v.state.hp > 0) {
-          const impact = sweptVehicle(a, b, v, 0);
-          if (
-            v.id !== projectile.vehicle &&
-            impact !== null &&
-            (!armed || impact < armed.t - 1e-12)
-          )
-            consider(impact, 'inert');
-          if (armed) {
-            const t = sweptVehicle(armed.a, b, v, radius, true);
-            if (t !== null) consider(armed.t + t * (1 - armed.t), 'fuse');
-          }
-        }
-      for (const p of r.pilots.values())
-        if (p.life === 'alive' && !p.vehicle_id) {
-          const point = this.playerPosition(r, p);
-          if (point) sphere(point, MAP.metres(0.6));
-        }
-      for (const e of r.equipment) sphere([e.x, e.y + MAP.metres(1), e.z], MAP.metres(1));
-      if (hit) {
-        projectile.done = true;
-        projectile.p = a.map((v, i) => v + (b[i] - v) * hit.t);
-        if (hit.kind === 'fuse') this.ordnanceImpact(r, projectile, {}, frames, projectile.p);
-      }
-    }
-    if (projectile.updated >= projectile.at + profile.lifetime * 1000) projectile.done = true;
-  }
-  ordnanceImpact(r, projectile, hit, frames, point) {
-    const weapon = projectile.weapon,
-      profile = HEAVY[weapon];
-    r.effects.push({
-      id: ++r.effectSeq,
-      kind: weapon === 'ap' ? 'piercing' : 'blast',
-      p: point,
-      shot: projectile.shot,
-      radius: profile.radius * (projectile.radiusFactor || 1),
-      at: this.now(),
+    r.ordnance = r.ordnance.filter((shot) => {
+      const alive = now <= shot.at + HEAVY[shot.weapon].lifetime * 1000 + IMPACT_GRACE_MS;
+      if (!alive) this.endOrdnance(r, shot, now);
+      return alive;
     });
-    const enemy = (index, damage) => {
-      const e = this.plan(r).roster[index];
-      if (!e || r.kills.has(index)) return;
-      r.enemyDamage[index] = (r.enemyDamage[index] || 0) + damage;
-      if (r.enemyDamage[index] >= e.hp) this.defeatEnemy(r, index, frames[index]?.p);
-    };
-    const hull = (id, damage) => {
-      const v = r.vehicles.get(id);
-      if (!v) return;
-      v.state.hp = Math.max(0, v.state.hp - damage);
-      if (v.state.hp === 0)
-        for (const id of [...v.seats.values()]) {
-          const p = r.pilots.get(id);
-          if (p) this.kill(r, p, p.incarnation);
-        }
-    };
-    if (weapon === 'ap') {
-      if (hit.enemy !== undefined) enemy(hit.enemy, profile.damage * projectile.bonus);
-      if (hit.vehicle) hull(hit.vehicle, profile.damage * projectile.bonus);
-      if (hit.player) {
-        const p = r.pilots.get(hit.player);
-        if (p) this.kill(r, p, p.incarnation);
-      }
+  }
+  endOrdnance(r, shot, now) {
+    if (shot.weapon !== 'missile') return;
+    const v = r.vehicles.get(shot.vehicle);
+    if (v) v.nextMissileAt = now + 2000 / r.balance.fireRate;
+  }
+  // Impact computed by the shooter: applied once, capped by the power of the
+  // launch recorded here. Damage to friends is the shooter's decision too.
+  heavyImpact(r, p, b) {
+    requireGame(typeof b.shot === 'string' && b.shot.length <= 120, 'Impact invalide.', 400);
+    const shot = r.ordnance.find((s) => s.shot === b.shot && s.shooter === p.id);
+    if (!shot) return; // already applied, expired or unknown: idempotent
+    // Ended without blast (inert contact, lifetime, lost helicopter).
+    if (b.fizzle === true) {
+      r.ordnance = r.ordnance.filter((s) => s !== shot);
+      this.endOrdnance(r, shot, this.now());
       return;
     }
-    const damage = (position) => {
-      const distance = Math.hypot(...point.map((v, i) => v - position[i]));
-      if (distance > profile.radius * (projectile.radiusFactor || 1)) return 0;
-      const obstructed = this.solids.some((box) => {
-        const t = segmentBox(
-          point.map((v, i) => v + (i === 1 ? MAP.metres(0.05) : 0)),
-          position,
-          box,
-        );
-        return t !== null && t > 0.001 && t < 0.999;
-      });
-      return obstructed
-        ? 0
-        : heavyDamage(weapon, distance, projectile.bonus, projectile.radiusFactor || 1);
-    };
-    // The heavy gun's small blast is narrower than a large insect: the target it
-    // strikes takes the full charge, the blast only reaches the others.
-    const direct = weapon === 'antitank';
-    if (direct && hit.enemy !== undefined) enemy(hit.enemy, profile.damage * projectile.bonus);
-    if (direct && hit.vehicle) hull(hit.vehicle, profile.damage * projectile.bonus);
-    frames.forEach((f, i) => {
-      if (f && !(direct && hit.enemy === i)) {
-        const n = damage(f.p);
-        if (n) enemy(i, n);
-      }
+    const list = (value) => (Array.isArray(value) ? value.slice(0, 512) : []);
+    const point = b.p;
+    requireGame(
+      Array.isArray(point) && point.length === 3 && point.every(Number.isFinite),
+      'Impact invalide.',
+      400,
+    );
+    const now = this.now(),
+      profile = HEAVY[shot.weapon],
+      cap = Math.ceil(profile.damage * shot.bonus) + 1,
+      amount = (n) => (Number.isFinite(n) ? Math.max(0, Math.min(cap, n)) : 0);
+    r.ordnance = r.ordnance.filter((s) => s !== shot);
+    this.endOrdnance(r, shot, now);
+    r.effects.push({
+      id: ++r.effectSeq,
+      kind: shot.weapon === 'ap' ? 'piercing' : 'blast',
+      p: point,
+      shot: shot.shot,
+      shooter: p.id,
+      radius: profile.radius * (shot.radiusFactor || 1),
+      at: now,
     });
-    for (const v of r.vehicles.values())
-      if (v.state.hp > 0 && !(direct && hit.vehicle === v.id)) {
-        const n = damage(v.state.p);
-        if (n) hull(v.id, n);
+    if (r.phase === 'combat' && shot.wave === r.wave) {
+      const roster = this.plan(r).roster;
+      for (const [index, damage, position] of list(b.enemies)) {
+        const e = roster[index];
+        if (!Number.isInteger(index) || !e || r.kills.has(index)) continue;
+        r.enemyDamage[index] = (r.enemyDamage[index] || 0) + amount(damage);
+        if (r.enemyDamage[index] >= e.hp)
+          this.defeatEnemy(
+            r,
+            index,
+            Array.isArray(position) && position.length === 3 && position.every(Number.isFinite)
+              ? position
+              : undefined,
+          );
       }
-    for (const p of r.pilots.values())
-      if (p.life === 'alive' && !p.vehicle_id) {
-        const position = this.playerPosition(r, p);
-        if (!position) continue;
-        const n = damage(position);
-        if (n) {
-          p.health = Math.max(0, p.health - n);
-          if (!p.health) this.kill(r, p, p.incarnation);
+    }
+    for (const [id, damage] of list(b.vehicles)) {
+      const v = r.vehicles.get(id);
+      if (!v || v.state.hp <= 0) continue;
+      v.state.hp = Math.max(0, v.state.hp - amount(damage));
+      if (v.state.hp === 0) {
+        v.ready = 0;
+        for (const crew of [...v.seats.values()]) {
+          const mate = r.pilots.get(crew);
+          if (mate) this.kill(r, mate, mate.incarnation);
         }
+      }
+    }
+    const target = (id) => {
+      const t = r.pilots.get(id);
+      return t?.life === 'alive' && !t.vehicle_id ? t : null;
+    };
+    for (const [id, damage] of list(b.players)) {
+      const t = target(id);
+      if (!t) continue;
+      t.health = Math.max(0, t.health - amount(damage));
+      if (!t.health) this.kill(r, t, t.incarnation);
+    }
+    // Only an armour-piercing shell kills outright on a direct hit.
+    if (shot.weapon === 'ap')
+      for (const id of list(b.kills)) {
+        const t = target(id);
+        if (t) this.kill(r, t, t.incarnation);
       }
   }
   playerPosition(r, p) {

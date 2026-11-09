@@ -119,6 +119,8 @@ const files = {
       'snapshot-wire',
       'motion-wire',
       'server-clock',
+      'heavy-sim',
+      'swept-broadphase',
       'mouse-flight',
       'purgatory-physics',
       'audio',

@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import * as T from '../vendor/three.module.min.js';
 import { Game } from '../server/game.js';
+import { resolveHeavy } from './heavy-resolver.mjs';
 import { VEHICLES, vehiclePad } from '../src/fleet.js';
 import { stepHelicopter } from '../src/helicopter.js';
 import { resolveLanding } from '../src/sortie.js';
@@ -89,7 +90,7 @@ shot.p = [1, 1, -1];
 shot.v = [0, 0, -0.1];
 room.ordnance = [shot];
 now += 3000;
-game.advanceOrdnance(room, now);
+resolveHeavy(game, room, { now });
 assert.ok(shot.v[2] < -0.099, 'must not turn back toward old aim point behind missile');
 v.supplies.ammo.missile = 1;
 assert.equal(missileStatus(v, [shot], now), 'Missile en vol');

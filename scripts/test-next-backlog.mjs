@@ -2,6 +2,8 @@ import assert from 'node:assert/strict';
 import * as T from '../vendor/three.module.min.js';
 import { amortization, newBank, signLoan, settleLoans, repayLoan } from '../src/bank.js';
 import { Game } from '../server/game.js';
+import { roomWorld, resolveHeavy } from './heavy-resolver.mjs';
+import { heavyImpact } from '../src/heavy-sim.js';
 import { VEHICLES, vehicleEntry, vehicleAccess } from '../src/fleet.js';
 import { fullAmmo, advanceSupplies, SERVICE_SECONDS } from '../src/logistics.js';
 import { TANK_MG, HEAVY, availableShell, heavyDamage } from '../src/armament.js';
@@ -194,13 +196,14 @@ stuka.state.v = [0, 0, 0];
 const stock = stuka.supplies.ammo.bomb;
 call('heavy-fire', { weapon: 'bomb', shot: 'bomb1', direction: [0, 0, -1] });
 assert.equal(stuka.supplies.ammo.bomb, stock - 1);
-// A real bomb reaches a support and produces one shared blast; repeated polls
-// cannot create a second explosion.
+// A real bomb reaches a support and produces one shared blast; repeated
+// reports cannot create a second explosion.
 now += 9000;
 p.seen = now;
-game.advance(r);
+resolveHeavy(game, r);
 const blasts = r.effects.filter((e) => e.shot === 'bomb1');
 assert.equal(blasts.length, 1);
+resolveHeavy(game, r);
 game.advance(r);
 assert.equal(r.effects.filter((e) => e.shot === 'bomb1').length, 1);
 // Stable bank slots and atomic signature credit on the actual room API.
@@ -265,7 +268,7 @@ for (let seed = 0; seed < 8; seed++)
         assert.equal(blockedSegment(route.points[i - 1], route.points[i], e.ground), false);
       if (wave === 1 && !e.ground) assert.ok(e.spawn + e.duration > 100);
     }
-// Heavy damage and soul release are authoritative, independently of visuals.
+// Heavy damage reported by the shooter is applied by the server, with soul release.
 const targetJoin = game.join({ code: 'GROUND' }),
   targets = game.rooms.get('GROUND');
 targets.phase = 'combat';
@@ -276,12 +279,20 @@ const roster = wavePlan('GROUND', 12, now).roster,
 assert.ok(ground);
 const centre = [0, 0.1, 0],
   frames = roster.map((e) => (e.id === ground.id ? { p: centre } : null));
-game.ordnanceImpact(
-  targets,
-  { weapon: 'bomb', shot: 'ground-bomb', bonus: 1, wave: 12 },
-  { enemy: ground.id },
-  frames,
-  centre,
+const bomb = {
+  weapon: 'bomb',
+  shot: 'ground-bomb',
+  shooter: targetJoin.id,
+  bonus: 1,
+  wave: 12,
+  at: now,
+};
+targets.ordnance.push(bomb);
+game.command(
+  'GROUND',
+  targetJoin.id,
+  'heavy-impact',
+  heavyImpact(bomb, { enemy: ground.id }, frames, centre, roomWorld(game, targets)),
 );
 assert.ok(targets.kills.has(ground.id), 'a bomb destroys a ground enemy');
 assert.equal([...targets.souls.values()].filter((s) => s.entity === '12:' + ground.id).length, 1);

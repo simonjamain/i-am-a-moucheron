@@ -311,11 +311,19 @@ try {
   assert.equal(observer.status, 200);
   assert.equal(observer.body.vehicles.find((v) => v.id === helicopter.id).state.hp, 200);
   assert.ok(observer.body.ordnance.some((s) => s.shot === 'udp-missile'));
-  assert.equal(
-    (await b.request('missile-detonate', { shot: 'udp-missile', occupation: operator.occupation }))
-      .status,
-    200,
-  );
+  // The copilot's browser detonates its missile and reports the impact.
+  const detonation = await b.request('heavy-impact', {
+    shot: 'udp-missile',
+    weapon: 'missile',
+    p: [2, 2, 1],
+    enemies: [],
+    vehicles: [],
+    players: [],
+    kills: [],
+  });
+  assert.equal(detonation.status, 200);
+  assert.ok(!detonation.body.ordnance.some((s) => s.shot === 'udp-missile'));
+  assert.ok(detonation.body.effects.some((e) => e.shot === 'udp-missile' && e.kind === 'blast'));
   const truck = app.game.createVehicle(gameRoom, 'flaktruck');
   truck.state.p = [-2, 2, 2];
   truck.state.q = [0, 0, 0, 1];

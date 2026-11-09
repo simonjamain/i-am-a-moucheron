@@ -98,8 +98,8 @@ Le tireur canon utilise une vue alignée sur la bouche du canon ; son propre tan
 est masqué dans cette lunette pour éviter l’obstruction par la géométrie. La
 coaxiale possède son nœud de bouche, décalé de 0,30 unité de modèle (environ
 1,67 mm du décor). Son rayon est parallèle au canon : la parallaxe à courte
-portée n’est pas artificiellement annulée. Les obus serveur partent du même
-canon que le modèle.
+portée n’est pas artificiellement annulée. Les obus partent du même canon que le
+modèle, simulés par le tireur.
 
 C maintenu passe en observation à la troisième personne. La souris/manette
 modifie l’observation, pas la tourelle ; MG et canon sont suspendus. Relâcher C,
