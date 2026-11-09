@@ -1,4 +1,5 @@
 import { airField } from '../src/air-current.js';
+import { ServerClock } from '../src/server-clock.js';
 import { GroundMotionTrack } from '../src/ground-motion.js';
 import { InsectIndex } from '../src/insect-hits.js';
 import assert from 'node:assert/strict';
@@ -99,6 +100,8 @@ const state = {
   },
   performance: { now: () => 0 },
   clockOffset: 0,
+  // No reply sample: enemies() falls back to the latest snapshot time.
+  serverClock: new ServerClock(),
   currentRoster: () => state.snap.roster,
   swarmFrame,
   airField,

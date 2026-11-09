@@ -110,6 +110,7 @@ import {
 } from '/mouse-flight.js';
 import { PeerMotion, MotionTrack } from '/network.js';
 import { UdpClient } from '/udp-client.js';
+import { ServerClock } from '/server-clock.js';
 import { RECONNECT_AFTER_MS, RECONNECT_WINDOW_MS } from '/udp-protocol.js';
 import { HoldZoom, advanceFuse, contextKey, rangeReadout } from '/equipment-controls.js';
 import { formatDistance, formatSpeed } from '/units.js';
@@ -548,6 +549,7 @@ function remoteBodies(a, scene) {
 // Reconnection state (see reconnect()); declared early: networkStatus() reads it.
 let reconnecting = false,
   identityKey = null;
+const serverClock = new ServerClock();
 let peerMotion = null,
   signalSince = 0;
 const motionTracks = new Map();
@@ -919,6 +921,8 @@ async function api(path, body) {
   return v;
 }
 function accept(s, force = false) {
+  // Every reply is a clock sample, even one too old to apply.
+  if (Number.isFinite(s.receivedAt)) serverClock.observe(s.sentAt ?? s.now, s.receivedAt);
   if (optimisticExitPending && !force) return;
   if (s.signals?.length) {
     signalSince = Math.max(signalSince, ...s.signals.map((m) => m.id));
@@ -3139,8 +3143,11 @@ function damageEnemy(enemy, amount, shot, point) {
 let entryNoticeWave = -1;
 function enemies(now) {
   if (!snap) return;
-  const elapsedSinceSnapshot = performance.now() - snap.receivedAt;
-  const serverNow = snap.sentAt ? snap.sentAt + elapsedSinceSnapshot : now + clockOffset;
+  // Smoothed, monotonic server time: re-anchoring on each reply made swarms
+  // jump by the variation of its transit time (see server-clock.js).
+  const serverNow =
+    serverClock.now(performance.now()) ??
+    (snap.sentAt ? snap.sentAt + performance.now() - snap.receivedAt : now + clockOffset);
   const active = new Set(),
     t = (serverNow - snap.started) / 1000,
     roster = currentRoster(),

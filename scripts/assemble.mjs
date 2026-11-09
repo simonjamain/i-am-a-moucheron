@@ -118,6 +118,7 @@ const files = {
       'udp-protocol',
       'snapshot-wire',
       'motion-wire',
+      'server-clock',
       'mouse-flight',
       'purgatory-physics',
       'audio',
