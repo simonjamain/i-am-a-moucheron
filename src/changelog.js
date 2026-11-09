@@ -1,7 +1,7 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
-    version: 258,
+    version: 259,
     changes: [
       'Les moucherons ont un nouveau look : de petites mouches à l’air furieux.',
       'En vol, ils battent des ailes, laissent pendre leurs pattes et remuent les antennes.',

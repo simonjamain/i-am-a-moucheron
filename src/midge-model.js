@@ -133,13 +133,14 @@ export function flightPose(T, t) {
   const e = (x, y, z, order = 'XYZ') =>
     new T.Quaternion().setFromEuler(new T.Euler(x, y, z, order));
   const pose = {};
-  // Stroke: cos = 1 at the top. The wing sweeps forward on the downstroke and
-  // back on the upstroke, and pitches (twists about its span) at the turns,
-  // so the tip draws a figure of eight seen from the side.
+  // Stroke: cos = 1 at the top. `sweep` is the angle behind the lateral axis:
+  // the wing moves forward during the downstroke (sin > 0) and back on the
+  // upstroke, pushing air backwards (forward flight), and pitches (twists
+  // about its span) at the turns, so the tip draws a figure of eight.
   const stroke = Math.cos(beat);
   const elevation = F.wingDown + ((F.wingUp - F.wingDown) * (1 + stroke)) / 2;
-  const sweep = F.wingSweep + F.wingSweepRange * Math.sin(beat);
-  const twist = F.wingTwist * Math.sin(beat);
+  const sweep = F.wingSweep - F.wingSweepRange * Math.sin(beat);
+  const twist = -F.wingTwist * Math.sin(beat);
   for (const [k, name] of MIDGE_BONES.wings.entries()) {
     const s = k ? -1 : 1;
     const direction = new T.Vector3(

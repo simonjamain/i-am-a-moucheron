@@ -84,6 +84,23 @@ for (const t of [0, 0.03, 0.31]) {
     right = span(1, t);
   assert.ok(Math.abs(left.y - right.y) < 0.15 && Math.abs(left.z - right.z) < 0.15, 'symmetric');
 }
+// Forward flight: the tip is ahead of its mean on the downstroke and behind on
+// the upstroke (pushes air backwards). Seen from the side (forward, up), the
+// tip loop runs clockwise: negative shoelace area. Head is -Z after presentation.
+for (const side of [0, 1]) {
+  const path = [];
+  for (let i = 0; i < 48; i++) {
+    const d = span(side, i / 48 / MIDGE_FLIGHT.beats);
+    path.push([-d.z, d.y]);
+  }
+  let area = 0;
+  for (let i = 0; i < path.length; i++) {
+    const [x1, y1] = path[i],
+      [x2, y2] = path[(i + 1) % path.length];
+    area += x1 * y2 - x2 * y1;
+  }
+  assert.ok(area < -0.05, 'wing beat drives forward flight (side ' + side + '): ' + area);
+}
 const q0 = flightPose(T, 0),
   q1 = flightPose(T, 1);
 for (const [name, p] of Object.entries(q0))
