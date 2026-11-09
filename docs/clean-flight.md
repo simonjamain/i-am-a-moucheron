@@ -19,10 +19,11 @@ Le prix du bon périmé est refusé avant paiement : fermer puis rouvrir pour re
 
 Les commandes prépayées sont personnelles à la connexion, restent disponibles
 après une mort et comptent dans la limite des 24 installations. À expiration du
-joueur (12 s sans activité), les objets non posés sont remboursés une fois à la
-caisse commune. Un reset efface commandes et monnaie. Ce stock ne possède pas le
-secret de reconnexion des contrats de lit : une reconnexion créant un nouvel ID
-ne reprend pas l’ancienne commande ; son remboursement intervient à l’expiration.
+joueur (30 s sans activité sur le serveur de production, 12 s sans reprise
+possible), les objets non posés sont remboursés une fois à la caisse commune.
+Un reset efface commandes et monnaie. Une reprise automatique de session garde
+le même ID et donc ses commandes ; une reconnexion créant un nouvel ID (page
+rechargée) ne reprend pas l’ancienne commande, remboursée à l’expiration.
 Les bons et la pose sont dédupliqués côté domaine, en plus du protocole fiable.
 Les améliorations restent achetées directement ; les appareils passent désormais par le même bon et aperçu, voir [déploiement courant](multiplayer-return.md#réserves-gratuites-et-achats-de-véhicules).
 

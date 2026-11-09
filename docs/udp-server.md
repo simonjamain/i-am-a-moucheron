@@ -68,6 +68,22 @@ Achats, tirs et impacts ont également leurs identifiants métier. Une commande
 sans confirmation ferme la connexion après 20 s : son résultat peut être incertain,
 il n'y a pas de réessai automatique sur une nouvelle session.
 
+**Reprise de session (version 250).** Le serveur de production crée son `Game`
+avec `resumable: true`. Quand une connexion se ferme, le pilote n'est plus
+expiré sur-le-champ : il disparaît de la liste des joueurs après 12 s sans
+message (`PRESENCE_MS`) et garde son corps, son siège, sa vie et ses papiers
+jusqu'à 30 s (`RESUME_MS`). Le navigateur détecte aussitôt la fermeture d'un
+canal de données, ou abandonne une connexion `disconnected` depuis 5 s
+(`RECONNECT_AFTER_MS`). Il ouvre alors une connexion neuve et envoie `join` avec
+`resume` (son identifiant de pilote) et son `resumeKey`, pendant 25 s au plus,
+sans recharger la page ; la physique locale continue entre-temps. Le serveur
+rattache la connexion au même pilote et ferme l'ancienne ; une clé fausse ou un
+pilote expiré reçoit 410, sans création d'un autre pilote, et le jeu demande de
+recharger. À la fermeture de la page (`pagehide`), le navigateur envoie `leave`
+(sans attendre de réponse) : le siège et le pilote sont libérés aussitôt. Si ce
+message ne part pas, l'expiration à 30 s s'applique. Les commandes en cours au
+moment de la coupure sont perdues (leur promesse est rejetée), comme avant.
+
 L'état WebRTC `disconnected` est souvent transitoire (contrôles ICE perdus,
 changement de réseau). Client et serveur attendent `DISCONNECT_GRACE_MS`
 (10 s) avant de fermer ; `failed` et `closed` ferment immédiatement. Au-delà de
@@ -91,8 +107,9 @@ Les corps restent sous autorité client ; les règles, sièges et réserves sont
 sous autorité du serveur. Le tick de maintenance est de 250 ms par salle.
 
 Un redémarrage efface tout : monnaie, joueurs, vagues et achats. Les connexions
-doivent être recréées. Les salles inactives expirent après 30 minutes ; les
-joueurs expirent après 12 secondes sans activité. Les corps détruits sans occupant
+doivent être recréées ; une reprise de session ne survit pas à un redémarrage. Les salles inactives expirent après 30 minutes ; les
+joueurs disparaissent après 12 secondes sans activité et sont supprimés après
+30 secondes (reprise possible entre-temps). Les corps détruits sans occupant
 sont retirés après 15 secondes et les âmes libérées sont supprimées. Au maximum
 24 PNJ matérialisés sont inclus dans les snapshots, en plus des joueurs.
 Les identifiants d'impacts et de tirs ont une limite de 128 000 par registre :
@@ -118,7 +135,12 @@ npm test
 `test-udp-client.mjs` vérifie le contrat navigateur avec un pair simulé, y compris
 refus TCP, fermeture et absence de repli HTTP. `test-udp-native.mjs` connecte
 deux vrais pairs natifs au serveur HTTP/UDP local, contrôle la paire UDP,
-la réplication et les confirmations idempotentes. Les tests Worker/D1 continuent
+la réplication, les confirmations idempotentes et la reprise d'un pilote par une
+nouvelle connexion. `test-resume.mjs` couvre les règles de reprise du domaine.
+`npm run e2e:resume` (manuel, Playwright requis) fait rejoindre un vrai Chromium,
+coupe sa connexion côté serveur et vérifie la reprise du même pilote puis
+`leave` ; dans un conteneur dont l'interface n'est pas `127.0.0.1`, passer son
+adresse : `node scripts/e2e-browser-resume.mjs 192.0.2.2`. Les tests Worker/D1 continuent
 à couvrir la compatibilité historique, sans être nécessaires au serveur Node.
 
 La réussite locale ne mesure pas la latence Internet, les NAT mobiles ni la

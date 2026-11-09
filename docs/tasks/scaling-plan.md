@@ -83,10 +83,15 @@ WebTransport (Go ou Rust) et/ou TURN UDP ; règles conservées en JS.
     des autres joueurs à 1 Hz dans les réponses fiables.
   - 50 joueurs / 900 ennemis, banc à horloge réaliste : ~1,8 ms et ~9 Ko par
     `sync` (v246 : 5–15 ms et ~72 Ko).
+- Phase 2, premier lot (version 250) : reprise automatique de session après
+  une coupure (même pilote, siège et vie, 30 s), détection immédiate des canaux
+  fermés, `leave` à la fermeture de la page. Vérifié avec un vrai Chromium
+  contre le serveur local (`npm run e2e:resume`) ; pas sur WAN.
 - Reste identifié : `groundAgents` (insectes au sol simulés par le serveur)
-  domine le volume restant. Les calculer chez chaque client de façon
-  déterministe, comme les nuées, ou les envoyer sur le canal non fiable.
-- Essais navigateur et WAN : non effectués.
-- Prochaine action : phase 2 (état sur le canal non fiable, événements
-  importants en fiable non ordonné, reprise de session sans rechargement),
-  en commençant par `groundAgents`.
+  domine le volume restant des réponses. Leur simulation est à état (appâts,
+  repas, rubans, dégâts aux barricades) et dépend du découpage du temps : la
+  rejouer chez chaque client serait fragile. Pistes : précision réduite des
+  positions, puis transport sur le canal non fiable.
+- Essais WAN et parties réelles : non effectués.
+- Prochaine action : phase 2, état de salle sur le canal non fiable avec bases
+  confirmées, en commençant par les positions `groundAgents`.

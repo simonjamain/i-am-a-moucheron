@@ -222,8 +222,55 @@ try {
       (e) => e.kind === 'pistol-trace' && e.shooter === person.id,
     ),
   );
+  // Reconnection: a fresh connection resumes the same pilot; the server closes
+  // the old connection; a dropped connection leaves the pilot resumable.
+  {
+    const first = await client();
+    const joined = await first.request('join', { code: 'RESUME', name: 'Echo' });
+    assert.equal(joined.status, 200);
+    const pilot = joined.body.id,
+      key = joined.body.resumeKey,
+      resumeRoom = app.game.rooms.get('RESUME');
+    const second = await client();
+    const resumed = await second.request('join', {
+      code: 'RESUME',
+      name: 'Echo',
+      resumeKey: key,
+      resume: pilot,
+    });
+    assert.equal(resumed.status, 200, JSON.stringify(resumed.body));
+    assert.equal(resumed.body.id, pilot, 'the same pilot is resumed');
+    assert.equal(resumed.body.resumed, true);
+    assert.equal(resumeRoom.pilots.size, 1, 'no second pilot is created');
+    await until(() => !first.commands.isOpen(), 5000);
+    assert.equal(
+      (await second.request('sync', { state: resumed.body.state, mode: 'foot' })).status,
+      200,
+    );
+    const intruder = await client();
+    const refused = await intruder.request('join', {
+      code: 'RESUME',
+      resumeKey: 'wrong',
+      resume: pilot,
+    });
+    assert.equal(refused.status, 410, 'a wrong identity key cannot resume');
+    assert.equal(resumeRoom.pilots.size, 1);
+    second.pc.close();
+    await until(
+      () => ![...app.connections].some((c) => c.session.player?.id === pilot && !c.session.closed),
+      15000,
+    );
+    const third = await client();
+    const again = await third.request('join', {
+      code: 'RESUME',
+      resumeKey: key,
+      resume: pilot,
+    });
+    assert.equal(again.status, 200, 'a dropped connection leaves the pilot resumable');
+    assert.equal(again.body.id, pilot);
+  }
   console.log(
-    'Native RTC: two clients, UDP confirmed, reliable commands/replay, lossy relay, prepaid purchase, Spitfire, shared wash/sparkles, office pistol refused, HTTP gameplay refused.',
+    'Native RTC: two clients, UDP confirmed, pilot resume after reconnection, reliable commands/replay, lossy relay, prepaid purchase, Spitfire, shared wash/sparkles, office pistol refused, HTTP gameplay refused.',
   );
   // New vehicles share the same native UDP sessions and command leases.
   await a.request('reset');

@@ -110,6 +110,7 @@ import {
 } from '/mouse-flight.js';
 import { PeerMotion, MotionTrack } from '/network.js';
 import { UdpClient } from '/udp-client.js';
+import { RECONNECT_AFTER_MS, RECONNECT_WINDOW_MS } from '/udp-protocol.js';
 import { HoldZoom, advanceFuse, contextKey, rangeReadout } from '/equipment-controls.js';
 import { formatDistance, formatSpeed } from '/units.js';
 import { HEAVY, TANK_MG, availableShell } from '/armament.js';
@@ -544,6 +545,9 @@ function remoteBodies(a, scene) {
     }
   }
 }
+// Reconnection state (see reconnect()); declared early: networkStatus() reads it.
+let reconnecting = false,
+  identityKey = null;
 let peerMotion = null,
   signalSince = 0;
 const motionTracks = new Map();
@@ -597,7 +601,7 @@ function networkStatus() {
   if (globalThis.MOUCHERON_UDP) {
     const s = peerMotion?.stats();
     $('net').textContent =
-      (s?.udp ? '● UDP' : '● UDP INTERROMPU') +
+      (s?.udp ? '● UDP' : reconnecting ? '● RECONNEXION…' : '● UDP INTERROMPU') +
       ' · ' +
       snap.pilots.length +
       ' PILOTE' +
@@ -866,10 +870,14 @@ async function api(path, body) {
     if (path === 'join') {
       peerMotion?.stop();
       peerMotion = new UdpClient({
+        // A stuck connection is replaced by a fresh one well before the
+        // server forgets this pilot (see reconnect()).
+        disconnectGrace: RECONNECT_AFTER_MS,
         onMotion: (peer, state, time, seq) => track(peer).push(state, time, seq, 'rtc'),
         onClose: (error) => {
           $('net').textContent = '● UDP INTERROMPU';
           $('net').title = error.message;
+          reconnect();
         },
       });
       await peerMotion.connect();
@@ -1313,6 +1321,7 @@ $('form').addEventListener('submit', async (e) => {
       resumeKey = sessionStorage.getItem('moucheron-identity:' + code);
     } catch {}
     const r = await api('join', { name: $('name').value, code, resumeKey });
+    identityKey = r.resumeKey || null;
     if (r.resumeKey)
       try {
         sessionStorage.setItem('moucheron-identity:' + code, r.resumeKey);
@@ -1352,6 +1361,39 @@ $('form').addEventListener('submit', async (e) => {
     $('join').disabled = false;
   }
 });
+// Lost connection: open a new one and resume the same pilot (same body, seat,
+// life and papers) while the server still holds it. Local physics keeps running
+// meanwhile. The server answers 410 when the pilot can no longer be resumed.
+async function reconnect() {
+  if (!joined || reconnecting || !globalThis.MOUCHERON_UDP || !identityKey) return;
+  reconnecting = true;
+  const deadline = performance.now() + RECONNECT_WINDOW_MS;
+  let wait = 300;
+  try {
+    while (joined && performance.now() < deadline) {
+      $('net').textContent = '● RECONNEXION…';
+      try {
+        const r = await api('join', {
+          name: $('name').value,
+          code: room,
+          resumeKey: identityKey,
+          resume: id,
+        });
+        if (r.id !== id) throw Object.assign(Error('Session différente.'), { status: 410 });
+        accept(r.snapshot, true);
+        notify('Connexion rétablie', 2);
+        return;
+      } catch (e) {
+        if (e.status === 410) break;
+        await new Promise((resolve) => setTimeout(resolve, wait));
+        wait = Math.min(wait * 2, 2000);
+      }
+    }
+    $('net').textContent = '● UDP INTERROMPU — RECHARGEZ';
+  } finally {
+    reconnecting = false;
+  }
+}
 async function action(path, extra = {}) {
   try {
     accept(await api(path, { id, ...extra }));
@@ -1648,7 +1690,7 @@ for (const b of document.querySelectorAll('[data-key]')) {
 }
 let nextSync = 0;
 setInterval(async () => {
-  if (!joined || pending || vehicleBusy || performance.now() < nextSync) return;
+  if (!joined || pending || vehicleBusy || reconnecting || performance.now() < nextSync) return;
   if (globalThis.MOUCHERON_UDP && peerMotion?.closed) return;
   pending = true;
   nextSync = performance.now() + (respawnAt || onFoot ? 100 : 250);
@@ -1668,7 +1710,7 @@ setInterval(async () => {
     );
   } catch (e) {
     // A refused burst (429) is not a lost connection: the next sync retries.
-    if (e.status === 429) return;
+    if (e.status === 429 || reconnecting) return;
     $('net').textContent = globalThis.MOUCHERON_UDP
       ? '● UDP INTERROMPU — RECHARGEZ'
       : '● RECONNEXION…';
@@ -1682,7 +1724,7 @@ setInterval(() => {
 setInterval(() => {
   if (joined) peerMotion?.measure().catch(() => {});
 }, 2000);
-addEventListener('pagehide', () => peerMotion?.stop());
+addEventListener('pagehide', () => (peerMotion?.leave ? peerMotion.leave() : peerMotion?.stop()));
 document.addEventListener('visibilitychange', () => {
   if (!document.hidden)
     for (const a of [baseArena, soulArena])

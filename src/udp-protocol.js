@@ -10,6 +10,10 @@ export const MAX_REPLY_BYTES = 4 * 1024 * 1024;
 // A WebRTC 'disconnected' state usually recovers by itself; wait this long
 // before treating it as a lost game connection (client and server).
 export const DISCONNECT_GRACE_MS = 10000;
+// The game client gives up a stuck connection sooner and resumes its pilot
+// over a fresh one, within the server's resume delay (RESUME_MS, 30 s).
+export const RECONNECT_AFTER_MS = 5000;
+export const RECONNECT_WINDOW_MS = 25000;
 
 // Chunk large snapshots below browser/native SCTP message size limits.
 export function encodeReply(value, id) {

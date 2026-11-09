@@ -1,6 +1,12 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 250,
+    changes: [
+      'Après une coupure réseau, le jeu se reconnecte tout seul : on retrouve son personnage et sa place sans recharger.',
+    ],
+  },
+  {
     version: 249,
     changes: [
       'Le serveur tient mieux la charge quand de nombreux joueurs sont connectés en même temps.',
