@@ -87,11 +87,13 @@ WebTransport (Go ou Rust) et/ou TURN UDP ; règles conservées en JS.
   une coupure (même pilote, siège et vie, 30 s), détection immédiate des canaux
   fermés, `leave` à la fermeture de la page. Vérifié avec un vrai Chromium
   contre le serveur local (`npm run e2e:resume`) ; pas sur WAN.
-- Reste identifié : `groundAgents` (insectes au sol simulés par le serveur)
-  domine le volume restant des réponses. Leur simulation est à état (appâts,
-  repas, rubans, dégâts aux barricades) et dépend du découpage du temps : la
-  rejouer chez chaque client serait fragile. Pistes : précision réduite des
-  positions, puis transport sur le canal non fiable.
+- Phase 2, deuxième lot (version 251) : vue réseau réduite des insectes au
+  sol (`p`, `dir`, `arrived`, positions arrondies) ; 50 joueurs : ~5 Ko par
+  `sync` courant (v250 : 8–10 Ko).
+- Rejeté : rejouer la simulation au sol chez chaque client. Elle est à état
+  (appâts, repas, rubans, dégâts aux barricades) et dépend du découpage du
+  temps ; les écarts entre clients seraient inévitables.
 - Essais WAN et parties réelles : non effectués.
-- Prochaine action : phase 2, état de salle sur le canal non fiable avec bases
-  confirmées, en commençant par les positions `groundAgents`.
+- Prochaine action : phase 3 (format binaire et paquet de mouvements groupé par
+  destinataire), qui réduira aussi les positions restantes ; puis phase 4
+  (profilage du rendu dans une vraie partie).
