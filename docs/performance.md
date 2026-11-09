@@ -345,7 +345,7 @@ horodatages, entiers et chaînes exacts. `npm run e2e:motion` a vérifié dans d
 Chromium réels la réception (lots de 225 octets au plus à deux joueurs) et le
 décodage par le module du jeu.
 
-## Horloge serveur lissée pour les ennemis (version 253)
+## Horloge serveur lissée pour les ennemis (version 255)
 
 Les positions des nuées et des insectes au sol sont calculées par chaque
 navigateur à partir de l'heure du serveur. `enemies()` la recalait sur chaque

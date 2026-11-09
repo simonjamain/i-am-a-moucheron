@@ -103,7 +103,7 @@ WebTransport (Go ou Rust) et/ou TURN UDP ; règles conservées en JS.
   (surtout gênant pour un mitrailleur dans l'avion d'un autre). Causes : heure
   serveur recalée à chaque réponse ; mouvements datés à leur arrivée et délai
   d'affichage fixe.
-  - Version 253 : horloge serveur lissée et monotone pour les ennemis.
+  - Version 255 : horloge serveur lissée et monotone pour les ennemis.
   - Suivant : interpolation des joueurs (heure de capture de l'émetteur,
     tampon adaptatif).
 - Essais WAN et parties réelles : non effectués.

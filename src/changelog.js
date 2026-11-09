@@ -1,7 +1,7 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
-    version: 253,
+    version: 255,
     changes: ['Les nuées et les insectes au sol avancent de façon régulière, sans à-coups.'],
   },
   {
