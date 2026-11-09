@@ -46,7 +46,10 @@ function simulate(method) {
 const before = simulate('reanchor'),
   after = simulate('clock');
 // The former method reproduces the reported "jumps": several per second.
-assert.ok(before.jumps > 40, 'former clock jumps several times per second: ' + JSON.stringify(before));
+assert.ok(
+  before.jumps > 40,
+  'former clock jumps several times per second: ' + JSON.stringify(before),
+);
 assert.ok(before.backwards > 10, 'and sometimes goes back in time');
 // The smoothed clock: no backward step, no visible jump, bounded lag.
 assert.equal(after.backwards, 0, 'never goes back');
