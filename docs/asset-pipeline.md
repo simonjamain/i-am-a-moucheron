@@ -131,6 +131,48 @@ tous les joueurs sont identiques pour l'instant, le modèle sera affiné.
   dans la paume ; balistique, dégâts et règles de tir sont inchangés. Aucune
   initiale ni teinte par joueur. `scripts/test-character.mjs` couvre ces points.
 
+## Moucheron Meshy (squelette et vol)
+
+Premier modèle d'animal ; modèle « Angry Little Fly » fourni par l'utilisateur
+(Meshy, déjà riggé), donc sans génération ni crédit Meshy de notre côté.
+
+- Original : `assets/originals/midge/angry-little-fly.glb` (hors dépôt), SHA-256
+  `5db0deca…f404`. Un maillage de 1 624 triangles, 1 967 sommets, squelette Meshy
+  « SmartRig » de 38 os (6 pattes, tête, antennes, abdomen), texture PNG 2K,
+  **aucun clip**. Axes : tête vers +Z, Y vers le haut, pieds à y = 0.
+- Ailes : le rig Meshy les pondère sur l'os de l'abdomen. Chaque aile étant une
+  coque séparée (107 et 121 sommets), `scripts/import-midge.py` ajoute les os
+  `Wing_L` (+X) et `Wing_R` (−X), enfants du thorax `Bone_003`, avec charnière aux
+  sommets les plus internes de la coque, et y lie ces sommets à 100 %.
+  Aucune géométrie, UV ni texture n'est modifiée.
+- Import : `PYTHONPATH=scripts python3 scripts/import-midge.py <GLB>` vérifie
+  l'empreinte et écrit `src/midge-data.js` (192 Ko : positions/UV float32, poids
+  8 bits renormalisés, texture JPEG 512 px de 72 Ko). Pas de simplification :
+  modèle déjà léger, monobloc articulé (l'outil Docker le refuserait sans
+  régions), et le coût est borné par le niveau de détail ci-dessous.
+- Vol (`src/midge-model.js`) : cycle procédural posé sur les os, boucle de 1 s
+  contenant 7 battements (7 Hz). Ailes : élévation de −11° à +54°, balayage
+  avant/arrière et torsion aux retournements (pointe en huit). Corps qui monte à
+  chaque battement et tangue lentement, abdomen ondulant, tête et antennes
+  mobiles, pattes repliées sous le corps qui traînent vers l'arrière.
+- Rendu (`src/midge-batch.js`) : le cycle est skinné une fois sur CPU en
+  84 images (positions et normales, demi-flottants, 2,6 Mo de texture GPU) ; un
+  seul `InstancedMesh` lit cette texture d'animation de sommets avec une phase par
+  moucheron. Près de la caméra (rayon apparent > 1 % de la distance, 1 000 au
+  plus) : modèle Meshy ; au-delà, les trois lots d'ellipsoïdes historiques,
+  recolorés. Cadavres et rendu sans WebGL : `SkinnedMesh` réel du même rig.
+  Les collisions restent la sphère `MIDGE_SPHERE_RADIUS` (inchangée).
+- Échelle : facteur 0,8 et thorax à l'origine, soit un corps de 18 mm en jeu
+  (16 mm auparavant), tête vers −Z comme le cap appliqué par le client.
+- Mesures (SwiftShader, rendu logiciel, 960×540, indicatif) : 300 moucherons
+  136 ms/image contre 43 ms en ellipsoïdes, 1 500 : 623 contre 203 ms. CPU du
+  `flush` inchangé (~23 ms pour 9 999). Les FPS sur GPU réel restent à mesurer.
+- Vérification : `scripts/test-midge-model.mjs` (provenance, os d'ailes,
+  orientation, battement symétrique, boucle sans raccord) et
+  `scripts/test-midge-batch.mjs` (niveau de détail, phases, lots).
+
+![Poses du cycle de vol](midge-model-review.jpg)
+
 ## Canon anti-matériel (obusier Meshy)
 
 Modèle fourni par l'utilisateur pour l'[issue #113](https://github.com/simonjamain/i-am-a-moucheron/issues/113)

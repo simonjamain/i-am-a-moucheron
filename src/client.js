@@ -3264,6 +3264,8 @@ function enemies(now) {
     for (const [j, leg] of (g.userData.legs || []).entries())
       leg.rotation.y = Math.sin(now * 0.025 + profile.phase + j) * 0.3;
     g.userData.hasPosition = true;
+    // Rigged midge outside the GPU batch (no WebGL): pose its flight cycle.
+    g.userData.flight?.animate(now, profile.phase);
     g.userData.wings.forEach(
       (w, j) =>
         (w.rotation.z =
@@ -4366,7 +4368,7 @@ function frame(now) {
     if (model?.userData.dish) model.userData.dish.rotation.y = now * 0.001;
   updateFallingEnemies(dt);
   updateContextHUD();
-  midgeBatch.flush(insects, now);
+  midgeBatch.flush(insects, now, camera);
   spiderlingBatch.flush(insects);
   tracerPool.flush();
   if (spectating && observationCamera) {
