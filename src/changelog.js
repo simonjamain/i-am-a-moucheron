@@ -1,6 +1,12 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 260,
+    changes: [
+      'Tirer à la mitrailleuse depuis un appareil ne provoque plus de déconnexions à répétition.',
+    ],
+  },
+  {
     version: 259,
     changes: [
       'Les moucherons ont un nouveau look : de petites mouches à l’air furieux.',
