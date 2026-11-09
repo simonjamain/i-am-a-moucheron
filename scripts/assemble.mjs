@@ -107,6 +107,8 @@ const files = {
       'interaction-timing',
       'insect-hits',
       'midge-batch',
+      'midge-model',
+      'midge-data',
       'spiderling-batch',
       'insect-status',
       'blood-effects',

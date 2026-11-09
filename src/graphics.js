@@ -4,6 +4,7 @@ import { makeH2 } from './h2-model.js';
 import { makeM1 } from './m1-model.js';
 import { makeCastorMeshy } from './castor-model.js';
 import { createCharacter, CHARACTER_HEIGHT, LEGACY_HEIGHT } from './character-model.js';
+import { createMidgeRig } from './midge-model.js';
 import { GROUND_LEGS, MIDGE_SPHERE_RADIUS } from './scale.js';
 export function createGraphics(T, scene) {
   const materials = new Map();
@@ -245,6 +246,24 @@ export function createGraphics(T, scene) {
         hitParts: [body, head],
         disposables: [],
         ...(large ? {} : { sphereRadius: 1.2 }),
+      };
+      scene.add(g);
+      return g;
+    }
+    if (type === 'midge') {
+      // Rigged Meshy midge (corpses, non-WebGL fallback). Living WebGL midges
+      // are drawn by MidgeBatch; hits use the sphere, not the mesh.
+      const rig = createMidgeRig(T);
+      rig.mesh.castShadow = true;
+      g.add(rig.container);
+      g.userData = {
+        wings: [],
+        legs: [],
+        hitParts: [],
+        disposables: [rig.mesh.material],
+        hitTolerance: 1.2,
+        sphereRadius: MIDGE_SPHERE_RADIUS,
+        flight: rig,
       };
       scene.add(g);
       return g;
