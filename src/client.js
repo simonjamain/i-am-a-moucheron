@@ -111,6 +111,10 @@ import {
 import { PeerMotion, MotionTrack } from '/network.js';
 import { UdpClient } from '/udp-client.js';
 import { ServerClock } from '/server-clock.js';
+import { stepHeavy, heavyImpact } from '/heavy-sim.js';
+import { createOrdnance, integrateOrdnance } from '/ordnance.js';
+import { ROUTE_OBSTACLES } from '/route-obstacles.js';
+import { howitzerMuzzle } from '/howitzer-geometry.js';
 import { RECONNECT_AFTER_MS, RECONNECT_WINDOW_MS } from '/udp-protocol.js';
 import { HoldZoom, advanceFuse, contextKey, rangeReadout } from '/equipment-controls.js';
 import { formatDistance, formatSpeed } from '/units.js';
@@ -256,8 +260,7 @@ let myVehicle = null,
   selectedShell = 'he',
   heliWeapon = 'copilot',
   missilePressed = false,
-  mobileProximity = MOBILE_FUSE.initial,
-  heavyPending = false;
+  mobileProximity = MOBILE_FUSE.initial;
 const fleetModels = new Map(),
   effectSeen = new Set();
 let turretIndex = -1,
@@ -550,6 +553,8 @@ function remoteBodies(a, scene) {
 let reconnecting = false,
   identityKey = null;
 const serverClock = new ServerClock();
+// Own heavy shells in flight, simulated here (see fireHeavy()).
+const localShots = new Map();
 let peerMotion = null,
   signalSince = 0;
 const motionTracks = new Map();
@@ -586,6 +591,8 @@ function localMotion() {
     turretDirection: weaponDirection().toArray(),
     aimPoint:
       myVehicle?.type === 'helicopter' && crewSeat === 'copilot' ? heliAimPoint() : undefined,
+    // Own guided missile, so that other players draw it where it really flies.
+    missile: ownMissileMotion(),
     ground: self
       ? {
           scene: respawnAt ? (isSuper() ? 'super' : 'soul') : 'base',
@@ -594,6 +601,11 @@ function localMotion() {
         }
       : null,
   };
+}
+function ownMissileMotion() {
+  for (const shot of localShots.values())
+    if (shot.weapon === 'missile') return { shot: shot.shot, p: [...shot.p], v: [...shot.v] };
+  return undefined;
 }
 function remoteMotion(p) {
   return motionTracks.get(p.id)?.sample(performance.now()) || p.state;
@@ -2925,12 +2937,30 @@ function updateVehicles(dt) {
           howitzer.fire();
           combatEffects.muzzle(muzzle, dir);
           sound.play('flak', muzzle, { ref: 35 });
-          action('antitank-fire', {
+          const shot = id + ':antitank:' + ++shotSequence,
+            aim = dir.clone().normalize().toArray(),
+            launchAt = serverClock.now(performance.now()) ?? Date.now() + clockOffset;
+          launchLocal({
+            shot,
+            weapon: 'antitank',
+            vehicle: null,
             station: index,
-            shot: id + ':antitank:' + ++shotSequence,
-            incarnation,
-            direction: dir.toArray(),
+            shooter: id,
+            p: howitzerMuzzle(station, aim),
+            v: aim.map((v) => v * HEAVY.antitank.speed),
+            age: 0,
+            at: launchAt,
+            updated: launchAt,
+            wave: snap.wave,
+            radiusFactor: 1,
+            bonus: 1,
           });
+          api('antitank-fire', { station: index, shot, incarnation, direction: aim })
+            .then((v) => accept(v))
+            .catch((e) => {
+              localShots.delete(shot);
+              notify(e.message, 2);
+            });
         } else {
           const fort = FORTIFICATIONS[station.kind];
           const shot = fort
@@ -5069,21 +5099,15 @@ function heliAimPoint() {
   return origin.addScaledVector(direction, distance).toArray();
 }
 function activeMissile() {
+  for (const shot of localShots.values())
+    if (shot.weapon === 'missile' && shot.vehicle === myVehicle?.id) return shot;
   return snap?.ordnance?.find((s) => s.weapon === 'missile' && s.vehicle === myVehicle?.id);
 }
-async function useHeliMissile() {
+function useHeliMissile() {
   const missile = activeMissile();
-  if (missile) {
-    const self = snap.pilots.find((p) => p.id === id);
-    if (missile.shooter !== id || missile.occupation !== self?.occupation) return;
-    try {
-      accept(
-        await api('missile-detonate', { id, shot: missile.shot, occupation: self.occupation }),
-      );
-    } catch (e) {
-      notify(e.message, 2);
-    }
-  } else fireHeavy('missile');
+  if (!missile) return fireHeavy('missile');
+  // Only its shooter detonates a missile, where it is now.
+  if (localShots.get(missile.shot) === missile) detonateLocalMissile(missile);
 }
 function heliGunnerView(mount, dir, up) {
   mount.updateWorldMatrix(true, true);
@@ -5111,12 +5135,40 @@ function hasAmmo() {
   );
 }
 let nextHeavyAt = 0;
+// Heavy weapons are simulated by their shooter (src/heavy-sim.js): the shell
+// leaves the displayed muzzle at once, flies and collides in this browser, and
+// its impact (damage included, friends too) is reported to the server, which
+// only debits ammunition and cadence and informs the other players.
+const rocketSides = new Map();
+function launchVehicle() {
+  // The pose the shooter sees: its own aircraft, or the pilot's as displayed.
+  const pilot = myVehicle.seats?.find?.((s) => s.seat === 'pilot')?.pilot;
+  const motion =
+    crewSeat === 'pilot'
+      ? { p: me.position.toArray(), q: me.quaternion.toArray(), v: vel.toArray() }
+      : pilot && pilot !== id
+        ? remoteMotion(
+            snap.pilots.find((p) => p.id === pilot) || { id: pilot, state: myVehicle.state },
+          )
+        : myVehicle.state;
+  const side = -(rocketSides.get(myVehicle.id) || -1);
+  return {
+    ...myVehicle,
+    state: { ...myVehicle.state, p: [...motion.p], q: [...motion.q], v: [...motion.v] },
+    rocketSide: side,
+    proximity: mobileProximity,
+  };
+}
+function launchLocal(projectile) {
+  projectile.bonus *= currentFactors().damage * (snap?.balance?.damage ?? 1);
+  localShots.set(projectile.shot, projectile);
+  return projectile;
+}
 async function fireHeavy(weapon = null) {
   if (
     !joined ||
     respawnAt ||
     !myVehicle ||
-    heavyPending ||
     !controlFocus.active ||
     !canCapture() ||
     (myVehicle.type === 'helicopter' && crewSeat === 'pilot' && keys.KeyC) ||
@@ -5133,8 +5185,12 @@ async function fireHeavy(weapon = null) {
           ? 'bomb'
           : null;
   if (!weapon || !HEAVY[weapon] || (myVehicle.supplies.ammo[weapon] || 0) < 1) return;
-  const state = localMotion();
-  heavyPending = true;
+  if (weapon === 'missile' && activeMissile()) return;
+  const state = localMotion(),
+    shot = id + ':heavy:' + ++shotSequence,
+    direction = weaponDirection().toArray(),
+    occupation = snap.pilots.find((p) => p.id === id).occupation,
+    now = serverClock.now(performance.now()) ?? Date.now() + clockOffset;
   nextHeavyAt =
     performance.now() +
     HEAVY[weapon].interval *
@@ -5142,26 +5198,147 @@ async function fireHeavy(weapon = null) {
       (['rocket', 'proximity'].includes(weapon)
         ? Math.max(1, currentFactors().interval) / (snap?.balance?.fireRate ?? 1)
         : currentFactors().interval / (snap?.balance?.fireRate ?? 1));
+  const vehicle = launchVehicle();
+  if (weapon === 'rocket') rocketSides.set(myVehicle.id, vehicle.rocketSide);
+  const projectile = launchLocal(
+    createOrdnance({ shot, weapon, vehicle, shooter: id, direction, now, wave: snap.wave }),
+  );
+  if (weapon === 'missile') projectile.occupation = occupation;
+  myVehicle.supplies.ammo[weapon] = Math.max(0, (myVehicle.supplies.ammo[weapon] || 0) - 1);
+  sound.play(weapon === 'bomb' ? 'exit' : 'flak', me.position, { ref: 25 });
   try {
     accept(
       await api('heavy-fire', {
         id,
         vehicle: myVehicle.id,
-        occupation: snap.pilots.find((p) => p.id === id).occupation,
+        occupation,
         state,
         weapon,
         proximity: mobileProximity,
-        shot: id + ':heavy:' + ++shotSequence,
-        direction: weaponDirection().toArray(),
+        shot,
+        direction,
       }),
     );
     selectedShell = availableShell(myVehicle?.supplies?.ammo || {}, selectedShell) || selectedShell;
-    sound.play(weapon === 'bomb' ? 'exit' : 'flak', me.position, { ref: 25 });
   } catch (e) {
+    // Refused (stock, cadence, seat): this shell never existed.
+    localShots.delete(shot);
     notify(e.message, 2);
-  } finally {
-    heavyPending = false;
   }
+}
+// What this shooter's browser sees, for its own shells.
+function heavyWorld() {
+  const kills = new Set(snap?.kills || []);
+  for (const k of localKills) kills.add(k);
+  const roster = currentRoster(),
+    cache = new Map();
+  const pose = (v) => {
+    const pilot = v.seats?.find?.((s) => s.seat === 'pilot')?.pilot;
+    const motion =
+      pilot === id && crewSeat === 'pilot'
+        ? { p: me.position.toArray(), q: me.quaternion.toArray() }
+        : pilot
+          ? remoteMotion(snap.pilots.find((p) => p.id === pilot) || { id: pilot, state: v.state })
+          : v.state;
+    return { id: v.id, type: v.type, state: { p: motion.p, q: motion.q, hp: v.state.hp } };
+  };
+  const players = [];
+  for (const p of snap?.pilots || []) {
+    if (p.life !== 'alive' || p.vehicle_id) continue;
+    if (p.mode === 'turret') {
+      const station = snap.equipment?.[p.state?.turret];
+      if (station) players.push({ id: p.id, p: [station.x, station.y + MAP.metres(1), station.z] });
+      continue;
+    }
+    const body = baseArena?.bodies.find((b) => b.entity === p.id && !b.gone);
+    if (!body) continue;
+    const w = baseWorld(body);
+    players.push({ id: p.id, p: [w.x, w.y + MAP.metres(0.9), w.z] });
+  }
+  return {
+    solids: ROUTE_OBSTACLES,
+    roster,
+    killed: (i) => kills.has(i),
+    frames: (time, projectile) => {
+      if (snap?.phase !== 'combat' || projectile.wave !== snap.wave) return [];
+      const at = Math.round(time / 50) * 50;
+      if (!cache.has(at))
+        cache.set(
+          at,
+          swarmFrame(
+            roster,
+            (at - snap.started) / 1000,
+            groundMotion.sample(at),
+            airField(snap.groundDefense, at),
+          ),
+        );
+      return cache.get(at);
+    },
+    vehicles: (snap?.vehicles || []).map(pose),
+    players,
+    equipment: snap?.equipment || [],
+    guidance: (projectile) =>
+      projectile.shooter === id &&
+      myVehicle?.id === projectile.vehicle &&
+      crewSeat === 'copilot' &&
+      !respawnAt
+        ? weaponDirection().toArray()
+        : null,
+    missileLost: (projectile) => {
+      const v = snap?.vehicles.find((x) => x.id === projectile.vehicle);
+      return !v || v.state.hp <= 0;
+    },
+  };
+}
+// Local effects of an own impact, at once; the server confirms for others.
+function showHeavyImpact(report) {
+  effectSeen.add(report.shot);
+  const point = new T.Vector3().fromArray(report.p);
+  if (report.kind === 'piercing') hitEffects.burst(point, camera);
+  else {
+    combatEffects.blast(point, report.radius);
+    sound.play('crash', point, { ref: 20 });
+  }
+  const roster = currentRoster();
+  for (const [index, amount] of report.enemies) {
+    if (localKills.has(index) || !roster[index]) continue;
+    const damage = (localEnemyDamage.get(index) || 0) + amount;
+    localEnemyDamage.set(index, damage);
+    if (damage >= roster[index].hp) {
+      localKills.add(index);
+      fallEnemy(index);
+    }
+  }
+}
+function finishHeavy(projectile, impact, world) {
+  localShots.delete(projectile.shot);
+  if (!impact) {
+    action('heavy-impact', { shot: projectile.shot, fizzle: true });
+    return;
+  }
+  const report = heavyImpact(projectile, impact.hit, impact.frames, impact.point, world);
+  showHeavyImpact(report);
+  action('heavy-impact', report);
+}
+function updateLocalHeavy() {
+  if (!localShots.size || !snap) return;
+  const now = serverClock.now(performance.now()) ?? Date.now() + clockOffset,
+    world = heavyWorld();
+  for (const projectile of [...localShots.values()]) {
+    const impact = stepHeavy(projectile, now, world);
+    if (impact || projectile.done) finishHeavy(projectile, impact, world);
+  }
+}
+function detonateLocalMissile(projectile) {
+  const now = serverClock.now(performance.now()) ?? Date.now() + clockOffset,
+    world = heavyWorld();
+  const impact = stepHeavy(projectile, now, world);
+  if (impact || projectile.done) return finishHeavy(projectile, impact, world);
+  finishHeavy(
+    projectile,
+    { hit: {}, point: projectile.p, frames: world.frames(now, projectile) },
+    world,
+  );
 }
 // Neutral shell colours by weapon, identical for every player (issue #106).
 const SHELL_COLORS = {
@@ -5171,12 +5348,42 @@ const SHELL_COLORS = {
   rocket: '#e0a33c',
   missile: '#e6e1cf',
 };
+// Other players' shells: flown here from their recorded launch, for display.
+const remoteFlights = new Map();
+function displayedShots() {
+  const shots = [...localShots.values()],
+    now = serverClock.now(performance.now()) ?? Date.now() + clockOffset,
+    listed = new Set();
+  for (const record of snap?.ordnance || []) {
+    listed.add(record.shot);
+    if (record.shooter === id || localShots.has(record.shot) || effectSeen.has(record.shot))
+      continue;
+    let flight = remoteFlights.get(record.shot);
+    if (!flight) remoteFlights.set(record.shot, (flight = structuredClone(record)));
+    const owner = snap.pilots.find((p) => p.id === record.shooter);
+    const relayed = owner && remoteMotion(owner)?.missile;
+    if (record.weapon === 'missile' && relayed?.shot === record.shot) {
+      flight.p = [...relayed.p];
+      flight.v = [...relayed.v];
+      flight.updated = now;
+    } else
+      while (flight.updated < now) {
+        const dt = Math.min(1 / 60, (now - flight.updated) / 1000);
+        integrateOrdnance(flight, dt);
+        flight.updated += dt * 1000;
+      }
+    shots.push(flight);
+  }
+  for (const shot of remoteFlights.keys()) if (!listed.has(shot)) remoteFlights.delete(shot);
+  return shots;
+}
 const ordnanceModels = new Map();
 const missileExhaust = new MissileExhaust(T, scene);
 function updateOrdnance(dt) {
   const active = new Set();
   const exhaustPositions = new Map();
-  for (const shot of snap?.ordnance || []) {
+  updateLocalHeavy();
+  for (const shot of displayedShots()) {
     active.add(shot.shot);
     let model = ordnanceModels.get(shot.shot);
     if (!model) {
@@ -5196,8 +5403,7 @@ function updateOrdnance(dt) {
       if (shot.weapon === 'rocket' || shot.weapon === 'missile')
         missileExhaust.attach(shot.shot, model, shot.weapon);
     }
-    const lag = Math.max(0, Math.min(0.25, (Date.now() + clockOffset - shot.updated) / 1000));
-    model.position.fromArray(shot.p).addScaledVector(new T.Vector3().fromArray(shot.v), lag);
+    model.position.fromArray(shot.p);
     if (shot.weapon === 'rocket' || shot.weapon === 'missile')
       exhaustPositions.set(shot.shot, model.position);
     if (Math.hypot(...shot.v) > 1e-8)
@@ -5249,7 +5455,7 @@ function updateContextHUD() {
               ? stations[turretIndex]?.kind === 'dca'
                 ? cooldown <= 0
                 : performance.now() >= (turrets[turretIndex]?.userData.shotAt ?? 0)
-              : performance.now() >= nextHeavyAt && !heavyPending,
+              : performance.now() >= nextHeavyAt,
           stall: !$('stallWarning').classList.contains('hidden'),
         })
       : null;

@@ -24,6 +24,8 @@ proxies interpolés. Le serveur conserve en mémoire les règles, PV, contrats,
 sièges et stocks. Les PNJ sont simulés par le joueur désigné au purgatoire ;
 sans joueur, le serveur poursuit leur service à chaque tick de salle (250 ms).
 Les tirs d'avion restent prédits immédiatement, puis débités par lots fiables.
+Les armes lourdes sont aussi simulées par leur tireur, qui rapporte leurs impacts ;
+voir [véhicules et armes](vehicles-bank.md).
 
 Les sections suivantes documentent le backend Sites historique, maintenu pour
 la version publique durant la migration. Les références HTTP/D1 de ces sections

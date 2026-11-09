@@ -52,9 +52,9 @@ focus et changement de poste effacent les commandes maintenues.
 Le bombardier initial dispose de **50 bombes**, le Stuka de **6**. Une pression
 brève largue une bombe ; le maintien largue à intervalle nominal de **0,5 s**.
 Le contrat de cadence double cet intervalle. Stocks et délai restent validés par
-`heavy-fire` côté serveur ; un envoi en cours est unique. En cas de latence élevée,
-l’attente de cette confirmation peut réduire la cadence effective des armes
-lourdes. Les MG restent prédites immédiatement et réglées par lots idempotents.
+`heavy-fire` côté serveur, mais la bombe part immédiatement, simulée par le
+tireur, sans attendre cette confirmation ; un refus la retire. Les MG restent
+prédites immédiatement et réglées par lots idempotents.
 La cadence rattrape les images retardées, avec un plafond de huit intervalles
 par pas pour éviter une surcharge après une longue pause. Les traceurs des
 armes automatiques des autres joueurs suivent désormais une cadence temporisée

@@ -558,14 +558,28 @@ const visualContext = {
   makeBomb: graphics.makeBomb,
   vehicleHue,
   clockOffset: 0,
+  // Other players' shells are flown locally from their recorded launch.
+  structuredClone,
+  performance,
+  integrateOrdnance,
+  localShots: new Map(),
+  effectSeen: new Set(),
+  serverClock: { now: () => Date.now() },
+  remoteMotion: () => null,
+  updateLocalHeavy: () => {},
+  id: 'observer',
   snap: {
+    pilots: [],
     ordnance: ['he', 'ap', 'bomb'].map((weapon, i) => ({
       shot: weapon,
       weapon,
       sequence: i + 4,
       p: [0, 1, 0],
       v: [0, 0, -1],
+      at: Date.now(),
       updated: Date.now(),
+      shooter: 'someone',
+      age: 0,
     })),
   },
 };

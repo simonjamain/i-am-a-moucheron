@@ -94,12 +94,22 @@ mémoire en cas de connexion durablement saturée ; les identifiants sont repris
 à l'identique après une confirmation perdue. Le tir normal ne s'arrête donc
 plus à cause de l'ancien délai fixe entre confirmations.
 Une rupture réseau durable peut encore remplir la file et interrompre le tir.
-Les armes
-lourdes passent par `heavy-fire` sur le canal UDP fiable ; le serveur débite,
-applique le délai, simule les projectiles et produit les impacts communs. Leurs
-réponses ne créent pas de deuxième projectile. Les snapshots décrivent les
-projectiles en vol. Les dégâts et libérations d’âmes sont métier ; les effets
-visuels ne déclenchent aucun dégât ni récompense supplémentaires.
+Les armes lourdes (roquettes, missiles, bombes, obus HE/AP, obus à fusée,
+canon lourd) suivent la même règle que les MG : **le tireur calcule ses tirs et
+leurs collisions**. Son navigateur crée le projectile dès l'appui, depuis la
+bouche affichée, le fait voler et le confronte à ce qu'il voit
+(`src/heavy-sim.js` : balistique, guidage, fusée de proximité, impact direct et
+souffle, alliés compris), puis envoie `heavy-impact` avec les dégâts. Une fin
+sans explosion (contact inerte, fin de vie, hélicoptère détruit) est signalée
+par `fizzle`. Le serveur ne simule plus rien : `heavy-fire` (ou
+`antitank-fire`) débite le stock, applique la cadence (avec 100 ms de tolérance
+pour les irrégularités du réseau, le tireur n'attendant pas la réponse) et
+enregistre le départ ; `heavy-impact` n'est accepté que du tireur, une seule
+fois, et ses montants sont plafonnés par la puissance enregistrée du départ.
+Seul un obus perforant tue net. Les autres joueurs simulent la trajectoire
+depuis le départ enregistré ; un missile guidé est dessiné à la position
+relayée dans le mouvement du tireur. Un départ sans rapport est oublié 3 s après
+sa fin de vie ; un obus encore en vol à la mort de son tireur garde son effet.
 
 ## Trajets et crashs
 
@@ -197,7 +207,7 @@ Les pilotes ont le vol/conduite à gauche et l’armement à droite ; les tireur
 ont la visée ou le canon à gauche et leur MG à droite. Le tank affiche le type
 d’obus effectivement disponible, HE/AP et le stock coaxial indépendant. Stuka et
 bombardier affichent leurs bombes. Les compteurs MG tiennent compte des débits
-locaux encore en attente ; les bombes/obus suivent le snapshot serveur.
+locaux encore en attente ; les bombes/obus sont débités dès le tir, puis corrigés par le snapshot serveur.
 
 Les rails restent compacts. Leurs détails s’ouvrent 2,5 s à l’entrée, lors d’un
 réglage, changement d’arme, dégâts, seuil critique, décrochage ou début/fin de ravitaillement ;

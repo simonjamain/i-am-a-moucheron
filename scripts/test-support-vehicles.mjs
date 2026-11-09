@@ -2,6 +2,8 @@ import assert from 'node:assert/strict';
 import { performance } from 'node:perf_hooks';
 import * as T from '../vendor/three.module.min.js';
 import { Game } from '../server/game.js';
+import { resolveHeavy, detonateHeavy, roomWorld } from './heavy-resolver.mjs';
+import { stepHeavy } from '../src/heavy-sim.js';
 import { VEHICLES, vehiclePad } from '../src/fleet.js';
 import { HEAVY, canUseWeapon, heavyDamage } from '../src/armament.js';
 import { MAP, REFERENCE, FLAK } from '../src/scale.js';
@@ -184,7 +186,7 @@ const checkFuse = (age, elapsed, expected) => {
   const shot = makeShot(age);
   room.ordnance = [shot];
   const before = room.effects.length;
-  game.advanceOrdnance(room, now + elapsed * 1000);
+  resolveHeavy(game, room, { now: now + elapsed * 1000 });
   assert.equal(room.effects.length - before, expected);
   return shot;
 };
@@ -198,12 +200,12 @@ game.solids = [{ min: { x: 0.99, y: 0.9, z: 0.95 }, max: { x: 1.01, y: 1.1, z: 0
 let shot = makeShot(0, [1, 1, 1], [0, 0, -10]);
 room.ordnance = [shot];
 let effects = room.effects.length;
-game.advanceOrdnance(room, now + 10);
+resolveHeavy(game, room, { now: now + 10 });
 assert.equal(shot.done, true);
 assert.equal(room.effects.length, effects);
 shot = makeShot(0.301, [1, 1, 1], [0, 0, -10]);
 room.ordnance = [shot];
-game.advanceOrdnance(room, now + 10);
+resolveHeavy(game, room, { now: now + 10 });
 assert.equal(room.effects.length, effects + 1);
 game.solids = [];
 room.ordnance = [];
@@ -212,12 +214,12 @@ game.solids = [{ min: { x: 1, y: 1, z: 1 }, max: { x: 1.01, y: 1.01, z: 1.01 } }
 shot = makeShot(0.301, [0.96, 1.03, 1.005], [1, 0, 0]);
 room.ordnance = [shot];
 effects = room.effects.length;
-game.advanceOrdnance(room, now + 20);
+resolveHeavy(game, room, { now: now + 20 });
 assert.equal(room.effects.length, effects, 'no explosion on radius entry');
-game.advanceOrdnance(room, now + 80);
+resolveHeavy(game, room, { now: now + 80 });
 assert.equal(room.effects.length, effects + 1, 'one explosion at closest passage');
 assert.ok(Math.abs(shot.p[0] - 1.01) < 0.0001, 'closest passage includes gravity');
-game.advanceOrdnance(room, now + 100);
+resolveHeavy(game, room, { now: now + 100 });
 assert.equal(room.effects.length, effects + 1);
 game.solids = [];
 // Own hull remains eligible after arm. Explosion applies only once.
@@ -226,10 +228,10 @@ shot = makeShot(0.3, truck.state.p);
 shot.vehicle = truck.id;
 room.ordnance = [shot];
 effects = room.effects.length;
-game.advanceOrdnance(room, now + 1);
+resolveHeavy(game, room, { now: now + 1 });
 assert.equal(room.effects.length, effects + 1);
 assert.ok(truck.state.hp < 100);
-game.advanceOrdnance(room, now + 100);
+resolveHeavy(game, room, { now: now + 100 });
 assert.equal(room.effects.length, effects + 1);
 // Full stock, cadence and exhaustion without underflow.
 truck.state.hp = 100;
@@ -263,18 +265,10 @@ fire(gunner, heli, 'missile', 'guided');
 let missile = room.ordnance.at(-1);
 assert.equal(missile.occupation, gunner.occupation);
 assert.throws(() => fire(gunner, heli, 'missile', 'second-guided'), /déjà/);
-assert.throws(
-  () =>
-    game.command(room.code, pilot.id, 'missile-detonate', {
-      shot: 'guided',
-      occupation: pilot.occupation,
-    }),
-  /indisponible/,
-);
-game.command(room.code, gunner.id, 'missile-detonate', {
-  shot: 'guided',
-  occupation: gunner.occupation,
-});
+// Only the shooter's impact report counts: the pilot cannot detonate it.
+detonateHeavy(game, room, 'guided', pilot.id);
+assert.ok(room.ordnance.includes(missile), 'a report from another player is ignored');
+detonateHeavy(game, room, 'guided', gunner.id);
 assert.ok(!room.ordnance.includes(missile));
 assert.throws(() => fire(gunner, heli, 'missile', 'reload'), /recharge/);
 now += 2000;
@@ -282,17 +276,10 @@ fire(gunner, heli, 'missile', 'orphan');
 missile = room.ordnance.at(-1);
 game.release(room, gunner);
 const direction = [...missile.v];
-game.advanceOrdnance(room, now + 100);
+resolveHeavy(game, room, { now: now + 100 });
+// Out of the copilot seat, the missile is no longer guided.
 near(missile.v[0], direction[0]);
 near(missile.v[1], direction[1]);
-assert.throws(
-  () =>
-    game.command(room.code, gunner.id, 'missile-detonate', {
-      shot: 'orphan',
-      occupation: gunner.occupation,
-    }),
-  /indisponible/,
-);
 // Lifetime deletion without blast, no guidance after a new occupation.
 room.ordnance = [missile];
 missile.p = [0, 2, 0];
@@ -300,14 +287,14 @@ missile.v = [0, 0, 0];
 missile.updated = missile.at + 9999;
 missile.age = 9.999;
 effects = room.effects.length;
-game.advanceOrdnance(room, missile.at + 10000);
+resolveHeavy(game, room, { now: missile.at + 10000 });
 assert.equal(room.ordnance.length, 0);
 assert.equal(room.effects.length, effects);
 now = missile.at + 12001;
 game.assign(room, gunner, heli, 'copilot', null);
 fire(gunner, heli, 'missile', 'hull-loss');
 heli.state.hp = 0;
-game.advanceOrdnance(room, now + 10);
+resolveHeavy(game, room, { now: now + 10 });
 assert.ok(!room.ordnance.some((s) => s.weapon === 'missile'));
 game.command(room.code, pilot.id, 'reset');
 assert.equal(room.ordnance.length, 0);
@@ -345,7 +332,9 @@ for (let batch = 0; batch < 4; batch++) {
     at: now - 400,
     vehicle: 'none',
   }));
-  bench.advanceOrdnance(r, now + 250);
+  // What each shooter's browser computes for its own shells.
+  const world = roomWorld(bench, r);
+  for (const projectile of r.ordnance) stepHeavy(projectile, now + 250, world);
 }
 console.log(
   JSON.stringify({

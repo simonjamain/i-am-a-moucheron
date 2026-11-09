@@ -3,6 +3,7 @@
 // smaller blast; a horizontal shot leaves the muzzle instead of exploding on it.
 import assert from 'node:assert/strict';
 import { Game } from '../server/game.js';
+import { resolveHeavy } from './heavy-resolver.mjs';
 import { HEAVY, heavyDamage } from '../src/armament.js';
 import { FORTIFICATIONS } from '../src/ground-fortifications.js';
 import { howitzerMuzzle } from '../src/howitzer-geometry.js';
@@ -45,13 +46,13 @@ near(flat.p[1] - gun.y, MAP.metres(1.31), MAP.metres(0.05), 'muzzle height');
 near(Math.hypot(...flat.v), shell.speed, 1e-12, 'muzzle velocity');
 const start = [...flat.p];
 now += 100;
-game.advanceOrdnance(r, now);
+resolveHeavy(game, r, { now: now });
 assert.ok(!flat.done, 'still flying after 0.1 s');
 assert.ok(flat.p[0] - start[0] > MAP.metres(60), 'travelled downrange: ' + (flat.p[0] - start[0]));
 assert.ok(flat.v[1] < 0, 'gravity bends the trajectory like a tank shell');
 assert.equal(r.effects.filter((e) => e.shot === 'flat').length, 0, 'no blast at the muzzle');
 now += 9000;
-game.advanceOrdnance(r, now);
+resolveHeavy(game, r, { now: now });
 assert.ok(!r.ordnance.includes(flat), 'shell ends on the floor or after its lifetime');
 
 // 2. Direct hit on a ground insect: full damage, small blast effect.
@@ -75,7 +76,7 @@ const offset = target.map((v, i) => v - muzzle[i]),
 fire('direct', aim);
 const direct = r.ordnance.find((o) => o.shot === 'direct');
 assert.ok(direct, 'aimed shell');
-game.advanceOrdnance(r, now + 200);
+resolveHeavy(game, r, { now: now + 200 });
 const blast = r.effects.find((e) => e.shot === 'direct');
 assert.ok(blast, 'impact effect');
 assert.equal(blast.kind, 'blast');

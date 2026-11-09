@@ -1,6 +1,13 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 257,
+    changes: [
+      'Les armes lourdes tirent sans délai et leurs obus partent bien de la bouche du canon.',
+      'Bombes, roquettes, missiles et obus touchent ce que vous voyez au moment du tir.',
+    ],
+  },
+  {
     version: 256,
     changes: [
       'Les autres joueurs se déplacent de façon fluide, sans sauts.',
