@@ -196,6 +196,23 @@ function roomState(code, now) {
   };
 }
 
+// What clients need to draw ground insects: position, heading and arrival.
+// Steering memory (baits tasted, meals, tapes, wall attacks) stays on the
+// server. Precision: 1e-6 map unit (~0.05 % of an ant), 1e-4 for the heading.
+const roundTo = (digits) => (value) => +value.toFixed(digits);
+const position = roundTo(6),
+  heading = roundTo(4);
+export function groundAgentsView(agents) {
+  const view = {};
+  for (const [id, unit] of Object.entries(agents))
+    view[id] = {
+      p: [position(unit.p[0]), position(unit.p[1])],
+      dir: [heading(unit.dir[0]), heading(unit.dir[1])],
+      ...(unit.arrived ? { arrived: true } : {}),
+    };
+  return view;
+}
+
 // One synchronous domain operation is one atomic turn of Node's event loop.
 // No SQL adapter, database, disk state or asynchronous transaction boundary.
 export class Game {
@@ -923,7 +940,7 @@ export class Game {
       rewardCount: r.rewardCount,
       equipment: r.equipment,
       groundDefense: groundSnapshot(r.groundDefense, this.now()),
-      groundAgents: r.groundEnabled ? r.groundAgents : {},
+      groundAgents: r.groundEnabled ? groundAgentsView(r.groundAgents) : {},
       deliveries: r.deliveries,
       pendingInstallations,
       purchases,

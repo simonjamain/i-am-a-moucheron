@@ -296,3 +296,24 @@ et direction des insectes au sol, simulées par le serveur) ; voir le
 l'heure exacte, la reconstruction après commande et nouvelle vague, le partage
 désactivé par défaut, la rétention des positions, les champs immédiats et les
 discontinuités.
+
+## Vue réseau des insectes au sol (version 251)
+
+Les insectes au sol sont simulés par le serveur (`advanceGroundUnit`). Le
+snapshot transmettait l'objet de simulation entier : appâts goûtés, repas,
+rubans traversés, cible d'attaque, et positions à 17 chiffres. Le navigateur
+n'en lit que la position, la direction et l'arrivée (`swarmFrame`,
+`GroundMotionTrack`). `groundAgentsView()` n'envoie plus que `p` (arrondi à
+1e-6 unité de carte, environ 0,05 % de la longueur d'une fourmi), `dir`
+(1e-4) et `arrived` quand il est vrai. La simulation du serveur, ses contacts
+et ses dégâts gardent l'état complet et non arrondi.
+
+`npm run bench:room-sync`, même banc à horloge simulée, trois séries :
+
+| Joueurs / ennemis | `sync` courant v250 | v251       |
+| ----------------- | ------------------- | ---------- |
+| 30 / 900          | 7,2 Ko              | 3,7–4,1 Ko |
+| 50 / 900          | 8,1–9,9 Ko          | 4,6–5,3 Ko |
+
+CPU par `sync` inchangé (1,5–2,1 ms dans les deux cas). `test-ground-view.mjs`
+vérifie les champs envoyés, la précision et l'état complet du serveur.
