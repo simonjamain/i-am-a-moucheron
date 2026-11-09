@@ -14,7 +14,7 @@ import {
 
 export function createGameServer({
   Peer = PeerConnection,
-  game = new Game({ solids: OFFICE_SOLIDS, snapshotShareMs: SNAPSHOT_SHARE_MS }),
+  game = new Game({ solids: OFFICE_SOLIDS, snapshotShareMs: SNAPSHOT_SHARE_MS, resumable: true }),
   portBegin = 41000,
   portEnd = 41099,
   advertiseAddress = '',
@@ -146,6 +146,15 @@ export function createGameServer({
                   } catch {}
             },
             close,
+            onJoin: (player) => {
+              for (const other of [...connections])
+                if (
+                  other !== c &&
+                  other.session?.player?.code === player.code &&
+                  other.session.player.id === player.id
+                )
+                  other.close();
+            },
           });
           function drain() {
             while (c.queue.length && c.commands?.isOpen() && c.commands.bufferedAmount() < 65536) {

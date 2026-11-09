@@ -85,6 +85,10 @@ export class UdpClient {
         this.onMotion(m.peer, m.state, performance.now(), m.seq);
       } catch {}
     };
+    // A closed data channel never reopens (the server ended the session, or the
+    // association died): report it at once instead of waiting for ICE timers.
+    this.commands.onclose = this.motion.onclose = () =>
+      this.fail(Error('Connexion UDP fermée par le serveur.'));
     // 'disconnected' is often transient in WebRTC (lost consent checks, Wi-Fi
     // hiccup) and recovers by itself. Only 'failed'/'closed', or a disconnection
     // lasting longer than the grace period, end the game connection.
@@ -181,6 +185,21 @@ export class UdpClient {
         this.fail(e);
       }
     });
+  }
+  // Deliberate departure: tell the server (best effort, no reply awaited) so
+  // that the pilot and its seat are released at once, then close.
+  leave() {
+    if (!this.closed && this.protocol === 'udp' && this.commands?.readyState === 'open')
+      try {
+        this.commands.send(
+          JSON.stringify({ v: PROTOCOL, id: ++this.seq, path: 'leave', body: {} }),
+        );
+        // Closing at once can drop the message: give it a moment to leave.
+        // If the page dies first, the server expires the pilot (RESUME_MS).
+        setTimeout(() => this.stop(), 200);
+        return;
+      } catch {}
+    this.stop();
   }
   observe(snapshot, self) {
     const p = snapshot?.pilots?.find((p) => p.id === self);

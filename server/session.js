@@ -10,11 +10,12 @@ import {
 // Session identity comes from its DTLS connection, never from a player ID supplied
 // in a command. Old command IDs can never execute again after cache eviction.
 export class GameSession {
-  constructor(game, { send, relay, close, now = Date.now } = {}) {
+  constructor(game, { send, relay, close, onJoin, now = Date.now } = {}) {
     this.game = game;
     this.send = send;
     this.relay = relay;
     this.close = close;
+    this.onJoin = onJoin;
     this.now = now;
     this.replies = new Map();
     this.replyBytes = 0;
@@ -92,6 +93,8 @@ export class GameSession {
         if (this.player) throw Object.assign(Error('Session déjà ouverte.'), { status: 409 });
         body = this.game.join(m.body);
         this.player = { code: body.snapshot.code, id: body.id };
+        // A resumed pilot must not keep an older connection alive.
+        if (body.resumed) this.onJoin?.(this.player);
       } else {
         if (!this.player) throw Object.assign(Error('Rejoignez une salle.'), { status: 401 });
         body = this.game.command(this.player.code, this.player.id, m.path, m.body, {

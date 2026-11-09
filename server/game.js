@@ -90,6 +90,11 @@ const clone = (x) => structuredClone(x);
 export const CONTACT_FRAME_MS = 50;
 // Production sharing window of sync snapshots between players of a room.
 export const SNAPSHOT_SHARE_MS = 50;
+// A pilot without any message for this long leaves the room.
+export const PRESENCE_MS = 12000;
+// Resumable games keep a silent pilot (hidden after PRESENCE_MS) and its seat
+// this long, so that a reconnecting player gets it back. 'leave' ends it at once.
+export const RESUME_MS = 30000;
 function requireGame(ok, message, status = 409) {
   if (!ok) throw Object.assign(new Error(message), { status });
 }
@@ -200,18 +205,23 @@ export class Game {
     roomTTL = 30 * 60_000,
     maxRooms = 128,
     snapshotShareMs = 0,
+    resumable = false,
   } = {}) {
     this.rooms = new Map();
     this.now = now;
     // > 0: `sync` replies of one room share a snapshot built at most this many
     // ms earlier (see snapshot()). 0 keeps one exact snapshot per command.
     this.snapshotShareMs = snapshotShareMs;
+    // true: a closed connection leaves its pilot in place for the presence
+    // delay (PRESENCE_MS), so that a new connection can resume it (join with
+    // `resume`). false: the pilot expires and releases its seat at once.
+    this.resumable = resumable;
     this.solids = solids;
     this.roomTTL = roomTTL;
     this.maxRooms = maxRooms;
   }
   live(r) {
-    return values(r.pilots).filter((p) => p.seen > this.now() - 12000);
+    return values(r.pilots).filter((p) => p.seen > this.now() - PRESENCE_MS);
   }
   join(b) {
     const code = String(b.code || 'BUREAU').toUpperCase();
@@ -223,6 +233,30 @@ export class Game {
       this.rooms.set(code, (r = roomState(code, this.now())));
     }
     this.advance(r);
+    // Reconnection: reattach the same pilot (body, seat, life, papers) while it
+    // is still present. Never creates another pilot: the caller reloads instead.
+    if (b.resume !== undefined) {
+      const resumed = r.pilots.get(b.resume);
+      requireGame(
+        this.resumable &&
+          typeof b.resume === 'string' &&
+          resumed &&
+          resumed.seen > this.now() - RESUME_MS &&
+          typeof b.resumeKey === 'string' &&
+          r.identityTokens.get(resumed.id) === b.resumeKey,
+        'Session expirée : rechargez la page.',
+        410,
+      );
+      resumed.seen = this.now();
+      r.touched = this.now();
+      return clone({
+        id: resumed.id,
+        resumeKey: b.resumeKey,
+        resumed: true,
+        state: resumed.state,
+        snapshot: this.snapshot(r),
+      });
+    }
     const active = this.live(r),
       used = new Set(active.map((p) => p.bay));
     requireGame(active.length < 100, 'La partie est complète (100 pilotes).');
@@ -290,8 +324,11 @@ export class Game {
     const r = this.rooms.get(code),
       p = r?.pilots.get(id);
     if (!p) return;
+    // A resumable pilot stays until its presence expires (advance() then
+    // releases its seat and refunds its orders), unless a connection resumes it.
+    if (this.resumable) return;
     this.release(r, p);
-    p.seen = this.now() - 12001;
+    p.seen = this.now() - (PRESENCE_MS + 1);
   }
   sweep() {
     for (const [code, r] of this.rooms)
@@ -568,7 +605,7 @@ export class Game {
           else for (const [seat, occupant] of v.seats) if (occupant === id) v.seats.delete(seat);
         }
     for (const [id, p] of r.pilots)
-      if (p.seen <= now - 12000) {
+      if (p.seen <= now - (this.resumable ? RESUME_MS : PRESENCE_MS)) {
         this.release(r, p);
         for (const s of r.souls.values())
           if (s.kind === 'player' && s.entity === id) s.status = 'gone';
@@ -1070,7 +1107,7 @@ export class Game {
     const vacant = Array.isArray(b.vacant) ? b.vacant : [];
     if (vacant.length) {
       let host = null;
-      const liveSince = this.now() - 12000;
+      const liveSince = this.now() - PRESENCE_MS;
       for (const candidate of r.pilots.values())
         if (candidate.seen > liveSince && (host === null || candidate.id < host))
           host = candidate.id;
@@ -1103,12 +1140,23 @@ export class Game {
     r.touched = this.now();
     requireGame(
       !p.state.awaitingPurgatory ||
-        ['sync', 'enter-purgatory', 'reset', 'lab', 'wave-vote', 'wave-buy', 'start'].includes(
-          path,
-        ),
+        [
+          'sync',
+          'enter-purgatory',
+          'reset',
+          'lab',
+          'wave-vote',
+          'wave-buy',
+          'start',
+          'leave',
+        ].includes(path),
       'Accédez au purgatoire avant d’agir.',
     );
-    if (path === 'enter-purgatory') {
+    if (path === 'leave') {
+      // Deliberate departure (tab closed): free the seat and leave at once.
+      this.release(r, p);
+      p.seen = this.now() - (RESUME_MS + 1);
+    } else if (path === 'enter-purgatory') {
       requireGame(b.incarnation === p.incarnation && p.life === 'dead', 'Décès périmé.');
       if (p.state.awaitingPurgatory) {
         p.state.awaitingPurgatory = false;
