@@ -362,6 +362,45 @@ resynchroniser au-delà de 500 ms d'écart (première réponse, onglet endormi).
 | Horloge des ennemis | Retours en arrière | Sauts > 4 ms/image | Pire écart | Retard    |
 | ------------------- | ------------------ | ------------------ | ---------- | --------- |
 | Recalage (v252)     | 25                 | 66                 | 266 ms     | 20–300 ms |
-| Lissée (v253)       | 0                  | 0                  | 0,8 ms     | 20–31 ms  |
+| Lissée (v255)       | 0                  | 0                  | 0,8 ms     | 20–31 ms  |
 
 Ce sont des mesures de simulation ; le ressenti doit être confirmé en partie.
+
+## Interpolation des joueurs distants à l'heure de capture (version 256)
+
+Les autres joueurs étaient datés à l'**arrivée** de leurs mouvements, avec un
+délai d'affichage fixe de 100 ms. Les variations du trajet déformaient donc
+l'espacement des échantillons (le mouvement affiché accélérait puis freinait),
+et un paquet en retard ou perdu faisait passer en extrapolation, puis recaler
+brutalement. Le défaut était le plus visible pour un mitrailleur, dont la vue
+est portée par l'appareil d'un autre joueur.
+
+Chaque navigateur joint désormais à son mouvement l'heure de capture, sur sa
+propre horloge (`at`) ; le serveur la relaie dans les lots binaires (version 2
+du format). `MotionTrack` place chaque échantillon à cette heure, ramenée sur
+l'horloge locale avec le trajet le plus rapide observé (`ServerClock`, fenêtre
+de 10 s). Le délai d'affichage s'adapte : intervalle habituel entre échantillons
+plus le retard d'arrivée au 95e centile, plus 15 ms, borné entre 60 et 350 ms,
+et ajusté d'au plus 5 % du temps écoulé. Sans heure de capture (instantané de
+secours), le comportement précédent s'applique.
+
+`test-motion-smoothing.mjs` : appareil en cercle à 5 unités/s, trajet de 20 à
+120 ms (5 % à 300 ms), 5 % de pertes, affichage à 60 images/s ; un saut est une
+image dont le pas s'écarte de plus de 50 % du pas réel.
+
+| Joueur distant | Sauts | Pire écart de pas | Images extrapolées | Délai d'affichage |
+| -------------- | ----- | ----------------- | ------------------ | ----------------- |
+| 20 Hz, arrivée | 320   | 0,424             | 40                 | 100 ms            |
+| 20 Hz, capture | 0     | 0,004             | 13                 | 145–159 ms        |
+| 10 Hz, arrivée | 119   | 0,406             | 210                | 100 ms            |
+| 10 Hz, capture | 0     | 0,004             | 34                 | 202–210 ms        |
+
+Contrepartie : les autres joueurs sont affichés environ 50 à 100 ms plus dans le
+passé, de façon régulière.
+
+> e2e:motion
+> node scripts/assemble.mjs && node scripts/e2e-browser-motion.mjs
+
+Browser motion: 26 binary batches received by Alpha (max 234 B), Bravo decoded, no page error. a vérifié dans deux Chromium
+réels que l'heure de capture arrive dans les lots. Le ressenti, en particulier
+pilote et mitrailleur d'un même bombardier, reste à confirmer en partie.

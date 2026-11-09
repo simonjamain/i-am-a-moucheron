@@ -148,6 +148,7 @@ export function createGameServer({
               pending.set(entry.peer, {
                 peer: entry.peer,
                 seq: entry.seq,
+                captured: entry.captured,
                 at: Date.now(),
                 bytes: encodeMotionState(entry.state),
               });

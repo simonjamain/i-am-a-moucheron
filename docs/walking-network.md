@@ -10,7 +10,10 @@ relayé, avec une interpolation distante moins fréquente ; le canal
 maillage entre navigateurs : depuis la version 252, toutes les 50 ms, il envoie
 à tous les joueurs d'une salle les mêmes lots binaires (`src/motion-wire.js`)
 contenant les mouvements acceptés depuis le lot précédent ; chacun ignore sa
-propre entrée. Le navigateur envoie toujours son mouvement en JSON. Les commandes portent un identifiant croissant et
+propre entrée. Le navigateur envoie toujours son mouvement en JSON, avec son
+heure de capture : les récepteurs placent les échantillons à cette heure et
+adaptent leur délai d'affichage ; voir
+[performances](performance.md#interpolation-des-joueurs-distants-à-lheure-de-capture-version-256). Les commandes portent un identifiant croissant et
 reçoivent leur résultat d'exécution. Identité de session, incarnation et numéro
 d'occupation empêchent une ancienne position de modifier un nouveau corps ou
 un nouveau poste. Aucun repli HTTP, TCP ou WebSocket ne transporte du gameplay.

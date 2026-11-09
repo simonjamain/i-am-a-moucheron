@@ -216,7 +216,7 @@ export class UdpClient {
       return;
     }
     const now = performance.now();
-    for (const { peer, seq, age, state } of batch.entries) {
+    for (const { peer, seq, age, state, captured } of batch.entries) {
       if (
         peer === this.self ||
         !this.members.has(peer) ||
@@ -229,7 +229,7 @@ export class UdpClient {
       this.remoteSeq.set(peer, seq);
       this.freshAt.set(peer, now);
       this.received++;
-      this.onMotion(peer, state, now - Math.min(age, 1000), seq);
+      this.onMotion(peer, state, now - Math.min(age, 1000), seq, captured);
     }
   }
   observe(snapshot, self) {
@@ -251,6 +251,8 @@ export class UdpClient {
     const data = JSON.stringify({
       v: PROTOCOL,
       seq: ++this.motionSeq,
+      // Capture time on this page's clock: receivers space samples by it.
+      at: Math.round(performance.now() * 10) / 10,
       incarnation: this.incarnation,
       occupation: this.occupation,
       mode: this.mode,

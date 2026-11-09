@@ -104,7 +104,10 @@ WebTransport (Go ou Rust) et/ou TURN UDP ; règles conservées en JS.
   serveur recalée à chaque réponse ; mouvements datés à leur arrivée et délai
   d'affichage fixe.
   - Version 255 : horloge serveur lissée et monotone pour les ennemis.
-  - Suivant : interpolation des joueurs (heure de capture de l'émetteur,
-    tampon adaptatif).
-- Essais WAN et parties réelles : non effectués.
-- Prochaine action : interpolation des joueurs distants.
+  - Version 256 : joueurs distants placés à l'heure de capture de
+    l'émetteur, délai d'affichage adaptatif ; simulation 320 sauts -> 0 à
+    20 Hz, 119 -> 0 à 10 Hz.
+- Essais WAN et parties réelles : non effectués. Confirmer en partie le
+  ressenti des ennemis et des joueurs (pilote et mitrailleur d'un bombardier).
+- Prochaine action : retours de partie réelle, puis profilage du rendu si des
+  baisses d'images apparaissent avec beaucoup d'ennemis.

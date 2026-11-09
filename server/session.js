@@ -193,6 +193,7 @@ export class GameSession {
         this.relay(this.player, {
           peer: p.id,
           seq: m.seq,
+          captured: Number.isFinite(m.at) ? m.at : undefined,
           state: { ...m.state, fire: p.state.fire },
         });
     } catch (e) {
