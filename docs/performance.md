@@ -237,6 +237,12 @@ La première réponse d'une connexion reste complète. Le canal `commands-v1`
 étant fiable et ordonné, la base du client est toujours la réponse précédente ;
 `ReplyAssembler` reconstruit le snapshot complet avant de le donner au jeu.
 Une réponse rejouée (identifiant déjà appliqué) ne modifie jamais cette base.
+Seules les réponses qui sont des snapshots de salle (`join`, et celles portant
+`rosterRevision`) partagent cette base ; les autres, comme le rapport de
+`aircraft-fire`, partent telles quelles. Jusqu'à la version 260, ce rapport
+était encodé comme un patch de snapshot : le décodage suivant échouait dans le
+navigateur, qui fermait la connexion, d'où une boucle de déconnexions et
+reconnexions en tirant depuis un appareil (`test-fire-reply.mjs`).
 
 `npm run bench:room-sync`, joueurs à pied qui bougent tous entre deux `sync`,
 conteneur de développement, Node 22 :
