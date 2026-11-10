@@ -1,8 +1,8 @@
-import { addFleetHull } from './meshy-fleet.js';
 import { buildMeshyRig, gunMount } from './meshy-rig.js';
 import { MODEL_DATA as SPITFIRE } from './meshy-spitfire-data.js';
 import { MODEL_DATA as TANK } from './meshy-tank-data.js';
 import { MODEL_DATA as FLAKTRUCK } from './meshy-flaktruck-data.js';
+import { MODEL_DATA as STUKA } from './meshy-stuka-data.js';
 import { makeB3 } from './b3-model.js';
 import { makeH2 } from './h2-model.js';
 import { makeM1 } from './m1-model.js';
@@ -60,48 +60,6 @@ export function createGraphics(T, scene) {
   function makePlane(color) {
     return makeM1(T, scene, color, box, mat);
   }
-  function makeFleetPlane(color, type) {
-    const g = new T.Group();
-    const wing = new T.Group();
-    g.add(wing);
-    addFleetHull(T, type, { body: g, wing }, mat(color));
-    const isStuka = type === 'stuka';
-    const prop = new T.Group();
-    prop.position.set(0, isStuka ? -0.1 : 0.25, isStuka ? -2.32 : -1.92);
-    g.add(prop);
-    box(0, 0, 0, 1.65, 0.1, 0.07, '#263d32', prop);
-    box(0, 0, 0, 0.1, 1.65, 0.07, '#263d32', prop);
-    const pilotMuzzles = [],
-      gunMeshes = [];
-    for (const side of [-1, 1]) {
-      for (const x of isStuka ? [1.35] : [1.35, 1.95, 2.5]) {
-        const z = isStuka ? -0.95 : -0.55 * Math.sqrt(1 - (x / 3.1) ** 2) - 0.2;
-        const barrel = box(side * x, -0.22, z, 0.065, 0.065, 0.55, '#334a3b', wing);
-        const muzzle = new T.Object3D();
-        muzzle.position.z = -0.275;
-        barrel.add(muzzle);
-        pilotMuzzles.push(muzzle);
-        gunMeshes.push(barrel);
-      }
-      if (isStuka) {
-        const bomb = makeBomb();
-        bomb.scale.setScalar(0.32);
-        bomb.position.set(side * 1.6, -0.46, 0.1);
-        g.add(bomb);
-      }
-    }
-    g.userData = {
-      wing,
-      prop,
-      gunMeshes,
-      pilotMuzzles,
-      muzzles: pilotMuzzles,
-      vehicleType: isStuka ? 'interceptor' : 'spitfire',
-      preserveTexture: true,
-    };
-    scene.add(g);
-    return g;
-  }
   // Remodelled Spitfire: real propeller, wings and six wing-gun muzzles.
   function makeSpitfire() {
     const { root: g, nodes, anchors } = buildMeshyRig(T, SPITFIRE, 'spitfire');
@@ -120,8 +78,21 @@ export function createGraphics(T, scene) {
   function makeBomber() {
     return makeB3(T, scene, box);
   }
-  function makeStuka(color) {
-    return makeFleetPlane(color, 'stuka');
+  // Remodelled Stuka: gull wings, propeller and two wing guns; its belly bomb
+  // is part of the hull.
+  function makeStuka() {
+    const { root: g, nodes, anchors } = buildMeshyRig(T, STUKA, 'stuka');
+    g.userData = {
+      wing: nodes.wing,
+      prop: nodes.prop,
+      gunMeshes: [],
+      pilotMuzzles: anchors.gun,
+      muzzles: anchors.gun,
+      vehicleType: 'interceptor',
+      preserveTexture: true,
+    };
+    scene.add(g);
+    return g;
   }
   function makeBomb() {
     const g = new T.Group();

@@ -30,9 +30,8 @@ for (const [type, factory] of [
     for (const attribute of Object.values(geometry.attributes))
       assert.ok(attribute.array.every(Number.isFinite));
   }
-  // Static Stuka hull vs the remodelled, articulated Spitfire/T3/D2 rigs.
-  if (type === 'interceptor') assert.ok(count >= 26000 && count <= 30000, 'Stuka hull budget');
-  else assert.ok(count >= 2500 && count <= 6000, 'remodelled rig keeps every source triangle');
+  // Remodelled, articulated Stuka/Spitfire/T3/D2 rigs keep every source triangle.
+  assert.ok(count >= 2000 && count <= 6000, 'remodelled rig budget');
   assert.ok(
     parts.every((part) => part.geometry.attributes.uv && part.material.map),
     'actual Meshy UV atlas',

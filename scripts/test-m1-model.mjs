@@ -20,13 +20,20 @@ a.traverse((mesh) => {
     if (attribute) assert.ok(attribute.array.every(Number.isFinite), key);
   }
 });
-assert.ok(triangles >= 27000 && triangles <= 30000, 'original UV geometry budget');
+assert.equal(triangles, 2376, 'every triangle of the remodelled M1');
 assert.ok(draws <= 8, 'bounded draw calls');
-assert.equal(a.children[2].geometry, b.children[2].geometry, 'share immutable buffers');
-assert.ok(a.children[2].geometry.attributes.uv, 'Meshy UVs preserved');
-assert.ok(a.children[2].material.map, 'actual Meshy atlas retained');
-assert.equal(a.children[2].material.map.colorSpace, T.SRGBColorSpace);
-assert.equal(a.children[2].material.map.flipY, false);
+const meshes = (model) => {
+  const list = [];
+  model.traverse((o) => o.isMesh && list.push(o));
+  return list;
+};
+const [hull] = meshes(a);
+assert.equal(hull.geometry, meshes(b)[0].geometry, 'share immutable buffers');
+assert.ok(hull.geometry.attributes.uv, 'Meshy UVs preserved');
+assert.ok(hull.material.map, 'actual Meshy atlas retained');
+assert.equal(hull.material.map.colorSpace, T.SRGBColorSpace);
+assert.equal(hull.material.map.flipY, false);
+assert.equal(a.userData.pilotMuzzles.length, 2, 'two nose machine guns');
 assert.notEqual(a.userData.prop, b.userData.prop, 'independent animation');
 const blade = a.userData.prop.children[0];
 a.updateMatrixWorld(true);

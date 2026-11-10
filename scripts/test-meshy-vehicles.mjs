@@ -16,6 +16,8 @@ import { MODEL_DATA as TANK } from '../src/meshy-tank-data.js';
 import { MODEL_DATA as FLAKTRUCK } from '../src/meshy-flaktruck-data.js';
 import { H2_DATA } from '../src/meshy-h2-data.js';
 import { B3_DATA } from '../src/meshy-b3-data.js';
+import { M1_DATA } from '../src/meshy-m1-data.js';
+import { MODEL_DATA as STUKA } from '../src/meshy-stuka-data.js';
 
 const SOURCES = {
   spitfire: [SPITFIRE, 'b18e5558feef75463354dee45037b11ed640a4de6f9f0c71cd6e9dbf484026c4', 3002],
@@ -23,6 +25,8 @@ const SOURCES = {
   flaktruck: [FLAKTRUCK, '3861d4bf21e75d0ca9a7864b40f98189847b0fdcffdf6de5daf1127f71da18ed', 4689],
   helicopter: [H2_DATA, '488832fc140c16321dc54d07addd088ea16e2f3b042f568fa910ec1ee1206a9a', 5102],
   bomber: [B3_DATA, 'a50363b85c21e407839651d5b478bf8900bb340debec3e86cdc68b94b8284307', 5797],
+  fighter: [M1_DATA, '7d9ab847ae7086af717f5fc81841c08635104fe3da44236e45fd0b352f1916b0', 2376],
+  interceptor: [STUKA, '6290811f303ac480f3b286dd62ee73d6293fa542d824987b378262e5c8ec9ade', 3261],
 };
 for (const [name, [data, sha, triangles]] of Object.entries(SOURCES)) {
   assert.equal(data.sourceSha256, sha, name + ' source');
@@ -56,6 +60,8 @@ for (const [type, make] of [
   ['flaktruck', 'makeFlakTruck'],
   ['helicopter', 'makeHelicopter'],
   ['bomber', 'makeBomber'],
+  ['fighter', 'makePlane'],
+  ['interceptor', 'makeStuka'],
 ]) {
   const model = graphics[make]();
   model.scale.setScalar(ACTOR_UNIT);
@@ -199,6 +205,22 @@ for (const [type, make] of [
   assert.ok(
     model.userData.pilotMuzzles.every((m) => m.parent === model.userData.wing),
     'guns ride the wing',
+  );
+}
+// M1 and Stuka: propeller on the nose axis, symmetric guns, damageable wing.
+for (const make of ['makePlane', 'makeStuka']) {
+  const model = graphics[make]();
+  model.updateMatrixWorld(true);
+  const guns = model.userData.pilotMuzzles.map((m) => m.getWorldPosition(new T.Vector3()));
+  assert.equal(guns.length, 2, make + ' guns');
+  assert.ok(
+    Math.abs(guns[0].x + guns[1].x) < 0.05 && guns[0].z < -1,
+    make + ' symmetric front guns',
+  );
+  assert.ok(Math.abs(model.userData.prop.position.x) < 0.05 && model.userData.prop.position.z < -2);
+  assert.ok(
+    model.userData.wing.children.some((o) => o.isMesh),
+    make + ' wing mesh',
   );
 }
 console.log('Meshy vehicles: sources, rigs, ground contact and physics anchors match the models');

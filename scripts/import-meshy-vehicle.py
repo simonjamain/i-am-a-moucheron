@@ -3,7 +3,7 @@ movable pieces are separate islands) into articulated, offline game modules.
 
 Usage:
   python3 scripts/import-meshy-vehicle.py VEHICLE SOURCE.glb [--debug]
-  VEHICLE: spitfire | tank | flaktruck | helicopter | bomber
+  VEHICLE: spitfire | tank | flaktruck | helicopter | bomber | fighter | interceptor
 
 Each vehicle spec selects islands (welded connectivity, ignoring UV seams) for
 every articulated node, gives its pivot and, for guns, the barrel direction.
@@ -175,6 +175,15 @@ def B3_MUZZLE(H, node, guns):
     return pivot + d * np.dot(B3_TIPS(H, guns)[0] - pivot, d)
 
 
+def STUKA_GUN(H, wing):
+    # Leading edge of a wing at 40 % of its span from the root.
+    lo, hi = H.box(wing)
+    x = 0.6 * lo[0] + 0.4 * hi[0] if abs(lo[0]) < abs(hi[0]) else 0.6 * hi[0] + 0.4 * lo[0]
+    near = H.island_points(wing)
+    band = near[np.abs(near[:, 0] - x) < 0.08 * (hi[0] - lo[0])]
+    return band[np.argmin(band[:, 2])]  # a real leading-edge vertex
+
+
 def TANK_TURRET(i):
     return -0.13 <= i.c[0] <= 0.31 and abs(i.c[2]) < 0.19 and i.lo[1] >= 0.008
 
@@ -291,6 +300,30 @@ SPECS = {
             dict(name='ventralMuzzle', node='ventralGun', fn=lambda H: [B3_MUZZLE(H, 'ventralGun', (12, 14))]),
         ],
     ),
+    # M1 light fighter: high wing (split from the hull, struts included),
+    # propeller, two nose machine guns.
+    'fighter': dict(
+        output='src/meshy-m1-data.js', export='M1_DATA',
+        fit=('x', 5.6), gear=1.05,
+        nodes=[
+            dict(name='prop', select=lambda i: i.c[0] < -0.36, pivot=('center', 'largest')),
+            dict(name='wing', select=ids(14, 16), split=dict(island=0, test=lambda c: abs(c[2]) > 0.07 and c[1] > 0.08),
+                 pivot=('origin',)),
+        ],
+        anchors=[dict(name='gun', node='body', each=lambda i: i.id in (1, 2))],
+    ),
+    # Stuka: gull wings (separate islands), propeller; the belly bomb stays on
+    # the hull. Its two wing guns fire from the leading edge at 40 % span.
+    'interceptor': dict(
+        output='src/meshy-stuka-data.js', export='MODEL_DATA',
+        fit=('x', 7.7), gear=1.05,
+        nodes=[
+            dict(name='prop', select=lambda i: abs(i.c[0] + 0.335) < 0.01 and i.n > 30,
+                 pivot=('fn', lambda H: H.center(17))),
+            dict(name='wing', select=ids(5, 6), pivot=('origin',)),
+        ],
+        anchors=[dict(name='gun', node='wing', fn=lambda H: [STUKA_GUN(H, 5), STUKA_GUN(H, 6)])],
+    ),
 }
 
 
@@ -373,6 +406,9 @@ def main():
             v = game(vertices[np.unique(faces[np.concatenate([isl[i].faces for i in ids_])])])
             v = v - v.mean(0)
             return np.linalg.svd(v, full_matrices=False)[2][0]
+
+        def island_points(self, i):
+            return game(vertices[np.unique(faces[isl[i].faces])])
 
         def isl_size(self, i):
             return isl[i].sz

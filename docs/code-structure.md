@@ -156,8 +156,8 @@ commun des maillages UV et des atlas. Le Spitfire, le T3, le D2 (dans
 hiérarchies articulées construites par `meshy-rig.js` depuis les modules générés
 par `scripts/import-meshy-vehicle.py` ; `vehicle-anchors.js` donne à la physique
 (`tank-view.js`, `mobile-flak.js`, `tank.js`, `helicopter.js`) les pivots, bouches
-et enveloppes de ces modèles. `m1-model.js` et `meshy-fleet.js` (Stuka) gardent
-les coques de première génération.
+et enveloppes de ces modèles. Le M1 (`m1-model.js`) et le Stuka (`graphics.js`)
+suivent le même chemin depuis la version 266.
 
 G1 Castor (issue #76) : `fleet.js` définit le véhicule monoplace,
 `tank.js` sa physique de sol, `paid-service.js` son rayon de soutien et ses coûts,

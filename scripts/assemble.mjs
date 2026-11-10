@@ -40,7 +40,6 @@ const files = {
       'meshy-brick-data',
       'meshy-texture',
       'meshy-m1-data',
-      'meshy-fleet',
       'meshy-rig',
       'vehicle-anchors',
       'castor-model',

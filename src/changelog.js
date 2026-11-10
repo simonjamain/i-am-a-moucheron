@@ -1,6 +1,12 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 266,
+    changes: [
+      'Nouveaux modèles pour le chasseur léger et le Stuka, avec hélice qui tourne et tirs qui partent des armes.',
+    ],
+  },
+  {
     version: 265,
     changes: [
       'Sur un PC à écran tactile, la souris se capture de nouveau normalement et les boutons tactiles n’apparaissent plus.',
