@@ -300,17 +300,14 @@ SPECS = {
             dict(name='ventralMuzzle', node='ventralGun', fn=lambda H: [B3_MUZZLE(H, 'ventralGun', (12, 14))]),
         ],
     ),
-    # M1 light fighter: high wing (split from the hull, struts included),
-    # propeller, two nose machine guns.
+    # M1 light fighter (remodel of the remodel, v267): propeller and the two
+    # sculpted nose machine guns. Damage no longer deforms the wing, so the
+    # hull keeps it whole.
     'fighter': dict(
         output='src/meshy-m1-data.js', export='M1_DATA',
         fit=('x', 5.6), gear=1.05,
-        nodes=[
-            dict(name='prop', select=lambda i: i.c[0] < -0.36, pivot=('center', 'largest')),
-            dict(name='wing', select=ids(14, 16), split=dict(island=0, test=lambda c: abs(c[2]) > 0.07 and c[1] > 0.08),
-                 pivot=('origin',)),
-        ],
-        anchors=[dict(name='gun', node='body', each=lambda i: i.id in (1, 2))],
+        nodes=[dict(name='prop', select=lambda i: i.c[0] < -0.33, pivot=('center', 'largest'))],
+        anchors=[dict(name='gun', node='body', each=lambda i: i.id in (3, 4))],
     ),
     # Stuka: gull wings (separate islands), propeller; the belly bomb stays on
     # the hull. Its two wing guns fire from the leading edge at 40 % span.

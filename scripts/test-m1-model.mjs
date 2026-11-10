@@ -20,7 +20,7 @@ a.traverse((mesh) => {
     if (attribute) assert.ok(attribute.array.every(Number.isFinite), key);
   }
 });
-assert.equal(triangles, 2376, 'every triangle of the remodelled M1');
+assert.equal(triangles, 2357, 'every triangle of the remodelled M1');
 assert.ok(draws <= 8, 'bounded draw calls');
 const meshes = (model) => {
   const list = [];
@@ -43,9 +43,6 @@ a.userData.prop.rotation.z += 0.7;
 a.updateMatrixWorld(true);
 assert.ok(blade.localToWorld(vertex.clone()).distanceTo(before) > 0.01);
 assert.equal(b.userData.prop.rotation.z, 0);
-const fullSpan = new T.Box3().setFromObject(a.userData.wing).getSize(new T.Vector3()).x;
-a.userData.wing.scale.x = 0.52;
-assert.ok(new T.Box3().setFromObject(a.userData.wing).getSize(new T.Vector3()).x < fullSpan * 0.53);
 const originalMeshes = [];
 a.traverse((mesh) => {
   if (mesh.isMesh) originalMeshes.push([mesh, mesh.material]);
@@ -58,5 +55,5 @@ for (const [mesh, originalMaterial] of originalMeshes)
 paintVehicle(T, a, 8, '#7b8155');
 assert.equal(a.userData.identification, undefined, 'sequence updates add no marker');
 console.log(
-  `PASS: M1 Meshy ${triangles} triangles, ${draws} draws, shared buffers, livery, wing damage and prop animation.`,
+  `PASS: M1 Meshy ${triangles} triangles, ${draws} draws, shared buffers, livery and prop animation.`,
 );

@@ -6,8 +6,8 @@ selon le véhicule ; une pastille flottante porte la couleur d'identification.
 
 ## Provenance et conversion
 
-Depuis la version 266, le M1 utilise le modèle refait par l'utilisateur (2 376
-triangles, aile haute et hélice articulées, deux mitrailleuses de nez) : voir
+Depuis la version 267, le M1 utilise le modèle refait par l'utilisateur (2 357
+triangles, hélice articulée, deux mitrailleuses de nez) : voir
 [le remodelage de la flotte](meshy-fleet.md#remodelage-de-la-flotte-version-263).
 L'historique ci-dessous décrit la version précédente.
 
@@ -37,6 +37,6 @@ précédente, pas le nouvel atlas.
 ## Vérification
 
 `node scripts/test-m1-model.mjs` teste le contact au sol, les UV et matériaux,
-les buffers partagés, l'aile endommagée, l'hélice et la pastille. Vérifier
+les buffers partagés, l'hélice et la pastille. Vérifier
 également en WebGL les vues pilote/extérieure, l'éclairage, la netteté du
 camouflage et les performances avec plusieurs M1.

@@ -106,7 +106,13 @@ réseau ; les rafales vues à distance suivent une cadence approximative plutôt
 qu'un tir aléatoire à chaque image. Voir [stocks et réseau](vehicles-bank.md).
 Les projectiles subissent gravité et traînée et sont supprimés après impact ou
 expiration. La DCA tire des obus à éclatement réglable en distance, à cadence
-réduite, avec fumée noire persistante. Le tir allié inflige des dégâts. Les joueurs ont 100 PV ; une résurrection restaure tous les PV. Les insectes
+réduite, avec fumée noire persistante. Le tir allié inflige des dégâts. Les joueurs ont 100 PV ; une résurrection restaure tous les PV.
+Depuis la version 267, un avion endommagé ne change plus de forme (plus d'ailes
+qui rétrécissent) : son ou ses moteurs laissent échapper de petits panaches de
+fumée, à partir de 15 % de dégâts, de plus en plus nombreux, gros et sombres à
+mesure que ses PV baissent (`src/engine-smoke.js`, un seul nuage de points pour
+tous les avions, plafonné à 1 500 panaches). L'état « aile endommagée » garde
+ses effets de vol. Les insectes
 tués tombent et s’estompent avant suppression. Voir [physique](economy-physics.md)
 et [armement](scale-fleet-weapons.md).
 

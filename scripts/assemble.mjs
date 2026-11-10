@@ -89,6 +89,7 @@ const files = {
       'castor-wheels',
       'castor-top-view',
       'service-zones',
+      'engine-smoke',
       'reserve-feedback',
       'delivery',
       'salvos',
