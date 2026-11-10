@@ -1,20 +1,13 @@
 // Pointer ownership is explicit: UI/escape releases it; only a new user gesture
-// (canvas click, joining, closing a panel) may request it again.
+// (canvas click, joining, closing a panel) may request it again. Desktop-first:
+// mouse and keyboard only, no touch mode.
 export class ControlFocus {
-  constructor({
-    canvas,
-    document,
-    onChange = () => {},
-    onError = () => {},
-    touch = false,
-    allowed = () => true,
-  }) {
+  constructor({ canvas, document, onChange = () => {}, onError = () => {}, allowed = () => true }) {
     this.canvas = canvas;
     this.document = document;
     this.onChange = onChange;
     this.onError = onError;
-    this.touch = touch;
-    this.active = touch;
+    this.active = false;
     this.allowed = allowed;
     this.wanted = false;
     this.pending = false;
@@ -33,11 +26,6 @@ export class ControlFocus {
   async capture() {
     if (this.active || this.pending || !this.allowed()) return;
     this.wanted = true;
-    if (this.touch) {
-      this.active = true;
-      this.onChange(true);
-      return;
-    }
     this.pending = true;
     try {
       if (!this.canvas.requestPointerLock) throw Error('Pointer Lock unavailable');

@@ -145,12 +145,19 @@ await denied.capture();
 assert.equal(denied.active, false);
 assert.equal(failed, 1);
 assert.equal(denied.pending, false);
-const touch = new ControlFocus({ canvas: {}, document: { addEventListener() {} }, touch: true });
-touch.release();
+// Desktop-first: no touch mode, a former touch option changes nothing and
+// activation only follows a real Pointer Lock.
+let locked = 0;
+const touch = new ControlFocus({
+  canvas: { requestPointerLock: async () => locked++ },
+  document: { addEventListener() {} },
+  touch: true,
+});
 assert.equal(touch.active, false);
 await touch.capture();
-assert.equal(touch.active, true);
-console.log('PASS: capture denial stays in UI mode; touch can resume after closing a panel');
+assert.equal(locked, 1);
+assert.equal(touch.active, false, 'active only after pointerlockchange');
+console.log('PASS: capture denial stays in UI mode; no touch mode without Pointer Lock');
 
 for (const seat of ['pilot', 'dorsal', 'tail']) {
   assert.equal(

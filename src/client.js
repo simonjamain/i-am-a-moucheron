@@ -699,7 +699,6 @@ canvas.tabIndex = 0;
 const controlFocus = new ControlFocus({
   canvas,
   document,
-  touch: matchMedia('(pointer:coarse)').matches,
   allowed: () => canCapture(),
   onChange: () => {
     clearControls();
@@ -1396,7 +1395,6 @@ $('form').addEventListener('submit', async (e) => {
     $('shade').classList.add('hidden');
     $('sceneLabel').classList.add('hidden');
     $('hud').classList.remove('hidden');
-    $('touch').classList.add('playing');
     history.replaceState({}, '', '?room=' + room);
     camera.position.copy(me.position).add(new T.Vector3(0, 4, 12).multiplyScalar(ACTOR_UNIT));
     captureMouse();
@@ -1730,7 +1728,6 @@ for (const b of document.querySelectorAll('[data-key]')) {
     e.preventDefault();
     b.setPointerCapture(e.pointerId);
     if (!canCapture()) return;
-    if (controlFocus.touch && !controlFocus.active) controlFocus.capture();
     keys[b.dataset.key] = true;
   };
   b.onpointerup = b.onpointercancel = () => (keys[b.dataset.key] = false);
@@ -1833,13 +1830,7 @@ function renderPurgatory() {
   $('personalFire').classList.toggle('hidden', spectating || !joined || !dead);
   if (dead || onFoot) $('crosshair').classList.remove('hidden');
   $('purgatory').classList.toggle('hidden', !dead);
-  $('touch').classList.toggle('inPurgatory', dead);
   document.querySelector('.bottomkeys').classList.toggle('hidden', dead || onFoot);
-  $('footTouch').classList.toggle(
-    'hidden',
-    spectating || !onFoot || dead || turretIndex >= 0 || !!myVehicle,
-  );
-  $('touch').classList.toggle('inPurgatory', dead || onFoot);
   for (const x of ['crosshair', 'flight', 'radar'])
     $(x).classList.toggle(
       'hidden',
@@ -2276,7 +2267,6 @@ $('soulPaperButton').onclick = () => {
   paperSuppressed = false;
   renderPaper();
 };
-$('boardButton').onclick = openBoarding;
 const purgScene = new T.Scene();
 const purgColliders = [
   new T.Box3(new T.Vector3(-3.5, 0, -2.9), new T.Vector3(3.5, 1.6, -0.9)),
@@ -2713,16 +2703,13 @@ async function chooseEquipment(index) {
     finishBoardingFeedback(timing, boardingOpen ? 'ready' : 'failed');
   }
 }
-$('boardButton').onclick = interactVehicle;
 $('vehicleInteract').onclick = interactVehicle;
 $('parachuteToggle').onclick = () => {
   if (toggleParachute(selfBase())) renderShop();
 };
-$('leavePlane').onclick = () => vehicleAction('vehicle-exit', { state: localMotion() });
 $('turretFire').onpointerdown = (e) => {
   e.preventDefault();
   e.currentTarget.setPointerCapture(e.pointerId);
-  if (controlFocus.touch && !controlFocus.active) captureMouse();
   uiWeaponFire = true;
 };
 $('turretFire').onpointerup = $('turretFire').onpointercancel = () => (uiWeaponFire = false);
@@ -2737,8 +2724,6 @@ function updateVehicles(dt) {
   $('parachuteToggle').textContent = selfBase()?.parachute
     ? 'Replier · Espace'
     : 'Parachute · Espace';
-  $('leavePlane').classList.toggle('hidden', !myVehicle || !controlFocus.touch);
-  $('leavePlane').textContent = landed ? 'Sortir' : 'Sauter';
   $('vehicleInteract').classList.toggle('hidden', turretIndex < 0);
   $('turretFire').classList.toggle('hidden', turretIndex < 0 && !crew);
   // Only the DCA has a time fuse; bunker and heavy gun have none.
@@ -3150,10 +3135,6 @@ function updateBaseWorld(dt, now) {
     const g = basePeople.get(id),
       w = g?.position || baseWorld(body);
     groundCamera(camera, w, dt);
-    const station = nearestStation(),
-      bed = nearestBed();
-    // Touch-only interaction button (no physical E key); no guidance text.
-    $('boardButton').disabled = body.parachute || (!bed && !station && !v);
     renderPaper();
   }
 }
@@ -4883,7 +4864,6 @@ function renderCrew() {
 
 $('personalFire').onpointerdown = (e) => {
   e.preventDefault();
-  if (controlFocus.touch && !controlFocus.active) controlFocus.capture();
   pistol();
 };
 
