@@ -1,10 +1,16 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
-    version: 260,
+    version: 261,
     changes: [
       'Nouveaux modèles pour les fourmis, rouges et furieuses, et les araignées pondeuses, velues et tachetées.',
       'Elles marchent pour de vrai : les pattes se posent au sol au rythme de leur vitesse et se figent à l’arrêt.',
+    ],
+  },
+  {
+    version: 260,
+    changes: [
+      'Tirer à la mitrailleuse depuis un appareil ne provoque plus de déconnexions à répétition.',
     ],
   },
   {

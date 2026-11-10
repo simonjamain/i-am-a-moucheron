@@ -102,31 +102,38 @@ export class GameSession {
           rosterMeta: this.lastRosterMeta,
         });
       }
-      // All commands (not only sync) share one roster baseline. Omit it
-      // BEFORE snapshot cloning, then compact initial rosters and event deltas.
-      const snapshot = { ...(m.path === 'join' ? body.snapshot : body) };
-      // Read roster metadata before encoding: most fields then move into $patch.
-      const key = snapshotRosterKey(snapshot),
-        meta = {
-          core: snapshotRosterCore(snapshot),
-          revision: snapshot.rosterRevision,
-          total: snapshot.total,
+      // Only room snapshots share the per-connection baseline. Some replies are
+      // not snapshots (aircraft-fire returns its fire report): encoding one as
+      // a snapshot patch broke the browser's next decode and closed the link.
+      const isSnapshot = m.path === 'join' || Object.hasOwn(body ?? {}, 'rosterRevision');
+      if (!isSnapshot) reply = { status: 200, body };
+      else {
+        // All commands (not only sync) share one roster baseline. Omit it
+        // BEFORE snapshot cloning, then compact initial rosters and event deltas.
+        const snapshot = { ...(m.path === 'join' ? body.snapshot : body) };
+        // Read roster metadata before encoding: most fields then move into $patch.
+        const key = snapshotRosterKey(snapshot),
+          meta = {
+            core: snapshotRosterCore(snapshot),
+            revision: snapshot.rosterRevision,
+            total: snapshot.total,
+          };
+        // Other players' positions in reliable replies: refreshed at 1 Hz only.
+        const refresh = this.now() - this.motionRefreshAt >= MOTION_REFRESH_MS;
+        if (refresh) this.motionRefreshAt = this.now();
+        this.lastWireSnapshot = encodeSnapshotForWire(snapshot, this.lastWireSnapshot, {
+          holdMotionOf: refresh ? undefined : this.player?.id,
+        });
+        if (snapshot.rosterGroups || snapshot.rosterAddGroups) {
+          this.lastRosterKey = key;
+          this.lastRosterMeta = meta;
+        }
+        // Do not mutate the domain object or the response retained by a caller.
+        reply = {
+          status: 200,
+          body: m.path === 'join' ? { ...body, snapshot } : snapshot,
         };
-      // Other players' positions in reliable replies: refreshed at 1 Hz only.
-      const refresh = this.now() - this.motionRefreshAt >= MOTION_REFRESH_MS;
-      if (refresh) this.motionRefreshAt = this.now();
-      this.lastWireSnapshot = encodeSnapshotForWire(snapshot, this.lastWireSnapshot, {
-        holdMotionOf: refresh ? undefined : this.player?.id,
-      });
-      if (snapshot.rosterGroups || snapshot.rosterAddGroups) {
-        this.lastRosterKey = key;
-        this.lastRosterMeta = meta;
       }
-      // Do not mutate the domain object or the response retained by a caller.
-      reply = {
-        status: 200,
-        body: m.path === 'join' ? { ...body, snapshot } : snapshot,
-      };
     } catch (e) {
       reply = {
         status: e.status || 500,
