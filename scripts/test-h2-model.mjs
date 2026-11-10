@@ -19,7 +19,7 @@ a.traverse((o) => {
   for (const attribute of Object.values(o.geometry.attributes))
     assert.ok(attribute.array.every(Number.isFinite));
 });
-assert.ok(triangles >= 27000 && triangles <= 30000);
+assert.equal(triangles, 5102, 'every triangle of the remodelled H2');
 assert.ok(draws <= 8);
 const bMeshes = [];
 b.traverse((o) => {
@@ -48,14 +48,18 @@ for (const [name, axis] of [
 const rotorBounds = new T.Box3().setFromObject(b.userData.rotor);
 assert.ok(rotorBounds.max.z < 3.8, 'main rotor excludes tail assembly');
 const tailBounds = new T.Box3().setFromObject(b.userData.tailRotor);
-assert.ok(tailBounds.getSize(new T.Vector3()).x < 0.22, 'tail rotor excludes thick fin');
-assert.ok(tailBounds.min.z > 4, 'tail rotor stays at tail');
+assert.ok(tailBounds.getSize(new T.Vector3()).x < 0.3, 'tail rotor excludes thick fin');
+assert.ok(
+  tailBounds.min.z > rotorBounds.max.z + 0.5,
+  'tail rotor stays at tail, behind the main rotor',
+);
 const mount = b.userData.turrets[0];
 const { pitch, muzzle } = mount.userData;
 b.updateMatrixWorld(true);
-assert.ok(
-  muzzle.getWorldPosition(new T.Vector3()).distanceTo(new T.Vector3(0.15, -0.65, -3.2)) < 1e-6,
-);
+// The copilot's muzzle is the front of the nose gun, under the cockpit.
+const nose = new T.Box3().setFromObject(b);
+const front = muzzle.getWorldPosition(new T.Vector3());
+assert.ok(Math.abs(front.z - nose.min.z) < 0.05 && front.y < 0, 'muzzle at the nose gun tip');
 const tip = muzzle.getWorldPosition(new T.Vector3());
 mount.rotation.y = 0.3;
 pitch.rotation.x = -0.2;

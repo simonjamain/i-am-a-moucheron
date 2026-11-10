@@ -150,9 +150,14 @@ des terrestres reste dans `ground-creatures.js`. Voir [gameplay](gameplay.md#dé
 `character-model.js` anime le personnage joueur de `character-data.js` (squelette Mixamo, repos/marche/course, poses procédurales assis, chute et pistolet) ; `graphics.humanoid()` l'enveloppe dans le cadre invisible du pistolet ([pipeline d'assets](asset-pipeline.md#personnage-joueur-meshy--mixamo)).
 
 `b3-model.js` et `meshy-b3-data.js` portent le [B3 texturé à quatre places](b3-model.md) ; `fleet.js` définit ses quatre postes et `vehicle-livery.js` son repère coloré.
-Les six autres véhicules Meshy utilisent `meshy-texture.js` pour le décodage
-commun des maillages UV et des atlas, `m1-model.js`, `h2-model.js` et
-`meshy-fleet.js` pour les articulations et leurs ressources partagées.
+Les autres véhicules Meshy utilisent `meshy-texture.js` pour le décodage
+commun des maillages UV et des atlas. Le Spitfire, le T3, le D2 (dans
+`graphics.js`), le H2 (`h2-model.js`) et le B3 (`b3-model.js`) sont des
+hiérarchies articulées construites par `meshy-rig.js` depuis les modules générés
+par `scripts/import-meshy-vehicle.py` ; `vehicle-anchors.js` donne à la physique
+(`tank-view.js`, `mobile-flak.js`, `tank.js`, `helicopter.js`) les pivots, bouches
+et enveloppes de ces modèles. `m1-model.js` et `meshy-fleet.js` (Stuka) gardent
+les coques de première génération.
 
 G1 Castor (issue #76) : `fleet.js` définit le véhicule monoplace,
 `tank.js` sa physique de sol, `paid-service.js` son rayon de soutien et ses coûts,

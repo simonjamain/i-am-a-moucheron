@@ -1,5 +1,6 @@
 import { sweptBoxProximity } from './mobile-flak.js';
 import { ACTOR_UNIT, MAP } from './scale.js';
+import { VEHICLE_ANCHORS } from './vehicle-anchors.js';
 // A tank follows support surfaces; gravity handles falling off a desk. No lift,
 // automatic turret rotation or dependency on a driver for the other stations.
 export function stepTank(T, state, controls, colliders, dt, profile) {
@@ -40,13 +41,15 @@ export function stepTank(T, state, controls, colliders, dt, profile) {
     }
   }
   if (profile.articulated) {
-    const points = [
-      [0, -3.1],
-      [0, -1.4],
-    ];
+    // Probe points along the D2 tractor and its trailer (model units).
+    const { tractorBox, trailerBox, hitch } = VEHICLE_ANCHORS.flaktruck;
+    const points = [];
+    for (let z = tractorBox[0][2] + 1.2; z < tractorBox[1][2] - 0.6; z += 1.7) points.push([0, z]);
     const angle = state.trailerAngle || 0;
-    for (const z of [0.2, 1.4, 2.6, 3.8, 5])
-      points.push([Math.sin(angle) * z, -0.7 + Math.cos(angle) * z]);
+    for (let z = 0.2; z < trailerBox[1][2] + 0.6; z += 1.2) {
+      const reach = Math.min(z, trailerBox[1][2]);
+      points.push([hitch[0] + Math.sin(angle) * reach, hitch[2] + Math.cos(angle) * reach]);
+    }
     const blocked = points.some(([x, z]) => {
       const offset = new T.Vector3(x * ACTOR_UNIT, 0, z * ACTOR_UNIT).applyQuaternion(q);
       const a = before.clone().add(offset).toArray(),

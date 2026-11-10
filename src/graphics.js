@@ -1,4 +1,8 @@
 import { addFleetHull } from './meshy-fleet.js';
+import { buildMeshyRig, gunMount } from './meshy-rig.js';
+import { MODEL_DATA as SPITFIRE } from './meshy-spitfire-data.js';
+import { MODEL_DATA as TANK } from './meshy-tank-data.js';
+import { MODEL_DATA as FLAKTRUCK } from './meshy-flaktruck-data.js';
 import { makeB3 } from './b3-model.js';
 import { makeH2 } from './h2-model.js';
 import { makeM1 } from './m1-model.js';
@@ -98,8 +102,20 @@ export function createGraphics(T, scene) {
     scene.add(g);
     return g;
   }
-  function makeSpitfire(color) {
-    return makeFleetPlane(color, 'spitfire');
+  // Remodelled Spitfire: real propeller, wings and six wing-gun muzzles.
+  function makeSpitfire() {
+    const { root: g, nodes, anchors } = buildMeshyRig(T, SPITFIRE, 'spitfire');
+    g.userData = {
+      wing: nodes.wing,
+      prop: nodes.prop,
+      gunMeshes: [],
+      pilotMuzzles: anchors.gun,
+      muzzles: anchors.gun,
+      vehicleType: 'spitfire',
+      preserveTexture: true,
+    };
+    scene.add(g);
+    return g;
   }
   function makeBomber() {
     return makeB3(T, scene, box);
@@ -118,47 +134,16 @@ export function createGraphics(T, scene) {
     g.userData.projectileSolid = false;
     return g;
   }
-  function makeTank(color) {
-    const g = new T.Group();
-    addFleetHull(T, 'tank', { body: g }, mat(color));
-    const turrets = [];
-    for (const [y, z, length] of [
-      [1, 0, 2.8],
-      [1.8, 0.7, 1.3],
-    ]) {
-      const mount = new T.Group();
-      mount.position.set(0, y, z);
-      g.add(mount);
-      const main = turrets.length === 0;
-      const armor = new T.Mesh(
-        new T.CylinderGeometry(main ? 0.7 : 0.34, main ? 0.9 : 0.42, main ? 0.55 : 0.4, 8),
-        mat(color),
-      );
-      armor.scale.z = main ? 1.1 : 1.25;
-      armor.castShadow = armor.receiveShadow = true;
-      mount.add(armor);
-      if (!main) cyl(0, -0.4, 0, 0.25, 0.3, 0.45, '#364439', mount);
-      const pitch = new T.Group();
-      mount.add(pitch);
-      box(0, 0, -length / 2, 0.15, 0.15, length, '#364439', pitch);
-      const muzzle = new T.Object3D();
-      muzzle.position.set(0, 0, -length);
-      pitch.add(muzzle);
-      const coaxMuzzle = new T.Object3D();
-      coaxMuzzle.position.set(0.3, 0, -length);
-      pitch.add(coaxMuzzle);
-      if (turrets.length === 0) box(0.3, 0, -length / 2, 0.065, 0.065, length, '#293e31', pitch);
-      mount.userData = { pitch, muzzle, coaxMuzzle };
-      turrets.push(mount);
-    }
-    const pilotBarrel = box(0.7, 0.5, -2, 0.09, 0.09, 0.8, '#293e31', g);
-    const pilotMuzzle = new T.Object3D();
-    pilotMuzzle.position.z = -0.4;
-    pilotBarrel.add(pilotMuzzle);
+  // Remodelled T3: turret with elevating gun and coaxial MG, roof MG on its
+  // own pintle (carried by the turret), hull MG for the driver.
+  function makeTank() {
+    const { root: g, nodes, anchors } = buildMeshyRig(T, TANK, 'tank');
+    const main = gunMount(nodes.cannon, nodes.cannonGun, anchors.muzzle[0], anchors.coax[0]);
+    const top = gunMount(nodes.top, nodes.topGun, anchors.topMuzzle[0]);
     g.userData = {
       preserveTexture: true,
-      turrets,
-      pilotMuzzles: [pilotMuzzle],
+      turrets: [main, top],
+      pilotMuzzles: anchors.hullGun,
       prop: new T.Object3D(),
       wing: new T.Object3D(),
     };
@@ -171,33 +156,21 @@ export function createGraphics(T, scene) {
   function makeHelicopter(color) {
     return makeH2(T, scene, color, box, mat);
   }
-  function makeFlakTruck(color) {
-    const g = new T.Group();
-    const trailer = new T.Group();
-    trailer.position.z = -0.7;
-    g.add(trailer);
-    addFleetHull(T, 'flaktruck', { body: g, trailer }, mat(color));
-    const mount = new T.Group();
-    mount.position.set(0, 1, 3.2);
-    trailer.add(mount);
-    cyl(0, -0.3, 0, 0.75, 0.9, 0.6, color, mount);
-    const pitch = new T.Group();
-    mount.add(pitch);
-    box(0, 0, -1.4, 0.16, 0.16, 2.8, '#364439', pitch);
-    const muzzle = new T.Object3D();
-    muzzle.position.z = -2.8;
-    pitch.add(muzzle);
-    mount.userData = { pitch, muzzle, coaxMuzzle: muzzle };
+  // Remodelled D2: truck towing an articulated trailer whose carriage yaws
+  // and whose twin guns elevate; pivots match src/vehicle-anchors.js.
+  function makeFlakTruck() {
+    const { root: g, nodes, anchors } = buildMeshyRig(T, FLAKTRUCK, 'flaktruck');
     g.userData = {
       preserveTexture: true,
-      turrets: [mount],
-      trailer,
+      turrets: [gunMount(nodes.cannon, nodes.cannonGun, anchors.muzzle[0])],
+      trailer: nodes.trailer,
       prop: new T.Object3D(),
       wing: new T.Object3D(),
     };
     scene.add(g);
     return g;
   }
+
   function insect(type = 'midge') {
     const g = new T.Group();
     g.userData.hitTolerance = type === 'midge' ? 1.2 : 1;

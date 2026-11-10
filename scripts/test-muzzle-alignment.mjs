@@ -27,7 +27,23 @@ for (const [name, model, count] of variants) {
 
   const expected = muzzles.map((node) => {
     const barrel = node.parent;
-    assert.ok(barrel.isMesh, name + ' muzzle must follow the visible barrel mesh');
+    if (!barrel.isMesh) {
+      // Remodelled Meshy rigs: the muzzle anchor rides the pivot carrying the
+      // sculpted barrel, at its tip (a source vertex lies within 0.15 units).
+      const tip = node.getWorldPosition(new T.Vector3());
+      let nearest = Infinity;
+      barrel.traverse((mesh) => {
+        if (!mesh.isMesh) return;
+        const p = mesh.geometry.attributes.position;
+        for (let i = 0; i < p.count; i++)
+          nearest = Math.min(
+            nearest,
+            mesh.localToWorld(new T.Vector3().fromBufferAttribute(p, i)).distanceTo(tip),
+          );
+      });
+      assert.ok(nearest < 0.15 * ACTOR_UNIT, name + ' muzzle at a sculpted barrel tip');
+      return tip;
+    }
     assert.equal(node.position.x, 0);
     assert.equal(node.position.y, 0);
     const depth = barrel.geometry.parameters.depth;

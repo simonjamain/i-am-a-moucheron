@@ -33,6 +33,8 @@ for (const [name, data] of [
     for (const i of index) assert.ok(i < vertexCount, `${name}: index in range`);
     triangles += index.length / 3;
   }
-  assert.ok(triangles >= 26000 && triangles <= 30000, `${name}: original Meshy mesh`);
+  // M1 and Stuka: first Meshy hulls; H2, Spitfire, T3, D2: user remodels.
+  if (data.sourceSha256) assert.equal(triangles, data.triangles, `${name}: every source triangle`);
+  else assert.ok(triangles >= 26000 && triangles <= 30000, `${name}: original Meshy mesh`);
   console.log(`PASS ${name}: ${triangles} indexed triangles, original UV and JPEG atlas`);
 }
