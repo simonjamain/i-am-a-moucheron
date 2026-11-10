@@ -4,6 +4,8 @@ import { TANK_MG } from './armament.js';
 export const FUEL_SECONDS = 300;
 export const SERVICE_SECONDS = 10;
 export const SERVICE_RADIUS = 0.12;
+// The Castor is a mobile refuel station: a 50 cm sphere around the truck.
+export const CASTOR_SERVICE_RADIUS = 0.5;
 export function ammoCapacity(type, seat, balance = null) {
   if (balance) return Math.round(ammoCapacity(type, seat) * balance.ammo);
   if (type === 'helicopter')

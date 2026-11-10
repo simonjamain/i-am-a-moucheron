@@ -67,20 +67,19 @@ vérifiés visuellement en jeu : silhouette, texture, repère, chaque poste et s
 armes, remorque D2, collision et fluidité avec plusieurs véhicules.
 Une compilation et un test sans GPU ne constituent pas cet essai.
 
-## Castor G1 : châssis, tourelle et roues Meshy
+## Castor G1 : modèle Meshy remodelé (version 262)
 
-Les trois modèles Meshy de l'issue [#76](https://github.com/simonjamain/i-am-a-moucheron/issues/76) sont importés séparément, avec leurs **vrais atlas et UV** : châssis `01a1afc9-29f8-771d-8efc-493296643670`, tourelle `01a1afc9-3823-7324-ae2b-56cd8adf4c34`, roue `01a1afc9-4756-727e-8b75-cf19b054f6d4`.
+Le Castor de l'issue [#76](https://github.com/simonjamain/i-am-a-moucheron/issues/76) utilise désormais le modèle refait par l'utilisateur, `Meshy_AI_Tactical_Rescue_Rover_1110083041_texture_1.glb` (SHA-256 `b211b4234f6a2ac443357c7867c9a634288a098f6fd5bfa62e3b4b863e67c466`, 3 700 triangles, texture 2 048 px). Il remplace les trois anciennes tâches séparées (châssis `01a1afc9-29f8-…`, tourelle, roue ; ~30 000 triangles pour la seule coque), ainsi que le masquage des roues sculptées dans la coque, devenu inutile.
 
-`python3 scripts/import-meshy-castor.py body|turret|wheel SOURCE.glb` convertit chaque source en module JS indépendant `src/meshy-castor-*-data.js`. Le convertisseur conserve les triangles et leurs UV/textures d'origine, rééchantillonne uniquement les images en atlas JPEG à 1 024 pixels et calibre les composants à l'échelle miniature. Les empreintes SHA256 des trois sources sont inscrites dans les modules.
+Le GLB est un seul maillage, mais **chaque pièce est un îlot séparé** (158 îlots). `python3 scripts/import-meshy-castor.py SOURCE.glb` soude les sommets (sans tenir compte des coutures UV) pour trouver ces îlots, puis :
 
-`src/castor-model.js` crée six pivots de roue et un pivot de tourelle/élévation sans rigging Meshy. Les géométries, matériaux et atlas sont partagés entre plusieurs exemplaires pour éviter les copies GPU inutiles. Aucune dépendance réseau ni import GLB au navigateur. Les couleurs Meshy restent originales, avec un rond d'identification séparé.
+- reconnaît les six pneus (îlots bas, plus de 60 faces, un par côté) et les cinq pièces de la tourelle de toit ; l'import échoue si ce compte diffère ;
+- tourne le modèle de −X (avant Meshy) vers −Z (avant du jeu), sans miroir, et l'échelonne à **6,1 unités de long** (longueur de l'ancien Castor) ; le contact des roues est à −0,8 (hauteur `gear`) ;
+- enregistre chaque pièce autour de son pivot dans `src/meshy-castor-data.js` : `body`, `wheel0`…`wheel5` (moyeu de chaque pneu, axe X, rayon 0,568 → `CASTOR_WHEEL_RADIUS` 0,57), `turret` (couronne, lacet autour de Y) et `gun` (tête et canon, élévation autour de X, au centre de la tête), avec la bouche à l'extrémité du canon ;
+- conserve tous les triangles et UV d'origine ; seule la texture est réduite en JPEG 1 024 px (module de 449 Ko, contre 3,3 Mo pour les trois anciens).
 
-**Vérification visuelle requise en WebGL** : sens de marche, face des roues, absence de roues doublées dans la coque Meshy, sortie de la bouche du canon et performances à plusieurs exemplaires. Les éventuelles roues déjà moulées dans le châssis sont conservées à cette étape (pas de découpage aveugle de la géométrie). Une CI verte ne constitue pas cet essai.
+`src/castor-model.js` crée ces pivots par Castor et partage géométries, matériau et atlas entre exemplaires. `scripts/test-castor-meshy.mjs` vérifie l'empreinte, les triangles, l'encombrement, le contact au sol, les moyeux et la bouche. Le mât caméra et l'antenne restent fixes dans la coque.
 
-### Correction de l'assemblage des roues G1 (version 186)
-
-Le châssis Meshy comporte déjà six roues sculptées. Le moteur retire de **l'affichage** les triangles du châssis dans leurs six zones latérales inférieures (sans modifier les atlas, UV ni GLB sources), puis réutilise la véritable roue Meshy indépendante aux centres du châssis : `x = ±1,01`, `z = −2,05 / 0,55 / 1,70`, `y = −0,24` en unités de modèle. L'échelle de roue est `0,65`, ce qui aligne sa taille sur les roues d'origine ; la rotation des six pivots reste indépendante. Le filtrage est effectué **une seule fois par maillage partagé**, sans duplication des textures et UV par Castor. Des tests vérifient le nombre de faces ignorées et l'encombrement final.
-
-La suppression est une découpe géométrique par zones, pas une segmentation sémantique Meshy : vérifier visuellement qu'aucun garde-boue, marchepied ou pare-chocs n'est tronqué par le masque. Le véhicule reste gourmand en triangles, à optimiser ultérieurement après mesure GPU.
+**Vérification visuelle requise en WebGL** : sens de marche, rotation des roues, visée de la tourelle et performances à plusieurs exemplaires ; un rendu hors jeu ne remplace pas l'essai en partie.
 
 Pour tout nouvel export GLB Meshy, voir le [pipeline de validation et de simplification](asset-pipeline.md) : les originaux approuvés restent la référence, et les variantes optimisées doivent préserver les textures et les pivots.

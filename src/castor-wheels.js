@@ -2,7 +2,7 @@
 // ACTOR_UNIT). Rolling without slipping: each wheel spins at its own ground
 // speed, forward speed plus the yaw contribution of its lateral offset, so a
 // pivot on the spot turns the left and right wheels in opposite directions.
-export const CASTOR_WHEEL_RADIUS = 0.64;
+export const CASTOR_WHEEL_RADIUS = 0.57;
 export const CASTOR_MAX_STEER = 0.5;
 
 const wrap = (a) => Math.atan2(Math.sin(a), Math.cos(a));

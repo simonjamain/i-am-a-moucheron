@@ -14,7 +14,7 @@ for (const expected of [
   /Q\/D : tourner/,
   /Clic : mitrailleuse/,
   /G \/ clic molette : construire/,
-  /V : vue tactique/,
+  /V : vue de dessus/,
   /F : sortir/,
 ])
   assert.match(castor, expected);

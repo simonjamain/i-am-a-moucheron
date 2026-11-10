@@ -3,7 +3,13 @@ import { SENTRY } from './ground-sentry.js';
 import { FORTIFICATIONS } from './ground-fortifications.js';
 import { distanceToSegment } from './ground-defense.js';
 import { FIXED_DCA_AMMO } from './ground-ammo.js';
-import { ammoCapacity, FUEL_SECONDS, SERVICE_RADIUS, SERVICE_SECONDS } from './logistics.js';
+import {
+  ammoCapacity,
+  CASTOR_SERVICE_RADIUS,
+  FUEL_SECONDS,
+  SERVICE_RADIUS,
+  SERVICE_SECONDS,
+} from './logistics.js';
 
 export const SERVICE_RATES = Object.freeze({
   hp: 0.01,
@@ -29,7 +35,7 @@ function serviceSources(installations, fleet) {
       .map((s) => ({ p: [s.x, s.y, s.z], radius: SERVICE_RADIUS })),
     ...fleet
       .filter((s) => s.type === 'castor' && s.state.hp > 0)
-      .map((s) => ({ p: s.state.p, radius: 0.5 })),
+      .map((s) => ({ p: s.state.p, radius: CASTOR_SERVICE_RADIUS })),
   ];
 }
 
@@ -85,13 +91,11 @@ export function advancePaidService(
     const needs = [];
     const maxHP = VEHICLES[v.type]?.maxHP || 100;
     const hp = Math.min(Math.max(0, maxHP - v.state.hp), maxHP * dt * 0.1);
-    if (hp > 0)
-      needs.push({ cost: hp * SERVICE_RATES.hp, apply: (f) => (v.state.hp += hp * f) });
+    if (hp > 0) needs.push({ cost: hp * SERVICE_RATES.hp, apply: (f) => (v.state.hp += hp * f) });
     for (const key of ['engine', 'wing']) {
       if (!Number.isFinite(v.state[key])) continue;
       const change = Math.min(Math.max(0, 1 - v.state[key]), dt * 0.1);
-      if (change > 0)
-        needs.push({ cost: change, apply: (f) => (v.state[key] += change * f) });
+      if (change > 0) needs.push({ cost: change, apply: (f) => (v.state[key] += change * f) });
     }
     const cap = FUEL_SECONDS * (balance.fuel ?? 1);
     const fuel = Math.min(Math.max(0, cap - v.supplies.fuel), (cap * dt) / SERVICE_SECONDS);
@@ -99,10 +103,7 @@ export function advancePaidService(
       needs.push({ cost: fuel * SERVICE_RATES.fuel, apply: (f) => (v.supplies.fuel += fuel * f) });
     for (const [key, current] of Object.entries(v.supplies.ammo || {})) {
       const capAmmo = ammoCapacity(v.type, key, balance.ammo === undefined ? null : balance);
-      const amount = Math.min(
-        Math.max(0, capAmmo - current),
-        (capAmmo * dt) / SERVICE_SECONDS,
-      );
+      const amount = Math.min(Math.max(0, capAmmo - current), (capAmmo * dt) / SERVICE_SECONDS);
       if (amount > 0)
         needs.push({
           cost: amount * ammoServiceRate(key),
@@ -119,20 +120,22 @@ export function advancePaidService(
     for (const gun of installations) {
       const fortification = FORTIFICATIONS[gun.kind];
       const capacity = fortification?.ammo ?? FIXED_DCA_AMMO;
-      if ((gun.kind !== 'dca' && !fortification) || !Number.isFinite(gun.ammo) || gun.ammo >= capacity || gun.hp === 0)
+      if (
+        (gun.kind !== 'dca' && !fortification) ||
+        !Number.isFinite(gun.ammo) ||
+        gun.ammo >= capacity ||
+        gun.hp === 0
+      )
         continue;
       if (
         !sources.some(
-          ({ p, radius }) =>
-            Math.hypot(gun.x - p[0], gun.y - p[1], gun.z - p[2]) <= radius,
+          ({ p, radius }) => Math.hypot(gun.x - p[0], gun.y - p[1], gun.z - p[2]) <= radius,
         )
       )
         continue;
-      const quantity = Math.min(
-        capacity - gun.ammo,
-        (capacity * dt) / SERVICE_SECONDS,
-      );
-      const cost = quantity * (gun.kind === 'bunker' ? SERVICE_RATES.machineGun : SERVICE_RATES.shell);
+      const quantity = Math.min(capacity - gun.ammo, (capacity * dt) / SERVICE_SECONDS);
+      const cost =
+        quantity * (gun.kind === 'bunker' ? SERVICE_RATES.machineGun : SERVICE_RATES.shell);
       if (cost > 0)
         jobs.push({
           cost,
@@ -183,22 +186,36 @@ export function advancePaidService(
     }
     for (const sentry of groundDefense.structures) {
       if (sentry.kind !== 'sentry' || sentry.hp <= 0 || sentry.ammo >= SENTRY.ammo) continue;
-      if (!sources.some(({ p, radius }) =>
-        Math.hypot(sentry.position[0] - p[0], p[1] - 0.025, sentry.position[1] - p[2]) <= radius,
-      )) continue;
+      if (
+        !sources.some(
+          ({ p, radius }) =>
+            Math.hypot(sentry.position[0] - p[0], p[1] - 0.025, sentry.position[1] - p[2]) <=
+            radius,
+        )
+      )
+        continue;
       const amount = Math.min(SENTRY.ammo - sentry.ammo, (SENTRY.ammo * dt) / SERVICE_SECONDS);
       const cost = amount * SERVICE_RATES.machineGun;
-      if (cost > 0) jobs.push({
-        cost,
-        needs: [{ cost, apply: (fraction) => {
-          sentry.ammo += amount * fraction;
-          groundDefense.revision++;
-        } }],
-        mark: () => {},
-      });
+      if (cost > 0)
+        jobs.push({
+          cost,
+          needs: [
+            {
+              cost,
+              apply: (fraction) => {
+                sentry.ammo += amount * fraction;
+                groundDefense.revision++;
+              },
+            },
+          ],
+          mark: () => {},
+        });
     }
   }
-  const shares = fairServiceShares(jobs.map((job) => job.cost), dollars);
+  const shares = fairServiceShares(
+    jobs.map((job) => job.cost),
+    dollars,
+  );
   let spent = 0;
   for (const [index, job] of jobs.entries()) {
     const paid = Math.min(job.cost, shares[index]);

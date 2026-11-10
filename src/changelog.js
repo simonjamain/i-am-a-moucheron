@@ -1,6 +1,14 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 262,
+    changes: [
+      'Le Castor a un tout nouveau look : six roues, tourelle sur le toit et caisses de ravitaillement.',
+      'Touche V au volant du Castor : vue de dessus, la souris déplace un viseur au sol pour poser vos défenses et tirer.',
+      'Les zones de ravitaillement sont visibles : une bulle verte autour des stations et de chaque Castor.',
+    ],
+  },
+  {
     version: 261,
     changes: [
       'Nouveaux modèles pour les fourmis, rouges et furieuses, et les araignées pondeuses, velues et tachetées.',

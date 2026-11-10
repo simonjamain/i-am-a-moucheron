@@ -1,200 +1,175 @@
-"""Convert the three original textured Meshy G1 Castor GLBs to indexed, UV-textured game assets.
+"""Convert the user's remodelled G1 Castor GLB (one textured mesh, cleanly split
+into separate islands) into the game's offline, indexed, UV-textured module.
 
-Usage: python3 scripts/import-meshy-castor.py body|turret|wheel SOURCE.glb
-No external 3D loader or CDN is needed by the Three.js runtime. Fail closed when
-the source loses its original UV or base-color texture.
+Usage: python3 scripts/import-meshy-castor.py SOURCE.glb
+
+The source is one Meshy mesh whose movable pieces are disconnected islands. They
+are separated geometrically (welded connectivity, ignoring UV seams), never by
+simplification: every source triangle and its original UV is kept. Fail closed
+if the expected six wheels and turret pieces cannot be identified.
 """
 import base64
 import hashlib
 import io
 import json
-import math
 from pathlib import Path
 import sys
 
 import numpy as np
 import trimesh
 from PIL import Image
+from trimesh.graph import connected_components
 
-TASKS = {
-    'body': '01a1afc9-29f8-771d-8efc-493296643670',
-    'turret': '01a1afc9-3823-7324-ae2b-56cd8adf4c34',
-    'wheel': '01a1afc9-4756-727e-8b75-cf19b054f6d4',
-}
-OUTPUT = {kind: Path(f'src/meshy-castor-{kind}-data.js') for kind in TASKS}
+SOURCE_NAME = 'Meshy_AI_Tactical_Rescue_Rover_1110083041_texture_1.glb'
+OUTPUT = Path('src/meshy-castor-data.js')
+# Calibrated game length (model units, multiplied by ACTOR_UNIT in game);
+# matches the previous Castor's 6.08 length so gameplay sizes are unchanged.
+GAME_LENGTH = 6.1
+GEAR = 0.8  # model origin height above the wheels' contact plane
 
 
-def load_parts(path):
+def load(path):
     scene = trimesh.load(path, force='scene')
-    parts = []
-    for node in scene.graph.nodes_geometry:
-        matrix, geometry_name = scene.graph[node]
-        mesh = scene.geometry[geometry_name].copy()
-        if not isinstance(mesh, trimesh.Trimesh) or len(mesh.faces) == 0:
-            continue
-        mesh.apply_transform(matrix)
-        visual = mesh.visual
-        uv = getattr(visual, 'uv', None)
-        material = getattr(visual, 'material', None)
-        img = getattr(material, 'baseColorTexture', None)
-        if img is None:
-            img = getattr(material, 'image', None)
-        if uv is None or img is None:
-            raise ValueError(f'{node}: missing original Meshy UV or baseColorTexture')
-        if not isinstance(img, Image.Image):
-            img = Image.fromarray(np.asarray(img))
-        uv = np.asarray(uv)
-        if uv.shape != (len(mesh.vertices), 2) or not np.isfinite(uv).all():
-            raise ValueError(f'{node}: invalid UVs')
-        parts.append((mesh, img.convert('RGB')))
-    if not parts:
-        raise ValueError('No textured Meshy triangles in source')
-    return parts
+    meshes = [scene.geometry[g].copy() for _, g in (scene.graph[n] for n in scene.graph.nodes_geometry)]
+    if len(meshes) != 1:
+        raise ValueError(f'expected one Meshy mesh, found {len(meshes)}')
+    node = scene.graph.nodes_geometry[0]
+    mesh = meshes[0]
+    mesh.apply_transform(scene.graph[node][0])
+    uv = getattr(mesh.visual, 'uv', None)
+    image = getattr(mesh.visual.material, 'baseColorTexture', None)
+    if uv is None or image is None:
+        raise ValueError('missing original Meshy UV or baseColorTexture')
+    uv = np.asarray(uv, dtype=float)
+    if uv.shape != (len(mesh.vertices), 2) or not np.isfinite(uv).all():
+        raise ValueError('invalid UVs')
+    return np.asarray(mesh.vertices, dtype=float), np.asarray(mesh.faces), uv, image.convert('RGB')
 
 
-def orient(pts, kind, spans):
-    # Meshy reference vehicles face -X; the game drives toward -Z.
-    if kind in ('body', 'turret'):
-        if spans[0] > spans[2]:
-            return np.column_stack((-pts[:, 2], pts[:, 1], pts[:, 0]))
-        return pts
-    thin = int(np.argmin(spans))
-    # Turn the wheel's thin axle direction onto X without mirroring geometry.
-    if thin == 2:
-        return np.column_stack((-pts[:, 2], pts[:, 1], pts[:, 0]))
-    if thin == 1:
-        return np.column_stack((pts[:, 1], pts[:, 2], pts[:, 0]))
-    return pts
+def islands(vertices, faces):
+    welded = trimesh.Trimesh(vertices.copy(), faces.copy(), process=False)
+    welded.merge_vertices(merge_tex=True, merge_norm=True)
+    return connected_components(welded.face_adjacency, nodes=np.arange(len(faces)), min_len=1)
 
 
-def normalize(parts, kind):
-    raw = np.vstack([m.vertices for m, _ in parts])
-    spans = np.ptp(raw, axis=0)
-    if np.any(spans < 1e-6):
-        raise ValueError(f'{kind}: degenerate component bounds')
-    vertices = [orient(m.vertices, kind, spans) for m, _ in parts]
-    all_pts = np.vstack(vertices)
-    lo, hi = all_pts.min(axis=0), all_pts.max(axis=0)
-    sizes = hi - lo
-    if kind == 'body':
-        limits = np.array([5.5, 3.1, 8.5])
-    elif kind == 'turret':
-        limits = np.array([2.1, 1.5, 3.0])
-    else:
-        limits = np.array([0.65, 1.7, 1.7])
-    scale = min(limits / sizes)
-    offsets = (lo + hi) / 2
-    if kind == 'body':
-        offsets[1] = lo[1] + 0.8 / scale
-    # Wheel/turret models are centered on their independently animated pivots.
-    for (mesh, _), v in zip(parts, vertices):
-        mesh.vertices = (v - offsets) * scale
-    after = np.vstack([m.vertices for m, _ in parts])
-    return {
-        'scale': float(scale),
-        'bounds': np.round([after.min(axis=0), after.max(axis=0)], 4).tolist(),
-        'orientation': 'Meshy X-forward rotated to game -Z' if spans[0] > spans[2] and kind != 'wheel' else 'adaptive',
-    }
+def orient(p):
+    # Meshy vehicles face -X; the game drives toward -Z (proper rotation, no mirror).
+    return np.column_stack((-p[:, 2], p[:, 1], p[:, 0]))
 
 
-def atlas_for(parts):
-    # Pack the actual source images, preserving each mesh's UV islands.
-    images = []
-    lookup = {}
-    mapping = []
-    for _, image in parts:
-        out = io.BytesIO()
-        image.save(out, format='PNG')
-        key = hashlib.sha256(out.getvalue()).hexdigest()
-        if key not in lookup:
-            lookup[key] = len(images)
-            images.append(image)
-        mapping.append(lookup[key])
-    if len(images) > 16:
-        raise ValueError('Too many original materials for a 1024px atlas')
-    cols = math.ceil(math.sqrt(len(images)))
-    rows = math.ceil(len(images) / cols)
-    tile = min(1024 // cols, 1024 // rows)
-    atlas = Image.new('RGB', (cols * tile, rows * tile), (24, 24, 24))
-    for index, image in enumerate(images):
-        atlas.paste(
-            image.resize((tile, tile), Image.Resampling.LANCZOS),
-            ((index % cols) * tile, (index // cols) * tile),
-        )
-    buf = io.BytesIO()
-    atlas.save(buf, format='JPEG', quality=88, optimize=True)
-    return buf.getvalue(), mapping, cols, rows
-
-
-def encode(parts, kind, mapping, columns, rows):
-    packed = []
-    triangles = 0
-    for (mesh, _), tile_index in zip(parts, mapping):
-        # Chunks keep each indexed mesh within the Uint16 vertex limit.
-        for start in range(0, len(mesh.faces), 9000):
-            selection = np.arange(start, min(start + 9000, len(mesh.faces)))
-            segment = mesh.submesh([selection], append=True)
-            if len(segment.vertices) > 65535:
-                raise ValueError('16-bit index budget exceeded')
-            pts = np.asarray(segment.vertices)
-            if not np.isfinite(pts).all() or np.max(np.abs(pts)) >= 16:
-                raise ValueError('Out-of-range 16-bit positions')
-            uv = np.asarray(segment.visual.uv, dtype=float).copy()
-            if uv.shape != (len(segment.vertices), 2):
-                raise ValueError('Original UV lost during submesh extraction')
-            uv[:, 0] = (np.clip(uv[:, 0], 0, 1) + tile_index % columns) / columns
-            uv[:, 1] = (1 - np.clip(uv[:, 1], 0, 1) + tile_index // columns) / rows
-            p = np.rint(pts / 0.0005).astype('<i2')
-            u = np.rint(uv * 65535).astype('<u2')
-            indices = segment.faces.flatten().astype('<u2')
-            triangles += len(indices) // 3
-            packed.append({
-                'part': kind,
-                'pivot': [0, 0, 0],
-                'positions': base64.b64encode(p.tobytes()).decode('ascii'),
-                'uv': base64.b64encode(u.tobytes()).decode('ascii'),
-                'indices': base64.b64encode(indices.tobytes()).decode('ascii'),
-            })
-    return packed, triangles
+def classify(vertices, faces, comps):
+    """Return face index arrays per articulated part (source -X forward frame)."""
+    wheels, turret = [], []
+    for c in comps:
+        v = vertices[np.unique(faces[c])]
+        lo, hi = v.min(0), v.max(0)
+        size = hi - lo
+        # Tyres: big low islands, one per side, each narrower than half the width.
+        if hi[1] < -0.1 and len(c) > 60 and size[2] < 0.12 and size[0] > 0.15:
+            wheels.append(c)
+        # Roof turret: ring, head, hatch and barrel above the cab (front half).
+        elif lo[1] >= 0.095 and hi[0] <= -0.13 and lo[0] >= -0.43 and np.abs(v[:, 2]).max() < 0.07:
+            turret.append(c)
+    if len(wheels) != 6 or len(turret) != 5:
+        raise ValueError(f'unexpected articulation islands: {len(wheels)} wheels, {len(turret)} turret')
+    return wheels, turret
 
 
 def main():
-    kind, source = sys.argv[1:3]
-    if kind not in TASKS:
-        raise ValueError(f'Unknown Castor component {kind}')
-    source = Path(source)
+    source = Path(sys.argv[1])
     sha = hashlib.sha256(source.read_bytes()).hexdigest()
-    parts = load_parts(source)
-    meta = normalize(parts, kind)
-    jpeg, mapping, columns, rows = atlas_for(parts)
-    output, triangles = encode(parts, kind, mapping, columns, rows)
-    if not 500 <= triangles <= 300000:
-        raise ValueError(f'Unexpected Meshy triangle count {triangles}')
+    vertices, faces, uv, image = load(source)
+    comps = islands(vertices, faces)
+    wheels, turret = classify(vertices, faces, comps)
+    lo, hi = vertices.min(0), vertices.max(0)
+    scale = GAME_LENGTH / (hi[0] - lo[0])
+    offset = (lo + hi) / 2
+    offset[1] = lo[1] + GEAR / scale
+
+    def game(points):
+        return orient((points - offset) * scale)
+
+    # Turret yaw pivot: centre of its lowest island (the ring). The whole head
+    # including the barrel elevates around the head's centre, as before.
+    ring = min(turret, key=lambda c: vertices[np.unique(faces[c])][:, 1].min())
+    ring_v = game(vertices[np.unique(faces[ring])])
+    head = [c for c in turret if c is not ring]
+    head_v = game(vertices[np.unique(faces[np.concatenate(head)])])
+    yaw_pivot = np.array([(ring_v[:, 0].min() + ring_v[:, 0].max()) / 2, ring_v[:, 1].min(),
+                          (ring_v[:, 2].min() + ring_v[:, 2].max()) / 2])
+    pitch_y = (head_v[:, 1].min() + head_v[:, 1].max()) / 2
+    pitch_pivot = np.array([yaw_pivot[0], pitch_y, yaw_pivot[2]])
+    barrel = min(head, key=lambda c: game(vertices[np.unique(faces[c])])[:, 2].min())
+    barrel_v = game(vertices[np.unique(faces[barrel])])
+    tip = barrel_v[np.argmin(barrel_v[:, 2])]
+    muzzle = np.array([pitch_pivot[0], tip[1], barrel_v[:, 2].min()])
+
+    pieces = []
+    for i, c in enumerate(sorted(wheels, key=lambda c: tuple(np.round(game(vertices[np.unique(faces[c])]).mean(0)[[2, 0]], 3)))):
+        v = game(vertices[np.unique(faces[c])])
+        center = (v.min(0) + v.max(0)) / 2
+        pieces.append((f'wheel{i}', c, center))
+    pieces.append(('turret', ring, yaw_pivot))
+    pieces.append(('gun', np.concatenate(head), pitch_pivot))
+    moving = np.concatenate([p[1] for p in pieces])
+    body = np.setdiff1d(np.arange(len(faces)), moving)
+    pieces.insert(0, ('body', body, np.zeros(3)))
+
+    out = io.BytesIO()
+    image.resize((1024, 1024), Image.Resampling.LANCZOS).save(out, format='JPEG', quality=88, optimize=True)
+    jpeg = out.getvalue()
+
+    parts, triangles = [], 0
+    for name, selection, pivot in pieces:
+        used, local = np.unique(faces[selection], return_inverse=True)
+        pts = game(vertices[used]) - pivot
+        if len(used) > 65535 or np.max(np.abs(pts)) >= 16:
+            raise ValueError(f'{name}: 16-bit budget exceeded')
+        tex = uv[used].copy()
+        tex[:, 1] = 1 - tex[:, 1]  # trimesh exposes bottom-up UVs; the game texture has flipY=false
+        tex = np.clip(tex, 0, 1)
+        indices = local.reshape(-1, 3).flatten().astype('<u2')
+        triangles += len(indices) // 3
+        parts.append({
+            'part': name,
+            'pivot': np.round(pivot, 4).tolist(),
+            'positions': base64.b64encode(np.rint(pts / 0.0005).astype('<i2').tobytes()).decode('ascii'),
+            'uv': base64.b64encode(np.rint(tex * 65535).astype('<u2').tobytes()).decode('ascii'),
+            'indices': base64.b64encode(indices.tobytes()).decode('ascii'),
+        })
+    if triangles != len(faces):
+        raise ValueError('source triangles lost')
+    wheel_radius = float(np.mean([(np.ptp(game(vertices[np.unique(faces[c])])[:, 1])) / 2 for c in wheels]))
+    allv = game(vertices)
     model = {
-        'sourceTask': TASKS[kind],
+        'source': SOURCE_NAME,
         'sourceSha256': sha,
         'triangles': triangles,
-        'bounds': meta['bounds'],
-        'parts': output,
+        'scale': round(float(scale), 5),
+        'bounds': np.round([allv.min(0), allv.max(0)], 4).tolist(),
+        'wheelRadius': round(wheel_radius, 4),
+        'muzzle': np.round(muzzle - pitch_pivot, 4).tolist(),
+        'parts': parts,
         'texture': 'data:image/jpeg;base64,' + base64.b64encode(jpeg).decode('ascii'),
     }
-    target = OUTPUT[kind]
-    target.write_text(
-        '// Imported from original textured Meshy task ' + TASKS[kind] + ', SHA256 ' + sha + '.\n'
+    OUTPUT.write_text(
+        '// Imported by scripts/import-meshy-castor.py from ' + SOURCE_NAME + ', SHA256 ' + sha + '.\n'
         + '// prettier-ignore\n'
         + 'export const MODEL_DATA = ' + json.dumps(model, separators=(',', ':')) + ';\n',
         encoding='utf-8',
     )
     print(json.dumps({
-        'component': kind,
         'sourceSha256': sha,
         'triangles': triangles,
-        'sourceMeshes': len(parts),
-        'indexedParts': len(output),
+        'islands': len(comps),
+        'scale': model['scale'],
+        'bounds': model['bounds'],
+        'wheelRadius': model['wheelRadius'],
+        'pivots': {p['part']: p['pivot'] for p in parts},
+        'muzzle': model['muzzle'],
         'atlasBytes': len(jpeg),
-        'jsBytes': target.stat().st_size,
-        **meta,
-    }))
+        'jsBytes': OUTPUT.stat().st_size,
+    }, indent=1))
 
 
 if __name__ == '__main__':

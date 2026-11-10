@@ -122,6 +122,14 @@ import { formatDistance, formatSpeed } from '/units.js';
 import { HEAVY, TANK_MG, availableShell } from '/armament.js';
 import { stepTank } from '/tank.js';
 import { animateCastorWheels, trackGroundMotion } from '/castor-wheels.js';
+import { ServiceZones, serviceZoneList } from '/service-zones.js';
+import {
+  moveTopCursor,
+  resetTopCursor,
+  topViewGroundPoint,
+  topViewPose,
+  topViewRay,
+} from '/castor-top-view.js';
 import { CrashEffects } from '/crash-effects.js';
 import { MissileExhaust } from '/missile-exhaust.js';
 import * as T from '/three.js';
@@ -275,6 +283,10 @@ const turretAim = { yaw: 0, pitch: 0.2 };
 const heliTurretAim = { yaw: 0, pitch: -0.1 };
 let selectedEquipment = null;
 let castorTacticalView = false;
+const topCursor = resetTopCursor({});
+// The V top view belongs to the Castor driver only.
+const castorTopView = () =>
+  castorTacticalView && myVehicle?.type === 'castor' && crewSeat === 'pilot' && !respawnAt;
 let optimisticExitPending = false;
 let onFoot = true,
   baseArena = null,
@@ -766,6 +778,14 @@ addEventListener('pointermove', (event) => {
     groundView.pitch = T.MathUtils.clamp(groundView.pitch + dy * 0.004, -1.52, 1.52);
     return;
   }
+  if (castorTopView()) {
+    moveTopCursor(topCursor, dx, dy, {
+      width: innerWidth,
+      height: innerHeight,
+      sensitivity: flightTuning.mouseSensitivity,
+    });
+    return;
+  }
   if (keys.KeyC) {
     lookDelta(freeLook, dx, dy);
     return;
@@ -854,6 +874,12 @@ function updateAimHUD() {
     return;
   }
   function place(el, direction) {
+    if (castorTopView()) {
+      el.classList.remove('offscreen');
+      el.style.left = (topCursor.x * 0.5 + 0.5) * innerWidth + 'px';
+      el.style.top = (-0.5 * topCursor.y + 0.5) * innerHeight + 'px';
+      return;
+    }
     const point = me.position.clone().addScaledVector(direction, 100);
     const front = point.clone().applyMatrix4(camera.matrixWorldInverse).z < 0;
     point.project(camera);
@@ -1446,15 +1472,11 @@ const groundDefenseUI = new GroundDefenseUI({
   snapshot: () => snap,
   aim: () => {
     const builder = castorBuilder();
-    return builder
-      ? placementAim(
-          builder,
-          camera.position,
-          camera.getWorldDirection(new T.Vector3()),
-          colliders,
-          0.24,
-        )
-      : cameraPlacement(0.24);
+    if (!builder) return cameraPlacement(0.24);
+    const ray = castorTopView()
+      ? topViewRay(T, camera, topCursor)
+      : { origin: camera.position, direction: camera.getWorldDirection(new T.Vector3()) };
+    return placementAim(builder, ray.origin, ray.direction, colliders, 0.24);
   },
   foot: () => {
     const builder = castorBuilder();
@@ -1573,7 +1595,13 @@ addEventListener('keydown', (event) => {
   if (interactionKey === 'KeyV' && myVehicle?.type === 'castor' && !event.repeat) {
     event.preventDefault();
     castorTacticalView = !castorTacticalView;
-    notify(castorTacticalView ? 'Vue tactique du Castor' : 'Vue de conduite du Castor', 2);
+    resetTopCursor(topCursor);
+    notify(
+      castorTacticalView
+        ? 'Vue de dessus · la souris déplace le viseur au sol'
+        : 'Vue de conduite du Castor',
+      2,
+    );
     return;
   }
   const exitAction = equipmentExitAction({
@@ -3031,6 +3059,7 @@ function roleEntry(type, seat, role = seatRole(type, seat)) {
   return g;
 }
 const stationRings = [];
+const serviceZones = new ServiceZones(T, scene);
 function updateBaseWorld(dt, now) {
   if (!baseArena || !snap) return;
   for (const event of snap.base?.events || [])
@@ -3500,6 +3529,9 @@ function updateOthers(dt) {
           ),
       );
   }
+  serviceZones.update(serviceZoneList(stations, snap.vehicles || []), (zone) =>
+    zone.vehicle !== undefined ? fleetModels.get(zone.vehicle)?.position : null,
+  );
   for (const [k, g] of fleetModels)
     if (!active.has(k)) {
       scene.remove(g);
@@ -4332,20 +4364,37 @@ function frame(now) {
         .multiply(
           new T.Quaternion().setFromEuler(new T.Euler(freeLook.pitch, freeLook.yaw, 0, 'YXZ')),
         );
-      const offset = new T.Vector3(
-        0,
-        myVehicle?.type === 'castor' ? (castorTacticalView ? 32 : 6) : 3.5,
-        myVehicle?.type === 'castor' ? (castorTacticalView ? 15 : 11) : 11,
-      )
-        .multiplyScalar(ACTOR_UNIT)
-        .applyQuaternion(orbit);
-      camera.position.lerp(me.position.clone().add(offset), 1 - Math.exp(-10 * dt));
-      camera.up.set(0, 1, 0).applyQuaternion(orbit);
-      camera.lookAt(
-        me.position
-          .clone()
-          .add(new T.Vector3(0, 0, -60).multiplyScalar(ACTOR_UNIT).applyQuaternion(orbit)),
-      );
+      if (castorTopView()) {
+        const pose = topViewPose(T, me.position, me.quaternion);
+        camera.position.lerp(pose.eye, 1 - Math.exp(-10 * dt));
+        camera.up.lerp(pose.up, 1 - Math.exp(-10 * dt)).normalize();
+        camera.lookAt(pose.target);
+        camera.updateMatrixWorld();
+        // The light machine gun fires at the floor point under the cursor.
+        const ground = topViewGroundPoint(
+          T,
+          camera,
+          topCursor,
+          me.position.y - VEHICLES.castor.gear,
+        );
+        if (ground) {
+          ground.y += MAP.metres(0.5);
+          const from = me.position.clone().add(new T.Vector3(0, 2 * ACTOR_UNIT, 0));
+          if (ground.distanceToSquared(from) > 1e-10)
+            mouseDirection.copy(ground.sub(from).normalize());
+        }
+      } else {
+        const offset = new T.Vector3(0, myVehicle?.type === 'castor' ? 6 : 3.5, 11)
+          .multiplyScalar(ACTOR_UNIT)
+          .applyQuaternion(orbit);
+        camera.position.lerp(me.position.clone().add(offset), 1 - Math.exp(-10 * dt));
+        camera.up.set(0, 1, 0).applyQuaternion(orbit);
+        camera.lookAt(
+          me.position
+            .clone()
+            .add(new T.Vector3(0, 0, -60).multiplyScalar(ACTOR_UNIT).applyQuaternion(orbit)),
+        );
+      }
     }
     updateAimHUD();
     $('speed').textContent = formatSpeed(vel.length());
@@ -4357,6 +4406,7 @@ function frame(now) {
     drawRadar();
     updateCountdown();
   } else {
+    serviceZones.update([]);
     camera.position.set(-1.65 + Math.sin(now * 0.00008) * 0.08, 1.08, 2.6);
     camera.lookAt(OFFICE_LAYOUT.base.originX, 0.91, OFFICE_LAYOUT.base.originZ - 0.08);
     me.userData.prop.rotation.z += dt * 15;
