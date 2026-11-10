@@ -1,6 +1,12 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 265,
+    changes: [
+      'Sur un PC à écran tactile, la souris se capture de nouveau normalement et les boutons tactiles n’apparaissent plus.',
+    ],
+  },
+  {
     version: 264,
     changes: [
       'Plus de contrats piégés : aucun document ne modifie vos commandes, votre visée ou vos tirs.',

@@ -1,5 +1,10 @@
 # Controls and pointer ownership
 
+The game is **desktop-first** (version 265): mouse and keyboard (or gamepad)
+only. There is no touch mode: no on-screen arrows, E or weapon buttons, and the
+mouse is always captured with Pointer Lock, whatever pointer the browser reports
+as primary (a touch-screen PC behaves like any other PC).
+
 Keyboard letters use `KeyboardEvent.key`, with a physical-code fallback, so ZQSD
 means the printed AZERTY letters. Key-up remembers the original physical-to-logical
 mapping, including modifier changes while a key is held.
@@ -58,7 +63,7 @@ pending-capture/form race.
 ## Pistolet et postes
 
 Au bureau, personne ne porte d'arme à pied : le personnage marche et court les
-mains libres. Le pistolet n'existe qu'au purgatoire : clic gauche, bouton tactile
+mains libres. Le pistolet n'existe qu'au purgatoire : clic gauche, bouton
 « Tir · pistolet » ou A/Croix, un tir par appui, sans rechargement. Espace en
 chute conserve la commande de parachute.
 E / Y-Triangle ouvre le dossier au guichet ou près d’un équipement.
@@ -111,8 +116,8 @@ les touches physiques, le jet et les nouvelles commandes du Spitfire.
 Plus de panneau d'instructions à pied à gauche, ni d'aide plein écran (bouton
 « Aide », « Commandes ? », touche H et bouton d'aide de manette retirés), ni de
 bouton « Défense », « Recommencer la partie » ou nom de room copiant le lien. Le
-lien d'invitation reste celui de la barre d'adresse (`?room=`). Sur écran tactile,
-seuls les boutons de marche et d'interaction (E) restent affichés à pied, sans texte.
+lien d'invitation reste celui de la barre d'adresse (`?room=`). Aucune commande
+tactile n'est affichée, même sur un écran tactile (jeu desktop-first).
 Le radar, ancré en haut et à droite, est agrandi vers le bas et la gauche dans
 l'espace libéré (211 px au lieu de 150, même carré). Le bouton **Debug : OFF / ON**
 est un interrupteur direct ([mode debug](laboratory.md)).

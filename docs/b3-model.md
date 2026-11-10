@@ -8,7 +8,7 @@ sortir ou échanger sa place ne libère pas les autres occupants.
 
 La visée ventrale couvre le dessous de l’appareil : élévation entre −1,5 et −0,05
 radian, rotation horizontale libre. Sa caméra reste sous la coque ; les commandes
-souris, tactiles et manette appliquent les mêmes limites. Le pilote conserve les
+souris et manette appliquent les mêmes limites. Le pilote conserve les
 bombes et l’autorité sur le vol. Les trois mitrailleurs publient leur direction et
 leurs tirs indépendamment, avec le protocole existant.
 

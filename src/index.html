@@ -408,65 +408,6 @@
         border: 1px solid var(--line);
         border-radius: 7px;
       }
-      #touch {
-        position: absolute;
-        bottom: 10px;
-        left: 10px;
-        right: 10px;
-        display: none;
-        justify-content: space-between;
-        pointer-events: none;
-      }
-      #touch button {
-        pointer-events: auto;
-        touch-action: none;
-        padding: 17px;
-        background: #173d33bb;
-        user-select: none;
-      }
-      #touch .dir {
-        display: grid;
-        grid-template-columns: repeat(3, 48px);
-        gap: 3px;
-      }
-      .touchFire {
-        align-self: end;
-        background: #d5ef73bb !important;
-        color: #132e23 !important;
-      }
-      #footTouch {
-        display: none;
-      }
-      @media (pointer: coarse) {
-        #touch.playing {
-          display: flex;
-        }
-        #footTouch:not(.hidden) {
-          position: absolute;
-          left: 10px;
-          bottom: 10px;
-          display: flex;
-          gap: 8px;
-          align-items: end;
-          pointer-events: auto;
-        }
-        .bottomkeys {
-          display: none;
-        }
-        #flight {
-          bottom: 175px;
-          width: 220px;
-        }
-        #actions {
-          bottom: 175px;
-        }
-        #radar {
-          /* Touch controls own the bottom: keep the former size and place. */
-          bottom: 225px;
-          width: 150px;
-          height: 150px;
-        }
-      }
       @media (max-width: 700px) {
         header {
           top: 18px;
@@ -640,9 +581,6 @@
         font-size: 12px;
         min-height: 16px;
         margin-bottom: 0;
-      }
-      #touch.inPurgatory {
-        display: none;
       }
       #purgatory .small {
         margin: 12px 0 0;
@@ -2397,15 +2335,6 @@
         <p id="phaseText">Les pilotes prennent position.</p>
         <button id="start" class="primary">Lancer la vague →</button>
       </div>
-      <!-- Issue #135: no on-foot help panel. Touch screens keep only the controls
-           that have no physical key there: walk arrows and the interaction (E). -->
-      <div id="footTouch" class="hidden">
-        <div class="soulControls">
-          <button data-key="ArrowLeft">←</button><button data-key="ArrowUp">↑</button
-          ><button data-key="ArrowDown">↓</button><button data-key="ArrowRight">→</button>
-        </div>
-        <button id="boardButton" class="primary" disabled aria-label="Interagir (E)">E</button>
-      </div>
       <div id="crosshair" aria-label="Direction des canons"></div>
       <div id="contextHUD" class="hidden" aria-label="Informations du poste">
         <section class="contextRail left" tabindex="0" aria-label="État du poste">
@@ -2452,17 +2381,6 @@
       <canvas id="radar" width="220" height="220"></canvas>
       <div id="actions">
         <button id="captureMouse">Capturer la souris</button>
-      </div>
-      <div id="touch">
-        <div class="dir">
-          <span></span><button data-key="ArrowUp">↑</button><span></span
-          ><button data-key="ArrowLeft">←</button><button data-key="ArrowDown">↓</button
-          ><button data-key="ArrowRight">→</button>
-        </div>
-        <div style="display: flex; gap: 4px">
-          <button data-key="KeyA">Gouv. ←</button><button data-key="KeyE">Gouv. →</button>
-        </div>
-        <button class="touchFire" data-key="Space">ARME SECONDAIRE</button>
       </div>
     </div>
     <section id="purgatory" class="hidden" aria-labelledby="soulTitle">
@@ -2689,7 +2607,6 @@
         ><small>Molette / [ ] · rayon 2,4 cm</small>
       </div>
       <button id="parachuteToggle" class="hidden">Parachute · Espace</button
-      ><button id="leavePlane">Sauter</button
       ><button id="vehicleInteract" class="hidden">Quitter le poste · F</button
       ><button id="turretFire" class="hidden">Tirer</button>
     </div>
