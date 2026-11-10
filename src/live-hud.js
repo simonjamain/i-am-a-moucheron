@@ -47,7 +47,7 @@ function vehicleHints({ type, supplies }, seat, build) {
       'Souris : viser',
       'Clic : mitrailleuse',
       build && BUILD,
-      'V : vue tactique',
+      'V : vue de dessus',
       'Clic droit : zoom',
       GROUND_EXIT,
     ];

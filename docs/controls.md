@@ -126,7 +126,7 @@ en chute ou au purgatoire, la disponibilité de la construction, la roue ouverte
 et l’outil actif (avec son point d’ancrage). L’aide change donc à l’entrée, à la
 sortie et au changement de poste. À pied : molette pour le zoom caméra, **G** ou
 clic molette pour la roue de construction. Au Castor : conduite Z/S Q/D, clic
-pour la mitrailleuse, **G**/clic molette, **V** vue tactique (prioritaire sur le
+pour la mitrailleuse, **G**/clic molette, **V** vue de dessus (prioritaire sur le
 raccourci du conseil de vague pour le conducteur), **F** pour sortir. Les postes
 fixes et véhicules terrestres n’affichent ni parachute ni « sauter ».
 `scripts/test-control-hints.mjs` vérifie chaque rôle et chaque siège de `VEHICLES`.
@@ -191,7 +191,7 @@ valider dans une vraie partie WebGL/UDP.
 ## Conseil de vague
 
 Ouvrez le bandeau **Vague** en haut de l’écran, ou appuyez sur **V** (sauf au
-volant du Castor, où V bascule la vue tactique). La frise
+volant du Castor, où V bascule la vue de dessus). La frise
 regroupe les arrivées simultanées dans une même colonne. Les repères **S** (sol)
 et **A** (air) et les silhouettes reprennent ceux des entrées dans le bureau.
 Le trajet terrestre confirmé apparaît comme une piste de phéromones orange
@@ -223,7 +223,7 @@ Maintenir **G** ou le **clic molette** : orienter vers un secteur puis relâcher
 
 Sur le [bombardier B3](b3-model.md), **4** demande le poste ventral avec signature ; **1 / 2 / 3** restent pilote, dorsal et queue.
 
-G1 Castor : Z/S avancer/reculer, Q/D tourner, souris et clic gauche pour tirer avec la mitrailleuse légère, **V** bascule la caméra tactique surélevée. Le soutien à 50 cm est automatique et payant. Pendant la conduite, **G** ou le clic molette ouvre la roue de construction. Clic gauche démarre/arrête la dépose des murs LEGO et rubans : les briques apparaissent une à une derrière le camion (hauteur fixe de trois rangs), chaque section de 20 cm est validée par le serveur et l’arrêt conserve la section commencée. Facturation au prorata de la longueur réelle : 1 $ pour 20 cm, au centime près ; les autres pièges se posent au point visé. Échap interrompt la construction.
+G1 Castor : Z/S avancer/reculer, Q/D tourner, souris et clic gauche pour tirer avec la mitrailleuse légère, **V** bascule la vue de dessus : la caméra se place à la verticale du camion (avant du camion en haut de l’écran) et la souris déplace un viseur au sol ; l’aperçu de construction et la mitrailleuse visent ce point. V de nouveau revient à la vue de conduite. Le soutien à 50 cm est automatique et payant. Pendant la conduite, **G** ou le clic molette ouvre la roue de construction. Clic gauche démarre/arrête la dépose des murs LEGO et rubans : les briques apparaissent une à une derrière le camion (hauteur fixe de trois rangs), chaque section de 20 cm est validée par le serveur et l’arrêt conserve la section commencée. Facturation au prorata de la longueur réelle : 1 $ pour 20 cm, au centime près ; les autres pièges se posent au point visé. Échap interrompt la construction.
 
 DCA fixe : le nombre d'obus restants (sur 120) est affiché près de l'état du
 poste. Un clic gauche ou Espace déclenche un tir tant qu'il reste des munitions.

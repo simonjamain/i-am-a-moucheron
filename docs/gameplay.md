@@ -343,12 +343,12 @@ Le [bombardier B3 à quatre places](b3-model.md) conserve son camouflage Meshy ;
 
 ## G1 Castor (première étape, version 179)
 
-Le **G1 Castor** est un camion monoplace à six roues, achetable pour **12 $** avec le bon signé des véhicules. Z/S et Q/D permettent de conduire ; la souris vise sa mitrailleuse légère (500 balles, recharges payantes). **V** bascule une vue tactique surélevée. Vitesse maximale 52 (deux fois le
+Le **G1 Castor** est un camion monoplace à six roues, achetable pour **12 $** avec le bon signé des véhicules. Z/S et Q/D permettent de conduire ; la souris vise sa mitrailleuse légère (500 balles, recharges payantes). **V** bascule une **vue de dessus** : caméra à 40 cm à la verticale du camion, avant en haut de l’écran, et viseur au sol déplacé à la souris pour poser les défenses dans les 24 cm de portée et tirer (`src/castor-top-view.js`). Vitesse maximale 52 (deux fois le
 réglage initial), avec une accélération forte au départ qui décroît près du
 maximum. Les six roues roulent à la vitesse du sol de leur côté (sens, marche
 arrière et arrêt compris) ; au pivot sur place, gauche et droite tournent en sens
 opposés et les roues avant braquent selon la vitesse de rotation
-(`src/castor-wheels.js`, `scripts/test-castor-wheels.mjs`). Plus rapide que le tank, il possède un rayon de soutien sphérique de **50 cm** qui peut soigner et ravitailler les alliés en mouvement ou en vol et se réapprovisionner lui-même. Le service utilise la caisse commune.
+(`src/castor-wheels.js`, `scripts/test-castor-wheels.mjs`). Plus rapide que le tank, il possède un rayon de soutien sphérique de **50 cm**, matérialisé en jeu par une sphère verte translucide (comme les 12 cm des stations de ravitaillement fixes, `src/service-zones.js`), qui peut soigner et ravitailler les alliés en mouvement ou en vol et se réapprovisionner lui-même. Le service utilise la caisse commune.
 
 **La construction en roulant est disponible depuis la version 188.** Le Castor utilise désormais **ses trois modèles Meshy texturés** : châssis, tourelle et roues indépendantes. Les couleurs originales sont préservées, sans pastille d’identification ([flotte Meshy](meshy-fleet.md)). Voir [l'issue #76](https://github.com/simonjamain/i-am-a-moucheron/issues/76) et [la note de reprise](tasks/g1-castor.md).
 

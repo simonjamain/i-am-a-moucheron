@@ -156,9 +156,11 @@ commun des maillages UV et des atlas, `m1-model.js`, `h2-model.js` et
 
 G1 Castor (issue #76) : `fleet.js` définit le véhicule monoplace,
 `tank.js` sa physique de sol, `paid-service.js` son rayon de soutien et ses coûts,
-`castor-model.js` assemble les trois vrais modèles Meshy texturés à six roues et tourelle mobile, et
-`client.js` la conduite, la visée et la caméra surélevée. Les trois imports Meshy
-sont générés hors ligne par `scripts/import-meshy-castor.py`.
+`castor-model.js` assemble le modèle Meshy texturé (coque, six roues, tourelle et
+canon pivotants) généré hors ligne par `scripts/import-meshy-castor.py`,
+`castor-top-view.js` la vue de dessus (V) et son viseur au sol, `client.js` la
+conduite et la visée. `service-zones.js` dessine les sphères vertes de
+ravitaillement des stations fixes et des Castor, aux rayons de `logistics.js`.
 
 La construction embarquée dans le Castor (PR #80) partage
 `GroundDefenseUI`, `groundPlacement` et `placement-aim` avec les piétons.
