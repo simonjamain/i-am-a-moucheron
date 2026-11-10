@@ -18,7 +18,7 @@ en charge continue du backlog et la revue finale des documents.
 | `src/network.js`                           | Validation de mouvement et interpolation ; `PeerMotion` est le transport historique des pairs. |
 | `src/ground-motion.js`                     | Historique et interpolation visuelle des positions des ennemis terrestres reçues du serveur.   |
 
-Les moucherons de grande nuée utilisent \`src/midge-batch.js\` (modèle Meshy animé par texture de sommets près de la caméra, trois meshes instanciés WebGL au loin, proxies logiques légers ; voir \`src/midge-model.js\` et [le pipeline d'assets](asset-pipeline.md#moucheron-meshy-squelette-et-vol)), \`waves.js\` (trajectoires indépendantes) et \`insect-hits.js\` (collisions sphériques). Le navigateur possède ses mouvements et raycasts dans un modèle coopératif.
+Les moucherons de grande nuée utilisent \`src/midge-batch.js\` (modèle Meshy animé par texture de sommets près de la caméra, trois meshes instanciés WebGL au loin, proxies logiques légers ; voir \`src/midge-model.js\` et [le pipeline d'assets](asset-pipeline.md#moucheron-meshy-squelette-et-vol)). Les fourmis et araignées pondeuses suivent la même chaîne (\`src/rigged-creature.js\`, \`src/creature-batch.js\`, \`src/walker-gait.js\`, \`src/walker-batch.js\`, \`src/ant-model.js\`, \`src/spider-model.js\`) avec une marche pilotée par la distance, \`waves.js\` (trajectoires indépendantes) et \`insect-hits.js\` (collisions sphériques). Le navigateur possède ses mouvements et raycasts dans un modèle coopératif.
 Le serveur possède les transactions et simule les armes lourdes. Il n’y a ni
 base de données ni accès disque dans les opérations de jeu Node. Voir
 [réseau](walking-network.md) et [serveur UDP](udp-server.md).

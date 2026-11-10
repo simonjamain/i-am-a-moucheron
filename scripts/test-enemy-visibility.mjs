@@ -84,6 +84,7 @@ const state = {
   // instantiate MidgeBatch, and all species must still have visible meshes.
   midgeBatch: { enabled: false },
   spiderlingBatch: { enabled: false },
+  walkerBatch: { enabled: false },
   midgeForward: new T.Vector3(0, 0, -1),
   midgeHeading: new T.Vector3(),
   midgeTarget: new T.Quaternion(),
@@ -121,8 +122,8 @@ vm.runInContext(update + '\nenemies(10000)', state);
 state.snap = { ...state.snap, wave: 2, roster: [testEnemy('ant')] };
 vm.runInContext('enemies(10000)', state);
 assert.equal(
-  models.get(0).userData.legs?.length,
-  6,
+  models.get(0).userData.walk?.container.name,
+  'fourmi',
   'Wave two must render its ground enemy, not reuse a flying mesh from wave one',
 );
 console.log(

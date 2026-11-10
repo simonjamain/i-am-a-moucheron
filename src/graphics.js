@@ -5,6 +5,7 @@ import { makeM1 } from './m1-model.js';
 import { makeCastorMeshy } from './castor-model.js';
 import { createCharacter, CHARACTER_HEIGHT, LEGACY_HEIGHT } from './character-model.js';
 import { createMidgeRig } from './midge-model.js';
+import { WALKERS, walkerStride } from './walker-batch.js';
 import { GROUND_LEGS, MIDGE_SPHERE_RADIUS } from './scale.js';
 export function createGraphics(T, scene) {
   const materials = new Map();
@@ -224,6 +225,31 @@ export function createGraphics(T, scene) {
       tail.position.set(0, -0.05, 1.9);
       g.add(tail);
       g.userData = { wings: [], legs: paws, hitParts: [body, head, nose], disposables: [] };
+      scene.add(g);
+      return g;
+    }
+    if (WALKERS[type]) {
+      // Rigged Meshy walkers (corpses, purgatory souls, non-WebGL fallback).
+      // Living WebGL walkers are drawn by WalkerBatch; hits use the ellipsoid.
+      const walker = WALKERS[type];
+      const rig = walker.creature.createRig(T);
+      rig.mesh.castShadow = true;
+      g.add(rig.container);
+      g.userData = {
+        enemyType: type,
+        wings: [],
+        legs: [],
+        hitParts: [],
+        disposables: [rig.mesh.material],
+        hitTolerance: 1,
+        hitEllipsoid: [...walker.hit.radii],
+        hitCentre: [...walker.hit.centre],
+        walk: rig,
+        // Purgatory souls: walk at their physical speed (world units per second).
+        animate(dt, { speed = 0 } = {}) {
+          if (speed > 1e-6) rig.pose(rig.phase + (speed * dt) / walkerStride(type, g.scale.x));
+        },
+      };
       scene.add(g);
       return g;
     }

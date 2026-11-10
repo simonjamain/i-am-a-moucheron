@@ -103,6 +103,9 @@ réelle de l'espèce. Les pattes sont abaissées pour que leurs extrémités, pl
 que l'abdomen, forment le point bas du corps. `GROUND_LEGS` et
 `GROUND_FOOT_DEPTH` partagent ces dimensions entre géométrie et placement. Ainsi le corps et les pattes dégagent le plancher, y compris
 ses joints décoratifs hauts de 0,4 mm, sans déplacer la géométrie du décor.
+Les fourmis et araignées pondeuses riggées (Meshy) placent leurs pieds à
+`GROUND_FOOT_CLEARANCE` au-dessus de ce même relèvement ; voir
+[le pipeline d'assets](asset-pipeline.md#fourmi-et-araignée-pondeuse-meshy-marche).
 L'écart est identique côté client et serveur ; la tangente reste horizontale sur
 le sol plat. La marge de navigation terrestre passe à 25 mm (aériens : 18 mm),
 pour tenir compte des corps élargis et de leur léger mouvement de groupe.

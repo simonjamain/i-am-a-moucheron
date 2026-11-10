@@ -11,6 +11,53 @@ export function nearestMeshHit(ray, model) {
 
 // Rebuilt lazily once after each enemy animation frame, shared by all shots.
 // Spheres cover every overlapped cell; ray queries walk cells, never triangles.
+// Conservative hit radius in unscaled model units: a sphere proxy (midges,
+// spiderlings), an ellipsoid proxy (rigged walkers) or a procedural mesh.
+export function hitRadius(model) {
+  const u = model.userData;
+  if (u.hitEllipsoid) {
+    const [cx, cy, cz] = u.hitCentre || [0, 0, 0];
+    return Math.max(...u.hitEllipsoid) * (u.hitTolerance || 1) + Math.hypot(cx, cy, cz);
+  }
+  if (u.sphereRadius) return (u.sphereRadius * (u.hitTolerance || 1)) / 1.2;
+  return 3 * (u.hitTolerance || 1);
+}
+
+const localMatrix = new WeakMap();
+// World matrix of a hit proxy that may live outside the scene graph.
+function modelMatrix(T, model, direct) {
+  if (!direct) {
+    model.updateWorldMatrix(true, false);
+    return model.matrixWorld;
+  }
+  let m = localMatrix.get(model);
+  if (!m) localMatrix.set(model, (m = new T.Matrix4()));
+  return m.compose(model.position, model.quaternion, model.scale);
+}
+
+// Ray / ellipsoid proxy (model-local centre and radii, with tolerance). Returns
+// the ray parameter t (world point = origin + t * direction) or null.
+function ellipsoidRayParameter(T, origin, direction, model, direct) {
+  const u = model.userData;
+  const inverse = new T.Matrix4().copy(modelMatrix(T, model, direct)).invert();
+  const [cx, cy, cz] = u.hitCentre || [0, 0, 0];
+  const o = origin.clone().applyMatrix4(inverse);
+  const d = origin.clone().add(direction).applyMatrix4(inverse).sub(o);
+  const tolerance = u.hitTolerance || 1;
+  const [rx, ry, rz] = u.hitEllipsoid.map((r) => r * tolerance);
+  o.set((o.x - cx) / rx, (o.y - cy) / ry, (o.z - cz) / rz);
+  d.set(d.x / rx, d.y / ry, d.z / rz);
+  const a = d.dot(d),
+    b = 2 * o.dot(d),
+    c = o.dot(o) - 1;
+  const disc = b * b - 4 * a * c;
+  if (disc < 0 || a < 1e-18) return null;
+  const root = Math.sqrt(disc);
+  let t = (-b - root) / (2 * a);
+  if (t < 0) t = (-b + root) / (2 * a);
+  return t >= 0 ? t : null;
+}
+
 export class InsectIndex {
   constructor(T, insects, cellSize = 0.08) {
     if (!(cellSize > 0) || !Number.isFinite(cellSize)) throw Error('Invalid cell size');
@@ -35,10 +82,7 @@ export class InsectIndex {
       const centre = direct ? model.position : model.getWorldPosition(this.centre);
       const size = direct ? model.scale : model.getWorldScale(this.size);
       const r =
-        Math.max(Math.abs(size.x), Math.abs(size.y), Math.abs(size.z)) *
-          (model.userData.sphereRadius
-            ? (model.userData.sphereRadius * (model.userData.hitTolerance || 1)) / 1.2
-            : 3 * (model.userData.hitTolerance || 1)) +
+        Math.max(Math.abs(size.x), Math.abs(size.y), Math.abs(size.z)) * hitRadius(model) +
         this.cellSize * 1e-9;
       const min = ['x', 'y', 'z'].map((a) => Math.floor((centre[a] - r) / this.cellSize));
       const max = ['x', 'y', 'z'].map((a) => Math.floor((centre[a] + r) / this.cellSize));
@@ -135,10 +179,7 @@ export function nearestInsectHit(
     const centre = direct ? model.position : model.getWorldPosition(new T.Vector3());
     const size = direct ? model.scale : model.getWorldScale(new T.Vector3());
     const radius =
-      Math.max(Math.abs(size.x), Math.abs(size.y), Math.abs(size.z)) *
-      (model.userData.sphereRadius
-        ? (model.userData.sphereRadius * (model.userData.hitTolerance || 1)) / 1.2
-        : 3 * (model.userData.hitTolerance || 1));
+      Math.max(Math.abs(size.x), Math.abs(size.y), Math.abs(size.z)) * hitRadius(model);
     const dx = centre.x - origin.x,
       dy = centre.y - origin.y,
       dz = centre.z - origin.z;
@@ -149,6 +190,16 @@ export function nearestInsectHit(
       dx * dx + dy * dy + dz * dz - along * along > radius * radius
     )
       continue;
+    // Exact ray/ellipsoid test for rigged walkers (ant, spider): the body
+    // volume follows the proxy's heading, without any triangle work.
+    if (model.userData.hitEllipsoid) {
+      const t = ellipsoidRayParameter(T, origin, direction, model, direct);
+      if (t === null) continue;
+      const distance = t * norm;
+      if (distance <= maxDistance && (!nearest || distance < nearest.distance))
+        nearest = { id, distance, point: origin.clone().addScaledVector(direction, t) };
+      continue;
+    }
     // Fast, exact ray/sphere intersection for an individual midge. No triangles
     // or mesh-world updates are needed, including for instanced render proxies.
     if (model.userData.sphereRadius) {
@@ -194,6 +245,22 @@ export function insectContact(T, point, model, padding = 0.3) {
   model.updateWorldMatrix(true, true);
   const centre = model.getWorldPosition(new T.Vector3()),
     size = model.getWorldScale(new T.Vector3());
+  if (model.userData.hitEllipsoid) {
+    const direct = !model.parent || model.parent.isScene;
+    const inverse = new T.Matrix4().copy(modelMatrix(T, model, direct)).invert();
+    const [cx, cy, cz] = model.userData.hitCentre || [0, 0, 0];
+    const local = point.clone().applyMatrix4(inverse);
+    const tolerance = model.userData.hitTolerance || 1;
+    const [rx, ry, rz] = model.userData.hitEllipsoid.map((r) => r * tolerance);
+    const pad =
+      padding / Math.max(1e-6, Math.min(Math.abs(size.x), Math.abs(size.y), Math.abs(size.z)));
+    return (
+      ((local.x - cx) / (rx + pad)) ** 2 +
+        ((local.y - cy) / (ry + pad)) ** 2 +
+        ((local.z - cz) / (rz + pad)) ** 2 <=
+      1
+    );
+  }
   if (model.userData.sphereRadius) {
     const r =
       ((model.userData.sphereRadius * (model.userData.hitTolerance || 1)) / 1.2) *
