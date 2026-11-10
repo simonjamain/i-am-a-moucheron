@@ -84,8 +84,8 @@ stand clear of their covers; stacked paper sheets have small gaps. Each free rol
 sits above the runway with polygon offset and no depth write; it still respects
 solid-object occlusion rather than appearing through furniture.
 
-Les réserves finies des avions, les teintes et inscriptions de carrosserie, les
-clauses d’armement et les radars sont décrits dans
+Les réserves finies des avions, les teintes et inscriptions de carrosserie et
+les radars sont décrits dans
 [logistique et contrats](logistics-contracts.md). La DCA fixe et le pistolet restent
 à munitions illimitées ; la panne sèche supprime la poussée, sans figer le vol.
 

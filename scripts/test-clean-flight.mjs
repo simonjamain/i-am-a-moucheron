@@ -519,7 +519,6 @@ const fireContext = {
   crewSeat: 'pilot',
   aircraftFire: realFire,
   currentAmmoKey: () => 'pilot',
-  currentFactors: () => ({ damage: 1 }),
   snap: { wave: 1 },
   vel: new T.Vector3(),
   me: model,

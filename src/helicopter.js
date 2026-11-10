@@ -71,12 +71,6 @@ export function stepHelicopter(T, state, controls, colliders, dt, profile) {
   const dir = controls.direction
     ? new T.Vector3().fromArray(controls.direction).normalize()
     : new T.Vector3(0, 0, -1).applyQuaternion(q);
-  if (controls.direction && controls.factor === -1) {
-    const local = dir.clone().applyQuaternion(q.clone().invert());
-    local.x *= -1;
-    local.y *= -1;
-    dir.copy(local.applyQuaternion(q));
-  }
   const yaw = controls.direction
     ? Math.atan2(-dir.x, -dir.z)
     : new T.Euler().setFromQuaternion(q, 'YXZ').y;

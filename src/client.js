@@ -35,7 +35,6 @@ import { paintVehicle, updateInscriptions } from '/vehicle-livery.js';
 import { drawSeatIcon, seatRole } from '/seat-icons.js';
 import { AircraftFire } from '/aircraft-fire.js';
 import { inRadarCoverage } from '/logistics.js';
-import { maliciousDocument, clauseFactors } from '/malice.js';
 import { InsectStatus, insectScale } from '/insect-status.js';
 import { BloodEffects } from '/blood-effects.js';
 import { stepVacantAircraft } from '/vacant-flight.js';
@@ -441,9 +440,9 @@ canvas.addEventListener('pointermove', (e) => {
       groundView.y = e.clientY;
       return;
     }
-    turretAim.yaw -= (e.clientX - groundView.x) * 0.003 * currentFactors().aim;
+    turretAim.yaw -= (e.clientX - groundView.x) * 0.003;
     turretAim.pitch = T.MathUtils.clamp(
-      turretAim.pitch - (e.clientY - groundView.y) * 0.003 * currentFactors().aim,
+      turretAim.pitch - (e.clientY - groundView.y) * 0.003,
       crewSeat === 'ventral'
         ? -1.5
         : myVehicle?.type === 'helicopter'
@@ -759,9 +758,9 @@ addEventListener('pointermove', (event) => {
     return;
   }
   if ((turretIndex >= 0 || (myVehicle && crewSeat !== 'pilot')) && !respawnAt) {
-    turretAim.yaw -= dx * 0.003 * currentFactors().aim;
+    turretAim.yaw -= dx * 0.003;
     turretAim.pitch = T.MathUtils.clamp(
-      turretAim.pitch - dy * 0.003 * currentFactors().aim,
+      turretAim.pitch - dy * 0.003,
       crewSeat === 'ventral'
         ? -1.5
         : myVehicle?.type === 'helicopter'
@@ -855,7 +854,7 @@ canvas.addEventListener(
     }
     if (!joined || respawnAt || onFoot || !controlFocus.active) return;
     e.preventDefault();
-    gas = T.MathUtils.clamp(gas - Math.sign(e.deltaY) * 0.05 * currentFactors().controls, 0, 1);
+    gas = T.MathUtils.clamp(gas - Math.sign(e.deltaY) * 0.05, 0, 1);
   },
   { passive: false },
 );
@@ -1523,7 +1522,7 @@ mountChangelog({
 function launchWave() {
   if (snap?.phase === 'lost') return action('reset', { epoch: snap.base.epoch });
   if (!snap?.mission_started) return action('start');
-  if (snap.preparation?.winner) return action('start', { preparation: snap.preparation.id });
+  if (snap.preparation) return action('start', { preparation: snap.preparation.id });
 }
 $('start').onclick = launchWave;
 addEventListener('keydown', (event) => {
@@ -2048,19 +2047,6 @@ const documents = Object.fromEntries(
 );
 let activeTransfer = null;
 let replacementCounter = 0;
-function currentDossier() {
-  const pilot = snap?.pilots.find((p) => p.id === id);
-  const token = activeTransfer
-    ? activeTransfer.id + ':' + id
-    : selectedEquipment !== null
-      ? pilot?.state.equipmentBoarding?.token
-      : pilot?.state.boarding?.token;
-  return !respawnAt ? snap?.dossiers?.find((d) => d.token === token && d.pilot === id) : null;
-}
-function pendingAnnex() {
-  const d = currentDossier();
-  return d?.clause && !d.choice && d.position <= signatureForm ? d : null;
-}
 
 function paperSource() {
   if (respawnAt) return { x: 0, y: 1.5, z: -1 };
@@ -2151,8 +2137,6 @@ function renderPaper() {
         ':' +
         (pilot?.state.boarding?.token || pilot?.state.equipmentBoarding?.token || '') +
         ':' +
-        (currentDossier()?.choice || '') +
-        ':' +
         replacementCounter;
   if (paperContext !== key) {
     $('stampEcho').classList.remove('show');
@@ -2162,7 +2146,7 @@ function renderPaper() {
     clearSignature();
     redrawInk();
   }
-  const ordinaryDoc = contractBook.get(
+  const doc = contractBook.get(
       contractKey(
         context,
         activeTransfer
@@ -2178,8 +2162,6 @@ function renderPaper() {
       key,
     ),
     total = documents[context].length;
-  const annex = pendingAnnex(),
-    doc = annex ? maliciousDocument(annex) : ordinaryDoc;
   $('paperTitle').textContent = doc.title;
   $('paperCode').textContent = doc.code + ' / ' + room;
   $('paperIssuer').textContent = !['purgatory', 'super'].includes(context)
@@ -2201,16 +2183,13 @@ function renderPaper() {
         : isSuper()
           ? 'Retour au purgatoire classique'
           : 'Retour à la base Alpha';
-  const dossier = currentDossier(),
-    extraDone = !!dossier?.clause && !!dossier.choice && dossier.position <= index;
-  const processed = index + (extraDone ? 1 : 0);
   $('paperProgress').textContent =
-    `Document ${processed + 1} sur ${total + (dossier?.clause ? 1 : 0)} · ${processed} traité${processed > 1 ? 's' : ''}`;
+    `Document ${index + 1} sur ${total} · ${index} traité${index > 1 ? 's' : ''}`;
 
   $('signSubmit').disabled = !inkReady() || soulBusy || boardingBusy;
   $('signSubmit').textContent = boardingBusy
     ? 'Signature apposée…'
-    : !annex && !['purgatory', 'super'].includes(context) && index === 1
+    : !['purgatory', 'super'].includes(context) && index === 1
       ? 'Signer et monter à bord →'
       : context === 'purgatory' && index === 2
         ? 'Signer et revenir à la base →'
@@ -2242,7 +2221,6 @@ async function submitPaper() {
     seat: selectedSeat,
     station: selectedEquipment,
     request: activeTransfer?.id,
-    annex: pendingAnnex()?.token || null,
   };
   boardingBusy = true;
   $('paperMessage').textContent = 'Signature apposée · Transmission du document';
@@ -2254,19 +2232,15 @@ async function submitPaper() {
   renderPaper();
   try {
     const response = api(
-      paperSubmission.annex
-        ? 'dossier-choice'
-        : activeTransfer
-          ? 'seat-sign'
-          : respawnAt
-            ? 'sign'
-            : selectedEquipment !== null
-              ? 'equipment-sign'
-              : 'vehicle-sign',
+      activeTransfer
+        ? 'seat-sign'
+        : respawnAt
+          ? 'sign'
+          : selectedEquipment !== null
+            ? 'equipment-sign'
+            : 'vehicle-sign',
       {
         id,
-        token: paperSubmission.annex,
-        choice: paperSubmission.annex ? 'sign' : undefined,
         form: paperSubmission.index + 1,
         signature,
         ground: groundReport(),
@@ -2837,9 +2811,9 @@ function updateVehicles(dt) {
       freeLook.pitch = T.MathUtils.clamp(freeLook.pitch - pad.pitch * dt, -0.1, 1.2);
     }
     if (controlFocus.active && !observing) {
-      turretAim.yaw -= pad.yaw * dt * currentFactors().aim;
+      turretAim.yaw -= pad.yaw * dt;
       turretAim.pitch = T.MathUtils.clamp(
-        turretAim.pitch - pad.pitch * dt * currentFactors().aim,
+        turretAim.pitch - pad.pitch * dt,
         crewSeat === 'ventral'
           ? -1.5
           : myVehicle?.type === 'helicopter'
@@ -2891,7 +2865,7 @@ function updateVehicles(dt) {
         : myVehicle.type === 'tank'
           ? TANK_MG[currentAmmoKey()].interval
           : 0.09) *
-        (currentFactors().interval / (snap?.balance?.fireRate ?? 1)),
+        (1 / (snap?.balance?.fireRate ?? 1)),
       shooting,
     );
     cooldown = burst.cooldown;
@@ -2927,9 +2901,9 @@ function updateVehicles(dt) {
     if (self) {
       if (controlFocus.active) {
         if (station.kind === 'dca') flakRange = advanceFuse(flakRange, keys, dt);
-        turretAim.yaw -= pad.yaw * dt * currentFactors().aim * 1.5;
+        turretAim.yaw -= pad.yaw * dt * 1.5;
         turretAim.pitch = T.MathUtils.clamp(
-          turretAim.pitch - pad.pitch * dt * currentFactors().aim,
+          turretAim.pitch - pad.pitch * dt,
           howitzer ? HOWITZER.minPitch : -0.1,
           howitzer ? HOWITZER.maxPitch : 1.35,
         );
@@ -2959,7 +2933,7 @@ function updateVehicles(dt) {
           performance.now() +
           (FORTIFICATIONS[station.kind]?.interval ?? FLAK.interval) *
             1000 *
-            ((self ? currentFactors().interval : 1) / (snap?.balance?.fireRate ?? 1));
+            (1 / (snap?.balance?.fireRate ?? 1));
         gun.userData.barrel++;
         const incarnation = snap.pilots.find((p) => p.id === id)?.incarnation;
         if (howitzer) {
@@ -3008,7 +2982,7 @@ function updateVehicles(dt) {
         performance.now() +
         (FORTIFICATIONS[station.kind]?.interval ?? FLAK.interval) *
           1000 *
-          ((self ? currentFactors().interval : 1) / (snap?.balance?.fireRate ?? 1));
+          (1 / (snap?.balance?.fireRate ?? 1));
       gun.userData.barrel++;
       if (howitzer) {
         // The shell itself arrives with the server ordnance.
@@ -3475,7 +3449,7 @@ function updateOthers(dt) {
                   : v.type === 'tank'
                     ? TANK_MG[seat === 'cannon' ? 'coax' : seat].interval
                     : 0.09) *
-                  (clauseFactors(gunner.contractClause).interval / (snap?.balance?.fireRate ?? 1)),
+                  (1 / (snap?.balance?.fireRate ?? 1)),
                 !!m.fire &&
                   v.supplies?.ammo[v.type === 'tank' && seat === 'cannon' ? 'coax' : seat] >= 1,
               );
@@ -3494,8 +3468,7 @@ function updateOthers(dt) {
             g,
             'pilot:' + (p?.id || ''),
             dt,
-            (v.type === 'castor' ? 0.16 : FIRE_INTERVAL) *
-              (clauseFactors(p?.contractClause).interval / (snap?.balance?.fireRate ?? 1)),
+            (v.type === 'castor' ? 0.16 : FIRE_INTERVAL) * (1 / (snap?.balance?.fireRate ?? 1)),
             !!motion.fire && v.supplies?.ammo.pilot >= 1,
           )
         : 0;
@@ -3551,7 +3524,6 @@ function bullet(pos, dir, color = '#f4efab', owned = false, aa = false) {
     const launch = {
       vehicle: myVehicle.id,
       wave: snap?.wave,
-      damageFactor: currentFactors().damage,
       weapon: currentAmmoKey(),
       baseDamage:
         myVehicle.type === 'castor'
@@ -3623,11 +3595,9 @@ function emitBullet(pos, dir, color, owned, aa, launch = null) {
     travelled: 0,
     fuse: MAP.metres(flakRange),
     originVehicle: launch?.vehicle || myVehicle?.id || null,
-    pierce: owned && !aa ? myVehicle?.blueprints?.filter((id) => id === 'piercing').length || 0 : 0,
     owned,
     shot: id + ':' + ++shotSequence,
     wave: launch?.wave ?? snap?.wave,
-    damageFactor: launch?.damageFactor ?? currentFactors().damage,
     baseDamage: launch?.baseDamage ?? 75,
     weapon: launch?.weapon,
   });
@@ -3676,12 +3646,7 @@ function explosion(b, point) {
       !exposed(g.position)
     )
       continue;
-    damageEnemy(
-      enemy,
-      blastDamage(g.position.distanceTo(point)) * (b.damageFactor ?? 1),
-      b.shot + ':' + enemy,
-      g.position,
-    );
+    damageEnemy(enemy, blastDamage(g.position.distanceTo(point)), b.shot + ':' + enemy, g.position);
   }
   for (const v of snap?.vehicles || []) {
     const g = fleetModels.get(v.id);
@@ -3759,38 +3724,15 @@ function stepProjectileSlice(dt) {
         }
       }
       const blocker = hit;
-      const excluded = b.pierced
-        ? { has: (id) => localKills.has(id) || b.pierced.has(id) }
-        : localKills;
-      let insect = nearestInsectHit(
+      const insect = nearestInsectHit(
         T,
         origin,
         dir,
         insects,
         blocker?.distance ?? distance,
-        excluded,
+        localKills,
         insectIndex,
       );
-      while (insect && b.pierce > 0 && b.wave === snap.wave) {
-        damageEnemy(
-          insect.id,
-          b.baseDamage * (1 + (snap.upgrades?.weapons || 0)) * (b.damageFactor ?? 1),
-          b.shot,
-          insect.point,
-        );
-        (b.pierced ??= new Set()).add(insect.id);
-        b.pierce--;
-        b.baseDamage *= 0.5;
-        insect = nearestInsectHit(
-          T,
-          origin,
-          dir,
-          insects,
-          blocker?.distance ?? distance,
-          { has: (id) => localKills.has(id) || b.pierced.has(id) },
-          insectIndex,
-        );
-      }
       hit = insect || blocker;
       if (hit) {
         if (b.shell) {
@@ -3806,7 +3748,7 @@ function stepProjectileSlice(dt) {
                 amount: impact.damage,
               });
             else if (hit.id !== undefined && b.wave === snap.wave)
-              damageEnemy(hit.id, impact.damage * (b.damageFactor ?? 1), b.shot, hit.point);
+              damageEnemy(hit.id, impact.damage, b.shot, hit.point);
           } else hitEffects.burst(hit.point, camera);
         } else {
           const enemyHit =
@@ -3820,7 +3762,7 @@ function stepProjectileSlice(dt) {
           else if (enemyHit) {
             damageEnemy(
               hit.id,
-              b.baseDamage * (1 + (snap.upgrades?.weapons || 0)) * (b.damageFactor ?? 1),
+              b.baseDamage * (1 + (snap.upgrades?.weapons || 0)),
               b.shot,
               hit.point,
             );
@@ -3862,17 +3804,14 @@ function physics(dt) {
       T,
       state,
       {
-        collective: collective * currentFactors().controls,
+        collective,
         pitch: active
-          ? (Number(!!(keys.KeyS || keys.ArrowDown)) - Number(!!(keys.KeyZ || keys.ArrowUp))) *
-            currentFactors().controls
+          ? Number(!!(keys.KeyS || keys.ArrowDown)) - Number(!!(keys.KeyZ || keys.ArrowUp))
           : 0,
         roll: active
-          ? (Number(!!(keys.KeyQ || keys.ArrowLeft)) - Number(!!(keys.KeyD || keys.ArrowRight))) *
-            currentFactors().controls
+          ? Number(!!(keys.KeyQ || keys.ArrowLeft)) - Number(!!(keys.KeyD || keys.ArrowRight))
           : 0,
         direction: active ? mouseDirection.toArray() : null,
-        factor: currentFactors().controls,
       },
       colliders,
       dt,
@@ -3902,8 +3841,8 @@ function physics(dt) {
       T,
       state,
       {
-        forward: -manual.pitch * currentFactors().controls,
-        turn: (manual.roll || -manual.yaw) * currentFactors().controls,
+        forward: -manual.pitch,
+        turn: manual.roll || -manual.yaw,
       },
       colliders,
       dt,
@@ -3929,7 +3868,7 @@ function physics(dt) {
       cooldown,
       dt,
       (myVehicle.type === 'castor' ? 0.16 : TANK_MG.pilot.interval) *
-        (currentFactors().interval / (snap?.balance?.fireRate ?? 1)),
+        (1 / (snap?.balance?.fireRate ?? 1)),
       shooting,
     );
     cooldown = burst.cooldown;
@@ -3950,11 +3889,8 @@ function physics(dt) {
     ? mouseFlightControls(T, { q: me.quaternion, omega, direction: mouseDirection }, flightTuning)
     : { pitch: 0, roll: 0, yaw: 0 };
   const steering = airplaneSteering(auto, manual);
-  const inversion = currentFactors().controls;
-  const pitch = steering.pitch * inversion,
-    roll = steering.roll * inversion,
-    yaw = steering.yaw * inversion;
-  gas = T.MathUtils.clamp(gas + manual.throttle * currentFactors().controls * dt * 0.4, 0, 1);
+  const { pitch, roll, yaw } = steering;
+  gas = T.MathUtils.clamp(gas + manual.throttle * dt * 0.4, 0, 1);
   const wind = new T.Vector3();
   const { forward, stall } = stepFlight(
     T,
@@ -4016,7 +3952,7 @@ function physics(dt) {
   const burst = advanceAutomaticFire(
     cooldown,
     dt,
-    FIRE_INTERVAL * (currentFactors().interval / (snap?.balance?.fireRate ?? 1)),
+    FIRE_INTERVAL * (1 / (snap?.balance?.fireRate ?? 1)),
     shooting && hp > 0,
   );
   cooldown = burst.cooldown;
@@ -4277,10 +4213,8 @@ function updateCountdown() {
     : 'Lancez la préparation de la première vague.';
   $('start').textContent = !snap.mission_started
     ? 'Lancer la partie →'
-    : !snap.preparation?.winner
-      ? 'Vote en cours'
-      : 'Lancer la vague maintenant →';
-  $('start').disabled = !!snap.mission_started && !snap.preparation?.winner;
+    : 'Lancer la vague maintenant →';
+  $('start').disabled = !!snap.mission_started && !snap.preparation;
 }
 function frame(now) {
   requestAnimationFrame(frame);
@@ -5068,9 +5002,6 @@ function remainingFuel() {
   const powered = crewSeat === 'pilot' ? engine : myVehicle.state.engine;
   return Math.max(0, supply.fuel - (powered ? consumption * age : 0));
 }
-function currentFactors() {
-  return clauseFactors(snap?.pilots.find((p) => p.id === id)?.contractClause);
-}
 function installationModel(st) {
   const g = new T.Group();
   g.position.set(st.x, st.y, st.z);
@@ -5120,7 +5051,6 @@ function installationModel(st) {
 
 $('paperTear').onclick = async () => {
   if (boardingBusy || soulBusy || $('papers').classList.contains('hidden')) return;
-  const annex = pendingAnnex();
   let message = '';
   boardingBusy = true;
   $('paperTear').disabled = true;
@@ -5130,13 +5060,9 @@ $('paperTear').onclick = async () => {
   $('stampEcho').classList.remove('show');
   $('papers').classList.add('tearing');
   try {
-    const result = annex
-      ? await api('dossier-choice', { id, token: annex.token, choice: 'tear' })
-      : null;
     await new Promise((resolve) => setTimeout(resolve, 320));
     replacementCounter++;
-    if (result) accept(result);
-    message = annex ? 'Feuillet déchiré.' : 'Document déchiré · Un nouvel exemplaire vous attend.';
+    message = 'Document déchiré · Un nouvel exemplaire vous attend.';
   } catch (e) {
     message = e.message;
   } finally {
@@ -5221,7 +5147,7 @@ function launchVehicle() {
   };
 }
 function launchLocal(projectile) {
-  projectile.bonus *= currentFactors().damage * (snap?.balance?.damage ?? 1);
+  projectile.bonus *= snap?.balance?.damage ?? 1;
   localShots.set(projectile.shot, projectile);
   return projectile;
 }
@@ -5253,12 +5179,7 @@ async function fireHeavy(weapon = null) {
     occupation = snap.pilots.find((p) => p.id === id).occupation,
     now = serverClock.now(performance.now()) ?? Date.now() + clockOffset;
   nextHeavyAt =
-    performance.now() +
-    HEAVY[weapon].interval *
-      1000 *
-      (['rocket', 'proximity'].includes(weapon)
-        ? Math.max(1, currentFactors().interval) / (snap?.balance?.fireRate ?? 1)
-        : currentFactors().interval / (snap?.balance?.fireRate ?? 1));
+    performance.now() + HEAVY[weapon].interval * 1000 * (1 / (snap?.balance?.fireRate ?? 1));
   const vehicle = launchVehicle();
   if (weapon === 'rocket') rocketSides.set(myVehicle.id, vehicle.rocketSide);
   const projectile = launchLocal(

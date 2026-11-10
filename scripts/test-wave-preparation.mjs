@@ -1,12 +1,6 @@
 import assert from 'node:assert/strict';
 import { Game } from '../server/game.js';
-import {
-  prepareRoster,
-  forecast,
-  directorBudget,
-  resolveVote,
-  purchaseBlueprint,
-} from '../server/wave-preparation.js';
+import { prepareRoster, forecast, directorBudget } from '../server/wave-preparation.js';
 import { DEFAULT_BALANCE } from '../src/balance.js';
 import { ENEMY_TYPES } from '../src/waves.js';
 
@@ -56,71 +50,37 @@ assert.equal(
   prep.groups.reduce((sum, g) => sum + g.count, 0),
   32,
 );
-now += 15000;
-request(a.id, 'wave-vote', { preparation: prep.id, card: prep.cards[1] });
-request(a.id, 'wave-vote', { preparation: prep.id, card: prep.cards[0] });
-assert.equal(request(b.id, 'start', { preparation: prep.id }).phase, 'prep');
-snap = request(b.id, 'wave-vote', { preparation: prep.id, card: prep.cards[0] });
-assert.equal(snap.phase, 'prep');
-assert.equal(snap.next_wave_at - now, 45000);
-assert.equal(snap.preparation.winner, prep.cards[0]);
-assert.deepEqual(snap.blueprintLevels, { [prep.cards[0]]: 1 });
+// No vote and no cards: the preparation only announces the wave.
+for (const key of ['cards', 'votes', 'winner']) assert.equal(prep[key], undefined, key);
+for (const key of ['blueprints', 'blueprintLevels', 'activeBlueprints'])
+  assert.equal(snap[key], undefined, key);
 const late = game.join({ code: 'PREP' });
 assert.deepEqual(late.snapshot.preparation, snap.preparation);
-snap = request(late.id, 'start', { preparation: prep.id });
+// Any player launches early; a stale or repeated launch starts nothing more.
+now += 15000;
+snap = request(b.id, 'start', { preparation: prep.id });
+assert.equal(snap.wave, 1);
+assert.equal(snap.phase, 'combat');
 assert.deepEqual(forecast(snap.roster), prep.groups);
-assert.equal(request(b.id, 'start', { preparation: prep.id }).wave, 1);
-assert.throws(
-  () => request(b.id, 'wave-vote', { preparation: prep.id, card: prep.cards[1] }),
-  /clos/,
-);
+assert.equal(request(late.id, 'start', { preparation: prep.id }).wave, 1);
 for (const e of room.plan.roster) room.kills.add(e.id);
 snap = request(a.id, 'sync', { state: a.state, mode: 'foot' });
 prep = snap.preparation;
+assert.equal(snap.next_wave_at - now, 60000, 'one-minute countdown');
+// Without anybody launching, the countdown starts the announced wave.
 now = snap.next_wave_at;
-snap = request(a.id, 'start', { preparation: prep.id });
+snap = request(a.id, 'sync', { state: a.state, mode: 'foot' });
 assert.equal(snap.wave, 2);
 assert.deepEqual(forecast(snap.roster), prep.groups);
-assert.equal(
-  Object.values(snap.blueprintLevels).reduce((a, b) => a + b),
-  2,
-);
-for (const pick of [0, 1]) {
-  const tie = {
-    pilots: new Map([
-      ['a', {}],
-      ['b', {}],
-    ]),
-    blueprintLevels: {},
-    preparation: { cards: ['lure', 'piercing', 'reinforced'], votes: { a: 'lure', b: 'piercing' } },
-  };
-  resolveVote(tie, false, () => pick);
-  assert.equal(tie.preparation.winner, tie.preparation.cards[pick]);
-  resolveVote(tie, true, () => 1 - pick);
-  assert.deepEqual(tie.blueprintLevels, { [tie.preparation.cards[pick]]: 1 });
-}
-const sugar = { id: 's', kind: 'sugar', radius: 0.15 };
-const vehicle = { id: 'v', type: 'fighter', state: { hp: 100 } };
-const fixture = {
-  blueprintLevels: { lure: 1, piercing: 1 },
-  dollars: 5,
-  groundDefense: { revision: 0, structures: [sugar] },
-  vehicles: new Map([['v', vehicle]]),
-};
-purchaseBlueprint(fixture, { blueprint: 'lure', level: 1 });
-assert.equal(sugar.radius, 0.25);
-assert.throws(() => purchaseBlueprint(fixture, { blueprint: 'lure', level: 1 }));
-purchaseBlueprint(fixture, { blueprint: 'piercing', level: 1 });
-assert.equal(fixture.dollars, 0);
-assert.deepEqual(vehicle.blueprints, ['piercing']);
-assert.deepEqual(fixture.activeBlueprints, { lure: 1, piercing: 1 });
-assert.equal(request(a.id, 'reset', { epoch: room.base.epoch }).blueprints.length, 0);
+assert.equal(request(a.id, 'reset', { epoch: room.base.epoch }).wave, 0);
+assert.throws(() => request(a.id, 'wave-vote', { preparation: prep.id }));
+assert.throws(() => request(a.id, 'wave-buy', { blueprint: 'lure', level: 1 }));
 console.log(
-  'Forecast, budget, tie, silence, early and deadline start, team plans, repeat purchases and reset passed.',
+  'Forecast, budget, early start by any player, countdown start, no vote, no team plans, reset passed.',
 );
 
-// Use the live projectile step against three aligned sphere hitboxes. A wall must
-// stop a piercing round, and a round that survives a step cannot hit its first target again.
+// Use the live projectile step against three aligned sphere hitboxes: a round
+// stops at the first insect (no piercing bonus any more).
 const { readFileSync } = await import('node:fs');
 const { runInNewContext } = await import('node:vm');
 const T = await import('../vendor/three.module.min.js');
@@ -148,7 +108,6 @@ for (const wall of [false, true]) {
       m: model,
       v: new T.Vector3(1, 0, 0),
       life: 5,
-      pierce: 2,
       owned: true,
       baseDamage: 100,
       wave: 1,
@@ -176,17 +135,5 @@ for (const wall of [false, true]) {
       hits.push([id, amount]);
     },
   });
-  assert.deepEqual(
-    hits,
-    wall
-      ? [
-          [0, 100],
-          [1, 50],
-        ]
-      : [
-          [0, 100],
-          [1, 50],
-          [2, 25],
-        ],
-  );
+  assert.deepEqual(hits, [[0, 100]]);
 }

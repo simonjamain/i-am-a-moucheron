@@ -8,9 +8,10 @@ import { advancePaidService } from '../src/paid-service.js';
 const defense = newGroundDefense();
 assert.throws(
   () => groundCommand(defense, { action: 'build', kind: 'sentry', a: [0, 0] }, [0, 0], 20),
-  /plan/,
+  /Castor/,
 );
-const options = { castor: true, blueprintLevels: { sentry: 1 } };
+// No plan to win: only the Castor and the dollar price matter.
+const options = { castor: true };
 const buy = groundCommand(
   defense,
   { action: 'build', kind: 'sentry', a: [0, 0] },
@@ -78,11 +79,6 @@ const command = (req) =>
     epoch: room.base.epoch,
     ...req,
   });
-assert.throws(
-  () => command({ action: 'build', kind: 'sentry', a: [0, 0], request: 'sentry:locked' }),
-  /plan/,
-);
-room.blueprintLevels.sentry = 1;
 let snap = command({ action: 'build', kind: 'sentry', a: [0, 0], request: 'sentry:first' });
 assert.equal(snap.dollars, 11);
 assert.equal(snap.groundDefense.structures.length, 1);

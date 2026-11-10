@@ -124,19 +124,12 @@ function approach(id, vehicle, seat) {
   assert.ok(Math.hypot(baseWorld(body).x - entry.x, baseWorld(body).z - entry.z) < 1e-8);
   return { epoch: room.base.epoch, body: { ...body } };
 }
-function clearAnnex(id, token) {
-  const d = room.dossiers.get(token);
-  const current = room.pilots.get(id);
-  const paper = current.state.boarding?.token === token ? current.board_paper : 0;
-  if (d?.clause && d.position <= paper) call(id, 'dossier-choice', { token, choice: 'tear' });
-}
 function board(id, vehicle, seat) {
   const ground = approach(id, vehicle, seat);
   call(id, 'vehicle-select', { vehicle: vehicle.id, seat, ground });
   const p = room.pilots.get(id),
     token = p.state.boarding.token;
   for (const form of [1, 2]) {
-    clearAnnex(id, token);
     call(id, 'vehicle-sign', { vehicle: vehicle.id, seat, signature: true, form, ground });
   }
 }
@@ -147,7 +140,6 @@ assert.equal(room.pilots.get(a.id).mode, 'flight');
 assert.equal(bomber.seats.get('tail'), b.id);
 call(a.id, 'seat-request', { seat: 'tail' });
 let q = [...room.requests.values()][0];
-clearAnnex(a.id, q.id + ':' + a.id);
 call(a.id, 'seat-sign', { request: q.id, signature: true });
 assert.equal(q.status, 'offered');
 assert.equal(bomber.seats.get('pilot'), a.id);
@@ -155,9 +147,7 @@ call(b.id, 'seat-reject', { request: q.id });
 assert.equal(bomber.seats.get('pilot'), a.id);
 call(a.id, 'seat-request', { seat: 'tail' });
 q = [...room.requests.values()][0];
-clearAnnex(a.id, q.id + ':' + a.id);
 call(a.id, 'seat-sign', { request: q.id, signature: true });
-clearAnnex(b.id, q.id + ':' + b.id);
 call(b.id, 'seat-sign', { request: q.id, signature: true });
 assert.equal(bomber.seats.get('pilot'), b.id);
 assert.equal(bomber.seats.get('tail'), a.id);

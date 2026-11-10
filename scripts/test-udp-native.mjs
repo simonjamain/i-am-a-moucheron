@@ -95,13 +95,10 @@ try {
   const started = await a.request('start');
   assert.equal(started.body.mission_started, 1);
   const prep = started.body.preparation;
-  const vote = { preparation: prep.id, card: prep.cards[0] };
-  assert.equal((await a.request('wave-vote', vote)).body.preparation.winner, null);
-  const voted = await b.request('wave-vote', vote);
-  assert.equal(voted.body.preparation.winner, vote.card);
-  assert.equal(voted.body.phase, 'prep');
-  const shared = await a.request('sync', { state: aj.body.state, mode: 'foot' });
-  assert.deepEqual(shared.body.preparation, voted.body.preparation);
+  assert.equal(prep.cards, undefined, 'announcement only, no vote');
+  assert.equal(started.body.phase, 'prep');
+  const shared = await b.request('sync', { state: bj.body.state, mode: 'foot' });
+  assert.deepEqual(shared.body.preparation, prep, 'both players see the same announcement');
   // Replaying the same command ID returns its original result, without another player.
   const duplicate = await a.request('join', { code: 'NATIVE', name: 'Spoof' }, aj.id);
   assert.equal(duplicate.body.id, aj.body.id);

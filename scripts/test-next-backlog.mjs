@@ -228,28 +228,23 @@ assert.ok(r.dollars < 0);
 const afterWave = r.dollars;
 game.advance(r);
 assert.equal(r.dollars, afterWave, 'one debit per end of wave');
-// New heavy weapons keep the promised contract cadence and damage factors.
+// Heavy weapons keep their own cadence and full damage (no contract clause).
 game.assign(r, p, tank, 'cannon', null);
 tank.state.landed = false;
-const d = game.dossier(r, p, tank.id, 'cannon');
-d.active = 1;
-d.choice = 'sign';
-d.clause = 'cadence';
 now += 4000;
 p.seen = now;
 tank.supplies.ammo.he = 10;
-call('heavy-fire', { weapon: 'he', shot: 'slow-heavy', direction: [0, 0, -1] });
-now += 2100;
+call('heavy-fire', { weapon: 'he', shot: 'first-heavy', direction: [0, 0, -1] });
+now += 1000;
 p.seen = now;
 assert.throws(
   () => call('heavy-fire', { weapon: 'he', shot: 'too-early', direction: [0, 0, -1] }),
   /recharge/,
 );
-now += 2000;
+now += 1100;
 p.seen = now;
-d.clause = 'damage';
-call('heavy-fire', { weapon: 'he', shot: 'half-heavy', direction: [0, 0, -1] });
-assert.equal(r.ordnance.find((p) => p.shot === 'half-heavy').bonus, 0.5);
+call('heavy-fire', { weapon: 'he', shot: 'full-heavy', direction: [0, 0, -1] });
+assert.equal(r.ordnance.find((p) => p.shot === 'full-heavy').bonus, 1);
 let state = { ...tank.state, p: [0, VEHICLES.tank.gear, 0], q: [0, 0, 0, 1], v: [0, 0, 0] };
 for (let i = 0; i < 120; i++)
   stepTank(T, state, { forward: 1, turn: 0 }, [], 1 / 120, VEHICLES.tank);

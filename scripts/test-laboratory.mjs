@@ -4,7 +4,6 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { Game } from '../server/game.js';
-import { BLUEPRINTS } from '../src/wave-blueprints.js';
 import { LabUI } from '../src/lab-ui.js';
 
 let now = 100000;
@@ -23,7 +22,6 @@ assert.throws(() => send('enable', { epoch: 'obsolete' }), /changé/);
 assert.deepEqual(send('enable', {}, b.id).lab, { enabled: true }, 'no scenario list on wire');
 assert.throws(() => send('enable'), /déjà actif/);
 assert.equal(regular.lab.enabled, false, 'isolated room');
-for (const card of Object.keys(BLUEPRINTS)) assert.equal(room.blueprintLevels[card], 1);
 assert.equal(room.dollars, 1000000000);
 assert.equal(room.phase, 'prep', 'enabling opens the first preparation');
 for (const action of ['card', 'unlock', 'wave', 'start', 'finish', 'save', 'load', 'delete'])
@@ -33,7 +31,6 @@ assert.equal(room.lab.enabled, true, 'normal reset keeps debug mode');
 const afterExit = send('exit');
 assert.equal(afterExit.lab?.enabled ?? false, false);
 assert.equal(room.wave, 0);
-assert.equal(room.blueprintLevels.piercing, undefined);
 assert.equal(room.dollars, room.balance.startingMoney, 'exit resets the game');
 assert.equal(regular.lab.enabled, false);
 

@@ -84,8 +84,8 @@ Les stations habituelles rechargent toutes les réserves en dix secondes selon
 les mêmes conditions d’arrêt et d’appui au sol. Les niveaux fractionnaires sont
 conservés ; tirer exige au moins une munition complète. Carburant : cinq minutes
 à plein régime. Aucune recharge achetée ni restriction aux intervagues.
-Les clauses malicieuses continuent de modifier commandes, visée, cadence et dégâts,
-y compris les armes lourdes et le pilote du tank.
+Aucune clause ne modifie plus commandes, visée, cadence ou dégâts (annexes
+malicieuses retirées en version 264).
 
 Les MG restent prédites localement puis débitées par lots idempotents. Les rapports
 sont regroupés pendant 50 ms (32 tirs maximum par lot), avec jusqu'à huit lots

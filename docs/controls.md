@@ -67,9 +67,9 @@ Touches physiques Digit1–Digit7 ou panneau « Postes » : même contrat pour c
 Les commandes de mêlée et de KO sont retirées.
 
 Les formulaires proposent « Déchirer ce document ». Un document obligatoire est
-remplacé, sans annuler les signatures précédentes ; une annexe refusée est écartée.
-Certains contrats signés inversent les axes du poste ou le pilotage et la variation
-des gaz jusqu’au départ. Voir [logistique et contrats](logistics-contracts.md).
+remplacé, sans annuler les signatures précédentes. Aucun contrat ne modifie les
+commandes (annexes malicieuses retirées en version 264). Voir
+[logistique et contrats](logistics-contracts.md).
 
 ## Nouveau lot Node : zoom et armes lourdes
 
@@ -127,7 +127,7 @@ et l’outil actif (avec son point d’ancrage). L’aide change donc à l’ent
 sortie et au changement de poste. À pied : molette pour le zoom caméra, **G** ou
 clic molette pour la roue de construction. Au Castor : conduite Z/S Q/D, clic
 pour la mitrailleuse, **G**/clic molette, **V** vue de dessus (prioritaire sur le
-raccourci du conseil de vague pour le conducteur), **F** pour sortir. Les postes
+raccourci de la fenêtre « Prochaine vague » pour le conducteur), **F** pour sortir. Les postes
 fixes et véhicules terrestres n’affichent ni parachute ni « sauter ».
 `scripts/test-control-hints.mjs` vérifie chaque rôle et chaque siège de `VEHICLES`.
 
@@ -188,7 +188,7 @@ Sources : `flight-tuning.js` (plages et stockage), `flight-tuning-ui.js`
 `test-flight-tuning.mjs` (régression). La sensation du pilotage reste à
 valider dans une vraie partie WebGL/UDP.
 
-## Conseil de vague
+## Prochaine vague
 
 Ouvrez le bandeau **Vague** en haut de l’écran, ou appuyez sur **V** (sauf au
 volant du Castor, où V bascule la vue de dessus). La frise
@@ -201,19 +201,16 @@ Pendant la pose d’une barricade ou d’un bunker, la piste claire à chevrons 
 montre le détour proposé avant le clic de validation. Les trajets aériens gardent
 leurs nuages colorés par aération (`src/pheromone-trail.js`, version 239).
 
-Choisissez une des trois cartes. Vous pouvez changer de voix tant que le vote
-est ouvert. Une fois le plan débloqué, activez son niveau dans **Améliorations de l’équipe** :
-le prix affiché est payé une fois par la caisse commune et le bonus s’applique à
-tous les objets compatibles, présents et futurs ([progression](progression.md)).
-**Replier** ou **Échap** permet de repartir construire. Les plans restent
-accessibles pendant le combat. **Lancer la vague maintenant** est une action
-séparée, disponible après le vote.
+Il n'y a ni vote ni carte de plan (version 264) : la fenêtre annonce seulement la
+vague. **Lancer la vague maintenant** est disponible pour tout joueur pendant la
+préparation ; sinon la vague part à la fin du compte à rebours
+([progression](progression.md)). **Replier** ou **Échap** permet de repartir construire.
 
 ## Défenses terrestres
 
-Après déblocage des cartes correspondantes, le conducteur du Castor peut poser un « Bunker LEGO » (10 $) et un « Canon lourd » (14 $). Descendez, approchez du poste et utilisez la commande d’interaction pour signer le dossier et occuper le siège ; utilisez la visée et le tir habituels, puis la même commande pour sortir. Le canon lourd pivote lentement (45°/s, roues en sens inverse) vers la visée, entre −5° et +40° d’élévation, et tire là où pointe réellement son tube un obus sans fusée (comme le tank), simulé par le tireur ; la caméra se place derrière la culasse. Les munitions se rechargent de manière payante à proximité d’une station ou du Castor.
+Le conducteur du Castor peut poser, sans plan à débloquer, un « Bunker LEGO » (10 $) et un « Canon lourd » (14 $). Descendez, approchez du poste et utilisez la commande d’interaction pour signer le dossier et occuper le siège ; utilisez la visée et le tir habituels, puis la même commande pour sortir. Le canon lourd pivote lentement (45°/s, roues en sens inverse) vers la visée, entre −5° et +40° d’élévation, et tire là où pointe réellement son tube un obus sans fusée (comme le tank), simulé par le tireur ; la caméra se place derrière la culasse. Les munitions se rechargent de manière payante à proximité d’une station ou du Castor.
 
-Après déblocage de la carte correspondante, le conducteur du Castor peut choisir « Tourelle auto » dans la roue de construction et la poser d’un clic (9 $). La tourelle consomme ses 180 balles ; le service de recharge est payant et local.
+Le conducteur du Castor peut choisir, sans plan à débloquer, « Tourelle auto » dans la roue de construction et la poser d’un clic (9 $). La tourelle consomme ses 180 balles ; le service de recharge est payant et local.
 
 **G** ou clic molette (roue de construction) à pied ou au poste conducteur du Castor au sol, puis choix d’un outil ; il n’y a plus de bouton « Défense » (issue #135) : aperçu au point visé par la caméra
 indépendamment de la marche, E ou clic gauche pour valider, R pour orienter le sucre ou le ventilateur, Échap

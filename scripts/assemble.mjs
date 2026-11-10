@@ -30,7 +30,6 @@ const files = {
   '/three.js': 'vendor/three.module.min.js',
   ...Object.fromEntries(
     [
-      'wave-blueprints',
       'balance',
       'lab-ui',
       'ground-defense-ui',
@@ -102,7 +101,6 @@ const files = {
       'aircraft-fire',
       'logistics',
       'ground-ammo',
-      'malice',
       'vehicle-livery',
       'seat-icons',
       'input',
@@ -248,7 +246,6 @@ await writeFile(
     equipment,
     inline(assets['/armament.js']),
     inline(assets['/logistics.js']),
-    inline(assets['/malice.js']),
     'const OFFICE_SOLIDS=' +
       JSON.stringify(
         officeBounds.map((b) => ({

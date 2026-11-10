@@ -162,13 +162,10 @@ export class GroundDefenseUI {
     if (!this.radial || this.wheelSource !== 'keyboard') return false;
     return this.finishWheel('keyboard');
   }
-  // Enter building mode with one tool (Castor-only plans need their card).
+  // Enter building mode with one tool (Castor defenses: from its driving seat).
   selectTool(kind) {
-    if (
-      ['sentry', 'bunker', 'antitank'].includes(kind) &&
-      (!this.builder() || !this.snapshot()?.blueprintLevels?.[kind])
-    ) {
-      this.notify('Débloquez ce plan par une carte et conduisez le Castor.', 3);
+    if (['sentry', 'bunker', 'antitank'].includes(kind) && !this.builder()) {
+      this.notify('Construisez cette défense au volant du Castor.', 3);
       return false;
     }
     this.anchor = null;
@@ -330,7 +327,6 @@ export class GroundDefenseUI {
       rotation: this.rotation,
       defense: snap.groundDefense,
       dollars: snap.dollars,
-      blueprintLevels: snap.blueprintLevels,
       castor: !!this.builder(),
     }));
     this.airTrails.update(

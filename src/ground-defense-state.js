@@ -109,14 +109,12 @@ export function groundCommand(state, command, foot, dollars, now = Date.now(), a
     const pointItem =
       kind === 'sugar' || kind === 'fan' || kind === 'sentry' || isFortification(kind);
     if (isFortification(kind)) {
-      if (!access.castor || !access.blueprintLevels?.[kind])
-        fail('Cette défense occupable exige le Castor et son plan collectif.');
+      if (!access.castor) fail('Cette défense occupable se construit depuis le Castor.');
       if (state.structures.filter((s) => s.kind === kind).length >= FORTIFICATIONS[kind].maxPerRoom)
         fail('Nombre maximal de défenses occupables atteint.');
     }
     if (kind === 'sentry') {
-      if (!access.castor || !access.blueprintLevels?.sentry)
-        fail('Cette tourelle exige le Castor et le plan débloqué par les cartes.');
+      if (!access.castor) fail('Cette tourelle se construit depuis le Castor.');
       if (state.structures.filter((s) => s.kind === 'sentry').length >= SENTRY.maxPerRoom)
         fail('Nombre maximal de tourelles atteint.');
     }

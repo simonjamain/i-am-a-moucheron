@@ -314,11 +314,8 @@ async function ensureFleet(db, code, now) {
   return vehicles.map((v) => ({ ...v, seats: seats.filter((s) => s.vehicle === v.id) }));
 }
 async function createDossier(db, pilot, target, seat, token, armed = true) {
-  const clause = drawClause(
-    seat,
-    armed,
-    () => crypto.getRandomValues(new Uint32Array(1))[0] / 4294967296,
-  );
+  // Malicious annexes were removed: dossiers never carry a clause.
+  const clause = null;
   await db
     .prepare(
       'INSERT INTO access_dossiers(token,room,pilot,target,seat,clause,position) VALUES(?,?,?,?,?,?,?) ON CONFLICT DO NOTHING',
@@ -1167,13 +1164,7 @@ function weaponDamage(pilot, b) {
 }
 async function friendlyHit(db, pilot, b, now) {
   if (typeof b.shot !== 'string' || b.shot.length > 120) return 'Impact invalide.';
-  const activeClause = await db
-    .prepare('SELECT clause FROM access_dossiers WHERE pilot=? AND active=1')
-    .bind(pilot.id)
-    .first();
-  const amount =
-    weaponDamage(pilot, b) *
-    (pilot.mode !== 'foot' ? clauseFactors(activeClause?.clause).damage : 1);
+  const amount = weaponDamage(pilot, b);
   if (b.vehicle) {
     if (playerWorld(pilot) !== 'office') return 'Appareil hors de cet espace.';
     await db.batch([

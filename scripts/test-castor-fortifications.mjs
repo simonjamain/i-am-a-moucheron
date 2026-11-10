@@ -29,10 +29,7 @@ const build = (kind, a, request) =>
     request,
   });
 
-assert.throws(() => build('bunker', [0, 0], 'locked-bunker'), /plan/);
-assert.throws(() => build('antitank', [0.19, 0], 'locked-antitank'), /plan/);
-room.blueprintLevels.bunker = 1;
-room.blueprintLevels.antitank = 1;
+// No plan to win: the Castor driver builds them for their dollar price.
 const first = build('bunker', [0, 0], 'fort:bunker');
 assert.equal(first.dollars, 30);
 const bunker = room.groundDefense.structures.find((s) => s.kind === 'bunker');
@@ -71,8 +68,6 @@ for (const kind of ['bunker', 'antitank']) {
       parachute: false,
     });
     game.command('FORTIFY', member.id, 'equipment-select', { station: station.slot });
-    // Any optional annex is independent of access and covered by contract tests.
-    room.dossiers.get(member.state.equipmentBoarding.token).clause = null;
     game.command('FORTIFY', member.id, 'equipment-sign', {
       station: station.slot,
       form: 1,

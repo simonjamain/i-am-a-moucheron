@@ -162,7 +162,6 @@ const context = vm.createContext({
   hasAmmo: () => true,
   vehicleColor: () => '#abcdef',
   currentAmmoKey: () => 'pilot',
-  currentFactors: () => ({ damage: 1 }),
   api: (path, body) => {
     assert.equal(path, 'aircraft-fire');
     const request = deferred();

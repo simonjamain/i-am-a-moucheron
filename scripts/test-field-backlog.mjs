@@ -83,7 +83,6 @@ for (const type of ['bomber', 'tank']) {
       y: e.y,
     });
     game.command(room.code, p.id, 'vehicle-select', { vehicle: vehicle.id, seat });
-    room.dossiers.get(p.state.boarding.token).clause = null;
     for (const form of [1, 2])
       game.command(room.code, p.id, 'vehicle-sign', {
         vehicle: vehicle.id,
@@ -368,11 +367,9 @@ waveGame.advance(waveRoom);
 assert.equal(waveRoom.wave, 2);
 waveRoom.plan.roster.forEach((e) => waveRoom.kills.add(e.id));
 waveGame.advance(waveRoom);
+// No vote: any player launches the announced wave before the countdown ends.
 const prep = waveRoom.preparation;
-waveGame.command('MINUTE', wavePlayer.id, 'wave-vote', {
-  preparation: prep.id,
-  card: prep.cards[0],
-});
+assert.equal(prep.cards, undefined, 'no cards to vote on');
 waveGame.command('MINUTE', wavePlayer.id, 'start', { preparation: prep.id });
 waveGame.command('MINUTE', wavePlayer.id, 'start', { preparation: prep.id });
 assert.equal(waveRoom.wave, 3);

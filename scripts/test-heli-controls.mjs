@@ -38,7 +38,6 @@ function client(key) {
     heliCollective: 0,
     heliRotorPower: 1,
     mouseDirection: new T.Vector3(0, 0, -1),
-    currentFactors: () => ({ controls: 1 }),
     colliders: [],
     upgradedVehicle: (x) => x,
     pad: { fire: false },
@@ -178,7 +177,7 @@ assert.ok(departing.me.position.y > VEHICLES.helicopter.gear + 0.005);
 assert.equal(departing.landed, false);
 const fuelSource = source.slice(
   source.indexOf('function remainingFuel()'),
-  source.indexOf('function currentFactors()'),
+  source.indexOf('function installationModel('),
 );
 for (const seat of ['pilot', 'copilot']) {
   const c = vm.createContext({
