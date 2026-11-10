@@ -25,7 +25,7 @@ const SOURCES = {
   flaktruck: [FLAKTRUCK, '3861d4bf21e75d0ca9a7864b40f98189847b0fdcffdf6de5daf1127f71da18ed', 4689],
   helicopter: [H2_DATA, '488832fc140c16321dc54d07addd088ea16e2f3b042f568fa910ec1ee1206a9a', 5102],
   bomber: [B3_DATA, 'a50363b85c21e407839651d5b478bf8900bb340debec3e86cdc68b94b8284307', 5797],
-  fighter: [M1_DATA, '7d9ab847ae7086af717f5fc81841c08635104fe3da44236e45fd0b352f1916b0', 2376],
+  fighter: [M1_DATA, 'd4115c13695e06dc06f42e35301c59e0717e26a68e77cbfb6d17bd5ba5107387', 2357],
   interceptor: [STUKA, '6290811f303ac480f3b286dd62ee73d6293fa542d824987b378262e5c8ec9ade', 3261],
 };
 for (const [name, [data, sha, triangles]] of Object.entries(SOURCES)) {
@@ -207,7 +207,7 @@ for (const [type, make] of [
     'guns ride the wing',
   );
 }
-// M1 and Stuka: propeller on the nose axis, symmetric guns, damageable wing.
+// M1 and Stuka: propeller on the nose axis and symmetric front guns.
 for (const make of ['makePlane', 'makeStuka']) {
   const model = graphics[make]();
   model.updateMatrixWorld(true);
@@ -218,9 +218,5 @@ for (const make of ['makePlane', 'makeStuka']) {
     make + ' symmetric front guns',
   );
   assert.ok(Math.abs(model.userData.prop.position.x) < 0.05 && model.userData.prop.position.z < -2);
-  assert.ok(
-    model.userData.wing.children.some((o) => o.isMesh),
-    make + ' wing mesh',
-  );
 }
 console.log('Meshy vehicles: sources, rigs, ground contact and physics anchors match the models');

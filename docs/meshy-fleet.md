@@ -47,8 +47,8 @@ une rugosité uniforme et un éclairage standard ; les autres cartes PBR ne sont
 chargées. Aucun GLB ni service Meshy n'est requis dans le navigateur.
 
 `src/meshy-texture.js` partage les buffers, matériaux et atlas entre véhicules.
-Les hélices et canons restent pilotés par le jeu, et les ailes des deux avions se
-rétractent visuellement avec les dégâts. Le T3 garde ses deux tourelles orientables
+Les hélices et canons restent pilotés par le jeu ; depuis la version 267, les
+dégâts se voient par la fumée des moteurs, jamais par un changement de forme. Le T3 garde ses deux tourelles orientables
 et le D2 son attelage : sa remorque suit le pivot existant à z = −0,7.
 Le placement, les tirs, les sièges et les règles réseau n'ont pas changé.
 
@@ -85,7 +85,7 @@ maillage** texturé dont chaque pièce mobile est un **îlot séparé** :
 | DCA mobile D2  | `Meshy_AI_Towable_Anti_Aircraft` (`3861d4bf21e75d0ca9a7864b40f98189847b0fdcffdf6de5daf1127f71da18ed`) |     4 689 |   150 |
 | H2             | `Meshy_AI_Desert_Viper_Helicopt` (`488832fc140c16321dc54d07addd088ea16e2f3b042f568fa910ec1ee1206a9a`) |     5 102 |    66 |
 | B3             | `Meshy_AI_Desert_Sky_Fortress` (`a50363b85c21e407839651d5b478bf8900bb340debec3e86cdc68b94b8284307`)   |     5 797 |    45 |
-| M1 (v. 266)    | `Meshy_AI_Olive_Scout_Plane` (`7d9ab847ae7086af717f5fc81841c08635104fe3da44236e45fd0b352f1916b0`)     |     2 376 |    18 |
+| M1 (v. 267)    | `Meshy_AI_Olive_Scout_Plane` (`d4115c13695e06dc06f42e35301c59e0717e26a68e77cbfb6d17bd5ba5107387`)     |     2 357 |    20 |
 | Stuka (v. 266) | `Meshy_AI_Desert_Sparrow` (`6290811f303ac480f3b286dd62ee73d6293fa542d824987b378262e5c8ec9ade`)        |     3 261 |    40 |
 
 `python3 scripts/import-meshy-vehicle.py spitfire|tank|flaktruck|helicopter|bomber|fighter|interceptor SOURCE.glb`
@@ -107,7 +107,7 @@ pivot placé dans le repère de son parent, avec sa rotation de repos. Les canon
 sont stockés alignés sur −Z, ce qu'attend `aimGun`, et leurs bouches
 (`data.anchors`) sont sur l'axe passant par le pivot d'élévation :
 
-- **Spitfire** : hélice (axe Z), ailes (rétraction des dégâts), six canons d'aile
+- **Spitfire** : hélice (axe Z), ailes, six canons d'aile
   sculptés comme bouches de tir.
 - **T3** : tourelle (lacet) portant le canon, la coaxiale et la mitrailleuse de toit
   sur son propre affût (lacet + élévation) ; mitrailleuse de caisse pour le pilote.
@@ -116,8 +116,10 @@ sont stockés alignés sur −Z, ce qu'attend `aimGun`, et leurs bouches
 - **H2** : rotor à cinq pales (Y), rotor de queue (X), canon de nez du copilote.
 - **B3** : deux hélices, ailes, tourelles dorsale, de queue (tournée vers l'arrière
   au repos) et ventrale (vers le bas), dans l'ordre des postes.
-- **M1** (version 266) : hélice, aile haute découpée de la coque avec ses haubans,
-  deux mitrailleuses de nez sculptées comme bouches ; envergure 5,6 conservée.
+- **M1** (version 267, `Meshy_AI_Olive_Scout_Plane_1110221559`, SHA-256
+  `d4115c13695e06dc06f42e35301c59e0717e26a68e77cbfb6d17bd5ba5107387`, 2 357
+  triangles, corrige le modèle de la version 266) : hélice et deux mitrailleuses
+  de nez sculptées comme bouches ; aile laissée dans la coque ; envergure 5,6.
 - **Stuka** (version 266) : hélice, ailes en mouette (îlots séparés), bombe ventrale
   dans la coque ; deux bouches au bord d'attaque à 40 % de l'envergure (pas de
   canon sculpté) ; envergure 7,7 conservée. Les anciennes bombes décoratives sous

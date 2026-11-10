@@ -54,9 +54,6 @@ for (const [type, factory] of [
   assert.equal(a.userData.identification, undefined);
   parts.forEach((mesh, i) => assert.equal(mesh.material, originalMaterials[i]));
   if (type === 'interceptor' || type === 'spitfire') {
-    const span = new T.Box3().setFromObject(a.userData.wing).getSize(new T.Vector3()).x;
-    a.userData.wing.scale.x = 0.52;
-    assert.ok(new T.Box3().setFromObject(a.userData.wing).getSize(new T.Vector3()).x < span * 0.53);
     a.userData.prop.rotation.z = 1;
     assert.equal(b.userData.prop.rotation.z, 0);
   }

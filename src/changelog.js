@@ -1,6 +1,13 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 267,
+    changes: [
+      'Un avion touché ne perd plus ses ailes : son moteur fume, de plus en plus fort selon les dégâts.',
+      'Le chasseur léger reçoit une version corrigée de son nouveau modèle.',
+    ],
+  },
+  {
     version: 266,
     changes: [
       'Nouveaux modèles pour le chasseur léger et le Stuka, avec hélice qui tourne et tirs qui partent des armes.',

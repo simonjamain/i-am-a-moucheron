@@ -122,6 +122,7 @@ import { HEAVY, TANK_MG, availableShell } from '/armament.js';
 import { stepTank } from '/tank.js';
 import { animateCastorWheels, trackGroundMotion } from '/castor-wheels.js';
 import { ServiceZones, serviceZoneList } from '/service-zones.js';
+import { EngineSmoke, damageRatio } from '/engine-smoke.js';
 import {
   moveTopCursor,
   resetTopCursor,
@@ -1822,7 +1823,6 @@ function respawn() {
   onFoot = true;
   boardingOpen = false;
   me.visible = false;
-  me.userData.wing.scale.x = 1;
   notify('De retour à pied à la base', 2);
 }
 function renderPurgatory() {
@@ -3019,6 +3019,7 @@ function roleEntry(type, seat, role = seatRole(type, seat)) {
 }
 const stationRings = [];
 const serviceZones = new ServiceZones(T, scene);
+const engineSmoke = new EngineSmoke(T, scene);
 function updateBaseWorld(dt, now) {
   if (!baseArena || !snap) return;
   for (const event of snap.base?.events || [])
@@ -3390,7 +3391,9 @@ function updateOthers(dt) {
     }
     updateInscriptions(T, g, v, snap.pilots);
     g.visible = v.state.hp > 0;
-    g.userData.wing.scale.x = v.state.wing ? 1 : 0.52;
+    // Damage shows as engine smoke, never as a change of shape.
+    if (!VEHICLES[v.type].ground && g.visible)
+      engineSmoke.emit(g, damageRatio(isSelf ? hp : v.state.hp, VEHICLES[v.type].maxHP || 100), dt);
     for (const prop of g.userData.props || [g.userData.prop])
       if (!isSelf)
         prop.rotation.z +=
@@ -3974,7 +3977,6 @@ function physics(dt) {
     p.addScaledVector(vel, 0.2);
     if (hp < 65 && wing) {
       wing = 0;
-      me.userData.wing.scale.x = 0.52;
       notify('Aile endommagée', 2);
     }
     if (hp < 35) engine = 0;
@@ -4247,6 +4249,7 @@ function frame(now) {
     renderDeliveries();
     enemies(Date.now());
     updateOthers(dt);
+    engineSmoke.update(dt, camera, innerHeight);
     updateOrdnance(dt);
     acc += dt;
     while (acc >= 1 / 120) {
@@ -4322,6 +4325,7 @@ function frame(now) {
     updateCountdown();
   } else {
     serviceZones.update([]);
+    engineSmoke.clear();
     camera.position.set(-1.65 + Math.sin(now * 0.00008) * 0.08, 1.08, 2.6);
     camera.lookAt(OFFICE_LAYOUT.base.originX, 0.91, OFFICE_LAYOUT.base.originZ - 0.08);
     me.userData.prop.rotation.z += dt * 15;
