@@ -81,6 +81,9 @@ additif de taille constante à l'écran, visible de loin. Le missile guidé a la
 plus dense et un halo plus grand qui pulse. Cadences, dégâts, guidage et vitesses sont
 inchangés ([issue #108](https://github.com/simonjamain/i-am-a-moucheron/issues/108),
 `scripts/test-shot-effects.mjs`).
+Depuis la version 269, chaque panache est un sprite de fumée doux (texture à lobes,
+rotation et dérive propres, apparition progressive, gonflement rapide puis stable) et
+non plus une sphère ; l'espacement est resserré pour une traînée continue.
 
 ## DCA mobile
 

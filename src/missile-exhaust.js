@@ -8,8 +8,8 @@ export const EXHAUST_PROFILES = Object.freeze({
   rocket: Object.freeze({
     puff: [0x5d605c, 0x8a897e],
     puffScale: 1.3,
-    opacity: 0.48,
-    spacing: 0.45,
+    opacity: 0.5,
+    spacing: 0.34,
     life: 0.8,
     flame: 1.2,
     halo: 0.024,
@@ -19,8 +19,8 @@ export const EXHAUST_PROFILES = Object.freeze({
   missile: Object.freeze({
     puff: [0x4a4d4a, 0x7b7a70],
     puffScale: 1.6,
-    opacity: 0.55,
-    spacing: 0.4,
+    opacity: 0.6,
+    spacing: 0.28,
     life: 1.05,
     flame: 1.45,
     halo: 0.036,
@@ -44,14 +44,44 @@ function haloTexture(T) {
   return texture;
 }
 
+// Soft, billowy smoke sprite: a round cloud made of a few overlapping lobes
+// with a deterministic ragged edge, so trails read as smoke, not as spheres.
+function smokeTexture(T) {
+  const size = 64,
+    pixels = new Uint8Array(size * size * 4);
+  const hash = (n) => {
+    const v = Math.sin(n * 127.1 + 311.7) * 43758.5453;
+    return v - Math.floor(v);
+  };
+  const lobes = Array.from({ length: 7 }, (_, i) => ({
+    x: (hash(i + 1) - 0.5) * 0.5,
+    y: (hash(i + 11) - 0.5) * 0.5,
+    r: 0.3 + hash(i + 21) * 0.2,
+  }));
+  for (let i = 0; i < size * size; i++) {
+    const x = ((i % size) + 0.5) / size - 0.5,
+      y = (Math.floor(i / size) + 0.5) / size - 0.5;
+    let a = 0;
+    for (const l of lobes) a = Math.max(a, 1 - Math.hypot(x - l.x, y - l.y) / l.r);
+    a = Math.max(0, Math.min(1, a * 1.2));
+    a = a * a * (3 - 2 * a) * Math.max(0, 1 - Math.hypot(x, y) * 1.9);
+    pixels.set([255, 255, 255, Math.round(255 * a)], i * 4);
+  }
+  const texture = new T.DataTexture(pixels, size, size);
+  texture.magFilter = T.LinearFilter;
+  texture.minFilter = T.LinearFilter;
+  texture.needsUpdate = true;
+  return texture;
+}
+
 export class MissileExhaust {
-  constructor(T, scene, maxPuffs = 320) {
+  constructor(T, scene, maxPuffs = 420) {
     this.T = T;
     this.scene = scene;
     this.maxPuffs = maxPuffs;
     this.puffs = [];
     this.emitters = new Map();
-    this.geometry = new T.IcosahedronGeometry(MAP.metres(0.17), 1);
+    this.smokeMap = smokeTexture(T);
     this.flameGeometry = new T.ConeGeometry(MAP.metres(0.13), MAP.metres(0.65), 7);
     this.flameMaterial = new T.MeshBasicMaterial({
       color: 0xffa333,
@@ -111,14 +141,23 @@ export class MissileExhaust {
   puff(position, seed, profile = EXHAUST_PROFILES.rocket) {
     if (this.puffs.length >= this.maxPuffs) this.remove(this.puffs.shift());
     const T = this.T;
-    const material = new T.MeshBasicMaterial({
+    const rand = (k) => {
+      const v = Math.sin((seed + 1) * 12.9898 + k * 78.233) * 43758.5453;
+      return v - Math.floor(v);
+    };
+    const material = new T.SpriteMaterial({
+      map: this.smokeMap,
       color: profile.puff[seed % 4 === 0 ? 1 : 0],
       transparent: true,
-      opacity: profile.opacity,
+      opacity: 0,
       depthWrite: false,
+      rotation: rand(1) * Math.PI * 2,
     });
-    const mesh = new T.Mesh(this.geometry, material);
+    const mesh = new T.Sprite(material);
     mesh.position.copy(position);
+    const spread = MAP.metres(0.07);
+    mesh.position.x += (rand(2) - 0.5) * spread;
+    mesh.position.z += (rand(3) - 0.5) * spread;
     mesh.userData.projectileSolid = false;
     this.scene.add(mesh);
     this.puffs.push({
@@ -128,6 +167,12 @@ export class MissileExhaust {
       life: profile.life + (seed % 5) * 0.11,
       opacity: profile.opacity,
       scale: profile.puffScale,
+      spin: (rand(4) - 0.5) * 0.9,
+      drift: [
+        (rand(5) - 0.5) * MAP.metres(0.5),
+        MAP.metres(0.1 + rand(6) * 0.2),
+        (rand(7) - 0.5) * MAP.metres(0.5),
+      ],
     });
   }
   remove(puff) {
@@ -144,9 +189,13 @@ export class MissileExhaust {
         this.remove(p);
         this.puffs.splice(i, 1);
       } else {
-        p.material.opacity = p.opacity * (1 - t) ** 1.5;
-        p.mesh.scale.setScalar(p.scale * (0.65 + 2.7 * t));
-        p.mesh.position.y += MAP.metres(0.12) * step;
+        // Quick fade-in (no popping), slow fade-out; fast swell that settles.
+        p.material.opacity = p.opacity * Math.min(1, t / 0.1) * (1 - t) ** 1.5;
+        p.material.rotation += p.spin * step;
+        p.mesh.scale.setScalar(MAP.metres(0.42) * p.scale * (0.8 + 4 * (1 - (1 - t) ** 2)));
+        p.mesh.position.x += p.drift[0] * step;
+        p.mesh.position.y += p.drift[1] * step;
+        p.mesh.position.z += p.drift[2] * step;
       }
     }
     for (const [id, emitter] of this.emitters) {
