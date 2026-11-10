@@ -4,6 +4,7 @@ import { createGraphics } from '../src/graphics.js';
 import { ENEMY_TYPES, wavePlan, swarmFrame } from '../src/waves.js';
 import { INSECT_SCALE } from '../src/scale.js';
 import { insectScale } from '../src/insect-status.js';
+import { WALKERS } from '../src/walker-batch.js';
 const graphics = createGraphics(T, new T.Scene());
 const camera = new T.PerspectiveCamera(62, 1920 / 1080, 0.00005, 40);
 const rows = [];
@@ -47,6 +48,34 @@ assert.deepEqual(
   'Ants meet the requested half-size; other enemy silhouettes exceed 6×2 pixels at 2 m / 1080p without zoom',
 );
 
+// Lowest skinned vertex of a rigged walker, provided it belongs to a foot bone.
+function lowestFoot(model) {
+  const rig = model.userData.walk,
+    walker = WALKERS[model.userData.enemyType];
+  // Anything below a knee (tibia, tarsus, claws) is a foot segment.
+  const knees = new Set(walker.bones.legs.map((leg) => leg.knee));
+  const isFoot = (index) => {
+    let bone = rig.skeleton.bones[index];
+    while (bone && bone.isBone && !knees.has(bone.name)) bone = bone.parent;
+    return !!bone?.isBone;
+  };
+  const skin = rig.mesh.geometry.attributes.skinIndex;
+  // updateMatrixWorld (not updateWorldMatrix) refreshes the skinned mesh's bind inverse.
+  model.updateMatrixWorld(true);
+  rig.skeleton.update();
+  const v = new T.Vector3();
+  let lowest = Infinity,
+    bone = -1;
+  for (let i = 0; i < skin.count; i++) {
+    rig.mesh.getVertexPosition(i, v).applyMatrix4(rig.mesh.matrixWorld);
+    if (v.y < lowest) ((lowest = v.y), (bone = skin.getX(i)));
+  }
+  assert.ok(
+    isFoot(bone),
+    model.userData.enemyType + ': lowest vertex is a foot (' + rig.skeleton.bones[bone].name + ')',
+  );
+  return lowest;
+}
 // Use the real swarm positions and complete ground meshes, including feet.
 // The floor has decorative seams reaching y=0.0004 m, not just y=0.
 for (const wave of [1, 2, 6, 12]) {
@@ -61,9 +90,9 @@ for (const wave of [1, 2, 6, 12]) {
       model.position.fromArray(sample.p);
       const box = new T.Box3().setFromObject(model);
       assert.ok(box.min.y > 0.0004, 'All feet must clear the real floor and its decorative seams');
-      const feetY = Math.min(
-        ...model.userData.legs.map((leg) => new T.Box3().setFromObject(leg).min.y),
-      );
+      const feetY = model.userData.walk
+        ? lowestFoot(model)
+        : Math.min(...model.userData.legs.map((leg) => new T.Box3().setFromObject(leg).min.y));
       assert.ok(
         Math.abs(box.min.y - feetY) < 1e-6,
         'Feet, not the abdomen, must be the lowest physical geometry',

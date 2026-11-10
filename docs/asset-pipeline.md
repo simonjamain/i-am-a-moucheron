@@ -173,6 +173,59 @@ Premier modèle d'animal ; modèle « Angry Little Fly » fourni par l'utilisate
 
 ![Poses du cycle de vol](midge-model-review.jpg)
 
+## Fourmi et araignée pondeuse Meshy (marche)
+
+Deux modèles fournis par l'utilisateur, déjà riggés par Meshy, sans clip ; ils
+suivent la même chaîne que le moucheron, généralisée dans `src/rigged-creature.js`
+(décodage, rig, cuisson) et `src/creature-batch.js` (texture d'animation de sommets,
+un `InstancedMesh` par espèce, ombres via un matériau de profondeur dédié).
+
+- Originaux hors dépôt : `assets/originals/ant/red-ant-warrior.glb` (SHA-256
+  `12064094…b4cd`, 2 074 triangles, 52 os) et `assets/originals/spider/spotted-velvet-spider.glb`
+  (`e8d8f32d…3faa`, 1 471 triangles, 30 os). Tête vers +Z, Y vers le haut, pieds à
+  y = 0, textures PNG 2K réduites en JPEG 512 px (66 et 57 Ko).
+- Import : `PYTHONPATH=scripts python3 scripts/import-creature.py ant|spider <GLB>`
+  écrit `src/ant-data.js` (199 Ko) et `src/spider-data.js` (166 Ko). Aucune
+  géométrie, UV ni os ajouté ; pas de simplification (modèles légers, monoblocs
+  articulés que l'outil Docker refuserait sans régions).
+- Os (`ANT_BONES`, `SPIDER_BONES`) : fourmi — 6 pattes hanche/genou/tarse,
+  gastre à trois segments, tête, antennes à deux segments, mandibules ; araignée —
+  8 pattes hanche/genou/tarse, céphalothorax, abdomen à deux segments.
+- Marche (`src/walker-gait.js`) : pieds plantés qui reculent à la vitesse du corps
+  pendant 60 % du cycle, levés en arc pendant les 40 % restants, résolus par une
+  cinématique inverse à deux os par patte (`solveLeg`). Fourmi : démarche tripode
+  (avant-gauche, milieu-droit, arrière-gauche ensemble) ; araignée : tétrapode
+  alternée (pattes 1 et 3 d'un côté avec 2 et 4 de l'autre). Les avant-pattes,
+  qui pointent vers l'avant, ont leur foulée recentrée vers l'arrière (`centre`).
+  Corps : rebond à chaque pas, léger roulis ; gastre/abdomen qui balancent ; tête,
+  antennes et mandibules de la fourmi animées. Poses de repos (tous pieds posés)
+  aux phases 0,45 et 0,95.
+- Phase pilotée par la distance (`src/walker-batch.js`) : chaque proxy avance sa
+  phase de `distance / foulée` (foulée 0,5 m-modèle fourmi, 0,6 araignée, ×0,6
+  d'échelle) et s'oriente dans le plan du sol vers son déplacement ; à l'arrêt
+  (colle, appât, calage réseau) il glisse vers la pose de repos la plus proche. La
+  cadence apparente est plafonnée (8 cycles/s fourmi, 5 araignée) : au-delà, les
+  pieds glissent un peu plutôt que de papilloter.
+- Échelle et sol : facteur 0,6 ; fourmi 17 × 12 mm, araignée 45 × 48 mm en jeu
+  (anciennes : 15 × 12 et 42 × 48). La présentation place les pieds à
+  `−GROUND_FOOT_DEPTH + GROUND_FOOT_CLEARANCE` : le relèvement partagé de
+  `swarmFrame()` reste inchangé et les pieds dégagent le plancher.
+- Collision : ellipsoïde du corps sans les pattes (`ANT_HIT`, `SPIDER_HIT`),
+  suivi par `insect-hits.js` (`hitEllipsoid`, `hitCentre`) pour le tir, l'index
+  spatial et le contact des aéronefs ; identique entre proxys instanciés et rigs.
+- Rendu de secours (`graphics.insect`) : `SkinnedMesh` réel du même rig pour les
+  cadavres (posés dans la foulée en cours), les âmes du purgatoire (qui marchent à
+  leur vitesse physique) et le rendu sans WebGL.
+- Vérification : `scripts/test-walker-models.mjs` (provenance, orientation, pieds
+  jamais sous le plancher, pieds plantés sans glissement ni dérive latérale, boucle,
+  cuisson, proxys, cap de cadence, collisions ellipsoïdales) ; `test-enemy-readability`
+  et `test-enemy-visibility` couvrent les tailles et le dégagement du sol.
+- Limites : FPS sur GPU réel non mesurés (une nuée peut compter plusieurs
+  centaines de fourmis : 2 074 triangles chacune, un seul appel de dessin) ; pas de
+  niveau de détail ; une créature arrêtée est figée (antennes comprises).
+
+![Poses de marche](walkers-model-review.jpg)
+
 ## Canon anti-matériel (obusier Meshy)
 
 Modèle fourni par l'utilisateur pour l'[issue #113](https://github.com/simonjamain/i-am-a-moucheron/issues/113)

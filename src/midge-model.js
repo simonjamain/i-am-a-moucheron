@@ -1,11 +1,12 @@
 import { MIDGE_DATA as D } from './midge-data.js';
+import { defineCreature, TAU } from './rigged-creature.js';
 
 // Midge enemy: user-supplied Meshy "Angry Little Fly" with its SmartRig skeleton
 // plus two wing bones added at import. The GLB has no clip: the flight cycle
 // below poses the bones procedurally (wing beat, body bob, dangling legs,
 // abdomen and antennae). Swarms reach thousands of midges, so the cycle is
-// skinned once on the CPU into a vertex animation texture (VAT) that a single
-// InstancedMesh samples per instance phase (src/midge-batch.js).
+// skinned once on the CPU into a vertex animation texture that a single
+// InstancedMesh samples per instance phase (src/creature-batch.js).
 
 // One loop holds an integer number of wing beats so every secondary motion
 // loops with it. FRAMES_PER_BEAT samples are interpolated linearly in the shader.
@@ -26,13 +27,6 @@ export const MIDGE_FLIGHT = Object.freeze({
 // thorax at the origin, body length about 1.9 units (old procedural midge: 1.55).
 export const MIDGE_MODEL = Object.freeze({ scale: 0.8, centre: [0, 0.82, 0.05] });
 
-const bytes = (b64) => Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
-const view = (b64, Type) => {
-  const raw = bytes(b64);
-  return new Type(raw.buffer, raw.byteOffset, raw.byteLength / Type.BYTES_PER_ELEMENT);
-};
-const TAU = Math.PI * 2;
-const index = Object.fromEntries(D.bones.map((b, i) => [b.name, i]));
 export const MIDGE_BONES = Object.freeze({
   root: 'Bone_000',
   abdomen: ['Bone_007', 'Bone_006', 'Bone_005'],
@@ -53,37 +47,13 @@ export const MIDGE_BONES = Object.freeze({
   wings: ['Wing_L', 'Wing_R'],
 });
 
-const cache = new WeakMap();
-function shared(T) {
-  let s = cache.get(T);
-  if (s) return s;
-  const geometry = new T.BufferGeometry();
-  geometry.setAttribute('position', new T.BufferAttribute(view(D.positions, Float32Array), 3));
-  geometry.setAttribute('uv', new T.BufferAttribute(view(D.uvs, Float32Array), 2));
-  geometry.setAttribute('skinIndex', new T.Uint16BufferAttribute(Array.from(bytes(D.joints)), 4));
-  geometry.setAttribute(
-    'skinWeight',
-    new T.Float32BufferAttribute(
-      Array.from(bytes(D.weights), (w) => w / 255),
-      4,
-    ),
-  );
-  geometry.setIndex(new T.BufferAttribute(view(D.indices, Uint16Array), 1));
-  geometry.computeVertexNormals();
-  geometry.computeBoundingSphere();
-  const texture =
-    typeof document === 'undefined' ? new T.Texture() : new T.TextureLoader().load(D.texture);
-  texture.colorSpace = T.SRGBColorSpace;
-  texture.flipY = false;
-  const inverses = view(D.inverseBindMatrices, Float32Array);
-  const boneInverses = D.bones.map((_, i) => new T.Matrix4().fromArray(inverses, i * 16));
-  // Bind-pose world rotations, to express model-space rotations in bone space.
-  const bindWorld = boneInverses.map((m) =>
-    new T.Quaternion().setFromRotationMatrix(m.clone().invert()),
-  );
-  s = { geometry, texture, boneInverses, bindWorld };
-  cache.set(T, s);
-  return s;
+// Presentation matrix: model metres (feet at y = 0, head +Z) -> game midge units.
+export function presentation(T) {
+  const [x, y, z] = MIDGE_MODEL.centre;
+  return new T.Matrix4()
+    .makeRotationY(Math.PI)
+    .multiply(new T.Matrix4().makeScale(MIDGE_MODEL.scale, MIDGE_MODEL.scale, MIDGE_MODEL.scale))
+    .multiply(new T.Matrix4().makeTranslation(-x, -y, -z));
 }
 
 // Bind-pose span of a wing (model space): hinge -> farthest vertex of its shell.
@@ -91,11 +61,11 @@ const spans = new WeakMap();
 function wingSpan(T, side) {
   let list = spans.get(T);
   if (!list) {
-    const { geometry } = shared(T);
+    const geometry = MIDGE.geometry(T);
     const p = geometry.attributes.position.array,
       j = geometry.attributes.skinIndex.array;
     list = MIDGE_BONES.wings.map((name, k) => {
-      const bone = index[name];
+      const bone = MIDGE.boneIndex(name);
       const hinge = new T.Vector3().fromArray(D.source.addedWingBones[k].hinge);
       let tip = hinge.clone(),
         best = 0;
@@ -111,27 +81,12 @@ function wingSpan(T, side) {
   return list[side];
 }
 
-export function midgeTexture(T) {
-  return shared(T).texture;
-}
-
-// Presentation matrix: model metres (feet at y = 0, head +Z) -> game midge units.
-export function presentation(T) {
-  const [x, y, z] = MIDGE_MODEL.centre;
-  return new T.Matrix4()
-    .makeRotationY(Math.PI)
-    .multiply(new T.Matrix4().makeScale(MIDGE_MODEL.scale, MIDGE_MODEL.scale, MIDGE_MODEL.scale))
-    .multiply(new T.Matrix4().makeTranslation(-x, -y, -z));
-}
-
 // Model-space rotation deltas of the flight cycle at loop phase t in [0, 1).
 // The fly faces +Z, Y is up, so +X is its left side.
-export function flightPose(T, t) {
+export function flightPose(T, t, { euler: e } = MIDGE.helpers(T)) {
   const F = MIDGE_FLIGHT;
   const beat = TAU * F.beats * t; // wing stroke angle
   const slow = TAU * t; // one secondary sway per loop
-  const e = (x, y, z, order = 'XYZ') =>
-    new T.Quaternion().setFromEuler(new T.Euler(x, y, z, order));
   const pose = {};
   // Stroke: cos = 1 at the top. `sweep` is the angle behind the lateral axis:
   // the wing moves forward during the downstroke (sin > 0) and back on the
@@ -185,132 +140,25 @@ export function flightPose(T, t) {
   return pose;
 }
 
+export const MIDGE = defineCreature(D, {
+  name: 'moucheron',
+  presentation,
+  pose: flightPose,
+  rest: 0.3 / MIDGE_FLIGHT.beats, // mid-stroke bounds for hit tests
+  frames: MIDGE_FLIGHT.frames,
+});
+
 // One rigged midge (SkinnedMesh): corpses, previews and non-WebGL fallback.
 // `pose(t)` applies the flight cycle at loop phase t.
 export function createMidgeRig(T, material) {
-  const { geometry, texture, boneInverses, bindWorld } = shared(T);
-  const bones = D.bones.map((b) => {
-    const bone = new T.Bone();
-    bone.name = b.name;
-    bone.position.fromArray(b.t);
-    bone.quaternion.fromArray(b.r);
-    return bone;
-  });
-  const rest = bones.map((b) => ({ p: b.position.clone(), q: b.quaternion.clone() }));
-  const rig = new T.Group();
-  rig.name = 'moucheron-squelette';
-  D.bones.forEach((b, i) => (b.parent >= 0 ? bones[b.parent] : rig).add(bones[i]));
-  const mesh = new T.SkinnedMesh(
-    geometry,
-    material || new T.MeshStandardMaterial({ map: texture, roughness: 0.75, side: T.DoubleSide }),
-  );
-  mesh.name = 'moucheron-meshy';
-  mesh.frustumCulled = false;
-  rig.add(mesh);
-  const skeleton = new T.Skeleton(bones, boneInverses);
-  rig.updateMatrixWorld(true);
-  mesh.bind(skeleton, new T.Matrix4());
-  const container = new T.Group();
-  container.name = 'moucheron';
-  presentation(T).decompose(rig.position, rig.quaternion, rig.scale);
-  container.add(rig);
-  const inverseParent = new T.Quaternion();
-  const rig_ = {
-    container,
-    mesh,
-    skeleton,
-    bones: Object.fromEntries(bones.map((b) => [b.name, b])),
-    pose(t) {
-      const pose = flightPose(T, ((t % 1) + 1) % 1);
-      bones.forEach((bone, i) => {
-        bone.position.copy(rest[i].p);
-        bone.quaternion.copy(rest[i].q);
-        const p = pose[bone.name];
-        if (!p) return;
-        // local = inverse(parent bind world) * delta(model space) * bind world.
-        const parent = D.bones[i].parent;
-        if (parent >= 0) inverseParent.copy(bindWorld[parent]).invert();
-        else inverseParent.identity();
-        if (p.rotation)
-          bone.quaternion.copy(inverseParent).multiply(p.rotation).multiply(bindWorld[i]);
-        if (p.offset)
-          bone.position.add(new T.Vector3().fromArray(p.offset).applyQuaternion(inverseParent));
-      });
-      rig.updateMatrixWorld(true);
-      return rig_;
-    },
-    // Flight cycle at time `ms` for a midge whose roster phase is in radians.
-    animate(ms, phase = 0) {
-      return rig_.pose(ms / 1000 / MIDGE_FLIGHT.loop + phase / TAU);
-    },
-  };
-  // Bounds (hit tests, Box3) of a mid-stroke pose, before any parent scale.
-  rig_.pose(0.3 / MIDGE_FLIGHT.beats);
-  container.updateMatrixWorld(true);
-  skeleton.update();
-  mesh.computeBoundingBox();
-  mesh.computeBoundingSphere();
-  return rig_;
+  const rig = MIDGE.createRig(T, material);
+  // Flight cycle at time `ms` for a midge whose roster phase is in radians.
+  rig.animate = (ms, phase = 0) => rig.pose(ms / 1000 / MIDGE_FLIGHT.loop + phase / TAU);
+  return rig;
 }
 
-// Skin the flight cycle into frames (positions and normals in presentation
-// space). Returns Float32Arrays of frames * vertices * 3.
-export function bakeFlight(T, frames = MIDGE_FLIGHT.frames) {
-  const { geometry, boneInverses } = shared(T);
-  const rig = createMidgeRig(T, new T.MeshBasicMaterial());
-  const bones = rig.skeleton.bones;
-  const base = geometry.attributes.position.array,
-    normal = geometry.attributes.normal.array,
-    joints = geometry.attributes.skinIndex.array,
-    weights = geometry.attributes.skinWeight.array;
-  const count = base.length / 3;
-  const positions = new Float32Array(frames * count * 3),
-    normals = new Float32Array(frames * count * 3);
-  const P = presentation(T);
-  const skin = bones.map(() => new T.Matrix4());
-  const rigInverse = new T.Matrix4();
-  const m = new T.Matrix4(),
-    n = new T.Matrix3();
-  const v = new T.Vector3(),
-    w = new T.Vector3(),
-    acc = new T.Vector3(),
-    nacc = new T.Vector3();
-  for (let f = 0; f < frames; f++) {
-    rig.pose(f / frames);
-    const rigRoot = rig.container.children[0];
-    rigInverse.copy(rigRoot.matrixWorld).invert();
-    // Bone matrices relative to the rig root (model metres), then presentation.
-    bones.forEach((bone, i) =>
-      skin[i]
-        .multiplyMatrices(rigInverse, bone.matrixWorld)
-        .multiply(boneInverses[i])
-        .premultiply(P),
-    );
-    for (let k = 0; k < count; k++) {
-      acc.set(0, 0, 0);
-      nacc.set(0, 0, 0);
-      for (let j = 0; j < 4; j++) {
-        const weight = weights[k * 4 + j];
-        if (!weight) continue;
-        m.copy(skin[joints[k * 4 + j]]);
-        acc.addScaledVector(v.fromArray(base, k * 3).applyMatrix4(m), weight);
-        nacc.addScaledVector(w.fromArray(normal, k * 3).applyMatrix3(n.setFromMatrix4(m)), weight);
-      }
-      nacc.normalize();
-      const o = (f * count + k) * 3;
-      positions[o] = acc.x;
-      positions[o + 1] = acc.y;
-      positions[o + 2] = acc.z;
-      normals[o] = nacc.x;
-      normals[o + 1] = nacc.y;
-      normals[o + 2] = nacc.z;
-    }
-  }
-  return { frames, count, positions, normals };
-}
-
+export const bakeFlight = (T, frames) => MIDGE.bake(T, frames);
+export const midgeTexture = (T) => MIDGE.texture(T);
+export const midgeGeometry = (T) => MIDGE.geometry(T);
+export const midgeBoneIndex = (name) => MIDGE.boneIndex(name);
 export const MIDGE_SOURCE = D.source;
-export const midgeBoneIndex = (name) => index[name];
-export function midgeGeometry(T) {
-  return shared(T).geometry;
-}
