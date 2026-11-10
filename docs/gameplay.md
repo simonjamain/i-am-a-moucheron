@@ -111,8 +111,9 @@ Depuis la version 267, un avion endommagé ne change plus de forme (plus d'ailes
 qui rétrécissent) : son ou ses moteurs laissent échapper de petits panaches de
 fumée, à partir de 15 % de dégâts, de plus en plus nombreux, gros et sombres à
 mesure que ses PV baissent (`src/engine-smoke.js`, un seul nuage de points pour
-tous les avions, plafonné à 1 500 panaches). L'état « aile endommagée » garde
-ses effets de vol. Les insectes
+tous les avions, plafonné à 1 500 panaches). Depuis la version 268, les dégâts
+n'ont plus aucun malus de pilotage : moteur et ailes restent pleinement
+efficaces, seule la fumée trahit l'état de l'avion. Les insectes
 tués tombent et s’estompent avant suppression. Voir [physique](economy-physics.md)
 et [armement](scale-fleet-weapons.md).
 

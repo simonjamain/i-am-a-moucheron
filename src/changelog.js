@@ -1,6 +1,12 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 268,
+    changes: [
+      'Un avion abîmé garde toute sa puissance : plus de moteur coupé ni d’aile perdue, seule la fumée montre les dégâts.',
+    ],
+  },
+  {
     version: 267,
     changes: [
       'Un avion touché ne perd plus ses ailes : son moteur fume, de plus en plus fort selon les dégâts.',

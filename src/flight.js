@@ -2,7 +2,7 @@
 // Units belong to the desk arena; these are not measured Spitfire coefficients.
 function unscaledFlight(
   T,
-  { q, vel, omega, wind, gas, wing, engine, pitch, roll, yaw = 0, profile = null },
+  { q, vel, omega, wind, gas, engine = 1, pitch, roll, yaw = 0, profile = null },
   dt,
 ) {
   const clamp = T.MathUtils.clamp;
@@ -11,8 +11,7 @@ function unscaledFlight(
     right = new T.Vector3(1, 0, 0).applyQuaternion(q);
   const air = vel.clone().sub(wind),
     speed = air.length();
-  const authority =
-    clamp(speed / 13, 0.12, 1) * clamp(38 / Math.max(speed, 38), 0.55, 1) * (wing ? 1 : 0.55);
+  const authority = clamp(speed / 13, 0.12, 1) * clamp(38 / Math.max(speed, 38), 0.55, 1);
   const bank = Math.atan2(-right.y, up.y);
   // Three independent control axes; no auto-level, bank target or yaw instructor.
   const turn = profile?.turn ?? 1;
@@ -21,7 +20,6 @@ function unscaledFlight(
   omega.x += (pitch * 1.12 * authority * turn - omega.x) * response;
   omega.z += (rollRate * authority - omega.z) * response;
   omega.y += (-yaw * 0.8 * authority * turn - omega.y) * response;
-  if (!wing) omega.z += dt * 1.8;
   q.multiply(
     new T.Quaternion().setFromEuler(new T.Euler(omega.x * dt, omega.y * dt, omega.z * dt, 'XYZ')),
   ).normalize();
@@ -36,9 +34,7 @@ function unscaledFlight(
       ((profile?.liftBase ?? 0.04) + aoa * (profile?.liftBase ? 0.12 : 0.48)) * fSpeed * fSpeed,
       -24,
       40,
-    ) *
-    stall *
-    (wing ? 1 : 0.48);
+    ) * stall;
   const induced = (0.025 * lift * lift) / Math.max(36, speed * speed);
   const drag = (profile?.drag ?? 0.016) * speed + 0.055 + induced + (1 - stall) * 0.4;
   const force = forward

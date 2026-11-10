@@ -3975,11 +3975,6 @@ function physics(dt) {
     }
     vel.multiplyScalar(-0.45);
     p.addScaledVector(vel, 0.2);
-    if (hp < 65 && wing) {
-      wing = 0;
-      notify('Aile endommagée', 2);
-    }
-    if (hp < 35) engine = 0;
   }
 }
 const radar = $('radar').getContext('2d');
