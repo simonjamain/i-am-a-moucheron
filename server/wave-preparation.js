@@ -1,5 +1,4 @@
 import { randomInt } from 'node:crypto';
-import { BLUEPRINTS, equippedLevel, supportsBlueprint } from '../src/wave-blueprints.js';
 import { ENEMY_TYPES, MAX_WAVE_POPULATION } from '../src/waves.js';
 import { routeDuration } from '../src/routes.js';
 import { scaleRoster } from '../src/balance.js';
@@ -95,77 +94,4 @@ export function forecast(roster) {
     groups.get(key).count++;
   }
   return [...groups.values()].sort((a, b) => a.spawn - b.spawn);
-}
-
-export function drawCards(levels, draw = randomInt) {
-  const pool = Object.keys(BLUEPRINTS),
-    cards = [];
-  // Offer both a continuation (including the lure/piercing combination) and an unexplored path.
-  const related = pool.filter(
-    (id) => levels[id] || (id === 'piercing' && levels.lure) || (id === 'lure' && levels.piercing),
-  );
-  if (related.length) cards.push(related[draw(related.length)]);
-  const fresh = pool.filter((id) => !levels[id] && !cards.includes(id));
-  if (fresh.length) cards.push(fresh[draw(fresh.length)]);
-  while (cards.length < 3) {
-    const available = pool.filter((id) => !cards.includes(id));
-    cards.push(available[draw(available.length)]);
-  }
-  return cards;
-}
-
-export function resolveVote(room, force = false, draw = randomInt) {
-  const prep = room.preparation;
-  if (!prep || prep.winner) return;
-  for (const pilot of Object.keys(prep.votes))
-    if (!room.pilots.has(pilot)) delete prep.votes[pilot];
-  const votes = Object.values(prep.votes);
-  if (!force && (!votes.length || votes.length < room.pilots.size)) return;
-  const totals = prep.cards.map((card) => votes.filter((v) => v === card).length);
-  const tied = prep.cards.filter((_, i) => totals[i] === Math.max(...totals));
-  prep.winner = tied[draw(tied.length)];
-  room.blueprintLevels[prep.winner] = (room.blueprintLevels[prep.winner] || 0) + 1;
-}
-
-// One level of a plan's effect on one object (existing behaviour per level).
-function applyLevel(item, id) {
-  (item.blueprints ??= []).push(id);
-  if (id === 'reinforced') {
-    item.hp += 100;
-    item.maxHp += 100;
-  }
-  if (id === 'lure') item.radius += 0.1;
-}
-
-// Bring one object up to the room's purchased levels. Called for every
-// compatible object after a purchase and for every object created later.
-export function equipPurchased(room, item) {
-  let changed = false;
-  for (const [id, level] of Object.entries(room.activeBlueprints || {}))
-    while (supportsBlueprint(id, item) && equippedLevel(item, id) < level) {
-      applyLevel(item, id);
-      changed = true;
-    }
-  return changed;
-}
-
-// Issue #101: a voted plan is bought once, level by level, from the common
-// bank and applies to every compatible object of every player, now and later.
-export function purchaseBlueprint(room, request) {
-  const { blueprint: id } = request;
-  if (!Object.hasOwn(room.blueprintLevels, id) || !Object.hasOwn(BLUEPRINTS, id))
-    throw Error('Plan non débloqué.');
-  const profile = BLUEPRINTS[id];
-  if (profile.kind === 'unlock') throw Error('Ce plan donne accès à une construction du Castor.');
-  room.activeBlueprints ??= {};
-  const level = room.activeBlueprints[id] || 0;
-  if (level >= room.blueprintLevels[id] || request.level !== level + 1)
-    throw Error('Niveau déjà acquis ou périmé.');
-  if (room.dollars < profile.cost) throw Error('Caisse commune insuffisante.');
-  room.dollars -= profile.cost;
-  room.activeBlueprints[id] = level + 1;
-  const objects =
-    profile.kind === 'vehicle' ? [...room.vehicles.values()] : room.groundDefense.structures;
-  for (const item of objects) equipPurchased(room, item);
-  if (profile.kind !== 'vehicle') room.groundDefense.revision++;
 }

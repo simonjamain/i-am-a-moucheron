@@ -82,11 +82,6 @@ function board(person, seat) {
   const ground = { epoch: r.base.epoch, body: { ...body } };
   game.command(r.code, person.id, 'vehicle-select', { vehicle: h2.id, seat, ground });
   for (const form of [1, 2]) {
-    const p = r.pilots.get(person.id),
-      token = p.state.boarding.token,
-      d = r.dossiers.get(token);
-    if (d?.clause && d.position <= p.board_paper)
-      game.command(r.code, person.id, 'dossier-choice', { token, choice: 'tear' });
     game.command(r.code, person.id, 'vehicle-sign', {
       vehicle: h2.id,
       seat,

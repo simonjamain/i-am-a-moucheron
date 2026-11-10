@@ -5,7 +5,7 @@ Ses réserves, dossiers et achats disparaissent au redémarrage. Les référence
 aux migrations, à la persistance et aux requêtes HTTP ci-dessous décrivent le
 backend Sites historique conservé pendant la transition. Voir [serveur UDP](udp-server.md).
 
-Référence du lot du 29 octobre 2026. Les modules `logistics.js`, `malice.js` et
+Référence du lot du 29 octobre 2026. Les modules `logistics.js` et
 `vehicle-livery.js` portent les règles communes. Migration :
 `0011_logistics_contracts.sql`. Les anciennes salles sont conservées ; leurs
 appareils reçoivent des réserves pleines à leur première lecture avec cette version.
@@ -31,33 +31,15 @@ et refuser un échange restent des actions distinctes. Une déchirure ne tamponn
 pas et n’ajoute aucune signature à l’archive. Les actions sont bloquées pendant
 un envoi ; après erreur, le document peut être traité de nouveau.
 
-Le serveur tire une annexe dans **5 % des dossiers**, au maximum une par dossier.
-Le tirage, sa clause et sa position sont persistants. Un dossier d’accès fermé
-puis rouvert au même poste conserve son jeton et sa progression. L’annexe se
-place avant le premier ou le deuxième document obligatoire ; les mutations et
-échanges peuvent également recevoir une annexe, avant leur contrat normal.
-Les dossiers de résurrection n’en reçoivent pas. Le refus d’une annexe est
-persisté sans signature et permet de poursuivre ; il ne dispense jamais des
-signatures normales. Une signature et une déchirure concurrentes sont départagées
-par une mise à jour conditionnelle : un seul choix est conservé.
+### Annexes malicieuses retirées (version 264)
 
-Les quatre clauses ont chacune dix introductions préécrites. Le texte indique
-son effet ; aucun avertissement extérieur ne signale le piège :
-
-| Clause                  | Effet pendant l’occupation du poste                                    |
-| ----------------------- | ---------------------------------------------------------------------- |
-| Commandes à contre-sens | Tangage, roulis, lacet et variation des gaz inversés, pilote seulement |
-| Tourelle contrariée     | Deux axes de visée inversés, mitrailleur ou DCA                        |
-| Économie de poudre      | Dégâts du poste × 0,5, y compris DCA directe et éclatement             |
-| Tir contemplatif        | Intervalle entre tirs × 2                                              |
-
-Le pilote du bombardier peut désormais larguer des bombes ; ses clauses
-de pilotage restent celles de son dossier. Les nouveaux postes et armes lourdes
-appliquent aussi leurs clauses compatibles ; voir [véhicules et banque](vehicles-bank.md).
-L’effet commence à l’attribution effective du poste et se termine à la sortie,
-au décès ou au transfert. Il ne passe pas à l’occupant suivant et n’affecte ni
-le pistolet ni les autres membres de l’équipage. Les dégâts fractionnaires sont
-conservés : une mitrailleuse normale à 75 dégâts peut infliger 37,5 dégâts.
+Les annexes malicieuses (5 % des dossiers, quatre clauses piégées : commandes à
+contre-sens, tourelle contrariée, dégâts divisés par deux, cadence divisée par
+deux) ont été **entièrement retirées** : `malice.js`, la commande
+`dossier-choice`, le suivi des dossiers et le champ `contractClause` des pilotes
+n'existent plus côté Node. Un dossier d'accès ne contient que ses documents
+obligatoires ; chaque poste tire avec la cadence et les dégâts de son arme.
+Le backend Worker historique (`src/server.js`) ne tire plus de clause non plus.
 
 ## Réserves des appareils
 
@@ -147,24 +129,18 @@ et des trajectoires partagées ; aucune dernière position ennemie n’est stock
 ## Vérifications et limites
 
 `test-logistics-contracts.mjs` exécute les règles et les routes Worker avec SQLite :
-probabilité sur 10 000 points, stabilité du dossier, concurrence signer/déchirer,
-progression normale obligatoire, effets propres au poste, dégâts réels 37,5/75,
-fin au transfert, doubles requêtes de tir, réserves indépendantes du bombardier,
+dossier sans annexe, progression normale obligatoire, dégâts pleins (75) pour
+chaque poste, transfert de poste, doubles requêtes de tir, réserves indépendantes du bombardier,
 panne après cinq minutes, reconnexion, plein de dix secondes de plusieurs avions,
 prix séparés, refus de pose/prix périmé et couverture cylindrique. Il exerce aussi
-le vrai gestionnaire de déchirure (double action et erreur réseau), les meshes
+le vrai gestionnaire de déchirure (double action, sans requête serveur), les meshes
 peints, le remplacement et la libération des textures d’inscription.
 
-La suite de régression conserve des dossiers ordinaires via une fixture explicite,
-pour éviter une variation aléatoire de ses scénarios. La nouvelle suite couvre
-séparément les annexes forcées et la probabilité réelle du module partagé.
-
-Navigateur local : entrée en jeu, déchirure/remplacement d’un document normal,
-signature suivante, annexe injectée dans la seule salle de test, déchirure de
-celle-ci, conservation de la première signature, embarquement final, HUD à
+Navigateur local (lot d'origine) : entrée en jeu, déchirure/remplacement d’un
+document normal, signature suivante, conservation de la première signature, embarquement final, HUD à
 300 s/1 000 balles avec ravitaillement, sortie et nouveaux articles du magasin.
 Le navigateur fonctionne en rendu logiciel et refuse Pointer Lock ; la lisibilité
-WebGL des plaques/couleurs, les commandes inversées en vol, le toucher physique,
+WebGL des plaques/couleurs, le toucher physique,
 l’écoute et la fluidité WAN ne sont pas validés par ce parcours.
 
 Les tests de `test-aircraft-fire.mjs` retiennent volontairement les réponses HTTP

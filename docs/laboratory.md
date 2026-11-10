@@ -4,7 +4,7 @@ Le bouton **Debug : OFF / Debug : ON** (en haut à droite) est disponible dans c
 
 ## Effets du mode actif
 
-- L'activation ouvre la préparation de la première vague si la mission n'a pas commencé, et débloque tous les plans de construction et d'amélioration du conseil, y compris les constructions du Castor.
+- L'activation ouvre la préparation de la première vague si la mission n'a pas commencé. Il n'y a plus de plans à débloquer : toutes les constructions sont déjà accessibles à leur prix.
 - **Caisse illimitée** : la caisse est réapprovisionnée à 1 milliard de dollars à chaque traitement serveur ; le HUD indique « ∞ ». Achats, poses, réparations et services restent soumis à leurs signatures, validations et limites physiques.
 - **Aucun dégât de chute** : les impacts au sol (`fall-impact`) sont ignorés.
 - **Défaite impossible** : la poubelle continue de compter ses dégâts (`infestation`), mais la fin de vague ouvre toujours la préparation suivante. Le HUD affiche les PV restants de la poubelle, même négatifs.

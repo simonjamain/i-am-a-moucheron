@@ -1,5 +1,5 @@
-// Legacy regression scenarios use ordinary dossiers. The logistics suite separately
-// exercises the 5% branch, compatible clauses, refusal and accepted effects.
+// Legacy regression scenarios pin crypto randomness (it once drew the removed
+// malicious annexes); kept so their other random draws stay reproducible.
 globalThis.crypto.getRandomValues = (array) => {
   array.fill(0xffffffff);
   return array;

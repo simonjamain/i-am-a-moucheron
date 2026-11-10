@@ -3,9 +3,9 @@
 Référence consolidée le 30 octobre 2026, comportement du runtime Node courant.
 Mettre à jour les sections concernées lorsque le comportement change.
 
-Deux cartes supplémentaires permettent de construire, avec le Castor, un bunker LEGO (10 $) et un canon antichar lourd (14 $). Le bunker protège son occupant d’une grande partie des impacts et possède sa propre mitrailleuse ; le canon est prévu pour les boss terrestres. Ce canon est un obusier à taille humaine qui pivote lentement sur ses roues, s’élève de −5° à +40° et recule à chaque tir. Il tire un obus simulé par le tireur, comme le canon du tank (gravité, obstacles, impact direct), mais plus rapide (750 m/s), plus puissant (360 dégâts, pleins sur la cible touchée) et à petite explosion (5 m) ; il n’a pas de fusée de DCA. Le cercle d’accès, l’ouverture du dossier et les signatures partagent la même portée autour du poste, au même niveau : 9 cm pour le bunker ; pour le canon, un cercle à 4,5 m de l’essieu, hors du balayage du tube, et une portée de 6 m. Chaque cercle porte l’icône de son rôle et chaque poste a ses propres textes et contrats. Les deux postes demandent la signature d’un dossier, disposent de munitions finies et se rechargent uniquement auprès des sources de service payantes.
+Au volant du Castor, on peut construire un bunker LEGO (10 $) et un canon antichar lourd (14 $), sans plan à débloquer : seul le prix compte. Le bunker protège son occupant d’une grande partie des impacts et possède sa propre mitrailleuse ; le canon est prévu pour les boss terrestres. Ce canon est un obusier à taille humaine qui pivote lentement sur ses roues, s’élève de −5° à +40° et recule à chaque tir. Il tire un obus simulé par le tireur, comme le canon du tank (gravité, obstacles, impact direct), mais plus rapide (750 m/s), plus puissant (360 dégâts, pleins sur la cible touchée) et à petite explosion (5 m) ; il n’a pas de fusée de DCA. Le cercle d’accès, l’ouverture du dossier et les signatures partagent la même portée autour du poste, au même niveau : 9 cm pour le bunker ; pour le canon, un cercle à 4,5 m de l’essieu, hors du balayage du tube, et une portée de 6 m. Chaque cercle porte l’icône de son rôle et chaque poste a ses propres textes et contrats. Les deux postes demandent la signature d’un dossier, disposent de munitions finies et se rechargent uniquement auprès des sources de service payantes.
 
-La carte « Tourelle automatique du Castor » débloque une construction de 9 $ au volant du G1. Elle tire automatiquement (180 balles finies) et se recharge contre paiement auprès du Castor ou des stations. Aucun tir ni achat à distance ; un plan non remporté ne permet pas de la poser. Son modèle définitif combine quatre modules Meshy texturés (socle fixe, tête qui pivote sur 360°, canon unique inclinable de −10° à +90° et capteur/radar séparé). Les géométries et UV Meshy sont conservés, avec une copie des textures rééchantillonnée en WebP 1K pour le navigateur ; voir [l'asset T-01](t01-asset.md). Les déplacements visuels suivent la dernière cible validée par le serveur ; les dégâts et les munitions restent autoritaires côté serveur. Le GLB texturé définitif doit être importé séparément après vérification des parties mobiles et de leurs UV.
+La « Tourelle automatique du Castor » se construit pour 9 $ au volant du G1, sans plan à débloquer. Elle tire automatiquement (180 balles finies) et se recharge contre paiement auprès du Castor ou des stations. Aucun tir ni achat à distance. Son modèle définitif combine quatre modules Meshy texturés (socle fixe, tête qui pivote sur 360°, canon unique inclinable de −10° à +90° et capteur/radar séparé). Les géométries et UV Meshy sont conservés, avec une copie des textures rééchantillonnée en WebP 1K pour le navigateur ; voir [l'asset T-01](t01-asset.md). Les déplacements visuels suivent la dernière cible validée par le serveur ; les dégâts et les munitions restent autoritaires côté serveur. Le GLB texturé définitif doit être importé séparément après vérification des parties mobiles et de leurs UV.
 
 ## Session réseau
 
@@ -25,7 +25,7 @@ des munitions limités, à compléter en se posant et s’arrêtant dans une sta
 protéger la poubelle contre les insectes ; les arrivées ennemies augmentent
 l’infestation. La mort ouvre une observation à caméra fixe ; un clic volontaire donne accès au purgatoire et à la paperasse de retour en jeu.
 
-Avant chaque vague, le serveur annonce les entrées et les horaires des groupes. La préparation dure une minute par défaut. Votez pour un plan commun, puis équipez les objets compatibles. Une fois le vote résolu, tout joueur peut lancer la vague avant la fin du compte à rebours. La première vague combine fourmis et moucherons, puis le budget des vagues augmente de moitié à chaque étape, jusqu'à 2 400 points. Voir [progression](progression.md). Des groupes aériens arrivent depuis
+Avant chaque vague, le serveur annonce les entrées et les horaires des groupes. La préparation dure une minute par défaut ; tout joueur peut lancer la vague avant la fin du compte à rebours. Il n'y a ni vote ni plan à débloquer entre les vagues (retirés en version 264) : équipements et véhicules s'achètent simplement à leur prix en dollars. La première vague combine fourmis et moucherons, puis le budget des vagues augmente de moitié à chaque étape, jusqu'à 2 400 points. Voir [progression](progression.md). Des groupes aériens arrivent depuis
 plusieurs aérations, se séparent et se rejoignent ; fourmis et cafards sortent
 de trous et marchent vers la poubelle par le chemin le plus direct qui contourne le
 mobilier, les barricades et les bunkers (voir [navigation terrestre](#navigation-terrestre)).
@@ -65,7 +65,7 @@ par type initial est conservé ; dès son décollage, un successeur gratuit appa
 un tank, un hélicoptère biplace ou une DCA mobile, dont la destruction est définitive. Les sièges sont exclusifs.
 
 Chaque accès publié aux équipements, y compris une nouvelle entrée, passe par un
-cercle au sol et un dossier de deux documents obligatoires, avec parfois une annexe. La signature s’effectue à la souris
+cercle au sol et un dossier de deux documents obligatoires. La signature s’effectue à la souris
 ou au toucher et part automatiquement au relâchement d’un trait valide. Le tampon
 est immédiat ; la réponse serveur confirme le document et l’attribution du siège.
 L’archive locale empile les documents confirmés pendant la session, à travers les
@@ -185,9 +185,9 @@ et les apparitions périphériques, et le [diagnostic et correction du pistolet]
 ## Identification, contrats et ravitaillement
 
 Les appareils ont une teinte persistante et les pseudos de leur équipage inscrits
-sur la carrosserie. Déchirer un document normal fournit un nouvel exemplaire
-obligatoire ; une annexe présente dans 5 % des dossiers peut être déchirée sans
-accepter sa clause. La signer applique son effet pendant l’occupation du poste.
+sur la carrosserie. Déchirer un document fournit un nouvel exemplaire
+obligatoire. Les annexes malicieuses (clauses piégées) ont été retirées en
+version 264 : aucun contrat ne modifie plus commandes, visée, cadence ou dégâts.
 
 Les avions disposent de cinq minutes de carburant à plein gaz et d’environ une
 minute de tir par poste armé. Une station initiale à Alpha répare et recharge les véhicules

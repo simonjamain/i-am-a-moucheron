@@ -1,6 +1,14 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 264,
+    changes: [
+      'Plus de contrats piégés : aucun document ne modifie vos commandes, votre visée ou vos tirs.',
+      'Plus de vote entre les vagues : la prochaine vague est annoncée et chacun peut la lancer.',
+      'Les bonus de plans disparaissent ; tourelle, bunker et canon du Castor s’achètent directement à leur prix.',
+    ],
+  },
+  {
     version: 263,
     changes: [
       'Nouveaux modèles pour le Spitfire, le char, la DCA mobile, l’hélicoptère et le bombardier.',

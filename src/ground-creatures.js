@@ -159,7 +159,7 @@ export function advanceGroundUnit(unit, enemy, elapsed, dt, world) {
       const newTape = swept.find((tape) => !unit.stickyInside.includes(tape.id));
       if (newTape) {
         unit.stickyInside.push(newTape.id);
-        unit.stuckUntil = time + effect.stopSeconds + (newTape.blueprints?.length || 0);
+        unit.stuckUntil = time + effect.stopSeconds;
         continue;
       }
     }

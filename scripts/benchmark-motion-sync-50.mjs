@@ -1,21 +1,10 @@
 import assert from 'node:assert/strict';
-import { execFileSync } from 'node:child_process';
-import { writeFileSync, unlinkSync } from 'node:fs';
+import { loadBaselineGame } from './baseline-game.mjs';
 import { performance } from 'node:perf_hooks';
 import { Game } from '../server/game.js';
 
 const baseline = '187c5228ce2fd945d63f1dacbf73c04556a2f094';
-const temporary = new URL('../server/.motion-baseline-benchmark.mjs', import.meta.url);
-writeFileSync(
-  temporary,
-  execFileSync('git', ['show', baseline + ':server/game.js'], { encoding: 'utf8' }),
-);
-let PreviousGame;
-try {
-  ({ Game: PreviousGame } = await import(temporary.href));
-} finally {
-  unlinkSync(temporary);
-}
+const PreviousGame = await loadBaselineGame(baseline, 'motion');
 const now = () => 100000;
 const fixture = new Game({ now });
 for (let i = 0; i < 50; i++) fixture.join({ code: 'MOVE50', name: 'Player ' + i });

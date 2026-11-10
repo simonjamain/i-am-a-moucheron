@@ -1,21 +1,10 @@
 import assert from 'node:assert/strict';
-import { execFileSync } from 'node:child_process';
-import { writeFileSync, unlinkSync } from 'node:fs';
+import { loadBaselineGame } from './baseline-game.mjs';
 import { performance } from 'node:perf_hooks';
 import { Game } from '../server/game.js';
 
 const baseline = '2f02d128997b8ffadfc9f4ba43afd1b6ebfe3442';
-const temporary = new URL('../server/.snapshot-baseline-benchmark.mjs', import.meta.url);
-const oldSource = execFileSync('git', ['show', baseline + ':server/game.js'], {
-  encoding: 'utf8',
-});
-writeFileSync(temporary, oldSource);
-let PreviousGame;
-try {
-  ({ Game: PreviousGame } = await import(temporary.href));
-} finally {
-  unlinkSync(temporary);
-}
+const PreviousGame = await loadBaselineGame(baseline, 'snapshot');
 const clock = () => 100000;
 const fixture = new Game({ now: clock });
 for (let i = 0; i < 50; i++) fixture.join({ code: 'PERF50', name: 'Player ' + i });
@@ -35,23 +24,24 @@ const after = new Game({ now: clock });
 // Isolate snapshot construction, not the simulation's advance rate.
 before.advance = () => {};
 after.advance = () => {};
-const original = before.snapshot(room);
+// The baseline still reads the annex records removed since (malicious contracts).
+room.dossiers = new Map();
+const { dossiers, ...original } = before.snapshot(room);
+assert.deepEqual(dossiers, [], 'no annex record in the fixture');
+original.pilots = original.pilots.map(({ contractClause, ...pilot }) => {
+  assert.equal(contractClause, null, 'no contract clause in the fixture');
+  return pilot;
+});
 const optimized = after.snapshot(room);
 const {
   rosterRevision,
   groundDefense,
   groundAgents,
   preparation,
-  blueprints,
-  blueprintLevels,
-  activeBlueprints,
   groundNavigationActive,
   ...comparable
 } = optimized;
-assert.equal(preparation, null, 'before mission launch there is no forecast or vote');
-assert.deepEqual(blueprints, []);
-assert.deepEqual(blueprintLevels, {});
-assert.deepEqual(activeBlueprints, {}, 'no team upgrade bought before launch');
+assert.equal(preparation, null, 'before mission launch there is no forecast');
 assert.equal(groundNavigationActive, false);
 assert.deepEqual(groundAgents, {}, 'a room without constructions keeps legacy enemy routes');
 assert.equal(rosterRevision, 0, 'new roster revision defaults to zero');

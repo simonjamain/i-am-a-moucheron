@@ -71,8 +71,7 @@ La destruction de coque supprime le missile sans dégâts supplémentaires.
 Le serveur intègre les armes lourdes à pas de 1/120 s au maximum. Le point visé
 et la direction arrivent par le canal de mouvement existant. Stocks, lancement
 et détonation utilisent les commandes fiables, liées à la génération d'occupation.
-Les effets ne produisent aucun second impact. Les clauses compatibles conservent
-leurs effets ; elles ne peuvent accélérer les roquettes au-delà du maximum validé.
+Les effets ne produisent aucun second impact.
 
 ### Effets des roquettes et du missile (version 240)
 

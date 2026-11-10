@@ -75,51 +75,28 @@ const ui = new WaveCouncilUI({
 });
 const snap = {
   base: { epoch: 'e' },
-  blueprints: [],
-  blueprintLevels: {},
   groundDefense: defense,
   vehicles: [],
   pilots: [{ id: 'p' }, { id: 'q' }],
   dollars: 12,
-  preparation: {
-    id: 'e1',
-    wave: 1,
-    groups,
-    cards: ['piercing', 'lure', 'reinforced'],
-    votes: {},
-    winner: null,
-  },
+  preparation: { id: 'e1', wave: 1, groups },
 };
 ui.accept(snap, 'p');
 ui.countdown(45);
 assert.equal(ui.dialog.open, false);
-assert.match(ui.button.textContent, /45 s · 0\/2 votes/);
+assert.equal(ui.button.textContent, 'Vague 1 · 45 s');
+assert.doesNotMatch(ui.button.textContent, /vote/);
 ui.button.onclick();
 assert.equal(ui.timeline.children.length, 2);
 assert.equal(ui.timeline.children[1].children.length, 3);
-ui.cards.children[0].onclick();
-assert.deepEqual(commands.pop(), ['wave-vote', { preparation: 'e1', card: 'piercing' }]);
-snap.preparation.votes = { p: 'piercing' };
-ui.accept(snap, 'p');
-assert.equal(ui.cards.children[0].attrs['aria-pressed'], 'true');
-ui.cards.children[1].onclick();
-assert.deepEqual(commands.pop(), ['wave-vote', { preparation: 'e1', card: 'lure' }]);
-snap.preparation.winner = 'reinforced';
-snap.blueprints = ['reinforced'];
-snap.blueprintLevels = { reinforced: 2 };
-ui.accept(snap, 'p');
-assert.equal(ui.cards.children[1].disabled, true);
+// No vote: the announced wave can be launched at once by any player.
 assert.equal(ui.launch.hidden, false);
-const [row] = ui.workshop.children.slice(1);
-const [, , buy] = row.children;
-buy.onclick();
-assert.deepEqual(commands.pop(), ['wave-buy', { blueprint: 'reinforced', level: 1, epoch: 'e' }]);
-assert.equal(commands.length, 0, 'last vote does not launch the wave');
+assert.equal(commands.length, 0);
 ui.launch.onclick();
 assert.deepEqual(commands.pop(), ['start', { preparation: 'e1' }]);
 ui.accept({ ...snap, preparation: null }, 'p');
 assert.equal(ui.dialog.open, false);
-assert.equal(ui.button.hidden, false, 'team plans remain accessible during combat');
+assert.equal(ui.button.hidden, true, 'nothing to announce during combat');
 console.log(
-  'PASS frise simultanée, vote modifiable, achat pour l’équipe, départ explicite, détour simulé puis confirmé',
+  'PASS frise simultanée, annonce sans vote, départ anticipé, détour simulé puis confirmé',
 );

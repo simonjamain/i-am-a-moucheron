@@ -122,7 +122,7 @@ destruction ; achat suivant possible, sans remplacement gratuit.
 Vitesse plafonnée à **122,5 m/s de référence** contre 70 ; facteur de rotation
 **1,45** contre 1. La poussée est réglée à 70 pour atteindre le nouveau plafond,
 sans prétention de modèle historique. À vitesse égale, les réponses angulaires
-mesurées sont multipliées par 1,45. Les améliorations et clauses restent applicables.
+mesurées sont multipliées par 1,45. Les améliorations achetées restent applicables.
 Chaque arme tire 75 dégâts de base toutes les 0,06 s. ARM-04 remplace le stock
 initial par **1 000 balles communes**, avec petits décalages et dernière salve
 partielle. [Règle et mesures actuelles](multiplayer-return.md#spitfire-et-performance-des-tirs).

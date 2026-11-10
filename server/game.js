@@ -1,15 +1,7 @@
 import { airField } from '../src/air-current.js';
-import {
-  prepareRoster,
-  forecast,
-  drawCards,
-  resolveVote,
-  purchaseBlueprint,
-  equipPurchased,
-} from './wave-preparation.js';
+import { prepareRoster, forecast } from './wave-preparation.js';
 import { feedingPoint } from '../src/ground-defense-state.js';
 import { DEFAULT_BALANCE, money } from '../src/balance.js';
-import { BLUEPRINTS } from '../src/wave-blueprints.js';
 import { deliveryStart, deliveryLanding, deliveryHeightAt } from '../src/delivery.js';
 import {
   newGroundDefense,
@@ -56,7 +48,6 @@ import {
   FUEL_SECONDS,
   installationCount,
 } from '../src/logistics.js';
-import { drawClause, clauseFactors } from '../src/malice.js';
 import { stationAccess, stationExit } from '../src/sortie.js';
 import { howitzerMuzzle, howitzerPitchAllowed } from '../src/howitzer-geometry.js';
 import { validMotion } from '../src/network.js';
@@ -129,7 +120,6 @@ function roomState(code, now) {
     plan: null,
     upcomingPlan: null,
     preparation: null,
-    blueprintLevels: {},
     created: now,
     touched: now,
     wave: 0,
@@ -141,11 +131,9 @@ function roomState(code, now) {
     dollars: 0,
     rewardCount: 0,
     upgrades: {},
-    activeBlueprints: {},
     bank: newBank(),
     pilots: new Map(),
     vehicles: new Map(),
-    dossiers: new Map(),
     requests: new Map(),
     souls: new Map(),
     orders: new Map(),
@@ -323,7 +311,6 @@ export class Game {
     p.occupation++;
     const v = r.vehicles.get(p.vehicle_id);
     if (v?.seats.get(p.seat) === p.id) v.seats.delete(p.seat);
-    for (const d of r.dossiers.values()) if (d.pilot === p.id) d.active = 0;
     p.vehicle_id = null;
     p.seat = null;
   }
@@ -405,7 +392,6 @@ export class Game {
         revision: 0,
       },
     };
-    equipPurchased(r, vehicle);
     r.vehicles.set(id, vehicle);
     return vehicle;
   }
@@ -639,7 +625,6 @@ export class Game {
         )
           q.status = 'cancelled';
       }
-    if (r.preparation) resolveVote(r);
     if (r.phase === 'prep' && r.mission_started && r.next_wave_at && now >= r.next_wave_at)
       this.startWave(r);
     const plan = this.plan(r);
@@ -691,26 +676,6 @@ export class Game {
     // Completed administrative records need no permanent archive on the server.
     for (const [id, q] of r.requests)
       if (!['signing', 'offered'].includes(q.status)) r.requests.delete(id);
-    for (const [token, d] of r.dossiers) {
-      const p = r.pilots.get(d.pilot);
-      if (
-        !p ||
-        (d.active &&
-          (p.life !== 'alive' ||
-            !(
-              (p.vehicle_id === d.target && p.seat === d.seat) ||
-              (p.mode === 'turret' && d.target === 'dca:' + p.state.turret)
-            )))
-      )
-        d.active = 0;
-      if (
-        !d.active &&
-        p?.state.boarding?.token !== token &&
-        p?.state.equipmentBoarding?.token !== token &&
-        !values(r.requests).some((q) => token === q.id + ':' + p?.id)
-      )
-        r.dossiers.delete(token);
-    }
     if (r.lab.enabled) r.dollars = LAB_FUNDS;
   }
   resetRoom(r, lab = r.lab) {
@@ -745,9 +710,6 @@ export class Game {
         state: initialState(),
         bedId: null,
       });
-    if (lab.enabled)
-      for (const card of Object.keys(BLUEPRINTS))
-        r.blueprintLevels[card] = Math.max(1, r.blueprintLevels[card] || 0);
   }
   setLabWave(r, wave) {
     requireGame(
@@ -784,8 +746,6 @@ export class Game {
       requireGame(!r.lab.enabled, 'Le mode debug est déjà actif.');
       r.lab.enabled = true;
       r.dollars = LAB_FUNDS;
-      for (const card of Object.keys(BLUEPRINTS))
-        r.blueprintLevels[card] = Math.max(1, r.blueprintLevels[card] || 0);
       if (!r.mission_started) this.setLabWave(r, 1);
       return;
     }
@@ -805,14 +765,10 @@ export class Game {
       id: uid(),
       wave: r.wave + 1,
       groups: forecast(r.upcomingPlan.roster),
-      cards: drawCards(r.blueprintLevels),
-      votes: {},
-      winner: null,
     };
   }
   startWave(r) {
     if (r.preparation?.wave !== r.wave + 1) this.prepareWave(r);
-    resolveVote(r, true);
     r.phase = 'combat';
     r.wave++;
     r.started = this.now();
@@ -868,7 +824,6 @@ export class Game {
       activePilots = this.live(r),
       pendingInstallations = Object.fromEntries(Object.keys(SHOP).map((item) => [item, 0])),
       purchases = [],
-      clauses = new Map(),
       arrived = [];
     for (const order of r.purchases.values())
       if (!order.placed) {
@@ -876,8 +831,6 @@ export class Game {
         const { token, item, owner, price } = order;
         purchases.push({ token, item, owner, price });
       }
-    for (const dossier of r.dossiers.values())
-      if (dossier.active && !clauses.has(dossier.pilot)) clauses.set(dossier.pilot, dossier.clause);
     const bodies = {
       purgatory: new Map(r.purgatory.bodies.map((b) => [b.id, b])),
       super: new Map(r.super.bodies.map((b) => [b.id, b])),
@@ -919,9 +872,6 @@ export class Game {
       mission_started: r.mission_started,
       next_wave_at: r.next_wave_at,
       preparation: r.preparation,
-      blueprints: Object.keys(r.blueprintLevels),
-      blueprintLevels: r.blueprintLevels,
-      activeBlueprints: r.activeBlueprints,
       groundNavigationActive:
         r.groundEnabled || r.groundDefense.structures.some((s) => s.kind !== 'fan'),
       dollars: r.dollars,
@@ -936,14 +886,13 @@ export class Game {
       purchases,
       initialStation: initialStation(),
       kills: valuesSet(r.kills),
-      pilots: activePilots.map((p) => ({ ...p, contractClause: clauses.get(p.id) || null })),
+      pilots: activePilots,
       vehicles: values(r.vehicles).map(
         ({ shots, updated, seats, contacts, contactPosition, contactWave, ...v }) => ({
           ...v,
           seats: [...seats].map(([seat, pilot]) => ({ vehicle: v.id, seat, pilot })),
         }),
       ),
-      dossiers: values(r.dossiers),
       seatRequests: values(r.requests),
       effects: r.effects.slice(-64),
       ordnance: r.ordnance,
@@ -965,43 +914,6 @@ export class Game {
       damage: [],
     });
   }
-  clause(r, p) {
-    return values(r.dossiers).find((d) => d.pilot === p.id && d.active)?.clause || null;
-  }
-  dossier(
-    r,
-    p,
-    target,
-    seat,
-    armed = true,
-    token = uid(),
-    position = Math.floor(Math.random() * 2),
-  ) {
-    const d = {
-      token,
-      room: r.code,
-      pilot: p.id,
-      target,
-      seat,
-      clause: drawClause(seat, armed),
-      position,
-      choice: null,
-      active: 0,
-    };
-    r.dossiers.set(token, d);
-    return d;
-  }
-  due(r, token, paper) {
-    const d = r.dossiers.get(token);
-    requireGame(
-      !d?.clause || d.choice || d.position > paper,
-      'Traitez le feuillet courant avant de continuer.',
-    );
-  }
-  activate(r, p, token) {
-    for (const d of r.dossiers.values())
-      if (d.pilot === p.id) d.active = +(d.token === token && d.choice === 'sign');
-  }
   assign(r, p, v, seat, token) {
     this.release(r, p);
     p.occupation++;
@@ -1020,7 +932,6 @@ export class Game {
       boarding: null,
       permits: [...new Set([...(p.state.permits || []), v.id])],
     };
-    this.activate(r, p, token);
   }
   kill(r, p, incarnation) {
     if (p.state.awaitingPurgatory) return;
@@ -1152,8 +1063,6 @@ export class Game {
           'enter-purgatory',
           'reset',
           'lab',
-          'wave-vote',
-          'wave-buy',
           'start',
           'leave',
           // A shell still in flight when its shooter dies keeps its effect.
@@ -1180,25 +1089,13 @@ export class Game {
     else if (path === 'pistol-trace') this.pistolTrace(r, p, b);
     else if (path === 'fixed-dca-fire') this.fixedDcaFire(r, p, b);
     else if (path === 'antitank-fire') this.antitankFire(r, p, b);
-    else if (path === 'wave-vote') {
-      const prep = r.preparation;
-      requireGame(prep && b.preparation === prep.id && !prep.winner, 'Ce vote est clos.');
-      requireGame(prep.cards.includes(b.card), 'Carte inconnue.');
-      prep.votes[p.id] = b.card;
-      resolveVote(r);
-    } else if (path === 'wave-buy') {
-      requireGame(b.epoch === r.base.epoch, 'Partie périmée.');
-      try {
-        purchaseBlueprint(r, b);
-      } catch (error) {
-        requireGame(false, error.message);
-      }
-    } else if (path === 'start') {
+    else if (path === 'start') {
       if (!r.mission_started && !b.preparation) {
         r.mission_started = 1;
         r.next_wave_at = this.now() + r.balance.initialDelay * 1000;
         this.prepareWave(r);
-      } else if (r.phase === 'prep' && r.preparation?.winner && b.preparation === r.preparation.id)
+      } else if (r.phase === 'prep' && r.preparation && b.preparation === r.preparation.id)
+        // Any player may launch the announced wave before the countdown ends.
         this.startWave(r);
     } else if (path === 'reset') {
       if (b.epoch !== undefined && b.epoch !== r.base.epoch) return this.snapshot(r, options);
@@ -1282,7 +1179,6 @@ export class Game {
       this.vehicle(r, p, path, b);
     else if (['equipment-select', 'equipment-sign', 'turret'].includes(path))
       this.equipment(r, p, path, b);
-    else if (path === 'dossier-choice') this.choice(r, p, b);
     else if (['seat-request', 'seat-sign', 'seat-reject'].includes(path)) this.seat(r, p, path, b);
     else if (path === 'aircraft-fire') return clone(this.fire(r, p, b));
     else if (path === 'heavy-impact') this.heavyImpact(r, p, b);
@@ -1385,16 +1281,12 @@ export class Game {
         [w.x, w.z],
         r.dollars,
         this.now(),
-        { castor, blueprintLevels: r.blueprintLevels },
+        { castor },
       );
     } catch (error) {
       requireGame(false, error.message, 400);
     }
     r.dollars = money(r.dollars - transaction.price);
-    if (b.action === 'build')
-      for (const structure of r.groundDefense.structures)
-        if (transaction.ids.includes(structure.id) && equipPurchased(r, structure))
-          r.groundDefense.revision++;
     if (b.action === 'build' && isFortification(b.kind)) {
       const structure = r.groundDefense.structures.find((s) => s.id === transaction.ids[0]);
       structure.slot = r.equipment.length;
@@ -1451,10 +1343,7 @@ export class Game {
     if (r.fixedDcaShots.has(key)) return;
     requireGame(gun.ammo >= 1, 'Cette arme est à court de munitions.');
     const interval =
-      ((FORTIFICATIONS[gun.kind]?.interval ?? FLAK.interval) *
-        1000 *
-        clauseFactors(this.clause(r, p)).interval) /
-      (r.balance.fireRate || 1);
+      ((FORTIFICATIONS[gun.kind]?.interval ?? FLAK.interval) * 1000) / (r.balance.fireRate || 1);
     requireGame(
       this.now() >= (gun.lastShotAt ?? -Infinity) + interval,
       'Cette arme recharge son canon.',
@@ -1496,12 +1385,10 @@ export class Game {
       400,
     );
     requireGame(gun.ammo >= 1, 'Ce canon est à court d’obus.');
-    const profile = HEAVY.antitank,
-      factors = clauseFactors(this.clause(r, p));
+    const profile = HEAVY.antitank;
     requireGame(
       this.now() + HEAVY_CADENCE_TOLERANCE_MS >=
-        (gun.lastShotAt ?? -Infinity) +
-          (profile.interval * 1000 * factors.interval) / (r.balance.fireRate || 1),
+        (gun.lastShotAt ?? -Infinity) + (profile.interval * 1000) / (r.balance.fireRate || 1),
       'Ce canon recharge.',
     );
     requireGame(
@@ -1527,7 +1414,7 @@ export class Game {
       updated: this.now(),
       wave: r.wave,
       radiusFactor: 1,
-      bonus: factors.damage * r.balance.damage,
+      bonus: r.balance.damage,
     });
   }
   pistolImpact(r, p, shot) {
@@ -1952,9 +1839,8 @@ export class Game {
     requireGame(!v.seats.has(seat), 'Ce poste est occupé.');
     if (path === 'vehicle-select') {
       if (p.state.boarding?.vehicle === v.id && p.state.boarding.seat === seat) return;
-      const d = this.dossier(r, p, v.id, seat, true);
       p.state.equipmentBoarding = null;
-      p.state.boarding = { vehicle: v.id, seat, token: d.token };
+      p.state.boarding = { vehicle: v.id, seat, token: uid() };
       p.board_paper = 0;
       return;
     }
@@ -1963,7 +1849,6 @@ export class Game {
       p.state.boarding?.vehicle === v.id && p.state.boarding.seat === seat,
       'Choisissez cet appareil avant de signer.',
     );
-    this.due(r, p.state.boarding.token, p.board_paper);
     requireGame(b.form === p.board_paper + 1 && b.form <= 2, 'Signez les documents dans l’ordre.');
     if (b.form === 2) this.assign(r, p, v, seat, p.state.boarding.token);
     else p.board_paper = 1;
@@ -1999,9 +1884,8 @@ export class Game {
     );
     if (path === 'equipment-select') {
       if (p.state.equipmentBoarding?.station === b.station) return;
-      const d = this.dossier(r, p, 'dca:' + b.station, 'dca');
       p.state.boarding = null;
-      p.state.equipmentBoarding = { station: b.station, paper: 0, token: d.token };
+      p.state.equipmentBoarding = { station: b.station, paper: 0, token: uid() };
       return;
     }
     const current = p.state.equipmentBoarding;
@@ -2013,7 +1897,6 @@ export class Game {
         b.form <= 2,
       'Signez le dossier dans l’ordre.',
     );
-    this.due(r, current.token, current.paper);
     if (b.form === 1) {
       current.paper = 1;
       return;
@@ -2022,7 +1905,6 @@ export class Game {
       !this.live(r).some((x) => x.mode === 'turret' && x.state.turret === b.station),
       'Cette défense est déjà occupée.',
     );
-    this.activate(r, p, current.token);
     p.mode = 'turret';
     Object.assign(p.state, {
       equipmentBoarding: null,
@@ -2030,33 +1912,6 @@ export class Game {
       turretDirection: [0, 0.3, -1],
       fire: false,
     });
-  }
-  choice(r, p, b) {
-    const current = p.state.equipmentBoarding || p.state.boarding;
-    const transfer = values(r.requests).find(
-      (q) =>
-        b.token === q.id + ':' + p.id &&
-        ((q.requester === p.id && q.status === 'signing') ||
-          (q.recipient === p.id && q.status === 'offered')),
-    );
-    requireGame(
-      p.life === 'alive' &&
-        ['sign', 'tear'].includes(b.choice) &&
-        (transfer || (p.mode === 'foot' && current?.token === b.token)),
-      'Ce dossier n’est plus ouvert.',
-    );
-    const d = r.dossiers.get(b.token),
-      paper = transfer ? 0 : p.state.equipmentBoarding ? current.paper : p.board_paper;
-    requireGame(
-      d?.pilot === p.id && d.clause && d.position <= paper,
-      'Traitez les documents dans l’ordre.',
-    );
-    requireGame(!d.choice || d.choice === b.choice, 'Ce feuillet a déjà été traité.');
-    requireGame(
-      b.choice !== 'sign' || signature(b.signature),
-      'Signez ce feuillet ou déchirez-le.',
-    );
-    d.choice = b.choice;
   }
   seat(r, p, path, b) {
     if (path === 'seat-request') {
@@ -2081,9 +1936,6 @@ export class Game {
         status: 'signing',
       };
       r.requests.set(q.id, q);
-      this.dossier(r, p, v.id, b.seat, true, q.id + ':' + p.id, 0);
-      if (q.recipient)
-        this.dossier(r, r.pilots.get(q.recipient), v.id, p.seat, true, q.id + ':' + q.recipient, 0);
       return;
     }
     const q = r.requests.get(b.request);
@@ -2095,7 +1947,6 @@ export class Game {
       q.status = 'cancelled';
       return;
     }
-    this.due(r, q.id + ':' + p.id, 0);
     requireGame(signature(b.signature), 'Signez le contrat de transfert.');
     requireGame(
       p.id === (q.status === 'signing' ? q.requester : q.recipient),
@@ -2151,16 +2002,10 @@ export class Game {
       weapon === 'he' || weapon === 'ap' ? availableShell(v.supplies.ammo, weapon) : weapon;
     requireGame(selected && v.supplies.ammo[selected] >= 1, 'Réserve vide.');
     const lane = selected === 'bomb' ? 'bomb' : 'cannon';
-    const factors = clauseFactors(this.clause(r, p));
     v.lastHeavy ??= {};
     requireGame(
       this.now() + HEAVY_CADENCE_TOLERANCE_MS >=
-        (v.lastHeavy[lane] ?? -Infinity) +
-          (HEAVY[selected].interval / r.balance.fireRate) *
-            1000 *
-            (['proximity', 'rocket'].includes(selected)
-              ? Math.max(1, factors.interval)
-              : factors.interval),
+        (v.lastHeavy[lane] ?? -Infinity) + (HEAVY[selected].interval / r.balance.fireRate) * 1000,
       'Arme en recharge.',
     );
     requireGame(
@@ -2201,7 +2046,7 @@ export class Game {
         wave: r.wave,
       }),
     );
-    r.ordnance.at(-1).bonus *= factors.damage * r.balance.damage;
+    r.ordnance.at(-1).bonus *= r.balance.damage;
   }
   // Heavy weapons are simulated by their shooter (src/heavy-sim.js): the room
   // keeps each launch (origin, velocity, time) for the other players' display
@@ -2450,9 +2295,7 @@ export class Game {
         ? 10
         : p.mode === 'turret'
           ? Math.max(0, Math.min(200, Math.round(Number(b.amount) || 80)))
-          : (tankDamage ?? 75)) *
-      (p.mode === 'foot' ? 1 : clauseFactors(this.clause(r, p)).damage) *
-      r.balance.damage;
+          : (tankDamage ?? 75)) * r.balance.damage;
     if (b.vehicle) {
       const v = r.vehicles.get(b.vehicle);
       requireGame(world(p) === 'office' && v, 'Appareil hors de cet espace.');

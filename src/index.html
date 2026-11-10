@@ -2306,8 +2306,7 @@
         gap: 8px;
         overflow-x: auto;
       }
-      #waveTimeline div,
-      #waveCards button {
+      #waveTimeline div {
         display: grid;
         gap: 4px;
         padding: 8px;
@@ -2316,37 +2315,6 @@
       #waveTimeline span {
         white-space: nowrap;
         font-size: 12px;
-      }
-      #waveCards {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(135px, 1fr));
-        gap: 8px;
-        margin: 12px 0;
-      }
-      #waveCards button {
-        text-align: left;
-        color: #edf4e8;
-        background: #25493e;
-      }
-      #waveCards button[aria-pressed='true'] {
-        border-color: #d7ef91;
-      }
-      #waveCards button:disabled {
-        opacity: 0.85;
-        cursor: default;
-      }
-      #waveCards small {
-        color: #d7ef91;
-      }
-      #waveWorkshop > div {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        flex-wrap: wrap;
-        margin: 6px 0;
-      }
-      #waveWorkshop select {
-        max-width: 100%;
       }
       #waveCouncil [hidden],
       #waveCouncilOpen[hidden] {
@@ -2392,12 +2360,10 @@
     <div id="sceneLabel"><span>Zone de départ</span><strong>Base Alpha / Bureau 01</strong></div>
     <dialog id="waveCouncil" aria-labelledby="waveCouncilTitle">
       <button id="waveCouncilClose">Replier</button>
-      <h2 id="waveCouncilTitle">Conseil de vague</h2>
+      <h2 id="waveCouncilTitle">Prochaine vague</h2>
       <p id="waveCouncilClock"></p>
       <div id="waveTimeline" aria-label="Frise des entrées prévues"></div>
-      <div id="waveCards" aria-label="Plans proposés au vote"></div>
       <button id="waveCouncilLaunch" hidden>Lancer la vague maintenant</button>
-      <section id="waveWorkshop" aria-label="Plans débloqués"></section>
     </dialog>
     <div id="hud" class="hidden">
       <span id="net">CONNEXION…</span>
@@ -2411,7 +2377,7 @@
           </div>
           <div class="stat"><label>Infestation</label><b class="lime" id="infest">0 / 20</b></div>
         </div>
-        <button id="waveCouncilOpen" hidden aria-haspopup="dialog" title="Conseil de vague (V)">
+        <button id="waveCouncilOpen" hidden aria-haspopup="dialog" title="Prochaine vague (V)">
           Préparer la vague
         </button>
         <div id="economyControls">

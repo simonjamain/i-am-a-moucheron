@@ -563,6 +563,9 @@ concurrence, erreur réseau et réouverture sans doublon ni retour du tampon dou
 
 ### CON-02 — Feuillets malicieux et effets réels
 
+> **Retiré en version 264** à la demande de l’utilisateur : plus aucune annexe
+> malicieuse ni effet de clause. Spécification conservée pour l’historique.
+
 **5 % des dossiers d’accès aux équipements** contiennent **au maximum un feuillet
 malicieux supplémentaire**, glissé parmi les documents classiques. Les autres
 dossiers restent normaux. Cette probabilité est **par dossier**, pas par document.
@@ -2336,6 +2339,7 @@ avant/après. **En cours, validation bloquée** : pas de Chromium/WebGL de mesur
 disponible ici. Ne pas accepter/fusionner tant que les comparaisons visuelles et
 la non-régression mesurée n’ont pas été vérifiées. Référence :
 [ombres](docs/shadow-visibility.md), [reprise](docs/tasks/issue-11-shadows.md).
+
 ## Issues #15, #16 et #17 — livraison groupée
 
 - #15 : descente affichée en continu sur le même temps absolu que le serveur ;

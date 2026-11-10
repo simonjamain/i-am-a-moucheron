@@ -16,7 +16,6 @@ import {
   vehicleHue,
   installationCount,
 } from '../src/logistics.js';
-import { drawClause, clauseFactors, maliciousDocument } from '../src/malice.js';
 import { shopPrice } from '../src/equipment.js';
 import { createGraphics } from '../src/graphics.js';
 import { paintVehicle, updateInscriptions } from '../src/vehicle-livery.js';
@@ -30,7 +29,8 @@ const tearSource = clientSource.slice(
     clientSource.indexOf("$('paperTear').onclick = async () => {"),
   ),
 );
-async function exerciseTear(annex, fail = false) {
+// Tearing an ordinary document is local: a fresh copy, no server request.
+async function exerciseTear() {
   const elements = new Map();
   const $ = (id) => {
     if (!elements.has(id)) {
@@ -54,7 +54,6 @@ async function exerciseTear(annex, fail = false) {
     $,
     boardingBusy: false,
     soulBusy: false,
-    pendingAnnex: () => annex,
     clearSignature: () => clears++,
     replacementCounter: 0,
     paperContext: 'old',
@@ -62,7 +61,6 @@ async function exerciseTear(annex, fail = false) {
     setTimeout: (cb) => queueMicrotask(cb),
     api: async () => {
       requests++;
-      if (fail) throw Error('Réseau interrompu');
       return { ok: true };
     },
     accept: () => accepts++,
@@ -79,14 +77,12 @@ async function exerciseTear(annex, fail = false) {
   assert.equal(context.boardingBusy, false);
   assert.equal(clears, 1);
   assert.equal($('papers').classList.contains('tearing'), false);
-  assert.equal(requests, annex ? 1 : 0);
-  assert.equal(accepts, annex && !fail ? 1 : 0);
-  assert.equal(context.replacementCounter, fail ? 0 : 1);
-  assert.ok($('paperMessage').textContent.includes(fail ? 'Réseau interrompu' : 'déchiré'));
+  assert.equal(requests, 0);
+  assert.equal(accepts, 0);
+  assert.equal(context.replacementCounter, 1);
+  assert.ok($('paperMessage').textContent.includes('déchiré'));
 }
-await exerciseTear(null);
-await exerciseTear({ token: 'annex' });
-await exerciseTear({ token: 'annex' }, true);
+await exerciseTear();
 const DB = localDB();
 let now = Date.now();
 const realNow = Date.now;
@@ -100,26 +96,6 @@ async function api(path, data, status = 200) {
   assert.equal(r.status, status, JSON.stringify(b));
   return b;
 }
-// Exhaustively sample the probability interval rather than asserting a flaky random frequency.
-let count = 0;
-for (let i = 0; i < 10000; i++) {
-  let n = 0;
-  const c = drawClause('dorsal', true, () => (n++ === 0 ? (i + 0.5) / 10000 : 0.5));
-  if (c) {
-    count++;
-    assert.ok(['aim', 'damage', 'cadence'].includes(c));
-  }
-}
-assert.equal(count, 500);
-for (let i = 0; i < 100; i++)
-  assert.equal(
-    drawClause('pilot', false, () => 0.01),
-    'inverse',
-  );
-assert.deepEqual(clauseFactors('damage'), { controls: 1, aim: 1, damage: 0.5, interval: 1 });
-assert.equal(clauseFactors('cadence').interval, 2);
-assert.equal(clauseFactors('inverse').controls, -1);
-assert.equal(clauseFactors('aim').aim, -1);
 for (const type of Object.keys(VEHICLES)) {
   const ammo = fullAmmo(type),
     state = { p: [0, 1, 0], v: [0, 0, -0.1], landed: false, hp: 100, engine: 1, gas: 1 };
@@ -252,21 +228,8 @@ async function ground(player, world) {
 }
 let g = await ground(a, vehicleEntry(vehicle));
 snap = await api('vehicle-select', { id: a.id, vehicle: vehicle.id, seat: 'pilot', ground: g });
-let dossier = snap.dossiers.find((d) => d.pilot === a.id);
-assert.ok(dossier.clause);
-const token = dossier.token;
-const reopened = await api('vehicle-select', {
-  id: a.id,
-  vehicle: vehicle.id,
-  seat: 'pilot',
-  ground: g,
-});
-assert.equal(reopened.dossiers.find((d) => d.pilot === a.id).token, token);
-assert.deepEqual(maliciousDocument(dossier), maliciousDocument(dossier));
-// Put annex between the two mandatory documents; neither refusal nor extra signature grants access.
-await DB.prepare("UPDATE access_dossiers SET position=1,clause='damage' WHERE token=?")
-  .bind(token)
-  .run();
+// Malicious annexes were removed: the boarding dossier never carries a clause.
+assert.equal(snap.dossiers.find((d) => d.pilot === a.id)?.clause ?? null, null);
 snap = await api('vehicle-sign', {
   id: a.id,
   vehicle: vehicle.id,
@@ -276,20 +239,6 @@ snap = await api('vehicle-sign', {
   ground: g,
 });
 assert.equal(snap.pilots.find((p) => p.id === a.id).board_paper, 1);
-await api(
-  'vehicle-sign',
-  { id: a.id, vehicle: vehicle.id, seat: 'pilot', form: 2, signature: true, ground: g },
-  409,
-);
-const outcomes = await Promise.allSettled([
-  api('dossier-choice', { id: a.id, token, choice: 'sign', signature: true }),
-  api('dossier-choice', { id: a.id, token, choice: 'tear' }),
-]);
-assert.equal(outcomes.filter((o) => o.status === 'fulfilled').length, 1);
-const choice = (
-  await DB.prepare('SELECT choice FROM access_dossiers WHERE token=?').bind(token).first()
-).choice;
-await api('dossier-choice', { id: a.id, token, choice, signature: true });
 snap = await api('vehicle-sign', {
   id: a.id,
   vehicle: vehicle.id,
@@ -299,10 +248,6 @@ snap = await api('vehicle-sign', {
   ground: g,
 });
 assert.equal(snap.pilots.find((p) => p.id === a.id).mode, 'flight');
-assert.equal(
-  snap.pilots.find((p) => p.id === a.id).contractClause,
-  choice === 'sign' ? 'damage' : null,
-);
 const fuel = snap.vehicles.find((v) => v.id === vehicle.id).supplies;
 assert.equal(fuel.fuel, 300);
 assert.equal(fuel.ammo.pilot, 1000);
@@ -401,7 +346,6 @@ resources = snap.vehicles.find((v) => v.id === vehicle.id).supplies;
 assert.equal(resources.fuel, 300);
 assert.equal(resources.ammo.pilot, 1000);
 snap = await api('vehicle-exit', { id: a.id, state });
-assert.equal(snap.pilots.find((p) => p.id === a.id).contractClause, null);
 assert.equal(snap.vehicles.find((v) => v.id === vehicle.id).supplies.ammo.pilot, 1000);
 // New installations use independent price curves and the same transaction guards.
 await DB.prepare("UPDATE rooms SET dollars=100 WHERE code='LOGISTICS'").run();
@@ -456,14 +400,9 @@ await api(
 const d = await api('join', { code: 'LOGISTICS', name: 'D' }),
   e = await api('join', { code: 'LOGISTICS', name: 'E' });
 const bomber = snap.vehicles.find((v) => v.type === 'bomber');
-async function boardWithClause(player, seat, clause, choice = 'sign') {
+async function boardBomber(player, seat) {
   const report = await ground(player, vehicleEntry(bomber));
-  let s = await api('vehicle-select', { id: player.id, vehicle: bomber.id, seat, ground: report });
-  const dossier = s.dossiers.find((d) => d.pilot === player.id);
-  await DB.prepare('UPDATE access_dossiers SET clause=?,position=0 WHERE token=?')
-    .bind(clause, dossier.token)
-    .run();
-  await api('dossier-choice', { id: player.id, token: dossier.token, choice, signature: true });
+  await api('vehicle-select', { id: player.id, vehicle: bomber.id, seat, ground: report });
   await api('vehicle-sign', {
     id: player.id,
     vehicle: bomber.id,
@@ -481,14 +420,12 @@ async function boardWithClause(player, seat, clause, choice = 'sign') {
     signature: true,
   });
 }
-await boardWithClause(d, 'dorsal', 'damage');
-snap = await boardWithClause(e, 'tail', 'aim', 'tear');
-assert.equal(snap.pilots.find((p) => p.id === d.id).contractClause, 'damage');
-assert.equal(snap.pilots.find((p) => p.id === e.id).contractClause, null);
-// Other seats' weapon damage remains 75; the accepted seat deals exactly 37.5.
-await api('friendly-hit', { id: d.id, target: c.id, shot: 'half-damage' });
+await boardBomber(d, 'dorsal');
+snap = await boardBomber(e, 'tail');
+// Every gunner's weapon deals its full 75 damage (no contract clause).
+await api('friendly-hit', { id: d.id, target: c.id, shot: 'full-damage-d' });
 let health = (await DB.prepare('SELECT health FROM pilots WHERE id=?').bind(c.id).first()).health;
-assert.equal(health, 62.5);
+assert.equal(health, 25);
 await api('friendly-hit', { id: e.id, target: d.id, shot: 'full-damage' });
 assert.equal(
   (await DB.prepare('SELECT health FROM pilots WHERE id=?').bind(d.id).first()).health,
@@ -513,12 +450,10 @@ await api(
   { id: e.id, vehicle: bomber.id, seat: 'dorsal', shot: 'wrong-seat' },
   409,
 );
-// Free-seat transfer removes the previous occupant's effect, without refilling either stock.
+// Free-seat transfer refills neither stock.
 snap = await api('seat-request', { id: d.id, seat: 'pilot' });
 const transfer = snap.seatRequests.find((r) => r.requester === d.id);
-await api('dossier-choice', { id: d.id, token: transfer.id + ':' + d.id, choice: 'tear' });
 snap = await api('seat-sign', { id: d.id, request: transfer.id, signature: true });
-assert.equal(snap.pilots.find((p) => p.id === d.id).contractClause, null);
 assert.equal(snap.vehicles.find((v) => v.id === bomber.id).supplies.ammo.dorsal, 0);
 // Two aircraft share a service area, never its filling rate.
 const service = snap.initialStation;
@@ -546,5 +481,5 @@ snap = await api('sync', { id: e.id, state: e.state });
 assert.ok(snap.vehicles.filter((v) => v.supplies.fuel === 300).length >= 2);
 Date.now = realNow;
 console.log(
-  'PASS: golden-angle paint/hull inscriptions, fixed optional dossiers, refusal/sign races, exclusive effects, timed shared fuel/ammo, projectile deduplication, refuel eligibility/parallel filling, independent purchases and spherical radar coverage.',
+  'PASS: golden-angle paint/hull inscriptions, dossiers without annexes, full weapon damage, timed shared fuel/ammo, projectile deduplication, refuel eligibility/parallel filling, independent purchases and spherical radar coverage.',
 );

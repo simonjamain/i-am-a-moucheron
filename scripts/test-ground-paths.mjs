@@ -105,10 +105,7 @@ const s3 = floor(built[2].points);
 const bunkerAt = [(s3[0][0] + s3[1][0]) / 2, (s3[0][1] + s3[1][1]) / 2];
 const bunker = { action: 'build', kind: 'bunker', a: bunkerAt };
 const bunkerDraft = predictedGroundPaths({ groups, walls: defense.structures, command: bunker });
-groundCommand(defense, bunker, bunker.a, 100, Date.now(), {
-  castor: true,
-  blueprintLevels: { bunker: 1 },
-});
+groundCommand(defense, bunker, bunker.a, 100, Date.now(), { castor: true });
 const fortified = assertWalkedEqualsForecast(defense.structures, 'bunker');
 assert.deepEqual(bunkerDraft, fortified, 'bunker draft preview equals the confirmed path');
 assert.notDeepEqual(fortified[2].points, built[2].points, 'bunkers block forecasts too');

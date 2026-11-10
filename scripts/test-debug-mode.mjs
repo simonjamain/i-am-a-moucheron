@@ -4,7 +4,6 @@
 import assert from 'node:assert/strict';
 import { readFileSync, existsSync } from 'node:fs';
 import { Game } from '../server/game.js';
-import { BLUEPRINTS } from '../src/wave-blueprints.js';
 import { DEFAULT_BALANCE } from '../src/balance.js';
 
 let now = 500000;
@@ -42,7 +41,6 @@ send(b.id, 'lab', { epoch: r.base.epoch, action: 'enable' });
 let seen = sync(a.id);
 assert.equal(seen.lab.enabled, true);
 assert.ok(seen.dollars >= 1e9, 'unlimited money');
-for (const card of Object.keys(BLUEPRINTS)) assert.ok(seen.blueprintLevels[card] >= 1, card);
 assert.throws(() => send(a.id, 'lab', { epoch: r.base.epoch, action: 'enable' }), /déjà actif/);
 
 // No fall damage, even a fatal-speed landing.
@@ -63,9 +61,9 @@ assert.match(
   client,
   /s\.lab\?\.enabled\s*\?\s*20 - \(s\.infestation \+ s\.leaked\) \+ ' \/ 20 PV'/,
 );
-// Money stays unlimited across wave transitions and purchases.
-r.blueprintLevels.lure = 3;
-send(a.id, 'wave-buy', { epoch: r.base.epoch, blueprint: 'lure', level: 1 });
+// Money stays unlimited: whatever is spent is refilled on the next tick.
+r.dollars -= 500;
+send(a.id, 'sync', { state: r.pilots.get(a.id).state, mode: 'foot' });
 assert.ok(sync(b.id).dollars >= 1e9);
 
 // Switching off restores normal rules without leftovers in the economy.
@@ -73,8 +71,6 @@ send(a.id, 'lab', { epoch: r.base.epoch, action: 'exit' });
 seen = sync(b.id);
 assert.equal(seen.lab, undefined);
 assert.equal(seen.dollars, DEFAULT_BALANCE.startingMoney);
-assert.deepEqual(seen.blueprintLevels, {});
-assert.deepEqual(seen.activeBlueprints, {});
 assert.equal(seen.infestation, 0);
 assert.equal(seen.wave, 0);
 fall(b.id, 100, 'normal-2');
@@ -86,5 +82,5 @@ r.infestation = 20;
 for (let i = 0; i < game.plan(r).roster.length; i++) r.kills.add(i);
 assert.equal(sync(a.id).phase, 'lost');
 console.log(
-  'Debug mode: one room switch, tools removed, ∞ money, plans, no fall damage, no defeat, clean exit.',
+  'Debug mode: one room switch, tools removed, ∞ money, no fall damage, no defeat, clean exit.',
 );

@@ -123,7 +123,7 @@ expiry and the existing flight, collision, network, document and combat flows.
 
 ## Extensions aux dossiers et installations
 
-Les déchirures, annexes, dégâts fractionnaires, prix indépendants des installations
+Les déchirures, prix indépendants des installations
 et réserves des avions sont détaillés dans [logistique et contrats](logistics-contracts.md).
 La DCA conserve ses deux signatures obligatoires et ses munitions illimitées.
 La station gratuite d’Alpha ne fournit pas de DCA gratuite.

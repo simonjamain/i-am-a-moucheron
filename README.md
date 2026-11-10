@@ -92,7 +92,7 @@ La courbe des vagues, récompenses et achats est décrite dans
 Les [retours de partie](docs/party-feedback.md) et le
 [diagnostic du pistolet](docs/pistol-diagnosis.md) complètent les références actuelles.
 
-L’identification des appareils, les annexes et les réserves partagées sont décrites
+L’identification des appareils, les dossiers et les réserves partagées sont décrites
 dans [logistique et contrats](docs/logistics-contracts.md).
 
 Le lot [pilotage, véhicules et banque](docs/vehicles-bank.md) décrit Stuka, tank,
@@ -144,7 +144,7 @@ sont retirés : les règles sont fixes et un seul interrupteur de mode debug les
 
 Le [bestiaire et ses vitesses physiques](docs/enemy-bestiary.md#vitesse-physique-dans-la-pièce) spécifient des mètres de la pièce par seconde, indépendants de la taille des modèles et de l'effectif des nuées.
 
-Le [mode debug par room](docs/laboratory.md) (interrupteur **Debug : OFF / ON**) donne argent illimité, plans débloqués, aucun dégât de chute et défaite impossible, sans panneau d'outils.
+Le [mode debug par room](docs/laboratory.md) (interrupteur **Debug : OFF / ON**) donne argent illimité, aucun dégât de chute et défaite impossible, sans panneau d'outils.
 
 Le [bombardier B3](docs/b3-model.md) accueille quatre joueurs et conserve son camouflage texturé.
 Les [sept véhicules Meshy](docs/meshy-fleet.md) gardent les couleurs de leur modèle
