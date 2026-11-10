@@ -6,6 +6,11 @@ selon le véhicule ; une pastille flottante porte la couleur d'identification.
 
 ## Provenance et conversion
 
+Depuis la version 266, le M1 utilise le modèle refait par l'utilisateur (2 376
+triangles, aile haute et hélice articulées, deux mitrailleuses de nez) : voir
+[le remodelage de la flotte](meshy-fleet.md#remodelage-de-la-flotte-version-263).
+L'historique ci-dessous décrit la version précédente.
+
 - Génération Meshy : `01a1a800-d23f-700f-a4c7-6f5cff0ed1fc`.
 - GLB d'origine : 27 707 triangles, 4 035 492 octets.
 - SHA-256 : `f576a15791f513c5af145556f9c499d4a2ae64b4c4d4fc16f75e4b8077ce66c6`.

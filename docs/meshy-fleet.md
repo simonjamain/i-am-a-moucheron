@@ -3,7 +3,8 @@
 Depuis la version 263, le Spitfire S6, le T3, le D2, le H2 et le B3 utilisent les
 modèles refaits par l'utilisateur, articulés pièce par pièce : voir
 [le remodelage de la flotte](#remodelage-de-la-flotte-version-263). Les sections
-suivantes décrivent la première génération, que seul le Stuka utilise encore.
+suivantes décrivent la première génération, remplacée partout : le M1 et le
+Stuka suivent depuis la version 266.
 
 Les quatre véhicules utilisent le maillage et les véritables UV des GLB Meshy.
 Leur atlas JPEG de 1 024 pixels est intégré dans les modules du jeu ; la texture
@@ -77,15 +78,17 @@ Une compilation et un test sans GPU ne constituent pas cet essai.
 L'utilisateur a refait cinq véhicules dans Meshy. Chaque GLB est **un seul
 maillage** texturé dont chaque pièce mobile est un **îlot séparé** :
 
-| Véhicule      | GLB fourni (SHA-256)                                                                                  | Triangles | Îlots |
-| ------------- | ----------------------------------------------------------------------------------------------------- | --------: | ----: |
-| Spitfire S6   | `Meshy_AI_Vintage_Fighter_Plane` (`b18e5558feef75463354dee45037b11ed640a4de6f9f0c71cd6e9dbf484026c4`) |     3 002 |    22 |
-| Tank T3       | `Meshy_AI_Desert_Vanguard` (`fb105cc19eefd50573c25ca9eaa233bf15eb4898d04f34cbaa736b618da186e9`)       |     3 833 |   154 |
-| DCA mobile D2 | `Meshy_AI_Towable_Anti_Aircraft` (`3861d4bf21e75d0ca9a7864b40f98189847b0fdcffdf6de5daf1127f71da18ed`) |     4 689 |   150 |
-| H2            | `Meshy_AI_Desert_Viper_Helicopt` (`488832fc140c16321dc54d07addd088ea16e2f3b042f568fa910ec1ee1206a9a`) |     5 102 |    66 |
-| B3            | `Meshy_AI_Desert_Sky_Fortress` (`a50363b85c21e407839651d5b478bf8900bb340debec3e86cdc68b94b8284307`)   |     5 797 |    45 |
+| Véhicule       | GLB fourni (SHA-256)                                                                                  | Triangles | Îlots |
+| -------------- | ----------------------------------------------------------------------------------------------------- | --------: | ----: |
+| Spitfire S6    | `Meshy_AI_Vintage_Fighter_Plane` (`b18e5558feef75463354dee45037b11ed640a4de6f9f0c71cd6e9dbf484026c4`) |     3 002 |    22 |
+| Tank T3        | `Meshy_AI_Desert_Vanguard` (`fb105cc19eefd50573c25ca9eaa233bf15eb4898d04f34cbaa736b618da186e9`)       |     3 833 |   154 |
+| DCA mobile D2  | `Meshy_AI_Towable_Anti_Aircraft` (`3861d4bf21e75d0ca9a7864b40f98189847b0fdcffdf6de5daf1127f71da18ed`) |     4 689 |   150 |
+| H2             | `Meshy_AI_Desert_Viper_Helicopt` (`488832fc140c16321dc54d07addd088ea16e2f3b042f568fa910ec1ee1206a9a`) |     5 102 |    66 |
+| B3             | `Meshy_AI_Desert_Sky_Fortress` (`a50363b85c21e407839651d5b478bf8900bb340debec3e86cdc68b94b8284307`)   |     5 797 |    45 |
+| M1 (v. 266)    | `Meshy_AI_Olive_Scout_Plane` (`7d9ab847ae7086af717f5fc81841c08635104fe3da44236e45fd0b352f1916b0`)     |     2 376 |    18 |
+| Stuka (v. 266) | `Meshy_AI_Desert_Sparrow` (`6290811f303ac480f3b286dd62ee73d6293fa542d824987b378262e5c8ec9ade`)        |     3 261 |    40 |
 
-`python3 scripts/import-meshy-vehicle.py spitfire|tank|flaktruck|helicopter|bomber SOURCE.glb`
+`python3 scripts/import-meshy-vehicle.py spitfire|tank|flaktruck|helicopter|bomber|fighter|interceptor SOURCE.glb`
 soude les sommets (sans tenir compte des coutures UV) pour retrouver les îlots, puis
 range chacun dans un nœud articulé selon une spécification par véhicule (zones,
 pivots, sens des canons). Tous les triangles et UV d'origine sont conservés ; seule
@@ -113,6 +116,12 @@ sont stockés alignés sur −Z, ce qu'attend `aimGun`, et leurs bouches
 - **H2** : rotor à cinq pales (Y), rotor de queue (X), canon de nez du copilote.
 - **B3** : deux hélices, ailes, tourelles dorsale, de queue (tournée vers l'arrière
   au repos) et ventrale (vers le bas), dans l'ordre des postes.
+- **M1** (version 266) : hélice, aile haute découpée de la coque avec ses haubans,
+  deux mitrailleuses de nez sculptées comme bouches ; envergure 5,6 conservée.
+- **Stuka** (version 266) : hélice, ailes en mouette (îlots séparés), bombe ventrale
+  dans la coque ; deux bouches au bord d'attaque à 40 % de l'envergure (pas de
+  canon sculpté) ; envergure 7,7 conservée. Les anciennes bombes décoratives sous
+  les ailes sont retirées. `src/meshy-fleet.js` (coques statiques) est supprimé.
 
 L'importeur écrit aussi `src/vehicle-anchors.js`, partagé par le client et le
 serveur, pour que la physique suive le modèle : pivot et longueur du canon du T3
