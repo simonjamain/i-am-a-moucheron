@@ -63,9 +63,10 @@ assert.ok(stepFlight(T, slow, 1 / 120).authority < 0.3);
 const stalled = state();
 stalled.vel.set(0, -15, -10);
 assert.ok(stepFlight(T, stalled, 1 / 120).stall < 0.3);
+// Damage never degrades flight: a hurt aircraft handles like a healthy one.
 const damaged = state();
 damaged.wing = 0;
-assert.ok(stepFlight(T, damaged, 1 / 120).authority < 0.6);
+assert.equal(stepFlight(T, damaged, 1 / 120).authority, stepFlight(T, state(), 1 / 120).authority);
 const barrel = state();
 barrel.roll = 1;
 barrel.pitch = 0.4;
