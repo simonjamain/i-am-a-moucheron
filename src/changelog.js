@@ -1,6 +1,13 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 263,
+    changes: [
+      'Nouveaux modèles pour le Spitfire, le char, la DCA mobile, l’hélicoptère et le bombardier.',
+      'Leurs tourelles, canons, hélices, rotors et la remorque de la DCA bougent pour de vrai, et les tirs partent du bout des canons.',
+    ],
+  },
+  {
     version: 262,
     changes: [
       'Le Castor a un tout nouveau look : six roues, tourelle sur le toit et caisses de ravitaillement.',

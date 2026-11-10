@@ -1,6 +1,7 @@
 import { segmentBox } from './swept-geometry.js';
 import { MAP, ACTOR_UNIT } from './scale.js';
 import { OFFICE_LAYOUT } from './layout.js';
+import { VEHICLE_ANCHORS } from './vehicle-anchors.js';
 export const HELI = Object.freeze({
   gunInterval: 1 / 15,
   gunDamage: 75,
@@ -43,7 +44,9 @@ export function rotateLocal(q, [x, y, z]) {
   ];
 }
 export function heliWeaponOrigin(vehicle, weapon, side = 1) {
-  const local = weapon === 'rocket' ? [side * 2.15, -0.3, -1.4] : [side * 1.15, -0.65, -1.8];
+  // Front of the H2's rocket pods and missile rails, mirrored for side -1.
+  const [x, y, z] = VEHICLE_ANCHORS.helicopter[weapon === 'rocket' ? 'rocket' : 'missile'];
+  const local = [side * x, y, z];
   const offset = rotateLocal(
     vehicle.state.q,
     local.map((v) => v * ACTOR_UNIT),

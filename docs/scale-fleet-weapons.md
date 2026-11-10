@@ -108,5 +108,6 @@ Les distances et vitesses de simulation restent inchangées. Depuis la version 2
 Le [B3 à quatre places](b3-model.md) possède une tourelle ventrale indépendante et conserve son atlas de camouflage.
 
 Les [quatre autres véhicules Meshy](meshy-fleet.md) conservent les UV et textures
-réelles de leurs GLB, avec armes et remorque articulées. Chaque véhicule se
+réelles de leurs GLB, avec armes et remorque articulées ; depuis la version 263, les
+origines de tir du T3, du D2 et du H2 viennent des modèles (`src/vehicle-anchors.js`). Chaque véhicule se
 repère par une pastille flottante colorée plutôt que par la couleur de sa coque.

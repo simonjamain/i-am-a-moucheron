@@ -14,6 +14,11 @@ leurs tirs indépendamment, avec le protocole existant.
 
 ## Modèle et textures
 
+Depuis la version 263, le B3 utilise le modèle refait par l'utilisateur (5 797
+triangles, tourelles dorsale, de queue et ventrale articulées) : voir
+[le remodelage de la flotte](meshy-fleet.md#remodelage-de-la-flotte-version-263).
+L'historique ci-dessous décrit la version précédente.
+
 Le modèle est issu de la tâche Meshy `01a1a87e-d709-73c8-b5d8-3fe935a944b8`, depuis
 une image dédiée créée à partir de la planche validée « Bombardier B3, tourelle
 ventrale.png ». La référence montre un seul avion entier sur fond neutre, sans

@@ -42,6 +42,8 @@ const files = {
       'meshy-texture',
       'meshy-m1-data',
       'meshy-fleet',
+      'meshy-rig',
+      'vehicle-anchors',
       'castor-model',
       'character-model',
       'character-data',

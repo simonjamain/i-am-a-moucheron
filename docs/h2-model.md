@@ -7,6 +7,11 @@ la coque, porte la couleur propre à chaque exemplaire.
 
 ## Provenance et conversion
 
+Depuis la version 263, le H2 utilise le modèle refait par l'utilisateur (5 102
+triangles, rotor à cinq pales, canon de nez articulé) : voir
+[le remodelage de la flotte](meshy-fleet.md#remodelage-de-la-flotte-version-263).
+L'historique ci-dessous décrit la version précédente.
+
 - Génération Meshy : `01a1a814-67d0-73ec-833f-d66281bd2d07`.
 - GLB d'origine : 28 246 triangles, 4 317 412 octets.
 - SHA-256 : `148472fadbaf69bdb02fa365a7c3581e04d550eff2f55c6177e3d25183b513de`.

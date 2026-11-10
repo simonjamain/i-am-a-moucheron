@@ -1,5 +1,10 @@
 # Visuels Meshy texturés : Stuka, Spitfire S6, Tank T3 et DCA mobile D2
 
+Depuis la version 263, le Spitfire S6, le T3, le D2, le H2 et le B3 utilisent les
+modèles refaits par l'utilisateur, articulés pièce par pièce : voir
+[le remodelage de la flotte](#remodelage-de-la-flotte-version-263). Les sections
+suivantes décrivent la première génération, que seul le Stuka utilise encore.
+
 Les quatre véhicules utilisent le maillage et les véritables UV des GLB Meshy.
 Leur atlas JPEG de 1 024 pixels est intégré dans les modules du jeu ; la texture
 est commune à tous les exemplaires d'un même véhicule. Les surfaces ne changent
@@ -66,6 +71,62 @@ La [projection CPU historique](meshy-fleet-review.png) illustre la géométrie
 vérifiés visuellement en jeu : silhouette, texture, repère, chaque poste et ses
 armes, remorque D2, collision et fluidité avec plusieurs véhicules.
 Une compilation et un test sans GPU ne constituent pas cet essai.
+
+## Remodelage de la flotte (version 263)
+
+L'utilisateur a refait cinq véhicules dans Meshy. Chaque GLB est **un seul
+maillage** texturé dont chaque pièce mobile est un **îlot séparé** :
+
+| Véhicule      | GLB fourni (SHA-256)                                                                                  | Triangles | Îlots |
+| ------------- | ----------------------------------------------------------------------------------------------------- | --------: | ----: |
+| Spitfire S6   | `Meshy_AI_Vintage_Fighter_Plane` (`b18e5558feef75463354dee45037b11ed640a4de6f9f0c71cd6e9dbf484026c4`) |     3 002 |    22 |
+| Tank T3       | `Meshy_AI_Desert_Vanguard` (`fb105cc19eefd50573c25ca9eaa233bf15eb4898d04f34cbaa736b618da186e9`)       |     3 833 |   154 |
+| DCA mobile D2 | `Meshy_AI_Towable_Anti_Aircraft` (`3861d4bf21e75d0ca9a7864b40f98189847b0fdcffdf6de5daf1127f71da18ed`) |     4 689 |   150 |
+| H2            | `Meshy_AI_Desert_Viper_Helicopt` (`488832fc140c16321dc54d07addd088ea16e2f3b042f568fa910ec1ee1206a9a`) |     5 102 |    66 |
+| B3            | `Meshy_AI_Desert_Sky_Fortress` (`a50363b85c21e407839651d5b478bf8900bb340debec3e86cdc68b94b8284307`)   |     5 797 |    45 |
+
+`python3 scripts/import-meshy-vehicle.py spitfire|tank|flaktruck|helicopter|bomber SOURCE.glb`
+soude les sommets (sans tenir compte des coutures UV) pour retrouver les îlots, puis
+range chacun dans un nœud articulé selon une spécification par véhicule (zones,
+pivots, sens des canons). Tous les triangles et UV d'origine sont conservés ; seule
+la texture 4 096 px est réduite en JPEG 1 024 px (modules de 350 à 420 Ko, contre
+0,8 à 1 Mo auparavant). L'option `--debug FICHIER` exporte les îlots et groupes
+pour un rendu de contrôle surligné. Les anciens scripts (`import-meshy-textures.py`,
+`import-meshy-h2.py`, `import-meshy-b3.py`) restent verrouillés sur les empreintes
+des anciennes sources et ne s'appliquent plus à ces cinq véhicules.
+
+Orientation : avant Meshy −X tourné vers −Z sans miroir ; échelle calée sur
+l'envergure (Spitfire 6,2 ; B3 11,3) ou la longueur (T3 4,3 ; D2 8,6 ; H2 7,5),
+cohérente avec `VEHICLES` ; roues au niveau −`gear`.
+
+`src/meshy-rig.js` construit la hiérarchie (`data.rig`) : chaque nœud est un
+pivot placé dans le repère de son parent, avec sa rotation de repos. Les canons
+sont stockés alignés sur −Z, ce qu'attend `aimGun`, et leurs bouches
+(`data.anchors`) sont sur l'axe passant par le pivot d'élévation :
+
+- **Spitfire** : hélice (axe Z), ailes (rétraction des dégâts), six canons d'aile
+  sculptés comme bouches de tir.
+- **T3** : tourelle (lacet) portant le canon, la coaxiale et la mitrailleuse de toit
+  sur son propre affût (lacet + élévation) ; mitrailleuse de caisse pour le pilote.
+- **D2** : remorque pivotant à l'attelage, affût tournant sur la remorque, canons
+  jumeaux en élévation (au repos, pointés vers l'arrière et le haut comme le modèle).
+- **H2** : rotor à cinq pales (Y), rotor de queue (X), canon de nez du copilote.
+- **B3** : deux hélices, ailes, tourelles dorsale, de queue (tournée vers l'arrière
+  au repos) et ventrale (vers le bas), dans l'ordre des postes.
+
+L'importeur écrit aussi `src/vehicle-anchors.js`, partagé par le client et le
+serveur, pour que la physique suive le modèle : pivot et longueur du canon du T3
+(`tankBarrelOrigin`), attelage, pivot et longueur des canons du D2
+(`mobileBarrelOrigin`, `trailerGunPivot`), enveloppes de collision tracteur et
+remorque (`sweptVehicle`, points de contact de `tank.js`), origines des roquettes
+et missiles du H2 (`heliWeaponOrigin`). Ces points ont changé avec les nouvelles
+proportions : les obus et roquettes partent des bouches dessinées.
+
+`scripts/test-meshy-vehicles.mjs` vérifie empreintes, triangles, contact au sol,
+hiérarchies et l'égalité entre bouches dessinées et origines de la physique
+(char et D2 quelle que soit la visée, remorque braquée, armes du H2, tourelles du
+B3). **Essai en jeu requis** : rendu, tirs de chaque poste, braquage de la
+remorque, collisions et performances à plusieurs véhicules en WebGL/UDP.
 
 ## Castor G1 : modèle Meshy remodelé (version 262)
 

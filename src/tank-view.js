@@ -1,4 +1,6 @@
 import { ACTOR_UNIT } from './scale.js';
+import { rotateLocal } from './helicopter.js';
+import { VEHICLE_ANCHORS } from './vehicle-anchors.js';
 export function tankSight(T, mount, direction, up, observation = null) {
   mount.updateWorldMatrix(true, true);
   const muzzle = mount.userData.muzzle.getWorldPosition(new T.Vector3());
@@ -19,12 +21,13 @@ export function tankSight(T, mount, direction, up, observation = null) {
     observing: false,
   };
 }
+// Shell origin: the turret's elevation pivot plus the barrel along the aim,
+// the same points the T3 model draws (scripts/import-meshy-vehicle.py).
 export function tankBarrelOrigin(vehicle, direction) {
-  const q = vehicle.state.q,
-    u = [
-      2 * (q[0] * q[1] - q[3] * q[2]),
-      1 - 2 * (q[0] * q[0] + q[2] * q[2]),
-      2 * (q[1] * q[2] + q[3] * q[0]),
-    ];
-  return vehicle.state.p.map((v, i) => v + u[i] * ACTOR_UNIT + direction[i] * 2.8 * ACTOR_UNIT);
+  const { gunPivot, gunLength } = VEHICLE_ANCHORS.tank;
+  const offset = rotateLocal(
+    vehicle.state.q,
+    gunPivot.map((v) => v * ACTOR_UNIT),
+  );
+  return vehicle.state.p.map((v, i) => v + offset[i] + direction[i] * gunLength * ACTOR_UNIT);
 }

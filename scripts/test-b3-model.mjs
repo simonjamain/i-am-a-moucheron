@@ -2,7 +2,6 @@ import assert from 'node:assert/strict';
 import * as T from '../vendor/three.module.min.js';
 import { createGraphics } from '../src/graphics.js';
 import { paintVehicle } from '../src/vehicle-livery.js';
-import { b3Attribute } from '../src/b3-model.js';
 import { B3_DATA } from '../src/meshy-b3-data.js';
 import { aimGun, gunnerView } from '../src/sortie.js';
 import { ACTOR_UNIT } from '../src/scale.js';
@@ -21,15 +20,18 @@ a.traverse((o) => {
   triangles += (g.index?.count || g.attributes.position.count) / 3;
   for (const attr of Object.values(g.attributes)) assert.ok(attr.array.every(Number.isFinite));
 });
-assert.ok(triangles < 31000);
-assert.equal(meshes[0].geometry, b.children[0].children[0].geometry);
+assert.equal(triangles, B3_DATA.triangles, 'every triangle of the remodelled B3');
+const bMeshes = [];
+b.traverse((o) => o.isMesh && bMeshes.push(o));
+assert.equal(meshes[0].geometry, bMeshes[0].geometry, 'shared geometry');
 const material = meshes[0].material;
 assert.ok(material.map);
 assert.equal(material.map.colorSpace, T.SRGBColorSpace);
 assert.equal(material.map.flipY, false);
 assert.ok(B3_DATA.texture.startsWith('data:image/jpeg;base64,/9j/'));
+const bytes = (encoded) => atob(encoded).length;
 for (const part of B3_DATA.parts)
-  assert.equal(b3Attribute(part.uv).length / 2, b3Attribute(part.positions).length / 3);
+  assert.equal(bytes(part.uv) / 4, bytes(part.positions) / 6, 'one UV per vertex');
 paintVehicle(T, a, 7, '#ffffff');
 assert.equal(meshes[0].material, material, 'original atlas remains untouched');
 // Issue #106: no floating colour marker, whatever the vehicle sequence.

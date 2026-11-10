@@ -1,6 +1,17 @@
 import { rotateLocal } from './helicopter.js';
 import { VEHICLES } from './fleet.js';
 import { MAP, ACTOR_UNIT } from './scale.js';
+import { VEHICLE_ANCHORS } from './vehicle-anchors.js';
+
+// D2 geometry shared with its model: trailer hitch, gun pivot and hulls.
+const D2 = VEHICLE_ANCHORS.flaktruck;
+// Gun pivot in the vehicle frame for a trailer angle (trailer yaws at the hitch).
+export function trailerGunPivot(angle) {
+  const [x, y, z] = D2.gunOffset,
+    c = Math.cos(angle),
+    s = Math.sin(angle);
+  return [D2.hitch[0] + x * c + z * s, D2.hitch[1] + y, D2.hitch[2] - x * s + z * c];
+}
 export {
   sweptBoxProximity,
   sweptSphereProximity,
@@ -22,11 +33,7 @@ export const clampProximity = (value) =>
 export function mobileBarrelOrigin(vehicle, direction) {
   const q = vehicle.state.q;
   const angle = vehicle.state.trailerAngle || 0;
-  const local = [
-    Math.sin(angle) * ACTOR_UNIT * 3.2,
-    ACTOR_UNIT,
-    ACTOR_UNIT * (-0.7 + Math.cos(angle) * 3.2),
-  ];
+  const local = trailerGunPivot(angle).map((v) => v * ACTOR_UNIT);
   // Quaternion rotation, shared by the model and authoritative projectile.
   const [x, y, z] = local,
     [qx, qy, qz, qw] = q;
@@ -38,7 +45,7 @@ export function mobileBarrelOrigin(vehicle, direction) {
     y + qw * ty + qz * tx - qx * tz,
     z + qw * tz + qx * ty - qy * tx,
   ];
-  return vehicle.state.p.map((v, i) => v + offset[i] + direction[i] * 2.8 * ACTOR_UNIT);
+  return vehicle.state.p.map((v, i) => v + offset[i] + direction[i] * D2.gunLength * ACTOR_UNIT);
 }
 export function fuseSegment(a, b, ageBefore, ageAfter) {
   if (ageAfter < MOBILE_FUSE.armedAt - 1e-12) return null;
@@ -86,26 +93,16 @@ export function sweptVehicle(a, b, vehicle, radius = 0, closest = false) {
     min: { x: lo[0] * ACTOR_UNIT, y: lo[1] * ACTOR_UNIT, z: lo[2] * ACTOR_UNIT },
     max: { x: hi[0] * ACTOR_UNIT, y: hi[1] * ACTOR_UNIT, z: hi[2] * ACTOR_UNIT },
   });
-  const tractor = sweptBoxProximity(
-    A,
-    B,
-    scale([-1.15, -0.8, -4], [1.15, 1.7, -0.6]),
-    radius,
-    closest,
-  );
+  const tractor = sweptBoxProximity(A, B, scale(...D2.tractorBox), radius, closest);
   const angle = -(vehicle.state.trailerAngle || 0),
     c = Math.cos(angle),
     sn = Math.sin(angle);
+  // Trailer frame: origin at the hitch, rotated with the trailer.
   const trailer = (p) => {
-    const z = p[2] + 0.7 * ACTOR_UNIT;
-    return [c * p[0] + sn * z, p[1], -sn * p[0] + c * z];
+    const x = p[0] - D2.hitch[0] * ACTOR_UNIT,
+      z = p[2] - D2.hitch[2] * ACTOR_UNIT;
+    return [c * x + sn * z, p[1] - D2.hitch[1] * ACTOR_UNIT, -sn * x + c * z];
   };
-  const t = sweptBoxProximity(
-    trailer(A),
-    trailer(B),
-    scale([-1.2, -0.8, -0.4], [1.2, 1.7, 5]),
-    radius,
-    closest,
-  );
+  const t = sweptBoxProximity(trailer(A), trailer(B), scale(...D2.trailerBox), radius, closest);
   return tractor === null ? t : t === null ? tractor : Math.min(tractor, t);
 }
