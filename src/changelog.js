@@ -1,6 +1,12 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 278,
+    changes: [
+      'Le rendu « dessin animé » (lumière par paliers et contours) devient le rendu du jeu pour tout le monde.',
+    ],
+  },
+  {
     version: 277,
     changes: [
       'Nouveau : un rendu « dessin animé » facultatif (lumière par paliers et contours), dans Réglages.',
