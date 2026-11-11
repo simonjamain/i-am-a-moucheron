@@ -1378,6 +1378,7 @@
         box-shadow: 0 25px 100px #0007;
       }
       #shop header {
+        position: static;
         display: flex;
         justify-content: space-between;
         align-items: start;
@@ -1416,11 +1417,26 @@
         text-transform: uppercase;
         color: #d5ef73;
       }
-      #shopItems article {
+      #shopItems .shopCard {
+        display: block;
+        width: 100%;
+        padding: 10px;
+        text-align: left;
+        font: inherit;
+        color: inherit;
         background: #24433a;
         border: 1px solid #7c9b6555;
         border-radius: 8px;
-        padding: 10px;
+        cursor: pointer;
+      }
+      #shopItems .shopCard:hover:not(:disabled),
+      #shopItems .shopCard:focus-visible {
+        border-color: #d5ef73;
+        background: #2c5146;
+      }
+      #shopItems .shopCard:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
       }
       #shopItems .shopPicture {
         display: flex;
@@ -1444,17 +1460,10 @@
         font-size: 15px;
         line-height: 1.25;
       }
-      #shopItems p {
-        font-size: 12px;
-        line-height: 1.4;
-        margin: 0 0 8px;
-        color: #c2d0b7;
-      }
-      #shopItems button {
-        background: #d5ef73;
-        color: #17352e;
-        width: 100%;
-        font-weight: 700;
+      #shopItems .shopCard strong {
+        display: block;
+        font-size: 18px;
+        color: #d5ef73;
       }
       #placementControls {
         position: fixed;

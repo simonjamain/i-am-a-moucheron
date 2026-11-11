@@ -36,6 +36,14 @@ assert.ok(
 const client = readFileSync('src/client.js', 'utf8');
 assert.match(client, /for \(const column of shopColumns\(\)\)/);
 assert.match(client, /shopThumbs\.picture\(item\)/);
+// Simplified cards: the whole card is the button; no description, no "Signer le bon".
+const card = client.slice(
+  client.indexOf('function shopCard('),
+  client.indexOf('async function purchase('),
+);
+assert.match(card, /createElement\('button'\)/);
+assert.match(card, /card\.onclick/);
+assert.doesNotMatch(card, /description|Signer le bon|createElement\('p'\)/);
 const thumbs = readFileSync('src/shop-thumbs.js', 'utf8');
 for (const item of [
   'fighter',

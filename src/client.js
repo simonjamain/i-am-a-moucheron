@@ -4477,35 +4477,33 @@ function shopPicture(item, holder) {
 }
 function shopCard(item) {
   const profile = SHOP[item],
-    card = document.createElement('article'),
+    card = document.createElement('button'),
     picture = document.createElement('div'),
     title = document.createElement('h4'),
-    text = document.createElement('p'),
-    button = document.createElement('button'),
+    cost = document.createElement('strong'),
     level = snap.upgrades?.[item] || 0,
     owned = !myVehicle && snap.purchases?.find((o) => o.owner === id && o.item === item),
     price = shopPrice(item, snap.upgrades, purchaseCount(snap, item), snap.balance);
+  card.type = 'button';
+  card.className = 'shopCard';
   card.dataset.item = item;
   picture.className = 'shopPicture';
   shopPicture(item, picture);
   title.textContent = profile.name + (profile.max > 1 ? ' · ' + level + '/' + profile.max : '');
-  text.textContent = profile.description;
-  button.textContent =
+  cost.textContent =
     profile.max && level >= profile.max
       ? 'Acquis'
       : owned
         ? 'Déjà payé · Reprendre la pose'
-        : price +
-          ' $ · ' +
-          (['placement', 'vehicle'].includes(profile.kind) ? 'Signer le bon' : 'Acheter');
-  button.disabled =
+        : price + ' $';
+  card.disabled =
     purchaseBusy ||
     (!owned && snap.dollars < price) ||
     (profile.max && level >= profile.max) ||
     (['placement', 'vehicle'].includes(profile.kind) &&
       !myVehicle &&
       (turretIndex >= 0 || selfBase()?.grounded === false));
-  button.onclick = () => {
+  card.onclick = () => {
     if (['placement', 'vehicle'].includes(profile.kind)) {
       if (owned) beginPlacement(owned);
       else
@@ -4515,7 +4513,7 @@ function shopCard(item) {
         );
     } else purchase(item);
   };
-  card.append(picture, title, text, button);
+  card.append(picture, title, cost);
   return card;
 }
 async function purchase(item) {
