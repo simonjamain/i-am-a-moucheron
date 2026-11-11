@@ -1,6 +1,13 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 274,
+    changes: [
+      'Les ennemis au sol ne se superposent plus : ils marchent côte à côte.',
+      'Vagues plus compactes : grosses nuées de moucherons, fourmis plus nombreuses, gros ennemis seuls.',
+    ],
+  },
+  {
     version: 273,
     changes: [
       'Menu d’achat simplifié : on clique directement sur l’article, sans bouton ni description.',

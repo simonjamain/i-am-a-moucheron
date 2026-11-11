@@ -10,6 +10,7 @@ import {
   swarmFrame,
   midgeDisplacement,
   swarmSpread,
+  groundLaneDisplacement,
   debugSwarmRoster,
   MAX_WAVE_POPULATION,
 } from '../src/waves.js';
@@ -162,6 +163,7 @@ const reference = new Function(
   'enemyRoutePosition',
   'midgeDisplacement',
   'swarmSpread',
+  'groundLaneDisplacement',
   exhaustive + '; return exhaustiveFrame;',
 )(
   MAP,
@@ -171,6 +173,7 @@ const reference = new Function(
   enemyRoutePosition,
   midgeDisplacement,
   swarmSpread,
+  groundLaneDisplacement,
 );
 const roster = wavePlan('DENSE-BENCH', 100, 123).roster;
 for (const time of [1, 4, 20, 75, 125]) {
