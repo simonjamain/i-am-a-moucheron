@@ -1,5 +1,5 @@
-// Optional toon look: stepped (cell-shaded) lighting plus dark outlines, both
-// local to the player and off by default. Lighting is patched into Three's lit
+// Toon look for every player: stepped (cell-shaded) lighting plus dark outlines,
+// fixed by TOON_LOOK (no player setting). Lighting is patched into Three's lit
 // materials once, with a shared uniform, so switching it needs no recompilation.
 // Outlines are a post-process on the log depth buffer the game already uses:
 // a pixel just behind a nearer surface gets the line colour, flat slopes are
@@ -89,6 +89,8 @@ void main() {
 }`;
 
 export const OUTLINE_COLOR = '#1b1510';
+// The look of the game: three light bands, 1.5 px outlines (validated in play).
+export const TOON_LOOK = Object.freeze({ toonShading: true, toonBands: 3, toonOutline: 1.5 });
 
 export class OutlinePass {
   constructor(T, renderer) {
@@ -151,7 +153,7 @@ export class OutlinePass {
 
 // Frame entry point: plain render unless the player asked for outlines.
 export class ToonRenderer {
-  constructor(T, renderer) {
+  constructor(T, renderer, look = TOON_LOOK) {
     this.T = T;
     this.renderer = renderer;
     this.pass = null;
@@ -160,6 +162,7 @@ export class ToonRenderer {
     // The software fallback renderer has no GL: leave it untouched.
     this.available = renderer.isWebGLRenderer === true;
     if (this.available) installToonLighting(T);
+    this.configure(look);
   }
   configure({ toonShading = false, toonBands = 3, toonOutline = 0 } = {}) {
     this.bands = toonShading ? toonBands : 0;

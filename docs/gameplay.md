@@ -124,7 +124,7 @@ et [armement](scale-fleet-weapons.md).
 
 Depuis la version 272, l'écran de jeu garde une seule barre en haut (`#topBar`) :
 à gauche vague, présence ennemie, infestation, « Préparer la vague », argent et boutons
-Équipement (P) / Banquier (N) ; à droite l'état de connexion, Réglages et Debug. La
+Équipement (P) / Banquier (N) ; à droite l'état de connexion, Pilotage et Debug. La
 liste des pilotes et les messages passent juste dessous. Les écrans étroits (tactile)
 ne sont plus traités à part.
 

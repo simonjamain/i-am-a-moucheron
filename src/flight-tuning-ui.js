@@ -28,7 +28,7 @@ export class FlightTuningUI {
         input.max = field.max;
         input.step = field.step;
         input.oninput = () => {
-          value.textContent = this.format(field, input.value);
+          value.textContent = Number(input.value).toFixed(1) + ' ×';
         };
       }
       const hint = document.createElement('small');
@@ -44,15 +44,12 @@ export class FlightTuningUI {
       this.status.textContent = 'Valeurs par défaut préparées. Enregistrez pour les appliquer.';
     };
   }
-  format(field, raw) {
-    return Number(raw).toFixed(field.decimals ?? 1) + (field.unit ?? ' ×');
-  }
   fill(settings) {
     for (const [key, { input, value, field }] of this.fields) {
       if (field.type === 'checkbox') input.checked = settings[key];
       else {
         input.value = settings[key];
-        value.textContent = this.format(field, input.value);
+        value.textContent = Number(input.value).toFixed(1) + ' ×';
       }
     }
   }

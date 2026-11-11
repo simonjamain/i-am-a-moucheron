@@ -178,7 +178,6 @@ document.addEventListener('visibilitychange', () => {
 addEventListener('pagehide', () => sound.close());
 const renderer = createRenderer(T, canvas);
 const toon = new ToonRenderer(T, renderer);
-toon.configure(flightTuning);
 
 const camera = new T.PerspectiveCamera(62, innerWidth / innerHeight, 0.00005, 40);
 const holdZoom = new HoldZoom();
@@ -5586,7 +5585,6 @@ const flightTuningUI = new FlightTuningUI({
   initial: flightTuning,
   onChange: (settings) => {
     flightTuning = settings;
-    toon.configure(settings);
   },
   onOpen: () => {
     releaseMouse();
