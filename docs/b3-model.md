@@ -1,3 +1,5 @@
+> **Remplacé en version 275** par le [chasseur et bombardier biplans](biplane-models.md) : ce document décrit l'ancien modèle, désormais supprimé.
+
 # Bombardier B3 : quatre places et camouflage
 
 Le B3 accueille un pilote, un mitrailleur dorsal, un mitrailleur de queue et un

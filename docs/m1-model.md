@@ -1,3 +1,5 @@
+> **Remplacé en version 275** par le [chasseur et bombardier biplans](biplane-models.md) : ce document décrit l'ancien modèle, désormais supprimé.
+
 # Chasseur M1 — modèle Meshy avec son camouflage d'origine
 
 Le M1 utilise le GLB Meshy issu du croquis « Chasseur M1.png » : aile haute,

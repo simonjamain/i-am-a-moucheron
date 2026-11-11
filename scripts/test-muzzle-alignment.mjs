@@ -10,7 +10,7 @@ const scene = new T.Scene();
 const graphics = createGraphics(T, scene);
 const effects = new CombatEffects(T, scene);
 const variants = [
-  ['fighter', graphics.makePlane('#fff'), 2],
+  ['fighter', graphics.makePlane('#fff'), 1],
   ['interceptor', graphics.makeStuka('#fff'), 2],
   ['spitfire', graphics.makeSpitfire('#fff'), 6],
   ['tank', graphics.makeTank('#fff'), 1],

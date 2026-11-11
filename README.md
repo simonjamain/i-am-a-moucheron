@@ -146,7 +146,7 @@ Le [bestiaire et ses vitesses physiques](docs/enemy-bestiary.md#vitesse-physique
 
 Le [mode debug par room](docs/laboratory.md) (interrupteur **Debug : OFF / ON**) donne argent illimité, aucun dégât de chute et défaite impossible, sans panneau d'outils.
 
-Le [bombardier B3](docs/b3-model.md) accueille quatre joueurs et conserve son camouflage texturé.
+Le [bombardier biplan](docs/biplane-models.md) accueille un pilote et un mitrailleur, avec 30 bombes ; le [chasseur biplan](docs/biplane-models.md) est 25 % plus lent que l'ancien chasseur léger mais décroche moins vite.
 Les [sept véhicules Meshy](docs/meshy-fleet.md) gardent les couleurs de leur modèle
 original ; seul un rond flottant indique la couleur propre à chaque véhicule.
 

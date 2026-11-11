@@ -158,7 +158,7 @@ Tests réels de `pistol()` et géométrie main/caméra aux deux échelles conser
 
 ## Bombes, moucherons, personnages et radar
 
-Les bombes du bombardier B3 ont un rayon de **40 m de référence = 0,12 m du décor**,
+Les bombes du bombardier B3 (biplan depuis la version 275 : 30 bombes, une par seconde) ont un rayon de **40 m de référence = 0,12 m du décor**,
 contre 20 / 0,06 pour le Stuka. Le facteur voyage avec le projectile et son événement
 d’explosion, même si la coque disparaît. Dégâts centre 240 et bord 60 inchangés,
 rayon visuel et dégâts doublés ensemble ; obstacles et déduplication conservés.

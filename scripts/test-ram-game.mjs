@@ -135,32 +135,32 @@ function board(id, vehicle, seat) {
 }
 const bomber = [...room.vehicles.values()].find((v) => v.type === 'bomber');
 board(a.id, bomber, 'pilot');
-board(b.id, bomber, 'tail');
+board(b.id, bomber, 'dorsal');
 assert.equal(room.pilots.get(a.id).mode, 'flight');
-assert.equal(bomber.seats.get('tail'), b.id);
-call(a.id, 'seat-request', { seat: 'tail' });
+assert.equal(bomber.seats.get('dorsal'), b.id);
+call(a.id, 'seat-request', { seat: 'dorsal' });
 let q = [...room.requests.values()][0];
 call(a.id, 'seat-sign', { request: q.id, signature: true });
 assert.equal(q.status, 'offered');
 assert.equal(bomber.seats.get('pilot'), a.id);
 call(b.id, 'seat-reject', { request: q.id });
 assert.equal(bomber.seats.get('pilot'), a.id);
-call(a.id, 'seat-request', { seat: 'tail' });
+call(a.id, 'seat-request', { seat: 'dorsal' });
 q = [...room.requests.values()][0];
 call(a.id, 'seat-sign', { request: q.id, signature: true });
 call(b.id, 'seat-sign', { request: q.id, signature: true });
 assert.equal(bomber.seats.get('pilot'), b.id);
-assert.equal(bomber.seats.get('tail'), a.id);
+assert.equal(bomber.seats.get('dorsal'), a.id);
 assert.equal(room.pilots.get(a.id).mode, 'crew');
-const ammo = bomber.supplies.ammo.tail;
+const ammo = bomber.supplies.ammo.dorsal;
 let fire = call(a.id, 'aircraft-fire', {
   vehicle: bomber.id,
-  seat: 'tail',
+  seat: 'dorsal',
   shots: ['a', 'b', 'c'],
 });
-assert.equal(fire.ammo.tail, ammo - 3);
-call(a.id, 'aircraft-fire', { vehicle: bomber.id, seat: 'tail', shots: ['a', 'b', 'c'] });
-assert.equal(bomber.supplies.ammo.tail, ammo - 3);
+assert.equal(fire.ammo.dorsal, ammo - 3);
+call(a.id, 'aircraft-fire', { vehicle: bomber.id, seat: 'dorsal', shots: ['a', 'b', 'c'] });
+assert.equal(bomber.supplies.ammo.dorsal, ammo - 3);
 // No refuel and no backwards clock double debit.
 bomber.state.landed = false;
 bomber.state.gas = 1;

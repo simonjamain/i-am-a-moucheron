@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import worker from '../worker/index.js';
 import { localDB } from './local-db.mjs';
 import { bodyMotion } from '../src/purgatory-physics.js';
-import { vehicleEntry, VEHICLES } from '../src/fleet.js';
+import { vehicleEntry, VEHICLES, pilotFireInterval } from '../src/fleet.js';
 import { OFFICE_LAYOUT } from '../src/layout.js';
 import { ACTOR_UNIT } from '../src/scale.js';
 import {
@@ -115,7 +115,9 @@ for (const type of Object.keys(VEHICLES)) {
   ))
     assert.ok(
       !ammo[seat] ||
-        Math.abs(ammoCapacity(type, seat) * (seat === 'pilot' ? 0.06 : 0.09) - 60) < 0.05,
+        Math.abs(
+          ammoCapacity(type, seat) * (seat === 'pilot' ? pilotFireInterval(type) : 0.09) - 60,
+        ) < 0.05,
     );
   const station = { kind: 'refuel', x: 0, y: 0.9, z: 0 };
   const parked = { ...state, p: [0, 0.9 + VEHICLES[type].gear, 0], v: [0, 0, 0], landed: true };
@@ -250,7 +252,8 @@ snap = await api('vehicle-sign', {
 assert.equal(snap.pilots.find((p) => p.id === a.id).mode, 'flight');
 const fuel = snap.vehicles.find((v) => v.id === vehicle.id).supplies;
 assert.equal(fuel.fuel, 300);
-assert.equal(fuel.ammo.pilot, 1000);
+const full = ammoCapacity('fighter', 'pilot'); // 500 rounds: one gun, half the rate of fire
+assert.equal(fuel.ammo.pilot, full);
 assert.ok(snap.initialStation.free);
 assert.ok(snap.equipment.length === 0);
 // A projectile spends once across duplicate requests; exhausted stock cannot emit.
@@ -262,7 +265,7 @@ assert.ok(shots.every((s) => s.allowed));
 let resources = await DB.prepare('SELECT * FROM vehicle_supplies WHERE vehicle=?')
   .bind(vehicle.id)
   .first();
-assert.equal(JSON.parse(resources.ammo).pilot, 999);
+assert.equal(JSON.parse(resources.ammo).pilot, full - 1);
 // Several predicted rounds settle in one request; retries still debit once.
 const batchReport = {
   id: a.id,
@@ -280,7 +283,7 @@ assert.equal(
     (await DB.prepare('SELECT ammo FROM vehicle_supplies WHERE vehicle=?').bind(vehicle.id).first())
       .ammo,
   ).pilot,
-  996,
+  full - 4,
 );
 await api('aircraft-fire', { id: a.id, shots: [] }, 400);
 await api('aircraft-fire', { id: a.id, shots: ['duplicate', 'duplicate'] }, 400);
@@ -344,9 +347,9 @@ for (let i = 0; i < 10; i++) {
 }
 resources = snap.vehicles.find((v) => v.id === vehicle.id).supplies;
 assert.equal(resources.fuel, 300);
-assert.equal(resources.ammo.pilot, 1000);
+assert.equal(resources.ammo.pilot, full);
 snap = await api('vehicle-exit', { id: a.id, state });
-assert.equal(snap.vehicles.find((v) => v.id === vehicle.id).supplies.ammo.pilot, 1000);
+assert.equal(snap.vehicles.find((v) => v.id === vehicle.id).supplies.ammo.pilot, full);
 // New installations use independent price curves and the same transaction guards.
 await DB.prepare("UPDATE rooms SET dollars=100 WHERE code='LOGISTICS'").run();
 const position = { x: -1.5, y: 0.90005, z: 1.885 };
@@ -421,39 +424,32 @@ async function boardBomber(player, seat) {
   });
 }
 await boardBomber(d, 'dorsal');
-snap = await boardBomber(e, 'tail');
-// Every gunner's weapon deals its full 75 damage (no contract clause).
+snap = await boardBomber(e, 'pilot');
+// The gunner's weapon deals its full 75 damage (no contract clause).
 await api('friendly-hit', { id: d.id, target: c.id, shot: 'full-damage-d' });
 let health = (await DB.prepare('SELECT health FROM pilots WHERE id=?').bind(c.id).first()).health;
 assert.equal(health, 25);
-await api('friendly-hit', { id: e.id, target: d.id, shot: 'full-damage' });
-assert.equal(
-  (await DB.prepare('SELECT health FROM pilots WHERE id=?').bind(d.id).first()).health,
-  25,
-);
 await DB.prepare('UPDATE vehicle_supplies SET ammo=? WHERE vehicle=?')
-  .bind('{"pilot":0,"dorsal":1,"tail":2}', bomber.id)
+  .bind('{"pilot":0,"dorsal":1}', bomber.id)
   .run();
-await Promise.all([
-  api('aircraft-fire', { id: d.id, shot: 'dorsal-1' }),
-  api('aircraft-fire', { id: e.id, shot: 'tail-1' }),
-]);
+await api('aircraft-fire', { id: d.id, shot: 'dorsal-1' });
 const stock = JSON.parse(
   (await DB.prepare('SELECT ammo FROM vehicle_supplies WHERE vehicle=?').bind(bomber.id).first())
     .ammo,
 );
 assert.equal(stock.dorsal, 0);
-assert.equal(stock.tail, 1);
 assert.equal((await api('aircraft-fire', { id: d.id, shot: 'dorsal-empty' })).allowed, false);
+// The bomber pilot has no gun: it cannot spend the gunner's stock.
 await api(
   'aircraft-fire',
   { id: e.id, vehicle: bomber.id, seat: 'dorsal', shot: 'wrong-seat' },
   409,
 );
-// Free-seat transfer refills neither stock.
+// A signed seat exchange refills no stock.
 snap = await api('seat-request', { id: d.id, seat: 'pilot' });
 const transfer = snap.seatRequests.find((r) => r.requester === d.id);
-snap = await api('seat-sign', { id: d.id, request: transfer.id, signature: true });
+await api('seat-sign', { id: d.id, request: transfer.id, signature: true });
+snap = await api('seat-sign', { id: e.id, request: transfer.id, signature: true });
 assert.equal(snap.vehicles.find((v) => v.id === bomber.id).supplies.ammo.dorsal, 0);
 // Two aircraft share a service area, never its filling rate.
 const service = snap.initialStation;

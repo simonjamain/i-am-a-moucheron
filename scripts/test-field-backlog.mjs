@@ -94,7 +94,7 @@ for (const type of ['bomber', 'tank']) {
     assert.equal(p.seat, seat);
     assert.equal(vehicle.seats.get(seat), p.id);
   }
-  assert.equal(vehicle.seats.size, type === 'bomber' ? 4 : 3);
+  assert.equal(vehicle.seats.size, type === 'bomber' ? 2 : 3);
 }
 
 const T = await import('../vendor/three.module.min.js');

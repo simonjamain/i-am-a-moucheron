@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
-import { M1_DATA } from '../src/meshy-m1-data.js';
+import { BIPLANE_DATA } from '../src/meshy-biplane-data.js';
+import { BIPLANE_BOMBER_DATA } from '../src/meshy-biplane-bomber-data.js';
 import { H2_DATA } from '../src/meshy-h2-data.js';
 import { MODEL_DATA as STUKA } from '../src/meshy-stuka-data.js';
 import { MODEL_DATA as SPITFIRE } from '../src/meshy-spitfire-data.js';
@@ -7,7 +8,8 @@ import { MODEL_DATA as TANK } from '../src/meshy-tank-data.js';
 import { MODEL_DATA as TRUCK } from '../src/meshy-flaktruck-data.js';
 
 for (const [name, data] of [
-  ['M1', M1_DATA],
+  ['Biplane fighter', BIPLANE_DATA],
+  ['Biplane bomber', BIPLANE_BOMBER_DATA],
   ['H2', H2_DATA],
   ['Stuka', STUKA],
   ['Spitfire', SPITFIRE],
@@ -33,7 +35,7 @@ for (const [name, data] of [
     for (const i of index) assert.ok(i < vertexCount, `${name}: index in range`);
     triangles += index.length / 3;
   }
-  // M1 and Stuka: first Meshy hulls; H2, Spitfire, T3, D2: user remodels.
+  // Every vehicle is a user remodel imported with its source triangles.
   if (data.sourceSha256) assert.equal(triangles, data.triangles, `${name}: every source triangle`);
   else assert.ok(triangles >= 26000 && triangles <= 30000, `${name}: original Meshy mesh`);
   console.log(`PASS ${name}: ${triangles} indexed triangles, original UV and JPEG atlas`);

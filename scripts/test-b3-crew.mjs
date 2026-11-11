@@ -6,7 +6,7 @@ import { ACTOR_UNIT } from '../src/scale.js';
 import { OFFICE_LAYOUT } from '../src/layout.js';
 import { CONTRACTS } from '../src/contracts.js';
 const game = new Game({ now: () => 100000 });
-const players = Array.from({ length: 5 }, (_, i) =>
+const players = Array.from({ length: 3 }, (_, i) =>
   game.join({ code: 'B3CREW', name: 'Crew ' + i }),
 );
 const room = game.rooms.get('B3CREW');
@@ -31,37 +31,39 @@ function board(id, vehicle, seat) {
 }
 
 const bomber = [...room.vehicles.values()].find((v) => v.type === 'bomber');
+assert.deepEqual(VEHICLES.bomber.seats, ['pilot', 'dorsal'], 'biplane bomber: pilot and gunner');
 for (const [i, seat] of VEHICLES.bomber.seats.entries()) board(players[i].id, bomber, seat);
-assert.equal(bomber.seats.size, 4);
-assert.throws(() => board(players[4].id, bomber, 'ventral'), /occupé/);
-const ventral = players[3].id;
-assert.equal(room.pilots.get(ventral).mode, 'crew');
+assert.equal(bomber.seats.size, 2);
+assert.throws(() => board(players[2].id, bomber, 'dorsal'), /occupé/);
+assert.throws(() => board(players[2].id, bomber, 'ventral'));
+const gunner = players[1].id;
+assert.equal(room.pilots.get(gunner).mode, 'crew');
 const stock = { ...bomber.supplies.ammo };
-const fire = call(ventral, 'aircraft-fire', {
+assert.equal(stock.bomb, 30, 'thirty bombs in the bay');
+assert.equal(stock.tail, undefined);
+assert.equal(stock.ventral, undefined);
+const fire = call(gunner, 'aircraft-fire', {
   vehicle: bomber.id,
-  seat: 'ventral',
+  seat: 'dorsal',
   shots: ['v1', 'v2'],
 });
-assert.equal(fire.ammo.ventral, stock.ventral - 2);
-assert.equal(fire.ammo.dorsal, stock.dorsal);
-assert.equal(fire.ammo.tail, stock.tail);
-call(ventral, 'aircraft-fire', { vehicle: bomber.id, seat: 'ventral', shots: ['v1', 'v2'] });
-assert.equal(bomber.supplies.ammo.ventral, stock.ventral - 2);
+assert.equal(fire.ammo.dorsal, stock.dorsal - 2);
+call(gunner, 'aircraft-fire', { vehicle: bomber.id, seat: 'dorsal', shots: ['v1', 'v2'] });
+assert.equal(bomber.supplies.ammo.dorsal, stock.dorsal - 2, 'idempotent fire');
+// Pilot and gunner swap seats by a signed exchange, the aircraft keeps flying.
 const pose = structuredClone(bomber.state);
-call(ventral, 'seat-request', { seat: 'dorsal' });
+call(gunner, 'seat-request', { seat: 'pilot' });
 const request = [...room.requests.values()].at(-1);
-for (const id of [ventral, players[1].id]) {
+for (const id of [gunner, players[0].id]) {
   call(id, 'seat-sign', { request: request.id, signature: true });
 }
-assert.equal(bomber.seats.get('ventral'), players[1].id);
-assert.equal(bomber.seats.get('dorsal'), ventral);
+assert.equal(bomber.seats.get('pilot'), gunner);
+assert.equal(bomber.seats.get('dorsal'), players[0].id);
 assert.deepEqual(bomber.state.p, pose.p);
-assert.equal(bomber.seats.get('pilot'), players[0].id);
-assert.ok(CONTRACTS['boarding:ventral'][0][0].title.includes('ventral'));
-call(players[1].id, 'vehicle-exit');
-assert.equal(bomber.seats.size, 3);
-assert.ok(!bomber.seats.has('ventral'));
-assert.equal(bomber.seats.get('pilot'), players[0].id);
+call(players[0].id, 'vehicle-exit');
+assert.equal(bomber.seats.size, 1);
+assert.ok(!bomber.seats.has('dorsal'));
+assert.equal(bomber.seats.get('pilot'), gunner);
 console.log(
-  'PASS B3: four signed occupants, exclusive ventral seat, independent stock, idempotent fire, signed exchange and exit.',
+  'PASS biplane bomber: two signed occupants, exclusive gunner seat, 30 bombs, idempotent fire, signed seat exchange and exit.',
 );

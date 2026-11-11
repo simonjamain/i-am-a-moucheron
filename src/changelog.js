@@ -1,6 +1,13 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 275,
+    changes: [
+      'Nouveau chasseur biplan : plus lent mais il décroche moins, avec une seule mitrailleuse.',
+      'Nouveau bombardier biplan : un pilote, un mitrailleur arrière, 30 bombes lâchées plus lentement.',
+    ],
+  },
+  {
     version: 274,
     changes: [
       'Les ennemis au sol ne se superposent plus : ils marchent côte à côte.',

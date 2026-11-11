@@ -135,7 +135,9 @@ assert.equal(
 );
 call('buy', { item: 'interceptor', request: 'stuka-order-2' });
 stuka = [...r.vehicles.values()].find((v) => v.type === 'interceptor' && v.state.hp > 0);
-assert.ok(VEHICLES.interceptor.maxSpeed < VEHICLES.fighter.maxSpeed);
+// The biplane fighter is 25 % slower than the old light fighter, so the Stuka is compared
+// with the Spitfire; it still turns more slowly than the fighter.
+assert.ok(VEHICLES.interceptor.maxSpeed < VEHICLES.spitfire.maxSpeed);
 assert.ok(VEHICLES.interceptor.turn < VEHICLES.fighter.turn);
 call('buy', { item: 'tank', request: 'tank-order' });
 const tank = [...r.vehicles.values()].find((v) => v.type === 'tank');

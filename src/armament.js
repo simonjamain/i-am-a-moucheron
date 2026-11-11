@@ -58,6 +58,12 @@ export function availableShell(ammo, selected = 'he') {
   const other = selected === 'he' ? 'ap' : 'he';
   return (ammo[other] || 0) >= 1 ? other : null;
 }
+// Seconds between two uses of a heavy weapon on a vehicle: the biplane bomber
+// drops its bombs half as fast as the Stuka's rack.
+export function heavyInterval(weapon, type) {
+  const base = HEAVY[weapon]?.interval ?? 0;
+  return weapon === 'bomb' && type === 'bomber' ? base * 2 : base;
+}
 export function heavyDamage(weapon, distance, bonus = 1, radiusFactor = 1) {
   const p = HEAVY[weapon];
   return p && distance <= p.radius * radiusFactor

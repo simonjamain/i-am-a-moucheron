@@ -1,23 +1,40 @@
 import { MAP, ACTOR_UNIT } from './scale.js';
 import { OFFICE_LAYOUT } from './layout.js';
+// The original light fighter stays the reference the Stuka, the Spitfire and the
+// H2 are derived from; the biplane fighter replaced it as the base fighter.
+export const LIGHT_FIGHTER = {
+  seats: ['pilot'],
+  span: 10.4,
+  length: 6.2,
+  maxSpeed: 70,
+  thrust: 12,
+  drag: 0.0036,
+  liftBase: 0.0032,
+  turn: 1,
+  gear: 1.05 * ACTOR_UNIT,
+};
 export const VEHICLES = {
+  // Biplane fighter: 25 % slower than the light fighter it replaced, but it keeps
+  // control and lift at lower speed (later stall). One central machine gun that
+  // fires like one gun of the light fighter: half its rate of fire.
   fighter: {
-    name: 'M1 Chasseur léger',
-    seats: ['pilot'],
-    span: 10.4,
-    length: 6.2,
-    maxSpeed: 70,
-    thrust: 12,
-    drag: 0.0036,
-    liftBase: 0.0032,
-    turn: 1,
-    gear: 1.05 * ACTOR_UNIT,
+    ...LIGHT_FIGHTER,
+    name: 'M1 Chasseur biplan',
+    length: 8.2,
+    maxSpeed: LIGHT_FIGHTER.maxSpeed * 0.75,
+    thrust: 7.4,
+    liftBase: 0.0056,
+    authoritySpeed: 8,
+    stallAngle: 0.45,
+    gunIntervalFactor: 2,
   },
+  // Biplane bomber: pilot and one rear gunner, same flight characteristics as
+  // the B3 it replaced; the bomb bay holds fewer bombs, dropped half as fast.
   bomber: {
-    name: 'B3 Bombardier moyen',
-    seats: ['pilot', 'dorsal', 'tail', 'ventral'],
+    name: 'B3 Bombardier biplan',
+    seats: ['pilot', 'dorsal'],
     span: 21,
-    length: 14,
+    length: 15.9,
     maxSpeed: 52.5,
     thrust: 8,
     drag: 0.0045,
@@ -27,7 +44,7 @@ export const VEHICLES = {
   },
 };
 VEHICLES.interceptor = {
-  ...VEHICLES.fighter,
+  ...LIGHT_FIGHTER,
   name: 'Stuka — attaque au sol',
   maxSpeed: 54,
   thrust: 9,
@@ -50,21 +67,21 @@ VEHICLES.tank = {
   ground: true,
 };
 VEHICLES.spitfire = {
-  ...VEHICLES.fighter,
+  ...LIGHT_FIGHTER,
   name: 'Spitfire S6',
-  maxSpeed: VEHICLES.fighter.maxSpeed * 1.75,
+  maxSpeed: LIGHT_FIGHTER.maxSpeed * 1.75,
   thrust: 70,
-  turn: VEHICLES.fighter.turn * 1.45,
+  turn: LIGHT_FIGHTER.turn * 1.45,
   span: 11.2,
   length: 7,
 };
 VEHICLES.helicopter = {
-  ...VEHICLES.fighter,
+  ...LIGHT_FIGHTER,
   name: 'H2 Hélicoptère d’attaque au sol',
   seats: ['pilot', 'copilot'],
   span: 16,
   length: 14,
-  maxSpeed: VEHICLES.fighter.maxSpeed * 0.6,
+  maxSpeed: LIGHT_FIGHTER.maxSpeed * 0.6,
   gear: 1.1 * ACTOR_UNIT,
   helicopter: true,
   maxHP: 200,
@@ -100,6 +117,11 @@ VEHICLES.castor = {
   gear: 0.8 * ACTOR_UNIT,
   ground: true,
 };
+
+// Seconds between two pilot machine-gun rounds (0.06 s on the light fighters).
+export const PILOT_FIRE_INTERVAL = 0.06;
+export const pilotFireInterval = (type) =>
+  PILOT_FIRE_INTERVAL * (VEHICLES[type]?.gunIntervalFactor ?? 1);
 
 export const SEAT_NAMES = {
   pilot: 'Pilote',
@@ -181,13 +203,6 @@ export function seatMount(type, seat) {
   if (type === 'flaktruck') return seat === 'cannon' ? [0, 1.8, 2.5] : [0, 1.5, -3.1];
   if (type === 'tank')
     return seat === 'cannon' ? [0, 1.3, 0] : seat === 'top' ? [0, 2.3, 1] : [0, 0.7, -1.5];
-  if (type === 'bomber')
-    return seat === 'ventral'
-      ? [0, -0.85, -0.18]
-      : seat === 'tail'
-        ? [0, 0.49, 4.28]
-        : seat === 'dorsal'
-          ? [0, 1.3, -1.73]
-          : [0, 0.7, -3.6];
+  if (type === 'bomber') return seat === 'dorsal' ? [0, 1.3, 0.57] : [0, 0.8, -0.4];
   return [0, 0.5, -0.5];
 }

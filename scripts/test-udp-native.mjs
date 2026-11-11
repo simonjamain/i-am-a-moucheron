@@ -141,7 +141,7 @@ try {
     direction: [0, 0, -1],
   });
   assert.equal(bomb.status, 200);
-  assert.equal(bomb.body.vehicles.find((v) => v.id === bomber.id).supplies.ammo.bomb, 49);
+  assert.equal(bomb.body.vehicles.find((v) => v.id === bomber.id).supplies.ammo.bomb, 29);
   assert.ok(bomb.body.ordnance.some((p) => p.shot === 'native-bomb'));
   const person = gameRoom.pilots.get(bj.body.id);
   app.game.release(gameRoom, person);

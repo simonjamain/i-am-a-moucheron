@@ -46,8 +46,8 @@ assert.match(
   'unlock on gesture',
 );
 
-assert.equal(VEHICLES.fighter.name, 'M1 Chasseur léger');
-assert.equal(VEHICLES.bomber.name, 'B3 Bombardier moyen');
+assert.equal(VEHICLES.fighter.name, 'M1 Chasseur biplan');
+assert.equal(VEHICLES.bomber.name, 'B3 Bombardier biplan');
 assert.equal(VEHICLES.helicopter.name, 'H2 Hélicoptère d’attaque au sol');
 assert.equal(VEHICLES.tank.name, 'T3 Char moyen');
 assert.equal(VEHICLES.castor.name, 'G1 Castor');

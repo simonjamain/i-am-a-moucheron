@@ -175,4 +175,4 @@ Le catalogue courant comprend 600 variantes, avec quatre rôles supplémentaires
 Le [lot confort de jeu, version 37](comfort.md) précise réparation, zoom, jauges,
 radar à pied, remise à zéro, fourmis et projectiles du pistolet courants.
 
-Le [B3 texturé](b3-model.md) porte la teinte d’identification sur un disque au-dessus de la coque ; son camouflage reste fixe.
+Le [bombardier biplan](biplane-models.md) porte les noms de ses occupants sur des plaques collées au fuselage ; son camouflage reste fixe.

@@ -33,12 +33,12 @@ for (const damage of [0.3, 0.5, 0.7, 0.9, 1]) {
 
 const scene = new T.Scene();
 const graphics = createGraphics(T, scene);
-// Engines: behind each propeller (two on the B3), under the H2 rotor.
+// Engines: behind each propeller, under the H2 rotor.
 const engines = {
   makePlane: 1,
   makeStuka: 1,
   makeSpitfire: 1,
-  makeBomber: 2,
+  makeBomber: 1,
   makeHelicopter: 1,
 };
 for (const [make, count] of Object.entries(engines)) {

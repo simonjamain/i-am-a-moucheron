@@ -11,7 +11,9 @@ function unscaledFlight(
     right = new T.Vector3(1, 0, 0).applyQuaternion(q);
   const air = vel.clone().sub(wind),
     speed = air.length();
-  const authority = clamp(speed / 13, 0.12, 1) * clamp(38 / Math.max(speed, 38), 0.55, 1);
+  const authority =
+    clamp(speed / (profile?.authoritySpeed ?? 13), 0.12, 1) *
+    clamp(38 / Math.max(speed, 38), 0.55, 1);
   const bank = Math.atan2(-right.y, up.y);
   // Three independent control axes; no auto-level, bank target or yaw instructor.
   const turn = profile?.turn ?? 1;
@@ -28,7 +30,7 @@ function unscaledFlight(
   right.set(1, 0, 0).applyQuaternion(q);
   const fSpeed = Math.max(0, air.dot(forward));
   const aoa = Math.atan2(-air.dot(up), Math.max(1, fSpeed));
-  const stall = 1 - 0.82 * clamp((Math.abs(aoa) - 0.3) / 0.32, 0, 1);
+  const stall = 1 - 0.82 * clamp((Math.abs(aoa) - (profile?.stallAngle ?? 0.3)) / 0.32, 0, 1);
   const lift =
     clamp(
       ((profile?.liftBase ?? 0.04) + aoa * (profile?.liftBase ? 0.12 : 0.48)) * fSpeed * fSpeed,

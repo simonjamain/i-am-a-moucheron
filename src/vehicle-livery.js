@@ -47,7 +47,7 @@ export function updateInscriptions(
     for (const side of [-1, 1]) {
       const texture = new T.CanvasTexture(canvas);
       const mesh = new T.Mesh(
-        new T.PlaneGeometry(vehicle.type === 'bomber' ? 1.35 : 0.8, 0.2),
+        new T.PlaneGeometry(vehicle.type === 'bomber' ? 1.0 : 0.8, 0.2),
         new T.MeshBasicMaterial({
           map: texture,
           polygonOffset: true,
@@ -56,18 +56,12 @@ export function updateInscriptions(
         }),
       );
       mesh.rotation.y = (side * Math.PI) / 2;
+      // Plates sit on the fuselage side of the biplane models (fuselage centre
+      // 0.31 high on the fighter, 0.5 on the bomber).
       mesh.position.set(
-        side * (vehicle.type === 'bomber' ? 0.665 : 0.405),
-        -0.12,
-        vehicle.type === 'bomber'
-          ? seat === 'pilot'
-            ? -1.7
-            : seat === 'tail'
-              ? 2.2
-              : seat === 'ventral'
-                ? 1
-                : 0
-          : 0.2,
+        side * (vehicle.type === 'bomber' ? 0.46 : 0.34),
+        vehicle.type === 'bomber' ? 0.42 : 0.3,
+        vehicle.type === 'bomber' ? (seat === 'pilot' ? -0.4 : 1.4) : 0.2,
       );
       mesh.userData.projectileSolid = false;
       model.add(mesh);
