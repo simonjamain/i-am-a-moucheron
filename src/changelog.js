@@ -1,6 +1,10 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 270,
+    changes: ['La fumée des roquettes et des missiles reste beaucoup plus longtemps dans le ciel.'],
+  },
+  {
     version: 269,
     changes: [
       'La fumée des roquettes et des missiles est plus douce et plus dense : de vrais nuages qui gonflent et se dissipent.',

@@ -9,8 +9,8 @@ export const EXHAUST_PROFILES = Object.freeze({
     puff: [0x5d605c, 0x8a897e],
     puffScale: 1.3,
     opacity: 0.5,
-    spacing: 0.34,
-    life: 0.8,
+    spacing: 0.65,
+    life: 3.2,
     flame: 1.2,
     halo: 0.024,
     haloColor: 0xffb04a,
@@ -20,8 +20,8 @@ export const EXHAUST_PROFILES = Object.freeze({
     puff: [0x4a4d4a, 0x7b7a70],
     puffScale: 1.6,
     opacity: 0.6,
-    spacing: 0.28,
-    life: 1.05,
+    spacing: 0.8,
+    life: 5,
     flame: 1.45,
     halo: 0.036,
     haloColor: 0xffd27a,
@@ -75,7 +75,7 @@ function smokeTexture(T) {
 }
 
 export class MissileExhaust {
-  constructor(T, scene, maxPuffs = 420) {
+  constructor(T, scene, maxPuffs = 900) {
     this.T = T;
     this.scene = scene;
     this.maxPuffs = maxPuffs;
@@ -164,7 +164,7 @@ export class MissileExhaust {
       mesh,
       material,
       age: 0,
-      life: profile.life + (seed % 5) * 0.11,
+      life: profile.life * (0.9 + (seed % 5) * 0.05),
       opacity: profile.opacity,
       scale: profile.puffScale,
       spin: (rand(4) - 0.5) * 0.9,
@@ -190,7 +190,7 @@ export class MissileExhaust {
         this.puffs.splice(i, 1);
       } else {
         // Quick fade-in (no popping), slow fade-out; fast swell that settles.
-        p.material.opacity = p.opacity * Math.min(1, t / 0.1) * (1 - t) ** 1.5;
+        p.material.opacity = p.opacity * Math.min(1, t / 0.06) * (1 - t * t);
         p.material.rotation += p.spin * step;
         p.mesh.scale.setScalar(MAP.metres(0.42) * p.scale * (0.8 + 4 * (1 - (1 - t) ** 2)));
         p.mesh.position.x += p.drift[0] * step;
