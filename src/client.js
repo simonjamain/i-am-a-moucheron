@@ -123,6 +123,8 @@ import { stepTank } from '/tank.js';
 import { animateCastorWheels, trackGroundMotion } from '/castor-wheels.js';
 import { ServiceZones, serviceZoneList } from '/service-zones.js';
 import { EngineSmoke, damageRatio } from '/engine-smoke.js';
+import { shopColumns } from '/shop-catalog.js';
+import { ShopThumbnails } from '/shop-thumbs.js';
 import {
   moveTopCursor,
   resetTopCursor,
@@ -4444,44 +4446,77 @@ function renderShop() {
   if ($('shopItems').dataset.key === key) return;
   $('shopItems').dataset.key = key;
   $('shopItems').replaceChildren();
-  for (const [item, profile] of Object.entries(SHOP)) {
-    const card = document.createElement('article'),
-      title = document.createElement('h3'),
-      text = document.createElement('p'),
-      button = document.createElement('button'),
-      level = snap.upgrades?.[item] || 0,
-      owned = !myVehicle && snap.purchases?.find((o) => o.owner === id && o.item === item),
-      price = shopPrice(item, snap.upgrades, purchaseCount(snap, item), snap.balance);
-    title.textContent = profile.name + (profile.max > 1 ? ' · ' + level + '/' + profile.max : '');
-    text.textContent = profile.description;
-    button.textContent =
-      profile.max && level >= profile.max
-        ? 'Acquis'
-        : owned
-          ? 'Déjà payé · Reprendre la pose'
-          : price +
-            ' $ · ' +
-            (['placement', 'vehicle'].includes(profile.kind) ? 'Signer le bon' : 'Acheter');
-    button.disabled =
-      purchaseBusy ||
-      (!owned && snap.dollars < price) ||
-      (profile.max && level >= profile.max) ||
-      (['placement', 'vehicle'].includes(profile.kind) &&
-        !myVehicle &&
-        (turretIndex >= 0 || selfBase()?.grounded === false));
-    button.onclick = () => {
-      if (['placement', 'vehicle'].includes(profile.kind)) {
-        if (owned) beginPlacement(owned);
-        else
-          purchaseUI.open(
-            item,
-            snap.pilots.find((p) => p.id === id),
-          );
-      } else purchase(item);
-    };
-    card.append(title, text, button);
-    $('shopItems').append(card);
+  for (const column of shopColumns()) {
+    const section = document.createElement('section'),
+      heading = document.createElement('h3');
+    heading.textContent = column.title;
+    section.append(heading);
+    for (const item of column.items) section.append(shopCard(item));
+    $('shopItems').append(section);
   }
+}
+const SHOP_GLYPHS = { engine: '⚙', weapons: '✹' };
+let shopThumbs;
+function shopPicture(item, holder) {
+  if (SHOP_GLYPHS[item]) {
+    holder.textContent = SHOP_GLYPHS[item];
+    return;
+  }
+  try {
+    shopThumbs ||= new ShopThumbnails(T);
+    shopThumbs.picture(item).then((url) => {
+      if (!url) return;
+      const img = new Image();
+      img.alt = '';
+      img.src = url;
+      holder.replaceChildren(img);
+    });
+  } catch {
+    // No second WebGL context available: the card simply has no picture.
+  }
+}
+function shopCard(item) {
+  const profile = SHOP[item],
+    card = document.createElement('article'),
+    picture = document.createElement('div'),
+    title = document.createElement('h4'),
+    text = document.createElement('p'),
+    button = document.createElement('button'),
+    level = snap.upgrades?.[item] || 0,
+    owned = !myVehicle && snap.purchases?.find((o) => o.owner === id && o.item === item),
+    price = shopPrice(item, snap.upgrades, purchaseCount(snap, item), snap.balance);
+  card.dataset.item = item;
+  picture.className = 'shopPicture';
+  shopPicture(item, picture);
+  title.textContent = profile.name + (profile.max > 1 ? ' · ' + level + '/' + profile.max : '');
+  text.textContent = profile.description;
+  button.textContent =
+    profile.max && level >= profile.max
+      ? 'Acquis'
+      : owned
+        ? 'Déjà payé · Reprendre la pose'
+        : price +
+          ' $ · ' +
+          (['placement', 'vehicle'].includes(profile.kind) ? 'Signer le bon' : 'Acheter');
+  button.disabled =
+    purchaseBusy ||
+    (!owned && snap.dollars < price) ||
+    (profile.max && level >= profile.max) ||
+    (['placement', 'vehicle'].includes(profile.kind) &&
+      !myVehicle &&
+      (turretIndex >= 0 || selfBase()?.grounded === false));
+  button.onclick = () => {
+    if (['placement', 'vehicle'].includes(profile.kind)) {
+      if (owned) beginPlacement(owned);
+      else
+        purchaseUI.open(
+          item,
+          snap.pilots.find((p) => p.id === id),
+        );
+    } else purchase(item);
+  };
+  card.append(picture, title, text, button);
+  return card;
 }
 async function purchase(item) {
   if (purchaseBusy) return;

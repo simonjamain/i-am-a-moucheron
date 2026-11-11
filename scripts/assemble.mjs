@@ -90,6 +90,8 @@ const files = {
       'castor-top-view',
       'service-zones',
       'engine-smoke',
+      'shop-catalog',
+      'shop-thumbs',
       'reserve-feedback',
       'delivery',
       'salvos',
