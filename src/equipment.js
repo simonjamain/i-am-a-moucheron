@@ -2,16 +2,16 @@ import { VEHICLES } from './fleet.js';
 import { MAP } from './scale.js';
 export const SHOP = Object.freeze({
   fighter: {
-    name: 'M1 Chasseur léger supplémentaire',
+    name: 'M1 Chasseur biplan supplémentaire',
     cost: 8,
     kind: 'vehicle',
     description: 'Achat à poser, en plus de la réserve gratuite.',
   },
   bomber: {
-    name: 'B3 Bombardier moyen supplémentaire',
+    name: 'B3 Bombardier biplan supplémentaire',
     cost: 16,
     kind: 'vehicle',
-    description: 'Trois postes et 50 bombes ; achat à poser.',
+    description: 'Pilote et mitrailleur, 30 bombes ; achat à poser.',
   },
   bed: {
     name: 'Lit de réapparition',

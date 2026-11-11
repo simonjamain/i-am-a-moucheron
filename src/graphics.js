@@ -3,9 +3,8 @@ import { MODEL_DATA as SPITFIRE } from './meshy-spitfire-data.js';
 import { MODEL_DATA as TANK } from './meshy-tank-data.js';
 import { MODEL_DATA as FLAKTRUCK } from './meshy-flaktruck-data.js';
 import { MODEL_DATA as STUKA } from './meshy-stuka-data.js';
-import { makeB3 } from './b3-model.js';
 import { makeH2 } from './h2-model.js';
-import { makeM1 } from './m1-model.js';
+import { makeBiplane, makeBiplaneBomber } from './biplane-model.js';
 import { makeCastorMeshy } from './castor-model.js';
 import { createCharacter, CHARACTER_HEIGHT, LEGACY_HEIGHT } from './character-model.js';
 import { createMidgeRig } from './midge-model.js';
@@ -58,7 +57,7 @@ export function createGraphics(T, scene) {
     return s;
   }
   function makePlane(color) {
-    return makeM1(T, scene, color, box, mat);
+    return makeBiplane(T, scene, color, box, mat);
   }
   // Remodelled Spitfire: real propeller, wings and six wing-gun muzzles.
   function makeSpitfire() {
@@ -76,7 +75,7 @@ export function createGraphics(T, scene) {
     return g;
   }
   function makeBomber() {
-    return makeB3(T, scene, box);
+    return makeBiplaneBomber(T, scene, box);
   }
   // Remodelled Stuka: gull wings, propeller and two wing guns; its belly bomb
   // is part of the hull.

@@ -206,18 +206,20 @@ assert.ok(upgradedVehicle(VEHICLES.fighter, snap.upgrades).thrust > VEHICLES.fig
 const bomber = snap.vehicles.find((v) => v.type === 'bomber'),
   entry = vehicleEntry(bomber),
   boarding = await ground(a, entry);
-assert.equal(
-  (await api('vehicle-select', { id: a.id, vehicle: bomber.id, seat: 'tail', ground: boarding }))
-    .status,
-  200,
-);
+const selected = await api('vehicle-select', {
+  id: a.id,
+  vehicle: bomber.id,
+  seat: 'dorsal',
+  ground: boarding,
+});
+assert.equal(selected.status, 200, JSON.stringify(selected.body));
 for (const form of [1, 2])
   assert.equal(
     (
       await api('vehicle-sign', {
         id: a.id,
         vehicle: bomber.id,
-        seat: 'tail',
+        seat: 'dorsal',
         ground: boarding,
         form,
         signature: true,

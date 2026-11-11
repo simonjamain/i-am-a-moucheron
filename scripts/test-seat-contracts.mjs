@@ -21,7 +21,15 @@ async function api(path, data, status = 200) {
 const a = await api('join', { name: 'A', code: 'SEATTEST' }),
   b = await api('join', { name: 'B', code: 'SEATTEST' }),
   c = await api('join', { name: 'C', code: 'SEATTEST' });
-const vehicle = a.snapshot.vehicles.find((v) => v.type === 'bomber');
+// Seat exchange rules are vehicle-independent: use a three-seat vehicle (the biplane
+// bomber has only a pilot and one gunner). Seats: pilot, cannon, top.
+const { vehiclePad } = await import('../src/fleet.js');
+await DB.prepare('INSERT INTO vehicles(id,room,type,state,ready,created) VALUES(?,?,?,?,1,?)')
+  .bind(crypto.randomUUID(), 'SEATTEST', 'tank', JSON.stringify(vehiclePad('tank')), now)
+  .run();
+const vehicle = (await api('sync', { id: a.id, state: a.state })).vehicles.find(
+  (v) => v.type === 'tank',
+);
 async function assign(p, seat) {
   await DB.prepare('DELETE FROM vehicle_seats WHERE pilot=?').bind(p.id).run();
   await DB.prepare('INSERT INTO vehicle_seats(room,vehicle,seat,pilot) VALUES(?,?,?,?)')
@@ -32,12 +40,12 @@ async function assign(p, seat) {
     .run();
 }
 await assign(a, 'pilot');
-await assign(b, 'tail');
-let s = await api('seat-request', { id: a.id, seat: 'dorsal' });
+await assign(b, 'top');
+let s = await api('seat-request', { id: a.id, seat: 'cannon' });
 let request = s.seatRequests.find((r) => r.requester === a.id);
 assert.equal(s.pilots.find((p) => p.id === a.id).seat, 'pilot');
 s = await api('seat-sign', { id: a.id, request: request.id, signature: true });
-assert.equal(s.pilots.find((p) => p.id === a.id).seat, 'dorsal');
+assert.equal(s.pilots.find((p) => p.id === a.id).seat, 'cannon');
 assert.ok(!s.vehicles.find((v) => v.id === vehicle.id).seats.some((x) => x.seat === 'pilot'));
 s = await api('seat-request', { id: a.id, seat: 'pilot' });
 request = s.seatRequests.find((r) => r.requester === a.id);
@@ -46,13 +54,13 @@ assert.equal(s.pilots.find((p) => p.id === a.id).mode, 'flight');
 // An airborne move never resets the aircraft pose.
 const pose = { ...vehicle.state, p: [0, 1.8, 0], v: [0, 0, -0.1], landed: false };
 await api('sync', { id: a.id, mode: 'flight', state: pose });
-s = await api('seat-request', { id: a.id, seat: 'tail' });
+s = await api('seat-request', { id: a.id, seat: 'top' });
 request = s.seatRequests.find((r) => r.requester === a.id);
 await api('seat-sign', { id: b.id, request: request.id, signature: true }, 409);
 s = await api('seat-sign', { id: a.id, request: request.id, signature: true });
 assert.equal(s.pilots.find((p) => p.id === a.id).seat, 'pilot');
 s = await api('seat-sign', { id: b.id, request: request.id, signature: true });
-assert.equal(s.pilots.find((p) => p.id === a.id).seat, 'tail');
+assert.equal(s.pilots.find((p) => p.id === a.id).seat, 'top');
 assert.equal(s.pilots.find((p) => p.id === b.id).seat, 'pilot');
 assert.deepEqual(s.vehicles.find((v) => v.id === vehicle.id).state.p, pose.p);
 // Refusal keeps both rights unchanged.
@@ -60,9 +68,9 @@ s = await api('seat-request', { id: a.id, seat: 'pilot' });
 request = s.seatRequests.find((r) => r.requester === a.id);
 await api('seat-sign', { id: a.id, request: request.id, signature: true });
 s = await api('seat-reject', { id: b.id, request: request.id });
-assert.equal(s.pilots.find((p) => p.id === a.id).seat, 'tail');
+assert.equal(s.pilots.find((p) => p.id === a.id).seat, 'top');
 // Two signatures competing for a free seat: precisely one claimant wins.
-await assign(c, 'dorsal');
+await assign(c, 'cannon');
 await DB.prepare('DELETE FROM vehicle_seats WHERE pilot=?').bind(b.id).run();
 await DB.prepare("UPDATE pilots SET mode='foot',vehicle_id=NULL,seat=NULL WHERE id=?")
   .bind(b.id)
@@ -151,7 +159,7 @@ const host = (
 await DB.prepare("DELETE FROM vehicle_seats WHERE vehicle=? AND seat='pilot'")
   .bind(vehicle.id)
   .run();
-await DB.prepare("UPDATE pilots SET mode='crew',seat='tail' WHERE id=?").bind(winner).run();
+await DB.prepare("UPDATE pilots SET mode='crew',seat='top' WHERE id=?").bind(winner).run();
 await api('sync', { id: host, state: pose, vacant: [{ id: vehicle.id, state: vacant }] });
 let hull = await DB.prepare('SELECT state FROM vehicles WHERE id=?').bind(vehicle.id).first();
 assert.deepEqual(JSON.parse(hull.state).p, vacant.p);

@@ -51,8 +51,14 @@ for (let i = 0; i < 240; i++) {
   stepFlight(T, bomber, 1 / 120);
   assert.ok(full.vel.clone().sub(small.vel.clone().divideScalar(MAP.ratio)).length() < 1e-8);
 }
+// The biplane fighter is 25 % slower than the light fighter it replaced; its level speed
+// (after the acceleration phase) is still above the bomber's, whose cap is the same.
+for (let i = 0; i < 28 * 120; i++) {
+  stepFlight(T, small, 1 / 120);
+  stepFlight(T, bomber, 1 / 120);
+}
 assert.ok(bomber.vel.length() < small.vel.length());
-assert.ok(VEHICLES.bomber.maxSpeed < VEHICLES.fighter.maxSpeed);
+assert.ok(VEHICLES.bomber.maxSpeed <= VEHICLES.fighter.maxSpeed);
 const raid = createRaid(T),
   a = raid.position(0, 20),
   b = raid.position(0, 20.01);
@@ -159,18 +165,23 @@ const raced = await Promise.all([sign(pa, bomb, 'pilot', 2, ga), sign(pd, bomb, 
 assert.deepEqual(raced.map((x) => x.status).sort(), [200, 409]);
 const pilot = raced[0].status === 200 ? pa : pd,
   loser = pilot === pa ? pd : pa;
-for (const [p, seat] of [
-  [pb, 'dorsal'],
-  [pc, 'tail'],
-]) {
-  const g = await select(p, bomb, seat);
-  assert.equal((await sign(p, bomb, seat, 1, g)).status, 200);
-  assert.equal((await sign(p, bomb, seat, 2, g)).status, 200);
+{
+  // The biplane bomber has a pilot and one rear gunner only.
+  const g = await select(pb, bomb, 'dorsal');
+  assert.equal((await sign(pb, bomb, 'dorsal', 1, g)).status, 200);
+  assert.equal((await sign(pb, bomb, 'dorsal', 2, g)).status, 200);
+  const extra = await api('vehicle-select', {
+    id: pc.id,
+    vehicle: bomb.id,
+    seat: 'tail',
+    ground: await position(pc, vehicleEntry(bomb, 'tail')),
+  });
+  assert.equal(extra.status, 409, 'no tail gunner seat');
 }
 snap = (await api('sync', { id: pilot.id, state: pilot.state })).body;
 const shared = snap.vehicles.find((v) => v.id === bomb.id);
-assert.equal(shared.seats.length, 3);
-assert.deepEqual(new Set(shared.seats.map((s) => s.seat)), new Set(['pilot', 'dorsal', 'tail']));
+assert.equal(shared.seats.length, 2);
+assert.deepEqual(new Set(shared.seats.map((s) => s.seat)), new Set(['pilot', 'dorsal']));
 pilot.state = {
   ...shared.state,
   p: [shared.state.p[0], shared.state.p[1] + MAP.metres(5), shared.state.p[2] + MAP.metres(30)],
@@ -243,12 +254,12 @@ assert.equal(
 );
 assert.ok(
   exit.body.pilots
-    .filter((p) => [pilot.id, pb.id, pc.id].includes(p.id))
+    .filter((p) => [pilot.id, pb.id].includes(p.id))
     .every((p) => p.mode === 'foot' && !p.vehicle_id),
 );
 assert.ok(
   exit.body.base.bodies
-    .filter((b) => [pilot.id, pb.id, pc.id].includes(b.entity))
+    .filter((b) => [pilot.id, pb.id].includes(b.entity))
     .every((b) => !b.parachute && b.grounded === false),
 );
 // DCA seat can be reached with scaled body coordinates and left nearby.

@@ -15,8 +15,8 @@ import { MODEL_DATA as SPITFIRE } from '../src/meshy-spitfire-data.js';
 import { MODEL_DATA as TANK } from '../src/meshy-tank-data.js';
 import { MODEL_DATA as FLAKTRUCK } from '../src/meshy-flaktruck-data.js';
 import { H2_DATA } from '../src/meshy-h2-data.js';
-import { B3_DATA } from '../src/meshy-b3-data.js';
-import { M1_DATA } from '../src/meshy-m1-data.js';
+import { BIPLANE_BOMBER_DATA } from '../src/meshy-biplane-bomber-data.js';
+import { BIPLANE_DATA } from '../src/meshy-biplane-data.js';
 import { MODEL_DATA as STUKA } from '../src/meshy-stuka-data.js';
 
 const SOURCES = {
@@ -24,8 +24,12 @@ const SOURCES = {
   tank: [TANK, 'fb105cc19eefd50573c25ca9eaa233bf15eb4898d04f34cbaa736b618da186e9', 3833],
   flaktruck: [FLAKTRUCK, '3861d4bf21e75d0ca9a7864b40f98189847b0fdcffdf6de5daf1127f71da18ed', 4689],
   helicopter: [H2_DATA, '488832fc140c16321dc54d07addd088ea16e2f3b042f568fa910ec1ee1206a9a', 5102],
-  bomber: [B3_DATA, 'a50363b85c21e407839651d5b478bf8900bb340debec3e86cdc68b94b8284307', 5797],
-  fighter: [M1_DATA, 'd4115c13695e06dc06f42e35301c59e0717e26a68e77cbfb6d17bd5ba5107387', 2357],
+  bomber: [
+    BIPLANE_BOMBER_DATA,
+    '62a9205e7fd834c30ce11e931da966f208fadc433859a3ebf12f7c587b3e8023',
+    1762,
+  ],
+  fighter: [BIPLANE_DATA, '4ca14796ad8154a636dff5b2a7f9646dea2eb29ab8a49774e2d4c103429d228a', 2702],
   interceptor: [STUKA, '6290811f303ac480f3b286dd62ee73d6293fa542d824987b378262e5c8ec9ade', 3261],
 };
 for (const [name, [data, sha, triangles]] of Object.entries(SOURCES)) {
@@ -170,24 +174,29 @@ for (const [type, make] of [
   assert.ok(rotor.children.some((o) => o.isMesh) && tail.children.some((o) => o.isMesh));
 }
 
-// B3: three gunner turrets in seat order; each muzzle lies on its aim line.
+// Biplane bomber: one rear gunner turret, backward at rest; the muzzle lies on its aim line.
 {
   const model = graphics.makeBomber();
-  const [dorsal, tail, ventral] = model.userData.turrets;
+  assert.equal(model.userData.turrets.length, 1, 'pilot and one gunner');
+  const [dorsal] = model.userData.turrets;
   model.updateMatrixWorld(true);
   const world = (o) => o.getWorldPosition(new T.Vector3());
-  assert.ok(world(dorsal).y > 0.5 && world(ventral).y < 0 && world(tail).z > 3.5, 'seat order');
+  assert.ok(world(dorsal).y > 0.5 && world(dorsal).z > 0, 'rear gunner behind the pilot');
   const rest = (mount) => world(mount.userData.muzzle).sub(world(mount.userData.pitch)).normalize();
-  assert.ok(rest(tail).z > 0.9, 'tail guns face backward at rest');
-  assert.ok(rest(ventral).y < -0.5, 'ventral guns hang down at rest');
-  for (const mount of [dorsal, tail, ventral]) {
-    const dir = new T.Vector3(0.3, -0.2, -0.9).normalize();
-    aimGun(T, mount, dir, mount.parent.getWorldQuaternion(new T.Quaternion()));
+  assert.ok(rest(dorsal).z > 0.8, 'gun faces backward at rest');
+  for (const d of [
+    [0.3, -0.2, -0.9],
+    [-0.5, 0.4, 0.7],
+  ]) {
+    const dir = new T.Vector3(...d).normalize();
+    aimGun(T, dorsal, dir, dorsal.parent.getWorldQuaternion(new T.Quaternion()));
     model.updateMatrixWorld(true);
-    assert.ok(rest(mount).dot(dir) > 0.9999, 'muzzle on the aim line');
+    assert.ok(rest(dorsal).dot(dir) > 0.9999, 'muzzle on the aim line');
   }
-  assert.equal(model.userData.props.length, 2);
-  assert.ok(world(model.userData.props[0]).x < 0 && world(model.userData.props[1]).x > 0);
+  assert.equal(model.userData.props.length, 1, 'single nose propeller');
+  assert.ok(
+    Math.abs(world(model.userData.props[0]).x) < 0.05 && world(model.userData.props[0]).z < -3,
+  );
 }
 
 // Spitfire: six wing guns, symmetric, and the propeller on the nose axis.
@@ -207,16 +216,21 @@ for (const [type, make] of [
     'guns ride the wing',
   );
 }
-// M1 and Stuka: propeller on the nose axis and symmetric front guns.
-for (const make of ['makePlane', 'makeStuka']) {
+// Biplane fighter: one central gun on the nose axis. Stuka: symmetric wing guns.
+for (const [make, count] of [
+  ['makePlane', 1],
+  ['makeStuka', 2],
+]) {
   const model = graphics[make]();
   model.updateMatrixWorld(true);
   const guns = model.userData.pilotMuzzles.map((m) => m.getWorldPosition(new T.Vector3()));
-  assert.equal(guns.length, 2, make + ' guns');
+  assert.equal(guns.length, count, make + ' guns');
   assert.ok(
-    Math.abs(guns[0].x + guns[1].x) < 0.05 && guns[0].z < -1,
-    make + ' symmetric front guns',
+    guns.every((g) => g.z < -1),
+    make + ' guns in front',
   );
+  if (count === 2) assert.ok(Math.abs(guns[0].x + guns[1].x) < 0.05, make + ' symmetric guns');
+  else assert.ok(Math.abs(guns[0].x) < 0.05, make + ' central gun');
   assert.ok(Math.abs(model.userData.prop.position.x) < 0.05 && model.userData.prop.position.z < -2);
 }
 console.log('Meshy vehicles: sources, rigs, ground contact and physics anchors match the models');

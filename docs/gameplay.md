@@ -51,7 +51,7 @@ plus d'étiquette flottante « BASE ALPHA · 3 / 1000 » dans la scène. Le num�
 version, en haut à gauche, ouvre les **Nouveautés**. Il n'y a plus de réglage audio visible : le son
 démarre au volume standard dès la première interaction autorisée par le navigateur.
 
-Noms validés : **M1 Chasseur léger**, **B3 Bombardier moyen**, **H2 Hélicoptère
+Noms validés : **M1 Chasseur biplan**, **B3 Bombardier biplan** (version 275, [biplans](biplane-models.md)), **H2 Hélicoptère
 d’attaque au sol**, **T3 Char moyen**, **G1 Castor**, **D2 Anti-air mobile**, DCA fixe
 **Canon Flak**, canon lourd **Canon anti-matériel** ; la tourelle automatique, le Stuka
 et le Spitfire gardent leur nom (`src/fleet.js`, `src/equipment.js`,
@@ -364,7 +364,7 @@ insectes déjà engagés rejoignent le nouveau tracé en 2,5 secondes en continu
 d’avancer. Retirez un ventilateur avec **Enlever** pour rétablir progressivement
 le parcours. Le départ et l’arrivée restent fixes.
 
-Le [bombardier B3 à quatre places](b3-model.md) conserve son camouflage Meshy ; un disque coloré au-dessus identifie l’appareil.
+Le [bombardier biplan à deux places](biplane-models.md) conserve son camouflage Meshy ; la plaque de nom de chaque occupant est collée sur son fuselage.
 
 ## G1 Castor (première étape, version 179)
 

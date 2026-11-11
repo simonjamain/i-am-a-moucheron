@@ -53,7 +53,7 @@ import { howitzerMuzzle, howitzerPitchAllowed } from '../src/howitzer-geometry.j
 import { validMotion } from '../src/network.js';
 import { snapshotRosterCore, snapshotRosterKey } from '../src/snapshot-wire.js';
 import { newBank, signLoan, settleLoans, repayLoan } from '../src/bank.js';
-import { canUseWeapon, HEAVY, TANK_MG, availableShell } from '../src/armament.js';
+import { canUseWeapon, HEAVY, TANK_MG, availableShell, heavyInterval } from '../src/armament.js';
 import { sweptSphereMayTouch } from '../src/swept-broadphase.js';
 import { createOrdnance, segmentSphere } from '../src/ordnance.js';
 
@@ -2005,7 +2005,8 @@ export class Game {
     v.lastHeavy ??= {};
     requireGame(
       this.now() + HEAVY_CADENCE_TOLERANCE_MS >=
-        (v.lastHeavy[lane] ?? -Infinity) + (HEAVY[selected].interval / r.balance.fireRate) * 1000,
+        (v.lastHeavy[lane] ?? -Infinity) +
+          (heavyInterval(selected, v.type) / r.balance.fireRate) * 1000,
       'Arme en recharge.',
     );
     requireGame(

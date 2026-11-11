@@ -7,8 +7,8 @@ import * as T from '../vendor/three.module.min.js';
 import { Game } from '../server/game.js';
 import { SHOP, shopPrice, purchaseCount, supportedPlacement } from '../src/equipment.js';
 import { fullAmmo, advanceSupplies } from '../src/logistics.js';
-import { HEAVY } from '../src/armament.js';
-import { VEHICLES, vehicleEntry } from '../src/fleet.js';
+import { HEAVY, heavyInterval } from '../src/armament.js';
+import { VEHICLES, LIGHT_FIGHTER, vehicleEntry } from '../src/fleet.js';
 import { MAP, ACTOR_UNIT } from '../src/scale.js';
 import { OFFICE_LAYOUT } from '../src/layout.js';
 import { OFFICE_SOLIDS } from '../worker/assets.js';
@@ -137,21 +137,22 @@ const pilot = q,
 game.assign(r, pilot, bomber, 'pilot', null);
 bomber.state.p = [0, 2, 0];
 bomber.state.landed = false;
-assert.equal(bomber.supplies.ammo.bomb, 50);
-for (let i = 0; i < 50; i++) {
-  now += 500;
+// The biplane bomber carries 30 bombs, dropped at half the Stuka's rate (1 s apart).
+assert.equal(bomber.supplies.ammo.bomb, 30);
+for (let i = 0; i < 30; i++) {
+  now += 1000;
   pilot.seen = now;
   command('heavy-fire', { weapon: 'bomb', shot: 'drop-' + i, direction: [0, 0, -1] }, pilot);
   command('heavy-fire', { weapon: 'bomb', shot: 'drop-' + i, direction: [0, 0, -1] }, pilot);
-  assert.equal(bomber.supplies.ammo.bomb, 49 - i);
-  if (i < 49)
+  assert.equal(bomber.supplies.ammo.bomb, 29 - i);
+  if (i < 29)
     assert.throws(
       () =>
         command('heavy-fire', { weapon: 'bomb', shot: 'fast-' + i, direction: [0, 0, -1] }, pilot),
       /recharge/,
     );
 }
-now += 500;
+now += 1000;
 pilot.seen = now;
 assert.throws(
   () => command('heavy-fire', { weapon: 'bomb', shot: 'empty', direction: [0, 0, -1] }, pilot),
@@ -165,8 +166,9 @@ const filled = advanceSupplies(
   [{ kind: 'refuel', x: 0, y: 0.9, z: 0 }],
   10,
 );
-assert.equal(filled.ammo.bomb, 50);
-assert.equal(HEAVY.bomb.interval, 0.5);
+assert.equal(filled.ammo.bomb, 30);
+assert.equal(HEAVY.bomb.interval, 0.5, 'Stuka rack cadence unchanged');
+assert.equal(heavyInterval('bomb', 'bomber'), 1, 'biplane bomber: half the bombing rate');
 
 // Spitfire price, exclusive role, real six physical barrels and 45-second stock.
 assert.equal(shopPrice('spitfire'), 2 * shopPrice('interceptor'));
@@ -227,13 +229,14 @@ function flight(profile, speed) {
   stepFlight(T, state, 1 / 120);
   return state;
 }
-const reference = flight(VEHICLES.fighter, 30),
+// Ratios are measured against the original light fighter, the reference of the derived planes.
+const reference = flight(LIGHT_FIGHTER, 30),
   fast = flight(VEHICLES.spitfire, 30);
 assert.ok(Math.abs(fast.omega.x / reference.omega.x - 1.45) < 1e-10);
 assert.ok(Math.abs(fast.omega.z / reference.omega.z - 1.45) < 1e-10);
 assert.ok(
   Math.abs(
-    flight(VEHICLES.spitfire, 200).vel.length() / flight(VEHICLES.fighter, 200).vel.length() - 1.75,
+    flight(VEHICLES.spitfire, 200).vel.length() / flight(LIGHT_FIGHTER, 200).vel.length() - 1.75,
   ) < 1e-10,
 );
 spit.state.hp = 0;
@@ -243,7 +246,7 @@ assert.equal(
   0,
 );
 console.log(
-  'Weapons: 50 bombs, bounded 500ms authority cadence, repeat/empty/refill; Spitfire 24$, six barrels, 1000 rounds/partial final salvo and measured 1.75/1.45 physics ratios.',
+  'Weapons: 30 bombs at 1 s authority cadence (Stuka 500 ms), repeat/empty/refill; Spitfire 24$, six barrels, 1000 rounds/partial final salvo and measured 1.75/1.45 physics ratios.',
 );
 
 // Impact uses enemy remaining health once, all vehicle roles share the same dirt.

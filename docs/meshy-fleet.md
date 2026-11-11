@@ -1,7 +1,7 @@
 # Visuels Meshy texturés : Stuka, Spitfire S6, Tank T3 et DCA mobile D2
 
 Depuis la version 263, le Spitfire S6, le T3, le D2, le H2 et le B3 utilisent les
-modèles refaits par l'utilisateur, articulés pièce par pièce : voir
+modèles refaits par l'utilisateur, articulés pièce par pièce ; le chasseur et le bombardier biplans les ont rejoints en version 275 ([biplanes](biplane-models.md)) : voir
 [le remodelage de la flotte](#remodelage-de-la-flotte-version-263). Les sections
 suivantes décrivent la première génération, remplacée partout : le M1 et le
 Stuka suivent depuis la version 266.
@@ -78,15 +78,15 @@ Une compilation et un test sans GPU ne constituent pas cet essai.
 L'utilisateur a refait cinq véhicules dans Meshy. Chaque GLB est **un seul
 maillage** texturé dont chaque pièce mobile est un **îlot séparé** :
 
-| Véhicule       | GLB fourni (SHA-256)                                                                                  | Triangles | Îlots |
-| -------------- | ----------------------------------------------------------------------------------------------------- | --------: | ----: |
-| Spitfire S6    | `Meshy_AI_Vintage_Fighter_Plane` (`b18e5558feef75463354dee45037b11ed640a4de6f9f0c71cd6e9dbf484026c4`) |     3 002 |    22 |
-| Tank T3        | `Meshy_AI_Desert_Vanguard` (`fb105cc19eefd50573c25ca9eaa233bf15eb4898d04f34cbaa736b618da186e9`)       |     3 833 |   154 |
-| DCA mobile D2  | `Meshy_AI_Towable_Anti_Aircraft` (`3861d4bf21e75d0ca9a7864b40f98189847b0fdcffdf6de5daf1127f71da18ed`) |     4 689 |   150 |
-| H2             | `Meshy_AI_Desert_Viper_Helicopt` (`488832fc140c16321dc54d07addd088ea16e2f3b042f568fa910ec1ee1206a9a`) |     5 102 |    66 |
-| B3             | `Meshy_AI_Desert_Sky_Fortress` (`a50363b85c21e407839651d5b478bf8900bb340debec3e86cdc68b94b8284307`)   |     5 797 |    45 |
-| M1 (v. 267)    | `Meshy_AI_Olive_Scout_Plane` (`d4115c13695e06dc06f42e35301c59e0717e26a68e77cbfb6d17bd5ba5107387`)     |     2 357 |    20 |
-| Stuka (v. 266) | `Meshy_AI_Desert_Sparrow` (`6290811f303ac480f3b286dd62ee73d6293fa542d824987b378262e5c8ec9ade`)        |     3 261 |    40 |
+| Véhicule           | GLB fourni (SHA-256)                                                                                  | Triangles | Îlots |
+| ------------------ | ----------------------------------------------------------------------------------------------------- | --------: | ----: |
+| Spitfire S6        | `Meshy_AI_Vintage_Fighter_Plane` (`b18e5558feef75463354dee45037b11ed640a4de6f9f0c71cd6e9dbf484026c4`) |     3 002 |    22 |
+| Tank T3            | `Meshy_AI_Desert_Vanguard` (`fb105cc19eefd50573c25ca9eaa233bf15eb4898d04f34cbaa736b618da186e9`)       |     3 833 |   154 |
+| DCA mobile D2      | `Meshy_AI_Towable_Anti_Aircraft` (`3861d4bf21e75d0ca9a7864b40f98189847b0fdcffdf6de5daf1127f71da18ed`) |     4 689 |   150 |
+| H2                 | `Meshy_AI_Desert_Viper_Helicopt` (`488832fc140c16321dc54d07addd088ea16e2f3b042f568fa910ec1ee1206a9a`) |     5 102 |    66 |
+| B3 biplan (v. 275) | `bombardier_biplan` (`62a9205e7fd834c30ce11e931da966f208fadc433859a3ebf12f7c587b3e8023`)              |     1 762 |    61 |
+| M1 biplan (v. 275) | `chasseur_biplan` (`4ca14796ad8154a636dff5b2a7f9646dea2eb29ab8a49774e2d4c103429d228a`)                |     2 702 |    29 |
+| Stuka (v. 266)     | `Meshy_AI_Desert_Sparrow` (`6290811f303ac480f3b286dd62ee73d6293fa542d824987b378262e5c8ec9ade`)        |     3 261 |    40 |
 
 `python3 scripts/import-meshy-vehicle.py spitfire|tank|flaktruck|helicopter|bomber|fighter|interceptor SOURCE.glb`
 soude les sommets (sans tenir compte des coutures UV) pour retrouver les îlots, puis

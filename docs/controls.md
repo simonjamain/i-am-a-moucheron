@@ -223,7 +223,7 @@ pour quitter. Prix, conditions et navigation : [gameplay](gameplay.md#défenses-
 
 Maintenir **G** ou le **clic molette** : orienter vers un secteur puis relâcher pour choisir, à pied ou au volant du Castor au sol. Les autres postes de véhicule ne peuvent pas construire. Clic gauche : fixer un début sans orientation, viser la fin (en marchant si nécessaire), puis cliquer à nouveau pour poser le mur ou le ruban. Le sucre, la réparation et la suppression demandent un seul clic.
 
-Sur le [bombardier B3](b3-model.md), **4** demande le poste ventral avec signature ; **1 / 2 / 3** restent pilote, dorsal et queue.
+Sur le [bombardier biplan](biplane-models.md), **1** et **2** demandent le poste de pilote et celui de mitrailleur (qui regarde vers l'arrière au début), avec signature.
 
 G1 Castor : Z/S avancer/reculer, Q/D tourner, souris et clic gauche pour tirer avec la mitrailleuse légère, **V** bascule la vue de dessus : la caméra se place à la verticale du camion (avant du camion en haut de l’écran) et la souris déplace un viseur au sol ; l’aperçu de construction et la mitrailleuse visent ce point. V de nouveau revient à la vue de conduite. Le soutien à 50 cm est automatique et payant. Pendant la conduite, **G** ou le clic molette ouvre la roue de construction. Clic gauche démarre/arrête la dépose des murs LEGO et rubans : les briques apparaissent une à une derrière le camion (hauteur fixe de trois rangs), chaque section de 20 cm est validée par le serveur et l’arrêt conserve la section commencée. Facturation au prorata de la longueur réelle : 1 $ pour 20 cm, au centime près ; les autres pièges se posent au point visé. Échap interrompt la construction.
 

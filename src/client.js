@@ -46,7 +46,14 @@ import { makeTracer, updateTracer } from '/tracers.js';
 import { airField } from '/air-current.js';
 import { wavePlan, swarmFrame, entryStatus } from '/waves.js';
 import { MAP, ACTOR_UNIT, HUMAN_SCALE, INSECT_SCALE, REFERENCE, FLAK } from '/scale.js';
-import { VEHICLES, SEAT_NAMES, vehiclePad, vehicleEntry, vehicleAccess } from '/fleet.js';
+import {
+  VEHICLES,
+  SEAT_NAMES,
+  vehiclePad,
+  vehicleEntry,
+  vehicleAccess,
+  pilotFireInterval,
+} from '/fleet.js';
 import {
   spreadDirection,
   fuseRange,
@@ -60,7 +67,6 @@ import {
   aimGun,
   gunnerView,
   BULLET_SPEED,
-  FIRE_INTERVAL,
   stationAccess,
   stationEntryOffset,
   stationExit,
@@ -118,7 +124,7 @@ import { howitzerMuzzle } from '/howitzer-geometry.js';
 import { RECONNECT_AFTER_MS, RECONNECT_WINDOW_MS } from '/udp-protocol.js';
 import { HoldZoom, advanceFuse, contextKey, rangeReadout } from '/equipment-controls.js';
 import { formatDistance, formatSpeed } from '/units.js';
-import { HEAVY, TANK_MG, availableShell } from '/armament.js';
+import { HEAVY, TANK_MG, availableShell, heavyInterval } from '/armament.js';
 import { stepTank } from '/tank.js';
 import { animateCastorWheels, trackGroundMotion } from '/castor-wheels.js';
 import { ServiceZones, serviceZoneList } from '/service-zones.js';
@@ -1111,7 +1117,11 @@ function accept(s, force = false) {
         heliRotorPower = myVehicle.state.rotorPower ?? 1;
         boardingOpen = false;
         groundView.scene = '';
-        turretAim.yaw = crewSeat === 'tail' ? Math.PI : 0;
+        // The biplane bomber's rear gunner starts looking backward, like the tail gunner.
+        turretAim.yaw =
+          crewSeat === 'tail' || (myVehicle.type === 'bomber' && crewSeat === 'dorsal')
+            ? Math.PI
+            : 0;
         turretAim.pitch =
           crewSeat === 'ventral' ? -0.65 : myVehicle.type === 'helicopter' ? -0.1 : 0.15;
         Object.assign(heliTurretAim, turretAim);
@@ -3410,7 +3420,7 @@ function updateOthers(dt) {
           ? ['cannon']
           : v.type === 'tank'
             ? ['cannon', 'top']
-            : ['dorsal', 'tail', 'ventral']
+            : ['dorsal']
       ).entries()) {
         const occ = v.seats.find((s) => s.seat === seat),
           gunner = snap.pilots.find((p) => p.id === occ?.pilot);
@@ -3454,7 +3464,8 @@ function updateOthers(dt) {
             g,
             'pilot:' + (p?.id || ''),
             dt,
-            (v.type === 'castor' ? 0.16 : FIRE_INTERVAL) * (1 / (snap?.balance?.fireRate ?? 1)),
+            (v.type === 'castor' ? 0.16 : pilotFireInterval(v.type)) *
+              (1 / (snap?.balance?.fireRate ?? 1)),
             !!motion.fire && v.supplies?.ammo.pilot >= 1,
           )
         : 0;
@@ -3938,7 +3949,7 @@ function physics(dt) {
   const burst = advanceAutomaticFire(
     cooldown,
     dt,
-    FIRE_INTERVAL * (1 / (snap?.balance?.fireRate ?? 1)),
+    pilotFireInterval(myVehicle?.type || 'fighter') * (1 / (snap?.balance?.fireRate ?? 1)),
     shooting && hp > 0,
   );
   cooldown = burst.cooldown;
@@ -5191,7 +5202,8 @@ async function fireHeavy(weapon = null) {
     occupation = snap.pilots.find((p) => p.id === id).occupation,
     now = serverClock.now(performance.now()) ?? Date.now() + clockOffset;
   nextHeavyAt =
-    performance.now() + HEAVY[weapon].interval * 1000 * (1 / (snap?.balance?.fireRate ?? 1));
+    performance.now() +
+    heavyInterval(weapon, myVehicle.type) * 1000 * (1 / (snap?.balance?.fireRate ?? 1));
   const vehicle = launchVehicle();
   if (weapon === 'rocket') rocketSides.set(myVehicle.id, vehicle.rocketSide);
   const projectile = launchLocal(

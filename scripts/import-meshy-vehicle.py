@@ -3,7 +3,7 @@ movable pieces are separate islands) into articulated, offline game modules.
 
 Usage:
   python3 scripts/import-meshy-vehicle.py VEHICLE SOURCE.glb [--debug]
-  VEHICLE: spitfire | tank | flaktruck | helicopter | bomber | fighter | interceptor
+  VEHICLE: spitfire | tank | flaktruck | helicopter | biplane | biplanebomber | interceptor
 
 Each vehicle spec selects islands (welded connectivity, ignoring UV seams) for
 every articulated node, gives its pivot and, for guns, the barrel direction.
@@ -175,6 +175,29 @@ def B3_MUZZLE(H, node, guns):
     return pivot + d * np.dot(B3_TIPS(H, guns)[0] - pivot, d)
 
 
+# Biplane bomber: the rear gunner's machine gun sits on a ring behind the pilot.
+# Barrel axis from the breech to the muzzle (islands 12 and 14, game space).
+BIPLANE_GUN = (12, 14, 23)
+
+
+def BIPLANE_AXIS(H):
+    base = H.front(12, low=True)
+    tip = H.front(12, low=False)
+    d = tip - base
+    return base, tip, d / np.linalg.norm(d)
+
+
+def BIPLANE_PIVOT(H):
+    # Point of the barrel axis nearest the ring centre: yaw and pitch pivot.
+    base, tip, d = BIPLANE_AXIS(H)
+    ring = H.center(3, 6)
+    return base + d * np.dot(ring - base, d)
+
+
+def BIPLANE_MUZZLE(H):
+    return BIPLANE_AXIS(H)[1]
+
+
 def STUKA_GUN(H, wing):
     # Leading edge of a wing at 40 % of its span from the root.
     lo, hi = H.box(wing)
@@ -300,14 +323,29 @@ SPECS = {
             dict(name='ventralMuzzle', node='ventralGun', fn=lambda H: [B3_MUZZLE(H, 'ventralGun', (12, 14))]),
         ],
     ),
-    # M1 light fighter (remodel of the remodel, v267): propeller and the two
-    # sculpted nose machine guns. Damage no longer deforms the wing, so the
-    # hull keeps it whole.
-    'fighter': dict(
-        output='src/meshy-m1-data.js', export='M1_DATA',
+    # Biplane fighter (replaces the M1 light fighter): propeller; the single
+    # central machine gun stays sculpted on the hull and fires from its muzzle.
+    'biplane': dict(
+        output='src/meshy-biplane-data.js', export='BIPLANE_DATA',
         fit=('x', 5.6), gear=1.05,
         nodes=[dict(name='prop', select=lambda i: i.c[0] < -0.33, pivot=('center', 'largest'))],
-        anchors=[dict(name='gun', node='body', each=lambda i: i.id in (3, 4))],
+        anchors=[dict(name='gun', node='body', fn=lambda H: [H.front(0)])],
+    ),
+    # Biplane bomber (replaces the B3): propeller and the rear gunner's mount.
+    # The ring stays in the hull; the gun yaws and elevates on the barrel axis,
+    # pointing backward at rest.
+    'biplanebomber': dict(
+        output='src/meshy-biplane-bomber-data.js', export='BIPLANE_BOMBER_DATA',
+        fit=('x', 11.3), gear=1.45,
+        nodes=[
+            dict(name='prop', select=lambda i: i.c[0] < -0.325 and i.sz[1] > 0.02,
+                 pivot=('center', 'largest')),
+            dict(name='dorsalGun', parent='dorsal', select=ids(*BIPLANE_GUN),
+                 pivot=('fn', BIPLANE_PIVOT), aim=lambda H: BIPLANE_AXIS(H)[2]),
+            dict(name='dorsal', pivot=('fn', BIPLANE_PIVOT),
+                 aim=lambda H: BIPLANE_AXIS(H)[2], elevate=False),
+        ],
+        anchors=[dict(name='dorsalMuzzle', node='dorsalGun', fn=lambda H: [BIPLANE_MUZZLE(H)])],
     ),
     # Stuka: gull wings (separate islands), propeller; the belly bomb stays on
     # the hull. Its two wing guns fire from the leading edge at 40 % span.
