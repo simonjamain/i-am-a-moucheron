@@ -1,6 +1,12 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 273,
+    changes: [
+      'Menu d’achat simplifié : on clique directement sur l’article, sans bouton ni description.',
+    ],
+  },
+  {
     version: 272,
     changes: [
       'Le haut de l’écran est regroupé en une seule barre : vague, argent et boutiques à gauche, connexion et réglages à droite.',

@@ -127,11 +127,11 @@ ne sont plus traités à part.
 
 ## Atelier de la base (menu d'achat, P)
 
-Depuis la version 271, l'atelier range les achats en quatre colonnes — Aéronefs,
+Depuis la version 271 (cartes simplifiées en 273), l'atelier range les achats en quatre colonnes — Aéronefs,
 Véhicules au sol, Installations, Améliorations — triées du plus faible (haut) au plus
-fort (bas) selon le prix de base. Chaque carte montre une image du modèle (rendue
+fort (bas) selon le prix de base. Chaque carte est un bouton unique (on clique directement dessus ; pas de bouton « Signer le bon » ni de description) qui montre une image du modèle (rendue
 une fois par `src/shop-thumbs.js` à partir des vrais modèles 3D ; un pictogramme pour
-les améliorations), son nom, sa description et le bouton d'achat avec le prix. L'ordre
+les améliorations), son nom et son prix (ou « Acquis » / « Déjà payé »). L'ordre
 et les catégories vivent dans `src/shop-catalog.js` ; un nouvel article non classé
 apparaît dans une colonne « Autres » (`scripts/test-shop-catalog.mjs`).
 
