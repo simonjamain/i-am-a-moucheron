@@ -45,7 +45,7 @@ Voir [mode debug](laboratory.md).
 
 ## Accueil et noms
 
-L'accueil affiche le titre **I am Moucheron**, le formulaire et l'indication « Base
+L'accueil affiche le titre **I am a moucheron**, le formulaire et l'indication « Base
 Alpha », sur le bureau 3D animé ; aucun slogan, badge ni mention de prototype, et
 plus d'étiquette flottante « BASE ALPHA · 3 / 1000 » dans la scène. Le numéro de
 version, en haut à gauche, ouvre les **Nouveautés**. Il n'y a plus de réglage audio visible : le son
@@ -116,6 +116,16 @@ n'ont plus aucun malus de pilotage : moteur et ailes restent pleinement
 efficaces, seule la fumée trahit l'état de l'avion. Les insectes
 tués tombent et s’estompent avant suppression. Voir [physique](economy-physics.md)
 et [armement](scale-fleet-weapons.md).
+
+## Atelier de la base (menu d'achat, P)
+
+Depuis la version 271, l'atelier range les achats en quatre colonnes — Aéronefs,
+Véhicules au sol, Installations, Améliorations — triées du plus faible (haut) au plus
+fort (bas) selon le prix de base. Chaque carte montre une image du modèle (rendue
+une fois par `src/shop-thumbs.js` à partir des vrais modèles 3D ; un pictogramme pour
+les améliorations), son nom, sa description et le bouton d'achat avec le prix. L'ordre
+et les catégories vivent dans `src/shop-catalog.js` ; un nouvel article non classé
+apparaît dans une colonne « Autres » (`scripts/test-shop-catalog.mjs`).
 
 ## Purgatoire et économie
 

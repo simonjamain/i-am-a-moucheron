@@ -1,6 +1,13 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 271,
+    changes: [
+      'Menu d’achat en colonnes, du moins cher au plus cher, avec une image de chaque article.',
+      'Le titre de l’accueil devient « I am a moucheron ».',
+    ],
+  },
+  {
     version: 270,
     changes: ['La fumée des roquettes et des missiles reste beaucoup plus longtemps dans le ciel.'],
   },

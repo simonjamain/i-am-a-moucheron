@@ -8,7 +8,7 @@ import { FORTIFICATIONS } from '../src/ground-fortifications.js';
 const html = readFileSync('src/index.html', 'utf8');
 const client = readFileSync('src/client.js', 'utf8');
 const office = readFileSync('src/office.js', 'utf8');
-assert.match(html, /<h1>I am Moucheron<\/h1>/);
+assert.match(html, /<h1>I am a moucheron<\/h1>/);
 const home = html.slice(0, html.indexOf('</main>'));
 for (const gone of [
   /class="mark"|✳/,
