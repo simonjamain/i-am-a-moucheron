@@ -1,6 +1,12 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 272,
+    changes: [
+      'Le haut de l’écran est regroupé en une seule barre : vague, argent et boutiques à gauche, connexion et réglages à droite.',
+    ],
+  },
+  {
     version: 271,
     changes: [
       'Menu d’achat en colonnes, du moins cher au plus cher, avec une image de chaque article.',

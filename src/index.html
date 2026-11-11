@@ -204,9 +204,6 @@
         pointer-events: auto;
       }
       .topstats {
-        position: absolute;
-        top: 85px;
-        left: 30px;
         display: flex;
         background: #0c211ed9;
         border: 1px solid var(--line);
@@ -237,9 +234,6 @@
         font-weight: bold;
       }
       #roomTag {
-        position: absolute;
-        right: 32px;
-        top: 85px;
         pointer-events: auto;
         display: flex;
         gap: 8px;
@@ -247,10 +241,11 @@
       }
       #players {
         position: absolute;
-        right: 32px;
-        top: 142px;
+        right: 20px;
+        top: 100px;
         text-align: right;
-        color: #b4c6be;
+        color: #e4eedc;
+        text-shadow: 0 1px 4px #000a;
         font-size: 11px;
         line-height: 1.9;
       }
@@ -388,9 +383,6 @@
         text-shadow: 0 2px 12px #000;
       }
       #net {
-        position: absolute;
-        right: 32px;
-        top: 27px;
         font-size: 10px;
         color: var(--acid);
         letter-spacing: 1px;
@@ -425,19 +417,11 @@
         #sceneLabel {
           display: none;
         }
-        .topstats {
-          left: 12px;
-          top: 70px;
-        }
         .stat {
           padding: 9px 11px;
         }
         .stat b {
           font-size: 17px;
-        }
-        #roomTag {
-          right: 12px;
-          top: 135px;
         }
         #players {
           top: 180px;
@@ -470,10 +454,6 @@
           right: 12px;
           width: 115px;
           height: 115px;
-        }
-        #net {
-          right: 15px;
-          top: 49px;
         }
         footer {
           left: 20px;
@@ -1364,10 +1344,6 @@
       }
 
       #economyControls {
-        position: fixed;
-        left: 32px;
-        top: 180px;
-        z-index: 4;
         background: #112c27e8;
         border: 1px solid #91ab6060;
         border-radius: 8px;
@@ -1375,7 +1351,6 @@
         display: flex;
         gap: 8px;
         align-items: center;
-        margin-top: 12px;
       }
       #wallet {
         font-size: 16px;
@@ -1510,8 +1485,6 @@
       }
       @media (max-width: 600px) {
         #economyControls {
-          left: 12px;
-          top: 168px;
           font-size: 12px;
         }
         #shopItems {
@@ -1654,8 +1627,6 @@
 
       /* Validated contextual rails: keep the centre clear during combat. */
       #hud .topstats {
-        top: 76px;
-        left: 20px;
         background: #102b29b8;
       }
       #hud .stat {
@@ -1669,8 +1640,6 @@
         margin: 0 0 2px;
       }
       #hud #economyControls {
-        top: 127px;
-        left: 20px;
         padding: 5px 8px;
         margin: 0;
         background: #102b29b8;
@@ -1706,7 +1675,7 @@
         display: none;
       }
       #hud #notice {
-        top: 180px;
+        top: 112px;
         max-width: min(440px, 85vw);
         font:
           13px 'Space Grotesk',
@@ -1918,14 +1887,6 @@
         font-size: 12px;
       }
       @media (max-width: 700px) {
-        #hud .topstats {
-          top: 65px;
-          left: 8px;
-        }
-        #hud #economyControls {
-          top: 119px;
-          left: 8px;
-        }
         #contextHUD .contextRail {
           left: 8px;
           width: 102px;
@@ -1962,22 +1923,44 @@
           grid-template-columns: 1fr;
         }
       }
-      #sessionSummary {
+      /* One top bar: the session (wave, enemies, infestation, wallet, shops) on
+         the left, connection and room tools on the right. */
+      #topBar {
         position: absolute;
-        top: 76px;
+        top: 34px;
         left: 20px;
+        right: 20px;
         display: flex;
-        flex-direction: column;
-        gap: 8px;
-        max-width: calc(100vw - 40px);
-        align-items: flex-start;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px 20px;
+        flex-wrap: wrap;
+        pointer-events: none;
+      }
+      #sessionSummary {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px 10px;
+        max-width: 100%;
       }
       #hud #sessionSummary .topstats,
       #hud #sessionSummary #economyControls {
-        position: static;
         flex-wrap: wrap;
         max-width: 100%;
         margin: 0;
+      }
+      #hud #sessionSummary #economyControls #wallet {
+        font-size: 18px;
+        padding-right: 4px;
+      }
+      #roomTag #net {
+        padding: 0 6px;
+      }
+      #hud #roomTag button,
+      #hud #waveCouncilOpen {
+        padding: 7px 11px;
+        font-size: 11px;
       }
       #wallet {
         overflow-wrap: anywhere;
@@ -2004,19 +1987,6 @@
         font-size: 13px;
       }
       @media (max-width: 700px) {
-        #sessionSummary {
-          top: 65px;
-          left: 8px;
-          max-width: calc(100vw - 16px);
-        }
-        #hud #sessionSummary .topstats,
-        #hud #sessionSummary #economyControls {
-          position: static;
-        }
-        #roomTag {
-          top: 190px;
-          right: 8px;
-        }
         #players {
           display: none;
         }
@@ -2345,31 +2315,33 @@
       <button id="waveCouncilLaunch" hidden>Lancer la vague maintenant</button>
     </dialog>
     <div id="hud" class="hidden">
-      <span id="net">CONNEXION…</span>
-      <div id="sessionSummary">
-        <div class="topstats">
-          <div class="stat">
-            <label>Vague</label><b id="wave">00</b><small id="threat">MENACE 0</small>
+      <header id="topBar">
+        <div id="sessionSummary">
+          <div class="topstats">
+            <div class="stat">
+              <label>Vague</label><b id="wave">00</b><small id="threat">MENACE 0</small>
+            </div>
+            <div class="stat">
+              <label>Présence ennemie</label><b id="enemies">Aucun ennemi restant</b>
+            </div>
+            <div class="stat"><label>Infestation</label><b class="lime" id="infest">0 / 20</b></div>
           </div>
-          <div class="stat">
-            <label>Présence ennemie</label><b id="enemies">Aucun ennemi restant</b>
+          <button id="waveCouncilOpen" hidden aria-haspopup="dialog" title="Prochaine vague (V)">
+            Préparer la vague
+          </button>
+          <div id="economyControls">
+            <span id="wallet">0 $</span><button id="shopOpen">Équipement · P</button
+            ><button id="bankOpen">Banquier · N</button>
           </div>
-          <div class="stat"><label>Infestation</label><b class="lime" id="infest">0 / 20</b></div>
         </div>
-        <button id="waveCouncilOpen" hidden aria-haspopup="dialog" title="Prochaine vague (V)">
-          Préparer la vague
-        </button>
-        <div id="economyControls">
-          <span id="wallet">0 $</span><button id="shopOpen">Équipement · P</button
-          ><button id="bankOpen">Banquier · N</button>
+        <div id="roomTag">
+          <span id="net">CONNEXION…</span>
+          <button id="flightSettingsOpen">Pilotage</button>
+          <button id="labOpen" aria-pressed="false" title="Mode debug commun à la room">
+            Debug : OFF
+          </button>
         </div>
-      </div>
-      <div id="roomTag">
-        <button id="flightSettingsOpen">Pilotage</button>
-        <button id="labOpen" aria-pressed="false" title="Mode debug commun à la room">
-          Debug : OFF
-        </button>
-      </div>
+      </header>
       <div id="players"></div>
       <div id="phaseBox">
         <strong id="phaseTitle">Préparation</strong>

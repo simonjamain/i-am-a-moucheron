@@ -117,6 +117,14 @@ efficaces, seule la fumée trahit l'état de l'avion. Les insectes
 tués tombent et s’estompent avant suppression. Voir [physique](economy-physics.md)
 et [armement](scale-fleet-weapons.md).
 
+## Barre du haut
+
+Depuis la version 272, l'écran de jeu garde une seule barre en haut (`#topBar`) :
+à gauche vague, présence ennemie, infestation, « Préparer la vague », argent et boutons
+Équipement (P) / Banquier (N) ; à droite l'état de connexion, Pilotage et Debug. La
+liste des pilotes et les messages passent juste dessous. Les écrans étroits (tactile)
+ne sont plus traités à part.
+
 ## Atelier de la base (menu d'achat, P)
 
 Depuis la version 271, l'atelier range les achats en quatre colonnes — Aéronefs,
