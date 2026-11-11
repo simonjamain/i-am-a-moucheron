@@ -19,7 +19,7 @@ export const VEHICLES = {
   // fires like one gun of the light fighter: half its rate of fire.
   fighter: {
     ...LIGHT_FIGHTER,
-    name: 'M1 Chasseur biplan',
+    name: 'Chasseur biplan',
     length: 8.2,
     maxSpeed: LIGHT_FIGHTER.maxSpeed * 0.75,
     thrust: 7.4,
@@ -31,7 +31,7 @@ export const VEHICLES = {
   // Biplane bomber: pilot and one rear gunner, same flight characteristics as
   // the B3 it replaced; the bomb bay holds fewer bombs, dropped half as fast.
   bomber: {
-    name: 'B3 Bombardier biplan',
+    name: 'Bombardier biplan',
     seats: ['pilot', 'dorsal'],
     span: 21,
     length: 15.9,
@@ -54,7 +54,7 @@ VEHICLES.interceptor = {
   length: 8.5,
 };
 VEHICLES.tank = {
-  name: 'T3 Char moyen',
+  name: 'Char moyen',
   seats: ['pilot', 'cannon', 'top'],
   span: 6,
   length: 8,
@@ -68,7 +68,7 @@ VEHICLES.tank = {
 };
 VEHICLES.spitfire = {
   ...LIGHT_FIGHTER,
-  name: 'Spitfire S6',
+  name: 'Spitfire',
   maxSpeed: LIGHT_FIGHTER.maxSpeed * 1.75,
   thrust: 70,
   turn: LIGHT_FIGHTER.turn * 1.45,
@@ -77,7 +77,7 @@ VEHICLES.spitfire = {
 };
 VEHICLES.helicopter = {
   ...LIGHT_FIGHTER,
-  name: 'H2 Hélicoptère d’attaque au sol',
+  name: 'Hélicoptère d’attaque au sol',
   seats: ['pilot', 'copilot'],
   span: 16,
   length: 14,
@@ -87,7 +87,7 @@ VEHICLES.helicopter = {
   maxHP: 200,
 };
 VEHICLES.flaktruck = {
-  name: 'D2 Anti-air mobile',
+  name: 'Anti-air mobile',
   seats: ['pilot', 'cannon'],
   span: 5,
   length: 16,
@@ -102,7 +102,7 @@ VEHICLES.flaktruck = {
 };
 // Fast single-seat construction and resupply truck; Meshy art follows later.
 VEHICLES.castor = {
-  name: 'G1 Castor',
+  name: 'Castor',
   seats: ['pilot'],
   span: 6,
   length: 9,

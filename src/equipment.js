@@ -2,13 +2,13 @@ import { VEHICLES } from './fleet.js';
 import { MAP } from './scale.js';
 export const SHOP = Object.freeze({
   fighter: {
-    name: 'M1 Chasseur biplan supplémentaire',
+    name: 'Chasseur biplan supplémentaire',
     cost: 8,
     kind: 'vehicle',
     description: 'Achat à poser, en plus de la réserve gratuite.',
   },
   bomber: {
-    name: 'B3 Bombardier biplan supplémentaire',
+    name: 'Bombardier biplan supplémentaire',
     cost: 16,
     kind: 'vehicle',
     description: 'Pilote et mitrailleur, 30 bombes ; achat à poser.',
@@ -46,32 +46,32 @@ export const SHOP = Object.freeze({
     description: 'Un exemplaire avec 6 bombes ; remplacement payant après destruction.',
   },
   spitfire: {
-    name: 'Spitfire S6',
+    name: 'Spitfire',
     cost: 24,
     kind: 'vehicle',
     description:
       'Six mitrailleuses, 1 000 balles au total ; vitesse +75 %, rotation +45 %. Sans bombes.',
   },
   helicopter: {
-    name: 'H2 Hélicoptère d’attaque au sol',
+    name: 'Hélicoptère d’attaque au sol',
     cost: 30,
     kind: 'vehicle',
     description: 'Deux postes, 200 PV, stationnaire assisté, 30 roquettes et 10 missiles guidés.',
   },
   flaktruck: {
-    name: 'D2 Anti-air mobile',
+    name: 'Anti-air mobile',
     cost: 20,
     kind: 'vehicle',
     description: 'Conducteur et canon de proximité, 100 obus ; fusée 0,5–20 m, armée à 0,3 s.',
   },
   tank: {
-    name: 'T3 Char moyen',
+    name: 'Char moyen',
     cost: 10,
     kind: 'vehicle',
     description: 'Un exemplaire, trois postes indépendants ; toutes munitions limitées.',
   },
   castor: {
-    name: 'G1 Castor',
+    name: 'Castor',
     cost: 12,
     kind: 'vehicle',
     description:

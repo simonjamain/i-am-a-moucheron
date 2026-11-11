@@ -51,11 +51,14 @@ plus d'étiquette flottante « BASE ALPHA · 3 / 1000 » dans la scène. Le num�
 version, en haut à gauche, ouvre les **Nouveautés**. Il n'y a plus de réglage audio visible : le son
 démarre au volume standard dès la première interaction autorisée par le navigateur.
 
-Noms validés : **M1 Chasseur biplan**, **B3 Bombardier biplan** (version 275, [biplans](biplane-models.md)), **H2 Hélicoptère
-d’attaque au sol**, **T3 Char moyen**, **G1 Castor**, **D2 Anti-air mobile**, DCA fixe
-**Canon Flak**, canon lourd **Canon anti-matériel** ; la tourelle automatique, le Stuka
-et le Spitfire gardent leur nom (`src/fleet.js`, `src/equipment.js`,
-`src/ground-fortifications.js`). Aucun « filet de leurre » n'existe dans le jeu.
+Noms validés (version 276, sans préfixe ni suffixe de code) : **Chasseur biplan**,
+**Bombardier biplan**, **Hélicoptère d’attaque au sol**, **Char moyen**, **Castor**,
+**Anti-air mobile**, **Spitfire**, DCA fixe **Canon Flak**, canon lourd **Canon
+anti-matériel** ; la tourelle automatique et le Stuka gardent leur nom
+(`src/fleet.js`, `src/equipment.js`, `src/ground-fortifications.js`). Les sigles
+M1, B3, H2, T3, D2, G1 et S6 ne s'affichent plus en jeu : ils ne subsistent que comme
+désignations internes dans les commentaires, tests et documents techniques. Aucun
+« filet de leurre » n'existe dans le jeu.
 
 ## Équipements et combat
 

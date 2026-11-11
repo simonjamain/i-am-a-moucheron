@@ -46,13 +46,13 @@ assert.match(
   'unlock on gesture',
 );
 
-assert.equal(VEHICLES.fighter.name, 'M1 Chasseur biplan');
-assert.equal(VEHICLES.bomber.name, 'B3 Bombardier biplan');
-assert.equal(VEHICLES.helicopter.name, 'H2 Hélicoptère d’attaque au sol');
-assert.equal(VEHICLES.tank.name, 'T3 Char moyen');
-assert.equal(VEHICLES.castor.name, 'G1 Castor');
-assert.equal(VEHICLES.flaktruck.name, 'D2 Anti-air mobile');
+assert.equal(VEHICLES.fighter.name, 'Chasseur biplan');
+assert.equal(VEHICLES.bomber.name, 'Bombardier biplan');
+assert.equal(VEHICLES.helicopter.name, 'Hélicoptère d’attaque au sol');
+assert.equal(VEHICLES.tank.name, 'Char moyen');
+assert.equal(VEHICLES.castor.name, 'Castor');
+assert.equal(VEHICLES.flaktruck.name, 'Anti-air mobile');
 assert.equal(SHOP.dca.name, 'Canon Flak');
 assert.equal(FORTIFICATIONS.antitank.name, 'Canon anti-matériel');
-assert.equal(VEHICLES.spitfire.name, 'Spitfire S6', 'unvalidated names untouched');
+assert.equal(VEHICLES.spitfire.name, 'Spitfire', 'unvalidated names untouched');
 console.log('Home: title, clickable version, no marketing/audio UI, validated names.');
