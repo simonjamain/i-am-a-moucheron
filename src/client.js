@@ -144,6 +144,7 @@ import * as T from '/three.js';
 import { stepFlight } from '/flight.js';
 import { loadFlightTuning } from '/flight-tuning.js';
 import { FlightTuningUI } from '/flight-tuning-ui.js';
+import { ToonRenderer } from '/toon.js';
 import { readPad, neutralPad } from '/input.js';
 const $ = (id) => document.getElementById(id),
   canvas = $('view'),
@@ -176,6 +177,8 @@ document.addEventListener('visibilitychange', () => {
 });
 addEventListener('pagehide', () => sound.close());
 const renderer = createRenderer(T, canvas);
+const toon = new ToonRenderer(T, renderer);
+toon.configure(flightTuning);
 
 const camera = new T.PerspectiveCamera(62, innerWidth / innerHeight, 0.00005, 40);
 const holdZoom = new HoldZoom();
@@ -4357,11 +4360,11 @@ function frame(now) {
   tracerPool.flush();
   if (spectating && observationCamera) {
     if (observationRealm !== 'office') observedPurgatory(dt);
-    renderer.render(observationRealm === 'office' ? scene : purgScene, observationCamera);
+    toon.render(observationRealm === 'office' ? scene : purgScene, observationCamera);
   } else if (respawnAt && soulBody) {
     physicalPurgatory(dt, now);
-    renderer.render(purgScene, purgCamera);
-  } else renderer.render(scene, camera);
+    toon.render(purgScene, purgCamera);
+  } else toon.render(scene, camera);
   updateAudio();
   gunSalvos.update(
     !spectating && canCapture() && myVehicle?.type === 'spitfire' && !respawnAt
@@ -5583,6 +5586,7 @@ const flightTuningUI = new FlightTuningUI({
   initial: flightTuning,
   onChange: (settings) => {
     flightTuning = settings;
+    toon.configure(settings);
   },
   onOpen: () => {
     releaseMouse();

@@ -64,6 +64,33 @@ export const FLIGHT_TUNING_FIELDS = Object.freeze({
     type: 'checkbox',
     value: false,
   },
+  // Rendu « dessin animé » (src/toon.js) : personnel et désactivé par défaut.
+  toonShading: {
+    label: 'Éclairage dessin animé',
+    hint: 'Lumière par paliers au lieu d’un dégradé continu.',
+    type: 'checkbox',
+    value: false,
+  },
+  toonBands: {
+    label: 'Paliers de lumière',
+    hint: 'Nombre de teintes d’ombre de l’éclairage dessin animé.',
+    min: 2,
+    max: 5,
+    step: 1,
+    value: 3,
+    unit: ' paliers',
+    decimals: 0,
+  },
+  toonOutline: {
+    label: 'Contours',
+    hint: 'Épaisseur du trait autour des formes ; 0 : aucun contour.',
+    min: 0,
+    max: 4,
+    step: 0.5,
+    value: 0,
+    unit: ' px',
+    decimals: 1,
+  },
 });
 
 export const DEFAULT_FLIGHT_TUNING = Object.freeze(
