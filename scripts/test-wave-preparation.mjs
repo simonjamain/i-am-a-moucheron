@@ -1,6 +1,12 @@
 import assert from 'node:assert/strict';
 import { Game } from '../server/game.js';
-import { prepareRoster, forecast, directorBudget } from '../server/wave-preparation.js';
+import {
+  prepareRoster,
+  forecast,
+  directorBudget,
+  packSize,
+  PACKS,
+} from '../server/wave-preparation.js';
 import { DEFAULT_BALANCE } from '../src/balance.js';
 import { ENEMY_TYPES } from '../src/waves.js';
 
@@ -12,18 +18,52 @@ for (const wave of [1, 2, 5, 10, 15, 100])
       directorBudget(wave),
     );
     assert.ok(plan.roster.length <= 900);
+    // Each announced group is one pack, whose members leave one after the other.
     for (const group of forecast(plan.roster)) {
-      const arrivals = plan.roster.filter(
+      const members = plan.roster.filter(
         (e) =>
           e.type === group.type &&
-          e.spawn === group.spawn &&
           e.portalIndex === group.portalIndex &&
           e.routeSeed === group.routeSeed &&
-          e.branch === group.branch,
+          e.branch === group.branch &&
+          e.spawn >= group.spawn,
       );
-      assert.equal(arrivals.length, group.count);
+      assert.ok(members.length >= group.count);
+      assert.equal(members.find((e) => e.spawn === group.spawn).spawn, group.spawn);
     }
+    // Crowds are big, strong species walk alone, and nobody leaves on top of a packmate.
+    const groups = forecast(plan.roster);
+    for (const g of groups) {
+      if (g.type === 'midge') assert.ok(g.count >= PACKS.midge.min, 'midge swarm ' + g.count);
+      if (g.type === 'ant') assert.ok(g.count >= PACKS.ant.min, 'ant pack ' + g.count);
+      if (['spider', 'rat'].includes(g.type)) assert.equal(g.count, 1, g.type + ' alone');
+      if (g.type === 'brute') assert.ok(g.count <= 2);
+      assert.ok(g.count <= PACKS[g.type].max + PACKS[g.type].min, g.type + ' pack size');
+    }
+    assert.ok(groups.length <= 60, 'few groups: ' + groups.length);
+    for (const e of plan.roster)
+      if (e.ground) {
+        const mates = plan.roster.filter((o) => o.group === e.group && o.id < e.id);
+        if (mates.length) assert.ok(e.spawn > mates.at(-1).spawn, 'staggered departures');
+      }
   }
+// Ants are more numerous every wave; midge swarms reach the hundreds.
+const ants = (wave) =>
+  prepareRoster(wave, DEFAULT_BALANCE, () => 0).roster.filter((e) => e.type === 'ant').length;
+assert.ok(ants(1) >= 8 && ants(5) > ants(1) && ants(10) > ants(5), 'ants grow');
+assert.ok(
+  prepareRoster(10, DEFAULT_BALANCE, (n) => n - 1).roster.filter((e) => e.type === 'midge')
+    .length >= 300,
+  'swarms of hundreds of midges',
+);
+// Pack sizes: cheap crowds up to hundreds, the stronger the species the smaller the pack.
+const sizes = Object.keys(PACKS).map((t) => packSize(t, 2400, (n) => n - 1));
+assert.deepEqual(
+  sizes,
+  [...sizes].sort((a, b) => b - a),
+  'bigger species, smaller packs',
+);
+assert.equal(packSize('rat', 2400), 1);
 let now = 100000;
 const game = new Game({ now: () => now }),
   a = game.join({ code: 'PREP' }),

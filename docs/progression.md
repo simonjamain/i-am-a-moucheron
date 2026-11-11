@@ -6,7 +6,20 @@ armes restent ceux de [combat-worlds](combat-worlds.md).
 
 ## Départ et montée en difficulté
 
-Le directeur Node tire la composition **dès l’annonce de la vague**. Chaque insecte consomme son coût individuel du bestiaire. Le budget est `min(2400, round(32 × 1,5^(n−1)))` avant réglages de room. À population normale, les vagues 1, 2, 5 et 10 coûtent 32, 48, 162 et 1 230 points. Dès la première, une colonne de fourmis sort à 0 s et une nuée aérienne entre 2 et 5 s. Les groupes suivants peuvent arriver ensemble. Le tirage conserve les déblocages du bestiaire et borne à 900 la population avant le multiplicateur de room. La difficulté affichée additionne les coûts du roster réellement envoyé. La progression seule ne modifie ni les PV individuels ni les dégâts.
+Le directeur Node tire la composition **dès l’annonce de la vague**. Chaque insecte consomme son coût individuel du bestiaire. Le budget est `min(2400, round(32 × 1,5^(n−1)))` avant réglages de room. À population normale, les vagues 1, 2, 5 et 10 coûtent 32, 48, 162 et 1 230 points. Depuis la version 274, la vague est composée de **paquets** compacts
+(`PACKS` et `packSize` dans `server/wave-preparation.js`) : les insectes bon marché
+arrivent en foules — fourmis de 8 à 200, moucherons de 20 à 400, moustiques de 6 à 60,
+croissant avec le budget — et jamais presque seuls ; plus une espèce est grosse et
+puissante, plus son paquet est petit (voltigeurs 3 à 12, cafards 2 à 8, carapaces 1 à 4,
+bourdons 1 à 2, araignées et rats seuls). Une première colonne de fourmis sort à 0 s,
+la nuée de moucherons à 1–2 s ; le reste suit à intervalles courts (les ennemis isolés
+arrivent par grappes). Les foules d'une même espèce partagent le plus souvent
+entrée et parcours ; les espèces fortes ont chacune le leur. Le reliquat de budget
+grossit un paquet existant au lieu de créer de petits groupes. Les membres d'un
+paquet partent l'un après l'autre (`memberGap`) ; la prévision annonce un groupe par
+paquet. Au sol, les créatures marchent en 2 à 8 files (`GROUND_LANES`,
+`groundLaneDisplacement` dans `src/waves.js`) et n'attendent qu'une fraction de
+seconde à l'entrée : plus de superposition (`scripts/test-ground-spread.mjs`). Le tirage conserve les déblocages du bestiaire et borne à 900 la population avant le multiplicateur de room. La difficulté affichée additionne les coûts du roster réellement envoyé. La progression seule ne modifie ni les PV individuels ni les dégâts.
 
 Le lancement et les pauses durent 60 secondes par défaut. Le bandeau affiche la prochaine vague et sa frise (entrées, horaires, espèces). Tout joueur peut lancer la vague annoncée avant l’échéance ; à l’échéance, elle démarre seule.
 

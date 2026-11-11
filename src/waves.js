@@ -155,7 +155,7 @@ export function debugSwarmRoster(counts, { room, wave, started, now, balance, fi
         hp: profile.hp * balance.enemyHP,
         phase: (i * Math.PI * 2) / count,
         spawn: elapsed + (i / Math.max(1, count - 1)) * departureWindow,
-        entryHold: 2,
+        entryHold: profile.ground ? 0.4 : 2,
         approach: 'full',
         routeSeed,
         portalIndex,
@@ -325,7 +325,7 @@ export function spawnOffspring(parent, position, time, balance, firstId, wave, l
       portalIndex: -1,
       approach: 'brood',
       phase: (i * Math.PI * 2) / count,
-      spawn: time + i * 0.012,
+      spawn: time + i * 0.02,
       entryHold: 0.15 / balance.enemySpeed,
     };
     child.travelSpeed = enemyTravelSpeed(child, balance.enemySpeed);
@@ -357,6 +357,54 @@ function unitHash(id, seed) {
 // At most 20x the base radius for aerial groups, 8x for ground movement.
 export function swarmSpread(enemy) {
   return Math.min(enemy.ground ? 8 : 20, Math.max(0.45, Math.sqrt((enemy.swarmSize || 1) / 5)));
+}
+// Ground creatures of one pack walk side by side in a few lanes across their
+// path, so that members leaving the same portal never stand on one another.
+// Display and hit position only: the simulated path is unchanged. Ribbons stay
+// narrower than the 2.5 cm route clearance around furniture.
+export const GROUND_LANES = Object.freeze({ ant: 6, spiderling: 8, roach: 3, spider: 2, rat: 2 });
+function groundLaneGeometry(enemy) {
+  const lanes = GROUND_LANES[enemy.type] || 1,
+    id = enemy.id ?? 0,
+    radius = INSECT_SCALE * (enemy.size ?? 1) * enemySizeFactor(enemy.type) * 0.9,
+    spacing = radius * 1.2,
+    lane = ((id % lanes) + lanes) % lanes;
+  // A little jitter keeps the columns from looking ruled.
+  return {
+    lanes,
+    spacing,
+    offset: (lane - (lanes - 1) / 2 + (unitHash(id, 5) - 0.5) * 0.3) * spacing,
+  };
+}
+export function groundLaneOffset(enemy) {
+  const geometry = groundLaneGeometry(enemy);
+  return geometry.lanes < 2 ? 0 : geometry.offset;
+}
+// Sideways displacement of a lane across the path: perpendicular to `dir`,
+// oriented once per route so that, at the portal, the ribbon lies on the outer
+// side of the wall (creatures appear from inside it) and then recentres over
+// the first metres, so nobody is drawn inside the room before leaving it.
+const portalSides = new Map();
+export function groundLaneDisplacement(e, dir, u) {
+  const { lanes, spacing, offset } = groundLaneGeometry(e);
+  if (lanes < 2) return [0, 0];
+  const key = [e.routeSeed, e.portalIndex, e.branch, e.approach].join(':');
+  let sign = portalSides.get(key);
+  if (sign === undefined) {
+    const a = enemyRoutePosition(e, 0),
+      b = enemyRoutePosition(e, 0.002),
+      onZWall = 3.45 - Math.abs(a[2]) < 4 - Math.abs(a[0]),
+      outward = onZWall ? [0, Math.sign(a[2]) || 1] : [Math.sign(a[0]) || 1, 0],
+      // Perpendicular of the first path segment, turned to face outward.
+      perpendicular = [b[2] - a[2], -(b[0] - a[0])],
+      alignment = perpendicular[0] * outward[0] + perpendicular[1] * outward[1];
+    sign = alignment < 0 ? -1 : 1;
+    if (portalSides.size > 512) portalSides.clear();
+    portalSides.set(key, sign);
+  }
+  const w = Math.max(0, Math.min(1, u * 120)),
+    along = offset + ((lanes - 1) / 2) * spacing * (1 - w);
+  return [dir[1] * sign * along, -dir[0] * sign * along];
 }
 export function midgeDisplacement(enemy, time, envelope = 1) {
   const id = enemy.id ?? 0;
@@ -390,8 +438,11 @@ export function swarmFrame(roster, time, groundAgents = null, field = null) {
     if (ground) {
       if (ground.arrived) return null;
       const lift = INSECT_SCALE * e.size * enemySizeFactor(e.type) * GROUND_FOOT_DEPTH;
+      const hold = e.entryHold || 0,
+        u = Math.max(0, Math.min(1, (time - e.spawn - hold) / Math.max(0.001, e.duration - hold))),
+        [dx, dz] = groundLaneDisplacement(e, ground.dir, u);
       return {
-        p: [ground.p[0], 0.0007 + lift, ground.p[1]],
+        p: [ground.p[0] + dx, 0.0007 + lift, ground.p[1] + dz],
         dir: [ground.dir[0], 0, ground.dir[1]],
         envelope: 1,
         authoritative: true,
@@ -427,6 +478,11 @@ export function swarmFrame(roster, time, groundAgents = null, field = null) {
       ),
       phase = e.phase,
       amplitude = MAP.metres(e.ground ? 1.5 : e.type === 'dart' ? 6 : 4) * envelope;
+    if (e.ground) {
+      const [dx, dz] = groundLaneDisplacement(e, [tangent[0] / length, tangent[2] / length], u);
+      p[0] += dx;
+      p[2] += dz;
+    }
     for (let j = 0; j < 3; j++)
       if (!e.ground || j !== 1)
         p[j] +=
