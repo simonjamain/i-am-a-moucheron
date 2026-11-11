@@ -1,6 +1,12 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 277,
+    changes: [
+      'Nouveau : un rendu « dessin animé » facultatif (lumière par paliers et contours), dans Réglages.',
+    ],
+  },
+  {
     version: 276,
     changes: [
       'Noms simplifiés : plus de codes comme M1, B3 ou G1 devant les véhicules et équipements.',

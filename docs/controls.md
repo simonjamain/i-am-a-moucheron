@@ -162,9 +162,16 @@ radar à pied, remise à zéro, fourmis et projectiles du pistolet courants.
 
 Le [mapping pilote H2 actuel](issues-15-16-17.md#16--séparation-puissance-et-tangage-du-pilote-h2) retire les anciens alias O/W sans changer les armes du copilote.
 
+## Rendu dessin animé (optionnel)
+
+Le même panneau **Réglages** propose, depuis la version 277, un rendu « toon »
+personnel, désactivé par défaut : **Éclairage dessin animé** (lumière par paliers,
+2 à 5), et **Contours** (trait de 0 à 4 px autour des formes). Voir
+[le rendu dessin animé](toon-rendering.md).
+
 ## Réglages personnels des avions
 
-Depuis une room, ouvrir **Pilotage** à côté de **Debug**. Tous les joueurs
+Depuis une room, ouvrir **Réglages** (ex-« Pilotage », version 277) à côté de **Debug**. Tous les joueurs
 peuvent configurer leurs propres avions, indépendamment des règles de la room.
 Le bouton **Enregistrer et appliquer** applique immédiatement les préférences,
 sauvegardées dans le `localStorage` du navigateur (`moucheron-flight-tuning:v1`).
