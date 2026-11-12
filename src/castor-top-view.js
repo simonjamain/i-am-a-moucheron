@@ -1,6 +1,6 @@
 // Castor top-down view (key V): the camera hangs straight above the truck,
-// the truck's front pointing up on screen, so the driver sees the whole
-// building reach around it. The mouse moves a cursor on the floor instead of
+// north (the -Z axis, up on the radar) at the top of the screen whatever the
+// truck's heading, so the driver sees the whole building reach around it. The mouse moves a cursor on the floor instead of
 // orbiting the camera: placement previews and the light machine gun both aim
 // at that floor point.
 export const TOP_VIEW_HEIGHT = 0.4; // metres above the truck: covers the 24 cm building reach
@@ -21,15 +21,12 @@ export function moveTopCursor(cursor, dx, dy, { width, height, sensitivity = 1 }
   return cursor;
 }
 
-// Eye straight above the truck; screen "up" is the truck's horizontal heading.
-export function topViewPose(T, position, quaternion) {
-  const forward = new T.Vector3(0, 0, -1).applyQuaternion(quaternion);
-  forward.y = 0;
-  if (forward.lengthSq() < 1e-12) forward.set(0, 0, -1);
-  forward.normalize();
+// Eye straight above the truck; screen "up" is fixed north, east is on the right.
+export const NORTH = Object.freeze([0, 0, -1]);
+export function topViewPose(T, position) {
   return {
     eye: position.clone().add(new T.Vector3(0, TOP_VIEW_HEIGHT, 0)),
-    up: forward,
+    up: new T.Vector3(...NORTH),
     target: position.clone(),
   };
 }

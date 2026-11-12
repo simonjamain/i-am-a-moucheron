@@ -4341,7 +4341,7 @@ function frame(now) {
           new T.Quaternion().setFromEuler(new T.Euler(freeLook.pitch, freeLook.yaw, 0, 'YXZ')),
         );
       if (castorTopView()) {
-        const pose = topViewPose(T, me.position, me.quaternion);
+        const pose = topViewPose(T, me.position);
         camera.position.lerp(pose.eye, 1 - Math.exp(-10 * dt));
         camera.up.lerp(pose.up, 1 - Math.exp(-10 * dt)).normalize();
         camera.lookAt(pose.target);

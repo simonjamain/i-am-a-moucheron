@@ -376,7 +376,7 @@ Le [bombardier biplan à deux places](biplane-models.md) conserve son camouflage
 
 ## G1 Castor (première étape, version 179)
 
-Le **G1 Castor** est un camion monoplace à six roues, achetable pour **12 $** avec le bon signé des véhicules. Z/S et Q/D permettent de conduire ; la souris vise sa mitrailleuse légère (500 balles, recharges payantes). **V** bascule une **vue de dessus** : caméra à 40 cm à la verticale du camion, avant en haut de l’écran, et viseur au sol déplacé à la souris pour poser les défenses dans les 24 cm de portée et tirer (`src/castor-top-view.js`). Vitesse maximale 52 (deux fois le
+Le **G1 Castor** est un camion monoplace à six roues, achetable pour **12 $** avec le bon signé des véhicules. Z/S et Q/D permettent de conduire ; la souris vise sa mitrailleuse légère (500 balles, recharges payantes). **V** bascule une **vue de dessus** : caméra à 40 cm à la verticale du camion, nord (axe −Z, le haut du radar) en haut de l’écran quel que soit le cap du camion, et viseur au sol déplacé à la souris pour poser les défenses dans les 24 cm de portée et tirer (`src/castor-top-view.js`). Vitesse maximale 52 (deux fois le
 réglage initial), avec une accélération forte au départ qui décroît près du
 maximum. Les six roues roulent à la vitesse du sol de leur côté (sens, marche
 arrière et arrêt compris) ; au pivot sur place, gauche et droite tournent en sens
