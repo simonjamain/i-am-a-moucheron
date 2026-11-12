@@ -1,6 +1,13 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 282,
+    changes: [
+      'Nouveau personnage : l’opératrice.',
+      'Accueil allégé : le choix du personnage n’a plus de cadre ni de nom, et le formulaire est plus compact.',
+    ],
+  },
+  {
     version: 281,
     changes: [
       'Vue de dessus du Castor : le nord reste en haut de l’écran, même quand le camion tourne.',

@@ -1,4 +1,4 @@
-// Player appearances: six user-approved Meshy + Mixamo characters, picked on the
+// Player appearances: seven user-approved Meshy + Mixamo characters, picked on the
 // home screen, carried by the join command and drawn for every player; models
 // turn smoothly toward their facing.
 import assert from 'node:assert/strict';
@@ -19,15 +19,28 @@ import {
   CHARACTER_HEIGHT,
 } from '../src/character-model.js';
 import { createGraphics } from '../src/graphics.js';
+import { PANEL_TINT, SIDE_SHADE } from '../src/appearance-picker.js';
 import { Game } from '../server/game.js';
 import { OFFICE_SOLIDS } from '../worker/assets.js';
 
 const near = (a, b, eps, label) => assert.ok(Math.abs(a - b) < eps, label + ': ' + a + ' vs ' + b);
 const world = (o) => o.getWorldPosition(new T.Vector3());
 
-// 1. Registry: six distinct characters, default first, selector wraps around.
-assert.equal(APPEARANCES.length, 6);
-assert.equal(new Set(APPEARANCES.map((a) => a.id)).size, 6);
+// 1. Registry: seven distinct characters, default first, selector wraps around.
+assert.equal(APPEARANCES.length, 7);
+assert.equal(new Set(APPEARANCES.map((a) => a.id)).size, 7);
+assert.deepEqual(
+  APPEARANCES.map((a) => a.name),
+  [
+    'Aventurier',
+    'Aventurière',
+    'Aviateur',
+    'Mécanicien',
+    'Mécanicienne',
+    'Aviatrice',
+    'Opératrice',
+  ],
+);
 assert.equal(DEFAULT_APPEARANCE, 'cowboy');
 assert.equal(appearanceId('toby'), 'toby');
 for (const bad of [undefined, null, '', 'admin', '__proto__', 3])
@@ -69,7 +82,7 @@ for (const { id } of APPEARANCES) {
   c.update(0.05, { speed: 6 });
   assert.equal(c.gait(), 'run');
 }
-for (const id of ['frontier', 'sky-pilot', 'toby', 'sunny', 'aviator']) {
+for (const id of ['frontier', 'sky-pilot', 'toby', 'sunny', 'aviator', 'operator']) {
   const source = readFileSync('src/character-' + id + '-data.js', 'utf8');
   const sha = /"sha256":"([0-9a-f]{64})"/.exec(source)[1];
   assert.ok(importer.includes(sha), id + ' provenance');
@@ -157,7 +170,22 @@ for (const slow of [
 ])
   assert.doesNotMatch(picker, slow);
 assert.match(client, /toon\.render\(scene, camera\);\n\s+appearancePicker\.draw\(renderer, dt\);/);
-assert.match(html, /\.appearance \{[^}]*box-shadow: 0 0 0 100vmax/, 'see-through selector');
+assert.match(
+  html,
+  /\.appearance \{[^}]*box-shadow: 0 0 0 100vmax #102b29eb/,
+  'see-through selector',
+);
+// No frame of its own (the preview redraws the panel colour), the name is for
+// screen readers only, and no empty line below the join button.
+const css = (selector) => new RegExp(selector + ' \\{([^}]*)\\}').exec(html)[1];
+assert.doesNotMatch(css('\\.appearance'), /border|background:/);
+// Panel and side shade redrawn from the page's own colours.
+assert.deepEqual(PANEL_TINT, { color: [0x10, 0x2b, 0x29], alpha: 0xeb / 255 });
+assert.deepEqual(SIDE_SHADE, { color: [0x0b, 0x21, 0x1f], alpha: 0xee / 255, end: 0.85 });
+assert.match(html, /#shade \{[^}]*linear-gradient\(90deg, #0b211fee, transparent 85%\)/);
+assert.match(css('#appearanceName'), /clip-path: inset\(50%\)/);
+assert.match(html, /#error:empty \{\s*display: none;/);
+assert.doesNotMatch(css('#error'), /min-height/);
 const packaged = readFileSync('scripts/assemble.mjs', 'utf8');
 for (const module of [
   'appearance-picker',
@@ -166,5 +194,5 @@ for (const module of [
 ])
   assert.ok(packaged.includes("'" + module + "'"), module + ' packaged');
 console.log(
-  'Appearances: six characters, on-demand loading, equal heights, rest pose, in-place swap, join validation, smooth turning, home selector.',
+  'Appearances: seven characters, on-demand loading, equal heights, rest pose, in-place swap, join validation, smooth turning, home selector.',
 );

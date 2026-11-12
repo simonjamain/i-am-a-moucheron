@@ -53,6 +53,7 @@ const files = {
       'character-toby-data',
       'character-sunny-data',
       'character-aviator-data',
+      'character-operator-data',
       'meshy-castor-data',
       'meshy-stuka-data',
       'meshy-spitfire-data',

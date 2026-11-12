@@ -50,9 +50,11 @@ Alpha », sur le bureau 3D animé ; aucun slogan, badge ni mention de prototype,
 plus d'étiquette flottante « BASE ALPHA · 3 / 1000 » dans la scène. Le numéro de
 version, en haut à gauche, ouvre les **Nouveautés**. Entre les champs pseudo/code et
 « Rejoindre la base », un sélecteur montre le **personnage** choisi qui pivote doucement ;
-les flèches (ou ←/→ quand il a le focus) parcourent les six modèles, le choix est
+les flèches (ou ←/→ quand il a le focus) parcourent les sept modèles (sans cadre ni
+nom affiché, sur le fond du panneau), le choix est
 mémorisé dans le navigateur et visible par tous les joueurs (purgatoire, bureau, DCA).
-La mention « Même code, même partie » a été retirée. En jeu, le modèle tourne vers
+La mention « Même code, même partie » a été retirée, et la ligne de message sous le
+bouton n'occupe de place que lorsqu'elle affiche un message. En jeu, le modèle tourne vers
 sa direction de marche en douceur (environ un quart de seconde pour un demi-tour). Il n'y a plus de réglage audio visible : le son
 démarre au volume standard dès la première interaction autorisée par le navigateur.
 
