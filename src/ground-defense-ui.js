@@ -1,3 +1,4 @@
+import { WALL_SEGMENT, HALF_BRICK, wallLength, wallVisualRuns } from './brick-rules.js';
 import { createGroundModel } from './ground-model.js';
 import { ModelPreview } from './model-preview.js';
 import { AirTrails } from './air-trails.js';
@@ -223,15 +224,22 @@ export class GroundDefenseUI {
     const from = this.trailAnchor;
     this.trailAnchor = null;
     this.previewModel.clear();
-    const distance = Math.hypot(castor.rear[0] - from[0], castor.rear[1] - from[1]);
-    if (distance < TRAIL_MIN || distance > TRAIL_MAX || this.busy || !this.enabled()) return;
+    const raw = Math.hypot(castor.rear[0] - from[0], castor.rear[1] - from[1]);
+    const distance = this.mode === 'barricade' ? wallLength(raw) : raw;
+    if (
+      distance < (this.mode === 'barricade' ? HALF_BRICK : TRAIL_MIN) ||
+      distance > TRAIL_MAX ||
+      this.busy ||
+      !this.enabled()
+    )
+      return;
     this.busy = true;
     try {
       await this.command({
         action: 'build',
         kind: this.mode,
         a: from,
-        b: [...castor.rear],
+        b: from.map((v, k) => v + ((castor.rear[k] - v) * distance) / raw),
         request: this.trailRequest(),
       });
     } finally {
@@ -257,15 +265,16 @@ export class GroundDefenseUI {
       return;
     const from = this.trailAnchor;
     const distance = Math.hypot(castor.rear[0] - from[0], castor.rear[1] - from[1]);
-    // Commit 20 cm sections (billed pro rata); the bricks in between are shown
+    // Commit 48 mm LEGO / 20 cm tape sections (billed pro rata); the bricks in between are shown
     // one by one by the trail preview.
-    if (distance < 0.2) return;
+    const step = this.mode === 'barricade' ? WALL_SEGMENT : 0.2;
+    if (distance + 1e-9 < step) return;
     if (distance > TRAIL_MAX) {
       this.trailAnchor = null;
       this.notify('Trajet de construction interrompu : trop éloigné.', 3);
       return;
     }
-    const to = from.map((n, i) => n + ((castor.rear[i] - n) * Math.min(0.2, distance)) / distance);
+    const to = from.map((n, i) => n + ((castor.rear[i] - n) * Math.min(step, distance)) / distance);
     this.busy = true;
     try {
       const request = this.trailRequest();
@@ -314,9 +323,38 @@ export class GroundDefenseUI {
         (this.mode === 'sticky' ? 'ruban' : 'mur LEGO') +
         ' en continu · ' +
         laid.toFixed(2).replace('.', ',') +
-        ' $ en cours · 1 $ / 20 cm au prorata · Cliquez pour arrêter';
+        ' $ en cours · ' +
+        (this.mode === 'barricade' ? '0,25 $ / 48 mm' : '1 $ / 20 cm') +
+        ' au prorata · Cliquez pour arrêter';
       this.airTrails.update(snap);
       this.advanceTrail();
+      return;
+    }
+    const builder = this.builder();
+    if (builder?.grounded && builder.y < 0.025 && this.mode === 'barricade' && !this.trailAnchor) {
+      const a = builder.rear;
+      const heading = builder.direction || [0, 1];
+      const b = a.map((v, k) => v + heading[k] * WALL_SEGMENT);
+      this.candidate = { center: a, startOnly: true };
+      this.status.disabled = this.busy;
+      this.status.textContent = 'Castor · Clic pour commencer · 0,25 $ / 48 mm · Échap : quitter';
+      this.previewModel.show(
+        'castor-wall-start',
+        () =>
+          createGroundModel(this.T, {
+            kind: 'barricade',
+            hp: 100,
+            a: [-WALL_SEGMENT / 2, 0],
+            b: [WALL_SEGMENT / 2, 0],
+          }),
+        {
+          x: (a[0] + b[0]) / 2,
+          y: 0,
+          z: (a[1] + b[1]) / 2,
+          angle: -Math.atan2(heading[1], heading[0]),
+        },
+        true,
+      );
       return;
     }
     const c = (this.candidate = groundPlacement({
@@ -389,12 +427,13 @@ export class GroundDefenseUI {
     const a = this.trailAnchor,
       b = castor.rear;
     const length = Math.min(TRAIL_MAX, Math.hypot(b[0] - a[0], b[1] - a[1]));
-    const bricks = trailBricks(length);
+    const bricks =
+      this.mode === 'barricade' ? Math.floor((length + 1e-9) / HALF_BRICK) : trailBricks(length);
     if (!bricks) {
       this.preview.visible = false;
       return 0;
     }
-    const shown = bricks * BRICK_PITCH;
+    const shown = bricks * (this.mode === 'barricade' ? HALF_BRICK : BRICK_PITCH);
     const angle = Math.atan2(b[1] - a[1], b[0] - a[0]);
     const end = [a[0] + Math.cos(angle) * shown, a[1] + Math.sin(angle) * shown];
     this.previewModel.show(
@@ -494,7 +533,10 @@ export class GroundDefenseUI {
       });
     }
     const T = this.T;
-    for (const structure of structures) {
+    for (const structure of [
+      ...structures.filter((s) => s.kind !== 'barricade'),
+      ...wallVisualRuns(structures),
+    ]) {
       // Occupied fortifications are already rendered with their articulated gun and operator.
       if (structure.kind === 'bunker' || structure.kind === 'antitank') continue;
       if (structure.kind === 'sentry' && this.sentries.has(String(structure.id))) continue;

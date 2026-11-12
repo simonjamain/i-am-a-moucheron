@@ -27,20 +27,20 @@ let s = run({
   b: [0.08, 0],
   request: 'castor:one',
 });
-assert.equal(s.dollars, 14.6, '8 cm billed 0,40 $ (issue #99)');
-assert.equal(s.groundDefense.structures.length, 1);
+assert.equal(s.dollars, 14.62, '8 cm billed 0,40 $ (issue #99)');
+assert.equal(s.groundDefense.structures.length, 2);
 s = run({ action: 'build', kind: 'barricade', a: [0, 0], b: [0.08, 0], request: 'castor:one' });
-assert.equal(s.dollars, 14.6, 'retry must not charge twice');
-assert.equal(s.groundDefense.structures.length, 1);
+assert.equal(s.dollars, 14.62, 'retry must not charge twice');
+assert.equal(s.groundDefense.structures.length, 2);
 s = run({
   action: 'build',
   kind: 'barricade',
-  a: [0.08, 0],
-  b: [0.16, 0],
+  a: [0.072, 0],
+  b: [0.144, 0],
   request: 'castor:two',
 });
-assert.equal(s.dollars, 14.2);
-assert.equal(s.groundDefense.structures.length, 2);
+assert.equal(s.dollars, 14.24);
+assert.equal(s.groundDefense.structures.length, 4);
 assert.throws(
   () => run({ action: 'build', kind: 'sugar', a: [1, 1], request: 'castor:far' }),
   /proximité/,

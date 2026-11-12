@@ -131,14 +131,14 @@ export function supportedPlacement(point, colliders, occupied = [], kind = 'dca'
   const localRx = profile
       ? MAP.metres(profile.span / 2 + 1)
       : kind === 'refuel'
-        ? MAP.metres(2.1)
+        ? MAP.metres(6.1)
         : MAP.metres(kind === 'bed' ? 3 : 2.1),
     localRz = profile
       ? MAP.metres(profile.length / 2 + 1)
       : kind === 'refuel'
-        ? MAP.metres(2.1)
+        ? MAP.metres(3.7)
         : MAP.metres(kind === 'bed' ? 2.1 : 1.5),
-    height = MAP.metres(profile ? 4 : 3.2),
+    height = MAP.metres(profile ? 4 : kind === 'refuel' ? 6.3 : 3.2),
     eps = 1e-5;
   const angle = Number.isFinite(point.angle) ? point.angle : 0;
   const rx = Math.abs(Math.cos(angle)) * localRx + Math.abs(Math.sin(angle)) * localRz;
@@ -175,7 +175,7 @@ export function supportedPlacement(point, colliders, occupied = [], kind = 'dca'
             (s.clearance
               ? s.clearance + rx
               : kind === 'refuel' || s.kind === 'refuel'
-                ? MAP.metres(2.6) + rx
+                ? MAP.metres(6.3) + rx
                 : MAP.metres(5)),
       )
     )

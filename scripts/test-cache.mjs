@@ -7,7 +7,7 @@ assert.equal(page.headers.get('cache-control'), 'no-cache');
 const version = page.headers.get('x-game-version');
 assert.match(version, /^[a-f0-9]{12}$/);
 const html = await page.text();
-assert.ok(html.includes('/assets/' + version + '/client.js'));
+assert.ok(html.includes('/assets/' + version + '/boot.js'));
 for (const file of [
   'client',
   'changelog',

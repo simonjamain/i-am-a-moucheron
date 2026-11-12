@@ -204,7 +204,9 @@ export function createCharacter(T, appearance = DEFAULT_APPEARANCE) {
   actions.idle.setEffectiveWeight(1);
   let current = 'idle';
   let airborne = false,
-    landing = 0;
+    landing = 0,
+    airBlend = 0,
+    hang = 0;
   const v = (x, y, z) => new T.Vector3(x, y, z);
   const character = {
     appearance: id,
@@ -221,6 +223,9 @@ export function createCharacter(T, appearance = DEFAULT_APPEARANCE) {
       if (airborne && !inAir && !state.seated) landing = LANDING_DURATION;
       airborne = inAir;
       if (inAir || state.seated) landing = 0;
+      const poseStep = 1 - Math.exp(-12 * Math.max(0, dt || 0));
+      airBlend += ((inAir ? 1 : 0) - airBlend) * poseStep;
+      hang += ((state.parachute ? 1 : 0) - hang) * poseStep;
       const landingWeight = Math.sin(Math.PI * Math.min(1, landing / LANDING_DURATION));
       landing = Math.max(0, landing - Math.max(0, dt || 0));
       const next =
@@ -244,6 +249,10 @@ export function createCharacter(T, appearance = DEFAULT_APPEARANCE) {
           ? 1
           : Math.max(0.5, Math.min(1.5, speed / authored));
       mixer.update(Math.max(0, Math.min(0.1, dt || 0)));
+      const lean = inAir && !state.parachute && !actions.fall ? 1.05 : 0;
+      root.rotation.x += (lean - root.rotation.x) * (1 - Math.exp(-10 * Math.max(0, dt || 0)));
+      if (lean === 0 && Math.abs(root.rotation.x) < 0.001) root.rotation.x = 0;
+      root.position.z = -0.85 * Math.sin(root.rotation.x);
       container.updateMatrixWorld(true);
       const q = container.getWorldQuaternion(new T.Quaternion());
       const local = (x, y, z) => v(x, y, z).applyQuaternion(q);
@@ -261,7 +270,13 @@ export function createCharacter(T, appearance = DEFAULT_APPEARANCE) {
           );
           pointBone(T, bone(side + 'ForeArm'), bone(side + 'Hand'), local(0, -0.1, 1), 0.9);
         }
-      } else if (restPose && !inAir && landing <= 0 && actions.idle.getEffectiveWeight() > 0) {
+      } else if (
+        restPose &&
+        airBlend < 0.01 &&
+        !inAir &&
+        landing <= 0 &&
+        actions.idle.getEffectiveWeight() > 0
+      ) {
         // Export without an idle clip: arms down along the body from the bind pose.
         const w = actions.idle.getEffectiveWeight();
         for (const side of ['Left', 'Right']) {
@@ -269,7 +284,7 @@ export function createCharacter(T, appearance = DEFAULT_APPEARANCE) {
           pointBone(T, bone(side + 'Arm'), bone(side + 'ForeArm'), local(s * 0.18, -1, 0), w);
           pointBone(T, bone(side + 'ForeArm'), bone(side + 'Hand'), local(s * 0.08, -1, 0.12), w);
         }
-      } else if (inAir && (state.parachute || !actions.fall)) {
+      } else if (airBlend > 0.001 && (state.parachute || !actions.fall)) {
         // Arms raised and spread, legs slightly apart.
         for (const side of ['Left', 'Right']) {
           const s = side === 'Left' ? 1 : -1;
@@ -277,22 +292,22 @@ export function createCharacter(T, appearance = DEFAULT_APPEARANCE) {
             T,
             bone(side + 'Arm'),
             bone(side + 'ForeArm'),
-            local(s * (state.parachute ? 0.3 : 0.8), 0.8, 0),
-            1,
+            local(s * (1 - 0.7 * hang), 0.1 + 0.7 * hang, 0),
+            airBlend,
           );
           pointBone(
             T,
             bone(side + 'ForeArm'),
             bone(side + 'Hand'),
-            local(s * (state.parachute ? 0.12 : 0.4), 1, 0),
-            1,
+            local(s * (0.8 - 0.68 * hang), 0.05 + 0.95 * hang, 0.3 * (1 - hang)),
+            airBlend,
           );
           pointBone(
             T,
             bone(side + 'UpLeg'),
             bone(side + 'Leg'),
-            local(s * (state.parachute ? 0.12 : 0.3), -1, state.parachute ? 0.3 : -0.15),
-            1,
+            local(s * (0.3 - 0.18 * hang), -1, -0.15 + 0.45 * hang),
+            airBlend,
           );
         }
       }
@@ -304,6 +319,7 @@ export function createCharacter(T, appearance = DEFAULT_APPEARANCE) {
           pointBone(T, bone(side + 'Leg'), bone(side + 'Foot'), local(0, -1, -0.65), landingWeight);
         }
       } else root.position.y = 0;
+      root.position.y += 0.85 * (1 - Math.cos(root.rotation.x));
       if (state.aim && state.aim.lengthSq() > 1e-12) {
         // Pistol: right arm straight along the aim, left hand supports it.
         const aim = state.aim.clone().normalize();

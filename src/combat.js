@@ -53,7 +53,7 @@ export class CombatEffects {
     this.scene = scene;
     this.items = [];
   }
-  muzzle(position, direction) {
+  muzzle(position, direction, anchor = null) {
     const T = this.T,
       g = new T.Group(),
       m = new T.MeshBasicMaterial({
@@ -70,8 +70,15 @@ export class CombatEffects {
     g.position.copy(position);
     g.quaternion.setFromUnitVectors(new T.Vector3(0, 0, -1), direction);
     this.scene.add(g);
-    this.items.push({ g, m, age: 0, life: 0.07, kind: 'muzzle' });
+    this.items.push({ g, m, anchor, age: 0, life: 0.07, kind: 'muzzle' });
+    this.followMuzzle(this.items.at(-1));
     this.trim();
+  }
+  followMuzzle(e) {
+    if (!e.anchor) return;
+    e.anchor.updateWorldMatrix(true, false);
+    e.anchor.getWorldPosition(e.g.position);
+    e.anchor.getWorldQuaternion(e.g.quaternion);
   }
   blast(position, radius = MAP.metres(FLAK.radius)) {
     const T = this.T,
@@ -146,6 +153,7 @@ export class CombatEffects {
   }
   update(dt, camera) {
     for (const e of [...this.items]) {
+      if (e.kind === 'muzzle') this.followMuzzle(e);
       e.age += dt;
       const t = e.age / e.life;
       if (t >= 1) {

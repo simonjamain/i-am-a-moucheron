@@ -25,8 +25,8 @@ const action = (id, command) =>
 foot(a.id, 0, 0);
 foot(b.id, 0, 0);
 let reply = action(a.id, { action: 'build', kind: 'barricade', a: [0, 0], b: [0.4, 0] });
-assert.equal(reply.dollars, 18);
-assert.equal(reply.groundDefense.structures.length, 2);
+assert.equal(reply.dollars, 17.94);
+assert.equal(reply.groundDefense.structures.length, 9);
 assert.equal(reply.groundDefense.navigationRevision, 1);
 const second = game.command('GROUND', b.id, 'sync', {
   state: r.pilots.get(b.id).state,
@@ -49,7 +49,7 @@ assert.throws(
   () => action(b.id, { action: 'build', kind: 'barricade', a: [0, 0], b: [0.4, 0] }),
   /occupé/,
 );
-assert.equal(r.dollars, 18, 'rejected simultaneous placement cannot spend shared money');
+assert.equal(r.dollars, 17.94, 'rejected simultaneous placement cannot spend shared money');
 assert.throws(
   () => action(a.id, { action: 'damage', id: reply.groundDefense.structures[0].id }),
   /inconnue/,
@@ -60,7 +60,7 @@ assert.throws(
   /changé/,
 );
 reply = action(a.id, { action: 'build', kind: 'sugar', a: [0, 0.1] });
-assert.equal(reply.dollars, 15);
+assert.equal(reply.dollars, 14.94);
 assert.equal(reply.groundDefense.structures.at(-1).kind, 'sugar');
 assert.equal(reply.groundDefense.structures.at(-1).radius, 0.15);
 const epoch = r.base.epoch;

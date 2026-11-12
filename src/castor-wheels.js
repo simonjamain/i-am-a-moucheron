@@ -29,7 +29,8 @@ export function wheelPose(wheel, { forwardSpeed, yawRate }, { scale, turnRate, f
   const groundSpeed = forwardSpeed + yawRate * wheel.x * scale;
   const spin = (-groundSpeed / (CASTOR_WHEEL_RADIUS * scale)) * dt;
   const turn = turnRate > 0 ? Math.max(-1, Math.min(1, yawRate / turnRate)) : 0;
-  const steer = wheel.z <= frontZ ? turn * CASTOR_MAX_STEER : 0;
+  const steeringDirection = forwardSpeed < -0.0001 ? -1 : 1;
+  const steer = wheel.z <= frontZ ? turn * CASTOR_MAX_STEER * steeringDirection : 0;
   return { spin, steer };
 }
 
