@@ -147,6 +147,50 @@
       input:focus {
         border-color: var(--acid);
       }
+      .appearance {
+        margin-top: 16px;
+        display: grid;
+        grid-template-columns: 44px 1fr 44px;
+        grid-template-rows: auto 1fr auto;
+        align-items: center;
+        border: 1px solid #ffffff1a;
+        border-radius: 6px;
+        background: #0c211f; /* PREVIEW_BACKGROUND in appearance-picker.js */
+        padding: 10px 6px 8px;
+      }
+      .appearance-title {
+        grid-column: 1 / -1;
+        font-size: 10px;
+        color: var(--muted);
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        padding-left: 6px;
+      }
+      #appearanceView {
+        width: 100%;
+        height: 190px;
+        display: block;
+      }
+      .appearance[aria-busy='true'] #appearanceView {
+        opacity: 0.45;
+      }
+      .appearance-arrow {
+        width: 40px;
+        height: 40px;
+        padding: 0;
+        border-radius: 50%;
+        font-size: 24px;
+        line-height: 1;
+        justify-self: center;
+      }
+      #appearanceName {
+        grid-column: 1 / -1;
+        text-align: center;
+        font-family: 'Barlow Condensed', Impact, sans-serif;
+        font-size: 19px;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+      }
       #join {
         margin-top: 16px;
         width: 100%;
@@ -399,6 +443,17 @@
         background: #0c211ecf;
         border: 1px solid var(--line);
         border-radius: 7px;
+      }
+      @media (max-height: 760px) {
+        #appearanceView {
+          height: 120px;
+        }
+        .lobby h1 {
+          margin: 10px 0;
+        }
+        .formbox {
+          margin-top: 14px;
+        }
       }
       @media (max-width: 700px) {
         header {
@@ -2310,9 +2365,29 @@
             />
           </div>
         </div>
+        <div id="appearance" class="appearance" role="group" aria-labelledby="appearanceTitle">
+          <span id="appearanceTitle" class="appearance-title">Personnage</span>
+          <button
+            id="appearancePrev"
+            class="appearance-arrow"
+            type="button"
+            aria-label="Personnage précédent"
+          >
+            ‹
+          </button>
+          <canvas id="appearanceView" aria-hidden="true"></canvas>
+          <button
+            id="appearanceNext"
+            class="appearance-arrow"
+            type="button"
+            aria-label="Personnage suivant"
+          >
+            ›
+          </button>
+          <output id="appearanceName" aria-live="polite"></output>
+        </div>
         <button id="join" class="primary" type="submit">Rejoindre la base <span>↗</span></button>
         <p id="error" role="alert"></p>
-        <div class="small">Même code, même partie.</div>
       </form>
     </main>
     <div id="sceneLabel"><span>Zone de départ</span><strong>Base Alpha / Bureau 01</strong></div>

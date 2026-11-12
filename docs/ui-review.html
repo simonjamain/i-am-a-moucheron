@@ -83,23 +83,6 @@
         font-weight: 700;
         letter-spacing: -0.4px;
       }
-      .mark {
-        width: 35px;
-        height: 35px;
-        display: grid;
-        place-items: center;
-        background: var(--acid);
-        color: var(--dark);
-        font-size: 24px;
-        border-radius: 50%;
-      }
-      .badge {
-        border: 1px solid #ffffff35;
-        border-radius: 30px;
-        padding: 7px 12px;
-        font-size: 10px;
-        letter-spacing: 2px;
-      }
       .lobby {
         position: fixed;
         left: 7vw;
@@ -120,12 +103,6 @@
       h1 em {
         font-style: normal;
         color: var(--acid);
-      }
-      .intro {
-        color: #b4c6be;
-        max-width: 350px;
-        line-height: 1.7;
-        font-size: 15px;
       }
       .formbox {
         margin-top: 28px;
@@ -160,6 +137,50 @@
       input:focus {
         border-color: var(--acid);
       }
+      .appearance {
+        margin-top: 16px;
+        display: grid;
+        grid-template-columns: 44px 1fr 44px;
+        grid-template-rows: auto 1fr auto;
+        align-items: center;
+        border: 1px solid #ffffff1a;
+        border-radius: 6px;
+        background: #0c211f; /* PREVIEW_BACKGROUND in appearance-picker.js */
+        padding: 10px 6px 8px;
+      }
+      .appearance-title {
+        grid-column: 1 / -1;
+        font-size: 10px;
+        color: var(--muted);
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        padding-left: 6px;
+      }
+      #appearanceView {
+        width: 100%;
+        height: 190px;
+        display: block;
+      }
+      .appearance[aria-busy='true'] #appearanceView {
+        opacity: 0.45;
+      }
+      .appearance-arrow {
+        width: 40px;
+        height: 40px;
+        padding: 0;
+        border-radius: 50%;
+        font-size: 24px;
+        line-height: 1;
+        justify-self: center;
+      }
+      #appearanceName {
+        grid-column: 1 / -1;
+        text-align: center;
+        font-family: 'Barlow Condensed', Impact, sans-serif;
+        font-size: 19px;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+      }
       #join {
         margin-top: 16px;
         width: 100%;
@@ -177,20 +198,6 @@
         color: var(--muted);
         font-size: 11px;
         line-height: 1.6;
-      }
-      .features {
-        display: flex;
-        gap: 22px;
-        margin-top: 22px;
-        font-size: 10px;
-        letter-spacing: 1.2px;
-        color: #bdcfc1;
-        text-transform: uppercase;
-      }
-      .features span:before {
-        content: '+';
-        color: var(--acid);
-        margin-right: 7px;
       }
       footer {
         position: fixed;
@@ -231,9 +238,6 @@
         pointer-events: auto;
       }
       .topstats {
-        position: absolute;
-        top: 85px;
-        left: 30px;
         display: flex;
         background: #0c211ed9;
         border: 1px solid var(--line);
@@ -258,10 +262,12 @@
       .stat b.lime {
         color: var(--acid);
       }
+      #labOpen.debugOn {
+        background: #d5ef73;
+        color: #132e23;
+        font-weight: bold;
+      }
       #roomTag {
-        position: absolute;
-        right: 32px;
-        top: 85px;
         pointer-events: auto;
         display: flex;
         gap: 8px;
@@ -269,10 +275,11 @@
       }
       #players {
         position: absolute;
-        right: 32px;
-        top: 142px;
+        right: 20px;
+        top: 100px;
         text-align: right;
-        color: #b4c6be;
+        color: #e4eedc;
+        text-shadow: 0 1px 4px #000a;
         font-size: 11px;
         line-height: 1.9;
       }
@@ -388,7 +395,7 @@
       #actions {
         position: absolute;
         right: 32px;
-        bottom: 32px;
+        bottom: 251px; /* just above the enlarged radar (issue #135) */
         display: flex;
         gap: 7px;
       }
@@ -410,94 +417,32 @@
         text-shadow: 0 2px 12px #000;
       }
       #net {
-        position: absolute;
-        right: 32px;
-        top: 27px;
         font-size: 10px;
         color: var(--acid);
         letter-spacing: 1px;
       }
+      /* Issue #135: top and right edges unchanged (243 px from the bottom, 32 px
+         from the right); the bottom edge moves down into the freed corner and
+         the square grows to the left (same 1:1 ratio as the 220×220 canvas). */
       #radar {
         position: absolute;
         right: 32px;
-        bottom: 93px;
-        width: 150px;
-        height: 150px;
+        bottom: 32px;
+        width: 211px;
+        height: 211px;
         background: #0c211ecf;
         border: 1px solid var(--line);
         border-radius: 7px;
       }
-      #help {
-        position: fixed;
-        z-index: 9;
-        inset: 0;
-        background: #041311cc;
-        display: grid;
-        place-items: center;
-        backdrop-filter: blur(10px);
-      }
-      #help article {
-        max-width: 560px;
-        padding: 30px;
-        background: #132f29;
-        border: 1px solid #50675b;
-        border-radius: 10px;
-        margin: 20px;
-        line-height: 1.7;
-      }
-      #help h2 {
-        font:
-          35px 'Barlow Condensed',
-          sans-serif;
-        text-transform: uppercase;
-        margin: 0 0 20px;
-      }
-      #help p {
-        color: #b5c7bd;
-        font-size: 13px;
-      }
-      #touch {
-        position: absolute;
-        bottom: 10px;
-        left: 10px;
-        right: 10px;
-        display: none;
-        justify-content: space-between;
-        pointer-events: none;
-      }
-      #touch button {
-        pointer-events: auto;
-        touch-action: none;
-        padding: 17px;
-        background: #173d33bb;
-        user-select: none;
-      }
-      #touch .dir {
-        display: grid;
-        grid-template-columns: repeat(3, 48px);
-        gap: 3px;
-      }
-      .touchFire {
-        align-self: end;
-        background: #d5ef73bb !important;
-        color: #132e23 !important;
-      }
-      @media (pointer: coarse) {
-        #touch.playing {
-          display: flex;
+      @media (max-height: 760px) {
+        #appearanceView {
+          height: 120px;
         }
-        .bottomkeys {
-          display: none;
+        .lobby h1 {
+          margin: 10px 0;
         }
-        #flight {
-          bottom: 175px;
-          width: 220px;
-        }
-        #actions {
-          bottom: 175px;
-        }
-        #radar {
-          bottom: 225px;
+        .formbox {
+          margin-top: 14px;
         }
       }
       @media (max-width: 700px) {
@@ -514,32 +459,14 @@
         h1 {
           font-size: 76px;
         }
-        .intro {
-          font-size: 13px;
-        }
         #sceneLabel {
           display: none;
-        }
-        .features {
-          gap: 12px;
-          font-size: 9px;
-        }
-        .badge {
-          font-size: 8px;
-        }
-        .topstats {
-          left: 12px;
-          top: 70px;
         }
         .stat {
           padding: 9px 11px;
         }
         .stat b {
           font-size: 17px;
-        }
-        #roomTag {
-          right: 12px;
-          top: 135px;
         }
         #players {
           top: 180px;
@@ -573,12 +500,19 @@
           width: 115px;
           height: 115px;
         }
-        #net {
-          right: 15px;
-          top: 49px;
-        }
         footer {
           left: 20px;
+        }
+      }
+      @media (max-width: 700px) and (pointer: fine) {
+        /* Narrow desktop windows: top edge kept (208 px), bigger square. */
+        #radar {
+          bottom: 32px;
+          width: 176px;
+          height: 176px;
+        }
+        #actions {
+          bottom: 216px;
         }
       }
       #purgatory {
@@ -672,9 +606,6 @@
         font-size: 12px;
         min-height: 16px;
         margin-bottom: 0;
-      }
-      #touch.inPurgatory {
-        display: none;
       }
       #purgatory .small {
         margin: 12px 0 0;
@@ -819,10 +750,6 @@
         width: 42vw;
         line-height: 1.7;
       }
-      #help article {
-        max-height: 90vh;
-        overflow: auto;
-      }
       @media (max-width: 700px) {
         #actions {
           max-width: 260px;
@@ -875,46 +802,7 @@
           padding: 8px 4px;
         }
       }
-      #audioControls {
-        position: fixed;
-        z-index: 8;
-        right: 32px;
-        top: 51px;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        background: #0c211ecf;
-        padding: 4px 8px;
-        border: 1px solid #ffffff20;
-        border-radius: 5px;
-      }
-      #audioControls button {
-        font-size: 10px;
-        padding: 4px 7px;
-      }
-      #audioControls label {
-        margin: 0;
-        font-size: 8px;
-      }
-      #audioControls input {
-        width: 72px;
-        padding: 0;
-        accent-color: #d5ef73;
-        cursor: pointer;
-      }
       @media (max-width: 700px) {
-        #audioControls {
-          top: 13px;
-          right: 12px;
-          gap: 4px;
-          padding: 3px;
-        }
-        #audioControls label {
-          display: none;
-        }
-        #audioControls input {
-          width: 50px;
-        }
         #soundToggle {
           font-size: 0 !important;
           width: 28px;
@@ -930,32 +818,6 @@
           max-width: 45%;
           font-size: 11px;
         }
-        header .badge {
-          display: none;
-        }
-      }
-      #baseActions {
-        position: absolute;
-        left: 22px;
-        bottom: 22px;
-        width: 330px;
-        background: #0c211ee8;
-        border: 1px solid #d5ef7340;
-        border-radius: 10px;
-        padding: 18px;
-        pointer-events: auto;
-      }
-      #baseActions h2 {
-        font:
-          29px 'Barlow Condensed',
-          sans-serif;
-        margin: 8px 0;
-      }
-      #baseActions p {
-        line-height: 1.6;
-      }
-      #baseActions .soulControls {
-        margin-top: 10px;
       }
       #papers {
         position: fixed;
@@ -1133,15 +995,6 @@
         margin: 0;
       }
       @media (max-width: 700px) {
-        #baseActions {
-          left: 10px;
-          bottom: 10px;
-          width: 280px;
-          padding: 12px;
-        }
-        #baseActions h2 {
-          font-size: 23px;
-        }
         #papers {
           left: 10px;
           right: 10px;
@@ -1202,9 +1055,6 @@
           right: 10px;
           bottom: 155px;
           max-width: 210px;
-        }
-        #baseActions {
-          width: 260px;
         }
       }
       /* The signed sheet is the centre of the game: paper, ink, stamp, archive. */
@@ -1346,16 +1196,6 @@
         border: 1px solid #287c51;
         transform: rotate(-12deg);
         padding: 2px;
-      }
-      #seatChoices {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 6px;
-        margin: 10px 0;
-      }
-      #seatChoices button {
-        font-size: 11px;
-        padding: 7px 9px;
       }
       #flakControls {
         width: 100%;
@@ -1549,10 +1389,6 @@
       }
 
       #economyControls {
-        position: fixed;
-        left: 32px;
-        top: 180px;
-        z-index: 4;
         background: #112c27e8;
         border: 1px solid #91ab6060;
         border-radius: 8px;
@@ -1560,7 +1396,6 @@
         display: flex;
         gap: 8px;
         align-items: center;
-        margin-top: 12px;
       }
       #wallet {
         font-size: 16px;
@@ -1578,7 +1413,7 @@
         padding: 20px;
       }
       #shop > article {
-        width: min(740px, 100%);
+        width: min(1240px, 100%);
         max-height: 92dvh;
         overflow: auto;
         background: #142e2a;
@@ -1588,6 +1423,7 @@
         box-shadow: 0 25px 100px #0007;
       }
       #shop header {
+        position: static;
         display: flex;
         justify-content: space-between;
         align-items: start;
@@ -1597,6 +1433,9 @@
         font-size: 34px;
         margin: 0 0 8px;
       }
+      #shop > article > p {
+        margin: 14px 0 0;
+      }
       #shopBalance {
         color: #d5ef73;
         font-weight: 700;
@@ -1604,31 +1443,72 @@
       }
       #shopItems {
         display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 12px;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 14px;
         margin-top: 18px;
+        align-items: start;
       }
-      #shopItems article {
+      #shopItems section {
+        display: grid;
+        gap: 10px;
+        align-content: start;
+      }
+      #shopItems h3 {
+        margin: 0;
+        padding-bottom: 6px;
+        border-bottom: 1px solid #a5bc7660;
+        font-size: 15px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: #d5ef73;
+      }
+      #shopItems .shopCard {
+        display: block;
+        width: 100%;
+        padding: 10px;
+        text-align: left;
+        font: inherit;
+        color: inherit;
         background: #24433a;
         border: 1px solid #7c9b6555;
         border-radius: 8px;
-        padding: 16px;
+        cursor: pointer;
       }
-      #shopItems h3 {
-        margin: 0 0 8px;
-        font-size: 20px;
+      #shopItems .shopCard:hover:not(:disabled),
+      #shopItems .shopCard:focus-visible {
+        border-color: #d5ef73;
+        background: #2c5146;
       }
-      #shopItems p {
-        font-size: 13px;
-        line-height: 1.5;
-        min-height: 40px;
-        color: #c2d0b7;
+      #shopItems .shopCard:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
       }
-      #shopItems button {
-        background: #d5ef73;
-        color: #17352e;
+      #shopItems .shopPicture {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 108px;
+        margin-bottom: 8px;
+        border-radius: 6px;
+        background: radial-gradient(ellipse at 50% 40%, #3a5f52, #1b3a32);
+        font-size: 44px;
+        color: #d5ef73;
+        overflow: hidden;
+      }
+      #shopItems .shopPicture img {
         width: 100%;
-        font-weight: 700;
+        height: 100%;
+        object-fit: contain;
+      }
+      #shopItems h4 {
+        margin: 0 0 4px;
+        font-size: 15px;
+        line-height: 1.25;
+      }
+      #shopItems .shopCard strong {
+        display: block;
+        font-size: 18px;
+        color: #d5ef73;
       }
       #placementControls {
         position: fixed;
@@ -1652,10 +1532,13 @@
         margin: 8px 0 0;
         color: #c4d6a9;
       }
+      @media (max-width: 1000px) {
+        #shopItems {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
       @media (max-width: 600px) {
         #economyControls {
-          left: 12px;
-          top: 168px;
           font-size: 12px;
         }
         #shopItems {
@@ -1757,40 +1640,6 @@
         opacity: 1;
         border: 2px solid #fff5b1;
       }
-      #balancePanel {
-        z-index: 100;
-      }
-      #balancePanel [data-balance-fields],
-      #balancePanel [data-spawn-fields] {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(min(270px, 100%), 1fr));
-        gap: 16px;
-        margin: 20px 0;
-      }
-      #balancePanel label {
-        display: grid;
-        gap: 6px;
-      }
-      #balancePanel input {
-        width: 100%;
-        padding: 8px;
-        color: #253c2d;
-        background: #fffbea;
-        border: 1px solid #6d7756;
-        font: inherit;
-      }
-      #balancePanel small {
-        font: 13px/1.4 sans-serif;
-      }
-      #balancePanel footer {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
-      }
-      #balancePanel [data-balance-status],
-      #balancePanel [data-spawn-status] {
-        min-height: 2em;
-      }
     </style>
 <style>
       #papers #paperBody {
@@ -1832,8 +1681,6 @@
 
       /* Validated contextual rails: keep the centre clear during combat. */
       #hud .topstats {
-        top: 76px;
-        left: 20px;
         background: #102b29b8;
       }
       #hud .stat {
@@ -1847,8 +1694,6 @@
         margin: 0 0 2px;
       }
       #hud #economyControls {
-        top: 127px;
-        left: 20px;
         padding: 5px 8px;
         margin: 0;
         background: #102b29b8;
@@ -1884,7 +1729,7 @@
         display: none;
       }
       #hud #notice {
-        top: 180px;
+        top: 112px;
         max-width: min(440px, 85vw);
         font:
           13px 'Space Grotesk',
@@ -1989,7 +1834,7 @@
       #aimRange small {
         font-size: 9px;
       }
-      :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel) {
+      :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel) {
         position: fixed;
         inset: 0;
         z-index: 45;
@@ -1998,7 +1843,7 @@
         background: #09211bd6;
         padding: 20px;
       }
-      :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel) > article {
+      :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel) > article {
         width: min(1080px, 100%);
         max-height: 90dvh;
         overflow: auto;
@@ -2009,28 +1854,28 @@
         box-shadow: 0 14px 60px #0007;
         font-family: Georgia, serif;
       }
-      :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel) header {
+      :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel) header {
         position: static;
         display: flex;
         align-items: start;
         justify-content: space-between;
         gap: 20px;
       }
-      :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel) h2 {
+      :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel) h2 {
         margin: 0 0 8px;
         font-size: 30px;
         font-style: italic;
         font-weight: 400;
       }
-      :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel) h3 {
+      :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel) h3 {
         font-size: 32px;
         font-weight: 400;
         margin: 22px 0;
       }
-      :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel) p {
+      :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel) p {
         line-height: 1.6;
       }
-      :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel) button {
+      :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel) button {
         background: #294938;
         color: #f3edcf;
         padding: 10px 14px;
@@ -2038,44 +1883,37 @@
         border-radius: 4px;
         cursor: pointer;
       }
-      :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel) button:disabled {
+      :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel) button:disabled {
         opacity: 0.5;
         cursor: default;
       }
-      :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel) [data-bank-cards] {
+      :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel) [data-bank-cards] {
         display: grid;
         grid-template-columns: repeat(3, minmax(0, 1fr));
         gap: 16px;
         margin: 20px 0;
       }
-      :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel)
-        [data-bank-cards]
-        article {
+      :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel) [data-bank-cards] article {
         padding: 18px;
         border: 1px solid #a7a17c;
         background: #fff8df55;
       }
-      :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel)
-        [data-bank-cards]
-        button {
+      :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel) [data-bank-cards] button {
         display: block;
         width: 100%;
         margin-top: 14px;
       }
-      :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel)
-        [data-bank-cards]
-        small {
+      :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel) [data-bank-cards] small {
         letter-spacing: 1px;
       }
-      :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel)
-        [data-bank-status] {
+      :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel) [data-bank-status] {
         min-height: 1.5em;
         font-weight: bold;
       }
-      :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel) [data-bank-text] {
+      :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel) [data-bank-text] {
         white-space: pre-line;
       }
-      :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel) canvas {
+      :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel) canvas {
         width: min(100%, 650px);
         height: 150px;
         touch-action: none;
@@ -2083,34 +1921,26 @@
         display: block;
         background: #fff9e5;
       }
-      :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel) .bankTable {
+      :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel) .bankTable {
         overflow: auto;
         margin: 15px 0;
       }
-      :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel) table {
+      :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel) table {
         width: 100%;
         border-collapse: collapse;
         font-size: 12px;
       }
-      :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel) th,
-      :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel) td {
+      :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel) th,
+      :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel) td {
         padding: 8px;
         text-align: left;
         border-bottom: 1px solid #b6b18c;
         white-space: nowrap;
       }
-      :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel) .bankHint {
+      :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel) .bankHint {
         font-size: 12px;
       }
       @media (max-width: 700px) {
-        #hud .topstats {
-          top: 65px;
-          left: 8px;
-        }
-        #hud #economyControls {
-          top: 119px;
-          left: 8px;
-        }
         #contextHUD .contextRail {
           left: 8px;
           width: 102px;
@@ -2137,33 +1967,54 @@
           top: 34px;
           bottom: auto;
         }
-        :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel) {
+        :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel) {
           padding: 8px;
         }
-        :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel) > article {
+        :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel) > article {
           padding: 14px;
         }
-        :is(#bank, #bedPanel, #purchasePanel, #balancePanel, #flightSettingsPanel)
-          [data-bank-cards] {
+        :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel) [data-bank-cards] {
           grid-template-columns: 1fr;
         }
       }
-      #sessionSummary {
+      /* One top bar: the session (wave, enemies, infestation, wallet, shops) on
+         the left, connection and room tools on the right. */
+      #topBar {
         position: absolute;
-        top: 76px;
+        top: 34px;
         left: 20px;
+        right: 20px;
         display: flex;
-        flex-direction: column;
-        gap: 8px;
-        max-width: calc(100vw - 40px);
-        align-items: flex-start;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px 20px;
+        flex-wrap: wrap;
+        pointer-events: none;
+      }
+      #sessionSummary {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px 10px;
+        max-width: 100%;
       }
       #hud #sessionSummary .topstats,
       #hud #sessionSummary #economyControls {
-        position: static;
         flex-wrap: wrap;
         max-width: 100%;
         margin: 0;
+      }
+      #hud #sessionSummary #economyControls #wallet {
+        font-size: 18px;
+        padding-right: 4px;
+      }
+      #roomTag #net {
+        padding: 0 6px;
+      }
+      #hud #roomTag button,
+      #hud #waveCouncilOpen {
+        padding: 7px 11px;
+        font-size: 11px;
       }
       #wallet {
         overflow-wrap: anywhere;
@@ -2190,19 +2041,6 @@
         font-size: 13px;
       }
       @media (max-width: 700px) {
-        #sessionSummary {
-          top: 65px;
-          left: 8px;
-          max-width: calc(100vw - 16px);
-        }
-        #hud #sessionSummary .topstats,
-        #hud #sessionSummary #economyControls {
-          position: static;
-        }
-        #roomTag {
-          top: 190px;
-          right: 8px;
-        }
         #players {
           display: none;
         }
@@ -2323,45 +2161,8 @@
         border-radius: 8px;
         font-size: 13px;
       }
-      #baseActions {
-        bottom: 110px;
-      }
       #placementControls {
         bottom: 100px;
-      }
-      #balancePanel {
-        z-index: 100;
-      }
-      #balancePanel [data-balance-fields],
-      #balancePanel [data-spawn-fields] {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(min(270px, 100%), 1fr));
-        gap: 16px;
-        margin: 20px 0;
-      }
-      #balancePanel label {
-        display: grid;
-        gap: 6px;
-      }
-      #balancePanel input {
-        width: 100%;
-        padding: 8px;
-        color: #253c2d;
-        background: #fffbea;
-        border: 1px solid #6d7756;
-        font: inherit;
-      }
-      #balancePanel small {
-        font: 13px/1.4 sans-serif;
-      }
-      #balancePanel footer {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
-      }
-      #balancePanel [data-balance-status],
-      #balancePanel [data-spawn-status] {
-        min-height: 2em;
       }
       #flightSettingsPanel {
         z-index: 101;
@@ -2403,11 +2204,16 @@
       /* Petit historique accessible depuis l'accueil comme en partie. */
       #changelogOpen {
         position: fixed;
-        left: 52px;
+        left: 8px;
         top: 4px;
         z-index: 200;
-        padding: 4px 8px;
+        padding: 2px 6px;
         font-size: 11px;
+        opacity: 0.8;
+        background: transparent;
+        border: 0;
+        text-decoration: underline dotted;
+        cursor: pointer;
       }
       #changelogDialog {
         width: min(420px, calc(100vw - 24px));
@@ -2465,7 +2271,7 @@
       }
       @media (max-width: 350px) {
         #changelogOpen {
-          top: 34px;
+          top: 4px;
           left: 8px;
         }
       }
@@ -2503,8 +2309,7 @@
         gap: 8px;
         overflow-x: auto;
       }
-      #waveTimeline div,
-      #waveCards button {
+      #waveTimeline div {
         display: grid;
         gap: 4px;
         padding: 8px;
@@ -2514,63 +2319,32 @@
         white-space: nowrap;
         font-size: 12px;
       }
-      #waveCards {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(135px, 1fr));
-        gap: 8px;
-        margin: 12px 0;
-      }
-      #waveCards button {
-        text-align: left;
-        color: #edf4e8;
-        background: #25493e;
-      }
-      #waveCards button[aria-pressed='true'] {
-        border-color: #d7ef91;
-      }
-      #waveCards button:disabled {
-        opacity: 0.85;
-        cursor: default;
-      }
-      #waveCards small {
-        color: #d7ef91;
-      }
-      #waveWorkshop > div {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        flex-wrap: wrap;
-        margin: 6px 0;
-      }
-      #waveWorkshop select {
-        max-width: 100%;
-      }
       #waveCouncil [hidden],
       #waveCouncilOpen[hidden] {
         display: none;
       }
     </style>
   <style>body{background:linear-gradient(#879a81 0 55%,#c1af81 56% 80%,#656c48 81%);min-height:100dvh}nav{position:relative;z-index:50;display:flex;gap:6px;flex-wrap:nowrap;overflow:auto;padding:14px;background:#102b29}nav button{padding:8px;font-size:12px}.previewNote{position:fixed;top:210px;bottom:auto;left:15px;right:auto;max-width:320px;font-size:12px;color:#fff;background:#102b29b8;padding:9px;z-index:50}#bank>article{max-height:78dvh}#bank{padding-top:90px;padding-bottom:60px}</style>
-  <nav aria-label="Postes de démonstration"><button data-demo="0">Chasseur</button><button data-demo="1">Stuka</button><button data-demo="2">Bombardier</button><button data-demo="3">Tourelle</button><button data-demo="4">DCA</button><button data-demo="5">Tank · pilote</button><button data-demo="6">Tank · canon</button><button data-demo="7">Tank · supérieur</button><button data-demo="8">Banquier</button><button data-demo="9">Lit</button><button data-demo="10">Bon de commande</button><button data-demo="11">Spitfire</button><button data-demo="12">Observation</button><button data-demo="13">Marche</button><button data-demo="14">Parachute</button><button data-demo="15">Placement</button><button data-demo="16">Hélicoptère · pilote</button><button data-demo="17">Hélicoptère · copilote</button><button data-demo="18">DCA mobile · conducteur</button><button data-demo="19">DCA mobile · tireur</button><button data-demo="20">Équilibrage</button></nav>
-  <div id="hud"><div id="sessionSummary">
-        <div class="topstats">
-          <div class="stat">
-            <label>Vague</label><b id="wave">00</b><small id="threat">MENACE 0</small>
+  <nav aria-label="Postes de démonstration"><button data-demo="0">Chasseur</button><button data-demo="1">Stuka</button><button data-demo="2">Bombardier</button><button data-demo="3">Tourelle</button><button data-demo="4">DCA</button><button data-demo="5">Tank · pilote</button><button data-demo="6">Tank · canon</button><button data-demo="7">Tank · supérieur</button><button data-demo="8">Banquier</button><button data-demo="9">Lit</button><button data-demo="10">Bon de commande</button><button data-demo="11">Spitfire</button><button data-demo="12">Observation</button><button data-demo="13">Marche</button><button data-demo="14">Parachute</button><button data-demo="15">Placement</button><button data-demo="16">Hélicoptère · pilote</button><button data-demo="17">Hélicoptère · copilote</button><button data-demo="18">DCA mobile · conducteur</button><button data-demo="19">DCA mobile · tireur</button></nav>
+  <div id="hud"><header id="topBar"><div id="sessionSummary">
+          <div class="topstats">
+            <div class="stat">
+              <label>Vague</label><b id="wave">00</b><small id="threat">MENACE 0</small>
+            </div>
+            <div class="stat">
+              <label>Présence ennemie</label><b id="enemies">Aucun ennemi restant</b>
+            </div>
+            <div class="stat"><label>Infestation</label><b class="lime" id="infest">0 / 20</b></div>
           </div>
-          <div class="stat">
-            <label>Présence ennemie</label><b id="enemies">Aucun ennemi restant</b>
+          <button id="waveCouncilOpen" hidden aria-haspopup="dialog" title="Prochaine vague (V)">
+            Préparer la vague
+          </button>
+          <div id="economyControls">
+            <span id="wallet">0 $</span><button id="shopOpen">Équipement · P</button
+            ><button id="bankOpen">Banquier · N</button>
           </div>
-          <div class="stat"><label>Infestation</label><b class="lime" id="infest">0 / 20</b></div>
         </div>
-        <button id="waveCouncilOpen" hidden aria-haspopup="dialog" title="Conseil de vague (V)">
-          Préparer la vague
-        </button>
-        <div id="economyControls">
-          <span id="wallet">0 $</span><button id="shopOpen">Équipement · P</button
-          ><button id="bankOpen">Banquier · N</button>
-        </div>
-      </div>
-      <div id="contextHUD" class="hidden" aria-label="Informations du poste">
+        </header><div id="contextHUD" class="hidden" aria-label="Informations du poste">
         <section class="contextRail left" tabindex="0" aria-label="État du poste">
           <small data-hud="left-0"></small><strong data-hud="left-1"></strong>
           <div class="railDetails">
@@ -2653,39 +2427,6 @@
         </footer>
       </article>
     </section>
-    <section
-      id="balancePanel"
-      class="hidden"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="balanceTitle"
-    >
-      <article>
-        <header>
-          <div>
-            <h2 id="balanceTitle">Équilibrage de la room</h2>
-            <p>
-              Réglages partagés, modifiables à tout moment par tous les joueurs. La partie continue
-              pendant les ajustements.
-            </p>
-          </div>
-          <button data-balance-close aria-label="Fermer l’équilibrage">✕</button>
-        </header>
-        <div data-balance-fields></div>
-        <p data-balance-status role="status" aria-live="polite"></p>
-        <footer>
-          <button data-balance-save>Appliquer à la room</button>
-          <button data-balance-defaults>Valeurs par défaut</button>
-          <button data-balance-reload>Recharger les valeurs</button>
-        </footer>
-        <hr />
-        <h3>Génération de nuées (debug)</h3>
-        <p>Choisissez le nombre exact d’insectes de chaque espèce à lancer dans cette room.</p>
-        <div data-spawn-fields></div>
-        <button data-spawn-send>Envoyer la nuée</button>
-        <p data-spawn-status role="status" aria-live="polite"></p>
-      </article>
-    </section>
     <section id="bank" class="hidden" role="dialog" aria-modal="true" aria-labelledby="bankTitle">
       <article>
         <header>
@@ -2744,7 +2485,6 @@
     <p class="previewNote">Aperçu des composants intégrés · Données de démonstration · Aucune partie multijoueur ni transaction réelle. Les signatures fonctionnent sur une caisse temporaire réinitialisée au rechargement.</p>
   <script type="module">
   import { controlHints, cursorStats, cursorAmmoText } from '/live-hud.js';
-  import { BalanceUI } from '/balance-ui.js';
   import { DEFAULT_BALANCE } from '/balance.js';
   import { PurchaseUI } from '/purchase-ui.js';
   import { BedUI } from '/bed-ui.js';
@@ -2757,15 +2497,12 @@
   const person={id:'demo',life:'alive',incarnation:0,bedId:null};
   const bedUI=new BedUI({root:document.getElementById('bedPanel'),snapshot:()=>snap,ground:()=>null,command:async b=>{person.bedId=b.cancel?null:b.bed;return snap},accept:()=>{},onOpen:()=>{rails.classList.add('hidden');document.getElementById('aimRange').classList.add('hidden')},onClose:()=>{},archive:()=>{}});
   const purchaseUI=new PurchaseUI({root:document.getElementById('purchasePanel'),snapshot:()=>snap,ground:()=>null,command:async()=>{snap.dollars-=purchaseUI.price;return snap},accept:()=>{},onOpen:()=>{rails.classList.add('hidden');document.getElementById('aimRange').classList.add('hidden')},onClose:()=>{},archive:()=>{document.querySelector('.previewNote').textContent='Bon signé dans la démonstration · En jeu, passage direct à la pose par E, achat déjà payé.'}});
-  const balanceUI = new BalanceUI({root:document.getElementById('balancePanel'),document,snapshot:()=>snap,player:()=> 'demo',command:async b=>({...snap,balance:{...b.values},balanceRevision:snap.balanceRevision+1}),accept:s=>{snap=s},onOpen:()=>{rails.classList.add('hidden');document.getElementById('aimRange').classList.add('hidden')},onClose:()=>{}});
   document.getElementById('bankOpen').onclick=()=>display(8);
   document.getElementById('wallet').textContent='123 456 789 012,67 $';
   document.getElementById('wave').textContent='12';document.getElementById('enemies').textContent='Ennemis restants';document.getElementById('infest').textContent='10 / 20';
   let model;
   function display(index) {
-    if (bank.busy || bedUI.busy || purchaseUI.busy || balanceUI.busy) return;
-    balanceUI.close();
-    if(index===20){model=null;purchaseUI.close();bank.close();bedUI.close();balanceUI.open();return;}
+    if (bank.busy || bedUI.busy || purchaseUI.busy) return;
     document.getElementById('cursorStats').classList.add('hidden');document.getElementById('deathWatch').classList.add('hidden');document.getElementById('commandHelp').classList.remove('hidden');
     document.getElementById('commandHelp').textContent=controlHints({observing:index===12,airborne:index===14,placing:index===15});
     if(index>=12&&index<=15){model=null;purchaseUI.close();bank.close();bedUI.close();if(index===12)document.getElementById('deathWatch').classList.remove('hidden');return;}

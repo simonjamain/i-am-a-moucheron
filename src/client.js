@@ -93,6 +93,8 @@ import {
 } from '/control-focus.js';
 import { createRenderer } from '/renderer.js';
 import { createGraphics } from '/graphics.js';
+import { availableAppearance, turnToward } from '/character-model.js';
+import { createAppearancePicker } from '/appearance-picker.js';
 import { MidgeBatch } from '/midge-batch.js';
 import { WalkerBatch } from '/walker-batch.js';
 import { SpiderlingBatch } from '/spiderling-batch.js';
@@ -308,6 +310,18 @@ let onFoot = true,
   paperContext = '';
 const basePeople = new Map(),
   parkedPlanes = new Map();
+// Appearance a pilot picked on the home screen, drawn once its model is loaded
+// (the default meanwhile; humanoid models swap in place when it arrives).
+let appearanceIndex = { pilots: null, byId: new Map() };
+function appearanceOf(pilotId) {
+  const pilots = snap?.pilots;
+  if (appearanceIndex.pilots !== pilots)
+    appearanceIndex = { pilots, byId: new Map((pilots || []).map((p) => [p.id, p.appearance])) };
+  return availableAppearance(appearanceIndex.byId.get(pilotId));
+}
+function wearAppearance(model, pilotId) {
+  model?.userData.setAppearance?.(appearanceOf(pilotId));
+}
 function baseIntent() {
   const i = soulIntent();
   return { x: i.x, z: -i.z, guard: false };
@@ -915,6 +929,23 @@ if (params.has('room'))
     .replace(/[^a-z0-9]/gi, '')
     .slice(0, 10);
 $('name').value = localStorage.getItem('moucheron-name') || '';
+let storedAppearance = null;
+try {
+  storedAppearance = localStorage.getItem('moucheron-appearance');
+} catch {}
+const appearancePicker = createAppearancePicker(T, {
+  root: $('appearance'),
+  canvas: $('appearanceView'),
+  label: $('appearanceName'),
+  prev: $('appearancePrev'),
+  next: $('appearanceNext'),
+  initial: storedAppearance,
+  onChange(value) {
+    try {
+      localStorage.setItem('moucheron-appearance', value);
+    } catch {}
+  },
+});
 async function api(path, body) {
   const sent = Date.now();
   if (globalThis.MOUCHERON_UDP) {
@@ -1378,7 +1409,12 @@ $('form').addEventListener('submit', async (e) => {
     try {
       resumeKey = sessionStorage.getItem('moucheron-identity:' + code);
     } catch {}
-    const r = await api('join', { name: $('name').value, code, resumeKey });
+    const r = await api('join', {
+      name: $('name').value,
+      code,
+      resumeKey,
+      appearance: appearancePicker.value,
+    });
     identityKey = r.resumeKey || null;
     if (r.resumeKey)
       try {
@@ -1404,6 +1440,7 @@ $('form').addEventListener('submit', async (e) => {
     localStorage.setItem('moucheron-name', $('name').value);
     joined = true;
     onFoot = true;
+    appearancePicker.stop();
     resetMouseAim();
     accept(r.snapshot);
     $('lobby').classList.add('hidden');
@@ -1433,6 +1470,7 @@ async function reconnect() {
       try {
         const r = await api('join', {
           name: $('name').value,
+          appearance: appearancePicker.value,
           code: room,
           resumeKey: identityKey,
           resume: id,
@@ -2360,7 +2398,10 @@ function physicalPurgatory(dt, now) {
     active.add(b.id);
     let g = soulMeshes.get(b.id);
     if (!g) {
-      g = b.kind === 'player' ? humanoid(b.entity === id ? '#d5ef73' : '#8bc9d6') : new T.Group();
+      g =
+        b.kind === 'player'
+          ? humanoid(b.entity === id ? '#d5ef73' : '#8bc9d6', false, appearanceOf(b.entity))
+          : new T.Group();
       if (b.kind === 'enemy') {
         pm(g, 0.75, 0.8, 1.1, '#695441', 0, 0.8);
         pm(g, 1.6, 0.07, 0.6, '#d3dedc', 0, 1.25);
@@ -2413,6 +2454,7 @@ function physicalPurgatory(dt, now) {
   }
   for (const b of soulArena.bodies)
     if (b.kind === 'player' && soulMeshes.has(b.id)) {
+      wearAppearance(soulMeshes.get(b.id), b.entity);
       posePersonalWeapon(soulMeshes.get(b.id), b.entity === id);
       soulMeshes.get(b.id).userData.animate?.(dt, {
         speed: Math.hypot(b.vx, b.vz) * SOUL_METRES,
@@ -2879,7 +2921,10 @@ function updateVehicles(dt) {
         (p) => p.life === 'alive' && p.mode === 'turret' && p.state.turret === index,
       );
     gun.userData.person.visible = !!occupant && station.kind === 'dca';
-    if (gun.userData.person.visible) gun.userData.person.userData.animate?.(dt, { seated: true });
+    if (gun.userData.person.visible) {
+      wearAppearance(gun.userData.person, occupant.id);
+      gun.userData.person.userData.animate?.(dt, { seated: true });
+    }
     const howitzer = gun.userData.howitzer;
     howitzer?.tick(dt); // recoil keeps returning to battery after the gunner leaves
     if (!occupant) continue;
@@ -3066,17 +3111,20 @@ function updateBaseWorld(dt, now) {
     active.add(b.entity);
     let g = basePeople.get(b.entity);
     if (!g) {
-      g = humanoid(b.entity === id ? '#d5ef73' : '#8bc9d6');
+      g = humanoid(b.entity === id ? '#d5ef73' : '#8bc9d6', false, appearanceOf(b.entity));
       g.scale.setScalar(HUMAN_SCALE);
 
       scene.add(g);
       basePeople.set(b.entity, g);
       const w = baseWorld(b);
       g.position.set(w.x, w.y, w.z);
+      g.rotation.y = Math.PI - b.face;
     }
+    wearAppearance(g, b.entity);
     const w = baseWorld(b);
     g.position.lerp(new T.Vector3(w.x, w.y, w.z), 1 - Math.exp(-20 * dt));
-    g.rotation.y = Math.PI - b.face;
+    // The facing snaps to the input; the model turns toward it smoothly.
+    g.rotation.y = turnToward(g.rotation.y, Math.PI - b.face, dt);
     if (!g.userData.chute) {
       const chute = new T.Group();
       const canopy = new T.Mesh(
@@ -4357,6 +4405,7 @@ function frame(now) {
   spiderlingBatch.flush(insects);
   walkerBatch.flush(insects);
   tracerPool.flush();
+  appearancePicker.draw(renderer, dt);
   if (spectating && observationCamera) {
     if (observationRealm !== 'office') observedPurgatory(dt);
     toon.render(observationRealm === 'office' ? scene : purgScene, observationCamera);
@@ -6030,12 +6079,17 @@ function observedPurgatory(dt) {
     active.add(body.id);
     let model = soulMeshes.get(body.id);
     if (!model) {
-      model = body.kind === 'player' ? humanoid('#8bc9d6') : insect(body.enemyType || 'midge');
+      model =
+        body.kind === 'player'
+          ? humanoid('#8bc9d6', false, appearanceOf(body.entity))
+          : insect(body.enemyType || 'midge');
       purgScene.add(model);
       soulMeshes.set(body.id, model);
+      model.rotation.y = body.face || 0;
     }
+    if (body.kind === 'player') wearAppearance(model, body.entity);
     model.position.set(body.x, 0, body.z);
-    model.rotation.y = body.face || 0;
+    model.rotation.y = turnToward(model.rotation.y, body.face || 0, dt);
     model.userData.animate?.(dt, {
       speed: Math.hypot(body.vx || 0, body.vz || 0) * SOUL_METRES,
     });

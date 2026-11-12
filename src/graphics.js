@@ -344,36 +344,51 @@ export function createGraphics(T, scene) {
   // below stay as an invisible frame (`arms`, `legs`, `rig`) so the pistol, its
   // muzzle (shot origin) and every existing caller keep exactly the same API.
   const PALM = 0.08; // wrist to grip, model metres
-  function humanoid(color, saint = false) {
+  // `appearance`: id from character-appearances.js (default if unknown or not
+  // loaded yet). userData.setAppearance(id) swaps the model in place, keeping
+  // the frame, the pistol and everything attached to the group.
+  function humanoid(color, saint = false, appearance) {
     if (saint) return legacyHumanoid(color, true);
     const g = new T.Group(),
       rig = new T.Group();
     g.add(rig);
-    const character = createCharacter(T);
-    character.container.scale.setScalar(LEGACY_HEIGHT / CHARACTER_HEIGHT);
-    rig.add(character.container);
     const legs = [-0.23, 0.23].map((x) => {
       const pivot = new T.Group();
       pivot.position.set(x, 0.85, 0);
       rig.add(pivot);
       return pivot;
     });
-    // Pistol frame on the character's own shoulders: the grip (0.25 below the
-    // elbow, see equipPistolModel) lands in the palm when the arm is straight.
-    rig.updateMatrixWorld(true);
-    const at = (n) =>
-      rig.worldToLocal(character.bones['mixamorig' + n].getWorldPosition(new T.Vector3()));
-    const arms = ['Left', 'Right'].map((side) => {
-      const shoulder = at(side + 'Arm'),
-        reach = shoulder.distanceTo(at(side + 'Hand')) + PALM * (LEGACY_HEIGHT / CHARACTER_HEIGHT);
+    const arms = ['Left', 'Right'].map(() => {
       const pivot = new T.Group();
-      pivot.position.copy(shoulder);
       rig.add(pivot);
       const elbow = new T.Group();
-      elbow.position.y = 0.25 - reach;
       pivot.add(elbow);
       return { pivot, elbow };
     });
+    let character;
+    function wear(id) {
+      if (character) rig.remove(character.container);
+      character = createCharacter(T, id);
+      character.container.scale.setScalar(LEGACY_HEIGHT / CHARACTER_HEIGHT);
+      rig.add(character.container);
+      g.userData.character = character;
+      g.userData.appearance = character.appearance;
+      // Pistol frame on the character's own shoulders: the grip (0.25 below the
+      // elbow, see equipPistolModel) lands in the palm when the arm is straight.
+      const pose = arms.map((a) => a.pivot.quaternion.clone());
+      arms.forEach((a) => a.pivot.quaternion.identity());
+      rig.updateMatrixWorld(true);
+      const at = (n) =>
+        rig.worldToLocal(character.bones['mixamorig' + n].getWorldPosition(new T.Vector3()));
+      ['Left', 'Right'].forEach((side, i) => {
+        const shoulder = at(side + 'Arm'),
+          reach =
+            shoulder.distanceTo(at(side + 'Hand')) + PALM * (LEGACY_HEIGHT / CHARACTER_HEIGHT);
+        arms[i].pivot.position.copy(shoulder);
+        arms[i].elbow.position.y = 0.25 - reach;
+        arms[i].pivot.quaternion.copy(pose[i]);
+      });
+    }
     const down = new T.Vector3(0, -1, 0);
     g.userData = {
       rig,
@@ -381,7 +396,9 @@ export function createGraphics(T, scene) {
       arms,
       lean: 0,
       leanV: 0,
-      character,
+      setAppearance(id) {
+        if (id !== character.appearance) wear(id);
+      },
       // state: { speed, seated, falling, aim }; aim defaults to the pistol arm.
       animate(dt, state = {}) {
         let aim = state.aim;
@@ -392,6 +409,7 @@ export function createGraphics(T, scene) {
         character.update(dt, { ...state, aim });
       },
     };
+    wear(appearance);
     return g;
   }
   function legacyHumanoid(color, saint = false) {

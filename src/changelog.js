@@ -1,6 +1,13 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 279,
+    changes: [
+      'Nouveau : choisis ton personnage parmi six avant de rejoindre la partie, avec les flèches de l’accueil.',
+      'Ton personnage tourne en douceur quand tu changes de direction.',
+    ],
+  },
+  {
     version: 278,
     changes: [
       'Le rendu « dessin animé » (lumière par paliers et contours) devient le rendu du jeu pour tout le monde.',
