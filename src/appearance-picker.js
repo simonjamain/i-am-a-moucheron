@@ -1,19 +1,30 @@
 import { APPEARANCES, appearanceId, nextAppearance } from './character-appearances.js';
-import { createCharacter, loadCharacter, characterLoaded } from './character-model.js';
+import {
+  createCharacter,
+  loadCharacter,
+  characterLoaded,
+  CHARACTER_HEIGHT,
+} from './character-model.js';
 
 // Home screen character selector: a small turntable of the chosen appearance
 // between the name/room fields and the join button, with previous/next arrows
-// (and ←/→ while the selector has focus). No second WebGL context: draw() is
-// called by the game loop before the frame, renders the turntable with the game
-// renderer into a scissored corner of its canvas, copies it into the 2D preview
-// canvas in the same task, and the frame then overwrites that corner. Models
-// load on demand (the chosen one here, other players' ones in game).
+// (and ←/→ while the selector has focus). Models load on demand (the chosen one
+// here, other players' ones in game).
+//
+// Drawing: after each game frame, draw() renders the turntable with the game
+// renderer straight into the game canvas, scissored to the selector's screen
+// rectangle; the page leaves that rectangle see-through (the panel colour is a
+// box-shadow around it, and the side shade gets a matching mask hole). No second
+// WebGL context and no pixel read-back: in Chrome either one left the game
+// several times slower for the rest of the session.
 export const PREVIEW_BACKGROUND = '#0c211f';
-export function createAppearancePicker(T, { root, canvas, label, prev, next, initial, onChange }) {
+const BAND = { top: 26, bottom: 34 }; // px taken by the title and the name rows
+export function createAppearancePicker(T, { root, label, prev, next, shade, initial, onChange }) {
   let value = appearanceId(initial),
     shown = null,
     character = null,
     active = true,
+    hole = '',
     yaw = -0.35;
   const scene = new T.Scene();
   scene.background = new T.Color(PREVIEW_BACKGROUND);
@@ -22,9 +33,6 @@ export function createAppearancePicker(T, { root, canvas, label, prev, next, ini
   key.position.set(1.5, 3, 4);
   scene.add(key);
   const camera = new T.PerspectiveCamera(26, 1, 0.1, 20);
-  camera.position.set(0, 1.0, 4.4);
-  camera.lookAt(0, 0.82, 0);
-  const context = canvas.getContext('2d');
   const nameOf = (id) => APPEARANCES.find((a) => a.id === id).name;
   function show() {
     if (shown === value || !characterLoaded(value)) return;
@@ -64,50 +72,56 @@ export function createAppearancePicker(T, { root, canvas, label, prev, next, ini
       return active;
     },
     select,
-    // Call before the game renders its frame (it must clear the whole canvas).
+    // Called once per game frame, after the frame is rendered, on the home screen.
     draw(renderer, dt) {
       if (!active) return;
+      // Software fallback renderer: an opaque selector, the name identifies the choice.
+      if (!renderer?.isWebGLRenderer) return void root.classList.add('appearance-flat');
       show();
-      // Software fallback renderer: the name alone identifies the choice.
-      if (!renderer?.isWebGLRenderer || !context) return void (canvas.hidden = true);
-      const width = canvas.clientWidth,
-        height = canvas.clientHeight,
-        ratio = renderer.getPixelRatio(),
-        source = renderer.domElement;
-      if (!character || !width || !height) return;
-      if (width * ratio > source.width || height * ratio > source.height) return;
-      if (canvas.width !== Math.round(width * ratio)) {
-        canvas.width = Math.round(width * ratio);
-        canvas.height = Math.round(height * ratio);
-        camera.aspect = width / height;
-        camera.updateProjectionMatrix();
+      const box = root.getBoundingClientRect(),
+        view = renderer.domElement.getBoundingClientRect();
+      const x = box.left - view.left,
+        y = view.bottom - box.bottom,
+        width = box.width,
+        height = box.height;
+      if (width < 1 || height < 1) return;
+      const rect = [box.left, box.top, width, height].map((v) => Math.round(v) + 'px');
+      if (rect.join() !== hole) {
+        hole = rect.join();
+        shade?.style.setProperty('--hole-x', rect[0]);
+        shade?.style.setProperty('--hole-y', rect[1]);
+        shade?.style.setProperty('--hole-w', rect[2]);
+        shade?.style.setProperty('--hole-h', rect[3]);
+        shade?.classList.add('appearance-hole');
       }
-      yaw += Math.min(0.1, dt || 0) * 0.45;
-      character.container.rotation.y = Math.sin(yaw) * 0.6;
-      character.update(dt, {});
-      const viewport = renderer.getViewport(new T.Vector4());
-      renderer.setViewport(0, 0, width, height);
-      renderer.setScissor(0, 0, width, height);
+      // Fit the 1.7 m character between the title row (top) and the name (bottom).
+      const band = Math.max(40, height - BAND.top - BAND.bottom),
+        visible = (CHARACTER_HEIGHT * 1.08 * height) / band,
+        centre = CHARACTER_HEIGHT / 2 + ((BAND.top - BAND.bottom) / 2) * (visible / height);
+      camera.aspect = width / height;
+      camera.position.set(0, centre + 0.1, visible / (2 * Math.tan(T.MathUtils.degToRad(13))));
+      camera.lookAt(0, centre, 0);
+      camera.updateProjectionMatrix();
+      if (character) {
+        yaw += Math.min(0.1, dt || 0) * 0.45;
+        character.container.rotation.y = Math.sin(yaw) * 0.6;
+        character.update(dt, {});
+      }
+      const viewport = renderer.getViewport(new T.Vector4()),
+        target = renderer.getRenderTarget();
+      renderer.setRenderTarget(null);
+      renderer.setViewport(x, y, width, height);
+      renderer.setScissor(x, y, width, height);
       renderer.setScissorTest(true);
       renderer.render(scene, camera);
       renderer.setScissorTest(false);
       renderer.setViewport(viewport);
-      // WebGL y runs upward: the corner is the bottom-left of the source.
-      context.drawImage(
-        source,
-        0,
-        source.height - canvas.height,
-        canvas.width,
-        canvas.height,
-        0,
-        0,
-        canvas.width,
-        canvas.height,
-      );
+      renderer.setRenderTarget(target);
     },
     // Joined: stop drawing. Shared geometry, materials and textures stay alive.
     stop() {
       active = false;
+      shade?.classList.remove('appearance-hole');
       if (character) scene.remove(character.container);
       character = null;
     },

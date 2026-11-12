@@ -113,7 +113,7 @@ Premier asset passé par la règle ci-dessus ([issue #99](https://github.com/sim
 ## Personnage joueur (Meshy + Mixamo)
 
 Six modèles fournis et validés par l'utilisateur ([issue #111](https://github.com/simonjamain/i-am-a-moucheron/issues/111)
-pour le premier, cinq ajoutés en version 279), déjà générés, riggés et animés par
+pour le premier, cinq ajoutés en version 280), déjà générés, riggés et animés par
 l'utilisateur dans Meshy/Mixamo : aucune génération ni crédit Meshy de notre côté.
 Le joueur choisit le sien à l'accueil (`src/character-appearances.js`, ordre du
 sélecteur ; le premier sert de défaut et de repli pour une valeur inconnue).
@@ -153,8 +153,12 @@ sélecteur ; le premier sert de défaut et de repli pour une valeur inconnue).
   invisible `arms`/`legs`/`rig` ; le bras du pistolet part de l'épaule du modèle et
   sa longueur place la crosse dans la paume, recalculées à chaque changement de
   modèle. Balistique, dégâts et règles de tir sont inchangés. Le sélecteur de
-  l'accueil (`src/appearance-picker.js`) dessine avec le moteur de rendu du jeu
-  (pas de second contexte WebGL) puis copie l'image dans un canevas 2D.
+  l'accueil (`src/appearance-picker.js`) dessine, après chaque image, directement
+  dans le canevas du jeu (viewport et ciseaux sur son rectangle) ; la page laisse ce
+  rectangle transparent (couleur du panneau en `box-shadow`, trou de masque dans
+  l'ombre latérale). Un second contexte WebGL ou une relecture de pixels
+  (`drawImage`, `readPixels`) laissaient Chrome 3 à 4 fois plus lent pendant toute
+  la partie (mesure SwiftShader : 1,4–3 contre 6 images/s), d'où ce choix.
   `scripts/test-character.mjs` et `scripts/test-appearances.mjs` couvrent ces points.
 
 ## Moucheron Meshy (squelette et vol)

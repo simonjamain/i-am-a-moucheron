@@ -147,11 +147,17 @@ order.reduce((at, key) => {
 assert.match(client, /appearance: appearancePicker\.value/);
 assert.match(client, /turnToward\(g\.rotation\.y, Math\.PI - b\.face, dt\)/);
 assert.doesNotMatch(client, /g\.rotation\.y = Math\.PI - b\.face;\n\s+if \(!g\.userData\.chute\)/);
-assert.doesNotMatch(
-  readFileSync('src/appearance-picker.js', 'utf8'),
+// No second WebGL context nor read-back of the game canvas (each one left
+// Chrome several times slower for the whole game): draw straight into it.
+const picker = readFileSync('src/appearance-picker.js', 'utf8');
+for (const slow of [
   /new T\.WebGLRenderer/,
-  'the picker reuses the game renderer (one WebGL context)',
-);
+  /readRenderTargetPixels|readPixels/,
+  /drawImage|getImageData/,
+])
+  assert.doesNotMatch(picker, slow);
+assert.match(client, /toon\.render\(scene, camera\);\n\s+appearancePicker\.draw\(renderer, dt\);/);
+assert.match(html, /\.appearance \{[^}]*box-shadow: 0 0 0 100vmax/, 'see-through selector');
 const packaged = readFileSync('scripts/assemble.mjs', 'utf8');
 for (const module of [
   'appearance-picker',

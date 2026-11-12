@@ -1,7 +1,7 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
-    version: 279,
+    version: 280,
     changes: [
       'Nouveau : choisis ton personnage parmi six avant de rejoindre la partie, avec les flèches de l’accueil.',
       'Ton personnage tourne en douceur quand tu changes de direction.',

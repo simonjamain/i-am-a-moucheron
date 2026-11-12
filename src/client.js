@@ -935,7 +935,7 @@ try {
 } catch {}
 const appearancePicker = createAppearancePicker(T, {
   root: $('appearance'),
-  canvas: $('appearanceView'),
+  shade: $('shade'),
   label: $('appearanceName'),
   prev: $('appearancePrev'),
   next: $('appearanceNext'),
@@ -4405,7 +4405,6 @@ function frame(now) {
   spiderlingBatch.flush(insects);
   walkerBatch.flush(insects);
   tracerPool.flush();
-  appearancePicker.draw(renderer, dt);
   if (spectating && observationCamera) {
     if (observationRealm !== 'office') observedPurgatory(dt);
     toon.render(observationRealm === 'office' ? scene : purgScene, observationCamera);
@@ -4413,6 +4412,7 @@ function frame(now) {
     physicalPurgatory(dt, now);
     toon.render(purgScene, purgCamera);
   } else toon.render(scene, camera);
+  appearancePicker.draw(renderer, dt);
   updateAudio();
   gunSalvos.update(
     !spectating && canCapture() && myVehicle?.type === 'spitfire' && !respawnAt

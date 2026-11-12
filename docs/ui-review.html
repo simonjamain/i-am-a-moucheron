@@ -107,7 +107,9 @@
       .formbox {
         margin-top: 28px;
         padding: 22px;
-        background: #102b29eb;
+        /* Panel colour: painted by the character selector's box-shadow, which
+           leaves the selector see-through for the 3D preview (appearance-picker.js). */
+        overflow: hidden;
         border: 1px solid #9abca330;
         border-radius: 10px;
         box-shadow: 0 20px 100px #001c1930;
@@ -145,8 +147,22 @@
         align-items: center;
         border: 1px solid #ffffff1a;
         border-radius: 6px;
-        background: #0c211f; /* PREVIEW_BACKGROUND in appearance-picker.js */
+        box-shadow: 0 0 0 100vmax #102b29eb;
         padding: 10px 6px 8px;
+      }
+      .appearance.appearance-flat {
+        background: #0c211f; /* PREVIEW_BACKGROUND in appearance-picker.js */
+      }
+      #shade.appearance-hole {
+        -webkit-mask:
+          linear-gradient(#000 0 0) var(--hole-x) var(--hole-y) / var(--hole-w) var(--hole-h)
+            no-repeat,
+          linear-gradient(#000 0 0);
+        -webkit-mask-composite: xor;
+        mask:
+          linear-gradient(#000 0 0) var(--hole-x) var(--hole-y) / var(--hole-w) var(--hole-h)
+            no-repeat exclude,
+          linear-gradient(#000 0 0);
       }
       .appearance-title {
         grid-column: 1 / -1;
@@ -160,9 +176,6 @@
         width: 100%;
         height: 190px;
         display: block;
-      }
-      .appearance[aria-busy='true'] #appearanceView {
-        opacity: 0.45;
       }
       .appearance-arrow {
         width: 40px;
