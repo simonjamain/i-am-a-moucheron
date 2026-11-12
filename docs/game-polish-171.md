@@ -23,8 +23,8 @@ Sources fournies par l’utilisateur (Meshy, sans génération) :
 Import reproductible : `python scripts/import-stations.py refuel|radar SOURCE.glb`
 (NumPy, trimesh, Pillow et SciPy). Originaux dans `assets/originals/stations/`,
 hors Git. Géométrie et UV conservés ; seules les positions sont quantifiées à
-0,0005 unité modèle et une copie de l’atlas est rééchantillonnée. Radar : six
-coques d’antenne, 160 triangles, palier source `(0 ; 0,0437 ; 0)`, hauteur finale
+0,0005 unité modèle et une copie de l’atlas est rééchantillonnée. Radar : sept
+coques (parabole et fixation), 234 triangles, palier source `(0 ; −0,0354 ; 0)`, hauteur finale
 4 unités modèle. Station : largeur 4 unités modèle. Échelle en jeu `MAP.ratio`.
 L’image Docker d’optimisation a inspecté les deux GLB ; elle refuse la réduction
 du monobloc articulé sans régions protégées. Vu leur faible nombre de triangles,
@@ -74,3 +74,17 @@ Le confort de pilotage, l’écoute et une partie à deux sur réseaux distincts
 restent des vérifications humaines, distinctes des contrôles locaux.
 
 ![Aperçu WebGL des deux stations importées](stations-review-171.png)
+
+## Correctif des visuels — version 285
+
+La fixation complète de la parabole suit maintenant sa rotation ; le socle et
+la bague du palier restent fixes. Le menu d’achat utilise directement les mêmes
+modèles et textures que les stations en jeu, à la place des anciens substituts.
+`test-station-visuals.mjs` vérifie la répartition des 674 triangles, la rotation
+et les modèles réellement utilisés par les vignettes.
+
+Rendu WebGL vérifié des vraies vignettes et de deux orientations du radar ;
+le support tourne avec la parabole et la bague reste fixe. Les vignettes montrent
+la face avant (+Z) des modèles fournis. Suite complète et build Node vérifiés.
+
+![Vignettes d’achat et rotation du support](station-fix-review-285.png)

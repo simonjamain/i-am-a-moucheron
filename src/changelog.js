@@ -1,6 +1,12 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 285,
+    changes: [
+      'La fixation de la parabole tourne avec le radar. Le menu d’achat montre les nouveaux modèles des stations.',
+    ],
+  },
+  {
     version: 284,
     changes: [
       'Nouvelles stations, réceptions au sol et rechargement visible autour du viseur.',

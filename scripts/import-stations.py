@@ -1,7 +1,7 @@
 """Import approved issue #171 station GLBs, preserving every triangle and UV.
 Usage: python scripts/import-stations.py refuel|radar SOURCE.glb
-Radar antenna islands are detached above the vertical bearing; the mast/base
-remain fixed. Textures are copied to a 1K JPEG atlas, originals stay outside Git.
+Radar antenna and its complete fork are detached above the vertical bearing;
+the bearing/base remain fixed. Textures are copied to a 1K JPEG atlas, originals stay outside Git.
 """
 import base64
 import hashlib
@@ -32,11 +32,11 @@ def main():
     points = (v - offset) * scale
     selections = [('base', np.arange(len(faces)), np.zeros(3))]
     if kind == 'radar':
-        antenna = [c for c in comps if v[np.unique(faces[c])][:, 1].min() >= 0.04]
-        if sorted(map(len, antenna)) != [10, 12, 12, 16, 18, 92]:
+        antenna = [c for c in comps if v[np.unique(faces[c])][:, 1].min() >= -0.035]
+        if sorted(map(len, antenna)) != [10, 12, 12, 16, 18, 74, 92]:
             raise ValueError('unexpected antenna islands')
         moving = np.concatenate(antenna)
-        pivot = (np.array([0, 0.0437, 0]) - offset) * scale
+        pivot = (np.array([0, -0.0354, 0]) - offset) * scale
         selections = [('base', np.setdiff1d(np.arange(len(faces)), moving), np.zeros(3)), ('antenna', moving, pivot)]
     parts = []
     for name, selected, pivot in selections:
