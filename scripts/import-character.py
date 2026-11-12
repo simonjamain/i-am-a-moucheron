@@ -29,6 +29,8 @@ CHARACTERS = {
               'src/character-sunny-data.js', GAITS),
     'aviator': ('222ea403e1cacf45addd54a3079bbefc7837cc3b80c27b82bee11490d3bd5f5e',
                 'src/character-aviator-data.js', GAITS),
+    'operator': ('99385d02e3423bc8e63bfe8f764958f0221080d30ac2dd97262098f88a0b602b',
+                 'src/character-operator-data.js', GAITS),
 }
 ident = sys.argv[1]
 SOURCE_SHA256, OUTPUT, CLIPS = CHARACTERS[ident]
