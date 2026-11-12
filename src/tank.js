@@ -9,10 +9,17 @@ export function stepTank(T, state, controls, colliders, dt, profile) {
     q = new T.Quaternion().fromArray(state.q);
   const throttle =
     state.fuelAvailable === false ? 0 : Math.max(-1, Math.min(1, controls.forward || 0));
+  const priorForward = new T.Vector3(0, 0, -1).applyQuaternion(q);
+  const signedSpeed = v.dot(priorForward);
+  const steeringSign =
+    profile.reverseSteering &&
+    (Math.abs(signedSpeed) > MAP.metres(0.1) ? signedSpeed < 0 : throttle < 0)
+      ? -1
+      : 1;
   q.multiply(
     new T.Quaternion().setFromAxisAngle(
       new T.Vector3(0, 1, 0),
-      (controls.turn || 0) * dt * profile.turn,
+      (controls.turn || 0) * dt * profile.turn * steeringSign,
     ),
   );
   const forward = new T.Vector3(0, 0, -1).applyQuaternion(q),

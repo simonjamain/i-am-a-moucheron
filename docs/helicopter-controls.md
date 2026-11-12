@@ -70,8 +70,8 @@ validations humaines en cours. Livraison ZIP, serveur à redémarrer et navigate
 
 ## Pilotage étendu et tourelle — version 45
 
-La souris peut demander jusqu’à 85° de tangage ; le virage peut incliner le H2
-jusqu’à 85° de roulis. Le pilote gère ces fortes inclinaisons. La descente
+Depuis le [lot #171](game-polish-171.md), ZQSD impose une inclinaison progressive
+avec un budget total de 45°, y compris en diagonale. La souris garde le cap horizontal. La descente
 commandée atteint progressivement 30 m/s de référence, contre 8 auparavant ;
 la montée reste à 8 m/s et le relâchement freine vers le stationnaire. Les chocs
 verticaux à plus de 8 m/s restent destructeurs : anticiper le freinage.
@@ -87,13 +87,12 @@ WebGL et le pilotage à deux restent à essayer par les joueurs.
 ## Roulis pilote au clavier — issue #9, version 49
 
 Q/flèche gauche forcent le roulis à gauche, D/flèche droite à droite, jusqu’à
-85°, même avec une souris immobile. Les alias simultanés ne cumulent pas leur
+45° au total avec le tangage, même avec une souris immobile. Les alias simultanés ne cumulent pas leur
 effet ; les directions opposées se neutralisent. Le roulis clavier prend la
 priorité sur l’inclinaison latérale demandée par la souris pendant l’appui.
 La montée/descente et la direction souris restent disponibles.
 
-Au relâchement, l’assistance retrouve la consigne souris (ou revient à plat sans
-consigne active). Menu et perte de focus neutralisent l’entrée ; l’inclinaison
+Au relâchement, l’assistance revient progressivement à plat. Menu et perte de focus neutralisent l’entrée ; l’inclinaison
 physique se stabilise progressivement, sans rotation résiduelle commandée.
 Seul le pilote commande la coque ; le quaternion existant partage ce mouvement
 avec les occupants et observateurs. Les tests exécutent la vraie branche client

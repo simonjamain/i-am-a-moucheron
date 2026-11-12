@@ -211,7 +211,7 @@ for (const [key, sign] of [
   const c = client(key);
   for (let i = 0; i < 60; i++) vm.runInContext('physics(1/120)', c);
   const roll = new T.Euler().setFromQuaternion(c.me.quaternion, 'YXZ').z;
-  assert.ok(roll * sign > 0.5, `${key} must force roll without mouse motion`);
+  assert.ok(roll * sign > 0.45, `${key} must force roll without mouse motion`);
   c.keys = {};
   c.controlFocus.active = false;
   for (let i = 0; i < 360; i++) vm.runInContext('physics(1/120)', c);
@@ -238,7 +238,7 @@ for (const [key, sign] of [
   const c = client(key);
   for (let i = 0; i < 60; i++) vm.runInContext('physics(1/120)', c);
   assert.ok(
-    new T.Euler().setFromQuaternion(c.me.quaternion, 'YXZ').x * sign > 0.5,
+    new T.Euler().setFromQuaternion(c.me.quaternion, 'YXZ').x * sign > 0.45,
     key + ' must force pitch',
   );
   assert.equal(c.me.position.y, 1, key + ' must not change collective altitude');

@@ -14,6 +14,7 @@ export const LEGACY_HEIGHT = 2.46; // procedural humanoid units used by the game
 export const CHARACTER_CLIPS = Object.freeze({ idle: 'Idle_12', walk: 'Walking', run: 'Running' });
 // Ground speeds (m/s) where the gait switches, and the speed each in-place clip
 // was authored for (its playback rate follows the real speed to limit sliding).
+export const LANDING_DURATION = 0.38;
 export const GAIT = Object.freeze({ walk: 0.35, run: 3, walkClip: 1.4, runClip: 5 });
 
 // Literal specifiers so scripts/assemble.mjs can version and check them.
@@ -123,6 +124,8 @@ function shared(T, id) {
   const gaits = {};
   for (const gait of ['idle', 'walk', 'run'])
     gaits[gait] = clips[id === DEFAULT_APPEARANCE ? CHARACTER_CLIPS[gait] : gait];
+  const fallName = Object.keys(clips).find((name) => /fall|free.?fall/i.test(name));
+  if (fallName) gaits.fall = clips[fallName];
   const restPose = !gaits.idle;
   if (restPose)
     gaits.idle = new T.AnimationClip(
@@ -200,6 +203,8 @@ export function createCharacter(T, appearance = DEFAULT_APPEARANCE) {
   for (const action of Object.values(actions)) action.play().setEffectiveWeight(0);
   actions.idle.setEffectiveWeight(1);
   let current = 'idle';
+  let airborne = false,
+    landing = 0;
   const v = (x, y, z) => new T.Vector3(x, y, z);
   const character = {
     appearance: id,
@@ -212,14 +217,22 @@ export function createCharacter(T, appearance = DEFAULT_APPEARANCE) {
     // state: { speed (m/s), aim (world Vector3 or null), seated, falling }
     update(dt, state = {}) {
       const speed = state.speed || 0;
+      const inAir = !!(state.falling || state.parachute);
+      if (airborne && !inAir && !state.seated) landing = LANDING_DURATION;
+      airborne = inAir;
+      if (inAir || state.seated) landing = 0;
+      const landingWeight = Math.sin(Math.PI * Math.min(1, landing / LANDING_DURATION));
+      landing = Math.max(0, landing - Math.max(0, dt || 0));
       const next =
-        state.seated || state.falling
-          ? 'idle'
-          : speed >= GAIT.run
-            ? 'run'
-            : speed >= GAIT.walk
-              ? 'walk'
-              : 'idle';
+        inAir && !state.parachute && actions.fall
+          ? 'fall'
+          : state.seated || inAir || landing > 0
+            ? 'idle'
+            : speed >= GAIT.run
+              ? 'run'
+              : speed >= GAIT.walk
+                ? 'walk'
+                : 'idle';
       if (next !== current) {
         actions[next].reset().setEffectiveWeight(1).fadeIn(0.18);
         actions[current].fadeOut(0.18);
@@ -227,7 +240,9 @@ export function createCharacter(T, appearance = DEFAULT_APPEARANCE) {
       }
       const authored = current === 'run' ? GAIT.runClip : GAIT.walkClip;
       actions[current].timeScale =
-        current === 'idle' ? 1 : Math.max(0.5, Math.min(1.5, speed / authored));
+        current === 'idle' || current === 'fall'
+          ? 1
+          : Math.max(0.5, Math.min(1.5, speed / authored));
       mixer.update(Math.max(0, Math.min(0.1, dt || 0)));
       container.updateMatrixWorld(true);
       const q = container.getWorldQuaternion(new T.Quaternion());
@@ -246,7 +261,7 @@ export function createCharacter(T, appearance = DEFAULT_APPEARANCE) {
           );
           pointBone(T, bone(side + 'ForeArm'), bone(side + 'Hand'), local(0, -0.1, 1), 0.9);
         }
-      } else if (restPose && actions.idle.getEffectiveWeight() > 0) {
+      } else if (restPose && !inAir && landing <= 0 && actions.idle.getEffectiveWeight() > 0) {
         // Export without an idle clip: arms down along the body from the bind pose.
         const w = actions.idle.getEffectiveWeight();
         for (const side of ['Left', 'Right']) {
@@ -254,15 +269,41 @@ export function createCharacter(T, appearance = DEFAULT_APPEARANCE) {
           pointBone(T, bone(side + 'Arm'), bone(side + 'ForeArm'), local(s * 0.18, -1, 0), w);
           pointBone(T, bone(side + 'ForeArm'), bone(side + 'Hand'), local(s * 0.08, -1, 0.12), w);
         }
-      } else if (state.falling) {
+      } else if (inAir && (state.parachute || !actions.fall)) {
         // Arms raised and spread, legs slightly apart.
         for (const side of ['Left', 'Right']) {
           const s = side === 'Left' ? 1 : -1;
-          pointBone(T, bone(side + 'Arm'), bone(side + 'ForeArm'), local(s * 0.8, 0.8, 0), 1);
-          pointBone(T, bone(side + 'ForeArm'), bone(side + 'Hand'), local(s * 0.4, 1, 0), 1);
-          pointBone(T, bone(side + 'UpLeg'), bone(side + 'Leg'), local(s * 0.3, -1, -0.15), 1);
+          pointBone(
+            T,
+            bone(side + 'Arm'),
+            bone(side + 'ForeArm'),
+            local(s * (state.parachute ? 0.3 : 0.8), 0.8, 0),
+            1,
+          );
+          pointBone(
+            T,
+            bone(side + 'ForeArm'),
+            bone(side + 'Hand'),
+            local(s * (state.parachute ? 0.12 : 0.4), 1, 0),
+            1,
+          );
+          pointBone(
+            T,
+            bone(side + 'UpLeg'),
+            bone(side + 'Leg'),
+            local(s * (state.parachute ? 0.12 : 0.3), -1, state.parachute ? 0.3 : -0.15),
+            1,
+          );
         }
       }
+      if (landingWeight > 0 && !inAir && !state.seated) {
+        // Short compression on touchdown, then release to locomotion.
+        root.position.y = -0.2 * landingWeight;
+        for (const side of ['Left', 'Right']) {
+          pointBone(T, bone(side + 'UpLeg'), bone(side + 'Leg'), local(0, -1, 0.65), landingWeight);
+          pointBone(T, bone(side + 'Leg'), bone(side + 'Foot'), local(0, -1, -0.65), landingWeight);
+        }
+      } else root.position.y = 0;
       if (state.aim && state.aim.lengthSq() > 1e-12) {
         // Pistol: right arm straight along the aim, left hand supports it.
         const aim = state.aim.clone().normalize();

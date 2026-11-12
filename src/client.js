@@ -1,3 +1,6 @@
+import { makeServiceStation, animateRadar } from '/station-model.js';
+import { ReloadHUD, seatReloads, heavyReadyAt, heavyLane, reloadProgress } from '/reload-hud.js';
+import { officeFogOpacity } from '/office-fog.js';
 import { makeFortificationStation } from '/fortification-model.js';
 import { placementFacing } from '/placement-aim.js';
 import { placementAim } from '/placement-aim.js';
@@ -138,6 +141,8 @@ import {
   resetTopCursor,
   topViewGroundPoint,
   topViewPose,
+  TOP_VIEW_HEIGHT,
+  zoomTopView,
   topViewRay,
 } from '/castor-top-view.js';
 import { CrashEffects } from '/crash-effects.js';
@@ -152,7 +157,7 @@ const $ = (id) => document.getElementById(id),
   canvas = $('view'),
   scene = new T.Scene();
 scene.background = new T.Color('#829f91');
-scene.fog = new T.FogExp2('#829f91', 0.035);
+scene.fog = new T.FogExp2('#ffffff', 0.018);
 // Issue #104: no visible audio controls. Sound starts at the standard volume as
 // soon as the browser allows it (first user gesture); old saved settings ignored.
 const audioSettings = { volume: 0.55, muted: false };
@@ -296,6 +301,7 @@ const heliTurretAim = { yaw: 0, pitch: -0.1 };
 let selectedEquipment = null;
 let castorTacticalView = false;
 const topCursor = resetTopCursor({});
+let topViewHeight = TOP_VIEW_HEIGHT;
 // The V top view belongs to the Castor driver only.
 const castorTopView = () =>
   castorTacticalView && myVehicle?.type === 'castor' && crewSeat === 'pilot' && !respawnAt;
@@ -471,11 +477,11 @@ canvas.addEventListener('pointermove', (e) => {
       crewSeat === 'ventral'
         ? -1.5
         : myVehicle?.type === 'helicopter'
-          ? -1.45
+          ? HELI.minPitch
           : myVehicle?.type === 'tank'
             ? -0.65
             : -0.1,
-      crewSeat === 'ventral' ? -0.05 : 1.35,
+      crewSeat === 'ventral' ? -0.05 : myVehicle?.type === 'helicopter' ? HELI.maxPitch : 1.35,
     );
     groundView.x = e.clientX;
     groundView.y = e.clientY;
@@ -788,11 +794,11 @@ addEventListener('pointermove', (event) => {
       crewSeat === 'ventral'
         ? -1.5
         : myVehicle?.type === 'helicopter'
-          ? -1.45
+          ? HELI.minPitch
           : myVehicle?.type === 'tank'
             ? -0.65
             : -0.1,
-      crewSeat === 'ventral' ? -0.05 : 1.35,
+      crewSeat === 'ventral' ? -0.05 : myVehicle?.type === 'helicopter' ? HELI.maxPitch : 1.35,
     );
     return;
   }
@@ -861,6 +867,11 @@ canvas.addEventListener('contextmenu', (event) => event.preventDefault());
 canvas.addEventListener(
   'wheel',
   (e) => {
+    if (castorTopView() && controlFocus.active && canCapture()) {
+      e.preventDefault();
+      topViewHeight = zoomTopView(topViewHeight, e.deltaY);
+      return;
+    }
     if (
       myVehicle?.type === 'flaktruck' &&
       crewSeat === 'cannon' &&
@@ -2858,11 +2869,11 @@ function updateVehicles(dt) {
         crewSeat === 'ventral'
           ? -1.5
           : myVehicle?.type === 'helicopter'
-            ? -1.45
+            ? HELI.minPitch
             : myVehicle?.type === 'tank'
               ? -0.65
               : -0.05,
-        crewSeat === 'ventral' ? -0.05 : 1.2,
+        crewSeat === 'ventral' ? -0.05 : myVehicle?.type === 'helicopter' ? HELI.maxPitch : 1.2,
       );
     }
     if (myVehicle.type === 'helicopter' && crewSeat === 'copilot') {
@@ -3152,7 +3163,8 @@ function updateBaseWorld(dt, now) {
     // No weapon in the office: the character keeps its own idle/walk/run animation.
     g.userData.animate?.(dt, {
       speed: speed * BASE_METRES,
-      falling: !!b.parachute || b.grounded === false,
+      falling: b.grounded === false,
+      parachute: !!b.parachute,
     });
     if (!respawnAt && footstepsAudible(b, speed))
       sound.play('step', w, {
@@ -3218,7 +3230,7 @@ function damageEnemy(enemy, amount, shot, point) {
     localKills.add(enemy);
     fallEnemy(enemy);
     sound.play('confirm', point, { ref: 10, cooldown: 0.06, key: 'kill' });
-    notify(profile.name + ' intercepté', 0.7);
+    if (profile.type !== 'midge') notify(profile.name + ' intercepté', 0.7);
   } else sound.play('ricochet', point, { ref: 10 });
 }
 let entryNoticeWave = -1;
@@ -4341,7 +4353,7 @@ function frame(now) {
           new T.Quaternion().setFromEuler(new T.Euler(freeLook.pitch, freeLook.yaw, 0, 'YXZ')),
         );
       if (castorTopView()) {
-        const pose = topViewPose(T, me.position);
+        const pose = topViewPose(T, me.position, topViewHeight);
         camera.position.lerp(pose.eye, 1 - Math.exp(-10 * dt));
         camera.up.lerp(pose.up, 1 - Math.exp(-10 * dt)).normalize();
         camera.lookAt(pose.target);
@@ -4382,6 +4394,7 @@ function frame(now) {
     drawRadar();
     updateCountdown();
   } else {
+    $('altitudeFog').style.opacity = 0;
     serviceZones.update([]);
     engineSmoke.clear();
     camera.position.set(-1.65 + Math.sin(now * 0.00008) * 0.08, 1.08, 2.6);
@@ -4397,14 +4410,23 @@ function frame(now) {
   if (joined) updateBaseWorld(dt, now);
   updateVehicles(dt);
   updatePlacement();
-  for (const model of turrets)
-    if (model?.userData.dish) model.userData.dish.rotation.y = now * 0.001;
+  for (const model of turrets) if (model?.userData.dish) animateRadar(model, dt, joined);
   updateFallingEnemies(dt);
   updateContextHUD();
   midgeBatch.flush(insects, now, camera);
   spiderlingBatch.flush(insects);
   walkerBatch.flush(insects);
   tracerPool.flush();
+  const fogCamera =
+    spectating && observationCamera
+      ? observationRealm === 'office'
+        ? observationCamera
+        : null
+      : respawnAt
+        ? null
+        : camera;
+  $('altitudeFog').style.opacity =
+    joined && fogCamera ? officeFogOpacity(fogCamera.position.y, OFFICE_LAYOUT.bounds.ceiling) : 0;
   if (spectating && observationCamera) {
     if (observationRealm !== 'office') observedPurgatory(dt);
     toon.render(observationRealm === 'office' ? scene : purgScene, observationCamera);
@@ -5077,48 +5099,16 @@ function remainingFuel() {
   return Math.max(0, supply.fuel - (powered ? consumption * age : 0));
 }
 function installationModel(st) {
-  const g = new T.Group();
+  const g = st.kind === 'bed' ? new T.Group() : makeServiceStation(T, st.kind);
   g.position.set(st.x, st.y, st.z);
   g.scale.setScalar(MAP.ratio);
   scene.add(g);
-  box(0, 0.15, 0, 4, 0.3, 3, st.kind === 'radar' ? '#527b87' : '#bb8c44', g);
   if (st.kind === 'bed') {
+    box(0, 0.15, 0, 4, 0.3, 3, '#bb8c44', g);
     box(0, 0.45, 0, 1.6, 0.35, 3, '#e2d6ad', g);
     box(0, 0.7, -1, 1.35, 0.2, 0.65, '#f7edcb', g);
     for (const x of [-0.65, 0.65])
       for (const z of [-1.2, 1.2]) box(x, 0.15, z, 0.15, 0.3, 0.15, '#664e34', g);
-    return g;
-  }
-  if (st.kind === 'radar') {
-    cyl(0, 2, 0, 0.18, 0.25, 4, '#d3dbbf', g);
-    const dish = new T.Group();
-    dish.position.y = 4;
-    g.add(dish);
-    const bowl = new T.Mesh(
-      new T.SphereGeometry(1.65, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2),
-      new T.MeshStandardMaterial({ color: '#7fbdad', side: T.DoubleSide }),
-    );
-    bowl.rotation.x = Math.PI / 2;
-    dish.add(bowl);
-    box(0, 0, -1, 0.12, 0.12, 2.5, '#d3dbbf', dish);
-    g.userData.dish = dish;
-  } else {
-    cyl(-1, 0.9, 0, 0.6, 0.6, 1.5, '#d9b958', g);
-    box(0.8, 1, 0, 1, 1.7, 0.9, '#557a69', g);
-    const ring = new T.Mesh(
-      new T.RingGeometry(39.5, 40, 64),
-      new T.MeshBasicMaterial({
-        color: '#d9b958',
-        side: T.DoubleSide,
-        transparent: true,
-        opacity: 0.55,
-        depthWrite: false,
-      }),
-    );
-    ring.rotation.x = -Math.PI / 2;
-    ring.position.y = 0.03;
-    ring.userData.projectileSolid = false;
-    g.add(ring);
   }
   return g;
 }
@@ -5195,7 +5185,18 @@ function hasAmmo() {
     aircraftFire.available(myVehicle.id, crewSeat, myVehicle.supplies, currentAmmoKey()) >= 1
   );
 }
-let nextHeavyAt = 0;
+const predictedReloads = new Map();
+const reloadKey = (vehicle, weapon) => vehicle.id + ':' + heavyLane(weapon);
+const reloadNow = () => serverClock.now(performance.now()) ?? Date.now() + clockOffset;
+const predictedReadyAt = (vehicle, weapon) => predictedReloads.get(reloadKey(vehicle, weapon)) || 0;
+function nextHeavyTime(vehicle, weapon) {
+  return heavyReadyAt(
+    vehicle,
+    weapon,
+    snap?.balance?.fireRate ?? 1,
+    predictedReadyAt(vehicle, weapon),
+  );
+}
 // Heavy weapons are simulated by their shooter (src/heavy-sim.js): the shell
 // leaves the displayed muzzle at once, flies and collides in this browser, and
 // its impact (damage included, friends too) is reported to the server, which
@@ -5233,8 +5234,7 @@ async function fireHeavy(weapon = null) {
     !controlFocus.active ||
     !canCapture() ||
     (myVehicle.type === 'helicopter' && crewSeat === 'pilot' && keys.KeyC) ||
-    (myVehicle.type === 'tank' && crewSeat === 'cannon' && keys.KeyC) ||
-    performance.now() < nextHeavyAt
+    (myVehicle.type === 'tank' && crewSeat === 'cannon' && keys.KeyC)
   )
     return;
   weapon ??=
@@ -5246,15 +5246,17 @@ async function fireHeavy(weapon = null) {
           ? 'bomb'
           : null;
   if (!weapon || !HEAVY[weapon] || (myVehicle.supplies.ammo[weapon] || 0) < 1) return;
+  if (reloadNow() < nextHeavyTime(myVehicle, weapon)) return;
   if (weapon === 'missile' && activeMissile()) return;
   const state = localMotion(),
     shot = id + ':heavy:' + ++shotSequence,
     direction = weaponDirection().toArray(),
     occupation = snap.pilots.find((p) => p.id === id).occupation,
     now = serverClock.now(performance.now()) ?? Date.now() + clockOffset;
-  nextHeavyAt =
-    performance.now() +
-    heavyInterval(weapon, myVehicle.type) * 1000 * (1 / (snap?.balance?.fireRate ?? 1));
+  predictedReloads.set(
+    reloadKey(myVehicle, weapon),
+    now + (heavyInterval(weapon, myVehicle.type) * 1000) / (snap?.balance?.fireRate ?? 1),
+  );
   const vehicle = launchVehicle();
   if (weapon === 'rocket') rocketSides.set(myVehicle.id, vehicle.rocketSide);
   const projectile = launchLocal(
@@ -5368,6 +5370,12 @@ function showHeavyImpact(report) {
   }
 }
 function finishHeavy(projectile, impact, world) {
+  if (projectile.weapon === 'missile') {
+    predictedReloads.set(
+      projectile.vehicle + ':missile',
+      reloadNow() + 2000 / (snap?.balance?.fireRate ?? 1),
+    );
+  }
   localShots.delete(projectile.shot);
   if (!impact) {
     action('heavy-impact', { shot: projectile.shot, fizzle: true });
@@ -5486,6 +5494,7 @@ function updateOrdnance(dt) {
 }
 
 const contextHUD = new ContextHUD($('contextHUD'));
+const reloadHUD = new ReloadHUD($('reloadArcs'));
 function updateContextHUD() {
   const modal = !canCapture();
   const model =
@@ -5512,11 +5521,53 @@ function updateContextHUD() {
               ? stations[turretIndex]?.kind === 'dca'
                 ? cooldown <= 0
                 : performance.now() >= (turrets[turretIndex]?.userData.shotAt ?? 0)
-              : performance.now() >= nextHeavyAt,
+              : !myVehicle ||
+                reloadNow() >=
+                  nextHeavyTime(
+                    myVehicle,
+                    myVehicle.type === 'tank'
+                      ? selectedShell
+                      : currentAmmoKey() === 'rocket'
+                        ? 'rocket'
+                        : currentAmmoKey() === 'missile'
+                          ? 'missile'
+                          : 'bomb',
+                  ),
           stall: !$('stallWarning').classList.contains('hidden'),
         })
       : null;
   contextHUD.update(model);
+  let arcs =
+    !modal && !respawnAt
+      ? seatReloads({
+          vehicle: myVehicle,
+          seat: crewSeat,
+          now: reloadNow(),
+          fireRate: snap?.balance?.fireRate ?? 1,
+          automaticCooldown: cooldown,
+          predicted: (weapon) => predictedReadyAt(myVehicle, weapon),
+          missileInFlight: !!activeMissile(),
+        })
+      : [];
+  if (!modal && !respawnAt && turretIndex >= 0) {
+    const station = stations[turretIndex],
+      gun = turrets[turretIndex];
+    const duration =
+      ((station?.kind === 'antitank'
+        ? HEAVY.antitank.interval
+        : station?.kind === 'dca'
+          ? FLAK.interval
+          : FORTIFICATIONS[station?.kind]?.interval || 0.09) *
+        1000) /
+      (snap?.balance?.fireRate ?? 1);
+    arcs = [
+      {
+        weapon: station?.kind || 'dca',
+        progress: reloadProgress(performance.now(), gun?.userData.shotAt || 0, duration),
+      },
+    ];
+  }
+  reloadHUD.update(arcs);
   const stats =
     !modal && !respawnAt
       ? cursorStats({
