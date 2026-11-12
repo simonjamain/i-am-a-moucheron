@@ -51,6 +51,8 @@ const context = {
   localKills: new Set(),
   localEnemyDamage: new Map(),
   localShots: new Map(),
+  predictedReloads: new Map(),
+  reloadNow: () => now,
   effectSeen: new Set(),
   groundMotion: { sample: () => () => undefined },
   serverClock: { now: () => now },

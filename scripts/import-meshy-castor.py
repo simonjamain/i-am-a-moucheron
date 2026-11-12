@@ -111,6 +111,15 @@ def main():
         pieces.append((f'wheel{i}', c, center))
     pieces.append(('turret', ring, yaw_pivot))
     pieces.append(('gun', np.concatenate(head), pitch_pivot))
+    # Outer axle endcaps are the rims, authored as part of the fixed axle
+    # islands. Move those triangles with each tyre, retaining their UVs.
+    all_game = game(vertices)
+    tri = all_game[faces]
+    for i, (name, selection, pivot) in enumerate(pieces[:6]):
+        rims = np.flatnonzero(np.all(tri[:, :, 0] * np.sign(pivot[0]) > 1.4, axis=1)
+            & np.all(np.abs(tri[:, :, 2] - pivot[2]) < .4, axis=1)
+            & np.all(tri[:, :, 1] < .1, axis=1))
+        pieces[i] = (name, np.union1d(selection, rims), pivot)
     moving = np.concatenate([p[1] for p in pieces])
     body = np.setdiff1d(np.arange(len(faces)), moving)
     pieces.insert(0, ('body', body, np.zeros(3)))

@@ -7,6 +7,8 @@ Au volant du Castor, on peut construire un bunker LEGO (10 $) et un canon antich
 
 La « Tourelle automatique du Castor » se construit pour 9 $ au volant du G1, sans plan à débloquer. Elle tire automatiquement (180 balles finies) et se recharge contre paiement auprès du Castor ou des stations. Aucun tir ni achat à distance. Son modèle définitif combine quatre modules Meshy texturés (socle fixe, tête qui pivote sur 360°, canon unique inclinable de −10° à +90° et capteur/radar séparé). Les géométries et UV Meshy sont conservés, avec une copie des textures rééchantillonnée en WebP 1K pour le navigateur ; voir [l'asset T-01](t01-asset.md). Les déplacements visuels suivent la dernière cible validée par le serveur ; les dégâts et les munitions restent autoritaires côté serveur. Le GLB texturé définitif doit être importé séparément après vérification des parties mobiles et de leurs UV.
 
+Le [lot de lisibilité et commandes #171](game-polish-171.md) précise les phases de chute, les nouvelles stations, le brouillard, les arcs de recharge et les commandes Hind/Castor.
+
 ## Session réseau
 
 Le serveur Node utilise WebRTC sur UDP uniquement. Les mouvements sont locaux,

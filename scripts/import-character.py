@@ -86,7 +86,8 @@ hips = node_to_joint[next(i for i, n in enumerate(g['nodes']) if n.get('name') =
 wanted = {name: gait for gait, name in CLIPS.items()} if CLIPS else None
 clips = {}
 for anim in g['animations']:
-    if wanted is not None and anim['name'] not in wanted:
+    is_fall = any(word in anim['name'].lower() for word in ['fall', 'freefall'])
+    if wanted is not None and anim['name'] not in wanted and not is_fall:
         continue
     tracks = []
     for ch in anim['channels']:
@@ -106,9 +107,9 @@ for anim in g['animations']:
         else:
             track['values'] = pack('f', values)
         tracks.append(track)
-    name = wanted[anim['name']] if wanted else anim['name']
+    name = ('fall' if is_fall else wanted[anim['name']]) if wanted else anim['name']
     clips[name] = {'duration': max(read(s['input'])[-1] for s in anim['samplers']), 'tracks': tracks}
-assert wanted is None or set(clips) == set(CLIPS), clips.keys()
+assert wanted is None or set(CLIPS).issubset(clips), clips.keys()
 
 material = g['materials'][prim.get('material', 0)]
 img = g['images'][g['textures'][material['pbrMetallicRoughness']['baseColorTexture']['index']]['source']]

@@ -344,6 +344,22 @@
         border: 1px solid #d5ef7360;
         border-radius: 50%;
       }
+      #altitudeFog {
+        position: fixed;
+        inset: 0;
+        background: white;
+        opacity: 0;
+        pointer-events: none;
+      }
+      #reloadArcs {
+        position: absolute;
+        width: 96px;
+        height: 96px;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        pointer-events: none;
+      }
       #crosshair:after {
         content: '';
         position: absolute;
@@ -2350,6 +2366,7 @@
   </head>
   <body>
     <canvas id="view" aria-label="Jeu aérien en trois dimensions"></canvas>
+    <div id="altitudeFog" aria-hidden="true"></div>
     <div id="shade"></div>
     <main id="lobby" class="lobby">
       <h1>I am a moucheron</h1>
@@ -2445,7 +2462,7 @@
         <p id="phaseText">Les pilotes prennent position.</p>
         <button id="start" class="primary">Lancer la vague →</button>
       </div>
-      <div id="crosshair" aria-label="Direction des canons"></div>
+      <div id="crosshair" aria-label="Direction des canons"><div id="reloadArcs"></div></div>
       <div id="contextHUD" class="hidden" aria-label="Informations du poste">
         <section class="contextRail left" tabindex="0" aria-label="État du poste">
           <small data-hud="left-0"></small><strong data-hud="left-1"></strong>

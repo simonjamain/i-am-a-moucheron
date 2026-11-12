@@ -261,7 +261,15 @@ const right = room.ordnance.at(-1);
 assert.ok(left.p[0] * right.p[0] < 0);
 assert.equal(heli.supplies.ammo.rocket, 28);
 assert.throws(() => fire(gunner, heli, 'rocket', 'wrong-rocket'), /Arme/);
-fire(gunner, heli, 'missile', 'guided');
+assert.throws(
+  () => fire(gunner, heli, 'missile', 'above-gun-stop', { direction: [0, 1, 0] }),
+  /Butée/,
+);
+fire(gunner, heli, 'missile', 'guided', { direction: [0, 0, 1] });
+assert.ok(
+  room.ordnance.at(-1).v[2] > 0,
+  'guided missile can launch behind the Hind like its machine gun',
+);
 let missile = room.ordnance.at(-1);
 assert.equal(missile.occupation, gunner.occupation);
 assert.throws(() => fire(gunner, heli, 'missile', 'second-guided'), /déjà/);

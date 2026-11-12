@@ -1,6 +1,13 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 284,
+    changes: [
+      'Nouvelles stations, réceptions au sol et rechargement visible autour du viseur.',
+      'Hind plus doux et missiles libres de viser derrière ; Castor plus progressif, jantes mobiles et zoom en vue du dessus.',
+    ],
+  },
+  {
     version: 283,
     changes: ['Nouveau personnage : l’opérateur.'],
   },

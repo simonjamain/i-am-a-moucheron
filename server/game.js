@@ -2033,7 +2033,11 @@ export class Game {
         [-v.state.q[0], -v.state.q[1], -v.state.q[2], v.state.q[3]],
         direction,
       );
-      requireGame(local[2] <= 1e-8 && local[1] <= 1e-8, 'Butée du copilote atteinte.');
+      const pitch = Math.asin(Math.max(-1, Math.min(1, local[1] / Math.hypot(...local))));
+      requireGame(
+        pitch >= HELI.minPitch - 1e-8 && pitch <= HELI.maxPitch + 1e-8,
+        'Butée du copilote atteinte.',
+      );
     }
     v.supplies.ammo[selected]--;
     v.supplies.revision++;

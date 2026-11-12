@@ -31,13 +31,13 @@ const down = { yaw: 0, pitch: 0 };
 stepHeliAim(down, { yaw: 0.7, pitch: -4 }, 2);
 near(down.yaw, 0.7);
 near(down.pitch, HELI.minPitch);
-// Actual physics: near-vertical pitch and fast descent, then released hover.
+// Actual physics: 45-degree pitch and fast descent, then released hover.
 const state = { ...vehiclePad('helicopter'), p: [0, 2, 0], q: [0, 0, 0, 1], landed: false };
 const direction = [0, -Math.sin(HELI.maxTilt), -Math.cos(HELI.maxTilt)];
 for (let i = 0; i < 480; i++)
   stepHelicopter(T, state, { direction, collective: 0 }, [], 1 / 120, VEHICLES.helicopter);
 const euler = new T.Euler().setFromQuaternion(new T.Quaternion().fromArray(state.q), 'YXZ');
-assert.ok(Math.abs(euler.x) > (84 * Math.PI) / 180);
+assert.ok(Math.abs(euler.x) > (44 * Math.PI) / 180);
 assert.equal(state.hp, 200);
 const descent = { ...vehiclePad('helicopter'), p: [0, 2, 0], q: [0, 0, 0, 1], landed: false };
 for (let i = 0; i < 480; i++)
@@ -47,7 +47,7 @@ for (let i = 0; i < 1200; i++) stepHelicopter(T, descent, {}, [], 1 / 120, VEHIC
 assert.ok(Math.abs(descent.v[1]) < MAP.metres(0.001));
 assert.equal(descent.hp, 200);
 console.log(
-  'PASS: H2 85-degree pitch, fast descent and released hover; 360-degree turret, shortest wrap and 180 degrees/s at 30/60/144 Hz.',
+  'PASS: H2 45-degree pitch, fast descent and released hover; 360-degree turret, shortest wrap and 180 degrees/s at 30/60/144 Hz.',
 );
 
 // Execute the shipped direction path: a sudden pointer jump must not redirect a shot.
