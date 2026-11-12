@@ -13,11 +13,11 @@ const state = newGroundDefense(),
 const build = (command, dollars = cash, position = foot) =>
   groundCommand(state, command, position, dollars);
 const first = build({ action: 'build', kind: 'barricade', a: [0, 0], b: [0.6, 0] });
-assert.equal(first.price, 3);
-assert.equal(first.ids.length, 3);
+assert.equal(first.price, 3.13);
+assert.equal(first.ids.length, 13);
 assert.equal(state.navigationRevision, 1);
-assert.equal(new Set(first.ids).size, 3);
-assert.equal(state.structures.length, 3);
+assert.equal(new Set(first.ids).size, 13);
+assert.equal(state.structures.length, 13);
 assert.equal(state.structures[0].hp, 100);
 assert.equal(state.structures[0].a[0], 0);
 assert.throws(

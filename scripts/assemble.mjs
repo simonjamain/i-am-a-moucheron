@@ -27,6 +27,7 @@ const files = {
   '/': 'src/index.html',
   '/ui-review.html': 'docs/ui-review.html',
   '/client.js': 'src/client.js',
+  '/boot.js': 'src/boot.js',
   '/three.js': 'vendor/three.module.min.js',
   ...Object.fromEntries(
     [
@@ -37,6 +38,7 @@ const files = {
       'ground-placement',
       'placement-aim',
       'brick-wall',
+      'brick-rules',
       'meshy-brick-data',
       'meshy-texture',
       'meshy-biplane-data',
@@ -213,7 +215,7 @@ assets['/'] = assets['/'].replaceAll(
   '__GAME_VERSION__',
   (await readFile('VERSION', 'utf8')).trim(),
 );
-assets['/'] = assets['/'].replace('src="/client.js"', 'src="/assets/' + version + '/client.js"');
+assets['/'] = assets['/'].replace('src="/boot.js"', 'src="/assets/' + version + '/boot.js"');
 const inline = (source) => source.replace(/^import .*;$/gm, '').replace(/^export /gm, '');
 const arena = inline(assets['/purgatory-physics.js']);
 const base = inline(assets['/base.js']);
@@ -252,6 +254,7 @@ await writeFile(
     layout,
     inline(assets['/route-obstacles.js']),
     inline(assets['/route-navigation.js']),
+    inline(assets['/brick-rules.js']),
     inline(assets['/ground-defense.js']),
     routes,
     inline(assets['/air-current.js']),

@@ -1,3 +1,4 @@
+import { WALL_SEGMENT, WALL_SEGMENT_PRICE, HALF_BRICK, wallLength } from './brick-rules.js';
 import { FAN_COST, FAN_FADE_MS } from './air-current.js';
 import { SENTRY } from './ground-sentry.js';
 import { FORTIFICATIONS, isFortification } from './ground-fortifications.js';
@@ -18,13 +19,17 @@ export const GROUND_BAIT_TYPES = Object.freeze({
   sugar: { radius: 0.15, cost: 3, mealSeconds: 4 },
 });
 export const GROUND_WALL_HP = 100;
-export const GROUND_WALL_COST_PER_SEGMENT = 1;
+export const GROUND_WALL_COST_PER_SEGMENT = WALL_SEGMENT_PRICE;
 export const GROUND_STICKY_COST_PER_20CM = 1;
-// Issue #99: walls and tape are billed pro rata to their real office length,
-// 1 $ per 20 cm, to the cent (no rounding up to whole 20 cm segments).
+// Walls: $0.25/48 mm after half-brick snapping. Tape: unchanged $1/20 cm.
+// Both use the existing cent precision and never round up to a full section.
 export function lengthPrice(kind, distance) {
+  if (kind === 'barricade') distance = wallLength(distance);
   const rate = kind === 'barricade' ? GROUND_WALL_COST_PER_SEGMENT : GROUND_STICKY_COST_PER_20CM;
-  return Math.max(0.01, Math.round((distance / 0.2) * rate * 100) / 100);
+  return Math.max(
+    0.01,
+    Math.round((distance / (kind === 'barricade' ? WALL_SEGMENT : 0.2)) * rate * 100) / 100,
+  );
 }
 
 export function feedingPoint(bait) {
@@ -105,7 +110,8 @@ export function groundCommand(state, command, foot, dollars, now = Date.now(), a
     fail('Commande de défense invalide.');
   const action = command.action;
   if (action === 'build') {
-    const { kind, a, b } = command;
+    const { kind, a } = command;
+    let { b } = command;
     const pointItem =
       kind === 'sugar' || kind === 'fan' || kind === 'sentry' || isFortification(kind);
     if (isFortification(kind)) {
@@ -124,10 +130,17 @@ export function groundCommand(state, command, foot, dollars, now = Date.now(), a
       (!pointItem && !finitePoint(b))
     )
       fail('Emplacement de construction invalide.');
-    if (!nearFoot(a, foot)) fail('Construisez à proximité de votre personnage.');
+    if (!nearFoot(a, foot) && (pointItem || !nearFoot(b, foot)))
+      fail('Construisez à proximité de votre personnage.');
+    if (kind === 'barricade') {
+      const d = length(a, b),
+        span = wallLength(d);
+      if (span < HALF_BRICK) fail('Tracez au moins une demi-brique (12 mm).');
+      b = a.map((v, k) => v + ((b[k] - v) * span) / d);
+    }
     const distance = pointItem ? 0 : length(a, b);
     if (!pointItem && distance < 0.002) fail('Tracez la construction depuis votre position.');
-    const count = kind === 'barricade' ? Math.ceil(distance / 0.2) : 1;
+    const count = kind === 'barricade' ? Math.ceil((distance - 1e-9) / WALL_SEGMENT) : 1;
     if (state.structures.length + count > GROUND_LIMIT)
       fail('Trop de constructions dans la salle.');
     const price = isFortification(kind)
@@ -191,6 +204,22 @@ export function groundCommand(state, command, foot, dollars, now = Date.now(), a
                   : 0.07)
             );
           if (existing.kind !== 'barricade' || existing.hp <= 0) return false;
+          if (!item.position) {
+            const joins = [item.a, item.b].some((p) =>
+              [existing.a, existing.b].some((q) => length(p, q) < 1e-7),
+            );
+            if (joins) {
+              const shared = [item.a, item.b].find((p) =>
+                [existing.a, existing.b].some((q) => length(p, q) < 1e-7),
+              );
+              const own = length(shared, item.a) > 1e-7 ? item.a : item.b;
+              const other = length(shared, existing.a) > 1e-7 ? existing.a : existing.b;
+              const dot =
+                (own[0] - shared[0]) * (other[0] - shared[0]) +
+                (own[1] - shared[1]) * (other[1] - shared[1]);
+              if (dot <= 1e-10) return false;
+            }
+          }
           return distanceToSegment(sample, existing.a, existing.b) < 0.02;
         })
       )

@@ -1,3 +1,4 @@
+import { WALL_SEGMENT, HALF_BRICK, wallLength } from './brick-rules.js';
 import { ROUTE_OBSTACLES } from './route-obstacles.js';
 // Deterministic, room-shared ground navigation primitives (office metres).
 // These are independent of the airborne route system. Keep this module free of
@@ -10,19 +11,24 @@ export const GROUND_STATIC_OBSTACLES = ROUTE_OBSTACLES.filter(
   (box) =>
     box.min.y < 0.01 && box.max.y > 0.01 && box.max.x - box.min.x < 2 && box.max.z - box.min.z < 2,
 );
-export const MAX_BARRICADE_SEGMENT = 0.2;
+export const MAX_BARRICADE_SEGMENT = WALL_SEGMENT;
 export const STICKY_WIDTH = 0.03;
 
 export function splitBarricade(a, b, id) {
   if (![...a, ...b].every(Number.isFinite)) throw Error('Invalid barricade endpoints');
   const distance = Math.hypot(b[0] - a[0], b[1] - a[1]);
   if (distance <= 0) throw Error('Empty barricade');
-  const count = Math.ceil(distance / MAX_BARRICADE_SEGMENT);
-  return Array.from({ length: count }, (_, i) => ({
-    id: id + ':' + i,
-    a: [a[0] + ((b[0] - a[0]) * i) / count, a[1] + ((b[1] - a[1]) * i) / count],
-    b: [a[0] + ((b[0] - a[0]) * (i + 1)) / count, a[1] + ((b[1] - a[1]) * (i + 1)) / count],
-  }));
+  const span = wallLength(distance);
+  const count = Math.ceil((span - 1e-9) / MAX_BARRICADE_SEGMENT);
+  return Array.from({ length: count }, (_, i) => {
+    const from = i * MAX_BARRICADE_SEGMENT;
+    const to = Math.min(span, from + MAX_BARRICADE_SEGMENT);
+    return {
+      id: id + ':' + i,
+      a: a.map((v, k) => v + ((b[k] - v) * from) / distance),
+      b: a.map((v, k) => v + ((b[k] - v) * to) / distance),
+    };
+  });
 }
 export function distanceToSegment(p, a, b) {
   const dx = b[0] - a[0],

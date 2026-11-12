@@ -1,5 +1,7 @@
 # Lisibilité et commandes — issue #171, version 284
 
+Le comportement courant est complété par le [lot #175](gameplay-polish-175.md), notamment pour le suivi souris, les dimensions de la station et le brouillard spatial.
+
 Les personnages distinguent chute libre, descente suspendue sous parachute et
 réception de 0,38 s avant de reprendre leur allure. Chaque modèle conserve ses
 propres clips ; un clip dont le nom contient « fall » est utilisé s’il existe,

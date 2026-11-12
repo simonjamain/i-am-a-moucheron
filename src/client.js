@@ -1,6 +1,6 @@
 import { makeServiceStation, animateRadar } from '/station-model.js';
 import { ReloadHUD, seatReloads, heavyReadyAt, heavyLane, reloadProgress } from '/reload-hud.js';
-import { officeFogOpacity } from '/office-fog.js';
+import { officeFogOpacity, installOfficeFog, officeFogCeiling } from '/office-fog.js';
 import { makeFortificationStation } from '/fortification-model.js';
 import { placementFacing } from '/placement-aim.js';
 import { placementAim } from '/placement-aim.js';
@@ -14,7 +14,7 @@ import { deliveryHeightAt } from '/delivery.js';
 import { reserveAlerts, missileStatus, ArrivalSignals } from '/reserve-feedback.js';
 import { controlHints, cursorStats, cursorAmmoText } from '/live-hud.js';
 import { GunSalvos } from '/salvos.js';
-import { nextPilotMuzzle } from '/muzzle.js';
+import { nextPilotMuzzle, nearestWeaponMuzzle } from '/muzzle.js';
 import { advanceAutomaticFire } from '/salvos.js';
 import { ammoCapacity } from '/logistics.js';
 import { FIXED_DCA_AMMO, PISTOL_CAPACITY } from '/ground-ammo.js';
@@ -96,7 +96,7 @@ import {
 } from '/control-focus.js';
 import { createRenderer } from '/renderer.js';
 import { createGraphics } from '/graphics.js';
-import { availableAppearance, turnToward } from '/character-model.js';
+import { availableAppearance, turnToward, loadCharacter } from '/character-model.js';
 import { createAppearancePicker } from '/appearance-picker.js';
 import { MidgeBatch } from '/midge-batch.js';
 import { WalkerBatch } from '/walker-batch.js';
@@ -157,7 +157,9 @@ const $ = (id) => document.getElementById(id),
   canvas = $('view'),
   scene = new T.Scene();
 scene.background = new T.Color('#829f91');
+installOfficeFog(T, OFFICE_LAYOUT.bounds.ceiling);
 scene.fog = new T.FogExp2('#ffffff', 0.018);
+scene.add(officeFogCeiling(T, OFFICE_LAYOUT.bounds));
 // Issue #104: no visible audio controls. Sound starts at the standard volume as
 // soon as the browser allows it (first user gesture); old saved settings ignored.
 const audioSettings = { volume: 0.55, muted: false };
@@ -1524,6 +1526,10 @@ function castorBuilder() {
     grounded: landed,
     parachute: false,
     rear: [rear.x, rear.z],
+    direction: new T.Vector3(0, 0, 1)
+      .applyQuaternion(me.quaternion)
+      .toArray()
+      .filter((_, i) => i !== 1),
   };
 }
 const groundDefenseUI = new GroundDefenseUI({
@@ -2558,19 +2564,22 @@ function reconcileEquipment(next) {
         ? 0.075
         : FORTIFICATIONS.antitank.footprint
       : MAP.metres(st.kind === 'bed' ? 0.8 : 2);
-    const collider = new T.Box3(
-      new T.Vector3(st.x - radius, st.y, st.z - radius),
-      new T.Vector3(
-        st.x + radius,
-        st.y +
-          (st.kind === 'antitank'
-            ? MAP.metres(2.2)
-            : isFortification(st.kind)
-              ? 0.04
-              : MAP.metres(0.8)),
-        st.z + radius,
-      ),
-    );
+    const collider =
+      st.kind === 'refuel'
+        ? new T.Box3().setFromObject(gun)
+        : new T.Box3(
+            new T.Vector3(st.x - radius, st.y, st.z - radius),
+            new T.Vector3(
+              st.x + radius,
+              st.y +
+                (st.kind === 'antitank'
+                  ? MAP.metres(2.2)
+                  : isFortification(st.kind)
+                    ? 0.04
+                    : MAP.metres(0.8)),
+              st.z + radius,
+            ),
+          );
     colliders.push(collider);
     gun.userData.collider = collider;
     const person = humanoid('#91b4a0');
@@ -2952,7 +2961,8 @@ function updateVehicles(dt) {
       aimGun(T, gun.userData.yaw, dir, gun.quaternion);
     }
     gun.updateWorldMatrix(true, true);
-    const muzzle = gun.userData.muzzles[gun.userData.barrel % 2].getWorldPosition(new T.Vector3());
+    const muzzleNode = gun.userData.muzzles[gun.userData.barrel % 2];
+    const muzzle = muzzleNode.getWorldPosition(new T.Vector3());
     if (self) {
       if (controlFocus.active) {
         if (station.kind === 'dca') flakRange = advanceFuse(flakRange, keys, dt);
@@ -2994,7 +3004,7 @@ function updateVehicles(dt) {
         if (howitzer) {
           // Issue #113: a server shell (like the tank's), from the real barrel.
           howitzer.fire();
-          combatEffects.muzzle(muzzle, dir);
+          combatEffects.muzzle(muzzle, dir, muzzleNode);
           sound.play('flak', muzzle, { ref: 35 });
           const shot = id + ':antitank:' + ++shotSequence,
             aim = dir.clone().normalize().toArray(),
@@ -3023,12 +3033,20 @@ function updateVehicles(dt) {
         } else {
           const fort = FORTIFICATIONS[station.kind];
           const shot = fort
-            ? emitBullet(muzzle, dir, '#ffe49b', true, false, {
-                wave: snap.wave,
-                baseDamage: fort.damage,
-                velocity: new T.Vector3(),
-              })
-            : bullet(muzzle, dir, '#ffe49b', true, true);
+            ? emitBullet(
+                muzzle,
+                dir,
+                '#ffe49b',
+                true,
+                false,
+                {
+                  wave: snap.wave,
+                  baseDamage: fort.damage,
+                  velocity: new T.Vector3(),
+                },
+                muzzleNode,
+              )
+            : bullet(muzzle, dir, '#ffe49b', true, true, muzzleNode);
           if (shot) action('fixed-dca-fire', { station: index, shot, incarnation });
         }
       }
@@ -3042,9 +3060,9 @@ function updateVehicles(dt) {
       if (howitzer) {
         // The shell itself arrives with the server ordnance.
         howitzer.fire();
-        combatEffects.muzzle(muzzle, dir);
+        combatEffects.muzzle(muzzle, dir, muzzleNode);
         sound.play('flak', muzzle, { ref: 35 });
-      } else bullet(muzzle, dir, '#91d9c4', false, station.kind !== 'bunker');
+      } else bullet(muzzle, dir, '#91d9c4', false, station.kind !== 'bunker', muzzleNode);
     }
   }
 }
@@ -3463,6 +3481,7 @@ function updateOthers(dt) {
       g.userData.rotor.rotation.y += rotation;
       if (g.userData.tailRotor) g.userData.tailRotor.rotation.x += rotation * 4;
     }
+    g.userData.animateGun?.(dt, performance.now() < (g.userData.gunFiredUntil || 0));
     updateInscriptions(T, g, v, snap.pilots);
     g.visible = v.state.hp > 0;
     // Damage shows as engine smoke, never as a change of shape.
@@ -3517,7 +3536,16 @@ function updateOthers(dt) {
               ? mount.userData.coaxMuzzle
               : mount.userData.muzzle
           ).getWorldPosition(new T.Vector3());
-          bullet(o, new T.Vector3().fromArray(m.turretDirection || [0, 0, -1]), vehicleColor(v));
+          bullet(
+            o,
+            new T.Vector3().fromArray(m.turretDirection || [0, 0, -1]),
+            vehicleColor(v),
+            false,
+            false,
+            v.type === 'tank' && seat === 'cannon'
+              ? mount.userData.coaxMuzzle
+              : mount.userData.muzzles?.[0] || mount.userData.muzzle,
+          );
         }
       }
     const remotePilotRounds =
@@ -3546,7 +3574,15 @@ function updateOthers(dt) {
         );
       } else {
         const muzzle = nextPilotMuzzle(T, g);
-        if (muzzle) bullet(muzzle, direction, vehicleColor(v));
+        if (muzzle)
+          bullet(
+            muzzle,
+            direction,
+            vehicleColor(v),
+            false,
+            false,
+            nearestWeaponMuzzle(T, g, muzzle),
+          );
       }
     }
     if (v.type === 'spitfire' && g.userData.remoteSalvos)
@@ -3558,6 +3594,9 @@ function updateOthers(dt) {
             g.userData.muzzles[index].getWorldPosition(new T.Vector3()),
             new T.Vector3(0, 0, -1).applyQuaternion(g.quaternion),
             vehicleColor(v),
+            false,
+            false,
+            g.userData.muzzles[index],
           ),
       );
   }
@@ -3576,7 +3615,9 @@ function updateOthers(dt) {
       others.delete(k);
     }
 }
-function bullet(pos, dir, color = '#f4efab', owned = false, aa = false) {
+function bullet(pos, dir, color = '#f4efab', owned = false, aa = false, muzzleNode = null) {
+  muzzleNode ??= owned && myVehicle ? nearestWeaponMuzzle(T, me, pos) : null;
+  if (muzzleNode) pos = muzzleNode.getWorldPosition(new T.Vector3());
   if (owned && !aa && myVehicle) {
     if (aircraftFire.available(myVehicle.id, crewSeat, myVehicle.supplies, currentAmmoKey()) < 1)
       return;
@@ -3597,10 +3638,10 @@ function bullet(pos, dir, color = '#f4efab', owned = false, aa = false) {
       origin = pos.clone(),
       direction = dir.clone();
     if (aircraftFire.fire(vehicle, seat, myVehicle.supplies, currentAmmoKey()))
-      emitBullet(origin, direction, vehicleColor(myVehicle), owned, aa, launch);
+      emitBullet(origin, direction, vehicleColor(myVehicle), owned, aa, launch, muzzleNode);
     return;
   }
-  return emitBullet(pos, dir, color, owned, aa);
+  return emitBullet(pos, dir, color, owned, aa, null, muzzleNode);
 }
 const tracerPool = new TracerPool(T, scene, 256, { instanced: renderer.isWebGLRenderer === true });
 const gunSalvos = new GunSalvos();
@@ -3627,7 +3668,7 @@ const aircraftFire = new AircraftFire(
       Date.now().toString(36) + '-' + Math.random().toString(36).slice(2),
   },
 );
-function emitBullet(pos, dir, color, owned, aa, launch = null) {
+function emitBullet(pos, dir, color, owned, aa, launch = null, muzzleNode = null) {
   const stamp = performance.now(),
     cue = stamp - spitSoundAt >= 40 || aa;
   if (!respawnAt && cue) {
@@ -3641,7 +3682,12 @@ function emitBullet(pos, dir, color, owned, aa, launch = null) {
   }
   const m = tracerPool.acquire(pos, dir, color, aa);
   if (!m) return;
-  if (owned && cue) combatEffects.muzzle(pos, dir);
+  if ((owned || muzzleNode) && cue) combatEffects.muzzle(pos, dir, muzzleNode);
+  if (muzzleNode) {
+    let root = muzzleNode;
+    while (root.parent && root.parent !== scene) root = root.parent;
+    root.userData.gunFiredUntil = performance.now() + 100;
+  }
   const velocity = dir.clone().multiplyScalar(MAP.metres(aa ? REFERENCE.shell : REFERENCE.bullet));
   if (launch) velocity.add(launch.velocity);
   else if (!aa && owned && myVehicle)
@@ -3859,17 +3905,32 @@ function physics(dt) {
       ? Number(!!(keys.ShiftLeft || keys.ShiftRight)) -
         Number(!!(keys.ControlLeft || keys.ControlRight))
       : 0;
+    const keyboardTilt =
+      keys.KeyS ||
+      keys.ArrowDown ||
+      keys.KeyZ ||
+      keys.ArrowUp ||
+      keys.KeyQ ||
+      keys.ArrowLeft ||
+      keys.KeyD ||
+      keys.ArrowRight;
     stepHelicopter(
       T,
       state,
       {
         collective,
-        pitch: active
-          ? Number(!!(keys.KeyS || keys.ArrowDown)) - Number(!!(keys.KeyZ || keys.ArrowUp))
-          : 0,
-        roll: active
-          ? Number(!!(keys.KeyQ || keys.ArrowLeft)) - Number(!!(keys.KeyD || keys.ArrowRight))
-          : 0,
+        pitch:
+          active && !keyboardTilt
+            ? undefined
+            : active
+              ? Number(!!(keys.KeyS || keys.ArrowDown)) - Number(!!(keys.KeyZ || keys.ArrowUp))
+              : 0,
+        roll:
+          active && !keyboardTilt
+            ? undefined
+            : active
+              ? Number(!!(keys.KeyQ || keys.ArrowLeft)) - Number(!!(keys.KeyD || keys.ArrowRight))
+              : 0,
         direction: active ? mouseDirection.toArray() : null,
       },
       colliders,
@@ -6151,3 +6212,14 @@ function observedPurgatory(dt) {
       soulMeshes.delete(key);
     }
 }
+
+// Readiness for the initial loader: selected appearance and its first draw.
+export const homeReady = loadCharacter(appearancePicker.value).then(
+  () =>
+    new Promise((resolve) =>
+      requestAnimationFrame(() => {
+        appearancePicker.draw(renderer, 0);
+        resolve();
+      }),
+    ),
+);

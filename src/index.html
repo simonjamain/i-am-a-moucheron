@@ -8,8 +8,13 @@
       name="description"
       content="Combat aérien coopératif miniature. Un pseudo, un code, un avion."
     />
+    <link
+      rel="stylesheet"
+      media="print"
+      onload="this.media = 'all'"
+      href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&amp;family=Space+Grotesk:wght@400;500;600;700&amp;display=swap"
+    />
     <style>
-      @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap');
       :root {
         --cream: #f1f0df;
         --muted: #96aaa6;
@@ -62,6 +67,41 @@
         text-transform: uppercase;
         letter-spacing: 2px;
         color: var(--acid);
+      }
+      #loading canvas {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+      }
+      #loading {
+        background: #091e1a;
+        position: fixed;
+        inset: 0;
+        z-index: 100;
+        display: grid;
+        place-content: center;
+        text-align: center;
+        pointer-events: none;
+      }
+      #loading strong {
+        position: relative;
+        z-index: 1;
+        font: 800 clamp(44px, 9vw, 130px) sans-serif;
+        color: #d5ef73;
+        letter-spacing: 0.04em;
+      }
+      #loadingError {
+        position: relative;
+        z-index: 1;
+        margin-top: 24px;
+        pointer-events: auto;
+      }
+      body.booting {
+        background: #091e1a;
+      }
+      body.booting > :not(#loading):not(#view):not(script) {
+        visibility: hidden;
       }
       #view {
         position: fixed;
@@ -2364,7 +2404,13 @@
       }
     </style>
   </head>
-  <body>
+  <body class="booting">
+    <div id="loading" role="status" aria-live="polite">
+      <strong>CHARGEMENT</strong>
+      <div id="loadingError" hidden>
+        Le chargement a échoué. <button id="loadingRetry" type="button">Réessayer</button>
+      </div>
+    </div>
     <canvas id="view" aria-label="Jeu aérien en trois dimensions"></canvas>
     <div id="altitudeFog" aria-hidden="true"></div>
     <div id="shade"></div>
@@ -2737,7 +2783,7 @@
       ><button id="vehicleInteract" class="hidden">Quitter le poste · F</button
       ><button id="turretFire" class="hidden">Tirer</button>
     </div>
-    <script type="module" src="/client.js"></script>
+    <script type="module" src="/boot.js"></script>
     <button
       id="changelogOpen"
       type="button"

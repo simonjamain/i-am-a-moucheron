@@ -1,3 +1,4 @@
+import { nearestWeaponMuzzle } from '../src/muzzle.js';
 import { TracerPool } from '../src/tracers.js';
 import { GunSalvos } from '../src/salvos.js';
 import assert from 'node:assert/strict';
@@ -525,6 +526,7 @@ const fireContext = {
   snap: { wave: 1 },
   vel: new T.Vector3(),
   me: model,
+  nearestWeaponMuzzle,
   spreadDirection: (_, d) => d.clone(),
   vehicleColor: () => '#fff',
   emitBullet: () => emitted++,

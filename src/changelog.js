@@ -1,6 +1,13 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 286,
+    changes: [
+      'Un moucheron accompagne le chargement ; les murs LEGO s’emboîtent et la station grandit.',
+      'Le Hind retrouve le suivi souris et ses canons tournent ; les chutes et le brouillard sont plus lisibles.',
+    ],
+  },
+  {
     version: 285,
     changes: [
       'La fixation de la parabole tourne avec le radar. Le menu d’achat montre les nouveaux modèles des stations.',

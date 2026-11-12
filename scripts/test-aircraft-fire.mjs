@@ -1,3 +1,4 @@
+import { nearestWeaponMuzzle } from '../src/muzzle.js';
 import { TracerPool } from '../src/tracers.js';
 import { GunSalvos, advanceAutomaticFire } from '../src/salvos.js';
 import assert from 'node:assert/strict';
@@ -159,6 +160,8 @@ const context = vm.createContext({
     supplies: { ammo: { pilot: 1000 }, revision: 0 },
   },
   vel: new T.Vector3(),
+  nearestWeaponMuzzle,
+  me: new T.Group(),
   hasAmmo: () => true,
   vehicleColor: () => '#abcdef',
   currentAmmoKey: () => 'pilot',

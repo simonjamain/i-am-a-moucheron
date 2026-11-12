@@ -10,6 +10,10 @@ export function makeServiceStation(T, kind) {
   )) {
     const pivot = new T.Group();
     pivot.position.fromArray(part.pivot);
+    if (kind === 'refuel') {
+      pivot.position.multiplyScalar(3);
+      pivot.scale.setScalar(3);
+    }
     const mesh = new T.Mesh(geometry, material);
     mesh.name = `meshy-${kind}-${part.part}`;
     mesh.castShadow = mesh.receiveShadow = true;

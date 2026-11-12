@@ -66,7 +66,7 @@ for (const kind of ['sugar', 'fan', 'sentry', 'barricade', 'sticky', 'bunker', '
 preview.clear();
 assert.equal(preview.root.children.length, 0);
 const longWall = createGroundModel(T, { kind: 'barricade', a: [0, 0], b: [0.45, 0], hp: 100 });
-assert.equal(longWall.children.length, 3, 'preview uses the same 20 cm segmentation as placement');
+assert.equal(longWall.children.length, 10, 'preview uses the same 48 mm segmentation as placement');
 
 const game = new Game();
 const joined = game.join({ code: 'ORIENT', name: 'Pose' });

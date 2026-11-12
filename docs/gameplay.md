@@ -9,6 +9,8 @@ La « Tourelle automatique du Castor » se construit pour 9 $ au volant du G1, s
 
 Le [lot de lisibilité et commandes #171](game-polish-171.md) précise les phases de chute, les nouvelles stations, le brouillard, les arcs de recharge et les commandes Hind/Castor.
 
+Le [lot #175](gameplay-polish-175.md) précise le chargement animé, le suivi souris du Hind, les éclairs attachés aux canons, les murs LEGO de deux rangées et le brouillard spatial.
+
 ## Session réseau
 
 Le serveur Node utilise WebRTC sur UDP uniquement. Les mouvements sont locaux,
@@ -331,10 +333,7 @@ pour le sélectionner. Au centre, le choix est annulé. Pour une barricade ou un
 ruban, le premier clic (ou E) fixe le début indiqué par un petit repère sans
 orientation. Visez ensuite la fin, en marchant si nécessaire, puis cliquez de
 nouveau (ou E). Les deux points déterminent seuls la longueur et l'orientation.
-Le bouton de confirmation suit ces mêmes deux étapes. Le coût est de 1 $ pour
-20 cm, au prorata exact de la longueur et au centime près (`lengthPrice`, version 233) ; les longs murs sont découpés en segments réparables. La
-barricade est composée de briques colorées en trois rangées décalées, plus ou
-moins nombreuses selon sa longueur. R oriente le sucre et le ventilateur.
+Le bouton de confirmation suit ces mêmes deux étapes. Le mur coûte 0,25 $ par tronçon de 48 mm, avec portions en demi-briques facturées au prorata au centime ; le ruban garde 1 $ pour 20 cm. Les murs sont découpés en sections réparables et dessinés en deux rangées de briques de taille fixe, avec extrémités décalées emboîtables. R oriente le sucre et le ventilateur.
 Le sucre coûte
 3 $, une réparation 1 $, la suppression est gratuite. L’aperçu rouge et le message
 signalent un refus ; le serveur revalide position, caisse et occupation avant
@@ -394,8 +393,7 @@ opposés et les roues avant braquent selon la vitesse de rotation
 Au sol, le pilote du Castor ouvre la roue des défenses par **clic molette**.
 Pour les murs **LEGO** et les **rubans**, un clic gauche démarre la pose en
 continu **derrière le véhicule** pendant la conduite ; un deuxième clic l'arrête.
-Le Castor valide des sections de 20 cm (1 $) ; entre deux validations, l'aperçu
-ajoute les briques une à une derrière le camion, à hauteur fixe de trois rangs.
+Le Castor valide des sections LEGO de 48 mm (0,25 $) ; l’aperçu, visible derrière le camion avant même le premier clic, ajoute les demi-briques entre deux validations, sur deux rangées. Le ruban conserve des sections de 20 cm à 1 $.
 L'arrêt valide la section commencée, facturée au prorata (`scripts/test-castor-trail.mjs`).
 Les briques sont des 2×4 LEGO (image de référence validée par l'utilisateur, modèle
 Meshy non texturé recoloré en jeu, tenons vers le haut, profondeur moitié de la

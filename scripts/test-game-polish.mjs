@@ -49,7 +49,7 @@ assert.equal(height, 0.8, 'maximum height doubled');
 for (let i = 0; i < 100; i++) height = zoomTopView(height, -1);
 assert.equal(height, 0.15);
 assert.equal(officeFogOpacity(0, 3), 0);
-assert.equal(officeFogOpacity(3, 3), 0.85);
+assert.equal(officeFogOpacity(3, 3), 0.65);
 assert.ok(officeFogOpacity(2.9, 3) > officeFogOpacity(2, 3));
 assert.equal(officeFogOpacity(0, 3), 0, 'descending clears haze');
 for (const appearance of ['cowboy', 'frontier']) {

@@ -77,7 +77,9 @@ export function createGroundModel(T, structure) {
     group.userData.sentry = sentry;
     group.add(sentry.group);
   } else if (structure.kind === 'barricade') {
-    for (const segment of splitBarricade(structure.a, structure.b, structure.id || 'preview'))
+    for (const segment of structure.wholeWall
+      ? [structure]
+      : splitBarricade(structure.a, structure.b, structure.id || 'preview'))
       group.add(createBrickWall(T, { ...segment, hp: structure.hp }));
   } else {
     const dx = structure.b[0] - structure.a[0];

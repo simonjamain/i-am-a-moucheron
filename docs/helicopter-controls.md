@@ -71,7 +71,7 @@ validations humaines en cours. Livraison ZIP, serveur à redémarrer et navigate
 ## Pilotage étendu et tourelle — version 45
 
 Depuis le [lot #171](game-polish-171.md), ZQSD impose une inclinaison progressive
-avec un budget total de 45°, y compris en diagonale. La souris garde le cap horizontal. La descente
+avec un budget total de 45°, y compris en diagonale. La souris commande le cap et l’inclinaison ; ZQSD prend temporairement priorité, puis le suivi du curseur reprend au relâchement (voir [lot #175](gameplay-polish-175.md)). La descente
 commandée atteint progressivement 30 m/s de référence, contre 8 auparavant ;
 la montée reste à 8 m/s et le relâchement freine vers le stationnaire. Les chocs
 verticaux à plus de 8 m/s restent destructeurs : anticiper le freinage.
