@@ -113,7 +113,7 @@ Premier asset passé par la règle ci-dessus ([issue #99](https://github.com/sim
 ## Personnage joueur (Meshy + Mixamo)
 
 Sept modèles fournis et validés par l'utilisateur ([issue #111](https://github.com/simonjamain/i-am-a-moucheron/issues/111)
-pour le premier, cinq ajoutés en version 280, l'opératrice en version 281), déjà générés, riggés et animés par
+pour le premier, cinq ajoutés en version 280, l'opératrice en version 282), déjà générés, riggés et animés par
 l'utilisateur dans Meshy/Mixamo : aucune génération ni crédit Meshy de notre côté.
 Le joueur choisit le sien à l'accueil (`src/character-appearances.js`, ordre du
 sélecteur ; le premier sert de défaut et de repli pour une valeur inconnue). Les noms
