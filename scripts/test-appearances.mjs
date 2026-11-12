@@ -1,4 +1,4 @@
-// Player appearances: seven user-approved Meshy + Mixamo characters, picked on the
+// Player appearances: eight user-approved Meshy + Mixamo characters, picked on the
 // home screen, carried by the join command and drawn for every player; models
 // turn smoothly toward their facing.
 import assert from 'node:assert/strict';
@@ -26,9 +26,9 @@ import { OFFICE_SOLIDS } from '../worker/assets.js';
 const near = (a, b, eps, label) => assert.ok(Math.abs(a - b) < eps, label + ': ' + a + ' vs ' + b);
 const world = (o) => o.getWorldPosition(new T.Vector3());
 
-// 1. Registry: seven distinct characters, default first, selector wraps around.
-assert.equal(APPEARANCES.length, 7);
-assert.equal(new Set(APPEARANCES.map((a) => a.id)).size, 7);
+// 1. Registry: eight distinct characters, default first, selector wraps around.
+assert.equal(APPEARANCES.length, 8);
+assert.equal(new Set(APPEARANCES.map((a) => a.id)).size, 8);
 assert.deepEqual(
   APPEARANCES.map((a) => a.name),
   [
@@ -38,6 +38,7 @@ assert.deepEqual(
     'Mécanicien',
     'Mécanicienne',
     'Aviatrice',
+    'Opérateur',
     'Opératrice',
   ],
 );
@@ -82,7 +83,7 @@ for (const { id } of APPEARANCES) {
   c.update(0.05, { speed: 6 });
   assert.equal(c.gait(), 'run');
 }
-for (const id of ['frontier', 'sky-pilot', 'toby', 'sunny', 'aviator', 'operator']) {
+for (const id of ['frontier', 'sky-pilot', 'toby', 'sunny', 'aviator', 'signaler', 'operator']) {
   const source = readFileSync('src/character-' + id + '-data.js', 'utf8');
   const sha = /"sha256":"([0-9a-f]{64})"/.exec(source)[1];
   assert.ok(importer.includes(sha), id + ' provenance');
@@ -194,5 +195,5 @@ for (const module of [
 ])
   assert.ok(packaged.includes("'" + module + "'"), module + ' packaged');
 console.log(
-  'Appearances: seven characters, on-demand loading, equal heights, rest pose, in-place swap, join validation, smooth turning, home selector.',
+  'Appearances: eight characters, on-demand loading, equal heights, rest pose, in-place swap, join validation, smooth turning, home selector.',
 );
