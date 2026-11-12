@@ -117,7 +117,9 @@
       .formbox {
         margin-top: 28px;
         padding: 22px;
-        background: #102b29eb;
+        /* Panel colour: painted by the character selector's box-shadow, which
+           leaves the selector see-through for the 3D preview (appearance-picker.js). */
+        overflow: hidden;
         border: 1px solid #9abca330;
         border-radius: 10px;
         box-shadow: 0 20px 100px #001c1930;
@@ -146,6 +148,61 @@
       }
       input:focus {
         border-color: var(--acid);
+      }
+      .appearance {
+        margin-top: 16px;
+        display: grid;
+        grid-template-columns: 44px 1fr 44px;
+        grid-template-rows: auto 1fr auto;
+        align-items: center;
+        border: 1px solid #ffffff1a;
+        border-radius: 6px;
+        box-shadow: 0 0 0 100vmax #102b29eb;
+        padding: 10px 6px 8px;
+      }
+      .appearance.appearance-flat {
+        background: #0c211f; /* PREVIEW_BACKGROUND in appearance-picker.js */
+      }
+      #shade.appearance-hole {
+        -webkit-mask:
+          linear-gradient(#000 0 0) var(--hole-x) var(--hole-y) / var(--hole-w) var(--hole-h)
+            no-repeat,
+          linear-gradient(#000 0 0);
+        -webkit-mask-composite: xor;
+        mask:
+          linear-gradient(#000 0 0) var(--hole-x) var(--hole-y) / var(--hole-w) var(--hole-h)
+            no-repeat exclude,
+          linear-gradient(#000 0 0);
+      }
+      .appearance-title {
+        grid-column: 1 / -1;
+        font-size: 10px;
+        color: var(--muted);
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        padding-left: 6px;
+      }
+      #appearanceView {
+        width: 100%;
+        height: 190px;
+        display: block;
+      }
+      .appearance-arrow {
+        width: 40px;
+        height: 40px;
+        padding: 0;
+        border-radius: 50%;
+        font-size: 24px;
+        line-height: 1;
+        justify-self: center;
+      }
+      #appearanceName {
+        grid-column: 1 / -1;
+        text-align: center;
+        font-family: 'Barlow Condensed', Impact, sans-serif;
+        font-size: 19px;
+        font-weight: 600;
+        letter-spacing: 0.5px;
       }
       #join {
         margin-top: 16px;
@@ -399,6 +456,17 @@
         background: #0c211ecf;
         border: 1px solid var(--line);
         border-radius: 7px;
+      }
+      @media (max-height: 760px) {
+        #appearanceView {
+          height: 120px;
+        }
+        .lobby h1 {
+          margin: 10px 0;
+        }
+        .formbox {
+          margin-top: 14px;
+        }
       }
       @media (max-width: 700px) {
         header {
@@ -2310,9 +2378,29 @@
             />
           </div>
         </div>
+        <div id="appearance" class="appearance" role="group" aria-labelledby="appearanceTitle">
+          <span id="appearanceTitle" class="appearance-title">Personnage</span>
+          <button
+            id="appearancePrev"
+            class="appearance-arrow"
+            type="button"
+            aria-label="Personnage précédent"
+          >
+            ‹
+          </button>
+          <div id="appearanceView" aria-hidden="true"></div>
+          <button
+            id="appearanceNext"
+            class="appearance-arrow"
+            type="button"
+            aria-label="Personnage suivant"
+          >
+            ›
+          </button>
+          <output id="appearanceName" aria-live="polite"></output>
+        </div>
         <button id="join" class="primary" type="submit">Rejoindre la base <span>↗</span></button>
         <p id="error" role="alert"></p>
-        <div class="small">Même code, même partie.</div>
       </form>
     </main>
     <div id="sceneLabel"><span>Zone de départ</span><strong>Base Alpha / Bureau 01</strong></div>

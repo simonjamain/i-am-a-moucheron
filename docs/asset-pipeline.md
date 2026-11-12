@@ -112,24 +112,54 @@ Premier asset passé par la règle ci-dessus ([issue #99](https://github.com/sim
 
 ## Personnage joueur (Meshy + Mixamo)
 
-Modèle fourni et validé par l'utilisateur ([issue #111](https://github.com/simonjamain/i-am-a-moucheron/issues/111)) ;
-tous les joueurs sont identiques pour l'instant, le modèle sera affiné.
+Six modèles fournis et validés par l'utilisateur ([issue #111](https://github.com/simonjamain/i-am-a-moucheron/issues/111)
+pour le premier, cinq ajoutés en version 280), déjà générés, riggés et animés par
+l'utilisateur dans Meshy/Mixamo : aucune génération ni crédit Meshy de notre côté.
+Le joueur choisit le sien à l'accueil (`src/character-appearances.js`, ordre du
+sélecteur ; le premier sert de défaut et de repli pour une valeur inconnue).
 
-- Original : `assets/originals/character/cowboy-boy.glb` (hors dépôt), SHA-256
-  `29cbb213…ed0d`. Squelette Mixamo de 44 os, 1 556 triangles, texture 1024 px,
-  clips `Idle_12`, `Walking`, `Running` (sur place).
-- Import : `PYTHONPATH=scripts python3 scripts/import-character.py <GLB>` vérifie
-  l'empreinte et écrit `src/character-data.js` (493 Ko) : positions/UV float32,
-  poids sur 8 bits, rotations quantifiées en int16, translation des hanches seule.
-- Rendu : `src/character-model.js` partage géométrie, matériau et clips ; chaque
-  joueur possède ses os et son mixeur. Allure : repos sous 0,35 m/s, course dès
-  3 m/s, vitesse de lecture liée à la vitesse réelle. Les poses absentes
-  (pistolet au purgatoire, assis en DCA, chute ou parachute) orientent les os en
-  espace monde ; au bureau, les joueurs n'ont pas d'arme et gardent les clips.
-- Intégration : `graphics.humanoid()` garde le cadre invisible `arms`/`legs`/`rig`.
-  Le bras du pistolet part de l'épaule du modèle et sa longueur place la crosse
-  dans la paume ; balistique, dégâts et règles de tir sont inchangés. Aucune
-  initiale ni teinte par joueur. `scripts/test-character.mjs` couvre ces points.
+| Id          | Nom affiché        | Original (`assets/originals/character/`, hors dépôt) | SHA-256         | Os  | Triangles |
+| ----------- | ------------------ | ---------------------------------------------------- | --------------- | --- | --------- |
+| `cowboy`    | Petit cow-boy      | `cowboy-boy.glb`                                     | `29cbb213…ed0d` | 44  | 1 556     |
+| `frontier`  | Pionnière bouclée  | `curly-frontier-girl.glb`                            | `abc715df…b27a` | 44  | 1 554     |
+| `sky-pilot` | Petit pilote       | `little-sky-pilot.glb`                               | `740ecc0a…ed8f` | 44  | 1 536     |
+| `toby`      | Toby le bricoleur  | `toolbox-toby.glb`                                   | `db97a0ab…1a`   | 44  | 1 562     |
+| `sunny`     | Sunny de l'atelier | `sunny-workshop-girl.glb`                            | `da6fd6ce…8d49` | 60  | 1 562     |
+| `aviator`   | Petite aviatrice   | `little-aviator.glb`                                 | `222ea403…f5e`  | 44  | 1 690     |
+
+- Import : `PYTHONPATH=scripts python3 scripts/import-character.py <id> <GLB>`
+  vérifie l'empreinte (table `CHARACTERS` du script) et écrit
+  `src/character-data.js` (défaut, 493 Ko) ou `src/character-<id>-data.js`
+  (310 à 415 Ko) : positions/UV float32, poids sur 8 bits, rotations quantifiées en
+  int16, translation des hanches seule, texture de base 1024 px en JPEG (les cartes
+  métal/rugosité et normales des originaux ne sont pas reprises). Clips gardés :
+  `Idle_12`, `Walking`, `Running` pour le défaut ; `Walking`, `Running` pour les
+  cinq autres. Leur clip sans nom de 3 s est un saut accroupi, pas un repos, et
+  `RunFast` n'est pas utilisé : ils ne sont pas importés.
+- Chargement : seul le défaut est inclus dans le graphe initial ; les autres sont
+  des `import()` dynamiques (versionnés par `scripts/assemble.mjs`), chargés quand
+  le sélecteur les montre ou qu'un joueur les porte. En attendant, le défaut est
+  affiché puis remplacé sur place (`humanoid().userData.setAppearance`).
+- Rendu : `src/character-model.js` partage géométrie, matériau et clips par
+  apparence ; chaque joueur possède ses os et son mixeur. Tous les modèles sont
+  ramenés à la même hauteur (1,7 m modèle) par une racine mise à l'échelle.
+  Allure : repos sous 0,35 m/s, course dès 3 m/s, vitesse de lecture liée à la
+  vitesse réelle. Sans clip de repos, une pose de liaison à une clé sert de repos et
+  les bras sont baissés le long du corps. Les poses absentes (pistolet au purgatoire,
+  assis en DCA, chute ou parachute) orientent les os en espace monde ; au bureau, les
+  joueurs n'ont pas d'arme et gardent les clips. `turnToward()` lisse l'orientation
+  affichée vers la direction de marche (constante de temps 1/12 s).
+- Intégration : `graphics.humanoid(color, saint, appearance)` garde le cadre
+  invisible `arms`/`legs`/`rig` ; le bras du pistolet part de l'épaule du modèle et
+  sa longueur place la crosse dans la paume, recalculées à chaque changement de
+  modèle. Balistique, dégâts et règles de tir sont inchangés. Le sélecteur de
+  l'accueil (`src/appearance-picker.js`) dessine, après chaque image, directement
+  dans le canevas du jeu (viewport et ciseaux sur son rectangle) ; la page laisse ce
+  rectangle transparent (couleur du panneau en `box-shadow`, trou de masque dans
+  l'ombre latérale). Un second contexte WebGL ou une relecture de pixels
+  (`drawImage`, `readPixels`) laissaient Chrome 3 à 4 fois plus lent pendant toute
+  la partie (mesure SwiftShader : 1,4–3 contre 6 images/s), d'où ce choix.
+  `scripts/test-character.mjs` et `scripts/test-appearances.mjs` couvrent ces points.
 
 ## Moucheron Meshy (squelette et vol)
 

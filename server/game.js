@@ -1,4 +1,5 @@
 import { airField } from '../src/air-current.js';
+import { appearanceId } from '../src/character-appearances.js';
 import { prepareRoster, forecast } from './wave-preparation.js';
 import { feedingPoint } from '../src/ground-defense-state.js';
 import { DEFAULT_BALANCE, money } from '../src/balance.js';
@@ -279,6 +280,8 @@ export class Game {
         String(b.name || 'Pilote')
           .trim()
           .slice(0, 20) || 'Pilote',
+      // Character picked on the home screen; unknown values fall back to the default.
+      appearance: appearanceId(b.appearance),
       bay,
       colorSequence:
         r.playerColors.get(resumeKey) ||

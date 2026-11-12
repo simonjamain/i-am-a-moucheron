@@ -45,7 +45,14 @@ const files = {
       'vehicle-anchors',
       'castor-model',
       'character-model',
+      'character-appearances',
+      'appearance-picker',
       'character-data',
+      'character-frontier-data',
+      'character-sky-pilot-data',
+      'character-toby-data',
+      'character-sunny-data',
+      'character-aviator-data',
       'meshy-castor-data',
       'meshy-stuka-data',
       'meshy-spitfire-data',
@@ -187,7 +194,7 @@ const version = createHash('sha256')
 for (const url of Object.keys(assets)) {
   if (url.endsWith('.js'))
     assets[url] = assets[url].replace(
-      /(\bfrom\s*['"]|\bimport\s*['"])(\.?\.?\/[^'"?]+\.js)(['"])/g,
+      /(\bfrom\s*['"]|\bimport\s*\(?\s*['"])(\.?\.?\/[^'"?]+\.js)(['"])/g,
       (_, prefix, path, quote) => {
         const target = new URL(path, 'https://assets.local' + url).pathname;
         if (!Object.hasOwn(assets, target)) throw Error('Unpackaged module: ' + target);

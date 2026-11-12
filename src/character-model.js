@@ -1,17 +1,66 @@
-import { CHARACTER_DATA as D } from './character-data.js';
+import { CHARACTER_DATA as COWBOY } from './character-data.js';
+import { DEFAULT_APPEARANCE, appearanceId } from './character-appearances.js';
 
 // Issue #111: the playable character (user-approved Meshy + Mixamo GLB). One
-// shared geometry/material/clip set; each player owns its bones, skeleton and
-// mixer. Missing animations (pistol aim, sitting, falling) are simple
-// procedural poses that orient bones in world space, so they do not depend on
-// the Mixamo bones' local axes.
+// shared geometry/material/clip set per appearance; each player owns its bones,
+// skeleton and mixer. Missing animations (pistol aim, sitting, falling, and the
+// idle of an export without one) are simple procedural poses that orient bones
+// in world space, so they do not depend on the Mixamo bones' local axes.
+// The default appearance is bundled; the others load on demand (loadCharacter).
 
-export const CHARACTER_HEIGHT = 1.7; // model metres (feet at y = 0)
+export const CHARACTER_HEIGHT = 1.7; // model metres (feet at y = 0), every appearance
 export const LEGACY_HEIGHT = 2.46; // procedural humanoid units used by the game
+// Clip names of the default (cowboy) export; the other imports name clips by gait.
 export const CHARACTER_CLIPS = Object.freeze({ idle: 'Idle_12', walk: 'Walking', run: 'Running' });
 // Ground speeds (m/s) where the gait switches, and the speed each in-place clip
 // was authored for (its playback rate follows the real speed to limit sliding).
 export const GAIT = Object.freeze({ walk: 0.35, run: 3, walkClip: 1.4, runClip: 5 });
+
+// Literal specifiers so scripts/assemble.mjs can version and check them.
+const LOADERS = {
+  frontier: () => import('./character-frontier-data.js'),
+  'sky-pilot': () => import('./character-sky-pilot-data.js'),
+  toby: () => import('./character-toby-data.js'),
+  sunny: () => import('./character-sunny-data.js'),
+  aviator: () => import('./character-aviator-data.js'),
+};
+const DATA = new Map([[DEFAULT_APPEARANCE, COWBOY]]);
+const pending = new Map();
+// Resolves once the appearance can be created synchronously (createCharacter).
+export function loadCharacter(id) {
+  id = appearanceId(id);
+  if (DATA.has(id)) return Promise.resolve(id);
+  if (!pending.has(id))
+    pending.set(
+      id,
+      LOADERS[id]().then(
+        (module) => (DATA.set(id, module.CHARACTER_DATA), id),
+        (error) => {
+          pending.delete(id);
+          throw error;
+        },
+      ),
+    );
+  return pending.get(id);
+}
+export const characterLoaded = (id) => DATA.has(appearanceId(id));
+// The appearance actually drawn now: the requested one once loaded (loading is
+// started here), the default meanwhile.
+export function availableAppearance(id) {
+  id = appearanceId(id);
+  if (DATA.has(id)) return id;
+  loadCharacter(id).catch(() => {});
+  return DEFAULT_APPEARANCE;
+}
+
+// Visual heading: the walker's facing (`face`) snaps to the input direction,
+// the model turns toward it with an exponential approach along the shortest arc
+// (time constant 1 / TURN_RATE s, about 0.25 s for a half turn).
+export const TURN_RATE = 12;
+export function turnToward(current, target, dt, rate = TURN_RATE) {
+  const delta = Math.atan2(Math.sin(target - current), Math.cos(target - current));
+  return current + delta * (1 - Math.exp(-rate * Math.max(0, dt || 0)));
+}
 
 const bytes = (b64) => Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
 const view = (b64, Type) => {
@@ -22,9 +71,12 @@ const view = (b64, Type) => {
 export const boneName = (name) => name.replace(/\s/g, '_').replace(/[\[\]\.:\/]/g, '');
 
 const cache = new WeakMap();
-function shared(T) {
-  let s = cache.get(T);
+function shared(T, id) {
+  let byId = cache.get(T);
+  if (!byId) cache.set(T, (byId = new Map()));
+  let s = byId.get(id);
   if (s) return s;
+  const D = DATA.get(id);
   const geometry = new T.BufferGeometry();
   geometry.setAttribute('position', new T.BufferAttribute(view(D.positions, Float32Array), 3));
   geometry.setAttribute('uv', new T.BufferAttribute(view(D.uvs, Float32Array), 2));
@@ -63,8 +115,28 @@ function shared(T) {
     });
     clips[name] = new T.AnimationClip(name, clip.duration, tracks);
   }
-  s = { geometry, material, boneInverses, clips };
-  cache.set(T, s);
+  // Gait → clip: the default export keeps its Mixamo names, the others are
+  // imported under their gait. Without an idle clip, a one-key bind pose stands
+  // in (arms are then lowered procedurally, see update()).
+  const gaits = {};
+  for (const gait of ['idle', 'walk', 'run'])
+    gaits[gait] = clips[id === DEFAULT_APPEARANCE ? CHARACTER_CLIPS[gait] : gait];
+  const restPose = !gaits.idle;
+  if (restPose)
+    gaits.idle = new T.AnimationClip(
+      'rest',
+      1,
+      D.bones.map(
+        (b) =>
+          new T.QuaternionKeyframeTrack(boneName(b.name) + '.quaternion', [0], Array.from(b.r)),
+      ),
+    );
+  // Bind-pose height (feet at y = 0): every appearance is drawn CHARACTER_HEIGHT tall.
+  const pos = geometry.getAttribute('position');
+  let top = 0;
+  for (let i = 0; i < pos.count; i++) top = Math.max(top, pos.getY(i));
+  s = { data: D, geometry, material, boneInverses, gaits, restPose, scale: CHARACTER_HEIGHT / top };
+  byId.set(id, s);
   return s;
 }
 
@@ -86,8 +158,9 @@ function pointBone(T, bone, child, direction, weight) {
   bone.updateWorldMatrix(false, true);
 }
 
-export function createCharacter(T) {
-  const { geometry, material, boneInverses, clips } = shared(T);
+export function createCharacter(T, appearance = DEFAULT_APPEARANCE) {
+  const id = DATA.has(appearanceId(appearance)) ? appearanceId(appearance) : DEFAULT_APPEARANCE;
+  const { data: D, geometry, material, boneInverses, gaits, restPose, scale } = shared(T, id);
   const bones = D.bones.map((b) => {
     const bone = new T.Bone();
     bone.name = boneName(b.name);
@@ -95,19 +168,24 @@ export function createCharacter(T) {
     bone.quaternion.fromArray(b.r);
     return bone;
   });
-  const container = new T.Group();
+  const container = new T.Group(),
+    root = new T.Group();
   container.name = 'personnage';
-  D.bones.forEach((b, i) => (b.parent >= 0 ? bones[b.parent] : container).add(bones[i]));
+  container.add(root);
+  root.scale.setScalar(scale);
+  D.bones.forEach((b, i) => (b.parent >= 0 ? bones[b.parent] : root).add(bones[i]));
   const mesh = new T.SkinnedMesh(geometry, material);
   mesh.name = 'personnage-meshy';
   mesh.castShadow = true;
   mesh.frustumCulled = false;
   mesh.userData.meshyShared = true;
-  container.add(mesh);
+  root.add(mesh);
   const skeleton = new T.Skeleton(bones, boneInverses);
   container.updateMatrixWorld(true);
   mesh.bind(skeleton, new T.Matrix4());
-  // Bind-pose bounds (hit tests, Box3): compute them before any parent scale.
+  // Bind-pose bounds (hit tests, Box3): compute them before any parent scale,
+  // with the bind inverse refreshed for the normalising root scale.
+  container.updateMatrixWorld(true);
   skeleton.update();
   mesh.computeBoundingBox();
   mesh.computeBoundingSphere();
@@ -115,13 +193,14 @@ export function createCharacter(T) {
   const bone = (n) => byName['mixamorig' + n];
   const mixer = new T.AnimationMixer(container);
   const actions = Object.fromEntries(
-    Object.entries(CHARACTER_CLIPS).map(([gait, clip]) => [gait, mixer.clipAction(clips[clip])]),
+    Object.entries(gaits).map(([gait, clip]) => [gait, mixer.clipAction(clip)]),
   );
   for (const action of Object.values(actions)) action.play().setEffectiveWeight(0);
   actions.idle.setEffectiveWeight(1);
   let current = 'idle';
   const v = (x, y, z) => new T.Vector3(x, y, z);
   const character = {
+    appearance: id,
     container,
     mesh,
     skeleton,
@@ -164,6 +243,14 @@ export function createCharacter(T) {
             0.9,
           );
           pointBone(T, bone(side + 'ForeArm'), bone(side + 'Hand'), local(0, -0.1, 1), 0.9);
+        }
+      } else if (restPose && actions.idle.getEffectiveWeight() > 0) {
+        // Export without an idle clip: arms down along the body from the bind pose.
+        const w = actions.idle.getEffectiveWeight();
+        for (const side of ['Left', 'Right']) {
+          const s = side === 'Left' ? 1 : -1;
+          pointBone(T, bone(side + 'Arm'), bone(side + 'ForeArm'), local(s * 0.18, -1, 0), w);
+          pointBone(T, bone(side + 'ForeArm'), bone(side + 'Hand'), local(s * 0.08, -1, 0.12), w);
         }
       } else if (state.falling) {
         // Arms raised and spread, legs slightly apart.
