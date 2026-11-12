@@ -9,6 +9,7 @@ export const APPEARANCES = Object.freeze([
   Object.freeze({ id: 'toby', name: 'Mécanicien' }),
   Object.freeze({ id: 'sunny', name: 'Mécanicienne' }),
   Object.freeze({ id: 'aviator', name: 'Aviatrice' }),
+  Object.freeze({ id: 'signaler', name: 'Opérateur' }),
   Object.freeze({ id: 'operator', name: 'Opératrice' }),
 ]);
 export const DEFAULT_APPEARANCE = APPEARANCES[0].id;

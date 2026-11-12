@@ -112,8 +112,8 @@ Premier asset passé par la règle ci-dessus ([issue #99](https://github.com/sim
 
 ## Personnage joueur (Meshy + Mixamo)
 
-Sept modèles fournis et validés par l'utilisateur ([issue #111](https://github.com/simonjamain/i-am-a-moucheron/issues/111)
-pour le premier, cinq ajoutés en version 280, l'opératrice en version 282), déjà générés, riggés et animés par
+Huit modèles fournis et validés par l'utilisateur ([issue #111](https://github.com/simonjamain/i-am-a-moucheron/issues/111)
+pour le premier, cinq ajoutés en version 280, l'opératrice en version 282, l'opérateur en version 283), déjà générés, riggés et animés par
 l'utilisateur dans Meshy/Mixamo : aucune génération ni crédit Meshy de notre côté.
 Le joueur choisit le sien à l'accueil (`src/character-appearances.js`, ordre du
 sélecteur ; le premier sert de défaut et de repli pour une valeur inconnue). Les noms
@@ -127,6 +127,7 @@ ne sont pas affichés : ils ne sont lus que par les lecteurs d'écran.
 | `toby`      | Mécanicien   | `toolbox-toby.glb`                                   | `db97a0ab…1a`   | 44  | 1 562     |
 | `sunny`     | Mécanicienne | `sunny-workshop-girl.glb`                            | `da6fd6ce…8d49` | 60  | 1 562     |
 | `aviator`   | Aviatrice    | `little-aviator.glb`                                 | `222ea403…f5e`  | 44  | 1 690     |
+| `signaler`  | Opérateur    | `skyline-signaler.glb`                               | `4e79dbe4…bead` | 46  | 1 662     |
 | `operator`  | Opératrice   | `headset-engineer.glb`                               | `99385d02…602b` | 42  | 1 670     |
 
 - Import : `PYTHONPATH=scripts python3 scripts/import-character.py <id> <GLB>`
@@ -136,7 +137,7 @@ ne sont pas affichés : ils ne sont lus que par les lecteurs d'écran.
   int16, translation des hanches seule, texture de base 1024 px en JPEG (les cartes
   métal/rugosité et normales des originaux ne sont pas reprises). Clips gardés :
   `Idle_12`, `Walking`, `Running` pour le défaut ; `Walking`, `Running` pour les
-  six autres. Leur clip sans nom de 3 s est un saut accroupi, pas un repos, et
+  sept autres. Leur clip sans nom de 3 s est un saut accroupi, pas un repos, et
   `RunFast` n'est pas utilisé : ils ne sont pas importés.
 - Chargement : seul le défaut est inclus dans le graphe initial ; les autres sont
   des `import()` dynamiques (versionnés par `scripts/assemble.mjs`), chargés quand

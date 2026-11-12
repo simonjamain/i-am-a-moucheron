@@ -23,6 +23,7 @@ const LOADERS = {
   toby: () => import('./character-toby-data.js'),
   sunny: () => import('./character-sunny-data.js'),
   aviator: () => import('./character-aviator-data.js'),
+  signaler: () => import('./character-signaler-data.js'),
   operator: () => import('./character-operator-data.js'),
 };
 const DATA = new Map([[DEFAULT_APPEARANCE, COWBOY]]);
