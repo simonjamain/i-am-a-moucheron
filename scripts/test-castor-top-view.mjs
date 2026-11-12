@@ -14,12 +14,21 @@ import { ServiceZones, serviceZoneList } from '../src/service-zones.js';
 import { CASTOR_SERVICE_RADIUS, SERVICE_RADIUS } from '../src/logistics.js';
 import { withinService } from '../src/paid-service.js';
 
-// Truck heading +X (yaw -90°), standing at the origin of a 5 cm high deck.
+// A truck standing on a 5 cm high deck, heading +X (east): the view stays north-up.
 const truck = new T.Vector3(1, 0.05, 2);
-const heading = new T.Quaternion().setFromAxisAngle(new T.Vector3(0, 1, 0), -Math.PI / 2);
-const pose = topViewPose(T, truck, heading);
+const pose = topViewPose(T, truck);
 assert.ok(pose.eye.distanceTo(truck.clone().add(new T.Vector3(0, TOP_VIEW_HEIGHT, 0))) < 1e-12);
-assert.ok(pose.up.distanceTo(new T.Vector3(1, 0, 0)) < 1e-9, 'screen up is the truck heading');
+assert.ok(pose.up.distanceTo(new T.Vector3(0, 0, -1)) < 1e-9, 'screen up is north (-Z)');
+for (const yaw of [0, 1, -Math.PI / 2, 2.5])
+  assert.deepEqual(
+    topViewPose(
+      T,
+      truck,
+      new T.Quaternion().setFromAxisAngle(new T.Vector3(0, 1, 0), yaw),
+    ).up.toArray(),
+    pose.up.toArray(),
+    'the heading of the truck never turns the view',
+  );
 
 const camera = new T.PerspectiveCamera(62, 16 / 9, 0.00005, 40);
 camera.position.copy(pose.eye);
@@ -30,9 +39,12 @@ const ground = 0;
 const below = topViewGroundPoint(T, camera, { x: 0, y: 0 }, ground);
 assert.ok(Math.hypot(below.x - truck.x, below.z - truck.z) < 1e-9, 'centre cursor under truck');
 const ahead = topViewGroundPoint(T, camera, { x: 0, y: 0.8 }, ground);
-assert.ok(ahead.x - truck.x > 0.15 && Math.abs(ahead.z - truck.z) < 1e-9, 'screen top is ahead');
+assert.ok(truck.z - ahead.z > 0.15 && Math.abs(ahead.x - truck.x) < 1e-9, 'screen top is north');
 const right = topViewGroundPoint(T, camera, { x: 0.8, y: 0 }, ground);
-assert.ok(right.z - truck.z > 0.15, 'screen right is the truck right side (+Z when heading +X)');
+assert.ok(
+  right.x - truck.x > 0.15 && Math.abs(right.z - truck.z) < 1e-9,
+  'screen right is east (+X)',
+);
 // The building reach (24 cm) fits on screen in every direction.
 const edge = topViewGroundPoint(T, camera, { x: 0, y: TOP_VIEW_CURSOR_LIMIT }, ground);
 assert.ok(edge.distanceTo(new T.Vector3(truck.x, 0, truck.z)) > 0.24, 'reach visible');
