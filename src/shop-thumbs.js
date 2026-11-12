@@ -1,6 +1,7 @@
 // Small 3D pictures of every shop item, drawn once by a private renderer from
-// the real in-game models (installations and upgrades use simple stand-ins).
+// the real in-game vehicle and service-station models (bed/DCA use stand-ins).
 import { createGraphics } from './graphics.js';
+import { makeServiceStation } from './station-model.js';
 
 const VEHICLE_MODELS = {
   fighter: 'makePlane',
@@ -14,6 +15,7 @@ const VEHICLE_MODELS = {
 };
 
 function installation(T, kind) {
+  if (kind === 'radar' || kind === 'refuel') return makeServiceStation(T, kind);
   const g = new T.Group();
   const part = (geometry, color, x, y, z) => {
     const mesh = new T.Mesh(geometry, new T.MeshStandardMaterial({ color, flatShading: true }));
@@ -24,25 +26,10 @@ function installation(T, kind) {
   const box = (w, h, d, color, x, y, z) => part(new T.BoxGeometry(w, h, d), color, x, y, z);
   const cyl = (rt, rb, h, color, x, y, z) =>
     part(new T.CylinderGeometry(rt, rb, h, 16), color, x, y, z);
-  box(4, 0.3, 3, kind === 'radar' ? '#527b87' : '#bb8c44', 0, 0.15, 0);
+  box(4, 0.3, 3, '#bb8c44', 0, 0.15, 0);
   if (kind === 'bed') {
     box(1.6, 0.35, 3, '#e2d6ad', 0, 0.45, 0);
     box(1.35, 0.2, 0.65, '#f7edcb', 0, 0.7, -1);
-  } else if (kind === 'radar') {
-    cyl(0.18, 0.25, 4, '#d3dbbf', 0, 2, 0);
-    const bowl = part(
-      new T.SphereGeometry(1.65, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2),
-      '#7fbdad',
-      0,
-      4,
-      0,
-    );
-    bowl.material.side = T.DoubleSide;
-    bowl.rotation.x = Math.PI / 2.6;
-  } else if (kind === 'refuel') {
-    cyl(0.6, 0.6, 1.5, '#d9b958', -1, 0.9, 0);
-    box(1, 1.7, 0.9, '#557a69', 0.8, 1, 0);
-    box(0.25, 0.25, 1.6, '#2c3a33', 0.1, 1.5, 0);
   } else {
     cyl(0.9, 1.1, 0.8, '#6d7b5a', 0, 0.7, 0);
     box(1.2, 0.9, 1.2, '#557a69', 0, 1.5, 0);
@@ -110,10 +97,14 @@ export class ShopThumbnails {
       center = box.getCenter(new T.Vector3()),
       radius = box.getSize(new T.Vector3()).length() / 2;
     const distance = (radius / Math.sin(T.MathUtils.degToRad(this.camera.fov / 2))) * 0.72;
-    // Front three-quarter view, slightly from above (models face -Z).
+    // Front three-quarter view, slightly from above. Vehicles face -Z;
+    // the supplied service stations have their front on +Z.
     this.camera.position
       .copy(center)
-      .addScaledVector(new T.Vector3(0.85, 0.55, -1).normalize(), distance);
+      .addScaledVector(
+        new T.Vector3(0.85, 0.55, item === 'radar' || item === 'refuel' ? 1 : -1).normalize(),
+        distance,
+      );
     this.camera.near = distance / 50;
     this.camera.far = distance * 4;
     this.camera.updateProjectionMatrix();
