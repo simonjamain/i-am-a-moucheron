@@ -158,7 +158,7 @@ const $ = (id) => document.getElementById(id),
   canvas = $('view'),
   scene = new T.Scene();
 scene.background = new T.Color('#829f91');
-installOfficeFog(T, OFFICE_LAYOUT.bounds.ceiling);
+installOfficeFog(T);
 scene.fog = new T.FogExp2('#ffffff', 0.018);
 scene.add(officeFogCeiling(T, OFFICE_LAYOUT.bounds));
 // Issue #104: no visible audio controls. Sound starts at the standard volume as
@@ -4487,8 +4487,7 @@ function frame(now) {
       : respawnAt
         ? null
         : camera;
-  $('altitudeFog').style.opacity =
-    joined && fogCamera ? officeFogOpacity(fogCamera.position.y, OFFICE_LAYOUT.bounds.ceiling) : 0;
+  $('altitudeFog').style.opacity = joined && fogCamera ? officeFogOpacity(fogCamera.position.y) : 0;
   if (spectating && observationCamera) {
     if (observationRealm !== 'office') observedPurgatory(dt);
     toon.render(observationRealm === 'office' ? scene : purgScene, observationCamera);

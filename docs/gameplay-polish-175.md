@@ -87,16 +87,20 @@ son minimum de 10 mm et son tarif de 1 $ par 20 cm.
 
 ## Brouillard spatial
 
-La couche commence à **75 % de la hauteur du bureau**, soit 2,2125 m pour un
-plafond à 2,95 m. Sa densité croît avec la hauteur. Les matériaux calculent
+La couche commence à **2,2125 m**, soit 75 % de l’ancien plafond de 2,95 m.
+Depuis la version 288, le plafond de vol est à **3,95 m** : les nuages conservent
+leur altitude et leur densité, y compris dans le mètre supplémentaire.
+La densité croît avec la hauteur. Les matériaux calculent
 l’épaisseur traversée par chaque rayon : regarder vers le haut depuis le sol
 révèle la couche, regarder horizontalement sous elle conserve la lisibilité.
 Les objets vus depuis l’intérieur restent voilés. Un voile intérieur progressif
 complète l’effet ; le HUD reste devant.
 
-Le bureau n’avait pas de toit dessiné : un plafond visuel non solide donne aux
-rayons de fond une terminaison dans ce même champ de brouillard. Il ne crée
-aucun collider ni obstacle pour les projectiles. Le brouillard linéaire du
+Le bureau n’avait pas de toit dessiné : une enveloppe visuelle non solide, ouverte sous le bureau, donne aux
+rayons de fond une terminaison dans ce même champ de brouillard. Elle couvre
+le haut et les quatre côtés, dont le sud ouvert : le fond vert uni ignorait
+auparavant le brouillard dans cette direction. Elle ne crée aucun collider
+ni obstacle pour les projectiles. Le brouillard linéaire du
 purgatoire est conservé ; le voile d’altitude n’y est pas affiché.
 
 ## Vérifications et limites
@@ -134,3 +138,19 @@ appuis et pose sur le toit. Un second cas rouge verrouille l’impossibilité de
 poser un équipement sur un faux toit situé dans un coin de l’enveloppe globale.
 
 ![Collision locale de la station à 0°, 45° et 90°](refuel-collision-287.png)
+
+## Nuages et plafond — version 288
+
+`test-office-clouds.mjs` vérifie les rayons de fond des quatre côtés, l’absence de
+sol/collision ajouté, le maintien de la couche à son altitude précédente et les
+limites de vol d’un avion abandonné et du Hind à 3,2 / 3,94 / 3,96 m. Le pilote
+d’avion local utilise la même borne `OFFICE_LAYOUT.bounds.ceiling`.
+
+`e2e-office-clouds.mjs` reproduit le vrai rendu WebGL/toon depuis le dessous et à
+3,2 m dans les nuages, dans les quatre directions. Il mesure les pixels pour
+repérer un fond vert non voilé et conserve un contrôle de vue claire sous la
+couche. Ce test navigateur nécessite Playwright et Chromium ; il est séparé de
+`npm test`. Variables facultatives : `PLAYWRIGHT_PATH`, `CHROMIUM_PATH` et
+`CLOUD_SCREENSHOT` pour enregistrer une capture.
+
+![Le côté sud reçoit désormais le voile nuageux](cloud-south-288.png)

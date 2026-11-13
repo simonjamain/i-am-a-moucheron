@@ -1,6 +1,12 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 288,
+    changes: [
+      'Les nuages voilent aussi le côté sud. Le plafond de vol monte d’un mètre pour explorer la couche nuageuse.',
+    ],
+  },
+  {
     version: 287,
     changes: [
       'La collision de la station de ravitaillement suit son orientation, même en diagonale.',
