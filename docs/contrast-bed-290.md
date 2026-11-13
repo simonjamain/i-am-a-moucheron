@@ -1,4 +1,4 @@
-# Contraste, lit et accès à Alpha — version 289
+# Contraste, lit et accès à Alpha — version 290
 
 Le viseur de direction des canons et la consigne souris gardent leurs positions
 et dimensions. Leur cercle et leur point central sont maintenant blancs opaques,
@@ -12,18 +12,19 @@ instancié : contour puis cœur. La largeur projetée du cœur vise un minimum d
 collisions. Le brouillard et les obstacles continuent à masquer les tirs.
 Les deux parties par calibre gardent les quatre lots instanciés existants.
 
-Le nouveau [lit Drawer Bed](asset-pipeline.md#lit-de-réapparition-drawer-bed--version-289)
+Le nouveau [lit Drawer Bed](asset-pipeline.md#lit-de-réapparition-drawer-bed--version-290)
 remplace le lit provisoire dans le monde, le fantôme de pose et la vignette
 à l’achat. Sa collision correspond à ses dimensions et tourne avec le modèle.
 Le joueur revient hors du lit du côté de son pied (+X local), même après rotation.
 Le prix, le contrat personnel et les règles de passage au purgatoire sont conservés.
 
-La station Alpha recule de **50,14 mm vers le nord** (−Z), sans déplacement
-latéral ni changement de hauteur. Son centre est désormais à 14 unités acteur au
-nord de l’origine d’Alpha, contre 5 auparavant. Le modèle agrandi empiétait sur
-les cercles d’accès du pilote et du tireur du bombardier ; les deux zones sont
-maintenant dégagées. Les appareils de départ restent à portée du service payant.
-Les serveurs Node et Worker historique partagent la même position depuis le layout.
+La station Alpha recule de **40 mm vers le nord** (−Z) et de **6 mm vers l’ouest**
+(−X), à la même hauteur. Ce léger décalage latéral conserve la couverture du tank,
+qui se trouvait au bord de la zone. Le modèle agrandi empiétait sur les cercles
+d’accès du pilote et du tireur du bombardier ; les deux zones sont maintenant
+dégagées. Tous les véhicules déjà couverts à leur emplacement initial gardent le
+service payant, sans agrandir son rayon. Les serveurs Node et Worker historique
+partagent la même position depuis le layout.
 
 ## Vérifications
 
@@ -41,6 +42,6 @@ Les serveurs Node et Worker historique partagent la même position depuis le lay
 La PR précise les commandes, le commit testé et le build Docker. Le rendu local
 ne remplace pas un essai humain de pilotage ou un test WAN.
 
-![Viseurs et traçante sur le fond nuageux blanc](contrast-289.png)
+![Viseurs et traçante sur le fond nuageux blanc](contrast-290.png)
 
-![Station reculée et cercles d’accès du bombardier](alpha-access-289.png)
+![Station reculée et cercles d’accès du bombardier](alpha-access-290.png)

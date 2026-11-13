@@ -383,7 +383,7 @@ rééchantillonnées en WebP 1K pour l'exécution. La géométrie reste intacte
 sur un taux de réduction arbitraire. Toute simplification supplémentaire doit
 être mesurée et validée sur une copie avant substitution.
 
-## Lit de réapparition Drawer Bed — version 289
+## Lit de réapparition Drawer Bed — version 290
 
 GLB fourni et approuvé par l’utilisateur pour intégration, sans nouvelle génération
 ni crédit Meshy. Source locale hors Git : `assets/originals/bed/drawer-bed.glb`,
@@ -410,4 +410,4 @@ Le tiroir est déjà ouvert : aucune articulation ni animation à reconstruire.
   modèle réellement utilisé par le client et l’achat, collisions et réapparition
   à plusieurs angles. La comparaison WebGL montre le vrai atlas et les proportions.
 
-![Lit Drawer Bed texturé](drawer-bed-289.png)
+![Lit Drawer Bed texturé](drawer-bed-290.png)

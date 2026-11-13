@@ -9,7 +9,7 @@ La « Tourelle automatique du Castor » se construit pour 9 $ au volant du G1, s
 
 Le [lot de lisibilité et commandes #171](game-polish-171.md) précise les phases de chute, les nouvelles stations, le brouillard, les arcs de recharge et les commandes Hind/Castor.
 
-Le [lot de contraste et le lit Drawer Bed](contrast-bed-289.md) précise le viseur,
+Le [lot de contraste et le lit Drawer Bed](contrast-bed-290.md) précise le viseur,
 les traçantes, le nouveau lit et le dégagement de la station Alpha.
 
 Le [lot #175](gameplay-polish-175.md) précise le chargement animé, le suivi souris du Hind, les éclairs attachés aux canons, les murs LEGO de deux rangées et le brouillard spatial.

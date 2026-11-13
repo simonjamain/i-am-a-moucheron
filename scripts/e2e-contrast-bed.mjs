@@ -73,7 +73,7 @@ try {
         s.add(new T.HemisphereLight(0xffffff,0x445544,3));s.add(sun.clone());
         const b=OFFICE_LAYOUT.base,plane=makeBiplaneBomber(T,s),state=vehiclePad('bomber');
         plane.position.fromArray(state.p);plane.quaternion.fromArray(state.q);plane.scale.setScalar(ACTOR_UNIT);
-        const station=makeServiceStation(T,'refuel');station.scale.setScalar(MAP.ratio);station.position.set(b.originX,b.deckY+.00005,b.originZ+b.refuelOffsetZ);s.add(station);
+        const station=makeServiceStation(T,'refuel');station.scale.setScalar(MAP.ratio);station.position.set(b.originX+b.refuelOffsetX,b.deckY+.00005,b.originZ+b.refuelOffsetZ);s.add(station);
         for(const seat of ['pilot','dorsal']){const e=vehicleEntry({type:'bomber',state},seat),ring=new T.Mesh(new T.RingGeometry(MAP.metres(2.9),MAP.metres(3),48),new T.MeshBasicMaterial({color:'#d5ef73',side:T.DoubleSide}));ring.rotation.x=-Math.PI/2;ring.position.set(e.x,e.y+.0001,e.z);s.add(ring)}
         const c=new T.PerspectiveCamera(38,1000/650,.00005,10);c.position.set(b.originX+.14,b.deckY+.2,b.originZ+.12);c.lookAt(b.originX+.01,b.deckY,b.originZ-.04);renderer.render(s,c);
       };
@@ -95,7 +95,7 @@ try {
   }
   await page.evaluate(() => window.bedView());
   if (process.env.REVIEW_DIR)
-    await page.screenshot({ path: process.env.REVIEW_DIR + '/drawer-bed-289.png' });
+    await page.screenshot({ path: process.env.REVIEW_DIR + '/drawer-bed-290.png' });
   assert.ok(await page.evaluate(() => window.shopBed?.startsWith('data:image/png;base64,')));
   for (const instanced of [false, true]) {
     const visible = await page.evaluate((i) => window.tracerView(i), instanced);
@@ -110,10 +110,10 @@ try {
   }
   await page.evaluate(() => window.tracerView(true));
   if (process.env.REVIEW_DIR)
-    await page.screenshot({ path: process.env.REVIEW_DIR + '/contrast-289.png' });
+    await page.screenshot({ path: process.env.REVIEW_DIR + '/contrast-290.png' });
   await page.evaluate(() => window.baseView());
   if (process.env.REVIEW_DIR)
-    await page.screenshot({ path: process.env.REVIEW_DIR + '/alpha-access-289.png' });
+    await page.screenshot({ path: process.env.REVIEW_DIR + '/alpha-access-290.png' });
   await page.goto('http://127.0.0.1:' + app.server.address().port + '/');
   await page.waitForFunction(() => !document.body.classList.contains('booting'), {
     timeout: 60000,

@@ -101,7 +101,7 @@ const initialState = () => ({
 export function initialStation() {
   const b = OFFICE_LAYOUT.base;
   return {
-    x: b.originX,
+    x: b.originX + b.refuelOffsetX,
     y: b.deckY + 0.00005,
     z: b.originZ + b.refuelOffsetZ,
     slot: -1,

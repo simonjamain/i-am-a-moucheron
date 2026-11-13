@@ -54,7 +54,7 @@ function validSignature(points) {
 function initialStation() {
   const base = OFFICE_LAYOUT.base;
   return {
-    x: base.originX,
+    x: base.originX + base.refuelOffsetX,
     y: base.deckY + 0.00005,
     z: base.originZ + base.refuelOffsetZ,
     slot: -1,

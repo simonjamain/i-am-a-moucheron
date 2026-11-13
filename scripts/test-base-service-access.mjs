@@ -5,6 +5,8 @@ import { makeServiceStation, makeRefuelCollider } from '../src/station-model.js'
 import { VEHICLES, vehicleEntry, vehiclePad } from '../src/fleet.js';
 import { MAP, ACTOR_UNIT } from '../src/scale.js';
 import { SERVICE_RADIUS } from '../src/logistics.js';
+import { withinService } from '../src/paid-service.js';
+import { OFFICE_LAYOUT } from '../src/layout.js';
 const station = initialStation();
 const model = makeServiceStation(T, 'refuel');
 model.position.set(station.x, station.y, station.z);
@@ -31,3 +33,18 @@ for (const type of ['fighter', 'bomber']) {
 console.log(
   'Base station: both bomber access circles clear; fighter/bomber remain in service range',
 );
+
+const previous = {
+  ...station,
+  x: OFFICE_LAYOUT.base.originX,
+  z: OFFICE_LAYOUT.base.originZ - 5 * ACTOR_UNIT,
+};
+for (const type of Object.keys(VEHICLES)) {
+  const vehicle = { type, state: vehiclePad(type) };
+  if (withinService(vehicle, [previous]))
+    assert.equal(
+      withinService(vehicle, [station]),
+      true,
+      `${type} retains its initial service coverage`,
+    );
+}
