@@ -10,7 +10,7 @@ export const OFFICE_LAYOUT = {
     yaw: Math.PI,
     speed: MAP.metres(25),
   },
-  bounds: { x: 4.15, z: 3.55, ceiling: 2.95 },
+  bounds: { x: 4.15, z: 3.55, ceiling: 3.95 },
   bin: { x: 2.5, y: 0.3, z: -2.7 },
   desks: [
     { x: -1.8, z: 1.6, w: 2.2, d: 1.2, y: 0.9 },
