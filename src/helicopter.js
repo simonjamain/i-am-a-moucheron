@@ -1,3 +1,4 @@
+import { colliderContainsXZ } from './oriented-collider.js';
 import { segmentBox } from './swept-geometry.js';
 import { MAP, ACTOR_UNIT } from './scale.js';
 import { OFFICE_LAYOUT } from './layout.js';
@@ -130,13 +131,7 @@ export function stepHelicopter(T, state, controls, colliders, dt, profile) {
   p.addScaledVector(v, dt);
   let support = 0;
   for (const b of colliders)
-    if (
-      before.y - profile.gear >= b.max.y - MAP.metres(0.15) &&
-      p.x >= b.min.x &&
-      p.x <= b.max.x &&
-      p.z >= b.min.z &&
-      p.z <= b.max.z
-    )
+    if (before.y - profile.gear >= b.max.y - MAP.metres(0.15) && colliderContainsXZ(b, p.x, p.z))
       support = Math.max(support, b.max.y);
   let landed = false;
   if (p.y - profile.gear <= support + (state.landed ? MAP.metres(0.03) : 1e-9) && v.y <= 0) {

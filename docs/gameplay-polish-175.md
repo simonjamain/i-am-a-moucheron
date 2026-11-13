@@ -50,8 +50,8 @@ ni son supplémentaire. Le rendu distant suit les départs qu’il affiche.
 
 Repair Bay est agrandie ×3 sur ses trois axes : environ **36 mm de large et
 18,47 mm de haut** dans la pièce, contre 12 et 6,16 mm. Le modèle réel sert au
-monde, aux aperçus et aux vignettes d’achat. Sa boîte de collision suit les bornes
-réelles du modèle tourné ; les contraintes de support et de dégagement suivent
+monde, aux aperçus et aux vignettes d’achat. Sa boîte de collision locale tourne avec la station (correctif version 287),
+y compris pour les coins vides de l’enveloppe sur les axes du monde ; les contraintes de support et de dégagement suivent
 également cette taille. Le rayon de service payant et sa sphère verte restent
 ceux des règles de ravitaillement.
 
@@ -118,3 +118,19 @@ sur la PR. Les sensations de pilotage, l’écoute et le WAN ne sont pas déduit
 ![Écran de chargement et moucheron détaillé](loading-175.png)
 
 ![Brouillard, briques et pose de chute en WebGL](visuals-175.png)
+
+## Collision orientée de la station — version 287
+
+Une boîte englobante sur les axes du monde servait encore de collision après
+rotation : à 45°, elle bloquait des coins vides. La boîte locale de Repair Bay
+est désormais transformée avec le modèle ; l’enveloppe globale ne sert qu’aux
+filtres larges. Marche, véhicules, appuis, atterrissage, rayons de tir/caméra,
+projectiles balayés et validation de pose utilisent la forme orientée. Les
+colliders ordinaires du bureau conservent leur comportement.
+
+`test-refuel-collision.mjs` reproduit le blocage d’un personnage dans un coin
+vide, puis contrôle plusieurs angles, translations, rayons, sphères balayées,
+appuis et pose sur le toit. Un second cas rouge verrouille l’impossibilité de
+poser un équipement sur un faux toit situé dans un coin de l’enveloppe globale.
+
+![Collision locale de la station à 0°, 45° et 90°](refuel-collision-287.png)

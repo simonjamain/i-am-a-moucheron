@@ -1,3 +1,4 @@
+import { rayCollider } from '../src/oriented-collider.js';
 import { makeTracer, makeShotTrace, moveShotTrace } from '../src/tracers.js';
 import { muzzleAim } from '../src/personal-aim.js';
 // Executes the current pistol() function in a controlled Three.js scene.
@@ -27,6 +28,7 @@ async function shoot({ camera, target, colliders = [], office = false }) {
   scene.add(person);
   const c = {
     T,
+    rayCollider,
     makeTracer,
     makeShotTrace,
     moveShotTrace,

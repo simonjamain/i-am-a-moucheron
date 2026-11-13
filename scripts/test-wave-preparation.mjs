@@ -1,3 +1,4 @@
+import { rayCollider } from '../src/oriented-collider.js';
 import assert from 'node:assert/strict';
 import { Game } from '../server/game.js';
 import {
@@ -157,6 +158,7 @@ for (const wall of [false, true]) {
   const colliders = wall ? [new T.Box3(new T.Vector3(1.8, -1, -1), new T.Vector3(1.9, 1, 1))] : [];
   runInNewContext(step + ';stepProjectileSlice(.5);stepProjectileSlice(3);', {
     T,
+    rayCollider,
     scene,
     trails,
     colliders,
