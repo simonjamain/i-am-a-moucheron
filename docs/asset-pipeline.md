@@ -382,3 +382,32 @@ rééchantillonnées en WebP 1K pour l'exécution. La géométrie reste intacte
 (13 626 triangles au total) : les pivots indépendants et les UV sont prioritaires
 sur un taux de réduction arbitraire. Toute simplification supplémentaire doit
 être mesurée et validée sur une copie avant substitution.
+
+## Lit de réapparition Drawer Bed — version 289
+
+GLB fourni et approuvé par l’utilisateur pour intégration, sans nouvelle génération
+ni crédit Meshy. Source locale hors Git : `assets/originals/bed/drawer-bed.glb`,
+nom original `Meshy_AI_Drawer_Bed_1113100645_texture.glb`, SHA-256
+`3ddaba9b3f39927101d6a16a429083a0a13811f8b18484e2a0f05a8cf9e64e49`.
+Le tiroir est déjà ouvert : aucune articulation ni animation à reconstruire.
+
+- Source : 310 triangles, 698 sommets, un maillage statique, UV et texture PNG 2K,
+  1 534 620 octets. Y vers le haut, grande longueur X, pieds ramenés à Y=0.
+- L’outil Docker a testé le profil prudent (0,75 / erreur 0,001), avec
+  `--allow-monobloc` justifié par ce modèle fixe : 304 triangles, attributs/UV/images
+  validés inchangés, mais 1 536 300 octets. Seuls six triangles disparaissent et le
+  GLB grossit : la variante est écartée, l’original est importé intégralement.
+- Import reproductible : `python scripts/import-bed.py SOURCE.glb` (NumPy,
+  trimesh et Pillow comme les imports de stations). L’empreinte source est
+  vérifiée. Positions quantifiées à 0,0005 unité modèle ; UV conservés, avec
+  inversion V adaptée au chargeur existant ; copie de texture JPEG 1K de
+  149 936 octets. Module embarqué : 212 160 octets, aucune lecture GLB en jeu.
+- Dimensions en jeu : **12 × 3,381 × 5,55 mm** (X/Y/Z), facteur MAP=0,003.
+  Géométrie et matériau partagés entre lits, fantômes et achat. La collision locale
+  tourne avec le modèle. La réapparition est à 2,6 unités modèle du centre côté
+  +X, tournée avec le lit, hors du lit et du rayon du personnage.
+- Vérifications : `test-bed-model.mjs` contrôle provenance, UV, géométrie commune,
+  modèle réellement utilisé par le client et l’achat, collisions et réapparition
+  à plusieurs angles. La comparaison WebGL montre le vrai atlas et les proportions.
+
+![Lit Drawer Bed texturé](drawer-bed-289.png)

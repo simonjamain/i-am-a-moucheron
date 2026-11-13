@@ -1,5 +1,5 @@
 import { rayCollider } from '../src/oriented-collider.js';
-import { makeTracer, makeShotTrace, moveShotTrace } from '../src/tracers.js';
+import { makeTracer, makeShotTrace, moveShotTrace, TRACER_COLOR } from '../src/tracers.js';
 import { muzzleAim } from '../src/personal-aim.js';
 // Executes the current pistol() function in a controlled Three.js scene.
 import * as T from '../vendor/three.module.min.js';
@@ -30,6 +30,7 @@ async function shoot({ camera, target, colliders = [], office = false }) {
     T,
     rayCollider,
     makeTracer,
+    TRACER_COLOR,
     makeShotTrace,
     moveShotTrace,
     performance,

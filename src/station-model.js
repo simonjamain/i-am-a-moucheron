@@ -30,7 +30,7 @@ export function animateRadar(model, dt, active = true) {
     model.userData.dish.rotation.y = (model.userData.dish.rotation.y + dt) % (2 * Math.PI);
 }
 
-export function makeRefuelCollider(T, model) {
+export function makeInstallationCollider(T, model) {
   model.updateWorldMatrix(true, true);
   const inverse = model.matrixWorld.clone().invert();
   const bounds = new T.Box3();
@@ -64,3 +64,6 @@ export function makeRefuelCollider(T, model) {
     bounds,
   });
 }
+
+// Keep the established refuel helper available to existing callers.
+export const makeRefuelCollider = makeInstallationCollider;

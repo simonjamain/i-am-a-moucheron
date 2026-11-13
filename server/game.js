@@ -103,7 +103,7 @@ export function initialStation() {
   return {
     x: b.originX,
     y: b.deckY + 0.00005,
-    z: b.originZ - 5 * ACTOR_UNIT,
+    z: b.originZ + b.refuelOffsetZ,
     slot: -1,
     kind: 'refuel',
     name: 'Ravitaillement Alpha',

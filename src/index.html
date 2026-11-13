@@ -381,8 +381,11 @@
         width: 26px;
         height: 26px;
         transform: translate(-50%, -50%);
-        border: 1px solid #d5ef7360;
+        border: 1px solid #fff;
         border-radius: 50%;
+        box-shadow:
+          0 0 0 1px #17201b,
+          inset 0 0 0 1px #17201b;
       }
       #altitudeFog {
         position: fixed;
@@ -407,7 +410,8 @@
         top: 11px;
         width: 2px;
         height: 2px;
-        background: var(--acid);
+        background: #fff;
+        box-shadow: 0 0 0 1px #17201b;
       }
       #flight {
         position: absolute;
@@ -788,9 +792,11 @@
         width: 38px;
         height: 38px;
         transform: translate(-50%, -50%);
-        border: 2px solid #f1f0df;
+        border: 2px solid #fff;
         border-radius: 50%;
-        box-shadow: 0 0 15px #0005;
+        box-shadow:
+          0 0 0 1px #17201b,
+          inset 0 0 0 1px #17201b;
         pointer-events: none;
       }
       #mouseAim:after {
@@ -798,7 +804,8 @@
         position: absolute;
         inset: 14px;
         border-radius: 50%;
-        background: #f1f0df;
+        background: #fff;
+        box-shadow: 0 0 0 1px #17201b;
       }
       .offscreen {
         opacity: 0.35;

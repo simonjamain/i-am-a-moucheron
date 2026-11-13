@@ -1,6 +1,7 @@
 // Small 3D pictures of every shop item, drawn once by a private renderer from
-// the real in-game vehicle and service-station models (bed/DCA use stand-ins).
+// the real in-game vehicle and service-station models (DCA uses a stand-in).
 import { createGraphics } from './graphics.js';
+import { makeBed } from './bed-model.js';
 import { makeServiceStation } from './station-model.js';
 
 const VEHICLE_MODELS = {
@@ -16,6 +17,7 @@ const VEHICLE_MODELS = {
 
 function installation(T, kind) {
   if (kind === 'radar' || kind === 'refuel') return makeServiceStation(T, kind);
+  if (kind === 'bed') return makeBed(T);
   const g = new T.Group();
   const part = (geometry, color, x, y, z) => {
     const mesh = new T.Mesh(geometry, new T.MeshStandardMaterial({ color, flatShading: true }));
@@ -27,16 +29,11 @@ function installation(T, kind) {
   const cyl = (rt, rb, h, color, x, y, z) =>
     part(new T.CylinderGeometry(rt, rb, h, 16), color, x, y, z);
   box(4, 0.3, 3, '#bb8c44', 0, 0.15, 0);
-  if (kind === 'bed') {
-    box(1.6, 0.35, 3, '#e2d6ad', 0, 0.45, 0);
-    box(1.35, 0.2, 0.65, '#f7edcb', 0, 0.7, -1);
-  } else {
-    cyl(0.9, 1.1, 0.8, '#6d7b5a', 0, 0.7, 0);
-    box(1.2, 0.9, 1.2, '#557a69', 0, 1.5, 0);
-    for (const x of [-0.25, 0.25]) {
-      const barrel = cyl(0.1, 0.12, 2.4, '#2c3a33', x, 2.4, -0.9);
-      barrel.rotation.x = -Math.PI / 2.8;
-    }
+  cyl(0.9, 1.1, 0.8, '#6d7b5a', 0, 0.7, 0);
+  box(1.2, 0.9, 1.2, '#557a69', 0, 1.5, 0);
+  for (const x of [-0.25, 0.25]) {
+    const barrel = cyl(0.1, 0.12, 2.4, '#2c3a33', x, 2.4, -0.9);
+    barrel.rotation.x = -Math.PI / 2.8;
   }
   return g;
 }

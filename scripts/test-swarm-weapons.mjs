@@ -83,7 +83,11 @@ assert.equal(tracer.userData.core.material.isMeshBasicMaterial, true);
 assert.equal(tracer.userData.halo.material.depthWrite, false);
 const camera = new T.PerspectiveCamera(60, 1, 0.00005, 40);
 updateTracer(T, tracer, new T.Vector3(0, 0, -1), camera);
-assert.ok(tracer.scale.x >= 1 && tracer.scale.x <= 8);
+const pixel = (2 * tracer.position.distanceTo(camera.position) * Math.tan(Math.PI / 6)) / 900;
+assert.ok(
+  (tracer.userData.width * 1.1 * tracer.scale.x) / pixel >= 2 - 1e-9,
+  'luminous core stays at least two screen pixels wide',
+);
 tracer.userData.dispose();
 scene.remove(tracer);
 const DB = localDB();
