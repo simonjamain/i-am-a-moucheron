@@ -1,4 +1,7 @@
+import { colliderPoint, colliderBounds } from './oriented-collider.js';
 export function segmentBox(a, b, box) {
+  if (box.oriented)
+    return segmentBox(colliderPoint(box, a), colliderPoint(box, b), colliderBounds(box));
   let lo = 0,
     hi = 1;
   for (let i = 0; i < 3; i++) {
@@ -20,6 +23,14 @@ export function segmentBox(a, b, box) {
 // Exact swept sphere against an axis-aligned box: piecewise quadratic distance
 // to the box, split at its faces. Unlike expanded AABBs this keeps round corners.
 export function sweptBoxProximity(a, b, box, radius, closest = false) {
+  if (box.oriented)
+    return sweptBoxProximity(
+      colliderPoint(box, a),
+      colliderPoint(box, b),
+      colliderBounds(box),
+      radius,
+      closest,
+    );
   const keys = ['x', 'y', 'z'];
   for (let i = 0; i < 3; i++) {
     const key = keys[i];

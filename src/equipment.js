@@ -1,3 +1,4 @@
+import { footprintInsideCollider, footprintOverlapsCollider } from './oriented-collider.js';
 import { VEHICLES } from './fleet.js';
 import { MAP } from './scale.js';
 export const SHOP = Object.freeze({
@@ -150,6 +151,7 @@ export function supportedPlacement(point, colliders, occupied = [], kind = 'dca'
         point.x + rx <= box.max.x &&
         point.z - rz >= box.min.z &&
         point.z + rz <= box.max.z &&
+        (!box.oriented || footprintInsideCollider(box, point, localRx, localRz, angle)) &&
         box.max.y <= point.y + MAP.metres(2) &&
         box.max.y >= point.y - MAP.metres(6),
     )
@@ -164,7 +166,8 @@ export function supportedPlacement(point, colliders, occupied = [], kind = 'dca'
         box.max.x > point.x - rx &&
         box.min.x < point.x + rx &&
         box.max.z > point.z - rz &&
-        box.min.z < point.z + rz,
+        box.min.z < point.z + rz &&
+        (!box.oriented || footprintOverlapsCollider(box, point, localRx, localRz, angle)),
     );
     if (
       blocked ||

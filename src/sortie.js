@@ -1,3 +1,4 @@
+import { colliderContainsXZ, colliderPushXZ } from './oriented-collider.js';
 import { isFortification } from './ground-fortifications.js';
 import { stepWalkerFall, impactDamage } from './field-physics.js';
 import { MAP, ACTOR_UNIT, REFERENCE, FLAK } from './scale.js';
@@ -74,13 +75,7 @@ export function resolveLanding(T, state, previous, colliders, dt) {
   ];
   let top = -Infinity;
   for (const box of surfaces) {
-    if (
-      p.x < box.min.x + 0.5 * ACTOR_UNIT ||
-      p.x > box.max.x - 0.5 * ACTOR_UNIT ||
-      p.z < box.min.z + 0.5 * ACTOR_UNIT ||
-      p.z > box.max.z - 0.5 * ACTOR_UNIT
-    )
-      continue;
+    if (!colliderContainsXZ(box, p.x, p.z, -0.5 * ACTOR_UNIT)) continue;
     const y = box.max.y + gear;
     if (previous.y >= y - 0.12 * ACTOR_UNIT && p.y <= y + 0.1 * ACTOR_UNIT && y > top) top = y;
   }
@@ -107,13 +102,7 @@ export function stepWalker(body, dt, colliders) {
   const previousY = body.y;
   let top = 0;
   for (const box of colliders) {
-    if (
-      x >= box.min.x &&
-      x <= box.max.x &&
-      z >= box.min.z &&
-      z <= box.max.z &&
-      box.max.y <= previousY + 0.15 * ACTOR_UNIT
-    )
+    if (colliderContainsXZ(box, x, z) && box.max.y <= previousY + 0.15 * ACTOR_UNIT)
       top = Math.max(top, box.max.y);
   }
   let impact = null;
@@ -144,15 +133,18 @@ export function stepWalker(body, dt, colliders) {
   // Chest-height walls stop the walker. Walkable tabletops do not block it.
   for (const box of colliders) {
     if (box.max.y < body.y + 0.25 * ACTOR_UNIT || box.min.y > body.y + 1.7 * ACTOR_UNIT) continue;
-    const px = Math.min(x - box.min.x + body.r * ACTOR_UNIT, box.max.x + body.r * ACTOR_UNIT - x),
-      pz = Math.min(z - box.min.z + body.r * ACTOR_UNIT, box.max.z + body.r * ACTOR_UNIT - z);
-    if (px <= 0 || pz <= 0) continue;
-    if (px < pz) {
-      x += (x < (box.min.x + box.max.x) / 2 ? -1 : 1) * px;
-      body.vx = 0;
-    } else {
-      z += (z < (box.min.z + box.max.z) / 2 ? -1 : 1) * pz;
-      body.vz = 0;
+    const pushed = colliderPushXZ(box, x, z, body.r * ACTOR_UNIT);
+    if (!pushed) continue;
+    x = pushed.x;
+    z = pushed.z;
+    // Body z is opposite world z. Remove only velocity into the contact face.
+    const normalSpeed = body.vx * pushed.nx - body.vz * pushed.nz;
+    if (!box.oriented) {
+      if (pushed.nx) body.vx = 0;
+      else body.vz = 0;
+    } else if (normalSpeed < 0) {
+      body.vx -= normalSpeed * pushed.nx;
+      body.vz += normalSpeed * pushed.nz;
     }
   }
   body.x = (x - origin.originX) / ACTOR_UNIT;

@@ -1,3 +1,4 @@
+import { rayCollider } from './oriented-collider.js';
 import { MAP } from './scale.js';
 export class CrashEffects {
   constructor(T, scene, { sound, blast, limit = 12 } = {}) {
@@ -73,7 +74,7 @@ export class CrashEffects {
             ? new T.Vector3(item.root.position.x, 0, item.root.position.z)
             : null;
         for (const box of colliders) {
-          const p = ray.intersectBox(box, new T.Vector3());
+          const p = rayCollider(T, ray, box, new T.Vector3());
           if (
             p &&
             p.distanceTo(start) <= length &&

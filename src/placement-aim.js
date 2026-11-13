@@ -1,3 +1,4 @@
+import { colliderPoint, colliderBounds } from './oriented-collider.js';
 // Centre-of-camera ray against solid office boxes. A side/ceiling hit blocks
 // placement instead of placing through it. Distances are office metres.
 export function placementAim(body, origin, direction, colliders, reach) {
@@ -10,20 +11,31 @@ export function placementAim(body, origin, direction, colliders, reach) {
     return null;
   let closest = Infinity,
     point = null;
-  for (const box of colliders) {
+  for (const collider of colliders) {
+    const box = colliderBounds(collider);
+    const local = colliderPoint(collider, [origin.x, origin.y, origin.z]);
+    const f = collider.oriented;
+    const rayOrigin = f ? { x: local[0], y: local[1], z: local[2] } : origin;
+    const rayDirection = f
+      ? {
+          x: f.c * direction.x - f.s * direction.z,
+          y: direction.y,
+          z: f.s * direction.x + f.c * direction.z,
+        }
+      : direction;
     let near = -Infinity,
       far = Infinity,
       face;
     for (const axis of ['x', 'y', 'z']) {
-      if (Math.abs(direction[axis]) < 1e-10) {
-        if (origin[axis] < box.min[axis] || origin[axis] > box.max[axis]) {
+      if (Math.abs(rayDirection[axis]) < 1e-10) {
+        if (rayOrigin[axis] < box.min[axis] || rayOrigin[axis] > box.max[axis]) {
           far = -Infinity;
           break;
         }
         continue;
       }
-      const a = (box.min[axis] - origin[axis]) / direction[axis];
-      const b = (box.max[axis] - origin[axis]) / direction[axis];
+      const a = (box.min[axis] - rayOrigin[axis]) / rayDirection[axis];
+      const b = (box.max[axis] - rayOrigin[axis]) / rayDirection[axis];
       if (Math.min(a, b) > near) {
         near = Math.min(a, b);
         face = axis === 'y' && direction.y < 0;

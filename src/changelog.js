@@ -1,6 +1,12 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 287,
+    changes: [
+      'La collision de la station de ravitaillement suit son orientation, même en diagonale.',
+    ],
+  },
+  {
     version: 286,
     changes: [
       'Un moucheron accompagne le chargement ; les murs LEGO s’emboîtent et la station grandit.',

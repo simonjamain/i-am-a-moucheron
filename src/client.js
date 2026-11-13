@@ -1,4 +1,5 @@
-import { makeServiceStation, animateRadar } from '/station-model.js';
+import { rayCollider, colliderContainsXZ } from '/oriented-collider.js';
+import { makeServiceStation, animateRadar, makeRefuelCollider } from '/station-model.js';
 import { ReloadHUD, seatReloads, heavyReadyAt, heavyLane, reloadProgress } from '/reload-hud.js';
 import { officeFogOpacity, installOfficeFog, officeFogCeiling } from '/office-fog.js';
 import { makeFortificationStation } from '/fortification-model.js';
@@ -535,7 +536,7 @@ function groundCamera(cam, position, dt, purg = false) {
     const ray = new T.Ray(target, offset.clone().normalize());
     let distance = offset.length();
     for (const box of purg ? purgColliders : colliders) {
-      const hit = ray.intersectBox(box, new T.Vector3());
+      const hit = rayCollider(T, ray, box, new T.Vector3());
       if (hit)
         distance = Math.min(
           distance,
@@ -2566,7 +2567,7 @@ function reconcileEquipment(next) {
       : MAP.metres(st.kind === 'bed' ? 0.8 : 2);
     const collider =
       st.kind === 'refuel'
-        ? new T.Box3().setFromObject(gun)
+        ? makeRefuelCollider(T, gun)
         : new T.Box3(
             new T.Vector3(st.x - radius, st.y, st.z - radius),
             new T.Vector3(
@@ -3737,7 +3738,7 @@ function explosion(b, point) {
     if (length < 1e-9) return true;
     const ray = new T.Ray(point, delta.normalize());
     return !colliders.some((box) => {
-      const p = ray.intersectBox(box, new T.Vector3());
+      const p = rayCollider(T, ray, box, new T.Vector3());
       if (!p) return false;
       const d = p.distanceTo(point);
       return d > MAP.metres(0.03) && d < length - MAP.metres(0.02);
@@ -3822,7 +3823,7 @@ function stepProjectileSlice(dt) {
       }
       const solidRay = new T.Ray(origin, dir);
       for (const box of colliders) {
-        const point = solidRay.intersectBox(box, new T.Vector3());
+        const point = rayCollider(T, solidRay, box, new T.Vector3());
         if (point) {
           const d = origin.distanceTo(point);
           if (d <= distance && (!hit || d < hit.distance)) hit = { point, distance: d, wall: true };
@@ -4826,10 +4827,7 @@ function updateFallingEnemies(dt) {
     let floor = 0;
     for (const b of colliders)
       if (
-        c.g.position.x >= b.min.x &&
-        c.g.position.x <= b.max.x &&
-        c.g.position.z >= b.min.z &&
-        c.g.position.z <= b.max.z &&
+        colliderContainsXZ(b, c.g.position.x, c.g.position.z) &&
         b.max.y <= previous + INSECT_SCALE
       )
         floor = Math.max(floor, b.max.y);
@@ -4896,7 +4894,7 @@ function pistol() {
         );
     const wallRay = new T.Ray(origin, dir);
     for (const box of purgColliders) {
-      const point = wallRay.intersectBox(box, new T.Vector3());
+      const point = rayCollider(T, wallRay, box, new T.Vector3());
       if (point && (!hit || point.distanceTo(origin) < hit.distance))
         hit = { wall: true, point, distance: point.distanceTo(origin) };
     }
@@ -5205,7 +5203,7 @@ function heliAimPoint() {
     ray = new T.Ray(origin, direction);
   let distance = MAP.metres(250);
   for (const box of colliders) {
-    const p = ray.intersectBox(box, new T.Vector3());
+    const p = rayCollider(T, ray, box, new T.Vector3());
     if (p) distance = Math.min(distance, p.distanceTo(origin));
   }
   return origin.addScaledVector(direction, distance).toArray();
@@ -6074,7 +6072,7 @@ function updateVehicleCare(dt) {
     let range = WASH.range;
     const ray = new T.Ray(origin, direction);
     for (const b of stream.targetScene === scene ? colliders : purgColliders) {
-      const hit = ray.intersectBox(b, new T.Vector3());
+      const hit = rayCollider(T, ray, b, new T.Vector3());
       if (hit) range = Math.min(range, hit.distanceTo(origin));
     }
     for (let i = 0; i < 28; i++) {
