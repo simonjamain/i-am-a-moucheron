@@ -145,7 +145,7 @@ assert.equal(
   room.deliveries.length,
   Object.values(SHOP).filter((x) => ['placement', 'vehicle'].includes(x.kind)).length,
 );
-assert.equal(DELIVERY_SPEED, 1, 'airdrop speed is 1 world metre per second');
+assert.equal(DELIVERY_SPEED, 1 / 3, 'airdrops fall at a third of a world metre per second');
 assert.equal(
   deliveryLanding({ item: 'dca', x: 0, y: 1, z: 0 }, [
     floor,

@@ -1,5 +1,40 @@
 import { GROUND_BOUNDS, groundCommand } from './ground-defense-state.js';
 import { distanceToSegment } from './ground-defense.js';
+import { airdropCommand } from './airdrop.js';
+
+// Castor volant: every drop is centred straight below the helicopter and turned
+// like it; repair/remove target the construction closest to that point.
+export const AIRDROP_TARGET_RANGE = 0.1;
+export function airdropPlacement({ builder, mode, defense, dollars }) {
+  const { x, z, yaw, landingY } = builder || {};
+  if (![x, z, yaw, landingY].every(Number.isFinite)) return { error: 'Position inconnue.' };
+  const center = [x, z];
+  if (mode === 'barricade') return { center, error: 'Le Castor volant ne largue pas de mur LEGO.' };
+  let command,
+    target = null;
+  if (mode === 'repair' || mode === 'remove') {
+    target = (defense?.structures || [])
+      .map((s) => ({
+        s,
+        d: s.position
+          ? Math.hypot(x - s.position[0], z - s.position[1])
+          : distanceToSegment(center, s.a, s.b),
+      }))
+      .filter(({ d }) => d < AIRDROP_TARGET_RANGE)
+      .sort((a, b) => a.d - b.d)[0]?.s;
+    if (!target) return { center, error: 'Survolez une construction (10 cm).' };
+    command = { action: mode, id: target.id };
+  } else command = airdropCommand(mode, { x, z, yaw });
+  try {
+    const result = groundCommand(structuredClone(defense), command, center, dollars, Date.now(), {
+      castor: true,
+      y: landingY,
+    });
+    return { center, command, price: result.price, landingY, target };
+  } catch (error) {
+    return { center, command, landingY, target, error: error.message };
+  }
+}
 
 // Preview commands use the camera target, never the walking direction.
 export function groundPlacement({

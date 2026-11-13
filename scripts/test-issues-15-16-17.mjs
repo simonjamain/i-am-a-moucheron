@@ -44,11 +44,11 @@ now += 200;
 vm.runInContext('renderDeliveries()', ctx);
 const visualY = vm.runInContext("deliveryModels.get('crate').position.y", ctx);
 assert.ok(
-  Math.abs(visualY - 1.05) < 1e-8,
-  'crate must visibly descend by 20 cm in 200 ms between snapshots',
+  Math.abs(visualY - (1.25 - delivery.DELIVERY_SPEED * 0.2)) < 1e-8,
+  'crate must visibly descend (about 7 cm in 200 ms) between snapshots',
 );
 // The parachute stops exactly at the support, never under or through the desk.
-now += 200;
+now += 2000;
 vm.runInContext('renderDeliveries()', ctx);
 assert.ok(
   Math.abs(vm.runInContext("deliveryModels.get('crate').position.y", ctx) - 0.90005) < 1e-8,
@@ -188,7 +188,7 @@ for (const surfaceY of [0, 0.9]) {
   now += 200;
   let owner = game.command(room.code, p.id, 'sync', { mode: 'flight', state: carrier.state });
   let observer = game.command(room.code, peer.id, 'sync', { mode: 'foot', state: peer.state });
-  assert.ok(Math.abs(owner.deliveries[0].y - (initial - 0.2)) < 1e-9);
+  assert.ok(Math.abs(owner.deliveries[0].y - (initial - delivery.DELIVERY_SPEED * 0.2)) < 1e-9);
   assert.equal(owner.deliveries[0].y, observer.deliveries[0].y);
   assert.equal(room.equipment.length, 0, 'no deployment in flight');
   for (let tick = 0; tick < 500 && room.deliveries.length; tick++) {

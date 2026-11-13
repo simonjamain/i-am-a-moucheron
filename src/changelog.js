@@ -1,6 +1,13 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 292,
+    changes: [
+      'Nouveau Castor volant (30 $) : pilote et trois passagers larguent les constructions du Castor, sauf les murs, même sur un meuble.',
+      'V donne une vue verticale avec l’aperçu du largage ; A/E tournent l’appareil. Les colis tombent trois fois moins vite.',
+    ],
+  },
+  {
     version: 291,
     changes: [
       'Viseur et traçantes se distinguent mieux dans les nuages. Le lit de réapparition adopte son nouveau modèle.',

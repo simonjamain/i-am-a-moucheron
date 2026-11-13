@@ -196,7 +196,8 @@ valider dans une vraie partie WebGL/UDP.
 ## Prochaine vague
 
 Ouvrez le bandeau **Vague** en haut de l’écran, ou appuyez sur **V** (sauf au
-volant du Castor, où V bascule la vue de dessus). La frise
+volant du Castor ou à bord du Castor volant, où V bascule la vue de dessus ou
+verticale). La frise
 regroupe les arrivées simultanées dans une même colonne. Les repères **S** (sol)
 et **A** (air) et les silhouettes reprennent ceux des entrées dans le bureau.
 Le trajet terrestre confirmé apparaît comme une piste de phéromones orange
@@ -226,6 +227,16 @@ Maintenir **G** ou le **clic molette** : orienter vers un secteur puis relâcher
 Sur le [bombardier biplan](biplane-models.md), **1** et **2** demandent le poste de pilote et celui de mitrailleur (qui regarde vers l'arrière au début), avec signature.
 
 G1 Castor : Z/S avancer/reculer, Q/D tourner, souris et clic gauche pour tirer avec la mitrailleuse légère, **V** bascule la vue de dessus : la caméra se place à la verticale du camion (le nord en haut de l’écran, quel que soit le cap du camion ; l’est à droite) et la souris déplace un viseur au sol ; l’aperçu de construction et la mitrailleuse visent ce point. La molette zoome entre 0,15 et 0,8 m au-dessus du camion. V de nouveau revient à la vue de conduite. Le soutien à 50 cm est automatique et payant. Pendant la conduite, **G** ou le clic molette ouvre la roue de construction. Clic gauche démarre/arrête la dépose des murs LEGO et rubans : les briques apparaissent une à une derrière le camion (hauteur fixe de deux rangées), chaque section LEGO de 48 mm est validée par le serveur et l’arrêt conserve la section commencée. Facturation au prorata au centime : 0,25 $ pour 48 mm de LEGO, 1 $ pour 20 cm de ruban ; les autres pièges se posent au point visé. Échap interrompt la construction.
+
+Castor volant : le pilote vole comme l'hélicoptère d'attaque (souris, Z/S/Q/D,
+Maj/Ctrl) ; 2 à 4 demandent les places de passager. **V** bascule, pour chaque
+occupant, la vue verticale : la caméra regarde le point de largage à la
+verticale, nez en haut de l'écran, molette pour la hauteur (5 à 80 cm au-dessus
+de la surface d'arrivée). Le pilote y pilote au clavier seulement, **A/E**
+tournant l'appareil. **G**/clic molette ouvre la roue pour tous les occupants ;
+clic gauche ou **Entrée** larguent l'objet choisi, tourné comme l'appareil (pas
+de R, et E sert à tourner). Hors vue verticale, les passagers regardent autour
+de l'appareil avec la souris.
 
 DCA fixe : le nombre d'obus restants (sur 120) est affiché près de l'état du
 poste. Un clic gauche ou Espace déclenche un tir tant qu'il reste des munitions.

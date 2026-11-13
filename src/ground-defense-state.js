@@ -2,6 +2,7 @@ import { WALL_SEGMENT, WALL_SEGMENT_PRICE, HALF_BRICK, wallLength } from './bric
 import { FAN_COST, FAN_FADE_MS } from './air-current.js';
 import { SENTRY } from './ground-sentry.js';
 import { FORTIFICATIONS, isFortification } from './ground-fortifications.js';
+import { onFloor, levelOf, FLOOR_LEVEL } from './airdrop.js';
 import {
   splitBarricade,
   buildGroundFlow,
@@ -37,7 +38,15 @@ export function feedingPoint(bait) {
   return [bait.position[0] + Math.sin(angle) * 0.024, bait.position[1] + Math.cos(angle) * 0.024];
 }
 export function newGroundDefense() {
-  return { revision: 0, navigationRevision: 0, nextId: 0, structures: [], retiringFans: [] };
+  return {
+    revision: 0,
+    navigationRevision: 0,
+    nextId: 0,
+    structures: [],
+    retiringFans: [],
+    drops: [], // Castor volant constructions still falling (server-owned)
+    dropSeq: 0,
+  };
 }
 function finitePoint(p) {
   return (
@@ -69,14 +78,23 @@ export function groundSnapshot(state, now = Date.now()) {
     revision: state.revision,
     navigationRevision: state.navigationRevision,
     structures: structuredClone(state.structures),
+    ...(state.drops?.length
+      ? {
+          drops: state.drops.map(({ id, kind, command, x, z, angle, fromY, landingY, startedAt }) =>
+            structuredClone({ id, kind, command, x, z, angle, fromY, landingY, startedAt }),
+          ),
+        }
+      : {}),
     ...(state.retiringFans.length ? { retiringFans: structuredClone(state.retiringFans) } : {}),
   };
 }
 // Structures that block ground movement (and that ground insects may break).
 export const BLOCKING_KINDS = Object.freeze(['barricade', 'bunker']);
 export function navigationStructures(structures = []) {
-  return structures.filter((s) => BLOCKING_KINDS.includes(s.kind) && s.hp > 0);
+  return structures.filter((s) => BLOCKING_KINDS.includes(s.kind) && s.hp > 0 && onFloor(s));
 }
+// What floor walkers meet (walls, tape, sugar): never constructions on furniture.
+export const floorStructures = (structures = []) => structures.filter(onFloor);
 export function bunkerSegment(position) {
   return { a: [position[0] - 0.045, position[1]], b: [position[0] + 0.045, position[1]] };
 }
@@ -153,6 +171,8 @@ export function groundCommand(state, command, foot, dollars, now = Date.now(), a
             ? GROUND_BAIT_TYPES.sugar.cost
             : lengthPrice(kind, distance);
     if (dollars + 1e-8 < price) fail('Caisse commune insuffisante.');
+    // Castor volant drops land on furniture too: those keep their height.
+    const level = Number.isFinite(access.y) && access.y > FLOOR_LEVEL ? access.y : 0;
     const id = String(state.nextId + 1);
     const items =
       kind === 'barricade'
@@ -184,6 +204,7 @@ export function groundCommand(state, command, foot, dollars, now = Date.now(), a
                       : { type: 'sugar', radius: GROUND_BAIT_TYPES.sugar.radius }),
               },
             ];
+    if (level) for (const item of items) item.y = level;
     if (kind === 'sugar' && !finitePoint(feedingPoint(items[0])))
       fail('Les cristaux dépassent du bureau.');
     // Validate collisions with existing barricades, preserving adjacent segments
@@ -194,6 +215,8 @@ export function groundCommand(state, command, foot, dollars, now = Date.now(), a
         : [(item.a[0] + item.b[0]) / 2, (item.a[1] + item.b[1]) / 2];
       if (
         state.structures.some((existing) => {
+          // Only constructions on the same surface (floor or furniture) collide.
+          if (Math.abs(levelOf(existing) - level) > 0.02) return false;
           if (['sentry', 'bunker', 'antitank'].includes(existing.kind) && existing.hp > 0)
             return (
               Math.hypot(sample[0] - existing.position[0], sample[1] - existing.position[1]) <
@@ -223,12 +246,12 @@ export function groundCommand(state, command, foot, dollars, now = Date.now(), a
           return distanceToSegment(sample, existing.a, existing.b) < 0.02;
         })
       )
-        fail('Emplacement déjà occupé par une barricade.');
+        fail('Emplacement déjà occupé par une construction.');
     }
     state.nextId++;
     state.structures.push(...items);
     state.revision++;
-    if (kind === 'barricade' || kind === 'bunker') state.navigationRevision++;
+    if ((kind === 'barricade' || kind === 'bunker') && !level) state.navigationRevision++;
     return { price, ids: items.map((item) => item.id) };
   }
   if (!['repair', 'remove'].includes(action)) fail('Action de défense inconnue.');

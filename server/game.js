@@ -10,6 +10,7 @@ import {
   groundSnapshot,
   groundFlow,
   damageBarricade,
+  floorStructures,
 } from '../src/ground-defense-state.js';
 import { groundUnit, advanceGroundUnit } from '../src/ground-creatures.js';
 import { HELI, rotateLocal } from '../src/helicopter.js';
@@ -21,7 +22,15 @@ import { impactDamage } from '../src/field-physics.js';
 import { randomUUID } from 'node:crypto';
 import { MAP, ACTOR_UNIT, FLAK, enemySizeFactor } from '../src/scale.js';
 import { OFFICE_LAYOUT, RAID_DURATION } from '../src/layout.js';
-import { VEHICLES, vehiclePad, vehicleEntry, vehicleAccess, leftVehiclePad } from '../src/fleet.js';
+import {
+  VEHICLES,
+  vehiclePad,
+  vehicleEntry,
+  vehicleAccess,
+  leftVehiclePad,
+  vehicleMaxHP,
+} from '../src/fleet.js';
+import { AIRDROP_KINDS, airdropCommand, airdropSurface, headingOf } from '../src/airdrop.js';
 import { baseWorld, baseBody, reconcileBase } from '../src/base.js';
 import {
   createSoul,
@@ -515,7 +524,7 @@ export class Game {
       return r.groundBaitFlows.get(bait.id);
     };
     const world = {
-      structures: r.groundDefense.structures,
+      structures: floorStructures(r.groundDefense.structures),
       goalFlow: r.groundNavigation,
       baitFlow,
       damageWall: (id, amount) => damageBarricade(r.groundDefense, id, amount),
@@ -571,7 +580,7 @@ export class Game {
           id: ++r.effectSeq,
           kind: 'sentry-shot',
           sentry: sentry.id,
-          p: [sentry.position[0], 0.03, sentry.position[1]],
+          p: [sentry.position[0], (sentry.y || 0) + 0.03, sentry.position[1]],
           target: target.p,
           at: now,
         });
@@ -650,6 +659,7 @@ export class Game {
       r.dollars = Math.round(r.dollars * 100 - settleLoans(r.bank, r.wave)) / 100;
     }
     this.advanceDeliveries(r, now);
+    this.advanceGroundDrops(r, now);
     this.fleet(r);
     this.base(r);
     this.arena(r, 'purgatory');
@@ -979,10 +989,7 @@ export class Game {
       p: flying ? s.p : old.p,
       q: flying ? s.q : old.q,
       v: flying ? s.v : old.v,
-      hp: Math.max(
-        0,
-        Math.min(r.vehicles.get(p.vehicle_id)?.type === 'helicopter' ? 200 : 100, s.hp),
-      ),
+      hp: Math.max(0, Math.min(vehicleMaxHP(r.vehicles.get(p.vehicle_id)?.type), s.hp)),
       type: r.vehicles.get(p.vehicle_id)?.type,
       rotorPower: Number.isFinite(s.rotorPower) ? Math.max(0, Math.min(1, s.rotorPower)) : 1,
       collective: Number.isFinite(s.collective) ? Math.max(-1, Math.min(1, s.collective)) : 0,
@@ -1243,9 +1250,15 @@ export class Game {
       vehicle?.type === 'castor' &&
       vehicle.seats.get('pilot') === p.id &&
       vehicle.state.hp > 0;
+    // Castor volant: its pilot and its three passengers drop constructions.
+    const airborne =
+      p.life === 'alive' &&
+      vehicle?.type === 'flyingcastor' &&
+      vehicle.seats.get(p.seat) === p.id &&
+      vehicle.state.hp > 0;
     requireGame(
-      (p.life === 'alive' && p.mode === 'foot') || castor,
-      'Construction réservée aux joueurs à pied et au conducteur du Castor.',
+      (p.life === 'alive' && p.mode === 'foot') || castor || airborne,
+      'Construction réservée aux joueurs à pied et aux équipages des Castor.',
     );
     requireGame(b?.epoch === r.base.epoch, 'La partie a changé ; recommencez la pose.');
     const token = b.request;
@@ -1257,7 +1270,21 @@ export class Game {
     const key = token && p.id + ':' + token;
     if (key && r.groundDefenseOrders.has(key)) return;
     let w;
-    if (castor) {
+    if (airborne) {
+      requireGame(
+        vehicle.state.p?.length === 3 &&
+          vehicle.state.p.every(Number.isFinite) &&
+          vehicle.state.q?.length === 4 &&
+          vehicle.state.q.every(Number.isFinite),
+        'Position du Castor volant inconnue.',
+      );
+      w = { x: vehicle.state.p[0], z: vehicle.state.p[2] };
+      if (b.action === 'build') {
+        this.airdrop(r, vehicle, b.kind);
+        this.rememberGroundOrder(r, key);
+        return;
+      }
+    } else if (castor) {
       requireGame(
         vehicle.state.landed && Math.abs(vehicle.state.p[1] - VEHICLES.castor.gear) < 0.025,
         'Le Castor doit rouler sur le sol du bureau.',
@@ -1284,21 +1311,14 @@ export class Game {
         [w.x, w.z],
         r.dollars,
         this.now(),
-        { castor },
+        { castor: castor || airborne },
       );
     } catch (error) {
       requireGame(false, error.message, 400);
     }
     r.dollars = money(r.dollars - transaction.price);
-    if (b.action === 'build' && isFortification(b.kind)) {
-      const structure = r.groundDefense.structures.find((s) => s.id === transaction.ids[0]);
-      structure.slot = r.equipment.length;
-      structure.x = structure.position[0];
-      structure.y = 0.00005;
-      structure.z = structure.position[1];
-      structure.name = FORTIFICATIONS[b.kind].name;
-      r.equipment.push(structure);
-    }
+    if (b.action === 'build' && isFortification(b.kind))
+      this.registerFortification(r, transaction.ids[0]);
     if (b.action === 'remove') {
       const station = r.equipment.find((s) => isFortification(s.kind) && s.id === b.target);
       if (station) {
@@ -1318,12 +1338,89 @@ export class Game {
         };
       }
     }
-    if (key) {
-      r.groundDefenseOrders.set(key, true);
-      if (r.groundDefenseOrders.size > 2048)
-        r.groundDefenseOrders.delete(r.groundDefenseOrders.keys().next().value);
+    this.rememberGroundOrder(r, key);
+  }
+  rememberGroundOrder(r, key) {
+    if (!key) return;
+    r.groundDefenseOrders.set(key, true);
+    if (r.groundDefenseOrders.size > 2048)
+      r.groundDefenseOrders.delete(r.groundDefenseOrders.keys().next().value);
+  }
+  // Occupiable posts are also equipment slots (signatures, seats, refills).
+  registerFortification(r, id) {
+    const structure = r.groundDefense.structures.find((s) => s.id === id);
+    structure.slot = r.equipment.length;
+    structure.x = structure.position[0];
+    structure.y = Math.max(0.00005, structure.y || 0);
+    structure.z = structure.position[1];
+    structure.name = FORTIFICATIONS[structure.kind].name;
+    r.equipment.push(structure);
+  }
+  // Castor volant drop: paid now, validated on a copy, built when it lands on
+  // the first surface below the helicopter (refunded if the spot got taken).
+  airdrop(r, vehicle, kind) {
+    requireGame(AIRDROP_KINDS.includes(kind), 'Le Castor volant ne largue pas de mur LEGO.');
+    const [x, y, z] = vehicle.state.p;
+    const fromY = y - VEHICLES.flyingcastor.gear;
+    const command = airdropCommand(kind, { x, z, yaw: headingOf(vehicle.state.q) });
+    const landingY = airdropSurface(this.solids, x, z, Math.max(0, fromY));
+    let price;
+    try {
+      price = groundCommand(
+        structuredClone(r.groundDefense),
+        command,
+        [x, z],
+        r.dollars,
+        this.now(),
+        {
+          castor: true,
+          y: landingY,
+        },
+      ).price;
+    } catch (error) {
+      requireGame(false, error.message, 400);
+    }
+    r.dollars = money(r.dollars - price);
+    const now = this.now();
+    r.groundDefense.drops ??= [];
+    r.groundDefense.drops.push({
+      id: 'drop-' + ++r.groundDefense.dropSeq,
+      kind,
+      command,
+      price,
+      x,
+      z,
+      angle: command.angle ?? 0,
+      fromY: Math.max(landingY, fromY),
+      landingY,
+      startedAt: now,
+      at: now,
+    });
+    r.groundDefense.revision++;
+  }
+  advanceGroundDrops(r, now) {
+    const drops = r.groundDefense.drops;
+    if (!drops?.length) return;
+    for (const drop of [...drops]) {
+      if (deliveryHeightAt(drop, now) > drop.landingY) continue;
+      drops.splice(drops.indexOf(drop), 1);
+      try {
+        const { ids } = groundCommand(
+          r.groundDefense,
+          drop.command,
+          [drop.x, drop.z],
+          drop.price,
+          now,
+          { castor: true, y: drop.landingY },
+        );
+        if (isFortification(drop.kind)) this.registerFortification(r, ids[0]);
+      } catch {
+        r.dollars = money(r.dollars + drop.price); // the spot was taken meanwhile
+      }
+      r.groundDefense.revision++;
     }
   }
+
   fixedDcaFire(r, p, b) {
     const gun = r.equipment[b.station];
     requireGame(

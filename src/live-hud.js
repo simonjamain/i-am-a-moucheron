@@ -1,6 +1,6 @@
 import { MAP } from './scale.js';
 import { formatDistance } from './units.js';
-import { VEHICLES } from './fleet.js';
+import { VEHICLES, vehicleMaxHP } from './fleet.js';
 
 // Single source of the bottom-left command help. Each context lists only the inputs
 // that client.js really routes for the current role, seat, station or tool.
@@ -20,7 +20,16 @@ function postsHint(type) {
   return count > 1 ? '1–' + count + ' : postes (contrats)' : null;
 }
 
-function buildingHints({ mode = 'barricade', castor = false, anchored = false }) {
+function buildingHints({ mode = 'barricade', castor = false, anchored = false, air = false }) {
+  // Castor volant: drops straight below, turned like the helicopter.
+  if (air)
+    return [
+      'V : vue verticale · A/E : tourner',
+      'Clic / Entrée : ' +
+        (mode === 'repair' ? 'réparer' : mode === 'remove' ? 'enlever' : 'larguer'),
+      "G / clic molette : changer d'outil",
+      'Échap : quitter',
+    ];
   const move = castor ? 'Z/S/Q/D : conduire' : 'ZQSD / flèches : marcher';
   const line = LINE_TOOLS.includes(mode);
   const verb =
@@ -50,6 +59,22 @@ function vehicleHints({ type, supplies }, seat, build) {
       'V : vue de dessus',
       'Clic droit : zoom',
       GROUND_EXIT,
+    ];
+  if (type === 'flyingcastor')
+    return [
+      ...(seat === 'pilot'
+        ? [
+            'Souris : incliner',
+            'Z/S/Q/D : tangage et roulis',
+            'Maj : monter',
+            'Ctrl : descendre',
+            'V : vue verticale (A/E : tourner)',
+          ]
+        : ['Souris : regarder', 'V : vue verticale']),
+      build && 'G / clic molette : larguer',
+      'Clic droit : zoom',
+      postsHint(type),
+      AIR_EXIT,
     ];
   if (type === 'helicopter')
     return [
@@ -172,7 +197,7 @@ export function cursorStats({ vehicle, seat, hp, speed, ammo }) {
   const bombs = seat === 'pilot' ? vehicle.supplies?.ammo.bomb : undefined;
   return {
     speed: Math.max(0, speed),
-    hp: Math.max(0, Math.min(vehicle.type === 'helicopter' ? 200 : 100, hp)),
+    hp: Math.max(0, Math.min(vehicleMaxHP(vehicle.type), hp)),
     ammo: Math.max(0, Math.floor(ammo || 0)),
     bombs: bombs === undefined ? null : Math.floor(bombs),
   };
@@ -182,6 +207,7 @@ export function cursorAmmoText({ vehicle, seat, ammo, proximity = 5, guiding = f
   const count = (value) => Math.max(0, Math.floor(value || 0));
   const stock = vehicle.supplies?.ammo || {};
   const fuel = ''; // Dedicated percentage gauge beside the crosshair.
+  if (vehicle.type === 'flyingcastor') return seat === 'pilot' ? 'Pilote' : 'Passager';
   if (vehicle.type === 'helicopter')
     return (
       (seat === 'pilot'

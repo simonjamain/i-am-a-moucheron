@@ -21,7 +21,7 @@ for (const column of columns) {
   );
 }
 assert.equal(columns[0].items[0], 'fighter');
-assert.equal(columns[0].items.at(-1), 'helicopter');
+assert.equal(columns[0].items.at(-1), 'flyingcastor');
 assert.equal(columns[1].items[0], 'tank');
 assert.equal(columns[1].items.at(-1), 'flaktruck');
 // A future item that no category lists still appears, in a last column.

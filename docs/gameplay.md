@@ -98,7 +98,8 @@ Au sol, il faut l’arrêter pour en sortir. Toute sortie aérienne commence en 
 libre avec la vitesse héritée ; le parachute s’ouvre et se replie manuellement.
 
 Les équipements commandés depuis un appareil descendent dans un colis sous
-parachute à **1 m/s dans le décor**, jusqu'à une surface porteuse disponible.
+parachute à **1/3 m/s dans le décor** (trois fois moins vite qu'avant la version
+292), jusqu'à une surface porteuse disponible.
 Le serveur y déploie l'équipement une seule fois ; le colis n'est pas utilisable
 en vol. Voir [livraisons](issues-15-16-17.md#correction-de-la-vitesse-après-retour-en-jeu-version-70).
 
@@ -411,6 +412,42 @@ Ce système conserve la validation serveur et ne permet pas de construire sur le
 surfaces surélevées depuis le Castor dans cette première version. Les véritables
 modèles Meshy du châssis, de la tourelle et des roues sont déjà intégrés ; la
 correction des six roues est conservée.
+
+## Castor volant (version 292)
+
+Le **Castor volant** est un hélicoptère logistique à deux rotors en tandem,
+acheté **30 $** (colonne Aéronefs). Il a **un pilote et trois passagers**, aucune
+arme, 200 PV, le pilotage assisté de l'hélicoptère d'attaque (souris pour
+l'inclinaison, Z/S/Q/D, Maj/Ctrl) et le même **soutien sphérique de 50 cm** que
+le Castor : soins, carburant, munitions et réparation des barricades, payés par
+la caisse commune, pour lui-même et pour ce qui l'entoure.
+
+**Tous les occupants** (pilote et passagers) ouvrent la roue (**G** / clic
+molette) et **larguent** les constructions du Castor, sauf les murs LEGO :
+sucre, ruban (un morceau de 10 cm), ventilateur, tourelle automatique, bunker
+LEGO et canon anti-matériel, au même prix. L'objet part **toujours à la
+verticale de l'hélicoptère** et **suit son cap** (le ventilateur souffle vers
+le nez) ; un aperçu transparent montre où il tombera. Clic gauche ou Entrée
+larguent, dans n'importe quelle condition de vol. La caisse est débitée au
+largage ; l'objet tombe comme les autres livraisons (1/3 m/s), puis le serveur
+le construit sur la première surface rencontrée : le sol ou un meuble. Si la
+place a été prise pendant la chute, le prix est remboursé. **Réparer** et
+**Enlever** visent la construction la plus proche sous l'hélicoptère (10 cm),
+qui doit se trouver à moins de 27 cm à l'horizontale.
+
+**V** bascule la **vue verticale** pour chaque occupant : la caméra regarde à
+la verticale du point de largage, le nez de l'appareil en haut de l'écran, à
+12 cm au-dessus de la surface d'arrivée (molette : 5 à 80 cm). Le pilote y
+pilote **au clavier seulement** : Z/S/Q/D pour avancer et glisser, **A/E** pour
+tourner l'appareil (et donc l'objet à larguer), Maj/Ctrl pour l'altitude ; la
+souris ne dirige plus. Hors de cette vue, les passagers regardent autour de
+l'appareil avec la souris.
+
+Les constructions posées sur un meuble gardent leur hauteur : tourelles et
+postes y tirent depuis leur emplacement réel, et le soutien les mesure en 3D.
+Les insectes au sol ne les rencontrent pas : un bunker sur un bureau ne bloque
+pas leur chemin, un ruban ou du sucre sur un meuble ne les retient pas. Voir
+[la flotte Meshy](meshy-fleet.md#castor-volant--hélicoptère-meshy-version-292).
 
 ### Réparation automatique des barricades (version 192)
 

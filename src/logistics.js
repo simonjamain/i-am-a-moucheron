@@ -1,16 +1,18 @@
 import { MAP } from './scale.js';
-import { VEHICLES, pilotFireInterval } from './fleet.js';
+import { VEHICLES, pilotFireInterval, isRotorcraft } from './fleet.js';
 import { TANK_MG } from './armament.js';
 export const FUEL_SECONDS = 300;
 export const SERVICE_SECONDS = 10;
 export const SERVICE_RADIUS = 0.12;
-// The Castor is a mobile refuel station: a 50 cm sphere around the truck.
+// The Castor (and the Castor volant) is a mobile refuel station: a 50 cm
+// sphere around the vehicle.
 export const CASTOR_SERVICE_RADIUS = 0.5;
 export function ammoCapacity(type, seat, balance = null) {
   if (balance) return Math.round(ammoCapacity(type, seat) * balance.ammo);
   if (type === 'helicopter')
     return seat === 'rocket' ? 30 : seat === 'missile' ? 10 : seat === 'copilot' ? 1000 : 0;
   if (type === 'castor') return seat === 'pilot' ? 500 : 0;
+  if (type === 'flyingcastor') return 0; // unarmed
   if (type === 'flaktruck') return seat === 'proximity' ? 100 : 0;
   if (type === 'tank')
     return seat === 'he' || seat === 'ap'
@@ -31,12 +33,14 @@ export function fullAmmo(type, balance = null) {
       ? ['rocket', 'missile', 'copilot']
       : type === 'flaktruck'
         ? ['proximity']
-        : type === 'tank'
-          ? ['pilot', 'top', 'coax', 'he', 'ap']
-          : [
-              ...VEHICLES[type].seats,
-              ...(['interceptor', 'bomber'].includes(type) ? ['bomb'] : []),
-            ];
+        : type === 'flyingcastor'
+          ? []
+          : type === 'tank'
+            ? ['pilot', 'top', 'coax', 'he', 'ap']
+            : [
+                ...VEHICLES[type].seats,
+                ...(['interceptor', 'bomber'].includes(type) ? ['bomb'] : []),
+              ];
   return Object.fromEntries(keys.map((s) => [s, ammoCapacity(type, s, balance)]));
 }
 export function inRadarCoverage(position, installations) {
@@ -68,7 +72,7 @@ export function advanceSupplies(supply, state, type, installations, dt, balance 
         (servicing
           ? capacity / SERVICE_SECONDS
           : state.engine
-            ? type === 'helicopter'
+            ? isRotorcraft(type)
               ? state.landed
                 ? 0
                 : -1

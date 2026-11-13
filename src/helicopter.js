@@ -12,6 +12,8 @@ export const HELI = Object.freeze({
   minPitch: -1.45,
   maxPitch: 0,
   missileTurn: 1.2,
+  // Keyboard turn rate (A/E) when no mouse direction steers (Castor volant vertical view).
+  yawRate: 1.4,
 });
 export function clampHeliAim(aim) {
   aim.yaw = Math.atan2(Math.sin(aim.yaw), Math.cos(aim.yaw));
@@ -74,7 +76,9 @@ export function stepHelicopter(T, state, controls, colliders, dt, profile) {
     : new T.Vector3(0, 0, -1).applyQuaternion(q);
   const yaw = controls.direction
     ? Math.atan2(-dir.x, -dir.z)
-    : new T.Euler().setFromQuaternion(q, 'YXZ').y;
+    : new T.Euler().setFromQuaternion(q, 'YXZ').y -
+      // Lead angle: the orientation slerps at 2/s, so this turns at yawRate rad/s.
+      (Math.max(-1, Math.min(1, controls.yaw || 0)) * HELI.yawRate) / 2;
   const pitch =
     controls.pitch !== undefined
       ? Math.max(-1, Math.min(1, controls.pitch)) * HELI.maxTilt

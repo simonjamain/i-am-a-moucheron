@@ -155,3 +155,41 @@ Le GLB est un seul maillage, mais **chaque pièce est un îlot séparé** (158 �
 **Vérification visuelle requise en WebGL** : sens de marche, rotation des roues, visée de la tourelle et performances à plusieurs exemplaires ; un rendu hors jeu ne remplace pas l'essai en partie.
 
 Pour tout nouvel export GLB Meshy, voir le [pipeline de validation et de simplification](asset-pipeline.md) : les originaux approuvés restent la référence, et les variantes optimisées doivent préserver les textures et les pivots.
+
+## Castor volant : hélicoptère Meshy (version 292)
+
+GLB fourni et approuvé par l'utilisateur, sans nouvelle génération : nom original
+`Meshy_AI_Rescue_Rotorcraft_1113100652_texture.glb`, SHA-256
+`dfcd21c08858057e13e78849a4156dd2f68c645edcd203f33acb7138806de691`, 3 173 236
+octets, conservé hors Git dans `assets/originals/`. Un seul maillage (trimesh),
+2 767 triangles, 3 197 sommets, UV et texture PNG, sans squelette ni animation ;
+nez vers −X, deux rotors tripales en tandem, patins, soute ouverte (outils,
+soins, carburant).
+
+Le maillage est monobloc mais **chaque pale et chaque moyeu sont des îlots
+séparés** (63 îlots une fois les sommets soudés). `PYTHONPATH=scripts python3
+scripts/import-meshy-flying-castor.py SOURCE.glb` vérifie l'empreinte, puis :
+
+- retient comme rotors les îlots qui commencent au-dessus des pylônes (Y source
+  ≥ 0,165) et dont le centre est à moins de 0,2 de l'axe avant (X ≈ −0,25) ou
+  arrière (X ≈ +0,28) : 5 îlots à l'avant, 8 à l'arrière, sinon l'import échoue ;
+  les pylônes restent sur la coque ;
+- tourne le modèle de −X vers −Z (avant du jeu), sans miroir, l'échelonne à
+  **9 unités de long** et place le contact des patins à −1 (hauteur `gear`) ;
+- enregistre `body`, `rotorFront` et `rotorRear` dans
+  `src/meshy-flying-castor-data.js`, chaque rotor autour de son axe vertical
+  (centre du moyeu, base du rotor) ;
+- conserve les 2 767 triangles et leurs UV ; seule la texture passe en JPEG
+  1 024 px (243 Ko ; module de 390 Ko).
+
+Aucune simplification : le modèle est déjà léger et ses pièces mobiles sont
+séparées par l'import. `src/flying-castor-model.js` crée les deux rotors par
+appareil (ils tournent en sens opposés, sans rotor de queue) et partage
+géométries, matériau et atlas ; la fumée de dégâts sort sous chaque moyeu.
+`scripts/test-flying-castor.mjs` vérifie l'empreinte, les triangles, les axes
+des rotors, le partage des ressources et le contact des patins. Rendu hors jeu
+contrôlé à deux angles de rotor : les pales restent sur leur moyeu.
+
+**Vérification visuelle requise en WebGL réel** : rotation des rotors en vol,
+lisibilité de la vue verticale et des aperçus, performances avec plusieurs
+appareils.

@@ -64,7 +64,11 @@ import {
   vehicleEntry,
   vehicleAccess,
   pilotFireInterval,
+  isRotorcraft,
+  isPassengerSeat,
+  vehicleMaxHP,
 } from '/fleet.js';
+import { headingOf, airdropSurface, AIR_VIEW_HEIGHT, zoomAirView } from '/airdrop.js';
 import {
   spreadDirection,
   fuseRange,
@@ -234,6 +238,7 @@ const {
   makeTank,
   makeFlakTruck,
   makeCastor,
+  makeFlyingCastor,
   makeHelicopter,
   insect,
   humanoid,
@@ -315,6 +320,12 @@ let topViewHeight = TOP_VIEW_HEIGHT;
 // The V top view belongs to the Castor driver only.
 const castorTopView = () =>
   castorTacticalView && myVehicle?.type === 'castor' && crewSeat === 'pilot' && !respawnAt;
+// Castor volant vertical view (V, pilot and passengers): the camera looks
+// straight down under the helicopter, its nose at the top of the screen; the
+// pilot flies with the keyboard only (A/E turn the helicopter).
+let airViewOn = false,
+  airViewHeight = AIR_VIEW_HEIGHT;
+const airView = () => airViewOn && myVehicle?.type === 'flyingcastor' && !respawnAt;
 let optimisticExitPending = false;
 let onFoot = true,
   baseArena = null,
@@ -627,7 +638,7 @@ function localMotion() {
     hp: Math.max(0, Math.min(VEHICLES[myVehicle?.type]?.maxHP || 100, hp)),
     type: myVehicle?.type,
     collective:
-      myVehicle?.type === 'helicopter' && crewSeat === 'pilot'
+      isRotorcraft(myVehicle?.type) && crewSeat === 'pilot'
         ? heliCollective
         : myVehicle?.state.collective || 0,
     rotorPower: heliRotorPower,
@@ -793,6 +804,7 @@ addEventListener('pointermove', (event) => {
     return;
   const dx = event.movementX,
     dy = event.movementY;
+  if (airView()) return; // vertical view: keyboard only, no mouse
   if (myVehicle?.type === 'tank' && crewSeat === 'cannon' && keys.KeyC) {
     lookDelta(freeLook, dx, dy);
     return;
@@ -882,6 +894,11 @@ canvas.addEventListener(
       topViewHeight = zoomTopView(topViewHeight, e.deltaY);
       return;
     }
+    if (airView() && controlFocus.active && canCapture()) {
+      e.preventDefault();
+      airViewHeight = zoomAirView(airViewHeight, e.deltaY);
+      return;
+    }
     if (
       myVehicle?.type === 'flaktruck' &&
       crewSeat === 'cannon' &&
@@ -906,10 +923,17 @@ canvas.addEventListener(
 addEventListener('blur', releaseMouse);
 function updateAimHUD() {
   const enabled =
-    joined && !spectating && !respawnAt && !onFoot && turretIndex < 0 && controlFocus.active;
+    joined &&
+    !spectating &&
+    !respawnAt &&
+    !onFoot &&
+    turretIndex < 0 &&
+    controlFocus.active &&
+    !isPassengerSeat(crewSeat);
   const aim = $('mouseAim'),
     gun = $('crosshair');
-  aim.classList.toggle('hidden', !enabled);
+  // Vertical view: no mouse steering; the gun sight marks the drop point.
+  aim.classList.toggle('hidden', !enabled || airView());
   $('mouseHint').classList.toggle('hidden', !enabled);
   canvas.classList.toggle('mouseFlight', document.pointerLockElement === canvas);
   if (!enabled) {
@@ -918,6 +942,12 @@ function updateAimHUD() {
     return;
   }
   function place(el, direction) {
+    if (airView()) {
+      el.classList.remove('offscreen');
+      el.style.left = '50%';
+      el.style.top = '50%';
+      return;
+    }
     if (castorTopView()) {
       el.classList.remove('offscreen');
       el.style.left = (topCursor.x * 0.5 + 0.5) * innerWidth + 'px';
@@ -1169,6 +1199,7 @@ function accept(s, force = false) {
         gas = myVehicle.state.gas ?? (landed ? 0 : 0.65);
         heliCollective = myVehicle.state.collective || 0;
         heliRotorPower = myVehicle.state.rotorPower ?? 1;
+        airViewOn = false;
         boardingOpen = false;
         groundView.scene = '';
         // The biplane bomber's rear gunner starts looking backward, like the tail gunner.
@@ -1523,6 +1554,22 @@ async function action(path, extra = {}) {
 const waveCouncil = new WaveCouncilUI({ document, command: action, releaseMouse });
 const forecastScene = new WaveForecastScene(T, scene, textLabel);
 function castorBuilder() {
+  // Castor volant: pilot and passengers drop below the helicopter.
+  if (myVehicle?.type === 'flyingcastor' && !respawnAt && myVehicle.state.hp > 0) {
+    const x = me.position.x,
+      y = me.position.y - VEHICLES.flyingcastor.gear,
+      z = me.position.z;
+    return {
+      air: true,
+      x,
+      y,
+      z,
+      yaw: headingOf(me.quaternion.toArray()),
+      landingY: airdropSurface(colliders, x, z, Math.max(0, y)),
+      grounded: false,
+      parachute: false,
+    };
+  }
   if (myVehicle?.type !== 'castor' || crewSeat !== 'pilot' || respawnAt) return null;
   const rear = new T.Vector3(0, 0, VEHICLES.castor.length * 0.5 * ACTOR_UNIT)
     .applyQuaternion(me.quaternion)
@@ -1561,6 +1608,7 @@ const groundDefenseUI = new GroundDefenseUI({
   },
   builder: castorBuilder,
   fortificationModel: (st) => makeFortificationStation(T, st, { box, cyl }),
+  serverNow: () => Date.now() + clockOffset,
   enabled: () => canCapture() && !placingEquipment,
   captureMouse,
   available: () =>
@@ -1641,7 +1689,7 @@ addEventListener('keydown', (event) => {
     !event.repeat &&
     !waveCouncil.button.hidden &&
     canCapture() &&
-    myVehicle?.type !== 'castor'
+    !['castor', 'flyingcastor'].includes(myVehicle?.type)
   ) {
     event.preventDefault();
     waveCouncil.button.click();
@@ -1657,7 +1705,15 @@ addEventListener('keydown', (event) => {
     if (groundDefenseUI.handleWheelKey(interactionKey, true, event.repeat)) event.preventDefault();
     return;
   }
-  if (groundDefenseUI.active && canCapture()) {
+  // Castor volant: drops follow the helicopter's heading (no R), and A/E turn
+  // it in the vertical view, so only Enter (or a click) drops.
+  if (groundDefenseUI.active && canCapture() && myVehicle?.type === 'flyingcastor') {
+    if (interactionKey === 'Enter' || interactionKey === 'KeyR') {
+      event.preventDefault();
+      if (interactionKey === 'Enter' && !event.repeat) groundDefenseUI.press();
+      return;
+    }
+  } else if (groundDefenseUI.active && canCapture()) {
     if (interactionKey === 'KeyR' || interactionKey === 'KeyE' || interactionKey === 'Enter') {
       event.preventDefault();
       if (!event.repeat) {
@@ -1666,6 +1722,21 @@ addEventListener('keydown', (event) => {
       }
       return;
     }
+  }
+  if (interactionKey === 'KeyV' && myVehicle?.type === 'flyingcastor' && !event.repeat) {
+    event.preventDefault();
+    airViewOn = !airViewOn;
+    if (!airViewOn) resetMouseAim();
+    notify(
+      airViewOn
+        ? 'Vue verticale · ' +
+            (crewSeat === 'pilot'
+              ? 'pilotage au clavier, A/E : tourner'
+              : 'largage sous l’appareil')
+        : 'Vue de vol du Castor volant',
+      2,
+    );
+    return;
   }
   if (interactionKey === 'KeyV' && myVehicle?.type === 'castor' && !event.repeat) {
     event.preventDefault();
@@ -2619,7 +2690,7 @@ function turretDirection(aim = turretAim) {
 }
 function weaponDirection() {
   if (myVehicle?.type === 'castor' && crewSeat === 'pilot') return mouseDirection.clone();
-  if (myVehicle?.type === 'helicopter' && crewSeat === 'pilot')
+  if (isRotorcraft(myVehicle?.type) && crewSeat === 'pilot')
     return new T.Vector3(0, 0, -1).applyQuaternion(me.quaternion);
   const d = turretDirection(
     myVehicle?.type === 'helicopter' && crewSeat === 'copilot' ? heliTurretAim : turretAim,
@@ -2797,6 +2868,25 @@ $('turretFire').onpointerdown = (e) => {
   uiWeaponFire = true;
 };
 $('turretFire').onpointerup = $('turretFire').onpointercancel = () => (uiWeaponFire = false);
+// Castor volant vertical view: straight down under the helicopter, its nose
+// at the top of the screen. The eye stays at a fixed height above the landing
+// surface (wheel: zoom), so the drop preview keeps its size at any altitude.
+function airViewCamera(dt) {
+  const yaw = headingOf(me.quaternion.toArray());
+  const ground = airdropSurface(
+    colliders,
+    me.position.x,
+    me.position.z,
+    Math.max(0, me.position.y - VEHICLES.flyingcastor.gear),
+  );
+  const eye = new T.Vector3(me.position.x, ground + airViewHeight, me.position.z);
+  camera.position.lerp(eye, 1 - Math.exp(-10 * dt));
+  camera.up
+    .lerp(new T.Vector3(-Math.sin(yaw), 0, -Math.cos(yaw)), 1 - Math.exp(-10 * dt))
+    .normalize();
+  camera.lookAt(camera.position.clone().add(new T.Vector3(0, -1, 0)));
+  camera.updateMatrixWorld();
+}
 function updateVehicles(dt) {
   const visible = joined && !respawnAt,
     crew = !!myVehicle && crewSeat !== 'pilot';
@@ -2809,7 +2899,10 @@ function updateVehicles(dt) {
     ? 'Replier · Espace'
     : 'Parachute · Espace';
   $('vehicleInteract').classList.toggle('hidden', turretIndex < 0);
-  $('turretFire').classList.toggle('hidden', turretIndex < 0 && !crew);
+  $('turretFire').classList.toggle(
+    'hidden',
+    turretIndex < 0 && (!crew || isPassengerSeat(crewSeat)),
+  );
   // Only the DCA has a time fuse; bunker and heavy gun have none.
   $('flakControls').classList.toggle(
     'hidden',
@@ -2858,7 +2951,34 @@ function updateVehicles(dt) {
           ? 'Descente sous voile'
           : 'Échelle ' + MAP.numerator + '/' + MAP.denominator + ' · À pied';
   if (!visible) return;
-  if (crew) {
+  // Castor volant passengers: no gun, a chase view they turn with the mouse
+  // (or the vertical view, V).
+  if (crew && isPassengerSeat(crewSeat)) {
+    me.visible = true;
+    $('crosshair').classList.toggle('hidden', !airView());
+    if (airView()) airViewCamera(dt);
+    else {
+      const orbit = new T.Quaternion()
+        .setFromAxisAngle(new T.Vector3(0, 1, 0), headingOf(me.quaternion.toArray()))
+        .multiply(
+          new T.Quaternion().setFromEuler(
+            new T.Euler(T.MathUtils.clamp(turretAim.pitch, -1.2, 0.6), turretAim.yaw, 0, 'YXZ'),
+          ),
+        );
+      camera.position.lerp(
+        me.position
+          .clone()
+          .add(new T.Vector3(0, 7, 21).multiplyScalar(ACTOR_UNIT).applyQuaternion(orbit)),
+        1 - Math.exp(-10 * dt),
+      );
+      camera.up.set(0, 1, 0);
+      camera.lookAt(
+        me.position
+          .clone()
+          .add(new T.Vector3(0, 0, -60).multiplyScalar(ACTOR_UNIT).applyQuaternion(orbit)),
+      );
+    }
+  } else if (crew) {
     if (myVehicle.type === 'helicopter' && crewSeat === 'copilot') {
       const pressed =
         !!(mouseFire || pad.fire || uiWeaponFire) && controlFocus.active && canCapture();
@@ -3398,19 +3518,21 @@ function vehicleModel(v) {
     g =
       v.type === 'castor'
         ? makeCastor()
-        : v.type === 'helicopter'
-          ? makeHelicopter('#7b8155')
-          : v.type === 'flaktruck'
-            ? makeFlakTruck('#7b8155')
-            : v.type === 'spitfire'
-              ? makeSpitfire('#7b8155')
-              : v.type === 'tank'
-                ? makeTank('#7b8155')
-                : v.type === 'interceptor'
-                  ? makeStuka('#7b8155')
-                  : v.type === 'bomber'
-                    ? makeBomber('#c5ba92')
-                    : makePlane('#7b8155');
+        : v.type === 'flyingcastor'
+          ? makeFlyingCastor()
+          : v.type === 'helicopter'
+            ? makeHelicopter('#7b8155')
+            : v.type === 'flaktruck'
+              ? makeFlakTruck('#7b8155')
+              : v.type === 'spitfire'
+                ? makeSpitfire('#7b8155')
+                : v.type === 'tank'
+                  ? makeTank('#7b8155')
+                  : v.type === 'interceptor'
+                    ? makeStuka('#7b8155')
+                    : v.type === 'bomber'
+                      ? makeBomber('#c5ba92')
+                      : makePlane('#7b8155');
     paintVehicle(
       T,
       g,
@@ -3487,6 +3609,10 @@ function updateOthers(dt) {
       const rotation =
         dt * (v.state.engine && v.supplies.fuel > 0 ? 35 * (motion.rotorPower ?? 1) : 0);
       g.userData.rotor.rotation.y += rotation;
+      if (g.userData.counterRotor) g.userData.counterRotor.rotation.y -= rotation;
+      // Own Castor volant in the vertical view: hide the hull over the drop point.
+      const hull = g.userData.counterRotor && g.getObjectByName('meshy-flying-castor-body');
+      if (hull) hull.visible = !(airView() && myVehicle?.id === v.id);
       if (g.userData.tailRotor) g.userData.tailRotor.rotation.x += rotation * 4;
     }
     g.userData.animateGun?.(dt, performance.now() < (g.userData.gunFiredUntil || 0));
@@ -3900,9 +4026,11 @@ function stepProjectileSlice(dt) {
 // Fixed timestep flight: thrust, quadratic drag, gravity, angle-of-attack lift, wind-relative velocity.
 function physics(dt) {
   if (respawnAt || onFoot || !myVehicle) return;
-  if (myVehicle.type === 'helicopter') {
+  if (isRotorcraft(myVehicle.type)) {
     if (crewSeat !== 'pilot') return;
     const active = controlFocus.active && canCapture();
+    // Vertical view: keyboard only, the mouse no longer steers.
+    const keyboardOnly = airView();
     const state = {
       ...localMotion(),
       collective: heliCollective,
@@ -3921,7 +4049,8 @@ function physics(dt) {
       keys.KeyQ ||
       keys.ArrowLeft ||
       keys.KeyD ||
-      keys.ArrowRight;
+      keys.ArrowRight ||
+      keyboardOnly;
     stepHelicopter(
       T,
       state,
@@ -3939,12 +4068,14 @@ function physics(dt) {
             : active
               ? Number(!!(keys.KeyQ || keys.ArrowLeft)) - Number(!!(keys.KeyD || keys.ArrowRight))
               : 0,
-        direction: active ? mouseDirection.toArray() : null,
+        direction: active && !keyboardOnly ? mouseDirection.toArray() : null,
+        yaw: keyboardOnly && active ? Number(!!keys.KeyE) - Number(!!keys.KeyA) : 0,
       },
       colliders,
       dt,
-      upgradedVehicle(VEHICLES.helicopter, snap?.upgrades),
+      upgradedVehicle(VEHICLES[myVehicle.type], snap?.upgrades),
     );
+    if (keyboardOnly) mouseDirection.set(0, 0, -1).applyQuaternion(me.quaternion);
     if (state.hp <= 0) {
       crash();
       return;
@@ -3958,7 +4089,8 @@ function physics(dt) {
     landed = state.landed;
     gas = state.gas;
     shooting = false;
-    if (active && !keys.KeyC && (mouseFire || pad.fire)) fireHeavy('rocket');
+    if (myVehicle.type === 'helicopter' && active && !keys.KeyC && (mouseFire || pad.fire))
+      fireHeavy('rocket');
     return;
   }
   if (VEHICLES[myVehicle.type].ground) {
@@ -4228,7 +4360,7 @@ function updateAudio() {
       keep.add('engine-self');
       sound.loop('engine-self', 'engine', me.position, {
         rate: 0.65 + (crewSeat === 'pilot' ? gas : myVehicle.state.gas || 0) * 1.2,
-        level: 0.65 * (myVehicle.type === 'helicopter' ? (myVehicle.state.rotorPower ?? 1) : 1),
+        level: 0.65 * (isRotorcraft(myVehicle.type) ? (myVehicle.state.rotorPower ?? 1) : 1),
         ref: 14,
       });
     }
@@ -4421,7 +4553,8 @@ function frame(now) {
         .multiply(
           new T.Quaternion().setFromEuler(new T.Euler(freeLook.pitch, freeLook.yaw, 0, 'YXZ')),
         );
-      if (castorTopView()) {
+      if (airView()) airViewCamera(dt);
+      else if (castorTopView()) {
         const pose = topViewPose(T, me.position, topViewHeight);
         camera.position.lerp(pose.eye, 1 - Math.exp(-10 * dt));
         camera.up.lerp(pose.up, 1 - Math.exp(-10 * dt)).normalize();
@@ -4441,7 +4574,11 @@ function frame(now) {
             mouseDirection.copy(ground.sub(from).normalize());
         }
       } else {
-        const offset = new T.Vector3(0, myVehicle?.type === 'castor' ? 6 : 3.5, 11)
+        const offset = (
+          myVehicle?.type === 'flyingcastor'
+            ? new T.Vector3(0, 7, 21)
+            : new T.Vector3(0, myVehicle?.type === 'castor' ? 6 : 3.5, 11)
+        )
           .multiplyScalar(ACTOR_UNIT)
           .applyQuaternion(orbit);
         camera.position.lerp(me.position.clone().add(offset), 1 - Math.exp(-10 * dt));
@@ -4458,7 +4595,7 @@ function frame(now) {
     $('alt').textContent = formatDistance(me.position.y);
     $('gas').textContent = Math.round(gas * 100);
     $('health').textContent = Math.max(0, Math.round(hp)) + ' PV';
-    $('hpbar').style.width = (hp / (myVehicle?.type === 'helicopter' ? 200 : 100)) * 100 + '%';
+    $('hpbar').style.width = (hp / vehicleMaxHP(myVehicle?.type)) * 100 + '%';
     networkStatus();
     drawRadar();
     updateCountdown();
@@ -4550,6 +4687,7 @@ const ghosts = {
   helicopter: makeHelicopter('#badb84'),
   flaktruck: makeFlakTruck('#badb84'),
   castor: makeCastor(),
+  flyingcastor: makeFlyingCastor(),
   tank: makeTank('#badb84'),
   spitfire: makeSpitfire('#badb84'),
 };
@@ -5107,14 +5245,14 @@ function simulateVacantAircraft(dt) {
     s.engine = v.state.engine;
     s.wing = v.state.wing;
     s.fuelAvailable = v.supplies?.fuel > 0;
-    if (v.type === 'helicopter')
+    if (isRotorcraft(v.type))
       stepHelicopter(
         T,
         s,
         { collective: 0, occupied: v.seats.length > 0 },
         colliders,
         dt,
-        upgradedVehicle(VEHICLES.helicopter, snap?.upgrades),
+        upgradedVehicle(VEHICLES[v.type], snap?.upgrades),
       );
     else if (VEHICLES[v.type].ground)
       stepTank(T, s, { forward: 0, turn: 0 }, colliders, dt, VEHICLES[v.type]);
@@ -5151,14 +5289,13 @@ function remainingFuel() {
   if (!supply) return 300;
   if (supply.servicing) return supply.fuel;
   const age = Math.max(0, (performance.now() - (snap.receivedAt || performance.now())) / 1000);
-  const consumption =
-    myVehicle.type === 'helicopter'
-      ? (crewSeat === 'pilot' ? landed : myVehicle.state.landed)
-        ? 0
-        : 1
-      : crewSeat === 'pilot'
-        ? gas
-        : myVehicle.state.gas || 0;
+  const consumption = isRotorcraft(myVehicle.type)
+    ? (crewSeat === 'pilot' ? landed : myVehicle.state.landed)
+      ? 0
+      : 1
+    : crewSeat === 'pilot'
+      ? gas
+      : myVehicle.state.gas || 0;
   const powered = crewSeat === 'pilot' ? engine : myVehicle.state.engine;
   return Math.max(0, supply.fuel - (powered ? consumption * age : 0));
 }
@@ -5680,7 +5817,7 @@ function updateContextHUD() {
       proximity: mobileProximity,
       guiding: !!activeMissile(),
     });
-    $('cursorHPbar').max = myVehicle?.type === 'helicopter' ? 200 : 100;
+    $('cursorHPbar').max = vehicleMaxHP(myVehicle?.type);
     $('cursorHPbar').value = stats.hp;
     $('cursorAmmoBar').max = Math.max(
       1,
@@ -5707,7 +5844,8 @@ function updateContextHUD() {
     $('cursorStats').style.top = 'calc(' + ($('crosshair').style.top || '50%') + ' + 22px)';
   }
   $('commandHelp').classList.toggle('hidden', !joined);
-  const castorBuilding = !!castorBuilder();
+  const builder = castorBuilder(),
+    castorBuilding = !!builder;
   $('commandHelp').textContent = controlHints({
     vehicle: myVehicle,
     seat: crewSeat,
@@ -5722,6 +5860,7 @@ function updateContextHUD() {
       ? {
           mode: groundDefenseUI.mode,
           castor: castorBuilding,
+          air: !!builder?.air,
           anchored: !!(castorBuilding ? groundDefenseUI.trailAnchor : groundDefenseUI.anchor),
         }
       : null,

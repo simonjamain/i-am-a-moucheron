@@ -383,6 +383,12 @@ rééchantillonnées en WebP 1K pour l'exécution. La géométrie reste intacte
 sur un taux de réduction arbitraire. Toute simplification supplémentaire doit
 être mesurée et validée sur une copie avant substitution.
 
+## Castor volant (hélicoptère Meshy) — version 292
+
+GLB fourni et approuvé par l'utilisateur, importé sans simplification (2 767
+triangles, rotors séparés par îlots) : provenance, import et vérifications dans
+[la flotte Meshy](meshy-fleet.md#castor-volant--hélicoptère-meshy-version-292).
+
 ## Lit de réapparition Drawer Bed — version 291
 
 GLB fourni et approuvé par l’utilisateur pour intégration, sans nouvelle génération

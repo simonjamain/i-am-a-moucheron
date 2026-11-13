@@ -167,6 +167,16 @@ canon pivotants) généré hors ligne par `scripts/import-meshy-castor.py`,
 conduite et la visée. `service-zones.js` dessine les sphères vertes de
 ravitaillement des stations fixes et des Castor, aux rayons de `logistics.js`.
 
+Castor volant : `fleet.js` le définit (un pilote, trois passagers, rotor et
+soutien via `isRotorcraft` / `isSupportVehicle`), `helicopter.js` le fait voler
+(lacet clavier pour la vue verticale), `flying-castor-model.js` assemble le modèle
+Meshy (`meshy-flying-castor-data.js`, `scripts/import-meshy-flying-castor.py`).
+`airdrop.js` partage cap, point et surface de largage entre le serveur
+(`Game.airdrop` et `advanceGroundDrops` dans `server/game.js`) et l'aperçu
+(`airdropPlacement` dans `ground-placement.js`, `GroundDefenseUI.updateAirdrop`
+et `renderDrops`). Les constructions sur un meuble portent `y` ; `floorStructures`
+et `navigationStructures` les retirent de ce que voient les insectes au sol.
+
 La construction embarquée dans le Castor (PR #80) partage
 `GroundDefenseUI`, `groundPlacement` et `placement-aim` avec les piétons.
 `server/game.js` vérifie le pilote, la position du Castor et chaque segment,

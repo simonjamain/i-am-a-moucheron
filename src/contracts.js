@@ -1368,6 +1368,8 @@ for (const [type, seat, role] of [
   ['helicopter', 'copilot', 'copilote armement'],
   ['flaktruck', 'pilot', 'conducteur de DCA mobile'],
   ['flaktruck', 'cannon', 'tireur de DCA mobile'],
+  ['flyingcastor', 'pilot', 'pilote du Castor volant'],
+  ['flyingcastor', 'passenger', 'passager du Castor volant'],
 ])
   for (const context of ['boarding', 'change', 'exchange-request', 'exchange-accept'])
     CONTRACTS[context + ':' + type + '-' + seat] = CONTRACTS[context + ':dorsal'].map(
@@ -1428,7 +1430,8 @@ for (const [kind, forms] of Object.entries(FORTIFICATION_FORMS))
   );
 // For the 'equipment' context, `type` is the station kind (dca, bunker, antitank).
 export function contractKey(context, seat = 'pilot', type = null) {
-  if (['helicopter', 'flaktruck'].includes(type)) seat = type + '-' + seat;
+  if (type === 'flyingcastor' && /^passenger/.test(seat)) seat = 'passenger';
+  if (['helicopter', 'flaktruck', 'flyingcastor'].includes(type)) seat = type + '-' + seat;
   if (type === 'tank' && seat === 'pilot') seat = 'tank-pilot';
   return (
     context +
