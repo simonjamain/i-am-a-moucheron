@@ -66,6 +66,17 @@ function equipmentModel({
       readout,
     };
   }
+  if (vehicle.type === 'flyingcastor')
+    return {
+      scope: vehicle.id + ':' + seat,
+      left: [
+        seat === 'pilot' ? 'PILOTE' : 'PASSAGER',
+        formatSpeed(speed),
+        health,
+        `Carburant ${Math.ceil(fuel)} s`,
+      ],
+      right: ['SOUTIEN', 'Ravitaillement 50 cm', 'G : larguer', 'V : vue verticale'],
+    };
   if (vehicle.type === 'helicopter' || vehicle.type === 'flaktruck') {
     const a = vehicle.supplies?.ammo || {};
     return {

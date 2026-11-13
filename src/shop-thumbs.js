@@ -13,6 +13,7 @@ const VEHICLE_MODELS = {
   flaktruck: 'makeFlakTruck',
   tank: 'makeTank',
   castor: 'makeCastor',
+  flyingcastor: 'makeFlyingCastor',
 };
 
 function installation(T, kind) {

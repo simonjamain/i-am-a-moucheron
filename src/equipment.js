@@ -78,6 +78,13 @@ export const SHOP = Object.freeze({
     description:
       'Camion monoplace rapide avec mitrailleuse et ravitaillement mobile dans un rayon de 50 cm.',
   },
+  flyingcastor: {
+    name: 'Castor volant',
+    cost: 30,
+    kind: 'vehicle',
+    description:
+      'Hélicoptère de soutien : un pilote et trois passagers, largue les constructions du Castor sauf les murs ; ravitaillement mobile 50 cm.',
+  },
   engine: {
     name: 'Motorisation',
     cost: 4,

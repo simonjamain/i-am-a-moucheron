@@ -5,6 +5,7 @@ const GROUND = new Set(['tank', 'flaktruck', 'castor']);
 export function seatRole(type, seat) {
   if (seat === 'pilot') return GROUND.has(type) ? 'driver' : 'pilot';
   if (seat === 'copilot') return 'copilot';
+  if (/^passenger/.test(seat)) return 'passenger';
   if (seat === 'cannon') return type === 'tank' ? 'cannon' : 'gunner';
   return 'gunner';
 }
@@ -15,6 +16,7 @@ export const SEAT_ROLE_NAMES = Object.freeze({
   copilot: 'Copilote',
   gunner: 'Mitrailleur',
   cannon: 'Canon',
+  passenger: 'Passager',
 });
 
 // Draw the role pictogram centred in a size × size square.
@@ -54,6 +56,12 @@ export function drawSeatIcon(ctx, role, size = 128) {
       circle(c + r * 0.62, c - r * 0.62, size * 0.07, true);
       circle(c - r * 0.62, c - r * 0.62, size * 0.07, true);
     }
+  } else if (role === 'passenger') {
+    // Seated person: head, back and legs.
+    circle(c - r * 0.15, c - r * 0.7, r * 0.22, true);
+    line(c - r * 0.3, c - r * 0.35, c - r * 0.3, c + r * 0.25);
+    line(c - r * 0.3, c + r * 0.25, c + r * 0.4, c + r * 0.25);
+    line(c + r * 0.4, c + r * 0.25, c + r * 0.4, c + r * 0.9);
   } else if (role === 'cannon') {
     // Turret with a long barrel.
     circle(c - r * 0.3, c + r * 0.2, r * 0.55);

@@ -116,7 +116,29 @@ VEHICLES.castor = {
   turn: 1.1,
   gear: 0.8 * ACTOR_UNIT,
   ground: true,
+  support: true,
 };
+// Castor volant: tandem-rotor logistics helicopter. One pilot and three
+// passengers; any of them can drop every Castor construction except the LEGO
+// wall, straight below the helicopter (key V: vertical view). No weapon; same
+// mobile support sphere as the Castor (healing, resupply, barricade repair).
+VEHICLES.flyingcastor = {
+  ...LIGHT_FIGHTER,
+  name: 'Castor volant',
+  seats: ['pilot', 'passenger1', 'passenger2', 'passenger3'],
+  span: 6,
+  length: 13,
+  maxSpeed: LIGHT_FIGHTER.maxSpeed * 0.6,
+  gear: 1 * ACTOR_UNIT,
+  helicopter: true,
+  support: true,
+  maxHP: 200,
+};
+// Rotorcraft flight (H2 and Castor volant) and mobile support (both Castor).
+export const isRotorcraft = (type) => !!VEHICLES[type]?.helicopter;
+export const isSupportVehicle = (type) => !!VEHICLES[type]?.support;
+export const isPassengerSeat = (seat) => /^passenger[1-3]$/.test(seat || '');
+export const vehicleMaxHP = (type) => VEHICLES[type]?.maxHP || 100;
 
 // Seconds between two pilot machine-gun rounds (0.06 s on the light fighters).
 export const PILOT_FIRE_INTERVAL = 0.06;
@@ -131,6 +153,9 @@ export const SEAT_NAMES = {
   ventral: 'Mitrailleur ventral',
   cannon: 'Tireur principal',
   top: 'Mitrailleur supérieur',
+  passenger1: 'Passager',
+  passenger2: 'Passager',
+  passenger3: 'Passager',
 };
 export function vehiclePad(type) {
   const b = OFFICE_LAYOUT.base;
@@ -165,7 +190,13 @@ export function vehicleEntry(v, seat = 'pilot') {
     q = v.state.q,
     s =
       (VEHICLES[v.type].span / 2 + 1.8) *
-      (v.type === 'fighter' || seat === 'tail' || seat === 'top' || seat === 'ventral' ? -1 : 1),
+      (v.type === 'fighter' ||
+      seat === 'tail' ||
+      seat === 'top' ||
+      seat === 'ventral' ||
+      seat === 'passenger3'
+        ? -1
+        : 1),
     along =
       VEHICLES[v.type].seats.length < 2
         ? 0
@@ -173,9 +204,11 @@ export function vehicleEntry(v, seat = 'pilot') {
           ? -6
           : seat === 'pilot'
             ? -4
-            : seat === 'dorsal' || seat === 'cannon'
+            : seat === 'passenger2'
               ? 4
-              : 0;
+              : seat === 'dorsal' || seat === 'cannon'
+                ? 4
+                : 0;
   const x = 1 - 2 * (q[1] * q[1] + q[2] * q[2]),
     z = 2 * (q[0] * q[2] - q[3] * q[1]);
   return {
@@ -199,6 +232,10 @@ export function leftVehiclePad(v) {
   );
 }
 export function seatMount(type, seat) {
+  if (type === 'flyingcastor')
+    return seat === 'pilot'
+      ? [0, 0.9, -3.4]
+      : [seat === 'passenger2' ? 0.6 : -0.6, 0.6, seat === 'passenger3' ? 1.6 : -0.6];
   if (type === 'helicopter') return seat === 'pilot' ? [0, 0.6, -2] : [0, 1.1, -0.8];
   if (type === 'flaktruck') return seat === 'cannon' ? [0, 1.8, 2.5] : [0, 1.5, -3.1];
   if (type === 'tank')

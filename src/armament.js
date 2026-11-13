@@ -74,6 +74,7 @@ export function heavyDamage(weapon, distance, bonus = 1, radiusFactor = 1) {
     : 0;
 }
 export function canUseWeapon(type, seat, key) {
+  if (type === 'flyingcastor') return false; // unarmed transport
   return type === 'helicopter'
     ? seat === 'pilot'
       ? key === 'rocket'

@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import * as T from '../vendor/three.module.min.js';
 import { stepHelicopter } from '../src/helicopter.js';
 import { MAP } from '../src/scale.js';
-import { VEHICLES, vehiclePad } from '../src/fleet.js';
+import { VEHICLES, vehiclePad, isRotorcraft } from '../src/fleet.js';
 import { Game } from '../server/game.js';
 import { HEAVY } from '../src/armament.js';
 const source = readFileSync('src/client.js', 'utf8');
@@ -19,6 +19,8 @@ function client(key) {
     stepHelicopter,
     MAP,
     VEHICLES,
+    isRotorcraft,
+    airView: () => false,
     snap: { upgrades: {} },
     respawnAt: 0,
     onFoot: false,
@@ -112,6 +114,7 @@ for (const [pitch, yaw, roll] of [
   const q = new T.Quaternion().setFromEuler(new T.Euler(pitch, yaw, roll, 'YXZ'));
   const c = vm.createContext({
     T,
+    isRotorcraft,
     myVehicle: { type: 'helicopter' },
     crewSeat: 'pilot',
     me: { quaternion: q },
@@ -181,6 +184,7 @@ const fuelSource = source.slice(
 );
 for (const seat of ['pilot', 'copilot']) {
   const c = vm.createContext({
+    isRotorcraft,
     myVehicle: {
       type: 'helicopter',
       state: { landed: false, engine: 1 },
