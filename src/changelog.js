@@ -1,7 +1,7 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
-    version: 290,
+    version: 291,
     changes: [
       'Viseur et traçantes se distinguent mieux dans les nuages. Le lit de réapparition adopte son nouveau modèle.',
       'La station de départ recule pour dégager l’accès au bombardier.',

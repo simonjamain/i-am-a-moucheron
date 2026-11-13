@@ -383,7 +383,7 @@ rééchantillonnées en WebP 1K pour l'exécution. La géométrie reste intacte
 sur un taux de réduction arbitraire. Toute simplification supplémentaire doit
 être mesurée et validée sur une copie avant substitution.
 
-## Lit de réapparition Drawer Bed — version 290
+## Lit de réapparition Drawer Bed — version 291
 
 GLB fourni et approuvé par l’utilisateur pour intégration, sans nouvelle génération
 ni crédit Meshy. Source locale hors Git : `assets/originals/bed/drawer-bed.glb`,
