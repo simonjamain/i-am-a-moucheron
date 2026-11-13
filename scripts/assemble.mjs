@@ -100,6 +100,8 @@ const files = {
       'castor-top-view',
       'service-zones',
       'station-model',
+      'bed-model',
+      'meshy-bed-data',
       'oriented-collider',
       'meshy-refuel-data',
       'meshy-radar-data',

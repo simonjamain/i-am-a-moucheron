@@ -17,19 +17,21 @@ export function texturedMeshyParts(T, data) {
   let resources = byModel.get(data);
   if (!resources) {
     const texture =
-      typeof document === 'undefined'
-        ? new T.Texture()
-        : new T.TextureLoader().load(data.texture);
+      typeof document === 'undefined' ? new T.Texture() : new T.TextureLoader().load(data.texture);
     texture.colorSpace = T.SRGBColorSpace;
     texture.flipY = false;
     const material = new T.MeshStandardMaterial({
       map: texture,
       roughness: 0.85,
       flatShading: true,
+      side: data.doubleSided ? T.DoubleSide : T.FrontSide,
     });
     resources = data.parts.map((part) => {
       const geometry = new T.BufferGeometry();
-      geometry.setAttribute('position', new T.BufferAttribute(unpack(part.positions, true, 0.0005), 3));
+      geometry.setAttribute(
+        'position',
+        new T.BufferAttribute(unpack(part.positions, true, 0.0005), 3),
+      );
       geometry.setAttribute('uv', new T.BufferAttribute(unpack(part.uv, false, 1 / 65535), 2));
       const bytes = Uint8Array.from(atob(part.indices), (char) => char.charCodeAt(0));
       geometry.setIndex(new T.BufferAttribute(new Uint16Array(bytes.buffer), 1));

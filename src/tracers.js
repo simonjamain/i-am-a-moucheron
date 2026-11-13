@@ -1,22 +1,26 @@
 import { MAP } from './scale.js';
+export const TRACER_COLOR = '#ffad32';
+export const TRACER_EDGE = '#402315';
 // World-space luminous streaks; visibility never changes swept collision rays.
-export function makeTracer(T, scene, position, direction, color, shell = false) {
+export function makeTracer(T, scene, position, direction, color = TRACER_COLOR, shell = false) {
   const root = new T.Group(),
     length = MAP.metres(shell ? 7 : 11),
     width = MAP.metres(shell ? 0.14 : 0.09);
   const material = new T.MeshBasicMaterial({
-    color,
+    color: TRACER_EDGE,
     transparent: true,
-    opacity: 0.32,
+    opacity: 0.95,
     depthWrite: false,
-    blending: T.AdditiveBlending,
+    blending: T.NormalBlending,
     toneMapped: false,
   });
-  const halo = new T.Mesh(new T.CylinderGeometry(width * 2.4, width * 0.5, length, 6), material);
+  const halo = new T.Mesh(new T.CylinderGeometry(width * 0.9, width * 0.55, length, 6), material);
   halo.rotation.x = Math.PI / 2;
   halo.position.z = -length / 2;
   const coreMaterial = new T.MeshBasicMaterial({
-    color: '#fff9da',
+    color,
+    transparent: true,
+    opacity: 1,
     depthWrite: false,
     toneMapped: false,
   });
@@ -24,6 +28,9 @@ export function makeTracer(T, scene, position, direction, color, shell = false) 
     new T.CylinderGeometry(width * 0.55, width * 0.3, length * 0.85, 5),
     coreMaterial,
   );
+  // Both passes stay depth-tested and fogged. Draw the dark edge first, then
+  // the luminous core, in both ordinary meshes and the instanced pool.
+  core.renderOrder = 1;
   core.rotation.x = Math.PI / 2;
   core.position.z = -length * 0.425;
   root.add(halo, core);
@@ -49,8 +56,8 @@ export function updateTracer(T, root, direction, camera) {
   // A minimum projected width keeps distant small-calibre tracers legible.
   const pixel =
     (2 * root.position.distanceTo(camera.position) * Math.tan((camera.fov * Math.PI) / 360)) /
-    Math.max(360, globalThis.innerHeight || 900);
-  const scale = Math.max(1, Math.min(8, (pixel * 1.4) / root.userData.width));
+    Math.max(1, globalThis.innerHeight || 900);
+  const scale = Math.max(1, (pixel * 2) / (root.userData.width * 1.1));
   root.scale.set(scale, scale, 1);
 }
 
@@ -78,7 +85,7 @@ export class TracerPool {
     this.free = [];
     this.all = new Set();
   }
-  acquire(position, direction, color, shell = false) {
+  acquire(position, direction, color = TRACER_COLOR, shell = false) {
     let model = this.free.find((m) => m.userData.shell === shell);
     if (model) this.free.splice(this.free.indexOf(model), 1);
     else {
@@ -102,7 +109,7 @@ export class TracerPool {
       this.all.add(model);
     }
     model.userData.released = false;
-    model.userData.halo.material.color.set(color);
+    model.userData.core.material.color.set(color ?? TRACER_COLOR);
     model.position.copy(position);
     model.scale.set(1, 1, 1);
     if (this.instanced) {
@@ -118,9 +125,10 @@ export class TracerPool {
     const parts = ['halo', 'core'].map((part) => {
       const source = model.userData[part];
       const material = source.material.clone();
-      // Color belongs to each instance, not to the shared halo material.
-      if (part === 'halo') material.color.set('#ffffff');
+      // Color belongs to each instance, not to the shared core material.
+      if (part === 'core') material.color.set('#ffffff');
       const mesh = new T.InstancedMesh(source.geometry.clone(), material, this.limit);
+      mesh.renderOrder = source.renderOrder;
       mesh.instanceMatrix.setUsage(T.DynamicDrawUsage);
       mesh.count = 0;
       mesh.frustumCulled = false;
@@ -141,7 +149,7 @@ export class TracerPool {
         for (const mesh of parts) {
           const source = model.userData[mesh.userData.part];
           mesh.setMatrixAt(count, source.matrixWorld);
-          if (mesh.userData.part === 'halo') mesh.setColorAt(count, source.material.color);
+          if (mesh.userData.part === 'core') mesh.setColorAt(count, source.material.color);
         }
         count++;
       }

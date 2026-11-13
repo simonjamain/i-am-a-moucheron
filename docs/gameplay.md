@@ -9,6 +9,9 @@ La « Tourelle automatique du Castor » se construit pour 9 $ au volant du G1, s
 
 Le [lot de lisibilité et commandes #171](game-polish-171.md) précise les phases de chute, les nouvelles stations, le brouillard, les arcs de recharge et les commandes Hind/Castor.
 
+Le [lot de contraste et le lit Drawer Bed](contrast-bed-290.md) précise le viseur,
+les traçantes, le nouveau lit et le dégagement de la station Alpha.
+
 Le [lot #175](gameplay-polish-175.md) précise le chargement animé, le suivi souris du Hind, les éclairs attachés aux canons, les murs LEGO de deux rangées et le brouillard spatial.
 
 ## Session réseau
@@ -229,7 +232,8 @@ obligatoire. Les annexes malicieuses (clauses piégées) ont été retirées en
 version 264 : aucun contrat ne modifie plus commandes, visée, cadence ou dégâts.
 
 Les avions disposent de cinq minutes de carburant à plein gaz et d’environ une
-minute de tir par poste armé. Une station initiale à Alpha répare et recharge les véhicules
+minute de tir par poste armé. Une station initiale à Alpha, reculée vers le nord pour dégager les postes du
+bombardier, répare et recharge les véhicules
 à portée, automatiquement et contre paiement, même en mouvement ou en vol. Les
 stations achetées fournissent le même service. La caisse commune paie au prorata
 les PV, le carburant et chaque catégorie de munitions ; en cas de fonds insuffisants,

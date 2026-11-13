@@ -1,6 +1,7 @@
 import { rayCollider, colliderContainsXZ } from '/oriented-collider.js';
-import { makeServiceStation, animateRadar, makeRefuelCollider } from '/station-model.js';
+import { makeServiceStation, animateRadar, makeInstallationCollider } from '/station-model.js';
 import { ReloadHUD, seatReloads, heavyReadyAt, heavyLane, reloadProgress } from '/reload-hud.js';
+import { makeBed } from '/bed-model.js';
 import { officeFogOpacity, installOfficeFog, officeFogCeiling } from '/office-fog.js';
 import { makeFortificationStation } from '/fortification-model.js';
 import { placementFacing } from '/placement-aim.js';
@@ -21,7 +22,13 @@ import { ammoCapacity } from '/logistics.js';
 import { FIXED_DCA_AMMO, PISTOL_CAPACITY } from '/ground-ammo.js';
 import { FORTIFICATIONS, isFortification } from '/ground-fortifications.js';
 import { HOWITZER } from '/howitzer-model.js';
-import { moveShotTrace, advanceShotTrace, makeShotTrace, TracerPool } from '/tracers.js';
+import {
+  moveShotTrace,
+  advanceShotTrace,
+  makeShotTrace,
+  TracerPool,
+  TRACER_COLOR,
+} from '/tracers.js';
 import { PurchaseUI } from '/purchase-ui.js';
 import { purchaseCount } from '/equipment.js';
 import { WASH } from '/vehicle-care.js';
@@ -1238,7 +1245,7 @@ function accept(s, force = false) {
         targetScene,
         new T.Vector3().fromArray(e.p),
         new T.Vector3().fromArray(e.direction),
-        '#ffe48d',
+        TRACER_COLOR,
         respawnAt ? 1 : MAP.ratio,
       );
 
@@ -2566,8 +2573,8 @@ function reconcileEquipment(next) {
         : FORTIFICATIONS.antitank.footprint
       : MAP.metres(st.kind === 'bed' ? 0.8 : 2);
     const collider =
-      st.kind === 'refuel'
-        ? makeRefuelCollider(T, gun)
+      st.kind === 'refuel' || st.kind === 'bed'
+        ? makeInstallationCollider(T, gun)
         : new T.Box3(
             new T.Vector3(st.x - radius, st.y, st.z - radius),
             new T.Vector3(
@@ -2932,7 +2939,7 @@ function updateVehicles(dt) {
     );
     cooldown = burst.cooldown;
     for (let shot = 0; shot < burst.shots; shot++)
-      bullet(view.muzzle, spreadDirection(T, dir), '#f4efab', true);
+      bullet(view.muzzle, spreadDirection(T, dir), TRACER_COLOR, true);
   }
   for (let index = 0; index < turrets.length; index++) {
     const gun = turrets[index];
@@ -3037,7 +3044,7 @@ function updateVehicles(dt) {
             ? emitBullet(
                 muzzle,
                 dir,
-                '#ffe49b',
+                TRACER_COLOR,
                 true,
                 false,
                 {
@@ -3047,7 +3054,7 @@ function updateVehicles(dt) {
                 },
                 muzzleNode,
               )
-            : bullet(muzzle, dir, '#ffe49b', true, true, muzzleNode);
+            : bullet(muzzle, dir, TRACER_COLOR, true, true, muzzleNode);
           if (shot) action('fixed-dca-fire', { station: index, shot, incarnation });
         }
       }
@@ -3063,7 +3070,7 @@ function updateVehicles(dt) {
         howitzer.fire();
         combatEffects.muzzle(muzzle, dir, muzzleNode);
         sound.play('flak', muzzle, { ref: 35 });
-      } else bullet(muzzle, dir, '#91d9c4', false, station.kind !== 'bunker', muzzleNode);
+      } else bullet(muzzle, dir, TRACER_COLOR, false, station.kind !== 'bunker', muzzleNode);
     }
   }
 }
@@ -3616,7 +3623,7 @@ function updateOthers(dt) {
       others.delete(k);
     }
 }
-function bullet(pos, dir, color = '#f4efab', owned = false, aa = false, muzzleNode = null) {
+function bullet(pos, dir, color = TRACER_COLOR, owned = false, aa = false, muzzleNode = null) {
   muzzleNode ??= owned && myVehicle ? nearestWeaponMuzzle(T, me, pos) : null;
   if (muzzleNode) pos = muzzleNode.getWorldPosition(new T.Vector3());
   if (owned && !aa && myVehicle) {
@@ -3724,7 +3731,7 @@ function shoot(forward) {
     return;
   }
   const muzzle = nextPilotMuzzle(T, me);
-  if (muzzle) bullet(muzzle, spreadDirection(T, forward), '#f4efab', true);
+  if (muzzle) bullet(muzzle, spreadDirection(T, forward), TRACER_COLOR, true);
 }
 function explosion(b, point) {
   combatEffects.blast(point);
@@ -4928,7 +4935,7 @@ function pistol() {
     targetScene,
     origin,
     dir,
-    '#ffe48d',
+    TRACER_COLOR,
     scale,
     hit?.distance || 150 * scale,
   );
@@ -4959,7 +4966,6 @@ function pistol() {
 
 const pistolTrails = [];
 // Issue #106: tracers no longer carry a per-vehicle colour.
-const TRACER_COLOR = '#f4efab';
 function vehicleColor() {
   return new T.Color(TRACER_COLOR);
 }
@@ -5157,17 +5163,10 @@ function remainingFuel() {
   return Math.max(0, supply.fuel - (powered ? consumption * age : 0));
 }
 function installationModel(st) {
-  const g = st.kind === 'bed' ? new T.Group() : makeServiceStation(T, st.kind);
+  const g = st.kind === 'bed' ? makeBed(T) : makeServiceStation(T, st.kind);
   g.position.set(st.x, st.y, st.z);
   g.scale.setScalar(MAP.ratio);
   scene.add(g);
-  if (st.kind === 'bed') {
-    box(0, 0.15, 0, 4, 0.3, 3, '#bb8c44', g);
-    box(0, 0.45, 0, 1.6, 0.35, 3, '#e2d6ad', g);
-    box(0, 0.7, -1, 1.35, 0.2, 0.65, '#f7edcb', g);
-    for (const x of [-0.65, 0.65])
-      for (const z of [-1.2, 1.2]) box(x, 0.15, z, 0.15, 0.3, 0.15, '#664e34', g);
-  }
   return g;
 }
 

@@ -200,3 +200,11 @@ La CI des PR exécute ce benchmark et le test de domaine de 50 participants
 en plus de la construction Docker. Pour une validation de capacité, instrumenter
 une partie UDP avec 50 clients indépendants et relever FPS, délai des commandes,
 débit, CPU et mémoire.
+
+### Position d’Alpha dans le comparatif historique
+
+Depuis la version 291, `benchmark-snapshot-50.mjs` vérifie explicitement le
+changement de coordonnées de la station Alpha depuis son commit de référence.
+Les autres champs de la station doivent rester identiques ; le reste du snapshot
+conserve sa comparaison complète. Ce contrôle ne retire pas la station du paquet
+et ne change ni les mesures CPU ni le nombre de joueurs du scénario.

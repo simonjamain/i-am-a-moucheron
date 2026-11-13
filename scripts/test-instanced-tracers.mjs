@@ -34,7 +34,7 @@ for (const batch of batches) {
     const source = models[i].userData[batch.userData.part];
     batch.getMatrixAt(i, matrix);
     assert.ok(matrix.elements.every((v, j) => Math.abs(v - source.matrixWorld.elements[j]) < 1e-6));
-    if (batch.userData.part === 'halo') {
+    if (batch.userData.part === 'core') {
       batch.getColorAt(i, color);
       assert.ok(
         color.toArray().every((v, j) => Math.abs(v - source.material.color.toArray()[j]) < 1e-6),
