@@ -13,7 +13,7 @@ import { CreatureBatch } from './creature-batch.js';
 export const MIDGE_LOD = Object.freeze({ ratio: 0.01, limit: 1000 });
 
 export class MidgeBatch {
-  constructor(T, scene, { enabled = true, capacity = 128, detailed = true } = {}) {
+  constructor(T, scene, { enabled = true, capacity = 128, detailed = true, vat = null } = {}) {
     this.T = T;
     this.scene = scene;
     this.enabled = enabled;
@@ -54,7 +54,7 @@ export class MidgeBatch {
         new T.Vector3(0.3, 0.3, 0.3),
       ),
     ];
-    if (detailed) this.detail = new CreatureBatch(T, scene, MIDGE, { name: 'moucherons' });
+    if (detailed) this.detail = new CreatureBatch(T, scene, MIDGE, { name: 'moucherons', vat });
     this.ensure(capacity);
   }
   ensure(needed) {

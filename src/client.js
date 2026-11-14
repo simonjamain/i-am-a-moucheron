@@ -1,3 +1,6 @@
+import { prepareCreatureVat } from '/creature-batch.js';
+import { MIDGE } from '/midge-model.js';
+import { WALKERS } from '/walker-batch.js';
 import { rayCollider, colliderContainsXZ } from '/oriented-collider.js';
 import { makeServiceStation, animateRadar, makeInstallationCollider } from '/station-model.js';
 import { ReloadHUD, seatReloads, heavyReadyAt, heavyLane, reloadProgress } from '/reload-hud.js';
@@ -259,9 +262,19 @@ const others = new Map(),
   trails = [];
 const insectIndex = new InsectIndex(T, insects);
 const groundMotion = new GroundMotionTrack();
-const midgeBatch = new MidgeBatch(T, scene, { enabled: !!renderer.isWebGLRenderer });
+// Prepare animation textures cooperatively before starting the main loop.
+// Awaiting microtasks alone would still freeze the loading screen.
+const midgeVat = renderer.isWebGLRenderer ? await prepareCreatureVat(T, MIDGE) : null;
+const walkerVats = {};
+if (renderer.isWebGLRenderer)
+  for (const [type, walker] of Object.entries(WALKERS))
+    walkerVats[type] = await prepareCreatureVat(T, walker.creature);
+const midgeBatch = new MidgeBatch(T, scene, { enabled: !!renderer.isWebGLRenderer, vat: midgeVat });
 const spiderlingBatch = new SpiderlingBatch(T, scene, { enabled: !!renderer.isWebGLRenderer });
-const walkerBatch = new WalkerBatch(T, scene, { enabled: !!renderer.isWebGLRenderer });
+const walkerBatch = new WalkerBatch(T, scene, {
+  enabled: !!renderer.isWebGLRenderer,
+  vats: walkerVats,
+});
 const midgeForward = new T.Vector3(0, 0, -1);
 const midgeHeading = new T.Vector3();
 const midgeTarget = new T.Quaternion();

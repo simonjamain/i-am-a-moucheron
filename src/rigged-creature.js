@@ -169,7 +169,7 @@ export function defineCreature(D, config) {
   }
 
   // Skin the cycle into frames (positions and normals in presentation space).
-  function bake(T, frames = config.frames) {
+  function* bakeSteps(T, frames = config.frames) {
     const { geometry, boneInverses } = shared(T);
     const instance = createRig(T, new T.MeshBasicMaterial());
     const bones = instance.skeleton.bones;
@@ -220,9 +220,23 @@ export function defineCreature(D, config) {
         normals[o] = nacc.x;
         normals[o + 1] = nacc.y;
         normals[o + 2] = nacc.z;
+        // Bound startup work even for a detailed mesh; synchronous callers
+        // drain these same steps without changing any animation samples.
+        if ((k + 1) % 256 === 0) yield;
       }
+      yield;
     }
+    instance.skeleton.dispose();
+    instance.mesh.material.dispose();
     return { frames, count, positions, normals };
+  }
+  function bake(T, frames = config.frames) {
+    const steps = bakeSteps(T, frames);
+    let result;
+    do {
+      result = steps.next();
+    } while (!result.done);
+    return result.value;
   }
 
   return {
@@ -239,5 +253,6 @@ export function defineCreature(D, config) {
     texture: (T) => shared(T).texture,
     createRig,
     bake,
+    bakeSteps,
   };
 }
