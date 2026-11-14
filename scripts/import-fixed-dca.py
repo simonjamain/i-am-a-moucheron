@@ -98,9 +98,12 @@ def convert(kind, path):
         # The upper sleeves sit farther back than the lower pair. Include
         # their two narrow shells without moving the surrounding shields.
         is_upper_sleeve = -.159 < front < -.156 and -.026 < back < -.022 and low_y > .075
+        # The heavy Flak breech is the separate, central shell behind the tube.
+        side = max(abs(p[0]) for p in pts)
+        is_heavy_breech = -.05 < front < -.045 and .26 < back < .27 and side < .112
         # The barrels, muzzle brakes and exposed sleeves are separate shells.
         is_barrel = (
-            front < -.42 if kind == 'dcaHeavy' else
+            (front < -.42 or is_heavy_breech) if kind == 'dcaHeavy' else
             ((front < -.235 and low_y > .014) or is_upper_sleeve) if kind == 'dcaRapid' else
             (front < -.37 or (-.17 < front < -.12 and low_y > .02 and high_y > .11))
         )

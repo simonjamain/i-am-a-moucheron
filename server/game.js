@@ -20,7 +20,7 @@ import { purchaseCount } from '../src/equipment.js';
 import { bedAccess, bedSpawn } from '../src/beds.js';
 import { impactDamage } from '../src/field-physics.js';
 import { randomUUID } from 'node:crypto';
-import { MAP, ACTOR_UNIT, enemySizeFactor } from '../src/scale.js';
+import { MAP, ACTOR_UNIT, enemySizeFactor, flakPitchAllowed } from '../src/scale.js';
 import { OFFICE_LAYOUT, RAID_DURATION } from '../src/layout.js';
 import {
   VEHICLES,
@@ -1512,9 +1512,7 @@ export class Game {
         direction.length === 3 &&
         direction.every(Number.isFinite) &&
         Math.hypot(...direction) > 0.5 &&
-        (weapon === 'antitank'
-          ? howitzerPitchAllowed(direction)
-          : Math.abs(direction[1] / Math.hypot(...direction)) <= Math.sin(1.35) + 1e-8),
+        (weapon === 'antitank' ? howitzerPitchAllowed(direction) : flakPitchAllowed(direction)),
       'Visée invalide.',
       400,
     );
@@ -2155,7 +2153,14 @@ export class Game {
       400,
     );
     if (selected === 'rocket') v.rocketSide = -(v.rocketSide || -1);
-    if (selected === 'proximity') v.proximity = clampProximity(b.proximity);
+    if (selected === 'proximity') {
+      const [x, y, z, w] = v.state.q;
+      requireGame(
+        flakPitchAllowed(rotateLocal([-x, -y, -z, w], direction)),
+        'Butée de la DCA atteinte.',
+      );
+      v.proximity = clampProximity(b.proximity);
+    }
     if (selected === 'missile') {
       const local = rotateLocal(
         [-v.state.q[0], -v.state.q[1], -v.state.q[2], v.state.q[3]],

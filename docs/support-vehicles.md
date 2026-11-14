@@ -91,8 +91,8 @@ Le conducteur conduit sans arme. Le tireur vise un canon unique, utilisable en
 roulant ; molette : proximité, pas de **0,5 m**, valeur initiale **5 m**, bornes
 **0,5–20 m de référence** en interne. Le curseur affiche la distance réelle du
 décor (1,5 mm–6,0 cm, version 237). La molette du tireur ne
-change ni les gaz ni le zoom. Les limites de visée choisies suivent les tourelles
-ordinaires : azimut libre, élévation de −0,1 à 1,35 rad.
+change ni les gaz ni le zoom. L’azimut est libre et l’élévation va de **+5° à +90°**
+par rapport au châssis du camion.
 
 100 obus, vitesse initiale propre **560 m/s** de référence (70 % de la DCA fixe),
 intervalle minimum **0,8 s**, durée maximale **6 s**. L'obus hérite aussi de la

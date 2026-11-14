@@ -24,7 +24,7 @@ import { advanceAutomaticFire } from '/salvos.js';
 import { ammoCapacity } from '/logistics.js';
 import { PISTOL_CAPACITY } from '/ground-ammo.js';
 import { FIXED_DCA, heavyDcaMuzzle, isFixedDca } from '/fixed-dca.js';
-import { makeFixedDca } from '/fixed-dca-model.js';
+import { makeFixedDca, positionHeavyFlakSight } from '/fixed-dca-model.js';
 import { FORTIFICATIONS, isFortification } from '/ground-fortifications.js';
 import { HOWITZER } from '/howitzer-model.js';
 import {
@@ -507,7 +507,7 @@ canvas.addEventListener('pointermove', (e) => {
       return;
     }
     turretAim.yaw -= (e.clientX - groundView.x) * 0.003;
-    turretAim.pitch = T.MathUtils.clamp(
+    turretAim.pitch = clampTurretPitch(
       turretAim.pitch - (e.clientY - groundView.y) * 0.003,
       crewSeat === 'ventral'
         ? -1.5
@@ -825,7 +825,7 @@ addEventListener('pointermove', (event) => {
   }
   if ((turretIndex >= 0 || (myVehicle && crewSeat !== 'pilot')) && !respawnAt) {
     turretAim.yaw -= dx * 0.003;
-    turretAim.pitch = T.MathUtils.clamp(
+    turretAim.pitch = clampTurretPitch(
       turretAim.pitch - dy * 0.003,
       crewSeat === 'ventral'
         ? -1.5
@@ -1245,6 +1245,7 @@ function accept(s, force = false) {
     }
     if (turretIndex >= 0 && oldTurret !== turretIndex) {
       boardingOpen = false;
+      groundView.scene = '';
       sound.play('board', camera.position, { ref: 8 });
       turretAim.yaw = 0;
       const kind = stations[turretIndex]?.kind;
@@ -2704,6 +2705,12 @@ function reconcileEquipment(next) {
     stationRings[i] = ring;
   }
 }
+function clampTurretPitch(value, min, max) {
+  const antiAir =
+    isFixedDca(stations[turretIndex]?.kind) ||
+    (myVehicle?.type === 'flaktruck' && crewSeat === 'cannon');
+  return T.MathUtils.clamp(value, antiAir ? FLAK.minPitch : min, antiAir ? FLAK.maxPitch : max);
+}
 function turretDirection(aim = turretAim) {
   return new T.Vector3(
     -Math.sin(aim.yaw) * Math.cos(aim.pitch),
@@ -3023,7 +3030,7 @@ function updateVehicles(dt) {
     }
     if (controlFocus.active && !observing) {
       turretAim.yaw -= pad.yaw * dt;
-      turretAim.pitch = T.MathUtils.clamp(
+      turretAim.pitch = clampTurretPitch(
         turretAim.pitch - pad.pitch * dt,
         crewSeat === 'ventral'
           ? -1.5
@@ -3057,7 +3064,8 @@ function updateVehicles(dt) {
     else if (myVehicle.type === 'helicopter') me.visible = true;
     camera.position.copy(view.eye);
     camera.up.copy(up);
-    camera.lookAt(view.target);
+    if (myVehicle.type === 'flaktruck') mount.userData.pitch.getWorldQuaternion(camera.quaternion);
+    else camera.lookAt(view.target);
     $('crosshair').classList.remove('hidden', 'offscreen');
     shooting =
       myVehicle.type !== 'flaktruck' &&
@@ -3090,7 +3098,9 @@ function updateVehicles(dt) {
       occupant = snap?.pilots.find(
         (p) => p.life === 'alive' && p.mode === 'turret' && p.state.turret === index,
       );
-    gun.userData.person.visible = !!occupant && isFixedDca(station.kind);
+    const heavyDca = station.kind === 'dcaHeavy';
+    const self = index === turretIndex;
+    gun.userData.person.visible = !!occupant && isFixedDca(station.kind) && !(self && heavyDca);
     if (gun.userData.person.visible) {
       wearAppearance(gun.userData.person, occupant.id);
       gun.userData.person.userData.animate?.(dt, { seated: true });
@@ -3102,8 +3112,7 @@ function updateVehicles(dt) {
       gun.userData.rapidQueue?.clear();
       continue;
     }
-    const self = occupant.id === id,
-      motion = self ? localMotion() : remoteMotion(occupant);
+    const motion = self ? localMotion() : remoteMotion(occupant);
     let dir = self
       ? turretDirection()
       : new T.Vector3().fromArray(motion.turretDirection || [0, 0.3, -1]).normalize();
@@ -3117,7 +3126,6 @@ function updateVehicles(dt) {
     gun.updateWorldMatrix(true, true);
     const muzzleNode = gun.userData.muzzles[gun.userData.barrel % gun.userData.muzzles.length];
     const muzzle = muzzleNode.getWorldPosition(new T.Vector3());
-    const heavyDca = station.kind === 'dcaHeavy';
     const interval =
       (FORTIFICATIONS[station.kind]?.interval ?? FIXED_DCA[station.kind]?.interval) /
       (snap?.balance?.fireRate ?? 1);
@@ -3125,7 +3133,7 @@ function updateVehicles(dt) {
       if (controlFocus.active) {
         if (station.kind === 'dca') flakRange = advanceFuse(flakRange, keys, dt);
         turretAim.yaw -= pad.yaw * dt * 1.5;
-        turretAim.pitch = T.MathUtils.clamp(
+        turretAim.pitch = clampTurretPitch(
           turretAim.pitch - pad.pitch * dt,
           howitzer ? HOWITZER.minPitch : -0.1,
           howitzer ? HOWITZER.maxPitch : 1.35,
@@ -3140,13 +3148,16 @@ function updateVehicles(dt) {
           .set(station.x, station.y + MAP.metres(2.6), station.z)
           .addScaledVector(back, -MAP.metres(4.5));
         camera.lookAt(camera.position.clone().addScaledVector(aim, MAP.metres(100)));
+      } else if (heavyDca) {
+        positionHeavyFlakSight(T, camera, gun);
       } else {
         camera.position.set(
           station.x,
           station.y + MAP.metres(station.kind === 'bunker' ? 17 : 5),
           station.z,
         );
-        camera.lookAt(camera.position.clone().addScaledVector(dir, MAP.metres(100)));
+        if (isFixedDca(station.kind)) gun.userData.pitch.getWorldQuaternion(camera.quaternion);
+        else camera.lookAt(camera.position.clone().addScaledVector(dir, MAP.metres(100)));
       }
       shooting =
         ((controlFocus.active && (mouseFire || keys.Space || pad.fire)) || uiWeaponFire) &&
@@ -3348,7 +3359,7 @@ function updateBaseWorld(dt, now) {
   }
   const active = new Set();
   for (const b of baseArena.bodies) {
-    if (b.gone) continue;
+    if (b.gone || (b.entity === id && turretIndex >= 0)) continue;
     active.add(b.entity);
     let g = basePeople.get(b.entity);
     if (!g) {

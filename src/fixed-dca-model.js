@@ -83,3 +83,12 @@ export function makeFixedDca(T, station) {
   });
   return root;
 }
+
+// Keep the sight just past the large tube so it cannot obstruct the view,
+// even at vertical elevation. Copy the orientation to preserve azimuth there.
+export function positionHeavyFlakSight(T, camera, gun) {
+  gun.userData.pitch.getWorldQuaternion(camera.quaternion);
+  const ahead = new T.Vector3(0, 0, -MAP.metres(0.15)).applyQuaternion(camera.quaternion);
+  gun.userData.muzzles[0].getWorldPosition(camera.position).add(ahead);
+  camera.updateMatrixWorld();
+}
