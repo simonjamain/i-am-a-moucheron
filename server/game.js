@@ -20,7 +20,7 @@ import { purchaseCount } from '../src/equipment.js';
 import { bedAccess, bedSpawn } from '../src/beds.js';
 import { impactDamage } from '../src/field-physics.js';
 import { randomUUID } from 'node:crypto';
-import { MAP, ACTOR_UNIT, FLAK, enemySizeFactor } from '../src/scale.js';
+import { MAP, ACTOR_UNIT, enemySizeFactor } from '../src/scale.js';
 import { OFFICE_LAYOUT, RAID_DURATION } from '../src/layout.js';
 import {
   VEHICLES,
@@ -50,7 +50,8 @@ import { SHOP, shopPrice, supportedPlacement, waveStipend } from '../src/equipme
 import { advancePaidService } from '../src/paid-service.js';
 import { SENTRY, fireGroundSentries } from '../src/ground-sentry.js';
 import { FORTIFICATIONS, isFortification } from '../src/ground-fortifications.js';
-import { FIXED_DCA_AMMO, PISTOL_CAPACITY } from '../src/ground-ammo.js';
+import { FIXED_DCA, heavyDcaMuzzle, isFixedDca } from '../src/fixed-dca.js';
+import { PISTOL_CAPACITY } from '../src/ground-ammo.js';
 import {
   fullAmmo,
   ammoCapacity,
@@ -172,6 +173,7 @@ function roomState(code, now) {
     ordnance: [],
     ordnanceShots: new Set(),
     fixedDcaShots: new Set(),
+    rapidDcaShots: new Map(),
     damageEvents: [],
     damageSeq: 0,
     enemyHits: new Set(),
@@ -734,6 +736,7 @@ export class Game {
     r.ordnance = [];
     r.ordnanceShots.clear();
     r.fixedDcaShots.clear();
+    r.rapidDcaShots.clear();
     this.prepareWave(r);
   }
   labCommand(r, b) {
@@ -1061,6 +1064,7 @@ export class Game {
           'leave',
           // A shell still in flight when its shooter dies keeps its effect.
           'heavy-impact',
+          'fixed-dca-impacts',
         ].includes(path),
       'Accédez au purgatoire avant d’agir.',
     );
@@ -1081,8 +1085,11 @@ export class Game {
     else if (path === 'place-purchase') this.placePurchase(r, p, b);
     else if (path === 'wash') this.wash(r, p, b);
     else if (path === 'pistol-trace') this.pistolTrace(r, p, b);
-    else if (path === 'fixed-dca-fire') this.fixedDcaFire(r, p, b);
-    else if (path === 'antitank-fire') this.antitankFire(r, p, b);
+    else if (path === 'fixed-dca-fire') {
+      const result = this.fixedDcaFire(r, p, b);
+      if (result) return result;
+    } else if (path === 'antitank-fire' || path === 'heavy-dca-fire')
+      this.fixedShellFire(r, p, b, path === 'antitank-fire' ? 'antitank' : 'dcaHeavy');
     else if (path === 'start') {
       if (!r.mission_started && !b.preparation) {
         r.mission_started = 1;
@@ -1175,6 +1182,7 @@ export class Game {
       this.equipment(r, p, path, b);
     else if (['seat-request', 'seat-sign', 'seat-reject'].includes(path)) this.seat(r, p, path, b);
     else if (path === 'aircraft-fire') return clone(this.fire(r, p, b));
+    else if (path === 'fixed-dca-impacts') return this.rapidDcaImpacts(r, p, b.impacts);
     else if (path === 'heavy-impact') this.heavyImpact(r, p, b);
     else if (path === 'heavy-fire') this.heavyFire(r, p, b);
     else if (path === 'hit') this.hit(r, p, b);
@@ -1412,12 +1420,13 @@ export class Game {
         p.mode === 'turret' &&
         Number.isInteger(b.station) &&
         p.state.turret === b.station &&
-        (gun?.kind === 'dca' || (isFortification(gun?.kind) && gun.hp > 0)) &&
+        (isFixedDca(gun?.kind) || (isFortification(gun?.kind) && gun.hp > 0)) &&
         p.incarnation === b.incarnation,
       'Occupez ce poste pour tirer.',
     );
     // The heavy gun fires server shells only (antitank-fire), never client rounds.
-    requireGame(gun.kind !== 'antitank', 'Le canon lourd tire des obus.');
+    requireGame(!['antitank', 'dcaHeavy'].includes(gun.kind), 'Le canon lourd tire des obus.');
+    if (gun.kind === 'dcaRapid') return this.rapidDcaFire(r, p, gun, b.shots);
     requireGame(
       typeof b.shot === 'string' && b.shot.length > 0 && b.shot.length <= 120,
       'Identifiant de tir invalide.',
@@ -1427,7 +1436,8 @@ export class Game {
     if (r.fixedDcaShots.has(key)) return;
     requireGame(gun.ammo >= 1, 'Cette arme est à court de munitions.');
     const interval =
-      ((FORTIFICATIONS[gun.kind]?.interval ?? FLAK.interval) * 1000) / (r.balance.fireRate || 1);
+      ((FORTIFICATIONS[gun.kind]?.interval ?? FIXED_DCA[gun.kind].interval) * 1000) /
+      (r.balance.fireRate || 1);
     requireGame(
       this.now() >= (gun.lastShotAt ?? -Infinity) + interval,
       'Cette arme recharge son canon.',
@@ -1437,17 +1447,55 @@ export class Game {
     gun.lastShotAt = this.now();
     r.fixedDcaShots.add(key);
   }
+  rapidDcaFire(r, p, gun, shots) {
+    requireGame(
+      Array.isArray(shots) &&
+        shots.length > 0 &&
+        shots.length <= 8 &&
+        new Set(shots).size === shots.length &&
+        shots.every(
+          (shot) =>
+            typeof shot === 'string' && shot.startsWith(p.id + ':rapid:') && shot.length <= 120,
+        ),
+      'Rapport de tirs invalide.',
+      400,
+    );
+    const now = this.now();
+    // Retain launch IDs beyond round flight and reliable retries. This ledger
+    // cannot exhaust the permanent budget of the slower emplacements.
+    for (const [key, launchedAt] of r.rapidDcaShots) {
+      if (now - launchedAt < 60000) break;
+      r.rapidDcaShots.delete(key);
+    }
+    const interval = (FIXED_DCA.dcaRapid.interval * 1000) / (r.balance.fireRate || 1);
+    // Accumulate a short burst of credit so packet timing does not set the rate.
+    let credit = Math.min(8, (gun.rapidCredit ?? 8) + (now - (gun.lastShotAt ?? now)) / interval);
+    const accepted = [];
+    for (const shot of shots) {
+      const key = p.id + ':' + p.incarnation + ':' + shot;
+      if (r.rapidDcaShots.has(key)) accepted.push(shot);
+      else if (credit >= 1 && gun.ammo >= 1 && r.rapidDcaShots.size < 128000) {
+        credit--;
+        gun.ammo--;
+        r.rapidDcaShots.set(key, now);
+        accepted.push(shot);
+      }
+    }
+    gun.rapidCredit = credit;
+    gun.lastShotAt = now;
+    return { accepted, ammo: gun.ammo, at: now };
+  }
   // Issue #113: the anti-materiel howitzer fires a server-simulated shell, like
   // the tank cannon, from its real muzzle along the barrel direction.
-  antitankFire(r, p, b) {
+  fixedShellFire(r, p, b, weapon) {
     const gun = r.equipment[b.station];
     requireGame(
       p.life === 'alive' &&
         p.mode === 'turret' &&
         Number.isInteger(b.station) &&
         p.state.turret === b.station &&
-        gun?.kind === 'antitank' &&
-        gun.hp > 0 &&
+        gun?.kind === weapon &&
+        (weapon !== 'antitank' || gun.hp > 0) &&
         p.incarnation === b.incarnation,
       'Occupez ce canon lourd pour tirer.',
     );
@@ -1464,12 +1512,14 @@ export class Game {
         direction.length === 3 &&
         direction.every(Number.isFinite) &&
         Math.hypot(...direction) > 0.5 &&
-        howitzerPitchAllowed(direction),
+        (weapon === 'antitank'
+          ? howitzerPitchAllowed(direction)
+          : Math.abs(direction[1] / Math.hypot(...direction)) <= Math.sin(1.35) + 1e-8),
       'Visée invalide.',
       400,
     );
     requireGame(gun.ammo >= 1, 'Ce canon est à court d’obus.');
-    const profile = HEAVY.antitank;
+    const profile = HEAVY[weapon];
     requireGame(
       this.now() + HEAVY_CADENCE_TOLERANCE_MS >=
         (gun.lastShotAt ?? -Infinity) + (profile.interval * 1000) / (r.balance.fireRate || 1),
@@ -1487,11 +1537,12 @@ export class Game {
     r.ordnanceShots.add(key);
     r.ordnance.push({
       shot: b.shot,
-      weapon: 'antitank',
+      weapon,
       vehicle: null,
       station: b.station,
       shooter: p.id,
-      p: howitzerMuzzle(gun, dir),
+      p: weapon === 'antitank' ? howitzerMuzzle(gun, dir) : heavyDcaMuzzle(gun, dir),
+      ...(weapon === 'dcaHeavy' ? { proximity: clampProximity(b.proximity) } : {}),
       v: dir.map((v) => v * profile.speed),
       age: 0,
       at: this.now(),
@@ -1655,13 +1706,7 @@ export class Game {
       }
       if (delivery.y > landing.y) continue;
       if (VEHICLES[delivery.item]) this.createVehicle(r, delivery.item, 'purchase', landing);
-      else
-        r.equipment.push({
-          ...landing,
-          kind: delivery.item,
-          name: SHOP[delivery.item].name,
-          slot: r.equipment.length,
-        });
+      else this.installEquipment(r, delivery.item, landing);
       delivery.done = true;
     }
     r.deliveries = r.deliveries.filter((d) => !d.done);
@@ -1864,18 +1909,20 @@ export class Game {
         'La base entière doit reposer sur une surface libre.',
       );
       if (item.kind === 'vehicle') this.createVehicle(r, b.item, 'purchase', placement);
-      else
-        r.equipment.push({
-          ...placement,
-          kind: b.item,
-          name: item.name,
-          slot: r.equipment.length,
-          ...(b.item === 'dca' ? { ammo: FIXED_DCA_AMMO } : {}),
-        });
+      else this.installEquipment(r, b.item, placement);
     } else if (item.kind === 'vehicle') this.createVehicle(r, b.item);
     else r.upgrades[b.item] = (r.upgrades[b.item] || 0) + 1;
     if (!prepaid) r.dollars = money(r.dollars - price);
     r.orders.set(request, b.item);
+  }
+  installEquipment(r, kind, placement) {
+    r.equipment.push({
+      ...placement,
+      kind,
+      name: SHOP[kind].name,
+      slot: r.equipment.length,
+      ...(isFixedDca(kind) ? { ammo: FIXED_DCA[kind].ammo } : {}),
+    });
   }
   vehicle(r, p, path, b) {
     if (path === 'vehicle-exit') {
@@ -1960,7 +2007,7 @@ export class Game {
     requireGame(
       p.mode === 'foot' &&
         Number.isInteger(b.station) &&
-        (s?.kind === 'dca' || (isFortification(s?.kind) && s.hp > 0)) &&
+        (isFixedDca(s?.kind) || (isFortification(s?.kind) && s.hp > 0)) &&
         body &&
         !body.parachute &&
         stationAccess(baseWorld(body), s),
@@ -2348,6 +2395,25 @@ export class Game {
     }
     return true;
   }
+  rapidDcaImpacts(r, p, impacts) {
+    requireGame(Array.isArray(impacts) && impacts.length <= 16, 'Impacts invalides.', 400);
+    for (const impact of impacts) {
+      if (typeof impact?.shot !== 'string' || !this.rapidImpactAllowed(r, p, impact.shot)) continue;
+      if (Number.isInteger(impact.enemy)) this.hit(r, p, impact);
+      else if (impact.vehicle ? r.vehicles.has(impact.vehicle) : r.pilots.has(impact.target)) {
+        try {
+          this.friendly(r, p, impact);
+        } catch (error) {
+          // The target can disappear or move between realms before arrival.
+          if (error.status !== 409) throw error;
+        }
+      }
+    }
+    return {};
+  }
+  rapidImpactAllowed(r, p, shot) {
+    return r.rapidDcaShots.has(p.id + ':' + p.incarnation + ':' + shot);
+  }
   hit(r, p, b) {
     const e = this.plan(r).roster[b.enemy];
     if (
@@ -2359,8 +2425,12 @@ export class Game {
     )
       return;
     if (r.kills.has(b.enemy)) return;
-    if (!this.pistolImpact(r, p, b.shot)) return;
-    const amount = Math.max(1, Math.min(800, Number(b.amount) || 75)) * r.balance.damage;
+    const rapid = typeof b.shot === 'string' && b.shot.startsWith(p.id + ':rapid:');
+    if (rapid ? !this.rapidImpactAllowed(r, p, b.shot) : !this.pistolImpact(r, p, b.shot)) return;
+    const damage = rapid
+      ? 75 * (1 + (r.upgrades.weapons || 0))
+      : Math.max(1, Math.min(800, Number(b.amount) || 75));
+    const amount = damage * r.balance.damage;
     this.once(
       r,
       JSON.stringify(['enemy', r.wave, b.enemy, p.id, String(b.shot || 'legacy').slice(0, 120)]),
@@ -2373,6 +2443,8 @@ export class Game {
   }
   friendly(r, p, b) {
     requireGame(typeof b.shot === 'string' && b.shot.length <= 120, 'Impact invalide.');
+    const rapid = b.shot.startsWith(p.id + ':rapid:');
+    if (rapid && !this.rapidImpactAllowed(r, p, b.shot)) return;
     const vehicle = r.vehicles.get(p.vehicle_id),
       key = b.weapon || p.seat;
     const tankDamage =
@@ -2380,15 +2452,17 @@ export class Game {
         ? TANK_MG[key]?.damage
         : undefined;
     const amount =
-      (p.mode === 'foot'
-        ? 10
-        : p.mode === 'turret'
-          ? Math.max(0, Math.min(200, Math.round(Number(b.amount) || 80)))
-          : (tankDamage ?? 75)) * r.balance.damage;
+      (rapid
+        ? 75 * (1 + (r.upgrades.weapons || 0))
+        : p.mode === 'foot'
+          ? 10
+          : p.mode === 'turret'
+            ? Math.max(0, Math.min(200, Math.round(Number(b.amount) || 80)))
+            : (tankDamage ?? 75)) * r.balance.damage;
     if (b.vehicle) {
       const v = r.vehicles.get(b.vehicle);
       requireGame(world(p) === 'office' && v, 'Appareil hors de cet espace.');
-      if (!this.pistolImpact(r, p, b.shot)) return;
+      if (!rapid && !this.pistolImpact(r, p, b.shot)) return;
       this.once(r, JSON.stringify(['hull', v.id, p.id, b.shot]), () => {
         v.state.hp = Math.max(0, v.state.hp - amount);
       });
@@ -2409,7 +2483,7 @@ export class Game {
         (b.incarnation === undefined || b.incarnation === target.incarnation),
       'Cible absente de cet espace.',
     );
-    if (!this.pistolImpact(r, p, b.shot)) return;
+    if (!rapid && !this.pistolImpact(r, p, b.shot)) return;
     this.once(r, JSON.stringify(['health', target.id, target.incarnation, p.id, b.shot]), () => {
       r.damageEvents.push({
         id: ++r.damageSeq,

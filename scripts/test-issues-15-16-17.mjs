@@ -116,6 +116,7 @@ const input = {
   crewSeat: 'pilot',
   respawnAt: 0,
   turretIndex: -1,
+  stations: [],
   onFoot: false,
   placingEquipment: false,
   gameKey,

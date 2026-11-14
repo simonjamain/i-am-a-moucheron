@@ -36,11 +36,13 @@ en supplément ; tuer dans le bureau ne crédite toujours rien directement.
 
 | Achat                           | Prix                                                     |
 | ------------------------------- | -------------------------------------------------------- |
-| DCA successives                 | 4 $, 6 $, 8 $, 10 $… +2 $ par installation, plafond 40 $ |
+| Flak légers successifs          | 4 $, 6 $, 8 $, 10 $… +2 $ par installation, plafond 40 $ |
 | Motorisation, niveaux 1 / 2 / 3 | 4 $ / 9 $ / 16 $                                         |
 | Munitions, niveaux 1 / 2 / 3    | 6 $ / 12 $ / 20 $                                        |
 | Stuka, chaque exemplaire        | 12 $                                                     |
 | Lit, exemplaires successifs     | 4 $, 6 $, 8 $…                                           |
+| DCA haute cadence               | 15 $                                                     |
+| Flak lourd                      | 35 $                                                     |
 | Spitfire, chaque exemplaire     | 24 $                                                     |
 | Tank, chaque exemplaire         | 10 $                                                     |
 

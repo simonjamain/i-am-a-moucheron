@@ -56,6 +56,6 @@ for (const item of [
   'castor',
 ])
   assert.match(thumbs, new RegExp(item + ':'), item + ' has a picture');
-for (const kind of ['bed', 'refuel', 'radar', 'dca'])
+for (const kind of ['bed', 'refuel', 'radar', 'dca', 'dcaRapid', 'dcaHeavy'])
   assert.match(thumbs, new RegExp("'" + kind + "'"));
 console.log('Shop catalog: columns by category, price-sorted, pictures for every item');
