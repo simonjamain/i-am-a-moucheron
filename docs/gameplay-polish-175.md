@@ -35,6 +35,15 @@ le joueur puis accélère vers la caméra. La sortie dure 1,4 s ; les clics sur
 l’accueil sont bloqués jusqu’à sa fin. Avec la réduction des animations activée,
 un fondu de 0,2 s remplace le vol vers la caméra, sans attente minimale.
 
+Depuis la version 295, la préparation des animations des ennemis est découpée en
+petites tâches (budget visé de 4 ms, avec retour à la boucle du navigateur).
+L’animation du moucheron peut ainsi continuer pendant ce calcul ; les textures
+préparées sont utilisées directement, sans refaire le calcul dans les constructeurs.
+Les images des cycles et leur précision restent identiques. Cela réduit le blocage
+CPU mesuré à l’initialisation, sans garantir l’absence de pauses dues aux shaders,
+au décodage des ressources ou au pilote GPU. `test-loading-preparation.mjs` vérifie
+les occasions de rafraîchissement et l’identité des données produites.
+
 Le contexte WebGL temporaire du loader est détruit après cette transition, avec son
 canevas ; il ne reste pas un deuxième contexte animé pendant la partie.
 

@@ -1,6 +1,12 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 295,
+    changes: [
+      'La préparation du jeu laisse respirer l’animation du moucheron pour réduire les à-coups pendant le chargement.',
+    ],
+  },
+  {
     version: 294,
     changes: [
       'À la fin du chargement, le moucheron s’envole vers vous et le fond s’efface pour révéler l’accueil.',
