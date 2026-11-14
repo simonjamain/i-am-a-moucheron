@@ -358,12 +358,26 @@ changement de `navigationRevision`. Le trajet est lissé à angle libre : depuis
 position, l'insecte vise le point le plus lointain de la descente encore visible
 en ligne droite, avec une marge d'environ une demi-case, et garde ce point jusqu'à
 l'atteindre. L'aperçu du conseil de vague (`smoothRoute`) enchaîne les mêmes points :
-à carte inchangée, la piste de phéromones orange (chevrons vers la poubelle) est le chemin marché. Un brouillon de barricade ou
+la piste de phéromones orange (chevrons vers la poubelle) indique le trajet de référence. Chaque insecte s'en écarte localement pour éviter ses voisins. Un brouillon de barricade ou
 de bunker montre le détour avant validation. Sans chemin, l'aperçu affiche
 « Passage fermé » ; les cafards, araignées et rats attaquent alors la barricade la
 plus proche. Le sucre détourne seulement les insectes entrés dans son rayon et
 n'est pas tracé. La route nominale (`enemyRoute`) suit aussi ce champ sur un bureau
-vide, ce qui fixe la durée de vague. `scripts/test-ground-paths.mjs` couvre ces cas.
+vide, ce qui fixe la durée nominale du trajet. `scripts/test-ground-paths.mjs` couvre ces cas.
+
+Les groupes ne sont plus dessinés en files décalées : leurs positions affichées et
+leurs volumes de tir suivent les positions simulées. `ground-crowd.js` partage une
+grille de voisinage par sous-pas (50 ms maximum). Chaque individu suit son propre
+point de passage et possède un espace personnel souple proportionnel à sa taille :
+il ralentit derrière un voisin et cherche à le contourner. Les groupes se forment
+ainsi autour de leur destination commune, sans attraction artificielle vers un centre.
+Les écarts doivent conserver un passage libre vers le point visé ; ils ne poussent
+pas un insecte à travers le mobilier ou une défense. La vitesse reste plafonnée à
+celle du bestiaire ; la foule peut retarder une arrivée. Le sucre et la colle gardent
+leurs pauses, les morts et les arrivés sont exclus du voisinage. Un chevauchement
+bref reste possible à la sortie d'un trou ou dans une foule comprimée : ce sont des
+contacts souples, pas des corps rigides. Les tests `test-ground-crowd.mjs` et
+`test-ground-spread.mjs` vérifient séparation, passages, pauses et arrivées.
 
 ## Défense aérienne
 

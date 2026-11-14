@@ -142,7 +142,37 @@ export function advanceGroundUnit(unit, enemy, elapsed, dt, world) {
     } else unit.attackId = null;
     const delta = dist(unit.p, next);
     if (delta < 0.000001) break;
-    const direction = [(next[0] - unit.p[0]) / delta, (next[1] - unit.p[1]) / delta];
+    let direction = [(next[0] - unit.p[0]) / delta, (next[1] - unit.p[1]) / delta];
+    let pace = 1;
+    if (world.separation && flow?.clear && !unit.attackId) {
+      const push = world.separation(unit, enemy);
+      const forward = push[0] * direction[0] + push[1] * direction[1];
+      let sideways = push[0] * direction[1] - push[1] * direction[0];
+      // A queue on the exact same line needs a preferred passing side; the
+      // preference only acts under pressure, never as a fixed formation offset.
+      if (forward < -0.05 && Math.abs(sideways) < 0.1) {
+        let hash = 0;
+        for (const ch of String(unit.id)) hash = Math.imul(hash, 31) + ch.charCodeAt(0);
+        sideways += (hash & 1 ? 1 : -1) * -forward * 0.7;
+      }
+      // Yield to the insect ahead, but keep progress in a crowded passage.
+      pace = Math.max(0.2, 1 + Math.min(0, forward) * 0.8);
+      const candidate = [
+        direction[0] + direction[1] * sideways * 2,
+        direction[1] - direction[0] * sideways * 2,
+      ];
+      const length = Math.hypot(...candidate);
+      const step = Math.min(delta, speed * remaining * pace);
+      const destination = unit.p.map((v, i) => v + (candidate[i] / length) * step);
+      // Both the avoidance step and the return toward the waypoint must remain
+      // clear: no sideways teleport through furniture or freshly built walls.
+      if (
+        Math.abs(sideways) > 1e-6 &&
+        flow.clear(unit.p, destination) &&
+        flow.clear(destination, next)
+      )
+        direction = candidate.map((v) => v / length);
+    }
     const contact = tapes.filter(
       (tape) => distanceToSegment(unit.p, tape.a, tape.b) <= tape.width / 2,
     );
@@ -152,7 +182,7 @@ export function advanceGroundUnit(unit, enemy, elapsed, dt, world) {
     unit.stickyInside = unit.stickyInside.filter((id) => nearby.some((tape) => tape.id === id));
     const effect = stickyTraversal(size);
     let multiplier = contact.length ? effect.speedMultiplier : 1;
-    const step = Math.min(delta, speed * remaining * multiplier);
+    const step = Math.min(delta, speed * pace * remaining * multiplier);
     const destination = [unit.p[0] + direction[0] * step, unit.p[1] + direction[1] * step];
     const swept = tapes.filter((tape) => crossedSticky(unit.p, destination, tape));
     if (swept.length && size === 'small') {
@@ -164,10 +194,10 @@ export function advanceGroundUnit(unit, enemy, elapsed, dt, world) {
       }
     }
     if (swept.length) multiplier = Math.min(multiplier, effect.speedMultiplier);
-    const travelled = Math.min(delta, speed * remaining * multiplier);
+    const travelled = Math.min(delta, speed * pace * remaining * multiplier);
     unit.p = [unit.p[0] + direction[0] * travelled, unit.p[1] + direction[1] * travelled];
     unit.dir = direction;
-    remaining -= travelled / (speed * multiplier);
+    remaining -= travelled / (speed * pace * multiplier);
     if (travelled < delta - 0.000001) break;
   }
   return unit;

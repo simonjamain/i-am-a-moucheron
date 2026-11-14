@@ -12,7 +12,7 @@ import {
   damageBarricade,
   floorStructures,
 } from '../src/ground-defense-state.js';
-import { groundUnit, advanceGroundUnit } from '../src/ground-creatures.js';
+import { advanceGroundCrowd } from '../src/ground-crowd.js';
 import { HELI, rotateLocal } from '../src/helicopter.js';
 import { clampProximity } from '../src/mobile-flak.js';
 import { collisionDamage, washTarget, WASH } from '../src/vehicle-care.js';
@@ -493,7 +493,7 @@ export class Game {
   }
   advanceGround(r, now) {
     // Ground insects always walk the shared flow field, with or without defenses,
-    // so the preparation forecast is the path walked during the wave.
+    // with local crowd avoidance around the preparation forecast.
     if (r.phase !== 'combat') return;
     const elapsed = (now - r.started) / 1000;
     if (r.groundWave !== r.wave) {
@@ -530,23 +530,7 @@ export class Game {
       damageWall: (id, amount) => damageBarricade(r.groundDefense, id, amount),
     };
     const roster = this.plan(r).roster;
-    for (let i = 0; i < roster.length; i++) {
-      const enemy = roster[i];
-      if (!enemy.ground || r.kills.has(i)) continue;
-      const availableAt = enemy.spawn + (enemy.entryHold || 0);
-      if (elapsed < availableAt) continue;
-      const unit =
-        r.groundAgents[enemy.id] ||
-        (r.groundAgents[enemy.id] = groundUnit(enemy, Math.max(previous, availableAt)));
-      if (unit.arrived) continue;
-      advanceGroundUnit(
-        unit,
-        enemy,
-        elapsed,
-        Math.max(0, elapsed - Math.max(previous, availableAt)),
-        world,
-      );
-    }
+    advanceGroundCrowd(r.groundAgents, roster, r.kills, previous, elapsed, world);
   }
   advanceSentries(r, now) {
     if (
