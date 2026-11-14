@@ -1,6 +1,12 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 297,
+    changes: [
+      'Les deux canons supérieurs de la DCA haute cadence restent assemblés quand on vise.',
+    ],
+  },
+  {
     version: 296,
     changes: [
       'Le Flak léger change de modèle. La boutique propose aussi une DCA à quatre mitrailleuses et un Flak lourd à obus de proximité.',

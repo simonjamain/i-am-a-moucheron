@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { FLAK } from '../src/scale.js';
+import { FLAK, MAP } from '../src/scale.js';
 import { FIXED_DCA_AMMO } from '../src/ground-ammo.js';
 import { advancePaidService } from '../src/paid-service.js';
 import { newGroundDefense } from '../src/ground-defense-state.js';
@@ -161,6 +161,41 @@ for (const [kind, count] of [
       mouths[0].distanceTo(new T.Vector3(...heavyDcaMuzzle(installed, direction.toArray()))) < 1e-9,
     );
 }
+
+// Front rim vertices of the two upper sleeves in the supplied GLB, in source
+// coordinates. They meet the barrels and must keep the same relative positions
+// as the four muzzle anchors through the full range of elevation.
+const rapidModel = makeFixedDca(T, { kind: 'dcaRapid' });
+const pivot = rapidModel.userData.pitch.position;
+const xAxis = new T.Vector3(1, 0, 0);
+const upperSleeves = [
+  [0.030029, 0.142334, -0.157471],
+  [-0.068115, 0.142334, -0.157471],
+].map(([x, y, z]) =>
+  new T.Vector3(x, y + 0.275635, z).multiplyScalar(5).sub(pivot).applyAxisAngle(xAxis, -0.455),
+);
+for (const elevation of [-0.1, 0.455, 1.35]) {
+  aimGun(T, rapidModel.userData.yaw, new T.Vector3(0, Math.sin(elevation), -Math.cos(elevation)));
+  const vertices = [];
+  rapidModel.traverse((mesh) => {
+    if (!mesh.isMesh) return;
+    const positions = mesh.geometry.attributes.position;
+    for (let index = 0; index < positions.count; index++)
+      vertices.push(mesh.localToWorld(new T.Vector3().fromBufferAttribute(positions, index)));
+  });
+  for (const rim of upperSleeves) {
+    const expected = rim
+      .clone()
+      .applyAxisAngle(xAxis, elevation)
+      .add(pivot)
+      .multiplyScalar(MAP.ratio);
+    assert.ok(
+      vertices.some((point) => point.distanceTo(expected) < 1e-7),
+      `upper sleeve follows its barrel at elevation ${elevation}`,
+    );
+  }
+}
+
 // Vehicle orders deploy by parachute and must initialise the same reserve.
 for (const [item, expectedPrice, ammo] of [
   ['dcaRapid', 15, 1000],

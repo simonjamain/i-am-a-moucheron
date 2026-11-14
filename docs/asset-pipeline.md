@@ -430,10 +430,13 @@ Les UV et les normales sont conservés. La texture de couleur devient un JPEG de
 | Modèle            | Source                                                | Triangles embase / bloc orientable / tubes |
 | ----------------- | ----------------------------------------------------- | -----------------------------------------: |
 | Flak léger        | `Meshy_AI_Twin_Thunder_Cannon_1114220423_texture.glb` |                          1 030 / 965 / 342 |
-| DCA haute cadence | `Meshy_AI_Quad_Flak_Sentinel_1114215256_texture.glb`  |                          970 / 1 148 / 208 |
+| DCA haute cadence | `Meshy_AI_Quad_Flak_Sentinel_1114215256_texture.glb`  |                          970 / 1 108 / 248 |
 | Flak lourd        | `Meshy_AI_Ironclad_Howitzer_1114215249_texture.glb`   |                          778 / 1 174 / 224 |
 
 Reproduire l’import avec `python scripts/import-fixed-dca.py TYPE SOURCE.glb`
 et les types `dca`, `dcaRapid` et `dcaHeavy`. Les bouches et pivots du modèle
 sont exprimés en mètres de référence. Le modèle partage ses maillages et sa
 texture entre les exemplaires.
+
+Les quatre manchons de la DCA haute cadence suivent les tubes en élévation.
+Le découpage inclut les deux manchons supérieurs, situés plus en arrière.
