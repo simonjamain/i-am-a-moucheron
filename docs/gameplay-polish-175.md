@@ -28,7 +28,14 @@ du personnage choisi et à la fin des textures demandées. Un échec propose
 en échec. La connexion au salon conserve son état distinct. Sans WebGL, le texte
 reste présent et le moteur logiciel existant demeure utilisable.
 
-Le contexte WebGL temporaire du loader est détruit après chargement, avec son
+Depuis la version 294, le moucheron reste visible au moins 0,9 s, même avec les
+ressources en cache. Une fois prêt, l’accueil apparaît derrière le fond qui se
+fond progressivement ; « CHARGEMENT » s’efface et le moucheron se tourne vers
+le joueur puis accélère vers la caméra. La sortie dure 1,4 s ; les clics sur
+l’accueil sont bloqués jusqu’à sa fin. Avec la réduction des animations activée,
+un fondu de 0,2 s remplace le vol vers la caméra, sans attente minimale.
+
+Le contexte WebGL temporaire du loader est détruit après cette transition, avec son
 canevas ; il ne reste pas un deuxième contexte animé pendant la partie.
 
 ## Éclairs de bouche et Hind

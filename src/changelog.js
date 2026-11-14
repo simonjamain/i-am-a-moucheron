@@ -1,6 +1,12 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 294,
+    changes: [
+      'À la fin du chargement, le moucheron s’envole vers vous et le fond s’efface pour révéler l’accueil.',
+    ],
+  },
+  {
     version: 293,
     changes: [
       'Les ennemis au sol se contournent et se répartissent naturellement, au lieu de marcher en formations rigides.',
