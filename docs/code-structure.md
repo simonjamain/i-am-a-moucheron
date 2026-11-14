@@ -143,7 +143,8 @@ les constructions ; `placement-aim.js` calcule la surface visée pour les défen
 `ground-placement.js` détermine les deux extrémités depuis ce point
 et prévalide sur une copie de l’état avec `ground-defense-state.js`. La commande
 fiable `ground-defense` reste autoritaire dans `server/game.js` ; le déplacement
-des terrestres reste dans `ground-creatures.js`. Voir [gameplay](gameplay.md#défenses-terrestres).
+des terrestres associe `ground-crowd.js` (sous-pas communs et voisinage spatial)
+à `ground-creatures.js` (navigation individuelle, séparation douce et pièges). Voir [gameplay](gameplay.md#défenses-terrestres).
 
 `brick-wall.js` répète en instances la brique 2×4 de `meshy-brick-data.js` (tenons vers +Y, dimensions `BRICK_PITCH`/`BRICK_ROW`/`BRICK_DEPTH`) selon la longueur des segments, recolorée par instance, sans modifier les collisions ni le coût serveur.
 

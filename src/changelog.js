@@ -1,6 +1,12 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 293,
+    changes: [
+      'Les ennemis au sol se contournent et se répartissent naturellement, au lieu de marcher en formations rigides.',
+    ],
+  },
+  {
     version: 292,
     changes: [
       'Nouveau Castor volant (30 $) : pilote et trois passagers larguent les constructions du Castor, sauf les murs, même sur un meuble.',

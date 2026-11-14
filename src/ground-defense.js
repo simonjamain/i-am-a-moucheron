@@ -215,6 +215,7 @@ export function buildGroundFlow({ bounds, cellSize, goal, barricades = [], stati
     route,
     smoothRoute,
     waypoint,
+    clear,
     nextStep,
     reachable: (p) => route(p) !== null,
   };

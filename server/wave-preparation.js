@@ -50,8 +50,8 @@ export function packSize(type, budget, draw = randomInt) {
   return Math.max(min, Math.min(max, Math.round(target)));
 }
 
-// Seconds between two members of one pack leaving the portal: enough, with the
-// lanes of `laneOffset`, for ground creatures not to overlap. Big swarms leave faster.
+// Seconds between two members leaving a portal; local soft avoidance spreads
+// ground creatures after emergence. Big swarms leave faster.
 export function memberGap(type, count) {
   const gaps = { ant: [0.04, 0.09], midge: [0.003, 0.01], mosquito: [0.01, 0.02] };
   const [lowest, highest] = gaps[type] || [0.1, 0.1 * Math.max(1, ENEMY_TYPES[type].cost / 4)];
