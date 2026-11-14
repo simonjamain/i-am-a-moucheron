@@ -77,6 +77,7 @@ async function buyEquipment(db, pilot, b, now) {
     request = String(b.request || '');
   if (!item || !/^[a-zA-Z0-9:_-]{8,120}$/.test(request) || pilot.life !== 'alive')
     return 'Achat invalide.';
+  if (b.item === 'dcaRapid' || b.item === 'dcaHeavy') return 'Cette DCA nécessite le serveur Node.';
   const prior = await db
     .prepare('SELECT item,done FROM purchase_orders WHERE room=? AND request=?')
     .bind(code, request)

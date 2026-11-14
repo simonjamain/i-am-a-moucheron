@@ -167,6 +167,7 @@ for (const wall of [false, true]) {
     insectIndex: null,
     camera: null,
     stepBallisticVelocity() {},
+    action() {},
     updateTracer() {},
     sound: { play() {} },
     hitEffects: { burst() {} },

@@ -1,6 +1,12 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 296,
+    changes: [
+      'Le Flak léger change de modèle. La boutique propose aussi une DCA à quatre mitrailleuses et un Flak lourd à obus de proximité.',
+    ],
+  },
+  {
     version: 295,
     changes: [
       'La préparation du jeu laisse respirer l’animation du moucheron pour réduire les à-coups pendant le chargement.',

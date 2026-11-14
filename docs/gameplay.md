@@ -67,7 +67,7 @@ démarre au volume standard dès la première interaction autorisée par le navi
 
 Noms validés (version 276, sans préfixe ni suffixe de code) : **Chasseur biplan**,
 **Bombardier biplan**, **Hélicoptère d’attaque au sol**, **Char moyen**, **Castor**,
-**Anti-air mobile**, **Spitfire**, DCA fixe **Canon Flak**, canon lourd **Canon
+**Anti-air mobile**, **Spitfire**, DCA fixe **Flak léger**, canon lourd **Canon
 anti-matériel** ; la tourelle automatique et le Stuka gardent leur nom
 (`src/fleet.js`, `src/equipment.js`, `src/ground-fortifications.js`). Les sigles
 M1, B3, H2, T3, D2, G1 et S6 ne s'affichent plus en jeu : ils ne subsistent que comme
@@ -123,8 +123,8 @@ La cadence locale rattrape les images retardées sans attendre les confirmations
 réseau ; les rafales vues à distance suivent une cadence approximative plutôt
 qu'un tir aléatoire à chaque image. Voir [stocks et réseau](vehicles-bank.md).
 Les projectiles subissent gravité et traînée et sont supprimés après impact ou
-expiration. La DCA tire des obus à éclatement réglable en distance, à cadence
-réduite, avec fumée noire persistante. Le tir allié inflige des dégâts. Les joueurs ont 100 PV ; une résurrection restaure tous les PV.
+expiration. Le Flak léger tire des obus à éclatement réglable en distance. La DCA haute cadence
+et le Flak lourd complètent les [DCA fixes](scale-fleet-weapons.md#dca-fixes-pilotées). Le tir allié inflige des dégâts. Les joueurs ont 100 PV ; une résurrection restaure tous les PV.
 Depuis la version 267, un avion endommagé ne change plus de forme (plus d'ailes
 qui rétrécissent) : son ou ses moteurs laissent échapper de petits panaches de
 fumée, à partir de 15 % de dégâts, de plus en plus nombreux, gros et sombres à

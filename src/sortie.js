@@ -29,7 +29,7 @@ export function stationEntryOffset(station) {
     ? MAP.metres(4.5)
     : isFortification(station?.kind)
       ? 0.08
-      : MAP.metres(3);
+      : MAP.metres(station?.kind === 'dcaHeavy' ? 4.5 : 3);
 }
 export function stationAccess(
   p,
@@ -38,7 +38,7 @@ export function stationAccess(
     ? MAP.metres(6)
     : isFortification(station?.kind)
       ? 0.09
-      : MAP.metres(3.4),
+      : MAP.metres(station?.kind === 'dcaHeavy' ? 5.2 : 3.4),
 ) {
   return (
     !!p &&
@@ -55,7 +55,7 @@ export function stationExit(station) {
         ? stationEntryOffset(station)
         : isFortification(station.kind)
           ? 0.09
-          : MAP.metres(3)),
+          : stationEntryOffset(station)),
     y: station.y + 0.05 * ACTOR_UNIT,
     z: station.z,
   };

@@ -417,3 +417,23 @@ Le tiroir est déjà ouvert : aucune articulation ni animation à reconstruire.
   à plusieurs angles. La comparaison WebGL montre le vrai atlas et les proportions.
 
 ![Lit Drawer Bed texturé](drawer-bed-290.png)
+
+## DCA fixes (Meshy)
+
+Les trois GLB fournis par l’utilisateur sont les sources de `scripts/import-fixed-dca.py`.
+Le script vérifie leur empreinte SHA-256, transforme l’axe des tubes vers −Z et
+sépare l’embase, le bloc orientable et les canons par coques. Il réaligne les
+tubes à l’horizontale au repos pour que l’élévation en jeu suive la visée.
+Les UV et les normales sont conservés. La texture de couleur devient un JPEG de
+1024 px au plus. Aucune décimation n’a été appliquée aux coques articulées.
+
+| Modèle            | Source                                                | Triangles embase / bloc orientable / tubes |
+| ----------------- | ----------------------------------------------------- | -----------------------------------------: |
+| Flak léger        | `Meshy_AI_Twin_Thunder_Cannon_1114220423_texture.glb` |                          1 030 / 965 / 342 |
+| DCA haute cadence | `Meshy_AI_Quad_Flak_Sentinel_1114215256_texture.glb`  |                          970 / 1 148 / 208 |
+| Flak lourd        | `Meshy_AI_Ironclad_Howitzer_1114215249_texture.glb`   |                          778 / 1 174 / 224 |
+
+Reproduire l’import avec `python scripts/import-fixed-dca.py TYPE SOURCE.glb`
+et les types `dca`, `dcaRapid` et `dcaHeavy`. Les bouches et pivots du modèle
+sont exprimés en mètres de référence. Le modèle partage ses maillages et sa
+texture entre les exemplaires.

@@ -22,7 +22,9 @@ import { GunSalvos } from '/salvos.js';
 import { nextPilotMuzzle, nearestWeaponMuzzle } from '/muzzle.js';
 import { advanceAutomaticFire } from '/salvos.js';
 import { ammoCapacity } from '/logistics.js';
-import { FIXED_DCA_AMMO, PISTOL_CAPACITY } from '/ground-ammo.js';
+import { PISTOL_CAPACITY } from '/ground-ammo.js';
+import { FIXED_DCA, heavyDcaMuzzle, isFixedDca } from '/fixed-dca.js';
+import { makeFixedDca } from '/fixed-dca-model.js';
 import { FORTIFICATIONS, isFortification } from '/ground-fortifications.js';
 import { HOWITZER } from '/howitzer-model.js';
 import {
@@ -90,7 +92,6 @@ import {
   stationExit,
   resolveLanding,
   stepWalker,
-  makeAntiaircraft,
   GEAR_HEIGHT,
 } from '/sortie.js';
 import {
@@ -913,8 +914,8 @@ canvas.addEventListener(
       return;
     }
     if (
-      myVehicle?.type === 'flaktruck' &&
-      crewSeat === 'cannon' &&
+      (stations[turretIndex]?.kind === 'dcaHeavy' ||
+        (myVehicle?.type === 'flaktruck' && crewSeat === 'cannon')) &&
       controlFocus.active &&
       canCapture()
     ) {
@@ -922,7 +923,7 @@ canvas.addEventListener(
       mobileProximity = clampProximity(mobileProximity - Math.sign(e.deltaY) * MOBILE_FUSE.step);
       return;
     }
-    if (turretIndex >= 0 && controlFocus.active) {
+    if (stations[turretIndex]?.kind === 'dca' && controlFocus.active) {
       e.preventDefault();
       flakRange = fuseRange(flakRange - Math.sign(e.deltaY) * FLAK.step);
       return;
@@ -1104,6 +1105,7 @@ function accept(s, force = false) {
       b.m.userData.dispose();
     }
     trails.length = 0;
+    rapidImpacts.length = 0;
     aircraftFire.invalidate();
     vacantAircraft.clear();
     entryNoticeWave = -1;
@@ -1252,7 +1254,14 @@ function accept(s, force = false) {
           ? 'Canon lourd · Souris : pointer (lent) · Clic : obus · F : sortir'
           : kind === 'bunker'
             ? 'Bunker LEGO · Clic : balles · F : sortir'
-            : 'DCA · Molette / [ ] : fusée · Clic : obus · F : sortir',
+            : stationLabel(stations[turretIndex]) +
+              ' · ' +
+              (kind === 'dcaRapid'
+                ? 'Clic : balles'
+                : kind === 'dcaHeavy'
+                  ? 'Molette : proximité · Clic : obus'
+                  : 'Molette / [ ] : fusée · Clic : obus') +
+              ' · F : sortir',
         4,
       );
     }
@@ -1872,7 +1881,7 @@ addEventListener('keydown', (event) => {
     !event.repeat
   )
     interactVehicle();
-  if (turretIndex >= 0 && ['BracketLeft', 'BracketRight'].includes(code)) {
+  if (stations[turretIndex]?.kind === 'dca' && ['BracketLeft', 'BracketRight'].includes(code)) {
     flakRange = fuseRange(flakRange + (code === 'BracketRight' ? FLAK.step : -FLAK.step));
   }
   if (code === 'KeyR' && !event.repeat) crash();
@@ -2641,12 +2650,11 @@ function reconcileEquipment(next) {
   stations = next;
   for (const [i, st] of stations.entries()) {
     if (turrets[i] || st.kind === 'retired') continue;
-    const gun =
-      st.kind === 'dca'
-        ? makeAntiaircraft(T, scene, { box, cyl }, [st])[0]
-        : isFortification(st.kind)
-          ? makeFortificationStation(T, st, { box, cyl })
-          : installationModel(st);
+    const gun = isFixedDca(st.kind)
+      ? makeFixedDca(T, st)
+      : isFortification(st.kind)
+        ? makeFortificationStation(T, st, { box, cyl })
+        : installationModel(st);
     scene.add(gun);
     gun.rotation.y = st.angle || 0;
     gun.userData.kind = st.kind;
@@ -2655,28 +2663,30 @@ function reconcileEquipment(next) {
       ? st.kind === 'bunker'
         ? 0.075
         : FORTIFICATIONS.antitank.footprint
-      : MAP.metres(st.kind === 'bed' ? 0.8 : 2);
+      : MAP.metres(2);
     const collider =
       st.kind === 'refuel' || st.kind === 'bed'
         ? makeInstallationCollider(T, gun)
-        : new T.Box3(
-            new T.Vector3(st.x - radius, st.y, st.z - radius),
-            new T.Vector3(
-              st.x + radius,
-              st.y +
-                (st.kind === 'antitank'
-                  ? MAP.metres(2.2)
-                  : isFortification(st.kind)
-                    ? 0.04
-                    : MAP.metres(0.8)),
-              st.z + radius,
-            ),
-          );
+        : isFixedDca(st.kind)
+          ? new T.Box3().setFromObject(gun.userData.baseMesh)
+          : new T.Box3(
+              new T.Vector3(st.x - radius, st.y, st.z - radius),
+              new T.Vector3(
+                st.x + radius,
+                st.y +
+                  (st.kind === 'antitank'
+                    ? MAP.metres(2.2)
+                    : isFortification(st.kind)
+                      ? 0.04
+                      : MAP.metres(0.8)),
+                st.z + radius,
+              ),
+            );
     colliders.push(collider);
     gun.userData.collider = collider;
     const person = humanoid('#91b4a0');
     person.scale.setScalar(1.8 / 2.46);
-    person.position.set(0, -0.75, 1);
+    person.position.fromArray(gun.userData.seat || [0, -0.75, 1]);
     person.rotation.y = Math.PI;
     (gun.userData.yaw || gun).add(person);
     person.visible = false;
@@ -2685,12 +2695,12 @@ function reconcileEquipment(next) {
     turrets[i] = gun;
     // Occupiable equipment circles carry their role icon (issue #106).
     const ring =
-      st.kind === 'dca' || isFortification(st.kind)
+      isFixedDca(st.kind) || isFortification(st.kind)
         ? roleEntry(null, null, st.kind === 'antitank' ? 'cannon' : 'gunner')
         : entryRing.clone();
     ring.position.set(st.x + stationEntryOffset(st), st.y + ACTOR_UNIT * 0.12, st.z);
     ring.scale.setScalar(ACTOR_UNIT);
-    if (st.kind === 'dca' || st.kind === 'bed' || isFortification(st.kind)) scene.add(ring);
+    if (isFixedDca(st.kind) || st.kind === 'bed' || isFortification(st.kind)) scene.add(ring);
     stationRings[i] = ring;
   }
 }
@@ -2713,8 +2723,8 @@ function weaponDirection() {
 // Player-facing names: only real DCA posts are called DCA.
 function stationLabel(st) {
   if (!st) return 'Poste';
-  return st.kind === 'dca'
-    ? 'DCA ' + st.name
+  return isFixedDca(st.kind)
+    ? SHOP[st.kind].name
     : st.kind === 'antitank'
       ? 'Canon lourd anti-matériel'
       : st.name || FORTIFICATIONS[st.kind]?.name || 'Poste';
@@ -2725,7 +2735,7 @@ function nearestStation() {
   const w = baseWorld(b);
   let nearest = null;
   stations.forEach((s, index) => {
-    if ((s.kind === 'dca' || (isFortification(s.kind) && s.hp > 0)) && stationAccess(w, s)) {
+    if ((isFixedDca(s.kind) || (isFortification(s.kind) && s.hp > 0)) && stationAccess(w, s)) {
       const d = Math.hypot(w.x - s.x, w.z - s.z);
       if (!nearest || d < nearest.distance) nearest = { index, distance: d };
     }
@@ -2851,7 +2861,7 @@ async function chooseEquipment(index) {
   selectedEquipment = index;
   boardingOpen = false;
   boardingSelectionBusy = true;
-  const timing = beginBoardingFeedback('dca', stations[index]?.name || 'Canon Flak');
+  const timing = beginBoardingFeedback('dca', stationLabel(stations[index]));
   releaseMouse();
   renderPaper();
   try {
@@ -2926,15 +2936,14 @@ function updateVehicles(dt) {
   const occupiedStation = turretIndex >= 0 ? stations[turretIndex] : null;
   $('vehicleState').textContent =
     turretIndex >= 0
-      ? (occupiedStation.kind === 'dca' ? 'Canon Flak · ' : '') +
-        stationLabel(occupiedStation) +
+      ? stationLabel(occupiedStation) +
         ' · ' +
         Math.round(occupiedStation.hp ?? hp) +
         ' PV · ' +
-        (occupiedStation.kind === 'bunker' ? 'Balles ' : 'Obus ') +
+        (['bunker', 'dcaRapid'].includes(occupiedStation.kind) ? 'Balles ' : 'Obus ') +
         Math.floor(occupiedStation.ammo ?? 0) +
         '/' +
-        (FORTIFICATIONS[occupiedStation.kind]?.ammo ?? FIXED_DCA_AMMO)
+        (FORTIFICATIONS[occupiedStation.kind]?.ammo ?? FIXED_DCA[occupiedStation.kind]?.ammo ?? 0)
       : myVehicle
         ? VEHICLES[myVehicle.type].name +
           ' · ' +
@@ -3081,14 +3090,18 @@ function updateVehicles(dt) {
       occupant = snap?.pilots.find(
         (p) => p.life === 'alive' && p.mode === 'turret' && p.state.turret === index,
       );
-    gun.userData.person.visible = !!occupant && station.kind === 'dca';
+    gun.userData.person.visible = !!occupant && isFixedDca(station.kind);
     if (gun.userData.person.visible) {
       wearAppearance(gun.userData.person, occupant.id);
       gun.userData.person.userData.animate?.(dt, { seated: true });
     }
     const howitzer = gun.userData.howitzer;
     howitzer?.tick(dt); // recoil keeps returning to battery after the gunner leaves
-    if (!occupant) continue;
+    if (!occupant) {
+      gun.userData.rapidCooldown = 0;
+      gun.userData.rapidQueue?.clear();
+      continue;
+    }
     const self = occupant.id === id,
       motion = self ? localMotion() : remoteMotion(occupant);
     let dir = self
@@ -3102,8 +3115,12 @@ function updateVehicles(dt) {
       aimGun(T, gun.userData.yaw, dir, gun.quaternion);
     }
     gun.updateWorldMatrix(true, true);
-    const muzzleNode = gun.userData.muzzles[gun.userData.barrel % 2];
+    const muzzleNode = gun.userData.muzzles[gun.userData.barrel % gun.userData.muzzles.length];
     const muzzle = muzzleNode.getWorldPosition(new T.Vector3());
+    const heavyDca = station.kind === 'dcaHeavy';
+    const interval =
+      (FORTIFICATIONS[station.kind]?.interval ?? FIXED_DCA[station.kind]?.interval) /
+      (snap?.balance?.fireRate ?? 1);
     if (self) {
       if (controlFocus.active) {
         if (station.kind === 'dca') flakRange = advanceFuse(flakRange, keys, dt);
@@ -3134,30 +3151,29 @@ function updateVehicles(dt) {
       shooting =
         ((controlFocus.active && (mouseFire || keys.Space || pad.fire)) || uiWeaponFire) &&
         (station.ammo ?? 0) >= 1;
-      if (shooting && performance.now() > gun.userData.shotAt) {
-        gun.userData.shotAt =
-          performance.now() +
-          (FORTIFICATIONS[station.kind]?.interval ?? FLAK.interval) *
-            1000 *
-            (1 / (snap?.balance?.fireRate ?? 1));
+      if (station.kind === 'dcaRapid') {
+        fireRapidDca(station, gun, dir, dt, interval, shooting, true);
+      } else if (shooting && performance.now() > gun.userData.shotAt) {
+        gun.userData.shotAt = performance.now() + interval * 1000;
         gun.userData.barrel++;
         const incarnation = snap.pilots.find((p) => p.id === id)?.incarnation;
-        if (howitzer) {
-          // Issue #113: a server shell (like the tank's), from the real barrel.
-          howitzer.fire();
+        if (howitzer || heavyDca) {
+          howitzer?.fire();
+          const weapon = heavyDca ? 'dcaHeavy' : 'antitank';
           combatEffects.muzzle(muzzle, dir, muzzleNode);
           sound.play('flak', muzzle, { ref: 35 });
-          const shot = id + ':antitank:' + ++shotSequence,
+          const shot = id + ':' + weapon + ':' + ++shotSequence,
             aim = dir.clone().normalize().toArray(),
             launchAt = serverClock.now(performance.now()) ?? Date.now() + clockOffset;
           launchLocal({
             shot,
-            weapon: 'antitank',
+            weapon,
             vehicle: null,
             station: index,
             shooter: id,
-            p: howitzerMuzzle(station, aim),
-            v: aim.map((v) => v * HEAVY.antitank.speed),
+            p: heavyDca ? heavyDcaMuzzle(station, aim) : howitzerMuzzle(station, aim),
+            ...(heavyDca ? { proximity: mobileProximity } : {}),
+            v: aim.map((v) => v * HEAVY[weapon].speed),
             age: 0,
             at: launchAt,
             updated: launchAt,
@@ -3165,7 +3181,13 @@ function updateVehicles(dt) {
             radiusFactor: 1,
             bonus: 1,
           });
-          api('antitank-fire', { station: index, shot, incarnation, direction: aim })
+          api(heavyDca ? 'heavy-dca-fire' : 'antitank-fire', {
+            station: index,
+            shot,
+            incarnation,
+            direction: aim,
+            ...(heavyDca ? { proximity: mobileProximity } : {}),
+          })
             .then((v) => accept(v))
             .catch((e) => {
               localShots.delete(shot);
@@ -3191,21 +3213,70 @@ function updateVehicles(dt) {
           if (shot) action('fixed-dca-fire', { station: index, shot, incarnation });
         }
       }
+    } else if (station.kind === 'dcaRapid') {
+      fireRapidDca(station, gun, dir, dt, interval, motion.fire, false);
     } else if (motion.fire && (station.ammo ?? 0) >= 1 && performance.now() > gun.userData.shotAt) {
-      gun.userData.shotAt =
-        performance.now() +
-        (FORTIFICATIONS[station.kind]?.interval ?? FLAK.interval) *
-          1000 *
-          (1 / (snap?.balance?.fireRate ?? 1));
+      gun.userData.shotAt = performance.now() + interval * 1000;
       gun.userData.barrel++;
-      if (howitzer) {
-        // The shell itself arrives with the server ordnance.
-        howitzer.fire();
+      if (howitzer || heavyDca) {
+        // The shell itself arrives with the recorded launch.
+        howitzer?.fire();
         combatEffects.muzzle(muzzle, dir, muzzleNode);
         sound.play('flak', muzzle, { ref: 35 });
       } else bullet(muzzle, dir, TRACER_COLOR, false, station.kind !== 'bunker', muzzleNode);
     }
   }
+}
+function fireRapidDca(station, gun, direction, dt, interval, firing, owned) {
+  const state = gun.userData;
+  const queue = owned ? (state.rapidQueue ??= new Map()) : null;
+  const ammo = Math.max(
+    0,
+    Math.floor((state.rapidReserve?.at >= snap.now ? state.rapidReserve.ammo : station.ammo) ?? 0) -
+      (state.pendingRounds || 0) -
+      (queue?.size || 0),
+  );
+  const burst = advanceAutomaticFire(state.rapidCooldown, dt, interval, firing && ammo > 0);
+  state.rapidCooldown = burst.cooldown;
+  state.shotAt = performance.now() + burst.cooldown * 1000;
+  for (let i = 0; i < Math.min(ammo, burst.shots, 8 - (queue?.size || 0)); i++) {
+    const muzzle = state.muzzles[state.barrel++ % state.muzzles.length];
+    const authorization = owned ? { accepted: null, impact: null } : null;
+    const shot = emitBullet(
+      muzzle.getWorldPosition(new T.Vector3()),
+      spreadDirection(T, direction),
+      TRACER_COLOR,
+      owned,
+      false,
+      { velocity: new T.Vector3(), weapon: 'dcaRapid', authorization },
+      muzzle,
+    );
+    if (queue && shot) queue.set(shot, authorization);
+  }
+  const now = performance.now();
+  if (!queue?.size || (firing && queue.size < 8 && now < (state.nextRapidReport ?? 0))) return;
+  state.nextRapidReport = now + 50;
+  const shots = queue;
+  state.rapidQueue = new Map();
+  state.pendingRounds = (state.pendingRounds || 0) + shots.size;
+  const incarnation = snap.pilots.find((p) => p.id === id)?.incarnation;
+  const epoch = snap.base?.epoch;
+  function resolveRounds(accepted) {
+    for (const [shot, authorization] of shots) {
+      authorization.accepted = snap?.base?.epoch === epoch && accepted.includes(shot);
+      if (authorization.accepted) authorization.impact?.();
+    }
+  }
+  api('fixed-dca-fire', { station: station.slot, shots: [...shots.keys()], incarnation })
+    .then(({ accepted, ammo, at }) => {
+      if (!(state.rapidReserve?.at > at)) state.rapidReserve = { ammo, at };
+      resolveRounds(accepted);
+    })
+    .catch((error) => {
+      resolveRounds([]);
+      notify(error.message, 2);
+    })
+    .finally(() => (state.pendingRounds -= shots.size));
 }
 $('fuseMinus').onclick = () => (flakRange = fuseRange(flakRange - FLAK.step));
 $('fusePlus').onclick = () => (flakRange = fuseRange(flakRange + FLAK.step));
@@ -3375,7 +3446,7 @@ function updateBaseWorld(dt, now) {
 function currentRoster() {
   return snap?.roster || wavePlan(room, snap?.wave || 0, snap?.started || 0).roster;
 }
-function damageEnemy(enemy, amount, shot, point) {
+function damageEnemy(enemy, amount, shot, point, report = action) {
   if (localKills.has(enemy)) return;
   const profile = currentRoster()[enemy];
   if (!profile) return;
@@ -3384,7 +3455,7 @@ function damageEnemy(enemy, amount, shot, point) {
     Math.max(1, Math.min(800, amount)) * (snap.balance?.damage ?? 1);
   localEnemyDamage.set(enemy, damage);
   bloodEffects.burst(point, { size: insectScale(profile.type, INSECT_SCALE, profile.size) });
-  action('hit', { wave: snap.wave, enemy, amount, shot });
+  report('hit', { wave: snap.wave, enemy, amount, shot });
   if (damage >= profile.hp) {
     localKills.add(enemy);
     fallEnemy(enemy);
@@ -3848,10 +3919,11 @@ function emitBullet(pos, dir, color, owned, aa, launch = null, muzzleNode = null
     fuse: MAP.metres(flakRange),
     originVehicle: launch?.vehicle || myVehicle?.id || null,
     owned,
-    shot: id + ':' + ++shotSequence,
+    shot: id + (launch?.weapon === 'dcaRapid' ? ':rapid:' : ':') + ++shotSequence,
     wave: launch?.wave ?? snap?.wave,
     baseDamage: launch?.baseDamage ?? 75,
     weapon: launch?.weapon,
+    authorization: launch?.authorization,
   });
   if (trails.length > 256) {
     const old = trails.shift();
@@ -3927,6 +3999,20 @@ function explosion(b, point) {
     if (amount && exposed(pos))
       action('friendly-hit', { target: p.id, shot: b.shot + ':' + p.id, amount });
   }
+}
+const rapidImpacts = [];
+let nextRapidImpactReport = 0;
+function queueRapidImpact(_path, impact) {
+  rapidImpacts.push(impact);
+}
+function flushRapidImpacts(now) {
+  if (!rapidImpacts.length || now < nextRapidImpactReport) return;
+  nextRapidImpactReport = now + 50;
+  const impacts = rapidImpacts.splice(0, 16);
+  api('fixed-dca-impacts', { impacts }).catch((error) => {
+    if (error.status === 429 && rapidImpacts.length < 64) rapidImpacts.unshift(...impacts);
+    else notify(error.message, 2);
+  });
 }
 function stepProjectiles(dt) {
   const n = Math.max(1, Math.ceil(dt * 120));
@@ -4007,18 +4093,23 @@ function stepProjectileSlice(dt) {
             !hit.wall && hit.id !== undefined && b.wave === snap.wave && !localKills.has(hit.id);
           if (!enemyHit) hitEffects.burst(hit.point, camera, { key: b.shot });
           sound.play('impact', hit.point, { ref: 12 });
-          if (hit.vehicle)
-            action('friendly-hit', { vehicle: hit.vehicle, shot: b.shot, weapon: b.weapon });
-          else if (hit.target)
-            action('friendly-hit', { target: hit.target, shot: b.shot, weapon: b.weapon });
-          else if (enemyHit) {
-            damageEnemy(
-              hit.id,
-              b.baseDamage * (1 + (snap.upgrades?.weapons || 0)),
-              b.shot,
-              hit.point,
-            );
-          }
+          const report = b.authorization ? queueRapidImpact : action;
+          const apply = () => {
+            if (hit.vehicle)
+              report('friendly-hit', { vehicle: hit.vehicle, shot: b.shot, weapon: b.weapon });
+            else if (hit.target)
+              report('friendly-hit', { target: hit.target, shot: b.shot, weapon: b.weapon });
+            else if (enemyHit && b.wave === snap?.wave)
+              damageEnemy(
+                hit.id,
+                b.baseDamage * (1 + (snap.upgrades?.weapons || 0)),
+                b.shot,
+                hit.point,
+                report,
+              );
+          };
+          if (b.authorization?.accepted === null) b.authorization.impact = apply;
+          else if (b.authorization?.accepted !== false) apply();
         }
         b.life = 0;
         fused = false;
@@ -4621,6 +4712,7 @@ function frame(now) {
     me.userData.prop.rotation.z += dt * 15;
   }
   stepProjectiles(dt);
+  flushRapidImpacts(now);
   if (respawnAt) {
     $('mouseAim').classList.add('hidden');
     $('mouseHint').classList.add('hidden');
@@ -4690,7 +4782,7 @@ let placingEquipment = false,
   purchaseBusy = false,
   placementToken = null;
 const ghosts = {
-  dca: makeAntiaircraft(T, scene, { box, cyl }, [{ x: 0, y: 0, z: 0 }])[0],
+  ...Object.fromEntries(Object.keys(FIXED_DCA).map((kind) => [kind, makeFixedDca(T, { kind })])),
   refuel: installationModel({ kind: 'refuel', x: 0, y: 0, z: 0 }),
   radar: installationModel({ kind: 'radar', x: 0, y: 0, z: 0 }),
   bed: installationModel({ kind: 'bed', x: 0, y: 0, z: 0 }),
@@ -4707,6 +4799,7 @@ const ghosts = {
 let ghost = ghosts.dca;
 for (const [kind, model] of Object.entries(ghosts)) {
   if (VEHICLES[kind]) model.scale.setScalar(ACTOR_UNIT);
+  if (isFixedDca(kind)) scene.add(model);
   model.visible = false;
   model.traverse((o) => {
     if (o.isMesh) {
@@ -4754,7 +4847,9 @@ function renderShop() {
       heading = document.createElement('h3');
     heading.textContent = column.title;
     section.append(heading);
-    for (const item of column.items) section.append(shopCard(item));
+    for (const item of column.items)
+      if (globalThis.MOUCHERON_UDP || !['dcaRapid', 'dcaHeavy'].includes(item))
+        section.append(shopCard(item));
     $('shopItems').append(section);
   }
 }
@@ -5617,6 +5712,7 @@ const SHELL_COLORS = {
   he: '#e0a33c',
   ap: '#cfd6dc',
   antitank: '#d9b45a',
+  dcaHeavy: '#e0a33c',
   rocket: '#e0a33c',
   missile: '#e6e1cf',
 };
@@ -5723,11 +5819,10 @@ function updateContextHUD() {
             : 0,
           shell: selectedShell,
           range: flakRange,
+          proximity: mobileProximity,
           ready:
             turretIndex >= 0
-              ? stations[turretIndex]?.kind === 'dca'
-                ? cooldown <= 0
-                : performance.now() >= (turrets[turretIndex]?.userData.shotAt ?? 0)
+              ? performance.now() >= (turrets[turretIndex]?.userData.shotAt ?? 0)
               : !myVehicle ||
                 reloadNow() >=
                   nextHeavyTime(
@@ -5762,9 +5857,7 @@ function updateContextHUD() {
     const duration =
       ((station?.kind === 'antitank'
         ? HEAVY.antitank.interval
-        : station?.kind === 'dca'
-          ? FLAK.interval
-          : FORTIFICATIONS[station?.kind]?.interval || 0.09) *
+        : (FIXED_DCA[station?.kind]?.interval ?? FORTIFICATIONS[station?.kind]?.interval ?? 0.09)) *
         1000) /
       (snap?.balance?.fireRate ?? 1);
     arcs = [

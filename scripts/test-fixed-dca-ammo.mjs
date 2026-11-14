@@ -3,6 +3,13 @@ import { FLAK } from '../src/scale.js';
 import { FIXED_DCA_AMMO } from '../src/ground-ammo.js';
 import { advancePaidService } from '../src/paid-service.js';
 import { newGroundDefense } from '../src/ground-defense-state.js';
+import * as T from '../vendor/three.module.min.js';
+import { HEAVY } from '../src/armament.js';
+import { stepHeavy } from '../src/heavy-sim.js';
+import { shopPrice } from '../src/equipment.js';
+import { heavyDcaMuzzle } from '../src/fixed-dca.js';
+import { makeFixedDca } from '../src/fixed-dca-model.js';
+import { aimGun } from '../src/sortie.js';
 import { Game } from '../server/game.js';
 
 const station = { kind: 'refuel', x: 0, y: 0.01, z: 0 };
@@ -20,7 +27,12 @@ assert.equal(advancePaidService([], [station, disconnected], 10).spent, 0);
 assert.equal(disconnected.ammo, 0);
 const ground = newGroundDefense();
 ground.structures.push({
-  id: 'wall', kind: 'barricade', a: [0, 0], b: [0.1, 0], hp: 50, maxHp: 100,
+  id: 'wall',
+  kind: 'barricade',
+  a: [0, 0],
+  b: [0.1, 0],
+  hp: 50,
+  maxHp: 100,
 });
 gun.ammo = 0;
 const shared = advancePaidService([], [station, gun], 0.2, {}, 1, ground);
@@ -28,7 +40,8 @@ assert.ok(Math.abs(shared.spent - 0.2) < 1e-9);
 assert.equal(ground.structures[0].hp, 60);
 assert.ok(Math.abs(gun.ammo - 1) < 1e-9, 'fair allocation with wall');
 const castor = {
-  type: 'castor', state: { p: [2, 0.2, 2], hp: 100, engine: 1, wing: 1 },
+  type: 'castor',
+  state: { p: [2, 0.2, 2], hp: 100, engine: 1, wing: 1 },
   supplies: { fuel: 300, ammo: { pilot: 500 }, revision: 0 },
 };
 const mobileGun = { ...disconnected, ammo: 0 };
@@ -61,5 +74,120 @@ assert.equal(positioned.ammo, 0);
 p.mode = 'foot';
 assert.throws(() => fire('round-unauthorized'), /Occupez/);
 assert.equal(positioned.ammo, 0);
-console.log('Fixed DCA: finite ammo, charged shot idempotence, cooldown, no remote reload, shared budget OK');
+console.log(
+  'Fixed DCA: finite ammo, charged shot idempotence, cooldown, no remote reload, shared budget OK',
+);
 
+const rapid = { ...positioned, kind: 'dcaRapid', ammo: 10 };
+r.equipment[0] = rapid;
+p.mode = 'turret';
+const rapidShot = (n) => p.id + ':rapid:' + n;
+const fireRapid = (shots) =>
+  game.command('DCAFIRE', p.id, 'fixed-dca-fire', {
+    shots,
+    incarnation: p.incarnation,
+    station: 0,
+  }).accepted;
+const burst = Array.from({ length: 8 }, (_, i) => rapidShot(i));
+assert.deepEqual(fireRapid(burst), burst, 'bounded jitter allowance');
+assert.equal(rapid.ammo, 2);
+assert.deepEqual(fireRapid(burst), burst, 'retry confirms without debiting again');
+assert.equal(rapid.ammo, 2);
+assert.deepEqual(fireRapid([rapidShot(8)]), []);
+const ally = r.pilots.get(game.join({ code: 'DCAFIRE', name: 'Allié' }).id);
+function rapidHit(shot) {
+  game.command('DCAFIRE', p.id, 'fixed-dca-impacts', { impacts: [{ target: ally.id, shot }] });
+}
+rapidHit(rapidShot(8));
+assert.equal(ally.health, 100, 'a refused round cannot damage an ally');
+now += 15;
+assert.deepEqual(fireRapid([rapidShot(8)]), [rapidShot(8)]);
+rapidHit(rapidShot(8));
+assert.equal(ally.health, 25);
+rapidHit(rapidShot(8));
+assert.equal(ally.health, 25, 'an impact is applied only once');
+now += 15;
+assert.deepEqual(fireRapid([rapidShot(9), rapidShot(10)]), [rapidShot(9)], 'last partial burst');
+assert.equal(rapid.ammo, 0);
+assert.equal(r.fixedDcaShots.size, 2, 'rapid fire has its own shot ledger');
+
+const heavy = { ...positioned, kind: 'dcaHeavy', ammo: 2, lastShotAt: undefined };
+r.equipment[0] = heavy;
+const launch = (shot, proximity = 5) =>
+  game.command('DCAFIRE', p.id, 'heavy-dca-fire', {
+    station: 0,
+    shot,
+    proximity,
+    incarnation: p.incarnation,
+    direction: [0, 0, -1],
+  });
+launch('heavy-1', 1000);
+assert.equal(heavy.ammo, 1);
+assert.equal(r.ordnance.at(-1).proximity, 20, 'same fuse bounds as mobile DCA');
+assert.deepEqual(r.ordnance.at(-1).p, heavyDcaMuzzle(heavy, [0, 0, -1]));
+assert.throws(() => launch('heavy-2'), /recharge/);
+now += 1000;
+launch('heavy-2');
+assert.equal(heavy.ammo, 0);
+assert.equal(HEAVY.dcaHeavy.radius, HEAVY.proximity.radius * 3);
+assert.equal(HEAVY.dcaHeavy.damage, HEAVY.proximity.damage * 3);
+assert.equal(HEAVY.dcaHeavy.edge, HEAVY.proximity.edge * 3);
+const record = r.ordnance.at(-1);
+record.p = [0, 1, 0];
+const equivalent = { ...structuredClone(record), weapon: 'proximity' };
+const wall = { min: { x: -0.1, y: 0.9, z: -0.7 }, max: { x: 0.1, y: 1.1, z: -0.69 } };
+const world = { solids: [wall], frames: () => [], vehicles: [], players: [], equipment: [] };
+assert.equal(stepHeavy(record, record.at + 299, world), null, 'fuse stays inert before 0.3 s');
+const burstHeavy = stepHeavy(record, record.at + 800, world);
+assert.ok(burstHeavy, 'arming followed by detonation near the solid');
+assert.equal(stepHeavy(equivalent, equivalent.at + 299, world), null);
+assert.deepEqual(burstHeavy, stepHeavy(equivalent, equivalent.at + 800, world));
+
+assert.equal(shopPrice('dcaRapid', {}, 2), 15);
+assert.equal(shopPrice('dcaHeavy', {}, 2), 35);
+for (const [kind, count] of [
+  ['dca', 2],
+  ['dcaRapid', 4],
+  ['dcaHeavy', 1],
+]) {
+  const installed = { kind, x: 0.2, y: 0.5, z: -0.3 };
+  const model = makeFixedDca(T, installed);
+  const direction = new T.Vector3(0.1, 0.7, -1).normalize();
+  aimGun(T, model.userData.yaw, direction);
+  const mouths = model.userData.muzzles.map((m) => m.getWorldPosition(new T.Vector3()));
+  assert.equal(new Set(mouths.map((p) => p.toArray().join(','))).size, count);
+  if (kind === 'dcaHeavy')
+    assert.ok(
+      mouths[0].distanceTo(new T.Vector3(...heavyDcaMuzzle(installed, direction.toArray()))) < 1e-9,
+    );
+}
+// Vehicle orders deploy by parachute and must initialise the same reserve.
+for (const [item, expectedPrice, ammo] of [
+  ['dcaRapid', 15, 1000],
+  ['dcaHeavy', 35, 120],
+]) {
+  const buyer = game.join({ code: 'DCABUY', name: 'Acheteur' });
+  const room = game.rooms.get('DCABUY'),
+    pilot = room.pilots.get(buyer.id);
+  const carrier = [...room.vehicles.values()][0];
+  const command = (path, data) => game.command('DCABUY', pilot.id, path, data);
+  Object.assign(pilot, { mode: 'flight', vehicle_id: carrier.id });
+  room.dollars = 50;
+  command('purchase-sign', {
+    item,
+    expectedPrice,
+    request: 'order-' + item,
+    signature: true,
+    epoch: room.base.epoch,
+    incarnation: pilot.incarnation,
+  });
+  assert.equal(room.dollars, 50 - expectedPrice);
+  assert.equal(room.deliveries.at(-1).item, item);
+  now += 12000;
+  game.advanceDeliveries(room, now);
+  assert.equal(room.equipment.at(-1).kind, item);
+  assert.equal(room.equipment.at(-1).ammo, ammo);
+}
+console.log(
+  'Fixed DCA variants: price, rapid fire acceptance, heavy cadence, proximity and muzzle alignment OK',
+);

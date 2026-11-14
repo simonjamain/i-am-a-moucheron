@@ -9,7 +9,11 @@ export const SHOP_CATEGORIES = Object.freeze([
     items: ['fighter', 'interceptor', 'bomber', 'spitfire', 'helicopter', 'flyingcastor'],
   },
   { id: 'ground', title: 'Véhicules au sol', items: ['tank', 'castor', 'flaktruck'] },
-  { id: 'base', title: 'Installations', items: ['bed', 'refuel', 'radar', 'dca'] },
+  {
+    id: 'base',
+    title: 'Installations',
+    items: ['bed', 'refuel', 'radar', 'dca', 'dcaRapid', 'dcaHeavy'],
+  },
   { id: 'upgrades', title: 'Améliorations', items: ['engine', 'weapons'] },
 ]);
 

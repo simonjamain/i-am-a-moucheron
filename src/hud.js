@@ -1,4 +1,5 @@
 import { availableShell, HEAVY } from './armament.js';
+import { FIXED_DCA } from './fixed-dca.js';
 import { FORTIFICATIONS } from './ground-fortifications.js';
 import { rangeReadout } from './equipment-controls.js';
 import { MAP } from './scale.js';
@@ -21,6 +22,7 @@ function equipmentModel({
   ammo = 0,
   shell = 'he',
   range = 300,
+  proximity = MOBILE_FUSE.initial,
   ready = true,
   stall = false,
 }) {
@@ -52,6 +54,27 @@ function equipmentModel({
       ],
     };
   }
+  if (turret && station === 'dcaRapid')
+    return {
+      scope: station,
+      left: ['DCA HAUTE CADENCE', health],
+      right: [
+        'ARMEMENT',
+        `Balles ${count(stationAmmo)}/${FIXED_DCA.dcaRapid.ammo}`,
+        '4 mitrailleuses',
+      ],
+    };
+  if (turret && station === 'dcaHeavy')
+    return {
+      scope: station,
+      left: ['FLAK LOURD', 'PROXIMITÉ', formatDistance(MAP.metres(proximity)), 'Molette', health],
+      right: [
+        'ARMEMENT',
+        ready ? 'PRÊT' : 'RECHARGE',
+        `Obus ${count(stationAmmo)}/${FIXED_DCA.dcaHeavy.ammo}`,
+        `Souffle : ${formatDistance(HEAVY.dcaHeavy.radius)}`,
+      ],
+    };
   if (turret) {
     const readout = rangeReadout(range);
     return {
@@ -60,7 +83,7 @@ function equipmentModel({
       right: [
         'ARMEMENT',
         ready ? 'PRÊT' : 'RECHARGE',
-        'Obus DCA illimités',
+        `Obus ${count(stationAmmo)}/${FIXED_DCA.dca.ammo}`,
         'Impact direct : 200 dégâts',
       ],
       readout,

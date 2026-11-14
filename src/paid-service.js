@@ -3,7 +3,7 @@ import { levelOf } from './airdrop.js';
 import { SENTRY } from './ground-sentry.js';
 import { FORTIFICATIONS } from './ground-fortifications.js';
 import { distanceToSegment } from './ground-defense.js';
-import { FIXED_DCA_AMMO } from './ground-ammo.js';
+import { FIXED_DCA } from './fixed-dca.js';
 import {
   ammoCapacity,
   CASTOR_SERVICE_RADIUS,
@@ -120,14 +120,8 @@ export function advancePaidService(
     const sources = serviceSources(installations, fleet);
     for (const gun of installations) {
       const fortification = FORTIFICATIONS[gun.kind];
-      const capacity = fortification?.ammo ?? FIXED_DCA_AMMO;
-      if (
-        (gun.kind !== 'dca' && !fortification) ||
-        !Number.isFinite(gun.ammo) ||
-        gun.ammo >= capacity ||
-        gun.hp === 0
-      )
-        continue;
+      const capacity = fortification?.ammo ?? FIXED_DCA[gun.kind]?.ammo;
+      if (!capacity || !Number.isFinite(gun.ammo) || gun.ammo >= capacity || gun.hp === 0) continue;
       if (
         !sources.some(
           ({ p, radius }) => Math.hypot(gun.x - p[0], gun.y - p[1], gun.z - p[2]) <= radius,
@@ -136,7 +130,10 @@ export function advancePaidService(
         continue;
       const quantity = Math.min(capacity - gun.ammo, (capacity * dt) / SERVICE_SECONDS);
       const cost =
-        quantity * (gun.kind === 'bunker' ? SERVICE_RATES.machineGun : SERVICE_RATES.shell);
+        quantity *
+        (['bunker', 'dcaRapid'].includes(gun.kind)
+          ? SERVICE_RATES.machineGun
+          : SERVICE_RATES.shell);
       if (cost > 0)
         jobs.push({
           cost,
