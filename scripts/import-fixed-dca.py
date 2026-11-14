@@ -94,10 +94,14 @@ def convert(kind, path):
         low_y = min(p[1] for p in pts)
         high_y = max(p[1] for p in pts)
         front = min(p[2] for p in pts)
+        back = max(p[2] for p in pts)
+        # The upper sleeves sit farther back than the lower pair. Include
+        # their two narrow shells without moving the surrounding shields.
+        is_upper_sleeve = -.159 < front < -.156 and -.026 < back < -.022 and low_y > .075
         # The barrels, muzzle brakes and exposed sleeves are separate shells.
         is_barrel = (
             front < -.42 if kind == 'dcaHeavy' else
-            front < -.235 and low_y > .014 if kind == 'dcaRapid' else
+            ((front < -.235 and low_y > .014) or is_upper_sleeve) if kind == 'dcaRapid' else
             (front < -.37 or (-.17 < front < -.12 and low_y > .02 and high_y > .11))
         )
         is_base = high_y < config['base'] or (low_y < ground + .035 and high_y < -.05)
