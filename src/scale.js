@@ -57,6 +57,8 @@ export const REFERENCE = Object.freeze({
   gravity: 9.81,
 });
 export const FLAK = Object.freeze({
+  minPitch: Math.PI / 36,
+  maxPitch: Math.PI / 2,
   interval: 0.7,
   minRange: 100,
   maxRange: 1200,
@@ -64,3 +66,8 @@ export const FLAK = Object.freeze({
   range: 300,
   radius: 8,
 });
+
+// Directions are relative to the gun's vertical axis, including the D2 hull.
+export function flakPitchAllowed(direction) {
+  return direction[1] >= Math.hypot(...direction) * (Math.sin(FLAK.minPitch) - 1e-8);
+}

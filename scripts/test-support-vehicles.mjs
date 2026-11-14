@@ -153,11 +153,16 @@ const fire = (person, vehicle, weapon, shot, extra = {}) => {
     occupation: person.occupation,
     weapon,
     shot,
-    direction: [0, 0, -1],
+    direction:
+      weapon === 'proximity' ? [0, Math.sin(Math.PI / 36), -Math.cos(Math.PI / 36)] : [0, 0, -1],
     ...extra,
   });
 };
 assert.throws(() => fire(pilot, truck, 'proximity', 'driver'), /Arme/);
+assert.throws(
+  () => fire(gunner, truck, 'proximity', 'below-stop', { direction: [0, 0, -1] }),
+  /Butée/,
+);
 fire(gunner, truck, 'proximity', 'first', { proximity: 20 });
 assert.equal(truck.supplies.ammo.proximity, 99);
 assert.equal(room.ordnance[0].proximity, 20);
@@ -165,7 +170,7 @@ fire(gunner, truck, 'proximity', 'first');
 assert.equal(truck.supplies.ammo.proximity, 99);
 assert.throws(() => fire(gunner, truck, 'proximity', 'too-soon'), /recharge/);
 now += 800;
-fire(gunner, truck, 'proximity', 'second', { proximity: 0.5 });
+fire(gunner, truck, 'proximity', 'second', { proximity: 0.5, direction: [0, 1, 0] });
 assert.equal(room.ordnance.at(-1).proximity, 0.5);
 const makeShot = (age, p = [1, 1, 1], v = [0, 0, 0]) => ({
   shot: 'boundary-' + age,

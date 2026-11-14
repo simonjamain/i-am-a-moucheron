@@ -1,6 +1,12 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 298,
+    changes: [
+      'Le Flak lourd passe en vue de visée et sa culasse suit le tube. Les DCA visent de +5° à +90°.',
+    ],
+  },
+  {
     version: 297,
     changes: [
       'Les deux canons supérieurs de la DCA haute cadence restent assemblés quand on vise.',

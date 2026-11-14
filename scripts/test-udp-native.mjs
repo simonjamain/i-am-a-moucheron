@@ -331,7 +331,7 @@ try {
     shot: 'udp-proximity',
     occupation: operator.occupation,
     vehicle: truck.id,
-    direction: [0, 0, -1],
+    direction: [0, Math.sin(Math.PI / 36), -Math.cos(Math.PI / 36)],
     proximity: 12.5,
   });
   assert.equal(proximity.status, 200);

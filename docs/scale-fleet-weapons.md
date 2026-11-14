@@ -123,7 +123,9 @@ portée les ravitaille automatiquement aux tarifs habituels des balles et obus.
 | DCA haute cadence |                                       15 $ | 1 000 balles | Quatre mitrailleuses de Spitfire. Un départ toutes les 15 ms, en alternant les tubes. |
 | Flak lourd        |                                       35 $ |     120 obus | Un obus par seconde avec la fusée de proximité de la DCA mobile.                      |
 
-Le Flak lourd règle la proximité à la molette. L’obus s’arme à 0,3 s et éclate
+Les trois DCA fixes ont un azimut libre et une élévation de **+5° à +90°**.
+En prenant le poste du Flak lourd, la vue passe à la bouche du canon et suit
+son axe. Le Flak lourd règle la proximité à la molette. L’obus s’arme à 0,3 s et éclate
 au passage au plus près d’un objet dans la zone de détection. Le souffle atteint
 7,2 cm dans le bureau et inflige de 240 dégâts au centre à 60 au bord, soit
 trois fois le rayon et les dégâts du souffle du Flak léger.

@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict';
-import { FLAK, MAP } from '../src/scale.js';
+import { readFileSync } from 'node:fs';
+import { runInNewContext } from 'node:vm';
+import { ACTOR_UNIT, FLAK, MAP } from '../src/scale.js';
 import { FIXED_DCA_AMMO } from '../src/ground-ammo.js';
 import { advancePaidService } from '../src/paid-service.js';
 import { newGroundDefense } from '../src/ground-defense-state.js';
@@ -8,7 +10,8 @@ import { HEAVY } from '../src/armament.js';
 import { stepHeavy } from '../src/heavy-sim.js';
 import { shopPrice } from '../src/equipment.js';
 import { heavyDcaMuzzle } from '../src/fixed-dca.js';
-import { makeFixedDca } from '../src/fixed-dca-model.js';
+import { makeFixedDca, positionHeavyFlakSight } from '../src/fixed-dca-model.js';
+import { OFFICE_LAYOUT } from '../src/layout.js';
 import { aimGun } from '../src/sortie.js';
 import { Game } from '../server/game.js';
 
@@ -113,18 +116,20 @@ assert.equal(r.fixedDcaShots.size, 2, 'rapid fire has its own shot ledger');
 
 const heavy = { ...positioned, kind: 'dcaHeavy', ammo: 2, lastShotAt: undefined };
 r.equipment[0] = heavy;
-const launch = (shot, proximity = 5) =>
+const minimumAim = [0, Math.sin(Math.PI / 36), -Math.cos(Math.PI / 36)];
+const launch = (shot, proximity = 5, direction = minimumAim) =>
   game.command('DCAFIRE', p.id, 'heavy-dca-fire', {
     station: 0,
     shot,
     proximity,
     incarnation: p.incarnation,
-    direction: [0, 0, -1],
+    direction,
   });
+assert.throws(() => launch('below-stop', 5, [0, 0, -1]), /Visée/);
 launch('heavy-1', 1000);
 assert.equal(heavy.ammo, 1);
 assert.equal(r.ordnance.at(-1).proximity, 20, 'same fuse bounds as mobile DCA');
-assert.deepEqual(r.ordnance.at(-1).p, heavyDcaMuzzle(heavy, [0, 0, -1]));
+assert.deepEqual(r.ordnance.at(-1).p, heavyDcaMuzzle(heavy, minimumAim));
 assert.throws(() => launch('heavy-2'), /recharge/);
 now += 1000;
 launch('heavy-2');
@@ -133,6 +138,10 @@ assert.equal(HEAVY.dcaHeavy.radius, HEAVY.proximity.radius * 3);
 assert.equal(HEAVY.dcaHeavy.damage, HEAVY.proximity.damage * 3);
 assert.equal(HEAVY.dcaHeavy.edge, HEAVY.proximity.edge * 3);
 const record = r.ordnance.at(-1);
+heavy.ammo = 1;
+now += 1000;
+launch('vertical', 5, [0, 1, 0]);
+assert.equal(r.ordnance.at(-1).v[1], HEAVY.dcaHeavy.speed);
 record.p = [0, 1, 0];
 const equivalent = { ...structuredClone(record), weapon: 'proximity' };
 const wall = { min: { x: -0.1, y: 0.9, z: -0.7 }, max: { x: 0.1, y: 1.1, z: -0.69 } };
@@ -174,7 +183,7 @@ const upperSleeves = [
 ].map(([x, y, z]) =>
   new T.Vector3(x, y + 0.275635, z).multiplyScalar(5).sub(pivot).applyAxisAngle(xAxis, -0.455),
 );
-for (const elevation of [-0.1, 0.455, 1.35]) {
+for (const elevation of [Math.PI / 36, 0.455, Math.PI / 2]) {
   aimGun(T, rapidModel.userData.yaw, new T.Vector3(0, Math.sin(elevation), -Math.cos(elevation)));
   const vertices = [];
   rapidModel.traverse((mesh) => {
@@ -194,6 +203,97 @@ for (const elevation of [-0.1, 0.455, 1.35]) {
       `upper sleeve follows its barrel at elevation ${elevation}`,
     );
   }
+}
+
+// Read the first snapshot returned by the second signature, before any sync.
+{
+  const joined = game.join({ code: 'FLAKSEAT', name: 'Servant' });
+  const room = game.rooms.get('FLAKSEAT');
+  const pilot = room.pilots.get(joined.id);
+  const body = game.base(room, pilot);
+  const station = {
+    ...heavy,
+    x: OFFICE_LAYOUT.base.originX + body.x * ACTOR_UNIT,
+    y: body.y,
+    z: OFFICE_LAYOUT.base.originZ - body.z * ACTOR_UNIT,
+    ammo: 120,
+  };
+  room.equipment = [station];
+  const command = (path, data) => game.command('FLAKSEAT', pilot.id, path, data);
+  command('equipment-select', { station: 0 });
+  command('equipment-sign', { station: 0, form: 1, signature: true });
+  const signed = command('equipment-sign', { station: 0, form: 2, signature: true });
+  assert.equal(signed.pilots.find((p) => p.id === pilot.id).mode, 'turret');
+  assert.ok(
+    !signed.base.bodies.some((b) => b.entity === pilot.id),
+    'remove the outside avatar on boarding',
+  );
+  const exited = command('turret');
+  assert.ok(
+    exited.base.bodies.some((b) => b.entity === pilot.id),
+    'restore the walker on exit',
+  );
+}
+
+// Run the station portion of the real client update after signing, with the
+// previous walking camera still far behind. At vertical aim it must follow the
+// barrel, preserve azimuth and stay clear of the muzzle.
+const stationClient = readFileSync('src/client.js', 'utf8');
+const stationUpdate = stationClient.slice(
+  stationClient.indexOf('  for (let index = 0; index < turrets.length; index++)'),
+  stationClient.indexOf('function fireRapidDca('),
+);
+const sightGun = makeFixedDca(T, { kind: 'dcaHeavy', x: 0.2, y: 0.5, z: -0.3 });
+const sightCamera = new T.PerspectiveCamera();
+sightGun.userData.person = new T.Object3D();
+const pitchAxis = new T.Vector3(1, 0, 0);
+const heavyBreech = new T.Vector3(-0.027588, -0.021729 + 0.288818, -0.047119)
+  .multiplyScalar(6.7)
+  .sub(sightGun.userData.pitch.position)
+  .applyAxisAngle(pitchAxis, -0.37);
+for (const elevation of [Math.PI / 36, Math.PI / 2]) {
+  sightCamera.position.set(-2, 1, 3);
+  const direction = new T.Vector3(0, Math.sin(elevation), -Math.cos(elevation));
+  runInNewContext('function updateVehicles(dt) {\n' + stationUpdate + '\nupdateVehicles(0);', {
+    T,
+    MAP,
+    aimGun,
+    positionHeavyFlakSight,
+    isFixedDca: (kind) => kind === 'dcaHeavy',
+    FIXED_DCA: { dcaHeavy: { interval: 1 } },
+    FORTIFICATIONS: {},
+    stations: [{ kind: 'dcaHeavy', ammo: 0 }],
+    turrets: [sightGun],
+    turretIndex: 0,
+    id: 'servant',
+    snap: { pilots: [{ id: 'servant', life: 'alive', mode: 'turret', state: { turret: 0 } }] },
+    localMotion: () => ({}),
+    turretDirection: () => direction,
+    controlFocus: { active: false },
+    uiWeaponFire: false,
+    camera: sightCamera,
+    wearAppearance: () => {},
+  });
+  const muzzle = sightGun.userData.muzzles[0].getWorldPosition(new T.Vector3());
+  assert.ok(
+    sightCamera.position.distanceTo(muzzle.clone().addScaledVector(direction, MAP.metres(0.15))) <
+      1e-8,
+  );
+  assert.ok(sightCamera.getWorldDirection(new T.Vector3()).distanceTo(direction) < 1e-8);
+  assert.equal(sightGun.userData.person.visible, false);
+
+  const expected = sightGun.userData.pitch.localToWorld(heavyBreech.clone());
+  const vertices = [];
+  sightGun.traverse((mesh) => {
+    if (!mesh.isMesh) return;
+    const positions = mesh.geometry.attributes.position;
+    for (let index = 0; index < positions.count; index++)
+      vertices.push(mesh.localToWorld(new T.Vector3().fromBufferAttribute(positions, index)));
+  });
+  assert.ok(
+    vertices.some((point) => point.distanceTo(expected) < 1e-7),
+    'the heavy breech follows the tube',
+  );
 }
 
 // Vehicle orders deploy by parachute and must initialise the same reserve.
