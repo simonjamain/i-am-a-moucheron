@@ -289,9 +289,14 @@ const stationClient = readFileSync('src/client.js', 'utf8');
   assert.equal(body.z, 0);
 }
 
-const stationUpdate = stationClient.slice(
-  stationClient.indexOf('  for (let index = 0; index < turrets.length; index++)'),
+const turretCameraUpdate = stationClient.slice(
+  stationClient.indexOf('function updateOccupiedTurretCamera()'),
   stationClient.indexOf('function fireRapidDca('),
+);
+assert.match(
+  stationClient,
+  /updateVehicles\(dt\);\s*updateOccupiedTurretCamera\(\);/,
+  'the occupied turret camera is applied after the frame world updates',
 );
 const sightGun = makeFixedDca(T, { kind: 'dcaHeavy', x: 0.2, y: 0.5, z: -0.3 });
 const sightCamera = new T.PerspectiveCamera();
@@ -304,24 +309,20 @@ const heavyBreech = new T.Vector3(-0.027588, -0.021729 + 0.288818, -0.047119)
 for (const elevation of [Math.PI / 36, Math.PI / 2]) {
   sightCamera.position.set(-2, 1, 3);
   const direction = new T.Vector3(0, Math.sin(elevation), -Math.cos(elevation));
-  runInNewContext('function updateVehicles(dt) {\n' + stationUpdate + '\nupdateVehicles(0);', {
+  aimGun(T, sightGun.userData.yaw, direction);
+  sightGun.updateWorldMatrix(true, true);
+  runInNewContext(turretCameraUpdate + 'updateOccupiedTurretCamera();', {
     T,
     MAP,
-    aimGun,
     positionHeavyFlakSight,
     isFixedDca: (kind) => kind === 'dcaHeavy',
-    FIXED_DCA: { dcaHeavy: { interval: 1 } },
-    FORTIFICATIONS: {},
-    stations: [{ kind: 'dcaHeavy', ammo: 0 }],
+    stations: [{ kind: 'dcaHeavy', x: 0.2, y: 0.5, z: -0.3, ammo: 0 }],
     turrets: [sightGun],
     turretIndex: 0,
-    id: 'servant',
-    snap: { pilots: [{ id: 'servant', life: 'alive', mode: 'turret', state: { turret: 0 } }] },
-    turretDirection: () => direction,
-    controlFocus: { active: false },
-    uiWeaponFire: false,
+    joined: true,
+    respawnAt: 0,
     camera: sightCamera,
-    wearAppearance: () => {},
+    turretDirection: () => direction,
   });
   const muzzle = sightGun.userData.muzzles[0].getWorldPosition(new T.Vector3());
   assert.ok(
