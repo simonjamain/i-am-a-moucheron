@@ -1,6 +1,10 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 300,
+    changes: ['La vue du Flak lourd s’affiche correctement après la prise du poste.'],
+  },
+  {
     version: 299,
     changes: [
       'Poser une DCA fixe près du départ ne fait plus bondir le personnage.',

@@ -203,6 +203,12 @@ export function equipmentHUD(options) {
 export class ContextHUD {
   constructor(root, clock = () => performance.now()) {
     this.root = root;
+    this.rails = ['left', 'right'].map((side) => ({
+      side,
+      label: root.querySelector(`[data-hud="${side}-0"]`),
+      summary: root.querySelector(`[data-hud="${side}-1"]`),
+      details: root.querySelector(`[data-hud-details="${side}"]`),
+    }));
     this.clock = clock;
     this.signature = '';
     this.until = 0;
@@ -226,11 +232,22 @@ export class ContextHUD {
       this.until = this.clock() + 2500;
     }
     this.root.classList.toggle('expanded', this.clock() < this.until);
-    for (const side of ['left', 'right'])
-      model[side].forEach((value, i) => {
-        const el = this.root.querySelector(`[data-hud="${side}-${i}"]`);
-        if (el.textContent !== value) el.textContent = value;
-      });
+    for (const { side, label, summary, details } of this.rails) {
+      const values = model[side];
+      if (label.textContent !== values[0]) label.textContent = values[0];
+      if (summary.textContent !== values[1]) summary.textContent = values[1];
+      const rows = values.length - 2;
+      if (details.children.length !== rows) {
+        details.replaceChildren(
+          ...Array.from({ length: rows }, () => details.ownerDocument.createElement('p')),
+        );
+      }
+      for (let index = 0; index < rows; index++) {
+        const row = details.children[index];
+        const value = values[index + 2];
+        if (row.textContent !== value) row.textContent = value;
+      }
+    }
   }
   reveal() {
     this.until = this.clock() + 2500;
