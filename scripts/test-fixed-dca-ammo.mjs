@@ -12,7 +12,9 @@ import { shopPrice } from '../src/equipment.js';
 import { heavyDcaMuzzle } from '../src/fixed-dca.js';
 import { makeFixedDca, positionHeavyFlakSight } from '../src/fixed-dca-model.js';
 import { OFFICE_LAYOUT } from '../src/layout.js';
-import { aimGun } from '../src/sortie.js';
+import { makeInstallationCollider } from '../src/station-model.js';
+import { colliderContainsXZ } from '../src/oriented-collider.js';
+import { aimGun, stepWalker, stationEntryOffset } from '../src/sortie.js';
 import { Game } from '../server/game.js';
 
 const station = { kind: 'refuel', x: 0, y: 0.01, z: 0 };
@@ -239,6 +241,62 @@ for (const elevation of [Math.PI / 36, 0.455, Math.PI / 2]) {
 // previous walking camera still far behind. At vertical aim it must follow the
 // barrel, preserve azimuth and stay clear of the muzzle.
 const stationClient = readFileSync('src/client.js', 'utf8');
+// Insert a rotated Flak through the real client reconciliation before the
+// first scene render, when the mesh's parent matrix has not yet updated.
+{
+  const source = stationClient.slice(
+    stationClient.indexOf('const turrets = [];'),
+    stationClient.indexOf('function updateHeavyFlakCamera()'),
+  );
+  const { originX, originZ, deckY } = OFFICE_LAYOUT.base;
+  const flak = {
+    kind: 'dcaHeavy',
+    slot: 0,
+    x: originX + MAP.metres(8),
+    y: deckY,
+    z: originZ,
+    angle: Math.PI / 4,
+  };
+  const colliders = [];
+  runInNewContext(source + 'reconcileEquipment([flak]);', {
+    T,
+    MAP,
+    ACTOR_UNIT,
+    scene: new T.Scene(),
+    colliders,
+    stationRings: [],
+    roleEntry: () => new T.Group(),
+    humanoid: () => new T.Group(),
+    flak,
+    makeFixedDca,
+    makeInstallationCollider,
+    stationEntryOffset,
+    isFixedDca: () => true,
+    isFortification: () => false,
+  });
+  const [collision] = colliders;
+  assert.ok(collision.oriented);
+  assert.ok(colliderContainsXZ(collision, flak.x, flak.z), 'the base remains solid');
+  const size = collision.getSize(new T.Vector3());
+  assert.ok(size.x < MAP.metres(8) && size.z < MAP.metres(8) && size.y < MAP.metres(2));
+  const body = { x: 0, z: 0, y: deckY + 0.05 * ACTOR_UNIT, vx: 0, vz: 0, r: 0.32, grounded: true };
+  const deck = new T.Box3(
+    new T.Vector3(originX - 1, deckY - 0.1, originZ - 1),
+    new T.Vector3(originX + 1, deckY, originZ + 1),
+  );
+  stepWalker(body, 1 / 60, [deck, collision]);
+  assert.equal(body.x, 0, 'Flak beside the spawn must not push the walker');
+  assert.equal(body.z, 0);
+}
+
+const heavyCameraUpdate = stationClient.slice(
+  stationClient.indexOf('function updateHeavyFlakCamera()'),
+  stationClient.indexOf('function clampTurretPitch('),
+);
+const frameCameraUpdate = stationClient.slice(
+  stationClient.indexOf('  if (joined) updateBaseWorld(dt, now);'),
+  stationClient.indexOf('  for (const model of turrets) if (model?.userData.dish)'),
+);
 const stationUpdate = stationClient.slice(
   stationClient.indexOf('  for (let index = 0; index < turrets.length; index++)'),
   stationClient.indexOf('function fireRapidDca('),
@@ -254,26 +312,35 @@ const heavyBreech = new T.Vector3(-0.027588, -0.021729 + 0.288818, -0.047119)
 for (const elevation of [Math.PI / 36, Math.PI / 2]) {
   sightCamera.position.set(-2, 1, 3);
   const direction = new T.Vector3(0, Math.sin(elevation), -Math.cos(elevation));
-  runInNewContext('function updateVehicles(dt) {\n' + stationUpdate + '\nupdateVehicles(0);', {
-    T,
-    MAP,
-    aimGun,
-    positionHeavyFlakSight,
-    isFixedDca: (kind) => kind === 'dcaHeavy',
-    FIXED_DCA: { dcaHeavy: { interval: 1 } },
-    FORTIFICATIONS: {},
-    stations: [{ kind: 'dcaHeavy', ammo: 0 }],
-    turrets: [sightGun],
-    turretIndex: 0,
-    id: 'servant',
-    snap: { pilots: [{ id: 'servant', life: 'alive', mode: 'turret', state: { turret: 0 } }] },
-    localMotion: () => ({}),
-    turretDirection: () => direction,
-    controlFocus: { active: false },
-    uiWeaponFire: false,
-    camera: sightCamera,
-    wearAppearance: () => {},
-  });
+  runInNewContext(
+    heavyCameraUpdate + 'function updateVehicles(dt) {\n' + stationUpdate + frameCameraUpdate,
+    {
+      T,
+      MAP,
+      aimGun,
+      positionHeavyFlakSight,
+      isFixedDca: (kind) => kind === 'dcaHeavy',
+      FIXED_DCA: { dcaHeavy: { interval: 1 } },
+      FORTIFICATIONS: {},
+      stations: [{ kind: 'dcaHeavy', ammo: 0 }],
+      turrets: [sightGun],
+      turretIndex: 0,
+      id: 'servant',
+      snap: { pilots: [{ id: 'servant', life: 'alive', mode: 'turret', state: { turret: 0 } }] },
+      joined: true,
+      dt: 0,
+      now: 0,
+      respawnAt: 0,
+      spectating: false,
+      updateBaseWorld: () => {},
+      updatePlacement: () => {},
+      turretDirection: () => direction,
+      controlFocus: { active: false },
+      uiWeaponFire: false,
+      camera: sightCamera,
+      wearAppearance: () => {},
+    },
+  );
   const muzzle = sightGun.userData.muzzles[0].getWorldPosition(new T.Vector3());
   assert.ok(
     sightCamera.position.distanceTo(muzzle.clone().addScaledVector(direction, MAP.metres(0.15))) <

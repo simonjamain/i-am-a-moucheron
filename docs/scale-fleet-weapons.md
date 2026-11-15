@@ -124,8 +124,9 @@ portée les ravitaille automatiquement aux tarifs habituels des balles et obus.
 | Flak lourd        |                                       35 $ |     120 obus | Un obus par seconde avec la fusée de proximité de la DCA mobile.                      |
 
 Les trois DCA fixes ont un azimut libre et une élévation de **+5° à +90°**.
-En prenant le poste du Flak lourd, la vue passe à la bouche du canon et suit
-son axe. Le Flak lourd règle la proximité à la molette. L’obus s’arme à 0,3 s et éclate
+Dès la confirmation du poste du Flak lourd, la vue passe à la bouche du canon
+et suit son axe. La collision des DCA fixes suit l’embase à son échelle et à
+son orientation dans le bureau. Le Flak lourd règle la proximité à la molette. L’obus s’arme à 0,3 s et éclate
 au passage au plus près d’un objet dans la zone de détection. Le souffle atteint
 7,2 cm dans le bureau et inflige de 240 dégâts au centre à 60 au bord, soit
 trois fois le rayon et les dégâts du souffle du Flak léger.
