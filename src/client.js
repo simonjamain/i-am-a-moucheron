@@ -7,8 +7,7 @@ import { ReloadHUD, seatReloads, heavyReadyAt, heavyLane, reloadProgress } from 
 import { makeBed } from '/bed-model.js';
 import { officeFogOpacity, installOfficeFog, officeFogCeiling } from '/office-fog.js';
 import { makeFortificationStation } from '/fortification-model.js';
-import { placementFacing } from '/placement-aim.js';
-import { placementAim } from '/placement-aim.js';
+import { placementAim, placementFacing } from '/placement-aim.js';
 import { WaveCouncilUI } from '/wave-council-ui.js';
 import { WaveForecastScene } from '/wave-forecast-scene.js';
 import { GroundDefenseUI } from '/ground-defense-ui.js';
@@ -18,10 +17,9 @@ import { mountChangelog } from '/changelog.js';
 import { deliveryHeightAt } from '/delivery.js';
 import { reserveAlerts, missileStatus, ArrivalSignals } from '/reserve-feedback.js';
 import { controlHints, cursorStats, cursorAmmoText } from '/live-hud.js';
-import { GunSalvos } from '/salvos.js';
+import { GunSalvos, advanceAutomaticFire } from '/salvos.js';
 import { nextPilotMuzzle, nearestWeaponMuzzle } from '/muzzle.js';
-import { advanceAutomaticFire } from '/salvos.js';
-import { ammoCapacity } from '/logistics.js';
+import { ammoCapacity, inRadarCoverage } from '/logistics.js';
 import { PISTOL_CAPACITY } from '/ground-ammo.js';
 import { FIXED_DCA, heavyDcaMuzzle, isFixedDca } from '/fixed-dca.js';
 import { makeFixedDca, positionHeavyFlakSight } from '/fixed-dca-model.js';
@@ -31,6 +29,8 @@ import {
   moveShotTrace,
   advanceShotTrace,
   makeShotTrace,
+  makeTracer,
+  updateTracer,
   TracerPool,
   TRACER_COLOR,
 } from '/tracers.js';
@@ -50,7 +50,6 @@ import { ContextHUD, equipmentHUD } from '/hud.js';
 import { paintVehicle, updateInscriptions } from '/vehicle-livery.js';
 import { drawSeatIcon, seatRole } from '/seat-icons.js';
 import { AircraftFire } from '/aircraft-fire.js';
-import { inRadarCoverage } from '/logistics.js';
 import { InsectStatus, insectScale } from '/insect-status.js';
 import { BloodEffects } from '/blood-effects.js';
 import { stepVacantAircraft } from '/vacant-flight.js';
@@ -58,7 +57,6 @@ import { CONTRACTS, ContractBook, contractKey } from '/contracts.js';
 import { RewardQueue } from '/rewards.js';
 import { SHOP, shopPrice, upgradedVehicle, supportedPlacement } from '/equipment.js';
 import { stepBallisticVelocity, toggleParachute } from '/ballistics.js';
-import { makeTracer, updateTracer } from '/tracers.js';
 import { airField } from '/air-current.js';
 import { wavePlan, swarmFrame, entryStatus } from '/waves.js';
 import { MAP, ACTOR_UNIT, HUMAN_SCALE, INSECT_SCALE, REFERENCE, FLAK } from '/scale.js';
@@ -3147,26 +3145,6 @@ function updateVehicles(dt) {
           howitzer ? HOWITZER.maxPitch : 1.35,
         );
       }
-      camera.up.set(0, 1, 0);
-      if (howitzer) {
-        // Gunner's view from behind the breech, looking where the crew aims.
-        const aim = turretDirection(),
-          back = new T.Vector3(aim.x, 0, aim.z).normalize();
-        camera.position
-          .set(station.x, station.y + MAP.metres(2.6), station.z)
-          .addScaledVector(back, -MAP.metres(4.5));
-        camera.lookAt(camera.position.clone().addScaledVector(aim, MAP.metres(100)));
-      } else if (heavyDca) {
-        positionHeavyFlakSight(T, camera, gun);
-      } else {
-        camera.position.set(
-          station.x,
-          station.y + MAP.metres(station.kind === 'bunker' ? 17 : 5),
-          station.z,
-        );
-        if (isFixedDca(station.kind)) gun.userData.pitch.getWorldQuaternion(camera.quaternion);
-        else camera.lookAt(camera.position.clone().addScaledVector(dir, MAP.metres(100)));
-      }
       shooting =
         ((controlFocus.active && (mouseFire || keys.Space || pad.fire)) || uiWeaponFire) &&
         (station.ammo ?? 0) >= 1;
@@ -3246,6 +3224,36 @@ function updateVehicles(dt) {
     }
   }
 }
+// Apply the occupied emplacement camera after all world/vehicle updates.
+// This keeps the final rendered view attached to the gun, not the walker's last pose.
+function updateOccupiedTurretCamera() {
+  if (!joined || respawnAt || turretIndex < 0) return;
+  const station = stations[turretIndex],
+    gun = turrets[turretIndex];
+  if (!station || !gun) return;
+  const howitzer = gun.userData.howitzer;
+  camera.up.set(0, 1, 0);
+  if (howitzer) {
+    const aim = turretDirection(),
+      back = new T.Vector3(aim.x, 0, aim.z).normalize();
+    camera.position
+      .set(station.x, station.y + MAP.metres(2.6), station.z)
+      .addScaledVector(back, -MAP.metres(4.5));
+    camera.lookAt(camera.position.clone().addScaledVector(aim, MAP.metres(100)));
+  } else if (station.kind === 'dcaHeavy') {
+    positionHeavyFlakSight(T, camera, gun);
+  } else {
+    camera.position.set(
+      station.x,
+      station.y + MAP.metres(station.kind === 'bunker' ? 17 : 5),
+      station.z,
+    );
+    if (isFixedDca(station.kind)) gun.userData.pitch.getWorldQuaternion(camera.quaternion);
+    else camera.lookAt(camera.position.clone().addScaledVector(turretDirection(), MAP.metres(100)));
+  }
+  camera.updateMatrixWorld(true);
+}
+
 function fireRapidDca(station, gun, direction, dt, interval, firing, owned) {
   const state = gun.userData;
   const queue = owned ? (state.rapidQueue ??= new Map()) : null;
@@ -4741,6 +4749,7 @@ function frame(now) {
   }
   if (joined) updateBaseWorld(dt, now);
   updateVehicles(dt);
+  updateOccupiedTurretCamera();
   updatePlacement();
   for (const model of turrets) if (model?.userData.dish) animateRadar(model, dt, joined);
   updateFallingEnemies(dt);
