@@ -453,7 +453,7 @@ function groundActive() {
   return (
     joined &&
     !spectating &&
-    ((onFoot && !myVehicle) || !!respawnAt) &&
+    ((onFoot && !myVehicle) || turretIndex >= 0 || !!respawnAt) &&
     $('papers').classList.contains('hidden') &&
     !$('changelogDialog').open &&
     !$('waveCouncil').open &&
@@ -1194,7 +1194,7 @@ function accept(s, force = false) {
   if (self?.life === 'alive') {
     const previousVehicle = myVehicle?.id,
       previousSeat = crewSeat,
-      foot = self.mode !== 'flight',
+      foot = self.mode !== 'flight' && self.mode !== 'turret',
       oldTurret = turretIndex;
     myVehicle = s.vehicles?.find((v) => v.id === self.vehicle_id) || null;
     crewSeat = self.seat || null;
@@ -1250,6 +1250,11 @@ function accept(s, force = false) {
       turretAim.yaw = 0;
       const kind = stations[turretIndex]?.kind;
       turretAim.pitch = kind === 'antitank' ? 0.05 : 0.2;
+      if (kind === 'dcaHeavy') {
+        const gun = turrets[turretIndex];
+        aimGun(T, gun.userData.yaw, turretDirection(), gun.quaternion);
+        updateHeavyFlakCamera();
+      }
       notify(
         kind === 'antitank'
           ? 'Canon lourd · Souris : pointer (lent) · Clic : obus · F : sortir'
@@ -1914,7 +1919,15 @@ setInterval(async () => {
     accept(
       await api('sync', {
         id,
-        mode: myVehicle ? (crewSeat === 'pilot' ? 'flight' : 'crew') : onFoot ? 'foot' : 'flight',
+        mode: myVehicle
+          ? crewSeat === 'pilot'
+            ? 'flight'
+            : 'crew'
+          : turretIndex >= 0
+            ? 'turret'
+            : onFoot
+              ? 'foot'
+              : 'flight',
         state: localMotion(),
         signalSince,
         damageSince: damageSeen,
@@ -2669,7 +2682,7 @@ function reconcileEquipment(next) {
       st.kind === 'refuel' || st.kind === 'bed'
         ? makeInstallationCollider(T, gun)
         : isFixedDca(st.kind)
-          ? new T.Box3().setFromObject(gun.userData.baseMesh)
+          ? makeInstallationCollider(T, gun.userData.baseMesh)
           : new T.Box3(
               new T.Vector3(st.x - radius, st.y, st.z - radius),
               new T.Vector3(
@@ -2704,6 +2717,10 @@ function reconcileEquipment(next) {
     if (isFixedDca(st.kind) || st.kind === 'bed' || isFortification(st.kind)) scene.add(ring);
     stationRings[i] = ring;
   }
+}
+function updateHeavyFlakCamera() {
+  const gun = turrets[turretIndex];
+  if (gun && stations[turretIndex]?.kind === 'dcaHeavy') positionHeavyFlakSight(T, camera, gun);
 }
 function clampTurretPitch(value, min, max) {
   const antiAir =
@@ -3107,12 +3124,12 @@ function updateVehicles(dt) {
     }
     const howitzer = gun.userData.howitzer;
     howitzer?.tick(dt); // recoil keeps returning to battery after the gunner leaves
-    if (!occupant) {
+    if (!self && !occupant) {
       gun.userData.rapidCooldown = 0;
       gun.userData.rapidQueue?.clear();
       continue;
     }
-    const motion = self ? localMotion() : remoteMotion(occupant);
+    const motion = self ? null : remoteMotion(occupant);
     let dir = self
       ? turretDirection()
       : new T.Vector3().fromArray(motion.turretDirection || [0, 0.3, -1]).normalize();
@@ -3148,9 +3165,7 @@ function updateVehicles(dt) {
           .set(station.x, station.y + MAP.metres(2.6), station.z)
           .addScaledVector(back, -MAP.metres(4.5));
         camera.lookAt(camera.position.clone().addScaledVector(aim, MAP.metres(100)));
-      } else if (heavyDca) {
-        positionHeavyFlakSight(T, camera, gun);
-      } else {
+      } else if (!heavyDca) {
         camera.position.set(
           station.x,
           station.y + MAP.metres(station.kind === 'bunker' ? 17 : 5),
@@ -4416,13 +4431,15 @@ function drawRadar() {
   for (const g of basePeople.values()) if (g.visible) dot(g.position, '#8abbb2', 2);
   for (const g of others.values()) dot(g.position, '#8abbb2', 3);
   for (const st of stations) dot(st, '#f5da91', 2);
-  dot(
-    onFoot && basePeople.get(id)?.visible ? basePeople.get(id).position : me.position,
-    '#d5ef73',
-    4,
-  );
-  const playerPosition = onFoot && selfBase() ? baseWorld(selfBase()) : me.position;
-  const heading = onFoot ? groundView.yaw : new T.Euler().setFromQuaternion(me.quaternion, 'YXZ').y;
+  const playerPosition =
+    stations[turretIndex] ?? (onFoot && selfBase() ? baseWorld(selfBase()) : me.position);
+  dot(playerPosition, '#d5ef73', 4);
+  const heading =
+    turretIndex >= 0
+      ? turretAim.yaw
+      : onFoot
+        ? groundView.yaw
+        : new T.Euler().setFromQuaternion(me.quaternion, 'YXZ').y;
   const px = 110 + playerPosition.x / 0.04,
     pz = 110 + (playerPosition.z / 0.04) * 0.88;
   radar.strokeStyle = '#d5ef73';
@@ -4651,7 +4668,7 @@ function frame(now) {
       $('notice').textContent = controlFocus.active
         ? ''
         : 'Curseur libre · Cliquez dans le décor pour reprendre';
-    if (!onFoot && !respawnAt) {
+    if (myVehicle && !onFoot && !respawnAt) {
       const assisted = true;
       if (assisted) mouseCameraRotation(T, mouseDirection, mouseCameraQ, dt);
       else if (controlFocus.active && !keys.KeyC) {
@@ -4731,6 +4748,7 @@ function frame(now) {
   }
   if (joined) updateBaseWorld(dt, now);
   updateVehicles(dt);
+  if (!respawnAt && !spectating) updateHeavyFlakCamera();
   updatePlacement();
   for (const model of turrets) if (model?.userData.dish) animateRadar(model, dt, joined);
   updateFallingEnemies(dt);

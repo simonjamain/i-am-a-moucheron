@@ -1,6 +1,13 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 299,
+    changes: [
+      'Poser une DCA fixe près du départ ne fait plus bondir le personnage.',
+      'La vue de visée du Flak lourd s’active dès la confirmation de la prise du poste.',
+    ],
+  },
+  {
     version: 298,
     changes: [
       'Le Flak lourd passe en vue de visée et sa culasse suit le tube. Les DCA visent de +5° à +90°.',
