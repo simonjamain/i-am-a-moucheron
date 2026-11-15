@@ -1250,11 +1250,6 @@ function accept(s, force = false) {
       turretAim.yaw = 0;
       const kind = stations[turretIndex]?.kind;
       turretAim.pitch = kind === 'antitank' ? 0.05 : 0.2;
-      if (kind === 'dcaHeavy') {
-        const gun = turrets[turretIndex];
-        aimGun(T, gun.userData.yaw, turretDirection(), gun.quaternion);
-        updateHeavyFlakCamera();
-      }
       notify(
         kind === 'antitank'
           ? 'Canon lourd · Souris : pointer (lent) · Clic : obus · F : sortir'
@@ -2718,10 +2713,6 @@ function reconcileEquipment(next) {
     stationRings[i] = ring;
   }
 }
-function updateHeavyFlakCamera() {
-  const gun = turrets[turretIndex];
-  if (gun && stations[turretIndex]?.kind === 'dcaHeavy') positionHeavyFlakSight(T, camera, gun);
-}
 function clampTurretPitch(value, min, max) {
   const antiAir =
     isFixedDca(stations[turretIndex]?.kind) ||
@@ -3165,7 +3156,9 @@ function updateVehicles(dt) {
           .set(station.x, station.y + MAP.metres(2.6), station.z)
           .addScaledVector(back, -MAP.metres(4.5));
         camera.lookAt(camera.position.clone().addScaledVector(aim, MAP.metres(100)));
-      } else if (!heavyDca) {
+      } else if (heavyDca) {
+        positionHeavyFlakSight(T, camera, gun);
+      } else {
         camera.position.set(
           station.x,
           station.y + MAP.metres(station.kind === 'bunker' ? 17 : 5),
@@ -4748,7 +4741,6 @@ function frame(now) {
   }
   if (joined) updateBaseWorld(dt, now);
   updateVehicles(dt);
-  if (!respawnAt && !spectating) updateHeavyFlakCamera();
   updatePlacement();
   for (const model of turrets) if (model?.userData.dish) animateRadar(model, dt, joined);
   updateFallingEnemies(dt);

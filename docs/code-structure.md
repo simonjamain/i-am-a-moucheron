@@ -48,6 +48,11 @@ Les couloirs aériens et leur déformation sont partagés entre serveur et clien
 Les gerbes de sang purement visuelles sont gérées dans `blood-effects.js`,
 avec un seul rendu instancié borné et une intégration aux impacts dans `client.js`.
 
+Le HUD contextuel (`src/hud.js`) affiche les lignes de détail à partir du modèle
+du poste. Le HTML fournit uniquement le titre, la valeur principale et un
+conteneur par panneau. La vue du Flak lourd est calculée avec celle des autres
+postes dans `updateVehicles()`, avant le rendu de la scène.
+
 ## Dernier lot
 
 [Lisibilité et nettoyage](clean-flight.md) : `purchase-ui.js` réutilise les protections
