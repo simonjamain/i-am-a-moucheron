@@ -112,8 +112,11 @@ assert.deepEqual(arrivals.update(1, [1]), []);
 assert.deepEqual(arrivals.update(1, [1, 2, 3]), [2, 3]);
 assert.deepEqual(arrivals.update(1, [1, 2, 3]), []);
 assert.deepEqual(arrivals.update(2, [2]), []);
+// VAG-09 reserved a « voltigeur » on wave 2; that species was removed (v312):
+// wave 2 is ants and midges only, the first special species comes on wave 3.
 for (let seed = 0; seed < 100; seed++) {
-  const wave = wavePlan('seed' + seed, 2);
+  assert.ok(wavePlan('seed' + seed, 2).roster.every((e) => ['ant', 'midge'].includes(e.type)));
+  const wave = wavePlan('seed' + seed, 3);
   assert.ok(wave.roster.some((e) => !['ant', 'midge'].includes(e.type)));
 }
 game.soul(room, 'player', pilot.id, pilot.name);

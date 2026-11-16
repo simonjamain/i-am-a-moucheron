@@ -73,6 +73,9 @@ VAG-09 réserve un voltigeur dès la vague 2 en retirant son coût du budget ini
 sans augmenter ce budget. Déblocages suivants : cafard 3, carapace 5, bourdon 8 ;
 plafonds d'élites et budget conservés. La vague 1 reste 20 moucherons + 4 fourmis.
 
+> Note (version 312) : le voltigeur (`dart`) a depuis été retiré du jeu ; ce compte rendu
+> historique le mentionne encore.
+
 ## Preuves et limites
 
 `test-backlog-return.mjs` exerce réparation des sept modèles, H2 occupé/vide et

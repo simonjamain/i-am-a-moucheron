@@ -122,7 +122,7 @@ const ground = debugSwarmRoster({ ant: 120, roach: 240 }, debugParams);
 assert.equal(new Set(ground.map((e) => e.routeSeed)).size, 1, 'one ground route');
 assert.equal(new Set(ground.map((e) => enemyRoute(e).portal)).size, 1);
 assert.ok(ground.every((e) => e.swarmSize === ground.length));
-const mixed = debugSwarmRoster({ midge: 1000, dart: 200, ant: 40 }, debugParams);
+const mixed = debugSwarmRoster({ midge: 1000, mosquito: 200, ant: 40 }, debugParams);
 assert.equal(new Set(mixed.filter((e) => !e.ground).map((e) => e.routeSeed)).size, 1);
 assert.equal(new Set(mixed.filter((e) => e.ground).map((e) => e.routeSeed)).size, 1);
 assert.ok(mixed.filter((e) => !e.ground).every((e) => e.swarmSize === 1200));

@@ -31,15 +31,6 @@ export const ENEMY_TYPES = Object.freeze({
     leak: 1,
     color: '#bfb36c',
   },
-  dart: {
-    name: 'Voltigeur',
-    cost: 3,
-    hp: 200,
-    size: 0.85,
-    speedMps: 0.13,
-    leak: 1,
-    color: '#d78253',
-  },
   guard: {
     name: 'Abeille',
     cost: 6,
@@ -238,24 +229,13 @@ export function wavePlan(room, wave, started = 0) {
   const unlock = {
     ant: 1,
     roach: 3,
-    dart: 2,
     mosquito: 3,
     guard: 5,
     brute: 8,
     spider: 11,
     rat: 15,
   };
-  if (wave >= 2) {
-    roster.push({
-      id: roster.length,
-      type: 'dart',
-      ...ENEMY_TYPES.dart,
-      phase: random() * Math.PI * 2,
-    });
-    remaining -= ENEMY_TYPES.dart.cost;
-    counts.dart = 1;
-  }
-  let eliteSpent = wave >= 2 ? ENEMY_TYPES.dart.cost : 0;
+  let eliteSpent = 0;
   while (remaining > 0 && roster.length < 180) {
     const unlocked = Object.entries(ENEMY_TYPES).filter(
       ([name, t]) =>
@@ -475,7 +455,7 @@ export function swarmFrame(roster, time, groundAgents = null, field = null) {
         Math.min(1, (age - hold) / fadeSeconds, (e.duration - age) / fadeSeconds),
       ),
       phase = e.phase,
-      amplitude = MAP.metres(e.ground ? 1.5 : e.type === 'dart' ? 6 : 4) * envelope;
+      amplitude = MAP.metres(e.ground ? 1.5 : 4) * envelope;
     if (e.ground) {
       const [dx, dz] = groundLaneDisplacement(e, [tangent[0] / length, tangent[2] / length], u);
       p[0] += dx;

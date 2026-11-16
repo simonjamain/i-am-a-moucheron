@@ -163,7 +163,7 @@ const scene = new T.Scene();
 const batch = new FlyerBatch(T, scene, { enabled: false });
 assert.equal(batch.handles('brute'), false, 'disabled batch hands over to the rig');
 const proxy = new FlyerBatch(T, scene, { enabled: true, vats: {} });
-assert.ok(proxy.handles('brute') && !proxy.handles('midge') && !proxy.handles('dart'));
+assert.ok(proxy.handles('brute') && !proxy.handles('midge') && !proxy.handles('ant'));
 const flyer = proxy.create('brute', 1.3);
 assert.ok(flyer.userData.instancedFlyer && flyer.userData.loopPhase >= 0);
 assert.deepEqual(flyer.userData.hitEllipsoid, BEETLE_HIT.radii);

@@ -20,7 +20,6 @@ assert.deepEqual(Object.fromEntries(Object.entries(ENEMY_TYPES).map(([k, v]) => 
   ant: 100,
   roach: 300,
   midge: 100,
-  dart: 200,
   guard: 400,
   brute: 800,
   mosquito: 70,

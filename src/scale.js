@@ -28,7 +28,6 @@ export const ENEMY_SIZE_FACTORS = Object.freeze({
   ant: 6,
   roach: 8,
   midge: MIDGE_SIZE_FACTOR,
-  dart: 4,
   guard: 3,
   brute: 3,
   mosquito: 4,

@@ -239,7 +239,7 @@ for (let x = -0.018; x <= 0.018; x += 0.0002) {
 }
 assert.ok(tolerant > exact);
 assert.equal(nearestInsectHit(T, new T.Vector3(1, 1, 0), dir, new Map([[0, midge]]), 1), null);
-for (const type of ['dart', 'guard', 'brute', 'ant', 'roach'])
+for (const type of ['guard', 'brute', 'ant', 'roach'])
   assert.equal(graphics.insect(type).userData.hitTolerance, 1);
 const pool = new TracerPool(T, scene, 8);
 for (let i = 0; i < 1000; i++) {

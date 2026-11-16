@@ -8,7 +8,6 @@ export const speciesSymbols = {
   spider: '🕷',
   spiderling: '🕷',
   midge: '🪰',
-  dart: '🪰➚',
   guard: '🐝',
   brute: '🪲🛡',
   mosquito: '🦟',

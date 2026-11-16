@@ -357,8 +357,8 @@ Modèle fourni par l'utilisateur, déjà riggé par Meshy, sans clip ; il rempla
   un `InstancedMesh` par espèce, battement sur l'horloge partagée avec un décalage
   de boucle par insecte ; le client oriente le proxy vers son déplacement 3D comme
   un moucheron. Cadavres, âmes du purgatoire et rendu sans WebGL : `SkinnedMesh`
-  réel du même rig (`graphics.insect`). D'autres volants (voltigeur, moustique)
-  pourront s'ajouter par une entrée de `FLYERS` ; l'abeille l'a fait en 309.
+  réel du même rig (`graphics.insect`). D'autres volants s'ajoutent par une
+  entrée de `FLYERS` : l'abeille (309) et le moustique (311) l'ont fait.
 - Échelle et collision : facteur 0,75, corps de 2,2 unités et 2,9 d'envergure
   (facteur d'espèce `brute` inchangé dans `scale.js`). Zone de tir : ellipsoïde de
   la carapace sans ailes ni pattes (`BEETLE_HIT`), partagé par le proxy et le rig.

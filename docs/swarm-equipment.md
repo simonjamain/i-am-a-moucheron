@@ -24,9 +24,10 @@ stopped. An airborne exit frees only that player, in freefall with a closed cano
 ## Difficulty and flock flow
 
 `waves.js` is shared with the Worker. A seeded PRNG keyed by room, wave and start
-time builds a roster from an increasing integer budget. Aerial costs are 1 / 3 / 6 / 12;
-health is 100 / 200 / 400 / 800 PV for midge / dart / guard / brute. Darts unlock on
-wave 2, guards on 5, brutes on 8. Ants (from wave 1) and roaches (wave 3) add ground variants;
+time builds a roster from an increasing integer budget. Aerial costs are 1 / 2 / 6 / 12;
+health is 100 / 70 / 400 / 800 PV for midge / mosquito / guard (bee) / brute (beetle).
+Mosquitoes unlock on wave 3, guards on 5, brutes on 8. The former « voltigeur »
+(`dart`) was removed in version 312. Ants (from wave 1) and roaches (wave 3) add ground variants;
 see `waves.js` for the complete catalog and `routes.js` for entry sources. They have distinct size, colour, speed and
 infestation cost. Budget is capped at 2400 and the source population at 180; at
 that ceiling, remaining budget is consolidated into one brute with its normal 800 PV. The
