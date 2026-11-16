@@ -146,6 +146,8 @@ const files = {
       'ant-data',
       'spider-model',
       'spider-data',
+      'roach-model',
+      'roach-data',
       'flyer-batch',
       'beetle-model',
       'beetle-data',

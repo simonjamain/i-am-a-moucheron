@@ -1,6 +1,12 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 308,
+    changes: [
+      'Le cafard a un nouveau modèle : il trottine sur ses six pattes en agitant ses longues antennes.',
+    ],
+  },
+  {
     version: 307,
     changes: [
       'Le bourdon blindé devient le scarabée : un nouveau modèle bleu et orange qui vole en battant des ailes, pattes pendantes.',

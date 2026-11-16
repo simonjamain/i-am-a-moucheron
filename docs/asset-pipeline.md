@@ -261,6 +261,36 @@ un `InstancedMesh` par espèce, ombres via un matériau de profondeur dédié).
 
 ![Poses de marche](walkers-model-review.jpg)
 
+### Cafard (version 308)
+
+Modèle Meshy « Low Poly Cockroach » fourni par l'utilisateur, même chaîne que la
+fourmi ; il remplace le cafard procédural (anciennement une fourmi agrandie).
+
+- Original hors dépôt : `assets/originals/roach/low-poly-cockroach.glb` (SHA-256
+  `4ca70cae…5fc3`), 490 triangles, 813 sommets, SmartRig de 40 os : 6 pattes à
+  quatre os (hanche, genou/tibia, tarse, pied), tête, antennes à cinq segments,
+  abdomen à deux segments. Texture JPEG 512 px (58 Ko).
+- Import : `PYTHONPATH=scripts python3 scripts/import-creature.py roach <GLB>` écrit
+  `src/roach-data.js`. Le rig Meshy répartissait des poids sur les os de pattes
+  voisines et portait la carapace par les hanches : l'espèce déclare ses chaînes
+  de pattes et un os moyeu (`Bone_001`), et chaque coque soudée ne garde que sa
+  propre chaîne, le reste allant au moyeu (537 influences). Géométrie, UV et
+  texture inchangées ; fourmi et araignée ne sont pas concernées.
+- Marche (`src/roach-model.js`) : démarche tripode comme la fourmi, foulée
+  0,6 m-modèle, corps bas, abdomen qui balance, tête qui hoche, longues antennes
+  qui balaient en ondulant ; cadence apparente plafonnée à 9 cycles/s.
+- Échelle : facteur 0,52 (2,1 unités antennes comprises, comme la fourmi ; le
+  facteur d'espèce et la taille de vague restent ceux du cafard). Les tibias
+  courent presque à plat jusqu'au pied : en pivotant sur le pied planté, leur
+  autre extrémité plonge. La présentation relève donc le modèle de 0,035 unité
+  (`ROACH_MODEL.raise`) pour qu'aucun sommet ne passe sous la ligne des pieds.
+- Collision : ellipsoïde du corps sans pattes ni antennes (`ROACH_HIT`).
+- Vérification : `scripts/test-walker-models.mjs` couvre aussi le cafard (pieds
+  plantés, sol, boucle, cuisson, zone de tir) ; rendu WebGL instancié contrôlé
+  hors jeu.
+
+![Poses de marche du cafard et rendu instancié](roach-model-review.jpg)
+
 ## Scarabée Meshy (vol, version 307)
 
 Modèle fourni par l'utilisateur, déjà riggé par Meshy, sans clip ; il remplace le

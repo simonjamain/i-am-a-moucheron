@@ -1,4 +1,4 @@
-// Rigged ground walkers (ant, egg-laying spider) drawn as one InstancedMesh
+// Rigged ground walkers (ant, egg-laying spider, cockroach) drawn as one InstancedMesh
 // per species through their baked walk cycle (src/creature-batch.js). Gameplay
 // keeps a cheap Object3D proxy per creature, outside the scene: its heading
 // follows its horizontal movement and its gait phase advances with the
@@ -7,12 +7,14 @@
 import { CreatureBatch } from './creature-batch.js';
 import { ANT, ANT_BONES, ANT_HIT, ANT_MODEL } from './ant-model.js';
 import { SPIDER, SPIDER_BONES, SPIDER_HIT, SPIDER_MODEL } from './spider-model.js';
+import { ROACH, ROACH_BONES, ROACH_HIT, ROACH_MODEL } from './roach-model.js';
 import { nearestRest } from './walker-gait.js';
 import { TAU } from './rigged-creature.js';
 
 export const WALKERS = Object.freeze({
   ant: { creature: ANT, model: ANT_MODEL, hit: ANT_HIT, bones: ANT_BONES },
   spider: { creature: SPIDER, model: SPIDER_MODEL, hit: SPIDER_HIT, bones: SPIDER_BONES },
+  roach: { creature: ROACH, model: ROACH_MODEL, hit: ROACH_HIT, bones: ROACH_BONES },
 });
 // Stride of one cycle in world units for a proxy or model scaled by `scale`.
 export const walkerStride = (type, scale = 1) =>
