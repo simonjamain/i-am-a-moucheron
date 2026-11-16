@@ -6,7 +6,7 @@ const scene = new T.Scene();
 const graphics = createGraphics(T, scene);
 const insects = new Map();
 for (let i = 0; i < 180; i++) {
-  const g = graphics.insect(['midge', 'ant', 'roach', 'dart', 'guard', 'brute'][i % 6]);
+  const g = graphics.insect(['midge', 'ant', 'roach', 'mosquito', 'guard', 'brute'][i % 6]);
   g.position.set(
     (i % 10) * 0.12 - 0.6,
     Math.floor(i / 60) * 0.12,

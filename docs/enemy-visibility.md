@@ -76,6 +76,9 @@ mesuraient respectivement 2,32×0,54, 3,83×0,88 et 5,19×1,20 pixels.
 `node scripts/test-enemy-readability.mjs` reproduit cet échec en projetant les
 bornes des vrais meshes Three.js, sans agrandir artificiellement un marqueur.
 
+> Note (version 312) : le voltigeur (`dart`) a depuis été retiré du jeu ; ce relevé
+> historique le mentionne encore.
+
 | Espèce    | Facteur courant par rapport au modèle initial | Dimensions du décor L×H×P (mm) | Projection frontale à 2 m (pixels) |
 | --------- | --------------------------------------------: | ------------------------------ | ---------------------------------- |
 | Fourmi    |                                             6 | 12,40×5,37×15,46               | 5,60×2,42                          |

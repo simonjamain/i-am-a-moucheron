@@ -6,7 +6,6 @@ import { scaleRoster } from '../src/balance.js';
 const unlock = {
   ant: 1,
   midge: 1,
-  dart: 2,
   roach: 3,
   mosquito: 3,
   guard: 5,
@@ -26,7 +25,6 @@ export const PACKS = Object.freeze({
   midge: { min: 20, max: 400, groups: 3 },
   ant: { min: 8, max: 200, groups: 2 },
   mosquito: { min: 6, max: 60, groups: 2 },
-  dart: { min: 3, max: 12 },
   roach: { min: 2, max: 8 },
   guard: { min: 1, max: 4 },
   brute: { min: 1, max: 2 },
@@ -41,7 +39,7 @@ const PORTAL_HOLD = 2,
 const holdFor = (profile) => (profile.ground ? GROUND_HOLD : PORTAL_HOLD);
 const SWARM_TYPES = new Set(['ant', 'midge', 'mosquito']);
 // Only crowds share an entrance and a path; strong species each walk their own.
-const SHARED_ROUTE = new Set(['ant', 'midge', 'mosquito', 'dart']);
+const SHARED_ROUTE = new Set(['ant', 'midge', 'mosquito']);
 
 export function packSize(type, budget, draw = randomInt) {
   const { min, max } = PACKS[type];
@@ -104,7 +102,6 @@ export function prepareRoster(wave, balance, draw = randomInt) {
     );
   pack('ant', opening('ant', 0.25), 0);
   pack('midge', opening('midge', 0.35), 1 + draw(2));
-  if (difficulty >= 2) pack('dart', opening('dart', 0.1), 2 + draw(2));
   while (remaining > 0) {
     const slots = MAX_WAVE_POPULATION - planned;
     // Reserve room for the most expensive species and a remainder of single-point insects.

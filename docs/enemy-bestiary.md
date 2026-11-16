@@ -11,9 +11,11 @@ La mort d'une pondeuse génère sur le serveur une naissance **exactement une fo
 
 Les fourmis et les araignées pondeuses utilisent les modèles Meshy « Red Ant Warrior » et « Spotted Velvet Spider » avec une marche à pieds plantés (démarche tripode et tétrapode alternée), dont la phase suit la distance parcourue ; voir [le pipeline d'assets](asset-pipeline.md#fourmi-et-araignée-pondeuse-meshy-marche). Leur zone de tir devient un ellipsoïde du corps, sans les pattes. Le cafard suit la même chaîne avec le modèle Meshy « Low Poly Cockroach » (démarche tripode, longues antennes) ; voir [le cafard](asset-pipeline.md#cafard-version-308). Les moucherons utilisent le modèle Meshy « Angry Little Fly » animé (battement d'ailes, pattes et antennes) près de la caméra et des ellipsoïdes au loin ; voir [le pipeline d'assets](asset-pipeline.md#moucheron-meshy-squelette-et-vol). Leur zone de tir est inchangée. Le scarabée (`brute`, anciennement « bourdon blindé ») utilise un modèle Meshy fourni par l'utilisateur, élytres fermées et ailes battantes, pattes pendantes ; voir [le pipeline d'assets](asset-pipeline.md#scarabée-meshy-vol-version-307). Sa zone de tir devient l'ellipsoïde de la carapace. Le rat géant rejoue le clip de marche fourni avec son modèle Meshy « Low Poly Mouse » ; voir [le rat](asset-pipeline.md#rat-version-310). Le moustique utilise le modèle Meshy « Low Poly Mosquito » (battement rapide, longues pattes pendantes) ; voir [le moustique](asset-pipeline.md#moustique-version-311). L'abeille (`guard`, anciennement « carapace ») suit la même chaîne avec le modèle Meshy « Angry Low Poly Bee » (bourdonnement rapide, abdomen qui pompe) ; voir [l'abeille](asset-pipeline.md#abeille-version-309).
 
-Les bébés utilisent un rendu InstancedMesh WebGL en trois lots et des objets légers pour les impacts. Les moustiques ont une oscillation erratique reproductible localement. Les gros rats ont des modèles procéduraux ; leur passage dans les couloirs de mobilier demande un contrôle en vrai jeu.
+Les bébés utilisent un rendu InstancedMesh WebGL en trois lots et des objets légers pour les impacts. Les moustiques ont une oscillation erratique reproductible localement. Les gros rats rejouent le clip Meshy de leur modèle ; leur passage dans les couloirs de mobilier demande un contrôle en vrai jeu.
 
 Le panneau d'équilibrage expose les trois espèces nouvelles, pas les bébés. Les changements du roster sont diffusés via `rosterRevision`, y compris aux joueurs arrivant tard.
+
+Le voltigeur (`dart`), petit volant rapide débloqué en vague 2, a été retiré du jeu en version 312 : plus de profil, de paquet, de vague ni d'apparition de débogage. `scripts/test-enemy-bestiary.mjs` vérifie qu'aucune vague ne le réintroduit.
 
 ## Vérification
 
@@ -23,13 +25,13 @@ Le panneau d'équilibrage expose les trois espèces nouvelles, pas les bébés. 
 
 Chaque profil possède `speedMps`, vitesse de progression en **mètres de la pièce par seconde**. Ce nombre ne dépend pas de la taille du modèle 3D, de l'effectif de la nuée, du numéro de vague, ni de la longueur d'un ancien parcours. Seul le multiplicateur « Vitesse ennemis » de la room le modifie. La durée se calcule sur le trajet effectivement emprunté : distance / vitesse.
 
-| Espèce            | Vitesse m/s | Espèce        | Vitesse m/s |
-| ----------------- | ----------: | ------------- | ----------: |
-| Fourmi            |       0,085 | Cafard        |      0,0625 |
-| Moucheron         |        0,11 | Voltigeur     |        0,13 |
-| Abeille           |      0,0875 | Scarabée      |        0,07 |
-| Moustique         |       0,115 | Rat géant     |     0,08075 |
-| Araignée pondeuse |       0,055 | Bébé araignée |       0,075 |
+| Espèce        | Vitesse m/s | Espèce            | Vitesse m/s |
+| ------------- | ----------: | ----------------- | ----------: |
+| Fourmi        |       0,085 | Cafard            |      0,0625 |
+| Moucheron     |        0,11 | Abeille           |      0,0875 |
+| Scarabée      |        0,07 | Moustique         |       0,115 |
+| Rat géant     |     0,08075 | Araignée pondeuse |       0,055 |
+| Bébé araignée |       0,075 |                   |             |
 
 Les bébés araignées n'ont plus de multiplicateur caché ×1,8. Les moustiques restent imprévisibles mais leurs oscillations locales ont été ralenties. Les mouvements secondaires de groupe sont des petits écarts autour de la progression à vitesse fixe, pas une deuxième vitesse liée aux dimensions du modèle. `scripts/test-enemy-speeds.mjs` vérifie les valeurs, le chemin réel, les nuées de 10 à 5 000 ennemis, les bébés et le multiplicateur de room. Les sensations de jeu et les FPS WebGL nécessitent une validation en partie réelle.
 

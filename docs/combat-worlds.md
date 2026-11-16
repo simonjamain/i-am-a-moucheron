@@ -5,7 +5,6 @@
 | Cible             |  PV |
 | ----------------- | --: |
 | Moucheron, fourmi | 100 |
-| Voltigeur         | 200 |
 | Cafard            | 300 |
 | Abeille           | 400 |
 | Scarabée          | 800 |

@@ -15,7 +15,6 @@ const expected = {
   ant: 0.085,
   roach: 0.0625,
   midge: 0.11,
-  dart: 0.13,
   guard: 0.0875,
   mosquito: 0.115,
   rat: 0.08075,

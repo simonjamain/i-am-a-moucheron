@@ -288,7 +288,6 @@ export function createGraphics(T, scene) {
       0.3,
       {
         midge: '#c6b96e',
-        dart: '#d78253',
       }[type],
       g,
     );
@@ -305,10 +304,6 @@ export function createGraphics(T, scene) {
       w.position.set(s * 0.8, 0.15, 0);
       g.add(w);
       wings.push(w);
-    }
-    if (type === 'dart') {
-      body.scale.z = 1.8;
-      for (const x of [-0.16, 0.16]) box(x, 0.22, -0.85, 0.04, 0.04, 0.4, '#dbb26d', g);
     }
     g.userData.disposables = [wm];
     g.userData.wings = wings;

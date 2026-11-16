@@ -7,7 +7,7 @@ import { enemyRoute, portalExit, PORTALS } from '../src/routes.js';
 const groups = [
   { ground: true, type: 'ant', portalIndex: 1, count: 5, spawn: 6 },
   { ground: false, type: 'midge', portalIndex: 0, count: 3, spawn: 1 },
-  { ground: false, type: 'dart', portalIndex: 0, count: 1, spawn: 6 },
+  { ground: false, type: 'mosquito', portalIndex: 0, count: 1, spawn: 6 },
 ];
 assert.deepEqual(timelineColumns(groups), [
   [1, [groups[1]]],

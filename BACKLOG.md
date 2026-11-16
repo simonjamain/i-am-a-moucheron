@@ -219,6 +219,9 @@ tardive. Pas de téléportation ni d’arrivée serveur anticipée après correc
 | Carapace       |        400 |
 | Bourdon blindé |        800 |
 
+> Note (version 312) : le voltigeur a depuis été retiré du jeu ; voir
+> [le bestiaire](docs/enemy-bestiary.md).
+
 Les dégâts sont absolus : une balle de mitrailleuse inflige **75 dégâts de base**,
 quel que soit le maximum de PV de la cible. Conserver les proportions de
 résistance actuelles. Adapter ensemble le calcul, le transport et la validation
@@ -1898,7 +1901,8 @@ Les validations humaines HEL-06/DCM-03 du lot précédent restent en cours.
 Cause reproduite : existence du mesh ne garantit pas lisibilité. Fourmi 0,93×0,36
 pixel et cafard 1,39×0,46 pixel à 2 m/1080p/62°. Les cinq espèces autres que le
 moucheron étaient restées trop petites. Facteurs : fourmi 12, cafard 8, voltigeur 4,
-carapace/bourdon 3 ; moucheron 6,075 inchangé. Un contrôle échoue ensuite sur les
+carapace/bourdon 3 ; moucheron 6,075 inchangé (voltigeur retiré depuis en
+version 312). Un contrôle échoue ensuite sur les
 pattes enfouies si seule l'échelle change : position et tangente sont relevées
 ensemble, avec marge terrestre de 25 mm. Référence, mesures et limites :
 [visibilité](docs/enemy-visibility.md). Pas de changement de PV, dégâts, vitesse,
