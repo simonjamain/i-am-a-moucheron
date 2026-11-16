@@ -1,10 +1,11 @@
-// Meshy ant and egg-laying spider: provenance, rig orientation, planted-foot
+// Meshy ant, egg-laying spider and cockroach: provenance, rig orientation, planted-foot
 // walk cycles (tripod / alternating tetrapod), distance-driven gait proxies,
 // ellipsoid hits and the shared VAT bake (src/walker-gait.js, src/walker-batch.js).
 import assert from 'node:assert/strict';
 import * as T from '../vendor/three.module.min.js';
 import { ANT_DATA } from '../src/ant-data.js';
 import { SPIDER_DATA } from '../src/spider-data.js';
+import { ROACH_DATA } from '../src/roach-data.js';
 import { WALKERS, WalkerBatch, walkerStride } from '../src/walker-batch.js';
 import { footCycle, nearestRest, REST_PHASES, SWING } from '../src/walker-gait.js';
 import { createGraphics } from '../src/graphics.js';
@@ -23,7 +24,15 @@ assert.equal(
   SPIDER_DATA.source.sha256,
   'e8d8f32d7739467f6758b4220dc373bfcbacae42a004fdc4d29bbfc36d1c3faa',
 );
+assert.equal(
+  ROACH_DATA.source.sha256,
+  '4ca70cae6e412b2787c81aa7cddd49c7f382b501859a1a8fc29ab3644c155fc3',
+);
 assert.equal(ANT_DATA.bones.length, 52);
+assert.equal(ROACH_DATA.bones.length, 40);
+assert.equal(WALKERS.roach.bones.legs.length, 6);
+// Roach import: every welded shell keeps only its own leg chain.
+assert.ok(ROACH_DATA.source.legWeightsMoved > 300, 'cross-leg weights cleaned');
 assert.equal(SPIDER_DATA.bones.length, 30);
 assert.equal(WALKERS.ant.bones.legs.length, 6);
 assert.equal(WALKERS.spider.bones.legs.length, 8);
@@ -56,8 +65,8 @@ for (const [type, walker] of Object.entries(WALKERS)) {
   const rig = walker.creature.createRig(T);
   const h = walker.creature.helpers(T);
   const world = (name) => rig.bones[name].getWorldPosition(new T.Vector3());
-  const head = type === 'ant' ? 'Bone_002' : 'Bone_001';
-  const tail = type === 'ant' ? 'Bone_005' : 'Bone_022';
+  const head = { ant: 'Bone_002', spider: 'Bone_001', roach: 'Bone_005' }[type];
+  const tail = { ant: 'Bone_005', spider: 'Bone_022', roach: 'Bone_002' }[type];
   assert.ok(world(head).z < world(tail).z - 0.5, type + ': head forward (-Z)');
   const box = new T.Box3().setFromObject(rig.container);
   near(box.min.y, -GROUND_FOOT_DEPTH + GROUND_FOOT_CLEARANCE, 0.02, type + ': feet on the lift');
@@ -157,10 +166,48 @@ const spider = batch.create('spider', 0);
 spider.position.set(0.2, 0, 0);
 spider.scale.setScalar(insectScale('spider', INSECT_SCALE, 2.3));
 insects.set(1, spider);
+const roach = batch.create('roach', 0.4);
+roach.position.set(-0.2, 0, 0);
+roach.scale.setScalar(insectScale('roach', INSECT_SCALE, 1.2));
+insects.set(2, roach);
 batch.flush(insects);
 assert.equal(batch.batches.ant.mesh.count, 1);
 assert.equal(batch.batches.spider.mesh.count, 1);
-assert.equal(scene.children.length, 2, 'one instanced mesh per species');
+assert.equal(batch.batches.roach.mesh.count, 1);
+assert.equal(scene.children.length, 3, 'one instanced mesh per species');
+insects.delete(2);
+
+// Roach hit volume: the body (without legs or antennae) fills the ellipsoid.
+{
+  const creature = WALKERS.roach.creature;
+  const joints = Uint8Array.from(atob(ROACH_DATA.joints), (c) => c.charCodeAt(0));
+  const limbs = new Set(
+    ROACH_DATA.bones
+      .map((b, i) => [b.name, i])
+      .filter(([name]) => {
+        const k = Number(name.slice(5));
+        return k >= 6 && k <= 39; // legs Bone_006..029, antennae Bone_030..039
+      })
+      .map(([, i]) => i),
+  );
+  const bake = creature.bake(T, 2);
+  const [cx, cy, cz] = WALKERS.roach.hit.centre,
+    [rx, ry, rz] = WALKERS.roach.hit.radii;
+  let body = 0,
+    inside = 0,
+    tolerant = 0;
+  for (let v = 0; v < bake.count; v++) {
+    if (limbs.has(joints[v * 4])) continue;
+    const [x, y, z] = bake.positions.slice(v * 3, v * 3 + 3);
+    const q = ((x - cx) / rx) ** 2 + ((y - cy) / ry) ** 2 + ((z - cz) / rz) ** 2;
+    body++;
+    if (q <= 1) inside++;
+    if (q <= 1.25 ** 2) tolerant++;
+  }
+  assert.ok(body > 250, 'roach body sample ' + body);
+  assert.ok(inside / body > 0.85, 'roach body in its hit ellipsoid ' + inside / body);
+  assert.ok(tolerant / body > 0.99, 'roach body in the tolerant ellipsoid ' + tolerant / body);
+}
 
 // 5. Hits: the ellipsoid follows the heading; legs are not part of it; contact
 // and indexed hits agree with the exhaustive path and with the rigged model.
@@ -221,8 +268,13 @@ console.log(
       bones: SPIDER_DATA.bones.length,
       vatBytes: batch.batches.spider.vat.bytes,
     },
+    roach: {
+      triangles: ROACH_DATA.source.triangles,
+      bones: ROACH_DATA.bones.length,
+      vatBytes: batch.batches.roach.vat.bytes,
+    },
   }),
 );
 console.log(
-  'PASS: Meshy ant and spider rigs, planted-foot gaits, distance-driven proxies, ellipsoid hits and VAT bakes.',
+  'PASS: Meshy ant, spider and cockroach rigs, planted-foot gaits, distance-driven proxies, ellipsoid hits and VAT bakes.',
 );
