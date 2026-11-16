@@ -102,6 +102,8 @@ jobs:
         run: node scripts/assemble.mjs
       - name: Connect 50 real WebRTC UDP peers
         run: node scripts/test-udp-capacity-50.mjs
+      - name: Connect 50 real WebRTC UDP peers on one shared port
+        run: UDP_MUX_PORT=44000 node scripts/test-udp-capacity-50.mjs
 
   physics-regression:
     name: Physics contact regression and 50x900 benchmark

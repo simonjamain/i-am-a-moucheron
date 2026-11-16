@@ -28,6 +28,18 @@ les pare-feu de la VM et de l’hébergeur. HTTP peut passer par un proxy HTTPS 
 trafic de jeu UDP ne passe pas par ce proxy. Les variables et vérifications réseau
 sont détaillées dans le [guide du serveur UDP](udp-server.md).
 
+Pour un réseau d'entreprise qui ne laisse sortir l'UDP que vers des ports
+connus, publier un seul port partagé, par exemple sur 3478 ou 443 :
+
+```sh
+docker run … -e UDP_ADVERTISE_ADDRESS=ADRESSE_IP_PUBLIQUE \
+  -e UDP_MUX_PORT=41000 -e UDP_ADVERTISE_PORT=3478 \
+  -p 127.0.0.1:3000:3000/tcp -p 3478:41000/udp i-am-a-moucheron:local
+```
+
+`UDP_ADVERTISE_PORT` doit égaler le port publié côté hôte ; voir
+[le port UDP unique](udp-server.md#port-udp-unique-réseaux-dentreprise).
+
 Une seule instance conserve toutes les salles en RAM. Redémarrer ou recréer le
 conteneur efface les parties en cours. Le contrôle `/healthz` valide HTTP, pas la
 connectivité UDP : la vérifier avec deux joueurs sur des réseaux distincts.
