@@ -41,7 +41,7 @@ export const ENEMY_TYPES = Object.freeze({
     color: '#d78253',
   },
   guard: {
-    name: 'Carapace',
+    name: 'Abeille',
     cost: 6,
     hp: 400,
     size: 1.4,

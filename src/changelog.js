@@ -1,6 +1,12 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 309,
+    changes: [
+      'La carapace devient l’abeille : un nouveau modèle rayé jaune et noir qui bourdonne en battant vite des ailes.',
+    ],
+  },
+  {
     version: 308,
     changes: [
       'Le cafard a un nouveau modèle : il trottine sur ses six pattes en agitant ses longues antennes.',

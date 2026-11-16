@@ -316,7 +316,6 @@ export function createGraphics(T, scene) {
       {
         midge: '#c6b96e',
         dart: '#d78253',
-        guard: '#729d8b',
         mosquito: '#73918d',
       }[type],
       g,
@@ -334,11 +333,6 @@ export function createGraphics(T, scene) {
       w.position.set(s * 0.8, 0.15, 0);
       g.add(w);
       wings.push(w);
-    }
-    if (type === 'guard') {
-      const shell = ball(0, 0.12, 0.12, 0.53, '#527e70', g);
-      shell.scale.set(0.76, 0.55, 1.2);
-      for (const z of [-0.2, 0.15, 0.5]) box(0, 0.36, z, 0.72, 0.05, 0.1, '#273d33', g);
     }
     if (type === 'mosquito') {
       body.scale.set(0.42, 0.38, 1.7);

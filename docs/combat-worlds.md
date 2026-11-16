@@ -7,7 +7,7 @@
 | Moucheron, fourmi | 100 |
 | Voltigeur         | 200 |
 | Cafard            | 300 |
-| Carapace          | 400 |
+| Abeille           | 400 |
 | Scarabée          | 800 |
 | Joueur            | 100 |
 
