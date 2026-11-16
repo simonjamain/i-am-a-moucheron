@@ -20,21 +20,44 @@ Un proxy HTTP comme Traefik ne transporte pas les paquets ICE/DTLS/SCTP de jeu.
 Une seule instance Node possède les salles ; ne pas répartir les requêtes de
 négociation entre plusieurs processus qui auraient des mémoires distinctes.
 
-| Variable                | Valeur par défaut      | Usage                                                                                |
-| ----------------------- | ---------------------- | ------------------------------------------------------------------------------------ |
-| `HOST`                  | `0.0.0.0`              | Adresse d'écoute HTTP                                                                |
-| `PORT`                  | `3000`                 | Port HTTP, accessible par le proxy HTTPS                                             |
-| `UDP_PORT_BEGIN`        | `41000`                | Premier port UDP ICE                                                                 |
-| `UDP_PORT_END`          | `41099`                | Dernier port UDP ICE                                                                 |
-| `UDP_BIND_ADDRESS`      | découverte automatique | IP locale de l'interface UDP ; `127.0.0.1` pour tests locaux                         |
-| `UDP_ADVERTISE_ADDRESS` | vide                   | IP publique à annoncer si la VM est derrière un NAT avec redirection des mêmes ports |
-| `STUN_SERVER`           | vide                   | Serveur STUN optionnel, par exemple `stun:stun.cloudflare.com:3478`                  |
+| Variable                | Valeur par défaut      | Usage                                                                                 |
+| ----------------------- | ---------------------- | ------------------------------------------------------------------------------------- |
+| `HOST`                  | `0.0.0.0`              | Adresse d'écoute HTTP                                                                 |
+| `PORT`                  | `3000`                 | Port HTTP, accessible par le proxy HTTPS                                              |
+| `UDP_PORT_BEGIN`        | `41000`                | Premier port UDP ICE                                                                  |
+| `UDP_PORT_END`          | `41099`                | Dernier port UDP ICE                                                                  |
+| `UDP_MUX_PORT`          | vide                   | Port UDP unique partagé par toutes les connexions ; remplace la plage s'il est défini |
+| `UDP_ADVERTISE_PORT`    | vide                   | Port UDP public annoncé aux navigateurs si Docker ou un NAT change le numéro          |
+| `UDP_BIND_ADDRESS`      | découverte automatique | IP locale de l'interface UDP ; `127.0.0.1` pour tests locaux                          |
+| `UDP_ADVERTISE_ADDRESS` | vide                   | IP publique à annoncer si la VM est derrière un NAT avec redirection des mêmes ports  |
+| `STUN_SERVER`           | vide                   | Serveur STUN optionnel, par exemple `stun:stun.cloudflare.com:3478`                   |
 
 Exemple, en remplaçant l'adresse documentaire par l'IP réelle de la VM :
 
 ```sh
 UDP_ADVERTISE_ADDRESS=203.0.113.10 PORT=3000 npm start
 ```
+
+### Port UDP unique (réseaux d'entreprise)
+
+Beaucoup de réseaux d'entreprise bloquent l'UDP sortant sauf sur quelques ports
+connus (443 pour HTTP/3, 3478 pour STUN/TURN). Avec `UDP_MUX_PORT`, toutes les
+connexions WebRTC partagent un seul port (multiplexage ICE de libdatachannel) :
+le serveur reconnaît chaque joueur à son identifiant ICE puis à son adresse.
+La plage de 100 ports ne limite plus les connexions (le plafond de 128 reste).
+Coût mesuré nul (`UDP_MUX_PORT=44000 npm run test:capacity`, 50 pairs : même
+durée de connexion, même relais, même mémoire qu'en plage). Toutes les connexions
+partagent le tampon de réception d'une seule socket ; en cas de pertes sous
+forte charge, augmenter `net.core.rmem_max`/`rmem_default` de la VM.
+
+Le port annoncé dans la réponse SDP doit être celui que le navigateur joint.
+Si Docker publie un autre numéro (`-p 443:41000/udp`), définir
+`UDP_ADVERTISE_PORT=443`. Si le reverse proxy de la VM sert HTTP/3, il occupe
+déjà l'UDP 443 de son adresse : choisir 3478, ou désactiver HTTP/3 sur le proxy.
+Un réseau qui bloque tout l'UDP reste incompatible (aucun relais TURN/TCP).
+Diagnostic : le partage de connexion 4G fonctionne, `h3` apparaît ou non dans la
+colonne Protocol des DevTools, et `tcpdump -ni any udp port PORT` sur la VM
+montre si les paquets du joueur arrivent.
 
 Sans IP publique directement joignable, configurer une redirection UDP conservant
 les ports ou un STUN adapté. Aucun relais TURN/TCP n'est configuré. L'échec UDP

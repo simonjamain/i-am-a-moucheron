@@ -22,19 +22,31 @@ export function createGameServer({
   game = new Game({ solids: OFFICE_SOLIDS, snapshotShareMs: SNAPSHOT_SHARE_MS, resumable: true }),
   portBegin = 41000,
   portEnd = 41099,
+  // Single shared UDP port for every connection (ICE UDP mux): 0 = port range.
+  muxPort = 0,
   advertiseAddress = '',
+  // Public UDP port announced to browsers when the port is remapped (Docker).
+  advertisePort = 0,
   bindAddress = '',
   iceServers = [],
   maxConnections = 128,
   offerTimeout = 20000,
   disconnectGrace = DISCONNECT_GRACE_MS,
 } = {}) {
+  if (muxPort && (!Number.isInteger(muxPort) || muxPort < 1 || muxPort > 65535))
+    throw Error('UDP_MUX_PORT invalide.');
   if (
-    !Number.isInteger(portBegin) ||
-    !Number.isInteger(portEnd) ||
-    portBegin < 1024 ||
-    portEnd > 65535 ||
-    portBegin > portEnd
+    advertisePort &&
+    (!Number.isInteger(advertisePort) || advertisePort < 1 || advertisePort > 65535)
+  )
+    throw Error('UDP_ADVERTISE_PORT invalide.');
+  if (
+    !muxPort &&
+    (!Number.isInteger(portBegin) ||
+      !Number.isInteger(portEnd) ||
+      portBegin < 1024 ||
+      portEnd > 65535 ||
+      portBegin > portEnd)
   )
     throw Error('Plage de ports UDP invalide.');
   if (advertiseAddress && !/^[a-fA-F0-9:.]+$/.test(advertiseAddress))
@@ -96,9 +108,9 @@ export function createGameServer({
           const pc = new Peer('moucheron-' + Date.now(), {
             iceServers,
             enableIceTcp: false,
-            enableIceUdpMux: false,
-            portRangeBegin: portBegin,
-            portRangeEnd: portEnd,
+            enableIceUdpMux: !!muxPort,
+            portRangeBegin: muxPort || portBegin,
+            portRangeEnd: muxPort || portEnd,
             ...(bindAddress ? { bindAddress } : {}),
           });
           connection = {
@@ -248,10 +260,11 @@ export function createGameServer({
           let sdp = udpDescription(answer.sdp);
           if (!/^a=candidate:\S+\s+\d+\s+UDP\s/im.test(sdp))
             throw Error('Aucune interface UDP disponible sur le serveur.');
-          if (advertiseAddress)
+          if (advertiseAddress || advertisePort)
             sdp = sdp.replace(
-              /^(a=candidate:\S+\s+\d+\s+UDP\s+\d+\s+)\S+/gim,
-              '$1' + advertiseAddress,
+              /^(a=candidate:\S+\s+\d+\s+UDP\s+\d+\s+)(\S+)(\s+)(\d+)/gim,
+              (_, head, address, space, port) =>
+                head + (advertiseAddress || address) + space + (advertisePort || port),
             );
           json(res, 200, { v: PROTOCOL, sdp });
         } catch (e) {
@@ -354,7 +367,9 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   const app = createGameServer({
     portBegin: Number(process.env.UDP_PORT_BEGIN || 41000),
     portEnd: Number(process.env.UDP_PORT_END || 41099),
+    muxPort: Number(process.env.UDP_MUX_PORT || 0),
     advertiseAddress: process.env.UDP_ADVERTISE_ADDRESS || '',
+    advertisePort: Number(process.env.UDP_ADVERTISE_PORT || 0),
     bindAddress: process.env.UDP_BIND_ADDRESS || '',
     iceServers: process.env.STUN_SERVER ? [process.env.STUN_SERVER] : [],
   });
