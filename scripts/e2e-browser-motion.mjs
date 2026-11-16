@@ -69,6 +69,8 @@ try {
     page.on('pageerror', (e) => page.errors.push(e.message));
     await page.addInitScript(harness);
     await page.goto(url);
+    // The lobby is usable once the loading screen has left (see e2e-loading).
+    await page.locator('#loading').waitFor({ state: 'detached', timeout: 60000 });
     await page.fill('#name', name);
     await page.fill('#code', 'E2EMOTION');
     await page.click('#join');

@@ -3,6 +3,8 @@ import { decodeSnapshotFromWire } from './snapshot-wire.js';
 export const PROTOCOL = 1;
 export const COMMAND_CHANNEL = 'commands-v1';
 export const MOTION_CHANNEL = 'motion-v2';
+// WebSocket path of the TCP fallback, for networks that block UDP.
+export const TCP_PATH = '/ws';
 export const MOTION_OPTIONS = { ordered: false, maxRetransmits: 0 };
 export const MAX_COMMAND_BYTES = 131072;
 export const CHUNK_BYTES = 12000;

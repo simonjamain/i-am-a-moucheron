@@ -18,6 +18,9 @@ export class UdpClient {
     onMotion = () => {},
     onClose = () => {},
     timeout = 20000,
+    // Longest wait for the UDP channels to open; the game falls back to TCP
+    // (WsClient) sooner than the command timeout on networks blocking UDP.
+    openTimeout = timeout,
     disconnectGrace = DISCONNECT_GRACE_MS,
   } = {}) {
     this.Peer = Peer;
@@ -25,6 +28,7 @@ export class UdpClient {
     this.onMotion = onMotion;
     this.onClose = onClose;
     this.timeout = timeout;
+    this.openTimeout = openTimeout;
     this.disconnectGrace = disconnectGrace;
     this.graceTimer = null;
     this.pending = new Map();
@@ -47,25 +51,7 @@ export class UdpClient {
     const pc = (this.pc = new this.Peer({ iceServers: [], bundlePolicy: 'max-bundle' }));
     this.commands = pc.createDataChannel(COMMAND_CHANNEL, { ordered: true });
     this.motion = pc.createDataChannel(MOTION_CHANNEL, MOTION_OPTIONS);
-    this.commands.onmessage = (e) => {
-      try {
-        if (typeof e.data !== 'string' || e.data.length > 100000) throw Error('Paquet invalide.');
-        const packet = JSON.parse(e.data);
-        // Late replies cannot allocate an unbounded assembly buffer.
-        if (!this.pending.has(packet.id)) return;
-        const reply = this.assembler.receive(packet);
-        if (!reply) return;
-        const pending = this.pending.get(packet.id);
-        if (!pending) return;
-        this.pending.delete(packet.id);
-        clearTimeout(pending.timer);
-        if (reply.status >= 400)
-          pending.reject(Object.assign(Error(reply.body.error), { status: reply.status }));
-        else pending.resolve(reply.body);
-      } catch (e) {
-        this.fail(e);
-      }
-    };
+    this.commands.onmessage = (e) => this.receiveReply(e.data);
     this.motion.binaryType = 'arraybuffer';
     this.motion.onmessage = (e) => {
       try {
@@ -125,8 +111,8 @@ export class UdpClient {
       await new Promise((resolve, reject) => {
         const timer = setTimeout(() => {
           clearInterval(poll);
-          reject(Error('UDP indisponible sur ce réseau. Aucun transport de secours.'));
-        }, this.timeout);
+          reject(Error('UDP indisponible sur ce réseau.'));
+        }, this.openTimeout);
         const poll = setInterval(() => {
           if (this.closed) {
             clearTimeout(timer);
@@ -146,6 +132,46 @@ export class UdpClient {
       throw e;
     }
     return this;
+  }
+  // One reply packet (possibly a chunk) on the reliable command stream.
+  receiveReply(data) {
+    try {
+      if (typeof data !== 'string' || data.length > 100000) throw Error('Paquet invalide.');
+      const packet = JSON.parse(data);
+      // Late replies cannot allocate an unbounded assembly buffer.
+      if (!this.pending.has(packet.id)) return;
+      const reply = this.assembler.receive(packet);
+      if (!reply) return;
+      const pending = this.pending.get(packet.id);
+      if (!pending) return;
+      this.pending.delete(packet.id);
+      clearTimeout(pending.timer);
+      if (reply.status >= 400)
+        pending.reject(Object.assign(Error(reply.body.error), { status: reply.status }));
+      else pending.resolve(reply.body);
+    } catch (e) {
+      this.fail(e);
+    }
+  }
+  // Transport hooks, replaced by WsClient (TCP fallback).
+  ready() {
+    return !this.closed && this.protocol === 'udp' && this.commands?.readyState === 'open';
+  }
+  buffered() {
+    return this.commands.bufferedAmount;
+  }
+  transmit(data) {
+    this.commands.send(data);
+  }
+  motionReady() {
+    return (
+      this.protocol === 'udp' &&
+      this.motion?.readyState === 'open' &&
+      this.motion.bufferedAmount <= 4096
+    );
+  }
+  transmitMotion(data) {
+    this.motion.send(data);
   }
   gather(pc) {
     if (pc.iceGatheringState === 'complete') return Promise.resolve();
@@ -169,9 +195,8 @@ export class UdpClient {
     });
   }
   request(path, body) {
-    if (this.closed || this.protocol !== 'udp' || this.commands?.readyState !== 'open')
-      return Promise.reject(Error('Connexion UDP indisponible.'));
-    if (this.pending.size >= 32 || this.commands.bufferedAmount > 256 * 1024)
+    if (!this.ready()) return Promise.reject(Error('Connexion indisponible.'));
+    if (this.pending.size >= 32 || this.buffered() > 256 * 1024)
       return Promise.reject(Object.assign(Error('Connexion saturée.'), { status: 429 }));
     const id = ++this.seq,
       data = JSON.stringify({ v: PROTOCOL, id, path, body });
@@ -183,7 +208,7 @@ export class UdpClient {
       );
       this.pending.set(id, { resolve, reject, timer });
       try {
-        this.commands.send(data);
+        this.transmit(data);
       } catch (e) {
         this.fail(e);
       }
@@ -192,11 +217,9 @@ export class UdpClient {
   // Deliberate departure: tell the server (best effort, no reply awaited) so
   // that the pilot and its seat are released at once, then close.
   leave() {
-    if (!this.closed && this.protocol === 'udp' && this.commands?.readyState === 'open')
+    if (this.ready())
       try {
-        this.commands.send(
-          JSON.stringify({ v: PROTOCOL, id: ++this.seq, path: 'leave', body: {} }),
-        );
+        this.transmit(JSON.stringify({ v: PROTOCOL, id: ++this.seq, path: 'leave', body: {} }));
         // Closing at once can drop the message: give it a moment to leave.
         // If the page dies first, the server expires the pilot (RESUME_MS).
         setTimeout(() => this.stop(), 200);
@@ -242,12 +265,7 @@ export class UdpClient {
     }
   }
   send(state) {
-    if (
-      this.protocol !== 'udp' ||
-      this.motion?.readyState !== 'open' ||
-      this.motion.bufferedAmount > 4096
-    )
-      return;
+    if (!this.motionReady()) return;
     const data = JSON.stringify({
       v: PROTOCOL,
       seq: ++this.motionSeq,
@@ -260,7 +278,7 @@ export class UdpClient {
     });
     if (data.length > 4096) return;
     try {
-      this.motion.send(data);
+      this.transmitMotion(data);
     } catch (e) {
       this.fail(e);
     }
@@ -303,6 +321,7 @@ export class UdpClient {
       total: this.members.size,
       received: this.received,
       udp: this.protocol === 'udp' ? 1 : 0,
+      tcp: this.protocol === 'tcp' ? 1 : 0,
       enabled: this.enabled,
       error: this.lastError || '',
     };

@@ -1,6 +1,12 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 306,
+    changes: [
+      'Sur les réseaux qui bloquent l’UDP (réseaux d’entreprise), la partie se lance quand même, en mode secours « TCP ».',
+    ],
+  },
+  {
     version: 305,
     changes: [
       'Tous les avions, y compris les deux de départ, décollent maintenant depuis une surface plane.',

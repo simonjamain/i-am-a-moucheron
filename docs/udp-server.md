@@ -1,7 +1,9 @@
-# Serveur Node : RAM et UDP obligatoire
+# Serveur Node : RAM, UDP et secours TCP
 
-Décision validée le 29 octobre 2026 : aucune base de données et aucun repli
-WebSocket/TCP pour les joueurs incompatibles. La livraison courante est un ZIP des sources pour la VM. Le [guide Docker](docker.md)
+Décision validée le 29 octobre 2026 : aucune base de données. Révisée le
+16 novembre 2026 (version 306) : les réseaux qui bloquent l'UDP sortant
+(réseaux d'entreprise) jouent en TCP sur un WebSocket, voir
+[secours TCP](#secours-tcp-websocket). La livraison courante est un ZIP des sources pour la VM. Le [guide Docker](docker.md)
 reste optionnel ; ses archives binaires historiques ne suivent pas chaque lot.
 
 ## Démarrage sur une VM
@@ -54,17 +56,38 @@ Le port annoncé dans la réponse SDP doit être celui que le navigateur joint.
 Si Docker publie un autre numéro (`-p 443:41000/udp`), définir
 `UDP_ADVERTISE_PORT=443`. Si le reverse proxy de la VM sert HTTP/3, il occupe
 déjà l'UDP 443 de son adresse : choisir 3478, ou désactiver HTTP/3 sur le proxy.
-Un réseau qui bloque tout l'UDP reste incompatible (aucun relais TURN/TCP).
+Un réseau qui bloque tout l'UDP passe par le [secours TCP](#secours-tcp-websocket).
 Diagnostic : le partage de connexion 4G fonctionne, `h3` apparaît ou non dans la
 colonne Protocol des DevTools, et `tcpdump -ni any udp port PORT` sur la VM
 montre si les paquets du joueur arrivent.
 
 Sans IP publique directement joignable, configurer une redirection UDP conservant
-les ports ou un STUN adapté. Aucun relais TURN/TCP n'est configuré. L'échec UDP
-refuse la connexion et affiche une erreur ; aucune action ne part alors en HTTP.
+les ports ou un STUN adapté. Aucun relais TURN n'est configuré. Si l'UDP échoue,
+le navigateur bascule sur le secours TCP ; aucune action ne part en HTTP.
 `GET /healthz` indique `storage: ram` et `transport: webrtc-udp` ; cela vérifie le
 processus, pas l'ouverture du pare-feu UDP. L'indication « UDP » en jeu nécessite
 les statistiques ICE du navigateur et la vérification du serveur.
+
+## Secours TCP (WebSocket)
+
+Le navigateur essaie toujours l'UDP d'abord. Si les canaux ne s'ouvrent pas en
+5 s (`UDP_OPEN_MS` dans `src/client.js`), par exemple sur un réseau d'entreprise
+qui ne laisse sortir que HTTPS, il ouvre un WebSocket sur `/ws` (même domaine,
+même proxy HTTPS : Traefik relaie les WebSocket sans configuration) avec le même
+protocole : trames texte pour les commandes fiables et leurs réponses, trames
+binaires pour les mouvements (JSON montant, lots binaires partagés descendants).
+Session, reprise, limites et confirmations sont celles de l'UDP ; un joueur TCP
+et un joueur UDP partagent la même salle et les mêmes lots de mouvements.
+Après un échec UDP, les reconnexions de la page vont directement en TCP. Le HUD
+affiche « TCP (SECOURS) ». Sur TCP, un paquet perdu retarde tout ce qui suit :
+le jeu est moins fluide sur un réseau qui perd des paquets ; un lot de
+mouvements est sauté si plus de 64 Ko attendent déjà vers ce joueur.
+
+`TCP_FALLBACK=0` désactive la route `/ws`. `/healthz` indique `tcpFallback` et
+`tcpConnections`. Contrôles : `node scripts/test-tcp-fallback.mjs` (WebSocket
+réel, salle mixte avec un pair UDP natif, reprise, refus d'origine) et
+`npm run e2e:tcp` (Chromium dont l'UDP ne reçoit aucune réponse : bascule,
+commandes et mouvements, reprise directe en TCP, `leave`).
 
 ## Transport et fiabilité
 
@@ -184,9 +207,8 @@ adresse : `node scripts/e2e-browser-resume.mjs 192.0.2.2`. Les tests Worker/D1 c
 La réussite locale ne mesure pas la latence Internet, les NAT mobiles ni la
 charge maximale de la VM. Après installation, faire un essai à deux navigateurs
 sur des réseaux distincts et vérifier « UDP » dans les deux interfaces.
-Le navigateur de prévisualisation a chargé le client Node puis affiché
-« UDP indisponible sur ce réseau. Aucun transport de secours. » : ce parcours
-vérifie le refus, sans valider une partie navigateur sur Internet.
+Un navigateur dont l'UDP est bloqué rejoint désormais la partie en TCP
+(`npm run e2e:tcp`) ; cela ne valide pas une partie sur Internet.
 
 Références : [WebRTC Data Channels, RFC 8831](https://www.rfc-editor.org/rfc/rfc8831),
 [API node-datachannel](https://github.com/murat-dogan/node-datachannel/blob/master/API.md),

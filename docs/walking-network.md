@@ -16,7 +16,8 @@ adaptent leur délai d'affichage ; voir
 [performances](performance.md#interpolation-des-joueurs-distants-à-lheure-de-capture-version-256). Les commandes portent un identifiant croissant et
 reçoivent leur résultat d'exécution. Identité de session, incarnation et numéro
 d'occupation empêchent une ancienne position de modifier un nouveau corps ou
-un nouveau poste. Aucun repli HTTP, TCP ou WebSocket ne transporte du gameplay.
+un nouveau poste. Aucun repli HTTP ne transporte du gameplay ; un réseau sans
+UDP joue avec le même protocole sur un WebSocket (secours TCP).
 Voir [déploiement et garanties UDP](udp-server.md).
 
 Le navigateur reste propriétaire de sa physique, les autres corps sont des

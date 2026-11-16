@@ -137,6 +137,7 @@ import {
 } from '/mouse-flight.js';
 import { PeerMotion, MotionTrack } from '/network.js';
 import { UdpClient } from '/udp-client.js';
+import { WsClient } from '/ws-client.js';
 import { ServerClock } from '/server-clock.js';
 import { stepHeavy, heavyImpact } from '/heavy-sim.js';
 import { createOrdnance, integrateOrdnance } from '/ordnance.js';
@@ -694,13 +695,21 @@ function networkStatus() {
   if (globalThis.MOUCHERON_UDP) {
     const s = peerMotion?.stats();
     $('net').textContent =
-      (s?.udp ? '● UDP' : reconnecting ? '● RECONNEXION…' : '● UDP INTERROMPU') +
+      (s?.udp
+        ? '● UDP'
+        : s?.tcp
+          ? '● TCP (SECOURS)'
+          : reconnecting
+            ? '● RECONNEXION…'
+            : '● CONNEXION INTERROMPUE') +
       ' · ' +
       snap.pilots.length +
       ' PILOTE' +
       (snap.pilots.length > 1 ? 'S' : '');
     $('net').title =
-      'Serveur en mémoire · mouvements à 20 Hz · commandes fiables sur UDP' +
+      (s?.tcp
+        ? 'Réseau sans UDP : partie en TCP (WebSocket), moins fluide si le réseau perd des paquets'
+        : 'Serveur en mémoire · mouvements à 20 Hz · commandes fiables sur UDP') +
       (s?.error ? ' · ' + s.error : '');
     return;
   }
@@ -1011,24 +1020,57 @@ const appearancePicker = createAppearancePicker(T, {
     } catch {}
   },
 });
+// Game transport: UDP (WebRTC) first. Networks that block UDP (many company
+// networks only let HTTPS out) fall back to TCP over a WebSocket, with the same
+// protocol. Once UDP has failed in this page, reconnections go straight to TCP.
+const UDP_OPEN_MS = 5000;
+let transport = 'udp';
+async function openConnection() {
+  const open = async (Client, extra = {}) => {
+    const client = new Client({
+      // A stuck connection is replaced by a fresh one well before the
+      // server forgets this pilot (see reconnect()).
+      disconnectGrace: RECONNECT_AFTER_MS,
+      onMotion: (peer, state, time, seq, captured) =>
+        track(peer).push(state, time, seq, 'rtc', captured),
+      onClose: (error) => {
+        // A UDP attempt abandoned for the TCP fallback is not a lost game.
+        if (client !== peerMotion) return;
+        $('net').textContent = '● CONNEXION INTERROMPUE';
+        $('net').title = error.message;
+        reconnect();
+      },
+      ...extra,
+    });
+    try {
+      return await client.connect();
+    } catch (e) {
+      client.stop();
+      throw e;
+    }
+  };
+  let udpError = '';
+  if (transport === 'udp')
+    try {
+      return await open(UdpClient, { openTimeout: UDP_OPEN_MS });
+    } catch (e) {
+      udpError = e.message;
+    }
+  try {
+    const client = await open(WsClient);
+    transport = 'tcp';
+    return client;
+  } catch (e) {
+    throw Error((udpError ? 'UDP : ' + udpError + ' TCP : ' : '') + e.message);
+  }
+}
 async function api(path, body) {
   const sent = Date.now();
   if (globalThis.MOUCHERON_UDP) {
     if (path === 'join') {
       peerMotion?.stop();
-      peerMotion = new UdpClient({
-        // A stuck connection is replaced by a fresh one well before the
-        // server forgets this pilot (see reconnect()).
-        disconnectGrace: RECONNECT_AFTER_MS,
-        onMotion: (peer, state, time, seq, captured) =>
-          track(peer).push(state, time, seq, 'rtc', captured),
-        onClose: (error) => {
-          $('net').textContent = '● UDP INTERROMPU';
-          $('net').title = error.message;
-          reconnect();
-        },
-      });
-      await peerMotion.connect();
+      peerMotion = null;
+      peerMotion = await openConnection();
     }
     const v = await peerMotion.request(
       path,
@@ -1560,7 +1602,7 @@ async function reconnect() {
         wait = Math.min(wait * 2, 2000);
       }
     }
-    $('net').textContent = '● UDP INTERROMPU — RECHARGEZ';
+    $('net').textContent = '● CONNEXION INTERROMPUE — RECHARGEZ';
   } finally {
     reconnecting = false;
   }
@@ -1936,7 +1978,7 @@ setInterval(async () => {
     // A refused burst (429) is not a lost connection: the next sync retries.
     if (e.status === 429 || reconnecting) return;
     $('net').textContent = globalThis.MOUCHERON_UDP
-      ? '● UDP INTERROMPU — RECHARGEZ'
+      ? '● CONNEXION INTERROMPUE — RECHARGEZ'
       : '● RECONNEXION…';
   } finally {
     pending = false;
