@@ -400,6 +400,35 @@ Modèle fourni par l'utilisateur, déjà riggé par Meshy, sans clip ; il rempla
 
 ![Poses du cycle de vol de l'abeille](bee-model-review.jpg)
 
+### Moustique (version 311)
+
+Modèle Meshy « Low Poly Mosquito » fourni par l'utilisateur, déjà riggé, sans clip ;
+il remplace le moustique procédural. Même chaîne que l'abeille.
+
+- Original hors dépôt : `assets/originals/mosquito/mosquito.glb` (SHA-256
+  `c13dff6e…1c15`), 478 triangles, 815 sommets, SmartRig de 62 os, texture JPEG
+  512 px (54 Ko). Tête et trompe vers +Z, Y vers le haut.
+- Import : `PYTHONPATH=scripts python3 scripts/import-mosquito.py <GLB>` écrit
+  `src/mosquito-data.js`. Douze coques soudées : corps, six pattes, deux ailes, yeux
+  et trompe. Chaque aile (chaîne Meshy de trois os, `Bone_034` à +X, `Bone_037` à
+  −X) suit son os racine à 100 %. Le corps et les pièces de tête cèdent au parent de
+  chaque chaîne leurs poids sur les os d'ailes et de pattes (250 influences) ;
+  chaque patte ne garde que sa chaîne (118 influences rendues à son moyeu).
+  Géométrie, UV et texture inchangées, pas de simplification.
+- Vol (`src/mosquito-model.js`) : boucle de 1 s, 15 battements étroits et rapides,
+  4 images par battement, 60 images. Abdomen qui ondule, tête qui frémit, six longues
+  pattes pendantes, la paire avant tendue vers l'avant, les autres traînant derrière.
+- Rendu et collision : entrée `mosquito` de `FLYERS`. Facteur 1 : environ 3,6
+  unités trompe comprise et 3,4 d'envergure, pour garder une silhouette lisible
+  (6×2 pixels à 2 m, `test-enemy-readability`) malgré le petit facteur d'espèce. Zone de tir : ellipsoïde du corps sans ailes, pattes ni
+  trompe (`MOSQUITO_HIT`). Les esquives erratiques de `waves.js` sont inchangées.
+- Vérification : `scripts/test-mosquito-model.mjs` (provenance, ailes rigides, aucun
+  poids du corps sur les ailes, orientation, battement symétrique, boucle, pattes
+  pendantes, cuisson, proxys et tirs). Rendu WebGL instancié contrôlé hors jeu avec
+  des abeilles ; la lisibilité en partie réelle reste à juger.
+
+![Poses du cycle de vol du moustique](mosquito-model-review.jpg)
+
 ## Canon anti-matériel (obusier Meshy)
 
 Modèle fourni par l'utilisateur pour l'[issue #113](https://github.com/simonjamain/i-am-a-moucheron/issues/113)

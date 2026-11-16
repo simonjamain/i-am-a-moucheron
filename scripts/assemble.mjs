@@ -155,6 +155,8 @@ const files = {
       'beetle-data',
       'bee-model',
       'bee-data',
+      'mosquito-model',
+      'mosquito-data',
       'spiderling-batch',
       'insect-status',
       'blood-effects',
