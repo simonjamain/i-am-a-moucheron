@@ -113,8 +113,7 @@ async function scenario({ reduced = false, readyAt = 0, fail = false, webgl = tr
   assert.equal(lobby.inert, false);
   if (webgl) assert.ok(disposed && lost, 'temporary renderer cleaned up');
   assert.ok(departureAt >= readyAt, 'wait for assets');
-  if (reduced) assert.equal(now - departureAt, 220);
-  else {
+  {
     assert.ok(departureAt >= 900, 'cached loading still displays the fly');
     assert.equal(now - departureAt, 1400);
     if (webgl) {

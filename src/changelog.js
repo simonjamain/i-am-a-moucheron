@@ -1,6 +1,10 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 303,
+    changes: ['Sur PC, le moucheron vole maintenant vers vous à la fin du chargement.'],
+  },
+  {
     version: 300,
     changes: ['La vue du Flak lourd s’affiche correctement après la prise du poste.'],
   },

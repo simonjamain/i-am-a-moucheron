@@ -62,6 +62,8 @@ try {
   await page.locator('#loading').waitFor({ state: 'detached' });
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.reload({ waitUntil: 'commit' });
+  await page.locator('#loading.departing').waitFor();
+  assert.equal(await page.locator('#loading canvas').count(), 1);
   await page.locator('#loading').waitFor({ state: 'detached' });
   assert.equal(await page.locator('#lobby').isVisible(), true);
   assert.deepEqual(errors, []);
