@@ -319,8 +319,8 @@ Modèle fourni par l'utilisateur, déjà riggé par Meshy, sans clip ; il rempla
   un `InstancedMesh` par espèce, battement sur l'horloge partagée avec un décalage
   de boucle par insecte ; le client oriente le proxy vers son déplacement 3D comme
   un moucheron. Cadavres, âmes du purgatoire et rendu sans WebGL : `SkinnedMesh`
-  réel du même rig (`graphics.insect`). D'autres volants (voltigeur, carapace,
-  moustique) pourront s'ajouter par une entrée de `FLYERS`.
+  réel du même rig (`graphics.insect`). D'autres volants (voltigeur, moustique)
+  pourront s'ajouter par une entrée de `FLYERS` ; l'abeille l'a fait en 309.
 - Échelle et collision : facteur 0,75, corps de 2,2 unités et 2,9 d'envergure
   (facteur d'espèce `brute` inchangé dans `scale.js`). Zone de tir : ellipsoïde de
   la carapace sans ailes ni pattes (`BEETLE_HIT`), partagé par le proxy et le rig.
@@ -331,6 +331,36 @@ Modèle fourni par l'utilisateur, déjà riggé par Meshy, sans clip ; il rempla
   décalées) ; la lisibilité en partie réelle reste à juger.
 
 ![Poses du cycle de vol et rendu instancié](beetle-model-review.jpg)
+
+### Abeille (version 309)
+
+Modèle fourni par l'utilisateur, déjà riggé par Meshy, sans clip ; il remplace la
+« carapace » procédurale de l'espèce `guard`, renommée « Abeille ».
+
+- Original hors dépôt : `assets/originals/guard/bee.glb` (Meshy « Angry Low Poly
+  Bee »), SHA-256 `a126aa44…2821d`. 582 triangles, 874 sommets, SmartRig de 45 os,
+  texture réduite en JPEG 512 px (73 Ko). Tête vers +Z, Y vers le haut.
+- Import : `PYTHONPATH=scripts python3 scripts/import-bee.py <GLB>` écrit
+  `src/bee-data.js`. Treize coques soudées : corps, six pattes, deux antennes et
+  quatre ailes. Les os d'ailes Meshy (`Bone_026` à +X, `Bone_028` à −X, enfants du
+  thorax) sont gardés ; l'aile antérieure et la postérieure de chaque côté suivent
+  l'os racine à 100 %, comme les ailes d'une abeille accrochées entre elles. Le corps
+  et les antennes cèdent au parent de chaque chaîne leurs poids sur les os d'ailes et
+  de pattes (531 influences) ; chaque patte ne garde que sa chaîne (140 influences
+  rendues à son moyeu). Géométrie, UV et texture inchangés, pas de simplification.
+- Vol (`src/bee-model.js`) : boucle de 1 s, 12 battements (bourdonnement plus vif que
+  le scarabée), 6 images par battement, 72 images. Ailes de −20° à +52° avec balayage
+  et torsion, abdomen abaissé qui pompe deux fois par boucle, tête et antennes qui
+  frémissent, pattes pendantes.
+- Rendu et collision : entrée `guard` de `FLYERS` (même chaîne que le scarabée).
+  Facteur 0,75, corps de 1,6 unité dard compris. Zone de tir : ellipsoïde du corps
+  sans ailes, pattes ni antennes (`BEE_HIT`).
+- Vérification : `scripts/test-bee-model.mjs` (provenance, ailes rigides, aucun poids
+  du corps sur les ailes, orientation, battement symétrique, boucle sans raccord,
+  pattes pendantes, cuisson, proxys et tirs). Rendu WebGL instancié contrôlé hors jeu
+  avec des scarabées dans la même scène ; la lisibilité en partie réelle reste à juger.
+
+![Poses du cycle de vol de l'abeille](bee-model-review.jpg)
 
 ## Canon anti-matériel (obusier Meshy)
 

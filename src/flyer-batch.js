@@ -1,4 +1,4 @@
-// Rigged Meshy flyers other than the midge (armoured beetle for now), drawn as
+// Rigged Meshy flyers other than the midge (armoured beetle, bee), drawn as
 // one InstancedMesh per species through their baked flight cycle
 // (src/creature-batch.js). Gameplay keeps a cheap Object3D proxy per creature,
 // outside the scene; the client turns it towards its 3D movement like a midge.
@@ -6,9 +6,11 @@
 // A new flying species needs its model module and one entry below.
 import { CreatureBatch } from './creature-batch.js';
 import { BEETLE, BEETLE_FLIGHT, BEETLE_HIT } from './beetle-model.js';
+import { BEE, BEE_FLIGHT, BEE_HIT } from './bee-model.js';
 
 export const FLYERS = Object.freeze({
   brute: { creature: BEETLE, flight: BEETLE_FLIGHT, hit: BEETLE_HIT },
+  guard: { creature: BEE, flight: BEE_FLIGHT, hit: BEE_HIT },
 });
 
 export class FlyerBatch {

@@ -151,6 +151,8 @@ const files = {
       'flyer-batch',
       'beetle-model',
       'beetle-data',
+      'bee-model',
+      'bee-data',
       'spiderling-batch',
       'insect-status',
       'blood-effects',
