@@ -493,3 +493,14 @@ décompté par le serveur avant de pouvoir blesser un insecte, un allié ou une 
 un impact ne peut utiliser qu'une fois le même identifiant de tir. Depuis la
 version 243, le pistolet n'existe plus qu'au purgatoire et rien ne le recharge :
 la paperasse reste le moyen de progression lorsque les munitions sont épuisées.
+
+## Décollage et trajectoires aériennes (v305)
+
+- Tous les avions décollent depuis une surface plane : la résistance au roulement
+  (`ROLLING_FRICTION`, `src/flight.js`) laisse les deux biplans, moins puissants,
+  atteindre la vitesse de rotation (`LIFTOFF_SPEED`, 18 m/s). `scripts/test-takeoff.mjs`
+  simule le roulage de toute la flotte.
+- Les couloirs des insectes volants (`src/routes.js`) restent sous la couche de
+  nuages (`OFFICE_CLOUD_TOP`, qui n'a pas suivi le plafond de vol relevé) : au plus
+  2,1 m, nuages dès 2,21 m. Les nuées restent visibles et suivent la trajectoire annoncée.
+- Limite : je n'ai pas fait d'essai en vraie partie ; la simulation reprend la logique du client.

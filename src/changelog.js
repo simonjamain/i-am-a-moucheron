@@ -1,6 +1,13 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 305,
+    changes: [
+      'Tous les avions, y compris les deux de départ, décollent maintenant depuis une surface plane.',
+      'Les insectes volants restent sous les nuages et suivent à nouveau leur trajectoire visible.',
+    ],
+  },
+  {
     version: 303,
     changes: ['Sur PC, le moucheron vole maintenant vers vous à la fin du chargement.'],
   },

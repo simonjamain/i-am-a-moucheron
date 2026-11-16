@@ -164,7 +164,7 @@ import {
 import { CrashEffects } from '/crash-effects.js';
 import { MissileExhaust } from '/missile-exhaust.js';
 import * as T from '/three.js';
-import { stepFlight } from '/flight.js';
+import { stepFlight, ROLLING_FRICTION, LIFTOFF_SPEED } from '/flight.js';
 import { loadFlightTuning } from '/flight-tuning.js';
 import { FlightTuningUI } from '/flight-tuning-ui.js';
 import { ToonRenderer } from '/toon.js';
@@ -4312,14 +4312,14 @@ function physics(dt) {
   landed = landing.landed;
   if (landed) {
     // Rolling friction and rudder/taxi steering. Pull back with enough airspeed to lift off.
-    vel.x *= Math.exp(-dt * 0.35);
-    vel.z *= Math.exp(-dt * 0.35);
+    vel.x *= Math.exp(-dt * ROLLING_FRICTION);
+    vel.z *= Math.exp(-dt * ROLLING_FRICTION);
     if (gas < 0.12) {
       const speed = vel.length();
       vel.multiplyScalar(Math.max(0, 1 - (MAP.metres(6) * dt) / Math.max(1e-9, speed)));
     }
     me.rotateY(-yaw * dt * 0.7);
-    if (pitch > 0 && vel.length() > MAP.metres(18)) {
+    if (pitch > 0 && vel.length() > MAP.metres(LIFTOFF_SPEED)) {
       me.rotateX(dt * 0.7);
       vel.y = MAP.metres(2);
       me.position.y += 0.16 * ACTOR_UNIT;

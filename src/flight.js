@@ -53,6 +53,12 @@ function unscaledFlight(
   return { forward, speed, bank, aoa, stall, lift, authority };
 }
 
+// Ground rolling resistance (per second) and the speed at which a pull-back
+// lifts the nose. Every aircraft must out-accelerate the first so it can reach
+// the second on a flat surface; scripts/test-takeoff.mjs checks the whole fleet.
+export const ROLLING_FRICTION = 0.1;
+export const LIFTOFF_SPEED = 18;
+
 // Dynamics use reference metres/seconds. Scaling every linear quantity here
 // preserves the same manoeuvre and timing on maps of different miniature ratios.
 export function stepFlight(T, state, dt) {
