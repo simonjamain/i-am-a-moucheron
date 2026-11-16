@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { BankUI, loanText } from '../src/bank-ui.js';
 import { equipmentHUD, ContextHUD } from '../src/hud.js';
 import { newBank, signLoan, settleLoans } from '../src/bank.js';
@@ -36,8 +37,8 @@ class Element {
   append(child) {
     this.children.push(child);
   }
-  replaceChildren() {
-    this.children = [];
+  replaceChildren(...children) {
+    this.children = children;
   }
   getContext() {
     return { clearRect() {}, beginPath() {}, moveTo() {}, lineTo() {}, stroke() {} };
@@ -157,8 +158,42 @@ assert.equal(model.readout.metres, 300);
 assert.equal(model.left[1], '90 cm', '300 reference metres shown as their real 90 cm');
 assert.ok(Math.abs(model.readout.fraction - 2 / 11) < 1e-10);
 let now = 0;
-const rails = new Element(),
-  hud = new ContextHUD(rails, () => now);
+const markup = readFileSync(new URL('../src/index.html', import.meta.url), 'utf8');
+const rails = new Element();
+const railMarkup = markup.slice(
+  markup.indexOf('<div id="contextHUD"'),
+  markup.indexOf('<div id="aimRange"'),
+);
+for (const [, key] of railMarkup.matchAll(/data-hud="([^"]+)"/g))
+  rails.map.set(`[data-hud="${key}"]`, new Element());
+for (const [, side] of railMarkup.matchAll(/data-hud-details="([^"]+)"/g)) {
+  const details = new Element();
+  details.ownerDocument = { createElement: (tag) => new Element(tag) };
+  rails.map.set(`[data-hud-details="${side}"]`, details);
+}
+rails.querySelector = (selector) => rails.map.get(selector) ?? null;
+const hud = new ContextHUD(rails, () => now);
+const leftDetails = rails.querySelector('[data-hud-details="left"]');
+const rightDetails = rails.querySelector('[data-hud-details="right"]');
+hud.update(equipmentHUD({ turret: true, station: 'dcaHeavy', stationAmmo: 120 }));
+assert.deepEqual(
+  leftDetails.children.map((row) => row.textContent),
+  ['1,5 cm', 'Molette', '100 PV'],
+);
+assert.deepEqual(
+  rightDetails.children.map((row) => row.textContent),
+  ['Obus 120/120', 'Souffle : 7,2 cm'],
+);
+const firstRow = leftDetails.children[0];
+hud.update(equipmentHUD({ turret: true, station: 'dcaHeavy', stationAmmo: 119 }));
+assert.equal(leftDetails.children[0], firstRow, 'reuse rows between frames');
+assert.equal(rightDetails.children[0].textContent, 'Obus 119/120');
+hud.update(equipmentHUD({ turret: true, station: 'dcaRapid', stationAmmo: 1000 }));
+assert.equal(leftDetails.children.length, 0, 'clear details from the previous station');
+assert.deepEqual(
+  rightDetails.children.map((row) => row.textContent),
+  ['4 mitrailleuses'],
+);
 hud.update(model);
 assert.equal(rails.classList.contains('expanded'), true);
 now = 3000;

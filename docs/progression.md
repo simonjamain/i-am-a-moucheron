@@ -17,9 +17,10 @@ arrivent par grappes). Les foules d'une même espèce partagent le plus souvent
 entrée et parcours ; les espèces fortes ont chacune le leur. Le reliquat de budget
 grossit un paquet existant au lieu de créer de petits groupes. Les membres d'un
 paquet partent l'un après l'autre (`memberGap`) ; la prévision annonce un groupe par
-paquet. Au sol, les créatures marchent en 2 à 8 files (`GROUND_LANES`,
-`groundLaneDisplacement` dans `src/waves.js`) et n'attendent qu'une fraction de
-seconde à l'entrée : plus de superposition (`scripts/test-ground-spread.mjs`). Le tirage conserve les déblocages du bestiaire et borne à 900 la population avant le multiplicateur de room. La difficulté affichée additionne les coûts du roster réellement envoyé. La progression seule ne modifie ni les PV individuels ni les dégâts.
+paquet. Au sol, les créatures quittent l'entrée à intervalles courts, puis
+suivent individuellement la navigation et évitent doucement leurs voisins ; voir
+[navigation terrestre](gameplay.md#navigation-terrestre). Les positions réelles
+remplacent les anciennes files d'affichage. Le tirage conserve les déblocages du bestiaire et borne à 900 la population avant le multiplicateur de room. La difficulté affichée additionne les coûts du roster réellement envoyé. La progression seule ne modifie ni les PV individuels ni les dégâts.
 
 Le lancement et les pauses durent 60 secondes par défaut. Le bandeau affiche la prochaine vague et sa frise (entrées, horaires, espèces). Tout joueur peut lancer la vague annoncée avant l’échéance ; à l’échéance, elle démarre seule.
 
@@ -35,11 +36,13 @@ en supplément ; tuer dans le bureau ne crédite toujours rien directement.
 
 | Achat                           | Prix                                                     |
 | ------------------------------- | -------------------------------------------------------- |
-| DCA successives                 | 4 $, 6 $, 8 $, 10 $… +2 $ par installation, plafond 40 $ |
+| Flak légers successifs          | 4 $, 6 $, 8 $, 10 $… +2 $ par installation, plafond 40 $ |
 | Motorisation, niveaux 1 / 2 / 3 | 4 $ / 9 $ / 16 $                                         |
 | Munitions, niveaux 1 / 2 / 3    | 6 $ / 12 $ / 20 $                                        |
 | Stuka, chaque exemplaire        | 12 $                                                     |
 | Lit, exemplaires successifs     | 4 $, 6 $, 8 $…                                           |
+| DCA haute cadence               | 15 $                                                     |
+| Flak lourd                      | 35 $                                                     |
 | Spitfire, chaque exemplaire     | 24 $                                                     |
 | Tank, chaque exemplaire         | 10 $                                                     |
 

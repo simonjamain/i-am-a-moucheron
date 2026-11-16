@@ -7,21 +7,54 @@
 // drive their own phase from the distance they travel.
 const TEXTURE_WIDTH = 1024;
 
-function createVat(T, creature) {
-  const bake = creature.bake(T);
+function* vatSteps(T, bake) {
   const texels = bake.frames * bake.count;
   const height = Math.ceil((2 * texels) / TEXTURE_WIDTH);
   const data = new Uint16Array(TEXTURE_WIDTH * height * 4);
-  for (let i = 0; i < texels; i++)
+  for (let i = 0; i < texels; i++) {
     for (let a = 0; a < 3; a++) {
       data[i * 4 + a] = T.DataUtils.toHalfFloat(bake.positions[i * 3 + a]);
       data[(texels + i) * 4 + a] = T.DataUtils.toHalfFloat(bake.normals[i * 3 + a]);
     }
+    if ((i + 1) % 1024 === 0) yield;
+  }
   const texture = new T.DataTexture(data, TEXTURE_WIDTH, height, T.RGBAFormat, T.HalfFloatType);
   texture.minFilter = texture.magFilter = T.NearestFilter;
   texture.generateMipmaps = false;
   texture.needsUpdate = true;
   return { texture, frames: bake.frames, count: bake.count, height, bytes: data.byteLength };
+}
+
+function createVat(T, creature) {
+  const steps = vatSteps(T, creature.bake(T));
+  let result;
+  do {
+    result = steps.next();
+  } while (!result.done);
+  return result.value;
+}
+
+// Yield tasks, not just microtasks: the browser must be able to paint the loader.
+export async function prepareCreatureVat(
+  T,
+  creature,
+  { yieldControl = () => new Promise((resolve) => setTimeout(resolve, 0)), budgetMs = 4 } = {},
+) {
+  async function drain(steps) {
+    let since = performance.now();
+    while (true) {
+      const result = steps.next();
+      if (result.done) return result.value;
+      if (performance.now() - since >= budgetMs) {
+        await yieldControl();
+        since = performance.now();
+      }
+    }
+  }
+  await yieldControl();
+  const baked = await drain(creature.bakeSteps(T));
+  await yieldControl();
+  return drain(vatSteps(T, baked));
 }
 
 function vatShader(uniforms) {
@@ -57,7 +90,7 @@ vec3 vatSample(float row) {
 }
 
 export class CreatureBatch {
-  constructor(T, scene, creature, { name = creature.name, shadows = false } = {}) {
+  constructor(T, scene, creature, { name = creature.name, shadows = false, vat = null } = {}) {
     this.T = T;
     this.scene = scene;
     this.creature = creature;
@@ -65,7 +98,7 @@ export class CreatureBatch {
     this.capacity = 0;
     this.count = 0;
     this.mesh = null;
-    this.vat = createVat(T, creature);
+    this.vat = vat || createVat(T, creature);
     const source = creature.geometry(T);
     this.geometry = new T.InstancedBufferGeometry();
     this.geometry.setIndex(source.index);

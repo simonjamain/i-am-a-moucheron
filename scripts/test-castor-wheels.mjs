@@ -79,14 +79,17 @@ assert.ok(
 assert.equal(VEHICLES.castor.maxSpeed, 52);
 const state = { p: [0, 0.01, 0], v: [0, 0, 0], q: [0, 0, 0, 1] };
 const speeds = [];
-for (let i = 0; i < 180; i++) {
+for (let i = 0; i < 360; i++) {
   stepTank(T, state, { forward: 1, turn: 0 }, [], dt, VEHICLES.castor);
   speeds.push(Math.hypot(...state.v));
 }
 const accel = speeds.map((v, i) => v - (speeds[i - 1] ?? 0));
 assert.ok(accel[1] > accel[30] && accel[30] > accel[90], 'acceleration decreases');
 assert.ok(speeds.at(-1) > MAP.metres(52) * 0.99 && speeds.at(-1) <= MAP.metres(52) + 1e-12);
-assert.ok(speeds[15] > MAP.metres(26), 'passes the old top speed within a quarter second');
+assert.ok(
+  speeds[15] < MAP.metres(26),
+  'gentle start stays below half speed for the first quarter second',
+);
 console.log(
   'Castor wheels: signed rolling, reverse, stop, pivot opposition, front steering, 2× speed.',
 );

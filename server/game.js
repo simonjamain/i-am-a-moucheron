@@ -10,8 +10,9 @@ import {
   groundSnapshot,
   groundFlow,
   damageBarricade,
+  floorStructures,
 } from '../src/ground-defense-state.js';
-import { groundUnit, advanceGroundUnit } from '../src/ground-creatures.js';
+import { advanceGroundCrowd } from '../src/ground-crowd.js';
 import { HELI, rotateLocal } from '../src/helicopter.js';
 import { clampProximity } from '../src/mobile-flak.js';
 import { collisionDamage, washTarget, WASH } from '../src/vehicle-care.js';
@@ -19,9 +20,17 @@ import { purchaseCount } from '../src/equipment.js';
 import { bedAccess, bedSpawn } from '../src/beds.js';
 import { impactDamage } from '../src/field-physics.js';
 import { randomUUID } from 'node:crypto';
-import { MAP, ACTOR_UNIT, FLAK, enemySizeFactor } from '../src/scale.js';
+import { MAP, ACTOR_UNIT, enemySizeFactor, flakPitchAllowed } from '../src/scale.js';
 import { OFFICE_LAYOUT, RAID_DURATION } from '../src/layout.js';
-import { VEHICLES, vehiclePad, vehicleEntry, vehicleAccess, leftVehiclePad } from '../src/fleet.js';
+import {
+  VEHICLES,
+  vehiclePad,
+  vehicleEntry,
+  vehicleAccess,
+  leftVehiclePad,
+  vehicleMaxHP,
+} from '../src/fleet.js';
+import { AIRDROP_KINDS, airdropCommand, airdropSurface, headingOf } from '../src/airdrop.js';
 import { baseWorld, baseBody, reconcileBase } from '../src/base.js';
 import {
   createSoul,
@@ -41,7 +50,8 @@ import { SHOP, shopPrice, supportedPlacement, waveStipend } from '../src/equipme
 import { advancePaidService } from '../src/paid-service.js';
 import { SENTRY, fireGroundSentries } from '../src/ground-sentry.js';
 import { FORTIFICATIONS, isFortification } from '../src/ground-fortifications.js';
-import { FIXED_DCA_AMMO, PISTOL_CAPACITY } from '../src/ground-ammo.js';
+import { FIXED_DCA, heavyDcaMuzzle, isFixedDca } from '../src/fixed-dca.js';
+import { PISTOL_CAPACITY } from '../src/ground-ammo.js';
 import {
   fullAmmo,
   ammoCapacity,
@@ -101,9 +111,9 @@ const initialState = () => ({
 export function initialStation() {
   const b = OFFICE_LAYOUT.base;
   return {
-    x: b.originX,
+    x: b.originX + b.refuelOffsetX,
     y: b.deckY + 0.00005,
-    z: b.originZ - 5 * ACTOR_UNIT,
+    z: b.originZ + b.refuelOffsetZ,
     slot: -1,
     kind: 'refuel',
     name: 'Ravitaillement Alpha',
@@ -163,6 +173,7 @@ function roomState(code, now) {
     ordnance: [],
     ordnanceShots: new Set(),
     fixedDcaShots: new Set(),
+    rapidDcaShots: new Map(),
     damageEvents: [],
     damageSeq: 0,
     enemyHits: new Set(),
@@ -484,7 +495,7 @@ export class Game {
   }
   advanceGround(r, now) {
     // Ground insects always walk the shared flow field, with or without defenses,
-    // so the preparation forecast is the path walked during the wave.
+    // with local crowd avoidance around the preparation forecast.
     if (r.phase !== 'combat') return;
     const elapsed = (now - r.started) / 1000;
     if (r.groundWave !== r.wave) {
@@ -515,29 +526,13 @@ export class Game {
       return r.groundBaitFlows.get(bait.id);
     };
     const world = {
-      structures: r.groundDefense.structures,
+      structures: floorStructures(r.groundDefense.structures),
       goalFlow: r.groundNavigation,
       baitFlow,
       damageWall: (id, amount) => damageBarricade(r.groundDefense, id, amount),
     };
     const roster = this.plan(r).roster;
-    for (let i = 0; i < roster.length; i++) {
-      const enemy = roster[i];
-      if (!enemy.ground || r.kills.has(i)) continue;
-      const availableAt = enemy.spawn + (enemy.entryHold || 0);
-      if (elapsed < availableAt) continue;
-      const unit =
-        r.groundAgents[enemy.id] ||
-        (r.groundAgents[enemy.id] = groundUnit(enemy, Math.max(previous, availableAt)));
-      if (unit.arrived) continue;
-      advanceGroundUnit(
-        unit,
-        enemy,
-        elapsed,
-        Math.max(0, elapsed - Math.max(previous, availableAt)),
-        world,
-      );
-    }
+    advanceGroundCrowd(r.groundAgents, roster, r.kills, previous, elapsed, world);
   }
   advanceSentries(r, now) {
     if (
@@ -571,7 +566,7 @@ export class Game {
           id: ++r.effectSeq,
           kind: 'sentry-shot',
           sentry: sentry.id,
-          p: [sentry.position[0], 0.03, sentry.position[1]],
+          p: [sentry.position[0], (sentry.y || 0) + 0.03, sentry.position[1]],
           target: target.p,
           at: now,
         });
@@ -650,6 +645,7 @@ export class Game {
       r.dollars = Math.round(r.dollars * 100 - settleLoans(r.bank, r.wave)) / 100;
     }
     this.advanceDeliveries(r, now);
+    this.advanceGroundDrops(r, now);
     this.fleet(r);
     this.base(r);
     this.arena(r, 'purgatory');
@@ -740,6 +736,7 @@ export class Game {
     r.ordnance = [];
     r.ordnanceShots.clear();
     r.fixedDcaShots.clear();
+    r.rapidDcaShots.clear();
     this.prepareWave(r);
   }
   labCommand(r, b) {
@@ -979,10 +976,7 @@ export class Game {
       p: flying ? s.p : old.p,
       q: flying ? s.q : old.q,
       v: flying ? s.v : old.v,
-      hp: Math.max(
-        0,
-        Math.min(r.vehicles.get(p.vehicle_id)?.type === 'helicopter' ? 200 : 100, s.hp),
-      ),
+      hp: Math.max(0, Math.min(vehicleMaxHP(r.vehicles.get(p.vehicle_id)?.type), s.hp)),
       type: r.vehicles.get(p.vehicle_id)?.type,
       rotorPower: Number.isFinite(s.rotorPower) ? Math.max(0, Math.min(1, s.rotorPower)) : 1,
       collective: Number.isFinite(s.collective) ? Math.max(-1, Math.min(1, s.collective)) : 0,
@@ -1070,6 +1064,7 @@ export class Game {
           'leave',
           // A shell still in flight when its shooter dies keeps its effect.
           'heavy-impact',
+          'fixed-dca-impacts',
         ].includes(path),
       'Accédez au purgatoire avant d’agir.',
     );
@@ -1090,8 +1085,11 @@ export class Game {
     else if (path === 'place-purchase') this.placePurchase(r, p, b);
     else if (path === 'wash') this.wash(r, p, b);
     else if (path === 'pistol-trace') this.pistolTrace(r, p, b);
-    else if (path === 'fixed-dca-fire') this.fixedDcaFire(r, p, b);
-    else if (path === 'antitank-fire') this.antitankFire(r, p, b);
+    else if (path === 'fixed-dca-fire') {
+      const result = this.fixedDcaFire(r, p, b);
+      if (result) return result;
+    } else if (path === 'antitank-fire' || path === 'heavy-dca-fire')
+      this.fixedShellFire(r, p, b, path === 'antitank-fire' ? 'antitank' : 'dcaHeavy');
     else if (path === 'start') {
       if (!r.mission_started && !b.preparation) {
         r.mission_started = 1;
@@ -1184,6 +1182,7 @@ export class Game {
       this.equipment(r, p, path, b);
     else if (['seat-request', 'seat-sign', 'seat-reject'].includes(path)) this.seat(r, p, path, b);
     else if (path === 'aircraft-fire') return clone(this.fire(r, p, b));
+    else if (path === 'fixed-dca-impacts') return this.rapidDcaImpacts(r, p, b.impacts);
     else if (path === 'heavy-impact') this.heavyImpact(r, p, b);
     else if (path === 'heavy-fire') this.heavyFire(r, p, b);
     else if (path === 'hit') this.hit(r, p, b);
@@ -1243,9 +1242,15 @@ export class Game {
       vehicle?.type === 'castor' &&
       vehicle.seats.get('pilot') === p.id &&
       vehicle.state.hp > 0;
+    // Castor volant: its pilot and its three passengers drop constructions.
+    const airborne =
+      p.life === 'alive' &&
+      vehicle?.type === 'flyingcastor' &&
+      vehicle.seats.get(p.seat) === p.id &&
+      vehicle.state.hp > 0;
     requireGame(
-      (p.life === 'alive' && p.mode === 'foot') || castor,
-      'Construction réservée aux joueurs à pied et au conducteur du Castor.',
+      (p.life === 'alive' && p.mode === 'foot') || castor || airborne,
+      'Construction réservée aux joueurs à pied et aux équipages des Castor.',
     );
     requireGame(b?.epoch === r.base.epoch, 'La partie a changé ; recommencez la pose.');
     const token = b.request;
@@ -1257,7 +1262,21 @@ export class Game {
     const key = token && p.id + ':' + token;
     if (key && r.groundDefenseOrders.has(key)) return;
     let w;
-    if (castor) {
+    if (airborne) {
+      requireGame(
+        vehicle.state.p?.length === 3 &&
+          vehicle.state.p.every(Number.isFinite) &&
+          vehicle.state.q?.length === 4 &&
+          vehicle.state.q.every(Number.isFinite),
+        'Position du Castor volant inconnue.',
+      );
+      w = { x: vehicle.state.p[0], z: vehicle.state.p[2] };
+      if (b.action === 'build') {
+        this.airdrop(r, vehicle, b.kind);
+        this.rememberGroundOrder(r, key);
+        return;
+      }
+    } else if (castor) {
       requireGame(
         vehicle.state.landed && Math.abs(vehicle.state.p[1] - VEHICLES.castor.gear) < 0.025,
         'Le Castor doit rouler sur le sol du bureau.',
@@ -1284,21 +1303,14 @@ export class Game {
         [w.x, w.z],
         r.dollars,
         this.now(),
-        { castor },
+        { castor: castor || airborne },
       );
     } catch (error) {
       requireGame(false, error.message, 400);
     }
     r.dollars = money(r.dollars - transaction.price);
-    if (b.action === 'build' && isFortification(b.kind)) {
-      const structure = r.groundDefense.structures.find((s) => s.id === transaction.ids[0]);
-      structure.slot = r.equipment.length;
-      structure.x = structure.position[0];
-      structure.y = 0.00005;
-      structure.z = structure.position[1];
-      structure.name = FORTIFICATIONS[b.kind].name;
-      r.equipment.push(structure);
-    }
+    if (b.action === 'build' && isFortification(b.kind))
+      this.registerFortification(r, transaction.ids[0]);
     if (b.action === 'remove') {
       const station = r.equipment.find((s) => isFortification(s.kind) && s.id === b.target);
       if (station) {
@@ -1318,12 +1330,89 @@ export class Game {
         };
       }
     }
-    if (key) {
-      r.groundDefenseOrders.set(key, true);
-      if (r.groundDefenseOrders.size > 2048)
-        r.groundDefenseOrders.delete(r.groundDefenseOrders.keys().next().value);
+    this.rememberGroundOrder(r, key);
+  }
+  rememberGroundOrder(r, key) {
+    if (!key) return;
+    r.groundDefenseOrders.set(key, true);
+    if (r.groundDefenseOrders.size > 2048)
+      r.groundDefenseOrders.delete(r.groundDefenseOrders.keys().next().value);
+  }
+  // Occupiable posts are also equipment slots (signatures, seats, refills).
+  registerFortification(r, id) {
+    const structure = r.groundDefense.structures.find((s) => s.id === id);
+    structure.slot = r.equipment.length;
+    structure.x = structure.position[0];
+    structure.y = Math.max(0.00005, structure.y || 0);
+    structure.z = structure.position[1];
+    structure.name = FORTIFICATIONS[structure.kind].name;
+    r.equipment.push(structure);
+  }
+  // Castor volant drop: paid now, validated on a copy, built when it lands on
+  // the first surface below the helicopter (refunded if the spot got taken).
+  airdrop(r, vehicle, kind) {
+    requireGame(AIRDROP_KINDS.includes(kind), 'Le Castor volant ne largue pas de mur LEGO.');
+    const [x, y, z] = vehicle.state.p;
+    const fromY = y - VEHICLES.flyingcastor.gear;
+    const command = airdropCommand(kind, { x, z, yaw: headingOf(vehicle.state.q) });
+    const landingY = airdropSurface(this.solids, x, z, Math.max(0, fromY));
+    let price;
+    try {
+      price = groundCommand(
+        structuredClone(r.groundDefense),
+        command,
+        [x, z],
+        r.dollars,
+        this.now(),
+        {
+          castor: true,
+          y: landingY,
+        },
+      ).price;
+    } catch (error) {
+      requireGame(false, error.message, 400);
+    }
+    r.dollars = money(r.dollars - price);
+    const now = this.now();
+    r.groundDefense.drops ??= [];
+    r.groundDefense.drops.push({
+      id: 'drop-' + ++r.groundDefense.dropSeq,
+      kind,
+      command,
+      price,
+      x,
+      z,
+      angle: command.angle ?? 0,
+      fromY: Math.max(landingY, fromY),
+      landingY,
+      startedAt: now,
+      at: now,
+    });
+    r.groundDefense.revision++;
+  }
+  advanceGroundDrops(r, now) {
+    const drops = r.groundDefense.drops;
+    if (!drops?.length) return;
+    for (const drop of [...drops]) {
+      if (deliveryHeightAt(drop, now) > drop.landingY) continue;
+      drops.splice(drops.indexOf(drop), 1);
+      try {
+        const { ids } = groundCommand(
+          r.groundDefense,
+          drop.command,
+          [drop.x, drop.z],
+          drop.price,
+          now,
+          { castor: true, y: drop.landingY },
+        );
+        if (isFortification(drop.kind)) this.registerFortification(r, ids[0]);
+      } catch {
+        r.dollars = money(r.dollars + drop.price); // the spot was taken meanwhile
+      }
+      r.groundDefense.revision++;
     }
   }
+
   fixedDcaFire(r, p, b) {
     const gun = r.equipment[b.station];
     requireGame(
@@ -1331,12 +1420,13 @@ export class Game {
         p.mode === 'turret' &&
         Number.isInteger(b.station) &&
         p.state.turret === b.station &&
-        (gun?.kind === 'dca' || (isFortification(gun?.kind) && gun.hp > 0)) &&
+        (isFixedDca(gun?.kind) || (isFortification(gun?.kind) && gun.hp > 0)) &&
         p.incarnation === b.incarnation,
       'Occupez ce poste pour tirer.',
     );
     // The heavy gun fires server shells only (antitank-fire), never client rounds.
-    requireGame(gun.kind !== 'antitank', 'Le canon lourd tire des obus.');
+    requireGame(!['antitank', 'dcaHeavy'].includes(gun.kind), 'Le canon lourd tire des obus.');
+    if (gun.kind === 'dcaRapid') return this.rapidDcaFire(r, p, gun, b.shots);
     requireGame(
       typeof b.shot === 'string' && b.shot.length > 0 && b.shot.length <= 120,
       'Identifiant de tir invalide.',
@@ -1346,7 +1436,8 @@ export class Game {
     if (r.fixedDcaShots.has(key)) return;
     requireGame(gun.ammo >= 1, 'Cette arme est à court de munitions.');
     const interval =
-      ((FORTIFICATIONS[gun.kind]?.interval ?? FLAK.interval) * 1000) / (r.balance.fireRate || 1);
+      ((FORTIFICATIONS[gun.kind]?.interval ?? FIXED_DCA[gun.kind].interval) * 1000) /
+      (r.balance.fireRate || 1);
     requireGame(
       this.now() >= (gun.lastShotAt ?? -Infinity) + interval,
       'Cette arme recharge son canon.',
@@ -1356,17 +1447,55 @@ export class Game {
     gun.lastShotAt = this.now();
     r.fixedDcaShots.add(key);
   }
+  rapidDcaFire(r, p, gun, shots) {
+    requireGame(
+      Array.isArray(shots) &&
+        shots.length > 0 &&
+        shots.length <= 8 &&
+        new Set(shots).size === shots.length &&
+        shots.every(
+          (shot) =>
+            typeof shot === 'string' && shot.startsWith(p.id + ':rapid:') && shot.length <= 120,
+        ),
+      'Rapport de tirs invalide.',
+      400,
+    );
+    const now = this.now();
+    // Retain launch IDs beyond round flight and reliable retries. This ledger
+    // cannot exhaust the permanent budget of the slower emplacements.
+    for (const [key, launchedAt] of r.rapidDcaShots) {
+      if (now - launchedAt < 60000) break;
+      r.rapidDcaShots.delete(key);
+    }
+    const interval = (FIXED_DCA.dcaRapid.interval * 1000) / (r.balance.fireRate || 1);
+    // Accumulate a short burst of credit so packet timing does not set the rate.
+    let credit = Math.min(8, (gun.rapidCredit ?? 8) + (now - (gun.lastShotAt ?? now)) / interval);
+    const accepted = [];
+    for (const shot of shots) {
+      const key = p.id + ':' + p.incarnation + ':' + shot;
+      if (r.rapidDcaShots.has(key)) accepted.push(shot);
+      else if (credit >= 1 && gun.ammo >= 1 && r.rapidDcaShots.size < 128000) {
+        credit--;
+        gun.ammo--;
+        r.rapidDcaShots.set(key, now);
+        accepted.push(shot);
+      }
+    }
+    gun.rapidCredit = credit;
+    gun.lastShotAt = now;
+    return { accepted, ammo: gun.ammo, at: now };
+  }
   // Issue #113: the anti-materiel howitzer fires a server-simulated shell, like
   // the tank cannon, from its real muzzle along the barrel direction.
-  antitankFire(r, p, b) {
+  fixedShellFire(r, p, b, weapon) {
     const gun = r.equipment[b.station];
     requireGame(
       p.life === 'alive' &&
         p.mode === 'turret' &&
         Number.isInteger(b.station) &&
         p.state.turret === b.station &&
-        gun?.kind === 'antitank' &&
-        gun.hp > 0 &&
+        gun?.kind === weapon &&
+        (weapon !== 'antitank' || gun.hp > 0) &&
         p.incarnation === b.incarnation,
       'Occupez ce canon lourd pour tirer.',
     );
@@ -1383,12 +1512,12 @@ export class Game {
         direction.length === 3 &&
         direction.every(Number.isFinite) &&
         Math.hypot(...direction) > 0.5 &&
-        howitzerPitchAllowed(direction),
+        (weapon === 'antitank' ? howitzerPitchAllowed(direction) : flakPitchAllowed(direction)),
       'Visée invalide.',
       400,
     );
     requireGame(gun.ammo >= 1, 'Ce canon est à court d’obus.');
-    const profile = HEAVY.antitank;
+    const profile = HEAVY[weapon];
     requireGame(
       this.now() + HEAVY_CADENCE_TOLERANCE_MS >=
         (gun.lastShotAt ?? -Infinity) + (profile.interval * 1000) / (r.balance.fireRate || 1),
@@ -1406,11 +1535,12 @@ export class Game {
     r.ordnanceShots.add(key);
     r.ordnance.push({
       shot: b.shot,
-      weapon: 'antitank',
+      weapon,
       vehicle: null,
       station: b.station,
       shooter: p.id,
-      p: howitzerMuzzle(gun, dir),
+      p: weapon === 'antitank' ? howitzerMuzzle(gun, dir) : heavyDcaMuzzle(gun, dir),
+      ...(weapon === 'dcaHeavy' ? { proximity: clampProximity(b.proximity) } : {}),
       v: dir.map((v) => v * profile.speed),
       age: 0,
       at: this.now(),
@@ -1574,13 +1704,7 @@ export class Game {
       }
       if (delivery.y > landing.y) continue;
       if (VEHICLES[delivery.item]) this.createVehicle(r, delivery.item, 'purchase', landing);
-      else
-        r.equipment.push({
-          ...landing,
-          kind: delivery.item,
-          name: SHOP[delivery.item].name,
-          slot: r.equipment.length,
-        });
+      else this.installEquipment(r, delivery.item, landing);
       delivery.done = true;
     }
     r.deliveries = r.deliveries.filter((d) => !d.done);
@@ -1783,18 +1907,20 @@ export class Game {
         'La base entière doit reposer sur une surface libre.',
       );
       if (item.kind === 'vehicle') this.createVehicle(r, b.item, 'purchase', placement);
-      else
-        r.equipment.push({
-          ...placement,
-          kind: b.item,
-          name: item.name,
-          slot: r.equipment.length,
-          ...(b.item === 'dca' ? { ammo: FIXED_DCA_AMMO } : {}),
-        });
+      else this.installEquipment(r, b.item, placement);
     } else if (item.kind === 'vehicle') this.createVehicle(r, b.item);
     else r.upgrades[b.item] = (r.upgrades[b.item] || 0) + 1;
     if (!prepaid) r.dollars = money(r.dollars - price);
     r.orders.set(request, b.item);
+  }
+  installEquipment(r, kind, placement) {
+    r.equipment.push({
+      ...placement,
+      kind,
+      name: SHOP[kind].name,
+      slot: r.equipment.length,
+      ...(isFixedDca(kind) ? { ammo: FIXED_DCA[kind].ammo } : {}),
+    });
   }
   vehicle(r, p, path, b) {
     if (path === 'vehicle-exit') {
@@ -1879,7 +2005,7 @@ export class Game {
     requireGame(
       p.mode === 'foot' &&
         Number.isInteger(b.station) &&
-        (s?.kind === 'dca' || (isFortification(s?.kind) && s.hp > 0)) &&
+        (isFixedDca(s?.kind) || (isFortification(s?.kind) && s.hp > 0)) &&
         body &&
         !body.parachute &&
         stationAccess(baseWorld(body), s),
@@ -2027,13 +2153,24 @@ export class Game {
       400,
     );
     if (selected === 'rocket') v.rocketSide = -(v.rocketSide || -1);
-    if (selected === 'proximity') v.proximity = clampProximity(b.proximity);
+    if (selected === 'proximity') {
+      const [x, y, z, w] = v.state.q;
+      requireGame(
+        flakPitchAllowed(rotateLocal([-x, -y, -z, w], direction)),
+        'Butée de la DCA atteinte.',
+      );
+      v.proximity = clampProximity(b.proximity);
+    }
     if (selected === 'missile') {
       const local = rotateLocal(
         [-v.state.q[0], -v.state.q[1], -v.state.q[2], v.state.q[3]],
         direction,
       );
-      requireGame(local[2] <= 1e-8 && local[1] <= 1e-8, 'Butée du copilote atteinte.');
+      const pitch = Math.asin(Math.max(-1, Math.min(1, local[1] / Math.hypot(...local))));
+      requireGame(
+        pitch >= HELI.minPitch - 1e-8 && pitch <= HELI.maxPitch + 1e-8,
+        'Butée du copilote atteinte.',
+      );
     }
     v.supplies.ammo[selected]--;
     v.supplies.revision++;
@@ -2263,6 +2400,25 @@ export class Game {
     }
     return true;
   }
+  rapidDcaImpacts(r, p, impacts) {
+    requireGame(Array.isArray(impacts) && impacts.length <= 16, 'Impacts invalides.', 400);
+    for (const impact of impacts) {
+      if (typeof impact?.shot !== 'string' || !this.rapidImpactAllowed(r, p, impact.shot)) continue;
+      if (Number.isInteger(impact.enemy)) this.hit(r, p, impact);
+      else if (impact.vehicle ? r.vehicles.has(impact.vehicle) : r.pilots.has(impact.target)) {
+        try {
+          this.friendly(r, p, impact);
+        } catch (error) {
+          // The target can disappear or move between realms before arrival.
+          if (error.status !== 409) throw error;
+        }
+      }
+    }
+    return {};
+  }
+  rapidImpactAllowed(r, p, shot) {
+    return r.rapidDcaShots.has(p.id + ':' + p.incarnation + ':' + shot);
+  }
   hit(r, p, b) {
     const e = this.plan(r).roster[b.enemy];
     if (
@@ -2274,8 +2430,12 @@ export class Game {
     )
       return;
     if (r.kills.has(b.enemy)) return;
-    if (!this.pistolImpact(r, p, b.shot)) return;
-    const amount = Math.max(1, Math.min(800, Number(b.amount) || 75)) * r.balance.damage;
+    const rapid = typeof b.shot === 'string' && b.shot.startsWith(p.id + ':rapid:');
+    if (rapid ? !this.rapidImpactAllowed(r, p, b.shot) : !this.pistolImpact(r, p, b.shot)) return;
+    const damage = rapid
+      ? 75 * (1 + (r.upgrades.weapons || 0))
+      : Math.max(1, Math.min(800, Number(b.amount) || 75));
+    const amount = damage * r.balance.damage;
     this.once(
       r,
       JSON.stringify(['enemy', r.wave, b.enemy, p.id, String(b.shot || 'legacy').slice(0, 120)]),
@@ -2288,6 +2448,8 @@ export class Game {
   }
   friendly(r, p, b) {
     requireGame(typeof b.shot === 'string' && b.shot.length <= 120, 'Impact invalide.');
+    const rapid = b.shot.startsWith(p.id + ':rapid:');
+    if (rapid && !this.rapidImpactAllowed(r, p, b.shot)) return;
     const vehicle = r.vehicles.get(p.vehicle_id),
       key = b.weapon || p.seat;
     const tankDamage =
@@ -2295,15 +2457,17 @@ export class Game {
         ? TANK_MG[key]?.damage
         : undefined;
     const amount =
-      (p.mode === 'foot'
-        ? 10
-        : p.mode === 'turret'
-          ? Math.max(0, Math.min(200, Math.round(Number(b.amount) || 80)))
-          : (tankDamage ?? 75)) * r.balance.damage;
+      (rapid
+        ? 75 * (1 + (r.upgrades.weapons || 0))
+        : p.mode === 'foot'
+          ? 10
+          : p.mode === 'turret'
+            ? Math.max(0, Math.min(200, Math.round(Number(b.amount) || 80)))
+            : (tankDamage ?? 75)) * r.balance.damage;
     if (b.vehicle) {
       const v = r.vehicles.get(b.vehicle);
       requireGame(world(p) === 'office' && v, 'Appareil hors de cet espace.');
-      if (!this.pistolImpact(r, p, b.shot)) return;
+      if (!rapid && !this.pistolImpact(r, p, b.shot)) return;
       this.once(r, JSON.stringify(['hull', v.id, p.id, b.shot]), () => {
         v.state.hp = Math.max(0, v.state.hp - amount);
       });
@@ -2324,7 +2488,7 @@ export class Game {
         (b.incarnation === undefined || b.incarnation === target.incarnation),
       'Cible absente de cet espace.',
     );
-    if (!this.pistolImpact(r, p, b.shot)) return;
+    if (!rapid && !this.pistolImpact(r, p, b.shot)) return;
     this.once(r, JSON.stringify(['health', target.id, target.incarnation, p.id, b.shot]), () => {
       r.damageEvents.push({
         id: ++r.damageSeq,

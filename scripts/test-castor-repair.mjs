@@ -81,4 +81,6 @@ game.snapshot(r);
 assert.equal(r.groundDefense.structures[0].hp, hp, 'no double repair for repeated snapshots');
 assert.equal(r.groundDefense.navigationRevision, 0);
 assert.equal(r.pilots.get(joined.id).id, joined.id);
-console.log('Castor auto-repair: fixed stations, moving support, fairness, debt, room snapshots OK');
+console.log(
+  'Castor auto-repair: fixed stations, moving support, fairness, debt, room snapshots OK',
+);

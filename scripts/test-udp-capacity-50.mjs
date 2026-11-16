@@ -13,7 +13,10 @@ const until = async (check, timeout = 15000) => {
     await sleep(15);
   }
 };
+// UDP_MUX_PORT=44000 runs the same test with every connection on one port.
+const muxPort = Number(process.env.UDP_MUX_PORT || 0);
 const app = createGameServer({
+  muxPort,
   portBegin: 44000,
   portEnd: 44399,
   bindAddress: '127.0.0.1',
@@ -132,6 +135,7 @@ try {
     JSON.stringify({
       peers: 50,
       transport: 'native WebRTC UDP on 127.0.0.1',
+      serverPorts: muxPort ? 'mux ' + muxPort : 'range 44000-44399',
       connectedMs: +connectedMs.toFixed(1),
       relaysAccepted: acceptedRelays,
       receivedMotionPackets: receivedPackets,

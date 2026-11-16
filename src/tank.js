@@ -1,3 +1,4 @@
+import { colliderContainsXZ } from './oriented-collider.js';
 import { sweptBoxProximity } from './mobile-flak.js';
 import { ACTOR_UNIT, MAP } from './scale.js';
 import { VEHICLE_ANCHORS } from './vehicle-anchors.js';
@@ -9,10 +10,17 @@ export function stepTank(T, state, controls, colliders, dt, profile) {
     q = new T.Quaternion().fromArray(state.q);
   const throttle =
     state.fuelAvailable === false ? 0 : Math.max(-1, Math.min(1, controls.forward || 0));
+  const priorForward = new T.Vector3(0, 0, -1).applyQuaternion(q);
+  const signedSpeed = v.dot(priorForward);
+  const steeringSign =
+    profile.reverseSteering &&
+    (Math.abs(signedSpeed) > MAP.metres(0.1) ? signedSpeed < 0 : throttle < 0)
+      ? -1
+      : 1;
   q.multiply(
     new T.Quaternion().setFromAxisAngle(
       new T.Vector3(0, 1, 0),
-      (controls.turn || 0) * dt * profile.turn,
+      (controls.turn || 0) * dt * profile.turn * steeringSign,
     ),
   );
   const forward = new T.Vector3(0, 0, -1).applyQuaternion(q),
@@ -28,12 +36,7 @@ export function stepTank(T, state, controls, colliders, dt, profile) {
   for (const box of colliders) {
     if (box.max.y <= bottom + MAP.metres(0.2)) continue;
     if (p.y + MAP.metres(2) < box.min.y) continue;
-    if (
-      p.x > box.min.x - radius &&
-      p.x < box.max.x + radius &&
-      p.z > box.min.z - radius &&
-      p.z < box.max.z + radius
-    ) {
+    if (colliderContainsXZ(box, p.x, p.z, radius)) {
       p.x = before.x;
       p.z = before.z;
       v.x = v.z = 0;
@@ -69,13 +72,7 @@ export function stepTank(T, state, controls, colliders, dt, profile) {
   }
   let support = 0;
   for (const box of colliders)
-    if (
-      box.max.y <= bottom + MAP.metres(0.25) &&
-      p.x >= box.min.x &&
-      p.x <= box.max.x &&
-      p.z >= box.min.z &&
-      p.z <= box.max.z
-    )
+    if (box.max.y <= bottom + MAP.metres(0.25) && colliderContainsXZ(box, p.x, p.z))
       support = Math.max(support, box.max.y);
   if (p.y - profile.gear <= support + MAP.metres(0.05) && v.y <= 0) {
     if (v.y < -MAP.metres(20)) state.hp = 0;

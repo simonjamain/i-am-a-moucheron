@@ -27,6 +27,7 @@ const files = {
   '/': 'src/index.html',
   '/ui-review.html': 'docs/ui-review.html',
   '/client.js': 'src/client.js',
+  '/boot.js': 'src/boot.js',
   '/three.js': 'vendor/three.module.min.js',
   ...Object.fromEntries(
     [
@@ -37,6 +38,7 @@ const files = {
       'ground-placement',
       'placement-aim',
       'brick-wall',
+      'brick-rules',
       'meshy-brick-data',
       'meshy-texture',
       'meshy-biplane-data',
@@ -53,7 +55,12 @@ const files = {
       'character-toby-data',
       'character-sunny-data',
       'character-aviator-data',
+      'character-signaler-data',
+      'character-operator-data',
       'meshy-castor-data',
+      'meshy-flying-castor-data',
+      'flying-castor-model',
+      'airdrop',
       'meshy-stuka-data',
       'meshy-spitfire-data',
       'meshy-tank-data',
@@ -95,6 +102,14 @@ const files = {
       'castor-wheels',
       'castor-top-view',
       'service-zones',
+      'station-model',
+      'bed-model',
+      'meshy-bed-data',
+      'oriented-collider',
+      'meshy-refuel-data',
+      'meshy-radar-data',
+      'reload-hud',
+      'office-fog',
       'engine-smoke',
       'toon',
       'shop-catalog',
@@ -110,6 +125,11 @@ const files = {
       'aircraft-fire',
       'logistics',
       'ground-ammo',
+      'fixed-dca',
+      'fixed-dca-model',
+      'fixed-dca-dca-data',
+      'fixed-dca-dcaRapid-data',
+      'fixed-dca-dcaHeavy-data',
       'vehicle-livery',
       'seat-icons',
       'input',
@@ -206,7 +226,7 @@ assets['/'] = assets['/'].replaceAll(
   '__GAME_VERSION__',
   (await readFile('VERSION', 'utf8')).trim(),
 );
-assets['/'] = assets['/'].replace('src="/client.js"', 'src="/assets/' + version + '/client.js"');
+assets['/'] = assets['/'].replace('src="/boot.js"', 'src="/assets/' + version + '/boot.js"');
 const inline = (source) => source.replace(/^import .*;$/gm, '').replace(/^export /gm, '');
 const arena = inline(assets['/purgatory-physics.js']);
 const base = inline(assets['/base.js']);
@@ -245,6 +265,7 @@ await writeFile(
     layout,
     inline(assets['/route-obstacles.js']),
     inline(assets['/route-navigation.js']),
+    inline(assets['/brick-rules.js']),
     inline(assets['/ground-defense.js']),
     routes,
     inline(assets['/air-current.js']),
@@ -252,6 +273,9 @@ await writeFile(
     waves,
     fleet,
     ballistics,
+    inline(assets['/oriented-collider.js']),
+    inline(assets['/ground-ammo.js']),
+    inline(assets['/fixed-dca.js']),
     equipment,
     inline(assets['/armament.js']),
     inline(assets['/logistics.js']),

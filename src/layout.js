@@ -8,9 +8,11 @@ export const OFFICE_LAYOUT = {
     parkedY: 0.90005 + 1.05 * ACTOR_UNIT,
     departureY: 0.90005 + 3 * ACTOR_UNIT,
     yaw: Math.PI,
+    refuelOffsetX: -0.006,
+    refuelOffsetZ: -5 * ACTOR_UNIT - 0.04,
     speed: MAP.metres(25),
   },
-  bounds: { x: 4.15, z: 3.55, ceiling: 2.95 },
+  bounds: { x: 4.15, z: 3.55, ceiling: 3.95 },
   bin: { x: 2.5, y: 0.3, z: -2.7 },
   desks: [
     { x: -1.8, z: 1.6, w: 2.2, d: 1.2, y: 0.9 },

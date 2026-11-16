@@ -2,7 +2,7 @@
 
 ## Déployer les sources courantes
 
-La livraison habituelle est un **ZIP des sources**, sans `node_modules`, données
+Le dépôt GitHub est la référence ; un **ZIP des sources** n'est produit que si la livraison demandée le nécessite (voir `AGENTS.md`), sans `node_modules`, données
 de partie, image Docker ni métadonnées Git. Extraire puis utiliser Node 22.13+ :
 
 ```sh
@@ -45,9 +45,27 @@ restent immuables ; Node ne les charge pas.
 npm run format:check
 npm test
 npm run check:docs
+npm run check:version
 npm run build
 node scripts/validate-artifact.mjs
 ```
+
+`check:version` compare `VERSION` indexé à celui de `HEAD` : indexer l'augmentation
+(`npm run version:next`) avant de l'exécuter. Le hook `.githooks/pre-commit`
+(activé par `npm run prepare:version`) lance ce contrôle puis `scripts/build.sh`.
+La CI `Docker build validation` exécute aussi `npm test`, `check:docs`, le build
+et `validate-artifact.mjs` ; `docker build` local reste exigé avant livraison
+([Docker](docker.md)).
+
+Audit des contrôles (suite complète mesurée : 144 scripts, environ 40 s cumulées,
+tous < 3 s) : lancer `npm test` en entier plutôt qu'une sélection, le retour est
+déjà rapide. `npm run format:check` est la seule commande de format, en local et
+en CI (job `Full game regression and formatting`) ; les données générées
+(`src/*data.js` importées, `docs/ui-review.html`) sont dans `.prettierignore`.
+Le job `Docker build` démarre l'image construite et vérifie `/healthz`
+(`ok`, `storage=ram`, `transport=webrtc-udp`) et le 410 de `/api/join` : il prouve
+que l'image démarre, pas les pairs UDP dans le conteneur, WebGL ni le WAN.
+`check:version` n'est pas exécuté en CI (il compare l'index à `HEAD`).
 
 Le build produit `dist/` avec serveur, modules partagés, assets et manifestes npm.
 Dans ce répertoire : `npm ci --omit=dev && npm start`. Le validateur vérifie
@@ -200,3 +218,11 @@ La CI des PR exécute ce benchmark et le test de domaine de 50 participants
 en plus de la construction Docker. Pour une validation de capacité, instrumenter
 une partie UDP avec 50 clients indépendants et relever FPS, délai des commandes,
 débit, CPU et mémoire.
+
+### Position d’Alpha dans le comparatif historique
+
+Depuis la version 291, `benchmark-snapshot-50.mjs` vérifie explicitement le
+changement de coordonnées de la station Alpha depuis son commit de référence.
+Les autres champs de la station doivent rester identiques ; le reste du snapshot
+conserve sa comparaison complète. Ce contrôle ne retire pas la station du paquet
+et ne change ni les mesures CPU ni le nombre de joueurs du scénario.

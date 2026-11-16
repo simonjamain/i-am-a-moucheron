@@ -20,7 +20,7 @@ export const walkerStride = (type, scale = 1) =>
 export const SETTLE_RATE = 6; // 1/s towards the nearest planted pose when stopped
 
 export class WalkerBatch {
-  constructor(T, scene, { enabled = true, shadows = true } = {}) {
+  constructor(T, scene, { enabled = true, shadows = true, vats = {} } = {}) {
     this.T = T;
     this.scene = scene;
     this.enabled = enabled;
@@ -30,6 +30,7 @@ export class WalkerBatch {
       this.batches[type] = new CreatureBatch(T, scene, walker.creature, {
         name: walker.creature.name + 's',
         shadows,
+        vat: vats[type],
       });
     this.forward = new T.Vector3(0, 0, -1);
     this.heading = new T.Vector3();

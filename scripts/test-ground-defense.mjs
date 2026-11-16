@@ -8,9 +8,9 @@ import {
   STICKY_WIDTH,
 } from '../src/ground-defense.js';
 const wall = splitBarricade([0.2, 0.5], [0.8, 0.5], 'wall');
-assert.equal(wall.length, 4);
+assert.equal(wall.length, 13);
 assert.ok(
-  wall.every((part) => Math.hypot(part.b[0] - part.a[0], part.b[1] - part.a[1]) <= 0.2 + 1e-12),
+  wall.every((part) => Math.hypot(part.b[0] - part.a[0], part.b[1] - part.a[1]) <= 0.048 + 1e-12),
 );
 assert.deepEqual(wall[0].a, [0.2, 0.5]);
 assert.deepEqual(wall.at(-1).b, [0.8, 0.5]);
@@ -29,7 +29,7 @@ const closed = buildGroundFlow({
 });
 assert.equal(closed.route([0.5, 0.05]), null);
 assert.ok(closed.route([0.9, 0.9]));
-assert.ok(buildGroundFlow({ ...config, barricades: wall.slice(1) }).route([0.5, 0.05]));
+assert.ok(buildGroundFlow({ ...config, barricades: wall.slice(3) }).route([0.5, 0.05]));
 const goalBlocked = buildGroundFlow({
   ...config,
   barricades: splitBarricade([0.9, 0.925], [1, 0.925], 'sealed'),

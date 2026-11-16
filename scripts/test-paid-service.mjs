@@ -17,7 +17,10 @@ const vehicle = (id, p = [0, 0.03, 0], type = 'fighter') => ({
 });
 
 assert.deepEqual(fairServiceShares([1, 1, 5], 1.5), [0.5, 0.5, 0.5]);
-assert.deepEqual(fairServiceShares([0.1, 1, 5], 1.5).map((n) => +n.toFixed(6)), [0.1, 0.7, 0.7]);
+assert.deepEqual(
+  fairServiceShares([0.1, 1, 5], 1.5).map((n) => +n.toFixed(6)),
+  [0.1, 0.7, 0.7],
+);
 const a = vehicle('a');
 const b = vehicle('b');
 assert.ok(withinService(a, [station]), 'moving airborne plane must receive service');

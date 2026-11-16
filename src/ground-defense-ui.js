@@ -1,7 +1,9 @@
+import { WALL_SEGMENT, HALF_BRICK, wallLength, wallVisualRuns } from './brick-rules.js';
 import { createGroundModel } from './ground-model.js';
 import { ModelPreview } from './model-preview.js';
 import { AirTrails } from './air-trails.js';
-import { groundPlacement } from './ground-placement.js';
+import { groundPlacement, airdropPlacement } from './ground-placement.js';
+import { deliveryHeightAt } from './delivery.js';
 import { lengthPrice } from './ground-defense-state.js';
 import { BRICK_PITCH } from './brick-wall.js';
 import { sentryAimAngles, sentryAngleDelta, SENTRY_MUZZLE_HEIGHT } from './sentry-model.js';
@@ -27,7 +29,12 @@ export class GroundDefenseUI {
     builder = () => null,
     fortificationModel,
     enabled,
+    serverNow = () => Date.now(),
   }) {
+    this.serverNow = serverNow;
+    this.drops = new Map(); // falling Castor volant constructions, by drop id
+    this.dropModels = new T.Group();
+    scene.add(this.dropModels);
     this.foot = foot;
     this.fortificationModel = fortificationModel;
     this.builder = builder;
@@ -103,7 +110,20 @@ export class GroundDefenseUI {
       0.017,
     );
     this.fanArrow.visible = false;
-    scene.add(this.preview, this.fanArrow);
+    // Castor volant: vertical guide from the helicopter to the landing point.
+    this.dropLine = new T.Line(
+      new T.BufferGeometry().setFromPoints([new T.Vector3(), new T.Vector3(0, -1, 0)]),
+      new T.LineDashedMaterial({
+        color: 0xd5ef73,
+        dashSize: 0.01,
+        gapSize: 0.008,
+        transparent: true,
+        opacity: 0.8,
+      }),
+    );
+    this.dropLine.computeLineDistances();
+    this.dropLine.visible = false;
+    scene.add(this.preview, this.fanArrow, this.dropLine);
   }
   openWheel(source = 'mouse') {
     if (this.radial || !this.available() || !this.enabled() || this.busy) return false;
@@ -164,8 +184,12 @@ export class GroundDefenseUI {
   }
   // Enter building mode with one tool (Castor defenses: from its driving seat).
   selectTool(kind) {
+    if (kind === 'barricade' && this.builder()?.air) {
+      this.notify('Le Castor volant ne largue pas de mur LEGO.', 3);
+      return false;
+    }
     if (['sentry', 'bunker', 'antitank'].includes(kind) && !this.builder()) {
-      this.notify('Construisez cette défense au volant du Castor.', 3);
+      this.notify('Construisez cette défense depuis un Castor.', 3);
       return false;
     }
     this.anchor = null;
@@ -184,11 +208,16 @@ export class GroundDefenseUI {
     this.anchor = null;
     this.preview.visible = false;
     this.fanArrow.visible = false;
+    this.dropLine.visible = false;
     this.status.style.display = 'none';
   }
   press() {
     if (!this.enabled() || this.busy) return;
     const castor = this.builder();
+    if (castor?.air) {
+      this.confirm();
+      return;
+    }
     if (castor && ['barricade', 'sticky'].includes(this.mode)) {
       if (this.trailAnchor) this.finishTrail(castor);
       else this.trailAnchor = castor.rear;
@@ -223,15 +252,22 @@ export class GroundDefenseUI {
     const from = this.trailAnchor;
     this.trailAnchor = null;
     this.previewModel.clear();
-    const distance = Math.hypot(castor.rear[0] - from[0], castor.rear[1] - from[1]);
-    if (distance < TRAIL_MIN || distance > TRAIL_MAX || this.busy || !this.enabled()) return;
+    const raw = Math.hypot(castor.rear[0] - from[0], castor.rear[1] - from[1]);
+    const distance = this.mode === 'barricade' ? wallLength(raw) : raw;
+    if (
+      distance < (this.mode === 'barricade' ? HALF_BRICK : TRAIL_MIN) ||
+      distance > TRAIL_MAX ||
+      this.busy ||
+      !this.enabled()
+    )
+      return;
     this.busy = true;
     try {
       await this.command({
         action: 'build',
         kind: this.mode,
         a: from,
-        b: [...castor.rear],
+        b: from.map((v, k) => v + ((castor.rear[k] - v) * distance) / raw),
         request: this.trailRequest(),
       });
     } finally {
@@ -257,15 +293,16 @@ export class GroundDefenseUI {
       return;
     const from = this.trailAnchor;
     const distance = Math.hypot(castor.rear[0] - from[0], castor.rear[1] - from[1]);
-    // Commit 20 cm sections (billed pro rata); the bricks in between are shown
+    // Commit 48 mm LEGO / 20 cm tape sections (billed pro rata); the bricks in between are shown
     // one by one by the trail preview.
-    if (distance < 0.2) return;
+    const step = this.mode === 'barricade' ? WALL_SEGMENT : 0.2;
+    if (distance + 1e-9 < step) return;
     if (distance > TRAIL_MAX) {
       this.trailAnchor = null;
       this.notify('Trajet de construction interrompu : trop éloigné.', 3);
       return;
     }
-    const to = from.map((n, i) => n + ((castor.rear[i] - n) * Math.min(0.2, distance)) / distance);
+    const to = from.map((n, i) => n + ((castor.rear[i] - n) * Math.min(step, distance)) / distance);
     this.busy = true;
     try {
       const request = this.trailRequest();
@@ -297,8 +334,10 @@ export class GroundDefenseUI {
       this.rebuild(snap?.groundDefense?.structures || []);
     }
     this.updateSentryAim(snap);
+    this.renderDrops(snap);
     this.preview.visible = false;
     this.fanArrow.visible = false;
+    this.dropLine.visible = false;
     this.status.style.display = this.active && this.enabled() ? 'block' : 'none';
     if (!this.active || !this.enabled()) {
       this.anchor = null;
@@ -314,9 +353,42 @@ export class GroundDefenseUI {
         (this.mode === 'sticky' ? 'ruban' : 'mur LEGO') +
         ' en continu · ' +
         laid.toFixed(2).replace('.', ',') +
-        ' $ en cours · 1 $ / 20 cm au prorata · Cliquez pour arrêter';
+        ' $ en cours · ' +
+        (this.mode === 'barricade' ? '0,25 $ / 48 mm' : '1 $ / 20 cm') +
+        ' au prorata · Cliquez pour arrêter';
       this.airTrails.update(snap);
       this.advanceTrail();
+      return;
+    }
+    const builder = this.builder();
+    if (builder?.air) {
+      this.updateAirdrop(builder, snap);
+      return;
+    }
+    if (builder?.grounded && builder.y < 0.025 && this.mode === 'barricade' && !this.trailAnchor) {
+      const a = builder.rear;
+      const heading = builder.direction || [0, 1];
+      const b = a.map((v, k) => v + heading[k] * WALL_SEGMENT);
+      this.candidate = { center: a, startOnly: true };
+      this.status.disabled = this.busy;
+      this.status.textContent = 'Castor · Clic pour commencer · 0,25 $ / 48 mm · Échap : quitter';
+      this.previewModel.show(
+        'castor-wall-start',
+        () =>
+          createGroundModel(this.T, {
+            kind: 'barricade',
+            hp: 100,
+            a: [-WALL_SEGMENT / 2, 0],
+            b: [WALL_SEGMENT / 2, 0],
+          }),
+        {
+          x: (a[0] + b[0]) / 2,
+          y: 0,
+          z: (a[1] + b[1]) / 2,
+          angle: -Math.atan2(heading[1], heading[0]),
+        },
+        true,
+      );
       return;
     }
     const c = (this.candidate = groundPlacement({
@@ -355,19 +427,7 @@ export class GroundDefenseUI {
     const previewKey = kind + ':' + length.toFixed(4);
     this.previewModel.show(
       previewKey,
-      () => {
-        if (kind === 'bunker' || kind === 'antitank')
-          return this.fortificationModel?.({ kind, x: 0, y: 0.00005, z: 0, angle: 0 });
-        return createGroundModel(this.T, {
-          kind,
-          position: [0, 0],
-          angle: 0,
-          hp: 100,
-          radius: target?.radius || 0.15,
-          a: [-length / 2, 0],
-          b: [length / 2, 0],
-        });
-      },
+      () => this.modelOf(kind, length, target?.radius),
       { x: position[0], y: 0, z: position[1], angle },
       !c.error,
     );
@@ -382,6 +442,94 @@ export class GroundDefenseUI {
     }
   }
 
+  // A construction centred on the origin, for previews and falling drops.
+  modelOf(kind, length = 0, radius = 0.15) {
+    if (kind === 'bunker' || kind === 'antitank')
+      return this.fortificationModel?.({ kind, x: 0, y: 0.00005, z: 0, angle: 0 });
+    return createGroundModel(this.T, {
+      kind,
+      position: [0, 0],
+      angle: 0,
+      hp: 100,
+      radius: radius || 0.15,
+      a: [-length / 2, 0],
+      b: [length / 2, 0],
+    });
+  }
+  // Pose (centre, length, angle) of a build command, as previews draw it.
+  static shapeOf(command) {
+    const { a, b } = command;
+    if (!b) return { position: a, length: 0, angle: command.angle || 0 };
+    return {
+      position: [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2],
+      length: Math.hypot(b[0] - a[0], b[1] - a[1]),
+      angle: -Math.atan2(b[1] - a[1], b[0] - a[0]),
+    };
+  }
+  // Castor volant: see-through preview where the construction will land,
+  // straight below the helicopter and turned like it, with a vertical guide.
+  updateAirdrop(builder, snap) {
+    const c = (this.candidate = airdropPlacement({
+      builder,
+      mode: this.mode,
+      defense: snap.groundDefense,
+      dollars: snap.dollars,
+    }));
+    const verb =
+      this.mode === 'repair' ? 'Réparer' : this.mode === 'remove' ? 'Enlever' : 'Larguer';
+    this.status.textContent =
+      c.error ||
+      (this.busy ? 'Envoi…' : `Clic / Entrée · ${verb} · ${c.price} $ · Échap : quitter`);
+    this.status.disabled = !!c.error || this.busy;
+    if (!Number.isFinite(c.landingY)) return;
+    const line = this.dropLine;
+    line.position.set(builder.x, builder.y, builder.z);
+    line.scale.set(1, Math.max(1e-4, builder.y - c.landingY), 1);
+    line.visible = builder.y > c.landingY;
+    const cmd = c.command;
+    if (cmd?.action !== 'build') return;
+    const shape = GroundDefenseUI.shapeOf(cmd);
+    this.previewModel.show(
+      'air:' + cmd.kind + ':' + shape.length.toFixed(4),
+      () => this.modelOf(cmd.kind, shape.length),
+      { x: shape.position[0], y: c.landingY, z: shape.position[1], angle: shape.angle },
+      !c.error,
+    );
+    if (cmd.kind === 'fan') {
+      this.fanArrow.visible = true;
+      this.fanArrow.position.set(shape.position[0], c.landingY + 0.02, shape.position[1]);
+      this.fanArrow.setDirection(
+        new this.T.Vector3(Math.sin(shape.angle), 0, Math.cos(shape.angle)),
+      );
+    }
+  }
+  // Constructions dropped by a Castor volant, falling until the server builds them.
+  renderDrops(snap) {
+    const active = new Set();
+    const now = this.serverNow();
+    for (const drop of snap?.groundDefense?.drops || []) {
+      active.add(drop.id);
+      let model = this.drops.get(drop.id);
+      if (!model) {
+        const shape = GroundDefenseUI.shapeOf(drop.command);
+        model = this.modelOf(drop.kind, shape.length);
+        if (!model) continue;
+        model.userData.shape = shape;
+        this.dropModels.add(model);
+        this.drops.set(drop.id, model);
+      }
+      const { position, angle } = model.userData.shape;
+      model.position.set(position[0], deliveryHeightAt(drop, now), position[1]);
+      model.rotation.y = angle;
+    }
+    for (const [key, model] of this.drops)
+      if (!active.has(key)) {
+        this.dropModels.remove(model);
+        GroundDefenseUI.dispose(model);
+        this.drops.delete(key);
+      }
+  }
+
   // Live section between the last committed point and the truck's rear. The
   // brick count only grows by whole bricks, so bricks appear one at a time and
   // the instanced preview is rebuilt only when a brick is added.
@@ -389,12 +537,13 @@ export class GroundDefenseUI {
     const a = this.trailAnchor,
       b = castor.rear;
     const length = Math.min(TRAIL_MAX, Math.hypot(b[0] - a[0], b[1] - a[1]));
-    const bricks = trailBricks(length);
+    const bricks =
+      this.mode === 'barricade' ? Math.floor((length + 1e-9) / HALF_BRICK) : trailBricks(length);
     if (!bricks) {
       this.preview.visible = false;
       return 0;
     }
-    const shown = bricks * BRICK_PITCH;
+    const shown = bricks * (this.mode === 'barricade' ? HALF_BRICK : BRICK_PITCH);
     const angle = Math.atan2(b[1] - a[1], b[0] - a[0]);
     const end = [a[0] + Math.cos(angle) * shown, a[1] + Math.sin(angle) * shown];
     this.previewModel.show(
@@ -430,7 +579,7 @@ export class GroundDefenseUI {
         structure.aimTarget.every(Number.isFinite)
       ) {
         const { yaw, pitch } = sentryAimAngles(
-          [structure.position[0], SENTRY_MUZZLE_HEIGHT, structure.position[1]],
+          [structure.position[0], (structure.y || 0) + SENTRY_MUZZLE_HEIGHT, structure.position[1]],
           structure.aimTarget,
         );
         model.targetYaw = yaw - (structure.angle || 0);
@@ -452,7 +601,7 @@ export class GroundDefenseUI {
     if (target) {
       // Snap toward the server's target so the tracer leaves along the barrel.
       const origin = model.container.position;
-      const angles = sentryAimAngles([origin.x, SENTRY_MUZZLE_HEIGHT, origin.z], target);
+      const angles = sentryAimAngles([origin.x, origin.y + SENTRY_MUZZLE_HEIGHT, origin.z], target);
       if (angles) {
         model.targetYaw = angles.yaw - (model.container.rotation.y || 0);
         model.targetPitch = angles.pitch;
@@ -468,6 +617,15 @@ export class GroundDefenseUI {
         );
     return { position, direction };
   }
+  static dispose(model) {
+    model.traverse((part) => {
+      // Meshy T-01 / howitzer geometry and atlases are shared by every copy.
+      if (part.userData?.meshyShared) return;
+      if (part.isInstancedMesh) part.dispose();
+      part.geometry?.dispose();
+      if (!part.userData?.sharedMaterial) part.material?.dispose();
+    });
+  }
   rebuild(structures) {
     // Keep articulated sentries alive across shot/ammo revisions. Rebuilding
     // dozens of meshes and resetting their pivots every 500 ms is expensive.
@@ -476,7 +634,11 @@ export class GroundDefenseUI {
       if (structure.kind !== 'sentry') continue;
       const existing = this.sentries.get(String(structure.id));
       if (!existing) continue;
-      existing.container.position.set(structure.position[0], 0, structure.position[1]);
+      existing.container.position.set(
+        structure.position[0],
+        structure.y || 0,
+        structure.position[1],
+      );
       existing.container.rotation.y = structure.angle || 0;
       retained.set(String(structure.id), existing);
     }
@@ -485,20 +647,18 @@ export class GroundDefenseUI {
     for (const child of [...this.models.children]) {
       if (keep.has(child)) continue;
       this.models.remove(child);
-      child.traverse((part) => {
-        // Meshy T-01 geometry/atlases are cached across all turrets.
-        if (part.userData?.meshyShared) return;
-        if (part.isInstancedMesh) part.dispose();
-        part.geometry?.dispose();
-        part.material?.dispose();
-      });
+      GroundDefenseUI.dispose(child);
     }
     const T = this.T;
-    for (const structure of structures) {
+    for (const structure of [
+      ...structures.filter((s) => s.kind !== 'barricade'),
+      ...wallVisualRuns(structures),
+    ]) {
       // Occupied fortifications are already rendered with their articulated gun and operator.
       if (structure.kind === 'bunker' || structure.kind === 'antitank') continue;
       if (structure.kind === 'sentry' && this.sentries.has(String(structure.id))) continue;
       const group = createGroundModel(T, structure);
+      group.position.y += structure.y || 0; // dropped on furniture by a Castor volant
       if (group.userData.sentry)
         this.sentries.set(String(structure.id), {
           ...group.userData.sentry,

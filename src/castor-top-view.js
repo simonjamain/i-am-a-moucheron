@@ -4,6 +4,14 @@
 // orbiting the camera: placement previews and the light machine gun both aim
 // at that floor point.
 export const TOP_VIEW_HEIGHT = 0.4; // metres above the truck: covers the 24 cm building reach
+export const TOP_VIEW_MIN_HEIGHT = 0.15;
+export const TOP_VIEW_MAX_HEIGHT = 0.8;
+export function zoomTopView(height, delta) {
+  return Math.max(
+    TOP_VIEW_MIN_HEIGHT,
+    Math.min(TOP_VIEW_MAX_HEIGHT, height * Math.exp(Math.sign(delta) * 0.12)),
+  );
+}
 export const TOP_VIEW_CURSOR_LIMIT = 0.95; // normalised screen coordinates
 const DEFAULT_CURSOR = Object.freeze({ x: 0, y: 0.3 });
 
@@ -23,9 +31,20 @@ export function moveTopCursor(cursor, dx, dy, { width, height, sensitivity = 1 }
 
 // Eye straight above the truck; screen "up" is fixed north, east is on the right.
 export const NORTH = Object.freeze([0, 0, -1]);
-export function topViewPose(T, position) {
+export function topViewPose(T, position, height = TOP_VIEW_HEIGHT) {
   return {
-    eye: position.clone().add(new T.Vector3(0, TOP_VIEW_HEIGHT, 0)),
+    eye: position
+      .clone()
+      .add(
+        new T.Vector3(
+          0,
+          Math.max(
+            TOP_VIEW_MIN_HEIGHT,
+            Math.min(TOP_VIEW_MAX_HEIGHT, Number.isFinite(height) ? height : TOP_VIEW_HEIGHT),
+          ),
+          0,
+        ),
+      ),
     up: new T.Vector3(...NORTH),
     target: position.clone(),
   };

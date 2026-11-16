@@ -112,20 +112,23 @@ Premier asset passé par la règle ci-dessus ([issue #99](https://github.com/sim
 
 ## Personnage joueur (Meshy + Mixamo)
 
-Six modèles fournis et validés par l'utilisateur ([issue #111](https://github.com/simonjamain/i-am-a-moucheron/issues/111)
-pour le premier, cinq ajoutés en version 280), déjà générés, riggés et animés par
+Huit modèles fournis et validés par l'utilisateur ([issue #111](https://github.com/simonjamain/i-am-a-moucheron/issues/111)
+pour le premier, cinq ajoutés en version 280, l'opératrice en version 282, l'opérateur en version 283), déjà générés, riggés et animés par
 l'utilisateur dans Meshy/Mixamo : aucune génération ni crédit Meshy de notre côté.
 Le joueur choisit le sien à l'accueil (`src/character-appearances.js`, ordre du
-sélecteur ; le premier sert de défaut et de repli pour une valeur inconnue).
+sélecteur ; le premier sert de défaut et de repli pour une valeur inconnue). Les noms
+ne sont pas affichés : ils ne sont lus que par les lecteurs d'écran.
 
-| Id          | Nom affiché        | Original (`assets/originals/character/`, hors dépôt) | SHA-256         | Os  | Triangles |
-| ----------- | ------------------ | ---------------------------------------------------- | --------------- | --- | --------- |
-| `cowboy`    | Petit cow-boy      | `cowboy-boy.glb`                                     | `29cbb213…ed0d` | 44  | 1 556     |
-| `frontier`  | Pionnière bouclée  | `curly-frontier-girl.glb`                            | `abc715df…b27a` | 44  | 1 554     |
-| `sky-pilot` | Petit pilote       | `little-sky-pilot.glb`                               | `740ecc0a…ed8f` | 44  | 1 536     |
-| `toby`      | Toby le bricoleur  | `toolbox-toby.glb`                                   | `db97a0ab…1a`   | 44  | 1 562     |
-| `sunny`     | Sunny de l'atelier | `sunny-workshop-girl.glb`                            | `da6fd6ce…8d49` | 60  | 1 562     |
-| `aviator`   | Petite aviatrice   | `little-aviator.glb`                                 | `222ea403…f5e`  | 44  | 1 690     |
+| Id          | Nom          | Original (`assets/originals/character/`, hors dépôt) | SHA-256         | Os  | Triangles |
+| ----------- | ------------ | ---------------------------------------------------- | --------------- | --- | --------- |
+| `cowboy`    | Aventurier   | `cowboy-boy.glb`                                     | `29cbb213…ed0d` | 44  | 1 556     |
+| `frontier`  | Aventurière  | `curly-frontier-girl.glb`                            | `abc715df…b27a` | 44  | 1 554     |
+| `sky-pilot` | Aviateur     | `little-sky-pilot.glb`                               | `740ecc0a…ed8f` | 44  | 1 536     |
+| `toby`      | Mécanicien   | `toolbox-toby.glb`                                   | `db97a0ab…1a`   | 44  | 1 562     |
+| `sunny`     | Mécanicienne | `sunny-workshop-girl.glb`                            | `da6fd6ce…8d49` | 60  | 1 562     |
+| `aviator`   | Aviatrice    | `little-aviator.glb`                                 | `222ea403…f5e`  | 44  | 1 690     |
+| `signaler`  | Opérateur    | `skyline-signaler.glb`                               | `4e79dbe4…bead` | 46  | 1 662     |
+| `operator`  | Opératrice   | `headset-engineer.glb`                               | `99385d02…602b` | 42  | 1 670     |
 
 - Import : `PYTHONPATH=scripts python3 scripts/import-character.py <id> <GLB>`
   vérifie l'empreinte (table `CHARACTERS` du script) et écrit
@@ -134,7 +137,7 @@ sélecteur ; le premier sert de défaut et de repli pour une valeur inconnue).
   int16, translation des hanches seule, texture de base 1024 px en JPEG (les cartes
   métal/rugosité et normales des originaux ne sont pas reprises). Clips gardés :
   `Idle_12`, `Walking`, `Running` pour le défaut ; `Walking`, `Running` pour les
-  cinq autres. Leur clip sans nom de 3 s est un saut accroupi, pas un repos, et
+  sept autres. Leur clip sans nom de 3 s est un saut accroupi, pas un repos, et
   `RunFast` n'est pas utilisé : ils ne sont pas importés.
 - Chargement : seul le défaut est inclus dans le graphe initial ; les autres sont
   des `import()` dynamiques (versionnés par `scripts/assemble.mjs`), chargés quand
@@ -156,7 +159,9 @@ sélecteur ; le premier sert de défaut et de repli pour une valeur inconnue).
   l'accueil (`src/appearance-picker.js`) dessine, après chaque image, directement
   dans le canevas du jeu (viewport et ciseaux sur son rectangle) ; la page laisse ce
   rectangle transparent (couleur du panneau en `box-shadow`, trou de masque dans
-  l'ombre latérale). Un second contexte WebGL ou une relecture de pixels
+  l'ombre latérale) et un quadrilatère y recompose, sur l'image du jeu, l'ombre
+  latérale puis le panneau à 92 % (`SIDE_SHADE`, `PANEL_TINT`) : le sélecteur n'a
+  ni cadre ni fond propre (écart mesuré ≤ 1/255 avec le panneau autour). Un second contexte WebGL ou une relecture de pixels
   (`drawImage`, `readPixels`) laissaient Chrome 3 à 4 fois plus lent pendant toute
   la partie (mesure SwiftShader : 1,4–3 contre 6 images/s), d'où ce choix.
   `scripts/test-character.mjs` et `scripts/test-appearances.mjs` couvrent ces points.
@@ -377,3 +382,63 @@ rééchantillonnées en WebP 1K pour l'exécution. La géométrie reste intacte
 (13 626 triangles au total) : les pivots indépendants et les UV sont prioritaires
 sur un taux de réduction arbitraire. Toute simplification supplémentaire doit
 être mesurée et validée sur une copie avant substitution.
+
+## Castor volant (hélicoptère Meshy) — version 292
+
+GLB fourni et approuvé par l'utilisateur, importé sans simplification (2 767
+triangles, rotors séparés par îlots) : provenance, import et vérifications dans
+[la flotte Meshy](meshy-fleet.md#castor-volant--hélicoptère-meshy-version-292).
+
+## Lit de réapparition Drawer Bed — version 291
+
+GLB fourni et approuvé par l’utilisateur pour intégration, sans nouvelle génération
+ni crédit Meshy. Source locale hors Git : `assets/originals/bed/drawer-bed.glb`,
+nom original `Meshy_AI_Drawer_Bed_1113100645_texture.glb`, SHA-256
+`3ddaba9b3f39927101d6a16a429083a0a13811f8b18484e2a0f05a8cf9e64e49`.
+Le tiroir est déjà ouvert : aucune articulation ni animation à reconstruire.
+
+- Source : 310 triangles, 698 sommets, un maillage statique, UV et texture PNG 2K,
+  1 534 620 octets. Y vers le haut, grande longueur X, pieds ramenés à Y=0.
+- L’outil Docker a testé le profil prudent (0,75 / erreur 0,001), avec
+  `--allow-monobloc` justifié par ce modèle fixe : 304 triangles, attributs/UV/images
+  validés inchangés, mais 1 536 300 octets. Seuls six triangles disparaissent et le
+  GLB grossit : la variante est écartée, l’original est importé intégralement.
+- Import reproductible : `python scripts/import-bed.py SOURCE.glb` (NumPy,
+  trimesh et Pillow comme les imports de stations). L’empreinte source est
+  vérifiée. Positions quantifiées à 0,0005 unité modèle ; UV conservés, avec
+  inversion V adaptée au chargeur existant ; copie de texture JPEG 1K de
+  149 936 octets. Module embarqué : 212 160 octets, aucune lecture GLB en jeu.
+- Dimensions en jeu : **12 × 3,381 × 5,55 mm** (X/Y/Z), facteur MAP=0,003.
+  Géométrie et matériau partagés entre lits, fantômes et achat. La collision locale
+  tourne avec le modèle. La réapparition est à 2,6 unités modèle du centre côté
+  +X, tournée avec le lit, hors du lit et du rayon du personnage.
+- Vérifications : `test-bed-model.mjs` contrôle provenance, UV, géométrie commune,
+  modèle réellement utilisé par le client et l’achat, collisions et réapparition
+  à plusieurs angles. La comparaison WebGL montre le vrai atlas et les proportions.
+
+![Lit Drawer Bed texturé](drawer-bed-290.png)
+
+## DCA fixes (Meshy)
+
+Les trois GLB fournis par l’utilisateur sont les sources de `scripts/import-fixed-dca.py`.
+Le script vérifie leur empreinte SHA-256, transforme l’axe des tubes vers −Z et
+sépare l’embase, le bloc orientable et les canons par coques. Il réaligne les
+tubes à l’horizontale au repos pour que l’élévation en jeu suive la visée.
+Les UV et les normales sont conservés. La texture de couleur devient un JPEG de
+1024 px au plus. Aucune décimation n’a été appliquée aux coques articulées.
+
+| Modèle            | Source                                                | Triangles embase / bloc orientable / tubes |
+| ----------------- | ----------------------------------------------------- | -----------------------------------------: |
+| Flak léger        | `Meshy_AI_Twin_Thunder_Cannon_1114220423_texture.glb` |                          1 030 / 965 / 342 |
+| DCA haute cadence | `Meshy_AI_Quad_Flak_Sentinel_1114215256_texture.glb`  |                          970 / 1 108 / 248 |
+| Flak lourd        | `Meshy_AI_Ironclad_Howitzer_1114215249_texture.glb`   |                          778 / 1 092 / 306 |
+
+Reproduire l’import avec `python scripts/import-fixed-dca.py TYPE SOURCE.glb`
+et les types `dca`, `dcaRapid` et `dcaHeavy`. Les bouches et pivots du modèle
+sont exprimés en mètres de référence. Le modèle partage ses maillages et sa
+texture entre les exemplaires.
+
+Les quatre manchons de la DCA haute cadence suivent les tubes en élévation.
+Le découpage inclut les deux manchons supérieurs, situés plus en arrière.
+
+La culasse du Flak lourd fait partie du groupe inclinable avec le tube.

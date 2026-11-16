@@ -54,9 +54,9 @@ function validSignature(points) {
 function initialStation() {
   const base = OFFICE_LAYOUT.base;
   return {
-    x: base.originX,
+    x: base.originX + base.refuelOffsetX,
     y: base.deckY + 0.00005,
-    z: base.originZ - 5 * ACTOR_UNIT,
+    z: base.originZ + base.refuelOffsetZ,
     slot: -1,
     kind: 'refuel',
     name: 'Ravitaillement Alpha',
@@ -77,6 +77,7 @@ async function buyEquipment(db, pilot, b, now) {
     request = String(b.request || '');
   if (!item || !/^[a-zA-Z0-9:_-]{8,120}$/.test(request) || pilot.life !== 'alive')
     return 'Achat invalide.';
+  if (b.item === 'dcaRapid' || b.item === 'dcaHeavy') return 'Cette DCA nécessite le serveur Node.';
   const prior = await db
     .prepare('SELECT item,done FROM purchase_orders WHERE room=? AND request=?')
     .bind(code, request)
@@ -223,7 +224,7 @@ async function ensureFleet(db, code, now) {
   const unlocked = JSON.parse(room.upgrades || '{}');
   for (const type of Object.keys(VEHICLES).filter(
     (type) =>
-      !['spitfire', 'tank', 'helicopter', 'flaktruck', 'castor'].includes(type) &&
+      !['spitfire', 'tank', 'helicopter', 'flaktruck', 'castor', 'flyingcastor'].includes(type) &&
       (type !== 'interceptor' || unlocked.interceptor),
   ))
     await db

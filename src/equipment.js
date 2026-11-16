@@ -1,4 +1,6 @@
+import { footprintInsideCollider, footprintOverlapsCollider } from './oriented-collider.js';
 import { VEHICLES } from './fleet.js';
+import { FIXED_DCA } from './fixed-dca.js';
 import { MAP } from './scale.js';
 export const SHOP = Object.freeze({
   fighter: {
@@ -33,11 +35,23 @@ export const SHOP = Object.freeze({
     description: 'Révèle les ennemis dans un cylindre de rayon 2 m sur la carte.',
   },
   dca: {
-    name: 'Canon Flak',
+    name: 'Flak léger',
     cost: 4,
     kind: 'placement',
     description:
       'Canon fixe avec réserve de 120 obus, rechargeable automatiquement à proximité d’une station ou d’un Castor.',
+  },
+  dcaRapid: {
+    name: 'DCA haute cadence',
+    cost: 15,
+    kind: 'placement',
+    description: 'Quatre mitrailleuses du Spitfire en alternance, 1 000 balles partagées.',
+  },
+  dcaHeavy: {
+    name: 'Flak lourd',
+    cost: 35,
+    kind: 'placement',
+    description: 'Gros canon à fusée de proximité, un obus par seconde.',
   },
   interceptor: {
     name: 'Stuka d’attaque au sol',
@@ -76,6 +90,13 @@ export const SHOP = Object.freeze({
     kind: 'vehicle',
     description:
       'Camion monoplace rapide avec mitrailleuse et ravitaillement mobile dans un rayon de 50 cm.',
+  },
+  flyingcastor: {
+    name: 'Castor volant',
+    cost: 30,
+    kind: 'vehicle',
+    description:
+      'Hélicoptère de soutien : un pilote et trois passagers, largue les constructions du Castor sauf les murs ; ravitaillement mobile 50 cm.',
   },
   engine: {
     name: 'Motorisation',
@@ -128,17 +149,18 @@ export function placementAhead(body, distance = 5) {
 // colliders in the Worker. Full base support, free headroom and nearby placement.
 export function supportedPlacement(point, colliders, occupied = [], kind = 'dca') {
   const profile = VEHICLES[kind];
+  const dca = FIXED_DCA[kind];
   const localRx = profile
       ? MAP.metres(profile.span / 2 + 1)
       : kind === 'refuel'
-        ? MAP.metres(2.1)
-        : MAP.metres(kind === 'bed' ? 3 : 2.1),
+        ? MAP.metres(6.1)
+        : MAP.metres(kind === 'bed' ? 3 : (dca?.clearance ?? 2.1)),
     localRz = profile
       ? MAP.metres(profile.length / 2 + 1)
       : kind === 'refuel'
-        ? MAP.metres(2.1)
-        : MAP.metres(kind === 'bed' ? 2.1 : 1.5),
-    height = MAP.metres(profile ? 4 : 3.2),
+        ? MAP.metres(3.7)
+        : MAP.metres(kind === 'bed' ? 2.1 : (dca?.clearance ?? 1.5)),
+    height = MAP.metres(profile ? 4 : kind === 'refuel' ? 6.3 : (dca?.height ?? 3.2)),
     eps = 1e-5;
   const angle = Number.isFinite(point.angle) ? point.angle : 0;
   const rx = Math.abs(Math.cos(angle)) * localRx + Math.abs(Math.sin(angle)) * localRz;
@@ -150,6 +172,7 @@ export function supportedPlacement(point, colliders, occupied = [], kind = 'dca'
         point.x + rx <= box.max.x &&
         point.z - rz >= box.min.z &&
         point.z + rz <= box.max.z &&
+        (!box.oriented || footprintInsideCollider(box, point, localRx, localRz, angle)) &&
         box.max.y <= point.y + MAP.metres(2) &&
         box.max.y >= point.y - MAP.metres(6),
     )
@@ -164,7 +187,8 @@ export function supportedPlacement(point, colliders, occupied = [], kind = 'dca'
         box.max.x > point.x - rx &&
         box.min.x < point.x + rx &&
         box.max.z > point.z - rz &&
-        box.min.z < point.z + rz,
+        box.min.z < point.z + rz &&
+        (!box.oriented || footprintOverlapsCollider(box, point, localRx, localRz, angle)),
     );
     if (
       blocked ||
@@ -175,8 +199,8 @@ export function supportedPlacement(point, colliders, occupied = [], kind = 'dca'
             (s.clearance
               ? s.clearance + rx
               : kind === 'refuel' || s.kind === 'refuel'
-                ? MAP.metres(2.6) + rx
-                : MAP.metres(5)),
+                ? MAP.metres(6.3) + rx
+                : Math.max(MAP.metres(5), rx + MAP.metres(FIXED_DCA[s.kind]?.clearance ?? 0))),
       )
     )
       continue;

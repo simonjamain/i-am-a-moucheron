@@ -1368,6 +1368,8 @@ for (const [type, seat, role] of [
   ['helicopter', 'copilot', 'copilote armement'],
   ['flaktruck', 'pilot', 'conducteur de DCA mobile'],
   ['flaktruck', 'cannon', 'tireur de DCA mobile'],
+  ['flyingcastor', 'pilot', 'pilote du Castor volant'],
+  ['flyingcastor', 'passenger', 'passager du Castor volant'],
 ])
   for (const context of ['boarding', 'change', 'exchange-request', 'exchange-accept'])
     CONTRACTS[context + ':' + type + '-' + seat] = CONTRACTS[context + ':dorsal'].map(
@@ -1384,6 +1386,30 @@ for (const [type, seat, role] of [
 // Fixed fortifications sign their own forms: only real DCA posts talk of fuses.
 // Ten variants per form: one commitment, five clauses, two closings.
 const FORTIFICATION_FORMS = {
+  dcaRapid: {
+    name: 'DCA haute cadence',
+    take: 'Je prends en charge la DCA haute cadence, ses quatre mitrailleuses et leur réserve commune.',
+    fire: 'Je réponds de chaque rafale et je vérifie que les quatre tubes sont dégagés.',
+    clauses: [
+      'Je me souviens que les canons tirent à tour de rôle. Un départ décalé ne déclenche pas une demande de maintenance.',
+      'Le stock s’épuise vite si je garde le doigt sur la détente.',
+      'J’attends le ravitaillement avant de reprendre le tir si la réserve est vide.',
+      'Je vérifie que la trajectoire est libre avant de tirer sur un insecte.',
+      'Je rends le poste disponible dès que je le quitte.',
+    ],
+  },
+  dcaHeavy: {
+    name: 'Flak lourd',
+    take: 'Je prends en charge le Flak lourd et sa fusée de proximité réglable à la molette.',
+    fire: 'Je vérifie la trajectoire avant chaque tir. Un obus armé peut éclater près d’un obstacle ou d’un allié.',
+    clauses: [
+      'Je me souviens que la fusée s’arme après le départ de l’obus.',
+      'Je tiens compte du souffle autour du point d’éclatement.',
+      'Je laisse le canon se recharger entre deux tirs.',
+      'Le rayon de détection se règle selon la cible et le mobilier autour.',
+      'Je confie le ravitaillement au Castor ou à une station à portée.',
+    ],
+  },
   antitank: {
     name: 'canon lourd anti-matériel',
     take: 'Je prends en charge le canon lourd, son pointage lent et son élévation limitée entre moins cinq et quarante degrés. Je reconnais que la pièce tourne sur ses roues à son rythme et non au mien.',
@@ -1428,7 +1454,8 @@ for (const [kind, forms] of Object.entries(FORTIFICATION_FORMS))
   );
 // For the 'equipment' context, `type` is the station kind (dca, bunker, antitank).
 export function contractKey(context, seat = 'pilot', type = null) {
-  if (['helicopter', 'flaktruck'].includes(type)) seat = type + '-' + seat;
+  if (type === 'flyingcastor' && /^passenger/.test(seat)) seat = 'passenger';
+  if (['helicopter', 'flaktruck', 'flyingcastor'].includes(type)) seat = type + '-' + seat;
   if (type === 'tank' && seat === 'pilot') seat = 'tank-pilot';
   return (
     context +

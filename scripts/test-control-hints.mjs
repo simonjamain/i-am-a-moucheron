@@ -94,7 +94,11 @@ const call = client.slice(client.indexOf("$('commandHelp').textContent = control
 for (const field of ['station:', 'build: groundDefenseUI.available()', 'wheel:', 'building:'])
   assert.ok(call.slice(0, 900).includes(field), field);
 const council = client.indexOf("interactionKey === 'KeyV' &&");
-assert.ok(client.slice(council, council + 250).includes("myVehicle?.type !== 'castor'"));
+assert.ok(
+  client
+    .slice(council, council + 250)
+    .includes("!['castor', 'flyingcastor'].includes(myVehicle?.type)"),
+);
 assert.ok(council < client.indexOf("interactionKey === 'KeyV' && myVehicle?.type === 'castor'"));
 
 console.log(

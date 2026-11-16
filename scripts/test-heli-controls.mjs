@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import * as T from '../vendor/three.module.min.js';
 import { stepHelicopter } from '../src/helicopter.js';
 import { MAP } from '../src/scale.js';
-import { VEHICLES, vehiclePad } from '../src/fleet.js';
+import { VEHICLES, vehiclePad, isRotorcraft } from '../src/fleet.js';
 import { Game } from '../server/game.js';
 import { HEAVY } from '../src/armament.js';
 const source = readFileSync('src/client.js', 'utf8');
@@ -19,6 +19,8 @@ function client(key) {
     stepHelicopter,
     MAP,
     VEHICLES,
+    isRotorcraft,
+    airView: () => false,
     snap: { upgrades: {} },
     respawnAt: 0,
     onFoot: false,
@@ -112,6 +114,7 @@ for (const [pitch, yaw, roll] of [
   const q = new T.Quaternion().setFromEuler(new T.Euler(pitch, yaw, roll, 'YXZ'));
   const c = vm.createContext({
     T,
+    isRotorcraft,
     myVehicle: { type: 'helicopter' },
     crewSeat: 'pilot',
     me: { quaternion: q },
@@ -181,6 +184,7 @@ const fuelSource = source.slice(
 );
 for (const seat of ['pilot', 'copilot']) {
   const c = vm.createContext({
+    isRotorcraft,
     myVehicle: {
       type: 'helicopter',
       state: { landed: false, engine: 1 },
@@ -211,7 +215,7 @@ for (const [key, sign] of [
   const c = client(key);
   for (let i = 0; i < 60; i++) vm.runInContext('physics(1/120)', c);
   const roll = new T.Euler().setFromQuaternion(c.me.quaternion, 'YXZ').z;
-  assert.ok(roll * sign > 0.5, `${key} must force roll without mouse motion`);
+  assert.ok(roll * sign > 0.45, `${key} must force roll without mouse motion`);
   c.keys = {};
   c.controlFocus.active = false;
   for (let i = 0; i < 360; i++) vm.runInContext('physics(1/120)', c);
@@ -238,7 +242,7 @@ for (const [key, sign] of [
   const c = client(key);
   for (let i = 0; i < 60; i++) vm.runInContext('physics(1/120)', c);
   assert.ok(
-    new T.Euler().setFromQuaternion(c.me.quaternion, 'YXZ').x * sign > 0.5,
+    new T.Euler().setFromQuaternion(c.me.quaternion, 'YXZ').x * sign > 0.45,
     key + ' must force pitch',
   );
   assert.equal(c.me.position.y, 1, key + ' must not change collective altitude');

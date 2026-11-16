@@ -2,6 +2,8 @@ import assert from 'node:assert/strict';
 import { loadBaselineGame } from './baseline-game.mjs';
 import { performance } from 'node:perf_hooks';
 import { Game } from '../server/game.js';
+import { OFFICE_LAYOUT } from '../src/layout.js';
+import { ACTOR_UNIT } from '../src/scale.js';
 
 const baseline = '2f02d128997b8ffadfc9f4ba43afd1b6ebfe3442';
 const PreviousGame = await loadBaselineGame(baseline, 'snapshot');
@@ -50,7 +52,27 @@ assert.deepEqual(
   { revision: 0, navigationRevision: 0, structures: [] },
   'new ground state is isolated and initially empty',
 );
-assert.deepEqual(comparable, original, 'snapshot wire structure and values must match baseline');
+// Alpha deliberately moved after the reference commit. Check this exact
+// gameplay difference, including every unchanged station field, before comparing
+// the rest of the wire snapshot. Do not discard the station from the comparison.
+const base = OFFICE_LAYOUT.base;
+assert.deepEqual(
+  original.initialStation,
+  {
+    ...comparable.initialStation,
+    x: base.originX,
+    z: base.originZ - 5 * ACTOR_UNIT,
+  },
+  'historical Alpha differs only by its explicitly relocated coordinates',
+);
+assert.equal(comparable.initialStation.x, base.originX + base.refuelOffsetX);
+assert.equal(comparable.initialStation.z, base.originZ + base.refuelOffsetZ);
+original.initialStation = comparable.initialStation;
+assert.deepEqual(
+  comparable,
+  original,
+  'snapshot matches baseline with the checked Alpha relocation',
+);
 const sample = (engine) => {
   const t0 = performance.now();
   for (let i = 0; i < 100; i++) engine.snapshot(room);

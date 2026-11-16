@@ -42,7 +42,8 @@ function enemyRadius(enemy) {
 // projectile.done on impact or at the end of its lifetime.
 export function stepHeavy(projectile, end, world) {
   if (projectile.done) return null;
-  if (projectile.weapon === 'proximity') return stepProximity(projectile, end, world);
+  if (projectile.weapon === 'proximity' || projectile.weapon === 'dcaHeavy')
+    return stepProximity(projectile, end, world);
   // A missile dies with its helicopter.
   if (projectile.weapon === 'missile' && world.missileLost?.(projectile)) {
     projectile.done = true;
@@ -122,7 +123,7 @@ export function stepHeavy(projectile, end, world) {
 }
 
 function stepProximity(projectile, end, world) {
-  const profile = HEAVY.proximity;
+  const profile = HEAVY[projectile.weapon];
   end = Math.min(end, projectile.at + profile.lifetime * 1000);
   const radius = proximityRadius(projectile.proximity);
   const horizon = Math.max(0, (end - projectile.updated) / 1000);
@@ -204,8 +205,14 @@ function stepProximity(projectile, end, world) {
           if (t !== null) consider(armed.t + t * (1 - armed.t), 'fuse');
         }
       }
-    for (const p of world.players) sphere(p.p, MAP.metres(0.6));
-    for (const e of world.equipment) sphere([e.x, e.y + MAP.metres(1), e.z], MAP.metres(1));
+    for (const p of world.players)
+      sphere(p.p, MAP.metres(0.6), projectile.station != null && p.id === projectile.shooter);
+    for (const e of world.equipment)
+      sphere(
+        [e.x, e.y + MAP.metres(1), e.z],
+        MAP.metres(1),
+        projectile.station === e.slot && e.slot != null,
+      );
     if (hit) {
       projectile.done = true;
       projectile.p = a.map((v, i) => v + (b[i] - v) * hit.t);

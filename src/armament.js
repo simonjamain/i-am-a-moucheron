@@ -24,6 +24,14 @@ export const HEAVY = Object.freeze({
     speed: MAP.metres(REFERENCE.shell * 0.7),
     lifetime: 6,
   },
+  dcaHeavy: {
+    interval: 1,
+    damage: 240,
+    edge: 60,
+    radius: MAP.metres(FLAK.radius * 3),
+    speed: MAP.metres(REFERENCE.shell * 0.7),
+    lifetime: 6,
+  },
   bomb: { interval: 0.5, damage: 240, edge: 60, radius: MAP.metres(20), speed: 0, lifetime: 35 },
   he: {
     interval: 2,
@@ -74,6 +82,7 @@ export function heavyDamage(weapon, distance, bonus = 1, radiusFactor = 1) {
     : 0;
 }
 export function canUseWeapon(type, seat, key) {
+  if (type === 'flyingcastor') return false; // unarmed transport
   return type === 'helicopter'
     ? seat === 'pilot'
       ? key === 'rocket'

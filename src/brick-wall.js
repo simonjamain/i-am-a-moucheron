@@ -1,9 +1,10 @@
+import { BRICK_PITCH, HALF_BRICK, WALL_ROWS, wallLength } from './brick-rules.js';
+export { BRICK_PITCH } from './brick-rules.js';
 import { BRICK_POSITIONS, BRICK_INDICES, BRICK_SOURCE } from './meshy-brick-data.js';
 
 // Office metres. A row is one brick body tall; the 2×4 brick is half as deep as
 // it is long (issue #99, approved reference). Studs rise above the body.
 export const BRICK_ROW = 0.006;
-export const BRICK_PITCH = 0.024;
 export const BRICK_DEPTH = BRICK_PITCH / 2;
 // Share of the normalized model height taken by the body, below the studs.
 const BODY_SHARE = 0.787;
@@ -27,21 +28,19 @@ export function brickGeometry(T) {
 
 // Integer columns fill the chosen length; half bricks stagger alternate rows.
 export function brickLayout(length) {
-  const columns = Math.max(1, Math.ceil(length / BRICK_PITCH));
-  const pitch = length / columns;
+  const span = wallLength(length);
   const bricks = [];
-  for (let row = 0; row < 3; row++) {
-    const edges =
-      row % 2
-        ? [0, ...Array.from({ length: columns }, (_, i) => (i + 0.5) * pitch), length]
-        : Array.from({ length: columns + 1 }, (_, i) => i * pitch);
-    for (let i = 0; i < edges.length - 1; i++)
+  for (let row = 0; row < WALL_ROWS; row++) {
+    for (let x = 0, i = 0; x < span - 1e-9; i++) {
+      const width = Math.min(BRICK_PITCH, span - x);
       bricks.push({
-        x: (edges[i] + edges[i + 1]) / 2 - length / 2,
+        x: x + width / 2 - length / 2 + row * HALF_BRICK,
         y: row * BRICK_ROW,
-        width: Math.max(0.0001, edges[i + 1] - edges[i] - 0.0002),
+        width: width - 0.0002,
         color: (i + row * 2) % 4,
       });
+      x += width;
+    }
   }
   return bricks;
 }

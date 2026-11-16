@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import worker from '../worker/index.js';
 import { localDB } from './local-db.mjs';
 import { bodyMotion } from '../src/purgatory-physics.js';
-import { vehicleEntry, VEHICLES, pilotFireInterval } from '../src/fleet.js';
+import { vehicleEntry, VEHICLES, pilotFireInterval, isRotorcraft } from '../src/fleet.js';
 import { OFFICE_LAYOUT } from '../src/layout.js';
 import { ACTOR_UNIT } from '../src/scale.js';
 import {
@@ -104,7 +104,7 @@ for (const type of Object.keys(VEHICLES)) {
   assert.ok(supply.fuel < 1e-8);
   assert.equal(
     advanceSupplies({ fuel: 300, ammo }, { ...state, gas: 0.5 }, type, [], 300).fuel,
-    type === 'helicopter' ? 0 : 150,
+    isRotorcraft(type) ? 0 : 150,
   );
   assert.equal(
     advanceSupplies({ fuel: 100, ammo }, { ...state, engine: 0 }, type, [], 300).fuel,

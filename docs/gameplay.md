@@ -7,6 +7,13 @@ Au volant du Castor, on peut construire un bunker LEGO (10 $) et un canon antich
 
 La « Tourelle automatique du Castor » se construit pour 9 $ au volant du G1, sans plan à débloquer. Elle tire automatiquement (180 balles finies) et se recharge contre paiement auprès du Castor ou des stations. Aucun tir ni achat à distance. Son modèle définitif combine quatre modules Meshy texturés (socle fixe, tête qui pivote sur 360°, canon unique inclinable de −10° à +90° et capteur/radar séparé). Les géométries et UV Meshy sont conservés, avec une copie des textures rééchantillonnée en WebP 1K pour le navigateur ; voir [l'asset T-01](t01-asset.md). Les déplacements visuels suivent la dernière cible validée par le serveur ; les dégâts et les munitions restent autoritaires côté serveur. Le GLB texturé définitif doit être importé séparément après vérification des parties mobiles et de leurs UV.
 
+Le [lot de lisibilité et commandes #171](game-polish-171.md) précise les phases de chute, les nouvelles stations, le brouillard, les arcs de recharge et les commandes Hind/Castor.
+
+Le [lot de contraste et le lit Drawer Bed](contrast-bed-290.md) précise le viseur,
+les traçantes, le nouveau lit et le dégagement de la station Alpha.
+
+Le [lot #175](gameplay-polish-175.md) précise le chargement animé, le suivi souris du Hind, les éclairs attachés aux canons, les murs LEGO de deux rangées et le brouillard spatial.
+
 ## Session réseau
 
 Le serveur Node utilise WebRTC sur UDP uniquement. Les mouvements sont locaux,
@@ -50,15 +57,17 @@ Alpha », sur le bureau 3D animé ; aucun slogan, badge ni mention de prototype,
 plus d'étiquette flottante « BASE ALPHA · 3 / 1000 » dans la scène. Le numéro de
 version, en haut à gauche, ouvre les **Nouveautés**. Entre les champs pseudo/code et
 « Rejoindre la base », un sélecteur montre le **personnage** choisi qui pivote doucement ;
-les flèches (ou ←/→ quand il a le focus) parcourent les six modèles, le choix est
+les flèches (ou ←/→ quand il a le focus) parcourent les huit modèles (sans cadre ni
+nom affiché, sur le fond du panneau), le choix est
 mémorisé dans le navigateur et visible par tous les joueurs (purgatoire, bureau, DCA).
-La mention « Même code, même partie » a été retirée. En jeu, le modèle tourne vers
+La mention « Même code, même partie » a été retirée, et la ligne de message sous le
+bouton n'occupe de place que lorsqu'elle affiche un message. En jeu, le modèle tourne vers
 sa direction de marche en douceur (environ un quart de seconde pour un demi-tour). Il n'y a plus de réglage audio visible : le son
 démarre au volume standard dès la première interaction autorisée par le navigateur.
 
 Noms validés (version 276, sans préfixe ni suffixe de code) : **Chasseur biplan**,
 **Bombardier biplan**, **Hélicoptère d’attaque au sol**, **Char moyen**, **Castor**,
-**Anti-air mobile**, **Spitfire**, DCA fixe **Canon Flak**, canon lourd **Canon
+**Anti-air mobile**, **Spitfire**, DCA fixe **Flak léger**, canon lourd **Canon
 anti-matériel** ; la tourelle automatique et le Stuka gardent leur nom
 (`src/fleet.js`, `src/equipment.js`, `src/ground-fortifications.js`). Les sigles
 M1, B3, H2, T3, D2, G1 et S6 ne s'affichent plus en jeu : ils ne subsistent que comme
@@ -89,7 +98,8 @@ Au sol, il faut l’arrêter pour en sortir. Toute sortie aérienne commence en 
 libre avec la vitesse héritée ; le parachute s’ouvre et se replie manuellement.
 
 Les équipements commandés depuis un appareil descendent dans un colis sous
-parachute à **1 m/s dans le décor**, jusqu'à une surface porteuse disponible.
+parachute à **1/3 m/s dans le décor** (trois fois moins vite qu'avant la version
+292), jusqu'à une surface porteuse disponible.
 Le serveur y déploie l'équipement une seule fois ; le colis n'est pas utilisable
 en vol. Voir [livraisons](issues-15-16-17.md#correction-de-la-vitesse-après-retour-en-jeu-version-70).
 
@@ -113,8 +123,8 @@ La cadence locale rattrape les images retardées sans attendre les confirmations
 réseau ; les rafales vues à distance suivent une cadence approximative plutôt
 qu'un tir aléatoire à chaque image. Voir [stocks et réseau](vehicles-bank.md).
 Les projectiles subissent gravité et traînée et sont supprimés après impact ou
-expiration. La DCA tire des obus à éclatement réglable en distance, à cadence
-réduite, avec fumée noire persistante. Le tir allié inflige des dégâts. Les joueurs ont 100 PV ; une résurrection restaure tous les PV.
+expiration. Le Flak léger tire des obus à éclatement réglable en distance. La DCA haute cadence
+et le Flak lourd complètent les [DCA fixes](scale-fleet-weapons.md#dca-fixes-pilotées). Le tir allié inflige des dégâts. Les joueurs ont 100 PV ; une résurrection restaure tous les PV.
 Depuis la version 267, un avion endommagé ne change plus de forme (plus d'ailes
 qui rétrécissent) : son ou ses moteurs laissent échapper de petits panaches de
 fumée, à partir de 15 % de dégâts, de plus en plus nombreux, gros et sombres à
@@ -223,7 +233,8 @@ obligatoire. Les annexes malicieuses (clauses piégées) ont été retirées en
 version 264 : aucun contrat ne modifie plus commandes, visée, cadence ou dégâts.
 
 Les avions disposent de cinq minutes de carburant à plein gaz et d’environ une
-minute de tir par poste armé. Une station initiale à Alpha répare et recharge les véhicules
+minute de tir par poste armé. Une station initiale à Alpha, reculée vers le nord pour dégager les postes du
+bombardier, répare et recharge les véhicules
 à portée, automatiquement et contre paiement, même en mouvement ou en vol. Les
 stations achetées fournissent le même service. La caisse commune paie au prorata
 les PV, le carburant et chaque catégorie de munitions ; en cas de fonds insuffisants,
@@ -327,10 +338,7 @@ pour le sélectionner. Au centre, le choix est annulé. Pour une barricade ou un
 ruban, le premier clic (ou E) fixe le début indiqué par un petit repère sans
 orientation. Visez ensuite la fin, en marchant si nécessaire, puis cliquez de
 nouveau (ou E). Les deux points déterminent seuls la longueur et l'orientation.
-Le bouton de confirmation suit ces mêmes deux étapes. Le coût est de 1 $ pour
-20 cm, au prorata exact de la longueur et au centime près (`lengthPrice`, version 233) ; les longs murs sont découpés en segments réparables. La
-barricade est composée de briques colorées en trois rangées décalées, plus ou
-moins nombreuses selon sa longueur. R oriente le sucre et le ventilateur.
+Le bouton de confirmation suit ces mêmes deux étapes. Le mur coûte 0,25 $ par tronçon de 48 mm, avec portions en demi-briques facturées au prorata au centime ; le ruban garde 1 $ pour 20 cm. Les murs sont découpés en sections réparables et dessinés en deux rangées de briques de taille fixe, avec extrémités décalées emboîtables. R oriente le sucre et le ventilateur.
 Le sucre coûte
 3 $, une réparation 1 $, la suppression est gratuite. L’aperçu rouge et le message
 signalent un refus ; le serveur revalide position, caisse et occupation avant
@@ -350,12 +358,26 @@ changement de `navigationRevision`. Le trajet est lissé à angle libre : depuis
 position, l'insecte vise le point le plus lointain de la descente encore visible
 en ligne droite, avec une marge d'environ une demi-case, et garde ce point jusqu'à
 l'atteindre. L'aperçu du conseil de vague (`smoothRoute`) enchaîne les mêmes points :
-à carte inchangée, la piste de phéromones orange (chevrons vers la poubelle) est le chemin marché. Un brouillon de barricade ou
+la piste de phéromones orange (chevrons vers la poubelle) indique le trajet de référence. Chaque insecte s'en écarte localement pour éviter ses voisins. Un brouillon de barricade ou
 de bunker montre le détour avant validation. Sans chemin, l'aperçu affiche
 « Passage fermé » ; les cafards, araignées et rats attaquent alors la barricade la
 plus proche. Le sucre détourne seulement les insectes entrés dans son rayon et
 n'est pas tracé. La route nominale (`enemyRoute`) suit aussi ce champ sur un bureau
-vide, ce qui fixe la durée de vague. `scripts/test-ground-paths.mjs` couvre ces cas.
+vide, ce qui fixe la durée nominale du trajet. `scripts/test-ground-paths.mjs` couvre ces cas.
+
+Les groupes ne sont plus dessinés en files décalées : leurs positions affichées et
+leurs volumes de tir suivent les positions simulées. `ground-crowd.js` partage une
+grille de voisinage par sous-pas (50 ms maximum). Chaque individu suit son propre
+point de passage et possède un espace personnel souple proportionnel à sa taille :
+il ralentit derrière un voisin et cherche à le contourner. Les groupes se forment
+ainsi autour de leur destination commune, sans attraction artificielle vers un centre.
+Les écarts doivent conserver un passage libre vers le point visé ; ils ne poussent
+pas un insecte à travers le mobilier ou une défense. La vitesse reste plafonnée à
+celle du bestiaire ; la foule peut retarder une arrivée. Le sucre et la colle gardent
+leurs pauses, les morts et les arrivés sont exclus du voisinage. Un chevauchement
+bref reste possible à la sortie d'un trou ou dans une foule comprimée : ce sont des
+contacts souples, pas des corps rigides. Les tests `test-ground-crowd.mjs` et
+`test-ground-spread.mjs` vérifient séparation, passages, pauses et arrivées.
 
 ## Défense aérienne
 
@@ -390,8 +412,7 @@ opposés et les roues avant braquent selon la vitesse de rotation
 Au sol, le pilote du Castor ouvre la roue des défenses par **clic molette**.
 Pour les murs **LEGO** et les **rubans**, un clic gauche démarre la pose en
 continu **derrière le véhicule** pendant la conduite ; un deuxième clic l'arrête.
-Le Castor valide des sections de 20 cm (1 $) ; entre deux validations, l'aperçu
-ajoute les briques une à une derrière le camion, à hauteur fixe de trois rangs.
+Le Castor valide des sections LEGO de 48 mm (0,25 $) ; l’aperçu, visible derrière le camion avant même le premier clic, ajoute les demi-briques entre deux validations, sur deux rangées. Le ruban conserve des sections de 20 cm à 1 $.
 L'arrêt valide la section commencée, facturée au prorata (`scripts/test-castor-trail.mjs`).
 Les briques sont des 2×4 LEGO (image de référence validée par l'utilisateur, modèle
 Meshy non texturé recoloré en jeu, tenons vers le haut, profondeur moitié de la
@@ -405,6 +426,42 @@ Ce système conserve la validation serveur et ne permet pas de construire sur le
 surfaces surélevées depuis le Castor dans cette première version. Les véritables
 modèles Meshy du châssis, de la tourelle et des roues sont déjà intégrés ; la
 correction des six roues est conservée.
+
+## Castor volant (version 292)
+
+Le **Castor volant** est un hélicoptère logistique à deux rotors en tandem,
+acheté **30 $** (colonne Aéronefs). Il a **un pilote et trois passagers**, aucune
+arme, 200 PV, le pilotage assisté de l'hélicoptère d'attaque (souris pour
+l'inclinaison, Z/S/Q/D, Maj/Ctrl) et le même **soutien sphérique de 50 cm** que
+le Castor : soins, carburant, munitions et réparation des barricades, payés par
+la caisse commune, pour lui-même et pour ce qui l'entoure.
+
+**Tous les occupants** (pilote et passagers) ouvrent la roue (**G** / clic
+molette) et **larguent** les constructions du Castor, sauf les murs LEGO :
+sucre, ruban (un morceau de 10 cm), ventilateur, tourelle automatique, bunker
+LEGO et canon anti-matériel, au même prix. L'objet part **toujours à la
+verticale de l'hélicoptère** et **suit son cap** (le ventilateur souffle vers
+le nez) ; un aperçu transparent montre où il tombera. Clic gauche ou Entrée
+larguent, dans n'importe quelle condition de vol. La caisse est débitée au
+largage ; l'objet tombe comme les autres livraisons (1/3 m/s), puis le serveur
+le construit sur la première surface rencontrée : le sol ou un meuble. Si la
+place a été prise pendant la chute, le prix est remboursé. **Réparer** et
+**Enlever** visent la construction la plus proche sous l'hélicoptère (10 cm),
+qui doit se trouver à moins de 27 cm à l'horizontale.
+
+**V** bascule la **vue verticale** pour chaque occupant : la caméra regarde à
+la verticale du point de largage, le nez de l'appareil en haut de l'écran, à
+12 cm au-dessus de la surface d'arrivée (molette : 5 à 80 cm). Le pilote y
+pilote **au clavier seulement** : Z/S/Q/D pour avancer et glisser, **A/E** pour
+tourner l'appareil (et donc l'objet à larguer), Maj/Ctrl pour l'altitude ; la
+souris ne dirige plus. Hors de cette vue, les passagers regardent autour de
+l'appareil avec la souris.
+
+Les constructions posées sur un meuble gardent leur hauteur : tourelles et
+postes y tirent depuis leur emplacement réel, et le soutien les mesure en 3D.
+Les insectes au sol ne les rencontrent pas : un bunker sur un bureau ne bloque
+pas leur chemin, un ruban ou du sucre sur un meuble ne les retient pas. Voir
+[la flotte Meshy](meshy-fleet.md#castor-volant--hélicoptère-meshy-version-292).
 
 ### Réparation automatique des barricades (version 192)
 

@@ -1,8 +1,9 @@
-import { VEHICLES } from './fleet.js';
+import { VEHICLES, isSupportVehicle } from './fleet.js';
+import { levelOf } from './airdrop.js';
 import { SENTRY } from './ground-sentry.js';
 import { FORTIFICATIONS } from './ground-fortifications.js';
 import { distanceToSegment } from './ground-defense.js';
-import { FIXED_DCA_AMMO } from './ground-ammo.js';
+import { FIXED_DCA } from './fixed-dca.js';
 import {
   ammoCapacity,
   CASTOR_SERVICE_RADIUS,
@@ -34,14 +35,14 @@ function serviceSources(installations, fleet) {
       .filter((s) => s.kind === 'refuel')
       .map((s) => ({ p: [s.x, s.y, s.z], radius: SERVICE_RADIUS })),
     ...fleet
-      .filter((s) => s.type === 'castor' && s.state.hp > 0)
+      .filter((s) => isSupportVehicle(s.type) && s.state.hp > 0)
       .map((s) => ({ p: s.state.p, radius: CASTOR_SERVICE_RADIUS })),
   ];
 }
 
 export function withinService(v, installations, fleet = []) {
   if (v.state.hp <= 0) return false;
-  if (v.type === 'castor') return true;
+  if (isSupportVehicle(v.type)) return true;
   const sources = serviceSources(installations, fleet);
   return sources.some(
     ({ p, radius }) => Math.hypot(...v.state.p.map((n, i) => n - p[i])) <= radius,
@@ -119,14 +120,8 @@ export function advancePaidService(
     const sources = serviceSources(installations, fleet);
     for (const gun of installations) {
       const fortification = FORTIFICATIONS[gun.kind];
-      const capacity = fortification?.ammo ?? FIXED_DCA_AMMO;
-      if (
-        (gun.kind !== 'dca' && !fortification) ||
-        !Number.isFinite(gun.ammo) ||
-        gun.ammo >= capacity ||
-        gun.hp === 0
-      )
-        continue;
+      const capacity = fortification?.ammo ?? FIXED_DCA[gun.kind]?.ammo;
+      if (!capacity || !Number.isFinite(gun.ammo) || gun.ammo >= capacity || gun.hp === 0) continue;
       if (
         !sources.some(
           ({ p, radius }) => Math.hypot(gun.x - p[0], gun.y - p[1], gun.z - p[2]) <= radius,
@@ -135,7 +130,10 @@ export function advancePaidService(
         continue;
       const quantity = Math.min(capacity - gun.ammo, (capacity * dt) / SERVICE_SECONDS);
       const cost =
-        quantity * (gun.kind === 'bunker' ? SERVICE_RATES.machineGun : SERVICE_RATES.shell);
+        quantity *
+        (['bunker', 'dcaRapid'].includes(gun.kind)
+          ? SERVICE_RATES.machineGun
+          : SERVICE_RATES.shell);
       if (cost > 0)
         jobs.push({
           cost,
@@ -163,7 +161,11 @@ export function advancePaidService(
       if (
         !sources.some(({ p, radius }) =>
           ['sentry', 'bunker', 'antitank'].includes(wall.kind)
-            ? Math.hypot(wall.position[0] - p[0], p[1] - 0.025, wall.position[1] - p[2]) <= radius
+            ? Math.hypot(
+                wall.position[0] - p[0],
+                p[1] - levelOf(wall) - 0.025,
+                wall.position[1] - p[2],
+              ) <= radius
             : Math.hypot(distanceToSegment([p[0], p[2]], wall.a, wall.b), p[1] - 0.01) <= radius,
         )
       )
@@ -189,8 +191,11 @@ export function advancePaidService(
       if (
         !sources.some(
           ({ p, radius }) =>
-            Math.hypot(sentry.position[0] - p[0], p[1] - 0.025, sentry.position[1] - p[2]) <=
-            radius,
+            Math.hypot(
+              sentry.position[0] - p[0],
+              p[1] - levelOf(sentry) - 0.025,
+              sentry.position[1] - p[2],
+            ) <= radius,
         )
       )
         continue;

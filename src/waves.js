@@ -358,6 +358,7 @@ function unitHash(id, seed) {
 export function swarmSpread(enemy) {
   return Math.min(enemy.ground ? 8 : 20, Math.max(0.45, Math.sqrt((enemy.swarmSize || 1) / 5)));
 }
+// Legacy route-only fallback (before an authoritative ground pose):
 // Ground creatures of one pack walk side by side in a few lanes across their
 // path, so that members leaving the same portal never stand on one another.
 // Display and hit position only: the simulated path is unchanged. Ribbons stay
@@ -438,11 +439,8 @@ export function swarmFrame(roster, time, groundAgents = null, field = null) {
     if (ground) {
       if (ground.arrived) return null;
       const lift = INSECT_SCALE * e.size * enemySizeFactor(e.type) * GROUND_FOOT_DEPTH;
-      const hold = e.entryHold || 0,
-        u = Math.max(0, Math.min(1, (time - e.spawn - hold) / Math.max(0.001, e.duration - hold))),
-        [dx, dz] = groundLaneDisplacement(e, ground.dir, u);
       return {
-        p: [ground.p[0] + dx, 0.0007 + lift, ground.p[1] + dz],
+        p: [ground.p[0], 0.0007 + lift, ground.p[1]],
         dir: [ground.dir[0], 0, ground.dir[1]],
         envelope: 1,
         authoritative: true,

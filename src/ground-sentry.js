@@ -26,7 +26,11 @@ export function fireGroundSentries(structures, targets, now, hit) {
     for (const target of targets) {
       if (!target || target.dead) continue;
       const [x, y, z] = target.p;
-      const distance = Math.hypot(x - sentry.position[0], y - 0.025, z - sentry.position[1]);
+      const distance = Math.hypot(
+        x - sentry.position[0],
+        y - (sentry.y || 0) - 0.025,
+        z - sentry.position[1],
+      );
       if (distance < range) {
         selected = target;
         range = distance;

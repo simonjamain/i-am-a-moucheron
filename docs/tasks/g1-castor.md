@@ -14,7 +14,6 @@
 - Tests de domaine et serveur : `node scripts/test-ground-sentry.mjs` dans la suite ; contrôles GitHub Actions `Docker build` obligatoires avant fusion. Aucun essai WebGL/FPS réel revendiqué.
 - À la fin du lot 8, le bunker et le canon antichar restaient à faire ; ils sont couverts par le lot 9 ci-dessus. Les essais interactifs WebGL/UDP et la mesure de FPS de plusieurs Castor demeurent à vérifier avant clôture complète de #76.
 
-
 - Issue : https://github.com/simonjamain/i-am-a-moucheron/issues/76.
 - Branche du premier lot : `feat/castor-paid-service` ; **ne clôture pas l'issue**.
 - Contexte : main VERSION 171 à la prise en charge. Modèles Meshy générés et texturés (châssis `01a1afc9-29f8-771d-8efc-493296643670`, tourelle `01a1afc9-3823-7324-ae2b-56cd8adf4c34`, roue `01a1afc9-4756-727e-8b75-cf19b054f6d4`). Les fichiers GLB n'ont pas été intégrés dans ce lot.
@@ -37,6 +36,7 @@
 - Contrôle de dette : les prêts peuvent laisser la caisse négative. Ne pas annuler cette dette lors d'un tick de service : aucun service si solde négatif, mais conserver le solde réel.
 
 ## Lot 2 — pilotage et soutien
+
 - Branche : `feat/castor-drivable-support`, issue #76 partiellement couverte.
 - Fait dans la branche : Castor signé à 12 $, conduite monoplace, mitrailleuse légère (500 balles), vue tactique V, soutien sphérique mobile 50 cm incluant son propre entretien. Maquette 6 roues articulées et tourelle, **pas les exports Meshy**.
 - Restant : import des 3 modèles texturés Meshy, construction continue en roulant, service des barricades/pistolets/DCA fixes, défenses exclusives et cartes ; essai WebGL/UDP humain.
@@ -50,14 +50,13 @@
 
 - Diagnostic temporaire de formatage Prettier exécuté dans CI, puis retiré du test : seul le retrait d'une ligne blanche et l'alignement d'une chaîne de ternaires étaient nécessaires. Les tests de domaine et la suite complète avaient passé ; attendre les cinq jobs sur le dernier SHA avant fusion.
 
-
 ## Lot 4 — vrais modèles Meshy (branche feat/castor-real-meshy)
+
 - Issue : #76, PR consacrée aux graphismes uniquement (en parallèle de la #80).
 - Source : les trois tâches Meshy texturées ci-dessus, export GLB téléchargé pour conversion sur un runner GitHub Actions temporaire. Aucune URL Meshy expirante ne doit être conservée dans la PR finale.
 - Cible : modules intégrés hors ligne, VRAM partagée, pivots séparés, tests source/UV/roues/tourelle. Conserver les textures et couleurs originales.
 - Risques : orientation et roues doublées dans la coque à vérifier en jeu, FPS avec plusieurs Castor, absence de visualisation WebGL dans les contrôles automatisés.
 - Suivi : tester `npm test`, format, docs et Docker build sur le commit final ; ne pas fermer l'issue.
-
 
 ## Correctif des roues (#76, capture utilisateur du 7 novembre)
 
@@ -65,7 +64,6 @@
 - Correction ciblée `fix/castor-wheel-overlap` : filtrage au rendu des triangles des roues intégrées et réemploi des six vrais modèles de roue, centrés et mis à l'échelle, avec pivots animés.
 - Test d'encombrement et de suppression de faces ajouté à `scripts/test-castor-meshy.mjs`.
 - Restant : vérification visuelle de découpe, performances GPU, construction en roulant (PR #80 toujours distincte).
-
 
 ## Lot 3 — reprise de la PR #80 après les vrais Meshy et les roues corrigées
 
@@ -83,7 +81,6 @@
 - **Restant après la PR** : réparation automatique des murs, munitions finies du
   pistolet et des DCA fixes, bunkers/canons/tourelles exclusifs.
 
-
 ## Lot 5 — réparation automatique des barricades (branche feat/castor-automatic-wall-repair)
 
 - Issue #76 partiellement couverte : stations fixes et Castor ont le même service
@@ -97,7 +94,6 @@
 - Restant : limitation des munitions pistolets et DCA fixes, défenses exclusives
   (plans de cartes, bunkers occupables, canon antichar, tourelle automatique),
   visuel/FPS du Castor en situation et vérification humaine du placement.
-
 
 ## Lot 6 — stocks finis DCA fixes (PR dédiée)
 
@@ -115,7 +111,6 @@
 - Première CI PR #87 : l'assemblage n'incluait pas encore le nouveau module navigateur `ground-ammo.js` et le formatage de l'expression de cadence du serveur échouait. Corrigés sur le commit suivant, puis CI complète à relancer.
 
 - Dernier diagnostic CI : Prettier exigeait deux retours à la ligne dans `src/client.js` (HUD du canon et expression de tir). Appliquer ces deux corrections, supprimer le diagnostic temporaire et relancer les cinq contrôles sur le SHA final.
-
 
 ## Lot 7 — pistolet personnel fini
 

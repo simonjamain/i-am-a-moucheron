@@ -153,11 +153,16 @@ const fire = (person, vehicle, weapon, shot, extra = {}) => {
     occupation: person.occupation,
     weapon,
     shot,
-    direction: [0, 0, -1],
+    direction:
+      weapon === 'proximity' ? [0, Math.sin(Math.PI / 36), -Math.cos(Math.PI / 36)] : [0, 0, -1],
     ...extra,
   });
 };
 assert.throws(() => fire(pilot, truck, 'proximity', 'driver'), /Arme/);
+assert.throws(
+  () => fire(gunner, truck, 'proximity', 'below-stop', { direction: [0, 0, -1] }),
+  /Butée/,
+);
 fire(gunner, truck, 'proximity', 'first', { proximity: 20 });
 assert.equal(truck.supplies.ammo.proximity, 99);
 assert.equal(room.ordnance[0].proximity, 20);
@@ -165,7 +170,7 @@ fire(gunner, truck, 'proximity', 'first');
 assert.equal(truck.supplies.ammo.proximity, 99);
 assert.throws(() => fire(gunner, truck, 'proximity', 'too-soon'), /recharge/);
 now += 800;
-fire(gunner, truck, 'proximity', 'second', { proximity: 0.5 });
+fire(gunner, truck, 'proximity', 'second', { proximity: 0.5, direction: [0, 1, 0] });
 assert.equal(room.ordnance.at(-1).proximity, 0.5);
 const makeShot = (age, p = [1, 1, 1], v = [0, 0, 0]) => ({
   shot: 'boundary-' + age,
@@ -261,7 +266,15 @@ const right = room.ordnance.at(-1);
 assert.ok(left.p[0] * right.p[0] < 0);
 assert.equal(heli.supplies.ammo.rocket, 28);
 assert.throws(() => fire(gunner, heli, 'rocket', 'wrong-rocket'), /Arme/);
-fire(gunner, heli, 'missile', 'guided');
+assert.throws(
+  () => fire(gunner, heli, 'missile', 'above-gun-stop', { direction: [0, 1, 0] }),
+  /Butée/,
+);
+fire(gunner, heli, 'missile', 'guided', { direction: [0, 0, 1] });
+assert.ok(
+  room.ordnance.at(-1).v[2] > 0,
+  'guided missile can launch behind the Hind like its machine gun',
+);
 let missile = room.ordnance.at(-1);
 assert.equal(missile.occupation, gunner.occupation);
 assert.throws(() => fire(gunner, heli, 'missile', 'second-guided'), /déjà/);

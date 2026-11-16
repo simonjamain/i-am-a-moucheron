@@ -110,3 +110,24 @@ Les [quatre autres véhicules Meshy](meshy-fleet.md) conservent les UV et textur
 réelles de leurs GLB, avec armes et remorque articulées ; depuis la version 263, les
 origines de tir du T3, du D2 et du H2 viennent des modèles (`src/vehicle-anchors.js`). Chaque véhicule se
 repère par une pastille flottante colorée plutôt que par la couleur de sa coque.
+
+## DCA fixes pilotées
+
+Les trois postes s’achètent dans **Installations**, se posent à pied et se
+servent après avoir signé les deux formulaires. Un Castor ou une station à
+portée les ravitaille automatiquement aux tarifs habituels des balles et obus.
+
+| Poste             |                               Prix de base |        Stock | Tir                                                                                   |
+| ----------------- | -----------------------------------------: | -----------: | ------------------------------------------------------------------------------------- |
+| Flak léger        | 4 $, puis +2 $ par exemplaire jusqu’à 40 $ |     120 obus | Deux tubes alternés, éclatement à distance programmée.                                |
+| DCA haute cadence |                                       15 $ | 1 000 balles | Quatre mitrailleuses de Spitfire. Un départ toutes les 15 ms, en alternant les tubes. |
+| Flak lourd        |                                       35 $ |     120 obus | Un obus par seconde avec la fusée de proximité de la DCA mobile.                      |
+
+Les trois DCA fixes ont un azimut libre et une élévation de **+5° à +90°**.
+Dès la confirmation du poste du Flak lourd, la vue passe à la bouche du canon
+et suit son axe. La collision des DCA fixes suit l’embase à son échelle et à
+son orientation dans le bureau. Le Flak lourd règle la proximité à la molette. L’obus s’arme à 0,3 s et éclate
+au passage au plus près d’un objet dans la zone de détection. Le souffle atteint
+7,2 cm dans le bureau et inflige de 240 dégâts au centre à 60 au bord, soit
+trois fois le rayon et les dégâts du souffle du Flak léger.
+Voir [la DCA mobile](support-vehicles.md) pour le détail de la fusée.

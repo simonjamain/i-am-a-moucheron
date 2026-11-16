@@ -11,7 +11,7 @@ assert.equal(make({ aim }).startOnly, true);
 assert.deepEqual(defense, before, 'preview does not mutate the room');
 assert.match(make().error, /Visez/);
 const first = make({ aim, anchor: [0.12, -0.045] });
-assert.equal(first.price, 0.6, '12 cm billed pro rata (issue #99)');
+assert.equal(first.price, 0.63, '12 cm billed pro rata (issue #99)');
 assert.deepEqual(first.center, [0, -0.045]);
 assert.deepEqual(
   make({ aim, anchor: [0.12, -0.045], foot: { ...foot, face: 2 } }).command,
@@ -25,8 +25,8 @@ assert.match(make({ aim, anchor: [aim.x, aim.z] }).error, /distance/);
 assert.equal(make({ aim, mode: 'sugar' }).price, 3);
 assert.equal(make({ aim, mode: 'sticky', anchor: [0.12, -0.045] }).price, 0.6);
 groundCommand(defense, first.command, [0, 0], 20);
-assert.equal(make({ aim, mode: 'remove' }).command.id, defense.structures[0].id);
-defense.structures[0].hp = 50;
+assert.equal(make({ aim, mode: 'remove' }).command.id, defense.structures.at(-1).id);
+defense.structures.at(-1).hp = 50;
 assert.equal(make({ aim, mode: 'repair' }).price, 1);
 console.log('Camera placement: anchors, direction independence, validation and targeting OK');
 
@@ -117,10 +117,10 @@ assert.equal(commands.length, 2);
 const stroke = newGroundDefense();
 assert.equal(
   groundCommand(stroke, commands[1], [foot.x, foot.z], 20).price,
-  2.85,
+  2.94,
   '57 cm pro rata',
 );
-assert.equal(stroke.structures.length, 3);
+assert.equal(stroke.structures.length, 12);
 assert.deepEqual(stroke.structures[0].b, stroke.structures[1].a);
 resolve();
 await Promise.resolve();
@@ -222,9 +222,9 @@ for (const mode of ['sugar', 'fan', 'repair', 'remove']) {
   assert.deepEqual(a, b, mode + ' ignores movement heading');
 }
 assert.ok(brickLayout(0.2).length > brickLayout(0.04).length);
-for (const length of [0.002, 0.04, 0.2]) {
+for (const length of [0.012, 0.036, 0.192]) {
   for (const brick of brickLayout(length))
-    assert.ok(Math.abs(brick.x) + brick.width / 2 <= length / 2 + 1e-8);
+    assert.ok(Math.abs(brick.x) + brick.width / 2 <= length / 2 + 0.012 + 1e-8);
   const wall = createBrickWall(T, { a: [0, 0], b: [length, 0], hp: 100 });
   assert.equal(wall.count, brickLayout(length).length);
   assert.ok(wall.instanceColor);

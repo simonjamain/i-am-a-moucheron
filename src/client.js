@@ -1,3 +1,11 @@
+import { prepareCreatureVat } from '/creature-batch.js';
+import { MIDGE } from '/midge-model.js';
+import { WALKERS } from '/walker-batch.js';
+import { rayCollider, colliderContainsXZ } from '/oriented-collider.js';
+import { makeServiceStation, animateRadar, makeInstallationCollider } from '/station-model.js';
+import { ReloadHUD, seatReloads, heavyReadyAt, heavyLane, reloadProgress } from '/reload-hud.js';
+import { makeBed } from '/bed-model.js';
+import { officeFogOpacity, installOfficeFog, officeFogCeiling } from '/office-fog.js';
 import { makeFortificationStation } from '/fortification-model.js';
 import { placementFacing } from '/placement-aim.js';
 import { placementAim } from '/placement-aim.js';
@@ -11,13 +19,21 @@ import { deliveryHeightAt } from '/delivery.js';
 import { reserveAlerts, missileStatus, ArrivalSignals } from '/reserve-feedback.js';
 import { controlHints, cursorStats, cursorAmmoText } from '/live-hud.js';
 import { GunSalvos } from '/salvos.js';
-import { nextPilotMuzzle } from '/muzzle.js';
+import { nextPilotMuzzle, nearestWeaponMuzzle } from '/muzzle.js';
 import { advanceAutomaticFire } from '/salvos.js';
 import { ammoCapacity } from '/logistics.js';
-import { FIXED_DCA_AMMO, PISTOL_CAPACITY } from '/ground-ammo.js';
+import { PISTOL_CAPACITY } from '/ground-ammo.js';
+import { FIXED_DCA, heavyDcaMuzzle, isFixedDca } from '/fixed-dca.js';
+import { makeFixedDca, positionHeavyFlakSight } from '/fixed-dca-model.js';
 import { FORTIFICATIONS, isFortification } from '/ground-fortifications.js';
 import { HOWITZER } from '/howitzer-model.js';
-import { moveShotTrace, advanceShotTrace, makeShotTrace, TracerPool } from '/tracers.js';
+import {
+  moveShotTrace,
+  advanceShotTrace,
+  makeShotTrace,
+  TracerPool,
+  TRACER_COLOR,
+} from '/tracers.js';
 import { PurchaseUI } from '/purchase-ui.js';
 import { purchaseCount } from '/equipment.js';
 import { WASH } from '/vehicle-care.js';
@@ -53,7 +69,11 @@ import {
   vehicleEntry,
   vehicleAccess,
   pilotFireInterval,
+  isRotorcraft,
+  isPassengerSeat,
+  vehicleMaxHP,
 } from '/fleet.js';
+import { headingOf, airdropSurface, AIR_VIEW_HEIGHT, zoomAirView } from '/airdrop.js';
 import {
   spreadDirection,
   fuseRange,
@@ -72,7 +92,6 @@ import {
   stationExit,
   resolveLanding,
   stepWalker,
-  makeAntiaircraft,
   GEAR_HEIGHT,
 } from '/sortie.js';
 import {
@@ -93,7 +112,7 @@ import {
 } from '/control-focus.js';
 import { createRenderer } from '/renderer.js';
 import { createGraphics } from '/graphics.js';
-import { availableAppearance, turnToward } from '/character-model.js';
+import { availableAppearance, turnToward, loadCharacter } from '/character-model.js';
 import { createAppearancePicker } from '/appearance-picker.js';
 import { MidgeBatch } from '/midge-batch.js';
 import { WalkerBatch } from '/walker-batch.js';
@@ -138,6 +157,8 @@ import {
   resetTopCursor,
   topViewGroundPoint,
   topViewPose,
+  TOP_VIEW_HEIGHT,
+  zoomTopView,
   topViewRay,
 } from '/castor-top-view.js';
 import { CrashEffects } from '/crash-effects.js';
@@ -152,7 +173,9 @@ const $ = (id) => document.getElementById(id),
   canvas = $('view'),
   scene = new T.Scene();
 scene.background = new T.Color('#829f91');
-scene.fog = new T.FogExp2('#829f91', 0.035);
+installOfficeFog(T);
+scene.fog = new T.FogExp2('#ffffff', 0.018);
+scene.add(officeFogCeiling(T, OFFICE_LAYOUT.bounds));
 // Issue #104: no visible audio controls. Sound starts at the standard volume as
 // soon as the browser allows it (first user gesture); old saved settings ignored.
 const audioSettings = { volume: 0.55, muted: false };
@@ -219,6 +242,7 @@ const {
   makeTank,
   makeFlakTruck,
   makeCastor,
+  makeFlyingCastor,
   makeHelicopter,
   insect,
   humanoid,
@@ -239,9 +263,19 @@ const others = new Map(),
   trails = [];
 const insectIndex = new InsectIndex(T, insects);
 const groundMotion = new GroundMotionTrack();
-const midgeBatch = new MidgeBatch(T, scene, { enabled: !!renderer.isWebGLRenderer });
+// Prepare animation textures cooperatively before starting the main loop.
+// Awaiting microtasks alone would still freeze the loading screen.
+const midgeVat = renderer.isWebGLRenderer ? await prepareCreatureVat(T, MIDGE) : null;
+const walkerVats = {};
+if (renderer.isWebGLRenderer)
+  for (const [type, walker] of Object.entries(WALKERS))
+    walkerVats[type] = await prepareCreatureVat(T, walker.creature);
+const midgeBatch = new MidgeBatch(T, scene, { enabled: !!renderer.isWebGLRenderer, vat: midgeVat });
 const spiderlingBatch = new SpiderlingBatch(T, scene, { enabled: !!renderer.isWebGLRenderer });
-const walkerBatch = new WalkerBatch(T, scene, { enabled: !!renderer.isWebGLRenderer });
+const walkerBatch = new WalkerBatch(T, scene, {
+  enabled: !!renderer.isWebGLRenderer,
+  vats: walkerVats,
+});
 const midgeForward = new T.Vector3(0, 0, -1);
 const midgeHeading = new T.Vector3();
 const midgeTarget = new T.Quaternion();
@@ -296,9 +330,16 @@ const heliTurretAim = { yaw: 0, pitch: -0.1 };
 let selectedEquipment = null;
 let castorTacticalView = false;
 const topCursor = resetTopCursor({});
+let topViewHeight = TOP_VIEW_HEIGHT;
 // The V top view belongs to the Castor driver only.
 const castorTopView = () =>
   castorTacticalView && myVehicle?.type === 'castor' && crewSeat === 'pilot' && !respawnAt;
+// Castor volant vertical view (V, pilot and passengers): the camera looks
+// straight down under the helicopter, its nose at the top of the screen; the
+// pilot flies with the keyboard only (A/E turn the helicopter).
+let airViewOn = false,
+  airViewHeight = AIR_VIEW_HEIGHT;
+const airView = () => airViewOn && myVehicle?.type === 'flyingcastor' && !respawnAt;
 let optimisticExitPending = false;
 let onFoot = true,
   baseArena = null,
@@ -412,7 +453,7 @@ function groundActive() {
   return (
     joined &&
     !spectating &&
-    ((onFoot && !myVehicle) || !!respawnAt) &&
+    ((onFoot && !myVehicle) || turretIndex >= 0 || !!respawnAt) &&
     $('papers').classList.contains('hidden') &&
     !$('changelogDialog').open &&
     !$('waveCouncil').open &&
@@ -466,16 +507,16 @@ canvas.addEventListener('pointermove', (e) => {
       return;
     }
     turretAim.yaw -= (e.clientX - groundView.x) * 0.003;
-    turretAim.pitch = T.MathUtils.clamp(
+    turretAim.pitch = clampTurretPitch(
       turretAim.pitch - (e.clientY - groundView.y) * 0.003,
       crewSeat === 'ventral'
         ? -1.5
         : myVehicle?.type === 'helicopter'
-          ? -1.45
+          ? HELI.minPitch
           : myVehicle?.type === 'tank'
             ? -0.65
             : -0.1,
-      crewSeat === 'ventral' ? -0.05 : 1.35,
+      crewSeat === 'ventral' ? -0.05 : myVehicle?.type === 'helicopter' ? HELI.maxPitch : 1.35,
     );
     groundView.x = e.clientX;
     groundView.y = e.clientY;
@@ -527,7 +568,7 @@ function groundCamera(cam, position, dt, purg = false) {
     const ray = new T.Ray(target, offset.clone().normalize());
     let distance = offset.length();
     for (const box of purg ? purgColliders : colliders) {
-      const hit = ray.intersectBox(box, new T.Vector3());
+      const hit = rayCollider(T, ray, box, new T.Vector3());
       if (hit)
         distance = Math.min(
           distance,
@@ -611,7 +652,7 @@ function localMotion() {
     hp: Math.max(0, Math.min(VEHICLES[myVehicle?.type]?.maxHP || 100, hp)),
     type: myVehicle?.type,
     collective:
-      myVehicle?.type === 'helicopter' && crewSeat === 'pilot'
+      isRotorcraft(myVehicle?.type) && crewSeat === 'pilot'
         ? heliCollective
         : myVehicle?.state.collective || 0,
     rotorPower: heliRotorPower,
@@ -777,22 +818,23 @@ addEventListener('pointermove', (event) => {
     return;
   const dx = event.movementX,
     dy = event.movementY;
+  if (airView()) return; // vertical view: keyboard only, no mouse
   if (myVehicle?.type === 'tank' && crewSeat === 'cannon' && keys.KeyC) {
     lookDelta(freeLook, dx, dy);
     return;
   }
   if ((turretIndex >= 0 || (myVehicle && crewSeat !== 'pilot')) && !respawnAt) {
     turretAim.yaw -= dx * 0.003;
-    turretAim.pitch = T.MathUtils.clamp(
+    turretAim.pitch = clampTurretPitch(
       turretAim.pitch - dy * 0.003,
       crewSeat === 'ventral'
         ? -1.5
         : myVehicle?.type === 'helicopter'
-          ? -1.45
+          ? HELI.minPitch
           : myVehicle?.type === 'tank'
             ? -0.65
             : -0.1,
-      crewSeat === 'ventral' ? -0.05 : 1.35,
+      crewSeat === 'ventral' ? -0.05 : myVehicle?.type === 'helicopter' ? HELI.maxPitch : 1.35,
     );
     return;
   }
@@ -861,9 +903,19 @@ canvas.addEventListener('contextmenu', (event) => event.preventDefault());
 canvas.addEventListener(
   'wheel',
   (e) => {
+    if (castorTopView() && controlFocus.active && canCapture()) {
+      e.preventDefault();
+      topViewHeight = zoomTopView(topViewHeight, e.deltaY);
+      return;
+    }
+    if (airView() && controlFocus.active && canCapture()) {
+      e.preventDefault();
+      airViewHeight = zoomAirView(airViewHeight, e.deltaY);
+      return;
+    }
     if (
-      myVehicle?.type === 'flaktruck' &&
-      crewSeat === 'cannon' &&
+      (stations[turretIndex]?.kind === 'dcaHeavy' ||
+        (myVehicle?.type === 'flaktruck' && crewSeat === 'cannon')) &&
       controlFocus.active &&
       canCapture()
     ) {
@@ -871,7 +923,7 @@ canvas.addEventListener(
       mobileProximity = clampProximity(mobileProximity - Math.sign(e.deltaY) * MOBILE_FUSE.step);
       return;
     }
-    if (turretIndex >= 0 && controlFocus.active) {
+    if (stations[turretIndex]?.kind === 'dca' && controlFocus.active) {
       e.preventDefault();
       flakRange = fuseRange(flakRange - Math.sign(e.deltaY) * FLAK.step);
       return;
@@ -885,10 +937,17 @@ canvas.addEventListener(
 addEventListener('blur', releaseMouse);
 function updateAimHUD() {
   const enabled =
-    joined && !spectating && !respawnAt && !onFoot && turretIndex < 0 && controlFocus.active;
+    joined &&
+    !spectating &&
+    !respawnAt &&
+    !onFoot &&
+    turretIndex < 0 &&
+    controlFocus.active &&
+    !isPassengerSeat(crewSeat);
   const aim = $('mouseAim'),
     gun = $('crosshair');
-  aim.classList.toggle('hidden', !enabled);
+  // Vertical view: no mouse steering; the gun sight marks the drop point.
+  aim.classList.toggle('hidden', !enabled || airView());
   $('mouseHint').classList.toggle('hidden', !enabled);
   canvas.classList.toggle('mouseFlight', document.pointerLockElement === canvas);
   if (!enabled) {
@@ -897,6 +956,12 @@ function updateAimHUD() {
     return;
   }
   function place(el, direction) {
+    if (airView()) {
+      el.classList.remove('offscreen');
+      el.style.left = '50%';
+      el.style.top = '50%';
+      return;
+    }
     if (castorTopView()) {
       el.classList.remove('offscreen');
       el.style.left = (topCursor.x * 0.5 + 0.5) * innerWidth + 'px';
@@ -1040,6 +1105,7 @@ function accept(s, force = false) {
       b.m.userData.dispose();
     }
     trails.length = 0;
+    rapidImpacts.length = 0;
     aircraftFire.invalidate();
     vacantAircraft.clear();
     entryNoticeWave = -1;
@@ -1128,7 +1194,7 @@ function accept(s, force = false) {
   if (self?.life === 'alive') {
     const previousVehicle = myVehicle?.id,
       previousSeat = crewSeat,
-      foot = self.mode !== 'flight',
+      foot = self.mode !== 'flight' && self.mode !== 'turret',
       oldTurret = turretIndex;
     myVehicle = s.vehicles?.find((v) => v.id === self.vehicle_id) || null;
     crewSeat = self.seat || null;
@@ -1148,6 +1214,7 @@ function accept(s, force = false) {
         gas = myVehicle.state.gas ?? (landed ? 0 : 0.65);
         heliCollective = myVehicle.state.collective || 0;
         heliRotorPower = myVehicle.state.rotorPower ?? 1;
+        airViewOn = false;
         boardingOpen = false;
         groundView.scene = '';
         // The biplane bomber's rear gunner starts looking backward, like the tail gunner.
@@ -1178,6 +1245,7 @@ function accept(s, force = false) {
     }
     if (turretIndex >= 0 && oldTurret !== turretIndex) {
       boardingOpen = false;
+      groundView.scene = '';
       sound.play('board', camera.position, { ref: 8 });
       turretAim.yaw = 0;
       const kind = stations[turretIndex]?.kind;
@@ -1187,7 +1255,14 @@ function accept(s, force = false) {
           ? 'Canon lourd · Souris : pointer (lent) · Clic : obus · F : sortir'
           : kind === 'bunker'
             ? 'Bunker LEGO · Clic : balles · F : sortir'
-            : 'DCA · Molette / [ ] : fusée · Clic : obus · F : sortir',
+            : stationLabel(stations[turretIndex]) +
+              ' · ' +
+              (kind === 'dcaRapid'
+                ? 'Clic : balles'
+                : kind === 'dcaHeavy'
+                  ? 'Molette : proximité · Clic : obus'
+                  : 'Molette / [ ] : fusée · Clic : obus') +
+              ' · F : sortir',
         4,
       );
     }
@@ -1224,7 +1299,7 @@ function accept(s, force = false) {
         targetScene,
         new T.Vector3().fromArray(e.p),
         new T.Vector3().fromArray(e.direction),
-        '#ffe48d',
+        TRACER_COLOR,
         respawnAt ? 1 : MAP.ratio,
       );
 
@@ -1502,6 +1577,22 @@ async function action(path, extra = {}) {
 const waveCouncil = new WaveCouncilUI({ document, command: action, releaseMouse });
 const forecastScene = new WaveForecastScene(T, scene, textLabel);
 function castorBuilder() {
+  // Castor volant: pilot and passengers drop below the helicopter.
+  if (myVehicle?.type === 'flyingcastor' && !respawnAt && myVehicle.state.hp > 0) {
+    const x = me.position.x,
+      y = me.position.y - VEHICLES.flyingcastor.gear,
+      z = me.position.z;
+    return {
+      air: true,
+      x,
+      y,
+      z,
+      yaw: headingOf(me.quaternion.toArray()),
+      landingY: airdropSurface(colliders, x, z, Math.max(0, y)),
+      grounded: false,
+      parachute: false,
+    };
+  }
   if (myVehicle?.type !== 'castor' || crewSeat !== 'pilot' || respawnAt) return null;
   const rear = new T.Vector3(0, 0, VEHICLES.castor.length * 0.5 * ACTOR_UNIT)
     .applyQuaternion(me.quaternion)
@@ -1513,6 +1604,10 @@ function castorBuilder() {
     grounded: landed,
     parachute: false,
     rear: [rear.x, rear.z],
+    direction: new T.Vector3(0, 0, 1)
+      .applyQuaternion(me.quaternion)
+      .toArray()
+      .filter((_, i) => i !== 1),
   };
 }
 const groundDefenseUI = new GroundDefenseUI({
@@ -1536,6 +1631,7 @@ const groundDefenseUI = new GroundDefenseUI({
   },
   builder: castorBuilder,
   fortificationModel: (st) => makeFortificationStation(T, st, { box, cyl }),
+  serverNow: () => Date.now() + clockOffset,
   enabled: () => canCapture() && !placingEquipment,
   captureMouse,
   available: () =>
@@ -1616,7 +1712,7 @@ addEventListener('keydown', (event) => {
     !event.repeat &&
     !waveCouncil.button.hidden &&
     canCapture() &&
-    myVehicle?.type !== 'castor'
+    !['castor', 'flyingcastor'].includes(myVehicle?.type)
   ) {
     event.preventDefault();
     waveCouncil.button.click();
@@ -1632,7 +1728,15 @@ addEventListener('keydown', (event) => {
     if (groundDefenseUI.handleWheelKey(interactionKey, true, event.repeat)) event.preventDefault();
     return;
   }
-  if (groundDefenseUI.active && canCapture()) {
+  // Castor volant: drops follow the helicopter's heading (no R), and A/E turn
+  // it in the vertical view, so only Enter (or a click) drops.
+  if (groundDefenseUI.active && canCapture() && myVehicle?.type === 'flyingcastor') {
+    if (interactionKey === 'Enter' || interactionKey === 'KeyR') {
+      event.preventDefault();
+      if (interactionKey === 'Enter' && !event.repeat) groundDefenseUI.press();
+      return;
+    }
+  } else if (groundDefenseUI.active && canCapture()) {
     if (interactionKey === 'KeyR' || interactionKey === 'KeyE' || interactionKey === 'Enter') {
       event.preventDefault();
       if (!event.repeat) {
@@ -1641,6 +1745,21 @@ addEventListener('keydown', (event) => {
       }
       return;
     }
+  }
+  if (interactionKey === 'KeyV' && myVehicle?.type === 'flyingcastor' && !event.repeat) {
+    event.preventDefault();
+    airViewOn = !airViewOn;
+    if (!airViewOn) resetMouseAim();
+    notify(
+      airViewOn
+        ? 'Vue verticale · ' +
+            (crewSeat === 'pilot'
+              ? 'pilotage au clavier, A/E : tourner'
+              : 'largage sous l’appareil')
+        : 'Vue de vol du Castor volant',
+      2,
+    );
+    return;
   }
   if (interactionKey === 'KeyV' && myVehicle?.type === 'castor' && !event.repeat) {
     event.preventDefault();
@@ -1763,7 +1882,7 @@ addEventListener('keydown', (event) => {
     !event.repeat
   )
     interactVehicle();
-  if (turretIndex >= 0 && ['BracketLeft', 'BracketRight'].includes(code)) {
+  if (stations[turretIndex]?.kind === 'dca' && ['BracketLeft', 'BracketRight'].includes(code)) {
     flakRange = fuseRange(flakRange + (code === 'BracketRight' ? FLAK.step : -FLAK.step));
   }
   if (code === 'KeyR' && !event.repeat) crash();
@@ -1795,7 +1914,15 @@ setInterval(async () => {
     accept(
       await api('sync', {
         id,
-        mode: myVehicle ? (crewSeat === 'pilot' ? 'flight' : 'crew') : onFoot ? 'foot' : 'flight',
+        mode: myVehicle
+          ? crewSeat === 'pilot'
+            ? 'flight'
+            : 'crew'
+          : turretIndex >= 0
+            ? 'turret'
+            : onFoot
+              ? 'foot'
+              : 'flight',
         state: localMotion(),
         signalSince,
         damageSince: damageSeen,
@@ -2532,12 +2659,11 @@ function reconcileEquipment(next) {
   stations = next;
   for (const [i, st] of stations.entries()) {
     if (turrets[i] || st.kind === 'retired') continue;
-    const gun =
-      st.kind === 'dca'
-        ? makeAntiaircraft(T, scene, { box, cyl }, [st])[0]
-        : isFortification(st.kind)
-          ? makeFortificationStation(T, st, { box, cyl })
-          : installationModel(st);
+    const gun = isFixedDca(st.kind)
+      ? makeFixedDca(T, st)
+      : isFortification(st.kind)
+        ? makeFortificationStation(T, st, { box, cyl })
+        : installationModel(st);
     scene.add(gun);
     gun.rotation.y = st.angle || 0;
     gun.userData.kind = st.kind;
@@ -2546,25 +2672,30 @@ function reconcileEquipment(next) {
       ? st.kind === 'bunker'
         ? 0.075
         : FORTIFICATIONS.antitank.footprint
-      : MAP.metres(st.kind === 'bed' ? 0.8 : 2);
-    const collider = new T.Box3(
-      new T.Vector3(st.x - radius, st.y, st.z - radius),
-      new T.Vector3(
-        st.x + radius,
-        st.y +
-          (st.kind === 'antitank'
-            ? MAP.metres(2.2)
-            : isFortification(st.kind)
-              ? 0.04
-              : MAP.metres(0.8)),
-        st.z + radius,
-      ),
-    );
+      : MAP.metres(2);
+    const collider =
+      st.kind === 'refuel' || st.kind === 'bed'
+        ? makeInstallationCollider(T, gun)
+        : isFixedDca(st.kind)
+          ? makeInstallationCollider(T, gun.userData.baseMesh)
+          : new T.Box3(
+              new T.Vector3(st.x - radius, st.y, st.z - radius),
+              new T.Vector3(
+                st.x + radius,
+                st.y +
+                  (st.kind === 'antitank'
+                    ? MAP.metres(2.2)
+                    : isFortification(st.kind)
+                      ? 0.04
+                      : MAP.metres(0.8)),
+                st.z + radius,
+              ),
+            );
     colliders.push(collider);
     gun.userData.collider = collider;
     const person = humanoid('#91b4a0');
     person.scale.setScalar(1.8 / 2.46);
-    person.position.set(0, -0.75, 1);
+    person.position.fromArray(gun.userData.seat || [0, -0.75, 1]);
     person.rotation.y = Math.PI;
     (gun.userData.yaw || gun).add(person);
     person.visible = false;
@@ -2573,14 +2704,20 @@ function reconcileEquipment(next) {
     turrets[i] = gun;
     // Occupiable equipment circles carry their role icon (issue #106).
     const ring =
-      st.kind === 'dca' || isFortification(st.kind)
+      isFixedDca(st.kind) || isFortification(st.kind)
         ? roleEntry(null, null, st.kind === 'antitank' ? 'cannon' : 'gunner')
         : entryRing.clone();
     ring.position.set(st.x + stationEntryOffset(st), st.y + ACTOR_UNIT * 0.12, st.z);
     ring.scale.setScalar(ACTOR_UNIT);
-    if (st.kind === 'dca' || st.kind === 'bed' || isFortification(st.kind)) scene.add(ring);
+    if (isFixedDca(st.kind) || st.kind === 'bed' || isFortification(st.kind)) scene.add(ring);
     stationRings[i] = ring;
   }
+}
+function clampTurretPitch(value, min, max) {
+  const antiAir =
+    isFixedDca(stations[turretIndex]?.kind) ||
+    (myVehicle?.type === 'flaktruck' && crewSeat === 'cannon');
+  return T.MathUtils.clamp(value, antiAir ? FLAK.minPitch : min, antiAir ? FLAK.maxPitch : max);
 }
 function turretDirection(aim = turretAim) {
   return new T.Vector3(
@@ -2591,7 +2728,7 @@ function turretDirection(aim = turretAim) {
 }
 function weaponDirection() {
   if (myVehicle?.type === 'castor' && crewSeat === 'pilot') return mouseDirection.clone();
-  if (myVehicle?.type === 'helicopter' && crewSeat === 'pilot')
+  if (isRotorcraft(myVehicle?.type) && crewSeat === 'pilot')
     return new T.Vector3(0, 0, -1).applyQuaternion(me.quaternion);
   const d = turretDirection(
     myVehicle?.type === 'helicopter' && crewSeat === 'copilot' ? heliTurretAim : turretAim,
@@ -2601,8 +2738,8 @@ function weaponDirection() {
 // Player-facing names: only real DCA posts are called DCA.
 function stationLabel(st) {
   if (!st) return 'Poste';
-  return st.kind === 'dca'
-    ? 'DCA ' + st.name
+  return isFixedDca(st.kind)
+    ? SHOP[st.kind].name
     : st.kind === 'antitank'
       ? 'Canon lourd anti-matériel'
       : st.name || FORTIFICATIONS[st.kind]?.name || 'Poste';
@@ -2613,7 +2750,7 @@ function nearestStation() {
   const w = baseWorld(b);
   let nearest = null;
   stations.forEach((s, index) => {
-    if ((s.kind === 'dca' || (isFortification(s.kind) && s.hp > 0)) && stationAccess(w, s)) {
+    if ((isFixedDca(s.kind) || (isFortification(s.kind) && s.hp > 0)) && stationAccess(w, s)) {
       const d = Math.hypot(w.x - s.x, w.z - s.z);
       if (!nearest || d < nearest.distance) nearest = { index, distance: d };
     }
@@ -2739,7 +2876,7 @@ async function chooseEquipment(index) {
   selectedEquipment = index;
   boardingOpen = false;
   boardingSelectionBusy = true;
-  const timing = beginBoardingFeedback('dca', stations[index]?.name || 'Canon Flak');
+  const timing = beginBoardingFeedback('dca', stationLabel(stations[index]));
   releaseMouse();
   renderPaper();
   try {
@@ -2769,6 +2906,25 @@ $('turretFire').onpointerdown = (e) => {
   uiWeaponFire = true;
 };
 $('turretFire').onpointerup = $('turretFire').onpointercancel = () => (uiWeaponFire = false);
+// Castor volant vertical view: straight down under the helicopter, its nose
+// at the top of the screen. The eye stays at a fixed height above the landing
+// surface (wheel: zoom), so the drop preview keeps its size at any altitude.
+function airViewCamera(dt) {
+  const yaw = headingOf(me.quaternion.toArray());
+  const ground = airdropSurface(
+    colliders,
+    me.position.x,
+    me.position.z,
+    Math.max(0, me.position.y - VEHICLES.flyingcastor.gear),
+  );
+  const eye = new T.Vector3(me.position.x, ground + airViewHeight, me.position.z);
+  camera.position.lerp(eye, 1 - Math.exp(-10 * dt));
+  camera.up
+    .lerp(new T.Vector3(-Math.sin(yaw), 0, -Math.cos(yaw)), 1 - Math.exp(-10 * dt))
+    .normalize();
+  camera.lookAt(camera.position.clone().add(new T.Vector3(0, -1, 0)));
+  camera.updateMatrixWorld();
+}
 function updateVehicles(dt) {
   const visible = joined && !respawnAt,
     crew = !!myVehicle && crewSeat !== 'pilot';
@@ -2781,7 +2937,10 @@ function updateVehicles(dt) {
     ? 'Replier · Espace'
     : 'Parachute · Espace';
   $('vehicleInteract').classList.toggle('hidden', turretIndex < 0);
-  $('turretFire').classList.toggle('hidden', turretIndex < 0 && !crew);
+  $('turretFire').classList.toggle(
+    'hidden',
+    turretIndex < 0 && (!crew || isPassengerSeat(crewSeat)),
+  );
   // Only the DCA has a time fuse; bunker and heavy gun have none.
   $('flakControls').classList.toggle(
     'hidden',
@@ -2792,15 +2951,14 @@ function updateVehicles(dt) {
   const occupiedStation = turretIndex >= 0 ? stations[turretIndex] : null;
   $('vehicleState').textContent =
     turretIndex >= 0
-      ? (occupiedStation.kind === 'dca' ? 'Canon Flak · ' : '') +
-        stationLabel(occupiedStation) +
+      ? stationLabel(occupiedStation) +
         ' · ' +
         Math.round(occupiedStation.hp ?? hp) +
         ' PV · ' +
-        (occupiedStation.kind === 'bunker' ? 'Balles ' : 'Obus ') +
+        (['bunker', 'dcaRapid'].includes(occupiedStation.kind) ? 'Balles ' : 'Obus ') +
         Math.floor(occupiedStation.ammo ?? 0) +
         '/' +
-        (FORTIFICATIONS[occupiedStation.kind]?.ammo ?? FIXED_DCA_AMMO)
+        (FORTIFICATIONS[occupiedStation.kind]?.ammo ?? FIXED_DCA[occupiedStation.kind]?.ammo ?? 0)
       : myVehicle
         ? VEHICLES[myVehicle.type].name +
           ' · ' +
@@ -2830,7 +2988,34 @@ function updateVehicles(dt) {
           ? 'Descente sous voile'
           : 'Échelle ' + MAP.numerator + '/' + MAP.denominator + ' · À pied';
   if (!visible) return;
-  if (crew) {
+  // Castor volant passengers: no gun, a chase view they turn with the mouse
+  // (or the vertical view, V).
+  if (crew && isPassengerSeat(crewSeat)) {
+    me.visible = true;
+    $('crosshair').classList.toggle('hidden', !airView());
+    if (airView()) airViewCamera(dt);
+    else {
+      const orbit = new T.Quaternion()
+        .setFromAxisAngle(new T.Vector3(0, 1, 0), headingOf(me.quaternion.toArray()))
+        .multiply(
+          new T.Quaternion().setFromEuler(
+            new T.Euler(T.MathUtils.clamp(turretAim.pitch, -1.2, 0.6), turretAim.yaw, 0, 'YXZ'),
+          ),
+        );
+      camera.position.lerp(
+        me.position
+          .clone()
+          .add(new T.Vector3(0, 7, 21).multiplyScalar(ACTOR_UNIT).applyQuaternion(orbit)),
+        1 - Math.exp(-10 * dt),
+      );
+      camera.up.set(0, 1, 0);
+      camera.lookAt(
+        me.position
+          .clone()
+          .add(new T.Vector3(0, 0, -60).multiplyScalar(ACTOR_UNIT).applyQuaternion(orbit)),
+      );
+    }
+  } else if (crew) {
     if (myVehicle.type === 'helicopter' && crewSeat === 'copilot') {
       const pressed =
         !!(mouseFire || pad.fire || uiWeaponFire) && controlFocus.active && canCapture();
@@ -2853,16 +3038,16 @@ function updateVehicles(dt) {
     }
     if (controlFocus.active && !observing) {
       turretAim.yaw -= pad.yaw * dt;
-      turretAim.pitch = T.MathUtils.clamp(
+      turretAim.pitch = clampTurretPitch(
         turretAim.pitch - pad.pitch * dt,
         crewSeat === 'ventral'
           ? -1.5
           : myVehicle?.type === 'helicopter'
-            ? -1.45
+            ? HELI.minPitch
             : myVehicle?.type === 'tank'
               ? -0.65
               : -0.05,
-        crewSeat === 'ventral' ? -0.05 : 1.2,
+        crewSeat === 'ventral' ? -0.05 : myVehicle?.type === 'helicopter' ? HELI.maxPitch : 1.2,
       );
     }
     if (myVehicle.type === 'helicopter' && crewSeat === 'copilot') {
@@ -2887,7 +3072,8 @@ function updateVehicles(dt) {
     else if (myVehicle.type === 'helicopter') me.visible = true;
     camera.position.copy(view.eye);
     camera.up.copy(up);
-    camera.lookAt(view.target);
+    if (myVehicle.type === 'flaktruck') mount.userData.pitch.getWorldQuaternion(camera.quaternion);
+    else camera.lookAt(view.target);
     $('crosshair').classList.remove('hidden', 'offscreen');
     shooting =
       myVehicle.type !== 'flaktruck' &&
@@ -2911,7 +3097,7 @@ function updateVehicles(dt) {
     );
     cooldown = burst.cooldown;
     for (let shot = 0; shot < burst.shots; shot++)
-      bullet(view.muzzle, spreadDirection(T, dir), '#f4efab', true);
+      bullet(view.muzzle, spreadDirection(T, dir), TRACER_COLOR, true);
   }
   for (let index = 0; index < turrets.length; index++) {
     const gun = turrets[index];
@@ -2920,16 +3106,21 @@ function updateVehicles(dt) {
       occupant = snap?.pilots.find(
         (p) => p.life === 'alive' && p.mode === 'turret' && p.state.turret === index,
       );
-    gun.userData.person.visible = !!occupant && station.kind === 'dca';
+    const heavyDca = station.kind === 'dcaHeavy';
+    const self = index === turretIndex;
+    gun.userData.person.visible = !!occupant && isFixedDca(station.kind) && !(self && heavyDca);
     if (gun.userData.person.visible) {
       wearAppearance(gun.userData.person, occupant.id);
       gun.userData.person.userData.animate?.(dt, { seated: true });
     }
     const howitzer = gun.userData.howitzer;
     howitzer?.tick(dt); // recoil keeps returning to battery after the gunner leaves
-    if (!occupant) continue;
-    const self = occupant.id === id,
-      motion = self ? localMotion() : remoteMotion(occupant);
+    if (!self && !occupant) {
+      gun.userData.rapidCooldown = 0;
+      gun.userData.rapidQueue?.clear();
+      continue;
+    }
+    const motion = self ? null : remoteMotion(occupant);
     let dir = self
       ? turretDirection()
       : new T.Vector3().fromArray(motion.turretDirection || [0, 0.3, -1]).normalize();
@@ -2941,12 +3132,16 @@ function updateVehicles(dt) {
       aimGun(T, gun.userData.yaw, dir, gun.quaternion);
     }
     gun.updateWorldMatrix(true, true);
-    const muzzle = gun.userData.muzzles[gun.userData.barrel % 2].getWorldPosition(new T.Vector3());
+    const muzzleNode = gun.userData.muzzles[gun.userData.barrel % gun.userData.muzzles.length];
+    const muzzle = muzzleNode.getWorldPosition(new T.Vector3());
+    const interval =
+      (FORTIFICATIONS[station.kind]?.interval ?? FIXED_DCA[station.kind]?.interval) /
+      (snap?.balance?.fireRate ?? 1);
     if (self) {
       if (controlFocus.active) {
         if (station.kind === 'dca') flakRange = advanceFuse(flakRange, keys, dt);
         turretAim.yaw -= pad.yaw * dt * 1.5;
-        turretAim.pitch = T.MathUtils.clamp(
+        turretAim.pitch = clampTurretPitch(
           turretAim.pitch - pad.pitch * dt,
           howitzer ? HOWITZER.minPitch : -0.1,
           howitzer ? HOWITZER.maxPitch : 1.35,
@@ -2961,41 +3156,43 @@ function updateVehicles(dt) {
           .set(station.x, station.y + MAP.metres(2.6), station.z)
           .addScaledVector(back, -MAP.metres(4.5));
         camera.lookAt(camera.position.clone().addScaledVector(aim, MAP.metres(100)));
+      } else if (heavyDca) {
+        positionHeavyFlakSight(T, camera, gun);
       } else {
         camera.position.set(
           station.x,
           station.y + MAP.metres(station.kind === 'bunker' ? 17 : 5),
           station.z,
         );
-        camera.lookAt(camera.position.clone().addScaledVector(dir, MAP.metres(100)));
+        if (isFixedDca(station.kind)) gun.userData.pitch.getWorldQuaternion(camera.quaternion);
+        else camera.lookAt(camera.position.clone().addScaledVector(dir, MAP.metres(100)));
       }
       shooting =
         ((controlFocus.active && (mouseFire || keys.Space || pad.fire)) || uiWeaponFire) &&
         (station.ammo ?? 0) >= 1;
-      if (shooting && performance.now() > gun.userData.shotAt) {
-        gun.userData.shotAt =
-          performance.now() +
-          (FORTIFICATIONS[station.kind]?.interval ?? FLAK.interval) *
-            1000 *
-            (1 / (snap?.balance?.fireRate ?? 1));
+      if (station.kind === 'dcaRapid') {
+        fireRapidDca(station, gun, dir, dt, interval, shooting, true);
+      } else if (shooting && performance.now() > gun.userData.shotAt) {
+        gun.userData.shotAt = performance.now() + interval * 1000;
         gun.userData.barrel++;
         const incarnation = snap.pilots.find((p) => p.id === id)?.incarnation;
-        if (howitzer) {
-          // Issue #113: a server shell (like the tank's), from the real barrel.
-          howitzer.fire();
-          combatEffects.muzzle(muzzle, dir);
+        if (howitzer || heavyDca) {
+          howitzer?.fire();
+          const weapon = heavyDca ? 'dcaHeavy' : 'antitank';
+          combatEffects.muzzle(muzzle, dir, muzzleNode);
           sound.play('flak', muzzle, { ref: 35 });
-          const shot = id + ':antitank:' + ++shotSequence,
+          const shot = id + ':' + weapon + ':' + ++shotSequence,
             aim = dir.clone().normalize().toArray(),
             launchAt = serverClock.now(performance.now()) ?? Date.now() + clockOffset;
           launchLocal({
             shot,
-            weapon: 'antitank',
+            weapon,
             vehicle: null,
             station: index,
             shooter: id,
-            p: howitzerMuzzle(station, aim),
-            v: aim.map((v) => v * HEAVY.antitank.speed),
+            p: heavyDca ? heavyDcaMuzzle(station, aim) : howitzerMuzzle(station, aim),
+            ...(heavyDca ? { proximity: mobileProximity } : {}),
+            v: aim.map((v) => v * HEAVY[weapon].speed),
             age: 0,
             at: launchAt,
             updated: launchAt,
@@ -3003,7 +3200,13 @@ function updateVehicles(dt) {
             radiusFactor: 1,
             bonus: 1,
           });
-          api('antitank-fire', { station: index, shot, incarnation, direction: aim })
+          api(heavyDca ? 'heavy-dca-fire' : 'antitank-fire', {
+            station: index,
+            shot,
+            incarnation,
+            direction: aim,
+            ...(heavyDca ? { proximity: mobileProximity } : {}),
+          })
             .then((v) => accept(v))
             .catch((e) => {
               localShots.delete(shot);
@@ -3012,30 +3215,87 @@ function updateVehicles(dt) {
         } else {
           const fort = FORTIFICATIONS[station.kind];
           const shot = fort
-            ? emitBullet(muzzle, dir, '#ffe49b', true, false, {
-                wave: snap.wave,
-                baseDamage: fort.damage,
-                velocity: new T.Vector3(),
-              })
-            : bullet(muzzle, dir, '#ffe49b', true, true);
+            ? emitBullet(
+                muzzle,
+                dir,
+                TRACER_COLOR,
+                true,
+                false,
+                {
+                  wave: snap.wave,
+                  baseDamage: fort.damage,
+                  velocity: new T.Vector3(),
+                },
+                muzzleNode,
+              )
+            : bullet(muzzle, dir, TRACER_COLOR, true, true, muzzleNode);
           if (shot) action('fixed-dca-fire', { station: index, shot, incarnation });
         }
       }
+    } else if (station.kind === 'dcaRapid') {
+      fireRapidDca(station, gun, dir, dt, interval, motion.fire, false);
     } else if (motion.fire && (station.ammo ?? 0) >= 1 && performance.now() > gun.userData.shotAt) {
-      gun.userData.shotAt =
-        performance.now() +
-        (FORTIFICATIONS[station.kind]?.interval ?? FLAK.interval) *
-          1000 *
-          (1 / (snap?.balance?.fireRate ?? 1));
+      gun.userData.shotAt = performance.now() + interval * 1000;
       gun.userData.barrel++;
-      if (howitzer) {
-        // The shell itself arrives with the server ordnance.
-        howitzer.fire();
-        combatEffects.muzzle(muzzle, dir);
+      if (howitzer || heavyDca) {
+        // The shell itself arrives with the recorded launch.
+        howitzer?.fire();
+        combatEffects.muzzle(muzzle, dir, muzzleNode);
         sound.play('flak', muzzle, { ref: 35 });
-      } else bullet(muzzle, dir, '#91d9c4', false, station.kind !== 'bunker');
+      } else bullet(muzzle, dir, TRACER_COLOR, false, station.kind !== 'bunker', muzzleNode);
     }
   }
+}
+function fireRapidDca(station, gun, direction, dt, interval, firing, owned) {
+  const state = gun.userData;
+  const queue = owned ? (state.rapidQueue ??= new Map()) : null;
+  const ammo = Math.max(
+    0,
+    Math.floor((state.rapidReserve?.at >= snap.now ? state.rapidReserve.ammo : station.ammo) ?? 0) -
+      (state.pendingRounds || 0) -
+      (queue?.size || 0),
+  );
+  const burst = advanceAutomaticFire(state.rapidCooldown, dt, interval, firing && ammo > 0);
+  state.rapidCooldown = burst.cooldown;
+  state.shotAt = performance.now() + burst.cooldown * 1000;
+  for (let i = 0; i < Math.min(ammo, burst.shots, 8 - (queue?.size || 0)); i++) {
+    const muzzle = state.muzzles[state.barrel++ % state.muzzles.length];
+    const authorization = owned ? { accepted: null, impact: null } : null;
+    const shot = emitBullet(
+      muzzle.getWorldPosition(new T.Vector3()),
+      spreadDirection(T, direction),
+      TRACER_COLOR,
+      owned,
+      false,
+      { velocity: new T.Vector3(), weapon: 'dcaRapid', authorization },
+      muzzle,
+    );
+    if (queue && shot) queue.set(shot, authorization);
+  }
+  const now = performance.now();
+  if (!queue?.size || (firing && queue.size < 8 && now < (state.nextRapidReport ?? 0))) return;
+  state.nextRapidReport = now + 50;
+  const shots = queue;
+  state.rapidQueue = new Map();
+  state.pendingRounds = (state.pendingRounds || 0) + shots.size;
+  const incarnation = snap.pilots.find((p) => p.id === id)?.incarnation;
+  const epoch = snap.base?.epoch;
+  function resolveRounds(accepted) {
+    for (const [shot, authorization] of shots) {
+      authorization.accepted = snap?.base?.epoch === epoch && accepted.includes(shot);
+      if (authorization.accepted) authorization.impact?.();
+    }
+  }
+  api('fixed-dca-fire', { station: station.slot, shots: [...shots.keys()], incarnation })
+    .then(({ accepted, ammo, at }) => {
+      if (!(state.rapidReserve?.at > at)) state.rapidReserve = { ammo, at };
+      resolveRounds(accepted);
+    })
+    .catch((error) => {
+      resolveRounds([]);
+      notify(error.message, 2);
+    })
+    .finally(() => (state.pendingRounds -= shots.size));
 }
 $('fuseMinus').onclick = () => (flakRange = fuseRange(flakRange - FLAK.step));
 $('fusePlus').onclick = () => (flakRange = fuseRange(flakRange + FLAK.step));
@@ -3107,7 +3367,7 @@ function updateBaseWorld(dt, now) {
   }
   const active = new Set();
   for (const b of baseArena.bodies) {
-    if (b.gone) continue;
+    if (b.gone || (b.entity === id && turretIndex >= 0)) continue;
     active.add(b.entity);
     let g = basePeople.get(b.entity);
     if (!g) {
@@ -3152,7 +3412,8 @@ function updateBaseWorld(dt, now) {
     // No weapon in the office: the character keeps its own idle/walk/run animation.
     g.userData.animate?.(dt, {
       speed: speed * BASE_METRES,
-      falling: !!b.parachute || b.grounded === false,
+      falling: b.grounded === false,
+      parachute: !!b.parachute,
     });
     if (!respawnAt && footstepsAudible(b, speed))
       sound.play('step', w, {
@@ -3204,7 +3465,7 @@ function updateBaseWorld(dt, now) {
 function currentRoster() {
   return snap?.roster || wavePlan(room, snap?.wave || 0, snap?.started || 0).roster;
 }
-function damageEnemy(enemy, amount, shot, point) {
+function damageEnemy(enemy, amount, shot, point, report = action) {
   if (localKills.has(enemy)) return;
   const profile = currentRoster()[enemy];
   if (!profile) return;
@@ -3213,12 +3474,12 @@ function damageEnemy(enemy, amount, shot, point) {
     Math.max(1, Math.min(800, amount)) * (snap.balance?.damage ?? 1);
   localEnemyDamage.set(enemy, damage);
   bloodEffects.burst(point, { size: insectScale(profile.type, INSECT_SCALE, profile.size) });
-  action('hit', { wave: snap.wave, enemy, amount, shot });
+  report('hit', { wave: snap.wave, enemy, amount, shot });
   if (damage >= profile.hp) {
     localKills.add(enemy);
     fallEnemy(enemy);
     sound.play('confirm', point, { ref: 10, cooldown: 0.06, key: 'kill' });
-    notify(profile.name + ' intercepté', 0.7);
+    if (profile.type !== 'midge') notify(profile.name + ' intercepté', 0.7);
   } else sound.play('ricochet', point, { ref: 10 });
 }
 let entryNoticeWave = -1;
@@ -3360,19 +3621,21 @@ function vehicleModel(v) {
     g =
       v.type === 'castor'
         ? makeCastor()
-        : v.type === 'helicopter'
-          ? makeHelicopter('#7b8155')
-          : v.type === 'flaktruck'
-            ? makeFlakTruck('#7b8155')
-            : v.type === 'spitfire'
-              ? makeSpitfire('#7b8155')
-              : v.type === 'tank'
-                ? makeTank('#7b8155')
-                : v.type === 'interceptor'
-                  ? makeStuka('#7b8155')
-                  : v.type === 'bomber'
-                    ? makeBomber('#c5ba92')
-                    : makePlane('#7b8155');
+        : v.type === 'flyingcastor'
+          ? makeFlyingCastor()
+          : v.type === 'helicopter'
+            ? makeHelicopter('#7b8155')
+            : v.type === 'flaktruck'
+              ? makeFlakTruck('#7b8155')
+              : v.type === 'spitfire'
+                ? makeSpitfire('#7b8155')
+                : v.type === 'tank'
+                  ? makeTank('#7b8155')
+                  : v.type === 'interceptor'
+                    ? makeStuka('#7b8155')
+                    : v.type === 'bomber'
+                      ? makeBomber('#c5ba92')
+                      : makePlane('#7b8155');
     paintVehicle(
       T,
       g,
@@ -3449,8 +3712,13 @@ function updateOthers(dt) {
       const rotation =
         dt * (v.state.engine && v.supplies.fuel > 0 ? 35 * (motion.rotorPower ?? 1) : 0);
       g.userData.rotor.rotation.y += rotation;
+      if (g.userData.counterRotor) g.userData.counterRotor.rotation.y -= rotation;
+      // Own Castor volant in the vertical view: hide the hull over the drop point.
+      const hull = g.userData.counterRotor && g.getObjectByName('meshy-flying-castor-body');
+      if (hull) hull.visible = !(airView() && myVehicle?.id === v.id);
       if (g.userData.tailRotor) g.userData.tailRotor.rotation.x += rotation * 4;
     }
+    g.userData.animateGun?.(dt, performance.now() < (g.userData.gunFiredUntil || 0));
     updateInscriptions(T, g, v, snap.pilots);
     g.visible = v.state.hp > 0;
     // Damage shows as engine smoke, never as a change of shape.
@@ -3505,7 +3773,16 @@ function updateOthers(dt) {
               ? mount.userData.coaxMuzzle
               : mount.userData.muzzle
           ).getWorldPosition(new T.Vector3());
-          bullet(o, new T.Vector3().fromArray(m.turretDirection || [0, 0, -1]), vehicleColor(v));
+          bullet(
+            o,
+            new T.Vector3().fromArray(m.turretDirection || [0, 0, -1]),
+            vehicleColor(v),
+            false,
+            false,
+            v.type === 'tank' && seat === 'cannon'
+              ? mount.userData.coaxMuzzle
+              : mount.userData.muzzles?.[0] || mount.userData.muzzle,
+          );
         }
       }
     const remotePilotRounds =
@@ -3534,7 +3811,15 @@ function updateOthers(dt) {
         );
       } else {
         const muzzle = nextPilotMuzzle(T, g);
-        if (muzzle) bullet(muzzle, direction, vehicleColor(v));
+        if (muzzle)
+          bullet(
+            muzzle,
+            direction,
+            vehicleColor(v),
+            false,
+            false,
+            nearestWeaponMuzzle(T, g, muzzle),
+          );
       }
     }
     if (v.type === 'spitfire' && g.userData.remoteSalvos)
@@ -3546,6 +3831,9 @@ function updateOthers(dt) {
             g.userData.muzzles[index].getWorldPosition(new T.Vector3()),
             new T.Vector3(0, 0, -1).applyQuaternion(g.quaternion),
             vehicleColor(v),
+            false,
+            false,
+            g.userData.muzzles[index],
           ),
       );
   }
@@ -3564,7 +3852,9 @@ function updateOthers(dt) {
       others.delete(k);
     }
 }
-function bullet(pos, dir, color = '#f4efab', owned = false, aa = false) {
+function bullet(pos, dir, color = TRACER_COLOR, owned = false, aa = false, muzzleNode = null) {
+  muzzleNode ??= owned && myVehicle ? nearestWeaponMuzzle(T, me, pos) : null;
+  if (muzzleNode) pos = muzzleNode.getWorldPosition(new T.Vector3());
   if (owned && !aa && myVehicle) {
     if (aircraftFire.available(myVehicle.id, crewSeat, myVehicle.supplies, currentAmmoKey()) < 1)
       return;
@@ -3585,10 +3875,10 @@ function bullet(pos, dir, color = '#f4efab', owned = false, aa = false) {
       origin = pos.clone(),
       direction = dir.clone();
     if (aircraftFire.fire(vehicle, seat, myVehicle.supplies, currentAmmoKey()))
-      emitBullet(origin, direction, vehicleColor(myVehicle), owned, aa, launch);
+      emitBullet(origin, direction, vehicleColor(myVehicle), owned, aa, launch, muzzleNode);
     return;
   }
-  return emitBullet(pos, dir, color, owned, aa);
+  return emitBullet(pos, dir, color, owned, aa, null, muzzleNode);
 }
 const tracerPool = new TracerPool(T, scene, 256, { instanced: renderer.isWebGLRenderer === true });
 const gunSalvos = new GunSalvos();
@@ -3615,7 +3905,7 @@ const aircraftFire = new AircraftFire(
       Date.now().toString(36) + '-' + Math.random().toString(36).slice(2),
   },
 );
-function emitBullet(pos, dir, color, owned, aa, launch = null) {
+function emitBullet(pos, dir, color, owned, aa, launch = null, muzzleNode = null) {
   const stamp = performance.now(),
     cue = stamp - spitSoundAt >= 40 || aa;
   if (!respawnAt && cue) {
@@ -3629,7 +3919,12 @@ function emitBullet(pos, dir, color, owned, aa, launch = null) {
   }
   const m = tracerPool.acquire(pos, dir, color, aa);
   if (!m) return;
-  if (owned && cue) combatEffects.muzzle(pos, dir);
+  if ((owned || muzzleNode) && cue) combatEffects.muzzle(pos, dir, muzzleNode);
+  if (muzzleNode) {
+    let root = muzzleNode;
+    while (root.parent && root.parent !== scene) root = root.parent;
+    root.userData.gunFiredUntil = performance.now() + 100;
+  }
   const velocity = dir.clone().multiplyScalar(MAP.metres(aa ? REFERENCE.shell : REFERENCE.bullet));
   if (launch) velocity.add(launch.velocity);
   else if (!aa && owned && myVehicle)
@@ -3643,10 +3938,11 @@ function emitBullet(pos, dir, color, owned, aa, launch = null) {
     fuse: MAP.metres(flakRange),
     originVehicle: launch?.vehicle || myVehicle?.id || null,
     owned,
-    shot: id + ':' + ++shotSequence,
+    shot: id + (launch?.weapon === 'dcaRapid' ? ':rapid:' : ':') + ++shotSequence,
     wave: launch?.wave ?? snap?.wave,
     baseDamage: launch?.baseDamage ?? 75,
     weapon: launch?.weapon,
+    authorization: launch?.authorization,
   });
   if (trails.length > 256) {
     const old = trails.shift();
@@ -3665,7 +3961,7 @@ function shoot(forward) {
     return;
   }
   const muzzle = nextPilotMuzzle(T, me);
-  if (muzzle) bullet(muzzle, spreadDirection(T, forward), '#f4efab', true);
+  if (muzzle) bullet(muzzle, spreadDirection(T, forward), TRACER_COLOR, true);
 }
 function explosion(b, point) {
   combatEffects.blast(point);
@@ -3679,7 +3975,7 @@ function explosion(b, point) {
     if (length < 1e-9) return true;
     const ray = new T.Ray(point, delta.normalize());
     return !colliders.some((box) => {
-      const p = ray.intersectBox(box, new T.Vector3());
+      const p = rayCollider(T, ray, box, new T.Vector3());
       if (!p) return false;
       const d = p.distanceTo(point);
       return d > MAP.metres(0.03) && d < length - MAP.metres(0.02);
@@ -3723,6 +4019,20 @@ function explosion(b, point) {
       action('friendly-hit', { target: p.id, shot: b.shot + ':' + p.id, amount });
   }
 }
+const rapidImpacts = [];
+let nextRapidImpactReport = 0;
+function queueRapidImpact(_path, impact) {
+  rapidImpacts.push(impact);
+}
+function flushRapidImpacts(now) {
+  if (!rapidImpacts.length || now < nextRapidImpactReport) return;
+  nextRapidImpactReport = now + 50;
+  const impacts = rapidImpacts.splice(0, 16);
+  api('fixed-dca-impacts', { impacts }).catch((error) => {
+    if (error.status === 429 && rapidImpacts.length < 64) rapidImpacts.unshift(...impacts);
+    else notify(error.message, 2);
+  });
+}
 function stepProjectiles(dt) {
   const n = Math.max(1, Math.ceil(dt * 120));
   for (let i = 0; i < n; i++) stepProjectileSlice(dt / n);
@@ -3764,7 +4074,7 @@ function stepProjectileSlice(dt) {
       }
       const solidRay = new T.Ray(origin, dir);
       for (const box of colliders) {
-        const point = solidRay.intersectBox(box, new T.Vector3());
+        const point = rayCollider(T, solidRay, box, new T.Vector3());
         if (point) {
           const d = origin.distanceTo(point);
           if (d <= distance && (!hit || d < hit.distance)) hit = { point, distance: d, wall: true };
@@ -3802,18 +4112,23 @@ function stepProjectileSlice(dt) {
             !hit.wall && hit.id !== undefined && b.wave === snap.wave && !localKills.has(hit.id);
           if (!enemyHit) hitEffects.burst(hit.point, camera, { key: b.shot });
           sound.play('impact', hit.point, { ref: 12 });
-          if (hit.vehicle)
-            action('friendly-hit', { vehicle: hit.vehicle, shot: b.shot, weapon: b.weapon });
-          else if (hit.target)
-            action('friendly-hit', { target: hit.target, shot: b.shot, weapon: b.weapon });
-          else if (enemyHit) {
-            damageEnemy(
-              hit.id,
-              b.baseDamage * (1 + (snap.upgrades?.weapons || 0)),
-              b.shot,
-              hit.point,
-            );
-          }
+          const report = b.authorization ? queueRapidImpact : action;
+          const apply = () => {
+            if (hit.vehicle)
+              report('friendly-hit', { vehicle: hit.vehicle, shot: b.shot, weapon: b.weapon });
+            else if (hit.target)
+              report('friendly-hit', { target: hit.target, shot: b.shot, weapon: b.weapon });
+            else if (enemyHit && b.wave === snap?.wave)
+              damageEnemy(
+                hit.id,
+                b.baseDamage * (1 + (snap.upgrades?.weapons || 0)),
+                b.shot,
+                hit.point,
+                report,
+              );
+          };
+          if (b.authorization?.accepted === null) b.authorization.impact = apply;
+          else if (b.authorization?.accepted !== false) apply();
         }
         b.life = 0;
         fused = false;
@@ -3834,9 +4149,11 @@ function stepProjectileSlice(dt) {
 // Fixed timestep flight: thrust, quadratic drag, gravity, angle-of-attack lift, wind-relative velocity.
 function physics(dt) {
   if (respawnAt || onFoot || !myVehicle) return;
-  if (myVehicle.type === 'helicopter') {
+  if (isRotorcraft(myVehicle.type)) {
     if (crewSeat !== 'pilot') return;
     const active = controlFocus.active && canCapture();
+    // Vertical view: keyboard only, the mouse no longer steers.
+    const keyboardOnly = airView();
     const state = {
       ...localMotion(),
       collective: heliCollective,
@@ -3847,23 +4164,41 @@ function physics(dt) {
       ? Number(!!(keys.ShiftLeft || keys.ShiftRight)) -
         Number(!!(keys.ControlLeft || keys.ControlRight))
       : 0;
+    const keyboardTilt =
+      keys.KeyS ||
+      keys.ArrowDown ||
+      keys.KeyZ ||
+      keys.ArrowUp ||
+      keys.KeyQ ||
+      keys.ArrowLeft ||
+      keys.KeyD ||
+      keys.ArrowRight ||
+      keyboardOnly;
     stepHelicopter(
       T,
       state,
       {
         collective,
-        pitch: active
-          ? Number(!!(keys.KeyS || keys.ArrowDown)) - Number(!!(keys.KeyZ || keys.ArrowUp))
-          : 0,
-        roll: active
-          ? Number(!!(keys.KeyQ || keys.ArrowLeft)) - Number(!!(keys.KeyD || keys.ArrowRight))
-          : 0,
-        direction: active ? mouseDirection.toArray() : null,
+        pitch:
+          active && !keyboardTilt
+            ? undefined
+            : active
+              ? Number(!!(keys.KeyS || keys.ArrowDown)) - Number(!!(keys.KeyZ || keys.ArrowUp))
+              : 0,
+        roll:
+          active && !keyboardTilt
+            ? undefined
+            : active
+              ? Number(!!(keys.KeyQ || keys.ArrowLeft)) - Number(!!(keys.KeyD || keys.ArrowRight))
+              : 0,
+        direction: active && !keyboardOnly ? mouseDirection.toArray() : null,
+        yaw: keyboardOnly && active ? Number(!!keys.KeyE) - Number(!!keys.KeyA) : 0,
       },
       colliders,
       dt,
-      upgradedVehicle(VEHICLES.helicopter, snap?.upgrades),
+      upgradedVehicle(VEHICLES[myVehicle.type], snap?.upgrades),
     );
+    if (keyboardOnly) mouseDirection.set(0, 0, -1).applyQuaternion(me.quaternion);
     if (state.hp <= 0) {
       crash();
       return;
@@ -3877,7 +4212,8 @@ function physics(dt) {
     landed = state.landed;
     gas = state.gas;
     shooting = false;
-    if (active && !keys.KeyC && (mouseFire || pad.fire)) fireHeavy('rocket');
+    if (myVehicle.type === 'helicopter' && active && !keys.KeyC && (mouseFire || pad.fire))
+      fireHeavy('rocket');
     return;
   }
   if (VEHICLES[myVehicle.type].ground) {
@@ -4088,13 +4424,15 @@ function drawRadar() {
   for (const g of basePeople.values()) if (g.visible) dot(g.position, '#8abbb2', 2);
   for (const g of others.values()) dot(g.position, '#8abbb2', 3);
   for (const st of stations) dot(st, '#f5da91', 2);
-  dot(
-    onFoot && basePeople.get(id)?.visible ? basePeople.get(id).position : me.position,
-    '#d5ef73',
-    4,
-  );
-  const playerPosition = onFoot && selfBase() ? baseWorld(selfBase()) : me.position;
-  const heading = onFoot ? groundView.yaw : new T.Euler().setFromQuaternion(me.quaternion, 'YXZ').y;
+  const playerPosition =
+    stations[turretIndex] ?? (onFoot && selfBase() ? baseWorld(selfBase()) : me.position);
+  dot(playerPosition, '#d5ef73', 4);
+  const heading =
+    turretIndex >= 0
+      ? turretAim.yaw
+      : onFoot
+        ? groundView.yaw
+        : new T.Euler().setFromQuaternion(me.quaternion, 'YXZ').y;
   const px = 110 + playerPosition.x / 0.04,
     pz = 110 + (playerPosition.z / 0.04) * 0.88;
   radar.strokeStyle = '#d5ef73';
@@ -4147,7 +4485,7 @@ function updateAudio() {
       keep.add('engine-self');
       sound.loop('engine-self', 'engine', me.position, {
         rate: 0.65 + (crewSeat === 'pilot' ? gas : myVehicle.state.gas || 0) * 1.2,
-        level: 0.65 * (myVehicle.type === 'helicopter' ? (myVehicle.state.rotorPower ?? 1) : 1),
+        level: 0.65 * (isRotorcraft(myVehicle.type) ? (myVehicle.state.rotorPower ?? 1) : 1),
         ref: 14,
       });
     }
@@ -4323,7 +4661,7 @@ function frame(now) {
       $('notice').textContent = controlFocus.active
         ? ''
         : 'Curseur libre · Cliquez dans le décor pour reprendre';
-    if (!onFoot && !respawnAt) {
+    if (myVehicle && !onFoot && !respawnAt) {
       const assisted = true;
       if (assisted) mouseCameraRotation(T, mouseDirection, mouseCameraQ, dt);
       else if (controlFocus.active && !keys.KeyC) {
@@ -4340,8 +4678,9 @@ function frame(now) {
         .multiply(
           new T.Quaternion().setFromEuler(new T.Euler(freeLook.pitch, freeLook.yaw, 0, 'YXZ')),
         );
-      if (castorTopView()) {
-        const pose = topViewPose(T, me.position);
+      if (airView()) airViewCamera(dt);
+      else if (castorTopView()) {
+        const pose = topViewPose(T, me.position, topViewHeight);
         camera.position.lerp(pose.eye, 1 - Math.exp(-10 * dt));
         camera.up.lerp(pose.up, 1 - Math.exp(-10 * dt)).normalize();
         camera.lookAt(pose.target);
@@ -4360,7 +4699,11 @@ function frame(now) {
             mouseDirection.copy(ground.sub(from).normalize());
         }
       } else {
-        const offset = new T.Vector3(0, myVehicle?.type === 'castor' ? 6 : 3.5, 11)
+        const offset = (
+          myVehicle?.type === 'flyingcastor'
+            ? new T.Vector3(0, 7, 21)
+            : new T.Vector3(0, myVehicle?.type === 'castor' ? 6 : 3.5, 11)
+        )
           .multiplyScalar(ACTOR_UNIT)
           .applyQuaternion(orbit);
         camera.position.lerp(me.position.clone().add(offset), 1 - Math.exp(-10 * dt));
@@ -4377,11 +4720,12 @@ function frame(now) {
     $('alt').textContent = formatDistance(me.position.y);
     $('gas').textContent = Math.round(gas * 100);
     $('health').textContent = Math.max(0, Math.round(hp)) + ' PV';
-    $('hpbar').style.width = (hp / (myVehicle?.type === 'helicopter' ? 200 : 100)) * 100 + '%';
+    $('hpbar').style.width = (hp / vehicleMaxHP(myVehicle?.type)) * 100 + '%';
     networkStatus();
     drawRadar();
     updateCountdown();
   } else {
+    $('altitudeFog').style.opacity = 0;
     serviceZones.update([]);
     engineSmoke.clear();
     camera.position.set(-1.65 + Math.sin(now * 0.00008) * 0.08, 1.08, 2.6);
@@ -4389,6 +4733,7 @@ function frame(now) {
     me.userData.prop.rotation.z += dt * 15;
   }
   stepProjectiles(dt);
+  flushRapidImpacts(now);
   if (respawnAt) {
     $('mouseAim').classList.add('hidden');
     $('mouseHint').classList.add('hidden');
@@ -4397,14 +4742,22 @@ function frame(now) {
   if (joined) updateBaseWorld(dt, now);
   updateVehicles(dt);
   updatePlacement();
-  for (const model of turrets)
-    if (model?.userData.dish) model.userData.dish.rotation.y = now * 0.001;
+  for (const model of turrets) if (model?.userData.dish) animateRadar(model, dt, joined);
   updateFallingEnemies(dt);
   updateContextHUD();
   midgeBatch.flush(insects, now, camera);
   spiderlingBatch.flush(insects);
   walkerBatch.flush(insects);
   tracerPool.flush();
+  const fogCamera =
+    spectating && observationCamera
+      ? observationRealm === 'office'
+        ? observationCamera
+        : null
+      : respawnAt
+        ? null
+        : camera;
+  $('altitudeFog').style.opacity = joined && fogCamera ? officeFogOpacity(fogCamera.position.y) : 0;
   if (spectating && observationCamera) {
     if (observationRealm !== 'office') observedPurgatory(dt);
     toon.render(observationRealm === 'office' ? scene : purgScene, observationCamera);
@@ -4450,7 +4803,7 @@ let placingEquipment = false,
   purchaseBusy = false,
   placementToken = null;
 const ghosts = {
-  dca: makeAntiaircraft(T, scene, { box, cyl }, [{ x: 0, y: 0, z: 0 }])[0],
+  ...Object.fromEntries(Object.keys(FIXED_DCA).map((kind) => [kind, makeFixedDca(T, { kind })])),
   refuel: installationModel({ kind: 'refuel', x: 0, y: 0, z: 0 }),
   radar: installationModel({ kind: 'radar', x: 0, y: 0, z: 0 }),
   bed: installationModel({ kind: 'bed', x: 0, y: 0, z: 0 }),
@@ -4460,12 +4813,14 @@ const ghosts = {
   helicopter: makeHelicopter('#badb84'),
   flaktruck: makeFlakTruck('#badb84'),
   castor: makeCastor(),
+  flyingcastor: makeFlyingCastor(),
   tank: makeTank('#badb84'),
   spitfire: makeSpitfire('#badb84'),
 };
 let ghost = ghosts.dca;
 for (const [kind, model] of Object.entries(ghosts)) {
   if (VEHICLES[kind]) model.scale.setScalar(ACTOR_UNIT);
+  if (isFixedDca(kind)) scene.add(model);
   model.visible = false;
   model.traverse((o) => {
     if (o.isMesh) {
@@ -4513,7 +4868,9 @@ function renderShop() {
       heading = document.createElement('h3');
     heading.textContent = column.title;
     section.append(heading);
-    for (const item of column.items) section.append(shopCard(item));
+    for (const item of column.items)
+      if (globalThis.MOUCHERON_UDP || !['dcaRapid', 'dcaHeavy'].includes(item))
+        section.append(shopCard(item));
     $('shopItems').append(section);
   }
 }
@@ -4743,10 +5100,7 @@ function updateFallingEnemies(dt) {
     let floor = 0;
     for (const b of colliders)
       if (
-        c.g.position.x >= b.min.x &&
-        c.g.position.x <= b.max.x &&
-        c.g.position.z >= b.min.z &&
-        c.g.position.z <= b.max.z &&
+        colliderContainsXZ(b, c.g.position.x, c.g.position.z) &&
         b.max.y <= previous + INSECT_SCALE
       )
         floor = Math.max(floor, b.max.y);
@@ -4813,7 +5167,7 @@ function pistol() {
         );
     const wallRay = new T.Ray(origin, dir);
     for (const box of purgColliders) {
-      const point = wallRay.intersectBox(box, new T.Vector3());
+      const point = rayCollider(T, wallRay, box, new T.Vector3());
       if (point && (!hit || point.distanceTo(origin) < hit.distance))
         hit = { wall: true, point, distance: point.distanceTo(origin) };
     }
@@ -4848,7 +5202,7 @@ function pistol() {
     targetScene,
     origin,
     dir,
-    '#ffe48d',
+    TRACER_COLOR,
     scale,
     hit?.distance || 150 * scale,
   );
@@ -4879,7 +5233,6 @@ function pistol() {
 
 const pistolTrails = [];
 // Issue #106: tracers no longer carry a per-vehicle colour.
-const TRACER_COLOR = '#f4efab';
 function vehicleColor() {
   return new T.Color(TRACER_COLOR);
 }
@@ -5021,14 +5374,14 @@ function simulateVacantAircraft(dt) {
     s.engine = v.state.engine;
     s.wing = v.state.wing;
     s.fuelAvailable = v.supplies?.fuel > 0;
-    if (v.type === 'helicopter')
+    if (isRotorcraft(v.type))
       stepHelicopter(
         T,
         s,
         { collective: 0, occupied: v.seats.length > 0 },
         colliders,
         dt,
-        upgradedVehicle(VEHICLES.helicopter, snap?.upgrades),
+        upgradedVehicle(VEHICLES[v.type], snap?.upgrades),
       );
     else if (VEHICLES[v.type].ground)
       stepTank(T, s, { forward: 0, turn: 0 }, colliders, dt, VEHICLES[v.type]);
@@ -5065,61 +5418,21 @@ function remainingFuel() {
   if (!supply) return 300;
   if (supply.servicing) return supply.fuel;
   const age = Math.max(0, (performance.now() - (snap.receivedAt || performance.now())) / 1000);
-  const consumption =
-    myVehicle.type === 'helicopter'
-      ? (crewSeat === 'pilot' ? landed : myVehicle.state.landed)
-        ? 0
-        : 1
-      : crewSeat === 'pilot'
-        ? gas
-        : myVehicle.state.gas || 0;
+  const consumption = isRotorcraft(myVehicle.type)
+    ? (crewSeat === 'pilot' ? landed : myVehicle.state.landed)
+      ? 0
+      : 1
+    : crewSeat === 'pilot'
+      ? gas
+      : myVehicle.state.gas || 0;
   const powered = crewSeat === 'pilot' ? engine : myVehicle.state.engine;
   return Math.max(0, supply.fuel - (powered ? consumption * age : 0));
 }
 function installationModel(st) {
-  const g = new T.Group();
+  const g = st.kind === 'bed' ? makeBed(T) : makeServiceStation(T, st.kind);
   g.position.set(st.x, st.y, st.z);
   g.scale.setScalar(MAP.ratio);
   scene.add(g);
-  box(0, 0.15, 0, 4, 0.3, 3, st.kind === 'radar' ? '#527b87' : '#bb8c44', g);
-  if (st.kind === 'bed') {
-    box(0, 0.45, 0, 1.6, 0.35, 3, '#e2d6ad', g);
-    box(0, 0.7, -1, 1.35, 0.2, 0.65, '#f7edcb', g);
-    for (const x of [-0.65, 0.65])
-      for (const z of [-1.2, 1.2]) box(x, 0.15, z, 0.15, 0.3, 0.15, '#664e34', g);
-    return g;
-  }
-  if (st.kind === 'radar') {
-    cyl(0, 2, 0, 0.18, 0.25, 4, '#d3dbbf', g);
-    const dish = new T.Group();
-    dish.position.y = 4;
-    g.add(dish);
-    const bowl = new T.Mesh(
-      new T.SphereGeometry(1.65, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2),
-      new T.MeshStandardMaterial({ color: '#7fbdad', side: T.DoubleSide }),
-    );
-    bowl.rotation.x = Math.PI / 2;
-    dish.add(bowl);
-    box(0, 0, -1, 0.12, 0.12, 2.5, '#d3dbbf', dish);
-    g.userData.dish = dish;
-  } else {
-    cyl(-1, 0.9, 0, 0.6, 0.6, 1.5, '#d9b958', g);
-    box(0.8, 1, 0, 1, 1.7, 0.9, '#557a69', g);
-    const ring = new T.Mesh(
-      new T.RingGeometry(39.5, 40, 64),
-      new T.MeshBasicMaterial({
-        color: '#d9b958',
-        side: T.DoubleSide,
-        transparent: true,
-        opacity: 0.55,
-        depthWrite: false,
-      }),
-    );
-    ring.rotation.x = -Math.PI / 2;
-    ring.position.y = 0.03;
-    ring.userData.projectileSolid = false;
-    g.add(ring);
-  }
   return g;
 }
 
@@ -5154,7 +5467,7 @@ function heliAimPoint() {
     ray = new T.Ray(origin, direction);
   let distance = MAP.metres(250);
   for (const box of colliders) {
-    const p = ray.intersectBox(box, new T.Vector3());
+    const p = rayCollider(T, ray, box, new T.Vector3());
     if (p) distance = Math.min(distance, p.distanceTo(origin));
   }
   return origin.addScaledVector(direction, distance).toArray();
@@ -5195,7 +5508,18 @@ function hasAmmo() {
     aircraftFire.available(myVehicle.id, crewSeat, myVehicle.supplies, currentAmmoKey()) >= 1
   );
 }
-let nextHeavyAt = 0;
+const predictedReloads = new Map();
+const reloadKey = (vehicle, weapon) => vehicle.id + ':' + heavyLane(weapon);
+const reloadNow = () => serverClock.now(performance.now()) ?? Date.now() + clockOffset;
+const predictedReadyAt = (vehicle, weapon) => predictedReloads.get(reloadKey(vehicle, weapon)) || 0;
+function nextHeavyTime(vehicle, weapon) {
+  return heavyReadyAt(
+    vehicle,
+    weapon,
+    snap?.balance?.fireRate ?? 1,
+    predictedReadyAt(vehicle, weapon),
+  );
+}
 // Heavy weapons are simulated by their shooter (src/heavy-sim.js): the shell
 // leaves the displayed muzzle at once, flies and collides in this browser, and
 // its impact (damage included, friends too) is reported to the server, which
@@ -5233,8 +5557,7 @@ async function fireHeavy(weapon = null) {
     !controlFocus.active ||
     !canCapture() ||
     (myVehicle.type === 'helicopter' && crewSeat === 'pilot' && keys.KeyC) ||
-    (myVehicle.type === 'tank' && crewSeat === 'cannon' && keys.KeyC) ||
-    performance.now() < nextHeavyAt
+    (myVehicle.type === 'tank' && crewSeat === 'cannon' && keys.KeyC)
   )
     return;
   weapon ??=
@@ -5246,15 +5569,17 @@ async function fireHeavy(weapon = null) {
           ? 'bomb'
           : null;
   if (!weapon || !HEAVY[weapon] || (myVehicle.supplies.ammo[weapon] || 0) < 1) return;
+  if (reloadNow() < nextHeavyTime(myVehicle, weapon)) return;
   if (weapon === 'missile' && activeMissile()) return;
   const state = localMotion(),
     shot = id + ':heavy:' + ++shotSequence,
     direction = weaponDirection().toArray(),
     occupation = snap.pilots.find((p) => p.id === id).occupation,
     now = serverClock.now(performance.now()) ?? Date.now() + clockOffset;
-  nextHeavyAt =
-    performance.now() +
-    heavyInterval(weapon, myVehicle.type) * 1000 * (1 / (snap?.balance?.fireRate ?? 1));
+  predictedReloads.set(
+    reloadKey(myVehicle, weapon),
+    now + (heavyInterval(weapon, myVehicle.type) * 1000) / (snap?.balance?.fireRate ?? 1),
+  );
   const vehicle = launchVehicle();
   if (weapon === 'rocket') rocketSides.set(myVehicle.id, vehicle.rocketSide);
   const projectile = launchLocal(
@@ -5368,6 +5693,12 @@ function showHeavyImpact(report) {
   }
 }
 function finishHeavy(projectile, impact, world) {
+  if (projectile.weapon === 'missile') {
+    predictedReloads.set(
+      projectile.vehicle + ':missile',
+      reloadNow() + 2000 / (snap?.balance?.fireRate ?? 1),
+    );
+  }
   localShots.delete(projectile.shot);
   if (!impact) {
     action('heavy-impact', { shot: projectile.shot, fizzle: true });
@@ -5402,6 +5733,7 @@ const SHELL_COLORS = {
   he: '#e0a33c',
   ap: '#cfd6dc',
   antitank: '#d9b45a',
+  dcaHeavy: '#e0a33c',
   rocket: '#e0a33c',
   missile: '#e6e1cf',
 };
@@ -5486,6 +5818,7 @@ function updateOrdnance(dt) {
 }
 
 const contextHUD = new ContextHUD($('contextHUD'));
+const reloadHUD = new ReloadHUD($('reloadArcs'));
 function updateContextHUD() {
   const modal = !canCapture();
   const model =
@@ -5507,16 +5840,55 @@ function updateContextHUD() {
             : 0,
           shell: selectedShell,
           range: flakRange,
+          proximity: mobileProximity,
           ready:
             turretIndex >= 0
-              ? stations[turretIndex]?.kind === 'dca'
-                ? cooldown <= 0
-                : performance.now() >= (turrets[turretIndex]?.userData.shotAt ?? 0)
-              : performance.now() >= nextHeavyAt,
+              ? performance.now() >= (turrets[turretIndex]?.userData.shotAt ?? 0)
+              : !myVehicle ||
+                reloadNow() >=
+                  nextHeavyTime(
+                    myVehicle,
+                    myVehicle.type === 'tank'
+                      ? selectedShell
+                      : currentAmmoKey() === 'rocket'
+                        ? 'rocket'
+                        : currentAmmoKey() === 'missile'
+                          ? 'missile'
+                          : 'bomb',
+                  ),
           stall: !$('stallWarning').classList.contains('hidden'),
         })
       : null;
   contextHUD.update(model);
+  let arcs =
+    !modal && !respawnAt
+      ? seatReloads({
+          vehicle: myVehicle,
+          seat: crewSeat,
+          now: reloadNow(),
+          fireRate: snap?.balance?.fireRate ?? 1,
+          automaticCooldown: cooldown,
+          predicted: (weapon) => predictedReadyAt(myVehicle, weapon),
+          missileInFlight: !!activeMissile(),
+        })
+      : [];
+  if (!modal && !respawnAt && turretIndex >= 0) {
+    const station = stations[turretIndex],
+      gun = turrets[turretIndex];
+    const duration =
+      ((station?.kind === 'antitank'
+        ? HEAVY.antitank.interval
+        : (FIXED_DCA[station?.kind]?.interval ?? FORTIFICATIONS[station?.kind]?.interval ?? 0.09)) *
+        1000) /
+      (snap?.balance?.fireRate ?? 1);
+    arcs = [
+      {
+        weapon: station?.kind || 'dca',
+        progress: reloadProgress(performance.now(), gun?.userData.shotAt || 0, duration),
+      },
+    ];
+  }
+  reloadHUD.update(arcs);
   const stats =
     !modal && !respawnAt
       ? cursorStats({
@@ -5572,7 +5944,7 @@ function updateContextHUD() {
       proximity: mobileProximity,
       guiding: !!activeMissile(),
     });
-    $('cursorHPbar').max = myVehicle?.type === 'helicopter' ? 200 : 100;
+    $('cursorHPbar').max = vehicleMaxHP(myVehicle?.type);
     $('cursorHPbar').value = stats.hp;
     $('cursorAmmoBar').max = Math.max(
       1,
@@ -5599,7 +5971,8 @@ function updateContextHUD() {
     $('cursorStats').style.top = 'calc(' + ($('crosshair').style.top || '50%') + ' + 22px)';
   }
   $('commandHelp').classList.toggle('hidden', !joined);
-  const castorBuilding = !!castorBuilder();
+  const builder = castorBuilder(),
+    castorBuilding = !!builder;
   $('commandHelp').textContent = controlHints({
     vehicle: myVehicle,
     seat: crewSeat,
@@ -5614,6 +5987,7 @@ function updateContextHUD() {
       ? {
           mode: groundDefenseUI.mode,
           castor: castorBuilding,
+          air: !!builder?.air,
           anchored: !!(castorBuilding ? groundDefenseUI.trailAnchor : groundDefenseUI.anchor),
         }
       : null,
@@ -5962,7 +6336,7 @@ function updateVehicleCare(dt) {
     let range = WASH.range;
     const ray = new T.Ray(origin, direction);
     for (const b of stream.targetScene === scene ? colliders : purgColliders) {
-      const hit = ray.intersectBox(b, new T.Vector3());
+      const hit = rayCollider(T, ray, b, new T.Vector3());
       if (hit) range = Math.min(range, hit.distanceTo(origin));
     }
     for (let i = 0; i < 28; i++) {
@@ -6100,3 +6474,14 @@ function observedPurgatory(dt) {
       soulMeshes.delete(key);
     }
 }
+
+// Readiness for the initial loader: selected appearance and its first draw.
+export const homeReady = loadCharacter(appearancePicker.value).then(
+  () =>
+    new Promise((resolve) =>
+      requestAnimationFrame(() => {
+        appearancePicker.draw(renderer, 0);
+        resolve();
+      }),
+    ),
+);

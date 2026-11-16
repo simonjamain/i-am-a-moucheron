@@ -62,7 +62,10 @@ for (const side of ['Left', 'Right']) {
 }
 for (let i = 0; i < 4; i++) c.update(0.05, { falling: true });
 for (const side of ['Left', 'Right'])
-  assert.ok(segment(side + 'Arm', side + 'ForeArm').y > 0.6, side + ' arm raised while falling');
+  assert.ok(
+    Math.abs(segment(side + 'Arm', side + 'ForeArm').y) < 0.3,
+    side + ' arm spread horizontally in freefall',
+  );
 const aim = new T.Vector3(0.3, 0.4, 1).normalize();
 c.update(0.05, { speed: 6, aim });
 assert.ok(segment('RightArm', 'RightForeArm').dot(aim) > 0.999, 'upper arm along the aim');

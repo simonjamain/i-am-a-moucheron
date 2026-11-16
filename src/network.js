@@ -1,4 +1,5 @@
 import { ServerClock } from './server-clock.js';
+import { vehicleMaxHP } from './fleet.js';
 // Ephemeral motion uses a lossy unordered RTC channel; game rules stay on HTTP.
 export const CHANNEL_OPTIONS = { ordered: false, maxRetransmits: 0 };
 export const RTC_HZ = 20,
@@ -15,7 +16,7 @@ export function validMotion(s) {
     finiteArray(s.v, 3) &&
     Number.isFinite(s.hp) &&
     s.hp >= 0 &&
-    s.hp <= (s.type === 'helicopter' ? 200 : 100) &&
+    s.hp <= vehicleMaxHP(s.type) &&
     [0, 1].includes(s.wing) &&
     [0, 1].includes(s.engine) &&
     typeof s.fire === 'boolean' &&

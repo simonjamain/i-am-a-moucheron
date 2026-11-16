@@ -1,9 +1,10 @@
 // Refuelling zones drawn as translucent green spheres: one around each fixed
-// refuel station and one around each living Castor. The radii are the ones the
+// refuel station and one around each living Castor (on wheels or flying). The radii are the ones the
 // paid service actually uses (paid-service.js), so what players see is the
 // real reach. A rim-lit shader keeps the inside readable when the camera sits
 // in the sphere (the Castor driver always does).
 import { CASTOR_SERVICE_RADIUS, SERVICE_RADIUS } from './logistics.js';
+import { isSupportVehicle } from './fleet.js';
 
 export const ZONE_COLOR = '#58e36f';
 
@@ -17,7 +18,7 @@ export function serviceZoneList(installations = [], fleet = []) {
         radius: SERVICE_RADIUS,
       })),
     ...fleet
-      .filter((v) => v.type === 'castor' && v.state.hp > 0)
+      .filter((v) => isSupportVehicle(v.type) && v.state.hp > 0)
       .map((v) => ({
         key: 'castor:' + v.id,
         vehicle: v.id,

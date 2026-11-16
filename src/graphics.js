@@ -6,6 +6,7 @@ import { MODEL_DATA as STUKA } from './meshy-stuka-data.js';
 import { makeH2 } from './h2-model.js';
 import { makeBiplane, makeBiplaneBomber } from './biplane-model.js';
 import { makeCastorMeshy } from './castor-model.js';
+import { makeFlyingCastorMeshy } from './flying-castor-model.js';
 import { createCharacter, CHARACTER_HEIGHT, LEGACY_HEIGHT } from './character-model.js';
 import { createMidgeRig } from './midge-model.js';
 import { WALKERS, walkerStride } from './walker-batch.js';
@@ -122,6 +123,9 @@ export function createGraphics(T, scene) {
   }
   function makeCastor() {
     return makeCastorMeshy(T, scene);
+  }
+  function makeFlyingCastor() {
+    return makeFlyingCastorMeshy(T, scene);
   }
   function makeHelicopter(color) {
     return makeH2(T, scene, color, box, mat);
@@ -470,6 +474,7 @@ export function createGraphics(T, scene) {
     makeTank,
     makeFlakTruck,
     makeCastor,
+    makeFlyingCastor,
     makeHelicopter,
     insect,
     humanoid,

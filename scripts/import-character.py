@@ -29,6 +29,10 @@ CHARACTERS = {
               'src/character-sunny-data.js', GAITS),
     'aviator': ('222ea403e1cacf45addd54a3079bbefc7837cc3b80c27b82bee11490d3bd5f5e',
                 'src/character-aviator-data.js', GAITS),
+    'signaler': ('4e79dbe4e0bd71dced09ed914d48e08300963497f72552dcf9620f62d358bead',
+                 'src/character-signaler-data.js', GAITS),
+    'operator': ('99385d02e3423bc8e63bfe8f764958f0221080d30ac2dd97262098f88a0b602b',
+                 'src/character-operator-data.js', GAITS),
 }
 ident = sys.argv[1]
 SOURCE_SHA256, OUTPUT, CLIPS = CHARACTERS[ident]
@@ -82,7 +86,8 @@ hips = node_to_joint[next(i for i, n in enumerate(g['nodes']) if n.get('name') =
 wanted = {name: gait for gait, name in CLIPS.items()} if CLIPS else None
 clips = {}
 for anim in g['animations']:
-    if wanted is not None and anim['name'] not in wanted:
+    is_fall = any(word in anim['name'].lower() for word in ['fall', 'freefall'])
+    if wanted is not None and anim['name'] not in wanted and not is_fall:
         continue
     tracks = []
     for ch in anim['channels']:
@@ -102,9 +107,9 @@ for anim in g['animations']:
         else:
             track['values'] = pack('f', values)
         tracks.append(track)
-    name = wanted[anim['name']] if wanted else anim['name']
+    name = ('fall' if is_fall else wanted[anim['name']]) if wanted else anim['name']
     clips[name] = {'duration': max(read(s['input'])[-1] for s in anim['samplers']), 'tracks': tracks}
-assert wanted is None or set(clips) == set(CLIPS), clips.keys()
+assert wanted is None or set(CLIPS).issubset(clips), clips.keys()
 
 material = g['materials'][prim.get('material', 0)]
 img = g['images'][g['textures'][material['pbrMetallicRoughness']['baseColorTexture']['index']]['source']]

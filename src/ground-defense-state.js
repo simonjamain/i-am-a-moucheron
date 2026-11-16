@@ -1,6 +1,8 @@
+import { WALL_SEGMENT, WALL_SEGMENT_PRICE, HALF_BRICK, wallLength } from './brick-rules.js';
 import { FAN_COST, FAN_FADE_MS } from './air-current.js';
 import { SENTRY } from './ground-sentry.js';
 import { FORTIFICATIONS, isFortification } from './ground-fortifications.js';
+import { onFloor, levelOf, FLOOR_LEVEL } from './airdrop.js';
 import {
   splitBarricade,
   buildGroundFlow,
@@ -18,13 +20,17 @@ export const GROUND_BAIT_TYPES = Object.freeze({
   sugar: { radius: 0.15, cost: 3, mealSeconds: 4 },
 });
 export const GROUND_WALL_HP = 100;
-export const GROUND_WALL_COST_PER_SEGMENT = 1;
+export const GROUND_WALL_COST_PER_SEGMENT = WALL_SEGMENT_PRICE;
 export const GROUND_STICKY_COST_PER_20CM = 1;
-// Issue #99: walls and tape are billed pro rata to their real office length,
-// 1 $ per 20 cm, to the cent (no rounding up to whole 20 cm segments).
+// Walls: $0.25/48 mm after half-brick snapping. Tape: unchanged $1/20 cm.
+// Both use the existing cent precision and never round up to a full section.
 export function lengthPrice(kind, distance) {
+  if (kind === 'barricade') distance = wallLength(distance);
   const rate = kind === 'barricade' ? GROUND_WALL_COST_PER_SEGMENT : GROUND_STICKY_COST_PER_20CM;
-  return Math.max(0.01, Math.round((distance / 0.2) * rate * 100) / 100);
+  return Math.max(
+    0.01,
+    Math.round((distance / (kind === 'barricade' ? WALL_SEGMENT : 0.2)) * rate * 100) / 100,
+  );
 }
 
 export function feedingPoint(bait) {
@@ -32,7 +38,15 @@ export function feedingPoint(bait) {
   return [bait.position[0] + Math.sin(angle) * 0.024, bait.position[1] + Math.cos(angle) * 0.024];
 }
 export function newGroundDefense() {
-  return { revision: 0, navigationRevision: 0, nextId: 0, structures: [], retiringFans: [] };
+  return {
+    revision: 0,
+    navigationRevision: 0,
+    nextId: 0,
+    structures: [],
+    retiringFans: [],
+    drops: [], // Castor volant constructions still falling (server-owned)
+    dropSeq: 0,
+  };
 }
 function finitePoint(p) {
   return (
@@ -64,14 +78,23 @@ export function groundSnapshot(state, now = Date.now()) {
     revision: state.revision,
     navigationRevision: state.navigationRevision,
     structures: structuredClone(state.structures),
+    ...(state.drops?.length
+      ? {
+          drops: state.drops.map(({ id, kind, command, x, z, angle, fromY, landingY, startedAt }) =>
+            structuredClone({ id, kind, command, x, z, angle, fromY, landingY, startedAt }),
+          ),
+        }
+      : {}),
     ...(state.retiringFans.length ? { retiringFans: structuredClone(state.retiringFans) } : {}),
   };
 }
 // Structures that block ground movement (and that ground insects may break).
 export const BLOCKING_KINDS = Object.freeze(['barricade', 'bunker']);
 export function navigationStructures(structures = []) {
-  return structures.filter((s) => BLOCKING_KINDS.includes(s.kind) && s.hp > 0);
+  return structures.filter((s) => BLOCKING_KINDS.includes(s.kind) && s.hp > 0 && onFloor(s));
 }
+// What floor walkers meet (walls, tape, sugar): never constructions on furniture.
+export const floorStructures = (structures = []) => structures.filter(onFloor);
 export function bunkerSegment(position) {
   return { a: [position[0] - 0.045, position[1]], b: [position[0] + 0.045, position[1]] };
 }
@@ -105,7 +128,8 @@ export function groundCommand(state, command, foot, dollars, now = Date.now(), a
     fail('Commande de défense invalide.');
   const action = command.action;
   if (action === 'build') {
-    const { kind, a, b } = command;
+    const { kind, a } = command;
+    let { b } = command;
     const pointItem =
       kind === 'sugar' || kind === 'fan' || kind === 'sentry' || isFortification(kind);
     if (isFortification(kind)) {
@@ -124,10 +148,17 @@ export function groundCommand(state, command, foot, dollars, now = Date.now(), a
       (!pointItem && !finitePoint(b))
     )
       fail('Emplacement de construction invalide.');
-    if (!nearFoot(a, foot)) fail('Construisez à proximité de votre personnage.');
+    if (!nearFoot(a, foot) && (pointItem || !nearFoot(b, foot)))
+      fail('Construisez à proximité de votre personnage.');
+    if (kind === 'barricade') {
+      const d = length(a, b),
+        span = wallLength(d);
+      if (span < HALF_BRICK) fail('Tracez au moins une demi-brique (12 mm).');
+      b = a.map((v, k) => v + ((b[k] - v) * span) / d);
+    }
     const distance = pointItem ? 0 : length(a, b);
     if (!pointItem && distance < 0.002) fail('Tracez la construction depuis votre position.');
-    const count = kind === 'barricade' ? Math.ceil(distance / 0.2) : 1;
+    const count = kind === 'barricade' ? Math.ceil((distance - 1e-9) / WALL_SEGMENT) : 1;
     if (state.structures.length + count > GROUND_LIMIT)
       fail('Trop de constructions dans la salle.');
     const price = isFortification(kind)
@@ -140,6 +171,8 @@ export function groundCommand(state, command, foot, dollars, now = Date.now(), a
             ? GROUND_BAIT_TYPES.sugar.cost
             : lengthPrice(kind, distance);
     if (dollars + 1e-8 < price) fail('Caisse commune insuffisante.');
+    // Castor volant drops land on furniture too: those keep their height.
+    const level = Number.isFinite(access.y) && access.y > FLOOR_LEVEL ? access.y : 0;
     const id = String(state.nextId + 1);
     const items =
       kind === 'barricade'
@@ -171,6 +204,7 @@ export function groundCommand(state, command, foot, dollars, now = Date.now(), a
                       : { type: 'sugar', radius: GROUND_BAIT_TYPES.sugar.radius }),
               },
             ];
+    if (level) for (const item of items) item.y = level;
     if (kind === 'sugar' && !finitePoint(feedingPoint(items[0])))
       fail('Les cristaux dépassent du bureau.');
     // Validate collisions with existing barricades, preserving adjacent segments
@@ -181,6 +215,8 @@ export function groundCommand(state, command, foot, dollars, now = Date.now(), a
         : [(item.a[0] + item.b[0]) / 2, (item.a[1] + item.b[1]) / 2];
       if (
         state.structures.some((existing) => {
+          // Only constructions on the same surface (floor or furniture) collide.
+          if (Math.abs(levelOf(existing) - level) > 0.02) return false;
           if (['sentry', 'bunker', 'antitank'].includes(existing.kind) && existing.hp > 0)
             return (
               Math.hypot(sample[0] - existing.position[0], sample[1] - existing.position[1]) <
@@ -191,15 +227,31 @@ export function groundCommand(state, command, foot, dollars, now = Date.now(), a
                   : 0.07)
             );
           if (existing.kind !== 'barricade' || existing.hp <= 0) return false;
+          if (!item.position) {
+            const joins = [item.a, item.b].some((p) =>
+              [existing.a, existing.b].some((q) => length(p, q) < 1e-7),
+            );
+            if (joins) {
+              const shared = [item.a, item.b].find((p) =>
+                [existing.a, existing.b].some((q) => length(p, q) < 1e-7),
+              );
+              const own = length(shared, item.a) > 1e-7 ? item.a : item.b;
+              const other = length(shared, existing.a) > 1e-7 ? existing.a : existing.b;
+              const dot =
+                (own[0] - shared[0]) * (other[0] - shared[0]) +
+                (own[1] - shared[1]) * (other[1] - shared[1]);
+              if (dot <= 1e-10) return false;
+            }
+          }
           return distanceToSegment(sample, existing.a, existing.b) < 0.02;
         })
       )
-        fail('Emplacement déjà occupé par une barricade.');
+        fail('Emplacement déjà occupé par une construction.');
     }
     state.nextId++;
     state.structures.push(...items);
     state.revision++;
-    if (kind === 'barricade' || kind === 'bunker') state.navigationRevision++;
+    if ((kind === 'barricade' || kind === 'bunker') && !level) state.navigationRevision++;
     return { price, ids: items.map((item) => item.id) };
   }
   if (!['repair', 'remove'].includes(action)) fail('Action de défense inconnue.');

@@ -28,9 +28,11 @@ export function bedSpawn(bed, solids, equipment, vehicles = []) {
     'bed',
   );
   if (!supported || Math.abs(supported.y - bed.y) > 0.0003) return null;
+  const angle = Number.isFinite(bed.angle) ? bed.angle : 0,
+    offset = MAP.metres(2.6);
   return {
-    x: (bed.x + MAP.metres(1.6) - OFFICE_LAYOUT.base.originX) / ACTOR_UNIT,
-    z: (OFFICE_LAYOUT.base.originZ - bed.z) / ACTOR_UNIT,
+    x: (bed.x + Math.cos(angle) * offset - OFFICE_LAYOUT.base.originX) / ACTOR_UNIT,
+    z: (OFFICE_LAYOUT.base.originZ - bed.z + Math.sin(angle) * offset) / ACTOR_UNIT,
     y: bed.y,
     airborne: false,
     vy: 0,

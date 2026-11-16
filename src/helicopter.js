@@ -1,3 +1,4 @@
+import { colliderContainsXZ } from './oriented-collider.js';
 import { segmentBox } from './swept-geometry.js';
 import { MAP, ACTOR_UNIT } from './scale.js';
 import { OFFICE_LAYOUT } from './layout.js';
@@ -5,12 +6,14 @@ import { VEHICLE_ANCHORS } from './vehicle-anchors.js';
 export const HELI = Object.freeze({
   gunInterval: 1 / 15,
   gunDamage: 75,
-  maxTilt: (85 * Math.PI) / 180,
+  maxTilt: Math.PI / 4,
   turretSpeed: Math.PI,
   descentSpeed: 30,
   minPitch: -1.45,
   maxPitch: 0,
   missileTurn: 1.2,
+  // Keyboard turn rate (A/E) when no mouse direction steers (Castor volant vertical view).
+  yawRate: 1.4,
 });
 export function clampHeliAim(aim) {
   aim.yaw = Math.atan2(Math.sin(aim.yaw), Math.cos(aim.yaw));
@@ -73,26 +76,47 @@ export function stepHelicopter(T, state, controls, colliders, dt, profile) {
     : new T.Vector3(0, 0, -1).applyQuaternion(q);
   const yaw = controls.direction
     ? Math.atan2(-dir.x, -dir.z)
-    : new T.Euler().setFromQuaternion(q, 'YXZ').y;
-  const pitch = controls.pitch
-    ? Math.max(-1, Math.min(1, controls.pitch)) * HELI.maxTilt
-    : controls.direction
-      ? Math.max(-HELI.maxTilt, Math.min(HELI.maxTilt, Math.asin(Math.max(-1, Math.min(1, dir.y)))))
-      : 0;
-  const roll = controls.roll
-    ? Math.max(-1, Math.min(1, controls.roll)) * HELI.maxTilt
-    : controls.direction
-      ? Math.max(
-          -HELI.maxTilt,
-          Math.min(
-            HELI.maxTilt,
-            new T.Vector3(0, 0, -1).applyQuaternion(q).cross(dir).y * -HELI.maxTilt,
-          ),
-        )
-      : 0;
-  const target = new T.Quaternion().setFromEuler(new T.Euler(pitch, yaw, roll, 'YXZ'));
+    : new T.Euler().setFromQuaternion(q, 'YXZ').y -
+      // Lead angle: the orientation slerps at 2/s, so this turns at yawRate rad/s.
+      (Math.max(-1, Math.min(1, controls.yaw || 0)) * HELI.yawRate) / 2;
+  const pitch =
+    controls.pitch !== undefined
+      ? Math.max(-1, Math.min(1, controls.pitch)) * HELI.maxTilt
+      : controls.direction
+        ? Math.max(
+            -HELI.maxTilt,
+            Math.min(HELI.maxTilt, Math.asin(Math.max(-1, Math.min(1, dir.y)))),
+          )
+        : 0;
+  const roll =
+    controls.roll !== undefined
+      ? Math.max(-1, Math.min(1, controls.roll)) * HELI.maxTilt
+      : controls.direction
+        ? Math.max(
+            -HELI.maxTilt,
+            Math.min(
+              HELI.maxTilt,
+              new T.Vector3(0, 0, -1).applyQuaternion(q).cross(dir).y * -HELI.maxTilt,
+            ),
+          )
+        : 0;
+  // One tilt budget for both axes: diagonal input cannot exceed 45 degrees.
+  const tilt = new T.Vector3(pitch, 0, roll);
+  const angle = Math.min(HELI.maxTilt, tilt.length());
+  const target = new T.Quaternion().setFromAxisAngle(new T.Vector3(0, 1, 0), yaw);
+  if (angle > 0) target.multiply(new T.Quaternion().setFromAxisAngle(tilt.normalize(), angle));
   q.slerp(target, 1 - Math.exp(-dt * 2));
   const up = new T.Vector3(0, 1, 0).applyQuaternion(q);
+  // Slerping across a large heading change can leave the cone even when both
+  // endpoints are inside it. Bound the actual orientation as well as the target.
+  if (up.y < Math.cos(HELI.maxTilt)) {
+    const limited = new T.Vector3(up.x, 0, up.z);
+    if (limited.lengthSq() < 1e-12) limited.set(0, 0, 1);
+    limited.normalize().multiplyScalar(Math.sin(HELI.maxTilt));
+    limited.y = Math.cos(HELI.maxTilt);
+    q.premultiply(new T.Quaternion().setFromUnitVectors(up, limited)).normalize();
+    up.copy(limited);
+  }
   if (powered) {
     v.x += (up.x * MAP.metres(30) - v.x * 0.28) * dt;
     v.z += (up.z * MAP.metres(30) - v.z * 0.28) * dt;
@@ -111,13 +135,7 @@ export function stepHelicopter(T, state, controls, colliders, dt, profile) {
   p.addScaledVector(v, dt);
   let support = 0;
   for (const b of colliders)
-    if (
-      before.y - profile.gear >= b.max.y - MAP.metres(0.15) &&
-      p.x >= b.min.x &&
-      p.x <= b.max.x &&
-      p.z >= b.min.z &&
-      p.z <= b.max.z
-    )
+    if (before.y - profile.gear >= b.max.y - MAP.metres(0.15) && colliderContainsXZ(b, p.x, p.z))
       support = Math.max(support, b.max.y);
   let landed = false;
   if (p.y - profile.gear <= support + (state.landed ? MAP.metres(0.03) : 1e-9) && v.y <= 0) {

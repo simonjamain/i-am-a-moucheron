@@ -1,6 +1,114 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 303,
+    changes: ['Sur PC, le moucheron vole maintenant vers vous à la fin du chargement.'],
+  },
+  {
+    version: 300,
+    changes: ['La vue du Flak lourd s’affiche correctement après la prise du poste.'],
+  },
+  {
+    version: 299,
+    changes: [
+      'Poser une DCA fixe près du départ ne fait plus bondir le personnage.',
+      'La vue de visée du Flak lourd s’active dès la confirmation de la prise du poste.',
+    ],
+  },
+  {
+    version: 298,
+    changes: [
+      'Le Flak lourd passe en vue de visée et sa culasse suit le tube. Les DCA visent de +5° à +90°.',
+    ],
+  },
+  {
+    version: 297,
+    changes: [
+      'Les deux canons supérieurs de la DCA haute cadence restent assemblés quand on vise.',
+    ],
+  },
+  {
+    version: 296,
+    changes: [
+      'Le Flak léger change de modèle. La boutique propose aussi une DCA à quatre mitrailleuses et un Flak lourd à obus de proximité.',
+    ],
+  },
+  {
+    version: 295,
+    changes: [
+      'La préparation du jeu laisse respirer l’animation du moucheron pour réduire les à-coups pendant le chargement.',
+    ],
+  },
+  {
+    version: 294,
+    changes: [
+      'À la fin du chargement, le moucheron s’envole vers vous et le fond s’efface pour révéler l’accueil.',
+    ],
+  },
+  {
+    version: 293,
+    changes: [
+      'Les ennemis au sol se contournent et se répartissent naturellement, au lieu de marcher en formations rigides.',
+    ],
+  },
+  {
+    version: 292,
+    changes: [
+      'Nouveau Castor volant (30 $) : pilote et trois passagers larguent les constructions du Castor, sauf les murs, même sur un meuble.',
+      'V donne une vue verticale avec l’aperçu du largage ; A/E tournent l’appareil. Les colis tombent trois fois moins vite.',
+    ],
+  },
+  {
+    version: 291,
+    changes: [
+      'Viseur et traçantes se distinguent mieux dans les nuages. Le lit de réapparition adopte son nouveau modèle.',
+      'La station de départ recule pour dégager l’accès au bombardier.',
+    ],
+  },
+  {
+    version: 288,
+    changes: [
+      'Les nuages voilent aussi le côté sud. Le plafond de vol monte d’un mètre pour explorer la couche nuageuse.',
+    ],
+  },
+  {
+    version: 287,
+    changes: [
+      'La collision de la station de ravitaillement suit son orientation, même en diagonale.',
+    ],
+  },
+  {
+    version: 286,
+    changes: [
+      'Un moucheron accompagne le chargement ; les murs LEGO s’emboîtent et la station grandit.',
+      'Le Hind retrouve le suivi souris et ses canons tournent ; les chutes et le brouillard sont plus lisibles.',
+    ],
+  },
+  {
+    version: 285,
+    changes: [
+      'La fixation de la parabole tourne avec le radar. Le menu d’achat montre les nouveaux modèles des stations.',
+    ],
+  },
+  {
+    version: 284,
+    changes: [
+      'Nouvelles stations, réceptions au sol et rechargement visible autour du viseur.',
+      'Hind plus doux et missiles libres de viser derrière ; Castor plus progressif, jantes mobiles et zoom en vue du dessus.',
+    ],
+  },
+  {
+    version: 283,
+    changes: ['Nouveau personnage : l’opérateur.'],
+  },
+  {
+    version: 282,
+    changes: [
+      'Nouveau personnage : l’opératrice.',
+      'Accueil allégé : le choix du personnage n’a plus de cadre ni de nom, et le formulaire est plus compact.',
+    ],
+  },
+  {
     version: 281,
     changes: [
       'Vue de dessus du Castor : le nord reste en haut de l’écran, même quand le camion tourne.',
