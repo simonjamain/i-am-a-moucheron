@@ -157,7 +157,7 @@ assert.ok(rx < size.x / 2 - 0.4, 'wings stay outside the hit volume');
 
 // 6. Batched proxies and rigged fallback share the hit volume; only the brute
 // uses the beetle, under its new name.
-assert.deepEqual(Object.keys(FLYERS), ['brute', 'guard']);
+assert.deepEqual(Object.keys(FLYERS), ['brute', 'guard', 'mosquito']);
 assert.equal(ENEMY_TYPES.brute.name, 'Scarabée');
 const scene = new T.Scene();
 const batch = new FlyerBatch(T, scene, { enabled: false });

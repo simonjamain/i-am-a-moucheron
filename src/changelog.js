@@ -1,6 +1,12 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 311,
+    changes: [
+      'Le moustique a un nouveau modèle : il vole en vibrant des ailes, ses longues pattes pendantes.',
+    ],
+  },
+  {
     version: 310,
     changes: [
       'Le rat géant a un nouveau modèle de souris qui trottine avec une vraie animation de marche.',

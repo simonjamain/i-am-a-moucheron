@@ -289,7 +289,6 @@ export function createGraphics(T, scene) {
       {
         midge: '#c6b96e',
         dart: '#d78253',
-        mosquito: '#73918d',
       }[type],
       g,
     );
@@ -306,18 +305,6 @@ export function createGraphics(T, scene) {
       w.position.set(s * 0.8, 0.15, 0);
       g.add(w);
       wings.push(w);
-    }
-    if (type === 'mosquito') {
-      body.scale.set(0.42, 0.38, 1.7);
-      for (const side of [-1, 1]) {
-        const feeler = box(side * 0.07, 0.1, -1.1, 0.025, 0.025, 0.6, '#4d6c69', g);
-        feeler.rotation.y = side * 0.15;
-        for (const z of [-0.35, 0, 0.35]) {
-          const leg = box(side * 0.35, -0.45, z, 0.04, 0.65, 0.04, '#4d6c69', g);
-          leg.rotation.z = side * 0.25;
-          leg.userData.projectileSolid = false;
-        }
-      }
     }
     if (type === 'dart') {
       body.scale.z = 1.8;
