@@ -46,7 +46,8 @@ localement, le signaler et attendre le résultat de GitHub Actions.
 Le workflow [Docker build validation](../.github/workflows/docker-build.yml)
 exécute le contrôle **Docker build** sur toutes les PR et les groupes de fusion. Il construit et charge l’image `linux/amd64` sans la
 publier ni utiliser de secrets de déploiement. Aucun filtre de fichiers ne saute
-le contrôle sur les contributions documentaires. Le workflow de publication
+le contrôle sur les contributions documentaires. Le job démarre ensuite l'image construite et contrôle `/healthz` et le refus 410
+de `/api/join` (sans tester UDP). Le workflow de publication
 GHCR reste distinct et ne se déclenche que sur les pushs sur `main` : les
 branches de contribution et les tags Git ne publient aucune image. Sur `main`,
 seul le workflow de publication reconstruit l’image, sans doubler le build de

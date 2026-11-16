@@ -5,3 +5,8 @@ dist/
 .local/
 src/route-obstacles.js
 docs/ui-review.html
+# Fichiers générés par les scripts d import (ne pas éditer à la main) ou par assemble.mjs
+src/character-*data.js
+src/howitzer-data.js
+src/meshy-brick-data.js
+docs/ui-review.html

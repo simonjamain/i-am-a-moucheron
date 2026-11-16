@@ -37,6 +37,23 @@ jobs:
           cache-from: type=gha,scope=docker-validation
           cache-to: type=gha,scope=docker-validation,mode=max
 
+      - name: Smoke-test the built Node/UDP image
+        shell: bash
+        run: |
+          set -euo pipefail
+          cid="$(docker run --rm -d -p 127.0.0.1::3000/tcp i-am-a-moucheron:check)"
+          trap 'docker logs "$cid" || true; docker rm -f "$cid" >/dev/null 2>&1 || true' EXIT
+          port="$(docker port "$cid" 3000/tcp | sed -n '1s/.*://p')"
+          test -n "$port"
+          ready=0
+          for attempt in {1..30}; do
+            if curl -fsS "http://127.0.0.1:$port/healthz" -o "$RUNNER_TEMP/health.json"; then ready=1; break; fi
+            sleep 1
+          done
+          test "$ready" -eq 1
+          node -e 'const a=require("node:assert/strict");const h=JSON.parse(require("node:fs").readFileSync(process.env.RUNNER_TEMP+"/health.json","utf8"));a.deepEqual([h.ok,h.storage,h.transport],[true,"ram","webrtc-udp"])'
+          test "$(curl -sS -o /dev/null -w '%{http_code}' -X POST "http://127.0.0.1:$port/api/join")" = "410"
+
   snapshot-benchmark:
     name: 50-player snapshot comparison
     runs-on: ubuntu-latest
@@ -106,8 +123,6 @@ jobs:
         run: node scripts/test-swept-broadphase.mjs
       - name: Benchmark 50 vehicles and 900 enemies
         run: npm run bench:swarm-50
-      - name: Check formatting
-        run: npx prettier --check src/swept-broadphase.js server/game.js scripts/test-swept-broadphase.mjs scripts/benchmark-swept-broadphase.mjs
 
   game-regression:
     name: Full game regression and formatting
@@ -127,8 +142,8 @@ jobs:
         run: npm ci
       - name: Run game tests including 10k procedural swarms
         run: npm test
-      - name: Check modified-file formatting
-        run: npx prettier --check src/client.js src/insect-hits.js src/midge-batch.js src/waves.js src/graphics.js src/scale.js server/game.js server/session.js scripts/test-dense-swarms.mjs scripts/test-insect-hits.mjs scripts/test-midge-batch.mjs scripts/test-roster-sync.mjs src/audio.js scripts/test-audio.mjs scripts/test-clean-flight.mjs docs/dense-swarms.md docs/performance.md docs/code-structure.md
+      - name: Check formatting (same command as local)
+        run: npm run format:check
       - name: Check documentation
         run: npm run check:docs
       - name: Build distributable

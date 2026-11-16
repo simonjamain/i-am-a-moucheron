@@ -3,6 +3,7 @@
 État : PR #81 actualisée sur la branche `feat/issue-78-meshy-asset-tooling` ; vérifications GitHub Actions finales obligatoires avant fusion.
 
 ## Décisions
+
 Image Node séparée de l'image du jeu, lancée à la demande par
 `compose.assets.yaml`, et vérifiée dans GitHub Actions. Le binaire utilise
 glTF Transform pour glTF I/O et meshoptimizer pour remplacer uniquement les
@@ -10,6 +11,7 @@ indices de triangles ; il protège les meshes nommés et refuse les monoblocs pa
 défaut. Le jeu et la flotte existante ne changent pas dans cette PR.
 
 ## Prochaines actions
+
 - Vérifier l'exécution du job **Asset tool Docker and UV tests** sur le commit.
 - Le lockfile npm complet est maintenant conservé, et l'image utilise npm ci.
 - Compléter un essai sur un véritable GLB Meshy segmenté, mesure visuelle et
