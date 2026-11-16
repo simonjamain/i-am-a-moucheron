@@ -53,23 +53,25 @@ export function enemyRoute(enemy) {
     points.push([3.0, 0.38, -2.7], [2.5, 0.38, -2.7]);
   } else {
     const source = portalExit(PORTALS.air[portal]);
+    // Flight routes stay below the cloud layer (OFFICE_CLOUD_TOP, which does not
+    // follow the raised flight ceiling): swarms remain readable, never veiled.
     // Two crossing corridors fed by the four vents. Their altitude separates
     // the crossing and keeps the course predictable before an insect spawns.
     const high = portal % 2 === 0;
     const lane = high
       ? [
-          [-2.85, 2.65, 2.55],
-          [2.75, 2.55, -2.6],
-          [2.8, 2.5, 2.5],
+          [-2.85, 2.05, 2.55],
+          [2.75, 2.0, -2.6],
+          [2.8, 1.95, 2.5],
         ]
       : [
-          [2.7, 1.85, 2.5],
-          [-2.8, 1.9, -2.6],
-          [-2.8, 2.2, 2.5],
+          [2.7, 1.5, 2.5],
+          [-2.8, 1.55, -2.6],
+          [-2.8, 1.8, 2.5],
         ];
     points = [
       source,
-      [source[0] * 0.7, 2.7, source[2] * 0.7],
+      [source[0] * 0.7, 2.1, source[2] * 0.7],
       ...lane,
       [0, 1.65, 1.9],
       [2.8, 1.5, -2.6],
@@ -81,8 +83,8 @@ export function enemyRoute(enemy) {
         points.splice(
           i,
           0,
-          [points[i - 1][0], 2.82, points[i - 1][2]],
-          [points[i][0], 2.82, points[i][2]],
+          [points[i - 1][0], 2.1, points[i - 1][2]],
+          [points[i][0], 2.1, points[i][2]],
         );
         i += 2;
       }

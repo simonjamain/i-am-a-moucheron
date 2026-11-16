@@ -1,4 +1,4 @@
-import { stepFlight } from './flight.js';
+import { stepFlight, ROLLING_FRICTION } from './flight.js';
 import { resolveLanding } from './sortie.js';
 import { MAP } from './scale.js';
 import { OFFICE_LAYOUT } from './layout.js';
@@ -39,8 +39,8 @@ export function stepVacantAircraft(T, state, profile, colliders, dt) {
     dt,
   );
   if (landing.landed) {
-    velocity.x *= Math.exp(-dt * 0.35);
-    velocity.z *= Math.exp(-dt * 0.35);
+    velocity.x *= Math.exp(-dt * ROLLING_FRICTION);
+    velocity.z *= Math.exp(-dt * ROLLING_FRICTION);
     if (gas < 0.12)
       velocity.multiplyScalar(
         Math.max(0, 1 - (MAP.metres(6) * dt) / Math.max(1e-9, velocity.length())),
