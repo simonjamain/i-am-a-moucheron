@@ -59,6 +59,8 @@ try {
     };
   });
   await page.goto('http://127.0.0.1:' + app.server.address().port + '/');
+  // The lobby is usable once the loading screen has left (see e2e-loading).
+  await page.locator('#loading').waitFor({ state: 'detached', timeout: 60000 });
   await page.fill('#name', 'Testeur');
   await page.fill('#code', 'E2E');
   await page.click('#join');

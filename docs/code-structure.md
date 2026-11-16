@@ -9,10 +9,11 @@ en charge continue du backlog et la revue finale des documents.
 
 | Module                                     | Responsabilité                                                                                 |
 | ------------------------------------------ | ---------------------------------------------------------------------------------------------- |
-| `server/index.js`                          | Assets HTTP, santé, négociation WebRTC native, UDP obligatoire et maintenance.                 |
+| `server/index.js`                          | Assets HTTP, santé, négociation WebRTC native, secours WebSocket `/ws` et maintenance.         |
 | `server/session.js`                        | Identité liée à DTLS, commandes fiables, confirmations/rejeu, mouvements sans retransmission.  |
 | `server/game.js`                           | Salles, joueurs, vagues, sièges, contrats, achats, dégâts, réserve et réapparition en RAM.     |
 | `src/udp-client.js`, `src/udp-protocol.js` | Canaux navigateur, refus hors UDP, limites, files et réassemblage.                             |
+| `src/ws-client.js`                         | Secours TCP : même interface et protocole que `UdpClient` sur un WebSocket.                    |
 | `src/motion-wire.js`                       | Codec binaire des mouvements et lots partagés relayés par le serveur.                          |
 | `src/client.js`                            | Orchestration de la scène, état local, entrées, interfaces et envoi des commandes.             |
 | `src/network.js`                           | Validation de mouvement et interpolation ; `PeerMotion` est le transport historique des pairs. |

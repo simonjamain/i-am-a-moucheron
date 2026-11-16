@@ -28,7 +28,8 @@ JavaScript ESM natif, Three.js embarqué dans `vendor/`, modèles procéduraux e
 sons Web Audio. Le serveur Node utilise **uniquement la RAM**, sans base de
 données. Les joueurs se connectent en étoile par WebRTC sur UDP : mouvements
 sans retransmission, commandes importantes fiables avec confirmations.
-Aucun WebSocket ni repli de gameplay HTTP/TCP. Un réseau sans UDP est refusé.
+Un réseau sans UDP (réseau d'entreprise) joue en TCP sur un WebSocket, avec le
+même protocole ; aucun gameplay ne passe en HTTP.
 Le redémarrage du processus efface toutes les parties.
 
 ```sh

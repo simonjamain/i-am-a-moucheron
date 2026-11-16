@@ -16,10 +16,10 @@ Le [lot #175](gameplay-polish-175.md) précise le chargement animé, le suivi so
 
 ## Session réseau
 
-Le serveur Node utilise WebRTC sur UDP uniquement. Les mouvements sont locaux,
+Le serveur Node utilise WebRTC sur UDP. Les mouvements sont locaux,
 relayés par le serveur à 20 Hz ; signatures, achats, impacts et changements de
-monde passent sur un canal fiable avec confirmation. Aucune connexion de jeu
-n'est ouverte si UDP n'est pas confirmé. Toute la partie reste en mémoire et
+monde passent sur un canal fiable avec confirmation. Un réseau sans UDP joue en
+TCP sur un WebSocket, moins fluide en cas de pertes. Toute la partie reste en mémoire et
 un redémarrage la supprime. Le [guide UDP](udp-server.md) distingue ce runtime
 de la version publique historique encore sur Sites/D1.
 

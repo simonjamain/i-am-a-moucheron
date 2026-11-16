@@ -154,6 +154,7 @@ const files = {
       'control-focus',
       'network',
       'udp-client',
+      'ws-client',
       'udp-protocol',
       'snapshot-wire',
       'motion-wire',
