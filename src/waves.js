@@ -91,7 +91,7 @@ export const ENEMY_TYPES = Object.freeze({
     offspringOnly: true,
   },
   brute: {
-    name: 'Bourdon blindé',
+    name: 'Scarabée',
     cost: 12,
     hp: 800,
     size: 1.9,

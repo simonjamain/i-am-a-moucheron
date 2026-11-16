@@ -1,6 +1,12 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 307,
+    changes: [
+      'Le bourdon blindé devient le scarabée : un nouveau modèle bleu et orange qui vole en battant des ailes, pattes pendantes.',
+    ],
+  },
+  {
     version: 306,
     changes: [
       'Sur les réseaux qui bloquent l’UDP (réseaux d’entreprise), la partie se lance quand même, en mode secours « TCP ».',

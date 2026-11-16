@@ -10,6 +10,8 @@ import { makeFlyingCastorMeshy } from './flying-castor-model.js';
 import { createCharacter, CHARACTER_HEIGHT, LEGACY_HEIGHT } from './character-model.js';
 import { createMidgeRig } from './midge-model.js';
 import { WALKERS, walkerStride } from './walker-batch.js';
+import { FLYERS } from './flyer-batch.js';
+import { TAU } from './rigged-creature.js';
 import { GROUND_LEGS, MIDGE_SPHERE_RADIUS } from './scale.js';
 export function createGraphics(T, scene) {
   const materials = new Map();
@@ -200,6 +202,33 @@ export function createGraphics(T, scene) {
       scene.add(g);
       return g;
     }
+    if (FLYERS[type]) {
+      // Rigged Meshy flyers (corpses, purgatory souls, non-WebGL fallback).
+      // Living WebGL flyers are drawn by FlyerBatch; hits use the ellipsoid.
+      const flyer = FLYERS[type];
+      const rig = flyer.creature.createRig(T);
+      rig.mesh.castShadow = true;
+      // Flight cycle at time `ms` for a flyer whose roster phase is in radians.
+      rig.animate = (ms, phase = 0) => rig.pose(ms / 1000 / flyer.flight.loop + phase / TAU);
+      g.add(rig.container);
+      g.userData = {
+        enemyType: type,
+        wings: [],
+        legs: [],
+        hitParts: [],
+        disposables: [rig.mesh.material],
+        hitTolerance: 1,
+        hitEllipsoid: [...flyer.hit.radii],
+        hitCentre: [...flyer.hit.centre],
+        flight: rig,
+        // Purgatory souls keep beating their wings.
+        animate(dt) {
+          rig.pose(rig.phase + dt / flyer.flight.loop);
+        },
+      };
+      scene.add(g);
+      return g;
+    }
     if (type === 'spider' || type === 'spiderling') {
       const large = type === 'spider';
       const body = ball(0, 0.06, 0.38, 0.56, large ? '#48362f' : '#66544c', g);
@@ -288,7 +317,6 @@ export function createGraphics(T, scene) {
         midge: '#c6b96e',
         dart: '#d78253',
         guard: '#729d8b',
-        brute: '#d0a14b',
         mosquito: '#73918d',
       }[type],
       g,
@@ -307,8 +335,8 @@ export function createGraphics(T, scene) {
       g.add(w);
       wings.push(w);
     }
-    if (type === 'guard' || type === 'brute') {
-      const shell = ball(0, 0.12, 0.12, 0.53, type === 'brute' ? '#be8c3d' : '#527e70', g);
+    if (type === 'guard') {
+      const shell = ball(0, 0.12, 0.12, 0.53, '#527e70', g);
       shell.scale.set(0.76, 0.55, 1.2);
       for (const z of [-0.2, 0.15, 0.5]) box(0, 0.36, z, 0.72, 0.05, 0.1, '#273d33', g);
     }

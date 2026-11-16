@@ -8,7 +8,7 @@
 | Voltigeur         | 200 |
 | Cafard            | 300 |
 | Carapace          | 400 |
-| Bourdon blindé    | 800 |
+| Scarabée          | 800 |
 | Joueur            | 100 |
 
 Une mitrailleuse inflige 75 dégâts de base. L’amélioration existante conserve

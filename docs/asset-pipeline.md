@@ -261,6 +261,47 @@ un `InstancedMesh` par espèce, ombres via un matériau de profondeur dédié).
 
 ![Poses de marche](walkers-model-review.jpg)
 
+## Scarabée Meshy (vol, version 307)
+
+Modèle fourni par l'utilisateur, déjà riggé par Meshy, sans clip ; il remplace le
+« bourdon blindé » procédural de l'espèce `brute`, renommée « Scarabée ».
+
+- Original hors dépôt : `assets/originals/beetle/low-poly-beetle.glb` (fichier Meshy
+  « Low Poly Cockroach », un scarabée bleu et orange), SHA-256 `a7d151ca…aa1f`.
+  598 triangles, 872 sommets, SmartRig de 48 os, texture PNG 2K réduite en JPEG
+  512 px (58 Ko). Tête vers +Z, Y vers le haut, pieds à y = 0.
+- Import : `PYTHONPATH=scripts python3 scripts/import-beetle.py <GLB>` écrit
+  `src/beetle-data.js` (124 Ko). Deux corrections de poids, sans toucher géométrie,
+  UV ni texture : chaque aile membraneuse (coque séparée de 28 et 29 sommets, pondérée
+  par Meshy sur un mélange d'os d'aile, d'élytre et de patte) reçoit son os
+  `Wing_L` (+X) ou `Wing_R` (−X), enfant du thorax `Bone_002`, charnière aux sommets
+  les plus internes, à 100 % ; la coque du corps (tête, élytres, abdomen) cède au
+  thorax les poids qu'elle portait sur les os de pattes animés (223 influences),
+  pour que les pattes ne tirent jamais la carapace. Pas de simplification :
+  modèle très léger, monobloc articulé.
+- Vol (`src/beetle-model.js`) : boucle de 1 s, 6 battements (plus lent et lourd
+  que le moucheron), 60 images. Ailes de −14° à +46° avec balayage avant/arrière et
+  torsion aux retournements. Comme une cétoine, il vole **élytres fermées** : elles
+  font partie de la coque du corps, les ouvrir déchirerait le maillage. Corps cabré
+  de 7°, léger rebond à chaque battement, roulis lent ; six pattes pendantes,
+  repliées vers l'arrière, qui pagaient doucement.
+- Rendu (`src/flyer-batch.js`) : texture d'animation de sommets cuite au chargement,
+  un `InstancedMesh` par espèce, battement sur l'horloge partagée avec un décalage
+  de boucle par insecte ; le client oriente le proxy vers son déplacement 3D comme
+  un moucheron. Cadavres, âmes du purgatoire et rendu sans WebGL : `SkinnedMesh`
+  réel du même rig (`graphics.insect`). D'autres volants (voltigeur, carapace,
+  moustique) pourront s'ajouter par une entrée de `FLYERS`.
+- Échelle et collision : facteur 0,75, corps de 2,2 unités et 2,9 d'envergure
+  (facteur d'espèce `brute` inchangé dans `scale.js`). Zone de tir : ellipsoïde de
+  la carapace sans ailes ni pattes (`BEETLE_HIT`), partagé par le proxy et le rig.
+- Vérification : `scripts/test-beetle-model.mjs` (provenance, os d'ailes rigides,
+  carapace rigide pendant tout le cycle, orientation, battement symétrique, boucle
+  sans raccord, pattes pendantes, cuisson, proxys et tirs ellipsoïdaux). Rendu
+  WebGL contrôlé hors jeu (8 scarabées instanciés en un appel de dessin, phases
+  décalées) ; la lisibilité en partie réelle reste à juger.
+
+![Poses du cycle de vol et rendu instancié](beetle-model-review.jpg)
+
 ## Canon anti-matériel (obusier Meshy)
 
 Modèle fourni par l'utilisateur pour l'[issue #113](https://github.com/simonjamain/i-am-a-moucheron/issues/113)
