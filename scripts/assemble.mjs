@@ -148,6 +148,8 @@ const files = {
       'spider-data',
       'roach-model',
       'roach-data',
+      'rat-model',
+      'rat-data',
       'flyer-batch',
       'beetle-model',
       'beetle-data',

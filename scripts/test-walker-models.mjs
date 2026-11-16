@@ -37,6 +37,7 @@ assert.equal(SPIDER_DATA.bones.length, 30);
 assert.equal(WALKERS.ant.bones.legs.length, 6);
 assert.equal(WALKERS.spider.bones.legs.length, 8);
 for (const walker of Object.values(WALKERS)) {
+  if (walker.clip) continue; // clip-driven rat: scripts/test-rat-model.mjs
   const names = new Set(walker.creature.data.bones.map((b) => b.name));
   for (const leg of walker.bones.legs)
     for (const key of ['hip', 'knee', 'tip']) assert.ok(names.has(leg[key]), leg[key]);
@@ -62,6 +63,7 @@ near(nearestRest(0.02), -0.05, 1e-9, 'nearest rest wraps');
 // 3. Rigs: head towards -Z, feet on the shared ground lift, no foot below it
 // during the whole cycle, planted feet move backwards at the body speed.
 for (const [type, walker] of Object.entries(WALKERS)) {
+  if (walker.clip) continue;
   const rig = walker.creature.createRig(T);
   const h = walker.creature.helpers(T);
   const world = (name) => rig.bones[name].getWorldPosition(new T.Vector3());

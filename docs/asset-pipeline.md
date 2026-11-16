@@ -291,6 +291,44 @@ fourmi ; il remplace le cafard procédural (anciennement une fourmi agrandie).
 
 ![Poses de marche du cafard et rendu instancié](roach-model-review.jpg)
 
+### Rat (version 310)
+
+Modèle Meshy « Low Poly Mouse » fourni par l'utilisateur **avec son propre clip de
+marche** ; il remplace le rat procédural. C'est le premier ennemi dont le cycle
+rejoue un clip au lieu d'une démarche calculée.
+
+- Original hors dépôt : `assets/originals/rat/mouse-walking.glb` (SHA-256
+  `fa7bf0c8…3eae`), 420 triangles, 698 sommets, un seul maillage soudé, squelette
+  de 27 os (bassin, poitrine, tête, queue à cinq segments, quatre pattes à quatre
+  os). Export Blender : armature à l'échelle 0,01 tournée depuis Z-haut, et
+  échelle constante 1,8233 sur `Hips` pendant le clip. Texture JPEG 512 px (54 Ko).
+- Import : `PYTHONPATH=scripts python3 scripts/import-rat.py <GLB>` écrit
+  `src/rat-data.js`. Squelette de repos sans échelle (mètres-modèle, ×100) et
+  matrices de liaison recalculées ; poids, UV et géométrie inchangés. Le clip
+  (« Armature|Unreal Take|baselayer », 1 s, 31 clés, sur place) est rééchantillonné
+  en transformations monde de chaque os aux 30 clés, divisées par l'échelle de
+  `Hips` (remise à l'échelle uniforme, aspect inchangé).
+- Cycle (`src/rat-model.js`) : la pose interpole les clés et les convertit en deltas
+  pour `rigged-creature` ; le test vérifie que chaque os retombe sur le clip.
+  Seule retouche : au décollement, les orteils arrière pointent vers le bas, 8 cm
+  sous les semelles posées ; ils pivotent sur l'axe latéral juste assez pour rester
+  au-dessus du plan des semelles, ce qui permet de poser les pattes au sol. Les
+  orteils avant tournoient trop vite pendant l'élan pour une correction lisse : ils
+  gardent le clip et peuvent plonger jusqu'à 0,2 unité sous la ligne des pieds au
+  décollement, et les pattes avant posées flottent d'environ 0,08 unité.
+- Marche : entrée `rat` de `WALKERS` marquée `clip`, phase pilotée par la distance
+  (foulée 0,35 m-modèle, vitesse des pattes arrière posées), cadence plafonnée à
+  4 boucles/s.
+- Échelle : facteur 3,5, environ 4,4 unités queue comprise comme l'ancien rat ;
+  corps centré sur le proxy, queue derrière. Zone de tir : ellipsoïde du corps et de
+  la tête sans queue ni pattes (`RAT_HIT`).
+- Vérification : `scripts/test-rat-model.mjs` (provenance, clip rejoué os par os,
+  boucle, semelles arrière sur la ligne des pieds, foulée, tirs, proxy, cuisson) ;
+  rendu WebGL instancié contrôlé hors jeu. Le rendu en partie réelle reste à juger,
+  en particulier les pattes avant.
+
+![Poses de marche du rat](rat-model-review.jpg)
+
 ## Scarabée Meshy (vol, version 307)
 
 Modèle fourni par l'utilisateur, déjà riggé par Meshy, sans clip ; il remplace le
