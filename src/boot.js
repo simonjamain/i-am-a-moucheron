@@ -4,7 +4,6 @@ const loading = document.getElementById('loading');
 let stop = () => {};
 let depart = () => {};
 let visibleSince = performance.now();
-const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 try {
   await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
@@ -61,7 +60,7 @@ try {
       camera.updateProjectionMatrix();
       const t = ms / 1000,
         angle = t * 1.1;
-      if (exit && !reducedMotion) {
+      if (exit) {
         const progress = Math.min(1, Math.max(0, (ms - exit.at) / 1400));
         const turn = Math.min(1, progress / 0.3);
         fly.container.quaternion.slerpQuaternions(
@@ -110,8 +109,10 @@ try {
   manager.itemStart = start;
   manager.itemEnd = end;
   manager.itemError = error;
+  // The fly-by also plays under prefers-reduced-motion: many PCs report it
+  // without the user having chosen it, and it replaced the exit by a bare fade.
   // Let a cached load still show the model, without extending slow loads.
-  if (!reducedMotion) await wait(Math.max(0, 900 - (performance.now() - visibleSince)));
+  await wait(Math.max(0, 900 - (performance.now() - visibleSince)));
   const lobby = document.getElementById('lobby');
   const wasInert = lobby?.inert;
   if (lobby) lobby.inert = true;
@@ -119,7 +120,7 @@ try {
   depart();
   loading.classList.add('departing');
   // A timer also completes when a background tab pauses animation frames.
-  await wait(reducedMotion ? 220 : 1400);
+  await wait(1400);
   stop();
   loading.remove();
   if (lobby) lobby.inert = wasInert;
