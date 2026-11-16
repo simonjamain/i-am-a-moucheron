@@ -42,7 +42,11 @@ const truck = { type: 'castor', state, supplies: { fuel: 10, ammo: { pilot: 0 },
 const plane = {
   type: 'fighter',
   state: {
-    hp: 50, engine: 1, wing: 1, landed: false, v: [4, 0, 0],
+    hp: 50,
+    engine: 1,
+    wing: 1,
+    landed: false,
+    v: [4, 0, 0],
     p: [state.p[0] + 0.1, state.p[1] + 0.1, state.p[2]],
   },
   supplies: { fuel: 1, ammo: { pilot: 0 }, revision: 0 },
@@ -54,4 +58,3 @@ assert.ok(paid.spent > 0 && paid.spent <= 1);
 assert.ok(plane.state.hp > 50 && plane.supplies.ammo.pilot > 0);
 assert.ok(truck.supplies.ammo.pilot > 0);
 console.log('Castor: shopping, seat, wheels, gun, movement and mobile support OK');
-

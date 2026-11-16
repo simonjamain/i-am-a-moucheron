@@ -30,10 +30,7 @@ for (const weapon of ['he', 'ap']) {
     const marks = ballisticMarks(weapon, direction);
     assert.equal(marks.length, TANK_MARKS.length, weapon + ' shows every graduation at ' + pitch);
     marks.forEach((mark, i) => {
-      assert.ok(
-        Math.abs(mark.metres - TANK_MARKS[i]) < 1e-9,
-        'label is the distance',
-      );
+      assert.ok(Math.abs(mark.metres - TANK_MARKS[i]) < 1e-9, 'label is the distance');
       // Independent replay of the trajectory up to the mark's along-axis distance.
       const shell = {
         weapon,
@@ -69,4 +66,6 @@ assert.ok(
   Math.abs(ballisticMarks('he').at(-1).point[1]) > Math.abs(ballisticMarks('ap').at(-1).point[1]),
   'slower HE drops more than AP',
 );
-console.log('Tank graduations: 15 cm to 9 m (real office metres) on the real HE/AP trajectories, far wall reachable.');
+console.log(
+  'Tank graduations: 15 cm to 9 m (real office metres) on the real HE/AP trajectories, far wall reachable.',
+);

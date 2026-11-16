@@ -57,6 +57,16 @@ La CI `Docker build validation` exécute aussi `npm test`, `check:docs`, le buil
 et `validate-artifact.mjs` ; `docker build` local reste exigé avant livraison
 ([Docker](docker.md)).
 
+Audit des contrôles (suite complète mesurée : 144 scripts, environ 40 s cumulées,
+tous < 3 s) : lancer `npm test` en entier plutôt qu'une sélection, le retour est
+déjà rapide. `npm run format:check` est la seule commande de format, en local et
+en CI (job `Full game regression and formatting`) ; les données générées
+(`src/*data.js` importées, `docs/ui-review.html`) sont dans `.prettierignore`.
+Le job `Docker build` démarre l'image construite et vérifie `/healthz`
+(`ok`, `storage=ram`, `transport=webrtc-udp`) et le 410 de `/api/join` : il prouve
+que l'image démarre, pas les pairs UDP dans le conteneur, WebGL ni le WAN.
+`check:version` n'est pas exécuté en CI (il compare l'index à `HEAD`).
+
 Le build produit `dist/` avec serveur, modules partagés, assets et manifestes npm.
 Dans ce répertoire : `npm ci --omit=dev && npm start`. Le validateur vérifie
 la syntaxe ESM du serveur, les imports locaux du runtime et les assets UDP.
