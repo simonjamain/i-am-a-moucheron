@@ -11,7 +11,7 @@ Le directeur Node tire la composition **dès l’annonce de la vague**. Chaque i
 arrivent en foules — fourmis de 8 à 200, moucherons de 20 à 400, moustiques de 6 à 60,
 croissant avec le budget — et jamais presque seuls ; plus une espèce est grosse et
 puissante, plus son paquet est petit (voltigeurs 3 à 12, cafards 2 à 8, carapaces 1 à 4,
-bourdons 1 à 2, araignées et rats seuls). Une première colonne de fourmis sort à 0 s,
+scarabées 1 à 2, araignées et rats seuls). Une première colonne de fourmis sort à 0 s,
 la nuée de moucherons à 1–2 s ; le reste suit à intervalles courts (les ennemis isolés
 arrivent par grappes). Les foules d'une même espèce partagent le plus souvent
 entrée et parcours ; les espèces fortes ont chacune le leur. Le reliquat de budget

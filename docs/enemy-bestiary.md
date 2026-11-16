@@ -9,7 +9,7 @@
 
 La mort d'une pondeuse génère sur le serveur une naissance **exactement une fois**, aussi bien par arme légère que lourde. Cent nouveaux identifiants sont ajoutés au roster, avec départ légèrement échelonné, point d'origine correspondant au décès, navigation au sol et variation procédurale sans dépendance aux voisins. Les baby spiders n'ont pas d'âme au purgatoire ni de récompense, mais **chaque bébé qui atteint la poubelle ajoute 1 infestation**. Leur apparition est bornée techniquement par un roster de 20 000 entités : en cas de stress-test anormal au plafond, la naissance peut être partielle.
 
-Les fourmis et les araignées pondeuses utilisent les modèles Meshy « Red Ant Warrior » et « Spotted Velvet Spider » avec une marche à pieds plantés (démarche tripode et tétrapode alternée), dont la phase suit la distance parcourue ; voir [le pipeline d'assets](asset-pipeline.md#fourmi-et-araignée-pondeuse-meshy-marche). Leur zone de tir devient un ellipsoïde du corps, sans les pattes. Les moucherons utilisent le modèle Meshy « Angry Little Fly » animé (battement d'ailes, pattes et antennes) près de la caméra et des ellipsoïdes au loin ; voir [le pipeline d'assets](asset-pipeline.md#moucheron-meshy-squelette-et-vol). Leur zone de tir est inchangée.
+Les fourmis et les araignées pondeuses utilisent les modèles Meshy « Red Ant Warrior » et « Spotted Velvet Spider » avec une marche à pieds plantés (démarche tripode et tétrapode alternée), dont la phase suit la distance parcourue ; voir [le pipeline d'assets](asset-pipeline.md#fourmi-et-araignée-pondeuse-meshy-marche). Leur zone de tir devient un ellipsoïde du corps, sans les pattes. Les moucherons utilisent le modèle Meshy « Angry Little Fly » animé (battement d'ailes, pattes et antennes) près de la caméra et des ellipsoïdes au loin ; voir [le pipeline d'assets](asset-pipeline.md#moucheron-meshy-squelette-et-vol). Leur zone de tir est inchangée. Le scarabée (`brute`, anciennement « bourdon blindé ») utilise un modèle Meshy fourni par l'utilisateur, élytres fermées et ailes battantes, pattes pendantes ; voir [le pipeline d'assets](asset-pipeline.md#scarabée-meshy-vol-version-307). Sa zone de tir devient l'ellipsoïde de la carapace.
 
 Les bébés utilisent un rendu InstancedMesh WebGL en trois lots et des objets légers pour les impacts. Les moustiques ont une oscillation erratique reproductible localement. Les gros rats ont des modèles procéduraux ; leur passage dans les couloirs de mobilier demande un contrôle en vrai jeu.
 
@@ -23,13 +23,13 @@ Le panneau d'équilibrage expose les trois espèces nouvelles, pas les bébés. 
 
 Chaque profil possède `speedMps`, vitesse de progression en **mètres de la pièce par seconde**. Ce nombre ne dépend pas de la taille du modèle 3D, de l'effectif de la nuée, du numéro de vague, ni de la longueur d'un ancien parcours. Seul le multiplicateur « Vitesse ennemis » de la room le modifie. La durée se calcule sur le trajet effectivement emprunté : distance / vitesse.
 
-| Espèce            | Vitesse m/s | Espèce         | Vitesse m/s |
-| ----------------- | ----------: | -------------- | ----------: |
-| Fourmi            |       0,085 | Cafard         |      0,0625 |
-| Moucheron         |        0,11 | Voltigeur      |        0,13 |
-| Carapace          |      0,0875 | Bourdon blindé |        0,07 |
-| Moustique         |       0,115 | Rat géant      |     0,08075 |
-| Araignée pondeuse |       0,055 | Bébé araignée  |       0,075 |
+| Espèce            | Vitesse m/s | Espèce        | Vitesse m/s |
+| ----------------- | ----------: | ------------- | ----------: |
+| Fourmi            |       0,085 | Cafard        |      0,0625 |
+| Moucheron         |        0,11 | Voltigeur     |        0,13 |
+| Carapace          |      0,0875 | Scarabée      |        0,07 |
+| Moustique         |       0,115 | Rat géant     |     0,08075 |
+| Araignée pondeuse |       0,055 | Bébé araignée |       0,075 |
 
 Les bébés araignées n'ont plus de multiplicateur caché ×1,8. Les moustiques restent imprévisibles mais leurs oscillations locales ont été ralenties. Les mouvements secondaires de groupe sont des petits écarts autour de la progression à vitesse fixe, pas une deuxième vitesse liée aux dimensions du modèle. `scripts/test-enemy-speeds.mjs` vérifie les valeurs, le chemin réel, les nuées de 10 à 5 000 ennemis, les bébés et le multiplicateur de room. Les sensations de jeu et les FPS WebGL nécessitent une validation en partie réelle.
 

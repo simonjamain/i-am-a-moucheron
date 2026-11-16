@@ -85,6 +85,7 @@ const state = {
   midgeBatch: { enabled: false },
   spiderlingBatch: { enabled: false },
   walkerBatch: { enabled: false },
+  flyerBatch: { enabled: false, handles: () => false },
   midgeForward: new T.Vector3(0, 0, -1),
   midgeHeading: new T.Vector3(),
   midgeTarget: new T.Quaternion(),

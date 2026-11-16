@@ -10,7 +10,7 @@ export const speciesSymbols = {
   midge: '🪰',
   dart: '🪰➚',
   guard: '🪲',
-  brute: '🐝',
+  brute: '🪲🛡',
   mosquito: '🦟',
 };
 export const entranceLabel = (group) => (group.ground ? 'S' : 'A') + (group.portalIndex + 1);
