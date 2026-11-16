@@ -1,7 +1,7 @@
 # Construire et exécuter avec Docker
 
-La livraison courante reste le ZIP des sources décrit dans
-[l’exploitation](operations.md). Le dépôt fournit aussi un `Dockerfile` pour
+La référence de livraison est le dépôt GitHub (ZIP des sources seulement sur
+demande, voir [l’exploitation](operations.md)). Le dépôt fournit aussi un `Dockerfile` pour
 construire localement la même version du serveur Node/UDP. Le workflow de
 [publication](../.github/workflows/docker.yml) construit et publie sur GHCR à
 chaque push sur `main` : `ghcr.io/simonjamain/i-am-a-moucheron:latest` et un
@@ -61,9 +61,9 @@ règle aux administrateurs et éviter les exceptions de contournement si toutes
 les fusions doivent être bloquées en cas d’échec. Le fichier de workflow seul
 ne peut pas rendre un contrôle obligatoire.
 
-L’intégration GitHub utilisée pour cette contribution ne dispose pas des droits
-d’administration : cette protection n’a pas pu être lue ni modifiée (HTTP 403).
-Son activation reste donc à vérifier dans les paramètres du dépôt.
+Les agents n'ont pas les droits d'administration : cette protection n'est pas
+lisible ni modifiable depuis une contribution. Vérifier son activation dans les
+paramètres du dépôt ; si la fusion est bloquée, laisser la PR ouverte.
 
 Référence : [contrôles obligatoires GitHub](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches#require-status-checks-before-merging).
 

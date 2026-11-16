@@ -2,7 +2,7 @@
 
 ## Déployer les sources courantes
 
-La livraison habituelle est un **ZIP des sources**, sans `node_modules`, données
+Le dépôt GitHub est la référence ; un **ZIP des sources** n'est produit que si la livraison demandée le nécessite (voir `AGENTS.md`), sans `node_modules`, données
 de partie, image Docker ni métadonnées Git. Extraire puis utiliser Node 22.13+ :
 
 ```sh
@@ -45,9 +45,17 @@ restent immuables ; Node ne les charge pas.
 npm run format:check
 npm test
 npm run check:docs
+npm run check:version
 npm run build
 node scripts/validate-artifact.mjs
 ```
+
+`check:version` compare `VERSION` indexé à celui de `HEAD` : indexer l'augmentation
+(`npm run version:next`) avant de l'exécuter. Le hook `.githooks/pre-commit`
+(activé par `npm run prepare:version`) lance ce contrôle puis `scripts/build.sh`.
+La CI `Docker build validation` exécute aussi `npm test`, `check:docs`, le build
+et `validate-artifact.mjs` ; `docker build` local reste exigé avant livraison
+([Docker](docker.md)).
 
 Le build produit `dist/` avec serveur, modules partagés, assets et manifestes npm.
 Dans ce répertoire : `npm ci --omit=dev && npm start`. Le validateur vérifie
