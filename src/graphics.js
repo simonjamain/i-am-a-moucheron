@@ -150,33 +150,6 @@ export function createGraphics(T, scene) {
   function insect(type = 'midge') {
     const g = new T.Group();
     g.userData.hitTolerance = type === 'midge' ? 1.2 : 1;
-    if (type === 'rat') {
-      const body = ball(0, 0.06, 0.35, 0.65, '#887363', g);
-      body.scale.set(0.75, 0.55, 1.65);
-      const head = ball(0, 0.11, -0.65, 0.43, '#988071', g);
-      const nose = ball(0, -0.1, -1.03, 0.16, '#bc8b94', g);
-      const paws = [];
-      for (const side of [-1, 1]) {
-        const ear = ball(side * 0.34, 0.37, -0.7, 0.24, '#bc8b94', g);
-        ear.scale.z = 0.38;
-        for (const z of [-0.37, 0.74]) {
-          const paw = ball(side * 0.48, -0.22, z, 0.19, '#766052', g);
-          paws.push(paw);
-          paw.scale.set(0.9, 0.6, 1.4);
-        }
-        for (const z of [-1.02, -0.93]) {
-          const whisker = box(side * 0.43, -0.08 + (z + 1), z, 0.76, 0.025, 0.025, '#dfb5a7', g);
-          whisker.rotation.z = side * 0.2;
-        }
-      }
-      const tail = new T.Mesh(new T.CylinderGeometry(0.07, 0.045, 2.2, 8), mat('#b58b88'));
-      tail.rotation.x = Math.PI / 2;
-      tail.position.set(0, -0.05, 1.9);
-      g.add(tail);
-      g.userData = { wings: [], legs: paws, hitParts: [body, head, nose], disposables: [] };
-      scene.add(g);
-      return g;
-    }
     if (WALKERS[type]) {
       // Rigged Meshy walkers (corpses, purgatory souls, non-WebGL fallback).
       // Living WebGL walkers are drawn by WalkerBatch; hits use the ellipsoid.

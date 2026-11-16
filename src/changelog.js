@@ -1,6 +1,12 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 310,
+    changes: [
+      'Le rat géant a un nouveau modèle de souris qui trottine avec une vraie animation de marche.',
+    ],
+  },
+  {
     version: 309,
     changes: [
       'La carapace devient l’abeille : un nouveau modèle rayé jaune et noir qui bourdonne en battant vite des ailes.',
