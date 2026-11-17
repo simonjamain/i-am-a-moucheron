@@ -1,4 +1,4 @@
-> **Remplacé en version 275** par le [chasseur et bombardier biplans](biplane-models.md) : ce document décrit l'ancien modèle, désormais supprimé.
+> **Version 327 :** le B3 est de retour, comme **Bombardier moyen** à l'achat (16 $, id `medbomber`, 50 bombes, 4 places). Le [bombardier biplan](biplane-models.md) reste l'avion de départ gratuit.
 
 # Bombardier B3 : quatre places et camouflage
 

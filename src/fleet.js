@@ -43,6 +43,23 @@ export const VEHICLES = {
     gear: 1.45 * ACTOR_UNIT,
   },
 };
+// The original aircraft stay in the game as purchases: the M1-style light
+// fighter and the four-seat medium bomber. Only the biplanes are free starters.
+VEHICLES.lightfighter = { ...LIGHT_FIGHTER, name: 'Chasseur léger' };
+VEHICLES.medbomber = {
+  name: 'Bombardier moyen',
+  seats: ['pilot', 'dorsal', 'tail', 'ventral'],
+  span: 21,
+  length: 14,
+  maxSpeed: 52.5,
+  thrust: 8,
+  drag: 0.0045,
+  liftBase: 0.0048,
+  turn: 0.62,
+  gear: 1.45 * ACTOR_UNIT,
+};
+// Bombers: the pilot flies and drops bombs but has no machine gun.
+export const isBomber = (type) => type === 'bomber' || type === 'medbomber';
 VEHICLES.interceptor = {
   ...LIGHT_FIGHTER,
   name: 'Stuka — attaque au sol',
@@ -170,7 +187,11 @@ export function vehiclePad(type) {
               ? 18
               : type === 'bomber'
                 ? 5
-                : -7) *
+                : type === 'medbomber'
+                  ? 11
+                  : type === 'lightfighter'
+                    ? -14
+                    : -7) *
           ACTOR_UNIT,
       b.deckY + VEHICLES[type].gear,
       b.originZ - 5 * ACTOR_UNIT,
@@ -191,6 +212,7 @@ export function vehicleEntry(v, seat = 'pilot') {
     s =
       (VEHICLES[v.type].span / 2 + 1.8) *
       (v.type === 'fighter' ||
+      v.type === 'lightfighter' ||
       seat === 'tail' ||
       seat === 'top' ||
       seat === 'ventral' ||
@@ -240,6 +262,14 @@ export function seatMount(type, seat) {
   if (type === 'flaktruck') return seat === 'cannon' ? [0, 1.8, 2.5] : [0, 1.5, -3.1];
   if (type === 'tank')
     return seat === 'cannon' ? [0, 1.3, 0] : seat === 'top' ? [0, 2.3, 1] : [0, 0.7, -1.5];
+  if (type === 'medbomber')
+    return seat === 'ventral'
+      ? [0, -0.85, -0.18]
+      : seat === 'tail'
+        ? [0, 0.49, 4.28]
+        : seat === 'dorsal'
+          ? [0, 1.3, -1.73]
+          : [0, 0.7, -3.6];
   if (type === 'bomber') return seat === 'dorsal' ? [0, 1.3, 0.57] : [0, 0.8, -0.4];
   return [0, 0.5, -0.5];
 }

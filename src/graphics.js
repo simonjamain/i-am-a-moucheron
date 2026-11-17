@@ -5,6 +5,8 @@ import { MODEL_DATA as FLAKTRUCK } from './meshy-flaktruck-data.js';
 import { MODEL_DATA as STUKA } from './meshy-stuka-data.js';
 import { makeH2 } from './h2-model.js';
 import { makeBiplane, makeBiplaneBomber } from './biplane-model.js';
+import { makeM1 } from './m1-model.js';
+import { makeB3 } from './b3-model.js';
 import { makeCastorMeshy } from './castor-model.js';
 import { makeFlyingCastorMeshy } from './flying-castor-model.js';
 import { createCharacter, CHARACTER_HEIGHT, LEGACY_HEIGHT } from './character-model.js';
@@ -79,6 +81,15 @@ export function createGraphics(T, scene) {
   }
   function makeBomber() {
     return makeBiplaneBomber(T, scene, box);
+  }
+  // The original light fighter and four-seat medium bomber (shop purchases).
+  function makeLightFighter() {
+    const g = makeM1(T, scene);
+    g.userData.vehicleType = 'lightfighter';
+    return g;
+  }
+  function makeMediumBomber() {
+    return makeB3(T, scene);
   }
   // Remodelled Stuka: gull wings, propeller and two wing guns; its belly bomb
   // is part of the hull.
@@ -423,6 +434,8 @@ export function createGraphics(T, scene) {
     makePlane,
     makeSpitfire,
     makeBomber,
+    makeLightFighter,
+    makeMediumBomber,
     makeStuka,
     makeBomb,
     makeTank,

@@ -1,4 +1,4 @@
-> **Remplacé en version 275** par le [chasseur et bombardier biplans](biplane-models.md) : ce document décrit l'ancien modèle, désormais supprimé.
+> **Version 327 :** le M1 est de retour, comme **Chasseur léger** à l'achat (8 $, id `lightfighter`). Le [chasseur biplan](biplane-models.md) reste l'avion de départ gratuit.
 
 # Chasseur M1 — modèle Meshy avec son camouflage d'origine
 

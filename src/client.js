@@ -72,6 +72,7 @@ import {
   vehicleAccess,
   pilotFireInterval,
   isRotorcraft,
+  isBomber,
   isPassengerSeat,
   vehicleMaxHP,
 } from '/fleet.js';
@@ -247,6 +248,8 @@ const {
   makePlane,
   makeSpitfire,
   makeBomber,
+  makeLightFighter,
+  makeMediumBomber,
   makeStuka,
   makeBomb,
   makeTank,
@@ -3746,12 +3749,16 @@ function vehicleModel(v) {
                     ? makeStuka('#7b8155')
                     : v.type === 'bomber'
                       ? makeBomber('#c5ba92')
-                      : makePlane('#7b8155');
+                      : v.type === 'medbomber'
+                        ? makeMediumBomber()
+                        : v.type === 'lightfighter'
+                          ? makeLightFighter()
+                          : makePlane('#7b8155');
     paintVehicle(
       T,
       g,
       v.supplies?.sequence || 0,
-      v.type === 'bomber'
+      isBomber(v.type)
         ? '#c5ba92'
         : ['interceptor', 'tank'].includes(v.type)
           ? '#8eb7c6'
@@ -3842,14 +3849,16 @@ function updateOthers(dt) {
           (v.state.engine && v.supplies?.fuel > 0 && v.seats.some((s) => s.seat === 'pilot')
             ? 45
             : 0);
-    if (['bomber', 'tank', 'flaktruck', 'helicopter'].includes(v.type))
+    if (['bomber', 'medbomber', 'tank', 'flaktruck', 'helicopter'].includes(v.type))
       for (const [i, seat] of (v.type === 'helicopter'
         ? ['copilot']
         : v.type === 'flaktruck'
           ? ['cannon']
           : v.type === 'tank'
             ? ['cannon', 'top']
-            : ['dorsal']
+            : v.type === 'medbomber'
+              ? ['dorsal', 'tail', 'ventral']
+              : ['dorsal']
       ).entries()) {
         const occ = v.seats.find((s) => s.seat === seat),
           gunner = snap.pilots.find((p) => p.id === occ?.pilot);
@@ -3897,7 +3906,7 @@ function updateOthers(dt) {
         }
       }
     const remotePilotRounds =
-      !isSelf && v.type !== 'bomber'
+      !isSelf && !isBomber(v.type)
         ? remoteShotCount(
             g,
             'pilot:' + (p?.id || ''),
@@ -4442,7 +4451,7 @@ function physics(dt) {
     prop.rotation.z += dt * gas * (engine && remainingFuel() > 0 ? 70 : 0);
   $('stallWarning').classList.toggle('hidden', stall > 0.8);
   shooting =
-    active && myVehicle && myVehicle.type !== 'bomber' && hasAmmo() && (manual.fire || mouseFire);
+    active && myVehicle && !isBomber(myVehicle.type) && hasAmmo() && (manual.fire || mouseFire);
   const burst = advanceAutomaticFire(
     cooldown,
     dt,
@@ -4926,6 +4935,8 @@ const ghosts = {
   bed: installationModel({ kind: 'bed', x: 0, y: 0, z: 0 }),
   fighter: makePlane('#badb84'),
   bomber: makeBomber('#badb84'),
+  lightfighter: makeLightFighter(),
+  medbomber: makeMediumBomber(),
   interceptor: makeStuka('#badb84'),
   helicopter: makeHelicopter('#badb84'),
   flaktruck: makeFlakTruck('#badb84'),
