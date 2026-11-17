@@ -37,7 +37,7 @@ npm ci
 npm start
 ```
 
-Livraison courante : ZIP des sources, avec ce README et `package-lock.json`.
+Livraison courante : PR GitHub fusionnée sur `main` (ZIP des sources seulement si la demande l’exige).
 Le [guide Docker](docs/docker.md) reste disponible pour construire soi-même une image.
 
 Node 22.13+ ; HTTP sur le port 3000, UDP sur 41000–41099. En production,
@@ -59,7 +59,7 @@ npm run build
 node scripts/validate-artifact.mjs
 ```
 
-Modifier `src/` et `scripts/`, puis assembler. `worker/index.js` et `dist/` sont
+Modifier `src/` et `scripts/`, puis assembler. `worker/index.js` (versionné) et `dist/` (ignoré par Git) sont
 générés. Les migrations publiées dans `drizzle/` restent immuables.
 `npm run build` produit un runtime Node autonome dans `dist/` : y exécuter
 `npm ci --omit=dev && npm start`. Le validateur contrôle ce paquet Node.
