@@ -44,8 +44,7 @@ base de données ni accès disque dans les opérations de jeu Node. Voir
 | Mesure d’interaction | `interaction-timing.js` : feedback immédiat et traces bornées de sélection.                                                                                                                                                                                                                         |
 | Effets/son           | `insect-status.ts`, `crash-effects.js`, `audio.js`, effets de combat et corps tombants du client.                                                                                                                                                                                                   |
 
-Les couloirs aériens et leur déformation sont partagés entre serveur et client dans
-`routes.js` et `air-current.ts`. Le client les affiche avec `air-trails.js`.
+Les couloirs aériens sont partagés entre serveur et client dans `routes.js`.
 
 Les gerbes de sang purement visuelles sont gérées dans `blood-effects.js`,
 avec un seul rendu instancié borné et une intégration aux impacts dans `client.js`.

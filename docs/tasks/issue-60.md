@@ -1,5 +1,7 @@
 # Issue 60 — Routes aériennes et ventilateurs
 
+> Version 319 : le ventilateur est retiré du jeu ; les couloirs aériens restent.
+
 - [Issue 60](https://github.com/simonjamain/i-am-a-moucheron/issues/60), branche `feat/air-routes-fans`, version 156, base `6bff92f`.
 - Les quatre aérations alimentent deux couloirs qui se croisent. Un lot de particules par entrée matérialise la trajectoire. Le serveur et les clients échantillonnent le même champ de souffle. Les règles de pose, de prix et d’orientation se trouvent dans le [gameplay](../gameplay.md).
 - Vérifié localement avec `npm test`, `npm run build`, `node scripts/validate-artifact.mjs` et `npm run check:docs`. Le scénario CPU de 10 000 individus est dans `scripts/test-air-fans.mjs`. Il contrôle également le retour continu au retrait, l’annulation par deux ventilateurs opposés et la correspondance de l’aperçu avec le tracé établi.

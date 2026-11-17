@@ -1,4 +1,3 @@
-import { airField } from '../src/air-current.ts';
 import { appearanceId } from '../src/character-appearances.js';
 import { prepareRoster, forecast } from './wave-preparation.js';
 import { feedingPoint } from '../src/ground-defense-state.js';
@@ -543,12 +542,7 @@ export class Game {
     if (now - r.sentryClock < SENTRY.intervalMs) return;
     r.sentryClock = now;
     const plan = this.plan(r);
-    const frames = swarmFrame(
-      plan.roster,
-      (now - r.started) / 1000,
-      r.groundAgents,
-      airField(r.groundDefense, now),
-    );
+    const frames = swarmFrame(plan.roster, (now - r.started) / 1000, r.groundAgents);
     const targets = frames.map((frame, index) =>
       frame && !r.kills.has(index) && (r.enemyDamage[index] || 0) < plan.roster[index].hp
         ? { id: index, p: frame.p, dead: false }
@@ -872,8 +866,7 @@ export class Game {
       mission_started: r.mission_started,
       next_wave_at: r.next_wave_at,
       preparation: r.preparation,
-      groundNavigationActive:
-        r.groundEnabled || r.groundDefense.structures.some((s) => s.kind !== 'fan'),
+      groundNavigationActive: r.groundEnabled || r.groundDefense.structures.length > 0,
       dollars: r.dollars,
       bank: r.bank,
       upgrades: r.upgrades,
@@ -1741,12 +1734,7 @@ export class Game {
       now - c.at < CONTACT_FRAME_MS
     )
       return c.frames;
-    const frames = swarmFrame(
-      plan.roster,
-      (now - r.started) / 1000,
-      r.groundAgents,
-      airField(r.groundDefense, now),
-    );
+    const frames = swarmFrame(plan.roster, (now - r.started) / 1000, r.groundAgents);
     r.contactFrameCache = {
       roster: plan.roster,
       revision: r.rosterRevision,
@@ -2373,14 +2361,7 @@ export class Game {
     if (!e.offspringOnly) this.soul(r, 'enemy', r.wave + ':' + index, e.name, 'purgatory', e.type);
     if (e.onDeath?.spawn) {
       const at = (this.now() - r.started) / 1000;
-      const location =
-        position ||
-        swarmFrame(
-          plan.roster,
-          at,
-          r.groundAgents,
-          airField(r.groundDefense, r.started + at * 1000),
-        )[index]?.p;
+      const location = position || swarmFrame(plan.roster, at, r.groundAgents)[index]?.p;
       if (location) {
         const children = spawnOffspring(
           e,

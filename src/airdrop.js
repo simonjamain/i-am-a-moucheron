@@ -3,14 +3,7 @@
 // helicopter, turned like it, and falls like the other purchases dropped in
 // flight (delivery.js) before it is built on the first surface below (floor or
 // furniture).
-export const AIRDROP_KINDS = Object.freeze([
-  'sugar',
-  'sticky',
-  'fan',
-  'sentry',
-  'bunker',
-  'antitank',
-]);
+export const AIRDROP_KINDS = Object.freeze(['sugar', 'sticky', 'sentry', 'bunker', 'antitank']);
 export const AIRDROP_TAPE = 0.1; // one 10 cm piece of tape per drop
 // Structures higher than this stand on furniture: floor walkers ignore them.
 export const FLOOR_LEVEL = 0.01;
@@ -39,7 +32,6 @@ export function airdropSurface(solids, x, z, fromY) {
 }
 
 // Build command of a drop: centred under the helicopter, along its heading.
-// Fans blow where the nose points.
 export function airdropCommand(kind, { x, z, yaw }) {
   if (kind === 'sticky') {
     const half = AIRDROP_TAPE / 2,
@@ -47,7 +39,7 @@ export function airdropCommand(kind, { x, z, yaw }) {
       dz = -Math.cos(yaw) * half;
     return { action: 'build', kind, a: [x + dx, z + dz], b: [x - dx, z - dz] };
   }
-  const angle = kind === 'fan' ? yaw + Math.PI : yaw;
+  const angle = yaw;
   return {
     action: 'build',
     kind,

@@ -385,14 +385,9 @@ Quatre aérations alimentent deux couloirs qui se croisent à des altitudes diff
 Le nuage de phéromones de chaque entrée apparaît en couleur avant le passage des
 insectes. Les volants conservent une dispersion propre autour du couloir.
 
-Au sol, sélectionnez **Ventilateur** dans la roue de construction. La flèche montre
-la direction du souffle. Tournez avec **R** et regardez la traînée se déplacer avant
-de confirmer la pose (4 $). Le ventilateur forme une colonne d’air de 1,8 m de rayon.
-Le déplacement latéral culmine à environ un mètre en son centre. Des ventilateurs
-opposés se compensent, des ventilateurs voisins combinent leur souffle. Les
-insectes déjà engagés rejoignent le nouveau tracé en 2,5 secondes en continuant
-d’avancer. Retirez un ventilateur avec **Enlever** pour rétablir progressivement
-le parcours. Le départ et l’arrivée restent fixes.
+Le ventilateur, qui déviait ces couloirs, est retiré du jeu (version 319) : la
+roue de construction et le Castor volant ne le proposent plus et le serveur refuse
+sa pose. Les volants suivent toujours leur couloir sans déformation.
 
 Le [bombardier biplan à deux places](biplane-models.md) conserve son camouflage Meshy ; la plaque de nom de chaque occupant est collée sur son fuselage.
 
@@ -438,10 +433,9 @@ la caisse commune, pour lui-même et pour ce qui l'entoure.
 
 **Tous les occupants** (pilote et passagers) ouvrent la roue (**G** / clic
 molette) et **larguent** les constructions du Castor, sauf les murs LEGO :
-sucre, ruban (un morceau de 10 cm), ventilateur, tourelle automatique, bunker
+sucre, ruban (un morceau de 10 cm), tourelle automatique, bunker
 LEGO et canon anti-matériel, au même prix. L'objet part **toujours à la
-verticale de l'hélicoptère** et **suit son cap** (le ventilateur souffle vers
-le nez) ; un aperçu transparent montre où il tombera. Clic gauche ou Entrée
+verticale de l'hélicoptère** et **suit son cap** ; un aperçu transparent montre où il tombera. Clic gauche ou Entrée
 larguent, dans n'importe quelle condition de vol. La caisse est débitée au
 largage ; l'objet tombe comme les autres livraisons (1/3 m/s), puis le serveur
 le construit sur la première surface rencontrée : le sol ou un meuble. Si la

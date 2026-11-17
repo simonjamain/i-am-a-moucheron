@@ -8,7 +8,7 @@ const AIR_EXIT = 'F : sauter / sortir · Espace en chute : parachute';
 const GROUND_EXIT = 'F : sortir';
 const BUILD = 'G / clic molette : construire';
 const LINE_TOOLS = ['barricade', 'sticky'];
-const ORIENTED_TOOLS = ['sugar', 'fan'];
+const ORIENTED_TOOLS = ['sugar'];
 const STATIONS = {
   dca: ['Clic / Espace : obus', 'Maj/Ctrl, [ ] ou molette : fusée'],
   dcaRapid: ['Clic / Espace : balles'],

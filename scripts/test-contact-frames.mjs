@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict';
 import { Game, CONTACT_FRAME_MS } from '../server/game.js';
 import { swarmFrame } from '../src/waves.js';
-import { airField } from '../src/air-current.ts';
 
 // Vehicle contacts reuse enemy positions for at most CONTACT_FRAME_MS, then
 // recompute them; roster changes and clock regressions always recompute.
@@ -15,12 +14,7 @@ game.advance(r);
 assert.equal(r.phase, 'combat');
 const plan = game.plan(r);
 const first = game.contactFrames(r, plan, now);
-const exact = swarmFrame(
-  plan.roster,
-  (now - r.started) / 1000,
-  r.groundAgents,
-  airField(r.groundDefense, now),
-);
+const exact = swarmFrame(plan.roster, (now - r.started) / 1000, r.groundAgents);
 assert.deepEqual(first, exact, 'cached positions equal a direct swarm computation');
 now += CONTACT_FRAME_MS - 1;
 assert.equal(game.contactFrames(r, plan, now), first, 'positions are reused inside the window');
