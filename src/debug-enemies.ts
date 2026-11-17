@@ -31,6 +31,9 @@ export const DUMMY_HP = 1e9;
 export const DUMMY_DURATION = 1e9;
 /** Highest point accepted for a placement (office ceiling with margin). */
 export const DEBUG_CEILING = 3;
+/** Rounding slack around the room: a floor hit can land a hair below y = 0, a
+ *  wall-side hit just outside the walkable bounds; such points are clamped in. */
+export const DEBUG_SLACK = 0.1;
 
 export interface DebugPlacement {
   kind: DebugEnemyKind;
@@ -64,14 +67,16 @@ export function debugPlacement(body: unknown): DebugPlacement {
   if (!Array.isArray(dir) || dir.length !== 2 || !dir.every(finite)) fail('Direction invalide.');
   const [x, y, z] = p as Vec3;
   const [minX, minZ, maxX, maxZ] = GROUND_BOUNDS;
-  if (x < minX || x > maxX || z < minZ || z > maxZ || y < 0 || y > DEBUG_CEILING)
+  const e = DEBUG_SLACK;
+  if (x < minX - e || x > maxX + e || z < minZ - e || z > maxZ + e || y < -e || y > DEBUG_CEILING)
     fail('Visez un point dans la pièce.');
+  const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
   const [dx, dz] = dir as [number, number];
   const n = Math.hypot(dx, dz);
   return {
     kind: b.kind as DebugEnemyKind,
     type: b.type as EnemyType,
-    p: [x, y, z],
+    p: [clamp(x, minX, maxX), Math.max(0, y), clamp(z, minZ, maxZ)],
     dir: n > 1e-6 ? [dx / n, dz / n] : [0, 1],
   };
 }

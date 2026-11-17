@@ -31,6 +31,8 @@ supplémentaires, avec une carte par espèce (les neuf, bébé araignée compris
 
 Après le choix d'une carte, le marchand se ferme : un repère montre le point visé,
 **clic gauche ou E** pose **un** ennemi (on peut en poser d'autres), **Échap** quitte.
+Le serveur ramène dans la pièce un point visé à moins de 10 cm du sol ou des bords
+praticables (arrondi d'un tir au sol juste sous y = 0, visée au pied d'un mur).
 Le bouton **Retirer les mannequins** les enlève tous, sans âme envoyée au purgatoire.
 Il n'y a pas de limite de nombre (utile pour tester la charge). Tant qu'un mannequin
 est debout, la vague ne se termine pas. Les ennemis posés sont partagés par la room

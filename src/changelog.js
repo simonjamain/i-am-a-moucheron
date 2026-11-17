@@ -1,6 +1,10 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 321,
+    changes: ['En mode debug, on peut de nouveau poser un ennemi par terre, et pas seulement sur un meuble.'],
+  },
+  {
     version: 320,
     changes: [
       'En mode debug, le marchand permet de poser des mannequins immobiles qui affichent les dégâts reçus, ou de vrais ennemis.',
