@@ -1559,7 +1559,8 @@ function renderPlanPicker() {
       b.type = 'button';
       b.setAttribute('role', 'radio');
       b.setAttribute('aria-checked', String(layout.id === activeLayout().id));
-      b.title = layout.summary;
+      b.title = `${layout.name} : ${layout.summary}`;
+      b.setAttribute('aria-label', layout.name);
       b.innerHTML = layoutThumbnail(layout);
       const name = document.createElement('span');
       name.textContent = layout.name;
