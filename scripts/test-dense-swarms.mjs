@@ -276,6 +276,8 @@ game.startWave(r); // Build the room-local plan through the same transition as a
 snapshot = game.snapshot(r);
 assert.ok(snapshot.total > 180);
 const high = snapshot.total - 1;
+// At wave 99 the last pack is a colossus holding the leftover power: only the id matters here.
+r.plan.roster[high].hp = Math.min(r.plan.roster[high].hp, 4000);
 for (let hit = 0; hit < Math.ceil(r.plan.roster[high].hp / 800); hit++) {
   gunShot();
   game.command(r.code, a.id, 'hit', { wave: 100, enemy: high, amount: 800, shot: 'high-id' + hit });

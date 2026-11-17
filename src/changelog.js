@@ -1,10 +1,10 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
-    version: 323,
+    version: 324,
     changes: [
-      'Chaque ennemi a maintenant une puissance : plus il est fort, plus il rapporte quand son âme est libérée, et plus il abîme la poubelle s’il l’atteint.',
-      'Les vagues grossissent sans limite et suivent le nombre de joueurs. La prime de fin de vague disparaît : seules les âmes libérées rapportent de l’argent.',
+      'Chaque ennemi a une puissance : plus il est fort, plus son âme libérée rapporte et plus il abîme la poubelle.',
+      'Les vagues suivent le nombre de joueurs. La prime de fin de vague disparaît : seules les âmes libérées rapportent.',
       'La puissance de la prochaine vague est affichée dans l’annonce.',
     ],
   },

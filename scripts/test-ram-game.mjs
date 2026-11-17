@@ -1,3 +1,4 @@
+import { ENEMY_TYPES } from '../src/waves.js';
 import assert from 'node:assert/strict';
 import { Game } from '../server/game.js';
 import { baseWorld } from '../src/base.js';
@@ -233,7 +234,11 @@ for (let i = 0; i < 10; i++) {
   call(a.id, 'soul-hit', { soul: enemy.id, shot: 'soul' + i });
 }
 call(a.id, 'soul-hit', { soul: enemy.id, shot: 'soul9' });
-assert.equal(room.dollars, dollars + 1);
+assert.equal(
+  room.dollars,
+  Math.round((dollars + ENEMY_TYPES[enemy.enemy_type].power) * 100) / 100,
+  'a freed soul pays the power of its species',
+);
 const epoch = room.base.epoch;
 call(b.id, 'reset');
 assert.notEqual(room.base.epoch, epoch);
