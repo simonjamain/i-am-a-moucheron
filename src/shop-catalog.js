@@ -6,7 +6,16 @@ export const SHOP_CATEGORIES = Object.freeze([
   {
     id: 'air',
     title: 'Aéronefs',
-    items: ['fighter', 'interceptor', 'bomber', 'spitfire', 'helicopter', 'flyingcastor'],
+    items: [
+      'fighter',
+      'lightfighter',
+      'interceptor',
+      'bomber',
+      'medbomber',
+      'spitfire',
+      'helicopter',
+      'flyingcastor',
+    ],
   },
   { id: 'ground', title: 'Véhicules au sol', items: ['tank', 'castor', 'flaktruck'] },
   {

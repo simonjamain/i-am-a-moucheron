@@ -224,7 +224,16 @@ async function ensureFleet(db, code, now) {
   const unlocked = JSON.parse(room.upgrades || '{}');
   for (const type of Object.keys(VEHICLES).filter(
     (type) =>
-      !['spitfire', 'tank', 'helicopter', 'flaktruck', 'castor', 'flyingcastor'].includes(type) &&
+      ![
+        'spitfire',
+        'tank',
+        'helicopter',
+        'flaktruck',
+        'castor',
+        'flyingcastor',
+        'lightfighter',
+        'medbomber',
+      ].includes(type) &&
       (type !== 'interceptor' || unlocked.interceptor),
   ))
     await db
@@ -514,7 +523,7 @@ async function fleetRoute(path, db, pilot, b, now) {
       vehicle.id,
       seat,
       state.boarding.token,
-      !(vehicle.type === 'bomber' && seat === 'pilot'),
+      !(isBomber(vehicle.type) && seat === 'pilot'),
     );
     await db
       .prepare('UPDATE pilots SET board_paper=0,state=? WHERE id=?')
@@ -999,7 +1008,7 @@ async function seatRoute(db, pilot, path, b, now) {
       vehicle.id,
       b.seat,
       requestId + ':' + pilot.id,
-      !(vehicle.type === 'bomber' && b.seat === 'pilot'),
+      !(isBomber(vehicle.type) && b.seat === 'pilot'),
     );
     if (target) {
       const recipient = await db
@@ -1012,7 +1021,7 @@ async function seatRoute(db, pilot, path, b, now) {
         vehicle.id,
         pilot.seat,
         requestId + ':' + recipient.id,
-        !(vehicle.type === 'bomber' && pilot.seat === 'pilot'),
+        !(isBomber(vehicle.type) && pilot.seat === 'pilot'),
       );
     }
     await db

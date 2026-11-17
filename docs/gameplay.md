@@ -81,8 +81,10 @@ désignations internes dans les commentaires, tests et documents techniques. Auc
 
 ## Équipements et combat
 
-Un chasseur monoplace et un bombardier sont disponibles au départ. Le bombardier
-a un pilote, un mitrailleur dorsal et un mitrailleur de queue. Un exemplaire de réserve prêt
+Un chasseur biplan et un bombardier biplan (pilote et mitrailleur dorsal) sont
+disponibles au départ, en nombre illimité. Le **Chasseur léger** (monoplace, 8 $) et
+le **Bombardier moyen** (pilote, mitrailleurs dorsal, de queue et ventral, 50 bombes,
+16 $) s'achètent en plus au marchand. Un exemplaire de réserve prêt
 par type initial est conservé ; dès son décollage, un successeur gratuit apparaît sans supprimer les avions utilisés. Les achats fournissent un Stuka, un Spitfire,
 un tank, un hélicoptère biplace ou une DCA mobile, dont la destruction est définitive. Les sièges sont exclusifs.
 

@@ -1,5 +1,5 @@
 import { MAP } from './scale.ts';
-import { VEHICLES, pilotFireInterval, isRotorcraft } from './fleet.js';
+import { VEHICLES, pilotFireInterval, isRotorcraft, isBomber } from './fleet.js';
 import { TANK_MG } from './armament.js';
 export const FUEL_SECONDS = 300;
 export const SERVICE_SECONDS = 10;
@@ -20,10 +20,11 @@ export function ammoCapacity(type, seat, balance = null) {
       : TANK_MG[seat]
         ? Math.round(90 / TANK_MG[seat].interval)
         : 0;
-  if (seat === 'bomb') return type === 'bomber' ? 30 : type === 'interceptor' ? 6 : 0;
+  if (seat === 'bomb')
+    return type === 'bomber' ? 30 : type === 'medbomber' ? 50 : type === 'interceptor' ? 6 : 0;
   if (type === 'spitfire' && seat === 'pilot') return 1000;
   if (!VEHICLES[type]?.seats.includes(seat)) return 0;
-  return type === 'bomber' && seat === 'pilot'
+  return isBomber(type) && seat === 'pilot'
     ? 0
     : Math.round(60 / (seat === 'pilot' ? pilotFireInterval(type) : 0.09));
 }
@@ -39,7 +40,7 @@ export function fullAmmo(type, balance = null) {
             ? ['pilot', 'top', 'coax', 'he', 'ap']
             : [
                 ...VEHICLES[type].seats,
-                ...(['interceptor', 'bomber'].includes(type) ? ['bomb'] : []),
+                ...(['interceptor', 'bomber', 'medbomber'].includes(type) ? ['bomb'] : []),
               ];
   return Object.fromEntries(keys.map((s) => [s, ammoCapacity(type, s, balance)]));
 }

@@ -1,6 +1,12 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 328,
+    changes: [
+      'Le chasseur léger et le bombardier moyen à quatre places sont de retour chez le marchand.',
+    ],
+  },
+  {
     version: 327,
     changes: [
       'Le choix du plan de bureau tient sur une ligne : le bouton Rejoindre reste visible sur les petits écrans.',

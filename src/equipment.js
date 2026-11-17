@@ -15,6 +15,18 @@ export const SHOP = Object.freeze({
     kind: 'vehicle',
     description: 'Pilote et mitrailleur, 30 bombes ; achat à poser.',
   },
+  lightfighter: {
+    name: 'Chasseur léger',
+    cost: 8,
+    kind: 'vehicle',
+    description: 'Monoplace rapide, deux mitrailleuses de nez ; achat à poser.',
+  },
+  medbomber: {
+    name: 'Bombardier moyen',
+    cost: 16,
+    kind: 'vehicle',
+    description: 'Pilote et trois mitrailleurs, 50 bombes ; achat à poser.',
+  },
   bed: {
     name: 'Lit de réapparition',
     cost: 4,

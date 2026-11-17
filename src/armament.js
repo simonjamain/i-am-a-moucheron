@@ -1,4 +1,5 @@
 import { FLAK, REFERENCE, MAP } from './scale.ts';
+import { isBomber } from './fleet.js';
 export const HEAVY = Object.freeze({
   rocket: {
     interval: 0.3,
@@ -94,6 +95,6 @@ export function canUseWeapon(type, seat, key) {
           ? ['coax', 'he', 'ap'].includes(key)
           : key === seat
         : key === 'bomb'
-          ? seat === 'pilot' && ['interceptor', 'bomber'].includes(type)
-          : key === seat && !(type === 'bomber' && seat === 'pilot');
+          ? seat === 'pilot' && ['interceptor', 'bomber', 'medbomber'].includes(type)
+          : key === seat && !(isBomber(type) && seat === 'pilot');
 }
