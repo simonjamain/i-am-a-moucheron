@@ -1,4 +1,3 @@
-import { airField } from '../src/air-current.ts';
 import { ServerClock } from '../src/server-clock.ts';
 import { GroundMotionTrack } from '../src/ground-motion.js';
 import { InsectIndex } from '../src/insect-hits.js';
@@ -106,7 +105,6 @@ const state = {
   serverClock: new ServerClock(),
   currentRoster: () => state.snap.roster,
   swarmFrame,
-  airField,
   localKills: new Set(),
   entryStatus: () => 'in-flight',
   entryNoticeWave: -1,

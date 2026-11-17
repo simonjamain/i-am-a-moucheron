@@ -135,8 +135,7 @@ near(Math.hypot(tape.b[0] - tape.a[0], tape.b[1] - tape.a[1]), AIRDROP_TAPE, 1e-
 near((tape.a[0] + tape.b[0]) / 2, 1, 1e-12, 'tape centred');
 near(Math.atan2(-(tape.a[0] - tape.b[0]), -(tape.a[1] - tape.b[1])), yaw, 1e-9, 'tape heading');
 assert.equal(airdropCommand('sentry', { x: 1, z: 2, yaw }).angle, yaw);
-near(Math.abs(airdropCommand('fan', { x: 1, z: 2, yaw }).angle - yaw), Math.PI, 1e-9, 'fan');
-assert.deepEqual(AIRDROP_KINDS, ['sugar', 'sticky', 'fan', 'sentry', 'bunker', 'antitank']);
+assert.deepEqual(AIRDROP_KINDS, ['sugar', 'sticky', 'sentry', 'bunker', 'antitank']);
 const desk = [-1.8, 1.6]; // office desk top at 0.90 m
 near(airdropSurface(OFFICE_SOLIDS, ...desk, 1.3), 0.9, 1e-6, 'desk top');
 near(airdropSurface(OFFICE_SOLIDS, ...desk, 0.5), 0, 1e-6, 'under the desk: floor');
@@ -261,7 +260,7 @@ hover(target.position[0] + 0.1, 0.5, target.position[1]);
 s = run(guest, { action: 'remove', target: target.id });
 assert.ok(!s.groundDefense.structures.some((x) => x.id === target.id), 'removed from the air');
 v.state.hp = 0;
-assert.throws(() => run(pilot, { action: 'build', kind: 'fan' }), /réservée|purgatoire/);
+assert.throws(() => run(pilot, { action: 'build', kind: 'sugar' }), /réservée|purgatoire/);
 
 // 6. Client wiring: V vertical view for every seat, keyboard-only flight,
 // A/E turn, hull hidden over the drop point, falling drops drawn.

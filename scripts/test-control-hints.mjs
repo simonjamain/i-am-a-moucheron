@@ -45,7 +45,7 @@ assert.match(
   controlHints({ building: { mode: 'barricade', castor: true, anchored: true } }),
   /arrêter la dépose/,
 );
-assert.match(controlHints({ building: { mode: 'fan' } }), /R : orienter/);
+assert.match(controlHints({ building: { mode: 'sugar' } }), /R : orienter/);
 assert.doesNotMatch(controlHints({ building: { mode: 'bunker', castor: true } }), /R : orienter/);
 assert.match(controlHints({ building: { mode: 'repair' } }), /Clic \/ E : réparer/);
 

@@ -60,7 +60,6 @@ import { RewardQueue } from '/rewards.js';
 import { SHOP, shopPrice, upgradedVehicle, supportedPlacement } from '/equipment.js';
 import { stepBallisticVelocity, toggleParachute } from '/ballistics.js';
 import { makeTracer, updateTracer } from '/tracers.js';
-import { airField } from '/air-current.js';
 import { wavePlan, swarmFrame, entryStatus } from '/waves.js';
 import { MAP, ACTOR_UNIT, HUMAN_SCALE, INSECT_SCALE, REFERENCE, FLAK } from '/scale.js';
 import {
@@ -3542,15 +3541,7 @@ function enemies(now) {
   const active = new Set(),
     t = (serverNow - snap.started) / 1000,
     roster = currentRoster(),
-    frame =
-      snap.phase === 'combat'
-        ? swarmFrame(
-            roster,
-            t,
-            groundMotion.sample(serverNow),
-            airField(snap.groundDefense, snap.started + t * 1000),
-          )
-        : [];
+    frame = snap.phase === 'combat' ? swarmFrame(roster, t, groundMotion.sample(serverNow)) : [];
   for (let i = 0; i < frame.length; i++) {
     const state = frame[i];
     if (!state || localKills.has(i)) continue;
@@ -5690,15 +5681,7 @@ function heavyWorld() {
       if (snap?.phase !== 'combat' || projectile.wave !== snap.wave) return [];
       const at = Math.round(time / 50) * 50;
       if (!cache.has(at))
-        cache.set(
-          at,
-          swarmFrame(
-            roster,
-            (at - snap.started) / 1000,
-            groundMotion.sample(at),
-            airField(snap.groundDefense, at),
-          ),
-        );
+        cache.set(at, swarmFrame(roster, (at - snap.started) / 1000, groundMotion.sample(at)));
       return cache.get(at);
     },
     vehicles: (snap?.vehicles || []).map(pose),

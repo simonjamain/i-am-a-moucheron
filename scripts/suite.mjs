@@ -120,7 +120,6 @@ export const SUITE = [
   'test-ground-motion',
   'test-ground-behaviors',
   'test-muzzle-alignment',
-  'test-air-fans',
   'test-paid-service',
   'test-castor',
   'test-castor-meshy',

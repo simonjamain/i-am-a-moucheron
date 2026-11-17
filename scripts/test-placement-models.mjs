@@ -13,7 +13,7 @@ import { MAP } from '../src/scale.ts';
 const scene = new T.Scene();
 const graphics = createGraphics(T, scene);
 const preview = new ModelPreview(T, scene);
-for (const kind of ['sugar', 'fan', 'sentry', 'barricade', 'sticky', 'bunker', 'antitank']) {
+for (const kind of ['sugar', 'sentry', 'barricade', 'sticky', 'bunker', 'antitank']) {
   const angle = 1.23;
   const pose = { x: 0.12, y: 0, z: -0.08, angle };
   const shape = {

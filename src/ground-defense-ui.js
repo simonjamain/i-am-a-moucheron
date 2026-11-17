@@ -1,7 +1,6 @@
 import { WALL_SEGMENT, HALF_BRICK, wallLength, wallVisualRuns } from './brick-rules.js';
 import { createGroundModel } from './ground-model.js';
 import { ModelPreview } from './model-preview.js';
-import { AirTrails } from './air-trails.js';
 import { groundPlacement, airdropPlacement } from './ground-placement.js';
 import { deliveryHeightAt } from './delivery.js';
 import { lengthPrice } from './ground-defense-state.js';
@@ -55,7 +54,6 @@ export class GroundDefenseUI {
     this.releaseMouse = releaseMouse;
     this.mode = 'barricade';
     this.key = '';
-    this.airTrails = new AirTrails(T, scene);
     this.models = new T.Group();
     this.sentries = new Map();
     this.lastSentryFrame = 0;
@@ -68,7 +66,6 @@ export class GroundDefenseUI {
       ['sticky', 'Ruban'],
       ['repair', 'Réparer'],
       ['remove', 'Enlever'],
-      ['fan', 'Ventilateur'],
       ['sentry', 'Tourelle auto'],
       ['bunker', 'Bunker LEGO'],
       ['antitank', 'Canon anti-matériel'],
@@ -101,15 +98,6 @@ export class GroundDefenseUI {
     this.previewModel = new ModelPreview(T, scene);
     this.preview = this.previewModel.root;
     this.preview.visible = false;
-    this.fanArrow = new T.ArrowHelper(
-      new T.Vector3(0, 0, 1),
-      new T.Vector3(),
-      0.08,
-      0x92effd,
-      0.025,
-      0.017,
-    );
-    this.fanArrow.visible = false;
     // Castor volant: vertical guide from the helicopter to the landing point.
     this.dropLine = new T.Line(
       new T.BufferGeometry().setFromPoints([new T.Vector3(), new T.Vector3(0, -1, 0)]),
@@ -123,7 +111,7 @@ export class GroundDefenseUI {
     );
     this.dropLine.computeLineDistances();
     this.dropLine.visible = false;
-    scene.add(this.preview, this.fanArrow, this.dropLine);
+    scene.add(this.preview, this.dropLine);
   }
   openWheel(source = 'mouse') {
     if (this.radial || !this.available() || !this.enabled() || this.busy) return false;
@@ -207,7 +195,6 @@ export class GroundDefenseUI {
     this.active = false;
     this.anchor = null;
     this.preview.visible = false;
-    this.fanArrow.visible = false;
     this.dropLine.visible = false;
     this.status.style.display = 'none';
   }
@@ -336,12 +323,10 @@ export class GroundDefenseUI {
     this.updateSentryAim(snap);
     this.renderDrops(snap);
     this.preview.visible = false;
-    this.fanArrow.visible = false;
     this.dropLine.visible = false;
     this.status.style.display = this.active && this.enabled() ? 'block' : 'none';
     if (!this.active || !this.enabled()) {
       this.anchor = null;
-      this.airTrails.update(snap);
       return;
     }
     if (this.trailAnchor && this.builder()) {
@@ -356,7 +341,6 @@ export class GroundDefenseUI {
         ' $ en cours · ' +
         (this.mode === 'barricade' ? '0,25 $ / 48 mm' : '1 $ / 20 cm') +
         ' au prorata · Cliquez pour arrêter';
-      this.airTrails.update(snap);
       this.advanceTrail();
       return;
     }
@@ -401,12 +385,6 @@ export class GroundDefenseUI {
       dollars: snap.dollars,
       castor: !!this.builder(),
     }));
-    this.airTrails.update(
-      snap,
-      this.mode === 'fan' && c.command && !c.error
-        ? { position: c.command.a, angle: c.command.angle, placedAt: 0 }
-        : undefined,
-    );
     this.status.textContent =
       c.error ||
       (this.busy
@@ -434,11 +412,6 @@ export class GroundDefenseUI {
     if (c.startOnly) {
       this.status.textContent = 'Clic ou E : fixer le début · Échap : quitter';
       this.status.disabled = this.busy;
-    }
-    if (kind === 'fan' && cmd) {
-      this.fanArrow.visible = true;
-      this.fanArrow.position.set(position[0], 0.02, position[1]);
-      this.fanArrow.setDirection(new this.T.Vector3(Math.sin(angle), 0, Math.cos(angle)));
     }
   }
 
@@ -495,13 +468,6 @@ export class GroundDefenseUI {
       { x: shape.position[0], y: c.landingY, z: shape.position[1], angle: shape.angle },
       !c.error,
     );
-    if (cmd.kind === 'fan') {
-      this.fanArrow.visible = true;
-      this.fanArrow.position.set(shape.position[0], c.landingY + 0.02, shape.position[1]);
-      this.fanArrow.setDirection(
-        new this.T.Vector3(Math.sin(shape.angle), 0, Math.cos(shape.angle)),
-      );
-    }
   }
   // Constructions dropped by a Castor volant, falling until the server builds them.
   renderDrops(snap) {
@@ -671,10 +637,7 @@ export class GroundDefenseUI {
   }
   drawRadar(ctx, defense) {
     for (const s of defense?.structures || []) {
-      if (s.kind === 'fan') {
-        ctx.fillStyle = '#75eaf1';
-        ctx.fillRect(108 + s.position[0] / 0.04, 108 + (s.position[1] / 0.04) * 0.88, 4, 4);
-      } else if (s.kind === 'bunker' || s.kind === 'antitank') {
+      if (s.kind === 'bunker' || s.kind === 'antitank') {
         ctx.fillStyle = s.kind === 'bunker' ? '#c6a355' : '#9eb9a0';
         ctx.fillRect(108 + s.position[0] / 0.04, 108 + (s.position[1] / 0.04) * 0.88, 7, 7);
       } else if (s.kind === 'sentry') {

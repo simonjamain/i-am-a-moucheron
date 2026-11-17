@@ -16,8 +16,9 @@ Fait (v315–v316) :
 - Lanceur `scripts/run-tests.mjs` + manifeste `scripts/suite.mjs` (même ordre, mêmes
   processus) ; filtres `npm test -- <fragment>`, `--bail`, `--list`.
 - Modules migrés et typés (10) : `scale`, `units`, `server-clock`,
-  `oriented-collider`, `swept-geometry`, `swept-broadphase`, `air-current`,
-  `ballistics`, `shadow-settings`, `insect-status`.
+  `oriented-collider`, `swept-geometry`, `swept-broadphase`, `air-current`
+  (retiré en version 319 avec le ventilateur), `ballistics`, `shadow-settings`,
+  `insect-status`.
 - `ENEMY_UNLOCK_WAVE` (src/waves.js) remplace les deux tables de déblocage
   dupliquées (waves.js et server/wave-preparation.js), valeurs et ordre identiques.
 - Garde `scripts/test-registries.mjs` et guide [ajouter du contenu](../adding-content.md).

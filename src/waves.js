@@ -1,4 +1,3 @@
-import { bendAirPoint } from './air-current.ts';
 import { MAP, INSECT_SCALE, enemySizeFactor, GROUND_FOOT_DEPTH } from './scale.ts';
 import { enemyRoutePosition, routeDuration } from './routes.js';
 export const ENEMY_TYPES = Object.freeze({
@@ -113,32 +112,12 @@ export function enemyTravelSpeed(enemy, roomMultiplier = 1) {
   if (!Number.isFinite(speed) || speed <= 0) throw Error('Vitesse ennemie invalide.');
   return speed;
 }
-export const MAX_DEBUG_SPAWN_BATCH = 5000;
-export const MAX_DEBUG_ROOM_ENEMIES = 10000;
-export function validateDebugSpawn(counts) {
-  if (!counts || typeof counts !== 'object' || Array.isArray(counts))
-    throw Error('Quantités de nuée invalides.');
-  let total = 0;
-  for (const [type, count] of Object.entries(counts)) {
-    if (
-      !Object.hasOwn(ENEMY_TYPES, type) ||
-      ENEMY_TYPES[type].offspringOnly ||
-      !Number.isSafeInteger(count) ||
-      count < 0
-    )
-      throw Error('Quantité invalide : ' + type);
-    total += count;
-  }
-  if (!Number.isSafeInteger(total) || total > MAX_DEBUG_SPAWN_BATCH)
-    throw Error('Maximum ' + MAX_DEBUG_SPAWN_BATCH + ' insectes par envoi.');
-  if (total === 0) throw Error('Renseignez au moins un insecte.');
-  return total;
-}
-
 // Append a fresh, deterministic swarm to the active room-local roster.
 // Existing enemy indices never change, including their damage and kills.
-// One manual command represents one flock. Aerial and ground species cannot
-// share a physical route, so a mixed command has at most one of each.
+// No in-game command uses it any more: the tests build exact rosters with it
+// (load, routes, heavy impacts). One call represents one flock. Aerial and
+// ground species cannot share a physical route, so a mixed call has at most
+// one of each.
 export function debugSwarmRoster(counts, { room, wave, started, now, balance, firstId, revision }) {
   const roster = [];
   const elapsed = (now - started) / 1000;
@@ -413,7 +392,7 @@ export function midgeDisplacement(enemy, time, envelope = 1) {
 // alignment rules. No frame-history dependency: late joiners see the same flock.
 // The route guides each cluster; local steering offsets cannot skip the bin.
 // A sampled ground pose can be provided instead of a static snapshot map.
-export function swarmFrame(roster, time, groundAgents = null, field = null) {
+export function swarmFrame(roster, time, groundAgents = null) {
   const groundAt = (id) => {
     if (typeof groundAgents === 'function') return groundAgents(id);
     return groundAgents?.[id];
@@ -437,10 +416,6 @@ export function swarmFrame(roster, time, groundAgents = null, field = null) {
     if (u < 0 || u >= 1) return null;
     const p = enemyRoutePosition(e, u),
       next = enemyRoutePosition(e, Math.min(1, u + 0.0001));
-    if (!e.ground && field) {
-      bendAirPoint(p, u, field);
-      bendAirPoint(next, Math.min(1, u + 0.0001), field);
-    }
     // Ground meshes extend below their origin: lift both path samples equally
     // so their feet clear the support without corrupting the movement tangent.
     if (e.ground) {

@@ -2,24 +2,16 @@ import assert from 'node:assert/strict';
 import { Game } from '../server/game.js';
 import { PACKS, prepareRoster } from '../server/wave-preparation.js';
 import { DEFAULT_BALANCE } from '../src/balance.js';
-import {
-  ENEMY_TYPES,
-  debugSwarmRoster,
-  swarmFrame,
-  validateDebugSpawn,
-  wavePlan,
-} from '../src/waves.js';
+import { ENEMY_TYPES, debugSwarmRoster, swarmFrame, wavePlan } from '../src/waves.js';
 
 assert.equal(ENEMY_TYPES.rat.hp, 5000);
 assert.equal(ENEMY_TYPES.mosquito.hp, 70);
 assert.equal(ENEMY_TYPES.spider.hp, 1200);
 assert.equal(ENEMY_TYPES.spider.onDeath.count, 100);
 assert.equal(ENEMY_TYPES.spiderling.leak, 1);
-assert.throws(() => validateDebugSpawn({ spiderling: 1 }), /invalide/);
 // The flyer « voltigeur » (`dart`) was removed from the game: no profile, no
-// pack, no wave and no debug spawn may bring it back.
+// pack and no wave may bring it back.
 assert.ok(!Object.hasOwn(ENEMY_TYPES, 'dart') && !Object.hasOwn(PACKS, 'dart'));
-assert.throws(() => validateDebugSpawn({ dart: 1 }), /invalide/);
 for (const w of [2, 5, 20])
   assert.ok(
     !prepareRoster(w, DEFAULT_BALANCE).roster.some((e) => e.type === 'dart'),
