@@ -20,7 +20,8 @@ import { bedAccess, bedSpawn } from '../src/beds.js';
 import { impactDamage } from '../src/field-physics.js';
 import { randomUUID } from 'node:crypto';
 import { MAP, ACTOR_UNIT, enemySizeFactor, flakPitchAllowed } from '../src/scale.ts';
-import { OFFICE_LAYOUT, RAID_DURATION } from '../src/layout.js';
+import { OFFICE_LAYOUT } from '../src/layout.js';
+import { setActiveLayout, isLayoutId, DEFAULT_LAYOUT_ID, layoutSolids } from '../src/layouts.js';
 import {
   VEHICLES,
   vehiclePad,
@@ -120,9 +121,11 @@ export function initialStation() {
     free: true,
   };
 }
-function roomState(code, now) {
+function roomState(code, now, layout = DEFAULT_LAYOUT_ID) {
+  setActiveLayout(layout);
   return {
     code,
+    layout,
     balance: { ...DEFAULT_BALANCE },
     lab: { enabled: false },
     balanceRevision: 0,
@@ -208,7 +211,7 @@ export function groundAgentsView(agents) {
 export class Game {
   constructor({
     now = Date.now,
-    solids = [],
+    solids = null,
     roomTTL = 30 * 60_000,
     maxRooms = 128,
     snapshotShareMs = 0,
@@ -223,9 +226,21 @@ export class Game {
     // delay (PRESENCE_MS), so that a new connection can resume it (join with
     // `resume`). false: the pilot expires and releases its seat at once.
     this.resumable = resumable;
-    this.solids = solids;
+    // Colliders of the room being handled; a fixed list (tests) overrides them.
+    this.fixedSolids = solids;
     this.roomTTL = roomTTL;
     this.maxRooms = maxRooms;
+  }
+  get solids() {
+    return this.fixedSolids ?? layoutSolids();
+  }
+  set solids(list) {
+    this.fixedSolids = list;
+  }
+  // Every operation on a room runs with that room's layout active.
+  use(r) {
+    setActiveLayout(r.layout);
+    return r;
   }
   live(r) {
     return values(r.pilots).filter((p) => p.seen > this.now() - PRESENCE_MS);
@@ -237,8 +252,13 @@ export class Game {
     let r = this.rooms.get(code);
     if (!r) {
       requireGame(this.rooms.size < this.maxRooms, 'Le serveur est complet.', 503);
-      this.rooms.set(code, (r = roomState(code, this.now())));
+      // The plan is chosen by whoever opens the room, then fixed for its life.
+      this.rooms.set(
+        code,
+        (r = roomState(code, this.now(), isLayoutId(b.layout) ? b.layout : DEFAULT_LAYOUT_ID)),
+      );
     }
+    this.use(r);
     this.advance(r);
     // Reconnection: reattach the same pilot (body, seat, life, papers) while it
     // is still present. Never creates another pilot: the caller reloads instead.
@@ -319,7 +339,7 @@ export class Game {
     const r = this.rooms.get(code),
       p = r?.pilots.get(id);
     requireGame(p, 'Connexion expirée. Rechargez la page.', 401);
-    return { r, p };
+    return { r: this.use(r), p };
   }
   release(r, p) {
     p.occupation++;
@@ -332,6 +352,7 @@ export class Game {
     const r = this.rooms.get(code),
       p = r?.pilots.get(id);
     if (!p) return;
+    this.use(r);
     // A resumable pilot stays until its presence expires (advance() then
     // releases its seat and refunds its orders), unless a connection resumes it.
     if (this.resumable) return;
@@ -570,6 +591,7 @@ export class Game {
     if (fired) r.groundDefense.revision++;
   }
   advance(r) {
+    this.use(r);
     if (r.lab.enabled) r.dollars = LAB_FUNDS;
     const now = this.now();
     this.advanceGround(r, now);
@@ -678,7 +700,7 @@ export class Game {
     const balance = r.balance;
     const owner = r.balanceOwnerToken;
     const revision = r.balanceRevision;
-    Object.assign(r, roomState(r.code, this.now()));
+    Object.assign(r, roomState(r.code, this.now(), r.layout));
     r.balance = balance;
     r.balanceOwnerToken = owner;
     r.balanceRevision = revision + 1;
@@ -838,6 +860,7 @@ export class Game {
     };
   }
   roomSnapshot(r) {
+    this.use(r);
     const now = this.now(),
       plan = this.plan(r),
       activePilots = this.live(r),
@@ -917,7 +940,7 @@ export class Game {
       waveReward: money(waveStipend(r.wave), r.balance.rewards),
       difficulty: r.wave ? plan.budget : 0,
       enemyDamage: r.enemyDamage,
-      raidDuration: RAID_DURATION,
+      layout: r.layout,
       mapScale: { numerator: MAP.numerator, denominator: MAP.denominator },
       total: plan.roster.length,
       arrived,

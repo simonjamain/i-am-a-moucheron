@@ -19,7 +19,14 @@ export async function loadBaselineGame(baseline, tag) {
       return `from './.${tag}-baseline-${name}.mjs'`;
     },
   );
-  writeFileSync(temporary, source);
+  // RAID_* left layout.js with the plans; the baseline only copies a number into its snapshot.
+  writeFileSync(
+    temporary,
+    source.replace(
+      /import \{ OFFICE_LAYOUT, RAID_DURATION \} from '\.\.\/src\/layout\.js';/,
+      "import { OFFICE_LAYOUT } from '../src/layout.js';\nconst RAID_DURATION = 0;",
+    ),
+  );
   try {
     return (await import(temporary.href)).Game;
   } finally {

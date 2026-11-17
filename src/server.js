@@ -939,7 +939,6 @@ async function snapshot(db, code) {
           .all()
       ).results.map((e) => [e.enemy, e.damage]),
     ),
-    raidDuration: RAID_DURATION,
     mapScale: { numerator: MAP.numerator, denominator: MAP.denominator },
     total,
     leaked,

@@ -1,5 +1,4 @@
 import { MAP, ACTOR_UNIT, INSECT_SCALE, REFERENCE, FLAK } from './scale.ts';
-import { OFFICE_LAYOUT, RAID_DURATION, RAID_LENGTH, raidPosition } from './layout.js';
 export function spreadDirection(T, direction, random = Math.random, angle = 0.003) {
   const n = direction.clone().normalize(),
     right = new T.Vector3(0, 1, 0).cross(n);
@@ -33,19 +32,6 @@ export function diveIntensity(speed, forwardY, maxSpeed) {
     Math.max(0, Math.min(1, (speed / maxSpeed - 0.68) / 0.28)) *
     Math.max(0, Math.min(1, (-forwardY - 0.25) / 0.45))
   );
-}
-export function createRaid(T) {
-  return {
-    length: RAID_LENGTH,
-    duration: RAID_DURATION,
-    position(index, t) {
-      const age = t - index * 1.5;
-      if (age < 0 || age >= RAID_DURATION) return null;
-      const p = new T.Vector3().fromArray(raidPosition(age / RAID_DURATION));
-      p.y += Math.sin(age * 1.7 + index) * MAP.metres(0.1);
-      return p;
-    },
-  };
 }
 export class CombatEffects {
   constructor(T, scene) {

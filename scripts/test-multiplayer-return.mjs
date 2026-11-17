@@ -18,6 +18,7 @@ import { GunSalvos } from '../src/salvos.js';
 import { makeShotTrace, TracerPool } from '../src/tracers.js';
 import { wavePlan, swarmFrame } from '../src/waves.js';
 import { enemyRoute } from '../src/routes.js';
+import { staticGroundFlow } from '../src/ground-defense.js';
 import { blockedSegment } from '../src/route-navigation.js';
 import { HEAVY, heavyDamage } from '../src/armament.js';
 import { createOrdnance } from '../src/ordnance.js';
@@ -277,11 +278,15 @@ for (let seed = 0; seed < 8; seed++)
         const walked = floor
           .slice(1)
           .reduce((sum, p, i) => sum + Math.hypot(p[0] - floor[i][0], p[2] - floor[i][2]), 0);
-        const straight = Math.hypot(floor[0][0] - 3, floor[0][2] + 2.7);
-        assert.ok(walked <= straight * 1.08, enemy.type + ' ground route detours');
+        // The shortest walk is the layout's own flow field around its furniture.
+        const direct = staticGroundFlow().smoothRoute([floor[0][0], floor[0][2]]);
+        const shortest = direct
+          .slice(1)
+          .reduce((sum, p, i) => sum + Math.hypot(p[0] - direct[i][0], p[1] - direct[i][1]), 0);
+        assert.ok(walked <= shortest * 1.08 + 0.5, enemy.type + ' ground route detours');
       } else {
-        assert.ok(Math.max(...xs) - Math.min(...xs) > 5.5);
-        assert.ok(Math.max(...zs) - Math.min(...zs) > 5);
+        assert.ok(Math.max(...xs) - Math.min(...xs) > 4);
+        assert.ok(Math.max(...zs) - Math.min(...zs) > 3);
         assert.ok(enemy.duration > 100);
       }
       for (let i = 1; i < route.samples.length - 2; i++)

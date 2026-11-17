@@ -8,7 +8,7 @@ import {
   groundCommand,
   groundFlow,
   newGroundDefense,
-  GROUND_GOAL,
+  groundGoal,
 } from '../src/ground-defense-state.js';
 import { distanceToSegment } from '../src/ground-defense.js';
 import { enemyRoute, PORTALS, portalExit } from '../src/routes.js';
@@ -73,7 +73,7 @@ function assertWalkedEqualsForecast(structures, label) {
 const empty = assertWalkedEqualsForecast([], 'undefended');
 for (const path of empty) {
   const line = floor(path.points);
-  const straight = Math.hypot(line[0][0] - GROUND_GOAL[0], line[0][1] - GROUND_GOAL[1]);
+  const straight = Math.hypot(line[0][0] - groundGoal()[0], line[0][1] - groundGoal()[1]);
   assert.ok(length(line) <= straight * 1.08, 'S' + (path.portalIndex + 1) + ' detours');
   const nominal = enemyRoute(groups[path.portalIndex]).points.filter((p) => p[1] < 0.01);
   assert.deepEqual(line, floor(nominal), 'nominal timing route is the forecast');
@@ -118,8 +118,8 @@ for (let i = 0; i < ring; i++) {
   const t0 = (i / ring) * 2 * Math.PI,
     t1 = ((i + 1) / ring) * 2 * Math.PI,
     r = 0.25;
-  const a = [GROUND_GOAL[0] + r * Math.cos(t0), GROUND_GOAL[1] + r * Math.sin(t0)];
-  const b = [GROUND_GOAL[0] + r * Math.cos(t1), GROUND_GOAL[1] + r * Math.sin(t1)];
+  const a = [groundGoal()[0] + r * Math.cos(t0), groundGoal()[1] + r * Math.sin(t0)];
+  const b = [groundGoal()[0] + r * Math.cos(t1), groundGoal()[1] + r * Math.sin(t1)];
   groundCommand(closed, { action: 'build', kind: 'barricade', a, b }, a, 100);
 }
 assert.ok(

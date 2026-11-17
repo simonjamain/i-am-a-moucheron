@@ -1,16 +1,30 @@
 import { WALL_SEGMENT, HALF_BRICK, wallLength } from './brick-rules.js';
-import { ROUTE_OBSTACLES } from './route-obstacles.js';
+import { activeLayout, layoutSolids } from './layouts.js';
 // Deterministic, room-shared ground navigation primitives (office metres).
 // These are independent of the airborne route system. Keep this module free of
 // heavy imports: routes.js (and the historical Worker bundle) inline it.
 export const GROUND_BOUNDS = Object.freeze([-4.12, -3.51, 4.12, 3.51]);
-export const GROUND_GOAL = Object.freeze([3, -2.7]);
 export const GROUND_CELL = 0.05;
+// Where ground insects head for, at the foot of the active layout's bin.
+export const groundGoal = () => activeLayout().groundGoal;
 // Furniture footprints that block insects on the floor (desk legs, boxes…).
-export const GROUND_STATIC_OBSTACLES = ROUTE_OBSTACLES.filter(
-  (box) =>
-    box.min.y < 0.01 && box.max.y > 0.01 && box.max.x - box.min.x < 2 && box.max.z - box.min.z < 2,
-);
+const obstacleCache = new Map();
+export function groundStaticObstacles() {
+  const layout = activeLayout();
+  let list = obstacleCache.get(layout.id);
+  if (!list)
+    obstacleCache.set(
+      layout.id,
+      (list = layoutSolids(layout).filter(
+        (box) =>
+          box.min.y < 0.01 &&
+          box.max.y > 0.01 &&
+          box.max.x - box.min.x < 2 &&
+          box.max.z - box.min.z < 2,
+      )),
+    );
+  return list;
+}
 export const MAX_BARRICADE_SEGMENT = WALL_SEGMENT;
 export const STICKY_WIDTH = 0.03;
 
@@ -251,13 +265,19 @@ export function stickyTraversal(gabarit) {
   throw Error('Unknown ground insect size');
 }
 
-let emptyFlow = null;
-// Flow field of an undefended desk, shared by nominal routes and their timing.
+const emptyFlows = new Map();
+// Flow field of an undefended room, shared by nominal routes and their timing.
 export function staticGroundFlow() {
-  return (emptyFlow ||= buildGroundFlow({
-    bounds: GROUND_BOUNDS,
-    cellSize: GROUND_CELL,
-    goal: GROUND_GOAL,
-    staticObstacles: GROUND_STATIC_OBSTACLES,
-  }));
+  const id = activeLayout().id;
+  if (!emptyFlows.has(id))
+    emptyFlows.set(
+      id,
+      buildGroundFlow({
+        bounds: GROUND_BOUNDS,
+        cellSize: GROUND_CELL,
+        goal: groundGoal(),
+        staticObstacles: groundStaticObstacles(),
+      }),
+    );
+  return emptyFlows.get(id);
 }
