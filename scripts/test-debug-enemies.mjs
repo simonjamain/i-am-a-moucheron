@@ -16,6 +16,7 @@ import { ENEMY_TYPES, swarmFrame } from '../src/waves.js';
 import { DEFAULT_BALANCE } from '../src/balance.js';
 import { enemyRoute, PORTALS } from '../src/routes.js';
 import { fireGroundSentries, SENTRY } from '../src/ground-sentry.js';
+import { GROUND_BOUNDS } from '../src/ground-defense.js';
 
 // 1. Every species, both kinds; inputs validated.
 assert.deepEqual(
@@ -35,6 +36,17 @@ for (const bad of [
 assert.deepEqual(
   debugPlacement({ kind: 'dummy', type: 'ant', p: [1, 0, 1], dir: [3, 4] }).dir,
   [0.6, 0.8],
+);
+// A floor hit rounds a hair below y = 0 (placement-aim.js): still on the floor.
+assert.deepEqual(
+  debugPlacement({ kind: 'live', type: 'rat', p: [1, -1e-9, 1] }).p,
+  [1, 0, 1],
+  'floor hit just under 0 accepted',
+);
+assert.deepEqual(
+  debugPlacement({ kind: 'dummy', type: 'ant', p: [4.15, 0, -3.55] }).p,
+  [GROUND_BOUNDS[2], 0, GROUND_BOUNDS[1]],
+  'wall-side hit clamped into the room',
 );
 
 // 2. Room rules: debug only, during a wave.
