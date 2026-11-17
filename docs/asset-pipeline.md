@@ -389,8 +389,9 @@ Modèle fourni par l'utilisateur, déjà riggé par Meshy, sans clip ; il rempla
   un moucheron. Cadavres, âmes du purgatoire et rendu sans WebGL : `SkinnedMesh`
   réel du même rig (`graphics.insect`). D'autres volants s'ajoutent par une
   entrée de `FLYERS` : l'abeille (309) et le moustique (311) l'ont fait.
-- Échelle et collision : facteur 0,75, corps de 2,2 unités et 2,9 d'envergure
-  (facteur d'espèce `brute` inchangé dans `scale.ts`). Zone de tir : ellipsoïde de
+- Échelle et collision : facteur 0,75, corps de 2,2 unités et 2,9 d'envergure ;
+  depuis la version 318, le facteur d'espèce `brute` (3,559 dans `scale.ts`)
+  lui donne 17 mm de haut au bureau. Zone de tir : ellipsoïde de
   la carapace sans ailes ni pattes (`BEETLE_HIT`), partagé par le proxy et le rig.
 - Vérification : `scripts/test-beetle-model.mjs` (provenance, os d'ailes rigides,
   carapace rigide pendant tout le cycle, orientation, battement symétrique, boucle
@@ -421,7 +422,9 @@ Modèle fourni par l'utilisateur, déjà riggé par Meshy, sans clip ; il rempla
   et torsion, abdomen abaissé qui pompe deux fois par boucle, tête et antennes qui
   frémissent, pattes pendantes.
 - Rendu et collision : entrée `guard` de `FLYERS` (même chaîne que le scarabée).
-  Facteur 0,75, corps de 1,6 unité dard compris. Zone de tir : ellipsoïde du corps
+  Facteur 0,75, corps de 1,6 unité dard compris ; depuis la version 318, le
+  facteur d'espèce `guard` (5,265 dans `scale.ts`) lui donne 15 mm de haut au
+  bureau. Zone de tir : ellipsoïde du corps
   sans ailes, pattes ni antennes (`BEE_HIT`).
 - Vérification : `scripts/test-bee-model.mjs` (provenance, ailes rigides, aucun poids
   du corps sur les ailes, orientation, battement symétrique, boucle sans raccord,
@@ -450,7 +453,8 @@ il remplace le moustique procédural. Même chaîne que l'abeille.
   pattes pendantes, la paire avant tendue vers l'avant, les autres traînant derrière.
 - Rendu et collision : entrée `mosquito` de `FLYERS`. Facteur 1 : environ 3,6
   unités trompe comprise et 3,4 d'envergure, pour garder une silhouette lisible
-  (6×2 pixels à 2 m, `test-enemy-readability`) malgré le petit facteur d'espèce. Zone de tir : ellipsoïde du corps sans ailes, pattes ni
+  (6×2 pixels à 2 m, `test-enemy-readability`) ; depuis la version 318, le facteur d'espèce `mosquito` (7,368 dans
+  `scale.ts`) lui donne 12 mm de haut au bureau. Zone de tir : ellipsoïde du corps sans ailes, pattes ni
   trompe (`MOSQUITO_HIT`). Les esquives erratiques de `waves.js` sont inchangées.
 - Vérification : `scripts/test-mosquito-model.mjs` (provenance, ailes rigides, aucun
   poids du corps sur les ailes, orientation, battement symétrique, boucle, pattes
