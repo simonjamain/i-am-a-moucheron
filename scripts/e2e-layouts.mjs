@@ -22,7 +22,7 @@ async function open(query = '') {
   page.on('pageerror', (e) => errors.push(e.message));
   page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
   await page.goto(url + query);
-  await page.waitForFunction(() => !document.body.classList.contains('booting'), {
+  await page.waitForFunction(() => !document.body.classList.contains('booting'), undefined, {
     timeout: 90000,
   });
   return page;
@@ -43,9 +43,13 @@ try {
   await a.fill('#name', 'Alice');
   await a.fill('#code', 'ESSAIA');
   await a.click('#join');
-  await a.waitForFunction(() => document.querySelector('#lobby').classList.contains('hidden'), {
-    timeout: 90000,
-  });
+  await a.waitForFunction(
+    () => document.querySelector('#lobby').classList.contains('hidden'),
+    undefined,
+    {
+      timeout: 90000,
+    },
+  );
   await a.waitForTimeout(1500);
   await a.screenshot({ path: 'work/game-cloison.png' });
   // Player B asks for another plan on the same code: the room's plan wins.
@@ -53,9 +57,13 @@ try {
   await b.fill('#name', 'Bob');
   await b.fill('#code', 'ESSAIA');
   await b.click('#join');
-  await b.waitForFunction(() => document.querySelector('#lobby').classList.contains('hidden'), {
-    timeout: 90000,
-  });
+  await b.waitForFunction(
+    () => document.querySelector('#lobby').classList.contains('hidden'),
+    undefined,
+    {
+      timeout: 90000,
+    },
+  );
   await b.waitForTimeout(1500);
   await b.screenshot({ path: 'work/game-joined.png' });
   assert.deepEqual(errors, [], 'no page error: ' + errors.join(' | '));
@@ -64,7 +72,15 @@ try {
   app.server.close();
   process.exit(0);
 } catch (error) {
-  console.error(error);
+  console.error(error, errors);
+  for (const page of browser.contexts().flatMap((c) => c.pages()))
+    console.error(
+      '#error:',
+      await page
+        .locator('#error')
+        .textContent()
+        .catch(() => '?'),
+    );
   await browser.close();
   app.server.close();
   process.exit(1);
