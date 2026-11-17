@@ -1,4 +1,4 @@
-import { colliderPoint, colliderBounds } from './oriented-collider.js';
+import { colliderPoint, colliderBounds } from './oriented-collider.ts';
 // Centre-of-camera ray against solid office boxes. A side/ceiling hit blocks
 // placement instead of placing through it. Distances are office metres.
 export function placementAim(body, origin, direction, colliders, reach) {

@@ -35,7 +35,7 @@ button. Ground contact folds the canopy; a grounded body cannot open it.
 
 ## Ballistics and fall model
 
-`ballistics.js` uses gravity and quadratic drag, following the
+`ballistics.ts` uses gravity and quadratic drag, following the
 [NASA drag equation](https://www1.grc.nasa.gov/beginners-guide-to-aeronautics/drag-equation/)
 and [falling-body model](https://www1.grc.nasa.gov/beginners-guide-to-aeronautics/falling-object-with-air-resistance/).
 The character reference terminal velocity is 54 m/s, close to the approximately

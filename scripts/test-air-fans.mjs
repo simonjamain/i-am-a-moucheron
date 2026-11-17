@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import * as T from '../vendor/three.module.min.js';
-import { airField, bendAirPoint, FAN_FADE_MS } from '../src/air-current.js';
+import { airField, bendAirPoint, FAN_FADE_MS } from '../src/air-current.ts';
 import { AirTrails } from '../src/air-trails.js';
 import { newGroundDefense, groundCommand, groundSnapshot } from '../src/ground-defense-state.js';
 import { enemyRoutePosition } from '../src/routes.js';

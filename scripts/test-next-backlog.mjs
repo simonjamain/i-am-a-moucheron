@@ -8,7 +8,7 @@ import { VEHICLES, vehicleEntry, vehicleAccess } from '../src/fleet.js';
 import { fullAmmo, advanceSupplies, SERVICE_SECONDS } from '../src/logistics.js';
 import { TANK_MG, HEAVY, availableShell, heavyDamage } from '../src/armament.js';
 import { HoldZoom, contextKey, rangeReadout } from '../src/equipment-controls.js';
-import { MAP, ACTOR_UNIT, REFERENCE } from '../src/scale.js';
+import { MAP, ACTOR_UNIT, REFERENCE } from '../src/scale.ts';
 import { stepTank } from '../src/tank.js';
 import { wavePlan } from '../src/waves.js';
 import { enemyRoute } from '../src/routes.js';

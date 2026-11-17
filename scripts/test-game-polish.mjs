@@ -3,7 +3,7 @@ import * as T from '../vendor/three.module.min.js';
 import { stepHelicopter, HELI } from '../src/helicopter.js';
 import { VEHICLES, vehiclePad } from '../src/fleet.js';
 import { stepTank } from '../src/tank.js';
-import { MAP } from '../src/scale.js';
+import { MAP } from '../src/scale.ts';
 import { createCharacter, LANDING_DURATION, loadCharacter } from '../src/character-model.js';
 import { makeServiceStation, animateRadar } from '../src/station-model.js';
 import { seatReloads, reloadProgress } from '../src/reload-hud.js';

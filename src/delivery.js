@@ -1,4 +1,4 @@
-import { MAP, ACTOR_UNIT } from './scale.js';
+import { MAP, ACTOR_UNIT } from './scale.ts';
 import { VEHICLES } from './fleet.js';
 import { supportedPlacement } from './equipment.js';
 // World-space metres per second: the previous scaled 1 mm/s looked stationary

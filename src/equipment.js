@@ -1,7 +1,7 @@
-import { footprintInsideCollider, footprintOverlapsCollider } from './oriented-collider.js';
+import { footprintInsideCollider, footprintOverlapsCollider } from './oriented-collider.ts';
 import { VEHICLES } from './fleet.js';
 import { FIXED_DCA } from './fixed-dca.js';
-import { MAP } from './scale.js';
+import { MAP } from './scale.ts';
 export const SHOP = Object.freeze({
   fighter: {
     name: 'Chasseur biplan supplémentaire',

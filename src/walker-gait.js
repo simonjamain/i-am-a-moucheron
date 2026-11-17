@@ -3,7 +3,7 @@
 // and a two-bone leg solve (src/rigged-creature.js) turns hip and knee so the
 // foot reaches its target. The cycle phase is one stride (0..1); the client
 // advances it with the distance travelled, so feet never slide on the floor.
-import { GROUND_FOOT_DEPTH, GROUND_FOOT_CLEARANCE } from './scale.js';
+import { GROUND_FOOT_DEPTH, GROUND_FOOT_CLEARANCE } from './scale.ts';
 
 // Fraction of the cycle a leg spends in the air. Legs in group 0 swing at
 // phase 0..SWING, group 1 at 0.5..0.5+SWING, so every foot is planted around

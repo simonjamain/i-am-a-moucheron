@@ -1,5 +1,5 @@
 import { PORTALS, enemyRoutePosition } from './routes.js';
-import { airField, bendAirPoint } from './air-current.js';
+import { airField, bendAirPoint } from './air-current.ts';
 
 // Each vent gets a single translucent point cloud with immutable local scatter.
 export class AirTrails {

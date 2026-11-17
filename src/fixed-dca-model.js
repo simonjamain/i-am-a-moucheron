@@ -1,7 +1,7 @@
 import light from './fixed-dca-dca-data.js';
 import rapid from './fixed-dca-dcaRapid-data.js';
 import heavy from './fixed-dca-dcaHeavy-data.js';
-import { MAP } from './scale.js';
+import { MAP } from './scale.ts';
 
 const data = { dca: light, dcaRapid: rapid, dcaHeavy: heavy };
 const cache = new WeakMap();

@@ -1,8 +1,8 @@
 import './normal-dossiers.mjs';
 import assert from 'node:assert/strict';
 import * as T from '../vendor/three.module.min.js';
-import { stepFall, stepBallisticVelocity, toggleParachute, HUMAN_AERO } from '../src/ballistics.js';
-import { MAP, ACTOR_UNIT } from '../src/scale.js';
+import { stepFall, stepBallisticVelocity, toggleParachute, HUMAN_AERO } from '../src/ballistics.ts';
+import { MAP, ACTOR_UNIT } from '../src/scale.ts';
 import { SHOP, supportedPlacement, upgradedVehicle } from '../src/equipment.js';
 import { VEHICLES, vehiclePad, vehicleEntry } from '../src/fleet.js';
 import { createSoul, bodyMotion } from '../src/purgatory-physics.js';

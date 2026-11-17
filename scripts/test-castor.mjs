@@ -7,7 +7,7 @@ import { canUseWeapon } from '../src/armament.js';
 import { withinService, advancePaidService } from '../src/paid-service.js';
 import { createGraphics } from '../src/graphics.js';
 import { stepTank } from '../src/tank.js';
-import { ACTOR_UNIT } from '../src/scale.js';
+import { ACTOR_UNIT } from '../src/scale.ts';
 
 assert.equal(SHOP.castor.cost, 12);
 assert.equal(shopPrice('castor'), 12);

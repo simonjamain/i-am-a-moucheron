@@ -23,7 +23,7 @@ recevant/projetant les ombres. Les ombres utilisent toujours les vraies surfaces
 sol/bureaux. Le mode Basic peut rendre les bords crénelés : sa lisibilité et ses
 artefacts doivent être observés avant acceptation.
 
-`shadow-settings.js` centralise le candidat et le préréglage précédent. Le rendu
+`shadow-settings.ts` centralise le candidat et le préréglage précédent. Le rendu
 logiciel de secours n’apporte pas de preuve concernant ces ombres WebGL.
 
 ## Comparaison reproductible

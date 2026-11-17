@@ -1,4 +1,4 @@
-import { airField } from '../src/air-current.js';
+import { airField } from '../src/air-current.ts';
 import { appearanceId } from '../src/character-appearances.js';
 import { prepareRoster, forecast } from './wave-preparation.js';
 import { feedingPoint } from '../src/ground-defense-state.js';
@@ -20,7 +20,7 @@ import { purchaseCount } from '../src/equipment.js';
 import { bedAccess, bedSpawn } from '../src/beds.js';
 import { impactDamage } from '../src/field-physics.js';
 import { randomUUID } from 'node:crypto';
-import { MAP, ACTOR_UNIT, enemySizeFactor, flakPitchAllowed } from '../src/scale.js';
+import { MAP, ACTOR_UNIT, enemySizeFactor, flakPitchAllowed } from '../src/scale.ts';
 import { OFFICE_LAYOUT, RAID_DURATION } from '../src/layout.js';
 import {
   VEHICLES,
@@ -65,7 +65,7 @@ import { validMotion } from '../src/network.js';
 import { snapshotRosterCore, snapshotRosterKey } from '../src/snapshot-wire.js';
 import { newBank, signLoan, settleLoans, repayLoan } from '../src/bank.js';
 import { canUseWeapon, HEAVY, TANK_MG, availableShell, heavyInterval } from '../src/armament.js';
-import { sweptSphereMayTouch } from '../src/swept-broadphase.js';
+import { sweptSphereMayTouch } from '../src/swept-broadphase.ts';
 import { createOrdnance, segmentSphere } from '../src/ordnance.js';
 
 const uid = () => randomUUID();

@@ -6,7 +6,7 @@ import { resolveHeavy, detonateHeavy, roomWorld } from './heavy-resolver.mjs';
 import { stepHeavy } from '../src/heavy-sim.js';
 import { VEHICLES, vehiclePad, LIGHT_FIGHTER } from '../src/fleet.js';
 import { HEAVY, canUseWeapon, heavyDamage } from '../src/armament.js';
-import { MAP, REFERENCE, FLAK } from '../src/scale.js';
+import { MAP, REFERENCE, FLAK } from '../src/scale.ts';
 import { SHOP, supportedPlacement } from '../src/equipment.js';
 import { fullAmmo, advanceSupplies } from '../src/logistics.js';
 import { createOrdnance } from '../src/ordnance.js';

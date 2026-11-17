@@ -1,5 +1,5 @@
 import { VEHICLES } from './fleet.js';
-import { MAP, ACTOR_UNIT } from './scale.js';
+import { MAP, ACTOR_UNIT } from './scale.ts';
 import { OFFICE_LAYOUT } from './layout.js';
 import { supportedPlacement } from './equipment.js';
 export function bedAccess(point, bed) {

@@ -44,8 +44,8 @@ console.log(
 // have the same miniature scale as the game, rather than raw metre-sized meshes.
 const T = await import('../vendor/three.module.min.js');
 const { createGraphics } = await import('../src/graphics.js');
-const { ACTOR_UNIT, INSECT_SCALE } = await import('../src/scale.js');
-const { insectScale } = await import('../src/insect-status.js');
+const { ACTOR_UNIT, INSECT_SCALE } = await import('../src/scale.ts');
+const { insectScale } = await import('../src/insect-status.ts');
 const setup = source.slice(source.indexOf('const $ ='), source.indexOf('let variant ='));
 const setupContext = vm.createContext({
   T,

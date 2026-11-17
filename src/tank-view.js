@@ -1,4 +1,4 @@
-import { ACTOR_UNIT } from './scale.js';
+import { ACTOR_UNIT } from './scale.ts';
 import { rotateLocal } from './helicopter.js';
 import { VEHICLE_ANCHORS } from './vehicle-anchors.js';
 export function tankSight(T, mount, direction, up, observation = null) {

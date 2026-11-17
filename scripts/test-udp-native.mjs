@@ -1,6 +1,6 @@
 import { supportedPlacement } from '../src/equipment.js';
 import { OFFICE_SOLIDS } from '../worker/assets.js';
-import { ACTOR_UNIT, MAP } from '../src/scale.js';
+import { ACTOR_UNIT, MAP } from '../src/scale.ts';
 import { OFFICE_LAYOUT } from '../src/layout.js';
 import assert from 'node:assert/strict';
 import { PeerConnection, cleanup } from 'node-datachannel';

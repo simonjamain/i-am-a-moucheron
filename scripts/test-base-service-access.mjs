@@ -3,7 +3,7 @@ import * as T from '../vendor/three.module.min.js';
 import { initialStation } from '../server/game.js';
 import { makeServiceStation, makeRefuelCollider } from '../src/station-model.js';
 import { VEHICLES, vehicleEntry, vehiclePad } from '../src/fleet.js';
-import { MAP, ACTOR_UNIT } from '../src/scale.js';
+import { MAP, ACTOR_UNIT } from '../src/scale.ts';
 import { SERVICE_RADIUS } from '../src/logistics.js';
 import { withinService } from '../src/paid-service.js';
 import { OFFICE_LAYOUT } from '../src/layout.js';

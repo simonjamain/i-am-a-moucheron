@@ -1,4 +1,4 @@
-import { MAP, ACTOR_UNIT, REFERENCE } from './scale.js';
+import { MAP, ACTOR_UNIT, REFERENCE } from './scale.ts';
 import { OFFICE_LAYOUT } from './layout.js';
 import { advanceArena, createSoul } from './purgatory-physics.js';
 export function aircraftBay(index) {

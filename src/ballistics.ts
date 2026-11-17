@@ -1,4 +1,13 @@
-import { MAP, REFERENCE } from './scale.js';
+import { MAP, REFERENCE } from './scale.ts';
+import type { Vector3 } from 'three';
+
+/** Vertical fall state integrated by stepFall (office metres, m/s). */
+export interface FallingBody {
+  y: number;
+  vy: number;
+  parachute?: boolean;
+  grounded?: boolean;
+}
 // dv/dt = gravity - k |v| v. k = rho Cd A / (2m), in reference metres.
 export const BALLISTICS = Object.freeze({ bullet: 0.0007, shell: 0.00015 });
 export const HUMAN_AERO = Object.freeze({
@@ -8,13 +17,18 @@ export const HUMAN_AERO = Object.freeze({
   terminal: 54,
   canopyTerminal: 5.5,
 });
-export function stepBallisticVelocity(v, dt, shell = false, ratio = MAP.ratio) {
+export function stepBallisticVelocity(
+  v: Vector3,
+  dt: number,
+  shell = false,
+  ratio: number = MAP.ratio,
+): void {
   const k = (shell ? BALLISTICS.shell : BALLISTICS.bullet) / ratio;
   v.y -= REFERENCE.gravity * ratio * dt * 0.5;
   v.multiplyScalar(1 / (1 + k * v.length() * dt));
   v.y -= REFERENCE.gravity * ratio * dt * 0.5;
 }
-export function stepFall(body, dt, ratio = MAP.ratio) {
+export function stepFall(body: FallingBody, dt: number, ratio: number = MAP.ratio): void {
   const steps = Math.max(1, Math.ceil(dt * 240)),
     h = dt / steps,
     g = HUMAN_AERO.gravity * ratio,
@@ -29,7 +43,7 @@ export function stepFall(body, dt, ratio = MAP.ratio) {
     body.vy = v;
   }
 }
-export function toggleParachute(body) {
+export function toggleParachute(body: FallingBody | null | undefined): boolean {
   if (!body || body.grounded !== false) return false;
   body.parachute = !body.parachute;
   return true;

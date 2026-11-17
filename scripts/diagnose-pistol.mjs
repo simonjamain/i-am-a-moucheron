@@ -1,4 +1,4 @@
-import { rayCollider } from '../src/oriented-collider.js';
+import { rayCollider } from '../src/oriented-collider.ts';
 import { makeTracer, makeShotTrace, moveShotTrace, TRACER_COLOR } from '../src/tracers.js';
 import { muzzleAim } from '../src/personal-aim.js';
 // Executes the current pistol() function in a controlled Three.js scene.
@@ -6,7 +6,7 @@ import * as T from '../vendor/three.module.min.js';
 import vm from 'node:vm';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { MAP } from '../src/scale.js';
+import { MAP } from '../src/scale.ts';
 import { nearestMeshHit } from '../src/insect-hits.js';
 const source = readFileSync('src/client.js', 'utf8'),
   pistol = source.slice(

@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { ServerClock, SNAP_MS } from '../src/server-clock.js';
+import { ServerClock, SNAP_MS } from '../src/server-clock.ts';
 
 // Simulated game: the server answers every 250 ms; each reply travels 20 to
 // 120 ms (and 5 % of them 300 ms); the browser draws at 60 FPS. Enemy positions

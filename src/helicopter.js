@@ -1,6 +1,6 @@
-import { colliderContainsXZ } from './oriented-collider.js';
-import { segmentBox } from './swept-geometry.js';
-import { MAP, ACTOR_UNIT } from './scale.js';
+import { colliderContainsXZ } from './oriented-collider.ts';
+import { segmentBox } from './swept-geometry.ts';
+import { MAP, ACTOR_UNIT } from './scale.ts';
 import { OFFICE_LAYOUT } from './layout.js';
 import { VEHICLE_ANCHORS } from './vehicle-anchors.js';
 export const HELI = Object.freeze({

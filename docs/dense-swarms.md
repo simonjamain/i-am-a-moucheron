@@ -67,7 +67,7 @@ actifs**, sans promettre des FPS mesurés sur le navigateur ou le VPS.
   elles uniquement. Le mouvement est reproductible à temps et roster donnés
   et ne nécessite pas d'état par frame ni d'envoi de positions réseau.
 - Les moucherons ont une sphère de collision commune, en coordonnées locales
-  de modèle (rayon `MIDGE_SPHERE_RADIUS` dans `scale.js`). Les tirs légers et
+  de modèle (rayon `MIDGE_SPHERE_RADIUS` dans `scale.ts`). Les tirs légers et
   la présélection `InsectIndex` utilisent l'intersection rayon–sphère exacte.
   Les projectiles lourds serveur utilisent le même rayon et écartent les
   candidats impossibles avec une boîte englobante balayée.

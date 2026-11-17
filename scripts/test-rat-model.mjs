@@ -8,8 +8,8 @@ import { RAT, RAT_BONES, RAT_HIT, RAT_MODEL, ratClipWorld, ratWorld } from '../s
 import { WALKERS, WalkerBatch, walkerStride } from '../src/walker-batch.js';
 import { createGraphics } from '../src/graphics.js';
 import { nearestInsectHit } from '../src/insect-hits.js';
-import { GROUND_FOOT_DEPTH, GROUND_FOOT_CLEARANCE, INSECT_SCALE } from '../src/scale.js';
-import { insectScale } from '../src/insect-status.js';
+import { GROUND_FOOT_DEPTH, GROUND_FOOT_CLEARANCE, INSECT_SCALE } from '../src/scale.ts';
+import { insectScale } from '../src/insect-status.ts';
 
 const bytes = (b64) => Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
 const floor = -GROUND_FOOT_DEPTH + GROUND_FOOT_CLEARANCE;

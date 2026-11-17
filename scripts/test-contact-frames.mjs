@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { Game, CONTACT_FRAME_MS } from '../server/game.js';
 import { swarmFrame } from '../src/waves.js';
-import { airField } from '../src/air-current.js';
+import { airField } from '../src/air-current.ts';
 
 // Vehicle contacts reuse enemy positions for at most CONTACT_FRAME_MS, then
 // recompute them; roster changes and clock regressions always recompute.

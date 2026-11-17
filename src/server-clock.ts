@@ -12,8 +12,28 @@ export const CLOCK_WINDOW_MS = 6000;
 export const SLEW_RATE = 0.05;
 export const SNAP_MS = 500;
 
+export interface ServerClockOptions {
+  window?: number;
+  slew?: number;
+  snap?: number;
+}
+interface ClockSample {
+  local: number;
+  offset: number;
+}
+
 export class ServerClock {
-  constructor({ window = CLOCK_WINDOW_MS, slew = SLEW_RATE, snap = SNAP_MS } = {}) {
+  window: number;
+  slew: number;
+  snap: number;
+  samples: ClockSample[];
+  offset: number | null;
+  last: number | null;
+  constructor({
+    window = CLOCK_WINDOW_MS,
+    slew = SLEW_RATE,
+    snap = SNAP_MS,
+  }: ServerClockOptions = {}) {
     this.window = window;
     this.slew = slew;
     this.snap = snap;
@@ -22,20 +42,20 @@ export class ServerClock {
     this.last = null;
   }
   // serverTime: server clock when the reply was sent (ms); local: performance.now() at receipt.
-  observe(serverTime, local) {
+  observe(serverTime: number, local: number): void {
     if (!Number.isFinite(serverTime) || !Number.isFinite(local)) return;
     this.samples.push({ local, offset: serverTime - local });
     while (this.samples.length > 1 && this.samples[0].local < local - this.window)
       this.samples.shift();
     if (this.samples.length > 256) this.samples.shift();
   }
-  target() {
+  target(): number {
     let best = -Infinity;
     for (const s of this.samples) if (s.offset > best) best = s.offset;
     return best;
   }
   // Server time at local time `local`, monotonic between successive calls.
-  now(local) {
+  now(local: number): number | null {
     if (!this.samples.length) return null;
     const target = this.target();
     if (this.offset === null || Math.abs(target - this.offset) > this.snap) this.offset = target;
@@ -46,7 +66,7 @@ export class ServerClock {
     this.last = local;
     return local + this.offset;
   }
-  reset() {
+  reset(): void {
     this.samples = [];
     this.offset = null;
     this.last = null;

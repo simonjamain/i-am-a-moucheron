@@ -10,7 +10,7 @@ import {
   MIDGE_FLIGHT,
   MIDGE_BONES,
 } from '../src/midge-model.js';
-import { MIDGE_SPHERE_RADIUS } from '../src/scale.js';
+import { MIDGE_SPHERE_RADIUS } from '../src/scale.ts';
 
 const world = (o) => o.getWorldPosition(new T.Vector3());
 
