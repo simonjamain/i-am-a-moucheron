@@ -1,6 +1,12 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 329,
+    changes: [
+      'Les tapis du bureau sont retirés : ils coupaient les personnages et les équipements en deux.',
+    ],
+  },
+  {
     version: 328,
     changes: [
       'Le chasseur léger et le bombardier moyen à quatre places sont de retour chez le marchand.',

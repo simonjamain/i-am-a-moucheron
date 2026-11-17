@@ -19,7 +19,6 @@ export const FURNITURE_KINDS = Object.freeze({
   copier: { h: 1, color: '#aab2b8' },
   fountain: { h: 1.2, color: '#8fb7d0' },
   plant: { h: 0.9, color: '#5f9a5f' },
-  rug: { h: 0.006, color: '#8f7a68', solid: false },
 });
 const furn = (kind, x, z, w, d, label = '') => ({ kind, x, z, w, d, label });
 
@@ -159,7 +158,6 @@ export const LAYOUTS = Object.freeze([
       furn('copier', 3.75, -0.4, 0.7, 0.5, 'Photoc.'),
       furn('fountain', -3.9, -1.4, 0.4, 0.4),
       furn('plant', -3.8, -3.2, 0.4, 0.4),
-      furn('rug', 2.7, -2.15, 1.3, 0.9, 'Tapis'),
     ],
     hidden: [
       [0.2, -2.4],
@@ -228,7 +226,6 @@ export const LAYOUTS = Object.freeze([
       furn('copier', -0.5, 3.2, 0.7, 0.5, 'Photoc.'),
       furn('plant', 3.9, -0.9, 0.4, 0.4),
       furn('box', -3.4, 0.1, 0.6, 0.6, 'Cartons'),
-      furn('rug', 0, 1.8, 1.4, 0.9, 'Tapis'),
     ],
     passages: [
       [0.9, -0.9],
@@ -299,7 +296,6 @@ export const LAYOUTS = Object.freeze([
       furn('copier', 3.3, 0.9, 0.8, 0.5, 'Photoc.'),
       furn('plant', 3.9, 2.9, 0.4, 0.4),
       furn('box', -3.6, -0.2, 0.6, 0.6, 'Cartons'),
-      furn('rug', 2.6, -1.5, 1.3, 0.9, 'Tapis'),
     ],
     hidden: [
       [0.3, -3.5],
@@ -359,7 +355,6 @@ export const LAYOUTS = Object.freeze([
       furn('desk', -2.6, -1.3, 2.0, 1.0, 'Bureau G'),
       furn('desk', 2.6, -1.3, 2.0, 1.0, 'Bureau D'),
       furn('paravent', 0, -1.7, 1.6, 0.1),
-      furn('rug', 0, -2.5, 1.5, 0.7, 'Tapis'),
       furn('cloison', -1.4, 1.4, 1.4, 0.1),
       furn('cloison', 1.4, 1.4, 1.4, 0.1),
       furn('plant', 3.9, -3.2, 0.4, 0.4),
@@ -436,7 +431,6 @@ export const LAYOUTS = Object.freeze([
       furn('box', -2.6, -2.6, 1.2, 0.8, 'Cartons'),
       furn('plant', -3.8, -3.2, 0.4, 0.4),
       furn('copier', -0.5, -3.25, 0.7, 0.5, 'Photoc.'),
-      furn('rug', 2.7, -2.2, 1.3, 0.9, 'Tapis'),
       furn('cloison', 2.2, -1.0, 0.1, 0.8),
     ],
     hidden: [
@@ -509,7 +503,6 @@ export const LAYOUTS = Object.freeze([
       furn('skirt', 1.2, -3.2, 0.08, 0.2),
       furn('skirt', 1.2, -2.25, 0.08, 0.7),
       furn('desk', 2.7, -2.6, 3.0, 1.4, 'Bureau de direction'),
-      furn('rug', 2.9, -1.1, 1.5, 0.7, 'Tapis'),
       furn('paravent', -1.4, -0.9, 1.2, 0.1),
       furn('paravent', -0.85, -0.5, 0.1, 0.8),
       furn('cloison', 0.5, 2.0, 1.4, 0.1),
@@ -608,9 +601,7 @@ export function layoutPieces(layout = activeLayoutValue) {
           radiusTop: it.w * 0.45,
         }),
       );
-    } else if (it.kind === 'rug')
-      P.push(mkPiece('box', it.x, k.h / 2, it.z, it.w, k.h, it.d, k.color, false));
-    else P.push(mkPiece('box', it.x, k.h / 2, it.z, it.w, k.h, it.d, k.color, solid));
+    } else P.push(mkPiece('box', it.x, k.h / 2, it.z, it.w, k.h, it.d, k.color, solid));
   }
   const b = layout.bin;
   P.push(
@@ -652,7 +643,7 @@ export function layoutThumbnail(layout) {
   const parts = layout.furniture.map((it) =>
     it.kind === 'plant'
       ? `<circle cx="${it.x}" cy="${it.z}" r="${it.w / 2}" fill="${FURNITURE_KINDS.plant.color}"/>`
-      : r(it, FURNITURE_KINDS[it.kind].color, it.kind === 'rug' ? 0.55 : 1),
+      : r(it, FURNITURE_KINDS[it.kind].color),
   );
   const dots = [
     ...layout.portals.ground.map(
