@@ -2,8 +2,7 @@
 
 JavaScript ESM natif, client Three.js et serveur Node en RAM. Lire
 [gameplay](gameplay.md) pour les parcours, [exploitation](operations.md) pour lancer,
-tester et livrer, puis la référence métier concernée. `AGENTS.md` décrit la prise
-en charge continue du backlog et la revue finale des documents.
+tester et livrer, puis la référence métier concernée. `AGENTS.md` décrit la boucle de travail, la livraison et la fusion autonome.
 
 ## Exécution et autorité
 
@@ -69,7 +68,7 @@ entre deux pairs. Le Worker conserve son ancien périmètre, sans Spitfire gratu
 
 `scripts/assemble.mjs` utilise la géométrie réelle du bureau pour générer les
 colliders et le graphe d’assets à URL de contenu. `worker/assets.js` est utilisé
-par Node. `worker/index.js` et `dist/` sont les sorties du backend Worker
+par Node. `worker/index.js` (versionné) et `dist/` (ignoré par Git) sont les sorties du backend Worker
 historique ; `src/server.js`, `drizzle/` et `scripts/local-db.mjs` restent sa
 compatibilité SQL. Ils ne sont pas importés par le runtime Node.
 
