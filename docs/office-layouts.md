@@ -33,7 +33,7 @@ Chaque plan décrit :
 - `furniture` : volumes alignés sur les axes (`kind`, centre `x`/`z`, taille
   `w`/`d`), les hauteurs viennent de `FURNITURE_KINDS` (bureau, rayonnage,
   cloison basse, paravent, mur plein, carton, photocopieuse, fontaine, plante,
-  tapis non solide, jupe de bureau) ;
+  jupe de bureau) ;
 - `bin` (position, `y` = hauteur du support), `groundGoal` (où les rampants
   s'arrêtent au sol) et `groundFinish` (la montée finale) ;
 - `portals.ground` / `portals.air`, et `airRoutes` (waypoints par vent, y
