@@ -17,7 +17,7 @@ larger.scale.setScalar(insectScale('midge', INSECT_SCALE));
 const a = new T.Box3().setFromObject(old).getSize(new T.Vector3()),
   b = new T.Box3().setFromObject(larger).getSize(new T.Vector3());
 assert.ok(Math.abs(b.x / a.x - 1.35 * 1.5 * 3) < 1e-8);
-assert.equal(insectScale('brute', 2), 6);
+assert.equal(insectScale('brute', 2), 2 * 3.559); // base × species factor (scarabée 17 mm, v318)
 let oldHits = 0,
   newHits = 0;
 for (let x = -0.004; x <= 0.004; x += 0.0001)

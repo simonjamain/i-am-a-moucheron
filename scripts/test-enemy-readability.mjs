@@ -47,6 +47,23 @@ assert.deepEqual(
   [],
   'Ants meet the requested half-size; other enemy silhouettes exceed 6×2 pixels at 2 m / 1080p without zoom',
 );
+// Heights asked for the Meshy flyers (office mm, model at rest, wings included).
+// The species factor scales the mesh, its hit ellipsoid (model space) and the
+// server heavy-weapon radius together.
+for (const [type, height] of Object.entries({ guard: 15, mosquito: 12, brute: 17 })) {
+  const row = rows.find((r) => r.type === type);
+  assert.ok(Math.abs(row.heightMM - height) < 0.1, `${type} is ${height} mm tall: ${row.heightMM}`);
+  const model = graphics.insect(type);
+  model.scale.setScalar(insectScale(type, INSECT_SCALE, ENEMY_TYPES[type].size));
+  model.updateMatrixWorld(true);
+  const box = new T.Box3().setFromObject(model).getSize(new T.Vector3());
+  const [, ry] = model.userData.hitEllipsoid;
+  const hitHeight = 2 * ry * model.scale.y;
+  assert.ok(
+    hitHeight > box.y * 0.4 && hitHeight < box.y * 1.2, // body only, without wings or legs
+    `${type} hit volume follows the model: ${hitHeight} vs ${box.y}`,
+  );
+}
 
 // Lowest skinned vertex of a rigged walker, provided it belongs to a foot bone.
 function lowestFoot(model) {

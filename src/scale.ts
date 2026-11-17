@@ -40,9 +40,11 @@ export const ENEMY_SIZE_FACTORS: Readonly<Record<EnemyType, number>> = Object.fr
   ant: 6,
   roach: 8,
   midge: MIDGE_SIZE_FACTOR,
-  guard: 3,
-  brute: 3,
-  mosquito: 4,
+  // Bee, beetle and mosquito: set from their in-game height (Meshy models at
+  // rest, wings included): 15, 17 and 12 mm in the office (version 318).
+  guard: 5.265,
+  brute: 3.559,
+  mosquito: 7.368,
   rat: 8,
   spider: 6,
   spiderling: 5,

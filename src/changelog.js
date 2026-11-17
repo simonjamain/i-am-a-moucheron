@@ -1,6 +1,12 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 318,
+    changes: [
+      'L’abeille, le moustique et le scarabée sont plus grands, et plus faciles à toucher en proportion.',
+    ],
+  },
+  {
     version: 317,
     changes: ['Les bébés araignées ont un nouveau modèle grognon qui trottine sur ses pattes.'],
   },

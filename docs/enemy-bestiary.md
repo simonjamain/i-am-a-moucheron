@@ -17,6 +17,15 @@ Le panneau d'équilibrage expose les trois espèces nouvelles, pas les bébés. 
 
 Le voltigeur (`dart`), petit volant rapide débloqué en vague 2, a été retiré du jeu en version 312 : plus de profil, de paquet, de vague ni d'apparition de débogage. `scripts/test-enemy-bestiary.mjs` vérifie qu'aucune vague ne le réintroduit.
 
+## Tailles en jeu
+
+Hauteur au bureau, modèle au repos, ailes et pattes comprises (version 318) :
+abeille 15 mm, scarabée 17 mm, moustique 12 mm. Elles se règlent par le facteur
+d'espèce `ENEMY_SIZE_FACTORS` (`src/scale.ts`), qui agrandit d'un même rapport le
+modèle, sa zone de tir (ellipsoïde dans le repère du modèle) et le rayon de
+collision des armes lourdes côté serveur. `scripts/test-enemy-readability.mjs`
+vérifie ces trois hauteurs et que la zone de tir suit le modèle.
+
 ## Vérification
 
 `node scripts/test-enemy-bestiary.mjs` vérifie éclosions, identifiants, doublons, infestations et profils. Les contrôles Docker et la suite de tests Node sont complétés par un essai manuel WebGL/UDP, nécessaire pour l'animation, la fluidité et la navigation des gros animaux.
