@@ -35,12 +35,9 @@ expectKeys('ENEMY_UNLOCK_WAVE (src/waves.js)', ENEMY_UNLOCK_WAVE, drawn);
 expectKeys('PACKS (server/wave-preparation.js)', PACKS, drawn);
 expectKeys('GROUND_LANES (src/waves.js)', GROUND_LANES, ground);
 expectKeys('GROUND_BODY_SIZES (src/ground-creatures.js)', GROUND_BODY_SIZES, ground);
-// Spiderlings use their own instanced batch; the midge has its own batch too.
-expectKeys(
-  'WALKERS (src/walker-batch.js)',
-  WALKERS,
-  ground.filter((t) => t !== 'spiderling'),
-);
+// Every ground species walks in WalkerBatch (spiderlings too, since v317);
+// the midge has its own batch.
+expectKeys('WALKERS (src/walker-batch.js)', WALKERS, ground);
 expectKeys(
   'FLYERS (src/flyer-batch.js)',
   FLYERS,

@@ -117,7 +117,6 @@ import { availableAppearance, turnToward, loadCharacter } from '/character-model
 import { createAppearancePicker } from '/appearance-picker.js';
 import { MidgeBatch } from '/midge-batch.js';
 import { WalkerBatch } from '/walker-batch.js';
-import { SpiderlingBatch } from '/spiderling-batch.js';
 import { createOffice } from '/office.js';
 import {
   aircraftBay,
@@ -277,7 +276,6 @@ if (renderer.isWebGLRenderer)
   for (const [type, flyer] of Object.entries(FLYERS))
     flyerVats[type] = await prepareCreatureVat(T, flyer.creature);
 const midgeBatch = new MidgeBatch(T, scene, { enabled: !!renderer.isWebGLRenderer, vat: midgeVat });
-const spiderlingBatch = new SpiderlingBatch(T, scene, { enabled: !!renderer.isWebGLRenderer });
 const walkerBatch = new WalkerBatch(T, scene, {
   enabled: !!renderer.isWebGLRenderer,
   vats: walkerVats,
@@ -3570,13 +3568,11 @@ function enemies(now) {
       g =
         profile.type === 'midge' && midgeBatch.enabled
           ? midgeBatch.create(profile.phase)
-          : profile.type === 'spiderling' && spiderlingBatch.enabled
-            ? spiderlingBatch.create()
-            : walkerBatch.enabled && walkerBatch.handles(profile.type)
-              ? walkerBatch.create(profile.type, profile.phase)
-              : flyerBatch.handles(profile.type)
-                ? flyerBatch.create(profile.type, profile.phase)
-                : insect(profile.type);
+          : walkerBatch.enabled && walkerBatch.handles(profile.type)
+            ? walkerBatch.create(profile.type, profile.phase)
+            : flyerBatch.handles(profile.type)
+              ? flyerBatch.create(profile.type, profile.phase)
+              : insect(profile.type);
       g.userData.enemyWave = snap.wave;
       g.userData.enemyType = profile.type;
       g.userData.entryStatus = entryStatus(profile, t);
@@ -3589,12 +3585,7 @@ function enemies(now) {
     }
     // An instanced midge has no meshes or animation hierarchy in the scene.
     // Update only its inexpensive logical transform used by impacts, audio and HUD.
-    if (
-      g.userData.instancedMidge ||
-      g.userData.instancedSpiderling ||
-      g.userData.instancedWalker ||
-      g.userData.instancedFlyer
-    ) {
+    if (g.userData.instancedMidge || g.userData.instancedWalker || g.userData.instancedFlyer) {
       const [x, y, z] = state.p;
       const dx = x - g.position.x,
         dy = y - g.position.y,
@@ -4800,7 +4791,6 @@ function frame(now) {
   updateFallingEnemies(dt);
   updateContextHUD();
   midgeBatch.flush(insects, now, camera);
-  spiderlingBatch.flush(insects);
   walkerBatch.flush(insects);
   flyerBatch.flush(insects, now);
   tracerPool.flush();
@@ -5098,12 +5088,7 @@ function fallEnemy(enemy) {
   if (!g) return;
   insects.delete(enemy);
   insectStatus.remove(enemy);
-  if (
-    g.userData.instancedMidge ||
-    g.userData.instancedSpiderling ||
-    g.userData.instancedWalker ||
-    g.userData.instancedFlyer
-  ) {
+  if (g.userData.instancedMidge || g.userData.instancedWalker || g.userData.instancedFlyer) {
     // Only up to 80 fallen bodies need real meshes; living insects stay batched.
     const corpse = insect(g.userData.enemyType);
     // A walker falls in the stride it was taking.

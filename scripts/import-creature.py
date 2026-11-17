@@ -1,7 +1,7 @@
 """Import a rigged Meshy creature (no clip) into a local JS module.
 Usage: PYTHONPATH=scripts python3 scripts/import-creature.py <species> path/to/model.glb
 Species: ant (Red Ant Warrior), spider (Spotted Velvet Spider), roach (Low Poly
-Cockroach). User-supplied
+Cockroach), spiderling (Grumpy Spider). User-supplied
 GLBs checked by SHA-256. Output keeps the skinned mesh, the Meshy SmartRig
 skeleton with its bind matrices and a 512 px JPEG copy of the 2K texture (the
 original stays in assets/originals/<species>/, outside Git). Gaits are
@@ -44,6 +44,26 @@ SPECIES = {
             ['Bone_013', 'Bone_012', 'Bone_011', 'Bone_010'],  # middle -X
             ['Bone_025', 'Bone_024', 'Bone_023', 'Bone_022'],  # rear +X
             ['Bone_029', 'Bone_028', 'Bone_027', 'Bone_026'],  # rear -X
+        ],
+    },
+    'spiderling': {
+        'sha256': 'eaeaff76e5384386dd19894b7acdf06a6513b675ecd9fd5d069891b4a5d996da',
+        'output': 'src/spiderling-data.js',
+        'constant': 'SPIDERLING_DATA',
+        'label': 'Spiderling enemy (Meshy "Grumpy Spider", rigged, no clip)',
+        'hub': 'Bone_001',
+        # Meshy gave leg 2 +X two overlapping chains (same pivots) and spread
+        # its shell over both: everything goes to the Bone_014 chain.
+        'alias': {'Bone_008': 'Bone_014', 'Bone_007': 'Bone_013', 'Bone_006': 'Bone_012'},
+        'legs': [
+            ['Bone_003', 'Bone_002'],  # 1 +X (short front pair)
+            ['Bone_005', 'Bone_004'],  # 1 -X
+            ['Bone_014', 'Bone_013', 'Bone_012'],  # 2 +X
+            ['Bone_011', 'Bone_010', 'Bone_009'],  # 2 -X
+            ['Bone_020', 'Bone_019', 'Bone_018'],  # 3 +X
+            ['Bone_017', 'Bone_016', 'Bone_015'],  # 3 -X
+            ['Bone_028', 'Bone_027', 'Bone_026'],  # 4 +X
+            ['Bone_025', 'Bone_024', 'Bone_023'],  # 4 -X
         ],
     },
 }
@@ -155,6 +175,22 @@ def clean_leg_weights(chains, hub):
     return moved
 
 
+aliased = 0
+if 'alias' in species:
+    names = [b['name'] for b in bones]
+    alias = {names.index(a): names.index(b) for a, b in species['alias'].items()}
+    for i, j in enumerate(joints):
+        if j in alias and weights[i] > 0:
+            joints[i], aliased = alias[j], aliased + 1
+    # Merge duplicate slots created by the alias.
+    for v in range(len(joints) // 4):
+        slots = {}
+        for k in range(4):
+            if weights[v * 4 + k] > 0:
+                slots[joints[v * 4 + k]] = slots.get(joints[v * 4 + k], 0) + weights[v * 4 + k]
+        ranked = sorted(slots.items(), key=lambda kv: -kv[1])[:4] + [(0, 0)] * (4 - len(slots))
+        joints[v * 4:v * 4 + 4] = [j for j, _ in ranked[:4]]
+        weights[v * 4:v * 4 + 4] = [w for _, w in ranked[:4]]
 moved = clean_leg_weights(species['legs'], species['hub']) if 'legs' in species else None
 # Renormalise the four weights after 8-bit quantisation (sum exactly 255).
 weights_q = []
@@ -175,7 +211,8 @@ data = {
     'source': {'sha256': species['sha256'], 'generator': g['asset'].get('generator'),
                'triangles': len(indices) // 3, 'vertices': len(positions) // 3, 'bones': len(bones),
                'textureBytes': len(out.getvalue()),
-               **({'legWeightsMoved': moved} if moved is not None else {})},
+               **({'legWeightsMoved': moved} if moved is not None else {}),
+               **({'aliasedWeights': aliased} if aliased else {})},
     'positions': pack('f', positions),
     'uvs': pack('f', uvs),
     'indices': pack('H', indices),
