@@ -58,9 +58,11 @@ Le workflow `Docker build validation` contient aussi le job `Full game regressio
 `npm test`, `format:check`, `check:docs`, le build et `validate-artifact.mjs` ; `docker build` local reste exigé avant livraison
 ([Docker](docker.md)).
 
-Audit des contrôles (suite complète mesurée : 150 scripts, mesure du 30 octobre 2026 : environ 40 s cumulées,
-tous < 3 s) : lancer `npm test` en entier plutôt qu'une sélection, le retour est
-déjà rapide. `npm run format:check` est la seule commande de format, en local et
+Audit des contrôles (suite complète : 151 scripts, mesure du 17 novembre 2026 : environ 42 s cumulées,
+tous < 4 s) : lancer `npm test` en entier plutôt qu'une sélection, le retour est
+déjà rapide. `test-suite-wiring.mjs` échoue si un `scripts/test-*.mjs` n'est pas branché dans `npm test`
+(seul `test-udp-capacity-50.mjs`, lourd, a sa commande `test:capacity`) : un test orphelin ne protège rien.
+`npm run format:check` est la seule commande de format, en local et
 en CI (job `Full game regression and formatting`) ; les données générées
 (`src/*data.js` importées, `docs/ui-review.html`) sont dans `.prettierignore`.
 Le job `Docker build` démarre l'image construite et vérifie `/healthz`
