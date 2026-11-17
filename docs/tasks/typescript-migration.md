@@ -1,14 +1,14 @@
 # typescript-migration — remplacer tout le JavaScript par TypeScript
 
-- Tâche / PR : demande de refactorisation du 17 novembre 2026 (routine) ; pas encore de PR.
-- Branche : `refactor/typescript-foundation` (locale, non poussée), rebasée sur `049ba33` (v314).
+- Tâche / PR : demande de refactorisation du 17 novembre 2026 (routine) ; PR [#204](https://github.com/simonjamain/i-am-a-moucheron/pull/204).
+- Branche : `refactor/typescript-foundation` rebasée sur `049ba33` (v314).
 - Résultat attendu : plus aucun `.js` écrit à la main dans `src/`, `server/`,
   `scripts/` ; `npm run typecheck` vert ; comportement de jeu, URL servies, image
   Docker et Worker historique inchangés. Règles : [TypeScript](../typescript.md).
 
 ## État réel
 
-Fait (v315) :
+Fait (v315–v316) :
 
 - Outillage : `tsconfig.json`, `npm run typecheck`, `npm run ts:migrate`
   (`scripts/ts-migrate.mjs`), lecture `.ts` et effacement des types dans
@@ -53,7 +53,8 @@ Restant (≈ 128 modules écrits à la main + 38 données générées) :
   connu de `test-wave-preparation.mjs` (0 échec sur 60 relances, avant comme après).
 - `npm run typecheck`, `npm run check:docs`, `npm run format:check`, `npm run build`
   et `node scripts/validate-artifact.mjs` : voir la PR.
-- Non effectués : `docker build` (Docker indisponible dans la session), partie
+- Non effectués : `docker build` local (Docker indisponible dans la session ; contrôle
+  CI `Docker build` à la place), partie
   WebGL/UDP réelle dans un navigateur.
 
 ## Prochaine action
