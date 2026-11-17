@@ -1,6 +1,18 @@
+import type { EnemyType } from './types.ts';
+
+export interface MapScale {
+  readonly numerator: number;
+  readonly denominator: number;
+  /** Office metres per reference metre. */
+  readonly ratio: number;
+  /** Reference (real-world) metres → office metres. */
+  metres(v: number): number;
+  /** Office metres → reference metres. */
+  reference(v: number): number;
+}
 // The room is modelled in SI metres. Actor reference dimensions/speeds are
 // multiplied by this map ratio, never by a second furniture enlargement.
-export function mapScale(numerator, denominator = 1000) {
+export function mapScale(numerator: number, denominator = 1000): MapScale {
   if (
     !Number.isFinite(numerator) ||
     !Number.isFinite(denominator) ||
@@ -14,8 +26,8 @@ export function mapScale(numerator, denominator = 1000) {
     numerator,
     denominator,
     ratio,
-    metres: (v) => v * ratio,
-    reference: (v) => v / ratio,
+    metres: (v: number) => v * ratio,
+    reference: (v: number) => v / ratio,
   });
 }
 export const MAPS = Object.freeze({ office: mapScale(3, 1000), purgatory: mapScale(1000, 1000) });
@@ -24,7 +36,7 @@ export const ACTOR_UNIT = MAP.metres(10.4 / 5.6);
 export const HUMAN_SCALE = MAP.metres(1.8 / 2.46);
 export const MIDGE_SIZE_FACTOR = 1.35 * 1.5 * 3;
 // Office presentation/hit geometry factors. Keep wave budget/HP independent.
-export const ENEMY_SIZE_FACTORS = Object.freeze({
+export const ENEMY_SIZE_FACTORS: Readonly<Record<EnemyType, number>> = Object.freeze({
   ant: 6,
   roach: 8,
   midge: MIDGE_SIZE_FACTOR,
@@ -35,7 +47,7 @@ export const ENEMY_SIZE_FACTORS = Object.freeze({
   spider: 6,
   spiderling: 5,
 });
-export const enemySizeFactor = (type) => ENEMY_SIZE_FACTORS[type] ?? 1;
+export const enemySizeFactor = (type: string): number => ENEMY_SIZE_FACTORS[type as EnemyType] ?? 1;
 export const GROUND_LEGS = Object.freeze({ y: -0.25, length: 0.65, thickness: 0.035, tilt: 0.3 });
 export const GROUND_FOOT_DEPTH =
   -GROUND_LEGS.y +
@@ -67,6 +79,6 @@ export const FLAK = Object.freeze({
 });
 
 // Directions are relative to the gun's vertical axis, including the D2 hull.
-export function flakPitchAllowed(direction) {
+export function flakPitchAllowed(direction: readonly number[]): boolean {
   return direction[1] >= Math.hypot(...direction) * (Math.sin(FLAK.minPitch) - 1e-8);
 }

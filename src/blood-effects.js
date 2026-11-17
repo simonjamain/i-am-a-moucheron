@@ -1,4 +1,4 @@
-import { MAP } from './scale.js';
+import { MAP } from './scale.ts';
 
 // Purely cosmetic insect impacts: one instanced draw call for all the droplets.
 // Nothing here participates in projectile collisions or shared game physics.

@@ -1,5 +1,5 @@
 // Shared meshes for hundreds of spiderlings; gameplay keeps per-child proxies.
-import { SPIDERLING_SPHERE_RADIUS } from './scale.js';
+import { SPIDERLING_SPHERE_RADIUS } from './scale.ts';
 
 export class SpiderlingBatch {
   constructor(T, scene, { enabled = true } = {}) {

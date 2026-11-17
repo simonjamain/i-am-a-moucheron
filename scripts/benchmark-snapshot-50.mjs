@@ -3,7 +3,7 @@ import { loadBaselineGame } from './baseline-game.mjs';
 import { performance } from 'node:perf_hooks';
 import { Game } from '../server/game.js';
 import { OFFICE_LAYOUT } from '../src/layout.js';
-import { ACTOR_UNIT } from '../src/scale.js';
+import { ACTOR_UNIT } from '../src/scale.ts';
 
 const baseline = '2f02d128997b8ffadfc9f4ba43afd1b6ebfe3442';
 const PreviousGame = await loadBaselineGame(baseline, 'snapshot');

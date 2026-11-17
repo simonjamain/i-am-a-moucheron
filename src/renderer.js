@@ -1,4 +1,4 @@
-import { applyShadowPreset } from './shadow-settings.js';
+import { applyShadowPreset } from './shadow-settings.ts';
 export function createRenderer(T, canvas) {
   // A lightweight software renderer keeps the prototype playable without WebGL.
   class SoftwareRenderer {

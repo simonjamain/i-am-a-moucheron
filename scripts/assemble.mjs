@@ -4,6 +4,17 @@ import { createOffice } from '../src/office.js';
 import { createGraphics } from '../src/graphics.js';
 import { createHash } from 'node:crypto';
 import { readFile, writeFile } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
+import { stripTypeScriptTypes } from 'node:module';
+
+// Browser URLs stay `/<name>.js`; the source is `src/<name>.ts` when migrated
+// (types erased in place, see docs/typescript.md) or `src/<name>.js` otherwise.
+const moduleSource = (name) =>
+  existsSync('src/' + name + '.ts') ? 'src/' + name + '.ts' : 'src/' + name + '.js';
+const readAsset = async (file) => {
+  const text = await readFile(file, 'utf8');
+  return file.endsWith('.ts') ? stripTypeScriptTypes(text, { mode: 'strip' }) : text;
+};
 
 const collisionScene = new T.Scene();
 const officeBounds = createOffice(T, collisionScene, {
@@ -26,8 +37,8 @@ await writeFile('docs/ui-review.html', uiPreview(await readFile('src/index.html'
 const files = {
   '/': 'src/index.html',
   '/ui-review.html': 'docs/ui-review.html',
-  '/client.js': 'src/client.js',
-  '/boot.js': 'src/boot.js',
+  '/client.js': moduleSource('client'),
+  '/boot.js': moduleSource('boot'),
   '/three.js': 'vendor/three.module.min.js',
   ...Object.fromEntries(
     [
@@ -208,13 +219,11 @@ const files = {
       'route-speed',
       'route-navigation',
       'route-obstacles',
-    ].map((name) => ['/' + name + '.js', 'src/' + name + '.js']),
+    ].map((name) => ['/' + name + '.js', moduleSource(name)]),
   ),
 };
 const assets = Object.fromEntries(
-  await Promise.all(
-    Object.entries(files).map(async ([url, path]) => [url, await readFile(path, 'utf8')]),
-  ),
+  await Promise.all(Object.entries(files).map(async ([url, path]) => [url, await readAsset(path)])),
 );
 // Content-address the complete module graph. Entry HTML is revalidated; these
 // URLs can be cached immutably and never resolve to another build's bytes.
@@ -226,9 +235,9 @@ const version = createHash('sha256')
 for (const url of Object.keys(assets)) {
   if (url.endsWith('.js'))
     assets[url] = assets[url].replace(
-      /(\bfrom\s*['"]|\bimport\s*\(?\s*['"])(\.?\.?\/[^'"?]+\.js)(['"])/g,
+      /(\bfrom\s*['"]|\bimport\s*\(?\s*['"])(\.?\.?\/[^'"?]+\.[jt]s)(['"])/g,
       (_, prefix, path, quote) => {
-        const target = new URL(path, 'https://assets.local' + url).pathname;
+        const target = new URL(path, 'https://assets.local' + url).pathname.replace(/\.ts$/, '.js');
         if (!Object.hasOwn(assets, target)) throw Error('Unpackaged module: ' + target);
         return prefix + '/assets/' + version + target + quote;
       },

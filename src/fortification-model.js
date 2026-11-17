@@ -1,4 +1,4 @@
-import { MAP } from './scale.js';
+import { MAP } from './scale.ts';
 import { createHowitzer } from './howitzer-model.js';
 export function makeFortificationStation(T, st, { box, cyl }) {
   // Build 3D field fortifications in the same scaled reference coordinates as DCA.

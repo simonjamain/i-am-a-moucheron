@@ -1,4 +1,4 @@
-import { MAP } from './scale.js';
+import { MAP } from './scale.ts';
 import { segmentSphere, segmentBox } from './ordnance.js';
 export const WASH = Object.freeze({
   range: 2,

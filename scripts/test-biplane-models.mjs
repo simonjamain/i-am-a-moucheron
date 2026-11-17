@@ -10,7 +10,7 @@ import { VEHICLES, pilotFireInterval, SEAT_NAMES } from '../src/fleet.js';
 import { ammoCapacity, fullAmmo } from '../src/logistics.js';
 import { HEAVY, heavyInterval, canUseWeapon } from '../src/armament.js';
 import { stepFlight } from '../src/flight.js';
-import { ACTOR_UNIT, MAP } from '../src/scale.js';
+import { ACTOR_UNIT, MAP } from '../src/scale.ts';
 
 const graphics = createGraphics(T, new T.Scene());
 const triangles = (model) => {

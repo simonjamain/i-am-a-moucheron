@@ -1,13 +1,13 @@
-import { airField } from '../src/air-current.js';
-import { ServerClock } from '../src/server-clock.js';
+import { airField } from '../src/air-current.ts';
+import { ServerClock } from '../src/server-clock.ts';
 import { GroundMotionTrack } from '../src/ground-motion.js';
 import { InsectIndex } from '../src/insect-hits.js';
 import assert from 'node:assert/strict';
 import * as T from '../vendor/three.module.min.js';
 import { createGraphics } from '../src/graphics.js';
 import { ENEMY_TYPES, wavePlan, swarmFrame } from '../src/waves.js';
-import { insectScale } from '../src/insect-status.js';
-import { INSECT_SCALE } from '../src/scale.js';
+import { insectScale } from '../src/insect-status.ts';
+import { INSECT_SCALE } from '../src/scale.ts';
 const scene = new T.Scene(),
   graphics = createGraphics(T, scene);
 const missing = [];

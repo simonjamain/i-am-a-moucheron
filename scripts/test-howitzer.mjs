@@ -7,7 +7,7 @@ import { HOWITZER_DATA } from '../src/howitzer-data.js';
 import { createHowitzer, HOWITZER, HOWITZER_SCALE } from '../src/howitzer-model.js';
 import { makeFortificationStation } from '../src/fortification-model.js';
 import { FORTIFICATIONS } from '../src/ground-fortifications.js';
-import { MAP } from '../src/scale.js';
+import { MAP } from '../src/scale.ts';
 import { howitzerMuzzle, HOWITZER_LIMITS } from '../src/howitzer-geometry.js';
 
 const near = (a, b, eps, label) => assert.ok(Math.abs(a - b) <= eps, `${label}: ${a} vs ${b}`);

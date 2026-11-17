@@ -1,4 +1,4 @@
-import { MAP, ACTOR_UNIT, INSECT_SCALE, REFERENCE, FLAK } from './scale.js';
+import { MAP, ACTOR_UNIT, INSECT_SCALE, REFERENCE, FLAK } from './scale.ts';
 import { OFFICE_LAYOUT, RAID_DURATION, RAID_LENGTH, raidPosition } from './layout.js';
 export function spreadDirection(T, direction, random = Math.random, angle = 0.003) {
   const n = direction.clone().normalize(),

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { Game } from '../server/game.js';
-import { ACTOR_UNIT } from '../src/scale.js';
+import { ACTOR_UNIT } from '../src/scale.ts';
 import { OFFICE_LAYOUT } from '../src/layout.js';
 
 let now = 100000;

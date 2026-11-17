@@ -5,7 +5,7 @@
 // impact report. Assertions about trajectories and damage keep their meaning.
 import { stepHeavy, heavyImpact } from '../src/heavy-sim.js';
 import { swarmFrame } from '../src/waves.js';
-import { airField } from '../src/air-current.js';
+import { airField } from '../src/air-current.ts';
 
 export function roomWorld(game, r) {
   const plan = game.plan(r),

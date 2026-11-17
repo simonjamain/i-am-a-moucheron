@@ -36,7 +36,7 @@ recevant tardivement une transition. Les six types sont vérifiés dans ce parco
 Les dimensions linéaires des **moucherons seulement** sont multipliées par **3
 par rapport à la livraison précédente** : facteur total 6,075 par rapport au
 modèle initial, soit un volume théorique multiplié par 27 à forme constante.
-Les PV et dégâts restent inchangés. `MIDGE_SIZE_FACTOR` dans `scale.js` est
+Les PV et dégâts restent inchangés. `MIDGE_SIZE_FACTOR` dans `scale.ts` est
 partagé par le modèle, les effets de blessure et les volumes de collision serveur.
 La tolérance de visée supplémentaire de 20 % est conservée, sans empiler deux
 agrandissements côté client. Dans ce premier correctif, les autres insectes conservaient leurs dimensions ;
@@ -94,7 +94,7 @@ contrôlé est de 6×2 pixels, avec exception fourmi à 5×1,7 pixels après la 
 VAG-07 de demi-taille. Voir [confort](comfort.md) pour ce changement validé.
 L'agrandissement n'est pas dépendant de la caméra : la géométrie visible, les
 tirs et les contacts conservent la même taille à plusieurs joueurs.
-`ENEMY_SIZE_FACTORS` et `enemySizeFactor()` dans `scale.js` centralisent les six
+`ENEMY_SIZE_FACTORS` et `enemySizeFactor()` dans `scale.ts` centralisent les six
 facteurs. PV, dégâts, composition et primes restent inchangés ; VAG-07 divise
 ensuite par deux la vitesse effective des seules fourmis. Les cinq espèces autres que le moucheron ne conservent donc **plus**
 leurs anciennes dimensions : cette reprise remplace la règle du premier correctif.

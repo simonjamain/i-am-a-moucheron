@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import * as T from '../vendor/three.module.min.js';
 import { createOffice } from '../src/office.js';
 import { createGraphics } from '../src/graphics.js';
-import { MAP, ACTOR_UNIT, REFERENCE } from '../src/scale.js';
+import { MAP, ACTOR_UNIT, REFERENCE } from '../src/scale.ts';
 import { reconcileBase, advanceBase } from '../src/base.js';
 import { OFFICE_LAYOUT } from '../src/layout.js';
 import {

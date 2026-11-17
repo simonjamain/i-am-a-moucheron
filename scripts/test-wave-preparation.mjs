@@ -1,4 +1,4 @@
-import { rayCollider } from '../src/oriented-collider.js';
+import { rayCollider } from '../src/oriented-collider.ts';
 import assert from 'node:assert/strict';
 import { Game } from '../server/game.js';
 import {

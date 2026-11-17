@@ -13,7 +13,7 @@ import {
 import { createGraphics } from '../src/graphics.js';
 import { VEHICLES } from '../src/fleet.js';
 import { stepTank } from '../src/tank.js';
-import { ACTOR_UNIT, MAP } from '../src/scale.js';
+import { ACTOR_UNIT, MAP } from '../src/scale.ts';
 
 const options = { scale: ACTOR_UNIT, turnRate: VEHICLES.castor.turn, frontZ: -2.05 };
 const left = { x: -1.01, z: 0.55 },

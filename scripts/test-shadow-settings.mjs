@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import * as T from '../vendor/three.module.min.js';
-import { applyShadowPreset } from '../src/shadow-settings.js';
+import { applyShadowPreset } from '../src/shadow-settings.ts';
 import { createOffice } from '../src/office.js';
 import { createGraphics } from '../src/graphics.js';
 const scene = new T.Scene();

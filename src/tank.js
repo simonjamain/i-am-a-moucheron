@@ -1,6 +1,6 @@
-import { colliderContainsXZ } from './oriented-collider.js';
+import { colliderContainsXZ } from './oriented-collider.ts';
 import { sweptBoxProximity } from './mobile-flak.js';
-import { ACTOR_UNIT, MAP } from './scale.js';
+import { ACTOR_UNIT, MAP } from './scale.ts';
 import { VEHICLE_ANCHORS } from './vehicle-anchors.js';
 // A tank follows support surfaces; gravity handles falling off a desk. No lift,
 // automatic turret rotation or dependency on a driver for the other stations.

@@ -33,6 +33,18 @@ GitHub et le diff ; vérifier les affirmations contre l'état de la branche.
    test local ne prouve pas une partie WebGL/UDP/WAN ni le confort du pilotage.
    Une optimisation demande un scénario et des mesures comparables avant/après.
 
+## TypeScript et contrôles rapides
+
+Tout nouveau module s'écrit en TypeScript ; migrer un module existant avec
+`npm run ts:migrate -- src/<module>.js`, puis le typer jusqu'à ce que
+`npm run typecheck` passe. Règles (syntaxe effaçable, imports `.ts`, Three.js typé,
+Worker historique) : [TypeScript](docs/typescript.md). Pour itérer, cibler la suite :
+`npm test -- <fragment>` (ex. `npm test -- castor`), `--bail` pour s'arrêter au
+premier échec, `--list` pour la liste ; la suite complète reste due avant livraison.
+Un nouveau script `scripts/test-*.mjs` s'ajoute à `scripts/suite.mjs`
+(`test-suite-wiring.mjs` le vérifie). Pour une
+nouvelle espèce ou un nouveau véhicule, suivre [ajouter du contenu](docs/adding-content.md).
+
 ## Contexte persistant et documentation
 
 Mettre à jour, dans la même PR, les références dont le comportement change ;

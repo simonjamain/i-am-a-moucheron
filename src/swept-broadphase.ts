@@ -1,7 +1,14 @@
 // Conservative broad phase for a segment against a sphere. No false negatives:
 // an intersecting sphere must overlap the segment's axis-aligned bounding box,
 // expanded by its radius. Leave exact collision and hit ordering to the caller.
-export function sweptSphereMayTouch(start, end, center, radius) {
+import type { Vec3Like } from './types.ts';
+
+export function sweptSphereMayTouch(
+  start: Vec3Like,
+  end: Vec3Like,
+  center: Vec3Like,
+  radius: number,
+): boolean {
   for (let axis = 0; axis < 3; axis++) {
     if (
       center[axis] + radius < Math.min(start[axis], end[axis]) ||

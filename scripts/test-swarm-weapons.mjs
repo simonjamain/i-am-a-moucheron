@@ -2,7 +2,7 @@ import './normal-dossiers.mjs';
 import assert from 'node:assert/strict';
 import * as T from '../vendor/three.module.min.js';
 import { wavePlan, waveBudget, swarmFrame } from '../src/waves.js';
-import { MAP, ACTOR_UNIT } from '../src/scale.js';
+import { MAP, ACTOR_UNIT } from '../src/scale.ts';
 import { createGraphics } from '../src/graphics.js';
 import { makeAntiaircraft, aimGun, gunnerView, AA_STATIONS } from '../src/sortie.js';
 import { makeTracer, updateTracer } from '../src/tracers.js';

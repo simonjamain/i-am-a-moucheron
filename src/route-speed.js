@@ -1,7 +1,7 @@
 // Historical speed calibration, kept for old fixtures only.
 // Live enemies use explicit speedMps in waves.js, independent of geometry.
 // These routes are never followed; routes.js defines the active paths.
-import { MAP, REFERENCE } from './scale.js';
+import { MAP, REFERENCE } from './scale.ts';
 import { PORTALS } from './routes.js';
 const baselineCache = new Map();
 function baselineRoute(enemy) {

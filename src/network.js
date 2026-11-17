@@ -1,4 +1,4 @@
-import { ServerClock } from './server-clock.js';
+import { ServerClock } from './server-clock.ts';
 import { vehicleMaxHP } from './fleet.js';
 // Ephemeral motion uses a lossy unordered RTC channel; game rules stay on HTTP.
 export const CHANNEL_OPTIONS = { ordered: false, maxRetransmits: 0 };

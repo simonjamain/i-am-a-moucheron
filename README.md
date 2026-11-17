@@ -24,7 +24,7 @@ par PR restent à configurer ; voir CONTRIBUTING pour leur état et la cible.
 
 ## Stack et démarrage
 
-JavaScript ESM natif, Three.js embarqué dans `vendor/`, modèles procéduraux et Meshy embarqués, et
+ESM natif en migration vers TypeScript ([fonctionnement](docs/typescript.md)), Three.js embarqué dans `vendor/`, modèles procéduraux et Meshy embarqués, et
 sons Web Audio. Le serveur Node utilise **uniquement la RAM**, sans base de
 données. Les joueurs se connectent en étoile par WebRTC sur UDP : mouvements
 sans retransmission, commandes importantes fiables avec confirmations.
@@ -40,7 +40,7 @@ npm start
 Livraison courante : PR GitHub fusionnée sur `main` (ZIP des sources seulement si la demande l’exige).
 Le [guide Docker](docs/docker.md) reste disponible pour construire soi-même une image.
 
-Node 22.13+ ; HTTP sur le port 3000, UDP sur 41000–41099. En production,
+Node 22.18+ ; HTTP sur le port 3000, UDP sur 41000–41099. En production,
 servir HTTP derrière HTTPS et exposer les ports UDP directement sur la VM.
 Voir [le guide du serveur UDP](docs/udp-server.md) pour les variables et les tests.
 `npm run dev` lance ce même serveur ; redémarrer après modification.

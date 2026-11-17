@@ -1,18 +1,9 @@
 import { randomInt } from 'node:crypto';
-import { ENEMY_TYPES, MAX_WAVE_POPULATION } from '../src/waves.js';
+import { ENEMY_TYPES, ENEMY_UNLOCK_WAVE, MAX_WAVE_POPULATION } from '../src/waves.js';
 import { routeDuration } from '../src/routes.js';
 import { scaleRoster } from '../src/balance.js';
 
-const unlock = {
-  ant: 1,
-  midge: 1,
-  roach: 3,
-  mosquito: 3,
-  guard: 5,
-  brute: 8,
-  spider: 11,
-  rat: 15,
-};
+const unlock = ENEMY_UNLOCK_WAVE;
 
 export function directorBudget(wave) {
   return Math.min(2400, Math.round(32 * 1.5 ** (wave - 1)));

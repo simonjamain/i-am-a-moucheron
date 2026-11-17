@@ -357,7 +357,7 @@ Les positions des nuées et des insectes au sol sont calculées par chaque
 navigateur à partir de l'heure du serveur. `enemies()` la recalait sur chaque
 réponse (`sentAt + temps écoulé depuis la réception`) : la variation du temps de
 trajet d'une réponse à l'autre faisait **sauter toute la nuée**, en avant ou en
-arrière, 4 à 10 fois par seconde. `ServerClock` (`src/server-clock.js`) garde,
+arrière, 4 à 10 fois par seconde. `ServerClock` (`src/server-clock.ts`) garde,
 sur 6 s, l'échantillon au trajet le plus court et s'en rapproche d'au plus 5 %
 du temps écoulé : l'heure ne recule jamais et ne saute jamais, sauf pour se
 resynchroniser au-delà de 500 ms d'écart (première réponse, onglet endormi).

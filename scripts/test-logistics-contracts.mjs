@@ -6,7 +6,7 @@ import { localDB } from './local-db.mjs';
 import { bodyMotion } from '../src/purgatory-physics.js';
 import { vehicleEntry, VEHICLES, pilotFireInterval, isRotorcraft } from '../src/fleet.js';
 import { OFFICE_LAYOUT } from '../src/layout.js';
-import { ACTOR_UNIT } from '../src/scale.js';
+import { ACTOR_UNIT } from '../src/scale.ts';
 import {
   fullAmmo,
   ammoCapacity,

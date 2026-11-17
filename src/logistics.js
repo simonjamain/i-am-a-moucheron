@@ -1,4 +1,4 @@
-import { MAP } from './scale.js';
+import { MAP } from './scale.ts';
 import { VEHICLES, pilotFireInterval, isRotorcraft } from './fleet.js';
 import { TANK_MG } from './armament.js';
 export const FUEL_SECONDS = 300;

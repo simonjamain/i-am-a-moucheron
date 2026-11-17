@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import { readFileSync } from 'node:fs';
 import * as T from '../vendor/three.module.min.js';
-import { MAP } from '../src/scale.js';
+import { MAP } from '../src/scale.ts';
 import * as delivery from '../src/delivery.js';
 import { Game } from '../server/game.js';
 import { wavePlan, ENEMY_TYPES } from '../src/waves.js';

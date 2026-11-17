@@ -6,7 +6,7 @@ import { Game } from '../server/game.js';
 import { VEHICLES, vehiclePad, vehicleEntry, vehicleAccess } from '../src/fleet.js';
 import { stepHelicopter } from '../src/helicopter.js';
 import { fullAmmo } from '../src/logistics.js';
-import { MAP, ENEMY_SIZE_FACTORS } from '../src/scale.js';
+import { MAP, ENEMY_SIZE_FACTORS } from '../src/scale.ts';
 import { wavePlan } from '../src/waves.js';
 import { makeShotTrace, moveShotTrace, advanceShotTrace } from '../src/tracers.js';
 const close = (a, b) => assert.ok(Math.abs(a - b) < 1e-8, `${a} != ${b}`);
@@ -68,7 +68,7 @@ for (const type of Object.keys(VEHICLES)) {
   close(v.state.hp, 0);
 }
 for (const pilot of r.pilots.values()) pilot.seen = now;
-const { ACTOR_UNIT } = await import('../src/scale.js');
+const { ACTOR_UNIT } = await import('../src/scale.ts');
 const { OFFICE_LAYOUT } = await import('../src/layout.js');
 const h2 = game.createVehicle(r, 'helicopter');
 function board(person, seat) {

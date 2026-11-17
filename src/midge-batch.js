@@ -3,7 +3,7 @@
 // Near midges use the rigged Meshy model through a vertex animation texture
 // (src/creature-batch.js, cycle in src/midge-model.js). Distant midges (a few
 // pixels) keep three cheap ellipsoid batches.
-import { MIDGE_SPHERE_RADIUS } from './scale.js';
+import { MIDGE_SPHERE_RADIUS } from './scale.ts';
 import { MIDGE, MIDGE_FLIGHT } from './midge-model.js';
 import { CreatureBatch } from './creature-batch.js';
 

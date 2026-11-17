@@ -2,7 +2,7 @@
 
 Le [chasseur et le bombardier biplans](biplane-models.md) (M1 et B3 depuis la version 275) décrivent leur provenance, leur conversion et leurs réglages de vol et d'armement.
 
-`src/scale.js` is the only miniature-ratio declaration. `MAPS.office` is 3/1000;
+`src/scale.ts` is the only miniature-ratio declaration. `MAPS.office` is 3/1000;
 `MAPS.purgatory` is 1/1. A designer can use `mapScale(1,1000)`, `(2,1000)` or
 `(100,1000)`. The world and office furniture use SI metres. Actor reference
 metres are multiplied by the map ratio. The office desk surface is 0.9 m;
@@ -102,7 +102,7 @@ Le client affiche une flamme orange avec un cœur lumineux derrière chaque roqu
 
 ## Affichage des unités (version 127)
 
-Les distances et vitesses de simulation restent inchangées. Depuis la version 237 ([issue #105](https://github.com/simonjamain/i-am-a-moucheron/issues/105)), le HUD affiche les **valeurs réelles du bureau** via `src/units.js` : vitesses en cm/s ou m/s (`formatSpeed(v)`, `v` en m/s du décor), altitude et distances en mm, cm ou m (`formatDistance`). Les réglages exprimés en mètres de référence (fusée DCA 100–1 200, proximité D2 0,5–20, rayon d'éclatement 8) sont convertis par `MAP.metres` pour l'affichage : 30 cm–3,60 m, 1,5 mm–6,0 cm, 2,4 cm. Les graduations du char sont définies directement en mètres du décor (15 cm à 9 m). `scripts/test-units.mjs` vérifie ces conversions contre les dimensions du décor ; aucun équilibrage ni protocole réseau n'est modifié.
+Les distances et vitesses de simulation restent inchangées. Depuis la version 237 ([issue #105](https://github.com/simonjamain/i-am-a-moucheron/issues/105)), le HUD affiche les **valeurs réelles du bureau** via `src/units.ts` : vitesses en cm/s ou m/s (`formatSpeed(v)`, `v` en m/s du décor), altitude et distances en mm, cm ou m (`formatDistance`). Les réglages exprimés en mètres de référence (fusée DCA 100–1 200, proximité D2 0,5–20, rayon d'éclatement 8) sont convertis par `MAP.metres` pour l'affichage : 30 cm–3,60 m, 1,5 mm–6,0 cm, 2,4 cm. Les graduations du char sont définies directement en mètres du décor (15 cm à 9 m). `scripts/test-units.mjs` vérifie ces conversions contre les dimensions du décor ; aucun équilibrage ni protocole réseau n'est modifié.
 
 Le [B3 biplan à deux places](biplane-models.md) a un mitrailleur arrière sur anneau et conserve son atlas de camouflage.
 

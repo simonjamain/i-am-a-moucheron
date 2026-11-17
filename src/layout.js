@@ -1,4 +1,4 @@
-import { MAP, ACTOR_UNIT, REFERENCE } from './scale.js';
+import { MAP, ACTOR_UNIT, REFERENCE } from './scale.ts';
 export const ROOM_SCALE = 1; // Compatibility alias; room geometry is already in metres.
 export const OFFICE_LAYOUT = {
   base: {

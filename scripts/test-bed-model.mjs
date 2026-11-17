@@ -7,7 +7,7 @@ import { makeBed } from '../src/bed-model.js';
 import { makeInstallationCollider, makeServiceStation } from '../src/station-model.js';
 import { bedSpawn, bedAccess } from '../src/beds.js';
 import { ShopThumbnails } from '../src/shop-thumbs.js';
-import { MAP, ACTOR_UNIT } from '../src/scale.js';
+import { MAP, ACTOR_UNIT } from '../src/scale.ts';
 import { baseWorld } from '../src/base.js';
 assert.equal(
   MODEL_DATA.sourceSha256,

@@ -1,16 +1,36 @@
+import type * as THREE from 'three';
+import type { Three, XYZ } from './types.ts';
+
+/** Yaw frame: rotation (c = cos, s = sin) around the box origin (x, z). */
+export interface OrientedFrame {
+  x: number;
+  z: number;
+  c: number;
+  s: number;
+  /** Local axis-aligned rectangle (a Box3 at runtime). */
+  bounds: THREE.Box3;
+}
+/** Axis-aligned bounds, optionally carrying a yaw frame for narrow-phase tests. */
+export interface Collider {
+  min: XYZ;
+  max: XYZ;
+  oriented?: OrientedFrame;
+}
+export type OrientedBox3 = THREE.Box3 & { oriented: OrientedFrame };
+
 // Optional yaw frame on a Box3: min/max remain a broad-phase world AABB.
 // Narrow-phase queries use the local rectangle, preserving ordinary boxes.
-export function colliderPoint(box, p) {
+export function colliderPoint(box: Collider, p: readonly number[]): readonly number[] {
   const f = box.oriented;
   if (!f) return p;
   const x = p[0] - f.x,
     z = p[2] - f.z;
   return [f.c * x - f.s * z, p[1], f.s * x + f.c * z];
 }
-export function colliderBounds(box) {
+export function colliderBounds(box: Collider): Collider {
   return box.oriented?.bounds || box;
 }
-export function colliderContainsXZ(box, x, z, margin = 0) {
+export function colliderContainsXZ(box: Collider, x: number, z: number, margin = 0): boolean {
   const p = colliderPoint(box, [x, 0, z]),
     b = colliderBounds(box);
   return (
@@ -20,7 +40,12 @@ export function colliderContainsXZ(box, x, z, margin = 0) {
     p[2] <= b.max.z + margin
   );
 }
-export function colliderPushXZ(box, x, z, radius) {
+export function colliderPushXZ(
+  box: Collider,
+  x: number,
+  z: number,
+  radius: number,
+): { x: number; z: number; nx: number; nz: number } | null {
   const p = colliderPoint(box, [x, 0, z]),
     b = colliderBounds(box);
   const px = Math.min(p[0] - b.min.x + radius, b.max.x + radius - p[0]);
@@ -36,7 +61,12 @@ export function colliderPushXZ(box, x, z, radius) {
   const length = Math.hypot(wx, wz);
   return { x: x + wx, z: z + wz, nx: wx / length, nz: wz / length };
 }
-export function rayCollider(T, ray, box, target) {
+export function rayCollider(
+  T: Three,
+  ray: THREE.Ray,
+  box: THREE.Box3 & { oriented?: OrientedFrame },
+  target: THREE.Vector3,
+): THREE.Vector3 | null {
   const f = box.oriented;
   if (!f) return ray.intersectBox(box, target);
   const p = colliderPoint(box, ray.origin.toArray());
@@ -54,26 +84,34 @@ export function rayCollider(T, ray, box, target) {
 }
 // Box3 adapters retain orientation through the existing clone/expand/contains
 // paths used by aircraft and vacant hulls. Ray queries explicitly use the frame.
-export function orientedBox(T, broad, frame) {
-  broad.oriented = frame;
-  broad.containsPoint = function (p) {
+export function orientedBox(T: Three, broad: THREE.Box3, frame: OrientedFrame): OrientedBox3 {
+  const box = broad as OrientedBox3;
+  box.oriented = frame;
+  box.containsPoint = function (this: OrientedBox3, p: THREE.Vector3) {
     return p.y >= this.min.y && p.y <= this.max.y && colliderContainsXZ(this, p.x, p.z);
   };
-  broad.clone = function () {
+  box.clone = function (this: OrientedBox3) {
     return orientedBox(T, new T.Box3().copy(this), {
       ...this.oriented,
       bounds: this.oriented.bounds.clone(),
     });
   };
-  broad.expandByScalar = function (radius) {
+  box.expandByScalar = function (this: OrientedBox3, radius: number) {
     T.Box3.prototype.expandByScalar.call(this, radius);
     this.oriented.bounds.expandByScalar(radius);
     return this;
   };
-  return broad;
+  return box;
 }
 
-function rectangleCorners(x, z, rx, rz, c, s) {
+function rectangleCorners(
+  x: number,
+  z: number,
+  rx: number,
+  rz: number,
+  c: number,
+  s: number,
+): Array<[number, number]> {
   return [
     [-rx, -rz],
     [-rx, rz],
@@ -81,12 +119,24 @@ function rectangleCorners(x, z, rx, rz, c, s) {
     [rx, -rz],
   ].map(([dx, dz]) => [x + c * dx + s * dz, z - s * dx + c * dz]);
 }
-export function footprintInsideCollider(box, point, rx, rz, angle) {
+export function footprintInsideCollider(
+  box: Collider,
+  point: { x: number; z: number },
+  rx: number,
+  rz: number,
+  angle: number,
+): boolean {
   return rectangleCorners(point.x, point.z, rx, rz, Math.cos(angle), Math.sin(angle)).every(
     ([x, z]) => colliderContainsXZ(box, x, z, 1e-9),
   );
 }
-export function footprintOverlapsCollider(box, point, rx, rz, angle) {
+export function footprintOverlapsCollider(
+  box: Collider,
+  point: { x: number; z: number },
+  rx: number,
+  rz: number,
+  angle: number,
+): boolean {
   const c = Math.cos(angle),
     s = Math.sin(angle),
     f = box.oriented;

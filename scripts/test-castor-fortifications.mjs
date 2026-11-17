@@ -3,7 +3,7 @@ import { Game } from '../server/game.js';
 import { VEHICLES } from '../src/fleet.js';
 import { FORTIFICATIONS } from '../src/ground-fortifications.js';
 import { stationAccess, stationEntryOffset, stationExit } from '../src/sortie.js';
-import { ACTOR_UNIT, MAP } from '../src/scale.js';
+import { ACTOR_UNIT, MAP } from '../src/scale.ts';
 import { OFFICE_LAYOUT } from '../src/layout.js';
 import { advancePaidService } from '../src/paid-service.js';
 

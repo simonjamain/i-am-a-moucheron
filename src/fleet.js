@@ -1,4 +1,4 @@
-import { MAP, ACTOR_UNIT } from './scale.js';
+import { MAP, ACTOR_UNIT } from './scale.ts';
 import { OFFICE_LAYOUT } from './layout.js';
 // The original light fighter stays the reference the Stuka, the Spitfire and the
 // H2 are derived from; the biplane fighter replaced it as the base fighter.

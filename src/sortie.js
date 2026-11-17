@@ -1,7 +1,7 @@
-import { colliderContainsXZ, colliderPushXZ } from './oriented-collider.js';
+import { colliderContainsXZ, colliderPushXZ } from './oriented-collider.ts';
 import { isFortification } from './ground-fortifications.js';
 import { stepWalkerFall, impactDamage } from './field-physics.js';
-import { MAP, ACTOR_UNIT, REFERENCE, FLAK } from './scale.js';
+import { MAP, ACTOR_UNIT, REFERENCE, FLAK } from './scale.ts';
 // Small vehicles keep their original dimensions; furniture uses the enlarged room.
 import { OFFICE_LAYOUT, ROOM_SCALE } from './layout.js';
 export const BULLET_SPEED = MAP.metres(REFERENCE.bullet),

@@ -1,7 +1,7 @@
 import './normal-dossiers.mjs';
 import assert from 'node:assert/strict';
 import * as T from '../vendor/three.module.min.js';
-import { MAP, mapScale, ACTOR_UNIT, HUMAN_SCALE, REFERENCE, FLAK } from '../src/scale.js';
+import { MAP, mapScale, ACTOR_UNIT, HUMAN_SCALE, REFERENCE, FLAK } from '../src/scale.ts';
 import { VEHICLES, vehiclePad, vehicleEntry } from '../src/fleet.js';
 import { OFFICE_LAYOUT, RAID_DURATION, raidPosition } from '../src/layout.js';
 import { createGraphics } from '../src/graphics.js';

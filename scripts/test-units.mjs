@@ -1,8 +1,8 @@
 // Issue #105: HUD distances and speeds are the real ones of the office.
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { formatDistance, formatSpeed } from '../src/units.js';
-import { MAP, FLAK, ACTOR_UNIT } from '../src/scale.js';
+import { formatDistance, formatSpeed } from '../src/units.ts';
+import { MAP, FLAK, ACTOR_UNIT } from '../src/scale.ts';
 import { MOBILE_FUSE } from '../src/mobile-flak.js';
 import { GROUND_BOUNDS } from '../src/ground-defense.js';
 import { equipmentHUD } from '../src/hud.js';
