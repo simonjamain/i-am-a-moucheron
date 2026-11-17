@@ -107,6 +107,7 @@ export const SUITE = [
   'test-laboratory',
   'test-debug-mode',
   'test-wave-preparation',
+  'test-enemy-power',
   'test-wave-forecast-ui',
   'test-ground-paths',
   'test-pheromone-trail',

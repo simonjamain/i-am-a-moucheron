@@ -125,11 +125,6 @@ export function shopPrice(key, upgrades = {}, installed = 0, balance = null) {
       : item.cost + 2 * Math.max(0, installed);
   return item.prices?.[Math.min(item.prices.length - 1, upgrades[key] || 0)] ?? item.cost;
 }
-// A completed, non-lost wave pays this stipend immediately, independently of
-// the slower Saint-Pierre queue. Each released NPC still yields one dollar.
-export function waveStipend(wave) {
-  return Math.min(20, 3 + Math.max(1, Math.floor(wave)));
-}
 export function upgradedVehicle(profile, upgrades = {}) {
   const n = Number(upgrades.engine) || 0;
   return {

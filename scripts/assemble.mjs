@@ -197,6 +197,7 @@ const files = {
       'field-physics',
       'personal-aim',
       'scale',
+      'enemy-power',
       'fleet',
       'tank',
       'tank-view',
@@ -256,6 +257,7 @@ const layout = inline(assets['/layout.js']);
 const routes = inline(assets['/routes.js']);
 const waves = inline(assets['/waves.js']);
 const scale = inline(assets['/scale.js']);
+const enemyPower = inline(assets['/enemy-power.js']);
 const fleet = inline(assets['/fleet.js']);
 const ballistics = inline(assets['/ballistics.js']);
 const equipment = inline(assets['/equipment.js']);
@@ -284,6 +286,7 @@ await writeFile(
     'const BUILD_VERSION=' + JSON.stringify(version) + ';',
     'const ASSETS=' + JSON.stringify(assets) + ';',
     scale,
+    enemyPower,
     layout,
     inline(assets['/route-obstacles.js']),
     inline(assets['/route-navigation.js']),

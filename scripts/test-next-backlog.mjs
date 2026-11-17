@@ -225,7 +225,7 @@ r.started = now;
 const expected = r.bank.slots.reduce((n, loan) => n + loan.schedule[0].payment, 0);
 for (const e of wavePlan(r.code, 1, now).roster) r.kills.add(e.id);
 game.advance(r);
-assert.equal(r.dollars, (400 - expected) / 100);
+assert.equal(r.dollars, -expected / 100, 'no wave stipend any more');
 assert.ok(r.dollars < 0);
 const afterWave = r.dollars;
 game.advance(r);

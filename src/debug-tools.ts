@@ -9,6 +9,7 @@
 import type * as THREE from 'three';
 import { DEBUG_ENEMY_TYPES, type DebugEnemyKind } from './debug-enemies.ts';
 import type { EnemyType, Three } from './types.ts';
+import { ENEMY_POWER } from './waves.js';
 
 /** Hit volume as insect-hits.js tests it: ellipsoid or sphere proxy. */
 export interface HitProxy {
@@ -180,7 +181,11 @@ export class DebugTools {
         picture.className = 'shopPicture';
         picture.textContent = symbols[type] || '?';
         title.textContent = names[type];
-        card.append(picture, title);
+        const power = document.createElement('small');
+        power.className = 'debugPower';
+        power.textContent =
+          'puissance ' + String(Math.round(ENEMY_POWER[type] * 100) / 100).replace('.', ',');
+        card.append(picture, title, power);
         card.onclick = () => this.begin(kind, type);
         section.append(card);
       }

@@ -1479,12 +1479,12 @@ function accept(s, force = false) {
   for (const [enemy, damage] of Object.entries(s.enemyDamage || {}))
     localEnemyDamage.set(Number(enemy), Math.max(localEnemyDamage.get(Number(enemy)) || 0, damage));
   networkStatus();
-  $('threat').textContent = 'MENACE ' + s.difficulty;
+  $('threat').textContent = 'MENACE ' + powerText(s.difficulty);
   $('wave').textContent = String(s.wave).padStart(2, '0');
   // Debug mode cannot be lost: show the bin's remaining HP, even negative.
   $('infest').textContent = s.lab?.enabled
-    ? 20 - (s.infestation + s.leaked) + ' / 20 PV'
-    : s.infestation + s.leaked + ' / 20';
+    ? powerText(20 - (s.infestation + s.leakedPower)) + ' / 20 PV'
+    : powerText(s.infestation + s.leakedPower) + ' / 20';
   $('infest').previousElementSibling.textContent = s.lab?.enabled ? 'Poubelle' : 'Infestation';
   for (const arrived of arrivalSignals.update(
     s.code + ':' + s.base?.epoch + ':' + s.wave,
@@ -4632,6 +4632,7 @@ function updateAudio() {
 }
 let prev = performance.now(),
   acc = 0;
+const powerText = (v) => String(Math.round(v * 100) / 100).replace('.', ',');
 function updateCountdown() {
   const seconds = Math.max(
     0,
@@ -4643,10 +4644,7 @@ function updateCountdown() {
     return;
   }
   $('phaseText').textContent = snap.mission_started
-    ? (snap.wave > 0 ? 'Prime de vague : +' + snap.waveReward + ' $ · ' : '') +
-      'Prochaine vague dans ' +
-      seconds +
-      ' s'
+    ? 'Prochaine vague dans ' + seconds + ' s'
     : 'Lancez la préparation de la première vague.';
   $('start').textContent = !snap.mission_started
     ? 'Lancer la partie →'

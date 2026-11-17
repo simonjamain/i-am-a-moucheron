@@ -1,6 +1,14 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 323,
+    changes: [
+      'Chaque ennemi a maintenant une puissance : plus il est fort, plus il rapporte quand son âme est libérée, et plus il abîme la poubelle s’il l’atteint.',
+      'Les vagues grossissent sans limite et suivent le nombre de joueurs. La prime de fin de vague disparaît : seules les âmes libérées rapportent de l’argent.',
+      'La puissance de la prochaine vague est affichée dans l’annonce.',
+    ],
+  },
+  {
     version: 322,
     changes: [
       'En mode debug, on peut de nouveau poser un ennemi par terre, et pas seulement sur un meuble.',

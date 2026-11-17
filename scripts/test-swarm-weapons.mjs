@@ -1,7 +1,7 @@
 import './normal-dossiers.mjs';
 import assert from 'node:assert/strict';
 import * as T from '../vendor/three.module.min.js';
-import { wavePlan, waveBudget, swarmFrame } from '../src/waves.js';
+import { wavePlan, waveBudget, swarmFrame, legacyCost } from '../src/waves.js';
 import { MAP, ACTOR_UNIT } from '../src/scale.ts';
 import { createGraphics } from '../src/graphics.js';
 import { makeAntiaircraft, aimGun, gunnerView, AA_STATIONS } from '../src/sortie.js';
@@ -14,7 +14,7 @@ import worker from '../worker/index.js';
 for (const wave of [1, 2, 3, 5, 10, 30, 100, 1000]) {
   const plan = wavePlan('SWARM', wave, 1234);
   assert.equal(
-    plan.roster.reduce((s, e) => s + e.cost, 0) -
+    plan.roster.reduce((s, e) => s + legacyCost(e), 0) -
       (plan.roster.filter((e) => e.type === 'midge').length / 5) * 4,
     waveBudget(wave),
   );

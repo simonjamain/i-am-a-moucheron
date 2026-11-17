@@ -1,7 +1,9 @@
 import './normal-dossiers.mjs';
 import assert from 'node:assert/strict';
-import { wavePlan, waveBudget } from '../src/waves.js';
-import { SHOP, shopPrice, waveStipend } from '../src/equipment.js';
+import { wavePlan, waveBudget, legacyCost } from '../src/waves.js';
+import { SHOP, shopPrice } from '../src/equipment.js';
+// Historic Worker/D1 stipend (the Node runtime pays none any more, issue #210).
+const waveStipend = (wave) => Math.min(20, 3 + Math.max(1, Math.floor(wave)));
 import worker from '../worker/index.js';
 import { localDB } from './local-db.mjs';
 assert.deepEqual(
@@ -12,7 +14,7 @@ for (let seed = 0; seed < 40; seed++)
   for (let wave = 1; wave <= 12; wave++) {
     const p = wavePlan('CURVE' + seed, wave, seed);
     assert.equal(
-      p.roster.reduce((n, e) => n + e.cost, 0) -
+      p.roster.reduce((n, e) => n + legacyCost(e), 0) -
         (p.roster.filter((e) => e.type === 'midge').length / 5) * 4,
       p.budget,
     );
@@ -45,7 +47,7 @@ for (let seed = 0; seed < 40; seed++)
       if (type !== 'ant') assert.ok(count <= 1 + Math.floor(Math.max(0, wave - unlock) / 3));
     }
     assert.ok(
-      p.roster.filter((e) => e.cost > 1).reduce((n, e) => n + e.cost, 0) <=
+      p.roster.filter((e) => legacyCost(e) > 1).reduce((n, e) => n + legacyCost(e), 0) <=
         Math.floor(p.budget * 0.4),
     );
   }

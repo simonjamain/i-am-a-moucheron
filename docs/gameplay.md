@@ -32,7 +32,7 @@ des munitions limités, à compléter en se posant et s’arrêtant dans une sta
 protéger la poubelle contre les insectes ; les arrivées ennemies augmentent
 l’infestation. La mort ouvre une observation à caméra fixe ; un clic volontaire donne accès au purgatoire et à la paperasse de retour en jeu.
 
-Avant chaque vague, le serveur annonce les entrées et les horaires des groupes. La préparation dure une minute par défaut ; tout joueur peut lancer la vague avant la fin du compte à rebours. Il n'y a ni vote ni plan à débloquer entre les vagues (retirés en version 264) : équipements et véhicules s'achètent simplement à leur prix en dollars. La première vague combine fourmis et moucherons, puis le budget des vagues augmente de moitié à chaque étape, jusqu'à 2 400 points. Voir [progression](progression.md). Des groupes aériens arrivent depuis
+Avant chaque vague, le serveur annonce les entrées et les horaires des groupes. La préparation dure une minute par défaut ; tout joueur peut lancer la vague avant la fin du compte à rebours. Il n'y a ni vote ni plan à débloquer entre les vagues (retirés en version 264) : équipements et véhicules s'achètent simplement à leur prix en dollars. La première vague combine fourmis et moucherons, puis son budget, exprimé en **puissance**, est multiplié par 1,2 à chaque étape, sans plafond, et par `N^0,9` pour `N` joueurs. La frise et le bouton de vague affichent la puissance de la vague annoncée. Voir [progression](progression.md) et [équilibrage](room-balance.md#puissance-unité-commune). Des groupes aériens arrivent depuis
 plusieurs aérations, se séparent et se rejoignent ; fourmis et cafards sortent
 de trous et marchent vers la poubelle par le chemin le plus direct qui contourne le
 mobilier, les barricades et les bunkers (voir [navigation terrestre](#navigation-terrestre)).
@@ -167,11 +167,12 @@ sans chargeur ni rechargement. Dans le bureau, personne ne porte d'arme à pied.
 personnelles sont inutilisables dans tous les équipements. Les PNJ ne ripostent
 pas et conservent leurs dégâts sans régénération. Voir [file physique](purgatory-queue.md).
 
-Une vague terminée sans défaite verse une prime commune immédiate, de 4 $ à la
-première vague à 20 $ au maximum. Les premiers achats commencent à 4 $, puis
-les prix montent avec les installations et niveaux acquis.
+Aucune prime de vague n'est versée (supprimée par l'issue #210) : les âmes libérées
+sont la seule source de revenu liée aux vagues, et un ennemi raté ne rapporte rien.
+Les prix montent avec les installations et niveaux acquis.
 Chaque PNJ accepté par Saint Pierre ou tué au purgatoire est définitivement
-libéré et rapporte un dollar commun une seule fois. Un ennemi abattu dans le
+libéré et rapporte, une seule fois, **la puissance de son espèce** en dollars
+communs (1 $ pour un moucheron, 12,23 $ pour un rat). Un ennemi abattu dans le
 bureau ne rapporte pas directement d’argent. Chaque dollar déclenche une courte
 sonnerie chez tous les joueurs présents, même dans les autres mondes. Le service des PNJ
 continue côté serveur sans joueur humain au purgatoire. Le menu P permet d’acheter
@@ -324,7 +325,7 @@ modifiables à tout moment par le créateur de la room.
 
 ## Rat, moustique et araignée pondeuse
 
-Le rat géant possède 5 000 PV et avance lentement. Le moustique possède 70 PV et esquive selon des oscillations déterministes. L'araignée pondeuse possède 1 200 PV : elle libère **100 bébés araignées** de 20 PV à sa mort, au lieu du site de décès, avec une trajectoire dispersée et rapide vers la poubelle. Chaque bébé survivant compte **1 point d'infestation**, soit 100 possibles pour la portée complète (défaite à 20). Les bébés morts ne créent pas d'âmes rémunérées. Moustique dès vague 3, pondeuse dès vague 11, rat dès vague 15. Voir [bestiaire](enemy-bestiary.md).
+Le rat géant possède 5 000 PV et avance lentement. Le moustique possède 70 PV et esquive selon des oscillations déterministes. L'araignée pondeuse possède 1 200 PV : elle libère **100 bébés araignées** de 20 PV à sa mort, au lieu du site de décès, avec une trajectoire dispersée et rapide vers la poubelle. Chaque bébé survivant inflige à la poubelle sa puissance (0,17), soit environ 17 pour la portée complète (défaite à 20 d'infestation). Les bébés morts ne créent pas d'âmes rémunérées. Moustique dès vague 3, pondeuse dès vague 11, rat dès vague 15. Voir [bestiaire](enemy-bestiary.md).
 
 Les [vitesses physiques des espèces](enemy-bestiary.md#vitesse-physique-dans-la-pièce) sont explicites en m/s dans le bureau, indépendantes de la taille des insectes et du nombre de membres de la nuée. L'accélération cachée des bébés araignées et les oscillations trop rapides des moustiques ont été corrigées.
 

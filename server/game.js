@@ -45,7 +45,7 @@ import {
   assignMidgeSwarmSizes,
   MAX_OFFSPRING_ROSTER,
 } from '../src/waves.js';
-import { SHOP, shopPrice, supportedPlacement, waveStipend } from '../src/equipment.js';
+import { SHOP, shopPrice, supportedPlacement } from '../src/equipment.js';
 import { advancePaidService } from '../src/paid-service.js';
 import { SENTRY, fireGroundSentries } from '../src/ground-sentry.js';
 import { FORTIFICATIONS, isFortification } from '../src/ground-fortifications.js';
@@ -441,7 +441,7 @@ export class Game {
   releaseSoul(r, s) {
     if (s.status !== 'waiting') return;
     s.status = 'gone';
-    if (s.kind === 'enemy') this.reward(r, 1);
+    if (s.kind === 'enemy') this.reward(r, ENEMY_TYPES[s.enemy_type].power);
   }
   reward(r, amount) {
     const credit = money(amount, r.balance.rewards);
@@ -629,12 +629,11 @@ export class Game {
           : (now - r.started) / 1000 >= e.spawn + e.duration),
     );
     if (r.phase === 'combat' && r.kills.size + escaped.length >= plan.roster.length) {
-      r.infestation += escaped.reduce((n, e) => n + e.leak, 0);
+      r.infestation = money(r.infestation + escaped.reduce((n, e) => n + e.power, 0));
       // Debug mode: bin damage keeps counting, but the room cannot be lost.
       r.phase = r.infestation >= 20 && !r.lab.enabled ? 'lost' : 'prep';
       r.next_wave_at = now + r.balance.pause * 1000;
       if (r.phase === 'prep') {
-        this.reward(r, waveStipend(r.wave));
         this.prepareWave(r);
       }
       r.dollars = Math.round(r.dollars * 100 - settleLoans(r.bank, r.wave)) / 100;
@@ -779,10 +778,14 @@ export class Game {
     return r.plan || wavePlan(r.code, r.wave, r.started);
   }
   prepareWave(r) {
-    r.upcomingPlan = prepareRoster(r.wave + 1, r.balance);
+    // N counts every pilot of the room, those in purgatory included.
+    const players = Math.max(1, r.pilots.size);
+    r.upcomingPlan = prepareRoster(r.wave + 1, r.balance, undefined, players);
     r.preparation = {
       id: uid(),
       wave: r.wave + 1,
+      power: money(r.upcomingPlan.budget),
+      players,
       groups: forecast(r.upcomingPlan.roster),
     };
   }
@@ -875,6 +878,7 @@ export class Game {
           : elapsed >= enemy.spawn + enemy.duration)
       )
         arrived.push(enemy.id);
+    const arrivedPower = arrived.reduce((sum, id) => sum + (plan.roster[id]?.power ?? 0), 0);
     return clone({
       code: r.code,
       balance: r.balance,
@@ -914,14 +918,14 @@ export class Game {
       seatRequests: values(r.requests),
       effects: r.effects.slice(-64),
       ordnance: r.ordnance,
-      waveReward: money(waveStipend(r.wave), r.balance.rewards),
-      difficulty: r.wave ? plan.budget : 0,
+      difficulty: r.wave ? money(plan.budget) : 0,
       enemyDamage: r.enemyDamage,
       raidDuration: RAID_DURATION,
       mapScale: { numerator: MAP.numerator, denominator: MAP.denominator },
       total: plan.roster.length,
       arrived,
       leaked: r.phase === 'combat' ? arrived.length : 0,
+      leakedPower: r.phase === 'combat' ? money(arrivedPower) : 0,
       now,
       sentAt: now,
       souls: souls.purgatory,

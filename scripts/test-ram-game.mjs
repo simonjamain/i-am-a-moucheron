@@ -97,7 +97,7 @@ for (let enemy = 0; enemy < s.total; enemy++) {
 room.pilots.get(a.id).mode = 'foot';
 s = game.snapshot(room);
 assert.equal(s.phase, 'prep');
-assert.equal(s.dollars, 4);
+assert.equal(s.dollars, 0, 'no wave stipend: only freed souls pay');
 assert.equal(s.kills.length, firstTotal);
 assert.equal(s.souls.length, Math.min(firstTotal, 24));
 assert.equal(s.enemyDamage[0], 150);

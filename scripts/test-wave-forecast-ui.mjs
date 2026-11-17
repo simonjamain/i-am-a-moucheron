@@ -79,12 +79,12 @@ const snap = {
   vehicles: [],
   pilots: [{ id: 'p' }, { id: 'q' }],
   dollars: 12,
-  preparation: { id: 'e1', wave: 1, groups },
+  preparation: { id: 'e1', wave: 1, power: 32, groups },
 };
 ui.accept(snap, 'p');
 ui.countdown(45);
 assert.equal(ui.dialog.open, false);
-assert.equal(ui.button.textContent, 'Vague 1 · 45 s');
+assert.equal(ui.button.textContent, 'Vague 1 · puissance 32 · 45 s');
 assert.doesNotMatch(ui.button.textContent, /vote/);
 ui.button.onclick();
 assert.equal(ui.timeline.children.length, 2);

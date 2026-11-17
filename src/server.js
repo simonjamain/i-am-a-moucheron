@@ -1,6 +1,20 @@
 const { AA_STATIONS, stationAccess } = SORTIE_ENGINE;
 const { aircraftBay, baseWorld, baseBody, baseAccess, reconcileBase, aircraftPose } = BASE_ENGINE;
 const { createSoul, deskOccupant, relayBodyReport } = ARENA_ENGINE;
+// Historic Worker/D1 runtime: keeps its own integer bin damage and wave stipend.
+// The Node runtime (server/game.js) uses enemy power instead (issue #210).
+const LEGACY_LEAK = {
+  ant: 1,
+  roach: 2,
+  midge: 1,
+  guard: 2,
+  mosquito: 1,
+  rat: 8,
+  spider: 3,
+  spiderling: 1,
+  brute: 3,
+};
+const waveStipend = (wave) => Math.min(20, 3 + Math.max(1, Math.floor(wave)));
 const json = (v, status = 200) =>
   new Response(
     JSON.stringify(
@@ -833,7 +847,7 @@ async function snapshot(db, code) {
     for (let i = 0; i < total; i++)
       if (!k.includes(i) && t >= plan.roster[i].spawn + plan.roster[i].duration) {
         leaked++;
-        leakDamage += plan.roster[i].leak;
+        leakDamage += LEGACY_LEAK[plan.roster[i].type];
         resolved++;
       }
     if (resolved >= total) {
