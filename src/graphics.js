@@ -202,29 +202,6 @@ export function createGraphics(T, scene) {
       scene.add(g);
       return g;
     }
-    if (type === 'spider' || type === 'spiderling') {
-      const large = type === 'spider';
-      const body = ball(0, 0.06, 0.38, 0.56, large ? '#48362f' : '#66544c', g);
-      body.scale.set(0.9, 0.72, 1.12);
-      const head = ball(0, 0.02, -0.48, 0.34, '#342e2b', g);
-      const legs = [];
-      for (const side of [-1, 1])
-        for (let i = 0; i < 4; i++) {
-          const leg = box(side * 0.64, -0.17, (i - 1.5) * 0.3, 0.82, 0.055, 0.055, '#382d28', g);
-          leg.rotation.z = side * 0.38;
-          legs.push(leg);
-        }
-      for (const side of [-1, 1]) ball(side * 0.17, 0.18, -0.71, 0.09, '#d28b47', g);
-      g.userData = {
-        wings: [],
-        legs,
-        hitParts: [body, head],
-        disposables: [],
-        ...(large ? {} : { sphereRadius: 1.2 }),
-      };
-      scene.add(g);
-      return g;
-    }
     if (type === 'midge') {
       // Rigged Meshy midge (corpses, non-WebGL fallback). Living WebGL midges
       // are drawn by MidgeBatch; hits use the sphere, not the mesh.

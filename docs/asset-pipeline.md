@@ -329,6 +329,36 @@ rejoue un clip au lieu d'une démarche calculée.
 
 ![Poses de marche du rat](rat-model-review.jpg)
 
+### Bébé araignée (version 313)
+
+Modèle Meshy « Grumpy Spider » fourni par l'utilisateur, déjà riggé, sans clip ; il
+remplace les bébés procéduraux (sphères et boîtes dans `spiderling-batch.js`,
+supprimé). Même chaîne que l'araignée pondeuse.
+
+- Original hors dépôt : `assets/originals/spiderling/grumpy-spider.glb` (SHA-256
+  `eaeaff76…96da`), 280 triangles, 524 sommets, SmartRig de 29 os, texture JPEG
+  512 px (47 Ko). Tête vers +Z.
+- Import : `PYTHONPATH=scripts python3 scripts/import-creature.py spiderling <GLB>`
+  écrit `src/spiderling-data.js`. Meshy a donné à la patte 2 +X deux chaînes d'os
+  superposées (mêmes pivots) et réparti sa coque entre elles : la nouvelle option
+  `alias` de l'espèce replie `Bone_008`/`007`/`006` sur `Bone_014`/`013`/`012`
+  (107 influences). Puis chaque coque ne garde que sa chaîne, le reste allant au
+  moyeu `Bone_001` (435 influences). Ant, araignée et cafard ne sont pas concernés.
+- Marche (`src/spiderling-model.js`) : démarche tétrapode des six pattes à trois os,
+  foulée 0,7 m-modèle, cadence plafonnée à 10 cycles/s. La paire avant, courte (deux
+  os), plongeait sous le sol avec le calcul de pas : elle est animée à part, en
+  palpes levées qui tâtent le sol. Présentation relevée de 0,025 unité comme le
+  cafard. Facteur 0,5 (2,1 unités pattes écartées, comme les autres marcheurs).
+- Rendu : entrée `spiderling` de `WALKERS`, un `InstancedMesh` par espèce (100
+  bébés en un appel de dessin, contrôlé hors jeu). Zone de tir : ellipsoïde du corps
+  et du haut des pattes, rayons 1,05 × 0,6 × 1,1, proche de l'ancienne sphère de
+  1,2 unité pour que ces petites nuées rapides restent aussi faciles à toucher.
+- Vérification : `scripts/test-walker-models.mjs` (provenance, chaîne repliée,
+  pieds plantés, sol, palpes au-dessus du sol, boucle, cuisson, tirs, proxy et
+  repli riggé). Le rendu de grosses éclosions en partie réelle reste à juger.
+
+![Poses de marche du bébé araignée](spiderling-model-review.jpg)
+
 ## Scarabée Meshy (vol, version 307)
 
 Modèle fourni par l'utilisateur, déjà riggé par Meshy, sans clip ; il remplace le
