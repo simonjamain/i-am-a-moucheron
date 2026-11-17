@@ -388,6 +388,7 @@ const c = {
   spectating: false,
   joined: true,
   groundDefenseUI: { active: false },
+  debugTools: { active: false, cancel() {} },
   purchaseUI: { opened: false },
   bedUI: { opened: false },
   bankUI: { opened: false },

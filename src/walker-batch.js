@@ -93,6 +93,17 @@ export class WalkerBatch {
       u.walkPhase = ((u.walkPhase % 1) + 1) % 1;
     }
   }
+  // Debug dummy (debug-enemies.ts): stays put facing `dir`, walking in place at
+  // `speed` (metres per second) as if it covered that distance.
+  treadmill(model, dir, speed, dt) {
+    const u = model.userData;
+    if (Math.hypot(dir[0], dir[2]) > 1e-9) {
+      this.heading.set(dir[0], 0, dir[2]).normalize();
+      model.quaternion.setFromUnitVectors(this.forward, this.heading);
+    }
+    const cycles = (speed * dt) / walkerStride(u.enemyType, model.scale.x);
+    u.walkPhase = (u.walkPhase + Math.min(cycles, WALKERS[u.enemyType].model.maxRate * dt)) % 1;
+  }
   flush(insects) {
     if (!this.enabled) return;
     const counts = {};

@@ -44,6 +44,8 @@ const files = {
     [
       'balance',
       'lab-ui',
+      'debug-enemies',
+      'debug-tools',
       'ground-defense-ui',
       'ground-motion',
       'ground-placement',
