@@ -1,5 +1,6 @@
 import { floorPath, blockedSegment } from './route-navigation.js';
 import { staticGroundFlow } from './ground-defense.js';
+import { activeLayout } from './layouts.js';
 export const MIN_SPAWN_DISTANCE = 3;
 // Portals describe the decorative vent/hole, not the first living position.
 export const VISIBLE_SPAWN_INSET = 0.04;
@@ -7,50 +8,26 @@ export function portalExit(portal) {
   const p = [...portal];
   if (Math.abs(p[0]) > 4) p[0] -= Math.sign(p[0]) * VISIBLE_SPAWN_INSET;
   else if (p[2] < -3.4) p[2] += VISIBLE_SPAWN_INSET;
+  else if (p[2] > 3.4) p[2] -= VISIBLE_SPAWN_INSET;
   return p;
 }
-export const PORTALS = Object.freeze({
-  air: [
-    [-4.11, 2.35, -1.8],
-    [0.2, 2.6, -3.51],
-    [4.11, 1.6, 0.8],
-    [-2.4, 2.2, -3.51],
-  ],
-  ground: [
-    [-4.11, 0.0007, 2.65],
-    [-1.0, 0.0007, -3.51],
-    [4.11, 0.0007, 1.0],
-  ],
-});
+// Vents and floor holes of the active layout (live view, see layouts.js).
+export const PORTALS = {
+  get air() {
+    return activeLayout().portals.air;
+  },
+  get ground() {
+    return activeLayout().portals.ground;
+  },
+};
+// Routes depend on the layout: the cache key carries its id.
 const routeCache = new Map();
-// Flight path from a vent: up to the shared corridor, around the room, then
-// the descent next to the bin.
+// Flight path from a vent: the layout's own course. Flight routes stay below the
+// cloud layer (OFFICE_CLOUD_TOP): swarms remain readable, never veiled.
 function airPoints(portal) {
-  const source = portalExit(PORTALS.air[portal]);
-  // Flight routes stay below the cloud layer (OFFICE_CLOUD_TOP, which does not
-  // follow the raised flight ceiling): swarms remain readable, never veiled.
-  // Two crossing corridors fed by the four vents. Their altitude separates
-  // the crossing and keeps the course predictable before an insect spawns.
-  const high = portal % 2 === 0;
-  const lane = high
-    ? [
-        [-2.85, 2.05, 2.55],
-        [2.75, 2.0, -2.6],
-        [2.8, 1.95, 2.5],
-      ]
-    : [
-        [2.7, 1.5, 2.5],
-        [-2.8, 1.55, -2.6],
-        [-2.8, 1.8, 2.5],
-      ];
-  return liftOverFurniture([
-    source,
-    [source[0] * 0.7, 2.1, source[2] * 0.7],
-    ...lane,
-    [0, 1.65, 1.9],
-    [2.8, 1.5, -2.6],
-    [2.5, 0.38, -2.7],
-  ]);
+  const course = activeLayout().airRoutes[portal].map((p) => [...p]);
+  course[0] = portalExit(course[0]);
+  return liftOverFurniture(course);
 }
 // Raise detours above static furniture; final descent is next to the bin.
 function liftOverFurniture(points) {
@@ -109,11 +86,15 @@ export function enemyRoute(enemy) {
           ? 0
           : 1
         : Math.floor((seed / 4294967296) * portalCount);
-  const key = enemy.airStart
-    ? 'air-start:' + enemy.airStart.join(':')
-    : enemy.spawnPoint
-      ? 'brood:' + enemy.spawnPoint.join(':')
-      : (enemy.ground ? 'ground:' : 'air:') + portal;
+  const layout = activeLayout();
+  const key =
+    layout.id +
+    ':' +
+    (enemy.airStart
+      ? 'air-start:' + enemy.airStart.join(':')
+      : enemy.spawnPoint
+        ? 'brood:' + enemy.spawnPoint.join(':')
+        : (enemy.ground ? 'ground:' : 'air:') + portal);
   if (routeCache.has(key)) return routeCache.get(key);
   let points;
   if (enemy.airStart) ({ portal, points } = joinCorridor(enemy.airStart));
@@ -126,9 +107,9 @@ export function enemyRoute(enemy) {
     const floor = staticGroundFlow()
       .smoothRoute([start[0], start[2]])
       ?.map(([x, z]) => [x, 0.0007, z]);
-    points = floor || floorPath(start, [3.0, 0.0007, -2.7]);
+    points = floor || floorPath(start, [layout.groundGoal[0], 0.0007, layout.groundGoal[1]]);
     points[0] = start;
-    points.push([3.0, 0.38, -2.7], [2.5, 0.38, -2.7]);
+    points.push(...layout.groundFinish.map((p) => [...p]));
   } else points = airPoints(portal);
   const route = sampleRoute(points, portal);
   if (routeCache.size > 256) routeCache.delete(routeCache.keys().next().value);

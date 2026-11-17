@@ -25,7 +25,8 @@ de la version publique historique encore sur Sites/D1.
 
 ## Boucle de jeu
 
-Les joueurs rejoignent une salle coopérative, apparaissent à pied sur le bureau
+Les joueurs rejoignent une salle coopérative, apparaissent à pied au sol près de la
+corbeille (le [plan du bureau](office-layouts.md) est choisi à la création de la room)
 et utilisent une caméra à la troisième personne. Ils rejoignent physiquement un
 équipement, remplissent son dossier et en prennent un siège. Les avions ont du carburant et
 des munitions limités, à compléter en se posant et s’arrêtant dans une station. L’objectif est de

@@ -1,7 +1,5 @@
 import { uiPreview } from './build-ui-preview.mjs';
-import * as T from '../vendor/three.module.min.js';
-import { createOffice } from '../src/office.js';
-import { createGraphics } from '../src/graphics.js';
+import { layoutSolids, LAYOUTS } from '../src/layouts.js';
 import { createHash } from 'node:crypto';
 import { readFile, writeFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
@@ -16,22 +14,9 @@ const readAsset = async (file) => {
   return file.endsWith('.ts') ? stripTypeScriptTypes(text, { mode: 'strip' }) : text;
 };
 
-const collisionScene = new T.Scene();
-const officeBounds = createOffice(T, collisionScene, {
-  ...createGraphics(T, collisionScene),
-  textLabel: () => new T.Group(),
-}).colliders;
-await writeFile(
-  'src/route-obstacles.js',
-  '// Generated from office colliders.\nexport const ROUTE_OBSTACLES=' +
-    JSON.stringify(
-      officeBounds.map((b) => ({
-        min: { x: b.min.x, y: b.min.y, z: b.min.z },
-        max: { x: b.max.x, y: b.max.y, z: b.max.z },
-      })),
-    ) +
-    ';\n',
-);
+// Colliders of the default layout, for the historical Worker bundle and fixtures.
+// The Node server and the browser derive each room's colliders from its layout.
+const officeBounds = layoutSolids(LAYOUTS[0]);
 await writeFile('docs/ui-review.html', uiPreview(await readFile('src/index.html', 'utf8')));
 // One asset manifest drives both browser module serving and Worker packaging.
 const files = {
@@ -100,7 +85,7 @@ const files = {
       'howitzer-data',
       'model-preview',
       'ground-defense',
-      'route-obstacles',
+      'layouts',
       'changelog',
       'flight-tuning',
       'flight-tuning-ui',
@@ -219,7 +204,7 @@ const files = {
       'routes',
       'route-speed',
       'route-navigation',
-      'route-obstacles',
+      'layouts',
     ].map((name) => ['/' + name + '.js', moduleSource(name)]),
   ),
 };
@@ -284,8 +269,8 @@ await writeFile(
     'const BUILD_VERSION=' + JSON.stringify(version) + ';',
     'const ASSETS=' + JSON.stringify(assets) + ';',
     scale,
+    inline(assets['/layouts.js']),
     layout,
-    inline(assets['/route-obstacles.js']),
     inline(assets['/route-navigation.js']),
     inline(assets['/brick-rules.js']),
     inline(assets['/ground-defense.js']),

@@ -3,6 +3,7 @@
 // HP and speed and head for the bin (walkers on the floor, flyers through the
 // nearest corridor). Server rules, roster entries and routes
 // (src/debug-enemies.ts, server/game.js labCommand, src/routes.js).
+import { OFFICE_LAYOUT } from '../src/layout.js';
 import assert from 'node:assert/strict';
 import { Game } from '../server/game.js';
 import {
@@ -139,7 +140,8 @@ const walker = debugEnemy(
 assert.equal(walker.hp, ENEMY_TYPES.roach.hp * balance.enemyHP);
 assert.deepEqual(walker.spawnPoint, [-1.8, 0.0007, 1.6], 'walkers start on the floor');
 const route = enemyRoute(walker);
-assert.deepEqual(route.points.at(-1), [2.5, 0.38, -2.7], 'walker reaches the bin');
+const { bin } = OFFICE_LAYOUT;
+assert.deepEqual(route.points.at(-1), [bin.x, bin.y + 0.38, bin.z], 'walker reaches the bin');
 const start = [-3, 1, 1];
 const flyer = debugEnemy(
   { kind: 'live', type: 'mosquito', p: start, dir: [0, 1] },
@@ -147,7 +149,7 @@ const flyer = debugEnemy(
 );
 const air = enemyRoute(flyer);
 assert.deepEqual(air.points[0], start, 'flyer departs from the aimed point');
-assert.deepEqual(air.points.at(-1), [2.5, 0.38, -2.7], 'flyer reaches the bin');
+assert.deepEqual(air.points.at(-1), [bin.x, bin.y + 0.38, bin.z], 'flyer reaches the bin');
 // Its course joins the nearest point of a usual vent corridor, then follows it.
 const usual = PORTALS.air.map((_, portal) => enemyRoute({ portalIndex: portal, routeSeed: 1 }));
 const nearest = Math.min(

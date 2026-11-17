@@ -2,7 +2,7 @@ import http from 'node:http';
 import { pathToFileURL } from 'node:url';
 import { PeerConnection } from 'node-datachannel';
 import { WebSocketServer } from 'ws';
-import { ASSETS, BUILD_VERSION, OFFICE_SOLIDS } from '../worker/assets.js';
+import { ASSETS, BUILD_VERSION } from '../worker/assets.js';
 import { Game, SNAPSHOT_SHARE_MS } from './game.js';
 import { GameSession } from './session.js';
 import { encodeMotionBatch, encodeMotionState } from '../src/motion-wire.js';
@@ -22,7 +22,7 @@ import {
 
 export function createGameServer({
   Peer = PeerConnection,
-  game = new Game({ solids: OFFICE_SOLIDS, snapshotShareMs: SNAPSHOT_SHARE_MS, resumable: true }),
+  game = new Game({ snapshotShareMs: SNAPSHOT_SHARE_MS, resumable: true }),
   portBegin = 41000,
   portEnd = 41099,
   // Single shared UDP port for every connection (ICE UDP mux): 0 = port range.

@@ -109,6 +109,7 @@ export const SUITE = [
   'test-wave-preparation',
   'test-wave-forecast-ui',
   'test-ground-paths',
+  'test-layouts',
   'test-pheromone-trail',
   'test-enemy-bestiary',
   'test-enemy-speeds',
