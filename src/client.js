@@ -11,10 +11,12 @@ import { makeFortificationStation } from '/fortification-model.js';
 import { placementFacing } from '/placement-aim.js';
 import { placementAim } from '/placement-aim.js';
 import { WaveCouncilUI } from '/wave-council-ui.js';
-import { WaveForecastScene } from '/wave-forecast-scene.js';
+import { WaveForecastScene, speciesSymbols } from '/wave-forecast-scene.js';
 import { GroundDefenseUI } from '/ground-defense-ui.js';
 import { GroundMotionTrack } from '/ground-motion.js';
 import { LabUI } from '/lab-ui.js';
+import { DebugTools } from '/debug-tools.js';
+import { SENTRY } from '/ground-sentry.js';
 import { mountChangelog } from '/changelog.js';
 import { deliveryHeightAt } from '/delivery.js';
 import { reserveAlerts, missileStatus, ArrivalSignals } from '/reserve-feedback.js';
@@ -60,7 +62,7 @@ import { RewardQueue } from '/rewards.js';
 import { SHOP, shopPrice, upgradedVehicle, supportedPlacement } from '/equipment.js';
 import { stepBallisticVelocity, toggleParachute } from '/ballistics.js';
 import { makeTracer, updateTracer } from '/tracers.js';
-import { wavePlan, swarmFrame, entryStatus } from '/waves.js';
+import { wavePlan, swarmFrame, entryStatus, ENEMY_TYPES } from '/waves.js';
 import { MAP, ACTOR_UNIT, HUMAN_SCALE, INSECT_SCALE, REFERENCE, FLAK } from '/scale.js';
 import {
   VEHICLES,
@@ -901,6 +903,7 @@ canvas.addEventListener('mousedown', (event) => {
     { active: canCapture(), locked: controlFocus.active },
   );
   if (action === 'capture') captureMouse();
+  else if (action === 'fire' && debugTools.active) debugTools.press();
   else if (action === 'fire' && groundDefenseUI.active) groundDefenseUI.press();
   else if (action === 'fire' && respawnAt) pistol();
   else if (action === 'fire' && (!onFoot || turretIndex >= 0 || !!myVehicle) && !respawnAt)
@@ -1729,6 +1732,7 @@ addEventListener('keydown', (event) => {
   if (!joined || spectating) return;
   if (event.code === 'Escape') {
     groundDefenseUI.cancel();
+    debugTools.cancel();
     if (purchaseUI.opened) {
       purchaseUI.close();
       return;
@@ -1832,6 +1836,11 @@ addEventListener('keydown', (event) => {
   if (exitAction) {
     event.preventDefault();
     vehicleAction(exitAction, { state: localMotion() });
+    return;
+  }
+  if (debugTools.active && ['KeyE', 'Enter'].includes(interactionKey)) {
+    event.preventDefault();
+    if (!event.repeat && canCapture()) debugTools.press();
     return;
   }
   if (placingEquipment && ['KeyE', 'Enter'].includes(interactionKey)) {
@@ -3567,7 +3576,11 @@ function enemies(now) {
       g.userData.enemyWave = snap.wave;
       g.userData.enemyType = profile.type;
       g.userData.entryStatus = entryStatus(profile, t);
-      if (g.userData.entryStatus === 'in-flight' && entryNoticeWave !== snap.wave) {
+      if (
+        g.userData.entryStatus === 'in-flight' &&
+        !profile.debug &&
+        entryNoticeWave !== snap.wave
+      ) {
         entryNoticeWave = snap.wave;
         notify('Ennemis déjà en route · découverte tardive de la vague', 4);
       }
@@ -3584,8 +3597,17 @@ function enemies(now) {
       const dt = Math.max(0.01, (now - (g.userData.lastMoveAt || now - 16)) / 1000);
       const velocity = g.userData.velocity || (g.userData.velocity = new T.Vector3());
       velocity.set(dx / dt, dy / dt, dz / dt);
+      // Debug dummy: still, facing its placer, walking or beating its wings in place.
+      if (profile.dummy) {
+        if (g.userData.instancedWalker)
+          walkerBatch.treadmill(g, state.dir, profile.travelSpeed || profile.speedMps, dt);
+        else {
+          midgeHeading.fromArray(state.dir).normalize();
+          g.quaternion.setFromUnitVectors(midgeForward, midgeHeading);
+        }
+      }
       // Walkers turn on the floor plane and step with the distance covered.
-      if (g.userData.instancedWalker) walkerBatch.step(g, dx, dz, dt);
+      else if (g.userData.instancedWalker) walkerBatch.step(g, dx, dz, dt);
       else if (g.userData.hasPosition && dx * dx + dy * dy + dz * dz > 1e-12) {
         midgeHeading.set(dx, dy, dz).normalize();
         midgeTarget.setFromUnitVectors(midgeForward, midgeHeading);
@@ -3625,7 +3647,7 @@ function enemies(now) {
     );
   }
   for (const [i, g] of insects)
-    if (active.has(i)) {
+    if (active.has(i) && !roster[i].dummy) {
       const profile = roster[i];
       insectStatus.update(
         i,
@@ -3637,7 +3659,7 @@ function enemies(now) {
         insectScale(profile.type, 1, profile.size),
       );
     }
-  insectStatus.keep(active);
+  insectStatus.keep(new Set([...active].filter((i) => !roster[i].dummy)));
   for (const [i, g] of insects)
     if (!active.has(i)) {
       scene.remove(g);
@@ -4778,6 +4800,7 @@ function frame(now) {
   if (joined) updateBaseWorld(dt, now);
   updateVehicles(dt);
   updatePlacement();
+  updateDebugTools();
   for (const model of turrets) if (model?.userData.dish) animateRadar(model, dt, joined);
   updateFallingEnemies(dt);
   updateContextHUD();
@@ -4872,6 +4895,7 @@ function toggleShop() {
   if (flightTuningUI.opened || bankUI.opened || bedUI.opened || purchaseUI.opened) return;
   if (!joined || respawnAt || !$('papers').classList.contains('hidden')) return;
   if (placingEquipment) cancelPlacement();
+  debugTools.cancel();
   const open = $('shop').classList.contains('hidden');
   $('shop').classList.toggle('hidden', !open);
   if (open) {
@@ -4909,6 +4933,9 @@ function renderShop() {
         section.append(shopCard(item));
     $('shopItems').append(section);
   }
+  // Debug mode: dummies and live enemies to place (debug-tools.ts).
+  $('shopItems').classList.toggle('debugShop', !!snap.lab?.enabled);
+  if (snap.lab?.enabled) $('shopItems').append(...debugTools.shopSections());
 }
 const SHOP_GLYPHS = { engine: '⚙', weapons: '✹' };
 let shopThumbs;
@@ -6062,6 +6089,57 @@ $('flightSettingsOpen').onclick = () => {
     return;
   flightTuningUI.open();
 };
+const debugTools = new DebugTools({
+  T,
+  scene,
+  document,
+  camera,
+  command: async (body) => {
+    try {
+      accept(await api('lab', { id, epoch: snap.base.epoch, ...body }));
+      return true;
+    } catch (error) {
+      notify(error.message, 3);
+      return false;
+    }
+  },
+  notify,
+  aimSurface: () => {
+    const origin = camera.getWorldPosition(new T.Vector3());
+    const point = placementAim(
+      origin,
+      origin,
+      camera.getWorldDirection(new T.Vector3()),
+      colliders,
+      MAP.metres(1000),
+    );
+    return point && new T.Vector3(point.x, point.y, point.z);
+  },
+  closeShop: () => {
+    $('shop').classList.add('hidden');
+    captureMouse();
+  },
+  names: Object.fromEntries(Object.entries(ENEMY_TYPES).map(([k, e]) => [k, e.name])),
+  grounded: Object.fromEntries(Object.entries(ENEMY_TYPES).map(([k, e]) => [k, !!e.ground])),
+  symbols: speciesSymbols,
+  sentryRange: SENTRY.range,
+});
+// Debug mode: placement marker, hit volumes, turret and sugar ranges, dummy damage.
+function updateDebugTools() {
+  const on = joined && !!snap?.lab?.enabled;
+  if (debugTools.active && !on) debugTools.cancel();
+  else if (debugTools.active) debugTools.render();
+  debugTools.showHitboxes(insects.values(), on);
+  debugTools.showRanges(snap?.groundDefense?.structures, on);
+  if (snap)
+    debugTools.showDummyDamage(
+      on ? insects : new Map(),
+      currentRoster(),
+      (i) => localEnemyDamage.get(i) || 0,
+      snap.wave,
+      performance.now() / 1000,
+    );
+}
 const labUI = new LabUI({
   button: $('labOpen'),
   snapshot: () => (joined ? snap : null),

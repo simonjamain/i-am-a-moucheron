@@ -23,10 +23,85 @@ export const PORTALS = Object.freeze({
   ],
 });
 const routeCache = new Map();
+// Flight path from a vent: up to the shared corridor, around the room, then
+// the descent next to the bin.
+function airPoints(portal) {
+  const source = portalExit(PORTALS.air[portal]);
+  // Flight routes stay below the cloud layer (OFFICE_CLOUD_TOP, which does not
+  // follow the raised flight ceiling): swarms remain readable, never veiled.
+  // Two crossing corridors fed by the four vents. Their altitude separates
+  // the crossing and keeps the course predictable before an insect spawns.
+  const high = portal % 2 === 0;
+  const lane = high
+    ? [
+        [-2.85, 2.05, 2.55],
+        [2.75, 2.0, -2.6],
+        [2.8, 1.95, 2.5],
+      ]
+    : [
+        [2.7, 1.5, 2.5],
+        [-2.8, 1.55, -2.6],
+        [-2.8, 1.8, 2.5],
+      ];
+  return liftOverFurniture([
+    source,
+    [source[0] * 0.7, 2.1, source[2] * 0.7],
+    ...lane,
+    [0, 1.65, 1.9],
+    [2.8, 1.5, -2.6],
+    [2.5, 0.38, -2.7],
+  ]);
+}
+// Raise detours above static furniture; final descent is next to the bin.
+function liftOverFurniture(points) {
+  for (let i = 1; i < points.length; i++)
+    if (blockedSegment(points[i - 1], points[i])) {
+      points.splice(
+        i,
+        0,
+        [points[i - 1][0], 2.1, points[i - 1][2]],
+        [points[i][0], 2.1, points[i][2]],
+      );
+      i += 2;
+    }
+  return points;
+}
+const SEGMENT_SAMPLES = 48;
+function sampleRoute(points, portal) {
+  const samples = [{ p: points[0], distance: 0 }];
+  for (let i = 0; i < points.length - 1; i++) {
+    const b = points[i],
+      c = points[i + 1];
+    for (let n = 1; n <= SEGMENT_SAMPLES; n++) {
+      const t = n / SEGMENT_SAMPLES;
+      const p = b.map((v, j) => v + (c[j] - v) * t);
+      const prev = samples.at(-1);
+      samples.push({ p, distance: prev.distance + Math.hypot(...p.map((v, j) => v - prev.p[j])) });
+    }
+  }
+  return { samples, length: samples.at(-1).distance, portal, points };
+}
+// A flyer placed in the room (debug mode): straight to the nearest point of a
+// vent's usual course (over furniture if needed), then the rest of that course.
+function joinCorridor(start) {
+  let best = null;
+  for (let portal = 0; portal < PORTALS.air.length; portal++) {
+    const points = airPoints(portal),
+      { samples } = sampleRoute(points, portal);
+    for (let k = 1; k < samples.length; k++) {
+      const d = Math.hypot(...samples[k].p.map((v, j) => v - start[j]));
+      if (!best || d < best.d) best = { d, portal, points, k, p: samples[k].p };
+    }
+  }
+  const segment = Math.ceil(best.k / SEGMENT_SAMPLES) - 1;
+  const rest = best.points.slice(segment + 1);
+  const join = best.k % SEGMENT_SAMPLES === 0 ? [] : [best.p];
+  return { portal: best.portal, points: liftOverFurniture([[...start], ...join, ...rest]) };
+}
 export function enemyRoute(enemy) {
   const portalCount = enemy.ground ? PORTALS.ground.length : PORTALS.air.length;
   const seed = (Math.imul(enemy.routeSeed || 1, 1664525) + 1013904223) >>> 0;
-  const portal =
+  let portal =
     Number.isInteger(enemy.portalIndex) && enemy.portalIndex >= 0 && enemy.portalIndex < portalCount
       ? enemy.portalIndex
       : enemy.approach === 'intro'
@@ -34,12 +109,15 @@ export function enemyRoute(enemy) {
           ? 0
           : 1
         : Math.floor((seed / 4294967296) * portalCount);
-  const key = enemy.spawnPoint
-    ? 'brood:' + enemy.spawnPoint.join(':')
-    : (enemy.ground ? 'ground:' : 'air:') + portal;
+  const key = enemy.airStart
+    ? 'air-start:' + enemy.airStart.join(':')
+    : enemy.spawnPoint
+      ? 'brood:' + enemy.spawnPoint.join(':')
+      : (enemy.ground ? 'ground:' : 'air:') + portal;
   if (routeCache.has(key)) return routeCache.get(key);
   let points;
-  if (enemy.ground || enemy.spawnPoint) {
+  if (enemy.airStart) ({ portal, points } = joinCorridor(enemy.airStart));
+  else if (enemy.ground || enemy.spawnPoint) {
     // Most direct floor path to the bin around furniture: the same smoothed flow
     // field the server walks (ground-creatures.js) and the forecast draws.
     const start = enemy.spawnPoint
@@ -51,56 +129,8 @@ export function enemyRoute(enemy) {
     points = floor || floorPath(start, [3.0, 0.0007, -2.7]);
     points[0] = start;
     points.push([3.0, 0.38, -2.7], [2.5, 0.38, -2.7]);
-  } else {
-    const source = portalExit(PORTALS.air[portal]);
-    // Flight routes stay below the cloud layer (OFFICE_CLOUD_TOP, which does not
-    // follow the raised flight ceiling): swarms remain readable, never veiled.
-    // Two crossing corridors fed by the four vents. Their altitude separates
-    // the crossing and keeps the course predictable before an insect spawns.
-    const high = portal % 2 === 0;
-    const lane = high
-      ? [
-          [-2.85, 2.05, 2.55],
-          [2.75, 2.0, -2.6],
-          [2.8, 1.95, 2.5],
-        ]
-      : [
-          [2.7, 1.5, 2.5],
-          [-2.8, 1.55, -2.6],
-          [-2.8, 1.8, 2.5],
-        ];
-    points = [
-      source,
-      [source[0] * 0.7, 2.1, source[2] * 0.7],
-      ...lane,
-      [0, 1.65, 1.9],
-      [2.8, 1.5, -2.6],
-      [2.5, 0.38, -2.7],
-    ];
-    // Raise detours above static furniture; final descent is next to the bin.
-    for (let i = 1; i < points.length; i++)
-      if (blockedSegment(points[i - 1], points[i])) {
-        points.splice(
-          i,
-          0,
-          [points[i - 1][0], 2.1, points[i - 1][2]],
-          [points[i][0], 2.1, points[i][2]],
-        );
-        i += 2;
-      }
-  }
-  const samples = [{ p: points[0], distance: 0 }];
-  for (let i = 0; i < points.length - 1; i++) {
-    const b = points[i],
-      c = points[i + 1];
-    for (let n = 1; n <= 48; n++) {
-      const t = n / 48;
-      const p = b.map((v, j) => v + (c[j] - v) * t);
-      const prev = samples.at(-1);
-      samples.push({ p, distance: prev.distance + Math.hypot(...p.map((v, j) => v - prev.p[j])) });
-    }
-  }
-  const route = { samples, length: samples.at(-1).distance, portal, points };
+  } else points = airPoints(portal);
+  const route = sampleRoute(points, portal);
   if (routeCache.size > 256) routeCache.delete(routeCache.keys().next().value);
   routeCache.set(key, route);
   return route;

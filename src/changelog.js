@@ -1,6 +1,13 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 320,
+    changes: [
+      'En mode debug, le marchand permet de poser des mannequins immobiles qui affichent les dégâts reçus, ou de vrais ennemis.',
+      'En mode debug, les zones touchables des ennemis et la portée des tourelles et du sucre sont visibles.',
+    ],
+  },
+  {
     version: 319,
     changes: ['Le ventilateur est retiré pour l’instant : il ne se construit plus.'],
   },

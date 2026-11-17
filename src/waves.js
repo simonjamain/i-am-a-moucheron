@@ -398,6 +398,11 @@ export function swarmFrame(roster, time, groundAgents = null) {
     return groundAgents?.[id];
   };
   const samples = roster.map((e) => {
+    // Debug-mode dummy (debug-enemies.ts): fixed pose from its placement on.
+    if (e.dummy)
+      return time < e.spawn
+        ? null
+        : { p: [...e.dummy.p], dir: [...e.dummy.dir], envelope: 1, authoritative: true };
     const ground = e.ground && groundAt(e.id);
     if (ground) {
       if (ground.arrived) return null;

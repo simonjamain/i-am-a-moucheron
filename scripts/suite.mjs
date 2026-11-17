@@ -103,6 +103,7 @@ export const SUITE = [
   'test-shadow-settings',
   'test-shadow-review',
   'test-instanced-tracers',
+  'test-debug-enemies',
   'test-laboratory',
   'test-debug-mode',
   'test-wave-preparation',

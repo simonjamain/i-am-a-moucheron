@@ -26,7 +26,9 @@ Rendu et interface :
 6. Modèle : `src/<espèce>-model.js` (+ `-data.js` généré), puis entrée dans
    `WALKERS` (`src/walker-batch.js`) ou `FLYERS` (`src/flyer-batch.js`), et dans la
    liste d'assets de `scripts/assemble.mjs`.
-7. `src/wave-forecast-scene.js` — symbole dans `speciesSymbols`.
+7. `src/wave-forecast-scene.js` — symbole dans `speciesSymbols` ;
+   `src/debug-enemies.ts` — place dans `DEBUG_ENEMY_TYPES` (cartes du mode debug,
+   vérifié par `scripts/test-debug-enemies.mjs`).
 8. Vérifier les cas particuliers par nom d'espèce : `grep -n "'midge'\|'spiderling'" src server`.
 9. Documenter dans [le bestiaire](enemy-bestiary.md) et `src/changelog.js`.
 

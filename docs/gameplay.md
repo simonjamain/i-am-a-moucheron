@@ -48,6 +48,10 @@ un clic l'active, le suivant le désactive. Actif : argent illimité, toutes les
 constructions et améliorations débloquées, aucun dégât de chute et défaite
 impossible. Les dégâts de la poubelle restent calculés et le HUD affiche ses PV,
 même négatifs (« -75 / 20 PV »). Désactiver réinitialise la partie aux règles normales.
+Pendant une vague, le marchand (P) propose en plus deux colonnes pour poser un ennemi
+au point visé : **Mannequins** (immobiles, invulnérables, avec le dernier dégât reçu
+affiché en gros) et **Ennemis réels**. Les hitbox des ennemis et la portée des
+tourelles et du sucre sont toujours visibles.
 Voir [mode debug](laboratory.md).
 
 ## Accueil et noms

@@ -62,6 +62,7 @@ import { stationAccess, stationExit } from '../src/sortie.js';
 import { howitzerMuzzle, howitzerPitchAllowed } from '../src/howitzer-geometry.js';
 import { validMotion } from '../src/network.js';
 import { snapshotRosterCore, snapshotRosterKey } from '../src/snapshot-wire.js';
+import { appendDebugEnemy, debugPlacement, standingDummies } from '../src/debug-enemies.ts';
 import { newBank, signLoan, settleLoans, repayLoan } from '../src/bank.js';
 import { canUseWeapon, HEAVY, TANK_MG, availableShell, heavyInterval } from '../src/armament.js';
 import { sweptSphereMayTouch } from '../src/swept-broadphase.ts';
@@ -743,9 +744,33 @@ export class Game {
       if (!r.mission_started) this.setLabWave(r, 1);
       return;
     }
-    // Issue #135: debug is a plain toggle. Only enable/exit exist; the former
-    // test tools (cards, waves, scenarios) are gone. Leaving resets the game so
-    // no test progress leaks into a normal game.
+    // Enemies placed from the shop's debug columns (debug-enemies.ts), one per
+    // order, appended to the running wave like a brood.
+    if (action === 'place' || action === 'clear-dummies') {
+      requireGame(r.lab.enabled, 'Activez le mode debug pour poser un ennemi.');
+      requireGame(r.phase === 'combat', 'Lancez une vague pour poser un ennemi.');
+      const plan = this.plan(r);
+      if (action === 'clear-dummies') {
+        for (const index of standingDummies(plan.roster, r.kills)) r.kills.add(index);
+        return;
+      }
+      let placement;
+      try {
+        placement = debugPlacement(b);
+      } catch (error) {
+        requireGame(false, error.message, 400);
+      }
+      appendDebugEnemy(plan.roster, placement, {
+        time: (this.now() - r.started) / 1000,
+        balance: r.balance,
+        seq: (r.debugEnemySeq = (r.debugEnemySeq || 0) + 1),
+      });
+      r.rosterRevision++;
+      return;
+    }
+    // Issue #135: debug is otherwise a plain toggle; the former test tools
+    // (cards, waves, scenarios) are gone. Leaving resets the game so no test
+    // progress leaks into a normal game.
     requireGame(action === 'exit', 'Action de debug inconnue.', 400);
     requireGame(r.lab.enabled, 'Le mode debug est déjà inactif.');
     this.resetRoom(r, { enabled: false });
@@ -1764,7 +1789,8 @@ export class Game {
       const contacts = [],
         latched = new Set(v.contactWave === r.wave ? v.contacts : []);
       frames.forEach((frame, i) => {
-        if (!frame || r.kills.has(i)) return;
+        // Debug dummies never wear vehicles down (their HP is symbolic).
+        if (!frame || r.kills.has(i) || plan.roster[i].dummy) return;
         const radius = MAP.metres(
           plan.roster[i].size * 0.7 * enemySizeFactor(plan.roster[i].type) + 0.3,
         );

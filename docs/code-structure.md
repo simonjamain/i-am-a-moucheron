@@ -135,7 +135,10 @@ et sa mesure à 50 véhicules pour 900 insectes.
 
 Les règles d’équilibrage sont fixes (`DEFAULT_BALANCE`, `src/balance.js`) ; l’ancien
 outil de [réglage par room](room-balance.md) est retiré au profit du
-[mode debug](laboratory.md) (`lab-ui.js`, commande serveur `lab`).
+[mode debug](laboratory.md) (`lab-ui.js`, commande serveur `lab`). Ses outils de
+test des ennemis : `debug-enemies.ts` (entrées de roster partagées serveur/tests)
+et `debug-tools.ts` (colonnes du marchand, pose, dégâts des mannequins, hitbox et
+portées, côté client).
 
 Les paramètres de l'instructeur de vol sont enregistrés uniquement dans le
 navigateur par `flight-tuning.js` et présentés par `flight-tuning-ui.js`.
