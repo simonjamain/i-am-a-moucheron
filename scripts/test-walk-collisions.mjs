@@ -5,7 +5,7 @@ import { advanceArena, createSoul, SOUL_RADIUS } from '../src/purgatory-physics.
 import { BASE_WALK_RADIUS, baseBody, footstepsAudible } from '../src/base.js';
 import { stepWalker } from '../src/sortie.js';
 import { OFFICE_LAYOUT } from '../src/layout.js';
-import { ACTOR_UNIT } from '../src/scale.js';
+import { ACTOR_UNIT } from '../src/scale.ts';
 
 assert.ok(BASE_WALK_RADIUS <= 0.32 / 2, 'office: at most half the former 0.32');
 assert.ok(SOUL_RADIUS <= 0.48 / 2, 'purgatory: at most half the former 0.48');

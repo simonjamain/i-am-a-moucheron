@@ -89,7 +89,7 @@ Critères : comparaison avant/après de la taille et de la facilité de visée ;
 un tir inflige les mêmes dégâts qu’avant. Barre absente avant blessure, correcte
 après plusieurs impacts, identique entre clients et retirée au décès/nettoyage.
 Les éléments d’interface ne participent pas aux collisions de projectiles.
-Repères : `src/graphics.js`, `src/insect-hits.js`, `src/client.js`, `src/scale.js`.
+Repères : `src/graphics.js`, `src/insect-hits.js`, `src/client.js`, `src/scale.ts`.
 
 ### BUG-01 — Double animation de tampon
 

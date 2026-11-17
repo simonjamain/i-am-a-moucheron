@@ -137,7 +137,7 @@ console.log(
 const T = await import('../vendor/three.module.min.js');
 const { stepVacantAircraft } = await import('../src/vacant-flight.js');
 const { VEHICLES } = await import('../src/fleet.js');
-const { MAP } = await import('../src/scale.js');
+const { MAP } = await import('../src/scale.ts');
 const vacant = {
   p: [0, 2, 0],
   q: [0, 0, 0, 1],

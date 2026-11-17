@@ -1,7 +1,7 @@
-import { applyShadowPreset } from './shadow-settings.js';
+import { applyShadowPreset } from './shadow-settings.ts';
 import { PORTALS } from './routes.js';
 import { OFFICE_LAYOUT } from './layout.js';
-import { ACTOR_UNIT } from './scale.js';
+import { ACTOR_UNIT } from './scale.ts';
 export function createOffice(T, scene, { box, cyl, ball, mat, textLabel }) {
   const colliders = [],
     solidObjects = [];

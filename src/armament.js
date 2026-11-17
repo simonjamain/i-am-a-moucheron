@@ -1,4 +1,4 @@
-import { FLAK, REFERENCE, MAP } from './scale.js';
+import { FLAK, REFERENCE, MAP } from './scale.ts';
 export const HEAVY = Object.freeze({
   rocket: {
     interval: 0.3,

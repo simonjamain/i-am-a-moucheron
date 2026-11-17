@@ -8,17 +8,43 @@ const nx = 45,
   nz = 39;
 const originX = -4.4,
   originZ = -3.8;
-const smooth = (t) => (t <= 0 ? 0 : t >= 1 ? 1 : t * t * (3 - 2 * t));
-const fieldCache = new WeakMap();
+const smooth = (t: number): number => (t <= 0 ? 0 : t >= 1 ? 1 : t * t * (3 - 2 * t));
+/** A placed fan (ground-defense structure) or the placement preview. */
+export interface Fan {
+  kind?: string;
+  position: [number, number];
+  angle: number;
+  placedAt: number;
+  removedAt?: number | null;
+}
+/** The slice of the room's ground defense that drives the air field. */
+export interface AirDefense {
+  revision: number;
+  structures: Array<{ kind: string } & Partial<Fan>>;
+  retiringFans?: Fan[];
+}
+/** Interleaved [dx, dz] displacement per grid cell. */
+export type AirGrid = Float32Array;
+interface CachedField {
+  revision: number;
+  at: number;
+  settled: boolean;
+  grid: AirGrid | null;
+}
+const fieldCache = new WeakMap<AirDefense, CachedField>();
 
-export function fanPower(fan, now) {
+export function fanPower(fan: Fan, now: number): number {
   const strength = smooth(((fan.removedAt ?? now) - fan.placedAt) / FAN_FADE_MS);
   return fan.removedAt == null
     ? strength
     : strength * (1 - smooth((now - fan.removedAt) / FAN_FADE_MS));
 }
 
-export function airField(defense, now, preview) {
+export function airField(
+  defense: AirDefense | null | undefined,
+  now: number,
+  preview?: Fan | null,
+): AirGrid | null {
   if (!defense) return null;
   const cached = fieldCache.get(defense);
   if (
@@ -27,12 +53,12 @@ export function airField(defense, now, preview) {
     (cached.at === now || (cached.settled && now >= cached.at))
   )
     return cached.grid;
-  const fans = [
-    ...defense.structures.filter((s) => s.kind === 'fan'),
+  const fans: Fan[] = [
+    ...(defense.structures.filter((s) => s.kind === 'fan') as Fan[]),
     ...(defense.retiringFans || []),
   ];
   if (preview) fans.push(preview);
-  let grid = null,
+  let grid: AirGrid | null = null,
     settled = true;
   for (const fan of fans) {
     const power = preview ? (fan.removedAt == null ? 1 : 0) : fanPower(fan, now);
@@ -65,7 +91,7 @@ export function airField(defense, now, preview) {
   return grid;
 }
 
-export function bendAirPoint(p, u, grid) {
+export function bendAirPoint<P extends number[]>(p: P, u: number, grid: AirGrid | null): P {
   if (!grid) return p;
   const x = Math.min(nx - 1.0001, Math.max(0, (p[0] - originX) / cell));
   const z = Math.min(nz - 1.0001, Math.max(0, (p[2] - originZ) / cell));
@@ -74,7 +100,7 @@ export function bendAirPoint(p, u, grid) {
     k = (j * nx + i) * 2;
   const fx = x - i,
     fz = z - j;
-  const sample = (offset) => {
+  const sample = (offset: number): number => {
     const a = k + offset,
       b = a + nx * 2;
     return (

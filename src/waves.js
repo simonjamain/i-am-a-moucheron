@@ -1,5 +1,5 @@
-import { bendAirPoint } from './air-current.js';
-import { MAP, INSECT_SCALE, enemySizeFactor, GROUND_FOOT_DEPTH } from './scale.js';
+import { bendAirPoint } from './air-current.ts';
+import { MAP, INSECT_SCALE, enemySizeFactor, GROUND_FOOT_DEPTH } from './scale.ts';
 import { enemyRoutePosition, routeDuration } from './routes.js';
 export const ENEMY_TYPES = Object.freeze({
   ant: {
@@ -90,6 +90,18 @@ export const ENEMY_TYPES = Object.freeze({
     leak: 3,
     color: '#d0a14b',
   },
+});
+// First wave where the director may draw each species (offspring excluded).
+// Shared by wavePlan() and server/wave-preparation.js; key order is the draw order.
+export const ENEMY_UNLOCK_WAVE = Object.freeze({
+  ant: 1,
+  midge: 1,
+  roach: 3,
+  mosquito: 3,
+  guard: 5,
+  brute: 8,
+  spider: 11,
+  rat: 15,
 });
 // Technical bounds prevent anonymous UDP commands from exhausting memory or
 // generating an untransportable reliable snapshot. Counts are exact, without
@@ -226,15 +238,7 @@ export function wavePlan(room, wave, started = 0) {
     })),
     counts = { ant: initialAnts };
   remaining -= initialAnts;
-  const unlock = {
-    ant: 1,
-    roach: 3,
-    mosquito: 3,
-    guard: 5,
-    brute: 8,
-    spider: 11,
-    rat: 15,
-  };
+  const unlock = ENEMY_UNLOCK_WAVE;
   let eliteSpent = 0;
   while (remaining > 0 && roster.length < 180) {
     const unlocked = Object.entries(ENEMY_TYPES).filter(

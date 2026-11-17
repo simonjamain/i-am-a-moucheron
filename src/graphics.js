@@ -12,7 +12,7 @@ import { createMidgeRig } from './midge-model.js';
 import { WALKERS, walkerStride } from './walker-batch.js';
 import { FLYERS } from './flyer-batch.js';
 import { TAU } from './rigged-creature.js';
-import { GROUND_LEGS, MIDGE_SPHERE_RADIUS } from './scale.js';
+import { GROUND_LEGS, MIDGE_SPHERE_RADIUS } from './scale.ts';
 export function createGraphics(T, scene) {
   const materials = new Map();
   function mat(c) {

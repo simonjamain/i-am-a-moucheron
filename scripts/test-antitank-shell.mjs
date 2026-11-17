@@ -8,7 +8,7 @@ import { HEAVY, heavyDamage } from '../src/armament.js';
 import { FORTIFICATIONS } from '../src/ground-fortifications.js';
 import { howitzerMuzzle } from '../src/howitzer-geometry.js';
 import { debugSwarmRoster, swarmFrame } from '../src/waves.js';
-import { MAP } from '../src/scale.js';
+import { MAP } from '../src/scale.ts';
 
 const shell = HEAVY.antitank;
 assert.ok(shell.speed > HEAVY.he.speed && shell.speed > HEAVY.ap.speed, 'faster than tank shells');

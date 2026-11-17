@@ -1,4 +1,4 @@
-import { MAP } from './scale.js';
+import { MAP } from './scale.ts';
 
 // Issue #113: dependency-free geometry of the player-scale howitzer, shared by
 // the server (shell origin, aim limits) and the client model. Reference metres,

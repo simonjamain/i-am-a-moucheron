@@ -4,7 +4,7 @@ import * as T from '../vendor/three.module.min.js';
 import { createGraphics } from '../src/graphics.js';
 import { nextPilotMuzzle } from '../src/muzzle.js';
 import { CombatEffects } from '../src/combat.js';
-import { ACTOR_UNIT } from '../src/scale.js';
+import { ACTOR_UNIT } from '../src/scale.ts';
 
 const scene = new T.Scene();
 const graphics = createGraphics(T, scene);

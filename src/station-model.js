@@ -1,4 +1,4 @@
-import { orientedBox } from './oriented-collider.js';
+import { orientedBox } from './oriented-collider.ts';
 import { MODEL_DATA as REFUEL } from './meshy-refuel-data.js';
 import { MODEL_DATA as RADAR } from './meshy-radar-data.js';
 import { texturedMeshyParts } from './meshy-texture.js';

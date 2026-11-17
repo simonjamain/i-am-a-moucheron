@@ -1,7 +1,7 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
-    version: 313,
+    version: 317,
     changes: ['Les bébés araignées ont un nouveau modèle grognon qui trottine sur ses pattes.'],
   },
   {

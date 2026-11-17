@@ -1,5 +1,5 @@
-import { MAP } from './scale.js';
-import { formatDistance } from './units.js';
+import { MAP } from './scale.ts';
+import { formatDistance } from './units.ts';
 import { VEHICLES, vehicleMaxHP } from './fleet.js';
 
 // Single source of the bottom-left command help. Each context lists only the inputs

@@ -10,7 +10,7 @@ import { SHOP, shopPrice, purchaseCount, supportedPlacement } from '../src/equip
 import { fullAmmo, advanceSupplies } from '../src/logistics.js';
 import { HEAVY, heavyInterval } from '../src/armament.js';
 import { VEHICLES, LIGHT_FIGHTER, vehicleEntry, isRotorcraft } from '../src/fleet.js';
-import { MAP, ACTOR_UNIT } from '../src/scale.js';
+import { MAP, ACTOR_UNIT } from '../src/scale.ts';
 import { OFFICE_LAYOUT } from '../src/layout.js';
 import { OFFICE_SOLIDS } from '../worker/assets.js';
 import { createGraphics } from '../src/graphics.js';

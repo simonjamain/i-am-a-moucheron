@@ -1,4 +1,4 @@
-import { MAP } from './scale.js';
+import { MAP } from './scale.ts';
 // Human reference physics converted to the current world ratio.
 export const WALKER_FALL = Object.freeze({
   gravity: 9.81 * MAP.ratio,

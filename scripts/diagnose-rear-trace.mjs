@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import * as T from '../vendor/three.module.min.js';
 import { makeShotTrace } from '../src/tracers.js';
-import { MAP } from '../src/scale.js';
+import { MAP } from '../src/scale.ts';
 const scene = new T.Scene(),
   origin = new T.Vector3(0, 0.9, 0),
   direction = new T.Vector3(0, 0, -1);

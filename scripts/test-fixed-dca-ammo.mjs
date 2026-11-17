@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { runInNewContext } from 'node:vm';
-import { ACTOR_UNIT, FLAK, MAP } from '../src/scale.js';
+import { ACTOR_UNIT, FLAK, MAP } from '../src/scale.ts';
 import { FIXED_DCA_AMMO } from '../src/ground-ammo.js';
 import { advancePaidService } from '../src/paid-service.js';
 import { newGroundDefense } from '../src/ground-defense-state.js';
@@ -13,7 +13,7 @@ import { heavyDcaMuzzle } from '../src/fixed-dca.js';
 import { makeFixedDca, positionHeavyFlakSight } from '../src/fixed-dca-model.js';
 import { OFFICE_LAYOUT } from '../src/layout.js';
 import { makeInstallationCollider } from '../src/station-model.js';
-import { colliderContainsXZ } from '../src/oriented-collider.js';
+import { colliderContainsXZ } from '../src/oriented-collider.ts';
 import { aimGun, stepWalker, stationEntryOffset } from '../src/sortie.js';
 import { Game } from '../server/game.js';
 

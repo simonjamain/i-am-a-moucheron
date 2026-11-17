@@ -5,7 +5,7 @@ import { resolveHeavy } from './heavy-resolver.mjs';
 import { VEHICLES, vehiclePad } from '../src/fleet.js';
 import { stepHelicopter } from '../src/helicopter.js';
 import { resolveLanding } from '../src/sortie.js';
-import { MAP } from '../src/scale.js';
+import { MAP } from '../src/scale.ts';
 import { fullAmmo } from '../src/logistics.js';
 import { SHOP, shopPrice, purchaseCount } from '../src/equipment.js';
 import { reserveAlerts, missileStatus, ArrivalSignals } from '../src/reserve-feedback.js';

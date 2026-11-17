@@ -8,7 +8,7 @@ import { placementFacing } from '../src/placement-aim.js';
 import { supportedPlacement } from '../src/equipment.js';
 import { Game } from '../server/game.js';
 import { VEHICLES } from '../src/fleet.js';
-import { MAP } from '../src/scale.js';
+import { MAP } from '../src/scale.ts';
 
 const scene = new T.Scene();
 const graphics = createGraphics(T, scene);

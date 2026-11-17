@@ -1,4 +1,4 @@
-import { MAP } from './scale.js';
+import { MAP } from './scale.ts';
 export const TRACER_COLOR = '#ffad32';
 export const TRACER_EDGE = '#402315';
 // World-space luminous streaks; visibility never changes swept collision rays.

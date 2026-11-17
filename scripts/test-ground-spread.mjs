@@ -5,7 +5,7 @@ import { DEFAULT_BALANCE } from '../src/balance.js';
 import { advanceGroundCrowd } from '../src/ground-crowd.js';
 import { newGroundDefense, groundFlow } from '../src/ground-defense-state.js';
 import { swarmFrame } from '../src/waves.js';
-import { INSECT_SCALE, enemySizeFactor } from '../src/scale.js';
+import { INSECT_SCALE, enemySizeFactor } from '../src/scale.ts';
 
 const state = newGroundDefense();
 const world = {

@@ -1,5 +1,5 @@
 import { WALL_SEGMENT, WALL_SEGMENT_PRICE, HALF_BRICK, wallLength } from './brick-rules.js';
-import { FAN_COST, FAN_FADE_MS } from './air-current.js';
+import { FAN_COST, FAN_FADE_MS } from './air-current.ts';
 import { SENTRY } from './ground-sentry.js';
 import { FORTIFICATIONS, isFortification } from './ground-fortifications.js';
 import { onFloor, levelOf, FLOOR_LEVEL } from './airdrop.js';

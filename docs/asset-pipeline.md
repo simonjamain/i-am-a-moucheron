@@ -329,7 +329,7 @@ rejoue un clip au lieu d'une démarche calculée.
 
 ![Poses de marche du rat](rat-model-review.jpg)
 
-### Bébé araignée (version 313)
+### Bébé araignée (version 317)
 
 Modèle Meshy « Grumpy Spider » fourni par l'utilisateur, déjà riggé, sans clip ; il
 remplace les bébés procéduraux (sphères et boîtes dans `spiderling-batch.js`,
@@ -390,7 +390,7 @@ Modèle fourni par l'utilisateur, déjà riggé par Meshy, sans clip ; il rempla
   réel du même rig (`graphics.insect`). D'autres volants s'ajoutent par une
   entrée de `FLYERS` : l'abeille (309) et le moustique (311) l'ont fait.
 - Échelle et collision : facteur 0,75, corps de 2,2 unités et 2,9 d'envergure
-  (facteur d'espèce `brute` inchangé dans `scale.js`). Zone de tir : ellipsoïde de
+  (facteur d'espèce `brute` inchangé dans `scale.ts`). Zone de tir : ellipsoïde de
   la carapace sans ailes ni pattes (`BEETLE_HIT`), partagé par le proxy et le rig.
 - Vérification : `scripts/test-beetle-model.mjs` (provenance, os d'ailes rigides,
   carapace rigide pendant tout le cycle, orientation, battement symétrique, boucle

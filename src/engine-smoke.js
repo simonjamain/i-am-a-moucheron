@@ -3,7 +3,7 @@
 // changes the shape of any aircraft. One point cloud (one draw call) holds
 // every puff; puffs stay where they were emitted, so a moving aircraft leaves
 // a trail behind it.
-import { ACTOR_UNIT } from './scale.js';
+import { ACTOR_UNIT } from './scale.ts';
 
 export const SMOKE_THRESHOLD = 0.15; // damage ratio below which nothing is emitted
 export const SMOKE_CAPACITY = 1500;

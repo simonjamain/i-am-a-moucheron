@@ -1,6 +1,6 @@
 import { pilotFireInterval } from './fleet.js';
 import { FIXED_DCA_AMMO } from './ground-ammo.js';
-import { FLAK, MAP } from './scale.js';
+import { FLAK, MAP } from './scale.ts';
 
 // The Spitfire fires one round per gun every 60 ms.
 export const RAPID_DCA_GUN_INTERVAL = pilotFireInterval('spitfire');

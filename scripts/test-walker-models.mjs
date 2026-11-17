@@ -11,8 +11,8 @@ import { WALKERS, WalkerBatch, walkerStride } from '../src/walker-batch.js';
 import { footCycle, nearestRest, REST_PHASES, SWING } from '../src/walker-gait.js';
 import { createGraphics } from '../src/graphics.js';
 import { nearestInsectHit, insectContact, InsectIndex } from '../src/insect-hits.js';
-import { GROUND_FOOT_DEPTH, GROUND_FOOT_CLEARANCE, INSECT_SCALE } from '../src/scale.js';
-import { insectScale } from '../src/insect-status.js';
+import { GROUND_FOOT_DEPTH, GROUND_FOOT_CLEARANCE, INSECT_SCALE } from '../src/scale.ts';
+import { insectScale } from '../src/insect-status.ts';
 
 const near = (a, b, eps, label) => assert.ok(Math.abs(a - b) < eps, label + ': ' + a + ' vs ' + b);
 

@@ -1,5 +1,5 @@
-import { rayCollider } from './oriented-collider.js';
-import { MAP } from './scale.js';
+import { rayCollider } from './oriented-collider.ts';
+import { MAP } from './scale.ts';
 export class CrashEffects {
   constructor(T, scene, { sound, blast, limit = 12 } = {}) {
     this.T = T;

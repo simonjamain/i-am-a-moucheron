@@ -1,11 +1,21 @@
-import { colliderPoint, colliderBounds } from './oriented-collider.js';
-export function segmentBox(a, b, box) {
+import { colliderPoint, colliderBounds, type Collider } from './oriented-collider.ts';
+import type { Vec3Like } from './types.ts';
+
+type Axis = 'x' | 'y' | 'z';
+const AXES: readonly Axis[] = ['x', 'y', 'z'];
+
+/** Entry fraction in [0, 1] of segment a→b into the box, or null when it misses. */
+export function segmentBox(
+  a: readonly number[],
+  b: readonly number[],
+  box: Collider,
+): number | null {
   if (box.oriented)
     return segmentBox(colliderPoint(box, a), colliderPoint(box, b), colliderBounds(box));
   let lo = 0,
     hi = 1;
   for (let i = 0; i < 3; i++) {
-    const k = ['x', 'y', 'z'][i],
+    const k = AXES[i],
       d = b[i] - a[i];
     if (Math.abs(d) < 1e-12) {
       if (a[i] < box.min[k] || a[i] > box.max[k]) return null;
@@ -22,7 +32,13 @@ export function segmentBox(a, b, box) {
 }
 // Exact swept sphere against an axis-aligned box: piecewise quadratic distance
 // to the box, split at its faces. Unlike expanded AABBs this keeps round corners.
-export function sweptBoxProximity(a, b, box, radius, closest = false) {
+export function sweptBoxProximity(
+  a: readonly number[],
+  b: readonly number[],
+  box: Collider,
+  radius: number,
+  closest = false,
+): number | null {
   if (box.oriented)
     return sweptBoxProximity(
       colliderPoint(box, a),
@@ -31,7 +47,7 @@ export function sweptBoxProximity(a, b, box, radius, closest = false) {
       radius,
       closest,
     );
-  const keys = ['x', 'y', 'z'];
+  const keys = AXES;
   for (let i = 0; i < 3; i++) {
     const key = keys[i];
     if (
@@ -66,7 +82,7 @@ export function sweptBoxProximity(a, b, box, radius, closest = false) {
       B += 2 * m * d[i];
       C += m * m;
     }
-    const f = (t) => (A * t + B) * t + C;
+    const f = (t: number) => (A * t + B) * t + C;
     if (closest) {
       // Distance to a convex box is piecewise quadratic. A zero-distance
       // contact is already optimal; otherwise wait until the minimum is passed.
@@ -90,7 +106,12 @@ export function sweptBoxProximity(a, b, box, radius, closest = false) {
   return closest ? null : segmentBox(a, b, box);
 }
 // Swept entry time (not closest approach) avoids tunnelling and orders triggers.
-export function sweptSphereProximity(a, b, centre, radius) {
+export function sweptSphereProximity(
+  a: readonly number[],
+  b: readonly number[],
+  centre: Vec3Like,
+  radius: number,
+): number | null {
   const d = b.map((v, i) => v - a[i]),
     m = a.map((v, i) => v - centre[i]);
   const A = d.reduce((n, v) => n + v * v, 0),
@@ -105,7 +126,13 @@ export function sweptSphereProximity(a, b, centre, radius) {
 }
 
 // Relative motion can be supplied by subtracting target displacement from b.
-export function closestSphereProximity(a, b, centre, size, radius) {
+export function closestSphereProximity(
+  a: readonly number[],
+  b: readonly number[],
+  centre: Vec3Like,
+  size: number,
+  radius: number,
+): number | null {
   const d = b.map((v, i) => v - a[i]);
   const m = a.map((v, i) => v - centre[i]);
   const A = d.reduce((sum, v) => sum + v * v, 0);

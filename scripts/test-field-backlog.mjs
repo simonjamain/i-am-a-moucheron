@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
 import { Game } from '../server/game.js';
 import { VEHICLES, vehicleEntry, vehicleAccess } from '../src/fleet.js';
-import { ACTOR_UNIT } from '../src/scale.js';
+import { ACTOR_UNIT } from '../src/scale.ts';
 import { OFFICE_LAYOUT } from '../src/layout.js';
 const source = readFileSync('src/client.js', 'utf8');
 const eligibility =

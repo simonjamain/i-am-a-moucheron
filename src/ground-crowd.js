@@ -1,4 +1,4 @@
-import { INSECT_SCALE, enemySizeFactor } from './scale.js';
+import { INSECT_SCALE, enemySizeFactor } from './scale.ts';
 import { advanceGroundUnit, groundUnit } from './ground-creatures.js';
 
 // Soft personal space in room metres, distinct from projectile hit volumes.

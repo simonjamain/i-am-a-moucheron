@@ -3,7 +3,7 @@
 ## Déployer les sources courantes
 
 Le dépôt GitHub est la référence ; un **ZIP des sources** n'est produit que si la livraison demandée le nécessite (voir `AGENTS.md`), sans `node_modules`, données
-de partie, image Docker ni métadonnées Git. Extraire puis utiliser Node 22.13+ :
+de partie, image Docker ni métadonnées Git. Extraire puis utiliser Node 22.18+ :
 
 ```sh
 npm ci
@@ -29,7 +29,7 @@ sans réintroduire ses instructions ou son manifeste dans le runtime Node.
 Le Site public Worker/D1 reste distinct du runtime Node/UDP. Les nouvelles
 commandes d’armes lourdes, banque, lits, impacts de chute, bons prépayés et nettoyage ciblent Node. **Ne pas
 publier leur client sur le Worker**, qui ne possède pas ces opérations. Les
-sources sont poussées au dépôt, puis livrées en ZIP. Une installation sur VM
+sources sont poussées au dépôt (PR), puis livrées en ZIP uniquement sur demande. Une installation sur VM
 n’est pas revendiquée sans accès et résultat vérifiés. La publication historique
 et les tests D1 restent disponibles pour compatibilité avec les versions précédentes.
 
@@ -43,6 +43,7 @@ restent immuables ; Node ne les charge pas.
 
 ```sh
 npm run format:check
+npm run typecheck
 npm test
 npm run check:docs
 npm run check:version
@@ -52,14 +53,24 @@ node scripts/validate-artifact.mjs
 
 `check:version` compare `VERSION` indexé à celui de `HEAD` : indexer l'augmentation
 (`npm run version:next`) avant de l'exécuter. Le hook `.githooks/pre-commit`
-(activé par `npm run prepare:version`) lance ce contrôle puis `scripts/build.sh`.
-La CI `Docker build validation` exécute aussi `npm test`, `check:docs`, le build
-et `validate-artifact.mjs` ; `docker build` local reste exigé avant livraison
+(activé par `npm run prepare:version`) ne lance que ce contrôle ; le build reste
+à exécuter à la main.
+Le workflow `Docker build validation` contient aussi le job `Full game regression and formatting` :
+`npm test`, `format:check`, `check:docs`, le build et `validate-artifact.mjs` ; `docker build` local reste exigé avant livraison
 ([Docker](docker.md)).
 
-Audit des contrôles (suite complète mesurée : 144 scripts, environ 40 s cumulées,
-tous < 3 s) : lancer `npm test` en entier plutôt qu'une sélection, le retour est
-déjà rapide. `npm run format:check` est la seule commande de format, en local et
+Audit des contrôles (suite complète : 153 scripts, environ 50 s cumulées, tous < 4 s) :
+`npm test` lance `scripts/run-tests.mjs`, qui assemble puis exécute la liste ordonnée
+de `scripts/suite.mjs`, chaque script dans son propre processus, et résume tous les
+échecs à la fin. `npm test -- <fragment>` cible les scripts dont le nom contient le
+fragment, `--bail` s'arrête au premier échec. Avant une livraison, lancer la suite
+entière ; elle inclut `tsc` (`test-typescript.mjs`) et la cohérence des tables par
+espèce et par véhicule (`test-registries.mjs`). `test-suite-wiring.mjs` échoue si un
+`scripts/test-*.mjs` n'est pas dans `scripts/suite.mjs` (seul `test-udp-capacity-50.mjs`,
+lourd, a sa commande `test:capacity`) : un test orphelin ne protège rien.
+`test-wave-preparation.mjs` tire des meutes au hasard et échoue rarement
+(« few groups ») sans changement de code : le relancer avant d'enquêter.
+`npm run format:check` est la seule commande de format, en local et
 en CI (job `Full game regression and formatting`) ; les données générées
 (`src/*data.js` importées, `docs/ui-review.html`) sont dans `.prettierignore`.
 Le job `Docker build` démarre l'image construite et vérifie `/healthz`

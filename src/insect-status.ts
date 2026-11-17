@@ -1,9 +1,29 @@
-import { enemySizeFactor } from './scale.js';
+import type * as THREE from 'three';
+import { enemySizeFactor } from './scale.ts';
+import type { Three } from './types.ts';
+
+type BasicMesh = THREE.Mesh<THREE.BufferGeometry, THREE.MeshBasicMaterial>;
+export interface WoundState {
+  fraction: number;
+  visible: boolean;
+  smoke: boolean;
+  flames: boolean;
+}
+interface StatusItem {
+  root: THREE.Group;
+  bar: THREE.Group;
+  back: BasicMesh;
+  fill: BasicMesh;
+  smoke: BasicMesh[];
+  flames: BasicMesh[];
+}
+type InsectId = string | number;
+
 // Presentation only: these meshes never enter the projectile collision surface.
-export function insectScale(type, base, size = 1) {
+export function insectScale(type: string, base: number, size = 1): number {
   return base * size * enemySizeFactor(type);
 }
-export function woundState(health, maximum) {
+export function woundState(health: number, maximum: number): WoundState {
   const fraction = Math.max(0, Math.min(1, health / Math.max(1, maximum)));
   return {
     fraction,
@@ -13,7 +33,14 @@ export function woundState(health, maximum) {
   };
 }
 export class InsectStatus {
-  constructor(T, scene, { scale = 1 } = {}) {
+  T: Three;
+  scene: THREE.Object3D;
+  scale: number;
+  items: Map<InsectId, StatusItem>;
+  geometry: THREE.PlaneGeometry;
+  smokeGeometry: THREE.CircleGeometry;
+  flameGeometry: THREE.CircleGeometry;
+  constructor(T: Three, scene: THREE.Object3D, { scale = 1 }: { scale?: number } = {}) {
     this.T = T;
     this.scene = scene;
     this.scale = scale;
@@ -23,13 +50,13 @@ export class InsectStatus {
     this.flameGeometry = new T.CircleGeometry(0.5, 3);
     this.flameGeometry.rotateZ(Math.PI / 2);
   }
-  create(id) {
+  create(id: InsectId): StatusItem {
     const T = this.T,
       root = new T.Group(),
       bar = new T.Group();
     root.add(bar);
-    const make = (color, opacity = 1) => {
-      const m = new T.Mesh(
+    const make = (color: string, opacity = 1): BasicMesh => {
+      const m: BasicMesh = new T.Mesh<THREE.BufferGeometry, THREE.MeshBasicMaterial>(
         this.geometry,
         new T.MeshBasicMaterial({
           color,
@@ -63,15 +90,22 @@ export class InsectStatus {
     this.scene.add(root);
     return item;
   }
-  update(id, model, health, maximum, camera, time = 0, size = 1) {
+  update(
+    id: InsectId,
+    model: THREE.Object3D,
+    health: number,
+    maximum: number,
+    camera: THREE.Camera,
+    time = 0,
+    size = 1,
+  ): void {
     const state = woundState(health, maximum);
     if (!state.visible) {
       this.remove(id);
       return;
     }
     const e = this.items.get(id) || this.create(id),
-      unit = this.scale * size,
-      T = this.T;
+      unit = this.scale * size;
     e.root.position.copy(model.position);
     e.root.quaternion.copy(camera.quaternion);
     const distance = camera.position.distanceTo(model.position),
@@ -94,20 +128,20 @@ export class InsectStatus {
       flame.rotation.z = Math.sin(time * 13 + i) * 0.15;
     }
   }
-  keep(ids) {
+  keep(ids: Set<InsectId>): void {
     for (const id of this.items.keys()) if (!ids.has(id)) this.remove(id);
   }
-  remove(id) {
+  remove(id: InsectId): void {
     const e = this.items.get(id);
     if (!e) return;
     this.scene.remove(e.root);
-    e.root.traverse((o) => o.material?.dispose());
+    e.root.traverse((o) => (o as Partial<BasicMesh>).material?.dispose());
     this.items.delete(id);
   }
-  clear() {
+  clear(): void {
     for (const id of this.items.keys()) this.remove(id);
   }
-  dispose() {
+  dispose(): void {
     this.clear();
     this.geometry.dispose();
     this.smokeGeometry.dispose();

@@ -1,9 +1,10 @@
 # Carte du code actuel
 
-JavaScript ESM natif, client Three.js et serveur Node en RAM. Lire
+ESM natif en migration progressive vers TypeScript (types effacés à l'exécution,
+sans bundler : voir [TypeScript](typescript.md)), client Three.js et serveur Node
+en RAM. Les types partagés sont dans `src/types.ts`. Lire
 [gameplay](gameplay.md) pour les parcours, [exploitation](operations.md) pour lancer,
-tester et livrer, puis la référence métier concernée. `AGENTS.md` décrit la prise
-en charge continue du backlog et la revue finale des documents.
+tester et livrer, puis la référence métier concernée. `AGENTS.md` décrit la boucle de travail, la livraison et la fusion autonome.
 
 ## Exécution et autorité
 
@@ -28,12 +29,12 @@ base de données ni accès disque dans les opérations de jeu Node. Voir
 
 | Domaine              | Modules et référence                                                                                                                                                                                                                                                                                |
 | -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Unités/décor         | `scale.js`, `layout.js`, `office.js` ; [échelle](scale-fleet-weapons.md).                                                                                                                                                                                                                           |
+| Unités/décor         | `scale.ts`, `layout.js`, `office.js` ; [échelle](scale-fleet-weapons.md).                                                                                                                                                                                                                           |
 | Géométrie            | `graphics.js`, modèles procéduraux ; `renderer.js` pour WebGL/secours.                                                                                                                                                                                                                              |
 | Vol et entrée        | `flight.js`, `mouse-flight.js`, `input.js`, `control-focus.js`, `fleet.js`, `vacant-flight.js`.                                                                                                                                                                                                     |
 | Corps et purgatoire  | `base.js`, `purgatory-physics.js`, `sortie.js` ; [file](purgatory-queue.md).                                                                                                                                                                                                                        |
 | Chute actuelle       | `field-physics.js` : gravité humaine convertie au ratio, gonflage, impact ; [physique actuelle](multiplayer-return.md).                                                                                                                                                                             |
-| Armes                | `ballistics.js`, `combat.js`, `armament.js`, `ordnance.js`, `aircraft-fire.js`, `tracers.js`, `muzzle.js`, `insect-hits.js`.                                                                                                                                                                        |
+| Armes                | `ballistics.ts`, `combat.js`, `armament.js`, `ordnance.js`, `aircraft-fire.js`, `tracers.js`, `muzzle.js`, `insect-hits.js`.                                                                                                                                                                        |
 | Visée/caméras        | `personal-aim.js` pour épaule/main ; `tank-reticle.js` pour les trajectoires de mire ; `tank-view.js` pour lunette, observation et bouche serveur.                                                                                                                                                  |
 | Vagues               | `server/wave-preparation.js` tire et conserve la vague annoncée (sans vote ni plans depuis la version 264) ; `wave-council-ui.js` l'affiche avec le lancement anticipé. `waves.js`, `routes.js`, `route-speed.js`, `route-navigation.js`, `route-obstacles.js` (généré par `scripts/assemble.mjs`). |
 | Économie/réserves    | `equipment.js`, `logistics.js`, `bank.js`, `rewards.js` ; [logistique](logistics-contracts.md).                                                                                                                                                                                                     |
@@ -41,10 +42,10 @@ base de données ni accès disque dans les opérations de jeu Node. Voir
 | Lits                 | `beds.js` : accès et support ; `bed-ui.js` : document personnel et signature.                                                                                                                                                                                                                       |
 | HUD/banque           | `hud.js`, `equipment-controls.js`, `bank-ui.js` ; [véhicules et banque](vehicles-bank.md).                                                                                                                                                                                                          |
 | Mesure d’interaction | `interaction-timing.js` : feedback immédiat et traces bornées de sélection.                                                                                                                                                                                                                         |
-| Effets/son           | `insect-status.js`, `crash-effects.js`, `audio.js`, effets de combat et corps tombants du client.                                                                                                                                                                                                   |
+| Effets/son           | `insect-status.ts`, `crash-effects.js`, `audio.js`, effets de combat et corps tombants du client.                                                                                                                                                                                                   |
 
 Les couloirs aériens et leur déformation sont partagés entre serveur et client dans
-`routes.js` et `air-current.js`. Le client les affiche avec `air-trails.js`.
+`routes.js` et `air-current.ts`. Le client les affiche avec `air-trails.js`.
 
 Les gerbes de sang purement visuelles sont gérées dans `blood-effects.js`,
 avec un seul rendu instancié borné et une intégration aux impacts dans `client.js`.
@@ -69,7 +70,7 @@ entre deux pairs. Le Worker conserve son ancien périmètre, sans Spitfire gratu
 
 `scripts/assemble.mjs` utilise la géométrie réelle du bureau pour générer les
 colliders et le graphe d’assets à URL de contenu. `worker/assets.js` est utilisé
-par Node. `worker/index.js` et `dist/` sont les sorties du backend Worker
+par Node. `worker/index.js` (versionné) et `dist/` (ignoré par Git) sont les sorties du backend Worker
 historique ; `src/server.js`, `drizzle/` et `scripts/local-db.mjs` restent sa
 compatibilité SQL. Ils ne sont pas importés par le runtime Node.
 
@@ -97,18 +98,18 @@ le [lot courant](multiplayer-return.md), complété par les vrais pairs UDP.
 
 `helicopter.js` porte le pilotage assisté, butées, origines et guidage borné.
 `mobile-flak.js` porte unités de proximité et enveloppes de coque orientées ;
-`swept-geometry.js` centralise les intersections balayées exactes ; `tank.js` réutilise ces balayages pour le long camion articulé.
+`swept-geometry.ts` centralise les intersections balayées exactes ; `tank.js` réutilise ces balayages pour le long camion articulé.
 `server/game.js` possède lancement/débit, armement différé et détonation fiable ;
 `ordnance.js` conserve les paramètres de chaque départ. `graphics.js` produit
 les deux modèles, `contracts.js` leurs rôles, `hud.js` leurs panneaux.
 `test-support-vehicles.mjs` et les pairs natifs UDP couvrent le lot. Voir
 [état de validation et limites](support-vehicles.md).
 
-`routes.js` distingue portail décoratif et sortie visible ; `scale.js` centralise
+`routes.js` distingue portail décoratif et sortie visible ; `scale.ts` centralise
 le facteur du moucheron ; `client.js` recrée les meshes par vague/espèce.
 `test-enemy-visibility.mjs` couvre la [visibilité courante](enemy-visibility.md).
 
-`scale.js` centralise les six facteurs d’insectes, partagés par géométrie et
+`scale.ts` centralise les six facteurs d’insectes, partagés par géométrie et
 volumes de collision serveur. `waves.js` relève les corps terrestres au-dessus
 du support ; `route-navigation.js` adapte leur marge. `test-enemy-readability.mjs`
 mesure les silhouettes projetées et les vrais corps au sol.

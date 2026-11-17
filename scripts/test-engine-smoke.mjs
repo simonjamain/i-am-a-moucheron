@@ -12,7 +12,7 @@ import {
   smokeLook,
   smokeRate,
 } from '../src/engine-smoke.js';
-import { ACTOR_UNIT } from '../src/scale.js';
+import { ACTOR_UNIT } from '../src/scale.ts';
 
 assert.equal(damageRatio(100, 100), 0);
 assert.equal(damageRatio(50, 200), 0.75);

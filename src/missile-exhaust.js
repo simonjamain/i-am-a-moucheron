@@ -1,4 +1,4 @@
-import { MAP } from './scale.js';
+import { MAP } from './scale.ts';
 
 // Purely client-side exhaust: no physics, hitboxes or network messages.
 // Issue #108: per-projectile look. Trails are darker and thicker than before,
