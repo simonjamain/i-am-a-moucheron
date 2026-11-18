@@ -59,7 +59,7 @@ Le workflow `Docker build validation` contient aussi le job `Full game regressio
 `npm test`, `format:check`, `check:docs`, le build et `validate-artifact.mjs` ; `docker build` local reste exigé avant livraison
 ([Docker](docker.md)).
 
-Audit des contrôles (suite complète : 153 scripts, environ 50 s cumulées, tous < 4 s) :
+Audit des contrôles (suite complète : 154 scripts, environ 50 s cumulées, tous < 4 s) :
 `npm test` lance `scripts/run-tests.mjs`, qui assemble puis exécute la liste ordonnée
 de `scripts/suite.mjs`, chaque script dans son propre processus, et résume tous les
 échecs à la fin. `npm test -- <fragment>` cible les scripts dont le nom contient le
@@ -104,7 +104,7 @@ partie UDP sur son réseau. Le chargement du client et les panneaux sont testabl
 ainsi que la géométrie Three.js sans GPU. Les images comparatives des modèles
 sont des projections CPU des triangles. Pointer Lock, confort du pilotage,
 tactile physique, écoute, charge maximale et WAN restent à vérifier sur la VM.
-La capacité configurée (100 joueurs) ne prouve pas des performances à cette charge ;
+La capacité configurée (128 connexions simultanées, `maxConnections` de `server/index.js`) ne prouve pas des performances à cette charge ;
 la cible de jeu reste un petit groupe de 5–10 joueurs.
 
 ## Référence métier du lot courant
