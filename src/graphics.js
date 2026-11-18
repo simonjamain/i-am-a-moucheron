@@ -14,7 +14,12 @@ import { createMidgeRig } from './midge-model.js';
 import { WALKERS, walkerStride } from './walker-batch.js';
 import { FLYERS } from './flyer-batch.js';
 import { TAU } from './rigged-creature.js';
-import { GROUND_LEGS, MIDGE_SPHERE_RADIUS } from './scale.ts';
+import {
+  FLYER_HIT_TOLERANCE,
+  GROUND_LEGS,
+  MIDGE_HIT_TOLERANCE,
+  MIDGE_SPHERE_RADIUS,
+} from './scale.ts';
 export function createGraphics(T, scene) {
   const materials = new Map();
   function mat(c) {
@@ -160,7 +165,7 @@ export function createGraphics(T, scene) {
 
   function insect(type = 'midge') {
     const g = new T.Group();
-    g.userData.hitTolerance = type === 'midge' ? 1.2 : 1;
+    g.userData.hitTolerance = type === 'midge' ? MIDGE_HIT_TOLERANCE : 1;
     if (WALKERS[type]) {
       // Rigged Meshy walkers (corpses, purgatory souls, non-WebGL fallback).
       // Living WebGL walkers are drawn by WalkerBatch; hits use the ellipsoid.
@@ -201,7 +206,7 @@ export function createGraphics(T, scene) {
         legs: [],
         hitParts: [],
         disposables: [rig.mesh.material],
-        hitTolerance: 1,
+        hitTolerance: FLYER_HIT_TOLERANCE,
         hitEllipsoid: [...flyer.hit.radii],
         hitCentre: [...flyer.hit.centre],
         flight: rig,
@@ -224,7 +229,7 @@ export function createGraphics(T, scene) {
         legs: [],
         hitParts: [],
         disposables: [rig.mesh.material],
-        hitTolerance: 1.2,
+        hitTolerance: MIDGE_HIT_TOLERANCE,
         sphereRadius: MIDGE_SPHERE_RADIUS,
         flight: rig,
       };

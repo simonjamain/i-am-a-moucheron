@@ -19,6 +19,7 @@ export const RAT_MODEL = Object.freeze({
   frames: 30, // one baked frame per clip key
   maxRate: 4, // apparent gait rate cap (loops/s)
   raise: -0.02, // insect units: puts the sole plane on the shared foot height
+  sink: 0.065, // insect units: lowers the rat 3.5 mm (1 unit = 5.4 cm), it walked in the air; more sinks its paws into the floor
   sole: 0.006, // model metres: lowest point of the planted soles in the clip
   toeDip: 0.2, // insect units: how far the front toes may dip under the lift
   // Insect units backwards: the body (nose to hips) is centred on the proxy,
@@ -26,8 +27,9 @@ export const RAT_MODEL = Object.freeze({
   back: 1.32,
 });
 // Hit volume in insect units (ellipsoid centre and radii): body and head,
-// without the tail or the paws.
-export const RAT_HIT = Object.freeze({ centre: [0, 0.5, 0], radii: [0.72, 0.7, 1.36] });
+// without the tail or the paws. Lowered by `sink` with the model, and shifted
+// a little backwards (-Z).
+export const RAT_HIT = Object.freeze({ centre: [0, 0.435, -0.15], radii: [0.72, 0.7, 1.36] });
 
 export const RAT_BONES = Object.freeze({
   root: 'Hips',
@@ -181,7 +183,7 @@ export const RAT = defineCreature(D, {
   name: 'rat',
   presentation: (T) =>
     new T.Matrix4()
-      .makeTranslation(0, RAT_MODEL.raise, RAT_MODEL.back)
+      .makeTranslation(0, RAT_MODEL.raise - RAT_MODEL.sink, RAT_MODEL.back)
       .multiply(groundPresentation(T, RAT_MODEL.scale)),
   pose: ratWalkPose,
   rest: REST_PHASES[0],

@@ -1,10 +1,16 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
-    version: 337,
+    version: 338,
     changes: [
       'En plein combat, les sons proches et importants ne sont plus coupés par le vacarme lointain.',
       'Le bruit des moteurs ne se limite plus aux dix avions les plus proches : on entend ceux qui comptent le plus.',
+    ],
+  },
+  {
+    version: 334,
+    changes: [
+      'Le rat marche au ras du sol. Le moucheron est plus dur à toucher, les autres insectes volants plus faciles.',
     ],
   },
   {
