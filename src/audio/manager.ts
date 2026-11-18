@@ -178,6 +178,15 @@ export function createAudioManager<const C extends Catalog>(
     sounds.delete(sound);
     if (sound.voice) releaseVoice(sound.voice, fade);
     sound.voice = null;
+    notifyEnded(sound.options, sound.name);
+  }
+
+  function notifyEnded(options: PlayOptions<any>, name: string) {
+    try {
+      options.onEnded?.();
+    } catch (e) {
+      warn('onEnded of ' + name + ' threw: ' + ((e as Error)?.message ?? e));
+    }
   }
 
   function virtualize(sound: LogicalSound, fade: number) {
@@ -317,7 +326,10 @@ export function createAudioManager<const C extends Catalog>(
         return noop;
       }
       const loop = !!def.loop;
-      if (!loop && (!running() || muted || !loaded(def))) return noop;
+      if (!loop && (!running() || muted || !loaded(def))) {
+        notifyEnded(options as PlayOptions<any>, name);
+        return noop;
+      }
       const position = options.position ? trackPosition(options.position) : null;
       const sound: LogicalSound = {
         id: nextId++,

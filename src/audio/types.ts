@@ -79,6 +79,8 @@ export type PlayOptions<P> = {
   volume?: number;
   /** Overrides the catalogue distances for this instance. */
   distance?: DistanceOptions;
+  /** Called once when the sound ends for any reason, refusal included. */
+  onEnded?: () => void;
 } & ([P] extends [void] ? { params?: never } : { params: P | (() => P) });
 
 /** Timers used by the manager; injectable for tests. */

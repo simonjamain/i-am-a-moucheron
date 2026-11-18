@@ -173,6 +173,27 @@ function setup(options = {}) {
   virtualScore = 1;
 }
 
+// onEnded fires once per sound, whatever ends it (natural end, stop, refusal).
+{
+  const { ctx, audio, timers } = setup({ config: { maxVoices: 1 } });
+  const ended = [];
+  audio.play('blip', { score: () => 1, onEnded: () => ended.push('early') });
+  await audio.resume();
+  audio.play('blip', { score: () => 2, onEnded: () => ended.push('natural') });
+  audio.play('blip', { score: () => 1, onEnded: () => ended.push('refused') });
+  const stop = audio.play('hum', {
+    score: () => 0,
+    params: { rate: 1 },
+    onEnded: () => ended.push('stopped'),
+  });
+  await flush();
+  stop();
+  stop();
+  ctx.advance(1.01);
+  timers.fire();
+  assert.deepEqual(ended, ['early', 'refused', 'stopped', 'natural']);
+}
+
 // One-shots end on their own and free their nodes.
 {
   const { ctx, audio, timers } = setup();

@@ -1285,7 +1285,7 @@ async function soulHit(db, pilot, b, now) {
 export default {
   async fetch(request, env) {
     const u = new URL(request.url);
-    const versioned = u.pathname.match(/^\/assets\/([a-f0-9]{12})(\/[^/]+\.js)$/);
+    const versioned = u.pathname.match(/^\/assets\/([a-f0-9]{12})(\/(?:[a-z0-9-]+\/)?[^/]+\.js)$/);
     if (u.pathname.startsWith('/assets/') && (!versioned || versioned[1] !== BUILD_VERSION))
       return new Response('Version expirée : rechargez la page.', {
         status: 410,

@@ -116,7 +116,15 @@ export class FakeContext {
     return this.track(node);
   }
   createBuffer(channels, length, sampleRate) {
-    return { numberOfChannels: channels, length, sampleRate, duration: length / sampleRate };
+    return {
+      numberOfChannels: channels,
+      length,
+      sampleRate,
+      duration: length / sampleRate,
+      copyToChannel(samples) {
+        this.samples = samples;
+      },
+    };
   }
   async decodeAudioData(data) {
     if (!data || data.byteLength === 0) throw Error('EncodingError');

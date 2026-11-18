@@ -11,6 +11,7 @@ export const SUITE = [
   'test-audio',
   'test-audio-library',
   'test-audio-boundary',
+  'test-game-audio',
   'test-boarding',
   'test-client-authority',
   'test-pointer-capture',
