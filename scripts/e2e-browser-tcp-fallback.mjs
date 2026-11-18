@@ -26,6 +26,9 @@ const app = createGameServer({
 });
 await new Promise((r) => app.server.listen(0, '127.0.0.1', r));
 const browser = await chromium.launch();
+// Software WebGL renders every pixel on the CPU; a small page keeps a shared
+// runner from starving the browser (the server drops a pilot silent for 15 s).
+const SMALL_VIEWPORT = { width: 320, height: 240 };
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const until = async (test, ms, label) => {
   const start = Date.now();
@@ -36,16 +39,18 @@ const until = async (test, ms, label) => {
   return Date.now() - start;
 };
 try {
-  const page = await browser.newPage();
+  const page = await browser.newPage({ viewport: SMALL_VIEWPORT });
   const errors = [];
   page.on('pageerror', (e) => errors.push(e.message));
   // Same harness shim as e2e-browser-resume: sandboxed Chromium may never
   // report ICE gathering as complete. The game code itself is unchanged.
   await page.addInitScript(() => {
     const Native = RTCPeerConnection;
+    globalThis.peerConnectionCount = 0;
     globalThis.RTCPeerConnection = class extends Native {
       constructor(...args) {
         super(...args);
+        globalThis.peerConnectionCount++;
         this.gathered = false;
         setTimeout(() => {
           this.gathered = true;
@@ -82,6 +87,7 @@ try {
   }
   // Headless software WebGL is slow here: allow time for the first frames.
   await until(() => seen.command > 0 && seen.motion > 0, 20000, 'commands and motion over TCP');
+  const attemptsBefore = await page.evaluate(() => peerConnectionCount);
   const dropped = new Set(app.connections);
   for (const c of dropped) c.close();
   const resumedAfter = await until(
@@ -89,10 +95,17 @@ try {
       [...app.connections].some(
         (c) => !dropped.has(c) && c.transport === 'tcp' && c.session.player?.id === pilot,
       ) && /^● TCP \(SECOURS\) · /.test(await net()),
-    20000,
+    45000,
     'resume over TCP',
   );
-  assert.ok(resumedAfter < 4000, 'resume goes straight to TCP, without a new UDP attempt');
+  // The resume must not start a new UDP attempt (abandoned only after 5 s).
+  // Count the page's peer connections instead of trusting a stopwatch, which
+  // a loaded runner stretches.
+  assert.equal(
+    await page.evaluate(() => peerConnectionCount),
+    attemptsBefore,
+    'resume goes straight to TCP, without a new UDP attempt',
+  );
   assert.equal(room.pilots.size, 1, 'no second pilot');
   await page.evaluate(() => dispatchEvent(new Event('pagehide')));
   await until(async () => !room.pilots.has(pilot), 3000, 'leave on pagehide');

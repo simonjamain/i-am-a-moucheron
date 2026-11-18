@@ -1,6 +1,10 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 340,
+    changes: ['Le temps de préparation entre deux vagues passe à 3 minutes.'],
+  },
+  {
     version: 339,
     changes: [
       'La zone de tir du scarabée est maintenant une sphère parfaite, autour de son corps.',

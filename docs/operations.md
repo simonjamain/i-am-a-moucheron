@@ -84,6 +84,12 @@ Chromium ; le job CI `Real Chromium over WebRTC UDP/TCP` les exécute à chaque 
 page) restent manuels jusqu'à diagnostic. Lancer le script ciblé
 (`e2e:resume`, `e2e:motion`, `e2e:tcp`) pendant l'itération. Ils prouvent la poignée de main
 WebRTC et les flux en loopback, pas WebGL (rendu supprimé ou logiciel), le WAN ni le confort.
+Ils ouvrent des pages de 320×240 : le WebGL logiciel dessine chaque pixel sur le CPU, et
+sur deux cœurs deux pages 1280×720 se privaient mutuellement (le serveur coupe un pilote
+muet depuis 15 s ; échec reproduit avec `taskset -c 0,1`, disparu avec la petite page).
+Leurs attentes tolèrent aussi un runner lent : la reprise attend jusqu'à 45 s, le mouvement de
+l'autre pilote est attendu par sondage (30 s) et l'absence de nouvelle tentative UDP se
+vérifie en comptant les `RTCPeerConnection` de la page, non au chronomètre.
 `test-wave-preparation.mjs` utilise des graines fixes (`WAVE_SEEDS=2000` pour élargir) : plus
 de test aléatoire intermittent.
 

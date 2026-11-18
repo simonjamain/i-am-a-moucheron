@@ -22,7 +22,7 @@ suivent individuellement la navigation et évitent doucement leurs voisins ; voi
 [navigation terrestre](gameplay.md#navigation-terrestre). Les positions réelles
 remplacent les anciennes files d'affichage. Le tirage conserve les déblocages du bestiaire et borne à 900 la population avant le multiplicateur de room. La difficulté affichée additionne les coûts du roster réellement envoyé. La progression seule ne modifie ni les PV individuels ni les dégâts.
 
-Le lancement et les pauses durent 60 secondes par défaut. Le bandeau affiche la prochaine vague et sa frise (entrées, horaires, espèces). Tout joueur peut lancer la vague annoncée avant l’échéance ; à l’échéance, elle démarre seule.
+Le lancement initial dure 60 secondes par défaut et les pauses entre vagues 180 secondes (3 minutes). Le bandeau affiche la prochaine vague et sa frise (entrées, horaires, espèces). Tout joueur peut lancer la vague annoncée avant l’échéance ; à l’échéance, elle démarre seule.
 
 Depuis la version 264, il n’y a **plus de vote ni de cartes de plans** entre les vagues, ni les améliorations d’équipe qui en découlaient (sucre parfumé, balles traversantes, renfort, colle renforcée). Les constructions du Castor (tourelle automatique, bunker LEGO, canon antichar) ne demandent plus de plan : leur prix en dollars suffit. Les commandes `wave-vote` et `wave-buy` n’existent plus. La caisse initiale vaut 0 $ par défaut. Dès la première préparation, l’équipe peut signer l’une des trois offres de la banque (12 à 40 $) pour financer ses premières constructions. Les échéances restent dues à chaque fin de vague. La remise à zéro efface les objets.
 

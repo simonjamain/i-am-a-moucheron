@@ -356,8 +356,8 @@ const roster = waveRoom.plan.roster;
 roster.forEach((_, i) => waveRoom.kills.add(i));
 waveGame.advance(waveRoom);
 assert.equal(waveRoom.phase, 'prep');
-assert.equal(waveRoom.next_wave_at - waveNow, 60000);
-waveNow += 59999;
+assert.equal(waveRoom.next_wave_at - waveNow, 180000);
+waveNow += 179999;
 wavePlayer.seen = waveNow;
 waveGame.advance(waveRoom);
 assert.equal(waveRoom.wave, 1);
@@ -374,7 +374,7 @@ waveGame.command('MINUTE', wavePlayer.id, 'start', { preparation: prep.id });
 waveGame.command('MINUTE', wavePlayer.id, 'start', { preparation: prep.id });
 assert.equal(waveRoom.wave, 3);
 console.log(
-  'Authority: deduplicated fall damage, purgatory death, 60-second pause, automatic/manual wave start without duplication.',
+  'Authority: deduplicated fall damage, purgatory death, 180-second pause, automatic/manual wave start without duplication.',
 );
 
 const standing = {
