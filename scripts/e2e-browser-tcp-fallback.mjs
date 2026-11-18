@@ -26,6 +26,9 @@ const app = createGameServer({
 });
 await new Promise((r) => app.server.listen(0, '127.0.0.1', r));
 const browser = await chromium.launch();
+// Software WebGL renders every pixel on the CPU; a small page keeps a shared
+// runner from starving the browser (the server drops a pilot silent for 15 s).
+const SMALL_VIEWPORT = { width: 320, height: 240 };
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const until = async (test, ms, label) => {
   const start = Date.now();
@@ -36,7 +39,7 @@ const until = async (test, ms, label) => {
   return Date.now() - start;
 };
 try {
-  const page = await browser.newPage();
+  const page = await browser.newPage({ viewport: SMALL_VIEWPORT });
   const errors = [];
   page.on('pageerror', (e) => errors.push(e.message));
   // Same harness shim as e2e-browser-resume: sandboxed Chromium may never
