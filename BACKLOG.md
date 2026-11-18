@@ -174,7 +174,7 @@ arrêtée. L’éventuelle fin de chute doit être distinguée d’une dispariti
 Critères : un son par mort visible, position mis à jour pendant la chute, arrêt
 et nettoyage à la suppression du corps ; morts simultanées sans fuite de sons.
 L’écoute subjective et le rendu final doivent être vérifiés en partie.
-Repères : corps en chute dans `src/client.js`, `src/audio.js`.
+Repères : corps en chute dans `src/client.js`, `src/game-audio/game-sound.ts`.
 
 ### VAG-01 — Apparitions périphériques loin de la corbeille
 

@@ -4,7 +4,7 @@ import worker from '../worker/index.js';
 import { localDB } from './local-db.mjs';
 import { CONTRACTS, ContractBook } from '../src/contracts.js';
 import { RewardQueue } from '../src/rewards.js';
-import { synthesize } from '../src/audio.js';
+import { synthesize } from '../src/game-audio/synth.ts';
 const DB = localDB();
 let now = Date.now();
 const realNow = Date.now;

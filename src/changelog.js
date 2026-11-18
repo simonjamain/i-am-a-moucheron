@@ -1,9 +1,16 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
-    version: 335,
+    version: 339,
     changes: [
       'La zone de tir du scarabée est maintenant une sphère parfaite, autour de son corps.',
+    ],
+  },
+  {
+    version: 338,
+    changes: [
+      'En plein combat, les sons proches et importants ne sont plus coupés par le vacarme lointain.',
+      'Le bruit des moteurs ne se limite plus aux dix avions les plus proches : on entend ceux qui comptent le plus.',
     ],
   },
   {
