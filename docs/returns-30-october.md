@@ -43,7 +43,7 @@ pulsé (animation désactivée si mouvement réduit). HUD-10 partage ce bloc :
 « Missile en vol » est prioritaire, puis épuisement ou recharge réelle de 2 s.
 
 NET-01 retire ventilateur, commandes, souffle et obstacle de la scène actuelle.
-L'ancien backend Worker/D1 reste historique. VOL-02 retire le mode manuel, sa
+VOL-02 retire le mode manuel, sa
 bascule et le raccourci M ; souris et gaz restent actifs, sans supprimer les
 commandes des véhicules terrestres, H2, zoom ni regard libre.
 

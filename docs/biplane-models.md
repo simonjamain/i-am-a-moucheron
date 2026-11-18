@@ -53,7 +53,7 @@ sont restaurés en 327 pour les deux avions d'achat.
   (`heavyInterval('bomb', 'bomber')`) ; la grille du Stuka (6 bombes, 0,5 s) est
   inchangée.
 - Autres caractéristiques identiques au B3 : vitesse maximale 52,5, poussée 8, traînée,
-  portance, virage, 100 PV, prix 16 $. Le pilote n'a toujours pas de mitrailleuse.
+  portance, virage, 100 PV, prix 5 $. Le pilote n'a toujours pas de mitrailleuse.
 
 ## Vérifications
 

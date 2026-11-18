@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import * as T from '../vendor/three.module.min.js';
 import { mouseFlightControls, mouseCameraRotation, rotateMouseAim } from '../src/mouse-flight.js';
 import { stepFlight } from '../src/flight.js';
-import worker from '../worker/index.js';
+import { ASSETS } from '../server/assets.js';
 const forward = (q) => new T.Vector3(0, 0, -1).applyQuaternion(q);
 // Aiming is a persistent world direction, independent of aircraft rotation and frame rate.
 const aim = new T.Vector3(0, 0, -1),
@@ -101,9 +101,7 @@ const a = new T.Quaternion(),
 for (let i = 0; i < 60; i++) mouseCameraRotation(T, dir, a, 1 / 60);
 for (let i = 0; i < 120; i++) mouseCameraRotation(T, dir, b, 1 / 120);
 assert.ok(a.angleTo(b) < 1e-6, 'camera damping is frame-rate independent');
-const response = await worker.fetch(new Request('https://test.local/mouse-flight.js'), {});
-assert.equal(response.status, 200);
-assert.match(await response.text(), /export function mouseFlightControls/);
+assert.match(ASSETS['/mouse-flight.js'] ?? '', /export function mouseFlightControls/);
 console.log(
   'PASS: persistent world aim, screen-relative mouse input, physical steering convergence in six directions, bounded commands, no orientation teleport, wind/damage stability, vertical camera and frame-rate-independent damping.',
 );

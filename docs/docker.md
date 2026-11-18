@@ -1,7 +1,6 @@
 # Construire et exécuter avec Docker
 
-La référence de livraison est le dépôt GitHub (ZIP des sources seulement sur
-demande, voir [l’exploitation](operations.md)). Le dépôt fournit aussi un `Dockerfile` pour
+La référence de livraison est le dépôt GitHub (voir [l’exploitation](operations.md)). Le dépôt fournit aussi un `Dockerfile` pour
 construire localement la même version du serveur Node/UDP. Le workflow de
 [publication](../.github/workflows/docker.yml) construit et publie sur GHCR à
 chaque push sur `main` : `ghcr.io/simonjamain/i-am-a-moucheron:latest` et un

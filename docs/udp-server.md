@@ -3,8 +3,8 @@
 Décision validée le 29 octobre 2026 : aucune base de données. Révisée le
 16 novembre 2026 (version 306) : les réseaux qui bloquent l'UDP sortant
 (réseaux d'entreprise) jouent en TCP sur un WebSocket, voir
-[secours TCP](#secours-tcp-websocket). La livraison courante est un ZIP des sources pour la VM. Le [guide Docker](docker.md)
-reste optionnel ; ses archives binaires historiques ne suivent pas chaque lot.
+[secours TCP](#secours-tcp-websocket). La livraison est l’image Docker `latest` publiée à chaque commit sur `main`
+(voir [le guide Docker](docker.md) et [l’exploitation](operations.md)).
 
 ## Démarrage sur une VM
 
@@ -175,13 +175,8 @@ Les identifiants d'impacts et de tirs ont une limite de 128 000 par registre :
 la limite atteinte refuse de nouveaux éléments, sans oublier les doublons.
 Une partie exceptionnellement longue peut nécessiter une remise à zéro.
 
-Le Site public reste sur le Worker/D1 historique jusqu'à installation de ce
-runtime sur une VM. Aucun domaine ni serveur externe n'a été configuré ici.
-L'assemblage produit séparément `worker/assets.js`, importé par Node, et
-`worker/index.js`, Worker de compatibilité. Le runtime Node n'importe pas le
-Worker, `node:sqlite`, ni `scripts/local-db.mjs`. `npm run dev:sites` est réservé
-à la reproduction du backend historique. Les deux runtimes ne partagent pas
-les salles. Les migrations D1 existantes ne sont pas modifiées.
+Aucun domaine ni serveur externe n'est configuré par le dépôt. L'assemblage produit
+`server/assets.js`, importé par Node.
 
 ## Vérifications
 
@@ -201,8 +196,7 @@ nouvelle connexion. `test-resume.mjs` couvre les règles de reprise du domaine.
 lots binaires dans la page. `npm run e2e:resume` (manuel, Playwright requis) fait rejoindre un vrai Chromium,
 coupe sa connexion côté serveur et vérifie la reprise du même pilote puis
 `leave` ; dans un conteneur dont l'interface n'est pas `127.0.0.1`, passer son
-adresse : `node scripts/e2e-browser-resume.mjs 192.0.2.2`. Les tests Worker/D1 continuent
-à couvrir la compatibilité historique, sans être nécessaires au serveur Node.
+adresse : `node scripts/e2e-browser-resume.mjs 192.0.2.2`.
 
 La réussite locale ne mesure pas la latence Internet, les NAT mobiles ni la
 charge maximale de la VM. Après installation, faire un essai à deux navigateurs

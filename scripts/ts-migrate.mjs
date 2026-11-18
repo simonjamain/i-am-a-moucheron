@@ -29,7 +29,7 @@ for (const t of targets) {
 }
 const migrated = new Set(targets);
 const codeDirs = ['src', 'server', 'scripts'];
-const skippedDirs = new Set(['node_modules', '.git', 'dist', 'vendor', 'worker', 'archive']);
+const skippedDirs = new Set(['node_modules', '.git', 'dist', 'vendor', 'archive']);
 
 async function walk(dir, accept) {
   const out = [];

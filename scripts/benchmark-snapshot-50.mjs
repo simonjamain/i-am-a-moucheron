@@ -42,12 +42,17 @@ const {
   preparation,
   groundNavigationActive,
   layout,
+  leakedPower,
   ...comparable
 } = optimized;
 // Plans arrived after the baseline: the room carries its plan id, and the unused
 // raid duration left the snapshot.
 assert.equal(layout, 'diagonale', 'a default room uses the default plan');
 delete original.raidDuration;
+// Issue #210: upgrades and the wave bonus left the snapshot; leaks are counted in power.
+delete original.upgrades;
+delete original.waveReward;
+assert.equal(leakedPower, 0, 'nothing leaked in a fresh room');
 assert.equal(preparation, null, 'before mission launch there is no forecast');
 assert.equal(groundNavigationActive, false);
 assert.deepEqual(groundAgents, {}, 'a room without constructions keeps legacy enemy routes');

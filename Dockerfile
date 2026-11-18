@@ -9,7 +9,7 @@ COPY server ./server
 COPY scripts/assemble.mjs scripts/build-ui-preview.mjs ./scripts/
 COPY vendor ./vendor
 COPY docs/ui-review.html ./docs/ui-review.html
-RUN mkdir worker && node scripts/assemble.mjs
+RUN node scripts/assemble.mjs
 
 FROM ${NODE_IMAGE} AS runtime
 LABEL org.opencontainers.image.title="i am a moucheron" \
@@ -20,7 +20,6 @@ COPY --from=build --chown=node:node /app/package.json ./package.json
 COPY --from=build --chown=node:node /app/node_modules ./node_modules
 COPY --from=build --chown=node:node /app/src ./src
 COPY --from=build --chown=node:node /app/server ./server
-COPY --from=build --chown=node:node /app/worker/assets.js ./worker/assets.js
 USER node
 EXPOSE 3000/tcp 41000-41099/udp
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \

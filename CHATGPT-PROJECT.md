@@ -12,10 +12,7 @@ Lire `AGENTS.md`, `README.md` et `CONTRIBUTING.md`, puis les références utiles
 à la tâche. Pour reprendre un travail interrompu, consulter sa note dans
 `docs/tasks/`, la PR et le diff actuel.
 
-Le Site historique `appgprj_6ae1e591360481919010bdf89f8da3f0` reste accessible
-via Sites et son ancien dépôt pour une intervention explicite sur ce backend.
-Le dépôt GitHub courant ne contient plus de manifeste de publication Sites. Le développement
-courant ne nécessite pas Sites. Une pièce jointe ChatGPT est une copie : vérifier
+Une pièce jointe ChatGPT est une copie : vérifier
 sa fraîcheur contre le dépôt. Signaler une source inaccessible sans inventer son état.
 
 ## Repères techniques
@@ -24,9 +21,8 @@ JavaScript ESM, Three.js embarqué, géométries procédurales et Web Audio spat
 Le runtime actuel est Node, en RAM uniquement. Tous les événements de jeu passent
 par WebRTC sur UDP : mouvements sans retransmission, commandes importantes fiables.
 HTTP sert les fichiers et la négociation ; aucun repli WebSocket/TCP/HTTP de gameplay.
-Le Worker/D1 Sites est un backend historique distinct, toujours publié tant que
-le serveur Node n’est pas déployé sur la VM de l’utilisateur. Les contributions sont livrées en PR ; ZIP et images Docker dépendent de la
-livraison demandée.
+Les contributions sont livrées en PR fusionnée sur `main` : l’image `latest` est alors
+publiée sur GHCR et un environnement extérieur au dépôt la déploie périodiquement sur le VPS.
 La physique reste coopérative côté client, avec règles et transactions côté serveur.
 Le décor est en mètres ; les modèles miniatures utilisent un ratio centralisé.
 La chute du personnage convertit aussi la gravité humaine avec ce ratio (CHU-02). Voir les références

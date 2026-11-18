@@ -1,6 +1,6 @@
 # Lisibilité, commandes, nettoyage et Spitfire
 
-Référence du lot ECO-03 à VEH-05, livré sur **Node, RAM et UDP** le 29 octobre 2026. Aucun déploiement sur le Worker historique, aucune nouvelle image Docker.
+Référence du lot ECO-03 à VEH-05, livré sur **Node, RAM et UDP** le 29 octobre 2026.
 
 ## Prix, bon signé et pose
 
@@ -115,7 +115,7 @@ lourds, 256 traceurs balistiques. Les matériaux sont libérés au retrait.
 
 ## Spitfire et identité sonore
 
-Le Spitfire S6 est un achat à **24 $**, deux Stuka. Monoplace sans bombes,
+Le Spitfire S6 est un achat à **75 $**, trois Stuka. Monoplace sans bombes,
 ailes elliptiques et six mitrailleuses, trois par aile. Perdu définitivement à sa
 destruction ; achat suivant possible, sans remplacement gratuit.
 

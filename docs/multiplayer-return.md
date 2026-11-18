@@ -3,8 +3,7 @@
 La composition de vague décrite dans ce lot a ensuite été densifiée : voir
 [les nuées de version 38](dense-swarms.md), 20 moucherons et 4 fourmis au départ.
 
-Lot MORT-01 à RAD-02, Node/RAM/UDP, 29 octobre 2026. Source livrée en ZIP ; le
-Worker historique n’héberge pas ces nouvelles règles. Les spécifications du backlog
+Lot MORT-01 à RAD-02, Node/RAM/UDP, 29 octobre 2026. Les spécifications du backlog
 sont les décisions validées ; ce document décrit leur réalisation et ses limites.
 
 ## Mort et observation volontaire
@@ -44,16 +43,15 @@ zoom. Les informations tank et DCA restent contextuelles, avec leur aide complè
 
 ## Réserves gratuites et achats de véhicules
 
-Chaque type initial garde **un exemplaire de réserve prêt**. Le premier décollage
+Chaque type initial (chasseur, bombardier et char moyen) garde **un exemplaire de réserve prêt**. Le premier décollage
 retire définitivement `ready` à cette coque et crée son remplaçant ; les avions
 utilisés restent en partie. Revenir se poser ne recrée pas une réserve supplémentaire.
 Détruire un exemplaire prêt le remplace ; détruire un avion déjà utilisé ne crée
 pas un deuxième remplaçant. Le tick et les commandes synchrones arbitrent les cas
 concurrents. Les coques achetées n’entrent jamais dans cette réserve gratuite.
 
-Tous les modèles sont vendus : chasseur M1 **8 $**, bombardier B3 **16 $**, Stuka
-**12 $**, tank **10 $**, Spitfire **24 $**. Les deux nouveaux prix sont choisis dans
-l’économie existante ; `shopPrice` reste partagé. Achat **à pied**, signature du
+Tous les modèles sont vendus aux prix de [progression](progression.md#revenus-et-prix) ;
+`shopPrice` reste partagé. Achat **à pied**, signature du
 bon puis aperçu et E pour poser, au sol ou sur mobilier réellement porteur.
 Aucun appareil acheté n’apparaît automatiquement à Alpha. La route publique
 `buy` refuse désormais les véhicules : passer par `purchase-sign` et

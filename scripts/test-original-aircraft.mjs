@@ -23,8 +23,8 @@ for (const key of ['lightfighter', 'medbomber']) {
     key + ' in the shop',
   );
 }
-assert.equal(SHOP.lightfighter.cost, 8);
-assert.equal(SHOP.medbomber.cost, 16);
+assert.equal(SHOP.lightfighter.cost, 15);
+assert.equal(SHOP.medbomber.cost, 15);
 assert.equal(ammoCapacity('medbomber', 'bomb'), 50);
 assert.equal(ammoCapacity('medbomber', 'pilot'), 0, 'the bomber pilot has no gun');
 assert.ok(ammoCapacity('medbomber', 'tail') > 0 && ammoCapacity('medbomber', 'ventral') > 0);
@@ -46,12 +46,16 @@ const game = new Game({ now: () => 100000 });
 const players = Array.from({ length: 4 }, (_, i) => game.join({ code: 'ORIGINAL', name: 'P' + i }));
 const room = game.rooms.get('ORIGINAL');
 const starters = [...room.vehicles.values()].map((v) => v.type).sort();
-assert.deepEqual(starters, ['bomber', 'fighter'], 'only biplanes are free starters');
+assert.deepEqual(
+  starters,
+  ['bomber', 'fighter', 'tank'],
+  'only the biplanes and the tank are free starters',
+);
 const light = game.createVehicle(room, 'lightfighter');
 const medium = game.createVehicle(room, 'medbomber');
 assert.equal(medium.origin, 'purchase');
 game.fleet(room);
-assert.equal(room.vehicles.size, 4, 'purchases never replace nor duplicate the starters');
+assert.equal(room.vehicles.size, 5, 'purchases never replace nor duplicate the starters');
 assert.equal(light.supplies.ammo.pilot, ammoCapacity('lightfighter', 'pilot'));
 assert.equal(medium.supplies.ammo.bomb, 50);
 

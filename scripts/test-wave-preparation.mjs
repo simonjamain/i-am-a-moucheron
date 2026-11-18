@@ -27,10 +27,12 @@ for (let seed = 1; seed <= SEEDS; seed++) draws.push(seeded(seed));
 for (const wave of [1, 2, 5, 10, 15, 100])
   for (const [drawIndex, draw] of draws.entries()) {
     const plan = prepareRoster(wave, DEFAULT_BALANCE, draw);
-    assert.equal(
-      plan.roster.reduce((sum, e) => sum + ENEMY_TYPES[e.type].cost, 0),
-      directorBudget(wave),
-    );
+    // Powers are fractional: the roster uses the budget up to the weakest species.
+    const spent = plan.roster.reduce((sum, e) => sum + e.power, 0);
+    const tolerance = directorBudget(wave) * 1e-9 + 1e-6;
+    assert.ok(spent <= directorBudget(wave) + tolerance, 'never above the budget');
+    assert.ok(spent > directorBudget(wave) - ENEMY_TYPES.ant.power - tolerance, 'budget is used');
+    assert.ok(Math.abs(plan.budget - spent) <= tolerance);
     assert.ok(plan.roster.length <= 900);
     // Each announced group is one pack, whose members leave one after the other.
     for (const group of forecast(plan.roster)) {
@@ -54,13 +56,14 @@ for (const wave of [1, 2, 5, 10, 15, 100])
       if (g.type === 'brute') assert.ok(g.count <= 2);
       assert.ok(g.count <= PACKS[g.type].max + PACKS[g.type].min, g.type + ' pack size');
     }
-    // Measured max over 2 000 seeds x waves 1..100: 64 groups (the 900-enemy cap binds).
-    // The old bound of 60 failed on ~1 seed in 50 at wave 15; 80 still catches a
+    // Beyond the 900-enemy ceiling (wave 20+) the frise is not meant to stay short.
+    // Main measured a max of 64 groups before the power unit; 80 still catches a
     // regression to one-enemy-per-group (hundreds of groups).
-    assert.ok(
-      groups.length <= 80,
-      `few groups: ${groups.length} (wave ${wave}, draw ${drawIndex}; seeds start at index 2)`,
-    );
+    if (wave <= 20)
+      assert.ok(
+        groups.length <= 80,
+        `few groups: ${groups.length} (wave ${wave}, draw ${drawIndex}; seeds start at index 2)`,
+      );
     for (const e of plan.roster)
       if (e.ground) {
         const mates = plan.roster.filter((o) => o.group === e.group && o.id < e.id);
@@ -72,7 +75,7 @@ const ants = (wave) =>
   prepareRoster(wave, DEFAULT_BALANCE, () => 0).roster.filter((e) => e.type === 'ant').length;
 assert.ok(ants(1) >= 8 && ants(5) > ants(1) && ants(10) > ants(5), 'ants grow');
 assert.ok(
-  prepareRoster(10, DEFAULT_BALANCE, (n) => n - 1).roster.filter((e) => e.type === 'midge')
+  prepareRoster(20, DEFAULT_BALANCE, (n) => n - 1).roster.filter((e) => e.type === 'midge')
     .length >= 300,
   'swarms of hundreds of midges',
 );
@@ -108,8 +111,14 @@ assert.ok(
 );
 assert.equal(
   prep.groups.reduce((sum, g) => sum + g.count, 0),
-  32,
+  room.upcomingPlan.roster.length,
 );
+const twoPlayers = 32 * 2 ** 0.9;
+assert.ok(
+  prep.power <= twoPlayers + 0.01 && prep.power > twoPlayers - 1,
+  'two players: 32 × 2^0.9',
+);
+assert.equal(prep.players, 2);
 // No vote and no cards: the preparation only announces the wave.
 for (const key of ['cards', 'votes', 'winner']) assert.equal(prep[key], undefined, key);
 for (const key of ['blueprints', 'blueprintLevels', 'activeBlueprints'])

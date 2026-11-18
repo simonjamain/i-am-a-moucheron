@@ -1,3 +1,4 @@
+import { ENEMY_TYPES } from '../src/waves.js';
 import assert from 'node:assert/strict';
 import { Game } from '../server/game.js';
 import { baseWorld } from '../src/base.js';
@@ -97,23 +98,19 @@ for (let enemy = 0; enemy < s.total; enemy++) {
 room.pilots.get(a.id).mode = 'foot';
 s = game.snapshot(room);
 assert.equal(s.phase, 'prep');
-assert.equal(s.dollars, 4);
+assert.equal(s.dollars, 0, 'no wave stipend: only freed souls pay');
 assert.equal(s.kills.length, firstTotal);
 assert.equal(s.souls.length, Math.min(firstTotal, 24));
 assert.equal(s.enemyDamage[0], 150);
 room.dollars = 30;
-s = call(a.id, 'buy', { item: 'engine', request: 'purchase-engine', expectedPrice: 4 });
-assert.equal(s.upgrades.engine, 1);
-call(a.id, 'buy', { item: 'engine', request: 'purchase-engine', expectedPrice: 4 });
-assert.equal(room.dollars, 26);
-assert.throws(
-  () => call(a.id, 'buy', { item: 'weapons', request: 'purchase-engine' }),
-  /déjà utilisée/,
-);
-assert.throws(
-  () => call(a.id, 'buy', { item: 'engine', request: 'purchase-engine-2', expectedPrice: 4 }),
-  /tarif/,
-);
+for (const gone of ['engine', 'weapons'])
+  assert.throws(
+    () => call(a.id, 'buy', { item: gone, request: 'purchase-' + gone, expectedPrice: 4 }),
+    /Achat invalide/,
+    'upgrades no longer exist',
+  );
+assert.equal(room.dollars, 30);
+assert.equal(s.upgrades, undefined);
 
 function approach(id, vehicle, seat) {
   const entry = vehicleEntry(vehicle, seat),
@@ -233,7 +230,11 @@ for (let i = 0; i < 10; i++) {
   call(a.id, 'soul-hit', { soul: enemy.id, shot: 'soul' + i });
 }
 call(a.id, 'soul-hit', { soul: enemy.id, shot: 'soul9' });
-assert.equal(room.dollars, dollars + 1);
+assert.equal(
+  room.dollars,
+  Math.round((dollars + ENEMY_TYPES[enemy.enemy_type].power) * 100) / 100,
+  'a freed soul pays the power of its species',
+);
 const epoch = room.base.epoch;
 call(b.id, 'reset');
 assert.notEqual(room.base.epoch, epoch);

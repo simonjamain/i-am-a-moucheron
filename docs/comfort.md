@@ -1,7 +1,6 @@
 # Confort de jeu — version 37
 
-Lot du 30 octobre 2026, sources Node/RAM/UDP. Le Worker public historique reste
-inchangé. La référence des commandes demeure [controls](controls.md).
+Lot du 30 octobre 2026, sources Node/RAM/UDP. La référence des commandes demeure [controls](controls.md).
 
 ## Version et livraison
 
@@ -13,7 +12,7 @@ Dans un clone : `npm run prepare:version` installe le hook Git local, puis
 Après `git add`, `npm run check:version` refuse un index sans incrément par rapport
 à HEAD. Le hook exécute cette vérification avant chaque commit, documentaire inclus.
 Les hooks ne s'installent pas automatiquement dans les autres clones : y relancer
-la préparation. Le ZIP se lance sans Git.
+la préparation.
 
 ## Stations et affichage au viseur
 

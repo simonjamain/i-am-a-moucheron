@@ -7,7 +7,7 @@ import { VEHICLES } from '../src/fleet.js';
 import { SHOP, shopPrice, supportedPlacement } from '../src/equipment.js';
 import { MAP, ACTOR_UNIT, INSECT_SCALE } from '../src/scale.ts';
 import { OFFICE_LAYOUT } from '../src/layout.js';
-import { OFFICE_SOLIDS } from '../worker/assets.js';
+import { OFFICE_SOLIDS } from '../server/assets.js';
 import { fullAmmo, inRadarCoverage } from '../src/logistics.js';
 import { WALKER_FALL, stepWalkerFall, impactDamage } from '../src/field-physics.js';
 import { createGraphics } from '../src/graphics.js';
@@ -40,7 +40,7 @@ assert.equal(
   r.base.bodies.some((b) => b.entity === p.id && !b.gone),
   false,
 );
-assert.throws(() => cmd('buy', { item: 'engine', request: 'forbidden-buy' }), /purgatoire/);
+assert.throws(() => cmd('buy', { item: 'radar', request: 'forbidden-buy' }), /purgatoire/);
 assert.throws(() => cmd('enter-purgatory', { incarnation: p.incarnation - 1 }), /périmé/);
 cmd('enter-purgatory', { incarnation: p.incarnation });
 cmd('enter-purgatory', { incarnation: p.incarnation });
@@ -100,7 +100,7 @@ for (const type of ['fighter', 'bomber'])
     game.release(r, p);
     p.mode = 'foot';
   }
-assert.equal([...r.vehicles.values()].filter((v) => v.origin === 'starter').length, 10);
+assert.equal([...r.vehicles.values()].filter((v) => v.origin === 'starter').length, 11);
 console.log(
   'Reserves: successive takeoffs keep used aircraft, produce one ready reserve, returning aircraft never trigger another spawn.',
 );
@@ -156,8 +156,8 @@ for (const [index, type] of Object.keys(VEHICLES).entries()) {
   assert.equal(bought[0].state.p[1], position.y + VEHICLES[type].gear);
   assert.equal(r.dollars, before - price);
 }
-assert.equal(SHOP.fighter.cost, 8);
-assert.equal(SHOP.bomber.cost, 16);
+assert.equal(SHOP.fighter.cost, 5);
+assert.equal(SHOP.bomber.cost, 5);
 assert.equal(fullAmmo('spitfire').pilot, 1000);
 const salvo = new GunSalvos(),
   departures = [];

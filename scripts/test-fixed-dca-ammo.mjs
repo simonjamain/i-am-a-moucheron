@@ -154,8 +154,8 @@ assert.ok(burstHeavy, 'arming followed by detonation near the solid');
 assert.equal(stepHeavy(equivalent, equivalent.at + 299, world), null);
 assert.deepEqual(burstHeavy, stepHeavy(equivalent, equivalent.at + 800, world));
 
-assert.equal(shopPrice('dcaRapid', {}, 2), 15);
-assert.equal(shopPrice('dcaHeavy', {}, 2), 35);
+assert.equal(shopPrice('dcaRapid', 2), 50);
+assert.equal(shopPrice('dcaHeavy', 2), 30);
 for (const [kind, count] of [
   ['dca', 2],
   ['dcaRapid', 4],
@@ -347,8 +347,8 @@ for (const elevation of [Math.PI / 36, Math.PI / 2]) {
 
 // Vehicle orders deploy by parachute and must initialise the same reserve.
 for (const [item, expectedPrice, ammo] of [
-  ['dcaRapid', 15, 1000],
-  ['dcaHeavy', 35, 120],
+  ['dcaRapid', 50, 1000],
+  ['dcaHeavy', 30, 120],
 ]) {
   const buyer = game.join({ code: 'DCABUY', name: 'Acheteur' });
   const room = game.rooms.get('DCABUY'),

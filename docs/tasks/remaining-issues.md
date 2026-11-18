@@ -17,7 +17,7 @@
 - Environnement : clone public et npm ci fonctionnent ; push Git sans credentials
   échoue. Publier les sources via le connecteur GitHub (tree/commit/branch/PR),
   puis récupérer main après fusion. Ne pas pousser les sorties générées périmées :
-  build/démarrage régénèrent worker/assets.js, worker/index.js et docs/ui-review.html.
+  build/démarrage régénèrent server/assets.js, worker/index.js et docs/ui-review.html.
 - Vérifications : npm test complet réussi pour #94 (Node v24.22.1), build/artefact,
   docs, format des fichiers CI et version. Pour #95, tests ciblés placement/modèles
   réussis ; suite complète réussie, puis contrôles ciblés relancés après revue.
