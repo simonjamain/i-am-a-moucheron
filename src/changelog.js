@@ -1,6 +1,12 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 334,
+    changes: [
+      'Le rat marche au ras du sol. Le moucheron est plus dur à toucher, les autres insectes volants plus faciles.',
+    ],
+  },
+  {
     version: 329,
     changes: [
       'Les tapis du bureau sont retirés : ils coupaient les personnages et les équipements en deux.',
