@@ -25,7 +25,8 @@
     "e2e:resume": "node scripts/assemble.mjs && node scripts/e2e-browser-resume.mjs",
     "e2e:motion": "node scripts/assemble.mjs && node scripts/e2e-browser-motion.mjs",
     "e2e:tcp": "node scripts/assemble.mjs && node scripts/e2e-browser-tcp-fallback.mjs",
-    "e2e": "node scripts/assemble.mjs && node scripts/e2e-browser-resume.mjs && node scripts/e2e-browser-motion.mjs && node scripts/e2e-browser-tcp-fallback.mjs && node scripts/e2e-loading.mjs && node scripts/e2e-game-polish.mjs && node scripts/e2e-layouts.mjs",
+    "e2e": "node scripts/assemble.mjs && node scripts/e2e-browser-resume.mjs && node scripts/e2e-browser-motion.mjs && node scripts/e2e-browser-tcp-fallback.mjs && node scripts/e2e-loading.mjs && node scripts/e2e-game-polish.mjs",
+    "e2e:layouts": "node scripts/assemble.mjs && node scripts/e2e-layouts.mjs",
     "typecheck": "tsc -p tsconfig.json",
     "ts:migrate": "node scripts/ts-migrate.mjs"
   },

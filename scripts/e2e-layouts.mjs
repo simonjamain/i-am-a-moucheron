@@ -1,6 +1,6 @@
 // Real browser check of the plan picker: six cards, the background room follows
 // the choice, a joined room keeps its plan, a second player joining the same code
-// with another choice lands in the first player's plan. In npm run e2e (CI), not npm test.
+// with another choice lands in the first player's plan. Manual: npm run e2e:layouts (times out on the CI runner, see docs/operations.md).
 import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
 import { mkdir } from 'node:fs/promises';
