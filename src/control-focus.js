@@ -79,10 +79,19 @@ export function airplaneSteering(assisted, manual) {
     yaw: manual.yaw !== 0 ? manual.yaw : assisted.yaw,
   };
 }
-export function lookDelta(look, dx, dy) {
+// A mouse count turns the view by a fixed angle, so a zoomed (narrower) view
+// would show it as a bigger jump on screen. Scale the angle by the field of
+// view so one count moves the same number of pixels zoomed or not.
+export const BASE_FOV = 62;
+export function lookScale(fov, base = BASE_FOV) {
+  if (!(fov > 0) || !(base > 0)) return 1;
+  const radians = (degrees) => (degrees * Math.PI) / 360;
+  return Math.min(1, Math.tan(radians(fov)) / Math.tan(radians(base)));
+}
+export function lookDelta(look, dx, dy, scale = 1) {
   if (!Number.isFinite(dx) || !Number.isFinite(dy)) return;
-  look.yaw -= Math.max(-250, Math.min(250, dx)) * 0.003;
-  look.pitch = Math.max(-1.2, Math.min(1.2, look.pitch - dy * 0.003));
+  look.yaw -= Math.max(-250, Math.min(250, dx)) * 0.003 * scale;
+  look.pitch = Math.max(-1.2, Math.min(1.2, look.pitch - dy * 0.003 * scale));
 }
 
 export function equipmentExitAction({

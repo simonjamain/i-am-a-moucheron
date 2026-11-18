@@ -8,6 +8,8 @@ import {
   gameKey,
   flightInput,
   lookDelta,
+  lookScale,
+  BASE_FOV,
 } from '../src/control-focus.js';
 import { neutralPad } from '../src/input.js';
 const pad = neutralPad();
@@ -177,3 +179,24 @@ assert.equal(equipmentEnterAllowed({ onFoot: true }), true);
 assert.equal(flightInput({ KeyE: true }, pad).yaw, 1);
 assert.equal(flightInput({ KeyA: true }, pad).yaw, -1);
 console.log('PASS: E only enters on foot, never exits or steals aircraft rudder A/E.');
+
+// Zoomed view: a mouse count must move the picture by the same number of pixels.
+assert.equal(lookScale(BASE_FOV), 1);
+assert.equal(lookScale(120), 1, 'a wider view never makes the mouse faster');
+assert.ok(
+  Math.abs(lookScale(28) - Math.tan((28 * Math.PI) / 360) / Math.tan((62 * Math.PI) / 360)) < 1e-12,
+);
+assert.equal(lookScale(0), 1);
+assert.equal(lookScale(Number.NaN), 1);
+{
+  const wide = { yaw: 0, pitch: 0 },
+    zoomed = { yaw: 0, pitch: 0 };
+  lookDelta(wide, 10, 0);
+  lookDelta(zoomed, 10, 0, lookScale(28));
+  // Pixels moved = angle / fov-per-pixel; the ratio of angles equals the ratio of tan(fov/2).
+  const pixels = (angle, fov) => Math.tan(angle) / Math.tan((fov * Math.PI) / 360);
+  assert.ok(
+    Math.abs(pixels(zoomed.yaw, 28) - pixels(wide.yaw, 62)) / Math.abs(pixels(wide.yaw, 62)) < 0.01,
+  );
+}
+console.log('Mouse look: sensitivity follows the field of view (same pixels per count zoomed).');

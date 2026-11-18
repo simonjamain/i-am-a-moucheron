@@ -1,6 +1,12 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 343,
+    changes: [
+      'Zoom (clic droit) : la souris est plus fine, les sauts de visée ne sont plus agrandis.',
+    ],
+  },
+  {
     version: 340,
     changes: ['Le temps de préparation entre deux vagues passe à 3 minutes.'],
   },

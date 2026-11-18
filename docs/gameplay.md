@@ -99,7 +99,9 @@ Le pilotage par défaut vise un point à la souris avec assistance, inspiré du
 principe de War Thunder. Z/S et les flèches haut/bas pilotent le tangage, Q/D et
 les flèches gauche/droite le roulis, et A/E le lacet. Une commande manuelle
 remplace l'assistance souris sur son axe tant qu'elle est active, sans désactiver
-les autres axes assistés ; voir [commandes](controls.md). Un avion
+les autres axes assistés ; voir [commandes](controls.md). Avec le zoom (clic droit), la
+sensibilité de la souris suit le champ de vision (`lookScale`, `src/control-focus.js`) :
+un cran de souris déplace l'image du même nombre de pixels, zoomé ou non. Un avion
 peut rouler et se poser si sa vitesse, sa descente et son attitude le permettent.
 Au sol, il faut l’arrêter pour en sortir. Toute sortie aérienne commence en chute
 libre avec la vitesse héritée ; le parachute s’ouvre et se replie manuellement.
