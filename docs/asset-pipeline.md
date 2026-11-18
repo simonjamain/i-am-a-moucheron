@@ -332,7 +332,7 @@ rejoue un clip au lieu d'une démarche calculée.
 ### Bébé araignée (version 317)
 
 Modèle Meshy « Grumpy Spider » fourni par l'utilisateur, déjà riggé, sans clip ; il
-remplace les bébés procéduraux (sphères et boîtes dans `spiderling-batch.js`,
+remplace les bébés procéduraux (sphères et boîtes d’un ancien module de lot,
 supprimé). Même chaîne que l'araignée pondeuse.
 
 - Original hors dépôt : `assets/originals/spiderling/grumpy-spider.glb` (SHA-256
