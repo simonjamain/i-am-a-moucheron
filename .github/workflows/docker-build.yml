@@ -126,6 +126,29 @@ jobs:
       - name: Benchmark 50 vehicles and 900 enemies
         run: npm run bench:swarm-50
 
+  browser-e2e:
+    name: Real Chromium over WebRTC UDP/TCP
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Install Playwright and Chromium (CI only, not a project dependency)
+        run: |
+          npm install --no-save playwright@1.63.0
+          npx playwright install --with-deps chromium
+      - name: Run browser scenarios (join/resume, shared motion, TCP fallback, loading, falls, plan picker)
+        run: npm run e2e
+
   game-regression:
     name: Full game regression and formatting
     runs-on: ubuntu-latest

@@ -68,8 +68,6 @@ entière ; elle inclut `tsc` (`test-typescript.mjs`) et la cohérence des tables
 espèce et par véhicule (`test-registries.mjs`). `test-suite-wiring.mjs` échoue si un
 `scripts/test-*.mjs` n'est pas dans `scripts/suite.mjs` (seul `test-udp-capacity-50.mjs`,
 lourd, a sa commande `test:capacity`) : un test orphelin ne protège rien.
-`test-wave-preparation.mjs` tire des meutes au hasard et échoue rarement
-(« few groups ») sans changement de code : le relancer avant d'enquêter.
 `npm run format:check` est la seule commande de format, en local et
 en CI (job `Full game regression and formatting`) ; les données générées
 (`src/*data.js` importées, `docs/ui-review.html`) sont dans `.prettierignore`.
@@ -77,6 +75,16 @@ Le job `Docker build` démarre l'image construite et vérifie `/healthz`
 (`ok`, `storage=ram`, `transport=webrtc-udp`) et le 410 de `/api/join` : il prouve
 que l'image démarre, pas les pairs UDP dans le conteneur, WebGL ni le WAN.
 `check:version` n'est pas exécuté en CI (il compare l'index à `HEAD`).
+
+Scénarios navigateur réel : `npm run e2e` (Chromium Playwright, WebRTC UDP puis repli
+TCP : reprise de pilote, mouvements partagés entre deux pages, chargement, chute vue
+par un second client, sélecteur de plans ; environ 5 min). Hors `npm test` car ils exigent
+Chromium ; le job CI `Real Chromium over WebRTC UDP/TCP` les exécute à chaque PR
+(Playwright installé à la volée, pas une dépendance du projet). Lancer le script ciblé
+(`e2e:resume`, `e2e:motion`, `e2e:tcp`) pendant l'itération. Ils prouvent la poignée de main
+WebRTC et les flux en loopback, pas WebGL (rendu supprimé ou logiciel), le WAN ni le confort.
+`test-wave-preparation.mjs` utilise des graines fixes (`WAVE_SEEDS=2000` pour élargir) : plus
+de test aléatoire intermittent.
 
 Le build produit `dist/` avec serveur, modules partagés, assets et manifestes npm.
 Dans ce répertoire : `npm ci --omit=dev && npm start`. Le validateur vérifie
