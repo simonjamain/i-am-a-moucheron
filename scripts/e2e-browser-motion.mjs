@@ -1,4 +1,4 @@
-// Manual end-to-end check (not part of npm test): two real Chromium pages join
+// End-to-end check (npm run e2e and CI job browser-e2e; not part of npm test): two real Chromium pages join
 // the same room on a local UDP server; each must receive the other's motion as
 // shared binary batches, decoded by the game's own module, without page errors.
 //   node scripts/assemble.mjs && node scripts/e2e-browser-motion.mjs [bind-ip]
