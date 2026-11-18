@@ -9,6 +9,15 @@ export function nearestMeshHit(ray, model) {
   return ray.intersectObjects(meshes, false)[0] ?? null;
 }
 
+// Hit-volume user data of a species: equal radii on the origin make a sphere
+// (cheap ray test, no matrix); anything else is an ellipsoid. The sphere is
+// stored like the midge's, whose radius is normalised by 1.2 (see hitRadius).
+export function hitUserData({ centre, radii }) {
+  const [r] = radii;
+  if (radii.every((v) => v === r) && centre.every((v) => v === 0)) return { sphereRadius: r * 1.2 };
+  return { hitEllipsoid: [...radii], hitCentre: [...centre] };
+}
+
 // Rebuilt lazily once after each enemy animation frame, shared by all shots.
 // Spheres cover every overlapped cell; ray queries walk cells, never triangles.
 // Conservative hit radius in unscaled model units: a sphere proxy (midges,

@@ -1,6 +1,12 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 335,
+    changes: [
+      'La zone de tir du scarabée est maintenant une sphère parfaite, autour de son corps.',
+    ],
+  },
+  {
     version: 334,
     changes: [
       'Le rat marche au ras du sol. Le moucheron est plus dur à toucher, les autres insectes volants plus faciles.',

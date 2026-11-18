@@ -27,9 +27,10 @@ export const BEETLE_FLIGHT = Object.freeze({
 // Presentation in game insect units: head towards -Z (client heading), body
 // centre at the origin, about 2.2 units long and 2.9 wide wings included.
 export const BEETLE_MODEL = Object.freeze({ scale: 0.75, centre: [0, 0.9, 0] });
-// Hit volume in insect units (ellipsoid centre and radii): carapace without
-// the wings or the legs.
-export const BEETLE_HIT = Object.freeze({ centre: [0, 0.02, 0.03], radii: [0.78, 0.68, 1.2] });
+// Hit volume in insect units: a perfect sphere on the body centre (equal radii
+// make the hit tests use the cheap ray/sphere path), as large as the old
+// carapace ellipsoid (same volume) without the wings or the legs.
+export const BEETLE_HIT = Object.freeze({ centre: [0, 0, 0], radii: [0.86, 0.86, 0.86] });
 
 export const BEETLE_BONES = Object.freeze({
   root: 'Bone_000',
