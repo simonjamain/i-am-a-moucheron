@@ -138,7 +138,8 @@ import {
   aircraftPose,
   footstepsAudible,
 } from '/base.js';
-import { SpatialAudio, swarmAudioGroups } from '/audio.js';
+import { GameSound } from '/game-audio/game-sound.js';
+import { swarmAudioGroups } from '/game-audio/swarm.js';
 import { advanceArena, deskOccupant, bodyMotion, mergeOwnedArena } from '/purgatory-physics.js';
 import {
   flightClickAction,
@@ -197,7 +198,7 @@ try {
   // Private browsing may disable localStorage entirely.
 }
 let flightTuning = loadFlightTuning(flightStorage);
-const sound = new SpatialAudio(audioSettings);
+const sound = new GameSound(audioSettings);
 const rewardQueue = new RewardQueue(() => sound.play('dollar', camera.position, { ref: 100000 }));
 setInterval(() => rewardQueue.tick(performance.now()), 40);
 for (const event of ['pointerdown', 'keydown'])
@@ -4607,21 +4608,17 @@ function updateAudio() {
         rate: 0.65 + (crewSeat === 'pilot' ? gas : myVehicle.state.gas || 0) * 1.2,
         level: 0.65 * (isRotorcraft(myVehicle.type) ? (myVehicle.state.rotorPower ?? 1) : 1),
         ref: 14,
+        priority: 2,
       });
     }
-    const planes = [...others.entries()]
-      .filter(
-        ([key, g]) =>
-          g.visible &&
-          key !== myVehicle?.id &&
-          snap?.vehicles.find((v) => v.id === key)?.seats.length > 0,
-      )
-      .sort(
-        (a, b) =>
-          a[1].position.distanceToSquared(activeCamera.position) -
-          b[1].position.distanceToSquared(activeCamera.position),
-      )
-      .slice(0, 10);
+    // Every crewed plane gets a logical engine loop; the voice manager keeps
+    // the loudest ones real and the others virtual.
+    const planes = [...others.entries()].filter(
+      ([key, g]) =>
+        g.visible &&
+        key !== myVehicle?.id &&
+        snap?.vehicles.find((v) => v.id === key)?.seats.length > 0,
+    );
     for (const [id, g] of planes) {
       const pilot = snap?.vehicles.find((p) => p.id === id);
       if (pilot?.state.engine === 0 || pilot?.supplies?.fuel <= 0) continue;
@@ -4677,14 +4674,7 @@ function updateAudio() {
   } else {
     activeSwarmAudioKeys.clear();
     lastSwarmAudioAt = -Infinity;
-    for (const b of (soulArena?.bodies || [])
-      .filter((b) => b.kind === 'enemy' && !b.gone)
-      .sort(
-        (a, b) =>
-          Math.hypot(a.x - activeCamera.position.x, a.z - activeCamera.position.z) -
-          Math.hypot(b.x - activeCamera.position.x, b.z - activeCamera.position.z),
-      )
-      .slice(0, 6)) {
+    for (const b of (soulArena?.bodies || []).filter((b) => b.kind === 'enemy' && !b.gone)) {
       const key = 'soul-bug-' + b.id;
       keep.add(key);
       sound.loop(key, 'insect', { x: b.x, y: 0.9, z: b.z }, { ref: 5, level: 0.6, rate: 0.8 });
