@@ -121,6 +121,7 @@ import {
   gameKey,
   flightInput,
   lookDelta,
+  lookScale,
 } from '/control-focus.js';
 import { createRenderer } from '/renderer.js';
 import { createGraphics } from '/graphics.js';
@@ -858,17 +859,18 @@ addEventListener('pointermove', (event) => {
     event.pointerType !== 'mouse'
   )
     return;
-  const dx = event.movementX,
+  const scale = lookScale(camera.fov),
+    dx = event.movementX,
     dy = event.movementY;
   if (airView()) return; // vertical view: keyboard only, no mouse
   if (myVehicle?.type === 'tank' && crewSeat === 'cannon' && keys.KeyC) {
-    lookDelta(freeLook, dx, dy);
+    lookDelta(freeLook, dx, dy, scale);
     return;
   }
   if ((turretIndex >= 0 || (myVehicle && crewSeat !== 'pilot')) && !respawnAt) {
-    turretAim.yaw -= dx * 0.003;
+    turretAim.yaw -= dx * 0.003 * scale;
     turretAim.pitch = clampTurretPitch(
-      turretAim.pitch - dy * 0.003,
+      turretAim.pitch - dy * 0.003 * scale,
       crewSeat === 'ventral'
         ? -1.5
         : myVehicle?.type === 'helicopter'
@@ -881,8 +883,8 @@ addEventListener('pointermove', (event) => {
     return;
   }
   if (onFoot || respawnAt) {
-    groundView.yaw -= dx * 0.005;
-    groundView.pitch = T.MathUtils.clamp(groundView.pitch + dy * 0.004, -1.52, 1.52);
+    groundView.yaw -= dx * 0.005 * scale;
+    groundView.pitch = T.MathUtils.clamp(groundView.pitch + dy * 0.004 * scale, -1.52, 1.52);
     return;
   }
   if (castorTopView()) {
@@ -894,7 +896,7 @@ addEventListener('pointermove', (event) => {
     return;
   }
   if (keys.KeyC) {
-    lookDelta(freeLook, dx, dy);
+    lookDelta(freeLook, dx, dy, scale);
     return;
   }
   {
@@ -904,7 +906,7 @@ addEventListener('pointermove', (event) => {
       camera.quaternion,
       dx,
       flightTuning.invertY ? -dy : dy,
-      0.0026 * flightTuning.mouseSensitivity,
+      0.0026 * flightTuning.mouseSensitivity * scale,
     );
   }
 });
