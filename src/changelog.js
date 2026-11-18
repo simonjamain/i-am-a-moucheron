@@ -1,6 +1,10 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 339,
+    changes: ['Le temps de préparation entre deux vagues passe à 3 minutes.'],
+  },
+  {
     version: 338,
     changes: [
       'En plein combat, les sons proches et importants ne sont plus coupés par le vacarme lointain.',

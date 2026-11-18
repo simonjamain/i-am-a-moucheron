@@ -126,7 +126,7 @@ assert.equal(request(late.id, 'start', { preparation: prep.id }).wave, 1);
 for (const e of room.plan.roster) room.kills.add(e.id);
 snap = request(a.id, 'sync', { state: a.state, mode: 'foot' });
 prep = snap.preparation;
-assert.equal(snap.next_wave_at - now, 60000, 'one-minute countdown');
+assert.equal(snap.next_wave_at - now, 180000, 'three-minute countdown');
 // Without anybody launching, the countdown starts the announced wave.
 now = snap.next_wave_at;
 snap = request(a.id, 'sync', { state: a.state, mode: 'foot' });

@@ -90,7 +90,7 @@ export const BALANCE_FIELDS = Object.freeze({
     label: 'Pause entre vagues (secondes)',
     min: 5,
     step: 1,
-    value: 60,
+    value: 180,
     when: 'Pause en cours, préavis minimum de 5 secondes',
   },
 });
