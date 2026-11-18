@@ -1,6 +1,7 @@
 // Meshy armoured beetle (`brute`): provenance, added wing bones, rigid closed
 // elytra, procedural flight cycle, VAT bake, batched proxies and ellipsoid hits
 // (src/beetle-model.js, src/flyer-batch.js, scripts/import-beetle.py).
+import { FLYER_HIT_TOLERANCE } from '../src/scale.ts';
 import assert from 'node:assert/strict';
 import * as T from '../vendor/three.module.min.js';
 import { BEETLE_DATA } from '../src/beetle-data.js';
@@ -140,7 +141,7 @@ const step = move(0, 1, isWing);
 assert.ok(move(bake.frames - 1, 0, isWing) < step * 1.5, 'seamless loop');
 
 // 5. Hit volume: the carapace (body shell above the legs, without wings) sits
-// in the ellipsoid; the game's hit tolerance covers the rounded corners.
+// in the hit sphere, which the game's hit tolerance enlarges.
 const [cx, cy, cz] = BEETLE_HIT.centre,
   [rx, ry, rz] = BEETLE_HIT.radii;
 const body = [];
@@ -151,8 +152,11 @@ const level = (v) => {
   return ((p.x - cx) / rx) ** 2 + ((p.y - cy) / ry) ** 2 + ((p.z - cz) / rz) ** 2;
 };
 const within = (limit) => body.filter((v) => level(v) <= limit).length / body.length;
-assert.ok(within(1) > 0.8, 'carapace inside the hit ellipsoid ' + within(1));
-assert.ok(within(1.25 ** 2) > 0.97, 'carapace inside the tolerant ellipsoid ' + within(1.25 ** 2));
+// The hit volume is a sphere (equal radii): played at the flyers' tolerance it
+// covers the elongated carapace (a perfect sphere, so nose and tail stay out).
+const played = FLYER_HIT_TOLERANCE ** 2;
+assert.ok(within(played) > 0.9, 'carapace inside the played hit sphere ' + within(played));
+assert.ok(within(1.5 ** 2) > 0.97, 'carapace inside the wide hit sphere ' + within(1.5 ** 2));
 assert.ok(rx < size.x / 2 - 0.4, 'wings stay outside the hit volume');
 
 // 6. Batched proxies and rigged fallback share the hit volume; only the brute
@@ -166,11 +170,12 @@ const proxy = new FlyerBatch(T, scene, { enabled: true, vats: {} });
 assert.ok(proxy.handles('brute') && !proxy.handles('midge') && !proxy.handles('ant'));
 const flyer = proxy.create('brute', 1.3);
 assert.ok(flyer.userData.instancedFlyer && flyer.userData.loopPhase >= 0);
-assert.deepEqual(flyer.userData.hitEllipsoid, BEETLE_HIT.radii);
+assert.equal(flyer.userData.hitEllipsoid, undefined, 'the beetle hit volume is a sphere');
+assert.ok(Math.abs(flyer.userData.sphereRadius - BEETLE_HIT.radii[0] * 1.2) < 1e-12);
 const graphics = createGraphics(T, scene);
 const fallback = graphics.insect('brute');
 assert.ok(fallback.userData.flight, 'rigged fallback beats its wings');
-assert.deepEqual(fallback.userData.hitEllipsoid, BEETLE_HIT.radii);
+assert.equal(fallback.userData.sphereRadius, flyer.userData.sphereRadius);
 fallback.userData.animate(0.1);
 for (const model of [flyer, fallback]) {
   model.position.set(0, 0, -10);
@@ -195,5 +200,5 @@ console.log(
   }),
 );
 console.log(
-  'PASS: Meshy beetle provenance, rigid wings and carapace, periodic symmetric wing beat, VAT bake, batched proxies and ellipsoid hits.',
+  'PASS: Meshy beetle provenance, rigid wings and carapace, periodic symmetric wing beat, VAT bake, batched proxies and a spherical hit volume.',
 );

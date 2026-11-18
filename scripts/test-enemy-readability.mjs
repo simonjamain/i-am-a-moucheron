@@ -57,7 +57,8 @@ for (const [type, height] of Object.entries({ guard: 15, mosquito: 12, brute: 17
   model.scale.setScalar(insectScale(type, INSECT_SCALE, ENEMY_TYPES[type].size));
   model.updateMatrixWorld(true);
   const box = new T.Box3().setFromObject(model).getSize(new T.Vector3());
-  const [, ry] = model.userData.hitEllipsoid;
+  // Sphere (beetle): radius normalised by 1.2, like the midge.
+  const ry = model.userData.hitEllipsoid?.[1] ?? model.userData.sphereRadius / 1.2;
   const hitHeight = 2 * ry * model.scale.y;
   assert.ok(
     hitHeight > box.y * 0.4 && hitHeight < box.y * 1.2, // body only, without wings or legs
