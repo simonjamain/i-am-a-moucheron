@@ -60,6 +60,11 @@ export const GROUND_FOOT_CLEARANCE = 0.04;
 export const INSECT_SCALE = MAP.metres(0.9 / 1.6);
 // Radius in unscaled midge-model coordinates; used by hitscan and the GPU batch.
 export const MIDGE_SPHERE_RADIUS = 1.5;
+// Hit-volume tolerance of the flyers (multiplies their hit radii). The midge's
+// sphere was 1.2 and is 30 % smaller (0.84); the bee, mosquito and beetle,
+// which were 1, are 30 % larger (1.3). The sphere is normalised by 1.2.
+export const MIDGE_HIT_TOLERANCE = 1.2 * 0.7;
+export const FLYER_HIT_TOLERANCE = 1.3;
 export const REFERENCE = Object.freeze({
   walk: 6,
   enemy: 60 / 3.6,

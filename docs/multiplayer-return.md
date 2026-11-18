@@ -164,9 +164,10 @@ d’explosion, même si la coque disparaît. Dégâts centre 240 et bord 60 inch
 rayon visuel et dégâts doublés ensemble ; obstacles et déduplication conservés.
 
 Le moucheron est encore agrandi de **50 %** : facteur visuel historique **2,025**, désormais **6,075** après le [correctif de visibilité](enemy-visibility.md) par
-rapport au modèle antérieur à VIS-02. Sa tolérance de tir est **1,2 ×** ce nouveau
-modèle. Les intersections ellipsoïdales ne modifient pas les meshes rendus ni les
-PV. Les autres espèces suivent désormais les [facteurs de visibilité](enemy-visibility.md) ; leurs tolérances de collision restent inchangées.
+rapport au modèle antérieur à VIS-02. Sa tolérance de tir était **1,2 ×** ce nouveau
+modèle ; depuis la v334 elle est de **0,84 ×** (hitbox réduite de 30 %), alors que l'abeille, le
+moustique et le scarabée passent de 1 à **1,3 ×** (hitbox agrandie de 30 %). Les intersections ellipsoïdales ne modifient pas les meshes rendus ni les
+PV. Les autres espèces suivent désormais les [facteurs de visibilité](enemy-visibility.md) ; leurs tolérances de collision restent inchangées, hors les volants ci-dessus.
 
 Les teintes et initiales corporelles des joueurs ont été retirées avec l'arrivée
 du [personnage animé](asset-pipeline.md#personnage-joueur-meshy--mixamo) : tous

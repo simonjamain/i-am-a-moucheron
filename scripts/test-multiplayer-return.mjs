@@ -227,21 +227,22 @@ console.log(
 const midge = graphics.insect('midge');
 midge.scale.setScalar(insectScale('midge', INSECT_SCALE));
 midge.position.set(0, 0, -0.1);
-assert.equal(midge.userData.hitTolerance, 1.2);
+assert.ok(Math.abs(midge.userData.hitTolerance - 0.84) < 1e-12, 'midge hit volume 30 % smaller');
 assert.equal(insectScale('midge', 1), 1.35 * 1.5 * 3);
-let tolerant = 0,
+let shrunk = 0,
   exact = 0;
 for (let x = -0.018; x <= 0.018; x += 0.0002) {
   const point = new T.Vector3(x, 0, 0);
   midge.userData.hitTolerance = 1;
   exact += !!nearestInsectHit(T, point, dir, new Map([[0, midge]]), 1);
-  midge.userData.hitTolerance = 1.2;
-  tolerant += !!nearestInsectHit(T, point, dir, new Map([[0, midge]]), 1);
+  midge.userData.hitTolerance = 0.84;
+  shrunk += !!nearestInsectHit(T, point, dir, new Map([[0, midge]]), 1);
 }
-assert.ok(tolerant > exact);
+assert.ok(shrunk < exact, 'the shrunk midge is harder to hit');
 assert.equal(nearestInsectHit(T, new T.Vector3(1, 1, 0), dir, new Map([[0, midge]]), 1), null);
-for (const type of ['guard', 'brute', 'ant', 'roach'])
-  assert.equal(graphics.insect(type).userData.hitTolerance, 1);
+for (const type of ['guard', 'brute', 'mosquito'])
+  assert.equal(graphics.insect(type).userData.hitTolerance, 1.3, type + ' hit volume 30 % larger');
+for (const type of ['ant', 'roach']) assert.equal(graphics.insect(type).userData.hitTolerance, 1);
 const pool = new TracerPool(T, scene, 8);
 for (let i = 0; i < 1000; i++) {
   const model = pool.acquire(origin, dir, '#abc');
