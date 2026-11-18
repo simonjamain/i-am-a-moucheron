@@ -12,7 +12,7 @@ import { GROUND_FOOT_DEPTH, GROUND_FOOT_CLEARANCE, INSECT_SCALE } from '../src/s
 import { insectScale } from '../src/insect-status.ts';
 
 const bytes = (b64) => Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
-const floor = -GROUND_FOOT_DEPTH + GROUND_FOOT_CLEARANCE;
+const floor = -GROUND_FOOT_DEPTH + GROUND_FOOT_CLEARANCE - RAT_MODEL.sink;
 
 // 1. Data: approved source, skeleton, clip of 30 keys over 1 s.
 assert.equal(

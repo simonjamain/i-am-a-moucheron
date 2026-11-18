@@ -59,7 +59,7 @@ Le workflow `Docker build validation` contient aussi le job `Full game regressio
 `npm test`, `format:check`, `check:docs`, le build et `validate-artifact.mjs` ; `docker build` local reste exigé avant livraison
 ([Docker](docker.md)).
 
-Audit des contrôles (suite complète : 153 scripts, environ 50 s cumulées, tous < 4 s) :
+Audit des contrôles (suite complète : 154 scripts, environ 50 s cumulées, tous < 4 s) :
 `npm test` lance `scripts/run-tests.mjs`, qui assemble puis exécute la liste ordonnée
 de `scripts/suite.mjs`, chaque script dans son propre processus, et résume tous les
 échecs à la fin. `npm test -- <fragment>` cible les scripts dont le nom contient le
@@ -68,8 +68,6 @@ entière ; elle inclut `tsc` (`test-typescript.mjs`) et la cohérence des tables
 espèce et par véhicule (`test-registries.mjs`). `test-suite-wiring.mjs` échoue si un
 `scripts/test-*.mjs` n'est pas dans `scripts/suite.mjs` (seul `test-udp-capacity-50.mjs`,
 lourd, a sa commande `test:capacity`) : un test orphelin ne protège rien.
-`test-wave-preparation.mjs` tire des meutes au hasard et échoue rarement
-(« few groups ») sans changement de code : le relancer avant d'enquêter.
 `npm run format:check` est la seule commande de format, en local et
 en CI (job `Full game regression and formatting`) ; les données générées
 (`src/*data.js` importées, `docs/ui-review.html`) sont dans `.prettierignore`.
@@ -77,6 +75,17 @@ Le job `Docker build` démarre l'image construite et vérifie `/healthz`
 (`ok`, `storage=ram`, `transport=webrtc-udp`) et le 410 de `/api/join` : il prouve
 que l'image démarre, pas les pairs UDP dans le conteneur, WebGL ni le WAN.
 `check:version` n'est pas exécuté en CI (il compare l'index à `HEAD`).
+
+Scénarios navigateur réel : `npm run e2e` (Chromium Playwright, WebRTC UDP puis repli
+TCP : reprise de pilote, mouvements partagés entre deux pages, chute vue
+par un second client, environ 3 min). Hors `npm test` car ils exigent
+Chromium ; le job CI `Real Chromium over WebRTC UDP/TCP` les exécute à chaque PR
+(Playwright installé à la volée, pas une dépendance du projet). `npm run e2e:loading` (échoue par intermittence sur le runner : `canvas` absent en `#loading.departing` au rechargement à chaud, course non tranchée) et `npm run e2e:layouts` (sélecteur de plans, 135 s en local) expire sur le runner CI (90 s d'attente
+page) restent manuels jusqu'à diagnostic. Lancer le script ciblé
+(`e2e:resume`, `e2e:motion`, `e2e:tcp`) pendant l'itération. Ils prouvent la poignée de main
+WebRTC et les flux en loopback, pas WebGL (rendu supprimé ou logiciel), le WAN ni le confort.
+`test-wave-preparation.mjs` utilise des graines fixes (`WAVE_SEEDS=2000` pour élargir) : plus
+de test aléatoire intermittent.
 
 Le build produit `dist/` avec serveur, modules partagés, assets et manifestes npm.
 Dans ce répertoire : `npm ci --omit=dev && npm start`. Le validateur vérifie
@@ -104,7 +113,7 @@ partie UDP sur son réseau. Le chargement du client et les panneaux sont testabl
 ainsi que la géométrie Three.js sans GPU. Les images comparatives des modèles
 sont des projections CPU des triangles. Pointer Lock, confort du pilotage,
 tactile physique, écoute, charge maximale et WAN restent à vérifier sur la VM.
-La capacité configurée (100 joueurs) ne prouve pas des performances à cette charge ;
+La capacité configurée (128 connexions simultanées, `maxConnections` de `server/index.js`) ne prouve pas des performances à cette charge ;
 la cible de jeu reste un petit groupe de 5–10 joueurs.
 
 ## Référence métier du lot courant

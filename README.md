@@ -74,6 +74,7 @@ Le [backlog](BACKLOG.md) suit les tâches validées et leurs vérifications.
 | Touches et capture du pointeur              | [controls](docs/controls.md)                                  |
 | Modules, état réseau et responsabilités     | [code-structure](docs/code-structure.md)                      |
 | Corps partagés et autorité client           | [walking-network](docs/walking-network.md)                    |
+| Son et gestionnaire de voix                 | [audio](docs/audio.md)                                        |
 | File physique et combat chez Saint Pierre   | [purgatory-queue](docs/purgatory-queue.md)                    |
 | Unités, flotte et DCA                       | [scale-fleet-weapons](docs/scale-fleet-weapons.md)            |
 | Nuées, traceurs et accès aux équipements    | [swarm-equipment](docs/swarm-equipment.md)                    |

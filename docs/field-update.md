@@ -72,7 +72,7 @@ L’ancien corps local est retiré lors du changement d’incarnation : ses coor
 ne doivent pas gagner contre la nouvelle destination dans la fusion des snapshots.
 Vitesse, parachute, rotation de caméra et commandes sont réinitialisés.
 
-Un lit coûte 4 $, puis +2 $ par lit acheté, sur la caisse commune. Sa pose réserve
+Un lit coûte 15 $, puis +2 $ par lit acheté, sur la caisse commune. Sa pose réserve
 une surface de 6 × 4,2 m de référence, soit 18 × 12,6 mm du décor, avec support
 continu, place pour le corps et hauteur libre. Il peut être posé sur un meuble.
 Un cercle permet E puis un **contrat personnel signé**. Chaque joueur a un seul

@@ -70,8 +70,8 @@ deux postes tireurs. Les réserves de MG sont complètement indépendantes.
 
 Le Stuka est une silhouette à ailes en mouette, carénages de train et bombes
 externes. Sa vitesse maximale de référence est 54 m/s et son facteur de virage
-0,65, contre 70 et 1 pour le chasseur initial. Il coûte 12 $ par exemplaire,
-le tank 10 $. Le bombardier conserve ses deux postes de mitrailleurs.
+0,65, contre 70 et 1 pour le chasseur initial. Il coûte 25 $ par exemplaire,
+le tank 5 $. Le bombardier conserve ses deux postes de mitrailleurs.
 
 Les bombes héritent de la vitesse de l’avion et subissent la gravité. Un piqué
 dont la direction avant descend de plus de 0,65 applique un facteur **1,35** aux

@@ -44,17 +44,19 @@ assert.equal(toggleParachute(falling), false);
 const scene = new T.Scene(),
   graphics = createGraphics(T, scene),
   office = createOffice(T, scene, { ...graphics, textLabel: () => new T.Group() });
-assert.ok(supportedPlacement({ x: -1.5, y: 0.90005, z: 1.885 }, office.colliders));
+assert.ok(supportedPlacement({ x: -1.5, y: 0.90005, z: 1.4 }, office.colliders));
 assert.equal(
   supportedPlacement({ x: 0, y: 2, z: 0 }, office.colliders),
   null,
   'no floating installations',
 );
-const books = office.colliders.filter((b) => Math.abs(b.max.z - 1.405) < 0.01 && b.max.y > 0.95);
-assert.ok(books.length);
+const cartons = office.colliders.filter(
+  (b) => Math.abs(b.max.y - 0.5) < 0.01 && b.max.x - b.min.x < 1,
+);
+assert.ok(cartons.length);
 assert.ok(
-  supportedPlacement({ x: -1.02, y: 1.00005, z: 1.23 }, office.colliders),
-  'books support a whole gun base',
+  supportedPlacement({ x: 2.4, y: 0.50005, z: 0.2 }, office.colliders),
+  'cartons support a whole gun base',
 );
 const fx = new CombatEffects(T, scene);
 fx.blast(new T.Vector3());
@@ -72,7 +74,7 @@ assert.ok(new Set(flyingRoutes.map((e) => e.routeSeed)).size > 3);
 for (const e of rosters) {
   const route = enemyRoute(e),
     end = enemyRoutePosition(e, 1);
-  assert.ok(Math.hypot(end[0] - 2.5, end[2] + 2.7) < 1e-8);
+  assert.ok(Math.hypot(end[0] - OFFICE_LAYOUT.bin.x, end[2] - OFFICE_LAYOUT.bin.z) < 1e-8);
   // Ground insects walk directly to the bin (issue #97); flights keep long lanes.
   assert.ok(e.ground ? e.duration > 0 : e.duration >= 60);
   for (const { p } of route.samples) {
@@ -163,8 +165,8 @@ async function ground(player, w, grounded = true) {
   });
   return { epoch: snap.base.epoch, body: bodyMotion(body) };
 }
-const position = { x: -1.5, y: 0.90005, z: 1.885 },
-  g = await ground(a, { x: -1.5, y: 0.90005, z: 1.9 });
+const position = { x: -1.5, y: 0.90005, z: 1.4 },
+  g = await ground(a, { x: -1.5, y: 0.90005, z: 1.415 });
 assert.equal(
   (await api('buy', { id: a.id, item: 'dca', request: 'insufficient', position, ground: g }))
     .status,

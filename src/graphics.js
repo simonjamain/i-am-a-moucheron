@@ -1,3 +1,4 @@
+import { hitUserData } from './insect-hits.js';
 import { buildMeshyRig, gunMount } from './meshy-rig.js';
 import { MODEL_DATA as SPITFIRE } from './meshy-spitfire-data.js';
 import { MODEL_DATA as TANK } from './meshy-tank-data.js';
@@ -5,6 +6,8 @@ import { MODEL_DATA as FLAKTRUCK } from './meshy-flaktruck-data.js';
 import { MODEL_DATA as STUKA } from './meshy-stuka-data.js';
 import { makeH2 } from './h2-model.js';
 import { makeBiplane, makeBiplaneBomber } from './biplane-model.js';
+import { makeM1 } from './m1-model.js';
+import { makeB3 } from './b3-model.js';
 import { makeCastorMeshy } from './castor-model.js';
 import { makeFlyingCastorMeshy } from './flying-castor-model.js';
 import { createCharacter, CHARACTER_HEIGHT, LEGACY_HEIGHT } from './character-model.js';
@@ -12,7 +15,12 @@ import { createMidgeRig } from './midge-model.js';
 import { WALKERS, walkerStride } from './walker-batch.js';
 import { FLYERS } from './flyer-batch.js';
 import { TAU } from './rigged-creature.js';
-import { GROUND_LEGS, MIDGE_SPHERE_RADIUS } from './scale.ts';
+import {
+  FLYER_HIT_TOLERANCE,
+  GROUND_LEGS,
+  MIDGE_HIT_TOLERANCE,
+  MIDGE_SPHERE_RADIUS,
+} from './scale.ts';
 export function createGraphics(T, scene) {
   const materials = new Map();
   function mat(c) {
@@ -79,6 +87,15 @@ export function createGraphics(T, scene) {
   }
   function makeBomber() {
     return makeBiplaneBomber(T, scene, box);
+  }
+  // The original light fighter and four-seat medium bomber (shop purchases).
+  function makeLightFighter() {
+    const g = makeM1(T, scene);
+    g.userData.vehicleType = 'lightfighter';
+    return g;
+  }
+  function makeMediumBomber() {
+    return makeB3(T, scene);
   }
   // Remodelled Stuka: gull wings, propeller and two wing guns; its belly bomb
   // is part of the hull.
@@ -149,7 +166,7 @@ export function createGraphics(T, scene) {
 
   function insect(type = 'midge') {
     const g = new T.Group();
-    g.userData.hitTolerance = type === 'midge' ? 1.2 : 1;
+    g.userData.hitTolerance = type === 'midge' ? MIDGE_HIT_TOLERANCE : 1;
     if (WALKERS[type]) {
       // Rigged Meshy walkers (corpses, purgatory souls, non-WebGL fallback).
       // Living WebGL walkers are drawn by WalkerBatch; hits use the ellipsoid.
@@ -190,9 +207,8 @@ export function createGraphics(T, scene) {
         legs: [],
         hitParts: [],
         disposables: [rig.mesh.material],
-        hitTolerance: 1,
-        hitEllipsoid: [...flyer.hit.radii],
-        hitCentre: [...flyer.hit.centre],
+        hitTolerance: FLYER_HIT_TOLERANCE,
+        ...hitUserData(flyer.hit),
         flight: rig,
         // Purgatory souls keep beating their wings.
         animate(dt) {
@@ -213,7 +229,7 @@ export function createGraphics(T, scene) {
         legs: [],
         hitParts: [],
         disposables: [rig.mesh.material],
-        hitTolerance: 1.2,
+        hitTolerance: MIDGE_HIT_TOLERANCE,
         sphereRadius: MIDGE_SPHERE_RADIUS,
         flight: rig,
       };
@@ -423,6 +439,8 @@ export function createGraphics(T, scene) {
     makePlane,
     makeSpitfire,
     makeBomber,
+    makeLightFighter,
+    makeMediumBomber,
     makeStuka,
     makeBomb,
     makeTank,

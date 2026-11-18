@@ -88,5 +88,6 @@ assert.equal(snap.groundDefense.structures.length, 1);
 p.mode = 'foot';
 p.vehicle_id = null;
 p.seat = null;
-assert.throws(() => command({ action: 'build', kind: 'sentry', a: [0.2, 0] }), /sol/);
+// Walking players start on the floor now: a sentry still needs the Castor.
+assert.throws(() => command({ action: 'build', kind: 'sentry', a: [0.2, 0] }), /Castor/);
 console.log('Sentry unlock, cash, finite shots, paid service, network retry and server access: OK');

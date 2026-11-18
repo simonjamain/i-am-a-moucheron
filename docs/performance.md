@@ -163,11 +163,13 @@ Le regroupement et les positions/gains audio sont calculés côté client
 tous les insectes à chaque image. La complexité du regroupement est linéaire
 en fonction du nombre d'insectes. Le cache des échantillons Web Audio,
 l'atténuation spatiale, la limite des boucles et les sons de morts/chutes
-individuels sont conservés. Aucun message réseau n'est ajouté.
+individuels sont conservés. Aucun message réseau n'est ajouté. Chaque source
+devient une boucle logique du [gestionnaire de voix](audio.md), qui attribue
+les voix réelles au score.
 
 `scripts/test-audio.mjs` inclut un test CPU à **10 000 individus**, vérifiant
-le nombre de sources, les morts, la spatialisation gauche/droite, les exclusions,
-le plafond de gain et le budget de voix. Ces tests ne valident pas la perception
+le nombre de sources, les morts, les exclusions et le plafond de gain ;
+`scripts/test-game-audio.mjs` vérifie le budget de voix. Ces tests ne valident pas la perception
 sonore en navigateur, notamment lors du franchissement des frontières de cellules,
 avec une nuée entourant la caméra ou plusieurs moteurs d'avions simultanés.
 

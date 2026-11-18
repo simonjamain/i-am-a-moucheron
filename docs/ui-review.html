@@ -131,6 +131,8 @@
         top: 50%;
         transform: translateY(-45%);
         width: 430px;
+        max-height: 96vh;
+        overflow-y: auto;
         z-index: 3;
       }
       h1 {
@@ -180,6 +182,33 @@
       }
       input:focus {
         border-color: var(--acid);
+      }
+      .plans {
+        display: grid;
+        grid-template-columns: repeat(6, 1fr);
+        gap: 5px;
+        margin: 12px 0 4px;
+      }
+      .plans button {
+        display: grid;
+        gap: 4px;
+        padding: 3px;
+        background: #0c211f;
+        color: var(--cream);
+        border: 1px solid #ffffff26;
+        border-radius: 4px;
+        font: inherit;
+        font-size: 0; /* names are in the tooltip; keeps the join button in view */
+        letter-spacing: 0.5px;
+        cursor: pointer;
+      }
+      .plans button[aria-checked='true'] {
+        border-color: var(--acid);
+      }
+      .plans svg {
+        width: 100%;
+        height: auto;
+        display: block;
       }
       .appearance {
         margin-top: 16px;

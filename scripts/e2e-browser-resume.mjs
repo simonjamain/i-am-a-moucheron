@@ -1,4 +1,4 @@
-// Manual end-to-end check (not part of npm test): a real Chromium joins a local
+// End-to-end check (npm run e2e and CI job browser-e2e; not part of npm test): a real Chromium joins a local
 // UDP server, the server drops the connection, and the browser must resume the
 // same pilot over a new connection. Then 'pagehide' must release the pilot.
 //   node scripts/assemble.mjs && node scripts/e2e-browser-resume.mjs [bind-ip]

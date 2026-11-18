@@ -25,7 +25,8 @@ de la version publique historique encore sur Sites/D1.
 
 ## Boucle de jeu
 
-Les joueurs rejoignent une salle coopérative, apparaissent à pied sur le bureau
+Les joueurs rejoignent une salle coopérative, apparaissent à pied au sol près de la
+corbeille (le [plan du bureau](office-layouts.md) est choisi à la création de la room)
 et utilisent une caméra à la troisième personne. Ils rejoignent physiquement un
 équipement, remplissent son dossier et en prennent un siège. Les avions ont du carburant et
 des munitions limités, à compléter en se posant et s’arrêtant dans une station. L’objectif est de
@@ -80,8 +81,10 @@ désignations internes dans les commentaires, tests et documents techniques. Auc
 
 ## Équipements et combat
 
-Un chasseur monoplace et un bombardier sont disponibles au départ. Le bombardier
-a un pilote, un mitrailleur dorsal et un mitrailleur de queue. Un exemplaire de réserve prêt
+Un chasseur biplan, un bombardier biplan (pilote et mitrailleur dorsal) et un char moyen
+sont disponibles au départ, en nombre illimité. Le **Chasseur léger** (monoplace, 15 $) et
+le **Bombardier moyen** (pilote, mitrailleurs dorsal, de queue et ventral, 50 bombes,
+15 $) s'achètent en plus au marchand. Un exemplaire de réserve prêt
 par type initial est conservé ; dès son décollage, un successeur gratuit apparaît sans supprimer les avions utilisés. Les achats fournissent un Stuka, un Spitfire,
 un tank, un hélicoptère biplace ou une DCA mobile, dont la destruction est définitive. Les sièges sont exclusifs.
 
@@ -245,7 +248,7 @@ stations achetées fournissent le même service. La caisse commune paie au prora
 les PV, le carburant et chaque catégorie de munitions ; en cas de fonds insuffisants,
 la somme est répartie équitablement entre les véhicules éligibles.
 Voir [le tarif et les limites du lot G1](economy-physics.md#tarification-automatique-des-stations-lot-préparatoire-g1-castor). Stations supplémentaires et radars sont
-vendus 4 $, puis +2 $ par exemplaire de leur type. Sans radar, aucun ennemi sur
+vendus 5 $ (flak léger), 10 $ (radar), 15 $ (lit) et 20 $ (station), puis +2 $ par exemplaire de leur type. Sans radar, aucun ennemi sur
 la carte ; chaque radar révèle ceux dans un cylindre de rayon 2 m, à toutes hauteurs, sans masquer la scène.
 Voir [logistique et contrats](logistics-contracts.md) pour les valeurs, garanties
 et limites de vérification.
@@ -274,7 +277,7 @@ coque ; seule la sirène de piqué du Stuka subsiste. Valeurs et limites :
 [lisibilité, commandes, nettoyage et Spitfire](clean-flight.md).
 
 Les achats de tous les véhicules utilisent désormais le bon signé et la pose par E,
-au sol ou sur mobilier, avec chasseur 8 $ et bombardier 16 $. Les bombes du B3
+au sol ou sur mobilier, avec chasseur 5 $ et bombardier 5 $. Les bombes du B3
 ont le double du rayon de celles du Stuka. [Référence du dernier lot](multiplayer-return.md).
 
 ## Hélicoptère et camion DCA
@@ -398,7 +401,7 @@ Le [bombardier biplan à deux places](biplane-models.md) conserve son camouflage
 
 ## G1 Castor (première étape, version 179)
 
-Le **G1 Castor** est un camion monoplace à six roues, achetable pour **12 $** avec le bon signé des véhicules. Z/S et Q/D permettent de conduire ; la souris vise sa mitrailleuse légère (500 balles, recharges payantes). **V** bascule une **vue de dessus** : caméra à 40 cm à la verticale du camion, nord (axe −Z, le haut du radar) en haut de l’écran quel que soit le cap du camion, et viseur au sol déplacé à la souris pour poser les défenses dans les 24 cm de portée et tirer (`src/castor-top-view.js`). Vitesse maximale 52 (deux fois le
+Le **G1 Castor** est un camion monoplace à six roues, achetable pour **15 $** avec le bon signé des véhicules. Z/S et Q/D permettent de conduire ; la souris vise sa mitrailleuse légère (500 balles, recharges payantes). **V** bascule une **vue de dessus** : caméra à 40 cm à la verticale du camion, nord (axe −Z, le haut du radar) en haut de l’écran quel que soit le cap du camion, et viseur au sol déplacé à la souris pour poser les défenses dans les 24 cm de portée et tirer (`src/castor-top-view.js`). Vitesse maximale 52 (deux fois le
 réglage initial), avec une accélération forte au départ qui décroît près du
 maximum. Les six roues roulent à la vitesse du sol de leur côté (sens, marche
 arrière et arrêt compris) ; au pivot sur place, gauche et droite tournent en sens
@@ -430,7 +433,7 @@ correction des six roues est conservée.
 ## Castor volant (version 292)
 
 Le **Castor volant** est un hélicoptère logistique à deux rotors en tandem,
-acheté **30 $** (colonne Aéronefs). Il a **un pilote et trois passagers**, aucune
+acheté **35 $** (colonne Aéronefs). Il a **un pilote et trois passagers**, aucune
 arme, 200 PV, le pilotage assisté de l'hélicoptère d'attaque (souris pour
 l'inclinaison, Z/S/Q/D, Maj/Ctrl) et le même **soutien sphérique de 50 cm** que
 le Castor : soins, carburant, munitions et réparation des barricades, payés par

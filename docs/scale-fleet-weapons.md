@@ -119,9 +119,9 @@ portée les ravitaille automatiquement aux tarifs habituels des balles et obus.
 
 | Poste             |                               Prix de base |        Stock | Tir                                                                                   |
 | ----------------- | -----------------------------------------: | -----------: | ------------------------------------------------------------------------------------- |
-| Flak léger        | 4 $, puis +2 $ par exemplaire jusqu’à 40 $ |     120 obus | Deux tubes alternés, éclatement à distance programmée.                                |
-| DCA haute cadence |                                       15 $ | 1 000 balles | Quatre mitrailleuses de Spitfire. Un départ toutes les 15 ms, en alternant les tubes. |
-| Flak lourd        |                                       35 $ |     120 obus | Un obus par seconde avec la fusée de proximité de la DCA mobile.                      |
+| Flak léger        | 5 $, puis +2 $ par exemplaire jusqu’à 40 $ |     120 obus | Deux tubes alternés, éclatement à distance programmée.                                |
+| DCA haute cadence |                                       50 $ | 1 000 balles | Quatre mitrailleuses de Spitfire. Un départ toutes les 15 ms, en alternant les tubes. |
+| Flak lourd        |                                       30 $ |     120 obus | Un obus par seconde avec la fusée de proximité de la DCA mobile.                      |
 
 Les trois DCA fixes ont un azimut libre et une élévation de **+5° à +90°**.
 Dès la confirmation du poste du Flak lourd, la vue passe à la bouche du canon

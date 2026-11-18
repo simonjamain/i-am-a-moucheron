@@ -8,11 +8,11 @@ import {
   distanceToSegment,
   STICKY_WIDTH,
   GROUND_BOUNDS,
-  GROUND_GOAL,
+  groundGoal,
   GROUND_CELL,
-  GROUND_STATIC_OBSTACLES,
+  groundStaticObstacles,
 } from './ground-defense.js';
-export { GROUND_BOUNDS, GROUND_GOAL, GROUND_CELL };
+export { GROUND_BOUNDS, groundGoal, GROUND_CELL };
 
 export const GROUND_LIMIT = 512;
 export const GROUND_BAIT_TYPES = Object.freeze({
@@ -108,13 +108,13 @@ export function previewStructures(command) {
     ];
   return [];
 }
-export function groundFlow(state, goal = GROUND_GOAL) {
+export function groundFlow(state, goal = groundGoal()) {
   return buildGroundFlow({
     bounds: GROUND_BOUNDS,
     cellSize: GROUND_CELL,
     goal,
     barricades: navigationStructures(state.structures),
-    staticObstacles: GROUND_STATIC_OBSTACLES,
+    staticObstacles: groundStaticObstacles(),
   });
 }
 // One synchronous command is an atomic room transaction. Never accept costs, HP,

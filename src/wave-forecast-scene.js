@@ -1,4 +1,5 @@
 import { PORTALS, portalExit } from './routes.js';
+import { activeLayout } from './layouts.js';
 import { PheromoneTrails } from './pheromone-trail.js';
 
 export const speciesSymbols = {
@@ -55,9 +56,12 @@ export class WaveForecastScene {
       cmd = null;
     // While walking, coalesce requests. The expensive navigation grid is built
     // off the render thread; stale snapshots and stale drafts never overwrite it.
-    const key = [prep.id, snap.groundDefense.navigationRevision, JSON.stringify(cmd || null)].join(
-      ':',
-    );
+    const key = [
+      prep.id,
+      activeLayout().id,
+      snap.groundDefense.navigationRevision,
+      JSON.stringify(cmd || null),
+    ].join(':');
     this.key = key;
     if (this.busy || this.rendered === key || now < (this.nextAt || 0)) return;
     if (!this.worker) {
@@ -77,6 +81,7 @@ export class WaveForecastScene {
     this.nextAt = now + 110;
     this.worker.postMessage({
       key,
+      layout: activeLayout().id,
       groups: this.entrances,
       walls: snap.groundDefense.structures.filter((s) => ['barricade', 'bunker'].includes(s.kind)),
       command: cmd || null,

@@ -16,10 +16,10 @@ communes. Les quatre nouveaux rôles ont leurs contrats propres, soit 200 varian
 supplémentaires et **600 variantes** au total. Les stations habituelles remplissent
 carburant et chaque stock en dix secondes, véhicule posé et arrêté.
 
-| Véhicule       |                   Prix |  Coque |              Vitesse de référence | Carburant                           |
-| -------------- | ---------------------: | -----: | --------------------------------: | ----------------------------------- |
-| Hélicoptère H2 | 30 $ (1,25 × Spitfire) | 200 PV | 42 m/s (60 % du chasseur initial) | 300 s en vol                        |
-| DCA mobile D2  |                   20 $ | 100 PV |                            10 m/s | 300 s à pleine commande de conduite |
+| Véhicule       | Prix |  Coque |              Vitesse de référence | Carburant                           |
+| -------------- | ---: | -----: | --------------------------------: | ----------------------------------- |
+| Hélicoptère H2 | 50 $ | 200 PV | 42 m/s (60 % du chasseur initial) | 300 s en vol                        |
+| DCA mobile D2  | 15 $ | 100 PV |                            10 m/s | 300 s à pleine commande de conduite |
 
 Les valeurs D2 non imposées sont des choix d'équilibrage. Son articulation est
 cinématique : angle de remorque limité à ±0,65 rad, redressement proportionnel au

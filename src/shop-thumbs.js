@@ -8,6 +8,8 @@ import { makeServiceStation } from './station-model.js';
 const VEHICLE_MODELS = {
   fighter: 'makePlane',
   bomber: 'makeBomber',
+  lightfighter: 'makeLightFighter',
+  medbomber: 'makeMediumBomber',
   interceptor: 'makeStuka',
   spitfire: 'makeSpitfire',
   helicopter: 'makeHelicopter',

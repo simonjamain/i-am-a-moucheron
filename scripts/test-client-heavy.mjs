@@ -7,7 +7,8 @@ import { HEAVY } from '../src/armament.js';
 import { MAP } from '../src/scale.ts';
 import { baseWorld } from '../src/base.js';
 import { debugSwarmRoster, swarmFrame } from '../src/waves.js';
-import { ROUTE_OBSTACLES } from '../src/route-obstacles.js';
+import { layoutSolids } from '../src/layouts.js';
+const ROUTE_OBSTACLES = layoutSolids();
 import { howitzerMuzzle } from '../src/howitzer-geometry.js';
 import { DEFAULT_BALANCE } from '../src/balance.js';
 
@@ -40,7 +41,7 @@ const context = {
   heavyImpact,
   swarmFrame,
   baseWorld,
-  ROUTE_OBSTACLES,
+  layoutSolids: () => ROUTE_OBSTACLES,
   id: 'shooter',
   myVehicle: null,
   crewSeat: null,

@@ -1,6 +1,6 @@
 import { MAP } from './scale.ts';
 import { formatDistance } from './units.ts';
-import { VEHICLES, vehicleMaxHP } from './fleet.js';
+import { VEHICLES, vehicleMaxHP, isBomber } from './fleet.js';
 
 // Single source of the bottom-left command help. Each context lists only the inputs
 // that client.js really routes for the current role, seat, station or tool.
@@ -131,7 +131,7 @@ function vehicleHints({ type, supplies }, seat, build) {
           'A/E : gouverne',
           'Maj/Ctrl ou molette : gaz',
           'C : regard libre',
-          type !== 'bomber' && 'Clic : MG',
+          !isBomber(type) && 'Clic : MG',
           supplies?.ammo?.bomb !== undefined && 'Espace : bombes',
         ]
       : ['Souris : tourelle', 'Clic / Espace : MG']),

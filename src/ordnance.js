@@ -4,6 +4,7 @@ import { mobileBarrelOrigin, clampProximity } from './mobile-flak.js';
 import { tankBarrelOrigin } from './tank-view.js';
 import { MAP } from './scale.ts';
 import { HEAVY } from './armament.js';
+import { isBomber } from './fleet.js';
 export const add = (a, b) => a.map((v, i) => v + b[i]);
 const sub = (a, b) => a.map((v, i) => v - b[i]);
 const dot = (a, b) => a.reduce((n, v, i) => n + v * b[i], 0);
@@ -70,7 +71,7 @@ export function createOrdnance({ shot, weapon, vehicle, shooter, direction, now,
     vehicle: vehicle.id,
     sequence: vehicle.supplies.sequence,
     proximity: weapon === 'proximity' ? clampProximity(vehicle.proximity ?? 5) : undefined,
-    radiusFactor: weapon === 'bomb' && vehicle.type === 'bomber' ? 2 : 1,
+    radiusFactor: weapon === 'bomb' && isBomber(vehicle.type) ? 2 : 1,
     shooter,
     occupation: vehicle.seats?.get?.('copilot') === shooter ? vehicle.missileOccupation : undefined,
     p,

@@ -11,8 +11,21 @@ import {
 import { DEFAULT_BALANCE } from '../src/balance.js';
 import { ENEMY_TYPES } from '../src/waves.js';
 
+// Deterministic PRNG (mulberry32): a failure names its seed and replays exactly.
+const seeded = (seed) => {
+  let a = seed >>> 0;
+  return (n) => {
+    a = (a + 0x6d2b79f5) >>> 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return Math.floor((((t ^ (t >>> 14)) >>> 0) / 4294967296) * n);
+  };
+};
+const SEEDS = Number(process.env.WAVE_SEEDS || 25);
+const draws = [() => 0, (n) => n - 1];
+for (let seed = 1; seed <= SEEDS; seed++) draws.push(seeded(seed));
 for (const wave of [1, 2, 5, 10, 15, 100])
-  for (const draw of [() => 0, (n) => n - 1, undefined]) {
+  for (const [drawIndex, draw] of draws.entries()) {
     const plan = prepareRoster(wave, DEFAULT_BALANCE, draw);
     // Powers are fractional: the roster uses the budget up to the weakest species.
     const spent = plan.roster.reduce((sum, e) => sum + e.power, 0);
@@ -44,7 +57,13 @@ for (const wave of [1, 2, 5, 10, 15, 100])
       assert.ok(g.count <= PACKS[g.type].max + PACKS[g.type].min, g.type + ' pack size');
     }
     // Beyond the 900-enemy ceiling (wave 20+) the frise is not meant to stay short.
-    if (wave <= 20) assert.ok(groups.length <= 60, 'few groups: ' + groups.length);
+    // Main measured a max of 64 groups before the power unit; 80 still catches a
+    // regression to one-enemy-per-group (hundreds of groups).
+    if (wave <= 20)
+      assert.ok(
+        groups.length <= 80,
+        `few groups: ${groups.length} (wave ${wave}, draw ${drawIndex}; seeds start at index 2)`,
+      );
     for (const e of plan.roster)
       if (e.ground) {
         const mates = plan.roster.filter((o) => o.group === e.group && o.id < e.id);

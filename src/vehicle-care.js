@@ -1,4 +1,5 @@
 import { MAP } from './scale.ts';
+import { isBomber } from './fleet.js';
 import { segmentSphere, segmentBox } from './ordnance.js';
 export const WASH = Object.freeze({
   range: 2,
@@ -23,7 +24,7 @@ export function washTarget(origin, direction, vehicles, solids) {
   }
   for (const v of vehicles) {
     if (v.state.hp <= 0) continue;
-    const t = segmentSphere(origin, end, v.state.p, MAP.metres(v.type === 'bomber' ? 3 : 1.8));
+    const t = segmentSphere(origin, end, v.state.p, MAP.metres(isBomber(v.type) ? 3 : 1.8));
     if (t !== null && t < nearest) {
       nearest = t;
       target = v;

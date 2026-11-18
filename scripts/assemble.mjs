@@ -1,10 +1,8 @@
 import { uiPreview } from './build-ui-preview.mjs';
-import * as T from '../vendor/three.module.min.js';
-import { createOffice } from '../src/office.js';
-import { createGraphics } from '../src/graphics.js';
+import { layoutSolids, LAYOUTS } from '../src/layouts.js';
 import { createHash } from 'node:crypto';
 import { readFile, writeFile } from 'node:fs/promises';
-import { existsSync } from 'node:fs';
+import { existsSync, readdirSync } from 'node:fs';
 import { stripTypeScriptTypes } from 'node:module';
 
 // Browser URLs stay `/<name>.js`; the source is `src/<name>.ts` when migrated
@@ -16,22 +14,9 @@ const readAsset = async (file) => {
   return file.endsWith('.ts') ? stripTypeScriptTypes(text, { mode: 'strip' }) : text;
 };
 
-const collisionScene = new T.Scene();
-const officeBounds = createOffice(T, collisionScene, {
-  ...createGraphics(T, collisionScene),
-  textLabel: () => new T.Group(),
-}).colliders;
-await writeFile(
-  'src/route-obstacles.js',
-  '// Generated from office colliders.\nexport const ROUTE_OBSTACLES=' +
-    JSON.stringify(
-      officeBounds.map((b) => ({
-        min: { x: b.min.x, y: b.min.y, z: b.min.z },
-        max: { x: b.max.x, y: b.max.y, z: b.max.z },
-      })),
-    ) +
-    ';\n',
-);
+// Colliders of the default layout, for the historical Worker bundle and fixtures.
+// The Node server and the browser derive each room's colliders from its layout.
+const officeBounds = layoutSolids(LAYOUTS[0]);
 await writeFile('docs/ui-review.html', uiPreview(await readFile('src/index.html', 'utf8')));
 // One asset manifest drives both browser module serving and Worker packaging.
 const files = {
@@ -56,6 +41,8 @@ const files = {
       'meshy-texture',
       'meshy-biplane-data',
       'meshy-biplane-bomber-data',
+      'meshy-m1-data',
+      'meshy-b3-data',
       'meshy-rig',
       'vehicle-anchors',
       'castor-model',
@@ -79,6 +66,8 @@ const files = {
       'meshy-tank-data',
       'meshy-flaktruck-data',
       'biplane-model',
+      'm1-model',
+      'b3-model',
       'meshy-h2-data',
       'h2-model',
       'wave-council-ui',
@@ -100,7 +89,7 @@ const files = {
       'howitzer-data',
       'model-preview',
       'ground-defense',
-      'route-obstacles',
+      'layouts',
       'changelog',
       'flight-tuning',
       'flight-tuning-ui',
@@ -186,7 +175,6 @@ const files = {
       'swept-broadphase',
       'mouse-flight',
       'purgatory-physics',
-      'audio',
       'base',
       'layout',
       'renderer',
@@ -220,7 +208,13 @@ const files = {
       'routes',
       'route-speed',
       'route-navigation',
-      'route-obstacles',
+      'layouts',
+      // Folder modules (the audio library and its game adapter) keep their path.
+      ...['audio', 'game-audio'].flatMap((dir) =>
+        readdirSync('src/' + dir)
+          .filter((file) => file.endsWith('.ts'))
+          .map((file) => dir + '/' + file.slice(0, -3)),
+      ),
     ].map((name) => ['/' + name + '.js', moduleSource(name)]),
   ),
 };
@@ -287,8 +281,8 @@ await writeFile(
     'const ASSETS=' + JSON.stringify(assets) + ';',
     scale,
     enemyPower,
+    inline(assets['/layouts.js']),
     layout,
-    inline(assets['/route-obstacles.js']),
     inline(assets['/route-navigation.js']),
     inline(assets['/brick-rules.js']),
     inline(assets['/ground-defense.js']),

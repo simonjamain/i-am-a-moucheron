@@ -8,6 +8,8 @@ import { CreatureBatch } from './creature-batch.js';
 import { BEETLE, BEETLE_FLIGHT, BEETLE_HIT } from './beetle-model.js';
 import { BEE, BEE_FLIGHT, BEE_HIT } from './bee-model.js';
 import { MOSQUITO, MOSQUITO_FLIGHT, MOSQUITO_HIT } from './mosquito-model.js';
+import { FLYER_HIT_TOLERANCE } from './scale.ts';
+import { hitUserData } from './insect-hits.js';
 
 export const FLYERS = Object.freeze({
   brute: { creature: BEETLE, flight: BEETLE_FLIGHT, hit: BEETLE_HIT },
@@ -38,9 +40,8 @@ export class FlyerBatch {
     model.userData = {
       enemyType: type,
       instancedFlyer: true,
-      hitEllipsoid: [...flyer.hit.radii],
-      hitCentre: [...flyer.hit.centre],
-      hitTolerance: 1,
+      ...hitUserData(flyer.hit),
+      hitTolerance: FLYER_HIT_TOLERANCE,
       phase,
       // Loop offset in [0, 1): neighbours beat out of step.
       loopPhase: (((phase * 0.6180339887) % 1) + 1) % 1,

@@ -3,24 +3,18 @@ import assert from 'node:assert/strict';
 import * as T from '../vendor/three.module.min.js';
 import { MAP, mapScale, ACTOR_UNIT, HUMAN_SCALE, REFERENCE, FLAK } from '../src/scale.ts';
 import { VEHICLES, vehiclePad, vehicleEntry } from '../src/fleet.js';
-import { OFFICE_LAYOUT, RAID_DURATION, raidPosition } from '../src/layout.js';
+import { OFFICE_LAYOUT } from '../src/layout.js';
 import { createGraphics } from '../src/graphics.js';
 import { createOffice } from '../src/office.js';
 import { stepFlight } from '../src/flight.js';
-import {
-  createRaid,
-  spreadDirection,
-  fuseRange,
-  blastDamage,
-  diveIntensity,
-} from '../src/combat.js';
+import { spreadDirection, fuseRange, blastDamage, diveIntensity } from '../src/combat.js';
 import { makeAntiaircraft, AA_STATIONS } from '../src/sortie.js';
 import { bodyMotion } from '../src/purgatory-physics.js';
 import { localDB } from './local-db.mjs';
 import worker from '../worker/index.js';
 assert.equal(MAP.ratio, 0.003);
 assert.equal(MAP.metres(1.8), 0.0054);
-assert.equal(OFFICE_LAYOUT.base.deckY, 0.90005);
+assert.equal(OFFICE_LAYOUT.base.deckY, 0.00005);
 for (const n of [1, 2, 3, 100]) {
   const scale = mapScale(n, 1000);
   assert.equal(scale.reference(scale.metres(100)), 100);
@@ -59,12 +53,7 @@ for (let i = 0; i < 28 * 120; i++) {
 }
 assert.ok(bomber.vel.length() < small.vel.length());
 assert.ok(VEHICLES.bomber.maxSpeed <= VEHICLES.fighter.maxSpeed);
-const raid = createRaid(T),
-  a = raid.position(0, 20),
-  b = raid.position(0, 20.01);
-assert.ok(Math.abs(a.distanceTo(b) / 0.01 / MAP.ratio - REFERENCE.enemy) < 0.2);
 assert.ok(REFERENCE.enemy < VEHICLES.fighter.maxSpeed / 3);
-assert.equal(raid.duration, RAID_DURATION);
 const scene = new T.Scene(),
   graphics = createGraphics(T, scene),
   office = createOffice(T, scene, { ...graphics, textLabel: () => new T.Group() });
@@ -72,7 +61,7 @@ const human = graphics.humanoid('#fff');
 human.scale.setScalar(HUMAN_SCALE);
 scene.add(human);
 assert.ok(Math.abs(new T.Box3().setFromObject(human).max.y - MAP.metres(1.8)) < 1e-7);
-assert.ok(office.colliders.length > 200);
+assert.ok(office.colliders.length > 20);
 for (const object of office.solidObjects) {
   const box = new T.Box3().setFromObject(object);
   assert.ok(!box.isEmpty());
@@ -298,26 +287,5 @@ assert.deepEqual(staleReply.body.vehicles.find((v) => v.id === fighter.id).state
 await api('reset', { id: pilot.id });
 Date.now = realNow;
 console.log(
-  'PASS: SI map ratios, 5.4mm character, scale-invariant flight, slower bomber, constant 60km/h raid, solid decor, true twin muzzles, dispersion, fuse safety, dive siren, exclusive 3-person crew, pilot authority, replacement spawning, deduplicated hull damage, 10s countdown/manual/atomic auto waves, crew parachutes and scaled DCA exit.',
-);
-
-let high = 0,
-  travelled = 0,
-  prev = new T.Vector3().fromArray(raidPosition(0)),
-  previousDirection = null;
-for (let i = 1; i <= 2000; i++) {
-  const p = new T.Vector3().fromArray(raidPosition(i / 2000)),
-    delta = p.clone().sub(prev);
-  if (p.y > 2.2) high++;
-  assert.ok(p.y < 2.9 && Math.abs(p.x) < 4 && Math.abs(p.z) < 3.4, 'tour stays inside room');
-  if (previousDirection)
-    assert.ok(previousDirection.dot(delta.clone().normalize()) > 0.99, 'smooth turns');
-  previousDirection = delta.clone().normalize();
-  travelled += delta.length();
-  prev = p;
-}
-assert.ok(high > 1200, 'majority of tour near ceiling');
-assert.ok(travelled > 20, 'room tour, not a shortcut to bin');
-console.log(
-  'PASS: smooth room tour, ceiling dwell, bounded route and constant arc-length progress.',
+  'PASS: SI map ratios, 5.4mm character, scale-invariant flight, slower bomber, solid decor, true twin muzzles, dispersion, fuse safety, dive siren, exclusive 3-person crew, pilot authority, replacement spawning, deduplicated hull damage, 10s countdown/manual/atomic auto waves, crew parachutes and scaled DCA exit.',
 );

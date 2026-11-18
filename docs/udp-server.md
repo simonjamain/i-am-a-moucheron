@@ -8,7 +8,7 @@ reste optionnel ; ses archives binaires historiques ne suivent pas chaque lot.
 
 ## Démarrage sur une VM
 
-Installer Node 22.13+ et les dépendances depuis le dépôt :
+Installer Node 22.18+ et les dépendances depuis le dépôt :
 
 ```sh
 npm ci

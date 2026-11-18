@@ -1,19 +1,58 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
-    version: 325,
+    version: 340,
     changes: [
+      'Chaque ennemi a une puissance : plus il est fort, plus son âme libérée rapporte et plus il abîme la poubelle.',
+      'Les vagues suivent le nombre de joueurs. Plus de prime de fin de vague : seules les âmes libérées rapportent.',
+      'La puissance de la prochaine vague est annoncée.',
       'Nouveaux prix pour tous les appareils, véhicules et installations du magasin.',
-      'Un char moyen gratuit et infini attend désormais au sol, avec les deux avions de base.',
+      'Un char moyen gratuit et infini attend au sol, avec les deux avions de base.',
       'La motorisation et les munitions renforcées n’existent plus.',
+    ],
+  },
+  {
+    version: 339,
+    changes: [
+      'La zone de tir du scarabée est maintenant une sphère parfaite, autour de son corps.',
+    ],
+  },
+  {
+    version: 338,
+    changes: [
+      'En plein combat, les sons proches et importants ne sont plus coupés par le vacarme lointain.',
+      'Le bruit des moteurs ne se limite plus aux dix avions les plus proches : on entend ceux qui comptent le plus.',
+    ],
+  },
+  {
+    version: 334,
+    changes: [
+      'Le rat marche au ras du sol. Le moucheron est plus dur à toucher, les autres insectes volants plus faciles.',
+    ],
+  },
+  {
+    version: 329,
+    changes: [
+      'Les tapis du bureau sont retirés : ils coupaient les personnages et les équipements en deux.',
+    ],
+  },
+  {
+    version: 328,
+    changes: [
+      'Le chasseur léger et le bombardier moyen à quatre places sont de retour chez le marchand.',
+    ],
+  },
+  {
+    version: 327,
+    changes: [
+      'Le choix du plan de bureau tient sur une ligne : le bouton Rejoindre reste visible sur les petits écrans.',
     ],
   },
   {
     version: 324,
     changes: [
-      'Chaque ennemi a une puissance : plus il est fort, plus son âme libérée rapporte et plus il abîme la poubelle.',
-      'Les vagues suivent le nombre de joueurs. La prime de fin de vague disparaît : seules les âmes libérées rapportent.',
-      'La puissance de la prochaine vague est affichée dans l’annonce.',
+      'Six plans de bureau au choix quand on crée une partie : corbeille au centre, cloison avec une seule porte, archives en serpentin…',
+      'On démarre maintenant au sol, près de la corbeille.',
     ],
   },
   {

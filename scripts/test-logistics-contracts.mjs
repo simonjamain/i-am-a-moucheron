@@ -352,8 +352,8 @@ snap = await api('vehicle-exit', { id: a.id, state });
 assert.equal(snap.vehicles.find((v) => v.id === vehicle.id).supplies.ammo.pilot, full);
 // New installations use independent price curves and the same transaction guards.
 await DB.prepare("UPDATE rooms SET dollars=100 WHERE code='LOGISTICS'").run();
-const position = { x: -1.5, y: 0.90005, z: 1.885 };
-g = await ground(c, { ...position, z: 1.9 });
+const position = { x: -1.5, y: 0.90005, z: 1.4 };
+g = await ground(c, { ...position, z: 1.415 });
 await api('buy', {
   id: c.id,
   item: 'radar',
@@ -362,8 +362,8 @@ await api('buy', {
   position,
   ground: g,
 });
-const next = { x: -1.65, y: 0.90005, z: 1.885 };
-g = await ground(c, { ...next, z: 1.9 });
+const next = { x: -1.65, y: 0.90005, z: 1.4 };
+g = await ground(c, { ...next, z: 1.415 });
 snap = await api('buy', {
   id: c.id,
   item: 'refuel',

@@ -153,7 +153,7 @@ Le modèle reste coopératif : positions et impacts sont déclarés par les clie
 Recharger tous les clients après publication pour utiliser le même protocole.
 
 Les lits sont une installation supplémentaire, avec progression de prix indépendante
-4 $, 6 $, 8 $… et contrat personnel de réapparition. Ils ne ravitaillent pas et
+15 $, 17 $, 19 $… et contrat personnel de réapparition. Ils ne ravitaillent pas et
 ne détectent pas d’ennemis. Voir [lits](field-update.md#départ-lits-et-contrats-personnels).
 
 Les [prix prépayés, projectiles teintés et nettoyage](clean-flight.md) complètent ces règles.

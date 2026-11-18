@@ -28,7 +28,8 @@ console.log(
   'Ground enemies present from wave one; finite visible spawn frames through wave twelve.',
 );
 // A live enemy must never be completely swallowed by solid furniture.
-import { ROUTE_OBSTACLES } from '../src/route-obstacles.js';
+import { layoutSolids } from '../src/layouts.js';
+const ROUTE_OBSTACLES = layoutSolids();
 const counts = {};
 for (const wave of [1, 2, 4, 6, 8, 12]) {
   const roster = wavePlan('VISIBLE', wave, 1000).roster;

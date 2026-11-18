@@ -238,7 +238,16 @@ async function ensureFleet(db, code, now) {
   const unlocked = JSON.parse(room.upgrades || '{}');
   for (const type of Object.keys(VEHICLES).filter(
     (type) =>
-      !['spitfire', 'tank', 'helicopter', 'flaktruck', 'castor', 'flyingcastor'].includes(type) &&
+      ![
+        'spitfire',
+        'tank',
+        'helicopter',
+        'flaktruck',
+        'castor',
+        'flyingcastor',
+        'lightfighter',
+        'medbomber',
+      ].includes(type) &&
       (type !== 'interceptor' || unlocked.interceptor),
   ))
     await db
@@ -528,7 +537,7 @@ async function fleetRoute(path, db, pilot, b, now) {
       vehicle.id,
       seat,
       state.boarding.token,
-      !(vehicle.type === 'bomber' && seat === 'pilot'),
+      !(isBomber(vehicle.type) && seat === 'pilot'),
     );
     await db
       .prepare('UPDATE pilots SET board_paper=0,state=? WHERE id=?')
@@ -953,7 +962,6 @@ async function snapshot(db, code) {
           .all()
       ).results.map((e) => [e.enemy, e.damage]),
     ),
-    raidDuration: RAID_DURATION,
     mapScale: { numerator: MAP.numerator, denominator: MAP.denominator },
     total,
     leaked,
@@ -1014,7 +1022,7 @@ async function seatRoute(db, pilot, path, b, now) {
       vehicle.id,
       b.seat,
       requestId + ':' + pilot.id,
-      !(vehicle.type === 'bomber' && b.seat === 'pilot'),
+      !(isBomber(vehicle.type) && b.seat === 'pilot'),
     );
     if (target) {
       const recipient = await db
@@ -1027,7 +1035,7 @@ async function seatRoute(db, pilot, path, b, now) {
         vehicle.id,
         pilot.seat,
         requestId + ':' + recipient.id,
-        !(vehicle.type === 'bomber' && pilot.seat === 'pilot'),
+        !(isBomber(vehicle.type) && pilot.seat === 'pilot'),
       );
     }
     await db
@@ -1291,7 +1299,7 @@ async function soulHit(db, pilot, b, now) {
 export default {
   async fetch(request, env) {
     const u = new URL(request.url);
-    const versioned = u.pathname.match(/^\/assets\/([a-f0-9]{12})(\/[^/]+\.js)$/);
+    const versioned = u.pathname.match(/^\/assets\/([a-f0-9]{12})(\/(?:[a-z0-9-]+\/)?[^/]+\.js)$/);
     if (u.pathname.startsWith('/assets/') && (!versioned || versioned[1] !== BUILD_VERSION))
       return new Response('Version expirée : rechargez la page.', {
         status: 410,

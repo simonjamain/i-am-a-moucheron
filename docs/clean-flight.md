@@ -115,7 +115,7 @@ lourds, 256 traceurs balistiques. Les matériaux sont libérés au retrait.
 
 ## Spitfire et identité sonore
 
-Le Spitfire S6 est un achat à **24 $**, deux Stuka. Monoplace sans bombes,
+Le Spitfire S6 est un achat à **75 $**, trois Stuka. Monoplace sans bombes,
 ailes elliptiques et six mitrailleuses, trois par aile. Perdu définitivement à sa
 destruction ; achat suivant possible, sans remplacement gratuit.
 

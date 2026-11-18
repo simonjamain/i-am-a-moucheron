@@ -1,3 +1,7 @@
+import { setActiveLayout } from './layouts.js';
 import { predictedGroundPaths } from './wave-ground-paths.js';
-self.onmessage = ({ data }) =>
+// The worker has its own module instances: it follows the room's plan per request.
+self.onmessage = ({ data }) => {
+  setActiveLayout(data.layout);
   self.postMessage({ key: data.key, paths: predictedGroundPaths(data) });
+};

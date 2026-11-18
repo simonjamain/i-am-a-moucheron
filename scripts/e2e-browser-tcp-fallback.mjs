@@ -1,4 +1,4 @@
-// Manual end-to-end check (not part of npm test): a real Chromium on a network
+// End-to-end check (npm run e2e and CI job browser-e2e; not part of npm test): a real Chromium on a network
 // where UDP never answers (the server announces an unreachable address, like a
 // company firewall dropping outbound UDP) must fall back to TCP (WebSocket),
 // play, resume over TCP after a drop without retrying UDP, and leave.

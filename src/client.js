@@ -72,6 +72,7 @@ import {
   vehicleAccess,
   pilotFireInterval,
   isRotorcraft,
+  isBomber,
   isPassengerSeat,
   vehicleMaxHP,
 } from '/fleet.js';
@@ -85,6 +86,15 @@ import {
   CombatEffects,
 } from '/combat.js';
 import { OFFICE_LAYOUT, ROOM_SCALE } from '/layout.js';
+import {
+  LAYOUTS,
+  DEFAULT_LAYOUT_ID,
+  activeLayout,
+  setActiveLayout,
+  isLayoutId,
+  layoutSolids,
+  layoutThumbnail,
+} from '/layouts.js';
 import {
   aimGun,
   gunnerView,
@@ -128,7 +138,8 @@ import {
   aircraftPose,
   footstepsAudible,
 } from '/base.js';
-import { SpatialAudio, swarmAudioGroups } from '/audio.js';
+import { GameSound } from '/game-audio/game-sound.js';
+import { swarmAudioGroups } from '/game-audio/swarm.js';
 import { advanceArena, deskOccupant, bodyMotion, mergeOwnedArena } from '/purgatory-physics.js';
 import {
   flightClickAction,
@@ -142,7 +153,6 @@ import { WsClient } from '/ws-client.js';
 import { ServerClock } from '/server-clock.js';
 import { stepHeavy, heavyImpact } from '/heavy-sim.js';
 import { createOrdnance, integrateOrdnance } from '/ordnance.js';
-import { ROUTE_OBSTACLES } from '/route-obstacles.js';
 import { howitzerMuzzle } from '/howitzer-geometry.js';
 import { RECONNECT_AFTER_MS, RECONNECT_WINDOW_MS } from '/udp-protocol.js';
 import { HoldZoom, advanceFuse, contextKey, rangeReadout } from '/equipment-controls.js';
@@ -188,7 +198,7 @@ try {
   // Private browsing may disable localStorage entirely.
 }
 let flightTuning = loadFlightTuning(flightStorage);
-const sound = new SpatialAudio(audioSettings);
+const sound = new GameSound(audioSettings);
 const rewardQueue = new RewardQueue(() => sound.play('dollar', camera.position, { ref: 100000 }));
 setInterval(() => rewardQueue.tick(performance.now()), 40);
 for (const event of ['pointerdown', 'keydown'])
@@ -239,6 +249,8 @@ const {
   makePlane,
   makeSpitfire,
   makeBomber,
+  makeLightFighter,
+  makeMediumBomber,
   makeStuka,
   makeBomb,
   makeTank,
@@ -250,13 +262,26 @@ const {
   humanoid,
   pm,
 } = createGraphics(T, scene);
-const { colliders } = createOffice(T, scene, {
-  box,
-  cyl,
-  ball,
-  mat,
-  textLabel,
-});
+// The room's plan is fixed once it is created: `?plan=` or the last choice picks
+// the one to open; joining an existing room switches to that room's plan.
+const planParam = new URLSearchParams(location.search).get('plan');
+let storedPlan = null;
+try {
+  storedPlan = localStorage.getItem('moucheron-plan');
+} catch {}
+setActiveLayout(
+  isLayoutId(planParam) ? planParam : isLayoutId(storedPlan) ? storedPlan : DEFAULT_LAYOUT_ID,
+);
+let office = createOffice(T, scene, { box, cyl, ball });
+const colliders = office.colliders;
+// Swaps the drawn room and its colliders in place (shared arrays keep working).
+function applyLayout(planId) {
+  if (!isLayoutId(planId) || planId === office.layout.id) return;
+  setActiveLayout(planId);
+  office.dispose();
+  office = createOffice(T, scene, { box, cyl, ball });
+  colliders.splice(0, colliders.length, ...office.colliders);
+}
 let me = makePlane('#e3ebc0');
 me.scale.setScalar(ACTOR_UNIT);
 me.visible = false;
@@ -1131,6 +1156,8 @@ function accept(s, force = false) {
       (s.now === snap.now && (s.balanceRevision ?? 0) < (snap.balanceRevision ?? 0)))
   )
     return;
+  // A joined room keeps the plan it was created with.
+  if (s.layout) applyLayout(s.layout);
   // GameSession omits unchanged rosters on repeated sync replies.
   // Reuse the previously acknowledged roster before any snapshot consumer runs.
   if (
@@ -1525,6 +1552,35 @@ function accept(s, force = false) {
   waveCouncil.accept(s, id);
   updateCountdown();
 }
+// Plan picker: the choice previews in the background and only applies when this
+// join creates the room; an existing room keeps its own plan.
+function renderPlanPicker() {
+  const box = $('plans');
+  if (!box) return;
+  box.replaceChildren(
+    ...LAYOUTS.map((layout) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.setAttribute('role', 'radio');
+      b.setAttribute('aria-checked', String(layout.id === activeLayout().id));
+      b.title = `${layout.name} : ${layout.summary}`;
+      b.setAttribute('aria-label', layout.name);
+      b.innerHTML = layoutThumbnail(layout);
+      const name = document.createElement('span');
+      name.textContent = layout.name;
+      b.append(name);
+      b.addEventListener('click', () => {
+        applyLayout(layout.id);
+        try {
+          localStorage.setItem('moucheron-plan', layout.id);
+        } catch {}
+        renderPlanPicker();
+      });
+      return b;
+    }),
+  );
+}
+renderPlanPicker();
 $('form').addEventListener('submit', async (e) => {
   e.preventDefault();
   $('join').disabled = true;
@@ -1540,6 +1596,7 @@ $('form').addEventListener('submit', async (e) => {
       code,
       resumeKey,
       appearance: appearancePicker.value,
+      layout: activeLayout().id,
     });
     identityKey = r.resumeKey || null;
     if (r.resumeKey)
@@ -3693,12 +3750,16 @@ function vehicleModel(v) {
                     ? makeStuka('#7b8155')
                     : v.type === 'bomber'
                       ? makeBomber('#c5ba92')
-                      : makePlane('#7b8155');
+                      : v.type === 'medbomber'
+                        ? makeMediumBomber()
+                        : v.type === 'lightfighter'
+                          ? makeLightFighter()
+                          : makePlane('#7b8155');
     paintVehicle(
       T,
       g,
       v.supplies?.sequence || 0,
-      v.type === 'bomber'
+      isBomber(v.type)
         ? '#c5ba92'
         : ['interceptor', 'tank'].includes(v.type)
           ? '#8eb7c6'
@@ -3789,14 +3850,16 @@ function updateOthers(dt) {
           (v.state.engine && v.supplies?.fuel > 0 && v.seats.some((s) => s.seat === 'pilot')
             ? 45
             : 0);
-    if (['bomber', 'tank', 'flaktruck', 'helicopter'].includes(v.type))
+    if (['bomber', 'medbomber', 'tank', 'flaktruck', 'helicopter'].includes(v.type))
       for (const [i, seat] of (v.type === 'helicopter'
         ? ['copilot']
         : v.type === 'flaktruck'
           ? ['cannon']
           : v.type === 'tank'
             ? ['cannon', 'top']
-            : ['dorsal']
+            : v.type === 'medbomber'
+              ? ['dorsal', 'tail', 'ventral']
+              : ['dorsal']
       ).entries()) {
         const occ = v.seats.find((s) => s.seat === seat),
           gunner = snap.pilots.find((p) => p.id === occ?.pilot);
@@ -3844,7 +3907,7 @@ function updateOthers(dt) {
         }
       }
     const remotePilotRounds =
-      !isSelf && v.type !== 'bomber'
+      !isSelf && !isBomber(v.type)
         ? remoteShotCount(
             g,
             'pilot:' + (p?.id || ''),
@@ -4383,7 +4446,7 @@ function physics(dt) {
     prop.rotation.z += dt * gas * (engine && remainingFuel() > 0 ? 70 : 0);
   $('stallWarning').classList.toggle('hidden', stall > 0.8);
   shooting =
-    active && myVehicle && myVehicle.type !== 'bomber' && hasAmmo() && (manual.fire || mouseFire);
+    active && myVehicle && !isBomber(myVehicle.type) && hasAmmo() && (manual.fire || mouseFire);
   const burst = advanceAutomaticFire(
     cooldown,
     dt,
@@ -4539,21 +4602,17 @@ function updateAudio() {
         rate: 0.65 + (crewSeat === 'pilot' ? gas : myVehicle.state.gas || 0) * 1.2,
         level: 0.65 * (isRotorcraft(myVehicle.type) ? (myVehicle.state.rotorPower ?? 1) : 1),
         ref: 14,
+        priority: 2,
       });
     }
-    const planes = [...others.entries()]
-      .filter(
-        ([key, g]) =>
-          g.visible &&
-          key !== myVehicle?.id &&
-          snap?.vehicles.find((v) => v.id === key)?.seats.length > 0,
-      )
-      .sort(
-        (a, b) =>
-          a[1].position.distanceToSquared(activeCamera.position) -
-          b[1].position.distanceToSquared(activeCamera.position),
-      )
-      .slice(0, 10);
+    // Every crewed plane gets a logical engine loop; the voice manager keeps
+    // the loudest ones real and the others virtual.
+    const planes = [...others.entries()].filter(
+      ([key, g]) =>
+        g.visible &&
+        key !== myVehicle?.id &&
+        snap?.vehicles.find((v) => v.id === key)?.seats.length > 0,
+    );
     for (const [id, g] of planes) {
       const pilot = snap?.vehicles.find((p) => p.id === id);
       if (pilot?.state.engine === 0 || pilot?.supplies?.fuel <= 0) continue;
@@ -4609,14 +4668,7 @@ function updateAudio() {
   } else {
     activeSwarmAudioKeys.clear();
     lastSwarmAudioAt = -Infinity;
-    for (const b of (soulArena?.bodies || [])
-      .filter((b) => b.kind === 'enemy' && !b.gone)
-      .sort(
-        (a, b) =>
-          Math.hypot(a.x - activeCamera.position.x, a.z - activeCamera.position.z) -
-          Math.hypot(b.x - activeCamera.position.x, b.z - activeCamera.position.z),
-      )
-      .slice(0, 6)) {
+    for (const b of (soulArena?.bodies || []).filter((b) => b.kind === 'enemy' && !b.gone)) {
       const key = 'soul-bug-' + b.id;
       keep.add(key);
       sound.loop(key, 'insect', { x: b.x, y: 0.9, z: b.z }, { ref: 5, level: 0.6, rate: 0.8 });
@@ -4778,8 +4830,13 @@ function frame(now) {
     $('altitudeFog').style.opacity = 0;
     serviceZones.update([]);
     engineSmoke.clear();
-    camera.position.set(-1.65 + Math.sin(now * 0.00008) * 0.08, 1.08, 2.6);
-    camera.lookAt(OFFICE_LAYOUT.base.originX, 0.91, OFFICE_LAYOUT.base.originZ - 0.08);
+    const lobbyBase = OFFICE_LAYOUT.base;
+    camera.position.set(
+      lobbyBase.originX + 0.15 + Math.sin(now * 0.00008) * 0.08,
+      lobbyBase.deckY + 0.18,
+      lobbyBase.originZ + 0.47,
+    );
+    camera.lookAt(lobbyBase.originX, lobbyBase.deckY + 0.01, lobbyBase.originZ - 0.08);
     me.userData.prop.rotation.z += dt * 15;
   }
   stepProjectiles(dt);
@@ -4860,6 +4917,8 @@ const ghosts = {
   bed: installationModel({ kind: 'bed', x: 0, y: 0, z: 0 }),
   fighter: makePlane('#badb84'),
   bomber: makeBomber('#badb84'),
+  lightfighter: makeLightFighter(),
+  medbomber: makeMediumBomber(),
   interceptor: makeStuka('#badb84'),
   helicopter: makeHelicopter('#badb84'),
   flaktruck: makeFlakTruck('#badb84'),
@@ -5680,7 +5739,7 @@ function heavyWorld() {
     players.push({ id: p.id, p: [w.x, w.y + MAP.metres(0.9), w.z] });
   }
   return {
-    solids: ROUTE_OBSTACLES,
+    solids: layoutSolids(),
     roster,
     killed: (i) => kills.has(i),
     frames: (time, projectile) => {
