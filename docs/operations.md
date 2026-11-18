@@ -77,11 +77,11 @@ que l'image démarre, pas les pairs UDP dans le conteneur, WebGL ni le WAN.
 `check:version` n'est pas exécuté en CI (il compare l'index à `HEAD`).
 
 Scénarios navigateur réel : `npm run e2e` (Chromium Playwright, WebRTC UDP puis repli
-TCP : reprise de pilote, mouvements partagés entre deux pages, chargement, chute vue
+TCP : reprise de pilote, mouvements partagés entre deux pages, chute vue
 par un second client, environ 3 min). Hors `npm test` car ils exigent
 Chromium ; le job CI `Real Chromium over WebRTC UDP/TCP` les exécute à chaque PR
-(Playwright installé à la volée, pas une dépendance du projet). `npm run e2e:layouts` (sélecteur de plans, 135 s en local) expire sur le runner CI (90 s d'attente
-page) : il reste manuel jusqu'à diagnostic. Lancer le script ciblé
+(Playwright installé à la volée, pas une dépendance du projet). `npm run e2e:loading` (échoue par intermittence sur le runner : `canvas` absent en `#loading.departing` au rechargement à chaud, course non tranchée) et `npm run e2e:layouts` (sélecteur de plans, 135 s en local) expire sur le runner CI (90 s d'attente
+page) restent manuels jusqu'à diagnostic. Lancer le script ciblé
 (`e2e:resume`, `e2e:motion`, `e2e:tcp`) pendant l'itération. Ils prouvent la poignée de main
 WebRTC et les flux en loopback, pas WebGL (rendu supprimé ou logiciel), le WAN ni le confort.
 `test-wave-preparation.mjs` utilise des graines fixes (`WAVE_SEEDS=2000` pour élargir) : plus
