@@ -9,6 +9,8 @@ export const SUITE = [
   'test-flight-tuning',
   'test-purgatory-physics',
   'test-audio',
+  'test-audio-library',
+  'test-audio-boundary',
   'test-boarding',
   'test-client-authority',
   'test-pointer-capture',
