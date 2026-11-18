@@ -180,7 +180,7 @@ for (const surfaceY of [0, 0.9]) {
     signature: true,
     epoch: room.base.epoch,
     incarnation: p.incarnation,
-    expectedPrice: 4,
+    expectedPrice: 10,
   };
   let s = game.command(room.code, p.id, 'purchase-sign', order);
   const initial = s.deliveries[0].y;

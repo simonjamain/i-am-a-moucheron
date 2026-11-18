@@ -46,15 +46,15 @@ const signed = (item, request, price, who = p) =>
 r.dollars = 200;
 for (const key of ['dca', 'radar', 'refuel', 'bed']) {
   const before = r.dollars,
-    price = shopPrice(key, r.upgrades, purchaseCount(game.snapshot(r), key));
+    price = shopPrice(key, purchaseCount(game.snapshot(r), key));
   signed(key, 'purchase-' + key, price);
   assert.equal(r.dollars, before - price);
   signed(key, 'purchase-' + key, price);
   assert.equal(r.dollars, before - price, 'retry spends once');
-  assert.equal(shopPrice(key, r.upgrades, purchaseCount(game.snapshot(r), key)), price + 2);
+  assert.equal(shopPrice(key, purchaseCount(game.snapshot(r), key)), price + 2);
   assert.throws(() => signed(key, 'competing-' + key, price, q), /tarif/);
 }
-assert.throws(() => signed('radar', 'unsigned-000', 4), /tarif/);
+assert.throws(() => signed('radar', 'unsigned-000', 10), /tarif/);
 assert.throws(
   () =>
     command('purchase-sign', {
@@ -119,7 +119,10 @@ assert.equal(r.dollars, cash);
 assert.ok(!r.purchases.get('purchase-bed').placed, 'invalid/cancelled pose stays owned');
 const oldCash = r.dollars;
 r.dollars = 0;
-assert.throws(() => signed('bed', 'insufficient-1', 6), /assez/);
+assert.throws(
+  () => signed('bed', 'insufficient-1', shopPrice('bed', purchaseCount(game.snapshot(r), 'bed'))),
+  /assez/,
+);
 r.dollars = oldCash;
 // Personal pending order ownership is lost only on expiry, with a single refund.
 const refund = [...r.purchases.values()].filter((o) => !o.placed).reduce((s, o) => s + o.price, 0);
@@ -172,14 +175,14 @@ assert.equal(HEAVY.bomb.interval, 0.5, 'Stuka rack cadence unchanged');
 assert.equal(heavyInterval('bomb', 'bomber'), 1, 'biplane bomber: half the bombing rate');
 
 // Spitfire price, exclusive role, real six physical barrels and 45-second stock.
-assert.equal(shopPrice('spitfire'), 2 * shopPrice('interceptor'));
+assert.equal(shopPrice('spitfire'), 3 * shopPrice('interceptor'));
 game.release(r, pilot);
 pilot.mode = 'foot';
 r.dollars = 100;
 game.buy(r, pilot, { item: 'spitfire', request: 'spitfire-buy' }); // Internal fixture: public signed placement has its own regression.
 const spit = [...r.vehicles.values()].find((v) => v.type === 'spitfire');
 assert.ok(spit);
-assert.equal(r.dollars, 76);
+assert.equal(r.dollars, 25);
 assert.deepEqual(VEHICLES.spitfire.seats, ['pilot']);
 assert.equal(fullAmmo('spitfire').bomb, undefined);
 assert.equal(fullAmmo('spitfire').pilot, 1000);
@@ -476,8 +479,8 @@ const ui = new PurchaseUI({
   onClose() {},
 });
 ui.open('dca', { life: 'alive', incarnation: 0 });
-assert.equal(ui.price, 4);
-assert.match(root.querySelector('[data-bed-text]').textContent, /4 \$/);
+assert.equal(ui.price, 5);
+assert.match(root.querySelector('[data-bed-text]').textContent, /5 \$/);
 const e = { pointerId: 1, clientX: 10, clientY: 10, preventDefault() {} };
 ui.canvas.onpointerdown(e);
 ui.canvas.onpointercancel();
@@ -490,8 +493,12 @@ assert.equal(submitted, 1);
 assert.equal(archived, 1);
 ss.balance = { prices: 2 };
 ui.open('radar', { life: 'alive', incarnation: 0 });
-assert.equal(ui.price, 8, 'signed order must use the same scaled quote as the workshop and server');
-assert.match(root.querySelector('[data-bed-text]').textContent, /8 \$/);
+assert.equal(
+  ui.price,
+  20,
+  'signed order must use the same scaled quote as the workshop and server',
+);
+assert.match(root.querySelector('[data-bed-text]').textContent, /20 \$/);
 ui.close();
 console.log(
   'Purchase UI: live price, actual pointer cancel and release, single signed command and ACK archive.',

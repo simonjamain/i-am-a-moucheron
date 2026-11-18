@@ -1,6 +1,14 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 325,
+    changes: [
+      'Nouveaux prix pour tous les appareils, véhicules et installations du magasin.',
+      'Un char moyen gratuit et infini attend désormais au sol, avec les deux avions de base.',
+      'La motorisation et les munitions renforcées n’existent plus.',
+    ],
+  },
+  {
     version: 324,
     changes: [
       'Chaque ennemi a une puissance : plus il est fort, plus son âme libérée rapporte et plus il abîme la poubelle.',

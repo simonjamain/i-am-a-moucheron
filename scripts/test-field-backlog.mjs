@@ -268,7 +268,7 @@ bedGame.command('BEDS', bedPilot.id, 'buy', {
 });
 const bed = bedRoom.equipment.find((e) => e.kind === 'bed');
 assert.ok(bed);
-assert.equal(bedRoom.dollars, 46);
+assert.equal(bedRoom.dollars, 35);
 const contract = {
   bed: bed.slot,
   incarnation: bedPilot.incarnation,

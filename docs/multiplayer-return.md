@@ -44,16 +44,15 @@ zoom. Les informations tank et DCA restent contextuelles, avec leur aide complè
 
 ## Réserves gratuites et achats de véhicules
 
-Chaque type initial garde **un exemplaire de réserve prêt**. Le premier décollage
+Chaque type initial (chasseur, bombardier et char moyen) garde **un exemplaire de réserve prêt**. Le premier décollage
 retire définitivement `ready` à cette coque et crée son remplaçant ; les avions
 utilisés restent en partie. Revenir se poser ne recrée pas une réserve supplémentaire.
 Détruire un exemplaire prêt le remplace ; détruire un avion déjà utilisé ne crée
 pas un deuxième remplaçant. Le tick et les commandes synchrones arbitrent les cas
 concurrents. Les coques achetées n’entrent jamais dans cette réserve gratuite.
 
-Tous les modèles sont vendus : chasseur M1 **8 $**, bombardier B3 **16 $**, Stuka
-**12 $**, tank **10 $**, Spitfire **24 $**. Les deux nouveaux prix sont choisis dans
-l’économie existante ; `shopPrice` reste partagé. Achat **à pied**, signature du
+Tous les modèles sont vendus aux prix de [progression](progression.md#revenus-et-prix) ;
+`shopPrice` reste partagé. Achat **à pied**, signature du
 bon puis aperçu et E pour poser, au sol ou sur mobilier réellement porteur.
 Aucun appareil acheté n’apparaît automatiquement à Alpha. La route publique
 `buy` refuse désormais les véhicules : passer par `purchase-sign` et

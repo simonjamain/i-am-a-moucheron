@@ -105,7 +105,7 @@ async function buyEquipment(db, pilot, b, now) {
   const installations = await roomStations(db, code);
   const installed = installations.length;
   const typeCount = installationCount(installations, b.item);
-  const price = shopPrice(b.item, upgrades, typeCount);
+  const price = shopPrice(b.item, typeCount);
   if (b.expectedPrice !== undefined && b.expectedPrice !== price)
     return 'Le tarif a changé. Consultez le nouveau prix avant de confirmer.';
   if (room.dollars < price) return 'La caisse commune ne contient pas assez de dollars.';

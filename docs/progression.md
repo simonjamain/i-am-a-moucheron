@@ -36,23 +36,31 @@ W rapporte donc au plus W $. L'ancienne prime `min(20, 3 + n)` ne subsiste que d
 Site historique Worker/D1, qui garde ses coûts et dégâts entiers (`legacyCost`,
 `LEGACY_LEAK`).
 
-| Achat                           | Prix                                                     |
-| ------------------------------- | -------------------------------------------------------- |
-| Flak légers successifs          | 4 $, 6 $, 8 $, 10 $… +2 $ par installation, plafond 40 $ |
-| Motorisation, niveaux 1 / 2 / 3 | 4 $ / 9 $ / 16 $                                         |
-| Munitions, niveaux 1 / 2 / 3    | 6 $ / 12 $ / 20 $                                        |
-| Stuka, chaque exemplaire        | 12 $                                                     |
-| Lit, exemplaires successifs     | 4 $, 6 $, 8 $…                                           |
-| DCA haute cadence               | 15 $                                                     |
-| Flak lourd                      | 35 $                                                     |
-| Spitfire, chaque exemplaire     | 24 $                                                     |
-| Tank, chaque exemplaire         | 10 $                                                     |
+| Achat                              | Prix                                               |
+| ---------------------------------- | -------------------------------------------------- |
+| Chasseur biplan supplémentaire     | 5 $                                                |
+| Bombardier biplan supplémentaire   | 5 $                                                |
+| Char moyen supplémentaire          | 5 $                                                |
+| Flak léger, exemplaires successifs | 5 $, 7 $, 9 $… +2 $ par installation, plafond 40 $ |
+| Radar                              | 10 $, +2 $ par installation                        |
+| Lit de réapparition                | 15 $, +2 $ par installation                        |
+| Station de ravitaillement          | 20 $, +2 $ par installation                        |
+| Castor                             | 15 $                                               |
+| Anti-air mobile                    | 15 $                                               |
+| Stuka                              | 25 $                                               |
+| Flak lourd                         | 30 $                                               |
+| Castor volant                      | 35 $                                               |
+| Hélicoptère d’attaque au sol       | 50 $                                               |
+| DCA haute cadence                  | 50 $                                               |
+| Spitfire                           | 75 $                                               |
 
-Sans revenu d’âme, un exemple d’achats après les douze premières vagues est :
-DCA, moteur 1, munitions 1, DCA, DCA, moteur 2, DCA, Stuka, DCA,
-munitions 2, moteur 3, DCA. Les revenus d’âmes ouvrent davantage de choix.
-C’est une possibilité vérifiée, pas une obligation d’achat ni une garantie par
-joueur : la monnaie et les améliorations appartiennent à la salle.
+Il n’y a plus d’améliorations achetables (motorisation, munitions renforcées) :
+la colonne du magasin, leurs prix et leur code ont disparu. Le chasseur, le
+bombardier et le char moyen ont chacun une **réserve gratuite et infinie** au sol
+à Alpha (voir [réserves](multiplayer-return.md#réserves-gratuites-et-achats-de-véhicules)).
+
+Sans revenu d’âme, les primes ne financent plus rien : seules les âmes libérées
+rapportent. La monnaie appartient à la salle.
 
 `shopPrice` est partagé entre affichage et serveur. La transaction revalide le
 niveau et le nombre d’installations posées ou prépayées avant de débiter : deux achats concurrents

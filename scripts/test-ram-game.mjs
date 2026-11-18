@@ -103,18 +103,14 @@ assert.equal(s.kills.length, firstTotal);
 assert.equal(s.souls.length, Math.min(firstTotal, 24));
 assert.equal(s.enemyDamage[0], 150);
 room.dollars = 30;
-s = call(a.id, 'buy', { item: 'engine', request: 'purchase-engine', expectedPrice: 4 });
-assert.equal(s.upgrades.engine, 1);
-call(a.id, 'buy', { item: 'engine', request: 'purchase-engine', expectedPrice: 4 });
-assert.equal(room.dollars, 26);
-assert.throws(
-  () => call(a.id, 'buy', { item: 'weapons', request: 'purchase-engine' }),
-  /déjà utilisée/,
-);
-assert.throws(
-  () => call(a.id, 'buy', { item: 'engine', request: 'purchase-engine-2', expectedPrice: 4 }),
-  /tarif/,
-);
+for (const gone of ['engine', 'weapons'])
+  assert.throws(
+    () => call(a.id, 'buy', { item: gone, request: 'purchase-' + gone, expectedPrice: 4 }),
+    /Achat invalide/,
+    'upgrades no longer exist',
+  );
+assert.equal(room.dollars, 30);
+assert.equal(s.upgrades, undefined);
 
 function approach(id, vehicle, seat) {
   const entry = vehicleEntry(vehicle, seat),

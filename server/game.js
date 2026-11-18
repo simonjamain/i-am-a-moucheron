@@ -141,7 +141,6 @@ function roomState(code, now) {
     next_wave_at: 0,
     dollars: 0,
     rewardCount: 0,
-    upgrades: {},
     bank: newBank(),
     pilots: new Map(),
     vehicles: new Map(),
@@ -344,7 +343,7 @@ export class Game {
   }
   fleet(r) {
     for (const vehicle of r.vehicles.values()) if (!vehicle.state.landed) vehicle.ready = 0;
-    for (const type of ['fighter', 'bomber'])
+    for (const type of ['fighter', 'bomber', 'tank'])
       if (
         !values(r.vehicles).some(
           (v) => v.type === type && v.origin === 'starter' && v.ready && v.state.hp > 0,
@@ -898,7 +897,6 @@ export class Game {
       groundNavigationActive: r.groundEnabled || r.groundDefense.structures.length > 0,
       dollars: r.dollars,
       bank: r.bank,
-      upgrades: r.upgrades,
       rewardCount: r.rewardCount,
       equipment: r.equipment,
       groundDefense: groundSnapshot(r.groundDefense, this.now()),
@@ -1676,12 +1674,7 @@ export class Game {
         ...values(r.vehicles).map((v) => ({ x: v.state.p[0], y: v.state.p[1], z: v.state.p[2] })),
       ]);
     requireGame(!carrier || drop, 'Aucune colonne de livraison libre près de cet appareil.');
-    const price = shopPrice(
-      b.item,
-      r.upgrades,
-      purchaseCount(this.purchaseSnapshot(r), b.item),
-      r.balance,
-    );
+    const price = shopPrice(b.item, purchaseCount(this.purchaseSnapshot(r), b.item), r.balance);
     requireGame(price === b.expectedPrice, 'Le tarif a changé. Relisez le bon.');
     requireGame(r.dollars >= price, 'La caisse commune ne contient pas assez de dollars.');
     r.dollars = money(r.dollars - price);
@@ -1866,12 +1859,7 @@ export class Game {
       requireGame(r.orders.get(request) === b.item, 'Référence d’achat déjà utilisée.');
       return;
     }
-    const price = shopPrice(
-      b.item,
-      r.upgrades,
-      purchaseCount(this.purchaseSnapshot(r), b.item),
-      r.balance,
-    );
+    const price = shopPrice(b.item, purchaseCount(this.purchaseSnapshot(r), b.item), r.balance);
     requireGame(
       prepaid || b.expectedPrice === undefined || b.expectedPrice === price,
       'Le tarif a changé.',
@@ -1880,7 +1868,6 @@ export class Game {
       prepaid || r.dollars >= price,
       'La caisse commune ne contient pas assez de dollars.',
     );
-    requireGame(!item.max || (r.upgrades[b.item] || 0) < item.max, 'Amélioration déjà au maximum.');
     if (item.kind === 'placement' || (item.kind === 'vehicle' && prepaid)) {
       requireGame(
         p.mode === 'foot' &&
@@ -1927,7 +1914,6 @@ export class Game {
       if (item.kind === 'vehicle') this.createVehicle(r, b.item, 'purchase', placement);
       else this.installEquipment(r, b.item, placement);
     } else if (item.kind === 'vehicle') this.createVehicle(r, b.item);
-    else r.upgrades[b.item] = (r.upgrades[b.item] || 0) + 1;
     if (!prepaid) r.dollars = money(r.dollars - price);
     r.orders.set(request, b.item);
   }
@@ -2443,9 +2429,7 @@ export class Game {
     if (r.kills.has(b.enemy)) return;
     const rapid = typeof b.shot === 'string' && b.shot.startsWith(p.id + ':rapid:');
     if (rapid ? !this.rapidImpactAllowed(r, p, b.shot) : !this.pistolImpact(r, p, b.shot)) return;
-    const damage = rapid
-      ? 75 * (1 + (r.upgrades.weapons || 0))
-      : Math.max(1, Math.min(800, Number(b.amount) || 75));
+    const damage = rapid ? 75 : Math.max(1, Math.min(800, Number(b.amount) || 75));
     const amount = damage * r.balance.damage;
     this.once(
       r,
@@ -2469,7 +2453,7 @@ export class Game {
         : undefined;
     const amount =
       (rapid
-        ? 75 * (1 + (r.upgrades.weapons || 0))
+        ? 75
         : p.mode === 'foot'
           ? 10
           : p.mode === 'turret'

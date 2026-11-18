@@ -93,7 +93,7 @@ try {
 assert.equal(client.protocol, 'udp');
 assert.deepEqual(client.pc.channels[0].options, { ordered: true });
 assert.deepEqual(client.pc.channels[1].options, { ordered: false, maxRetransmits: 0 });
-const request = client.request('buy', { item: 'engine', request: 'id-000001' });
+const request = client.request('buy', { item: 'radar', request: 'id-000001' });
 const m = JSON.parse(client.commands.sent.at(-1));
 assert.equal(m.path, 'buy');
 for (const chunk of encodeReply(

@@ -143,8 +143,8 @@ assert.ok(inRadarCoverage({ x: 0, y: 1, z: 0 }, [radar]));
 assert.ok(inRadarCoverage({ x: 0, y: 100, z: 0 }, [radar]));
 assert.ok(!inRadarCoverage({ x: 2.0001, y: 0, z: 0 }, [radar]));
 assert.ok(inRadarCoverage({ x: 1.5, y: 0, z: 0 }, [radar, { ...radar, x: 1 }]));
-assert.equal(shopPrice('refuel', {}, 2), 8);
-assert.equal(shopPrice('radar', {}, 0), 4);
+assert.equal(shopPrice('refuel', 2), 24);
+assert.equal(shopPrice('radar', 0), 10);
 assert.equal(
   installationCount(
     [{ kind: 'refuel', free: true }, { kind: 'radar' }, { kind: 'refuel' }],
@@ -358,7 +358,7 @@ await api('buy', {
   id: c.id,
   item: 'radar',
   request: 'radar-first',
-  expectedPrice: 4,
+  expectedPrice: 10,
   position,
   ground: g,
 });
@@ -368,11 +368,11 @@ snap = await api('buy', {
   id: c.id,
   item: 'refuel',
   request: 'refuel-first',
-  expectedPrice: 4,
+  expectedPrice: 20,
   position: next,
   ground: g,
 });
-assert.equal(snap.dollars, 92);
+assert.equal(snap.dollars, 70);
 assert.equal(snap.equipment.filter((e) => e.kind === 'radar').length, 1);
 assert.equal(snap.equipment.filter((e) => e.kind === 'refuel').length, 1);
 await api(

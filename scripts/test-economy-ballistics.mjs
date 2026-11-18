@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import * as T from '../vendor/three.module.min.js';
 import { stepFall, stepBallisticVelocity, toggleParachute, HUMAN_AERO } from '../src/ballistics.ts';
 import { MAP, ACTOR_UNIT } from '../src/scale.ts';
-import { SHOP, supportedPlacement, upgradedVehicle } from '../src/equipment.js';
+import { SHOP, supportedPlacement } from '../src/equipment.js';
 import { VEHICLES, vehiclePad, vehicleEntry } from '../src/fleet.js';
 import { createSoul, bodyMotion } from '../src/purgatory-physics.js';
 import { OFFICE_LAYOUT } from '../src/layout.js';
@@ -178,7 +178,7 @@ assert.ok(
   JSON.stringify(bought),
 );
 snap = (await api('sync', { id: a.id, state: a.state })).body;
-assert.equal(snap.dollars, 96);
+assert.equal(snap.dollars, 95);
 assert.equal(snap.equipment.length, 1);
 assert.equal((await api('buy', { ...purchase, request: 'overlap-duplicate' })).status, 409);
 assert.equal(
@@ -186,22 +186,20 @@ assert.equal(
   200,
 );
 snap = (await api('sync', { id: a.id, state: a.state })).body;
-assert.equal(snap.dollars, 84);
+assert.equal(snap.dollars, 70);
 assert.equal(snap.vehicles.filter((v) => v.type === 'interceptor').length, 1);
 assert.equal(
   (await api('buy', { id: a.id, item: 'interceptor', request: 'new-aircraft' })).status,
   200,
 ); // exact retry
-await DB.prepare("UPDATE rooms SET dollars=4 WHERE code='ECONOMY'").run();
-const upgradeRace = await Promise.all([
-  api('buy', { id: a.id, item: 'engine', request: 'upgrade-race-a' }),
-  api('buy', { id: b.id, item: 'engine', request: 'upgrade-race-b' }),
+await DB.prepare("UPDATE rooms SET dollars=25 WHERE code='ECONOMY'").run();
+const purchaseRace = await Promise.all([
+  api('buy', { id: a.id, item: 'interceptor', request: 'purchase-race-a' }),
+  api('buy', { id: b.id, item: 'interceptor', request: 'purchase-race-b' }),
 ]);
-assert.deepEqual(upgradeRace.map((x) => x.status).sort(), [200, 409]);
+assert.deepEqual(purchaseRace.map((x) => x.status).sort(), [200, 409]);
 snap = (await api('sync', { id: a.id, state: a.state })).body;
 assert.equal(snap.dollars, 0);
-assert.equal(snap.upgrades.engine, 1);
-assert.ok(upgradedVehicle(VEHICLES.fighter, snap.upgrades).thrust > VEHICLES.fighter.thrust);
 // Every airborne exit is free fall, including a fast bomber gunner. No canopy appears automatically.
 const bomber = snap.vehicles.find((v) => v.type === 'bomber'),
   entry = vehicleEntry(bomber),
@@ -247,7 +245,6 @@ assert.equal(body.vx, MAP.metres(30) / ACTOR_UNIT);
 await api('reset', { id: a.id });
 snap = (await api('sync', { id: a.id, state: a.state })).body;
 assert.equal(snap.dollars, 0);
-assert.deepEqual(snap.upgrades, {});
 assert.equal(snap.equipment.length, 0);
 assert.ok(!snap.vehicles.some((v) => v.type === 'interceptor'));
 Date.now = realNow;

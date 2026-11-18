@@ -59,7 +59,7 @@ import { BloodEffects } from '/blood-effects.js';
 import { stepVacantAircraft } from '/vacant-flight.js';
 import { CONTRACTS, ContractBook, contractKey } from '/contracts.js';
 import { RewardQueue } from '/rewards.js';
-import { SHOP, shopPrice, upgradedVehicle, supportedPlacement } from '/equipment.js';
+import { SHOP, shopPrice, supportedPlacement } from '/equipment.js';
 import { stepBallisticVelocity, toggleParachute } from '/ballistics.js';
 import { makeTracer, updateTracer } from '/tracers.js';
 import { wavePlan, swarmFrame, entryStatus, ENEMY_TYPES } from '/waves.js';
@@ -4177,13 +4177,7 @@ function stepProjectileSlice(dt) {
             else if (hit.target)
               report('friendly-hit', { target: hit.target, shot: b.shot, weapon: b.weapon });
             else if (enemyHit && b.wave === snap?.wave)
-              damageEnemy(
-                hit.id,
-                b.baseDamage * (1 + (snap.upgrades?.weapons || 0)),
-                b.shot,
-                hit.point,
-                report,
-              );
+              damageEnemy(hit.id, b.baseDamage, b.shot, hit.point, report);
           };
           if (b.authorization?.accepted === null) b.authorization.impact = apply;
           else if (b.authorization?.accepted !== false) apply();
@@ -4254,7 +4248,7 @@ function physics(dt) {
       },
       colliders,
       dt,
-      upgradedVehicle(VEHICLES[myVehicle.type], snap?.upgrades),
+      VEHICLES[myVehicle.type],
     );
     if (keyboardOnly) mouseDirection.set(0, 0, -1).applyQuaternion(me.quaternion);
     if (state.hp <= 0) {
@@ -4347,7 +4341,7 @@ function physics(dt) {
       roll,
       yaw,
       scale: MAP.ratio,
-      profile: upgradedVehicle(VEHICLES[myVehicle?.type || 'fighter'], snap?.upgrades),
+      profile: VEHICLES[myVehicle?.type || 'fighter'],
     },
     dt,
   );
@@ -4910,7 +4904,6 @@ function renderShop() {
   const key = JSON.stringify([
     snap.dollars,
     snap.lab?.enabled,
-    snap.upgrades,
     snap.equipment?.length,
     snap.purchases,
     !!myVehicle,
@@ -4935,13 +4928,8 @@ function renderShop() {
   $('shopItems').classList.toggle('debugShop', !!snap.lab?.enabled);
   if (snap.lab?.enabled) $('shopItems').append(...debugTools.shopSections());
 }
-const SHOP_GLYPHS = { engine: '⚙', weapons: '✹' };
 let shopThumbs;
 function shopPicture(item, holder) {
-  if (SHOP_GLYPHS[item]) {
-    holder.textContent = SHOP_GLYPHS[item];
-    return;
-  }
   try {
     shopThumbs ||= new ShopThumbnails(T);
     shopThumbs.picture(item).then((url) => {
@@ -4961,25 +4949,18 @@ function shopCard(item) {
     picture = document.createElement('div'),
     title = document.createElement('h4'),
     cost = document.createElement('strong'),
-    level = snap.upgrades?.[item] || 0,
     owned = !myVehicle && snap.purchases?.find((o) => o.owner === id && o.item === item),
-    price = shopPrice(item, snap.upgrades, purchaseCount(snap, item), snap.balance);
+    price = shopPrice(item, purchaseCount(snap, item), snap.balance);
   card.type = 'button';
   card.className = 'shopCard';
   card.dataset.item = item;
   picture.className = 'shopPicture';
   shopPicture(item, picture);
-  title.textContent = profile.name + (profile.max > 1 ? ' · ' + level + '/' + profile.max : '');
-  cost.textContent =
-    profile.max && level >= profile.max
-      ? 'Acquis'
-      : owned
-        ? 'Déjà payé · Reprendre la pose'
-        : price + ' $';
+  title.textContent = profile.name;
+  cost.textContent = owned ? 'Déjà payé · Reprendre la pose' : price + ' $';
   card.disabled =
     purchaseBusy ||
     (!owned && snap.dollars < price) ||
-    (profile.max && level >= profile.max) ||
     (['placement', 'vehicle'].includes(profile.kind) &&
       !myVehicle &&
       (turretIndex >= 0 || selfBase()?.grounded === false));
@@ -5006,7 +4987,7 @@ async function purchase(item) {
       await api('buy', {
         id,
         item,
-        expectedPrice: shopPrice(item, snap.upgrades, purchaseCount(snap, item), snap.balance),
+        expectedPrice: shopPrice(item, purchaseCount(snap, item), snap.balance),
         request:
           globalThis.crypto?.randomUUID?.() ||
           Date.now().toString(36) +
@@ -5442,11 +5423,11 @@ function simulateVacantAircraft(dt) {
         { collective: 0, occupied: v.seats.length > 0 },
         colliders,
         dt,
-        upgradedVehicle(VEHICLES[v.type], snap?.upgrades),
+        VEHICLES[v.type],
       );
     else if (VEHICLES[v.type].ground)
       stepTank(T, s, { forward: 0, turn: 0 }, colliders, dt, VEHICLES[v.type]);
-    else stepVacantAircraft(T, s, upgradedVehicle(VEHICLES[v.type], snap.upgrades), colliders, dt);
+    else stepVacantAircraft(T, s, VEHICLES[v.type], colliders, dt);
     Object.assign(v.state, s);
   }
   for (const key of vacantAircraft.keys()) if (!active.has(key)) vacantAircraft.delete(key);

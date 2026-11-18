@@ -14,7 +14,6 @@ export const SHOP_CATEGORIES = Object.freeze([
     title: 'Installations',
     items: ['bed', 'refuel', 'radar', 'dca', 'dcaRapid', 'dcaHeavy'],
   },
-  { id: 'upgrades', title: 'Améliorations', items: ['engine', 'weapons'] },
 ]);
 
 // Columns in display order; items missing from every category land in a last

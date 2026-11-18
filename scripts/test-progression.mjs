@@ -64,30 +64,35 @@ assert.ok(
 // after each of the first twelve clears. Better interception adds real choice.
 let cash = 0,
   installed = 0;
-const upgrades = {};
 const choices = [
   'dca',
-  'engine',
-  'weapons',
+  'radar',
   'dca',
   'dca',
-  'engine',
+  'radar',
+  'dca',
   'dca',
   'interceptor',
   'dca',
-  'weapons',
-  'engine',
+  'radar',
+  'bed',
   'dca',
 ];
+let bought = 0,
+  lastPurchaseWave = 0;
 for (let wave = 1; wave <= 12; wave++) {
   cash += waveStipend(wave);
-  const key = choices[wave - 1],
-    cost = shopPrice(key, upgrades, installed);
-  assert.ok(cash >= cost, `wave ${wave}: ${cash} cannot buy ${key} at ${cost}`);
-  cash -= cost;
-  if (key === 'dca') installed++;
-  else upgrades[key] = (upgrades[key] || 0) + 1;
+  const key = choices[bought],
+    cost = shopPrice(key, installed);
+  if (cash >= cost) {
+    cash -= cost;
+    bought++;
+    lastPurchaseWave = wave;
+    if (key === 'dca') installed++;
+  }
+  assert.ok(wave - lastPurchaseWave <= 2, `wave ${wave}: stipends alone stall for over two waves`);
 }
+assert.ok(bought >= 7, `only ${bought} purchases funded by twelve stipends`);
 const DB = localDB();
 let now = Date.now();
 const realNow = Date.now;
@@ -121,26 +126,22 @@ s = (await api('sync', { id: a.id, state: a.state })).body;
 assert.equal(s.dollars, 4);
 assert.equal(s.rewardCount, 4);
 // End-of-wave income and NPC release are separate, both counted for audio.
-let buy = await api('buy', { id: a.id, item: 'engine', request: 'engine-cheap' });
-assert.equal(buy.status, 200);
-assert.equal(buy.body.dollars, 0);
-assert.equal(buy.body.upgrades.engine, 1);
-await DB.prepare("UPDATE rooms SET dollars=8 WHERE code='PROGRESS'").run();
+await DB.prepare("UPDATE rooms SET dollars=24 WHERE code='PROGRESS'").run();
 assert.equal(
-  (await api('buy', { id: a.id, item: 'engine', request: 'engine-expensive' })).status,
+  (await api('buy', { id: a.id, item: 'interceptor', request: 'too-expensive' })).status,
   409,
 );
-await DB.prepare("UPDATE rooms SET dollars=9 WHERE code='PROGRESS'").run();
+await DB.prepare("UPDATE rooms SET dollars=25 WHERE code='PROGRESS'").run();
 assert.equal(
-  (await api('buy', { id: a.id, item: 'engine', request: 'outdated-price', expectedPrice: 4 }))
+  (await api('buy', { id: a.id, item: 'interceptor', request: 'outdated-price', expectedPrice: 5 }))
     .status,
   409,
 );
-buy = await api('buy', { id: a.id, item: 'engine', request: 'engine-level-two' });
+const buy = await api('buy', { id: a.id, item: 'interceptor', request: 'interceptor-order' });
 assert.equal(buy.status, 200);
 assert.equal(buy.body.dollars, 0);
 assert.equal(
-  (await api('buy', { id: a.id, item: 'engine', request: 'engine-level-two' })).status,
+  (await api('buy', { id: a.id, item: 'interceptor', request: 'interceptor-order' })).status,
   200,
 );
 // A fully missed extended wave reaches its shared arrival deadline and pays a consolation stipend;

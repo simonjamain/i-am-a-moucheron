@@ -1,10 +1,10 @@
 # Bestiaire
 
-| Ennemi            |    PV | Déblocage            | Particularité                             |
-| ----------------- | ----: | -------------------- | ----------------------------------------- |
-| Moustique         |    70 | vague 3              | zigzag rapide                             |
-| Araignée pondeuse | 1 200 | vague 11             | 100 bébés sur mort                        |
-| Rat géant         | 5 000 | vague 15             | très gros, lent, puissance 12,23            |
+| Ennemi            |    PV | Déblocage            | Particularité                              |
+| ----------------- | ----: | -------------------- | ------------------------------------------ |
+| Moustique         |    70 | vague 3              | zigzag rapide                              |
+| Araignée pondeuse | 1 200 | vague 11             | 100 bébés sur mort                         |
+| Rat géant         | 5 000 | vague 15             | très gros, lent, puissance 12,23           |
 | Bébé araignée     |    20 | naissance uniquement | dispersion, vitesse élevée, puissance 0,17 |
 
 La mort d'une pondeuse génère sur le serveur une naissance **exactement une fois**, aussi bien par arme légère que lourde. Cent nouveaux identifiants sont ajoutés au roster, avec départ légèrement échelonné, point d'origine correspondant au décès, navigation au sol et variation procédurale sans dépendance aux voisins. Les baby spiders n'ont pas d'âme au purgatoire ni de récompense, mais **chaque bébé qui atteint la poubelle ajoute sa puissance (0,17) à l'infestation**. Leur apparition est bornée techniquement par un roster de 20 000 entités : en cas de stress-test anormal au plafond, la naissance peut être partielle.
