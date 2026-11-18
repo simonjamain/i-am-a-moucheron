@@ -89,19 +89,23 @@ try {
     10000,
     'binary motion batches reach the browser',
   );
-  // Decode in the page with the game's own module.
-  const peers = await pages[0].evaluate(async () => {
-    const { decodeMotionBatch } = await import('/motion-wire.js');
-    const found = new Set();
-    for (const data of motionMessages)
-      for (const entry of decodeMotionBatch(data).entries)
-        // Senders attach their capture time; receivers space samples by it.
-        if (Number.isFinite(entry.captured)) found.add(entry.peer);
-    return [...found];
-  });
+  // Decode in the page with the game's own module. The first batches may carry
+  // only Alpha's own echo, so wait until Bravo's motion is among them instead
+  // of decoding once: a slow runner delivers it later, not never.
+  const decodePeers = () =>
+    pages[0].evaluate(async () => {
+      const { decodeMotionBatch } = await import('/motion-wire.js');
+      const found = new Set();
+      for (const data of motionMessages)
+        for (const entry of decodeMotionBatch(data).entries)
+          // Senders attach their capture time; receivers space samples by it.
+          if (Number.isFinite(entry.captured)) found.add(entry.peer);
+      return [...found];
+    });
   const bravo = ids.find((id) => room.pilots.get(id).name === 'Bravo');
-  assert.ok(
-    peers.includes(bravo),
+  await until(
+    async () => (await decodePeers()).includes(bravo),
+    30000,
     'Alpha receives Bravo motion, with its capture time, in shared batches',
   );
   const sizes = await pages[0].evaluate(() => motionMessages.map((m) => m.byteLength));

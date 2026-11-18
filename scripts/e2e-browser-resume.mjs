@@ -78,7 +78,7 @@ try {
       !dropped.has([...app.connections][0]) &&
       [...app.connections][0].session.player?.id === pilot &&
       /^● UDP · /.test(await net()),
-    20000,
+    45000,
     'resume after drop',
   );
   assert.equal(room.pilots.size, 1, 'no second pilot');

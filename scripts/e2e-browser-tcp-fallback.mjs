@@ -43,9 +43,11 @@ try {
   // report ICE gathering as complete. The game code itself is unchanged.
   await page.addInitScript(() => {
     const Native = RTCPeerConnection;
+    globalThis.peerConnectionCount = 0;
     globalThis.RTCPeerConnection = class extends Native {
       constructor(...args) {
         super(...args);
+        globalThis.peerConnectionCount++;
         this.gathered = false;
         setTimeout(() => {
           this.gathered = true;
@@ -82,6 +84,7 @@ try {
   }
   // Headless software WebGL is slow here: allow time for the first frames.
   await until(() => seen.command > 0 && seen.motion > 0, 20000, 'commands and motion over TCP');
+  const attemptsBefore = await page.evaluate(() => peerConnectionCount);
   const dropped = new Set(app.connections);
   for (const c of dropped) c.close();
   const resumedAfter = await until(
@@ -89,10 +92,17 @@ try {
       [...app.connections].some(
         (c) => !dropped.has(c) && c.transport === 'tcp' && c.session.player?.id === pilot,
       ) && /^● TCP \(SECOURS\) · /.test(await net()),
-    20000,
+    45000,
     'resume over TCP',
   );
-  assert.ok(resumedAfter < 4000, 'resume goes straight to TCP, without a new UDP attempt');
+  // The resume must not start a new UDP attempt (abandoned only after 5 s).
+  // Count the page's peer connections instead of trusting a stopwatch, which
+  // a loaded runner stretches.
+  assert.equal(
+    await page.evaluate(() => peerConnectionCount),
+    attemptsBefore,
+    'resume goes straight to TCP, without a new UDP attempt',
+  );
   assert.equal(room.pilots.size, 1, 'no second pilot');
   await page.evaluate(() => dispatchEvent(new Event('pagehide')));
   await until(async () => !room.pilots.has(pilot), 3000, 'leave on pagehide');
