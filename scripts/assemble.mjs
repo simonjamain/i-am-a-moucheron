@@ -2,7 +2,7 @@ import { uiPreview } from './build-ui-preview.mjs';
 import { layoutSolids, LAYOUTS } from '../src/layouts.js';
 import { createHash } from 'node:crypto';
 import { readFile, writeFile } from 'node:fs/promises';
-import { existsSync } from 'node:fs';
+import { existsSync, readdirSync } from 'node:fs';
 import { stripTypeScriptTypes } from 'node:module';
 
 // Browser URLs stay `/<name>.js`; the source is `src/<name>.ts` when migrated
@@ -175,7 +175,6 @@ const files = {
       'swept-broadphase',
       'mouse-flight',
       'purgatory-physics',
-      'audio',
       'base',
       'layout',
       'renderer',
@@ -209,6 +208,12 @@ const files = {
       'route-speed',
       'route-navigation',
       'layouts',
+      // Folder modules (the audio library and its game adapter) keep their path.
+      ...['audio', 'game-audio'].flatMap((dir) =>
+        readdirSync('src/' + dir)
+          .filter((file) => file.endsWith('.ts'))
+          .map((file) => dir + '/' + file.slice(0, -3)),
+      ),
     ].map((name) => ['/' + name + '.js', moduleSource(name)]),
   ),
 };

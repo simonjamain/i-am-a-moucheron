@@ -298,7 +298,7 @@ export function createGameServer({
       }
       if (req.method !== 'GET' && req.method !== 'HEAD')
         return json(res, 405, { error: 'GET requis.' });
-      const versioned = path.match(/^\/assets\/([a-f0-9]{12})(\/[^/]+\.js)$/);
+      const versioned = path.match(/^\/assets\/([a-f0-9]{12})(\/(?:[a-z0-9-]+\/)?[^/]+\.js)$/);
       if (path.startsWith('/assets/') && (!versioned || versioned[1] !== BUILD_VERSION))
         return json(res, 410, { error: 'Rechargez la page.' });
       const asset = versioned ? versioned[2] : path;
