@@ -175,7 +175,6 @@ const files = {
       'swept-broadphase',
       'mouse-flight',
       'purgatory-physics',
-      'audio',
       'base',
       'layout',
       'renderer',

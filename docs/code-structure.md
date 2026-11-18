@@ -42,7 +42,7 @@ base de données ni accès disque dans les opérations de jeu Node. Voir
 | Lits                 | `beds.js` : accès et support ; `bed-ui.js` : document personnel et signature.                                                                                                                                                                                                              |
 | HUD/banque           | `hud.js`, `equipment-controls.js`, `bank-ui.js` ; [véhicules et banque](vehicles-bank.md).                                                                                                                                                                                                 |
 | Mesure d’interaction | `interaction-timing.js` : feedback immédiat et traces bornées de sélection.                                                                                                                                                                                                                |
-| Effets/son           | `insect-status.ts`, `crash-effects.js`, `audio.js`, effets de combat et corps tombants du client.                                                                                                                                                                                          |
+| Effets/son           | `insect-status.ts`, `crash-effects.js`, effets de combat et corps tombants du client ; son : bibliothèque `audio/` et adaptateur `game-audio/` ([audio](audio.md)).                                                                                                                        |
 
 Les couloirs aériens sont partagés entre serveur et client dans `routes.js`.
 
