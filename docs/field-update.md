@@ -121,7 +121,7 @@ le langage visuel des documents et garde les commandes du monde neutralisées.
 
 ## Vagues et prêts
 
-Le lancement initial reste à 10 s. Les pauses **entre vagues** passent à 60 s (puis 180 s depuis la v339) ;
+Le lancement initial reste à 10 s. Les pauses **entre vagues** passent à 60 s (puis 180 s depuis la v340) ;
 le bouton de lancement anticipé est conservé. Le serveur arbitre démarrage manuel
 et automatique sans double vague. Une seule échéance de prêt reste prélevée à
 chaque fin de vague.

@@ -1,3 +1,4 @@
+import { hitUserData } from './insect-hits.js';
 import { buildMeshyRig, gunMount } from './meshy-rig.js';
 import { MODEL_DATA as SPITFIRE } from './meshy-spitfire-data.js';
 import { MODEL_DATA as TANK } from './meshy-tank-data.js';
@@ -207,8 +208,7 @@ export function createGraphics(T, scene) {
         hitParts: [],
         disposables: [rig.mesh.material],
         hitTolerance: FLYER_HIT_TOLERANCE,
-        hitEllipsoid: [...flyer.hit.radii],
-        hitCentre: [...flyer.hit.centre],
+        ...hitUserData(flyer.hit),
         flight: rig,
         // Purgatory souls keep beating their wings.
         animate(dt) {
