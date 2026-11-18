@@ -7,7 +7,7 @@ import { VEHICLES } from '../src/fleet.js';
 import { SHOP, shopPrice, supportedPlacement } from '../src/equipment.js';
 import { MAP, ACTOR_UNIT, INSECT_SCALE } from '../src/scale.ts';
 import { OFFICE_LAYOUT } from '../src/layout.js';
-import { OFFICE_SOLIDS } from '../worker/assets.js';
+import { OFFICE_SOLIDS } from '../server/assets.js';
 import { fullAmmo, inRadarCoverage } from '../src/logistics.js';
 import { WALKER_FALL, stepWalkerFall, impactDamage } from '../src/field-physics.js';
 import { createGraphics } from '../src/graphics.js';

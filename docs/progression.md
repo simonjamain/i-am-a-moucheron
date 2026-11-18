@@ -32,9 +32,7 @@ Le directeur Node ne verse **aucune prime de vague** (`waveStipend` et l'afficha
 `waveReward` sont supprimés). Les âmes libérées par Saint-Pierre ou par le pistolet
 rapportent **la puissance de leur espèce** en dollars (multipliée par le réglage
 `rewards`) ; tuer dans le bureau ne crédite rien directement. Une vague de puissance
-W rapporte donc au plus W $. L'ancienne prime `min(20, 3 + n)` ne subsiste que dans le
-Site historique Worker/D1, qui garde ses coûts et dégâts entiers (`legacyCost`,
-`LEGACY_LEAK`).
+W rapporte donc au plus W $. L'ancienne prime `min(20, 3 + n)` n'existe plus.
 
 | Achat                              | Prix                                               |
 | ---------------------------------- | -------------------------------------------------- |
@@ -84,8 +82,8 @@ Les portails restent à au moins trois mètres du décor de la corbeille ;
 [retours de partie](party-feedback.md) précise les premières images et la connexion tardive.
 
 Sur Node, les primes et commandes sont dédupliquées en RAM. Les noms de tables
-et migrations mentionnés plus haut décrivent la compatibilité Worker historique.
-La progression actuelle ne dépend pas de D1 et disparaît au redémarrage.
+et migrations mentionnés plus haut décrivent l'ancien modèle à base de données,
+abandonné. La progression disparaît au redémarrage.
 
 Installations Node : le [bon signé](clean-flight.md#prix-bon-signé-et-pose) débite
 avant la pose ; annuler l’aperçu ne fait pas perdre l’objet payé.

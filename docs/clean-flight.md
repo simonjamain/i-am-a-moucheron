@@ -1,6 +1,6 @@
 # Lisibilité, commandes, nettoyage et Spitfire
 
-Référence du lot ECO-03 à VEH-05, livré sur **Node, RAM et UDP** le 29 octobre 2026. Aucun déploiement sur le Worker historique, aucune nouvelle image Docker.
+Référence du lot ECO-03 à VEH-05, livré sur **Node, RAM et UDP** le 29 octobre 2026.
 
 ## Prix, bon signé et pose
 

@@ -1,5 +1,7 @@
 # Backlog — i am a moucheron
 
+> **Note :** journal daté. Ses mentions du Site historique Worker/D1 et des livraisons en ZIP sont obsolètes : le Site historique est abandonné et le déploiement passe par l’image `latest` publiée à chaque commit sur `main` (voir [l’exploitation](docs/operations.md)).
+
 Spécification initiale validée par l’utilisateur le 29 octobre 2026.
 Compléments validés le 30 octobre 2026 : hélicoptère et DCA mobile.
 Ce document décrit le travail demandé, pas les fonctionnalités déjà livrées.

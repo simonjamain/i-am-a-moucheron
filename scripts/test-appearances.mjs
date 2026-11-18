@@ -21,7 +21,7 @@ import {
 import { createGraphics } from '../src/graphics.js';
 import { PANEL_TINT, SIDE_SHADE } from '../src/appearance-picker.js';
 import { Game } from '../server/game.js';
-import { OFFICE_SOLIDS } from '../worker/assets.js';
+import { OFFICE_SOLIDS } from '../server/assets.js';
 
 const near = (a, b, eps, label) => assert.ok(Math.abs(a - b) < eps, label + ': ' + a + ' vs ' + b);
 const world = (o) => o.getWorldPosition(new T.Vector3());

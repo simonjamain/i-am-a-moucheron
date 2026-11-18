@@ -1,5 +1,7 @@
 # Revue des références
 
+> **Note :** journal daté. Ses mentions du Site historique Worker/D1 et des livraisons en ZIP sont obsolètes : le Site historique est abandonné et le déploiement passe par l’image `latest` publiée à chaque commit sur `main` (voir [l’exploitation](operations.md)).
+
 ## Commandes H2 — version 39
 
 Revue des 35 Markdown suivis et ajout de `helicopter-controls.md` : O ajouté,

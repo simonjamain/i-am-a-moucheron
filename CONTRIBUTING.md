@@ -73,8 +73,8 @@ les secrets de déploiement ni un accès d'administration au VPS.
 
 Les agents consultent les résultats de la pipeline ; l'infrastructure est
 configurée une fois par les mainteneurs. Le déploiement sur VPS et ses secrets
-restent à configurer séparément. Le Site Worker/D1 historique ne permet pas de
-valider le runtime Node/UDP.
+restent à configurer séparément. La production est déployée à partir de l’image
+`latest` publiée sur GHCR à chaque commit sur `main`.
 
 ## Sources de la méthode
 

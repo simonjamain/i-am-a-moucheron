@@ -185,8 +185,8 @@ export function expandMidgeSwarms(roster) {
       .map((enemy, id) => ({ ...enemy, id })),
   );
 }
-// Historic Worker/D1 director (Site historique): integer point costs of its own,
-// independent from the power model used by the Node runtime.
+// Integer point costs of the seeded `wavePlan` director, independent from the
+// power model that prices the rosters drawn by server/wave-preparation.js.
 const LEGACY_COST = Object.freeze({
   ant: 1,
   roach: 4,

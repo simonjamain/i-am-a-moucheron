@@ -63,15 +63,13 @@ salissure. `vehicle-care.js` porte dégâts et rayon du jet ; les effets décora
 restent côté client. `tank-reticle.js` réutilise l’intégrateur autoritaire des obus.
 `fleet.js` / `graphics.js` / `logistics.js` décrivent le Spitfire S6 et ses réserves.
 `test-clean-flight.mjs` couvre ce lot ; les tests natifs UDP exercent ses commandes
-entre deux pairs. Le Worker conserve son ancien périmètre, sans Spitfire gratuit.
+entre deux pairs.
 
 ## Génération, tests et compatibilité
 
 `scripts/assemble.mjs` utilise la géométrie réelle du bureau pour générer les
-colliders et le graphe d’assets à URL de contenu. `worker/assets.js` est utilisé
-par Node. `worker/index.js` (versionné) et `dist/` (ignoré par Git) sont les sorties du backend Worker
-historique ; `src/server.js`, `drizzle/` et `scripts/local-db.mjs` restent sa
-compatibilité SQL. Ils ne sont pas importés par le runtime Node.
+colliders et le graphe d’assets à URL de contenu. `server/assets.js` est utilisé
+par Node. `dist/` (ignoré par Git) est la sortie du build Node autonome.
 
 `scripts/build-ui-preview.mjs` extrait HTML/CSS réels et les composants HUD,
 banque et lit pour `/ui-review.html`. La page utilise une caisse de démonstration
@@ -80,7 +78,7 @@ la géométrie VIS-05 à partir du commit précédent, lorsqu’un clone Git est
 
 Les scripts de `package.json` sont la liste courante des commandes. Les tests
 exécutent les modules, les gestionnaires UI et le domaine, avec tests natifs UDP
-et compatibilité Worker séparés. `test-field-backlog.mjs` et `test-bed-ui.mjs`
+séparés. `test-field-backlog.mjs` et `test-bed-ui.mjs`
 couvrent le dernier lot. `check-docs.mjs` inventorie les Markdown et contrôle
 leurs liens locaux ; leur exactitude fonctionnelle reste une revue sémantique.
 

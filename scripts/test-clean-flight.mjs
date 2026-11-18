@@ -12,7 +12,7 @@ import { HEAVY, heavyInterval } from '../src/armament.js';
 import { VEHICLES, LIGHT_FIGHTER, vehicleEntry, isRotorcraft } from '../src/fleet.js';
 import { MAP, ACTOR_UNIT } from '../src/scale.ts';
 import { OFFICE_LAYOUT } from '../src/layout.js';
-import { OFFICE_SOLIDS } from '../worker/assets.js';
+import { OFFICE_SOLIDS } from '../server/assets.js';
 import { createGraphics } from '../src/graphics.js';
 import { stepFlight } from '../src/flight.js';
 import { swarmAudioGroups } from '../src/game-audio/swarm.ts';

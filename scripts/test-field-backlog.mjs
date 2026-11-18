@@ -229,7 +229,7 @@ console.log(
   'Field mechanics: complete crews, shoulder/muzzle geometry in both scales, independent observation/coax, rates, immediate feedback and delayed ACK.',
 );
 
-const { OFFICE_SOLIDS } = await import('../worker/assets.js');
+const { OFFICE_SOLIDS } = await import('../server/assets.js');
 const { supportedPlacement } = await import('../src/equipment.js');
 const { bedSpawn } = await import('../src/beds.js');
 const bedGame = new Game({ solids: OFFICE_SOLIDS }),

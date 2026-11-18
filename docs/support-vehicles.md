@@ -5,7 +5,7 @@ métier HEL-01 à HEL-05 et DCM-01/DCM-02 sont implémentées et couvertes par l
 contrôles de domaine. HEL-06 et DCM-03 gardent leur validation finale **en cours** :
 les échanges entre deux pairs UDP natifs sont vérifiés, mais le réseau du navigateur
 de contrôle refuse UDP. Aucun essai humain de pilotage, d'écoute, de rendu WebGL
-ou de partie WAN n'est revendiqué. Le Site Worker historique reste inchangé.
+ou de partie WAN n'est revendiqué.
 
 ## Achat, accès et réserves
 
@@ -144,8 +144,8 @@ Le navigateur charge le client, puis affiche « UDP indisponible sur ce réseau 
 La validation finale demande encore, sur une VM UDP joignable, une partie solo
 puis pilote/copilote, une conduite/tir simultanés, l'entrée tardive, les changements
 de poste et les morts, l'écoute et le confort visuel des modèles et du pilotage.
-**Aucune VM externe n'a été provisionnée ni déployée.** Installer le ZIP selon
-[le guide UDP](udp-server.md), puis recharger les navigateurs après redémarrage.
+**Aucune VM externe n'a été provisionnée ni déployée.** Voir
+[le guide UDP](udp-server.md) ; recharger les navigateurs après chaque déploiement.
 
 Le [lot confort de jeu, version 37](comfort.md) précise réparation, zoom, jauges,
 radar à pied, remise à zéro, fourmis et projectiles du pistolet courants.

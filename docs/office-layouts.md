@@ -27,7 +27,7 @@ haut, sous la couche de nuages) avant de plonger vers la corbeille.
 ## Données et code
 
 `src/layouts.js` est la seule source : données pures (pas de Three.js), importées
-par le client, le serveur Node, les workers et le bundle Worker historique.
+par le client, le serveur Node et les Web Workers.
 Chaque plan décrit :
 
 - `furniture` : volumes alignés sur les axes (`kind`, centre `x`/`z`, taille
@@ -67,7 +67,6 @@ plan. Le serveur active le plan de la room avant chaque opération
 
 - Essais WebGL et UDP réels non faits ; le rendu des plans est un blocage en volumes
   simples (une couleur par type), sans modèles détaillés.
-- Les stations fixes historiques (`AA_STATIONS`) et le Worker historique
-  (`src/server.js`) restent sur le plan par défaut.
+- Les stations fixes historiques (`AA_STATIONS`) restent sur le plan par défaut.
 - Les plans `ilots` et `fronts` ne respectent pas la distance de 6 m entre entrées
   et corbeille (impossible au centre).

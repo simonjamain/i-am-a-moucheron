@@ -15,7 +15,7 @@ import { enemyRoute } from '../src/routes.js';
 import { blockedSegment } from '../src/route-navigation.js';
 import { createGraphics } from '../src/graphics.js';
 import { CrashEffects } from '../src/crash-effects.js';
-import { OFFICE_SOLIDS } from '../worker/assets.js';
+import { OFFICE_SOLIDS } from '../server/assets.js';
 
 for (const [principal, rate, waves] of [
   [1200, 0.04, 4],

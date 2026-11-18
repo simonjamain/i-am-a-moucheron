@@ -1,8 +1,7 @@
 # Retours terrain : accès, visée, chutes et réapparition
 
 Référence technique du lot BUG-04 à ECO-02, serveur **Node RAM/UDP**.
-Les sources se livrent en ZIP ; l’ancienne image Docker `.2` ne contient pas ce lot.
-Le Site public Worker reste historique et n’est pas remplacé par ce client Node.
+L’ancienne image Docker `.2` ne contient pas ce lot.
 
 ## Embarquement et délai après E
 

@@ -47,8 +47,8 @@ export const HEAVY = Object.freeze({
   // Fixed anti-materiel howitzer (#113): ballistic like the tank shells, faster
   // than both, more damage than HE on a small 5 m blast.
   antitank: {
-    // Same values as FORTIFICATIONS.antitank (no import: the legacy Worker
-    // bundle concatenates modules; scripts/test-howitzer.mjs checks they match).
+    // Same values as FORTIFICATIONS.antitank (no import, to keep this
+    // module light; scripts/test-howitzer.mjs checks they match).
     interval: 1.8,
     damage: 360,
     edge: 90,

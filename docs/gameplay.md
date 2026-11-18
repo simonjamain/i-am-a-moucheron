@@ -20,8 +20,7 @@ Le serveur Node utilise WebRTC sur UDP. Les mouvements sont locaux,
 relayés par le serveur à 20 Hz ; signatures, achats, impacts et changements de
 monde passent sur un canal fiable avec confirmation. Un réseau sans UDP joue en
 TCP sur un WebSocket, moins fluide en cas de pertes. Toute la partie reste en mémoire et
-un redémarrage la supprime. Le [guide UDP](udp-server.md) distingue ce runtime
-de la version publique historique encore sur Sites/D1.
+un redémarrage la supprime. Voir le [guide UDP](udp-server.md).
 
 ## Boucle de jeu
 

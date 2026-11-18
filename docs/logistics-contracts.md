@@ -2,8 +2,8 @@
 
 Le serveur Node applique ces règles en RAM et sur des commandes UDP fiables.
 Ses réserves, dossiers et achats disparaissent au redémarrage. Les références
-aux migrations, à la persistance et aux requêtes HTTP ci-dessous décrivent le
-backend Sites historique conservé pendant la transition. Voir [serveur UDP](udp-server.md).
+aux migrations, à la persistance et aux requêtes HTTP ci-dessous décrivent l’ancien
+modèle à base de données, abandonné. Voir [serveur UDP](udp-server.md).
 
 Référence du lot du 29 octobre 2026. Les modules `logistics.js` et
 `vehicle-livery.js` portent les règles communes. Migration :
@@ -39,7 +39,6 @@ deux) ont été **entièrement retirées** : `malice.js`, la commande
 `dossier-choice`, le suivi des dossiers et le champ `contractClause` des pilotes
 n'existent plus côté Node. Un dossier d'accès ne contient que ses documents
 obligatoires ; chaque poste tire avec la cadence et les dégâts de son arme.
-Le backend Worker historique (`src/server.js`) ne tire plus de clause non plus.
 
 ## Réserves des appareils
 
@@ -128,7 +127,7 @@ et des trajectoires partagées ; aucune dernière position ennemie n’est stock
 
 ## Vérifications et limites
 
-`test-logistics-contracts.mjs` exécute les règles et les routes Worker avec SQLite :
+`test-logistics-contracts.mjs` exécute les règles pures :
 dossier sans annexe, progression normale obligatoire, dégâts pleins (75) pour
 chaque poste, transfert de poste, doubles requêtes de tir, réserves indépendantes du bombardier,
 panne après cinq minutes, reconnexion, plein de dix secondes de plusieurs avions,

@@ -37,20 +37,16 @@ npm ci
 npm start
 ```
 
-Livraison courante : PR GitHub fusionnée sur `main` (ZIP des sources seulement si la demande l’exige).
-Le [guide Docker](docs/docker.md) reste disponible pour construire soi-même une image.
+Livraison : PR GitHub fusionnée sur `main`. Chaque commit sur `main` publie l’image
+`latest` sur GHCR ; un environnement extérieur au dépôt la récupère périodiquement
+et la déploie sur le VPS. Le [guide Docker](docs/docker.md) décrit la construction locale.
 
 Node 22.18+ ; HTTP sur le port 3000, UDP sur 41000–41099. En production,
 servir HTTP derrière HTTPS et exposer les ports UDP directement sur la VM.
 Voir [le guide du serveur UDP](docs/udp-server.md) pour les variables et les tests.
 `npm run dev` lance ce même serveur ; redémarrer après modification.
 
-Le Site public historique utilise un backend Worker/D1 distinct, incapable
-d'héberger ce processus UDP. `npm run dev:sites` permet de reproduire ce backend.
-La cible de déploiement courante est le VPS Node/UDP. Le dépôt ne configure
-plus de publication Sites ; aucun serveur externe n’est provisionné par le build. Le serveur Node
-n'importe pas le Worker ni son adaptateur SQLite. Les anciens tests D1 restent
-pour vérifier la version historique pendant cette transition.
+Le serveur Node/UDP est l'unique runtime du jeu.
 
 ```sh
 npm run format:check
@@ -59,8 +55,8 @@ npm run build
 node scripts/validate-artifact.mjs
 ```
 
-Modifier `src/` et `scripts/`, puis assembler. `worker/index.js` (versionné) et `dist/` (ignoré par Git) sont
-générés. Les migrations publiées dans `drizzle/` restent immuables.
+Modifier `src/` et `scripts/`, puis assembler. `server/assets.js` (versionné) et `dist/` (ignoré par Git) sont
+générés.
 `npm run build` produit un runtime Node autonome dans `dist/` : y exécuter
 `npm ci --omit=dev && npm start`. Le validateur contrôle ce paquet Node.
 

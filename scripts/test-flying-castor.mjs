@@ -36,7 +36,7 @@ import { navigationStructures, floorStructures } from '../src/ground-defense-sta
 import { seatRole } from '../src/seat-icons.js';
 import { controlHintItems } from '../src/live-hud.js';
 import { Game } from '../server/game.js';
-import { OFFICE_SOLIDS } from '../worker/assets.js';
+import { OFFICE_SOLIDS } from '../server/assets.js';
 
 const near = (a, b, eps, label) => assert.ok(Math.abs(a - b) < eps, label + ': ' + a + ' vs ' + b);
 

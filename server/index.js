@@ -2,7 +2,7 @@ import http from 'node:http';
 import { pathToFileURL } from 'node:url';
 import { PeerConnection } from 'node-datachannel';
 import { WebSocketServer } from 'ws';
-import { ASSETS, BUILD_VERSION } from '../worker/assets.js';
+import { ASSETS, BUILD_VERSION } from './assets.js';
 import { Game, SNAPSHOT_SHARE_MS } from './game.js';
 import { GameSession } from './session.js';
 import { encodeMotionBatch, encodeMotionState } from '../src/motion-wire.js';
@@ -303,7 +303,7 @@ export function createGameServer({
         return json(res, 410, { error: 'Rechargez la page.' });
       const asset = versioned ? versioned[2] : path;
       if (!Object.hasOwn(ASSETS, asset)) return json(res, 404, { error: 'Introuvable.' });
-      // Same content-addressed modules as Sites; only this entry opts into UDP.
+      // Content-addressed modules; only the entry page opts into UDP.
       const data =
         asset === '/'
           ? ASSETS[asset].replace('<head>', '<head><script>globalThis.MOUCHERON_UDP=true;</script>')

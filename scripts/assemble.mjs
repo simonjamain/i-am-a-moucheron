@@ -14,11 +14,11 @@ const readAsset = async (file) => {
   return file.endsWith('.ts') ? stripTypeScriptTypes(text, { mode: 'strip' }) : text;
 };
 
-// Colliders of the default layout, for the historical Worker bundle and fixtures.
-// The Node server and the browser derive each room's colliders from its layout.
+// Colliders of the default layout, kept as a fixture for tests. The Node server and
+// the browser derive each room's colliders from the active layout.
 const officeBounds = layoutSolids(LAYOUTS[0]);
 await writeFile('docs/ui-review.html', uiPreview(await readFile('src/index.html', 'utf8')));
-// One asset manifest drives both browser module serving and Worker packaging.
+// One asset manifest drives the browser module serving of the Node server.
 const files = {
   '/': 'src/index.html',
   '/ui-review.html': 'docs/ui-review.html',
@@ -244,21 +244,8 @@ assets['/'] = assets['/'].replaceAll(
   (await readFile('VERSION', 'utf8')).trim(),
 );
 assets['/'] = assets['/'].replace('src="/boot.js"', 'src="/assets/' + version + '/boot.js"');
-const inline = (source) => source.replace(/^import .*;$/gm, '').replace(/^export /gm, '');
-const arena = inline(assets['/purgatory-physics.js']);
-const base = inline(assets['/base.js']);
-const layout = inline(assets['/layout.js']);
-const routes = inline(assets['/routes.js']);
-const waves = inline(assets['/waves.js']);
-const scale = inline(assets['/scale.js']);
-const enemyPower = inline(assets['/enemy-power.js']);
-const fleet = inline(assets['/fleet.js']);
-const ballistics = inline(assets['/ballistics.js']);
-const equipment = inline(assets['/equipment.js']);
-const sortie = inline(assets['/ground-fortifications.js']) + '\n' + inline(assets['/sortie.js']);
-const server = await readFile('src/server.js', 'utf8');
 await writeFile(
-  'worker/assets.js',
+  'server/assets.js',
   'export const BUILD_VERSION=' +
     JSON.stringify(version) +
     ';\n' +
@@ -273,45 +260,4 @@ await writeFile(
       })),
     ) +
     ';\n',
-);
-await writeFile(
-  'worker/index.js',
-  [
-    'const BUILD_VERSION=' + JSON.stringify(version) + ';',
-    'const ASSETS=' + JSON.stringify(assets) + ';',
-    scale,
-    enemyPower,
-    inline(assets['/layouts.js']),
-    layout,
-    inline(assets['/route-navigation.js']),
-    inline(assets['/brick-rules.js']),
-    inline(assets['/ground-defense.js']),
-    routes,
-    inline(assets['/route-speed.js']),
-    waves,
-    fleet,
-    ballistics,
-    inline(assets['/oriented-collider.js']),
-    inline(assets['/ground-ammo.js']),
-    inline(assets['/fixed-dca.js']),
-    equipment,
-    inline(assets['/armament.js']),
-    inline(assets['/logistics.js']),
-    'const OFFICE_SOLIDS=' +
-      JSON.stringify(
-        officeBounds.map((b) => ({
-          min: { x: b.min.x, y: b.min.y, z: b.min.z },
-          max: { x: b.max.x, y: b.max.y, z: b.max.z },
-        })),
-      ) +
-      ';',
-    'const ARENA_ENGINE=(()=>{' +
-      arena +
-      ';return {createSoul,advanceArena,deskOccupant,relayBodyReport};})();',
-    'const BASE_ENGINE=(()=>{const {createSoul,advanceArena}=ARENA_ENGINE;' +
-      base +
-      ';return {aircraftBay,baseWorld,baseBody,baseAccess,reconcileBase,advanceBase,aircraftPose};})();',
-    'const SORTIE_ENGINE=(()=>{' + sortie + ';return {AA_STATIONS,stationAccess};})();',
-    server,
-  ].join('\n'),
 );

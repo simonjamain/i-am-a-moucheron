@@ -128,8 +128,8 @@ export function placementAhead(body, distance = 5) {
     z: body.z - Math.cos(body.face) * MAP.metres(distance),
   };
 }
-// The same footprint/support test runs in the browser and on generated office
-// colliders in the Worker. Full base support, free headroom and nearby placement.
+// The same footprint/support test runs in the browser and on the server's office
+// colliders. Full base support, free headroom and nearby placement.
 export function supportedPlacement(point, colliders, occupied = [], kind = 'dca') {
   const profile = VEHICLES[kind];
   const dca = FIXED_DCA[kind];

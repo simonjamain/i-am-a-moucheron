@@ -5,9 +5,8 @@ project_root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 dist_root="$project_root/dist"
 
 rm -rf "$dist_root"
-mkdir -p "$dist_root/worker"
+mkdir -p "$dist_root"
 cp -R "$project_root/server" "$project_root/src" "$dist_root/"
-cp "$project_root/worker/assets.js" "$dist_root/worker/assets.js"
 cp "$project_root/package.json" "$project_root/package-lock.json" \
   "$project_root/VERSION" "$dist_root/"
 # The package is already assembled: no development tool or source checkout required.

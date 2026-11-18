@@ -8,7 +8,7 @@ import { execFileSync } from 'node:child_process';
 import { existsSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { ASSETS } from '../worker/assets.js';
+import { ASSETS } from '../server/assets.js';
 
 const tsc = path.resolve('node_modules/.bin/tsc');
 assert.ok(existsSync(tsc), 'TypeScript is a dev dependency: run npm ci');

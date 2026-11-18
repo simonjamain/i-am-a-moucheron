@@ -31,7 +31,7 @@ import { validMotion } from '../src/network.js';
 import { contractKey, ContractBook } from '../src/contracts.js';
 import { controlHints, cursorStats, cursorAmmoText } from '../src/live-hud.js';
 import { contextKey } from '../src/equipment-controls.js';
-import { OFFICE_SOLIDS } from '../worker/assets.js';
+import { OFFICE_SOLIDS } from '../server/assets.js';
 const near = (a, b, eps = 1e-8) => assert.ok(Math.abs(a - b) < eps, `${a} != ${b}`);
 assert.equal(SHOP.helicopter.cost, 50);
 assert.equal(VEHICLES.helicopter.maxSpeed, LIGHT_FIGHTER.maxSpeed * 0.6);

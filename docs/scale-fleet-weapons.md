@@ -58,9 +58,7 @@ block the next document. Only confirmed documents enter the archive; there is
 no minimum animation wait. See [signature handling](economy-physics.md).
 
 Mission start schedules the first wave at +10 s. Finishing a wave schedules the
-next at +60 s on Node (the historical Worker retains +10 s). Manual start can shorten subsequent breaks; a conditional update
-serializes concurrent automatic starts. Node transitions use the shared wall clock and the maintenance tick. The historical Worker advances due transitions on requests. Migration 0006 resets the
-old arbitrary-coordinate sessions instead of reading their numbers as metres.
+next at +60 s. Manual start can shorten subsequent breaks. Transitions use the shared wall clock and the maintenance tick.
 
 ## Revision 020: collisions, movement and depth
 
