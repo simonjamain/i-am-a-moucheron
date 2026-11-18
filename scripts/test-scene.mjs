@@ -42,13 +42,10 @@ for (let i = 0; i < 12; i++) {
   }
   scene.remove(plane);
 }
-// Every extracted browser module must be included in the built Worker.
-const { default: worker } = await import('../worker/index.js');
+// Every extracted browser module must be included in the packaged runtime assets.
+const { ASSETS } = await import('../server/assets.js');
 for (const name of ['office', 'graphics', 'renderer', 'layout'])
-  assert.equal(
-    (await worker.fetch(new Request('https://test.local/' + name + '.js'), {})).status,
-    200,
-  );
+  assert.ok(ASSETS['/' + name + '.js'], name + ' is packaged');
 console.log(
   'PASS: fan removed, parked landing gear, clear outward departure, aligned nose/velocity and packaged scene modules',
 );

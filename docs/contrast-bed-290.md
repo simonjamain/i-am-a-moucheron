@@ -23,7 +23,7 @@ La station Alpha recule de **40 mm vers le nord** (−Z) et de **6 mm vers l’o
 qui se trouvait au bord de la zone. Le modèle agrandi empiétait sur les cercles
 d’accès du pilote et du tireur du bombardier ; les deux zones sont maintenant
 dégagées. Tous les véhicules déjà couverts à leur emplacement initial gardent le
-service payant, sans agrandir son rayon. Les serveurs Node et Worker historique
+service payant, sans agrandir son rayon. Le serveur et le client
 partagent la même position depuis le layout.
 
 ## Vérifications

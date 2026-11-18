@@ -20,8 +20,7 @@ Le serveur Node utilise WebRTC sur UDP. Les mouvements sont locaux,
 relayés par le serveur à 20 Hz ; signatures, achats, impacts et changements de
 monde passent sur un canal fiable avec confirmation. Un réseau sans UDP joue en
 TCP sur un WebSocket, moins fluide en cas de pertes. Toute la partie reste en mémoire et
-un redémarrage la supprime. Le [guide UDP](udp-server.md) distingue ce runtime
-de la version publique historique encore sur Sites/D1.
+un redémarrage la supprime. Voir le [guide UDP](udp-server.md).
 
 ## Boucle de jeu
 
@@ -33,7 +32,7 @@ des munitions limités, à compléter en se posant et s’arrêtant dans une sta
 protéger la poubelle contre les insectes ; les arrivées ennemies augmentent
 l’infestation. La mort ouvre une observation à caméra fixe ; un clic volontaire donne accès au purgatoire et à la paperasse de retour en jeu.
 
-Avant chaque vague, le serveur annonce les entrées et les horaires des groupes. La préparation dure une minute par défaut ; tout joueur peut lancer la vague avant la fin du compte à rebours. Il n'y a ni vote ni plan à débloquer entre les vagues (retirés en version 264) : équipements et véhicules s'achètent simplement à leur prix en dollars. La première vague combine fourmis et moucherons, puis le budget des vagues augmente de moitié à chaque étape, jusqu'à 2 400 points. Voir [progression](progression.md). Des groupes aériens arrivent depuis
+Avant chaque vague, le serveur annonce les entrées et les horaires des groupes. La préparation dure une minute par défaut ; tout joueur peut lancer la vague avant la fin du compte à rebours. Il n'y a ni vote ni plan à débloquer entre les vagues (retirés en version 264) : équipements et véhicules s'achètent simplement à leur prix en dollars. La première vague combine fourmis et moucherons, puis son budget, exprimé en **puissance**, est multiplié par 1,2 à chaque étape, sans plafond, et par `N^0,9` pour `N` joueurs. La frise et le bouton de vague affichent la puissance de la vague annoncée. Voir [progression](progression.md) et [équilibrage](room-balance.md#puissance-unité-commune). Des groupes aériens arrivent depuis
 plusieurs aérations, se séparent et se rejoignent ; fourmis et cafards sortent
 de trous et marchent vers la poubelle par le chemin le plus direct qui contourne le
 mobilier, les barricades et les bunkers (voir [navigation terrestre](#navigation-terrestre)).
@@ -81,10 +80,10 @@ désignations internes dans les commentaires, tests et documents techniques. Auc
 
 ## Équipements et combat
 
-Un chasseur biplan et un bombardier biplan (pilote et mitrailleur dorsal) sont
-disponibles au départ, en nombre illimité. Le **Chasseur léger** (monoplace, 8 $) et
+Un chasseur biplan, un bombardier biplan (pilote et mitrailleur dorsal) et un char moyen
+sont disponibles au départ, en nombre illimité. Le **Chasseur léger** (monoplace, 15 $) et
 le **Bombardier moyen** (pilote, mitrailleurs dorsal, de queue et ventral, 50 bombes,
-16 $) s'achètent en plus au marchand. Un exemplaire de réserve prêt
+15 $) s'achètent en plus au marchand. Un exemplaire de réserve prêt
 par type initial est conservé ; dès son décollage, un successeur gratuit apparaît sans supprimer les avions utilisés. Les achats fournissent un Stuka, un Spitfire,
 un tank, un hélicoptère biplace ou une DCA mobile, dont la destruction est définitive. Les sièges sont exclusifs.
 
@@ -172,11 +171,12 @@ sans chargeur ni rechargement. Dans le bureau, personne ne porte d'arme à pied.
 personnelles sont inutilisables dans tous les équipements. Les PNJ ne ripostent
 pas et conservent leurs dégâts sans régénération. Voir [file physique](purgatory-queue.md).
 
-Une vague terminée sans défaite verse une prime commune immédiate, de 4 $ à la
-première vague à 20 $ au maximum. Les premiers achats commencent à 4 $, puis
-les prix montent avec les installations et niveaux acquis.
+Aucune prime de vague n'est versée (supprimée par l'issue #210) : les âmes libérées
+sont la seule source de revenu liée aux vagues, et un ennemi raté ne rapporte rien.
+Les prix montent avec les installations et niveaux acquis.
 Chaque PNJ accepté par Saint Pierre ou tué au purgatoire est définitivement
-libéré et rapporte un dollar commun une seule fois. Un ennemi abattu dans le
+libéré et rapporte, une seule fois, **la puissance de son espèce** en dollars
+communs (1 $ pour un moucheron, 12,23 $ pour un rat). Un ennemi abattu dans le
 bureau ne rapporte pas directement d’argent. Chaque dollar déclenche une courte
 sonnerie chez tous les joueurs présents, même dans les autres mondes. Le service des PNJ
 continue côté serveur sans joueur humain au purgatoire. Le menu P permet d’acheter
@@ -249,7 +249,7 @@ stations achetées fournissent le même service. La caisse commune paie au prora
 les PV, le carburant et chaque catégorie de munitions ; en cas de fonds insuffisants,
 la somme est répartie équitablement entre les véhicules éligibles.
 Voir [le tarif et les limites du lot G1](economy-physics.md#tarification-automatique-des-stations-lot-préparatoire-g1-castor). Stations supplémentaires et radars sont
-vendus 4 $, puis +2 $ par exemplaire de leur type. Sans radar, aucun ennemi sur
+vendus 5 $ (flak léger), 10 $ (radar), 15 $ (lit) et 20 $ (station), puis +2 $ par exemplaire de leur type. Sans radar, aucun ennemi sur
 la carte ; chaque radar révèle ceux dans un cylindre de rayon 2 m, à toutes hauteurs, sans masquer la scène.
 Voir [logistique et contrats](logistics-contracts.md) pour les valeurs, garanties
 et limites de vérification.
@@ -278,7 +278,7 @@ coque ; seule la sirène de piqué du Stuka subsiste. Valeurs et limites :
 [lisibilité, commandes, nettoyage et Spitfire](clean-flight.md).
 
 Les achats de tous les véhicules utilisent désormais le bon signé et la pose par E,
-au sol ou sur mobilier, avec chasseur 8 $ et bombardier 16 $. Les bombes du B3
+au sol ou sur mobilier, avec chasseur 5 $ et bombardier 5 $. Les bombes du B3
 ont le double du rayon de celles du Stuka. [Référence du dernier lot](multiplayer-return.md).
 
 ## Hélicoptère et camion DCA
@@ -329,7 +329,7 @@ modifiables à tout moment par le créateur de la room.
 
 ## Rat, moustique et araignée pondeuse
 
-Le rat géant possède 5 000 PV et avance lentement. Le moustique possède 70 PV et esquive selon des oscillations déterministes. L'araignée pondeuse possède 1 200 PV : elle libère **100 bébés araignées** de 20 PV à sa mort, au lieu du site de décès, avec une trajectoire dispersée et rapide vers la poubelle. Chaque bébé survivant compte **1 point d'infestation**, soit 100 possibles pour la portée complète (défaite à 20). Les bébés morts ne créent pas d'âmes rémunérées. Moustique dès vague 3, pondeuse dès vague 11, rat dès vague 15. Voir [bestiaire](enemy-bestiary.md).
+Le rat géant possède 5 000 PV et avance lentement. Le moustique possède 70 PV et esquive selon des oscillations déterministes. L'araignée pondeuse possède 1 200 PV : elle libère **100 bébés araignées** de 20 PV à sa mort, au lieu du site de décès, avec une trajectoire dispersée et rapide vers la poubelle. Chaque bébé survivant inflige à la poubelle sa puissance (0,17), soit environ 17 pour la portée complète (défaite à 20 d'infestation). Les bébés morts ne créent pas d'âmes rémunérées. Moustique dès vague 3, pondeuse dès vague 11, rat dès vague 15. Voir [bestiaire](enemy-bestiary.md).
 
 Les [vitesses physiques des espèces](enemy-bestiary.md#vitesse-physique-dans-la-pièce) sont explicites en m/s dans le bureau, indépendantes de la taille des insectes et du nombre de membres de la nuée. L'accélération cachée des bébés araignées et les oscillations trop rapides des moustiques ont été corrigées.
 
@@ -402,7 +402,7 @@ Le [bombardier biplan à deux places](biplane-models.md) conserve son camouflage
 
 ## G1 Castor (première étape, version 179)
 
-Le **G1 Castor** est un camion monoplace à six roues, achetable pour **12 $** avec le bon signé des véhicules. Z/S et Q/D permettent de conduire ; la souris vise sa mitrailleuse légère (500 balles, recharges payantes). **V** bascule une **vue de dessus** : caméra à 40 cm à la verticale du camion, nord (axe −Z, le haut du radar) en haut de l’écran quel que soit le cap du camion, et viseur au sol déplacé à la souris pour poser les défenses dans les 24 cm de portée et tirer (`src/castor-top-view.js`). Vitesse maximale 52 (deux fois le
+Le **G1 Castor** est un camion monoplace à six roues, achetable pour **15 $** avec le bon signé des véhicules. Z/S et Q/D permettent de conduire ; la souris vise sa mitrailleuse légère (500 balles, recharges payantes). **V** bascule une **vue de dessus** : caméra à 40 cm à la verticale du camion, nord (axe −Z, le haut du radar) en haut de l’écran quel que soit le cap du camion, et viseur au sol déplacé à la souris pour poser les défenses dans les 24 cm de portée et tirer (`src/castor-top-view.js`). Vitesse maximale 52 (deux fois le
 réglage initial), avec une accélération forte au départ qui décroît près du
 maximum. Les six roues roulent à la vitesse du sol de leur côté (sens, marche
 arrière et arrêt compris) ; au pivot sur place, gauche et droite tournent en sens
@@ -434,7 +434,7 @@ correction des six roues est conservée.
 ## Castor volant (version 292)
 
 Le **Castor volant** est un hélicoptère logistique à deux rotors en tandem,
-acheté **30 $** (colonne Aéronefs). Il a **un pilote et trois passagers**, aucune
+acheté **35 $** (colonne Aéronefs). Il a **un pilote et trois passagers**, aucune
 arme, 200 PV, le pilotage assisté de l'hélicoptère d'attaque (souris pour
 l'inclinaison, Z/S/Q/D, Maj/Ctrl) et le même **soutien sphérique de 50 cm** que
 le Castor : soins, carburant, munitions et réparation des barricades, payés par

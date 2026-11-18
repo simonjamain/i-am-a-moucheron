@@ -59,7 +59,7 @@ assert.equal(20 - seen.infestation, -75, 'HUD shows negative bin HP');
 const client = readFileSync('src/client.js', 'utf8');
 assert.match(
   client,
-  /s\.lab\?\.enabled\s*\?\s*20 - \(s\.infestation \+ s\.leaked\) \+ ' \/ 20 PV'/,
+  /s\.lab\?\.enabled\s*\?\s*powerText\(20 - \(s\.infestation \+ s\.leakedPower\)\) \+ ' \/ 20 PV'/,
 );
 // Money stays unlimited: whatever is spent is refilled on the next tick.
 r.dollars -= 500;

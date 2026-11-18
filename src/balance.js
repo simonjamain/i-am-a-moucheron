@@ -30,6 +30,27 @@ export const BALANCE_FIELDS = Object.freeze({
     value: 1,
     when: 'Immédiat, sans déplacement brusque',
   },
+  waveGrowth: {
+    label: 'Multiplicateur de vague (g)',
+    min: 1,
+    step: 0.05,
+    value: 1.2,
+    when: 'Prochaine vague encore à tirer',
+  },
+  firstWavePower: {
+    label: 'Puissance de la première vague',
+    min: 1,
+    step: 1,
+    value: 32,
+    when: 'Prochaine vague encore à tirer',
+  },
+  playerExponent: {
+    label: 'Exposant du nombre de joueurs',
+    min: 0,
+    step: 0.05,
+    value: 0.9,
+    when: 'Prochaine vague encore à tirer',
+  },
   damage: {
     label: 'Dégâts des armes',
     min: 0.25,

@@ -9,8 +9,8 @@ import { createGraphics } from '../src/graphics.js';
 import { stepTank } from '../src/tank.js';
 import { ACTOR_UNIT } from '../src/scale.ts';
 
-assert.equal(SHOP.castor.cost, 12);
-assert.equal(shopPrice('castor'), 12);
+assert.equal(SHOP.castor.cost, 15);
+assert.equal(shopPrice('castor'), 15);
 assert.deepEqual(VEHICLES.castor.seats, ['pilot']);
 assert.equal(VEHICLES.castor.ground, true);
 assert.ok(VEHICLES.castor.maxSpeed > VEHICLES.tank.maxSpeed);

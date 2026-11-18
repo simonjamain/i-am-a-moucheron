@@ -1,4 +1,4 @@
-> **Version 327 :** le B3 est de retour, comme **Bombardier moyen** à l'achat (16 $, id `medbomber`, 50 bombes, 4 places). Le [bombardier biplan](biplane-models.md) reste l'avion de départ gratuit.
+> **Version 327 :** le B3 est de retour, comme **Bombardier moyen** à l'achat (15 $, id `medbomber`, 50 bombes, 4 places). Le [bombardier biplan](biplane-models.md) reste l'avion de départ gratuit.
 
 # Bombardier B3 : quatre places et camouflage
 

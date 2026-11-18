@@ -1,6 +1,8 @@
 import { ENEMY_TYPES } from './waves.js';
 import { speciesSymbols, entranceLabel } from './wave-forecast-scene.js';
 
+const powerLabel = (power) => String(Math.round(power * 10) / 10).replace('.', ',');
+
 export function timelineColumns(groups) {
   const columns = new Map();
   for (const group of groups) {
@@ -50,7 +52,9 @@ export class WaveCouncilUI {
   }
   countdown(seconds) {
     const prep = this.snap?.preparation;
-    const label = prep ? 'Vague ' + prep.wave + ' · ' + seconds + ' s' : 'Prochaine vague';
+    const label = prep
+      ? 'Vague ' + prep.wave + ' · puissance ' + powerLabel(prep.power) + ' · ' + seconds + ' s'
+      : 'Prochaine vague';
     if (this.button.textContent !== label) this.button.textContent = label;
     if (this.dialog.open && this.clock.textContent !== label) this.clock.textContent = label;
   }

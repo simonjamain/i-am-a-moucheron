@@ -30,7 +30,7 @@ minimale de sécurité. Un projectile supprimé ne déclenche aucun second impac
 
 Les clients conservent leur autorité sur les mouvements et les impacts déclarés.
 Le serveur Node valide les opérations en RAM. Les noms de tables et transactions
-SQL cités ci-dessous décrivent le Worker historique, conservé séparément. `health_hits` déduplique par tireur, cible,
+SQL cités ci-dessous sont l’ancien modèle de persistance, abandonné : le serveur garde ces registres en RAM. `health_hits` déduplique par tireur, cible,
 tir et incarnation. Une transaction retire les PV une fois. Une transition de
 mort est conditionnée par l’incarnation courante, puis l’incrémente ; les retries
 ne peuvent pas réinitialiser le dossier d’une nouvelle vie. Les instantanés

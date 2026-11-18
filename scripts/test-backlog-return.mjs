@@ -134,7 +134,7 @@ for (const [item, profile] of Object.entries(SHOP)) {
   const body = {
     item,
     request: 'delivery-' + item,
-    expectedPrice: shopPrice(item, room.upgrades, 0),
+    expectedPrice: shopPrice(item, 0),
     epoch: room.base.epoch,
     incarnation: pilot.incarnation,
     signature: true,

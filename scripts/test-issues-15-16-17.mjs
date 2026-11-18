@@ -180,7 +180,7 @@ for (const surfaceY of [0, 0.9]) {
     signature: true,
     epoch: room.base.epoch,
     incarnation: p.incarnation,
-    expectedPrice: 4,
+    expectedPrice: 10,
   };
   let s = game.command(room.code, p.id, 'purchase-sign', order);
   const initial = s.deliveries[0].y;
@@ -232,7 +232,7 @@ assert.equal(timingRoom.infestation, 0);
 now = timingRoom.started + 1000 * (ant.spawn + ant.duration) + 1;
 timingGame.advance(timingRoom);
 assert.equal(timingRoom.phase, 'prep');
-assert.equal(timingRoom.infestation, 1);
+assert.equal(timingRoom.infestation, Math.round(ENEMY_TYPES.ant.power * 100) / 100);
 console.log(
   '#17 server deadline: no leak/completion at the old arrival, correct completion at the new one.',
 );

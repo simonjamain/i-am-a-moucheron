@@ -74,7 +74,7 @@ voir [trajets actuels](vehicles-bank.md#trajets-et-crashs).
 
 Le rendu des vagues utilise l’heure serveur prise à l’envoi de la réponse et
 un temps local monotone, plutôt que de déduire l’avancement d’un milieu d’aller-
-retour contenant aussi le travail D1. L’heure de départ et les durées d’arrivée
+retour contenant aussi le travail de la base de données. L’heure de départ et les durées d’arrivée
 sont communes au client et au serveur.
 
 Rejoindre tard ou réafficher une scène peut révéler un ennemi déjà près de la

@@ -8,7 +8,7 @@ import {
   saveFlightTuning,
 } from '../src/flight-tuning.js';
 import { mouseFlightControls, rotateMouseAim } from '../src/mouse-flight.js';
-import worker from '../worker/index.js';
+import { ASSETS } from '../server/assets.js';
 
 const data = new Map();
 const storage = {
@@ -71,8 +71,7 @@ const inverted = new T.Vector3(0, 0, -1);
 rotateMouseAim(T, inverted, new T.Quaternion(), 60, 40, 0.0026);
 assert.ok(inverted.y < 0, 'negative vertical direction is available at the input boundary');
 for (const path of ['/flight-tuning.js', '/flight-tuning-ui.js']) {
-  const response = await worker.fetch(new Request('https://test.local' + path), {});
-  assert.equal(response.status, 200);
+  assert.ok(ASSETS[path], path + ' is packaged');
 }
 console.log(
   'PASS: local flight preferences, invalid/blocked storage, near-target boost, axis response, damping and mouse input.',

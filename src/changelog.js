@@ -1,9 +1,20 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
-    version: 343,
+    version: 345,
     changes: [
       'Zoom (clic droit) : la souris est plus fine, les sauts de visée ne sont plus agrandis.',
+    ],
+  },
+  {
+    version: 343,
+    changes: [
+      'Chaque ennemi a une puissance : plus il est fort, plus son âme libérée rapporte et plus il abîme la poubelle.',
+      'Les vagues suivent le nombre de joueurs. Plus de prime de fin de vague : seules les âmes libérées rapportent.',
+      'La puissance de la prochaine vague est annoncée.',
+      'Nouveaux prix pour tous les appareils, véhicules et installations du magasin.',
+      'Un char moyen gratuit et infini attend au sol, avec les deux avions de base.',
+      'La motorisation et les munitions renforcées n’existent plus.',
     ],
   },
   {

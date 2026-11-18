@@ -37,8 +37,7 @@ GitHub et le diff ; vérifier les affirmations contre l'état de la branche.
 
 Tout nouveau module s'écrit en TypeScript ; migrer un module existant avec
 `npm run ts:migrate -- src/<module>.js`, puis le typer jusqu'à ce que
-`npm run typecheck` passe. Règles (syntaxe effaçable, imports `.ts`, Three.js typé,
-Worker historique) : [TypeScript](docs/typescript.md). Pour itérer, cibler la suite :
+`npm run typecheck` passe. Règles (syntaxe effaçable, imports `.ts`, Three.js typé) : [TypeScript](docs/typescript.md). Pour itérer, cibler la suite :
 `npm test -- <fragment>` (ex. `npm test -- castor`), `--bail` pour s'arrêter au
 premier échec, `--list` pour la liste ; la suite complète reste due avant livraison.
 Un nouveau script `scripts/test-*.mjs` s'ajoute à `scripts/suite.mjs`
@@ -82,11 +81,10 @@ Après fusion, vérifier l'état de `main` et la fermeture des issues liées.
 Les déploiements temporaires relèvent de GitHub Actions, selon l'état décrit dans
 CONTRIBUTING. Vérifier le résultat réellement retourné ; signaler un environnement
 absent ou en échec. Garder secrets et administration du VPS hors des contributions.
-Le runtime Node/UDP et le Site historique Worker/D1 sont distincts : publier le
-client Node sur le Worker est incompatible. Sites n'est pas requis pour coder ;
-le consulter seulement pour une intervention explicite sur le Site historique,
-depuis son ancien dépôt distinct. Ce dépôt ne porte plus de manifeste Sites.
-Générer un ZIP uniquement si la livraison demandée le nécessite.
+Le déploiement est automatique : chaque commit sur `main` publie l'image
+`latest` sur GHCR (workflow `docker.yml`), et un environnement extérieur au dépôt
+récupère périodiquement la dernière image pour la déployer sur le VPS. Il n'y a
+ni ZIP à produire ni autre cible de publication ; la livraison est la PR fusionnée.
 Avant toute livraison de contribution, construire systématiquement l’image Docker
 selon [le guide Docker](docs/docker.md), même sans livrer d’image. Après les
 dernières modifications ou une synchronisation, refaire ce build et consigner
@@ -118,6 +116,7 @@ versionnement pour les branches parallèles.
 
 Règle pérenne pour tout nouveau modèle Meshy (détails et checklist dans
 [le pipeline d'assets](docs/asset-pipeline.md#règle-pour-tout-nouveau-modèle-meshy)) :
+
 1. proposer des visuels dans la direction artistique du jeu et obtenir la
    **validation de l'utilisateur avant toute génération** ;
 2. une image de référence isolée, aux vues adaptées, par pièce mobile — jamais une

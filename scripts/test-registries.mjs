@@ -46,8 +46,9 @@ expectKeys(
 for (const type of Object.keys(GROUND_ATTACK_DAMAGE))
   assert.ok(ground.includes(type), `GROUND_ATTACK_DAMAGE.${type} is not a ground species`);
 for (const [type, profile] of Object.entries(ENEMY_TYPES)) {
-  for (const field of ['name', 'cost', 'hp', 'size', 'speedMps', 'leak', 'color'])
+  for (const field of ['name', 'power', 'hp', 'size', 'speedMps', 'color'])
     assert.ok(profile[field] !== undefined, `ENEMY_TYPES.${type}.${field} is required`);
+  assert.ok(!('cost' in profile) && !('leak' in profile), `${type}: cost/leak are gone`);
   if (profile.onDeath)
     assert.ok(ENEMY_TYPES[profile.onDeath.spawn], `${type}.onDeath spawns an unknown species`);
 }

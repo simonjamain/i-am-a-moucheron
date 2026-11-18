@@ -46,7 +46,7 @@ import {
   assignMidgeSwarmSizes,
   MAX_OFFSPRING_ROSTER,
 } from '../src/waves.js';
-import { SHOP, shopPrice, supportedPlacement, waveStipend } from '../src/equipment.js';
+import { SHOP, shopPrice, supportedPlacement } from '../src/equipment.js';
 import { advancePaidService } from '../src/paid-service.js';
 import { SENTRY, fireGroundSentries } from '../src/ground-sentry.js';
 import { FORTIFICATIONS, isFortification } from '../src/ground-fortifications.js';
@@ -144,7 +144,6 @@ function roomState(code, now, layout = DEFAULT_LAYOUT_ID) {
     next_wave_at: 0,
     dollars: 0,
     rewardCount: 0,
-    upgrades: {},
     bank: newBank(),
     pilots: new Map(),
     vehicles: new Map(),
@@ -365,7 +364,7 @@ export class Game {
   }
   fleet(r) {
     for (const vehicle of r.vehicles.values()) if (!vehicle.state.landed) vehicle.ready = 0;
-    for (const type of ['fighter', 'bomber'])
+    for (const type of ['fighter', 'bomber', 'tank'])
       if (
         !values(r.vehicles).some(
           (v) => v.type === type && v.origin === 'starter' && v.ready && v.state.hp > 0,
@@ -462,7 +461,7 @@ export class Game {
   releaseSoul(r, s) {
     if (s.status !== 'waiting') return;
     s.status = 'gone';
-    if (s.kind === 'enemy') this.reward(r, 1);
+    if (s.kind === 'enemy') this.reward(r, ENEMY_TYPES[s.enemy_type].power);
   }
   reward(r, amount) {
     const credit = money(amount, r.balance.rewards);
@@ -651,12 +650,11 @@ export class Game {
           : (now - r.started) / 1000 >= e.spawn + e.duration),
     );
     if (r.phase === 'combat' && r.kills.size + escaped.length >= plan.roster.length) {
-      r.infestation += escaped.reduce((n, e) => n + e.leak, 0);
+      r.infestation = money(r.infestation + escaped.reduce((n, e) => n + e.power, 0));
       // Debug mode: bin damage keeps counting, but the room cannot be lost.
       r.phase = r.infestation >= 20 && !r.lab.enabled ? 'lost' : 'prep';
       r.next_wave_at = now + r.balance.pause * 1000;
       if (r.phase === 'prep') {
-        this.reward(r, waveStipend(r.wave));
         this.prepareWave(r);
       }
       r.dollars = Math.round(r.dollars * 100 - settleLoans(r.bank, r.wave)) / 100;
@@ -801,10 +799,14 @@ export class Game {
     return r.plan || wavePlan(r.code, r.wave, r.started);
   }
   prepareWave(r) {
-    r.upcomingPlan = prepareRoster(r.wave + 1, r.balance);
+    // N counts every pilot of the room, those in purgatory included.
+    const players = Math.max(1, r.pilots.size);
+    r.upcomingPlan = prepareRoster(r.wave + 1, r.balance, undefined, players);
     r.preparation = {
       id: uid(),
       wave: r.wave + 1,
+      power: money(r.upcomingPlan.budget),
+      players,
       groups: forecast(r.upcomingPlan.roster),
     };
   }
@@ -898,6 +900,7 @@ export class Game {
           : elapsed >= enemy.spawn + enemy.duration)
       )
         arrived.push(enemy.id);
+    const arrivedPower = arrived.reduce((sum, id) => sum + (plan.roster[id]?.power ?? 0), 0);
     return clone({
       code: r.code,
       balance: r.balance,
@@ -917,7 +920,6 @@ export class Game {
       groundNavigationActive: r.groundEnabled || r.groundDefense.structures.length > 0,
       dollars: r.dollars,
       bank: r.bank,
-      upgrades: r.upgrades,
       rewardCount: r.rewardCount,
       equipment: r.equipment,
       groundDefense: groundSnapshot(r.groundDefense, this.now()),
@@ -937,14 +939,14 @@ export class Game {
       seatRequests: values(r.requests),
       effects: r.effects.slice(-64),
       ordnance: r.ordnance,
-      waveReward: money(waveStipend(r.wave), r.balance.rewards),
-      difficulty: r.wave ? plan.budget : 0,
+      difficulty: r.wave ? money(plan.budget) : 0,
       enemyDamage: r.enemyDamage,
       layout: r.layout,
       mapScale: { numerator: MAP.numerator, denominator: MAP.denominator },
       total: plan.roster.length,
       arrived,
       leaked: r.phase === 'combat' ? arrived.length : 0,
+      leakedPower: r.phase === 'combat' ? money(arrivedPower) : 0,
       now,
       sentAt: now,
       souls: souls.purgatory,
@@ -1695,12 +1697,7 @@ export class Game {
         ...values(r.vehicles).map((v) => ({ x: v.state.p[0], y: v.state.p[1], z: v.state.p[2] })),
       ]);
     requireGame(!carrier || drop, 'Aucune colonne de livraison libre près de cet appareil.');
-    const price = shopPrice(
-      b.item,
-      r.upgrades,
-      purchaseCount(this.purchaseSnapshot(r), b.item),
-      r.balance,
-    );
+    const price = shopPrice(b.item, purchaseCount(this.purchaseSnapshot(r), b.item), r.balance);
     requireGame(price === b.expectedPrice, 'Le tarif a changé. Relisez le bon.');
     requireGame(r.dollars >= price, 'La caisse commune ne contient pas assez de dollars.');
     r.dollars = money(r.dollars - price);
@@ -1885,12 +1882,7 @@ export class Game {
       requireGame(r.orders.get(request) === b.item, 'Référence d’achat déjà utilisée.');
       return;
     }
-    const price = shopPrice(
-      b.item,
-      r.upgrades,
-      purchaseCount(this.purchaseSnapshot(r), b.item),
-      r.balance,
-    );
+    const price = shopPrice(b.item, purchaseCount(this.purchaseSnapshot(r), b.item), r.balance);
     requireGame(
       prepaid || b.expectedPrice === undefined || b.expectedPrice === price,
       'Le tarif a changé.',
@@ -1899,7 +1891,6 @@ export class Game {
       prepaid || r.dollars >= price,
       'La caisse commune ne contient pas assez de dollars.',
     );
-    requireGame(!item.max || (r.upgrades[b.item] || 0) < item.max, 'Amélioration déjà au maximum.');
     if (item.kind === 'placement' || (item.kind === 'vehicle' && prepaid)) {
       requireGame(
         p.mode === 'foot' &&
@@ -1946,7 +1937,6 @@ export class Game {
       if (item.kind === 'vehicle') this.createVehicle(r, b.item, 'purchase', placement);
       else this.installEquipment(r, b.item, placement);
     } else if (item.kind === 'vehicle') this.createVehicle(r, b.item);
-    else r.upgrades[b.item] = (r.upgrades[b.item] || 0) + 1;
     if (!prepaid) r.dollars = money(r.dollars - price);
     r.orders.set(request, b.item);
   }
@@ -2462,9 +2452,7 @@ export class Game {
     if (r.kills.has(b.enemy)) return;
     const rapid = typeof b.shot === 'string' && b.shot.startsWith(p.id + ':rapid:');
     if (rapid ? !this.rapidImpactAllowed(r, p, b.shot) : !this.pistolImpact(r, p, b.shot)) return;
-    const damage = rapid
-      ? 75 * (1 + (r.upgrades.weapons || 0))
-      : Math.max(1, Math.min(800, Number(b.amount) || 75));
+    const damage = rapid ? 75 : Math.max(1, Math.min(800, Number(b.amount) || 75));
     const amount = damage * r.balance.damage;
     this.once(
       r,
@@ -2488,7 +2476,7 @@ export class Game {
         : undefined;
     const amount =
       (rapid
-        ? 75 * (1 + (r.upgrades.weapons || 0))
+        ? 75
         : p.mode === 'foot'
           ? 10
           : p.mode === 'turret'

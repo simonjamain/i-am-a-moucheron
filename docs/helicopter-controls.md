@@ -65,8 +65,7 @@ La suite complète conserve les deux pairs UDP natifs, contrats, postes et armes
 
 Rendu WebGL, Pointer Lock physique et confort de pilotage restent à observer sur
 la VM : le navigateur de contrôle ne joint pas UDP. HEL-06/DCM-03 gardent leurs
-validations humaines en cours. Livraison ZIP, serveur à redémarrer et navigateurs
-à recharger ; aucune publication incompatible sur le Worker historique.
+validations humaines en cours. Après déploiement, recharger les navigateurs.
 
 ## Pilotage étendu et tourelle — version 45
 

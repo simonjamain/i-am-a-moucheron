@@ -5,150 +5,121 @@ import { MAP } from './scale.ts';
 export const SHOP = Object.freeze({
   fighter: {
     name: 'Chasseur biplan supplémentaire',
-    cost: 8,
+    cost: 5,
     kind: 'vehicle',
     description: 'Achat à poser, en plus de la réserve gratuite.',
   },
   bomber: {
     name: 'Bombardier biplan supplémentaire',
-    cost: 16,
+    cost: 5,
     kind: 'vehicle',
     description: 'Pilote et mitrailleur, 30 bombes ; achat à poser.',
   },
   lightfighter: {
     name: 'Chasseur léger',
-    cost: 8,
+    cost: 15,
     kind: 'vehicle',
     description: 'Monoplace rapide, deux mitrailleuses de nez ; achat à poser.',
   },
   medbomber: {
     name: 'Bombardier moyen',
-    cost: 16,
+    cost: 15,
     kind: 'vehicle',
     description: 'Pilote et trois mitrailleurs, 50 bombes ; achat à poser.',
   },
   bed: {
     name: 'Lit de réapparition',
-    cost: 4,
+    cost: 15,
     kind: 'placement',
     description: 'Signez un contrat personnel au lit pour choisir votre retour après purgatoire.',
   },
   refuel: {
     name: 'Station de ravitaillement',
-    cost: 4,
+    cost: 20,
     kind: 'placement',
     description:
       'Répare et recharge automatiquement les véhicules proches, même en mouvement, contre paiement.',
   },
   radar: {
     name: 'Radar',
-    cost: 4,
+    cost: 10,
     kind: 'placement',
     description: 'Révèle les ennemis dans un cylindre de rayon 2 m sur la carte.',
   },
   dca: {
     name: 'Flak léger',
-    cost: 4,
+    cost: 5,
     kind: 'placement',
     description:
       'Canon fixe avec réserve de 120 obus, rechargeable automatiquement à proximité d’une station ou d’un Castor.',
   },
   dcaRapid: {
     name: 'DCA haute cadence',
-    cost: 15,
+    cost: 50,
     kind: 'placement',
     description: 'Quatre mitrailleuses du Spitfire en alternance, 1 000 balles partagées.',
   },
   dcaHeavy: {
     name: 'Flak lourd',
-    cost: 35,
+    cost: 30,
     kind: 'placement',
     description: 'Gros canon à fusée de proximité, un obus par seconde.',
   },
   interceptor: {
     name: 'Stuka d’attaque au sol',
-    cost: 12,
+    cost: 25,
     kind: 'vehicle',
     description: 'Un exemplaire avec 6 bombes ; remplacement payant après destruction.',
   },
   spitfire: {
     name: 'Spitfire',
-    cost: 24,
+    cost: 75,
     kind: 'vehicle',
     description:
       'Six mitrailleuses, 1 000 balles au total ; vitesse +75 %, rotation +45 %. Sans bombes.',
   },
   helicopter: {
     name: 'Hélicoptère d’attaque au sol',
-    cost: 30,
+    cost: 50,
     kind: 'vehicle',
     description: 'Deux postes, 200 PV, stationnaire assisté, 30 roquettes et 10 missiles guidés.',
   },
   flaktruck: {
     name: 'Anti-air mobile',
-    cost: 20,
+    cost: 15,
     kind: 'vehicle',
     description: 'Conducteur et canon de proximité, 100 obus ; fusée 0,5–20 m, armée à 0,3 s.',
   },
   tank: {
     name: 'Char moyen',
-    cost: 10,
+    cost: 5,
     kind: 'vehicle',
     description: 'Un exemplaire, trois postes indépendants ; toutes munitions limitées.',
   },
   castor: {
     name: 'Castor',
-    cost: 12,
+    cost: 15,
     kind: 'vehicle',
     description:
       'Camion monoplace rapide avec mitrailleuse et ravitaillement mobile dans un rayon de 50 cm.',
   },
   flyingcastor: {
     name: 'Castor volant',
-    cost: 30,
+    cost: 35,
     kind: 'vehicle',
     description:
       'Hélicoptère de soutien : un pilote et trois passagers, largue les constructions du Castor sauf les murs ; ravitaillement mobile 50 cm.',
   },
-  engine: {
-    name: 'Motorisation',
-    cost: 4,
-    prices: [4, 9, 16],
-    kind: 'upgrade',
-    max: 3,
-    description: '+10 % de poussée et +5 % de vitesse par niveau, pour tous.',
-  },
-  weapons: {
-    name: 'Munitions renforcées',
-    cost: 6,
-    prices: [6, 12, 20],
-    kind: 'upgrade',
-    max: 3,
-    description: '+75 dégâts des mitrailleuses par niveau ; pistolet inchangé.',
-  },
 });
-export function shopPrice(key, upgrades = {}, installed = 0, balance = null) {
-  if (balance) return Math.round(shopPrice(key, upgrades, installed) * balance.prices * 100) / 100;
+export function shopPrice(key, installed = 0, balance = null) {
+  if (balance) return Math.round(shopPrice(key, installed) * balance.prices * 100) / 100;
   const item = SHOP[key];
   if (!item) return Infinity;
   if (['dca', 'refuel', 'radar', 'bed'].includes(key))
     return key === 'dca'
       ? Math.min(40, item.cost + 2 * Math.max(0, installed))
       : item.cost + 2 * Math.max(0, installed);
-  return item.prices?.[Math.min(item.prices.length - 1, upgrades[key] || 0)] ?? item.cost;
-}
-// A completed, non-lost wave pays this stipend immediately, independently of
-// the slower Saint-Pierre queue. Each released NPC still yields one dollar.
-export function waveStipend(wave) {
-  return Math.min(20, 3 + Math.max(1, Math.floor(wave)));
-}
-export function upgradedVehicle(profile, upgrades = {}) {
-  const n = Number(upgrades.engine) || 0;
-  return {
-    ...profile,
-    thrust: profile.thrust * (1 + n * 0.1),
-    maxSpeed: profile.maxSpeed * (1 + n * 0.05),
-  };
+  return item.cost;
 }
 export function placementAhead(body, distance = 5) {
   return {
@@ -157,8 +128,8 @@ export function placementAhead(body, distance = 5) {
     z: body.z - Math.cos(body.face) * MAP.metres(distance),
   };
 }
-// The same footprint/support test runs in the browser and on generated office
-// colliders in the Worker. Full base support, free headroom and nearby placement.
+// The same footprint/support test runs in the browser and on the server's office
+// colliders. Full base support, free headroom and nearby placement.
 export function supportedPlacement(point, colliders, occupied = [], kind = 'dca') {
   const profile = VEHICLES[kind];
   const dca = FIXED_DCA[kind];

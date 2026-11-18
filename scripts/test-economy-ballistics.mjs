@@ -2,18 +2,14 @@ import './normal-dossiers.mjs';
 import assert from 'node:assert/strict';
 import * as T from '../vendor/three.module.min.js';
 import { stepFall, stepBallisticVelocity, toggleParachute, HUMAN_AERO } from '../src/ballistics.ts';
-import { MAP, ACTOR_UNIT } from '../src/scale.ts';
-import { SHOP, supportedPlacement, upgradedVehicle } from '../src/equipment.js';
-import { VEHICLES, vehiclePad, vehicleEntry } from '../src/fleet.js';
-import { createSoul, bodyMotion } from '../src/purgatory-physics.js';
+import { MAP } from '../src/scale.ts';
+import { supportedPlacement } from '../src/equipment.js';
 import { OFFICE_LAYOUT } from '../src/layout.js';
 import { createGraphics } from '../src/graphics.js';
 import { createOffice } from '../src/office.js';
 import { enemyRoute, enemyRoutePosition, PORTALS } from '../src/routes.js';
 import { wavePlan, swarmFrame } from '../src/waves.js';
 import { CombatEffects } from '../src/combat.js';
-import { localDB } from './local-db.mjs';
-import worker from '../worker/index.js';
 const reference = new T.Vector3(820, 0, 0),
   small = reference.clone().multiplyScalar(MAP.ratio);
 for (let i = 0; i < 120; i++) {
@@ -82,177 +78,6 @@ for (const e of rosters) {
     assert.ok(p[1] >= 0.0006 && p[1] <= 2.81);
   }
 }
-const DB = localDB(),
-  realNow = Date.now;
-let now = realNow();
-Date.now = () => now;
-async function api(path, data) {
-  const r = await worker.fetch(
-    new Request('https://test.local/api/' + path, { method: 'POST', body: JSON.stringify(data) }),
-    { DB },
-  );
-  return { status: r.status, body: await r.json() };
-}
-const a = (await api('join', { name: 'A', code: 'ECONOMY' })).body,
-  b = (await api('join', { name: 'B', code: 'ECONOMY' })).body;
-let snap = (await api('sync', { id: a.id, state: a.state })).body;
-assert.equal(snap.dollars, 0);
-assert.equal(snap.equipment.length, 0);
-assert.equal(snap.vehicles.length, 2);
-// Accepted souls credit one shared dollar exactly once, including CAS retries.
-await DB.prepare(
-  "INSERT INTO souls(room,kind,entity,name,place) VALUES('ECONOMY','enemy','reward','Fourmi',1)",
-).run();
-const row = await DB.prepare(
-  "SELECT * FROM souls WHERE room='ECONOMY' AND entity='reward'",
-).first();
-const room = await DB.prepare("SELECT purgatory FROM rooms WHERE code='ECONOMY'").first(),
-  arena = JSON.parse(room.purgatory),
-  soul = createSoul(row, 0, now);
-soul.gone = true;
-arena.bodies = [soul];
-await DB.prepare("UPDATE rooms SET purgatory=? WHERE code='ECONOMY'")
-  .bind(JSON.stringify(arena))
-  .run();
-await Promise.all([
-  api('sync', { id: a.id, state: a.state }),
-  api('sync', { id: b.id, state: b.state }),
-]);
-snap = (await api('sync', { id: a.id, state: a.state })).body;
-assert.equal(snap.dollars, 1);
-assert.equal(
-  (await DB.prepare("SELECT COUNT(*) AS n FROM soul_rewards WHERE room='ECONOMY'").first()).n,
-  1,
-);
-// NPC service advances even when no human is currently in purgatory.
-await DB.prepare(
-  "INSERT INTO souls(room,kind,entity,name,place) VALUES('ECONOMY','enemy','natural','Moucheron',2)",
-).run();
-const naturalRow = await DB.prepare(
-  "SELECT * FROM souls WHERE room='ECONOMY' AND entity='natural'",
-).first();
-const natural = createSoul(naturalRow, 0, now);
-natural.x = 0;
-natural.z = -1;
-const naturalArena = JSON.parse(
-  (await DB.prepare("SELECT purgatory FROM rooms WHERE code='ECONOMY'").first()).purgatory,
-);
-naturalArena.bodies = [natural];
-naturalArena.time = now;
-await DB.prepare("UPDATE rooms SET purgatory=? WHERE code='ECONOMY'")
-  .bind(JSON.stringify(naturalArena))
-  .run();
-for (let i = 0; i < 40; i++) {
-  now += 100;
-  await api('sync', { id: a.id, state: a.state });
-}
-assert.equal(
-  (await api('sync', { id: a.id, state: a.state })).body.dollars,
-  2,
-  'natural Saint Peter service earns one dollar',
-);
-async function ground(player, w, grounded = true) {
-  const snap = (await api('sync', { id: player.id, state: player.state })).body,
-    body = snap.base.bodies.find((b) => b.entity === player.id);
-  Object.assign(body, {
-    x: (w.x - OFFICE_LAYOUT.base.originX) / ACTOR_UNIT,
-    z: (OFFICE_LAYOUT.base.originZ - w.z) / ACTOR_UNIT,
-    y: w.y,
-    vx: 0,
-    vz: 0,
-    grounded,
-    parachute: false,
-  });
-  return { epoch: snap.base.epoch, body: bodyMotion(body) };
-}
-const position = { x: -1.5, y: 0.90005, z: 1.4 },
-  g = await ground(a, { x: -1.5, y: 0.90005, z: 1.415 });
-assert.equal(
-  (await api('buy', { id: a.id, item: 'dca', request: 'insufficient', position, ground: g }))
-    .status,
-  409,
-);
-await DB.prepare("UPDATE rooms SET dollars=100 WHERE code='ECONOMY'").run();
-const purchase = { id: a.id, item: 'dca', request: 'one-deployment', position, ground: g };
-const bought = await Promise.all([api('buy', purchase), api('buy', purchase)]);
-assert.ok(
-  bought.every((r) => r.status === 200),
-  JSON.stringify(bought),
-);
-snap = (await api('sync', { id: a.id, state: a.state })).body;
-assert.equal(snap.dollars, 96);
-assert.equal(snap.equipment.length, 1);
-assert.equal((await api('buy', { ...purchase, request: 'overlap-duplicate' })).status, 409);
-assert.equal(
-  (await api('buy', { id: a.id, item: 'interceptor', request: 'new-aircraft' })).status,
-  200,
-);
-snap = (await api('sync', { id: a.id, state: a.state })).body;
-assert.equal(snap.dollars, 84);
-assert.equal(snap.vehicles.filter((v) => v.type === 'interceptor').length, 1);
-assert.equal(
-  (await api('buy', { id: a.id, item: 'interceptor', request: 'new-aircraft' })).status,
-  200,
-); // exact retry
-await DB.prepare("UPDATE rooms SET dollars=4 WHERE code='ECONOMY'").run();
-const upgradeRace = await Promise.all([
-  api('buy', { id: a.id, item: 'engine', request: 'upgrade-race-a' }),
-  api('buy', { id: b.id, item: 'engine', request: 'upgrade-race-b' }),
-]);
-assert.deepEqual(upgradeRace.map((x) => x.status).sort(), [200, 409]);
-snap = (await api('sync', { id: a.id, state: a.state })).body;
-assert.equal(snap.dollars, 0);
-assert.equal(snap.upgrades.engine, 1);
-assert.ok(upgradedVehicle(VEHICLES.fighter, snap.upgrades).thrust > VEHICLES.fighter.thrust);
-// Every airborne exit is free fall, including a fast bomber gunner. No canopy appears automatically.
-const bomber = snap.vehicles.find((v) => v.type === 'bomber'),
-  entry = vehicleEntry(bomber),
-  boarding = await ground(a, entry);
-const selected = await api('vehicle-select', {
-  id: a.id,
-  vehicle: bomber.id,
-  seat: 'dorsal',
-  ground: boarding,
-});
-assert.equal(selected.status, 200, JSON.stringify(selected.body));
-for (const form of [1, 2])
-  assert.equal(
-    (
-      await api('vehicle-sign', {
-        id: a.id,
-        vehicle: bomber.id,
-        seat: 'dorsal',
-        ground: boarding,
-        form,
-        signature: true,
-      })
-    ).status,
-    200,
-  );
-await DB.prepare('UPDATE vehicles SET state=? WHERE id=?')
-  .bind(
-    JSON.stringify({
-      ...bomber.state,
-      p: [entry.x, 1.8, entry.z],
-      v: [MAP.metres(30), 0, 0],
-      landed: false,
-    }),
-    bomber.id,
-  )
-  .run();
-const exited = await api('vehicle-exit', { id: a.id });
-assert.equal(exited.status, 200);
-const body = exited.body.base.bodies.find((b) => b.entity === a.id);
-assert.equal(body.parachute, false);
-assert.equal(body.grounded, false);
-assert.equal(body.vx, MAP.metres(30) / ACTOR_UNIT);
-await api('reset', { id: a.id });
-snap = (await api('sync', { id: a.id, state: a.state })).body;
-assert.equal(snap.dollars, 0);
-assert.deepEqual(snap.upgrades, {});
-assert.equal(snap.equipment.length, 0);
-assert.ok(!snap.vehicles.some((v) => v.type === 'interceptor'));
-Date.now = realNow;
 console.log(
-  'PASS: stable drag/ballistics, terminal free fall, manual canopy, physical placement on books, persistent flak cleanup, multi-source paths, shared exact-once rewards, idempotent spending, purchase races, unlocks/upgrades, signature acknowledgements, freefall exits and economy reset.',
+  'PASS: stable drag/ballistics, terminal free fall, manual canopy, physical placement on books, persistent flak cleanup and multi-source paths.',
 );

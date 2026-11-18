@@ -2,7 +2,7 @@ import { WALL_SEGMENT, HALF_BRICK, wallLength } from './brick-rules.js';
 import { activeLayout, layoutSolids } from './layouts.js';
 // Deterministic, room-shared ground navigation primitives (office metres).
 // These are independent of the airborne route system. Keep this module free of
-// heavy imports: routes.js (and the historical Worker bundle) inline it.
+// heavy imports: routes.js imports it.
 export const GROUND_BOUNDS = Object.freeze([-4.12, -3.51, 4.12, 3.51]);
 export const GROUND_CELL = 0.05;
 // Where ground insects head for, at the foot of the active layout's bin.

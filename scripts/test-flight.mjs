@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import * as T from '../vendor/three.module.min.js';
 import { stepFlight } from '../src/flight.js';
 import { readPad, deadzone } from '../src/input.js';
-import worker from '../worker/index.js';
+import { ASSETS } from '../server/assets.js';
 const state = () => ({
   q: new T.Quaternion(),
   vel: new T.Vector3(0, 0, -18),
@@ -87,9 +87,7 @@ assert.equal(readPad([{ ...gp, axes: [0.05, -0.05, 0.02] }]).roll, 0);
 buttons[5].value = 1;
 assert.equal(readPad([{ ...gp, axes: [0, 0, 0] }]).yaw, 1);
 for (const path of ['flight', 'input']) {
-  const r = await worker.fetch(new Request('https://test.local/' + path + '.js'), {});
-  assert.equal(r.status, 200);
-  assert.match(await r.text(), /export /);
+  assert.match(ASSETS['/' + path + '.js'] ?? '', /export /);
 }
 console.log(
   'PASS: manual three axes, both full rolls, no auto-level, independent rudder, pitch, stall, damage, combined aerobatics and 60s stability.',

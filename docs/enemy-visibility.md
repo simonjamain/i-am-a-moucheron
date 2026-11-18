@@ -3,8 +3,7 @@
 La composition de vague décrite dans ce lot a ensuite été densifiée : voir
 [les nuées de version 38](dense-swarms.md), 20 moucherons et 4 fourmis au départ.
 
-Le correctif cible le runtime Node/UDP et se livre en sources. Le Site public
-Worker historique n'est pas redéployé avec ce client.
+Le correctif cible le runtime Node/UDP.
 
 ## Défauts reproduits
 
@@ -124,5 +123,4 @@ inclut les tests de dégâts et les deux pairs UDP natifs.
 La projection géométrique n'est pas une observation du confort WebGL : à une
 distance plus grande, dans une autre orientation ou derrière un meuble, la taille
 apparente et l'occultation changent. Aucun affichage à travers les obstacles ni
-marqueur de remplacement n'est introduit. Le Site historique n'est pas redéployé ;
-le ZIP des sources Node/UDP doit être installé, puis serveur et clients relancés.
+marqueur de remplacement n'est introduit. Après déploiement, recharger les clients.

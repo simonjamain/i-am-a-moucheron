@@ -106,17 +106,8 @@ assert.ok(
   'late discovery keeps its actual near-bin position rather than teleporting',
 );
 // The very first join snapshot needs the same anchored clock as later syncs.
-const { default: worker } = await import('../worker/index.js');
-const { localDB } = await import('./local-db.mjs');
-const DB = localDB();
-const joinResponse = await worker.fetch(
-  new Request('https://test/api/join', {
-    method: 'POST',
-    body: JSON.stringify({ name: 'Clock', code: 'ENTRYTIME' }),
-  }),
-  { DB },
-);
-const join = await joinResponse.json();
+const { Game } = await import('../server/game.js');
+const join = new Game({ now: () => 1000 }).join({ name: 'Clock', code: 'ENTRYTIME' });
 assert.ok(join.snapshot.sentAt >= join.snapshot.now);
 const { readFileSync } = await import('node:fs'),
   { default: vm } = await import('node:vm');

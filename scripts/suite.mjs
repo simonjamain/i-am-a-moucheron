@@ -2,7 +2,6 @@
 // Add a new scripts/<name>.mjs here; scripts/test-suite-wiring.mjs checks that every
 // scripts/test-*.mjs file is listed here or in OUTSIDE_SUITE.
 export const SUITE = [
-  'test',
   'test-flight',
   'test-network',
   'test-mouse-flight',
@@ -113,6 +112,7 @@ export const SUITE = [
   'test-laboratory',
   'test-debug-mode',
   'test-wave-preparation',
+  'test-enemy-power',
   'test-wave-forecast-ui',
   'test-ground-paths',
   'test-layouts',

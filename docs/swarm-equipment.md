@@ -23,7 +23,7 @@ stopped. An airborne exit frees only that player, in freefall with a closed cano
 
 ## Difficulty and flock flow
 
-`waves.js` is shared with the Worker. A seeded PRNG keyed by room, wave and start
+`waves.js` is shared by the server and the client. A seeded PRNG keyed by room, wave and start
 time builds a roster from an increasing integer budget. Aerial costs are 1 / 2 / 6 / 12;
 health is 100 / 70 / 400 / 800 PV for midge / mosquito / guard (bee) / brute (beetle).
 Mosquitoes unlock on wave 3, guards on 5, brutes on 8. The former « voltigeur »

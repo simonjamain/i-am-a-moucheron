@@ -43,10 +43,6 @@ dans `src/`, `server/` et `scripts/`. L'état et la prochaine étape sont suivis
 6. **Comportement identique** : une migration ne change ni la logique ni les
    allocations des chemins chauds. Préférer `readonly number[]` à une conversion
    (`Array.from`) quand une fonction reçoit des tableaux.
-7. **Modules inclus dans le Worker historique** (`scale`, `layout`, `routes`,
-   `waves`, `fleet`, `ballistics`, `equipment`… voir `inline()` dans l'assembleur) :
-   garder chaque `import` sur **une seule ligne**, car l'assemblage retire les
-   imports ligne par ligne.
 
 ## Migrer un module
 
@@ -68,5 +64,5 @@ non migré), par lots cohérents, puis remonter vers `client.js` et `server/game
 `docs/code-structure.md` décrivait « JavaScript ESM natif » et `README.md`
 Node 22.13+. La base exige désormais Node 22.18+ (effacement des types activé par
 défaut) et devient mixte JS/TS pendant la migration. Le choix « pas de bundler »
-est conservé : les URL de contenu, le Worker historique et le Dockerfile restent
+est conservé : les URL de contenu et le Dockerfile restent
 identiques ; seule la lecture des sources par l'assembleur change.

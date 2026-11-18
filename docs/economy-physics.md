@@ -5,7 +5,7 @@
 The Node server implements these gameplay rules in RAM, in synchronous domain
 operations, with reliable UDP commands. It needs no database, migrations or disk
 writes. Restart resets every room. SQL/migration and HTTP references below refer
-to the historical Sites backend, retained until VM deployment.
+to the former database-backed model, now abandoned.
 See [UDP server](udp-server.md).
 
 ## Input and signatures
@@ -83,8 +83,8 @@ placements are checked again inside the transaction. A placement must be within
 9 reference metres of an alive grounded walker, have full-base support and free
 headroom, avoid parked aircraft and other installations. A room allows 24 purchased installations in total.
 
-Placement uses the same test in browser and Worker. At assembly, the Worker's
-static collider data is generated from the actual office geometry, including
+Placement uses the same test in browser and server. At assembly, the static
+collider fixture (`OFFICE_SOLIDS`) is generated from the actual office geometry, including
 books and paper stacks. A design edit therefore does not silently leave a second
 hand-maintained server surface list behind. Existing game position reports remain
 client-trusted; this is cooperative-game consistency, not anti-cheat.

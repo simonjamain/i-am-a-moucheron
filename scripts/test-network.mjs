@@ -7,8 +7,7 @@ import {
   CHANNEL_OPTIONS,
   MAX_MESH_PLAYERS,
 } from '../src/network.js';
-import { localDB } from './local-db.mjs';
-import worker from '../worker/index.js';
+import { ASSETS } from '../server/assets.js';
 const motion = (x = 0) => ({
   p: [x, 16, 0],
   q: [0, 0, 0, 1],
@@ -190,61 +189,9 @@ const unsupported = new PeerMotion({
 });
 unsupported.reconcile(['a', 'b']);
 assert.equal(unsupported.peers.size, 0);
-// Real endpoint and SQL tests: mailbox isolation, replay cursor, size/recipient validation.
-const DB = localDB();
-async function api(path, body) {
-  const r = await worker.fetch(
-    new Request('https://test.local/api/' + path, { method: 'POST', body: JSON.stringify(body) }),
-    { DB },
-  );
-  return { status: r.status, body: await r.json() };
-}
-const a = (await api('join', { code: 'RTCQA', name: 'A' })).body,
-  b = (await api('join', { code: 'RTCQA', name: 'B' })).body,
-  c = (await api('join', { code: 'OTHER', name: 'C' })).body;
-const message = { session: 'negotiation-1', description: { type: 'offer', sdp: 'v=0' } };
-assert.equal((await api('signal', { id: a.id, to: b.id, message })).status, 200);
-let inbox = (await api('sync', { id: b.id, state: b.state, signalSince: 0 })).body;
-assert.equal(inbox.signals.length, 1);
-assert.equal(inbox.signals[0].sender, a.id);
-assert.deepEqual(inbox.signals[0].payload, message);
-assert.equal(
-  (await api('sync', { id: a.id, state: a.state, signalSince: 0 })).body.signals.length,
-  0,
-);
-assert.equal(
-  (await api('sync', { id: c.id, state: c.state, signalSince: 0 })).body.signals.length,
-  0,
-);
-assert.equal(
-  (await api('sync', { id: b.id, state: b.state, signalSince: inbox.signals[0].id })).body.signals
-    .length,
-  0,
-);
-assert.equal((await api('signal', { id: a.id, to: c.id, message })).status, 400);
-assert.equal((await api('signal', { id: a.id, to: a.id, message })).status, 400);
-assert.equal(
-  (
-    await api('signal', {
-      id: a.id,
-      to: b.id,
-      message: { session: '1', description: { type: 'offer', sdp: 'x'.repeat(15000) } },
-    })
-  ).status,
-  400,
-);
-const realNow = Date.now;
-Date.now = () => realNow() + 61000;
-assert.equal(
-  (await api('sync', { id: b.id, state: b.state, signalSince: 0 })).body.signals.length,
-  0,
-);
-Date.now = realNow;
-const response = await worker.fetch(new Request('https://test.local/network.js'), {});
-assert.equal(response.status, 200);
-assert.match(await response.text(), /maxRetransmits:\s*0/);
+assert.match(ASSETS['/network.js'] ?? '', /maxRetransmits:\s*0/);
 console.log(
-  'PASS: jitter interpolation, quaternion rotation, bounded prediction, teleports, soul motion, unordered/zero-retry RTC, duplicate/stale rejection, backpressure, fallback, mesh cap, signaling isolation, cursor and TTL.',
+  'PASS: jitter interpolation, quaternion rotation, bounded prediction, teleports, soul motion, unordered/zero-retry RTC, duplicate/stale rejection, backpressure, fallback, mesh cap, signaling.',
 );
 const groundTrack = new MotionTrack(),
   groundState = (x) => ({
