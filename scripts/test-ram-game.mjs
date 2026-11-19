@@ -88,19 +88,22 @@ assert.throws(
 assert.equal(game.snapshot(room).enemyDamage[0] ?? 0, 0);
 // A fixed gun operator reports the wave hits instead; each shot counts once.
 room.pilots.get(a.id).mode = 'turret';
-for (let enemy = 0; enemy < s.total; enemy++) {
+// Any species can open a wave: hit each one until dead (spiders add their brood as they fall).
+let total = 0;
+for (let enemy = 0; enemy < game.plan(room).roster.length; enemy++) {
   const one = 'wave1:' + enemy + ':one';
-  const two = 'wave1:' + enemy + ':two';
   call(a.id, 'hit', { wave: 1, enemy, amount: 75, shot: one });
   call(a.id, 'hit', { wave: 1, enemy, amount: 75, shot: one });
-  call(a.id, 'hit', { wave: 1, enemy, amount: 75, shot: two });
+  for (let n = 0; !room.kills.has(enemy) && n < 400; n++)
+    call(a.id, 'hit', { wave: 1, enemy, amount: 75, shot: 'wave1:' + enemy + ':' + n });
+  total++;
 }
 room.pilots.get(a.id).mode = 'foot';
 s = game.snapshot(room);
 assert.equal(s.phase, 'prep');
 assert.equal(s.dollars, 0, 'no wave stipend: only freed souls pay');
-assert.equal(s.kills.length, firstTotal);
-assert.equal(s.souls.length, Math.min(firstTotal, 24));
+assert.equal(s.kills.length, total);
+assert.equal(s.souls.length, Math.min(total, 24));
 assert.equal(s.enemyDamage[0], 150);
 room.dollars = 30;
 for (const gone of ['engine', 'weapons'])
