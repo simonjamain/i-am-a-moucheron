@@ -157,6 +157,9 @@ export function createGraphics(T, scene) {
       preserveTexture: true,
       turrets: [gunMount(nodes.cannon, nodes.cannonGun, anchors.muzzle[0])],
       trailer: nodes.trailer,
+      // Wheels (parts of the rig): the tractor's six, steered and spun, and the trailer's four.
+      truckWheels: [0, 1, 2, 3, 4, 5].map((i) => nodes['wheel' + i]),
+      trailerWheels: [0, 1, 2, 3].map((i) => nodes['trailerWheel' + i]),
       prop: new T.Object3D(),
       wing: new T.Object3D(),
     };

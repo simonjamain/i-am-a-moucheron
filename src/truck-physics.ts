@@ -1,11 +1,8 @@
-import type {
-  DynamicRayCastVehicleController,
-  RevoluteImpulseJoint,
-  RigidBody,
-} from '@dimforge/rapier3d-compat';
+import type { DynamicRayCastVehicleController, RigidBody } from '@dimforge/rapier3d-compat';
 import { MAP } from './scale.ts';
-import type { VehicleProfile } from './fleet.ts';
-import { BRAKE_PER_DECEL, wheelSteering, type Wheel } from './castor-physics.ts';
+import { TRAILER_LIMITS, type VehicleProfile } from './fleet.ts';
+import { MODEL_DATA } from './meshy-flaktruck-data.js';
+import { wheelSteering, type Wheel } from './castor-physics.ts';
 import {
   FALL_KILL_SPEED,
   MODEL_UNIT,
@@ -18,43 +15,73 @@ import {
 } from './physics-world.ts';
 
 // The anti-air truck on Rapier: a 6x4 tractor and its gun trailer, two rigid bodies
-// joined by a hitch that turns about the vertical axis. Each has its own ray-cast
-// wheels and springs; the tractor steers on its front axle (Ackermann, pivot on the
-// rear tandem) and the trailer follows. The trailer swings, pushes the tractor when
-// braking (its overrun brake only slows it), sways on a bend and jackknifes when
-// reversing: the hitch stops at the same ±0.65 rad the server accepts.
+// joined by a ball hitch (three rotations, each with its own stop: yaw up to 100°, pitch
+// ±26°, roll ±17°). Each has its own ray-cast wheels and springs; the tractor steers on
+// its front axle (Ackermann, pivot on the rear tandem) and the trailer follows. The
+// trailer swings, pitches under acceleration and braking, sways on a bend and jackknifes
+// when reversing. The game's state carries its yaw (`trailerAngle`) and pitch
+// (`trailerPitch`) in the tractor's frame.
 //
 // Scale: a real truck (6 m) and light gun trailer, at the model's 0.28 scale and the
 // same gravity (Froude: mass ∝ size³, speed ∝ √size): 6 t → 130 kg, 1.5 t → 45 kg,
 // 55 km/h empty or 40 km/h towing → 5.8 m/s.
 const MU = MODEL_UNIT;
 
-// Running gear, measured on the model's low vertices (model units): `body` has three
-// axles (z = -3.6, -1.2, -0.2), `trailer` two (z = 1.6, 2.4), wheels at |x| 0.72.
-const HITCH = { x: 0, y: -0.18 * MU, z: 0.98 * MU }; // hinge, in tractor space
-const TRACTOR_WHEELS: readonly Wheel[] = [-3.6, -1.2, -0.2].flatMap((z) =>
-  [-1, 1].map((side) => ({ x: side * 0.72 * MU, y: -0.45 * MU, z: z * MU })),
-);
-const TRAILER_WHEELS: readonly Wheel[] = [1.6, 2.4].flatMap((z) =>
-  [-1, 1].map((side) => ({
-    x: side * 0.75 * MU,
-    y: -0.5 * MU - HITCH.y, // in trailer space (origin on the hitch)
+// Running gear, read from the model (the wheels are parts of its rig, see
+// scripts/split-vehicle-parts.mjs): `wheel0…5` on the tractor (three axles, left then
+// right from the front) and `trailerWheel0…3` on the trailer (two axles).
+const pivot = (name: string): [number, number, number] => {
+  const part = MODEL_DATA.parts.find((p: { part: string }) => p.part === name);
+  if (!part) throw Error('Missing flak truck part ' + name);
+  return part.pivot as [number, number, number];
+};
+const HITCH = {
+  x: 0,
+  y: pivot('trailer')[1] * MU,
+  z: pivot('trailer')[2] * MU,
+}; // hinge, in tractor space
+export const TRACTOR_WHEELS: readonly Wheel[] = [0, 1, 2, 3, 4, 5].map((i) => {
+  const [x, y, z] = pivot('wheel' + i);
+  return { x: x * MU, y: y * MU, z: z * MU };
+});
+// The trailer's wheels rest on the ground when the trailer is level: the physics wheel
+// is as large as the model's and touches the ground, whatever height the mesh floats at.
+export const WHEEL_MODEL_RADIUS = 0.42; // measured on the wheel meshes, in model units
+export const TRAILER_WHEEL_MODEL_RADIUS = 0.35;
+export const WHEEL_RADIUS = WHEEL_MODEL_RADIUS * MU;
+export const TRAILER_WHEEL_RADIUS = TRAILER_WHEEL_MODEL_RADIUS * MU;
+const GROUND_Y = -0.8 * MU;
+export const TRAILER_WHEELS: readonly Wheel[] = [0, 1, 2, 3].map((i) => {
+  const [x, , z] = pivot('trailerWheel' + i);
+  return {
+    x: x * MU,
+    y: GROUND_Y + TRAILER_WHEEL_RADIUS - HITCH.y, // in trailer space (origin on the hitch)
     z: z * MU - HITCH.z,
-  })),
-);
-const WHEEL_RADIUS = 0.35 * MU;
-const TRAILER_WHEEL_RADIUS = 0.3 * MU;
-const FRONT_Z = -3.6 * MU;
-const PIVOT_Z = -0.7 * MU; // middle of the rear tandem
-const WHEELBASE = PIVOT_Z - FRONT_Z;
-export const HITCH_LIMIT = 0.62; // rad: a little inside the server's clamp (0.65)
+  };
+});
+const FRONT_Z = TRACTOR_WHEELS[0].z;
+// The tandem's middle is the pivot of the steering geometry.
+export const PIVOT_Z = (TRACTOR_WHEELS[2].z + TRACTOR_WHEELS[4].z) / 2;
+export const PIVOT_MODEL_Z = PIVOT_Z / MU; // the same, in model units (the renderer's)
+export const WHEELBASE = PIVOT_Z - FRONT_Z;
+// Stops of the ball hitch, a little inside what the game accepts (TRAILER_LIMITS).
+export const HITCH_LIMITS = Object.freeze({
+  yaw: TRAILER_LIMITS.yaw - 0.05,
+  pitch: TRAILER_LIMITS.pitch - 0.05,
+  roll: 0.3,
+});
+
+// Rapier's wheel brake is not a force: it is a friction impulse, so the deceleration of a
+// chassis is the brake value times the wheel count over its mass. Measured on the 130 kg
+// tractor: a brake value b per wheel decelerates by about 4.8·b m/s² (see test-truck-physics.mjs).
+const BRAKE_PER_DECEL = 1 / 4.8;
 
 export const TRUCK_PHYSICS = Object.freeze({
   tractorMass: 130, // kg
   trailerMass: 45, // kg
   tractorCom: -0.3, // model units above the origin: a low centre of mass, no rollover
   trailerCom: -0.2,
-  accel: 2.4, // m/s² at standstill (loaded 6x4)
+  accel: 1.2, // m/s² at standstill (loaded 6x4): calm, the former 2.4 was too brisk
   reverseSpeed: 0.5, // share of the top speed
   brake: 5.5, // m/s² when the throttle opposes the motion
   trailerBrake: 0.5, // share of the braking the trailer's overrun brake adds
@@ -68,12 +95,17 @@ export const TRUCK_PHYSICS = Object.freeze({
   compression: 2.3,
   relaxation: 2.8,
   trailerStiffness: 60,
-  topMargin: 1.06,
+  topMargin: 1.03,
   lift: 0.18, // model units: spring top above the wheel centre
-  ride: 0.054, // model units added to the spring length, to offset the sag: the hull rests at the model's ride height
-  linearDamping: 0.05,
+  ride: 0.084, // model units added to the spring length, to offset the sag: the hull rests at the model's ride height
+  trailerRide: 0.01, // same for the trailer's wheels: the trailer rests level
+  linearDamping: 0.01, // small: at the doubled top speed the drag would eat half the thrust
   angularDamping: 1,
   hitchDamping: 0.6, // N·m·s/rad of friction in the hitch (keeps the trailer from ringing)
+  hitchSpring: 40, // N·m/rad: a sway-control hitch pulls the trailer back in line (a trailer is
+  // unstable backwards, and the short drawbar makes it fast); weak enough to jackknife
+  hitchStop: 4000, // N·m/rad: stiffness of the hitch stops
+  hitchStopDamping: 180, // N·m·s/rad: damping of the stops
 });
 export type TruckParams = typeof TRUCK_PHYSICS;
 
@@ -93,15 +125,16 @@ export interface TruckState {
   gas?: number;
   landed?: boolean;
   fuelAvailable?: boolean;
+  /** Yaw of the trailer in the tractor's frame (rad, positive to the left). */
   trailerAngle?: number;
+  /** Pitch of the trailer in the tractor's frame (rad, positive nose up). */
+  trailerPitch?: number;
 }
 export interface TruckControls {
   forward?: number;
   turn?: number;
 }
 
-const yawOf = (q: { x: number; y: number; z: number; w: number }): number =>
-  Math.atan2(2 * (q.w * q.y + q.x * q.z), 1 - 2 * (q.y * q.y + q.z * q.z));
 const compose = (
   a: { x: number; y: number; z: number; w: number },
   b: { x: number; y: number; z: number; w: number },
@@ -117,6 +150,26 @@ const yawQuaternion = (angle: number) => ({
   z: 0,
   w: Math.cos(angle / 2),
 });
+const pitchQuaternion = (angle: number) => ({
+  x: Math.sin(angle / 2),
+  y: 0,
+  z: 0,
+  w: Math.cos(angle / 2),
+});
+const rollQuaternion = (angle: number) => ({
+  x: 0,
+  y: 0,
+  z: Math.sin(angle / 2),
+  w: Math.cos(angle / 2),
+});
+type Quat = { x: number; y: number; z: number; w: number };
+const conjugate = (q: Quat): Quat => ({ x: -q.x, y: -q.y, z: -q.z, w: q.w });
+// Rotation = yaw (about Y) · pitch (about X) · roll (about Z): three.js's 'YXZ' order.
+const eulerYXZ = (q: Quat) => ({
+  yaw: Math.atan2(2 * (q.x * q.z + q.w * q.y), 1 - 2 * (q.x * q.x + q.y * q.y)),
+  pitch: Math.asin(Math.max(-1, Math.min(1, -2 * (q.y * q.z - q.w * q.x)))),
+  roll: Math.atan2(2 * (q.x * q.y + q.w * q.z), 1 - 2 * (q.x * q.x + q.z * q.z)),
+});
 
 export class TruckRig {
   params: TruckParams;
@@ -125,7 +178,6 @@ export class TruckRig {
   trailer: RigidBody;
   tractorWheels: DynamicRayCastVehicleController;
   trailerWheels: DynamicRayCastVehicleController;
-  hitch: RevoluteImpulseJoint;
   steer = 0;
   /** Last state written back, to detect a teleport. */
   pose: { p: number[]; q: number[] } | null = null;
@@ -185,26 +237,27 @@ export class TruckRig {
         .setRestitution(0),
       this.trailer,
     );
-    // The hitch turns about the vertical axis only, within the limit.
-    this.hitch = world.createImpulseJoint(
-      RAPIER.JointData.revolute(HITCH, { x: 0, y: 0, z: 0 }, { x: 0, y: 1, z: 0 }),
+    // A ball hitch: the stops on each rotation are soft torques, applied in step().
+    const joint = world.createImpulseJoint(
+      RAPIER.JointData.spherical(HITCH, { x: 0, y: 0, z: 0 }),
       this.tractor,
       this.trailer,
       true,
-    ) as RevoluteImpulseJoint;
-    this.hitch.setLimits(-HITCH_LIMIT, HITCH_LIMIT);
-    this.hitch.setContactsEnabled(false);
+    );
+    joint.setContactsEnabled(false);
     this.tractorWheels = this.addWheels(
       world.createVehicleController(this.tractor),
       TRACTOR_WHEELS,
       WHEEL_RADIUS,
       params.stiffness,
+      params.ride,
     );
     this.trailerWheels = this.addWheels(
       world.createVehicleController(this.trailer),
       TRAILER_WHEELS,
       TRAILER_WHEEL_RADIUS,
       params.trailerStiffness,
+      params.trailerRide,
     );
   }
 
@@ -213,6 +266,7 @@ export class TruckRig {
     wheels: readonly Wheel[],
     radius: number,
     stiffness: number,
+    ride: number,
   ): DynamicRayCastVehicleController {
     const params = this.params;
     // The wheel mounts sit above the rest height by the spring's sag, so that the
@@ -223,7 +277,7 @@ export class TruckRig {
         { x: w.x, y: w.y + lift, z: w.z },
         { x: 0, y: -1, z: 0 },
         { x: 1, y: 0, z: 0 },
-        lift + (0.04 + params.ride) * MU,
+        lift + (0.04 + ride) * MU,
         radius,
       );
     for (let i = 0; i < wheels.length; i++) {
@@ -254,7 +308,8 @@ export class TruckRig {
     )
       return;
     const q = { x: state.q[0], y: state.q[1], z: state.q[2], w: state.q[3] },
-      angle = Math.max(-HITCH_LIMIT, Math.min(HITCH_LIMIT, state.trailerAngle || 0)),
+      yaw = Math.max(-HITCH_LIMITS.yaw, Math.min(HITCH_LIMITS.yaw, state.trailerAngle || 0)),
+      pitch = Math.max(-HITCH_LIMITS.pitch, Math.min(HITCH_LIMITS.pitch, state.trailerPitch || 0)),
       v = { x: toPhysics(state.v[0]), y: toPhysics(state.v[1]), z: toPhysics(state.v[2]) },
       hinge = rotate(q, HITCH);
     this.tractor.setTranslation({ x: p[0], y: p[1], z: p[2] }, true);
@@ -262,7 +317,7 @@ export class TruckRig {
     this.tractor.setLinvel(v, true);
     this.tractor.setAngvel({ x: 0, y: 0, z: 0 }, true);
     this.trailer.setTranslation({ x: p[0] + hinge.x, y: p[1] + hinge.y, z: p[2] + hinge.z }, true);
-    this.trailer.setRotation(compose(q, yawQuaternion(angle)), true);
+    this.trailer.setRotation(compose(compose(q, yawQuaternion(yaw)), pitchQuaternion(pitch)), true);
     this.trailer.setLinvel(v, true);
     this.trailer.setAngvel({ x: 0, y: 0, z: 0 }, true);
     this.steer = 0;
@@ -319,17 +374,13 @@ export class TruckRig {
       this.tractorWheels.setWheelSteering(i, wheelSteering(this.steer, wheel, PIVOT_Z, WHEELBASE));
     });
     TRAILER_WHEELS.forEach((_, i) => {
-      this.trailerWheels.setWheelBrake(i, brake * params.trailerBrake * BRAKE_PER_DECEL);
+      this.trailerWheels.setWheelBrake(
+        i,
+        brake * params.trailerBrake * BRAKE_PER_DECEL * (params.trailerMass / params.tractorMass),
+      );
     });
 
-    // Friction in the hitch: a torque against the relative yaw rate.
-    const wt = this.tractor.angvel(),
-      wr = this.trailer.angvel(),
-      relative = (wr.y - wt.y) * params.hitchDamping;
-    this.trailer.resetTorques(true);
-    this.tractor.resetTorques(true);
-    this.trailer.addTorque({ x: 0, y: -relative, z: 0 }, true);
-    this.tractor.addTorque({ x: 0, y: relative, z: 0 }, true);
+    this.hitchTorques();
 
     this.tractorWheels.updateVehicle(dt);
     this.trailerWheels.updateVehicle(dt);
@@ -347,8 +398,8 @@ export class TruckRig {
       state.hp = 0;
     this.fallSpeed = lv.y;
     this.pose = { p: [t.x, t.y, t.z], q: [r.x, r.y, r.z, r.w] };
-    // Trailer angle: its yaw relative to the tractor, in the tractor's frame.
-    const rel = compose({ x: -r.x, y: -r.y, z: -r.z, w: r.w }, tq);
+    // The trailer's yaw and pitch relative to the tractor, in the tractor's frame.
+    const hitch = eulerYXZ(compose(conjugate(r), tq));
     Object.assign(state, {
       p: [toWorld(t.x), toWorld(t.y), toWorld(t.z)],
       q: [r.x, r.y, r.z, r.w],
@@ -356,9 +407,51 @@ export class TruckRig {
       omega: [av.x, av.y, av.z],
       gas: Math.abs(throttle),
       landed: contacts >= 4,
-      trailerAngle: Math.max(-HITCH_LIMIT, Math.min(HITCH_LIMIT, yawOf(rel))),
+      trailerAngle: Math.max(-TRAILER_LIMITS.yaw, Math.min(TRAILER_LIMITS.yaw, hitch.yaw)),
+      trailerPitch: Math.max(-TRAILER_LIMITS.pitch, Math.min(TRAILER_LIMITS.pitch, hitch.pitch)),
     });
     this.pose.p = state.p.map(toPhysics);
+  }
+
+  // Friction and stops of the ball hitch, as torques on the two bodies about the axes of the
+  // yaw · pitch · roll decomposition of the trailer's rotation in the tractor's frame.
+  private hitchTorques(): void {
+    const params = this.params,
+      tractor = this.tractor,
+      trailer = this.trailer;
+    tractor.resetTorques(true);
+    trailer.resetTorques(true);
+    const r = tractor.rotation(),
+      angles = eulerYXZ(compose(conjugate(r), trailer.rotation())),
+      wt = tractor.angvel(),
+      wr = trailer.angvel(),
+      spin = { x: wr.x - wt.x, y: wr.y - wt.y, z: wr.z - wt.z };
+    const yawFrame = compose(r, yawQuaternion(angles.yaw)),
+      pitchFrame = compose(yawFrame, pitchQuaternion(angles.pitch));
+    const axes = [
+      { angle: angles.yaw, limit: HITCH_LIMITS.yaw, axis: rotate(r, { x: 0, y: 1, z: 0 }) },
+      {
+        angle: angles.pitch,
+        limit: HITCH_LIMITS.pitch,
+        axis: rotate(yawFrame, { x: 1, y: 0, z: 0 }),
+      },
+      {
+        angle: angles.roll,
+        limit: HITCH_LIMITS.roll,
+        axis: rotate(pitchFrame, { x: 0, y: 0, z: 1 }),
+      },
+    ];
+    axes.forEach(({ angle, limit, axis }, index) => {
+      const rate = spin.x * axis.x + spin.y * axis.y + spin.z * axis.z;
+      let torque = -params.hitchDamping * rate;
+      if (index === 0) torque -= params.hitchSpring * angle;
+      const excess = Math.abs(angle) - limit;
+      if (excess > 0)
+        torque -= Math.sign(angle) * params.hitchStop * excess + params.hitchStopDamping * rate;
+      const push = { x: axis.x * torque, y: axis.y * torque, z: axis.z * torque };
+      trailer.addTorque(push, true);
+      tractor.addTorque({ x: -push.x, y: -push.y, z: -push.z }, true);
+    });
   }
 
   dispose(): void {

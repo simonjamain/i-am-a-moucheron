@@ -164,8 +164,18 @@ import { HEAVY, TANK_MG, availableShell, heavyInterval } from '/armament.js';
 import { loadRapier } from '/physics-world.js';
 import { CastorRig } from '/castor-physics.js';
 import { TankRig } from '/tank-physics.js';
-import { TruckRig } from '/truck-physics.js';
-import { animateCastorWheels, trackGroundMotion } from '/castor-wheels.js';
+import {
+  PIVOT_MODEL_Z as TRUCK_STEER_PIVOT,
+  TRAILER_WHEEL_MODEL_RADIUS as TRAILER_WHEEL_RADIUS,
+  TruckRig,
+  WHEEL_MODEL_RADIUS as TRUCK_WHEEL_RADIUS,
+} from '/truck-physics.js';
+import {
+  animateCastorWheels,
+  animateRollingWheels,
+  animateSteeredWheels,
+  trackGroundMotion,
+} from '/castor-wheels.js';
 import { ServiceZones, serviceZoneList } from '/service-zones.js';
 import { EngineSmoke, damageRatio } from '/engine-smoke.js';
 import { shopColumns } from '/shop-catalog.js';
@@ -705,6 +715,7 @@ function localMotion() {
     landed,
     gas,
     trailerAngle: myVehicle?.state.trailerAngle || 0,
+    trailerPitch: myVehicle?.state.trailerPitch || 0,
     omega: omega.toArray(),
     turret: turretIndex,
     turretDirection: weaponDirection().toArray(),
@@ -3803,7 +3814,30 @@ function updateOthers(dt) {
       else g.position.lerp(pos, 1 - Math.exp(-24 * dt));
       g.quaternion.slerp(new T.Quaternion().fromArray(motion.q), 1 - Math.exp(-24 * dt));
     }
-    if (g.userData.trailer) g.userData.trailer.rotation.y = motion.trailerAngle || 0;
+    if (g.userData.trailer)
+      g.userData.trailer.rotation.set(motion.trailerPitch || 0, motion.trailerAngle || 0, 0, 'YXZ');
+    if (g.userData.truckWheels) {
+      const forward = new T.Vector3(0, 0, -1).applyQuaternion(g.quaternion);
+      const velocity = isSelf ? vel : new T.Vector3().fromArray(motion.v);
+      const ground = trackGroundMotion(
+        (g.userData.wheelMemory ??= {}),
+        Math.atan2(-forward.x, -forward.z),
+        velocity.dot(forward),
+        dt,
+      );
+      animateSteeredWheels(
+        g.userData.truckWheels,
+        ground,
+        { scale: ACTOR_UNIT, pivotZ: TRUCK_STEER_PIVOT, radius: TRUCK_WHEEL_RADIUS },
+        dt,
+      );
+      animateRollingWheels(
+        g.userData.trailerWheels,
+        ground.forwardSpeed * Math.cos(motion.trailerAngle || 0),
+        { scale: ACTOR_UNIT, radius: TRAILER_WHEEL_RADIUS },
+        dt,
+      );
+    }
     if (g.userData.wheels) {
       const forward = new T.Vector3(0, 0, -1).applyQuaternion(g.quaternion);
       const velocity = isSelf ? vel : new T.Vector3().fromArray(motion.v);
@@ -4363,7 +4397,8 @@ function physics(dt) {
     me.quaternion.fromArray(state.q);
     vel.fromArray(state.v);
     myVehicle.state.trailerAngle = state.trailerAngle || 0;
-    if (me.userData.trailer) me.userData.trailer.rotation.y = state.trailerAngle || 0;
+    myVehicle.state.trailerPitch = state.trailerPitch || 0;
+    me.userData.trailer?.rotation.set(state.trailerPitch || 0, state.trailerAngle || 0, 0, 'YXZ');
     landed = state.landed;
     gas = state.gas;
     shooting =

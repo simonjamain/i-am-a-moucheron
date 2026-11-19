@@ -82,3 +82,59 @@ export function animateCastorWheels(
     axle.rotation.y = steer;
   }
 }
+
+// Wheels of a vehicle that steers on a chosen pivot (the anti-air truck): each wheel
+// rolls along the velocity of its own contact point, so its steering angle and spin
+// follow from the vehicle's speed and yaw rate alone (no extra network data) and match
+// the physics' Ackermann geometry. wheel: { x, z } in model units, forward is -z.
+// Returns the steering angle (positive to the left, folded into ±90°) and the spin
+// increment around the axle (negative = rolling forward) for dt seconds.
+export function steeredWheelPose(
+  wheel: { x: number; z: number },
+  { forwardSpeed, yawRate }: GroundMotion,
+  { scale, pivotZ, radius }: { scale: number; pivotZ: number; radius: number },
+  dt: number,
+): WheelPose {
+  const across = -yawRate * (wheel.z - pivotZ) * scale, // to the left
+    ahead = forwardSpeed + yawRate * wheel.x * scale;
+  const speed = Math.hypot(across, ahead);
+  if (speed < 1e-6) return { spin: 0, steer: 0 };
+  let steer = Math.atan2(across, ahead),
+    sign = 1;
+  if (Math.abs(steer) > Math.PI / 2) {
+    steer -= Math.sign(steer) * Math.PI; // rolling backwards: the wheel points the other way
+    sign = -1;
+  }
+  // `+ 0` turns a negative zero into zero.
+  return { spin: ((-sign * speed) / (radius * scale)) * dt, steer: steer + 0 };
+}
+
+export function animateSteeredWheels(
+  wheels: readonly THREE.Object3D[],
+  motion: GroundMotion,
+  options: { scale: number; pivotZ: number; radius: number },
+  dt: number,
+): void {
+  for (const axle of wheels) {
+    const { spin, steer } = steeredWheelPose(
+      { x: axle.position.x, z: axle.position.z },
+      motion,
+      options,
+      dt,
+    );
+    axle.rotation.order = 'YXZ';
+    axle.rotation.x = (axle.rotation.x + spin) % (2 * Math.PI);
+    axle.rotation.y = steer;
+  }
+}
+
+// Wheels that only roll (a trailer's): spin from the speed along their own heading.
+export function animateRollingWheels(
+  wheels: readonly THREE.Object3D[],
+  forwardSpeed: number,
+  { scale, radius }: { scale: number; radius: number },
+  dt: number,
+): void {
+  const spin = (-forwardSpeed / (radius * scale)) * dt;
+  for (const axle of wheels) axle.rotation.x = (axle.rotation.x + spin) % (2 * Math.PI);
+}

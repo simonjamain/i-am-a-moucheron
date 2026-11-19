@@ -29,6 +29,7 @@ import {
   vehicleAccess,
   leftVehiclePad,
   vehicleMaxHP,
+  TRAILER_LIMITS,
 } from '../src/fleet.ts';
 import { AIRDROP_KINDS, airdropCommand, airdropSurface, headingOf } from '../src/airdrop.js';
 import { baseWorld, baseBody, reconcileBase } from '../src/base.js';
@@ -1115,7 +1116,10 @@ export class Game {
           ? s.omega
           : old.omega || [0, 0, 0],
       trailerAngle: Number.isFinite(s.trailerAngle)
-        ? Math.max(-0.65, Math.min(0.65, s.trailerAngle))
+        ? Math.max(-TRAILER_LIMITS.yaw, Math.min(TRAILER_LIMITS.yaw, s.trailerAngle))
+        : 0,
+      trailerPitch: Number.isFinite(s.trailerPitch)
+        ? Math.max(-TRAILER_LIMITS.pitch, Math.min(TRAILER_LIMITS.pitch, s.trailerPitch))
         : 0,
       landed: flying ? !!s.landed : !!old.landed,
       aimPoint:
