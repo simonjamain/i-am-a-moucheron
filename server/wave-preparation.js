@@ -101,6 +101,7 @@ export function prepareRoster(wave, balance, draw = randomInt, players = 1) {
         Math.floor(remaining / ENEMY_TYPES[type].power),
       ),
     );
+  const full = new Set();
   pack('ant', opening('ant', 0.25), 0);
   pack('midge', opening('midge', 0.35), 1 + draw(2));
   while (remaining > 0) {
@@ -109,8 +110,11 @@ export function prepareRoster(wave, balance, draw = randomInt, players = 1) {
     // becomes one colossus, a pack of the strongest species with boosted HP.
     if (slots <= 0) break;
     // Reserve room for the most expensive species and a remainder of single-point insects.
-    const spare = slots - Math.floor(remaining / maxPower) - maxPower;
-    const eligible = types.filter((type) => ENEMY_TYPES[type].power <= remaining);
+    // Whole slots only: powers are fractional but a count never is.
+    const spare = slots - Math.floor(remaining / maxPower) - Math.ceil(maxPower);
+    const eligible = types.filter(
+      (type) => ENEMY_TYPES[type].power <= remaining && !full.has(type),
+    );
     // Powers are fractional: stop once the remainder cannot buy the weakest species.
     if (!eligible.length) break;
     const open = eligible.filter(
@@ -132,7 +136,9 @@ export function prepareRoster(wave, balance, draw = randomInt, players = 1) {
       packSize(type, budget, draw),
     );
     if (SWARM_TYPES.has(type) && count < PACKS[type].min && packs.some((p) => p.type === type)) {
-      grow(type, count);
+      // A swarm never outgrows its maximum: that species is done for this wave.
+      if (packs.findLast((p) => p.type === type).count + count > PACKS[type].max) full.add(type);
+      else grow(type, count);
       continue;
     }
     // Single strong enemies arrive in bunches, packs one after the other.

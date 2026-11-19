@@ -34,7 +34,7 @@ export const BALANCE_FIELDS = Object.freeze({
     label: 'Multiplicateur de vague (g)',
     min: 1,
     step: 0.05,
-    value: 1.2,
+    value: 1.5,
     when: 'Prochaine vague encore à tirer',
   },
   firstWavePower: {

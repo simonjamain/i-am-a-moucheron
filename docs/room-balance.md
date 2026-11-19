@@ -29,7 +29,7 @@ espèces n'existent plus.
 
 | Règle           | Valeur                                                                      |
 | --------------- | --------------------------------------------------------------------------- |
-| Budget de vague | `W(1) × g^(n−1) × N^e`, sans plafond (défauts 32, 1,2, 0,9)                 |
+| Budget de vague | `W(1) × g^(n−1) × N^e`, sans plafond (défauts 32, 1,5, 0,9)                 |
 | Joueurs `N`     | pilotes de la room, purgatoire compris, relevés au tirage de la vague       |
 | Récompense      | puissance de l'espèce par âme libérée × réglage `rewards` ; plus de prime   |
 | Dégâts poubelle | puissance de l'ennemi qui l'atteint ; défaite à 20 d'infestation            |
@@ -37,7 +37,7 @@ espèces n'existent plus.
 
 Réglages de `BALANCE_FIELDS` ajoutés, validés par `validateBalance` (pas de plafond) :
 `waveGrowth` (g, min 1, pas 0,05), `firstWavePower` (W(1), min 1, pas 1) et
-`playerExponent` (e, min 0, pas 0,05). `scripts/test-enemy-power.mjs` couvre formule,
+`playerExponent` (e, min 0, pas 0,05). Avec g = 1,5, le plafond technique de 900 ennemis est atteint vers la vague 9 ; au-delà, la puissance restante va au colosse, sans plafond de puissance. `scripts/test-enemy-power.mjs` couvre formule,
 étalon, descendance, budget, récompenses et dégâts.
 
 Pour tester sans contraintes de jeu, utiliser l’interrupteur direct du

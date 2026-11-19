@@ -56,10 +56,10 @@ for (const wave of [1, 2, 5, 10, 15, 100])
       if (g.type === 'brute') assert.ok(g.count <= 2);
       assert.ok(g.count <= PACKS[g.type].max + PACKS[g.type].min, g.type + ' pack size');
     }
-    // Beyond the 900-enemy ceiling (wave 20+) the frise is not meant to stay short.
-    // Main measured a max of 64 groups before the power unit; 80 still catches a
-    // regression to one-enemy-per-group (hundreds of groups).
-    if (wave <= 20)
+    // The 900-enemy ceiling is reached around wave 9 (growth 1.5): beyond it the
+    // frise is not meant to stay short, strong species keep their small packs.
+    // Below it, 80 still catches a regression to one-enemy-per-group.
+    if (wave <= 8)
       assert.ok(
         groups.length <= 80,
         `few groups: ${groups.length} (wave ${wave}, draw ${drawIndex}; seeds start at index 2)`,
