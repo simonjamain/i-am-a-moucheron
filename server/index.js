@@ -2,9 +2,11 @@ import http from 'node:http';
 import { pathToFileURL } from 'node:url';
 import { PeerConnection } from 'node-datachannel';
 import { WebSocketServer } from 'ws';
-import { ASSETS, BUILD_VERSION } from './assets.js';
+import { ASSETS, BUILD_VERSION, GAME_VERSION } from './assets.js';
 import { Game, SNAPSHOT_SHARE_MS } from './game.js';
 import { GameSession } from './session.js';
+import { StatsLedger } from './stats.ts';
+import { STATS_PAGE } from './stats-page.ts';
 import { encodeMotionBatch, encodeMotionState } from '../src/motion-wire.ts';
 
 // Shared motion batches: flush period and per-receiver congestion limit.
@@ -22,7 +24,12 @@ import {
 
 export function createGameServer({
   Peer = PeerConnection,
-  game = new Game({ snapshotShareMs: SNAPSHOT_SHARE_MS, resumable: true }),
+  game = new Game({
+    snapshotShareMs: SNAPSHOT_SHARE_MS,
+    resumable: true,
+    stats: new StatsLedger({ version: GAME_VERSION, file: process.env.STATS_FILE || null }),
+  }),
+  statsToken = process.env.STATS_TOKEN || '',
   portBegin = 41000,
   portEnd = 41099,
   // Single shared UDP port for every connection (ICE UDP mux): 0 = port range.
@@ -118,6 +125,30 @@ export function createGameServer({
           tcpFallback: tcpFallback,
           tcpConnections: [...connections].filter((c) => c.transport === 'tcp').length,
         });
+      if (path === '/stats' || path === '/stats.json') {
+        // Optional shared secret (STATS_TOKEN): the figures hold no player name.
+        const query = new URL(req.url, 'http://localhost').searchParams;
+        const bearer = String(req.headers.authorization || '').replace(/^Bearer /, '');
+        if (statsToken && query.get('token') !== statsToken && bearer !== statsToken)
+          return json(res, 401, { error: 'Jeton de statistiques requis.' });
+        if (path === '/stats') {
+          res.writeHead(200, {
+            'content-type': 'text/html; charset=utf-8',
+            'cache-control': 'no-store',
+          });
+          return res.end(STATS_PAGE);
+        }
+        const version = Number(query.get('version'));
+        return json(
+          res,
+          200,
+          game.stats.report({
+            ...(Number.isFinite(version) && version > 0 ? { version } : {}),
+            n: /^\d+-\d+$/.test(query.get('n') || '') ? query.get('n') : 'all',
+            wave: /^\d+-\d+$/.test(query.get('wave') || '') ? query.get('wave') : 'all',
+          }),
+        );
+      }
       if (path.startsWith('/api/'))
         return json(res, 410, {
           error: 'Ce serveur accepte les actions de jeu uniquement sur UDP.',
@@ -407,6 +438,9 @@ export function createGameServer({
     game.sweep();
   }, 250);
   tick.unref();
+  // Statistics reach STATS_FILE (when set) every 30 s and when the server stops.
+  const statsTimer = setInterval(() => game.stats.save(), 30_000);
+  statsTimer.unref();
   return {
     server,
     game,
@@ -415,6 +449,8 @@ export function createGameServer({
     close: async () => {
       clearInterval(tick);
       clearInterval(motionTimer);
+      clearInterval(statsTimer);
+      game.stats.save(true);
       for (const c of [...connections]) c.close();
       sockets?.close();
       await new Promise((resolve) => server.close(resolve));
