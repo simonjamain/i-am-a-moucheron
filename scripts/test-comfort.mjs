@@ -1,6 +1,5 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { execFileSync } from 'node:child_process';
 import * as T from '../vendor/three.module.min.js';
 import { Game } from '../server/game.js';
 import { VEHICLES, vehiclePad, vehicleEntry, vehicleAccess } from '../src/fleet.js';
@@ -144,33 +143,4 @@ assert.match(client, /phase === 'lost'\) return action\('reset'/);
 assert.match(client, /x !== 'radar'/);
 console.log(
   'Comfort: rounded H2 landing/access, repairs all hulls/overlap/full/departure/destruction, concurrent reset, explicit enemy speeds and moving shot endpoints passed.',
-);
-// Exercise the real staged-index guard in a disposable repository.
-const { mkdtempSync, writeFileSync, rmSync } = await import('node:fs');
-const { tmpdir } = await import('node:os');
-const { resolve, join } = await import('node:path');
-const repo = mkdtempSync(join(tmpdir(), 'moucheron-version-'));
-const check = resolve('scripts/check-version.mjs');
-try {
-  const git = (...args) => execFileSync('git', args, { cwd: repo, stdio: 'pipe' });
-  git('init');
-  git('config', 'user.name', 'Test');
-  git('config', 'user.email', 'test@example.invalid');
-  writeFileSync(join(repo, 'VERSION'), '36\n');
-  git('add', 'VERSION');
-  git('commit', '-m', 'baseline');
-  assert.throws(() => execFileSync(process.execPath, [check], { cwd: repo, stdio: 'pipe' }));
-  writeFileSync(join(repo, 'VERSION'), '37\n');
-  git('add', 'VERSION');
-  execFileSync(process.execPath, [check], { cwd: repo, stdio: 'pipe' });
-  git('commit', '-m', 'concurrent baseline');
-  assert.throws(() => execFileSync(process.execPath, [check], { cwd: repo, stdio: 'pipe' }));
-  writeFileSync(join(repo, 'VERSION'), '38\n');
-  git('add', 'VERSION');
-  execFileSync(process.execPath, [check], { cwd: repo, stdio: 'pipe' });
-} finally {
-  rmSync(repo, { recursive: true, force: true });
-}
-console.log(
-  'Version guard: rejects missing increment, accepts next, rejects old number after synchronization.',
 );

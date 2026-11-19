@@ -64,7 +64,7 @@ en CI (job `Full game regression and formatting`) ; les données générées
 Le job `Docker build` démarre l'image construite et vérifie `/healthz`
 (`ok`, `storage=ram`, `transport=webrtc-udp`) et le 410 de `/api/join` : il prouve
 que l'image démarre, pas les pairs UDP dans le conteneur, WebGL ni le WAN.
-`check:version` n'est pas exécuté en CI (il compare l'index à `HEAD`).
+`check:version` compare l'index à `HEAD` (hook pre-commit) ; en CI des PR, `check:version --base origin/<cible>` (job `Full game regression and formatting`) échoue si `VERSION` n'est pas supérieur à celui de la branche cible. `test-version-guard.mjs` exerce les deux modes. Le job de benchmark ne relance plus `test-ram-game`/`test-motion-capacity`, déjà dans `npm test`.
 
 Scénarios navigateur réel : `npm run e2e` (Chromium Playwright, WebRTC UDP puis repli
 TCP : reprise de pilote, mouvements partagés entre deux pages, chute vue

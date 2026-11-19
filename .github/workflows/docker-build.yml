@@ -73,10 +73,6 @@ jobs:
         run: npm ci
       - name: Build game assets
         run: node scripts/assemble.mjs
-      - name: Run 50-player snapshot regression
-        run: node scripts/test-ram-game.mjs
-      - name: Verify crowded-room motion relay behavior
-        run: node scripts/test-motion-capacity.mjs
       - name: Compare baseline and current snapshot CPU time
         run: node scripts/benchmark-snapshot-50.mjs
       - name: Compare 50-player motion handling CPU time
@@ -157,7 +153,13 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
+          fetch-depth: 0
           persist-credentials: false
+      - name: Check VERSION is above the target branch
+        if: github.event_name == 'pull_request'
+        run: |
+          git fetch --no-tags origin "${{ github.base_ref }}"
+          node scripts/check-version.mjs --base "origin/${{ github.base_ref }}"
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
