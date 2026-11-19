@@ -6,9 +6,7 @@ aux migrations, à la persistance et aux requêtes HTTP ci-dessous décrivent l�
 modèle à base de données, abandonné. Voir [serveur UDP](udp-server.md).
 
 Référence du lot du 29 octobre 2026. Les modules `logistics.js` et
-`vehicle-livery.js` portent les règles communes. Migration :
-`0011_logistics_contracts.sql`. Les anciennes salles sont conservées ; leurs
-appareils reçoivent des réserves pleines à leur première lecture avec cette version.
+`vehicle-livery.js` portent les règles communes. Les données vivent en RAM (plus de migration SQL depuis le retrait du Worker/D1).
 
 ## Véhicules identifiables
 
