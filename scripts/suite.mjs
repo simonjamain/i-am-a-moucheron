@@ -159,6 +159,7 @@ export const SUITE = [
   'test-bed-model',
   'test-tracer-contrast',
   'test-udp-mux',
+  'test-version-guard',
   'test-suite-wiring',
   'test-registries',
   'test-typescript',
