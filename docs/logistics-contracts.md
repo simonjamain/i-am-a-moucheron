@@ -92,7 +92,7 @@ lente allonge la durée du stock sans en changer la capacité.
 ## Ravitaillement et installations
 
 Une station gratuite est disponible à Alpha dès le départ, avec un cercle de
-service de **0,12 m réel** de rayon, adapté au bombardier. Elle n’est pas un achat
+service de **0,50 m réel** de rayon, comme le Castor. Elle n’est pas un achat
 et ne compte pas dans le prix des suivantes. Un avion vivant doit être posé,
 au niveau du support et arrêté (tolérance numérique de 0,001 m/s de référence).
 Un survol ou un roulage ne remplit rien. Chaque avion peut être servi en même

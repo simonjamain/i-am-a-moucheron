@@ -162,8 +162,8 @@ Le budget est partagé équitablement entre les véhicules éligibles quand la c
 Le moteur `advancePaidService()` accepte l'état de défense terrestre de la room.
 Il inclut les segments de barricade encore intacts mais endommagés dans le même
 budget d'entretien que les véhicules et applique le même tarif proportionnel
-`SERVICE_RATES.hp` (**1 $ / 100 PV**). Une station de service répare dans une
-sphère de 0,12 m et un Castor vivant dans une sphère de 0,50 m, distance mesurée
+`SERVICE_RATES.hp` (**1 $ / 100 PV**). Une station de service et un Castor vivant réparent dans
+une même sphère de 0,50 m, distance mesurée
 jusqu'au point le plus proche du segment. La réparation va au plus à 10 % des PV
 max par seconde, sans dépasser la santé maximale ni la caisse commune.
 La révision de défense est incrémentée seulement lorsqu'au moins un PV est rendu ;

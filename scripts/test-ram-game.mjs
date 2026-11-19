@@ -164,7 +164,7 @@ bomber.state.gas = 1;
 // An aircraft now receives paid service while flying through a station's sphere.
 // Move it away to test fuel consumption with no available service.
 bomber.state.p = [...bomber.state.p];
-bomber.state.p[0] += 0.3;
+bomber.state.p[0] += 0.8;
 const fuel = bomber.supplies.fuel;
 now += 1000;
 call(a.id, 'aircraft-fire', { shots: ['d'] });

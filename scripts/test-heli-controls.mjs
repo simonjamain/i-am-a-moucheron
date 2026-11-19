@@ -223,6 +223,15 @@ for (const [key, sign] of [
     'focus loss releases roll and levels',
   );
 }
+// Q/D force the roll only: the pitch keeps following the mouse height.
+for (const key of ['KeyQ', 'KeyD']) {
+  const c = client(key);
+  c.mouseDirection.set(0, Math.sin(0.5), -Math.cos(0.5));
+  for (let i = 0; i < 120; i++) vm.runInContext('physics(1/120)', c);
+  const euler = new T.Euler().setFromQuaternion(c.me.quaternion, 'YXZ');
+  assert.ok(Math.abs(euler.z) > 0.45, key + ' still forces the roll');
+  assert.ok(Math.abs(euler.x) > 0.1, key + ' leaves the pitch to the mouse height');
+}
 const copilot = client('KeyQ');
 copilot.crewSeat = 'copilot';
 for (let i = 0; i < 60; i++) vm.runInContext('physics(1/120)', copilot);

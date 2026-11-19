@@ -4301,29 +4301,23 @@ function physics(dt) {
       ? Number(!!(keys.ShiftLeft || keys.ShiftRight)) -
         Number(!!(keys.ControlLeft || keys.ControlRight))
       : 0;
-    const keyboardTilt =
-      keys.KeyS ||
-      keys.ArrowDown ||
-      keys.KeyZ ||
-      keys.ArrowUp ||
-      keys.KeyQ ||
-      keys.ArrowLeft ||
-      keys.KeyD ||
-      keys.ArrowRight ||
-      keyboardOnly;
+    // Z/S force the pitch and Q/D force the roll, each on its own: without
+    // Z/S the pitch keeps following the mouse height (orbiting a target).
+    const pitchKeys = keys.KeyS || keys.ArrowDown || keys.KeyZ || keys.ArrowUp;
+    const rollKeys = keys.KeyQ || keys.ArrowLeft || keys.KeyD || keys.ArrowRight;
     stepHelicopter(
       T,
       state,
       {
         collective,
         pitch:
-          active && !keyboardTilt
+          active && !pitchKeys && !keyboardOnly
             ? undefined
             : active
               ? Number(!!(keys.KeyS || keys.ArrowDown)) - Number(!!(keys.KeyZ || keys.ArrowUp))
               : 0,
         roll:
-          active && !keyboardTilt
+          active && !rollKeys && !keyboardOnly
             ? undefined
             : active
               ? Number(!!(keys.KeyQ || keys.ArrowLeft)) - Number(!!(keys.KeyD || keys.ArrowRight))
@@ -6068,13 +6062,12 @@ function updateContextHUD() {
       proximity: mobileProximity,
       guiding: !!activeMissile(),
     });
-    $('cursorHPbar').max = vehicleMaxHP(myVehicle?.type);
-    $('cursorHPbar').value = stats.hp;
-    $('cursorAmmoBar').max = Math.max(
-      1,
-      ammoCapacity(myVehicle.type, currentAmmoKey(), snap.balance),
+    setBar($('cursorHPbar'), stats.hp, vehicleMaxHP(myVehicle?.type));
+    setBar(
+      $('cursorAmmoBar'),
+      stats.ammo,
+      Math.max(1, ammoCapacity(myVehicle.type, currentAmmoKey(), snap.balance)),
     );
-    $('cursorAmmoBar').value = stats.ammo;
     $('cursorAmmoBar').classList.toggle(
       'hidden',
       ammoCapacity(myVehicle.type, currentAmmoKey(), snap.balance) <= 0,
@@ -6087,9 +6080,9 @@ function updateContextHUD() {
       0,
       Math.min(100, (crewSeat === 'pilot' ? gas : myVehicle.state.gas || 0) * 100),
     );
-    $('cursorFuel').value = fuelPercent;
+    setBar($('cursorFuel'), fuelPercent, 100);
     setGaugeLabel($('cursorFuelLabel'), 'Carburant ', Math.round(fuelPercent) + ' %');
-    $('cursorGas').value = power;
+    setBar($('cursorGas'), power, 100);
     setGaugeLabel($('cursorGasLabel'), 'Gaz ', Math.round(power) + ' %');
     $('cursorStats').style.left = 'calc(' + ($('crosshair').style.left || '50%') + ' + 30px)';
     $('cursorStats').style.top = 'calc(' + ($('crosshair').style.top || '50%') + ' + 22px)';
@@ -6541,6 +6534,11 @@ function updateVehicleCare(dt) {
       cleanStars.splice(i, 1);
     }
   }
+}
+// Gauge bars are plain boxes: native <progress> ignores a 4 px height in most browsers.
+function setBar(element, value, max) {
+  const ratio = max > 0 ? Math.max(0, Math.min(1, value / max)) : 0;
+  element.firstElementChild.style.width = ratio * 100 + '%';
 }
 function setGaugeLabel(element, label, value) {
   const strong = document.createElement('strong');
