@@ -39,6 +39,7 @@ export const SUITE = [
   'test-home',
   'test-meshy-rule',
   'test-insect-hits',
+  'test-solid-targets',
   'test-sorties',
   'test-fleet-scale',
   'test-character',
