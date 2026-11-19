@@ -133,7 +133,7 @@ remorque (`sweptVehicle`, points de contact de `truck-physics.ts`), origines des
 et missiles du H2 (`heliWeaponOrigin`). Ces points ont changé avec les nouvelles
 proportions : les obus et roquettes partent des bouches dessinées.
 
-Depuis la version 362, `scripts/split-vehicle-parts.mjs` extrait du module `src/meshy-flaktruck-data.js`
+Depuis la version 363, `scripts/split-vehicle-parts.mjs` extrait du module `src/meshy-flaktruck-data.js`
 les roues du D2 en pièces du rig (six de tracteur, quatre de remorque) pour qu'elles tournent
 et braquent ; aucun triangle, UV ni texture ne change, le module garde l'empreinte de sa
 source et le script écrit sa trace dans son en-tête. Le char sera découpé de la même

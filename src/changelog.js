@@ -1,11 +1,17 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
-    version: 362,
+    version: 363,
     changes: [
       'Camion anti-aérien : les roues tournent et braquent, la remorque pique et se cabre, et peut se replier à plus de 90°.',
       'Le camion anti-aérien va deux fois plus vite. Le camion, le char et le Castor accélèrent plus doucement.',
       'Char : avancer et tourner en même temps marche tout de suite, comme avec deux chenilles.',
+    ],
+  },
+  {
+    version: 362,
+    changes: [
+      'Tous les ennemis peuvent apparaître dès la première vague : seule la puissance de la vague décide de qui peut venir.',
     ],
   },
   {

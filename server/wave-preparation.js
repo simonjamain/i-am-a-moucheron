@@ -60,7 +60,8 @@ export function memberGap(type, count) {
 export function prepareRoster(wave, balance, draw = randomInt, players = 1) {
   const difficulty = 1 + Math.round((wave - 1) * balance.progression);
   const budget = directorBudget(difficulty, players, balance);
-  const types = Object.keys(unlock).filter((type) => difficulty >= unlock[type]);
+  // No unlock wave: a species is drawn whenever its power fits what is left of the budget.
+  const types = Object.keys(unlock);
   const maxPower = Math.max(...types.map((type) => ENEMY_TYPES[type].power));
   // Phase 1: plan packs. Few, large packs on shared routes keep a wave compact.
   const packs = [],

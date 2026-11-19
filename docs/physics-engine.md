@@ -1,4 +1,4 @@
-# Physique Rapier — les véhicules au sol (versions 352 à 362)
+# Physique Rapier — les véhicules au sol (versions 352 à 363)
 
 Le jeu écrit sa physique à la main (vol, hélicoptère, `stepWalker`, balistique). Les
 véhicules au sol roulent sur un vrai moteur, **Rapier** (Rust compilé en
@@ -100,10 +100,10 @@ char vide simulé par l'hôte. Le modèle d'un char à chenilles :
   cabre en accélérant et penche dans les virages. `rig.wheelCompression` expose la
   compression de chaque ressort : c'est la donnée dont les chenilles déformables seront
   dessinées.
-- **Chenilles, comme au clavier** (version 362) : Z pousse les deux chenilles vers l'avant, S les
+- **Chenilles, comme au clavier** (version 363) : Z pousse les deux chenilles vers l'avant, S les
   tire vers l'arrière ; Q (gauche) ou D (droite) ajoute une **différence de poussée** entre elles,
   **à toute vitesse et dès le départ** : avancer en tournant fait ralentir un peu la chenille
-  intérieure pendant que le char accélère (avant la version 362, le char attendait sa vitesse
+  intérieure pendant que le char accélère (avant la version 363, le char attendait sa vitesse
   finale pour tourner : une commande en vitesse de bande saturait la poussée des deux
   côtés). Q seul fait pivoter sur place (chenille droite vers l'avant, gauche vers l'arrière).
   La différence est un asservissement du taux de lacet voulu (voir plus bas), la poussée
@@ -111,7 +111,7 @@ char vide simulé par l'hôte. Le modèle d'un char à chenilles :
   42°). Le glissement latéral est un frottement sec (adhérence 0,4 de la charge), plus faible
   que l'adhérence longitudinale : le char pivote sur place (1,1 rad/s mesuré) et un braquage
   à pleine vitesse le fait glisser un peu.
-- **Accélération douce** : 1,2 m/s² au départ (2,4 avant la version 362) ; 12 s pour atteindre
+- **Accélération douce** : 1,2 m/s² au départ (2,4 avant la version 363) ; 12 s pour atteindre
   la vitesse maximale. Le char monte quand même une marche de 18 cm : tant qu'une touche est
   appuyée, la pente est annulée (`slopeAssist`), comme un char qui a la puissance de grimper.
 - **Franchissement** : la coque a le nez et l'arrière chanfreinés ; le char franchit une
@@ -123,10 +123,10 @@ Pistes (pas encore faites) : découpage du modèle du char en caisse, chenilles,
 motrice ; chenilles dessinées par un shader le long du profil des ressorts ; roues du Castor
 et du camion animées par la physique plutôt que déduites du taux de lacet.
 
-## Le camion DCA sur Rapier (versions 359 et 362)
+## Le camion DCA sur Rapier (versions 359 et 363)
 
 Deux corps rigides, le tracteur (6x4) et la remorque du canon, liés par une **rotule**
-(version 362) : trois rotations, chacune avec sa butée souple (couples de rappel sur les deux
+(version 363) : trois rotations, chacune avec sa butée souple (couples de rappel sur les deux
 corps) : lacet jusqu'à **100°** (1,75 rad, sous les 1,8 rad acceptés par le serveur),
 tangage ±26° (0,45 rad), roulis ±17° (0,3 rad). Chacun a ses roues à rayon et ses ressorts :
 trois essieux au tracteur (avant directeur, tandem arrière moteur), deux à la remorque. Les
@@ -135,7 +135,7 @@ chenilles dans les modèles ») : la physique lit leurs pivots et leur rayon (0,
 unité de modèle).
 
 Réseau : l'état envoie la pose du tracteur, `trailerAngle` (lacet de la remorque dans le
-repère du tracteur, jusqu'à ±1,8 rad) et, depuis la version 362, `trailerPitch` (tangage,
+repère du tracteur, jusqu'à ±1,8 rad) et, depuis la version 363, `trailerPitch` (tangage,
 jusqu'à ±0,5 rad). Le roulis n'est pas envoyé. Le champ ajouté change le format des lots de
 mouvement (`MOTION_BATCH_VERSION` 3) ; les ressources étant versionnées, une page ouverte
 sur l'ancienne version doit être rechargée.
@@ -143,7 +143,7 @@ sur l'ancienne version doit être rechargée.
 - **Échelle d'un vrai camion** (Froude, 0,277) : tracteur 130 kg (6 t), remorque 45 kg
   (2,1 t). Un vrai camion attelé ferait 5,8 m/s (40 km/h) ; **vitesse maximale doublée pour
   le jeu** (11,4 m/s, `maxSpeed` 66, il était à 10 avant le moteur physique).
-- **Accélération douce** : 1,2 m/s² au départ (le double avant la version 362) ; il faut
+- **Accélération douce** : 1,2 m/s² au départ (le double avant la version 363) ; il faut
   environ 25 s pour atteindre la vitesse maximale (poussée qui s'annule en approchant de
   celle-ci, frottement linéaire faible pour ne pas la manger).
 - **Conduite** : comme le Castor (Ackermann, braquage limité par l'adhérence, freins,
@@ -167,7 +167,7 @@ sur l'ancienne version doit être rechargée.
   bornée à 2,8 m/s² (0,29 g, un camion chargé). La remorque est de niveau au repos (ses
   roues physiques touchent le sol même si le maillage de la remorque flotte de 0,18 unité).
 
-## Accélérations (version 362)
+## Accélérations (version 363)
 
 Les accélérations au départ étaient trop vives : Castor 4 → 2,5 m/s², char 2,4 → 1,2 m/s²,
 camion 2,4 → 1,2 m/s². Les vitesses maximales restent celles des profils (Castor 9 m/s, char
