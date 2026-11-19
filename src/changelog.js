@@ -1,6 +1,14 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 360,
+    changes: [
+      'Rat, scarabées, abeilles, moustiques et cafards sont plus costauds ; les bébés araignées ont presque aucune vie.',
+      'Tous les ennemis, bébés araignées compris, passent au purgatoire avec leur vrai modèle et rapportent des dollars.',
+      'Au purgatoire, les ennemis signent leurs papiers deux fois plus vite.',
+    ],
+  },
+  {
     version: 358,
     changes: [
       'Le char moyen roule comme un vrai char : suspension qui pique du nez au freinage, pivot sur place, franchit les petites marches.',

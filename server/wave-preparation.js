@@ -146,10 +146,18 @@ export function prepareRoster(wave, balance, draw = randomInt, players = 1) {
     pack(type, count, spawn);
   }
   const top = types.reduce((a, b) => (ENEMY_TYPES[a].power >= ENEMY_TYPES[b].power ? a : b));
+  // Whatever is left but could not be bought (population ceiling, or a swarm at its
+  // maximum) boosts the colossus: a pack of the strongest species present.
+  const weakest = Math.min(...types.map((type) => ENEMY_TYPES[type].power));
   if (remaining >= ENEMY_TYPES[top].power) {
     if (!packs.some((p) => p.type === top)) pack(top, 1, spawn);
-    const colossus = packs.findLast((p) => p.type === top);
-    colossus.boost = 1 + remaining / (colossus.count * ENEMY_TYPES[top].power);
+  }
+  if (remaining > 0 && (remaining >= weakest || MAX_WAVE_POPULATION - planned <= 0)) {
+    const strongest = packs.reduce((a, b) =>
+      ENEMY_TYPES[a.type].power >= ENEMY_TYPES[b.type].power ? a : b,
+    );
+    const colossus = packs.findLast((p) => p.type === strongest.type);
+    colossus.boost = 1 + remaining / (colossus.count * ENEMY_TYPES[colossus.type].power);
     remaining = 0;
   }
   // Phase 2: members of a pack are contiguous, so ids follow pack order.
