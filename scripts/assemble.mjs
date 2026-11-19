@@ -25,6 +25,8 @@ const files = {
   '/client.js': moduleSource('client'),
   '/boot.js': moduleSource('boot'),
   '/three.js': 'vendor/three.module.min.js',
+  // Physics engine, loaded on demand (see docs/physics-engine.md).
+  '/rapier.js': 'vendor/rapier.compat.mjs',
   ...Object.fromEntries(
     [
       'balance',
@@ -188,6 +190,8 @@ const files = {
       'enemy-power',
       'fleet',
       'tank',
+      'physics-world',
+      'castor-physics',
       'tank-view',
       'armament',
       'ordnance',
