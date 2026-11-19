@@ -162,6 +162,8 @@ import { HoldZoom, advanceFuse, contextKey, rangeReadout } from '/equipment-cont
 import { formatDistance, formatSpeed } from '/units.js';
 import { HEAVY, TANK_MG, availableShell, heavyInterval } from '/armament.js';
 import { stepTank } from '/tank.js';
+import { loadRapier } from '/physics-world.js';
+import { CastorRig } from '/castor-physics.js';
 import { animateCastorWheels, trackGroundMotion } from '/castor-wheels.js';
 import { ServiceZones, serviceZoneList } from '/service-zones.js';
 import { EngineSmoke, damageRatio } from '/engine-smoke.js';
@@ -4276,6 +4278,16 @@ function stepProjectileSlice(dt) {
 }
 
 // Fixed timestep flight: thrust, quadratic drag, gravity, angle-of-attack lift, wind-relative velocity.
+// ?rapier: load the physics engine (4 MB, on demand) and drive the Castor with it
+// once ready; until then, and without the flag, the arcade step is used.
+let castorRig = null;
+if (new URLSearchParams(location.search).has('rapier'))
+  loadRapier(() => import('/rapier.js'))
+    .then((RAPIER) => {
+      castorRig = new CastorRig(RAPIER);
+      console.info('Castor : physique Rapier active');
+    })
+    .catch((error) => console.warn('Rapier indisponible, Castor inchangé', error));
 function physics(dt) {
   if (respawnAt || onFoot || !myVehicle) return;
   if (isRotorcraft(myVehicle.type)) {
@@ -4349,17 +4361,11 @@ function physics(dt) {
     const active = controlFocus.active && canCapture(),
       manual = flightInput(keys, pad, active);
     const state = { ...localMotion(), fuelAvailable: remainingFuel() > 0 };
-    stepTank(
-      T,
-      state,
-      {
-        forward: -manual.pitch,
-        turn: manual.roll || -manual.yaw,
-      },
-      colliders,
-      dt,
-      VEHICLES[myVehicle.type],
-    );
+    const drive = { forward: -manual.pitch, turn: manual.roll || -manual.yaw };
+    // Experimental (?rapier): the Castor drives on the Rapier physics engine.
+    if (castorRig && myVehicle.type === 'castor')
+      castorRig.step(state, drive, colliders, dt, VEHICLES.castor);
+    else stepTank(T, state, drive, colliders, dt, VEHICLES[myVehicle.type]);
     if (state.hp <= 0) {
       crash();
       return;
