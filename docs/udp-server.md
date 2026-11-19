@@ -33,6 +33,8 @@ négociation entre plusieurs processus qui auraient des mémoires distinctes.
 | `UDP_BIND_ADDRESS`      | découverte automatique | IP locale de l'interface UDP ; `127.0.0.1` pour tests locaux                          |
 | `UDP_ADVERTISE_ADDRESS` | vide                   | IP publique à annoncer si la VM est derrière un NAT avec redirection des mêmes ports  |
 | `STUN_SERVER`           | vide                   | Serveur STUN optionnel, par exemple `stun:stun.cloudflare.com:3478`                   |
+| `STATS_FILE`            | vide                   | Fichier de persistance des [statistiques](stats.md) (volume Docker à monter)          |
+| `STATS_TOKEN`           | vide                   | Jeton exigé par `/stats` et `/stats.json` ; sans jeton, routes publiques              |
 
 Exemple, en remplaçant l'adresse documentaire par l'IP réelle de la VM :
 

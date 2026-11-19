@@ -253,6 +253,9 @@ await writeFile(
   'export const BUILD_VERSION=' +
     JSON.stringify(version) +
     ';\n' +
+    'export const GAME_VERSION=' +
+    Number((await readFile('VERSION', 'utf8')).trim()) +
+    ';\n' +
     'export const ASSETS=' +
     JSON.stringify(assets) +
     ';\n' +

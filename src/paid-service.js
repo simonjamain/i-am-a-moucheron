@@ -112,7 +112,7 @@ export function advancePaidService(
         });
     }
     const cost = needs.reduce((sum, n) => sum + n.cost, 0);
-    if (cost > 0) jobs.push({ needs, cost, mark: () => v.supplies.revision++ });
+    if (cost > 0) jobs.push({ owner: v.type, needs, cost, mark: () => v.supplies.revision++ });
   }
   // Fixed DCA guns also compete for the same budget; no remote top-ups.
   // A shell requires a real supply source near the fixed emplacement.
@@ -136,6 +136,7 @@ export function advancePaidService(
           : SERVICE_RATES.shell);
       if (cost > 0)
         jobs.push({
+          owner: gun.kind,
           cost,
           needs: [{ cost, apply: (fraction) => (gun.ammo += quantity * fraction) }],
           mark: () => {},
@@ -173,6 +174,7 @@ export function advancePaidService(
       const amount = Math.min(wall.maxHp - wall.hp, wall.maxHp * dt * 0.1);
       const cost = amount * SERVICE_RATES.hp;
       jobs.push({
+        owner: wall.kind,
         cost,
         needs: [
           {
@@ -203,6 +205,7 @@ export function advancePaidService(
       const cost = amount * SERVICE_RATES.machineGun;
       if (cost > 0)
         jobs.push({
+          owner: 'sentry',
           cost,
           needs: [
             {
@@ -222,17 +225,21 @@ export function advancePaidService(
     dollars,
   );
   let spent = 0;
+  // Dollars paid per kind of equipment (vehicle type, gun or wall kind): statistics.
+  const spentBy = {};
   for (const [index, job] of jobs.entries()) {
     const paid = Math.min(job.cost, shares[index]);
     if (paid <= 0) continue;
     for (const need of job.needs) need.apply(paid / job.cost);
     job.mark();
     spent += paid;
+    if (job.owner) spentBy[job.owner] = (spentBy[job.owner] || 0) + paid;
   }
   if (wallsChanged) groundDefense.revision++;
   return {
     dollars: Math.round((dollars - spent) * 1e6) / 1e6,
     spent,
+    spentBy,
     recipients: jobs.length,
   };
 }
