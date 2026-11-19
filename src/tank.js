@@ -2,31 +2,26 @@ import { colliderContainsXZ } from './oriented-collider.ts';
 import { sweptBoxProximity } from './mobile-flak.js';
 import { ACTOR_UNIT, MAP } from './scale.ts';
 import { VEHICLE_ANCHORS } from './vehicle-anchors.js';
-// A tank follows support surfaces; gravity handles falling off a desk. No lift,
-// automatic turret rotation or dependency on a driver for the other stations.
+// Legacy arcade step for the tank and the flak truck (the Castor now runs on
+// Rapier, see castor-physics.ts; these two will follow). A tank follows support
+// surfaces; gravity handles falling off a desk. No lift, automatic turret
+// rotation or dependency on a driver for the other stations.
 export function stepTank(T, state, controls, colliders, dt, profile) {
   const p = new T.Vector3().fromArray(state.p),
     v = new T.Vector3().fromArray(state.v),
     q = new T.Quaternion().fromArray(state.q);
   const throttle =
     state.fuelAvailable === false ? 0 : Math.max(-1, Math.min(1, controls.forward || 0));
-  const priorForward = new T.Vector3(0, 0, -1).applyQuaternion(q);
-  const signedSpeed = v.dot(priorForward);
-  const steeringSign =
-    profile.reverseSteering &&
-    (Math.abs(signedSpeed) > MAP.metres(0.1) ? signedSpeed < 0 : throttle < 0)
-      ? -1
-      : 1;
   q.multiply(
     new T.Quaternion().setFromAxisAngle(
       new T.Vector3(0, 1, 0),
-      (controls.turn || 0) * dt * profile.turn * steeringSign,
+      (controls.turn || 0) * dt * profile.turn,
     ),
   );
   const forward = new T.Vector3(0, 0, -1).applyQuaternion(q),
     target = throttle * MAP.metres(profile.maxSpeed);
   const speed = v.dot(forward),
-    next = speed + (target - speed) * Math.min(1, dt * (profile.response ?? 4));
+    next = speed + (target - speed) * Math.min(1, dt * 4);
   v.x = forward.x * next;
   v.z = forward.z * next;
   const before = p.clone();

@@ -1,5 +1,11 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
+  {
+    version: 357,
+    changes: [
+      'Le Castor se conduit comme un vrai véhicule à roues : départ progressif, freins, virages qui se resserrent à basse vitesse.',
+    ],
+  },
   { version: 355, changes: ['Le Castor volant est 30 % plus petit.'] },
   {
     version: 354,

@@ -1191,7 +1191,7 @@ function accept(s, force = false) {
     trails.length = 0;
     rapidImpacts.length = 0;
     aircraftFire.invalidate();
-    vacantAircraft.clear();
+    clearVacantAircraft();
     entryNoticeWave = -1;
     paperArchive.length = 0;
     renderArchive();
@@ -4277,17 +4277,13 @@ function stepProjectileSlice(dt) {
   }
 }
 
-// Fixed timestep flight: thrust, quadratic drag, gravity, angle-of-attack lift, wind-relative velocity.
-// ?rapier: load the physics engine (4 MB, on demand) and drive the Castor with it
-// once ready; until then, and without the flag, the arcade step is used.
+// The Castor is driven by the Rapier physics engine, loaded behind the loading
+// screen (see homeReady): the module, the rig of the Castor we drive, and one rig
+// per empty Castor that this client simulates as the room's host.
+let rapier = null;
 let castorRig = null;
-if (new URLSearchParams(location.search).has('rapier'))
-  loadRapier(() => import('/rapier.js'))
-    .then((RAPIER) => {
-      castorRig = new CastorRig(RAPIER);
-      console.info('Castor : physique Rapier active');
-    })
-    .catch((error) => console.warn('Rapier indisponible, Castor inchangé', error));
+const vacantRigs = new Map();
+// Fixed timestep flight: thrust, quadratic drag, gravity, angle-of-attack lift, wind-relative velocity.
 function physics(dt) {
   if (respawnAt || onFoot || !myVehicle) return;
   if (isRotorcraft(myVehicle.type)) {
@@ -4356,10 +4352,10 @@ function physics(dt) {
       manual = flightInput(keys, pad, active);
     const state = { ...localMotion(), fuelAvailable: remainingFuel() > 0 };
     const drive = { forward: -manual.pitch, turn: manual.roll || -manual.yaw };
-    // Experimental (?rapier): the Castor drives on the Rapier physics engine.
-    if (castorRig && myVehicle.type === 'castor')
+    if (myVehicle.type === 'castor') {
+      castorRig ??= new CastorRig(rapier);
       castorRig.step(state, drive, colliders, dt, VEHICLES.castor);
-    else stepTank(T, state, drive, colliders, dt, VEHICLES[myVehicle.type]);
+    } else stepTank(T, state, drive, colliders, dt, VEHICLES[myVehicle.type]);
     if (state.hp <= 0) {
       crash();
       return;
@@ -5468,11 +5464,19 @@ function renderDeliveries() {
     }
 }
 const vacantAircraft = new Map();
+function releaseVacantRig(key) {
+  vacantRigs.get(key)?.dispose();
+  vacantRigs.delete(key);
+}
+function clearVacantAircraft() {
+  vacantAircraft.clear();
+  for (const key of [...vacantRigs.keys()]) releaseVacantRig(key);
+}
 function simulateVacantAircraft(dt) {
   if (!snap) return;
   const host = [...snap.pilots].sort((a, b) => a.id.localeCompare(b.id))[0]?.id;
   if (host !== id) {
-    vacantAircraft.clear();
+    clearVacantAircraft();
     return;
   }
   const active = new Set();
@@ -5498,12 +5502,19 @@ function simulateVacantAircraft(dt) {
         dt,
         VEHICLES[v.type],
       );
-    else if (VEHICLES[v.type].ground)
+    else if (v.type === 'castor') {
+      if (!vacantRigs.has(v.id)) vacantRigs.set(v.id, new CastorRig(rapier));
+      vacantRigs.get(v.id).step(s, { forward: 0, turn: 0 }, colliders, dt, VEHICLES.castor);
+    } else if (VEHICLES[v.type].ground)
       stepTank(T, s, { forward: 0, turn: 0 }, colliders, dt, VEHICLES[v.type]);
     else stepVacantAircraft(T, s, VEHICLES[v.type], colliders, dt);
     Object.assign(v.state, s);
   }
-  for (const key of vacantAircraft.keys()) if (!active.has(key)) vacantAircraft.delete(key);
+  for (const key of [...vacantAircraft.keys()])
+    if (!active.has(key)) {
+      vacantAircraft.delete(key);
+      releaseVacantRig(key);
+    }
 }
 
 function equipPistolModel(person) {
@@ -6660,8 +6671,9 @@ function warmShaders() {
   combatEffects.update(10, camera);
 }
 
-// Readiness for the initial loader: selected appearance and its first draw.
-export const homeReady = loadCharacter(appearancePicker.value).then(
+// Readiness for the initial loader: selected appearance and its first draw, and
+// the Rapier physics engine (4 MB), which the Castor cannot be driven without.
+const characterReady = loadCharacter(appearancePicker.value).then(
   () =>
     new Promise((resolve) =>
       requestAnimationFrame(() => {
@@ -6675,3 +6687,7 @@ export const homeReady = loadCharacter(appearancePicker.value).then(
       }),
     ),
 );
+const rapierReady = loadRapier(() => import('/rapier.js')).then((RAPIER) => {
+  rapier = RAPIER;
+});
+export const homeReady = Promise.all([characterReady, rapierReady]).then(() => {});

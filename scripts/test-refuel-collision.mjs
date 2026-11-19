@@ -37,7 +37,8 @@ console.log('Refuel collision follows rotation and leaves empty diagonal corners
 
 const { segmentBox, sweptBoxProximity } = await import('../src/swept-geometry.ts');
 const { rayCollider, colliderContainsXZ } = await import('../src/oriented-collider.ts');
-const { stepTank } = await import('../src/tank.js');
+const { CastorRig } = await import('../src/castor-physics.ts');
+const { loadRapier } = await import('../src/physics-world.ts');
 const { VEHICLES } = await import('../src/fleet.ts');
 for (const angle of [0, Math.PI / 4, Math.PI / 2, (Math.PI * 3) / 4, -Math.PI / 3]) {
   const station = makeServiceStation(T, 'refuel');
@@ -85,9 +86,13 @@ for (const angle of [0, Math.PI / 4, Math.PI / 2, (Math.PI * 3) / 4, -Math.PI / 
   const empty = world(6.3, 0, 3.9);
   state.p = empty.toArray();
   state.p[1] = 0.2 + VEHICLES.castor.gear;
-  stepTank(T, state, {}, [box], 1 / 60, VEHICLES.castor);
-  stepTank(T, state, {}, [box], 1 / 60, VEHICLES.castor);
-  assert.ok(state.p[1] < 0.2 + VEHICLES.castor.gear, 'ground vehicle falls in the empty corner');
+  const rig = new CastorRig(await loadRapier(() => import('../vendor/rapier.compat.mjs')));
+  for (let i = 0; i < 90; i++) rig.step(state, {}, [box], 1 / 60, VEHICLES.castor);
+  rig.dispose();
+  assert.ok(
+    state.p[1] < 0.2 + VEHICLES.castor.gear - 0.01,
+    'ground vehicle falls in the empty corner',
+  );
 }
 console.log(
   'Rotated station: translated bounds, positive/negative ray hits, swept spheres, aircraft expansion and ground support',

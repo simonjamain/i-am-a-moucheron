@@ -2,7 +2,8 @@ import assert from 'node:assert/strict';
 import * as T from '../vendor/three.module.min.js';
 import { stepHelicopter, HELI } from '../src/helicopter.js';
 import { VEHICLES, vehiclePad } from '../src/fleet.ts';
-import { stepTank } from '../src/tank.js';
+import { CastorRig } from '../src/castor-physics.ts';
+import { loadRapier } from '../src/physics-world.ts';
 import { MAP } from '../src/scale.ts';
 import { createCharacter, LANDING_DURATION, loadCharacter } from '../src/character-model.js';
 import { makeServiceStation, animateRadar } from '../src/station-model.js';
@@ -33,12 +34,16 @@ for (const hz of [30, 60, 120]) {
     );
   assert.ok(tilt() < 0.001, 'release levels even if mouse still points down');
 }
+const rapier = await loadRapier(() => import('../vendor/rapier.compat.mjs'));
 for (const turn of [-1, 1]) {
   const yaws = [];
   for (const direction of [-1, 1]) {
-    const state = { p: [0, 0.01, 0], v: [0, 0, -direction * MAP.metres(10)], q: [0, 0, 0, 1] };
-    stepTank(T, state, { forward: direction, turn }, [], 1 / 60, VEHICLES.castor);
-    yaws.push(new T.Euler().setFromQuaternion(new T.Quaternion().fromArray(state.q), 'YXZ').y);
+    const rig = new CastorRig(rapier),
+      state = { p: [0, VEHICLES.castor.gear, 0], v: [0, 0, 0], q: [0, 0, 0, 1], hp: 100 };
+    for (let i = 0; i < 240; i++)
+      rig.step(state, { forward: 0.4 * direction, turn }, [], 1 / 120, VEHICLES.castor);
+    yaws.push(state.omega[1]);
+    rig.dispose();
   }
   assert.ok(yaws[0] * yaws[1] < 0, 'same steering input reverses yaw when backing up');
 }

@@ -12,7 +12,8 @@ import {
 } from '../src/castor-wheels.ts';
 import { createGraphics } from '../src/graphics.js';
 import { VEHICLES } from '../src/fleet.ts';
-import { stepTank } from '../src/tank.js';
+import { CastorRig } from '../src/castor-physics.ts';
+import { loadRapier } from '../src/physics-world.ts';
 import { ACTOR_UNIT, MAP } from '../src/scale.ts';
 
 const options = { scale: ACTOR_UNIT, turnRate: VEHICLES.castor.turn, frontZ: -2.05 };
@@ -74,21 +75,24 @@ assert.ok(
   'each side spins the same way, sides opposite',
 );
 
-// Driving: about twice the former 26 top speed; first-order approach gives a
-// strong start that fades near the limit.
+// Driving on Rapier: the top speed is the profile's 52 (about twice the former
+// 26); the start is progressive and the thrust fades near the limit.
 assert.equal(VEHICLES.castor.maxSpeed, 52);
-const state = { p: [0, 0.01, 0], v: [0, 0, 0], q: [0, 0, 0, 1] };
+const state = { p: [0, VEHICLES.castor.gear, 0], v: [0, 0, 0], q: [0, 0, 0, 1], hp: 100 };
+const rig = new CastorRig(await loadRapier(() => import('../vendor/rapier.compat.mjs')));
+for (let i = 0; i < 240; i++) rig.step(state, {}, [], dt, VEHICLES.castor); // settle on the springs
 const speeds = [];
-for (let i = 0; i < 360; i++) {
-  stepTank(T, state, { forward: 1, turn: 0 }, [], dt, VEHICLES.castor);
+for (let i = 0; i < 720; i++) {
+  rig.step(state, { forward: 1, turn: 0 }, [], dt, VEHICLES.castor);
   speeds.push(Math.hypot(...state.v));
 }
-const accel = speeds.map((v, i) => v - (speeds[i - 1] ?? 0));
-assert.ok(accel[1] > accel[30] && accel[30] > accel[90], 'acceleration decreases');
-assert.ok(speeds.at(-1) > MAP.metres(52) * 0.99 && speeds.at(-1) <= MAP.metres(52) + 1e-12);
+rig.dispose();
+const accel = (from, to) => (speeds[to] - speeds[from]) / ((to - from) * dt);
+assert.ok(accel(0, 60) > accel(240, 300) && accel(240, 300) > accel(500, 560), 'thrust fades');
+assert.ok(speeds.at(-1) > MAP.metres(52) * 0.97 && speeds.at(-1) <= MAP.metres(52) * 1.02);
 assert.ok(
-  speeds[15] < MAP.metres(26),
-  'gentle start stays below half speed for the first quarter second',
+  speeds[60] < MAP.metres(26),
+  'gentle start stays below half speed for the first half second',
 );
 console.log(
   'Castor wheels: signed rolling, reverse, stop, pivot opposition, front steering, 2× speed.',

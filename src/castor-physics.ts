@@ -1,6 +1,37 @@
+import type { DynamicRayCastVehicleController, RigidBody } from '@dimforge/rapier3d-compat';
 import { MODEL_DATA } from './meshy-castor-data.js';
 import { MAP } from './scale.ts';
-import { GRAVITY, MODEL_UNIT, PhysicsWorld, toPhysics, toWorld } from './physics-world.js';
+import type { VehicleProfile } from './fleet.ts';
+import {
+  GRAVITY,
+  MODEL_UNIT,
+  PhysicsWorld,
+  toPhysics,
+  toWorld,
+  type Rapier,
+  type Solid,
+} from './physics-world.ts';
+
+export interface Wheel {
+  x: number;
+  y: number;
+  z: number;
+}
+/** The part of a vehicle state this rig reads and writes (world units). */
+export interface CastorState {
+  p: number[];
+  q: number[];
+  v: number[];
+  hp: number;
+  omega?: number[];
+  gas?: number;
+  landed?: boolean;
+  fuelAvailable?: boolean;
+}
+export interface CastorControls {
+  forward?: number;
+  turn?: number;
+}
 
 // The Castor on Rapier: a rigid chassis on a ray-cast 6x6 (one ray and one spring
 // per wheel), driven like a real wheeled vehicle instead of the arcade tank step.
@@ -8,7 +39,7 @@ import { GRAVITY, MODEL_UNIT, PhysicsWorld, toPhysics, toWorld } from './physics
 // physics-world.js; wheel positions come from the vehicle model.
 const MU = MODEL_UNIT;
 const wheelParts = MODEL_DATA.parts.filter((p) => /^wheel\d+$/.test(p.part));
-export const WHEELS = wheelParts.map(({ pivot }) => ({
+export const WHEELS: readonly Wheel[] = wheelParts.map(({ pivot }) => ({
   x: pivot[0] * MU,
   y: pivot[1] * MU,
   z: pivot[2] * MU,
@@ -36,6 +67,7 @@ export const CASTOR_PHYSICS = Object.freeze({
   mass: 400, // kg
   accel: 4, // m/s² at standstill, full throttle: a progressive start (issue #171)
   reverseSpeed: 0.5, // share of the top speed
+  topMargin: 1.06, // thrust fades towards this multiple of the top speed: drag makes up the rest
   brake: 7, // m/s² when the throttle opposes the motion
   coast: 1.2, // m/s² of engine braking without throttle
   hold: 4, // m/s² holding the vehicle still when stopped without throttle
@@ -50,16 +82,23 @@ export const CASTOR_PHYSICS = Object.freeze({
   angularDamping: 1,
 });
 
+export type CastorParams = typeof CASTOR_PHYSICS;
+
 // Wheels steer to roll about one centre: front positive (left), rear opposite.
 // delta is the front-axle angle on the centre line; positive turns left.
-export function wheelSteering(delta, wheel, pivotZ = PIVOT_Z, wheelbase = WHEELBASE) {
+export function wheelSteering(
+  delta: number,
+  wheel: Wheel,
+  pivotZ = PIVOT_Z,
+  wheelbase = WHEELBASE,
+): number {
   if (Math.abs(delta) < 1e-6) return 0;
   const radius = wheelbase / Math.tan(delta); // signed: positive centre on the left
   return Math.atan((pivotZ - wheel.z) / (radius + wheel.x));
 }
 // Largest front-wheel angle at this speed: the full lock when slow, then only as
 // much as the tyres can grip (lateral acceleration v²·tan(delta)/wheelbase).
-export function steerLimit(speed, params = CASTOR_PHYSICS) {
+export function steerLimit(speed: number, params: CastorParams = CASTOR_PHYSICS): number {
   const v2 = Math.max(speed * speed, 1e-6);
   return Math.min(params.steerLock, Math.atan((WHEELBASE * params.maxLateral) / v2));
 }
@@ -69,7 +108,10 @@ export function steerLimit(speed, params = CASTOR_PHYSICS) {
 const KILL_DROP = toPhysics(MAP.metres(20) ** 2 / (2 * MAP.metres(9.81)));
 export const FALL_KILL_SPEED = Math.sqrt(2 * GRAVITY * KILL_DROP);
 
-const rotate = (q, v) => {
+const rotate = (
+  q: { x: number; y: number; z: number; w: number },
+  v: { x: number; y: number; z: number },
+) => {
   // q * v * q^-1 for a unit quaternion (x, y, z, w).
   const { x, y, z, w } = q,
     tx = 2 * (y * v.z - z * v.y),
@@ -83,8 +125,17 @@ const rotate = (q, v) => {
 };
 
 export class CastorRig {
-  constructor(RAPIER, params = CASTOR_PHYSICS) {
-    this.R = RAPIER;
+  params: CastorParams;
+  physics: PhysicsWorld;
+  body: RigidBody;
+  vehicle: DynamicRayCastVehicleController;
+  steer = 0;
+  /** Last state written back, to detect a teleport. */
+  pose: { p: number[]; q: number[] } | null = null;
+  /** Vertical speed at the previous step. */
+  fallSpeed = 0;
+
+  constructor(RAPIER: Rapier, params: CastorParams = CASTOR_PHYSICS) {
     this.params = params;
     this.physics = new PhysicsWorld(RAPIER);
     const world = this.physics.world;
@@ -139,14 +190,11 @@ export class CastorRig {
       this.vehicle.setWheelFrictionSlip(i, params.tyreGrip);
       this.vehicle.setWheelSideFrictionStiffness(i, 1);
     }
-    this.steer = 0;
-    this.pose = null; // last state written back, to detect a teleport
-    this.fallSpeed = 0; // vertical speed at the previous step
   }
 
   // The game moves vehicles too (placement, respawn): follow its state when it
   // is not the one this rig wrote at the previous step.
-  adopt(state) {
+  adopt(state: CastorState): void {
     const p = state.p.map(toPhysics),
       last = this.pose;
     if (
@@ -172,7 +220,13 @@ export class CastorRig {
   }
 
   // Same contract as stepTank: advance `state` by dt and write it back.
-  step(state, controls, colliders, dt, profile) {
+  step(
+    state: CastorState,
+    controls: CastorControls,
+    colliders: readonly Solid[],
+    dt: number,
+    profile: VehicleProfile,
+  ): void {
     const params = this.params,
       body = this.body,
       vehicle = this.vehicle;
@@ -202,7 +256,7 @@ export class CastorRig {
     if (Math.abs(throttle) > 0.05) {
       if (throttle * along < -0.3) brake = params.brake;
       else {
-        const top = throttle > 0 ? vmax : vmax * params.reverseSpeed;
+        const top = (throttle > 0 ? vmax : vmax * params.reverseSpeed) * params.topMargin;
         const share = Math.max(0, 1 - (Math.abs(along) / top) ** 2);
         engine = Math.sign(throttle) * Math.abs(throttle) * params.accel * share;
       }
@@ -242,7 +296,7 @@ export class CastorRig {
     this.pose.p = state.p.map(toPhysics);
   }
 
-  dispose() {
+  dispose(): void {
     this.physics.dispose();
   }
 }
