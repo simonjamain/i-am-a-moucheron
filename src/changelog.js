@@ -1,6 +1,15 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 354,
+    changes: [
+      'Hélicoptère : avec Q/D, le nez suit toujours la hauteur de la souris, pour tourner autour d’une cible.',
+      'Les barres sous les statistiques s’affichent sur tous les navigateurs.',
+      'La flamme des mitrailleuses part dans le sens du tir.',
+      'La bulle des stations de ravitaillement a la taille de celle du Castor.',
+    ],
+  },
+  {
     version: 351,
     changes: ['Tirer sur une nuée est plus fluide, et le premier tir ne fige plus l’image.'],
   },

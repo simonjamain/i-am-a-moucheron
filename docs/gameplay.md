@@ -96,7 +96,8 @@ morts. Elle est vidée à la réception d’une remise à zéro de la partie.
 
 Le pilotage par défaut vise un point à la souris avec assistance, inspiré du
 principe de War Thunder. Z/S et les flèches haut/bas pilotent le tangage, Q/D et
-les flèches gauche/droite le roulis, et A/E le lacet. Une commande manuelle
+les flèches gauche/droite le roulis, et A/E le lacet. Sur hélicoptère, Q/D forcent le roulis sans figer le tangage, qui continue de suivre la hauteur
+de la souris tant que Z/S ne sont pas touchés. Une commande manuelle
 remplace l'assistance souris sur son axe tant qu'elle est active, sans désactiver
 les autres axes assistés ; voir [commandes](controls.md). Avec le zoom (clic droit), la
 sensibilité de la souris suit le champ de vision (`lookScale`, `src/control-focus.js`) :
@@ -406,7 +407,7 @@ réglage initial), avec une accélération forte au départ qui décroît près 
 maximum. Les six roues roulent à la vitesse du sol de leur côté (sens, marche
 arrière et arrêt compris) ; au pivot sur place, gauche et droite tournent en sens
 opposés et les roues avant braquent selon la vitesse de rotation
-(`src/castor-wheels.ts`, `scripts/test-castor-wheels.mjs`). Plus rapide que le tank, il possède un rayon de soutien sphérique de **50 cm**, matérialisé en jeu par une sphère verte translucide (comme les 12 cm des stations de ravitaillement fixes, `src/service-zones.js`), qui peut soigner et ravitailler les alliés en mouvement ou en vol et se réapprovisionner lui-même. Le service utilise la caisse commune.
+(`src/castor-wheels.ts`, `scripts/test-castor-wheels.mjs`). Plus rapide que le tank, il possède un rayon de soutien sphérique de **50 cm**, matérialisé en jeu par une sphère verte translucide (comme les 50 cm des stations de ravitaillement fixes, `src/service-zones.js`), qui peut soigner et ravitailler les alliés en mouvement ou en vol et se réapprovisionner lui-même. Le service utilise la caisse commune.
 
 **La construction en roulant est disponible depuis la version 188.** Le Castor utilise désormais **ses trois modèles Meshy texturés** : châssis, tourelle et roues indépendantes. Les couleurs originales sont préservées, sans pastille d’identification ([flotte Meshy](meshy-fleet.md)). Voir [l'issue #76](https://github.com/simonjamain/i-am-a-moucheron/issues/76) et [la note de reprise](tasks/g1-castor.md).
 
@@ -468,7 +469,7 @@ pas leur chemin, un ruban ou du sucre sur un meuble ne les retient pas. Voir
 ### Réparation automatique des barricades (version 192)
 
 Les stations fixes et les Castor en état de marche réparent désormais les **murs
-LEGO endommagés** dans leur zone de soutien : 12 cm autour d'une station et 50 cm
+LEGO endommagés** dans leur zone de soutien : 50 cm autour d'une station comme
 autour d'un Castor. Pour chaque segment, le serveur cherche la portion du mur la
 plus proche, même si le centre du segment est plus loin. Les réparations sont
 progressives, à **10 % des PV maximum du segment par seconde**, et coûtent
