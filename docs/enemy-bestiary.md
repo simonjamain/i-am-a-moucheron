@@ -1,13 +1,13 @@
 # Bestiaire
 
-| Ennemi            |    PV | Déblocage            | Particularité                              |
-| ----------------- | ----: | -------------------- | ------------------------------------------ |
-| Moustique         |    70 | vague 3              | zigzag rapide                              |
-| Araignée pondeuse | 1 200 | vague 11             | 100 bébés sur mort                         |
-| Rat géant         | 5 000 | vague 15             | très gros, lent, puissance 12,23           |
-| Bébé araignée     |    20 | naissance uniquement | dispersion, vitesse élevée, puissance 0,17 |
+| Ennemi            |     PV | Déblocage            | Particularité                              |
+| ----------------- | -----: | -------------------- | ------------------------------------------ |
+| Moustique         |    150 | vague 3              | zigzag rapide                              |
+| Araignée pondeuse |  1 200 | vague 11             | 100 bébés sur mort                         |
+| Rat géant         | 10 000 | vague 15             | très gros, lent, puissance 24,47           |
+| Bébé araignée     |     10 | naissance uniquement | dispersion, vitesse élevée, puissance 0,08 |
 
-La mort d'une pondeuse génère sur le serveur une naissance **exactement une fois**, aussi bien par arme légère que lourde. Cent nouveaux identifiants sont ajoutés au roster, avec départ légèrement échelonné, point d'origine correspondant au décès, navigation au sol et variation procédurale sans dépendance aux voisins. Les baby spiders n'ont pas d'âme au purgatoire ni de récompense, mais **chaque bébé qui atteint la poubelle ajoute sa puissance (0,17) à l'infestation**. Leur apparition est bornée techniquement par un roster de 20 000 entités : en cas de stress-test anormal au plafond, la naissance peut être partielle.
+La mort d'une pondeuse génère sur le serveur une naissance **exactement une fois**, aussi bien par arme légère que lourde. Cent nouveaux identifiants sont ajoutés au roster, avec départ légèrement échelonné, point d'origine correspondant au décès, navigation au sol et variation procédurale sans dépendance aux voisins. Les bébés passent eux aussi au purgatoire et rapportent leur puissance, et **chaque bébé qui atteint la poubelle ajoute sa puissance (0,08) à l'infestation**. Leur apparition est bornée techniquement par un roster de 20 000 entités : en cas de stress-test anormal au plafond, la naissance peut être partielle.
 
 Les fourmis et les araignées pondeuses utilisent les modèles Meshy « Red Ant Warrior » et « Spotted Velvet Spider » avec une marche à pieds plantés (démarche tripode et tétrapode alternée), dont la phase suit la distance parcourue ; voir [le pipeline d'assets](asset-pipeline.md#fourmi-et-araignée-pondeuse-meshy-marche). Leur zone de tir devient un ellipsoïde du corps, sans les pattes. Le cafard suit la même chaîne avec le modèle Meshy « Low Poly Cockroach » (démarche tripode, longues antennes) ; voir [le cafard](asset-pipeline.md#cafard-version-308). Les moucherons utilisent le modèle Meshy « Angry Little Fly » animé (battement d'ailes, pattes et antennes) près de la caméra et des ellipsoïdes au loin ; voir [le pipeline d'assets](asset-pipeline.md#moucheron-meshy-squelette-et-vol). Leur zone de tir est inchangée. Le scarabée (`brute`, anciennement « bourdon blindé ») utilise un modèle Meshy fourni par l'utilisateur, élytres fermées et ailes battantes, pattes pendantes ; voir [le pipeline d'assets](asset-pipeline.md#scarabée-meshy-vol-version-307). Sa zone de tir est une sphère parfaite (rayon 0,86 unité d'insecte, centrée sur le corps, de même volume que l'ancienne ellipsoïde) : le test de tir par sphère, sans matrice, est environ cinq fois plus rapide que celui par ellipsoïde. Le rat géant rejoue le clip de marche fourni avec son modèle Meshy « Low Poly Mouse » ; voir [le rat](asset-pipeline.md#rat-version-310). Le moustique utilise le modèle Meshy « Low Poly Mosquito » (battement rapide, longues pattes pendantes) ; voir [le moustique](asset-pipeline.md#moustique-version-311). L'abeille (`guard`, anciennement « carapace ») suit la même chaîne avec le modèle Meshy « Angry Low Poly Bee » (bourdonnement rapide, abdomen qui pompe) ; voir [l'abeille](asset-pipeline.md#abeille-version-309).
 
@@ -22,19 +22,19 @@ Le voltigeur (`dart`), petit volant rapide débloqué en vague 2, a été retir�
 Valeurs calculées avec les statistiques actuelles (voir
 [équilibrage](room-balance.md#puissance-unité-commune)) :
 
-| Espèce            | Puissance                       |
-| ----------------- | ------------------------------- |
-| Moucheron         | 1,00                            |
-| Fourmi            | 0,58                            |
-| Moustique         | 0,96                            |
-| Cafard            | 1,04                            |
-| Abeille           | 2,69                            |
-| Scarabée          | 3,69                            |
-| Araignée pondeuse | 19,24 (2,64 + 100 bébés × 0,17) |
-| Bébé araignée     | 0,17                            |
-| Rat géant         | 12,23                           |
+| Espèce            | Puissance                        |
+| ----------------- | -------------------------------- |
+| Moucheron         | 1,00                             |
+| Fourmi            | 0,58                             |
+| Moustique         | 2,06                             |
+| Cafard            | 1,38                             |
+| Abeille           | 4,03                             |
+| Scarabée          | 6,93                             |
+| Araignée pondeuse | 10,94 (2,64 + 100 bébés × 0,08) |
+| Bébé araignée     | 0,08                             |
+| Rat géant         | 24,47                            |
 
-Une âme libérée rapporte cette puissance en dollars et un ennemi qui atteint la
+Tout ennemi tué (bébés araignées compris) devient une âme au purgatoire, où il apparaît sous son vrai modèle. Une âme libérée rapporte cette puissance en dollars et un ennemi qui atteint la
 poubelle lui inflige autant de dégâts. Les cartes du mode debug l'affichent.
 
 ## Tailles en jeu

@@ -2485,7 +2485,7 @@ export class Game {
       e = plan.roster[index];
     if (!e) return false;
     r.kills.add(index);
-    if (!e.offspringOnly) this.soul(r, 'enemy', r.wave + ':' + index, e.name, 'purgatory', e.type);
+    this.soul(r, 'enemy', r.wave + ':' + index, e.name, 'purgatory', e.type);
     if (e.onDeath?.spawn) {
       const at = (this.now() - r.started) / 1000;
       const location = position || swarmFrame(plan.roster, at, r.groundAgents)[index]?.p;

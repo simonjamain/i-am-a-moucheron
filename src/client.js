@@ -2648,12 +2648,7 @@ function physicalPurgatory(dt, now) {
       g =
         b.kind === 'player'
           ? humanoid(b.entity === id ? '#d5ef73' : '#8bc9d6', false, appearanceOf(b.entity))
-          : new T.Group();
-      if (b.kind === 'enemy') {
-        pm(g, 0.75, 0.8, 1.1, '#695441', 0, 0.8);
-        pm(g, 1.6, 0.07, 0.6, '#d3dedc', 0, 1.25);
-        for (const x of [-0.23, 0.23]) ball(x, 0.98, 0.55, 0.11, '#e7ab63', g);
-      }
+          : soulInsect(b.enemyType);
 
       g.position.set(b.x, 0, b.z);
       if (b.kind === 'player') equipPistolModel(g);
@@ -2711,6 +2706,7 @@ function physicalPurgatory(dt, now) {
   for (const b of soulArena.bodies)
     if (b.kind === 'enemy' && !b.gone) {
       const g = soulMeshes.get(b.id);
+      g?.userData.animate?.(dt, { speed: Math.hypot(b.vx, b.vz) * SOUL_METRES });
       if (g) soulStatus.update(b.id, g, b.health, b.maxHealth || 100, purgCamera, now / 1000);
     }
   soulStatus.keep(
@@ -6607,6 +6603,25 @@ $('enterPurgatory').onclick = async () => {
     $('enterPurgatory').disabled = false;
   }
 };
+// The real insect model, standing in the purgatory queue: the rig faces -Z, the
+// soul's heading is +Z, so it sits in a turned pivot, and it is fitted to the
+// soul's size (the office scale would make a rat fill the room).
+function soulInsect(type = 'midge') {
+  if (!ENEMY_TYPES[type]) type = 'midge';
+  const outer = new T.Group(),
+    model = insect(type);
+  model.rotation.y = Math.PI;
+  outer.add(model);
+  outer.updateMatrixWorld(true);
+  const size = new T.Box3().setFromObject(model).getSize(new T.Vector3()),
+    longest = Math.max(size.x, size.z, 1e-6),
+    wanted = Math.min(1.9, Math.max(0.45, 0.8 * Math.sqrt(ENEMY_TYPES[type].size)));
+  model.scale.multiplyScalar(wanted / longest);
+  outer.userData.disposables = model.userData.disposables;
+  outer.userData.animate = (dt, info) => model.userData.animate?.(dt, info);
+  return outer;
+}
+
 function observedPurgatory(dt) {
   const arena = observationRealm === 'super' ? snap?.superArena : snap?.arena;
   const active = new Set();
@@ -6618,7 +6633,7 @@ function observedPurgatory(dt) {
       model =
         body.kind === 'player'
           ? humanoid('#8bc9d6', false, appearanceOf(body.entity))
-          : insect(body.enemyType || 'midge');
+          : soulInsect(body.enemyType);
       purgScene.add(model);
       soulMeshes.set(body.id, model);
       model.rotation.y = body.face || 0;

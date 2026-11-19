@@ -176,7 +176,7 @@ sont la seule source de revenu liée aux vagues, et un ennemi raté ne rapporte 
 Les prix de certaines installations montent avec le nombre déjà posé (voir [progression](progression.md#revenus-et-prix)).
 Chaque PNJ accepté par Saint Pierre ou tué au purgatoire est définitivement
 libéré et rapporte, une seule fois, **la puissance de son espèce** en dollars
-communs (1 $ pour un moucheron, 12,23 $ pour un rat). Un ennemi abattu dans le
+communs (1 $ pour un moucheron, 24,47 $ pour un rat). Un ennemi abattu dans le
 bureau ne rapporte pas directement d’argent. Chaque dollar déclenche une courte
 sonnerie chez tous les joueurs présents, même dans les autres mondes. Le service des PNJ
 continue côté serveur sans joueur humain au purgatoire. Le menu P permet d’acheter
@@ -329,7 +329,7 @@ modifiables à tout moment par le créateur de la room.
 
 ## Rat, moustique et araignée pondeuse
 
-Le rat géant possède 5 000 PV et avance lentement. Le moustique possède 70 PV et esquive selon des oscillations déterministes. L'araignée pondeuse possède 1 200 PV : elle libère **100 bébés araignées** de 20 PV à sa mort, au lieu du site de décès, avec une trajectoire dispersée et rapide vers la poubelle. Chaque bébé survivant inflige à la poubelle sa puissance (0,17), soit environ 17 pour la portée complète (défaite à 20 d'infestation). Les bébés morts ne créent pas d'âmes rémunérées. Moustique dès vague 3, pondeuse dès vague 11, rat dès vague 15. Voir [bestiaire](enemy-bestiary.md).
+Le rat géant possède 10 000 PV et avance lentement. Le moustique possède 150 PV et esquive selon des oscillations déterministes. L'araignée pondeuse possède 1 200 PV : elle libère **100 bébés araignées** de 10 PV à sa mort, au lieu du site de décès, avec une trajectoire dispersée et rapide vers la poubelle. Chaque bébé survivant inflige à la poubelle sa puissance (0,08), soit environ 8 pour la portée complète. Les bébés morts passent au purgatoire comme les autres ennemis. Moustique dès vague 3, pondeuse dès vague 11, rat dès vague 15. Voir [bestiaire](enemy-bestiary.md).
 
 Les [vitesses physiques des espèces](enemy-bestiary.md#vitesse-physique-dans-la-pièce) sont explicites en m/s dans le bureau, indépendantes de la taille des insectes et du nombre de membres de la nuée. L'accélération cachée des bébés araignées et les oscillations trop rapides des moustiques ont été corrigées.
 

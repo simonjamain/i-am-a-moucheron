@@ -12,7 +12,7 @@ const SPECIES = {
   },
   roach: {
     name: 'Cafard',
-    hp: 300,
+    hp: 400,
     size: 1.2,
     speedMps: 0.0625,
     color: '#a36f42',
@@ -27,21 +27,21 @@ const SPECIES = {
   },
   guard: {
     name: 'Abeille',
-    hp: 400,
+    hp: 600,
     size: 1.4,
     speedMps: 0.0875,
     color: '#729d8b',
   },
   mosquito: {
     name: 'Moustique',
-    hp: 70,
+    hp: 150,
     size: 0.58,
     speedMps: 0.115,
     color: '#6b807e',
   },
   rat: {
     name: 'Rat',
-    hp: 5000,
+    hp: 10000,
     size: 4,
     speedMps: 0.08075,
     color: '#86705c',
@@ -58,7 +58,7 @@ const SPECIES = {
   },
   spiderling: {
     name: 'Bébé araignée',
-    hp: 20,
+    hp: 10,
     size: 0.3,
     speedMps: 0.075,
     color: '#51463d',
@@ -67,7 +67,7 @@ const SPECIES = {
   },
   brute: {
     name: 'Scarabée',
-    hp: 800,
+    hp: 1500,
     size: 1.9,
     speedMps: 0.07,
     color: '#d0a14b',
