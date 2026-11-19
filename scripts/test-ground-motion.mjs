@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { GroundMotionTrack, GROUND_VISUAL_DELAY_MS } from '../src/ground-motion.js';
+import { GroundMotionTrack, GROUND_VISUAL_DELAY_MS } from '../src/ground-motion.ts';
 
 const actor = (x, arrived = false) => ({
   p: [x, 0],

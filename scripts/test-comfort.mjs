@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import * as T from '../vendor/three.module.min.js';
 import { Game } from '../server/game.js';
-import { VEHICLES, vehiclePad, vehicleEntry, vehicleAccess } from '../src/fleet.js';
+import { VEHICLES, vehiclePad, vehicleEntry, vehicleAccess } from '../src/fleet.ts';
 import { stepHelicopter } from '../src/helicopter.js';
 import { fullAmmo } from '../src/logistics.js';
 import { MAP, ENEMY_SIZE_FACTORS } from '../src/scale.ts';
@@ -68,7 +68,7 @@ for (const type of Object.keys(VEHICLES)) {
 }
 for (const pilot of r.pilots.values()) pilot.seen = now;
 const { ACTOR_UNIT } = await import('../src/scale.ts');
-const { OFFICE_LAYOUT } = await import('../src/layout.js');
+const { OFFICE_LAYOUT } = await import('../src/layout.ts');
 const h2 = game.createVehicle(r, 'helicopter');
 function board(person, seat) {
   const e = vehicleEntry(h2, seat),

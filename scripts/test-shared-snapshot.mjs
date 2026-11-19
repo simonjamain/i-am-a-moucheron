@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { Game } from '../server/game.js';
 import { GameSession } from '../server/session.js';
 import { PROTOCOL, ReplyAssembler } from '../src/udp-protocol.js';
-import { MOTION_REFRESH_MS } from '../src/snapshot-wire.js';
+import { MOTION_REFRESH_MS } from '../src/snapshot-wire.ts';
 
 // 1. Shared room snapshots: sync replies reuse one snapshot for at most
 // snapshotShareMs; other commands and roster changes rebuild it at once.

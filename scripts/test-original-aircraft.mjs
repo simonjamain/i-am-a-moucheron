@@ -2,12 +2,12 @@ import assert from 'node:assert/strict';
 import { Game } from '../server/game.js';
 import { SHOP } from '../src/equipment.js';
 import { shopColumns } from '../src/shop-catalog.js';
-import { VEHICLES, isBomber, vehicleEntry } from '../src/fleet.js';
+import { VEHICLES, isBomber, vehicleEntry } from '../src/fleet.ts';
 import { canUseWeapon } from '../src/armament.js';
 import { ammoCapacity, fullAmmo } from '../src/logistics.js';
 import { baseWorld } from '../src/base.js';
 import { ACTOR_UNIT } from '../src/scale.ts';
-import { OFFICE_LAYOUT } from '../src/layout.js';
+import { OFFICE_LAYOUT } from '../src/layout.ts';
 
 // The original M1-style light fighter and four-seat medium bomber stay in the
 // game as purchases; only the biplanes are free, unlimited starters.

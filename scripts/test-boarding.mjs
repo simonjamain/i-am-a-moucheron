@@ -1,6 +1,6 @@
 import './normal-dossiers.mjs';
 import assert from 'node:assert/strict';
-import { OFFICE_LAYOUT } from '../src/layout.js';
+import { OFFICE_LAYOUT } from '../src/layout.ts';
 import { ASSETS } from '../server/assets.js';
 import {
   aircraftBay,

@@ -1,5 +1,5 @@
 import { MAP, ACTOR_UNIT } from './scale.ts';
-import { VEHICLES } from './fleet.js';
+import { VEHICLES } from './fleet.ts';
 import { supportedPlacement } from './equipment.js';
 // World-space metres per second: the previous scaled 1 mm/s looked stationary
 // for several minutes after a drop from a plane above the office furniture;

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { BankUI, loanText } from '../src/bank-ui.js';
 import { equipmentHUD, ContextHUD } from '../src/hud.js';
-import { newBank, signLoan, settleLoans } from '../src/bank.js';
+import { newBank, signLoan, settleLoans } from '../src/bank.ts';
 import { Game } from '../server/game.js';
 
 class Element {

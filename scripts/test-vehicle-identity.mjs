@@ -5,7 +5,7 @@ import { readFileSync } from 'node:fs';
 import * as T from '../vendor/three.module.min.js';
 import { paintVehicle } from '../src/vehicle-livery.js';
 import { drawSeatIcon, seatRole, SEAT_ROLE_NAMES } from '../src/seat-icons.js';
-import { VEHICLES } from '../src/fleet.js';
+import { VEHICLES } from '../src/fleet.ts';
 
 // Procedural model: the original base colour is kept for every sequence.
 const make = () => {

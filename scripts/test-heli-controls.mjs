@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import * as T from '../vendor/three.module.min.js';
 import { stepHelicopter } from '../src/helicopter.js';
 import { MAP } from '../src/scale.ts';
-import { VEHICLES, vehiclePad, isRotorcraft } from '../src/fleet.js';
+import { VEHICLES, vehiclePad, isRotorcraft } from '../src/fleet.ts';
 import { Game } from '../server/game.js';
 import { HEAVY } from '../src/armament.js';
 const source = readFileSync('src/client.js', 'utf8');

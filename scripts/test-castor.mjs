@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import * as T from '../vendor/three.module.min.js';
 import { SHOP, shopPrice } from '../src/equipment.js';
-import { VEHICLES } from '../src/fleet.js';
+import { VEHICLES } from '../src/fleet.ts';
 import { fullAmmo, ammoCapacity } from '../src/logistics.js';
 import { canUseWeapon } from '../src/armament.js';
 import { withinService, advancePaidService } from '../src/paid-service.js';

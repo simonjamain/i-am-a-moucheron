@@ -5,7 +5,7 @@ import { createOffice } from '../src/office.js';
 import { createGraphics } from '../src/graphics.js';
 import { aircraftPose } from '../src/base.js';
 import { MAP, ACTOR_UNIT } from '../src/scale.ts';
-import { OFFICE_LAYOUT } from '../src/layout.js';
+import { OFFICE_LAYOUT } from '../src/layout.ts';
 // Scene geometry can be checked without a GPU or DOM-backed text textures.
 const scene = new T.Scene(),
   graphics = createGraphics(T, scene);

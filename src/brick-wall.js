@@ -1,5 +1,5 @@
-import { BRICK_PITCH, HALF_BRICK, WALL_ROWS, wallLength } from './brick-rules.js';
-export { BRICK_PITCH } from './brick-rules.js';
+import { BRICK_PITCH, HALF_BRICK, WALL_ROWS, wallLength } from './brick-rules.ts';
+export { BRICK_PITCH } from './brick-rules.ts';
 import { BRICK_POSITIONS, BRICK_INDICES, BRICK_SOURCE } from './meshy-brick-data.js';
 
 // Office metres. A row is one brick body tall; the 2×4 brick is half as deep as

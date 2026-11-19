@@ -14,7 +14,7 @@ import {
   isRotorcraft,
   isSupportVehicle,
   isPassengerSeat,
-} from '../src/fleet.js';
+} from '../src/fleet.ts';
 import { SHOP } from '../src/equipment.js';
 import { SHOP_CATEGORIES } from '../src/shop-catalog.js';
 import { canUseWeapon } from '../src/armament.js';

@@ -37,8 +37,12 @@ dans `src/`, `server/` et `scripts/`. L'état et la prochaine étape sont suivis
    (types `@types/three` alignés sur la révision embarquée r170). Aucun import
    d'exécution de `'three'` : le navigateur charge toujours `vendor/`.
 4. **Champs de classe** déclarés (`samples: ClockSample[];`) avant le constructeur.
-5. **Tables exhaustives** : typer `Record<EnemyType, …>` (ou futur `VehicleType`)
-   pour que `tsc` liste chaque table à compléter lors d'un ajout. Voir
+5. **Tables exhaustives** : typer `Record<EnemyType, …>` ou `Record<VehicleType, …>`
+   pour que `tsc` liste chaque table à compléter lors d'un ajout. Quand le registre
+   est lui-même en TypeScript, dériver le type de ses clés
+   (`export type VehicleType = keyof typeof VEHICLES`, objet vérifié par
+   `satisfies Record<string, VehicleProfile>`) plutôt que de recopier une union
+   dans `src/types.ts`. Voir
    [ajouter du contenu](adding-content.md).
 6. **Comportement identique** : une migration ne change ni la logique ni les
    allocations des chemins chauds. Préférer `readonly number[]` à une conversion
@@ -57,7 +61,7 @@ relatifs de `src/`, `server/`, `scripts/`, chemins lus par les tests
 (`'src/scale.js'`) et mentions Markdown (sauf `docs/archive/`). Il ne touche ni
 aux URL du navigateur ni aux noms construits dynamiquement : relire le diff.
 Migrer de préférence des feuilles du graphe d'imports (modules sans import local
-non migré), par lots cohérents, puis remonter vers `client.js` et `server/game.js`.
+non migré ; `npm run ts:migrate -- --leaves` les liste, plus petites d'abord), par lots cohérents, puis remonter vers `client.js` et `server/game.js`.
 
 ## Écart avec la consigne précédente
 

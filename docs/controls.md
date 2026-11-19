@@ -189,7 +189,7 @@ automatique, tandis que le bouton fermer peut reprendre la capture. La partie
 continue pendant l'ouverture du panneau.
 
 Sources : `flight-tuning.js` (plages et stockage), `flight-tuning-ui.js`
-(panneau), `mouse-flight.js` (instructeur) et
+(panneau), `mouse-flight.ts` (instructeur) et
 `test-flight-tuning.mjs` (régression). La sensation du pilotage reste à
 valider dans une vraie partie WebGL/UDP.
 

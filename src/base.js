@@ -1,5 +1,5 @@
 import { MAP, ACTOR_UNIT, REFERENCE } from './scale.ts';
-import { OFFICE_LAYOUT } from './layout.js';
+import { OFFICE_LAYOUT } from './layout.ts';
 import { advanceArena, createSoul } from './purgatory-physics.js';
 export function aircraftBay(index) {
   const col = index % 10,

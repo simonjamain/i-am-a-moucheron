@@ -15,7 +15,7 @@ import {
   SPIDERLING_HIT,
   SPIDERLING_MODEL,
 } from './spiderling-model.js';
-import { nearestRest } from './walker-gait.js';
+import { nearestRest } from './walker-gait.ts';
 import { TAU } from './rigged-creature.js';
 
 export const WALKERS = Object.freeze({

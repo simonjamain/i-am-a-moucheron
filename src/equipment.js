@@ -1,5 +1,5 @@
 import { footprintInsideCollider, footprintOverlapsCollider } from './oriented-collider.ts';
-import { VEHICLES } from './fleet.js';
+import { VEHICLES } from './fleet.ts';
 import { FIXED_DCA } from './fixed-dca.js';
 import { MAP } from './scale.ts';
 export const SHOP = Object.freeze({

@@ -1,6 +1,7 @@
 // Rename JavaScript modules to TypeScript and rewrite every reference to them.
 //
 //   node scripts/ts-migrate.mjs src/scale.js src/units.js [--dry-run]
+//   node scripts/ts-migrate.mjs --leaves   # list the next candidates, smallest first
 //
 // The rename is mechanical: types are added afterwards, then checked with
 // `npm run typecheck`. References rewritten:
@@ -18,8 +19,12 @@ const root = path.resolve(import.meta.dirname, '..');
 const args = process.argv.slice(2);
 const dryRun = args.includes('--dry-run');
 const targets = args.filter((a) => !a.startsWith('--')).map((a) => path.normalize(a));
+if (args.includes('--leaves')) {
+  await listLeaves();
+  process.exit(0);
+}
 if (!targets.length) {
-  console.error('Usage: node scripts/ts-migrate.mjs src/<module>.js [...] [--dry-run]');
+  console.error('Usage: node scripts/ts-migrate.mjs src/<module>.js [...] [--dry-run] | --leaves');
   process.exit(2);
 }
 for (const t of targets) {
@@ -114,3 +119,29 @@ console.log(
 );
 if (changed.length) console.log(changed.map((f) => '  ' + f).join('\n'));
 console.log('Next: add types, then `npm run typecheck && npm test`.');
+
+// Hand-written modules whose local imports are all TypeScript (or generated
+// `-data.js`): migrating them never forces another rename first. Browser-absolute
+// imports (`'/scale.js'` in client.js) count as local.
+async function listLeaves() {
+  const rows = [];
+  for (const dir of ['src', 'server']) {
+    for (const name of await readdir(path.join(root, dir))) {
+      if (!name.endsWith('.js') || name.endsWith('-data.js')) continue;
+      const text = await readFile(path.join(root, dir, name), 'utf8');
+      const pending = [...text.matchAll(/from\s+['"]((?:\.{1,2})?\/[^'"]+\.js)['"]/g)]
+        .map((m) => m[1])
+        .filter((spec) => !spec.endsWith('-data.js'))
+        .filter((spec) => {
+          const target = spec.startsWith('/')
+            ? path.join(root, 'src', spec)
+            : path.resolve(root, dir, spec);
+          return existsSync(target) && !existsSync(target.replace(/\.js$/, '.ts'));
+        });
+      if (!pending.length) rows.push([text.split('\n').length, `${dir}/${name}`]);
+    }
+  }
+  rows.sort((a, b) => a[0] - b[0]);
+  for (const [lines, file] of rows) console.log(`${String(lines).padStart(5)}  ${file}`);
+  console.log(`${rows.length} module(s) ready to migrate.`);
+}

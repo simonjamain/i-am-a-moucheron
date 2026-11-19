@@ -14,19 +14,49 @@
 //   str                       : exact; UUIDs packed on 16 bytes
 // JSON semantics apply: undefined fields are absent; NaN decodes as null.
 
+/** Scalar codecs; a nested Schema encodes an optional sub-object (null allowed). */
+export type ScalarCodec = 'vec3' | 'quat' | 'real' | 'num' | 'u8' | 'bool' | 'str' | 'json';
+export type Codec = ScalarCodec | Schema;
+/** Ordered [field, codec] pairs; the index is the field's bit in the presence mask (≤ 32). */
+export type Schema = readonly (readonly [string, Codec])[];
+/** Decoded motion object: schema fields plus any JSON "rest" fields. */
+export type MotionObject = Record<string, unknown>;
+export interface MotionBatchEntry {
+  peer: string | null;
+  seq: number;
+  /** Server time (ms) at which the state was accepted. */
+  at: number;
+  /** Capture time on the sender's clock, when known. */
+  captured?: number | null;
+  bytes: Uint8Array;
+}
+export interface DecodedMotionEntry {
+  peer: string | null;
+  seq: number | null;
+  age: number;
+  captured: number | null;
+  state: MotionObject;
+}
+export interface DecodedMotionBatch {
+  time: number;
+  entries: DecodedMotionEntry[];
+}
+
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
-const plain = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
-const finite3 = (v) => Array.isArray(v) && v.length === 3 && v.every(Number.isFinite);
+const plain = (v: unknown): v is MotionObject =>
+  v !== null && typeof v === 'object' && !Array.isArray(v);
+const finite3 = (v: unknown): v is [number, number, number] =>
+  Array.isArray(v) && v.length === 3 && v.every(Number.isFinite);
 const MAX_STRING = 255;
 const MAX_REST = 4096;
 const QUAT_SCALE = 1.5 / 32767;
 
-const INPUT = [
+const INPUT: Schema = [
   ['x', 'real'],
   ['z', 'real'],
   ['guard', 'bool'],
 ];
-const BODY = [
+const BODY: Schema = [
   ['id', 'num'],
   ['x', 'real'],
   ['z', 'real'],
@@ -50,19 +80,19 @@ const BODY = [
   ['parachute', 'bool'],
   ['grounded', 'bool'],
 ];
-const GROUND = [
+const GROUND: Schema = [
   ['scene', 'str'],
   ['epoch', 'str'],
   ['body', BODY],
 ];
-const SOUL = [
+const SOUL: Schema = [
   ['x', 'real'],
   ['z', 'real'],
   ['vx', 'real'],
   ['vz', 'real'],
   ['face', 'real'],
 ];
-export const MOTION_SCHEMA = [
+export const MOTION_SCHEMA: Schema = [
   ['p', 'vec3'],
   ['q', 'quat'],
   ['v', 'vec3'],
@@ -87,104 +117,110 @@ export const MOTION_SCHEMA = [
 ];
 
 class Writer {
+  bytes: Uint8Array;
+  view: DataView;
+  length: number;
   constructor() {
     this.bytes = new Uint8Array(256);
     this.view = new DataView(this.bytes.buffer);
     this.length = 0;
   }
-  room(n) {
+  room(n: number): void {
     if (this.length + n <= this.bytes.length) return;
     const next = new Uint8Array(Math.max(this.bytes.length * 2, this.length + n));
     next.set(this.bytes.subarray(0, this.length));
     this.bytes = next;
     this.view = new DataView(next.buffer);
   }
-  u8(v) {
+  u8(v: number): void {
     this.room(1);
     this.view.setUint8(this.length++, v);
   }
-  u16(v) {
+  u16(v: number): void {
     this.room(2);
     this.view.setUint16(this.length, v);
     this.length += 2;
   }
-  u32(v) {
+  u32(v: number): void {
     this.room(4);
     this.view.setUint32(this.length, v);
     this.length += 4;
   }
-  i16(v) {
+  i16(v: number): void {
     this.room(2);
     this.view.setInt16(this.length, v);
     this.length += 2;
   }
-  i32(v) {
+  i32(v: number): void {
     this.room(4);
     this.view.setInt32(this.length, v);
     this.length += 4;
   }
-  f32(v) {
+  f32(v: number): void {
     this.room(4);
     this.view.setFloat32(this.length, v);
     this.length += 4;
   }
-  f64(v) {
+  f64(v: number): void {
     this.room(8);
     this.view.setFloat64(this.length, v);
     this.length += 8;
   }
-  raw(bytes) {
+  raw(bytes: Uint8Array): void {
     this.room(bytes.length);
     this.bytes.set(bytes, this.length);
     this.length += bytes.length;
   }
-  done() {
+  done(): Uint8Array {
     return this.bytes.slice(0, this.length);
   }
 }
 class Reader {
-  constructor(bytes) {
+  bytes: Uint8Array;
+  view: DataView;
+  offset: number;
+  constructor(bytes: Uint8Array) {
     this.bytes = bytes;
     this.view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
     this.offset = 0;
   }
-  take(n) {
+  take(n: number): number {
     if (this.offset + n > this.bytes.length) throw RangeError('Paquet de mouvement tronqué.');
     const at = this.offset;
     this.offset += n;
     return at;
   }
-  u8() {
+  u8(): number {
     return this.view.getUint8(this.take(1));
   }
-  u16() {
+  u16(): number {
     return this.view.getUint16(this.take(2));
   }
-  u32() {
+  u32(): number {
     return this.view.getUint32(this.take(4));
   }
-  i16() {
+  i16(): number {
     return this.view.getInt16(this.take(2));
   }
-  i32() {
+  i32(): number {
     return this.view.getInt32(this.take(4));
   }
-  f32() {
+  f32(): number {
     return this.view.getFloat32(this.take(4));
   }
-  f64() {
+  f64(): number {
     return this.view.getFloat64(this.take(8));
   }
-  raw(n) {
+  raw(n: number): Uint8Array {
     const at = this.take(n);
     return this.bytes.subarray(at, at + n);
   }
 }
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();
-const nanToNull = (v) => (Number.isNaN(v) ? null : v);
+const nanToNull = (v: number): number | null => (Number.isNaN(v) ? null : v);
 
-function accepts(codec, value) {
+function accepts(codec: Codec, value: unknown): boolean {
   if (Array.isArray(codec)) return value === null || plain(value);
   switch (codec) {
     case 'vec3':
@@ -193,13 +229,13 @@ function accepts(codec, value) {
       return (
         Array.isArray(value) &&
         value.length === 4 &&
-        value.every((n) => Number.isFinite(n) && Math.abs(n) <= 1.5)
+        value.every((n) => Number.isFinite(n) && Math.abs(n as number) <= 1.5)
       );
     case 'real':
     case 'num':
       return typeof value === 'number' && Number.isFinite(value);
     case 'u8':
-      return Number.isInteger(value) && value >= 0 && value <= 255;
+      return Number.isInteger(value) && (value as number) >= 0 && (value as number) <= 255;
     case 'bool':
       return typeof value === 'boolean';
     case 'str':
@@ -213,7 +249,7 @@ function accepts(codec, value) {
   }
   return false;
 }
-function writeString(w, value) {
+function writeString(w: Writer, value: string | null): void {
   if (value === null) return w.u8(0);
   if (UUID.test(value)) {
     w.u8(1);
@@ -226,7 +262,7 @@ function writeString(w, value) {
   w.u8(bytes.length);
   w.raw(bytes);
 }
-function readString(r) {
+function readString(r: Reader): string | null {
   const tag = r.u8();
   if (tag === 0) return null;
   if (tag === 1) {
@@ -242,7 +278,7 @@ function readString(r) {
   if (tag === 2) return decoder.decode(r.raw(r.u8()));
   throw RangeError('Chaîne de mouvement invalide.');
 }
-function writeNumber(w, value, exact) {
+function writeNumber(w: Writer, value: number, exact: boolean): void {
   if (value === 0 && !Object.is(value, -0)) return w.u8(0);
   if (Number.isInteger(value) && value >= -2147483648 && value <= 2147483647) {
     w.u8(1);
@@ -255,7 +291,7 @@ function writeNumber(w, value, exact) {
   w.u8(2);
   w.f32(value);
 }
-function readNumber(r) {
+function readNumber(r: Reader): number | null {
   const tag = r.u8();
   if (tag === 0) return 0;
   if (tag === 1) return r.i32();
@@ -263,41 +299,42 @@ function readNumber(r) {
   if (tag === 3) return nanToNull(r.f64());
   throw RangeError('Nombre de mouvement invalide.');
 }
-function writeJson(w, value) {
+function writeJson(w: Writer, value: unknown): void {
   const bytes = encoder.encode(JSON.stringify(value) ?? 'null');
   if (bytes.length > MAX_REST) throw RangeError('Champ de mouvement trop long.');
   w.u16(bytes.length);
   w.raw(bytes);
 }
-function readJson(r) {
+function readJson(r: Reader): unknown {
   return JSON.parse(decoder.decode(r.raw(r.u16())));
 }
-function writeValue(w, codec, value) {
+// `value` was validated by accepts(codec, value) before reaching the writer.
+function writeValue(w: Writer, codec: Codec, value: unknown): void {
   if (Array.isArray(codec)) {
     if (value === null) return w.u8(0);
     w.u8(1);
-    return writeObject(w, codec, value);
+    return writeObject(w, codec, value as MotionObject);
   }
   switch (codec) {
     case 'vec3':
-      return value.forEach((n) => w.f32(n));
+      return (value as number[]).forEach((n) => w.f32(n));
     case 'quat':
-      return value.forEach((n) => w.i16(Math.round(n / QUAT_SCALE)));
+      return (value as number[]).forEach((n) => w.i16(Math.round(n / QUAT_SCALE)));
     case 'real':
-      return writeNumber(w, value, false);
+      return writeNumber(w, value as number, false);
     case 'num':
-      return writeNumber(w, value, true);
+      return writeNumber(w, value as number, true);
     case 'u8':
-      return w.u8(value);
+      return w.u8(value as number);
     case 'bool':
       return w.u8(value ? 1 : 0);
     case 'str':
-      return writeString(w, value);
+      return writeString(w, value as string | null);
     case 'json':
       return writeJson(w, value);
   }
 }
-function readValue(r, codec, depth) {
+function readValue(r: Reader, codec: Codec, depth: number): unknown {
   if (Array.isArray(codec)) return r.u8() ? readObject(r, codec, depth + 1) : null;
   switch (codec) {
     case 'vec3':
@@ -318,9 +355,9 @@ function readValue(r, codec, depth) {
   }
   throw RangeError('Schéma de mouvement invalide.');
 }
-function writeObject(w, schema, object) {
+function writeObject(w: Writer, schema: Schema, object: MotionObject): void {
   let mask = 0;
-  const known = new Set();
+  const known = new Set<string>();
   schema.forEach(([key, codec], i) => {
     known.add(key);
     if (Object.hasOwn(object, key) && object[key] !== undefined && accepts(codec, object[key]))
@@ -330,7 +367,7 @@ function writeObject(w, schema, object) {
   schema.forEach(([key, codec], i) => {
     if (mask & (1 << i)) writeValue(w, codec, object[key]);
   });
-  const rest = {};
+  const rest: MotionObject = {};
   let extra = false;
   for (const [key, value] of Object.entries(object)) {
     if (value === undefined || typeof value === 'function') continue;
@@ -344,10 +381,10 @@ function writeObject(w, schema, object) {
     writeJson(w, rest);
   } else w.u8(0);
 }
-function readObject(r, schema, depth = 0) {
+function readObject(r: Reader, schema: Schema, depth = 0): MotionObject {
   if (depth > 4) throw RangeError('Mouvement trop imbriqué.');
   const mask = r.u32(),
-    object = {};
+    object: MotionObject = {};
   schema.forEach(([key, codec], i) => {
     if (mask & (1 << i)) object[key] = readValue(r, codec, depth);
   });
@@ -360,12 +397,12 @@ function readObject(r, schema, depth = 0) {
   return object;
 }
 
-export function encodeMotionState(state) {
+export function encodeMotionState(state: MotionObject): Uint8Array {
   const w = new Writer();
   writeObject(w, MOTION_SCHEMA, state);
   return w.done();
 }
-export function decodeMotionState(bytes) {
+export function decodeMotionState(bytes: Uint8Array): MotionObject {
   const r = new Reader(bytes);
   const state = readObject(r, MOTION_SCHEMA);
   if (r.offset !== bytes.length) throw RangeError('Mouvement de longueur invalide.');
@@ -379,9 +416,13 @@ export function decodeMotionState(bytes) {
 export const MOTION_BATCH_VERSION = 2;
 export const MOTION_BATCH_BYTES = 1100;
 const MAGIC = 0x4d;
-export function encodeMotionBatch(time, entries, maxBytes = MOTION_BATCH_BYTES) {
-  const chunks = [];
-  let w = null,
+export function encodeMotionBatch(
+  time: number,
+  entries: Iterable<MotionBatchEntry>,
+  maxBytes = MOTION_BATCH_BYTES,
+): Uint8Array[] {
+  const chunks: Uint8Array[] = [];
+  let w: Writer | null = null as Writer | null,
     count = 0,
     countAt = 0;
   const flush = () => {
@@ -398,7 +439,7 @@ export function encodeMotionBatch(time, entries, maxBytes = MOTION_BATCH_BYTES) 
     // Capture time on the sender's clock (version 2), when known.
     if (Number.isFinite(entry.captured)) {
       body.u8(1);
-      body.f64(entry.captured);
+      body.f64(entry.captured as number);
     } else body.u8(0);
     body.u16(entry.bytes.length);
     body.raw(entry.bytes);
@@ -419,15 +460,19 @@ export function encodeMotionBatch(time, entries, maxBytes = MOTION_BATCH_BYTES) 
   flush();
   return chunks;
 }
-export function decodeMotionBatch(data) {
+export function decodeMotionBatch(
+  data: Uint8Array | ArrayBuffer | ArrayBufferView,
+): DecodedMotionBatch {
   const bytes =
-    data instanceof Uint8Array ? data : new Uint8Array(data.buffer ? data.buffer : data);
+    data instanceof Uint8Array
+      ? data
+      : new Uint8Array('buffer' in data && data.buffer ? data.buffer : (data as ArrayBuffer));
   const r = new Reader(bytes);
   if (r.u8() !== MAGIC || r.u8() !== MOTION_BATCH_VERSION)
     throw RangeError('Lot de mouvements inconnu.');
   const time = r.f64(),
     count = r.u8(),
-    entries = [];
+    entries: DecodedMotionEntry[] = [];
   for (let i = 0; i < count; i++) {
     const peer = readString(r),
       seq = readNumber(r),

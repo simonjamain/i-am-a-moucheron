@@ -4,7 +4,7 @@
 // real reach. A rim-lit shader keeps the inside readable when the camera sits
 // in the sphere (the Castor driver always does).
 import { CASTOR_SERVICE_RADIUS, SERVICE_RADIUS } from './logistics.js';
-import { isSupportVehicle } from './fleet.js';
+import { isSupportVehicle } from './fleet.ts';
 
 export const ZONE_COLOR = '#58e36f';
 

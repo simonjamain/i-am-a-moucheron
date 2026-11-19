@@ -1,10 +1,50 @@
+import type * as THREE from 'three';
+import type { Three } from './types.ts';
 // Miniature fighter tuning inspired by a Merlin Spitfire's turn-fighting role.
 // Units belong to the desk arena; these are not measured Spitfire coefficients.
+/** Aerodynamic overrides from a VEHICLES entry; omitted fields use the fighter defaults. */
+export interface FlightProfile {
+  authoritySpeed?: number;
+  turn?: number;
+  stallAngle?: number;
+  liftBase?: number;
+  drag?: number;
+  thrust?: number;
+  maxSpeed?: number;
+}
+/** Mutable aircraft state stepped in place (q, vel, omega are updated). */
+export interface FlightState {
+  q: THREE.Quaternion;
+  vel: THREE.Vector3;
+  omega: THREE.Vector3;
+  wind: THREE.Vector3;
+  gas: number;
+  /** Truthy when the engine can produce thrust (number kept for older callers). */
+  engine?: boolean | number;
+  pitch: number;
+  roll: number;
+  yaw?: number;
+  /** Miniature ratio: linear quantities are divided by it before integrating. */
+  scale?: number;
+  profile?: FlightProfile | null;
+  /** Ignored by the integrator; callers pass it along with the rest of their state. */
+  wing?: unknown;
+}
+export interface FlightStep {
+  forward: THREE.Vector3;
+  speed: number;
+  bank: number;
+  aoa: number;
+  stall: number;
+  lift: number;
+  authority: number;
+}
+
 function unscaledFlight(
-  T,
-  { q, vel, omega, wind, gas, engine = 1, pitch, roll, yaw = 0, profile = null },
-  dt,
-) {
+  T: Three,
+  { q, vel, omega, wind, gas, engine = 1, pitch, roll, yaw = 0, profile = null }: FlightState,
+  dt: number,
+): FlightStep {
   const clamp = T.MathUtils.clamp;
   let forward = new T.Vector3(0, 0, -1).applyQuaternion(q),
     up = new T.Vector3(0, 1, 0).applyQuaternion(q),
@@ -61,7 +101,7 @@ export const LIFTOFF_SPEED = 18;
 
 // Dynamics use reference metres/seconds. Scaling every linear quantity here
 // preserves the same manoeuvre and timing on maps of different miniature ratios.
-export function stepFlight(T, state, dt) {
+export function stepFlight(T: Three, state: FlightState, dt: number): FlightStep {
   const scale = state.scale ?? 1;
   const vel = state.vel.clone().multiplyScalar(1 / scale),
     wind = state.wind.clone().multiplyScalar(1 / scale);

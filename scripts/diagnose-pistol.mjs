@@ -1,6 +1,6 @@
 import { rayCollider } from '../src/oriented-collider.ts';
 import { makeTracer, makeShotTrace, moveShotTrace, TRACER_COLOR } from '../src/tracers.js';
-import { muzzleAim } from '../src/personal-aim.js';
+import { muzzleAim } from '../src/personal-aim.ts';
 // Executes the current pistol() function in a controlled Three.js scene.
 import * as T from '../vendor/three.module.min.js';
 import vm from 'node:vm';

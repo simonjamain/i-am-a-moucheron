@@ -1,9 +1,9 @@
 import { colliderContainsXZ, colliderPushXZ } from './oriented-collider.ts';
 import { isFortification } from './ground-fortifications.js';
-import { stepWalkerFall, impactDamage } from './field-physics.js';
+import { stepWalkerFall, impactDamage } from './field-physics.ts';
 import { MAP, ACTOR_UNIT, REFERENCE, FLAK } from './scale.ts';
 // Small vehicles keep their original dimensions; furniture uses the enlarged room.
-import { OFFICE_LAYOUT, ROOM_SCALE } from './layout.js';
+import { OFFICE_LAYOUT, ROOM_SCALE } from './layout.ts';
 export const BULLET_SPEED = MAP.metres(REFERENCE.bullet),
   FIRE_INTERVAL = 0.06,
   GEAR_HEIGHT = 1.05 * ACTOR_UNIT;

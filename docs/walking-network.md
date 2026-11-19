@@ -8,7 +8,7 @@ continue de valider et d'appliquer les 20 mises à jour/s. Cela réduit le débi
 relayé, avec une interpolation distante moins fréquente ; le canal
 `commands-v1` est fiable et ordonné. Le serveur relaie les mouvements, sans
 maillage entre navigateurs : depuis la version 252, toutes les 50 ms, il envoie
-à tous les joueurs d'une salle les mêmes lots binaires (`src/motion-wire.js`)
+à tous les joueurs d'une salle les mêmes lots binaires (`src/motion-wire.ts`)
 contenant les mouvements acceptés depuis le lot précédent ; chacun ignore sa
 propre entrée. Le navigateur envoie toujours son mouvement en JSON, avec son
 heure de capture : les récepteurs placent les échantillons à cette heure et

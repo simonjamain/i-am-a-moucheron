@@ -7,7 +7,7 @@ sont revenus en version 327 comme achats à part : **Chasseur léger** (`lightfi
 `fighter` et `bomber` (stock de départ, boutique, achats) ; leurs noms deviennent
 **M1 Chasseur biplan** et **B3 Bombardier biplan**. Le Stuka, le Spitfire et le H2
 ne changent pas : ils dérivent de l'ancien chasseur léger conservé comme référence
-(`LIGHT_FIGHTER` dans `src/fleet.js`).
+(`LIGHT_FIGHTER` dans `src/fleet.ts`).
 
 ## Modèles
 
@@ -39,7 +39,7 @@ sont restaurés en 327 pour les deux avions d'achat.
   (13 avant, `authoritySpeed`), portance de base 0,0056 (0,0032) et angle de décrochage
   0,45 rad (0,30, `stallAngle`) ; la vitesse minimale de vol en palier baisse d'environ
   un cinquième. Ces trois réglages sont des champs optionnels du profil de vol
-  (`src/flight.js`), sans effet sur les autres avions.
+  (`src/flight.ts`), sans effet sur les autres avions.
 - **Une mitrailleuse centrale** qui tire comme _une seule_ des deux mitrailleuses du
   chasseur léger : un coup toutes les 0,12 s au lieu de 0,06 s (`gunIntervalFactor: 2`,
   `pilotFireInterval`), soit **deux fois moins de DPS** ; même dégât par balle (75).

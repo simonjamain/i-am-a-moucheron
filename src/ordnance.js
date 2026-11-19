@@ -4,7 +4,7 @@ import { mobileBarrelOrigin, clampProximity } from './mobile-flak.js';
 import { tankBarrelOrigin } from './tank-view.js';
 import { MAP } from './scale.ts';
 import { HEAVY } from './armament.js';
-import { isBomber } from './fleet.js';
+import { isBomber } from './fleet.ts';
 export const add = (a, b) => a.map((v, i) => v + b[i]);
 const sub = (a, b) => a.map((v, i) => v - b[i]);
 const dot = (a, b) => a.reduce((n, v, i) => n + v * b[i], 0);

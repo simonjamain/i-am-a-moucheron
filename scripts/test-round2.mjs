@@ -1,13 +1,13 @@
 import assert from 'node:assert/strict';
 import * as T from '../vendor/three.module.min.js';
-import { wheelPose } from '../src/castor-wheels.js';
+import { wheelPose } from '../src/castor-wheels.ts';
 import { stepHelicopter } from '../src/helicopter.js';
-import { VEHICLES, vehiclePad } from '../src/fleet.js';
+import { VEHICLES, vehiclePad } from '../src/fleet.ts';
 import { CombatEffects } from '../src/combat.js';
 import { makeBiplaneBomber } from '../src/biplane-model.js';
 import { aimGun } from '../src/sortie.js';
 import { makeH2 } from '../src/h2-model.js';
-import { nearestWeaponMuzzle } from '../src/muzzle.js';
+import { nearestWeaponMuzzle } from '../src/muzzle.ts';
 import { makeServiceStation } from '../src/station-model.js';
 import { fogOpticalDepth, officeFogOpacity } from '../src/office-fog.js';
 import { brickLayout, BRICK_PITCH, BRICK_HEIGHT, BRICK_ROW } from '../src/brick-wall.js';
@@ -94,7 +94,7 @@ console.log(
 );
 
 // A partial stop/resume must be visually identical to a single continuous run.
-const { wallVisualRuns } = await import('../src/brick-rules.js');
+const { wallVisualRuns } = await import('../src/brick-rules.ts');
 const resumed = wallVisualRuns([
   { kind: 'barricade', id: 'a', a: [0, 0], b: [0.036, 0], hp: 100 },
   { kind: 'barricade', id: 'b', a: [0.036, 0], b: [0.084, 0], hp: 100 },

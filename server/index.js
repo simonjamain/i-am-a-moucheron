@@ -5,7 +5,7 @@ import { WebSocketServer } from 'ws';
 import { ASSETS, BUILD_VERSION } from './assets.js';
 import { Game, SNAPSHOT_SHARE_MS } from './game.js';
 import { GameSession } from './session.js';
-import { encodeMotionBatch, encodeMotionState } from '../src/motion-wire.js';
+import { encodeMotionBatch, encodeMotionState } from '../src/motion-wire.ts';
 
 // Shared motion batches: flush period and per-receiver congestion limit.
 export const MOTION_FLUSH_MS = 50;

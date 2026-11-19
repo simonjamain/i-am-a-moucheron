@@ -1,15 +1,80 @@
 // Compact immutable insect rosters by consecutive swarms. All individual
 // IDs and trajectory parameters remain exact; only repeated object fields
 // are stored once per run. This is a wire format, not gameplay authority.
-export function snapshotRosterCore(s) {
+type Json = unknown;
+type JsonObject = Record<string, Json>;
+/** One enemy of the roster as produced by the server (fields vary per species). */
+export type RosterEnemy = JsonObject & { type?: string };
+/** [enemy] for a run of one, or [count, fixed fields, varying columns]. */
+export type RosterGroup = [RosterEnemy] | [number, JsonObject, Record<string, Json[]>];
+/** Structural patch node (see the format comment above diffValue). */
+export type PatchNode =
+  | { $: Json }
+  | { o: Record<string, PatchNode>; d?: string[] }
+  | { a: Record<number, PatchNode>; n: number };
+type EnemyId = string | number;
+/**
+ * Room snapshot as it crosses the reliable channel. Only the fields this codec
+ * reads are named; everything else is patched structurally.
+ */
+export interface WireSnapshot {
+  code?: string;
+  base?: { epoch?: number; bodies?: WireBody[] } & JsonObject;
+  wave?: number;
+  started?: number | boolean;
+  balanceRevision?: number;
+  rosterRevision?: number;
+  roster?: RosterEnemy[];
+  rosterAdd?: RosterEnemy[];
+  rosterGroups?: RosterGroup[];
+  rosterAddGroups?: RosterGroup[];
+  kills?: EnemyId[];
+  killsAdded?: EnemyId[];
+  enemyDamage?: Record<string, number>;
+  enemyDamageChanged?: Record<string, number>;
+  pilots?: WirePilot[];
+  vehicles?: WireVehicle[];
+  $patch?: PatchNode;
+  [field: string]: unknown;
+}
+interface WirePilot {
+  id?: string;
+  incarnation?: unknown;
+  occupation?: unknown;
+  mode?: unknown;
+  vehicle_id?: unknown;
+  seen?: unknown;
+  state?: JsonObject;
+}
+interface WireVehicle {
+  id?: string;
+  seats?: { pilot?: string }[];
+  state?: JsonObject;
+}
+interface WireBody extends JsonObject {
+  id?: string;
+  kind?: string;
+  entity?: string;
+}
+/** Per-connection baseline returned by encode/decode and passed back next time. */
+export interface WireState {
+  key: string;
+  kills: Set<EnemyId>;
+  damage: Record<string, number>;
+  fields?: JsonObject;
+  core?: string;
+  roster?: RosterEnemy[];
+}
+
+export function snapshotRosterCore(s: WireSnapshot): string {
   return [s.code, s.base?.epoch, s.wave, s.started, s.balanceRevision].join(':');
 }
 
-export function snapshotRosterKey(s) {
+export function snapshotRosterKey(s: WireSnapshot): string {
   return [snapshotRosterCore(s), s.rosterRevision].join(':');
 }
 
-const same = (a, b) =>
+const same = (a: Json, b: Json): boolean =>
   Object.is(a, b) ||
   (a !== null &&
     b !== null &&
@@ -17,8 +82,8 @@ const same = (a, b) =>
     typeof b === 'object' &&
     JSON.stringify(a) === JSON.stringify(b));
 
-export function packRoster(roster) {
-  const groups = [];
+export function packRoster(roster: readonly RosterEnemy[]): RosterGroup[] {
+  const groups: RosterGroup[] = [];
   for (let start = 0; start < roster.length;) {
     const keys = Object.keys(roster[start]);
     const signature = keys.join('\0');
@@ -32,8 +97,8 @@ export function packRoster(roster) {
     if (end - start === 1) {
       groups.push([roster[start]]);
     } else {
-      const fixed = {},
-        columns = {};
+      const fixed: JsonObject = {},
+        columns: Record<string, Json[]> = {};
       for (const key of keys) {
         const first = roster[start][key];
         let varies = false;
@@ -52,8 +117,8 @@ export function packRoster(roster) {
   return groups;
 }
 
-export function unpackRoster(groups) {
-  const roster = [];
+export function unpackRoster(groups: readonly RosterGroup[]): RosterEnemy[] {
+  const roster: RosterEnemy[] = [];
   for (const group of groups) {
     if (group.length === 1) {
       roster.push(group[0]);
@@ -63,7 +128,7 @@ export function unpackRoster(groups) {
     if (!Number.isSafeInteger(count) || count < 1 || count > 20000)
       throw Error('Groupe de nuée invalide.');
     for (let i = 0; i < count; i++) {
-      const enemy = { ...fixed };
+      const enemy: RosterEnemy = { ...fixed };
       for (const [key, values] of Object.entries(columns)) {
         if (!Array.isArray(values) || values.length !== count)
           throw Error('Colonne de nuée invalide.');
@@ -83,9 +148,11 @@ export function unpackRoster(groups) {
 //   { o: { key: node }, d: [keys] }    patch an object; d lists removed keys
 //   { a: { index: node }, n: length }  patch an array; n is the new length
 // JSON semantics apply: undefined is absent, the receiver works on parsed JSON.
-const plain = (v) => v !== null && typeof v === 'object';
-const absent = (v) => v === undefined || typeof v === 'function';
-export function diffValue(prev, next) {
+// Not a type guard: diffValue/applyPatch walk `any` JSON and must keep indexing it.
+const plain = (v: unknown): boolean => v !== null && typeof v === 'object';
+const absent = (v: unknown): boolean => v === undefined || typeof v === 'function';
+// Callers pass parsed JSON; `any` lets the walk index arrays and objects alike.
+export function diffValue(prev: any, next: any): PatchNode | undefined {
   if (absent(next)) return absent(prev) ? undefined : { $: null };
   if (Object.is(prev, next)) return undefined;
   if (!plain(next) || !plain(prev) || Array.isArray(next) !== Array.isArray(prev))
@@ -99,7 +166,7 @@ export function diffValue(prev, next) {
           return { $: next };
       return undefined;
     }
-    const a = {};
+    const a: Record<number, PatchNode> = {};
     let changed = next.length !== prev.length;
     for (let i = 0; i < next.length; i++) {
       // Array holes and undefined entries are null in JSON.
@@ -114,8 +181,8 @@ export function diffValue(prev, next) {
     }
     return changed ? { a, n: next.length } : undefined;
   }
-  const o = {},
-    d = [];
+  const o: Record<string, PatchNode> = {},
+    d: string[] = [];
   let changed = false;
   for (const key of Object.keys(next)) {
     const node = absent(next[key])
@@ -135,13 +202,13 @@ export function diffValue(prev, next) {
   return d.length ? { o, d } : { o };
 }
 const MAX_PATCH_DEPTH = 64;
-export function applyPatch(prev, node, depth = 0) {
+export function applyPatch(prev: any, node: any, depth = 0): any {
   if (depth > MAX_PATCH_DEPTH || !plain(node)) throw Error('Patch de snapshot invalide.');
   if (Object.hasOwn(node, '$')) return structuredClone(node.$);
   if (node.a) {
     if (!Array.isArray(prev) || !Number.isSafeInteger(node.n) || node.n < 0 || node.n > 1e6)
       throw Error('Patch de liste invalide.');
-    const out = prev.slice(0, node.n);
+    const out: Json[] = prev.slice(0, node.n);
     while (out.length < node.n) out.push(null);
     for (const [index, child] of Object.entries(node.a)) {
       const i = Number(index);
@@ -152,7 +219,7 @@ export function applyPatch(prev, node, depth = 0) {
   }
   if (!plain(node.o) || !plain(prev) || Array.isArray(prev)) throw Error('Patch d’objet invalide.');
   if (Object.hasOwn(node.o, '__proto__')) throw Error('Patch d’objet invalide.');
-  const out = { ...prev };
+  const out: JsonObject = { ...prev };
   for (const key of node.d || []) delete out[key];
   for (const [key, child] of Object.entries(node.o))
     out[key] = applyPatch(Object.hasOwn(prev, key) ? prev[key] : undefined, child, depth + 1);
@@ -169,8 +236,8 @@ const UNPATCHED = new Set([
   'killsAdded',
   'enemyDamageChanged',
 ]);
-function patchable(snapshot) {
-  const fields = {};
+function patchable(snapshot: WireSnapshot): JsonObject {
+  const fields: JsonObject = {};
   for (const [key, value] of Object.entries(snapshot))
     if (!UNPATCHED.has(key) && !absent(value)) fields[key] = value;
   return fields;
@@ -195,23 +262,27 @@ const PILOT_MOTION = [
   'ground',
 ];
 const BODY_MOTION = ['x', 'z', 'y', 'vx', 'vz', 'vy', 'face', 'input', 'inputAt'];
-function holdKeys(next, prev, keys) {
-  let out = null;
+function holdKeys<O extends JsonObject>(next: O, prev: JsonObject, keys: readonly string[]): O {
+  let out: JsonObject | null = null;
   for (const key of keys)
     if (Object.hasOwn(prev, key) && !Object.is(prev[key], next[key])) {
       out ||= { ...next };
       out[key] = prev[key];
     }
-  return out || next;
+  return (out || next) as O;
 }
 // Returns fields with other players' motion held at the previous values. Never
 // mutates `fields`, which may be shared between connections.
-export function holdRemoteMotion(fields, previous, self) {
+export function holdRemoteMotion(
+  fields: WireSnapshot,
+  previous: WireSnapshot | null | undefined,
+  self: string,
+): WireSnapshot {
   if (!previous) return fields;
-  const out = { ...fields };
+  const out: WireSnapshot = { ...fields };
   if (Array.isArray(fields.pilots) && Array.isArray(previous.pilots)) {
     const before = new Map(previous.pilots.map((p) => [p?.id, p]));
-    out.pilots = fields.pilots.map((p) => {
+    out.pilots = fields.pilots.map((p): WirePilot => {
       const old = before.get(p?.id);
       // A new life, seat or mode is a discontinuity: send it at once.
       if (
@@ -231,7 +302,7 @@ export function holdRemoteMotion(fields, previous, self) {
   }
   if (Array.isArray(fields.vehicles) && Array.isArray(previous.vehicles)) {
     const before = new Map(previous.vehicles.map((v) => [v?.id, v]));
-    out.vehicles = fields.vehicles.map((v) => {
+    out.vehicles = fields.vehicles.map((v): WireVehicle => {
       const old = before.get(v?.id);
       const crew = Array.isArray(v?.seats) ? v.seats.map((seat) => seat.pilot) : [];
       if (!old?.state || !v.state || !crew.length || crew.includes(self)) return v;
@@ -240,10 +311,10 @@ export function holdRemoteMotion(fields, previous, self) {
     });
   }
   if (Array.isArray(fields.base?.bodies) && Array.isArray(previous.base?.bodies)) {
-    const before = new Map(previous.base.bodies.map((b) => [b?.id, b]));
+    const before = new Map(previous.base!.bodies!.map((b) => [b?.id, b]));
     out.base = {
       ...fields.base,
-      bodies: fields.base.bodies.map((b) => {
+      bodies: fields.base!.bodies!.map((b) => {
         const old = before.get(b?.id);
         if (!old || b.kind !== 'player' || b.entity === self || old.entity !== b.entity) return b;
         return holdKeys(b, old, BODY_MOTION);
@@ -255,17 +326,23 @@ export function holdRemoteMotion(fields, previous, self) {
 
 // Keep only changes after an acknowledged state on this ordered reliable
 // connection. Changes to wave/balance/roster reset the baseline.
-export function encodeSnapshotForWire(snapshot, previous = null, { holdMotionOf } = {}) {
+export function encodeSnapshotForWire(
+  snapshot: WireSnapshot,
+  previous: WireState | null = null,
+  { holdMotionOf }: { holdMotionOf?: string } = {},
+): WireState {
   const key = snapshotRosterKey(snapshot);
-  const next = {
+  const next: WireState = {
     key,
     kills: new Set(snapshot.kills),
     damage: { ...snapshot.enemyDamage },
   };
   if (previous?.key === key) {
-    snapshot.killsAdded = snapshot.kills.filter((id) => !previous.kills.has(id));
+    snapshot.killsAdded = snapshot.kills!.filter((id) => !previous.kills.has(id));
     snapshot.enemyDamageChanged = Object.fromEntries(
-      Object.entries(snapshot.enemyDamage).filter(([id, amount]) => previous.damage[id] !== amount),
+      Object.entries(snapshot.enemyDamage!).filter(
+        ([id, amount]) => previous.damage[id] !== amount,
+      ),
     );
     delete snapshot.kills;
     delete snapshot.enemyDamage;
@@ -296,10 +373,13 @@ export function encodeSnapshotForWire(snapshot, previous = null, { holdMotionOf 
   return next;
 }
 
-export function decodeSnapshotFromWire(snapshot, previous = null) {
+export function decodeSnapshotFromWire(
+  snapshot: WireSnapshot,
+  previous: WireState | null = null,
+): WireState {
   if (Object.hasOwn(snapshot, '$patch')) {
     if (!previous?.fields) throw Error('Patch de snapshot sans état initial.');
-    const fields = applyPatch(previous.fields, snapshot.$patch);
+    const fields: JsonObject = applyPatch(previous.fields, snapshot.$patch);
     delete snapshot.$patch;
     for (const [field, value] of Object.entries(fields))
       if (!UNPATCHED.has(field)) snapshot[field] = value;
@@ -322,7 +402,7 @@ export function decodeSnapshotFromWire(snapshot, previous = null) {
   if (Object.hasOwn(snapshot, 'killsAdded')) {
     if (previous?.key !== key || !Object.hasOwn(snapshot, 'enemyDamageChanged'))
       throw Error('Synchronisation différentielle sans état initial.');
-    snapshot.kills = [...previous.kills, ...snapshot.killsAdded];
+    snapshot.kills = [...previous.kills, ...snapshot.killsAdded!];
     snapshot.enemyDamage = { ...previous.damage, ...snapshot.enemyDamageChanged };
     delete snapshot.killsAdded;
     delete snapshot.enemyDamageChanged;

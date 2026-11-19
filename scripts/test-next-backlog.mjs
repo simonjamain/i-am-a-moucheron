@@ -1,10 +1,10 @@
 import assert from 'node:assert/strict';
 import * as T from '../vendor/three.module.min.js';
-import { amortization, newBank, signLoan, settleLoans, repayLoan } from '../src/bank.js';
+import { amortization, newBank, signLoan, settleLoans, repayLoan } from '../src/bank.ts';
 import { Game } from '../server/game.js';
 import { roomWorld, resolveHeavy } from './heavy-resolver.mjs';
 import { heavyImpact } from '../src/heavy-sim.js';
-import { VEHICLES, vehicleEntry, vehicleAccess } from '../src/fleet.js';
+import { VEHICLES, vehicleEntry, vehicleAccess } from '../src/fleet.ts';
 import { fullAmmo, advanceSupplies, SERVICE_SECONDS } from '../src/logistics.js';
 import { TANK_MG, HEAVY, availableShell, heavyDamage } from '../src/armament.js';
 import { HoldZoom, contextKey, rangeReadout } from '../src/equipment-controls.js';

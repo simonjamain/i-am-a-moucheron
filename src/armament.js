@@ -1,5 +1,5 @@
 import { FLAK, REFERENCE, MAP } from './scale.ts';
-import { isBomber } from './fleet.js';
+import { isBomber } from './fleet.ts';
 export const HEAVY = Object.freeze({
   rocket: {
     interval: 0.3,

@@ -2,9 +2,9 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
 import { Game } from '../server/game.js';
-import { VEHICLES, vehicleEntry, vehicleAccess } from '../src/fleet.js';
+import { VEHICLES, vehicleEntry, vehicleAccess } from '../src/fleet.ts';
 import { ACTOR_UNIT } from '../src/scale.ts';
-import { OFFICE_LAYOUT } from '../src/layout.js';
+import { OFFICE_LAYOUT } from '../src/layout.ts';
 const source = readFileSync('src/client.js', 'utf8');
 const eligibility =
   source.slice(
@@ -99,7 +99,7 @@ for (const type of ['bomber', 'tank']) {
 
 const T = await import('../vendor/three.module.min.js');
 const { stepWalker } = await import('../src/sortie.js');
-const { impactDamage, WALKER_FALL } = await import('../src/field-physics.js');
+const { impactDamage, WALKER_FALL } = await import('../src/field-physics.ts');
 function fall(height, openAt = null, dt = 1 / 120) {
   const body = {
     x: 100,
@@ -132,7 +132,7 @@ assert.ok(early.impact.damage < noChute.impact.damage);
 assert.equal(late.impact.damage, 100);
 assert.ok(noChute.elapsed > 7, 'miniature gravity creates a long visible fall');
 const repeated = { y: 5, vy: -2, parachute: true, grounded: false };
-const { stepWalkerFall } = await import('../src/field-physics.js');
+const { stepWalkerFall } = await import('../src/field-physics.ts');
 stepWalkerFall(repeated, 0.02);
 assert.ok(repeated.vy < -1.8, 'opening cannot remove existing velocity instantly');
 repeated.parachute = false;
@@ -151,7 +151,7 @@ console.log(
   }),
 );
 
-const { shoulderView, aimPistol, muzzleAim } = await import('../src/personal-aim.js');
+const { shoulderView, aimPistol, muzzleAim } = await import('../src/personal-aim.ts');
 const { createGraphics } = await import('../src/graphics.js');
 for (const scale of [0.003, 1])
   for (const yaw of [0, Math.PI / 2, Math.PI, -Math.PI / 2]) {
@@ -201,7 +201,7 @@ assert.ok(
     .distanceTo(mount.userData.muzzle.getWorldPosition(new T.Vector3())) < 1e-12,
 );
 
-const { newBank, LOAN_TERMS, amortization } = await import('../src/bank.js');
+const { newBank, LOAN_TERMS, amortization } = await import('../src/bank.ts');
 assert.ok(LOAN_TERMS.every((t) => t.rate >= 0.1 && t.rate <= 0.2));
 for (const rate of [0.1, 0.2]) {
   const loan = amortization(1200, rate, 4);
@@ -211,7 +211,7 @@ for (const rate of [0.1, 0.2]) {
     loan.schedule.reduce((n, r) => n + r.payment, 0),
   );
 }
-const { InteractionTiming } = await import('../src/interaction-timing.js');
+const { InteractionTiming } = await import('../src/interaction-timing.ts');
 let time = 0;
 const callbacks = [],
   timings = new InteractionTiming(

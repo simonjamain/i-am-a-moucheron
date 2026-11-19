@@ -1,3 +1,4 @@
+import type * as THREE from 'three';
 // Castor 6×6 wheel kinematics (model units; the vehicle model is scaled by
 // ACTOR_UNIT). Rolling without slipping: each wheel spins at its own ground
 // speed, forward speed plus the yaw contribution of its lateral offset, so a
@@ -5,10 +6,33 @@
 export const CASTOR_WHEEL_RADIUS = 0.57;
 export const CASTOR_MAX_STEER = 0.5;
 
-const wrap = (a) => Math.atan2(Math.sin(a), Math.cos(a));
+const wrap = (a: number): number => Math.atan2(Math.sin(a), Math.cos(a));
 
 // Signed forward speed and yaw rate of a displayed model between two frames.
-export function trackGroundMotion(memory, yaw, forwardSpeed, dt) {
+/** Per-model memory kept in `userData.wheelMemory` between frames. */
+export interface WheelMemory {
+  yaw?: number;
+  yawRate?: number;
+}
+export interface GroundMotion {
+  forwardSpeed: number;
+  yawRate: number;
+}
+export interface WheelOptions {
+  scale: number;
+  turnRate: number;
+}
+export interface WheelPose {
+  spin: number;
+  steer: number;
+}
+
+export function trackGroundMotion(
+  memory: WheelMemory,
+  yaw: number,
+  forwardSpeed: number,
+  dt: number,
+): GroundMotion {
   const previous = memory.yaw;
   memory.yaw = yaw;
   if (previous === undefined || !(dt > 0)) {
@@ -25,7 +49,12 @@ export function trackGroundMotion(memory, yaw, forwardSpeed, dt) {
 
 // wheel: { x, z } in model units (forward is -z). Returns the spin increment
 // around the axle (negative = rolling forward) and the steering angle.
-export function wheelPose(wheel, { forwardSpeed, yawRate }, { scale, turnRate, frontZ }, dt) {
+export function wheelPose(
+  wheel: { x: number; z: number },
+  { forwardSpeed, yawRate }: GroundMotion,
+  { scale, turnRate, frontZ }: WheelOptions & { frontZ: number },
+  dt: number,
+): WheelPose {
   const groundSpeed = forwardSpeed + yawRate * wheel.x * scale;
   const spin = (-groundSpeed / (CASTOR_WHEEL_RADIUS * scale)) * dt;
   const turn = turnRate > 0 ? Math.max(-1, Math.min(1, yawRate / turnRate)) : 0;
@@ -34,7 +63,12 @@ export function wheelPose(wheel, { forwardSpeed, yawRate }, { scale, turnRate, f
   return { spin, steer };
 }
 
-export function animateCastorWheels(wheels, motion, options, dt) {
+export function animateCastorWheels(
+  wheels: readonly THREE.Object3D[],
+  motion: GroundMotion,
+  options: WheelOptions,
+  dt: number,
+): void {
   const frontZ = Math.min(...wheels.map((w) => w.position.z));
   for (const axle of wheels) {
     const { spin, steer } = wheelPose(

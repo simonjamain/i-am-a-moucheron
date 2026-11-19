@@ -5,7 +5,7 @@ import { paintVehicle } from '../src/vehicle-livery.js';
 import { B3_DATA } from '../src/meshy-b3-data.js';
 import { aimGun, gunnerView } from '../src/sortie.js';
 import { ACTOR_UNIT } from '../src/scale.ts';
-import { VEHICLES } from '../src/fleet.js';
+import { VEHICLES } from '../src/fleet.ts';
 const graphics = createGraphics(T, new T.Scene());
 const a = graphics.makeMediumBomber(),
   b = graphics.makeMediumBomber();

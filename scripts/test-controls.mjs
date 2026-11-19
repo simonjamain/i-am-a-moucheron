@@ -11,7 +11,7 @@ import {
   lookScale,
   BASE_FOV,
 } from '../src/control-focus.js';
-import { neutralPad } from '../src/input.js';
+import { neutralPad } from '../src/input.ts';
 const pad = neutralPad();
 for (const [letter, arrow, axis] of [
   ['KeyZ', 'ArrowUp', 'pitch'],

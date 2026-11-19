@@ -6,7 +6,7 @@ import * as T from '../vendor/three.module.min.js';
 import { createGraphics } from '../src/graphics.js';
 import { aimGun } from '../src/sortie.js';
 import { ACTOR_UNIT } from '../src/scale.ts';
-import { VEHICLES } from '../src/fleet.js';
+import { VEHICLES } from '../src/fleet.ts';
 import { tankBarrelOrigin } from '../src/tank-view.js';
 import { mobileBarrelOrigin, trailerGunPivot } from '../src/mobile-flak.js';
 import { heliWeaponOrigin } from '../src/helicopter.js';

@@ -73,7 +73,7 @@ Noms validés (version 276, sans préfixe ni suffixe de code) : **Chasseur bipla
 **Bombardier biplan**, **Hélicoptère d’attaque au sol**, **Char moyen**, **Castor**,
 **Anti-air mobile**, **Spitfire**, DCA fixe **Flak léger**, canon lourd **Canon
 anti-matériel** ; la tourelle automatique et le Stuka gardent leur nom
-(`src/fleet.js`, `src/equipment.js`, `src/ground-fortifications.js`). Les sigles
+(`src/fleet.ts`, `src/equipment.js`, `src/ground-fortifications.js`). Les sigles
 M1, B3, H2, T3, D2, G1 et S6 ne s'affichent plus en jeu : ils ne subsistent que comme
 désignations internes dans les commentaires, tests et documents techniques. Aucun
 « filet de leurre » n'existe dans le jeu.
@@ -406,7 +406,7 @@ réglage initial), avec une accélération forte au départ qui décroît près 
 maximum. Les six roues roulent à la vitesse du sol de leur côté (sens, marche
 arrière et arrêt compris) ; au pivot sur place, gauche et droite tournent en sens
 opposés et les roues avant braquent selon la vitesse de rotation
-(`src/castor-wheels.js`, `scripts/test-castor-wheels.mjs`). Plus rapide que le tank, il possède un rayon de soutien sphérique de **50 cm**, matérialisé en jeu par une sphère verte translucide (comme les 12 cm des stations de ravitaillement fixes, `src/service-zones.js`), qui peut soigner et ravitailler les alliés en mouvement ou en vol et se réapprovisionner lui-même. Le service utilise la caisse commune.
+(`src/castor-wheels.ts`, `scripts/test-castor-wheels.mjs`). Plus rapide que le tank, il possède un rayon de soutien sphérique de **50 cm**, matérialisé en jeu par une sphère verte translucide (comme les 12 cm des stations de ravitaillement fixes, `src/service-zones.js`), qui peut soigner et ravitailler les alliés en mouvement ou en vol et se réapprovisionner lui-même. Le service utilise la caisse commune.
 
 **La construction en roulant est disponible depuis la version 188.** Le Castor utilise désormais **ses trois modèles Meshy texturés** : châssis, tourelle et roues indépendantes. Les couleurs originales sont préservées, sans pastille d’identification ([flotte Meshy](meshy-fleet.md)). Voir [l'issue #76](https://github.com/simonjamain/i-am-a-moucheron/issues/76) et [la note de reprise](tasks/g1-castor.md).
 
@@ -499,7 +499,7 @@ la paperasse reste le moyen de progression lorsque les munitions sont épuisées
 ## Décollage et trajectoires aériennes (v305)
 
 - Tous les avions décollent depuis une surface plane : la résistance au roulement
-  (`ROLLING_FRICTION`, `src/flight.js`) laisse les deux biplans, moins puissants,
+  (`ROLLING_FRICTION`, `src/flight.ts`) laisse les deux biplans, moins puissants,
   atteindre la vitesse de rotation (`LIFTOFF_SPEED`, 18 m/s). `scripts/test-takeoff.mjs`
   simule le roulage de toute la flotte.
 - Les couloirs des insectes volants (`src/routes.js`) restent sous la couche de

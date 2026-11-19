@@ -226,7 +226,7 @@ un `InstancedMesh` par espèce, ombres via un matériau de profondeur dédié).
 - Os (`ANT_BONES`, `SPIDER_BONES`) : fourmi — 6 pattes hanche/genou/tarse,
   gastre à trois segments, tête, antennes à deux segments, mandibules ; araignée —
   8 pattes hanche/genou/tarse, céphalothorax, abdomen à deux segments.
-- Marche (`src/walker-gait.js`) : pieds plantés qui reculent à la vitesse du corps
+- Marche (`src/walker-gait.ts`) : pieds plantés qui reculent à la vitesse du corps
   pendant 60 % du cycle, levés en arc pendant les 40 % restants, résolus par une
   cinématique inverse à deux os par patte (`solveLeg`). Fourmi : démarche tripode
   (avant-gauche, milieu-droit, arrière-gauche ensemble) ; araignée : tétrapode

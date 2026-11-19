@@ -1,5 +1,5 @@
 import { rotateLocal } from './helicopter.js';
-import { VEHICLES } from './fleet.js';
+import { VEHICLES } from './fleet.ts';
 import { MAP, ACTOR_UNIT } from './scale.ts';
 import { VEHICLE_ANCHORS } from './vehicle-anchors.js';
 

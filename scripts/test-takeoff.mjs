@@ -2,8 +2,8 @@
 // below the cloud layer that did not follow the raised flight ceiling.
 import assert from 'node:assert/strict';
 import * as T from '../vendor/three.module.min.js';
-import { stepFlight, ROLLING_FRICTION, LIFTOFF_SPEED } from '../src/flight.js';
-import { VEHICLES } from '../src/fleet.js';
+import { stepFlight, ROLLING_FRICTION, LIFTOFF_SPEED } from '../src/flight.ts';
+import { VEHICLES } from '../src/fleet.ts';
 import { enemyRoute } from '../src/routes.js';
 import { OFFICE_CLOUD_TOP, FOG_START_RATIO } from '../src/office-fog.js';
 

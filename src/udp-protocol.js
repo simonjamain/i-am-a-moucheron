@@ -1,4 +1,4 @@
-import { decodeSnapshotFromWire } from './snapshot-wire.js';
+import { decodeSnapshotFromWire } from './snapshot-wire.ts';
 
 export const PROTOCOL = 1;
 export const COMMAND_CHANNEL = 'commands-v1';

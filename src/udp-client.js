@@ -9,7 +9,7 @@ import {
   DISCONNECT_GRACE_MS,
 } from './udp-protocol.js';
 import { validMotion } from './network.js';
-import { decodeMotionBatch } from './motion-wire.js';
+import { decodeMotionBatch } from './motion-wire.ts';
 
 export class UdpClient {
   constructor({

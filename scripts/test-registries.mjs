@@ -1,5 +1,5 @@
 // Per-species tables must stay in step with ENEMY_TYPES (src/waves.js), and
-// per-vehicle tables with VEHICLES (src/fleet.js).
+// per-vehicle tables with VEHICLES (src/fleet.ts).
 // Adding an enemy: follow docs/adding-content.md; this test names every table
 // still missing the new key. tsc enforces the same for `Record<EnemyType, …>`.
 import assert from 'node:assert/strict';
@@ -10,7 +10,7 @@ import { PACKS } from '../server/wave-preparation.js';
 import { GROUND_BODY_SIZES, GROUND_ATTACK_DAMAGE } from '../src/ground-creatures.js';
 import { WALKERS } from '../src/walker-batch.js';
 import { FLYERS } from '../src/flyer-batch.js';
-import { VEHICLES } from '../src/fleet.js';
+import { VEHICLES } from '../src/fleet.ts';
 import { SHOP } from '../src/equipment.js';
 import { SHOP_CATEGORIES } from '../src/shop-catalog.js';
 import { CONTRACTS, contractKey } from '../src/contracts.js';

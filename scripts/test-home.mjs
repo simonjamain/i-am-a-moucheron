@@ -1,7 +1,7 @@
 // Issue #104: clean home screen, clickable version, validated names, no audio UI.
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { VEHICLES } from '../src/fleet.js';
+import { VEHICLES } from '../src/fleet.ts';
 import { SHOP } from '../src/equipment.js';
 import { FORTIFICATIONS } from '../src/ground-fortifications.js';
 

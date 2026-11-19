@@ -1,6 +1,6 @@
-import { VEHICLES } from './fleet.js';
+import { VEHICLES } from './fleet.ts';
 import { MAP, ACTOR_UNIT } from './scale.ts';
-import { OFFICE_LAYOUT } from './layout.js';
+import { OFFICE_LAYOUT } from './layout.ts';
 import { supportedPlacement } from './equipment.js';
 export function bedAccess(point, bed) {
   return (

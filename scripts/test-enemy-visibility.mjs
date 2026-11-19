@@ -1,5 +1,5 @@
 import { ServerClock } from '../src/server-clock.ts';
-import { GroundMotionTrack } from '../src/ground-motion.js';
+import { GroundMotionTrack } from '../src/ground-motion.ts';
 import { InsectIndex } from '../src/insect-hits.js';
 import assert from 'node:assert/strict';
 import * as T from '../vendor/three.module.min.js';

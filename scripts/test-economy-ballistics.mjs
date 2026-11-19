@@ -4,7 +4,7 @@ import * as T from '../vendor/three.module.min.js';
 import { stepFall, stepBallisticVelocity, toggleParachute, HUMAN_AERO } from '../src/ballistics.ts';
 import { MAP } from '../src/scale.ts';
 import { supportedPlacement } from '../src/equipment.js';
-import { OFFICE_LAYOUT } from '../src/layout.js';
+import { OFFICE_LAYOUT } from '../src/layout.ts';
 import { createGraphics } from '../src/graphics.js';
 import { createOffice } from '../src/office.js';
 import { enemyRoute, enemyRoutePosition, PORTALS } from '../src/routes.js';

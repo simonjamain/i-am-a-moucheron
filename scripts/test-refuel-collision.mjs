@@ -3,7 +3,7 @@ import * as T from '../vendor/three.module.min.js';
 import { makeServiceStation, makeRefuelCollider } from '../src/station-model.js';
 import { stepWalker } from '../src/sortie.js';
 import { MAP, ACTOR_UNIT } from '../src/scale.ts';
-import { OFFICE_LAYOUT } from '../src/layout.js';
+import { OFFICE_LAYOUT } from '../src/layout.ts';
 for (const angle of [Math.PI / 4, -Math.PI / 4, Math.PI / 3]) {
   const station = makeServiceStation(T, 'refuel');
   station.scale.setScalar(MAP.ratio);
@@ -38,7 +38,7 @@ console.log('Refuel collision follows rotation and leaves empty diagonal corners
 const { segmentBox, sweptBoxProximity } = await import('../src/swept-geometry.ts');
 const { rayCollider, colliderContainsXZ } = await import('../src/oriented-collider.ts');
 const { stepTank } = await import('../src/tank.js');
-const { VEHICLES } = await import('../src/fleet.js');
+const { VEHICLES } = await import('../src/fleet.ts');
 for (const angle of [0, Math.PI / 4, Math.PI / 2, (Math.PI * 3) / 4, -Math.PI / 3]) {
   const station = makeServiceStation(T, 'refuel');
   station.scale.setScalar(MAP.ratio);
