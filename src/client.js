@@ -110,6 +110,8 @@ import {
   InsectIndex,
   nearestInsectHit,
   nearestMeshHit,
+  nearestSolidHit,
+  solidTarget,
   HitEffects,
   insectContact,
 } from '/insect-hits.js';
@@ -160,6 +162,8 @@ import { HoldZoom, advanceFuse, contextKey, rangeReadout } from '/equipment-cont
 import { formatDistance, formatSpeed } from '/units.js';
 import { HEAVY, TANK_MG, availableShell, heavyInterval } from '/armament.js';
 import { stepTank } from '/tank.js';
+import { loadRapier } from '/physics-world.js';
+import { CastorRig } from '/castor-physics.js';
 import { animateCastorWheels, trackGroundMotion } from '/castor-wheels.js';
 import { ServiceZones, serviceZoneList } from '/service-zones.js';
 import { EngineSmoke, damageRatio } from '/engine-smoke.js';
@@ -4156,9 +4160,33 @@ function flushRapidImpacts(now) {
     else notify(error.message, 2);
   });
 }
+// Vehicles and pilots a shot can hit, prepared once per frame (matrices, solid
+// meshes, padded box) instead of once per projectile and per slice.
+const projectileRay = new T.Raycaster(),
+  scratchPoint = new T.Vector3();
+let frameTargets = null;
+function solidTargets() {
+  if (frameTargets) return frameTargets;
+  frameTargets = [];
+  for (const v of snap?.vehicles || []) {
+    const model = fleetModels.get(v.id);
+    const target = model?.visible && solidTarget(T, model, { vehicle: v.id });
+    if (target) frameTargets.push(target);
+  }
+  for (const p of snap?.pilots || []) {
+    if (p.id === id || p.life !== 'alive' || p.vehicle_id) continue;
+    const model =
+      p.mode === 'turret' ? turrets[p.state.turret]?.userData.person : basePeople.get(p.id);
+    const target = model?.visible && solidTarget(T, model, { target: p.id });
+    if (target) frameTargets.push(target);
+  }
+  return frameTargets;
+}
 function stepProjectiles(dt) {
+  frameTargets = null;
   const n = Math.max(1, Math.ceil(dt * 120));
   for (let i = 0; i < n; i++) stepProjectileSlice(dt / n);
+  frameTargets = null;
 }
 function stepProjectileSlice(dt) {
   for (let i = trails.length - 1; i >= 0; i--) {
@@ -4177,30 +4205,16 @@ function stepProjectileSlice(dt) {
     }
     if (b.owned && !respawnAt) {
       let hit = null;
-      const ray = new T.Raycaster(origin, dir, 0, distance);
-      for (const v of snap?.vehicles || []) {
-        if (v.id === b.originVehicle) continue;
-        const model = fleetModels.get(v.id);
-        if (!model?.visible) continue;
-        model.updateWorldMatrix(true, true);
-        const h = nearestMeshHit(ray, model);
-        if (h && (!hit || h.distance < hit.distance)) hit = { ...h, vehicle: v.id };
-      }
-      for (const p of snap?.pilots || []) {
-        if (p.id === id || p.life !== 'alive' || p.vehicle_id) continue;
-        const model =
-          p.mode === 'turret' ? turrets[p.state.turret]?.userData.person : basePeople.get(p.id);
-        if (!model?.visible) continue;
-        model.updateWorldMatrix(true, true);
-        const h = nearestMeshHit(ray, model);
-        if (h && (!hit || h.distance < hit.distance)) hit = { ...h, target: p.id };
-      }
-      const solidRay = new T.Ray(origin, dir);
+      projectileRay.set(origin, dir);
+      projectileRay.near = 0;
+      projectileRay.far = distance;
+      hit = nearestSolidHit(T, projectileRay, solidTargets(), b.originVehicle);
       for (const box of colliders) {
-        const point = rayCollider(T, solidRay, box, new T.Vector3());
+        const point = rayCollider(T, projectileRay.ray, box, scratchPoint);
         if (point) {
           const d = origin.distanceTo(point);
-          if (d <= distance && (!hit || d < hit.distance)) hit = { point, distance: d, wall: true };
+          if (d <= distance && (!hit || d < hit.distance))
+            hit = { point: point.clone(), distance: d, wall: true };
         }
       }
       const blocker = hit;
@@ -4264,6 +4278,16 @@ function stepProjectileSlice(dt) {
 }
 
 // Fixed timestep flight: thrust, quadratic drag, gravity, angle-of-attack lift, wind-relative velocity.
+// ?rapier: load the physics engine (4 MB, on demand) and drive the Castor with it
+// once ready; until then, and without the flag, the arcade step is used.
+let castorRig = null;
+if (new URLSearchParams(location.search).has('rapier'))
+  loadRapier(() => import('/rapier.js'))
+    .then((RAPIER) => {
+      castorRig = new CastorRig(RAPIER);
+      console.info('Castor : physique Rapier active');
+    })
+    .catch((error) => console.warn('Rapier indisponible, Castor inchangé', error));
 function physics(dt) {
   if (respawnAt || onFoot || !myVehicle) return;
   if (isRotorcraft(myVehicle.type)) {
@@ -4337,17 +4361,11 @@ function physics(dt) {
     const active = controlFocus.active && canCapture(),
       manual = flightInput(keys, pad, active);
     const state = { ...localMotion(), fuelAvailable: remainingFuel() > 0 };
-    stepTank(
-      T,
-      state,
-      {
-        forward: -manual.pitch,
-        turn: manual.roll || -manual.yaw,
-      },
-      colliders,
-      dt,
-      VEHICLES[myVehicle.type],
-    );
+    const drive = { forward: -manual.pitch, turn: manual.roll || -manual.yaw };
+    // Experimental (?rapier): the Castor drives on the Rapier physics engine.
+    if (castorRig && myVehicle.type === 'castor')
+      castorRig.step(state, drive, colliders, dt, VEHICLES.castor);
+    else stepTank(T, state, drive, colliders, dt, VEHICLES[myVehicle.type]);
     if (state.hp <= 0) {
       crash();
       return;
@@ -6621,11 +6639,39 @@ function observedPurgatory(dt) {
     }
 }
 
+// Shader programs are compiled the first time a material is drawn, which froze
+// the game for about 150 ms when the first shot appeared. Draw one of each fire
+// effect (tracer batches, impact, blood, muzzle flash, blast) in front of the
+// camera, through the real render path, while the loading screen still covers
+// the canvas; then expire them. Nothing else is touched: no sound, no network.
+function warmShaders() {
+  if (!renderer.isWebGLRenderer) return;
+  const forward = new T.Vector3(0, 0, -1).applyQuaternion(camera.quaternion),
+    at = camera.position.clone().addScaledVector(forward, 2);
+  const tracers = [false, true].map((shell) => tracerPool.acquire(at, forward, '#ffffff', shell));
+  tracerPool.flush();
+  hitEffects.burst(at, camera);
+  bloodEffects.burst(at);
+  combatEffects.muzzle(at, forward);
+  combatEffects.blast(at);
+  toon.render(scene, camera);
+  for (const tracer of tracers) tracer?.userData.dispose();
+  tracerPool.flush();
+  hitEffects.update(10, camera);
+  bloodEffects.update(10);
+  combatEffects.update(10, camera);
+}
+
 // Readiness for the initial loader: selected appearance and its first draw.
 export const homeReady = loadCharacter(appearancePicker.value).then(
   () =>
     new Promise((resolve) =>
       requestAnimationFrame(() => {
+        try {
+          warmShaders();
+        } catch (error) {
+          console.warn('Shader warm-up skipped', error);
+        }
         appearancePicker.draw(renderer, 0);
         resolve();
       }),

@@ -1,6 +1,10 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 351,
+    changes: ['Tirer sur une nuée est plus fluide, et le premier tir ne fige plus l’image.'],
+  },
+  {
     version: 348,
     changes: [
       'Les vagues deviennent plus difficiles plus vite : la puissance monte de moitié à chaque vague.',

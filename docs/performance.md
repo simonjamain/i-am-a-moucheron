@@ -38,6 +38,38 @@ chaque espèce ; vérifier les impacts, les alliés, le mobilier et les fins de 
 L'environnement temporaire est indisponible ; utiliser `npm ci && npm start`
 et le réseau UDP décrit dans [l'exploitation](operations.md).
 
+## Cibles solides préparées une fois par image (version 351)
+
+Une trace Chrome (12 s de tir à la DCA haute cadence sur une nuée, écran à haut
+taux de rafraîchissement) montrait `stepProjectiles` à 3,5 s sur 6,7 s passées dans
+`frame()`, soit environ la moitié. Le GPU n'était occupé qu'à 15 %. Les coûts
+dominants : le rayon contre les triangles de chaque véhicule et de chaque pilote
+(927 ms), les matrices `updateWorldMatrix` recalculées pour chaque projectile et
+chaque tranche (environ 1,6 s avec `compose`/`multiplyMatrices`), `hitRadius`
+(449 ms, spread et `Math.hypot` par moucheron et par tir) et les allocations
+(`Raycaster`, vecteurs) par tranche.
+
+- `solidTarget` / `nearestSolidHit` (`src/insect-hits.js`) : matrices, maillages
+  solides et boîte monde (agrandie de 30 % pour la pose animée) sont préparés une
+  seule fois par image, à la demande, par `stepProjectiles`. Une boîte que le
+  segment n'atteint pas évite tout test de triangle. Même ordre et même règle
+  d'égalité qu'un `nearestMeshHit` par modèle.
+- `Raycaster` et vecteur de travail partagés ; `hitRadius` sans spread.
+- `test-solid-targets.mjs` compare 4 000 rayons aléatoires (portées, exclusion du
+  véhicule du tireur, origine dans la boîte, maillages non solides).
+
+Pré-compilation des shaders : le premier tir faisait apparaître des matériaux
+jamais dessinés (traceurs instanciés, impacts, sang, flash, explosion), compilés
+en synchrone (`getProgramInfoLog`, images de 132 et 58 ms). `warmShaders`
+(`src/client.js`) dessine une fois chaque effet par le vrai chemin de rendu, avant
+la fin de l'écran de chargement, puis les fait expirer. Mesure locale
+(Chromium, rendu logiciel) : 12 programmes liés au chargement avant, 15 après.
+
+Limites : la trace d'origine vient d'une seule machine ; refaire la même capture
+(même scène, même arme, mêmes 12 s) et comparer `stepProjectiles` et les images de
+plus de 20 ms (66 avant). L'absence de nouveau programme au premier tir réel
+n'est pas vérifiée automatiquement.
+
 ## Encodage des réponses UDP
 
 `GameSession` conserve les réponses JSON immuables pour rejouer une commande.
