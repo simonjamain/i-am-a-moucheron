@@ -129,7 +129,7 @@ L'importeur écrit aussi `src/vehicle-anchors.js`, partagé par le client et le
 serveur, pour que la physique suive le modèle : pivot et longueur du canon du T3
 (`tankBarrelOrigin`), attelage, pivot et longueur des canons du D2
 (`mobileBarrelOrigin`, `trailerGunPivot`), enveloppes de collision tracteur et
-remorque (`sweptVehicle`, points de contact de `tank.js`), origines des roquettes
+remorque (`sweptVehicle`, points de contact de `truck-physics.ts`), origines des roquettes
 et missiles du H2 (`heliWeaponOrigin`). Ces points ont changé avec les nouvelles
 proportions : les obus et roquettes partent des bouches dessinées.
 

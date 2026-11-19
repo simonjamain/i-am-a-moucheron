@@ -161,10 +161,10 @@ import { RECONNECT_AFTER_MS, RECONNECT_WINDOW_MS } from '/udp-protocol.js';
 import { HoldZoom, advanceFuse, contextKey, rangeReadout } from '/equipment-controls.js';
 import { formatDistance, formatSpeed } from '/units.js';
 import { HEAVY, TANK_MG, availableShell, heavyInterval } from '/armament.js';
-import { stepTank } from '/tank.js';
 import { loadRapier } from '/physics-world.js';
 import { CastorRig } from '/castor-physics.js';
 import { TankRig } from '/tank-physics.js';
+import { TruckRig } from '/truck-physics.js';
 import { animateCastorWheels, trackGroundMotion } from '/castor-wheels.js';
 import { ServiceZones, serviceZoneList } from '/service-zones.js';
 import { EngineSmoke, damageRatio } from '/engine-smoke.js';
@@ -4161,12 +4161,12 @@ function flushRapidImpacts(now) {
     else notify(error.message, 2);
   });
 }
-// The Castor and the medium tank are driven by the Rapier physics engine, loaded behind
+// The ground vehicles (Castor, medium tank, anti-air truck) are driven by the Rapier physics engine, loaded behind
 // the loading screen (see homeReady): the module, the rig of the vehicle type we drive,
 // and one rig per empty vehicle of these types that this client simulates as the room's
-// host. The other vehicles still use their original physics (see docs/physics-engine.md).
+// host. The aircraft still use their original physics (see docs/physics-engine.md).
 let rapier = null;
-const RAPIER_RIGS = { castor: CastorRig, tank: TankRig };
+const RAPIER_RIGS = { castor: CastorRig, tank: TankRig, flaktruck: TruckRig };
 const drivenRigs = new Map();
 const vacantRigs = new Map();
 
@@ -4356,11 +4356,9 @@ function physics(dt) {
       manual = flightInput(keys, pad, active);
     const state = { ...localMotion(), fuelAvailable: remainingFuel() > 0 };
     const drive = { forward: -manual.pitch, turn: manual.roll || -manual.yaw };
-    const Rig = RAPIER_RIGS[myVehicle.type];
-    if (Rig) {
-      if (!drivenRigs.has(myVehicle.type)) drivenRigs.set(myVehicle.type, new Rig(rapier));
-      drivenRigs.get(myVehicle.type).step(state, drive, colliders, dt, VEHICLES[myVehicle.type]);
-    } else stepTank(T, state, drive, colliders, dt, VEHICLES[myVehicle.type]);
+    if (!drivenRigs.has(myVehicle.type))
+      drivenRigs.set(myVehicle.type, new RAPIER_RIGS[myVehicle.type](rapier));
+    drivenRigs.get(myVehicle.type).step(state, drive, colliders, dt, VEHICLES[myVehicle.type]);
     if (state.hp <= 0) {
       crash();
       return;
@@ -5510,9 +5508,7 @@ function simulateVacantAircraft(dt) {
     else if (RAPIER_RIGS[v.type]) {
       if (!vacantRigs.has(v.id)) vacantRigs.set(v.id, new RAPIER_RIGS[v.type](rapier));
       vacantRigs.get(v.id).step(s, { forward: 0, turn: 0 }, colliders, dt, VEHICLES[v.type]);
-    } else if (VEHICLES[v.type].ground)
-      stepTank(T, s, { forward: 0, turn: 0 }, colliders, dt, VEHICLES[v.type]);
-    else stepVacantAircraft(T, s, VEHICLES[v.type], colliders, dt);
+    } else stepVacantAircraft(T, s, VEHICLES[v.type], colliders, dt);
     Object.assign(v.state, s);
   }
   for (const key of [...vacantAircraft.keys()])

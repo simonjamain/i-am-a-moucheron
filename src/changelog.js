@@ -1,6 +1,13 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 359,
+    changes: [
+      'La remorque du camion anti-aérien se balance dans les virages et se met en portefeuille en marche arrière.',
+      'Le camion est plus rapide.',
+    ],
+  },
+  {
     version: 358,
     changes: [
       'Le char moyen roule comme un vrai char : suspension qui pique du nez au freinage, pivot sur place, franchit les petites marches.',

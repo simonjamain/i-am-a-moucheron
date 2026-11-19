@@ -150,7 +150,9 @@ export const VEHICLES = {
     seats: ['pilot', 'cannon'],
     span: 5,
     length: 16,
-    maxSpeed: 10,
+    // A real truck towing a gun at the model's size (Froude similarity, see
+    // truck-physics.ts): 40 km/h × √0.277 = 5.8 m/s of physics. It was 10.
+    maxSpeed: 33,
     thrust: 3,
     drag: 0.1,
     liftBase: 0,

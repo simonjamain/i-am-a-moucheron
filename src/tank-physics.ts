@@ -177,7 +177,7 @@ export class TankRig {
     this.fallSpeed = 0;
   }
 
-  // Same contract as stepTank: advance `state` by dt and write it back.
+  // Advance `state` (the vehicle state of the game, in world units) by dt and write it back.
   step(
     state: TankState,
     controls: TankControls,
