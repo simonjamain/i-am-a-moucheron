@@ -22,17 +22,17 @@ Le voltigeur (`dart`), petit volant rapide débloqué en vague 2, a été retir�
 Valeurs calculées avec les statistiques actuelles (voir
 [équilibrage](room-balance.md#puissance-unité-commune)) :
 
-| Espèce            | Puissance                        |
-| ----------------- | -------------------------------- |
-| Moucheron         | 1,00                             |
-| Fourmi            | 0,58                             |
-| Moustique         | 2,06                             |
-| Cafard            | 1,38                             |
-| Abeille           | 4,03                             |
-| Scarabée          | 6,93                             |
+| Espèce            | Puissance                       |
+| ----------------- | ------------------------------- |
+| Moucheron         | 1,00                            |
+| Fourmi            | 0,58                            |
+| Moustique         | 2,06                            |
+| Cafard            | 1,38                            |
+| Abeille           | 4,03                            |
+| Scarabée          | 6,93                            |
 | Araignée pondeuse | 10,94 (2,64 + 100 bébés × 0,08) |
-| Bébé araignée     | 0,08                             |
-| Rat géant         | 24,47                            |
+| Bébé araignée     | 0,08                            |
+| Rat géant         | 24,47                           |
 
 Tout ennemi tué (bébés araignées compris) devient une âme au purgatoire, où il apparaît sous son vrai modèle. Une âme libérée rapporte cette puissance en dollars et un ennemi qui atteint la
 poubelle lui inflige autant de dégâts. Les cartes du mode debug l'affichent.
