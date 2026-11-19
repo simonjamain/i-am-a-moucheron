@@ -67,6 +67,7 @@ export const CASTOR_PHYSICS = Object.freeze({
   mass: 400, // kg
   accel: 4, // m/s² at standstill, full throttle: a progressive start (issue #171)
   reverseSpeed: 0.5, // share of the top speed
+  topMargin: 1.06, // thrust fades towards this multiple of the top speed: drag makes up the rest
   brake: 7, // m/s² when the throttle opposes the motion
   coast: 1.2, // m/s² of engine braking without throttle
   hold: 4, // m/s² holding the vehicle still when stopped without throttle
@@ -255,7 +256,7 @@ export class CastorRig {
     if (Math.abs(throttle) > 0.05) {
       if (throttle * along < -0.3) brake = params.brake;
       else {
-        const top = throttle > 0 ? vmax : vmax * params.reverseSpeed;
+        const top = (throttle > 0 ? vmax : vmax * params.reverseSpeed) * params.topMargin;
         const share = Math.max(0, 1 - (Math.abs(along) / top) ** 2);
         engine = Math.sign(throttle) * Math.abs(throttle) * params.accel * share;
       }

@@ -168,7 +168,7 @@ et enveloppes de ces modèles. Le Stuka (`graphics.js`) suit le même chemin dep
 la version 266, les biplans depuis la version 275.
 
 G1 Castor (issue #76) : `fleet.ts` définit le véhicule monoplace,
-`tank.js` sa physique de sol (le Castor conduit roule sur Rapier, `?rapier=0` pour la conduite simple : `physics-world.ts`, `castor-physics.ts`, voir [la physique Rapier](physics-engine.md)), `paid-service.js` son rayon de soutien et ses coûts,
+`tank.js` sa physique de sol (le Castor roule sur Rapier, `tank.js` ne garde que le char et le camion DCA : `physics-world.ts`, `castor-physics.ts`, voir [la physique Rapier](physics-engine.md)), `paid-service.js` son rayon de soutien et ses coûts,
 `castor-model.js` assemble le modèle Meshy texturé (coque, six roues, tourelle et
 canon pivotants) généré hors ligne par `scripts/import-meshy-castor.py`,
 `castor-top-view.js` la vue de dessus (V) et son viseur au sol, `client.js` la

@@ -41,9 +41,6 @@ export interface VehicleProfile extends FlightProfile {
   maxHP?: number;
   /** Multiplier of PILOT_FIRE_INTERVAL for the pilot's gun. */
   gunIntervalFactor?: number;
-  /** Ground acceleration response (Castor progressive start). */
-  response?: number;
-  reverseSteering?: boolean;
 }
 // The original light fighter stays the reference the Stuka, the Spitfire and the
 // H2 are derived from; the biplane fighter replaced it as the base fighter.
@@ -165,10 +162,9 @@ export const VEHICLES = {
     seats: ['pilot'],
     span: 6,
     length: 9,
-    // Same top speed, with a gentler progressive start (issue #171).
+    // Top speed (reference m/s); acceleration, steering and braking come from the
+    // physics, see castor-physics.ts (progressive start, issue #171).
     maxSpeed: 52,
-    response: 1.5,
-    reverseSteering: true,
     thrust: 6,
     drag: 0.1,
     liftBase: 0,

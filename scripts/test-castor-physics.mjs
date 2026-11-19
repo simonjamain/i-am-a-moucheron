@@ -109,7 +109,7 @@ const up = (s) => new T.Vector3(0, 1, 0).applyQuaternion(new T.Quaternion().from
   });
   assert.ok(marks[1] > 2.8 && marks[1] < 4.6, 'about 4 m/s² at the start: ' + marks[1]);
   assert.ok(marks[1] < 0.6 * vmax, 'a progressive start');
-  assert.ok(marks[6] > 0.9 * vmax, 'reaches the top speed: ' + marks[6]);
+  assert.ok(marks[6] > 0.95 * vmax, 'reaches the top speed: ' + marks[6]);
   assert.ok(s.p[2] < 0 && Math.abs(s.p[0]) < toWorld(0.05), 'drives straight along -z');
   assert.ok(Math.abs(s.gas - 1) < 1e-9);
   // Coasting brakes gently (about 1.2 m/s²), a throttle against the motion
