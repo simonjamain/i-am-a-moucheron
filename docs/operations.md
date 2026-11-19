@@ -49,7 +49,7 @@ Le workflow `Docker build validation` contient aussi le job `Full game regressio
 `npm test`, `format:check`, `check:docs`, le build et `validate-artifact.mjs` ; `docker build` local reste exigé avant livraison
 ([Docker](docker.md)).
 
-Audit des contrôles (suite complète : 154 scripts, environ 50 s cumulées, tous < 4 s) :
+Audit des contrôles (suite complète : `npm test -- --list` donne le décompte, environ 50 s cumulées) :
 `npm test` lance `scripts/run-tests.mjs`, qui assemble puis exécute la liste ordonnée
 de `scripts/suite.mjs`, chaque script dans son propre processus, et résume tous les
 échecs à la fin. `npm test -- <fragment>` cible les scripts dont le nom contient le

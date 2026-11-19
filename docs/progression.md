@@ -64,16 +64,14 @@ rapportent. La monnaie appartient à la salle.
 niveau et le nombre d’installations posées ou prépayées avant de débiter : deux achats concurrents
 ne peuvent pas obtenir le même ancien tarif. Un tarif affiché devenu obsolète
 est refusé avant débit pour laisser le joueur confirmer le nouveau prix. Un retry conserve sa transaction
-initiale. `wave_rewards` déduplique les primes ; leur somme est incluse dans le
-compteur sonore, distinct du solde dépensable. Reset efface ce registre avec le
-reste de la partie. La migration additive `0010_wave_rewards.sql` n’efface pas
-les monnaies, installations ou niveaux déjà acquis.
+initiale. Le compteur sonore reste distinct du solde dépensable. Reset efface
+tout l'état de la partie (en RAM, sans migration).
 
 ## Vérifications
 
 `test-progression.mjs` exerce 40 tirages sur les douze premières vagues, les
 plafonds d’élites, la durée initiale, un parcours d’achats sans revenus d’âmes,
-les routes HTTP des primes (concurrence et répétitions), les prix par palier,
+les prix par palier,
 une vague entièrement manquée, la défaite et le reset. Les tests d’économie
 existants gardent leurs contrôles de placement et d’achats concurrents.
 Le ressenti des trajectoires et du combat reste à confirmer en partie réelle.

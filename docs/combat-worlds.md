@@ -10,9 +10,8 @@
 | Scarabée          | 800 |
 | Joueur            | 100 |
 
-Une mitrailleuse inflige 75 dégâts de base. L’amélioration existante conserve
-son multiplicateur relatif : 75 × (1 + niveau), jusqu’au niveau 3 ; elle ne
-s’applique pas au pistolet, qui n'existe qu'au purgatoire. Celui-ci inflige
+Une mitrailleuse inflige 75 dégâts (l'ancienne amélioration de munitions est
+retirée). Le pistolet n'existe qu'au purgatoire et inflige
 toujours 10 dégâts, un tir par appui, sans délai entre deux appuis distincts.
 Maintenir ne répète pas le tir. Le corps visible de l'âme porte le pistolet ; le
 rayon vise le réticule. Au bureau, le personnage n'a pas d'arme à pied.
@@ -42,7 +41,6 @@ La file PNJ appartient uniquement au purgatoire classique. Le registre
 `soul_rewards` arbitre entre service et tir : le premier libère l’âme et crédite
 un dollar ; les autres demandes n’ajoutent rien. Les PV PNJ viennent de leur type,
 et leurs dégâts ne sont pas remplacés par les rapports de mouvement du client.
-La migration additive `0009_player_worlds.sql` conserve les données existantes.
 
 ## Sièges et sons
 

@@ -4,7 +4,7 @@
 - Branche : `refactor/typescript-foundation` rebasée sur `049ba33` (v314).
 - Résultat attendu : plus aucun `.js` écrit à la main dans `src/`, `server/`,
   `scripts/` ; `npm run typecheck` vert ; comportement de jeu, URL servies, image
-  Docker et Worker historique inchangés. Règles : [TypeScript](../typescript.md).
+  Docker inchangé. Règles : [TypeScript](../typescript.md).
 
 ## État réel
 
@@ -44,10 +44,6 @@ Restant (≈ 128 modules écrits à la main + 38 données générées) :
 - **Données générées `src/*-data.js`** (Meshy, personnages) : proposition — faire
   émettre `.ts` par les générateurs, sans annotations, exclus de `tsc` si la
   vérification devient lente.
-- **Worker historique** (`src/server.js`, `worker/index.js`, `drizzle/`) : le
-  migrer coûte cher pour un runtime non déployé ; proposition — le retirer dans
-  une tâche dédiée plutôt que le convertir. Tant qu'il existe, respecter la règle
-  « imports sur une ligne » des modules inclus.
 
 ## Vérifications
 

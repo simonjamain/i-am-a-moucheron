@@ -25,7 +25,7 @@ Un reset efface commandes et monnaie. Une reprise automatique de session garde
 le même ID et donc ses commandes ; une reconnexion créant un nouvel ID (page
 rechargée) ne reprend pas l’ancienne commande, remboursée à l’expiration.
 Les bons et la pose sont dédupliqués côté domaine, en plus du protocole fiable.
-Les améliorations restent achetées directement ; les appareils passent désormais par le même bon et aperçu, voir [déploiement courant](multiplayer-return.md#réserves-gratuites-et-achats-de-véhicules).
+Les appareils passent désormais par le même bon et aperçu, voir [déploiement courant](multiplayer-return.md#réserves-gratuites-et-achats-de-véhicules).
 
 ## Postes et commandes d’armes
 
@@ -122,7 +122,7 @@ destruction ; achat suivant possible, sans remplacement gratuit.
 Vitesse plafonnée à **122,5 m/s de référence** contre 70 ; facteur de rotation
 **1,45** contre 1. La poussée est réglée à 70 pour atteindre le nouveau plafond,
 sans prétention de modèle historique. À vitesse égale, les réponses angulaires
-mesurées sont multipliées par 1,45. Les améliorations achetées restent applicables.
+mesurées sont multipliées par 1,45. (Les améliorations achetables ont depuis été retirées.)
 Chaque arme tire 75 dégâts de base toutes les 0,06 s. ARM-04 remplace le stock
 initial par **1 000 balles communes**, avec petits décalages et dernière salve
 partielle. [Règle et mesures actuelles](multiplayer-return.md#spitfire-et-performance-des-tirs).

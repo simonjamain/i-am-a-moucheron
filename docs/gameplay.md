@@ -45,7 +45,7 @@ Les règles de la room sont fixes : l'ancien panneau **Équilibrage et nuées** 
 
 Le bouton **Debug : OFF / ON** du HUD est un interrupteur direct, commun à la room :
 un clic l'active, le suivant le désactive. Actif : argent illimité, toutes les
-constructions et améliorations débloquées, aucun dégât de chute et défaite
+constructions débloquées, aucun dégât de chute et défaite
 impossible. Les dégâts de la poubelle restent calculés et le HUD affiche ses PV,
 même négatifs (« -75 / 20 PV »). Désactiver réinitialise la partie aux règles normales.
 Pendant une vague, le marchand (P) propose en plus deux colonnes pour poser un ennemi
@@ -153,11 +153,10 @@ ne sont plus traités à part.
 
 ## Atelier de la base (menu d'achat, P)
 
-Depuis la version 271 (cartes simplifiées en 273), l'atelier range les achats en quatre colonnes — Aéronefs,
-Véhicules au sol, Installations, Améliorations — triées du plus faible (haut) au plus
+Depuis la version 271 (cartes simplifiées en 273), l'atelier range les achats en trois colonnes — Aéronefs,
+Véhicules au sol, Installations — triées du plus faible (haut) au plus
 fort (bas) selon le prix de base. Chaque carte est un bouton unique (on clique directement dessus ; pas de bouton « Signer le bon » ni de description) qui montre une image du modèle (rendue
-une fois par `src/shop-thumbs.js` à partir des vrais modèles 3D ; un pictogramme pour
-les améliorations), son nom et son prix (ou « Acquis » / « Déjà payé »). L'ordre
+une fois par `src/shop-thumbs.js` à partir des vrais modèles 3D), son nom et son prix (ou « Acquis » / « Déjà payé »). L'ordre
 et les catégories vivent dans `src/shop-catalog.js` ; un nouvel article non classé
 apparaît dans une colonne « Autres » (`scripts/test-shop-catalog.mjs`).
 
@@ -173,17 +172,17 @@ pas et conservent leurs dégâts sans régénération. Voir [file physique](purg
 
 Aucune prime de vague n'est versée (supprimée par l'issue #210) : les âmes libérées
 sont la seule source de revenu liée aux vagues, et un ennemi raté ne rapporte rien.
-Les prix montent avec les installations et niveaux acquis.
+Les prix de certaines installations montent avec le nombre déjà posé (voir [progression](progression.md#revenus-et-prix)).
 Chaque PNJ accepté par Saint Pierre ou tué au purgatoire est définitivement
 libéré et rapporte, une seule fois, **la puissance de son espèce** en dollars
 communs (1 $ pour un moucheron, 12,23 $ pour un rat). Un ennemi abattu dans le
 bureau ne rapporte pas directement d’argent. Chaque dollar déclenche une courte
 sonnerie chez tous les joueurs présents, même dans les autres mondes. Le service des PNJ
 continue côté serveur sans joueur humain au purgatoire. Le menu P permet d’acheter
-une DCA, un radar ou une station à placer sur un support solide, un Stuka, un Spitfire, un tank et des
-améliorations partagées de moteur ou de munitions. Prix et niveaux sont définis
+une DCA, un radar ou une station à placer sur un support solide, un Stuka, un Spitfire, un tank, etc.
+Il n'y a plus d'améliorations achetables. Les prix sont définis
 par `src/equipment.js` ; [économie](economy-physics.md) détaille les garanties.
-La remise à zéro efface monnaie, installations et améliorations : aucune
+La remise à zéro efface monnaie et installations : aucune
 progression permanente entre parties n’est implémentée.
 
 ## Échelle et présentation
