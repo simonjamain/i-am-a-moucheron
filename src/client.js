@@ -164,6 +164,7 @@ import { HEAVY, TANK_MG, availableShell, heavyInterval } from '/armament.js';
 import { stepTank } from '/tank.js';
 import { loadRapier } from '/physics-world.js';
 import { CastorRig } from '/castor-physics.js';
+import { TankRig } from '/tank-physics.js';
 import { animateCastorWheels, trackGroundMotion } from '/castor-wheels.js';
 import { ServiceZones, serviceZoneList } from '/service-zones.js';
 import { EngineSmoke, damageRatio } from '/engine-smoke.js';
@@ -4160,6 +4161,15 @@ function flushRapidImpacts(now) {
     else notify(error.message, 2);
   });
 }
+// The Castor and the medium tank are driven by the Rapier physics engine, loaded behind
+// the loading screen (see homeReady): the module, the rig of the vehicle type we drive,
+// and one rig per empty vehicle of these types that this client simulates as the room's
+// host. The other vehicles still use their original physics (see docs/physics-engine.md).
+let rapier = null;
+const RAPIER_RIGS = { castor: CastorRig, tank: TankRig };
+const drivenRigs = new Map();
+const vacantRigs = new Map();
+
 // Vehicles and pilots a shot can hit, prepared once per frame (matrices, solid
 // meshes, padded box) instead of once per projectile and per slice.
 const projectileRay = new T.Raycaster(),
@@ -4277,12 +4287,6 @@ function stepProjectileSlice(dt) {
   }
 }
 
-// The Castor is driven by the Rapier physics engine, loaded behind the loading
-// screen (see homeReady): the module, the rig of the Castor we drive, and one rig
-// per empty Castor that this client simulates as the room's host.
-let rapier = null;
-let castorRig = null;
-const vacantRigs = new Map();
 // Fixed timestep flight: thrust, quadratic drag, gravity, angle-of-attack lift, wind-relative velocity.
 function physics(dt) {
   if (respawnAt || onFoot || !myVehicle) return;
@@ -4352,9 +4356,10 @@ function physics(dt) {
       manual = flightInput(keys, pad, active);
     const state = { ...localMotion(), fuelAvailable: remainingFuel() > 0 };
     const drive = { forward: -manual.pitch, turn: manual.roll || -manual.yaw };
-    if (myVehicle.type === 'castor') {
-      castorRig ??= new CastorRig(rapier);
-      castorRig.step(state, drive, colliders, dt, VEHICLES.castor);
+    const Rig = RAPIER_RIGS[myVehicle.type];
+    if (Rig) {
+      if (!drivenRigs.has(myVehicle.type)) drivenRigs.set(myVehicle.type, new Rig(rapier));
+      drivenRigs.get(myVehicle.type).step(state, drive, colliders, dt, VEHICLES[myVehicle.type]);
     } else stepTank(T, state, drive, colliders, dt, VEHICLES[myVehicle.type]);
     if (state.hp <= 0) {
       crash();
@@ -5502,9 +5507,9 @@ function simulateVacantAircraft(dt) {
         dt,
         VEHICLES[v.type],
       );
-    else if (v.type === 'castor') {
-      if (!vacantRigs.has(v.id)) vacantRigs.set(v.id, new CastorRig(rapier));
-      vacantRigs.get(v.id).step(s, { forward: 0, turn: 0 }, colliders, dt, VEHICLES.castor);
+    else if (RAPIER_RIGS[v.type]) {
+      if (!vacantRigs.has(v.id)) vacantRigs.set(v.id, new RAPIER_RIGS[v.type](rapier));
+      vacantRigs.get(v.id).step(s, { forward: 0, turn: 0 }, colliders, dt, VEHICLES[v.type]);
     } else if (VEHICLES[v.type].ground)
       stepTank(T, s, { forward: 0, turn: 0 }, colliders, dt, VEHICLES[v.type]);
     else stepVacantAircraft(T, s, VEHICLES[v.type], colliders, dt);

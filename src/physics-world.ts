@@ -1,9 +1,10 @@
 import type RAPIER from '@dimforge/rapier3d-compat';
 import type { Collider as RapierCollider, World } from '@dimforge/rapier3d-compat';
 import type * as THREE from 'three';
-import { ACTOR_UNIT } from './scale.ts';
+import { ACTOR_UNIT, MAP } from './scale.ts';
 import { colliderBounds } from './oriented-collider.ts';
 import type { OrientedFrame } from './oriented-collider.ts';
+import type { XYZ } from './types.ts';
 
 /** The Rapier module (the default export of `rapier.compat.mjs`). */
 export type Rapier = typeof RAPIER;
@@ -23,6 +24,28 @@ export const MODEL_UNIT = HUMAN_HEIGHT / PILOT_MODEL_UNITS;
 export const WORLD_PER_METRE = ACTOR_UNIT / MODEL_UNIT;
 export const toPhysics = (world: number): number => world / WORLD_PER_METRE;
 export const toWorld = (metres: number): number => metres * WORLD_PER_METRE;
+
+// Falling from a desk kills a ground vehicle above this drop height (about 6 cm of
+// the office, as before the physics engine); kept as a height so that it does not
+// depend on the gravity value.
+const KILL_DROP = toPhysics(MAP.metres(20) ** 2 / (2 * MAP.metres(9.81)));
+export const FALL_KILL_SPEED = Math.sqrt(2 * GRAVITY * KILL_DROP);
+
+/** q * v * q^-1 for a unit quaternion (x, y, z, w). */
+export const rotate = (
+  q: { x: number; y: number; z: number; w: number },
+  v: { x: number; y: number; z: number },
+): XYZ => {
+  const { x, y, z, w } = q,
+    tx = 2 * (y * v.z - z * v.y),
+    ty = 2 * (z * v.x - x * v.z),
+    tz = 2 * (x * v.y - y * v.x);
+  return {
+    x: v.x + w * tx + (y * tz - z * ty),
+    y: v.y + w * ty + (z * tx - x * tz),
+    z: v.z + w * tz + (x * ty - y * tx),
+  };
+};
 
 let loading: Promise<Rapier> | null = null;
 // Rapier is a 4 MB script (WebAssembly inlined): load it only when a rig needs

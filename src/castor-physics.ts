@@ -3,14 +3,17 @@ import { MODEL_DATA } from './meshy-castor-data.js';
 import { MAP } from './scale.ts';
 import type { VehicleProfile } from './fleet.ts';
 import {
-  GRAVITY,
+  FALL_KILL_SPEED,
   MODEL_UNIT,
   PhysicsWorld,
+  rotate,
   toPhysics,
   toWorld,
   type Rapier,
   type Solid,
 } from './physics-world.ts';
+
+export { FALL_KILL_SPEED };
 
 export interface Wheel {
   x: number;
@@ -102,27 +105,6 @@ export function steerLimit(speed: number, params: CastorParams = CASTOR_PHYSICS)
   const v2 = Math.max(speed * speed, 1e-6);
   return Math.min(params.steerLock, Math.atan((WHEELBASE * params.maxLateral) / v2));
 }
-
-// Falling from a desk kills the vehicle above this drop height, as before; it is
-// kept as a height so that it does not depend on the gravity value.
-const KILL_DROP = toPhysics(MAP.metres(20) ** 2 / (2 * MAP.metres(9.81)));
-export const FALL_KILL_SPEED = Math.sqrt(2 * GRAVITY * KILL_DROP);
-
-const rotate = (
-  q: { x: number; y: number; z: number; w: number },
-  v: { x: number; y: number; z: number },
-) => {
-  // q * v * q^-1 for a unit quaternion (x, y, z, w).
-  const { x, y, z, w } = q,
-    tx = 2 * (y * v.z - z * v.y),
-    ty = 2 * (z * v.x - x * v.z),
-    tz = 2 * (x * v.y - y * v.x);
-  return {
-    x: v.x + w * tx + (y * tz - z * ty),
-    y: v.y + w * ty + (z * tx - x * tz),
-    z: v.z + w * tz + (x * ty - y * tx),
-  };
-};
 
 export class CastorRig {
   params: CastorParams;

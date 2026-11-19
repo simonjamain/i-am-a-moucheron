@@ -1,6 +1,13 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 358,
+    changes: [
+      'Le char moyen roule comme un vrai char : suspension qui pique du nez au freinage, pivot sur place, franchit les petites marches.',
+      'Le char est plus rapide.',
+    ],
+  },
+  {
     version: 357,
     changes: [
       'Le Castor se conduit comme un vrai véhicule à roues : départ progressif, freins, virages qui se resserrent à basse vitesse.',
