@@ -69,8 +69,8 @@ for (const file of ['server/game.js', 'server/wave-preparation.js', 'src/client.
 
 // Wave budget: W(1) g^(n-1) N^0.9, no ceiling.
 assert.equal(directorBudget(1), 32);
-near(directorBudget(2), 38.4, 1e-9);
-near(directorBudget(10), 32 * 1.2 ** 9, 1e-9);
+near(directorBudget(2), 48, 1e-9);
+near(directorBudget(10), 32 * 1.5 ** 9, 1e-9);
 assert.ok(directorBudget(40) > 2400, 'no 2 400 ceiling');
 for (const wave of [1, 5, 12])
   for (const n of [2, 3, 10]) {
@@ -79,12 +79,12 @@ for (const wave of [1, 5, 12])
   }
 assert.equal(directorBudget(7, 1), directorBudget(7), 'N = 1 is the base budget');
 // Room settings change the three parameters.
-near(directorBudget(3, 1, { ...DEFAULT_BALANCE, waveGrowth: 1.5 }), 32 * 1.5 ** 2, 1e-9);
+near(directorBudget(3, 1, { ...DEFAULT_BALANCE, waveGrowth: 1.2 }), 32 * 1.2 ** 2, 1e-9);
 near(directorBudget(1, 1, { ...DEFAULT_BALANCE, firstWavePower: 50 }), 50, 1e-9);
 near(directorBudget(1, 4, { ...DEFAULT_BALANCE, playerExponent: 0.5 }), 64, 1e-9);
 assert.deepEqual(
   [DEFAULT_BALANCE.waveGrowth, DEFAULT_BALANCE.firstWavePower, DEFAULT_BALANCE.playerExponent],
-  [1.2, 32, 0.9],
+  [1.5, 32, 0.9],
 );
 validateBalance({ waveGrowth: 1.25, firstWavePower: 40, playerExponent: 1 });
 for (const bad of [
