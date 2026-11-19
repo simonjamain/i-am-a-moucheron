@@ -439,6 +439,8 @@ arme, 200 PV, le pilotage assisté de l'hélicoptère d'attaque (souris pour
 l'inclinaison, Z/S/Q/D, Maj/Ctrl) et le même **soutien sphérique de 50 cm** que
 le Castor : soins, carburant, munitions et réparation des barricades, payés par
 la caisse commune, pour lui-même et pour ce qui l'entoure.
+Depuis la version 355, modèle, envergure, longueur et patins sont réduits de 30 %
+(`FLYING_CASTOR_SCALE`, `src/flying-castor-model.js`) ; la sphère de soutien ne change pas.
 
 **Tous les occupants** (pilote et passagers) ouvrent la roue (**G** / clic
 molette) et **larguent** les constructions du Castor, sauf les murs LEGO :

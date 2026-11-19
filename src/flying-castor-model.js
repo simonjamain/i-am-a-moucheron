@@ -6,9 +6,16 @@ import { texturedMeshyParts } from './meshy-texture.js';
 // rotor around its vertical axis. Geometry, material and atlas are shared
 // between helicopters; the rotor groups are per vehicle. Nose toward -Z.
 export const FLYING_CASTOR_ROTORS = Object.freeze(['rotorFront', 'rotorRear']);
+// Version 355: the helicopter was too big, everything shrinks by 30 %. The
+// profile (span, length, gear in fleet.ts) follows the same factor.
+export const FLYING_CASTOR_SCALE = 0.7;
 
 export function makeFlyingCastorMeshy(T, scene) {
   const model = new T.Group();
+  const rig = new T.Group();
+  rig.name = 'flying-castor-rig';
+  rig.scale.setScalar(FLYING_CASTOR_SCALE);
+  model.add(rig);
   const rotors = [];
   for (const { part, geometry, material } of texturedMeshyParts(T, MODEL_DATA)) {
     const mesh = new T.Mesh(geometry, material);
@@ -16,14 +23,14 @@ export function makeFlyingCastorMeshy(T, scene) {
     mesh.userData.meshyShared = true;
     mesh.castShadow = mesh.receiveShadow = true;
     if (part.part === 'body') {
-      model.add(mesh);
+      rig.add(mesh);
       continue;
     }
     const group = new T.Group();
     group.name = part.part;
     group.position.fromArray(part.pivot);
     group.add(mesh);
-    model.add(group);
+    rig.add(group);
     rotors.push(group);
   }
   if (rotors.length !== FLYING_CASTOR_ROTORS.length) throw Error('Missing Castor volant rotor');
@@ -32,7 +39,7 @@ export function makeFlyingCastorMeshy(T, scene) {
     const anchor = new T.Object3D();
     anchor.name = 'engine-smoke';
     anchor.position.copy(rotor.position).add(new T.Vector3(0, -0.4, 0));
-    model.add(anchor);
+    rig.add(anchor);
     return anchor;
   });
   model.userData = {
