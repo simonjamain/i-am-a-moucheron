@@ -1,10 +1,18 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
-    version: 359,
+    version: 361,
     changes: [
       'La remorque du camion anti-aérien se balance dans les virages et se met en portefeuille en marche arrière.',
       'Le camion est plus rapide.',
+    ],
+  },
+  {
+    version: 360,
+    changes: [
+      'Rat, scarabées, abeilles, moustiques et cafards sont plus costauds ; les bébés araignées ont presque aucune vie.',
+      'Tous les ennemis, bébés araignées compris, passent au purgatoire avec leur vrai modèle et rapportent des dollars.',
+      'Au purgatoire, les ennemis signent leurs papiers deux fois plus vite.',
     ],
   },
   {

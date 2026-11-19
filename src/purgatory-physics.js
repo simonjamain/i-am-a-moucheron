@@ -277,7 +277,7 @@ export function advanceArena(a, to, owner = null) {
     for (const b of a.bodies) {
       if (owned(b) && b.kind === 'enemy' && b.id === a.desk) {
         b.served += ms;
-        if (b.served >= 3000) {
+        if (b.served >= 1500) {
           b.gone = true;
           a.desk = null;
           a.events.push({ id: ++a.eventSeq, at: now, kind: 'stamp', target: b.id, x: 0, z: -1 });

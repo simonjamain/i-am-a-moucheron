@@ -4,11 +4,11 @@ import { PACKS, prepareRoster } from '../server/wave-preparation.js';
 import { DEFAULT_BALANCE } from '../src/balance.js';
 import { ENEMY_TYPES, debugSwarmRoster, swarmFrame, wavePlan } from '../src/waves.js';
 
-assert.equal(ENEMY_TYPES.rat.hp, 5000);
-assert.equal(ENEMY_TYPES.mosquito.hp, 70);
+assert.equal(ENEMY_TYPES.rat.hp, 10000);
+assert.equal(ENEMY_TYPES.mosquito.hp, 150);
 assert.equal(ENEMY_TYPES.spider.hp, 1200);
 assert.equal(ENEMY_TYPES.spider.onDeath.count, 100);
-assert.ok(Math.abs(ENEMY_TYPES.spiderling.power - 0.17) < 0.005);
+assert.ok(Math.abs(ENEMY_TYPES.spiderling.power - 0.08) < 0.005);
 // The flyer « voltigeur » (`dart`) was removed from the game: no profile, no
 // pack and no wave may bring it back.
 assert.ok(!Object.hasOwn(ENEMY_TYPES, 'dart') && !Object.hasOwn(PACKS, 'dart'));

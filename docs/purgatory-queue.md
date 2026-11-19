@@ -5,9 +5,11 @@ en s’y tenant réellement ; aucun ticket ne lui accorde de priorité abstraite
 guichet. Un PNJ déplacé conserve sa place et la rejoint par les allées latérales.
 Il attend derrière les joueurs et ne riposte jamais.
 
-Le service de Saint-Pierre exige trois secondes à son guichet. Le client hôte
+Le service de Saint-Pierre exige une seconde et demie à son guichet (les PNJ, deux fois plus vite qu'avant). Le client hôte
 simule les PNJ lorsqu’un joueur est présent ; sinon le serveur Node les avance à son tick de maintenance. Les déplacements restent côté client, sans correction imposée au
 corps du joueur. Une âme libérée n’est jamais réintroduite par un ancien rapport.
+
+Les PNJ sont les vrais modèles des insectes tués, mis à l'échelle de l'âme.
 
 Les coups, gardes, esquives de combat et KO sont supprimés. Le pistolet utilise
 de vrais PV persistants, sans récupération automatique ; tuer un PNJ le libère
