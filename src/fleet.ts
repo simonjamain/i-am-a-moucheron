@@ -151,8 +151,9 @@ export const VEHICLES = {
     span: 5,
     length: 16,
     // A real truck towing a gun at the model's size (Froude similarity, see
-    // truck-physics.ts): 40 km/h × √0.277 = 5.8 m/s of physics. It was 10.
-    maxSpeed: 33,
+    // truck-physics.ts) would reach 5.8 m/s of physics (33); doubled for the game: 11.4
+    // m/s, 66 reference m/s. It was 10 before the physics engine.
+    maxSpeed: 66,
     thrust: 3,
     drag: 0.1,
     liftBase: 0,
@@ -195,6 +196,12 @@ export const VEHICLES = {
     maxHP: 200,
   },
 } satisfies Record<string, VehicleProfile>;
+
+/**
+ * What the game accepts of the anti-air trailer's hitch, in the tractor's frame: the
+ * server clamps to it, the physics stops a little inside it (truck-physics.ts).
+ */
+export const TRAILER_LIMITS = Object.freeze({ yaw: 1.8, pitch: 0.5 });
 
 /** Every vehicle key; adding an entry to VEHICLES extends it (and every Record<VehicleType, …>). */
 export type VehicleType = keyof typeof VEHICLES;

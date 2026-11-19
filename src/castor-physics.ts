@@ -68,9 +68,9 @@ export const BRAKE_PER_DECEL = 0.54;
 
 export const CASTOR_PHYSICS = Object.freeze({
   mass: 400, // kg
-  accel: 4, // m/s² at standstill, full throttle: a progressive start (issue #171)
+  accel: 2.5, // m/s² at standstill, full throttle: a progressive start (issue #171), calmer than the former 4
   reverseSpeed: 0.5, // share of the top speed
-  topMargin: 1.06, // thrust fades towards this multiple of the top speed: drag makes up the rest
+  topMargin: 1.1, // thrust fades towards this multiple of the top speed: drag makes up the rest
   brake: 7, // m/s² when the throttle opposes the motion
   coast: 1.2, // m/s² of engine braking without throttle
   hold: 4, // m/s² holding the vehicle still when stopped without throttle

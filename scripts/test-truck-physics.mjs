@@ -4,10 +4,18 @@
 import assert from 'node:assert/strict';
 import * as T from '../vendor/three.module.min.js';
 import { ACTOR_UNIT, MAP } from '../src/scale.ts';
-import { VEHICLES } from '../src/fleet.ts';
+import { TRAILER_LIMITS, VEHICLES } from '../src/fleet.ts';
 import { MODEL_DATA } from '../src/meshy-flaktruck-data.js';
 import { MODEL_UNIT, loadRapier, toPhysics, toWorld } from '../src/physics-world.ts';
-import { HITCH_LIMIT, TRUCK_PHYSICS, TruckRig } from '../src/truck-physics.ts';
+import {
+  HITCH_LIMITS,
+  TRACTOR_WHEELS,
+  TRAILER_WHEELS,
+  TRAILER_WHEEL_RADIUS,
+  TRUCK_PHYSICS,
+  WHEEL_RADIUS,
+  TruckRig,
+} from '../src/truck-physics.ts';
 
 const RAPIER = await loadRapier(() => import('../vendor/rapier.compat.mjs'));
 const profile = VEHICLES.flaktruck;
@@ -22,25 +30,50 @@ assert.ok(
 const trailerTonnes = TRUCK_PHYSICS.trailerMass / scale ** 3;
 assert.ok(trailerTonnes > 1500 && trailerTonnes < 2500, 'trailer ' + trailerTonnes + ' kg');
 const topSpeed = toPhysics(MAP.metres(profile.maxSpeed));
-assert.ok(Math.abs(topSpeed - (40 / 3.6) * Math.sqrt(scale)) < 0.4, 'top speed ' + topSpeed);
-assert.ok(HITCH_LIMIT < 0.65, 'inside the angle the server accepts');
+// Twice what the real truck would reach, as asked for the game.
+assert.ok(Math.abs(topSpeed - 2 * (40 / 3.6) * Math.sqrt(scale)) < 0.8, 'top speed ' + topSpeed);
+assert.ok(HITCH_LIMITS.yaw < TRAILER_LIMITS.yaw && HITCH_LIMITS.pitch < TRAILER_LIMITS.pitch);
+assert.ok(HITCH_LIMITS.yaw >= Math.PI / 2, 'the trailer can turn by at least 90°');
 
-// Running gear against the model: low vertices cluster on the axles.
+// Running gear: the wheels are parts of the model (scripts/split-vehicle-parts.mjs), with
+// their pivot at the centre; the physics reads these pivots and the meshes' size.
 {
-  const lowZ = (name, threshold) => {
-    const part = MODEL_DATA.parts.find((p) => p.part === name);
+  const wheelPart = (name) => MODEL_DATA.parts.find((p) => p.part === name);
+  const size = (part) => {
     const bytes = Buffer.from(part.positions, 'base64');
     const raw = new Int16Array(bytes.buffer, bytes.byteOffset, bytes.length / 2);
-    const zs = [];
+    const lo = [Infinity, Infinity, Infinity],
+      hi = [-Infinity, -Infinity, -Infinity];
     for (let i = 0; i < raw.length; i += 3)
-      if (raw[i + 1] * 0.0005 < threshold) zs.push(raw[i + 2] * 0.0005);
-    return zs;
+      for (let a = 0; a < 3; a++) {
+        lo[a] = Math.min(lo[a], raw[i + a] * 0.0005);
+        hi[a] = Math.max(hi[a], raw[i + a] * 0.0005);
+      }
+    return hi.map((v, a) => v - lo[a]);
   };
-  const tractor = lowZ('body', -0.68),
-    trailer = lowZ('trailer', -0.5);
-  assert.ok(Math.min(...tractor) < -3.3 && Math.min(...tractor) > -4.0, 'front axle');
-  assert.ok(Math.max(...tractor) > -0.1 && Math.max(...tractor) < 0.4, 'rear tandem');
-  assert.ok(Math.min(...trailer) > 1.2 && Math.max(...trailer) < 2.8, 'trailer axles');
+  for (let i = 0; i < 6; i++) {
+    const part = wheelPart('wheel' + i);
+    assert.ok(part, 'tractor wheel ' + i);
+    assert.ok(Math.abs(size(part)[1] / 2 - WHEEL_RADIUS / MODEL_UNIT) < 0.02, 'tractor radius');
+    assert.ok(Math.abs(TRACTOR_WHEELS[i].x - part.pivot[0] * MODEL_UNIT) < 1e-9);
+  }
+  for (let i = 0; i < 4; i++) {
+    const part = wheelPart('trailerWheel' + i);
+    assert.ok(part, 'trailer wheel ' + i);
+    assert.ok(
+      Math.abs(size(part)[1] / 2 - TRAILER_WHEEL_RADIUS / MODEL_UNIT) < 0.02,
+      'trailer radius',
+    );
+    assert.ok(TRAILER_WHEELS[i].z > 0, 'behind the hitch');
+  }
+  // Nothing was lost in the split: same triangles as the original module.
+  const triangles = MODEL_DATA.parts.reduce(
+    (n, p) => n + Buffer.from(p.indices, 'base64').length / 6,
+    0,
+  );
+  assert.equal(triangles, MODEL_DATA.triangles, 'every triangle is still there');
+  assert.equal(TRACTOR_WHEELS.length, 6);
+  assert.equal(TRAILER_WHEELS.length, 4);
 }
 
 const fresh = (x = 0, z = 0, y = 0) => ({
@@ -86,23 +119,30 @@ const box = (x0, y0, z0, x1, y1, z1) =>
   const rig = new TruckRig(RAPIER),
     s = fresh(),
     marks = {};
-  run(rig, s, { forward: 1 }, 9, [], (i) => {
+  run(rig, s, { forward: 1 }, 36, [], (i) => {
     if ((i + 1) % 120 === 0) marks[(i + 1) / 120] = -toPhysics(s.v[2]);
     assert.ok(speed(s) < topSpeed * 1.03, 'never above the top speed');
     assert.ok(Math.abs(s.trailerAngle) < 0.03, 'trailer follows in line');
   });
-  assert.ok(marks[1] > 1.5 && marks[1] < 3.2, 'about 2.4 m/s² at the start: ' + marks[1]);
-  assert.ok(marks[8] > 0.95 * topSpeed, 'reaches the top speed: ' + marks[8]);
-  assert.ok(Math.abs(s.p[0]) < toWorld(0.1) && s.p[2] < 0, 'straight along -z');
-  run(rig, s, {}, 5);
-  assert.ok(speed(s) < 0.05, 'coasts to a stop and holds');
-  run(rig, s, { forward: 1 }, 7);
+  assert.ok(marks[1] > 0.8 && marks[1] < 1.7, 'about 1.2 m/s² at the start: ' + marks[1]);
+  assert.ok(marks[8] < 0.8 * topSpeed, 'a calm acceleration: ' + marks[8]);
+  assert.ok(marks[35] > 0.93 * topSpeed, 'reaches the top speed: ' + marks[35]);
+  assert.ok(Math.abs(s.p[0]) < 0.01 * Math.abs(s.p[2]) && s.p[2] < 0, 'straight along -z');
   const before = speed(s);
-  let fold = 0;
-  run(rig, s, { forward: -1 }, 0.8, [], () => (fold = Math.max(fold, Math.abs(s.trailerAngle))));
+  let fold = 0,
+    pitch = 0;
+  run(rig, s, { forward: -1 }, 0.8, [], () => {
+    fold = Math.max(fold, Math.abs(s.trailerAngle));
+    pitch = Math.max(pitch, Math.abs(s.trailerPitch));
+  });
+  // The ball hitch lets the trailer pitch against the tractor under braking.
+  assert.ok(pitch > 0.03 && pitch < TRAILER_LIMITS.pitch, 'the trailer pitches: ' + pitch);
   const deceleration = (before - speed(s)) / 0.8;
   assert.ok(deceleration > 4 && deceleration < 8, 'braking about 5.5 m/s²: ' + deceleration);
   assert.ok(fold < 0.1, 'braking does not fold the trailer: ' + fold);
+  run(rig, s, {}, 12);
+  assert.ok(speed(s) < 0.05, 'coasts to a stop and holds');
+  assert.ok(Math.abs(s.trailerPitch) < 0.03, 'the trailer settles level: ' + s.trailerPitch);
   rig.dispose();
 }
 
@@ -129,32 +169,50 @@ const box = (x0, y0, z0, x1, y1, z1) =>
       worst = Math.min(worst, up(z));
       swing = Math.max(swing, Math.abs(z.trailerAngle));
     });
-  assert.ok(worst > 0.95 && swing < HITCH_LIMIT, `zig-zag: up ${worst}, swing ${swing}`);
+  assert.ok(worst > 0.95 && swing < HITCH_LIMITS.yaw, `zig-zag: up ${worst}, swing ${swing}`);
   [rig, zig].forEach((r) => r.dispose());
 }
 
-// Reversing: straight is fine; steering while backing jackknifes against the hitch
-// stop (never beyond the server's ±0.65), and the truck stops.
+// Reversing: straight is fine at first (a trailer is unstable backwards); full lock while
+// backing jackknifes against the hitch stop, 100° and no more, and the truck jams.
 {
   const rig = new TruckRig(RAPIER),
     s = fresh();
-  run(rig, s, { forward: -1 }, 3);
-  assert.ok(s.p[2] > 0 && Math.abs(s.trailerAngle) < 0.05, 'backs up straight');
+  run(rig, s, { forward: -1 }, 2);
+  assert.ok(s.p[2] > 0 && Math.abs(s.trailerAngle) < 0.05, 'backs up straight at first');
   const back = new TruckRig(RAPIER),
     b = fresh();
   let largest = 0;
+  run(back, b, {}, 2);
+  run(back, b, { forward: -1 }, 1);
   run(
     back,
     b,
-    { forward: -1, turn: 0.5 },
-    12,
+    { forward: -1, turn: 1 },
+    13,
     [],
     () => (largest = Math.max(largest, Math.abs(b.trailerAngle))),
   );
-  assert.ok(largest > HITCH_LIMIT - 0.03 && largest <= 0.65, 'jackknife to the stop: ' + largest);
+  assert.ok(largest > 1 && largest <= TRAILER_LIMITS.yaw, 'jackknife (> 57°): ' + largest);
+  // The hitch really allows more than 90°: placed at 97° it is not pushed back by a stop,
+  // and backing with full lock never takes it beyond its stop.
+  const folded = new TruckRig(RAPIER),
+    f = fresh();
+  f.trailerAngle = 1.7;
+  let past = 0;
+  run(
+    folded,
+    f,
+    { forward: -1, turn: 1 },
+    6,
+    [],
+    () => (past = Math.max(past, Math.abs(f.trailerAngle))),
+  );
+  assert.ok(past > Math.PI / 2 && past <= TRAILER_LIMITS.yaw, 'past 90°, within the stop: ' + past);
+  folded.dispose();
   assert.ok(
     speed(b) < 0.45 * topSpeed * TRUCK_PHYSICS.reverseSpeed * 2,
-    'and the jammed truck barely moves: ' + speed(b),
+    'and a jammed truck barely moves: ' + speed(b),
   );
   run(back, b, { forward: 1 }, 6);
   assert.ok(Math.abs(b.trailerAngle) < 0.3, 'driving forward straightens the trailer');
@@ -171,10 +229,12 @@ const box = (x0, y0, z0, x1, y1, z1) =>
   assert.ok(s.hp === 100, 'no damage');
   const moved = fresh(30, -30);
   moved.trailerAngle = 0.3;
+  moved.trailerPitch = 0.1;
   Object.assign(s, moved);
   rig.step(s, {}, [], DT, profile);
   assert.ok(Math.abs(toPhysics(s.p[0]) - 30) < 0.1 && Math.abs(toPhysics(s.p[2]) + 30) < 0.1);
   assert.ok(Math.abs(s.trailerAngle - 0.3) < 0.05, 'trailer angle taken from the state');
+  assert.ok(Math.abs(s.trailerPitch - 0.1) < 0.05, 'and its pitch');
   rig.dispose();
   const drop = (height) => {
     const solid = box(-10, 0, -40, 10, toPhysics(height), 10),

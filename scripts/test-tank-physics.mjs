@@ -95,14 +95,15 @@ const box = (x0, y0, z0, x1, y1, z1) =>
     s = fresh(),
     marks = {};
   let squat = 0;
-  run(rig, s, { forward: 1 }, 6, [], (i) => {
+  run(rig, s, { forward: 1 }, 13, [], (i) => {
     if ((i + 1) % 120 === 0) marks[(i + 1) / 120] = -toPhysics(s.v[2]);
     squat = Math.max(squat, euler(s).x);
     assert.ok(speed(s) < topSpeed * 1.03, 'never above the top speed');
   });
-  assert.ok(marks[1] > 1.5 && marks[1] < 3, 'about 2.4 m/s² at the start: ' + marks[1]);
+  assert.ok(marks[1] > 0.8 && marks[1] < 1.6, 'about 1.2 m/s² at the start: ' + marks[1]);
   assert.ok(marks[1] < 0.6 * topSpeed, 'a progressive start');
-  assert.ok(marks[5] > 0.97 * topSpeed, 'reaches the top speed: ' + marks[5]);
+  assert.ok(marks[5] < 0.85 * topSpeed, 'a calm acceleration: ' + marks[5]);
+  assert.ok(marks[12] > 0.95 * topSpeed, 'reaches the top speed: ' + marks[12]);
   assert.ok(Math.abs(s.p[0]) < toWorld(0.1) && s.p[2] < 0, 'straight along -z');
   assert.ok(squat > 0.01, 'the nose rises under acceleration: ' + squat);
   let dive = 0;
@@ -146,6 +147,39 @@ const box = (x0, y0, z0, x1, y1, z1) =>
   run(back, b, { forward: -0.6, turn: 1 }, 3);
   assert.ok(b.omega[1] > 0.1, 'left stays left in reverse: ' + b.omega[1]);
   [rig, fast, back].forEach((r) => r.dispose());
+}
+
+// The keys: Z / S push both tracks forward / backward, Q / D add a difference between
+// the tracks from the very first instant (the tank does not wait to reach its top speed).
+{
+  const after = (controls, seconds) => {
+    const rig = new TankRig(RAPIER),
+      s = fresh();
+    run(rig, s, {}, 2);
+    run(rig, s, controls, seconds);
+    rig.dispose();
+    return { yaw: s.omega[1], along: -toPhysics(s.v[2]), speed: speed(s) };
+  };
+  const pivot = after({ turn: 1 }, 0.5),
+    ahead = after({ forward: 1 }, 0.5),
+    aheadLeft = after({ forward: 1, turn: 1 }, 0.5),
+    aheadRight = after({ forward: 1, turn: -1 }, 0.5),
+    backLeft = after({ forward: -1, turn: 1 }, 0.5);
+  assert.ok(pivot.yaw > 0.8 && pivot.speed < 0.15, 'Q alone pivots: ' + pivot.yaw);
+  assert.ok(Math.abs(ahead.yaw) < 0.02 && ahead.along > 0.4, 'Z alone drives straight');
+  assert.ok(aheadLeft.yaw > 0.5 * pivot.yaw, 'Z+Q turns at once: ' + aheadLeft.yaw);
+  assert.ok(aheadLeft.along > 0.5 * ahead.along, 'while accelerating: ' + aheadLeft.along);
+  assert.ok(aheadRight.yaw < -0.5 * pivot.yaw, 'Z+D turns the other way: ' + aheadRight.yaw);
+  assert.ok(backLeft.yaw > 0.5 * pivot.yaw && backLeft.along < -0.3, 'S+Q backs up turning');
+  // At speed, Z+Q still turns, less tightly (the tracks keep their grip).
+  const rig = new TankRig(RAPIER),
+    s = fresh();
+  run(rig, s, { forward: 1 }, 12);
+  const cruise = speed(s);
+  run(rig, s, { forward: 1, turn: 1 }, 1);
+  assert.ok(s.omega[1] > 0.3 && s.omega[1] < 0.8 * pivot.yaw, 'less yaw at speed: ' + s.omega[1]);
+  assert.ok(speed(s) > 0.8 * cruise, 'and the tank keeps its speed');
+  rig.dispose();
 }
 
 // A wall stops it; a step the size of two wheels is climbed, a higher one is not.

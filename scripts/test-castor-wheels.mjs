@@ -82,7 +82,7 @@ const state = { p: [0, VEHICLES.castor.gear, 0], v: [0, 0, 0], q: [0, 0, 0, 1], 
 const rig = new CastorRig(await loadRapier(() => import('../vendor/rapier.compat.mjs')));
 for (let i = 0; i < 240; i++) rig.step(state, {}, [], dt, VEHICLES.castor); // settle on the springs
 const speeds = [];
-for (let i = 0; i < 720; i++) {
+for (let i = 0; i < 1200; i++) {
   rig.step(state, { forward: 1, turn: 0 }, [], dt, VEHICLES.castor);
   speeds.push(Math.hypot(...state.v));
 }

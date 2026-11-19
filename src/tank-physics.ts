@@ -37,11 +37,15 @@ export const GROUND_CLEARANCE = 0.8 * MU; // hull origin above the ground at res
 export const TANK_PHYSICS = Object.freeze({
   mass: 270, // kg
   reverseSpeed: 0.5, // share of the top speed
-  thrust: 2.4, // m/s² per tank, both tracks, at standstill
+  thrust: 1.2, // m/s² per tank, both tracks, at standstill: calm, the former 2.4 was too brisk
   brakeGrip: 0.9, // longitudinal friction: holds the tank up to a 42° slope
   sideGrip: 0.4, // sideways friction: lower than the above, so that the tank pivots
-  steerBoost: 3, // extra thrust available while steering
-  beltSoftness: 0.12, // m/s of belt speed error over which a track goes to full thrust
+  steerThrust: 6, // thrust of the steering difference, in the same units as `thrust` (per wheel)
+  brakeForce: 6, // braking against the motion, in units of `thrust`
+  coastForce: 3, // holding force when no key is pressed, in units of `thrust`
+  slopeAssist: 1, // share of the weight along a slope that the tracks climb without slowing down
+  yawSoftness: 0.3, // rad/s of yaw error over which the steering goes to full thrust
+  beltSoftness: 0.15, // m/s over which the holding force builds up
   slipSpeed: 0.08, // m/s over which sideways friction builds up to its limit
   sag: 0.04, // m: spring compression with the hull at rest
   droop: 0.1, // m: extension of the spring at full droop, below the rest height
@@ -196,20 +200,13 @@ export class TankRig {
     const throttle =
       state.fuelAvailable === false ? 0 : Math.max(-1, Math.min(1, controls.forward || 0));
     const turn = Math.max(-1, Math.min(1, controls.turn || 0));
-    // Belt speeds: the throttle sets the speed of the tank, the steering adds a yaw rate
-    // (positive turn = left, the right track runs faster). The yaw is the same going
-    // forward or backward, as with the former arcade step.
-    const base = throttle * (throttle > 0 ? topSpeed : topSpeed * params.reverseSpeed);
-    // Like a driver, ask for less yaw as the speed grows, so that the tracks keep their
-    // grip: the lateral acceleration (speed × yaw rate) stays below what they hold.
-    const grip = 0.8 * params.sideGrip * GRAVITY,
-      pace = Math.abs(base) + 1e-6,
-      yaw = Math.min(pivotRate, grip / pace),
-      differential = turn * yaw * TRACK_X;
-    const wanted: [number, number] = [base - differential, base + differential];
-    const limit = Math.max(1, Math.max(Math.abs(wanted[0]), Math.abs(wanted[1])) / topSpeed);
-    wanted[0] /= limit;
-    wanted[1] /= limit;
+    // Track commands, as on a real tank: forward (Z) pushes both tracks, backward (S) pulls
+    // both; turning (Q/D) adds a difference between the tracks (positive turn = left: the
+    // right track pushes more, the left one less or backwards), at any speed and straight
+    // from the start, so that Z+Q slows the left track a little while the tank accelerates.
+    // The yaw asked for shrinks with the speed so that the tracks keep their grip: the
+    // lateral acceleration (speed × yaw rate) stays below what they hold.
+    const grip = 0.8 * params.sideGrip * GRAVITY;
 
     const q = body.rotation(),
       p = body.translation(),
@@ -221,9 +218,27 @@ export class TankRig {
     body.resetForces(true);
     body.resetTorques(true);
 
-    // Steering asks more of the tracks than driving straight (scrubbing the ground).
-    const maxPush =
-      ((params.thrust * mass) / WHEEL_COUNT) * (1 + params.steerBoost * Math.abs(turn));
+    const along = v.x * forward.x + v.y * forward.y + v.z * forward.z,
+      yawRate = w.x * up.x + w.y * up.y + w.z * up.z;
+    // Both tracks: the same push, whatever the steering.
+    const share = (params.thrust * mass) / WHEEL_COUNT;
+    let common = 0;
+    if (Math.abs(throttle) > 0.05) {
+      if (throttle * along < -0.3) common = -Math.sign(along) * params.brakeForce * share;
+      else {
+        const top = throttle > 0 ? topSpeed : topSpeed * params.reverseSpeed;
+        common = throttle * share * Math.max(0, 1 - (Math.abs(along) / top) ** 2);
+      }
+      // A tank has the power to climb: the pull of gravity along the hull is cancelled while
+      // a key is pressed, so that a step or a ramp does not slow it down.
+      common +=
+        (Math.abs(throttle) * params.slopeAssist * mass * GRAVITY * forward.y) / WHEEL_COUNT;
+    } else common = -Math.tanh(along / params.beltSoftness) * params.coastForce * share;
+    // The steering: a difference of pushes between the two tracks that drives the yaw rate
+    // to the one asked for (full lock at standstill, less at speed).
+    const wantedYaw = turn * Math.min(pivotRate, grip / Math.max(Math.abs(along), 0.5));
+    const differential =
+      params.steerThrust * share * Math.tanh((wantedYaw - yawRate) / params.yawSoftness);
     const beltSums = [0, 0],
       beltCounts = [0, 0];
     let contacts = 0;
@@ -267,12 +282,11 @@ export class TankRig {
       // Tracks: grip is a share of the load. A track pushes the belt speed towards its
       // command (drive limited by the thrust, braking only by grip); sideways, the track
       // only resists sliding.
-      const target = wanted[side];
-      const brake = target * along < 0 || Math.abs(target) < Math.abs(along);
       const gripLimit = params.brakeGrip * load;
-      const push =
-        (brake ? gripLimit : Math.min(maxPush, gripLimit)) *
-        Math.tanh((target - along) / params.beltSoftness);
+      const push = Math.max(
+        -gripLimit,
+        Math.min(gripLimit, common + (side === 0 ? -differential : differential)),
+      );
       const sideLimit = params.sideGrip * load;
       // Dry friction, smoothed around zero so that it does not chatter at rest.
       const slide = -sideLimit * Math.tanh(across / params.slipSpeed);

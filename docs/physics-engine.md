@@ -1,4 +1,4 @@
-# Physique Rapier — les véhicules au sol (versions 352 à 359)
+# Physique Rapier — les véhicules au sol (versions 352 à 362)
 
 Le jeu écrit sa physique à la main (vol, hélicoptère, `stepWalker`, balistique). Les
 véhicules au sol roulent sur un vrai moteur, **Rapier** (Rust compilé en
@@ -100,15 +100,20 @@ char vide simulé par l'hôte. Le modèle d'un char à chenilles :
   cabre en accélérant et penche dans les virages. `rig.wheelCompression` expose la
   compression de chaque ressort : c'est la donnée dont les chenilles déformables seront
   dessinées.
-- **Chenilles** : chaque côté est commandé en vitesse de bande (gaz ± braquage) ; la chenille
-  pousse le sol au niveau de ses galets, dans la limite de la poussée (2,4 m/s², plus
-  pendant un braquage) et de l'adhérence (la charge du ressort × 0,9, ce qui tient une pente de
+- **Chenilles, comme au clavier** (version 362) : Z pousse les deux chenilles vers l'avant, S les
+  tire vers l'arrière ; Q (gauche) ou D (droite) ajoute une **différence de poussée** entre elles,
+  **à toute vitesse et dès le départ** : avancer en tournant fait ralentir un peu la chenille
+  intérieure pendant que le char accélère (avant la version 362, le char attendait sa vitesse
+  finale pour tourner : une commande en vitesse de bande saturait la poussée des deux
+  côtés). Q seul fait pivoter sur place (chenille droite vers l'avant, gauche vers l'arrière).
+  La différence est un asservissement du taux de lacet voulu (voir plus bas), la poussée
+  commune est limitée par l'adhérence (la charge du ressort × 0,9, ce qui tient une pente de
   42°). Le glissement latéral est un frottement sec (adhérence 0,4 de la charge), plus faible
-  que l'adhérence longitudinale : le char pivote sur place (1,07 rad/s mesuré) et un braquage à
-  pleine vitesse le fait glisser un peu.
-- **Braquage selon la vitesse** : l'écart de bandes demandé diminue quand la vitesse monte, pour
-  que l'accélération latérale reste sous 0,32 g (comme un conducteur qui n'ose pas tourner à
-  fond à 18 km/h). Le même braquage tourne à gauche en marche avant comme en marche arrière.
+  que l'adhérence longitudinale : le char pivote sur place (1,1 rad/s mesuré) et un braquage
+  à pleine vitesse le fait glisser un peu.
+- **Accélération douce** : 1,2 m/s² au départ (2,4 avant la version 362) ; 12 s pour atteindre
+  la vitesse maximale. Le char monte quand même une marche de 18 cm : tant qu'une touche est
+  appuyée, la pente est annulée (`slopeAssist`), comme un char qui a la puissance de grimper.
 - **Franchissement** : la coque a le nez et l'arrière chanfreinés ; le char franchit une
   marche de 18 cm (environ deux rayons de galet) et bute sur 40 cm.
 - **Géométrie du train de roulement** (galets, rayon, ligne de chenille) mesurée sur le
@@ -118,34 +123,66 @@ Pistes (pas encore faites) : découpage du modèle du char en caisse, chenilles,
 motrice ; chenilles dessinées par un shader le long du profil des ressorts ; roues du Castor
 et du camion animées par la physique plutôt que déduites du taux de lacet.
 
-## Le camion DCA sur Rapier (version 359)
+## Le camion DCA sur Rapier (versions 359 et 362)
 
-Deux corps rigides, le tracteur (6x4) et la remorque du canon, liés par une articulation
-**à axe vertical**, avec butées à ±0,62 rad (un peu en deçà des ±0,65 acceptés par le
-serveur). Chacun a ses roues à rayon et ses ressorts : trois essieux au tracteur (avant
-directeur, tandem arrière moteur), deux à la remorque, positions lues sur les sommets du
-modèle. Le contrat réseau ne change pas : l'état envoie la pose du tracteur et
-`trailerAngle`, le lacet de la remorque dans le repère du tracteur ; les autres joueurs
-l'affichent comme avant.
+Deux corps rigides, le tracteur (6x4) et la remorque du canon, liés par une **rotule**
+(version 362) : trois rotations, chacune avec sa butée souple (couples de rappel sur les deux
+corps) : lacet jusqu'à **100°** (1,75 rad, sous les 1,8 rad acceptés par le serveur),
+tangage ±26° (0,45 rad), roulis ±17° (0,3 rad). Chacun a ses roues à rayon et ses ressorts :
+trois essieux au tracteur (avant directeur, tandem arrière moteur), deux à la remorque. Les
+roues sont des **pièces du modèle** (`wheel0…5`, `trailerWheel0…3`, voir « Roues et
+chenilles dans les modèles ») : la physique lit leurs pivots et leur rayon (0,42 et 0,35
+unité de modèle).
+
+Réseau : l'état envoie la pose du tracteur, `trailerAngle` (lacet de la remorque dans le
+repère du tracteur, jusqu'à ±1,8 rad) et, depuis la version 362, `trailerPitch` (tangage,
+jusqu'à ±0,5 rad). Le roulis n'est pas envoyé. Le champ ajouté change le format des lots de
+mouvement (`MOTION_BATCH_VERSION` 3) ; les ressources étant versionnées, une page ouverte
+sur l'ancienne version doit être rechargée.
 
 - **Échelle d'un vrai camion** (Froude, 0,277) : tracteur 130 kg (6 t), remorque 45 kg
-  (2,1 t), vitesse maximale 5,8 m/s (40 km/h attelé) : `maxSpeed` 10 → 33, **le camion est
-  environ 3,4 fois plus rapide qu'avant**.
-- **Conduite** : comme le Castor (Ackermann, braquage limité par l'adhérence, départ
-  progressif, freins, marche arrière lente), pivot de direction sur le milieu du tandem. La
-  remorque a un frein d'inertie qui suit celui du camion, ce qui l'empêche de plier au freinage.
-- **Remorque** : elle se balance à l'opposé du virage (environ −0,1 rad en virage établi), se
-  recentre en ligne droite sans osciller, et **se met en portefeuille** (jackknife) en marche
-  arrière avec braquage : elle va jusqu'à la butée, le camion n'avance plus guère, et la
-  marche avant la redresse.
+  (2,1 t). Un vrai camion attelé ferait 5,8 m/s (40 km/h) ; **vitesse maximale doublée pour
+  le jeu** (11,4 m/s, `maxSpeed` 66, il était à 10 avant le moteur physique).
+- **Accélération douce** : 1,2 m/s² au départ (le double avant la version 362) ; il faut
+  environ 25 s pour atteindre la vitesse maximale (poussée qui s'annule en approchant de
+  celle-ci, frottement linéaire faible pour ne pas la manger).
+- **Conduite** : comme le Castor (Ackermann, braquage limité par l'adhérence, freins,
+  marche arrière lente), pivot de direction sur le milieu du tandem. Le frein de roue de
+  Rapier est une impulsion de frottement, pas une force : étalonné à 4,8·b m/s² pour le
+  tracteur de 130 kg (`BRAKE_PER_DECEL`). La remorque a un frein d'inertie qui suit celui du
+  camion, ce qui l'empêche de plier au freinage.
+- **Remorque** : elle se balance à l'opposé du virage (environ −0,05 rad en virage établi à
+  vitesse), **pique et se cabre par rapport au tracteur** à l'accélération et au freinage
+  (jusqu'à 0,08 rad mesuré au freinage), se recentre sans osciller, et **se met en
+  portefeuille** en marche arrière à pleine butée de braquage (jusqu'à 100°). Un ressort de
+  rappel de lacet (40 N·m/rad : un attelage anti-ballant) compense l'instabilité d'une
+  remorque en marche arrière (elle part en portefeuille en quelques secondes si on la laisse) ;
+  plus rigide il l'empêcherait de plier, plus souple il la ferait plier seule.
+- **Roues** : les angles de braquage et la rotation des roues viennent de la vitesse et du
+  taux de lacet, par la cinématique de la roue sur le sol (`steeredWheelPose`,
+  `castor-wheels.ts`) : même géométrie d'Ackermann que la physique, aucun envoi réseau, valable
+  aussi pour les autres joueurs. Les roues de la remorque ne font que rouler.
 - **Réglage** : ressorts plus souples (60) que ceux du Castor (100) : un tracteur léger sur
   des ressorts plus raides rebondit et roule (mesuré) ; l'accélération latérale demandée est
-  bornée à 2,8 m/s² (0,29 g, un camion chargé).
-- **Limite** : la remorque est couplée en tangage et en roulis au tracteur (articulation à
-  axe vertical) ; l'affichage de la remorque ne suit que le lacet.
-- **Défaut du modèle** : les points bas de la remorque sont 0,18 unité plus haut que ceux du
-  tracteur ; la physique pose ses roues au sol, le maillage de la remorque flotte donc de
-  0,18 unité (comme avant ; à corriger dans l'import).
+  bornée à 2,8 m/s² (0,29 g, un camion chargé). La remorque est de niveau au repos (ses
+  roues physiques touchent le sol même si le maillage de la remorque flotte de 0,18 unité).
+
+## Accélérations (version 362)
+
+Les accélérations au départ étaient trop vives : Castor 4 → 2,5 m/s², char 2,4 → 1,2 m/s²,
+camion 2,4 → 1,2 m/s². Les vitesses maximales restent celles des profils (Castor 9 m/s, char
+5 m/s, camion 11,4 m/s) ; la marge `topMargin` de chaque véhicule compense le frottement
+pour que la vitesse atteinte soit celle du profil à 1-2 % près.
+
+## Roues et chenilles dans les modèles
+
+Les modèles Meshy du camion et du char sont un maillage texturé dont les pièces sont des
+îlots de triangles soudés. `scripts/split-vehicle-parts.mjs` en extrait des pièces du rig
+sans toucher un triangle, une UV ni la texture : le camion a six roues de tracteur
+(`wheel0…5`, de l'avant vers l'arrière, gauche puis droite) et quatre de remorque
+(`trailerWheel0…3`, rattachées à la remorque) ; chacune a son pivot au centre. Le script
+refuse un module déjà découpé ; sa trace est écrite dans l'en-tête du module de données.
+Le char sera découpé de la même façon (chenilles, galets, roues, pignons).
 
 ## Réglages et étalonnage
 
