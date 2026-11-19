@@ -1,6 +1,6 @@
 import { MAP } from './scale.ts';
 import { formatDistance } from './units.ts';
-import { VEHICLES, vehicleMaxHP, isBomber } from './fleet.js';
+import { VEHICLES, vehicleMaxHP, isBomber } from './fleet.ts';
 
 // Single source of the bottom-left command help. Each context lists only the inputs
 // that client.js really routes for the current role, seat, station or tool.

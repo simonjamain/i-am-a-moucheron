@@ -6,7 +6,7 @@ import {
   encodeMotionBatch,
   encodeMotionState,
   MOTION_BATCH_BYTES,
-} from '../src/motion-wire.js';
+} from '../src/motion-wire.ts';
 
 const json = (v) => JSON.parse(JSON.stringify(v));
 let seed = 7;

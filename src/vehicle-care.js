@@ -1,5 +1,5 @@
 import { MAP } from './scale.ts';
-import { isBomber } from './fleet.js';
+import { isBomber } from './fleet.ts';
 import { segmentSphere, segmentBox } from './ordnance.js';
 export const WASH = Object.freeze({
   range: 2,

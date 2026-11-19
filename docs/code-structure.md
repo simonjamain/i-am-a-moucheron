@@ -15,12 +15,12 @@ tester et livrer, puis la référence métier concernée. `AGENTS.md` décrit la
 | `server/game.js`                           | Salles, joueurs, vagues, sièges, contrats, achats, dégâts, réserve et réapparition en RAM.     |
 | `src/udp-client.js`, `src/udp-protocol.js` | Canaux navigateur, refus hors UDP, limites, files et réassemblage.                             |
 | `src/ws-client.js`                         | Secours TCP : même interface et protocole que `UdpClient` sur un WebSocket.                    |
-| `src/motion-wire.js`                       | Codec binaire des mouvements et lots partagés relayés par le serveur.                          |
+| `src/motion-wire.ts`                       | Codec binaire des mouvements et lots partagés relayés par le serveur.                          |
 | `src/client.js`                            | Orchestration de la scène, état local, entrées, interfaces et envoi des commandes.             |
 | `src/network.js`                           | Validation de mouvement et interpolation ; `PeerMotion` est le transport historique des pairs. |
-| `src/ground-motion.js`                     | Historique et interpolation visuelle des positions des ennemis terrestres reçues du serveur.   |
+| `src/ground-motion.ts`                     | Historique et interpolation visuelle des positions des ennemis terrestres reçues du serveur.   |
 
-Les moucherons de grande nuée utilisent `src/midge-batch.js` (modèle Meshy animé par texture de sommets près de la caméra, trois meshes instanciés WebGL au loin, proxies logiques légers ; voir `src/midge-model.js` et [le pipeline d'assets](asset-pipeline.md#moucheron-meshy-squelette-et-vol)). Les fourmis et araignées pondeuses suivent la même chaîne (`src/rigged-creature.js`, `src/creature-batch.js`, `src/walker-gait.js`, `src/walker-batch.js`, `src/ant-model.js`, `src/spider-model.js`, `src/roach-model.js`, `src/spiderling-model.js`, `src/rat-model.js` qui rejoue un clip) avec une marche pilotée par la distance ; le scarabée volant (`brute`) l'abeille (`guard`) et le moustique aussi, via `src/flyer-batch.js`, `src/beetle-model.js`, `src/bee-model.js` et `src/mosquito-model.js`, avec un battement d'ailes sur l'horloge partagée ; `waves.js` (trajectoires indépendantes) et `insect-hits.js` (collisions sphériques). Le navigateur possède ses mouvements et raycasts dans un modèle coopératif.
+Les moucherons de grande nuée utilisent `src/midge-batch.js` (modèle Meshy animé par texture de sommets près de la caméra, trois meshes instanciés WebGL au loin, proxies logiques légers ; voir `src/midge-model.js` et [le pipeline d'assets](asset-pipeline.md#moucheron-meshy-squelette-et-vol)). Les fourmis et araignées pondeuses suivent la même chaîne (`src/rigged-creature.js`, `src/creature-batch.js`, `src/walker-gait.ts`, `src/walker-batch.js`, `src/ant-model.js`, `src/spider-model.js`, `src/roach-model.js`, `src/spiderling-model.js`, `src/rat-model.js` qui rejoue un clip) avec une marche pilotée par la distance ; le scarabée volant (`brute`) l'abeille (`guard`) et le moustique aussi, via `src/flyer-batch.js`, `src/beetle-model.js`, `src/bee-model.js` et `src/mosquito-model.js`, avec un battement d'ailes sur l'horloge partagée ; `waves.js` (trajectoires indépendantes) et `insect-hits.js` (collisions sphériques). Le navigateur possède ses mouvements et raycasts dans un modèle coopératif.
 Le serveur possède les transactions et simule les armes lourdes. Il n’y a ni
 base de données ni accès disque dans les opérations de jeu Node. Voir
 [réseau](walking-network.md) et [serveur UDP](udp-server.md).
@@ -29,19 +29,19 @@ base de données ni accès disque dans les opérations de jeu Node. Voir
 
 | Domaine              | Modules et référence                                                                                                                                                                                                                                                                                                                                                                                    |
 | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Unités/décor         | `scale.ts`, `layouts.js` (plans de bureau), `layout.js`, `office.js` ; [plans](office-layouts.md), [échelle](scale-fleet-weapons.md).                                                                                                                                                                                                                                                                   |
+| Unités/décor         | `scale.ts`, `layouts.js` (plans de bureau), `layout.ts`, `office.js` ; [plans](office-layouts.md), [échelle](scale-fleet-weapons.md).                                                                                                                                                                                                                                                                   |
 | Géométrie            | `graphics.js`, modèles procéduraux ; `renderer.js` pour WebGL/secours.                                                                                                                                                                                                                                                                                                                                  |
-| Vol et entrée        | `flight.js`, `mouse-flight.js`, `input.js`, `control-focus.js`, `fleet.js`, `vacant-flight.js`.                                                                                                                                                                                                                                                                                                         |
+| Vol et entrée        | `flight.ts`, `mouse-flight.ts`, `input.ts`, `control-focus.js`, `fleet.ts`, `vacant-flight.js`.                                                                                                                                                                                                                                                                                                         |
 | Corps et purgatoire  | `base.js`, `purgatory-physics.js`, `sortie.js` ; [file](purgatory-queue.md).                                                                                                                                                                                                                                                                                                                            |
-| Chute actuelle       | `field-physics.js` : gravité humaine convertie au ratio, gonflage, impact ; [physique actuelle](multiplayer-return.md).                                                                                                                                                                                                                                                                                 |
-| Armes                | `ballistics.ts`, `combat.js`, `armament.js`, `ordnance.js`, `aircraft-fire.js`, `tracers.js`, `muzzle.js`, `insect-hits.js`.                                                                                                                                                                                                                                                                            |
-| Visée/caméras        | `personal-aim.js` pour épaule/main ; `tank-reticle.js` pour les trajectoires de mire ; `tank-view.js` pour lunette, observation et bouche serveur.                                                                                                                                                                                                                                                      |
+| Chute actuelle       | `field-physics.ts` : gravité humaine convertie au ratio, gonflage, impact ; [physique actuelle](multiplayer-return.md).                                                                                                                                                                                                                                                                                 |
+| Armes                | `ballistics.ts`, `combat.js`, `armament.js`, `ordnance.js`, `aircraft-fire.js`, `tracers.js`, `muzzle.ts`, `insect-hits.js`.                                                                                                                                                                                                                                                                            |
+| Visée/caméras        | `personal-aim.ts` pour épaule/main ; `tank-reticle.js` pour les trajectoires de mire ; `tank-view.js` pour lunette, observation et bouche serveur.                                                                                                                                                                                                                                                      |
 | Vagues               | `enemy-power.ts` calcule la puissance des espèces ([équilibrage](room-balance.md#puissance-unité-commune)) ; `server/wave-preparation.js` tire et conserve la vague annoncée (sans vote ni plans depuis la version 264) ; `wave-council-ui.js` l'affiche avec le lancement anticipé. `waves.js`, `routes.js`, `route-speed.js`, `route-navigation.js` ; obstacles dérivés du plan actif (`layouts.js`). |
-| Économie/réserves    | `equipment.js`, `logistics.js`, `bank.js`, `rewards.js` ; [logistique](logistics-contracts.md).                                                                                                                                                                                                                                                                                                         |
+| Économie/réserves    | `equipment.js`, `logistics.js`, `bank.ts`, `rewards.ts` ; [logistique](logistics-contracts.md).                                                                                                                                                                                                                                                                                                         |
 | Contrats             | `contracts.js`, gestion des papiers dans le client (annexes malicieuses retirées).                                                                                                                                                                                                                                                                                                                      |
 | Lits                 | `beds.js` : accès et support ; `bed-ui.js` : document personnel et signature.                                                                                                                                                                                                                                                                                                                           |
 | HUD/banque           | `hud.js`, `equipment-controls.js`, `bank-ui.js` ; [véhicules et banque](vehicles-bank.md).                                                                                                                                                                                                                                                                                                              |
-| Mesure d’interaction | `interaction-timing.js` : feedback immédiat et traces bornées de sélection.                                                                                                                                                                                                                                                                                                                             |
+| Mesure d’interaction | `interaction-timing.ts` : feedback immédiat et traces bornées de sélection.                                                                                                                                                                                                                                                                                                                             |
 | Effets/son           | `insect-status.ts`, `crash-effects.js`, effets de combat et corps tombants du client ; son : bibliothèque `audio/` et adaptateur `game-audio/` ([audio](audio.md)).                                                                                                                                                                                                                                     |
 
 Les couloirs aériens sont partagés entre serveur et client dans `routes.js`.
@@ -61,7 +61,7 @@ de signature de `BedUI` pour les bons. `equipment.js` calcule prix et compteurs
 prépayés ; `server/game.js` possède commandes personnelles, poses, contacts et
 salissure. `vehicle-care.js` porte dégâts et rayon du jet ; les effets décoratifs
 restent côté client. `tank-reticle.js` réutilise l’intégrateur autoritaire des obus.
-`fleet.js` / `graphics.js` / `logistics.js` décrivent le Spitfire S6 et ses réserves.
+`fleet.ts` / `graphics.js` / `logistics.js` décrivent le Spitfire S6 et ses réserves.
 `test-clean-flight.mjs` couvre ce lot ; les tests natifs UDP exercent ses commandes
 entre deux pairs.
 
@@ -84,7 +84,7 @@ leurs liens locaux ; leur exactitude fonctionnelle reste une revue sémantique.
 
 ## Retours multijoueurs courants
 
-`live-hud.js` : valeurs au viseur et aide permanente. `salvos.js` : départs décalés et annulation d’occupation.
+`live-hud.js` : valeurs au viseur et aide permanente. `salvos.ts` : départs décalés et annulation d’occupation.
 `tracers.js` : pool borné et effet personnel orienté vers l’avant ;
 `insect-hits.js` : phase large puis intersections, avec tolérance du seul moucheron.
 `server/game.js` : observation avant âme, réserve renouvelée et véhicules prépayés
@@ -157,7 +157,7 @@ des terrestres associe `ground-crowd.js` (sous-pas communs et voisinage spatial)
 
 `character-appearances.js` liste les huit personnages au choix (validés aussi par le serveur à la connexion) et `appearance-picker.js` affiche le sélecteur de l'accueil ; `character-model.js` anime le personnage joueur choisi (`character-data.js` par défaut, les autres `character-<id>-data.js` chargés à la demande) (squelette Mixamo, repos/marche/course, poses procédurales assis, chute et pistolet) ; `graphics.humanoid()` l'enveloppe dans le cadre invisible du pistolet ([pipeline d'assets](asset-pipeline.md#personnage-joueur-meshy--mixamo)).
 
-`biplane-model.js`, `meshy-biplane-data.js` et `meshy-biplane-bomber-data.js` portent le [chasseur et le bombardier biplans](biplane-models.md) ; `fleet.js` définit leurs postes (le bombardier : pilote et mitrailleur) et `vehicle-livery.js` leurs plaques de nom.
+`biplane-model.js`, `meshy-biplane-data.js` et `meshy-biplane-bomber-data.js` portent le [chasseur et le bombardier biplans](biplane-models.md) ; `fleet.ts` définit leurs postes (le bombardier : pilote et mitrailleur) et `vehicle-livery.js` leurs plaques de nom.
 Les autres véhicules Meshy utilisent `meshy-texture.js` pour le décodage
 commun des maillages UV et des atlas. Le Spitfire, le T3, le D2 (dans
 `graphics.js`), le H2 (`h2-model.js`) et les deux biplans (`biplane-model.js`) sont des
@@ -167,7 +167,7 @@ par `scripts/import-meshy-vehicle.py` ; `vehicle-anchors.js` donne à la physiqu
 et enveloppes de ces modèles. Le Stuka (`graphics.js`) suit le même chemin depuis
 la version 266, les biplans depuis la version 275.
 
-G1 Castor (issue #76) : `fleet.js` définit le véhicule monoplace,
+G1 Castor (issue #76) : `fleet.ts` définit le véhicule monoplace,
 `tank.js` sa physique de sol, `paid-service.js` son rayon de soutien et ses coûts,
 `castor-model.js` assemble le modèle Meshy texturé (coque, six roues, tourelle et
 canon pivotants) généré hors ligne par `scripts/import-meshy-castor.py`,
@@ -175,7 +175,7 @@ canon pivotants) généré hors ligne par `scripts/import-meshy-castor.py`,
 conduite et la visée. `service-zones.js` dessine les sphères vertes de
 ravitaillement des stations fixes et des Castor, aux rayons de `logistics.js`.
 
-Castor volant : `fleet.js` le définit (un pilote, trois passagers, rotor et
+Castor volant : `fleet.ts` le définit (un pilote, trois passagers, rotor et
 soutien via `isRotorcraft` / `isSupportVehicle`), `helicopter.js` le fait voler
 (lacet clavier pour la vue verticale), `flying-castor-model.js` assemble le modèle
 Meshy (`meshy-flying-castor-data.js`, `scripts/import-meshy-flying-castor.py`).

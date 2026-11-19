@@ -15,7 +15,7 @@
 //   missileLost(projectile) true when the launching helicopter is gone
 import { MAP, enemySizeFactor, INSECT_SCALE, MIDGE_SPHERE_RADIUS } from './scale.ts';
 import { HEAVY, heavyDamage } from './armament.js';
-import { VEHICLES } from './fleet.js';
+import { VEHICLES } from './fleet.ts';
 import { integrateOrdnance, segmentSphere, segmentBox } from './ordnance.js';
 import { sweptSphereMayTouch } from './swept-broadphase.ts';
 import { steerMissile } from './helicopter.js';

@@ -1,6 +1,6 @@
-import { nearestWeaponMuzzle } from '../src/muzzle.js';
+import { nearestWeaponMuzzle } from '../src/muzzle.ts';
 import { TracerPool } from '../src/tracers.js';
-import { GunSalvos, advanceAutomaticFire } from '../src/salvos.js';
+import { GunSalvos, advanceAutomaticFire } from '../src/salvos.ts';
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import { readFileSync } from 'node:fs';

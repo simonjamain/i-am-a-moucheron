@@ -36,8 +36,8 @@ GitHub et le diff ; vérifier les affirmations contre l'état de la branche.
 ## TypeScript et contrôles rapides
 
 Tout nouveau module s'écrit en TypeScript ; migrer un module existant avec
-`npm run ts:migrate -- src/<module>.js`, puis le typer jusqu'à ce que
-`npm run typecheck` passe. Règles (syntaxe effaçable, imports `.ts`, Three.js typé) : [TypeScript](docs/typescript.md). Pour itérer, cibler la suite :
+`npm run ts:migrate -- src/<module>.js` (candidats prêts : `npm run ts:migrate -- --leaves`),
+puis le typer jusqu'à ce que `npm run typecheck` passe. Règles (syntaxe effaçable, imports `.ts`, Three.js typé) : [TypeScript](docs/typescript.md). Pour itérer, cibler la suite :
 `npm test -- <fragment>` (ex. `npm test -- castor`), `--bail` pour s'arrêter au
 premier échec, `--list` pour la liste ; la suite complète reste due avant livraison.
 Un nouveau script `scripts/test-*.mjs` s'ajoute à `scripts/suite.mjs`

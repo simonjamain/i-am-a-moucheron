@@ -1,7 +1,32 @@
+import type * as THREE from 'three';
+import type { Three } from './types.ts';
 // Independent implementation of direction-based mouse aim and an aircraft instructor.
 // Camera/aim separation inspired by https://github.com/brihernandez/MouseFlight .
-// Aircraft forces and angular response remain in flight.js.
-export function rotateMouseAim(T, direction, cameraQ, dx, dy, sensitivity = 0.0026) {
+// Aircraft forces and angular response remain in flight.ts.
+/** Instructor gains (src/flight-tuning.js); every field defaults to 1 or its documented value. */
+export interface MouseFlightTuning {
+  bankStrength?: number;
+  nearTargetBoost?: number;
+  damping?: number;
+  pitchResponse?: number;
+  rollResponse?: number;
+  yawResponse?: number;
+}
+export interface ControlCommand {
+  pitch: number;
+  roll: number;
+  yaw: number;
+}
+export type FlightClickAction = 'fire' | 'capture' | null;
+
+export function rotateMouseAim(
+  T: Three,
+  direction: THREE.Vector3,
+  cameraQ: THREE.Quaternion,
+  dx: number,
+  dy: number,
+  sensitivity = 0.0026,
+): void {
   if (!Number.isFinite(dx) || !Number.isFinite(dy)) return;
   const right = new T.Vector3(1, 0, 0).applyQuaternion(cameraQ);
   const up = new T.Vector3(0, 1, 0).applyQuaternion(cameraQ);
@@ -10,7 +35,11 @@ export function rotateMouseAim(T, direction, cameraQ, dx, dy, sensitivity = 0.00
     .applyAxisAngle(up, -T.MathUtils.clamp(dx, -200, 200) * sensitivity)
     .normalize();
 }
-export function mouseFlightControls(T, { q, omega, direction }, tuning = {}) {
+export function mouseFlightControls(
+  T: Three,
+  { q, omega, direction }: { q: THREE.Quaternion; omega: THREE.Vector3; direction: THREE.Vector3 },
+  tuning: MouseFlightTuning = {},
+): ControlCommand {
   const local = direction.clone().normalize().applyQuaternion(q.clone().invert());
   const yawError = Math.atan2(local.x, -local.z);
   const pitchError = Math.atan2(local.y, Math.max(0.05, -local.z));
@@ -22,7 +51,7 @@ export function mouseFlightControls(T, { q, omega, direction }, tuning = {}) {
   const desiredBank = T.MathUtils.clamp(yawError * 1.35 * (tuning.bankStrength ?? 1), -1.25, 1.25);
   const rollError = bank - desiredBank;
   // A bounded boost near zero compensates for the slow final phase of proportional control.
-  const closeBoost = (error) =>
+  const closeBoost = (error: number): number =>
     1 + ((tuning.nearTargetBoost ?? 1.4) - 1) * Math.exp(-Math.abs(error) / 0.22);
   const damping = tuning.damping ?? 1;
   return {
@@ -45,7 +74,12 @@ export function mouseFlightControls(T, { q, omega, direction }, tuning = {}) {
     ),
   };
 }
-export function mouseCameraRotation(T, direction, previous, dt) {
+export function mouseCameraRotation(
+  T: Three,
+  direction: THREE.Vector3,
+  previous: THREE.Quaternion,
+  dt: number,
+): THREE.Quaternion {
   // At the poles retain the rig's up direction instead of flipping the horizon.
   const up =
     Math.abs(direction.y) > 0.92
@@ -57,7 +91,10 @@ export function mouseCameraRotation(T, direction, previous, dt) {
 }
 
 // Keep pointer decisions independent from DOM state and pointer-lock side effects.
-export function flightClickAction(event, { active, locked }) {
+export function flightClickAction(
+  event: Pick<PointerEvent, 'button' | 'pointerType'>,
+  { active, locked }: { active: boolean; locked: boolean },
+): FlightClickAction {
   if (!active || event.button !== 0 || event.pointerType !== 'mouse') return null;
   return locked ? 'fire' : 'capture';
 }

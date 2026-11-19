@@ -1,4 +1,4 @@
-import { WALL_SEGMENT, HALF_BRICK, wallLength, wallVisualRuns } from './brick-rules.js';
+import { WALL_SEGMENT, HALF_BRICK, wallLength, wallVisualRuns } from './brick-rules.ts';
 import { createGroundModel } from './ground-model.js';
 import { ModelPreview } from './model-preview.js';
 import { groundPlacement, airdropPlacement } from './ground-placement.js';

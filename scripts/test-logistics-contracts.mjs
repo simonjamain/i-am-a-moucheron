@@ -1,7 +1,7 @@
 import vm from 'node:vm';
 import { readFileSync } from 'node:fs';
 import assert from 'node:assert/strict';
-import { VEHICLES, pilotFireInterval, isRotorcraft } from '../src/fleet.js';
+import { VEHICLES, pilotFireInterval, isRotorcraft } from '../src/fleet.ts';
 import {
   fullAmmo,
   ammoCapacity,

@@ -17,10 +17,10 @@ import { clampProximity } from '../src/mobile-flak.js';
 import { collisionDamage, washTarget, WASH } from '../src/vehicle-care.js';
 import { purchaseCount } from '../src/equipment.js';
 import { bedAccess, bedSpawn } from '../src/beds.js';
-import { impactDamage } from '../src/field-physics.js';
+import { impactDamage } from '../src/field-physics.ts';
 import { randomUUID } from 'node:crypto';
 import { MAP, ACTOR_UNIT, enemySizeFactor, flakPitchAllowed } from '../src/scale.ts';
-import { OFFICE_LAYOUT } from '../src/layout.js';
+import { OFFICE_LAYOUT } from '../src/layout.ts';
 import { setActiveLayout, isLayoutId, DEFAULT_LAYOUT_ID, layoutSolids } from '../src/layouts.js';
 import {
   VEHICLES,
@@ -29,7 +29,7 @@ import {
   vehicleAccess,
   leftVehiclePad,
   vehicleMaxHP,
-} from '../src/fleet.js';
+} from '../src/fleet.ts';
 import { AIRDROP_KINDS, airdropCommand, airdropSurface, headingOf } from '../src/airdrop.js';
 import { baseWorld, baseBody, reconcileBase } from '../src/base.js';
 import {
@@ -51,7 +51,7 @@ import { advancePaidService } from '../src/paid-service.js';
 import { SENTRY, fireGroundSentries } from '../src/ground-sentry.js';
 import { FORTIFICATIONS, isFortification } from '../src/ground-fortifications.js';
 import { FIXED_DCA, heavyDcaMuzzle, isFixedDca } from '../src/fixed-dca.js';
-import { PISTOL_CAPACITY } from '../src/ground-ammo.js';
+import { PISTOL_CAPACITY } from '../src/ground-ammo.ts';
 import {
   fullAmmo,
   ammoCapacity,
@@ -62,9 +62,9 @@ import {
 import { stationAccess, stationExit } from '../src/sortie.js';
 import { howitzerMuzzle, howitzerPitchAllowed } from '../src/howitzer-geometry.js';
 import { validMotion } from '../src/network.js';
-import { snapshotRosterCore, snapshotRosterKey } from '../src/snapshot-wire.js';
+import { snapshotRosterCore, snapshotRosterKey } from '../src/snapshot-wire.ts';
 import { appendDebugEnemy, debugPlacement, standingDummies } from '../src/debug-enemies.ts';
-import { newBank, signLoan, settleLoans, repayLoan } from '../src/bank.js';
+import { newBank, signLoan, settleLoans, repayLoan } from '../src/bank.ts';
 import { canUseWeapon, HEAVY, TANK_MG, availableShell, heavyInterval } from '../src/armament.js';
 import { sweptSphereMayTouch } from '../src/swept-broadphase.ts';
 import { createOrdnance, segmentSphere } from '../src/ordnance.js';

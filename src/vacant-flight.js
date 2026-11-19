@@ -1,7 +1,7 @@
-import { stepFlight, ROLLING_FRICTION } from './flight.js';
+import { stepFlight, ROLLING_FRICTION } from './flight.ts';
 import { resolveLanding } from './sortie.js';
 import { MAP } from './scale.ts';
-import { OFFICE_LAYOUT } from './layout.js';
+import { OFFICE_LAYOUT } from './layout.ts';
 // This is the ordinary aircraft integrator with neutral controls, not an
 // autopilot. A selected client owns it only while the cockpit is vacant.
 export function stepVacantAircraft(T, state, profile, colliders, dt) {

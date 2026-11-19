@@ -1,42 +1,58 @@
 # typescript-migration — remplacer tout le JavaScript par TypeScript
 
-- Tâche / PR : demande de refactorisation du 17 novembre 2026 (routine) ; PR [#204](https://github.com/simonjamain/i-am-a-moucheron/pull/204).
-- Branche : `refactor/typescript-foundation` rebasée sur `049ba33` (v314).
+- Tâche / PR : demandes de refactorisation des 17 et 19 novembre 2026 (routine) ;
+  PR [#204](https://github.com/simonjamain/i-am-a-moucheron/pull/204) (fondations).
+- Branche du lot 2 : `refactor/typescript-leaves-batch1`, rebasée sur `c21e47c` (v348).
 - Résultat attendu : plus aucun `.js` écrit à la main dans `src/`, `server/`,
   `scripts/` ; `npm run typecheck` vert ; comportement de jeu, URL servies, image
   Docker inchangé. Règles : [TypeScript](../typescript.md).
 
 ## État réel
 
-Fait (v315–v316) :
+Fait (v315–v316, fondations) :
 
 - Outillage : `tsconfig.json`, `npm run typecheck`, `npm run ts:migrate`
   (`scripts/ts-migrate.mjs`), lecture `.ts` et effacement des types dans
   `scripts/assemble.mjs`, garde `scripts/test-typescript.mjs`, `src/types.ts`.
-- Lanceur `scripts/run-tests.mjs` + manifeste `scripts/suite.mjs` (même ordre, mêmes
-  processus) ; filtres `npm test -- <fragment>`, `--bail`, `--list`.
-- Modules migrés et typés (10) : `scale`, `units`, `server-clock`,
-  `oriented-collider`, `swept-geometry`, `swept-broadphase`, `air-current`
-  (retiré en version 319 avec le ventilateur), `ballistics`, `shadow-settings`,
-  `insect-status`. Nouveaux modules écrits en TypeScript : `debug-enemies`,
-  `debug-tools` (version 320).
-- `ENEMY_UNLOCK_WAVE` (src/waves.js) remplace les deux tables de déblocage
-  dupliquées (waves.js et server/wave-preparation.js), valeurs et ordre identiques.
+- Lanceur `scripts/run-tests.mjs` + manifeste `scripts/suite.mjs` ; filtres
+  `npm test -- <fragment>`, `--bail`, `--list`.
+- Modules migrés : `scale`, `units`, `server-clock`, `oriented-collider`,
+  `swept-geometry`, `swept-broadphase`, `ballistics`, `shadow-settings`,
+  `insect-status` ; écrits en TypeScript : `debug-enemies`, `debug-tools`,
+  `enemy-power`, `audio/*`, `game-audio/*`.
 - Garde `scripts/test-registries.mjs` et guide [ajouter du contenu](../adding-content.md).
 
-Restant (≈ 128 modules écrits à la main + 38 données générées) :
+Fait (lot 2, routine du 19 novembre, v346) — 19 modules typés, comportement identique :
 
-1. Feuilles sans import local non migré, par lots : `layout`, `field-physics`,
-   `flight`, `mouse-flight`, `personal-aim`, `muzzle`, `salvos`, `rewards`,
-   `bank`, `armament`, `brick-rules`, `ground-ammo`, `ground-motion`,
-   `interaction-timing`, `input`, `walker-gait`, `castor-wheels`, `pheromone-trail`.
-2. Protocole réseau (gain de typage élevé) : `snapshot-wire`, `motion-wire`, puis
-   `udp-protocol`, `udp-client`, `ws-client`, `network`.
-3. Domaine : `routes`, `route-speed`, `route-navigation`, `waves` (puis dériver
-   `EnemyType` de `keyof typeof ENEMY_TYPES`), `fleet` (introduire `VehicleType`),
-   `equipment`, `logistics`, `contracts`.
+- Feuilles : `layout`, `field-physics`, `flight` (`FlightState`, `FlightProfile`),
+  `mouse-flight`, `personal-aim`, `muzzle`, `salvos`, `rewards`, `bank` (`Loan`,
+  `Bank`), `brick-rules`, `ground-ammo`, `ground-motion` (`GroundPose`),
+  `interaction-timing`, `input` (`PadState`), `walker-gait` (`LegSpec`,
+  `GaitHelpers`), `castor-wheels`.
+- Protocole : `snapshot-wire` (`WireSnapshot`, `WireState`, `PatchNode`,
+  `RosterGroup`), `motion-wire` (`Schema`, `Codec`, `MotionBatchEntry`).
+- `fleet` : `VEHICLES` devient un seul littéral `satisfies Record<string, VehicleProfile>`
+  (même ordre de clés, mêmes valeurs : comparaison JSON et fonctions vérifiées
+  contre l'ancien module), `VehicleType = keyof typeof VEHICLES`, `SeatName`.
+  La cascade de ternaires de `vehiclePad` devient la table `PAD_OFFSET`
+  (`Partial<Record<VehicleType, number>>`, défaut −7). `seatMount`, appelé nulle
+  part, est supprimé.
+
+Restant (≈ 120 modules écrits à la main + 40 données générées) :
+
+1. Feuilles restantes (aucun import local non migré) : `character-appearances`,
+   `ground-fortifications`, `lab-ui`, `meshy-texture`, `ground-sentry`, `airdrop`,
+   `vehicle-anchors`, `flight-tuning`, `control-focus`, `seat-icons`,
+   `vehicle-livery`, `pheromone-trail`, `toon`, `boot`, `aircraft-fire`,
+   `creature-batch`, `rigged-creature` (typer `GaitHelpers` côté fournisseur),
+   `insect-hits`, `purgatory-physics`. Liste à jour : `npm run ts:migrate -- --leaves`.
+2. Protocole : `udp-protocol`, `udp-client`, `ws-client`, `network` (s'appuient
+   désormais sur les types de `snapshot-wire` / `motion-wire`).
+3. Domaine : `layouts`, `routes`, `route-speed`, `route-navigation`, `waves` (puis
+   dériver `EnemyType` de `keyof typeof ENEMY_TYPES` et retirer la copie de
+   `src/types.ts`), `equipment`, `logistics`, `contracts`, `armament`.
 4. Serveur : `server/wave-preparation`, `server/session`, `server/game`, `server/index`.
-5. Rendu/UI puis `client.js` (6 500 lignes : extraire des modules avant de migrer).
+5. Rendu/UI puis `client.js` (6 600 lignes : extraire des modules avant de migrer).
 6. `scripts/*.mjs` (tests et outils) en dernier : ils importent déjà les `.ts`.
 
 ## Décisions à prendre (utilisateur)
@@ -45,17 +61,16 @@ Restant (≈ 128 modules écrits à la main + 38 données générées) :
   émettre `.ts` par les générateurs, sans annotations, exclus de `tsc` si la
   vérification devient lente.
 
-## Vérifications
+## Vérifications (lot 2)
 
-- `npm test` : 153 scripts ; vert au dernier passage hormis l'échec aléatoire
-  connu de `test-wave-preparation.mjs` (0 échec sur 60 relances, avant comme après).
-- `npm run typecheck`, `npm run check:docs`, `npm run format:check`, `npm run build`
-  et `node scripts/validate-artifact.mjs` : voir la PR.
-- Non effectués : `docker build` local (Docker indisponible dans la session ; contrôle
-  CI `Docker build` à la place), partie
-  WebGL/UDP réelle dans un navigateur.
+- `npm test` : 160 scripts verts avant (43,4 s) et après (44,8 s).
+- `npm run typecheck`, `npm run format:check`, `npm run check:docs` : verts.
+- `npm run test:udp` et `npm run e2e` (Chromium headless : reprise, lots de
+  mouvements binaires, repli TCP, phases de chute) : verts.
+- Non effectués : `docker build` (Docker indisponible), partie WebGL réelle à
+  plusieurs joueurs, pilotage humain.
 
 ## Prochaine action
 
-`npm run ts:migrate -- src/layout.js src/field-physics.js src/flight.js` puis
-typer jusqu'au vert de `npm run typecheck` et `npm test`.
+Migrer le lot de feuilles du point 1 (`npm run ts:migrate -- src/flight-tuning.js
+src/control-focus.js src/seat-icons.js …`), puis le protocole du point 2.

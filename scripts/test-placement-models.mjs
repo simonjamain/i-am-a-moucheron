@@ -7,7 +7,7 @@ import { createGraphics } from '../src/graphics.js';
 import { placementFacing } from '../src/placement-aim.js';
 import { supportedPlacement } from '../src/equipment.js';
 import { Game } from '../server/game.js';
-import { VEHICLES } from '../src/fleet.js';
+import { VEHICLES } from '../src/fleet.ts';
 import { MAP } from '../src/scale.ts';
 
 const scene = new T.Scene();

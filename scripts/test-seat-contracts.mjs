@@ -1,7 +1,7 @@
 import './normal-dossiers.mjs';
 import assert from 'node:assert/strict';
 import { CONTRACTS, ContractBook } from '../src/contracts.js';
-import { RewardQueue } from '../src/rewards.js';
+import { RewardQueue } from '../src/rewards.ts';
 import { synthesize } from '../src/game-audio/synth.ts';
 let count = 0;
 const rewards = new RewardQueue(() => count++);
@@ -36,7 +36,7 @@ assert.equal(docs, 83);
 console.log('PASS: reward sounds and 830 contract variants.');
 const T = await import('../vendor/three.module.min.js');
 const { stepVacantAircraft } = await import('../src/vacant-flight.js');
-const { VEHICLES } = await import('../src/fleet.js');
+const { VEHICLES } = await import('../src/fleet.ts');
 const { MAP } = await import('../src/scale.ts');
 const vacant = {
   p: [0, 2, 0],

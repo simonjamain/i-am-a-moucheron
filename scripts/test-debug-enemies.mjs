@@ -3,7 +3,7 @@
 // HP and speed and head for the bin (walkers on the floor, flyers through the
 // nearest corridor). Server rules, roster entries and routes
 // (src/debug-enemies.ts, server/game.js labCommand, src/routes.js).
-import { OFFICE_LAYOUT } from '../src/layout.js';
+import { OFFICE_LAYOUT } from '../src/layout.ts';
 import assert from 'node:assert/strict';
 import { Game } from '../server/game.js';
 import {

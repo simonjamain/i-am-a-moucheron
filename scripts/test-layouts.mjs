@@ -13,7 +13,7 @@ import {
   layoutThumbnail,
   isLayoutId,
 } from '../src/layouts.js';
-import { OFFICE_LAYOUT } from '../src/layout.js';
+import { OFFICE_LAYOUT } from '../src/layout.ts';
 import { enemyRoute, PORTALS } from '../src/routes.js';
 import { blockedSegment } from '../src/route-navigation.js';
 import { staticGroundFlow, groundGoal, groundStaticObstacles } from '../src/ground-defense.js';

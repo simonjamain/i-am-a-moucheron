@@ -1,6 +1,6 @@
 import { SPIDERLING_DATA as D } from './spiderling-data.js';
 import { defineCreature, TAU } from './rigged-creature.js';
-import { walkLegs, groundPresentation, REST_PHASES } from './walker-gait.js';
+import { walkLegs, groundPresentation, REST_PHASES } from './walker-gait.ts';
 
 // Spiderling (hatched by an egg-laying spider): user-supplied Meshy "Grumpy
 // Spider" with its 29-bone SmartRig (no clip). Same walker chain as the big

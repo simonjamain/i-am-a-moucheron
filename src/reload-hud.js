@@ -1,6 +1,6 @@
 import { canUseWeapon, heavyInterval, TANK_MG } from './armament.js';
 import { HELI } from './helicopter.js';
-import { pilotFireInterval } from './fleet.js';
+import { pilotFireInterval } from './fleet.ts';
 
 export const heavyLane = (weapon) =>
   weapon === 'bomb' ? 'bomb' : weapon === 'missile' ? 'missile' : 'cannon';

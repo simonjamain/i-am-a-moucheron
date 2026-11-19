@@ -1,4 +1,4 @@
-import { VEHICLES, isSupportVehicle } from './fleet.js';
+import { VEHICLES, isSupportVehicle } from './fleet.ts';
 import { levelOf } from './airdrop.js';
 import { SENTRY } from './ground-sentry.js';
 import { FORTIFICATIONS } from './ground-fortifications.js';

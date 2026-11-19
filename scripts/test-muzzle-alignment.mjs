@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import * as T from '../vendor/three.module.min.js';
 import { createGraphics } from '../src/graphics.js';
-import { nextPilotMuzzle } from '../src/muzzle.js';
+import { nextPilotMuzzle } from '../src/muzzle.ts';
 import { CombatEffects } from '../src/combat.js';
 import { ACTOR_UNIT } from '../src/scale.ts';
 

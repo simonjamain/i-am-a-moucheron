@@ -3,7 +3,7 @@ import * as T from '../vendor/three.module.min.js';
 import { createGraphics } from '../src/graphics.js';
 import { paintVehicle } from '../src/vehicle-livery.js';
 import { ACTOR_UNIT } from '../src/scale.ts';
-import { VEHICLES } from '../src/fleet.js';
+import { VEHICLES } from '../src/fleet.ts';
 const graphics = createGraphics(T, new T.Scene());
 const a = graphics.makeHelicopter('#7b8155');
 const b = graphics.makeHelicopter('#7b8155');

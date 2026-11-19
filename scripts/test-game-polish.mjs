@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import * as T from '../vendor/three.module.min.js';
 import { stepHelicopter, HELI } from '../src/helicopter.js';
-import { VEHICLES, vehiclePad } from '../src/fleet.js';
+import { VEHICLES, vehiclePad } from '../src/fleet.ts';
 import { stepTank } from '../src/tank.js';
 import { MAP } from '../src/scale.ts';
 import { createCharacter, LANDING_DURATION, loadCharacter } from '../src/character-model.js';

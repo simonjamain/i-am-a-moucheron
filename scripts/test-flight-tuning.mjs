@@ -7,7 +7,7 @@ import {
   normalizeFlightTuning,
   saveFlightTuning,
 } from '../src/flight-tuning.js';
-import { mouseFlightControls, rotateMouseAim } from '../src/mouse-flight.js';
+import { mouseFlightControls, rotateMouseAim } from '../src/mouse-flight.ts';
 import { ASSETS } from '../server/assets.js';
 
 const data = new Map();

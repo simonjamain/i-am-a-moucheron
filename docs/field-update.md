@@ -52,7 +52,7 @@ Un point situé derrière la bouche n’entraîne pas de tir dans le dos. Mobili
 bureau, guichet et sol des purgatoires bloquent le tir. Les rayons suivent le second rayon ; le traceur immobile a ensuite nécessité une correction spécifique ARM-05, décrite dans le dernier lot. Portée conservée : 150 m de référence, soit 0,45 m au bureau et
 150 m au purgatoire ; 10 dégâts, semi-automatique, sans recharge, interdit en poste.
 
-`personal-aim.js`, le diagnostic exécutant le vrai `pistol()` et les tests géométriques
+`personal-aim.ts`, le diagnostic exécutant le vrai `pistol()` et les tests géométriques
 couvrent orientations, deux échelles, cible proche/lointaine et obstruction. Le
 ressenti avec Pointer Lock réel reste à observer sur une machine équipée de WebGL.
 

@@ -3,7 +3,7 @@ import vm from 'node:vm';
 import { readFileSync } from 'node:fs';
 import * as T from '../vendor/three.module.min.js';
 import { HELI, stepHelicopter, stepHeliAim } from '../src/helicopter.js';
-import { VEHICLES, vehiclePad, isRotorcraft } from '../src/fleet.js';
+import { VEHICLES, vehiclePad, isRotorcraft } from '../src/fleet.ts';
 import { MAP } from '../src/scale.ts';
 const near = (a, b) => assert.ok(Math.abs(a - b) < 1e-7, `${a} != ${b}`);
 // Half-turn takes a full second; diagonal motion shares the same angular budget.

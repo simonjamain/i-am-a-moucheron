@@ -9,9 +9,9 @@ import {
   CASTOR_WHEEL_RADIUS,
   trackGroundMotion,
   wheelPose,
-} from '../src/castor-wheels.js';
+} from '../src/castor-wheels.ts';
 import { createGraphics } from '../src/graphics.js';
-import { VEHICLES } from '../src/fleet.js';
+import { VEHICLES } from '../src/fleet.ts';
 import { stepTank } from '../src/tank.js';
 import { ACTOR_UNIT, MAP } from '../src/scale.ts';
 

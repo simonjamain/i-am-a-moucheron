@@ -9,7 +9,14 @@ export const WALKER_FALL = Object.freeze({
   safeImpact: 6 * MAP.ratio,
   fatalImpact: 20 * MAP.ratio,
 });
-export function impactDamage(speed) {
+/** Walker body integrated by stepWalkerFall (office metres, m/s). */
+export interface WalkerBody {
+  y: number;
+  vy: number;
+  parachute?: boolean;
+  canopyInflation?: number;
+}
+export function impactDamage(speed: number): number {
   const { safeImpact, fatalImpact } = WALKER_FALL;
   return speed <= safeImpact
     ? 0
@@ -17,7 +24,7 @@ export function impactDamage(speed) {
       ? 100
       : Math.ceil(100 * ((speed - safeImpact) / (fatalImpact - safeImpact)) ** 2);
 }
-export function stepWalkerFall(body, dt) {
+export function stepWalkerFall(body: WalkerBody, dt: number): void {
   const n = Math.max(1, Math.ceil(dt * 240)),
     h = dt / n,
     f = WALKER_FALL;
@@ -35,7 +42,8 @@ export function stepWalkerFall(body, dt) {
         Math.min(f.brake, -f.gravity * (1 - (Math.min(0, v) / f.terminal) ** 2)),
       ),
       brake = Math.max(-f.gravity, Math.min(f.brake, (-f.canopyTerminal - v) * 12)),
-      next = v + (free * (1 - body.canopyInflation) + brake * body.canopyInflation) * h;
+      inflation = body.canopyInflation,
+      next = v + (free * (1 - inflation) + brake * inflation) * h;
     body.y += ((v + next) * h) / 2;
     body.vy = next;
   }

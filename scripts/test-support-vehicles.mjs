@@ -4,7 +4,7 @@ import * as T from '../vendor/three.module.min.js';
 import { Game } from '../server/game.js';
 import { resolveHeavy, detonateHeavy, roomWorld } from './heavy-resolver.mjs';
 import { stepHeavy } from '../src/heavy-sim.js';
-import { VEHICLES, vehiclePad, LIGHT_FIGHTER } from '../src/fleet.js';
+import { VEHICLES, vehiclePad, LIGHT_FIGHTER } from '../src/fleet.ts';
 import { HEAVY, canUseWeapon, heavyDamage } from '../src/armament.js';
 import { MAP, REFERENCE, FLAK } from '../src/scale.ts';
 import { SHOP, supportedPlacement } from '../src/equipment.js';

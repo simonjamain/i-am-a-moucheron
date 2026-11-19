@@ -37,8 +37,15 @@ Rendu et interface :
 Les règles de véhicule sont encore réparties par type (`type === 'flaktruck'`) ;
 la garde vérifie les tables, pas les cas particuliers. Partir d'un véhicule
 proche et chercher son identifiant : `grep -rn "'castor'" src server`.
+`VehicleType` (`src/fleet.ts`) est dérivé des clés de `VEHICLES` : une table
+TypeScript `Record<VehicleType, …>` signale donc à `tsc` chaque entrée manquante,
+sans liste de types à recopier ailleurs.
 
-1. `src/fleet.js` — entrée dans `VEHICLES` (`name`, `seats`, dimensions, vol ou roulage).
+1. `src/fleet.ts` — entrée dans `VEHICLES` (`name`, `seats`, dimensions, vol ou
+   roulage ; champs décrits par `VehicleProfile`, vérifiés par `satisfies`) et,
+   si le véhicule ne partage pas la place par défaut, son emplacement de
+   stationnement dans `PAD_OFFSET`. Un nouveau poste s'ajoute à `SeatName` et
+   `SEAT_NAMES`.
 2. `src/equipment.js` — article `SHOP` de `kind: 'vehicle'` (prix, description).
 3. `src/shop-catalog.js` — colonne dans `SHOP_CATEGORIES`.
 4. `src/contracts.js` — contrats d'embarquement de chaque siège (`contractKey`,

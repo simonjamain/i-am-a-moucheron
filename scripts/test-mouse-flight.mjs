@@ -1,8 +1,8 @@
 import './normal-dossiers.mjs';
 import assert from 'node:assert/strict';
 import * as T from '../vendor/three.module.min.js';
-import { mouseFlightControls, mouseCameraRotation, rotateMouseAim } from '../src/mouse-flight.js';
-import { stepFlight } from '../src/flight.js';
+import { mouseFlightControls, mouseCameraRotation, rotateMouseAim } from '../src/mouse-flight.ts';
+import { stepFlight } from '../src/flight.ts';
 import { ASSETS } from '../server/assets.js';
 const forward = (q) => new T.Vector3(0, 0, -1).applyQuaternion(q);
 // Aiming is a persistent world direction, independent of aircraft rotation and frame rate.

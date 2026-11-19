@@ -1,6 +1,6 @@
 import { ANT_DATA as D } from './ant-data.js';
 import { defineCreature, TAU } from './rigged-creature.js';
-import { walkLegs, groundPresentation, REST_PHASES } from './walker-gait.js';
+import { walkLegs, groundPresentation, REST_PHASES } from './walker-gait.ts';
 
 // Ant enemy: user-supplied Meshy "Red Ant Warrior" with its 52-bone SmartRig
 // (no clip). The walk is an alternating tripod gait: front-left, mid-right and

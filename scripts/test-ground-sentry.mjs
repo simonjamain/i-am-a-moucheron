@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { Game } from '../server/game.js';
-import { VEHICLES } from '../src/fleet.js';
+import { VEHICLES } from '../src/fleet.ts';
 import { newGroundDefense, groundCommand } from '../src/ground-defense-state.js';
 import { SENTRY, fireGroundSentries } from '../src/ground-sentry.js';
 import { advancePaidService } from '../src/paid-service.js';

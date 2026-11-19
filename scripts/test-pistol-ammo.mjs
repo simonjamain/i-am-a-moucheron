@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { Game, initialStation } from '../server/game.js';
-import { PISTOL_CAPACITY } from '../src/ground-ammo.js';
+import { PISTOL_CAPACITY } from '../src/ground-ammo.ts';
 
 // The pistol only exists in purgatory: each incarnation has a finite magazine,
 // nobody fires on foot in the office and no office service sells rounds.

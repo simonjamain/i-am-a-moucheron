@@ -42,13 +42,13 @@ export async function loadBaselineGame(baseline, tag) {
     restored.push(copy);
     return `from './.${tag}-baseline-${name}.mjs'`;
   });
-  // RAID_* left layout.js with the plans; the baseline only copies a number into its snapshot.
+  // RAID_* left layout.ts with the plans; the baseline only copies a number into its snapshot.
   writeFileSync(
     temporary,
     (stubs.length ? stubs.map((name) => `const ${name} = () => 0;\n`).join('') : '') +
       source.replace(
         /import \{ OFFICE_LAYOUT, RAID_DURATION \} from '\.\.\/src\/layout\.js';/,
-        "import { OFFICE_LAYOUT } from '../src/layout.js';\nconst RAID_DURATION = 0;",
+        "import { OFFICE_LAYOUT } from '../src/layout.ts';\nconst RAID_DURATION = 0;",
       ),
   );
   try {

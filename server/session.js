@@ -5,7 +5,7 @@ import {
   MOTION_REFRESH_MS,
   snapshotRosterCore,
   snapshotRosterKey,
-} from '../src/snapshot-wire.js';
+} from '../src/snapshot-wire.ts';
 
 // Session identity comes from its DTLS connection, never from a player ID supplied
 // in a command. Old command IDs can never execute again after cache eviction.
