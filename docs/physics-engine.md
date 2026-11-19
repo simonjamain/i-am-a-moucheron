@@ -1,4 +1,4 @@
-# Physique Rapier — le Castor (versions 352 et 353)
+# Physique Rapier — le Castor et le char (versions 352 à 358)
 
 Le jeu écrit sa physique à la main (vol, hélicoptère, `stepTank`, `stepWalker`,
 balistique). Le Castor, lui, roule sur un vrai moteur, **Rapier** (Rust compilé en
@@ -8,9 +8,11 @@ Rapier est chargé **derrière l'écran de chargement** (`homeReady` attend son
 téléchargement) et un échec de chargement est une erreur de démarrage, comme une
 ressource manquante.
 
-Migration en cours : les véhicules qui ne sont pas encore passés sur Rapier (char,
-camion DCA, avions, hélicoptères, marche) gardent leur physique d'origine
-(`tank.js`, `flight.js`, `helicopter.js`, `sortie.js`). Elle est obsolète : chaque
+Version 358 : le **char moyen** passe aussi sur Rapier (voir plus bas).
+
+Migration en cours : les véhicules qui ne sont pas encore passés sur Rapier (camion
+DCA, avions, hélicoptères, marche) gardent leur physique d'origine
+(`tank.js` pour le camion DCA, `flight.js`, `helicopter.js`, `sortie.js`). Elle est obsolète : chaque
 véhicule migré en retire le code correspondant, et à terme elle disparaît entièrement.
 
 ## Décision et périmètre
@@ -53,6 +55,8 @@ pièce), pas comme vitesse.
 | `vendor/rapier.compat.mjs`        | Rapier 0.21.0 (WASM en base64, 4,3 Mo, environ 1,7 Mo compressé), servi sur `/rapier.js`. Provenance et empreinte dans [vendor/README.md](../vendor/README.md). Chargé pendant l'écran de chargement.                                      |
 | `src/physics-world.ts`            | Unités, `loadRapier`, `PhysicsWorld` : le sol et les boîtes `colliders` du jeu en solides fixes. Boîtes orientées (cadre de lacet) converties en cuboïdes tournés ; la liste est comparée à chaque pas (ajouts et retraits de placements). |
 | `src/castor-physics.ts`           | `CastorRig` : châssis rigide, six roues à rayon et ressort (positions, rayon tirés du modèle Meshy), conduite, direction, freinage. Même contrat que `stepTank`, appelé par `physics()` dans `client.js`.                                  |
+| `src/tank-physics.ts`             | `TankRig` : coque rigide sur douze ressorts (un rayon par galet), chenilles commandées en vitesse de bande. Voir « Le char sur Rapier ».                                                                                                   |
+| `scripts/test-tank-physics.mjs`   | Test Node (dans `npm test`) : échelle, train de roulement mesuré sur le maillage, ressorts, conduite, pivot, mur, marches, chute.                                                                                                          |
 | `scripts/test-castor-physics.mjs` | Test Node (dans `npm test`) : unités, géométrie, conduite, mur, solides orientés contre `rayCollider`, téléportation, chute.                                                                                                               |
 
 ## Conduite du Castor sur Rapier
@@ -75,6 +79,41 @@ pièce), pas comme vitesse.
 - **Collisions** : le châssis rigide s'arrête sur les murs (les anciens `colliders` du jeu),
   sans rebond ni dégâts, et glisse ou s'arrête selon l'angle ; la masse est basse, pas de
   retournement dans les essais de slalom.
+
+## Le char sur Rapier (version 358)
+
+Même contrat que le Castor (`p`, `q`, `v`, `omega`), un rig par char conduit et un par
+char vide simulé par l'hôte. Le modèle d'un char à chenilles :
+
+- **Échelle d'un vrai char** : le modèle est un char moyen réduit (coque de 1,23 m pour les
+  5,9 m d'un Sherman, échelle 0,208). À gravité égale, la similitude de Froude donne les
+  masses en taille³, les vitesses en √taille et les taux de rotation en 1/√taille : 30 t
+  deviennent 270 kg, 40 km/h deviennent 5 m/s, un pivot de 0,6 rad/s devient 1,3 rad/s. Les
+  profils changent donc : `maxSpeed` 12 → 29 (m de référence/s, soit 5 m/s physiques),
+  `turn` 0,7 → 1,3. **Le char est environ 2,4 fois plus rapide qu'avant.**
+- **Suspension** : douze ressorts (six galets par côté) à rayons `castRay` ; raideur pour un
+  affaissement de 4 cm au repos, amortissement à 45 %, fréquence de la coque 2,5 Hz (le 1,1 Hz
+  d'un vrai char, mis à l'échelle). Le char pique du nez au freinage (environ 4°), se
+  cabre en accélérant et penche dans les virages. `rig.wheelCompression` expose la
+  compression de chaque ressort : c'est la donnée dont les chenilles déformables seront
+  dessinées.
+- **Chenilles** : chaque côté est commandé en vitesse de bande (gaz ± braquage) ; la chenille
+  pousse le sol au niveau de ses galets, dans la limite de la poussée (2,4 m/s², plus
+  pendant un braquage) et de l'adhérence (la charge du ressort × 0,9, ce qui tient une pente de
+  42°). Le glissement latéral est un frottement sec (adhérence 0,4 de la charge), plus faible
+  que l'adhérence longitudinale : le char pivote sur place (1,07 rad/s mesuré) et un braquage à
+  pleine vitesse le fait glisser un peu.
+- **Braquage selon la vitesse** : l'écart de bandes demandé diminue quand la vitesse monte, pour
+  que l'accélération latérale reste sous 0,32 g (comme un conducteur qui n'ose pas tourner à
+  fond à 18 km/h). Le même braquage tourne à gauche en marche avant comme en marche arrière.
+- **Franchissement** : la coque a le nez et l'arrière chanfreinés ; le char franchit une
+  marche de 18 cm (environ deux rayons de galet) et bute sur 40 cm.
+- **Géométrie du train de roulement** (galets, rayon, ligne de chenille) mesurée sur le
+  maillage de la caisse ; `test-tank-physics.mjs` la contrôle sur les sommets du modèle.
+
+Pistes (pas encore faites) : découpage du modèle en caisse, chenilles, galets et roue
+motrice ; chenilles dessinées par un shader le long du profil des ressorts ; camion DCA avec
+attelage articulé (articulation Rapier, remorque sur son essieu à ressorts).
 
 ## Réglages et étalonnage
 

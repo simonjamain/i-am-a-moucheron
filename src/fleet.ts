@@ -114,11 +114,14 @@ export const VEHICLES = {
     seats: ['pilot', 'cannon', 'top'],
     span: 6,
     length: 8,
-    maxSpeed: 12,
+    // A real medium tank at the model's size (Froude similarity, see tank-physics.ts):
+    // 40 km/h × √0.208 = 5 m/s of physics (29 reference m/s), a 0.6 rad/s pivot
+    // becomes 1.3 rad/s. The former arcade values were 12 and 0.7.
+    maxSpeed: 29,
     thrust: 4,
     drag: 0.1,
     liftBase: 0,
-    turn: 0.7,
+    turn: 1.3,
     gear: 0.8 * ACTOR_UNIT,
     ground: true,
   },
