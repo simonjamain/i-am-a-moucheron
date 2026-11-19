@@ -48,8 +48,9 @@ effects.update(0.01);
 const flash = effects.items[0].g;
 assert.ok(flash.position.distanceTo(anchor.getWorldPosition(new T.Vector3())) < 1e-9);
 assert.ok(
-  flash.quaternion.angleTo(anchor.getWorldQuaternion(new T.Quaternion())) < 1e-7,
-  'flash follows barrel despite dispersion',
+  new T.Vector3(0, 0, -1).applyQuaternion(flash.quaternion).distanceTo(new T.Vector3(1, 0, 0)) <
+    1e-7,
+  'flash leaves along the shot, from the moving barrel tip',
 );
 const h = makeH2(T, scene);
 assert.equal(h.userData.turrets[0].userData.muzzles.length, 2);

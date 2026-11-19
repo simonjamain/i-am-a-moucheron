@@ -2303,11 +2303,19 @@
       #cursorAmmo {
         font-weight: 700;
       }
-      #cursorStats progress {
+      #cursorStats .bar {
         display: block;
         width: 95px;
         height: 4px;
-        accent-color: #c0e27d;
+        background: rgba(0, 0, 0, 0.55);
+        border-radius: 2px;
+        overflow: hidden;
+      }
+      #cursorStats .bar i {
+        display: block;
+        height: 100%;
+        width: 0;
+        background: #c0e27d;
       }
       #cursorAmmo {
         display: block;
@@ -2670,10 +2678,10 @@
     <div id="reserveAlerts" aria-live="polite"></div>
     <div id="cursorStats" class="hidden">
       <span id="cursorSpeed"></span> · <span id="cursorHealth"></span
-      ><progress id="cursorHPbar" max="100" value="100"></progress><span id="cursorAmmo"></span
-      ><progress id="cursorAmmoBar" max="1" value="1"></progress> <span id="cursorFuelLabel"></span
-      ><progress id="cursorFuel" max="100"></progress> <span id="cursorGasLabel"></span
-      ><progress id="cursorGas" max="100"></progress>
+      ><span id="cursorHPbar" class="bar"><i></i></span><span id="cursorAmmo"></span
+      ><span id="cursorAmmoBar" class="bar"><i></i></span> <span id="cursorFuelLabel"></span
+      ><span id="cursorFuel" class="bar"><i></i></span> <span id="cursorGasLabel"></span
+      ><span id="cursorGas" class="bar"><i></i></span>
     </div>
     <div id="dirtView" aria-hidden="true"></div>
     <p id="dirtWarning" class="hidden">Attention, nettoyez votre véhicule en urinant dessus.</p>

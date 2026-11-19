@@ -107,7 +107,7 @@ for (const type of Object.keys(VEHICLES)) {
   for (const bad of [
     { ...parked, landed: false },
     { ...parked, v: [0.001, 0, 0] },
-    { ...parked, p: [0.121, parked.p[1], 0] },
+    { ...parked, p: [0.501, parked.p[1], 0] },
     { ...parked, p: [0, parked.p[1] + 0.1, 0] },
   ])
     assert.ok(!serviceEligible(bad, [station], type));

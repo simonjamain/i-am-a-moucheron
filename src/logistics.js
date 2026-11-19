@@ -3,10 +3,10 @@ import { VEHICLES, pilotFireInterval, isRotorcraft, isBomber } from './fleet.ts'
 import { TANK_MG } from './armament.js';
 export const FUEL_SECONDS = 300;
 export const SERVICE_SECONDS = 10;
-export const SERVICE_RADIUS = 0.12;
 // The Castor (and the Castor volant) is a mobile refuel station: a 50 cm
-// sphere around the vehicle.
+// sphere around the vehicle. Fixed refuel stations use the same reach.
 export const CASTOR_SERVICE_RADIUS = 0.5;
+export const SERVICE_RADIUS = CASTOR_SERVICE_RADIUS;
 export function ammoCapacity(type, seat, balance = null) {
   if (balance) return Math.round(ammoCapacity(type, seat) * balance.ammo);
   if (type === 'helicopter')
