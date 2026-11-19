@@ -1,5 +1,6 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
+  { version: 355, changes: ['Le Castor volant est 30 % plus petit.'] },
   {
     version: 354,
     changes: [
