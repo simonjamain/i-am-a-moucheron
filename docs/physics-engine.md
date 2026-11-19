@@ -1,4 +1,4 @@
-# Physique Rapier — les véhicules au sol (versions 352 à 363)
+# Physique Rapier — les véhicules au sol (versions 352 à 364)
 
 Le jeu écrit sa physique à la main (vol, hélicoptère, `stepWalker`, balistique). Les
 véhicules au sol roulent sur un vrai moteur, **Rapier** (Rust compilé en
@@ -155,13 +155,27 @@ sur l'ancienne version doit être rechargée.
   vitesse), **pique et se cabre par rapport au tracteur** à l'accélération et au freinage
   (jusqu'à 0,08 rad mesuré au freinage), se recentre sans osciller, et **se met en
   portefeuille** en marche arrière à pleine butée de braquage (jusqu'à 100°). Un ressort de
-  rappel de lacet (40 N·m/rad : un attelage anti-ballant) compense l'instabilité d'une
-  remorque en marche arrière (elle part en portefeuille en quelques secondes si on la laisse) ;
-  plus rigide il l'empêcherait de plier, plus souple il la ferait plier seule.
-- **Roues** : les angles de braquage et la rotation des roues viennent de la vitesse et du
-  taux de lacet, par la cinématique de la roue sur le sol (`steeredWheelPose`,
-  `castor-wheels.ts`) : même géométrie d'Ackermann que la physique, aucun envoi réseau, valable
-  aussi pour les autres joueurs. Les roues de la remorque ne font que rouler.
+  rappel de lacet (un attelage anti-ballant) compense l'instabilité d'une remorque en marche
+  arrière ; plus rigide il l'empêcherait de plier, plus souple il la ferait plier seule.
+- **Roues** (version 364) : seule l'essieu avant braque ; les deux essieux arrière et la remorque
+  sont fixes (le tandem frotte un peu dans les virages, comme sur un vrai camion). L'angle des
+  roues avant est celui que le conducteur demande au clavier (`steer`, le volant tourne à
+  1,8 rad/s au plus et se recentre, butée de 0,5 rad à l'arrêt, qui se ferme avec la vitesse) : il
+  existe **à l'arrêt** et voyage dans l'état (champ `steer`, `MOTION_BATCH_VERSION` 4), si bien
+  que les autres joueurs le voient. Avant, il était déduit de la vitesse et du taux de lacet :
+  il sautillait presque à l'arrêt et braquait trop fort. La rotation des roues vient de la
+  vitesse au sol. `animateDrivenWheels` (`castor-wheels.ts`) applique l'angle de Ackermann (le
+  même `ackermannAngle` que la physique, roue intérieure plus braquée) avec un léger lissage
+  contre l'arrivée à 20 Hz.
+- **Repère de la remorque** : le maillage de la remorque est dans son propre repère (origine à
+  l'attelage) ; ses roues, extraites par `split-vehicle-parts.mjs`, sont dans ce repère. La
+  version 363 les décalait une seconde fois de la distance de l'attelage : roues mal placées
+  à l'écran, et physique de remorque construite avec des empattements faux (0,6 et 1,4 unité au
+  lieu de 1,58 et 2,37). Corrigé en 364 ; les roues de la remorque touchent le même sol que
+  celles du tracteur, sans flottement, et le ressort anti-ballant passe à 300 N·m/rad (un
+  empattement plus long rend la marche arrière plus instable : en marche arrière droite, le
+  pli met plusieurs secondes à se former ; plein braquage jusqu'à environ 55°, plus loin si on
+  insiste).
 - **Réglage** : ressorts plus souples (60) que ceux du Castor (100) : un tracteur léger sur
   des ressorts plus raides rebondit et roule (mesuré) ; l'accélération latérale demandée est
   bornée à 2,8 m/s² (0,29 g, un camion chargé). La remorque est de niveau au repos (ses

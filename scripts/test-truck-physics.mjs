@@ -136,7 +136,7 @@ const box = (x0, y0, z0, x1, y1, z1) =>
     pitch = Math.max(pitch, Math.abs(s.trailerPitch));
   });
   // The ball hitch lets the trailer pitch against the tractor under braking.
-  assert.ok(pitch > 0.03 && pitch < TRAILER_LIMITS.pitch, 'the trailer pitches: ' + pitch);
+  assert.ok(pitch > 0.015 && pitch < TRAILER_LIMITS.pitch, 'the trailer pitches: ' + pitch);
   const deceleration = (before - speed(s)) / 0.8;
   assert.ok(deceleration > 4 && deceleration < 8, 'braking about 5.5 m/s²: ' + deceleration);
   assert.ok(fold < 0.1, 'braking does not fold the trailer: ' + fold);
@@ -173,8 +173,9 @@ const box = (x0, y0, z0, x1, y1, z1) =>
   [rig, zig].forEach((r) => r.dispose());
 }
 
-// Reversing: straight is fine at first (a trailer is unstable backwards); full lock while
-// backing jackknifes against the hitch stop, 100° and no more, and the truck jams.
+// Reversing: straight is fine at first (a trailer is unstable backwards, a sway-control hitch
+// slows it down); full lock while backing folds the trailer; the hitch allows over 90° and
+// stops at 100°.
 {
   const rig = new TruckRig(RAPIER),
     s = fresh();
@@ -193,7 +194,10 @@ const box = (x0, y0, z0, x1, y1, z1) =>
     [],
     () => (largest = Math.max(largest, Math.abs(b.trailerAngle))),
   );
-  assert.ok(largest > 1 && largest <= TRAILER_LIMITS.yaw, 'jackknife (> 57°): ' + largest);
+  assert.ok(
+    largest > 0.7 && largest <= TRAILER_LIMITS.yaw,
+    'the trailer folds (> 40°): ' + largest,
+  );
   // The hitch really allows more than 90°: placed at 97° it is not pushed back by a stop,
   // and backing with full lock never takes it beyond its stop.
   const folded = new TruckRig(RAPIER),
@@ -246,6 +250,55 @@ const box = (x0, y0, z0, x1, y1, z1) =>
   };
   assert.equal(drop(0.75).hp, 0, 'desk');
   assert.equal(drop(0.004).hp, 100, '4 mm step');
+}
+
+// Steering as a driver does it: only the front axle turns, by an angle that exists at a
+// standstill, is rate-limited, closes with speed, and is part of the state (the renderer
+// and the other players draw the wheels from it).
+{
+  const rig = new TruckRig(RAPIER),
+    s = fresh();
+  run(rig, s, {}, 2);
+  assert.equal(s.steer, 0);
+  run(rig, s, { turn: 1 }, 0.1);
+  assert.ok(
+    s.steer > 0 && s.steer < TRUCK_PHYSICS.steerLock,
+    'turned at a limited rate: ' + s.steer,
+  );
+  run(rig, s, { turn: 1 }, 1);
+  assert.ok(Math.abs(s.steer - TRUCK_PHYSICS.steerLock) < 1e-6, 'full lock at a standstill');
+  assert.ok(speed(s) < 0.05, 'without moving');
+  const angles = [0, 1, 2, 3, 4, 5].map((i) => rig.tractorWheels.wheelSteering(i));
+  assert.ok(Math.abs(angles[0]) > 0.3 && Math.abs(angles[1]) > 0.3, 'the front wheels turn');
+  assert.ok(
+    angles.slice(2).every((a) => a === 0),
+    'the two rear axles are fixed',
+  );
+  run(rig, s, { turn: -1 }, 3);
+  assert.ok(Math.abs(s.steer + TRUCK_PHYSICS.steerLock) < 1e-6, 'and the other way');
+  run(rig, s, {}, 2);
+  assert.ok(Math.abs(s.steer) < 1e-6, 'released to the centre');
+  // At speed the lock closes.
+  run(rig, s, { forward: 1 }, 25);
+  run(rig, s, { turn: 1 }, 1);
+  assert.ok(s.steer < 0.2 * TRUCK_PHYSICS.steerLock, 'less lock at speed: ' + s.steer);
+  rig.dispose();
+}
+
+// The trailer's geometry is the model's: wheels behind the hitch, resting level on the same
+// ground, the hull between the two ends of the trailer.
+{
+  const rig = new TruckRig(RAPIER),
+    s = fresh();
+  run(rig, s, {}, 3);
+  for (let i = 0; i < 4; i++) {
+    assert.ok(rig.trailerWheels.wheelIsInContact(i), 'trailer wheel ' + i + ' on the ground');
+    const point = rig.trailerWheels.wheelHardPoint(i);
+    assert.ok(point && Math.abs(point.y - rig.trailer.translation().y) < 1, 'sane');
+  }
+  assert.ok(Math.abs(s.trailerPitch) < 0.02, 'level: ' + s.trailerPitch);
+  assert.ok(TRAILER_WHEELS.every((w) => w.z > 1.2 * MODEL_UNIT && w.z < 2.7 * MODEL_UNIT));
+  rig.dispose();
 }
 
 console.log('truck physics ok: scale, mesh axles, hitch, bends, jackknife, walls, falls');

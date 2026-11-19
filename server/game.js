@@ -1121,6 +1121,7 @@ export class Game {
       trailerPitch: Number.isFinite(s.trailerPitch)
         ? Math.max(-TRAILER_LIMITS.pitch, Math.min(TRAILER_LIMITS.pitch, s.trailerPitch))
         : 0,
+      steer: Number.isFinite(s.steer) ? Math.max(-1, Math.min(1, s.steer)) : 0,
       landed: flying ? !!s.landed : !!old.landed,
       aimPoint:
         Array.isArray(s.aimPoint) &&

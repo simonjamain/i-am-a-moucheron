@@ -83,48 +83,53 @@ export function animateCastorWheels(
   }
 }
 
-// Wheels of a vehicle that steers on a chosen pivot (the anti-air truck): each wheel
-// rolls along the velocity of its own contact point, so its steering angle and spin
-// follow from the vehicle's speed and yaw rate alone (no extra network data) and match
-// the physics' Ackermann geometry. wheel: { x, z } in model units, forward is -z.
-// Returns the steering angle (positive to the left, folded into ±90°) and the spin
-// increment around the axle (negative = rolling forward) for dt seconds.
-export function steeredWheelPose(
+// Ackermann geometry: the angle of a wheel (positive to the left) when the front axle is
+// turned by `delta` on the centre line, so that every wheel rolls about one centre on the
+// line of the axle at `pivotZ`. Any consistent unit; forward is -z.
+export function ackermannAngle(
+  delta: number,
   wheel: { x: number; z: number },
-  { forwardSpeed, yawRate }: GroundMotion,
-  { scale, pivotZ, radius }: { scale: number; pivotZ: number; radius: number },
-  dt: number,
-): WheelPose {
-  const across = -yawRate * (wheel.z - pivotZ) * scale, // to the left
-    ahead = forwardSpeed + yawRate * wheel.x * scale;
-  const speed = Math.hypot(across, ahead);
-  if (speed < 1e-6) return { spin: 0, steer: 0 };
-  let steer = Math.atan2(across, ahead),
-    sign = 1;
-  if (Math.abs(steer) > Math.PI / 2) {
-    steer -= Math.sign(steer) * Math.PI; // rolling backwards: the wheel points the other way
-    sign = -1;
-  }
-  // `+ 0` turns a negative zero into zero.
-  return { spin: ((-sign * speed) / (radius * scale)) * dt, steer: steer + 0 };
+  pivotZ: number,
+  wheelbase: number,
+): number {
+  if (Math.abs(delta) < 1e-6) return 0;
+  const radius = wheelbase / Math.tan(delta); // signed: positive centre on the left
+  return Math.atan((pivotZ - wheel.z) / (radius + wheel.x));
 }
 
-export function animateSteeredWheels(
+// The wheels of a vehicle whose driver turns the front axle (the anti-air truck): the front
+// wheels take the angle the driver asked for, which exists even at a standstill and travels
+// with the vehicle's state, so that other players see it too; the other axles are fixed.
+// Every wheel spins with its ground speed. wheel nodes: model units, forward is -z.
+export interface DrivenWheelMotion {
+  /** Angle of the front wheels asked for (rad, positive to the left). */
+  steer: number;
+  forwardSpeed: number;
+  yawRate: number;
+}
+export function animateDrivenWheels(
   wheels: readonly THREE.Object3D[],
-  motion: GroundMotion,
-  options: { scale: number; pivotZ: number; radius: number },
+  { steer, forwardSpeed, yawRate }: DrivenWheelMotion,
+  {
+    scale,
+    pivotZ,
+    wheelbase,
+    radius,
+  }: { scale: number; pivotZ: number; wheelbase: number; radius: number },
   dt: number,
 ): void {
+  const frontZ = Math.min(...wheels.map((w) => w.position.z));
   for (const axle of wheels) {
-    const { spin, steer } = steeredWheelPose(
-      { x: axle.position.x, z: axle.position.z },
-      motion,
-      options,
-      dt,
-    );
+    const front = Math.abs(axle.position.z - frontZ) < 1e-6;
+    const target = front
+      ? ackermannAngle(steer, { x: axle.position.x, z: axle.position.z }, pivotZ, wheelbase)
+      : 0;
+    // The network brings the steering at 20 Hz: ease towards it.
+    const rotationY = Math.abs(axle.rotation.y - target) < 1e-4 ? target : axle.rotation.y;
     axle.rotation.order = 'YXZ';
-    axle.rotation.x = (axle.rotation.x + spin) % (2 * Math.PI);
-    axle.rotation.y = steer;
+    axle.rotation.y = rotationY + (target - rotationY) * Math.min(1, dt * 30);
+    const ground = forwardSpeed + yawRate * axle.position.x * scale;
+    axle.rotation.x = (axle.rotation.x + (-ground / (radius * scale)) * dt) % (2 * Math.PI);
   }
 }
 

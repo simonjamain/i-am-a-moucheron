@@ -35,6 +35,7 @@ const foot = () => ({
   gas: 0.65,
   trailerAngle: 0,
   trailerPitch: 0,
+  steer: 0,
   omega: [0, 0, 0],
   turret: -1,
   turretDirection: [r(1), r(1), r(1)],

@@ -1,6 +1,7 @@
 import type { DynamicRayCastVehicleController, RigidBody } from '@dimforge/rapier3d-compat';
 import { MODEL_DATA } from './meshy-castor-data.js';
 import { MAP } from './scale.ts';
+import { ackermannAngle } from './castor-wheels.ts';
 import type { VehicleProfile } from './fleet.ts';
 import {
   FALL_KILL_SPEED,
@@ -95,9 +96,7 @@ export function wheelSteering(
   pivotZ = PIVOT_Z,
   wheelbase = WHEELBASE,
 ): number {
-  if (Math.abs(delta) < 1e-6) return 0;
-  const radius = wheelbase / Math.tan(delta); // signed: positive centre on the left
-  return Math.atan((pivotZ - wheel.z) / (radius + wheel.x));
+  return ackermannAngle(delta, wheel, pivotZ, wheelbase);
 }
 // Largest front-wheel angle at this speed: the full lock when slow, then only as
 // much as the tyres can grip (lateral acceleration v²·tan(delta)/wheelbase).

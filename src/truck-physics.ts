@@ -44,26 +44,22 @@ export const TRACTOR_WHEELS: readonly Wheel[] = [0, 1, 2, 3, 4, 5].map((i) => {
   const [x, y, z] = pivot('wheel' + i);
   return { x: x * MU, y: y * MU, z: z * MU };
 });
-// The trailer's wheels rest on the ground when the trailer is level: the physics wheel
-// is as large as the model's and touches the ground, whatever height the mesh floats at.
 export const WHEEL_MODEL_RADIUS = 0.42; // measured on the wheel meshes, in model units
 export const TRAILER_WHEEL_MODEL_RADIUS = 0.35;
 export const WHEEL_RADIUS = WHEEL_MODEL_RADIUS * MU;
 export const TRAILER_WHEEL_RADIUS = TRAILER_WHEEL_MODEL_RADIUS * MU;
-const GROUND_Y = -0.8 * MU;
+// The trailer is modelled in its own frame (origin on the hitch); the part pivots are in the
+// vehicle's frame, so the wheels' offsets from the hitch are the differences.
 export const TRAILER_WHEELS: readonly Wheel[] = [0, 1, 2, 3].map((i) => {
-  const [x, , z] = pivot('trailerWheel' + i);
-  return {
-    x: x * MU,
-    y: GROUND_Y + TRAILER_WHEEL_RADIUS - HITCH.y, // in trailer space (origin on the hitch)
-    z: z * MU - HITCH.z,
-  };
+  const [x, y, z] = pivot('trailerWheel' + i);
+  return { x: x * MU, y: y * MU - HITCH.y, z: z * MU - HITCH.z };
 });
 const FRONT_Z = TRACTOR_WHEELS[0].z;
 // The tandem's middle is the pivot of the steering geometry.
 export const PIVOT_Z = (TRACTOR_WHEELS[2].z + TRACTOR_WHEELS[4].z) / 2;
 export const PIVOT_MODEL_Z = PIVOT_Z / MU; // the same, in model units (the renderer's)
 export const WHEELBASE = PIVOT_Z - FRONT_Z;
+export const WHEELBASE_MODEL = WHEELBASE / MU;
 // Stops of the ball hitch, a little inside what the game accepts (TRAILER_LIMITS).
 export const HITCH_LIMITS = Object.freeze({
   yaw: TRAILER_LIMITS.yaw - 0.05,
@@ -97,12 +93,12 @@ export const TRUCK_PHYSICS = Object.freeze({
   trailerStiffness: 60,
   topMargin: 1.03,
   lift: 0.18, // model units: spring top above the wheel centre
-  ride: 0.084, // model units added to the spring length, to offset the sag: the hull rests at the model's ride height
-  trailerRide: 0.01, // same for the trailer's wheels: the trailer rests level
+  ride: 0.073, // model units added to the spring length, to offset the sag: the hull rests at the model's ride height
+  trailerRide: 0.05, // same for the trailer's wheels: the trailer rests level
   linearDamping: 0.01, // small: at the doubled top speed the drag would eat half the thrust
   angularDamping: 1,
   hitchDamping: 0.6, // N·m·s/rad of friction in the hitch (keeps the trailer from ringing)
-  hitchSpring: 40, // N·m/rad: a sway-control hitch pulls the trailer back in line (a trailer is
+  hitchSpring: 300, // N·m/rad: a sway-control hitch pulls the trailer back in line (a trailer is
   // unstable backwards, and the short drawbar makes it fast); weak enough to jackknife
   hitchStop: 4000, // N·m/rad: stiffness of the hitch stops
   hitchStopDamping: 180, // N·m·s/rad: damping of the stops
@@ -129,6 +125,8 @@ export interface TruckState {
   trailerAngle?: number;
   /** Pitch of the trailer in the tractor's frame (rad, positive nose up). */
   trailerPitch?: number;
+  /** Angle of the front wheels asked for by the driver (rad, positive to the left). */
+  steer?: number;
 }
 export interface TruckControls {
   forward?: number;
@@ -224,14 +222,14 @@ export class TruckRig {
         .setCanSleep(false)
         .setAdditionalMassProperties(
           params.trailerMass,
-          { x: 0, y: params.trailerCom * MU, z: 0.6 * MU },
+          { x: 0, y: params.trailerCom * MU, z: 1.5 * MU },
           box(params.trailerMass, 1.8 * MU, 1.2 * MU, 3.4 * MU),
           { x: 0, y: 0, z: 0, w: 1 },
         ),
     );
     world.createCollider(
-      RAPIER.ColliderDesc.cuboid(0.9 * MU, 0.65 * MU, 1.7 * MU)
-        .setTranslation(0, 0.2 * MU, 0.6 * MU)
+      RAPIER.ColliderDesc.cuboid(0.9 * MU, 0.6 * MU, 1.6 * MU)
+        .setTranslation(0, 0.3 * MU, 1.45 * MU)
         .setDensity(0)
         .setFriction(0)
         .setRestitution(0),
@@ -371,7 +369,11 @@ export class TruckRig {
         wheel.z > FRONT_Z + 1e-6 ? (engine * total) / 4 : 0,
       );
       this.tractorWheels.setWheelBrake(i, brake * BRAKE_PER_DECEL);
-      this.tractorWheels.setWheelSteering(i, wheelSteering(this.steer, wheel, PIVOT_Z, WHEELBASE));
+      // Only the front axle steers: the two rear axles are fixed.
+      this.tractorWheels.setWheelSteering(
+        i,
+        wheel.z === FRONT_Z ? wheelSteering(this.steer, wheel, PIVOT_Z, WHEELBASE) : 0,
+      );
     });
     TRAILER_WHEELS.forEach((_, i) => {
       this.trailerWheels.setWheelBrake(
@@ -409,6 +411,7 @@ export class TruckRig {
       landed: contacts >= 4,
       trailerAngle: Math.max(-TRAILER_LIMITS.yaw, Math.min(TRAILER_LIMITS.yaw, hitch.yaw)),
       trailerPitch: Math.max(-TRAILER_LIMITS.pitch, Math.min(TRAILER_LIMITS.pitch, hitch.pitch)),
+      steer: this.steer,
     });
     this.pose.p = state.p.map(toPhysics);
   }

@@ -114,8 +114,8 @@ function components(part) {
   });
 }
 
-// Move the triangles `list` of `part` into a new part pivoting at `pivot` (world model
-// units, on the grid); returns [remaining part, new part].
+// Move the triangles `list` of `part` into a new part pivoting at `pivot` (in the part's
+// own frame, on the grid); returns [remaining part, new part, with that pivot].
 function extract(part, lists, pivot, name) {
   const positions = decode(part.positions, Int16Array),
     uv = decode(part.uv, Uint16Array),
@@ -177,15 +177,20 @@ export function split(data, spec) {
       const [rest, piece] = extract(source(), fresh.list, component.centre, name);
       result.parts[sourceIndex] = rest;
       result.parts.push(piece);
-      const parentNode =
+      // The island's centre is in the frame of the part it came from, which is the frame of
+      // its parent node (the trailer's vertices are relative to the hitch). A rig node's
+      // `position` is relative to its parent; its `pivot` is in the vehicle's frame.
+      const parentPivot =
         group.parent === 'body'
-          ? { pivot: [0, 0, 0] }
-          : result.rig.find((node) => node.name === group.parent);
+          ? [0, 0, 0]
+          : result.rig.find((node) => node.name === group.parent).pivot;
+      const local = piece.pivot;
+      piece.pivot = local.map((v, a) => +(v + parentPivot[a]).toFixed(4));
       result.rig.push({
         name,
         parent: group.parent,
         pivot: piece.pivot,
-        position: piece.pivot.map((v, a) => +(v - parentNode.pivot[a]).toFixed(4)),
+        position: local,
         quaternion: [0, 0, 0, 1],
       });
       found.push(piece.pivot);

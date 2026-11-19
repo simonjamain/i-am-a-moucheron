@@ -1,6 +1,12 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 364,
+    changes: [
+      'Camion anti-aérien : seules les roues avant braquent, selon le clavier, même à l’arrêt ; roues de remorque bien placées.',
+    ],
+  },
+  {
     version: 363,
     changes: [
       'Camion anti-aérien : les roues tournent et braquent, la remorque pique et se cabre, et peut se replier à plus de 90°.',

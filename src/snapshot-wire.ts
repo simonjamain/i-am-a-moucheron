@@ -260,6 +260,7 @@ const PILOT_MOTION = [
   'collective',
   'trailerAngle',
   'trailerPitch',
+  'steer',
   'ground',
 ];
 const BODY_MOTION = ['x', 'z', 'y', 'vx', 'vz', 'vy', 'face', 'input', 'inputAt'];

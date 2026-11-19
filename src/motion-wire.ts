@@ -110,6 +110,7 @@ export const MOTION_SCHEMA: Schema = [
   ['gas', 'real'],
   ['trailerAngle', 'real'],
   ['trailerPitch', 'real'],
+  ['steer', 'real'],
   ['omega', 'vec3'],
   ['turret', 'num'],
   ['turretDirection', 'vec3'],
@@ -414,7 +415,7 @@ export function decodeMotionState(bytes: Uint8Array): MotionObject {
 // the peer ID, its motion sequence, the age of the state in the batch (ms,
 // time since the server accepted it), the capture time on the sender's clock
 // (flag + float64) and the encoded state.
-export const MOTION_BATCH_VERSION = 3;
+export const MOTION_BATCH_VERSION = 4;
 export const MOTION_BATCH_BYTES = 1100;
 const MAGIC = 0x4d;
 export function encodeMotionBatch(
