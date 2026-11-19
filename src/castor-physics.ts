@@ -64,7 +64,7 @@ export const WHEELBASE = PIVOT_Z - FRONT_Z; // front axle to steering pivot
 // Rapier's wheel brake is not a force: measured on this chassis (400 kg, six
 // wheels) a brake value b per wheel decelerates by about 1.85·b m/s² up to the
 // grip limit. See test-castor-physics.mjs, which checks the resulting decelerations.
-const BRAKE_PER_DECEL = 0.54;
+export const BRAKE_PER_DECEL = 0.54;
 
 export const CASTOR_PHYSICS = Object.freeze({
   mass: 400, // kg
@@ -201,7 +201,7 @@ export class CastorRig {
     this.fallSpeed = 0;
   }
 
-  // Same contract as stepTank: advance `state` by dt and write it back.
+  // Advance `state` (the vehicle state of the game, in world units) by dt and write it back.
   step(
     state: CastorState,
     controls: CastorControls,

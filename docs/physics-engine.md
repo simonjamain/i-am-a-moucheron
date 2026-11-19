@@ -1,19 +1,20 @@
-# Physique Rapier — le Castor et le char (versions 352 à 358)
+# Physique Rapier — les véhicules au sol (versions 352 à 359)
 
-Le jeu écrit sa physique à la main (vol, hélicoptère, `stepTank`, `stepWalker`,
-balistique). Le Castor, lui, roule sur un vrai moteur, **Rapier** (Rust compilé en
+Le jeu écrit sa physique à la main (vol, hélicoptère, `stepWalker`, balistique). Les
+véhicules au sol roulent sur un vrai moteur, **Rapier** (Rust compilé en
 WebAssembly). Version 352 : essai derrière `?rapier`. Version 353 : par défaut.
 Version 354 : **l'ancienne conduite du Castor est supprimée** (au volant et à vide) ;
 Rapier est chargé **derrière l'écran de chargement** (`homeReady` attend son
 téléchargement) et un échec de chargement est une erreur de démarrage, comme une
 ressource manquante.
 
-Version 358 : le **char moyen** passe aussi sur Rapier (voir plus bas).
+Version 358 : le **char moyen** passe aussi sur Rapier. Version 359 : le **camion DCA**
+et sa remorque aussi ; l'ancienne conduite au sol (`tank.js`) est supprimée.
 
-Migration en cours : les véhicules qui ne sont pas encore passés sur Rapier (camion
-DCA, avions, hélicoptères, marche) gardent leur physique d'origine
-(`tank.js` pour le camion DCA, `flight.js`, `helicopter.js`, `sortie.js`). Elle est obsolète : chaque
-véhicule migré en retire le code correspondant, et à terme elle disparaît entièrement.
+Migration en cours : tous les véhicules **au sol** sont sur Rapier. Les avions, les
+hélicoptères et la marche gardent leur physique d'origine (`flight.js`, `helicopter.js`,
+`sortie.js`). Elle est obsolète : chaque migration en retire le code correspondant, et à
+terme elle disparaît entièrement.
 
 ## Décision et périmètre
 
@@ -54,8 +55,10 @@ pièce), pas comme vitesse.
 | --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `vendor/rapier.compat.mjs`        | Rapier 0.21.0 (WASM en base64, 4,3 Mo, environ 1,7 Mo compressé), servi sur `/rapier.js`. Provenance et empreinte dans [vendor/README.md](../vendor/README.md). Chargé pendant l'écran de chargement.                                      |
 | `src/physics-world.ts`            | Unités, `loadRapier`, `PhysicsWorld` : le sol et les boîtes `colliders` du jeu en solides fixes. Boîtes orientées (cadre de lacet) converties en cuboïdes tournés ; la liste est comparée à chaque pas (ajouts et retraits de placements). |
-| `src/castor-physics.ts`           | `CastorRig` : châssis rigide, six roues à rayon et ressort (positions, rayon tirés du modèle Meshy), conduite, direction, freinage. Même contrat que `stepTank`, appelé par `physics()` dans `client.js`.                                  |
+| `src/castor-physics.ts`           | `CastorRig` : châssis rigide, six roues à rayon et ressort (positions, rayon tirés du modèle Meshy), conduite, direction, freinage. Appelé par `physics()` dans `client.js`.                                                               |
 | `src/tank-physics.ts`             | `TankRig` : coque rigide sur douze ressorts (un rayon par galet), chenilles commandées en vitesse de bande. Voir « Le char sur Rapier ».                                                                                                   |
+| `src/truck-physics.ts`            | `TruckRig` : tracteur 6x4 et remorque sur une articulation Rapier, roues à rayon et ressort pour chacun. Voir « Le camion DCA sur Rapier ».                                                                                                |
+| `scripts/test-truck-physics.mjs`  | Test Node (dans `npm test`) : échelle, essieux mesurés sur le maillage, attelage, virages, marche arrière, mur, chute.                                                                                                                     |
 | `scripts/test-tank-physics.mjs`   | Test Node (dans `npm test`) : échelle, train de roulement mesuré sur le maillage, ressorts, conduite, pivot, mur, marches, chute.                                                                                                          |
 | `scripts/test-castor-physics.mjs` | Test Node (dans `npm test`) : unités, géométrie, conduite, mur, solides orientés contre `rayCollider`, téléportation, chute.                                                                                                               |
 
@@ -111,9 +114,38 @@ char vide simulé par l'hôte. Le modèle d'un char à chenilles :
 - **Géométrie du train de roulement** (galets, rayon, ligne de chenille) mesurée sur le
   maillage de la caisse ; `test-tank-physics.mjs` la contrôle sur les sommets du modèle.
 
-Pistes (pas encore faites) : découpage du modèle en caisse, chenilles, galets et roue
-motrice ; chenilles dessinées par un shader le long du profil des ressorts ; camion DCA avec
-attelage articulé (articulation Rapier, remorque sur son essieu à ressorts).
+Pistes (pas encore faites) : découpage du modèle du char en caisse, chenilles, galets et roue
+motrice ; chenilles dessinées par un shader le long du profil des ressorts ; roues du Castor
+et du camion animées par la physique plutôt que déduites du taux de lacet.
+
+## Le camion DCA sur Rapier (version 359)
+
+Deux corps rigides, le tracteur (6x4) et la remorque du canon, liés par une articulation
+**à axe vertical**, avec butées à ±0,62 rad (un peu en deçà des ±0,65 acceptés par le
+serveur). Chacun a ses roues à rayon et ses ressorts : trois essieux au tracteur (avant
+directeur, tandem arrière moteur), deux à la remorque, positions lues sur les sommets du
+modèle. Le contrat réseau ne change pas : l'état envoie la pose du tracteur et
+`trailerAngle`, le lacet de la remorque dans le repère du tracteur ; les autres joueurs
+l'affichent comme avant.
+
+- **Échelle d'un vrai camion** (Froude, 0,277) : tracteur 130 kg (6 t), remorque 45 kg
+  (2,1 t), vitesse maximale 5,8 m/s (40 km/h attelé) : `maxSpeed` 10 → 33, **le camion est
+  environ 3,4 fois plus rapide qu'avant**.
+- **Conduite** : comme le Castor (Ackermann, braquage limité par l'adhérence, départ
+  progressif, freins, marche arrière lente), pivot de direction sur le milieu du tandem. La
+  remorque a un frein d'inertie qui suit celui du camion, ce qui l'empêche de plier au freinage.
+- **Remorque** : elle se balance à l'opposé du virage (environ −0,1 rad en virage établi), se
+  recentre en ligne droite sans osciller, et **se met en portefeuille** (jackknife) en marche
+  arrière avec braquage : elle va jusqu'à la butée, le camion n'avance plus guère, et la
+  marche avant la redresse.
+- **Réglage** : ressorts plus souples (60) que ceux du Castor (100) : un tracteur léger sur
+  des ressorts plus raides rebondit et roule (mesuré) ; l'accélération latérale demandée est
+  bornée à 2,8 m/s² (0,29 g, un camion chargé).
+- **Limite** : la remorque est couplée en tangage et en roulis au tracteur (articulation à
+  axe vertical) ; l'affichage de la remorque ne suit que le lacet.
+- **Défaut du modèle** : les points bas de la remorque sont 0,18 unité plus haut que ceux du
+  tracteur ; la physique pose ses roues au sol, le maillage de la remorque flotte donc de
+  0,18 unité (comme avant ; à corriger dans l'import).
 
 ## Réglages et étalonnage
 

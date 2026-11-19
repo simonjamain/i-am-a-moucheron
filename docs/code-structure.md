@@ -96,7 +96,7 @@ le [lot courant](multiplayer-return.md), complété par les vrais pairs UDP.
 
 `helicopter.js` porte le pilotage assisté, butées, origines et guidage borné.
 `mobile-flak.js` porte unités de proximité et enveloppes de coque orientées ;
-`swept-geometry.ts` centralise les intersections balayées exactes ; `tank.js` réutilise ces balayages pour le long camion articulé.
+`swept-geometry.ts` centralise les intersections balayées exactes (`mobile-flak.js` s'en sert pour le long camion articulé, tracteur et remorque).
 `server/game.js` possède lancement/débit, armement différé et détonation fiable ;
 `ordnance.js` conserve les paramètres de chaque départ. `graphics.js` produit
 les deux modèles, `contracts.js` leurs rôles, `hud.js` leurs panneaux.
@@ -164,12 +164,12 @@ commun des maillages UV et des atlas. Le Spitfire, le T3, le D2 (dans
 `graphics.js`), le H2 (`h2-model.js`) et les deux biplans (`biplane-model.js`) sont des
 hiérarchies articulées construites par `meshy-rig.js` depuis les modules générés
 par `scripts/import-meshy-vehicle.py` ; `vehicle-anchors.js` donne à la physique
-(`tank-view.js`, `mobile-flak.js`, `tank.js`, `helicopter.js`) les pivots, bouches
+(`tank-view.js`, `mobile-flak.js`, `truck-physics.ts`, `helicopter.js`) les pivots, bouches
 et enveloppes de ces modèles. Le Stuka (`graphics.js`) suit le même chemin depuis
 la version 266, les biplans depuis la version 275.
 
 G1 Castor (issue #76) : `fleet.ts` définit le véhicule monoplace,
-`tank.js` sa physique de sol (le Castor et le char roulent sur Rapier, `tank.js` ne garde que le camion DCA : `physics-world.ts`, `castor-physics.ts`, `tank-physics.ts`, voir [la physique Rapier](physics-engine.md)), `paid-service.js` son rayon de soutien et ses coûts,
+sa physique de sol (tous les véhicules au sol roulent sur Rapier : `physics-world.ts`, `castor-physics.ts`, `tank-physics.ts`, `truck-physics.ts`, voir [la physique Rapier](physics-engine.md)), `paid-service.js` son rayon de soutien et ses coûts,
 `castor-model.js` assemble le modèle Meshy texturé (coque, six roues, tourelle et
 canon pivotants) généré hors ligne par `scripts/import-meshy-castor.py`,
 `castor-top-view.js` la vue de dessus (V) et son viseur au sol, `client.js` la
