@@ -153,7 +153,7 @@ console.log(
 const { readFileSync } = await import('node:fs');
 const { runInNewContext } = await import('node:vm');
 const T = await import('../vendor/three.module.min.js');
-const { nearestInsectHit } = await import('../src/insect-hits.js');
+const { nearestInsectHit, nearestSolidHit } = await import('../src/insect-hits.js');
 const src = readFileSync('src/client.js', 'utf8');
 const step = src.slice(
   src.indexOf('function stepProjectileSlice('),
@@ -187,6 +187,10 @@ for (const wall of [false, true]) {
   runInNewContext(step + ';stepProjectileSlice(.5);stepProjectileSlice(3);', {
     T,
     rayCollider,
+    nearestSolidHit,
+    projectileRay: new T.Raycaster(),
+    scratchPoint: new T.Vector3(),
+    solidTargets: () => [],
     scene,
     trails,
     colliders,

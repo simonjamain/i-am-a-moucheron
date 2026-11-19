@@ -9,6 +9,43 @@ export function nearestMeshHit(ray, model) {
   return ray.intersectObjects(meshes, false)[0] ?? null;
 }
 
+// A solid target (vehicle, pilot) prepared once per frame for every projectile
+// slice of that frame: its world matrices are refreshed once, its solid meshes
+// listed once, and a padded world box (the animated pose can leave the bind-pose
+// box) rejects the rays that cannot touch it before any triangle is tested.
+export function solidTarget(T, model, extra, padding = 0.3) {
+  model.updateWorldMatrix(true, true);
+  const meshes = [],
+    box = new T.Box3();
+  model.traverseVisible((part) => {
+    if (!part.isMesh || part.userData.projectileSolid === false) return;
+    meshes.push(part);
+    box.union(new T.Box3().setFromObject(part));
+  });
+  if (!meshes.length) return null;
+  const size = box.getSize(new T.Vector3());
+  box.expandByVector(size.multiplyScalar(padding));
+  return { model, meshes, box, extra };
+}
+const boxPoint = [];
+// Nearest triangle hit over prepared targets within the ray's `far`. `skip`
+// excludes the target whose extra.vehicle equals it (the shooter's own vehicle).
+// Same order and tie rule as testing each model in turn with nearestMeshHit.
+export function nearestSolidHit(T, ray, targets, skipVehicle = undefined) {
+  const point = (boxPoint[0] ??= new T.Vector3());
+  let best = null;
+  for (const target of targets) {
+    if (skipVehicle !== undefined && target.extra.vehicle === skipVehicle) continue;
+    if (!target.box.containsPoint(ray.ray.origin)) {
+      if (!ray.ray.intersectBox(target.box, point)) continue;
+      if (point.distanceToSquared(ray.ray.origin) > ray.far * ray.far) continue;
+    }
+    const hit = ray.intersectObjects(target.meshes, false)[0];
+    if (hit && (!best || hit.distance < best.distance)) best = { ...hit, ...target.extra };
+  }
+  return best;
+}
+
 // Hit-volume user data of a species: equal radii on the origin make a sphere
 // (cheap ray test, no matrix); anything else is an ellipsoid. The sphere is
 // stored like the midge's, whose radius is normalised by 1.2 (see hitRadius).
@@ -26,7 +63,8 @@ export function hitRadius(model) {
   const u = model.userData;
   if (u.hitEllipsoid) {
     const [cx, cy, cz] = u.hitCentre || [0, 0, 0];
-    return Math.max(...u.hitEllipsoid) * (u.hitTolerance || 1) + Math.hypot(cx, cy, cz);
+    const [a, b, c] = u.hitEllipsoid; // no spread/hypot: this runs per insect per shot
+    return Math.max(a, b, c) * (u.hitTolerance || 1) + Math.sqrt(cx * cx + cy * cy + cz * cz);
   }
   if (u.sphereRadius) return (u.sphereRadius * (u.hitTolerance || 1)) / 1.2;
   return 3 * (u.hitTolerance || 1);
