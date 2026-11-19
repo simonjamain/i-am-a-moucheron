@@ -20,7 +20,7 @@ paquet partent l'un après l'autre (`memberGap`) ; la prévision annonce un grou
 paquet. Au sol, les créatures quittent l'entrée à intervalles courts, puis
 suivent individuellement la navigation et évitent doucement leurs voisins ; voir
 [navigation terrestre](gameplay.md#navigation-terrestre). Les positions réelles
-remplacent les anciennes files d'affichage. Le tirage conserve les déblocages du bestiaire et borne à 900 la population avant le multiplicateur de room. La difficulté affichée (« MENACE ») additionne les puissances du roster réellement envoyé. La progression seule ne modifie ni les PV individuels ni les dégâts.
+remplacent les anciennes files d'affichage. Le tirage n'a plus de déblocage par vague (seule la puissance restante décide) et borne à 900 la population avant le multiplicateur de room. La difficulté affichée (« MENACE ») additionne les puissances du roster réellement envoyé. La progression seule ne modifie ni les PV individuels ni les dégâts.
 
 Le lancement initial dure 60 secondes par défaut et les pauses entre vagues 180 secondes (3 minutes). Le bandeau affiche la prochaine vague et sa frise (entrées, horaires, espèces). Tout joueur peut lancer la vague annoncée avant l’échéance ; à l’échéance, elle démarre seule.
 

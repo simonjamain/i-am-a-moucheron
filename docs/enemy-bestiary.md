@@ -2,10 +2,12 @@
 
 | Ennemi            |     PV | Déblocage            | Particularité                              |
 | ----------------- | -----: | -------------------- | ------------------------------------------ |
-| Moustique         |    150 | vague 3              | zigzag rapide                              |
-| Araignée pondeuse |  1 200 | vague 11             | 100 bébés sur mort                         |
-| Rat géant         | 10 000 | vague 15             | très gros, lent, puissance 24,47           |
+| Moustique         |    150 | dès la vague 1       | zigzag rapide                              |
+| Araignée pondeuse |  1 200 | dès la vague 1       | 100 bébés sur mort                         |
+| Rat géant         | 10 000 | dès la vague 1       | très gros, lent, puissance 24,47           |
 | Bébé araignée     |     10 | naissance uniquement | dispersion, vitesse élevée, puissance 0,08 |
+
+Il n'y a plus de vague de déblocage : tous les ennemis (hors bébés araignées) peuvent être tirés dès la première vague, et seule la puissance de la vague décide s'ils tiennent dans son budget restant. La vague 1 (32) peut ainsi appeler une pondeuse (10,94), mais pas encore un rat (24,47) une fois les essaims d'ouverture servis.
 
 La mort d'une pondeuse génère sur le serveur une naissance **exactement une fois**, aussi bien par arme légère que lourde. Cent nouveaux identifiants sont ajoutés au roster, avec départ légèrement échelonné, point d'origine correspondant au décès, navigation au sol et variation procédurale sans dépendance aux voisins. Les bébés passent eux aussi au purgatoire et rapportent leur puissance, et **chaque bébé qui atteint la poubelle ajoute sa puissance (0,08) à l'infestation**. Leur apparition est bornée techniquement par un roster de 20 000 entités : en cas de stress-test anormal au plafond, la naissance peut être partielle.
 

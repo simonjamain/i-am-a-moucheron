@@ -1,6 +1,12 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 362,
+    changes: [
+      'Tous les ennemis peuvent apparaître dès la première vague : seule la puissance de la vague décide de qui peut venir.',
+    ],
+  },
+  {
     version: 361,
     changes: [
       'La remorque du camion anti-aérien se balance dans les virages et se met en portefeuille en marche arrière.',

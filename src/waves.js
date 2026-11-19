@@ -86,8 +86,9 @@ export const ENEMY_TYPES = Object.freeze(
   ),
 );
 export const enemyPower = (type) => ENEMY_POWER[type];
-// First wave where the director may draw each species (offspring excluded).
-// Shared by wavePlan() and server/wave-preparation.js; key order is the draw order.
+// First wave where the legacy wavePlan() may draw each species (offspring excluded).
+// The live director (server/wave-preparation.js) ignores it: every species is
+// available from wave 1 and only the wave's power decides; key order is the draw order.
 export const ENEMY_UNLOCK_WAVE = Object.freeze({
   ant: 1,
   midge: 1,
