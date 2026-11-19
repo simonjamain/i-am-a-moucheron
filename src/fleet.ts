@@ -55,6 +55,16 @@ export const LIGHT_FIGHTER = {
   turn: 1,
   gear: 1.05 * ACTOR_UNIT,
 };
+/**
+ * Size of a vehicle's model relative to the others': a model unit is ACTOR_UNIT × this scale
+ * in the world. The medium tank is 20 % bigger than it was drawn (its physics, anchors and hull
+ * follow: see tank-physics.ts).
+ */
+export const VEHICLE_SCALE: Readonly<Record<string, number>> = Object.freeze({ tank: 1.2 });
+export const vehicleScale = (type: string): number => VEHICLE_SCALE[type] ?? 1;
+/** World metres per model unit of a vehicle. */
+export const vehicleUnit = (type: string): number => ACTOR_UNIT * vehicleScale(type);
+
 export const VEHICLES = {
   // Biplane fighter: 25 % slower than the light fighter it replaced, but it keeps
   // control and lift at lower speed (later stall). One central machine gun that
@@ -112,17 +122,17 @@ export const VEHICLES = {
   tank: {
     name: 'Char moyen',
     seats: ['pilot', 'cannon', 'top'],
-    span: 6,
-    length: 8,
-    // A real medium tank at the model's size (Froude similarity, see tank-physics.ts):
-    // 40 km/h × √0.208 = 5 m/s of physics (29 reference m/s), a 0.6 rad/s pivot
-    // becomes 1.3 rad/s. The former arcade values were 12 and 0.7.
-    maxSpeed: 29,
+    span: 6 * VEHICLE_SCALE.tank,
+    length: 8 * VEHICLE_SCALE.tank,
+    // A real medium tank at the model's size (Froude similarity, see tank-physics.ts): 40 km/h
+    // × √0.25 = 5.5 m/s of physics (32 reference m/s), a 0.6 rad/s pivot becomes 1.2 rad/s. The
+    // former arcade values were 12 and 0.7; the model was 20 % smaller (0.208, 29 and 1.3).
+    maxSpeed: 32,
     thrust: 4,
     drag: 0.1,
     liftBase: 0,
-    turn: 1.3,
-    gear: 0.8 * ACTOR_UNIT,
+    turn: 1.2,
+    gear: 0.8 * ACTOR_UNIT * VEHICLE_SCALE.tank,
     ground: true,
   },
   spitfire: {

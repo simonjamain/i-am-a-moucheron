@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import * as T from '../vendor/three.module.min.js';
 import { createGraphics } from '../src/graphics.js';
 import { ACTOR_UNIT } from '../src/scale.ts';
-import { VEHICLES } from '../src/fleet.ts';
+import { VEHICLES, vehicleUnit } from '../src/fleet.ts';
 import { paintVehicle } from '../src/vehicle-livery.js';
 const graphics = createGraphics(T, new T.Scene());
 for (const [type, factory] of [
@@ -77,7 +77,7 @@ for (const [type, factory] of [
     assert.equal(b.userData.trailer.rotation.y, 0);
     assert.ok(parts.filter((o) => o.parent === trailer).length >= 1);
   }
-  b.scale.setScalar(ACTOR_UNIT);
+  b.scale.setScalar(vehicleUnit(type));
   b.position.y = VEHICLES[type].gear;
   assert.ok(Math.abs(new T.Box3().setFromObject(b).min.y) < 0.02 * ACTOR_UNIT, 'wheel contact');
   console.log(`${type}: ${count} hull triangles; sharing, livery, contact and articulation OK`);

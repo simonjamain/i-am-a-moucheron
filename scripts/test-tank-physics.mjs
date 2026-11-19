@@ -4,12 +4,13 @@
 import assert from 'node:assert/strict';
 import * as T from '../vendor/three.module.min.js';
 import { ACTOR_UNIT, MAP } from '../src/scale.ts';
-import { VEHICLES } from '../src/fleet.ts';
+import { VEHICLES, vehicleScale, vehicleUnit } from '../src/fleet.ts';
 import { MODEL_DATA } from '../src/meshy-tank-data.js';
 import { GRAVITY, MODEL_UNIT, loadRapier, toPhysics, toWorld } from '../src/physics-world.ts';
 import {
   GROUND_CLEARANCE,
   TANK_PHYSICS,
+  TANK_SCALE,
   TRACK_X,
   WHEEL_COUNT,
   WHEEL_RADIUS,
@@ -21,37 +22,95 @@ const RAPIER = await loadRapier(() => import('../vendor/rapier.compat.mjs'));
 const profile = VEHICLES.tank;
 const DT = 1 / 120;
 
-// Scale: the model is a real medium tank at the model's size (Froude similarity).
-const hullLength = 3.82 * MODEL_UNIT; // hull of the mesh: z from -1.67 to 2.15
+// The model is 20 % bigger than it was drawn, and a real medium tank at that size (Froude
+// similarity: masses with size³, speeds with √size, rates with 1/√size).
+assert.equal(vehicleScale('tank'), 1.2);
+assert.ok(Math.abs(vehicleUnit('tank') - 1.2 * ACTOR_UNIT) < 1e-15);
+assert.ok(Math.abs(profile.gear - 0.8 * 1.2 * ACTOR_UNIT) < 1e-15, 'rests on its tracks');
+const hullLength = 3.82 * MODEL_UNIT * TANK_SCALE; // hull of the mesh: z from -1.67 to 2.15
 const scale = hullLength / 5.9; // a 5.9 m Sherman hull
 assert.ok(Math.abs(TANK_PHYSICS.mass - 30000 * scale ** 3) < 0.15 * TANK_PHYSICS.mass, 'mass');
 const topSpeed = toPhysics(MAP.metres(profile.maxSpeed));
 assert.ok(Math.abs(topSpeed - (40 / 3.6) * Math.sqrt(scale)) < 0.4, 'top speed ' + topSpeed);
-assert.ok(profile.turn > 1 && profile.turn < 1.6, 'pivot command 1/√scale times 0.6 rad/s');
+assert.ok(Math.abs(profile.turn - 0.6 / Math.sqrt(scale)) < 0.2, 'pivot ' + profile.turn);
 
-// Running gear against the mesh: low vertices sit on the contact patch, the track
-// body spans the measured |x|.
+// Running gear: parts of the model (scripts/split-vehicle-parts.mjs), not triangles of the hull.
 {
-  const body = MODEL_DATA.parts.find((p) => p.part === 'body');
-  const bytes = Buffer.from(body.positions, 'base64');
-  const raw = new Int16Array(bytes.buffer, bytes.byteOffset, bytes.length / 2);
-  const points = [];
-  for (let i = 0; i < raw.length; i += 3)
-    points.push([raw[i] * 0.0005, raw[i + 1] * 0.0005, raw[i + 2] * 0.0005]);
-  const low = points.filter((p) => p[1] < -0.7);
-  const zs = low.map((p) => p[2] * MODEL_UNIT);
-  assert.ok(Math.abs(Math.min(...zs) - WHEEL_Z[0]) < 0.06, 'front of the contact patch');
-  assert.ok(Math.abs(Math.max(...zs) - WHEEL_Z.at(-1)) < 0.06, 'rear of the contact patch');
-  const outer = points.filter((p) => p[0] > 0.6);
-  const xs = outer.map((p) => p[0] * MODEL_UNIT);
-  assert.ok(Math.min(...xs) < TRACK_X && TRACK_X < Math.max(...xs), 'track centre line');
-  assert.ok(Math.min(...points.map((p) => p[1])) * MODEL_UNIT > -GROUND_CLEARANCE - 1e-3);
+  const part = (name) => {
+    const found = MODEL_DATA.parts.find((p) => p.part === name);
+    assert.ok(found, name);
+    return found;
+  };
+  const bounds = (p) => {
+    const bytes = Buffer.from(p.positions, 'base64');
+    const raw = new Int16Array(bytes.buffer, bytes.byteOffset, bytes.length / 2);
+    const lo = [Infinity, Infinity, Infinity],
+      hi = [-Infinity, -Infinity, -Infinity];
+    for (let i = 0; i < raw.length; i += 3)
+      for (let a = 0; a < 3; a++) {
+        lo[a] = Math.min(lo[a], p.pivot[a] + raw[i + a] * 0.0005);
+        hi[a] = Math.max(hi[a], p.pivot[a] + raw[i + a] * 0.0005);
+      }
+    return { lo, hi };
+  };
+  const names = [
+    'trackL',
+    'trackR',
+    ...[0, 1, 2, 3, 4, 5, 6, 7].map((i) => 'roadWheel' + i),
+    'idler0',
+    'idler1',
+    'sprocket0',
+    'sprocket1',
+  ];
+  for (const name of names) part(name);
+  // Mirrored in pairs: left (-x) then right (+x), the same z.
+  for (const [left, right] of [
+    ['idler0', 'idler1'],
+    ['roadWheel0', 'roadWheel1'],
+    ['roadWheel2', 'roadWheel3'],
+    ['roadWheel4', 'roadWheel5'],
+    ['roadWheel6', 'roadWheel7'],
+    ['sprocket0', 'sprocket1'],
+  ]) {
+    assert.ok(part(left).pivot[0] < 0 && part(right).pivot[0] > 0, left + ' is on the left');
+    assert.ok(Math.abs(part(left).pivot[2] - part(right).pivot[2]) < 0.03, 'same axle');
+  }
+  // The belts carry the lowest point of the tank (the ground), and the wheels are inside them.
+  const left = bounds(part('trackL')),
+    right = bounds(part('trackR'));
+  assert.ok(Math.abs(left.lo[1] + 0.8) < 0.01 && Math.abs(right.lo[1] + 0.8) < 0.01, 'ground');
+  for (const name of names.slice(2)) {
+    const wheel = part(name),
+      belt = wheel.pivot[0] < 0 ? left : right;
+    assert.ok(
+      wheel.pivot[0] > belt.lo[0] && wheel.pivot[0] < belt.hi[0],
+      name + ' within its belt',
+    );
+    assert.ok(wheel.pivot[2] > belt.lo[2] && wheel.pivot[2] < belt.hi[2]);
+    assert.ok(wheel.pivot[1] - bounds(wheel).lo[1] < 0.3, 'wheels not larger than the belts');
+  }
+  // The physics' axles are the model's, front to back.
+  assert.equal(WHEEL_Z.length, 6);
+  assert.ok(
+    WHEEL_Z.every((z, i) => i === 0 || z > WHEEL_Z[i - 1]),
+    'front to back',
+  );
+  assert.ok(Math.abs(WHEEL_Z[0] - part('idler0').pivot[2] * MODEL_UNIT * TANK_SCALE) < 0.03);
+  assert.ok(Math.abs(WHEEL_Z.at(-1) - part('sprocket0').pivot[2] * MODEL_UNIT * TANK_SCALE) < 0.03);
+  assert.ok(Math.abs(TRACK_X - 0.8 * MODEL_UNIT * TANK_SCALE) < 0.02);
   assert.equal(WHEEL_COUNT, 12);
-  assert.ok(WHEEL_RADIUS > 0.08 && WHEEL_RADIUS < 0.12);
+  assert.ok(Math.abs(WHEEL_RADIUS - 0.28 * MODEL_UNIT * TANK_SCALE) < 1e-9);
+  assert.ok(GROUND_CLEARANCE > 0);
+  // Nothing was lost in the split: every triangle of the source is still there.
+  const triangles = MODEL_DATA.parts.reduce(
+    (n, p) => n + Buffer.from(p.indices, 'base64').length / 6,
+    0,
+  );
+  assert.equal(triangles, MODEL_DATA.triangles);
 }
 
 const fresh = (x = 0, z = 0, y = 0) => ({
-  p: [toWorld(x), y + 0.8 * ACTOR_UNIT, toWorld(z)],
+  p: [toWorld(x), y + profile.gear, toWorld(z)],
   q: [0, 0, 0, 1],
   v: [0, 0, 0],
   hp: 100,
@@ -75,7 +134,7 @@ const box = (x0, y0, z0, x1, y1, z1) =>
   const rig = new TankRig(RAPIER),
     s = fresh();
   run(rig, s, {}, 3);
-  assert.ok(Math.abs(s.p[1] - 0.8 * ACTOR_UNIT) < 0.02 * ACTOR_UNIT, 'ride height');
+  assert.ok(Math.abs(s.p[1] - profile.gear) < 0.02 * ACTOR_UNIT, 'ride height');
   assert.equal(s.landed, true);
   assert.ok(speed(s) < 0.03, 'parked');
   for (const c of rig.wheelCompression)
@@ -95,17 +154,17 @@ const box = (x0, y0, z0, x1, y1, z1) =>
     s = fresh(),
     marks = {};
   let squat = 0;
-  run(rig, s, { forward: 1 }, 13, [], (i) => {
+  run(rig, s, { forward: 1 }, 16, [], (i) => {
     if ((i + 1) % 120 === 0) marks[(i + 1) / 120] = -toPhysics(s.v[2]);
-    squat = Math.max(squat, euler(s).x);
+    squat = Math.max(squat, Math.abs(euler(s).x));
     assert.ok(speed(s) < topSpeed * 1.03, 'never above the top speed');
   });
   assert.ok(marks[1] > 0.8 && marks[1] < 1.6, 'about 1.2 m/s² at the start: ' + marks[1]);
   assert.ok(marks[1] < 0.6 * topSpeed, 'a progressive start');
   assert.ok(marks[5] < 0.85 * topSpeed, 'a calm acceleration: ' + marks[5]);
-  assert.ok(marks[12] > 0.95 * topSpeed, 'reaches the top speed: ' + marks[12]);
+  assert.ok(marks[15] > 0.95 * topSpeed, 'reaches the top speed: ' + marks[15]);
   assert.ok(Math.abs(s.p[0]) < toWorld(0.1) && s.p[2] < 0, 'straight along -z');
-  assert.ok(squat > 0.01, 'the nose rises under acceleration: ' + squat);
+  assert.ok(squat > 0.004, 'the hull pitches under acceleration: ' + squat);
   let dive = 0;
   run(rig, s, {}, 2, [], () => (dive = Math.min(dive, euler(s).x)));
   assert.ok(dive < -0.03, 'the nose dives under braking: ' + dive);
@@ -209,11 +268,11 @@ const box = (x0, y0, z0, x1, y1, z1) =>
   const rig = new TankRig(RAPIER),
     s = fresh();
   run(rig, s, { forward: 1 }, 2);
-  s.p = [toWorld(30), 0.8 * ACTOR_UNIT, toWorld(-30)];
+  s.p = [toWorld(30), profile.gear, toWorld(-30)];
   s.v = [0, 0, 0];
   run(rig, s, {}, 1);
   assert.ok(Math.abs(toPhysics(s.p[0]) - 30) < 0.1 && Math.abs(toPhysics(s.p[2]) + 30) < 0.1);
-  s.p = [0, 0.8 * ACTOR_UNIT + 5, 0];
+  s.p = [0, profile.gear + 5, 0];
   rig.step(s, {}, [], DT, profile);
   assert.ok(
     rig.wheelCompression.every((c) => c === 0),

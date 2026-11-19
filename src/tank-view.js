@@ -1,4 +1,5 @@
 import { ACTOR_UNIT } from './scale.ts';
+import { vehicleUnit } from './fleet.ts';
 import { rotateLocal } from './helicopter.js';
 import { VEHICLE_ANCHORS } from './vehicle-anchors.js';
 export function tankSight(T, mount, direction, up, observation = null) {
@@ -25,9 +26,10 @@ export function tankSight(T, mount, direction, up, observation = null) {
 // the same points the T3 model draws (scripts/import-meshy-vehicle.py).
 export function tankBarrelOrigin(vehicle, direction) {
   const { gunPivot, gunLength } = VEHICLE_ANCHORS.tank;
+  const unit = vehicleUnit('tank');
   const offset = rotateLocal(
     vehicle.state.q,
-    gunPivot.map((v) => v * ACTOR_UNIT),
+    gunPivot.map((v) => v * unit),
   );
-  return vehicle.state.p.map((v, i) => v + offset[i] + direction[i] * gunLength * ACTOR_UNIT);
+  return vehicle.state.p.map((v, i) => v + offset[i] + direction[i] * gunLength * unit);
 }

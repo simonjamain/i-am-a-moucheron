@@ -1,6 +1,10 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 365,
+    changes: ['Le char est un cinquième plus grand, et ses roues tournent avec les chenilles.'],
+  },
+  {
     version: 364,
     changes: [
       'Camion anti-aérien : seules les roues avant braquent, selon le clavier, même à l’arrêt ; roues de remorque bien placées.',

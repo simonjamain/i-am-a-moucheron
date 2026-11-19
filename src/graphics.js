@@ -130,8 +130,22 @@ export function createGraphics(T, scene) {
     const { root: g, nodes, anchors } = buildMeshyRig(T, TANK, 'tank');
     const main = gunMount(nodes.cannon, nodes.cannonGun, anchors.muzzle[0], anchors.coax[0]);
     const top = gunMount(nodes.top, nodes.topGun, anchors.topMuzzle[0]);
+    // Running gear (parts of the rig): the road wheels, idlers and sprockets spin with their
+    // track; the two belts are meshes of their own (the deformable tracks draw them).
+    const gear = [
+      ...[0, 1, 2, 3, 4, 5, 6, 7].map((i) => nodes['roadWheel' + i]),
+      ...[0, 1].map((i) => nodes['idler' + i]),
+      ...[0, 1].map((i) => nodes['sprocket' + i]),
+    ];
+    for (const wheel of gear) {
+      const geometry = wheel.children.find((c) => c.isMesh).geometry;
+      geometry.computeBoundingBox();
+      wheel.userData.radius = (geometry.boundingBox.max.y - geometry.boundingBox.min.y) / 2;
+    }
     g.userData = {
       preserveTexture: true,
+      runningGear: gear,
+      tracks: [nodes.trackL, nodes.trackR],
       turrets: [main, top],
       pilotMuzzles: anchors.hullGun,
       prop: new T.Object3D(),

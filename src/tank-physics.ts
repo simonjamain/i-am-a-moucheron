@@ -1,6 +1,7 @@
 import type { RigidBody } from '@dimforge/rapier3d-compat';
 import { MAP } from './scale.ts';
-import type { VehicleProfile } from './fleet.ts';
+import { vehicleScale, type VehicleProfile } from './fleet.ts';
+import { MODEL_DATA } from './meshy-tank-data.js';
 import {
   FALL_KILL_SPEED,
   GRAVITY,
@@ -22,20 +23,39 @@ import {
 //
 // Scale: the tank is the model of a real medium tank, not a toy. At the same gravity,
 // geometric similarity (Froude) scales masses with size³, speeds with √size and rates
-// with 1/√size. The model's hull is 1.23 m long (a 5.9 m Sherman hull at 0.208): a 30 t
-// tank becomes 270 kg, a 40 km/h top speed 5 m/s, a pivot of 0.6 rad/s 1.3 rad/s.
-const MU = MODEL_UNIT;
+// with 1/√size. The model's hull is 1.48 m long (a 5.9 m Sherman hull at 0.25 once the model is
+// drawn 20 % bigger, `VEHICLE_SCALE`): a 30 t tank becomes 470 kg, a 40 km/h top speed 5.5
+// m/s, a pivot of 0.6 rad/s 1.2 rad/s.
+export const TANK_SCALE = vehicleScale('tank');
+// Physics metres per model unit of the tank.
+const MU = MODEL_UNIT * TANK_SCALE;
 
-// Running gear, measured on the hull mesh (model units): the tracks are the parts of
-// `body` with |x| from 0.62 to 1.03, whose flat contact patch spans z = -1.02…1.55
-// from y = -0.80 (ground). test-tank-physics.mjs checks these against the mesh.
-export const TRACK_X = 0.79 * MU; // centre line of each track
-export const WHEEL_RADIUS = 0.3 * MU;
-export const WHEEL_Z = [-1, -0.49, 0.02, 0.53, 1.04, 1.55].map((z) => z * MU);
+// Running gear, read from the model (the tracks, wheels, idlers and sprockets are parts of its
+// rig, see scripts/split-vehicle-parts.mjs): `idler0/1` at the front, four `roadWheel` pairs,
+// `sprocket0/1` at the back, left (-x) then right (+x). One ray and spring per axle and side.
+const pivots = (names: string[]): Array<[number, number, number]> =>
+  names.map((name) => {
+    const part = MODEL_DATA.parts.find((p: { part: string }) => p.part === name);
+    if (!part) throw Error('Missing tank part ' + name);
+    return part.pivot as [number, number, number];
+  });
+const AXLES: string[][] = [
+  ['idler0', 'idler1'],
+  ['roadWheel0', 'roadWheel1'],
+  ['roadWheel2', 'roadWheel3'],
+  ['roadWheel4', 'roadWheel5'],
+  ['roadWheel6', 'roadWheel7'],
+  ['sprocket0', 'sprocket1'],
+];
+const wheelPivots = AXLES.map(pivots);
+export const TRACK_X =
+  (wheelPivots.flat().reduce((sum, p) => sum + Math.abs(p[0]), 0) / (AXLES.length * 2)) * MU; // centre line of each track
+export const WHEEL_RADIUS = 0.28 * MU; // the road wheels'
+export const WHEEL_Z = wheelPivots.map(([a, b]) => ((a[2] + b[2]) / 2) * MU);
 export const GROUND_CLEARANCE = 0.8 * MU; // hull origin above the ground at rest
 
 export const TANK_PHYSICS = Object.freeze({
-  mass: 270, // kg
+  mass: 270 * TANK_SCALE ** 3, // kg: a 30 t tank at the model's scale
   reverseSpeed: 0.5, // share of the top speed
   thrust: 1.2, // m/s² per tank, both tracks, at standstill: calm, the former 2.4 was too brisk
   brakeGrip: 0.9, // longitudinal friction: holds the tank up to a 42° slope
@@ -47,9 +67,9 @@ export const TANK_PHYSICS = Object.freeze({
   yawSoftness: 0.3, // rad/s of yaw error over which the steering goes to full thrust
   beltSoftness: 0.15, // m/s over which the holding force builds up
   slipSpeed: 0.08, // m/s over which sideways friction builds up to its limit
-  sag: 0.04, // m: spring compression with the hull at rest
-  droop: 0.1, // m: extension of the spring at full droop, below the rest height
-  bump: 0.1, // m: extra compression (up to the hull touching the ground)
+  sag: 0.04 * TANK_SCALE, // m: spring compression with the hull at rest
+  droop: 0.1 * TANK_SCALE, // m: extension of the spring at full droop, below the rest height
+  bump: 0.1 * TANK_SCALE, // m: extra compression (up to the hull touching the ground)
   damping: 0.45, // damping ratio of the hull on its springs
   linearDamping: 0.02,
   angularDamping: 0.4,
