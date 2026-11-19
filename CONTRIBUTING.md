@@ -38,6 +38,9 @@ fusionne sa PR dès qu'elle est prête, sans demander de validation manuelle à
 l'utilisateur. Avant cela, il doit constater la réussite des contrôles requis
 sur le dernier commit (notamment `Docker build`), relire le diff et les critères
 d'acceptation, et vérifier l'absence de conflit. Utiliser **squash** si autorisé.
+Activer l'**auto-merge** en squash sur la PR terminée : GitHub la fusionne dès que
+les contrôles requis de `main` passent (fusion directe seulement si la PR est déjà
+fusionnable). L'auteur reste responsable jusqu'à la fusion effective.
 Les essais humains impossibles à réaliser sont décrits honnêtement dans la PR ;
 ils ne doivent pas être présentés comme exécutés. Si un contrôle requis échoue,
 reste absent ou si GitHub bloque la fusion, laisser la PR ouverte et signaler
