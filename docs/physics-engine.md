@@ -1,9 +1,11 @@
-# Physique Rapier — essai sur le Castor (version 352)
+# Physique Rapier — le Castor (versions 352 et 353)
 
 Le jeu écrit sa physique à la main (vol, hélicoptère, `stepTank`, `stepWalker`,
-balistique). Cet essai teste un vrai moteur, **Rapier** (Rust compilé en WebAssembly),
-sur un seul véhicule : le Castor. Il est derrière le paramètre d'URL `?rapier` ; sans
-lui, le jeu est inchangé et Rapier n'est même pas téléchargé.
+balistique). Le Castor, lui, roule sur un vrai moteur, **Rapier** (Rust compilé en
+WebAssembly). Version 352 : essai derrière `?rapier`. Version 353 : concluant en jeu,
+donc **par défaut**. `?rapier=0` revient à la conduite simple de `tank.js` (secours et
+comparaison) ; le moteur est téléchargé en arrière-plan une fois l'accueil prêt, et
+tant qu'il n'est pas chargé, ou s'il échoue, le Castor utilise `tank.js`.
 
 ## Décision et périmètre
 
@@ -22,7 +24,7 @@ lui, le jeu est inchangé et Rapier n'est même pas téléchargé.
 La pièce est modélisée en mètres SI ; les pilotes y mesurent environ 3 cm. Pour que la
 physique garde le « poids » d'un humain, elle travaille en **mètres humains** : un pilote
 (5,6 unités de modèle) mesure 1,8 m, la gravité vaut 9,81 m/s². Tout passe par
-`toPhysics` / `toWorld` (`src/physics-world.js`) :
+`toPhysics` / `toWorld` (`src/physics-world.ts`) :
 
 ```
 MODEL_UNIT      = 1,8 / 5,6            mètres physiques par unité de modèle
@@ -42,9 +44,9 @@ pièce), pas comme vitesse.
 
 | Module                            | Rôle                                                                                                                                                                                                                                       |
 | --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `vendor/rapier.compat.mjs`        | Rapier 0.21.0 (WASM en base64, 4,3 Mo, environ 1,7 Mo compressé), servi sur `/rapier.js`. Provenance et empreinte dans [vendor/README.md](../vendor/README.md). Chargé seulement avec `?rapier`.                                           |
-| `src/physics-world.js`            | Unités, `loadRapier`, `PhysicsWorld` : le sol et les boîtes `colliders` du jeu en solides fixes. Boîtes orientées (cadre de lacet) converties en cuboïdes tournés ; la liste est comparée à chaque pas (ajouts et retraits de placements). |
-| `src/castor-physics.js`           | `CastorRig` : châssis rigide, six roues à rayon et ressort (positions, rayon tirés du modèle Meshy), conduite, direction, freinage. Même contrat que `stepTank`, appelé par `physics()` dans `client.js`.                                  |
+| `vendor/rapier.compat.mjs`        | Rapier 0.21.0 (WASM en base64, 4,3 Mo, environ 1,7 Mo compressé), servi sur `/rapier.js`. Provenance et empreinte dans [vendor/README.md](../vendor/README.md). Chargé en arrière-plan après l'accueil (sauf `?rapier=0`).                 |
+| `src/physics-world.ts`            | Unités, `loadRapier`, `PhysicsWorld` : le sol et les boîtes `colliders` du jeu en solides fixes. Boîtes orientées (cadre de lacet) converties en cuboïdes tournés ; la liste est comparée à chaque pas (ajouts et retraits de placements). |
+| `src/castor-physics.ts`           | `CastorRig` : châssis rigide, six roues à rayon et ressort (positions, rayon tirés du modèle Meshy), conduite, direction, freinage. Même contrat que `stepTank`, appelé par `physics()` dans `client.js`.                                  |
 | `scripts/test-castor-physics.mjs` | Test Node (dans `npm test`) : unités, géométrie, conduite, mur, solides orientés contre `rayCollider`, téléportation, chute.                                                                                                               |
 
 ## Conduite du Castor sur Rapier
@@ -81,9 +83,9 @@ de jeu.
 
 ## Limites et essais à faire en jeu
 
-- Aucun essai de sensation n'a été fait en jeu : à vérifier avec `?rapier` (voir ci-dessous).
-  Les valeurs (accélération, freins, braquage, adhérence) sont une première estimation
-  réaliste, à régler au ressenti.
+- Essai de conduite concluant (version 352, par le responsable du jeu). Les valeurs
+  (accélération, freins, braquage, adhérence) restent une estimation réaliste, à régler au
+  ressenti ; pas encore d'essai à plusieurs ni en réseau dégradé.
 - Le châssis peut maintenant tanguer et rouler : le quaternion envoyé aux autres joueurs
   contient donc le roulis et le tangage, qui étaient nuls. Les caméras de conduite suivent
   la souris, pas le châssis.
@@ -93,11 +95,11 @@ de jeu.
 - Les roues affichées déduisent leur braquage du taux de lacet (`castor-wheels.ts`) ; le
   braquage réel de la physique n'est pas encore transmis au modèle.
 - Le glissement le long d'un mur oblique est faible : les roues gardent le cap.
-- Le serveur Node ne compresse pas les ressources : `/rapier.js` est servi en 4,3 Mo (environ 1,7 Mo si le reverse proxy compresse). Seule la page avec `?rapier` le télécharge, une fois (URL immuable versionnée).
+- Le serveur Node ne compresse pas les ressources : `/rapier.js` est servi en 4,3 Mo (environ 1,7 Mo si le reverse proxy compresse). Chaque joueur le télécharge une fois (URL immuable versionnée), en arrière-plan.
 - Le gain CPU des tirs ne dépend pas de cet essai ; voir [performances](performance.md).
 
-Essai en jeu : ouvrir la page avec `?rapier` (la console affiche « Castor : physique
-Rapier active »), monter dans un Castor, accélérer, braquer à basse puis haute vitesse,
+Essai en jeu : monter dans un Castor (attendre quelques secondes après l'accueil le temps
+du téléchargement), accélérer, braquer à basse puis haute vitesse,
 freiner, reculer, heurter un bureau et un mur oblique, tomber d'un bureau. Comparer avec la
-page sans `?rapier`. Avec une partie à plusieurs : un autre joueur doit voir le Castor
+page `?rapier=0`. Avec une partie à plusieurs : un autre joueur doit voir le Castor
 suivre le même trajet sans saccade.

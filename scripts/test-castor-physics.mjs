@@ -15,7 +15,7 @@ import {
   loadRapier,
   toPhysics,
   toWorld,
-} from '../src/physics-world.js';
+} from '../src/physics-world.ts';
 import {
   CASTOR_PHYSICS,
   CastorRig,
@@ -24,7 +24,7 @@ import {
   WHEELBASE,
   steerLimit,
   wheelSteering,
-} from '../src/castor-physics.js';
+} from '../src/castor-physics.ts';
 
 const RAPIER = await loadRapier(() => import('../vendor/rapier.compat.mjs'));
 const profile = VEHICLES.castor;

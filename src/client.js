@@ -4277,17 +4277,8 @@ function stepProjectileSlice(dt) {
   }
 }
 
+let castorRig = null; // set once Rapier has loaded, see the end of this file
 // Fixed timestep flight: thrust, quadratic drag, gravity, angle-of-attack lift, wind-relative velocity.
-// ?rapier: load the physics engine (4 MB, on demand) and drive the Castor with it
-// once ready; until then, and without the flag, the arcade step is used.
-let castorRig = null;
-if (new URLSearchParams(location.search).has('rapier'))
-  loadRapier(() => import('/rapier.js'))
-    .then((RAPIER) => {
-      castorRig = new CastorRig(RAPIER);
-      console.info('Castor : physique Rapier active');
-    })
-    .catch((error) => console.warn('Rapier indisponible, Castor inchangé', error));
 function physics(dt) {
   if (respawnAt || onFoot || !myVehicle) return;
   if (isRotorcraft(myVehicle.type)) {
@@ -4362,7 +4353,6 @@ function physics(dt) {
       manual = flightInput(keys, pad, active);
     const state = { ...localMotion(), fuelAvailable: remainingFuel() > 0 };
     const drive = { forward: -manual.pitch, turn: manual.roll || -manual.yaw };
-    // Experimental (?rapier): the Castor drives on the Rapier physics engine.
     if (castorRig && myVehicle.type === 'castor')
       castorRig.step(state, drive, colliders, dt, VEHICLES.castor);
     else stepTank(T, state, drive, colliders, dt, VEHICLES[myVehicle.type]);
@@ -6677,3 +6667,14 @@ export const homeReady = loadCharacter(appearancePicker.value).then(
       }),
     ),
 );
+
+// The Castor drives on the Rapier physics engine (4 MB, loaded in the background
+// once the home screen is ready). Until it has loaded, if it fails, and with
+// `?rapier=0`, the arcade step (tank.js) drives it instead.
+if (new URLSearchParams(location.search).get('rapier') !== '0')
+  homeReady
+    .then(() => loadRapier(() => import('/rapier.js')))
+    .then((RAPIER) => {
+      castorRig = new CastorRig(RAPIER);
+    })
+    .catch((error) => console.warn('Rapier indisponible, Castor en conduite simple', error));

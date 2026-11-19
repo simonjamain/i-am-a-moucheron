@@ -1,6 +1,12 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 353,
+    changes: [
+      'Le Castor se conduit comme un vrai véhicule à roues : départ progressif, freins, virages qui se resserrent à basse vitesse.',
+    ],
+  },
+  {
     version: 351,
     changes: ['Tirer sur une nuée est plus fluide, et le premier tir ne fige plus l’image.'],
   },
