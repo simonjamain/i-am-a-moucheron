@@ -166,14 +166,15 @@ import { CastorRig } from '/castor-physics.js';
 import { TankRig } from '/tank-physics.js';
 import {
   PIVOT_MODEL_Z as TRUCK_STEER_PIVOT,
+  WHEELBASE_MODEL as TRUCK_WHEELBASE,
   TRAILER_WHEEL_MODEL_RADIUS as TRAILER_WHEEL_RADIUS,
   TruckRig,
   WHEEL_MODEL_RADIUS as TRUCK_WHEEL_RADIUS,
 } from '/truck-physics.js';
 import {
   animateCastorWheels,
+  animateDrivenWheels,
   animateRollingWheels,
-  animateSteeredWheels,
   trackGroundMotion,
 } from '/castor-wheels.js';
 import { ServiceZones, serviceZoneList } from '/service-zones.js';
@@ -716,6 +717,7 @@ function localMotion() {
     gas,
     trailerAngle: myVehicle?.state.trailerAngle || 0,
     trailerPitch: myVehicle?.state.trailerPitch || 0,
+    steer: myVehicle?.state.steer || 0,
     omega: omega.toArray(),
     turret: turretIndex,
     turretDirection: weaponDirection().toArray(),
@@ -3825,10 +3827,18 @@ function updateOthers(dt) {
         velocity.dot(forward),
         dt,
       );
-      animateSteeredWheels(
+      animateDrivenWheels(
         g.userData.truckWheels,
-        ground,
-        { scale: ACTOR_UNIT, pivotZ: TRUCK_STEER_PIVOT, radius: TRUCK_WHEEL_RADIUS },
+        {
+          steer: isSelf ? (myVehicle?.state.steer ?? 0) : motion.steer || 0,
+          ...ground,
+        },
+        {
+          scale: ACTOR_UNIT,
+          pivotZ: TRUCK_STEER_PIVOT,
+          wheelbase: TRUCK_WHEELBASE,
+          radius: TRUCK_WHEEL_RADIUS,
+        },
         dt,
       );
       animateRollingWheels(
@@ -4398,6 +4408,7 @@ function physics(dt) {
     vel.fromArray(state.v);
     myVehicle.state.trailerAngle = state.trailerAngle || 0;
     myVehicle.state.trailerPitch = state.trailerPitch || 0;
+    myVehicle.state.steer = state.steer || 0;
     me.userData.trailer?.rotation.set(state.trailerPitch || 0, state.trailerAngle || 0, 0, 'YXZ');
     landed = state.landed;
     gas = state.gas;
