@@ -68,6 +68,7 @@ import { newBank, signLoan, settleLoans, repayLoan } from '../src/bank.ts';
 import { canUseWeapon, HEAVY, TANK_MG, availableShell, heavyInterval } from '../src/armament.js';
 import { sweptSphereMayTouch } from '../src/swept-broadphase.ts';
 import { createOrdnance, segmentSphere } from '../src/ordnance.js';
+import { StatsLedger } from './stats.ts';
 
 const uid = () => randomUUID();
 const values = (m) => [...m.values()];
@@ -100,6 +101,7 @@ const world = (p) =>
         ? 'super'
         : 'purgatory';
 const signature = (s) => s === true;
+const SENTRY_SOURCE = Object.freeze({ item: 'sentry', seat: 'auto', weapon: 'sentry' });
 const initialState = () => ({
   p: [OFFICE_LAYOUT.base.originX, OFFICE_LAYOUT.base.departureY, OFFICE_LAYOUT.base.originZ - 8],
   q: [0, 0, 0, 1],
@@ -215,8 +217,11 @@ export class Game {
     maxRooms = 128,
     snapshotShareMs = 0,
     resumable = false,
+    stats = new StatsLedger(),
   } = {}) {
     this.rooms = new Map();
+    // Puissance pratique des équipements (docs/stats.md).
+    this.stats = stats;
     this.now = now;
     // > 0: `sync` replies of one room share a snapshot built at most this many
     // ms earlier (see snapshot()). 0 keeps one exact snapshot per command.
@@ -393,6 +398,9 @@ export class Game {
       );
       r.dollars = result.dollars;
       r.lastPaidServiceAt = now;
+      if (!r.lab.enabled)
+        for (const [item, dollars] of Object.entries(result.spentBy))
+          this.stats.service(r, item, dollars);
     }
   }
   createVehicle(r, type, origin = 'purchase', placement = null) {
@@ -575,6 +583,7 @@ export class Game {
       now,
       (target, sentry, damage) => {
         const id = target.id;
+        this.creditEnemy(r, SENTRY_SOURCE, id, plan.roster[id], damage * r.balance.damage);
         r.enemyDamage[id] = (r.enemyDamage[id] || 0) + damage * r.balance.damage;
         if (r.enemyDamage[id] >= plan.roster[id].hp) this.defeatEnemy(r, id, target.p);
         r.effects.push({
@@ -589,10 +598,67 @@ export class Game {
     );
     if (fired) r.groundDefense.revision++;
   }
+  // ------------------------------------------------------------ statistiques
+  // Poste tenu par un pilote vivant : { item, seat }, ou null (docs/stats.md).
+  statSeat(r, p) {
+    if (p.life !== 'alive') return null;
+    if (p.mode === 'turret') {
+      const kind = r.equipment[p.state?.turret]?.kind;
+      return kind ? { item: kind, seat: 'operator' } : null;
+    }
+    const v = p.vehicle_id ? r.vehicles.get(p.vehicle_id) : null;
+    if (v && p.seat) return { item: v.type, seat: p.seat };
+    return p.mode === 'foot' ? { item: 'pistol', seat: 'foot' } : null;
+  }
+  hitSource(r, p, b, rapid) {
+    const seat = this.statSeat(r, p);
+    if (!seat) return null;
+    if (rapid) return { ...seat, weapon: 'rapid' };
+    if (seat.item === 'pistol') return { ...seat, weapon: 'pistol' };
+    return { ...seat, weapon: typeof b.weapon === 'string' ? b.weapon.slice(0, 24) : 'mg' };
+  }
+  heavySource(r, p, shot) {
+    const station = shot.station == null ? null : r.equipment[shot.station];
+    if (station?.kind) return { item: station.kind, seat: 'operator', weapon: shot.weapon };
+    const v = shot.vehicle ? r.vehicles.get(shot.vehicle) : null;
+    if (!v) return null;
+    return {
+      item: v.type,
+      seat: p.vehicle_id === v.id && p.seat ? p.seat : '?',
+      weapon: shot.weapon,
+    };
+  }
+  // Credits the shooter's seat with the share of the enemy's power the damage
+  // removes: no last-hit bias, nothing for damage beyond the remaining HP.
+  creditEnemy(r, source, index, enemy, amount) {
+    if (r.lab.enabled || !source || !enemy || !(enemy.hp > 0)) return;
+    const done = r.enemyDamage[index] || 0,
+      effective = Math.max(0, Math.min(amount, enemy.hp - done));
+    if (effective > 0)
+      this.stats.credit(
+        r,
+        source,
+        (effective / enemy.hp) * enemy.power,
+        enemy.ground ? 'ground' : 'air',
+      );
+  }
+  // Seat-seconds of the crews in combat; the clock only runs during a wave.
+  sampleStats(r, now) {
+    const dt = this.stats.step(r, now, r.phase === 'combat' && !r.lab.enabled);
+    if (!dt) return;
+    for (const p of r.pilots.values()) {
+      const seat = this.statSeat(r, p);
+      if (seat) this.stats.occupy(r, seat.item, seat.seat, dt);
+    }
+    for (const v of r.vehicles.values())
+      if (v.seats.size && v.state.hp > 0)
+        this.stats.vehicleTime(r, v.type, VEHICLES[v.type].seats.length, dt);
+  }
   advance(r) {
     this.use(r);
     if (r.lab.enabled) r.dollars = LAB_FUNDS;
     const now = this.now();
+    this.sampleStats(r, now);
     this.advanceGround(r, now);
     this.advanceSentries(r, now);
     this.expireOrdnance(r, now);
@@ -605,12 +671,17 @@ export class Game {
       if (isFortification(station?.kind) && station.hp <= 0) this.kill(r, p, p.incarnation);
     }
     for (const v of r.vehicles.values())
-      if (v.state.hp <= 0)
+      if (v.state.hp <= 0) {
+        if (!v.statLost && !r.lab.enabled) {
+          v.statLost = true;
+          this.stats.loss(r, v.type);
+        }
         for (const id of [...v.seats.values()]) {
           const mate = r.pilots.get(id);
           if (mate) this.kill(r, mate, mate.incarnation);
           else for (const [seat, occupant] of v.seats) if (occupant === id) v.seats.delete(seat);
         }
+      }
     for (const [id, p] of r.pilots)
       if (p.seen <= now - (this.resumable ? RESUME_MS : PRESENCE_MS)) {
         this.release(r, p);
@@ -650,7 +721,17 @@ export class Game {
           : (now - r.started) / 1000 >= e.spawn + e.duration),
     );
     if (r.phase === 'combat' && r.kills.size + escaped.length >= plan.roster.length) {
-      r.infestation = money(r.infestation + escaped.reduce((n, e) => n + e.power, 0));
+      const leaked = escaped.reduce((n, e) => n + e.power, 0);
+      r.infestation = money(r.infestation + leaked);
+      if (!r.lab.enabled)
+        this.stats.flush(r, {
+          wave: r.wave,
+          n: r.pilots.size,
+          power: plan.roster.reduce((n, e) => n + e.power, 0),
+          killed: plan.roster.reduce((n, e, i) => n + (r.kills.has(i) ? e.power : 0), 0),
+          leaked,
+          lost: r.infestation >= 20,
+        });
       // Debug mode: bin damage keeps counting, but the room cannot be lost.
       r.phase = r.infestation >= 20 && !r.lab.enabled ? 'lost' : 'prep';
       r.next_wave_at = now + r.balance.pause * 1000;
@@ -693,6 +774,7 @@ export class Game {
     if (r.lab.enabled) r.dollars = LAB_FUNDS;
   }
   resetRoom(r, lab = r.lab) {
+    this.stats.discard(r);
     const pilots = r.pilots;
     const identities = r.identityTokens;
     const balance = r.balance;
@@ -1352,6 +1434,7 @@ export class Game {
       requireGame(false, error.message, 400);
     }
     r.dollars = money(r.dollars - transaction.price);
+    if (!r.lab.enabled) this.stats.purchase(r, b.kind, transaction.price);
     if (b.action === 'build' && isFortification(b.kind))
       this.registerFortification(r, transaction.ids[0]);
     if (b.action === 'remove') {
@@ -1701,6 +1784,7 @@ export class Game {
     requireGame(price === b.expectedPrice, 'Le tarif a changé. Relisez le bon.');
     requireGame(r.dollars >= price, 'La caisse commune ne contient pas assez de dollars.');
     r.dollars = money(r.dollars - price);
+    if (!r.lab.enabled) this.stats.purchase(r, b.item, price);
     r.purchases.set(b.request, {
       token: b.request,
       owner: p.id,
@@ -1937,7 +2021,10 @@ export class Game {
       if (item.kind === 'vehicle') this.createVehicle(r, b.item, 'purchase', placement);
       else this.installEquipment(r, b.item, placement);
     } else if (item.kind === 'vehicle') this.createVehicle(r, b.item);
-    if (!prepaid) r.dollars = money(r.dollars - price);
+    if (!prepaid) {
+      r.dollars = money(r.dollars - price);
+      if (!r.lab.enabled) this.stats.purchase(r, b.item, price);
+    }
     r.orders.set(request, b.item);
   }
   installEquipment(r, kind, placement) {
@@ -2271,6 +2358,7 @@ export class Game {
       for (const [index, damage, position] of list(b.enemies)) {
         const e = roster[index];
         if (!Number.isInteger(index) || !e || r.kills.has(index)) continue;
+        this.creditEnemy(r, this.heavySource(r, p, shot), index, e, amount(damage));
         r.enemyDamage[index] = (r.enemyDamage[index] || 0) + amount(damage);
         if (r.enemyDamage[index] >= e.hp)
           this.defeatEnemy(
@@ -2458,6 +2546,7 @@ export class Game {
       r,
       JSON.stringify(['enemy', r.wave, b.enemy, p.id, String(b.shot || 'legacy').slice(0, 120)]),
       () => {
+        this.creditEnemy(r, this.hitSource(r, p, b, rapid), b.enemy, e, amount);
         r.enemyDamage[b.enemy] = (r.enemyDamage[b.enemy] || 0) + amount;
         if (r.enemyDamage[b.enemy] >= e.hp) this.defeatEnemy(r, b.enemy);
       },

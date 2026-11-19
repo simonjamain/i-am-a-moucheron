@@ -75,6 +75,7 @@ Le [backlog](BACKLOG.md) suit les tâches validées et leurs vérifications.
 | Unités, flotte et DCA                       | [scale-fleet-weapons](docs/scale-fleet-weapons.md)            |
 | Nuées, traceurs et accès aux équipements    | [swarm-equipment](docs/swarm-equipment.md)                    |
 | Économie, signatures et balistique          | [economy-physics](docs/economy-physics.md)                    |
+| Statistiques et équilibrage des équipements | [stats](docs/stats.md)                                        |
 | Tests, publication et limites de validation | [operations](docs/operations.md)                              |
 | Recherche initiale sur les transports       | [NETWORK-RESEARCH](NETWORK-RESEARCH.md) — contexte historique |
 

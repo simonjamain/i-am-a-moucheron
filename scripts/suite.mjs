@@ -113,6 +113,7 @@ export const SUITE = [
   'test-debug-mode',
   'test-wave-preparation',
   'test-enemy-power',
+  'test-stats',
   'test-wave-forecast-ui',
   'test-ground-paths',
   'test-layouts',

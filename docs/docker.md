@@ -39,6 +39,10 @@ docker run … -e UDP_ADVERTISE_ADDRESS=ADRESSE_IP_PUBLIQUE \
 `UDP_ADVERTISE_PORT` doit égaler le port publié côté hôte ; voir
 [le port UDP unique](udp-server.md#port-udp-unique-réseaux-dentreprise).
 
+Pour conserver les [statistiques](stats.md) d'une version à l'autre, monter un volume
+inscriptible par l'utilisateur `node` et définir `STATS_FILE` (par exemple
+`-v moucheron-stats:/stats -e STATS_FILE=/stats/stats.json`) ; la page `/stats` les affiche.
+
 Une seule instance conserve toutes les salles en RAM. Redémarrer ou recréer le
 conteneur efface les parties en cours. Le contrôle `/healthz` valide HTTP, pas la
 connectivité UDP : la vérifier avec deux joueurs sur des réseaux distincts.
