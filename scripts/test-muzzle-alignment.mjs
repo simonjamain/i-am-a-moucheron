@@ -78,3 +78,15 @@ assert.doesNotMatch(source, /weaponBarrel|new T\.Vector3\(side, 0, -1\.2\)/);
 console.log(
   'PASS: pilot muzzle flashes use actual barrel tips, alternating in local and remote firing.',
 );
+
+{
+  // The flash leaves along the shot, whatever the muzzle node's own axes are.
+  const anchor = new T.Object3D();
+  anchor.rotation.set(0.4, 1.1, 0);
+  scene.add(anchor);
+  const shot = new T.Vector3(0.3, 0.2, -1).normalize();
+  effects.muzzle(new T.Vector3(), shot, anchor);
+  const flash = effects.items.at(-1).g;
+  const axis = new T.Vector3(0, 0, -1).applyQuaternion(flash.quaternion);
+  assert.ok(axis.distanceTo(shot) < 1e-6, 'muzzle flash follows the shot direction');
+}

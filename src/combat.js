@@ -56,7 +56,15 @@ export class CombatEffects {
     g.position.copy(position);
     g.quaternion.setFromUnitVectors(new T.Vector3(0, 0, -1), direction);
     this.scene.add(g);
-    this.items.push({ g, m, anchor, age: 0, life: 0.07, kind: 'muzzle' });
+    this.items.push({
+      g,
+      m,
+      anchor,
+      direction: direction.clone(),
+      age: 0,
+      life: 0.07,
+      kind: 'muzzle',
+    });
     this.followMuzzle(this.items.at(-1));
     this.trim();
   }
@@ -64,7 +72,9 @@ export class CombatEffects {
     if (!e.anchor) return;
     e.anchor.updateWorldMatrix(true, false);
     e.anchor.getWorldPosition(e.g.position);
-    e.anchor.getWorldQuaternion(e.g.quaternion);
+    // The flame leaves along the shot, not along the model node's own axes: a
+    // gunner's barrel node is not always oriented like its aim.
+    e.g.quaternion.setFromUnitVectors(new this.T.Vector3(0, 0, -1), e.direction);
   }
   blast(position, radius = MAP.metres(FLAK.radius)) {
     const T = this.T,
