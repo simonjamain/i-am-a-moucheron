@@ -8,6 +8,7 @@ import { readFileSync } from 'node:fs';
 import * as T from '../vendor/three.module.min.js';
 import { MODEL_DATA } from '../src/meshy-flying-castor-data.js';
 import { createGraphics } from '../src/graphics.js';
+import { ACTOR_UNIT } from '../src/scale.ts';
 import {
   VEHICLES,
   SEAT_NAMES,
@@ -87,7 +88,7 @@ for (const rotor of one.userData.rotors) {
 front.rotation.y = 1;
 assert.equal(two.userData.rotor.rotation.y, 0, 'rotors are per helicopter');
 const box = new T.Box3().setFromObject(one);
-near(box.min.y, -VEHICLES.flyingcastor.gear / VEHICLES.flyingcastor.gear, 1e-3, 'skids at gear');
+near(box.min.y, -VEHICLES.flyingcastor.gear / ACTOR_UNIT, 1e-3, 'skids at gear');
 assert.equal(one.userData.engines.length, 2, 'smoke under each rotor');
 
 // 2. Fleet, shop, crew and support.

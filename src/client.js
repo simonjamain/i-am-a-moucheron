@@ -164,6 +164,7 @@ import { HEAVY, TANK_MG, availableShell, heavyInterval } from '/armament.js';
 import { stepTank } from '/tank.js';
 import { loadRapier } from '/physics-world.js';
 import { CastorRig } from '/castor-physics.js';
+import { TankRig } from '/tank-physics.js';
 import { animateCastorWheels, trackGroundMotion } from '/castor-wheels.js';
 import { ServiceZones, serviceZoneList } from '/service-zones.js';
 import { EngineSmoke, damageRatio } from '/engine-smoke.js';
@@ -1191,7 +1192,7 @@ function accept(s, force = false) {
     trails.length = 0;
     rapidImpacts.length = 0;
     aircraftFire.invalidate();
-    vacantAircraft.clear();
+    clearVacantAircraft();
     entryNoticeWave = -1;
     paperArchive.length = 0;
     renderArchive();
@@ -4156,6 +4157,15 @@ function flushRapidImpacts(now) {
     else notify(error.message, 2);
   });
 }
+// The Castor and the medium tank are driven by the Rapier physics engine, loaded behind
+// the loading screen (see homeReady): the module, the rig of the vehicle type we drive,
+// and one rig per empty vehicle of these types that this client simulates as the room's
+// host. The other vehicles still use their original physics (see docs/physics-engine.md).
+let rapier = null;
+const RAPIER_RIGS = { castor: CastorRig, tank: TankRig };
+const drivenRigs = new Map();
+const vacantRigs = new Map();
+
 // Vehicles and pilots a shot can hit, prepared once per frame (matrices, solid
 // meshes, padded box) instead of once per projectile and per slice.
 const projectileRay = new T.Raycaster(),
@@ -4274,16 +4284,6 @@ function stepProjectileSlice(dt) {
 }
 
 // Fixed timestep flight: thrust, quadratic drag, gravity, angle-of-attack lift, wind-relative velocity.
-// ?rapier: load the physics engine (4 MB, on demand) and drive the Castor with it
-// once ready; until then, and without the flag, the arcade step is used.
-let castorRig = null;
-if (new URLSearchParams(location.search).has('rapier'))
-  loadRapier(() => import('/rapier.js'))
-    .then((RAPIER) => {
-      castorRig = new CastorRig(RAPIER);
-      console.info('Castor : physique Rapier active');
-    })
-    .catch((error) => console.warn('Rapier indisponible, Castor inchangé', error));
 function physics(dt) {
   if (respawnAt || onFoot || !myVehicle) return;
   if (isRotorcraft(myVehicle.type)) {
@@ -4352,10 +4352,11 @@ function physics(dt) {
       manual = flightInput(keys, pad, active);
     const state = { ...localMotion(), fuelAvailable: remainingFuel() > 0 };
     const drive = { forward: -manual.pitch, turn: manual.roll || -manual.yaw };
-    // Experimental (?rapier): the Castor drives on the Rapier physics engine.
-    if (castorRig && myVehicle.type === 'castor')
-      castorRig.step(state, drive, colliders, dt, VEHICLES.castor);
-    else stepTank(T, state, drive, colliders, dt, VEHICLES[myVehicle.type]);
+    const Rig = RAPIER_RIGS[myVehicle.type];
+    if (Rig) {
+      if (!drivenRigs.has(myVehicle.type)) drivenRigs.set(myVehicle.type, new Rig(rapier));
+      drivenRigs.get(myVehicle.type).step(state, drive, colliders, dt, VEHICLES[myVehicle.type]);
+    } else stepTank(T, state, drive, colliders, dt, VEHICLES[myVehicle.type]);
     if (state.hp <= 0) {
       crash();
       return;
@@ -5464,11 +5465,19 @@ function renderDeliveries() {
     }
 }
 const vacantAircraft = new Map();
+function releaseVacantRig(key) {
+  vacantRigs.get(key)?.dispose();
+  vacantRigs.delete(key);
+}
+function clearVacantAircraft() {
+  vacantAircraft.clear();
+  for (const key of [...vacantRigs.keys()]) releaseVacantRig(key);
+}
 function simulateVacantAircraft(dt) {
   if (!snap) return;
   const host = [...snap.pilots].sort((a, b) => a.id.localeCompare(b.id))[0]?.id;
   if (host !== id) {
-    vacantAircraft.clear();
+    clearVacantAircraft();
     return;
   }
   const active = new Set();
@@ -5494,12 +5503,19 @@ function simulateVacantAircraft(dt) {
         dt,
         VEHICLES[v.type],
       );
-    else if (VEHICLES[v.type].ground)
+    else if (RAPIER_RIGS[v.type]) {
+      if (!vacantRigs.has(v.id)) vacantRigs.set(v.id, new RAPIER_RIGS[v.type](rapier));
+      vacantRigs.get(v.id).step(s, { forward: 0, turn: 0 }, colliders, dt, VEHICLES[v.type]);
+    } else if (VEHICLES[v.type].ground)
       stepTank(T, s, { forward: 0, turn: 0 }, colliders, dt, VEHICLES[v.type]);
     else stepVacantAircraft(T, s, VEHICLES[v.type], colliders, dt);
     Object.assign(v.state, s);
   }
-  for (const key of vacantAircraft.keys()) if (!active.has(key)) vacantAircraft.delete(key);
+  for (const key of [...vacantAircraft.keys()])
+    if (!active.has(key)) {
+      vacantAircraft.delete(key);
+      releaseVacantRig(key);
+    }
 }
 
 function equipPistolModel(person) {
@@ -6675,8 +6691,9 @@ function warmShaders() {
   combatEffects.update(10, camera);
 }
 
-// Readiness for the initial loader: selected appearance and its first draw.
-export const homeReady = loadCharacter(appearancePicker.value).then(
+// Readiness for the initial loader: selected appearance and its first draw, and
+// the Rapier physics engine (4 MB), which the Castor cannot be driven without.
+const characterReady = loadCharacter(appearancePicker.value).then(
   () =>
     new Promise((resolve) =>
       requestAnimationFrame(() => {
@@ -6690,3 +6707,7 @@ export const homeReady = loadCharacter(appearancePicker.value).then(
       }),
     ),
 );
+const rapierReady = loadRapier(() => import('/rapier.js')).then((RAPIER) => {
+  rapier = RAPIER;
+});
+export const homeReady = Promise.all([characterReady, rapierReady]).then(() => {});

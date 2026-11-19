@@ -192,6 +192,7 @@ const files = {
       'tank',
       'physics-world',
       'castor-physics',
+      'tank-physics',
       'tank-view',
       'armament',
       'ordnance',

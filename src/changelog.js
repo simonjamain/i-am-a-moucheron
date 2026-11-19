@@ -1,13 +1,27 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
-    version: 355,
+    version: 359,
     changes: [
       'Rat, scarabées, abeilles, moustiques et cafards sont plus costauds ; les bébés araignées ont presque aucune vie.',
       'Tous les ennemis, bébés araignées compris, passent au purgatoire avec leur vrai modèle et rapportent des dollars.',
       'Au purgatoire, les ennemis signent leurs papiers deux fois plus vite.',
     ],
   },
+  {
+    version: 358,
+    changes: [
+      'Le char moyen roule comme un vrai char : suspension qui pique du nez au freinage, pivot sur place, franchit les petites marches.',
+      'Le char est plus rapide.',
+    ],
+  },
+  {
+    version: 357,
+    changes: [
+      'Le Castor se conduit comme un vrai véhicule à roues : départ progressif, freins, virages qui se resserrent à basse vitesse.',
+    ],
+  },
+  { version: 355, changes: ['Le Castor volant est 30 % plus petit.'] },
   {
     version: 354,
     changes: [

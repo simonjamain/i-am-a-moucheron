@@ -41,9 +41,6 @@ export interface VehicleProfile extends FlightProfile {
   maxHP?: number;
   /** Multiplier of PILOT_FIRE_INTERVAL for the pilot's gun. */
   gunIntervalFactor?: number;
-  /** Ground acceleration response (Castor progressive start). */
-  response?: number;
-  reverseSteering?: boolean;
 }
 // The original light fighter stays the reference the Stuka, the Spitfire and the
 // H2 are derived from; the biplane fighter replaced it as the base fighter.
@@ -117,11 +114,14 @@ export const VEHICLES = {
     seats: ['pilot', 'cannon', 'top'],
     span: 6,
     length: 8,
-    maxSpeed: 12,
+    // A real medium tank at the model's size (Froude similarity, see tank-physics.ts):
+    // 40 km/h × √0.208 = 5 m/s of physics (29 reference m/s), a 0.6 rad/s pivot
+    // becomes 1.3 rad/s. The former arcade values were 12 and 0.7.
+    maxSpeed: 29,
     thrust: 4,
     drag: 0.1,
     liftBase: 0,
-    turn: 0.7,
+    turn: 1.3,
     gear: 0.8 * ACTOR_UNIT,
     ground: true,
   },
@@ -165,10 +165,9 @@ export const VEHICLES = {
     seats: ['pilot'],
     span: 6,
     length: 9,
-    // Same top speed, with a gentler progressive start (issue #171).
+    // Top speed (reference m/s); acceleration, steering and braking come from the
+    // physics, see castor-physics.ts (progressive start, issue #171).
     maxSpeed: 52,
-    response: 1.5,
-    reverseSteering: true,
     thrust: 6,
     drag: 0.1,
     liftBase: 0,
@@ -185,10 +184,10 @@ export const VEHICLES = {
     ...LIGHT_FIGHTER,
     name: 'Castor volant',
     seats: ['pilot', 'passenger1', 'passenger2', 'passenger3'],
-    span: 6,
-    length: 13,
+    span: 4.2,
+    length: 9.1,
     maxSpeed: LIGHT_FIGHTER.maxSpeed * 0.6,
-    gear: 1 * ACTOR_UNIT,
+    gear: 0.7 * ACTOR_UNIT,
     helicopter: true,
     support: true,
     maxHP: 200,

@@ -133,6 +133,7 @@ export const SUITE = [
   'test-paid-service',
   'test-castor',
   'test-castor-physics',
+  'test-tank-physics',
   'test-castor-meshy',
   'test-castor-top-view',
   'test-castor-wheels',

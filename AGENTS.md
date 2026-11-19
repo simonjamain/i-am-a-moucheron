@@ -73,6 +73,15 @@ relire le diff, vérifier les critères d'acceptation, les contrôles GitHub Act
 (y compris `Docker build`), l'absence de conflit et les protections de `main`.
 Si Docker n'est pas disponible localement, attendre la réussite du contrôle
 `Docker build` de la PR. Utiliser une fusion **squash** lorsque GitHub l'autorise.
+Utiliser l'**auto-merge** de GitHub (activé sur le dépôt, contrôles requis sur
+`main`) : une fois la contribution terminée, le diff relu et les critères
+vérifiés, activer l'auto-merge en squash sur la PR (`enable_pr_auto_merge` avec
+`SQUASH`) au lieu d'attendre les contrôles pour fusionner à la main ; GitHub
+fusionne dès que tous les contrôles requis passent. Si GitHub répond que la PR est
+déjà fusionnable (statut propre), fusionner directement en squash. Rester
+responsable de la PR jusqu'à la fusion effective : corriger un contrôle rouge ou
+un conflit, puis vérifier que la fusion a eu lieu. Ne pas activer l'auto-merge
+tant qu'un essai attendu, un contrôle ou une relecture reste à faire.
 Ne jamais contourner une protection ni déclarer réussi un essai non exécuté :
 en cas d'échec, de contrôle absent, de conflit ou de permission insuffisante,
 laisser la PR ouverte, documenter précisément le blocage et le signaler.
