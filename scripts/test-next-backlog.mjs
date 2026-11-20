@@ -6,7 +6,7 @@ import { roomWorld, resolveHeavy } from './heavy-resolver.mjs';
 import { heavyImpact } from '../src/heavy-sim.js';
 import { VEHICLES, vehicleEntry, vehicleAccess } from '../src/fleet.ts';
 import { fullAmmo, advanceSupplies, SERVICE_SECONDS } from '../src/logistics.js';
-import { TANK_MG, HEAVY, availableShell, heavyDamage } from '../src/armament.js';
+import { TANK_MG, HEAVY, availableShell, heavyDamage } from '../src/armament.ts';
 import { HoldZoom, contextKey, rangeReadout } from '../src/equipment-controls.js';
 import { MAP, ACTOR_UNIT, REFERENCE } from '../src/scale.ts';
 import { TankRig } from '../src/tank-physics.ts';

@@ -231,7 +231,7 @@ console.log(
 );
 
 const { OFFICE_SOLIDS } = await import('../server/assets.js');
-const { supportedPlacement } = await import('../src/equipment.js');
+const { supportedPlacement } = await import('../src/equipment.ts');
 const { bedSpawn } = await import('../src/beds.js');
 const bedGame = new Game({ solids: OFFICE_SOLIDS }),
   bedJoin = bedGame.join({ code: 'BEDS' }),

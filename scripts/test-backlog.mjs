@@ -1,7 +1,7 @@
 import './normal-dossiers.mjs';
 import assert from 'node:assert/strict';
 import { ENEMY_TYPES } from '../src/waves.js';
-import { blastDamage } from '../src/combat.js';
+import { blastDamage } from '../src/combat.ts';
 assert.deepEqual(Object.fromEntries(Object.entries(ENEMY_TYPES).map(([k, v]) => [k, v.hp])), {
   ant: 100,
   roach: 400,
@@ -17,7 +17,7 @@ assert.equal(blastDamage(0, 10), 80);
 assert.equal(blastDamage(10, 10), 20);
 assert.equal(blastDamage(10.01, 10), 0);
 // Direct shells consume their only impact; no splash reaches the neighbour.
-const { shellImpact } = await import('../src/combat.js');
+const { shellImpact } = await import('../src/combat.ts');
 for (const hp of [100, 300, 800]) {
   const hit = shellImpact({ id: 0 }, 0, 100);
   assert.equal(hit.kind, 'direct');

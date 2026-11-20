@@ -20,7 +20,7 @@ import {
   TCP_PATH,
   PROTOCOL,
   udpDescription,
-} from '../src/udp-protocol.js';
+} from '../src/udp-protocol.ts';
 
 export function createGameServer({
   Peer = PeerConnection,

@@ -1,4 +1,5 @@
 import { decodeSnapshotFromWire } from './snapshot-wire.ts';
+import type { WireSnapshot, WireState } from './snapshot-wire.ts';
 
 export const PROTOCOL = 1;
 export const COMMAND_CHANNEL = 'commands-v1';
@@ -18,12 +19,12 @@ export const RECONNECT_AFTER_MS = 5000;
 export const RECONNECT_WINDOW_MS = 25000;
 
 // Chunk large snapshots below browser/native SCTP message size limits.
-export function encodeReply(value, id) {
+export function encodeReply(value: unknown, id: number): string[] {
   return encodeReplyText(JSON.stringify(value), id);
 }
 // Internal fast path for immutable JSON already serialized by GameSession.
 // It intentionally does not parse the text; callers supply JSON.stringify output.
-export function encodeReplyText(text, id) {
+export function encodeReplyText(text: string, id: number): string[] {
   if (typeof text !== 'string') throw Error('Réponse JSON attendue.');
   if (text.length > MAX_REPLY_BYTES) throw Error('État de salle trop volumineux.');
   const count = Math.ceil(text.length / CHUNK_BYTES) || 1;
@@ -37,13 +38,35 @@ export function encodeReplyText(text, id) {
     }),
   );
 }
+/** One chunk of a reply, as sent on the command channel. */
+export interface ReplyPacket {
+  v: number;
+  id: number;
+  part: number;
+  count: number;
+  data: string;
+}
+/** A reassembled HTTP-like reply (`{ status, body }`). */
+export interface Reply {
+  status: number;
+  body?: (WireSnapshot & { snapshot?: WireSnapshot }) | null;
+  [key: string]: unknown;
+}
+interface PendingReply {
+  count: number;
+  parts: Map<number, string>;
+  size: number;
+}
 export class ReplyAssembler {
+  messages: Map<number, PendingReply>;
+  lastSnapshot: WireState | null;
+  lastAppliedId: number;
   constructor() {
     this.messages = new Map();
     this.lastSnapshot = null;
     this.lastAppliedId = 0;
   }
-  receive(packet) {
+  receive(packet: ReplyPacket | null | undefined): Reply | null {
     if (
       !packet ||
       packet.v !== PROTOCOL ||
@@ -71,12 +94,15 @@ export class ReplyAssembler {
     if (m.size > MAX_REPLY_BYTES) throw Error('Réponse réseau trop volumineuse.');
     if (m.parts.size !== m.count) return null;
     this.messages.delete(packet.id);
-    const reply = JSON.parse(Array.from({ length: m.count }, (_, i) => m.parts.get(i)).join(''));
+    const parts = m.parts;
+    const reply: Reply = JSON.parse(
+      Array.from({ length: m.count }, (_, i) => parts.get(i)).join(''),
+    );
     // A replayed command can return an older snapshot. Never roll the
     // differential baseline backwards; new replies remain ordered by ID.
     if (packet.id > this.lastAppliedId) {
       if (reply.status < 400 && reply.body) {
-        const snapshot = reply.body.snapshot || reply.body;
+        const snapshot: WireSnapshot = reply.body.snapshot || reply.body;
         if (snapshot.rosterRevision !== undefined || Object.hasOwn(snapshot, '$patch'))
           this.lastSnapshot = decodeSnapshotFromWire(snapshot, this.lastSnapshot);
       }
@@ -84,17 +110,20 @@ export class ReplyAssembler {
     }
     return reply;
   }
-  clear() {
+  clear(): void {
     this.messages.clear();
     this.lastSnapshot = null;
     this.lastAppliedId = 0;
   }
 }
-export function udpCandidate(candidate) {
-  const text = typeof candidate === 'string' ? candidate : candidate?.candidate;
+export function udpCandidate(candidate: unknown): boolean {
+  const text =
+    typeof candidate === 'string'
+      ? candidate
+      : (candidate as { candidate?: unknown } | null)?.candidate;
   return typeof text === 'string' && /^candidate:\S+\s+\d+\s+udp\s/i.test(text.trim());
 }
-export function udpDescription(sdp) {
+export function udpDescription(sdp: unknown): string | false {
   return (
     typeof sdp === 'string' &&
     sdp

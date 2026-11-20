@@ -12,7 +12,7 @@ import {
   MOTION_CHANNEL,
   ReplyAssembler,
   TCP_PATH,
-} from '../src/udp-protocol.js';
+} from '../src/udp-protocol.ts';
 
 globalThis.performance ??= (await import('node:perf_hooks')).performance;
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));

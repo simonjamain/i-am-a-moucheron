@@ -4,7 +4,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { Game } from '../server/game.js';
-import { LabUI } from '../src/lab-ui.js';
+import { LabUI } from '../src/lab-ui.ts';
 
 let now = 100000;
 const game = new Game({ now: () => now });

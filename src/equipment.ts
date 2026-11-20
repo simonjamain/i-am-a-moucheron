@@ -1,7 +1,17 @@
 import { footprintInsideCollider, footprintOverlapsCollider } from './oriented-collider.ts';
 import { VEHICLES } from './fleet.ts';
-import { FIXED_DCA } from './fixed-dca.js';
+import { FIXED_DCA } from './fixed-dca.ts';
 import { MAP } from './scale.ts';
+import type { Collider } from './oriented-collider.ts';
+import type { VehicleProfile } from './fleet.ts';
+
+/** A shop entry: a vehicle bought to place, or a fixed installation. */
+export interface ShopItem {
+  name: string;
+  cost: number;
+  kind: 'vehicle' | 'placement';
+  description: string;
+}
 export const SHOP = Object.freeze({
   fighter: {
     name: 'Chasseur biplan supplémentaire',
@@ -110,10 +120,20 @@ export const SHOP = Object.freeze({
     description:
       'Hélicoptère de soutien : un pilote et trois passagers, largue les constructions du Castor sauf les murs ; ravitaillement mobile 50 cm.',
   },
-});
-export function shopPrice(key, installed = 0, balance = null) {
+} satisfies Record<string, ShopItem>);
+export type ShopKey = keyof typeof SHOP;
+const SHOP_BY_KEY: Readonly<Record<string, ShopItem | undefined>> = SHOP;
+const VEHICLE_BY_KEY: Readonly<Record<string, VehicleProfile | undefined>> = VEHICLES;
+const FIXED_DCA_BY_KEY: Readonly<
+  Record<string, (typeof FIXED_DCA)[keyof typeof FIXED_DCA] | undefined>
+> = FIXED_DCA;
+/** Room balance multipliers (only the price factor is read here). */
+export interface PriceBalance {
+  prices: number;
+}
+export function shopPrice(key: string, installed = 0, balance: PriceBalance | null = null): number {
   if (balance) return Math.round(shopPrice(key, installed) * balance.prices * 100) / 100;
-  const item = SHOP[key];
+  const item = SHOP_BY_KEY[key];
   if (!item) return Infinity;
   if (['dca', 'refuel', 'radar', 'bed'].includes(key))
     return key === 'dca'
@@ -121,7 +141,10 @@ export function shopPrice(key, installed = 0, balance = null) {
       : item.cost + 2 * Math.max(0, installed);
   return item.cost;
 }
-export function placementAhead(body, distance = 5) {
+export function placementAhead(
+  body: { x: number; y: number; z: number; face: number },
+  distance = 5,
+): { x: number; y: number; z: number } {
   return {
     x: body.x + Math.sin(body.face) * MAP.metres(distance),
     y: body.y,
@@ -130,9 +153,29 @@ export function placementAhead(body, distance = 5) {
 }
 // The same footprint/support test runs in the browser and on the server's office
 // colliders. Full base support, free headroom and nearby placement.
-export function supportedPlacement(point, colliders, occupied = [], kind = 'dca') {
-  const profile = VEHICLES[kind];
-  const dca = FIXED_DCA[kind];
+/** Candidate point; `angle` (yaw) is optional. */
+export interface PlacementPoint {
+  x: number;
+  y: number;
+  z: number;
+  angle?: number;
+}
+/** An existing installation that blocks nearby placements. */
+export interface OccupiedSpot {
+  x: number;
+  y: number;
+  z: number;
+  kind?: string;
+  clearance?: number;
+}
+export function supportedPlacement(
+  point: PlacementPoint,
+  colliders: readonly Collider[],
+  occupied: readonly OccupiedSpot[] = [],
+  kind = 'dca',
+): PlacementPoint | null {
+  const profile = VEHICLE_BY_KEY[kind];
+  const dca = FIXED_DCA_BY_KEY[kind];
   const localRx = profile
       ? MAP.metres(profile.span / 2 + 1)
       : kind === 'refuel'
@@ -145,7 +188,7 @@ export function supportedPlacement(point, colliders, occupied = [], kind = 'dca'
         : MAP.metres(kind === 'bed' ? 2.1 : (dca?.clearance ?? 1.5)),
     height = MAP.metres(profile ? 4 : kind === 'refuel' ? 6.3 : (dca?.height ?? 3.2)),
     eps = 1e-5;
-  const angle = Number.isFinite(point.angle) ? point.angle : 0;
+  const angle = Number.isFinite(point.angle) ? (point.angle as number) : 0;
   const rx = Math.abs(Math.cos(angle)) * localRx + Math.abs(Math.sin(angle)) * localRz;
   const rz = Math.abs(Math.sin(angle)) * localRx + Math.abs(Math.cos(angle)) * localRz;
   const surfaces = colliders
@@ -183,7 +226,10 @@ export function supportedPlacement(point, colliders, occupied = [], kind = 'dca'
               ? s.clearance + rx
               : kind === 'refuel' || s.kind === 'refuel'
                 ? MAP.metres(6.3) + rx
-                : Math.max(MAP.metres(5), rx + MAP.metres(FIXED_DCA[s.kind]?.clearance ?? 0))),
+                : Math.max(
+                    MAP.metres(5),
+                    rx + MAP.metres(FIXED_DCA_BY_KEY[s.kind ?? '']?.clearance ?? 0),
+                  )),
       )
     )
       continue;
@@ -198,7 +244,13 @@ export function supportedPlacement(point, colliders, occupied = [], kind = 'dca'
 }
 
 // Include prepaid, unplaced installations in the next quote.
-export function purchaseCount(snapshot, kind) {
+/** The part of a room snapshot that counts purchases. */
+export interface PurchaseSnapshot {
+  equipment?: readonly { kind: string; free?: boolean }[];
+  deliveries?: readonly { item: string }[];
+  pendingInstallations?: Partial<Record<string, number>>;
+}
+export function purchaseCount(snapshot: PurchaseSnapshot, kind: string): number {
   return (
     (snapshot.equipment || []).filter((e) => e.kind === kind && !e.free).length +
     (snapshot.deliveries || []).filter((d) => d.item === kind).length +

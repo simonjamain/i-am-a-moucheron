@@ -1,4 +1,5 @@
 import { MAP } from './scale.ts';
+import type { XYZ } from './types.ts';
 
 // Issue #113: dependency-free geometry of the player-scale howitzer, shared by
 // the server (shell origin, aim limits) and the client model. Reference metres,
@@ -13,7 +14,7 @@ export const HOWITZER_BORE = Object.freeze({
 });
 
 // World muzzle for a gun standing at `station` and pointing along `direction`.
-export function howitzerMuzzle(station, direction) {
+export function howitzerMuzzle(station: XYZ, direction: readonly number[]): number[] {
   const n = Math.hypot(...direction) || 1,
     d = direction.map((v) => v / n),
     flat = Math.hypot(d[0], d[2]) || 1,
@@ -29,7 +30,7 @@ export function howitzerMuzzle(station, direction) {
       ),
   );
 }
-export function howitzerPitchAllowed(direction, tolerance = 1 * DEG) {
+export function howitzerPitchAllowed(direction: readonly number[], tolerance = 1 * DEG): boolean {
   const n = Math.hypot(...direction) || 1,
     pitch = Math.asin(Math.max(-1, Math.min(1, direction[1] / n)));
   return (

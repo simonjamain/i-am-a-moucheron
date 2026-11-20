@@ -3,7 +3,7 @@ import type { Three } from './types.ts';
 // Independent implementation of direction-based mouse aim and an aircraft instructor.
 // Camera/aim separation inspired by https://github.com/brihernandez/MouseFlight .
 // Aircraft forces and angular response remain in flight.ts.
-/** Instructor gains (src/flight-tuning.js); every field defaults to 1 or its documented value. */
+/** Instructor gains (src/flight-tuning.ts); every field defaults to 1 or its documented value. */
 export interface MouseFlightTuning {
   bankStrength?: number;
   nearTargetBoost?: number;

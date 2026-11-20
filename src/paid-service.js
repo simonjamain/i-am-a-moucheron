@@ -1,9 +1,9 @@
 import { VEHICLES, isSupportVehicle } from './fleet.ts';
-import { levelOf } from './airdrop.js';
-import { SENTRY } from './ground-sentry.js';
-import { FORTIFICATIONS } from './ground-fortifications.js';
+import { levelOf } from './airdrop.ts';
+import { SENTRY } from './ground-sentry.ts';
+import { FORTIFICATIONS } from './ground-fortifications.ts';
 import { distanceToSegment } from './ground-defense.js';
-import { FIXED_DCA } from './fixed-dca.js';
+import { FIXED_DCA } from './fixed-dca.ts';
 import {
   ammoCapacity,
   CASTOR_SERVICE_RADIUS,

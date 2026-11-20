@@ -24,4 +24,6 @@ export const FORTIFICATIONS = Object.freeze({
     footprint: 0.0105,
   }),
 });
-export const isFortification = (kind) => Object.hasOwn(FORTIFICATIONS, kind);
+export type FortificationKind = keyof typeof FORTIFICATIONS;
+export const isFortification = (kind: unknown): kind is FortificationKind =>
+  Object.hasOwn(FORTIFICATIONS, kind as PropertyKey);

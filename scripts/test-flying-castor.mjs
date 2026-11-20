@@ -16,9 +16,9 @@ import {
   isSupportVehicle,
   isPassengerSeat,
 } from '../src/fleet.ts';
-import { SHOP } from '../src/equipment.js';
+import { SHOP } from '../src/equipment.ts';
 import { SHOP_CATEGORIES } from '../src/shop-catalog.js';
-import { canUseWeapon } from '../src/armament.js';
+import { canUseWeapon } from '../src/armament.ts';
 import { fullAmmo, CASTOR_SERVICE_RADIUS } from '../src/logistics.js';
 import { CONTRACTS, contractKey } from '../src/contracts.js';
 import { withinService } from '../src/paid-service.js';
@@ -31,10 +31,10 @@ import {
   airdropCommand,
   airdropSurface,
   headingOf,
-} from '../src/airdrop.js';
+} from '../src/airdrop.ts';
 import { airdropPlacement } from '../src/ground-placement.js';
 import { navigationStructures, floorStructures } from '../src/ground-defense-state.js';
-import { seatRole } from '../src/seat-icons.js';
+import { seatRole } from '../src/seat-icons.ts';
 import { controlHintItems } from '../src/live-hud.js';
 import { Game } from '../server/game.js';
 import { OFFICE_SOLIDS } from '../server/assets.js';

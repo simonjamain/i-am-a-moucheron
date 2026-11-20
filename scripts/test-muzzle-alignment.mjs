@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import * as T from '../vendor/three.module.min.js';
 import { createGraphics } from '../src/graphics.js';
 import { nextPilotMuzzle } from '../src/muzzle.ts';
-import { CombatEffects } from '../src/combat.js';
+import { CombatEffects } from '../src/combat.ts';
 import { ACTOR_UNIT } from '../src/scale.ts';
 
 const scene = new T.Scene();

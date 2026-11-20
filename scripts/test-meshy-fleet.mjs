@@ -3,7 +3,7 @@ import * as T from '../vendor/three.module.min.js';
 import { createGraphics } from '../src/graphics.js';
 import { ACTOR_UNIT } from '../src/scale.ts';
 import { VEHICLES, vehicleUnit } from '../src/fleet.ts';
-import { paintVehicle } from '../src/vehicle-livery.js';
+import { paintVehicle } from '../src/vehicle-livery.ts';
 const graphics = createGraphics(T, new T.Scene());
 for (const [type, factory] of [
   ['interceptor', 'makeStuka'],

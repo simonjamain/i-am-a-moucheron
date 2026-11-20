@@ -16,7 +16,7 @@ import {
   MAX_WAVE_POPULATION,
 } from '../src/waves.js';
 import { Game } from '../server/game.js';
-import { encodeReply, ReplyAssembler } from '../src/udp-protocol.js';
+import { encodeReply, ReplyAssembler } from '../src/udp-protocol.ts';
 const input = [
   { id: 0, type: 'ant', spawn: 0, phase: 0.1, hp: 100 },
   { id: 1, type: 'midge', spawn: 1, phase: 0.2, hp: 100, routeSeed: 13 },

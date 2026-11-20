@@ -1,6 +1,6 @@
 import { MAP, ACTOR_UNIT } from './scale.ts';
 import { VEHICLES } from './fleet.ts';
-import { supportedPlacement } from './equipment.js';
+import { supportedPlacement } from './equipment.ts';
 // World-space metres per second: the previous scaled 1 mm/s looked stationary
 // for several minutes after a drop from a plane above the office furniture;
 // 1 m/s then looked like a free fall, so equipment falls three times slower.

@@ -7,7 +7,7 @@ import { OFFICE_LAYOUT } from '../src/layout.ts';
 import { createGraphics } from '../src/graphics.js';
 import { createOffice } from '../src/office.js';
 import { stepFlight } from '../src/flight.ts';
-import { spreadDirection, fuseRange, blastDamage, diveIntensity } from '../src/combat.js';
+import { spreadDirection, fuseRange, blastDamage, diveIntensity } from '../src/combat.ts';
 import { makeAntiaircraft, AA_STATIONS } from '../src/sortie.js';
 import { bodyMotion } from '../src/purgatory-physics.js';
 assert.equal(MAP.ratio, 0.003);

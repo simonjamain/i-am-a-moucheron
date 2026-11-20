@@ -1,7 +1,7 @@
 import { WALL_SEGMENT, WALL_SEGMENT_PRICE, HALF_BRICK, wallLength } from './brick-rules.ts';
-import { SENTRY } from './ground-sentry.js';
-import { FORTIFICATIONS, isFortification } from './ground-fortifications.js';
-import { onFloor, levelOf, FLOOR_LEVEL } from './airdrop.js';
+import { SENTRY } from './ground-sentry.ts';
+import { FORTIFICATIONS, isFortification } from './ground-fortifications.ts';
+import { onFloor, levelOf, FLOOR_LEVEL } from './airdrop.ts';
 import {
   splitBarricade,
   buildGroundFlow,

@@ -3,7 +3,7 @@ import * as T from '../vendor/three.module.min.js';
 import { wheelPose } from '../src/castor-wheels.ts';
 import { stepHelicopter } from '../src/helicopter.js';
 import { VEHICLES, vehiclePad } from '../src/fleet.ts';
-import { CombatEffects } from '../src/combat.js';
+import { CombatEffects } from '../src/combat.ts';
 import { makeBiplaneBomber } from '../src/biplane-model.js';
 import { aimGun } from '../src/sortie.js';
 import { makeH2 } from '../src/h2-model.js';

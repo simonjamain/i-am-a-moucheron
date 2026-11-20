@@ -6,7 +6,7 @@ import { stepHelicopter } from '../src/helicopter.js';
 import { MAP } from '../src/scale.ts';
 import { VEHICLES, vehiclePad, isRotorcraft } from '../src/fleet.ts';
 import { Game } from '../server/game.js';
-import { HEAVY } from '../src/armament.js';
+import { HEAVY } from '../src/armament.ts';
 const source = readFileSync('src/client.js', 'utf8');
 const physics = source.slice(
   source.indexOf('function physics(dt)'),

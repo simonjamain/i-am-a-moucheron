@@ -6,7 +6,7 @@ import {
   ReplyAssembler,
   CHUNK_BYTES,
   MAX_REPLY_BYTES,
-} from '../src/udp-protocol.js';
+} from '../src/udp-protocol.ts';
 for (const reply of [
   { status: 200, body: { message: 'Été 🦟', quoted: '\\"\n\t' } },
   { status: 409, body: { error: 'Commande déjà traitée.' } },

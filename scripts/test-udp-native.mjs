@@ -1,4 +1,4 @@
-import { supportedPlacement } from '../src/equipment.js';
+import { supportedPlacement } from '../src/equipment.ts';
 import { OFFICE_SOLIDS } from '../server/assets.js';
 import { ACTOR_UNIT, MAP } from '../src/scale.ts';
 import { OFFICE_LAYOUT } from '../src/layout.ts';
@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 import { PeerConnection, cleanup } from 'node-datachannel';
 import { createGameServer } from '../server/index.js';
 import { decodeMotionBatch } from '../src/motion-wire.ts';
-import { ReplyAssembler, PROTOCOL, COMMAND_CHANNEL, MOTION_CHANNEL } from '../src/udp-protocol.js';
+import { ReplyAssembler, PROTOCOL, COMMAND_CHANNEL, MOTION_CHANNEL } from '../src/udp-protocol.ts';
 
 const app = createGameServer({
   portBegin: 42000,

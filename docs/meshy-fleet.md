@@ -13,7 +13,7 @@ pas de couleur selon l'appareil et, depuis la version 238 ([issue #106](https://
 aucune pastille flottante ni couleur par joueur ou par appareil n'est ajoutée : traceurs
 et obus ont des couleurs neutres par arme. Le M1, le H2 et le bombardier B3 suivent le même principe.
 Les cercles d'accès au sol des postes libres portent un pictogramme blanc par rôle
-(`src/seat-icons.js`) : volant (conducteur), avion (pilote), avion à deux places
+(`src/seat-icons.ts`) : volant (conducteur), avion (pilote), avion à deux places
 (copilote), viseur (mitrailleur) et tourelle (canon du char).
 
 ## Références et provenance
@@ -46,7 +46,7 @@ avec leurs séparations de texture. Le matériau utilise la carte de couleur d'o
 une rugosité uniforme et un éclairage standard ; les autres cartes PBR ne sont pas
 chargées. Aucun GLB ni service Meshy n'est requis dans le navigateur.
 
-`src/meshy-texture.js` partage les buffers, matériaux et atlas entre véhicules.
+`src/meshy-texture.ts` partage les buffers, matériaux et atlas entre véhicules.
 Les hélices et canons restent pilotés par le jeu ; depuis la version 267, les
 dégâts se voient par la fumée des moteurs, jamais par un changement de forme. Le T3 garde ses deux tourelles orientables
 et le D2 son attelage : sa remorque suit le pivot existant à z = −0,7.

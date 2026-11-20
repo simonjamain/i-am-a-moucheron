@@ -99,7 +99,7 @@ console.log(
 );
 
 // Placement must not treat the broad AABB's empty corner as a real roof.
-const { supportedPlacement } = await import('../src/equipment.js');
+const { supportedPlacement } = await import('../src/equipment.ts');
 const roofStation = makeServiceStation(T, 'refuel');
 roofStation.scale.setScalar(MAP.ratio);
 roofStation.rotation.y = Math.PI / 4;

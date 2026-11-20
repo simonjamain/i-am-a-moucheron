@@ -3,7 +3,7 @@ import { heliWeaponOrigin } from './helicopter.js';
 import { mobileBarrelOrigin, clampProximity } from './mobile-flak.js';
 import { tankBarrelOrigin } from './tank-view.js';
 import { MAP } from './scale.ts';
-import { HEAVY } from './armament.js';
+import { HEAVY } from './armament.ts';
 import { isBomber } from './fleet.ts';
 export const add = (a, b) => a.map((v, i) => v + b[i]);
 const sub = (a, b) => a.map((v, i) => v - b[i]);

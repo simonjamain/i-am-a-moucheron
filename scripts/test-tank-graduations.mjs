@@ -2,7 +2,7 @@
 // the authoritative shell trajectory (same integrator and step as the server).
 import assert from 'node:assert/strict';
 import { ballisticMarks, TANK_MARKS } from '../src/tank-reticle.js';
-import { HEAVY } from '../src/armament.js';
+import { HEAVY } from '../src/armament.ts';
 import { integrateOrdnance } from '../src/ordnance.js';
 import { GROUND_BOUNDS } from '../src/ground-defense.js';
 import { MAP } from '../src/scale.ts';

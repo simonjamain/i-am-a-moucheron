@@ -9,7 +9,7 @@ import {
   DEFAULT_APPEARANCE,
   appearanceId,
   nextAppearance,
-} from '../src/character-appearances.js';
+} from '../src/character-appearances.ts';
 import {
   createCharacter,
   loadCharacter,

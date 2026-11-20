@@ -2,7 +2,7 @@ import { MODEL_DATA as SOCLE } from './meshy-t01-socle-data.js';
 import { MODEL_DATA as TETE } from './meshy-t01-tete-data.js';
 import { MODEL_DATA as CANON } from './meshy-t01-canon-data.js';
 import { MODEL_DATA as CAPTEUR } from './meshy-t01-capteur-data.js';
-import { texturedMeshyParts } from './meshy-texture.js';
+import { texturedMeshyParts } from './meshy-texture.ts';
 
 // Approved G1 Castor T-01: four independent Meshy textured modules, preserved UVs.
 // Original meshes use different front axes; normalize them at the assembly pivots.

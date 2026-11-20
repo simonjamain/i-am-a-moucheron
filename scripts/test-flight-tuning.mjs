@@ -6,7 +6,7 @@ import {
   loadFlightTuning,
   normalizeFlightTuning,
   saveFlightTuning,
-} from '../src/flight-tuning.js';
+} from '../src/flight-tuning.ts';
 import { mouseFlightControls, rotateMouseAim } from '../src/mouse-flight.ts';
 import { ASSETS } from '../server/assets.js';
 

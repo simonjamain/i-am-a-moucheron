@@ -54,7 +54,7 @@ request is cancelled if paperwork opens before it completes. Closing paperwork
 with Escape does not request capture. An explicit close or final signature may
 resume capture; intermediate signatures retain the free cursor.
 
-`control-focus.js` owns this lifecycle and the testable keyboard mapping. Flight
+`control-focus.ts` owns this lifecycle and the testable keyboard mapping. Flight
 physics continues with neutral control surfaces while UI owns the pointer.
 `test-controls.mjs` covers AZERTY mapping, throttle separation, airplane manual
 overrides and client integration, suspended inputs, capture/release, and the
@@ -188,7 +188,7 @@ et neutralise les commandes maintenues ; **Échap** le ferme sans recapture
 automatique, tandis que le bouton fermer peut reprendre la capture. La partie
 continue pendant l'ouverture du panneau.
 
-Sources : `flight-tuning.js` (plages et stockage), `flight-tuning-ui.js`
+Sources : `flight-tuning.ts` (plages et stockage), `flight-tuning-ui.js`
 (panneau), `mouse-flight.ts` (instructeur) et
 `test-flight-tuning.mjs` (régression). La sensation du pilotage reste à
 valider dans une vraie partie WebGL/UDP.

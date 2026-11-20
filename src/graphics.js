@@ -341,7 +341,7 @@ export function createGraphics(T, scene) {
   // below stay as an invisible frame (`arms`, `legs`, `rig`) so the pistol, its
   // muzzle (shot origin) and every existing caller keep exactly the same API.
   const PALM = 0.08; // wrist to grip, model metres
-  // `appearance`: id from character-appearances.js (default if unknown or not
+  // `appearance`: id from character-appearances.ts (default if unknown or not
   // loaded yet). userData.setAppearance(id) swaps the model in place, keeping
   // the frame, the pistol and everything attached to the group.
   function humanoid(color, saint = false, appearance) {

@@ -1,5 +1,5 @@
 import { HOWITZER_DATA as D } from './howitzer-data.js';
-import { HOWITZER_LIMITS } from './howitzer-geometry.js';
+import { HOWITZER_LIMITS } from './howitzer-geometry.ts';
 
 // Issue #113: the anti-materiel gun is the user-supplied Meshy howitzer, split
 // offline into carriage, two wheels, cradle (with the shield) and tube.

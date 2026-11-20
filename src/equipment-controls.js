@@ -1,5 +1,5 @@
 import { FLAK } from './scale.ts';
-import { fuseRange } from './combat.js';
+import { fuseRange } from './combat.ts';
 export function contextKey({ type, seat, turret = false }, key) {
   if (!['ShiftLeft', 'ShiftRight', 'ControlLeft', 'ControlRight'].includes(key)) return null;
   if (type === 'helicopter' && seat === 'pilot' && !turret) return null;

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import * as T from '../vendor/three.module.min.js';
 import { createGraphics } from '../src/graphics.js';
-import { paintVehicle } from '../src/vehicle-livery.js';
+import { paintVehicle } from '../src/vehicle-livery.ts';
 import { B3_DATA } from '../src/meshy-b3-data.js';
 import { aimGun, gunnerView } from '../src/sortie.js';
 import { ACTOR_UNIT } from '../src/scale.ts';

@@ -1,4 +1,4 @@
-import { texturedMeshyParts } from './meshy-texture.js';
+import { texturedMeshyParts } from './meshy-texture.ts';
 
 // Articulated Meshy vehicles (scripts/import-meshy-vehicle.py): every node of
 // `data.rig` is a pivot group placed in its parent's frame, with its rest

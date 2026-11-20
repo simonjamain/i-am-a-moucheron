@@ -1,5 +1,5 @@
 import { MODEL_DATA } from './meshy-bed-data.js';
-import { texturedMeshyParts } from './meshy-texture.js';
+import { texturedMeshyParts } from './meshy-texture.ts';
 
 // One static, open drawer bed. Its original geometry and atlas are shared by
 // placed beds, placement previews and purchase thumbnails.

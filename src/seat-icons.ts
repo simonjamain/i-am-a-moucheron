@@ -1,8 +1,9 @@
 // Issue #106: uniform white pictograms on the ground entry circles, one per role,
 // instead of letters. Drawn on a 2D canvas context, white only.
-const GROUND = new Set(['tank', 'flaktruck', 'castor']);
+export type SeatRole = 'driver' | 'pilot' | 'copilot' | 'gunner' | 'cannon' | 'passenger';
+const GROUND: ReadonlySet<string> = new Set(['tank', 'flaktruck', 'castor']);
 
-export function seatRole(type, seat) {
+export function seatRole(type: string, seat: string): SeatRole {
   if (seat === 'pilot') return GROUND.has(type) ? 'driver' : 'pilot';
   if (seat === 'copilot') return 'copilot';
   if (/^passenger/.test(seat)) return 'passenger';
@@ -10,7 +11,7 @@ export function seatRole(type, seat) {
   return 'gunner';
 }
 
-export const SEAT_ROLE_NAMES = Object.freeze({
+export const SEAT_ROLE_NAMES: Readonly<Record<SeatRole, string>> = Object.freeze({
   driver: 'Conducteur',
   pilot: 'Pilote',
   copilot: 'Copilote',
@@ -20,7 +21,11 @@ export const SEAT_ROLE_NAMES = Object.freeze({
 });
 
 // Draw the role pictogram centred in a size × size square.
-export function drawSeatIcon(ctx, role, size = 128) {
+export function drawSeatIcon(
+  ctx: CanvasRenderingContext2D,
+  role: SeatRole | string,
+  size = 128,
+): void {
   const c = size / 2,
     r = size * 0.34;
   ctx.save();
@@ -29,13 +34,13 @@ export function drawSeatIcon(ctx, role, size = 128) {
   ctx.lineWidth = size * 0.07;
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
-  const line = (x1, y1, x2, y2) => {
+  const line = (x1: number, y1: number, x2: number, y2: number): void => {
     ctx.beginPath();
     ctx.moveTo(x1, y1);
     ctx.lineTo(x2, y2);
     ctx.stroke();
   };
-  const circle = (x, y, radius, fill = false) => {
+  const circle = (x: number, y: number, radius: number, fill = false): void => {
     ctx.beginPath();
     ctx.arc(x, y, radius, 0, Math.PI * 2);
     if (fill) ctx.fill();
