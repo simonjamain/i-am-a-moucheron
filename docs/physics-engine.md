@@ -1,4 +1,4 @@
-# Physique Rapier — les véhicules au sol (versions 352 à 370)
+# Physique Rapier — les véhicules au sol (versions 352 à 373)
 
 Le jeu écrit sa physique à la main (vol, hélicoptère, `stepWalker`, balistique). Les
 véhicules au sol roulent sur un vrai moteur, **Rapier** (Rust compilé en
@@ -143,11 +143,18 @@ char vide simulé par l'hôte. Le modèle d'un char à chenilles :
   publiée est nulle, donc les roues ne tournent pas. Avant, la force de maintien visqueuse
   s'éteignait vers zéro et laissait le char ramper (≈ 2 mm/s) après la sortie de l'équipage.
 - **Recul du canon** : chaque obus du char (enregistrement de tir de la salle, visible de tous)
-  déclenche `src/tank-recoil.ts` (le tube recule de 0,32 unité modèle en 0,05 s, revient en
-  0,55 s, le long de son axe quelle que soit l'élévation) et, sur la machine qui simule la caisse
+  déclenche `src/tank-recoil.ts` : le **tube seul** (nœud `cannonBarrel`) recule de 0,32 unité
+  modèle en 0,05 s et revient en 0,55 s, le long de son axe ; le masque (le bloc autour de la
+  base du tube) reste sur le pivot. Et, sur la machine qui simule la caisse
   (conducteur, ou hôte si char vide), `TankRig.kick` : une impulsion `mass × recoil` (0,35 m/s)
   au pivot du canon, qui recule et fait tanguer la caisse sur ses ressorts.
-- **Vue du tireur** (`tankSight`, `SIGHT`) : œil derrière (1,5) et haut au-dessus (1,0) du pivot
+- **Pivot du canon** (version 373) : l'axe d'élévation est à l'avant de la tourelle, à la base du
+  tube (`scripts/rig-tank-gun.mjs` : `cannonGun` porte le masque et la mitrailleuse coaxiale,
+  `cannonBarrel` le tube ; aucun triangle ni UV ne change). Comme ce pivot n'est plus sur l'axe de
+  rotation de la tourelle, il tourne avec elle : `tankBarrelOrigin` en tient compte (lacet lu dans
+  la visée, `turretPivot`, `gunPivot`, `gunLength` de `VEHICLE_ANCHORS`).
+- **Vue du tireur** (`tankSight`, `SIGHT`) : œil derrière (2,4, soit la même place qu'avant le
+  déplacement du pivot) et haut au-dessus (1,0) du pivot
   du canon, sur son axe, regard le long de la visée (version 370 ; la première position,
   plus basse et décalée, cachait le tube derrière la tourelle et laissait la mitrailleuse du toit
   dans le champ). Le tube est vu de dessus, sous le réticule, et on le voit reculer. L'œil ne suit

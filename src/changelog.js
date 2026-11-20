@@ -1,6 +1,12 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 373,
+    changes: [
+      'Le canon du char pivote à l’avant de la tourelle, et seul le tube recule quand il tire.',
+    ],
+  },
+  {
     version: 372,
     changes: [
       'Un diagnostic d’affichage, dans « Nouveautés », aide à comprendre pourquoi certains joueurs ne voient pas tout.',

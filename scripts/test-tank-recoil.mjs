@@ -8,7 +8,8 @@ import { loadRapier } from '../src/physics-world.ts';
 import { TankRig } from '../src/tank-physics.ts';
 import { GUN_RECOIL, applyGunRecoil, recoilAmount } from '../src/tank-recoil.ts';
 import { tankSight, SIGHT } from '../src/tank-view.js';
-import { aimGun } from '../src/sortie.js';
+import { MODEL_DATA } from '../src/meshy-tank-data.js';
+import { VEHICLE_ANCHORS } from '../src/vehicle-anchors.js';
 
 // Profile: quick back, slower return, nothing before the shot.
 assert.equal(recoilAmount(-1), 0);
@@ -17,50 +18,76 @@ assert.equal(recoilAmount(GUN_RECOIL.back), 1);
 assert.ok(recoilAmount(GUN_RECOIL.back + 0.1) < 1 && recoilAmount(GUN_RECOIL.back + 0.1) > 0.5);
 assert.equal(recoilAmount(GUN_RECOIL.back + GUN_RECOIL.ret), 0);
 
-// The barrel slides back along its own axis, level or elevated, and returns to battery.
+// The pivot is at the front of the turret, at the base of the barrel; only the barrel tube slides
+// back along its own axis (level or elevated), the mantlet stays, and it returns to battery.
 const tank = createGraphics(T, new T.Scene()).makeTank('#777');
 tank.scale.setScalar(vehicleUnit('tank'));
 const mount = tank.userData.turrets[0],
-  gun = mount.userData.pitch;
+  gun = mount.userData.pitch,
+  barrel = mount.userData.barrel;
+assert.equal(barrel.parent, gun, 'the tube is a child of the pitching gun');
+{
+  const nodes = (n) => MODEL_DATA.rig.find((r) => r.name === n);
+  const turretFront = nodes('cannon').pivot[2] - 0.9;
+  assert.ok(
+    Math.abs(nodes('cannonGun').pivot[2] - turretFront) < 1e-9,
+    'pivot at the turret front',
+  );
+  assert.ok(
+    nodes('cannonGun').pivot[2] < nodes('cannon').pivot[2],
+    'in front of the turret centre',
+  );
+  assert.equal(VEHICLE_ANCHORS.tank.gunPivot[2], nodes('cannonGun').pivot[2], 'shell origin pivot');
+}
+const mantlet = gun.children.find((c) => c.isMesh);
+assert.ok(
+  mantlet && barrel.children.some((c) => c.isMesh),
+  'mantlet on the pivot, tube on its node',
+);
 for (const pitch of [0, 0.4]) {
   gun.rotation.x = pitch;
-  applyGunRecoil(gun, 0);
+  applyGunRecoil(barrel, 0);
   tank.updateMatrixWorld(true);
-  const rest = gun.getWorldPosition(new T.Vector3());
-  applyGunRecoil(gun, 1);
+  const rest = barrel.getWorldPosition(new T.Vector3()),
+    mantletRest = mantlet.getWorldPosition(new T.Vector3());
+  applyGunRecoil(barrel, 1);
   tank.updateMatrixWorld(true);
-  const kicked = gun.getWorldPosition(new T.Vector3());
+  const kicked = barrel.getWorldPosition(new T.Vector3());
   const back = kicked.clone().sub(rest),
     axis = new T.Vector3(0, 0, 1).applyEuler(new T.Euler(pitch, 0, 0));
   assert.ok(Math.abs(back.length() - GUN_RECOIL.travel * vehicleUnit('tank')) < 1e-9, 'travel');
   assert.ok(back.normalize().distanceTo(axis) < 1e-9, 'along the barrel, pitch ' + pitch);
-  applyGunRecoil(gun, 0);
+  assert.ok(
+    mantlet.getWorldPosition(new T.Vector3()).distanceTo(mantletRest) < 1e-12,
+    'mantlet stays',
+  );
+  applyGunRecoil(barrel, 0);
   tank.updateMatrixWorld(true);
-  assert.ok(gun.getWorldPosition(new T.Vector3()).distanceTo(rest) < 1e-12, 'back to battery');
+  assert.ok(barrel.getWorldPosition(new T.Vector3()).distanceTo(rest) < 1e-12, 'back to battery');
 }
 
-// Gunner's view: behind, above and left of the pivot, looking along the aim; the barrel is ahead
-// and to the right of the eye, and does not move with the recoil.
+// Gunner's view: behind and above the pivot on the barrel axis, looking along the aim; it ignores
+// the recoil.
 gun.rotation.x = 0;
-applyGunRecoil(gun, 0);
+applyGunRecoil(barrel, 0);
 tank.updateMatrixWorld(true);
 const dir = new T.Vector3(0, 0, -1),
   up = new T.Vector3(0, 1, 0);
 const sight = tankSight(T, mount, dir, up);
-const pivot = mount.localToWorld(new T.Vector3(...gun.userData.restPosition));
+const pivot = gun.getWorldPosition(new T.Vector3());
 const rel = sight.eye.clone().sub(pivot).divideScalar(vehicleUnit('tank'));
 assert.ok(Math.abs(rel.z - SIGHT.behind) < 1e-9 && Math.abs(rel.y - SIGHT.above) < 1e-9);
 assert.equal(rel.x, 0, 'on the barrel axis');
-applyGunRecoil(gun, 1);
+applyGunRecoil(barrel, 1);
 tank.updateMatrixWorld(true);
 assert.ok(tankSight(T, mount, dir, up).eye.distanceTo(sight.eye) < 1e-12, 'the eye ignores recoil');
-applyGunRecoil(gun, 0);
+applyGunRecoil(barrel, 0);
 tank.updateMatrixWorld(true);
 // Nothing hides the barrel from the eye: rays to points along it meet no other part of the tank
 // (the turret hides it from low eyes, the roof machine gun from eyes beside it).
 {
-  const pivotWorld = gun.getWorldPosition(new T.Vector3());
-  const box = new T.Box3().setFromObject(gun);
+  const pivotWorld = barrel.getWorldPosition(new T.Vector3());
+  const box = new T.Box3().setFromObject(barrel);
   const blockers = [];
   tank.traverse((o) => {
     let p = o,
