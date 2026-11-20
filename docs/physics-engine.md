@@ -1,4 +1,4 @@
-# Physique Rapier — les véhicules au sol (versions 352 à 375)
+# Physique Rapier — les véhicules au sol (versions 352 à 377)
 
 Le jeu écrit sa physique à la main (vol, hélicoptère, `stepWalker`, balistique). Les
 véhicules au sol roulent sur un vrai moteur, **Rapier** (Rust compilé en
@@ -158,13 +158,13 @@ char vide simulé par l'hôte. Le modèle d'un char à chenilles :
   le tactile s'arrêtent à cette butée. Le serveur ne la contrôle pas (voir
   [confiance envers les clients](trust-model.md)). La mitrailleuse du toit et l'abaissement (−37°)
   ne changent pas.
-- **Vue du tireur** (`tankSight`, `SIGHT`) : œil derrière (2,4, soit la même place qu'avant le
-  déplacement du pivot) et haut au-dessus (1,0) du pivot
-  du canon, sur son axe, regard le long de la visée (version 370 ; la première position,
-  plus basse et décalée, cachait le tube derrière la tourelle et laissait la mitrailleuse du toit
-  dans le champ). Le tube est vu de dessus, sous le réticule, et on le voit reculer. L'œil ne suit
-  pas le recul. Le char n'est plus masqué en vue de tir.
-  `test-tank-recoil.mjs` contrôle l'ensemble, dont un lancer de rayons de l'œil vers le tube.
+- **Vue du tireur** (`tankSight`, `SIGHT`) : l'œil est tout près du canon, derrière (0,4) et au-dessus
+  (0,75) de son pivot, **dans le repère du canon** (le « dessus » est perpendiculaire à la visée) :
+  il monte avec le tube et reste au-dessus du toit de la tourelle à toute élévation (version 377 ;
+  avant, l'œil restait à 2,4 derrière et 1,0 au-dessus à la verticale, donc sous le toit dès que le
+  canon se relevait). Le tube est vu de dessus, sous le réticule, et on le voit reculer. L'œil ne
+  suit pas le recul. Le char n'est plus masqué en vue de tir.
+  `test-tank-recoil.mjs` contrôle l'ensemble, dont des lancers de rayons de l'œil vers le tube et devant lui, à six élévations et lacets.
 
 Pistes (pas encore faites) : roues du Castor animées par le braquage de la physique plutôt que
 déduites du taux de lacet.

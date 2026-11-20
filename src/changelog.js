@@ -1,6 +1,12 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 377,
+    changes: [
+      'Le tireur du char voit son canon de près, sans que la tourelle gêne quand il relève la visée.',
+    ],
+  },
+  {
     version: 375,
     changes: ['Le canon du char ne se relève plus qu’à 30 degrés.'],
   },
