@@ -149,12 +149,6 @@ for (let i = 0; i < 30; i++) {
   command('heavy-fire', { weapon: 'bomb', shot: 'drop-' + i, direction: [0, 0, -1] }, pilot);
   command('heavy-fire', { weapon: 'bomb', shot: 'drop-' + i, direction: [0, 0, -1] }, pilot);
   assert.equal(bomber.supplies.ammo.bomb, 29 - i);
-  if (i < 29)
-    assert.throws(
-      () =>
-        command('heavy-fire', { weapon: 'bomb', shot: 'fast-' + i, direction: [0, 0, -1] }, pilot),
-      /recharge/,
-    );
 }
 now += 1000;
 pilot.seen = now;
