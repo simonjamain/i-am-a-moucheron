@@ -1,6 +1,10 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 375,
+    changes: ['Le canon du char ne se relève plus qu’à 30 degrés.'],
+  },
+  {
     version: 374,
     changes: [
       'La caméra suit mieux le véhicule : moins de petits sauts en arrière quand l’image saccade.',

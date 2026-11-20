@@ -153,3 +153,36 @@ assert.ok(backward > 0, 'pushed backwards (the shot goes to -z)');
 assert.ok(pitch > 0.005, 'the hull rocks: ' + pitch);
 assert.ok(state.p[2] > before[2], 'moved back');
 console.log('tank recoil ok');
+
+// Elevation stop: the main gun rises to 30° at most, in the hull's frame, also on the server.
+{
+  const { Game } = await import('../server/game.js');
+  const { TANK_GUN_MAX_PITCH } = await import('../src/armament.ts');
+  assert.ok(Math.abs(TANK_GUN_MAX_PITCH - Math.PI / 6) < 1e-12, '30 degrees');
+  let now = 100000;
+  const game = new Game({ now: () => now, solids: [] });
+  const joined = game.join({ code: 'ELEV', name: 'Tireur' }),
+    room = game.rooms.get('ELEV'),
+    gunner = room.pilots.get(joined.id);
+  const car = game.createVehicle(room, 'tank');
+  car.state.p = [1, 1, 1];
+  car.state.q = [0, 0, 0, 1];
+  game.assign(room, gunner, car, 'cannon', null);
+  const shoot = (shot, degrees) => {
+    gunner.seen = now;
+    const a = (degrees * Math.PI) / 180;
+    return game.command(room.code, joined.id, 'heavy-fire', {
+      vehicle: car.id,
+      occupation: gunner.occupation,
+      weapon: 'he',
+      shot,
+      direction: [0, Math.sin(a), -Math.cos(a)],
+    });
+  };
+  assert.throws(() => shoot('too-high', 35), /Butée/);
+  shoot('stop', 30);
+  now += 5000;
+  shoot('level', 5);
+  assert.equal(room.ordnance.length, 2, 'the two legal shots are in flight');
+}
+console.log('tank elevation stop ok');
