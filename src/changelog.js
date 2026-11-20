@@ -1,6 +1,12 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 374,
+    changes: [
+      'La caméra suit mieux le véhicule : moins de petits sauts en arrière quand l’image saccade.',
+    ],
+  },
+  {
     version: 373,
     changes: [
       'Le canon du char pivote à l’avant de la tourelle, et seul le tube recule quand il tire.',

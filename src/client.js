@@ -48,6 +48,7 @@ import { BedUI } from '/bed-ui.js';
 import { bedAccess } from '/beds.js';
 import { tankSight } from '/tank-view.js';
 import { applyGunRecoil, recoilAmount } from '/tank-recoil.js';
+import { followMoving } from '/camera-follow.js';
 import { shoulderView, aimPistol, muzzleAim } from '/personal-aim.js';
 import { BankUI } from '/bank-ui.js';
 import { ContextHUD, equipmentHUD } from '/hud.js';
@@ -3072,7 +3073,7 @@ function airViewCamera(dt) {
     Math.max(0, me.position.y - VEHICLES.flyingcastor.gear),
   );
   const eye = new T.Vector3(me.position.x, ground + airViewHeight, me.position.z);
-  camera.position.lerp(eye, 1 - Math.exp(-10 * dt));
+  followMoving(camera.position, eye, new T.Vector3(vel.x, 0, vel.z), 10, dt);
   camera.up
     .lerp(new T.Vector3(-Math.sin(yaw), 0, -Math.cos(yaw)), 1 - Math.exp(-10 * dt))
     .normalize();
@@ -3156,11 +3157,14 @@ function updateVehicles(dt) {
             new T.Euler(T.MathUtils.clamp(turretAim.pitch, -1.2, 0.6), turretAim.yaw, 0, 'YXZ'),
           ),
         );
-      camera.position.lerp(
+      followMoving(
+        camera.position,
         me.position
           .clone()
           .add(new T.Vector3(0, 7, 21).multiplyScalar(ACTOR_UNIT).applyQuaternion(orbit)),
-        1 - Math.exp(-10 * dt),
+        vel,
+        10,
+        dt,
       );
       camera.up.set(0, 1, 0);
       camera.lookAt(
@@ -4874,7 +4878,7 @@ function frame(now) {
       if (airView()) airViewCamera(dt);
       else if (castorTopView()) {
         const pose = topViewPose(T, me.position, topViewHeight);
-        camera.position.lerp(pose.eye, 1 - Math.exp(-10 * dt));
+        followMoving(camera.position, pose.eye, new T.Vector3(vel.x, 0, vel.z), 10, dt);
         camera.up.lerp(pose.up, 1 - Math.exp(-10 * dt)).normalize();
         camera.lookAt(pose.target);
         camera.updateMatrixWorld();
@@ -4899,7 +4903,7 @@ function frame(now) {
         )
           .multiplyScalar(ACTOR_UNIT)
           .applyQuaternion(orbit);
-        camera.position.lerp(me.position.clone().add(offset), 1 - Math.exp(-10 * dt));
+        followMoving(camera.position, me.position.clone().add(offset), vel, 10, dt);
         camera.up.set(0, 1, 0).applyQuaternion(orbit);
         camera.lookAt(
           me.position
