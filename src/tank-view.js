@@ -3,7 +3,7 @@ import { vehicleUnit } from './fleet.ts';
 import { rotateLocal } from './helicopter.js';
 import { VEHICLE_ANCHORS } from './vehicle-anchors.js';
 // Position of the gunner's eye relative to the gun's pivot, in model units.
-export const SIGHT = Object.freeze({ behind: 1.35, above: 0.5, left: 0.4 });
+export const SIGHT = Object.freeze({ behind: 1.5, above: 1, left: 0 });
 export function tankSight(T, mount, direction, up, observation = null) {
   mount.updateWorldMatrix(true, true);
   const muzzle = mount.userData.muzzle.getWorldPosition(new T.Vector3());
@@ -17,8 +17,9 @@ export function tankSight(T, mount, direction, up, observation = null) {
     ).multiplyScalar(9 * ACTOR_UNIT);
     return { eye: center.clone().add(offset), target: center, muzzle: coax, observing: true };
   }
-  // Over the shoulder: behind and above the gun's pivot, a little to the left, so that the barrel
-  // stays in view, lower right of the sight, and is seen kicking back when it fires. The eye
+  // Behind and well above the gun's pivot, on its axis: the barrel is seen from above and behind
+  // (clear of the turret, which hides it from lower eyes, and of the roof machine gun, which sits
+  // below the line of sight), under the sight, and is seen kicking back when it fires. The eye
   // follows the gun's rest pose, not its recoil.
   const gun = mount.userData.pitch,
     rest = gun.userData.restPosition ?? gun.position.toArray(),

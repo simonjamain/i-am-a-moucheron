@@ -1,6 +1,10 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 370,
+    changes: ['Le tireur du char voit son canon de plus haut, sans la mitrailleuse devant.'],
+  },
+  {
     version: 369,
     changes: [
       'Le canon du char recule à chaque tir et secoue la caisse. Le tireur voit le canon par-dessus l’épaule.',
