@@ -1,6 +1,12 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 372,
+    changes: [
+      'Un diagnostic d’affichage, dans « Nouveautés », aide à comprendre pourquoi certains joueurs ne voient pas tout.',
+    ],
+  },
+  {
     version: 371,
     changes: ['Les ronds au sol des sièges et équipements restent visibles sur tous les écrans.'],
   },

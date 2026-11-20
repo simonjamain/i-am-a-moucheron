@@ -129,6 +129,7 @@ import {
 } from '/control-focus.js';
 import { createRenderer } from '/renderer.js';
 import { makeEntryRing } from '/entry-ring.js';
+import { renderInfo } from '/render-info.js';
 import { createGraphics } from '/graphics.js';
 import { availableAppearance, turnToward, loadCharacter } from '/character-model.js';
 import { createAppearancePicker } from '/appearance-picker.js';
@@ -1800,6 +1801,23 @@ mountChangelog({
     clearControls();
   },
 });
+{
+  const report = renderInfo(T, renderer).join('\n');
+  $('renderInfoText').textContent = report;
+  $('renderInfoCopy').onclick = async () => {
+    try {
+      await navigator.clipboard.writeText(report);
+      $('renderInfoCopy').textContent = 'Copié';
+    } catch {
+      $('renderInfoCopy').textContent = 'Copie impossible : sélectionnez le texte';
+    }
+  };
+  if (!renderer.isWebGLRenderer)
+    notify(
+      'La 3D n’est pas disponible dans ce navigateur : l’affichage est simplifié. Activez l’accélération matérielle de Chrome.',
+      12,
+    );
+}
 function launchWave() {
   if (snap?.phase === 'lost') return action('reset', { epoch: snap.base.epoch });
   if (!snap?.mission_started) return action('start');

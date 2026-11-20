@@ -2422,6 +2422,16 @@
         overscroll-behavior: contain;
         padding: 0 18px 12px;
       }
+      #renderInfo {
+        padding: 0 18px 14px;
+        font-size: 12px;
+      }
+      #renderInfo pre {
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+        margin: 6px 0;
+        font-size: 11px;
+      }
       #changelogEntries section {
         padding: 12px 0;
         border-bottom: 1px solid var(--line);
@@ -2886,6 +2896,11 @@
         <button id="changelogClose" type="button" aria-label="Fermer les nouveautés">✕</button>
       </header>
       <div id="changelogEntries" tabindex="0" aria-label="Historique des versions"></div>
+      <details id="renderInfo">
+        <summary>Diagnostic d’affichage</summary>
+        <pre id="renderInfoText"></pre>
+        <button id="renderInfoCopy" type="button">Copier</button>
+      </details>
     </dialog>
   </body>
 </html>
