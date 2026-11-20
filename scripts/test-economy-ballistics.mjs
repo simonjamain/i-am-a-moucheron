@@ -3,13 +3,13 @@ import assert from 'node:assert/strict';
 import * as T from '../vendor/three.module.min.js';
 import { stepFall, stepBallisticVelocity, toggleParachute, HUMAN_AERO } from '../src/ballistics.ts';
 import { MAP } from '../src/scale.ts';
-import { supportedPlacement } from '../src/equipment.js';
+import { supportedPlacement } from '../src/equipment.ts';
 import { OFFICE_LAYOUT } from '../src/layout.ts';
 import { createGraphics } from '../src/graphics.js';
 import { createOffice } from '../src/office.js';
 import { enemyRoute, enemyRoutePosition, PORTALS } from '../src/routes.js';
 import { wavePlan, swarmFrame } from '../src/waves.js';
-import { CombatEffects } from '../src/combat.js';
+import { CombatEffects } from '../src/combat.ts';
 const reference = new T.Vector3(820, 0, 0),
   small = reference.clone().multiplyScalar(MAP.ratio);
 for (let i = 0; i < 120; i++) {

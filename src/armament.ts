@@ -1,5 +1,14 @@
 import { FLAK, REFERENCE, MAP } from './scale.ts';
 import { isBomber } from './fleet.ts';
+/** A heavy (explosive or armour-piercing) weapon; distances in map units. */
+export interface HeavyWeapon {
+  interval: number;
+  damage: number;
+  edge: number;
+  radius: number;
+  speed: number;
+  lifetime: number;
+}
 export const HEAVY = Object.freeze({
   rocket: {
     interval: 0.3,
@@ -56,25 +65,31 @@ export const HEAVY = Object.freeze({
     speed: MAP.metres(750),
     lifetime: 8,
   },
-});
+} satisfies Record<string, HeavyWeapon>);
+export type HeavyKind = keyof typeof HEAVY;
+const HEAVY_BY_NAME: Readonly<Record<string, HeavyWeapon | undefined>> = HEAVY;
 export const TANK_MG = Object.freeze({
   pilot: { interval: 0.09, damage: 25 },
   top: { interval: 0.06, damage: 75 },
   coax: { interval: 0.06, damage: 50 },
 });
-export function availableShell(ammo, selected = 'he') {
+export type Shell = 'he' | 'ap';
+export function availableShell(
+  ammo: Partial<Record<string, number>>,
+  selected: Shell = 'he',
+): Shell | null {
   if ((ammo[selected] || 0) >= 1) return selected;
   const other = selected === 'he' ? 'ap' : 'he';
   return (ammo[other] || 0) >= 1 ? other : null;
 }
 // Seconds between two uses of a heavy weapon on a vehicle: the biplane bomber
 // drops its bombs half as fast as the Stuka's rack.
-export function heavyInterval(weapon, type) {
-  const base = HEAVY[weapon]?.interval ?? 0;
+export function heavyInterval(weapon: string, type?: string): number {
+  const base = HEAVY_BY_NAME[weapon]?.interval ?? 0;
   return weapon === 'bomb' && type === 'bomber' ? base * 2 : base;
 }
-export function heavyDamage(weapon, distance, bonus = 1, radiusFactor = 1) {
-  const p = HEAVY[weapon];
+export function heavyDamage(weapon: string, distance: number, bonus = 1, radiusFactor = 1): number {
+  const p = HEAVY_BY_NAME[weapon];
   return p && distance <= p.radius * radiusFactor
     ? Math.round(
         (p.damage - ((p.damage - p.edge) * distance) / Math.max(p.radius * radiusFactor, 1e-9)) *
@@ -82,7 +97,7 @@ export function heavyDamage(weapon, distance, bonus = 1, radiusFactor = 1) {
       )
     : 0;
 }
-export function canUseWeapon(type, seat, key) {
+export function canUseWeapon(type: string, seat: string, key: string): boolean {
   if (type === 'flyingcastor') return false; // unarmed transport
   return type === 'helicopter'
     ? seat === 'pilot'

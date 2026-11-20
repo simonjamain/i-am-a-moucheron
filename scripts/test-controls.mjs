@@ -10,7 +10,7 @@ import {
   lookDelta,
   lookScale,
   BASE_FOV,
-} from '../src/control-focus.js';
+} from '../src/control-focus.ts';
 import { neutralPad } from '../src/input.ts';
 const pad = neutralPad();
 for (const [letter, arrow, axis] of [

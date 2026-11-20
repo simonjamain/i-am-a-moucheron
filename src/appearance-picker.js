@@ -1,4 +1,4 @@
-import { APPEARANCES, appearanceId, nextAppearance } from './character-appearances.js';
+import { APPEARANCES, appearanceId, nextAppearance } from './character-appearances.ts';
 import {
   createCharacter,
   loadCharacter,

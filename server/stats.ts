@@ -8,7 +8,7 @@
 // redémarrage (STATS_FILE).
 import { mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
-import { SHOP } from '../src/equipment.js';
+import { SHOP } from '../src/equipment.ts';
 import { VEHICLES } from '../src/fleet.ts';
 
 /** Salle de jeu : seul ce que le registre lit est utilisé. */

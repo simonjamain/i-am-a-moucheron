@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import { readFileSync } from 'node:fs';
 import * as T from '../vendor/three.module.min.js';
-import { AircraftFire } from '../src/aircraft-fire.js';
+import { AircraftFire } from '../src/aircraft-fire.ts';
 
 const deferred = () => {
   let resolve, reject;

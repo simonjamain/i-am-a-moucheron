@@ -184,7 +184,7 @@ assert.equal(ui.active, false, 'entering a vehicle or dying cancels placement');
 assert.equal(ui.preview.visible, false);
 console.log('Ground placement UI: wheel, ghost, pending command, modal suspension and reset OK');
 
-const { placementAim } = await import('../src/placement-aim.js');
+const { placementAim } = await import('../src/placement-aim.ts');
 const { brickLayout, createBrickWall } = await import('../src/brick-wall.js');
 const floor = { min: { x: -4, y: -0.1, z: -4 }, max: { x: 4, y: 0, z: 4 } };
 const eye = { x: 0, y: 0.04, z: 0.04 };

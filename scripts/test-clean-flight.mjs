@@ -6,9 +6,9 @@ import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
 import * as T from '../vendor/three.module.min.js';
 import { Game } from '../server/game.js';
-import { SHOP, shopPrice, purchaseCount, supportedPlacement } from '../src/equipment.js';
+import { SHOP, shopPrice, purchaseCount, supportedPlacement } from '../src/equipment.ts';
 import { fullAmmo, advanceSupplies } from '../src/logistics.js';
-import { HEAVY, heavyInterval } from '../src/armament.js';
+import { HEAVY, heavyInterval } from '../src/armament.ts';
 import { VEHICLES, LIGHT_FIGHTER, vehicleEntry, isRotorcraft } from '../src/fleet.ts';
 import { MAP, ACTOR_UNIT } from '../src/scale.ts';
 import { OFFICE_LAYOUT } from '../src/layout.ts';
@@ -16,7 +16,7 @@ import { OFFICE_SOLIDS } from '../server/assets.js';
 import { createGraphics } from '../src/graphics.js';
 import { stepFlight } from '../src/flight.ts';
 import { swarmAudioGroups } from '../src/game-audio/swarm.ts';
-import { AircraftFire } from '../src/aircraft-fire.js';
+import { AircraftFire } from '../src/aircraft-fire.ts';
 import { wavePlan, swarmFrame } from '../src/waves.js';
 import { collisionDamage, washTarget, WASH } from '../src/vehicle-care.js';
 import { ballisticMarks } from '../src/tank-reticle.js';
@@ -617,7 +617,7 @@ assert.equal(visualModels.size, 0);
 
 // Execute the real audio updater: siren is Stuka-only, and the loop leaves the
 // keep set on exit/destruction rather than merely lowering its volume.
-const { diveIntensity } = await import('../src/combat.js');
+const { diveIntensity } = await import('../src/combat.ts');
 let kept = new Set();
 const soundModels = new Map();
 const audioVehicles = Object.keys(VEHICLES).map((type) => ({

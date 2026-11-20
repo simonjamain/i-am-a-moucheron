@@ -5,7 +5,7 @@
 // Same protocol, session and resume as UdpClient; only the transport differs.
 // A lost packet stalls everything behind it on TCP: smoothness is lower than
 // over UDP, which the game always tries first.
-import { TCP_PATH } from './udp-protocol.js';
+import { TCP_PATH } from './udp-protocol.ts';
 import { UdpClient } from './udp-client.js';
 
 const encoder = new TextEncoder();

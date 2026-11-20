@@ -1,5 +1,5 @@
 import { CHARACTER_DATA as COWBOY } from './character-data.js';
-import { DEFAULT_APPEARANCE, appearanceId } from './character-appearances.js';
+import { DEFAULT_APPEARANCE, appearanceId } from './character-appearances.ts';
 
 // Issue #111: the playable character (user-approved Meshy + Mixamo GLB). One
 // shared geometry/material/clip set per appearance; each player owns its bones,

@@ -1,4 +1,4 @@
-import { appearanceId } from '../src/character-appearances.js';
+import { appearanceId } from '../src/character-appearances.ts';
 import { prepareRoster, forecast } from './wave-preparation.js';
 import { feedingPoint } from '../src/ground-defense-state.js';
 import { DEFAULT_BALANCE, money } from '../src/balance.js';
@@ -15,7 +15,7 @@ import { advanceGroundCrowd } from '../src/ground-crowd.js';
 import { HELI, rotateLocal } from '../src/helicopter.js';
 import { clampProximity } from '../src/mobile-flak.js';
 import { collisionDamage, washTarget, WASH } from '../src/vehicle-care.js';
-import { purchaseCount } from '../src/equipment.js';
+import { purchaseCount } from '../src/equipment.ts';
 import { bedAccess, bedSpawn } from '../src/beds.js';
 import { impactDamage } from '../src/field-physics.ts';
 import { randomUUID } from 'node:crypto';
@@ -31,7 +31,7 @@ import {
   vehicleMaxHP,
   TRAILER_LIMITS,
 } from '../src/fleet.ts';
-import { AIRDROP_KINDS, airdropCommand, airdropSurface, headingOf } from '../src/airdrop.js';
+import { AIRDROP_KINDS, airdropCommand, airdropSurface, headingOf } from '../src/airdrop.ts';
 import { baseWorld, baseBody, reconcileBase } from '../src/base.js';
 import {
   createSoul,
@@ -47,11 +47,11 @@ import {
   assignMidgeSwarmSizes,
   MAX_OFFSPRING_ROSTER,
 } from '../src/waves.js';
-import { SHOP, shopPrice, supportedPlacement } from '../src/equipment.js';
+import { SHOP, shopPrice, supportedPlacement } from '../src/equipment.ts';
 import { advancePaidService } from '../src/paid-service.js';
-import { SENTRY, fireGroundSentries } from '../src/ground-sentry.js';
-import { FORTIFICATIONS, isFortification } from '../src/ground-fortifications.js';
-import { FIXED_DCA, heavyDcaMuzzle, isFixedDca } from '../src/fixed-dca.js';
+import { SENTRY, fireGroundSentries } from '../src/ground-sentry.ts';
+import { FORTIFICATIONS, isFortification } from '../src/ground-fortifications.ts';
+import { FIXED_DCA, heavyDcaMuzzle, isFixedDca } from '../src/fixed-dca.ts';
 import { PISTOL_CAPACITY } from '../src/ground-ammo.ts';
 import {
   fullAmmo,
@@ -61,12 +61,12 @@ import {
   installationCount,
 } from '../src/logistics.js';
 import { stationAccess, stationExit } from '../src/sortie.js';
-import { howitzerMuzzle, howitzerPitchAllowed } from '../src/howitzer-geometry.js';
+import { howitzerMuzzle, howitzerPitchAllowed } from '../src/howitzer-geometry.ts';
 import { validMotion } from '../src/network.js';
 import { snapshotRosterCore, snapshotRosterKey } from '../src/snapshot-wire.ts';
 import { appendDebugEnemy, debugPlacement, standingDummies } from '../src/debug-enemies.ts';
 import { newBank, signLoan, settleLoans, repayLoan } from '../src/bank.ts';
-import { canUseWeapon, HEAVY, TANK_MG, availableShell, heavyInterval } from '../src/armament.js';
+import { canUseWeapon, HEAVY, TANK_MG, availableShell, heavyInterval } from '../src/armament.ts';
 import { sweptSphereMayTouch } from '../src/swept-broadphase.ts';
 import { createOrdnance, segmentSphere } from '../src/ordnance.js';
 import { StatsLedger } from './stats.ts';

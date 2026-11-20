@@ -115,7 +115,7 @@ Premier asset passé par la règle ci-dessus ([issue #99](https://github.com/sim
 Huit modèles fournis et validés par l'utilisateur ([issue #111](https://github.com/simonjamain/i-am-a-moucheron/issues/111)
 pour le premier, cinq ajoutés en version 280, l'opératrice en version 282, l'opérateur en version 283), déjà générés, riggés et animés par
 l'utilisateur dans Meshy/Mixamo : aucune génération ni crédit Meshy de notre côté.
-Le joueur choisit le sien à l'accueil (`src/character-appearances.js`, ordre du
+Le joueur choisit le sien à l'accueil (`src/character-appearances.ts`, ordre du
 sélecteur ; le premier sert de défaut et de repli pour une valeur inconnue). Les noms
 ne sont pas affichés : ils ne sont lus que par les lecteurs d'écran.
 
@@ -488,7 +488,7 @@ Modèle fourni par l'utilisateur pour l'[issue #113](https://github.com/simonjam
   −5° et +40° (au-delà, la culasse traverserait les flèches) ; le tir part dans la
   direction réelle du tube. Recul de 30 % du tube en 0,06 s, retour en 0,6 s,
   secousse de 6 cm de l'affût. `scripts/test-howitzer.mjs` couvre ces points.
-- Tir : `src/howitzer-geometry.js` (sans three.js) reprend les pivots mesurés sur
+- Tir : `src/howitzer-geometry.ts` (sans three.js) reprend les pivots mesurés sur
   le modèle pour que l'obus `HEAVY.antitank` parte de la vraie bouche ; le test
   vérifie l'écart modèle/géométrie (< 2 cm). L'obus est simulé par le tireur
   (`src/heavy-sim.js`) ; `scripts/test-antitank-shell.mjs` couvre sa balistique,

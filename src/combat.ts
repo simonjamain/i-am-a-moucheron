@@ -1,5 +1,13 @@
-import { MAP, ACTOR_UNIT, INSECT_SCALE, REFERENCE, FLAK } from './scale.ts';
-export function spreadDirection(T, direction, random = Math.random, angle = 0.003) {
+import { MAP, FLAK } from './scale.ts';
+import type * as THREE from 'three';
+import type { Three } from './types.ts';
+
+export function spreadDirection(
+  T: Three,
+  direction: THREE.Vector3,
+  random: () => number = Math.random,
+  angle = 0.003,
+): THREE.Vector3 {
   const n = direction.clone().normalize(),
     right = new T.Vector3(0, 1, 0).cross(n);
   if (right.lengthSq() < 1e-8) right.set(1, 0, 0);
@@ -13,33 +21,71 @@ export function spreadDirection(T, direction, random = Math.random, angle = 0.00
     .normalize();
 }
 // Continuous within bounds: held Shift/Ctrl reaches any distance (issue #102).
-export function fuseRange(value) {
+export function fuseRange(value: number): number {
   if (!Number.isFinite(value)) return FLAK.range;
   return Math.max(FLAK.minRange, Math.min(FLAK.maxRange, value));
 }
-export function blastDamage(distance, radius = MAP.metres(FLAK.radius)) {
+export function blastDamage(distance: number, radius = MAP.metres(FLAK.radius)): number {
   return distance > radius ? 0 : Math.round(80 - (60 * Math.max(0, distance)) / radius);
 }
 // Direct contact consumes a shell; only a solid obstacle beyond the safety
 // distance can turn contact into an explosion. The timed fuse is handled once
 // by the caller when there was no earlier contact.
-export function shellImpact(hit, distance, minimum) {
+export function shellImpact(
+  hit: { wall?: unknown },
+  distance: number,
+  minimum: number,
+): { kind: 'direct' | 'blast' | 'inert'; damage: number } {
   if (!hit.wall) return { kind: 'direct', damage: 200 };
   return { kind: distance >= minimum ? 'blast' : 'inert', damage: 0 };
 }
-export function diveIntensity(speed, forwardY, maxSpeed) {
+export function diveIntensity(speed: number, forwardY: number, maxSpeed: number): number {
   return (
     Math.max(0, Math.min(1, (speed / maxSpeed - 0.68) / 0.28)) *
     Math.max(0, Math.min(1, (-forwardY - 0.25) / 0.45))
   );
 }
+interface Particle {
+  p: THREE.Mesh;
+  v: THREE.Vector3;
+}
+interface MuzzleEffect {
+  kind: 'muzzle';
+  g: THREE.Group;
+  m: THREE.MeshBasicMaterial;
+  anchor: THREE.Object3D | null;
+  direction: THREE.Vector3;
+  age: number;
+  life: number;
+}
+interface BlastEffect {
+  kind: 'blast';
+  g: THREE.Group;
+  m: THREE.MeshStandardMaterial;
+  core: THREE.Mesh;
+  flash: THREE.MeshBasicMaterial;
+  metal: THREE.MeshBasicMaterial;
+  smoke: Particle[];
+  shards: Particle[];
+  age: number;
+  life: number;
+  radius: number;
+}
+type Effect = MuzzleEffect | BlastEffect;
 export class CombatEffects {
-  constructor(T, scene) {
+  T: Three;
+  scene: THREE.Object3D;
+  items: Effect[];
+  constructor(T: Three, scene: THREE.Object3D) {
     this.T = T;
     this.scene = scene;
     this.items = [];
   }
-  muzzle(position, direction, anchor = null) {
+  muzzle(
+    position: THREE.Vector3,
+    direction: THREE.Vector3,
+    anchor: THREE.Object3D | null = null,
+  ): void {
     const T = this.T,
       g = new T.Group(),
       m = new T.MeshBasicMaterial({
@@ -65,10 +111,10 @@ export class CombatEffects {
       life: 0.07,
       kind: 'muzzle',
     });
-    this.followMuzzle(this.items.at(-1));
+    this.followMuzzle(this.items.at(-1) as MuzzleEffect);
     this.trim();
   }
-  followMuzzle(e) {
+  followMuzzle(e: MuzzleEffect): void {
     if (!e.anchor) return;
     e.anchor.updateWorldMatrix(true, false);
     e.anchor.getWorldPosition(e.g.position);
@@ -76,7 +122,7 @@ export class CombatEffects {
     // gunner's barrel node is not always oriented like its aim.
     e.g.quaternion.setFromUnitVectors(new this.T.Vector3(0, 0, -1), e.direction);
   }
-  blast(position, radius = MAP.metres(FLAK.radius)) {
+  blast(position: THREE.Vector3, radius = MAP.metres(FLAK.radius)): void {
     const T = this.T,
       g = new T.Group(),
       flash = new T.MeshBasicMaterial({
@@ -94,7 +140,7 @@ export class CombatEffects {
       });
     const core = new T.Mesh(new T.IcosahedronGeometry(radius * 0.3, 1), flash);
     g.add(core);
-    const smoke = [];
+    const smoke: Particle[] = [];
     for (let i = 0; i < 11; i++) {
       const a = i * 2.39996,
         v = new T.Vector3(Math.cos(a), Math.sin(i * 1.71) * 0.6, Math.sin(a)).normalize();
@@ -103,7 +149,7 @@ export class CombatEffects {
       g.add(puff);
       smoke.push({ p: puff, v: v.multiplyScalar(radius * 0.28) });
     }
-    const shards = [],
+    const shards: Particle[] = [],
       metal = new T.MeshBasicMaterial({
         color: '#414437',
         transparent: true,
@@ -136,18 +182,20 @@ export class CombatEffects {
     });
     this.trim();
   }
-  trim() {
+  trim(): void {
     while (this.items.length > 40) this.remove(this.items[0]);
   }
-  remove(e) {
+  remove(e: Effect): void {
     this.scene.remove(e.g);
-    e.g.traverse((o) => o.geometry?.dispose());
+    e.g.traverse((o) => (o as THREE.Mesh).geometry?.dispose());
     e.m.dispose();
-    e.flash?.dispose();
-    e.metal?.dispose();
+    if (e.kind === 'blast') {
+      e.flash.dispose();
+      e.metal.dispose();
+    }
     this.items.splice(this.items.indexOf(e), 1);
   }
-  update(dt, camera) {
+  update(dt: number, _camera?: unknown): void {
     for (const e of [...this.items]) {
       if (e.kind === 'muzzle') this.followMuzzle(e);
       e.age += dt;

@@ -1,7 +1,7 @@
 import { VEHICLES } from './fleet.ts';
 import { MAP, ACTOR_UNIT } from './scale.ts';
 import { OFFICE_LAYOUT } from './layout.ts';
-import { supportedPlacement } from './equipment.js';
+import { supportedPlacement } from './equipment.ts';
 export function bedAccess(point, bed) {
   return (
     !!point &&

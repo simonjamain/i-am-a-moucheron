@@ -6,7 +6,7 @@ import { vehicleEntry } from '../src/fleet.ts';
 import { ACTOR_UNIT } from '../src/scale.ts';
 import { OFFICE_LAYOUT } from '../src/layout.ts';
 import { GameSession } from '../server/session.js';
-import { ReplyAssembler } from '../src/udp-protocol.js';
+import { ReplyAssembler } from '../src/udp-protocol.ts';
 
 let now = 100000;
 const game = new Game({ now: () => now, roomTTL: 30000 });

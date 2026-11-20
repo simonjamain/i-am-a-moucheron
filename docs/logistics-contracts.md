@@ -6,7 +6,7 @@ aux migrations, à la persistance et aux requêtes HTTP ci-dessous décrivent l�
 modèle à base de données, abandonné. Voir [serveur UDP](udp-server.md).
 
 Référence du lot du 29 octobre 2026. Les modules `logistics.js` et
-`vehicle-livery.js` portent les règles communes. Les données vivent en RAM (plus de migration SQL depuis le retrait du Worker/D1).
+`vehicle-livery.ts` portent les règles communes. Les données vivent en RAM (plus de migration SQL depuis le retrait du Worker/D1).
 
 ## Véhicules identifiables
 
@@ -63,7 +63,7 @@ conditionnée à la révision lue pour gérer les accès concurrents.
 - DCA fixe et pistolet : réserves illimitées ; DCA mobile limitée, voir plus bas.
 
 Les tirs d’avion sont simulés **immédiatement dans le navigateur**, avec son,
-traceur et trajectoire créés à l’appui, sans attendre le serveur. `aircraft-fire.js`
+traceur et trajectoire créés à l’appui, sans attendre le serveur. `aircraft-fire.ts`
 décompte localement les balles et transmet leurs identifiants au serveur par lots
 (toutes les 250 ms au plus vite, 32 tirs maximum par lot, une requête en cours).
 L’origine, la direction, la vitesse héritée et l’effet contractuel restent fixés

@@ -7,7 +7,7 @@ import {
   udpDescription,
   MAX_COMMAND_BYTES,
   DISCONNECT_GRACE_MS,
-} from './udp-protocol.js';
+} from './udp-protocol.ts';
 import { validMotion } from './network.js';
 import { decodeMotionBatch } from './motion-wire.ts';
 

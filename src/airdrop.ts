@@ -1,3 +1,6 @@
+import type { Collider } from './oriented-collider.ts';
+import type { Vec2 } from './types.ts';
+
 // Castor volant airdrops (shared by the server and the client preview). Every
 // Castor construction except the LEGO wall is dropped straight below the
 // helicopter, turned like it, and falls like the other purchases dropped in
@@ -7,11 +10,16 @@ export const AIRDROP_KINDS = Object.freeze(['sugar', 'sticky', 'sentry', 'bunker
 export const AIRDROP_TAPE = 0.1; // one 10 cm piece of tape per drop
 // Structures higher than this stand on furniture: floor walkers ignore them.
 export const FLOOR_LEVEL = 0.01;
-export const onFloor = (structure) => !((structure?.y || 0) > FLOOR_LEVEL);
-export const levelOf = (structure) => structure?.y || 0;
+/** Anything with an optional height above the floor (structures, drops). */
+export interface Levelled {
+  y?: number;
+}
+export const onFloor = (structure: Levelled | null | undefined): boolean =>
+  !((structure?.y || 0) > FLOOR_LEVEL);
+export const levelOf = (structure: Levelled | null | undefined): number => structure?.y || 0;
 
 // Heading (rotation about +Y) of a vehicle quaternion whose nose points -Z.
-export function headingOf(q) {
+export function headingOf(q: readonly number[]): number {
   const [x, y, z, w] = q;
   const fx = -2 * (x * z + w * y),
     fz = -(1 - 2 * (x * x + y * y));
@@ -19,7 +27,12 @@ export function headingOf(q) {
 }
 
 // Top of the highest solid under (x, z) that is not above `fromY`; 0 = floor.
-export function airdropSurface(solids, x, z, fromY) {
+export function airdropSurface(
+  solids: readonly Partial<Collider>[] | null | undefined,
+  x: number,
+  z: number,
+  fromY: number,
+): number {
   let top = 0;
   for (const box of solids || []) {
     const max = box.max,
@@ -32,7 +45,17 @@ export function airdropSurface(solids, x, z, fromY) {
 }
 
 // Build command of a drop: centred under the helicopter, along its heading.
-export function airdropCommand(kind, { x, z, yaw }) {
+export interface AirdropCommand {
+  action: 'build';
+  kind: string;
+  a: Vec2;
+  b?: Vec2;
+  angle?: number;
+}
+export function airdropCommand(
+  kind: string,
+  { x, z, yaw }: { x: number; z: number; yaw: number },
+): AirdropCommand {
   if (kind === 'sticky') {
     const half = AIRDROP_TAPE / 2,
       dx = -Math.sin(yaw) * half,
@@ -53,7 +76,7 @@ export function airdropCommand(kind, { x, z, yaw }) {
 export const AIR_VIEW_HEIGHT = 0.12;
 export const AIR_VIEW_MIN_HEIGHT = 0.05;
 export const AIR_VIEW_MAX_HEIGHT = 0.8;
-export function zoomAirView(height, delta) {
+export function zoomAirView(height: number, delta: number): number {
   return Math.max(
     AIR_VIEW_MIN_HEIGHT,
     Math.min(AIR_VIEW_MAX_HEIGHT, height * Math.exp(Math.sign(delta) * 0.15)),

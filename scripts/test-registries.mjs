@@ -11,7 +11,7 @@ import { GROUND_BODY_SIZES, GROUND_ATTACK_DAMAGE } from '../src/ground-creatures
 import { WALKERS } from '../src/walker-batch.js';
 import { FLYERS } from '../src/flyer-batch.js';
 import { VEHICLES } from '../src/fleet.ts';
-import { SHOP } from '../src/equipment.js';
+import { SHOP } from '../src/equipment.ts';
 import { SHOP_CATEGORIES } from '../src/shop-catalog.js';
 import { CONTRACTS, contractKey } from '../src/contracts.js';
 
@@ -56,7 +56,7 @@ for (const [type, profile] of Object.entries(ENEMY_TYPES)) {
 // Vehicles: sold in the shop, shown in a named column, a boarding contract per seat.
 const vehicles = keys(VEHICLES);
 expectKeys(
-  "SHOP entries of kind 'vehicle' (src/equipment.js)",
+  "SHOP entries of kind 'vehicle' (src/equipment.ts)",
   Object.fromEntries(Object.entries(SHOP).filter(([, item]) => item.kind === 'vehicle')),
   vehicles,
 );

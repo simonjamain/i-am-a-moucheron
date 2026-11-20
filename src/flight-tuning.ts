@@ -1,6 +1,21 @@
 // Réglages locaux du joueur : sans modification de l'équilibrage de la room.
 export const FLIGHT_TUNING_STORAGE_KEY = 'moucheron-flight-tuning:v1';
 
+export interface RangeField {
+  label: string;
+  hint: string;
+  type?: undefined;
+  min: number;
+  max: number;
+  step: number;
+  value: number;
+}
+export interface CheckboxField {
+  label: string;
+  hint: string;
+  type: 'checkbox';
+  value: boolean;
+}
 export const FLIGHT_TUNING_FIELDS = Object.freeze({
   mouseSensitivity: {
     label: 'Sensibilité de la souris',
@@ -64,18 +79,30 @@ export const FLIGHT_TUNING_FIELDS = Object.freeze({
     type: 'checkbox',
     value: false,
   },
-});
+} satisfies Record<string, RangeField | CheckboxField>);
+export type FlightTuningKey = keyof typeof FLIGHT_TUNING_FIELDS;
+/** Every field's current value: numbers for sliders, booleans for checkboxes. */
+export type FlightTuning = {
+  [K in FlightTuningKey]: (typeof FLIGHT_TUNING_FIELDS)[K]['value'] extends boolean
+    ? boolean
+    : number;
+};
+const FIELD_ENTRIES = Object.entries(FLIGHT_TUNING_FIELDS) as [
+  FlightTuningKey,
+  RangeField | CheckboxField,
+][];
 
-export const DEFAULT_FLIGHT_TUNING = Object.freeze(
-  Object.fromEntries(
-    Object.entries(FLIGHT_TUNING_FIELDS).map(([key, field]) => [key, field.value]),
-  ),
+export const DEFAULT_FLIGHT_TUNING: Readonly<FlightTuning> = Object.freeze(
+  Object.fromEntries(FIELD_ENTRIES.map(([key, field]) => [key, field.value])) as FlightTuning,
 );
 
-export function normalizeFlightTuning(value) {
-  const input = value && typeof value === 'object' && !Array.isArray(value) ? value : {};
-  const result = { ...DEFAULT_FLIGHT_TUNING };
-  for (const [key, field] of Object.entries(FLIGHT_TUNING_FIELDS)) {
+export function normalizeFlightTuning(value: unknown): FlightTuning {
+  const input: Record<string, unknown> =
+    value && typeof value === 'object' && !Array.isArray(value)
+      ? (value as Record<string, unknown>)
+      : {};
+  const result: Record<FlightTuningKey, number | boolean> = { ...DEFAULT_FLIGHT_TUNING };
+  for (const [key, field] of FIELD_ENTRIES) {
     const v = input[key];
     if (field.type === 'checkbox') {
       if (typeof v === 'boolean') result[key] = v;
@@ -83,10 +110,13 @@ export function normalizeFlightTuning(value) {
       result[key] = Math.min(field.max, Math.max(field.min, v));
     }
   }
-  return result;
+  return result as FlightTuning;
 }
 
-export function loadFlightTuning(storage) {
+type TuningStorage = Pick<Storage, 'getItem' | 'setItem'>;
+export function loadFlightTuning(
+  storage: Pick<Storage, 'getItem'> | null | undefined,
+): FlightTuning {
   try {
     return normalizeFlightTuning(JSON.parse(storage?.getItem(FLIGHT_TUNING_STORAGE_KEY) || 'null'));
   } catch {
@@ -94,7 +124,10 @@ export function loadFlightTuning(storage) {
   }
 }
 
-export function saveFlightTuning(storage, value) {
+export function saveFlightTuning(
+  storage: TuningStorage | null | undefined,
+  value: unknown,
+): boolean {
   try {
     storage?.setItem(FLIGHT_TUNING_STORAGE_KEY, JSON.stringify(normalizeFlightTuning(value)));
     return !!storage;

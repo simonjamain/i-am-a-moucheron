@@ -5,9 +5,9 @@ import { Game } from '../server/game.js';
 import { resolveHeavy, detonateHeavy, roomWorld } from './heavy-resolver.mjs';
 import { stepHeavy } from '../src/heavy-sim.js';
 import { VEHICLES, vehiclePad, LIGHT_FIGHTER } from '../src/fleet.ts';
-import { HEAVY, canUseWeapon, heavyDamage } from '../src/armament.js';
+import { HEAVY, canUseWeapon, heavyDamage } from '../src/armament.ts';
 import { MAP, REFERENCE, FLAK } from '../src/scale.ts';
-import { SHOP, supportedPlacement } from '../src/equipment.js';
+import { SHOP, supportedPlacement } from '../src/equipment.ts';
 import { fullAmmo, advanceSupplies } from '../src/logistics.js';
 import { createOrdnance } from '../src/ordnance.js';
 import {

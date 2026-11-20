@@ -5,7 +5,7 @@ import * as T from '../vendor/three.module.min.js';
 import { createSentryModel, SENTRY_MUZZLE_HEIGHT, SENTRY_SCALE } from '../src/sentry-model.js';
 import { makeCastorMeshy } from '../src/castor-model.js';
 import { createGroundModel } from '../src/ground-model.js';
-import { SENTRY } from '../src/ground-sentry.js';
+import { SENTRY } from '../src/ground-sentry.ts';
 import { ACTOR_UNIT } from '../src/scale.ts';
 
 const size = (o) => new T.Box3().setFromObject(o).getSize(new T.Vector3());

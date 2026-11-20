@@ -1,4 +1,4 @@
-import { HEAVY } from './armament.js';
+import { HEAVY } from './armament.ts';
 import { integrateOrdnance } from './ordnance.js';
 // Graduations in real office metres (issue #105), out to the far end of the room
 // (about 9 m). Each one is sampled on the authoritative trajectory.

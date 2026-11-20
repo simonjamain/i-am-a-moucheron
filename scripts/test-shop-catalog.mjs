@@ -2,7 +2,7 @@
 // (bottom) by price, a picture for every purchasable item, no item hidden.
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { SHOP } from '../src/equipment.js';
+import { SHOP } from '../src/equipment.ts';
 import { SHOP_CATEGORIES, shopColumns } from '../src/shop-catalog.js';
 
 const columns = shopColumns();

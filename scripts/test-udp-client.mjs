@@ -7,7 +7,7 @@ import {
   udpDescription,
   udpCandidate,
   CHUNK_BYTES,
-} from '../src/udp-protocol.js';
+} from '../src/udp-protocol.ts';
 
 let fetches = 0,
   protocol = 'udp';

@@ -73,7 +73,7 @@ Noms validés (version 276, sans préfixe ni suffixe de code) : **Chasseur bipla
 **Bombardier biplan**, **Hélicoptère d’attaque au sol**, **Char moyen**, **Castor**,
 **Anti-air mobile**, **Spitfire**, DCA fixe **Flak léger**, canon lourd **Canon
 anti-matériel** ; la tourelle automatique et le Stuka gardent leur nom
-(`src/fleet.ts`, `src/equipment.js`, `src/ground-fortifications.js`). Les sigles
+(`src/fleet.ts`, `src/equipment.ts`, `src/ground-fortifications.ts`). Les sigles
 M1, B3, H2, T3, D2, G1 et S6 ne s'affichent plus en jeu : ils ne subsistent que comme
 désignations internes dans les commentaires, tests et documents techniques. Aucun
 « filet de leurre » n'existe dans le jeu.
@@ -100,7 +100,7 @@ les flèches gauche/droite le roulis, et A/E le lacet. Sur hélicoptère, Q/D fo
 de la souris tant que Z/S ne sont pas touchés. Une commande manuelle
 remplace l'assistance souris sur son axe tant qu'elle est active, sans désactiver
 les autres axes assistés ; voir [commandes](controls.md). Avec le zoom (clic droit), la
-sensibilité de la souris suit le champ de vision (`lookScale`, `src/control-focus.js`) :
+sensibilité de la souris suit le champ de vision (`lookScale`, `src/control-focus.ts`) :
 un cran de souris déplace l'image du même nombre de pixels, zoomé ou non. Un avion
 peut rouler et se poser si sa vitesse, sa descente et son attitude le permettent.
 Au sol, il faut l’arrêter pour en sortir. Toute sortie aérienne commence en chute
@@ -182,7 +182,7 @@ sonnerie chez tous les joueurs présents, même dans les autres mondes. Le servi
 continue côté serveur sans joueur humain au purgatoire. Le menu P permet d’acheter
 une DCA, un radar ou une station à placer sur un support solide, un Stuka, un Spitfire, un tank, etc.
 Il n'y a plus d'améliorations achetables. Les prix sont définis
-par `src/equipment.js` ; [économie](economy-physics.md) détaille les garanties.
+par `src/equipment.ts` ; [économie](economy-physics.md) détaille les garanties.
 La remise à zéro efface monnaie et installations : aucune
 progression permanente entre parties n’est implémentée.
 

@@ -1,5 +1,5 @@
 import { MODEL_DATA } from './meshy-flying-castor-data.js';
-import { texturedMeshyParts } from './meshy-texture.js';
+import { texturedMeshyParts } from './meshy-texture.ts';
 
 // Castor volant: one Meshy mesh whose two tandem rotors (hub and three blades
 // each) are separate islands; scripts/import-meshy-flying-castor.py stores each

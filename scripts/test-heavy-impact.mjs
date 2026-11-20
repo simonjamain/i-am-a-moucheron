@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { Game, IMPACT_GRACE_MS, HEAVY_CADENCE_TOLERANCE_MS } from '../server/game.js';
-import { HEAVY } from '../src/armament.js';
+import { HEAVY } from '../src/armament.ts';
 import { debugSwarmRoster } from '../src/waves.js';
 
 // Heavy weapons are simulated by their shooter; the server records launches,

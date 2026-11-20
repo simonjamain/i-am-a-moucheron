@@ -1,6 +1,6 @@
 // Shop layout: one column per category, items sorted from weakest (top) to
 // strongest (bottom) by base price, which tracks power across the catalogue.
-import { SHOP } from './equipment.js';
+import { SHOP } from './equipment.ts';
 
 export const SHOP_CATEGORIES = Object.freeze([
   {

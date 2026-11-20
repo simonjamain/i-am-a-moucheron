@@ -11,7 +11,26 @@ export const SENTRY = Object.freeze({
   footprint: 0.02,
 });
 
-export function fireGroundSentries(structures, targets, now, hit) {
+/** Server structure record (only the fields the sentry loop reads or writes). */
+export interface SentryStructure {
+  kind: string;
+  hp: number;
+  ammo: number;
+  position: readonly number[];
+  y?: number;
+  lastShotAt?: number;
+  aimTarget?: number[];
+}
+export interface SentryTarget {
+  p: readonly number[];
+  dead?: boolean;
+}
+export function fireGroundSentries<S extends SentryStructure, E extends SentryTarget>(
+  structures: Iterable<S>,
+  targets: Iterable<E | null | undefined>,
+  now: number,
+  hit: (target: E, sentry: S, damage: number) => void,
+): number {
   let fired = 0;
   for (const sentry of structures) {
     if (
@@ -21,8 +40,8 @@ export function fireGroundSentries(structures, targets, now, hit) {
       now - (sentry.lastShotAt ?? -Infinity) < SENTRY.intervalMs
     )
       continue;
-    let selected = null;
-    let range = SENTRY.range;
+    let selected: E | null = null;
+    let range: number = SENTRY.range;
     for (const target of targets) {
       if (!target || target.dead) continue;
       const [x, y, z] = target.p;
