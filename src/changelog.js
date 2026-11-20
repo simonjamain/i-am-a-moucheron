@@ -1,6 +1,13 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 369,
+    changes: [
+      'Le canon du char recule à chaque tir et secoue la caisse. Le tireur voit le canon par-dessus l’épaule.',
+      'Un char abandonné reste bien à l’arrêt.',
+    ],
+  },
+  {
     version: 366,
     changes: [
       'Les chenilles du char épousent le relief : galets et chenille montent sur les obstacles.',

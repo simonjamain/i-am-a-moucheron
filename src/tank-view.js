@@ -2,6 +2,8 @@ import { ACTOR_UNIT } from './scale.ts';
 import { vehicleUnit } from './fleet.ts';
 import { rotateLocal } from './helicopter.js';
 import { VEHICLE_ANCHORS } from './vehicle-anchors.js';
+// Position of the gunner's eye relative to the gun's pivot, in model units.
+export const SIGHT = Object.freeze({ behind: 1.35, above: 0.5, left: 0.4 });
 export function tankSight(T, mount, direction, up, observation = null) {
   mount.updateWorldMatrix(true, true);
   const muzzle = mount.userData.muzzle.getWorldPosition(new T.Vector3());
@@ -15,9 +17,21 @@ export function tankSight(T, mount, direction, up, observation = null) {
     ).multiplyScalar(9 * ACTOR_UNIT);
     return { eye: center.clone().add(offset), target: center, muzzle: coax, observing: true };
   }
+  // Over the shoulder: behind and above the gun's pivot, a little to the left, so that the barrel
+  // stays in view, lower right of the sight, and is seen kicking back when it fires. The eye
+  // follows the gun's rest pose, not its recoil.
+  const gun = mount.userData.pitch,
+    rest = gun.userData.restPosition ?? gun.position.toArray(),
+    anchor = mount.localToWorld(new T.Vector3(...rest)),
+    unit = vehicleUnit('tank'),
+    right = direction.clone().cross(up).normalize();
   return {
-    eye: muzzle.clone().addScaledVector(direction, -0.5 * ACTOR_UNIT),
-    target: muzzle.clone().addScaledVector(direction, 100 * ACTOR_UNIT),
+    eye: anchor
+      .clone()
+      .addScaledVector(direction, -SIGHT.behind * unit)
+      .addScaledVector(up, SIGHT.above * unit)
+      .addScaledVector(right, -SIGHT.left * unit),
+    target: anchor.clone().addScaledVector(direction, 100 * ACTOR_UNIT),
     muzzle: coax,
     observing: false,
   };

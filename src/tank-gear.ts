@@ -28,3 +28,10 @@ export const GROUND_Y = -0.8;
 /** Distance of each track's wheels from the centre line. */
 export const TRACK_HALF =
   AXLES.flat().reduce((sum, p) => sum + Math.abs(p[0]), 0) / (AXLES.length * 2);
+
+/** Elevation pivot of the main gun, in the hull frame (model units); the barrel recoils from here. */
+export const GUN_PIVOT = (() => {
+  const node = MODEL_DATA.rig.find((n: { name: string }) => n.name === 'cannonGun');
+  if (!node) throw Error('Missing tank node cannonGun');
+  return node.pivot as [number, number, number];
+})();
