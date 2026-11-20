@@ -50,10 +50,42 @@ const sight = tankSight(T, mount, dir, up);
 const pivot = mount.localToWorld(new T.Vector3(...gun.userData.restPosition));
 const rel = sight.eye.clone().sub(pivot).divideScalar(vehicleUnit('tank'));
 assert.ok(Math.abs(rel.z - SIGHT.behind) < 1e-9 && Math.abs(rel.y - SIGHT.above) < 1e-9);
-assert.ok(rel.x < 0, 'to the left of the barrel');
+assert.equal(rel.x, 0, 'on the barrel axis');
 applyGunRecoil(gun, 1);
 tank.updateMatrixWorld(true);
 assert.ok(tankSight(T, mount, dir, up).eye.distanceTo(sight.eye) < 1e-12, 'the eye ignores recoil');
+applyGunRecoil(gun, 0);
+tank.updateMatrixWorld(true);
+// Nothing hides the barrel from the eye: rays to points along it meet no other part of the tank
+// (the turret hides it from low eyes, the roof machine gun from eyes beside it).
+{
+  const pivotWorld = gun.getWorldPosition(new T.Vector3());
+  const box = new T.Box3().setFromObject(gun);
+  const blockers = [];
+  tank.traverse((o) => {
+    let p = o,
+      inGun = false;
+    while (p) {
+      if (p === gun) inGun = true;
+      p = p.parent;
+    }
+    if (o.isMesh && !inGun) blockers.push(o);
+  });
+  const ray = new T.Raycaster();
+  let clear = 0;
+  for (const t of [0.5, 0.65, 0.8, 0.95]) {
+    const point = new T.Vector3(
+      pivotWorld.x,
+      pivotWorld.y,
+      box.min.z + (box.max.z - box.min.z) * t,
+    );
+    const d = point.clone().sub(sight.eye);
+    ray.set(sight.eye, d.clone().normalize());
+    ray.far = d.length() - 1e-6;
+    if (!ray.intersectObjects(blockers, false).length) clear++;
+  }
+  assert.ok(clear >= 3, 'the barrel is in the clear: ' + clear + '/4 points');
+}
 // The muzzle, ahead of the eye, is below the sight line: the barrel is in the picture.
 const muzzle = mount.userData.muzzle.getWorldPosition(new T.Vector3());
 const view = new T.PerspectiveCamera(60, 16 / 9, 0.001, 10);
