@@ -131,6 +131,7 @@ export function createGraphics(T, scene) {
   function makeTank() {
     const { root: g, nodes, anchors } = buildMeshyRig(T, TANK, 'tank');
     const main = gunMount(nodes.cannon, nodes.cannonGun, anchors.muzzle[0], anchors.coax[0]);
+    main.userData.barrel = nodes.cannonBarrel; // slides back when the gun fires
     const top = gunMount(nodes.top, nodes.topGun, anchors.topMuzzle[0]);
     // Running gear (parts of the rig): the road wheels, idlers and sprockets spin with their
     // track; the two belts are meshes of their own (the deformable tracks draw them).

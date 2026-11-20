@@ -3,7 +3,7 @@ import { vehicleUnit } from './fleet.ts';
 import { rotateLocal } from './helicopter.js';
 import { VEHICLE_ANCHORS } from './vehicle-anchors.js';
 // Position of the gunner's eye relative to the gun's pivot, in model units.
-export const SIGHT = Object.freeze({ behind: 1.5, above: 1, left: 0 });
+export const SIGHT = Object.freeze({ behind: 2.4, above: 1, left: 0 });
 export function tankSight(T, mount, direction, up, observation = null) {
   mount.updateWorldMatrix(true, true);
   const muzzle = mount.userData.muzzle.getWorldPosition(new T.Vector3());
@@ -19,11 +19,8 @@ export function tankSight(T, mount, direction, up, observation = null) {
   }
   // Behind and well above the gun's pivot, on its axis: the barrel is seen from above and behind
   // (clear of the turret, which hides it from lower eyes, and of the roof machine gun, which sits
-  // below the line of sight), under the sight, and is seen kicking back when it fires. The eye
-  // follows the gun's rest pose, not its recoil.
-  const gun = mount.userData.pitch,
-    rest = gun.userData.restPosition ?? gun.position.toArray(),
-    anchor = mount.localToWorld(new T.Vector3(...rest)),
+  // below the line of sight), under the sight, and is seen kicking back when it fires.
+  const anchor = mount.localToWorld(mount.userData.pitch.position.clone()),
     unit = vehicleUnit('tank'),
     right = direction.clone().cross(up).normalize();
   return {
@@ -37,14 +34,22 @@ export function tankSight(T, mount, direction, up, observation = null) {
     observing: false,
   };
 }
-// Shell origin: the turret's elevation pivot plus the barrel along the aim,
-// the same points the T3 model draws (scripts/import-meshy-vehicle.py).
+// Shell origin: the gun's elevation pivot plus the barrel along the aim, the same points the T3
+// model draws. The pivot is at the turret's front, so it swings with the turret's yaw (the turret
+// turns about its own centre): the yaw is read from the aim, like `aimGun` does.
 export function tankBarrelOrigin(vehicle, direction) {
-  const { gunPivot, gunLength } = VEHICLE_ANCHORS.tank;
+  const { gunPivot, gunLength, turretPivot } = VEHICLE_ANCHORS.tank;
   const unit = vehicleUnit('tank');
+  const q = vehicle.state.q;
+  const local = rotateLocal([-q[0], -q[1], -q[2], q[3]], direction);
+  const yaw = Math.atan2(-local[0], -local[2]),
+    sin = Math.sin(yaw),
+    cos = Math.cos(yaw);
+  const [x, y, z] = gunPivot.map((v, i) => v - turretPivot[i]);
+  const swung = [x * cos + z * sin, y, -x * sin + z * cos];
   const offset = rotateLocal(
-    vehicle.state.q,
-    gunPivot.map((v) => v * unit),
+    q,
+    swung.map((v, i) => (v + turretPivot[i]) * unit),
   );
   return vehicle.state.p.map((v, i) => v + offset[i] + direction[i] * gunLength * unit);
 }

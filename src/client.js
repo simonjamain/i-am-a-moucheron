@@ -3197,7 +3197,7 @@ function updateVehicles(dt) {
       up = new T.Vector3(0, 1, 0).applyQuaternion(me.quaternion);
     aimGun(T, mount, dir, mount.parent.getWorldQuaternion(new T.Quaternion()));
     if (myVehicle.type === 'tank' && crewSeat === 'cannon') {
-      applyGunRecoil(mount.userData.pitch, gunRecoilFor(myVehicle.id));
+      applyGunRecoil(mount.userData.barrel, gunRecoilFor(myVehicle.id));
       mount.updateWorldMatrix(true, true);
     }
     const scoped = ['tank', 'flaktruck'].includes(myVehicle.type) && crewSeat === 'cannon';
@@ -3913,7 +3913,7 @@ function updateOthers(dt) {
     }
     if (v.type === 'tank') {
       trackTankShots();
-      applyGunRecoil(g.userData.turrets[0].userData.pitch, gunRecoilFor(v.id));
+      applyGunRecoil(g.userData.turrets[0].userData.barrel, gunRecoilFor(v.id));
     }
     g.userData.animateGun?.(dt, performance.now() < (g.userData.gunFiredUntil || 0));
     updateInscriptions(T, g, v, snap.pilots);

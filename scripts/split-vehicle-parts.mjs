@@ -119,16 +119,16 @@ SPECS.tank = {
   ],
 };
 
-const decode = (text, Type) => {
+export const decode = (text, Type) => {
   const bytes = Buffer.from(text, 'base64');
   return new Type(bytes.buffer, bytes.byteOffset, bytes.length / Type.BYTES_PER_ELEMENT);
 };
-const encode = (array) =>
+export const encode = (array) =>
   Buffer.from(array.buffer, array.byteOffset, array.byteLength).toString('base64');
 
 // Welded connected components of a part (by vertex position, so UV seams do not split an
 // island), as lists of triangle indices with their bounding box.
-function components(part) {
+export function components(part) {
   const positions = decode(part.positions, Int16Array),
     indices = decode(part.indices, Uint16Array);
   const key = new Map(),
@@ -181,7 +181,7 @@ function components(part) {
 
 // Move the triangles `list` of `part` into a new part pivoting at `pivot` (in the part's
 // own frame, on the grid); returns [remaining part, new part, with that pivot].
-function extract(part, lists, pivot, name) {
+export function extract(part, lists, pivot, name) {
   const positions = decode(part.positions, Int16Array),
     uv = decode(part.uv, Uint16Array),
     indices = decode(part.indices, Uint16Array);
