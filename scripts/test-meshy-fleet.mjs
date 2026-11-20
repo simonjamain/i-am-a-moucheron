@@ -24,7 +24,9 @@ for (const [type, factory] of [
   assert.ok(parts.length >= 1);
   let count = 0;
   for (const [i, mesh] of parts.entries()) {
-    assert.equal(mesh.geometry, other[i].geometry, 'shared GPU geometry');
+    // The tank's belts bend with the terrain: each tank owns its geometry (track-suspension.ts).
+    if (mesh.parent?.userData.belt) assert.notEqual(mesh.geometry, other[i].geometry);
+    else assert.equal(mesh.geometry, other[i].geometry, 'shared GPU geometry');
     const geometry = mesh.geometry;
     count += (geometry.index?.count || geometry.attributes.position.count) / 3;
     for (const attribute of Object.values(geometry.attributes))

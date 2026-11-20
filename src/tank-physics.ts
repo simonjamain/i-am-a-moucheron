@@ -1,7 +1,7 @@
 import type { RigidBody } from '@dimforge/rapier3d-compat';
 import { MAP } from './scale.ts';
 import { vehicleScale, type VehicleProfile } from './fleet.ts';
-import { MODEL_DATA } from './meshy-tank-data.js';
+import { AXLES, TRACK_HALF } from './tank-gear.ts';
 import {
   FALL_KILL_SPEED,
   GRAVITY,
@@ -33,25 +33,9 @@ const MU = MODEL_UNIT * TANK_SCALE;
 // Running gear, read from the model (the tracks, wheels, idlers and sprockets are parts of its
 // rig, see scripts/split-vehicle-parts.mjs): `idler0/1` at the front, four `roadWheel` pairs,
 // `sprocket0/1` at the back, left (-x) then right (+x). One ray and spring per axle and side.
-const pivots = (names: string[]): Array<[number, number, number]> =>
-  names.map((name) => {
-    const part = MODEL_DATA.parts.find((p: { part: string }) => p.part === name);
-    if (!part) throw Error('Missing tank part ' + name);
-    return part.pivot as [number, number, number];
-  });
-const AXLES: string[][] = [
-  ['idler0', 'idler1'],
-  ['roadWheel0', 'roadWheel1'],
-  ['roadWheel2', 'roadWheel3'],
-  ['roadWheel4', 'roadWheel5'],
-  ['roadWheel6', 'roadWheel7'],
-  ['sprocket0', 'sprocket1'],
-];
-const wheelPivots = AXLES.map(pivots);
-export const TRACK_X =
-  (wheelPivots.flat().reduce((sum, p) => sum + Math.abs(p[0]), 0) / (AXLES.length * 2)) * MU; // centre line of each track
+export const TRACK_X = TRACK_HALF * MU; // centre line of each track
 export const WHEEL_RADIUS = 0.28 * MU; // the road wheels'
-export const WHEEL_Z = wheelPivots.map(([a, b]) => ((a[2] + b[2]) / 2) * MU);
+export const WHEEL_Z = AXLES.map(([a, b]) => ((a[2] + b[2]) / 2) * MU);
 export const GROUND_CLEARANCE = 0.8 * MU; // hull origin above the ground at rest
 
 export const TANK_PHYSICS = Object.freeze({

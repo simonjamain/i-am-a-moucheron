@@ -1,6 +1,12 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 366,
+    changes: [
+      'Les chenilles du char épousent le relief : galets et chenille montent sur les obstacles.',
+    ],
+  },
+  {
     version: 365,
     changes: ['Le char est un cinquième plus grand, et ses roues tournent avec les chenilles.'],
   },

@@ -165,6 +165,8 @@ import { HEAVY, TANK_MG, availableShell, heavyInterval } from '/armament.js';
 import { loadRapier } from '/physics-world.js';
 import { CastorRig } from '/castor-physics.js';
 import { TankRig } from '/tank-physics.js';
+import { updateSuspension } from '/track-suspension.js';
+import { TRACK_HALF } from '/tank-gear.js';
 import {
   PIVOT_MODEL_Z as TRUCK_STEER_PIVOT,
   WHEELBASE_MODEL as TRUCK_WHEELBASE,
@@ -3850,6 +3852,8 @@ function updateOthers(dt) {
         dt,
       );
     }
+    if (g.userData.suspension)
+      updateSuspension(g, g.userData.suspension, g.userData.tracks, colliders, TRACK_HALF, dt);
     if (g.userData.runningGear) {
       const forward = new T.Vector3(0, 0, -1).applyQuaternion(g.quaternion);
       const velocity = isSelf ? vel : new T.Vector3().fromArray(motion.v);
