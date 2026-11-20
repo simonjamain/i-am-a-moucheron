@@ -184,8 +184,9 @@ for (const scale of [0.003, 1])
     );
   }
 const { tankSight, tankBarrelOrigin } = await import('../src/tank-view.js');
+const { vehicleUnit } = await import('../src/fleet.ts');
 const tank = createGraphics(T, new T.Scene()).makeTank('#777');
-tank.scale.setScalar(ACTOR_UNIT);
+tank.scale.setScalar(vehicleUnit('tank'));
 tank.updateMatrixWorld(true);
 const mount = tank.userData.turrets[0],
   dir = new T.Vector3(0, 0, -1),
@@ -230,7 +231,7 @@ console.log(
 );
 
 const { OFFICE_SOLIDS } = await import('../server/assets.js');
-const { supportedPlacement } = await import('../src/equipment.js');
+const { supportedPlacement } = await import('../src/equipment.ts');
 const { bedSpawn } = await import('../src/beds.js');
 const bedGame = new Game({ solids: OFFICE_SOLIDS }),
   bedJoin = bedGame.join({ code: 'BEDS' }),

@@ -25,7 +25,7 @@ export async function loadBaselineGame(baseline, tag) {
     if (file) modules.set(name, await import(file.href));
   }
   // Names the baseline imports but that were removed since (waveStipend left
-  // equipment.js with the wave bonus): the import drops them and a stub stands in.
+  // equipment.ts with the wave bonus): the import drops them and a stub stands in.
   // The benchmarks only build snapshots, which never call them.
   const stubs = [];
   const raw = show('server/game.js');

@@ -16,7 +16,7 @@ import {
 import { ENEMY_TYPES, swarmFrame } from '../src/waves.js';
 import { DEFAULT_BALANCE } from '../src/balance.js';
 import { enemyRoute, PORTALS } from '../src/routes.js';
-import { fireGroundSentries, SENTRY } from '../src/ground-sentry.js';
+import { fireGroundSentries, SENTRY } from '../src/ground-sentry.ts';
 import { GROUND_BOUNDS } from '../src/ground-defense.js';
 
 // 1. Every species, both kinds; inputs validated.
@@ -38,7 +38,7 @@ assert.deepEqual(
   debugPlacement({ kind: 'dummy', type: 'ant', p: [1, 0, 1], dir: [3, 4] }).dir,
   [0.6, 0.8],
 );
-// A floor hit rounds a hair below y = 0 (placement-aim.js): still on the floor.
+// A floor hit rounds a hair below y = 0 (placement-aim.ts): still on the floor.
 assert.deepEqual(
   debugPlacement({ kind: 'live', type: 'rat', p: [1, -1e-9, 1] }).p,
   [1, 0, 1],
@@ -187,7 +187,7 @@ const { DebugTools, DamageMeter, DAMAGE_WINDOW_S, formatDamage } =
   await import('../src/debug-tools.ts');
 const { nearestInsectHit } = await import('../src/insect-hits.js');
 const { WalkerBatch } = await import('../src/walker-batch.js');
-const { SENTRY: SENTRY_RULES } = await import('../src/ground-sentry.js');
+const { SENTRY: SENTRY_RULES } = await import('../src/ground-sentry.ts');
 const meter = new DamageMeter();
 assert.equal(meter.update(0, 0), false);
 meter.update(38, 1);

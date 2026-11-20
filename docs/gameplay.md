@@ -32,14 +32,14 @@ des munitions limités, à compléter en se posant et s’arrêtant dans une sta
 protéger la poubelle contre les insectes ; les arrivées ennemies augmentent
 l’infestation. La mort ouvre une observation à caméra fixe ; un clic volontaire donne accès au purgatoire et à la paperasse de retour en jeu.
 
-Avant chaque vague, le serveur annonce les entrées et les horaires des groupes. La préparation dure une minute par défaut ; tout joueur peut lancer la vague avant la fin du compte à rebours. Il n'y a ni vote ni plan à débloquer entre les vagues (retirés en version 264) : équipements et véhicules s'achètent simplement à leur prix en dollars. La première vague combine fourmis et moucherons, puis son budget, exprimé en **puissance**, est multiplié par 1,5 à chaque étape, sans plafond, et par `N^0,9` pour `N` joueurs. La frise et le bouton de vague affichent la puissance de la vague annoncée. Voir [progression](progression.md) et [équilibrage](room-balance.md#puissance-unité-commune). Des groupes aériens arrivent depuis
+Avant chaque vague, le serveur annonce les entrées et les horaires des groupes. La préparation dure une minute par défaut ; tout joueur peut lancer la vague avant la fin du compte à rebours. Il n'y a ni vote ni plan à débloquer entre les vagues (retirés en version 264) : équipements et véhicules s'achètent simplement à leur prix en dollars. La première vague part des fourmis et des moucherons, complétés par n’importe quelle espèce que son budget permet (aucun déblocage), puis son budget, exprimé en **puissance**, est multiplié par 1,5 à chaque étape, sans plafond, et par `N^0,9` pour `N` joueurs. La frise et le bouton de vague affichent la puissance de la vague annoncée. Voir [progression](progression.md) et [équilibrage](enemy-power.md#unité-commune). Des groupes aériens arrivent depuis
 plusieurs aérations, se séparent et se rejoignent ; fourmis et cafards sortent
 de trous et marchent vers la poubelle par le chemin le plus direct qui contourne le
 mobilier, les barricades et les bunkers (voir [navigation terrestre](#navigation-terrestre)).
 La durée nominale des trajets dépend de leur longueur à vitesse conservée.
 
 Les règles de la room sont fixes : l'ancien panneau **Équilibrage et nuées** est retiré
-(voir [historique](room-balance.md)).
+(voir [historique](enemy-power.md)).
 
 ## Mode debug
 
@@ -73,7 +73,7 @@ Noms validés (version 276, sans préfixe ni suffixe de code) : **Chasseur bipla
 **Bombardier biplan**, **Hélicoptère d’attaque au sol**, **Char moyen**, **Castor**,
 **Anti-air mobile**, **Spitfire**, DCA fixe **Flak léger**, canon lourd **Canon
 anti-matériel** ; la tourelle automatique et le Stuka gardent leur nom
-(`src/fleet.ts`, `src/equipment.js`, `src/ground-fortifications.js`). Les sigles
+(`src/fleet.ts`, `src/equipment.ts`, `src/ground-fortifications.ts`). Les sigles
 M1, B3, H2, T3, D2, G1 et S6 ne s'affichent plus en jeu : ils ne subsistent que comme
 désignations internes dans les commentaires, tests et documents techniques. Aucun
 « filet de leurre » n'existe dans le jeu.
@@ -100,7 +100,7 @@ les flèches gauche/droite le roulis, et A/E le lacet. Sur hélicoptère, Q/D fo
 de la souris tant que Z/S ne sont pas touchés. Une commande manuelle
 remplace l'assistance souris sur son axe tant qu'elle est active, sans désactiver
 les autres axes assistés ; voir [commandes](controls.md). Avec le zoom (clic droit), la
-sensibilité de la souris suit le champ de vision (`lookScale`, `src/control-focus.js`) :
+sensibilité de la souris suit le champ de vision (`lookScale`, `src/control-focus.ts`) :
 un cran de souris déplace l'image du même nombre de pixels, zoomé ou non. Un avion
 peut rouler et se poser si sa vitesse, sa descente et son attitude le permettent.
 Au sol, il faut l’arrêter pour en sortir. Toute sortie aérienne commence en chute
@@ -176,13 +176,13 @@ sont la seule source de revenu liée aux vagues, et un ennemi raté ne rapporte 
 Les prix de certaines installations montent avec le nombre déjà posé (voir [progression](progression.md#revenus-et-prix)).
 Chaque PNJ accepté par Saint Pierre ou tué au purgatoire est définitivement
 libéré et rapporte, une seule fois, **la puissance de son espèce** en dollars
-communs (1 $ pour un moucheron, 12,23 $ pour un rat). Un ennemi abattu dans le
+communs (1 $ pour un moucheron, 24,47 $ pour un rat). Un ennemi abattu dans le
 bureau ne rapporte pas directement d’argent. Chaque dollar déclenche une courte
 sonnerie chez tous les joueurs présents, même dans les autres mondes. Le service des PNJ
 continue côté serveur sans joueur humain au purgatoire. Le menu P permet d’acheter
 une DCA, un radar ou une station à placer sur un support solide, un Stuka, un Spitfire, un tank, etc.
 Il n'y a plus d'améliorations achetables. Les prix sont définis
-par `src/equipment.js` ; [économie](economy-physics.md) détaille les garanties.
+par `src/equipment.ts` ; [économie](economy-physics.md) détaille les garanties.
 La remise à zéro efface monnaie et installations : aucune
 progression permanente entre parties n’est implémentée.
 
@@ -232,7 +232,7 @@ Les noms flottants sont retirés. Les moucherons sont agrandis d’un facteur to
 insectes blessés montrent leurs PV, de la fumée puis des flammes à 30 % de PV.
 Les morts aériennes ont un son de chute spatialisé. Voir
 [retours de partie](party-feedback.md) pour les seuils, les signatures fiabilisées
-et les apparitions périphériques, et le [diagnostic et correction du pistolet](pistol-diagnosis.md).
+et les apparitions périphériques, et le [pistolet à l’épaule](field-update.md#pistolet-à-lépaule).
 
 ## Identification, contrats et ravitaillement
 
@@ -302,34 +302,15 @@ tirage que les suivantes, avec au moins deux fourmis et des moucherons en nuées
 L'ancienne composition fixe 20 + 4 est décrite dans [les nuées densifiées](dense-swarms.md).
 VAG-07 réduit taille et vitesse des fourmis, selon le lot confort.
 
-Le [lot confort de jeu, version 37](comfort.md) précise réparation, zoom, jauges,
-radar à pied, remise à zéro, fourmis et projectiles du pistolet courants.
-
-Une commande manuelle de debug crée une nuée unique sur un trajet et à une
-entrée commune, même avec plusieurs milliers d'individus (les espèces au sol
-gardent leur parcours terrestre propre). L'étendue spatiale croît avec
-l'effectif, sans accélérer les insectes ; les vagues automatiques restent
-réparties en plusieurs groupes.
-Voir [nuées densifiées](dense-swarms.md) et [équilibrage](room-balance.md).
-
-Les [nuées densifiées](dense-swarms.md) multiplient les seuls moucherons par cinq,
-avec mêmes groupes de trajets et calcul de voisinage spatial.
-
-Les [commandes H2 corrigées](helicopter-controls.md) précisent les touches,
-le retour au stationnaire et les roquettes alignées sur la coque.
-
-Le [lot de retours du 30 octobre, version 48](returns-30-october.md) décrit les correctifs
-physiques, sons/HUD, livraisons sous parachute et parcours du purgatoire.
-
-Les [issues 15–17](issues-15-16-17.md) précisent la descente continue des colis,
-le mapping Maj/Ctrl et tangage du H2, et la réduction supplémentaire des vitesses terrestres.
-
-Les [réglages d’équilibrage par room](room-balance.md) sont consultables par tous et
-modifiables à tout moment par le créateur de la room.
+Références détaillées de cette période : [confort de jeu](comfort.md) (réparation,
+zoom, jauges, radar, remise à zéro), [nuées densifiées](dense-swarms.md),
+[commandes H2](helicopter-controls.md), [retours du 30 octobre](returns-30-october.md)
+et [issues 15–17](issues-15-16-17.md). Les réglages d’équilibrage par room n’existent
+plus : voir [puissance et budget des vagues](enemy-power.md).
 
 ## Rat, moustique et araignée pondeuse
 
-Le rat géant possède 5 000 PV et avance lentement. Le moustique possède 70 PV et esquive selon des oscillations déterministes. L'araignée pondeuse possède 1 200 PV : elle libère **100 bébés araignées** de 20 PV à sa mort, au lieu du site de décès, avec une trajectoire dispersée et rapide vers la poubelle. Chaque bébé survivant inflige à la poubelle sa puissance (0,17), soit environ 17 pour la portée complète (défaite à 20 d'infestation). Les bébés morts ne créent pas d'âmes rémunérées. Moustique dès vague 3, pondeuse dès vague 11, rat dès vague 15. Voir [bestiaire](enemy-bestiary.md).
+Le rat géant possède 10 000 PV et avance lentement. Le moustique possède 150 PV et esquive selon des oscillations déterministes. L'araignée pondeuse possède 1 200 PV : elle libère **100 bébés araignées** de 10 PV à sa mort, au lieu du site de décès, avec une trajectoire dispersée et rapide vers la poubelle. Chaque bébé survivant inflige à la poubelle sa puissance (0,08), soit environ 8 pour la portée complète. Les bébés morts passent au purgatoire comme les autres ennemis. Tous les ennemis sont disponibles dès la vague 1 : leur puissance, comparée au budget de la vague, décide seule s'ils peuvent être appelés. Voir [bestiaire](enemy-bestiary.md).
 
 Les [vitesses physiques des espèces](enemy-bestiary.md#vitesse-physique-dans-la-pièce) sont explicites en m/s dans le bureau, indépendantes de la taille des insectes et du nombre de membres de la nuée. L'accélération cachée des bébés araignées et les oscillations trop rapides des moustiques ont été corrigées.
 
@@ -410,7 +391,7 @@ opposés et les roues avant braquent selon la vitesse de rotation
 (`src/castor-wheels.ts`, `scripts/test-castor-wheels.mjs`). Plus rapide que le tank, il possède un rayon de soutien sphérique de **50 cm**, matérialisé en jeu par une sphère verte translucide (comme les 50 cm des stations de ravitaillement fixes, `src/service-zones.js`), qui peut soigner et ravitailler les alliés en mouvement ou en vol et se réapprovisionner lui-même. Le service utilise la caisse commune.
 Les ronds d'entrée au sol (sièges, équipements) sont tracés par un shader (`src/entry-ring.ts`) : leur trait garde au moins ~1,6 pixel d'écran, sans dépendre de l'anticrénelage du GPU, pour rester visibles sur tous les écrans.
 
-**La construction en roulant est disponible depuis la version 188.** Le Castor utilise désormais **ses trois modèles Meshy texturés** : châssis, tourelle et roues indépendantes. Les couleurs originales sont préservées, sans pastille d’identification ([flotte Meshy](meshy-fleet.md)). Voir [l'issue #76](https://github.com/simonjamain/i-am-a-moucheron/issues/76) et [la note de reprise](tasks/g1-castor.md).
+**La construction en roulant est disponible depuis la version 188.** Le Castor utilise désormais **ses trois modèles Meshy texturés** : châssis, tourelle et roues indépendantes. Les couleurs originales sont préservées, sans pastille d’identification ([flotte Meshy](meshy-fleet.md)). Voir [l'issue #76](https://github.com/simonjamain/i-am-a-moucheron/issues/76).
 
 ### Construction depuis le Castor (version 188)
 

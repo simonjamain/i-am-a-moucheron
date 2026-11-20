@@ -1,6 +1,6 @@
 import { GROUND_BOUNDS, groundCommand } from './ground-defense-state.js';
 import { distanceToSegment } from './ground-defense.js';
-import { airdropCommand } from './airdrop.js';
+import { airdropCommand } from './airdrop.ts';
 
 // Castor volant: every drop is centred straight below the helicopter and turned
 // like it; repair/remove target the construction closest to that point.

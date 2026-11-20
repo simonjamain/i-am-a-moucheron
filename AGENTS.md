@@ -10,7 +10,10 @@ ou chutes, [economy-physics](docs/economy-physics.md). Pour les vérifications e
 l'exploitation, lire [operations](docs/operations.md).
 Lire [CONTRIBUTING](CONTRIBUTING.md) avant de prendre une tâche ou préparer une PR.
 Pour reprendre une tâche interrompue, lire sa note dans `docs/tasks/`, la discussion
-GitHub et le diff ; vérifier les affirmations contre l'état de la branche.
+GitHub et le diff ; vérifier les affirmations contre l'état de la branche. Les
+tâches ouvertes sont les issues GitHub ; il n'y a plus de BACKLOG ni d'archive de
+docs (l'historique est dans Git). Les documents de `docs/` décrivant un « lot »
+daté peuvent citer des versions dépassées : le code et la référence du thème font foi.
 
 ## Boucle de travail
 

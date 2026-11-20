@@ -90,8 +90,7 @@ Il ne prouve ni l’installation des dépendances natives ni un déploiement WAN
 La suite complète inclut les tests de règles Node, physique, signatures, assets,
 interface et les deux clients natifs UDP.
 `AGENTS.md` exige une revue des documents concernés par la modification en plus
-du contrôle mécanique des liens. Un audit global fait l’objet d’une tâche dédiée. La [revue du 29 octobre 2026](archive/reference-audit-2026-10-29.md)
-reste une trace historique, pas une seconde référence métier.
+du contrôle mécanique des liens ; un audit global fait l’objet d’une tâche dédiée.
 
 Le test ciblé `node scripts/test-laboratory.mjs` couvre l’interrupteur debug (activation, désactivation), l’isolation des rooms, les autorisations, le déblocage, le refus des anciens outils de test et le retour à une partie normale.
 
@@ -111,36 +110,13 @@ tactile physique, écoute, charge maximale et WAN restent à vérifier sur la VM
 La capacité configurée (128 connexions simultanées, `maxConnections` de `server/index.js`) ne prouve pas des performances à cette charge ;
 la cible de jeu reste un petit groupe de 5–10 joueurs.
 
-## Référence métier du lot courant
-
-[Retours terrain](field-update.md) : causes d’embarquement, mesure avant/après de E,
-visée, chute, lits, résurrection, lunette et prêts. Les résultats mesurés avec un
-retard de réponse injecté ne sont pas des mesures de latence réseau réelle.
-
-Dernier lot : [lisibilité et nettoyage](clean-flight.md), incluant le Spitfire.
-Recharger tous les navigateurs après un déploiement ; le serveur
-Node conserve ses assets assemblés au démarrage et doit être redémarré après modification.
-
-Lot courant : [retours multijoueurs](multiplayer-return.md). Les mesures CPU
-comparatives sont reproductibles avec `node scripts/review-return-performance.mjs`
-dans un clone Git contenant le commit de référence.
-
-## Lot véhicules d’appui
-
-[Hélicoptère et DCA mobile](support-vehicles.md) : code livré, contrôles
-locaux et deux pairs UDP vérifiés. HEL-06/DCM-03 restent en cours pour les essais
-humains WebGL/WAN. Le navigateur de contrôle charge le client mais refuse UDP ;
-les quatre HUD sont également consultables dans l’aperçu sans réseau.
-`test-support-vehicles.mjs` fait partie de `npm test`.
-
-Le [lot confort de jeu, version 37](comfort.md) précise réparation, zoom, jauges,
-radar à pied, remise à zéro, fourmis et projectiles du pistolet courants.
-
-Les [nuées densifiées](dense-swarms.md) multiplient les moucherons par cinq
-et utilisent une grille spatiale pour le voisinage.
-
-La [correction des commandes H2](helicopter-controls.md) couvre Z/O/Haut, S/Bas,
-stationnaire, poussée locale et axe des roquettes.
+Recharger tous les navigateurs après un déploiement ; le serveur Node conserve ses
+assets assemblés au démarrage et doit être redémarré après modification. Les
+comparaisons CPU de rendu se reproduisent avec `node scripts/review-return-performance.mjs`
+dans un clone Git contenant le commit de référence. Références métier :
+[retours terrain](field-update.md), [lisibilité et nettoyage](clean-flight.md),
+[retours multijoueurs](multiplayer-return.md), [véhicules d’appui](support-vehicles.md)
+(validation WebGL/WAN de HEL-06/DCM-03 non faite ; le navigateur de contrôle refuse UDP).
 
 ## Tir automatique avec latence simulée
 
@@ -205,14 +181,8 @@ réelles.
 
 ## Contributions GitHub
 
-Le [guide de contribution](../CONTRIBUTING.md) décrit les branches parallèles,
-la revue, les essais et la décision de fusion. Les environnements temporaires
-GitHub Actions ne sont pas encore configurés ; leur fonctionnement cible et
-leurs contraintes UDP y sont consignés. Aucun déploiement VPS automatique
-n’est revendiqué par la seule présence de ces instructions.
-
-Le [lot de retours du 30 octobre, version 48](returns-30-october.md) décrit les correctifs
-physiques, sons/HUD, livraisons sous parachute et parcours du purgatoire.
+Branches parallèles, revue, essais et fusion : [CONTRIBUTING](../CONTRIBUTING.md).
+Les environnements temporaires par PR ne sont pas encore configurés.
 
 ## Mesure reproductible des snapshots (50 joueurs)
 

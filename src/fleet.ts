@@ -41,9 +41,6 @@ export interface VehicleProfile extends FlightProfile {
   maxHP?: number;
   /** Multiplier of PILOT_FIRE_INTERVAL for the pilot's gun. */
   gunIntervalFactor?: number;
-  /** Ground acceleration response (Castor progressive start). */
-  response?: number;
-  reverseSteering?: boolean;
 }
 // The original light fighter stays the reference the Stuka, the Spitfire and the
 // H2 are derived from; the biplane fighter replaced it as the base fighter.
@@ -58,6 +55,16 @@ export const LIGHT_FIGHTER = {
   turn: 1,
   gear: 1.05 * ACTOR_UNIT,
 };
+/**
+ * Size of a vehicle's model relative to the others': a model unit is ACTOR_UNIT × this scale
+ * in the world. The medium tank is 20 % bigger than it was drawn (its physics, anchors and hull
+ * follow: see tank-physics.ts).
+ */
+export const VEHICLE_SCALE: Readonly<Record<string, number>> = Object.freeze({ tank: 1.2 });
+export const vehicleScale = (type: string): number => VEHICLE_SCALE[type] ?? 1;
+/** World metres per model unit of a vehicle. */
+export const vehicleUnit = (type: string): number => ACTOR_UNIT * vehicleScale(type);
+
 export const VEHICLES = {
   // Biplane fighter: 25 % slower than the light fighter it replaced, but it keeps
   // control and lift at lower speed (later stall). One central machine gun that
@@ -115,14 +122,17 @@ export const VEHICLES = {
   tank: {
     name: 'Char moyen',
     seats: ['pilot', 'cannon', 'top'],
-    span: 6,
-    length: 8,
-    maxSpeed: 12,
+    span: 6 * VEHICLE_SCALE.tank,
+    length: 8 * VEHICLE_SCALE.tank,
+    // A real medium tank at the model's size (Froude similarity, see tank-physics.ts): 40 km/h
+    // × √0.25 = 5.5 m/s of physics (32 reference m/s), a 0.6 rad/s pivot becomes 1.2 rad/s. The
+    // former arcade values were 12 and 0.7; the model was 20 % smaller (0.208, 29 and 1.3).
+    maxSpeed: 32,
     thrust: 4,
     drag: 0.1,
     liftBase: 0,
-    turn: 0.7,
-    gear: 0.8 * ACTOR_UNIT,
+    turn: 1.2,
+    gear: 0.8 * ACTOR_UNIT * VEHICLE_SCALE.tank,
     ground: true,
   },
   spitfire: {
@@ -150,7 +160,10 @@ export const VEHICLES = {
     seats: ['pilot', 'cannon'],
     span: 5,
     length: 16,
-    maxSpeed: 10,
+    // A real truck towing a gun at the model's size (Froude similarity, see
+    // truck-physics.ts) would reach 5.8 m/s of physics (33); doubled for the game: 11.4
+    // m/s, 66 reference m/s. It was 10 before the physics engine.
+    maxSpeed: 66,
     thrust: 3,
     drag: 0.1,
     liftBase: 0,
@@ -165,10 +178,9 @@ export const VEHICLES = {
     seats: ['pilot'],
     span: 6,
     length: 9,
-    // Same top speed, with a gentler progressive start (issue #171).
+    // Top speed (reference m/s); acceleration, steering and braking come from the
+    // physics, see castor-physics.ts (progressive start, issue #171).
     maxSpeed: 52,
-    response: 1.5,
-    reverseSteering: true,
     thrust: 6,
     drag: 0.1,
     liftBase: 0,
@@ -194,6 +206,12 @@ export const VEHICLES = {
     maxHP: 200,
   },
 } satisfies Record<string, VehicleProfile>;
+
+/**
+ * What the game accepts of the anti-air trailer's hitch, in the tractor's frame: the
+ * server clamps to it, the physics stops a little inside it (truck-physics.ts).
+ */
+export const TRAILER_LIMITS = Object.freeze({ yaw: 1.8, pitch: 0.5 });
 
 /** Every vehicle key; adding an entry to VEHICLES extends it (and every Record<VehicleType, …>). */
 export type VehicleType = keyof typeof VEHICLES;

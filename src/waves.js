@@ -12,7 +12,7 @@ const SPECIES = {
   },
   roach: {
     name: 'Cafard',
-    hp: 300,
+    hp: 400,
     size: 1.2,
     speedMps: 0.0625,
     color: '#a36f42',
@@ -27,21 +27,21 @@ const SPECIES = {
   },
   guard: {
     name: 'Abeille',
-    hp: 400,
+    hp: 600,
     size: 1.4,
     speedMps: 0.0875,
     color: '#729d8b',
   },
   mosquito: {
     name: 'Moustique',
-    hp: 70,
+    hp: 150,
     size: 0.58,
     speedMps: 0.115,
     color: '#6b807e',
   },
   rat: {
     name: 'Rat',
-    hp: 5000,
+    hp: 10000,
     size: 4,
     speedMps: 0.08075,
     color: '#86705c',
@@ -58,7 +58,7 @@ const SPECIES = {
   },
   spiderling: {
     name: 'Bébé araignée',
-    hp: 20,
+    hp: 10,
     size: 0.3,
     speedMps: 0.075,
     color: '#51463d',
@@ -67,7 +67,7 @@ const SPECIES = {
   },
   brute: {
     name: 'Scarabée',
-    hp: 800,
+    hp: 1500,
     size: 1.9,
     speedMps: 0.07,
     color: '#d0a14b',
@@ -86,8 +86,9 @@ export const ENEMY_TYPES = Object.freeze(
   ),
 );
 export const enemyPower = (type) => ENEMY_POWER[type];
-// First wave where the director may draw each species (offspring excluded).
-// Shared by wavePlan() and server/wave-preparation.js; key order is the draw order.
+// First wave where the legacy wavePlan() may draw each species (offspring excluded).
+// The live director (server/wave-preparation.js) ignores it: every species is
+// available from wave 1 and only the wave's power decides; key order is the draw order.
 export const ENEMY_UNLOCK_WAVE = Object.freeze({
   ant: 1,
   midge: 1,

@@ -99,7 +99,7 @@ console.log('#17: current director source stats, route seeds, and fixed room-met
 // #16: real keyboard handler must not swallow pilot Shift/Ctrl as weapon selection.
 const { contextKey } = await import('../src/equipment-controls.js');
 const { gameKey, equipmentExitAction, equipmentEnterAllowed } =
-  await import('../src/control-focus.js');
+  await import('../src/control-focus.ts');
 let keyHandler;
 const input = {
   addEventListener: (_, h) => (keyHandler = h),

@@ -5,9 +5,9 @@ import { Game } from '../server/game.js';
 import { resolveHeavy, detonateHeavy, roomWorld } from './heavy-resolver.mjs';
 import { stepHeavy } from '../src/heavy-sim.js';
 import { VEHICLES, vehiclePad, LIGHT_FIGHTER } from '../src/fleet.ts';
-import { HEAVY, canUseWeapon, heavyDamage } from '../src/armament.js';
+import { HEAVY, canUseWeapon, heavyDamage } from '../src/armament.ts';
 import { MAP, REFERENCE, FLAK } from '../src/scale.ts';
-import { SHOP, supportedPlacement } from '../src/equipment.js';
+import { SHOP, supportedPlacement } from '../src/equipment.ts';
 import { fullAmmo, advanceSupplies } from '../src/logistics.js';
 import { createOrdnance } from '../src/ordnance.js';
 import {
@@ -26,7 +26,8 @@ import {
   proximityRadius,
 } from '../src/mobile-flak.js';
 import { createGraphics } from '../src/graphics.js';
-import { stepTank } from '../src/tank.js';
+import { TruckRig } from '../src/truck-physics.ts';
+import { loadRapier } from '../src/physics-world.ts';
 import { validMotion } from '../src/network.js';
 import { contractKey, ContractBook } from '../src/contracts.js';
 import { controlHints, cursorStats, cursorAmmoText } from '../src/live-hud.js';
@@ -327,9 +328,11 @@ for (const [type, factory] of [
   assert.ok(bounds.max.z > bounds.min.z);
   assert.ok(model.userData.turrets[0].userData.muzzle);
 }
-const drive = { ...vehiclePad('flaktruck'), p: [0, 0.01, 0], q: [0, 0, 0, 1] };
-for (let i = 0; i < 120; i++)
-  stepTank(T, drive, { forward: 1, turn: 1 }, [], 1 / 120, VEHICLES.flaktruck);
+const drive = { ...vehiclePad('flaktruck'), p: [0, VEHICLES.flaktruck.gear, 0], q: [0, 0, 0, 1] };
+const truckRig = new TruckRig(await loadRapier(() => import('../vendor/rapier.compat.mjs')));
+for (let i = 0; i < 360; i++)
+  truckRig.step(drive, { forward: 1, turn: 1 }, [], 1 / 120, VEHICLES.flaktruck);
+truckRig.dispose();
 assert.ok(drive.trailerAngle < 0 && drive.trailerAngle >= -0.65);
 assert.ok(Math.hypot(...drive.v) > 0);
 // Bounded representative CPU load; observations, not a WAN/FPS benchmark.

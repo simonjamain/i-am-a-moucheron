@@ -82,3 +82,81 @@ export function animateCastorWheels(
     axle.rotation.y = steer;
   }
 }
+
+// Ackermann geometry: the angle of a wheel (positive to the left) when the front axle is
+// turned by `delta` on the centre line, so that every wheel rolls about one centre on the
+// line of the axle at `pivotZ`. Any consistent unit; forward is -z.
+export function ackermannAngle(
+  delta: number,
+  wheel: { x: number; z: number },
+  pivotZ: number,
+  wheelbase: number,
+): number {
+  if (Math.abs(delta) < 1e-6) return 0;
+  const radius = wheelbase / Math.tan(delta); // signed: positive centre on the left
+  return Math.atan((pivotZ - wheel.z) / (radius + wheel.x));
+}
+
+// The wheels of a vehicle whose driver turns the front axle (the anti-air truck): the front
+// wheels take the angle the driver asked for, which exists even at a standstill and travels
+// with the vehicle's state, so that other players see it too; the other axles are fixed.
+// Every wheel spins with its ground speed. wheel nodes: model units, forward is -z.
+export interface DrivenWheelMotion {
+  /** Angle of the front wheels asked for (rad, positive to the left). */
+  steer: number;
+  forwardSpeed: number;
+  yawRate: number;
+}
+export function animateDrivenWheels(
+  wheels: readonly THREE.Object3D[],
+  { steer, forwardSpeed, yawRate }: DrivenWheelMotion,
+  {
+    scale,
+    pivotZ,
+    wheelbase,
+    radius,
+  }: { scale: number; pivotZ: number; wheelbase: number; radius: number },
+  dt: number,
+): void {
+  const frontZ = Math.min(...wheels.map((w) => w.position.z));
+  for (const axle of wheels) {
+    const front = Math.abs(axle.position.z - frontZ) < 1e-6;
+    const target = front
+      ? ackermannAngle(steer, { x: axle.position.x, z: axle.position.z }, pivotZ, wheelbase)
+      : 0;
+    // The network brings the steering at 20 Hz: ease towards it.
+    const rotationY = Math.abs(axle.rotation.y - target) < 1e-4 ? target : axle.rotation.y;
+    axle.rotation.order = 'YXZ';
+    axle.rotation.y = rotationY + (target - rotationY) * Math.min(1, dt * 30);
+    const ground = forwardSpeed + yawRate * axle.position.x * scale;
+    axle.rotation.x = (axle.rotation.x + (-ground / (radius * scale)) * dt) % (2 * Math.PI);
+  }
+}
+
+// Wheels that only roll (a trailer's): spin from the speed along their own heading.
+export function animateRollingWheels(
+  wheels: readonly THREE.Object3D[],
+  forwardSpeed: number,
+  { scale, radius }: { scale: number; radius: number },
+  dt: number,
+): void {
+  const spin = (-forwardSpeed / (radius * scale)) * dt;
+  for (const axle of wheels) axle.rotation.x = (axle.rotation.x + spin) % (2 * Math.PI);
+}
+
+// The wheels of a tracked vehicle: every road wheel, idler and sprocket turns with the speed
+// of its own track, forward speed plus the yaw rate times its lateral offset (the outer track
+// runs faster in a turn, the two run in opposite directions in a pivot). Each node carries its
+// radius in model units in `userData.radius`.
+export function animateTrackedWheels(
+  wheels: readonly THREE.Object3D[],
+  { forwardSpeed, yawRate }: GroundMotion,
+  scale: number,
+  dt: number,
+): void {
+  for (const wheel of wheels) {
+    const ground = forwardSpeed + yawRate * wheel.position.x * scale;
+    const radius = (wheel.userData.radius as number | undefined) ?? 0.28;
+    wheel.rotation.x = (wheel.rotation.x + (-ground / (radius * scale)) * dt) % (2 * Math.PI);
+  }
+}

@@ -46,12 +46,14 @@ sans liste de types à recopier ailleurs.
    si le véhicule ne partage pas la place par défaut, son emplacement de
    stationnement dans `PAD_OFFSET`. Un nouveau poste s'ajoute à `SeatName` et
    `SEAT_NAMES`.
-2. `src/equipment.js` — article `SHOP` de `kind: 'vehicle'` (prix, description).
+2. `src/equipment.ts` — article `SHOP` de `kind: 'vehicle'` (prix, description ; forme
+   `ShopItem` vérifiée par `satisfies`, clés exportées en `ShopKey`).
 3. `src/shop-catalog.js` — colonne dans `SHOP_CATEGORIES`.
 4. `src/contracts.js` — contrats d'embarquement de chaque siège (`contractKey`,
    tableau des rôles pour les sièges spécifiques).
-5. Armes et réserves : `src/armament.js`, `src/logistics.js`, `src/ordnance.js`.
-6. Rendu et HUD : `src/graphics.js` (modèle), `src/hud.js`, `src/seat-icons.js`,
+5. Armes et réserves : `src/armament.ts` (nouvelle arme lourde : entrée `HEAVY`, forme
+   `HeavyWeapon`), `src/logistics.js`, `src/ordnance.js`.
+6. Rendu et HUD : `src/graphics.js` (modèle), `src/hud.js`, `src/seat-icons.ts`,
    `src/shop-thumbs.js`.
 7. Autorité : `server/game.js` pour toute arme lourde ou règle simulée au serveur.
 8. Documenter dans [véhicules et banque](vehicles-bank.md) et `src/changelog.js`.

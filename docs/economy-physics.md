@@ -71,7 +71,7 @@ in purgatory releases it with the same exact-once reward. NPC service continues
 on the server when no dead human currently owns the purgatory. With a human
 there, the existing client-hosted physical queue remains authoritative.
 
-The catalog is declarative in `src/equipment.js` (`SHOP`, `shopPrice`) and the
+The catalog is declarative in `src/equipment.ts` (`SHOP`, `shopPrice`) and the
 shop columns in `src/shop-catalog.js`. Prices, the per-installation increments and
 the absence of wave stipends and purchasable upgrades are listed once in
 [progression](progression.md#revenus-et-prix).

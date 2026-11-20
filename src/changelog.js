@@ -1,8 +1,77 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
-    version: 357,
+    version: 371,
     changes: ['Les ronds au sol des sièges et équipements restent visibles sur tous les écrans.'],
+  },
+  {
+    version: 370,
+    changes: ['Le tireur du char voit son canon de plus haut, sans la mitrailleuse devant.'],
+  },
+  {
+    version: 369,
+    changes: [
+      'Le canon du char recule à chaque tir et secoue la caisse. Le tireur voit le canon par-dessus l’épaule.',
+      'Un char abandonné reste bien à l’arrêt.',
+    ],
+  },
+  {
+    version: 366,
+    changes: [
+      'Les chenilles du char épousent le relief : galets et chenille montent sur les obstacles.',
+    ],
+  },
+  {
+    version: 365,
+    changes: ['Le char est un cinquième plus grand, et ses roues tournent avec les chenilles.'],
+  },
+  {
+    version: 364,
+    changes: [
+      'Camion anti-aérien : seules les roues avant braquent, selon le clavier, même à l’arrêt ; roues de remorque bien placées.',
+    ],
+  },
+  {
+    version: 363,
+    changes: [
+      'Camion anti-aérien : les roues tournent et braquent, la remorque pique et se cabre, et peut se replier à plus de 90°.',
+      'Le camion anti-aérien va deux fois plus vite. Le camion, le char et le Castor accélèrent plus doucement.',
+      'Char : avancer et tourner en même temps marche tout de suite, comme avec deux chenilles.',
+    ],
+  },
+  {
+    version: 362,
+    changes: [
+      'Tous les ennemis peuvent apparaître dès la première vague : seule la puissance de la vague décide de qui peut venir.',
+    ],
+  },
+  {
+    version: 361,
+    changes: [
+      'La remorque du camion anti-aérien se balance dans les virages et se met en portefeuille en marche arrière.',
+      'Le camion est plus rapide.',
+    ],
+  },
+  {
+    version: 360,
+    changes: [
+      'Rat, scarabées, abeilles, moustiques et cafards sont plus costauds ; les bébés araignées ont presque aucune vie.',
+      'Tous les ennemis, bébés araignées compris, passent au purgatoire avec leur vrai modèle et rapportent des dollars.',
+      'Au purgatoire, les ennemis signent leurs papiers deux fois plus vite.',
+    ],
+  },
+  {
+    version: 358,
+    changes: [
+      'Le char moyen roule comme un vrai char : suspension qui pique du nez au freinage, pivot sur place, franchit les petites marches.',
+      'Le char est plus rapide.',
+    ],
+  },
+  {
+    version: 357,
+    changes: [
+      'Le Castor se conduit comme un vrai véhicule à roues : départ progressif, freins, virages qui se resserrent à basse vitesse.',
+    ],
   },
   { version: 355, changes: ['Le Castor volant est 30 % plus petit.'] },
   {

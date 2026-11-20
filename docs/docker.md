@@ -47,10 +47,10 @@ Une seule instance conserve toutes les salles en RAM. Redémarrer ou recréer le
 conteneur efface les parties en cours. Le contrôle `/healthz` valide HTTP, pas la
 connectivité UDP : la vérifier avec deux joueurs sur des réseaux distincts.
 
-Les fichiers Compose et l’exemple Traefik du dépôt restent liés à l’ancienne
-image importable `2026.10.29-udp.2`. Ses instructions sont conservées dans
-[l’archive du paquet Docker](archive/docker-package-2026-10-29.md) ; elles ne
-doivent pas être prises pour une livraison de l’état courant.
+`compose.yaml` et `compose.traefik.yaml` référencent encore l’ancien tag local
+`i-am-a-moucheron:2026.10.29-udp.2`, qui n’est plus produit : ils ne suivent pas
+l’état courant. Utiliser la commande `docker build` / `docker run` ci-dessus ou
+l’image GHCR `latest`.
 
 ## Contrôle de contribution et protection de main
 

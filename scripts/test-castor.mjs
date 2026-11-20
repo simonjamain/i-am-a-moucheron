@@ -1,12 +1,13 @@
 import assert from 'node:assert/strict';
 import * as T from '../vendor/three.module.min.js';
-import { SHOP, shopPrice } from '../src/equipment.js';
+import { SHOP, shopPrice } from '../src/equipment.ts';
 import { VEHICLES } from '../src/fleet.ts';
 import { fullAmmo, ammoCapacity } from '../src/logistics.js';
-import { canUseWeapon } from '../src/armament.js';
+import { canUseWeapon } from '../src/armament.ts';
 import { withinService, advancePaidService } from '../src/paid-service.js';
 import { createGraphics } from '../src/graphics.js';
-import { stepTank } from '../src/tank.js';
+import { CastorRig } from '../src/castor-physics.ts';
+import { loadRapier } from '../src/physics-world.ts';
 import { ACTOR_UNIT } from '../src/scale.ts';
 
 assert.equal(SHOP.castor.cost, 15);
@@ -34,8 +35,10 @@ const state = {
   wing: 1,
   landed: true,
 };
+const rig = new CastorRig(await loadRapier(() => import('../vendor/rapier.compat.mjs')));
 for (let i = 0; i < 120; i++)
-  stepTank(T, state, { forward: 1, turn: 0 }, [floor], 1 / 120, VEHICLES.castor);
+  rig.step(state, { forward: 1, turn: 0 }, [floor], 1 / 120, VEHICLES.castor);
+rig.dispose();
 assert.ok(state.p[2] < 0, 'vehicle drives');
 assert.ok(state.landed);
 const truck = { type: 'castor', state, supplies: { fuel: 10, ammo: { pilot: 0 }, revision: 0 } };

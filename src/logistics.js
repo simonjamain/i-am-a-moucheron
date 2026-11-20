@@ -1,6 +1,6 @@
 import { MAP } from './scale.ts';
 import { VEHICLES, pilotFireInterval, isRotorcraft, isBomber } from './fleet.ts';
-import { TANK_MG } from './armament.js';
+import { TANK_MG } from './armament.ts';
 export const FUEL_SECONDS = 300;
 export const SERVICE_SECONDS = 10;
 // The Castor (and the Castor volant) is a mobile refuel station: a 50 cm

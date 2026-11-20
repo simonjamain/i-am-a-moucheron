@@ -20,12 +20,12 @@ assert.equal(computeEnemyPower(ref, { ref }), 1);
 for (const [type, expected] of Object.entries({
   midge: 1,
   ant: 0.58,
-  mosquito: 0.96,
-  roach: 1.04,
-  guard: 2.69,
-  brute: 3.69,
-  spiderling: 0.17,
-  rat: 12.23,
+  mosquito: 2.06,
+  roach: 1.38,
+  guard: 4.03,
+  brute: 6.93,
+  spiderling: 0.08,
+  rat: 24.47,
 }))
   near(ENEMY_POWER[type], expected);
 assert.equal(enemyPower('rat'), ENEMY_TYPES.rat.power);
@@ -51,8 +51,8 @@ const spiderBody =
   1.5;
 near(spiderBody, 2.64);
 near(ENEMY_POWER.spider, spiderBody + 100 * ENEMY_POWER.spiderling);
-// The issue rounds the brood to 100 × 0,17 ≈ 19,6; the exact formula gives 19,24.
-near(ENEMY_POWER.spider, 19.24, 0.01);
+// The issue rounds the brood to 100 × 0,08 ≈ 8; the exact formula gives 10,94.
+near(ENEMY_POWER.spider, 10.94, 0.01);
 // A manual factor only touches its own species.
 const boosted = { ...SPECIES, ant: { ...SPECIES.ant, powerFactor: 2 } };
 near(powerTable(boosted).ant, ENEMY_POWER.ant * 2, 1e-9);

@@ -31,7 +31,7 @@ prix ne se mélange pas aux mesures précédentes.
 ## Ce qui est mesuré
 
 **Puissance délivrée.** À chaque dégât infligé à un ennemi, le poste qui tire reçoit
-`dégâts effectifs / PV de l'ennemi × puissance de l'ennemi` (unité de l'[issue 210](room-balance.md#puissance-unité-commune)).
+`dégâts effectifs / PV de l'ennemi × puissance de l'ennemi` (unité de l'[issue 210](enemy-power.md#unité-commune)).
 Pas de « dernier coup » : le crédit est proportionnel aux dégâts. Les dégâts au-delà des
 PV restants ne comptent pas. La puissance est séparée par cible (volante ou terrestre) et par arme
 (`mg`, `rapid`, `bomb`, `rocket`, `missile`…).

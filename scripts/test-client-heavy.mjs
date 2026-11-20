@@ -3,13 +3,13 @@ import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
 import * as T from '../vendor/three.module.min.js';
 import { stepHeavy, heavyImpact } from '../src/heavy-sim.js';
-import { HEAVY } from '../src/armament.js';
+import { HEAVY } from '../src/armament.ts';
 import { MAP } from '../src/scale.ts';
 import { baseWorld } from '../src/base.js';
 import { debugSwarmRoster, swarmFrame } from '../src/waves.js';
 import { layoutSolids } from '../src/layouts.js';
 const ROUTE_OBSTACLES = layoutSolids();
-import { howitzerMuzzle } from '../src/howitzer-geometry.js';
+import { howitzerMuzzle } from '../src/howitzer-geometry.ts';
 import { DEFAULT_BALANCE } from '../src/balance.js';
 
 // Runs the client's real shooter code (heavyWorld, updateLocalHeavy,

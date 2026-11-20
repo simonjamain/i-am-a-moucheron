@@ -16,7 +16,7 @@ import {
   MAX_WAVE_POPULATION,
 } from '../src/waves.js';
 import { Game } from '../server/game.js';
-import { encodeReply, ReplyAssembler } from '../src/udp-protocol.js';
+import { encodeReply, ReplyAssembler } from '../src/udp-protocol.ts';
 const input = [
   { id: 0, type: 'ant', spawn: 0, phase: 0.1, hp: 100 },
   { id: 1, type: 'midge', spawn: 1, phase: 0.2, hp: 100, routeSeed: 13 },
@@ -257,15 +257,19 @@ r.pilots.get(a.id).seen = now;
 let snapshot = game.command(r.code, a.id, 'sync', { mode: 'foot', state: a.state });
 const firstTotal = r.plan.roster.length;
 assert.equal(snapshot.total, firstTotal);
-for (let enemy = 0; enemy < firstTotal - 1; enemy++) {
-  gunShot();
-  game.command(r.code, a.id, 'hit', { wave: 1, enemy, amount: 800, shot: 'kill' + enemy });
+// The roster is random and an enemy can have more than one hit of life (a brute has 1500).
+function kill(enemy, tag) {
+  const hits = Math.ceil(r.plan.roster[enemy].hp / 800);
+  for (let k = 0; k < hits; k++) {
+    gunShot();
+    game.command(r.code, a.id, 'hit', { wave: 1, enemy, amount: 800, shot: tag + ':' + k });
+  }
 }
+for (let enemy = 0; enemy < firstTotal - 1; enemy++) kill(enemy, 'kill' + enemy);
 snapshot = game.snapshot(r);
 assert.equal(snapshot.phase, 'combat');
 assert.equal(snapshot.kills.length, firstTotal - 1);
-gunShot();
-game.command(r.code, a.id, 'hit', { wave: 1, enemy: firstTotal - 1, amount: 800, shot: 'last' });
+kill(firstTotal - 1, 'last');
 snapshot = game.snapshot(r);
 assert.equal(snapshot.phase, 'prep');
 assert.equal(snapshot.dollars, 0, 'no wave stipend: only freed souls pay');

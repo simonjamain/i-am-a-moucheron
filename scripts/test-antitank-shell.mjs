@@ -4,9 +4,9 @@
 import assert from 'node:assert/strict';
 import { Game } from '../server/game.js';
 import { resolveHeavy } from './heavy-resolver.mjs';
-import { HEAVY, heavyDamage } from '../src/armament.js';
-import { FORTIFICATIONS } from '../src/ground-fortifications.js';
-import { howitzerMuzzle } from '../src/howitzer-geometry.js';
+import { HEAVY, heavyDamage } from '../src/armament.ts';
+import { FORTIFICATIONS } from '../src/ground-fortifications.ts';
+import { howitzerMuzzle } from '../src/howitzer-geometry.ts';
 import { debugSwarmRoster, swarmFrame } from '../src/waves.js';
 import { MAP } from '../src/scale.ts';
 

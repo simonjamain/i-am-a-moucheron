@@ -119,7 +119,7 @@ suivis. La durée actuelle est le temps d’entrée plus longueur du nouveau tra
 divisée par cette vitesse. Les longues routes ne sont plus accélérées pour
 rentrer dans un délai artificiel. Les apparitions restent périphériques.
 
-Les terrestres suivent une grille A* puis une simplification avec visibilité
+Les terrestres suivent une grille A\* puis une simplification avec visibilité
 libre ; les aériens font des détours en altitude avant la descente vers la poubelle.
 Les obstacles de navigation sont générés depuis les colliders du bureau.
 Les grilles d’aération décoratives sont les points de sortie, pas des obstacles

@@ -1,7 +1,7 @@
 import { orientedBox } from './oriented-collider.ts';
 import { MODEL_DATA as REFUEL } from './meshy-refuel-data.js';
 import { MODEL_DATA as RADAR } from './meshy-radar-data.js';
-import { texturedMeshyParts } from './meshy-texture.js';
+import { texturedMeshyParts } from './meshy-texture.ts';
 
 export function makeServiceStation(T, kind) {
   const model = new T.Group();

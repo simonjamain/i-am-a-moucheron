@@ -6,9 +6,9 @@ import * as T from '../vendor/three.module.min.js';
 import { HOWITZER_DATA } from '../src/howitzer-data.js';
 import { createHowitzer, HOWITZER, HOWITZER_SCALE } from '../src/howitzer-model.js';
 import { makeFortificationStation } from '../src/fortification-model.js';
-import { FORTIFICATIONS } from '../src/ground-fortifications.js';
+import { FORTIFICATIONS } from '../src/ground-fortifications.ts';
 import { MAP } from '../src/scale.ts';
-import { howitzerMuzzle, HOWITZER_LIMITS } from '../src/howitzer-geometry.js';
+import { howitzerMuzzle, HOWITZER_LIMITS } from '../src/howitzer-geometry.ts';
 
 const near = (a, b, eps, label) => assert.ok(Math.abs(a - b) <= eps, `${label}: ${a} vs ${b}`);
 const world = (o) => o.getWorldPosition(new T.Vector3());

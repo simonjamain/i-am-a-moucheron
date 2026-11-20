@@ -1,5 +1,5 @@
 import { colliderContainsXZ, colliderPushXZ } from './oriented-collider.ts';
-import { isFortification } from './ground-fortifications.js';
+import { isFortification } from './ground-fortifications.ts';
 import { stepWalkerFall, impactDamage } from './field-physics.ts';
 import { MAP, ACTOR_UNIT, REFERENCE, FLAK } from './scale.ts';
 // Small vehicles keep their original dimensions; furniture uses the enlarged room.

@@ -1,6 +1,6 @@
-import { availableShell, HEAVY } from './armament.js';
-import { FIXED_DCA } from './fixed-dca.js';
-import { FORTIFICATIONS } from './ground-fortifications.js';
+import { availableShell, HEAVY } from './armament.ts';
+import { FIXED_DCA } from './fixed-dca.ts';
+import { FORTIFICATIONS } from './ground-fortifications.ts';
 import { rangeReadout } from './equipment-controls.js';
 import { MAP } from './scale.ts';
 import { MOBILE_FUSE } from './mobile-flak.js';

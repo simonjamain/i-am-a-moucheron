@@ -1,4 +1,4 @@
-import { canUseWeapon, heavyInterval, TANK_MG } from './armament.js';
+import { canUseWeapon, heavyInterval, TANK_MG } from './armament.ts';
 import { HELI } from './helicopter.js';
 import { pilotFireInterval } from './fleet.ts';
 

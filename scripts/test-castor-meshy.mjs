@@ -3,7 +3,7 @@ import * as T from '../vendor/three.module.min.js';
 import { MODEL_DATA } from '../src/meshy-castor-data.js';
 import { CASTOR_WHEEL_RADIUS } from '../src/castor-wheels.ts';
 import { createGraphics } from '../src/graphics.js';
-import { paintVehicle } from '../src/vehicle-livery.js';
+import { paintVehicle } from '../src/vehicle-livery.ts';
 
 // One remodelled Meshy source, split into islands by scripts/import-meshy-castor.py.
 assert.match(MODEL_DATA.sourceSha256, /^[a-f0-9]{64}$/);

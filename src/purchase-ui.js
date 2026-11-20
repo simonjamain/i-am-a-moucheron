@@ -1,5 +1,5 @@
 import { BedUI } from './bed-ui.js';
-import { SHOP, shopPrice, purchaseCount } from './equipment.js';
+import { SHOP, shopPrice, purchaseCount } from './equipment.ts';
 // Same pointer-cancel, ACK and ink lifecycle as the personal bed contract.
 export class PurchaseUI extends BedUI {
   open(item, self) {

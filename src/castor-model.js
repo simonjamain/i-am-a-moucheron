@@ -1,5 +1,5 @@
 import { MODEL_DATA } from './meshy-castor-data.js';
-import { texturedMeshyParts } from './meshy-texture.js';
+import { texturedMeshyParts } from './meshy-texture.ts';
 
 // The remodelled Castor is one Meshy mesh whose movable pieces are separate
 // islands; scripts/import-meshy-castor.py stores each piece around its pivot.

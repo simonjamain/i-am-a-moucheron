@@ -23,7 +23,7 @@ sans explosion. Sa fusée programmée, en l’absence d’impact précédent, ex
 80 dégâts au centre, décroissance linéaire à 20 au bord inclus, zéro au-delà.
 Les obstacles masquent le souffle. Les contacts solides conservent la distance
 minimale de sécurité. Un projectile supprimé ne déclenche aucun second impact.
-`combat.js` porte la classification d’impact et la courbe de souffle.
+`combat.ts` porte la classification d’impact et la courbe de souffle.
 
 ## Autorité et persistance
 

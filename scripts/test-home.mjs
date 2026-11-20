@@ -2,8 +2,8 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { VEHICLES } from '../src/fleet.ts';
-import { SHOP } from '../src/equipment.js';
-import { FORTIFICATIONS } from '../src/ground-fortifications.js';
+import { SHOP } from '../src/equipment.ts';
+import { FORTIFICATIONS } from '../src/ground-fortifications.ts';
 
 const html = readFileSync('src/index.html', 'utf8');
 const client = readFileSync('src/client.js', 'utf8');

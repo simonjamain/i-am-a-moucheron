@@ -11,9 +11,9 @@ import {
   vehicleHue,
   installationCount,
 } from '../src/logistics.js';
-import { shopPrice } from '../src/equipment.js';
+import { shopPrice } from '../src/equipment.ts';
 import { createGraphics } from '../src/graphics.js';
-import { paintVehicle, updateInscriptions } from '../src/vehicle-livery.js';
+import { paintVehicle, updateInscriptions } from '../src/vehicle-livery.ts';
 import * as T from '../vendor/three.module.min.js';
 // Execute the real tear handler, including double activation and a failed request.
 const clientSource = readFileSync('src/client.js', 'utf8');

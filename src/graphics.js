@@ -4,6 +4,8 @@ import { MODEL_DATA as SPITFIRE } from './meshy-spitfire-data.js';
 import { MODEL_DATA as TANK } from './meshy-tank-data.js';
 import { MODEL_DATA as FLAKTRUCK } from './meshy-flaktruck-data.js';
 import { MODEL_DATA as STUKA } from './meshy-stuka-data.js';
+import { AXLE_PARTS } from './tank-gear.ts';
+import { prepareBelts, prepareSuspension } from './track-suspension.ts';
 import { makeH2 } from './h2-model.js';
 import { makeBiplane, makeBiplaneBomber } from './biplane-model.js';
 import { makeM1 } from './m1-model.js';
@@ -130,8 +132,26 @@ export function createGraphics(T, scene) {
     const { root: g, nodes, anchors } = buildMeshyRig(T, TANK, 'tank');
     const main = gunMount(nodes.cannon, nodes.cannonGun, anchors.muzzle[0], anchors.coax[0]);
     const top = gunMount(nodes.top, nodes.topGun, anchors.topMuzzle[0]);
+    // Running gear (parts of the rig): the road wheels, idlers and sprockets spin with their
+    // track; the two belts are meshes of their own (the deformable tracks draw them).
+    const gear = [
+      ...[0, 1, 2, 3, 4, 5, 6, 7].map((i) => nodes['roadWheel' + i]),
+      ...[0, 1].map((i) => nodes['idler' + i]),
+      ...[0, 1].map((i) => nodes['sprocket' + i]),
+    ];
+    for (const wheel of gear) {
+      const geometry = wheel.children.find((c) => c.isMesh).geometry;
+      geometry.computeBoundingBox();
+      wheel.userData.radius = (geometry.boundingBox.max.y - geometry.boundingBox.min.y) / 2;
+    }
+    // Deformable tracks: own, finely cut belt geometry, and wheels that ride the terrain.
+    const tracks = [nodes.trackL, nodes.trackR];
+    prepareBelts(T, tracks);
     g.userData = {
       preserveTexture: true,
+      runningGear: gear,
+      tracks,
+      suspension: prepareSuspension(nodes, AXLE_PARTS),
       turrets: [main, top],
       pilotMuzzles: anchors.hullGun,
       prop: new T.Object3D(),
@@ -157,6 +177,9 @@ export function createGraphics(T, scene) {
       preserveTexture: true,
       turrets: [gunMount(nodes.cannon, nodes.cannonGun, anchors.muzzle[0])],
       trailer: nodes.trailer,
+      // Wheels (parts of the rig): the tractor's six, steered and spun, and the trailer's four.
+      truckWheels: [0, 1, 2, 3, 4, 5].map((i) => nodes['wheel' + i]),
+      trailerWheels: [0, 1, 2, 3].map((i) => nodes['trailerWheel' + i]),
       prop: new T.Object3D(),
       wing: new T.Object3D(),
     };
@@ -318,7 +341,7 @@ export function createGraphics(T, scene) {
   // below stay as an invisible frame (`arms`, `legs`, `rig`) so the pistol, its
   // muzzle (shot origin) and every existing caller keep exactly the same API.
   const PALM = 0.08; // wrist to grip, model metres
-  // `appearance`: id from character-appearances.js (default if unknown or not
+  // `appearance`: id from character-appearances.ts (default if unknown or not
   // loaded yet). userData.setAppearance(id) swaps the model in place, keeping
   // the frame, the pistol and everything attached to the group.
   function humanoid(color, saint = false, appearance) {

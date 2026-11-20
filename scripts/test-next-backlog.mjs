@@ -6,10 +6,11 @@ import { roomWorld, resolveHeavy } from './heavy-resolver.mjs';
 import { heavyImpact } from '../src/heavy-sim.js';
 import { VEHICLES, vehicleEntry, vehicleAccess } from '../src/fleet.ts';
 import { fullAmmo, advanceSupplies, SERVICE_SECONDS } from '../src/logistics.js';
-import { TANK_MG, HEAVY, availableShell, heavyDamage } from '../src/armament.js';
+import { TANK_MG, HEAVY, availableShell, heavyDamage } from '../src/armament.ts';
 import { HoldZoom, contextKey, rangeReadout } from '../src/equipment-controls.js';
 import { MAP, ACTOR_UNIT, REFERENCE } from '../src/scale.ts';
-import { stepTank } from '../src/tank.js';
+import { TankRig } from '../src/tank-physics.ts';
+import { loadRapier } from '../src/physics-world.ts';
 import { wavePlan } from '../src/waves.js';
 import { enemyRoute } from '../src/routes.js';
 import { blockedSegment } from '../src/route-navigation.js';
@@ -248,13 +249,14 @@ p.seen = now;
 call('heavy-fire', { weapon: 'he', shot: 'full-heavy', direction: [0, 0, -1] });
 assert.equal(r.ordnance.find((p) => p.shot === 'full-heavy').bonus, 1);
 let state = { ...tank.state, p: [0, VEHICLES.tank.gear, 0], q: [0, 0, 0, 1], v: [0, 0, 0] };
+const tankRig = new TankRig(await loadRapier(() => import('../vendor/rapier.compat.mjs')));
 for (let i = 0; i < 120; i++)
-  stepTank(T, state, { forward: 1, turn: 0 }, [], 1 / 120, VEHICLES.tank);
+  tankRig.step(state, { forward: 1, turn: 0 }, [], 1 / 120, VEHICLES.tank);
 assert.ok(state.p[2] < 0);
 assert.equal(state.landed, true);
 const wall = new T.Box3(new T.Vector3(-1, 0, -0.05), new T.Vector3(1, 1, -0.04));
 for (let i = 0; i < 240; i++)
-  stepTank(T, state, { forward: 1, turn: 0 }, [wall], 1 / 120, VEHICLES.tank);
+  tankRig.step(state, { forward: 1, turn: 0 }, [wall], 1 / 120, VEHICLES.tank);
 assert.ok(state.p[2] > wall.max.z, 'tank cannot drive through wall');
 for (let seed = 0; seed < 8; seed++)
   for (const wave of [1, 3, 6, 12])
@@ -323,8 +325,12 @@ crashes.add(
 );
 assert.equal(crashes.items.size, 0, 'late snapshots do not replay a finished crash');
 const falling = { ...state, p: [0, 0.1, 0], v: [0, -0.01, 0], landed: false, hp: 100 };
-stepTank(T, falling, { forward: 0, turn: 0 }, [], 0.1, VEHICLES.tank);
+const fallingRig = new TankRig(await loadRapier(() => import('../vendor/rapier.compat.mjs')));
+for (let i = 0; i < 12; i++)
+  fallingRig.step(falling, { forward: 0, turn: 0 }, [], 1 / 120, VEHICLES.tank);
 assert.ok(falling.p[1] < 0.1, 'driverless tank continues falling');
+tankRig.dispose();
+fallingRig.dispose();
 console.log(
   'Next backlog: amortization, debt/slots, zoom/context, supply independence, renewable/purchased hulls, role access, heavy weapons/dedup/reload, terrain driving, deterministic obstacle-free routes, bounded crash effects.',
 );

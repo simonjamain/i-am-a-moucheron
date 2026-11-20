@@ -2,7 +2,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { advanceFuse, contextKey, FUSE_RATE, rangeReadout } from '../src/equipment-controls.js';
-import { fuseRange } from '../src/combat.js';
+import { fuseRange } from '../src/combat.ts';
 import { FLAK } from '../src/scale.ts';
 
 const held = (...codes) => Object.fromEntries(codes.map((code) => [code, true]));

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { Game } from '../server/game.js';
 import { GameSession } from '../server/session.js';
-import { PROTOCOL } from '../src/udp-protocol.js';
+import { PROTOCOL } from '../src/udp-protocol.ts';
 
 const now = () => 100000;
 for (const count of [2, 39, 40, 50]) {

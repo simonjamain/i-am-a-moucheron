@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { Game } from '../server/game.js';
 import { GameSession } from '../server/session.js';
-import { PROTOCOL, ReplyAssembler } from '../src/udp-protocol.js';
+import { PROTOCOL, ReplyAssembler } from '../src/udp-protocol.ts';
 import { applyPatch, diffValue } from '../src/snapshot-wire.ts';
 
 const json = (v) => JSON.parse(JSON.stringify(v));

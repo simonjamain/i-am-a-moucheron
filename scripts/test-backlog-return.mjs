@@ -7,7 +7,7 @@ import { stepHelicopter } from '../src/helicopter.js';
 import { resolveLanding } from '../src/sortie.js';
 import { MAP } from '../src/scale.ts';
 import { fullAmmo } from '../src/logistics.js';
-import { SHOP, shopPrice, purchaseCount } from '../src/equipment.js';
+import { SHOP, shopPrice, purchaseCount } from '../src/equipment.ts';
 import { reserveAlerts, missileStatus, ArrivalSignals } from '../src/reserve-feedback.js';
 import { deliveryLanding, DELIVERY_SPEED } from '../src/delivery.js';
 import { wavePlan } from '../src/waves.js';

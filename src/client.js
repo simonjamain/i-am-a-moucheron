@@ -47,6 +47,7 @@ import { InteractionTiming } from '/interaction-timing.js';
 import { BedUI } from '/bed-ui.js';
 import { bedAccess } from '/beds.js';
 import { tankSight } from '/tank-view.js';
+import { applyGunRecoil, recoilAmount } from '/tank-recoil.js';
 import { shoulderView, aimPistol, muzzleAim } from '/personal-aim.js';
 import { BankUI } from '/bank-ui.js';
 import { ContextHUD, equipmentHUD } from '/hud.js';
@@ -75,6 +76,7 @@ import {
   isBomber,
   isPassengerSeat,
   vehicleMaxHP,
+  vehicleUnit,
 } from '/fleet.js';
 import { headingOf, airdropSurface, AIR_VIEW_HEIGHT, zoomAirView } from '/airdrop.js';
 import {
@@ -162,10 +164,25 @@ import { RECONNECT_AFTER_MS, RECONNECT_WINDOW_MS } from '/udp-protocol.js';
 import { HoldZoom, advanceFuse, contextKey, rangeReadout } from '/equipment-controls.js';
 import { formatDistance, formatSpeed } from '/units.js';
 import { HEAVY, TANK_MG, availableShell, heavyInterval } from '/armament.js';
-import { stepTank } from '/tank.js';
 import { loadRapier } from '/physics-world.js';
 import { CastorRig } from '/castor-physics.js';
-import { animateCastorWheels, trackGroundMotion } from '/castor-wheels.js';
+import { TankRig } from '/tank-physics.js';
+import { updateSuspension } from '/track-suspension.js';
+import { TRACK_HALF } from '/tank-gear.js';
+import {
+  PIVOT_MODEL_Z as TRUCK_STEER_PIVOT,
+  WHEELBASE_MODEL as TRUCK_WHEELBASE,
+  TRAILER_WHEEL_MODEL_RADIUS as TRAILER_WHEEL_RADIUS,
+  TruckRig,
+  WHEEL_MODEL_RADIUS as TRUCK_WHEEL_RADIUS,
+} from '/truck-physics.js';
+import {
+  animateCastorWheels,
+  animateDrivenWheels,
+  animateRollingWheels,
+  animateTrackedWheels,
+  trackGroundMotion,
+} from '/castor-wheels.js';
 import { ServiceZones, serviceZoneList } from '/service-zones.js';
 import { EngineSmoke, damageRatio } from '/engine-smoke.js';
 import { shopColumns } from '/shop-catalog.js';
@@ -705,6 +722,8 @@ function localMotion() {
     landed,
     gas,
     trailerAngle: myVehicle?.state.trailerAngle || 0,
+    trailerPitch: myVehicle?.state.trailerPitch || 0,
+    steer: myVehicle?.state.steer || 0,
     omega: omega.toArray(),
     turret: turretIndex,
     turretDirection: weaponDirection().toArray(),
@@ -1192,7 +1211,7 @@ function accept(s, force = false) {
     trails.length = 0;
     rapidImpacts.length = 0;
     aircraftFire.invalidate();
-    vacantAircraft.clear();
+    clearVacantAircraft();
     entryNoticeWave = -1;
     paperArchive.length = 0;
     renderArchive();
@@ -2649,12 +2668,7 @@ function physicalPurgatory(dt, now) {
       g =
         b.kind === 'player'
           ? humanoid(b.entity === id ? '#d5ef73' : '#8bc9d6', false, appearanceOf(b.entity))
-          : new T.Group();
-      if (b.kind === 'enemy') {
-        pm(g, 0.75, 0.8, 1.1, '#695441', 0, 0.8);
-        pm(g, 1.6, 0.07, 0.6, '#d3dedc', 0, 1.25);
-        for (const x of [-0.23, 0.23]) ball(x, 0.98, 0.55, 0.11, '#e7ab63', g);
-      }
+          : soulInsect(b.enemyType);
 
       g.position.set(b.x, 0, b.z);
       if (b.kind === 'player') equipPistolModel(g);
@@ -2712,6 +2726,7 @@ function physicalPurgatory(dt, now) {
   for (const b of soulArena.bodies)
     if (b.kind === 'enemy' && !b.gone) {
       const g = soulMeshes.get(b.id);
+      g?.userData.animate?.(dt, { speed: Math.hypot(b.vx, b.vz) * SOUL_METRES });
       if (g) soulStatus.update(b.id, g, b.health, b.maxHealth || 100, purgCamera, now / 1000);
     }
   soulStatus.keep(
@@ -3182,6 +3197,10 @@ function updateVehicles(dt) {
         ],
       up = new T.Vector3(0, 1, 0).applyQuaternion(me.quaternion);
     aimGun(T, mount, dir, mount.parent.getWorldQuaternion(new T.Quaternion()));
+    if (myVehicle.type === 'tank' && crewSeat === 'cannon') {
+      applyGunRecoil(mount.userData.pitch, gunRecoilFor(myVehicle.id));
+      mount.updateWorldMatrix(true, true);
+    }
     const scoped = ['tank', 'flaktruck'].includes(myVehicle.type) && crewSeat === 'cannon';
     const view =
       myVehicle.type === 'helicopter'
@@ -3189,7 +3208,8 @@ function updateVehicles(dt) {
         : scoped
           ? tankSight(T, mount, dir, up, observing ? freeLook : null)
           : gunnerView(T, mount, dir, up, crewSeat === 'ventral');
-    if (scoped) me.visible = observing;
+    if (scoped)
+      me.visible = true; // the gun and the hull stay in view, over the shoulder
     else if (myVehicle.type === 'helicopter') me.visible = true;
     camera.position.copy(view.eye);
     camera.up.copy(up);
@@ -3758,7 +3778,7 @@ function vehicleModel(v) {
           ? '#8eb7c6'
           : '#e3ebc0',
     );
-    g.scale.setScalar(ACTOR_UNIT);
+    g.scale.setScalar(vehicleUnit(v.type));
     g.userData.vehicleType = v.type;
 
     fleetModels.set(v.id, g);
@@ -3793,7 +3813,55 @@ function updateOthers(dt) {
       else g.position.lerp(pos, 1 - Math.exp(-24 * dt));
       g.quaternion.slerp(new T.Quaternion().fromArray(motion.q), 1 - Math.exp(-24 * dt));
     }
-    if (g.userData.trailer) g.userData.trailer.rotation.y = motion.trailerAngle || 0;
+    if (g.userData.trailer)
+      g.userData.trailer.rotation.set(motion.trailerPitch || 0, motion.trailerAngle || 0, 0, 'YXZ');
+    if (g.userData.truckWheels) {
+      const forward = new T.Vector3(0, 0, -1).applyQuaternion(g.quaternion);
+      const velocity = isSelf ? vel : new T.Vector3().fromArray(motion.v);
+      const ground = trackGroundMotion(
+        (g.userData.wheelMemory ??= {}),
+        Math.atan2(-forward.x, -forward.z),
+        velocity.dot(forward),
+        dt,
+      );
+      animateDrivenWheels(
+        g.userData.truckWheels,
+        {
+          steer: isSelf ? (myVehicle?.state.steer ?? 0) : motion.steer || 0,
+          ...ground,
+        },
+        {
+          scale: ACTOR_UNIT,
+          pivotZ: TRUCK_STEER_PIVOT,
+          wheelbase: TRUCK_WHEELBASE,
+          radius: TRUCK_WHEEL_RADIUS,
+        },
+        dt,
+      );
+      animateRollingWheels(
+        g.userData.trailerWheels,
+        ground.forwardSpeed * Math.cos(motion.trailerAngle || 0),
+        { scale: ACTOR_UNIT, radius: TRAILER_WHEEL_RADIUS },
+        dt,
+      );
+    }
+    if (g.userData.suspension)
+      updateSuspension(g, g.userData.suspension, g.userData.tracks, colliders, TRACK_HALF, dt);
+    if (g.userData.runningGear) {
+      const forward = new T.Vector3(0, 0, -1).applyQuaternion(g.quaternion);
+      const velocity = isSelf ? vel : new T.Vector3().fromArray(motion.v);
+      animateTrackedWheels(
+        g.userData.runningGear,
+        trackGroundMotion(
+          (g.userData.wheelMemory ??= {}),
+          Math.atan2(-forward.x, -forward.z),
+          velocity.dot(forward),
+          dt,
+        ),
+        vehicleUnit(v.type),
+        dt,
+      );
+    }
     if (g.userData.wheels) {
       const forward = new T.Vector3(0, 0, -1).applyQuaternion(g.quaternion);
       const velocity = isSelf ? vel : new T.Vector3().fromArray(motion.v);
@@ -3829,6 +3897,10 @@ function updateOthers(dt) {
       const hull = g.userData.counterRotor && g.getObjectByName('meshy-flying-castor-body');
       if (hull) hull.visible = !(airView() && myVehicle?.id === v.id);
       if (g.userData.tailRotor) g.userData.tailRotor.rotation.x += rotation * 4;
+    }
+    if (v.type === 'tank') {
+      trackTankShots();
+      applyGunRecoil(g.userData.turrets[0].userData.pitch, gunRecoilFor(v.id));
     }
     g.userData.animateGun?.(dt, performance.now() < (g.userData.gunFiredUntil || 0));
     updateInscriptions(T, g, v, snap.pilots);
@@ -4147,6 +4219,15 @@ function flushRapidImpacts(now) {
     else notify(error.message, 2);
   });
 }
+// The ground vehicles (Castor, medium tank, anti-air truck) are driven by the Rapier physics engine, loaded behind
+// the loading screen (see homeReady): the module, the rig of the vehicle type we drive,
+// and one rig per empty vehicle of these types that this client simulates as the room's
+// host. The aircraft still use their original physics (see docs/physics-engine.md).
+let rapier = null;
+const RAPIER_RIGS = { castor: CastorRig, tank: TankRig, flaktruck: TruckRig };
+const drivenRigs = new Map();
+const vacantRigs = new Map();
+
 // Vehicles and pilots a shot can hit, prepared once per frame (matrices, solid
 // meshes, padded box) instead of once per projectile and per slice.
 const projectileRay = new T.Raycaster(),
@@ -4265,16 +4346,6 @@ function stepProjectileSlice(dt) {
 }
 
 // Fixed timestep flight: thrust, quadratic drag, gravity, angle-of-attack lift, wind-relative velocity.
-// ?rapier: load the physics engine (4 MB, on demand) and drive the Castor with it
-// once ready; until then, and without the flag, the arcade step is used.
-let castorRig = null;
-if (new URLSearchParams(location.search).has('rapier'))
-  loadRapier(() => import('/rapier.js'))
-    .then((RAPIER) => {
-      castorRig = new CastorRig(RAPIER);
-      console.info('Castor : physique Rapier active');
-    })
-    .catch((error) => console.warn('Rapier indisponible, Castor inchangé', error));
 function physics(dt) {
   if (respawnAt || onFoot || !myVehicle) return;
   if (isRotorcraft(myVehicle.type)) {
@@ -4343,10 +4414,9 @@ function physics(dt) {
       manual = flightInput(keys, pad, active);
     const state = { ...localMotion(), fuelAvailable: remainingFuel() > 0 };
     const drive = { forward: -manual.pitch, turn: manual.roll || -manual.yaw };
-    // Experimental (?rapier): the Castor drives on the Rapier physics engine.
-    if (castorRig && myVehicle.type === 'castor')
-      castorRig.step(state, drive, colliders, dt, VEHICLES.castor);
-    else stepTank(T, state, drive, colliders, dt, VEHICLES[myVehicle.type]);
+    if (!drivenRigs.has(myVehicle.type))
+      drivenRigs.set(myVehicle.type, new RAPIER_RIGS[myVehicle.type](rapier));
+    drivenRigs.get(myVehicle.type).step(state, drive, colliders, dt, VEHICLES[myVehicle.type]);
     if (state.hp <= 0) {
       crash();
       return;
@@ -4355,7 +4425,9 @@ function physics(dt) {
     me.quaternion.fromArray(state.q);
     vel.fromArray(state.v);
     myVehicle.state.trailerAngle = state.trailerAngle || 0;
-    if (me.userData.trailer) me.userData.trailer.rotation.y = state.trailerAngle || 0;
+    myVehicle.state.trailerPitch = state.trailerPitch || 0;
+    myVehicle.state.steer = state.steer || 0;
+    me.userData.trailer?.rotation.set(state.trailerPitch || 0, state.trailerAngle || 0, 0, 'YXZ');
     landed = state.landed;
     gas = state.gas;
     shooting =
@@ -4930,7 +5002,7 @@ const ghosts = {
 };
 let ghost = ghosts.dca;
 for (const [kind, model] of Object.entries(ghosts)) {
-  if (VEHICLES[kind]) model.scale.setScalar(ACTOR_UNIT);
+  if (VEHICLES[kind]) model.scale.setScalar(vehicleUnit(kind));
   if (isFixedDca(kind)) scene.add(model);
   model.visible = false;
   model.traverse((o) => {
@@ -5455,11 +5527,19 @@ function renderDeliveries() {
     }
 }
 const vacantAircraft = new Map();
+function releaseVacantRig(key) {
+  vacantRigs.get(key)?.dispose();
+  vacantRigs.delete(key);
+}
+function clearVacantAircraft() {
+  vacantAircraft.clear();
+  for (const key of [...vacantRigs.keys()]) releaseVacantRig(key);
+}
 function simulateVacantAircraft(dt) {
   if (!snap) return;
   const host = [...snap.pilots].sort((a, b) => a.id.localeCompare(b.id))[0]?.id;
   if (host !== id) {
-    vacantAircraft.clear();
+    clearVacantAircraft();
     return;
   }
   const active = new Set();
@@ -5485,12 +5565,17 @@ function simulateVacantAircraft(dt) {
         dt,
         VEHICLES[v.type],
       );
-    else if (VEHICLES[v.type].ground)
-      stepTank(T, s, { forward: 0, turn: 0 }, colliders, dt, VEHICLES[v.type]);
-    else stepVacantAircraft(T, s, VEHICLES[v.type], colliders, dt);
+    else if (RAPIER_RIGS[v.type]) {
+      if (!vacantRigs.has(v.id)) vacantRigs.set(v.id, new RAPIER_RIGS[v.type](rapier));
+      vacantRigs.get(v.id).step(s, { forward: 0, turn: 0 }, colliders, dt, VEHICLES[v.type]);
+    } else stepVacantAircraft(T, s, VEHICLES[v.type], colliders, dt);
     Object.assign(v.state, s);
   }
-  for (const key of vacantAircraft.keys()) if (!active.has(key)) vacantAircraft.delete(key);
+  for (const key of [...vacantAircraft.keys()])
+    if (!active.has(key)) {
+      vacantAircraft.delete(key);
+      releaseVacantRig(key);
+    }
 }
 
 function equipPistolModel(person) {
@@ -5651,6 +5736,44 @@ function launchLocal(projectile) {
   localShots.set(projectile.shot, projectile);
   return projectile;
 }
+// Main-gun recoil: seen on every client from the shell's launch record, felt by the machine
+// that simulates the hull (its driver, or the room host when nobody drives).
+const gunKicks = new Map(),
+  kickSeen = new Set();
+function noteTankShot(vehicleId, shot, aim, atMs) {
+  if (kickSeen.has(shot)) return;
+  kickSeen.add(shot);
+  if (kickSeen.size > 400) kickSeen.delete(kickSeen.values().next().value);
+  gunKicks.set(vehicleId, atMs);
+  const rig =
+    myVehicle?.id === vehicleId && crewSeat === 'pilot'
+      ? drivenRigs.get('tank')
+      : vacantRigs.get(vehicleId);
+  rig?.kick?.(aim);
+}
+function trackTankShots() {
+  const now = serverClock.now(performance.now()) ?? Date.now() + clockOffset;
+  for (const record of snap?.ordnance || []) {
+    if (kickSeen.has(record.shot)) continue;
+    const owner = snap.vehicles.find((v) => v.id === record.vehicle);
+    if (owner?.type !== 'tank' || !HEAVY[record.weapon] || record.weapon === 'bomb') continue;
+    const age = now - record.at;
+    if (age > 600) kickSeen.add(record.shot);
+    else {
+      const n = Math.hypot(...record.v) || 1;
+      noteTankShot(
+        record.vehicle,
+        record.shot,
+        record.v.map((x) => x / n),
+        performance.now() - Math.max(0, age),
+      );
+    }
+  }
+}
+function gunRecoilFor(vehicleId) {
+  const at = gunKicks.get(vehicleId);
+  return at === undefined ? 0 : recoilAmount((performance.now() - at) / 1000);
+}
 async function fireHeavy(weapon = null) {
   if (
     !joined ||
@@ -5684,6 +5807,8 @@ async function fireHeavy(weapon = null) {
   );
   const vehicle = launchVehicle();
   if (weapon === 'rocket') rocketSides.set(myVehicle.id, vehicle.rocketSide);
+  if (myVehicle.type === 'tank' && crewSeat === 'cannon')
+    noteTankShot(myVehicle.id, shot, direction, performance.now());
   const projectile = launchLocal(
     createOrdnance({ shot, weapon, vehicle, shooter: id, direction, now, wave: snap.wave }),
   );
@@ -6594,6 +6719,25 @@ $('enterPurgatory').onclick = async () => {
     $('enterPurgatory').disabled = false;
   }
 };
+// The real insect model, standing in the purgatory queue: the rig faces -Z, the
+// soul's heading is +Z, so it sits in a turned pivot, and it is fitted to the
+// soul's size (the office scale would make a rat fill the room).
+function soulInsect(type = 'midge') {
+  if (!ENEMY_TYPES[type]) type = 'midge';
+  const outer = new T.Group(),
+    model = insect(type);
+  model.rotation.y = Math.PI;
+  outer.add(model);
+  outer.updateMatrixWorld(true);
+  const size = new T.Box3().setFromObject(model).getSize(new T.Vector3()),
+    longest = Math.max(size.x, size.z, 1e-6),
+    wanted = Math.min(1.9, Math.max(0.45, 0.8 * Math.sqrt(ENEMY_TYPES[type].size)));
+  model.scale.multiplyScalar(wanted / longest);
+  outer.userData.disposables = model.userData.disposables;
+  outer.userData.animate = (dt, info) => model.userData.animate?.(dt, info);
+  return outer;
+}
+
 function observedPurgatory(dt) {
   const arena = observationRealm === 'super' ? snap?.superArena : snap?.arena;
   const active = new Set();
@@ -6605,7 +6749,7 @@ function observedPurgatory(dt) {
       model =
         body.kind === 'player'
           ? humanoid('#8bc9d6', false, appearanceOf(body.entity))
-          : insect(body.enemyType || 'midge');
+          : soulInsect(body.enemyType);
       purgScene.add(model);
       soulMeshes.set(body.id, model);
       model.rotation.y = body.face || 0;
@@ -6647,8 +6791,9 @@ function warmShaders() {
   combatEffects.update(10, camera);
 }
 
-// Readiness for the initial loader: selected appearance and its first draw.
-export const homeReady = loadCharacter(appearancePicker.value).then(
+// Readiness for the initial loader: selected appearance and its first draw, and
+// the Rapier physics engine (4 MB), which the Castor cannot be driven without.
+const characterReady = loadCharacter(appearancePicker.value).then(
   () =>
     new Promise((resolve) =>
       requestAnimationFrame(() => {
@@ -6662,3 +6807,7 @@ export const homeReady = loadCharacter(appearancePicker.value).then(
       }),
     ),
 );
+const rapierReady = loadRapier(() => import('/rapier.js')).then((RAPIER) => {
+  rapier = RAPIER;
+});
+export const homeReady = Promise.all([characterReady, rapierReady]).then(() => {});

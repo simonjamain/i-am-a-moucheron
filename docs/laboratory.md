@@ -1,6 +1,6 @@
 # Mode debug par room
 
-Le bouton **Debug : OFF / Debug : ON** (en haut à droite) est disponible dans chaque salle connectée au runtime Node/UDP. C'est un **interrupteur direct** ([issue #135](https://github.com/simonjamain/i-am-a-moucheron/issues/135)) : un clic l'active pour **toute la room**, le clic suivant le désactive, sans menu, panneau ni confirmation. L'état actif est visible sur le bouton (« Debug : ON », fond clair, `aria-pressed`) pour tous les membres. Les autres rooms restent normales. Le code interne garde le nom `lab` (commande serveur, `lab-ui.js`).
+Le bouton **Debug : OFF / Debug : ON** (en haut à droite) est disponible dans chaque salle connectée au runtime Node/UDP. C'est un **interrupteur direct** ([issue #135](https://github.com/simonjamain/i-am-a-moucheron/issues/135)) : un clic l'active pour **toute la room**, le clic suivant le désactive, sans menu, panneau ni confirmation. L'état actif est visible sur le bouton (« Debug : ON », fond clair, `aria-pressed`) pour tous les membres. Les autres rooms restent normales. Le code interne garde le nom `lab` (commande serveur, `lab-ui.ts`).
 
 ## Effets du mode actif
 
@@ -53,7 +53,7 @@ ennemis sont ajoutés au roster de la vague comme une ponte (`src/debug-enemies.
 Un mannequin a 10⁹ PV et ne heurte pas les véhicules. Le client est dans
 `src/debug-tools.ts`.
 
-Les anciens outils de laboratoire (ajout manuel de niveaux de carte, choix, lancement et achèvement forcé de vagues, scénarios enregistrés) ont été **retirés** avec leur interface et leurs commandes serveur. L'équilibrage par room reste retiré ([historique](room-balance.md)).
+Les anciens outils de laboratoire (ajout manuel de niveaux de carte, choix, lancement et achèvement forcé de vagues, scénarios enregistrés) ont été **retirés** avec leur interface et leurs commandes serveur. L'équilibrage par room reste retiré ([historique](enemy-power.md)).
 
 ## Sortie et sécurité
 

@@ -3,9 +3,8 @@
 ## Prendre une tâche
 
 Proposer idées et bugs dans les issues GitHub ; préciser le comportement attendu,
-la reproduction ou les critères d'acceptation. Le [backlog](BACKLOG.md) contient
-les tâches existantes : le consulter pour éviter les doublons. Lier issue et
-entrée de backlog lorsque les deux existent, sans recopier leurs états partout.
+la reproduction ou les critères d'acceptation. Les issues GitHub sont le seul
+suivi des tâches : chercher les doublons et les PR en cours avant d'en ouvrir une.
 
 Annoncer sa prise en charge dans la discussion de la tâche et ouvrir une branche
 par contribution. Vérifier les tâches et PR en cours qui touchent les mêmes

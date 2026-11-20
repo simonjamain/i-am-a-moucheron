@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
 import { Game } from '../server/game.js';
-import { SHOP } from '../src/equipment.js';
+import { SHOP } from '../src/equipment.ts';
 import { shopColumns } from '../src/shop-catalog.js';
 import { VEHICLES, isBomber, vehicleEntry } from '../src/fleet.ts';
-import { canUseWeapon } from '../src/armament.js';
+import { canUseWeapon } from '../src/armament.ts';
 import { ammoCapacity, fullAmmo } from '../src/logistics.js';
 import { baseWorld } from '../src/base.js';
 import { ACTOR_UNIT } from '../src/scale.ts';

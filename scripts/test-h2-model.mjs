@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import * as T from '../vendor/three.module.min.js';
 import { createGraphics } from '../src/graphics.js';
-import { paintVehicle } from '../src/vehicle-livery.js';
+import { paintVehicle } from '../src/vehicle-livery.ts';
 import { ACTOR_UNIT } from '../src/scale.ts';
 import { VEHICLES } from '../src/fleet.ts';
 const graphics = createGraphics(T, new T.Scene());
