@@ -51,8 +51,9 @@ focus et changement de poste effacent les commandes maintenues.
 
 Le bombardier initial dispose de **50 bombes**, le Stuka de **6**. Une pression
 brève largue une bombe ; le maintien largue à intervalle nominal de **0,5 s**.
-Le contrat de cadence double cet intervalle. Stocks et délai restent validés par
-`heavy-fire` côté serveur, mais la bombe part immédiatement, simulée par le
+Le contrat de cadence double cet intervalle. Les stocks restent comptés par
+`heavy-fire` côté serveur (sans contrôle de cadence : le client règle la sienne, voir
+[confiance](trust-model.md)), et la bombe part immédiatement, simulée par le
 tireur, sans attendre cette confirmation ; un refus la retire. Les MG restent
 prédites immédiatement et réglées par lots idempotents.
 La cadence rattrape les images retardées, avec un plafond de huit intervalles

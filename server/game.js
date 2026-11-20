@@ -12,14 +12,13 @@ import {
   floorStructures,
 } from '../src/ground-defense-state.js';
 import { advanceGroundCrowd } from '../src/ground-crowd.js';
-import { HELI, rotateLocal } from '../src/helicopter.js';
 import { clampProximity } from '../src/mobile-flak.js';
 import { collisionDamage, washTarget, WASH } from '../src/vehicle-care.js';
 import { purchaseCount } from '../src/equipment.ts';
 import { bedAccess, bedSpawn } from '../src/beds.js';
 import { impactDamage } from '../src/field-physics.ts';
 import { randomUUID } from 'node:crypto';
-import { MAP, ACTOR_UNIT, enemySizeFactor, flakPitchAllowed } from '../src/scale.ts';
+import { MAP, ACTOR_UNIT, enemySizeFactor } from '../src/scale.ts';
 import { OFFICE_LAYOUT } from '../src/layout.ts';
 import { setActiveLayout, isLayoutId, DEFAULT_LAYOUT_ID, layoutSolids } from '../src/layouts.js';
 import {
@@ -61,19 +60,12 @@ import {
   installationCount,
 } from '../src/logistics.js';
 import { stationAccess, stationExit } from '../src/sortie.js';
-import { howitzerMuzzle, howitzerPitchAllowed } from '../src/howitzer-geometry.ts';
+import { howitzerMuzzle } from '../src/howitzer-geometry.ts';
 import { validMotion } from '../src/network.js';
 import { snapshotRosterCore, snapshotRosterKey } from '../src/snapshot-wire.ts';
 import { appendDebugEnemy, debugPlacement, standingDummies } from '../src/debug-enemies.ts';
 import { newBank, signLoan, settleLoans, repayLoan } from '../src/bank.ts';
-import {
-  canUseWeapon,
-  HEAVY,
-  TANK_GUN_MAX_PITCH,
-  TANK_MG,
-  availableShell,
-  heavyInterval,
-} from '../src/armament.ts';
+import { canUseWeapon, HEAVY, TANK_MG, availableShell } from '../src/armament.ts';
 import { sweptSphereMayTouch } from '../src/swept-broadphase.ts';
 import { createOrdnance, segmentSphere } from '../src/ordnance.js';
 import { StatsLedger } from './stats.ts';
@@ -94,9 +86,6 @@ export const RESUME_MS = 30000;
 // A launch whose impact has not been reported is forgotten this long after
 // the end of its lifetime.
 export const IMPACT_GRACE_MS = 3000;
-// The shooter's browser fires on its own cadence without waiting for a reply;
-// network jitter can bring two launches closer on arrival.
-export const HEAVY_CADENCE_TOLERANCE_MS = 100;
 function requireGame(ok, message, status = 409) {
   if (!ok) throw Object.assign(new Error(message), { status });
 }
@@ -1573,13 +1562,6 @@ export class Game {
     const key = p.id + ':' + p.incarnation + ':' + b.shot;
     if (r.fixedDcaShots.has(key)) return;
     requireGame(gun.ammo >= 1, 'Cette arme est à court de munitions.');
-    const interval =
-      ((FORTIFICATIONS[gun.kind]?.interval ?? FIXED_DCA[gun.kind].interval) * 1000) /
-      (r.balance.fireRate || 1);
-    requireGame(
-      this.now() >= (gun.lastShotAt ?? -Infinity) + interval,
-      'Cette arme recharge son canon.',
-    );
     requireGame(r.fixedDcaShots.size < 128000, 'Trop de tirs enregistrés.', 429);
     gun.ammo -= 1;
     gun.lastShotAt = this.now();
@@ -1649,18 +1631,12 @@ export class Game {
       Array.isArray(direction) &&
         direction.length === 3 &&
         direction.every(Number.isFinite) &&
-        Math.hypot(...direction) > 0.5 &&
-        (weapon === 'antitank' ? howitzerPitchAllowed(direction) : flakPitchAllowed(direction)),
+        Math.hypot(...direction) > 0.5,
       'Visée invalide.',
       400,
     );
     requireGame(gun.ammo >= 1, 'Ce canon est à court d’obus.');
     const profile = HEAVY[weapon];
-    requireGame(
-      this.now() + HEAVY_CADENCE_TOLERANCE_MS >=
-        (gun.lastShotAt ?? -Infinity) + (profile.interval * 1000) / (r.balance.fireRate || 1),
-      'Ce canon recharge.',
-    );
     requireGame(
       r.ordnance.length < 128 && r.ordnanceShots.size < 128000,
       'Trop de projectiles actifs.',
@@ -1689,13 +1665,14 @@ export class Game {
     });
   }
   pistolImpact(r, p, shot) {
-    // A foot soldier has no other damaging firearm. Require a validated
-    // trace and allow only one impact (enemy, friendly or soul) per shot.
+    // Allow only one impact (enemy, friendly or soul) per shot.
     if (p.mode !== 'foot') return true;
+    // Game rule: the pistol only exists in purgatory.
+    requireGame(world(p) !== 'office', 'Aucun pistolet dans le bureau.');
     requireGame(
-      typeof shot === 'string' &&
-        r.hits.has(JSON.stringify(['pistol-trace', p.id, p.incarnation, shot])),
-      'Tir de pistolet non validé.',
+      typeof shot === 'string' && shot.length <= 120,
+      'Identifiant de tir invalide.',
+      400,
     );
     const key = JSON.stringify(['pistol-impact', p.id, p.incarnation, shot]);
     if (r.pistolImpacts.has(key)) return false;
@@ -2250,7 +2227,6 @@ export class Game {
         !r.ordnance.some((s) => !s.done && s.vehicle === v.id && s.weapon === 'missile'),
         'Un missile est déjà en vol.',
       );
-      requireGame(this.now() >= (v.nextMissileAt || 0), 'Missile en recharge.');
       v.missileOccupation = p.occupation;
     }
     const selected =
@@ -2258,12 +2234,6 @@ export class Game {
     requireGame(selected && v.supplies.ammo[selected] >= 1, 'Réserve vide.');
     const lane = selected === 'bomb' ? 'bomb' : 'cannon';
     v.lastHeavy ??= {};
-    requireGame(
-      this.now() + HEAVY_CADENCE_TOLERANCE_MS >=
-        (v.lastHeavy[lane] ?? -Infinity) +
-          (heavyInterval(selected, v.type) / r.balance.fireRate) * 1000,
-      'Arme en recharge.',
-    );
     requireGame(
       r.ordnance.length < 128 && r.ordnanceShots.size < 128000,
       'Trop de projectiles actifs.',
@@ -2279,34 +2249,7 @@ export class Game {
       400,
     );
     if (selected === 'rocket') v.rocketSide = -(v.rocketSide || -1);
-    if (selected === 'proximity') {
-      const [x, y, z, w] = v.state.q;
-      requireGame(
-        flakPitchAllowed(rotateLocal([-x, -y, -z, w], direction)),
-        'Butée de la DCA atteinte.',
-      );
-      v.proximity = clampProximity(b.proximity);
-    }
-    if (selected === 'missile') {
-      const local = rotateLocal(
-        [-v.state.q[0], -v.state.q[1], -v.state.q[2], v.state.q[3]],
-        direction,
-      );
-      const pitch = Math.asin(Math.max(-1, Math.min(1, local[1] / Math.hypot(...local))));
-      requireGame(
-        pitch >= HELI.minPitch - 1e-8 && pitch <= HELI.maxPitch + 1e-8,
-        'Butée du copilote atteinte.',
-      );
-    }
-    if (v.type === 'tank' && ['he', 'ap'].includes(selected)) {
-      // The main gun's elevation stops, in the hull's frame.
-      const local = rotateLocal(
-        [-v.state.q[0], -v.state.q[1], -v.state.q[2], v.state.q[3]],
-        direction,
-      );
-      const pitch = Math.asin(Math.max(-1, Math.min(1, local[1] / Math.hypot(...local))));
-      requireGame(pitch <= TANK_GUN_MAX_PITCH + 1e-3, 'Butée du canon atteinte.');
-    }
+    if (selected === 'proximity') v.proximity = clampProximity(b.proximity);
     v.supplies.ammo[selected]--;
     v.supplies.revision++;
     v.lastHeavy[lane] = this.now();
@@ -2340,8 +2283,8 @@ export class Game {
     const v = r.vehicles.get(shot.vehicle);
     if (v) v.nextMissileAt = now + 2000 / r.balance.fireRate;
   }
-  // Impact computed by the shooter: applied once, capped by the power of the
-  // launch recorded here. Damage to friends is the shooter's decision too.
+  // Impact computed by the shooter and trusted: applied once. Damage to friends is the
+  // shooter's decision too.
   heavyImpact(r, p, b) {
     requireGame(typeof b.shot === 'string' && b.shot.length <= 120, 'Impact invalide.', 400);
     const shot = r.ordnance.find((s) => s.shot === b.shot && s.shooter === p.id);
@@ -2361,8 +2304,8 @@ export class Game {
     );
     const now = this.now(),
       profile = HEAVY[shot.weapon],
-      cap = Math.ceil(profile.damage * shot.bonus) + 1,
-      amount = (n) => (Number.isFinite(n) ? Math.max(0, Math.min(cap, n)) : 0);
+      // The shooter's report is trusted as is (cooperative game, no cheat control).
+      amount = (n) => (Number.isFinite(n) ? Math.max(0, n) : 0);
     r.ordnance = r.ordnance.filter((s) => s !== shot);
     this.endOrdnance(r, shot, now);
     r.effects.push({

@@ -174,8 +174,9 @@ Node seulement, au maximum une fois par seconde de temps de room.
 ### Stocks des DCA fixes
 
 Un canon DCA fixe est installé avec **120 obus**. Les coups validés par
-`fixedDcaFire()` sur le serveur décrémentent son stock avec idempotence,
-limitation de cadence et vérification de l'occupant. Les recharges sont intégrées
+`fixedDcaFire()` sur le serveur décrémentent son stock avec idempotence
+et vérification de l'occupant (sans contrôle de cadence côté serveur, voir
+[confiance](trust-model.md)). Les recharges sont intégrées
 au budget `advancePaidService()` avec les autres services et valent **0,10 $
 par obus**, au débit maximal de 12 obus/seconde. Sans station ou Castor présent
 à portée, la DCA ne se recharge pas ; plusieurs demandes partagent équitablement

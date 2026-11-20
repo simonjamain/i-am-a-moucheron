@@ -154,10 +154,10 @@ char vide simulé par l'hôte. Le modèle d'un char à chenilles :
   rotation de la tourelle, il tourne avec elle : `tankBarrelOrigin` en tient compte (lacet lu dans
   la visée, `turretPivot`, `gunPivot`, `gunLength` de `VEHICLE_ANCHORS`).
 - **Butée d'élévation** (version 375) : le canon du char monte à **30° au plus** dans le repère de
-  la caisse (`TANK_GUN_MAX_PITCH`, `src/armament.ts`), contre 77° avant. La souris, la manette et
-  le tactile s'arrêtent à cette butée ; le serveur refuse un obus au-delà (« Butée du canon
-  atteinte », tolérance 1 mrad), comme pour la DCA et le copilote. La mitrailleuse du toit et
-  l'abaissement (−37°) ne changent pas.
+  la caisse (`TANK_GUN_MAX_PITCH`, `src/armament.ts`), contre 77° avant : la souris, la manette et
+  le tactile s'arrêtent à cette butée. Le serveur ne la contrôle pas (voir
+  [confiance envers les clients](trust-model.md)). La mitrailleuse du toit et l'abaissement (−37°)
+  ne changent pas.
 - **Vue du tireur** (`tankSight`, `SIGHT`) : œil derrière (2,4, soit la même place qu'avant le
   déplacement du pivot) et haut au-dessus (1,0) du pivot
   du canon, sur son axe, regard le long de la visée (version 370 ; la première position,

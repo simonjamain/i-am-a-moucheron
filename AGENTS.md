@@ -15,6 +15,14 @@ tâches ouvertes sont les issues GitHub ; il n'y a plus de BACKLOG ni d'archive 
 docs (l'historique est dans Git). Les documents de `docs/` décrivant un « lot »
 daté peuvent citer des versions dépassées : le code et la référence du thème font foi.
 
+## Confiance envers les joueurs
+
+Règle pérenne : **on fait confiance aux clients**. C'est un jeu coopératif sans enjeu ; ne jamais
+écrire ni conserver de code qui détecte, empêche ou limite la triche (butées ou cadences imposées
+par le serveur, plafonds de dégâts, contrôles de plausibilité de position ou de vitesse). Le serveur
+garde seulement les règles de jeu partagées, la robustesse des entrées (types, nombres finis,
+idempotence) et la protection de la salle. Détail : [confiance envers les clients](docs/trust-model.md).
+
 ## Boucle de travail
 
 1. Définir le résultat observable et le périmètre depuis la demande. Reproduire

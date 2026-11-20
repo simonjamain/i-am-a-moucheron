@@ -61,7 +61,8 @@ maximale conservée. Le message « Moucheron intercepté » est retiré.
 `node scripts/test-game-polish.mjs` couvre les limites diagonales, le retour à
 plat, les virages avant/arrière, le zoom, le voile, les poses de deux apparences,
 les stations et les arcs par poste. `test-support-vehicles.mjs` vérifie aussi un
-lancement guidé vers l’arrière et le refus au-dessus de la butée. Les suites
+lancement guidé vers l’arrière (plus de refus serveur au-dessus de la butée : le client garde la
+sienne, voir [confiance](trust-model.md)). Les suites
 Castor, personnages et armes lourdes restent applicables.
 
 Suite complète `npm test`, build Node et validateur d’artefact réussis.

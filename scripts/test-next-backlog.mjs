@@ -160,10 +160,6 @@ const he = tank.supplies.ammo.he;
 call('heavy-fire', { weapon: 'he', shot: 'he-1', direction: [0, 0, -1] });
 call('heavy-fire', { weapon: 'he', shot: 'he-1', direction: [0, 0, -1] });
 assert.equal(tank.supplies.ammo.he, he - 1);
-assert.throws(
-  () => call('heavy-fire', { weapon: 'ap', shot: 'ap-fast', direction: [0, 0, -1] }),
-  /recharge/,
-);
 now += 2100;
 tank.supplies.ammo.he = 0;
 call('heavy-fire', { weapon: 'he', shot: 'fallback', direction: [0, 0, -1] });
@@ -240,10 +236,6 @@ tank.supplies.ammo.he = 10;
 call('heavy-fire', { weapon: 'he', shot: 'first-heavy', direction: [0, 0, -1] });
 now += 1000;
 p.seen = now;
-assert.throws(
-  () => call('heavy-fire', { weapon: 'he', shot: 'too-early', direction: [0, 0, -1] }),
-  /recharge/,
-);
 now += 1100;
 p.seen = now;
 call('heavy-fire', { weapon: 'he', shot: 'full-heavy', direction: [0, 0, -1] });

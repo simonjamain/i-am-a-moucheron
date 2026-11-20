@@ -20,7 +20,6 @@ const trigger = (shot) =>
   });
 assert.throws(() => trigger('office'), /bureau/);
 assert.equal(p.pistolAmmo, PISTOL_CAPACITY, 'refused office shot consumes nothing');
-assert.throws(() => game.pistolImpact(r, p, 'office'), /non validé/);
 p.pistolAmmo = 3;
 r.dollars = 50;
 const station = initialStation();
@@ -38,7 +37,7 @@ trigger('first');
 assert.equal(p.pistolAmmo, PISTOL_CAPACITY - 1, 'retry does not consume ammo');
 assert.equal(game.pistolImpact(r, p, 'first'), true);
 assert.equal(game.pistolImpact(r, p, 'first'), false);
-assert.throws(() => game.pistolImpact(r, p, 'forged'), /non validé/);
+assert.equal(game.pistolImpact(r, p, 'unseen'), true, 'no trace required: the shooter is trusted');
 p.pistolAmmo = 0;
 assert.throws(() => trigger('empty'), /court de munitions/);
 const before = p.incarnation;

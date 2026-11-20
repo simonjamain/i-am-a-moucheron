@@ -63,13 +63,13 @@ générés.
 ## Documents par thème
 
 Les constantes et commandes exactes restent dans le code et `package.json`. Les
-documents marqués *(lot)* racontent une livraison datée : ils décrivent des
+documents marqués _(lot)_ racontent une livraison datée : ils décrivent des
 comportements encore valides mais peuvent citer des versions ou des états
 dépassés ; en cas de doute, le code et les références du thème font foi.
 
 **Jeu et règles**
 
-- [gameplay](docs/gameplay.md) : règles et parcours joueur · [controls](docs/controls.md) : touches, pointeur · [comfort](docs/comfort.md), [clean-flight](docs/clean-flight.md), [field-update](docs/field-update.md), [multiplayer-return](docs/multiplayer-return.md), [returns-30-october](docs/returns-30-october.md), [party-feedback](docs/party-feedback.md), [game-polish-171](docs/game-polish-171.md), [gameplay-polish-175](docs/gameplay-polish-175.md), [issues-15-16-17](docs/issues-15-16-17.md) *(lots)*
+- [gameplay](docs/gameplay.md) : règles et parcours joueur · [controls](docs/controls.md) : touches, pointeur · [comfort](docs/comfort.md), [clean-flight](docs/clean-flight.md), [field-update](docs/field-update.md), [multiplayer-return](docs/multiplayer-return.md), [returns-30-october](docs/returns-30-october.md), [party-feedback](docs/party-feedback.md), [game-polish-171](docs/game-polish-171.md), [gameplay-polish-175](docs/gameplay-polish-175.md), [issues-15-16-17](docs/issues-15-16-17.md) _(lots)_
 - [progression](docs/progression.md) : vagues, récompenses, achats · [enemy-power](docs/enemy-power.md) : puissance et budget · [economy-physics](docs/economy-physics.md) : économie, signatures, balistique · [stats](docs/stats.md) : statistiques des équipements
 - [combat-worlds](docs/combat-worlds.md) · [logistics-contracts](docs/logistics-contracts.md) · [purgatory-queue](docs/purgatory-queue.md) · [laboratory](docs/laboratory.md) (mode debug) · [office-layouts](docs/office-layouts.md)
 
@@ -83,6 +83,7 @@ dépassés ; en cas de doute, le code et les références du thème font foi.
 
 **Architecture et réseau**
 
+- [trust-model](docs/trust-model.md) : confiance envers les clients, pas d'anti-triche
 - [code-structure](docs/code-structure.md) : carte du code · [walking-network](docs/walking-network.md) : corps partagés, autorité client · [udp-server](docs/udp-server.md) : serveur, variables, tests · [performance](docs/performance.md) : mesures et optimisations · [typescript](docs/typescript.md) · [adding-content](docs/adding-content.md) : nouvelle espèce ou nouveau véhicule
 
 **Rendu, son et modèles**
