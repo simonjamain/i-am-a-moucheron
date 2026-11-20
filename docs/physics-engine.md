@@ -1,4 +1,4 @@
-# Physique Rapier — les véhicules au sol (versions 352 à 366)
+# Physique Rapier — les véhicules au sol (versions 352 à 369)
 
 Le jeu écrit sa physique à la main (vol, hélicoptère, `stepWalker`, balistique). Les
 véhicules au sol roulent sur un vrai moteur, **Rapier** (Rust compilé en
@@ -135,6 +135,22 @@ char vide simulé par l'hôte. Le modèle d'un char à chenilles :
   chenille (`beltDisplacement` : interpolation linéaire entre essieux, poids dégressif avec la
   hauteur : le brin haut reste en place). `src/tank-gear.ts` donne les essieux, partagés avec la
   physique. `test-track-suspension.mjs` le contrôle.
+
+### Frein de parking, recul et vue du tireur (version 369)
+
+- **Frein de parking** : sans touche, sans virage, au sol et sous 0,12 m/s, le char est immobilisé
+  (vitesse horizontale et lacet annulés, poussée horizontale des ressorts compensée) ; la vitesse
+  publiée est nulle, donc les roues ne tournent pas. Avant, la force de maintien visqueuse
+  s'éteignait vers zéro et laissait le char ramper (≈ 2 mm/s) après la sortie de l'équipage.
+- **Recul du canon** : chaque obus du char (enregistrement de tir de la salle, visible de tous)
+  déclenche `src/tank-recoil.ts` (le tube recule de 0,32 unité modèle en 0,05 s, revient en
+  0,55 s, le long de son axe quelle que soit l'élévation) et, sur la machine qui simule la caisse
+  (conducteur, ou hôte si char vide), `TankRig.kick` : une impulsion `mass × recoil` (0,35 m/s)
+  au pivot du canon, qui recule et fait tanguer la caisse sur ses ressorts.
+- **Vue du tireur** (`tankSight`, `SIGHT`) : œil derrière (1,35), au-dessus (0,5) et à gauche
+  (0,4) du pivot du canon, regard le long de la visée : le tube reste en bas à droite de l'écran
+  et on le voit reculer. L'œil ne suit pas le recul. Le char n'est plus masqué en vue de tir.
+  `test-tank-recoil.mjs` contrôle l'ensemble.
 
 Pistes (pas encore faites) : roues du Castor animées par le braquage de la physique plutôt que
 déduites du taux de lacet.

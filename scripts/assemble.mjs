@@ -192,6 +192,7 @@ const files = {
       'physics-world',
       'castor-physics',
       'tank-physics',
+      'tank-recoil',
       'tank-gear',
       'tessellate',
       'track-suspension',

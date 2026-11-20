@@ -1,7 +1,7 @@
 import type { RigidBody } from '@dimforge/rapier3d-compat';
 import { MAP } from './scale.ts';
 import { vehicleScale, type VehicleProfile } from './fleet.ts';
-import { AXLES, TRACK_HALF } from './tank-gear.ts';
+import { AXLES, GUN_PIVOT, TRACK_HALF } from './tank-gear.ts';
 import {
   FALL_KILL_SPEED,
   GRAVITY,
@@ -49,6 +49,8 @@ export const TANK_PHYSICS = Object.freeze({
   coastForce: 3, // holding force when no key is pressed, in units of `thrust`
   slopeAssist: 1, // share of the weight along a slope that the tracks climb without slowing down
   yawSoftness: 0.3, // rad/s of yaw error over which the steering goes to full thrust
+  parkSpeed: 0.12, // m/s: below this, with no key pressed, the tracks lock and the tank stands still
+  recoil: 0.35, // m/s: speed given to the hull by a main-gun round (the shell's momentum, exaggerated)
   beltSoftness: 0.15, // m/s over which the holding force builds up
   slipSpeed: 0.08, // m/s over which sideways friction builds up to its limit
   sag: 0.04 * TANK_SCALE, // m: spring compression with the hull at rest
@@ -245,7 +247,9 @@ export class TankRig {
       params.steerThrust * share * Math.tanh((wantedYaw - yawRate) / params.yawSoftness);
     const beltSums = [0, 0],
       beltCounts = [0, 0];
-    let contacts = 0;
+    let contacts = 0,
+      pushX = 0,
+      pushZ = 0;
     for (let i = 0; i < WHEEL_COUNT; i++) {
       const mount = MOUNTS[i],
         side = mount.side < 0 ? 0 : 1;
@@ -294,15 +298,14 @@ export class TankRig {
       const sideLimit = params.sideGrip * load;
       // Dry friction, smoothed around zero so that it does not chatter at rest.
       const slide = -sideLimit * Math.tanh(across / params.slipSpeed);
-      body.addForceAtPoint(
-        {
-          x: up.x * load + forward.x * push + right.x * slide,
-          y: up.y * load + forward.y * push + right.y * slide,
-          z: up.z * load + forward.z * push + right.z * slide,
-        },
-        contact,
-        true,
-      );
+      const force = {
+        x: up.x * load + forward.x * push + right.x * slide,
+        y: up.y * load + forward.y * push + right.y * slide,
+        z: up.z * load + forward.z * push + right.z * slide,
+      };
+      body.addForceAtPoint(force, contact, true);
+      pushX += force.x;
+      pushZ += force.z;
       beltSums[side] += along;
       beltCounts[side]++;
       contacts++;
@@ -311,6 +314,23 @@ export class TankRig {
       beltCounts[0] ? beltSums[0] / beltCounts[0] : 0,
       beltCounts[1] ? beltSums[1] / beltCounts[1] : 0,
     ];
+    // Parking brake: a tank left alone (driver out, no key) stands still. The viscous holding
+    // force above fades towards zero speed, so it would leave a slow creep without this.
+    const parked =
+      Math.abs(throttle) <= 0.05 &&
+      turn === 0 &&
+      contacts >= 4 &&
+      Math.hypot(v.x, v.z) < params.parkSpeed &&
+      Math.abs(yawRate) < params.parkSpeed;
+    if (parked) {
+      // Static friction: the springs of a hull at rest on a slight tilt push it sideways; cancel it.
+      body.addForce({ x: -pushX, y: 0, z: -pushZ }, true);
+      body.setLinvel({ x: 0, y: v.y, z: 0 }, true);
+      body.setAngvel(
+        { x: w.x - up.x * yawRate, y: w.y - up.y * yawRate, z: w.z - up.z * yawRate },
+        true,
+      );
+    }
     this.physics.step(dt);
 
     // Write back (world units).
@@ -326,12 +346,34 @@ export class TankRig {
     Object.assign(state, {
       p: [toWorld(t.x), toWorld(t.y), toWorld(t.z)],
       q: [r.x, r.y, r.z, r.w],
-      v: [toWorld(lv.x), toWorld(lv.y), toWorld(lv.z)],
+      // Parked: the residue left by the solver is not a speed (the wheels would turn on it).
+      v: [parked ? 0 : toWorld(lv.x), toWorld(lv.y), parked ? 0 : toWorld(lv.z)],
       omega: [av.x, av.y, av.z],
       gas: Math.abs(throttle),
       landed: contacts >= 4,
     });
     this.pose.p = state.p.map(toPhysics);
+  }
+
+  /**
+   * A main-gun round leaves along the world direction `aim`: the hull is pushed back at the
+   * gun's pivot, so that it also pitches (a firing tank rocks on its springs).
+   */
+  kick(aim: readonly number[]): void {
+    const body = this.body,
+      n = Math.hypot(aim[0], aim[1], aim[2]) || 1,
+      m = this.params.mass * this.params.recoil;
+    const offset = rotate(body.rotation(), {
+        x: GUN_PIVOT[0] * MU,
+        y: GUN_PIVOT[1] * MU,
+        z: GUN_PIVOT[2] * MU,
+      }),
+      t = body.translation();
+    body.applyImpulseAtPoint(
+      { x: (-aim[0] / n) * m, y: (-aim[1] / n) * m, z: (-aim[2] / n) * m },
+      { x: t.x + offset.x, y: t.y + offset.y, z: t.z + offset.z },
+      true,
+    );
   }
 
   dispose(): void {
