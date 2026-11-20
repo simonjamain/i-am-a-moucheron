@@ -47,6 +47,7 @@ import { InteractionTiming } from '/interaction-timing.js';
 import { BedUI } from '/bed-ui.js';
 import { bedAccess } from '/beds.js';
 import { tankSight } from '/tank-view.js';
+import { applyGunRecoil, recoilAmount } from '/tank-recoil.js';
 import { shoulderView, aimPistol, muzzleAim } from '/personal-aim.js';
 import { BankUI } from '/bank-ui.js';
 import { ContextHUD, equipmentHUD } from '/hud.js';
@@ -127,6 +128,7 @@ import {
   lookScale,
 } from '/control-focus.js';
 import { createRenderer } from '/renderer.js';
+import { makeEntryRing } from '/entry-ring.js';
 import { createGraphics } from '/graphics.js';
 import { availableAppearance, turnToward, loadCharacter } from '/character-model.js';
 import { createAppearancePicker } from '/appearance-picker.js';
@@ -3195,6 +3197,10 @@ function updateVehicles(dt) {
         ],
       up = new T.Vector3(0, 1, 0).applyQuaternion(me.quaternion);
     aimGun(T, mount, dir, mount.parent.getWorldQuaternion(new T.Quaternion()));
+    if (myVehicle.type === 'tank' && crewSeat === 'cannon') {
+      applyGunRecoil(mount.userData.pitch, gunRecoilFor(myVehicle.id));
+      mount.updateWorldMatrix(true, true);
+    }
     const scoped = ['tank', 'flaktruck'].includes(myVehicle.type) && crewSeat === 'cannon';
     const view =
       myVehicle.type === 'helicopter'
@@ -3202,7 +3208,8 @@ function updateVehicles(dt) {
         : scoped
           ? tankSight(T, mount, dir, up, observing ? freeLook : null)
           : gunnerView(T, mount, dir, up, crewSeat === 'ventral');
-    if (scoped) me.visible = observing;
+    if (scoped)
+      me.visible = true; // the gun and the hull stay in view, over the shoulder
     else if (myVehicle.type === 'helicopter') me.visible = true;
     camera.position.copy(view.eye);
     camera.up.copy(up);
@@ -3434,21 +3441,7 @@ function fireRapidDca(station, gun, direction, dt, interval, firing, owned) {
 $('fuseMinus').onclick = () => (flakRange = fuseRange(flakRange - FLAK.step));
 $('fusePlus').onclick = () => (flakRange = fuseRange(flakRange + FLAK.step));
 
-const entryRing = new T.Mesh(
-  new T.RingGeometry(1.08, 1.24, 40),
-  new T.MeshBasicMaterial({
-    color: '#d5ef73',
-    side: T.DoubleSide,
-    transparent: true,
-    opacity: 0.9,
-    depthWrite: false,
-    polygonOffset: true,
-    polygonOffsetFactor: -2,
-    polygonOffsetUnits: -2,
-  }),
-);
-entryRing.rotation.x = -Math.PI / 2;
-entryRing.renderOrder = 5;
+const entryRing = makeEntryRing(T);
 const entryRings = new Map();
 function roleEntry(type, seat, role = seatRole(type, seat)) {
   const g = new T.Group();
@@ -3904,6 +3897,10 @@ function updateOthers(dt) {
       const hull = g.userData.counterRotor && g.getObjectByName('meshy-flying-castor-body');
       if (hull) hull.visible = !(airView() && myVehicle?.id === v.id);
       if (g.userData.tailRotor) g.userData.tailRotor.rotation.x += rotation * 4;
+    }
+    if (v.type === 'tank') {
+      trackTankShots();
+      applyGunRecoil(g.userData.turrets[0].userData.pitch, gunRecoilFor(v.id));
     }
     g.userData.animateGun?.(dt, performance.now() < (g.userData.gunFiredUntil || 0));
     updateInscriptions(T, g, v, snap.pilots);
@@ -5739,6 +5736,44 @@ function launchLocal(projectile) {
   localShots.set(projectile.shot, projectile);
   return projectile;
 }
+// Main-gun recoil: seen on every client from the shell's launch record, felt by the machine
+// that simulates the hull (its driver, or the room host when nobody drives).
+const gunKicks = new Map(),
+  kickSeen = new Set();
+function noteTankShot(vehicleId, shot, aim, atMs) {
+  if (kickSeen.has(shot)) return;
+  kickSeen.add(shot);
+  if (kickSeen.size > 400) kickSeen.delete(kickSeen.values().next().value);
+  gunKicks.set(vehicleId, atMs);
+  const rig =
+    myVehicle?.id === vehicleId && crewSeat === 'pilot'
+      ? drivenRigs.get('tank')
+      : vacantRigs.get(vehicleId);
+  rig?.kick?.(aim);
+}
+function trackTankShots() {
+  const now = serverClock.now(performance.now()) ?? Date.now() + clockOffset;
+  for (const record of snap?.ordnance || []) {
+    if (kickSeen.has(record.shot)) continue;
+    const owner = snap.vehicles.find((v) => v.id === record.vehicle);
+    if (owner?.type !== 'tank' || !HEAVY[record.weapon] || record.weapon === 'bomb') continue;
+    const age = now - record.at;
+    if (age > 600) kickSeen.add(record.shot);
+    else {
+      const n = Math.hypot(...record.v) || 1;
+      noteTankShot(
+        record.vehicle,
+        record.shot,
+        record.v.map((x) => x / n),
+        performance.now() - Math.max(0, age),
+      );
+    }
+  }
+}
+function gunRecoilFor(vehicleId) {
+  const at = gunKicks.get(vehicleId);
+  return at === undefined ? 0 : recoilAmount((performance.now() - at) / 1000);
+}
 async function fireHeavy(weapon = null) {
   if (
     !joined ||
@@ -5772,6 +5807,8 @@ async function fireHeavy(weapon = null) {
   );
   const vehicle = launchVehicle();
   if (weapon === 'rocket') rocketSides.set(myVehicle.id, vehicle.rocketSide);
+  if (myVehicle.type === 'tank' && crewSeat === 'cannon')
+    noteTankShot(myVehicle.id, shot, direction, performance.now());
   const projectile = launchLocal(
     createOrdnance({ shot, weapon, vehicle, shooter: id, direction, now, wave: snap.wave }),
   );
