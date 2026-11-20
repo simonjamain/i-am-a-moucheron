@@ -66,7 +66,14 @@ import { validMotion } from '../src/network.js';
 import { snapshotRosterCore, snapshotRosterKey } from '../src/snapshot-wire.ts';
 import { appendDebugEnemy, debugPlacement, standingDummies } from '../src/debug-enemies.ts';
 import { newBank, signLoan, settleLoans, repayLoan } from '../src/bank.ts';
-import { canUseWeapon, HEAVY, TANK_MG, availableShell, heavyInterval } from '../src/armament.ts';
+import {
+  canUseWeapon,
+  HEAVY,
+  TANK_GUN_MAX_PITCH,
+  TANK_MG,
+  availableShell,
+  heavyInterval,
+} from '../src/armament.ts';
 import { sweptSphereMayTouch } from '../src/swept-broadphase.ts';
 import { createOrdnance, segmentSphere } from '../src/ordnance.js';
 import { StatsLedger } from './stats.ts';
@@ -2290,6 +2297,15 @@ export class Game {
         pitch >= HELI.minPitch - 1e-8 && pitch <= HELI.maxPitch + 1e-8,
         'Butée du copilote atteinte.',
       );
+    }
+    if (v.type === 'tank' && ['he', 'ap'].includes(selected)) {
+      // The main gun's elevation stops, in the hull's frame.
+      const local = rotateLocal(
+        [-v.state.q[0], -v.state.q[1], -v.state.q[2], v.state.q[3]],
+        direction,
+      );
+      const pitch = Math.asin(Math.max(-1, Math.min(1, local[1] / Math.hypot(...local))));
+      requireGame(pitch <= TANK_GUN_MAX_PITCH + 1e-3, 'Butée du canon atteinte.');
     }
     v.supplies.ammo[selected]--;
     v.supplies.revision++;

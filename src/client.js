@@ -165,7 +165,7 @@ import { howitzerMuzzle } from '/howitzer-geometry.js';
 import { RECONNECT_AFTER_MS, RECONNECT_WINDOW_MS } from '/udp-protocol.js';
 import { HoldZoom, advanceFuse, contextKey, rangeReadout } from '/equipment-controls.js';
 import { formatDistance, formatSpeed } from '/units.js';
-import { HEAVY, TANK_MG, availableShell, heavyInterval } from '/armament.js';
+import { HEAVY, TANK_GUN_MAX_PITCH, TANK_MG, availableShell, heavyInterval } from '/armament.js';
 import { loadRapier } from '/physics-world.js';
 import { CastorRig } from '/castor-physics.js';
 import { TankRig } from '/tank-physics.js';
@@ -575,7 +575,13 @@ canvas.addEventListener('pointermove', (e) => {
           : myVehicle?.type === 'tank'
             ? -0.65
             : -0.1,
-      crewSeat === 'ventral' ? -0.05 : myVehicle?.type === 'helicopter' ? HELI.maxPitch : 1.35,
+      crewSeat === 'ventral'
+        ? -0.05
+        : myVehicle?.type === 'helicopter'
+          ? HELI.maxPitch
+          : tankCannonSeat()
+            ? TANK_GUN_MAX_PITCH
+            : 1.35,
     );
     groundView.x = e.clientX;
     groundView.y = e.clientY;
@@ -904,7 +910,13 @@ addEventListener('pointermove', (event) => {
           : myVehicle?.type === 'tank'
             ? -0.65
             : -0.1,
-      crewSeat === 'ventral' ? -0.05 : myVehicle?.type === 'helicopter' ? HELI.maxPitch : 1.35,
+      crewSeat === 'ventral'
+        ? -0.05
+        : myVehicle?.type === 'helicopter'
+          ? HELI.maxPitch
+          : tankCannonSeat()
+            ? TANK_GUN_MAX_PITCH
+            : 1.35,
     );
     return;
   }
@@ -2868,6 +2880,7 @@ function reconcileEquipment(next) {
     stationRings[i] = ring;
   }
 }
+const tankCannonSeat = () => myVehicle?.type === 'tank' && crewSeat === 'cannon';
 function clampTurretPitch(value, min, max) {
   const antiAir =
     isFixedDca(stations[turretIndex]?.kind) ||
@@ -3205,7 +3218,13 @@ function updateVehicles(dt) {
             : myVehicle?.type === 'tank'
               ? -0.65
               : -0.05,
-        crewSeat === 'ventral' ? -0.05 : myVehicle?.type === 'helicopter' ? HELI.maxPitch : 1.2,
+        crewSeat === 'ventral'
+          ? -0.05
+          : myVehicle?.type === 'helicopter'
+            ? HELI.maxPitch
+            : tankCannonSeat()
+              ? TANK_GUN_MAX_PITCH
+              : 1.2,
       );
     }
     if (myVehicle.type === 'helicopter' && crewSeat === 'copilot') {
