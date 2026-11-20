@@ -1,4 +1,4 @@
-# Physique Rapier — les véhicules au sol (versions 352 à 371)
+# Physique Rapier — les véhicules au sol (versions 352 à 373)
 
 Le jeu écrit sa physique à la main (vol, hélicoptère, `stepWalker`, balistique). Les
 véhicules au sol roulent sur un vrai moteur, **Rapier** (Rust compilé en
@@ -148,7 +148,7 @@ char vide simulé par l'hôte. Le modèle d'un char à chenilles :
   base du tube) reste sur le pivot. Et, sur la machine qui simule la caisse
   (conducteur, ou hôte si char vide), `TankRig.kick` : une impulsion `mass × recoil` (0,35 m/s)
   au pivot du canon, qui recule et fait tanguer la caisse sur ses ressorts.
-- **Pivot du canon** (version 371) : l'axe d'élévation est à l'avant de la tourelle, à la base du
+- **Pivot du canon** (version 373) : l'axe d'élévation est à l'avant de la tourelle, à la base du
   tube (`scripts/rig-tank-gun.mjs` : `cannonGun` porte le masque et la mitrailleuse coaxiale,
   `cannonBarrel` le tube ; aucun triangle ni UV ne change). Comme ce pivot n'est plus sur l'axe de
   rotation de la tourelle, il tourne avec elle : `tankBarrelOrigin` en tient compte (lacet lu dans
