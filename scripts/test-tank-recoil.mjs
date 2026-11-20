@@ -9,6 +9,7 @@ import { TankRig } from '../src/tank-physics.ts';
 import { GUN_RECOIL, applyGunRecoil, recoilAmount } from '../src/tank-recoil.ts';
 import { tankSight, SIGHT } from '../src/tank-view.js';
 import { MODEL_DATA } from '../src/meshy-tank-data.js';
+import { aimGun } from '../src/sortie.js';
 import { VEHICLE_ANCHORS } from '../src/vehicle-anchors.js';
 
 // Profile: quick back, slower return, nothing before the shot.
@@ -83,11 +84,10 @@ tank.updateMatrixWorld(true);
 assert.ok(tankSight(T, mount, dir, up).eye.distanceTo(sight.eye) < 1e-12, 'the eye ignores recoil');
 applyGunRecoil(barrel, 0);
 tank.updateMatrixWorld(true);
-// Nothing hides the barrel from the eye: rays to points along it meet no other part of the tank
-// (the turret hides it from low eyes, the roof machine gun from eyes beside it).
+// Nothing hides the barrel or the view ahead, at any elevation and turret yaw: rays from the eye
+// to points along the barrel, and a cone of rays along the aim, meet no other part of the tank
+// (the turret roof hides the gun from eyes behind it, the roof machine gun from eyes beside it).
 {
-  const pivotWorld = barrel.getWorldPosition(new T.Vector3());
-  const box = new T.Box3().setFromObject(barrel);
   const blockers = [];
   tank.traverse((o) => {
     let p = o,
@@ -99,19 +99,49 @@ tank.updateMatrixWorld(true);
     if (o.isMesh && !inGun) blockers.push(o);
   });
   const ray = new T.Raycaster();
-  let clear = 0;
-  for (const t of [0.5, 0.65, 0.8, 0.95]) {
-    const point = new T.Vector3(
-      pivotWorld.x,
-      pivotWorld.y,
-      box.min.z + (box.max.z - box.min.z) * t,
-    );
-    const d = point.clone().sub(sight.eye);
-    ray.set(sight.eye, d.clone().normalize());
-    ray.far = d.length() - 1e-6;
-    if (!ray.intersectObjects(blockers, false).length) clear++;
+  for (const [degrees, yawDegrees] of [
+    [0, 0],
+    [15, 0],
+    [30, 0],
+    [-20, 0],
+    [30, 60],
+    [10, -120],
+  ]) {
+    const a = (degrees * Math.PI) / 180,
+      y = (yawDegrees * Math.PI) / 180;
+    const aim = new T.Vector3(-Math.sin(y) * Math.cos(a), Math.sin(a), -Math.cos(y) * Math.cos(a));
+    aimGun(T, mount, aim, mount.parent.getWorldQuaternion(new T.Quaternion()));
+    tank.updateMatrixWorld(true);
+    const view = tankSight(T, mount, aim, up),
+      origin = gun.getWorldPosition(new T.Vector3()),
+      tip = mount.userData.muzzle.getWorldPosition(new T.Vector3());
+    for (const t of [0.15, 0.4, 0.65, 0.9]) {
+      const point = origin.clone().lerp(tip, t),
+        d = point.clone().sub(view.eye);
+      ray.set(view.eye, d.clone().normalize());
+      ray.far = d.length();
+      assert.ok(
+        !ray.intersectObjects(blockers, false).length,
+        `barrel clear at ${degrees}°/${yawDegrees}°`,
+      );
+    }
+    const lift = up.clone().addScaledVector(aim, -up.dot(aim)).normalize(),
+      side = aim.clone().cross(lift).normalize();
+    for (const dx of [-0.14, 0, 0.14])
+      for (const dy of [-0.14, 0, 0.14]) {
+        ray.set(
+          view.eye,
+          aim.clone().addScaledVector(side, dx).addScaledVector(lift, dy).normalize(),
+        );
+        ray.far = 6 * vehicleUnit('tank');
+        assert.ok(
+          !ray.intersectObjects(blockers, false).length,
+          `view clear at ${degrees}°/${yawDegrees}°`,
+        );
+      }
   }
-  assert.ok(clear >= 3, 'the barrel is in the clear: ' + clear + '/4 points');
+  aimGun(T, mount, dir, mount.parent.getWorldQuaternion(new T.Quaternion()));
+  tank.updateMatrixWorld(true);
 }
 // The muzzle, ahead of the eye, is below the sight line: the barrel is in the picture.
 const muzzle = mount.userData.muzzle.getWorldPosition(new T.Vector3());

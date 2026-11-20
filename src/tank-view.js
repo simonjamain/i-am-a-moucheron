@@ -3,7 +3,7 @@ import { vehicleUnit } from './fleet.ts';
 import { rotateLocal } from './helicopter.js';
 import { VEHICLE_ANCHORS } from './vehicle-anchors.js';
 // Position of the gunner's eye relative to the gun's pivot, in model units.
-export const SIGHT = Object.freeze({ behind: 2.4, above: 1, left: 0 });
+export const SIGHT = Object.freeze({ behind: 0.4, above: 0.75, left: 0 });
 export function tankSight(T, mount, direction, up, observation = null) {
   mount.updateWorldMatrix(true, true);
   const muzzle = mount.userData.muzzle.getWorldPosition(new T.Vector3());
@@ -17,17 +17,20 @@ export function tankSight(T, mount, direction, up, observation = null) {
     ).multiplyScalar(9 * ACTOR_UNIT);
     return { eye: center.clone().add(offset), target: center, muzzle: coax, observing: true };
   }
-  // Behind and well above the gun's pivot, on its axis: the barrel is seen from above and behind
-  // (clear of the turret, which hides it from lower eyes, and of the roof machine gun, which sits
-  // below the line of sight), under the sight, and is seen kicking back when it fires.
+  // Close behind and above the gun's pivot, in the gun's own frame (so the eye rises with the
+  // barrel): the barrel is seen from above, under the sight, clear of the turret roof at any
+  // elevation, and is seen kicking back when it fires.
   const anchor = mount.localToWorld(mount.userData.pitch.position.clone()),
     unit = vehicleUnit('tank'),
-    right = direction.clone().cross(up).normalize();
+    right = direction.clone().cross(up).normalize(),
+    // "Above" is perpendicular to the aim, so that the eye rises with the barrel and stays over
+    // the turret roof when the gun is elevated.
+    sightUp = up.clone().addScaledVector(direction, -up.dot(direction)).normalize();
   return {
     eye: anchor
       .clone()
       .addScaledVector(direction, -SIGHT.behind * unit)
-      .addScaledVector(up, SIGHT.above * unit)
+      .addScaledVector(sightUp, SIGHT.above * unit)
       .addScaledVector(right, -SIGHT.left * unit),
     target: anchor.clone().addScaledVector(direction, 100 * ACTOR_UNIT),
     muzzle: coax,
