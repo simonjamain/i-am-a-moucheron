@@ -1,6 +1,10 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 371,
+    changes: ['Les ronds au sol des sièges et équipements restent visibles sur tous les écrans.'],
+  },
+  {
     version: 370,
     changes: ['Le tireur du char voit son canon de plus haut, sans la mitrailleuse devant.'],
   },
