@@ -135,9 +135,10 @@ proportions : les obus et roquettes partent des bouches dessinées.
 
 Depuis la version 363, `scripts/split-vehicle-parts.mjs` extrait du module `src/meshy-flaktruck-data.js`
 les roues du D2 en pièces du rig (six de tracteur, quatre de remorque) pour qu'elles tournent
-et braquent ; aucun triangle, UV ni texture ne change, le module garde l'empreinte de sa
-source et le script écrit sa trace dans son en-tête. Le char sera découpé de la même
-façon (voir [la physique Rapier](physics-engine.md#roues-et-chenilles-dans-les-modèles)).
+et braquent (et, depuis la 365, du module du T3 ses chenilles, galets, barbotins et pignons) ; aucun triangle, UV ni texture ne change, le module garde l'empreinte de sa
+source et le script écrit sa trace dans son en-tête (voir
+[la physique Rapier](physics-engine.md#roues-et-chenilles-dans-les-modèles)). Les pièces
+des remorques sont dans le repère de leur parent (l'attelage pour la remorque).
 
 `scripts/test-meshy-vehicles.mjs` vérifie empreintes, triangles, contact au sol,
 hiérarchies et l'égalité entre bouches dessinées et origines de la physique

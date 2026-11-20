@@ -54,6 +54,71 @@ const SPECS = {
   },
 };
 
+// The medium tank: both track belts (`trackL`, `trackR`), the eight road wheels, the two idlers
+// (front) and the two sprockets (rear) are islands of `body`. Named from the front, left (-x)
+// then right (+x), so that the physics' and the renderer's indices agree.
+const trackSide = (c) => Math.abs(c.centre[0]) > 0.6;
+// Axles are at least 0.5 apart and the two wheels of one axle differ by less than 0.05 in z.
+const byFront = (a, b) =>
+  Math.round(a.centre[2] * 3) - Math.round(b.centre[2] * 3) || a.centre[0] - b.centre[0];
+SPECS.tank = {
+  file: 'src/meshy-tank-data.js',
+  groups: [
+    {
+      from: 'body',
+      parent: 'body',
+      prefix: 'track',
+      names: ['trackL', 'trackR'],
+      // ~95 triangles, 1.1 high and 3.4 long: a belt wraps the whole running gear.
+      match: (c) =>
+        trackSide(c) && c.tris >= 90 && c.tris <= 100 && c.size[1] > 0.7 && c.size[2] > 3.2,
+      order: (a, b) => a.centre[0] - b.centre[0],
+      expected: 2,
+    },
+    {
+      from: 'body',
+      parent: 'body',
+      prefix: 'roadWheel',
+      // 4 per side, 0.56 across, ~65 triangles, between the idler and the sprocket.
+      match: (c) =>
+        trackSide(c) &&
+        c.tris >= 58 &&
+        c.tris <= 70 &&
+        near(c.size[1], 0.56, 0.06) &&
+        c.centre[2] > -0.9 &&
+        c.centre[2] < 1.45,
+      order: byFront,
+      expected: 8,
+    },
+    {
+      from: 'body',
+      parent: 'body',
+      prefix: 'idler',
+      match: (c) =>
+        trackSide(c) &&
+        c.tris >= 40 &&
+        c.tris <= 60 &&
+        near(c.size[1], 0.47, 0.06) &&
+        c.centre[2] < -0.8,
+      order: byFront,
+      expected: 2,
+    },
+    {
+      from: 'body',
+      parent: 'body',
+      prefix: 'sprocket',
+      match: (c) =>
+        trackSide(c) &&
+        c.tris >= 50 &&
+        c.tris <= 60 &&
+        near(c.size[1], 0.47, 0.06) &&
+        c.centre[2] > 1.45,
+      order: byFront,
+      expected: 2,
+    },
+  ],
+};
+
 const decode = (text, Type) => {
   const bytes = Buffer.from(text, 'base64');
   return new Type(bytes.buffer, bytes.byteOffset, bytes.length / Type.BYTES_PER_ELEMENT);
@@ -163,7 +228,7 @@ export function split(data, spec) {
     if (wanted.length !== group.expected)
       throw Error(`${group.prefix}: expected ${group.expected} islands, matched ${wanted.length}`);
     wanted.forEach((component, i) => {
-      const name = group.prefix + i;
+      const name = group.names?.[i] ?? group.prefix + i;
       if (names.has(name)) throw Error(name + ' already exists: restore the unsplit module first');
       names.add(name);
       const sourceIndex = result.parts.findIndex((p) => p.part === group.from);

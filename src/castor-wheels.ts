@@ -143,3 +143,20 @@ export function animateRollingWheels(
   const spin = (-forwardSpeed / (radius * scale)) * dt;
   for (const axle of wheels) axle.rotation.x = (axle.rotation.x + spin) % (2 * Math.PI);
 }
+
+// The wheels of a tracked vehicle: every road wheel, idler and sprocket turns with the speed
+// of its own track, forward speed plus the yaw rate times its lateral offset (the outer track
+// runs faster in a turn, the two run in opposite directions in a pivot). Each node carries its
+// radius in model units in `userData.radius`.
+export function animateTrackedWheels(
+  wheels: readonly THREE.Object3D[],
+  { forwardSpeed, yawRate }: GroundMotion,
+  scale: number,
+  dt: number,
+): void {
+  for (const wheel of wheels) {
+    const ground = forwardSpeed + yawRate * wheel.position.x * scale;
+    const radius = (wheel.userData.radius as number | undefined) ?? 0.28;
+    wheel.rotation.x = (wheel.rotation.x + (-ground / (radius * scale)) * dt) % (2 * Math.PI);
+  }
+}

@@ -6,7 +6,7 @@ import * as T from '../vendor/three.module.min.js';
 import { createGraphics } from '../src/graphics.js';
 import { aimGun } from '../src/sortie.js';
 import { ACTOR_UNIT } from '../src/scale.ts';
-import { VEHICLES } from '../src/fleet.ts';
+import { VEHICLES, vehicleUnit } from '../src/fleet.ts';
 import { tankBarrelOrigin } from '../src/tank-view.js';
 import { mobileBarrelOrigin, trailerGunPivot } from '../src/mobile-flak.js';
 import { heliWeaponOrigin } from '../src/helicopter.js';
@@ -52,7 +52,7 @@ const vehicleAt = (model, type) => {
   };
   model.position.fromArray(state.p);
   model.quaternion.fromArray(state.q);
-  model.scale.setScalar(ACTOR_UNIT);
+  model.scale.setScalar(vehicleUnit(type));
   return { type, state };
 };
 const close = (a, b, eps = 1e-9) => new T.Vector3().fromArray(a).distanceTo(b) < eps;
@@ -68,7 +68,7 @@ for (const [type, make] of [
   ['interceptor', 'makeStuka'],
 ]) {
   const model = graphics[make]();
-  model.scale.setScalar(ACTOR_UNIT);
+  model.scale.setScalar(vehicleUnit(type));
   model.position.y = VEHICLES[type].gear;
   model.updateMatrixWorld(true);
   // The D2's wheels are parts of the rig since the split (scripts/split-vehicle-parts.mjs):

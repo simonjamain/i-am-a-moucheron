@@ -75,6 +75,7 @@ import {
   isBomber,
   isPassengerSeat,
   vehicleMaxHP,
+  vehicleUnit,
 } from '/fleet.js';
 import { headingOf, airdropSurface, AIR_VIEW_HEIGHT, zoomAirView } from '/airdrop.js';
 import {
@@ -175,6 +176,7 @@ import {
   animateCastorWheels,
   animateDrivenWheels,
   animateRollingWheels,
+  animateTrackedWheels,
   trackGroundMotion,
 } from '/castor-wheels.js';
 import { ServiceZones, serviceZoneList } from '/service-zones.js';
@@ -3781,7 +3783,7 @@ function vehicleModel(v) {
           ? '#8eb7c6'
           : '#e3ebc0',
     );
-    g.scale.setScalar(ACTOR_UNIT);
+    g.scale.setScalar(vehicleUnit(v.type));
     g.userData.vehicleType = v.type;
 
     fleetModels.set(v.id, g);
@@ -3845,6 +3847,21 @@ function updateOthers(dt) {
         g.userData.trailerWheels,
         ground.forwardSpeed * Math.cos(motion.trailerAngle || 0),
         { scale: ACTOR_UNIT, radius: TRAILER_WHEEL_RADIUS },
+        dt,
+      );
+    }
+    if (g.userData.runningGear) {
+      const forward = new T.Vector3(0, 0, -1).applyQuaternion(g.quaternion);
+      const velocity = isSelf ? vel : new T.Vector3().fromArray(motion.v);
+      animateTrackedWheels(
+        g.userData.runningGear,
+        trackGroundMotion(
+          (g.userData.wheelMemory ??= {}),
+          Math.atan2(-forward.x, -forward.z),
+          velocity.dot(forward),
+          dt,
+        ),
+        vehicleUnit(v.type),
         dt,
       );
     }
@@ -4984,7 +5001,7 @@ const ghosts = {
 };
 let ghost = ghosts.dca;
 for (const [kind, model] of Object.entries(ghosts)) {
-  if (VEHICLES[kind]) model.scale.setScalar(ACTOR_UNIT);
+  if (VEHICLES[kind]) model.scale.setScalar(vehicleUnit(kind));
   if (isFixedDca(kind)) scene.add(model);
   model.visible = false;
   model.traverse((o) => {

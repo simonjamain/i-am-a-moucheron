@@ -1,4 +1,4 @@
-# Physique Rapier — les véhicules au sol (versions 352 à 364)
+# Physique Rapier — les véhicules au sol (versions 352 à 365)
 
 Le jeu écrit sa physique à la main (vol, hélicoptère, `stepWalker`, balistique). Les
 véhicules au sol roulent sur un vrai moteur, **Rapier** (Rust compilé en
@@ -88,12 +88,15 @@ pièce), pas comme vitesse.
 Même contrat que le Castor (`p`, `q`, `v`, `omega`), un rig par char conduit et un par
 char vide simulé par l'hôte. Le modèle d'un char à chenilles :
 
-- **Échelle d'un vrai char** : le modèle est un char moyen réduit (coque de 1,23 m pour les
-  5,9 m d'un Sherman, échelle 0,208). À gravité égale, la similitude de Froude donne les
-  masses en taille³, les vitesses en √taille et les taux de rotation en 1/√taille : 30 t
-  deviennent 270 kg, 40 km/h deviennent 5 m/s, un pivot de 0,6 rad/s devient 1,3 rad/s. Les
-  profils changent donc : `maxSpeed` 12 → 29 (m de référence/s, soit 5 m/s physiques),
-  `turn` 0,7 → 1,3. **Le char est environ 2,4 fois plus rapide qu'avant.**
+- **Échelle d'un vrai char** : le modèle est un char moyen réduit. Depuis la version 365 il est
+  dessiné **20 % plus grand** (`VEHICLE_SCALE.tank` = 1,2 dans `fleet.ts`, `vehicleUnit(type)` :
+  mètres du monde par unité de modèle ; échelle du modèle, hauteur de caisse `gear`, ancres du
+  canon, `span` et `length` suivent). La coque mesure alors 1,48 m pour les 5,9 m d'un Sherman
+  (échelle 0,25). À gravité égale, la similitude de Froude donne les masses en taille³, les
+  vitesses en √taille et les taux de rotation en 1/√taille : 30 t deviennent 470 kg, 40 km/h
+  deviennent 5,5 m/s, un pivot de 0,6 rad/s devient 1,2 rad/s. Profil du char : `maxSpeed` 32
+  (m de référence/s) et `turn` 1,2 (12 et 0,7 au départ, 29 et 1,3 en version 358). Toutes les
+  longueurs du rig (coque, ressorts, affaissement) se règlent sur `TANK_SCALE`.
 - **Suspension** : douze ressorts (six galets par côté) à rayons `castRay` ; raideur pour un
   affaissement de 4 cm au repos, amortissement à 45 %, fréquence de la coque 2,5 Hz (le 1,1 Hz
   d'un vrai char, mis à l'échelle). Le char pique du nez au freinage (environ 4°), se
@@ -196,7 +199,13 @@ sans toucher un triangle, une UV ni la texture : le camion a six roues de tracte
 (`wheel0…5`, de l'avant vers l'arrière, gauche puis droite) et quatre de remorque
 (`trailerWheel0…3`, rattachées à la remorque) ; chacune a son pivot au centre. Le script
 refuse un module déjà découpé ; sa trace est écrite dans l'en-tête du module de données.
-Le char sera découpé de la même façon (chenilles, galets, roues, pignons).
+Le char (version 365) est découpé de la même façon : deux chenilles (`trackL`, `trackR`),
+huit galets (`roadWheel0…7`), deux barbotins avant (`idler0/1`) et deux pignons arrière
+(`sprocket0/1`), nommés de l'avant vers l'arrière, gauche puis droite. Le train de roulement du
+rig Rapier est lu dans ces pièces (six essieux, ligne de chenille) ; les galets, barbotins et
+pignons tournent à la vitesse de leur chenille (`animateTrackedWheels` : vitesse d'avance plus
+taux de lacet fois l'écart latéral, donc les deux côtés tournent en sens inverse au pivot). Les
+chenilles elles-mêmes sont des maillages à part, prêts pour être déformées par les ressorts.
 
 ## Réglages et étalonnage
 
