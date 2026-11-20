@@ -1,5 +1,9 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
+  {
+    version: 357,
+    changes: ['Les ronds au sol des sièges et équipements restent visibles sur tous les écrans.'],
+  },
   { version: 355, changes: ['Le Castor volant est 30 % plus petit.'] },
   {
     version: 354,

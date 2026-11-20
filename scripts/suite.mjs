@@ -135,6 +135,7 @@ export const SUITE = [
   'test-castor-physics',
   'test-castor-meshy',
   'test-castor-top-view',
+  'test-entry-ring',
   'test-castor-wheels',
   'test-castor-building',
   'test-castor-trail',

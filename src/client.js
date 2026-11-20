@@ -126,6 +126,7 @@ import {
   lookScale,
 } from '/control-focus.js';
 import { createRenderer } from '/renderer.js';
+import { makeEntryRing } from '/entry-ring.js';
 import { createGraphics } from '/graphics.js';
 import { availableAppearance, turnToward, loadCharacter } from '/character-model.js';
 import { createAppearancePicker } from '/appearance-picker.js';
@@ -3420,21 +3421,7 @@ function fireRapidDca(station, gun, direction, dt, interval, firing, owned) {
 $('fuseMinus').onclick = () => (flakRange = fuseRange(flakRange - FLAK.step));
 $('fusePlus').onclick = () => (flakRange = fuseRange(flakRange + FLAK.step));
 
-const entryRing = new T.Mesh(
-  new T.RingGeometry(1.08, 1.24, 40),
-  new T.MeshBasicMaterial({
-    color: '#d5ef73',
-    side: T.DoubleSide,
-    transparent: true,
-    opacity: 0.9,
-    depthWrite: false,
-    polygonOffset: true,
-    polygonOffsetFactor: -2,
-    polygonOffsetUnits: -2,
-  }),
-);
-entryRing.rotation.x = -Math.PI / 2;
-entryRing.renderOrder = 5;
+const entryRing = makeEntryRing(T);
 const entryRings = new Map();
 function roleEntry(type, seat, role = seatRole(type, seat)) {
   const g = new T.Group();

@@ -103,6 +103,7 @@ const files = {
       'units',
       'castor-wheels',
       'castor-top-view',
+      'entry-ring',
       'service-zones',
       'station-model',
       'bed-model',
