@@ -32,14 +32,14 @@ des munitions limités, à compléter en se posant et s’arrêtant dans une sta
 protéger la poubelle contre les insectes ; les arrivées ennemies augmentent
 l’infestation. La mort ouvre une observation à caméra fixe ; un clic volontaire donne accès au purgatoire et à la paperasse de retour en jeu.
 
-Avant chaque vague, le serveur annonce les entrées et les horaires des groupes. La préparation dure une minute par défaut ; tout joueur peut lancer la vague avant la fin du compte à rebours. Il n'y a ni vote ni plan à débloquer entre les vagues (retirés en version 264) : équipements et véhicules s'achètent simplement à leur prix en dollars. La première vague part des fourmis et des moucherons, complétés par n’importe quelle espèce que son budget permet (aucun déblocage), puis son budget, exprimé en **puissance**, est multiplié par 1,5 à chaque étape, sans plafond, et par `N^0,9` pour `N` joueurs. La frise et le bouton de vague affichent la puissance de la vague annoncée. Voir [progression](progression.md) et [équilibrage](room-balance.md#puissance-unité-commune). Des groupes aériens arrivent depuis
+Avant chaque vague, le serveur annonce les entrées et les horaires des groupes. La préparation dure une minute par défaut ; tout joueur peut lancer la vague avant la fin du compte à rebours. Il n'y a ni vote ni plan à débloquer entre les vagues (retirés en version 264) : équipements et véhicules s'achètent simplement à leur prix en dollars. La première vague part des fourmis et des moucherons, complétés par n’importe quelle espèce que son budget permet (aucun déblocage), puis son budget, exprimé en **puissance**, est multiplié par 1,5 à chaque étape, sans plafond, et par `N^0,9` pour `N` joueurs. La frise et le bouton de vague affichent la puissance de la vague annoncée. Voir [progression](progression.md) et [équilibrage](enemy-power.md#unité-commune). Des groupes aériens arrivent depuis
 plusieurs aérations, se séparent et se rejoignent ; fourmis et cafards sortent
 de trous et marchent vers la poubelle par le chemin le plus direct qui contourne le
 mobilier, les barricades et les bunkers (voir [navigation terrestre](#navigation-terrestre)).
 La durée nominale des trajets dépend de leur longueur à vitesse conservée.
 
 Les règles de la room sont fixes : l'ancien panneau **Équilibrage et nuées** est retiré
-(voir [historique](room-balance.md)).
+(voir [historique](enemy-power.md)).
 
 ## Mode debug
 
@@ -232,7 +232,7 @@ Les noms flottants sont retirés. Les moucherons sont agrandis d’un facteur to
 insectes blessés montrent leurs PV, de la fumée puis des flammes à 30 % de PV.
 Les morts aériennes ont un son de chute spatialisé. Voir
 [retours de partie](party-feedback.md) pour les seuils, les signatures fiabilisées
-et les apparitions périphériques, et le [diagnostic et correction du pistolet](pistol-diagnosis.md).
+et les apparitions périphériques, et le [pistolet à l’épaule](field-update.md#pistolet-à-lépaule).
 
 ## Identification, contrats et ravitaillement
 
@@ -302,30 +302,11 @@ tirage que les suivantes, avec au moins deux fourmis et des moucherons en nuées
 L'ancienne composition fixe 20 + 4 est décrite dans [les nuées densifiées](dense-swarms.md).
 VAG-07 réduit taille et vitesse des fourmis, selon le lot confort.
 
-Le [lot confort de jeu, version 37](comfort.md) précise réparation, zoom, jauges,
-radar à pied, remise à zéro, fourmis et projectiles du pistolet courants.
-
-Une commande manuelle de debug crée une nuée unique sur un trajet et à une
-entrée commune, même avec plusieurs milliers d'individus (les espèces au sol
-gardent leur parcours terrestre propre). L'étendue spatiale croît avec
-l'effectif, sans accélérer les insectes ; les vagues automatiques restent
-réparties en plusieurs groupes.
-Voir [nuées densifiées](dense-swarms.md) et [équilibrage](room-balance.md).
-
-Les [nuées densifiées](dense-swarms.md) multiplient les seuls moucherons par cinq,
-avec mêmes groupes de trajets et calcul de voisinage spatial.
-
-Les [commandes H2 corrigées](helicopter-controls.md) précisent les touches,
-le retour au stationnaire et les roquettes alignées sur la coque.
-
-Le [lot de retours du 30 octobre, version 48](returns-30-october.md) décrit les correctifs
-physiques, sons/HUD, livraisons sous parachute et parcours du purgatoire.
-
-Les [issues 15–17](issues-15-16-17.md) précisent la descente continue des colis,
-le mapping Maj/Ctrl et tangage du H2, et la réduction supplémentaire des vitesses terrestres.
-
-Les [réglages d’équilibrage par room](room-balance.md) sont consultables par tous et
-modifiables à tout moment par le créateur de la room.
+Références détaillées de cette période : [confort de jeu](comfort.md) (réparation,
+zoom, jauges, radar, remise à zéro), [nuées densifiées](dense-swarms.md),
+[commandes H2](helicopter-controls.md), [retours du 30 octobre](returns-30-october.md)
+et [issues 15–17](issues-15-16-17.md). Les réglages d’équilibrage par room n’existent
+plus : voir [puissance et budget des vagues](enemy-power.md).
 
 ## Rat, moustique et araignée pondeuse
 
@@ -409,7 +390,7 @@ arrière et arrêt compris) ; au pivot sur place, gauche et droite tournent en s
 opposés et les roues avant braquent selon la vitesse de rotation
 (`src/castor-wheels.ts`, `scripts/test-castor-wheels.mjs`). Plus rapide que le tank, il possède un rayon de soutien sphérique de **50 cm**, matérialisé en jeu par une sphère verte translucide (comme les 50 cm des stations de ravitaillement fixes, `src/service-zones.js`), qui peut soigner et ravitailler les alliés en mouvement ou en vol et se réapprovisionner lui-même. Le service utilise la caisse commune.
 
-**La construction en roulant est disponible depuis la version 188.** Le Castor utilise désormais **ses trois modèles Meshy texturés** : châssis, tourelle et roues indépendantes. Les couleurs originales sont préservées, sans pastille d’identification ([flotte Meshy](meshy-fleet.md)). Voir [l'issue #76](https://github.com/simonjamain/i-am-a-moucheron/issues/76) et [la note de reprise](tasks/g1-castor.md).
+**La construction en roulant est disponible depuis la version 188.** Le Castor utilise désormais **ses trois modèles Meshy texturés** : châssis, tourelle et roues indépendantes. Les couleurs originales sont préservées, sans pastille d’identification ([flotte Meshy](meshy-fleet.md)). Voir [l'issue #76](https://github.com/simonjamain/i-am-a-moucheron/issues/76).
 
 ### Construction depuis le Castor (version 188)
 

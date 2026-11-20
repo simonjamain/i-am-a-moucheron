@@ -12,8 +12,8 @@ des vagues d’insectes et passent chez Saint Pierre après leur mort.
    [l’exploitation](docs/operations.md) selon la tâche.
 
 Le dépôt est la référence maintenue. Les conversations expliquent les demandes,
-mais ne constituent pas une spécification exhaustive de l’état actuel.
-Les notes dans `docs/archive/` sont historiques.
+mais ne constituent pas une spécification exhaustive de l’état actuel. Les tâches
+ouvertes vivent dans les issues GitHub ; l’historique est dans Git.
 
 ## Contributions
 
@@ -60,95 +60,41 @@ générés.
 `npm run build` produit un runtime Node autonome dans `dist/` : y exécuter
 `npm ci --omit=dev && npm start`. Le validateur contrôle ce paquet Node.
 
-Le [backlog](BACKLOG.md) suit les tâches validées et leurs vérifications.
+## Documents par thème
 
-## Documents par besoin
+Les constantes et commandes exactes restent dans le code et `package.json`. Les
+documents marqués *(lot)* racontent une livraison datée : ils décrivent des
+comportements encore valides mais peuvent citer des versions ou des états
+dépassés ; en cas de doute, le code et les références du thème font foi.
 
-| Besoin                                      | Référence actuelle                                            |
-| ------------------------------------------- | ------------------------------------------------------------- |
-| Règles et parcours joueur                   | [gameplay](docs/gameplay.md)                                  |
-| Touches et capture du pointeur              | [controls](docs/controls.md)                                  |
-| Modules, état réseau et responsabilités     | [code-structure](docs/code-structure.md)                      |
-| Corps partagés et autorité client           | [walking-network](docs/walking-network.md)                    |
-| Physique Rapier (essai sur le Castor)       | [physics-engine](docs/physics-engine.md)                      |
-| Son et gestionnaire de voix                 | [audio](docs/audio.md)                                        |
-| File physique et combat chez Saint Pierre   | [purgatory-queue](docs/purgatory-queue.md)                    |
-| Unités, flotte et DCA                       | [scale-fleet-weapons](docs/scale-fleet-weapons.md)            |
-| Nuées, traceurs et accès aux équipements    | [swarm-equipment](docs/swarm-equipment.md)                    |
-| Économie, signatures et balistique          | [economy-physics](docs/economy-physics.md)                    |
-| Statistiques et équilibrage des équipements | [stats](docs/stats.md)                                        |
-| Tests, publication et limites de validation | [operations](docs/operations.md)                              |
-| Recherche initiale sur les transports       | [NETWORK-RESEARCH](NETWORK-RESEARCH.md) — contexte historique |
+**Jeu et règles**
 
-Les détails techniques renvoient aux sources externes pertinentes. Les constantes
-et commandes exactes restent dans le code et `package.json`.
+- [gameplay](docs/gameplay.md) : règles et parcours joueur · [controls](docs/controls.md) : touches, pointeur · [comfort](docs/comfort.md), [clean-flight](docs/clean-flight.md), [field-update](docs/field-update.md), [multiplayer-return](docs/multiplayer-return.md), [returns-30-october](docs/returns-30-october.md), [party-feedback](docs/party-feedback.md), [game-polish-171](docs/game-polish-171.md), [gameplay-polish-175](docs/gameplay-polish-175.md), [issues-15-16-17](docs/issues-15-16-17.md) *(lots)*
+- [progression](docs/progression.md) : vagues, récompenses, achats · [enemy-power](docs/enemy-power.md) : puissance et budget · [economy-physics](docs/economy-physics.md) : économie, signatures, balistique · [stats](docs/stats.md) : statistiques des équipements
+- [combat-worlds](docs/combat-worlds.md) · [logistics-contracts](docs/logistics-contracts.md) · [purgatory-queue](docs/purgatory-queue.md) · [laboratory](docs/laboratory.md) (mode debug) · [office-layouts](docs/office-layouts.md)
 
-Les nouvelles règles de dégâts, mondes et contrats sont détaillées dans
-[combat et mondes](docs/combat-worlds.md).
+**Ennemis**
 
-La courbe des vagues, récompenses et achats est décrite dans
-[progression](docs/progression.md).
+- [enemy-bestiary](docs/enemy-bestiary.md) · [enemy-visibility](docs/enemy-visibility.md) · [dense-swarms](docs/dense-swarms.md) · [swarm-equipment](docs/swarm-equipment.md)
 
-Les [retours de partie](docs/party-feedback.md) et le
-[diagnostic du pistolet](docs/pistol-diagnosis.md) complètent les références actuelles.
+**Véhicules et armes**
 
-L’identification des appareils, les dossiers et les réserves partagées sont décrites
-dans [logistique et contrats](docs/logistics-contracts.md).
+- [scale-fleet-weapons](docs/scale-fleet-weapons.md) : unités, flotte, DCA · [vehicles-bank](docs/vehicles-bank.md) : Stuka, tank, banque · [support-vehicles](docs/support-vehicles.md) : H2 et camion D2 · [helicopter-controls](docs/helicopter-controls.md) · [biplane-models](docs/biplane-models.md) · [physics-engine](docs/physics-engine.md) : Rapier
 
-Le lot [pilotage, véhicules et banque](docs/vehicles-bank.md) décrit Stuka, tank,
-armes lourdes, accès par poste et prêts. Les interfaces HUD/banquier ont été validées et intégrées : informations au viseur et aide permanente,
-jauge DCA au viseur, prêts et remboursements signés. Banquier : bouton ou N.
-L’aperçu `/ui-review.html` utilise les composants réels avec des données temporaires.
-Le lot [retours terrain](docs/field-update.md) décrit les accès corrigés, le pistolet
-à l’épaule, les chutes, les lits, la lunette du tank, la minute de préparation et
-les nouveaux taux de prêt. Les images Docker précédentes sont antérieures à ce lot.
+**Architecture et réseau**
 
-Le lot [lisibilité, commandes, nettoyage et Spitfire](docs/clean-flight.md) ajoute
-les bons prépayés et pose par E, les touches physiques de poste, les bombes en
-continu, les projectiles teintés et la mire, les impacts uniques et le jet partagé.
+- [code-structure](docs/code-structure.md) : carte du code · [walking-network](docs/walking-network.md) : corps partagés, autorité client · [udp-server](docs/udp-server.md) : serveur, variables, tests · [performance](docs/performance.md) : mesures et optimisations · [typescript](docs/typescript.md) · [adding-content](docs/adding-content.md) : nouvelle espèce ou nouveau véhicule
 
-Le [dernier lot multijoueur](docs/multiplayer-return.md) ajoute l’observation avant
-purgatoire, l’aide permanente, les véhicules achetés à poser au sol, la réserve
-gratuite au décollage, les fourmis précoces, la gravité miniature, le radar de 2 m
-et les personnages identifiés. Le Spitfire a 1 000 balles ; les tirs sont optimisés.
+**Rendu, son et modèles**
 
-Le lot [hélicoptère et DCA mobile](docs/support-vehicles.md) ajoute le H2 biplace
-et le camion D2, avec roquettes, missile guidé et fusée de proximité. Le code et
-les contrôles locaux sont livrés ; HEL-06/DCM-03 conservent leur validation finale
-en cours, car le navigateur de contrôle ne peut pas joindre le jeu en UDP.
+- [audio](docs/audio.md) · [toon-rendering](docs/toon-rendering.md) · [shadow-visibility](docs/shadow-visibility.md) · [asset-pipeline](docs/asset-pipeline.md) : modèles Meshy et outil GLB · [meshy-fleet](docs/meshy-fleet.md), [b3-model](docs/b3-model.md), [h2-model](docs/h2-model.md), [m1-model](docs/m1-model.md), [t01-asset](docs/t01-asset.md), [contrast-bed-290](docs/contrast-bed-290.md)
 
-Le [correctif de visibilité des ennemis](docs/enemy-visibility.md) corrige les
-aérations et transitions de vague, triple les moucherons et renforce les fourmis
-de la première vague.
+**Exploitation et contribution**
 
-La [reprise du diagnostic de visibilité](docs/enemy-visibility.md#reprise-après-persistance-du-signalement--taille-apparente-des-six-espèces)
-agrandit aussi les cinq autres espèces trop petites et ajuste l’appui au sol.
+- [operations](docs/operations.md) : contrôles, tests, limites de validation · [docker](docs/docker.md) · [CONTRIBUTING](CONTRIBUTING.md) · [notes de reprise](docs/tasks/README.md) (en cours : [migration TypeScript](docs/tasks/typescript-migration.md), [montée en charge](docs/tasks/scaling-plan.md))
 
-Le [lot confort de jeu, version 37](docs/comfort.md) précise réparation, zoom, jauges,
-radar à pied, remise à zéro, fourmis et projectiles du pistolet courants.
-
-Les [nuées densifiées](docs/dense-swarms.md) multiplient les moucherons par cinq
-et utilisent une grille spatiale pour le voisinage.
-
-La [correction des commandes H2](docs/helicopter-controls.md) couvre Z/O/Haut, S/Bas,
-stationnaire, poussée locale et axe des roquettes.
-
-Le [lot de retours du 30 octobre, version 48](docs/returns-30-october.md) décrit les correctifs
-physiques, sons/HUD, livraisons sous parachute et parcours du purgatoire.
-
-Les [correctifs des issues 15–17](docs/issues-15-16-17.md) couvrent la descente
-continue des colis, le nouveau mapping H2 et le ralentissement terrestre supplémentaire.
-
-Les anciens [réglages d’équilibrage et la génération de nuées par room](docs/room-balance.md)
-sont retirés : les règles sont fixes et un seul interrupteur de mode debug les remplace.
-
-Le [bestiaire et ses vitesses physiques](docs/enemy-bestiary.md#vitesse-physique-dans-la-pièce) spécifient des mètres de la pièce par seconde, indépendants de la taille des modèles et de l'effectif des nuées.
-
-Le [mode debug par room](docs/laboratory.md) (interrupteur **Debug : OFF / ON**) donne argent illimité, aucun dégât de chute et défaite impossible, sans panneau d'outils.
-
-Le [bombardier biplan](docs/biplane-models.md) accueille un pilote et un mitrailleur, avec 30 bombes ; le [chasseur biplan](docs/biplane-models.md) est 25 % plus lent que l'ancien chasseur léger mais décroche moins vite.
-Les [sept véhicules Meshy](docs/meshy-fleet.md) gardent les couleurs de leur modèle
-original ; seul un rond flottant indique la couleur propre à chaque véhicule.
+`/ui-review.html` (aperçu des vrais composants HUD/banque sur données temporaires)
+est généré par l’assemblage (`scripts/assemble.mjs`, lancé par `npm start`, `npm test` et `npm run build`).
 
 ## Outillage de modèles Meshy
 

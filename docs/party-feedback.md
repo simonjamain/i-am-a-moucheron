@@ -1,7 +1,7 @@
 # Retours de partie — visibilité, signatures et entrées
 
 Livraison du lot suivant la version 025, 29 octobre 2026.
-Le diagnostic et la correction du pistolet est dans [pistol-diagnosis](pistol-diagnosis.md).
+Le pistolet à l’épaule est décrit dans [retours terrain](field-update.md#pistolet-à-lépaule).
 
 ## Présentation et état des insectes
 
