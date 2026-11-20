@@ -137,6 +137,7 @@ export const SUITE = [
   'test-tank-wheels',
   'test-track-suspension',
   'test-tank-recoil',
+  'test-camera-follow',
   'test-truck-physics',
   'test-truck-wheels',
   'test-castor-meshy',

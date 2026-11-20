@@ -195,6 +195,7 @@ const files = {
       'castor-physics',
       'tank-physics',
       'tank-recoil',
+      'camera-follow',
       'tank-gear',
       'tessellate',
       'track-suspension',

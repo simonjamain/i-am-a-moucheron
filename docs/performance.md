@@ -444,3 +444,18 @@ passé, de façon régulière.
 Browser motion: 26 binary batches received by Alpha (max 234 B), Bravo decoded, no page error. a vérifié dans deux Chromium
 réels que l'heure de capture arrive dans les lots. Le ressenti, en particulier
 pilote et mitrailleur d'un même bombardier, reste à confirmer en partie.
+
+## Caméra de poursuite et durée des images (version 374)
+
+Symptôme : de petits sauts en arrière du véhicule, d'une image, à intervalles réguliers, sur tous
+les véhicules. Cause probable (calcul, pas encore confirmée par un essai en jeu) : la caméra de
+poursuite suivait la cible par `camera.position.lerp(cible, 1 - exp(-10·dt))`. C'est exact pour
+une cible fixe, mais le véhicule avance pendant l'image : le retard que la caméra garde derrière
+lui vaut `v·dt·e^(-k·dt)/(1 - e^(-k·dt))` et **dépend de `dt`**. Une image longue (ramasse-miettes,
+vsync manqué) rapproche le véhicule de la caméra à l'écran pour cette image, puis il repart :
+saut de 1,3 unité à 60 u/s pour une image de 100 ms, 0,05 pour une alternance 8/33 ms.
+`src/camera-follow.ts` (`followMoving`) résout le suivi exactement pour une cible qui avance à la
+vitesse du véhicule : le retard reste `v/k` quelle que soit la durée de l'image
+(`test-camera-follow.mjs`). Non traité : la physique Rapier et le vol utilisent le `dt` brut de
+`requestAnimationFrame` ; un pas fixe avec interpolation serait l'étape suivante si des saccades
+persistent (à mesurer avec `?perf=1`).
