@@ -58,7 +58,7 @@ npm test
 
 `scripts/ts-migrate.mjs` renomme avec `git mv` et réécrit les références : imports
 relatifs de `src/`, `server/`, `scripts/`, chemins lus par les tests
-(`'src/scale.js'`) et mentions Markdown (sauf `docs/archive/`). Il ne touche ni
+(`'src/scale.js'`) et mentions Markdown. Il ne touche ni
 aux URL du navigateur ni aux noms construits dynamiquement : relire le diff.
 Migrer de préférence des feuilles du graphe d'imports (modules sans import local
 non migré ; `npm run ts:migrate -- --leaves` les liste, plus petites d'abord), par lots cohérents, puis remonter vers `client.js` et `server/game.js`.

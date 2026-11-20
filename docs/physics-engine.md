@@ -12,7 +12,7 @@ Version 358 : le **char moyen** passe aussi sur Rapier. Version 359 : le **camio
 et sa remorque aussi ; l'ancienne conduite au sol (`tank.js`) est supprimée.
 
 Migration en cours : tous les véhicules **au sol** sont sur Rapier. Les avions, les
-hélicoptères et la marche gardent leur physique d'origine (`flight.js`, `helicopter.js`,
+hélicoptères et la marche gardent leur physique d'origine (`flight.ts`, `helicopter.js`,
 `sortie.js`). Elle est obsolète : chaque migration en retire le code correspondant, et à
 terme elle disparaît entièrement.
 

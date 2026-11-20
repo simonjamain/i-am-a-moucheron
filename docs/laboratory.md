@@ -53,7 +53,7 @@ ennemis sont ajoutés au roster de la vague comme une ponte (`src/debug-enemies.
 Un mannequin a 10⁹ PV et ne heurte pas les véhicules. Le client est dans
 `src/debug-tools.ts`.
 
-Les anciens outils de laboratoire (ajout manuel de niveaux de carte, choix, lancement et achèvement forcé de vagues, scénarios enregistrés) ont été **retirés** avec leur interface et leurs commandes serveur. L'équilibrage par room reste retiré ([historique](room-balance.md)).
+Les anciens outils de laboratoire (ajout manuel de niveaux de carte, choix, lancement et achèvement forcé de vagues, scénarios enregistrés) ont été **retirés** avec leur interface et leurs commandes serveur. L'équilibrage par room reste retiré ([historique](enemy-power.md)).
 
 ## Sortie et sécurité
 

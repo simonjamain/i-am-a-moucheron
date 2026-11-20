@@ -15,14 +15,14 @@ Les fourmis et les araignées pondeuses utilisent les modèles Meshy « Red Ant 
 
 Les bébés utilisent le modèle Meshy « Grumpy Spider » dans la chaîne des marcheurs : un seul `InstancedMesh` animé (marche à pieds plantés, palpes avant qui tâtent le sol), des objets légers pour les impacts et une zone de tir proche de l'ancienne sphère ; voir [le bébé araignée](asset-pipeline.md#bébé-araignée-version-317). Les moustiques ont une oscillation erratique reproductible localement. Les gros rats rejouent le clip Meshy de leur modèle ; leur passage dans les couloirs de mobilier demande un contrôle en vrai jeu.
 
-Le panneau d'équilibrage expose les trois espèces nouvelles, pas les bébés. Les changements du roster sont diffusés via `rosterRevision`, y compris aux joueurs arrivant tard.
+Les changements du roster sont diffusés via `rosterRevision`, y compris aux joueurs arrivant tard.
 
 Le voltigeur (`dart`), petit volant rapide débloqué en vague 2, a été retiré du jeu en version 312 : plus de profil, de paquet, de vague ni d'apparition de débogage. `scripts/test-enemy-bestiary.mjs` vérifie qu'aucune vague ne le réintroduit.
 
 ## Puissance
 
 Valeurs calculées avec les statistiques actuelles (voir
-[équilibrage](room-balance.md#puissance-unité-commune)) :
+[équilibrage](enemy-power.md#unité-commune)) :
 
 | Espèce            | Puissance                       |
 | ----------------- | ------------------------------- |

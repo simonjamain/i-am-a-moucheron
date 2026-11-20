@@ -100,41 +100,6 @@ demandent encore des mesures en conditions réelles et plusieurs joueurs.
 Le comportement de pilotage et des tourelles multijoueurs ne change pas dans
 ce chantier. Il n'y a pas de nouveau plafond imposé au réglage de population.
 
-## Nuée manuelle unique et vitesse indépendante de l'effectif
-
-Lorsqu'un joueur envoie des insectes avec le panneau d'équilibrage, il
-obtient **une seule nuée par environnement de déplacement**, même pour
-une commande de 5 000 individus. Les espèces volantes partagent une seule
-graine de trajet, entrée et branche ; les espèces terrestres, si présentes
-dans le même envoi, empruntent leur propre chemin au sol. Une nouvelle
-commande est indépendante de la précédente. Les vagues automatiques restent
-constituées de plusieurs groupes de tailles variées.
-
-L'étendue des groupes grandit selon la racine carrée de leur population
-initiale, jusqu'à un rayon de référence ×20 dans les airs et ×8 au sol.
-Cette population est calculée lors de la création du roster (y compris
-après multiplication de la population d'une vague ordinaire) et demeure
-fixe lorsque des ennemis meurent.
-
-**Correctif de vitesse :** auparavant l'oscillation angulaire était
-multipliée par le rayon de formation, de sorte que la vitesse linéaire
-augmentait mécaniquement avec l'effectif. Maintenant la dispersion
-initiale est une position stable autour du trajet ; une petite oscillation
-de fréquence et d'amplitude fixes apporte du mouvement sans amplification
-liée à l'effectif. La formation s'ouvre et se referme avec un fondu dont
-la durée est proportionnelle à son rayon, afin de limiter aussi sa vitesse
-aux entrées et sorties. La vitesse de parcours déterminée par l'espèce
-et le réglage de la room ne dépend pas du nombre d'individus. Les
-insectes terrestres ne prennent pas de décalage vertical.
-
-Le calcul procédural indépendant s'applique aussi aux autres espèces
-des nuées de debug, sans voisinage quadratique. Les autres insectes
-des vagues automatiques conservent leur steering spatial. Les contrôles
-dans `scripts/test-dense-swarms.mjs` comparent petites et grandes
-nuées, effectifs jusqu'à 5 000, entrées communes, vitesse de
-parcours, vitesse d'oscillation et formation mixte. Une validation
-humaine WebGL et des mesures GPU/UDP réelles restent nécessaires.
-
 ## Correction de la vitesse physique — suite au retour de partie
 
 La vitesse de progression est désormais fixée par espèce dans `ENEMY_TYPES.speedMps` : mètres de la pièce/seconde, quelle que soit la taille de l'insecte ou de sa formation. Les anciennes calibrations sur la longueur des itinéraires historiques ne gouvernent plus la durée des vagues ; la durée d'un ennemi vient de la longueur de **son trajet réel** divisée par sa vitesse explicite. Les oscillations locales restent petites, et le moustique utilise une fréquence d'esquive réduite. Les bébés araignées utilisent leur propre vitesse, sans accélération cachée.

@@ -1,15 +1,11 @@
-# Équilibrage par room (retiré)
+# Puissance des ennemis et budget des vagues
 
-Le panneau **Équilibrage et nuées**, la commande `balance` (multiplicateurs par room)
-et la commande `debug-spawn` (génération manuelle de nuées par espèce) ont été
-retirés en version 231 ([issue #100](https://github.com/simonjamain/i-am-a-moucheron/issues/100)).
+Les règles d’une room sont fixes : `DEFAULT_BALANCE` (`src/balance.js`) donne les
+multiplicateurs (dégâts, vitesses, prix, pauses, caisse initiale…) appliqués à toutes
+les rooms. Le panneau de réglage par room, `balance` et `debug-spawn` n’existent plus ;
+les tests composent un roster exact avec `debugSwarmRoster` (`src/waves.js`).
 
-Les règles d’une room sont désormais fixes : `DEFAULT_BALANCE` dans `src/balance.js`
-reste la référence des multiplicateurs (dégâts, vitesses, prix, pauses, caisse
-initiale…), appliqués à toutes les rooms. Les tests se servent directement de
-`debugSwarmRoster` (`src/waves.js`) pour composer un roster exact.
-
-## Puissance : unité commune
+## Unité commune
 
 Issue #210. La **puissance** mesure ennemis, vagues, récompenses et dégâts à la
 poubelle : un joueur de puissance 1 élimine un ennemi de puissance 1 pendant une

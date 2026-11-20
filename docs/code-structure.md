@@ -28,22 +28,22 @@ base de données ni accès disque dans les opérations de jeu Node. Voir
 
 ## Modules de jeu
 
-| Domaine              | Modules et référence                                                                                                                                                                                                                                                                                                                                                                                    |
-| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Unités/décor         | `scale.ts`, `layouts.js` (plans de bureau), `layout.ts`, `office.js` ; [plans](office-layouts.md), [échelle](scale-fleet-weapons.md).                                                                                                                                                                                                                                                                   |
-| Géométrie            | `graphics.js`, modèles procéduraux ; `renderer.js` pour WebGL/secours.                                                                                                                                                                                                                                                                                                                                  |
-| Vol et entrée        | `flight.ts`, `mouse-flight.ts`, `input.ts`, `control-focus.js`, `fleet.ts`, `vacant-flight.js`.                                                                                                                                                                                                                                                                                                         |
-| Corps et purgatoire  | `base.js`, `purgatory-physics.js`, `sortie.js` ; [file](purgatory-queue.md).                                                                                                                                                                                                                                                                                                                            |
-| Chute actuelle       | `field-physics.ts` : gravité humaine convertie au ratio, gonflage, impact ; [physique actuelle](multiplayer-return.md).                                                                                                                                                                                                                                                                                 |
-| Armes                | `ballistics.ts`, `combat.js`, `armament.js`, `ordnance.js`, `aircraft-fire.js`, `tracers.js`, `muzzle.ts`, `insect-hits.js`.                                                                                                                                                                                                                                                                            |
-| Visée/caméras        | `personal-aim.ts` pour épaule/main ; `tank-reticle.js` pour les trajectoires de mire ; `tank-view.js` pour lunette, observation et bouche serveur.                                                                                                                                                                                                                                                      |
-| Vagues               | `enemy-power.ts` calcule la puissance des espèces ([équilibrage](room-balance.md#puissance-unité-commune)) ; `server/wave-preparation.js` tire et conserve la vague annoncée (sans vote ni plans depuis la version 264) ; `wave-council-ui.js` l'affiche avec le lancement anticipé. `waves.js`, `routes.js`, `route-speed.js`, `route-navigation.js` ; obstacles dérivés du plan actif (`layouts.js`). |
-| Économie/réserves    | `equipment.js`, `logistics.js`, `bank.ts`, `rewards.ts` ; [logistique](logistics-contracts.md).                                                                                                                                                                                                                                                                                                         |
-| Contrats             | `contracts.js`, gestion des papiers dans le client (annexes malicieuses retirées).                                                                                                                                                                                                                                                                                                                      |
-| Lits                 | `beds.js` : accès et support ; `bed-ui.js` : document personnel et signature.                                                                                                                                                                                                                                                                                                                           |
-| HUD/banque           | `hud.js`, `equipment-controls.js`, `bank-ui.js` ; [véhicules et banque](vehicles-bank.md).                                                                                                                                                                                                                                                                                                              |
-| Mesure d’interaction | `interaction-timing.ts` : feedback immédiat et traces bornées de sélection.                                                                                                                                                                                                                                                                                                                             |
-| Effets/son           | `insect-status.ts`, `crash-effects.js`, effets de combat et corps tombants du client ; son : bibliothèque `audio/` et adaptateur `game-audio/` ([audio](audio.md)).                                                                                                                                                                                                                                     |
+| Domaine              | Modules et référence                                                                                                                                                                                                                                                                                                                                                                         |
+| -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Unités/décor         | `scale.ts`, `layouts.js` (plans de bureau), `layout.ts`, `office.js` ; [plans](office-layouts.md), [échelle](scale-fleet-weapons.md).                                                                                                                                                                                                                                                        |
+| Géométrie            | `graphics.js`, modèles procéduraux ; `renderer.js` pour WebGL/secours.                                                                                                                                                                                                                                                                                                                       |
+| Vol et entrée        | `flight.ts`, `mouse-flight.ts`, `input.ts`, `control-focus.js`, `fleet.ts`, `vacant-flight.js`.                                                                                                                                                                                                                                                                                              |
+| Corps et purgatoire  | `base.js`, `purgatory-physics.js`, `sortie.js` ; [file](purgatory-queue.md).                                                                                                                                                                                                                                                                                                                 |
+| Chute actuelle       | `field-physics.ts` : gravité humaine convertie au ratio, gonflage, impact ; [physique actuelle](multiplayer-return.md).                                                                                                                                                                                                                                                                      |
+| Armes                | `ballistics.ts`, `combat.js`, `armament.js`, `ordnance.js`, `aircraft-fire.js`, `tracers.js`, `muzzle.ts`, `insect-hits.js`.                                                                                                                                                                                                                                                                 |
+| Visée/caméras        | `personal-aim.ts` pour épaule/main ; `tank-reticle.js` pour les trajectoires de mire ; `tank-view.js` pour lunette, observation et bouche serveur.                                                                                                                                                                                                                                           |
+| Vagues               | `enemy-power.ts` calcule la puissance des espèces ([équilibrage](enemy-power.md#unité-commune)) ; `server/wave-preparation.js` tire et conserve la vague annoncée (sans vote ni plans depuis la version 264) ; `wave-council-ui.js` l'affiche avec le lancement anticipé. `waves.js`, `routes.js`, `route-speed.js`, `route-navigation.js` ; obstacles dérivés du plan actif (`layouts.js`). |
+| Économie/réserves    | `equipment.js`, `logistics.js`, `bank.ts`, `rewards.ts` ; [logistique](logistics-contracts.md).                                                                                                                                                                                                                                                                                              |
+| Contrats             | `contracts.js`, gestion des papiers dans le client (annexes malicieuses retirées).                                                                                                                                                                                                                                                                                                           |
+| Lits                 | `beds.js` : accès et support ; `bed-ui.js` : document personnel et signature.                                                                                                                                                                                                                                                                                                                |
+| HUD/banque           | `hud.js`, `equipment-controls.js`, `bank-ui.js` ; [véhicules et banque](vehicles-bank.md).                                                                                                                                                                                                                                                                                                   |
+| Mesure d’interaction | `interaction-timing.ts` : feedback immédiat et traces bornées de sélection.                                                                                                                                                                                                                                                                                                                  |
+| Effets/son           | `insect-status.ts`, `crash-effects.js`, effets de combat et corps tombants du client ; son : bibliothèque `audio/` et adaptateur `game-audio/` ([audio](audio.md)).                                                                                                                                                                                                                          |
 
 Les couloirs aériens sont partagés entre serveur et client dans `routes.js`.
 
@@ -55,7 +55,7 @@ du poste. Le HTML fournit uniquement le titre, la valeur principale et un
 conteneur par panneau. La vue du Flak lourd est calculée avec celle des autres
 postes dans `updateVehicles()`, avant le rendu de la scène.
 
-## Dernier lot
+## Achats prépayés et salissure
 
 [Lisibilité et nettoyage](clean-flight.md) : `purchase-ui.js` réutilise les protections
 de signature de `BedUI` pour les bons. `equipment.js` calcule prix et compteurs
@@ -83,7 +83,7 @@ séparés. `test-field-backlog.mjs` et `test-bed-ui.mjs`
 couvrent le dernier lot. `check-docs.mjs` inventorie les Markdown et contrôle
 leurs liens locaux ; leur exactitude fonctionnelle reste une revue sémantique.
 
-## Retours multijoueurs courants
+## Retours multijoueurs
 
 `live-hud.js` : valeurs au viseur et aide permanente. `salvos.ts` : départs décalés et annulation d’occupation.
 `tracers.js` : pool borné et effet personnel orienté vers l’avant ;
@@ -112,29 +112,16 @@ volumes de collision serveur. `waves.js` relève les corps terrestres au-dessus
 du support ; `route-navigation.js` adapte leur marge. `test-enemy-readability.mjs`
 mesure les silhouettes projetées et les vrais corps au sol.
 
-Le [lot confort de jeu, version 37](comfort.md) précise réparation, zoom, jauges,
-radar à pied, remise à zéro, fourmis et projectiles du pistolet courants.
-
-Les [nuées densifiées](dense-swarms.md) multiplient les moucherons par cinq
-et utilisent une grille spatiale pour le voisinage.
-
-La [correction des commandes H2](helicopter-controls.md) couvre Z/O/Haut, S/Bas,
-stationnaire, poussée locale et axe des roquettes.
-
-Le [lot de retours du 30 octobre, version 48](returns-30-october.md) décrit les correctifs
-physiques, sons/HUD, livraisons sous parachute et parcours du purgatoire.
-
-`delivery.js` partage désormais le calcul de hauteur absolue entre serveur et
-client ; les [issues 15–17](issues-15-16-17.md) décrivent ce contrat et les nouvelles commandes/vitesses.
+`delivery.js` partage le calcul de hauteur absolue des colis entre serveur et
+client ([issues 15–17](issues-15-16-17.md)).
 
 La [référence performance](performance.md) décrit la sélection spatiale des
 cibles des tirs, ses replis conservateurs et le benchmark CPU reproductible,
 ainsi que le rejet conservateur des collisions véhicule–ennemi côté serveur
 et sa mesure à 50 véhicules pour 900 insectes.
 
-Les règles d’équilibrage sont fixes (`DEFAULT_BALANCE`, `src/balance.js`) ; l’ancien
-outil de [réglage par room](room-balance.md) est retiré au profit du
-[mode debug](laboratory.md) (`lab-ui.js`, commande serveur `lab`). Ses outils de
+Les règles d’équilibrage sont fixes (`DEFAULT_BALANCE`, `src/balance.js`, voir
+[puissance](enemy-power.md)) ; le [mode debug](laboratory.md) (`lab-ui.js`, commande serveur `lab`). Ses outils de
 test des ennemis : `debug-enemies.ts` (entrées de roster partagées serveur/tests)
 et `debug-tools.ts` (colonnes du marchand, pose, dégâts des mannequins, hitbox et
 portées, côté client).
@@ -201,7 +188,7 @@ contrarotatives, élévation et recul, [pipeline d'assets](asset-pipeline.md#can
 `server/game.js` crée les postes occupables, vérifie les signatures et les tirs,
 et conserve des réserves finies. `paid-service.js` les répare et recharge uniquement
 près du Castor ou des stations, en débitant la caisse commune. `client.js` affiche
-leurs modèles et postes 3D. Voir [note de reprise Castor](tasks/g1-castor.md).
+leurs modèles et postes 3D.
 
 Les modèles de constructions sont partagés entre le rendu final et l’aperçu :
 `ground-model.js` pour les défenses, `fortification-model.js` pour les postes
