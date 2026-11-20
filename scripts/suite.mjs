@@ -135,6 +135,7 @@ export const SUITE = [
   'test-castor-physics',
   'test-tank-physics',
   'test-tank-wheels',
+  'test-track-suspension',
   'test-truck-physics',
   'test-truck-wheels',
   'test-castor-meshy',

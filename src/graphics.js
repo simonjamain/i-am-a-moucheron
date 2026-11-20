@@ -4,6 +4,8 @@ import { MODEL_DATA as SPITFIRE } from './meshy-spitfire-data.js';
 import { MODEL_DATA as TANK } from './meshy-tank-data.js';
 import { MODEL_DATA as FLAKTRUCK } from './meshy-flaktruck-data.js';
 import { MODEL_DATA as STUKA } from './meshy-stuka-data.js';
+import { AXLE_PARTS } from './tank-gear.ts';
+import { prepareBelts, prepareSuspension } from './track-suspension.ts';
 import { makeH2 } from './h2-model.js';
 import { makeBiplane, makeBiplaneBomber } from './biplane-model.js';
 import { makeM1 } from './m1-model.js';
@@ -142,10 +144,14 @@ export function createGraphics(T, scene) {
       geometry.computeBoundingBox();
       wheel.userData.radius = (geometry.boundingBox.max.y - geometry.boundingBox.min.y) / 2;
     }
+    // Deformable tracks: own, finely cut belt geometry, and wheels that ride the terrain.
+    const tracks = [nodes.trackL, nodes.trackR];
+    prepareBelts(T, tracks);
     g.userData = {
       preserveTexture: true,
       runningGear: gear,
-      tracks: [nodes.trackL, nodes.trackR],
+      tracks,
+      suspension: prepareSuspension(nodes, AXLE_PARTS),
       turrets: [main, top],
       pilotMuzzles: anchors.hullGun,
       prop: new T.Object3D(),

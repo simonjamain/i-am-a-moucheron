@@ -1,4 +1,4 @@
-# Physique Rapier — les véhicules au sol (versions 352 à 365)
+# Physique Rapier — les véhicules au sol (versions 352 à 366)
 
 Le jeu écrit sa physique à la main (vol, hélicoptère, `stepWalker`, balistique). Les
 véhicules au sol roulent sur un vrai moteur, **Rapier** (Rust compilé en
@@ -101,8 +101,8 @@ char vide simulé par l'hôte. Le modèle d'un char à chenilles :
   affaissement de 4 cm au repos, amortissement à 45 %, fréquence de la coque 2,5 Hz (le 1,1 Hz
   d'un vrai char, mis à l'échelle). Le char pique du nez au freinage (environ 4°), se
   cabre en accélérant et penche dans les virages. `rig.wheelCompression` expose la
-  compression de chaque ressort : c'est la donnée dont les chenilles déformables seront
-  dessinées.
+  compression de chaque ressort ; l'affichage des chenilles déformables (version 366) calcule
+  la même chose depuis la pose et les colliders (voir « Chenilles déformables »).
 - **Chenilles, comme au clavier** (version 363) : Z pousse les deux chenilles vers l'avant, S les
   tire vers l'arrière ; Q (gauche) ou D (droite) ajoute une **différence de poussée** entre elles,
   **à toute vitesse et dès le départ** : avancer en tournant fait ralentir un peu la chenille
@@ -122,9 +122,22 @@ char vide simulé par l'hôte. Le modèle d'un char à chenilles :
 - **Géométrie du train de roulement** (galets, rayon, ligne de chenille) mesurée sur le
   maillage de la caisse ; `test-tank-physics.mjs` la contrôle sur les sommets du modèle.
 
-Pistes (pas encore faites) : découpage du modèle du char en caisse, chenilles, galets et roue
-motrice ; chenilles dessinées par un shader le long du profil des ressorts ; roues du Castor
-et du camion animées par la physique plutôt que déduites du taux de lacet.
+### Chenilles déformables (version 366)
+
+- **Pourquoi cosmétique** : un char distant est simulé sur une autre machine, sans ses ressorts.
+  `src/track-suspension.ts` reconstruit donc le relief sous chaque essieu depuis la pose et les
+  colliders (`terrainHeight`, `axleOffsets`), identique pour le char local et les chars distants ;
+  la physique garde ses propres ressorts (même relief, d'où un accord à peu près exact).
+- **Rendu** : chaque chenille a sa propre géométrie, découpée par `src/tessellate.ts` (arêtes ≤
+  0,3 unité modèle dans le sens de la longueur et de la hauteur, environ 1 000 triangles par chenille, milieux partagés pour éviter les fissures, UV interpolées : la texture ne
+  change pas). `updateSuspension` fait suivre le relief aux galets, aux barbotins et aux
+  tendeurs (débattement ±0,18 unité modèle, lissage 14/s) et déplace les sommets du brin bas de la
+  chenille (`beltDisplacement` : interpolation linéaire entre essieux, poids dégressif avec la
+  hauteur : le brin haut reste en place). `src/tank-gear.ts` donne les essieux, partagés avec la
+  physique. `test-track-suspension.mjs` le contrôle.
+
+Pistes (pas encore faites) : roues du Castor animées par le braquage de la physique plutôt que
+déduites du taux de lacet.
 
 ## Le camion DCA sur Rapier (versions 359 et 363)
 
