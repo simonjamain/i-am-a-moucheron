@@ -613,6 +613,7 @@ assert.equal(visualModels.size, 0);
 // keep set on exit/destruction rather than merely lowering its volume.
 const { diveIntensity } = await import('../src/combat.ts');
 let kept = new Set();
+const loops = [];
 const soundModels = new Map();
 const audioVehicles = Object.keys(VEHICLES).map((type) => ({
   id: type,
@@ -641,9 +642,15 @@ const audioContext = {
     scene: 'flight',
     setScene() {},
     listener() {},
-    loop() {},
+    loop: (key, kind) => loops.push([key, kind]),
     play() {},
     keep: (s) => (kept = new Set(s)),
+  },
+  // One firing Gatling: a single continuous voice, never a sound per round.
+  groundDefenseUI: {
+    gatlingSounds: () => [
+      { key: 'gatling-1', position: { x: 0, y: 0, z: 0 }, rate: 1, level: 1, distance: 0 },
+    ],
   },
   snap: { vehicles: audioVehicles, phase: 'prep', next_wave_at: 0, fan: false },
   clockOffset: 0,
@@ -663,6 +670,8 @@ vm.runInContext(
   audioContext,
 );
 vm.runInContext('updateAudio()', audioContext);
+assert.ok(kept.has('gatling-1'), 'the firing Gatling keeps its continuous loop');
+assert.ok(loops.some(([key, kind]) => key === 'gatling-1' && kind === 'gatling'));
 assert.deepEqual(
   [...kept].filter((k) => k.startsWith('dive-')),
   ['dive-interceptor'],

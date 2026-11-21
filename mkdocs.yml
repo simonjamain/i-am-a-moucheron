@@ -93,6 +93,7 @@ nav:
           - Hélicoptère H2: h2-model.md
           - Biplans: biplane-models.md
           - Tourelle T-01: t01-asset.md
+          - Tourelle Gatling: gatling-turret.md
   - Règles détaillées:
       - Économie, signatures et balistique: economy-physics.md
       - Puissance des ennemis: enemy-power.md

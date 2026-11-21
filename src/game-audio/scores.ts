@@ -23,6 +23,7 @@ export const SOUND_PRIORITY: Readonly<Record<SoundKind, number>> = {
   ko: 4,
   punch: 4,
   shot: 4,
+  gatling: 4,
   block: 3,
   dash: 3,
   insect: 3,

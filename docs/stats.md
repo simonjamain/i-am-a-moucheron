@@ -37,8 +37,8 @@ PV restants ne comptent pas. La puissance est séparée par cible (volante ou te
 (`mg`, `rapid`, `bomb`, `rocket`, `missile`…).
 
 **Poste.** La clé est _type d'équipement + poste_, par exemple `medbomber|tail`. Les
-tourelles fixes ont un poste `operator`, le pistolet (à pied) `pistol|foot`, la
-tourelle automatique du Castor `sentry|auto` (sans joueur).
+tourelles fixes ont un poste `operator`, le pistolet (à pied) `pistol|foot`, les
+tourelles automatiques du Castor `sentry|auto` et `gatling|auto` (sans joueur).
 
 **Temps d'occupation.** Pendant une vague, chaque poste tenu par un pilote vivant
 accumule des secondes. Un intervalle entre deux mises à jour ne compte jamais plus de

@@ -314,7 +314,9 @@ export class DebugTools {
   // Turret range (sphere + circle at its base) and sugar attraction (circle).
   showRanges(structures: readonly Structure[] | undefined, enabled: boolean): void {
     const T = this.T,
-      list = enabled ? (structures || []).filter((s) => ['sentry', 'sugar'].includes(s.kind)) : [];
+      list = enabled
+        ? (structures || []).filter((s) => ['sentry', 'gatling', 'sugar'].includes(s.kind))
+        : [];
     const key = JSON.stringify(list.map((s) => [s.kind, s.id, s.position, s.y, s.radius]));
     if (key === this.rangeKey) return;
     this.rangeKey = key;
@@ -326,7 +328,7 @@ export class DebugTools {
     }
     for (const s of list) {
       if (!s.position) continue;
-      const sentry = s.kind === 'sentry',
+      const sentry = s.kind === 'sentry' || s.kind === 'gatling',
         radius = sentry ? this.options.sentryRange : s.radius || 0,
         color = sentry ? 0xff8a3d : 0xe9d487,
         y = s.y || 0;

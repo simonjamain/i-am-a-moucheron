@@ -108,6 +108,7 @@ export function itemName(item: string): string {
   const special: Record<string, string> = {
     pistol: 'Pistolet (à pied)',
     sentry: 'Tourelle automatique du Castor',
+    gatling: 'Tourelle automatique Gatling du Castor',
     bunker: 'Bunker LEGO',
     antitank: 'Canon antichar',
   };

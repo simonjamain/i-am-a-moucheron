@@ -157,6 +157,7 @@ export const SUITE = [
   'test-sentry-scale',
   'test-shot-effects',
   'test-sentry-meshy',
+  'test-gatling',
   'test-castor-fortifications',
   'test-flying-castor',
   'test-game-polish',

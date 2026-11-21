@@ -48,7 +48,7 @@ import {
 } from '../src/waves.js';
 import { SHOP, shopPrice, supportedPlacement } from '../src/equipment.ts';
 import { advancePaidService } from '../src/paid-service.js';
-import { SENTRY, fireGroundSentries } from '../src/ground-sentry.ts';
+import { SENTRY, GATLING, isTurret, fireGroundSentries } from '../src/ground-sentry.ts';
 import { FORTIFICATIONS, isFortification } from '../src/ground-fortifications.ts';
 import { FIXED_DCA, heavyDcaMuzzle, isFixedDca } from '../src/fixed-dca.ts';
 import { PISTOL_CAPACITY } from '../src/ground-ammo.ts';
@@ -99,6 +99,7 @@ const world = (p) =>
         : 'purgatory';
 const signature = (s) => s === true;
 const SENTRY_SOURCE = Object.freeze({ item: 'sentry', seat: 'auto', weapon: 'sentry' });
+const GATLING_SOURCE = Object.freeze({ item: 'gatling', seat: 'auto', weapon: 'gatling' });
 const initialState = () => ({
   p: [OFFICE_LAYOUT.base.originX, OFFICE_LAYOUT.base.departureY, OFFICE_LAYOUT.base.originZ - 8],
   q: [0, 0, 0, 1],
@@ -562,10 +563,11 @@ export class Game {
   advanceSentries(r, now) {
     if (
       r.phase !== 'combat' ||
-      !r.groundDefense.structures.some((s) => s.kind === 'sentry' && s.hp > 0 && s.ammo >= 1)
+      !r.groundDefense.structures.some((s) => isTurret(s.kind) && s.hp > 0 && s.ammo >= 1)
     )
       return;
-    if (now - r.sentryClock < SENTRY.intervalMs) return;
+    const gatling = r.groundDefense.structures.some((s) => s.kind === 'gatling');
+    if (now - r.sentryClock < (gatling ? GATLING.intervalMs / 2 : SENTRY.intervalMs)) return;
     r.sentryClock = now;
     const plan = this.plan(r);
     const frames = swarmFrame(plan.roster, (now - r.started) / 1000, r.groundAgents);
@@ -574,23 +576,47 @@ export class Game {
         ? { id: index, p: frame.p, dead: false }
         : null,
     );
+    // A Gatling fires up to two rounds per server tick: one effect per turret
+    // and tick carries the count, the client spreads the rounds over time.
+    const bursts = new Map();
     const fired = fireGroundSentries(
       r.groundDefense.structures,
       targets,
       now,
       (target, sentry, damage) => {
         const id = target.id;
-        this.creditEnemy(r, SENTRY_SOURCE, id, plan.roster[id], damage * r.balance.damage);
+        this.creditEnemy(
+          r,
+          sentry.kind === 'gatling' ? GATLING_SOURCE : SENTRY_SOURCE,
+          id,
+          plan.roster[id],
+          damage * r.balance.damage,
+        );
         r.enemyDamage[id] = (r.enemyDamage[id] || 0) + damage * r.balance.damage;
-        if (r.enemyDamage[id] >= plan.roster[id].hp) this.defeatEnemy(r, id, target.p);
-        r.effects.push({
+        if (r.enemyDamage[id] >= plan.roster[id].hp) {
+          this.defeatEnemy(r, id, target.p);
+          target.dead = true;
+        }
+        const burst = bursts.get(sentry.id);
+        if (burst) {
+          burst.shots++;
+          burst.target = target.p;
+          return;
+        }
+        const effect = {
           id: ++r.effectSeq,
           kind: 'sentry-shot',
           sentry: sentry.id,
           p: [sentry.position[0], (sentry.y || 0) + 0.03, sentry.position[1]],
           target: target.p,
           at: now,
-        });
+        };
+        if (sentry.kind === 'gatling') {
+          effect.turret = 'gatling';
+          effect.shots = 1;
+          bursts.set(sentry.id, effect);
+        }
+        r.effects.push(effect);
       },
     );
     if (fired) r.groundDefense.revision++;

@@ -6,7 +6,14 @@ import type { Vec2 } from './types.ts';
 // helicopter, turned like it, and falls like the other purchases dropped in
 // flight (delivery.js) before it is built on the first surface below (floor or
 // furniture).
-export const AIRDROP_KINDS = Object.freeze(['sugar', 'sticky', 'sentry', 'bunker', 'antitank']);
+export const AIRDROP_KINDS = Object.freeze([
+  'sugar',
+  'sticky',
+  'sentry',
+  'gatling',
+  'bunker',
+  'antitank',
+]);
 export const AIRDROP_TAPE = 0.1; // one 10 cm piece of tape per drop
 // Structures higher than this stand on furniture: floor walkers ignore them.
 export const FLOOR_LEVEL = 0.01;

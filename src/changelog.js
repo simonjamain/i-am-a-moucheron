@@ -1,6 +1,12 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 384,
+    changes: [
+      'Nouvelle tourelle automatique Gatling, à poser depuis le Castor ou à larguer depuis le Castor volant : six canons qui tournent et un tir continu.',
+    ],
+  },
+  {
     version: 381,
     changes: ['Les moyeux des roues du char suivent maintenant les roues sur le relief.'],
   },
