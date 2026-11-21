@@ -218,7 +218,7 @@ préparation ; sinon la vague part à la fin du compte à rebours
 
 Le conducteur du Castor peut poser, sans plan à débloquer, un « Canon lourd » (14 $). Descendez, approchez du poste et utilisez la commande d’interaction pour signer le dossier et occuper le siège ; utilisez la visée et le tir habituels, puis la même commande pour sortir. Le canon lourd pivote lentement (45°/s, roues en sens inverse) vers la visée, entre −5° et +40° d’élévation, et tire là où pointe réellement son tube un obus sans fusée (comme le tank), simulé par le tireur ; la caméra se place derrière la culasse. Les munitions se rechargent de manière payante à proximité d’une station ou du Castor.
 
-Le conducteur du Castor peut choisir, sans plan à débloquer, « Tourelle auto » dans la roue de construction et la poser d’un clic (5 $). La tourelle consomme ses 180 balles ; le service de recharge est payant et local. « Tourelle auto Gatling » (25 $, 6 tirs/s, 1 000 balles, tir continu sans son par tir) se choisit et se pose de la même façon : [la Gatling](gatling-turret.md).
+Le conducteur du Castor peut choisir, sans plan à débloquer, « Tourelle auto » dans la roue de construction et la poser d’un clic (5 $). La tourelle consomme ses 180 balles (60 dégâts chacune) ; le service de recharge est payant et local. « Tourelle auto Gatling » (25 $, 12 tirs/s, 1 000 balles, tir continu sans son par tir) se choisit et se pose de la même façon : [la Gatling](gatling-turret.md).
 
 **G** ou clic molette (roue de construction) à pied ou au poste conducteur du Castor au sol, puis choix d’un outil ; il n’y a plus de bouton « Défense » (issue #135) : aperçu au point visé par la caméra
 indépendamment de la marche, E ou clic gauche pour valider, R pour orienter le sucre, Échap

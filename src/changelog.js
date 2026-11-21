@@ -1,11 +1,28 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
-    version: 388,
+    version: 391,
     changes: [
       'Le bon de commande devient une vraie feuille : cochez un motif au crayon, signez, et le tampon tombe.',
       'La convenance personnelle n’est pas un motif réglementaire : la commande est refusée.',
     ],
+  },
+  {
+    version: 390,
+    changes: [
+      'La tourelle Gatling tire deux fois plus vite : 12 tirs par seconde.',
+      'Les balles de la tourelle automatique font deux fois plus de dégâts.',
+    ],
+  },
+  {
+    version: 389,
+    changes: [
+      'Gatling : toute la partie haute de la tourelle se lève pour viser, pas seulement les canons.',
+    ],
+  },
+  {
+    version: 388,
+    changes: ['Gatling : la base du faisceau de canons s’incline maintenant avec le canon.'],
   },
   {
     version: 387,
