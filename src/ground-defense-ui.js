@@ -588,9 +588,10 @@ export class GroundDefenseUI {
       model.yaw.rotation.y += sentryAngleDelta(model.yaw.rotation.y, model.targetYaw) * weight;
       // Short barrel recoil after each authoritative shot (issue #108).
       model.recoil = (model.recoil || 0) * Math.exp(-(gatling ? 30 : 18) * Math.max(0, dt));
-      model.pitch.position.z =
-        (model.basePitchZ ??= model.pitch.position.z) +
-        model.recoil * (gatling ? GATLING_RECOIL : 0.003);
+      // The Gatling kicks its barrel assembly only; the whole head tilts with `pitch`.
+      const kick = model.barrel || model.pitch;
+      kick.position.z =
+        (model.basePitchZ ??= kick.position.z) + model.recoil * (gatling ? GATLING_RECOIL : 0.003);
       model.pitch.rotation.x += (model.targetPitch - model.pitch.rotation.x) * weight;
       if (gatling) {
         // The whole bundle (barrels and collars) turns about the central axis;

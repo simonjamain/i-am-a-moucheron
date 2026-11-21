@@ -10,8 +10,9 @@ share the single atlas:
   tete   yaw head: housing, radar, ammo box and belt
   rotor  the six barrels and their two collars (every component reaching x < -0.3)
   anneau the circular base of the bundle (rear plate and front rim of the housing
-         opening): it tilts with the barrels but does not spin
-Only the rotor spins, around the axis of the bundle. The bundle axis is fitted
+         opening): it does not spin
+The whole upper unit (head, ring, bundle) tilts about a horizontal axis at the top of
+the turntable (`elevation`); only the rotor spins, around the axis of the bundle. The bundle axis is fitted
 on the six barrels and the rotor is straightened onto it (about 2 degrees), so
 the rotation is exact. Output frame: game axes (-Z forward), origin on the
 ground under the yaw axis; rotor vertices are relative to its pivot (the centre
@@ -207,6 +208,8 @@ def main():
         'triangles': int(len(faces)),
         'vertices': int(len(vertices)),
         'bounds': bounds,
+        # Elevation pivot of the whole upper unit: top of the turntable, on the yaw axis.
+        'elevation': [0, round(float(vertices[np.unique(faces[np.concatenate(base)])][:, 1].max() - ground), 4), 0],
         'rotor': {
             'barrels': 6,
             'tips': tips,

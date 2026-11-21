@@ -1,6 +1,12 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 389,
+    changes: [
+      'Gatling : toute la partie haute de la tourelle se lève pour viser, pas seulement les canons.',
+    ],
+  },
+  {
     version: 388,
     changes: ['Gatling : la base du faisceau de canons s’incline maintenant avec le canon.'],
   },

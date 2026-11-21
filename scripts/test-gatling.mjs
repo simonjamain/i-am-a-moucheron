@@ -16,6 +16,7 @@ import {
   firingBarrel,
   GATLING_MAX_SPIN,
   GATLING_SCALE,
+  GATLING_MAX_ELEVATION,
 } from '../src/gatling-model.ts';
 import { GroundDefenseUI } from '../src/ground-defense-ui.js';
 import { synthesize, AUDIO_PROFILES } from '../src/game-audio/synth.ts';
@@ -185,35 +186,67 @@ assert.equal(
 assert.ok(MODEL_DATA.texture.startsWith('data:image/webp;base64,'));
 assert.equal(MODEL_DATA.rotor.barrels, 6);
 const model = createGatlingModel(T);
-const { group, yaw, pitch, spin, barrels, muzzle } = model;
+const { group, yaw, pitch, barrel, spin, barrels, muzzle } = model;
 assert.equal(group.scale.x, GATLING_SCALE);
 assert.equal(yaw.parent, group);
 assert.equal(pitch.parent, yaw);
-assert.equal(spin.parent, pitch);
-assert.equal(muzzle.parent, pitch, 'la bouche ne tourne pas sur elle-même');
-assert.equal(group.getObjectByName('socle-fixe').parent, group);
-assert.equal(group.getObjectByName('tete-gatling').parent, yaw);
+assert.equal(barrel.parent, pitch);
+assert.equal(spin.parent, barrel);
+assert.equal(muzzle.parent, barrel, 'la bouche ne tourne pas sur elle-même');
+assert.equal(group.getObjectByName('socle-fixe').parent, group, 'le socle ne bouge jamais');
+const head = group.getObjectByName('tete-gatling');
+assert.equal(head.parent, pitch, 'toute la tête se lève avec le pivot d’élévation');
 assert.equal(group.getObjectByName('faisceau-canons').parent, spin, 'tous les canons tournent');
-// La base circulaire du faisceau s'incline avec les canons mais ne tourne pas sur elle-même.
+// La base circulaire du faisceau suit les canons mais ne tourne pas sur elle-même.
 const base = group.getObjectByName('anneau-faisceau');
-assert.equal(base.parent, pitch, 'l’anneau suit l’élévation du canon');
+assert.equal(base.parent, barrel, 'l’anneau suit l’élévation du canon');
 assert.notEqual(base.parent, spin);
 base.geometry.computeBoundingBox();
 const baseBox = base.geometry.boundingBox;
 assert.ok(Math.abs((baseBox.min.x + baseBox.max.x) / 2) < 0.004, 'anneau centré sur l’axe (X)');
 // 0,009 unité (0,2 mm) de décalage vient du modèle Meshy : ses canons sont un peu bas dans l'ouverture.
 assert.ok(Math.abs((baseBox.min.y + baseBox.max.y) / 2) < 0.012, 'anneau centré sur l’axe (Y)');
+// Pivot d'élévation : sommet de la couronne, sur l'axe de lacet.
+const [ex, ey, ez] = MODEL_DATA.elevation;
+assert.deepEqual([pitch.position.x, pitch.position.y, pitch.position.z], [ex, ey, ez]);
+// Tout ce qui est au-dessus du pivot se lève d'un bloc ; le point du pivot reste immobile.
+const pivotPoint = () => new T.Vector3(ex, ey, ez).applyMatrix4(head.matrixWorld);
+const upright = () =>
+  new T.Vector3(0, 1, 0).applyQuaternion(head.getWorldQuaternion(new T.Quaternion()));
+group.updateMatrixWorld(true);
+const restPivot = pivotPoint();
+const restLed = model.lens.getWorldPosition(new T.Vector3());
+const restSocle = new T.Box3().setFromObject(group.getObjectByName('socle-fixe'));
 pitch.rotation.x = 0.7;
 group.updateMatrixWorld(true);
+assert.ok(pivotPoint().distanceTo(restPivot) < 1e-9, 'le pivot ne bouge pas');
+const forward = new T.Vector3(0, 0, -1).applyQuaternion(
+  head.getWorldQuaternion(new T.Quaternion()),
+);
+assert.ok(Math.abs(forward.y - Math.sin(0.7)) < 1e-9, 'la tête se lève de l’angle demandé');
+assert.ok(upright().z > 0.6, 'le haut de la tête bascule vers l’arrière');
+const tiltedLed = model.lens.getWorldPosition(new T.Vector3());
+assert.ok(tiltedLed.distanceTo(restLed) > 0.003, 'le radar et son témoin suivent la tête');
 const along = new T.Vector3(0, 0, -1).applyQuaternion(base.getWorldQuaternion(new T.Quaternion()));
 const aimed = muzzle
   .getWorldPosition(new T.Vector3())
-  .sub(pitch.getWorldPosition(new T.Vector3()))
+  .sub(barrel.getWorldPosition(new T.Vector3()))
   .normalize();
 assert.ok(along.distanceTo(aimed) < 1e-6, 'l’anneau pointe dans le sens du canon');
+assert.ok(forward.distanceTo(aimed) < 1e-6, 'tête, anneau et canons pointent ensemble');
+assert.ok(
+  new T.Box3().setFromObject(group.getObjectByName('socle-fixe')).equals(restSocle),
+  'le socle reste immobile',
+);
 pitch.rotation.x = 0;
+group.updateMatrixWorld(true);
 assert.equal(barrels.length, 6);
 assert.ok(barrels.every((b) => b.parent === spin));
+assert.equal(
+  GATLING_MAX_ELEVATION,
+  (45 * Math.PI) / 180,
+  'au-delà de 45° la tête s’enfonce dans le socle',
+);
 const materials = new Set();
 group.traverse((o) => o.isMesh && o.userData.meshyShared && materials.add(o.material));
 assert.equal(materials.size, 1, 'les quatre pièces partagent l’atlas Meshy');
