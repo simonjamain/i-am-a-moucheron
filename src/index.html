@@ -1508,7 +1508,7 @@
       #aimRange small {
         font-size: 9px;
       }
-      :is(#bank, #flightSettingsPanel) {
+      #flightSettingsPanel {
         position: fixed;
         inset: 0;
         z-index: 45;
@@ -1517,7 +1517,7 @@
         background: #09211bd6;
         padding: 20px;
       }
-      :is(#bank, #flightSettingsPanel) > article {
+      #flightSettingsPanel > article {
         width: min(1080px, 100%);
         max-height: 90dvh;
         overflow: auto;
@@ -1528,28 +1528,28 @@
         box-shadow: 0 14px 60px #0007;
         font-family: Georgia, serif;
       }
-      :is(#bank, #flightSettingsPanel) header {
+      #flightSettingsPanel header {
         position: static;
         display: flex;
         align-items: start;
         justify-content: space-between;
         gap: 20px;
       }
-      :is(#bank, #flightSettingsPanel) h2 {
+      #flightSettingsPanel h2 {
         margin: 0 0 8px;
         font-size: 30px;
         font-style: italic;
         font-weight: 400;
       }
-      :is(#bank, #flightSettingsPanel) h3 {
+      #flightSettingsPanel h3 {
         font-size: 32px;
         font-weight: 400;
         margin: 22px 0;
       }
-      :is(#bank, #flightSettingsPanel) p {
+      #flightSettingsPanel p {
         line-height: 1.6;
       }
-      :is(#bank, #flightSettingsPanel) button {
+      #flightSettingsPanel button {
         background: #294938;
         color: #f3edcf;
         padding: 10px 14px;
@@ -1557,43 +1557,9 @@
         border-radius: 4px;
         cursor: pointer;
       }
-      :is(#bank, #flightSettingsPanel) button:disabled {
+      #flightSettingsPanel button:disabled {
         opacity: 0.5;
         cursor: default;
-      }
-      :is(#bank, #flightSettingsPanel) [data-bank-cards] {
-        display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 16px;
-        margin: 20px 0;
-      }
-      :is(#bank, #flightSettingsPanel) [data-bank-cards] article {
-        padding: 18px;
-        border: 1px solid #a7a17c;
-        background: #fff8df55;
-      }
-      :is(#bank, #flightSettingsPanel) [data-bank-cards] button {
-        display: block;
-        width: 100%;
-        margin-top: 14px;
-      }
-      :is(#bank, #flightSettingsPanel) [data-bank-cards] small {
-        letter-spacing: 1px;
-      }
-      :is(#bank, #flightSettingsPanel) [data-bank-status] {
-        min-height: 1.5em;
-        font-weight: bold;
-      }
-      :is(#bank, #flightSettingsPanel) [data-bank-text] {
-        white-space: pre-line;
-      }
-      :is(#bank, #flightSettingsPanel) canvas {
-        width: min(100%, 650px);
-        height: 150px;
-        touch-action: none;
-        border: 1px solid #8b9976;
-        display: block;
-        background: #fff9e5;
       }
       /* Paper documents (bon de commande, lit, dossier): no HTML form look, see docs/ui-guidelines.md. */
       .paperPanel {
@@ -1786,6 +1752,144 @@
           transform: translateY(30vh);
         }
       }
+      /* Bank prospectus: three coupons, then the ticked offer's terms beside its schedule. */
+      .paperPanel.bankPanel > article.paperDoc {
+        width: min(900px, 100%);
+      }
+      .bankPanel .docMotto,
+      .bankPanel .docHint,
+      .bankPanel .docBalance {
+        font-size: 12px;
+      }
+      .bankPanel .docBalance {
+        font-weight: 700;
+      }
+      .bankPanel .coupons {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+        margin: 0 0 12px;
+      }
+      .bankPanel .coupon {
+        position: relative;
+        display: grid;
+        gap: 1px;
+        padding: 8px 12px;
+        border: 2px dashed var(--paper-line);
+        font-size: 12px;
+        font-variant-numeric: tabular-nums;
+        cursor: pointer;
+        outline-offset: 2px;
+      }
+      .bankPanel .coupon:focus-visible {
+        outline: 2px dashed var(--pencil);
+      }
+      .bankPanel .coupon[aria-checked='true'] {
+        border-color: var(--ink);
+      }
+      .bankPanel .coupon[aria-disabled='true'] {
+        cursor: not-allowed;
+        opacity: 0.55;
+      }
+      .bankPanel .couponHead {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        font-size: 11px;
+      }
+      .bankPanel .couponHead svg {
+        width: 24px;
+        height: 24px;
+        flex: none;
+        overflow: visible;
+      }
+      .bankPanel .couponHead .clauseTick {
+        stroke-dashoffset: 0;
+      }
+      .bankPanel .couponAmount {
+        font-size: 21px;
+      }
+      .bankPanel .couponStamp {
+        position: absolute;
+        right: 10px;
+        top: 26px;
+        padding: 0 6px;
+        border: 2px solid var(--stamp-ink);
+        color: var(--stamp-ink);
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        transform: rotate(-10deg);
+        mix-blend-mode: multiply;
+      }
+      .bankPanel .loanSheet {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 20px;
+        align-items: start;
+      }
+      .bankPanel .loanSheet h3 {
+        font: 700 15px var(--typewriter);
+        text-transform: uppercase;
+        margin: 0 0 6px;
+      }
+      .bankPanel [data-bank-text] {
+        font-size: 11px;
+        line-height: 1.4;
+      }
+      .bankPanel .docSchedule {
+        border-collapse: collapse;
+        font-size: 11px;
+        font-variant-numeric: tabular-nums;
+      }
+      .bankPanel .docSchedule th,
+      .bankPanel .docSchedule td {
+        padding: 2px 6px;
+        text-align: right;
+        border-bottom: 1px solid var(--paper-line);
+        white-space: nowrap;
+      }
+      .bankPanel .docSchedule th {
+        border-bottom: 2px solid var(--ink);
+      }
+      .bankPanel .docSchedule td.paid {
+        color: var(--stamp-ink);
+        font-weight: 700;
+        letter-spacing: 0.08em;
+      }
+      .bankPanel [data-bank-status] {
+        min-height: 1.5em;
+        margin: 8px 0 0;
+      }
+      .bankPanel .docStamp {
+        top: auto;
+        bottom: 56px;
+        right: 48px;
+      }
+      @media (max-width: 760px) {
+        .bankPanel .coupons {
+          gap: 6px;
+        }
+        .bankPanel .coupon {
+          padding: 6px;
+          font-size: 11px;
+        }
+        .bankPanel .couponAmount {
+          font-size: 15px;
+        }
+        .bankPanel .loanSheet {
+          grid-template-columns: 1fr;
+          gap: 8px;
+        }
+        .bankPanel .docMotto {
+          display: none;
+        }
+        .bankPanel [data-bank-text] {
+          font-size: 11px;
+          line-height: 1.3;
+        }
+      }
       /* Short screens: the sheet stays whole, never scrolled. */
       @media (max-height: 720px) {
         .paperPanel > article.paperDoc {
@@ -1805,25 +1909,6 @@
         .paperPanel.leaving {
           animation: none;
         }
-      }
-      :is(#bank, #flightSettingsPanel) .bankTable {
-        overflow: auto;
-        margin: 15px 0;
-      }
-      :is(#bank, #flightSettingsPanel) table {
-        width: 100%;
-        border-collapse: collapse;
-        font-size: 12px;
-      }
-      :is(#bank, #flightSettingsPanel) th,
-      :is(#bank, #flightSettingsPanel) td {
-        padding: 8px;
-        text-align: left;
-        border-bottom: 1px solid #b6b18c;
-        white-space: nowrap;
-      }
-      :is(#bank, #flightSettingsPanel) .bankHint {
-        font-size: 12px;
       }
       @media (max-width: 700px) {
         #contextHUD .contextRail {
@@ -1852,14 +1937,11 @@
           top: 34px;
           bottom: auto;
         }
-        :is(#bank, #flightSettingsPanel) {
+        #flightSettingsPanel {
           padding: 8px;
         }
-        :is(#bank, #flightSettingsPanel) > article {
+        #flightSettingsPanel > article {
           padding: 14px;
-        }
-        :is(#bank, #flightSettingsPanel) [data-bank-cards] {
-          grid-template-columns: 1fr;
         }
       }
       /* One top bar: the session (wave, enemies, infestation, wallet, shops) on
@@ -2534,46 +2616,53 @@
         </footer>
       </article>
     </section>
-    <section id="bank" class="hidden" role="dialog" aria-modal="true" aria-labelledby="bankTitle">
-      <article>
+    <section
+      id="bank"
+      class="paperPanel bankPanel hidden"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="bankTitle"
+    >
+      <article class="paperDoc">
+        <div class="docTop">
+          <span>Banque de la Dernière Volonté · Ligne directe</span
+          ><span>Prospectus P-3 · Offres et contrats</span>
+        </div>
         <header>
           <div>
-            <h2 id="bankTitle">Banque de la Dernière Volonté</h2>
-            <p>« Votre avenir est incertain. Vos échéances, beaucoup moins. »</p>
+            <h2 id="bankTitle">Prospectus de prêt</h2>
+            <p class="docMotto">« Votre avenir est incertain. Vos échéances, beaucoup moins. »</p>
           </div>
-          <button data-bank-close aria-label="Fermer le banquier">✕</button>
+          <button data-bank-close aria-label="Fermer le prospectus">✕</button>
         </header>
-        <div data-bank-cards></div>
-        <section data-bank-sheet class="hidden">
-          <button data-bank-back>← Les trois contrats</button>
-          <h3 data-bank-title></h3>
-          <p data-bank-text></p>
-          <details>
-            <summary>Tableau d’amortissement</summary>
-            <div class="bankTable">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Échéance</th>
-                    <th>Montant</th>
-                    <th>Intérêts</th>
-                    <th>Capital</th>
-                    <th>Restant</th>
-                  </tr>
-                </thead>
-                <tbody data-bank-schedule></tbody>
-              </table>
+        <p data-bank-balance class="docBalance"></p>
+        <div data-bank-cards class="coupons"></div>
+        <p data-bank-hint class="docHint">Cochez une offre pour lire ses conditions.</p>
+        <section data-bank-sheet class="loanSheet hidden">
+          <div>
+            <h3 data-bank-title></h3>
+            <p data-bank-text></p>
+            <div data-clauses class="clauses"></div>
+            <div data-bank-sign class="signLine">
+              <canvas width="800" height="200" aria-label="Signer le contrat de prêt"></canvas>
             </div>
-          </details>
-          <p class="bankHint" data-bank-sign-hint></p>
-          <canvas width="800" height="200" aria-label="Signer le document bancaire"></canvas
-          ><button data-bank-clear>Effacer la signature</button>
+          </div>
+          <table class="docSchedule">
+            <thead>
+              <tr>
+                <th>Vague</th>
+                <th>Échéance</th>
+                <th>Intérêts</th>
+                <th>Capital</th>
+                <th>Restant</th>
+                <th aria-label="Payé"></th>
+              </tr>
+            </thead>
+            <tbody data-bank-schedule></tbody>
+          </table>
         </section>
         <p data-bank-status role="status" aria-live="polite"></p>
-        <p data-bank-balance></p>
-        <p class="bankHint">
-          Échap : fermer · N : banquier · La partie continue pendant la consultation.
-        </p>
+        <div data-stamp class="docStamp" aria-hidden="true"></div>
       </article>
     </section>
     <section id="shop" class="hidden" aria-label="Équipement et améliorations">

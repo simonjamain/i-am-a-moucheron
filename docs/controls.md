@@ -95,8 +95,8 @@ ou sous le curseur libéré) ouvre son dossier.
 Les mutations à bord restent dans le menu des postes. Voir [référence du lot](vehicles-bank.md).
 
 Le banquier s’ouvre avec **N** ou le bouton Banquier, depuis tous les postes et
-mondes. Signer dans son cadre puis relâcher dépose le contrat ; remboursement
-anticipé également signé. Échap ferme. La souris est libérée et les commandes
+mondes (sa « ligne directe »). Cocher une offre, puis l’objet du prêt, puis signer et
+relâcher dépose le contrat. Échap ferme. La souris est libérée et les commandes
 neutralisées pendant la consultation ; la partie continue. Les rails contextuels
 s’ouvrent au réglage/événement et au survol/focus.
 

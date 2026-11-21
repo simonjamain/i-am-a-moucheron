@@ -63,7 +63,7 @@ remplir, signatures, tampons, cachets « APPROUVÉ ».
   [signatures](economy-physics.md#input-and-signatures)) ; c’est le geste qui valide, à
   la place d’un bouton.
 
-Tous les documents du jeu sont en papier, sauf le banquier (à part) :
+Tous les documents du jeu sont en papier :
 
 | Document                                                        | Motif à cocher (jamais d’office)     |
 | --------------------------------------------------------------- | ------------------------------------ |
@@ -71,16 +71,21 @@ Tous les documents du jeu sont en papier, sauf le banquier (à part) :
 | Retour du purgatoire ou de Super Saint-Pierre, 1ʳᵉ pièce        | `RETURN_MOTIVES`                     |
 | Contrat de lit / résiliation                                    | `BED_MOTIVES` / `BED_CANCEL_MOTIVES` |
 | Bon de commande de l’atelier                                    | `PURCHASE_MOTIVES`                   |
+| Prospectus de la banque (offre cochée puis objet du prêt)       | `LOAN_MOTIVES`                       |
 | Pièces suivantes, changement et échange de poste                | aucun (signature seule)              |
 
-Chaque motif propose « Convenance personnelle », **réellement refusée** : tampon « REFUSÉ »,
+Chaque motif propose « Convenance personnelle », **réellement refusée** (sauf à la banque,
+seul service qui l’accepte : elle ne juge pas les motifs, elle prélève les échéances) : tampon « REFUSÉ »,
 rien n’est envoyé au serveur, le document se ferme et il faut recommencer (viser de nouveau le
 poste, revenir au lit, à l’atelier ou au guichet). Une signature acceptée reçoit le tampon
 « APPROUVÉ » sur la feuille, qui s’efface pendant que la partie reprend. Les changements et
 échanges de poste, faits en plein vol, gardent une signature seule pour rester rapides.
 Composant partagé : `src/paper-form.ts` (motifs, cases, coche au crayon, tampons) ; le lit et
 le bon de commande en héritent par `src/bed-ui.js`, le dossier est rendu par `renderPaper`
-(`src/client.js`). Jetons (`--paper`, `--ink`, `--pencil`, `--stamp-ink`, `--typewriter`) et
+(`src/client.js`) et le prospectus bancaire par `src/bank-ui.js` (coupons cochés au crayon,
+tampons « SIGNÉ » et « PAYÉ » sur le contrat et ses échéances). Le banquier s’ouvre à
+distance (touche N, « ligne directe ») ; un guichet visable dans le bureau viendra avec les
+autres objets. Jetons (`--paper`, `--ink`, `--pencil`, `--stamp-ink`, `--typewriter`) et
 styles `.paperPanel` / `.paperDoc` dans `src/index.html`.
 
 L’interface HTML actuelle (panneaux vert sombre génériques) est héritée ; chaque

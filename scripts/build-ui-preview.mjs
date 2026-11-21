@@ -2,12 +2,10 @@
 // makes visual QA possible without a GPU or a reachable multiplayer UDP path.
 export function uiPreview(html) {
   const style = [...html.matchAll(/<style>[\s\S]*?<\/style>/g)].map((match) => match[0]).join('\n');
-  const bank = html.slice(html.indexOf('<section id="bank"'), html.indexOf('<section id="shop"'));
+  const bankStart = html.lastIndexOf('<section', html.indexOf('id="bank"'));
+  const bank = html.slice(bankStart, html.indexOf('<section id="shop"'));
   if (!bank.includes('data-bank-cards')) throw Error('Bank markup missing from UI preview');
-  const bed = html.slice(
-    html.lastIndexOf('<section', html.indexOf('id="bedPanel"')),
-    html.indexOf('<section id="bank"'),
-  );
+  const bed = html.slice(html.lastIndexOf('<section', html.indexOf('id="bedPanel"')), bankStart);
   const summary = html.slice(
     html.indexOf('<div id="sessionSummary"'),
     html.indexOf('<div id="roomTag"'),
@@ -34,11 +32,11 @@ export function uiPreview(html) {
   import { PurchaseUI } from '/purchase-ui.js';
   import { BedUI } from '/bed-ui.js';
   import { BankUI } from '/bank-ui.js'; import { ContextHUD, equipmentHUD } from '/hud.js';
-  import { newBank, signLoan, repayLoan } from '/bank.js';
+  import { newBank, signLoan } from '/bank.js';
   let snap = { balance: {...DEFAULT_BALANCE}, balanceRevision:0, balanceOwner:['demo'], equipment: [], purchases: [], upgrades: {}, dollars: 12, base: {epoch:'demo'}, bank: newBank(() => .05) };
   signLoan(snap.bank,1,snap.bank.slots[1].serial,1200,0);
   const root = document.getElementById('bank'), rails = document.getElementById('contextHUD'), hud = new ContextHUD(rails);
-  const bank = new BankUI({root,document,snapshot:()=>snap,onOpen:()=>{rails.classList.add('hidden');document.getElementById('aimRange').classList.add('hidden')},onClose:()=>{},accept:s=>{snap=s},command:async(path,b)=>{const cash=Math.round(snap.dollars*100);snap.dollars=(cash+(path==='bank-sign'?signLoan(snap.bank,b.slot,b.serial,cash,0):-repayLoan(snap.bank,b.slot,b.serial,cash)))/100;return snap}});
+  const bank = new BankUI({root,document,snapshot:()=>snap,onOpen:()=>{rails.classList.add('hidden');document.getElementById('aimRange').classList.add('hidden')},onClose:()=>{},accept:s=>{snap=s},command:async(path,b)=>{const cash=Math.round(snap.dollars*100);snap.dollars=(cash+signLoan(snap.bank,b.slot,b.serial,cash,0))/100;return snap}});
   const person={id:'demo',life:'alive',incarnation:0,bedId:null};
   const bedUI=new BedUI({root:document.getElementById('bedPanel'),snapshot:()=>snap,ground:()=>null,command:async b=>{person.bedId=b.cancel?null:b.bed;return snap},accept:()=>{},onOpen:()=>{rails.classList.add('hidden');document.getElementById('aimRange').classList.add('hidden')},onClose:()=>{},archive:()=>{}});
   const purchaseUI=new PurchaseUI({root:document.getElementById('purchasePanel'),snapshot:()=>snap,ground:()=>null,command:async()=>{snap.dollars-=purchaseUI.price;return snap},accept:()=>{},onOpen:()=>{rails.classList.add('hidden');document.getElementById('aimRange').classList.add('hidden')},onClose:()=>{},archive:()=>{document.querySelector('.previewNote').textContent='Bon signé dans la démonstration · En jeu, passage direct à la pose par E, achat déjà payé.'}});

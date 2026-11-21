@@ -1,6 +1,13 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 395,
+    changes: [
+      'Le banquier devient un prospectus en papier : cochez une offre, puis l’objet du prêt, et signez.',
+      'Les échéances payées sont tamponnées PAYÉ. Le remboursement anticipé disparaît.',
+    ],
+  },
+  {
     version: 394,
     changes: [
       'Après une signature (montée à bord, changement de place), la souris est reprise tout de suite.',
