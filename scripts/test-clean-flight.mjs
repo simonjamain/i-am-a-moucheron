@@ -382,6 +382,7 @@ const requests = [];
 const c = {
   addEventListener: (_, h) => (handler = h),
   $: () => ({ classList: { contains: () => true } }),
+  sheetOpen: () => false,
   spectating: false,
   joined: true,
   groundDefenseUI: { active: false },
@@ -455,8 +456,7 @@ class Element {
 }
 const root = new Element(),
   ss = { base: { epoch: 'test' }, upgrades: {}, equipment: [] };
-let submitted = 0,
-  archived = 0;
+let submitted = 0;
 const ui = new PurchaseUI({
   root,
   snapshot: () => ss,
@@ -466,9 +466,6 @@ const ui = new PurchaseUI({
     return ss;
   },
   accept() {},
-  archive() {
-    archived++;
-  },
   onOpen() {},
   onClose() {},
 });
@@ -491,7 +488,6 @@ ui.canvas.onpointerdown(e);
 ui.canvas.onpointerup({ ...e, clientX: 90 });
 await new Promise((r) => setImmediate(r));
 assert.equal(submitted, 1);
-assert.equal(archived, 1);
 // « Convenance personnelle » is really refused: no command, the document closes.
 ui.open('dca', { life: 'alive', incarnation: 0 });
 ui.clauses.toggle('comfort');
@@ -511,7 +507,7 @@ assert.equal(
 assert.match(root.querySelector('[data-bed-text]').textContent, /20 \$/);
 ui.close();
 console.log(
-  'Purchase UI: live price, actual pointer cancel and release, single signed command and ACK archive.',
+  'Purchase UI: live price, actual pointer cancel and release, single signed command after ACK.',
 );
 
 // Execute the actual six-gun volley AND bullet gate with exactly six rounds.

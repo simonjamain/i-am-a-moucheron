@@ -153,8 +153,8 @@ permet de signer à nouveau. Une annulation du pointeur ne signe jamais. Le cont
 actif reste consultable avec son capital restant, ses vagues restantes et les
 échéances payées. Le remboursement anticipé exige une nouvelle signature. Une
 échéance ou un reset intervenus pendant la lecture invalident le document ; le
-serveur revérifie aussi son epoch et le montant attendu. Les documents confirmés
-rejoignent l’archive locale des signatures, sans envoyer leur image au serveur.
+serveur revérifie aussi son epoch et le montant attendu. L’image de la
+signature n’est ni conservée ni envoyée au serveur.
 
 | Capital proposé | Taux fixe par vague | Nombre de vagues |
 | --------------- | ------------------- | ---------------- |

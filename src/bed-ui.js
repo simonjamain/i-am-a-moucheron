@@ -8,8 +8,8 @@ import { BED_CANCEL_MOTIVES, BED_MOTIVES, ClauseSheet, REFUSAL_TEXT, stamp } fro
 const STAMP_LINGER_MS = 900;
 const REFUSAL_LINGER_MS = 1600;
 export class BedUI {
-  constructor({ root, snapshot, command, accept, ground, onOpen, onClose, archive }) {
-    Object.assign(this, { root, snapshot, command, accept, ground, onOpen, onClose, archive });
+  constructor({ root, snapshot, command, accept, ground, onOpen, onClose }) {
+    Object.assign(this, { root, snapshot, command, accept, ground, onOpen, onClose });
     this.opened = false;
     this.busy = false;
     this.canvas = root.querySelector('canvas');
@@ -184,7 +184,6 @@ export class BedUI {
     this.busy = true;
     this.root.querySelector('[data-bed-close]').disabled = true;
     this.status('Transmission du contrat…');
-    const ink = this.canvas.toDataURL('image/png');
     let success = false;
     try {
       const result = await this.command({
@@ -196,11 +195,6 @@ export class BedUI {
         ground: this.ground(),
       });
       this.accept(result);
-      if (this.snapshot().base.epoch === this.epoch)
-        this.archive({
-          title: this.cancel ? 'Résiliation du lit' : 'Contrat de réapparition',
-          ink,
-        });
       stamp(this.root.querySelector('[data-stamp]'), 'APPROUVÉ');
       this.status(this.signedText());
       this.keepInk = true;

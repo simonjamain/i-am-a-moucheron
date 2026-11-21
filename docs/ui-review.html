@@ -965,14 +965,6 @@
           max-width: 210px;
         }
       }
-      #signedPapers {
-        display: flex;
-        justify-content: center;
-        gap: 10px;
-        min-height: 50px;
-        padding: 0 18px 12px;
-        pointer-events: none;
-      }
       .paperPanel {
         align-content: center;
         gap: 10px;
@@ -984,16 +976,6 @@
         gap: 12px;
         font-size: 12px;
       }
-      .paperPanel .docArchive {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        max-width: min(640px, 100%);
-        overflow: hidden;
-        color: var(--cream);
-        font: 12px var(--typewriter);
-        pointer-events: none;
-      }
       .paperPanel.tearing .paperDoc {
         animation: paperTear 0.32s ease-in forwards;
       }
@@ -1002,45 +984,6 @@
           opacity: 0;
           transform: translateY(18px) rotate(-6deg);
         }
-      }
-      .paperPanel.leaving .docArchive {
-        display: none;
-      }
-      #signedPapers {
-        display: flex;
-        gap: 8px;
-        overflow: hidden;
-      }
-      #signedPapers article {
-        width: 112px;
-        height: 55px;
-        position: relative;
-        background: #faf5e3;
-        border: 1px solid #a4ad97;
-        box-shadow: 0 2px 5px #23352c30;
-        transform: rotate(var(--tilt));
-        padding: 7px;
-        font-size: 8px;
-        color: #586e58;
-        animation: archiveIn 0.45s ease-out;
-      }
-      #signedPapers img {
-        position: absolute;
-        bottom: 4px;
-        left: 8px;
-        width: 75px;
-        height: 23px;
-        object-fit: contain;
-      }
-      #signedPapers b {
-        position: absolute;
-        bottom: 5px;
-        right: 4px;
-        font-size: 8px;
-        color: #287c51;
-        border: 1px solid #287c51;
-        transform: rotate(-12deg);
-        padding: 2px;
       }
       #flakControls {
         width: 100%;
@@ -1069,73 +1012,12 @@
           transform: translate(-50%, -50%) rotate(0);
         }
       }
-      @keyframes archiveIn {
-        from {
-          opacity: 0;
-          transform: translateY(-30px) rotate(-8deg);
-        }
-        to {
-          opacity: 1;
-          transform: translateY(0) rotate(var(--tilt));
-        }
-      }
-      @media (max-height: 750px) {
-        #signedPapers {
-          min-height: 40px;
-          padding-bottom: 8px;
-        }
-        #signedPapers article {
-          height: 40px;
-        }
-      }
-      @media (max-width: 650px) {
-        #signedPapers {
-          min-height: 44px;
-        }
-      }
-
-      #signedPapers:empty {
-        min-height: 0;
-        height: 0;
-        padding: 0;
-      }
       #threat {
         display: block;
         color: #d5ef73;
         font-size: 9px;
         letter-spacing: 1px;
         margin-top: 4px;
-      }
-      #signedPapers {
-        justify-content: flex-start;
-        overflow-x: auto;
-        overflow-y: hidden;
-        pointer-events: auto;
-        padding: 12px 22px 18px;
-        min-height: 90px;
-        scrollbar-width: thin;
-      }
-      #signedPapers article {
-        flex: 0 0 110px;
-        width: 110px;
-        height: 64px;
-        margin-right: -52px;
-        transition: transform 0.15s;
-      }
-      #signedPapers article:last-child {
-        margin-right: 0;
-      }
-      #signedPapers article:hover {
-        transform: translateY(-7px) rotate(0);
-        z-index: 2;
-      }
-      @media (max-height: 760px) {
-        #signedPapers {
-          min-height: 65px;
-        }
-        #signedPapers article {
-          height: 45px;
-        }
       }
 
       #economyControls {

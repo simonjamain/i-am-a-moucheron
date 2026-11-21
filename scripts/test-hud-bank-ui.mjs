@@ -56,7 +56,7 @@ let snapshot = { dollars: 10, bank: newBank(() => 0), base: { epoch: 1 } },
   calls = 0,
   opens = 0,
   closes = 0,
-  archives = 0,
+  signedCount = 0,
   complete,
   reject;
 const root = new Element();
@@ -80,7 +80,7 @@ const ui = new BankUI({
   },
   onOpen: () => opens++,
   onClose: () => closes++,
-  archive: () => archives++,
+  onSigned: () => signedCount++,
 });
 ui.open();
 assert.equal(opens, 1);
@@ -107,7 +107,7 @@ signLoan(result.bank, 0, 1, 1000, 0);
 result.dollars += 12;
 complete(result);
 await new Promise((resolve) => setImmediate(resolve));
-assert.equal(archives, 1);
+assert.equal(signedCount, 1);
 assert.equal(ui.selection, null);
 assert.equal(snapshot.bank.slots[0].status, 'active');
 ui.select(snapshot.bank.slots[0], false);
@@ -122,7 +122,7 @@ const failed = ui.submit();
 reject(Error('Réseau interrompu'));
 await failed;
 assert.match(ui.status.textContent, /Réseau/);
-assert.equal(archives, 1);
+assert.equal(signedCount, 1);
 assert.equal(ui.busy, false);
 snapshot.dollars = -1;
 ui.selection = null;

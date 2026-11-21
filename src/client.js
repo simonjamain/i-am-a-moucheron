@@ -517,11 +517,11 @@ function groundActive() {
     joined &&
     !spectating &&
     ((onFoot && !myVehicle) || turretIndex >= 0 || !!respawnAt) &&
-    $('papers').classList.contains('hidden') &&
+    !sheetOpen('papers') &&
     !$('changelogDialog').open &&
     !$('waveCouncil').open &&
-    $('bedPanel').classList.contains('hidden') &&
-    $('purchasePanel').classList.contains('hidden') &&
+    !sheetOpen('bedPanel') &&
+    !sheetOpen('purchasePanel') &&
     $('flightSettingsPanel').classList.contains('hidden') &&
     $('bank').classList.contains('hidden') &&
     $('shop').classList.contains('hidden') &&
@@ -858,18 +858,24 @@ const controlFocus = new ControlFocus({
 function releaseMouse() {
   controlFocus.release();
 }
+// A paper document is open while shown, except a stamped sheet that is leaving the
+// screen: the game (mouse capture, controls) takes over as soon as it is done.
+function sheetOpen(name) {
+  const el = $(name);
+  return !el.classList.contains('hidden') && !el.classList.contains('leaving');
+}
 function canCapture() {
   return (
     joined &&
     !spectating &&
-    $('papers').classList.contains('hidden') &&
+    !sheetOpen('papers') &&
     !$('changelogDialog').open &&
     !$('waveCouncil').open &&
     $('shop').classList.contains('hidden') &&
     $('flightSettingsPanel').classList.contains('hidden') &&
     $('bank').classList.contains('hidden') &&
-    $('bedPanel').classList.contains('hidden') &&
-    $('purchasePanel').classList.contains('hidden')
+    !sheetOpen('bedPanel') &&
+    !sheetOpen('purchasePanel')
   );
 }
 function updateControlHUD() {
@@ -1241,11 +1247,6 @@ function accept(s, force = false) {
     aircraftFire.invalidate();
     clearVacantAircraft();
     entryNoticeWave = -1;
-    paperArchive.length = 0;
-    renderArchive();
-    try {
-      sessionStorage.removeItem('moucheron-dossier:' + room);
-    } catch {}
   }
   const wasDead = !!respawnAt;
   const self = s.pilots.find((p) => p.id === id);
@@ -1656,11 +1657,6 @@ $('form').addEventListener('submit', async (e) => {
           track(peer).push(state, time, seq, 'rtc', captured),
       });
     room = r.snapshot.code;
-    paperArchive.length = 0;
-    try {
-      paperArchive.push(...JSON.parse(sessionStorage.getItem('moucheron-dossier:' + room) || '[]'));
-    } catch {}
-    renderArchive();
     spawnPos.fromArray(r.state.p);
     me.position.copy(spawnPos);
     vel.fromArray(r.state.v);
@@ -1866,7 +1862,7 @@ addEventListener('keydown', (event) => {
     cancelPlacement();
     $('shop').classList.add('hidden');
     releaseMouse();
-    if (!$('papers').classList.contains('hidden')) $('paperClose').click();
+    if (sheetOpen('papers')) $('paperClose').click();
     return;
   }
   if (
@@ -1949,7 +1945,7 @@ addEventListener('keydown', (event) => {
     vehicle: myVehicle,
     turret: turretIndex,
     dead: !!respawnAt,
-    formOpen: !$('papers').classList.contains('hidden'),
+    formOpen: sheetOpen('papers'),
   });
   if (exitAction) {
     event.preventDefault();
@@ -1978,9 +1974,9 @@ addEventListener('keydown', (event) => {
     !myVehicle &&
     turretIndex < 0 &&
     !respawnAt &&
-    $('papers').classList.contains('hidden') &&
-    $('bedPanel').classList.contains('hidden') &&
-    $('purchasePanel').classList.contains('hidden') &&
+    !sheetOpen('papers') &&
+    !sheetOpen('bedPanel') &&
+    !sheetOpen('purchasePanel') &&
     $('flightSettingsPanel').classList.contains('hidden') &&
     $('bank').classList.contains('hidden') &&
     $('shop').classList.contains('hidden') &&
@@ -2242,6 +2238,7 @@ $('heavyPunch').onclick = null;
 $('soulDash').onclick = null;
 // Paper dossier state (see paperMotives below).
 let paperClauses = null,
+  paperShown = false,
   paperRefusing = false,
   paperLingerUntil = 0,
   paperLingerTimer = 0;
@@ -2394,33 +2391,6 @@ function refusePaper() {
     captureMouse();
   }, 1300);
 }
-const paperArchive = [];
-function renderArchive() {
-  const root = $('signedPapers');
-  root.setAttribute(
-    'aria-label',
-    paperArchive.length + ' documents signés depuis le début de la partie',
-  );
-  $('archiveCount').textContent =
-    paperArchive.length + ' document' + (paperArchive.length > 1 ? 's' : '') + ' au dossier';
-  root.replaceChildren();
-  for (const [i, p] of paperArchive.entries()) {
-    const card = document.createElement('article');
-    card.style.setProperty('--tilt', ((i * 7) % 9) - 4 + 'deg');
-    card.style.setProperty('--sheet-index', i);
-    card.title = `Document ${i + 1} · ${p.title}`;
-    const title = document.createElement('span');
-    title.textContent = p.title;
-    const img = document.createElement('img');
-    img.src = p.ink;
-    img.alt = 'Signature apposée';
-    const stamp = document.createElement('b');
-    stamp.textContent = 'VALIDÉ';
-    card.append(title, img, stamp);
-    root.append(card);
-    root.scrollLeft = root.scrollWidth;
-  }
-}
 const contractBook = new ContractBook();
 const documents = Object.fromEntries(
   [
@@ -2500,6 +2470,7 @@ function renderPaper() {
     index < documents[context]?.length;
   $('paperClose').disabled = boardingBusy;
   $('paperTear').disabled = boardingBusy || soulBusy;
+  paperShown = visible;
   // A stamped or refused sheet stays a moment on screen while the game goes on.
   const lingering = !visible && performance.now() < paperLingerUntil;
   $('papers').classList.toggle('hidden', !visible && !lingering);
@@ -2603,8 +2574,7 @@ async function submitPaper() {
     refusePaper();
     return;
   }
-  const signature = true,
-    archive = { title: $('paperTitle').textContent, ink: sig.toDataURL('image/png') };
+  const signature = true;
   paperSubmission = {
     context: activeTransfer
       ? activeTransfer.recipient
@@ -2652,11 +2622,6 @@ async function submitPaper() {
       },
     );
     const result = await response;
-    paperArchive.push(archive);
-    try {
-      sessionStorage.setItem('moucheron-dossier:' + room, JSON.stringify(paperArchive));
-    } catch {}
-    renderArchive();
     paperSubmission = null;
     if (activeTransfer) boardingOpen = false;
     accept(result);
@@ -2671,7 +2636,9 @@ async function submitPaper() {
     paperSubmission = null;
 
     renderPaper();
-    if ($('papers').classList.contains('hidden')) captureMouse();
+    // The dossier is done (boarded, seat changed, back from the purgatory): the
+    // mouse is captured again even while the stamped sheet is still leaving.
+    if (!paperShown) captureMouse();
   }
 }
 $('soulPaperButton').onclick = () => {
@@ -5232,7 +5199,7 @@ for (const [kind, model] of Object.entries(ghosts)) {
 }
 function toggleShop() {
   if (flightTuningUI.opened || bankUI.opened || bedUI.opened || purchaseUI.opened) return;
-  if (!joined || respawnAt || !$('papers').classList.contains('hidden')) return;
+  if (!joined || respawnAt || sheetOpen('papers')) return;
   if (placingEquipment) cancelPlacement();
   debugTools.cancel();
   const open = $('shop').classList.contains('hidden');
@@ -5839,7 +5806,7 @@ function installationModel(st) {
 }
 
 $('paperTear').onclick = async () => {
-  if (boardingBusy || soulBusy || $('papers').classList.contains('hidden')) return;
+  if (boardingBusy || soulBusy || !sheetOpen('papers')) return;
   let message = '';
   boardingBusy = true;
   $('paperTear').disabled = true;
@@ -6540,14 +6507,7 @@ const bankUI = new BankUI({
     renderPaper();
     captureMouse();
   },
-  archive: (record) => {
-    paperArchive.push(record);
-    try {
-      sessionStorage.setItem('moucheron-dossier:' + room, JSON.stringify(paperArchive));
-    } catch {}
-    renderArchive();
-    sound.play('stamp', paperSource(), { ref: 6 });
-  },
+  onSigned: () => sound.play('stamp', paperSource(), { ref: 6 }),
 });
 function toggleBank() {
   if (spectating) return;
@@ -6572,14 +6532,6 @@ const bedUI = new BedUI({
   onClose: () => {
     renderPaper();
     captureMouse();
-  },
-  archive: (record) => {
-    paperArchive.push(record);
-    renderArchive();
-    try {
-      sessionStorage.setItem('moucheron-dossier:' + room, JSON.stringify(paperArchive));
-    } catch {}
-    notify('Contrat de réapparition enregistré', 3);
   },
 });
 
@@ -6664,10 +6616,6 @@ const purchaseUI = new PurchaseUI({
         notify('Colis en descente · 1 m/s dans la pièce', 6);
       captureMouse();
     }
-  },
-  archive: (record) => {
-    paperArchive.push({ ...record, title: 'Bon de commande · ' + SHOP[purchaseUI.item].name });
-    renderArchive();
   },
 });
 
