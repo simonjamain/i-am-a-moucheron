@@ -1,11 +1,18 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
-    version: 384,
+    version: 385,
     changes: [
       'Flak léger : l’explosion touche à 30 m. Flak lourd : à 40 m. DCA haute cadence : 62 dégâts par balle.',
       'Canon anti-matériel : 800 dégâts au cœur de l’impact et 50 obus. Tourelle automatique : 5 $.',
       'Le bunker LEGO disparaît.',
+    ],
+  },
+  {
+    version: 384,
+    changes: [
+      'Bombardier moyen : visez le poste voulu (cockpit ou tourelle) et cliquez pour monter, de n’importe quel côté.',
+      'Le poste visé s’entoure de bleu ; un poste occupé affiche le nom de son occupant.',
     ],
   },
   {
