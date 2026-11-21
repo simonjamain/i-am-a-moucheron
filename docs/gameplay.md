@@ -88,8 +88,10 @@ occupant), et un clic ouvre son dossier, de n’importe quel côté de l’appar
 ([règles d’interface](ui-guidelines.md#monter-dans-un-engin--viser-le-poste)). La signature s’effectue à la souris
 ou au toucher et part automatiquement au relâchement d’un trait valide. Le tampon
 est immédiat ; la réponse serveur confirme le document et l’attribution du siège.
-L’archive locale empile les documents confirmés pendant la session, à travers les
-morts. Elle est vidée à la réception d’une remise à zéro de la partie.
+Aucune archive des documents signés n’est conservée (retirée en version 394) : la
+signature n’existe que sur la feuille, le temps de son tampon. Dès qu’un dossier est
+terminé (siège attribué, changement de poste, retour à la base), la souris est
+recapturée, même pendant que la feuille tamponnée quitte l’écran.
 
 Le pilotage par défaut vise un point à la souris avec assistance, inspiré du
 principe de War Thunder. Z/S et les flèches haut/bas pilotent le tangage, Q/D et

@@ -1,6 +1,13 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 394,
+    changes: [
+      'Après une signature (montée à bord, changement de place), la souris est reprise tout de suite.',
+      'Les anciens contrats signés ne s’empilent plus sous la feuille.',
+    ],
+  },
+  {
     version: 393,
     changes: [
       'Tous les documents deviennent de vraies feuilles : prise de poste, retour du purgatoire et contrat de lit.',

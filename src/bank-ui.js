@@ -9,8 +9,8 @@ export function loanText(loan, repay = false) {
 }
 
 export class BankUI {
-  constructor({ root, document, snapshot, command, accept, onOpen, onClose, archive = () => {} }) {
-    Object.assign(this, { root, document, snapshot, command, accept, onOpen, onClose, archive });
+  constructor({ root, document, snapshot, command, accept, onOpen, onClose, onSigned = () => {} }) {
+    Object.assign(this, { root, document, snapshot, command, accept, onOpen, onClose, onSigned });
     this.opened = false;
     this.busy = false;
     this.selection = null;
@@ -265,7 +265,6 @@ export class BankUI {
     this.busy = true;
     this.status.textContent = 'Dépôt du document en cours…';
     this.render();
-    const ink = this.canvas.toDataURL('image/png');
     try {
       const result = await this.command(selected.repay ? 'bank-repay' : 'bank-sign', {
         slot: selected.slot,
@@ -281,7 +280,7 @@ export class BankUI {
         this.status.textContent = 'La partie a été remise à zéro ; ce document est clos.';
         return;
       }
-      this.archive({ title: selected.repay ? 'Remboursement anticipé' : 'Contrat de prêt', ink });
+      this.onSigned();
       this.selection = null;
       this.clear();
       this.status.textContent = 'SIGNÉ · Document enregistré.';

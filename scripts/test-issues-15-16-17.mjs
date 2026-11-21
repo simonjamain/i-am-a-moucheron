@@ -104,6 +104,7 @@ let keyHandler;
 const input = {
   addEventListener: (_, h) => (keyHandler = h),
   $: () => ({ classList: { contains: () => true } }),
+  sheetOpen: () => false,
   spectating: false,
   joined: true,
   groundDefenseUI: { active: false },

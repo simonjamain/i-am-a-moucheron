@@ -47,6 +47,8 @@ async function exerciseTear() {
     clears = 0;
   const context = vm.createContext({
     $,
+    sheetOpen: (name) =>
+      !$(name).classList.contains('hidden') && !$(name).classList.contains('leaving'),
     boardingBusy: false,
     soulBusy: false,
     clearSignature: () => clears++,

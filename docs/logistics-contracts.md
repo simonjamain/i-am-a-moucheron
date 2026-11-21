@@ -24,9 +24,9 @@ flottant n’est réintroduit. Un changement d’équipage remplace les textures
 Tous les documents ouverts proposent « Déchirer ce document ». Une déchirure
 anime la feuille pendant 320 ms, efface le trait et fournit un nouvel exemplaire
 s’il s’agit d’un document obligatoire. Les signatures précédentes restent
-acquises. Les documents archivés ne peuvent plus être déchirés. Fermer un dossier
+acquises. Fermer un dossier
 et refuser un échange restent des actions distinctes. Une déchirure ne tamponne
-pas et n’ajoute aucune signature à l’archive. Les actions sont bloquées pendant
+pas. Les actions sont bloquées pendant
 un envoi ; après erreur, le document peut être traité de nouveau.
 
 ### Annexes malicieuses retirées (version 264)

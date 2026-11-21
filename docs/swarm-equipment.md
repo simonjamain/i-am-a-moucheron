@@ -68,12 +68,8 @@ contexts: fleet, DCA and purgatory. The direct DCA-entry route refuses unsigned
 access. The legacy fleet API remains for compatibility with older clients; the
 published UI always uses the dossier flow.
 
-Active sheets are flat, with larger, shorter copy. Every confirmed document is
-kept, drawn as overlapping cards with a horizontal scrollbar and total count.
-The archive is restored from sessionStorage per room, lasts through deaths and
-is cleared when a connected player receives a game reset. It is local browser
-session history, not shared server storage. Only confirmed signatures enter it;
-rejected requests preserve ink and remain retryable.
+Active sheets are flat, with larger, shorter copy. Signed documents are not
+archived (removed in version 394); rejected requests remain retryable.
 
 ## Sound
 

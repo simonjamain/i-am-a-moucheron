@@ -26,7 +26,6 @@ class Element {
 }
 let resolve,
   calls = 0,
-  archived = 0,
   opened = 0,
   closed = 0;
 const snap = { base: { epoch: 'a' } },
@@ -44,7 +43,6 @@ const ui = new BedUI({
   accept() {},
   onOpen: () => opened++,
   onClose: () => closed++,
-  archive: () => archived++,
 });
 const self = { bedId: null, incarnation: 0, life: 'alive' };
 ui.open({ slot: 2 }, self);
@@ -71,7 +69,6 @@ ui.canvas.onpointerup({ ...e, clientX: 90 });
 assert.equal(calls, 1);
 resolve(snap);
 await new Promise((r) => setImmediate(r));
-assert.equal(archived, 1);
 assert.equal(closed, 1);
 ui.open({ slot: 2 }, { ...self, bedId: 2 });
 assert.equal(ui.cancel, true);
@@ -86,5 +83,5 @@ ui.open({ slot: 2 }, { ...self, bedId: 2 });
 ui.observe({ ...self, incarnation: 1, life: 'dead' });
 assert.equal(ui.opened, false, 'death clears pending local sheet');
 console.log(
-  'Bed UI: cancel/valid ink, single pending command, ACK archive, personal cancellation sheet, incarnation cleanup.',
+  'Bed UI: cancel/valid ink, single pending command, ACK, personal cancellation sheet, incarnation cleanup.',
 );

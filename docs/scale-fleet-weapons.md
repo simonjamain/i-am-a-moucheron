@@ -52,10 +52,9 @@ presence timeout. A former occupant cannot overwrite a reclaimed seat's aircraft
 Damage shot IDs are idempotent. See [vehicles and bank](vehicles-bank.md) for
 current access circles, models, armament and lifecycle.
 
-The signed sheet is a centred HTML overlay with a paper stack, immediate local
-SIGNÉ animation and completed sheet thumbnails. A valid stroke submits on pointer-up. The independent stamp overlay does not
-block the next document. Only confirmed documents enter the archive; there is
-no minimum animation wait. See [signature handling](economy-physics.md).
+The signed sheet is a centred paper document (see the
+[interface rules](ui-guidelines.md)). A valid stroke submits on pointer-up; there is
+no minimum animation wait and no archive of signed sheets. See [signature handling](economy-physics.md).
 
 Mission start schedules the first wave at +10 s. Finishing a wave schedules the
 next at +60 s. Manual start can shorten subsequent breaks. Transitions use the shared wall clock and the maintenance tick.
