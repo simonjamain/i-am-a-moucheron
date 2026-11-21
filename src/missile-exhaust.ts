@@ -1,35 +1,50 @@
+import type * as THREE from 'three';
 import { MAP } from './scale.ts';
+import type { Three } from './types.ts';
+
+export interface ExhaustProfile {
+  readonly puff: readonly number[];
+  readonly puffScale: number;
+  readonly opacity: number;
+  readonly spacing: number;
+  readonly life: number;
+  readonly flame: number;
+  readonly halo: number;
+  readonly haloColor: number;
+  readonly pulse: number;
+}
 
 // Purely client-side exhaust: no physics, hitboxes or network messages.
 // Issue #108: per-projectile look. Trails are darker and thicker than before,
 // the flame brighter, and an additive halo of constant screen size keeps the
 // engine visible from afar (stronger and pulsing for the guided missile).
-export const EXHAUST_PROFILES = Object.freeze({
-  rocket: Object.freeze({
-    puff: [0x5d605c, 0x8a897e],
-    puffScale: 1.3,
-    opacity: 0.5,
-    spacing: 0.65,
-    life: 3.2,
-    flame: 1.2,
-    halo: 0.024,
-    haloColor: 0xffb04a,
-    pulse: 0,
-  }),
-  missile: Object.freeze({
-    puff: [0x4a4d4a, 0x7b7a70],
-    puffScale: 1.6,
-    opacity: 0.6,
-    spacing: 0.8,
-    life: 5,
-    flame: 1.45,
-    halo: 0.036,
-    haloColor: 0xffd27a,
-    pulse: 0.25,
-  }),
-});
+export const EXHAUST_PROFILES: Readonly<Record<'rocket' | 'missile', ExhaustProfile>> =
+  Object.freeze({
+    rocket: Object.freeze({
+      puff: [0x5d605c, 0x8a897e],
+      puffScale: 1.3,
+      opacity: 0.5,
+      spacing: 0.65,
+      life: 3.2,
+      flame: 1.2,
+      halo: 0.024,
+      haloColor: 0xffb04a,
+      pulse: 0,
+    }),
+    missile: Object.freeze({
+      puff: [0x4a4d4a, 0x7b7a70],
+      puffScale: 1.6,
+      opacity: 0.6,
+      spacing: 0.8,
+      life: 5,
+      flame: 1.45,
+      halo: 0.036,
+      haloColor: 0xffd27a,
+      pulse: 0.25,
+    }),
+  });
 
-function haloTexture(T) {
+function haloTexture(T: Three): THREE.DataTexture {
   const size = 32,
     pixels = new Uint8Array(size * size * 4);
   for (let i = 0; i < size * size; i++) {
@@ -46,10 +61,10 @@ function haloTexture(T) {
 
 // Soft, billowy smoke sprite: a round cloud made of a few overlapping lobes
 // with a deterministic ragged edge, so trails read as smoke, not as spheres.
-function smokeTexture(T) {
+function smokeTexture(T: Three): THREE.DataTexture {
   const size = 64,
     pixels = new Uint8Array(size * size * 4);
-  const hash = (n) => {
+  const hash = (n: number): number => {
     const v = Math.sin(n * 127.1 + 311.7) * 43758.5453;
     return v - Math.floor(v);
   };
@@ -74,8 +89,41 @@ function smokeTexture(T) {
   return texture;
 }
 
+export type ExhaustWeapon = keyof typeof EXHAUST_PROFILES;
+interface ExhaustEmitter {
+  flame: THREE.Mesh;
+  core: THREE.Mesh;
+  halo: THREE.Sprite;
+  profile: ExhaustProfile;
+  previous: THREE.Vector3 | null;
+  carry: number;
+}
+interface ExhaustPuff {
+  mesh: THREE.Sprite;
+  material: THREE.SpriteMaterial;
+  age: number;
+  life: number;
+  opacity: number;
+  scale: number;
+  spin: number;
+  drift: [number, number, number];
+}
+
 export class MissileExhaust {
-  constructor(T, scene, maxPuffs = 900) {
+  T: Three;
+  scene: THREE.Object3D;
+  maxPuffs: number;
+  puffs: ExhaustPuff[];
+  emitters: Map<string, ExhaustEmitter>;
+  smokeMap: THREE.DataTexture;
+  flameGeometry: THREE.ConeGeometry;
+  flameMaterial: THREE.MeshBasicMaterial;
+  coreGeometry: THREE.ConeGeometry;
+  coreMaterial: THREE.MeshBasicMaterial;
+  haloMap: THREE.DataTexture;
+  haloMaterials: Map<ExhaustProfile, THREE.SpriteMaterial>;
+
+  constructor(T: Three, scene: THREE.Object3D, maxPuffs = 900) {
     this.T = T;
     this.scene = scene;
     this.maxPuffs = maxPuffs;
@@ -99,7 +147,7 @@ export class MissileExhaust {
     this.haloMap = haloTexture(T);
     this.haloMaterials = new Map();
   }
-  haloMaterial(profile) {
+  haloMaterial(profile: ExhaustProfile): THREE.SpriteMaterial {
     let material = this.haloMaterials.get(profile);
     if (!material) {
       material = new this.T.SpriteMaterial({
@@ -115,9 +163,10 @@ export class MissileExhaust {
     }
     return material;
   }
-  attach(id, model, weapon = 'rocket') {
+  attach(id: string, model: THREE.Object3D, weapon: string = 'rocket'): void {
     const T = this.T,
-      profile = EXHAUST_PROFILES[weapon] || EXHAUST_PROFILES.rocket;
+      profile: ExhaustProfile =
+        EXHAUST_PROFILES[weapon as ExhaustWeapon] || EXHAUST_PROFILES.rocket;
     const flame = new T.Mesh(this.flameGeometry, this.flameMaterial);
     const core = new T.Mesh(this.coreGeometry, this.coreMaterial);
     for (const mesh of [flame, core]) {
@@ -135,13 +184,17 @@ export class MissileExhaust {
     model.add(halo);
     this.emitters.set(id, { flame, core, halo, profile, previous: null, carry: 0 });
   }
-  detach(id) {
+  detach(id: string): void {
     this.emitters.delete(id);
   }
-  puff(position, seed, profile = EXHAUST_PROFILES.rocket) {
-    if (this.puffs.length >= this.maxPuffs) this.remove(this.puffs.shift());
+  puff(
+    position: THREE.Vector3,
+    seed: number,
+    profile: ExhaustProfile = EXHAUST_PROFILES.rocket,
+  ): void {
+    if (this.puffs.length >= this.maxPuffs) this.remove(this.puffs.shift()!);
     const T = this.T;
-    const rand = (k) => {
+    const rand = (k: number): number => {
       const v = Math.sin((seed + 1) * 12.9898 + k * 78.233) * 43758.5453;
       return v - Math.floor(v);
     };
@@ -175,11 +228,11 @@ export class MissileExhaust {
       ],
     });
   }
-  remove(puff) {
+  remove(puff: ExhaustPuff): void {
     this.scene.remove(puff.mesh);
     puff.material.dispose();
   }
-  update(dt, active) {
+  update(dt: number, active: ReadonlyMap<string, THREE.Vector3>): void {
     const step = Math.min(0.1, Math.max(0, dt));
     for (let i = this.puffs.length - 1; i >= 0; i--) {
       const p = this.puffs[i];

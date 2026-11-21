@@ -3,19 +3,21 @@
 // changes the shape of any aircraft. One point cloud (one draw call) holds
 // every puff; puffs stay where they were emitted, so a moving aircraft leaves
 // a trail behind it.
+import type * as THREE from 'three';
 import { ACTOR_UNIT } from './scale.ts';
+import type { Three } from './types.ts';
 
 export const SMOKE_THRESHOLD = 0.15; // damage ratio below which nothing is emitted
 export const SMOKE_CAPACITY = 1500;
 
 // Damage ratio in [0, 1] from current and maximum hit points.
-export function damageRatio(hp, maxHP) {
+export function damageRatio(hp: number, maxHP: number): number {
   if (!(maxHP > 0) || !Number.isFinite(hp)) return 0;
   return Math.max(0, Math.min(1, 1 - hp / maxHP));
 }
 
 // Puffs per second, per engine: none when nearly intact, then steadily more.
-export function smokeRate(damage) {
+export function smokeRate(damage: number): number {
   if (!(damage > SMOKE_THRESHOLD)) return 0;
   const t = (damage - SMOKE_THRESHOLD) / (1 - SMOKE_THRESHOLD);
   return 2 + 24 * t ** 1.2;
@@ -23,7 +25,14 @@ export function smokeRate(damage) {
 
 // Look of a puff for a damage level: sizes in model units (× ACTOR_UNIT in
 // the world), lifetime in seconds, grey level from light grey to near black.
-export function smokeLook(damage) {
+export interface SmokeLook {
+  startSize: number;
+  endSize: number;
+  life: number;
+  shade: number;
+  opacity: number;
+}
+export function smokeLook(damage: number): SmokeLook {
   const t = Math.max(0, Math.min(1, (damage - SMOKE_THRESHOLD) / (1 - SMOKE_THRESHOLD)));
   return {
     startSize: 0.4 + 0.5 * t,
@@ -35,13 +44,13 @@ export function smokeLook(damage) {
 }
 
 // Where the engines are: behind each propeller, or under the main rotor.
-export function engineAnchors(T, model) {
+export function engineAnchors(T: Three, model: THREE.Object3D): THREE.Object3D[] {
   if (model.userData.engines) return model.userData.engines;
-  const sources = model.userData.rotor
+  const sources: [THREE.Object3D, [number, number, number]][] = model.userData.rotor
     ? [[model.userData.rotor, [0, -0.25, 0.8]]]
     : (model.userData.props || [model.userData.prop])
-        .filter((prop) => prop?.parent === model)
-        .map((prop) => [prop, [0, 0.12, 0.6]]);
+        .filter((prop: THREE.Object3D | undefined) => prop?.parent === model)
+        .map((prop: THREE.Object3D) => [prop, [0, 0.12, 0.6]]);
   const engines = sources.map(([pivot, offset]) => {
     const anchor = new T.Object3D();
     anchor.name = 'engine-smoke';
@@ -82,8 +91,33 @@ const fragmentShader = `
     gl_FragColor = vec4(vec3(vShade), vAlpha * (1.0 - r * r));
   }`;
 
+interface SmokePuff extends SmokeLook {
+  p: THREE.Vector3;
+  v: THREE.Vector3;
+  age: number;
+}
+export interface EngineSmokeOptions {
+  capacity?: number;
+  random?: () => number;
+}
+
 export class EngineSmoke {
-  constructor(T, scene, { capacity = SMOKE_CAPACITY, random = Math.random } = {}) {
+  T: Three;
+  capacity: number;
+  random: () => number;
+  puffs: SmokePuff[];
+  positions: Float32Array;
+  sizes: Float32Array;
+  alphas: Float32Array;
+  shades: Float32Array;
+  material: THREE.ShaderMaterial;
+  points: THREE.Points<THREE.BufferGeometry, THREE.ShaderMaterial>;
+
+  constructor(
+    T: Three,
+    scene: THREE.Object3D,
+    { capacity = SMOKE_CAPACITY, random = Math.random }: EngineSmokeOptions = {},
+  ) {
     this.T = T;
     this.capacity = capacity;
     this.random = random;
@@ -113,7 +147,7 @@ export class EngineSmoke {
   }
 
   // Emit for one aircraft this frame, according to its damage ratio.
-  emit(model, damage, dt) {
+  emit(model: THREE.Object3D, damage: number, dt: number): number {
     const rate = smokeRate(damage);
     const memory = model.userData;
     if (!rate || !(dt > 0)) {
@@ -149,7 +183,7 @@ export class EngineSmoke {
   }
 
   // Age, drift and upload every puff; `scale` makes sizes perspective-correct.
-  update(dt, camera, viewportHeight) {
+  update(dt: number, camera: THREE.Camera | null | undefined, viewportHeight: number): number {
     this.puffs = this.puffs.filter((puff) => (puff.age += dt) < puff.life);
     this.puffs.forEach((puff, i) => {
       puff.p.addScaledVector(puff.v, dt);
@@ -163,13 +197,14 @@ export class EngineSmoke {
     geometry.setDrawRange(0, this.puffs.length);
     for (const name of ['position', 'size', 'alpha', 'shade'])
       geometry.attributes[name].needsUpdate = true;
-    if (camera?.isPerspectiveCamera)
+    if ((camera as THREE.PerspectiveCamera | null | undefined)?.isPerspectiveCamera)
       this.material.uniforms.scale.value =
-        viewportHeight / (2 * Math.tan(this.T.MathUtils.degToRad(camera.fov) / 2));
+        viewportHeight /
+        (2 * Math.tan(this.T.MathUtils.degToRad((camera as THREE.PerspectiveCamera).fov) / 2));
     return this.puffs.length;
   }
 
-  clear() {
+  clear(): void {
     this.puffs = [];
     this.points.geometry.setDrawRange(0, 0);
   }

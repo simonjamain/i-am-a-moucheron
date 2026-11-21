@@ -125,7 +125,7 @@ export class OutlinePass {
     this.renderer = renderer;
     this.target = null;
     this.size = [0, 0];
-    this.material = new T.ShaderMaterial<OutlineUniforms>({
+    this.material = new T.ShaderMaterial({
       uniforms: {
         tColor: { value: null },
         tDepth: { value: null },
@@ -139,7 +139,7 @@ export class OutlinePass {
       fragmentShader,
       depthTest: false,
       depthWrite: false,
-    });
+    }) as THREE.ShaderMaterial & { uniforms: OutlineUniforms };
     this.scene = new T.Scene();
     this.scene.add(new T.Mesh(new T.PlaneGeometry(2, 2), this.material));
     this.camera = new T.Camera();
@@ -194,7 +194,7 @@ export class ToonRenderer {
     this.bands = 0;
     this.outline = 0;
     // The software fallback renderer has no GL: leave it untouched.
-    this.available = renderer.isWebGLRenderer === true;
+    this.available = (renderer as { isWebGLRenderer?: boolean }).isWebGLRenderer === true;
     if (this.available) installToonLighting(T);
     this.configure(look);
   }

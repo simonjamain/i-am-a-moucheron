@@ -5,9 +5,57 @@
 // and no per-instance skeleton. The optional shared clock (`time`) advances
 // every instance together (midge wing beat); ground walkers keep time = 0 and
 // drive their own phase from the distance they travel.
+import type * as THREE from 'three';
+import type { Three } from './types.ts';
+
 const TEXTURE_WIDTH = 1024;
 
-function* vatSteps(T, bake) {
+/** Skinned cycle frames: positions and normals per frame, per vertex. */
+export interface CreatureBake {
+  frames: number;
+  count: number;
+  positions: ArrayLike<number>;
+  normals: ArrayLike<number>;
+}
+
+/** Vertex animation texture built from a bake. */
+export interface CreatureVat {
+  texture: THREE.DataTexture;
+  frames: number;
+  count: number;
+  height: number;
+  bytes: number;
+}
+
+/** The part of a rigged creature (src/rigged-creature.js) the batch uses. */
+export interface BatchCreature {
+  name: string;
+  bake(T: Three): CreatureBake;
+  bakeSteps(T: Three): Generator<unknown, CreatureBake, unknown>;
+  geometry(T: Three): THREE.BufferGeometry;
+  texture(T: Three): THREE.Texture | null;
+}
+
+export interface PrepareVatOptions {
+  yieldControl?: () => Promise<unknown>;
+  budgetMs?: number;
+}
+
+export interface CreatureBatchOptions {
+  name?: string;
+  shadows?: boolean;
+  vat?: CreatureVat | null;
+}
+
+interface VatUniforms {
+  vatTexture: THREE.IUniform<THREE.DataTexture>;
+  vatTime: THREE.IUniform<number>;
+  vatFrames: THREE.IUniform<number>;
+  vatCount: THREE.IUniform<number>;
+  [uniform: string]: THREE.IUniform;
+}
+
+function* vatSteps(T: Three, bake: CreatureBake): Generator<undefined, CreatureVat, unknown> {
   const texels = bake.frames * bake.count;
   const height = Math.ceil((2 * texels) / TEXTURE_WIDTH);
   const data = new Uint16Array(TEXTURE_WIDTH * height * 4);
@@ -25,9 +73,9 @@ function* vatSteps(T, bake) {
   return { texture, frames: bake.frames, count: bake.count, height, bytes: data.byteLength };
 }
 
-function createVat(T, creature) {
+function createVat(T: Three, creature: BatchCreature): CreatureVat {
   const steps = vatSteps(T, creature.bake(T));
-  let result;
+  let result: IteratorResult<undefined, CreatureVat>;
   do {
     result = steps.next();
   } while (!result.done);
@@ -36,11 +84,14 @@ function createVat(T, creature) {
 
 // Yield tasks, not just microtasks: the browser must be able to paint the loader.
 export async function prepareCreatureVat(
-  T,
-  creature,
-  { yieldControl = () => new Promise((resolve) => setTimeout(resolve, 0)), budgetMs = 4 } = {},
-) {
-  async function drain(steps) {
+  T: Three,
+  creature: BatchCreature,
+  {
+    yieldControl = () => new Promise((resolve) => setTimeout(resolve, 0)),
+    budgetMs = 4,
+  }: PrepareVatOptions = {},
+): Promise<CreatureVat> {
+  async function drain<R>(steps: Generator<unknown, R, unknown>): Promise<R> {
     let since = performance.now();
     while (true) {
       const result = steps.next();
@@ -57,7 +108,7 @@ export async function prepareCreatureVat(
   return drain(vatSteps(T, baked));
 }
 
-function vatShader(uniforms) {
+function vatShader(uniforms: VatUniforms): (shader: THREE.WebGLProgramParametersWithUniforms) => void {
   return (shader) => {
     Object.assign(shader.uniforms, uniforms);
     shader.vertexShader = shader.vertexShader
@@ -90,7 +141,26 @@ vec3 vatSample(float row) {
 }
 
 export class CreatureBatch {
-  constructor(T, scene, creature, { name = creature.name, shadows = false, vat = null } = {}) {
+  T: Three;
+  scene: THREE.Object3D;
+  creature: BatchCreature;
+  name: string;
+  capacity: number;
+  count: number;
+  mesh: THREE.InstancedMesh<THREE.InstancedBufferGeometry, THREE.MeshStandardMaterial> | null;
+  vat: CreatureVat;
+  geometry: THREE.InstancedBufferGeometry;
+  uniforms: VatUniforms;
+  material: THREE.MeshStandardMaterial;
+  shadows: boolean;
+  depthMaterial?: THREE.MeshDepthMaterial;
+  phases?: THREE.InstancedBufferAttribute;
+  constructor(
+    T: Three,
+    scene: THREE.Object3D,
+    creature: BatchCreature,
+    { name = creature.name, shadows = false, vat = null }: CreatureBatchOptions = {},
+  ) {
     this.T = T;
     this.scene = scene;
     this.creature = creature;
@@ -134,7 +204,7 @@ export class CreatureBatch {
       this.depthMaterial.onBeforeCompile = vatShader(this.uniforms);
     }
   }
-  ensure(needed) {
+  ensure(needed: number): void {
     if (this.capacity >= needed) return;
     let capacity = Math.max(64, this.capacity);
     while (capacity < needed) capacity *= 2;
@@ -154,26 +224,26 @@ export class CreatureBatch {
     this.capacity = capacity;
   }
   // begin(n) reserves room, add() fills instances in order, end() uploads.
-  begin(expected) {
+  begin(expected: number): void {
     this.ensure(expected);
     this.count = 0;
   }
-  add(matrix, phase) {
+  add(matrix: THREE.Matrix4, phase: number): void {
     this.ensure(this.count + 1);
-    this.mesh.setMatrixAt(this.count, matrix);
-    this.phases.array[this.count] = phase;
+    this.mesh!.setMatrixAt(this.count, matrix);
+    this.phases!.array[this.count] = phase;
     this.count++;
   }
-  end(time = 0) {
+  end(time = 0): void {
     if (!this.mesh) return;
     this.mesh.count = this.count;
     this.uniforms.vatTime.value = ((time % 1) + 1) % 1;
     if (this.count) {
       this.mesh.instanceMatrix.needsUpdate = true;
-      this.phases.needsUpdate = true;
+      this.phases!.needsUpdate = true;
     }
   }
-  dispose() {
+  dispose(): void {
     if (this.mesh) this.scene.remove(this.mesh);
     this.mesh = null;
     this.capacity = 0;

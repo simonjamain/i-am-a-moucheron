@@ -1,7 +1,54 @@
+import type * as THREE from 'three';
 import { rayCollider } from './oriented-collider.ts';
+import type { OrientedFrame } from './oriented-collider.ts';
 import { MAP } from './scale.ts';
+import type { Three } from './types.ts';
+
+/** Server crash event: vehicle id, timestamp (ms) and position/quaternion/velocity arrays. */
+export interface CrashEvent {
+  vehicle: string;
+  at: number;
+  p: number[];
+  q: number[];
+  v: number[];
+}
+export type CrashCollider = THREE.Box3 & { oriented?: OrientedFrame };
+export interface CrashEffectsOptions {
+  sound?: (name: 'fall' | 'crash', position: THREE.Vector3) => void;
+  blast?: (position: THREE.Vector3) => void;
+  limit?: number;
+}
+interface CrashDebris {
+  mesh: THREE.Mesh;
+  v: THREE.Vector3;
+}
+interface CrashItem {
+  root: THREE.Object3D;
+  v: THREE.Vector3;
+  age: number;
+  impact: number | null;
+  debris: CrashDebris[];
+}
+/** Object3D as seen by traverse(): meshes carry geometry/material. */
+type Renderable = THREE.Object3D & {
+  geometry?: THREE.BufferGeometry;
+  material?: THREE.Material | THREE.Material[];
+};
+
 export class CrashEffects {
-  constructor(T, scene, { sound, blast, limit = 12 } = {}) {
+  T: Three;
+  scene: THREE.Object3D;
+  sound: CrashEffectsOptions['sound'];
+  blast: CrashEffectsOptions['blast'];
+  limit: number;
+  items: Map<string, CrashItem>;
+  seen: Set<string>;
+
+  constructor(
+    T: Three,
+    scene: THREE.Object3D,
+    { sound, blast, limit = 12 }: CrashEffectsOptions = {},
+  ) {
     this.T = T;
     this.scene = scene;
     this.sound = sound;
@@ -10,13 +57,18 @@ export class CrashEffects {
     this.items = new Map();
     this.seen = new Set();
   }
-  add(event, source, now, colliders = []) {
+  add(
+    event: CrashEvent,
+    source: THREE.Object3D,
+    now: number,
+    colliders: readonly CrashCollider[] = [],
+  ): void {
     if (this.seen.has(event.vehicle) || now - event.at > 20000) return;
     this.seen.add(event.vehicle);
-    if (this.seen.size > 1024) this.seen.delete(this.seen.values().next().value);
+    if (this.seen.size > 1024) this.seen.delete(this.seen.values().next().value!);
     const T = this.T,
       root = source.clone(true);
-    root.traverse((o) => {
+    root.traverse((o: Renderable) => {
       o.userData = { projectileSolid: false };
       if (o.geometry) o.geometry = o.geometry.clone();
       if (o.material)
@@ -43,21 +95,26 @@ export class CrashEffects {
       elapsed -= dt;
     }
     if (now - event.at < 500 && this.items.has(event.vehicle)) this.sound?.('fall', root.position);
-    while (this.items.size > this.limit) this.remove(this.items.keys().next().value);
+    while (this.items.size > this.limit) this.remove(this.items.keys().next().value!);
   }
-  remove(id) {
+  remove(id: string): void {
     const item = this.items.get(id);
     if (!item) return;
     for (const root of [item.root, ...item.debris.map((d) => d.mesh)]) {
       this.scene.remove(root);
-      root.traverse((o) => {
+      root.traverse((o: Renderable) => {
         o.geometry?.dispose();
         for (const m of Array.isArray(o.material) ? o.material : [o.material]) m?.dispose();
       });
     }
     this.items.delete(id);
   }
-  update(dt, colliders, only = null, silent = false) {
+  update(
+    dt: number,
+    colliders: readonly CrashCollider[],
+    only: string | null = null,
+    silent = false,
+  ): void {
     const T = this.T;
     for (const [id, item] of this.items) {
       if (only !== null && id !== only) continue;
@@ -69,7 +126,7 @@ export class CrashEffects {
         const delta = item.root.position.clone().sub(start),
           length = delta.length(),
           ray = new T.Ray(start, delta.clone().normalize());
-        let point =
+        let point: THREE.Vector3 | null =
           item.root.position.y <= 0
             ? new T.Vector3(item.root.position.x, 0, item.root.position.z)
             : null;
@@ -109,7 +166,7 @@ export class CrashEffects {
         }
       } else {
         const alpha = Math.max(0, 1 - (item.age - item.impact) / 4);
-        item.root.traverse((o) => {
+        item.root.traverse((o: Renderable) => {
           for (const m of Array.isArray(o.material) ? o.material : [o.material])
             if (m) {
               m.transparent = true;

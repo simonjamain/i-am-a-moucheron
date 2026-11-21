@@ -1,31 +1,50 @@
 // This entry has no static imports: the HTML loading screen paints before any
 // game modules arrive. Load the detailed fly first, then the full game graph.
-const loading = document.getElementById('loading');
+// (Type-only imports are erased: still no static import at runtime.)
+import type * as THREE from 'three';
+import type { Three } from './types.ts';
+
+/** The part of the midge rig the loading screen animates. */
+interface LoadingFly {
+  container: THREE.Object3D;
+  animate(ms: number): void;
+}
+/** The fly's pose when the departure starts. */
+interface Departure {
+  at: number;
+  position: THREE.Vector3;
+  rotation: THREE.Quaternion;
+  facing: THREE.Quaternion;
+}
+const loading = document.getElementById('loading')!;
 let stop = () => {};
 let depart = () => {};
 let visibleSince = performance.now();
-const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+const wait = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
 try {
   await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
-  const [T, { createMidgeRig }] = await Promise.all([
+  // Browser URLs served by scripts/assemble.mjs: tsc has no module behind them.
+  const [T, { createMidgeRig }] = (await Promise.all([
+    // @ts-expect-error browser-only URL (vendor/three.module.min.js)
     import('/three.js'),
+    // @ts-expect-error browser-only URL (src/midge-model.js)
     import('/midge-model.js'),
-  ]);
+  ])) as [Three, { createMidgeRig(T: Three): LoadingFly }];
   let pending = 0;
-  const failed = [];
+  const failed: string[] = [];
   const manager = T.DefaultLoadingManager;
   const start = manager.itemStart.bind(manager),
     end = manager.itemEnd.bind(manager),
     error = manager.itemError.bind(manager);
-  manager.itemStart = (url) => {
+  manager.itemStart = (url: string) => {
     pending++;
     start(url);
   };
-  manager.itemEnd = (url) => {
+  manager.itemEnd = (url: string) => {
     pending--;
     end(url);
   };
-  manager.itemError = (url) => {
+  manager.itemError = (url: string) => {
     failed.push(url);
     error(url);
   };
@@ -42,7 +61,7 @@ try {
     scene.add(fly.container);
     fly.container.scale.setScalar(0.7);
     let active = true;
-    let exit = null;
+    let exit: Departure | null = null;
     depart = () => {
       exit = {
         at: performance.now(),
@@ -52,7 +71,7 @@ try {
       };
     };
     visibleSince = performance.now();
-    function frame(ms) {
+    function frame(ms: number): void {
       if (!active) return;
       const aspect = innerWidth / innerHeight;
       renderer.setSize(innerWidth, innerHeight, false);
@@ -101,7 +120,8 @@ try {
   } catch {
     // The game has a software fallback; lack of WebGL must not block loading.
   }
-  const module = await import('/client.js');
+  // @ts-expect-error browser-only URL (src/client.js)
+  const module = (await import('/client.js')) as { homeReady: Promise<unknown> };
   await module.homeReady;
   const deadline = performance.now() + 30000;
   while (pending > 0 && performance.now() < deadline) await new Promise((r) => setTimeout(r, 30));
@@ -114,7 +134,7 @@ try {
   // Let a cached load still show the model, without extending slow loads.
   await wait(Math.max(0, 900 - (performance.now() - visibleSince)));
   const lobby = document.getElementById('lobby');
-  const wasInert = lobby?.inert;
+  const wasInert = lobby?.inert as boolean;
   if (lobby) lobby.inert = true;
   document.body.classList.remove('booting');
   depart();
@@ -126,6 +146,6 @@ try {
   if (lobby) lobby.inert = wasInert;
 } catch {
   stop();
-  document.getElementById('loadingError').hidden = false;
-  document.getElementById('loadingRetry').onclick = () => location.reload();
+  document.getElementById('loadingError')!.hidden = false;
+  document.getElementById('loadingRetry')!.onclick = () => location.reload();
 }

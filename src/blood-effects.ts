@@ -1,9 +1,45 @@
+import type * as THREE from 'three';
 import { MAP } from './scale.ts';
+import type { Three } from './types.ts';
+
+export interface BloodEffectsOptions {
+  capacity?: number;
+  particlesPerHit?: number;
+  scale?: number;
+}
+interface BloodDrop {
+  position: THREE.Vector3;
+  velocity: THREE.Vector3;
+  radius: number;
+  age: number;
+  lifetime: number;
+  /** Index into `BloodEffects.colors`. */
+  color: number;
+}
 
 // Purely cosmetic insect impacts: one instanced draw call for all the droplets.
 // Nothing here participates in projectile collisions or shared game physics.
 export class BloodEffects {
-  constructor(T, scene, { capacity = 240, particlesPerHit = 18, scale = MAP.ratio } = {}) {
+  T: Three;
+  scene: THREE.Object3D;
+  capacity: number;
+  particlesPerHit: number;
+  scale: number;
+  drops: BloodDrop[];
+  bursts: number;
+  geometry: THREE.IcosahedronGeometry;
+  material: THREE.MeshBasicMaterial;
+  mesh: THREE.InstancedMesh<THREE.IcosahedronGeometry, THREE.MeshBasicMaterial>;
+  colors: THREE.Color[];
+  dummy: THREE.Object3D;
+  heading: THREE.Vector3;
+  up: THREE.Vector3;
+
+  constructor(
+    T: Three,
+    scene: THREE.Object3D,
+    { capacity = 240, particlesPerHit = 18, scale = MAP.ratio }: BloodEffectsOptions = {},
+  ) {
     this.T = T;
     this.scene = scene;
     this.capacity = capacity;
@@ -30,7 +66,10 @@ export class BloodEffects {
     this.up = new T.Vector3(0, 1, 0);
   }
 
-  burst(point, { size = this.scale } = {}) {
+  burst(
+    point: THREE.Vector3 | null | undefined,
+    { size = this.scale }: { size?: number } = {},
+  ): boolean {
     if (!point || ![point.x, point.y, point.z, size].every(Number.isFinite)) return false;
     const radius = Math.max(this.scale * 0.55, Math.min(this.scale * 1.7, size * 0.22));
     const burst = this.bursts++;
@@ -57,7 +96,7 @@ export class BloodEffects {
     return true;
   }
 
-  update(dt) {
+  update(dt: number): void {
     if (!Number.isFinite(dt) || dt <= 0) return;
     for (let i = this.drops.length - 1; i >= 0; i--) {
       const drop = this.drops[i];
@@ -79,7 +118,7 @@ export class BloodEffects {
     this.flush();
   }
 
-  flush() {
+  flush(): void {
     for (const [i, drop] of this.drops.entries()) {
       const fade = Math.min(1, Math.max(0, (drop.lifetime - drop.age) / 0.25));
       const radius = drop.radius * fade;
@@ -98,13 +137,13 @@ export class BloodEffects {
     if (this.mesh.instanceColor) this.mesh.instanceColor.needsUpdate = true;
   }
 
-  clear() {
+  clear(): void {
     this.drops.length = 0;
     this.mesh.count = 0;
     this.mesh.instanceMatrix.needsUpdate = true;
   }
 
-  dispose() {
+  dispose(): void {
     this.clear();
     this.scene.remove(this.mesh);
     this.mesh.dispose();

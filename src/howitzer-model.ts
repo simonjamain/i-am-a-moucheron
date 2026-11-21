@@ -1,5 +1,7 @@
 import { HOWITZER_DATA as D } from './howitzer-data.js';
 import { HOWITZER_LIMITS } from './howitzer-geometry.ts';
+import type * as THREE from 'three';
+import type { Three, Vec3Like } from './types.ts';
 
 // Issue #113: the anti-materiel gun is the user-supplied Meshy howitzer, split
 // offline into carriage, two wheels, cradle (with the shield) and tube.
@@ -24,13 +26,23 @@ export const HOWITZER = Object.freeze({
 });
 export const HOWITZER_SCALE = HOWITZER.wheelDiameter / (2 * D.pivots.wheelRadius);
 
-const bytes = (b64) => Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
-const view = (b64, Type) => {
+/** A typed-array constructor (Float32Array, Uint16Array, ...). */
+interface TypedArrayType<A> {
+  new (buffer: ArrayBufferLike, byteOffset: number, length: number): A;
+  readonly BYTES_PER_ELEMENT: number;
+}
+interface HowitzerShared {
+  material: THREE.MeshStandardMaterial;
+  geometries: Record<string, THREE.BufferGeometry>;
+}
+
+const bytes = (b64: string) => Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+const view = <A>(b64: string, Type: TypedArrayType<A>): A => {
   const raw = bytes(b64);
   return new Type(raw.buffer, raw.byteOffset, raw.byteLength / Type.BYTES_PER_ELEMENT);
 };
-const cache = new WeakMap();
-function shared(T) {
+const cache = new WeakMap<Three, HowitzerShared>();
+function shared(T: Three): HowitzerShared {
   let s = cache.get(T);
   if (s) return s;
   const texture =
@@ -38,7 +50,7 @@ function shared(T) {
   texture.colorSpace = T.SRGBColorSpace;
   texture.flipY = false;
   const material = new T.MeshStandardMaterial({ map: texture, roughness: 0.8 });
-  const geometries = {};
+  const geometries: Record<string, THREE.BufferGeometry> = {};
   for (const [name, part] of Object.entries(D.parts)) {
     const geometry = new T.BufferGeometry();
     geometry.setAttribute('position', new T.BufferAttribute(view(part.positions, Float32Array), 3));
@@ -56,23 +68,29 @@ function shared(T) {
 
 // Model coordinates (barrel -X, axle Z) to yaw space (barrel -Z, axle X).
 const { axle, ground } = D.pivots;
-export function howitzerPoint(T, p) {
+export function howitzerPoint(T: Three, p: Vec3Like): THREE.Vector3 {
   return new T.Vector3(-p[2], p[1] - ground, p[0] - axle[0]).multiplyScalar(HOWITZER_SCALE);
 }
-const wrap = (a) => Math.atan2(Math.sin(a), Math.cos(a));
-const toward = (from, to, step) => from + Math.max(-step, Math.min(step, to - from));
+const wrap = (a: number) => Math.atan2(Math.sin(a), Math.cos(a));
+const toward = (from: number, to: number, step: number) => from + Math.max(-step, Math.min(step, to - from));
 
-export function createHowitzer(T) {
+export type Howitzer = ReturnType<typeof createHowitzer>;
+
+export function createHowitzer(T: Three) {
   const { material, geometries } = shared(T);
   // A pivot group at `pivot` (model coords) whose content keeps model placement.
-  function pivotGroup(parent, pivot, parentPivot = null) {
+  function pivotGroup(
+    parent: THREE.Object3D,
+    pivot: Vec3Like,
+    parentPivot: Vec3Like | null = null,
+  ): THREE.Group {
     const group = new T.Group();
     group.position.copy(howitzerPoint(T, pivot));
     if (parentPivot) group.position.sub(howitzerPoint(T, parentPivot));
     parent.add(group);
     return group;
   }
-  function part(parent, name, pivot) {
+  function part(parent: THREE.Object3D, name: string, pivot?: Vec3Like): THREE.Mesh {
     const frame = new T.Group();
     frame.rotation.y = -Math.PI / 2;
     frame.scale.setScalar(HOWITZER_SCALE);
@@ -91,7 +109,7 @@ export function createHowitzer(T) {
   const body = new T.Group(); // recoil jolt of the whole carriage
   yaw.add(body);
   part(body, 'carriage');
-  const wheels = ['wheelLeft', 'wheelRight'].map((name) => {
+  const wheels = (['wheelLeft', 'wheelRight'] as const).map((name) => {
     const group = pivotGroup(body, D.pivots[name]);
     part(group, name, D.pivots[name]);
     // Yaw-space +X wheel rolls forward (-Z) when the gun turns left (+yaw).
@@ -123,7 +141,7 @@ export function createHowitzer(T) {
     body,
     state,
     // Set the angles directly (placement preview, tests); wheels follow.
-    pose(yawAngle, pitchAngle) {
+    pose(yawAngle: number, pitchAngle: number): void {
       const turn = wrap(yawAngle - state.yaw);
       for (const w of wheels) w.group.rotation.x -= (w.side * turn * halfTrack) / radius;
       state.yaw = wrap(yawAngle);
@@ -133,7 +151,11 @@ export function createHowitzer(T) {
     },
     // Slew toward a world direction at the traverse/elevation rates and return
     // the direction the barrel really points to (world space).
-    aim(dt, worldDirection, parentQuaternion = null) {
+    aim(
+      dt: number,
+      worldDirection: THREE.Vector3,
+      parentQuaternion: THREE.Quaternion | null = null,
+    ): THREE.Vector3 {
       local.copy(worldDirection).normalize();
       if (parentQuaternion) local.applyQuaternion(inverse.copy(parentQuaternion).invert());
       const targetYaw = Math.atan2(-local.x, -local.z),
@@ -149,7 +171,7 @@ export function createHowitzer(T) {
       );
       return howitzer.direction(parentQuaternion);
     },
-    direction(parentQuaternion = null) {
+    direction(parentQuaternion: THREE.Quaternion | null = null): THREE.Vector3 {
       const d = new T.Vector3(
         -Math.sin(state.yaw) * Math.cos(state.pitch),
         Math.sin(state.pitch),
@@ -157,11 +179,11 @@ export function createHowitzer(T) {
       );
       return parentQuaternion ? d.applyQuaternion(parentQuaternion) : d;
     },
-    fire() {
+    fire(): void {
       firedAt = clock;
     },
     // Recoil: tube back along the bore, then return to battery; carriage jolt.
-    tick(dt) {
+    tick(dt: number): number {
       clock += Math.max(0, dt || 0);
       const t = clock - firedAt;
       let back = 0;

@@ -1,25 +1,126 @@
 // Client-owned 2.5D locomotion, collisions and physical queue. Combat uses shared hit points.
+
+export type SoulKind = 'player' | 'enemy';
+/** Player id (pilot entity) owning a body or hosting the NPCs. */
+export type SoulEntity = string | null;
+
+export interface SoulInput {
+  x: number;
+  z: number;
+  guard: boolean;
+}
+
+/** One physical body of a walking arena (purgatory queue, base deck). */
+export interface SoulBody {
+  id: number;
+  entity: SoulEntity;
+  kind: SoulKind;
+  name?: string;
+  x: number;
+  z: number;
+  y?: number | null;
+  vx: number;
+  vz: number;
+  vy?: number;
+  face: number;
+  r: number;
+  mass: number;
+  balance: number;
+  queueTicket: number;
+  koUntil: number;
+  hitAt: number;
+  hitX: number;
+  hitZ: number;
+  attack: object | null;
+  nextAttack: number;
+  nextDash: number;
+  input: SoulInput;
+  inputAt: number;
+  served: number;
+  gone?: boolean;
+  grounded?: boolean;
+  parachute?: boolean;
+  // Server-side metadata kept across owned merges.
+  health?: number;
+  maxHealth?: number;
+  enemyType?: string;
+  paper?: unknown;
+}
+
+export interface ArenaEvent {
+  id: number;
+  at: number;
+  kind: 'stamp';
+  target: number;
+  x: number;
+  z: number;
+}
+
+export interface ArenaBounds {
+  minX: number;
+  maxX: number;
+  minZ: number;
+  maxZ: number;
+}
+
+/** Axis-aligned box obstacle (centre x/z, width w along x, depth d along z). */
+export interface ArenaObstacle {
+  x: number;
+  z: number;
+  w: number;
+  d: number;
+  y?: number;
+}
+
+export interface Arena {
+  epoch?: unknown;
+  bodies: SoulBody[];
+  time: number;
+  events: ArenaEvent[];
+  eventSeq: number;
+  host?: SoulEntity;
+  desk?: number | null;
+  respectQueue?: boolean;
+  verticalUnit?: number;
+  acceleration?: number;
+  bounds?: ArenaBounds;
+  obstacles?: ArenaObstacle[];
+  revision?: number;
+}
+
+export interface PlanarPoint {
+  x: number;
+  z: number;
+}
+
+export interface SoulSeed {
+  id: number;
+  entity: SoulEntity;
+  kind: SoulKind;
+  name?: string;
+}
+
 // Movement radius only (hits use meshes/spheres elsewhere). Issue #135 halved
 // it so the slimmer character no longer snags on other players and furniture.
 export const SOUL_RADIUS = 0.24,
   STEP = 1 / 60;
-const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const clamp = (v: number, a: number, b: number): number => Math.max(a, Math.min(b, v));
 export const QUEUE_SPACING = 1.85,
   NPC_BALANCE = 60,
   NPC_KO_MS = 10000;
-export function soulSpawn(index) {
+export function soulSpawn(index: number): PlanarPoint {
   return { x: 0, z: 1.1 + index * QUEUE_SPACING };
 }
 // Each NPC has a distinct place. Players reserve space by actually standing in
 // the lane; tickets never grant exclusive access to the signing desk.
-export function queueTargets(a, now = a.time) {
+export function queueTargets(a: Arena, now: number = a.time): Map<number, PlanarPoint> {
   const npcs = a.bodies
     .filter((b) => b.kind === 'enemy' && !b.gone && b.koUntil <= now)
     .sort((a, b) => (a.queueTicket ?? a.id) - (b.queueTicket ?? b.id) || a.id - b.id);
   const players = a.bodies.filter(
     (b) => b.kind === 'player' && !b.gone && b.koUntil <= now && Math.abs(b.x) < 1.1,
   );
-  const targets = new Map();
+  const targets = new Map<number, PlanarPoint>();
   let z = 1.1;
   for (const b of npcs) {
     while (players.some((p) => Math.abs(p.z - z) < QUEUE_SPACING * 0.85)) z += QUEUE_SPACING;
@@ -28,7 +129,12 @@ export function queueTargets(a, now = a.time) {
   }
   return targets;
 }
-function queueIntent(a, b, target, now) {
+function queueIntent(
+  a: Arena,
+  b: SoulBody,
+  target: PlanarPoint | undefined,
+  now: number,
+): PlanarPoint {
   if (!target || now - b.hitAt < 450) return { x: 0, z: 0 };
   let z = target.z;
   // A person physically standing ahead is never bypassed automatically.
@@ -62,7 +168,7 @@ function queueIntent(a, b, target, now) {
   const scale = Math.max(1, d);
   return { x: dx / scale, z: dz / scale };
 }
-export function createSoul(s, index, now) {
+export function createSoul(s: SoulSeed, index: number, now: number): SoulBody {
   return {
     id: s.id,
     entity: s.entity,
@@ -88,10 +194,10 @@ export function createSoul(s, index, now) {
     served: 0,
   };
 }
-export function inDeskZone(b) {
+export function inDeskZone(b: SoulBody): boolean {
   return !b.gone && b.z >= 0.48 && Math.hypot(b.x, b.z - 1.1) < 1.25;
 }
-export function deskOccupant(a, now = a.time) {
+export function deskOccupant(a: Arena, now: number = a.time): SoulBody | null {
   return (
     a.bodies
       .filter(
@@ -110,7 +216,13 @@ export function deskOccupant(a, now = a.time) {
       )[0] || null
   );
 }
-function collide(a, b, owned = () => true, now = 0, verticalUnit = 1) {
+function collide(
+  a: SoulBody,
+  b: SoulBody,
+  owned: (body: SoulBody) => boolean = () => true,
+  now = 0,
+  verticalUnit = 1,
+): void {
   if ((a.kind === 'enemy' && a.koUntil > now) || (b.kind === 'enemy' && b.koUntil > now)) return;
   if (
     a.gone ||
@@ -147,8 +259,8 @@ function collide(a, b, owned = () => true, now = 0, verticalUnit = 1) {
     b.vz += nz * j * ib;
   }
 }
-export function advanceArena(a, to, owner = null) {
-  const owned = (b) => !owner || b.entity === owner || (b.kind === 'enemy' && a.host === owner);
+export function advanceArena(a: Arena, to: number, owner: SoulEntity = null): Arena {
+  const owned = (b: SoulBody): boolean => !owner || b.entity === owner || (b.kind === 'enemy' && a.host === owner);
   a.events ??= [];
   a.eventSeq ??= 0;
   a.time ??= to;
@@ -254,7 +366,7 @@ export function advanceArena(a, to, owner = null) {
           b.vz = -Math.abs(b.vz) * 0.15;
         }
         for (const o of a.obstacles || []) {
-          if (Number.isFinite(o.y) && Math.abs((b.y ?? o.y) - o.y) > 1.7 * (a.verticalUnit || 1))
+          if (Number.isFinite(o.y) && Math.abs((b.y ?? o.y!) - o.y!) > 1.7 * (a.verticalUnit || 1))
             continue;
           const dx = b.x - o.x,
             dz = b.z - o.z,
@@ -308,12 +420,33 @@ const MOTION_KEYS = [
   'nextDash',
   'served',
   'queueTicket',
-];
-export function bodyMotion(b) {
+] as const satisfies readonly (keyof SoulBody)[];
+export type MotionKey = (typeof MOTION_KEYS)[number];
+
+/** Owned body state relayed by its simulating client (see bodyMotion). */
+export type BodyMotion = Record<MotionKey, number> & {
+  id: number;
+  input: SoulInput;
+  attack: object | null;
+  gone: boolean;
+  y: number | null;
+  vy: number;
+  parachute: boolean;
+  grounded: boolean;
+};
+
+/** Network report of a client's own body and, for the host, its NPCs. */
+export interface BodyReport {
+  epoch?: unknown;
+  body?: BodyMotion;
+  npcs?: BodyMotion[];
+}
+
+export function bodyMotion(b: SoulBody | null | undefined): BodyMotion | null {
   if (!b) return null;
   return {
     id: b.id,
-    ...Object.fromEntries(MOTION_KEYS.map((k) => [k, b[k] || 0])),
+    ...(Object.fromEntries(MOTION_KEYS.map((k) => [k, b[k] || 0])) as Record<MotionKey, number>),
     input: { ...b.input },
     attack: b.attack ? structuredClone(b.attack) : null,
     gone: !!b.gone,
@@ -323,7 +456,8 @@ export function bodyMotion(b) {
     grounded: b.grounded !== false,
   };
 }
-export function acceptBodyMotion(b, m) {
+// `m` comes from the network: every field is validated before use.
+export function acceptBodyMotion(b: SoulBody, m: BodyMotion | null | undefined): boolean {
   if (
     !m ||
     m.id !== b.id ||
@@ -335,7 +469,7 @@ export function acceptBodyMotion(b, m) {
   )
     return false;
   for (const k of MOTION_KEYS) b[k] = m[k];
-  if (Number.isFinite(m.y) && Math.abs(m.y) < 2000) b.y = m.y;
+  if (Number.isFinite(m.y) && Math.abs(m.y!) < 2000) b.y = m.y;
   b.vy = Number.isFinite(m.vy) ? clamp(m.vy, -100, 100) : 0;
   b.parachute = !!m.parachute;
   b.grounded = m.grounded !== false;
@@ -349,7 +483,11 @@ export function acceptBodyMotion(b, m) {
   b.input.guard = false;
   return true;
 }
-export function mergeOwnedArena(snapshot, previous, entity) {
+export function mergeOwnedArena(
+  snapshot: Arena,
+  previous: Arena | null | undefined,
+  entity: SoulEntity,
+): Arena {
   const a = structuredClone(snapshot);
   if (!previous || a.epoch !== previous.epoch) return a;
   a.time = previous.time;
@@ -370,7 +508,12 @@ export function mergeOwnedArena(snapshot, previous, entity) {
   }
   return a;
 }
-export function relayBodyReport(a, actor, report, now) {
+export function relayBodyReport(
+  a: Arena,
+  actor: SoulBody,
+  report: BodyReport | null | undefined,
+  now: number,
+): void {
   if (!report || report.epoch !== a.epoch || report.body?.id !== actor.id) return;
   if (!acceptBodyMotion(actor, report.body)) return;
   actor.inputAt = now;

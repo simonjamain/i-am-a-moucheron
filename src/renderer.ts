@@ -1,37 +1,55 @@
+import type * as THREE from 'three';
 import { applyShadowPreset } from './shadow-settings.ts';
-export function createRenderer(T, canvas) {
+import type { Three } from './types.ts';
+
+interface SoftwareFace {
+  dot?: [number, number];
+  points?: [number, number][];
+  distance: number;
+  color: string;
+  alpha: number;
+}
+
+type SoftwareMesh = THREE.Mesh<THREE.BufferGeometry, THREE.MeshBasicMaterial | THREE.MeshBasicMaterial[]>;
+
+export function createRenderer(T: Three, canvas: HTMLCanvasElement): THREE.WebGLRenderer {
   // A lightweight software renderer keeps the prototype playable without WebGL.
   class SoftwareRenderer {
-    constructor(canvas) {
+    ctx: CanvasRenderingContext2D | null;
+    shadowMap: Partial<THREE.WebGLShadowMap>;
+    ratio: number;
+    last: number;
+    constructor(canvas: HTMLCanvasElement) {
       this.ctx = canvas.getContext('2d');
       this.shadowMap = {};
       this.ratio = 1;
       this.last = 0;
     }
-    setPixelRatio(r) {
+    setPixelRatio(r: number): void {
       this.ratio = Math.min(1, r);
     }
-    setSize(w, h) {
+    setSize(w: number, h: number): void {
       canvas.width = w * this.ratio;
       canvas.height = h * this.ratio;
     }
-    render(scene, camera) {
+    render(scene: THREE.Scene, camera: THREE.PerspectiveCamera): void {
       if (performance.now() - this.last < 40) return;
       this.last = performance.now();
       const ctx = this.ctx;
       if (!ctx) return;
       const w = canvas.width,
         h = canvas.height;
-      ctx.fillStyle = scene.background?.getStyle() || '#829f91';
+      ctx.fillStyle = (scene.background as THREE.Color | null)?.getStyle() || '#829f91';
       ctx.fillRect(0, 0, w, h);
       scene.updateMatrixWorld();
       camera.updateMatrixWorld();
       const view = camera.matrixWorldInverse,
         proj = camera.projectionMatrix,
-        faces = [],
+        faces: SoftwareFace[] = [],
         near = Math.max(0.000001, camera.near),
         light = new T.Vector3(-0.4, 0.85, 0.3).normalize();
-      scene.traverseVisible((o) => {
+      scene.traverseVisible((object) => {
+        const o = object as SoftwareMesh;
         if (o.userData.softwareTrail) {
           const a = o.geometry.attributes.position;
           const p = new T.Vector3();
@@ -44,7 +62,7 @@ export function createRenderer(T, canvas) {
             faces.push({
               dot: [(p.x * 0.5 + 0.5) * w, (-p.y * 0.5 + 0.5) * h],
               distance,
-              color: o.material.color.getStyle(),
+              color: (o.material as THREE.MeshBasicMaterial).color.getStyle(),
               alpha: 0.52,
             });
           }
@@ -57,7 +75,7 @@ export function createRenderer(T, canvas) {
           mv = new T.Matrix4().multiplyMatrices(view, world),
           count = idx ? idx.count : a.count;
         for (let i = 0; i < count; i += 3) {
-          const v = [];
+          const v: THREE.Vector3[] = [];
           for (let j = 0; j < 3; j++)
             v.push(
               new T.Vector3()
@@ -69,7 +87,7 @@ export function createRenderer(T, canvas) {
             .subVectors(v[1], v[0])
             .cross(new T.Vector3().subVectors(v[2], v[0]));
           if (n.dot(v[0]) >= 0) continue;
-          let poly = [];
+          let poly: THREE.Vector3[] = [];
           for (let j = 0; j < 3; j++) {
             const A = v[j],
               B = v[(j + 1) % 3],
@@ -89,7 +107,7 @@ export function createRenderer(T, canvas) {
           c.lerp(new T.Color('#829f91'), Math.min(0.7, distance / 400));
           const points = poly
             .map((p) => p.clone().applyMatrix4(proj))
-            .map((p) => [(p.x * 0.5 + 0.5) * w, (-p.y * 0.5 + 0.5) * h]);
+            .map((p): [number, number] => [(p.x * 0.5 + 0.5) * w, (-p.y * 0.5 + 0.5) * h]);
           if (
             points.every((p) => p[0] < 0) ||
             points.every((p) => p[0] > w) ||
@@ -114,7 +132,7 @@ export function createRenderer(T, canvas) {
           continue;
         }
         ctx.beginPath();
-        f.points.forEach((p, i) => (i ? ctx.lineTo(...p) : ctx.moveTo(...p)));
+        f.points!.forEach((p, i) => (i ? ctx.lineTo(...p) : ctx.moveTo(...p)));
         ctx.closePath();
         ctx.fillStyle = f.color;
         ctx.globalAlpha = f.alpha;
@@ -123,11 +141,12 @@ export function createRenderer(T, canvas) {
       ctx.globalAlpha = 1;
     }
   }
-  let renderer;
+  let renderer: THREE.WebGLRenderer;
   try {
     renderer = new T.WebGLRenderer({ canvas, antialias: true, logarithmicDepthBuffer: true });
   } catch (e) {
-    renderer = new SoftwareRenderer(canvas);
+    // Duck-typed stand-in: callers only use the subset SoftwareRenderer implements.
+    renderer = new SoftwareRenderer(canvas) as unknown as THREE.WebGLRenderer;
   }
   renderer.setPixelRatio(Math.min(devicePixelRatio, 1.6));
   renderer.setSize(innerWidth, innerHeight);

@@ -1,6 +1,37 @@
 // Issue #107: readable ground pheromone trails. A soft ribbon on the floor over a
 // darker underlay (contrast on light and dark floors) and chevrons that slide
 // toward the bin to show the direction. Geometry helpers are pure and testable.
+import type * as THREE from 'three';
+import type { Three, Vec3Like } from './types.ts';
+
+/** Floor polyline [[x, y, z], …] (only x and z are read). */
+export type TrailPoints = readonly Vec3Like[];
+
+export interface TrailSample {
+  x: number;
+  z: number;
+  dx: number;
+  dz: number;
+}
+
+export interface RibbonGeometry {
+  positions: number[];
+  uvs: number[];
+  indices: number[];
+}
+
+type TrailMesh =
+  | THREE.Mesh<THREE.BufferGeometry, THREE.MeshBasicMaterial>
+  | THREE.InstancedMesh<THREE.BufferGeometry, THREE.MeshBasicMaterial>;
+
+interface TrailPath {
+  points: TrailPoints;
+  lengths: number[];
+  total: number;
+  chevrons: THREE.InstancedMesh<THREE.BufferGeometry, THREE.MeshBasicMaterial>;
+  objects: TrailMesh[];
+}
+
 export const TRAIL = Object.freeze({
   width: 0.045,
   underlay: 0.08,
@@ -15,7 +46,7 @@ export const TRAIL = Object.freeze({
 });
 
 // Floor polyline [[x, y, z], …] → cumulative lengths.
-export function polylineLengths(points) {
+export function polylineLengths(points: TrailPoints): number[] {
   const lengths = [0];
   for (let i = 1; i < points.length; i++)
     lengths.push(
@@ -25,8 +56,12 @@ export function polylineLengths(points) {
 }
 
 // Position and unit heading at distance d along the polyline.
-export function sampleAt(points, lengths, d) {
-  const total = lengths.at(-1);
+export function sampleAt(
+  points: TrailPoints,
+  lengths: readonly number[],
+  d: number,
+): TrailSample {
+  const total = lengths.at(-1)!;
   const t = Math.max(0, Math.min(total, d));
   let i = 1;
   while (i < lengths.length - 1 && lengths[i] < t) i++;
@@ -41,10 +76,10 @@ export function sampleAt(points, lengths, d) {
 
 // Flat ribbon of the given width on the floor: two vertices per point, offset
 // perpendicular to the averaged heading, with a 0→1 v coordinate across it.
-export function ribbonGeometry(points, width, y) {
-  const positions = [],
-    uvs = [],
-    indices = [];
+export function ribbonGeometry(points: TrailPoints, width: number, y: number): RibbonGeometry {
+  const positions: number[] = [],
+    uvs: number[] = [],
+    indices: number[] = [];
   const lengths = polylineLengths(points);
   for (let i = 0; i < points.length; i++) {
     const prev = points[Math.max(0, i - 1)],
@@ -74,16 +109,21 @@ export function ribbonGeometry(points, width, y) {
 }
 
 // Chevron centres for time `seconds`: evenly spaced, drifting toward the end.
-export function chevronStations(total, seconds, spacing = TRAIL.spacing, speed = TRAIL.speed) {
+export function chevronStations(
+  total: number,
+  seconds: number,
+  spacing: number = TRAIL.spacing,
+  speed: number = TRAIL.speed,
+): number[] {
   if (!(total > 0)) return [];
   const phase = (((seconds * speed) % spacing) + spacing) % spacing;
-  const out = [];
+  const out: number[] = [];
   for (let d = phase; d < total && out.length < TRAIL.maxChevrons; d += spacing) out.push(d);
   return out;
 }
 
 // Soft falloff across the ribbon (v = 0..1), opaque in the middle.
-function softTexture(T) {
+function softTexture(T: Three): THREE.DataTexture {
   const size = 32,
     pixels = new Uint8Array(4 * size);
   for (let i = 0; i < size; i++) {
@@ -100,7 +140,13 @@ function softTexture(T) {
 }
 
 export class PheromoneTrails {
-  constructor(T, parent) {
+  T: Three;
+  parent: THREE.Object3D;
+  soft: THREE.DataTexture;
+  paths: TrailPath[];
+  chevronGeometry: THREE.ShapeGeometry;
+  dummy: THREE.Object3D;
+  constructor(T: Three, parent: THREE.Object3D) {
     this.T = T;
     this.parent = parent;
     this.soft = softTexture(T);
@@ -117,7 +163,7 @@ export class PheromoneTrails {
     this.chevronGeometry.rotateX(-Math.PI / 2);
     this.dummy = new T.Object3D();
   }
-  clear() {
+  clear(): void {
     for (const path of this.paths)
       for (const object of path.objects) {
         this.parent.remove(object);
@@ -126,7 +172,13 @@ export class PheromoneTrails {
       }
     this.paths = [];
   }
-  ribbon(points, width, y, color, opacity) {
+  ribbon(
+    points: TrailPoints,
+    width: number,
+    y: number,
+    color: THREE.ColorRepresentation,
+    opacity: number,
+  ): THREE.Mesh<THREE.BufferGeometry, THREE.MeshBasicMaterial> {
     const T = this.T,
       { positions, uvs, indices } = ribbonGeometry(points, width, y);
     const geometry = new T.BufferGeometry();
@@ -152,13 +204,13 @@ export class PheromoneTrails {
     this.parent.add(mesh);
     return mesh;
   }
-  set(paths, draft = false) {
+  set(paths: Iterable<TrailPoints>, draft = false): void {
     this.clear();
     const T = this.T;
     for (const points of paths) {
       if (points.length < 2) continue;
       const lengths = polylineLengths(points);
-      const total = lengths.at(-1);
+      const total = lengths.at(-1)!;
       const shadow = this.ribbon(points, TRAIL.underlay, TRAIL.height - 0.0005, TRAIL.shadow, 0.4);
       const band = this.ribbon(
         points,
@@ -185,7 +237,7 @@ export class PheromoneTrails {
       this.paths.push({ points, lengths, total, chevrons, objects: [shadow, band, chevrons] });
     }
   }
-  animate(seconds) {
+  animate(seconds: number): void {
     for (const { points, lengths, total, chevrons } of this.paths) {
       const stations = chevronStations(total, seconds);
       chevrons.count = Math.min(stations.length, chevrons.instanceMatrix.count);
