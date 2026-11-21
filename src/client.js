@@ -337,6 +337,26 @@ function solidRayDistance(ray, far, boxes = colliders) {
   }
   return best <= far ? best : Infinity;
 }
+// Placement aim on top faces (placement-aim.ts), on the props' real triangles once
+// the decor world is built: a top face of a prop (normal up) is a candidate
+// point, any other face of a prop blocks the aim. Shell, floor and constructions
+// stay boxes.
+function aimPlacement(body, origin, direction, reach) {
+  const decor = office.decor;
+  if (!decor) return placementAim(body, origin, direction, colliders, reach);
+  const boxes = colliders.filter((b) => !b.decor);
+  const boxPoint = placementAim(body, origin, direction, boxes, reach);
+  const boxHit = solidRayDistance(
+    new T.Ray(origin.clone(), direction.clone().normalize()),
+    1e3,
+    boxes,
+  );
+  const hit = decor.raycast(origin.toArray(), direction.clone().normalize().toArray(), boxHit);
+  if (!hit) return boxPoint;
+  if (hit.normal[1] < 0.7) return null;
+  const [x, y, z] = hit.point;
+  return Math.hypot(x - body.x, z - body.z) <= reach + 1e-8 ? { x, y, z } : null;
+}
 let me = makePlane('#e3ebc0');
 me.scale.setScalar(ACTOR_UNIT);
 me.visible = false;
@@ -5288,13 +5308,7 @@ function cameraPlacement(reach) {
   const b = selfBase();
   return (
     b &&
-    placementAim(
-      baseWorld(b),
-      camera.position,
-      camera.getWorldDirection(new T.Vector3()),
-      colliders,
-      reach,
-    )
+    aimPlacement(baseWorld(b), camera.position, camera.getWorldDirection(new T.Vector3()), reach)
   );
 }
 function updatePlacement() {
@@ -5323,6 +5337,7 @@ function updatePlacement() {
                 })),
             ],
             placementKind,
+            office.decor ?? undefined,
           )
         : null;
   placementCandidate = candidate;
@@ -6401,11 +6416,10 @@ const debugTools = new DebugTools({
   notify,
   aimSurface: () => {
     const origin = camera.getWorldPosition(new T.Vector3());
-    const point = placementAim(
+    const point = aimPlacement(
       origin,
       origin,
       camera.getWorldDirection(new T.Vector3()),
-      colliders,
       MAP.metres(1000),
     );
     return point && new T.Vector3(point.x, point.y, point.z);

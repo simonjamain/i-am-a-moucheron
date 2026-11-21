@@ -46,7 +46,7 @@ import {
   assignMidgeSwarmSizes,
   MAX_OFFSPRING_ROSTER,
 } from '../src/waves.js';
-import { SHOP, shopPrice, supportedPlacement } from '../src/equipment.ts';
+import { SHOP, shopPrice, supportedPlacement, decorTrust } from '../src/equipment.ts';
 import { advancePaidService } from '../src/paid-service.js';
 import { SENTRY, GATLING, isTurret, fireGroundSentries } from '../src/ground-sentry.ts';
 import { FORTIFICATIONS, isFortification } from '../src/ground-fortifications.ts';
@@ -2026,6 +2026,8 @@ export class Game {
             })),
         ],
         b.item,
+        // On furniture, the client found the surface on the props' triangles.
+        decorTrust(this.solids, b.position.y - 0.00005),
       );
       requireGame(
         placement && Math.abs(placement.y - b.position.y) <= 0.0003,

@@ -168,12 +168,63 @@ export interface OccupiedSpot {
   kind?: string;
   clearance?: number;
 }
+/** Footprint of a placement: centre, yaw, local half sizes and headroom (metres). */
+export interface FootprintQuery {
+  x: number;
+  y: number;
+  z: number;
+  angle: number;
+  rx: number;
+  rz: number;
+  height: number;
+}
+/**
+ * The office pack props as placement support, on their real triangles (see
+ * docs/collisions.md). The client answers with the decor's collision world; the
+ * server trusts the height the client sent (decorTrust). With it, the props'
+ * boxes (marked `decor`) no longer support nor block placements.
+ */
+export interface DecorSupport {
+  /** Height of the decor surface carrying the whole footprint, or null. */
+  surface(q: FootprintQuery): number | null;
+  /** True when no decor stands in the headroom above `y`. */
+  clear(q: FootprintQuery, y: number): boolean;
+}
+/** Collider that may be the box of a pack prop (layouts.ts marks them). */
+type MaybeDecor = Collider & { decor?: boolean };
+/**
+ * Server side of DecorSupport: accepts the height `claimed` by the client when it
+ * lies within the box of a prop under the footprint centre (clients are trusted).
+ */
+export function decorTrust(colliders: readonly Collider[], claimed: number): DecorSupport {
+  return {
+    surface: (q) =>
+      Number.isFinite(claimed) &&
+      (colliders as readonly MaybeDecor[]).some(
+        (b) =>
+          b.decor &&
+          q.x >= b.min.x &&
+          q.x <= b.max.x &&
+          q.z >= b.min.z &&
+          q.z <= b.max.z &&
+          claimed >= b.min.y - 1e-4 &&
+          claimed <= b.max.y + 1e-4,
+      )
+        ? claimed
+        : null,
+    clear: () => true,
+  };
+}
 export function supportedPlacement(
   point: PlacementPoint,
-  colliders: readonly Collider[],
+  allColliders: readonly Collider[],
   occupied: readonly OccupiedSpot[] = [],
   kind = 'dca',
+  decor?: DecorSupport,
 ): PlacementPoint | null {
+  const colliders = decor
+    ? (allColliders as readonly MaybeDecor[]).filter((b) => !b.decor)
+    : allColliders;
   const profile = VEHICLE_BY_KEY[kind];
   const dca = FIXED_DCA_BY_KEY[kind];
   const localRx = profile
@@ -191,18 +242,31 @@ export function supportedPlacement(
   const angle = Number.isFinite(point.angle) ? (point.angle as number) : 0;
   const rx = Math.abs(Math.cos(angle)) * localRx + Math.abs(Math.sin(angle)) * localRz;
   const rz = Math.abs(Math.sin(angle)) * localRx + Math.abs(Math.cos(angle)) * localRz;
-  const surfaces = colliders
-    .filter(
-      (box) =>
-        point.x - rx >= box.min.x &&
-        point.x + rx <= box.max.x &&
-        point.z - rz >= box.min.z &&
-        point.z + rz <= box.max.z &&
-        (!box.oriented || footprintInsideCollider(box, point, localRx, localRz, angle)) &&
-        box.max.y <= point.y + MAP.metres(2) &&
-        box.max.y >= point.y - MAP.metres(6),
-    )
-    .sort((a, b) => b.max.y - a.max.y);
+  const query: FootprintQuery = {
+    x: point.x,
+    y: point.y,
+    z: point.z,
+    angle,
+    rx: localRx,
+    rz: localRz,
+    height,
+  };
+  const boxSurfaces: { max: { y: number } }[] = colliders.filter(
+    (box) =>
+      point.x - rx >= box.min.x &&
+      point.x + rx <= box.max.x &&
+      point.z - rz >= box.min.z &&
+      point.z + rz <= box.max.z &&
+      (!box.oriented || footprintInsideCollider(box, point, localRx, localRz, angle)) &&
+      box.max.y <= point.y + MAP.metres(2) &&
+      box.max.y >= point.y - MAP.metres(6),
+  );
+  const decorY = decor?.surface(query);
+  const surfaces =
+    decorY != null && decorY <= point.y + MAP.metres(2) && decorY >= point.y - MAP.metres(6)
+      ? [...boxSurfaces, { max: { y: decorY } }]
+      : boxSurfaces;
+  surfaces.sort((a, b) => b.max.y - a.max.y);
   for (const surface of surfaces) {
     const y = surface.max.y;
     const blocked = colliders.some(
@@ -218,6 +282,7 @@ export function supportedPlacement(
     );
     if (
       blocked ||
+      (decor && !decor.clear(query, y)) ||
       occupied.some(
         (s) =>
           Math.abs(s.y - y) < height &&

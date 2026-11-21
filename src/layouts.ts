@@ -1302,7 +1302,7 @@ export function layoutSolids(layout: Readonly<OfficeLayout> = activeLayoutValue)
       layout.id,
       (s = layoutPieces(layout)
         .filter((p) => p.solid)
-        .map(pieceBounds)),
+        .map((p) => (p.decor ? { ...pieceBounds(p), decor: true as const } : pieceBounds(p)))),
     );
   return s;
 }
