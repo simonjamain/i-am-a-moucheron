@@ -1,0 +1,33 @@
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&display=swap');
+
+/* Couleurs du site de documentation, reprises de l'accueil du jeu (src/index.html). */
+:root,
+[data-md-color-scheme='default'] {
+  --md-primary-fg-color: #102b28;
+  --md-primary-fg-color--light: #183832;
+  --md-primary-fg-color--dark: #0c201e;
+  --md-primary-bg-color: #f1f0df;
+  --md-accent-fg-color: #6b8a1f;
+}
+
+[data-md-color-scheme='slate'] {
+  --md-primary-fg-color: #0c201e;
+  --md-primary-fg-color--light: #183832;
+  --md-primary-fg-color--dark: #091e1a;
+  --md-primary-bg-color: #f1f0df;
+  --md-accent-fg-color: #d5ef73;
+  --md-default-bg-color: #102b28;
+  --md-typeset-a-color: #d5ef73;
+}
+
+.md-header__title,
+.md-typeset h1 {
+  font-family: 'Barlow Condensed', Impact, sans-serif;
+  letter-spacing: 0.01em;
+}
+
+.md-typeset h1 {
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--md-default-fg-color);
+}

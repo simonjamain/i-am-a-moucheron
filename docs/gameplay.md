@@ -405,7 +405,7 @@ Le Castor valide des sections LEGO de 48 mm (0,25 $) ; l’aperçu, visible derr
 L'arrêt valide la section commencée, facturée au prorata (`scripts/test-castor-trail.mjs`).
 Les briques sont des 2×4 LEGO (image de référence validée par l'utilisateur, modèle
 Meshy non texturé recoloré en jeu, tenons vers le haut, profondeur moitié de la
-longueur) ; voir [pipeline d'assets](asset-pipeline.md#brique-lego-2×4-du-mur-castor).
+longueur) ; voir [pipeline d'assets](asset-pipeline.md#brique-lego-24-du-mur-castor).
 Le serveur vérifie chaque pose, les collisions et les fonds de la caisse commune.
 Un changement de poste, une sortie, un échec de placement ou un déplacement trop
 brutal interrompt la construction. Les autres pièges, la réparation et la

@@ -48,6 +48,8 @@ node scripts/validate-artifact.mjs
 Le workflow `Docker build validation` contient aussi le job `Full game regression and formatting` :
 `npm test`, `format:check`, `check:docs`, le build et `validate-artifact.mjs` ; `docker build` local reste exigé avant livraison
 ([Docker](docker.md)).
+Le workflow `Docs site` construit le [site de documentation](site.md) en mode strict à
+chaque PR et le publie sur GitHub Pages depuis `main`.
 
 Audit des contrôles (suite complète : `npm test -- --list` donne le décompte, environ 50 s cumulées) :
 `npm test` lance `scripts/run-tests.mjs`, qui assemble puis exécute la liste ordonnée
