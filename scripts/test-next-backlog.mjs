@@ -141,9 +141,7 @@ call('buy', { item: 'tank', request: 'tank-order' });
 const tank = [...r.vehicles.values()].find((v) => v.type === 'tank');
 for (const seat of VEHICLES.tank.seats) {
   const entry = vehicleEntry(tank, seat);
-  assert.ok(vehicleAccess(entry, tank, seat));
-  for (const other of VEHICLES.tank.seats)
-    if (other !== seat) assert.equal(vehicleAccess(entry, tank, other), false);
+  assert.ok(vehicleAccess(entry, tank), 'every post reachable from any side');
 }
 // Independent gunner fires without any driver. Heavy reports spend once and
 // one cannon cooldown spans both ammunition types.

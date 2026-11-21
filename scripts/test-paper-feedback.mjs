@@ -106,7 +106,7 @@ for (const seat of ['pilot', 'dorsal', 'tail']) {
   vm.createContext(c);
   const select = source.slice(
     source.indexOf('async function chooseVehicle('),
-    source.indexOf('function openBoarding()'),
+    source.indexOf('let soulArena = null,'),
   );
   vm.runInContext(select, c);
   const pending = vm.runInContext(`chooseVehicle({id:'new'},'${seat}')`, c);

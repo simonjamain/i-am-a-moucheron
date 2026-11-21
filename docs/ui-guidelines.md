@@ -104,18 +104,22 @@ rond au sol : seul un objet réel est interactif, et l’engin s’aborde par to
 - **Zones de visée généreuses**, plus grandes que le maillage, pour les postes difficiles
   à viser (ventral, queue) ; une **portée** limitée oblige à s’approcher de l’engin.
 - **Aucun indice permanent** : pas de clignotement ni de reflet ; le survol suffit.
-- Les ronds au sol et les pictogrammes de rôle (`src/seat-icons.ts`) sont hérités et
-  disparaissent engin par engin ; le nom du poste s’écrit en toutes lettres dans les
-  documents (« Mitrailleur ventral »). Les autres ronds (stations, lits, banque…)
-  suivent le même principe : on vise l’objet.
+- **Aucun rond au sol ni pictogramme de rôle** : le nom du poste s’écrit en toutes lettres
+  dans les documents (« Mitrailleur ventral »).
+- Les **installations** suivent le même principe : DCA fixes, canon anti-matériel et lits
+  s’utilisent en les visant ; l’objet entier prend le contour.
 
-En jeu sur le **bombardier moyen** (pilote, mitrailleurs dorsal, ventral et de queue) :
-postes et zones de visée dans `src/seat-posts.ts`, contour dans `src/post-highlight.ts`. Le
-contour est tracé à l’écran, par-dessus l’image, autour de la silhouette du poste (comme les
-contours du [rendu dessin animé](toon-rendering.md)) : aucun volume n’est ajouté au modèle.
-Le clic gauche, ou la touche d’interaction, sur le poste visé ouvre son dossier ; le
-serveur vérifie seulement que le joueur se tient près de l’appareil. Les autres engins
-gardent leurs ronds jusqu’à leur passage.
+En jeu sur **tous les engins** : postes et zones de visée dans `src/seat-posts.ts` (un poste
+par siège, posé sur la vraie pièce : verrière, trappe du conducteur, tourelle ; la cabine du
+Castor volant donne la première des trois places passagers libre), contour dans
+`src/post-highlight.ts`. Le rayon retient d’abord la pièce réellement touchée (la
+mitrailleuse sur le toit plutôt que la tourelle qui l’entoure) ; les sphères de visée
+ajoutent de la marge autour des petites pièces, sauf si l’engin les cache. Le contour est
+tracé à l’écran, par-dessus l’image, autour de la silhouette du poste (comme les contours du
+[rendu dessin animé](toon-rendering.md)) : aucun volume n’est ajouté au modèle.
+Le clic gauche, ou la touche d’interaction, sur le poste visé ouvre son dossier (ou le contrat
+du lit) ; le serveur vérifie seulement que le joueur se tient près de l’engin ou de
+l’installation, de n’importe quel côté.
 
 ## Équipage : les fiches en T (à venir)
 

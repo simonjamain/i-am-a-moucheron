@@ -12,9 +12,7 @@ est commune à tous les exemplaires d'un même véhicule. Les surfaces ne change
 pas de couleur selon l'appareil et, depuis la version 238 ([issue #106](https://github.com/simonjamain/i-am-a-moucheron/issues/106)),
 aucune pastille flottante ni couleur par joueur ou par appareil n'est ajoutée : traceurs
 et obus ont des couleurs neutres par arme. Le M1, le H2 et le bombardier B3 suivent le même principe.
-Les cercles d'accès au sol des postes libres portent un pictogramme blanc par rôle
-(`src/seat-icons.ts`) : volant (conducteur), avion (pilote), avion à deux places
-(copilote), viseur (mitrailleur) et tourelle (canon du char).
+Les postes ne sont plus marqués au sol : on les vise sur le modèle (`src/seat-posts.ts`).
 
 ## Références et provenance
 

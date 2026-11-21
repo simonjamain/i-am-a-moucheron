@@ -53,7 +53,6 @@ import { shoulderView, aimPistol, muzzleAim } from '/personal-aim.js';
 import { BankUI } from '/bank-ui.js';
 import { ContextHUD, equipmentHUD } from '/hud.js';
 import { paintVehicle, updateInscriptions } from '/vehicle-livery.js';
-import { drawSeatIcon, seatRole } from '/seat-icons.js';
 import { AircraftFire } from '/aircraft-fire.js';
 import { inRadarCoverage } from '/logistics.js';
 import { InsectStatus, insectScale } from '/insect-status.js';
@@ -104,7 +103,6 @@ import {
   gunnerView,
   BULLET_SPEED,
   stationAccess,
-  stationEntryOffset,
   stationExit,
   resolveLanding,
   stepWalker,
@@ -130,8 +128,7 @@ import {
   lookScale,
 } from '/control-focus.js';
 import { createRenderer } from '/renderer.js';
-import { makeEntryRing } from '/entry-ring.js';
-import { pointBoarding, SEAT_POSTS, pickPost } from '/seat-posts.js';
+import { SEAT_POSTS, aimPost, pickPost, freeSeat } from '/seat-posts.js';
 import { PostHighlight, SelectionOutline, SIGNAL_COLOR, TAKEN_COLOR } from '/post-highlight.js';
 import { renderInfo } from '/render-info.js';
 import { createGraphics } from '/graphics.js';
@@ -443,25 +440,6 @@ function selfBase() {
 function assignedBay() {
   return aircraftBay(snap?.pilots.find((p) => p.id === id)?.bay || 0);
 }
-function nearestVehicle() {
-  const body = selfBase();
-  if (!body || body.parachute) return null;
-  const w = baseWorld(body);
-  return (
-    (snap?.vehicles || [])
-      .filter((v) => v.state.landed && !pointBoarding(v.type))
-      .flatMap((v) =>
-        VEHICLES[v.type].seats
-          .filter((seat) => !v.seats.some((s) => s.seat === seat) && vehicleAccess(w, v, seat))
-          .map((entrySeat) => ({ ...v, entrySeat })),
-      )
-      .sort(
-        (a, b) =>
-          Math.hypot(w.x - a.state.p[0], w.z - a.state.p[2]) -
-          Math.hypot(w.x - b.state.p[0], w.z - b.state.p[2]),
-      )[0] || null
-  );
-}
 async function chooseVehicle(vehicle, seat = vehicle?.entrySeat || 'pilot') {
   if (!vehicle || boardingBusy || boardingSelectionBusy) return;
   selectedEquipment = null;
@@ -497,20 +475,6 @@ async function chooseVehicle(vehicle, seat = vehicle?.entrySeat || 'pilot') {
     renderPaper();
     finishBoardingFeedback(timing, boardingOpen ? 'ready' : 'failed');
   }
-}
-function openBoarding() {
-  if (!onFoot || respawnAt || myVehicle) return;
-  const v = nearestVehicle();
-  if (!v) {
-    notify('Rejoignez la porte d’un appareil prêt au départ.', 2);
-    return;
-  }
-  const seat = VEHICLES[v.type].seats.find((s) => !v.seats.some((t) => t.seat === s));
-  if (!seat) {
-    notify('Cet équipage est complet.', 2);
-    return;
-  }
-  chooseVehicle(v, v.entrySeat || seat);
 }
 let soulArena = null,
   soulArenaRevision = -1,
@@ -975,7 +939,7 @@ canvas.addEventListener('mousemove', (e) => {
   aimMouse = [e.clientX, e.clientY];
 });
 canvas.addEventListener('mousedown', (event) => {
-  if (event.button === 0 && boardAimedPost()) {
+  if (event.button === 0 && useAimedPost()) {
     event.preventDefault();
     return;
   }
@@ -2853,9 +2817,7 @@ function reconcileEquipment(next) {
       gun.traverse((o) => o.userData.meshyShared || o.geometry?.dispose());
       const at = colliders.indexOf(gun.userData.collider);
       if (at >= 0) colliders.splice(at, 1);
-      scene.remove(stationRings[i]);
-      stationRings[i]?.userData.dispose?.();
-      stationRings[i] = null;
+      gun.userData.highlight?.dispose();
       turrets[i] = null;
     }
   stations = next;
@@ -2900,15 +2862,6 @@ function reconcileEquipment(next) {
     gun.userData.person = person;
     gun.userData.shotAt = 0;
     turrets[i] = gun;
-    // Occupiable equipment circles carry their role icon (issue #106).
-    const ring =
-      isFixedDca(st.kind) || isFortification(st.kind)
-        ? roleEntry(null, null, st.kind === 'antitank' ? 'cannon' : 'gunner')
-        : entryRing.clone();
-    ring.position.set(st.x + stationEntryOffset(st), st.y + ACTOR_UNIT * 0.12, st.z);
-    ring.scale.setScalar(ACTOR_UNIT);
-    if (isFixedDca(st.kind) || st.kind === 'bed' || isFortification(st.kind)) scene.add(ring);
-    stationRings[i] = ring;
   }
 }
 const tankCannonSeat = () => myVehicle?.type === 'tank' && crewSeat === 'cannon';
@@ -2942,19 +2895,6 @@ function stationLabel(st) {
     : st.kind === 'antitank'
       ? 'Canon lourd anti-matériel'
       : st.name || FORTIFICATIONS[st.kind]?.name || 'Poste';
-}
-function nearestStation() {
-  const b = selfBase();
-  if (!b || b.parachute || turretIndex >= 0) return null;
-  const w = baseWorld(b);
-  let nearest = null;
-  stations.forEach((s, index) => {
-    if ((isFixedDca(s.kind) || (isFortification(s.kind) && s.hp > 0)) && stationAccess(w, s)) {
-      const d = Math.hypot(w.x - s.x, w.z - s.z);
-      if (!nearest || d < nearest.distance) nearest = { index, distance: d };
-    }
-  });
-  return nearest;
 }
 async function vehicleAction(path, extra = {}) {
   if (vehicleBusy || respawnAt) return;
@@ -3040,21 +2980,7 @@ function optimisticExit() {
     optimisticExitPending = false;
   };
 }
-function nearestBed() {
-  const body = selfBase();
-  return body?.grounded && !myVehicle && turretIndex < 0 && !respawnAt
-    ? snap.equipment.find((bed) => bed.kind === 'bed' && bedAccess(baseWorld(body), bed))
-    : null;
-}
 function interactVehicle() {
-  const bed = nearestBed();
-  if (bed) {
-    bedUI.open(
-      bed,
-      snap.pilots.find((p) => p.id === id),
-    );
-    return;
-  }
   if (myVehicle) {
     vehicleAction('vehicle-exit', { state: localMotion() });
     return;
@@ -3063,13 +2989,8 @@ function interactVehicle() {
     vehicleAction('turret');
     return;
   }
-  const near = nearestStation();
-  if (near) {
-    chooseEquipment(near.index);
-    return;
-  }
-  if (boardAimedPost()) return;
-  openBoarding();
+  if (useAimedPost()) return;
+  notify(aimedPost ? 'Ce poste est occupé.' : 'Visez le poste à occuper, puis cliquez.', 2);
 }
 async function chooseEquipment(index) {
   if (vehicleBusy || boardingBusy || boardingSelectionBusy) return;
@@ -3500,29 +3421,6 @@ function fireRapidDca(station, gun, direction, dt, interval, firing, owned) {
 $('fuseMinus').onclick = () => (flakRange = fuseRange(flakRange - FLAK.step));
 $('fusePlus').onclick = () => (flakRange = fuseRange(flakRange + FLAK.step));
 
-const entryRing = makeEntryRing(T);
-const entryRings = new Map();
-function roleEntry(type, seat, role = seatRole(type, seat)) {
-  const g = new T.Group();
-  g.add(entryRing.clone());
-  const c = document.createElement('canvas');
-  c.width = c.height = 128;
-  drawSeatIcon(c.getContext('2d'), role, 128);
-  const texture = new T.CanvasTexture(c),
-    geometry = new T.PlaneGeometry(1, 1),
-    material = new T.MeshBasicMaterial({ map: texture, transparent: true, depthWrite: false });
-  const icon = new T.Mesh(geometry, material);
-  icon.rotation.x = -Math.PI / 2;
-  icon.position.y = 0.01;
-  g.add(icon);
-  g.userData.dispose = () => {
-    texture.dispose();
-    geometry.dispose();
-    material.dispose();
-  };
-  return g;
-}
-const stationRings = [];
 const serviceZones = new ServiceZones(T, scene);
 const engineSmoke = new EngineSmoke(T, scene);
 function updateBaseWorld(dt, now) {
@@ -3613,34 +3511,6 @@ function updateBaseWorld(dt, now) {
       scene.remove(g);
       basePeople.delete(id);
     }
-  const v = nearestVehicle();
-  for (const ring of stationRings.filter(Boolean))
-    ring.visible = onFoot && !respawnAt && !myVehicle && turretIndex < 0;
-  const visibleEntries = new Set();
-  for (const vehicle of snap.vehicles || []) {
-    if (vehicle.state.hp <= 0 || !vehicle.state.landed || pointBoarding(vehicle.type)) continue;
-    for (const seat of VEHICLES[vehicle.type].seats) {
-      if (vehicle.seats.some((s) => s.seat === seat)) continue;
-      const key = vehicle.id + ':' + seat;
-      visibleEntries.add(key);
-      let ring = entryRings.get(key);
-      if (!ring) {
-        ring = roleEntry(vehicle.type, seat);
-        entryRings.set(key, ring);
-        scene.add(ring);
-      }
-      const e = vehicleEntry(vehicle, seat);
-      ring.visible = onFoot && !respawnAt && !myVehicle && turretIndex < 0;
-      ring.position.set(e.x, e.y + ACTOR_UNIT * 0.12, e.z);
-      ring.scale.setScalar(ACTOR_UNIT);
-    }
-  }
-  for (const [key, ring] of entryRings)
-    if (!visibleEntries.has(key)) {
-      scene.remove(ring);
-      ring.userData.dispose?.();
-      entryRings.delete(key);
-    }
   if (onFoot && !respawnAt && body && !myVehicle && turretIndex < 0) {
     const g = basePeople.get(id),
       w = g?.position || baseWorld(body);
@@ -3649,12 +3519,30 @@ function updateBaseWorld(dt, now) {
   }
   updateAimedPost();
 }
-// Boarding by aiming at a post (src/seat-posts.ts, docs/ui-guidelines.md): the post
-// under the crosshair (or the free cursor) gets an outline, signal blue when free.
+// Everything usable is used by aiming at it (src/seat-posts.ts, docs/ui-guidelines.md):
+// vehicle posts, fixed defences and beds. The object under the crosshair (or the free
+// cursor) gets an outline, signal blue when free; a click or the interaction key uses it.
 let aimedPost = null,
   shownPost = null;
 const postHighlights = new Map();
 const postRay = new T.Raycaster();
+/** Station (fixed defence or bed) usable from where the player stands. */
+function usableStation(st, w, body) {
+  if (st.kind === 'bed') return !!body.grounded && bedAccess(w, st);
+  return (isFixedDca(st.kind) || (isFortification(st.kind) && st.hp > 0)) && stationAccess(w, st);
+}
+/** Aiming sphere of an installation, in world space (its bounding sphere, tightened). */
+function stationSphere(gun) {
+  if (!gun.userData.aimSphere) {
+    const box = new T.Box3();
+    gun.updateMatrixWorld(true);
+    gun.traverseVisible((o) => o.isMesh && box.expandByObject(o));
+    const sphere = box.getBoundingSphere(new T.Sphere());
+    sphere.radius *= 0.8;
+    gun.userData.aimSphere = sphere;
+  }
+  return gun.userData.aimSphere;
+}
 function updateAimedPost() {
   const body = selfBase();
   let next = null;
@@ -3685,30 +3573,41 @@ function updateAimedPost() {
       origin = postRay.ray.origin.toArray(),
       direction = postRay.ray.direction.toArray();
     for (const v of snap?.vehicles || []) {
-      if (!pointBoarding(v.type) || !v.state.landed || !vehicleAccess(w, v)) continue;
+      if (!v.state.landed || !SEAT_POSTS[v.type] || !vehicleAccess(w, v)) continue;
       const g = fleetModels.get(v.id);
       if (!g) continue;
       g.updateMatrixWorld(true);
       const k = g.getWorldScale(new T.Vector3()).x;
-      const hit = pickPost(
+      const block = postRay.intersectObject(g, true)[0];
+      const hit = aimPost(
         origin,
         direction,
         SEAT_POSTS[v.type].map((post) => ({
-          seat: post.seat,
+          seat: post.seats[0],
           centre: g.localToWorld(new T.Vector3(...post.local)).toArray(),
           radius: post.radius * k,
         })),
+        block ? { point: block.point.toArray(), distance: block.distance } : null,
       );
       if (!hit || (next && hit.distance >= next.distance)) continue;
-      // A post hidden behind the vehicle itself (a wing, the fuselage) is not aimed at.
-      const radius = SEAT_POSTS[v.type].find((post) => post.seat === hit.seat).radius * k;
-      const block = postRay.intersectObject(g, true)[0];
-      if (block && block.distance < hit.distance - radius * 0.5) continue;
       next = { ...hit, vehicle: v };
     }
+    for (const [index, st] of stations.entries()) {
+      const gun = turrets[index];
+      if (!gun || !usableStation(st, w, body)) continue;
+      const sphere = stationSphere(gun);
+      const hit = pickPost(origin, direction, [
+        { seat: 'station', centre: sphere.center.toArray(), radius: sphere.radius },
+      ]);
+      if (hit && (!next || hit.distance < next.distance)) next = { ...hit, station: index };
+    }
   }
-  const key = next ? next.vehicle.id + ':' + next.seat : null;
-  if (shownPost && shownPost !== key) postHighlights.get(shownPost)?.hide();
+  const key = !next
+    ? null
+    : next.vehicle
+      ? next.vehicle.id + ':' + next.seat
+      : 'station:' + next.station + ':' + stations[next.station].slot;
+  if (shownPost && shownPost !== key) postHighlight(shownPost)?.hide();
   aimedPost = next;
   shownPost = key;
   const label = $('postLabel');
@@ -3717,32 +3616,77 @@ function updateAimedPost() {
     postSelection.color = null;
     return;
   }
-  let highlight = postHighlights.get(key);
-  if (!highlight) {
-    highlight = new PostHighlight(
-      T,
-      fleetModels.get(next.vehicle.id),
-      SEAT_POSTS[next.vehicle.type].find((post) => post.seat === next.seat),
+  let highlight, names;
+  if (next.vehicle) {
+    highlight = postHighlights.get(key);
+    if (!highlight) {
+      highlight = new PostHighlight(
+        T,
+        fleetModels.get(next.vehicle.id),
+        SEAT_POSTS[next.vehicle.type].find((post) => post.seats[0] === next.seat),
+      );
+      postHighlights.set(key, highlight);
+    }
+    names = freeSeat(highlight.post, next.vehicle.seats)
+      ? []
+      : next.vehicle.seats
+          .filter((s) => highlight.post.seats.includes(s.seat))
+          .map((s) => snap.pilots.find((p) => p.id === s.pilot)?.name);
+  } else {
+    const gun = turrets[next.station];
+    // The whole installation is outlined (no mesh names: every visible part).
+    gun.userData.highlight ??= new PostHighlight(T, gun, {
+      seats: [],
+      local: [0, 0, 0],
+      radius: 0,
+      outline: { meshes: [] },
+    });
+    highlight = gun.userData.highlight;
+    const occupant = snap.pilots.find(
+      (p) => p.mode === 'turret' && p.state.turret === next.station,
     );
-    postHighlights.set(key, highlight);
+    names = occupant ? [occupant.name] : [];
   }
-  const occupant = next.vehicle.seats.find((s) => s.seat === next.seat);
   highlight.show();
-  postSelection.color = occupant ? TAKEN_COLOR : SIGNAL_COLOR;
-  // A taken post names its occupant; a free post needs no text.
-  label.hidden = !occupant;
-  if (occupant) {
-    label.textContent = snap.pilots.find((p) => p.id === occupant.pilot)?.name || 'Occupé';
+  const taken = names.length > 0;
+  postSelection.color = taken ? TAKEN_COLOR : SIGNAL_COLOR;
+  // A taken post names its occupants; a free post needs no text.
+  label.hidden = !taken;
+  if (taken) {
+    label.textContent = names.filter(Boolean).join(', ') || 'Occupé';
     const free = document.pointerLockElement !== canvas && aimMouse;
     label.style.left = (free ? aimMouse[0] : innerWidth / 2) + 'px';
     label.style.top = (free ? aimMouse[1] : innerHeight / 2) + 'px';
   }
 }
-/** Opens the boarding form of the aimed post when it is free; true when handled. */
-function boardAimedPost() {
+function postHighlight(key) {
+  if (!key.startsWith('station:')) return postHighlights.get(key);
+  const [, index, slot] = key.split(':');
+  const gun = turrets[+index];
+  return gun && String(gun.userData.slot) === slot ? gun.userData.highlight : null;
+}
+/** Uses the aimed object when it is free (boarding form, station, bed); true when handled. */
+function useAimedPost() {
   if (!aimedPost || !onFoot || myVehicle || respawnAt) return false;
-  const { vehicle, seat } = aimedPost;
-  if (vehicle.seats.some((s) => s.seat === seat)) return false;
+  if (aimedPost.station !== undefined) {
+    const st = stations[aimedPost.station];
+    if (!st) return false;
+    if (st.kind === 'bed') {
+      bedUI.open(
+        st,
+        snap.pilots.find((p) => p.id === id),
+      );
+      return true;
+    }
+    if (snap.pilots.some((p) => p.mode === 'turret' && p.state.turret === aimedPost.station))
+      return false;
+    chooseEquipment(aimedPost.station);
+    return true;
+  }
+  const { vehicle } = aimedPost;
+  const post = SEAT_POSTS[vehicle.type].find((p) => p.seats[0] === aimedPost.seat);
+  const seat = post && freeSeat(post, vehicle.seats);
+  if (!seat) return false;
   chooseVehicle({ ...vehicle, entrySeat: seat }, seat);
   return true;
 }

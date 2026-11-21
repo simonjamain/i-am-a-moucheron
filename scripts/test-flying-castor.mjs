@@ -35,7 +35,6 @@ import {
 } from '../src/airdrop.ts';
 import { airdropPlacement } from '../src/ground-placement.js';
 import { navigationStructures, floorStructures } from '../src/ground-defense-state.js';
-import { seatRole } from '../src/seat-icons.ts';
 import { controlHintItems } from '../src/live-hud.js';
 import { Game } from '../server/game.js';
 import { OFFICE_SOLIDS } from '../server/assets.js';
@@ -100,7 +99,6 @@ assert.ok(isRotorcraft('flyingcastor') && isRotorcraft('helicopter') && !isRotor
 assert.ok(isSupportVehicle('flyingcastor') && isSupportVehicle('castor'));
 assert.ok(!isSupportVehicle('helicopter'));
 assert.ok(spec.seats.slice(1).every((s) => isPassengerSeat(s) && SEAT_NAMES[s] === 'Passager'));
-assert.equal(seatRole('flyingcastor', 'passenger2'), 'passenger');
 assert.equal(SHOP.flyingcastor.cost, 35);
 assert.equal(SHOP.flyingcastor.kind, 'vehicle');
 assert.ok(SHOP_CATEGORIES.find((c) => c.id === 'air').items.includes('flyingcastor'));
