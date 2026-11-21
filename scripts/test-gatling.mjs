@@ -168,14 +168,14 @@ const tools = new GroundDefenseUI({
 }).tools;
 assert.ok(tools.some(([kind, label]) => kind === 'gatling' && /Gatling/.test(label)));
 
-// --- Modèle : trois pièces, un seul atlas, rotation du faisceau ---------------------
+// --- Modèle : quatre pièces, un seul atlas, rotation du faisceau ---------------------
 assert.equal(
   MODEL_DATA.sourceSha256,
   'a2a4e7eb9b42aed070b12c1a004ef4b998275b205c033f451f8dda9b39c07920',
 );
 assert.deepEqual(
   MODEL_DATA.parts.map((p) => p.part),
-  ['socle', 'tete', 'rotor'],
+  ['socle', 'tete', 'rotor', 'anneau'],
 );
 assert.equal(
   MODEL_DATA.parts.reduce((n, p) => n + p.triangles, 0),
@@ -194,11 +194,29 @@ assert.equal(muzzle.parent, pitch, 'la bouche ne tourne pas sur elle-même');
 assert.equal(group.getObjectByName('socle-fixe').parent, group);
 assert.equal(group.getObjectByName('tete-gatling').parent, yaw);
 assert.equal(group.getObjectByName('faisceau-canons').parent, spin, 'tous les canons tournent');
+// La base circulaire du faisceau s'incline avec les canons mais ne tourne pas sur elle-même.
+const base = group.getObjectByName('anneau-faisceau');
+assert.equal(base.parent, pitch, 'l’anneau suit l’élévation du canon');
+assert.notEqual(base.parent, spin);
+base.geometry.computeBoundingBox();
+const baseBox = base.geometry.boundingBox;
+assert.ok(Math.abs((baseBox.min.x + baseBox.max.x) / 2) < 0.004, 'anneau centré sur l’axe (X)');
+// 0,009 unité (0,2 mm) de décalage vient du modèle Meshy : ses canons sont un peu bas dans l'ouverture.
+assert.ok(Math.abs((baseBox.min.y + baseBox.max.y) / 2) < 0.012, 'anneau centré sur l’axe (Y)');
+pitch.rotation.x = 0.7;
+group.updateMatrixWorld(true);
+const along = new T.Vector3(0, 0, -1).applyQuaternion(base.getWorldQuaternion(new T.Quaternion()));
+const aimed = muzzle
+  .getWorldPosition(new T.Vector3())
+  .sub(pitch.getWorldPosition(new T.Vector3()))
+  .normalize();
+assert.ok(along.distanceTo(aimed) < 1e-6, 'l’anneau pointe dans le sens du canon');
+pitch.rotation.x = 0;
 assert.equal(barrels.length, 6);
 assert.ok(barrels.every((b) => b.parent === spin));
 const materials = new Set();
 group.traverse((o) => o.isMesh && o.userData.meshyShared && materials.add(o.material));
-assert.equal(materials.size, 1, 'les trois pièces partagent l’atlas Meshy');
+assert.equal(materials.size, 1, 'les quatre pièces partagent l’atlas Meshy');
 // Le faisceau est centré sur l'axe de rotation et à symétrie sextuple.
 const rotor = group.getObjectByName('faisceau-canons').geometry;
 rotor.computeBoundingBox();
