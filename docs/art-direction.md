@@ -86,6 +86,12 @@ et disparaîtront avec la reprise des écrans.
   (meubles, fournitures, objets posés) aux règles d’assemblage simples. Cette approche
   prépare une piste à long terme de cartes générées à partir d’une graine.
 - Les objets du décor sont reconnaissables au premier coup d’œil, sans détail inutile.
+- Le bureau est meublé avec le **Cartoon Office Pack** (BloxBits, acheté) : cartoon
+  low poly, tons chauds, bureau beige des années 90 ([plans](office-layouts.md#décor--le-cartoon-office-pack)).
+  Ses proportions sont conservées ; les volumes de jeu s’adaptent aux meubles.
+- Pour l’instant, chaque carte est une **liste finie d’objets placés à la main**, y
+  compris le désordre : pas de génération aléatoire. Si elle vient un jour, elle
+  portera sur toute la carte.
 
 ## Machines et assets
 

@@ -48,7 +48,8 @@ Contrôles : `test-tracer-contrast.mjs`, `test-instanced-tracers.mjs`.
 ## Brouillard spatial et plafond
 
 Le brouillard de distance blanc est léger (densité 0,018). La couche de nuages
-commence à **2,2125 m** ; le plafond de vol est à **3,95 m**
+commence à **2,2125 m** (`OFFICE_FOG_START`) et s'épaissit jusqu'au haut des murs,
+**2,7 m** (`OFFICE_CLOUD_TOP`, hauteur des murs du pack de bureau) ; le plafond de vol est à **3,95 m**
 (`LAYOUT_BOUNDS.ceiling`, `src/layout.ts`, partagé par l'avion local et le Hind). La densité
 croît avec la hauteur et les matériaux calculent l'épaisseur traversée par chaque
 rayon : regarder vers le haut depuis le sol révèle la couche. Un voile blanc

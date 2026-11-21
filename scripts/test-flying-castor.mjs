@@ -136,8 +136,8 @@ near((tape.a[0] + tape.b[0]) / 2, 1, 1e-12, 'tape centred');
 near(Math.atan2(-(tape.a[0] - tape.b[0]), -(tape.a[1] - tape.b[1])), yaw, 1e-9, 'tape heading');
 assert.equal(airdropCommand('sentry', { x: 1, z: 2, yaw }).angle, yaw);
 assert.deepEqual(AIRDROP_KINDS, ['sugar', 'sticky', 'sentry', 'gatling', 'antitank']);
-const desk = [-1.8, 1.6]; // office desk top at 0.90 m
-near(airdropSurface(OFFICE_SOLIDS, ...desk, 1.3), 0.9, 1e-6, 'desk top');
+const desk = [-2.5, 1.5]; // free end of a desk of island A, top at 0.74 m
+near(airdropSurface(OFFICE_SOLIDS, ...desk, 1.3), 0.74, 1e-6, 'desk top');
 near(airdropSurface(OFFICE_SOLIDS, ...desk, 0.5), 0, 1e-6, 'under the desk: floor');
 assert.match(
   airdropPlacement({
@@ -218,9 +218,9 @@ for (const [kind, request] of [
   run(pilot, { action: 'build', kind, request });
 s = wait(10000);
 const heavy = s.groundDefense.structures.find((x) => x.kind === 'antitank');
-near(heavy.y, 0.9, 1e-6, 'heavy gun on the desk');
+near(heavy.y, 0.74, 1e-6, 'heavy gun on the desk');
 const station = r.equipment.find((x) => x.kind === 'antitank');
-near(station.y, 0.9, 1e-6, 'its post too');
+near(station.y, 0.74, 1e-6, 'its post too');
 assert.equal(navigationStructures(s.groundDefense.structures).length, 0, 'no floor blocking');
 assert.equal(
   floorStructures(s.groundDefense.structures).filter((x) => x.kind === 'sticky').length,

@@ -7,11 +7,14 @@ export const GROUND_BOUNDS = Object.freeze([-4.12, -3.51, 4.12, 3.51]);
 export const GROUND_CELL = 0.05;
 // Where ground insects head for, at the foot of the active layout's bin.
 export const groundGoal = () => activeLayout().groundGoal;
-// Furniture footprints that block insects on the floor (desk legs, boxes…).
+// Furniture footprints that block insects on the floor (desk legs, boxes, rows of
+// shelves, partition walls…): every solid standing on the floor inside the walking
+// area. The floor itself, the room walls and their skirting boards lie outside it.
 const obstacleCache = new Map();
 export function groundStaticObstacles() {
   const layout = activeLayout();
   let list = obstacleCache.get(layout.id);
+  const [x0, z0, x1, z1] = GROUND_BOUNDS;
   if (!list)
     obstacleCache.set(
       layout.id,
@@ -19,8 +22,10 @@ export function groundStaticObstacles() {
         (box) =>
           box.min.y < 0.01 &&
           box.max.y > 0.01 &&
-          box.max.x - box.min.x < 2 &&
-          box.max.z - box.min.z < 2,
+          box.max.x > x0 &&
+          box.min.x < x1 &&
+          box.max.z > z0 &&
+          box.min.z < z1,
       )),
     );
   return list;

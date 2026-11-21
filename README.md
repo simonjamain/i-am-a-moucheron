@@ -24,7 +24,8 @@ par PR restent à configurer ; voir CONTRIBUTING pour leur état et la cible.
 
 ## Stack et démarrage
 
-ESM natif en migration vers TypeScript ([fonctionnement](docs/typescript.md)), Three.js embarqué dans `vendor/`, modèles procéduraux et Meshy embarqués, et
+ESM natif en migration vers TypeScript ([fonctionnement](docs/typescript.md)), Three.js embarqué dans `vendor/`, modèles procéduraux et Meshy embarqués, décor du
+bureau issu du Cartoon Office Pack de BloxBits (acheté, réservé à ce jeu : [licence](src/office-pack-LICENSE.md)), et
 sons Web Audio. Le serveur Node utilise **uniquement la RAM**, sans base de
 données. Les joueurs se connectent en étoile par WebRTC sur UDP : mouvements
 sans retransmission, commandes importantes fiables avec confirmations.
