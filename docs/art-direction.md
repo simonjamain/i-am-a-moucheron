@@ -3,8 +3,7 @@
 Référence de l’identité visuelle, sonore et du ton du jeu. Toute contribution visible
 (modèle, décor, effet, son, texte, menu) s’y conforme ; une exception se justifie dans
 sa PR. L’interface a sa propre référence : [règles d’interface](ui-guidelines.md).
-Les sections marquées **(proposition)** restent à valider sur une planche visuelle ; le
-reste est décidé.
+Décisions prises après la planche visuelle n°1 (palettes rendues avec le moteur du jeu).
 
 ## En une phrase
 
@@ -55,25 +54,28 @@ La paperasse est **militaire**, pas propre au bureau : elle reste cohérente sur
   référence ([bestiaire](enemy-bestiary.md), galerie du site). Toute nouvelle créature
   ou tout nouveau personnage s’aligne sur eux.
 
-## Couleurs par rôle (proposition)
+## Couleurs
 
-La palette donne **un rôle à chaque famille de couleurs**, au lieu d’un vert partout.
-Aujourd’hui l’interface, le décor et les véhicules partagent des verts proches : les
-machines se fondent dans le décor, ce que le pilier 1 refuse.
+Pas de palette imposée au décor : chaque carte choisit ses teintes. Ce qui est fixé :
 
-| Rôle                 | Intention                                                                |
-| -------------------- | ------------------------------------------------------------------------ |
-| Décor                | Neutres chauds du quotidien : bois, papier, beige, moquette, lampe.      |
-| Machines militaires  | Seules à porter l’olive, le kaki et les camouflages : elles détonnent.   |
-| Marquages            | Accents vifs et réalistes (cocardes, numéros, bandes) ; identité joueur. |
-| Insectes             | Famille propre : sombres, brillants, lisibles sur le décor clair.        |
-| Signal d’interaction | Une seule couleur pour « ceci s’utilise » (sièges, stations, documents). |
-| Danger               | Réservée aux alertes réelles (dégâts, infestation), jamais décorative.   |
+- **Le style** est commun à toutes les cartes (rendu, formes, contours).
+- **Des tons pastels**, doux et peu saturés, pour le décor.
+- **Le contraste de clarté** : les engins mêlent crème, sable et olive ; le sol reste
+  nettement plus sombre ou plus froid que leurs carlingues, sinon ils s’y noient.
+- **Des rôles réservés** :
 
-Les valeurs exactes seront fixées après comparaison sur une planche visuelle (même
-scène, deux ou trois palettes), puis reportées ici et dans les jetons de l’interface.
-Le vert sombre et le vert acide actuels de l’interface ne sont pas une décision : ils
-sont hérités et pourront disparaître.
+| Rôle                 | Règle                                                                  |
+| -------------------- | ---------------------------------------------------------------------- |
+| Machines militaires  | Olive, kaki, sable et camouflages ; elles détonnent dans le quotidien. |
+| Marquages            | Accents réalistes (cocardes, numéros, bandes, jaune de chantier).      |
+| Insectes             | Famille des modèles actuels, lisible sur le décor.                     |
+| Signal d’interaction | **Bleu cyan `#2ec4d6`**, uniquement pour « ceci s’utilise ».           |
+| Danger               | Réservé aux alertes réelles (dégâts, infestation), jamais décoratif.   |
+
+Le bleu cyan est la seule couleur fixée dans le code pour le monde, comme jeton partagé
+([règles d’interface](ui-guidelines.md#jetons-visuels)) ; le jaune reste libre pour les
+marquages des engins. Le vert sombre et le vert acide actuels de l’interface sont hérités
+et disparaîtront avec la reprise des écrans.
 
 ## Environnements
 
@@ -92,7 +94,10 @@ sont hérités et pourront disparaître.
   [ajouter du contenu](adding-content.md).
 - Usure légère et marquages plutôt que surfaces neuves et unies.
 - Une machine doit montrer son état : dégâts (fumée, trous, pièces qui pendent),
-  carburant, munitions, poste occupé — voir les règles d’interface.
+  carburant, munitions, poste occupé (personnage visible à son poste) — voir les règles
+  d’interface.
+- Chaque poste occupable est une pièce identifiable du modèle (verrière, tourelle,
+  trappe) : c’est lui qu’on vise pour monter.
 - Proposer tout nouveau visuel au regard de cette page **avant** génération (règle Meshy
   d’[AGENTS](../AGENTS.md)).
 
