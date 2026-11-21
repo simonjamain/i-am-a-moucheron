@@ -139,23 +139,27 @@ si le dernier mouvement signale la destruction sans commande de mort ultérieure
 ## Banque et documents signés
 
 L’API expose toujours trois emplacements, contenant une offre stable ou un prêt
-signé. Les signatures et remboursements portent le numéro de l’emplacement et
-le numéro unique de l’offre ; une ancienne offre ne peut pas recréditer la caisse.
+signé. Une signature porte le numéro de l’emplacement et le numéro unique de
+l’offre ; une ancienne offre ne peut pas recréditer la caisse.
 Ces opérations sont accessibles à tout moment par le domaine serveur.
 Le bouton Banquier ou N ouvre le guichet à tout moment, y compris embarqué ou
 au purgatoire. La consultation libère la souris et neutralise les commandes ;
 la partie continue. Échap ou la croix ferment le panneau. Il ne s’ouvre pas
 pendant le dépôt d’un autre dossier. La navigation clavier reste dans le panneau.
 
-Chaque offre donne accès à un document humoristique, au tableau d’amortissement
-et à un cadre de signature. Relâcher un trait valide transmet une seule commande
-fiable. Le dossier attend sa confirmation ; une erreur affiche son message et
-permet de signer à nouveau. Une annulation du pointeur ne signe jamais. Le contrat
-actif reste consultable avec son capital restant, ses vagues restantes et les
-échéances payées. Le remboursement anticipé exige une nouvelle signature. Une
-échéance ou un reset intervenus pendant la lecture invalident le document ; le
-serveur revérifie aussi son epoch et le montant attendu. L’image de la
-signature n’est ni conservée ni envoyée au serveur.
+Le guichet est un **prospectus en papier** ([règles d’interface](ui-guidelines.md)) :
+les trois emplacements y sont imprimés comme des coupons. Cocher une offre affiche
+son texte humoristique et son tableau d’amortissement ; il faut ensuite cocher
+l’**objet du prêt** (`LOAN_MOTIVES`) avant de signer. La banque est le seul service
+qui accepte « Convenance personnelle ». Relâcher un trait valide transmet une seule
+commande fiable ; le contrat reçoit le tampon « APPROUVÉ ». Une erreur affiche son
+message et permet de signer à nouveau. Une annulation du pointeur ne signe jamais.
+Un contrat actif se consulte en cochant son coupon : capital restant, vagues
+restantes, et un tampon « PAYÉ » sur chaque échéance prélevée. Il n’y a pas de
+remboursement anticipé : un prêt se rembourse par ses échéances. Un reset pendant
+la lecture, ou la disparition de l’offre, invalide le document ; le serveur
+revérifie aussi son epoch. L’image de la signature n’est ni conservée ni envoyée
+au serveur.
 
 | Capital proposé | Taux fixe par vague | Nombre de vagues |
 | --------------- | ------------------- | ---------------- |
@@ -174,8 +178,7 @@ le capital restant sont conservés dans le contrat signé.
 Une signature crédite immédiatement le capital. Une seule échéance est prélevée
 par prêt à chaque fin de vague, y compris une vague perdue, sans double prélèvement
 sur les polls suivants. Le solde peut devenir négatif et les échéances continuent.
-Aucun nouveau prêt n’est signé avec un solde négatif. Le remboursement anticipé
-coûte seulement le capital restant et exige les fonds disponibles. Le prêt terminé
+Aucun nouveau prêt n’est signé avec un solde négatif. Le prêt terminé
 est remplacé par une nouvelle offre vierge dans le même emplacement. Un reset
 efface prêts, offres et monnaie avec le reste de la partie.
 

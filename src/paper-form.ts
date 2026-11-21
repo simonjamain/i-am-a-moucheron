@@ -64,6 +64,20 @@ export const BED_CANCEL_MOTIVES = motives(
   'Déménagement vers le front',
   'Lit devenu impraticable',
 );
+/**
+ * Purpose of a bank loan. The bank is the one office that accepts « convenance
+ * personnelle »: it does not judge motives, it collects instalments.
+ */
+export const LOAN_MOTIVES: ClauseRule = Object.freeze({
+  title: 'Objet du prêt (cocher une case)',
+  exclusive: true,
+  min: 1,
+  clauses: Object.freeze([
+    { id: 'defense', text: 'Défense de la poubelle' },
+    { id: 'equipment', text: 'Achat de matériel' },
+    { id: 'comfort', text: 'Convenance personnelle' },
+  ]),
+});
 /** The refusal printed under the REFUSÉ stamp. */
 export const REFUSAL_TEXT =
   'Demande refusée : la convenance personnelle n’est pas un motif réglementaire.';

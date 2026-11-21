@@ -116,8 +116,9 @@ Le Stuka et le pilote du bombardier larguent des bombes en maintenant Espace
 (0,5 s ; 6 et 50 bombes respectivement). Le clic gauche sert aux MG ; au canon du
 tank, clic gauche tire HE/AP et Espace la coaxiale. B est supprimé. Les stocks, commandes et dégâts sont détaillés
 dans [véhicules et banque](vehicles-bank.md). Le HUD affiche les statistiques de coque près du viseur et une aide permanente
-en bas à gauche. Les anciens panneaux repliables sont masqués ; la jauge DCA reste. Le banquier (bouton ou N) propose trois emplacements
-de prêts partagés, consultables et signables dans tous les postes et mondes.
+en bas à gauche. Les anciens panneaux repliables sont masqués ; la jauge DCA reste. Le banquier (bouton ou N) présente sur un prospectus
+en papier trois emplacements de prêts partagés, consultables et signables dans tous les
+postes et mondes ; il n’y a pas de remboursement anticipé.
 
 Chaque impact infligeant des dégâts à un insecte déclenche une gerbe de grosses gouttes
 rouges, y compris sur un coup fatal. Cet effet purement visuel fonctionne aussi à partir
