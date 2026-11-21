@@ -12,7 +12,7 @@
       rel="stylesheet"
       media="print"
       onload="this.media = 'all'"
-      href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&amp;family=Space+Grotesk:wght@400;500;600;700&amp;display=swap"
+      href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&amp;family=Space+Grotesk:wght@400;500;600;700&amp;family=Courier+Prime:wght@400;700&amp;display=swap"
     />
     <style>
       :root {
@@ -23,6 +23,13 @@
         --line: #ffffff20;
         /* Interaction signal, shared with the 3D outline (src/post-highlight.ts). */
         --signal: #2ec4d6;
+        /* Paper documents (src/paper-form.ts, docs/ui-guidelines.md). */
+        --paper: #f7f1e1;
+        --paper-line: #c9bfa4;
+        --ink: #1b1510;
+        --pencil: #3b3a36;
+        --stamp-ink: #5b3f9e;
+        --typewriter: 'Courier Prime', 'Courier New', monospace;
       }
       * {
         box-sizing: border-box;
@@ -2097,6 +2104,171 @@
         display: block;
         background: #fff9e5;
       }
+      /* Paper document (bon de commande): no HTML form look, see docs/ui-guidelines.md. */
+      #purchasePanel > article.paperDoc {
+        position: relative;
+        width: min(640px, 100%);
+        background: var(--paper);
+        color: var(--ink);
+        border: 0;
+        border-radius: 2px;
+        padding: 26px 30px 30px;
+        font: 15px/1.5 var(--typewriter);
+        transform: rotate(-0.7deg);
+        box-shadow:
+          0 1px 0 var(--paper-line),
+          0 20px 50px #0008;
+        animation: paperIn 0.28s ease-out;
+      }
+      @keyframes paperIn {
+        from {
+          transform: translateY(40vh) rotate(4deg);
+        }
+      }
+      #purchasePanel .docTop {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        gap: 8px;
+        font-size: 11px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+      #purchasePanel .paperDoc header {
+        border-bottom: 2px solid var(--ink);
+        margin: 8px 0 12px;
+      }
+      #purchasePanel .paperDoc h2 {
+        font: 700 21px var(--typewriter);
+        font-style: normal;
+        text-transform: uppercase;
+        margin: 0 0 6px;
+      }
+      #purchasePanel .paperDoc p {
+        line-height: 1.5;
+        margin: 0 0 12px;
+      }
+      #purchasePanel .paperDoc [data-bed-text] {
+        font-size: 12px;
+      }
+      #purchasePanel .docLedger {
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+      }
+      #purchasePanel .paperDoc button {
+        background: none;
+        color: var(--ink);
+        padding: 2px 4px;
+        font: 700 13px var(--typewriter);
+        text-decoration: underline dotted;
+      }
+      #purchasePanel .clauses {
+        display: grid;
+        gap: 4px;
+        margin: 4px 0 14px;
+      }
+      #purchasePanel .clauseTitle {
+        margin: 0 0 2px;
+      }
+      #purchasePanel .clause {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        width: fit-content;
+        cursor: pointer;
+        outline-offset: 2px;
+      }
+      #purchasePanel .clause:focus-visible {
+        outline: 2px dashed var(--pencil);
+      }
+      #purchasePanel .clause svg {
+        width: 24px;
+        height: 24px;
+        flex: none;
+        overflow: visible;
+      }
+      #purchasePanel .clauseBox,
+      #purchasePanel .clauseTick {
+        fill: none;
+        stroke: var(--pencil);
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+      #purchasePanel .clauseBox {
+        stroke-width: 1.4;
+      }
+      #purchasePanel .clauseTick {
+        stroke-width: 2.6;
+        stroke-dasharray: 40;
+        stroke-dashoffset: 40;
+      }
+      #purchasePanel .clause[aria-checked='true'] .clauseTick {
+        stroke-dashoffset: 0;
+        transition: stroke-dashoffset 0.18s ease-out;
+      }
+      #purchasePanel .signLine {
+        display: flex;
+        align-items: end;
+        gap: 10px;
+      }
+      #purchasePanel .paperDoc canvas {
+        flex: 1;
+        min-width: 0;
+        height: 110px;
+        border: 0;
+        border-bottom: 1px solid var(--ink);
+        background: transparent;
+        transition: opacity 0.2s;
+      }
+      #purchasePanel.locked .paperDoc canvas {
+        opacity: 0.35;
+        cursor: not-allowed;
+      }
+      #purchasePanel .docStamp {
+        position: absolute;
+        right: 34px;
+        top: 96px;
+        padding: 4px 14px;
+        border: 4px double var(--stamp-ink);
+        color: var(--stamp-ink);
+        font: 700 28px var(--typewriter);
+        letter-spacing: 0.08em;
+        opacity: 0;
+        mix-blend-mode: multiply;
+        pointer-events: none;
+        transform: rotate(-14deg) scale(1.6);
+      }
+      #purchasePanel .docStamp.printed {
+        opacity: 0.85;
+        transform: rotate(-14deg) scale(1);
+        transition:
+          transform 0.16s ease-in,
+          opacity 0.16s ease-in;
+      }
+      #purchasePanel .docStamp.refused {
+        transform: rotate(9deg) scale(1.6);
+      }
+      #purchasePanel .docStamp.refused.printed {
+        transform: rotate(9deg) scale(1);
+      }
+      #purchasePanel.leaving {
+        pointer-events: none;
+        background: transparent;
+        animation: paperOut 0.35s ease-in forwards;
+        animation-delay: 0.5s;
+      }
+      @keyframes paperOut {
+        to {
+          opacity: 0;
+          transform: translateY(30vh);
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        #purchasePanel > article.paperDoc,
+        #purchasePanel.leaving {
+          animation: none;
+        }
+      }
       :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel) .bankTable {
         overflow: auto;
         margin: 15px 0;
@@ -2781,15 +2953,23 @@
       aria-modal="true"
       aria-labelledby="purchaseTitle"
     >
-      <article>
+      <article class="paperDoc">
+        <div class="docTop">
+          <span>Intendance · Base Alpha</span><span>Formulaire R-12 · 3 exemplaires</span>
+        </div>
         <header>
-          <h2 id="purchaseTitle">Contrat de réapparition</h2>
+          <h2 id="purchaseTitle">Bon de commande</h2>
           <button data-bed-close aria-label="Fermer le bon de commande">✕</button>
         </header>
+        <p data-ledger class="docLedger"></p>
         <p data-bed-text></p>
-        <canvas width="800" height="200" aria-label="Signer le bon de commande"></canvas
-        ><button data-bed-clear>Effacer</button>
+        <div data-clauses class="clauses"></div>
+        <div class="signLine">
+          <canvas width="800" height="200" aria-label="Signer le bon de commande"></canvas
+          ><button data-bed-clear>Gommer</button>
+        </div>
         <p data-bed-status role="status" aria-live="polite"></p>
+        <div data-stamp class="docStamp" aria-hidden="true"></div>
       </article>
     </section>
     <section

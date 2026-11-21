@@ -14,6 +14,10 @@ export class BedUI {
     this.canvas.onpointerdown = (e) => {
       e.preventDefault();
       if (this.busy || this.pointer !== null) return;
+      if (!this.canSign()) {
+        this.signBlocked();
+        return;
+      }
       this.pointer = e.pointerId;
       this.canvas.setPointerCapture?.(e.pointerId);
       this.points = [this.point(e)];
@@ -42,6 +46,13 @@ export class BedUI {
       this.pointer = null;
     };
   }
+  // Documents with clauses to tick first (PurchaseUI) lock the signature until done.
+  canSign() {
+    return true;
+  }
+  signBlocked() {}
+  // Runs after a confirmed signature, before the document closes.
+  signed() {}
   point(e) {
     const r = this.canvas.getBoundingClientRect();
     return [
@@ -129,6 +140,7 @@ export class BedUI {
           ink,
         });
       this.root.querySelector('[data-bed-status]').textContent = 'SIGNÉ · Destination mise à jour.';
+      this.signed();
       this.clear();
       success = true;
     } catch (e) {

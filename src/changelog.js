@@ -1,6 +1,13 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 388,
+    changes: [
+      'Le bon de commande devient une vraie feuille : cochez un motif au crayon, signez, et le tampon tombe.',
+      'La convenance personnelle n’est pas un motif réglementaire : la commande est refusée.',
+    ],
+  },
+  {
     version: 387,
     changes: [
       'Bombardier moyen : le poste visé est cerné d’un trait net, qui le détache bien de l’avion.',
