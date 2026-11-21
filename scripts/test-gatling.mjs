@@ -29,7 +29,7 @@ assert.equal(GATLING.hp, 150);
 assert.equal(GATLING.damage, 30);
 assert.equal(GATLING.ammo, 1000);
 assert.equal(GATLING.range, SENTRY.range, 'même portée que la tourelle automatique');
-assert.ok(Math.abs(1000 / GATLING.intervalMs - 6) < 1e-9, '6 tirs par seconde');
+assert.ok(Math.abs(1000 / GATLING.intervalMs - 12) < 1e-9, '12 tirs par seconde');
 
 const defense = newGroundDefense();
 assert.throws(
@@ -85,7 +85,7 @@ assert.throws(
   /maximal/,
 );
 
-// --- Cadence : 6 tirs/s malgré un tick serveur de 250 ms ------------------------
+// --- Cadence : 12 tirs/s malgré un tick serveur de 250 ms ------------------------
 const range = newGroundDefense();
 groundCommand(range, { action: 'build', kind: 'gatling', a: [0, 0] }, [0, 0], 99, 0, {
   castor: true,
@@ -97,7 +97,7 @@ for (let now = 1000; now <= 11000; now += 250)
   shots += fireGroundSentries(range.structures, [{ id: 1, p: [0.1, 0, 0] }], now, (t, s, d) => {
     damage.push(d);
   });
-assert.ok(shots >= 60 && shots <= 61, '10 s de feu continu = 60 tirs, obtenu ' + shots);
+assert.ok(shots >= 120 && shots <= 121, '10 s de feu continu = 120 tirs, obtenu ' + shots);
 assert.ok(damage.every((d) => d === 30));
 assert.equal(turret.ammo, 1000 - shots);
 assert.deepEqual(turret.aimTarget, [0.1, 0, 0]);
@@ -299,8 +299,8 @@ const wheel = { angle: 0, speed: 0 };
 for (let i = 0; i < 90; i++) stepGatlingSpin(wheel, 1 / 60, true);
 assert.ok(wheel.speed > GATLING_MAX_SPIN * 0.95, 'monte à pleine vitesse en 1,5 s');
 assert.ok(
-  Math.abs(GATLING_MAX_SPIN - 2 * Math.PI) < 1e-9,
-  '1 tour/s : un tir par canon et par tour',
+  Math.abs(GATLING_MAX_SPIN - 4 * Math.PI) < 1e-9,
+  '2 tours/s : un tir par canon et par tour',
 );
 const spun = wheel.angle;
 for (let i = 0; i < 30; i++) stepGatlingSpin(wheel, 1 / 60, false);
@@ -328,17 +328,20 @@ ui.sentries = new Map([
 assert.equal(ui.noteGatlingBurst('9', 2, [0.2, 0, 0.2], 1000), true);
 assert.equal(ui.noteGatlingBurst('404', 1, null, 1000), false, 'tourelle inconnue');
 assert.equal(ui.takeGatlingShots(1000).length, 1, 'un tir à la fois, à la cadence de l’arme');
-assert.equal(ui.takeGatlingShots(1100).length, 0, 'pas de tir avant l’intervalle de 1/6 s');
+assert.equal(ui.takeGatlingShots(1050).length, 0, 'pas de tir avant l’intervalle de 1/12 s');
 ui.noteGatlingBurst('9', 4, null, 1100);
 assert.equal(
   ui.takeGatlingShots(1900).length,
   2,
   'image en retard : jamais plus de deux tirs à la fois',
 );
-ui.noteGatlingBurst('9', 6, [0.2, 0, 0.2], 2000);
+// Le serveur annonce jusqu'à 3 tirs par tick de 250 ms : 12 tirs par seconde à l'écran.
 let released = 0;
-for (let t = 2000; t < 3000; t += 16) released += ui.takeGatlingShots(t).length;
-assert.ok(released >= 5 && released <= 6, 'six tirs en une seconde, obtenu ' + released);
+for (let t = 2000; t < 3000; t += 16) {
+  if ((t - 2000) % 250 < 16) ui.noteGatlingBurst('9', 3, [0.2, 0, 0.2], t);
+  released += ui.takeGatlingShots(t).length;
+}
+assert.ok(released >= 11 && released <= 12, 'douze tirs en une seconde, obtenu ' + released);
 const sounds = ui.gatlingSounds({ x: 0, y: 0, z: 0 }, 2500);
 assert.equal(sounds.length, 1, 'une seule voix par tourelle en train de tirer');
 assert.equal(sounds[0].key, 'gatling-9');
@@ -363,9 +366,86 @@ const energy = (from) => {
   for (let i = from; i < from + 240; i++) sum += loop[i] ** 2;
   return sum;
 };
-assert.ok(energy(0) > energy(2400) * 3, 'les six impulsions sont audibles');
-assert.ok(Math.abs(energy(0) - energy(rate / 6)) < energy(0) * 0.6, 'cadence régulière');
+assert.ok(energy(0) > energy(1200) * 3, 'les douze impulsions sont audibles');
+assert.ok(Math.abs(energy(0) - energy(rate / 12)) < energy(0) * 0.6, 'cadence régulière');
+
+// --- Achat complet côté serveur, depuis un Castor -----------------------------------
+const game = new Game({ now: () => 100000 });
+const joined = game.join({ code: 'GATLING', name: 'Armurier' });
+const room = game.rooms.get('GATLING');
+const pilot = room.pilots.get(joined.id);
+const castor = game.createVehicle(room, 'castor');
+castor.state.p = [0, VEHICLES.castor.gear, 0];
+castor.state.landed = true;
+castor.seats.set('pilot', joined.id);
+pilot.mode = 'flight';
+pilot.seat = 'pilot';
+pilot.vehicle_id = castor.id;
+room.dollars = 40;
+const build = (request) =>
+  game.command('GATLING', joined.id, 'ground-defense', {
+    epoch: room.base.epoch,
+    action: 'build',
+    kind: 'gatling',
+    a: [0, 0],
+    request,
+  });
+let snap = build('gatling:first');
+assert.equal(snap.dollars, 15, '25 $ débités');
+assert.equal(snap.groundDefense.structures[0].ammo, 1000);
+snap = build('gatling:first');
+assert.equal(snap.dollars, 15, 'nouvel essai réseau idempotent');
+assert.equal(snap.groundDefense.structures.length, 1);
+
+// --- Tick serveur : un effet par tourelle et par tick porte le nombre de tirs ----------
+let clock = 200000;
+const live = new Game({ now: () => clock });
+live.join({ code: 'GATFIRE', name: 'Tireur' });
+const arena = live.rooms.get('GATFIRE');
+arena.phase = 'combat';
+arena.started = clock;
+const roster = live.plan(arena).roster;
+clock += 2000;
+const first = swarmFrame(roster, 2, arena.groundAgents).find(Boolean);
+assert.ok(first, 'un ennemi est présent');
+const standing = {
+  position: [first.p[0], first.p[2]],
+  y: Math.max(0, first.p[1] - 0.025),
+  angle: 0,
+  hp: 150,
+  maxHp: 150,
+};
+arena.groundDefense.structures.push(
+  { id: 'g1', kind: 'gatling', ammo: 1000, ...standing },
+  { id: 's1', kind: 'sentry', ammo: 180, ...standing },
+);
+arena.effects = [];
+for (let i = 0; i < 8; i++) {
+  clock += 250;
+  live.advanceSentries(arena, clock);
+}
+const gatlingEffects = arena.effects.filter((e) => e.sentry === 'g1');
+const sentryEffects = arena.effects.filter((e) => e.sentry === 's1');
+assert.ok(gatlingEffects.length > 0, 'la Gatling tire sur l’ennemi présent');
+assert.ok(
+  gatlingEffects.every((e) => e.turret === 'gatling' && e.shots >= 1 && e.shots <= 3),
+  'un effet par tick de 250 ms, 1 à 3 tirs à 12 tirs/s',
+);
+assert.ok(
+  gatlingEffects.some((e) => e.shots === 3),
+  'à 12 tirs/s un tick porte bien jusqu’à trois tirs',
+);
+assert.ok(
+  sentryEffects.every((e) => e.turret === undefined && e.shots === undefined),
+  'la tourelle T-01 garde son effet par tir',
+);
+const fired = 1000 - arena.groundDefense.structures.find((s) => s.id === 'g1').ammo;
+assert.equal(
+  gatlingEffects.reduce((n, e) => n + e.shots, 0),
+  fired,
+  'les effets comptent exactement les munitions consommées',
+);
 
 console.log(
-  'Gatling: règles, cadence 6/s, modèle articulé, rotation du faisceau, tirs étalés et son continu OK',
+  'Gatling: règles, cadence 12/s, modèle articulé, rotation du faisceau, tirs étalés et son continu OK',
 );

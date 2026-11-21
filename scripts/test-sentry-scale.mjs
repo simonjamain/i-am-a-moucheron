@@ -46,7 +46,7 @@ assert.ok(SENTRY.footprint >= box.x / 2 && SENTRY.footprint < 0.03, 'placement s
 
 // Gameplay untouched.
 assert.equal(SENTRY.intervalMs, 500);
-assert.equal(SENTRY.damage, 30);
+assert.equal(SENTRY.damage, 60, 'balles deux fois plus puissantes (v390)');
 assert.equal(SENTRY.range, 0.42);
 console.log(
   `Sentry scale: ×${SENTRY_SCALE}, barrel ${(barrel * 1000).toFixed(1)} mm vs Castor ${(castorBarrel * 1000).toFixed(1)} mm.`,
