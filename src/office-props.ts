@@ -34,6 +34,8 @@ export type Facing = keyof typeof FACE;
 // collided separately; flat items on walls). Any other model collides with its
 // bounds, except small items (all sides under SMALL), which never block.
 const SMALL = 0.15;
+/** Length of the rod that hangs ceiling models from above the clouds (metres). */
+export const ROD = 1.2;
 const NONE: readonly LocalBox[] = [];
 const HITBOXES: Partial<Record<OfficeModel, readonly LocalBox[]>> = {
   Desk: [
@@ -57,6 +59,15 @@ const HITBOXES: Partial<Record<OfficeModel, readonly LocalBox[]>> = {
   Wall_Half: [
     [-0.056, 0, -0.3, 0.056, 2.7, 0.3],
     [-0.073, 0, -0.3, 0.073, 0.1, 0.3],
+  ],
+  // Rod (rising into the clouds above the hanging point), hub, and the disc swept
+  // by the blades (radius 0.75 m) as a square and a cross.
+  Ceiling_Fan: [
+    [-0.013, 0, -0.013, 0.013, ROD, 0.013],
+    [-0.13, -0.48, -0.13, 0.13, 0, 0.13],
+    [-0.53, -0.35, -0.53, 0.53, -0.3, 0.53],
+    [-0.75, -0.35, -0.3, 0.75, -0.3, 0.3],
+    [-0.3, -0.35, -0.75, 0.3, -0.3, 0.75],
   ],
   Wall_Corner: NONE,
   Wall_Window: NONE,

@@ -668,8 +668,9 @@ pas, mais la même discipline de provenance oui.
   au sol pour les meubles, dos pour les objets muraux) ; face avant vers +X. Échelle
   uniforme : un module de mur (5,4 unités du pack) vaut exactement 1,2 m, donc
   2,7 m de haut ; aucune déformation.
-- **Seulement ce qui sert** : `MODELS` liste les objets placés par les plans (67 en
-  version 401, 66 460 triangles, 2,2 Mo de module, environ 0,9 Mo compressé) ;
+- **Seulement ce qui sert** : `MODELS` liste les objets placés par les plans (68 en
+  version 403 avec le ventilateur de plafond, 67 632 triangles, 2,2 Mo de module,
+  environ 0,9 Mo compressé) ;
   `test-office-pack.mjs` refuse un modèle importé inutilisé. Pour en utiliser un
   autre, l'ajouter à la liste et relancer l'import avec la source.
 - **Rendu** : un `InstancedMesh` par modèle, un seul matériau (l'atlas) pour tout le

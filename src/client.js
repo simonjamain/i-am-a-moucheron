@@ -306,6 +306,7 @@ setActiveLayout(
   isLayoutId(planParam) ? planParam : isLayoutId(storedPlan) ? storedPlan : DEFAULT_LAYOUT_ID,
 );
 let office = createOffice(T, scene, { box, cyl, ball });
+office.bakeShadows(renderer);
 const colliders = office.colliders;
 // Swaps the drawn room and its colliders in place (shared arrays keep working).
 function applyLayout(planId) {
@@ -313,6 +314,7 @@ function applyLayout(planId) {
   setActiveLayout(planId);
   office.dispose();
   office = createOffice(T, scene, { box, cyl, ball });
+  office.bakeShadows(renderer);
   colliders.splice(0, colliders.length, ...office.colliders);
 }
 let me = makePlane('#e3ebc0');

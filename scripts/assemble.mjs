@@ -98,6 +98,7 @@ const files = {
       'office-pack-catalog',
       'office-pack',
       'office-pack-data',
+      'office-lights',
       'changelog',
       'flight-tuning',
       'flight-tuning-ui',

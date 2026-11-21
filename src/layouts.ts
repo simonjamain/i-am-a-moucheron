@@ -120,6 +120,11 @@ export function onWall(
     ? put(model, -X + off, at, 'east', { y })
     : put(model, X - off, at, 'west', { y });
 }
+/** Height of the hanging point of ceiling fans: blades just below 2 m. */
+export const FAN_TOP = 2.34;
+/** Model hanging from a rod that rises into the clouds (see office-props.ts). */
+export const hanging = (model: OfficeModel, x: number, z: number, top = FAN_TOP): PropSpec =>
+  put(model, x, z, 'east', { y: top });
 /** Wall holding the door, and the centre of its module along that wall. */
 export interface DoorSpec {
   wall: 'left' | 'right' | 'back';
@@ -575,6 +580,9 @@ const DIAGONALE_PROPS: PropSpec[] = (() => {
     onWall('Fire_Extinguisher', 'right', 1.05, 0.75),
     onWall('Light_Switch', 'right', 2.5, 1.05),
   );
+  // Two lit ceiling fans hanging below the clouds, inside the enemies' ring and
+  // clear of their dives: obstacles for pilots, light for the islands.
+  add(hanging('Ceiling_Fan', -0.7, 1.1), hanging('Ceiling_Fan', -0.85, -0.95));
   return P;
 })();
 
@@ -609,7 +617,7 @@ export const LAYOUTS = Object.freeze([
       [
         [-3.0, -1.2],
         [-1.5, -0.2],
-        [0, 0.6],
+        [0.1, 0.35],
         [1.8, 0.3],
         [3.0, -1.0],
         [3.5, -2.8],
@@ -624,7 +632,7 @@ export const LAYOUTS = Object.freeze([
       [
         [3.3, 1.8],
         [2.2, 0.8],
-        [0.5, 1.0],
+        [0.6, 0.7],
         [-0.6, -0.2],
         [1.6, -1.6],
         [3.5, -2.9],

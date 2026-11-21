@@ -52,6 +52,9 @@ reprennent leurs volumes de jeu avec les mêmes meubles, en version plus sobre.
   à fleur de la face du mur et centrée sur son entrée ; chaque trou de souris est une
   arche sombre sur la plinthe, au pied du mur.
 - **Sol uni**, sans lattes ni dalles.
+- **Lampes.** Les ventilateurs de plafond lumineux (`hanging`, `FAN_TOP`) pendent
+  sous les nuages et éclairent le plan à la place du soleil oblique : voir
+  [l'éclairage du bureau](office-lighting.md).
 
 ## Données et code
 
