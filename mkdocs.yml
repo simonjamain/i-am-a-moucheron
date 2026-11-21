@@ -76,6 +76,8 @@ nav:
       - Plans de bureau: office-layouts.md
       - Nouveautés: nouveautes.md
   - Conception:
+      - Direction artistique: art-direction.md
+      - Règles d’interface: ui-guidelines.md
       - Galerie visuelle: galerie.md
       - Écrans intégrés: ecrans.md
       - Écran de chargement: loading-screen.md
