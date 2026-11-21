@@ -60,6 +60,7 @@ import { InsectStatus, insectScale } from '/insect-status.js';
 import { BloodEffects } from '/blood-effects.js';
 import { stepVacantAircraft } from '/vacant-flight.js';
 import { CONTRACTS, ContractBook, contractKey } from '/contracts.js';
+import { BOARDING_MOTIVES, RETURN_MOTIVES, REFUSAL_TEXT, ClauseSheet, stamp } from '/paper-form.js';
 import { RewardQueue } from '/rewards.js';
 import { SHOP, shopPrice, supportedPlacement } from '/equipment.js';
 import { stepBallisticVelocity, toggleParachute } from '/ballistics.js';
@@ -2239,6 +2240,11 @@ function isSuper() {
 $('punch').onclick = null;
 $('heavyPunch').onclick = null;
 $('soulDash').onclick = null;
+// Paper dossier state (see paperMotives below).
+let paperClauses = null,
+  paperRefusing = false,
+  paperLingerUntil = 0,
+  paperLingerTimer = 0;
 let soulBody = null,
   signatureForm = -1,
   signaturePoints = [],
@@ -2260,7 +2266,7 @@ function clearSignature() {
   signaturePointer = null;
   if (pointer !== null && sig.hasPointerCapture?.(pointer)) sig.releasePointerCapture(pointer);
   signaturePoints = [];
-  if ($('inkState')) $('inkState').textContent = 'Signez librement dans le cadre';
+  if ($('inkState')) $('inkState').textContent = paperInkHint();
   ink.clearRect(0, 0, sig.width, sig.height);
   $('signSubmit').disabled = true;
 }
@@ -2295,13 +2301,16 @@ function redrawInk() {
   }
   ink.stroke();
   $('signSubmit').disabled = !inkReady() || soulBusy || boardingBusy;
-  $('inkState').textContent = inkReady()
-    ? 'Relâchez pour signer'
-    : 'Signez librement dans le cadre';
+  $('inkState').textContent = inkReady() ? 'Relâchez pour signer' : paperInkHint();
 }
 sig.onpointerdown = (e) => {
   e.preventDefault();
   if (boardingBusy || soulBusy || boardingSelectionBusy || signaturePointer !== null) return;
+  if (paperRefusing) return;
+  if (paperClauses && !paperClauses.complete) {
+    $('paperMessage').textContent = 'Cochez un motif avant de signer.';
+    return;
+  }
   signaturePointer = e.pointerId;
   try {
     sig.setPointerCapture(e.pointerId);
@@ -2337,7 +2346,6 @@ sig.onpointercancel = () => clearSignature();
 sig.onlostpointercapture = () => {
   signaturePointer = null;
 };
-$('signClear').onclick = clearSignature;
 $('paperClose').onclick = (event) => {
   if (boardingBusy) return;
   boardingOpen = false;
@@ -2350,6 +2358,42 @@ $('paperClose').onclick = (event) => {
 $('signSubmit').onclick = submitPaper;
 let paperSuppressed = false;
 let paperSubmission = null;
+// Paper dossier (docs/ui-guidelines.md): the first document of a boarding or of a
+// return from the purgatory has a motive to tick; « convenance personnelle » is
+// refused and closes the dossier. Seat changes and exchanges keep a bare signature.
+function paperMotives(context, index) {
+  if (index !== 0) return null;
+  if (context === 'boarding' || context === 'equipment') return BOARDING_MOTIVES;
+  if (context === 'purgatory' || context === 'super') return RETURN_MOTIVES;
+  return null;
+}
+function paperInkHint() {
+  return paperClauses && !paperClauses.complete
+    ? 'Cochez un motif, puis signez.'
+    : 'Signez librement dans le cadre';
+}
+function refreshPaperLock() {
+  $('papers').classList.toggle('locked', !!paperClauses && !paperClauses.complete);
+  if (!inkReady()) $('inkState').textContent = paperInkHint();
+}
+// Really refused: nothing is sent; the dossier closes and must be started again.
+function refusePaper() {
+  paperRefusing = true;
+  stamp($('paperStamp'), 'REFUSÉ', true);
+  sound.play('stamp', paperSource(), { ref: 8 });
+  $('paperMessage').textContent =
+    REFUSAL_TEXT + (respawnAt ? ' Recommencez au guichet.' : ' Recommencez depuis le poste.');
+  setTimeout(() => {
+    paperRefusing = false;
+    boardingOpen = false;
+    clearSignature();
+    paperContext = '';
+    if (respawnAt) paperSuppressed = true;
+    paperLingerUntil = performance.now() + 500;
+    renderPaper();
+    captureMouse();
+  }, 1300);
+}
 const paperArchive = [];
 function renderArchive() {
   const root = $('signedPapers');
@@ -2455,12 +2499,21 @@ function renderPaper() {
     eligible &&
     index < documents[context]?.length;
   $('paperClose').disabled = boardingBusy;
-  $('signClear').disabled = boardingBusy;
   $('paperTear').disabled = boardingBusy || soulBusy;
-  $('papers').classList.toggle('hidden', !visible);
-  $('paperBackdrop').classList.toggle('hidden', !visible);
+  // A stamped or refused sheet stays a moment on screen while the game goes on.
+  const lingering = !visible && performance.now() < paperLingerUntil;
+  $('papers').classList.toggle('hidden', !visible && !lingering);
+  $('papers').classList.toggle('leaving', lingering);
   if (!visible) {
-    if (!boardingBusy) $('stampEcho').classList.remove('show');
+    if (lingering && !paperLingerTimer)
+      paperLingerTimer = setTimeout(
+        () => {
+          paperLingerTimer = 0;
+          renderPaper();
+        },
+        paperLingerUntil - performance.now() + 20,
+      );
+    if (!boardingBusy && !lingering) $('paperStamp').classList.remove('printed', 'refused');
     return;
   }
   if (controlFocus.active || document.pointerLockElement === canvas) releaseMouse();
@@ -2483,12 +2536,16 @@ function renderPaper() {
         ':' +
         replacementCounter;
   if (paperContext !== key) {
-    $('stampEcho').classList.remove('show');
+    $('paperStamp').classList.remove('printed', 'refused');
     paperContext = key;
     signatureForm = index;
     $('paperMessage').textContent = '';
+    const motives = paperMotives(context, index);
+    paperClauses = motives ? new ClauseSheet(motives, $('paperClauses'), refreshPaperLock) : null;
+    if (!motives) $('paperClauses').replaceChildren();
     clearSignature();
     redrawInk();
+    refreshPaperLock();
   }
   const doc = contractBook.get(
       contractKey(
@@ -2527,8 +2584,7 @@ function renderPaper() {
         : isSuper()
           ? 'Retour au purgatoire classique'
           : 'Retour à la base Alpha';
-  $('paperProgress').textContent =
-    `Document ${index + 1} sur ${total} · ${index} traité${index > 1 ? 's' : ''}`;
+  $('paperProgress').textContent = `${index + 1} sur ${total}`;
 
   $('signSubmit').disabled = !inkReady() || soulBusy || boardingBusy;
   $('signSubmit').textContent = boardingBusy
@@ -2542,7 +2598,11 @@ function renderPaper() {
           : 'Déposer le document signé →';
 }
 async function submitPaper() {
-  if (boardingBusy || soulBusy || !inkReady()) return;
+  if (boardingBusy || soulBusy || paperRefusing || !inkReady()) return;
+  if (paperClauses?.refused) {
+    refusePaper();
+    return;
+  }
   const signature = true,
     archive = { title: $('paperTitle').textContent, ink: sig.toDataURL('image/png') };
   paperSubmission = {
@@ -2568,10 +2628,7 @@ async function submitPaper() {
   };
   boardingBusy = true;
   $('paperMessage').textContent = 'Signature apposée · Transmission du document';
-  const echo = $('stampEcho');
-  echo.classList.remove('show');
-  void echo.offsetWidth;
-  echo.classList.add('show');
+  stamp($('paperStamp'), 'APPROUVÉ');
   sound.play('stamp', paperSource(), { ref: 8 });
   renderPaper();
   try {
@@ -2604,9 +2661,10 @@ async function submitPaper() {
     if (activeTransfer) boardingOpen = false;
     accept(result);
     $('paperMessage').textContent = 'Document validé · Classé dans votre dossier';
+    paperLingerUntil = performance.now() + 900;
   } catch (e) {
     clearSignature();
-    $('stampEcho').classList.remove('show');
+    $('paperStamp').classList.remove('printed', 'refused');
     $('paperMessage').textContent = e.message;
   } finally {
     boardingBusy = false;
@@ -5785,10 +5843,9 @@ $('paperTear').onclick = async () => {
   let message = '';
   boardingBusy = true;
   $('paperTear').disabled = true;
-  $('signClear').disabled = true;
   $('signSubmit').disabled = true;
   clearSignature();
-  $('stampEcho').classList.remove('show');
+  $('paperStamp').classList.remove('printed', 'refused');
   $('papers').classList.add('tearing');
   try {
     await new Promise((resolve) => setTimeout(resolve, 320));

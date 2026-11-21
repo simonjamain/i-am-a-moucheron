@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 const source = readFileSync(process.argv[2] || 'src/client.js', 'utf8');
 const handlers = source.slice(
   source.indexOf('sig.onpointerdown ='),
-  source.indexOf("$('signClear').onclick"),
+  source.indexOf("$('paperClose').onclick"),
 );
 if (process.argv[3] !== 'selection')
   for (const pointerType of ['mouse', 'touch'])
@@ -25,6 +25,9 @@ if (process.argv[3] !== 'selection')
           c.signaturePoints.some(
             (p, i, a) => i && p[2] && Math.hypot(p[0] - a[i - 1][0], p[1] - a[i - 1][1]) > 0.12,
           ),
+        paperRefusing: false,
+        paperClauses: null,
+        $: () => ({ textContent: '' }),
         submitPaper: () => submitted++,
         clearSignature: () => {
           c.signaturePoints = [];
@@ -58,6 +61,20 @@ if (process.argv[3] !== 'selection')
       c.sig.onpointercancel();
       c.sig.onpointerup({ ...e, clientX: 0.8 });
       assert.equal(submitted, 3, 'cancel cannot sign');
+      // A dossier with an unticked motive keeps the signature locked.
+      const message = { textContent: '' };
+      c.$ = () => message;
+      c.paperClauses = { complete: false };
+      c.clearSignature();
+      c.sig.onpointerdown({ ...e, pointerId: 10 });
+      c.sig.onpointerup({ ...e, pointerId: 10, clientX: 0.8 });
+      assert.equal(submitted, 3, 'no signature before a motive is ticked');
+      assert.match(message.textContent, /Cochez un motif/);
+      c.paperClauses = { complete: true };
+      c.sig.onpointerdown({ ...e, pointerId: 11 });
+      c.sig.onpointerup({ ...e, pointerId: 11, clientX: 0.8 });
+      assert.equal(submitted, 4, 'a ticked motive unlocks the signature');
+      c.paperClauses = null;
     }
 // Exercise the real selection function while another client's seat/snapshot
 // changes are delayed: no obsolete, signable sheet may appear before ACK.
@@ -108,6 +125,7 @@ assert.equal(
     /classList.add\('stamping'\)/,
     /paperStampUntil = performance.now\(\) \+ 5000/,
     /echo.classList.add\('show'\)/,
+    /stamp\(\$\('paperStamp'\), 'APPROUVÉ'\)/,
   ].filter((re) => re.test(submit)).length,
   1,
   'one stamp presentation per actual submit',

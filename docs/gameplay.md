@@ -80,7 +80,8 @@ par type initial est conservé ; dès son décollage, un successeur gratuit appa
 un tank, un hélicoptère biplace ou une DCA mobile, dont la destruction est définitive. Les sièges sont exclusifs.
 
 Chaque accès publié aux équipements, y compris une nouvelle entrée, passe par un
-cercle au sol et un dossier de deux documents obligatoires. Exception : le bombardier
+cercle au sol et un dossier de deux documents obligatoires, sur papier : la première pièce
+exige de cocher un motif (« Convenance personnelle » est refusée et oblige à recommencer). Exception : le bombardier
 moyen n’a plus de cercles ; on vise directement le poste (cockpit, tourelle), qui
 s’entoure de bleu signal s’il est libre (ou d’un contour clair avec le nom de son
 occupant), et un clic ouvre son dossier, de n’importe quel côté de l’appareil
