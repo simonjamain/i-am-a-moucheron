@@ -132,4 +132,16 @@ assert.ok(
   'the wheel rides the bump',
 );
 assert.equal(suspension.axles[0][0].position.y, restY[0][0], 'other axles stay');
+
+// The hubs ride with their wheels: each wheel's mesh reaches the outer face where its hub is, and
+// the hull no longer holds them (scripts/rig-tank-hubs.mjs refuses a module that is done).
+for (const wheel of g.userData.runningGear) {
+  const box = new T.Box3().setFromBufferAttribute(
+    wheel.children.find((c) => c.isMesh).geometry.getAttribute('position'),
+  );
+  assert.ok(Math.max(-box.min.x, box.max.x) > 0.12, 'hub in the wheel: ' + wheel.name);
+}
+const { MODEL_DATA } = await import('../src/meshy-tank-data.js');
+const { rigHubs } = await import('./rig-tank-hubs.mjs');
+assert.throws(() => rigHubs(MODEL_DATA), /already done|expected one hub/, 'hubs already moved');
 console.log('track suspension ok');
