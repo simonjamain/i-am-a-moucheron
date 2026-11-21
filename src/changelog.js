@@ -1,7 +1,7 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
-    version: 385,
+    version: 386,
     changes: [
       'Nouvelle tourelle Gatling pour le Castor et le Castor volant : six canons qui tournent et un tir continu.',
     ],

@@ -10,7 +10,7 @@ l'ennemi le plus proche dans sa portée, se répare et se recharge aux zones de 
 
 | Valeur            | Gatling            | T-01 (pour mémoire) |
 | ----------------- | ------------------ | ------------------- |
-| Prix              | 25 $               | 9 $                 |
+| Prix              | 25 $               | 5 $                 |
 | Points de vie     | 150                | 150                 |
 | Dégâts par tir    | 30                 | 30                  |
 | Cadence           | 6 tirs par seconde | 2 tirs par seconde  |
