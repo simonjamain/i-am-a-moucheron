@@ -1,6 +1,13 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 403,
+    changes: [
+      'Diagonale s’éclaire par deux ventilateurs lumineux qui pendent sous les nuages : attention aux pales en vol.',
+      'Ombres plus douces sous la lumière des lampes ; l’ombre des avions et des insectes tombe juste sous eux.',
+    ],
+  },
+  {
     version: 401,
     changes: [
       'Nouveau décor : vrais meubles de bureau, écrans, cuisine, porte et désordre sur les bureaux, dans tous les plans.',

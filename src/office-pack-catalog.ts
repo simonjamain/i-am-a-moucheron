@@ -76,7 +76,6 @@ const TABLE = {
   Fire_Extinguisher: {"min": [0.0, 0.0, -0.1055], "max": [0.215, 0.559, 0.08], "triangles": 1444},
   Wall_Outlet: {"min": [0.0, 0.0, -0.0375], "max": [0.0135, 0.12, 0.0375], "triangles": 236},
   Light_Switch: {"min": [0.0, 0.0, -0.0375], "max": [0.0315, 0.12, 0.0375], "triangles": 196},
-  Ceiling_Light: {"min": [-0.31, -0.111, -0.61], "max": [0.31, 0.0, 0.61], "triangles": 308},
   Ceiling_Fan: {"min": [-0.732, -0.61, -0.75], "max": [0.732, 0.0, 0.642], "triangles": 1172},
 } as const;
 export type OfficeModel = keyof typeof TABLE;

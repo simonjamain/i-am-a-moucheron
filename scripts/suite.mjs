@@ -121,6 +121,7 @@ export const SUITE = [
   'test-ground-paths',
   'test-layouts',
   'test-office-pack',
+  'test-office-lights',
   'test-pheromone-trail',
   'test-enemy-bestiary',
   'test-enemy-speeds',

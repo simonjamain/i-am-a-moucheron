@@ -3,6 +3,10 @@
 **Validation WebGL et performance ouverte. Ne pas fusionner ce candidat avant
 la comparaison demandée dans l’issue #11.**
 
+Depuis la version 403, un plan éclairé par ses lampes (Diagonale) garde ces ombres
+d'atterrissage avec un soleil presque vertical qui ne porte plus que les objets
+mobiles : voir [l'éclairage du bureau](office-lighting.md).
+
 ## Mise à jour issue #135
 
 Les bords francs de BasicShadowMap étaient trop nets et crénelés. Le préréglage

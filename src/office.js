@@ -1,6 +1,13 @@
-import { applyShadowPreset } from './shadow-settings.ts';
+import {
+  officeLamps,
+  addOfficeLights,
+  lightRoom,
+  bakeOfficeShadows,
+  LAMP_LOOK,
+} from './office-lights.ts';
 import { activeLayout, layoutPieces, pieceBounds, LAYOUT_ROOM } from './layouts.ts';
 import { addOfficeProps } from './office-pack.ts';
+import { ROD } from './office-props.ts';
 // Draws the active layout (see layouts.ts): floor, blocking-out volumes, the
 // office pack models (walls, door, vents, bin, furniture and objects) and the
 // mouse holes. Everything goes into one group so a room's plan can be replaced
@@ -19,25 +26,14 @@ export function createOffice(T, scene, { box, cyl }) {
     solidObjects.push(m);
     return m;
   };
-  // Lights belong to the scene, not to a plan: they are added once.
-  if (!scene.children.some((o) => o.isDirectionalLight)) {
-    const sky = new T.HemisphereLight('#eff3dd', '#50634e', 2.5);
-    const sun = new T.DirectionalLight('#fff4d9', 3);
-    sun.position.set(-3, 6, 2);
-    sun.castShadow = true;
-    sun.shadow.mapSize.set(2048, 2048);
-    Object.assign(sun.shadow.camera, {
-      left: -5,
-      right: 5,
-      top: 5,
-      bottom: -5,
-      near: 0.01,
-      far: 15,
-    });
-    sun.shadow.bias = -0.00001;
-    scene.add(sky, sun);
-    applyShadowPreset(T, null, scene);
-  }
+  // Sky and sun belong to the scene (set for this plan); lamps belong to the plan.
+  const lamps = officeLamps(layout.props);
+  lightRoom(
+    T,
+    scene,
+    lamps.some((l) => l.kind === 'fan'),
+  );
+  addOfficeLights(T, lamps, root);
   for (const p of layoutPieces(layout)) {
     if (p.visible === false) {
       const b = pieceBounds(p);
@@ -62,6 +58,19 @@ export function createOffice(T, scene, { box, cyl }) {
   }
   // Pack models are instanced per model: their colliders are the layout solids above.
   addOfficeProps(T, layout.props, root);
+  // Hanging models: a thin rod from their hanging point up into the clouds.
+  for (const p of layout.props)
+    if (p.model === 'Ceiling_Fan')
+      cyl(
+        p.x,
+        p.y + ROD / 2,
+        p.z,
+        0.008,
+        0.008,
+        ROD,
+        LAMP_LOOK.rod,
+        root,
+      ).userData.projectileSolid = false;
   // Mouse holes: dark arches on the skirting board, at the foot of the wall.
   const arch = new T.Shape();
   arch.moveTo(-0.075, 0);
@@ -88,11 +97,14 @@ export function createOffice(T, scene, { box, cyl }) {
     root,
     colliders,
     solidObjects,
+    // Renders the lamps' shadows once, with the room alone (see office-lights.ts).
+    bakeShadows: (renderer) => bakeOfficeShadows(T, renderer, root),
     // Removes the room from the scene. Pack geometries are shared: keep them.
     dispose() {
       scene.remove(root);
       root.traverse((o) => {
-        if (o.isInstancedMesh) o.dispose();
+        if (o.isLight) o.dispose();
+        else if (o.isInstancedMesh) o.dispose();
         else o.geometry?.dispose();
       });
     },

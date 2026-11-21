@@ -83,6 +83,7 @@ nav:
       - Écran de chargement: loading-screen.md
       - Rendu dessin animé: toon-rendering.md
       - Ombres d’atterrissage: shadow-visibility.md
+      - Éclairage du bureau: office-lighting.md
       - Visibilité des ennemis: enemy-visibility.md
       - Audio: audio.md
       - Pipeline des assets Meshy: asset-pipeline.md
