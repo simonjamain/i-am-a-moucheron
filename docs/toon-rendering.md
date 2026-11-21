@@ -34,3 +34,28 @@ mesure des images par seconde reste à faire sur des machines réelles.
 `scripts/test-toon.mjs` vérifie le patch (une fois, uniforme partagée), l'enchaînement
 des passes avec un moteur simulé, le décodage de la profondeur et l'absence de réglage joueur ; le
 rendu a été vérifié hors partie avec un moteur logiciel.
+
+## Viseurs et traçantes
+
+Le cercle et le point central du viseur des canons et de la consigne souris sont
+blancs opaques avec un liseré sombre ; aucun réglage en jeu. Les traçantes ont un
+cœur ambre/orange et un contour brun sombre en mélange normal, dessinés dans cet
+ordre (contour puis cœur), y compris en rendu instancié. La largeur projetée du
+cœur vise au moins 2 pixels ; seule la largeur change, jamais la trajectoire ni
+les collisions. Brouillard et obstacles masquent toujours les tirs.
+Contrôles : `test-tracer-contrast.mjs`, `test-instanced-tracers.mjs`.
+
+## Brouillard spatial et plafond
+
+Le brouillard de distance blanc est léger (densité 0,018). La couche de nuages
+commence à **2,2125 m** ; le plafond de vol est à **3,95 m**
+(`LAYOUT_BOUNDS.ceiling`, `src/layout.ts`, partagé par l'avion local et le Hind). La densité
+croît avec la hauteur et les matériaux calculent l'épaisseur traversée par chaque
+rayon : regarder vers le haut depuis le sol révèle la couche. Un voile blanc
+uniforme monte entre 40 % et 100 % du plafond (jusqu'à 85 % d'opacité) ; le HUD
+reste devant. Une enveloppe visuelle non solide (haut et quatre côtés, sud compris)
+termine les rayons de fond dans le même brouillard et ne crée aucun collider. Le
+purgatoire garde son brouillard linéaire, sans voile d'altitude.
+Contrôles : `test-office-clouds.mjs` ; rendu réel : `e2e-office-clouds.mjs`
+(Playwright + Chromium, hors `npm test` ; variables `PLAYWRIGHT_PATH`,
+`CHROMIUM_PATH`, `CLOUD_SCREENSHOT`).

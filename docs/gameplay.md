@@ -3,16 +3,8 @@
 Référence consolidée le 30 octobre 2026, comportement du runtime Node courant.
 Mettre à jour les sections concernées lorsque le comportement change.
 
-Au volant du Castor, on peut construire un bunker LEGO (10 $) et un canon antichar lourd (14 $), sans plan à débloquer : seul le prix compte. Le bunker protège son occupant d’une grande partie des impacts et possède sa propre mitrailleuse ; le canon est prévu pour les boss terrestres. Ce canon est un obusier à taille humaine qui pivote lentement sur ses roues, s’élève de −5° à +40° et recule à chaque tir. Il tire un obus simulé par le tireur, comme le canon du tank (gravité, obstacles, impact direct), mais plus rapide (750 m/s), plus puissant (360 dégâts, pleins sur la cible touchée) et à petite explosion (5 m) ; il n’a pas de fusée de DCA. Le cercle d’accès, l’ouverture du dossier et les signatures partagent la même portée autour du poste, au même niveau : 9 cm pour le bunker ; pour le canon, un cercle à 4,5 m de l’essieu, hors du balayage du tube, et une portée de 6 m. Chaque cercle porte l’icône de son rôle et chaque poste a ses propres textes et contrats. Les deux postes demandent la signature d’un dossier, disposent de munitions finies et se rechargent uniquement auprès des sources de service payantes.
-
-La « Tourelle automatique du Castor » se construit pour 9 $ au volant du G1, sans plan à débloquer. Elle tire automatiquement (180 balles finies) et se recharge contre paiement auprès du Castor ou des stations. Aucun tir ni achat à distance. Son modèle définitif combine quatre modules Meshy texturés (socle fixe, tête qui pivote sur 360°, canon unique inclinable de −10° à +90° et capteur/radar séparé). Les géométries et UV Meshy sont conservés, avec une copie des textures rééchantillonnée en WebP 1K pour le navigateur ; voir [l'asset T-01](t01-asset.md). Les déplacements visuels suivent la dernière cible validée par le serveur ; les dégâts et les munitions restent autoritaires côté serveur. Le GLB texturé définitif doit être importé séparément après vérification des parties mobiles et de leurs UV.
-
-Le [lot de lisibilité et commandes #171](game-polish-171.md) précise les phases de chute, les nouvelles stations, le brouillard, les arcs de recharge et les commandes Hind/Castor.
-
-Le [lot de contraste et le lit Drawer Bed](contrast-bed-290.md) précise le viseur,
-les traçantes, le nouveau lit et le dégagement de la station Alpha.
-
-Le [lot #175](gameplay-polish-175.md) précise le chargement animé, le suivi souris du Hind, les éclairs attachés aux canons, les murs LEGO de deux rangées et le brouillard spatial.
+Index : [commandes](controls.md) · [économie et signatures](economy-physics.md) · [réseau](walking-network.md) ·
+[écran de chargement](loading-screen.md) · [viseurs, traçantes et brouillard](toon-rendering.md).
 
 ## Session réseau
 
@@ -110,7 +102,7 @@ Les équipements commandés depuis un appareil descendent dans un colis sous
 parachute à **1/3 m/s dans le décor** (trois fois moins vite qu'avant la version
 292), jusqu'à une surface porteuse disponible.
 Le serveur y déploie l'équipement une seule fois ; le colis n'est pas utilisable
-en vol. Voir [livraisons](issues-15-16-17.md#correction-de-la-vitesse-après-retour-en-jeu-version-70).
+en vol. Voir [colis parachutés](logistics-contracts.md#colis-parachutés).
 
 Le tank a un pilote/MG avant, un tireur canon/coaxiale et un mitrailleur supérieur.
 Le Stuka et le pilote du bombardier larguent des bombes en maintenant Espace
@@ -226,13 +218,25 @@ transition restaure 100 PV ; tuer un joueur ne rapporte jamais d’argent.
 
 Voir [combat et mondes](combat-worlds.md) pour les valeurs et garanties réseau.
 
-## Retours de partie après 025
+## Retours de partie
 
-Les noms flottants sont retirés. Les moucherons sont agrandis d’un facteur total de 6,075, avec tolérance de tir supplémentaire de 20 % ; les
-insectes blessés montrent leurs PV, de la fumée puis des flammes à 30 % de PV.
-Les morts aériennes ont un son de chute spatialisé. Voir
-[retours de partie](party-feedback.md) pour les seuils, les signatures fiabilisées
-et les apparitions périphériques, et le [pistolet à l’épaule](field-update.md#pistolet-à-lépaule).
+Noms flottants retirés, moucherons agrandis (facteur 6,075, tolérance de tir +20 %),
+blessures visibles et sons de chute : voir [visibilité des ennemis](enemy-visibility.md).
+Pistolet à l'épaule : [retours terrain](field-update.md#pistolet-à-lépaule).
+Alertes de réserves à 25 % et zéro : bloc discret rouge lentement pulsé (animation
+coupée si mouvement réduit) ; « Missile en vol » est prioritaire sur l'épuisement.
+Un appareil vivant, posé et arrêté en station récupère moteur et ailes avec ses PV.
+Le contact des roues est permis si l'axe haut > 0,88 et la descente < 5 m/s de
+référence ; une vitesse verticale positive ou la souris à cabrer au-delà de 18 m/s
+permet le décollage.
+
+## Stations de service
+
+Repair Bay (ravitaillement, sphère verte = rayon réel du service payant) et Signal
+Sentinel (radar, antenne tournant à 1 rad/s) reposent à y=0. Repair Bay mesure ~36 mm
+de large ; sa collision orientée tourne avec le modèle. La station Alpha est reculée
+de 40 mm vers le nord et 6 mm vers l'ouest pour dégager les cercles d'accès du
+bombardier. Les personnages distinguent chute libre, parachute et réception (0,38 s).
 
 ## Identification, contrats et ravitaillement
 
@@ -304,8 +308,7 @@ VAG-07 réduit taille et vitesse des fourmis, selon le lot confort.
 
 Références détaillées de cette période : [confort de jeu](comfort.md) (réparation,
 zoom, jauges, radar, remise à zéro), [nuées densifiées](dense-swarms.md),
-[commandes H2](helicopter-controls.md), [retours du 30 octobre](returns-30-october.md)
-et [issues 15–17](issues-15-16-17.md). Les réglages d’équilibrage par room n’existent
+[commandes H2](helicopter-controls.md). Les réglages d’équilibrage par room n’existent
 plus : voir [puissance et budget des vagues](enemy-power.md).
 
 ## Rat, moustique et araignée pondeuse
@@ -412,6 +415,12 @@ Ce système conserve la validation serveur et ne permet pas de construire sur le
 surfaces surélevées depuis le Castor dans cette première version. Les véritables
 modèles Meshy du châssis, de la tourelle et des roues sont déjà intégrés ; la
 correction des six roues est conservée.
+
+### Constructions du Castor
+
+Au volant du Castor, on peut construire un bunker LEGO (10 $) et un canon antichar lourd (14 $), sans plan à débloquer : seul le prix compte. Le bunker protège son occupant d’une grande partie des impacts et possède sa propre mitrailleuse ; le canon est prévu pour les boss terrestres. Ce canon est un obusier à taille humaine qui pivote lentement sur ses roues, s’élève de −5° à +40° et recule à chaque tir. Il tire un obus simulé par le tireur, comme le canon du tank (gravité, obstacles, impact direct), mais plus rapide (750 m/s), plus puissant (360 dégâts, pleins sur la cible touchée) et à petite explosion (5 m) ; il n’a pas de fusée de DCA. Le cercle d’accès, l’ouverture du dossier et les signatures partagent la même portée autour du poste, au même niveau : 9 cm pour le bunker ; pour le canon, un cercle à 4,5 m de l’essieu, hors du balayage du tube, et une portée de 6 m. Chaque cercle porte l’icône de son rôle et chaque poste a ses propres textes et contrats. Les deux postes demandent la signature d’un dossier, disposent de munitions finies et se rechargent uniquement auprès des sources de service payantes.
+
+La « Tourelle automatique du Castor » se construit pour 9 $ au volant du G1, sans plan à débloquer. Elle tire automatiquement (180 balles finies) et se recharge contre paiement auprès du Castor ou des stations. Aucun tir ni achat à distance. Son modèle définitif combine quatre modules Meshy texturés (socle fixe, tête qui pivote sur 360°, canon unique inclinable de −10° à +90° et capteur/radar séparé). Les géométries et UV Meshy sont conservés, avec une copie des textures rééchantillonnée en WebP 1K pour le navigateur ; voir [l'asset T-01](t01-asset.md). Les déplacements visuels suivent la dernière cible validée par le serveur ; les dégâts et les munitions restent autoritaires côté serveur. Le GLB texturé définitif doit être importé séparément après vérification des parties mobiles et de leurs UV.
 
 ## Castor volant (version 292)
 

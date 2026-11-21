@@ -67,3 +67,10 @@ Contrat :
 `scripts/audio-library-types.ts` vérifie les erreurs de typage attendues via
 `npm run typecheck`. Ces tests ne valident ni l'écoute en partie, ni le confort
 des fondus, ni le coût HRTF sur une machine modeste.
+
+## Bourdonnements et arrivées
+
+Six sources de bourdonnement au plus (niveau 0,12, distance de référence 20 unités
+acteur), chacune réduite par la racine du nombre de sources. Une nouvelle arrivée
+d'ennemis (comparaison des identifiants entre deux snapshots, sans rejouer le
+premier) donne un signal bref placé à l'auditeur. Valeurs à confirmer à l'écoute.

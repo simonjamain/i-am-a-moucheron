@@ -113,7 +113,7 @@ du support ; `route-navigation.js` adapte leur marge. `test-enemy-readability.mj
 mesure les silhouettes projetées et les vrais corps au sol.
 
 `delivery.ts` partage le calcul de hauteur absolue des colis entre serveur et
-client ([issues 15–17](issues-15-16-17.md)).
+client ([colis](logistics-contracts.md#colis-parachutés)).
 
 La [référence performance](performance.md) décrit la sélection spatiale des
 cibles des tirs, ses replis conservateurs et le benchmark CPU reproductible,
