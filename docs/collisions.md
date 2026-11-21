@@ -57,7 +57,21 @@ travail avance par lots (note de reprise : [collisions en triangles](tasks/colli
      porte rien. Les largages, livraisons, apparitions sur les lits et constructions
      du Castor sont calculés par le serveur seul : ils restent sur les boîtes
      jusqu'au lot 4.
-3. Avions, marche et véhicules au contact des triangles.
+3. **Avions, marche et véhicules au contact des triangles (version 410)** :
+   - **vol** (`client.js`) : l'avion s'écrase quand son point, gonflé de 0,3 unité
+     d'acteur, touche un triangle, ou quand le segment parcouru depuis l'image
+     précédente en traverse un (`sweptHitsDecor`) : pas de passage à travers une
+     pale, une feuille ou un panneau ; atterrissage (`resolveLanding`, `sortie.ts`)
+     sur la surface tournée vers le haut sous l'avion (`supportBelow`), dans la
+     même fenêtre que sur les boîtes ; les appareils sans pilote
+     (`stepVacantAircraft`) suivent les mêmes règles ;
+   - **marche** (`stepWalker`) : appui sur la vraie surface sous le marcheur ; les
+     faces proches des jambes, de la poitrine et de la tête le repoussent ;
+   - **véhicules Rapier** (char, camion, Castor) : `PhysicsWorld.useDecor` copie les
+     colliders en triangles du décor dans le monde de l'engin (une fois, 63 ms sous
+     Node pour Diagonale) et en retire les boîtes des meubles ;
+   - restent sur les boîtes : débris des crashs (`crash-effects.ts`) et
+     suspension visuelle des chenilles (`track-suspension.ts`), purement visuels.
 4. Navigation des fourmis et serveur.
 
 ## Mode debug

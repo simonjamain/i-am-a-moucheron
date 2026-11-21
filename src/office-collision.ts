@@ -136,11 +136,13 @@ export class DecorCollision {
   solids: DecorSolid[] = [];
   byHandle = new Map<number, DecorSolid>();
   triangleCount = 0;
+  /** Trimesh data per model (physics units), shared by every copy of the decor. */
+  shapes = new Map<OfficeModel, { vertices: Float32Array; indices: Uint32Array }>();
 
   constructor(R: Rapier, data: PackData, props: readonly Prop[]) {
     this.R = R;
     this.world = new R.World({ x: 0, y: 0, z: 0 });
-    const shapes = new Map<OfficeModel, { vertices: Float32Array; indices: Uint32Array }>();
+    const shapes = this.shapes;
     for (const p of props) {
       if (p.ghost || collisionShape(p.model) === 'none') continue;
       let shape = shapes.get(p.model);
@@ -153,22 +155,30 @@ export class DecorCollision {
         shapes.set(p.model, (shape = { vertices, indices }));
       }
       if (!shape.indices.length) continue;
-      const desc = R.ColliderDesc.trimesh(shape.vertices, shape.indices)
-        .setTranslation(toPhysics(p.x), toPhysics(p.y), toPhysics(p.z))
-        .setRotation({ x: 0, y: Math.sin(p.yaw / 2), z: 0, w: Math.cos(p.yaw / 2) })
-        .setFriction(0.4);
-      const collider = this.world.createCollider(desc);
-      const solid: DecorSolid = {
-        model: p.model,
-        frame: { x: p.x, y: p.y, z: p.z, c: Math.cos(p.yaw), s: Math.sin(p.yaw) },
-        collider,
-      };
+      const frame = { x: p.x, y: p.y, z: p.z, c: Math.cos(p.yaw), s: Math.sin(p.yaw) };
+      const collider = this.world.createCollider(this.desc(p.model, frame));
+      const solid: DecorSolid = { model: p.model, frame, collider };
       this.solids.push(solid);
       this.byHandle.set(collider.handle, solid);
       this.triangleCount += shape.indices.length / 3;
     }
     // Fills the broad phase, so queries see every collider (nothing moves).
     this.world.step();
+  }
+
+  // Fixed trimesh collider of a model at a frame (yaw only), physics units.
+  private desc(model: OfficeModel, f: DecorSolid['frame']) {
+    const shape = this.shapes.get(model)!;
+    const yaw = Math.atan2(f.s, f.c);
+    return this.R.ColliderDesc.trimesh(shape.vertices, shape.indices)
+      .setTranslation(toPhysics(f.x), toPhysics(f.y), toPhysics(f.z))
+      .setRotation({ x: 0, y: Math.sin(yaw / 2), z: 0, w: Math.cos(yaw / 2) })
+      .setFriction(0.4);
+  }
+
+  /** Copies the decor's colliders into another Rapier world (a vehicle's). */
+  addTo(world: World): RapierCollider[] {
+    return this.solids.map((s) => world.createCollider(this.desc(s.model, s.frame)));
   }
 
   /**
@@ -271,6 +281,32 @@ export class DecorCollision {
     return !blocked;
   }
 
+  /** True when a sphere (game metres) touches a decor triangle. */
+  touches(centre: readonly number[], radius: number): boolean {
+    const R = this.R;
+    let hit = false;
+    this.world.intersectionsWithShape(
+      { x: toPhysics(centre[0]), y: toPhysics(centre[1]), z: toPhysics(centre[2]) },
+      { x: 0, y: 0, z: 0, w: 1 },
+      new R.Ball(toPhysics(radius)),
+      () => {
+        hit = true;
+        return false;
+      },
+    );
+    return hit;
+  }
+
+  /**
+   * Height of an upward decor surface (normal y at least `flat`) straight below
+   * (x, z), searched from `from` down `depth` metres; null if none or another face
+   * comes first.
+   */
+  supportBelow(x: number, from: number, z: number, depth: number, flat = 0.7): number | null {
+    const hit = this.raycast([x, from, z], [0, -1, 0], depth);
+    return hit && hit.normal[1] >= flat ? hit.point[1] : null;
+  }
+
   dispose(): void {
     this.world.free();
     this.solids = [];
@@ -289,4 +325,28 @@ export function solidTriangles(data: PackData, solid: DecorSolid): Float32Array 
     out[i + 2] = f.z - f.s * t[i] + f.c * t[i + 2];
   }
   return out;
+}
+
+/**
+ * A moving body (a point padded by `pad`, game metres) against the decor: true
+ * when it ends within `pad` of a triangle, or when the segment travelled since
+ * `previous` crosses one (no tunnelling through thin sheets, panels or blades).
+ */
+export function sweptHitsDecor(
+  decor: Pick<DecorCollision, 'touches' | 'raycast'>,
+  previous: readonly number[],
+  position: readonly number[],
+  pad: number,
+): boolean {
+  if (decor.touches(position, pad)) return true;
+  const d = [0, 1, 2].map((k) => position[k] - previous[k]);
+  const length = Math.hypot(d[0], d[1], d[2]);
+  return (
+    length > 1e-9 &&
+    !!decor.raycast(
+      previous,
+      d.map((v) => v / length),
+      length,
+    )
+  );
 }

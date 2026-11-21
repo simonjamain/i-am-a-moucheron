@@ -79,6 +79,9 @@ export class PhysicsWorld {
   world: World;
   solids = new Map<Solid, { collider: RapierCollider; signature: string }>();
   floor: RapierCollider;
+  /** The decor whose triangles stand for the props' boxes, and their copies here. */
+  decor: { addTo(world: World): RapierCollider[] } | null = null;
+  decorColliders: RapierCollider[] = [];
 
   constructor(RAPIER: Rapier, { gravity = GRAVITY } = {}) {
     this.R = RAPIER;
@@ -110,7 +113,22 @@ export class PhysicsWorld {
     return this.world.createCollider(desc);
   }
 
-  sync(colliders: readonly Solid[]): void {
+  /**
+   * Uses the props' real triangles (office-collision.ts) instead of their boxes:
+   * copies the decor's trimesh colliders into this world, once per decor.
+   */
+  useDecor(decor: { addTo(world: World): RapierCollider[] } | null | undefined): void {
+    if ((decor ?? null) === this.decor) return;
+    for (const c of this.decorColliders) this.world.removeCollider(c, false);
+    this.decor = decor ?? null;
+    this.decorColliders = decor ? decor.addTo(this.world) : [];
+  }
+
+  sync(allColliders: readonly Solid[]): void {
+    // With the decor's triangles here, the pack props' boxes are left out.
+    const colliders = this.decor
+      ? allColliders.filter((b) => !(b as Solid & { decor?: boolean }).decor)
+      : allColliders;
     const live = new Set(colliders);
     for (const [box, entry] of this.solids)
       if (!live.has(box)) {
