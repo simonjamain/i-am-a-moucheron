@@ -77,7 +77,7 @@ existants gardent leurs contrôles de placement et d’achats concurrents.
 Le ressenti des trajectoires et du combat reste à confirmer en partie réelle.
 
 Les portails restent à au moins trois mètres du décor de la corbeille ;
-[retours de partie](party-feedback.md) précise les premières images et la connexion tardive.
+[visibilité des ennemis](enemy-visibility.md#blessures-et-apparitions) précise les premières images et la connexion tardive.
 
 Sur Node, les primes et commandes sont dédupliquées en RAM. Les noms de tables
 et migrations mentionnés plus haut décrivent l'ancien modèle à base de données,
@@ -97,5 +97,4 @@ Le H2 coûte 30 $, le camion D2 20 $, sans remplacement gratuit. Voir
 Le [lot confort de jeu, version 37](comfort.md) précise réparation, zoom, jauges,
 radar à pied, remise à zéro, fourmis et projectiles du pistolet courants.
 
-Les [issues 15–17](issues-15-16-17.md) précisent la descente continue des colis,
-le mapping Maj/Ctrl et tangage du H2, et la réduction supplémentaire des vitesses terrestres.
+Colis : [logistique](logistics-contracts.md#colis-parachutés) ; H2 : [commandes](helicopter-controls.md#mapping-pilote-h2).

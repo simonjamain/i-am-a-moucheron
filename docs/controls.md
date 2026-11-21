@@ -160,7 +160,7 @@ Les réserves, butées et unités sont détaillées dans [véhicules d’appui](
 Le [lot confort de jeu, version 37](comfort.md) précise réparation, zoom, jauges,
 radar à pied, remise à zéro, fourmis et projectiles du pistolet courants.
 
-Le [mapping pilote H2 actuel](issues-15-16-17.md#16--séparation-puissance-et-tangage-du-pilote-h2) retire les anciens alias O/W sans changer les armes du copilote.
+Le [mapping pilote H2 actuel](helicopter-controls.md#mapping-pilote-h2) retire les anciens alias O/W sans changer les armes du copilote.
 
 ## Réglages personnels des avions
 
