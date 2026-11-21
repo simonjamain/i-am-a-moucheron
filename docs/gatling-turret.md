@@ -66,7 +66,7 @@ toucher aux UV**, en quatre pièces rigides qui partagent un seul atlas WebP 1 0
 Total 1 948 (590 + 896 + 382 + 80) : aucun triangle perdu. Aucune réduction de maillage n'a été appliquée :
 à moins de 2 000 triangles, l'optimiseur Docker n'a rien de sûr à gagner (voir le
 [pipeline d'assets](asset-pipeline.md)). Le rendu WebGL des quatre pièces assemblées a
-été contrôlé avec des captures (repos, +50°, rotation du faisceau).
+été contrôlé avec des captures (repos, +45°, rotation du faisceau).
 
 ```sh
 python3 scripts/import-meshy-gatling.py --source Meshy_AI_Sentinel_Sentry_1121103608_texture.glb --output src
@@ -78,15 +78,21 @@ sur les six canons et **redresse le faisceau** sur l'horizontale avant de le pos
 sur son pivot (le centre de l'ouverture du boîtier), sinon les canons « nageraient »
 en tournant. Le pivot et les centres des six bouches sont enregistrés dans les données.
 
-**Hiérarchie** (`src/gatling-model.ts`) : `socle` fixe → `lacet` (tête) →
-`élévation` (pivot du faisceau) → `anneau-faisceau` (la base circulaire, qui s'incline avec
-le canon) et `rotation-barillet` (tourne autour de l'axe central, porte `faisceau-canons`
-et les six bouches). La bouche centrale et l'anneau ne tournent pas sur eux-mêmes. L'anneau
-est redressé comme le faisceau (même axe) ; il garde le léger décalage de 0,2 mm du modèle
-d'origine, dont les canons sont un peu bas dans l'ouverture. Échelle `GATLING_SCALE = 0,021` : 16 mm de haut, canons de 8 mm
-(la mitrailleuse du Castor fait environ 9 mm). Élévation de −10° à +50° ; au-delà, le
-canon reste à 50° (le tir part malgré tout vers la cible, les traceurs sont calculés
-depuis la bouche vers la cible réelle).
+**Hiérarchie** (`src/gatling-model.ts`) : `socle` fixe → `lacet` → `elevation-canon`
+(pivot horizontal au **sommet de la couronne**, sur l'axe de lacet) qui porte **toute la
+partie supérieure** : la tête (boîtier, radar, caisse de munitions, témoin) et
+`ensemble-canons` (au centre de l'ouverture : `anneau-faisceau`, qui ne tourne pas sur
+lui-même, et `rotation-barillet`, qui tourne autour de l'axe central avec
+`faisceau-canons` et les six bouches). Le recul de chaque tir ne déplace que
+`ensemble-canons`. L'anneau est redressé comme le faisceau (même axe) ; il garde le léger
+décalage de 0,2 mm du modèle d'origine, dont les canons sont un peu bas dans l'ouverture.
+
+Échelle `GATLING_SCALE = 0,021` : 16 mm de haut, canons de 8 mm (la mitrailleuse du
+Castor fait environ 9 mm). **Élévation de −10° à +45°.** Au-delà de 45°, le dessous de
+la tête s'enfonce nettement dans le socle : la tourelle reste à 45° (le tir part malgré
+tout vers la cible, les traceurs sont calculés depuis la bouche vers la cible réelle). À
+l'élévation maximale, l'arrière de la tête affleure la couronne ; le pied de la tête
+s'écarte du socle à l'avant, comme une charnière.
 
 **Rotation.** Le faisceau tourne à 1 tour par seconde à plein régime : avec six
 canons et 6 tirs par seconde, un tir par canon et par tour. Il monte en régime en
