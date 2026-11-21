@@ -1,6 +1,10 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 381,
+    changes: ['Les moyeux des roues du char suivent maintenant les roues sur le relief.'],
+  },
+  {
     version: 377,
     changes: [
       'Le tireur du char voit son canon de près, sans que la tourelle gêne quand il relève la visée.',

@@ -1,4 +1,4 @@
-# Physique Rapier — les véhicules au sol (versions 352 à 377)
+# Physique Rapier — les véhicules au sol (versions 352 à 381)
 
 Le jeu écrit sa physique à la main (vol, hélicoptère, `stepWalker`, balistique). Les
 véhicules au sol roulent sur un vrai moteur, **Rapier** (Rust compilé en
@@ -121,6 +121,14 @@ char vide simulé par l'hôte. Le modèle d'un char à chenilles :
   marche de 18 cm (environ deux rayons de galet) et bute sur 40 cm.
 - **Géométrie du train de roulement** (galets, rayon, ligne de chenille) mesurée sur le
   maillage de la caisse ; `test-tank-physics.mjs` la contrôle sur les sommets du modèle.
+
+### Moyeux dans les roues (version 381)
+
+Les capuchons hexagonaux des moyeux (« axes » des galets, du barbotin avant et du pignon arrière)
+étaient restés dans la caisse quand les roues ont été extraites : ils ne suivaient pas les roues
+qui montaient avec le relief. `scripts/rig-tank-hubs.mjs` déplace chacun des douze îlots de 22
+triangles dans la pièce de sa roue (aucun triangle, UV ni texture ne change) ; ils tournent et
+montent avec elle. `test-track-suspension.mjs` le contrôle.
 
 ### Chenilles déformables (version 366)
 
