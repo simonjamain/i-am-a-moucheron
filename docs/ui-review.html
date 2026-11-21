@@ -976,15 +976,6 @@
         gap: 12px;
         font-size: 12px;
       }
-      .paperPanel.tearing .paperDoc {
-        animation: paperTear 0.32s ease-in forwards;
-      }
-      @keyframes paperTear {
-        to {
-          opacity: 0;
-          transform: translateY(18px) rotate(-6deg);
-        }
-      }
       #flakControls {
         width: 100%;
         display: flex;
@@ -1255,17 +1246,6 @@
           transform: scale(1) rotate(-12deg);
         }
       }
-      @keyframes tear-sheet {
-        40% {
-          clip-path: polygon(0 0, 100% 0, 100% 47%, 52% 50%, 100% 53%, 100% 100%, 0 100%);
-          transform: rotate(-3deg);
-        }
-        100% {
-          opacity: 0;
-          transform: translateY(60px) rotate(8deg);
-          clip-path: polygon(0 0, 100% 0, 100% 43%, 40% 50%, 100% 57%, 100% 100%, 0 100%);
-        }
-      }
 
       #dirtView {
         position: fixed;
@@ -1324,17 +1304,6 @@
         display: block;
         margin: 6px 0;
         width: 100%;
-      }
-      @keyframes tear-sheet {
-        40% {
-          clip-path: polygon(0 0, 100% 0, 100% 47%, 52% 50%, 100% 53%, 100% 100%, 0 100%);
-          transform: rotate(-3deg);
-        }
-        100% {
-          opacity: 0;
-          transform: translateY(60px) rotate(8deg);
-          clip-path: polygon(0 0, 100% 0, 100% 43%, 40% 50%, 100% 57%, 100% 100%, 0 100%);
-        }
       }
 
       /* Validated contextual rails: keep the centre clear during combat. */

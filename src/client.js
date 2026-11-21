@@ -2375,7 +2375,6 @@ const documents = Object.fromEntries(
   ].map((context) => [context, CONTRACTS[contractKey(context)]]),
 );
 let activeTransfer = null;
-let replacementCounter = 0;
 
 function paperSource() {
   if (respawnAt) return { x: 0, y: 1.5, z: -1 };
@@ -2440,7 +2439,6 @@ function renderPaper() {
     eligible &&
     index < documents[context]?.length;
   $('paperClose').disabled = boardingBusy;
-  $('paperTear').disabled = boardingBusy || soulBusy;
   paperShown = visible;
   // A stamped or refused sheet stays a moment on screen while the game goes on.
   const lingering = !visible && performance.now() < paperLingerUntil;
@@ -2474,9 +2472,7 @@ function renderPaper() {
         ':' +
         (pilot?.board_paper || 0) +
         ':' +
-        (pilot?.state.boarding?.token || pilot?.state.equipmentBoarding?.token || '') +
-        ':' +
-        replacementCounter;
+        (pilot?.state.boarding?.token || pilot?.state.equipmentBoarding?.token || '');
   if (paperContext !== key) {
     $('paperStamp').classList.remove('printed', 'refused');
     paperContext = key;
@@ -5755,30 +5751,6 @@ function installationModel(st) {
   scene.add(g);
   return g;
 }
-
-$('paperTear').onclick = async () => {
-  if (boardingBusy || soulBusy || !sheetOpen('papers')) return;
-  let message = '';
-  boardingBusy = true;
-  $('paperTear').disabled = true;
-  $('signSubmit').disabled = true;
-  clearSignature();
-  $('paperStamp').classList.remove('printed', 'refused');
-  $('papers').classList.add('tearing');
-  try {
-    await new Promise((resolve) => setTimeout(resolve, 320));
-    replacementCounter++;
-    message = 'Document déchiré · Un nouvel exemplaire vous attend.';
-  } catch (e) {
-    message = e.message;
-  } finally {
-    boardingBusy = false;
-    $('papers').classList.remove('tearing');
-    paperContext = '';
-    renderPaper();
-    $('paperMessage').textContent = message;
-  }
-};
 
 function heliAimPoint() {
   const direction = weaponDirection(),

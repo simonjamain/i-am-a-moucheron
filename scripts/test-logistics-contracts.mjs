@@ -1,4 +1,3 @@
-import vm from 'node:vm';
 import { readFileSync } from 'node:fs';
 import assert from 'node:assert/strict';
 import { VEHICLES, pilotFireInterval, isRotorcraft } from '../src/fleet.ts';
@@ -15,71 +14,10 @@ import { shopPrice } from '../src/equipment.ts';
 import { createGraphics } from '../src/graphics.js';
 import { paintVehicle, updateInscriptions } from '../src/vehicle-livery.ts';
 import * as T from '../vendor/three.module.min.js';
-// Execute the real tear handler, including double activation and a failed request.
+// Documents can no longer be torn: no tear button nor handler.
 const clientSource = readFileSync('src/client.js', 'utf8');
-const tearSource = clientSource.slice(
-  clientSource.indexOf("$('paperTear').onclick = async () => {"),
-  clientSource.indexOf(
-    '\nfunction hasAmmo()',
-    clientSource.indexOf("$('paperTear').onclick = async () => {"),
-  ),
-);
-// Tearing an ordinary document is local: a fresh copy, no server request.
-async function exerciseTear() {
-  const elements = new Map();
-  const $ = (id) => {
-    if (!elements.has(id)) {
-      const classes = new Set();
-      elements.set(id, {
-        disabled: false,
-        textContent: '',
-        classList: {
-          contains: (k) => classes.has(k),
-          add: (k) => classes.add(k),
-          remove: (k) => classes.delete(k),
-        },
-      });
-    }
-    return elements.get(id);
-  };
-  let requests = 0,
-    accepts = 0,
-    clears = 0;
-  const context = vm.createContext({
-    $,
-    sheetOpen: (name) =>
-      !$(name).classList.contains('hidden') && !$(name).classList.contains('leaving'),
-    boardingBusy: false,
-    soulBusy: false,
-    clearSignature: () => clears++,
-    replacementCounter: 0,
-    paperContext: 'old',
-    id: 'test',
-    setTimeout: (cb) => queueMicrotask(cb),
-    api: async () => {
-      requests++;
-      return { ok: true };
-    },
-    accept: () => accepts++,
-    renderPaper: () => {
-      $('paperMessage').textContent = '';
-    },
-  });
-  vm.runInContext(tearSource, context);
-  const first = $('paperTear').onclick();
-  const second = $('paperTear').onclick();
-  assert.equal(context.boardingBusy, true);
-  await second;
-  await first;
-  assert.equal(context.boardingBusy, false);
-  assert.equal(clears, 1);
-  assert.equal($('papers').classList.contains('tearing'), false);
-  assert.equal(requests, 0);
-  assert.equal(accepts, 0);
-  assert.equal(context.replacementCounter, 1);
-  assert.ok($('paperMessage').textContent.includes('déchiré'));
-}
-await exerciseTear();
+assert.doesNotMatch(clientSource, /paperTear|replacementCounter/);
+assert.doesNotMatch(readFileSync('src/index.html', 'utf8'), /paperTear|Déchirer/);
 for (const type of Object.keys(VEHICLES)) {
   const ammo = fullAmmo(type),
     state = { p: [0, 1, 0], v: [0, 0, -0.1], landed: false, hp: 100, engine: 1, gas: 1 };
@@ -190,5 +128,5 @@ assert.equal(model.userData.inscriptions.length, 0);
 assert.notEqual(vehicleHue(1), vehicleHue(2));
 assert.equal(vehicleHue(3), vehicleHue(3));
 console.log(
-  'PASS: golden-angle paint/hull inscriptions, tear handler, refuel eligibility/parallel filling, install price curves and spherical radar coverage.',
+  'PASS: golden-angle paint/hull inscriptions, no tearing, refuel eligibility/parallel filling, install price curves and spherical radar coverage.',
 );

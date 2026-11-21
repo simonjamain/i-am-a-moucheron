@@ -19,15 +19,12 @@ les occultations ordinaires ; elles ne font pas face à la caméra. Aucun nom
 flottant n’est réintroduit. Un changement d’équipage remplace les textures ; un
 équipage identique les réutilise. Maximum : six plaques sur un bombardier.
 
-## Déchirer et signer
+## Signer
 
-Tous les documents ouverts proposent « Déchirer ce document ». Une déchirure
-anime la feuille pendant 320 ms, efface le trait et fournit un nouvel exemplaire
-s’il s’agit d’un document obligatoire. Les signatures précédentes restent
-acquises. Fermer un dossier
-et refuser un échange restent des actions distinctes. Une déchirure ne tamponne
-pas. Les actions sont bloquées pendant
-un envoi ; après erreur, le document peut être traité de nouveau.
+Les documents ne se déchirent plus (option retirée en version 399 : elle ne servait
+plus à rien). Fermer un dossier et refuser un échange restent des actions distinctes.
+Les actions sont bloquées pendant un envoi ; après erreur, le document peut être traité
+de nouveau.
 
 ### Annexes malicieuses retirées (version 264)
 
@@ -129,12 +126,10 @@ et des trajectoires partagées ; aucune dernière position ennemie n’est stock
 dossier sans annexe, progression normale obligatoire, dégâts pleins (75) pour
 chaque poste, transfert de poste, doubles requêtes de tir, réserves indépendantes du bombardier,
 panne après cinq minutes, reconnexion, plein de dix secondes de plusieurs avions,
-prix séparés, refus de pose/prix périmé et couverture cylindrique. Il exerce aussi
-le vrai gestionnaire de déchirure (double action, sans requête serveur), les meshes
-peints, le remplacement et la libération des textures d’inscription.
+prix séparés, refus de pose/prix périmé et couverture cylindrique. Il vérifie aussi
+l’absence de déchirure, les meshes peints, le remplacement et la libération des textures d’inscription.
 
-Navigateur local (lot d'origine) : entrée en jeu, déchirure/remplacement d’un
-document normal, signature suivante, conservation de la première signature, embarquement final, HUD à
+Navigateur local (lot d'origine) : entrée en jeu, signature suivante, conservation de la première signature, embarquement final, HUD à
 300 s/1 000 balles avec ravitaillement, sortie et nouveaux articles du magasin.
 Le navigateur fonctionne en rendu logiciel et refuse Pointer Lock ; la lisibilité
 WebGL des plaques/couleurs, le toucher physique,

@@ -1,6 +1,10 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 399,
+    changes: ['Les documents ne se déchirent plus : le bouton « Déchirer ce document » disparaît.'],
+  },
+  {
     version: 398,
     changes: [
       'Obus perforant du char : il frappe chaque ennemi au moment où il le traverse, en perdant 20 % de ses dégâts à chacun.',
