@@ -54,17 +54,18 @@ SHA-256 `a2a4e7eb9b42aed070b12c1a004ef4b998275b205c033f451f8dda9b39c07920`,
 il n'est pas versionné dans Git (le script contrôle son SHA).
 
 `scripts/import-meshy-gatling.py` le sépare, par composantes connexes et **sans
-toucher aux UV**, en trois pièces rigides qui partagent un seul atlas WebP 1 024 × 1 024 :
+toucher aux UV**, en quatre pièces rigides qui partagent un seul atlas WebP 1 024 × 1 024 :
 
-| Pièce   | Triangles | Rôle                                                            |
-| ------- | --------: | --------------------------------------------------------------- |
-| `socle` |       590 | Trépied et couronne, fixes.                                     |
-| `tete`  |       976 | Tête en lacet : boîtier, radar, caisse et bande de munitions.   |
-| `rotor` |       382 | Les six canons et leurs deux colliers : seule pièce qui tourne. |
+| Pièce    | Triangles | Rôle                                                                                                  |
+| -------- | --------: | ----------------------------------------------------------------------------------------------------- |
+| `socle`  |       590 | Trépied et couronne, fixes.                                                                           |
+| `tete`   |       896 | Tête en lacet : boîtier, radar, caisse et bande de munitions.                                         |
+| `anneau` |        80 | Base circulaire du faisceau (plaque arrière, rebord) : suit l'élévation, ne tourne pas sur elle-même. |
+| `rotor`  |       382 | Les six canons et leurs deux colliers : seule pièce qui tourne.                                       |
 
-Total 1 948 : aucun triangle perdu. Aucune réduction de maillage n'a été appliquée :
+Total 1 948 (590 + 896 + 382 + 80) : aucun triangle perdu. Aucune réduction de maillage n'a été appliquée :
 à moins de 2 000 triangles, l'optimiseur Docker n'a rien de sûr à gagner (voir le
-[pipeline d'assets](asset-pipeline.md)). Le rendu WebGL des trois pièces assemblées a
+[pipeline d'assets](asset-pipeline.md)). Le rendu WebGL des quatre pièces assemblées a
 été contrôlé avec des captures (repos, +50°, rotation du faisceau).
 
 ```sh
@@ -78,9 +79,11 @@ sur son pivot (le centre de l'ouverture du boîtier), sinon les canons « nagera
 en tournant. Le pivot et les centres des six bouches sont enregistrés dans les données.
 
 **Hiérarchie** (`src/gatling-model.ts`) : `socle` fixe → `lacet` (tête) →
-`élévation` (pivot du faisceau) → `rotation-barillet` (tourne autour de l'axe central,
-porte `faisceau-canons` et les six bouches). La bouche centrale et la plaque arrière
-ne tournent pas. Échelle `GATLING_SCALE = 0,021` : 16 mm de haut, canons de 8 mm
+`élévation` (pivot du faisceau) → `anneau-faisceau` (la base circulaire, qui s'incline avec
+le canon) et `rotation-barillet` (tourne autour de l'axe central, porte `faisceau-canons`
+et les six bouches). La bouche centrale et l'anneau ne tournent pas sur eux-mêmes. L'anneau
+est redressé comme le faisceau (même axe) ; il garde le léger décalage de 0,2 mm du modèle
+d'origine, dont les canons sont un peu bas dans l'ouverture. Échelle `GATLING_SCALE = 0,021` : 16 mm de haut, canons de 8 mm
 (la mitrailleuse du Castor fait environ 9 mm). Élévation de −10° à +50° ; au-delà, le
 canon reste à 50° (le tir part malgré tout vers la cible, les traceurs sont calculés
 depuis la bouche vers la cible réelle).

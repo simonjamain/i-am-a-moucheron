@@ -5,7 +5,7 @@ import type * as THREE from 'three';
 import type { Three } from './types.ts';
 
 // Gatling auto-turret: one Meshy atlas split into three rigid pieces (fixed
-// tripod, yaw head, spinning barrel bundle). See docs/gatling-turret.md.
+// tripod, yaw head, tilting bundle base, spinning barrel bundle). See docs/gatling-turret.md.
 export const GATLING_MIN_ELEVATION = (-10 * Math.PI) / 180;
 export const GATLING_MAX_ELEVATION = (50 * Math.PI) / 180;
 // 1 source unit = 21 mm: 16 mm tall, 8 mm barrels (the Castor gun is ~9 mm).
@@ -99,6 +99,8 @@ export function createGatlingModel(T: Three): GatlingModel {
   pitch.name = 'elevation-canon';
   pitch.position.set(...PIVOT);
   yaw.add(pitch);
+  // The circular base of the bundle (rear plate and front rim) tilts with the barrels.
+  addPart(T, resources.anneau, pitch, 'anneau-faisceau');
   // The spin group turns every barrel and both collars about the bundle axis (local Z).
   const spin = new T.Group();
   spin.name = 'rotation-barillet';
