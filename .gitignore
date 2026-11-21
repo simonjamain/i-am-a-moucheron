@@ -9,3 +9,4 @@ node_modules/
 # Private Meshy originals and temporary optimization candidates
 /assets/originals/
 /assets/optimized/
+.site/

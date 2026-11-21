@@ -11,7 +11,7 @@ import {
   engineAnchors,
   smokeLook,
   smokeRate,
-} from '../src/engine-smoke.js';
+} from '../src/engine-smoke.ts';
 import { ACTOR_UNIT } from '../src/scale.ts';
 
 assert.equal(damageRatio(100, 100), 0);

@@ -124,3 +124,17 @@ La projection géométrique n'est pas une observation du confort WebGL : à une
 distance plus grande, dans une autre orientation ou derrière un meuble, la taille
 apparente et l'occultation changent. Aucun affichage à travers les obstacles ni
 marqueur de remplacement n'est introduit. Après déploiement, recharger les clients.
+
+## Blessures et apparitions
+
+- Une barre de PV (sans texte, hors raycast) apparaît sur chaque insecte blessé,
+  PNJ du purgatoire compris, seulement si 0 < PV < max. Trois volutes de fumée
+  s'y ajoutent, et deux flammes à 30 % de PV ou moins ; aucun dégât en plus. Les
+  objets suivent l'insecte et sont réutilisés.
+- Une mort aérienne visible lance un son de chute de quatre secondes (16 voix au
+  plus), qui suit le corps et s'arrête à l'impact.
+- Les noms flottants des véhicules et personnages sont supprimés.
+- Tous les portails sont sur la périphérie, à au moins 3 m du décor de la
+  corbeille. Un ennemi découvert déjà près de la corbeille (connexion tardive,
+  `in-flight`) n'est pas replacé au mur : le client affiche une indication de
+  découverte tardive. Contrôle : `test-feedback.mjs`.

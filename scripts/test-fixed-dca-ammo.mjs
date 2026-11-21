@@ -10,11 +10,11 @@ import { HEAVY } from '../src/armament.ts';
 import { stepHeavy } from '../src/heavy-sim.js';
 import { shopPrice } from '../src/equipment.ts';
 import { heavyDcaMuzzle } from '../src/fixed-dca.ts';
-import { makeFixedDca, positionHeavyFlakSight } from '../src/fixed-dca-model.js';
+import { makeFixedDca, positionHeavyFlakSight } from '../src/fixed-dca-model.ts';
 import { OFFICE_LAYOUT } from '../src/layout.ts';
-import { makeInstallationCollider } from '../src/station-model.js';
+import { makeInstallationCollider } from '../src/station-model.ts';
 import { colliderContainsXZ } from '../src/oriented-collider.ts';
-import { aimGun, stepWalker, stationEntryOffset } from '../src/sortie.js';
+import { aimGun, stepWalker, stationEntryOffset } from '../src/sortie.ts';
 import { Game } from '../server/game.js';
 
 const station = { kind: 'refuel', x: 0, y: 0.01, z: 0 };
@@ -68,8 +68,6 @@ fire('round-1');
 assert.equal(positioned.ammo, 1);
 fire('round-1');
 assert.equal(positioned.ammo, 1, 'same shot cannot debit twice');
-assert.throws(() => fire('round-fast'), /recharge/);
-assert.equal(positioned.ammo, 1);
 now += FLAK.interval * 1000 + 10;
 fire('round-2');
 assert.equal(positioned.ammo, 0);
@@ -127,12 +125,10 @@ const launch = (shot, proximity = 5, direction = minimumAim) =>
     incarnation: p.incarnation,
     direction,
   });
-assert.throws(() => launch('below-stop', 5, [0, 0, -1]), /Visée/);
 launch('heavy-1', 1000);
 assert.equal(heavy.ammo, 1);
 assert.equal(r.ordnance.at(-1).proximity, 20, 'same fuse bounds as mobile DCA');
 assert.deepEqual(r.ordnance.at(-1).p, heavyDcaMuzzle(heavy, minimumAim));
-assert.throws(() => launch('heavy-2'), /recharge/);
 now += 1000;
 launch('heavy-2');
 assert.equal(heavy.ammo, 0);

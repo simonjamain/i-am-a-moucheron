@@ -12,7 +12,7 @@ import { WALKERS } from '../src/walker-batch.js';
 import { FLYERS } from '../src/flyer-batch.js';
 import { VEHICLES } from '../src/fleet.ts';
 import { SHOP } from '../src/equipment.ts';
-import { SHOP_CATEGORIES } from '../src/shop-catalog.js';
+import { SHOP_CATEGORIES } from '../src/shop-catalog.ts';
 import { CONTRACTS, contractKey } from '../src/contracts.js';
 
 const all = Object.keys(ENEMY_TYPES).sort();

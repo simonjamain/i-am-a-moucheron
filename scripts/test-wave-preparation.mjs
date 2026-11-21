@@ -153,7 +153,7 @@ console.log(
 const { readFileSync } = await import('node:fs');
 const { runInNewContext } = await import('node:vm');
 const T = await import('../vendor/three.module.min.js');
-const { nearestInsectHit, nearestSolidHit } = await import('../src/insect-hits.js');
+const { nearestInsectHit, nearestSolidHit } = await import('../src/insect-hits.ts');
 const src = readFileSync('src/client.js', 'utf8');
 const step = src.slice(
   src.indexOf('function stepProjectileSlice('),

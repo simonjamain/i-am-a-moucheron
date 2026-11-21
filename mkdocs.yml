@@ -1,0 +1,134 @@
+# Site de documentation publié sur GitHub Pages (voir docs/site.md).
+# La source est préparée par `node scripts/build-site.mjs` dans `.site/src`.
+# Toute nouvelle page de docs/ s'ajoute au menu ci-dessous.
+site_name: i am a moucheron
+site_description: Combat aérien coopératif miniature dans un bureau — documentation du jeu.
+site_url: https://simonjamain.github.io/i-am-a-moucheron/
+repo_url: https://github.com/simonjamain/i-am-a-moucheron
+repo_name: simonjamain/i-am-a-moucheron
+edit_uri: ''
+docs_dir: .site/src
+site_dir: .site/html
+strict: true
+
+theme:
+  name: material
+  language: fr
+  palette:
+    - media: '(prefers-color-scheme: light)'
+      scheme: default
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/weather-night
+        name: Thème sombre
+    - media: '(prefers-color-scheme: dark)'
+      scheme: slate
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/weather-sunny
+        name: Thème clair
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - navigation.indexes
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - toc.follow
+
+extra_css:
+  - site.css
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+      slugify: !!python/object/apply:pymdownx.slugs.slugify
+        kwds:
+          case: lower
+  - pymdownx.highlight
+  - pymdownx.superfences
+  - pymdownx.details
+
+validation:
+  nav:
+    omitted_files: warn
+    not_found: warn
+  links:
+    not_found: warn
+    anchors: warn
+    unrecognized_links: info
+
+nav:
+  - Accueil: index.md
+  - Le jeu:
+      - Règles et parcours: gameplay.md
+      - Commandes: controls.md
+      - Vagues et magasin: progression.md
+      - Bestiaire: enemy-bestiary.md
+      - Combat, mondes et contrats: combat-worlds.md
+      - Plans de bureau: office-layouts.md
+      - Nouveautés: nouveautes.md
+  - Conception:
+      - Direction artistique: art-direction.md
+      - Règles d’interface: ui-guidelines.md
+      - Galerie visuelle: galerie.md
+      - Écrans intégrés: ecrans.md
+      - Écran de chargement: loading-screen.md
+      - Rendu dessin animé: toon-rendering.md
+      - Ombres d’atterrissage: shadow-visibility.md
+      - Visibilité des ennemis: enemy-visibility.md
+      - Audio: audio.md
+      - Pipeline des assets Meshy: asset-pipeline.md
+      - Modèles:
+          - Flotte Meshy texturée: meshy-fleet.md
+          - Chasseur M1: m1-model.md
+          - Bombardier B3: b3-model.md
+          - Hélicoptère H2: h2-model.md
+          - Biplans: biplane-models.md
+          - Tourelle T-01: t01-asset.md
+  - Règles détaillées:
+      - Économie, signatures et balistique: economy-physics.md
+      - Puissance des ennemis: enemy-power.md
+      - Statistiques des équipements: stats.md
+      - Unités, flotte et armes: scale-fleet-weapons.md
+      - Véhicules et banque: vehicles-bank.md
+      - Véhicules de soutien: support-vehicles.md
+      - Commandes de l’hélicoptère: helicopter-controls.md
+      - Nuées et équipement: swarm-equipment.md
+      - Nuées denses: dense-swarms.md
+      - Logistique et feuillets: logistics-contracts.md
+      - File des purgatoires: purgatory-queue.md
+      - Mode debug: laboratory.md
+      - Retours de terrain (lots):
+          - Confort: comfort.md
+          - Lisibilité et Spitfire: clean-flight.md
+          - Accès, visée et chutes: field-update.md
+          - Multijoueur et HUD: multiplayer-return.md
+  - Technique:
+      - Présentation du projet: projet.md
+      - Carte du code: code-structure.md
+      - Confiance envers les clients: trust-model.md
+      - Réseau et corps partagés: walking-network.md
+      - Serveur UDP: udp-server.md
+      - Physique Rapier: physics-engine.md
+      - Performances: performance.md
+      - TypeScript: typescript.md
+  - Contribuer:
+      - Contribuer: contribuer.md
+      - Consignes des agents: agents.md
+      - Exploitation et vérifications: operations.md
+      - Docker: docker.md
+      - Ajouter du contenu: adding-content.md
+      - Site de documentation: site.md
+      - Santé de la documentation: sante.md
+      - Tâches en cours:
+          - tasks/README.md
+          - tasks/scaling-plan.md
+          - tasks/typescript-migration.md

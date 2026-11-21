@@ -1,4 +1,4 @@
-import { ammoCapacity } from './logistics.js';
+import { ammoCapacity } from './logistics.ts';
 export function reserveAlerts(vehicle) {
   if (!vehicle || vehicle.state.hp <= 0) return [];
   const low = (name, value, max) =>

@@ -3,7 +3,7 @@ import vm from 'node:vm';
 import { readFileSync } from 'node:fs';
 import * as T from '../vendor/three.module.min.js';
 import { MAP } from '../src/scale.ts';
-import * as delivery from '../src/delivery.js';
+import * as delivery from '../src/delivery.ts';
 import { Game } from '../server/game.js';
 import { wavePlan, ENEMY_TYPES } from '../src/waves.js';
 const source = readFileSync('src/client.js', 'utf8');
@@ -97,7 +97,7 @@ for (const fixture of JSON.parse(
 console.log('#17: current director source stats, route seeds, and fixed room-metre speeds.');
 
 // #16: real keyboard handler must not swallow pilot Shift/Ctrl as weapon selection.
-const { contextKey } = await import('../src/equipment-controls.js');
+const { contextKey } = await import('../src/equipment-controls.ts');
 const { gameKey, equipmentExitAction, equipmentEnterAllowed } =
   await import('../src/control-focus.ts');
 let keyHandler;

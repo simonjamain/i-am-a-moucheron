@@ -10,7 +10,7 @@ import {
   OutlinePass,
   ToonRenderer,
   TOON_LOOK,
-} from '../src/toon.js';
+} from '../src/toon.ts';
 import { DEFAULT_FLIGHT_TUNING, normalizeFlightTuning } from '../src/flight-tuning.ts';
 import { readFileSync } from 'node:fs';
 

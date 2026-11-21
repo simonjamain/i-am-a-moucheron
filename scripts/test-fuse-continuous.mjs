@@ -1,7 +1,7 @@
 // Issue #102: fixed DCA fuse distance sweeps continuously while Shift/Ctrl is held.
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { advanceFuse, contextKey, FUSE_RATE, rangeReadout } from '../src/equipment-controls.js';
+import { advanceFuse, contextKey, FUSE_RATE, rangeReadout } from '../src/equipment-controls.ts';
 import { fuseRange } from '../src/combat.ts';
 import { FLAK } from '../src/scale.ts';
 

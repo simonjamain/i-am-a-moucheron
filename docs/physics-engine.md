@@ -1,4 +1,4 @@
-# Physique Rapier — les véhicules au sol (versions 352 à 370)
+# Physique Rapier — les véhicules au sol (versions 352 à 381)
 
 Le jeu écrit sa physique à la main (vol, hélicoptère, `stepWalker`, balistique). Les
 véhicules au sol roulent sur un vrai moteur, **Rapier** (Rust compilé en
@@ -13,7 +13,7 @@ et sa remorque aussi ; l'ancienne conduite au sol (`tank.js`) est supprimée.
 
 Migration en cours : tous les véhicules **au sol** sont sur Rapier. Les avions, les
 hélicoptères et la marche gardent leur physique d'origine (`flight.ts`, `helicopter.js`,
-`sortie.js`). Elle est obsolète : chaque migration en retire le code correspondant, et à
+`sortie.ts`). Elle est obsolète : chaque migration en retire le code correspondant, et à
 terme elle disparaît entièrement.
 
 ## Décision et périmètre
@@ -122,6 +122,14 @@ char vide simulé par l'hôte. Le modèle d'un char à chenilles :
 - **Géométrie du train de roulement** (galets, rayon, ligne de chenille) mesurée sur le
   maillage de la caisse ; `test-tank-physics.mjs` la contrôle sur les sommets du modèle.
 
+### Moyeux dans les roues (version 381)
+
+Les capuchons hexagonaux des moyeux (« axes » des galets, du barbotin avant et du pignon arrière)
+étaient restés dans la caisse quand les roues ont été extraites : ils ne suivaient pas les roues
+qui montaient avec le relief. `scripts/rig-tank-hubs.mjs` déplace chacun des douze îlots de 22
+triangles dans la pièce de sa roue (aucun triangle, UV ni texture ne change) ; ils tournent et
+montent avec elle. `test-track-suspension.mjs` le contrôle.
+
 ### Chenilles déformables (version 366)
 
 - **Pourquoi cosmétique** : un char distant est simulé sur une autre machine, sans ses ressorts.
@@ -143,16 +151,28 @@ char vide simulé par l'hôte. Le modèle d'un char à chenilles :
   publiée est nulle, donc les roues ne tournent pas. Avant, la force de maintien visqueuse
   s'éteignait vers zéro et laissait le char ramper (≈ 2 mm/s) après la sortie de l'équipage.
 - **Recul du canon** : chaque obus du char (enregistrement de tir de la salle, visible de tous)
-  déclenche `src/tank-recoil.ts` (le tube recule de 0,32 unité modèle en 0,05 s, revient en
-  0,55 s, le long de son axe quelle que soit l'élévation) et, sur la machine qui simule la caisse
+  déclenche `src/tank-recoil.ts` : le **tube seul** (nœud `cannonBarrel`) recule de 0,32 unité
+  modèle en 0,05 s et revient en 0,55 s, le long de son axe ; le masque (le bloc autour de la
+  base du tube) reste sur le pivot. Et, sur la machine qui simule la caisse
   (conducteur, ou hôte si char vide), `TankRig.kick` : une impulsion `mass × recoil` (0,35 m/s)
   au pivot du canon, qui recule et fait tanguer la caisse sur ses ressorts.
-- **Vue du tireur** (`tankSight`, `SIGHT`) : œil derrière (1,5) et haut au-dessus (1,0) du pivot
-  du canon, sur son axe, regard le long de la visée (version 370 ; la première position,
-  plus basse et décalée, cachait le tube derrière la tourelle et laissait la mitrailleuse du toit
-  dans le champ). Le tube est vu de dessus, sous le réticule, et on le voit reculer. L'œil ne suit
-  pas le recul. Le char n'est plus masqué en vue de tir.
-  `test-tank-recoil.mjs` contrôle l'ensemble, dont un lancer de rayons de l'œil vers le tube.
+- **Pivot du canon** (version 373) : l'axe d'élévation est à l'avant de la tourelle, à la base du
+  tube (`scripts/rig-tank-gun.mjs` : `cannonGun` porte le masque et la mitrailleuse coaxiale,
+  `cannonBarrel` le tube ; aucun triangle ni UV ne change). Comme ce pivot n'est plus sur l'axe de
+  rotation de la tourelle, il tourne avec elle : `tankBarrelOrigin` en tient compte (lacet lu dans
+  la visée, `turretPivot`, `gunPivot`, `gunLength` de `VEHICLE_ANCHORS`).
+- **Butée d'élévation** (version 375) : le canon du char monte à **30° au plus** dans le repère de
+  la caisse (`TANK_GUN_MAX_PITCH`, `src/armament.ts`), contre 77° avant : la souris, la manette et
+  le tactile s'arrêtent à cette butée. Le serveur ne la contrôle pas (voir
+  [confiance envers les clients](trust-model.md)). La mitrailleuse du toit et l'abaissement (−37°)
+  ne changent pas.
+- **Vue du tireur** (`tankSight`, `SIGHT`) : l'œil est tout près du canon, derrière (0,4) et au-dessus
+  (0,75) de son pivot, **dans le repère du canon** (le « dessus » est perpendiculaire à la visée) :
+  il monte avec le tube et reste au-dessus du toit de la tourelle à toute élévation (version 377 ;
+  avant, l'œil restait à 2,4 derrière et 1,0 au-dessus à la verticale, donc sous le toit dès que le
+  canon se relevait). Le tube est vu de dessus, sous le réticule, et on le voit reculer. L'œil ne
+  suit pas le recul. Le char n'est plus masqué en vue de tir.
+  `test-tank-recoil.mjs` contrôle l'ensemble, dont des lancers de rayons de l'œil vers le tube et devant lui, à six élévations et lacets.
 
 Pistes (pas encore faites) : roues du Castor animées par le braquage de la physique plutôt que
 déduites du taux de lacet.

@@ -7,7 +7,7 @@ import { paintVehicle } from '../src/vehicle-livery.ts';
 import { BIPLANE_DATA } from '../src/meshy-biplane-data.js';
 import { BIPLANE_BOMBER_DATA } from '../src/meshy-biplane-bomber-data.js';
 import { VEHICLES, pilotFireInterval, SEAT_NAMES } from '../src/fleet.ts';
-import { ammoCapacity, fullAmmo } from '../src/logistics.js';
+import { ammoCapacity, fullAmmo } from '../src/logistics.ts';
 import { HEAVY, heavyInterval, canUseWeapon } from '../src/armament.ts';
 import { stepFlight } from '../src/flight.ts';
 import { ACTOR_UNIT, MAP } from '../src/scale.ts';

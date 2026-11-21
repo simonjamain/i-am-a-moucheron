@@ -2,7 +2,7 @@
 
 ## Collisions des tirs
 
-`InsectIndex` dans `src/insect-hits.js` sélectionne les candidats avec une grille
+`InsectIndex` dans `src/insect-hits.ts` sélectionne les candidats avec une grille
 spatiale de 8 cm et un parcours des cellules traversées par le segment. Les mêmes
 sphères conservatrices que le parcours exhaustif couvrent toutes leurs cellules.
 Les intersections précises, tolérance du moucheron, exclusions et ordre des
@@ -49,7 +49,7 @@ chaque tranche (environ 1,6 s avec `compose`/`multiplyMatrices`), `hitRadius`
 (449 ms, spread et `Math.hypot` par moucheron et par tir) et les allocations
 (`Raycaster`, vecteurs) par tranche.
 
-- `solidTarget` / `nearestSolidHit` (`src/insect-hits.js`) : matrices, maillages
+- `solidTarget` / `nearestSolidHit` (`src/insect-hits.ts`) : matrices, maillages
   solides et boîte monde (agrandie de 30 % pour la pose animée) sont préparés une
   seule fois par image, à la demande, par `stepProjectiles`. Une boîte que le
   segment n'atteint pas évite tout test de triangle. Même ordre et même règle
@@ -162,7 +162,7 @@ calculées directement depuis ID, route et temps, avec une complexité
 essentiellement linéaire par trame moucheron. Les autres espèces conservent
 la grille de voisinage existante. `src/midge-batch.js` réduit les meshes
 WebGL **vivants** des moucherons à trois lots instanciés, sans rendre les
-collisions dépendantes du rendu. `src/insect-hits.js` utilise le rayon
+collisions dépendantes du rendu. `src/insect-hits.ts` utilise le rayon
 mathématique de la sphère pour les intersections et le même index spatial.
 Le serveur ajoute un rejet AABB rapide avant les intersections segment–sphère
 des armes lourdes. Aucun changement d'autorité des impacts.
@@ -444,3 +444,18 @@ passé, de façon régulière.
 Browser motion: 26 binary batches received by Alpha (max 234 B), Bravo decoded, no page error. a vérifié dans deux Chromium
 réels que l'heure de capture arrive dans les lots. Le ressenti, en particulier
 pilote et mitrailleur d'un même bombardier, reste à confirmer en partie.
+
+## Caméra de poursuite et durée des images (version 374)
+
+Symptôme : de petits sauts en arrière du véhicule, d'une image, à intervalles réguliers, sur tous
+les véhicules. Cause probable (calcul, pas encore confirmée par un essai en jeu) : la caméra de
+poursuite suivait la cible par `camera.position.lerp(cible, 1 - exp(-10·dt))`. C'est exact pour
+une cible fixe, mais le véhicule avance pendant l'image : le retard que la caméra garde derrière
+lui vaut `v·dt·e^(-k·dt)/(1 - e^(-k·dt))` et **dépend de `dt`**. Une image longue (ramasse-miettes,
+vsync manqué) rapproche le véhicule de la caméra à l'écran pour cette image, puis il repart :
+saut de 1,3 unité à 60 u/s pour une image de 100 ms, 0,05 pour une alternance 8/33 ms.
+`src/camera-follow.ts` (`followMoving`) résout le suivi exactement pour une cible qui avance à la
+vitesse du véhicule : le retard reste `v/k` quelle que soit la durée de l'image
+(`test-camera-follow.mjs`). Non traité : la physique Rapier et le vol utilisent le `dt` brut de
+`requestAnimationFrame` ; un pas fixe avec interpolation serait l'étape suivante si des saccades
+persistent (à mesurer avec `?perf=1`).

@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { validMotion } from '../src/network.js';
+import { validMotion } from '../src/network.ts';
 import {
   decodeMotionBatch,
   decodeMotionState,

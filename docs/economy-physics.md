@@ -72,7 +72,7 @@ on the server when no dead human currently owns the purgatory. With a human
 there, the existing client-hosted physical queue remains authoritative.
 
 The catalog is declarative in `src/equipment.ts` (`SHOP`, `shopPrice`) and the
-shop columns in `src/shop-catalog.js`. Prices, the per-installation increments and
+shop columns in `src/shop-catalog.ts`. Prices, the per-installation increments and
 the absence of wave stipends and purchasable upgrades are listed once in
 [progression](progression.md#revenus-et-prix).
 
@@ -174,8 +174,9 @@ Node seulement, au maximum une fois par seconde de temps de room.
 ### Stocks des DCA fixes
 
 Un canon DCA fixe est installé avec **120 obus**. Les coups validés par
-`fixedDcaFire()` sur le serveur décrémentent son stock avec idempotence,
-limitation de cadence et vérification de l'occupant. Les recharges sont intégrées
+`fixedDcaFire()` sur le serveur décrémentent son stock avec idempotence
+et vérification de l'occupant (sans contrôle de cadence côté serveur, voir
+[confiance](trust-model.md)). Les recharges sont intégrées
 au budget `advancePaidService()` avec les autres services et valent **0,10 $
 par obus**, au débit maximal de 12 obus/seconde. Sans station ou Castor présent
 à portée, la DCA ne se recharge pas ; plusieurs demandes partagent équitablement

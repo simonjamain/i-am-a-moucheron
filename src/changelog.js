@@ -1,6 +1,38 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 381,
+    changes: ['Les moyeux des roues du char suivent maintenant les roues sur le relief.'],
+  },
+  {
+    version: 377,
+    changes: [
+      'Le tireur du char voit son canon de près, sans que la tourelle gêne quand il relève la visée.',
+    ],
+  },
+  {
+    version: 375,
+    changes: ['Le canon du char ne se relève plus qu’à 30 degrés.'],
+  },
+  {
+    version: 374,
+    changes: [
+      'La caméra suit mieux le véhicule : moins de petits sauts en arrière quand l’image saccade.',
+    ],
+  },
+  {
+    version: 373,
+    changes: [
+      'Le canon du char pivote à l’avant de la tourelle, et seul le tube recule quand il tire.',
+    ],
+  },
+  {
+    version: 372,
+    changes: [
+      'Un diagnostic d’affichage, dans « Nouveautés », aide à comprendre pourquoi certains joueurs ne voient pas tout.',
+    ],
+  },
+  {
     version: 371,
     changes: ['Les ronds au sol des sièges et équipements restent visibles sur tous les écrans.'],
   },

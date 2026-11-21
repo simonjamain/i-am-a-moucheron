@@ -15,6 +15,14 @@ tâches ouvertes sont les issues GitHub ; il n'y a plus de BACKLOG ni d'archive 
 docs (l'historique est dans Git). Les documents de `docs/` décrivant un « lot »
 daté peuvent citer des versions dépassées : le code et la référence du thème font foi.
 
+## Confiance envers les joueurs
+
+Règle pérenne : **on fait confiance aux clients**. C'est un jeu coopératif sans enjeu ; ne jamais
+écrire ni conserver de code qui détecte, empêche ou limite la triche (butées ou cadences imposées
+par le serveur, plafonds de dégâts, contrôles de plausibilité de position ou de vitesse). Le serveur
+garde seulement les règles de jeu partagées, la robustesse des entrées (types, nombres finis,
+idempotence) et la protection de la salle. Détail : [confiance envers les clients](docs/trust-model.md).
+
 ## Boucle de travail
 
 1. Définir le résultat observable et le périmètre depuis la demande. Reproduire
@@ -53,7 +61,10 @@ Mettre à jour, dans la même PR, les références dont le comportement change ;
 conserver une référence détaillée par sujet, avec des liens ailleurs. Pour une
 évolution de stack, d'autorité réseau ou de boucle de jeu, revoir aussi README,
 gameplay et carte du code. Vérifier les documents concernés et leurs liens avec
-`npm run check:docs`. Réserver l'audit global à une tâche documentaire explicite.
+`npm run check:docs`. Une nouvelle page de `docs/` s'ajoute au menu de `mkdocs.yml` :
+le [site de documentation](docs/site.md) publié sur GitHub Pages en est généré et son
+contrôle `Docs site` échoue sur une page hors menu ou un lien cassé. Réserver l'audit
+global à une tâche documentaire explicite.
 
 Pour un travail long, interrompu ou à transmettre, maintenir une note par tâche
 selon [le modèle de reprise](docs/tasks/README.md). Y conserver l'état actuel,
@@ -103,6 +114,14 @@ dernières modifications ou une synchronisation, refaire ce build et consigner
 commande, résultat et commit testé dans la PR. Si Docker est indisponible, le
 signaler et vérifier le contrôle GitHub Actions `Docker build` avant la fusion.
 
+## Direction artistique et interface
+
+Toute contribution visible (modèle, décor, effet, son, texte, menu, HUD) suit la
+[direction artistique](docs/art-direction.md) et les [règles d'interface](docs/ui-guidelines.md) :
+le monde et le son informent avant le HUD, les menus sont des documents qui sortent
+du monde, aucune couleur ou taille nouvelle écrite en dur hors des jetons visuels.
+Justifier toute exception dans la PR.
+
 ## Nouveautés visibles par les joueurs
 
 Tenir `src/changelog.js` à jour **dans la même PR** pour chaque fonctionnalité ou
@@ -129,7 +148,7 @@ versionnement pour les branches parallèles.
 Règle pérenne pour tout nouveau modèle Meshy (détails et checklist dans
 [le pipeline d'assets](docs/asset-pipeline.md#règle-pour-tout-nouveau-modèle-meshy)) :
 
-1. proposer des visuels dans la direction artistique du jeu et obtenir la
+1. proposer des visuels conformes à la [direction artistique](docs/art-direction.md) et obtenir la
    **validation de l'utilisateur avant toute génération** ;
 2. une image de référence isolée, aux vues adaptées, par pièce mobile — jamais une
    planche entière envoyée comme une seule pièce ;

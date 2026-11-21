@@ -102,7 +102,7 @@ Orientation : avant Meshy −X tourné vers −Z sans miroir ; échelle calée s
 l'envergure (Spitfire 6,2 ; B3 11,3) ou la longueur (T3 4,3 ; D2 8,6 ; H2 7,5),
 cohérente avec `VEHICLES` ; roues au niveau −`gear`.
 
-`src/meshy-rig.js` construit la hiérarchie (`data.rig`) : chaque nœud est un
+`src/meshy-rig.ts` construit la hiérarchie (`data.rig`) : chaque nœud est un
 pivot placé dans le repère de son parent, avec sa rotation de repos. Les canons
 sont stockés alignés sur −Z, ce qu'attend `aimGun`, et leurs bouches
 (`data.anchors`) sont sur l'axe passant par le pivot d'élévation :
@@ -138,7 +138,7 @@ les roues du D2 en pièces du rig (six de tracteur, quatre de remorque) pour qu'
 et braquent (et, depuis la 365, du module du T3 ses chenilles, galets, barbotins et pignons) ; aucun triangle, UV ni texture ne change, le module garde l'empreinte de sa
 source et le script écrit sa trace dans son en-tête (voir
 [la physique Rapier](physics-engine.md#roues-et-chenilles-dans-les-modèles)). Les pièces
-des remorques sont dans le repère de leur parent (l'attelage pour la remorque).
+des remorques sont dans le repère de leur parent (l'attelage pour la remorque). Depuis la 373, `scripts/rig-tank-gun.mjs` place le pivot du canon du T3 à l'avant de la tourelle et sépare le tube (`cannonBarrel`) du masque (`cannonGun`), pour que seul le tube recule ; `scripts/rig-tank-hubs.mjs` (381) range les moyeux du T3 dans leurs roues.
 
 `scripts/test-meshy-vehicles.mjs` vérifie empreintes, triangles, contact au sol,
 hiérarchies et l'égalité entre bouches dessinées et origines de la physique
@@ -157,7 +157,7 @@ Le GLB est un seul maillage, mais **chaque pièce est un îlot séparé** (158 �
 - enregistre chaque pièce autour de son pivot dans `src/meshy-castor-data.js` : `body`, `wheel0`…`wheel5` (moyeu de chaque pneu, axe X, rayon 0,568 → `CASTOR_WHEEL_RADIUS` 0,57), `turret` (couronne, lacet autour de Y) et `gun` (tête et canon, élévation autour de X, au centre de la tête), avec la bouche à l'extrémité du canon ;
 - conserve tous les triangles et UV d'origine ; seule la texture est réduite en JPEG 1 024 px (module de 449 Ko, contre 3,3 Mo pour les trois anciens).
 
-`src/castor-model.js` crée ces pivots par Castor et partage géométries, matériau et atlas entre exemplaires. `scripts/test-castor-meshy.mjs` vérifie l'empreinte, les triangles, l'encombrement, le contact au sol, les moyeux et la bouche. Le mât caméra et l'antenne restent fixes dans la coque.
+`src/castor-model.ts` crée ces pivots par Castor et partage géométries, matériau et atlas entre exemplaires. `scripts/test-castor-meshy.mjs` vérifie l'empreinte, les triangles, l'encombrement, le contact au sol, les moyeux et la bouche. Le mât caméra et l'antenne restent fixes dans la coque.
 
 **Vérification visuelle requise en WebGL** : sens de marche, rotation des roues, visée de la tourelle et performances à plusieurs exemplaires ; un rendu hors jeu ne remplace pas l'essai en partie.
 
@@ -190,7 +190,7 @@ scripts/import-meshy-flying-castor.py SOURCE.glb` vérifie l'empreinte, puis :
   1 024 px (243 Ko ; module de 390 Ko).
 
 Aucune simplification : le modèle est déjà léger et ses pièces mobiles sont
-séparées par l'import. `src/flying-castor-model.js` crée les deux rotors par
+séparées par l'import. `src/flying-castor-model.ts` crée les deux rotors par
 appareil (ils tournent en sens opposés, sans rotor de queue) et partage
 géométries, matériau et atlas ; la fumée de dégâts sort sous chaque moyeu.
 `scripts/test-flying-castor.mjs` vérifie l'empreinte, les triangles, les axes

@@ -1,5 +1,5 @@
 import { nearestWeaponMuzzle } from '../src/muzzle.ts';
-import { TracerPool } from '../src/tracers.js';
+import { TracerPool } from '../src/tracers.ts';
 import { GunSalvos, advanceAutomaticFire } from '../src/salvos.ts';
 import assert from 'node:assert/strict';
 import vm from 'node:vm';

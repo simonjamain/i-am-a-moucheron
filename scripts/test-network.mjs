@@ -6,7 +6,7 @@ import {
   PeerMotion,
   CHANNEL_OPTIONS,
   MAX_MESH_PLAYERS,
-} from '../src/network.js';
+} from '../src/network.ts';
 import { ASSETS } from '../server/assets.js';
 const motion = (x = 0) => ({
   p: [x, 16, 0],

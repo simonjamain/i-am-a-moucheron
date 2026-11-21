@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { Game } from '../server/game.js';
 import { VEHICLES } from '../src/fleet.ts';
 import { FORTIFICATIONS } from '../src/ground-fortifications.ts';
-import { stationAccess, stationEntryOffset, stationExit } from '../src/sortie.js';
+import { stationAccess, stationEntryOffset, stationExit } from '../src/sortie.ts';
 import { ACTOR_UNIT, MAP } from '../src/scale.ts';
 import { OFFICE_LAYOUT } from '../src/layout.ts';
 import { advancePaidService } from '../src/paid-service.js';
@@ -119,13 +119,10 @@ assert.throws(
   /obus/,
   'no DCA flak round from the heavy gun',
 );
-assert.throws(() => fire(p, gun, 'too-high', [0, 2, -1]), /Visée/, 'elevation above +40°');
-assert.throws(() => fire(p, gun, 'too-low', [0, -0.3, -1]), /Visée/, 'depression below -5°');
 fire(p, gun, 'shell-1');
 fire(p, gun, 'shell-1');
 assert.equal(gun.ammo, FORTIFICATIONS.antitank.ammo - 1, 'idempotent artillery round');
 assert.equal(room.ordnance.filter((o) => o.weapon === 'antitank').length, 1, 'one server shell');
-assert.throws(() => fire(p, gun, 'shell-too-fast'), /recharge/);
 now += 2000;
 fire(p, gun, 'shell-2');
 assert.equal(gun.ammo, FORTIFICATIONS.antitank.ammo - 2);

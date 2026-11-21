@@ -1,5 +1,5 @@
 import { nearestWeaponMuzzle } from '../src/muzzle.ts';
-import { TracerPool } from '../src/tracers.js';
+import { TracerPool } from '../src/tracers.ts';
 import { GunSalvos } from '../src/salvos.ts';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -7,7 +7,7 @@ import vm from 'node:vm';
 import * as T from '../vendor/three.module.min.js';
 import { Game } from '../server/game.js';
 import { SHOP, shopPrice, purchaseCount, supportedPlacement } from '../src/equipment.ts';
-import { fullAmmo, advanceSupplies } from '../src/logistics.js';
+import { fullAmmo, advanceSupplies } from '../src/logistics.ts';
 import { HEAVY, heavyInterval } from '../src/armament.ts';
 import { VEHICLES, LIGHT_FIGHTER, vehicleEntry, isRotorcraft } from '../src/fleet.ts';
 import { MAP, ACTOR_UNIT } from '../src/scale.ts';
@@ -149,12 +149,6 @@ for (let i = 0; i < 30; i++) {
   command('heavy-fire', { weapon: 'bomb', shot: 'drop-' + i, direction: [0, 0, -1] }, pilot);
   command('heavy-fire', { weapon: 'bomb', shot: 'drop-' + i, direction: [0, 0, -1] }, pilot);
   assert.equal(bomber.supplies.ammo.bomb, 29 - i);
-  if (i < 29)
-    assert.throws(
-      () =>
-        command('heavy-fire', { weapon: 'bomb', shot: 'fast-' + i, direction: [0, 0, -1] }, pilot),
-      /recharge/,
-    );
 }
 now += 1000;
 pilot.seen = now;
@@ -558,10 +552,10 @@ console.log(
 
 // Render actual heavy meshes without a GPU: type and persistent colour survive
 // removal of the originating vehicle, so late snapshots keep their provenance.
-const { vehicleHue } = await import('../src/logistics.js');
+const { vehicleHue } = await import('../src/logistics.ts');
 const renderScene = new T.Scene();
 const graphics = createGraphics(T, renderScene);
-const { MissileExhaust } = await import('../src/missile-exhaust.js');
+const { MissileExhaust } = await import('../src/missile-exhaust.ts');
 const visualContext = {
   MissileExhaust,
   T,

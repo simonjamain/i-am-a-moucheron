@@ -2,7 +2,7 @@
 
 ## Tracers and mounts
 
-`tracers.js` draws each small-calibre shot as an unlit ivory core plus a coloured
+`tracers.ts` draws each small-calibre shot as an unlit ivory core plus a coloured
 additive halo and an 11-reference-metre streak. A bounded minimum projected width
 improves distant readability; collision still uses the actual swept segment,
 not the exaggerated visual width/length. Shells have a shorter orange streak.

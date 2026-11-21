@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import * as T from '../vendor/three.module.min.js';
 import { createGraphics } from '../src/graphics.js';
-import { InsectIndex, nearestInsectHit } from '../src/insect-hits.js';
+import { InsectIndex, nearestInsectHit } from '../src/insect-hits.ts';
 const scene = new T.Scene();
 const graphics = createGraphics(T, scene);
 const insects = new Map();

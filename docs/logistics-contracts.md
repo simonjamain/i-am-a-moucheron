@@ -5,7 +5,7 @@ Ses réserves, dossiers et achats disparaissent au redémarrage. Les référence
 aux migrations, à la persistance et aux requêtes HTTP ci-dessous décrivent l’ancien
 modèle à base de données, abandonné. Voir [serveur UDP](udp-server.md).
 
-Référence du lot du 29 octobre 2026. Les modules `logistics.js` et
+Référence du lot du 29 octobre 2026. Les modules `logistics.ts` et
 `vehicle-livery.ts` portent les règles communes. Les données vivent en RAM (plus de migration SQL depuis le retrait du Worker/D1).
 
 ## Véhicules identifiables
@@ -173,3 +173,30 @@ Le [lot confort de jeu, version 37](comfort.md) précise réparation, zoom, jaug
 radar à pied, remise à zéro, fourmis et projectiles du pistolet courants.
 
 Le [bombardier biplan](biplane-models.md) porte les noms de ses occupants sur des plaques collées au fuselage ; son camouflage reste fixe.
+
+## Colis parachutés
+
+La hauteur d'un colis dépend de l'instant de largage immuable et de sa hauteur
+initiale : serveur et client utilisent le même calcul (`src/delivery.ts`,
+`DELIVERY_SPEED`), le client l'évalue entre les snapshots jusqu'à la surface de
+réception publiée par le serveur. Seul le serveur supprime le colis et crée
+l'équipement, une seule fois ; la première surface portant toute l'emprise avec
+la hauteur libre reçoit l'objet, sans dégâts ; un contact latéral ne reçoit pas.
+La signature depuis tous les postes d'un véhicule débite une seule fois ; les prix
+croissants comptent les livraisons en cours. La limite de 24 installations ne
+concerne que la pose à pied. Vitesse de descente : voir [gameplay](gameplay.md).
+
+## Murs LEGO
+
+| Règle                  | Valeur                                                |
+| ---------------------- | ----------------------------------------------------- |
+| Brique entière / demie | 24 mm / 12 mm de long, 12 mm de profondeur            |
+| Mur                    | deux rangées décalées de 12 mm, ~13,62 mm avec tenons |
+| Tronçon complet        | 48 mm, 0,25 $ (`WALL_SEGMENT_PRICE`)                  |
+| Portion incomplète     | pas de demi-brique, facturée au prorata au centime    |
+
+La longueur validée est arrondie vers le bas au pas de 12 mm ; un trait plus court
+est refusé sans débit. Mêmes règles à pied et au Castor (fantôme derrière le
+véhicule, sections validées une à une par le serveur). Les tronçons alignés sont
+réunis pour le dessin seulement ; dégâts, réparation, achat restent par section.
+Ruban collant : pas conservé, minimum 10 mm, 1 $ par 20 cm.

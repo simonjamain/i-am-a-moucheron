@@ -12,14 +12,14 @@ import {
   layoutSolids,
   layoutThumbnail,
   isLayoutId,
-} from '../src/layouts.js';
+} from '../src/layouts.ts';
 import { OFFICE_LAYOUT } from '../src/layout.ts';
 import { enemyRoute, PORTALS } from '../src/routes.js';
 import { blockedSegment } from '../src/route-navigation.js';
 import { staticGroundFlow, groundGoal, groundStaticObstacles } from '../src/ground-defense.js';
 import { createGraphics } from '../src/graphics.js';
 import { createOffice } from '../src/office.js';
-import { OFFICE_CLOUD_TOP, FOG_START_RATIO } from '../src/office-fog.js';
+import { OFFICE_CLOUD_TOP, FOG_START_RATIO } from '../src/office-fog.ts';
 import { prepareRoster } from '../server/wave-preparation.js';
 import { DEFAULT_BALANCE } from '../src/balance.js';
 import { advanceGroundCrowd } from '../src/ground-crowd.js';

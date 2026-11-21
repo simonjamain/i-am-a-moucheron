@@ -1,5 +1,5 @@
-import { hitUserData } from './insect-hits.js';
-import { buildMeshyRig, gunMount } from './meshy-rig.js';
+import { hitUserData } from './insect-hits.ts';
+import { buildMeshyRig, gunMount } from './meshy-rig.ts';
 import { MODEL_DATA as SPITFIRE } from './meshy-spitfire-data.js';
 import { MODEL_DATA as TANK } from './meshy-tank-data.js';
 import { MODEL_DATA as FLAKTRUCK } from './meshy-flaktruck-data.js';
@@ -10,8 +10,8 @@ import { makeH2 } from './h2-model.js';
 import { makeBiplane, makeBiplaneBomber } from './biplane-model.js';
 import { makeM1 } from './m1-model.js';
 import { makeB3 } from './b3-model.js';
-import { makeCastorMeshy } from './castor-model.js';
-import { makeFlyingCastorMeshy } from './flying-castor-model.js';
+import { makeCastorMeshy } from './castor-model.ts';
+import { makeFlyingCastorMeshy } from './flying-castor-model.ts';
 import { createCharacter, CHARACTER_HEIGHT, LEGACY_HEIGHT } from './character-model.js';
 import { createMidgeRig } from './midge-model.js';
 import { WALKERS, walkerStride } from './walker-batch.js';
@@ -131,6 +131,7 @@ export function createGraphics(T, scene) {
   function makeTank() {
     const { root: g, nodes, anchors } = buildMeshyRig(T, TANK, 'tank');
     const main = gunMount(nodes.cannon, nodes.cannonGun, anchors.muzzle[0], anchors.coax[0]);
+    main.userData.barrel = nodes.cannonBarrel; // slides back when the gun fires
     const top = gunMount(nodes.top, nodes.topGun, anchors.topMuzzle[0]);
     // Running gear (parts of the rig): the road wheels, idlers and sprockets spin with their
     // track; the two belts are meshes of their own (the deformable tracks draw them).

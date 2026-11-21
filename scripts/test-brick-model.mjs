@@ -11,7 +11,7 @@ import {
   brickGeometry,
   brickLayout,
   createBrickWall,
-} from '../src/brick-wall.js';
+} from '../src/brick-wall.ts';
 
 assert.equal(BRICK_SOURCE.sourceTask, '01a1ba16-7dde-758d-82fb-74eb5b54fa80');
 assert.match(BRICK_SOURCE.sourceSha256, /^[a-f0-9]{64}$/);

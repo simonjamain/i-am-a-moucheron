@@ -51,7 +51,7 @@ dans `src/`, `server/` et `scripts/`. L'état et la prochaine étape sont suivis
 ## Migrer un module
 
 ```sh
-npm run ts:migrate -- src/route-speed.js src/delivery.js   # --dry-run pour prévisualiser
+npm run ts:migrate -- src/<a>.js src/<b>.js         # --dry-run pour prévisualiser
 npm run typecheck                                           # ajouter les types jusqu'au vert
 npm test
 ```
@@ -62,6 +62,18 @@ relatifs de `src/`, `server/`, `scripts/`, chemins lus par les tests
 aux URL du navigateur ni aux noms construits dynamiquement : relire le diff.
 Migrer de préférence des feuilles du graphe d'imports (modules sans import local
 non migré ; `npm run ts:migrate -- --leaves` les liste, plus petites d'abord), par lots cohérents, puis remonter vers `client.js` et `server/game.js`.
+
+Pièges vus au lot 4 :
+
+- Un test qui lit le texte d'un module et l'exécute (`new AsyncFunction(source)`)
+  doit d'abord effacer les types avec `stripTypeScriptTypes` (exemple :
+  `scripts/test-loading-exit.mjs`).
+- Le script réécrit aussi les exemples de commandes dans la doc : les relire.
+- Pour un gros lot, répartir les fichiers entre agents, chacun limité à ses
+  fichiers, sans modifier `src/types.ts` en parallèle. Contrôle de
+  non-régression : effacer les types, passer Prettier et comparer à l'ancien `.js`
+  (`git show <base>:src/<m>.js`). Seuls des champs de classe déclarés ou des alias
+  doivent apparaître.
 
 ## Écart avec la consigne précédente
 

@@ -1,5 +1,5 @@
 import { H2_DATA } from './meshy-h2-data.js';
-import { buildMeshyRig, gunMount } from './meshy-rig.js';
+import { buildMeshyRig, gunMount } from './meshy-rig.ts';
 
 // Remodelled H2: five-blade main rotor (Y axis), tail rotor (X axis) and the
 // copilot's nose gun (housing yaws, twin barrels elevate).

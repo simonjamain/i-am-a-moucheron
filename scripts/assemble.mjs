@@ -1,5 +1,5 @@
 import { uiPreview } from './build-ui-preview.mjs';
-import { layoutSolids, LAYOUTS } from '../src/layouts.js';
+import { layoutSolids, LAYOUTS } from '../src/layouts.ts';
 import { createHash } from 'node:crypto';
 import { readFile, writeFile } from 'node:fs/promises';
 import { existsSync, readdirSync } from 'node:fs';
@@ -104,6 +104,7 @@ const files = {
       'castor-wheels',
       'castor-top-view',
       'entry-ring',
+      'render-info',
       'service-zones',
       'station-model',
       'bed-model',
@@ -194,6 +195,7 @@ const files = {
       'castor-physics',
       'tank-physics',
       'tank-recoil',
+      'camera-follow',
       'tank-gear',
       'tessellate',
       'track-suspension',

@@ -7,7 +7,7 @@ import {
   bodyMotion,
   relayBodyReport,
   NPC_KO_MS,
-} from '../src/purgatory-physics.js';
+} from '../src/purgatory-physics.ts';
 const player = { ...createSoul({ id: 1, entity: 'me', kind: 'player' }, 0, 1000), x: 0, z: 1.1 };
 const npcs = Array.from({ length: 12 }, (_, i) =>
   createSoul({ id: i + 2, entity: 'bug' + i, kind: 'enemy' }, i + 1, 1000),

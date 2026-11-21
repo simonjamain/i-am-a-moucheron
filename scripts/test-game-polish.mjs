@@ -6,10 +6,10 @@ import { CastorRig } from '../src/castor-physics.ts';
 import { loadRapier } from '../src/physics-world.ts';
 import { MAP } from '../src/scale.ts';
 import { createCharacter, LANDING_DURATION, loadCharacter } from '../src/character-model.js';
-import { makeServiceStation, animateRadar } from '../src/station-model.js';
+import { makeServiceStation, animateRadar } from '../src/station-model.ts';
 import { seatReloads, reloadProgress } from '../src/reload-hud.js';
-import { zoomTopView, TOP_VIEW_HEIGHT } from '../src/castor-top-view.js';
-import { officeFogOpacity } from '../src/office-fog.js';
+import { zoomTopView, TOP_VIEW_HEIGHT } from '../src/castor-top-view.ts';
+import { officeFogOpacity } from '../src/office-fog.ts';
 
 for (const hz of [30, 60, 120]) {
   const state = { ...vehiclePad('helicopter'), p: [0, 1, 0], q: [0, 0, 0, 1] };

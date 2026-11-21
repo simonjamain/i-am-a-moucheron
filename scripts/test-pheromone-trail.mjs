@@ -10,7 +10,7 @@ import {
   polylineLengths,
   ribbonGeometry,
   sampleAt,
-} from '../src/pheromone-trail.js';
+} from '../src/pheromone-trail.ts';
 import { predictedGroundPaths } from '../src/wave-ground-paths.js';
 
 const path = [

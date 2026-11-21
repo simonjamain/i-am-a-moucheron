@@ -1,5 +1,5 @@
 import { WALL_SEGMENT, HALF_BRICK, wallLength } from './brick-rules.ts';
-import { activeLayout, layoutSolids } from './layouts.js';
+import { activeLayout, layoutSolids } from './layouts.ts';
 // Deterministic, room-shared ground navigation primitives (office metres).
 // These are independent of the airborne route system. Keep this module free of
 // heavy imports: routes.js imports it.

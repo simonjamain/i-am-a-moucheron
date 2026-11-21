@@ -4,8 +4,8 @@ import { pathToFileURL } from 'node:url';
 import { performance } from 'node:perf_hooks';
 import * as T from '../vendor/three.module.min.js';
 import { createGraphics } from '../src/graphics.js';
-import { nearestInsectHit } from '../src/insect-hits.js';
-import { TracerPool } from '../src/tracers.js';
+import { nearestInsectHit } from '../src/insect-hits.ts';
+import { TracerPool } from '../src/tracers.ts';
 import { enemyRoute } from '../src/routes.js';
 const baseline = '94c54a4cd98f4956a0bc9c48a8a630cd5fbc5936';
 function oldURL(file, overrides = {}) {

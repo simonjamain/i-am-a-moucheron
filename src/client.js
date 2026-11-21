@@ -48,6 +48,7 @@ import { BedUI } from '/bed-ui.js';
 import { bedAccess } from '/beds.js';
 import { tankSight } from '/tank-view.js';
 import { applyGunRecoil, recoilAmount } from '/tank-recoil.js';
+import { followMoving } from '/camera-follow.js';
 import { shoulderView, aimPistol, muzzleAim } from '/personal-aim.js';
 import { BankUI } from '/bank-ui.js';
 import { ContextHUD, equipmentHUD } from '/hud.js';
@@ -129,6 +130,7 @@ import {
 } from '/control-focus.js';
 import { createRenderer } from '/renderer.js';
 import { makeEntryRing } from '/entry-ring.js';
+import { renderInfo } from '/render-info.js';
 import { createGraphics } from '/graphics.js';
 import { availableAppearance, turnToward, loadCharacter } from '/character-model.js';
 import { createAppearancePicker } from '/appearance-picker.js';
@@ -163,7 +165,7 @@ import { howitzerMuzzle } from '/howitzer-geometry.js';
 import { RECONNECT_AFTER_MS, RECONNECT_WINDOW_MS } from '/udp-protocol.js';
 import { HoldZoom, advanceFuse, contextKey, rangeReadout } from '/equipment-controls.js';
 import { formatDistance, formatSpeed } from '/units.js';
-import { HEAVY, TANK_MG, availableShell, heavyInterval } from '/armament.js';
+import { HEAVY, TANK_GUN_MAX_PITCH, TANK_MG, availableShell, heavyInterval } from '/armament.js';
 import { loadRapier } from '/physics-world.js';
 import { CastorRig } from '/castor-physics.js';
 import { TankRig } from '/tank-physics.js';
@@ -573,7 +575,13 @@ canvas.addEventListener('pointermove', (e) => {
           : myVehicle?.type === 'tank'
             ? -0.65
             : -0.1,
-      crewSeat === 'ventral' ? -0.05 : myVehicle?.type === 'helicopter' ? HELI.maxPitch : 1.35,
+      crewSeat === 'ventral'
+        ? -0.05
+        : myVehicle?.type === 'helicopter'
+          ? HELI.maxPitch
+          : tankCannonSeat()
+            ? TANK_GUN_MAX_PITCH
+            : 1.35,
     );
     groundView.x = e.clientX;
     groundView.y = e.clientY;
@@ -902,7 +910,13 @@ addEventListener('pointermove', (event) => {
           : myVehicle?.type === 'tank'
             ? -0.65
             : -0.1,
-      crewSeat === 'ventral' ? -0.05 : myVehicle?.type === 'helicopter' ? HELI.maxPitch : 1.35,
+      crewSeat === 'ventral'
+        ? -0.05
+        : myVehicle?.type === 'helicopter'
+          ? HELI.maxPitch
+          : tankCannonSeat()
+            ? TANK_GUN_MAX_PITCH
+            : 1.35,
     );
     return;
   }
@@ -1800,6 +1814,23 @@ mountChangelog({
     clearControls();
   },
 });
+{
+  const report = renderInfo(T, renderer).join('\n');
+  $('renderInfoText').textContent = report;
+  $('renderInfoCopy').onclick = async () => {
+    try {
+      await navigator.clipboard.writeText(report);
+      $('renderInfoCopy').textContent = 'Copié';
+    } catch {
+      $('renderInfoCopy').textContent = 'Copie impossible : sélectionnez le texte';
+    }
+  };
+  if (!renderer.isWebGLRenderer)
+    notify(
+      'La 3D n’est pas disponible dans ce navigateur : l’affichage est simplifié. Activez l’accélération matérielle de Chrome.',
+      12,
+    );
+}
 function launchWave() {
   if (snap?.phase === 'lost') return action('reset', { epoch: snap.base.epoch });
   if (!snap?.mission_started) return action('start');
@@ -2849,6 +2880,7 @@ function reconcileEquipment(next) {
     stationRings[i] = ring;
   }
 }
+const tankCannonSeat = () => myVehicle?.type === 'tank' && crewSeat === 'cannon';
 function clampTurretPitch(value, min, max) {
   const antiAir =
     isFixedDca(stations[turretIndex]?.kind) ||
@@ -3054,7 +3086,7 @@ function airViewCamera(dt) {
     Math.max(0, me.position.y - VEHICLES.flyingcastor.gear),
   );
   const eye = new T.Vector3(me.position.x, ground + airViewHeight, me.position.z);
-  camera.position.lerp(eye, 1 - Math.exp(-10 * dt));
+  followMoving(camera.position, eye, new T.Vector3(vel.x, 0, vel.z), 10, dt);
   camera.up
     .lerp(new T.Vector3(-Math.sin(yaw), 0, -Math.cos(yaw)), 1 - Math.exp(-10 * dt))
     .normalize();
@@ -3138,11 +3170,14 @@ function updateVehicles(dt) {
             new T.Euler(T.MathUtils.clamp(turretAim.pitch, -1.2, 0.6), turretAim.yaw, 0, 'YXZ'),
           ),
         );
-      camera.position.lerp(
+      followMoving(
+        camera.position,
         me.position
           .clone()
           .add(new T.Vector3(0, 7, 21).multiplyScalar(ACTOR_UNIT).applyQuaternion(orbit)),
-        1 - Math.exp(-10 * dt),
+        vel,
+        10,
+        dt,
       );
       camera.up.set(0, 1, 0);
       camera.lookAt(
@@ -3183,7 +3218,13 @@ function updateVehicles(dt) {
             : myVehicle?.type === 'tank'
               ? -0.65
               : -0.05,
-        crewSeat === 'ventral' ? -0.05 : myVehicle?.type === 'helicopter' ? HELI.maxPitch : 1.2,
+        crewSeat === 'ventral'
+          ? -0.05
+          : myVehicle?.type === 'helicopter'
+            ? HELI.maxPitch
+            : tankCannonSeat()
+              ? TANK_GUN_MAX_PITCH
+              : 1.2,
       );
     }
     if (myVehicle.type === 'helicopter' && crewSeat === 'copilot') {
@@ -3198,7 +3239,7 @@ function updateVehicles(dt) {
       up = new T.Vector3(0, 1, 0).applyQuaternion(me.quaternion);
     aimGun(T, mount, dir, mount.parent.getWorldQuaternion(new T.Quaternion()));
     if (myVehicle.type === 'tank' && crewSeat === 'cannon') {
-      applyGunRecoil(mount.userData.pitch, gunRecoilFor(myVehicle.id));
+      applyGunRecoil(mount.userData.barrel, gunRecoilFor(myVehicle.id));
       mount.updateWorldMatrix(true, true);
     }
     const scoped = ['tank', 'flaktruck'].includes(myVehicle.type) && crewSeat === 'cannon';
@@ -3900,7 +3941,7 @@ function updateOthers(dt) {
     }
     if (v.type === 'tank') {
       trackTankShots();
-      applyGunRecoil(g.userData.turrets[0].userData.pitch, gunRecoilFor(v.id));
+      applyGunRecoil(g.userData.turrets[0].userData.barrel, gunRecoilFor(v.id));
     }
     g.userData.animateGun?.(dt, performance.now() < (g.userData.gunFiredUntil || 0));
     updateInscriptions(T, g, v, snap.pilots);
@@ -4856,7 +4897,7 @@ function frame(now) {
       if (airView()) airViewCamera(dt);
       else if (castorTopView()) {
         const pose = topViewPose(T, me.position, topViewHeight);
-        camera.position.lerp(pose.eye, 1 - Math.exp(-10 * dt));
+        followMoving(camera.position, pose.eye, new T.Vector3(vel.x, 0, vel.z), 10, dt);
         camera.up.lerp(pose.up, 1 - Math.exp(-10 * dt)).normalize();
         camera.lookAt(pose.target);
         camera.updateMatrixWorld();
@@ -4881,7 +4922,7 @@ function frame(now) {
         )
           .multiplyScalar(ACTOR_UNIT)
           .applyQuaternion(orbit);
-        camera.position.lerp(me.position.clone().add(offset), 1 - Math.exp(-10 * dt));
+        followMoving(camera.position, me.position.clone().add(offset), vel, 10, dt);
         camera.up.set(0, 1, 0).applyQuaternion(orbit);
         camera.lookAt(
           me.position

@@ -9,7 +9,7 @@ import {
   SENTRY_MAX_ELEVATION,
   SENTRY_MUZZLE_HEIGHT,
   SENTRY_SCALE,
-} from '../src/sentry-model.js';
+} from '../src/sentry-model.ts';
 
 const origin = [0, SENTRY_MUZZLE_HEIGHT, 0];
 const vertical = sentryAimAngles(origin, [0, 2, 0]);

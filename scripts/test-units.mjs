@@ -7,7 +7,7 @@ import { MOBILE_FUSE } from '../src/mobile-flak.js';
 import { GROUND_BOUNDS } from '../src/ground-defense.js';
 import { equipmentHUD } from '../src/hud.js';
 import { cursorAmmoText } from '../src/live-hud.js';
-import { fullAmmo } from '../src/logistics.js';
+import { fullAmmo } from '../src/logistics.ts';
 
 assert.equal(formatDistance(0.0015), '1,5 mm');
 assert.equal(formatDistance(0.024), '2,4 cm');

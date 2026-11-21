@@ -62,14 +62,18 @@ générés.
 
 ## Documents par thème
 
+La documentation se lit aussi sur le site <https://simonjamain.github.io/i-am-a-moucheron/>,
+généré depuis ce dépôt ([fonctionnement](docs/site.md)) : menus par public, recherche,
+nouveautés, galerie visuelle, écrans intégrés et santé de la documentation.
+
 Les constantes et commandes exactes restent dans le code et `package.json`. Les
-documents marqués *(lot)* racontent une livraison datée : ils décrivent des
+documents marqués _(lot)_ racontent une livraison datée : ils décrivent des
 comportements encore valides mais peuvent citer des versions ou des états
 dépassés ; en cas de doute, le code et les références du thème font foi.
 
 **Jeu et règles**
 
-- [gameplay](docs/gameplay.md) : règles et parcours joueur · [controls](docs/controls.md) : touches, pointeur · [comfort](docs/comfort.md), [clean-flight](docs/clean-flight.md), [field-update](docs/field-update.md), [multiplayer-return](docs/multiplayer-return.md), [returns-30-october](docs/returns-30-october.md), [party-feedback](docs/party-feedback.md), [game-polish-171](docs/game-polish-171.md), [gameplay-polish-175](docs/gameplay-polish-175.md), [issues-15-16-17](docs/issues-15-16-17.md) *(lots)*
+- [gameplay](docs/gameplay.md) : règles et parcours joueur · [controls](docs/controls.md) : touches, pointeur · [comfort](docs/comfort.md), [clean-flight](docs/clean-flight.md), [field-update](docs/field-update.md), [multiplayer-return](docs/multiplayer-return.md) _(lots)_
 - [progression](docs/progression.md) : vagues, récompenses, achats · [enemy-power](docs/enemy-power.md) : puissance et budget · [economy-physics](docs/economy-physics.md) : économie, signatures, balistique · [stats](docs/stats.md) : statistiques des équipements
 - [combat-worlds](docs/combat-worlds.md) · [logistics-contracts](docs/logistics-contracts.md) · [purgatory-queue](docs/purgatory-queue.md) · [laboratory](docs/laboratory.md) (mode debug) · [office-layouts](docs/office-layouts.md)
 
@@ -83,17 +87,18 @@ dépassés ; en cas de doute, le code et les références du thème font foi.
 
 **Architecture et réseau**
 
+- [trust-model](docs/trust-model.md) : confiance envers les clients, pas d'anti-triche
 - [code-structure](docs/code-structure.md) : carte du code · [walking-network](docs/walking-network.md) : corps partagés, autorité client · [udp-server](docs/udp-server.md) : serveur, variables, tests · [performance](docs/performance.md) : mesures et optimisations · [typescript](docs/typescript.md) · [adding-content](docs/adding-content.md) : nouvelle espèce ou nouveau véhicule
 
 **Rendu, son et modèles**
 
-- [audio](docs/audio.md) · [toon-rendering](docs/toon-rendering.md) · [shadow-visibility](docs/shadow-visibility.md) · [asset-pipeline](docs/asset-pipeline.md) : modèles Meshy et outil GLB · [meshy-fleet](docs/meshy-fleet.md), [b3-model](docs/b3-model.md), [h2-model](docs/h2-model.md), [m1-model](docs/m1-model.md), [t01-asset](docs/t01-asset.md), [contrast-bed-290](docs/contrast-bed-290.md)
+- [art-direction](docs/art-direction.md) : direction artistique · [ui-guidelines](docs/ui-guidelines.md) : règles d’interface · [audio](docs/audio.md) · [toon-rendering](docs/toon-rendering.md) · [shadow-visibility](docs/shadow-visibility.md) · [asset-pipeline](docs/asset-pipeline.md) : modèles Meshy et outil GLB · [meshy-fleet](docs/meshy-fleet.md), [b3-model](docs/b3-model.md), [h2-model](docs/h2-model.md), [m1-model](docs/m1-model.md), [t01-asset](docs/t01-asset.md)
 
 **Exploitation et contribution**
 
 - [operations](docs/operations.md) : contrôles, tests, limites de validation · [docker](docs/docker.md) · [CONTRIBUTING](CONTRIBUTING.md) · [notes de reprise](docs/tasks/README.md) (en cours : [migration TypeScript](docs/tasks/typescript-migration.md), [montée en charge](docs/tasks/scaling-plan.md))
 
-`/ui-review.html` (aperçu des vrais composants HUD/banque sur données temporaires)
+`/ui-review.html` (aperçu des vrais composants HUD/banque sur données temporaires, publié aussi sur le site : [écrans intégrés](https://simonjamain.github.io/i-am-a-moucheron/ecrans/))
 est généré par l’assemblage (`scripts/assemble.mjs`, lancé par `npm start`, `npm test` et `npm run build`).
 
 ## Outillage de modèles Meshy

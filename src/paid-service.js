@@ -10,7 +10,7 @@ import {
   FUEL_SECONDS,
   SERVICE_RADIUS,
   SERVICE_SECONDS,
-} from './logistics.js';
+} from './logistics.ts';
 
 export const SERVICE_RATES = Object.freeze({
   hp: 0.01,

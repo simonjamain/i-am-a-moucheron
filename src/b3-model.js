@@ -1,5 +1,5 @@
 import { B3_DATA } from './meshy-b3-data.js';
-import { buildMeshyRig, gunMount } from './meshy-rig.js';
+import { buildMeshyRig, gunMount } from './meshy-rig.ts';
 
 // Remodelled B3: two propellers, detachable-looking wings for damage, and the
 // three gunner turrets in seat order (dorsal, tail, ventral). The tail and

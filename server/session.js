@@ -1,5 +1,5 @@
 import { PROTOCOL, MAX_COMMAND_BYTES, encodeReply, encodeReplyText } from '../src/udp-protocol.ts';
-import { validMotion } from '../src/network.js';
+import { validMotion } from '../src/network.ts';
 import {
   encodeSnapshotForWire,
   MOTION_REFRESH_MS,
