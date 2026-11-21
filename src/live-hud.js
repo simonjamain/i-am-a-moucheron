@@ -13,7 +13,6 @@ const STATIONS = {
   dca: ['Clic / Espace : obus', 'Maj/Ctrl, [ ] ou molette : fusée'],
   dcaRapid: ['Clic / Espace : balles'],
   dcaHeavy: ['Clic / Espace : obus', 'Molette : proximité'],
-  bunker: ['Clic / Espace : balles'],
   antitank: ['Clic / Espace : obus anti-matériel'],
 };
 

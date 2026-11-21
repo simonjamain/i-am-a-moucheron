@@ -81,7 +81,10 @@ export const FLAK = Object.freeze({
   maxRange: 1200,
   step: 25,
   range: 300,
+  // Blast of the proximity shell and of the missile; the light flak has its own.
   radius: 8,
+  // Blast radius of the light flak's shell (m), damage falling off to its edge.
+  lightRadius: 30,
 });
 
 // Directions are relative to the gun's vertical axis, including the D2 hull.

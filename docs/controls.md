@@ -128,7 +128,7 @@ est un interrupteur direct ([mode debug](laboratory.md)).
 
 `controlHintItems()` dans `src/live-hud.js` est la source unique de l’aide affichée
 en bas à gauche (`#commandHelp`). `client.js` lui transmet le véhicule et le siège,
-le type de poste fixe occupé (DCA, bunker LEGO, canon antichar), l’état à pied,
+le type de poste fixe occupé (DCA, canon antichar), l’état à pied,
 en chute ou au purgatoire, la disponibilité de la construction, la roue ouverte
 et l’outil actif (avec son point d’ancrage). L’aide change donc à l’entrée, à la
 sortie et au changement de poste. À pied : molette pour le zoom caméra, **G** ou
@@ -205,7 +205,7 @@ et **A** (air) et les silhouettes reprennent ceux des entrées dans le bureau.
 Le trajet terrestre confirmé apparaît comme une piste de phéromones orange
 semi-transparente bordée de sombre, parcourue de chevrons blancs qui glissent vers
 la poubelle : c'est le chemin réellement marché tant que la carte ne change pas.
-Pendant la pose d’une barricade ou d’un bunker, la piste claire à chevrons orange
+Pendant la pose d’une barricade, la piste claire à chevrons orange
 montre le détour proposé avant le clic de validation. Les trajets aériens gardent
 leurs nuages colorés par aération (`src/pheromone-trail.ts`, version 239).
 
@@ -216,9 +216,9 @@ préparation ; sinon la vague part à la fin du compte à rebours
 
 ## Défenses terrestres
 
-Le conducteur du Castor peut poser, sans plan à débloquer, un « Bunker LEGO » (10 $) et un « Canon lourd » (14 $). Descendez, approchez du poste et utilisez la commande d’interaction pour signer le dossier et occuper le siège ; utilisez la visée et le tir habituels, puis la même commande pour sortir. Le canon lourd pivote lentement (45°/s, roues en sens inverse) vers la visée, entre −5° et +40° d’élévation, et tire là où pointe réellement son tube un obus sans fusée (comme le tank), simulé par le tireur ; la caméra se place derrière la culasse. Les munitions se rechargent de manière payante à proximité d’une station ou du Castor.
+Le conducteur du Castor peut poser, sans plan à débloquer, un « Canon lourd » (14 $). Descendez, approchez du poste et utilisez la commande d’interaction pour signer le dossier et occuper le siège ; utilisez la visée et le tir habituels, puis la même commande pour sortir. Le canon lourd pivote lentement (45°/s, roues en sens inverse) vers la visée, entre −5° et +40° d’élévation, et tire là où pointe réellement son tube un obus sans fusée (comme le tank), simulé par le tireur ; la caméra se place derrière la culasse. Les munitions se rechargent de manière payante à proximité d’une station ou du Castor.
 
-Le conducteur du Castor peut choisir, sans plan à débloquer, « Tourelle auto » dans la roue de construction et la poser d’un clic (9 $). La tourelle consomme ses 180 balles ; le service de recharge est payant et local.
+Le conducteur du Castor peut choisir, sans plan à débloquer, « Tourelle auto » dans la roue de construction et la poser d’un clic (5 $). La tourelle consomme ses 180 balles ; le service de recharge est payant et local.
 
 **G** ou clic molette (roue de construction) à pied ou au poste conducteur du Castor au sol, puis choix d’un outil ; il n’y a plus de bouton « Défense » (issue #135) : aperçu au point visé par la caméra
 indépendamment de la marche, E ou clic gauche pour valider, R pour orienter le sucre, Échap

@@ -41,19 +41,6 @@ function equipmentModel({
       ],
     };
   }
-  if (turret && station === 'bunker') {
-    const fort = FORTIFICATIONS.bunker;
-    return {
-      scope: 'bunker',
-      left: ['BUNKER LEGO', health],
-      right: [
-        'ARMEMENT',
-        ready ? 'PRÊT' : 'RECHARGE',
-        `Balles ${count(stationAmmo)}/${fort.ammo}`,
-        `${fort.damage} dégâts par balle`,
-      ],
-    };
-  }
   if (turret && station === 'dcaRapid')
     return {
       scope: station,

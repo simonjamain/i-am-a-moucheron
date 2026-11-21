@@ -38,7 +38,7 @@ export const HEAVY = Object.freeze({
     interval: 1,
     damage: 240,
     edge: 60,
-    radius: MAP.metres(FLAK.radius * 3),
+    radius: MAP.metres(40),
     speed: MAP.metres(REFERENCE.shell * 0.7),
     lifetime: 6,
   },
@@ -59,7 +59,7 @@ export const HEAVY = Object.freeze({
     // Same values as FORTIFICATIONS.antitank (no import, to keep this
     // module light; scripts/test-howitzer.mjs checks they match).
     interval: 1.8,
-    damage: 360,
+    damage: 800,
     edge: 90,
     radius: MAP.metres(5),
     speed: MAP.metres(750),
