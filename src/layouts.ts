@@ -1163,6 +1163,8 @@ export interface LayoutPiece {
   radiusTop?: number;
   /** False for colliders of models drawn elsewhere (office pack props). */
   visible?: boolean;
+  /** Box of an office pack prop, replaced by its triangles where they are used. */
+  decor?: true;
 }
 const mkPiece = (
   shape: LayoutPiece['shape'],
@@ -1270,8 +1272,12 @@ export function layoutPieces(layout: Readonly<OfficeLayout> = activeLayoutValue)
   }
   // Colliders of the models (walls, vents, bin, props): drawn by office.js.
   // Touching boxes of a row (bookshelves, panels) become one: no seam to catch on.
-  for (const c of mergeTouching([...layout.shellSolids, ...layout.props.flatMap(propColliders)]))
+  // Boxes of the pack props are marked `decor`: their triangles stand for them
+  // where the decor's collision world is used (office-collision.ts).
+  for (const c of mergeTouching(layout.shellSolids))
     P.push({ ...colliderPiece(c), visible: false });
+  for (const c of mergeTouching(layout.props.flatMap(propColliders)))
+    P.push({ ...colliderPiece(c), visible: false, decor: true });
   piecesCache.set(layout.id, P);
   return P;
 }

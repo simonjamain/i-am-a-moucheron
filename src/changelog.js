@@ -1,6 +1,12 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 408,
+    changes: [
+      'Les tirs, les explosions et la caméra suivent la vraie forme des meubles : on tire entre les pieds d’une chaise.',
+    ],
+  },
+  {
     version: 407,
     changes: [
       'Mode debug : les vraies formes de collision des meubles s’affichent en jaune, en préparation de collisions fidèles.',

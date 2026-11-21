@@ -318,6 +318,25 @@ function applyLayout(planId) {
   office.buildDecor(rapier);
   colliders.splice(0, colliders.length, ...office.colliders);
 }
+// Nearest solid along a ray (unit direction), within `far`: the boxes (shell,
+// floor, constructions, and the pack props until the decor world is built), then
+// the props' real triangles (office.decor, see office-collision.ts). Infinity
+// when nothing is hit. Purgatory boxes have no decor world.
+const solidRayPoint = new T.Vector3();
+function solidRayDistance(ray, far, boxes = colliders) {
+  const decor = boxes === colliders ? office.decor : null;
+  let best = Infinity;
+  for (const box of boxes) {
+    if (decor && box.decor) continue;
+    const p = rayCollider(T, ray, box, solidRayPoint);
+    if (p) best = Math.min(best, ray.origin.distanceTo(p));
+  }
+  if (decor && best > 0) {
+    const hit = decor.raycast(ray.origin.toArray(), ray.direction.toArray(), Math.min(far, best));
+    if (hit) best = Math.min(best, hit.distance);
+  }
+  return best <= far ? best : Infinity;
+}
 let me = makePlane('#e3ebc0');
 me.scale.setScalar(ACTOR_UNIT);
 me.visible = false;
@@ -610,14 +629,9 @@ function groundCamera(cam, position, dt, purg = false) {
   {
     const ray = new T.Ray(target, offset.clone().normalize());
     let distance = offset.length();
-    for (const box of purg ? purgColliders : colliders) {
-      const hit = rayCollider(T, ray, box, new T.Vector3());
-      if (hit)
-        distance = Math.min(
-          distance,
-          Math.max(0.08 * viewScale, target.distanceTo(hit) - 0.08 * viewScale),
-        );
-    }
+    const hit = solidRayDistance(ray, distance, purg ? purgColliders : colliders);
+    if (hit < Infinity)
+      distance = Math.min(distance, Math.max(0.08 * viewScale, hit - 0.08 * viewScale));
     desired.copy(target).addScaledVector(offset.normalize(), distance);
   }
   if (changed) cam.position.copy(desired);
@@ -4277,13 +4291,11 @@ function explosion(b, point) {
     const delta = position.clone().sub(point),
       length = delta.length();
     if (length < 1e-9) return true;
-    const ray = new T.Ray(point, delta.normalize());
-    return !colliders.some((box) => {
-      const p = rayCollider(T, ray, box, new T.Vector3());
-      if (!p) return false;
-      const d = p.distanceTo(point);
-      return d > MAP.metres(0.03) && d < length - MAP.metres(0.02);
-    });
+    // Ignore the surface the blast stands on (3 cm) and the target's own (2 cm).
+    const skip = MAP.metres(0.03),
+      dir = delta.normalize();
+    const ray = new T.Ray(point.clone().addScaledVector(dir, skip), dir);
+    return solidRayDistance(ray, length - skip - MAP.metres(0.02)) === Infinity;
   };
   for (const [enemy, g] of insects) {
     if (
@@ -4353,8 +4365,7 @@ const vacantRigs = new Map();
 
 // Vehicles and pilots a shot can hit, prepared once per frame (matrices, solid
 // meshes, padded box) instead of once per projectile and per slice.
-const projectileRay = new T.Raycaster(),
-  scratchPoint = new T.Vector3();
+const projectileRay = new T.Raycaster();
 let frameTargets = null;
 function solidTargets() {
   if (frameTargets) return frameTargets;
@@ -4400,14 +4411,9 @@ function stepProjectileSlice(dt) {
       projectileRay.near = 0;
       projectileRay.far = distance;
       hit = nearestSolidHit(T, projectileRay, solidTargets(), b.originVehicle);
-      for (const box of colliders) {
-        const point = rayCollider(T, projectileRay.ray, box, scratchPoint);
-        if (point) {
-          const d = origin.distanceTo(point);
-          if (d <= distance && (!hit || d < hit.distance))
-            hit = { point: point.clone(), distance: d, wall: true };
-        }
-      }
+      const wall = solidRayDistance(projectileRay.ray, distance);
+      if (wall < Infinity && (!hit || wall < hit.distance))
+        hit = { point: origin.clone().addScaledVector(dir, wall), distance: wall, wall: true };
       const blocker = hit;
       const insect = nearestInsectHit(
         T,
@@ -5759,11 +5765,8 @@ function heliAimPoint() {
   const direction = weaponDirection(),
     origin = camera.position.clone(),
     ray = new T.Ray(origin, direction);
-  let distance = MAP.metres(250);
-  for (const box of colliders) {
-    const p = rayCollider(T, ray, box, new T.Vector3());
-    if (p) distance = Math.min(distance, p.distanceTo(origin));
-  }
+  const reach = MAP.metres(250);
+  const distance = Math.min(reach, solidRayDistance(ray, reach));
   return origin.addScaledVector(direction, distance).toArray();
 }
 function activeMissile() {
@@ -6716,10 +6719,10 @@ function updateVehicleCare(dt) {
     // Decorative particles stop at the first physical surface. Damage/cleaning remains server-owned.
     let range = WASH.range;
     const ray = new T.Ray(origin, direction);
-    for (const b of stream.targetScene === scene ? colliders : purgColliders) {
-      const hit = rayCollider(T, ray, b, new T.Vector3());
-      if (hit) range = Math.min(range, hit.distanceTo(origin));
-    }
+    range = Math.min(
+      range,
+      solidRayDistance(ray, range, stream.targetScene === scene ? colliders : purgColliders),
+    );
     for (let i = 0; i < 28; i++) {
       const t = ((now / 180 + i / 28) % 1) * range;
       const point = origin.clone().addScaledVector(direction, t);

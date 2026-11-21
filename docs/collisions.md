@@ -34,8 +34,17 @@ travail avance par lots (note de reprise : [collisions en triangles](tasks/colli
 ## Lots
 
 1. **Monde de collision en triangles** (version 407) : monde Rapier du décor,
-   requêtes exactes, affichage en mode debug. Les boîtes restent les solides du jeu pendant ce lot.
-2. Tirs, visée de pose, caméra, largages : rayons sur les triangles.
+   requêtes exactes, affichage en mode debug.
+2. Rayons sur les triangles, en deux temps :
+   - **2a (version 408)**, rayons propres au client : impacts des tirs, exposition
+     aux explosions, recul de la caméra devant le décor, visée de l'hélicoptère, jet
+     d'eau (particules). `solidRayDistance` (`src/client.js`) prend l'impact le
+     plus proche parmi les boîtes restantes (coque, sol, constructions) et les
+     triangles du décor ; les boîtes des objets du pack (marquées `decor` par
+     `layoutPieces`) sont ignorées dès que le monde du décor existe ;
+   - **2b**, surfaces partagées avec le serveur (pose d'équipement, largages,
+     livraisons, apparitions sur les lits) : le serveur vérifie encore sur ses
+     boîtes, il devra accepter la hauteur calculée par le client.
 3. Avions, marche et véhicules au contact des triangles.
 4. Navigation des fourmis et serveur.
 
