@@ -61,7 +61,10 @@ Mettre à jour, dans la même PR, les références dont le comportement change ;
 conserver une référence détaillée par sujet, avec des liens ailleurs. Pour une
 évolution de stack, d'autorité réseau ou de boucle de jeu, revoir aussi README,
 gameplay et carte du code. Vérifier les documents concernés et leurs liens avec
-`npm run check:docs`. Réserver l'audit global à une tâche documentaire explicite.
+`npm run check:docs`. Une nouvelle page de `docs/` s'ajoute au menu de `mkdocs.yml` :
+le [site de documentation](docs/site.md) publié sur GitHub Pages en est généré et son
+contrôle `Docs site` échoue sur une page hors menu ou un lien cassé. Réserver l'audit
+global à une tâche documentaire explicite.
 
 Pour un travail long, interrompu ou à transmettre, maintenir une note par tâche
 selon [le modèle de reprise](docs/tasks/README.md). Y conserver l'état actuel,

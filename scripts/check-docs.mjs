@@ -1,6 +1,6 @@
 import { readdir, readFile, access } from 'node:fs/promises';
 import path from 'node:path';
-const skipped = new Set(['.git', '.local', 'node_modules', 'vendor', 'dist', 'outputs']);
+const skipped = new Set(['.git', '.local', '.site', 'node_modules', 'vendor', 'dist', 'outputs']);
 async function walk(dir = '.') {
   const found = [];
   for (const entry of await readdir(dir, { withFileTypes: true })) {

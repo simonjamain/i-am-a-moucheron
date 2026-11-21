@@ -62,6 +62,10 @@ générés.
 
 ## Documents par thème
 
+La documentation se lit aussi sur le site <https://simonjamain.github.io/i-am-a-moucheron/>,
+généré depuis ce dépôt ([fonctionnement](docs/site.md)) : menus par public, recherche,
+nouveautés, galerie visuelle, écrans intégrés et santé de la documentation.
+
 Les constantes et commandes exactes restent dans le code et `package.json`. Les
 documents marqués _(lot)_ racontent une livraison datée : ils décrivent des
 comportements encore valides mais peuvent citer des versions ou des états
@@ -94,7 +98,7 @@ dépassés ; en cas de doute, le code et les références du thème font foi.
 
 - [operations](docs/operations.md) : contrôles, tests, limites de validation · [docker](docs/docker.md) · [CONTRIBUTING](CONTRIBUTING.md) · [notes de reprise](docs/tasks/README.md) (en cours : [migration TypeScript](docs/tasks/typescript-migration.md), [montée en charge](docs/tasks/scaling-plan.md))
 
-`/ui-review.html` (aperçu des vrais composants HUD/banque sur données temporaires)
+`/ui-review.html` (aperçu des vrais composants HUD/banque sur données temporaires, publié aussi sur le site : [écrans intégrés](https://simonjamain.github.io/i-am-a-moucheron/ecrans/))
 est généré par l’assemblage (`scripts/assemble.mjs`, lancé par `npm start`, `npm test` et `npm run build`).
 
 ## Outillage de modèles Meshy
