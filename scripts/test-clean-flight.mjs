@@ -476,6 +476,13 @@ ui.open('dca', { life: 'alive', incarnation: 0 });
 assert.equal(ui.price, 5);
 assert.match(root.querySelector('[data-bed-text]').textContent, /5 \$/);
 const e = { pointerId: 1, clientX: 10, clientY: 10, preventDefault() {} };
+// No motive is ticked by default: the signature stays locked until one is.
+ui.canvas.onpointerdown(e);
+ui.canvas.onpointerup({ ...e, clientX: 90 });
+await new Promise((r) => setImmediate(r));
+assert.equal(submitted, 0, 'no order without a ticked motive');
+assert.match(root.querySelector('[data-bed-status]').textContent, /Cochez un motif/);
+ui.clauses.toggle('defense');
 ui.canvas.onpointerdown(e);
 ui.canvas.onpointercancel();
 ui.canvas.onpointerup({ ...e, clientX: 90 });
@@ -485,6 +492,15 @@ ui.canvas.onpointerup({ ...e, clientX: 90 });
 await new Promise((r) => setImmediate(r));
 assert.equal(submitted, 1);
 assert.equal(archived, 1);
+// « Convenance personnelle » is really refused: no command, the document closes.
+ui.open('dca', { life: 'alive', incarnation: 0 });
+ui.clauses.toggle('comfort');
+assert.ok(ui.canSign(), 'the refused clause still counts as a ticked motive');
+ui.canvas.onpointerdown(e);
+ui.canvas.onpointerup({ ...e, clientX: 90 });
+await new Promise((r) => setImmediate(r));
+assert.equal(submitted, 1, 'a refused order sends nothing');
+assert.ok(!ui.opened && ui.invalidated, 'a refused order closes and must be started again');
 ss.balance = { prices: 2 };
 ui.open('radar', { life: 'alive', incarnation: 0 });
 assert.equal(

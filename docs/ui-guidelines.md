@@ -61,6 +61,14 @@ remplir, signatures, tampons, cachets « APPROUVÉ ».
   [signatures](economy-physics.md#input-and-signatures)) ; c’est le geste qui valide, à
   la place d’un bouton.
 
+En jeu sur le **bon de commande** de l’atelier (`src/purchase-ui.js`) : feuille de papier,
+motif obligatoire à cocher (`PURCHASE_MOTIVES`), solde de la caisse commune avant et après,
+signature, puis tampon « APPROUVÉ ». La clause « Convenance personnelle » est réellement
+refusée : tampon « REFUSÉ », aucune commande envoyée, et il faut recommencer depuis l’atelier.
+Le composant partagé (cases dessinées, coche au crayon, tampons) est `src/paper-form.ts` ;
+ses jetons (`--paper`, `--ink`, `--pencil`, `--stamp-ink`, `--typewriter`) sont dans
+`src/index.html`. Le dossier d’embarquement, le lit et le banquier suivront.
+
 L’interface HTML actuelle (panneaux vert sombre génériques) est héritée ; chaque
 reprise d’un écran va vers ce modèle.
 

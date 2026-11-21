@@ -127,6 +127,7 @@ const files = {
       'salvos',
       'muzzle',
       'purchase-ui',
+      'paper-form',
       'vehicle-care',
       'tank-reticle',
       'flight',
