@@ -8,39 +8,39 @@ l'ennemi le plus proche dans sa portée, se répare et se recharge aux zones de 
 
 ## Règles
 
-| Valeur            | Gatling            | T-01 (pour mémoire) |
-| ----------------- | ------------------ | ------------------- |
-| Prix              | 25 $               | 5 $                 |
-| Points de vie     | 150                | 150                 |
-| Dégâts par tir    | 30                 | 30                  |
-| Cadence           | 6 tirs par seconde | 2 tirs par seconde  |
-| Munitions         | 1 000              | 180                 |
-| Portée            | 0,42 m (identique) | 0,42 m              |
-| Empreinte de pose | 2 cm (identique)   | 2 cm                |
+| Valeur            | Gatling             | T-01 (pour mémoire) |
+| ----------------- | ------------------- | ------------------- |
+| Prix              | 25 $                | 5 $                 |
+| Points de vie     | 150                 | 150                 |
+| Dégâts par tir    | 30                  | 60                  |
+| Cadence           | 12 tirs par seconde | 2 tirs par seconde  |
+| Munitions         | 1 000               | 180                 |
+| Portée            | 0,42 m (identique)  | 0,42 m              |
+| Empreinte de pose | 2 cm (identique)    | 2 cm                |
 
-Les valeurs vivent dans `GATLING` (`src/ground-sentry.ts`). Le plafond de
+À 12 tirs par seconde, les 1 000 munitions durent environ 83 s de feu continu. Les valeurs vivent dans `GATLING` (`src/ground-sentry.ts`). Le plafond de
 **12 tourelles par salle** est partagé entre les deux types ; la recharge payante
 et la réparation utilisent la capacité de chaque type (`turretSpec`).
 
 ## Cadence et réseau
 
 Le serveur avance une salle toutes les 250 ms (et à chaque commande) alors qu'un
-tir Gatling revient toutes les 166,7 ms. `fireGroundSentries` tient donc un
-**calendrier exact** : un tick peut devoir un ou deux tirs, la dérive ne s'accumule
+tir Gatling revient toutes les 83,3 ms. `fireGroundSentries` tient donc un
+**calendrier exact** : un tick peut devoir jusqu'à trois tirs, la dérive ne s'accumule
 pas, et une tourelle restée inactive plus de 500 ms recommence par un seul tir
 (jamais de rafale de rattrapage). Une cible abattue au premier tir n'est pas
 touchée une seconde fois dans le même tick. Les 10 s de feu continu donnent
-60 tirs (`scripts/test-gatling.mjs`).
+120 tirs (`scripts/test-gatling.mjs`).
 
 Pour ne pas multiplier les messages, le serveur publie **un effet `sentry-shot`
-par tourelle et par tick** avec `turret: 'gatling'` et `shots` (1 ou 2). La T-01
+par tourelle et par tick** avec `turret: 'gatling'` et `shots` (1 à 3). La T-01
 garde son effet par tir. Le client étale les tirs d'un effet à la cadence de l'arme
 (`noteGatlingBurst` / `takeGatlingShots`, au plus deux par image) : un traceur et
 un éclair par tir, chacun depuis le canon du haut du faisceau, **sans son par tir**.
 
 ## Son continu
 
-Un tir isolé n'a plus de son. Une **boucle de 1 s** (six impulsions, raccord sans
+Un tir isolé n'a plus de son. Une **boucle de 1 s** (douze impulsions, raccord sans
 couture, `gatling` dans `src/game-audio/synth.ts`) joue pendant tout le feu, dans l'espace du
 Castor : sa hauteur et sa cadence suivent la vitesse du faisceau (montée en
 régime, puis arrêt avec la fin du feu). Seules les trois Gatling les plus proches
@@ -94,21 +94,21 @@ tout vers la cible, les traceurs sont calculés depuis la bouche vers la cible r
 l'élévation maximale, l'arrière de la tête affleure la couronne ; le pied de la tête
 s'écarte du socle à l'avant, comme une charnière.
 
-**Rotation.** Le faisceau tourne à 1 tour par seconde à plein régime : avec six
-canons et 6 tirs par seconde, un tir par canon et par tour. Il monte en régime en
+**Rotation.** Le faisceau tourne à 2 tours par seconde à plein régime : avec six
+canons et 12 tirs par seconde, un tir par canon et par tour. Il monte en régime en
 0,35 s, et ralentit en 1,1 s après le dernier tir (`stepGatlingSpin`). Il ne
 tourne que lorsque des tirs partent réellement.
 
 ## Vérifications
 
 `scripts/test-gatling.mjs` (dans `npm test`) couvre : valeurs, plafond partagé,
-cadence de 60 tirs en 10 s au tick de 250 ms, cible abattue, munitions, recharge,
+cadence de 120 tirs en 10 s au tick de 250 ms, cible abattue, munitions, recharge,
 largage du Castor volant, achat serveur idempotent, effets du tick, hiérarchie du
 modèle, atlas partagé, symétrie sextuple et centrage du faisceau, inertie, tirs
 étalés, voix sonore par tourelle et raccord de la boucle.
 
 **Reste à valider à la main** (WebGL/UDP/ressenti, non prouvables ici) : le rendu en
 partie réelle, la lisibilité du faisceau en rotation à distance de jeu, le confort
-du son continu avec plusieurs Gatling, le coût de 12 Gatling (72 traceurs par
+du son continu avec plusieurs Gatling, le coût de 12 Gatling (144 traceurs par
 seconde, partagés avec le plafond de 256 traces) et l'équilibrage du prix (25 $)
 face à la T-01.

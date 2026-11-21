@@ -5,20 +5,20 @@ export const SENTRY = Object.freeze({
   ammo: 180,
   range: 0.42,
   intervalMs: 500,
-  damage: 30,
+  damage: 60,
   // Shared by every automatic turret kind (T-01 and Gatling together).
   maxPerRoom: 12,
   // Ground footprint radius used for placement spacing (scaled T-01, #110).
   footprint: 0.02,
 });
 
-// Gatling: same behaviour and range as the T-01, 6 rounds/s from a 1000-round belt.
+// Gatling: same behaviour and range as the T-01, 12 rounds/s from a 1000-round belt.
 export const GATLING = Object.freeze({
   cost: 25,
   hp: 150,
   ammo: 1000,
   range: SENTRY.range,
-  intervalMs: 1000 / 6,
+  intervalMs: 1000 / 12,
   damage: 30,
   footprint: 0.02,
 });

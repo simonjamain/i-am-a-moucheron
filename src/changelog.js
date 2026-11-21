@@ -1,6 +1,13 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 390,
+    changes: [
+      'La tourelle Gatling tire deux fois plus vite : 12 tirs par seconde.',
+      'Les balles de la tourelle automatique font deux fois plus de dégâts.',
+    ],
+  },
+  {
     version: 389,
     changes: [
       'Gatling : toute la partie haute de la tourelle se lève pour viser, pas seulement les canons.',
