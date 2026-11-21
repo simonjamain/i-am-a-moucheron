@@ -182,7 +182,7 @@ assert.deepEqual(
 );
 assert.deepEqual(
   rightDetails.children.map((row) => row.textContent),
-  ['Obus 120/120', 'Souffle : 7,2 cm'],
+  ['Obus 120/120', 'Souffle : 12 cm'],
 );
 const firstRow = leftDetails.children[0];
 hud.update(equipmentHUD({ turret: true, station: 'dcaHeavy', stationAmmo: 119 }));

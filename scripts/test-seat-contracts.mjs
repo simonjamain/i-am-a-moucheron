@@ -32,8 +32,8 @@ for (const [key, forms] of Object.entries(CONTRACTS))
           3 * Math.max(...CONTRACTS['purgatory:soul'].flat().map((v) => v.text.length)),
       );
   }
-assert.equal(docs, 83);
-console.log('PASS: reward sounds and 830 contract variants.');
+assert.equal(docs, 81);
+console.log('PASS: reward sounds and 810 contract variants.');
 const T = await import('../vendor/three.module.min.js');
 const { stepVacantAircraft } = await import('../src/vacant-flight.js');
 const { VEHICLES } = await import('../src/fleet.ts');

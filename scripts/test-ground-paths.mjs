@@ -85,7 +85,7 @@ for (const path of empty) {
     );
 }
 
-// 2. Barricade then bunker across S2's path: the draft preview equals the built
+// 2. Barricade across S2's path: the draft preview equals the built
 // result, the detour is taken, and the walked path still matches the forecast.
 const defense = newGroundDefense();
 const s2 = floor(empty[1].points);
@@ -101,14 +101,6 @@ groundCommand(defense, wall, wall.a, 100);
 const built = assertWalkedEqualsForecast(defense.structures, 'barricade');
 assert.deepEqual(draft, built, 'barricade draft preview equals the confirmed path');
 assert.notDeepEqual(built[1].points, empty[1].points, 'the barricade changes S2');
-const s3 = floor(built[2].points);
-const bunkerAt = [(s3[0][0] + s3[1][0]) / 2, (s3[0][1] + s3[1][1]) / 2];
-const bunker = { action: 'build', kind: 'bunker', a: bunkerAt };
-const bunkerDraft = predictedGroundPaths({ groups, walls: defense.structures, command: bunker });
-groundCommand(defense, bunker, bunker.a, 100, Date.now(), { castor: true });
-const fortified = assertWalkedEqualsForecast(defense.structures, 'bunker');
-assert.deepEqual(bunkerDraft, fortified, 'bunker draft preview equals the confirmed path');
-assert.notDeepEqual(fortified[2].points, built[2].points, 'bunkers block forecasts too');
 
 // 3. No path: the bin is enclosed. The forecast reports a closed passage and the
 // server neither crashes nor walks through: destructive species attack the wall.
@@ -174,7 +166,7 @@ for (let i = 0; i < 30; i++) flow.smoothRoute(floor(empty[i % 3].points)[0]);
 const query = (performance.now() - started) / 30;
 assert.ok(build < 1000 && query < 100, 'navigation budget');
 console.log(
-  'Ground paths: direct, forecast = walked path (undefended, barricade, bunker), closed passage, server agents always on; flow ' +
+  'Ground paths: direct, forecast = walked path (undefended, barricade), closed passage, server agents always on; flow ' +
     build.toFixed(0) +
     ' ms, route ' +
     query.toFixed(1) +

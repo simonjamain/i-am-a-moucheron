@@ -18,7 +18,7 @@ import { purchaseCount } from '../src/equipment.ts';
 import { bedAccess, bedSpawn } from '../src/beds.ts';
 import { impactDamage } from '../src/field-physics.ts';
 import { randomUUID } from 'node:crypto';
-import { MAP, ACTOR_UNIT, enemySizeFactor } from '../src/scale.ts';
+import { MAP, ACTOR_UNIT, FLAK, enemySizeFactor } from '../src/scale.ts';
 import { OFFICE_LAYOUT } from '../src/layout.ts';
 import { setActiveLayout, isLayoutId, DEFAULT_LAYOUT_ID, layoutSolids } from '../src/layouts.ts';
 import {
@@ -51,7 +51,7 @@ import { SHOP, shopPrice, supportedPlacement } from '../src/equipment.ts';
 import { advancePaidService } from '../src/paid-service.js';
 import { SENTRY, GATLING, isTurret, fireGroundSentries } from '../src/ground-sentry.ts';
 import { FORTIFICATIONS, isFortification } from '../src/ground-fortifications.ts';
-import { FIXED_DCA, heavyDcaMuzzle, isFixedDca } from '../src/fixed-dca.ts';
+import { FIXED_DCA, RAPID_DCA_DAMAGE, heavyDcaMuzzle, isFixedDca } from '../src/fixed-dca.ts';
 import { PISTOL_CAPACITY } from '../src/ground-ammo.ts';
 import {
   fullAmmo,
@@ -1354,7 +1354,15 @@ export class Game {
         400,
       );
       if (!r.effects.some((e) => e.shot === b.shot))
-        r.effects.push({ id: ++r.effectSeq, kind: 'blast', p: b.p, shot: b.shot, at: this.now() });
+        r.effects.push({
+          id: ++r.effectSeq,
+          kind: 'blast',
+          p: b.p,
+          shot: b.shot,
+          radius:
+            Math.min(MAP.metres(FLAK.lightRadius), Math.max(0, Number(b.radius) || 0)) || undefined,
+          at: this.now(),
+        });
     } else if (path === 'death') {
       if (
         p.life === 'alive' &&
@@ -2533,7 +2541,7 @@ export class Game {
     if (r.kills.has(b.enemy)) return;
     const rapid = typeof b.shot === 'string' && b.shot.startsWith(p.id + ':rapid:');
     if (rapid ? !this.rapidImpactAllowed(r, p, b.shot) : !this.pistolImpact(r, p, b.shot)) return;
-    const damage = rapid ? 75 : Math.max(1, Math.min(800, Number(b.amount) || 75));
+    const damage = rapid ? RAPID_DCA_DAMAGE : Math.max(1, Math.min(800, Number(b.amount) || 75));
     const amount = damage * r.balance.damage;
     this.once(
       r,
@@ -2558,7 +2566,7 @@ export class Game {
         : undefined;
     const amount =
       (rapid
-        ? 75
+        ? RAPID_DCA_DAMAGE
         : p.mode === 'foot'
           ? 10
           : p.mode === 'turret'
@@ -2597,16 +2605,7 @@ export class Game {
         amount,
         at: this.now(),
       });
-      const shelter = target.mode === 'turret' ? r.equipment[target.state.turret] : null;
-      let toBody = amount;
-      if (shelter?.kind === 'bunker' && shelter.hp > 0) {
-        const absorbed = Math.min(shelter.hp, amount * 0.85);
-        shelter.hp = Math.max(0, shelter.hp - absorbed);
-        toBody -= absorbed;
-        r.groundDefense.revision++;
-        if (shelter.hp === 0) r.groundDefense.navigationRevision++;
-      }
-      target.health = Math.max(0, target.health - toBody);
+      target.health = Math.max(0, target.health - amount);
       if (!target.health) this.kill(r, target, target.incarnation);
     });
   }

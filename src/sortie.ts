@@ -83,7 +83,7 @@ export const AA_STATIONS: Station[] = [
 ];
 // Where the entry circle sits, beside the station (+X), inside its access
 // radius. The player-scale howitzer (#113) sweeps 3.4 m around its axle: its
-// circle stands just outside that sweep; the large bunker keeps its distances.
+// circle stands just outside that sweep.
 export function stationEntryOffset(station: Station | null | undefined): number {
   return station?.kind === 'antitank'
     ? MAP.metres(4.5)

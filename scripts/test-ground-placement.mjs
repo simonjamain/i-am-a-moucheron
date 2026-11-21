@@ -133,7 +133,7 @@ for (let i = 0; i < ui.tools.length; i++) {
   const angle = (i * 2 * Math.PI) / ui.tools.length;
   ui.moveWheel(80 * Math.sin(angle), -80 * Math.cos(angle));
   ui.finishWheel();
-  if (['sentry', 'gatling', 'bunker', 'antitank'].includes(ui.tools[i][0]))
+  if (['sentry', 'gatling', 'antitank'].includes(ui.tools[i][0]))
     assert.equal(ui.mode, 'remove', 'Castor-only locked tools cannot be selected on foot');
   else assert.equal(ui.mode, ui.tools[i][0]);
 }

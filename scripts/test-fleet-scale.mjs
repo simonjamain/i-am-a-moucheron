@@ -93,6 +93,11 @@ assert.equal(fuseRange(9999), 1200);
 assert.equal(FLAK.interval, 0.7);
 assert.equal(blastDamage(MAP.metres(FLAK.radius)), 20);
 assert.equal(blastDamage(0), 80);
+// The light flak's shell blasts out to 30 m, falling from 80 to 20 over that radius.
+assert.equal(FLAK.lightRadius, 30);
+assert.equal(blastDamage(MAP.metres(30), MAP.metres(FLAK.lightRadius)), 20);
+assert.equal(blastDamage(MAP.metres(30.01), MAP.metres(FLAK.lightRadius)), 0);
+assert.equal(blastDamage(MAP.metres(15), MAP.metres(FLAK.lightRadius)), 50);
 assert.equal(diveIntensity(70, 0.2, 70), 0);
 assert.ok(diveIntensity(70, -0.9, 70) > 0.9);
 console.log(

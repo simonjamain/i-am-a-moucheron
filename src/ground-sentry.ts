@@ -1,6 +1,6 @@
 // Server-owned automatic defense: each accepted round costs one cartridge.
 export const SENTRY = Object.freeze({
-  cost: 9,
+  cost: 5,
   hp: 150,
   ammo: 180,
   range: 0.42,

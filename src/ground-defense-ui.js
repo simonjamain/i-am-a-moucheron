@@ -99,7 +99,6 @@ export class GroundDefenseUI {
       ['remove', 'Enlever'],
       ['sentry', 'Tourelle auto'],
       ['gatling', 'Tourelle auto Gatling'],
-      ['bunker', 'Bunker LEGO'],
       ['antitank', 'Canon anti-matériel'],
     ];
     this.wheel = document.createElement('div');
@@ -208,7 +207,7 @@ export class GroundDefenseUI {
       this.notify('Le Castor volant ne largue pas de mur LEGO.', 3);
       return false;
     }
-    if (['sentry', 'gatling', 'bunker', 'antitank'].includes(kind) && !this.builder()) {
+    if (['sentry', 'gatling', 'antitank'].includes(kind) && !this.builder()) {
       this.notify('Construisez cette défense depuis un Castor.', 3);
       return false;
     }
@@ -449,7 +448,7 @@ export class GroundDefenseUI {
 
   // A construction centred on the origin, for previews and falling drops.
   modelOf(kind, length = 0, radius = 0.15) {
-    if (kind === 'bunker' || kind === 'antitank')
+    if (kind === 'antitank')
       return this.fortificationModel?.({ kind, x: 0, y: 0.00005, z: 0, angle: 0 });
     return createGroundModel(this.T, {
       kind,
@@ -721,7 +720,7 @@ export class GroundDefenseUI {
       ...wallVisualRuns(structures),
     ]) {
       // Occupied fortifications are already rendered with their articulated gun and operator.
-      if (structure.kind === 'bunker' || structure.kind === 'antitank') continue;
+      if (structure.kind === 'antitank') continue;
       if (isTurret(structure.kind) && this.sentries.has(String(structure.id))) continue;
       const group = createGroundModel(T, structure);
       group.position.y += structure.y || 0; // dropped on furniture by a Castor volant
@@ -737,8 +736,8 @@ export class GroundDefenseUI {
   }
   drawRadar(ctx, defense) {
     for (const s of defense?.structures || []) {
-      if (s.kind === 'bunker' || s.kind === 'antitank') {
-        ctx.fillStyle = s.kind === 'bunker' ? '#c6a355' : '#9eb9a0';
+      if (s.kind === 'antitank') {
+        ctx.fillStyle = '#9eb9a0';
         ctx.fillRect(108 + s.position[0] / 0.04, 108 + (s.position[1] / 0.04) * 0.88, 7, 7);
       } else if (isTurret(s.kind)) {
         ctx.fillStyle = s.ammo > 0 ? '#a0c89b' : '#6e6660';

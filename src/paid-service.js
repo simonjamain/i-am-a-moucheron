@@ -130,10 +130,7 @@ export function advancePaidService(
         continue;
       const quantity = Math.min(capacity - gun.ammo, (capacity * dt) / SERVICE_SECONDS);
       const cost =
-        quantity *
-        (['bunker', 'dcaRapid'].includes(gun.kind)
-          ? SERVICE_RATES.machineGun
-          : SERVICE_RATES.shell);
+        quantity * (gun.kind === 'dcaRapid' ? SERVICE_RATES.machineGun : SERVICE_RATES.shell);
       if (cost > 0)
         jobs.push({
           owner: gun.kind,
@@ -152,7 +149,7 @@ export function advancePaidService(
     const sources = serviceSources(installations, fleet);
     for (const wall of groundDefense.structures) {
       if (
-        !['barricade', 'sentry', 'gatling', 'bunker', 'antitank'].includes(wall.kind) ||
+        !['barricade', 'sentry', 'gatling', 'antitank'].includes(wall.kind) ||
         !Number.isFinite(wall.hp) ||
         !Number.isFinite(wall.maxHp) ||
         wall.hp <= 0 ||
@@ -161,7 +158,7 @@ export function advancePaidService(
         continue;
       if (
         !sources.some(({ p, radius }) =>
-          isTurret(wall.kind) || ['bunker', 'antitank'].includes(wall.kind)
+          isTurret(wall.kind) || wall.kind === 'antitank'
             ? Math.hypot(
                 wall.position[0] - p[0],
                 p[1] - levelOf(wall) - 0.025,

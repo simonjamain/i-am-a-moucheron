@@ -109,7 +109,6 @@ export function itemName(item: string): string {
     pistol: 'Pistolet (à pied)',
     sentry: 'Tourelle automatique du Castor',
     gatling: 'Tourelle automatique Gatling du Castor',
-    bunker: 'Bunker LEGO',
     antitank: 'Canon antichar',
   };
   return special[item] || item;
