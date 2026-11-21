@@ -83,7 +83,9 @@ rond au sol : seul un objet réel est interactif, et l’engin s’aborde par to
   suivent le même principe : on vise l’objet.
 
 En jeu sur le **bombardier moyen** (pilote, mitrailleurs dorsal, ventral et de queue) :
-postes et zones de visée dans `src/seat-posts.ts`, contour dans `src/post-highlight.ts`.
+postes et zones de visée dans `src/seat-posts.ts`, contour dans `src/post-highlight.ts`. Le
+contour est tracé à l’écran, par-dessus l’image, autour de la silhouette du poste (comme les
+contours du [rendu dessin animé](toon-rendering.md)) : aucun volume n’est ajouté au modèle.
 Le clic gauche, ou la touche d’interaction, sur le poste visé ouvre son dossier ; le
 serveur vérifie seulement que le joueur se tient près de l’appareil. Les autres engins
 gardent leurs ronds jusqu’à leur passage.

@@ -13,7 +13,7 @@ import {
   pointBoarding,
 } from '../src/seat-posts.ts';
 import { makeB3 } from '../src/b3-model.js';
-import { PostHighlight, SIGNAL_COLOR } from '../src/post-highlight.ts';
+import { PostHighlight, SELECTION_LAYER } from '../src/post-highlight.ts';
 
 // Ray picking: nearest post along the ray, never behind, inside a sphere counts.
 const posts = [
@@ -43,10 +43,15 @@ for (const post of SEAT_POSTS.medbomber) {
   for (const name of post.outline.meshes)
     assert.ok(model.getObjectByName(name)?.isMesh, post.seat + ': mesh ' + name);
   const highlight = new PostHighlight(T, model, post);
-  highlight.show(SIGNAL_COLOR);
+  highlight.show();
   const shown = [];
   model.traverse((o) => o.userData.postOutline && o.visible && shown.push(o));
   assert.equal(shown.length, post.outline.meshes.length, post.seat + ': outline parts shown');
+  const camera = new T.PerspectiveCamera();
+  assert.ok(
+    shown.every((o) => !o.layers.test(camera.layers) && o.layers.isEnabled(SELECTION_LAYER)),
+    'mask meshes are invisible to the game camera, only in the selection layer',
+  );
   assert.ok(
     shown.every((o) => o.raycast.length === 0),
     'outlines are never hit by rays',

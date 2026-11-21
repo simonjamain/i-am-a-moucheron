@@ -2,54 +2,52 @@ import type * as THREE from 'three';
 import type { Three } from './types.ts';
 import type { SeatPost } from './seat-posts.ts';
 
-// Hover outline of an aimable post (docs/ui-guidelines.md, « Monter dans un engin »):
-// the post's meshes are drawn again, back faces only, slightly scaled about the
-// post, so only a coloured rim shows around them. A shared hull (cockpit, turret
-// glazing) is clipped to a sphere around the post. Signal blue marks a free post.
+// Hover outline of an aimable post (docs/ui-guidelines.md, « Monter dans un engin »),
+// drawn in screen space like the toon outlines (src/toon.ts): the post's parts are
+// rendered alone, white on black, into a mask (layer SELECTION_LAYER, never seen by
+// the game camera); a full-screen pass then draws a line around the mask's silhouette
+// over the finished frame. The whole part stands out from its vehicle, even across
+// the vehicle's own surfaces. A shared hull (cockpit, turret glazing) is clipped to a
+// sphere around the post. Signal blue marks a free post.
 
 /** Interaction signal, shared with the CSS token --signal (docs/art-direction.md). */
 export const SIGNAL_COLOR = '#2ec4d6';
 /** Outline of a post already taken. */
 export const TAKEN_COLOR = '#ece8dc';
+/** Layer of the mask meshes: rendered only by SelectionOutline. */
+export const SELECTION_LAYER = 7;
+/** Line width in pixels at 900 px of screen height (toon outlines: 1.5). */
+export const SELECTION_WIDTH = 3;
+const MAX_RADIUS = 6;
 
-export function postOutlineMaterial(T: Three, color: string = SIGNAL_COLOR): THREE.ShaderMaterial {
+export function postMaskMaterial(T: Three): THREE.ShaderMaterial {
   return new T.ShaderMaterial({
     uniforms: {
-      color: { value: new T.Color(color) },
-      centre: { value: new T.Vector3() },
-      scale: { value: 1.1 },
       clipCentre: { value: new T.Vector3() },
       clipRadius: { value: 0 },
     },
     vertexShader: `
-      #include <common>
-      #include <logdepthbuf_pars_vertex>
-      uniform vec3 centre;
-      uniform float scale;
       varying vec3 vWorld;
       void main() {
-        vec4 world = modelMatrix * vec4(centre + (position - centre) * scale, 1.0);
+        vec4 world = modelMatrix * vec4(position, 1.0);
         vWorld = world.xyz;
         gl_Position = projectionMatrix * viewMatrix * world;
-        #include <logdepthbuf_vertex>
       }`,
     fragmentShader: `
-      #include <logdepthbuf_pars_fragment>
-      uniform vec3 color;
       uniform vec3 clipCentre;
       uniform float clipRadius;
       varying vec3 vWorld;
       void main() {
-        #include <logdepthbuf_fragment>
         if (clipRadius > 0.0 && distance(vWorld, clipCentre) > clipRadius) discard;
-        gl_FragColor = vec4(color, 1.0);
+        gl_FragColor = vec4(1.0);
       }`,
-    side: T.BackSide,
+    side: T.DoubleSide,
+    depthTest: false,
     depthWrite: false,
   });
 }
 
-/** Outline meshes of one post of one vehicle model, created hidden. */
+/** Mask meshes of one post of one vehicle model, created hidden. */
 export class PostHighlight {
   readonly post: SeatPost;
   private readonly T: Three;
@@ -60,19 +58,15 @@ export class PostHighlight {
     this.post = post;
     this.T = T;
     this.model = model;
-    model.updateMatrixWorld(true);
-    const centre = model.localToWorld(new T.Vector3(...post.local));
     for (const name of post.outline.meshes) {
       const source = model.getObjectByName(name) as THREE.Mesh | undefined;
       if (!source?.isMesh) continue;
-      const material = postOutlineMaterial(T);
-      material.uniforms.centre.value.copy(source.worldToLocal(centre.clone()));
-      material.uniforms.scale.value = post.outline.scale;
+      const material = postMaskMaterial(T);
       const mesh = new T.Mesh(source.geometry, material);
       mesh.name = 'post-outline';
       mesh.visible = false;
       mesh.castShadow = mesh.receiveShadow = false;
-      mesh.renderOrder = 1;
+      mesh.layers.set(SELECTION_LAYER);
       mesh.userData = { projectileSolid: false, postOutline: true };
       mesh.raycast = () => {};
       source.add(mesh);
@@ -80,13 +74,12 @@ export class PostHighlight {
     }
   }
 
-  /** Show the outline in `color`; the clip sphere follows the vehicle. */
-  show(color: string): void {
+  /** Put the post in the selection mask; the clip sphere follows the vehicle. */
+  show(): void {
     this.model.updateMatrixWorld(true);
     const centre = this.model.localToWorld(new this.T.Vector3(...this.post.local));
     const scale = this.model.getWorldScale(new this.T.Vector3()).x;
     for (const { mesh, material } of this.parts) {
-      material.uniforms.color.value.set(color);
       material.uniforms.clipCentre.value.copy(centre);
       material.uniforms.clipRadius.value = (this.post.outline.clipRadius || 0) * scale;
       mesh.visible = true;
@@ -103,5 +96,109 @@ export class PostHighlight {
       material.dispose();
     }
     this.parts.length = 0;
+  }
+}
+
+/** Screen-space outline of the visible mask meshes, over the finished frame. */
+export class SelectionOutline {
+  /** Line colour, or null when nothing is selected. */
+  color: string | null = null;
+  private readonly T: Three;
+  private readonly renderer: THREE.WebGLRenderer;
+  private target: THREE.WebGLRenderTarget | null = null;
+  private readonly material: THREE.ShaderMaterial;
+  private readonly quad: THREE.Scene;
+  private readonly camera: THREE.Camera;
+  private readonly size: THREE.Vector2;
+
+  constructor(T: Three, renderer: THREE.WebGLRenderer) {
+    this.T = T;
+    this.renderer = renderer;
+    this.size = new T.Vector2();
+    this.material = new T.ShaderMaterial({
+      uniforms: {
+        tMask: { value: null },
+        texel: { value: new T.Vector2() },
+        radius: { value: SELECTION_WIDTH },
+        lineColor: { value: new T.Color() },
+      },
+      vertexShader: `
+        varying vec2 vUv;
+        void main() {
+          vUv = uv;
+          gl_Position = vec4(position.xy, 0.0, 1.0);
+        }`,
+      fragmentShader: `
+        uniform sampler2D tMask;
+        uniform vec2 texel;
+        uniform float radius;
+        uniform vec3 lineColor;
+        varying vec2 vUv;
+        void main() {
+          if (texture2D(tMask, vUv).r > 0.5) discard;
+          float nearest = 1e3;
+          for (int y = -${MAX_RADIUS}; y <= ${MAX_RADIUS}; y++)
+            for (int x = -${MAX_RADIUS}; x <= ${MAX_RADIUS}; x++) {
+              vec2 o = vec2(float(x), float(y));
+              float d = length(o);
+              if (d > radius + 1.0 || d >= nearest) continue;
+              if (texture2D(tMask, vUv + o * texel).r > 0.5) nearest = d;
+            }
+          float alpha = clamp(radius + 0.5 - nearest, 0.0, 1.0);
+          if (alpha <= 0.0) discard;
+          gl_FragColor = vec4(lineColor, alpha);
+        }`,
+      transparent: true,
+      depthTest: false,
+      depthWrite: false,
+    });
+    this.quad = new T.Scene();
+    this.quad.add(new T.Mesh(new T.PlaneGeometry(2, 2), this.material));
+    this.camera = new T.Camera();
+  }
+
+  /** Draw the outline of the selected parts of `scene` over the current frame. */
+  render(scene: THREE.Scene, camera: THREE.Camera): void {
+    if (!this.color) return;
+    const T = this.T,
+      renderer = this.renderer,
+      size = renderer.getDrawingBufferSize(this.size);
+    if (!this.target || this.target.width !== size.x || this.target.height !== size.y) {
+      this.target?.dispose();
+      this.target = new T.WebGLRenderTarget(size.x, size.y, { depthBuffer: false });
+    }
+    // Mask pass: only the selection layer, no background, no shadow update.
+    const layers = camera.layers.mask,
+      background = scene.background,
+      shadows = renderer.shadowMap.autoUpdate,
+      clearColor = renderer.getClearColor(new T.Color()),
+      clearAlpha = renderer.getClearAlpha(),
+      autoClear = renderer.autoClear;
+    camera.layers.set(SELECTION_LAYER);
+    scene.background = null;
+    renderer.shadowMap.autoUpdate = false;
+    renderer.setClearColor(0x000000, 0);
+    renderer.setRenderTarget(this.target);
+    renderer.clear();
+    renderer.render(scene, camera);
+    camera.layers.mask = layers;
+    scene.background = background;
+    renderer.shadowMap.autoUpdate = shadows;
+    renderer.setClearColor(clearColor, clearAlpha);
+    // Outline pass over the finished frame (its colour already in display space).
+    const uniforms = this.material.uniforms;
+    uniforms.tMask.value = this.target.texture;
+    uniforms.texel.value.set(1 / size.x, 1 / size.y);
+    uniforms.radius.value = Math.min(MAX_RADIUS, SELECTION_WIDTH * (size.y / 900));
+    uniforms.lineColor.value.set(this.color).convertLinearToSRGB();
+    renderer.setRenderTarget(null);
+    renderer.autoClear = false;
+    renderer.render(this.quad, this.camera);
+    renderer.autoClear = autoClear;
+  }
+
+  dispose(): void {
+    this.target?.dispose();
+    this.material.dispose();
   }
 }

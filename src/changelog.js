@@ -1,6 +1,12 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 386,
+    changes: [
+      'Bombardier moyen : le poste visé est cerné d’un trait net, qui le détache bien de l’avion.',
+    ],
+  },
+  {
     version: 385,
     changes: [
       'Flak léger : l’explosion touche à 30 m. Flak lourd : à 40 m. DCA haute cadence : 62 dégâts par balle.',
