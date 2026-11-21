@@ -4,11 +4,53 @@ import { stepWalkerFall, impactDamage } from './field-physics.ts';
 import { MAP, ACTOR_UNIT, REFERENCE, FLAK } from './scale.ts';
 // Small vehicles keep their original dimensions; furniture uses the enlarged room.
 import { OFFICE_LAYOUT, ROOM_SCALE } from './layout.ts';
+import type * as THREE from 'three';
+import type { Collider } from './oriented-collider.ts';
+import type { WalkerBody } from './field-physics.ts';
+import type { Three, XYZ } from './types.ts';
+
+/** A manned station (fixed anti-aircraft gun, fortification, howitzer…). */
+export interface Station extends XYZ {
+  kind?: string;
+  name?: string;
+}
+/** Aircraft state handed to resolveLanding (mutated on touchdown). */
+export interface LandingState {
+  position: THREE.Vector3;
+  vel: THREE.Vector3;
+  q: THREE.Quaternion;
+  omega: THREE.Vector3;
+  gear?: number;
+}
+export interface LandingResult {
+  landed: boolean;
+  contact: boolean;
+  hard?: boolean;
+}
+/** Walking / parachuting body: x and z in actor units from the base origin. */
+export interface Walker extends WalkerBody {
+  x: number;
+  z: number;
+  vx: number;
+  vz: number;
+  /** Radius in actor units. */
+  r: number;
+  grounded?: boolean;
+}
+export interface WalkerImpact {
+  speed: number;
+  damage: number;
+}
+/** Mesh builders from createGraphics (graphics.js). */
+export interface StationGraphics {
+  box(x: number, y: number, z: number, w: number, h: number, d: number, c: string, parent?: THREE.Object3D): THREE.Mesh;
+  cyl(x: number, y: number, z: number, rt: number, rb: number, h: number, c: string, parent?: THREE.Object3D): THREE.Mesh;
+}
 export const BULLET_SPEED = MAP.metres(REFERENCE.bullet),
   FIRE_INTERVAL = 0.06,
   GEAR_HEIGHT = 1.05 * ACTOR_UNIT;
 const b = OFFICE_LAYOUT.base;
-export const AA_STATIONS = [
+export const AA_STATIONS: Station[] = [
   {
     x: b.originX - 32 * ACTOR_UNIT,
     y: b.deckY,
@@ -24,7 +66,7 @@ export const AA_STATIONS = [
 // Where the entry circle sits, beside the station (+X), inside its access
 // radius. The player-scale howitzer (#113) sweeps 3.4 m around its axle: its
 // circle stands just outside that sweep; the large bunker keeps its distances.
-export function stationEntryOffset(station) {
+export function stationEntryOffset(station: Station | null | undefined): number {
   return station?.kind === 'antitank'
     ? MAP.metres(4.5)
     : isFortification(station?.kind)
@@ -32,14 +74,14 @@ export function stationEntryOffset(station) {
       : MAP.metres(station?.kind === 'dcaHeavy' ? 4.5 : 3);
 }
 export function stationAccess(
-  p,
-  station,
+  p: XYZ | null | undefined,
+  station: Station | null | undefined,
   radius = station?.kind === 'antitank'
     ? MAP.metres(6)
     : isFortification(station?.kind)
       ? 0.09
       : MAP.metres(station?.kind === 'dcaHeavy' ? 5.2 : 3.4),
-) {
+): boolean {
   return (
     !!p &&
     !!station &&
@@ -47,7 +89,7 @@ export function stationAccess(
     Math.hypot(p.x - station.x, p.z - station.z) < radius
   );
 }
-export function stationExit(station) {
+export function stationExit(station: Station): XYZ {
   return {
     x:
       station.x +
@@ -62,11 +104,17 @@ export function stationExit(station) {
 }
 // Swept contact with horizontal surfaces. Hard, inverted and side-on arrivals
 // remain crashes; a gentle wheels-first touchdown becomes rolling contact.
-export function resolveLanding(T, state, previous, colliders, dt) {
+export function resolveLanding(
+  T: Three,
+  state: LandingState,
+  previous: XYZ,
+  colliders: readonly Collider[],
+  dt: number,
+): LandingResult {
   const { position: p, vel, q, omega } = state;
   const gear = state.gear ?? GEAR_HEIGHT;
   const up = new T.Vector3(0, 1, 0).applyQuaternion(q);
-  const surfaces = [
+  const surfaces: Collider[] = [
     {
       min: { x: -OFFICE_LAYOUT.bounds.x, y: -0.08, z: -OFFICE_LAYOUT.bounds.z },
       max: { x: OFFICE_LAYOUT.bounds.x, y: 0, z: OFFICE_LAYOUT.bounds.z },
@@ -93,7 +141,11 @@ export function resolveLanding(T, state, previous, colliders, dt) {
   return { landed: true, contact: true };
 }
 // World-space walking / deployed parachute. Ownership stays on the client.
-export function stepWalker(body, dt, colliders) {
+export function stepWalker(
+  body: Walker,
+  dt: number,
+  colliders: readonly Collider[],
+): WalkerImpact | null {
   const origin = OFFICE_LAYOUT.base;
   let x = origin.originX + body.x * ACTOR_UNIT,
     z = origin.originZ - body.z * ACTOR_UNIT;
@@ -105,7 +157,7 @@ export function stepWalker(body, dt, colliders) {
     if (colliderContainsXZ(box, x, z) && box.max.y <= previousY + 0.15 * ACTOR_UNIT)
       top = Math.max(top, box.max.y);
   }
-  let impact = null;
+  let impact: WalkerImpact | null = null;
   const contactY = top + 0.05 * ACTOR_UNIT;
   const supported = body.grounded && Math.abs(previousY - contactY) < 0.15 * ACTOR_UNIT;
   if (supported) {
@@ -151,7 +203,12 @@ export function stepWalker(body, dt, colliders) {
   body.z = (origin.originZ - z) / ACTOR_UNIT;
   return impact;
 }
-export function makeAntiaircraft(T, scene, graphics, stations = AA_STATIONS) {
+export function makeAntiaircraft(
+  T: Three,
+  scene: THREE.Object3D,
+  graphics: StationGraphics,
+  stations: readonly Station[] = AA_STATIONS,
+): THREE.Group[] {
   const { box, cyl } = graphics;
   return stations.map((station) => {
     const root = new T.Group();
@@ -168,7 +225,7 @@ export function makeAntiaircraft(T, scene, graphics, stations = AA_STATIONS) {
     yaw.add(pitch);
     pitch.position.y = 0.65;
     box(0, -0.25, 0.2, 1.1, 0.7, 1.1, '#64734c', yaw);
-    const muzzles = [];
+    const muzzles: THREE.Object3D[] = [];
     for (const x of [-0.36, 0.36]) {
       cyl(x, 0, -1.2, 0.09, 0.09, 2.4, '#283c35', pitch).rotation.x = Math.PI / 2;
       box(x, 0, -2.4, 0.22, 0.22, 0.25, '#1a3028', pitch);
@@ -189,14 +246,25 @@ export function makeAntiaircraft(T, scene, graphics, stations = AA_STATIONS) {
 }
 
 // Match visible yaw/elevation to the actual projectile direction, without roll.
-export function aimGun(T, mount, worldDirection, parentQuaternion = null) {
+export function aimGun(
+  T: Three,
+  mount: THREE.Object3D,
+  worldDirection: THREE.Vector3,
+  parentQuaternion: THREE.Quaternion | null = null,
+): void {
   const d = worldDirection.clone().normalize();
   if (parentQuaternion) d.applyQuaternion(parentQuaternion.clone().invert());
   mount.rotation.set(0, Math.atan2(-d.x, -d.z), 0);
   mount.userData.pitch.rotation.set(Math.asin(Math.max(-1, Math.min(1, d.y))), 0, 0);
   mount.updateWorldMatrix(true, true);
 }
-export function gunnerView(T, mount, direction, up, ventral = false) {
+export function gunnerView(
+  T: Three,
+  mount: THREE.Object3D,
+  direction: THREE.Vector3,
+  up: THREE.Vector3,
+  ventral = false,
+): { eye: THREE.Vector3; muzzle: THREE.Vector3; target: THREE.Vector3 } {
   const right = direction.clone().cross(up).normalize(),
     horizontal = direction.clone().addScaledVector(up, -direction.dot(up)).normalize(),
     origin = mount.getWorldPosition(new T.Vector3()),

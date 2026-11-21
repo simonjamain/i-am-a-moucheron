@@ -1,10 +1,62 @@
+import type * as THREE from 'three';
+import type { Three } from './types.ts';
+
+/** Enemy id keying the insect map (numeric or string, as the server sends it). */
+export type InsectId = string | number;
+export type InsectEntries = Iterable<readonly [InsectId, THREE.Object3D]>;
+
+/** Hit proxy fields read from an insect model's userData. */
+export interface InsectHitData {
+  hitEllipsoid?: readonly number[];
+  hitCentre?: readonly number[];
+  sphereRadius?: number;
+  hitTolerance?: number;
+  hitParts?: THREE.Mesh<THREE.SphereGeometry>[];
+}
+
+export type HitUserData =
+  { sphereRadius: number } | { hitEllipsoid: number[]; hitCentre: number[] };
+
+/** A solid model prepared once per frame (see solidTarget). */
+export interface SolidTarget<E extends object = Record<string, unknown>> {
+  model: THREE.Object3D;
+  meshes: THREE.Mesh[];
+  box: THREE.Box3;
+  extra: E;
+}
+
+export interface InsectHit {
+  id: InsectId;
+  distance: number;
+  point: THREE.Vector3;
+}
+
+interface IndexRow {
+  id: InsectId;
+  model: THREE.Object3D;
+  order: number;
+}
+
+interface HitBurst {
+  group: THREE.Group;
+  material: THREE.MeshBasicMaterial;
+  flash: THREE.Mesh;
+  ring: THREE.Mesh;
+  sparks: { mesh: THREE.Mesh; velocity: THREE.Vector3 }[];
+  age: number;
+}
+
 // Projectile collisions use physical meshes only. Sprites are UI billboards:
 // raycasting them requires a camera and would make hitboxes view-dependent.
-export function nearestMeshHit(ray, model) {
+export function nearestMeshHit(
+  ray: THREE.Raycaster,
+  model: THREE.Object3D,
+): THREE.Intersection | null {
   model.updateWorldMatrix(true, true);
-  const meshes = [];
+  const meshes: THREE.Mesh[] = [];
   model.traverseVisible((part) => {
-    if (part.isMesh && part.userData.projectileSolid !== false) meshes.push(part);
+    if ((part as THREE.Mesh).isMesh && part.userData.projectileSolid !== false)
+      meshes.push(part as THREE.Mesh);
   });
   return ray.intersectObjects(meshes, false)[0] ?? null;
 }
@@ -13,13 +65,18 @@ export function nearestMeshHit(ray, model) {
 // slice of that frame: its world matrices are refreshed once, its solid meshes
 // listed once, and a padded world box (the animated pose can leave the bind-pose
 // box) rejects the rays that cannot touch it before any triangle is tested.
-export function solidTarget(T, model, extra, padding = 0.3) {
+export function solidTarget<E extends object>(
+  T: Three,
+  model: THREE.Object3D,
+  extra: E,
+  padding = 0.3,
+): SolidTarget<E> | null {
   model.updateWorldMatrix(true, true);
-  const meshes = [],
+  const meshes: THREE.Mesh[] = [],
     box = new T.Box3();
   model.traverseVisible((part) => {
-    if (!part.isMesh || part.userData.projectileSolid === false) return;
-    meshes.push(part);
+    if (!(part as THREE.Mesh).isMesh || part.userData.projectileSolid === false) return;
+    meshes.push(part as THREE.Mesh);
     box.union(new T.Box3().setFromObject(part));
   });
   if (!meshes.length) return null;
@@ -27,13 +84,18 @@ export function solidTarget(T, model, extra, padding = 0.3) {
   box.expandByVector(size.multiplyScalar(padding));
   return { model, meshes, box, extra };
 }
-const boxPoint = [];
+const boxPoint: THREE.Vector3[] = [];
 // Nearest triangle hit over prepared targets within the ray's `far`. `skip`
 // excludes the target whose extra.vehicle equals it (the shooter's own vehicle).
 // Same order and tie rule as testing each model in turn with nearestMeshHit.
-export function nearestSolidHit(T, ray, targets, skipVehicle = undefined) {
+export function nearestSolidHit<E extends { vehicle?: unknown }>(
+  T: Three,
+  ray: THREE.Raycaster,
+  targets: Iterable<SolidTarget<E>>,
+  skipVehicle: unknown = undefined,
+): (THREE.Intersection & E) | null {
   const point = (boxPoint[0] ??= new T.Vector3());
-  let best = null;
+  let best: (THREE.Intersection & E) | null = null;
   for (const target of targets) {
     if (skipVehicle !== undefined && target.extra.vehicle === skipVehicle) continue;
     if (!target.box.containsPoint(ray.ray.origin)) {
@@ -49,7 +111,13 @@ export function nearestSolidHit(T, ray, targets, skipVehicle = undefined) {
 // Hit-volume user data of a species: equal radii on the origin make a sphere
 // (cheap ray test, no matrix); anything else is an ellipsoid. The sphere is
 // stored like the midge's, whose radius is normalised by 1.2 (see hitRadius).
-export function hitUserData({ centre, radii }) {
+export function hitUserData({
+  centre,
+  radii,
+}: {
+  centre: readonly number[];
+  radii: readonly number[];
+}): HitUserData {
   const [r] = radii;
   if (radii.every((v) => v === r) && centre.every((v) => v === 0)) return { sphereRadius: r * 1.2 };
   return { hitEllipsoid: [...radii], hitCentre: [...centre] };
@@ -59,8 +127,8 @@ export function hitUserData({ centre, radii }) {
 // Spheres cover every overlapped cell; ray queries walk cells, never triangles.
 // Conservative hit radius in unscaled model units: a sphere proxy (midges,
 // spiderlings), an ellipsoid proxy (rigged walkers) or a procedural mesh.
-export function hitRadius(model) {
-  const u = model.userData;
+export function hitRadius(model: THREE.Object3D): number {
+  const u: InsectHitData = model.userData;
   if (u.hitEllipsoid) {
     const [cx, cy, cz] = u.hitCentre || [0, 0, 0];
     const [a, b, c] = u.hitEllipsoid; // no spread/hypot: this runs per insect per shot
@@ -70,9 +138,9 @@ export function hitRadius(model) {
   return 3 * (u.hitTolerance || 1);
 }
 
-const localMatrix = new WeakMap();
+const localMatrix = new WeakMap<THREE.Object3D, THREE.Matrix4>();
 // World matrix of a hit proxy that may live outside the scene graph.
-function modelMatrix(T, model, direct) {
+function modelMatrix(T: Three, model: THREE.Object3D, direct: boolean): THREE.Matrix4 {
   if (!direct) {
     model.updateWorldMatrix(true, false);
     return model.matrixWorld;
@@ -84,14 +152,20 @@ function modelMatrix(T, model, direct) {
 
 // Ray / ellipsoid proxy (model-local centre and radii, with tolerance). Returns
 // the ray parameter t (world point = origin + t * direction) or null.
-function ellipsoidRayParameter(T, origin, direction, model, direct) {
-  const u = model.userData;
+function ellipsoidRayParameter(
+  T: Three,
+  origin: THREE.Vector3,
+  direction: THREE.Vector3,
+  model: THREE.Object3D,
+  direct: boolean,
+): number | null {
+  const u: InsectHitData = model.userData;
   const inverse = new T.Matrix4().copy(modelMatrix(T, model, direct)).invert();
   const [cx, cy, cz] = u.hitCentre || [0, 0, 0];
   const o = origin.clone().applyMatrix4(inverse);
   const d = origin.clone().add(direction).applyMatrix4(inverse).sub(o);
   const tolerance = u.hitTolerance || 1;
-  const [rx, ry, rz] = u.hitEllipsoid.map((r) => r * tolerance);
+  const [rx, ry, rz] = u.hitEllipsoid!.map((r) => r * tolerance);
   o.set((o.x - cx) / rx, (o.y - cy) / ry, (o.z - cz) / rz);
   d.set(d.x / rx, d.y / ry, d.z / rz);
   const a = d.dot(d),
@@ -106,7 +180,16 @@ function ellipsoidRayParameter(T, origin, direction, model, direct) {
 }
 
 export class InsectIndex {
-  constructor(T, insects, cellSize = 0.08) {
+  declare T: Three;
+  declare insects: ReadonlyMap<InsectId, THREE.Object3D>;
+  declare cellSize: number;
+  dirty: boolean;
+  scan?: boolean;
+  buckets: Map<string, IndexRow[]>;
+  overflow: IndexRow[];
+  centre: THREE.Vector3;
+  size: THREE.Vector3;
+  constructor(T: Three, insects: ReadonlyMap<InsectId, THREE.Object3D>, cellSize = 0.08) {
     if (!(cellSize > 0) || !Number.isFinite(cellSize)) throw Error('Invalid cell size');
     Object.assign(this, { T, insects, cellSize });
     this.dirty = true;
@@ -115,24 +198,28 @@ export class InsectIndex {
     this.centre = new T.Vector3();
     this.size = new T.Vector3();
   }
-  invalidate() {
+  invalidate(): void {
     this.dirty = true;
   }
-  rebuild() {
+  rebuild(): void {
     this.scan = false;
     this.buckets.clear();
     this.overflow.length = 0;
     let order = 0;
     for (const [id, model] of this.insects) {
-      const row = { id, model, order: order++ };
-      const direct = !model.parent || model.parent.isScene;
+      const row: IndexRow = { id, model, order: order++ };
+      const direct = !model.parent || (model.parent as THREE.Scene).isScene;
       const centre = direct ? model.position : model.getWorldPosition(this.centre);
       const size = direct ? model.scale : model.getWorldScale(this.size);
       const r =
         Math.max(Math.abs(size.x), Math.abs(size.y), Math.abs(size.z)) * hitRadius(model) +
         this.cellSize * 1e-9;
-      const min = ['x', 'y', 'z'].map((a) => Math.floor((centre[a] - r) / this.cellSize));
-      const max = ['x', 'y', 'z'].map((a) => Math.floor((centre[a] + r) / this.cellSize));
+      const min = (['x', 'y', 'z'] as const).map((a) =>
+        Math.floor((centre[a] - r) / this.cellSize),
+      );
+      const max = (['x', 'y', 'z'] as const).map((a) =>
+        Math.floor((centre[a] + r) / this.cellSize),
+      );
       // Very large models remain conservative without filling millions of cells.
       if (
         !Number.isFinite(r) ||
@@ -148,7 +235,7 @@ export class InsectIndex {
           for (let z = min[2]; z <= max[2]; z++) {
             const key = x + ':' + y + ':' + z;
             if (!this.buckets.has(key)) this.buckets.set(key, []);
-            const bucket = this.buckets.get(key);
+            const bucket = this.buckets.get(key)!;
             bucket.push(row);
             if (bucket.length > this.insects.size / 4) {
               this.scan = true;
@@ -159,7 +246,7 @@ export class InsectIndex {
     }
     this.dirty = false;
   }
-  query(origin, direction, distance) {
+  query(origin: THREE.Vector3, direction: THREE.Vector3, distance: number): InsectEntries {
     const h = this.cellSize;
     // Small waves and exceptional/long rays cost less via the reference scan.
     if (
@@ -167,14 +254,14 @@ export class InsectIndex {
       !Number.isFinite(distance) ||
       distance < 0 ||
       distance / h > 2048 ||
-      !['x', 'y', 'z'].every((a) => Number.isFinite(origin[a]))
+      !(['x', 'y', 'z'] as const).every((a) => Number.isFinite(origin[a]))
     )
       return this.insects;
     if (this.dirty) this.rebuild();
     if (this.scan) return this.insects;
     const length = direction.length();
     if (!(length > 0)) return this.insects;
-    const axes = ['x', 'y', 'z'];
+    const axes = ['x', 'y', 'z'] as const;
     const cells = axes.map((a) => Math.floor(origin[a] / h));
     const unit = axes.map((a) => direction[a] / length);
     const step = unit.map(Math.sign);
@@ -182,7 +269,7 @@ export class InsectIndex {
     const next = unit.map((v, i) =>
       v === 0 ? Infinity : ((cells[i] + (step[i] > 0 ? 1 : 0)) * h - origin[axes[i]]) / v,
     );
-    const found = new Map(this.overflow.map((row) => [row.id, row]));
+    const found = new Map(this.overflow.map((row): [InsectId, IndexRow] => [row.id, row]));
     for (let n = 0; n < 8192; n++) {
       const key = cells[0] + ':' + cells[1] + ':' + cells[2];
       for (const row of this.buckets.get(key) || []) {
@@ -200,29 +287,29 @@ export class InsectIndex {
     return [...found.values()]
       .sort((a, b) => a.order - b.order)
       .filter((row) => this.insects.get(row.id) === row.model)
-      .map((row) => [row.id, row.model]);
+      .map((row): [InsectId, THREE.Object3D] => [row.id, row.model]);
   }
 }
 
 // Use the rendered triangles, including animated wings, instead of a distance-
 // dependent aim cone. Returned distance is measured from the gun muzzle.
 export function nearestInsectHit(
-  T,
-  origin,
-  direction,
-  insects,
+  T: Three,
+  origin: THREE.Vector3,
+  direction: THREE.Vector3,
+  insects: InsectEntries,
   maxDistance = 60,
-  excluded = null,
-  index = null,
-) {
+  excluded: ReadonlySet<InsectId> | null = null,
+  index: InsectIndex | null = null,
+): InsectHit | null {
   if (!Number.isFinite(direction.lengthSq()) || direction.lengthSq() < 1e-12) return null;
   const norm = Math.sqrt(direction.lengthSq());
-  let ray = null,
-    nearest = null;
+  let ray: THREE.Raycaster | null = null,
+    nearest: InsectHit | null = null;
   for (const [id, model] of index ? index.query(origin, direction, maxDistance) : insects) {
     if (!model.visible || excluded?.has(id)) continue;
     // Broad phase uses a conservative world sphere before any matrix/mesh work.
-    const direct = !model.parent || model.parent.isScene;
+    const direct = !model.parent || (model.parent as THREE.Scene).isScene;
     const centre = direct ? model.position : model.getWorldPosition(new T.Vector3());
     const size = direct ? model.scale : model.getWorldScale(new T.Vector3());
     const radius =
@@ -263,10 +350,10 @@ export function nearestInsectHit(
       continue;
     }
     ray ??= new T.Raycaster(origin, direction.clone().normalize(), 0, maxDistance);
-    let hit;
+    let hit: { point: THREE.Vector3; distance: number } | null | undefined;
     if ((model.userData.hitTolerance || 1) > 1) {
       model.updateWorldMatrix(true, true);
-      for (const part of model.userData.hitParts || []) {
+      for (const part of (model.userData as InsectHitData).hitParts || []) {
         const r = part.geometry.parameters.radius;
         if (!r) continue;
         const local = ray.ray.clone().applyMatrix4(new T.Matrix4().copy(part.matrixWorld).invert());
@@ -288,17 +375,24 @@ export function nearestInsectHit(
 
 // Small aircraft collision probe against the visible ellipsoids. Padding is
 // the aircraft body's radius, not an oversized radius around the insect.
-export function insectContact(T, point, model, padding = 0.3) {
+export function insectContact(
+  T: Three,
+  point: THREE.Vector3,
+  model: THREE.Object3D,
+  padding = 0.3,
+): boolean {
   model.updateWorldMatrix(true, true);
   const centre = model.getWorldPosition(new T.Vector3()),
     size = model.getWorldScale(new T.Vector3());
   if (model.userData.hitEllipsoid) {
-    const direct = !model.parent || model.parent.isScene;
+    const direct = !model.parent || (model.parent as THREE.Scene).isScene;
     const inverse = new T.Matrix4().copy(modelMatrix(T, model, direct)).invert();
     const [cx, cy, cz] = model.userData.hitCentre || [0, 0, 0];
     const local = point.clone().applyMatrix4(inverse);
     const tolerance = model.userData.hitTolerance || 1;
-    const [rx, ry, rz] = model.userData.hitEllipsoid.map((r) => r * tolerance);
+    const [rx, ry, rz] = (model.userData.hitEllipsoid as readonly number[]).map(
+      (r) => r * tolerance,
+    );
     const pad =
       padding / Math.max(1e-6, Math.min(Math.abs(size.x), Math.abs(size.y), Math.abs(size.z)));
     return (
@@ -317,11 +411,11 @@ export function insectContact(T, point, model, padding = 0.3) {
   }
   if (point.distanceToSquared(centre) > (2 * Math.max(size.x, size.y, size.z) + padding) ** 2)
     return false;
-  for (const part of model.userData.hitParts || []) {
+  for (const part of (model.userData as InsectHitData).hitParts || []) {
     const radius = part.geometry.parameters.radius,
       scale = part.getWorldScale(new T.Vector3());
     const local = point.clone().applyMatrix4(new T.Matrix4().copy(part.matrixWorld).invert());
-    const distance = ['x', 'y', 'z'].reduce(
+    const distance = (['x', 'y', 'z'] as const).reduce(
       (sum, axis) =>
         sum + (local[axis] / (radius + padding / Math.max(1e-6, Math.abs(scale[axis])))) ** 2,
       0,
@@ -332,7 +426,20 @@ export function insectContact(T, point, model, padding = 0.3) {
 }
 
 export class HitEffects {
-  constructor(T, scene, { maxBursts = 16, scale = 1 } = {}) {
+  T: Three;
+  scale: number;
+  scene: THREE.Object3D;
+  maxBursts: number;
+  active: HitBurst[];
+  seen: Set<unknown>;
+  spark: THREE.OctahedronGeometry;
+  ring: THREE.TorusGeometry;
+  flash: THREE.SphereGeometry;
+  constructor(
+    T: Three,
+    scene: THREE.Object3D,
+    { maxBursts = 16, scale = 1 }: { maxBursts?: number; scale?: number } = {},
+  ) {
     this.T = T;
     this.scale = scale;
     this.scene = scene;
@@ -343,7 +450,7 @@ export class HitEffects {
     this.ring = new T.TorusGeometry(0.3, 0.025, 4, 20);
     this.flash = new T.SphereGeometry(0.2, 8, 6);
   }
-  burst(point, camera, { key } = {}) {
+  burst(point: THREE.Vector3, camera: THREE.Camera, { key }: { key?: unknown } = {}): boolean {
     if (key && this.seen.has(key)) return false;
     if (key) {
       this.seen.add(key);
@@ -365,7 +472,7 @@ export class HitEffects {
       ring = new T.Mesh(this.ring, material);
     group.add(flash, ring);
     ring.quaternion.copy(camera.quaternion);
-    const sparks = [];
+    const sparks: HitBurst['sparks'] = [];
     for (let i = 0; i < 9; i++) {
       const angle = i * 2.39996,
         y = 1 - (2 * (i + 0.5)) / 9,
@@ -380,7 +487,7 @@ export class HitEffects {
     this.active.push({ group, material, flash, ring, sparks, age: 0 });
     return true;
   }
-  update(dt, camera) {
+  update(dt: number, camera: THREE.Camera): void {
     for (const effect of [...this.active]) {
       effect.age += dt;
       const progress = effect.age / 0.45;
@@ -399,16 +506,16 @@ export class HitEffects {
       }
     }
   }
-  remove(effect) {
+  remove(effect: HitBurst): void {
     this.scene.remove(effect.group);
     effect.material.dispose();
     this.active.splice(this.active.indexOf(effect), 1);
   }
-  clear() {
+  clear(): void {
     for (const effect of [...this.active]) this.remove(effect);
     this.seen.clear();
   }
-  dispose() {
+  dispose(): void {
     this.clear();
     this.spark.dispose();
     this.ring.dispose();

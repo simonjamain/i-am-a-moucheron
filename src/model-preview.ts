@@ -52,7 +52,10 @@ export class ModelPreview {
       }
       const ownedOriginals = new Set<THREE.Material>();
       model.traverse((object) => {
-        const part = object as THREE.Mesh<THREE.BufferGeometry, PreviewMaterial | PreviewMaterial[]>;
+        const part = object as THREE.Mesh<
+          THREE.BufferGeometry,
+          PreviewMaterial | PreviewMaterial[]
+        >;
         if (!part.isMesh) return;
         const copy = (original: PreviewMaterial): PreviewMaterial => {
           const material = original.clone() as PreviewMaterial;

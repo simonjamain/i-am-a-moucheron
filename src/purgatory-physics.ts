@@ -260,7 +260,8 @@ function collide(
   }
 }
 export function advanceArena(a: Arena, to: number, owner: SoulEntity = null): Arena {
-  const owned = (b: SoulBody): boolean => !owner || b.entity === owner || (b.kind === 'enemy' && a.host === owner);
+  const owned = (b: SoulBody): boolean =>
+    !owner || b.entity === owner || (b.kind === 'enemy' && a.host === owner);
   a.events ??= [];
   a.eventSeq ??= 0;
   a.time ??= to;

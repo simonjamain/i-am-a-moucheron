@@ -3,10 +3,23 @@
 // truck's heading, so the driver sees the whole building reach around it. The mouse moves a cursor on the floor instead of
 // orbiting the camera: placement previews and the light machine gun both aim
 // at that floor point.
+import type * as THREE from 'three';
+import type { Three } from './types.ts';
+
+/** Floor cursor in normalised screen coordinates (-1..1). */
+export interface TopCursor {
+  x: number;
+  y: number;
+}
+export interface TopViewPose {
+  eye: THREE.Vector3;
+  up: THREE.Vector3;
+  target: THREE.Vector3;
+}
 export const TOP_VIEW_HEIGHT = 0.4; // metres above the truck: covers the 24 cm building reach
 export const TOP_VIEW_MIN_HEIGHT = 0.15;
 export const TOP_VIEW_MAX_HEIGHT = 0.8;
-export function zoomTopView(height, delta) {
+export function zoomTopView(height: number, delta: number): number {
   return Math.max(
     TOP_VIEW_MIN_HEIGHT,
     Math.min(TOP_VIEW_MAX_HEIGHT, height * Math.exp(Math.sign(delta) * 0.12)),
@@ -15,23 +28,32 @@ export function zoomTopView(height, delta) {
 export const TOP_VIEW_CURSOR_LIMIT = 0.95; // normalised screen coordinates
 const DEFAULT_CURSOR = Object.freeze({ x: 0, y: 0.3 });
 
-export function resetTopCursor(cursor) {
+export function resetTopCursor(cursor: Partial<TopCursor>): TopCursor {
   cursor.x = DEFAULT_CURSOR.x;
   cursor.y = DEFAULT_CURSOR.y;
-  return cursor;
+  return cursor as TopCursor;
 }
 
 // Pointer-lock deltas (pixels) move the cursor in normalised screen space.
-export function moveTopCursor(cursor, dx, dy, { width, height, sensitivity = 1 }) {
-  const clamp = (v) => Math.max(-TOP_VIEW_CURSOR_LIMIT, Math.min(TOP_VIEW_CURSOR_LIMIT, v));
+export function moveTopCursor(
+  cursor: TopCursor,
+  dx: number,
+  dy: number,
+  { width, height, sensitivity = 1 }: { width: number; height: number; sensitivity?: number },
+): TopCursor {
+  const clamp = (v: number) => Math.max(-TOP_VIEW_CURSOR_LIMIT, Math.min(TOP_VIEW_CURSOR_LIMIT, v));
   cursor.x = clamp(cursor.x + ((2 * dx) / Math.max(1, width)) * sensitivity);
   cursor.y = clamp(cursor.y - ((2 * dy) / Math.max(1, height)) * sensitivity);
   return cursor;
 }
 
 // Eye straight above the truck; screen "up" is fixed north, east is on the right.
-export const NORTH = Object.freeze([0, 0, -1]);
-export function topViewPose(T, position, height = TOP_VIEW_HEIGHT) {
+export const NORTH = Object.freeze([0, 0, -1] as const);
+export function topViewPose(
+  T: Three,
+  position: THREE.Vector3,
+  height: number = TOP_VIEW_HEIGHT,
+): TopViewPose {
   return {
     eye: position
       .clone()
@@ -51,14 +73,23 @@ export function topViewPose(T, position, height = TOP_VIEW_HEIGHT) {
 }
 
 // Ray from the camera through the cursor, for placement and for the floor point.
-export function topViewRay(T, camera, cursor) {
+export function topViewRay(
+  T: Three,
+  camera: THREE.Camera,
+  cursor: TopCursor,
+): { origin: THREE.Vector3; direction: THREE.Vector3 } {
   const ray = new T.Raycaster();
   ray.setFromCamera(new T.Vector2(cursor.x, cursor.y), camera);
   return { origin: ray.ray.origin.clone(), direction: ray.ray.direction.clone() };
 }
 
 // Intersection of that ray with the horizontal plane y = groundY.
-export function topViewGroundPoint(T, camera, cursor, groundY) {
+export function topViewGroundPoint(
+  T: Three,
+  camera: THREE.Camera,
+  cursor: TopCursor,
+  groundY: number,
+): THREE.Vector3 | null {
   const { origin, direction } = topViewRay(T, camera, cursor);
   if (direction.y > -1e-6) return null;
   const t = (groundY - origin.y) / direction.y;

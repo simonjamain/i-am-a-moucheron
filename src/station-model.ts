@@ -2,8 +2,13 @@ import { orientedBox } from './oriented-collider.ts';
 import { MODEL_DATA as REFUEL } from './meshy-refuel-data.js';
 import { MODEL_DATA as RADAR } from './meshy-radar-data.js';
 import { texturedMeshyParts } from './meshy-texture.ts';
+import type { OrientedBox3 } from './oriented-collider.ts';
+import type * as THREE from 'three';
+import type { Three } from './types.ts';
 
-export function makeServiceStation(T, kind) {
+export type ServiceStationKind = 'radar' | 'refuel';
+
+export function makeServiceStation(T: Three, kind: ServiceStationKind): THREE.Group {
   const model = new T.Group();
   for (const { part, geometry, material } of texturedMeshyParts(
     T,
@@ -25,21 +30,22 @@ export function makeServiceStation(T, kind) {
   }
   return model;
 }
-export function animateRadar(model, dt, active = true) {
+export function animateRadar(model: THREE.Object3D, dt: number, active = true): void {
   if (active && model.userData.dish)
     model.userData.dish.rotation.y = (model.userData.dish.rotation.y + dt) % (2 * Math.PI);
 }
 
-export function makeInstallationCollider(T, model) {
+export function makeInstallationCollider(T: Three, model: THREE.Object3D): OrientedBox3 {
   model.updateWorldMatrix(true, true);
   const inverse = model.matrixWorld.clone().invert();
   const bounds = new T.Box3();
-  model.traverse((mesh) => {
+  model.traverse((object) => {
+    const mesh = object as THREE.Mesh;
     if (!mesh.isMesh || !mesh.geometry) return;
     mesh.geometry.computeBoundingBox();
     bounds.union(
-      mesh.geometry.boundingBox
-        .clone()
+      mesh.geometry
+        .boundingBox!.clone()
         .applyMatrix4(new T.Matrix4().multiplyMatrices(inverse, mesh.matrixWorld)),
     );
   });

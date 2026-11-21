@@ -10,7 +10,10 @@ interface SoftwareFace {
   alpha: number;
 }
 
-type SoftwareMesh = THREE.Mesh<THREE.BufferGeometry, THREE.MeshBasicMaterial | THREE.MeshBasicMaterial[]>;
+type SoftwareMesh = THREE.Mesh<
+  THREE.BufferGeometry,
+  THREE.MeshBasicMaterial | THREE.MeshBasicMaterial[]
+>;
 
 export function createRenderer(T: Three, canvas: HTMLCanvasElement): THREE.WebGLRenderer {
   // A lightweight software renderer keeps the prototype playable without WebGL.

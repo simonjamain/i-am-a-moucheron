@@ -72,7 +72,8 @@ export function howitzerPoint(T: Three, p: Vec3Like): THREE.Vector3 {
   return new T.Vector3(-p[2], p[1] - ground, p[0] - axle[0]).multiplyScalar(HOWITZER_SCALE);
 }
 const wrap = (a: number) => Math.atan2(Math.sin(a), Math.cos(a));
-const toward = (from: number, to: number, step: number) => from + Math.max(-step, Math.min(step, to - from));
+const toward = (from: number, to: number, step: number) =>
+  from + Math.max(-step, Math.min(step, to - from));
 
 export type Howitzer = ReturnType<typeof createHowitzer>;
 

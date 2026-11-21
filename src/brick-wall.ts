@@ -1,6 +1,17 @@
 import { BRICK_PITCH, HALF_BRICK, WALL_ROWS, wallLength } from './brick-rules.ts';
 export { BRICK_PITCH } from './brick-rules.ts';
 import { BRICK_POSITIONS, BRICK_INDICES, BRICK_SOURCE } from './meshy-brick-data.js';
+import type { WallStructure } from './brick-rules.ts';
+import type * as THREE from 'three';
+import type { Three } from './types.ts';
+
+/** One brick of a wall run: centre x, row base y, width (office metres), palette index. */
+export interface BrickPlacement {
+  x: number;
+  y: number;
+  width: number;
+  color: number;
+}
 
 // Office metres. A row is one brick body tall; the 2×4 brick is half as deep as
 // it is long (issue #99, approved reference). Studs rise above the body.
@@ -11,13 +22,13 @@ const BODY_SHARE = 0.787;
 export const BRICK_HEIGHT = BRICK_ROW / BODY_SHARE;
 
 // Normalize one brick to a unit box resting on y = 0, studs up.
-export function brickGeometry(T) {
+export function brickGeometry(T: Three): THREE.BufferGeometry {
   const geometry = new T.BufferGeometry();
   geometry.setAttribute('position', new T.Float32BufferAttribute(BRICK_POSITIONS, 3));
   geometry.setIndex(BRICK_INDICES);
   if (BRICK_SOURCE?.up !== 'y') geometry.rotateX(-Math.PI / 2);
   geometry.computeBoundingBox();
-  const box = geometry.boundingBox;
+  const box = geometry.boundingBox!;
   const size = box.getSize(new T.Vector3());
   const center = box.getCenter(new T.Vector3());
   geometry.translate(-center.x, -box.min.y, -center.z);
@@ -27,9 +38,9 @@ export function brickGeometry(T) {
 }
 
 // Integer columns fill the chosen length; half bricks stagger alternate rows.
-export function brickLayout(length) {
+export function brickLayout(length: number): BrickPlacement[] {
   const span = wallLength(length);
-  const bricks = [];
+  const bricks: BrickPlacement[] = [];
   for (let row = 0; row < WALL_ROWS; row++) {
     for (let x = 0, i = 0; x < span - 1e-9; i++) {
       const width = Math.min(BRICK_PITCH, span - x);
@@ -44,7 +55,10 @@ export function brickLayout(length) {
   }
   return bricks;
 }
-export function createBrickWall(T, structure) {
+export function createBrickWall(
+  T: Three,
+  structure: Pick<WallStructure, 'a' | 'b' | 'hp'>,
+): THREE.InstancedMesh {
   const length = Math.hypot(structure.b[0] - structure.a[0], structure.b[1] - structure.a[1]);
   const bricks = brickLayout(length);
   const mesh = new T.InstancedMesh(brickGeometry(T), new T.MeshLambertMaterial(), bricks.length);

@@ -56,11 +56,7 @@ export function polylineLengths(points: TrailPoints): number[] {
 }
 
 // Position and unit heading at distance d along the polyline.
-export function sampleAt(
-  points: TrailPoints,
-  lengths: readonly number[],
-  d: number,
-): TrailSample {
+export function sampleAt(points: TrailPoints, lengths: readonly number[], d: number): TrailSample {
   const total = lengths.at(-1)!;
   const t = Math.max(0, Math.min(total, d));
   let i = 1;

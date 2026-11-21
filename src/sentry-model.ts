@@ -3,6 +3,9 @@ import { MODEL_DATA as TETE } from './meshy-t01-tete-data.js';
 import { MODEL_DATA as CANON } from './meshy-t01-canon-data.js';
 import { MODEL_DATA as CAPTEUR } from './meshy-t01-capteur-data.js';
 import { texturedMeshyParts } from './meshy-texture.ts';
+import type { MeshyTexturedData } from './meshy-texture.ts';
+import type * as THREE from 'three';
+import type { Three, Vec3 } from './types.ts';
 
 // Approved G1 Castor T-01: four independent Meshy textured modules, preserved UVs.
 // Original meshes use different front axes; normalize them at the assembly pivots.
@@ -15,7 +18,10 @@ export const SENTRY_SCALE = 0.22;
 // Elevation pivot height (yaw 14 mm + pitch 22 mm unscaled), in office metres.
 export const SENTRY_MUZZLE_HEIGHT = 0.036 * SENTRY_SCALE;
 
-export function sentryAimAngles(origin, target) {
+export function sentryAimAngles(
+  origin: readonly number[],
+  target: readonly number[],
+): { yaw: number; pitch: number } {
   if (
     !Array.isArray(origin) ||
     !Array.isArray(target) ||
@@ -37,13 +43,21 @@ export function sentryAimAngles(origin, target) {
   return { yaw, pitch };
 }
 
-export function sentryAngleDelta(from, to) {
+export function sentryAngleDelta(from: number, to: number): number {
   return Math.atan2(Math.sin(to - from), Math.cos(to - from));
 }
 
 // Geometry + materials are shared by all T-01 instances, but these groups and
 // their animated pivots are distinct for each installed sentry.
-function addMeshy(T, data, parent, name, size, rotation, position) {
+function addMeshy(
+  T: Three,
+  data: MeshyTexturedData,
+  parent: THREE.Object3D,
+  name: string,
+  size: number,
+  rotation: number,
+  position: Vec3,
+): THREE.Mesh {
   const parts = texturedMeshyParts(T, data);
   if (parts.length !== 1) throw new Error(`Unexpected Meshy T-01 part count for ${name}`);
   const { geometry, material } = parts[0];
@@ -59,7 +73,16 @@ function addMeshy(T, data, parent, name, size, rotation, position) {
   return mesh;
 }
 
-export function createSentryModel(T) {
+export interface SentryModel {
+  group: THREE.Group;
+  yaw: THREE.Group;
+  pitch: THREE.Group;
+  radar: THREE.Group;
+  lens: THREE.Mesh;
+  muzzle: THREE.Group;
+}
+
+export function createSentryModel(T: Three): SentryModel {
   const group = new T.Group();
   group.name = 't01';
   group.scale.setScalar(SENTRY_SCALE);

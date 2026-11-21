@@ -42,7 +42,9 @@ export function installToonLighting(T: Three): boolean {
     );
   // Every standard / lambert material shares one uniform (0 = smooth lighting).
   for (const Material of [T.MeshStandardMaterial, T.MeshLambertMaterial])
-    Material.prototype.onBeforeCompile = function toonBind(shader: THREE.WebGLProgramParametersWithUniforms) {
+    Material.prototype.onBeforeCompile = function toonBind(
+      shader: THREE.WebGLProgramParametersWithUniforms,
+    ) {
       shader.uniforms.toonBands = toonUniform;
     };
   return true;

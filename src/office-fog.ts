@@ -1,27 +1,41 @@
 // Uniform horizontal layer, kept at its original altitude when the flight limit
 // rises. Integrating along each view ray makes it visible from below and inside.
+import type * as THREE from 'three';
+import type { Three } from './types.ts';
+
+/** Flight bounds: half extents x/z and ceiling height, office metres. */
+export interface FogBounds {
+  x: number;
+  z: number;
+  ceiling: number;
+}
 export const OFFICE_DISTANCE_FOG = 0.018;
 export const FOG_START_RATIO = 0.75;
 export const OFFICE_CLOUD_TOP = 2.95;
-export function officeFogOpacity(height, cloudTop = OFFICE_CLOUD_TOP) {
+export function officeFogOpacity(height: number, cloudTop: number = OFFICE_CLOUD_TOP): number {
   const t = Math.max(
     0,
     Math.min(1, (height / Math.max(cloudTop, 0.001) - FOG_START_RATIO) / (1 - FOG_START_RATIO)),
   );
   return 0.65 * t * t * (3 - 2 * t);
 }
-export function fogOpticalDepth(fromY, toY, distance, cloudTop = OFFICE_CLOUD_TOP) {
+export function fogOpticalDepth(
+  fromY: number,
+  toY: number,
+  distance: number,
+  cloudTop: number = OFFICE_CLOUD_TOP,
+): number {
   const start = cloudTop * FOG_START_RATIO,
     thickness = cloudTop - start;
-  const primitive = (y) => Math.max(0, y - start) ** 2 / (2 * thickness);
+  const primitive = (y: number) => Math.max(0, y - start) ** 2 / (2 * thickness);
   const average =
     Math.abs(toY - fromY) < 1e-6
       ? Math.max(0, fromY - start) / thickness
       : (primitive(toY) - primitive(fromY)) / (toY - fromY);
   return Math.max(0, distance) * average * 9;
 }
-const installed = new WeakSet();
-export function installOfficeFog(T, cloudTop = OFFICE_CLOUD_TOP) {
+const installed = new WeakSet<Three>();
+export function installOfficeFog(T: Three, cloudTop: number = OFFICE_CLOUD_TOP): void {
   if (installed.has(T)) return;
   installed.add(T);
   T.ShaderChunk.fog_pars_vertex += '\n#ifdef USE_FOG\nvarying vec3 vOfficeFogPosition;\n#endif';
@@ -52,7 +66,7 @@ export function installOfficeFog(T, cloudTop = OFFICE_CLOUD_TOP) {
 // The clear scene background does not run material fog shaders. Enclose its
 // rays on every side, including the open south, with a non-solid backdrop.
 // Keep the chase camera inside the atmosphere even near the flight bounds.
-export function officeFogCeiling(T, bounds) {
+export function officeFogCeiling(T: Three, bounds: FogBounds): THREE.Mesh {
   const margin = 0.25,
     width = (bounds.x + margin) * 2,
     depth = (bounds.z + margin) * 2,
@@ -60,7 +74,7 @@ export function officeFogCeiling(T, bounds) {
     material = new T.MeshBasicMaterial({ color: '#829f91', side: T.DoubleSide, fog: true }),
     geometry = new T.BoxGeometry(width, height, depth);
   // Leave the bottom open: this is atmosphere, never a floor or a collider.
-  const indices = Array.from(geometry.index.array),
+  const indices = Array.from(geometry.index!.array),
     bottom = geometry.groups[3]; // BoxGeometry face order: +X, −X, +Y, −Y, +Z, −Z.
   geometry.setIndex(indices.filter((_, i) => i < bottom.start || i >= bottom.start + bottom.count));
   geometry.clearGroups();

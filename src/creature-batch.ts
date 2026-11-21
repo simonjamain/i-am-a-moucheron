@@ -108,7 +108,9 @@ export async function prepareCreatureVat(
   return drain(vatSteps(T, baked));
 }
 
-function vatShader(uniforms: VatUniforms): (shader: THREE.WebGLProgramParametersWithUniforms) => void {
+function vatShader(
+  uniforms: VatUniforms,
+): (shader: THREE.WebGLProgramParametersWithUniforms) => void {
   return (shader) => {
     Object.assign(shader.uniforms, uniforms);
     shader.vertexShader = shader.vertexShader

@@ -1,22 +1,24 @@
 import { MODEL_DATA } from './meshy-flying-castor-data.js';
 import { texturedMeshyParts } from './meshy-texture.ts';
+import type * as THREE from 'three';
+import type { Three } from './types.ts';
 
 // Castor volant: one Meshy mesh whose two tandem rotors (hub and three blades
 // each) are separate islands; scripts/import-meshy-flying-castor.py stores each
 // rotor around its vertical axis. Geometry, material and atlas are shared
 // between helicopters; the rotor groups are per vehicle. Nose toward -Z.
-export const FLYING_CASTOR_ROTORS = Object.freeze(['rotorFront', 'rotorRear']);
+export const FLYING_CASTOR_ROTORS = Object.freeze(['rotorFront', 'rotorRear'] as const);
 // Version 355: the helicopter was too big, everything shrinks by 30 %. The
 // profile (span, length, gear in fleet.ts) follows the same factor.
 export const FLYING_CASTOR_SCALE = 0.7;
 
-export function makeFlyingCastorMeshy(T, scene) {
+export function makeFlyingCastorMeshy(T: Three, scene: THREE.Object3D): THREE.Group {
   const model = new T.Group();
   const rig = new T.Group();
   rig.name = 'flying-castor-rig';
   rig.scale.setScalar(FLYING_CASTOR_SCALE);
   model.add(rig);
-  const rotors = [];
+  const rotors: THREE.Group[] = [];
   for (const { part, geometry, material } of texturedMeshyParts(T, MODEL_DATA)) {
     const mesh = new T.Mesh(geometry, material);
     mesh.name = 'meshy-flying-castor-' + part.part;
