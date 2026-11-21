@@ -8,9 +8,12 @@ export class BedUI {
     this.pointer = null;
     this.points = [];
     root.querySelector('[data-bed-close]').onclick = () => this.close();
-    root.querySelector('[data-bed-clear]').onclick = () => {
-      if (!this.busy) this.clear();
-    };
+    // Optional: the paper order has no eraser (a short stroke is discarded anyway).
+    const eraser = root.querySelector('[data-bed-clear]');
+    if (eraser)
+      eraser.onclick = () => {
+        if (!this.busy) this.clear();
+      };
     this.canvas.onpointerdown = (e) => {
       e.preventDefault();
       if (this.busy || this.pointer !== null) return;

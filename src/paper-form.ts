@@ -61,7 +61,8 @@ export function handPath(kind: 'box' | 'tick', random: () => number = Math.rando
   const j = (amount: number): number => (random() * 2 - 1) * amount;
   const p = (x: number, y: number, amount = 0.9): string =>
     `${(x + j(amount)).toFixed(1)} ${(y + j(amount)).toFixed(1)}`;
-  if (kind === 'box') return `M${p(4, 4)} L${p(20, 4)} L${p(20, 20)} L${p(4, 20)} Z`;
+  // Boxes are printed with the typed form: perfect squares. Only the tick is by hand.
+  if (kind === 'box') return 'M4 4 H20 V20 H4 Z';
   return `M${p(4, 12, 1.2)} Q${p(7, 15)} ${p(10, 19, 1)} Q${p(14, 9, 1.5)} ${p(22, 2, 1.5)}`;
 }
 
