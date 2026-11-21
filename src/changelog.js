@@ -3,7 +3,7 @@ export const PLAYER_CHANGELOG = [
   {
     version: 384,
     changes: [
-      'Nouvelle tourelle automatique Gatling, à poser depuis le Castor ou à larguer depuis le Castor volant : six canons qui tournent et un tir continu.',
+      'Nouvelle tourelle Gatling pour le Castor et le Castor volant : six canons qui tournent et un tir continu.',
     ],
   },
   {
