@@ -128,6 +128,50 @@ const slot = decor.raycast([sx, 0.7, sz], inward, 3, copier);
 assert.ok(!slot || slot.distance - 0.1 > 0.3, 'paper slot open');
 const body = decor.raycast([sx, 0.8, sz], inward, 3, copier);
 assert.ok(body && body.distance - 0.1 < 0.1, 'body above the slot');
+// Placement on the real surfaces (equipment.ts with the decor as support), and
+// the server accepting the height the client found (decorTrust).
+const { supportedPlacement, decorTrust } = await import('../src/equipment.ts');
+const { layoutSolids } = await import('../src/layouts.ts');
+const boxes = layoutSolids(diagonale);
+assert.ok(boxes.some((b) => b.decor) && boxes.some((b) => !b.decor), 'prop boxes marked');
+const place = (x, y, z) => supportedPlacement({ x, y, z, angle: 0 }, boxes, [], 'dca', decor);
+const server = (x, builderY, z, claimed) =>
+  supportedPlacement(
+    { x, y: builderY, z, angle: 0 },
+    boxes,
+    [],
+    'dca',
+    decorTrust(boxes, claimed - 0.00005),
+  );
+for (const p of diagonale.props.filter((q) => /Chair|Photocopier/.test(q.model))) {
+  const top = decor.raycast([p.x, 2.5, p.z], [0, -1, 0], 3);
+  const at = place(p.x, top.point[1], p.z);
+  assert.ok(at && Math.abs(at.y - 0.00005 - top.point[1]) < 1e-4, p.model + ' top supports');
+  assert.ok(Math.abs(server(p.x, at.y, p.z, at.y).y - at.y) <= 0.0003, 'server agrees');
+}
+const seatTop = place(chair.frame.x, seat.point[1], chair.frame.z).y;
+assert.ok(seatTop < 0.5, 'on the seat, not on the box around the backrest');
+const desk = diagonale.props.find((p) => p.model === 'Desk');
+assert.ok(Math.abs(place(desk.x, 0.745, desk.z + 0.3).y - 0.74005) < 1e-4, 'desk top');
+assert.equal(place(desk.x + 0.85, 0.745, desk.z), null, 'nothing beyond the desk edge');
+const keyboard = diagonale.props.find((p) => p.model === 'Keyboard');
+assert.equal(place(keyboard.x, 0.777, keyboard.z), null, 'uneven keys: no support');
+// The server trusts heights inside a prop's box only.
+assert.equal(server(desk.x, 0.745, desk.z + 0.3, 1.5), null, 'claimed height above the desk');
+assert.ok(server(0.6, 0, -0.4, 0), 'open floor stays a box rule');
+// Headroom: the decor blocks a placement whose volume crosses a triangle.
+const hanging = solids.find((s) => s.model === 'Ceiling_Fan');
+const q = {
+  x: hanging.frame.x,
+  z: hanging.frame.z,
+  y: 0,
+  angle: 0,
+  rx: 0.05,
+  rz: 0.05,
+  height: 2.1,
+};
+assert.equal(decor.clear(q, 0), false, 'the fan hangs in a 2.1 m headroom');
+assert.equal(decor.clear({ ...q, height: 1.5 }, 0), true, 'below the fan');
 decor.dispose();
 
 // The client's rays (solidRayDistance, src/client.js): the pack props' boxes give

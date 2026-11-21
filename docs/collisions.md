@@ -42,9 +42,21 @@ travail avance par lots (note de reprise : [collisions en triangles](tasks/colli
      plus proche parmi les boîtes restantes (coque, sol, constructions) et les
      triangles du décor ; les boîtes des objets du pack (marquées `decor` par
      `layoutPieces`) sont ignorées dès que le monde du décor existe ;
-   - **2b**, surfaces partagées avec le serveur (pose d'équipement, largages,
-     livraisons, apparitions sur les lits) : le serveur vérifie encore sur ses
-     boîtes, il devra accepter la hauteur calculée par le client.
+   - **2b (version 409)**, pose d'équipement par le joueur sur les vraies surfaces.
+     `supportedPlacement` (`src/equipment.ts`) prend un appui `DecorSupport` :
+     côté client, le monde du décor cherche une surface plane et horizontale sous
+     le centre et les quatre coins de l'emprise (rayons verticaux, normales à plus
+     de 0,95, écart de hauteur d'au plus 2 mm) et vérifie le volume libre au-dessus
+     (`intersectionsWithShape` de Rapier) ; la visée (`aimPlacement`, client) vise
+     une face supérieure d'un meuble ou s'arrête sur ses autres faces. Côté
+     serveur, `decorTrust` accepte la hauteur envoyée par le client si elle tombe
+     dans la boîte d'un meuble sous le centre (confiance aux clients) ; les boîtes
+     des meubles ne portent ni ne bloquent plus la pose. Sol, coque, constructions
+     et équipements voisins gardent leurs règles. On pose ainsi sur l'assise d'une
+     chaise ou le dessus de la photocopieuse ; le clavier, aux touches inégales, ne
+     porte rien. Les largages, livraisons, apparitions sur les lits et constructions
+     du Castor sont calculés par le serveur seul : ils restent sur les boîtes
+     jusqu'au lot 4.
 3. Avions, marche et véhicules au contact des triangles.
 4. Navigation des fourmis et serveur.
 

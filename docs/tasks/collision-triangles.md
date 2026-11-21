@@ -15,17 +15,15 @@
     restent les solides du jeu.
   - Lot 2a fait (v408) : `solidRayDistance` (client) pour tirs, explosions,
     caméra, visée hélicoptère, jet d'eau ; boîtes des objets marquées `decor`.
-  - Lot 2b à faire : pose (`placement-aim.ts`, client 1745/5288/6404), largages
-    (`airdrop.ts`), livraisons (`delivery.ts`), lits (`beds.ts`) : le serveur
-    (`supportedPlacement`, `airdropSurface`, `deliveryLanding`, `bedSpawn` dans
-    `server/game.js`) vérifie sur ses boîtes ; il doit accepter la hauteur que le
-    client calcule sur les triangles (confiance aux clients). Consommateurs : `grep -n colliders src/client.js` (caméra 612,
-    projectiles 4402, explosions 4280, visée 5762, eau 6718, pose 1745/5288/6404,
-    largages `airdrop.ts`).
+  - Lot 2b fait (v409) : pose d'équipement par le joueur (`DecorSupport`,
+    `decorTrust`, `aimPlacement`). Restent sur les boîtes jusqu'au lot 4, car
+    calculés par le serveur seul : largages (`airdrop.ts`), livraisons
+    (`delivery.ts`), lits (`beds.ts`), constructions du Castor (visée client.js
+    `aim`, `groundCommand`).
   - Lot 3 : vol (`flight` / atterrissage 4618, collisions 4662), marcheur
     (`stepWalker`), véhicules Rapier (`physics-world.ts` : les trimesh du décor au
     lieu des cuboïdes, ou un monde partagé), effets de crash, suspension des chenilles (`track-suspension.ts`).
   - Lot 4 : navigation des fourmis (`ground-defense.js`, grille depuis la
     géométrie), serveur et workers (boîtes grossières ou triangles).
 - Vérifications : `node scripts/test-collision-mesh.mjs`, `npm test`.
-- Prochaine action : lot 2b, pose sur les triangles avec hauteur acceptée par le serveur.
+- Prochaine action : lot 3, vol (atterrissage, collisions) contre `office.decor`.

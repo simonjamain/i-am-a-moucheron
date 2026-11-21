@@ -1,6 +1,12 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 409,
+    changes: [
+      'Les équipements se posent sur la vraie surface des meubles : assise d’une chaise, dessus de la photocopieuse.',
+    ],
+  },
+  {
     version: 408,
     changes: [
       'Les tirs, les explosions et la caméra suivent la vraie forme des meubles : on tire entre les pieds d’une chaise.',

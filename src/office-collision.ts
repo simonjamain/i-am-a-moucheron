@@ -7,6 +7,17 @@
 import type { Collider as RapierCollider, World } from '@dimforge/rapier3d-compat';
 import { modelBoxes, ROD, type OfficeModel, type Prop } from './office-props.ts';
 import { toPhysics, toWorld, type Rapier } from './physics-world.ts';
+import type { FootprintQuery } from './equipment.ts';
+
+// Placement support on the decor (metres): rays start SUPPORT_RISE above the
+// aimed height and reach SUPPORT_DROP below it; the five contacts must be flat
+// (normal y above SUPPORT_FLAT) and level within SUPPORT_LEVEL; the headroom
+// test starts HEADROOM_GAP above the surface.
+const SUPPORT_RISE = 0.01;
+const SUPPORT_DROP = 0.02;
+const SUPPORT_FLAT = 0.95;
+const SUPPORT_LEVEL = 0.002;
+const HEADROOM_GAP = 0.001;
 
 /** How a model collides: its triangles, boxes standing for it, or not at all. */
 export type CollisionShape = 'mesh' | 'proxy' | 'none';
@@ -210,6 +221,54 @@ export class DecorCollision {
     ];
     const distance = Math.hypot(p[0] - point[0], p[1] - point[1], p[2] - point[2]);
     return distance <= radius ? { distance, point: p, solid } : null;
+  }
+
+  /**
+   * Placement support (equipment.ts DecorSupport): height of a flat, upward decor
+   * surface under the centre and the four corners of the footprint, just below
+   * q.y (within SUPPORT_DROP); null when the footprint overhangs or tilts.
+   */
+  surface(q: FootprintQuery): number | null {
+    const c = Math.cos(q.angle),
+      s = Math.sin(q.angle);
+    const from = q.y + SUPPORT_RISE;
+    const ys: number[] = [];
+    for (const [u, v] of [
+      [0, 0],
+      [-q.rx, -q.rz],
+      [-q.rx, q.rz],
+      [q.rx, q.rz],
+      [q.rx, -q.rz],
+    ]) {
+      const x = q.x + c * u + s * v,
+        z = q.z - s * u + c * v;
+      const hit = this.raycast([x, from, z], [0, -1, 0], SUPPORT_RISE + SUPPORT_DROP);
+      if (!hit || hit.normal[1] < SUPPORT_FLAT) return null;
+      ys.push(hit.point[1]);
+    }
+    return Math.max(...ys) - Math.min(...ys) <= SUPPORT_LEVEL ? Math.max(...ys) : null;
+  }
+
+  /** True when no decor triangle lies in the footprint's headroom above `y`. */
+  clear(q: FootprintQuery, y: number): boolean {
+    const R = this.R;
+    const half = q.height / 2;
+    const shape = new R.Cuboid(
+      toPhysics(q.rx),
+      toPhysics(half - HEADROOM_GAP / 2),
+      toPhysics(q.rz),
+    );
+    let blocked = false;
+    this.world.intersectionsWithShape(
+      { x: toPhysics(q.x), y: toPhysics(y + HEADROOM_GAP + half), z: toPhysics(q.z) },
+      { x: 0, y: Math.sin(q.angle / 2), z: 0, w: Math.cos(q.angle / 2) },
+      shape,
+      () => {
+        blocked = true;
+        return false;
+      },
+    );
+    return !blocked;
   }
 
   dispose(): void {
