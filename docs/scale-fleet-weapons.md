@@ -28,7 +28,7 @@ by the map ratio. The Anti-Aircraft Museum lists an 800 m/s muzzle velocity for
 its L/60 40 mm Bofors:
 https://ilmatorjuntamuseo.fi/ilmatorjuntamuseo/kokoelman_helmet/40-itk-36-59-galileo-bofors/
 The 0.7 s game cadence, distance-programmed airburst, 100–1200 m reference fuse
-and 8 m blast radius are gameplay choices; this is not a historical fuze simulation.
+and 30 m blast radius of the light flak (8 m for the mobile flak and the missile) are gameplay choices; this is not a historical fuze simulation.
 Early impacts before arming are inert. Blasts use falloff and solid-furniture
 occlusion, and can damage teammates and shared hulls. Two separate yaw/pitch
 joints keep the DCA trunnion anchored; alternating muzzle objects determine the
@@ -115,17 +115,16 @@ Les trois postes s’achètent dans **Installations**, se posent à pied et se
 servent après avoir signé les deux formulaires. Un Castor ou une station à
 portée les ravitaille automatiquement aux tarifs habituels des balles et obus.
 
-| Poste             |                               Prix de base |        Stock | Tir                                                                                   |
-| ----------------- | -----------------------------------------: | -----------: | ------------------------------------------------------------------------------------- |
-| Flak léger        | 5 $, puis +2 $ par exemplaire jusqu’à 40 $ |     120 obus | Deux tubes alternés, éclatement à distance programmée.                                |
-| DCA haute cadence |                                       50 $ | 1 000 balles | Quatre mitrailleuses de Spitfire. Un départ toutes les 15 ms, en alternant les tubes. |
-| Flak lourd        |                                       30 $ |     120 obus | Un obus par seconde avec la fusée de proximité de la DCA mobile.                      |
+| Poste             |                               Prix de base |        Stock | Tir                                                                                                        |
+| ----------------- | -----------------------------------------: | -----------: | ---------------------------------------------------------------------------------------------------------- |
+| Flak léger        | 5 $, puis +2 $ par exemplaire jusqu’à 40 $ |     120 obus | Deux tubes alternés, éclatement à distance programmée ; souffle de 30 m (80 au centre, 20 au bord).        |
+| DCA haute cadence |                                       50 $ | 1 000 balles | Quatre mitrailleuses de Spitfire, 62 dégâts par balle. Un départ toutes les 15 ms, en alternant les tubes. |
+| Flak lourd        |                                       30 $ |     120 obus | Un obus par seconde avec la fusée de proximité de la DCA mobile.                                           |
 
 Les trois DCA fixes ont un azimut libre et une élévation de **+5° à +90°**.
 Dès la confirmation du poste du Flak lourd, la vue passe à la bouche du canon
 et suit son axe. La collision des DCA fixes suit l’embase à son échelle et à
 son orientation dans le bureau. Le Flak lourd règle la proximité à la molette. L’obus s’arme à 0,3 s et éclate
 au passage au plus près d’un objet dans la zone de détection. Le souffle atteint
-7,2 cm dans le bureau et inflige de 240 dégâts au centre à 60 au bord, soit
-trois fois le rayon et les dégâts du souffle du Flak léger.
+12 cm dans le bureau (40 m de référence) et inflige de 240 dégâts au centre à 60 au bord.
 Voir [la DCA mobile](support-vehicles.md) pour le détail de la fusée.

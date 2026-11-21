@@ -1417,21 +1417,9 @@ const FORTIFICATION_FORMS = {
     clauses: [
       'Je laisse le tube reculer à chaque tir et je n’y range ni tasse ni formulaire.',
       'J’accepte que l’obus parte là où le tube pointe vraiment, et non là où mon intention se trouvait une seconde plus tôt. Le service balistique ne lit pas dans les pensées.',
-      'Je réserve ce canon aux cibles terrestres sérieuses. Vingt-quatre obus ne constituent pas une réserve illimitée, même rangés avec optimisme.',
+      'Je réserve ce canon aux cibles terrestres sérieuses. Cinquante obus ne constituent pas une réserve illimitée, même rangés avec optimisme.',
       'Je reçois la pièce flèches posées et roues propres. Toute rayure postérieure à ma signature sera réputée héroïque, donc à ma charge.',
       'Je ne demanderai pas au canon de tirer plus vite en lui parlant gentiment. Le chargement obéit au règlement, pas à la politesse.',
-    ],
-  },
-  bunker: {
-    name: 'bunker LEGO',
-    take: 'Je prends en charge le bunker LEGO et sa mitrailleuse. Je m’engage à ne démonter aucune brique pour améliorer la vue.',
-    fire: 'Je réponds de chaque rafale tirée depuis les meurtrières. Je contrôle les obstacles et les alliés avant de tirer.',
-    clauses: [
-      'Je reconnais que les murs absorbent une partie des impacts et que le reste me concerne personnellement.',
-      'Toute brique manquante sera déclarée au service des petits éléments, ouvert sous le canapé.',
-      'J’accepte que les balles soient comptées une à une. Le bureau des munitions ne reconnaît pas les rafales imaginaires.',
-      'Je réserve la mitrailleuse aux insectes. Les briques voisines ne sont pas des cibles d’entraînement, même mal alignées.',
-      'Je signalerai mon départ du bunker. Un casque posé sur une brique ne vaut pas occupation du poste.',
     ],
   },
 };
@@ -1452,7 +1440,7 @@ for (const [kind, forms] of Object.entries(FORTIFICATION_FORMS))
       })),
     ),
   );
-// For the 'equipment' context, `type` is the station kind (dca, bunker, antitank).
+// For the 'equipment' context, `type` is the station kind (dca, antitank).
 export function contractKey(context, seat = 'pilot', type = null) {
   if (type === 'flyingcastor' && /^passenger/.test(seat)) seat = 'passenger';
   if (['helicopter', 'flaktruck', 'flyingcastor'].includes(type)) seat = type + '-' + seat;

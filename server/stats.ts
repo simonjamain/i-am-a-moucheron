@@ -108,7 +108,6 @@ export function itemName(item: string): string {
   const special: Record<string, string> = {
     pistol: 'Pistolet (à pied)',
     sentry: 'Tourelle automatique du Castor',
-    bunker: 'Bunker LEGO',
     antitank: 'Canon antichar',
   };
   return special[item] || item;

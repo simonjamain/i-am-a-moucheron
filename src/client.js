@@ -26,7 +26,7 @@ import { nextPilotMuzzle, nearestWeaponMuzzle } from '/muzzle.js';
 import { advanceAutomaticFire } from '/salvos.js';
 import { ammoCapacity } from '/logistics.js';
 import { PISTOL_CAPACITY } from '/ground-ammo.js';
-import { FIXED_DCA, heavyDcaMuzzle, isFixedDca } from '/fixed-dca.js';
+import { FIXED_DCA, RAPID_DCA_DAMAGE, heavyDcaMuzzle, isFixedDca } from '/fixed-dca.js';
 import { makeFixedDca, positionHeavyFlakSight } from '/fixed-dca-model.js';
 import { FORTIFICATIONS, isFortification } from '/ground-fortifications.js';
 import { HOWITZER } from '/howitzer-model.js';
@@ -1371,9 +1371,7 @@ function accept(s, force = false) {
       notify(
         kind === 'antitank'
           ? 'Canon lourd · Souris : pointer (lent) · Clic : obus · F : sortir'
-          : kind === 'bunker'
-            ? 'Bunker LEGO · Clic : balles · F : sortir'
-            : stationLabel(stations[turretIndex]) +
+          : stationLabel(stations[turretIndex]) +
               ' · ' +
               (kind === 'dcaRapid'
                 ? 'Clic : balles'
@@ -1778,7 +1776,7 @@ const groundDefenseUI = new GroundDefenseUI({
     return b && { ...b, ...baseWorld(b) };
   },
   builder: castorBuilder,
-  fortificationModel: (st) => makeFortificationStation(T, st, { box, cyl }),
+  fortificationModel: (st) => makeFortificationStation(T, st),
   serverNow: () => Date.now() + clockOffset,
   enabled: () => canCapture() && !placingEquipment,
   captureMouse,
@@ -2829,17 +2827,13 @@ function reconcileEquipment(next) {
     const gun = isFixedDca(st.kind)
       ? makeFixedDca(T, st)
       : isFortification(st.kind)
-        ? makeFortificationStation(T, st, { box, cyl })
+        ? makeFortificationStation(T, st)
         : installationModel(st);
     scene.add(gun);
     gun.rotation.y = st.angle || 0;
     gun.userData.kind = st.kind;
     gun.userData.slot = st.slot;
-    const radius = isFortification(st.kind)
-      ? st.kind === 'bunker'
-        ? 0.075
-        : FORTIFICATIONS.antitank.footprint
-      : MAP.metres(2);
+    const radius = isFortification(st.kind) ? FORTIFICATIONS.antitank.footprint : MAP.metres(2);
     const collider =
       st.kind === 'refuel' || st.kind === 'bed'
         ? makeInstallationCollider(T, gun)
@@ -3109,7 +3103,7 @@ function updateVehicles(dt) {
     'hidden',
     turretIndex < 0 && (!crew || isPassengerSeat(crewSeat)),
   );
-  // Only the DCA has a time fuse; bunker and heavy gun have none.
+  // Only the DCA has a time fuse; the heavy gun has none.
   $('flakControls').classList.toggle(
     'hidden',
     turretIndex < 0 || stations[turretIndex]?.kind !== 'dca',
@@ -3123,7 +3117,7 @@ function updateVehicles(dt) {
         ' · ' +
         Math.round(occupiedStation.hp ?? hp) +
         ' PV · ' +
-        (['bunker', 'dcaRapid'].includes(occupiedStation.kind) ? 'Balles ' : 'Obus ') +
+        (occupiedStation.kind === 'dcaRapid' ? 'Balles ' : 'Obus ') +
         Math.floor(occupiedStation.ammo ?? 0) +
         '/' +
         (FORTIFICATIONS[occupiedStation.kind]?.ammo ?? FIXED_DCA[occupiedStation.kind]?.ammo ?? 0)
@@ -3341,11 +3335,7 @@ function updateVehicles(dt) {
       } else if (heavyDca) {
         positionHeavyFlakSight(T, camera, gun);
       } else {
-        camera.position.set(
-          station.x,
-          station.y + MAP.metres(station.kind === 'bunker' ? 17 : 5),
-          station.z,
-        );
+        camera.position.set(station.x, station.y + MAP.metres(5), station.z);
         if (isFixedDca(station.kind)) gun.userData.pitch.getWorldQuaternion(camera.quaternion);
         else camera.lookAt(camera.position.clone().addScaledVector(dir, MAP.metres(100)));
       }
@@ -3395,22 +3385,7 @@ function updateVehicles(dt) {
               notify(e.message, 2);
             });
         } else {
-          const fort = FORTIFICATIONS[station.kind];
-          const shot = fort
-            ? emitBullet(
-                muzzle,
-                dir,
-                TRACER_COLOR,
-                true,
-                false,
-                {
-                  wave: snap.wave,
-                  baseDamage: fort.damage,
-                  velocity: new T.Vector3(),
-                },
-                muzzleNode,
-              )
-            : bullet(muzzle, dir, TRACER_COLOR, true, true, muzzleNode);
+          const shot = bullet(muzzle, dir, TRACER_COLOR, true, true, muzzleNode);
           if (shot) action('fixed-dca-fire', { station: index, shot, incarnation });
         }
       }
@@ -3424,7 +3399,7 @@ function updateVehicles(dt) {
         howitzer?.fire();
         combatEffects.muzzle(muzzle, dir, muzzleNode);
         sound.play('flak', muzzle, { ref: 35 });
-      } else bullet(muzzle, dir, TRACER_COLOR, false, station.kind !== 'bunker', muzzleNode);
+      } else bullet(muzzle, dir, TRACER_COLOR, false, true, muzzleNode);
     }
   }
 }
@@ -3449,7 +3424,12 @@ function fireRapidDca(station, gun, direction, dt, interval, firing, owned) {
       TRACER_COLOR,
       owned,
       false,
-      { velocity: new T.Vector3(), weapon: 'dcaRapid', authorization },
+      {
+        velocity: new T.Vector3(),
+        weapon: 'dcaRapid',
+        baseDamage: RAPID_DCA_DAMAGE,
+        authorization,
+      },
       muzzle,
     );
     if (queue && shot) queue.set(shot, authorization);
@@ -4191,11 +4171,11 @@ function shoot(forward) {
   if (muzzle) bullet(muzzle, spreadDirection(T, forward), TRACER_COLOR, true);
 }
 function explosion(b, point) {
-  combatEffects.blast(point);
+  const radius = MAP.metres(FLAK.lightRadius);
+  combatEffects.blast(point, radius);
   effectSeen.add(b.shot);
   sound.play('crash', point, { ref: 22 });
-  action('blast', { shot: b.shot, p: point.toArray() });
-  const radius = MAP.metres(FLAK.radius);
+  action('blast', { shot: b.shot, p: point.toArray(), radius });
   const exposed = (position) => {
     const delta = position.clone().sub(point),
       length = delta.length();
@@ -4216,12 +4196,17 @@ function explosion(b, point) {
       !exposed(g.position)
     )
       continue;
-    damageEnemy(enemy, blastDamage(g.position.distanceTo(point)), b.shot + ':' + enemy, g.position);
+    damageEnemy(
+      enemy,
+      blastDamage(g.position.distanceTo(point), radius),
+      b.shot + ':' + enemy,
+      g.position,
+    );
   }
   for (const v of snap?.vehicles || []) {
     const g = fleetModels.get(v.id);
     if (!g?.visible) continue;
-    const damage = blastDamage(g.position.distanceTo(point));
+    const damage = blastDamage(g.position.distanceTo(point), radius);
     if (damage && exposed(g.position))
       action('friendly-hit', { vehicle: v.id, shot: b.shot + ':' + v.id, amount: damage });
   }
@@ -4241,7 +4226,7 @@ function explosion(b, point) {
               )
             : null;
     if (!pos) continue;
-    const amount = blastDamage(pos.distanceTo(point));
+    const amount = blastDamage(pos.distanceTo(point), radius);
     if (amount && exposed(pos))
       action('friendly-hit', { target: p.id, shot: b.shot + ':' + p.id, amount });
   }

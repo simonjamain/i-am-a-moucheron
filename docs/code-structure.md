@@ -180,8 +180,8 @@ retire les coûts de la caisse et déduplique les requêtes identifiées.
 
 Les trois constructions propres au Castor, accessibles à leur seul prix en dollars
 (plus de cartes d'ingénierie depuis la version 264), sont la tourelle automatique (`ground-sentry.ts`),
-le bunker LEGO et le canon antichar occupables (`ground-fortifications.ts`).
-`fortification-model.js` dessine ces postes ; le canon antichar est l'obusier
+le canon antichar occupable (`ground-fortifications.ts`).
+`fortification-model.js` dessine ce poste : c’est l'obusier
 Meshy articulé de `howitzer-model.ts` / `howitzer-data.js` (pointage lent, roues
 contrarotatives, élévation et recul, [pipeline d'assets](asset-pipeline.md#canon-anti-matériel-obusier-meshy)).
 `ground-defense-state.js` contrôle leur placement et les collisions ;

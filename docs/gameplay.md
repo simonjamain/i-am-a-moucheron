@@ -27,7 +27,7 @@ l’infestation. La mort ouvre une observation à caméra fixe ; un clic volonta
 Avant chaque vague, le serveur annonce les entrées et les horaires des groupes. La préparation dure une minute par défaut ; tout joueur peut lancer la vague avant la fin du compte à rebours. Il n'y a ni vote ni plan à débloquer entre les vagues (retirés en version 264) : équipements et véhicules s'achètent simplement à leur prix en dollars. La première vague part des fourmis et des moucherons, complétés par n’importe quelle espèce que son budget permet (aucun déblocage), puis son budget, exprimé en **puissance**, est multiplié par 1,5 à chaque étape, sans plafond, et par `N^0,9` pour `N` joueurs. La frise et le bouton de vague affichent la puissance de la vague annoncée. Voir [progression](progression.md) et [équilibrage](enemy-power.md#unité-commune). Des groupes aériens arrivent depuis
 plusieurs aérations, se séparent et se rejoignent ; fourmis et cafards sortent
 de trous et marchent vers la poubelle par le chemin le plus direct qui contourne le
-mobilier, les barricades et les bunkers (voir [navigation terrestre](#navigation-terrestre)).
+mobilier et les barricades (voir [navigation terrestre](#navigation-terrestre)).
 La durée nominale des trajets dépend de leur longueur à vitesse conservée.
 
 Les règles de la room sont fixes : l'ancien panneau **Équilibrage et nuées** est retiré
@@ -337,7 +337,7 @@ Le sucre coûte
 signalent un refus ; le serveur revalide position, caisse et occupation avant
 paiement. La pose exige le sol du bureau, sans parachute. Les défenses sont
 partagées par room et effacées à sa remise à zéro. Les terrestres utilisent
-toujours la navigation serveur, qui tient compte des barricades, bunkers, appâts
+toujours la navigation serveur, qui tient compte des barricades, appâts
 et rubans ; les volants gardent leurs parcours. Le radar conserve les constructions et rayons
 d’appât ; il ne sert pas à construire. Le rendu et le confort de pose demandent
 encore un essai WebGL/UDP en partie réelle.
@@ -346,13 +346,13 @@ encore un essai WebGL/UDP en partie réelle.
 
 Le serveur simule chaque insecte terrestre dès le début du combat, avec ou sans
 défense. Une grille de 5 cm (`buildGroundFlow`, `src/ground-defense.js`) bloque le
-mobilier au sol, les barricades et les bunkers ; elle n'est reconstruite qu'à un
+mobilier au sol et les barricades ; elle n'est reconstruite qu'à un
 changement de `navigationRevision`. Le trajet est lissé à angle libre : depuis sa
 position, l'insecte vise le point le plus lointain de la descente encore visible
 en ligne droite, avec une marge d'environ une demi-case, et garde ce point jusqu'à
 l'atteindre. L'aperçu du conseil de vague (`smoothRoute`) enchaîne les mêmes points :
-la piste de phéromones orange (chevrons vers la poubelle) indique le trajet de référence. Chaque insecte s'en écarte localement pour éviter ses voisins. Un brouillon de barricade ou
-de bunker montre le détour avant validation. Sans chemin, l'aperçu affiche
+la piste de phéromones orange (chevrons vers la poubelle) indique le trajet de référence. Chaque insecte s'en écarte localement pour éviter ses voisins. Un brouillon de barricade
+montre le détour avant validation. Sans chemin, l'aperçu affiche
 « Passage fermé » ; les cafards, araignées et rats attaquent alors la barricade la
 plus proche. Le sucre détourne seulement les insectes entrés dans son rayon et
 n'est pas tracé. La route nominale (`enemyRoute`) suit aussi ce champ sur un bureau
@@ -418,9 +418,9 @@ correction des six roues est conservée.
 
 ### Constructions du Castor
 
-Au volant du Castor, on peut construire un bunker LEGO (10 $) et un canon antichar lourd (14 $), sans plan à débloquer : seul le prix compte. Le bunker protège son occupant d’une grande partie des impacts et possède sa propre mitrailleuse ; le canon est prévu pour les boss terrestres. Ce canon est un obusier à taille humaine qui pivote lentement sur ses roues, s’élève de −5° à +40° et recule à chaque tir. Il tire un obus simulé par le tireur, comme le canon du tank (gravité, obstacles, impact direct), mais plus rapide (750 m/s), plus puissant (360 dégâts, pleins sur la cible touchée) et à petite explosion (5 m) ; il n’a pas de fusée de DCA. Le cercle d’accès, l’ouverture du dossier et les signatures partagent la même portée autour du poste, au même niveau : 9 cm pour le bunker ; pour le canon, un cercle à 4,5 m de l’essieu, hors du balayage du tube, et une portée de 6 m. Chaque cercle porte l’icône de son rôle et chaque poste a ses propres textes et contrats. Les deux postes demandent la signature d’un dossier, disposent de munitions finies et se rechargent uniquement auprès des sources de service payantes.
+Au volant du Castor, on peut construire un canon antichar lourd (14 $), sans plan à débloquer : seul le prix compte. Le canon est prévu pour les boss terrestres. Ce canon est un obusier à taille humaine qui pivote lentement sur ses roues, s’élève de −5° à +40° et recule à chaque tir. Il tire un obus simulé par le tireur, comme le canon du tank (gravité, obstacles, impact direct), mais plus rapide (750 m/s), plus puissant (800 dégâts au cœur de l’impact, pleins sur la cible touchée) et à petite explosion (5 m) ; il n’a pas de fusée de DCA. Le cercle d’accès, l’ouverture du dossier et les signatures partagent la même portée autour du poste, au même niveau : pour le canon, un cercle à 4,5 m de l’essieu, hors du balayage du tube, et une portée de 6 m. Chaque cercle porte l’icône de son rôle et chaque poste a ses propres textes et contrats. Le poste demande la signature d’un dossier, dispose de 50 obus finis et se rechargent uniquement auprès des sources de service payantes.
 
-La « Tourelle automatique du Castor » se construit pour 9 $ au volant du G1, sans plan à débloquer. Elle tire automatiquement (180 balles finies) et se recharge contre paiement auprès du Castor ou des stations. Aucun tir ni achat à distance. Son modèle définitif combine quatre modules Meshy texturés (socle fixe, tête qui pivote sur 360°, canon unique inclinable de −10° à +90° et capteur/radar séparé). Les géométries et UV Meshy sont conservés, avec une copie des textures rééchantillonnée en WebP 1K pour le navigateur ; voir [l'asset T-01](t01-asset.md). Les déplacements visuels suivent la dernière cible validée par le serveur ; les dégâts et les munitions restent autoritaires côté serveur. Le GLB texturé définitif doit être importé séparément après vérification des parties mobiles et de leurs UV.
+La « Tourelle automatique du Castor » se construit pour 5 $ au volant du G1, sans plan à débloquer. Elle tire automatiquement (180 balles finies) et se recharge contre paiement auprès du Castor ou des stations. Aucun tir ni achat à distance. Son modèle définitif combine quatre modules Meshy texturés (socle fixe, tête qui pivote sur 360°, canon unique inclinable de −10° à +90° et capteur/radar séparé). Les géométries et UV Meshy sont conservés, avec une copie des textures rééchantillonnée en WebP 1K pour le navigateur ; voir [l'asset T-01](t01-asset.md). Les déplacements visuels suivent la dernière cible validée par le serveur ; les dégâts et les munitions restent autoritaires côté serveur. Le GLB texturé définitif doit être importé séparément après vérification des parties mobiles et de leurs UV.
 
 ## Castor volant (version 292)
 
@@ -435,8 +435,8 @@ Depuis la version 355, modèle, envergure, longueur et patins sont réduits de 3
 
 **Tous les occupants** (pilote et passagers) ouvrent la roue (**G** / clic
 molette) et **larguent** les constructions du Castor, sauf les murs LEGO :
-sucre, ruban (un morceau de 10 cm), tourelle automatique, bunker
-LEGO et canon anti-matériel, au même prix. L'objet part **toujours à la
+sucre, ruban (un morceau de 10 cm), tourelle automatique
+et canon anti-matériel, au même prix. L'objet part **toujours à la
 verticale de l'hélicoptère** et **suit son cap** ; un aperçu transparent montre où il tombera. Clic gauche ou Entrée
 larguent, dans n'importe quelle condition de vol. La caisse est débitée au
 largage ; l'objet tombe comme les autres livraisons (1/3 m/s), puis le serveur
@@ -455,7 +455,7 @@ l'appareil avec la souris.
 
 Les constructions posées sur un meuble gardent leur hauteur : tourelles et
 postes y tirent depuis leur emplacement réel, et le soutien les mesure en 3D.
-Les insectes au sol ne les rencontrent pas : un bunker sur un bureau ne bloque
+Les insectes au sol ne les rencontrent pas : une barricade sur un bureau ne bloque
 pas leur chemin, un ruban ou du sucre sur un meuble ne les retient pas. Voir
 [la flotte Meshy](meshy-fleet.md#castor-volant--hélicoptère-meshy-version-292).
 

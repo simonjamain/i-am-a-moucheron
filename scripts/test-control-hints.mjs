@@ -46,18 +46,16 @@ assert.match(
   /arrêter la dépose/,
 );
 assert.match(controlHints({ building: { mode: 'sugar' } }), /R : orienter/);
-assert.doesNotMatch(controlHints({ building: { mode: 'bunker', castor: true } }), /R : orienter/);
 assert.match(controlHints({ building: { mode: 'repair' } }), /Clic \/ E : réparer/);
 
-// Fixed stations: DCA fuse, LEGO bunker and heavy cannon, all left with F.
+// Fixed stations: DCA fuse and heavy cannon, all left with F.
 assert.match(controlHints({ turret: true }), /fusée/);
 assert.match(controlHints({ station: 'dca' }), /Clic \/ Espace : obus.*fusée/);
-for (const station of ['bunker', 'antitank']) {
+for (const station of ['antitank']) {
   const text = controlHints({ station });
   assert.doesNotMatch(text, /fusée|parachute|sauter/);
   assert.match(text, /F : sortir/);
 }
-assert.match(controlHints({ station: 'bunker' }), /balles/);
 assert.match(controlHints({ station: 'antitank' }), /obus anti-matériel/);
 
 // Every seat of every vehicle has a dedicated, non-empty help and the right seat range.

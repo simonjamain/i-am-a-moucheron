@@ -1,4 +1,5 @@
 // Castor volant: tandem-rotor logistics helicopter (Meshy model, rotors split
+import { SENTRY } from '../src/ground-sentry.ts';
 // from the source mesh), one pilot and three passengers who all drop the
 // Castor constructions (except LEGO walls) straight below it, turned like it;
 // drops fall like the other purchases (now three times slower) and land on the
@@ -136,7 +137,7 @@ near(Math.hypot(tape.b[0] - tape.a[0], tape.b[1] - tape.a[1]), AIRDROP_TAPE, 1e-
 near((tape.a[0] + tape.b[0]) / 2, 1, 1e-12, 'tape centred');
 near(Math.atan2(-(tape.a[0] - tape.b[0]), -(tape.a[1] - tape.b[1])), yaw, 1e-9, 'tape heading');
 assert.equal(airdropCommand('sentry', { x: 1, z: 2, yaw }).angle, yaw);
-assert.deepEqual(AIRDROP_KINDS, ['sugar', 'sticky', 'sentry', 'bunker', 'antitank']);
+assert.deepEqual(AIRDROP_KINDS, ['sugar', 'sticky', 'sentry', 'antitank']);
 const desk = [-1.8, 1.6]; // office desk top at 0.90 m
 near(airdropSurface(OFFICE_SOLIDS, ...desk, 1.3), 0.9, 1e-6, 'desk top');
 near(airdropSurface(OFFICE_SOLIDS, ...desk, 0.5), 0, 1e-6, 'under the desk: floor');
@@ -190,7 +191,7 @@ assert.throws(
   /LEGO/,
 );
 let s = run(guest, { action: 'build', kind: 'sentry', a: [3, 3], request: 'air:sentry:1' });
-assert.equal(s.dollars, 100 - 9, 'paid when dropped');
+assert.equal(s.dollars, 100 - SENTRY.cost, 'paid when dropped');
 assert.equal(s.groundDefense.structures.length, 0, 'still falling');
 assert.equal(s.groundDefense.drops.length, 1);
 const drop = s.groundDefense.drops[0];
@@ -199,7 +200,7 @@ near(drop.angle, yaw, 1e-9, 'turned like the helicopter');
 near(drop.fromY, 0.6, 1e-9, 'falls from the helicopter');
 assert.equal(drop.landingY, airdropSurface(OFFICE_SOLIDS, 0.5, 0.3, 0.6));
 s = run(guest, { action: 'build', kind: 'sentry', a: [3, 3], request: 'air:sentry:1' });
-assert.equal(s.dollars, 91, 'retry not charged twice');
+assert.equal(s.dollars, 100 - SENTRY.cost, 'retry not charged twice');
 const fall = (drop.fromY - drop.landingY) / DELIVERY_SPEED;
 s = wait(fall * 1000 * 0.5);
 assert.equal(s.groundDefense.structures.length, 0, 'half way down');
@@ -213,14 +214,14 @@ near(sentry.angle, yaw, 1e-9, 'kept the heading');
 // Over a desk: lands on the desk top, out of reach of floor walkers.
 hover(desk[0], 1.3, desk[1]);
 for (const [kind, request] of [
-  ['bunker', 'air:bunker:1'],
+  ['antitank', 'air:antitank:1'],
   ['sticky', 'air:tape:1'],
 ])
   run(pilot, { action: 'build', kind, request });
 s = wait(10000);
-const bunker = s.groundDefense.structures.find((x) => x.kind === 'bunker');
-near(bunker.y, 0.9, 1e-6, 'bunker on the desk');
-const station = r.equipment.find((x) => x.kind === 'bunker');
+const heavy = s.groundDefense.structures.find((x) => x.kind === 'antitank');
+near(heavy.y, 0.9, 1e-6, 'heavy gun on the desk');
+const station = r.equipment.find((x) => x.kind === 'antitank');
 near(station.y, 0.9, 1e-6, 'its post too');
 assert.equal(navigationStructures(s.groundDefense.structures).length, 0, 'no floor blocking');
 assert.equal(
@@ -242,10 +243,10 @@ hover(-0.5, 0.5, -0.5);
 const cash = r.dollars;
 run(pilot, { action: 'build', kind: 'sentry', request: 'air:sentry:2' });
 run(guest, { action: 'build', kind: 'sentry', request: 'air:sentry:3' });
-near(r.dollars, cash - 18, 0.011, 'both drops paid');
+near(r.dollars, cash - 2 * SENTRY.cost, 0.011, 'both drops paid');
 s = wait(10000);
 // (Some fuel is bought meanwhile by the support service.)
-near(r.dollars, cash - 9, 0.3, 'taken spot refunded');
+near(r.dollars, cash - SENTRY.cost, 0.3, 'taken spot refunded');
 assert.equal(
   s.groundDefense.structures.filter(
     (x) => x.kind === 'sentry' && x.position[0] === -0.5 && x.position[1] === -0.5,
