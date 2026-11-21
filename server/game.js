@@ -2325,10 +2325,14 @@ export class Game {
     );
     const now = this.now(),
       profile = HEAVY[shot.weapon],
+      // A piercing shell reports each enemy it crosses while it flies on.
+      partial = shot.weapon === 'ap' && b.partial === true,
       // The shooter's report is trusted as is (cooperative game, no cheat control).
       amount = (n) => (Number.isFinite(n) ? Math.max(0, n) : 0);
-    r.ordnance = r.ordnance.filter((s) => s !== shot);
-    this.endOrdnance(r, shot, now);
+    if (!partial) {
+      r.ordnance = r.ordnance.filter((s) => s !== shot);
+      this.endOrdnance(r, shot, now);
+    }
     r.effects.push({
       id: ++r.effectSeq,
       kind: shot.weapon === 'ap' ? 'piercing' : 'blast',
