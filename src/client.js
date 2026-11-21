@@ -165,7 +165,14 @@ import { howitzerMuzzle } from '/howitzer-geometry.js';
 import { RECONNECT_AFTER_MS, RECONNECT_WINDOW_MS } from '/udp-protocol.js';
 import { HoldZoom, advanceFuse, contextKey, rangeReadout } from '/equipment-controls.js';
 import { formatDistance, formatSpeed } from '/units.js';
-import { HEAVY, TANK_GUN_MAX_PITCH, TANK_MG, availableShell, heavyInterval } from '/armament.js';
+import {
+  CASTOR_GUN_DAMAGE,
+  HEAVY,
+  TANK_GUN_MAX_PITCH,
+  TANK_MG,
+  availableShell,
+  heavyInterval,
+} from '/armament.js';
 import { loadRapier } from '/physics-world.js';
 import { CastorRig } from '/castor-physics.js';
 import { TankRig } from '/tank-physics.js';
@@ -4146,7 +4153,7 @@ function bullet(pos, dir, color = TRACER_COLOR, owned = false, aa = false, muzzl
       weapon: currentAmmoKey(),
       baseDamage:
         myVehicle.type === 'castor'
-          ? 20
+          ? CASTOR_GUN_DAMAGE
           : myVehicle.type === 'tank'
             ? TANK_MG[currentAmmoKey()].damage
             : 75,

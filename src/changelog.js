@@ -1,10 +1,18 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
-    version: 396,
+    version: 397,
     changes: [
       'Plus de ronds au sol : on monte dans tous les engins en visant le poste (verrière, tourelle, trappe).',
       'DCA fixes, canon anti-matériel et lits s’utilisent aussi en les visant, puis clic ou E.',
+    ],
+  },
+  {
+    version: 396,
+    changes: [
+      'Char moyen : la mitrailleuse du pilote tire plus fort et l’obus explosif frappe bien plus fort, sur 20 m.',
+      'L’obus perforant du char traverse maintenant tous les ennemis sur sa route.',
+      'Le camion anti-aérien explose aussi large que le flak léger ; la mitrailleuse du Castor fait deux fois plus de dégâts.',
     ],
   },
   {

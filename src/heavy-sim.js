@@ -66,7 +66,8 @@ export function stepHeavy(projectile, end, world) {
         (key, i) => box.max[key] >= lower[i] - 0.001 && box.min[key] <= upper[i] + 0.001,
       ),
   );
-  let impact = null;
+  let impact = null,
+    lastFrames = [];
   while (projectile.updated < end && !projectile.done) {
     const dt = Math.min(1 / 120, (end - projectile.updated) / 1000);
     if (projectile.weapon === 'missile') {
@@ -91,12 +92,21 @@ export function stepHeavy(projectile, end, world) {
     for (const solid of nearbySolids) consider(segmentBox(a, b, solid), { solid: true });
     if (b[1] <= 0) consider(a[1] / Math.max(1e-12, a[1] - b[1]), { solid: true });
     const frames = world.frames(projectile.updated, projectile);
+    lastFrames = frames;
     for (let i = 0; i < frames.length; i++) {
       if (!frames[i] || world.killed(i)) continue;
       const radius = enemyRadius(world.roster[i]);
       // Cheap swept-AABB rejection before the exact segment/sphere calculation.
       if (!sweptSphereMayTouch(a, b, frames[i].p, radius)) continue;
-      consider(segmentSphere(a, b, frames[i].p, radius), { enemy: i });
+      const t = segmentSphere(a, b, frames[i].p, radius);
+      // The armour-piercing shell goes through enemies: it only notes them
+      // (once each, where they stood) and flies on until a wall or a vehicle.
+      if (projectile.weapon === 'ap') {
+        if (t !== null && t >= 0 && t <= 1) {
+          projectile.pierced ??= {};
+          projectile.pierced[i] ??= frames[i].p;
+        }
+      } else consider(t, { enemy: i });
     }
     for (const v of world.vehicles)
       if (v.id !== projectile.vehicle && v.state.hp > 0)
@@ -119,6 +129,9 @@ export function stepHeavy(projectile, end, world) {
     projectile.updated >= projectile.at + profile.lifetime * 1000
   )
     projectile.done = true;
+  // A piercing shell that ends in the air (lifetime) still delivers its hits.
+  if (!impact && projectile.done && projectile.weapon === 'ap' && projectile.pierced)
+    impact = { hit: {}, point: projectile.p, frames: lastFrames };
   return impact;
 }
 
@@ -245,7 +258,9 @@ export function heavyImpact(projectile, hit, frames, point, world) {
     report.enemies.push([index, amount, frames[index]?.p || null]);
   };
   if (weapon === 'ap') {
-    if (hit.enemy !== undefined) enemy(hit.enemy, profile.damage * projectile.bonus);
+    for (const [index, position] of Object.entries(projectile.pierced || {}))
+      if (world.roster[index] && !world.killed(Number(index)))
+        report.enemies.push([Number(index), profile.damage * projectile.bonus, position]);
     if (hit.vehicle) report.vehicles.push([hit.vehicle, profile.damage * projectile.bonus]);
     if (hit.player) report.kills.push(hit.player);
     return report;
