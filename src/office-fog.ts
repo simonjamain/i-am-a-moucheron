@@ -10,8 +10,11 @@ export interface FogBounds {
   ceiling: number;
 }
 export const OFFICE_DISTANCE_FOG = 0.018;
-export const FOG_START_RATIO = 0.75;
-export const OFFICE_CLOUD_TOP = 2.95;
+/** Altitude where the haze begins: air routes stay below it (test-layouts). */
+export const OFFICE_FOG_START = 2.2125;
+/** Top of the cloud layer: the top of the office walls (layouts.ts WALL_HEIGHT). */
+export const OFFICE_CLOUD_TOP = 2.7;
+export const FOG_START_RATIO = OFFICE_FOG_START / OFFICE_CLOUD_TOP;
 export function officeFogOpacity(height: number, cloudTop: number = OFFICE_CLOUD_TOP): number {
   const t = Math.max(
     0,

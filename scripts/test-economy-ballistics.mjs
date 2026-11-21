@@ -40,18 +40,19 @@ assert.equal(toggleParachute(falling), false);
 const scene = new T.Scene(),
   graphics = createGraphics(T, scene),
   office = createOffice(T, scene, { ...graphics, textLabel: () => new T.Group() });
-assert.ok(supportedPlacement({ x: -1.5, y: 0.90005, z: 1.4 }, office.colliders));
+assert.ok(supportedPlacement({ x: -2.5, y: 0.74005, z: 1.5 }, office.colliders), 'on a desk top');
 assert.equal(
   supportedPlacement({ x: 0, y: 2, z: 0 }, office.colliders),
   null,
   'no floating installations',
 );
+// Archive boxes of the office pack (0.28 m high), next to the photocopier.
 const cartons = office.colliders.filter(
-  (b) => Math.abs(b.max.y - 0.5) < 0.01 && b.max.x - b.min.x < 1,
+  (b) => Math.abs(b.max.y - 0.275) < 0.01 && b.max.x - b.min.x < 1,
 );
 assert.ok(cartons.length);
 assert.ok(
-  supportedPlacement({ x: 2.4, y: 0.50005, z: 0.2 }, office.colliders),
+  supportedPlacement({ x: 2.75, y: 0.27505, z: 0.2 }, office.colliders),
   'cartons support a whole gun base',
 );
 const fx = new CombatEffects(T, scene);

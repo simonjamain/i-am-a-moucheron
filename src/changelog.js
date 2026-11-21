@@ -1,6 +1,14 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 401,
+    changes: [
+      'Nouveau décor : vrais meubles de bureau, écrans, cuisine, porte et désordre sur les bureaux, dans tous les plans.',
+      'Le plan Diagonale devient un bureau complet. Bouches d’aération et trous de souris sont collés aux murs.',
+      'Bureaux plus bas (0,74 m) : la corbeille du plan « Corbeille sur le bureau » s’atteint par-dessous.',
+    ],
+  },
+  {
     version: 400,
     changes: [
       'Missiles guidés de l’hélicoptère : explosion bien plus puissante, qui touche jusqu’à 30 m autour.',

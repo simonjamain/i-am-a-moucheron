@@ -120,6 +120,7 @@ export const SUITE = [
   'test-wave-forecast-ui',
   'test-ground-paths',
   'test-layouts',
+  'test-office-pack',
   'test-pheromone-trail',
   'test-enemy-bestiary',
   'test-enemy-speeds',

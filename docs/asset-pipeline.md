@@ -644,3 +644,38 @@ Les quatre manchons de la DCA haute cadence suivent les tubes en élévation.
 Le découpage inclut les deux manchons supérieurs, situés plus en arrière.
 
 La culasse du Flak lourd fait partie du groupe inclinable avec le tube.
+
+## Cartoon Office Pack (BloxBits)
+
+Décor du bureau depuis la version 401 : **Cartoon Office Pack**, édition Extra, de
+BloxBits (<https://bloxbits.itch.io/cartoon-office-pack>), acheté par le propriétaire
+du projet. Ce n'est pas un modèle Meshy : la règle de validation Meshy ne s'applique
+pas, mais la même discipline de provenance oui.
+
+- **Licence** : usage autorisé dans le jeu et modifications permises ; revente et
+  redistribution des fichiers interdites. D'où [`src/office-pack-LICENSE.md`](../src/office-pack-LICENSE.md)
+  à côté du module généré : modèles réservés à ce jeu, aucune licence du dépôt ne s'y
+  applique. Les fichiers d'origine (FBX, GLB complet) restent **hors de Git**.
+- **Source** : le GLB converti depuis le FBX du pack (même géométrie, triangle pour
+  triangle ; le GLB embarque en plus l'atlas 1024 px), à déposer dans
+  `assets/originals/office-pack/Cartoon_Office_Pack_Extra_All.glb` (SHA-256
+  `5de660c5…3aab`, vérifié par le script). 179 objets, une seule texture.
+- **Import** : `python3 scripts/import-office-pack.py <source.glb>` écrit
+  `src/office-pack-data.js` (géométrie quantifiée à 0,5 mm, UV et indices, atlas PNG
+  d'origine ; triangles soudés par position et UV) et `src/office-pack-catalog.ts`
+  (bornes et triangles par modèle, données pures pour le serveur et les plans).
+- **Repère et échelle** : Y vers le haut, mètres, origine du modèle conservée (centre
+  au sol pour les meubles, dos pour les objets muraux) ; face avant vers +X. Échelle
+  uniforme : un module de mur (5,4 unités du pack) vaut exactement 1,2 m, donc
+  2,7 m de haut ; aucune déformation.
+- **Seulement ce qui sert** : `MODELS` liste les objets placés par les plans (67 en
+  version 401, 66 460 triangles, 2,2 Mo de module, environ 0,9 Mo compressé) ;
+  `test-office-pack.mjs` refuse un modèle importé inutilisé. Pour en utiliser un
+  autre, l'ajouter à la liste et relancer l'import avec la source.
+- **Rendu** : un `InstancedMesh` par modèle, un seul matériau (l'atlas) pour tout le
+  pack, ombres portées et reçues ([plans](office-layouts.md#décor--le-cartoon-office-pack)).
+- **Mesures** (plan `diagonale`, rendu logiciel SwiftShader 1280 × 720, même scénario
+  avant/après) : appels de dessin 78 → 53, triangles 6 300 → 81 000, temps d'image du
+  rendu toon logiciel 180 → 370 ms, construction de la scène 9 → 190 ms (une fois,
+  décodage du module). Le rendu logiciel n'est pas représentatif d'un GPU réel, où
+  80 000 triangles restent modestes ; à confirmer en partie.

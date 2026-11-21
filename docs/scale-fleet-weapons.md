@@ -5,7 +5,7 @@ Le [chasseur et le bombardier biplans](biplane-models.md) (M1 et B3 depuis la ve
 `src/scale.ts` is the only miniature-ratio declaration. `MAPS.office` is 3/1000;
 `MAPS.purgatory` is 1/1. A designer can use `mapScale(1,1000)`, `(2,1000)` or
 `(100,1000)`. The world and office furniture use SI metres. Actor reference
-metres are multiplied by the map ratio. The office desk surface is 0.9 m;
+metres are multiplied by the map ratio. The office desk surface is 0.74 m (office pack desk);
 the human mesh is calibrated to 1.8 reference metres, hence 5.4 mm here.
 `ACTOR_UNIT` converts the retained aircraft mesh's 5.6-unit wingspan to a
 10.4-reference-metre fighter. The independent insect reference body is 0.9 m.
