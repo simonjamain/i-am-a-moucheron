@@ -40,8 +40,7 @@ assert.equal(vehiclePad('helicopter').hp, 200);
 assert.deepEqual(fullAmmo('helicopter'), { rocket: 30, missile: 10, copilot: 1000 });
 assert.deepEqual(fullAmmo('flaktruck'), { proximity: 100 });
 assert.equal(HEAVY.proximity.speed, MAP.metres(REFERENCE.shell * 0.7));
-assert.equal(HEAVY.proximity.radius, MAP.metres(FLAK.radius));
-assert.equal(HEAVY.rocket.radius, HEAVY.he.radius);
+assert.equal(HEAVY.proximity.radius, MAP.metres(FLAK.lightRadius), 'same blast as the light flak');
 assert.equal(HEAVY.missile.damage, 80);
 for (const type of ['helicopter', 'flaktruck']) {
   const state = vehiclePad(type);

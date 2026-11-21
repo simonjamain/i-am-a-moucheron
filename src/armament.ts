@@ -26,11 +26,12 @@ export const HEAVY = Object.freeze({
     speed: MAP.metres(100),
     lifetime: 10,
   },
+  // Mobile AA shell: same blast as the fixed light flak, only the rate differs.
   proximity: {
     interval: 0.8,
     damage: 80,
     edge: 20,
-    radius: MAP.metres(FLAK.radius),
+    radius: MAP.metres(FLAK.lightRadius),
     speed: MAP.metres(REFERENCE.shell * 0.7),
     lifetime: 6,
   },
@@ -45,14 +46,14 @@ export const HEAVY = Object.freeze({
   bomb: { interval: 0.5, damage: 240, edge: 60, radius: MAP.metres(20), speed: 0, lifetime: 35 },
   he: {
     interval: 2,
-    damage: 120,
+    damage: 320,
     edge: 30,
-    radius: MAP.metres(12),
+    radius: MAP.metres(20),
     speed: MAP.metres(320),
     // Long enough to cross the whole office (issue #103); walls still stop it.
     lifetime: 13,
   },
-  ap: { interval: 2, damage: 320, edge: 0, radius: 0, speed: MAP.metres(600), lifetime: 8 },
+  ap: { interval: 2, damage: 800, edge: 0, radius: 0, speed: MAP.metres(600), lifetime: 8 },
   // Fixed anti-materiel howitzer (#113): ballistic like the tank shells, faster
   // than both, more damage than HE on a small 5 m blast.
   antitank: {
@@ -72,10 +73,12 @@ const HEAVY_BY_NAME: Readonly<Record<string, HeavyWeapon | undefined>> = HEAVY;
 export const TANK_GUN_MAX_PITCH = (30 * Math.PI) / 180;
 
 export const TANK_MG = Object.freeze({
-  pilot: { interval: 0.09, damage: 25 },
+  pilot: { interval: 0.09, damage: 33 },
   top: { interval: 0.06, damage: 75 },
   coax: { interval: 0.06, damage: 50 },
 });
+/** Damage per bullet of the Castor driver's machine gun. */
+export const CASTOR_GUN_DAMAGE = 40;
 export type Shell = 'he' | 'ap';
 export function availableShell(
   ammo: Partial<Record<string, number>>,

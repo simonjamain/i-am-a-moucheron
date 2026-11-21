@@ -1,6 +1,14 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 395,
+    changes: [
+      'Char moyen : la mitrailleuse du pilote tire plus fort et l’obus explosif frappe bien plus fort, sur 20 m.',
+      'L’obus perforant du char traverse maintenant tous les ennemis sur sa route.',
+      'Le camion anti-aérien explose aussi large que le flak léger ; la mitrailleuse du Castor fait deux fois plus de dégâts.',
+    ],
+  },
+  {
     version: 394,
     changes: [
       'Après une signature (montée à bord, changement de place), la souris est reprise tout de suite.',

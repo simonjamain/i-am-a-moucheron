@@ -55,11 +55,11 @@ Les changements de siège ne recréent aucune réserve.
 | Stuka, mitrailleuses         | 1 000   | 0,06 s           | 75                        |
 | Stuka, bombes                | 6       | 0,5 s            | 240 au centre, 60 au bord |
 | Bombardier, bombes du pilote | 50      | 0,5 s            | mêmes bombes              |
-| Tank, MG du pilote           | 1 000   | 0,09 s           | 25                        |
+| Tank, MG du pilote           | 1 000   | 0,09 s           | 33                        |
 | Tank, MG coaxiale            | 1 500   | 0,06 s           | 50                        |
 | Tank, MG supérieure          | 1 500   | 0,06 s           | 75                        |
-| Tank, obus HE                | 30      | 2 s              | 120 au centre, 30 au bord |
-| Tank, obus AP                | 30      | 2 s              | 320 sur la cible touchée  |
+| Tank, obus HE                | 30      | 2 s              | 320 au centre, 30 à 20 m  |
+| Tank, obus AP                | 30      | 2 s              | 800 par ennemi traversé   |
 
 Chaque MG du tank a 90 s de tir nominal ; chaque réserve d’obus a 60 s.
 HE et AP partagent le même délai de canon, empêchant de contourner ce délai en
@@ -76,8 +76,9 @@ Les bombes héritent de la vitesse de l’avion et subissent la gravité. Un piq
 dont la direction avant descend de plus de 0,65 applique un facteur **1,35** aux
 dégâts, soit 324 au centre : il permet notamment d’abattre un cafard de 300 PV
 avec une bombe bien placée. Le rayon d’une bombe Stuka est de 20 m de référence
-(0,060 m du décor), celui du gros bombardier de 40 m (0,120 m), celui d’un HE de 12 m (0,036 m). Les AP sont des projectiles
-directs sans dégâts de zone. Le décor bloque trajectoires et explosions.
+(0,060 m du décor), celui du gros bombardier de 40 m (0,120 m), celui d’un HE de 20 m (0,060 m). Les AP sont des projectiles
+perforants sans dégâts de zone : ils traversent les ennemis (800 chacun, une fois
+par ennemi) et ne s’arrêtent que sur le décor, un appareil ou un joueur. Le décor bloque trajectoires et explosions.
 
 Les stations habituelles rechargent toutes les réserves en dix secondes selon
 les mêmes conditions d’arrêt et d’appui au sol. Les niveaux fractionnaires sont

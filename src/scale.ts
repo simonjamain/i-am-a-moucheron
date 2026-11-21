@@ -81,9 +81,9 @@ export const FLAK = Object.freeze({
   maxRange: 1200,
   step: 25,
   range: 300,
-  // Blast of the proximity shell and of the missile; the light flak has its own.
+  // Blast of the missile; the light flak and the mobile AA shell share `lightRadius`.
   radius: 8,
-  // Blast radius of the light flak's shell (m), damage falling off to its edge.
+  // Blast radius of the light flak's and mobile AA's shell (m), damage falling off to its edge.
   lightRadius: 30,
 });
 
