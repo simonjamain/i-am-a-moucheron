@@ -52,6 +52,8 @@ remplir, signatures, tampons, cachets « APPROUVÉ ».
 - Il ne masque pas plus de scène que nécessaire ; le jeu continue derrière lui.
 - Un seul style de document pour tout le jeu (papier, typographie, tampons), défini par
   les jetons de l’interface.
+- Un document **tient entier à l’écran** : jamais de barre de défilement, il se compacte
+  sur les petits écrans. Il **ne grise pas** la scène derrière lui.
 - **Rien ne ressemble à un formulaire HTML** : pas de case, bouton radio ni bouton
   système visibles.
 - **Cocher** se fait au clic et laisse une coche manuscrite, au crayon ou au stylo,

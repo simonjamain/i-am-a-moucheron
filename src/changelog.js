@@ -1,6 +1,12 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 392,
+    changes: [
+      'Bon de commande plus lisible : montants alignés, cases carrées, plus de bouton Gommer ni de fond grisé.',
+    ],
+  },
+  {
     version: 391,
     changes: [
       'Le bon de commande devient une vraie feuille : cochez un motif au crayon, signez, et le tampon tombe.',

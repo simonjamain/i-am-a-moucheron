@@ -29,8 +29,23 @@ export class PurchaseUI extends BedUI {
       `Je commande ${SHOP[item].name} pour ${this.price} $. La caisse commune sera débitée une fois à la signature. Depuis un appareil, le colis descend sous parachute ; à pied, E posera cet objet sans autre paiement ni signature. Échap conserve l’achat pour reprise dans l’atelier pendant cette connexion ; une déconnexion prolongée rembourse les objets non posés, une remise à zéro les supprime. Le ministère ne rembourse pas les hésitations décoratives.`;
     const ledger = this.root.querySelector('[data-ledger]');
     const cash = this.snapshot().dollars;
-    if (ledger && Number.isFinite(cash))
-      ledger.textContent = `Caisse commune : ${money(cash)} · Prix : − ${money(this.price)} · Après signature : ${money(cash - this.price)}`;
+    if (ledger?.ownerDocument && Number.isFinite(cash)) {
+      const doc = ledger.ownerDocument;
+      ledger.replaceChildren(
+        ...[
+          ['Solde de la caisse commune', money(cash)],
+          ['Prix réglementaire', '− ' + money(this.price)],
+          ['Solde après signature', money(cash - this.price), 'total'],
+        ].flatMap(([label, value, kind]) => {
+          const dt = doc.createElement('dt'),
+            dd = doc.createElement('dd');
+          dt.textContent = label;
+          dd.textContent = value;
+          if (kind) dt.className = dd.className = kind;
+          return [dt, dd];
+        }),
+      );
+    }
     this.clauses = new ClauseSheet(
       PURCHASE_MOTIVES,
       this.root.querySelector('[data-clauses]'),
