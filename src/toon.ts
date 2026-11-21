@@ -6,6 +6,7 @@
 // ignored (the Laplacian of inverse depth vanishes on planes).
 import type * as THREE from 'three';
 import type { Three } from './types.ts';
+import { officeFogLayer } from './office-fog.ts';
 
 export const toonUniform = { value: 0 };
 let installed = false;
@@ -68,6 +69,17 @@ uniform float radius;
 uniform float logRange;
 uniform float threshold;
 uniform vec3 lineColor;
+// Fog of the scene, so that lines fade with the surface they outline:
+// 0 none, 1 office cloud layer (office-fog.ts), 2 linear, 3 exponential squared.
+uniform int fogMode;
+uniform float fogDensity;
+uniform float fogNear;
+uniform float fogFar;
+uniform float fogStart;
+uniform float fogThickness;
+uniform vec2 focal;
+uniform mat4 cameraWorld;
+uniform vec3 eye;
 varying vec2 vUv;
 // Inverse view depth from the logarithmic depth buffer: d = log2(1 + w) / log2(far + 1).
 float inverseDepth( const in vec2 uv ) {
@@ -78,13 +90,35 @@ void main() {
 	vec4 base = texture2D( tColor, vUv );
 	float centre = inverseDepth( vUv );
 	float strength = 0.0;
+	float nearest = centre;
 	for ( int i = 0; i < 4; i++ ) {
 		vec2 axis = i == 0 ? vec2( 1.0, 0.0 ) : i == 1 ? vec2( 0.0, 1.0 ) : i == 2 ? vec2( 0.7071, 0.7071 ) : vec2( 0.7071, -0.7071 );
 		vec2 step = axis * texel * radius;
-		float laplacian = ( inverseDepth( vUv + step ) + inverseDepth( vUv - step ) - 2.0 * centre ) / centre;
+		float a = inverseDepth( vUv + step ), b = inverseDepth( vUv - step );
+		float laplacian = ( a + b - 2.0 * centre ) / centre;
 		strength = max( strength, laplacian );
+		nearest = max( nearest, max( a, b ) );
 	}
 	float line = smoothstep( threshold, threshold * 2.0, strength );
+	// The line belongs to the nearest outlined surface: it takes that surface's fog.
+	if ( fogMode > 0 && line > 0.0 ) {
+		float depth = 1.0 / nearest;
+		vec2 ndc = vUv * 2.0 - 1.0;
+		vec3 world = ( cameraWorld * vec4( ndc.x * depth / focal.x, ndc.y * depth / focal.y, - depth, 1.0 ) ).xyz;
+		float fog;
+		if ( fogMode == 2 ) fog = smoothstep( fogNear, fogFar, depth );
+		else {
+			float optical = fogDensity * fogDensity * depth * depth;
+			if ( fogMode == 1 ) {
+				float fa = max( 0.0, eye.y - fogStart ), fb = max( 0.0, world.y - fogStart );
+				float dy = world.y - eye.y;
+				float average = abs( dy ) < 0.000001 ? fa / fogThickness : ( fb * fb - fa * fa ) / ( 2.0 * fogThickness * dy );
+				optical += max( 0.0, average ) * length( world - eye ) * 9.0;
+			}
+			fog = 1.0 - exp( - optical );
+		}
+		line *= 1.0 - fog;
+	}
 	gl_FragColor = vec4( mix( base.rgb, lineColor, line ), base.a );
 	// The sky is a clear colour, which a direct render never tone-maps.
 	vec3 sky = gl_FragColor.rgb;
@@ -112,6 +146,15 @@ interface OutlineUniforms {
   logRange: THREE.IUniform<number>;
   threshold: THREE.IUniform<number>;
   lineColor: THREE.IUniform<THREE.Color>;
+  fogMode: THREE.IUniform<number>;
+  fogDensity: THREE.IUniform<number>;
+  fogNear: THREE.IUniform<number>;
+  fogFar: THREE.IUniform<number>;
+  fogStart: THREE.IUniform<number>;
+  fogThickness: THREE.IUniform<number>;
+  focal: THREE.IUniform<THREE.Vector2>;
+  cameraWorld: THREE.IUniform<THREE.Matrix4>;
+  eye: THREE.IUniform<THREE.Vector3>;
 }
 
 export class OutlinePass {
@@ -136,6 +179,15 @@ export class OutlinePass {
         logRange: { value: 1 },
         threshold: { value: 0.1 },
         lineColor: { value: new T.Color(OUTLINE_COLOR) },
+        fogMode: { value: 0 },
+        fogDensity: { value: 0 },
+        fogNear: { value: 0 },
+        fogFar: { value: 1 },
+        fogStart: { value: 0 },
+        fogThickness: { value: 1 },
+        focal: { value: new T.Vector2(1, 1) },
+        cameraWorld: { value: new T.Matrix4() },
+        eye: { value: new T.Vector3() },
       },
       vertexShader,
       fragmentShader,
@@ -173,7 +225,29 @@ export class OutlinePass {
     uniforms.texel.value.set(1 / size.x, 1 / size.y);
     uniforms.radius.value = thickness * (size.y / 900);
     uniforms.logRange.value = Math.log2(camera.far + 1);
+    this.fog(scene, camera);
     renderer.render(this.scene, this.camera);
+  }
+  // Scene fog and camera, for the fading of lines (same formulas as materials).
+  fog(scene: THREE.Scene, camera: THREE.PerspectiveCamera): void {
+    const u = this.material.uniforms,
+      fog = scene.fog as (THREE.Fog & THREE.FogExp2) | null,
+      layer = officeFogLayer(this.T);
+    u.fogMode.value = !fog ? 0 : fog.isFog ? 2 : layer ? 1 : 3;
+    if (!fog) return;
+    if (fog.isFog) {
+      u.fogNear.value = fog.near;
+      u.fogFar.value = fog.far;
+    } else u.fogDensity.value = fog.density;
+    if (layer) {
+      u.fogStart.value = layer.start;
+      u.fogThickness.value = layer.thickness;
+    }
+    const p = camera.projectionMatrix.elements;
+    u.focal.value.set(p[0], p[5]);
+    camera.updateMatrixWorld();
+    u.cameraWorld.value.copy(camera.matrixWorld);
+    u.eye.value.setFromMatrixPosition(camera.matrixWorld);
   }
   dispose(): void {
     this.target?.dispose();

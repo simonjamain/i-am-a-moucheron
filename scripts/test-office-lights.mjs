@@ -9,6 +9,8 @@ import { officeLamps, bakeOfficeShadows, LAMP_LOOK } from '../src/office-lights.
 import { OFFICE_CLOUD_TOP, OFFICE_FOG_START } from '../src/office-fog.ts';
 import { createGraphics } from '../src/graphics.js';
 import { createOffice } from '../src/office.js';
+import { GLOW_INTENSITY } from '../src/office-pack.ts';
+import { OFFICE_MODELS } from '../src/office-pack-catalog.ts';
 
 const diagonale = LAYOUTS.find((l) => l.id === 'diagonale');
 const lamps = officeLamps(diagonale.props);
@@ -53,6 +55,23 @@ for (const c of cones) {
   assert.equal(c.target.parent, office.root);
 }
 assert.equal(lights(office.root, (o) => o.isPointLight).length, 1, 'one desk lamp');
+// The fans' globes are lit: a second, emissive material on their atlas glass.
+const fanMesh = office.root.children.find((o) => o.name === 'office-prop-Ceiling_Fan');
+const [plain, glow] = fanMesh.material;
+assert.ok(!plain.emissiveMap && glow.emissiveMap === glow.map, 'glowing glass only');
+assert.equal(glow.emissiveIntensity, GLOW_INTENSITY);
+assert.equal('#' + glow.emissive.getHexString(), LAMP_LOOK.fan.color);
+const groups = fanMesh.geometry.groups;
+assert.deepEqual(
+  groups.map((g) => g.materialIndex),
+  [0, 1],
+);
+assert.ok(groups[1].count >= 60, 'the globe has its triangles');
+assert.equal(
+  groups[0].count + groups[1].count,
+  OFFICE_MODELS.Ceiling_Fan.triangles * 3,
+  'no triangle lost',
+);
 // Lamp-lit room: dim sky, sun from above (landing shadows under the movers).
 assert.equal(sky.intensity, LAMP_LOOK.sky.intensity);
 assert.equal(sun.intensity, LAMP_LOOK.sun.intensity);
