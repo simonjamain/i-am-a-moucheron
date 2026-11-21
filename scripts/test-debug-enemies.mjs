@@ -289,6 +289,33 @@ assert.equal(bubble.geometry.parameters.radius, SENTRY_RULES.range);
 assert.deepEqual(bubble.position.toArray(), [1, 0.925, 2], 'centre used by the turret');
 tools.showRanges([{ kind: 'sentry', id: '1', position: [1, 2] }], false);
 assert.equal(tools.ranges.children.length, 0);
+// Collision volumes: every box drawn as faces + 12 edges, rebuilt on change only.
+const boxes = [
+  new T.Box3(new T.Vector3(-1, 0, -1), new T.Vector3(1, 0.74, 1)),
+  new T.Box3(new T.Vector3(2, 0, 2), new T.Vector3(2.5, 1.8, 2.4)),
+];
+tools.showColliders(boxes, true);
+const [faces, edges] = tools.colliders.children;
+assert.equal(faces.count, 2);
+assert.ok(faces.material.transparent && faces.material.opacity < 0.3, 'faint faces');
+assert.equal(edges.geometry.attributes.position.count, 2 * 24, '12 edges per box');
+const fm = new T.Matrix4();
+faces.getMatrixAt(1, fm);
+assert.deepEqual(
+  new T.Box3(new T.Vector3(-0.5, -0.5, -0.5), new T.Vector3(0.5, 0.5, 0.5))
+    .applyMatrix4(fm)
+    .min.toArray()
+    .map((v) => +v.toFixed(6)),
+  [2, 0, 2],
+  'face box = collider',
+);
+tools.showColliders(boxes, true);
+assert.equal(tools.colliders.children[0], faces, 'unchanged colliders: no rebuild');
+boxes.push(new T.Box3(new T.Vector3(0, 0, 0), new T.Vector3(0.1, 0.1, 0.1)));
+tools.showColliders(boxes, true);
+assert.equal(tools.colliders.children[0].count, 3, 'new collider shown');
+tools.showColliders(boxes, false);
+assert.equal(tools.colliders.children.length, 0, 'hidden outside debug mode');
 console.log(
-  'PASS: debug shop columns, placement, damage readout, hit volumes, treadmill and ranges.',
+  'PASS: debug shop columns, placement, damage readout, hit volumes, treadmill, ranges and collision volumes.',
 );

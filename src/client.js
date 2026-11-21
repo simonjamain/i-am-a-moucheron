@@ -6415,13 +6415,15 @@ const debugTools = new DebugTools({
   symbols: speciesSymbols,
   sentryRange: SENTRY.range,
 });
-// Debug mode: placement marker, hit volumes, turret and sugar ranges, dummy damage.
+// Debug mode: placement marker, hit volumes, turret and sugar ranges, collision
+// volumes of the room, dummy damage.
 function updateDebugTools() {
   const on = joined && !!snap?.lab?.enabled;
   if (debugTools.active && !on) debugTools.cancel();
   else if (debugTools.active) debugTools.render();
   debugTools.showHitboxes(insects.values(), on);
   debugTools.showRanges(snap?.groundDefense?.structures, on);
+  debugTools.showColliders(colliders, on);
   if (snap)
     debugTools.showDummyDamage(
       on ? insects : new Map(),

@@ -8,6 +8,11 @@ Le bouton **Debug : OFF / Debug : ON** (en haut à droite) est disponible dans c
 - **Caisse illimitée** : la caisse est réapprovisionnée à 1 milliard de dollars à chaque traitement serveur ; le HUD indique « ∞ ». Achats, poses, réparations et services restent soumis à leurs signatures, validations et limites physiques.
 - **Aucun dégât de chute** : les impacts au sol (`fall-impact`) sont ignorés.
 - **Défaite impossible** : la poubelle continue de compter ses dégâts (`infestation`), mais la fin de vague ouvre toujours la préparation suivante. Le HUD affiche les PV restants de la poubelle, même négatifs.
+- **Volumes de collision** (version 404) : chaque boîte de collision de la pièce
+  (murs, sol, meubles, ventilateurs, constructions posées) est dessinée en fil de
+  fer cyan sur des faces teintées à 12 % d'opacité (`showColliders`,
+  `src/debug-tools.ts`). Ce sont exactement les boîtes testées par les avions et
+  les tirs ; l'affichage se refait quand elles changent.
 
 ## Tester les ennemis (version 320)
 

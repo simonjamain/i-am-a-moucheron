@@ -4,7 +4,9 @@
 //  - placement mode: aim, click (or E) to place one enemy, Échap to stop;
 //  - the last damage taken by each dummy, in large print above it;
 //  - every enemy's hit volume (wireframe), always on;
-//  - turret (sphere + floor circle) and sugar (floor circle) ranges.
+//  - turret (sphere + floor circle) and sugar (floor circle) ranges;
+//  - every collision volume of the room (walls, furniture, fans, built
+//    structures): wireframe edges over faintly tinted boxes.
 // The server stays authoritative (labCommand 'place' / 'clear-dummies').
 import type * as THREE from 'three';
 import { DEBUG_ENEMY_TYPES, type DebugEnemyKind } from './debug-enemies.ts';
@@ -52,6 +54,8 @@ export interface DebugToolsOptions {
   symbols: Readonly<Record<string, string>>;
   sentryRange: number;
 }
+/** Colour of the room's collision volumes in debug mode (cyan, unlike hit volumes). */
+export const COLLIDER_COLOR = 0x46d2ff;
 /** Hover distance of a placed flyer in front of the camera, in metres. */
 export const FLYER_HOVER_DISTANCE = 0.1;
 /** Window of the cumulated damage shown under a dummy's last hit. */
@@ -107,6 +111,8 @@ export class DebugTools {
   hitboxes: THREE.InstancedMesh;
   ranges: THREE.Group;
   rangeKey = '';
+  colliders: THREE.Group;
+  colliderKey = '';
   labels = new Map<number, Label>();
   labelWave = -1;
   matrix: THREE.Matrix4;
@@ -135,7 +141,9 @@ export class DebugTools {
     document.body.append(this.status);
     this.hitboxes = this.hitboxMesh(64);
     this.ranges = new T.Group();
-    scene.add(this.marker, this.hitboxes, this.ranges);
+    this.colliders = new T.Group();
+    this.colliders.name = 'debug-colliders';
+    scene.add(this.marker, this.hitboxes, this.ranges, this.colliders);
   }
   hitboxMesh(capacity: number): THREE.InstancedMesh {
     const T = this.T;
@@ -309,6 +317,65 @@ export class DebugTools {
     }
     this.hitboxes.count = n;
     this.hitboxes.instanceMatrix.needsUpdate = true;
+  }
+
+  // Collision volumes (axis-aligned boxes): one batch of edges and one of faces.
+  showColliders(boxes: readonly THREE.Box3[], enabled: boolean): void {
+    const T = this.T;
+    let key = '';
+    if (enabled) {
+      let sum = 0;
+      for (const b of boxes)
+        sum += b.min.x + 3 * b.min.y + 7 * b.min.z + 11 * b.max.x + 13 * b.max.y + 17 * b.max.z;
+      key = boxes.length + ':' + sum.toFixed(5);
+    }
+    if (key === this.colliderKey) return;
+    this.colliderKey = key;
+    for (const child of [...this.colliders.children]) {
+      child.removeFromParent();
+      const mesh = child as THREE.Mesh;
+      mesh.geometry.dispose();
+      (mesh.material as THREE.Material).dispose();
+      (mesh as unknown as THREE.InstancedMesh).dispose?.();
+    }
+    if (!enabled || !boxes.length) return;
+    const color = COLLIDER_COLOR;
+    const faces = new T.InstancedMesh(
+      new T.BoxGeometry(1, 1, 1),
+      new T.MeshBasicMaterial({ color, transparent: true, opacity: 0.12, depthWrite: false }),
+      boxes.length,
+    );
+    const corners: number[] = [];
+    const size = new T.Vector3(),
+      centre = new T.Vector3(),
+      matrix = new T.Matrix4();
+    boxes.forEach((b, i) => {
+      b.getSize(size).max(new T.Vector3(1e-4, 1e-4, 1e-4));
+      b.getCenter(centre);
+      faces.setMatrixAt(i, matrix.makeScale(size.x, size.y, size.z).setPosition(centre));
+      const x = [b.min.x, b.max.x],
+        y = [b.min.y, b.max.y],
+        z = [b.min.z, b.max.z];
+      for (const j of [0, 1])
+        for (const k of [0, 1]) {
+          corners.push(x[0], y[j], z[k], x[1], y[j], z[k]);
+          corners.push(x[j], y[0], z[k], x[j], y[1], z[k]);
+          corners.push(x[j], y[k], z[0], x[j], y[k], z[1]);
+        }
+    });
+    faces.instanceMatrix.needsUpdate = true;
+    const geometry = new T.BufferGeometry();
+    geometry.setAttribute('position', new T.Float32BufferAttribute(corners, 3));
+    const edges = new T.LineSegments(
+      geometry,
+      new T.LineBasicMaterial({ color, transparent: true, opacity: 0.9 }),
+    );
+    for (const o of [faces, edges]) {
+      o.userData.projectileSolid = false;
+      o.frustumCulled = false;
+      o.renderOrder = 10;
+    }
+    this.colliders.add(faces, edges);
   }
 
   // Turret range (sphere + circle at its base) and sugar attraction (circle).
