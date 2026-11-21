@@ -21,7 +21,7 @@ flottant n’est réintroduit. Un changement d’équipage remplace les textures
 
 ## Signer
 
-Les documents ne se déchirent plus (option retirée en version 398 : elle ne servait
+Les documents ne se déchirent plus (option retirée en version 399 : elle ne servait
 plus à rien). Fermer un dossier et refuser un échange restent des actions distinctes.
 Les actions sont bloquées pendant un envoi ; après erreur, le document peut être traité
 de nouveau.

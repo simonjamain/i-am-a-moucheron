@@ -6015,6 +6015,27 @@ function showHeavyImpact(report) {
     }
   }
 }
+// Armour-piercing shell: each enemy crossed is hit and reported at once, the
+// shell flies on (it keeps 80 % of its damage per enemy, see stepHeavy).
+function flushPierces(projectile) {
+  const enemies = projectile.fresh;
+  if (!enemies?.length) return;
+  projectile.fresh = [];
+  const report = {
+    shot: projectile.shot,
+    weapon: 'ap',
+    partial: true,
+    kind: 'piercing',
+    p: enemies.at(-1)[2],
+    radius: 0,
+    enemies,
+    vehicles: [],
+    players: [],
+    kills: [],
+  };
+  showHeavyImpact(report);
+  action('heavy-impact', report);
+}
 function finishHeavy(projectile, impact, world) {
   if (projectile.weapon === 'missile') {
     predictedReloads.set(
@@ -6037,6 +6058,7 @@ function updateLocalHeavy() {
     world = heavyWorld();
   for (const projectile of [...localShots.values()]) {
     const impact = stepHeavy(projectile, now, world);
+    flushPierces(projectile);
     if (impact || projectile.done) finishHeavy(projectile, impact, world);
   }
 }
