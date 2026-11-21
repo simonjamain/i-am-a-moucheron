@@ -106,6 +106,8 @@ const files = {
       'castor-wheels',
       'castor-top-view',
       'entry-ring',
+      'seat-posts',
+      'post-highlight',
       'render-info',
       'service-zones',
       'station-model',

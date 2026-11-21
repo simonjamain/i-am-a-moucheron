@@ -1,9 +1,16 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
-    version: 384,
+    version: 385,
     changes: [
       'Nouvelle tourelle Gatling pour le Castor et le Castor volant : six canons qui tournent et un tir continu.',
+    ],
+  },
+  {
+    version: 384,
+    changes: [
+      'Bombardier moyen : visez le poste voulu (cockpit ou tourelle) et cliquez pour monter, de n’importe quel côté.',
+      'Le poste visé s’entoure de bleu ; un poste occupé affiche le nom de son occupant.',
     ],
   },
   {

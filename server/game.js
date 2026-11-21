@@ -30,6 +30,7 @@ import {
   vehicleMaxHP,
   TRAILER_LIMITS,
 } from '../src/fleet.ts';
+import { pointBoarding } from '../src/seat-posts.ts';
 import { AIRDROP_KINDS, airdropCommand, airdropSurface, headingOf } from '../src/airdrop.ts';
 import { baseWorld, baseBody, reconcileBase } from '../src/base.js';
 import {
@@ -2091,7 +2092,9 @@ export class Game {
     const body = this.base(r, p, b.ground);
     requireGame(
       body && vehicleAccess(baseWorld(body), v, seat),
-      'Rejoignez le cercle de ce poste.',
+      pointBoarding(v.type)
+        ? 'Approchez-vous de cet appareil.'
+        : 'Rejoignez le cercle de ce poste.',
     );
     requireGame(VEHICLES[v.type].seats.includes(seat), 'Poste invalide.');
     requireGame(!v.seats.has(seat), 'Ce poste est occupé.');

@@ -80,7 +80,11 @@ par type initial est conservé ; dès son décollage, un successeur gratuit appa
 un tank, un hélicoptère biplace ou une DCA mobile, dont la destruction est définitive. Les sièges sont exclusifs.
 
 Chaque accès publié aux équipements, y compris une nouvelle entrée, passe par un
-cercle au sol et un dossier de deux documents obligatoires. La signature s’effectue à la souris
+cercle au sol et un dossier de deux documents obligatoires. Exception : le bombardier
+moyen n’a plus de cercles ; on vise directement le poste (cockpit, tourelle), qui
+s’entoure de bleu signal s’il est libre (ou d’un contour clair avec le nom de son
+occupant), et un clic ouvre son dossier, de n’importe quel côté de l’appareil
+([règles d’interface](ui-guidelines.md#monter-dans-un-engin--viser-le-poste)). La signature s’effectue à la souris
 ou au toucher et part automatiquement au relâchement d’un trait valide. Le tampon
 est immédiat ; la réponse serveur confirme le document et l’attribution du siège.
 L’archive locale empile les documents confirmés pendant la session, à travers les
