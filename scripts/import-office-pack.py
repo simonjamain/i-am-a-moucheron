@@ -47,6 +47,8 @@ MODELS = [
     'Paper_Crumpled', 'Paper_Crumpled_Pile', 'Paper_Crumpled_Yellow', 'Paper_Crumpled_Sheet',
     # On the walls
     'Wall_Clock', 'Wall_Calendar', 'Corkboard', 'Fire_Extinguisher', 'Wall_Outlet', 'Light_Switch',
+    # Hanging from the ceiling
+    'Ceiling_Light', 'Ceiling_Fan',
 ]
 COMPONENTS = {5126: ('f', 4), 5125: ('I', 4), 5123: ('H', 2), 5121: ('B', 1)}
 WIDTH = {'SCALAR': 1, 'VEC2': 2, 'VEC3': 3, 'VEC4': 4}
