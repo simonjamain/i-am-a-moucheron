@@ -155,10 +155,9 @@ const { runInNewContext } = await import('node:vm');
 const T = await import('../vendor/three.module.min.js');
 const { nearestInsectHit, nearestSolidHit } = await import('../src/insect-hits.ts');
 const src = readFileSync('src/client.js', 'utf8');
-const step = src.slice(
-  src.indexOf('function stepProjectileSlice('),
-  src.indexOf('// Fixed timestep flight:'),
-);
+const step =
+  src.slice(src.indexOf('const solidRayPoint ='), src.indexOf("let me = makePlane('#e3ebc0');")) +
+  src.slice(src.indexOf('function stepProjectileSlice('), src.indexOf('// Fixed timestep flight:'));
 for (const wall of [false, true]) {
   const scene = new T.Scene(),
     insects = new Map(),
@@ -189,7 +188,7 @@ for (const wall of [false, true]) {
     rayCollider,
     nearestSolidHit,
     projectileRay: new T.Raycaster(),
-    scratchPoint: new T.Vector3(),
+    office: { decor: null },
     solidTargets: () => [],
     scene,
     trails,

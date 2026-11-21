@@ -39,12 +39,13 @@ export function createOffice(T, scene, { box, cyl }) {
   for (const p of layoutPieces(layout)) {
     if (p.visible === false) {
       const b = pieceBounds(p);
-      colliders.push(
-        new T.Box3(
-          new T.Vector3(b.min.x, b.min.y, b.min.z),
-          new T.Vector3(b.max.x, b.max.y, b.max.z),
-        ),
+      const box = new T.Box3(
+        new T.Vector3(b.min.x, b.min.y, b.min.z),
+        new T.Vector3(b.max.x, b.max.y, b.max.z),
       );
+      // Box of a pack prop: rays use the prop's triangles instead (office.decor).
+      if (p.decor) box.decor = true;
+      colliders.push(box);
       continue;
     }
     let m;

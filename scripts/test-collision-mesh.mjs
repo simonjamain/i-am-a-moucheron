@@ -130,6 +130,45 @@ const body = decor.raycast([sx, 0.8, sz], inward, 3, copier);
 assert.ok(body && body.distance - 0.1 < 0.1, 'body above the slot');
 decor.dispose();
 
+// The client's rays (solidRayDistance, src/client.js): the pack props' boxes give
+// way to their triangles once the decor world is built; shell and floor stay boxes.
+const T = await import('../vendor/three.module.min.js');
+const { rayCollider } = await import('../src/oriented-collider.ts');
+const { createOffice } = await import('../src/office.js');
+const { createGraphics } = await import('../src/graphics.js');
+const { setActiveLayout } = await import('../src/layouts.ts');
+const { runInNewContext } = await import('node:vm');
+const { readFileSync } = await import('node:fs');
+setActiveLayout('diagonale');
+const scene = new T.Scene();
+const office = createOffice(T, scene, createGraphics(T, scene));
+const source = readFileSync('src/client.js', 'utf8');
+const helper = source.slice(
+  source.indexOf('const solidRayPoint ='),
+  source.indexOf("let me = makePlane('#e3ebc0');"),
+);
+const context = { T, rayCollider, office, colliders: office.colliders };
+runInNewContext(helper + ';this.solidRayDistance = solidRayDistance;', context);
+const { solidRayDistance } = context;
+assert.ok(office.colliders.some((b) => b.decor) && office.colliders.some((b) => !b.decor));
+const ray = (o, d) => new T.Ray(new T.Vector3(...o), new T.Vector3(...d).normalize());
+const cast = (o, d, far = 10) => solidRayDistance(ray(o, d), far);
+// Through the copier's paper slot: the box stopped it, the triangles do not.
+const slotOrigin = [sx, 0.7, sz];
+const before = cast(slotOrigin, inward);
+assert.equal(office.buildDecor(RAPIER), office.decor);
+const after = cast(slotOrigin, inward);
+assert.ok(before < 0.15 && after > 0.4, `copier slot: ${before} -> ${after}`);
+// Down onto a turned chair's seat, past the box around its backrest.
+const seatRay = [chair.frame.x, 2, chair.frame.z];
+assert.ok(Math.abs(2 - cast(seatRay, [0, -1, 0]) - seat.point[1]) < 1e-6, 'chair seat');
+// Shell walls and the floor are still boxes.
+assert.ok(Math.abs(cast([0, 1, 0], [0, -1, 0]) - 1) < 1e-9, 'floor');
+assert.ok(Math.abs(cast([2.5, 2.0, 0], [0, 0, -1]) - 3.6) < 1e-6, 'back wall face');
+assert.equal(cast([0, 3.5, 0], [0, 1, 0]), Infinity, 'nothing above the clouds');
+office.dispose();
+assert.equal(office.decor, null, 'decor world freed with the plan');
+
 console.log(
   `Collision meshes (Rapier): ${solids.length} props, ${decor.triangleCount} triangles, built in ${buildMs.toFixed(0)} ms, ray ${rayUs.toFixed(0)} µs; exact against brute force, turned props, paper proxies, copier slot open.`,
 );
