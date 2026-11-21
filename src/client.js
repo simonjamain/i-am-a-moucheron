@@ -130,6 +130,8 @@ import {
 } from '/control-focus.js';
 import { createRenderer } from '/renderer.js';
 import { makeEntryRing } from '/entry-ring.js';
+import { pointBoarding, SEAT_POSTS, pickPost } from '/seat-posts.js';
+import { PostHighlight, SIGNAL_COLOR, TAKEN_COLOR } from '/post-highlight.js';
 import { renderInfo } from '/render-info.js';
 import { createGraphics } from '/graphics.js';
 import { availableAppearance, turnToward, loadCharacter } from '/character-model.js';
@@ -438,7 +440,7 @@ function nearestVehicle() {
   const w = baseWorld(body);
   return (
     (snap?.vehicles || [])
-      .filter((v) => v.state.landed)
+      .filter((v) => v.state.landed && !pointBoarding(v.type))
       .flatMap((v) =>
         VEHICLES[v.type].seats
           .filter((seat) => !v.seats.some((s) => s.seat === seat) && vehicleAccess(w, v, seat))
@@ -950,8 +952,18 @@ addEventListener('pointermove', (event) => {
 });
 canvas.addEventListener('pointerleave', () => {
   mousePrevious = null;
+  aimMouse = null;
+});
+// Free-cursor position, for aiming at posts (updateAimedPost).
+let aimMouse = null;
+canvas.addEventListener('mousemove', (e) => {
+  aimMouse = [e.clientX, e.clientY];
 });
 canvas.addEventListener('mousedown', (event) => {
+  if (event.button === 0 && boardAimedPost()) {
+    event.preventDefault();
+    return;
+  }
   if (event.button === 1 && groundDefenseUI.openWheel()) {
     event.preventDefault();
     return;
@@ -3037,6 +3049,7 @@ function interactVehicle() {
     chooseEquipment(near.index);
     return;
   }
+  if (boardAimedPost()) return;
   openBoarding();
 }
 async function chooseEquipment(index) {
@@ -3600,7 +3613,7 @@ function updateBaseWorld(dt, now) {
     ring.visible = onFoot && !respawnAt && !myVehicle && turretIndex < 0;
   const visibleEntries = new Set();
   for (const vehicle of snap.vehicles || []) {
-    if (vehicle.state.hp <= 0 || !vehicle.state.landed) continue;
+    if (vehicle.state.hp <= 0 || !vehicle.state.landed || pointBoarding(vehicle.type)) continue;
     for (const seat of VEHICLES[vehicle.type].seats) {
       if (vehicle.seats.some((s) => s.seat === seat)) continue;
       const key = vehicle.id + ':' + seat;
@@ -3629,6 +3642,102 @@ function updateBaseWorld(dt, now) {
     groundCamera(camera, w, dt);
     renderPaper();
   }
+  updateAimedPost();
+}
+// Boarding by aiming at a post (src/seat-posts.ts, docs/ui-guidelines.md): the post
+// under the crosshair (or the free cursor) gets an outline, signal blue when free.
+let aimedPost = null,
+  shownPost = null;
+const postHighlights = new Map();
+const postRay = new T.Raycaster();
+function updateAimedPost() {
+  const body = selfBase();
+  let next = null;
+  if (
+    onFoot &&
+    !respawnAt &&
+    !myVehicle &&
+    turretIndex < 0 &&
+    body &&
+    !body.parachute &&
+    !boardingOpen &&
+    !boardingSelectionBusy &&
+    !bankUI.opened &&
+    !bedUI.opened &&
+    !purchaseUI.opened
+  ) {
+    const rect = canvas.getBoundingClientRect();
+    const free = document.pointerLockElement !== canvas && aimMouse;
+    camera.updateMatrixWorld();
+    postRay.setFromCamera(
+      new T.Vector2(
+        free ? ((aimMouse[0] - rect.left) / rect.width) * 2 - 1 : 0,
+        free ? 1 - ((aimMouse[1] - rect.top) / rect.height) * 2 : 0,
+      ),
+      camera,
+    );
+    const w = baseWorld(body),
+      origin = postRay.ray.origin.toArray(),
+      direction = postRay.ray.direction.toArray();
+    for (const v of snap?.vehicles || []) {
+      if (!pointBoarding(v.type) || !v.state.landed || !vehicleAccess(w, v)) continue;
+      const g = fleetModels.get(v.id);
+      if (!g) continue;
+      g.updateMatrixWorld(true);
+      const k = g.getWorldScale(new T.Vector3()).x;
+      const hit = pickPost(
+        origin,
+        direction,
+        SEAT_POSTS[v.type].map((post) => ({
+          seat: post.seat,
+          centre: g.localToWorld(new T.Vector3(...post.local)).toArray(),
+          radius: post.radius * k,
+        })),
+      );
+      if (!hit || (next && hit.distance >= next.distance)) continue;
+      // A post hidden behind the vehicle itself (a wing, the fuselage) is not aimed at.
+      const radius = SEAT_POSTS[v.type].find((post) => post.seat === hit.seat).radius * k;
+      const block = postRay.intersectObject(g, true)[0];
+      if (block && block.distance < hit.distance - radius * 0.5) continue;
+      next = { ...hit, vehicle: v };
+    }
+  }
+  const key = next ? next.vehicle.id + ':' + next.seat : null;
+  if (shownPost && shownPost !== key) postHighlights.get(shownPost)?.hide();
+  aimedPost = next;
+  shownPost = key;
+  const label = $('postLabel');
+  if (!next) {
+    label.hidden = true;
+    return;
+  }
+  let highlight = postHighlights.get(key);
+  if (!highlight) {
+    highlight = new PostHighlight(
+      T,
+      fleetModels.get(next.vehicle.id),
+      SEAT_POSTS[next.vehicle.type].find((post) => post.seat === next.seat),
+    );
+    postHighlights.set(key, highlight);
+  }
+  const occupant = next.vehicle.seats.find((s) => s.seat === next.seat);
+  highlight.show(occupant ? TAKEN_COLOR : SIGNAL_COLOR);
+  // A taken post names its occupant; a free post needs no text.
+  label.hidden = !occupant;
+  if (occupant) {
+    label.textContent = snap.pilots.find((p) => p.id === occupant.pilot)?.name || 'Occupé';
+    const free = document.pointerLockElement !== canvas && aimMouse;
+    label.style.left = (free ? aimMouse[0] : innerWidth / 2) + 'px';
+    label.style.top = (free ? aimMouse[1] : innerHeight / 2) + 'px';
+  }
+}
+/** Opens the boarding form of the aimed post when it is free; true when handled. */
+function boardAimedPost() {
+  if (!aimedPost || !onFoot || myVehicle || respawnAt) return false;
+  const { vehicle, seat } = aimedPost;
+  if (vehicle.seats.some((s) => s.seat === seat)) return false;
+  chooseVehicle({ ...vehicle, entrySeat: seat }, seat);
+  return true;
 }
 function currentRoster() {
   return snap?.roster || wavePlan(room, snap?.wave || 0, snap?.started || 0).roster;
@@ -4077,6 +4186,8 @@ function updateOthers(dt) {
       });
       fleetModels.delete(k);
       others.delete(k);
+      for (const key of [...postHighlights.keys()])
+        if (key.startsWith(k + ':')) postHighlights.delete(key);
     }
 }
 function bullet(pos, dir, color = TRACER_COLOR, owned = false, aa = false, muzzleNode = null) {

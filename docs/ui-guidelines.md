@@ -82,8 +82,11 @@ rond au sol : seul un objet réel est interactif, et l’engin s’aborde par to
   documents (« Mitrailleur ventral »). Les autres ronds (stations, lits, banque…)
   suivent le même principe : on vise l’objet.
 
-Premier engin concerné : le **bombardier moyen** (pilote, mitrailleurs dorsal, ventral et
-de queue).
+En jeu sur le **bombardier moyen** (pilote, mitrailleurs dorsal, ventral et de queue) :
+postes et zones de visée dans `src/seat-posts.ts`, contour dans `src/post-highlight.ts`.
+Le clic gauche, ou la touche d’interaction, sur le poste visé ouvre son dossier ; le
+serveur vérifie seulement que le joueur se tient près de l’appareil. Les autres engins
+gardent leurs ronds jusqu’à leur passage.
 
 ## Équipage : les fiches en T (à venir)
 
