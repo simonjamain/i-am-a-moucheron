@@ -1,6 +1,10 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 398,
+    changes: ['Les documents ne se déchirent plus : le bouton « Déchirer ce document » disparaît.'],
+  },
+  {
     version: 397,
     changes: [
       'Plus de ronds au sol : on monte dans tous les engins en visant le poste (verrière, tourelle, trappe).',

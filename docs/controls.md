@@ -71,8 +71,7 @@ Touches physiques Digit1–Digit7 ou panneau « Postes » : même contrat pour c
 échange. Espace au sol maintient un jet ; en chute, il garde le parachute. Le destinataire signe pour accepter ou utilise « Refuser l’échange ».
 Les commandes de mêlée et de KO sont retirées.
 
-Les formulaires proposent « Déchirer ce document ». Un document obligatoire est
-remplacé, sans annuler les signatures précédentes. Aucun contrat ne modifie les
+Les documents ne se déchirent plus. Aucun contrat ne modifie les
 commandes (annexes malicieuses retirées en version 264). Voir
 [logistique et contrats](logistics-contracts.md).
 

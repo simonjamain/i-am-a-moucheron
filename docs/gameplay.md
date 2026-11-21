@@ -249,8 +249,7 @@ bombardier. Les personnages distinguent chute libre, parachute et réception (0,
 ## Identification, contrats et ravitaillement
 
 Les appareils ont une teinte persistante et les pseudos de leur équipage inscrits
-sur la carrosserie. Déchirer un document fournit un nouvel exemplaire
-obligatoire. Les annexes malicieuses (clauses piégées) ont été retirées en
+sur la carrosserie. Les annexes malicieuses (clauses piégées) ont été retirées en
 version 264 : aucun contrat ne modifie plus commandes, visée, cadence ou dégâts.
 
 Les avions disposent de cinq minutes de carburant à plein gaz et d’environ une
