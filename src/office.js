@@ -8,6 +8,8 @@ import {
 import { activeLayout, layoutPieces, pieceBounds, LAYOUT_ROOM } from './layouts.ts';
 import { addOfficeProps } from './office-pack.ts';
 import { ROD } from './office-props.ts';
+import { propMeshSolids } from './office-collision.ts';
+import { MODEL_DATA } from './office-pack-data.js';
 // Draws the active layout (see layouts.ts): floor, blocking-out volumes, the
 // office pack models (walls, door, vents, bin, furniture and objects) and the
 // mouse holes. Everything goes into one group so a room's plan can be replaced
@@ -92,10 +94,14 @@ export function createOffice(T, scene, { box, cyl }) {
     } else hole.position.set(x, 0, -Z + face);
     root.add(hole);
   }
+  // Triangle colliders of the props (office-collision.ts): built here, used by
+  // the debug view for now; the box colliders above remain the game's solids.
+  const meshSolids = propMeshSolids(MODEL_DATA, layout.props);
   return {
     layout,
     root,
     colliders,
+    meshSolids,
     solidObjects,
     // Renders the lamps' shadows once, with the room alone (see office-lights.ts).
     bakeShadows: (renderer) => bakeOfficeShadows(T, renderer, root),

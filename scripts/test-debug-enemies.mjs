@@ -3,6 +3,8 @@
 // HP and speed and head for the bin (walkers on the floor, flyers through the
 // nearest corridor). Server rules, roster entries and routes
 // (src/debug-enemies.ts, server/game.js labCommand, src/routes.js).
+import { propMeshSolids } from '../src/office-collision.ts';
+import { MODEL_DATA } from '../src/office-pack-data.js';
 import { OFFICE_LAYOUT } from '../src/layout.ts';
 import assert from 'node:assert/strict';
 import { Game } from '../server/game.js';
@@ -183,7 +185,7 @@ console.log(
 // 6. Client tools (debug-tools.ts): shop columns, dummy damage readout,
 // hit-volume wireframes matching insect-hits.js, turret and sugar ranges.
 const T = await import('../vendor/three.module.min.js');
-const { DebugTools, DamageMeter, DAMAGE_WINDOW_S, formatDamage } =
+const { DebugTools, DamageMeter, DAMAGE_WINDOW_S, formatDamage, MESH_COLLIDER_COLOR } =
   await import('../src/debug-tools.ts');
 const { nearestInsectHit } = await import('../src/insect-hits.ts');
 const { WalkerBatch } = await import('../src/walker-batch.js');
@@ -314,7 +316,14 @@ assert.equal(tools.colliders.children[0], faces, 'unchanged colliders: no rebuil
 boxes.push(new T.Box3(new T.Vector3(0, 0, 0), new T.Vector3(0.1, 0.1, 0.1)));
 tools.showColliders(boxes, true);
 assert.equal(tools.colliders.children[0].count, 3, 'new collider shown');
-tools.showColliders(boxes, false);
+// Triangle colliders of the props: one batch of edges, three per triangle.
+const meshSolids = propMeshSolids(MODEL_DATA, [{ model: 'Mug', x: 0, y: 0.74, z: 0, yaw: 0 }]);
+tools.showColliders(boxes, true, meshSolids);
+const wire = tools.colliders.children.find(
+  (c) => c.material.color.getHex() === MESH_COLLIDER_COLOR,
+);
+assert.equal(wire.geometry.attributes.position.count, meshSolids[0].mesh.count * 6);
+tools.showColliders(boxes, false, meshSolids);
 assert.equal(tools.colliders.children.length, 0, 'hidden outside debug mode');
 console.log(
   'PASS: debug shop columns, placement, damage readout, hit volumes, treadmill, ranges and collision volumes.',

@@ -1,6 +1,12 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 406,
+    changes: [
+      'Mode debug : les vraies formes de collision des meubles s’affichent en jaune, en préparation de collisions fidèles.',
+    ],
+  },
+  {
     version: 405,
     changes: [
       'Les globes des ventilateurs sont allumés.',

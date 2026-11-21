@@ -6423,7 +6423,7 @@ function updateDebugTools() {
   else if (debugTools.active) debugTools.render();
   debugTools.showHitboxes(insects.values(), on);
   debugTools.showRanges(snap?.groundDefense?.structures, on);
-  debugTools.showColliders(colliders, on);
+  debugTools.showColliders(colliders, on, office.meshSolids);
   if (snap)
     debugTools.showDummyDamage(
       on ? insects : new Map(),

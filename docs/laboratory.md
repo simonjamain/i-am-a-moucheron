@@ -12,7 +12,9 @@ Le bouton **Debug : OFF / Debug : ON** (en haut à droite) est disponible dans c
   (murs, sol, meubles, ventilateurs, constructions posées) est dessinée en fil de
   fer cyan sur des faces teintées à 12 % d'opacité (`showColliders`,
   `src/debug-tools.ts`). Ce sont exactement les boîtes testées par les avions et
-  les tirs ; l'affichage se refait quand elles changent.
+  les tirs ; l'affichage se refait quand elles changent. Depuis la version 406, les triangles
+  de collision des objets du décor s'y ajoutent en fil de fer jaune
+  ([collisions en triangles](collisions.md)).
 
 ## Tester les ennemis (version 320)
 
