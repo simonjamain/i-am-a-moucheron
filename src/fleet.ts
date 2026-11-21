@@ -2,7 +2,7 @@ import { MAP, ACTOR_UNIT } from './scale.ts';
 import { OFFICE_LAYOUT } from './layout.ts';
 import type { FlightProfile } from './flight.ts';
 import type { Vec3, Vec3Like, XYZ } from './types.ts';
-import { pointBoarding, POST_REACH } from './seat-posts.ts';
+import { postReach } from './seat-posts.ts';
 
 /** Crew seats; display names in SEAT_NAMES. */
 export type SeatName =
@@ -337,20 +337,13 @@ export function vehicleEntry(v: VehicleRef, seat: string = 'pilot'): XYZ {
 export function vehicleAccess(
   body: BoardingBody | null | undefined,
   v: VehicleRef | null | undefined,
-  seat: string = 'pilot',
 ): boolean {
   if (!body || !v || body.parachute || v.state.hp <= 0) return false;
-  if (pointBoarding(v.type)) {
-    // Posts aimed at directly (src/seat-posts.ts): any side of the vehicle, within reach.
-    const p = v.state.p;
-    return (
-      Math.abs(body.y - (p[1] - VEHICLES[v.type].gear)) < MAP.metres(2) &&
-      Math.hypot(body.x - p[0], body.z - p[2]) < MAP.metres(VEHICLES[v.type].span / 2 + POST_REACH)
-    );
-  }
-  const e = vehicleEntry(v, seat);
+  // Posts aimed at directly (src/seat-posts.ts): any side of the vehicle, within reach.
+  const p = v.state.p;
   return (
-    Math.abs(body.y - e.y) < MAP.metres(2) && Math.hypot(body.x - e.x, body.z - e.z) < MAP.metres(3)
+    Math.abs(body.y - (p[1] - VEHICLES[v.type].gear)) < MAP.metres(2) &&
+    Math.hypot(body.x - p[0], body.z - p[2]) < MAP.metres(postReach(VEHICLES[v.type]))
   );
 }
 export function leftVehiclePad(v: VehicleRef): boolean {

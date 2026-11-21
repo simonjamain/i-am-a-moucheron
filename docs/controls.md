@@ -88,10 +88,9 @@ HE, Ctrl AP. Au tireur principal, clic gauche tire le canon et Espace la coaxial
 de la lunette vont de 15 cm à 9 m du bureau (l'autre bout de la pièce), échantillonnées sur la trajectoire réelle de l'obus choisi (HE/AP,
 même intégration que le serveur) ; obus HE 13 s et AP 8 s de vol maximal. Aux pilotes,
 clic gauche tire la MG et Espace maintenu largue les bombes disponibles toutes les
-0,5 s. B est supprimé. Les autres mitrailleurs et DCA gardent clic/Espace pour tirer. E signe depuis
-le cercle du poste approché ; la liste des postes n’est plus nécessaire à pied. Sur le
-bombardier moyen, sans cercle, clic gauche ou E sur le poste visé (au centre de l’écran,
-ou sous le curseur libéré) ouvre son dossier.
+0,5 s. B est supprimé. Les autres mitrailleurs et DCA gardent clic/Espace pour tirer. À pied, sans
+cercle au sol, clic gauche ou E sur le poste visé (au centre de l’écran, ou sous le curseur
+libéré) ouvre son dossier : poste d’un engin, DCA fixe, canon anti-matériel ou lit.
 Les mutations à bord restent dans le menu des postes. Voir [référence du lot](vehicles-bank.md).
 
 Le banquier s’ouvre avec **N** ou le bouton Banquier, depuis tous les postes et
@@ -102,8 +101,8 @@ s’ouvrent au réglage/événement et au survol/focus.
 
 ## Retours terrain
 
-Au sol près d’un lit : E ouvre le contrat personnel ; E au lit actif propose la
-résiliation signée. Après purgatoire, retour au lit valide ou au départ.
+Au sol près d’un lit, le viser puis clic ou E ouvre le contrat personnel ; au lit actif,
+la résiliation signée. Après purgatoire, retour au lit valide ou au départ.
 Au canon du tank : vue de lunette, **C maintenu** pour observer à la troisième
 personne sans déplacer le canon ; les tirs sont suspendus jusqu’au relâchement.
 Espace permet plusieurs cycles d’ouverture/fermeture du parachute ; une ouverture

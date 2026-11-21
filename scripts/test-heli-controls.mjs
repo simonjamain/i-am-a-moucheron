@@ -103,7 +103,7 @@ for (const key of ['KeyZ', 'KeyO', 'KeyS', 'ArrowDown']) {
 }
 const directionSource = source.slice(
   source.indexOf('function weaponDirection()'),
-  source.indexOf('function nearestStation()'),
+  source.indexOf('async function vehicleAction('),
 );
 for (const [pitch, yaw, roll] of [
   [0, 0, 0],

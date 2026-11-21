@@ -14,7 +14,7 @@ import { makeFixedDca, positionHeavyFlakSight } from '../src/fixed-dca-model.ts'
 import { OFFICE_LAYOUT } from '../src/layout.ts';
 import { makeInstallationCollider } from '../src/station-model.ts';
 import { colliderContainsXZ } from '../src/oriented-collider.ts';
-import { aimGun, stepWalker, stationEntryOffset } from '../src/sortie.ts';
+import { aimGun, stepWalker } from '../src/sortie.ts';
 import { Game } from '../server/game.js';
 
 const station = { kind: 'refuel', x: 0, y: 0.01, z: 0 };
@@ -261,13 +261,10 @@ const stationClient = readFileSync('src/client.js', 'utf8');
     ACTOR_UNIT,
     scene: new T.Scene(),
     colliders,
-    stationRings: [],
-    roleEntry: () => new T.Group(),
     humanoid: () => new T.Group(),
     flak,
     makeFixedDca,
     makeInstallationCollider,
-    stationEntryOffset,
     isFixedDca: () => true,
     isFortification: () => false,
   });

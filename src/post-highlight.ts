@@ -8,7 +8,8 @@ import type { SeatPost } from './seat-posts.ts';
 // the game camera); a full-screen pass then draws a line around the mask's silhouette
 // over the finished frame. The whole part stands out from its vehicle, even across
 // the vehicle's own surfaces. A shared hull (cockpit, turret glazing) is clipped to a
-// sphere around the post. Signal blue marks a free post.
+// sphere around the post. An installation (fixed defence, bed) is outlined whole.
+// Signal blue marks a free post.
 
 /** Interaction signal, shared with the CSS token --signal (docs/art-direction.md). */
 export const SIGNAL_COLOR = '#2ec4d6';
@@ -58,9 +59,23 @@ export class PostHighlight {
     this.post = post;
     this.T = T;
     this.model = model;
-    for (const name of post.outline.meshes) {
-      const source = model.getObjectByName(name) as THREE.Mesh | undefined;
-      if (!source?.isMesh) continue;
+    // No mesh names: every visible part of the model (an installation), except the
+    // crew figure it may carry.
+    const person = model.userData.person as THREE.Object3D | undefined;
+    const sources: THREE.Mesh[] = [];
+    if (post.outline.meshes.length)
+      for (const name of post.outline.meshes) {
+        const source = model.getObjectByName(name) as THREE.Mesh | undefined;
+        if (source?.isMesh) sources.push(source);
+      }
+    else
+      model.traverseVisible((o) => {
+        const mesh = o as THREE.Mesh;
+        if (!mesh.isMesh || mesh.userData.postOutline) return;
+        for (let p: THREE.Object3D | null = mesh; p; p = p.parent) if (p === person) return;
+        sources.push(mesh);
+      });
+    for (const source of sources) {
       const material = postMaskMaterial(T);
       const mesh = new T.Mesh(source.geometry, material);
       mesh.name = 'post-outline';

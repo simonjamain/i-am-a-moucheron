@@ -64,7 +64,7 @@ const context = vm.createContext({
 vm.runInContext(
   source.slice(
     source.indexOf('function turretDirection('),
-    source.indexOf('function nearestStation()'),
+    source.indexOf('async function vehicleAction('),
   ),
   context,
 );

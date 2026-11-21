@@ -80,11 +80,11 @@ par type initial est conservé ; dès son décollage, un successeur gratuit appa
 un tank, un hélicoptère biplace ou une DCA mobile, dont la destruction est définitive. Les sièges sont exclusifs.
 
 Chaque accès publié aux équipements, y compris une nouvelle entrée, passe par un
-cercle au sol et un dossier de deux documents obligatoires, sur papier : la première pièce
-exige de cocher un motif (« Convenance personnelle » est refusée et oblige à recommencer). Exception : le bombardier
-moyen n’a plus de cercles ; on vise directement le poste (cockpit, tourelle), qui
-s’entoure de bleu signal s’il est libre (ou d’un contour clair avec le nom de son
-occupant), et un clic ouvre son dossier, de n’importe quel côté de l’appareil
+dossier de deux documents obligatoires, sur papier : la première pièce exige de cocher un
+motif (« Convenance personnelle » est refusée et oblige à recommencer). Il n’y a plus de
+cercle au sol : on vise directement le poste (cockpit, trappe, tourelle) ou l’installation
+(DCA fixe, canon, lit), qui s’entoure de bleu signal s’il est libre (ou d’un contour clair
+avec le nom de son occupant), et un clic ouvre son dossier, de n’importe quel côté
 ([règles d’interface](ui-guidelines.md#monter-dans-un-engin--viser-le-poste)). La signature s’effectue à la souris
 ou au toucher et part automatiquement au relâchement d’un trait valide. Le tampon
 est immédiat ; la réponse serveur confirme le document et l’attribution du siège.
@@ -271,7 +271,7 @@ et limites de vérification.
 Au purgatoire, le pistolet tire depuis la main vers le point du réticule, avec
 caméra à l’épaule et obstacles revérifiés depuis le canon. La chute utilise la gravité humaine multipliée par le ratio du personnage,
 un parachute progressif et des dégâts d’impact verticaux. Le retour après
-purgatoire se fait au départ, sauf contrat personnel de lit signé (E au lit).
+purgatoire se fait au départ, sauf contrat personnel de lit signé (en visant le lit).
 Les lits s’achètent 4 $, puis +2 $ ; plusieurs joueurs peuvent signer le même.
 Le tireur canon du tank utilise une lunette ; C maintenu observe sans tourner
 la tourelle et suspend les tirs. Les nouvelles offres de prêt sont à 10–20 %
@@ -400,7 +400,6 @@ maximum. Les six roues roulent à la vitesse du sol de leur côté (sens, marche
 arrière et arrêt compris) ; au pivot sur place, gauche et droite tournent en sens
 opposés et les roues avant braquent selon la vitesse de rotation
 (`src/castor-wheels.ts`, `scripts/test-castor-wheels.mjs`). Plus rapide que le tank, il possède un rayon de soutien sphérique de **50 cm**, matérialisé en jeu par une sphère verte translucide (comme les 50 cm des stations de ravitaillement fixes, `src/service-zones.js`), qui peut soigner et ravitailler les alliés en mouvement ou en vol et se réapprovisionner lui-même. Le service utilise la caisse commune.
-Les ronds d'entrée au sol (sièges, équipements) sont tracés par un shader (`src/entry-ring.ts`) : leur trait garde au moins ~1,6 pixel d'écran, sans dépendre de l'anticrénelage du GPU, pour rester visibles sur tous les écrans.
 
 **La construction en roulant est disponible depuis la version 188.** Le Castor utilise désormais **ses trois modèles Meshy texturés** : châssis, tourelle et roues indépendantes. Les couleurs originales sont préservées, sans pastille d’identification ([flotte Meshy](meshy-fleet.md)). Voir [l'issue #76](https://github.com/simonjamain/i-am-a-moucheron/issues/76).
 
@@ -426,7 +425,7 @@ correction des six roues est conservée.
 
 ### Constructions du Castor
 
-Au volant du Castor, on peut construire un canon antichar lourd (14 $), sans plan à débloquer : seul le prix compte. Le canon est prévu pour les boss terrestres. Ce canon est un obusier à taille humaine qui pivote lentement sur ses roues, s’élève de −5° à +40° et recule à chaque tir. Il tire un obus simulé par le tireur, comme le canon du tank (gravité, obstacles, impact direct), mais plus rapide (750 m/s), plus puissant (800 dégâts au cœur de l’impact, pleins sur la cible touchée) et à petite explosion (5 m) ; il n’a pas de fusée de DCA. Le cercle d’accès, l’ouverture du dossier et les signatures partagent la même portée autour du poste, au même niveau : pour le canon, un cercle à 4,5 m de l’essieu, hors du balayage du tube, et une portée de 6 m. Chaque cercle porte l’icône de son rôle et chaque poste a ses propres textes et contrats. Le poste demande la signature d’un dossier, dispose de 50 obus finis et se rechargent uniquement auprès des sources de service payantes.
+Au volant du Castor, on peut construire un canon antichar lourd (14 $), sans plan à débloquer : seul le prix compte. Le canon est prévu pour les boss terrestres. Ce canon est un obusier à taille humaine qui pivote lentement sur ses roues, s’élève de −5° à +40° et recule à chaque tir. Il tire un obus simulé par le tireur, comme le canon du tank (gravité, obstacles, impact direct), mais plus rapide (750 m/s), plus puissant (800 dégâts au cœur de l’impact, pleins sur la cible touchée) et à petite explosion (5 m) ; il n’a pas de fusée de DCA. L’ouverture du dossier (en visant le canon) et les signatures partagent la même portée autour du poste, au même niveau : 6 m pour le canon. Chaque poste a ses propres textes et contrats. Le poste demande la signature d’un dossier, dispose de 50 obus finis et se rechargent uniquement auprès des sources de service payantes.
 
 La « Tourelle automatique du Castor » se construit pour 5 $ au volant du G1, sans plan à débloquer. Elle tire automatiquement (180 balles finies) et se recharge contre paiement auprès du Castor ou des stations. Aucun tir ni achat à distance. Son modèle définitif combine quatre modules Meshy texturés (socle fixe, tête qui pivote sur 360°, canon unique inclinable de −10° à +90° et capteur/radar séparé). Les géométries et UV Meshy sont conservés, avec une copie des textures rééchantillonnée en WebP 1K pour le navigateur ; voir [l'asset T-01](t01-asset.md). Les déplacements visuels suivent la dernière cible validée par le serveur ; les dégâts et les munitions restent autoritaires côté serveur. Le GLB texturé définitif doit être importé séparément après vérification des parties mobiles et de leurs UV.
 

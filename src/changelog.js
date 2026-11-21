@@ -1,6 +1,13 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 396,
+    changes: [
+      'Plus de ronds au sol : on monte dans tous les engins en visant le poste (verrière, tourelle, trappe).',
+      'DCA fixes, canon anti-matériel et lits s’utilisent aussi en les visant, puis clic ou E.',
+    ],
+  },
+  {
     version: 395,
     changes: [
       'Le banquier devient un prospectus en papier : cochez une offre, puis l’objet du prêt, et signez.',
