@@ -47,6 +47,7 @@ export const SUITE = [
   'test-appearances',
   'test-howitzer',
   'test-antitank-shell',
+  'test-ap-pierce',
   'test-walk-collisions',
   'test-swarm-weapons',
   'test-economy-ballistics',
