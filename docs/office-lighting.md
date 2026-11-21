@@ -2,7 +2,7 @@
 
 Depuis la version 403, un plan peut être éclairé par ses propres lampes au lieu du
 soleil oblique historique. `diagonale` est le premier : deux **ventilateurs de
-plafond lumineux** (modèle `Ceiling_Fan` du [Cartoon Office Pack](office-layouts.md#décor-le-cartoon-office-pack))
+plafond lumineux** (modèle `Ceiling_Fan` du [Cartoon Office Pack](office-layouts.md#décor--le-cartoon-office-pack))
 et la lampe de bureau de l'îlot A. Code : `src/office-lights.ts`, appelé par
 `src/office.js` ; contrôle : `scripts/test-office-lights.mjs`.
 
@@ -25,6 +25,7 @@ et la lampe de bureau de l'îlot A. Code : `src/office-lights.ts`, appelé par
 | Source                        | Réglage (`LAMP_LOOK`)                                                                                                  | Ombre                                                 |
 | ----------------------------- | ---------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- |
 | Ventilateur                   | cône chaud `#ffcf8f`, 20 cd, demi-angle 1,15 rad, pénombre 0,95, depuis le globe (0,45 m sous l'accroche), vers le bas | carte 1024², flou PCF 4 texels, **calculée une fois** |
+| Globe du ventilateur          | verre de l'atlas émissif dans la couleur du cône, ×1,6 (`GLOWING`, `src/office-pack.ts`)                               | —                                                     |
 | Lampe de bureau (`Desk_Lamp`) | point chaud `#ffc27a`, 0,8 cd, sous l'abat-jour                                                                        | aucune                                                |
 | Ciel (hémisphère)             | `#f3efe2` / `#6b6a5a`, 0,75                                                                                            | —                                                     |
 | Soleil                        | `#e6ecfb`, 1,6, presque à la verticale                                                                                 | carte 2048², **objets mobiles seulement**             |

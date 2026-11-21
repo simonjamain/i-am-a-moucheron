@@ -13,6 +13,13 @@ import {
 } from '../src/toon.ts';
 import { DEFAULT_FLIGHT_TUNING, normalizeFlightTuning } from '../src/flight-tuning.ts';
 import { readFileSync } from 'node:fs';
+import {
+  installOfficeFog,
+  fogOpticalDepth,
+  OFFICE_DISTANCE_FOG,
+  OFFICE_FOG_START,
+  OFFICE_CLOUD_TOP,
+} from '../src/office-fog.ts';
 
 // Lighting: patched once, shared uniform, switchable without recompiling.
 assert.equal(installToonLighting(T), true);
@@ -80,6 +87,43 @@ const source = new OutlinePass(T, fake(true)).material.fragmentShader;
 for (const part of ['tonemapping_fragment', 'colorspace_fragment', 'inverseDepth', 'laplacian'])
   assert.ok(source.includes(part), part);
 assert.ok(source.includes('sky'), 'the sky keeps its clear colour');
+
+// Lines fade with the fog of the surface they outline (rods vanish into the clouds).
+assert.match(source, /line \*= 1\.0 - fog;/);
+const fogPass = new OutlinePass(T, fake(true));
+const fu = fogPass.material.uniforms;
+const eyeCam = new T.PerspectiveCamera(62, 16 / 9, 0.00005, 40);
+eyeCam.position.set(0.4, 1.6, 2.2);
+eyeCam.lookAt(-0.7, 2.3, 1.1);
+eyeCam.updateMatrixWorld();
+fogPass.fog(scene, eyeCam);
+assert.equal(fu.fogMode.value, 0, 'no fog, no fading');
+installOfficeFog(T);
+scene.fog = new T.FogExp2('#ffffff', OFFICE_DISTANCE_FOG);
+fogPass.fog(scene, eyeCam);
+assert.equal(fu.fogMode.value, 1, 'office cloud layer');
+assert.ok(Math.abs(fu.fogStart.value - OFFICE_FOG_START) < 1e-9);
+assert.ok(Math.abs(fu.fogStart.value + fu.fogThickness.value - OFFICE_CLOUD_TOP) < 1e-9);
+// The shader rebuilds a pixel's world point from its depth like this.
+const point = new T.Vector3(-0.6, 2.7, 1.0);
+const ndc = point.clone().project(eyeCam);
+const depth = -point.clone().applyMatrix4(eyeCam.matrixWorldInverse).z;
+const rebuilt = new T.Vector3(
+  (ndc.x * depth) / fu.focal.value.x,
+  (ndc.y * depth) / fu.focal.value.y,
+  -depth,
+).applyMatrix4(fu.cameraWorld.value);
+assert.ok(rebuilt.distanceTo(point) < 1e-9, 'world point from depth');
+assert.ok(fu.eye.value.distanceTo(eyeCam.position) < 1e-12);
+// Same optical depth as the materials: a point in the clouds loses its line.
+const optical =
+  fogOpticalDepth(eyeCam.position.y, point.y, point.distanceTo(eyeCam.position)) +
+  (OFFICE_DISTANCE_FOG * depth) ** 2;
+assert.ok(1 - Math.exp(-optical) > 0.9, 'outline of a rod in the clouds mostly faded');
+scene.fog = new T.Fog('#172c39', 35, 85);
+fogPass.fog(scene, eyeCam);
+assert.deepEqual([fu.fogMode.value, fu.fogNear.value, fu.fogFar.value], [2, 35, 85], 'linear fog');
+scene.fog = null;
 
 // No player setting: the personal panel is pilot-only again.
 for (const key of Object.keys(DEFAULT_FLIGHT_TUNING)) assert.ok(!/toon/i.test(key), key);

@@ -37,10 +37,12 @@ export function fogOpticalDepth(
       : (primitive(toY) - primitive(fromY)) / (toY - fromY);
   return Math.max(0, distance) * average * 9;
 }
-const installed = new WeakSet<Three>();
+const installed = new WeakMap<Three, { start: number; thickness: number }>();
+/** Cloud layer installed in this Three (start and thickness, metres), if any. */
+export const officeFogLayer = (T: Three): { start: number; thickness: number } | null =>
+  installed.get(T) ?? null;
 export function installOfficeFog(T: Three, cloudTop: number = OFFICE_CLOUD_TOP): void {
   if (installed.has(T)) return;
-  installed.add(T);
   T.ShaderChunk.fog_pars_vertex += '\n#ifdef USE_FOG\nvarying vec3 vOfficeFogPosition;\n#endif';
   T.ShaderChunk.fog_vertex += `
 #ifdef USE_FOG
@@ -52,6 +54,7 @@ export function installOfficeFog(T: Three, cloudTop: number = OFFICE_CLOUD_TOP):
   T.ShaderChunk.fog_pars_fragment += '\n#ifdef USE_FOG\nvarying vec3 vOfficeFogPosition;\n#endif';
   const start = cloudTop * FOG_START_RATIO,
     thickness = cloudTop - start;
+  installed.set(T, { start, thickness });
   T.ShaderChunk.fog_fragment = T.ShaderChunk.fog_fragment.replace(
     'float fogFactor = 1.0 - exp( - fogDensity * fogDensity * vFogDepth * vFogDepth );',
     `

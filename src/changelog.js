@@ -1,6 +1,13 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 405,
+    changes: [
+      'Les globes des ventilateurs sont allumés.',
+      'Les contours noirs s’effacent dans les nuages et le brouillard, comme les objets qu’ils dessinent.',
+    ],
+  },
+  {
     version: 404,
     changes: [
       'Mode debug : les volumes de collision des murs, meubles et ventilateurs s’affichent en fil de fer.',
