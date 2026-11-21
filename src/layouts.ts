@@ -3,12 +3,20 @@
 // when it joins. Every geometry consumer (scene, colliders, routes, ground flow,
 // spawn) derives from the active layout, never from constants.
 import { ACTOR_UNIT, MAP } from './scale.ts';
+import type { Collider } from './oriented-collider.ts';
+import type { Vec2, Vec3 } from './types.ts';
 
 export const FLOOR_Y = 0.00005;
 export const LAYOUT_ROOM = Object.freeze({ x: 4.2, z: 3.6, wall: 3 });
 export const LAYOUT_BOUNDS = Object.freeze({ x: 4.15, z: 3.55, ceiling: 3.95 });
+/** Size and look of one furniture kind. */
+export interface FurnitureKindSpec {
+  h: number;
+  color: string;
+  solid?: boolean;
+}
 // Kinds: size and look of each furniture volume. `solid: false` never blocks.
-export const FURNITURE_KINDS = Object.freeze({
+const FURNITURE_KIND_TABLE = {
   desk: { h: 0.9, color: '#c7b38e' },
   shelf: { h: 1.2, color: '#a99a72' },
   cloison: { h: 0.9, color: '#9fb6c1' },
@@ -19,23 +27,107 @@ export const FURNITURE_KINDS = Object.freeze({
   copier: { h: 1, color: '#aab2b8' },
   fountain: { h: 1.2, color: '#8fb7d0' },
   plant: { h: 0.9, color: '#5f9a5f' },
+} satisfies Record<string, FurnitureKindSpec>;
+export type FurnitureKind = keyof typeof FURNITURE_KIND_TABLE;
+export const FURNITURE_KINDS: Readonly<Record<FurnitureKind, FurnitureKindSpec>> =
+  Object.freeze(FURNITURE_KIND_TABLE);
+/** One furniture volume, centred at (x, z), w × d on the floor. */
+export interface Furniture {
+  kind: FurnitureKind;
+  x: number;
+  z: number;
+  w: number;
+  d: number;
+  label: string;
+}
+const furn = (kind: FurnitureKind, x: number, z: number, w: number, d: number, label = ''): Furniture => ({
+  kind,
+  x,
+  z,
+  w,
+  d,
+  label,
 });
-const furn = (kind, x, z, w, d, label = '') => ({ kind, x, z, w, d, label });
+/** Ellipse [cx, cz, rx, rz] that flyers lap before heading for the bin. */
+export type Circuit = [cx: number, cz: number, rx: number, rz: number];
+/** Hand-made aerial waypoint [x, z] with an optional height. */
+export type AirPathPoint = [x: number, z: number, y?: number];
+/** Hand-written plan, expanded by buildLayout. */
+interface LayoutSpec {
+  id: string;
+  name: string;
+  summary: string;
+  circuit?: Circuit;
+  bin: { x: number; z: number; y?: number };
+  goal: Vec2;
+  finish?: Vec3[];
+  spawn: Vec2;
+  yaw?: number;
+  ground: Vec2[];
+  air: Vec3[];
+  airPaths: AirPathPoint[][];
+  furniture: Furniture[];
+  hidden?: Vec2[];
+  passages?: Vec2[];
+}
+/** Player base frame of a layout (office metres). */
+export interface LayoutBase {
+  originX: number;
+  originZ: number;
+  deckY: number;
+  parkedY: number;
+  departureY: number;
+  yaw: number;
+  refuelOffsetX: number;
+  refuelOffsetZ: number;
+  speed: number;
+}
+/** An expanded office plan: geometry, routes and base. */
+export interface OfficeLayout {
+  id: string;
+  name: string;
+  summary: string;
+  bounds: typeof LAYOUT_BOUNDS;
+  bin: { x: number; y: number; z: number };
+  groundGoal: Vec2;
+  groundFinish: Vec3[];
+  base: LayoutBase;
+  portals: { ground: Vec3[]; air: Vec3[] };
+  airRoutes: Vec3[][];
+  furniture: Furniture[];
+  hidden: Vec2[];
+  passages: Vec2[];
+}
 
 // One lap of an ellipse as waypoints [x, z, y] at cruising height, starting at
 // angle `from` and turning `dir` (1 or -1). Flyers take a lap before heading for
 // the bin, which keeps their arrival well after the walkers'.
-function lapPoints(cx, cz, rx, rz, from = 0, dir = 1, n = 10) {
-  return Array.from({ length: n + 1 }, (_, i) => {
+function lapPoints(
+  cx: number,
+  cz: number,
+  rx: number,
+  rz: number,
+  from = 0,
+  dir = 1,
+  n = 10,
+): Vec3[] {
+  return Array.from({ length: n + 1 }, (_, i): Vec3 => {
     const a = from + (dir * 2 * Math.PI * i) / n;
     return [cx + rx * Math.cos(a), cz + rz * Math.sin(a), 2.0 + 0.15 * Math.sin(2 * a)];
   });
 }
 // Aerial course of a vent: entry, an optional circuit lap (entering it at the
 // point nearest the vent), then the hand-made approach to the bin.
-function airCourse(entry, path, rim, bin, circuit, index) {
+function airCourse(
+  entry: Vec3,
+  path: readonly AirPathPoint[],
+  rim: number,
+  bin: { x: number; z: number },
+  circuit: Circuit | undefined,
+  index: number,
+): Vec3[] {
   const lap = circuit
-    ? (([cx, cz, rx, rz]) =>
+    ? (([cx, cz, rx, rz]: Circuit) =>
         lapPoints(
           cx,
           cz,
@@ -47,21 +139,21 @@ function airCourse(entry, path, rim, bin, circuit, index) {
     : [];
   return [
     [entry[0], entry[1], entry[2]],
-    ...lap.map(([x, z, y]) => [x, y, z]),
-    ...path.map(([x, z, y], i) => [x, y ?? (i === 0 ? 2.1 : i % 2 ? 1.7 : 2.0), z]),
+    ...lap.map(([x, z, y]): Vec3 => [x, y, z]),
+    ...path.map(([x, z, y], i): Vec3 => [x, y ?? (i === 0 ? 2.1 : i % 2 ? 1.7 : 2.0), z]),
     [bin.x, rim, bin.z],
   ];
 }
 const LAYOUT_GROUND_Y = 0.0007;
-const groundAt = (x, z) => [x, LAYOUT_GROUND_Y, z];
+const groundAt = (x: number, z: number): Vec3 => [x, LAYOUT_GROUND_Y, z];
 
-function buildLayout(spec) {
+function buildLayout(spec: LayoutSpec): Readonly<OfficeLayout> {
   const bin = { y: 0, ...spec.bin };
   const rim = bin.y + 0.38;
   const u = ACTOR_UNIT;
   const originX = spec.spawn[0],
     originZ = spec.spawn[1];
-  const out = {
+  const out: OfficeLayout = {
     id: spec.id,
     name: spec.name,
     summary: spec.summary,
@@ -524,28 +616,54 @@ export const LAYOUTS = Object.freeze([
   }),
 ]);
 export const DEFAULT_LAYOUT_ID = LAYOUTS[0].id;
-export const layoutById = (id) => LAYOUTS.find((l) => l.id === id) || null;
-export const isLayoutId = (id) => typeof id === 'string' && !!layoutById(id);
+export const layoutById = (id: unknown): Readonly<OfficeLayout> | null => LAYOUTS.find((l) => l.id === id) || null;
+export const isLayoutId = (id: unknown): boolean => typeof id === 'string' && !!layoutById(id);
 
 // Active layout: set by the server around each room operation and by the client
 // when it joins. The default keeps standalone scripts and tests working.
 let activeLayoutValue = LAYOUTS[0];
-const layoutListeners = new Set();
-export const activeLayout = () => activeLayoutValue;
-export function setActiveLayout(id) {
+type LayoutListener = (layout: Readonly<OfficeLayout>) => void;
+const layoutListeners = new Set<LayoutListener>();
+export const activeLayout = (): Readonly<OfficeLayout> => activeLayoutValue;
+export function setActiveLayout(id: unknown): Readonly<OfficeLayout> {
   const next = layoutById(id) || LAYOUTS[0];
   if (next === activeLayoutValue) return next;
   activeLayoutValue = next;
   for (const l of layoutListeners) l(next);
   return next;
 }
-export const onLayoutChange = (listener) => {
+export const onLayoutChange = (listener: LayoutListener): (() => boolean) => {
   layoutListeners.add(listener);
   return () => layoutListeners.delete(listener);
 };
 
 // ---- geometry: primitives drawn by office.js and used as colliders ----------
-const mkPiece = (shape, x, y, z, w, h, d, color, solid = true, extra = {}) => ({
+/** A drawn primitive; `solid` ones are colliders. Cylinders: w = bottom radius. */
+export interface LayoutPiece {
+  shape: 'box' | 'cyl';
+  x: number;
+  y: number;
+  z: number;
+  w: number;
+  h: number;
+  d: number;
+  color: string;
+  solid: boolean;
+  grid?: Vec3;
+  radiusTop?: number;
+}
+const mkPiece = (
+  shape: LayoutPiece['shape'],
+  x: number,
+  y: number,
+  z: number,
+  w: number,
+  h: number,
+  d: number,
+  color: string,
+  solid = true,
+  extra: Pick<LayoutPiece, 'grid' | 'radiusTop'> = {},
+): LayoutPiece => ({
   shape,
   x,
   y,
@@ -557,8 +675,8 @@ const mkPiece = (shape, x, y, z, w, h, d, color, solid = true, extra = {}) => ({
   solid,
   ...extra,
 });
-function deskPieces(it, top) {
-  const out = [];
+function deskPieces(it: Furniture, top: number): LayoutPiece[] {
+  const out: LayoutPiece[] = [];
   // Platform desks (a `wall` skirt around them) are closed boxes under the top.
   out.push(
     mkPiece('box', it.x, top - 0.025, it.z, it.w, 0.05, it.d, FURNITURE_KINDS.desk.color, true, {
@@ -575,13 +693,13 @@ function deskPieces(it, top) {
   );
   return out;
 }
-const piecesCache = new Map();
+const piecesCache = new Map<string, LayoutPiece[]>();
 // Primitives of one layout: room shell, furniture, bin. `solid` ones are the
 // colliders (axis-aligned boxes), exactly what the scene draws.
-export function layoutPieces(layout = activeLayoutValue) {
+export function layoutPieces(layout: Readonly<OfficeLayout> = activeLayoutValue): LayoutPiece[] {
   const hit = piecesCache.get(layout.id);
   if (hit) return hit;
-  const P = [];
+  const P: LayoutPiece[] = [];
   P.push(mkPiece('box', 0, -0.04, 0, 8.4, 0.08, 7.2, '#7b8675'));
   P.push(mkPiece('box', 0, 1.5, -3.6, 8.4, 3, 0.08, '#b7c0ac'));
   P.push(mkPiece('box', -4.2, 1.5, 0, 0.08, 3, 7.2, '#b4c6b7'));
@@ -610,7 +728,7 @@ export function layoutPieces(layout = activeLayoutValue) {
   piecesCache.set(layout.id, P);
   return P;
 }
-export function pieceBounds(p) {
+export function pieceBounds(p: LayoutPiece): Collider {
   if (p.shape === 'cyl') {
     const r = Math.max(p.w, p.radiusTop ?? p.w);
     return {
@@ -623,8 +741,8 @@ export function pieceBounds(p) {
     max: { x: p.x + p.w / 2, y: p.y + p.h / 2, z: p.z + p.d / 2 },
   };
 }
-const solidsCache = new Map();
-export function layoutSolids(layout = activeLayoutValue) {
+const solidsCache = new Map<string, Collider[]>();
+export function layoutSolids(layout: Readonly<OfficeLayout> = activeLayoutValue): Collider[] {
   let s = solidsCache.get(layout.id);
   if (!s)
     solidsCache.set(
@@ -637,8 +755,8 @@ export function layoutSolids(layout = activeLayoutValue) {
 }
 
 // Top-down thumbnail of a layout (back wall at the top), as an SVG string.
-export function layoutThumbnail(layout) {
-  const r = (it, fill, op = 1) =>
+export function layoutThumbnail(layout: Readonly<OfficeLayout>): string {
+  const r = (it: Furniture, fill: string, op = 1): string =>
     `<rect x="${it.x - it.w / 2}" y="${it.z - it.d / 2}" width="${it.w}" height="${it.d}" fill="${fill}" fill-opacity="${op}"/>`;
   const parts = layout.furniture.map((it) =>
     it.kind === 'plant'
