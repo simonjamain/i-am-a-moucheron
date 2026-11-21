@@ -21,6 +21,8 @@
         --acid: #d5ef73;
         --dark: #0c201e;
         --line: #ffffff20;
+        /* Interaction signal, shared with the 3D outline (src/post-highlight.ts). */
+        --signal: #2ec4d6;
       }
       * {
         box-sizing: border-box;
@@ -410,6 +412,18 @@
       #phaseBox button {
         padding: 9px 14px;
         font-size: 12px;
+      }
+      #postLabel {
+        position: fixed;
+        z-index: 4;
+        transform: translate(-50%, 22px);
+        padding: 3px 8px;
+        border-radius: 4px;
+        background: color-mix(in srgb, var(--dark) 80%, transparent);
+        color: var(--cream);
+        font-size: 12px;
+        pointer-events: none;
+        white-space: nowrap;
       }
       #crosshair {
         position: absolute;
@@ -2610,6 +2624,7 @@
         <p id="phaseText">Les pilotes prennent position.</p>
         <button id="start" class="primary">Lancer la vague →</button>
       </div>
+      <div id="postLabel" role="status" hidden></div>
       <div id="crosshair" aria-label="Direction des canons"><div id="reloadArcs"></div></div>
       <div id="contextHUD" class="hidden" aria-label="Informations du poste">
         <section class="contextRail left" tabindex="0" aria-label="État du poste">

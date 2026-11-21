@@ -1,6 +1,13 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 384,
+    changes: [
+      'Bombardier moyen : visez le poste voulu (cockpit ou tourelle) et cliquez pour monter, de n’importe quel côté.',
+      'Le poste visé s’entoure de bleu ; un poste occupé affiche le nom de son occupant.',
+    ],
+  },
+  {
     version: 381,
     changes: ['Les moyeux des roues du char suivent maintenant les roues sur le relief.'],
   },
