@@ -1,4 +1,4 @@
-import { activeLayout } from './layouts.js';
+import { activeLayout } from './layouts.ts';
 export const ROOM_SCALE: number = 1; // Compatibility alias; room geometry is already in metres.
 // Live view of the active layout (see layouts.js): reads always follow the
 // layout of the room being handled. `bounds` is shared by every layout.

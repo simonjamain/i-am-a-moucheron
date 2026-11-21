@@ -1,9 +1,9 @@
 // Small 3D pictures of every shop item, drawn once by a private renderer from
 // the real in-game vehicle and service-station models.
 import { createGraphics } from './graphics.js';
-import { makeFixedDca } from './fixed-dca-model.js';
-import { makeBed } from './bed-model.js';
-import { makeServiceStation } from './station-model.js';
+import { makeFixedDca } from './fixed-dca-model.ts';
+import { makeBed } from './bed-model.ts';
+import { makeServiceStation } from './station-model.ts';
 
 const VEHICLE_MODELS = {
   fighter: 'makePlane',

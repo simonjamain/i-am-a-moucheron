@@ -1,5 +1,5 @@
 import { uiPreview } from './build-ui-preview.mjs';
-import { layoutSolids, LAYOUTS } from '../src/layouts.js';
+import { layoutSolids, LAYOUTS } from '../src/layouts.ts';
 import { createHash } from 'node:crypto';
 import { readFile, writeFile } from 'node:fs/promises';
 import { existsSync, readdirSync } from 'node:fs';

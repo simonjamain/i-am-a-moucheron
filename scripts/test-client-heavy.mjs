@@ -7,7 +7,7 @@ import { HEAVY } from '../src/armament.ts';
 import { MAP } from '../src/scale.ts';
 import { baseWorld } from '../src/base.js';
 import { debugSwarmRoster, swarmFrame } from '../src/waves.js';
-import { layoutSolids } from '../src/layouts.js';
+import { layoutSolids } from '../src/layouts.ts';
 const ROUTE_OBSTACLES = layoutSolids();
 import { howitzerMuzzle } from '../src/howitzer-geometry.ts';
 import { DEFAULT_BALANCE } from '../src/balance.js';

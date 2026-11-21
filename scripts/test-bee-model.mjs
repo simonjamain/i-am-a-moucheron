@@ -7,7 +7,7 @@ import { BEE_DATA } from '../src/bee-data.js';
 import { BEE, BEE_BONES, BEE_FLIGHT, BEE_HIT, beeFlightPose } from '../src/bee-model.js';
 import { FLYERS, FlyerBatch } from '../src/flyer-batch.js';
 import { createGraphics } from '../src/graphics.js';
-import { nearestInsectHit } from '../src/insect-hits.js';
+import { nearestInsectHit } from '../src/insect-hits.ts';
 import { ENEMY_TYPES } from '../src/waves.js';
 
 const world = (o) => o.getWorldPosition(new T.Vector3());

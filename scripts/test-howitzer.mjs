@@ -4,7 +4,7 @@
 import assert from 'node:assert/strict';
 import * as T from '../vendor/three.module.min.js';
 import { HOWITZER_DATA } from '../src/howitzer-data.js';
-import { createHowitzer, HOWITZER, HOWITZER_SCALE } from '../src/howitzer-model.js';
+import { createHowitzer, HOWITZER, HOWITZER_SCALE } from '../src/howitzer-model.ts';
 import { makeFortificationStation } from '../src/fortification-model.js';
 import { FORTIFICATIONS } from '../src/ground-fortifications.ts';
 import { MAP } from '../src/scale.ts';

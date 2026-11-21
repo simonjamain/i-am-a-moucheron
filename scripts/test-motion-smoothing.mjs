@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { MotionTrack, MOTION_DELAY_MAX_MS } from '../src/network.js';
+import { MotionTrack, MOTION_DELAY_MAX_MS } from '../src/network.ts';
 
 // A remote aircraft flies a circle at 5 units/s. Its browser sends at 20 Hz
 // (10 Hz relayed in big rooms); the network adds 20-120 ms, 5 % at 300 ms, and

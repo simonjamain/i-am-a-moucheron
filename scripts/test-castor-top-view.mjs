@@ -9,9 +9,9 @@ import {
   resetTopCursor,
   topViewGroundPoint,
   topViewPose,
-} from '../src/castor-top-view.js';
+} from '../src/castor-top-view.ts';
 import { ServiceZones, serviceZoneList } from '../src/service-zones.js';
-import { CASTOR_SERVICE_RADIUS, SERVICE_RADIUS } from '../src/logistics.js';
+import { CASTOR_SERVICE_RADIUS, SERVICE_RADIUS } from '../src/logistics.ts';
 import { withinService } from '../src/paid-service.js';
 
 // A truck standing on a 5 cm high deck, heading +X (east): the view stays north-up.

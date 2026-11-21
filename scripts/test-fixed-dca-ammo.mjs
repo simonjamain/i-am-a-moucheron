@@ -10,11 +10,11 @@ import { HEAVY } from '../src/armament.ts';
 import { stepHeavy } from '../src/heavy-sim.js';
 import { shopPrice } from '../src/equipment.ts';
 import { heavyDcaMuzzle } from '../src/fixed-dca.ts';
-import { makeFixedDca, positionHeavyFlakSight } from '../src/fixed-dca-model.js';
+import { makeFixedDca, positionHeavyFlakSight } from '../src/fixed-dca-model.ts';
 import { OFFICE_LAYOUT } from '../src/layout.ts';
-import { makeInstallationCollider } from '../src/station-model.js';
+import { makeInstallationCollider } from '../src/station-model.ts';
 import { colliderContainsXZ } from '../src/oriented-collider.ts';
-import { aimGun, stepWalker, stationEntryOffset } from '../src/sortie.js';
+import { aimGun, stepWalker, stationEntryOffset } from '../src/sortie.ts';
 import { Game } from '../server/game.js';
 
 const station = { kind: 'refuel', x: 0, y: 0.01, z: 0 };

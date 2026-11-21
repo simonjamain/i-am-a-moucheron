@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { Game } from '../server/game.js';
 import { VEHICLES } from '../src/fleet.ts';
 import { FORTIFICATIONS } from '../src/ground-fortifications.ts';
-import { stationAccess, stationEntryOffset, stationExit } from '../src/sortie.js';
+import { stationAccess, stationEntryOffset, stationExit } from '../src/sortie.ts';
 import { ACTOR_UNIT, MAP } from '../src/scale.ts';
 import { OFFICE_LAYOUT } from '../src/layout.ts';
 import { advancePaidService } from '../src/paid-service.js';

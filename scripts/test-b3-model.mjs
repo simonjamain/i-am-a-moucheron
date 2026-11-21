@@ -3,7 +3,7 @@ import * as T from '../vendor/three.module.min.js';
 import { createGraphics } from '../src/graphics.js';
 import { paintVehicle } from '../src/vehicle-livery.ts';
 import { B3_DATA } from '../src/meshy-b3-data.js';
-import { aimGun, gunnerView } from '../src/sortie.js';
+import { aimGun, gunnerView } from '../src/sortie.ts';
 import { ACTOR_UNIT } from '../src/scale.ts';
 import { VEHICLES } from '../src/fleet.ts';
 const graphics = createGraphics(T, new T.Scene());

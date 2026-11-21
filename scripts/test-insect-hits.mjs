@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import * as T from '../vendor/three.module.min.js';
 import { createGraphics } from '../src/graphics.js';
-import { nearestInsectHit, nearestMeshHit, insectContact, HitEffects } from '../src/insect-hits.js';
-import { BloodEffects } from '../src/blood-effects.js';
+import { nearestInsectHit, nearestMeshHit, insectContact, HitEffects } from '../src/insect-hits.ts';
+import { BloodEffects } from '../src/blood-effects.ts';
 const scene = new T.Scene(),
   graphics = createGraphics(T, scene),
   bug = graphics.insect(),

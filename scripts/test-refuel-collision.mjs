@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import * as T from '../vendor/three.module.min.js';
-import { makeServiceStation, makeRefuelCollider } from '../src/station-model.js';
-import { stepWalker } from '../src/sortie.js';
+import { makeServiceStation, makeRefuelCollider } from '../src/station-model.ts';
+import { stepWalker } from '../src/sortie.ts';
 import { MAP, ACTOR_UNIT } from '../src/scale.ts';
 import { OFFICE_LAYOUT } from '../src/layout.ts';
 for (const angle of [Math.PI / 4, -Math.PI / 4, Math.PI / 3]) {

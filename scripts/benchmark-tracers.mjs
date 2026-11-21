@@ -1,6 +1,6 @@
 import { performance } from 'node:perf_hooks';
 import * as T from '../vendor/three.module.min.js';
-import { TracerPool } from '../src/tracers.js';
+import { TracerPool } from '../src/tracers.ts';
 for (const count of [32, 128, 256]) {
   for (const instanced of [false, true]) {
     const scene = new T.Scene(),

@@ -5,7 +5,7 @@
 // pixels) keep three cheap ellipsoid batches.
 import { MIDGE_HIT_TOLERANCE, MIDGE_SPHERE_RADIUS } from './scale.ts';
 import { MIDGE, MIDGE_FLIGHT } from './midge-model.js';
-import { CreatureBatch } from './creature-batch.js';
+import { CreatureBatch } from './creature-batch.ts';
 
 // Detailed model while the midge's apparent radius (world radius / distance)
 // exceeds this ratio (about 7 px at 1 000 px height with a 70 degree lens),

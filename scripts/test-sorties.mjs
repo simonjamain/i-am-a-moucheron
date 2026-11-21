@@ -13,8 +13,8 @@ import {
   resolveLanding,
   stepWalker,
   GEAR_HEIGHT,
-} from '../src/sortie.js';
-import { createSoul, advanceArena, mergeOwnedArena } from '../src/purgatory-physics.js';
+} from '../src/sortie.ts';
+import { createSoul, advanceArena, mergeOwnedArena } from '../src/purgatory-physics.ts';
 assert.equal(BULLET_SPEED, MAP.metres(REFERENCE.bullet));
 assert.equal(FIRE_INTERVAL, 0.06);
 const scene = new T.Scene(),

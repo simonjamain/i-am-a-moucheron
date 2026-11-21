@@ -137,7 +137,7 @@ et le Flak lourd complètent les [DCA fixes](scale-fleet-weapons.md#dca-fixes-pi
 Depuis la version 267, un avion endommagé ne change plus de forme (plus d'ailes
 qui rétrécissent) : son ou ses moteurs laissent échapper de petits panaches de
 fumée, à partir de 15 % de dégâts, de plus en plus nombreux, gros et sombres à
-mesure que ses PV baissent (`src/engine-smoke.js`, un seul nuage de points pour
+mesure que ses PV baissent (`src/engine-smoke.ts`, un seul nuage de points pour
 tous les avions, plafonné à 1 500 panaches). Depuis la version 268, les dégâts
 n'ont plus aucun malus de pilotage : moteur et ailes restent pleinement
 efficaces, seule la fumée trahit l'état de l'avion. Les insectes
@@ -158,7 +158,7 @@ Depuis la version 271 (cartes simplifiées en 273), l'atelier range les achats e
 Véhicules au sol, Installations — triées du plus faible (haut) au plus
 fort (bas) selon le prix de base. Chaque carte est un bouton unique (on clique directement dessus ; pas de bouton « Signer le bon » ni de description) qui montre une image du modèle (rendue
 une fois par `src/shop-thumbs.js` à partir des vrais modèles 3D), son nom et son prix (ou « Acquis » / « Déjà payé »). L'ordre
-et les catégories vivent dans `src/shop-catalog.js` ; un nouvel article non classé
+et les catégories vivent dans `src/shop-catalog.ts` ; un nouvel article non classé
 apparaît dans une colonne « Autres » (`scripts/test-shop-catalog.mjs`).
 
 ## Purgatoire et économie
@@ -383,7 +383,7 @@ Le [bombardier biplan à deux places](biplane-models.md) conserve son camouflage
 
 ## G1 Castor (première étape, version 179)
 
-Le **G1 Castor** est un camion monoplace à six roues, achetable pour **15 $** avec le bon signé des véhicules. Z/S et Q/D permettent de conduire ; la souris vise sa mitrailleuse légère (500 balles, recharges payantes). **V** bascule une **vue de dessus** : caméra à 40 cm à la verticale du camion, nord (axe −Z, le haut du radar) en haut de l’écran quel que soit le cap du camion, et viseur au sol déplacé à la souris pour poser les défenses dans les 24 cm de portée et tirer (`src/castor-top-view.js`). Vitesse maximale 52 (deux fois le
+Le **G1 Castor** est un camion monoplace à six roues, achetable pour **15 $** avec le bon signé des véhicules. Z/S et Q/D permettent de conduire ; la souris vise sa mitrailleuse légère (500 balles, recharges payantes). **V** bascule une **vue de dessus** : caméra à 40 cm à la verticale du camion, nord (axe −Z, le haut du radar) en haut de l’écran quel que soit le cap du camion, et viseur au sol déplacé à la souris pour poser les défenses dans les 24 cm de portée et tirer (`src/castor-top-view.ts`). Vitesse maximale 52 (deux fois le
 réglage initial), avec une accélération forte au départ qui décroît près du
 maximum. Les six roues roulent à la vitesse du sol de leur côté (sens, marche
 arrière et arrêt compris) ; au pivot sur place, gauche et droite tournent en sens
@@ -422,7 +422,7 @@ l'inclinaison, Z/S/Q/D, Maj/Ctrl) et le même **soutien sphérique de 50 cm** qu
 le Castor : soins, carburant, munitions et réparation des barricades, payés par
 la caisse commune, pour lui-même et pour ce qui l'entoure.
 Depuis la version 355, modèle, envergure, longueur et patins sont réduits de 30 %
-(`FLYING_CASTOR_SCALE`, `src/flying-castor-model.js`) ; la sphère de soutien ne change pas.
+(`FLYING_CASTOR_SCALE`, `src/flying-castor-model.ts`) ; la sphère de soutien ne change pas.
 
 **Tous les occupants** (pilote et passagers) ouvrent la roue (**G** / clic
 molette) et **larguent** les constructions du Castor, sauf les murs LEGO :

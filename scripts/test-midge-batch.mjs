@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { performance } from 'node:perf_hooks';
 import * as T from '../vendor/three.module.min.js';
 import { MidgeBatch, MIDGE_LOD } from '../src/midge-batch.js';
-import { nearestInsectHit, InsectIndex } from '../src/insect-hits.js';
+import { nearestInsectHit, InsectIndex } from '../src/insect-hits.ts';
 
 const scene = new T.Scene();
 const batch = new MidgeBatch(T, scene, { capacity: 2 });

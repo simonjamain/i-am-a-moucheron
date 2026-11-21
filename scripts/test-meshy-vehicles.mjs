@@ -4,7 +4,7 @@
 import assert from 'node:assert/strict';
 import * as T from '../vendor/three.module.min.js';
 import { createGraphics } from '../src/graphics.js';
-import { aimGun } from '../src/sortie.js';
+import { aimGun } from '../src/sortie.ts';
 import { ACTOR_UNIT } from '../src/scale.ts';
 import { VEHICLES, vehicleUnit } from '../src/fleet.ts';
 import { tankBarrelOrigin } from '../src/tank-view.js';

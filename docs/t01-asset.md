@@ -30,7 +30,7 @@ Pour explorer une réduction **supplémentaire** avec l'outillage gratuit, voir 
 
 ## Articulation et intégration
 
-Dans `src/sentry-model.js`, le socle reste immobile. La tête et son radar suivent un groupe _yaw_ (360°) ; le canon possède un groupe _pitch_ distinct (−10° à +90°). Chaque fichier Meshy avait son propre axe avant : l'assemblage aligne la tête (+X source), le canon (−X source) et le radar (+Z source) vers −Z du jeu par des transformations **propres à chaque module**. Les échelles et pivots sont fixes et documentés dans le code. Le radar est monté latéralement pour éviter le passage du canon à +90° ; sa position doit être contrôlée en WebGL et peut être ajustée sans regénérer le modèle.
+Dans `src/sentry-model.ts`, le socle reste immobile. La tête et son radar suivent un groupe _yaw_ (360°) ; le canon possède un groupe _pitch_ distinct (−10° à +90°). Chaque fichier Meshy avait son propre axe avant : l'assemblage aligne la tête (+X source), le canon (−X source) et le radar (+Z source) vers −Z du jeu par des transformations **propres à chaque module**. Les échelles et pivots sont fixes et documentés dans le code. Le radar est monté latéralement pour éviter le passage du canon à +90° ; sa position doit être contrôlée en WebGL et peut être ajustée sans regénérer le modèle.
 
 Le code partage les géométries et matériaux des modèles entre toutes les tourelles d'une salle, mais chaque tourelle possède ses pivots d'animation propres. Leur orientation visuelle suit les cibles que le serveur a déjà choisies. Les règles serveur de tirs, dégâts, portée, achat, munitions et recharge ne changent pas.
 

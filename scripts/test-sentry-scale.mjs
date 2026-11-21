@@ -2,8 +2,8 @@
 // cannon matches the Castor's gun; pivots, muzzle, preview and spacing follow.
 import assert from 'node:assert/strict';
 import * as T from '../vendor/three.module.min.js';
-import { createSentryModel, SENTRY_MUZZLE_HEIGHT, SENTRY_SCALE } from '../src/sentry-model.js';
-import { makeCastorMeshy } from '../src/castor-model.js';
+import { createSentryModel, SENTRY_MUZZLE_HEIGHT, SENTRY_SCALE } from '../src/sentry-model.ts';
+import { makeCastorMeshy } from '../src/castor-model.ts';
 import { createGroundModel } from '../src/ground-model.js';
 import { SENTRY } from '../src/ground-sentry.ts';
 import { ACTOR_UNIT } from '../src/scale.ts';

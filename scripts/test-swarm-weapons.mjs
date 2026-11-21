@@ -4,8 +4,8 @@ import * as T from '../vendor/three.module.min.js';
 import { wavePlan, waveBudget, swarmFrame, legacyCost } from '../src/waves.js';
 import { MAP, ACTOR_UNIT } from '../src/scale.ts';
 import { createGraphics } from '../src/graphics.js';
-import { makeAntiaircraft, aimGun, gunnerView } from '../src/sortie.js';
-import { makeTracer, updateTracer } from '../src/tracers.js';
+import { makeAntiaircraft, aimGun, gunnerView } from '../src/sortie.ts';
+import { makeTracer, updateTracer } from '../src/tracers.ts';
 for (const wave of [1, 2, 3, 5, 10, 30, 100, 1000]) {
   const plan = wavePlan('SWARM', wave, 1234);
   assert.equal(

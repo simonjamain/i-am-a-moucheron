@@ -1,6 +1,6 @@
 import './normal-dossiers.mjs';
 import assert from 'node:assert/strict';
-import { createSoul, advanceArena } from '../src/purgatory-physics.js';
+import { createSoul, advanceArena } from '../src/purgatory-physics.ts';
 const now = Date.now();
 // A remote proxy cannot be moved by the local integrator.
 const near = createSoul({ id: 101, entity: 'remote', kind: 'player' }, 0, now),

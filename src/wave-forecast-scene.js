@@ -1,6 +1,6 @@
 import { PORTALS, portalExit } from './routes.js';
-import { activeLayout } from './layouts.js';
-import { PheromoneTrails } from './pheromone-trail.js';
+import { activeLayout } from './layouts.ts';
+import { PheromoneTrails } from './pheromone-trail.ts';
 
 export const speciesSymbols = {
   ant: '🐜',

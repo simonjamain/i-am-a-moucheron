@@ -1,7 +1,7 @@
 # Rendu dessin animé (cell shading et contours) — versions 277 et 278
 
 Depuis la version 278, le rendu « toon » est **le rendu du jeu pour tous les joueurs** :
-trois paliers de lumière et des contours de 1,5 px (`TOON_LOOK` dans `src/toon.js`),
+trois paliers de lumière et des contours de 1,5 px (`TOON_LOOK` dans `src/toon.ts`),
 valeurs validées en partie lors du prototype de la version 277, où il était une option
 personnelle désactivée par défaut. Il n'existe plus de réglage joueur (les champs ont
 été retirés du panneau **Pilotage**). Il n'agit que sur le rendu WebGL ; le rendu logiciel
@@ -9,7 +9,7 @@ de secours reste tel quel.
 
 ## Éclairage par paliers
 
-`installToonLighting` (`src/toon.js`) modifie une fois, au démarrage, les chunks de
+`installToonLighting` (`src/toon.ts`) modifie une fois, au démarrage, les chunks de
 shader de Three.js pour les matériaux éclairés (`MeshStandardMaterial` et
 `MeshLambertMaterial`, donc tous les modèles Meshy et le décor) : l'éclairage direct
 et la pondération de l'hémisphère passent par `toonQuantize`, qui découpe la lumière

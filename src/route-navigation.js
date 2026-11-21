@@ -1,4 +1,4 @@
-import { activeLayout, layoutSolids } from './layouts.js';
+import { activeLayout, layoutSolids } from './layouts.ts';
 const clearance = 0.018,
   groundClearance = 0.025;
 // Obstacle boxes of each layout, built once.

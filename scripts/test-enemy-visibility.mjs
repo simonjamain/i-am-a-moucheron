@@ -1,6 +1,6 @@
 import { ServerClock } from '../src/server-clock.ts';
 import { GroundMotionTrack } from '../src/ground-motion.ts';
-import { InsectIndex } from '../src/insect-hits.js';
+import { InsectIndex } from '../src/insect-hits.ts';
 import assert from 'node:assert/strict';
 import * as T from '../vendor/three.module.min.js';
 import { createGraphics } from '../src/graphics.js';
@@ -28,7 +28,7 @@ console.log(
   'Ground enemies present from wave one; finite visible spawn frames through wave twelve.',
 );
 // A live enemy must never be completely swallowed by solid furniture.
-import { layoutSolids } from '../src/layouts.js';
+import { layoutSolids } from '../src/layouts.ts';
 const ROUTE_OBSTACLES = layoutSolids();
 const counts = {};
 for (const wave of [1, 2, 4, 6, 8, 12]) {

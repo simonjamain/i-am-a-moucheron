@@ -8,7 +8,7 @@ import {
   MAX_COMMAND_BYTES,
   DISCONNECT_GRACE_MS,
 } from './udp-protocol.ts';
-import { validMotion } from './network.js';
+import { validMotion } from './network.ts';
 import { decodeMotionBatch } from './motion-wire.ts';
 
 export class UdpClient {

@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
 import { mkdir } from 'node:fs/promises';
 import { createGameServer } from '../server/index.js';
-import { LAYOUTS } from '../src/layouts.js';
+import { LAYOUTS } from '../src/layouts.ts';
 await mkdir('work', { recursive: true });
 const require = createRequire(import.meta.url);
 const { chromium } = require(process.env.PLAYWRIGHT_PATH || 'playwright');

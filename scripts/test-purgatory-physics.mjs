@@ -6,7 +6,7 @@ import {
   bodyMotion,
   relayBodyReport,
   SOUL_RADIUS,
-} from '../src/purgatory-physics.js';
+} from '../src/purgatory-physics.ts';
 const make = (id, x = 0, z = 8) => ({
   ...createSoul({ id, entity: 'p' + id, kind: 'player' }, 0, 1000),
   x,

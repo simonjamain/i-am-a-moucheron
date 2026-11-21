@@ -1,6 +1,6 @@
 import { MAP, ACTOR_UNIT, REFERENCE } from './scale.ts';
 import { OFFICE_LAYOUT } from './layout.ts';
-import { advanceArena, createSoul } from './purgatory-physics.js';
+import { advanceArena, createSoul } from './purgatory-physics.ts';
 export function aircraftBay(index) {
   const col = index % 10,
     row = Math.floor(index / 10);

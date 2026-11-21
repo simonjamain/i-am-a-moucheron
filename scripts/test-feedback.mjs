@@ -3,11 +3,11 @@ import assert from 'node:assert/strict';
 import * as T from '../vendor/three.module.min.js';
 import { createGraphics } from '../src/graphics.js';
 import { InsectStatus, insectScale, woundState } from '../src/insect-status.ts';
-import { nearestInsectHit, nearestMeshHit } from '../src/insect-hits.js';
+import { nearestInsectHit, nearestMeshHit } from '../src/insect-hits.ts';
 import { INSECT_SCALE } from '../src/scale.ts';
 import { wavePlan, swarmFrame, entryStatus } from '../src/waves.js';
 import { PORTALS, MIN_SPAWN_DISTANCE } from '../src/routes.js';
-import { mergeOwnedArena } from '../src/purgatory-physics.js';
+import { mergeOwnedArena } from '../src/purgatory-physics.ts';
 const scene = new T.Scene(),
   { insect } = createGraphics(T, scene),
   old = insect('midge'),
