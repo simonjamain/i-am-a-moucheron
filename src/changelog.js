@@ -1,6 +1,12 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 400,
+    changes: [
+      'Missiles guidés de l’hélicoptère : explosion bien plus puissante, qui touche jusqu’à 30 m autour.',
+    ],
+  },
+  {
     version: 399,
     changes: ['Les documents ne se déchirent plus : le bouton « Déchirer ce document » disparaît.'],
   },

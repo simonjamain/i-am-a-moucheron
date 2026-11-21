@@ -20,9 +20,9 @@ export const HEAVY = Object.freeze({
   },
   missile: {
     interval: 0,
-    damage: 80,
-    edge: 20,
-    radius: MAP.metres(FLAK.radius),
+    damage: 360,
+    edge: 70,
+    radius: MAP.metres(30),
     speed: MAP.metres(100),
     lifetime: 10,
   },
