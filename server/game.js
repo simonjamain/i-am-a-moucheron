@@ -65,7 +65,7 @@ import { howitzerMuzzle } from '../src/howitzer-geometry.ts';
 import { validMotion } from '../src/network.ts';
 import { snapshotRosterCore, snapshotRosterKey } from '../src/snapshot-wire.ts';
 import { appendDebugEnemy, debugPlacement, standingDummies } from '../src/debug-enemies.ts';
-import { newBank, signLoan, settleLoans, repayLoan } from '../src/bank.ts';
+import { newBank, signLoan, settleLoans } from '../src/bank.ts';
 import { canUseWeapon, HEAVY, TANK_MG, availableShell } from '../src/armament.ts';
 import { sweptSphereMayTouch } from '../src/swept-broadphase.ts';
 import { createOrdnance, segmentSphere } from '../src/ordnance.js';
@@ -1254,16 +1254,11 @@ export class Game {
     } else if (path === 'reset') {
       if (b.epoch !== undefined && b.epoch !== r.base.epoch) return this.snapshot(r, options);
       this.resetRoom(r);
-    } else if (path === 'bank-sign' || path === 'bank-repay') {
+    } else if (path === 'bank-sign') {
       requireGame(
         b.epoch === undefined || b.epoch === r.base.epoch,
         'La partie a changé. Relisez le contrat.',
       );
-      if (path === 'bank-repay' && b.expectedRemaining !== undefined)
-        requireGame(
-          b.expectedRemaining === r.bank.slots[b.slot]?.remaining,
-          'Le capital restant a changé. Relisez le remboursement.',
-        );
       requireGame(
         Number.isInteger(b.slot) && b.slot >= 0 && b.slot < 3 && Number.isSafeInteger(b.serial),
         'Contrat bancaire invalide.',
@@ -1272,12 +1267,7 @@ export class Game {
       requireGame(signature(b.signature), 'Signez le contrat bancaire.');
       try {
         const cents = Math.round(r.dollars * 100);
-        r.dollars =
-          (cents +
-            (path === 'bank-sign'
-              ? signLoan(r.bank, b.slot, b.serial, cents, r.wave)
-              : -repayLoan(r.bank, b.slot, b.serial, cents))) /
-          100;
+        r.dollars = (cents + signLoan(r.bank, b.slot, b.serial, cents, r.wave)) / 100;
       } catch (e) {
         requireGame(false, e.message);
       }

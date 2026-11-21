@@ -113,19 +113,3 @@ export function settleLoans(bank: Bank, wave: number, random: Random = Math.rand
   }
   return debit;
 }
-export function repayLoan(
-  bank: Bank,
-  slot: number,
-  serial: number,
-  balance: number,
-  random: Random = Math.random,
-): number {
-  const loan = bank.slots[slot];
-  if (!loan || loan.serial !== serial || loan.status !== 'active')
-    throw Error('Contrat absent ou déjà soldé.');
-  if (balance < loan.remaining)
-    throw Error('Solde insuffisant pour rembourser le capital restant.');
-  const debit = loan.remaining;
-  bank.slots[slot] = loanOffer(slot, ++bank.serial, random);
-  return debit;
-}
