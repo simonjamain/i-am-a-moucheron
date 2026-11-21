@@ -146,7 +146,7 @@ des terrestres associe `ground-crowd.js` (sous-pas communs et voisinage spatial)
 
 `character-appearances.ts` liste les huit personnages au choix (validés aussi par le serveur à la connexion) et `appearance-picker.js` affiche le sélecteur de l'accueil ; `character-model.js` anime le personnage joueur choisi (`character-data.js` par défaut, les autres `character-<id>-data.js` chargés à la demande) (squelette Mixamo, repos/marche/course, poses procédurales assis, chute et pistolet) ; `graphics.humanoid()` l'enveloppe dans le cadre invisible du pistolet ([pipeline d'assets](asset-pipeline.md#personnage-joueur-meshy--mixamo)).
 
-`seat-posts.ts` (partagé client/serveur) liste les engins où l’on monte en visant le poste (bombardier moyen), leurs zones de visée et la portée ; `post-highlight.ts` dessine le contour bleu signal du poste survolé ([règles d’interface](ui-guidelines.md#monter-dans-un-engin--viser-le-poste)).
+`seat-posts.ts` (partagé client/serveur) liste les engins où l’on monte en visant le poste (bombardier moyen), leurs zones de visée et la portée ; `post-highlight.ts` dessine le contour bleu signal du poste survolé, en post-traitement à l’écran comme les contours du rendu dessin animé (masque des pièces du poste, puis trait autour de sa silhouette) ([règles d’interface](ui-guidelines.md#monter-dans-un-engin--viser-le-poste)).
 
 `biplane-model.js`, `meshy-biplane-data.js` et `meshy-biplane-bomber-data.js` portent le [chasseur et le bombardier biplans](biplane-models.md) ; `fleet.ts` définit leurs postes (le bombardier : pilote et mitrailleur) et `vehicle-livery.ts` leurs plaques de nom.
 Les autres véhicules Meshy utilisent `meshy-texture.ts` pour le décodage

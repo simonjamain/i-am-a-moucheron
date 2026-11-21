@@ -131,7 +131,7 @@ import {
 import { createRenderer } from '/renderer.js';
 import { makeEntryRing } from '/entry-ring.js';
 import { pointBoarding, SEAT_POSTS, pickPost } from '/seat-posts.js';
-import { PostHighlight, SIGNAL_COLOR, TAKEN_COLOR } from '/post-highlight.js';
+import { PostHighlight, SelectionOutline, SIGNAL_COLOR, TAKEN_COLOR } from '/post-highlight.js';
 import { renderInfo } from '/render-info.js';
 import { createGraphics } from '/graphics.js';
 import { availableAppearance, turnToward, loadCharacter } from '/character-model.js';
@@ -242,6 +242,7 @@ document.addEventListener('visibilitychange', () => {
 addEventListener('pagehide', () => sound.close());
 const renderer = createRenderer(T, canvas);
 const toon = new ToonRenderer(T, renderer);
+const postSelection = new SelectionOutline(T, renderer);
 
 const camera = new T.PerspectiveCamera(62, innerWidth / innerHeight, 0.00005, 40);
 const holdZoom = new HoldZoom();
@@ -3681,6 +3682,7 @@ function updateAimedPost() {
   const label = $('postLabel');
   if (!next) {
     label.hidden = true;
+    postSelection.color = null;
     return;
   }
   let highlight = postHighlights.get(key);
@@ -3693,7 +3695,8 @@ function updateAimedPost() {
     postHighlights.set(key, highlight);
   }
   const occupant = next.vehicle.seats.find((s) => s.seat === next.seat);
-  highlight.show(occupant ? TAKEN_COLOR : SIGNAL_COLOR);
+  highlight.show();
+  postSelection.color = occupant ? TAKEN_COLOR : SIGNAL_COLOR;
   // A taken post names its occupant; a free post needs no text.
   label.hidden = !occupant;
   if (occupant) {
@@ -5099,6 +5102,8 @@ function frame(now) {
     toon.render(purgScene, purgCamera);
   } else toon.render(scene, camera);
   appearancePicker.draw(renderer, dt);
+  // Outline of the aimed post, over the office frame only (src/post-highlight.ts).
+  if (!spectating && !respawnAt) postSelection.render(scene, camera);
   updateAudio();
   gunSalvos.update(
     !spectating && canCapture() && myVehicle?.type === 'spitfire' && !respawnAt
