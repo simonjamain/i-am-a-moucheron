@@ -3,6 +3,7 @@ import { MIDGE } from '/midge-model.js';
 import { WALKERS } from '/walker-batch.js';
 import { FLYERS, FlyerBatch } from '/flyer-batch.js';
 import { rayCollider, colliderContainsXZ } from '/oriented-collider.js';
+import { sweptHitsDecor } from '/office-collision.js';
 import { makeServiceStation, animateRadar, makeInstallationCollider } from '/station-model.js';
 import { ReloadHUD, seatReloads, heavyReadyAt, heavyLane, reloadProgress } from '/reload-hud.js';
 import { makeBed } from '/bed-model.js';
@@ -105,6 +106,7 @@ import {
   stationAccess,
   stationExit,
   resolveLanding,
+  withoutDecor,
   stepWalker,
   GEAR_HEIGHT,
 } from '/sortie.js';
@@ -3474,7 +3476,7 @@ function updateBaseWorld(dt, now) {
   remoteBodies(baseArena, 'base');
   advanceBase(baseArena, baseArena.time + dt * 1000, id);
   if (body && onFoot && !respawnAt && turretIndex < 0) {
-    const impact = stepWalker(body, dt, colliders);
+    const impact = stepWalker(body, dt, colliders, office.decor);
     if (impact?.damage)
       action('fall-impact', {
         speed: impact.speed,
@@ -4565,6 +4567,7 @@ function physics(dt) {
     const drive = { forward: -manual.pitch, turn: manual.roll || -manual.yaw };
     if (!drivenRigs.has(myVehicle.type))
       drivenRigs.set(myVehicle.type, new RAPIER_RIGS[myVehicle.type](rapier));
+    drivenRigs.get(myVehicle.type).physics?.useDecor(office.decor);
     drivenRigs.get(myVehicle.type).step(state, drive, colliders, dt, VEHICLES[myVehicle.type]);
     if (state.hp <= 0) {
       crash();
@@ -4644,6 +4647,7 @@ function physics(dt) {
     previousPosition,
     colliders,
     dt,
+    office.decor,
   );
   const wasLanded = landed;
   landed = landing.landed;
@@ -4685,8 +4689,17 @@ function physics(dt) {
     p.y > OFFICE_LAYOUT.bounds.ceiling ||
     Math.abs(p.x) > OFFICE_LAYOUT.bounds.x ||
     Math.abs(p.z) > OFFICE_LAYOUT.bounds.z;
+  // Props collide on their real triangles once the decor world is built: the
+  // padded point touching a triangle, or the step's segment crossing one.
+  if (!collision && office.decor)
+    collision = sweptHitsDecor(
+      office.decor,
+      previousPosition.toArray(),
+      p.toArray(),
+      0.3 * ACTOR_UNIT,
+    );
   if (!collision)
-    for (const b of colliders)
+    for (const b of withoutDecor(colliders, office.decor))
       if (
         !(
           landed &&
@@ -5720,8 +5733,9 @@ function simulateVacantAircraft(dt) {
       );
     else if (RAPIER_RIGS[v.type]) {
       if (!vacantRigs.has(v.id)) vacantRigs.set(v.id, new RAPIER_RIGS[v.type](rapier));
+      vacantRigs.get(v.id).physics?.useDecor(office.decor);
       vacantRigs.get(v.id).step(s, { forward: 0, turn: 0 }, colliders, dt, VEHICLES[v.type]);
-    } else stepVacantAircraft(T, s, VEHICLES[v.type], colliders, dt);
+    } else stepVacantAircraft(T, s, VEHICLES[v.type], colliders, dt, office.decor);
     Object.assign(v.state, s);
   }
   for (const key of [...vacantAircraft.keys()])

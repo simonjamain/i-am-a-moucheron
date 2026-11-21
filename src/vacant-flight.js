@@ -1,10 +1,13 @@
 import { stepFlight, ROLLING_FRICTION } from './flight.ts';
-import { resolveLanding } from './sortie.ts';
-import { MAP } from './scale.ts';
+import { resolveLanding, withoutDecor } from './sortie.ts';
+import { MAP, ACTOR_UNIT } from './scale.ts';
+import { sweptHitsDecor } from './office-collision.ts';
 import { OFFICE_LAYOUT } from './layout.ts';
 // This is the ordinary aircraft integrator with neutral controls, not an
 // autopilot. A selected client owns it only while the cockpit is vacant.
-export function stepVacantAircraft(T, state, profile, colliders, dt) {
+// `decor`: the props' triangle colliders (office-collision.ts), when built.
+export function stepVacantAircraft(T, state, profile, allColliders, dt, decor = null) {
+  const colliders = withoutDecor(allColliders, decor);
   if (state.hp <= 0) return state;
   const position = new T.Vector3().fromArray(state.p),
     previous = position.clone(),
@@ -37,6 +40,7 @@ export function stepVacantAircraft(T, state, profile, colliders, dt) {
     previous,
     colliders,
     dt,
+    decor,
   );
   if (landing.landed) {
     velocity.x *= Math.exp(-dt * ROLLING_FRICTION);
@@ -52,7 +56,8 @@ export function stepVacantAircraft(T, state, profile, colliders, dt) {
     position.y > OFFICE_LAYOUT.bounds.ceiling ||
     Math.abs(position.x) > OFFICE_LAYOUT.bounds.x ||
     Math.abs(position.z) > OFFICE_LAYOUT.bounds.z ||
-    colliders.some((box) => box.containsPoint(position))
+    colliders.some((box) => box.containsPoint(position)) ||
+    (decor && sweptHitsDecor(decor, previous.toArray(), position.toArray(), 0.1 * ACTOR_UNIT))
   )
     state.hp = 0;
   Object.assign(state, {

@@ -1,6 +1,13 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 410,
+    changes: [
+      'Avions, piétons et véhicules touchent la vraie forme des meubles : on se pose sur une assise, on passe sous un bureau.',
+      'Une pale de ventilateur ou une feuille ne se traverse plus, même très vite.',
+    ],
+  },
+  {
     version: 409,
     changes: [
       'Les équipements se posent sur la vraie surface des meubles : assise d’une chaise, dessus de la photocopieuse.',
