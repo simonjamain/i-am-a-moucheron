@@ -42,8 +42,10 @@ impossible. Les dégâts de la poubelle restent calculés et le HUD affiche ses 
 même négatifs (« -75 / 20 PV »). Désactiver réinitialise la partie aux règles normales.
 Pendant une vague, le marchand (P) propose en plus deux colonnes pour poser un ennemi
 au point visé : **Mannequins** (immobiles, invulnérables, avec le dernier dégât reçu
-affiché en gros) et **Ennemis réels**. Les hitbox des ennemis et la portée des
-tourelles et du sucre sont toujours visibles.
+affiché en gros) et **Ennemis réels**. Les hitbox des ennemis, la portée des
+tourelles et du sucre, et les volumes de collision du décor (murs, meubles,
+ventilateurs, constructions : fil de fer cyan sur faces légèrement teintées) sont
+toujours visibles.
 Voir [mode debug](laboratory.md).
 
 ## Accueil et noms

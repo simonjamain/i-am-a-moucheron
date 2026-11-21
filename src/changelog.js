@@ -1,6 +1,12 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 404,
+    changes: [
+      'Mode debug : les volumes de collision des murs, meubles et ventilateurs s’affichent en fil de fer.',
+    ],
+  },
+  {
     version: 403,
     changes: [
       'Diagonale s’éclaire par deux ventilateurs lumineux qui pendent sous les nuages : attention aux pales en vol.',
