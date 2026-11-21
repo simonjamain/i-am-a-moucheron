@@ -26,7 +26,7 @@ haut, sous la couche de nuages) avant de plonger vers la corbeille.
 
 ## Données et code
 
-`src/layouts.js` est la seule source : données pures (pas de Three.js), importées
+`src/layouts.ts` est la seule source : données pures (pas de Three.js), importées
 par le client, le serveur Node et les Web Workers.
 Chaque plan décrit :
 
@@ -54,7 +54,7 @@ plan. Le serveur active le plan de la room avant chaque opération
 
 ## Ajouter ou modifier un plan
 
-1. Ajouter l'entrée dans `LAYOUTS` (`src/layouts.js`) ; éviter les rotations
+1. Ajouter l'entrée dans `LAYOUTS` (`src/layouts.ts`) ; éviter les rotations
    (la navigation au sol utilise des boîtes alignées).
 2. Garder les entrées sur les murs, loin de la corbeille, jamais dans un meuble ;
    laisser le pied de la corbeille et l'apparition libres.

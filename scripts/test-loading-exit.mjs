@@ -4,7 +4,7 @@ import * as Three from '../vendor/three.module.min.js';
 
 // Execute the actual bootstrap with a deterministic clock and DOM/renderer adapters.
 // Real Three transforms; this checks lifecycle/trajectory, not pixels or GPU rendering.
-const source = (await readFile(new URL('../src/boot.js', import.meta.url), 'utf8')).replaceAll(
+const source = (await readFile(new URL('../src/boot.ts', import.meta.url), 'utf8')).replaceAll(
   'import(',
   'importModule(',
 );

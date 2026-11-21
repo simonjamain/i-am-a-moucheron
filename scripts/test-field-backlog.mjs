@@ -98,7 +98,7 @@ for (const type of ['bomber', 'tank']) {
 }
 
 const T = await import('../vendor/three.module.min.js');
-const { stepWalker } = await import('../src/sortie.js');
+const { stepWalker } = await import('../src/sortie.ts');
 const { impactDamage, WALKER_FALL } = await import('../src/field-physics.ts');
 function fall(height, openAt = null, dt = 1 / 120) {
   const body = {
@@ -232,7 +232,7 @@ console.log(
 
 const { OFFICE_SOLIDS } = await import('../server/assets.js');
 const { supportedPlacement } = await import('../src/equipment.ts');
-const { bedSpawn } = await import('../src/beds.js');
+const { bedSpawn } = await import('../src/beds.ts');
 const bedGame = new Game({ solids: OFFICE_SOLIDS }),
   bedJoin = bedGame.join({ code: 'BEDS' }),
   bedRoom = bedGame.rooms.get('BEDS'),

@@ -1,6 +1,6 @@
 import { splitBarricade } from './ground-defense.js';
-import { createBrickWall } from './brick-wall.js';
-import { createSentryModel } from './sentry-model.js';
+import { createBrickWall } from './brick-wall.ts';
+import { createSentryModel } from './sentry-model.ts';
 
 // One model factory for both placed structures and placement previews.
 export function createGroundModel(T, structure) {

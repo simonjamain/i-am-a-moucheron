@@ -4,7 +4,7 @@
 // follows its horizontal movement and its gait phase advances with the
 // distance travelled, so feet stay planted whatever the server speed. A
 // creature that stops (glue, bait, stall) settles into the nearest planted pose.
-import { CreatureBatch } from './creature-batch.js';
+import { CreatureBatch } from './creature-batch.ts';
 import { ANT, ANT_BONES, ANT_HIT, ANT_MODEL } from './ant-model.js';
 import { SPIDER, SPIDER_BONES, SPIDER_HIT, SPIDER_MODEL } from './spider-model.js';
 import { ROACH, ROACH_BONES, ROACH_HIT, ROACH_MODEL } from './roach-model.js';

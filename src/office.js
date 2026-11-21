@@ -1,5 +1,5 @@
 import { applyShadowPreset } from './shadow-settings.ts';
-import { activeLayout, layoutPieces } from './layouts.js';
+import { activeLayout, layoutPieces } from './layouts.ts';
 // Draws the active layout (see layouts.js): room shell, furniture volumes, bin,
 // vents and floor holes. Everything goes into one group so a room's plan can be
 // replaced (`dispose`) without touching the rest of the scene. Colliders are the

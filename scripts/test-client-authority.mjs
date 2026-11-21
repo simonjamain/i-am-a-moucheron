@@ -5,7 +5,7 @@ import {
   mergeOwnedArena,
   bodyMotion,
   relayBodyReport,
-} from '../src/purgatory-physics.js';
+} from '../src/purgatory-physics.ts';
 for (const delay of [40, 160, 320, 1500]) {
   const b = createSoul({ id: 1, entity: 'me', kind: 'player' }, 0, 1000);
   b.x = 0;

@@ -1,5 +1,5 @@
 import { stepFlight, ROLLING_FRICTION } from './flight.ts';
-import { resolveLanding } from './sortie.js';
+import { resolveLanding } from './sortie.ts';
 import { MAP } from './scale.ts';
 import { OFFICE_LAYOUT } from './layout.ts';
 // This is the ordinary aircraft integrator with neutral controls, not an

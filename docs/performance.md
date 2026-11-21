@@ -2,7 +2,7 @@
 
 ## Collisions des tirs
 
-`InsectIndex` dans `src/insect-hits.js` sélectionne les candidats avec une grille
+`InsectIndex` dans `src/insect-hits.ts` sélectionne les candidats avec une grille
 spatiale de 8 cm et un parcours des cellules traversées par le segment. Les mêmes
 sphères conservatrices que le parcours exhaustif couvrent toutes leurs cellules.
 Les intersections précises, tolérance du moucheron, exclusions et ordre des
@@ -49,7 +49,7 @@ chaque tranche (environ 1,6 s avec `compose`/`multiplyMatrices`), `hitRadius`
 (449 ms, spread et `Math.hypot` par moucheron et par tir) et les allocations
 (`Raycaster`, vecteurs) par tranche.
 
-- `solidTarget` / `nearestSolidHit` (`src/insect-hits.js`) : matrices, maillages
+- `solidTarget` / `nearestSolidHit` (`src/insect-hits.ts`) : matrices, maillages
   solides et boîte monde (agrandie de 30 % pour la pose animée) sont préparés une
   seule fois par image, à la demande, par `stepProjectiles`. Une boîte que le
   segment n'atteint pas évite tout test de triangle. Même ordre et même règle
@@ -162,7 +162,7 @@ calculées directement depuis ID, route et temps, avec une complexité
 essentiellement linéaire par trame moucheron. Les autres espèces conservent
 la grille de voisinage existante. `src/midge-batch.js` réduit les meshes
 WebGL **vivants** des moucherons à trois lots instanciés, sans rendre les
-collisions dépendantes du rendu. `src/insect-hits.js` utilise le rayon
+collisions dépendantes du rendu. `src/insect-hits.ts` utilise le rayon
 mathématique de la sphère pour les intersections et le même index spatial.
 Le serveur ajoute un rejet AABB rapide avant les intersections segment–sphère
 des armes lourdes. Aucun changement d'autorité des impacts.

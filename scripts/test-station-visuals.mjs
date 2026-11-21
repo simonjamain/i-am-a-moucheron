@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import * as T from '../vendor/three.module.min.js';
-import { makeServiceStation, animateRadar } from '../src/station-model.js';
+import { makeServiceStation, animateRadar } from '../src/station-model.ts';
 import { ShopThumbnails } from '../src/shop-thumbs.js';
 
 const radar = makeServiceStation(T, 'radar');

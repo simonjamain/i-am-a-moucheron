@@ -4,6 +4,9 @@
 // Outlines are a post-process on the log depth buffer the game already uses:
 // a pixel just behind a nearer surface gets the line colour, flat slopes are
 // ignored (the Laplacian of inverse depth vanishes on planes).
+import type * as THREE from 'three';
+import type { Three } from './types.ts';
+
 export const toonUniform = { value: 0 };
 let installed = false;
 
@@ -17,11 +20,11 @@ float toonQuantize( const in float x ) {
 }
 `;
 
-export function installToonLighting(T) {
+export function installToonLighting(T: Three): boolean {
   if (installed) return false;
   installed = true;
-  const chunks = T.ShaderChunk;
-  const patch = (name, from, to, declare = false) => {
+  const chunks = T.ShaderChunk as unknown as Record<string, string>;
+  const patch = (name: string, from: string, to: string, declare = false) => {
     if (!chunks[name].includes(from)) throw Error('Three shader changed: ' + name);
     chunks[name] = (declare ? STEP : '') + chunks[name].replaceAll(from, to);
   };
@@ -39,13 +42,13 @@ export function installToonLighting(T) {
     );
   // Every standard / lambert material shares one uniform (0 = smooth lighting).
   for (const Material of [T.MeshStandardMaterial, T.MeshLambertMaterial])
-    Material.prototype.onBeforeCompile = function toonBind(shader) {
+    Material.prototype.onBeforeCompile = function toonBind(shader: THREE.WebGLProgramParametersWithUniforms) {
       shader.uniforms.toonBands = toonUniform;
     };
   return true;
 }
 
-export function setToonBands(bands) {
+export function setToonBands(bands: number): void {
   toonUniform.value = bands >= 2 ? Math.round(bands) : 0;
 }
 
@@ -92,13 +95,37 @@ export const OUTLINE_COLOR = '#1b1510';
 // The look of the game: three light bands, 1.5 px outlines (validated in play).
 export const TOON_LOOK = Object.freeze({ toonShading: true, toonBands: 3, toonOutline: 1.5 });
 
+export interface ToonLook {
+  toonShading?: boolean;
+  toonBands?: number;
+  toonOutline?: number;
+}
+
+interface OutlineUniforms {
+  [uniform: string]: THREE.IUniform;
+  tColor: THREE.IUniform<THREE.Texture | null>;
+  tDepth: THREE.IUniform<THREE.DepthTexture | null>;
+  texel: THREE.IUniform<THREE.Vector2>;
+  radius: THREE.IUniform<number>;
+  logRange: THREE.IUniform<number>;
+  threshold: THREE.IUniform<number>;
+  lineColor: THREE.IUniform<THREE.Color>;
+}
+
 export class OutlinePass {
-  constructor(T, renderer) {
+  T: Three;
+  renderer: THREE.WebGLRenderer;
+  target: THREE.WebGLRenderTarget | null;
+  size: [number, number];
+  material: THREE.ShaderMaterial & { uniforms: OutlineUniforms };
+  scene: THREE.Scene;
+  camera: THREE.Camera;
+  constructor(T: Three, renderer: THREE.WebGLRenderer) {
     this.T = T;
     this.renderer = renderer;
     this.target = null;
     this.size = [0, 0];
-    this.material = new T.ShaderMaterial({
+    this.material = new T.ShaderMaterial<OutlineUniforms>({
       uniforms: {
         tColor: { value: null },
         tDepth: { value: null },
@@ -117,7 +144,7 @@ export class OutlinePass {
     this.scene.add(new T.Mesh(new T.PlaneGeometry(2, 2), this.material));
     this.camera = new T.Camera();
   }
-  resize(width, height) {
+  resize(width: number, height: number): void {
     if (this.target && this.size[0] === width && this.size[1] === height) return;
     const T = this.T;
     this.target?.dispose();
@@ -130,22 +157,23 @@ export class OutlinePass {
     this.size = [width, height];
   }
   // Draw `scene` with outlines of `thickness` pixels on screen.
-  render(scene, camera, thickness) {
+  render(scene: THREE.Scene, camera: THREE.PerspectiveCamera, thickness: number): void {
     const renderer = this.renderer,
       size = renderer.getDrawingBufferSize(new this.T.Vector2());
     this.resize(size.x, size.y);
     renderer.setRenderTarget(this.target);
     renderer.render(scene, camera);
     renderer.setRenderTarget(null);
-    const uniforms = this.material.uniforms;
-    uniforms.tColor.value = this.target.texture;
-    uniforms.tDepth.value = this.target.depthTexture;
+    const uniforms = this.material.uniforms,
+      target = this.target!;
+    uniforms.tColor.value = target.texture;
+    uniforms.tDepth.value = target.depthTexture;
     uniforms.texel.value.set(1 / size.x, 1 / size.y);
     uniforms.radius.value = thickness * (size.y / 900);
     uniforms.logRange.value = Math.log2(camera.far + 1);
     renderer.render(this.scene, this.camera);
   }
-  dispose() {
+  dispose(): void {
     this.target?.dispose();
     this.material.dispose();
   }
@@ -153,7 +181,13 @@ export class OutlinePass {
 
 // Frame entry point: plain render unless the player asked for outlines.
 export class ToonRenderer {
-  constructor(T, renderer, look = TOON_LOOK) {
+  T: Three;
+  renderer: THREE.WebGLRenderer;
+  pass: OutlinePass | null;
+  bands: number;
+  outline: number;
+  available: boolean;
+  constructor(T: Three, renderer: THREE.WebGLRenderer, look: ToonLook = TOON_LOOK) {
     this.T = T;
     this.renderer = renderer;
     this.pass = null;
@@ -164,12 +198,12 @@ export class ToonRenderer {
     if (this.available) installToonLighting(T);
     this.configure(look);
   }
-  configure({ toonShading = false, toonBands = 3, toonOutline = 0 } = {}) {
+  configure({ toonShading = false, toonBands = 3, toonOutline = 0 }: ToonLook = {}): void {
     this.bands = toonShading ? toonBands : 0;
     this.outline = toonOutline;
     if (this.available) setToonBands(this.bands);
   }
-  render(scene, camera) {
+  render(scene: THREE.Scene, camera: THREE.PerspectiveCamera): void {
     if (!this.available || !(this.outline > 0)) {
       this.renderer.render(scene, camera);
       return;

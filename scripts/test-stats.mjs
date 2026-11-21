@@ -7,7 +7,7 @@ import { Game } from '../server/game.js';
 import { StatsLedger, MIN_HUMAN_MINUTES, FAIR_BAND } from '../server/stats.ts';
 import { createGameServer } from '../server/index.js';
 import { advancePaidService } from '../src/paid-service.js';
-import { fullAmmo } from '../src/logistics.js';
+import { fullAmmo } from '../src/logistics.ts';
 
 const near = (a, b, eps = 1e-9) => assert.ok(Math.abs(a - b) < eps, `${a} != ${b}`);
 

@@ -9,7 +9,7 @@ import { TankRig } from '../src/tank-physics.ts';
 import { GUN_RECOIL, applyGunRecoil, recoilAmount } from '../src/tank-recoil.ts';
 import { tankSight, SIGHT } from '../src/tank-view.js';
 import { MODEL_DATA } from '../src/meshy-tank-data.js';
-import { aimGun } from '../src/sortie.js';
+import { aimGun } from '../src/sortie.ts';
 import { VEHICLE_ANCHORS } from '../src/vehicle-anchors.js';
 
 // Profile: quick back, slower return, nothing before the shot.

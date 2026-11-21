@@ -74,7 +74,7 @@ Les effets ne produisent aucun second impact.
 
 ### Effets des roquettes et du missile (version 240)
 
-`src/missile-exhaust.js` applique un profil par projectile (`EXHAUST_PROFILES`) : fumée
+`src/missile-exhaust.ts` applique un profil par projectile (`EXHAUST_PROFILES`) : fumée
 plus sombre et plus épaisse qu'auparavant, flamme plus grande et plus vive, et halo
 additif de taille constante à l'écran, visible de loin. Le missile guidé a la traînée la
 plus dense et un halo plus grand qui pulse. Cadences, dégâts, guidage et vitesses sont

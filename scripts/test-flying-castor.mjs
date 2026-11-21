@@ -17,14 +17,14 @@ import {
   isPassengerSeat,
 } from '../src/fleet.ts';
 import { SHOP } from '../src/equipment.ts';
-import { SHOP_CATEGORIES } from '../src/shop-catalog.js';
+import { SHOP_CATEGORIES } from '../src/shop-catalog.ts';
 import { canUseWeapon } from '../src/armament.ts';
-import { fullAmmo, CASTOR_SERVICE_RADIUS } from '../src/logistics.js';
+import { fullAmmo, CASTOR_SERVICE_RADIUS } from '../src/logistics.ts';
 import { CONTRACTS, contractKey } from '../src/contracts.js';
 import { withinService } from '../src/paid-service.js';
 import { serviceZoneList } from '../src/service-zones.js';
 import { stepHelicopter, HELI } from '../src/helicopter.js';
-import { DELIVERY_SPEED, deliveryHeightAt } from '../src/delivery.js';
+import { DELIVERY_SPEED, deliveryHeightAt } from '../src/delivery.ts';
 import {
   AIRDROP_KINDS,
   AIRDROP_TAPE,

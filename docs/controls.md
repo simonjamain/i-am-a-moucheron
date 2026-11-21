@@ -82,7 +82,7 @@ Clic droit maintenu : zoom dans un poste avec pointeur capturé ; relâcher rest
 la vue. DCA : Shift maintenu augmente la fusée en continu, Ctrl maintenu la réduit
 (de 30 cm à 3,60 m du bureau en environ 3 s), relâcher arrête aussitôt et les deux
 touches ensemble s'annulent ; distance réelle affichée en direct.
-`advanceFuse()` (`src/equipment-controls.js`) porte ce réglage, couvert par
+`advanceFuse()` (`src/equipment-controls.ts`) porte ce réglage, couvert par
 `scripts/test-fuse-continuous.mjs`. Molette et [ ] gardent des pas de 25 m. Tank : Z/S ou flèches pour avancer/reculer, Q/D pour tourner ; Shift choisit
 HE, Ctrl AP. Au tireur principal, clic gauche tire le canon et Espace la coaxiale. Les graduations
 de la lunette vont de 15 cm à 9 m du bureau (l'autre bout de la pièce), échantillonnées sur la trajectoire réelle de l'obus choisi (HE/AP,
@@ -205,7 +205,7 @@ semi-transparente bordée de sombre, parcourue de chevrons blancs qui glissent v
 la poubelle : c'est le chemin réellement marché tant que la carte ne change pas.
 Pendant la pose d’une barricade ou d’un bunker, la piste claire à chevrons orange
 montre le détour proposé avant le clic de validation. Les trajets aériens gardent
-leurs nuages colorés par aération (`src/pheromone-trail.js`, version 239).
+leurs nuages colorés par aération (`src/pheromone-trail.ts`, version 239).
 
 Il n'y a ni vote ni carte de plan (version 264) : la fenêtre annonce seulement la
 vague. **Lancer la vague maintenant** est disponible pour tout joueur pendant la

@@ -185,7 +185,7 @@ console.log(
 const T = await import('../vendor/three.module.min.js');
 const { DebugTools, DamageMeter, DAMAGE_WINDOW_S, formatDamage } =
   await import('../src/debug-tools.ts');
-const { nearestInsectHit } = await import('../src/insect-hits.js');
+const { nearestInsectHit } = await import('../src/insect-hits.ts');
 const { WalkerBatch } = await import('../src/walker-batch.js');
 const { SENTRY: SENTRY_RULES } = await import('../src/ground-sentry.ts');
 const meter = new DamageMeter();

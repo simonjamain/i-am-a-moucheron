@@ -1,11 +1,11 @@
 import { WALL_SEGMENT, HALF_BRICK, wallLength, wallVisualRuns } from './brick-rules.ts';
 import { createGroundModel } from './ground-model.js';
-import { ModelPreview } from './model-preview.js';
+import { ModelPreview } from './model-preview.ts';
 import { groundPlacement, airdropPlacement } from './ground-placement.js';
-import { deliveryHeightAt } from './delivery.js';
+import { deliveryHeightAt } from './delivery.ts';
 import { lengthPrice } from './ground-defense-state.js';
-import { BRICK_PITCH } from './brick-wall.js';
-import { sentryAimAngles, sentryAngleDelta, SENTRY_MUZZLE_HEIGHT } from './sentry-model.js';
+import { BRICK_PITCH } from './brick-wall.ts';
+import { sentryAimAngles, sentryAngleDelta, SENTRY_MUZZLE_HEIGHT } from './sentry-model.ts';
 // One LEGO brick of the wall model (brick-wall.js), and the trail section bounds.
 export { BRICK_PITCH };
 export const TRAIL_MIN = 0.01;

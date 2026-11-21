@@ -212,7 +212,7 @@ Premier modèle d'animal ; modèle « Angry Little Fly » fourni par l'utilisate
 
 Deux modèles fournis par l'utilisateur, déjà riggés par Meshy, sans clip ; ils
 suivent la même chaîne que le moucheron, généralisée dans `src/rigged-creature.js`
-(décodage, rig, cuisson) et `src/creature-batch.js` (texture d'animation de sommets,
+(décodage, rig, cuisson) et `src/creature-batch.ts` (texture d'animation de sommets,
 un `InstancedMesh` par espèce, ombres via un matériau de profondeur dédié).
 
 - Originaux hors dépôt : `assets/originals/ant/red-ant-warrior.glb` (SHA-256
@@ -246,7 +246,7 @@ un `InstancedMesh` par espèce, ombres via un matériau de profondeur dédié).
   `−GROUND_FOOT_DEPTH + GROUND_FOOT_CLEARANCE` : le relèvement partagé de
   `swarmFrame()` reste inchangé et les pieds dégagent le plancher.
 - Collision : ellipsoïde du corps sans les pattes (`ANT_HIT`, `SPIDER_HIT`),
-  suivi par `insect-hits.js` (`hitEllipsoid`, `hitCentre`) pour le tir, l'index
+  suivi par `insect-hits.ts` (`hitEllipsoid`, `hitCentre`) pour le tir, l'index
   spatial et le contact des aéronefs ; identique entre proxys instanciés et rigs.
 - Rendu de secours (`graphics.insect`) : `SkinnedMesh` réel du même rig pour les
   cadavres (posés dans la foulée en cours), les âmes du purgatoire (qui marchent à
@@ -484,7 +484,7 @@ Modèle fourni par l'utilisateur pour l'[issue #113](https://github.com/simonjam
 - Échelle joueur : roues de 1,10 m (mètres de référence), soit un canon d'environ
   6,4 m de long et 2 m de haut à côté du joueur de 1,80 m ; emprise de pose et
   collision 0,0105 (rayon balayé par la bouche, 3,4 m).
-- Mouvements (`src/howitzer-model.js`) : pointage 45°/s, élévation 30°/s entre
+- Mouvements (`src/howitzer-model.ts`) : pointage 45°/s, élévation 30°/s entre
   −5° et +40° (au-delà, la culasse traverserait les flèches) ; le tir part dans la
   direction réelle du tube. Recul de 30 % du tube en 0,06 s, retour en 0,6 s,
   secousse de 6 cm de l'affût. `scripts/test-howitzer.mjs` couvre ces points.

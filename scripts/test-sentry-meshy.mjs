@@ -9,7 +9,7 @@ import {
   SENTRY_MAX_ELEVATION,
   SENTRY_MIN_ELEVATION,
   SENTRY_SCALE,
-} from '../src/sentry-model.js';
+} from '../src/sentry-model.ts';
 
 const assets = [SOCLE, TETE, CANON, CAPTEUR];
 const expected = [3149, 4380, 3684, 2413];

@@ -8,7 +8,7 @@ import {
   officeFogOpacity,
   fogOpticalDepth,
   installOfficeFog,
-} from '../src/office-fog.js';
+} from '../src/office-fog.ts';
 import { stepHelicopter } from '../src/helicopter.js';
 import { stepVacantAircraft } from '../src/vacant-flight.js';
 import { VEHICLES, vehiclePad } from '../src/fleet.ts';

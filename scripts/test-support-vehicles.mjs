@@ -8,7 +8,7 @@ import { VEHICLES, vehiclePad, LIGHT_FIGHTER } from '../src/fleet.ts';
 import { HEAVY, canUseWeapon, heavyDamage } from '../src/armament.ts';
 import { MAP, REFERENCE, FLAK } from '../src/scale.ts';
 import { SHOP, supportedPlacement } from '../src/equipment.ts';
-import { fullAmmo, advanceSupplies } from '../src/logistics.js';
+import { fullAmmo, advanceSupplies } from '../src/logistics.ts';
 import { createOrdnance } from '../src/ordnance.js';
 import {
   HELI,
@@ -28,10 +28,10 @@ import {
 import { createGraphics } from '../src/graphics.js';
 import { TruckRig } from '../src/truck-physics.ts';
 import { loadRapier } from '../src/physics-world.ts';
-import { validMotion } from '../src/network.js';
+import { validMotion } from '../src/network.ts';
 import { contractKey, ContractBook } from '../src/contracts.js';
 import { controlHints, cursorStats, cursorAmmoText } from '../src/live-hud.js';
-import { contextKey } from '../src/equipment-controls.js';
+import { contextKey } from '../src/equipment-controls.ts';
 import { OFFICE_SOLIDS } from '../server/assets.js';
 const near = (a, b, eps = 1e-8) => assert.ok(Math.abs(a - b) < eps, `${a} != ${b}`);
 assert.equal(SHOP.helicopter.cost, 50);

@@ -4,12 +4,12 @@
 // outside the scene; the client turns it towards its 3D movement like a midge.
 // The wing beat follows the shared clock, each proxy keeps its own loop offset.
 // A new flying species needs its model module and one entry below.
-import { CreatureBatch } from './creature-batch.js';
+import { CreatureBatch } from './creature-batch.ts';
 import { BEETLE, BEETLE_FLIGHT, BEETLE_HIT } from './beetle-model.js';
 import { BEE, BEE_FLIGHT, BEE_HIT } from './bee-model.js';
 import { MOSQUITO, MOSQUITO_FLIGHT, MOSQUITO_HIT } from './mosquito-model.js';
 import { FLYER_HIT_TOLERANCE } from './scale.ts';
-import { hitUserData } from './insect-hits.js';
+import { hitUserData } from './insect-hits.ts';
 
 export const FLYERS = Object.freeze({
   brute: { creature: BEETLE, flight: BEETLE_FLIGHT, hit: BEETLE_HIT },

@@ -5,12 +5,12 @@ import { stepHelicopter } from '../src/helicopter.js';
 import { VEHICLES, vehiclePad } from '../src/fleet.ts';
 import { CombatEffects } from '../src/combat.ts';
 import { makeBiplaneBomber } from '../src/biplane-model.js';
-import { aimGun } from '../src/sortie.js';
+import { aimGun } from '../src/sortie.ts';
 import { makeH2 } from '../src/h2-model.js';
 import { nearestWeaponMuzzle } from '../src/muzzle.ts';
-import { makeServiceStation } from '../src/station-model.js';
-import { fogOpticalDepth, officeFogOpacity } from '../src/office-fog.js';
-import { brickLayout, BRICK_PITCH, BRICK_HEIGHT, BRICK_ROW } from '../src/brick-wall.js';
+import { makeServiceStation } from '../src/station-model.ts';
+import { fogOpticalDepth, officeFogOpacity } from '../src/office-fog.ts';
+import { brickLayout, BRICK_PITCH, BRICK_HEIGHT, BRICK_ROW } from '../src/brick-wall.ts';
 import { groundCommand, newGroundDefense, lengthPrice } from '../src/ground-defense-state.js';
 const wheel = { x: -1, z: -2 },
   opts = { scale: 0.003, turnRate: 1, frontZ: -2 };

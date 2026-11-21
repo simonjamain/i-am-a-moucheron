@@ -10,7 +10,7 @@ import {
   inRadarCoverage,
   vehicleHue,
   installationCount,
-} from '../src/logistics.js';
+} from '../src/logistics.ts';
 import { shopPrice } from '../src/equipment.ts';
 import { createGraphics } from '../src/graphics.js';
 import { paintVehicle, updateInscriptions } from '../src/vehicle-livery.ts';

@@ -3,7 +3,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { SHOP } from '../src/equipment.ts';
-import { SHOP_CATEGORIES, shopColumns } from '../src/shop-catalog.js';
+import { SHOP_CATEGORIES, shopColumns } from '../src/shop-catalog.ts';
 
 const columns = shopColumns();
 assert.deepEqual(

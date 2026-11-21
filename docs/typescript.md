@@ -51,7 +51,7 @@ dans `src/`, `server/` et `scripts/`. L'état et la prochaine étape sont suivis
 ## Migrer un module
 
 ```sh
-npm run ts:migrate -- src/route-speed.js src/delivery.js   # --dry-run pour prévisualiser
+npm run ts:migrate -- src/<a>.js src/<b>.js         # --dry-run pour prévisualiser
 npm run typecheck                                           # ajouter les types jusqu'au vert
 npm test
 ```

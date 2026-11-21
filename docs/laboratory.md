@@ -41,7 +41,7 @@ et disparaissent avec la réinitialisation qui suit la sortie du mode debug.
 Toujours visibles en mode debug, sans réglage :
 
 - **hitbox** de chaque ennemi en fil de fer rose : l'ellipsoïde ou la sphère que les
-  tirs testent réellement (`insect-hits.js`, tolérance comprise) ;
+  tirs testent réellement (`insect-hits.ts`, tolérance comprise) ;
 - **portée des tourelles automatiques** : bulle orange translucide de 42 cm de rayon,
   centrée comme le serveur la mesure (2,5 cm au-dessus du support), et cercle net à sa
   base ;

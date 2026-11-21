@@ -5,7 +5,7 @@ Ses réserves, dossiers et achats disparaissent au redémarrage. Les référence
 aux migrations, à la persistance et aux requêtes HTTP ci-dessous décrivent l’ancien
 modèle à base de données, abandonné. Voir [serveur UDP](udp-server.md).
 
-Référence du lot du 29 octobre 2026. Les modules `logistics.js` et
+Référence du lot du 29 octobre 2026. Les modules `logistics.ts` et
 `vehicle-livery.ts` portent les règles communes. Les données vivent en RAM (plus de migration SQL depuis le retrait du Worker/D1).
 
 ## Véhicules identifiables

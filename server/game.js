@@ -2,7 +2,7 @@ import { appearanceId } from '../src/character-appearances.ts';
 import { prepareRoster, forecast } from './wave-preparation.js';
 import { feedingPoint } from '../src/ground-defense-state.js';
 import { DEFAULT_BALANCE, money } from '../src/balance.js';
-import { deliveryStart, deliveryLanding, deliveryHeightAt } from '../src/delivery.js';
+import { deliveryStart, deliveryLanding, deliveryHeightAt } from '../src/delivery.ts';
 import {
   newGroundDefense,
   groundCommand,
@@ -15,12 +15,12 @@ import { advanceGroundCrowd } from '../src/ground-crowd.js';
 import { clampProximity } from '../src/mobile-flak.js';
 import { collisionDamage, washTarget, WASH } from '../src/vehicle-care.js';
 import { purchaseCount } from '../src/equipment.ts';
-import { bedAccess, bedSpawn } from '../src/beds.js';
+import { bedAccess, bedSpawn } from '../src/beds.ts';
 import { impactDamage } from '../src/field-physics.ts';
 import { randomUUID } from 'node:crypto';
 import { MAP, ACTOR_UNIT, enemySizeFactor } from '../src/scale.ts';
 import { OFFICE_LAYOUT } from '../src/layout.ts';
-import { setActiveLayout, isLayoutId, DEFAULT_LAYOUT_ID, layoutSolids } from '../src/layouts.js';
+import { setActiveLayout, isLayoutId, DEFAULT_LAYOUT_ID, layoutSolids } from '../src/layouts.ts';
 import {
   VEHICLES,
   vehiclePad,
@@ -37,7 +37,7 @@ import {
   advanceArena,
   relayBodyReport,
   deskOccupant,
-} from '../src/purgatory-physics.js';
+} from '../src/purgatory-physics.ts';
 import {
   wavePlan,
   ENEMY_TYPES,
@@ -58,10 +58,10 @@ import {
   advanceSupplies,
   FUEL_SECONDS,
   installationCount,
-} from '../src/logistics.js';
-import { stationAccess, stationExit } from '../src/sortie.js';
+} from '../src/logistics.ts';
+import { stationAccess, stationExit } from '../src/sortie.ts';
 import { howitzerMuzzle } from '../src/howitzer-geometry.ts';
-import { validMotion } from '../src/network.js';
+import { validMotion } from '../src/network.ts';
 import { snapshotRosterCore, snapshotRosterKey } from '../src/snapshot-wire.ts';
 import { appendDebugEnemy, debugPlacement, standingDummies } from '../src/debug-enemies.ts';
 import { newBank, signLoan, settleLoans, repayLoan } from '../src/bank.ts';
