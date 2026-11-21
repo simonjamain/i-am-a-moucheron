@@ -40,7 +40,14 @@ export interface Furniture {
   d: number;
   label: string;
 }
-const furn = (kind: FurnitureKind, x: number, z: number, w: number, d: number, label = ''): Furniture => ({
+const furn = (
+  kind: FurnitureKind,
+  x: number,
+  z: number,
+  w: number,
+  d: number,
+  label = '',
+): Furniture => ({
   kind,
   x,
   z,
@@ -616,7 +623,8 @@ export const LAYOUTS = Object.freeze([
   }),
 ]);
 export const DEFAULT_LAYOUT_ID = LAYOUTS[0].id;
-export const layoutById = (id: unknown): Readonly<OfficeLayout> | null => LAYOUTS.find((l) => l.id === id) || null;
+export const layoutById = (id: unknown): Readonly<OfficeLayout> | null =>
+  LAYOUTS.find((l) => l.id === id) || null;
 export const isLayoutId = (id: unknown): boolean => typeof id === 'string' && !!layoutById(id);
 
 // Active layout: set by the server around each room operation and by the client

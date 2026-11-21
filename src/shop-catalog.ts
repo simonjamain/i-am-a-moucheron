@@ -39,7 +39,10 @@ export function shopColumns(
   shop: Readonly<Record<string, ShopItem | undefined>> = SHOP,
 ): ShopCategory[] {
   const listed = new Set(SHOP_CATEGORIES.flatMap((c) => c.items));
-  const columns: ShopCategory[] = SHOP_CATEGORIES.map((c) => ({ ...c, items: c.items.filter((k) => shop[k]) }));
+  const columns: ShopCategory[] = SHOP_CATEGORIES.map((c) => ({
+    ...c,
+    items: c.items.filter((k) => shop[k]),
+  }));
   const others = Object.keys(shop).filter((k) => !listed.has(k));
   if (others.length) columns.push({ id: 'other', title: 'Autres', items: others });
   return columns

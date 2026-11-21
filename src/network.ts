@@ -1,12 +1,93 @@
 import { ServerClock } from './server-clock.ts';
 import { vehicleMaxHP } from './fleet.ts';
+
+/** Scene body relayed with a walking player's motion (scene units). */
+export interface GroundBody {
+  x: number;
+  z: number;
+  vx: number;
+  vz: number;
+  face: number;
+  y?: number;
+  vy?: number;
+  id?: unknown;
+}
+/** Purgatory soul position relayed with motion. */
+export interface SoulBody {
+  x: number;
+  z: number;
+  vx: number;
+  vz: number;
+  face: number;
+}
+/** One relayed motion state (vehicle pose plus optional ground body or soul). */
+export interface MotionState {
+  p: number[];
+  q: number[];
+  v: number[];
+  hp: number;
+  type: string;
+  wing: number;
+  engine: number;
+  fire: boolean;
+  ground?: { scene: 'base' | 'soul' | 'super'; epoch: string; body: GroundBody };
+  soul?: SoulBody;
+}
+export type MotionSource = 'http' | 'rtc';
+interface MotionSample {
+  state: MotionState;
+  time: number;
+  captured: boolean;
+}
+/** Signalling payload exchanged over HTTP to set up a peer link. */
+export interface MotionSignal {
+  session: string;
+  description?: RTCSessionDescriptionInit;
+  candidate?: RTCIceCandidateInit;
+}
+/** A received signalling message. */
+export interface SignalMessage {
+  sender: string;
+  payload: MotionSignal;
+}
+/** One peer connection and its motion channel. */
+export interface PeerLink {
+  pc: RTCPeerConnection;
+  created: number;
+  channel: RTCDataChannel | null;
+  seq: number;
+  lastReceived: number;
+  session: string;
+  announced: boolean;
+  outgoing: MotionSignal[];
+  candidates?: RTCIceCandidateInit[];
+  protocol?: string;
+  rtt?: number;
+}
+export interface PeerMotionOptions {
+  self: string;
+  signal: (id: string, message: MotionSignal) => Promise<unknown>;
+  onMotion: (id: string, state: MotionState, time: number, seq: number) => void;
+  Peer?: typeof RTCPeerConnection;
+  now?: () => number;
+}
+export interface PeerMotionStats {
+  active: number;
+  total: number;
+  received: number;
+  dropped: number;
+  udp: number;
+  error: string;
+  enabled: boolean;
+}
 // Ephemeral motion uses a lossy unordered RTC channel; game rules stay on HTTP.
 export const CHANNEL_OPTIONS = { ordered: false, maxRetransmits: 0 };
 export const RTC_HZ = 20,
   MAX_MESH_PLAYERS = 12;
-const finiteArray = (v, n) =>
+const finiteArray = (v: unknown, n: number): boolean =>
   Array.isArray(v) && v.length === n && v.every((x) => Number.isFinite(x) && Math.abs(x) < 10000);
-export function validMotion(s) {
+// `s` is untrusted JSON from a peer or the server: every field is checked here.
+export function validMotion(s: any): s is MotionState {
   return (
     !!s &&
     finiteArray(s.p, 3) &&
@@ -36,8 +117,8 @@ export function validMotion(s) {
         Math.abs(s.soul.vz) < 40))
   );
 }
-const mix = (a, b, t) => a + (b - a) * t;
-function quaternion(a, b, t) {
+const mix = (a: number, b: number, t: number): number => a + (b - a) * t;
+function quaternion(a: readonly number[], b: readonly number[], t: number): number[] {
   let dot = a.reduce((n, v, i) => n + v * b[i], 0),
     sign = dot < 0 ? -1 : 1;
   dot = Math.min(1, Math.abs(dot));
@@ -61,13 +142,23 @@ function quaternion(a, b, t) {
 // the measured lateness, so that drawing rarely runs past the latest sample.
 export const MOTION_DELAY_MIN_MS = 60;
 export const MOTION_DELAY_MAX_MS = 350;
-const quantile = (values, q) => {
+const quantile = (values: readonly number[], q: number): number => {
   if (!values.length) return 0;
   const sorted = [...values].sort((a, b) => a - b);
   return sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * q))];
 };
 export class MotionTrack {
-  constructor({ teleportDistance = 35 } = {}) {
+  teleportDistance: number;
+  samples: MotionSample[];
+  source: string;
+  seq: number;
+  lastReceived: number;
+  clock: ServerClock;
+  lateness: number[];
+  intervals: number[];
+  delay: number | null;
+  delayAt: number | null;
+  constructor({ teleportDistance = 35 }: { teleportDistance?: number } = {}) {
     this.teleportDistance = teleportDistance;
     this.samples = [];
     this.source = 'http';
@@ -79,7 +170,13 @@ export class MotionTrack {
     this.delay = null;
     this.delayAt = null;
   }
-  push(state, time, seq, source, captured) {
+  push(
+    state: MotionState,
+    time: number,
+    seq: number,
+    source: MotionSource,
+    captured?: number,
+  ): boolean {
     if (!validMotion(state) || !Number.isFinite(time) || !Number.isFinite(seq)) return false;
     if (source === this.source && seq <= this.seq) return false;
     if (source !== this.source) {
@@ -90,8 +187,8 @@ export class MotionTrack {
     this.lastReceived = time;
     if (source === 'rtc' && Number.isFinite(captured)) {
       // Sender clock -> local clock, with the fastest transit of the window.
-      this.clock.observe(captured, time);
-      const mapped = captured - (this.clock.now(time) - time);
+      this.clock.observe(captured!, time);
+      const mapped = captured! - ((this.clock.now(time) as number) - time);
       const previous = this.samples.at(-1);
       if (previous?.captured) {
         const interval = mapped - previous.time;
@@ -121,7 +218,7 @@ export class MotionTrack {
   }
   // Display delay: one usual interval plus the usual lateness (95th
   // percentile), slewed at 5 % of elapsed time so that it never jumps.
-  displayDelay(now) {
+  displayDelay(now: number): number {
     if (this.source !== 'rtc') return 160;
     if (!this.samples.at(-1)?.captured || this.lateness.length < 5) return 100;
     const target = Math.max(
@@ -139,7 +236,7 @@ export class MotionTrack {
     this.delayAt = now;
     return this.delay;
   }
-  sample(now) {
+  sample(now: number): MotionState | null {
     const list = this.samples;
     if (!list.length) return null;
     const target = now - this.displayDelay(now);
@@ -154,7 +251,7 @@ export class MotionTrack {
       b = s;
     }
     if (target > b.time) {
-      const latest = list.at(-1),
+      const latest = list.at(-1)!,
         prev = list.at(-2) || latest,
         dt = Math.min(0.15, Math.max(0, (target - latest.time) / 1000)),
         state = structuredClone(latest.state);
@@ -169,7 +266,7 @@ export class MotionTrack {
         state.ground.body.x += state.ground.body.vx * dt;
         state.ground.body.z += state.ground.body.vz * dt;
         if (Number.isFinite(state.ground.body.y))
-          state.ground.body.y += (state.ground.body.vy || 0) * dt;
+          state.ground.body.y! += (state.ground.body.vy || 0) * dt;
       }
       if (state.soul) {
         state.soul.x = Math.max(-10, Math.min(10, state.soul.x + state.soul.vx * dt));
@@ -190,9 +287,9 @@ export class MotionTrack {
       s.ground.scene === b.state.ground.scene &&
       s.ground.body.id === b.state.ground.body.id
     ) {
-      for (const k of ['x', 'z', 'vx', 'vz', 'y', 'vy'])
+      for (const k of ['x', 'z', 'vx', 'vz', 'y', 'vy'] as const)
         if (Number.isFinite(s.ground.body[k]) && Number.isFinite(b.state.ground.body[k]))
-          s.ground.body[k] = mix(s.ground.body[k], b.state.ground.body[k], t);
+          s.ground.body[k] = mix(s.ground.body[k]!, b.state.ground.body[k]!, t);
       const delta = Math.atan2(
         Math.sin(b.state.ground.body.face - s.ground.body.face),
         Math.cos(b.state.ground.body.face - s.ground.body.face),
@@ -200,7 +297,8 @@ export class MotionTrack {
       s.ground.body.face += delta * t;
     }
     if (s.soul && b.state.soul) {
-      for (const k of ['x', 'z', 'vx', 'vz']) s.soul[k] = mix(s.soul[k], b.state.soul[k], t);
+      for (const k of ['x', 'z', 'vx', 'vz'] as const)
+        s.soul[k] = mix(s.soul[k], b.state.soul[k], t);
       const delta = Math.atan2(
         Math.sin(b.state.soul.face - s.soul.face),
         Math.cos(b.state.soul.face - s.soul.face),
@@ -211,21 +309,36 @@ export class MotionTrack {
   }
 }
 export class PeerMotion {
+  self: string;
+  signal: PeerMotionOptions['signal'];
+  onMotion: PeerMotionOptions['onMotion'];
+  Peer: typeof RTCPeerConnection;
+  now: () => number;
+  peers: Map<string, PeerLink>;
+  members: Set<string>;
+  retry: Map<string, number>;
+  seq: number;
+  received: number;
+  dropped: number;
+  signals: Promise<void>;
+  enabled: boolean;
+  lastError: string;
+  lastMeasure: number;
   constructor({
     self,
     signal,
     onMotion,
     Peer = globalThis.RTCPeerConnection,
     now = () => performance.now(),
-  }) {
+  }: PeerMotionOptions) {
     this.self = self;
     this.signal = signal;
     this.onMotion = onMotion;
     this.Peer = Peer;
     this.now = now;
-    this.peers = new Map();
-    this.members = new Set();
-    this.retry = new Map();
+    this.peers = new Map<string, PeerLink>();
+    this.members = new Set<string>();
+    this.retry = new Map<string, number>();
     this.seq = 0;
     this.received = 0;
     this.dropped = 0;
@@ -234,7 +347,7 @@ export class PeerMotion {
     this.lastError = '';
     this.lastMeasure = -Infinity;
   }
-  reconcile(ids) {
+  reconcile(ids: string[]): void {
     this.members = new Set(ids.filter((id) => id !== this.self));
     if (ids.length > MAX_MESH_PLAYERS || !this.enabled) {
       for (const id of this.peers.keys()) this.close(id);
@@ -258,12 +371,12 @@ export class PeerMotion {
     }
   }
   create(
-    id,
-    session = globalThis.crypto?.randomUUID?.() ||
+    id: string,
+    session: string = globalThis.crypto?.randomUUID?.() ||
       Date.now().toString(36) + Math.random().toString(36).slice(2),
-  ) {
+  ): PeerLink {
     const pc = new this.Peer({ iceServers: [{ urls: 'stun:stun.cloudflare.com:3478' }] }),
-      p = {
+      p: PeerLink = {
         pc,
         created: this.now(),
         channel: null,
@@ -276,7 +389,7 @@ export class PeerMotion {
     this.peers.set(id, p);
     pc.onicecandidate = (e) => {
       if (e.candidate) {
-        const message = { session: p.session, candidate: e.candidate.toJSON() };
+        const message: MotionSignal = { session: p.session, candidate: e.candidate.toJSON() };
         if (p.announced) this.signal(id, message).catch(() => {});
         else p.outgoing.push(message);
       }
@@ -287,7 +400,7 @@ export class PeerMotion {
     };
     return p;
   }
-  attach(id, p, channel) {
+  attach(id: string, p: PeerLink, channel: RTCDataChannel): void {
     if (channel.label !== 'motion-v1') {
       channel.close();
       return;
@@ -316,29 +429,29 @@ export class PeerMotion {
       }
     };
   }
-  async announce(id, p) {
+  async announce(id: string, p: PeerLink): Promise<void> {
     await this.signal(id, {
       session: p.session,
-      description: { type: p.pc.localDescription.type, sdp: p.pc.localDescription.sdp },
+      description: { type: p.pc.localDescription!.type, sdp: p.pc.localDescription!.sdp },
     });
     p.announced = true;
     for (const message of p.outgoing) await this.signal(id, message);
     p.outgoing = [];
   }
-  async offer(id) {
-    let p;
+  async offer(id: string): Promise<void> {
+    let p: PeerLink | undefined;
     try {
       p = this.create(id);
       this.attach(id, p, p.pc.createDataChannel('motion-v1', CHANNEL_OPTIONS));
       await p.pc.setLocalDescription(await p.pc.createOffer());
       await this.announce(id, p);
     } catch (e) {
-      this.lastError = e.name || 'RTC';
+      this.lastError = (e as Error).name || 'RTC';
       if (this.peers.get(id) === p) this.close(id);
       this.retry.set(id, this.now() + 5000);
     }
   }
-  receive(messages) {
+  receive(messages: readonly SignalMessage[]): Promise<void> {
     this.signals = this.signals
       .then(async () => {
         for (const m of messages) {
@@ -367,7 +480,7 @@ export class PeerMotion {
               p.candidates = [];
             }
           } catch (e) {
-            this.lastError = e.name || 'RTC';
+            this.lastError = (e as Error).name || 'RTC';
             this.close(m.sender);
             this.retry.set(m.sender, this.now() + 5000);
           }
@@ -376,7 +489,7 @@ export class PeerMotion {
       .catch(() => {});
     return this.signals;
   }
-  send(state) {
+  send(state: MotionState): void {
     const data = JSON.stringify({ v: 1, seq: ++this.seq, state });
     for (const p of this.peers.values()) {
       if (p.channel?.readyState === 'open' && p.channel.bufferedAmount < 4096)
@@ -385,17 +498,17 @@ export class PeerMotion {
         } catch {}
     }
   }
-  fresh(id) {
+  fresh(id: string): boolean {
     return this.now() - (this.peers.get(id)?.lastReceived ?? -Infinity) < 750;
   }
-  async measure() {
+  async measure(): Promise<void> {
     if (this.now() - this.lastMeasure < 2000) return;
     this.lastMeasure = this.now();
     for (const p of this.peers.values()) {
       if (p.channel?.readyState !== 'open') continue;
       try {
         const report = await p.pc.getStats();
-        let pair;
+        let pair: RTCIceCandidatePairStats | undefined;
         report.forEach((s) => {
           if (s.type === 'transport' && s.selectedCandidatePairId)
             pair = report.get(s.selectedCandidatePairId);
@@ -410,7 +523,7 @@ export class PeerMotion {
       } catch {}
     }
   }
-  stats() {
+  stats(): PeerMotionStats {
     let active = 0;
     for (const id of this.peers.keys()) if (this.fresh(id)) active++;
     return {
@@ -423,14 +536,14 @@ export class PeerMotion {
       enabled: this.enabled,
     };
   }
-  close(id) {
+  close(id: string): void {
     const p = this.peers.get(id);
     if (!p) return;
     this.peers.delete(id);
     p.channel?.close();
     p.pc.close();
   }
-  stop() {
+  stop(): void {
     for (const id of this.peers.keys()) this.close(id);
   }
 }

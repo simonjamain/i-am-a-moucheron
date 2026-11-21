@@ -43,8 +43,26 @@ export interface WalkerImpact {
 }
 /** Mesh builders from createGraphics (graphics.js). */
 export interface StationGraphics {
-  box(x: number, y: number, z: number, w: number, h: number, d: number, c: string, parent?: THREE.Object3D): THREE.Mesh;
-  cyl(x: number, y: number, z: number, rt: number, rb: number, h: number, c: string, parent?: THREE.Object3D): THREE.Mesh;
+  box(
+    x: number,
+    y: number,
+    z: number,
+    w: number,
+    h: number,
+    d: number,
+    c: string,
+    parent?: THREE.Object3D,
+  ): THREE.Mesh;
+  cyl(
+    x: number,
+    y: number,
+    z: number,
+    rt: number,
+    rb: number,
+    h: number,
+    c: string,
+    parent?: THREE.Object3D,
+  ): THREE.Mesh;
 }
 export const BULLET_SPEED = MAP.metres(REFERENCE.bullet),
   FIRE_INTERVAL = 0.06,

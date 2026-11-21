@@ -3,9 +3,7 @@ import { fuseRange } from './combat.ts';
 
 /** Context-key action: fuse step, H2 weapon selection or tank shell. */
 export type ContextAction =
-  | { fuse: 1 | -1 }
-  | { heliWeapon: 'copilot' | 'missile' }
-  | { shell: 'he' | 'ap' };
+  { fuse: 1 | -1 } | { heliWeapon: 'copilot' | 'missile' } | { shell: 'he' | 'ap' };
 /** Held-key map (KeyboardEvent.code → pressed). */
 export type HeldKeys = Readonly<Record<string, boolean | undefined>>;
 export function contextKey(

@@ -1,13 +1,13 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
+import { stripTypeScriptTypes } from 'node:module';
 import * as Three from '../vendor/three.module.min.js';
 
 // Execute the actual bootstrap with a deterministic clock and DOM/renderer adapters.
 // Real Three transforms; this checks lifecycle/trajectory, not pixels or GPU rendering.
-const source = (await readFile(new URL('../src/boot.ts', import.meta.url), 'utf8')).replaceAll(
-  'import(',
-  'importModule(',
-);
+const source = stripTypeScriptTypes(
+  await readFile(new URL('../src/boot.ts', import.meta.url), 'utf8'),
+).replaceAll('import(', 'importModule(');
 async function scenario({ reduced = false, readyAt = 0, fail = false, webgl = true } = {}) {
   let now = 0,
     disposed = false,
