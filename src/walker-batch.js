@@ -1,18 +1,35 @@
-// Rigged ground walkers (ant, egg-laying spider) drawn as one InstancedMesh
+// Rigged ground walkers (ant, egg-laying spider, spiderling, cockroach, rat) drawn as one InstancedMesh
 // per species through their baked walk cycle (src/creature-batch.js). Gameplay
 // keeps a cheap Object3D proxy per creature, outside the scene: its heading
 // follows its horizontal movement and its gait phase advances with the
 // distance travelled, so feet stay planted whatever the server speed. A
 // creature that stops (glue, bait, stall) settles into the nearest planted pose.
-import { CreatureBatch } from './creature-batch.js';
+import { CreatureBatch } from './creature-batch.ts';
 import { ANT, ANT_BONES, ANT_HIT, ANT_MODEL } from './ant-model.js';
 import { SPIDER, SPIDER_BONES, SPIDER_HIT, SPIDER_MODEL } from './spider-model.js';
-import { nearestRest } from './walker-gait.js';
+import { ROACH, ROACH_BONES, ROACH_HIT, ROACH_MODEL } from './roach-model.js';
+import { RAT, RAT_BONES, RAT_HIT, RAT_MODEL } from './rat-model.js';
+import {
+  SPIDERLING,
+  SPIDERLING_BONES,
+  SPIDERLING_HIT,
+  SPIDERLING_MODEL,
+} from './spiderling-model.js';
+import { nearestRest } from './walker-gait.ts';
 import { TAU } from './rigged-creature.js';
 
 export const WALKERS = Object.freeze({
   ant: { creature: ANT, model: ANT_MODEL, hit: ANT_HIT, bones: ANT_BONES },
   spider: { creature: SPIDER, model: SPIDER_MODEL, hit: SPIDER_HIT, bones: SPIDER_BONES },
+  roach: { creature: ROACH, model: ROACH_MODEL, hit: ROACH_HIT, bones: ROACH_BONES },
+  spiderling: {
+    creature: SPIDERLING,
+    model: SPIDERLING_MODEL,
+    hit: SPIDERLING_HIT,
+    bones: SPIDERLING_BONES,
+  },
+  // The rat replays its own Meshy walking clip instead of a procedural gait.
+  rat: { creature: RAT, model: RAT_MODEL, hit: RAT_HIT, bones: RAT_BONES, clip: true },
 });
 // Stride of one cycle in world units for a proxy or model scaled by `scale`.
 export const walkerStride = (type, scale = 1) =>
@@ -75,6 +92,17 @@ export class WalkerBatch {
       u.walkPhase += (rest - u.walkPhase) * Math.min(1, dt * SETTLE_RATE);
       u.walkPhase = ((u.walkPhase % 1) + 1) % 1;
     }
+  }
+  // Debug dummy (debug-enemies.ts): stays put facing `dir`, walking in place at
+  // `speed` (metres per second) as if it covered that distance.
+  treadmill(model, dir, speed, dt) {
+    const u = model.userData;
+    if (Math.hypot(dir[0], dir[2]) > 1e-9) {
+      this.heading.set(dir[0], 0, dir[2]).normalize();
+      model.quaternion.setFromUnitVectors(this.forward, this.heading);
+    }
+    const cycles = (speed * dt) / walkerStride(u.enemyType, model.scale.x);
+    u.walkPhase = (u.walkPhase + Math.min(cycles, WALKERS[u.enemyType].model.maxRate * dt)) % 1;
   }
   flush(insects) {
     if (!this.enabled) return;

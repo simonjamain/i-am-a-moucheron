@@ -1,19 +1,19 @@
 import assert from 'node:assert/strict';
 import * as T from '../vendor/three.module.min.js';
-import { ModelPreview } from '../src/model-preview.js';
+import { ModelPreview } from '../src/model-preview.ts';
 import { createGroundModel } from '../src/ground-model.js';
 import { makeFortificationStation } from '../src/fortification-model.js';
 import { createGraphics } from '../src/graphics.js';
-import { placementFacing } from '../src/placement-aim.js';
-import { supportedPlacement } from '../src/equipment.js';
+import { placementFacing } from '../src/placement-aim.ts';
+import { supportedPlacement } from '../src/equipment.ts';
 import { Game } from '../server/game.js';
-import { VEHICLES } from '../src/fleet.js';
-import { MAP } from '../src/scale.js';
+import { VEHICLES } from '../src/fleet.ts';
+import { MAP } from '../src/scale.ts';
 
 const scene = new T.Scene();
 const graphics = createGraphics(T, scene);
 const preview = new ModelPreview(T, scene);
-for (const kind of ['sugar', 'fan', 'sentry', 'barricade', 'sticky', 'bunker', 'antitank']) {
+for (const kind of ['sugar', 'sentry', 'barricade', 'sticky', 'bunker', 'antitank']) {
   const angle = 1.23;
   const pose = { x: 0.12, y: 0, z: -0.08, angle };
   const shape = {

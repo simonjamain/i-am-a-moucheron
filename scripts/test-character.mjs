@@ -11,8 +11,8 @@ import {
   GAIT,
 } from '../src/character-model.js';
 import { createGraphics } from '../src/graphics.js';
-import { aimPistol } from '../src/personal-aim.js';
-import { HUMAN_SCALE, MAP } from '../src/scale.js';
+import { aimPistol } from '../src/personal-aim.ts';
+import { HUMAN_SCALE, MAP } from '../src/scale.ts';
 
 const near = (a, b, eps, label) => assert.ok(Math.abs(a - b) < eps, label + ': ' + a + ' vs ' + b);
 const world = (o) => o.getWorldPosition(new T.Vector3());

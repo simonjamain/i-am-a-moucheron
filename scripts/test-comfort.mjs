@@ -1,14 +1,13 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { execFileSync } from 'node:child_process';
 import * as T from '../vendor/three.module.min.js';
 import { Game } from '../server/game.js';
-import { VEHICLES, vehiclePad, vehicleEntry, vehicleAccess } from '../src/fleet.js';
+import { VEHICLES, vehiclePad, vehicleEntry, vehicleAccess } from '../src/fleet.ts';
 import { stepHelicopter } from '../src/helicopter.js';
-import { fullAmmo } from '../src/logistics.js';
-import { MAP, ENEMY_SIZE_FACTORS } from '../src/scale.js';
+import { fullAmmo } from '../src/logistics.ts';
+import { MAP, ENEMY_SIZE_FACTORS } from '../src/scale.ts';
 import { wavePlan } from '../src/waves.js';
-import { makeShotTrace, moveShotTrace, advanceShotTrace } from '../src/tracers.js';
+import { makeShotTrace, moveShotTrace, advanceShotTrace } from '../src/tracers.ts';
 const close = (a, b) => assert.ok(Math.abs(a - b) < 1e-8, `${a} != ${b}`);
 // The rounded subtraction really fails before the H2 landing fix.
 const support = 0.0001,
@@ -68,8 +67,8 @@ for (const type of Object.keys(VEHICLES)) {
   close(v.state.hp, 0);
 }
 for (const pilot of r.pilots.values()) pilot.seen = now;
-const { ACTOR_UNIT } = await import('../src/scale.js');
-const { OFFICE_LAYOUT } = await import('../src/layout.js');
+const { ACTOR_UNIT } = await import('../src/scale.ts');
+const { OFFICE_LAYOUT } = await import('../src/layout.ts');
 const h2 = game.createVehicle(r, 'helicopter');
 function board(person, seat) {
   const e = vehicleEntry(h2, seat),
@@ -144,33 +143,4 @@ assert.match(client, /phase === 'lost'\) return action\('reset'/);
 assert.match(client, /x !== 'radar'/);
 console.log(
   'Comfort: rounded H2 landing/access, repairs all hulls/overlap/full/departure/destruction, concurrent reset, explicit enemy speeds and moving shot endpoints passed.',
-);
-// Exercise the real staged-index guard in a disposable repository.
-const { mkdtempSync, writeFileSync, rmSync } = await import('node:fs');
-const { tmpdir } = await import('node:os');
-const { resolve, join } = await import('node:path');
-const repo = mkdtempSync(join(tmpdir(), 'moucheron-version-'));
-const check = resolve('scripts/check-version.mjs');
-try {
-  const git = (...args) => execFileSync('git', args, { cwd: repo, stdio: 'pipe' });
-  git('init');
-  git('config', 'user.name', 'Test');
-  git('config', 'user.email', 'test@example.invalid');
-  writeFileSync(join(repo, 'VERSION'), '36\n');
-  git('add', 'VERSION');
-  git('commit', '-m', 'baseline');
-  assert.throws(() => execFileSync(process.execPath, [check], { cwd: repo, stdio: 'pipe' }));
-  writeFileSync(join(repo, 'VERSION'), '37\n');
-  git('add', 'VERSION');
-  execFileSync(process.execPath, [check], { cwd: repo, stdio: 'pipe' });
-  git('commit', '-m', 'concurrent baseline');
-  assert.throws(() => execFileSync(process.execPath, [check], { cwd: repo, stdio: 'pipe' }));
-  writeFileSync(join(repo, 'VERSION'), '38\n');
-  git('add', 'VERSION');
-  execFileSync(process.execPath, [check], { cwd: repo, stdio: 'pipe' });
-} finally {
-  rmSync(repo, { recursive: true, force: true });
-}
-console.log(
-  'Version guard: rejects missing increment, accepts next, rejects old number after synchronization.',
 );

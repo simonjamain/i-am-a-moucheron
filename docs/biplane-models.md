@@ -1,11 +1,13 @@
 # Chasseur et bombardier biplans — version 275
 
 Deux modèles Meshy fournis par l'utilisateur remplacent le chasseur léger **M1** et le
-bombardier **B3** comme avions de base du bureau. Les identifiants de jeu restent
+bombardier **B3** comme avions de base du bureau (départ gratuit). Les deux anciens avions
+sont revenus en version 327 comme achats à part : **Chasseur léger** (`lightfighter`) et
+**Bombardier moyen** (`medbomber`), voir [M1](m1-model.md) et [B3](b3-model.md). Les identifiants de jeu restent
 `fighter` et `bomber` (stock de départ, boutique, achats) ; leurs noms deviennent
 **M1 Chasseur biplan** et **B3 Bombardier biplan**. Le Stuka, le Spitfire et le H2
 ne changent pas : ils dérivent de l'ancien chasseur léger conservé comme référence
-(`LIGHT_FIGHTER` dans `src/fleet.js`).
+(`LIGHT_FIGHTER` dans `src/fleet.ts`).
 
 ## Modèles
 
@@ -17,8 +19,8 @@ ne changent pas : ils dérivent de l'ancien chasseur léger conservé comme réf
 `scripts/import-meshy-vehicle.py biplane|biplanebomber SOURCE.glb` conserve chaque
 triangle et les UV d'origine (atlas JPEG 1 024 px) et écrit
 `src/meshy-biplane-data.js` et `src/meshy-biplane-bomber-data.js` ; `src/biplane-model.js`
-construit les rigs. Les anciens fichiers `m1-model.js`, `b3-model.js` et leurs données
-sont supprimés ([ancien M1](m1-model.md), [ancien B3](b3-model.md)).
+construit les rigs. Les fichiers `m1-model.js`, `b3-model.js` et leurs données, retirés en 275,
+sont restaurés en 327 pour les deux avions d'achat.
 
 - **Chasseur** : envergure 5,6 (10,4 m de référence), hélice articulée, **une**
   mitrailleuse centrale sculptée sur le capot devant le pilote ; son extrémité est
@@ -37,7 +39,7 @@ sont supprimés ([ancien M1](m1-model.md), [ancien B3](b3-model.md)).
   (13 avant, `authoritySpeed`), portance de base 0,0056 (0,0032) et angle de décrochage
   0,45 rad (0,30, `stallAngle`) ; la vitesse minimale de vol en palier baisse d'environ
   un cinquième. Ces trois réglages sont des champs optionnels du profil de vol
-  (`src/flight.js`), sans effet sur les autres avions.
+  (`src/flight.ts`), sans effet sur les autres avions.
 - **Une mitrailleuse centrale** qui tire comme _une seule_ des deux mitrailleuses du
   chasseur léger : un coup toutes les 0,12 s au lieu de 0,06 s (`gunIntervalFactor: 2`,
   `pilotFireInterval`), soit **deux fois moins de DPS** ; même dégât par balle (75).
@@ -51,7 +53,7 @@ sont supprimés ([ancien M1](m1-model.md), [ancien B3](b3-model.md)).
   (`heavyInterval('bomb', 'bomber')`) ; la grille du Stuka (6 bombes, 0,5 s) est
   inchangée.
 - Autres caractéristiques identiques au B3 : vitesse maximale 52,5, poussée 8, traînée,
-  portance, virage, 100 PV, prix 16 $. Le pilote n'a toujours pas de mitrailleuse.
+  portance, virage, 100 PV, prix 5 $. Le pilote n'a toujours pas de mitrailleuse.
 
 ## Vérifications
 

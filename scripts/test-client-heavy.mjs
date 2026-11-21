@@ -3,13 +3,13 @@ import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
 import * as T from '../vendor/three.module.min.js';
 import { stepHeavy, heavyImpact } from '../src/heavy-sim.js';
-import { HEAVY } from '../src/armament.js';
-import { MAP } from '../src/scale.js';
+import { HEAVY } from '../src/armament.ts';
+import { MAP } from '../src/scale.ts';
 import { baseWorld } from '../src/base.js';
-import { airField } from '../src/air-current.js';
 import { debugSwarmRoster, swarmFrame } from '../src/waves.js';
-import { ROUTE_OBSTACLES } from '../src/route-obstacles.js';
-import { howitzerMuzzle } from '../src/howitzer-geometry.js';
+import { layoutSolids } from '../src/layouts.ts';
+const ROUTE_OBSTACLES = layoutSolids();
+import { howitzerMuzzle } from '../src/howitzer-geometry.ts';
 import { DEFAULT_BALANCE } from '../src/balance.js';
 
 // Runs the client's real shooter code (heavyWorld, updateLocalHeavy,
@@ -27,7 +27,7 @@ const roster = debugSwarmRoster(
 );
 const groundDefense = { revision: 0, navigationRevision: 0, structures: [] };
 now += 4000;
-const target = swarmFrame(roster, 4, null, airField(groundDefense, now))[0].p;
+const target = swarmFrame(roster, 4, null)[0].p;
 const station = { kind: 'antitank', x: target[0] + MAP.metres(30), y: 0, z: target[2], hp: 180 };
 const sent = [],
   fallen = [];
@@ -40,9 +40,8 @@ const context = {
   stepHeavy,
   heavyImpact,
   swarmFrame,
-  airField,
   baseWorld,
-  ROUTE_OBSTACLES,
+  layoutSolids: () => ROUTE_OBSTACLES,
   id: 'shooter',
   myVehicle: null,
   crewSeat: null,

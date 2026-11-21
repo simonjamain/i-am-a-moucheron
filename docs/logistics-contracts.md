@@ -2,13 +2,11 @@
 
 Le serveur Node applique ces règles en RAM et sur des commandes UDP fiables.
 Ses réserves, dossiers et achats disparaissent au redémarrage. Les références
-aux migrations, à la persistance et aux requêtes HTTP ci-dessous décrivent le
-backend Sites historique conservé pendant la transition. Voir [serveur UDP](udp-server.md).
+aux migrations, à la persistance et aux requêtes HTTP ci-dessous décrivent l’ancien
+modèle à base de données, abandonné. Voir [serveur UDP](udp-server.md).
 
-Référence du lot du 29 octobre 2026. Les modules `logistics.js` et
-`vehicle-livery.js` portent les règles communes. Migration :
-`0011_logistics_contracts.sql`. Les anciennes salles sont conservées ; leurs
-appareils reçoivent des réserves pleines à leur première lecture avec cette version.
+Référence du lot du 29 octobre 2026. Les modules `logistics.ts` et
+`vehicle-livery.ts` portent les règles communes. Les données vivent en RAM (plus de migration SQL depuis le retrait du Worker/D1).
 
 ## Véhicules identifiables
 
@@ -39,7 +37,6 @@ deux) ont été **entièrement retirées** : `malice.js`, la commande
 `dossier-choice`, le suivi des dossiers et le champ `contractClause` des pilotes
 n'existent plus côté Node. Un dossier d'accès ne contient que ses documents
 obligatoires ; chaque poste tire avec la cadence et les dégâts de son arme.
-Le backend Worker historique (`src/server.js`) ne tire plus de clause non plus.
 
 ## Réserves des appareils
 
@@ -66,7 +63,7 @@ conditionnée à la révision lue pour gérer les accès concurrents.
 - DCA fixe et pistolet : réserves illimitées ; DCA mobile limitée, voir plus bas.
 
 Les tirs d’avion sont simulés **immédiatement dans le navigateur**, avec son,
-traceur et trajectoire créés à l’appui, sans attendre le serveur. `aircraft-fire.js`
+traceur et trajectoire créés à l’appui, sans attendre le serveur. `aircraft-fire.ts`
 décompte localement les balles et transmet leurs identifiants au serveur par lots
 (toutes les 250 ms au plus vite, 32 tirs maximum par lot, une requête en cours).
 L’origine, la direction, la vitesse héritée et l’effet contractuel restent fixés
@@ -95,7 +92,7 @@ lente allonge la durée du stock sans en changer la capacité.
 ## Ravitaillement et installations
 
 Une station gratuite est disponible à Alpha dès le départ, avec un cercle de
-service de **0,12 m réel** de rayon, adapté au bombardier. Elle n’est pas un achat
+service de **0,50 m réel** de rayon, comme le Castor. Elle n’est pas un achat
 et ne compte pas dans le prix des suivantes. Un avion vivant doit être posé,
 au niveau du support et arrêté (tolérance numérique de 0,001 m/s de référence).
 Un survol ou un roulage ne remplit rien. Chaque avion peut être servi en même
@@ -128,7 +125,7 @@ et des trajectoires partagées ; aucune dernière position ennemie n’est stock
 
 ## Vérifications et limites
 
-`test-logistics-contracts.mjs` exécute les règles et les routes Worker avec SQLite :
+`test-logistics-contracts.mjs` exécute les règles pures :
 dossier sans annexe, progression normale obligatoire, dégâts pleins (75) pour
 chaque poste, transfert de poste, doubles requêtes de tir, réserves indépendantes du bombardier,
 panne après cinq minutes, reconnexion, plein de dix secondes de plusieurs avions,
@@ -153,7 +150,7 @@ Le modèle reste coopératif : positions et impacts sont déclarés par les clie
 Recharger tous les clients après publication pour utiliser le même protocole.
 
 Les lits sont une installation supplémentaire, avec progression de prix indépendante
-4 $, 6 $, 8 $… et contrat personnel de réapparition. Ils ne ravitaillent pas et
+15 $, 17 $, 19 $… et contrat personnel de réapparition. Ils ne ravitaillent pas et
 ne détectent pas d’ennemis. Voir [lits](field-update.md#départ-lits-et-contrats-personnels).
 
 Les [prix prépayés, projectiles teintés et nettoyage](clean-flight.md) complètent ces règles.
@@ -176,3 +173,30 @@ Le [lot confort de jeu, version 37](comfort.md) précise réparation, zoom, jaug
 radar à pied, remise à zéro, fourmis et projectiles du pistolet courants.
 
 Le [bombardier biplan](biplane-models.md) porte les noms de ses occupants sur des plaques collées au fuselage ; son camouflage reste fixe.
+
+## Colis parachutés
+
+La hauteur d'un colis dépend de l'instant de largage immuable et de sa hauteur
+initiale : serveur et client utilisent le même calcul (`src/delivery.ts`,
+`DELIVERY_SPEED`), le client l'évalue entre les snapshots jusqu'à la surface de
+réception publiée par le serveur. Seul le serveur supprime le colis et crée
+l'équipement, une seule fois ; la première surface portant toute l'emprise avec
+la hauteur libre reçoit l'objet, sans dégâts ; un contact latéral ne reçoit pas.
+La signature depuis tous les postes d'un véhicule débite une seule fois ; les prix
+croissants comptent les livraisons en cours. La limite de 24 installations ne
+concerne que la pose à pied. Vitesse de descente : voir [gameplay](gameplay.md).
+
+## Murs LEGO
+
+| Règle                  | Valeur                                                |
+| ---------------------- | ----------------------------------------------------- |
+| Brique entière / demie | 24 mm / 12 mm de long, 12 mm de profondeur            |
+| Mur                    | deux rangées décalées de 12 mm, ~13,62 mm avec tenons |
+| Tronçon complet        | 48 mm, 0,25 $ (`WALL_SEGMENT_PRICE`)                  |
+| Portion incomplète     | pas de demi-brique, facturée au prorata au centime    |
+
+La longueur validée est arrondie vers le bas au pas de 12 mm ; un trait plus court
+est refusé sans débit. Mêmes règles à pied et au Castor (fantôme derrière le
+véhicule, sections validées une à une par le serveur). Les tronçons alignés sont
+réunis pour le dessin seulement ; dégâts, réparation, achat restent par section.
+Ruban collant : pas conservé, minimum 10 mm, 1 $ par 20 cm.

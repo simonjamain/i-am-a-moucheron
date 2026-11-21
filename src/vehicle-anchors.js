@@ -53,11 +53,16 @@ export const VEHICLE_ANCHORS = {
   ]
  },
  "tank": {
-  "gunLength": 2.591,
+  "gunLength": 1.691,
+  "turretPivot": [
+   0.0082,
+   0.4154,
+   0.441
+  ],
   "gunPivot": [
    0.0082,
    0.8702,
-   0.441
+   -0.459
   ]
  }
 };

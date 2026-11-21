@@ -1,14 +1,25 @@
-import { ROUTE_OBSTACLES } from './route-obstacles.js';
+import { activeLayout, layoutSolids } from './layouts.ts';
 const clearance = 0.018,
   groundClearance = 0.025;
-const boxes = ROUTE_OBSTACLES.filter((b) => {
-  const size = [b.max.x - b.min.x, b.max.y - b.min.y, b.max.z - b.min.z];
-  return !(Math.min(...size) < 0.025 && (Math.abs(b.min.x) > 4.09 || b.min.z < -3.49));
-});
-const groundBoxes = boxes.filter((b) => b.min.y <= 0.0007 && b.max.y > 0.0001);
+// Obstacle boxes of each layout, built once.
+const navCache = new Map();
+function navigation() {
+  const layout = activeLayout();
+  let nav = navCache.get(layout.id);
+  if (!nav) {
+    const boxes = layoutSolids(layout).filter((b) => {
+      const size = [b.max.x - b.min.x, b.max.y - b.min.y, b.max.z - b.min.z];
+      return !(Math.min(...size) < 0.025 && (Math.abs(b.min.x) > 4.09 || b.min.z < -3.49));
+    });
+    nav = { boxes, groundBoxes: boxes.filter((b) => b.min.y <= 0.0007 && b.max.y > 0.0001) };
+    navCache.set(layout.id, nav);
+  }
+  return nav;
+}
 const floorCache = new Map();
 export function blockedSegment(a, b, ground = false) {
-  return (ground ? groundBoxes : boxes).some((box) => {
+  const nav = navigation();
+  return (ground ? nav.groundBoxes : nav.boxes).some((box) => {
     if (box.max.y < 0.0001 || (ground && box.min.y > 0.01)) return false;
     let lo = 0,
       hi = 1;
@@ -35,7 +46,7 @@ export function blockedSegment(a, b, ground = false) {
 // Small deterministic A* floor grid. Corridors are simplified only with a clear
 // line of sight, so smoothing cannot cut through a table leg or bookcase.
 export function floorPath(start, end) {
-  const key = JSON.stringify([start, end]);
+  const key = activeLayout().id + JSON.stringify([start, end]);
   if (floorCache.has(key)) return floorCache.get(key);
   const step = 0.16,
     minX = -4.0,

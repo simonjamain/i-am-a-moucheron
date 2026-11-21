@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { Game } from '../server/game.js';
-import { VEHICLES } from '../src/fleet.js';
+import { VEHICLES } from '../src/fleet.ts';
 
 let now = 100000;
 const game = new Game({ now: () => now });
@@ -50,14 +50,17 @@ assert.throws(
   /près/,
 );
 v.state.landed = false;
-assert.throws(() => run({ action: 'build', kind: 'fan', a: [0, 0], request: 'castor:air' }), /sol/);
+assert.throws(
+  () => run({ action: 'build', kind: 'sugar', a: [0, 0], request: 'castor:air' }),
+  /sol/,
+);
 v.state.landed = true;
 const cash = r.dollars;
 s = run({ action: 'build', kind: 'sugar', a: [0, 0.2], request: 'castor:sugar' });
 assert.equal(s.dollars, cash - 3);
 v.state.hp = 0;
 assert.throws(
-  () => run({ action: 'build', kind: 'fan', a: [0, 0], request: 'castor:dead' }),
+  () => run({ action: 'build', kind: 'sugar', a: [0, 0], request: 'castor:dead' }),
   /réservée|purgatoire/,
 );
 console.log('Castor construction: pilot validation, costs, retry, range, floor and destruction OK');

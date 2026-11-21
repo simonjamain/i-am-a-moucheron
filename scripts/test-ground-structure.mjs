@@ -12,6 +12,9 @@ const state = newGroundDefense(),
   cash = 100;
 const build = (command, dollars = cash, position = foot) =>
   groundCommand(state, command, position, dollars);
+// The fan was removed from the game (version 319): the server refuses it.
+assert.throws(() => build({ action: 'build', kind: 'fan', a: [0, 0], angle: 0 }), /invalide/);
+assert.equal(state.structures.length, 0);
 const first = build({ action: 'build', kind: 'barricade', a: [0, 0], b: [0.6, 0] });
 assert.equal(first.price, 3.13);
 assert.equal(first.ids.length, 13);

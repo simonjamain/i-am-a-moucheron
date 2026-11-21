@@ -1,10 +1,10 @@
-import { availableShell, HEAVY } from './armament.js';
-import { FIXED_DCA } from './fixed-dca.js';
-import { FORTIFICATIONS } from './ground-fortifications.js';
-import { rangeReadout } from './equipment-controls.js';
-import { MAP } from './scale.js';
+import { availableShell, HEAVY } from './armament.ts';
+import { FIXED_DCA } from './fixed-dca.ts';
+import { FORTIFICATIONS } from './ground-fortifications.ts';
+import { rangeReadout } from './equipment-controls.ts';
+import { MAP } from './scale.ts';
 import { MOBILE_FUSE } from './mobile-flak.js';
-import { formatDistance, formatSpeed } from './units.js';
+import { formatDistance, formatSpeed } from './units.ts';
 
 const count = (value) => Math.max(0, Math.floor(value || 0));
 function equipmentModel({

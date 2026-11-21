@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
-import { Game, IMPACT_GRACE_MS, HEAVY_CADENCE_TOLERANCE_MS } from '../server/game.js';
-import { HEAVY } from '../src/armament.js';
+import { Game, IMPACT_GRACE_MS } from '../server/game.js';
+import { HEAVY } from '../src/armament.ts';
 import { debugSwarmRoster } from '../src/waves.js';
 
 // Heavy weapons are simulated by their shooter; the server records launches,
@@ -59,7 +59,6 @@ r.plan = {
 };
 record.wave = 1;
 const vehicle = [...r.vehicles.values()][0];
-const cap = Math.ceil(HEAVY.antitank.damage * record.bonus) + 1;
 const report = {
   shot: 'one',
   weapon: 'antitank',
@@ -75,8 +74,8 @@ assert.ok(r.ordnance.includes(record), "only the shooter's report counts");
 command(shooter, 'heavy-impact', report);
 assert.ok(!r.ordnance.includes(record), 'the launch ends with its impact');
 assert.equal(r.effects.filter((e) => e.shot === 'one' && e.kind === 'blast').length, 1);
-assert.equal(r.enemyDamage[0], Math.min(cap, r.plan.roster[0].hp + cap), 'damage is capped');
-assert.ok(r.enemyDamage[0] <= cap);
+// The shooter's report is trusted as is: no cap, no cheat control.
+assert.equal(r.enemyDamage[0], 99999, 'reported damage is applied as is');
 assert.equal(vehicle.state.hp, 70, 'friendly hull damage is applied');
 assert.equal(friend.health, 75, 'friendly blast damage is applied');
 assert.equal(friend.life, 'alive', 'only an armour-piercing shell kills outright');
@@ -129,13 +128,9 @@ const fire2 = (shot) =>
     direction: [1, 0, 0],
   });
 fire2('cadence-1');
-const interval = HEAVY.antitank.interval * 1000;
-now += interval - HEAVY_CADENCE_TOLERANCE_MS / 2;
-fire2('cadence-2');
-now += interval - HEAVY_CADENCE_TOLERANCE_MS * 2;
-assert.throws(() => fire2('cadence-3'), /recharge/, 'a really early launch is refused');
+fire2('cadence-2'); // no rate-of-fire control: the client paces its own reload
 // 7. Malformed reports are refused.
 assert.throws(() => command(shooter, 'heavy-impact', { shot: 5 }), /invalide/);
 console.log(
-  'Heavy impacts: recorded launch, shooter-only report, once, capped, friends hit, AP-only kill, fizzle, expiry, after death.',
+  'Heavy impacts: recorded launch, shooter-only report, once, trusted damage, friends hit, AP-only kill, fizzle, expiry, after death.',
 );

@@ -5,7 +5,7 @@
 The Node server implements these gameplay rules in RAM, in synchronous domain
 operations, with reliable UDP commands. It needs no database, migrations or disk
 writes. Restart resets every room. SQL/migration and HTTP references below refer
-to the historical Sites backend, retained until VM deployment.
+to the former database-backed model, now abandoned.
 See [UDP server](udp-server.md).
 
 ## Input and signatures
@@ -35,13 +35,13 @@ button. Ground contact folds the canopy; a grounded body cannot open it.
 
 ## Ballistics and fall model
 
-`ballistics.js` uses gravity and quadratic drag, following the
+`ballistics.ts` uses gravity and quadratic drag, following the
 [NASA drag equation](https://www1.grc.nasa.gov/beginners-guide-to-aeronautics/drag-equation/)
 and [falling-body model](https://www1.grc.nasa.gov/beginners-guide-to-aeronautics/falling-object-with-air-resistance/).
 The character reference terminal velocity is 54 m/s, close to the approximately
 120 mph free-fall reference given by [USPA](https://www.uspa.org/students/your-first-skydive/tandem).
 Canopy terminal speed is a game tuning value of 5.5 m/s. The equivalent drag is
-k = g / terminal²; body mass is declared as an 80 kg reference, with Cd*A
+k = g / terminal²; body mass is declared as an 80 kg reference, with Cd\*A
 represented by that combined coefficient. This is the reference-human model
 scaled by the map ratio, not a fluid-dynamics simulation of an actual 5 mm human.
 
@@ -61,35 +61,33 @@ combat effects remain capped at 40. Smoke has no extra damaging lifetime.
 
 ## Shared economy
 
-Migration `0008_economy.sql` adds room dollars, upgrades, a soul-reward ledger,
-idempotent purchase orders and placed equipment. Each NPC accepted by Saint
-Peter earns exactly one shared dollar, guarded in the same compare-and-swap
-transaction that marks the soul gone. Office kills earn nothing directly. Shooting a soul in purgatory releases it with the same exact-once reward. NPC service
-continues on the server when no dead human currently owns the purgatory. With a
-human there, the existing client-hosted physical queue remains authoritative.
+The room's dollars, purchased installations and unlocks live in RAM in the Node
+director (`server/game.js`): one synchronous domain operation is one atomic turn
+of the event loop, with no SQL adapter, disk state or asynchronous transaction.
+The former Worker/D1 backend and its migrations are removed. Each NPC accepted by
+Saint Peter earns the shared dollars of its species' power exactly once, guarded
+where the soul is marked gone. Office kills earn nothing directly. Shooting a soul
+in purgatory releases it with the same exact-once reward. NPC service continues
+on the server when no dead human currently owns the purgatory. With a human
+there, the existing client-hosted physical queue remains authoritative.
 
-The catalog is declarative in `equipment.js`:
+The catalog is declarative in `src/equipment.ts` (`SHOP`, `shopPrice`) and the
+shop columns in `src/shop-catalog.ts`. Prices, the per-installation increments and
+the absence of wave stipends and purchasable upgrades are listed once in
+[progression](progression.md#revenus-et-prix).
 
-The initial DCA costs 4 dollars, Stuka 12 dollars per hull, Spitfire 24 dollars, tank 10 dollars, motor levels 4/9/16,
-and ammunition levels 6/12/20. DCA prices rise by 2 dollars per installed gun,
-up to 40 dollars. Completed, non-lost waves grant an immediate team stipend;
-soul releases remain worth one dollar. See [progression](progression.md) for
-the single detailed reference, curve, validation and persistence guarantees.
-
-The historical direct-purchase transaction conditionally inserts an order, debits once, adds the
-installation/unlock/upgrade, then marks the order done. Retrying its request ID
-cannot debit twice. Competing purchases cannot overspend the room. Conflicting
-placements are checked again inside the transaction. A placement must be within
+A purchase is debited once by its request ID: retrying the same ID cannot debit
+twice, and competing purchases cannot overspend the room. Placement is checked
+again at purchase time. A placement must be within
 9 reference metres of an alive grounded walker, have full-base support and free
 headroom, avoid parked aircraft and other installations. A room allows 24 purchased installations in total.
 
-Placement uses the same test in browser and Worker. At assembly, the Worker's
-static collider data is generated from the actual office geometry, including
+Placement uses the same test in browser and server. At assembly, the static
+collider fixture (`OFFICE_SOLIDS`) is generated from the actual office geometry, including
 books and paper stacks. A design edit therefore does not silently leave a second
 hand-maintained server surface list behind. Existing game position reports remain
 client-trusted; this is cooperative-game consistency, not anti-cheat.
 
-The migration returns users of older static DCA posts to foot mode.
 No DCA is supplied free at game start. Purchased installations are replicated
 and retain the same ground-ring/two-document access flow. A game reset clears
 money, purchases, equipment and unlocks. Saved room state survives page refresh.
@@ -105,7 +103,7 @@ Routes are sampled by arc length for consistent speed and shared arrival timing.
 Most aerial waypoints are high, with variable altitude and low approaches. Ants
 unlock on wave 1 and roaches on wave 3. Their floor routes avoid the main furniture
 supports and finish by climbing toward the bin. They have walking legs instead
-of wings. Ground paths use static obstacle-aware A* and simplification, not a dynamic navigation mesh;
+of wings. Ground paths use static obstacle-aware A\* and simplification, not a dynamic navigation mesh;
 arbitrary player-deployed equipment is not dynamically rerouted around.
 
 The bomber now has a rounded fuselage, glazed nose, side windows, engine cowls,
@@ -164,8 +162,8 @@ Le budget est partagé équitablement entre les véhicules éligibles quand la c
 Le moteur `advancePaidService()` accepte l'état de défense terrestre de la room.
 Il inclut les segments de barricade encore intacts mais endommagés dans le même
 budget d'entretien que les véhicules et applique le même tarif proportionnel
-`SERVICE_RATES.hp` (**1 $ / 100 PV**). Une station de service répare dans une
-sphère de 0,12 m et un Castor vivant dans une sphère de 0,50 m, distance mesurée
+`SERVICE_RATES.hp` (**1 $ / 100 PV**). Une station de service et un Castor vivant réparent dans
+une même sphère de 0,50 m, distance mesurée
 jusqu'au point le plus proche du segment. La réparation va au plus à 10 % des PV
 max par seconde, sans dépasser la santé maximale ni la caisse commune.
 La révision de défense est incrémentée seulement lorsqu'au moins un PV est rendu ;
@@ -176,8 +174,9 @@ Node seulement, au maximum une fois par seconde de temps de room.
 ### Stocks des DCA fixes
 
 Un canon DCA fixe est installé avec **120 obus**. Les coups validés par
-`fixedDcaFire()` sur le serveur décrémentent son stock avec idempotence,
-limitation de cadence et vérification de l'occupant. Les recharges sont intégrées
+`fixedDcaFire()` sur le serveur décrémentent son stock avec idempotence
+et vérification de l'occupant (sans contrôle de cadence côté serveur, voir
+[confiance](trust-model.md)). Les recharges sont intégrées
 au budget `advancePaidService()` avec les autres services et valent **0,10 $
 par obus**, au débit maximal de 12 obus/seconde. Sans station ou Castor présent
 à portée, la DCA ne se recharge pas ; plusieurs demandes partagent équitablement

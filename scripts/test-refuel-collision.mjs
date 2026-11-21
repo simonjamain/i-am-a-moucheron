@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
 import * as T from '../vendor/three.module.min.js';
-import { makeServiceStation, makeRefuelCollider } from '../src/station-model.js';
-import { stepWalker } from '../src/sortie.js';
-import { MAP, ACTOR_UNIT } from '../src/scale.js';
-import { OFFICE_LAYOUT } from '../src/layout.js';
+import { makeServiceStation, makeRefuelCollider } from '../src/station-model.ts';
+import { stepWalker } from '../src/sortie.ts';
+import { MAP, ACTOR_UNIT } from '../src/scale.ts';
+import { OFFICE_LAYOUT } from '../src/layout.ts';
 for (const angle of [Math.PI / 4, -Math.PI / 4, Math.PI / 3]) {
   const station = makeServiceStation(T, 'refuel');
   station.scale.setScalar(MAP.ratio);
@@ -35,10 +35,11 @@ for (const angle of [Math.PI / 4, -Math.PI / 4, Math.PI / 3]) {
 }
 console.log('Refuel collision follows rotation and leaves empty diagonal corners walkable');
 
-const { segmentBox, sweptBoxProximity } = await import('../src/swept-geometry.js');
-const { rayCollider, colliderContainsXZ } = await import('../src/oriented-collider.js');
-const { stepTank } = await import('../src/tank.js');
-const { VEHICLES } = await import('../src/fleet.js');
+const { segmentBox, sweptBoxProximity } = await import('../src/swept-geometry.ts');
+const { rayCollider, colliderContainsXZ } = await import('../src/oriented-collider.ts');
+const { CastorRig } = await import('../src/castor-physics.ts');
+const { loadRapier } = await import('../src/physics-world.ts');
+const { VEHICLES } = await import('../src/fleet.ts');
 for (const angle of [0, Math.PI / 4, Math.PI / 2, (Math.PI * 3) / 4, -Math.PI / 3]) {
   const station = makeServiceStation(T, 'refuel');
   station.scale.setScalar(MAP.ratio);
@@ -85,16 +86,20 @@ for (const angle of [0, Math.PI / 4, Math.PI / 2, (Math.PI * 3) / 4, -Math.PI / 
   const empty = world(6.3, 0, 3.9);
   state.p = empty.toArray();
   state.p[1] = 0.2 + VEHICLES.castor.gear;
-  stepTank(T, state, {}, [box], 1 / 60, VEHICLES.castor);
-  stepTank(T, state, {}, [box], 1 / 60, VEHICLES.castor);
-  assert.ok(state.p[1] < 0.2 + VEHICLES.castor.gear, 'ground vehicle falls in the empty corner');
+  const rig = new CastorRig(await loadRapier(() => import('../vendor/rapier.compat.mjs')));
+  for (let i = 0; i < 90; i++) rig.step(state, {}, [box], 1 / 60, VEHICLES.castor);
+  rig.dispose();
+  assert.ok(
+    state.p[1] < 0.2 + VEHICLES.castor.gear - 0.01,
+    'ground vehicle falls in the empty corner',
+  );
 }
 console.log(
   'Rotated station: translated bounds, positive/negative ray hits, swept spheres, aircraft expansion and ground support',
 );
 
 // Placement must not treat the broad AABB's empty corner as a real roof.
-const { supportedPlacement } = await import('../src/equipment.js');
+const { supportedPlacement } = await import('../src/equipment.ts');
 const roofStation = makeServiceStation(T, 'refuel');
 roofStation.scale.setScalar(MAP.ratio);
 roofStation.rotation.y = Math.PI / 4;
@@ -106,7 +111,7 @@ assert.equal(
   null,
   'empty diagonal corner must not support a placement',
 );
-const { footprintOverlapsCollider } = await import('../src/oriented-collider.js');
+const { footprintOverlapsCollider } = await import('../src/oriented-collider.ts');
 assert.equal(
   footprintOverlapsCollider(
     roof,

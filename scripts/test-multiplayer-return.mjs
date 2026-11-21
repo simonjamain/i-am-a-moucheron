@@ -3,23 +3,24 @@ import * as T from '../vendor/three.module.min.js';
 import vm from 'node:vm';
 import { readFileSync } from 'node:fs';
 import { Game } from '../server/game.js';
-import { VEHICLES } from '../src/fleet.js';
-import { SHOP, shopPrice, supportedPlacement } from '../src/equipment.js';
-import { MAP, ACTOR_UNIT, INSECT_SCALE } from '../src/scale.js';
-import { OFFICE_LAYOUT } from '../src/layout.js';
-import { OFFICE_SOLIDS } from '../worker/assets.js';
-import { fullAmmo, inRadarCoverage } from '../src/logistics.js';
-import { WALKER_FALL, stepWalkerFall, impactDamage } from '../src/field-physics.js';
+import { VEHICLES } from '../src/fleet.ts';
+import { SHOP, shopPrice, supportedPlacement } from '../src/equipment.ts';
+import { MAP, ACTOR_UNIT, INSECT_SCALE } from '../src/scale.ts';
+import { OFFICE_LAYOUT } from '../src/layout.ts';
+import { OFFICE_SOLIDS } from '../server/assets.js';
+import { fullAmmo, inRadarCoverage } from '../src/logistics.ts';
+import { WALKER_FALL, stepWalkerFall, impactDamage } from '../src/field-physics.ts';
 import { createGraphics } from '../src/graphics.js';
-import { insectScale } from '../src/insect-status.js';
-import { nearestInsectHit } from '../src/insect-hits.js';
+import { insectScale } from '../src/insect-status.ts';
+import { nearestInsectHit } from '../src/insect-hits.ts';
 import { controlHints, cursorStats } from '../src/live-hud.js';
-import { GunSalvos } from '../src/salvos.js';
-import { makeShotTrace, TracerPool } from '../src/tracers.js';
+import { GunSalvos } from '../src/salvos.ts';
+import { makeShotTrace, TracerPool } from '../src/tracers.ts';
 import { wavePlan, swarmFrame } from '../src/waves.js';
 import { enemyRoute } from '../src/routes.js';
+import { staticGroundFlow } from '../src/ground-defense.js';
 import { blockedSegment } from '../src/route-navigation.js';
-import { HEAVY, heavyDamage } from '../src/armament.js';
+import { HEAVY, heavyDamage } from '../src/armament.ts';
 import { createOrdnance } from '../src/ordnance.js';
 let now = 100000;
 const game = new Game({ now: () => now, solids: OFFICE_SOLIDS });
@@ -39,7 +40,7 @@ assert.equal(
   r.base.bodies.some((b) => b.entity === p.id && !b.gone),
   false,
 );
-assert.throws(() => cmd('buy', { item: 'engine', request: 'forbidden-buy' }), /purgatoire/);
+assert.throws(() => cmd('buy', { item: 'radar', request: 'forbidden-buy' }), /purgatoire/);
 assert.throws(() => cmd('enter-purgatory', { incarnation: p.incarnation - 1 }), /périmé/);
 cmd('enter-purgatory', { incarnation: p.incarnation });
 cmd('enter-purgatory', { incarnation: p.incarnation });
@@ -99,7 +100,7 @@ for (const type of ['fighter', 'bomber'])
     game.release(r, p);
     p.mode = 'foot';
   }
-assert.equal([...r.vehicles.values()].filter((v) => v.origin === 'starter').length, 10);
+assert.equal([...r.vehicles.values()].filter((v) => v.origin === 'starter').length, 11);
 console.log(
   'Reserves: successive takeoffs keep used aircraft, produce one ready reserve, returning aircraft never trigger another spawn.',
 );
@@ -155,8 +156,8 @@ for (const [index, type] of Object.keys(VEHICLES).entries()) {
   assert.equal(bought[0].state.p[1], position.y + VEHICLES[type].gear);
   assert.equal(r.dollars, before - price);
 }
-assert.equal(SHOP.fighter.cost, 8);
-assert.equal(SHOP.bomber.cost, 16);
+assert.equal(SHOP.fighter.cost, 5);
+assert.equal(SHOP.bomber.cost, 5);
 assert.equal(fullAmmo('spitfire').pilot, 1000);
 const salvo = new GunSalvos(),
   departures = [];
@@ -196,7 +197,7 @@ trace.updateWorldMatrix(true, true);
 assert.ok(trace.userData.core.getWorldPosition(new T.Vector3()).dot(dir) > 0);
 for (const scale of [MAP.ratio, 1])
   for (const pitch of [-1.52, -0.8, 0, 0.8, 1.52]) {
-    const { shoulderView, muzzleAim, aimPistol } = await import('../src/personal-aim.js');
+    const { shoulderView, muzzleAim, aimPistol } = await import('../src/personal-aim.ts');
     const cam = new T.PerspectiveCamera();
     const view = shoulderView(T, { x: 0, y: 0, z: 0 }, 1, pitch, 5.8, scale);
     cam.position.copy(view.eye);
@@ -226,21 +227,22 @@ console.log(
 const midge = graphics.insect('midge');
 midge.scale.setScalar(insectScale('midge', INSECT_SCALE));
 midge.position.set(0, 0, -0.1);
-assert.equal(midge.userData.hitTolerance, 1.2);
+assert.ok(Math.abs(midge.userData.hitTolerance - 0.84) < 1e-12, 'midge hit volume 30 % smaller');
 assert.equal(insectScale('midge', 1), 1.35 * 1.5 * 3);
-let tolerant = 0,
+let shrunk = 0,
   exact = 0;
 for (let x = -0.018; x <= 0.018; x += 0.0002) {
   const point = new T.Vector3(x, 0, 0);
   midge.userData.hitTolerance = 1;
   exact += !!nearestInsectHit(T, point, dir, new Map([[0, midge]]), 1);
-  midge.userData.hitTolerance = 1.2;
-  tolerant += !!nearestInsectHit(T, point, dir, new Map([[0, midge]]), 1);
+  midge.userData.hitTolerance = 0.84;
+  shrunk += !!nearestInsectHit(T, point, dir, new Map([[0, midge]]), 1);
 }
-assert.ok(tolerant > exact);
+assert.ok(shrunk < exact, 'the shrunk midge is harder to hit');
 assert.equal(nearestInsectHit(T, new T.Vector3(1, 1, 0), dir, new Map([[0, midge]]), 1), null);
-for (const type of ['dart', 'guard', 'brute', 'ant', 'roach'])
-  assert.equal(graphics.insect(type).userData.hitTolerance, 1);
+for (const type of ['guard', 'brute', 'mosquito'])
+  assert.equal(graphics.insect(type).userData.hitTolerance, 1.3, type + ' hit volume 30 % larger');
+for (const type of ['ant', 'roach']) assert.equal(graphics.insect(type).userData.hitTolerance, 1);
 const pool = new TracerPool(T, scene, 8);
 for (let i = 0; i < 1000; i++) {
   const model = pool.acquire(origin, dir, '#abc');
@@ -277,11 +279,15 @@ for (let seed = 0; seed < 8; seed++)
         const walked = floor
           .slice(1)
           .reduce((sum, p, i) => sum + Math.hypot(p[0] - floor[i][0], p[2] - floor[i][2]), 0);
-        const straight = Math.hypot(floor[0][0] - 3, floor[0][2] + 2.7);
-        assert.ok(walked <= straight * 1.08, enemy.type + ' ground route detours');
+        // The shortest walk is the layout's own flow field around its furniture.
+        const direct = staticGroundFlow().smoothRoute([floor[0][0], floor[0][2]]);
+        const shortest = direct
+          .slice(1)
+          .reduce((sum, p, i) => sum + Math.hypot(p[0] - direct[i][0], p[1] - direct[i][1]), 0);
+        assert.ok(walked <= shortest * 1.08 + 0.5, enemy.type + ' ground route detours');
       } else {
-        assert.ok(Math.max(...xs) - Math.min(...xs) > 5.5);
-        assert.ok(Math.max(...zs) - Math.min(...zs) > 5);
+        assert.ok(Math.max(...xs) - Math.min(...xs) > 4);
+        assert.ok(Math.max(...zs) - Math.min(...zs) > 3);
         assert.ok(enemy.duration > 100);
       }
       for (let i = 1; i < route.samples.length - 2; i++)

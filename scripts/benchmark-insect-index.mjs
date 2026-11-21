@@ -1,7 +1,7 @@
 import { performance } from 'node:perf_hooks';
 import * as T from '../vendor/three.module.min.js';
 import { createGraphics } from '../src/graphics.js';
-import { InsectIndex, nearestInsectHit } from '../src/insect-hits.js';
+import { InsectIndex, nearestInsectHit } from '../src/insect-hits.ts';
 // CPU-only: each sample includes one index rebuild and 256 swept shot segments.
 // Models/queries and narrow phase are identical; no GPU or network is measured.
 let seed = 42;

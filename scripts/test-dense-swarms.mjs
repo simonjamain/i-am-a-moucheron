@@ -1,10 +1,11 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { performance } from 'node:perf_hooks';
-import { MAP, INSECT_SCALE, enemySizeFactor, GROUND_FOOT_DEPTH } from '../src/scale.js';
+import { MAP, INSECT_SCALE, enemySizeFactor, GROUND_FOOT_DEPTH } from '../src/scale.ts';
 import { enemyRoute, enemyRoutePosition } from '../src/routes.js';
 import { scaleRoster, DEFAULT_BALANCE } from '../src/balance.js';
 import {
+  legacyCost,
   wavePlan,
   expandMidgeSwarms,
   swarmFrame,
@@ -15,7 +16,7 @@ import {
   MAX_WAVE_POPULATION,
 } from '../src/waves.js';
 import { Game } from '../server/game.js';
-import { encodeReply, ReplyAssembler } from '../src/udp-protocol.js';
+import { encodeReply, ReplyAssembler } from '../src/udp-protocol.ts';
 const input = [
   { id: 0, type: 'ant', spawn: 0, phase: 0.1, hp: 100 },
   { id: 1, type: 'midge', spawn: 1, phase: 0.2, hp: 100, routeSeed: 13 },
@@ -51,7 +52,7 @@ for (const wave of [1, 2, 6, 12, 30, 100, 1000])
       );
     }
     assert.equal(
-      [...groups.values()].reduce((n, group) => n + group[0].cost, 0),
+      [...groups.values()].reduce((n, group) => n + legacyCost(group[0]), 0),
       p.budget,
     );
   }
@@ -122,7 +123,7 @@ const ground = debugSwarmRoster({ ant: 120, roach: 240 }, debugParams);
 assert.equal(new Set(ground.map((e) => e.routeSeed)).size, 1, 'one ground route');
 assert.equal(new Set(ground.map((e) => enemyRoute(e).portal)).size, 1);
 assert.ok(ground.every((e) => e.swarmSize === ground.length));
-const mixed = debugSwarmRoster({ midge: 1000, dart: 200, ant: 40 }, debugParams);
+const mixed = debugSwarmRoster({ midge: 1000, mosquito: 200, ant: 40 }, debugParams);
 assert.equal(new Set(mixed.filter((e) => !e.ground).map((e) => e.routeSeed)).size, 1);
 assert.equal(new Set(mixed.filter((e) => e.ground).map((e) => e.routeSeed)).size, 1);
 assert.ok(mixed.filter((e) => !e.ground).every((e) => e.swarmSize === 1200));
@@ -256,18 +257,22 @@ r.pilots.get(a.id).seen = now;
 let snapshot = game.command(r.code, a.id, 'sync', { mode: 'foot', state: a.state });
 const firstTotal = r.plan.roster.length;
 assert.equal(snapshot.total, firstTotal);
-for (let enemy = 0; enemy < firstTotal - 1; enemy++) {
-  gunShot();
-  game.command(r.code, a.id, 'hit', { wave: 1, enemy, amount: 800, shot: 'kill' + enemy });
+// The roster is random and an enemy can have more than one hit of life (a brute has 1500).
+function kill(enemy, tag) {
+  const hits = Math.ceil(r.plan.roster[enemy].hp / 800);
+  for (let k = 0; k < hits; k++) {
+    gunShot();
+    game.command(r.code, a.id, 'hit', { wave: 1, enemy, amount: 800, shot: tag + ':' + k });
+  }
 }
+for (let enemy = 0; enemy < firstTotal - 1; enemy++) kill(enemy, 'kill' + enemy);
 snapshot = game.snapshot(r);
 assert.equal(snapshot.phase, 'combat');
 assert.equal(snapshot.kills.length, firstTotal - 1);
-gunShot();
-game.command(r.code, a.id, 'hit', { wave: 1, enemy: firstTotal - 1, amount: 800, shot: 'last' });
+kill(firstTotal - 1, 'last');
 snapshot = game.snapshot(r);
 assert.equal(snapshot.phase, 'prep');
-assert.equal(snapshot.dollars, 4);
+assert.equal(snapshot.dollars, 0, 'no wave stipend: only freed souls pay');
 assert.equal(snapshot.souls.length, Math.min(firstTotal, 24));
 r.wave = 99;
 r.balance.population = 4; // Even the most expensive possible composition exceeds 180 enemies.
@@ -275,6 +280,8 @@ game.startWave(r); // Build the room-local plan through the same transition as a
 snapshot = game.snapshot(r);
 assert.ok(snapshot.total > 180);
 const high = snapshot.total - 1;
+// At wave 99 the last pack is a colossus holding the leftover power: only the id matters here.
+r.plan.roster[high].hp = Math.min(r.plan.roster[high].hp, 4000);
 for (let hit = 0; hit < Math.ceil(r.plan.roster[high].hp / 800); hit++) {
   gunShot();
   game.command(r.code, a.id, 'hit', { wave: 100, enemy: high, amount: 800, shot: 'high-id' + hit });

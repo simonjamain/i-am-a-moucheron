@@ -1,104 +1,103 @@
-import { bendAirPoint } from './air-current.js';
-import { MAP, INSECT_SCALE, enemySizeFactor, GROUND_FOOT_DEPTH } from './scale.js';
+import { MAP, INSECT_SCALE, enemySizeFactor, GROUND_FOOT_DEPTH } from './scale.ts';
+import { powerTable } from './enemy-power.ts';
 import { enemyRoutePosition, routeDuration } from './routes.js';
-export const ENEMY_TYPES = Object.freeze({
+const SPECIES = {
   ant: {
     name: 'Fourmi',
-    cost: 1,
     hp: 100,
     size: 0.8,
     speedMps: 0.085,
-    leak: 1,
     color: '#6e4432',
     ground: true,
   },
   roach: {
     name: 'Cafard',
-    cost: 4,
-    hp: 300,
+    hp: 400,
     size: 1.2,
     speedMps: 0.0625,
-    leak: 2,
     color: '#a36f42',
     ground: true,
   },
   midge: {
     name: 'Moucheron',
-    cost: 1,
     hp: 100,
     size: 1,
     speedMps: 0.11,
-    leak: 1,
     color: '#bfb36c',
   },
-  dart: {
-    name: 'Voltigeur',
-    cost: 3,
-    hp: 200,
-    size: 0.85,
-    speedMps: 0.13,
-    leak: 1,
-    color: '#d78253',
-  },
   guard: {
-    name: 'Carapace',
-    cost: 6,
-    hp: 400,
+    name: 'Abeille',
+    hp: 600,
     size: 1.4,
     speedMps: 0.0875,
-    leak: 2,
     color: '#729d8b',
   },
   mosquito: {
     name: 'Moustique',
-    cost: 2,
-    hp: 70,
+    hp: 150,
     size: 0.58,
     speedMps: 0.115,
-    leak: 1,
     color: '#6b807e',
   },
   rat: {
     name: 'Rat',
-    cost: 40,
-    hp: 5000,
+    hp: 10000,
     size: 4,
     speedMps: 0.08075,
-    leak: 8,
     color: '#86705c',
     ground: true,
   },
   spider: {
     name: 'Araignée pondeuse',
-    cost: 22,
     hp: 1200,
     size: 2.3,
     speedMps: 0.055,
-    leak: 3,
     color: '#453b35',
     ground: true,
     onDeath: { spawn: 'spiderling', count: 100 },
   },
   spiderling: {
     name: 'Bébé araignée',
-    cost: 0,
-    hp: 20,
+    hp: 10,
     size: 0.3,
     speedMps: 0.075,
-    leak: 1,
     color: '#51463d',
     ground: true,
     offspringOnly: true,
   },
   brute: {
-    name: 'Bourdon blindé',
-    cost: 12,
-    hp: 800,
+    name: 'Scarabée',
+    hp: 1500,
     size: 1.9,
     speedMps: 0.07,
-    leak: 3,
     color: '#d0a14b',
   },
+};
+// `power` is computed from the statistics (src/enemy-power.ts), never typed in.
+// It is the only measure of an enemy: wave budget, soul reward, bin damage.
+export const ENEMY_POWER = powerTable(SPECIES);
+/** @type {{ [K in keyof typeof SPECIES]: (typeof SPECIES)[K] & { power: number } }} */
+export const ENEMY_TYPES = Object.freeze(
+  Object.fromEntries(
+    Object.entries(SPECIES).map(([type, stats]) => [
+      type,
+      Object.freeze({ ...stats, power: ENEMY_POWER[type] }),
+    ]),
+  ),
+);
+export const enemyPower = (type) => ENEMY_POWER[type];
+// First wave where the legacy wavePlan() may draw each species (offspring excluded).
+// The live director (server/wave-preparation.js) ignores it: every species is
+// available from wave 1 and only the wave's power decides; key order is the draw order.
+export const ENEMY_UNLOCK_WAVE = Object.freeze({
+  ant: 1,
+  midge: 1,
+  roach: 3,
+  mosquito: 3,
+  guard: 5,
+  brute: 8,
+  spider: 11,
+  rat: 15,
 });
 // Technical bounds prevent anonymous UDP commands from exhausting memory or
 // generating an untransportable reliable snapshot. Counts are exact, without
@@ -110,32 +109,12 @@ export function enemyTravelSpeed(enemy, roomMultiplier = 1) {
   if (!Number.isFinite(speed) || speed <= 0) throw Error('Vitesse ennemie invalide.');
   return speed;
 }
-export const MAX_DEBUG_SPAWN_BATCH = 5000;
-export const MAX_DEBUG_ROOM_ENEMIES = 10000;
-export function validateDebugSpawn(counts) {
-  if (!counts || typeof counts !== 'object' || Array.isArray(counts))
-    throw Error('Quantités de nuée invalides.');
-  let total = 0;
-  for (const [type, count] of Object.entries(counts)) {
-    if (
-      !Object.hasOwn(ENEMY_TYPES, type) ||
-      ENEMY_TYPES[type].offspringOnly ||
-      !Number.isSafeInteger(count) ||
-      count < 0
-    )
-      throw Error('Quantité invalide : ' + type);
-    total += count;
-  }
-  if (!Number.isSafeInteger(total) || total > MAX_DEBUG_SPAWN_BATCH)
-    throw Error('Maximum ' + MAX_DEBUG_SPAWN_BATCH + ' insectes par envoi.');
-  if (total === 0) throw Error('Renseignez au moins un insecte.');
-  return total;
-}
-
 // Append a fresh, deterministic swarm to the active room-local roster.
 // Existing enemy indices never change, including their damage and kills.
-// One manual command represents one flock. Aerial and ground species cannot
-// share a physical route, so a mixed command has at most one of each.
+// No in-game command uses it any more: the tests build exact rosters with it
+// (load, routes, heavy impacts). One call represents one flock. Aerial and
+// ground species cannot share a physical route, so a mixed call has at most
+// one of each.
 export function debugSwarmRoster(counts, { room, wave, started, now, balance, firstId, revision }) {
   const roster = [];
   const elapsed = (now - started) / 1000;
@@ -207,6 +186,20 @@ export function expandMidgeSwarms(roster) {
       .map((enemy, id) => ({ ...enemy, id })),
   );
 }
+// Integer point costs of the seeded `wavePlan` director, independent from the
+// power model that prices the rosters drawn by server/wave-preparation.js.
+const LEGACY_COST = Object.freeze({
+  ant: 1,
+  roach: 4,
+  midge: 1,
+  guard: 6,
+  mosquito: 2,
+  rat: 40,
+  spider: 22,
+  spiderling: 0,
+  brute: 12,
+});
+export const legacyCost = (enemy) => enemy.legacyCost ?? LEGACY_COST[enemy.type];
 export function waveBudget(wave) {
   const n = Math.max(1, Math.floor(Number(wave) || 1));
   return Math.min(2400, 8 + 2 * (n - 1) + Math.floor((n - 1) ** 2 / 2));
@@ -235,37 +228,18 @@ export function wavePlan(room, wave, started = 0) {
     })),
     counts = { ant: initialAnts };
   remaining -= initialAnts;
-  const unlock = {
-    ant: 1,
-    roach: 3,
-    dart: 2,
-    mosquito: 3,
-    guard: 5,
-    brute: 8,
-    spider: 11,
-    rat: 15,
-  };
-  if (wave >= 2) {
-    roster.push({
-      id: roster.length,
-      type: 'dart',
-      ...ENEMY_TYPES.dart,
-      phase: random() * Math.PI * 2,
-    });
-    remaining -= ENEMY_TYPES.dart.cost;
-    counts.dart = 1;
-  }
-  let eliteSpent = wave >= 2 ? ENEMY_TYPES.dart.cost : 0;
+  const unlock = ENEMY_UNLOCK_WAVE;
+  let eliteSpent = 0;
   while (remaining > 0 && roster.length < 180) {
     const unlocked = Object.entries(ENEMY_TYPES).filter(
       ([name, t]) =>
         !t.offspringOnly &&
-        t.cost <= remaining &&
+        LEGACY_COST[name] <= remaining &&
         (name === 'midge' ||
           (wave >= unlock[name] &&
-            (t.cost === 1 ||
+            (LEGACY_COST[name] === 1 ||
               ((counts[name] || 0) < 1 + Math.floor((wave - unlock[name]) / 3) &&
-                eliteSpent + t.cost <= Math.floor(waveBudget(wave) * 0.4))))),
+                eliteSpent + LEGACY_COST[name] <= Math.floor(waveBudget(wave) * 0.4))))),
     );
     // At the population ceiling, consolidate the remaining budget into a boss.
     if (roster.length === 179) {
@@ -275,7 +249,7 @@ export function wavePlan(room, wave, started = 0) {
         type: 'brute',
         ...ENEMY_TYPES.brute,
         hp,
-        cost: remaining,
+        legacyCost: remaining,
         phase: random() * Math.PI * 2,
       });
       remaining = 0;
@@ -283,9 +257,9 @@ export function wavePlan(room, wave, started = 0) {
     }
     const [type, profile] = unlocked[Math.floor(random() * unlocked.length)];
     roster.push({ id: roster.length, type, ...profile, phase: random() * Math.PI * 2 });
-    remaining -= profile.cost;
+    remaining -= LEGACY_COST[type];
     counts[type] = (counts[type] || 0) + 1;
-    if (profile.cost > 1) eliteSpent += profile.cost;
+    if (LEGACY_COST[type] > 1) eliteSpent += LEGACY_COST[type];
   }
   for (const enemy of roster) {
     enemy.entryHold = 2;
@@ -429,12 +403,17 @@ export function midgeDisplacement(enemy, time, envelope = 1) {
 // alignment rules. No frame-history dependency: late joiners see the same flock.
 // The route guides each cluster; local steering offsets cannot skip the bin.
 // A sampled ground pose can be provided instead of a static snapshot map.
-export function swarmFrame(roster, time, groundAgents = null, field = null) {
+export function swarmFrame(roster, time, groundAgents = null) {
   const groundAt = (id) => {
     if (typeof groundAgents === 'function') return groundAgents(id);
     return groundAgents?.[id];
   };
   const samples = roster.map((e) => {
+    // Debug-mode dummy (debug-enemies.ts): fixed pose from its placement on.
+    if (e.dummy)
+      return time < e.spawn
+        ? null
+        : { p: [...e.dummy.p], dir: [...e.dummy.dir], envelope: 1, authoritative: true };
     const ground = e.ground && groundAt(e.id);
     if (ground) {
       if (ground.arrived) return null;
@@ -453,10 +432,6 @@ export function swarmFrame(roster, time, groundAgents = null, field = null) {
     if (u < 0 || u >= 1) return null;
     const p = enemyRoutePosition(e, u),
       next = enemyRoutePosition(e, Math.min(1, u + 0.0001));
-    if (!e.ground && field) {
-      bendAirPoint(p, u, field);
-      bendAirPoint(next, Math.min(1, u + 0.0001), field);
-    }
     // Ground meshes extend below their origin: lift both path samples equally
     // so their feet clear the support without corrupting the movement tangent.
     if (e.ground) {
@@ -475,7 +450,7 @@ export function swarmFrame(roster, time, groundAgents = null, field = null) {
         Math.min(1, (age - hold) / fadeSeconds, (e.duration - age) / fadeSeconds),
       ),
       phase = e.phase,
-      amplitude = MAP.metres(e.ground ? 1.5 : e.type === 'dart' ? 6 : 4) * envelope;
+      amplitude = MAP.metres(e.ground ? 1.5 : 4) * envelope;
     if (e.ground) {
       const [dx, dz] = groundLaneDisplacement(e, [tangent[0] / length, tangent[2] / length], u);
       p[0] += dx;

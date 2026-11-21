@@ -1,12 +1,14 @@
-# Serveur Node : RAM et UDP obligatoire
+# Serveur Node : RAM, UDP et secours TCP
 
-Décision validée le 29 octobre 2026 : aucune base de données et aucun repli
-WebSocket/TCP pour les joueurs incompatibles. La livraison courante est un ZIP des sources pour la VM. Le [guide Docker](docker.md)
-reste optionnel ; ses archives binaires historiques ne suivent pas chaque lot.
+Décision validée le 29 octobre 2026 : aucune base de données. Révisée le
+16 novembre 2026 (version 306) : les réseaux qui bloquent l'UDP sortant
+(réseaux d'entreprise) jouent en TCP sur un WebSocket, voir
+[secours TCP](#secours-tcp-websocket). La livraison est l’image Docker `latest` publiée à chaque commit sur `main`
+(voir [le guide Docker](docker.md) et [l’exploitation](operations.md)).
 
 ## Démarrage sur une VM
 
-Installer Node 22.13+ et les dépendances depuis le dépôt :
+Installer Node 22.18+ et les dépendances depuis le dépôt :
 
 ```sh
 npm ci
@@ -31,6 +33,8 @@ négociation entre plusieurs processus qui auraient des mémoires distinctes.
 | `UDP_BIND_ADDRESS`      | découverte automatique | IP locale de l'interface UDP ; `127.0.0.1` pour tests locaux                          |
 | `UDP_ADVERTISE_ADDRESS` | vide                   | IP publique à annoncer si la VM est derrière un NAT avec redirection des mêmes ports  |
 | `STUN_SERVER`           | vide                   | Serveur STUN optionnel, par exemple `stun:stun.cloudflare.com:3478`                   |
+| `STATS_FILE`            | vide                   | Fichier de persistance des [statistiques](stats.md) (volume Docker à monter)          |
+| `STATS_TOKEN`           | vide                   | Jeton exigé par `/stats` et `/stats.json` ; sans jeton, routes publiques              |
 
 Exemple, en remplaçant l'adresse documentaire par l'IP réelle de la VM :
 
@@ -54,17 +58,38 @@ Le port annoncé dans la réponse SDP doit être celui que le navigateur joint.
 Si Docker publie un autre numéro (`-p 443:41000/udp`), définir
 `UDP_ADVERTISE_PORT=443`. Si le reverse proxy de la VM sert HTTP/3, il occupe
 déjà l'UDP 443 de son adresse : choisir 3478, ou désactiver HTTP/3 sur le proxy.
-Un réseau qui bloque tout l'UDP reste incompatible (aucun relais TURN/TCP).
+Un réseau qui bloque tout l'UDP passe par le [secours TCP](#secours-tcp-websocket).
 Diagnostic : le partage de connexion 4G fonctionne, `h3` apparaît ou non dans la
 colonne Protocol des DevTools, et `tcpdump -ni any udp port PORT` sur la VM
 montre si les paquets du joueur arrivent.
 
 Sans IP publique directement joignable, configurer une redirection UDP conservant
-les ports ou un STUN adapté. Aucun relais TURN/TCP n'est configuré. L'échec UDP
-refuse la connexion et affiche une erreur ; aucune action ne part alors en HTTP.
+les ports ou un STUN adapté. Aucun relais TURN n'est configuré. Si l'UDP échoue,
+le navigateur bascule sur le secours TCP ; aucune action ne part en HTTP.
 `GET /healthz` indique `storage: ram` et `transport: webrtc-udp` ; cela vérifie le
 processus, pas l'ouverture du pare-feu UDP. L'indication « UDP » en jeu nécessite
 les statistiques ICE du navigateur et la vérification du serveur.
+
+## Secours TCP (WebSocket)
+
+Le navigateur essaie toujours l'UDP d'abord. Si les canaux ne s'ouvrent pas en
+5 s (`UDP_OPEN_MS` dans `src/client.js`), par exemple sur un réseau d'entreprise
+qui ne laisse sortir que HTTPS, il ouvre un WebSocket sur `/ws` (même domaine,
+même proxy HTTPS : Traefik relaie les WebSocket sans configuration) avec le même
+protocole : trames texte pour les commandes fiables et leurs réponses, trames
+binaires pour les mouvements (JSON montant, lots binaires partagés descendants).
+Session, reprise, limites et confirmations sont celles de l'UDP ; un joueur TCP
+et un joueur UDP partagent la même salle et les mêmes lots de mouvements.
+Après un échec UDP, les reconnexions de la page vont directement en TCP. Le HUD
+affiche « TCP (SECOURS) ». Sur TCP, un paquet perdu retarde tout ce qui suit :
+le jeu est moins fluide sur un réseau qui perd des paquets ; un lot de
+mouvements est sauté si plus de 64 Ko attendent déjà vers ce joueur.
+
+`TCP_FALLBACK=0` désactive la route `/ws`. `/healthz` indique `tcpFallback` et
+`tcpConnections`. Contrôles : `node scripts/test-tcp-fallback.mjs` (WebSocket
+réel, salle mixte avec un pair UDP natif, reprise, refus d'origine) et
+`npm run e2e:tcp` (Chromium dont l'UDP ne reçoit aucune réponse : bascule,
+commandes et mouvements, reprise directe en TCP, `leave`).
 
 ## Transport et fiabilité
 
@@ -152,13 +177,8 @@ Les identifiants d'impacts et de tirs ont une limite de 128 000 par registre :
 la limite atteinte refuse de nouveaux éléments, sans oublier les doublons.
 Une partie exceptionnellement longue peut nécessiter une remise à zéro.
 
-Le Site public reste sur le Worker/D1 historique jusqu'à installation de ce
-runtime sur une VM. Aucun domaine ni serveur externe n'a été configuré ici.
-L'assemblage produit séparément `worker/assets.js`, importé par Node, et
-`worker/index.js`, Worker de compatibilité. Le runtime Node n'importe pas le
-Worker, `node:sqlite`, ni `scripts/local-db.mjs`. `npm run dev:sites` est réservé
-à la reproduction du backend historique. Les deux runtimes ne partagent pas
-les salles. Les migrations D1 existantes ne sont pas modifiées.
+Aucun domaine ni serveur externe n'est configuré par le dépôt. L'assemblage produit
+`server/assets.js`, importé par Node.
 
 ## Vérifications
 
@@ -178,15 +198,13 @@ nouvelle connexion. `test-resume.mjs` couvre les règles de reprise du domaine.
 lots binaires dans la page. `npm run e2e:resume` (manuel, Playwright requis) fait rejoindre un vrai Chromium,
 coupe sa connexion côté serveur et vérifie la reprise du même pilote puis
 `leave` ; dans un conteneur dont l'interface n'est pas `127.0.0.1`, passer son
-adresse : `node scripts/e2e-browser-resume.mjs 192.0.2.2`. Les tests Worker/D1 continuent
-à couvrir la compatibilité historique, sans être nécessaires au serveur Node.
+adresse : `node scripts/e2e-browser-resume.mjs 192.0.2.2`.
 
 La réussite locale ne mesure pas la latence Internet, les NAT mobiles ni la
 charge maximale de la VM. Après installation, faire un essai à deux navigateurs
 sur des réseaux distincts et vérifier « UDP » dans les deux interfaces.
-Le navigateur de prévisualisation a chargé le client Node puis affiché
-« UDP indisponible sur ce réseau. Aucun transport de secours. » : ce parcours
-vérifie le refus, sans valider une partie navigateur sur Internet.
+Un navigateur dont l'UDP est bloqué rejoint désormais la partie en TCP
+(`npm run e2e:tcp`) ; cela ne valide pas une partie sur Internet.
 
 Références : [WebRTC Data Channels, RFC 8831](https://www.rfc-editor.org/rfc/rfc8831),
 [API node-datachannel](https://github.com/murat-dogan/node-datachannel/blob/master/API.md),

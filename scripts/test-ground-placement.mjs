@@ -127,13 +127,14 @@ await Promise.resolve();
 assert.equal(ui.openWheel(), true);
 ui.finishWheel();
 assert.equal(ui.active, false);
+assert.ok(!ui.tools.some(([kind]) => kind === 'fan'), 'no fan in the wheel (version 319)');
 for (let i = 0; i < ui.tools.length; i++) {
   ui.openWheel();
   const angle = (i * 2 * Math.PI) / ui.tools.length;
   ui.moveWheel(80 * Math.sin(angle), -80 * Math.cos(angle));
   ui.finishWheel();
   if (['sentry', 'bunker', 'antitank'].includes(ui.tools[i][0]))
-    assert.equal(ui.mode, 'fan', 'Castor-only locked tools cannot be selected on foot');
+    assert.equal(ui.mode, 'remove', 'Castor-only locked tools cannot be selected on foot');
   else assert.equal(ui.mode, ui.tools[i][0]);
 }
 assert.equal(commands.length, 2, 'selecting a sector never builds');
@@ -183,8 +184,8 @@ assert.equal(ui.active, false, 'entering a vehicle or dying cancels placement');
 assert.equal(ui.preview.visible, false);
 console.log('Ground placement UI: wheel, ghost, pending command, modal suspension and reset OK');
 
-const { placementAim } = await import('../src/placement-aim.js');
-const { brickLayout, createBrickWall } = await import('../src/brick-wall.js');
+const { placementAim } = await import('../src/placement-aim.ts');
+const { brickLayout, createBrickWall } = await import('../src/brick-wall.ts');
 const floor = { min: { x: -4, y: -0.1, z: -4 }, max: { x: 4, y: 0, z: 4 } };
 const eye = { x: 0, y: 0.04, z: 0.04 };
 const direction = { x: 0, y: -1, z: -2 };
@@ -210,7 +211,7 @@ assert.ok(
     0.24,
   ),
 );
-for (const mode of ['sugar', 'fan', 'repair', 'remove']) {
+for (const mode of ['sugar', 'repair', 'remove']) {
   const a = groundPlacement({ foot: body, mode, aim: aimed, defense, dollars: 100 });
   const b = groundPlacement({
     foot: { ...body, face: Math.PI },

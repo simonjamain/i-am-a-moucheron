@@ -3,7 +3,7 @@ import {
   FLIGHT_TUNING_FIELDS,
   normalizeFlightTuning,
   saveFlightTuning,
-} from './flight-tuning.js';
+} from './flight-tuning.ts';
 
 export class FlightTuningUI {
   constructor({ root, document, storage, initial, onChange, onOpen, onClose }) {

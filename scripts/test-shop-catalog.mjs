@@ -2,13 +2,13 @@
 // (bottom) by price, a picture for every purchasable item, no item hidden.
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { SHOP } from '../src/equipment.js';
-import { SHOP_CATEGORIES, shopColumns } from '../src/shop-catalog.js';
+import { SHOP } from '../src/equipment.ts';
+import { SHOP_CATEGORIES, shopColumns } from '../src/shop-catalog.ts';
 
 const columns = shopColumns();
 assert.deepEqual(
   columns.map((c) => c.title),
-  ['Aéronefs', 'Véhicules au sol', 'Installations', 'Améliorations'],
+  ['Aéronefs', 'Véhicules au sol', 'Installations'],
 );
 const placed = columns.flatMap((c) => c.items);
 assert.deepEqual([...placed].sort(), Object.keys(SHOP).sort(), 'every item once, none hidden');
@@ -21,7 +21,7 @@ for (const column of columns) {
   );
 }
 assert.equal(columns[0].items[0], 'fighter');
-assert.equal(columns[0].items.at(-1), 'flyingcastor');
+assert.equal(columns[0].items.at(-1), 'spitfire');
 assert.equal(columns[1].items[0], 'tank');
 assert.equal(columns[1].items.at(-1), 'flaktruck');
 // A future item that no category lists still appears, in a last column.

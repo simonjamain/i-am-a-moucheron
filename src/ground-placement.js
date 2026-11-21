@@ -1,6 +1,6 @@
 import { GROUND_BOUNDS, groundCommand } from './ground-defense-state.js';
 import { distanceToSegment } from './ground-defense.js';
-import { airdropCommand } from './airdrop.js';
+import { airdropCommand } from './airdrop.ts';
 
 // Castor volant: every drop is centred straight below the helicopter and turned
 // like it; repair/remove target the construction closest to that point.
@@ -78,7 +78,7 @@ export function groundPlacement({
       .sort((a, b) => a.d - b.d)[0]?.s;
     if (!target) return { center, error: 'Visez une construction proche devant vous.' };
     command = { action: mode, id: target.id };
-  } else if (['sugar', 'fan', 'sentry', 'bunker', 'antitank'].includes(mode))
+  } else if (['sugar', 'sentry', 'bunker', 'antitank'].includes(mode))
     command = { action: 'build', kind: mode, a: center, angle: rotation };
   else
     command =

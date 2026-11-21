@@ -1,6 +1,6 @@
 import { rotateLocal } from './helicopter.js';
-import { VEHICLES } from './fleet.js';
-import { MAP, ACTOR_UNIT } from './scale.js';
+import { VEHICLES } from './fleet.ts';
+import { MAP, ACTOR_UNIT } from './scale.ts';
 import { VEHICLE_ANCHORS } from './vehicle-anchors.js';
 
 // D2 geometry shared with its model: trailer hitch, gun pivot and hulls.
@@ -16,8 +16,8 @@ export {
   sweptBoxProximity,
   sweptSphereProximity,
   closestSphereProximity,
-} from './swept-geometry.js';
-import { sweptBoxProximity } from './swept-geometry.js';
+} from './swept-geometry.ts';
+import { sweptBoxProximity } from './swept-geometry.ts';
 export const MOBILE_FUSE = Object.freeze({
   min: 0.5,
   max: 20,

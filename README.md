@@ -12,8 +12,8 @@ des vagues d’insectes et passent chez Saint Pierre après leur mort.
    [l’exploitation](docs/operations.md) selon la tâche.
 
 Le dépôt est la référence maintenue. Les conversations expliquent les demandes,
-mais ne constituent pas une spécification exhaustive de l’état actuel.
-Les notes dans `docs/archive/` sont historiques.
+mais ne constituent pas une spécification exhaustive de l’état actuel. Les tâches
+ouvertes vivent dans les issues GitHub ; l’historique est dans Git.
 
 ## Contributions
 
@@ -24,11 +24,12 @@ par PR restent à configurer ; voir CONTRIBUTING pour leur état et la cible.
 
 ## Stack et démarrage
 
-JavaScript ESM natif, Three.js embarqué dans `vendor/`, modèles procéduraux et Meshy embarqués, et
+ESM natif en migration vers TypeScript ([fonctionnement](docs/typescript.md)), Three.js embarqué dans `vendor/`, modèles procéduraux et Meshy embarqués, et
 sons Web Audio. Le serveur Node utilise **uniquement la RAM**, sans base de
 données. Les joueurs se connectent en étoile par WebRTC sur UDP : mouvements
 sans retransmission, commandes importantes fiables avec confirmations.
-Aucun WebSocket ni repli de gameplay HTTP/TCP. Un réseau sans UDP est refusé.
+Un réseau sans UDP (réseau d'entreprise) joue en TCP sur un WebSocket, avec le
+même protocole ; aucun gameplay ne passe en HTTP.
 Le redémarrage du processus efface toutes les parties.
 
 ```sh
@@ -36,20 +37,16 @@ npm ci
 npm start
 ```
 
-Livraison courante : ZIP des sources, avec ce README et `package-lock.json`.
-Le [guide Docker](docs/docker.md) reste disponible pour construire soi-même une image.
+Livraison : PR GitHub fusionnée sur `main`. Chaque commit sur `main` publie l’image
+`latest` sur GHCR ; un environnement extérieur au dépôt la récupère périodiquement
+et la déploie sur le VPS. Le [guide Docker](docs/docker.md) décrit la construction locale.
 
-Node 22.13+ ; HTTP sur le port 3000, UDP sur 41000–41099. En production,
+Node 22.18+ ; HTTP sur le port 3000, UDP sur 41000–41099. En production,
 servir HTTP derrière HTTPS et exposer les ports UDP directement sur la VM.
 Voir [le guide du serveur UDP](docs/udp-server.md) pour les variables et les tests.
 `npm run dev` lance ce même serveur ; redémarrer après modification.
 
-Le Site public historique utilise un backend Worker/D1 distinct, incapable
-d'héberger ce processus UDP. `npm run dev:sites` permet de reproduire ce backend.
-La cible de déploiement courante est le VPS Node/UDP. Le dépôt ne configure
-plus de publication Sites ; aucun serveur externe n’est provisionné par le build. Le serveur Node
-n'importe pas le Worker ni son adaptateur SQLite. Les anciens tests D1 restent
-pour vérifier la version historique pendant cette transition.
+Le serveur Node/UDP est l'unique runtime du jeu.
 
 ```sh
 npm run format:check
@@ -58,97 +55,51 @@ npm run build
 node scripts/validate-artifact.mjs
 ```
 
-Modifier `src/` et `scripts/`, puis assembler. `worker/index.js` et `dist/` sont
-générés. Les migrations publiées dans `drizzle/` restent immuables.
+Modifier `src/` et `scripts/`, puis assembler. `server/assets.js` (versionné) et `dist/` (ignoré par Git) sont
+générés.
 `npm run build` produit un runtime Node autonome dans `dist/` : y exécuter
 `npm ci --omit=dev && npm start`. Le validateur contrôle ce paquet Node.
 
-Le [backlog](BACKLOG.md) suit les tâches validées et leurs vérifications.
+## Documents par thème
 
-## Documents par besoin
+La documentation se lit aussi sur le site <https://simonjamain.github.io/i-am-a-moucheron/>,
+généré depuis ce dépôt ([fonctionnement](docs/site.md)) : menus par public, recherche,
+nouveautés, galerie visuelle, écrans intégrés et santé de la documentation.
 
-| Besoin                                      | Référence actuelle                                            |
-| ------------------------------------------- | ------------------------------------------------------------- |
-| Règles et parcours joueur                   | [gameplay](docs/gameplay.md)                                  |
-| Touches et capture du pointeur              | [controls](docs/controls.md)                                  |
-| Modules, état réseau et responsabilités     | [code-structure](docs/code-structure.md)                      |
-| Corps partagés et autorité client           | [walking-network](docs/walking-network.md)                    |
-| File physique et combat chez Saint Pierre   | [purgatory-queue](docs/purgatory-queue.md)                    |
-| Unités, flotte et DCA                       | [scale-fleet-weapons](docs/scale-fleet-weapons.md)            |
-| Nuées, traceurs et accès aux équipements    | [swarm-equipment](docs/swarm-equipment.md)                    |
-| Économie, signatures et balistique          | [economy-physics](docs/economy-physics.md)                    |
-| Tests, publication et limites de validation | [operations](docs/operations.md)                              |
-| Recherche initiale sur les transports       | [NETWORK-RESEARCH](NETWORK-RESEARCH.md) — contexte historique |
+Les constantes et commandes exactes restent dans le code et `package.json`. Les
+documents marqués _(lot)_ racontent une livraison datée : ils décrivent des
+comportements encore valides mais peuvent citer des versions ou des états
+dépassés ; en cas de doute, le code et les références du thème font foi.
 
-Les détails techniques renvoient aux sources externes pertinentes. Les constantes
-et commandes exactes restent dans le code et `package.json`.
+**Jeu et règles**
 
-Les nouvelles règles de dégâts, mondes et contrats sont détaillées dans
-[combat et mondes](docs/combat-worlds.md).
+- [gameplay](docs/gameplay.md) : règles et parcours joueur · [controls](docs/controls.md) : touches, pointeur · [comfort](docs/comfort.md), [clean-flight](docs/clean-flight.md), [field-update](docs/field-update.md), [multiplayer-return](docs/multiplayer-return.md) _(lots)_
+- [progression](docs/progression.md) : vagues, récompenses, achats · [enemy-power](docs/enemy-power.md) : puissance et budget · [economy-physics](docs/economy-physics.md) : économie, signatures, balistique · [stats](docs/stats.md) : statistiques des équipements
+- [combat-worlds](docs/combat-worlds.md) · [logistics-contracts](docs/logistics-contracts.md) · [purgatory-queue](docs/purgatory-queue.md) · [laboratory](docs/laboratory.md) (mode debug) · [office-layouts](docs/office-layouts.md)
 
-La courbe des vagues, récompenses et achats est décrite dans
-[progression](docs/progression.md).
+**Ennemis**
 
-Les [retours de partie](docs/party-feedback.md) et le
-[diagnostic du pistolet](docs/pistol-diagnosis.md) complètent les références actuelles.
+- [enemy-bestiary](docs/enemy-bestiary.md) · [enemy-visibility](docs/enemy-visibility.md) · [dense-swarms](docs/dense-swarms.md) · [swarm-equipment](docs/swarm-equipment.md)
 
-L’identification des appareils, les dossiers et les réserves partagées sont décrites
-dans [logistique et contrats](docs/logistics-contracts.md).
+**Véhicules et armes**
 
-Le lot [pilotage, véhicules et banque](docs/vehicles-bank.md) décrit Stuka, tank,
-armes lourdes, accès par poste et prêts. Les interfaces HUD/banquier ont été validées et intégrées : informations au viseur et aide permanente,
-jauge DCA au viseur, prêts et remboursements signés. Banquier : bouton ou N.
-L’aperçu `/ui-review.html` utilise les composants réels avec des données temporaires.
-Le lot [retours terrain](docs/field-update.md) décrit les accès corrigés, le pistolet
-à l’épaule, les chutes, les lits, la lunette du tank, la minute de préparation et
-les nouveaux taux de prêt. Les images Docker précédentes sont antérieures à ce lot.
+- [scale-fleet-weapons](docs/scale-fleet-weapons.md) : unités, flotte, DCA · [vehicles-bank](docs/vehicles-bank.md) : Stuka, tank, banque · [support-vehicles](docs/support-vehicles.md) : H2 et camion D2 · [helicopter-controls](docs/helicopter-controls.md) · [biplane-models](docs/biplane-models.md) · [physics-engine](docs/physics-engine.md) : Rapier
 
-Le lot [lisibilité, commandes, nettoyage et Spitfire](docs/clean-flight.md) ajoute
-les bons prépayés et pose par E, les touches physiques de poste, les bombes en
-continu, les projectiles teintés et la mire, les impacts uniques et le jet partagé.
+**Architecture et réseau**
 
-Le [dernier lot multijoueur](docs/multiplayer-return.md) ajoute l’observation avant
-purgatoire, l’aide permanente, les véhicules achetés à poser au sol, la réserve
-gratuite au décollage, les fourmis précoces, la gravité miniature, le radar de 2 m
-et les personnages identifiés. Le Spitfire a 1 000 balles ; les tirs sont optimisés.
+- [trust-model](docs/trust-model.md) : confiance envers les clients, pas d'anti-triche
+- [code-structure](docs/code-structure.md) : carte du code · [walking-network](docs/walking-network.md) : corps partagés, autorité client · [udp-server](docs/udp-server.md) : serveur, variables, tests · [performance](docs/performance.md) : mesures et optimisations · [typescript](docs/typescript.md) · [adding-content](docs/adding-content.md) : nouvelle espèce ou nouveau véhicule
 
-Le lot [hélicoptère et DCA mobile](docs/support-vehicles.md) ajoute le H2 biplace
-et le camion D2, avec roquettes, missile guidé et fusée de proximité. Le code et
-les contrôles locaux sont livrés ; HEL-06/DCM-03 conservent leur validation finale
-en cours, car le navigateur de contrôle ne peut pas joindre le jeu en UDP.
+**Rendu, son et modèles**
 
-Le [correctif de visibilité des ennemis](docs/enemy-visibility.md) corrige les
-aérations et transitions de vague, triple les moucherons et renforce les fourmis
-de la première vague.
+- [art-direction](docs/art-direction.md) : direction artistique · [ui-guidelines](docs/ui-guidelines.md) : règles d’interface · [audio](docs/audio.md) · [toon-rendering](docs/toon-rendering.md) · [shadow-visibility](docs/shadow-visibility.md) · [asset-pipeline](docs/asset-pipeline.md) : modèles Meshy et outil GLB · [meshy-fleet](docs/meshy-fleet.md), [b3-model](docs/b3-model.md), [h2-model](docs/h2-model.md), [m1-model](docs/m1-model.md), [t01-asset](docs/t01-asset.md)
 
-La [reprise du diagnostic de visibilité](docs/enemy-visibility.md#reprise-après-persistance-du-signalement--taille-apparente-des-six-espèces)
-agrandit aussi les cinq autres espèces trop petites et ajuste l’appui au sol.
+**Exploitation et contribution**
 
-Le [lot confort de jeu, version 37](docs/comfort.md) précise réparation, zoom, jauges,
-radar à pied, remise à zéro, fourmis et projectiles du pistolet courants.
+- [operations](docs/operations.md) : contrôles, tests, limites de validation · [docker](docs/docker.md) · [CONTRIBUTING](CONTRIBUTING.md) · [notes de reprise](docs/tasks/README.md) (en cours : [migration TypeScript](docs/tasks/typescript-migration.md), [montée en charge](docs/tasks/scaling-plan.md))
 
-Les [nuées densifiées](docs/dense-swarms.md) multiplient les moucherons par cinq
-et utilisent une grille spatiale pour le voisinage.
-
-La [correction des commandes H2](docs/helicopter-controls.md) couvre Z/O/Haut, S/Bas,
-stationnaire, poussée locale et axe des roquettes.
-
-Le [lot de retours du 30 octobre, version 48](docs/returns-30-october.md) décrit les correctifs
-physiques, sons/HUD, livraisons sous parachute et parcours du purgatoire.
-
-Les [correctifs des issues 15–17](docs/issues-15-16-17.md) couvrent la descente
-continue des colis, le nouveau mapping H2 et le ralentissement terrestre supplémentaire.
-
-Les anciens [réglages d’équilibrage et la génération de nuées par room](docs/room-balance.md)
-sont retirés : les règles sont fixes et un seul interrupteur de mode debug les remplace.
-
-Le [bestiaire et ses vitesses physiques](docs/enemy-bestiary.md#vitesse-physique-dans-la-pièce) spécifient des mètres de la pièce par seconde, indépendants de la taille des modèles et de l'effectif des nuées.
-
-Le [mode debug par room](docs/laboratory.md) (interrupteur **Debug : OFF / ON**) donne argent illimité, aucun dégât de chute et défaite impossible, sans panneau d'outils.
-
-Le [bombardier biplan](docs/biplane-models.md) accueille un pilote et un mitrailleur, avec 30 bombes ; le [chasseur biplan](docs/biplane-models.md) est 25 % plus lent que l'ancien chasseur léger mais décroche moins vite.
-Les [sept véhicules Meshy](docs/meshy-fleet.md) gardent les couleurs de leur modèle
-original ; seul un rond flottant indique la couleur propre à chaque véhicule.
+`/ui-review.html` (aperçu des vrais composants HUD/banque sur données temporaires, publié aussi sur le site : [écrans intégrés](https://simonjamain.github.io/i-am-a-moucheron/ecrans/))
+est généré par l’assemblage (`scripts/assemble.mjs`, lancé par `npm start`, `npm test` et `npm run build`).
 
 ## Outillage de modèles Meshy
 

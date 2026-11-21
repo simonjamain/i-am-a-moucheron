@@ -1,6 +1,6 @@
 # Lisibilité, commandes, nettoyage et Spitfire
 
-Référence du lot ECO-03 à VEH-05, livré sur **Node, RAM et UDP** le 29 octobre 2026. Aucun déploiement sur le Worker historique, aucune nouvelle image Docker.
+Référence du lot ECO-03 à VEH-05, livré sur **Node, RAM et UDP** le 29 octobre 2026.
 
 ## Prix, bon signé et pose
 
@@ -25,7 +25,7 @@ Un reset efface commandes et monnaie. Une reprise automatique de session garde
 le même ID et donc ses commandes ; une reconnexion créant un nouvel ID (page
 rechargée) ne reprend pas l’ancienne commande, remboursée à l’expiration.
 Les bons et la pose sont dédupliqués côté domaine, en plus du protocole fiable.
-Les améliorations restent achetées directement ; les appareils passent désormais par le même bon et aperçu, voir [déploiement courant](multiplayer-return.md#réserves-gratuites-et-achats-de-véhicules).
+Les appareils passent désormais par le même bon et aperçu, voir [déploiement courant](multiplayer-return.md#réserves-gratuites-et-achats-de-véhicules).
 
 ## Postes et commandes d’armes
 
@@ -51,8 +51,9 @@ focus et changement de poste effacent les commandes maintenues.
 
 Le bombardier initial dispose de **50 bombes**, le Stuka de **6**. Une pression
 brève largue une bombe ; le maintien largue à intervalle nominal de **0,5 s**.
-Le contrat de cadence double cet intervalle. Stocks et délai restent validés par
-`heavy-fire` côté serveur, mais la bombe part immédiatement, simulée par le
+Le contrat de cadence double cet intervalle. Les stocks restent comptés par
+`heavy-fire` côté serveur (sans contrôle de cadence : le client règle la sienne, voir
+[confiance](trust-model.md)), et la bombe part immédiatement, simulée par le
 tireur, sans attendre cette confirmation ; un refus la retire. Les MG restent
 prédites immédiatement et réglées par lots idempotents.
 La cadence rattrape les images retardées, avec un plafond de huit intervalles
@@ -115,14 +116,14 @@ lourds, 256 traceurs balistiques. Les matériaux sont libérés au retrait.
 
 ## Spitfire et identité sonore
 
-Le Spitfire S6 est un achat à **24 $**, deux Stuka. Monoplace sans bombes,
+Le Spitfire S6 est un achat à **75 $**, trois Stuka. Monoplace sans bombes,
 ailes elliptiques et six mitrailleuses, trois par aile. Perdu définitivement à sa
 destruction ; achat suivant possible, sans remplacement gratuit.
 
 Vitesse plafonnée à **122,5 m/s de référence** contre 70 ; facteur de rotation
 **1,45** contre 1. La poussée est réglée à 70 pour atteindre le nouveau plafond,
 sans prétention de modèle historique. À vitesse égale, les réponses angulaires
-mesurées sont multipliées par 1,45. Les améliorations achetées restent applicables.
+mesurées sont multipliées par 1,45. (Les améliorations achetables ont depuis été retirées.)
 Chaque arme tire 75 dégâts de base toutes les 0,06 s. ARM-04 remplace le stock
 initial par **1 000 balles communes**, avec petits décalages et dernière salve
 partielle. [Règle et mesures actuelles](multiplayer-return.md#spitfire-et-performance-des-tirs).

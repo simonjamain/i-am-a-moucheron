@@ -10,8 +10,8 @@ import {
   OutlinePass,
   ToonRenderer,
   TOON_LOOK,
-} from '../src/toon.js';
-import { DEFAULT_FLIGHT_TUNING, normalizeFlightTuning } from '../src/flight-tuning.js';
+} from '../src/toon.ts';
+import { DEFAULT_FLIGHT_TUNING, normalizeFlightTuning } from '../src/flight-tuning.ts';
 import { readFileSync } from 'node:fs';
 
 // Lighting: patched once, shared uniform, switchable without recompiling.

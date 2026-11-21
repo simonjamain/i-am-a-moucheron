@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { flightClickAction } from '../src/mouse-flight.js';
-import { ControlFocus } from '../src/control-focus.js';
+import { flightClickAction } from '../src/mouse-flight.ts';
+import { ControlFocus } from '../src/control-focus.ts';
 const mouse = { button: 0, pointerType: 'mouse' };
 assert.equal(flightClickAction(mouse, { active: true, locked: false }), 'capture');
 assert.equal(flightClickAction(mouse, { active: true, locked: true }), 'fire');

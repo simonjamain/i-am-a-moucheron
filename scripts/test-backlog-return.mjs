@@ -2,17 +2,17 @@ import assert from 'node:assert/strict';
 import * as T from '../vendor/three.module.min.js';
 import { Game } from '../server/game.js';
 import { resolveHeavy } from './heavy-resolver.mjs';
-import { VEHICLES, vehiclePad } from '../src/fleet.js';
+import { VEHICLES, vehiclePad } from '../src/fleet.ts';
 import { stepHelicopter } from '../src/helicopter.js';
-import { resolveLanding } from '../src/sortie.js';
-import { MAP } from '../src/scale.js';
-import { fullAmmo } from '../src/logistics.js';
-import { SHOP, shopPrice, purchaseCount } from '../src/equipment.js';
+import { resolveLanding } from '../src/sortie.ts';
+import { MAP } from '../src/scale.ts';
+import { fullAmmo } from '../src/logistics.ts';
+import { SHOP, shopPrice, purchaseCount } from '../src/equipment.ts';
 import { reserveAlerts, missileStatus, ArrivalSignals } from '../src/reserve-feedback.js';
-import { deliveryLanding, DELIVERY_SPEED } from '../src/delivery.js';
+import { deliveryLanding, DELIVERY_SPEED } from '../src/delivery.ts';
 import { wavePlan } from '../src/waves.js';
 import { createOrdnance } from '../src/ordnance.js';
-import { createSoul, inDeskZone, deskOccupant, advanceArena } from '../src/purgatory-physics.js';
+import { createSoul, inDeskZone, deskOccupant, advanceArena } from '../src/purgatory-physics.ts';
 const floor = { min: { x: -4, y: -0.1, z: -3 }, max: { x: 4, y: 0, z: 3 } };
 for (const occupied of [false, true]) {
   const s = { ...vehiclePad('helicopter'), p: [0, 1, 0], q: [0, 0, 0, 1], landed: false };
@@ -112,8 +112,11 @@ assert.deepEqual(arrivals.update(1, [1]), []);
 assert.deepEqual(arrivals.update(1, [1, 2, 3]), [2, 3]);
 assert.deepEqual(arrivals.update(1, [1, 2, 3]), []);
 assert.deepEqual(arrivals.update(2, [2]), []);
+// VAG-09 reserved a « voltigeur » on wave 2; that species was removed (v312):
+// wave 2 is ants and midges only, the first special species comes on wave 3.
 for (let seed = 0; seed < 100; seed++) {
-  const wave = wavePlan('seed' + seed, 2);
+  assert.ok(wavePlan('seed' + seed, 2).roster.every((e) => ['ant', 'midge'].includes(e.type)));
+  const wave = wavePlan('seed' + seed, 3);
   assert.ok(wave.roster.some((e) => !['ant', 'midge'].includes(e.type)));
 }
 game.soul(room, 'player', pilot.id, pilot.name);
@@ -131,7 +134,7 @@ for (const [item, profile] of Object.entries(SHOP)) {
   const body = {
     item,
     request: 'delivery-' + item,
-    expectedPrice: shopPrice(item, room.upgrades, 0),
+    expectedPrice: shopPrice(item, 0),
     epoch: room.base.epoch,
     incarnation: pilot.incarnation,
     signature: true,

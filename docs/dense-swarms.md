@@ -43,9 +43,8 @@ Les tests de visibilité conservent les contrôles du mobilier, des aérations e
 des pieds au sol sur la population densifiée. La suite conserve aussi deux pairs
 UDP natifs. Le confort de tir et les FPS restent à observer en partie sur la VM.
 
-Livraison Node/RAM/UDP en ZIP ; aucune publication du client sur le Worker
-historique. Installer les sources, redémarrer le serveur puis recharger les
-navigateurs, comme décrit dans [l'exploitation](operations.md).
+Livraison Node/RAM/UDP : après déploiement, recharger les navigateurs, comme
+décrit dans [l'exploitation](operations.md).
 
 Depuis l'uniformisation ultérieure de la génération des vagues, la première vague
 n'impose plus les anciennes quantités 20 + 4 : deux fourmis restent garanties,
@@ -67,7 +66,7 @@ actifs**, sans promettre des FPS mesurés sur le navigateur ou le VPS.
   elles uniquement. Le mouvement est reproductible à temps et roster donnés
   et ne nécessite pas d'état par frame ni d'envoi de positions réseau.
 - Les moucherons ont une sphère de collision commune, en coordonnées locales
-  de modèle (rayon `MIDGE_SPHERE_RADIUS` dans `scale.js`). Les tirs légers et
+  de modèle (rayon `MIDGE_SPHERE_RADIUS` dans `scale.ts`). Les tirs légers et
   la présélection `InsectIndex` utilisent l'intersection rayon–sphère exacte.
   Les projectiles lourds serveur utilisent le même rayon et écartent les
   candidats impossibles avec une boîte englobante balayée.
@@ -101,51 +100,13 @@ demandent encore des mesures en conditions réelles et plusieurs joueurs.
 Le comportement de pilotage et des tourelles multijoueurs ne change pas dans
 ce chantier. Il n'y a pas de nouveau plafond imposé au réglage de population.
 
-## Nuée manuelle unique et vitesse indépendante de l'effectif
-
-Lorsqu'un joueur envoie des insectes avec le panneau d'équilibrage, il
-obtient **une seule nuée par environnement de déplacement**, même pour
-une commande de 5 000 individus. Les espèces volantes partagent une seule
-graine de trajet, entrée et branche ; les espèces terrestres, si présentes
-dans le même envoi, empruntent leur propre chemin au sol. Une nouvelle
-commande est indépendante de la précédente. Les vagues automatiques restent
-constituées de plusieurs groupes de tailles variées.
-
-L'étendue des groupes grandit selon la racine carrée de leur population
-initiale, jusqu'à un rayon de référence ×20 dans les airs et ×8 au sol.
-Cette population est calculée lors de la création du roster (y compris
-après multiplication de la population d'une vague ordinaire) et demeure
-fixe lorsque des ennemis meurent.
-
-**Correctif de vitesse :** auparavant l'oscillation angulaire était
-multipliée par le rayon de formation, de sorte que la vitesse linéaire
-augmentait mécaniquement avec l'effectif. Maintenant la dispersion
-initiale est une position stable autour du trajet ; une petite oscillation
-de fréquence et d'amplitude fixes apporte du mouvement sans amplification
-liée à l'effectif. La formation s'ouvre et se referme avec un fondu dont
-la durée est proportionnelle à son rayon, afin de limiter aussi sa vitesse
-aux entrées et sorties. La vitesse de parcours déterminée par l'espèce
-et le réglage de la room ne dépend pas du nombre d'individus. Les
-insectes terrestres ne prennent pas de décalage vertical.
-
-Le calcul procédural indépendant s'applique aussi aux autres espèces
-des nuées de debug, sans voisinage quadratique. Les autres insectes
-des vagues automatiques conservent leur steering spatial. Les contrôles
-dans `scripts/test-dense-swarms.mjs` comparent petites et grandes
-nuées, effectifs jusqu'à 5 000, entrées communes, vitesse de
-parcours, vitesse d'oscillation et formation mixte. Une validation
-humaine WebGL et des mesures GPU/UDP réelles restent nécessaires.
-
 ## Correction de la vitesse physique — suite au retour de partie
 
 La vitesse de progression est désormais fixée par espèce dans `ENEMY_TYPES.speedMps` : mètres de la pièce/seconde, quelle que soit la taille de l'insecte ou de sa formation. Les anciennes calibrations sur la longueur des itinéraires historiques ne gouvernent plus la durée des vagues ; la durée d'un ennemi vient de la longueur de **son trajet réel** divisée par sa vitesse explicite. Les oscillations locales restent petites, et le moustique utilise une fréquence d'esquive réduite. Les bébés araignées utilisent leur propre vitesse, sans accélération cachée.
 Voir [bestiaire](enemy-bestiary.md) et `scripts/test-enemy-speeds.mjs`.
 
-## Souffle des ventilateurs
+## Souffle des ventilateurs (retiré)
 
-Le serveur et les clients interpolent le même champ horizontal à partir des
-positions et horodatages de la salle. Un champ stabilisé est partagé par toute
-la nuée. Seule la déformation des coordonnées du parcours change, sans modifier
-l’identité, la dispersion ou le temps d’arrivée individuel. Le test
-`node scripts/test-air-fans.mjs` compare une trame CPU de 10 000 moucherons
-avec et sans souffle et contrôle la pose, le retrait et l’aperçu.
+Le ventilateur et son champ de souffle (`air-current.ts`, `air-trails.js`,
+`scripts/test-air-fans.mjs`) sont retirés en version 319 : les couloirs aériens
+ne sont plus déformés. L'historique Git conserve l'implémentation.

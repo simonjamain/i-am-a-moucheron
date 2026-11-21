@@ -1,12 +1,12 @@
 import assert from 'node:assert/strict';
 import * as T from '../vendor/three.module.min.js';
 import { initialStation } from '../server/game.js';
-import { makeServiceStation, makeRefuelCollider } from '../src/station-model.js';
-import { VEHICLES, vehicleEntry, vehiclePad } from '../src/fleet.js';
-import { MAP, ACTOR_UNIT } from '../src/scale.js';
-import { SERVICE_RADIUS } from '../src/logistics.js';
+import { makeServiceStation, makeRefuelCollider } from '../src/station-model.ts';
+import { VEHICLES, vehicleEntry, vehiclePad } from '../src/fleet.ts';
+import { MAP, ACTOR_UNIT } from '../src/scale.ts';
+import { SERVICE_RADIUS } from '../src/logistics.ts';
 import { withinService } from '../src/paid-service.js';
-import { OFFICE_LAYOUT } from '../src/layout.js';
+import { OFFICE_LAYOUT } from '../src/layout.ts';
 const station = initialStation();
 const model = makeServiceStation(T, 'refuel');
 model.position.set(station.x, station.y, station.z);

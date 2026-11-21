@@ -4,8 +4,7 @@
 
 Pilote : Maj/Ctrl pour monter/descendre ; Z/S et Haut/Bas pour piquer/cabrer ;
 Q/D et Gauche/Droite pour le roulis. O/W ne sont plus des alias du pilote H2.
-Le copilote garde Maj/Ctrl pour ses armes. Mapping, vitesses et vérifications :
-[issues 15–17](issues-15-16-17.md#16--séparation-puissance-et-tangage-du-pilote-h2).
+Le copilote garde Maj/Ctrl pour ses armes. Mapping : [plus bas](#mapping-pilote-h2).
 
 ## Historique — version 39
 
@@ -65,13 +64,12 @@ La suite complète conserve les deux pairs UDP natifs, contrats, postes et armes
 
 Rendu WebGL, Pointer Lock physique et confort de pilotage restent à observer sur
 la VM : le navigateur de contrôle ne joint pas UDP. HEL-06/DCM-03 gardent leurs
-validations humaines en cours. Livraison ZIP, serveur à redémarrer et navigateurs
-à recharger ; aucune publication incompatible sur le Worker historique.
+validations humaines en cours. Après déploiement, recharger les navigateurs.
 
 ## Pilotage étendu et tourelle — version 45
 
-Depuis le [lot #171](game-polish-171.md), ZQSD impose une inclinaison progressive
-avec un budget total de 45°, y compris en diagonale. La souris commande le cap et l’inclinaison ; ZQSD prend temporairement priorité, puis le suivi du curseur reprend au relâchement (voir [lot #175](gameplay-polish-175.md)). La descente
+ZQSD impose une inclinaison progressive
+avec un budget total de 45°, y compris en diagonale. La souris commande le cap et l’inclinaison ; ZQSD prend temporairement priorité, puis le suivi du curseur reprend au relâchement. La descente
 commandée atteint progressivement 30 m/s de référence, contre 8 auparavant ;
 la montée reste à 8 m/s et le relâchement freine vers le stationnaire. Les chocs
 verticaux à plus de 8 m/s restent destructeurs : anticiper le freinage.
@@ -115,3 +113,32 @@ continue bornée ; les autres armes conservent leur visée actuelle. Rotation 36
 butées verticales, caméra/canon/tirs alignés et guidage missile sont conservés.
 La régression automatique couvre les cadences 30/60/144 Hz, arrêt/reprise et
 inversion après grande impulsion ; le ressenti en partie reste à essayer.
+
+## Mapping pilote H2
+
+| Touches              | Commande        |
+| -------------------- | --------------- |
+| Maj gauche ou droite | Monter          |
+| Ctrl gauche ou droit | Descendre       |
+| Z ou flèche Haut     | Piquer          |
+| S ou flèche Bas      | Cabrer          |
+| Q ou flèche Gauche   | Roulis à gauche |
+| D ou flèche Droite   | Roulis à droite |
+
+Pas d'ancien alias O/W. Les touches de tangage/roulis priment pendant l'appui
+(inclinaison maximale 85°) ; la souris garde les axes non forcés ; les touches
+opposées se neutralisent. Montée 8 m/s, descente 30 m/s de référence. Le clavier
+laisse passer Maj/Ctrl au pilote ; le copilote garde Maj (MG) et Ctrl (missile).
+
+## Rotor, missile et éclairs de bouche
+
+- Dernier occupant parti : le rotor décroît exponentiellement (constante 0,8/s),
+  l'assistance perd son efficacité et la gravité reprend ; un copilote seul garde
+  l'appareil occupé. Le retour d'un pilote relance le rotor (2/s).
+- Le missile suit la direction demandée depuis sa position (limite 1,2 rad/s),
+  balayage contre tous les solides, expiration inerte à 10 s, recharge de 2 s,
+  aucun évitement automatique.
+- Les deux tubes Meshy tournent autour d'un pivot longitudinal ; deux ancres sont
+  aux sorties sculptées. Les éclairs de bouche (70 ms) suivent l'ancre physique
+  du canon, indépendamment de la dispersion balistique, pour tous les postes
+  (le Spitfire, le poste arrière du biplan et les DCA fixes ont leurs ancres).

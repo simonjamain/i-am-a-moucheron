@@ -4,7 +4,7 @@
 import assert from 'node:assert/strict';
 import { PeerConnection, cleanup } from 'node-datachannel';
 import { createGameServer } from '../server/index.js';
-import { PROTOCOL, COMMAND_CHANNEL, MOTION_CHANNEL, ReplyAssembler } from '../src/udp-protocol.js';
+import { PROTOCOL, COMMAND_CHANNEL, MOTION_CHANNEL, ReplyAssembler } from '../src/udp-protocol.ts';
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const until = async (check, timeout = 10000) => {

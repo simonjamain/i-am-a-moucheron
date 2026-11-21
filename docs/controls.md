@@ -54,7 +54,7 @@ request is cancelled if paperwork opens before it completes. Closing paperwork
 with Escape does not request capture. An explicit close or final signature may
 resume capture; intermediate signatures retain the free cursor.
 
-`control-focus.js` owns this lifecycle and the testable keyboard mapping. Flight
+`control-focus.ts` owns this lifecycle and the testable keyboard mapping. Flight
 physics continues with neutral control surfaces while UI owns the pointer.
 `test-controls.mjs` covers AZERTY mapping, throttle separation, airplane manual
 overrides and client integration, suspended inputs, capture/release, and the
@@ -82,7 +82,7 @@ Clic droit maintenu : zoom dans un poste avec pointeur capturé ; relâcher rest
 la vue. DCA : Shift maintenu augmente la fusée en continu, Ctrl maintenu la réduit
 (de 30 cm à 3,60 m du bureau en environ 3 s), relâcher arrête aussitôt et les deux
 touches ensemble s'annulent ; distance réelle affichée en direct.
-`advanceFuse()` (`src/equipment-controls.js`) porte ce réglage, couvert par
+`advanceFuse()` (`src/equipment-controls.ts`) porte ce réglage, couvert par
 `scripts/test-fuse-continuous.mjs`. Molette et [ ] gardent des pas de 25 m. Tank : Z/S ou flèches pour avancer/reculer, Q/D pour tourner ; Shift choisit
 HE, Ctrl AP. Au tireur principal, clic gauche tire le canon et Espace la coaxiale. Les graduations
 de la lunette vont de 15 cm à 9 m du bureau (l'autre bout de la pièce), échantillonnées sur la trajectoire réelle de l'obus choisi (HE/AP,
@@ -160,7 +160,7 @@ Les réserves, butées et unités sont détaillées dans [véhicules d’appui](
 Le [lot confort de jeu, version 37](comfort.md) précise réparation, zoom, jauges,
 radar à pied, remise à zéro, fourmis et projectiles du pistolet courants.
 
-Le [mapping pilote H2 actuel](issues-15-16-17.md#16--séparation-puissance-et-tangage-du-pilote-h2) retire les anciens alias O/W sans changer les armes du copilote.
+Le [mapping pilote H2 actuel](helicopter-controls.md#mapping-pilote-h2) retire les anciens alias O/W sans changer les armes du copilote.
 
 ## Réglages personnels des avions
 
@@ -188,8 +188,8 @@ et neutralise les commandes maintenues ; **Échap** le ferme sans recapture
 automatique, tandis que le bouton fermer peut reprendre la capture. La partie
 continue pendant l'ouverture du panneau.
 
-Sources : `flight-tuning.js` (plages et stockage), `flight-tuning-ui.js`
-(panneau), `mouse-flight.js` (instructeur) et
+Sources : `flight-tuning.ts` (plages et stockage), `flight-tuning-ui.js`
+(panneau), `mouse-flight.ts` (instructeur) et
 `test-flight-tuning.mjs` (régression). La sensation du pilotage reste à
 valider dans une vraie partie WebGL/UDP.
 
@@ -205,7 +205,7 @@ semi-transparente bordée de sombre, parcourue de chevrons blancs qui glissent v
 la poubelle : c'est le chemin réellement marché tant que la carte ne change pas.
 Pendant la pose d’une barricade ou d’un bunker, la piste claire à chevrons orange
 montre le détour proposé avant le clic de validation. Les trajets aériens gardent
-leurs nuages colorés par aération (`src/pheromone-trail.js`, version 239).
+leurs nuages colorés par aération (`src/pheromone-trail.ts`, version 239).
 
 Il n'y a ni vote ni carte de plan (version 264) : la fenêtre annonce seulement la
 vague. **Lancer la vague maintenant** est disponible pour tout joueur pendant la
@@ -219,14 +219,14 @@ Le conducteur du Castor peut poser, sans plan à débloquer, un « Bunker LEGO �
 Le conducteur du Castor peut choisir, sans plan à débloquer, « Tourelle auto » dans la roue de construction et la poser d’un clic (9 $). La tourelle consomme ses 180 balles ; le service de recharge est payant et local.
 
 **G** ou clic molette (roue de construction) à pied ou au poste conducteur du Castor au sol, puis choix d’un outil ; il n’y a plus de bouton « Défense » (issue #135) : aperçu au point visé par la caméra
-indépendamment de la marche, E ou clic gauche pour valider, R pour orienter le sucre ou le ventilateur, Échap
+indépendamment de la marche, E ou clic gauche pour valider, R pour orienter le sucre, Échap
 pour quitter. Prix, conditions et navigation : [gameplay](gameplay.md#défenses-terrestres).
 
 Maintenir **G** ou le **clic molette** : orienter vers un secteur puis relâcher pour choisir, à pied ou au volant du Castor au sol. Les autres postes de véhicule ne peuvent pas construire. Clic gauche : fixer un début sans orientation, viser la fin (en marchant si nécessaire), puis cliquer à nouveau pour poser le mur ou le ruban. Le sucre, la réparation et la suppression demandent un seul clic.
 
 Sur le [bombardier biplan](biplane-models.md), **1** et **2** demandent le poste de pilote et celui de mitrailleur (qui regarde vers l'arrière au début), avec signature.
 
-G1 Castor : Z/S avancer/reculer, Q/D tourner, souris et clic gauche pour tirer avec la mitrailleuse légère, **V** bascule la vue de dessus : la caméra se place à la verticale du camion (le nord en haut de l’écran, quel que soit le cap du camion ; l’est à droite) et la souris déplace un viseur au sol ; l’aperçu de construction et la mitrailleuse visent ce point. La molette zoome entre 0,15 et 0,8 m au-dessus du camion. V de nouveau revient à la vue de conduite. Le soutien à 50 cm est automatique et payant. Pendant la conduite, **G** ou le clic molette ouvre la roue de construction. Clic gauche démarre/arrête la dépose des murs LEGO et rubans : les briques apparaissent une à une derrière le camion (hauteur fixe de deux rangées), chaque section LEGO de 48 mm est validée par le serveur et l’arrêt conserve la section commencée. Facturation au prorata au centime : 0,25 $ pour 48 mm de LEGO, 1 $ pour 20 cm de ruban ; les autres pièges se posent au point visé. Échap interrompt la construction.
+G1 Castor : Z/S avancer/reculer, Q/D tourner (conduite physique : départ progressif, freinage en appuyant à l’opposé du mouvement, braquage qui se ferme avec la vitesse, marche arrière plus lente ; voir [la physique Rapier](physics-engine.md)), souris et clic gauche pour tirer avec la mitrailleuse légère, **V** bascule la vue de dessus : la caméra se place à la verticale du camion (le nord en haut de l’écran, quel que soit le cap du camion ; l’est à droite) et la souris déplace un viseur au sol ; l’aperçu de construction et la mitrailleuse visent ce point. La molette zoome entre 0,15 et 0,8 m au-dessus du camion. V de nouveau revient à la vue de conduite. Le soutien à 50 cm est automatique et payant. Pendant la conduite, **G** ou le clic molette ouvre la roue de construction. Clic gauche démarre/arrête la dépose des murs LEGO et rubans : les briques apparaissent une à une derrière le camion (hauteur fixe de deux rangées), chaque section LEGO de 48 mm est validée par le serveur et l’arrêt conserve la section commencée. Facturation au prorata au centime : 0,25 $ pour 48 mm de LEGO, 1 $ pour 20 cm de ruban ; les autres pièges se posent au point visé. Échap interrompt la construction.
 
 Castor volant : le pilote vole comme l'hélicoptère d'attaque (souris, Z/S/Q/D,
 Maj/Ctrl) ; 2 à 4 demandent les places de passager. **V** bascule, pour chaque

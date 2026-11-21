@@ -4,9 +4,9 @@
 import assert from 'node:assert/strict';
 import * as T from '../vendor/three.module.min.js';
 import { createGraphics } from '../src/graphics.js';
-import { aimGun } from '../src/sortie.js';
-import { ACTOR_UNIT } from '../src/scale.js';
-import { VEHICLES } from '../src/fleet.js';
+import { aimGun } from '../src/sortie.ts';
+import { ACTOR_UNIT } from '../src/scale.ts';
+import { VEHICLES, vehicleUnit } from '../src/fleet.ts';
 import { tankBarrelOrigin } from '../src/tank-view.js';
 import { mobileBarrelOrigin, trailerGunPivot } from '../src/mobile-flak.js';
 import { heliWeaponOrigin } from '../src/helicopter.js';
@@ -52,7 +52,7 @@ const vehicleAt = (model, type) => {
   };
   model.position.fromArray(state.p);
   model.quaternion.fromArray(state.q);
-  model.scale.setScalar(ACTOR_UNIT);
+  model.scale.setScalar(vehicleUnit(type));
   return { type, state };
 };
 const close = (a, b, eps = 1e-9) => new T.Vector3().fromArray(a).distanceTo(b) < eps;
@@ -68,10 +68,17 @@ for (const [type, make] of [
   ['interceptor', 'makeStuka'],
 ]) {
   const model = graphics[make]();
-  model.scale.setScalar(ACTOR_UNIT);
+  model.scale.setScalar(vehicleUnit(type));
   model.position.y = VEHICLES[type].gear;
   model.updateMatrixWorld(true);
-  assert.ok(Math.abs(new T.Box3().setFromObject(model).min.y) < 1e-5, type + ' ground contact');
+  // The D2's wheels are parts of the rig since the split (scripts/split-vehicle-parts.mjs):
+  // its lowest drawn vertex is the wheel's, 0.0045 model units above the gear height (the
+  // former bounding box was set by an unused vertex).
+  const tolerance = type === 'flaktruck' ? 3e-5 : 1e-5;
+  assert.ok(
+    Math.abs(new T.Box3().setFromObject(model).min.y) < tolerance,
+    type + ' ground contact',
+  );
 }
 
 // T3: the shell leaves the drawn muzzle, whatever the hull pose and aim.

@@ -3,9 +3,8 @@
 ## Prendre une tâche
 
 Proposer idées et bugs dans les issues GitHub ; préciser le comportement attendu,
-la reproduction ou les critères d'acceptation. Le [backlog](BACKLOG.md) contient
-les tâches existantes : le consulter pour éviter les doublons. Lier issue et
-entrée de backlog lorsque les deux existent, sans recopier leurs états partout.
+la reproduction ou les critères d'acceptation. Les issues GitHub sont le seul
+suivi des tâches : chercher les doublons et les PR en cours avant d'en ouvrir une.
 
 Annoncer sa prise en charge dans la discussion de la tâche et ouvrir une branche
 par contribution. Vérifier les tâches et PR en cours qui touchent les mêmes
@@ -38,6 +37,9 @@ fusionne sa PR dès qu'elle est prête, sans demander de validation manuelle à
 l'utilisateur. Avant cela, il doit constater la réussite des contrôles requis
 sur le dernier commit (notamment `Docker build`), relire le diff et les critères
 d'acceptation, et vérifier l'absence de conflit. Utiliser **squash** si autorisé.
+Activer l'**auto-merge** en squash sur la PR terminée : GitHub la fusionne dès que
+les contrôles requis de `main` passent (fusion directe seulement si la PR est déjà
+fusionnable). L'auteur reste responsable jusqu'à la fusion effective.
 Les essais humains impossibles à réaliser sont décrits honnêtement dans la PR ;
 ils ne doivent pas être présentés comme exécutés. Si un contrôle requis échoue,
 reste absent ou si GitHub bloque la fusion, laisser la PR ouverte et signaler
@@ -73,8 +75,8 @@ les secrets de déploiement ni un accès d'administration au VPS.
 
 Les agents consultent les résultats de la pipeline ; l'infrastructure est
 configurée une fois par les mainteneurs. Le déploiement sur VPS et ses secrets
-restent à configurer séparément. Le Site Worker/D1 historique ne permet pas de
-valider le runtime Node/UDP.
+restent à configurer séparément. La production est déployée à partir de l’image
+`latest` publiée sur GHCR à chaque commit sur `main`.
 
 ## Sources de la méthode
 

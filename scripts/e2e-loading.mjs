@@ -1,5 +1,5 @@
 // Real browser loading regression: delayed game graph, animated detailed fly,
-// successful readiness, and retry after a failed module request. Not in npm test.
+// successful readiness, and retry after a failed module request. In npm run e2e (CI), not npm test.
 import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
 import { mkdir } from 'node:fs/promises';

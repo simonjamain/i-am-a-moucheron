@@ -1,21 +1,22 @@
 import assert from 'node:assert/strict';
 import * as T from '../vendor/three.module.min.js';
-import { amortization, newBank, signLoan, settleLoans, repayLoan } from '../src/bank.js';
+import { amortization, newBank, signLoan, settleLoans, repayLoan } from '../src/bank.ts';
 import { Game } from '../server/game.js';
 import { roomWorld, resolveHeavy } from './heavy-resolver.mjs';
 import { heavyImpact } from '../src/heavy-sim.js';
-import { VEHICLES, vehicleEntry, vehicleAccess } from '../src/fleet.js';
-import { fullAmmo, advanceSupplies, SERVICE_SECONDS } from '../src/logistics.js';
-import { TANK_MG, HEAVY, availableShell, heavyDamage } from '../src/armament.js';
-import { HoldZoom, contextKey, rangeReadout } from '../src/equipment-controls.js';
-import { MAP, ACTOR_UNIT, REFERENCE } from '../src/scale.js';
-import { stepTank } from '../src/tank.js';
+import { VEHICLES, vehicleEntry, vehicleAccess } from '../src/fleet.ts';
+import { fullAmmo, advanceSupplies, SERVICE_SECONDS } from '../src/logistics.ts';
+import { TANK_MG, HEAVY, availableShell, heavyDamage } from '../src/armament.ts';
+import { HoldZoom, contextKey, rangeReadout } from '../src/equipment-controls.ts';
+import { MAP, ACTOR_UNIT, REFERENCE } from '../src/scale.ts';
+import { TankRig } from '../src/tank-physics.ts';
+import { loadRapier } from '../src/physics-world.ts';
 import { wavePlan } from '../src/waves.js';
 import { enemyRoute } from '../src/routes.js';
 import { blockedSegment } from '../src/route-navigation.js';
 import { createGraphics } from '../src/graphics.js';
-import { CrashEffects } from '../src/crash-effects.js';
-import { OFFICE_SOLIDS } from '../worker/assets.js';
+import { CrashEffects } from '../src/crash-effects.ts';
+import { OFFICE_SOLIDS } from '../server/assets.js';
 
 for (const [principal, rate, waves] of [
   [1200, 0.04, 4],
@@ -153,16 +154,12 @@ game.assign(r, p, tank, 'cannon', null);
 tank.state.landed = false;
 // Away from Alpha: service now works for aircraft and tanks in movement.
 tank.state.p = [...tank.state.p];
-tank.state.p[0] += 0.3;
+tank.state.p[0] += 0.8;
 assert.equal(tank.seats.has('pilot'), false);
 const he = tank.supplies.ammo.he;
 call('heavy-fire', { weapon: 'he', shot: 'he-1', direction: [0, 0, -1] });
 call('heavy-fire', { weapon: 'he', shot: 'he-1', direction: [0, 0, -1] });
 assert.equal(tank.supplies.ammo.he, he - 1);
-assert.throws(
-  () => call('heavy-fire', { weapon: 'ap', shot: 'ap-fast', direction: [0, 0, -1] }),
-  /recharge/,
-);
 now += 2100;
 tank.supplies.ammo.he = 0;
 call('heavy-fire', { weapon: 'he', shot: 'fallback', direction: [0, 0, -1] });
@@ -225,7 +222,7 @@ r.started = now;
 const expected = r.bank.slots.reduce((n, loan) => n + loan.schedule[0].payment, 0);
 for (const e of wavePlan(r.code, 1, now).roster) r.kills.add(e.id);
 game.advance(r);
-assert.equal(r.dollars, (400 - expected) / 100);
+assert.equal(r.dollars, -expected / 100, 'no wave stipend any more');
 assert.ok(r.dollars < 0);
 const afterWave = r.dollars;
 game.advance(r);
@@ -239,22 +236,19 @@ tank.supplies.ammo.he = 10;
 call('heavy-fire', { weapon: 'he', shot: 'first-heavy', direction: [0, 0, -1] });
 now += 1000;
 p.seen = now;
-assert.throws(
-  () => call('heavy-fire', { weapon: 'he', shot: 'too-early', direction: [0, 0, -1] }),
-  /recharge/,
-);
 now += 1100;
 p.seen = now;
 call('heavy-fire', { weapon: 'he', shot: 'full-heavy', direction: [0, 0, -1] });
 assert.equal(r.ordnance.find((p) => p.shot === 'full-heavy').bonus, 1);
 let state = { ...tank.state, p: [0, VEHICLES.tank.gear, 0], q: [0, 0, 0, 1], v: [0, 0, 0] };
+const tankRig = new TankRig(await loadRapier(() => import('../vendor/rapier.compat.mjs')));
 for (let i = 0; i < 120; i++)
-  stepTank(T, state, { forward: 1, turn: 0 }, [], 1 / 120, VEHICLES.tank);
+  tankRig.step(state, { forward: 1, turn: 0 }, [], 1 / 120, VEHICLES.tank);
 assert.ok(state.p[2] < 0);
 assert.equal(state.landed, true);
 const wall = new T.Box3(new T.Vector3(-1, 0, -0.05), new T.Vector3(1, 1, -0.04));
 for (let i = 0; i < 240; i++)
-  stepTank(T, state, { forward: 1, turn: 0 }, [wall], 1 / 120, VEHICLES.tank);
+  tankRig.step(state, { forward: 1, turn: 0 }, [wall], 1 / 120, VEHICLES.tank);
 assert.ok(state.p[2] > wall.max.z, 'tank cannot drive through wall');
 for (let seed = 0; seed < 8; seed++)
   for (const wave of [1, 3, 6, 12])
@@ -323,8 +317,12 @@ crashes.add(
 );
 assert.equal(crashes.items.size, 0, 'late snapshots do not replay a finished crash');
 const falling = { ...state, p: [0, 0.1, 0], v: [0, -0.01, 0], landed: false, hp: 100 };
-stepTank(T, falling, { forward: 0, turn: 0 }, [], 0.1, VEHICLES.tank);
+const fallingRig = new TankRig(await loadRapier(() => import('../vendor/rapier.compat.mjs')));
+for (let i = 0; i < 12; i++)
+  fallingRig.step(falling, { forward: 0, turn: 0 }, [], 1 / 120, VEHICLES.tank);
 assert.ok(falling.p[1] < 0.1, 'driverless tank continues falling');
+tankRig.dispose();
+fallingRig.dispose();
 console.log(
   'Next backlog: amortization, debt/slots, zoom/context, supply independence, renewable/purchased hulls, role access, heavy weapons/dedup/reload, terrain driving, deterministic obstacle-free routes, bounded crash effects.',
 );

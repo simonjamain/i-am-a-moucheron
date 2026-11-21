@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import { Game } from '../server/game.js';
-import { VEHICLES } from '../src/fleet.js';
+import { VEHICLES } from '../src/fleet.ts';
 import { newGroundDefense, groundCommand } from '../src/ground-defense-state.js';
-import { SENTRY, fireGroundSentries } from '../src/ground-sentry.js';
+import { SENTRY, fireGroundSentries } from '../src/ground-sentry.ts';
 import { advancePaidService } from '../src/paid-service.js';
 
 const defense = newGroundDefense();
@@ -88,5 +88,6 @@ assert.equal(snap.groundDefense.structures.length, 1);
 p.mode = 'foot';
 p.vehicle_id = null;
 p.seat = null;
-assert.throws(() => command({ action: 'build', kind: 'sentry', a: [0.2, 0] }), /sol/);
+// Walking players start on the floor now: a sentry still needs the Castor.
+assert.throws(() => command({ action: 'build', kind: 'sentry', a: [0.2, 0] }), /Castor/);
 console.log('Sentry unlock, cash, finite shots, paid service, network retry and server access: OK');

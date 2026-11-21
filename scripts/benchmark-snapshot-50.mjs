@@ -2,8 +2,8 @@ import assert from 'node:assert/strict';
 import { loadBaselineGame } from './baseline-game.mjs';
 import { performance } from 'node:perf_hooks';
 import { Game } from '../server/game.js';
-import { OFFICE_LAYOUT } from '../src/layout.js';
-import { ACTOR_UNIT } from '../src/scale.js';
+import { OFFICE_LAYOUT } from '../src/layout.ts';
+import { ACTOR_UNIT } from '../src/scale.ts';
 
 const baseline = '2f02d128997b8ffadfc9f4ba43afd1b6ebfe3442';
 const PreviousGame = await loadBaselineGame(baseline, 'snapshot');
@@ -41,8 +41,18 @@ const {
   groundAgents,
   preparation,
   groundNavigationActive,
+  layout,
+  leakedPower,
   ...comparable
 } = optimized;
+// Plans arrived after the baseline: the room carries its plan id, and the unused
+// raid duration left the snapshot.
+assert.equal(layout, 'diagonale', 'a default room uses the default plan');
+delete original.raidDuration;
+// Issue #210: upgrades and the wave bonus left the snapshot; leaks are counted in power.
+delete original.upgrades;
+delete original.waveReward;
+assert.equal(leakedPower, 0, 'nothing leaked in a fresh room');
 assert.equal(preparation, null, 'before mission launch there is no forecast');
 assert.equal(groundNavigationActive, false);
 assert.deepEqual(groundAgents, {}, 'a room without constructions keeps legacy enemy routes');

@@ -10,7 +10,18 @@ ou chutes, [economy-physics](docs/economy-physics.md). Pour les vérifications e
 l'exploitation, lire [operations](docs/operations.md).
 Lire [CONTRIBUTING](CONTRIBUTING.md) avant de prendre une tâche ou préparer une PR.
 Pour reprendre une tâche interrompue, lire sa note dans `docs/tasks/`, la discussion
-GitHub et le diff ; vérifier les affirmations contre l'état de la branche.
+GitHub et le diff ; vérifier les affirmations contre l'état de la branche. Les
+tâches ouvertes sont les issues GitHub ; il n'y a plus de BACKLOG ni d'archive de
+docs (l'historique est dans Git). Les documents de `docs/` décrivant un « lot »
+daté peuvent citer des versions dépassées : le code et la référence du thème font foi.
+
+## Confiance envers les joueurs
+
+Règle pérenne : **on fait confiance aux clients**. C'est un jeu coopératif sans enjeu ; ne jamais
+écrire ni conserver de code qui détecte, empêche ou limite la triche (butées ou cadences imposées
+par le serveur, plafonds de dégâts, contrôles de plausibilité de position ou de vitesse). Le serveur
+garde seulement les règles de jeu partagées, la robustesse des entrées (types, nombres finis,
+idempotence) et la protection de la salle. Détail : [confiance envers les clients](docs/trust-model.md).
 
 ## Boucle de travail
 
@@ -33,13 +44,27 @@ GitHub et le diff ; vérifier les affirmations contre l'état de la branche.
    test local ne prouve pas une partie WebGL/UDP/WAN ni le confort du pilotage.
    Une optimisation demande un scénario et des mesures comparables avant/après.
 
+## TypeScript et contrôles rapides
+
+Tout nouveau module s'écrit en TypeScript ; migrer un module existant avec
+`npm run ts:migrate -- src/<module>.js` (candidats prêts : `npm run ts:migrate -- --leaves`),
+puis le typer jusqu'à ce que `npm run typecheck` passe. Règles (syntaxe effaçable, imports `.ts`, Three.js typé) : [TypeScript](docs/typescript.md). Pour itérer, cibler la suite :
+`npm test -- <fragment>` (ex. `npm test -- castor`), `--bail` pour s'arrêter au
+premier échec, `--list` pour la liste ; la suite complète reste due avant livraison.
+Un nouveau script `scripts/test-*.mjs` s'ajoute à `scripts/suite.mjs`
+(`test-suite-wiring.mjs` le vérifie). Pour une
+nouvelle espèce ou un nouveau véhicule, suivre [ajouter du contenu](docs/adding-content.md).
+
 ## Contexte persistant et documentation
 
 Mettre à jour, dans la même PR, les références dont le comportement change ;
 conserver une référence détaillée par sujet, avec des liens ailleurs. Pour une
 évolution de stack, d'autorité réseau ou de boucle de jeu, revoir aussi README,
 gameplay et carte du code. Vérifier les documents concernés et leurs liens avec
-`npm run check:docs`. Réserver l'audit global à une tâche documentaire explicite.
+`npm run check:docs`. Une nouvelle page de `docs/` s'ajoute au menu de `mkdocs.yml` :
+le [site de documentation](docs/site.md) publié sur GitHub Pages en est généré et son
+contrôle `Docs site` échoue sur une page hors menu ou un lien cassé. Réserver l'audit
+global à une tâche documentaire explicite.
 
 Pour un travail long, interrompu ou à transmettre, maintenir une note par tâche
 selon [le modèle de reprise](docs/tasks/README.md). Y conserver l'état actuel,
@@ -62,6 +87,15 @@ relire le diff, vérifier les critères d'acceptation, les contrôles GitHub Act
 (y compris `Docker build`), l'absence de conflit et les protections de `main`.
 Si Docker n'est pas disponible localement, attendre la réussite du contrôle
 `Docker build` de la PR. Utiliser une fusion **squash** lorsque GitHub l'autorise.
+Utiliser l'**auto-merge** de GitHub (activé sur le dépôt, contrôles requis sur
+`main`) : une fois la contribution terminée, le diff relu et les critères
+vérifiés, activer l'auto-merge en squash sur la PR (`enable_pr_auto_merge` avec
+`SQUASH`) au lieu d'attendre les contrôles pour fusionner à la main ; GitHub
+fusionne dès que tous les contrôles requis passent. Si GitHub répond que la PR est
+déjà fusionnable (statut propre), fusionner directement en squash. Rester
+responsable de la PR jusqu'à la fusion effective : corriger un contrôle rouge ou
+un conflit, puis vérifier que la fusion a eu lieu. Ne pas activer l'auto-merge
+tant qu'un essai attendu, un contrôle ou une relecture reste à faire.
 Ne jamais contourner une protection ni déclarer réussi un essai non exécuté :
 en cas d'échec, de contrôle absent, de conflit ou de permission insuffisante,
 laisser la PR ouverte, documenter précisément le blocage et le signaler.
@@ -70,16 +104,23 @@ Après fusion, vérifier l'état de `main` et la fermeture des issues liées.
 Les déploiements temporaires relèvent de GitHub Actions, selon l'état décrit dans
 CONTRIBUTING. Vérifier le résultat réellement retourné ; signaler un environnement
 absent ou en échec. Garder secrets et administration du VPS hors des contributions.
-Le runtime Node/UDP et le Site historique Worker/D1 sont distincts : publier le
-client Node sur le Worker est incompatible. Sites n'est pas requis pour coder ;
-le consulter seulement pour une intervention explicite sur le Site historique,
-depuis son ancien dépôt distinct. Ce dépôt ne porte plus de manifeste Sites.
-Générer un ZIP uniquement si la livraison demandée le nécessite.
+Le déploiement est automatique : chaque commit sur `main` publie l'image
+`latest` sur GHCR (workflow `docker.yml`), et un environnement extérieur au dépôt
+récupère périodiquement la dernière image pour la déployer sur le VPS. Il n'y a
+ni ZIP à produire ni autre cible de publication ; la livraison est la PR fusionnée.
 Avant toute livraison de contribution, construire systématiquement l’image Docker
 selon [le guide Docker](docs/docker.md), même sans livrer d’image. Après les
 dernières modifications ou une synchronisation, refaire ce build et consigner
 commande, résultat et commit testé dans la PR. Si Docker est indisponible, le
 signaler et vérifier le contrôle GitHub Actions `Docker build` avant la fusion.
+
+## Direction artistique et interface
+
+Toute contribution visible (modèle, décor, effet, son, texte, menu, HUD) suit la
+[direction artistique](docs/art-direction.md) et les [règles d'interface](docs/ui-guidelines.md) :
+le monde et le son informent avant le HUD, les menus sont des documents qui sortent
+du monde, aucune couleur ou taille nouvelle écrite en dur hors des jetons visuels.
+Justifier toute exception dans la PR.
 
 ## Nouveautés visibles par les joueurs
 
@@ -106,7 +147,8 @@ versionnement pour les branches parallèles.
 
 Règle pérenne pour tout nouveau modèle Meshy (détails et checklist dans
 [le pipeline d'assets](docs/asset-pipeline.md#règle-pour-tout-nouveau-modèle-meshy)) :
-1. proposer des visuels dans la direction artistique du jeu et obtenir la
+
+1. proposer des visuels conformes à la [direction artistique](docs/art-direction.md) et obtenir la
    **validation de l'utilisateur avant toute génération** ;
 2. une image de référence isolée, aux vues adaptées, par pièce mobile — jamais une
    planche entière envoyée comme une seule pièce ;

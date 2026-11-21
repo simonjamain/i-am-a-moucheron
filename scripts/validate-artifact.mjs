@@ -26,7 +26,7 @@ async function checkGraph(file) {
   }
 }
 await checkGraph(resolve(root, 'server/index.js'));
-const assets = await import(pathToFileURL(resolve(root, 'worker/assets.js')));
+const assets = await import(pathToFileURL(resolve(root, 'server/assets.js')));
 assert.ok(assets.ASSETS['/'].includes((await readFile(resolve(root, 'VERSION'), 'utf8')).trim()));
 assert.ok(assets.ASSETS['/udp-client.js']);
 assert.ok(Array.isArray(assets.OFFICE_SOLIDS));

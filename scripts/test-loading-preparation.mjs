@@ -4,7 +4,7 @@ import * as T from '../vendor/three.module.min.js';
 import { MIDGE } from '../src/midge-model.js';
 import { WALKERS, WalkerBatch } from '../src/walker-batch.js';
 import { MidgeBatch } from '../src/midge-batch.js';
-import { CreatureBatch, prepareCreatureVat } from '../src/creature-batch.js';
+import { CreatureBatch, prepareCreatureVat } from '../src/creature-batch.ts';
 
 let ticks = 0;
 const heartbeat = setInterval(() => ticks++, 1);

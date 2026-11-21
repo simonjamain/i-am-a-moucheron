@@ -5,7 +5,6 @@
 // impact report. Assertions about trajectories and damage keep their meaning.
 import { stepHeavy, heavyImpact } from '../src/heavy-sim.js';
 import { swarmFrame } from '../src/waves.js';
-import { airField } from '../src/air-current.js';
 
 export function roomWorld(game, r) {
   const plan = game.plan(r),
@@ -18,15 +17,7 @@ export function roomWorld(game, r) {
       if (r.phase !== 'combat' || projectile.wave !== r.wave) return [];
       const at = Math.round(time / 50) * 50;
       if (!cache.has(at))
-        cache.set(
-          at,
-          swarmFrame(
-            plan.roster,
-            (at - r.started) / 1000,
-            r.groundAgents,
-            airField(r.groundDefense, at),
-          ),
-        );
+        cache.set(at, swarmFrame(plan.roster, (at - r.started) / 1000, r.groundAgents));
       return cache.get(at);
     },
     vehicles: [...r.vehicles.values()],

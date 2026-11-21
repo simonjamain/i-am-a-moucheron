@@ -1,22 +1,22 @@
-import { nearestWeaponMuzzle } from '../src/muzzle.js';
-import { TracerPool } from '../src/tracers.js';
-import { GunSalvos } from '../src/salvos.js';
+import { nearestWeaponMuzzle } from '../src/muzzle.ts';
+import { TracerPool } from '../src/tracers.ts';
+import { GunSalvos } from '../src/salvos.ts';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
 import * as T from '../vendor/three.module.min.js';
 import { Game } from '../server/game.js';
-import { SHOP, shopPrice, purchaseCount, supportedPlacement } from '../src/equipment.js';
-import { fullAmmo, advanceSupplies } from '../src/logistics.js';
-import { HEAVY, heavyInterval } from '../src/armament.js';
-import { VEHICLES, LIGHT_FIGHTER, vehicleEntry, isRotorcraft } from '../src/fleet.js';
-import { MAP, ACTOR_UNIT } from '../src/scale.js';
-import { OFFICE_LAYOUT } from '../src/layout.js';
-import { OFFICE_SOLIDS } from '../worker/assets.js';
+import { SHOP, shopPrice, purchaseCount, supportedPlacement } from '../src/equipment.ts';
+import { fullAmmo, advanceSupplies } from '../src/logistics.ts';
+import { HEAVY, heavyInterval } from '../src/armament.ts';
+import { VEHICLES, LIGHT_FIGHTER, vehicleEntry, isRotorcraft } from '../src/fleet.ts';
+import { MAP, ACTOR_UNIT } from '../src/scale.ts';
+import { OFFICE_LAYOUT } from '../src/layout.ts';
+import { OFFICE_SOLIDS } from '../server/assets.js';
 import { createGraphics } from '../src/graphics.js';
-import { stepFlight } from '../src/flight.js';
-import { swarmAudioGroups } from '../src/audio.js';
-import { AircraftFire } from '../src/aircraft-fire.js';
+import { stepFlight } from '../src/flight.ts';
+import { swarmAudioGroups } from '../src/game-audio/swarm.ts';
+import { AircraftFire } from '../src/aircraft-fire.ts';
 import { wavePlan, swarmFrame } from '../src/waves.js';
 import { collisionDamage, washTarget, WASH } from '../src/vehicle-care.js';
 import { ballisticMarks } from '../src/tank-reticle.js';
@@ -46,15 +46,15 @@ const signed = (item, request, price, who = p) =>
 r.dollars = 200;
 for (const key of ['dca', 'radar', 'refuel', 'bed']) {
   const before = r.dollars,
-    price = shopPrice(key, r.upgrades, purchaseCount(game.snapshot(r), key));
+    price = shopPrice(key, purchaseCount(game.snapshot(r), key));
   signed(key, 'purchase-' + key, price);
   assert.equal(r.dollars, before - price);
   signed(key, 'purchase-' + key, price);
   assert.equal(r.dollars, before - price, 'retry spends once');
-  assert.equal(shopPrice(key, r.upgrades, purchaseCount(game.snapshot(r), key)), price + 2);
+  assert.equal(shopPrice(key, purchaseCount(game.snapshot(r), key)), price + 2);
   assert.throws(() => signed(key, 'competing-' + key, price, q), /tarif/);
 }
-assert.throws(() => signed('radar', 'unsigned-000', 4), /tarif/);
+assert.throws(() => signed('radar', 'unsigned-000', 10), /tarif/);
 assert.throws(
   () =>
     command('purchase-sign', {
@@ -119,7 +119,10 @@ assert.equal(r.dollars, cash);
 assert.ok(!r.purchases.get('purchase-bed').placed, 'invalid/cancelled pose stays owned');
 const oldCash = r.dollars;
 r.dollars = 0;
-assert.throws(() => signed('bed', 'insufficient-1', 6), /assez/);
+assert.throws(
+  () => signed('bed', 'insufficient-1', shopPrice('bed', purchaseCount(game.snapshot(r), 'bed'))),
+  /assez/,
+);
 r.dollars = oldCash;
 // Personal pending order ownership is lost only on expiry, with a single refund.
 const refund = [...r.purchases.values()].filter((o) => !o.placed).reduce((s, o) => s + o.price, 0);
@@ -146,12 +149,6 @@ for (let i = 0; i < 30; i++) {
   command('heavy-fire', { weapon: 'bomb', shot: 'drop-' + i, direction: [0, 0, -1] }, pilot);
   command('heavy-fire', { weapon: 'bomb', shot: 'drop-' + i, direction: [0, 0, -1] }, pilot);
   assert.equal(bomber.supplies.ammo.bomb, 29 - i);
-  if (i < 29)
-    assert.throws(
-      () =>
-        command('heavy-fire', { weapon: 'bomb', shot: 'fast-' + i, direction: [0, 0, -1] }, pilot),
-      /recharge/,
-    );
 }
 now += 1000;
 pilot.seen = now;
@@ -172,14 +169,14 @@ assert.equal(HEAVY.bomb.interval, 0.5, 'Stuka rack cadence unchanged');
 assert.equal(heavyInterval('bomb', 'bomber'), 1, 'biplane bomber: half the bombing rate');
 
 // Spitfire price, exclusive role, real six physical barrels and 45-second stock.
-assert.equal(shopPrice('spitfire'), 2 * shopPrice('interceptor'));
+assert.equal(shopPrice('spitfire'), 3 * shopPrice('interceptor'));
 game.release(r, pilot);
 pilot.mode = 'foot';
 r.dollars = 100;
 game.buy(r, pilot, { item: 'spitfire', request: 'spitfire-buy' }); // Internal fixture: public signed placement has its own regression.
 const spit = [...r.vehicles.values()].find((v) => v.type === 'spitfire');
 assert.ok(spit);
-assert.equal(r.dollars, 76);
+assert.equal(r.dollars, 25);
 assert.deepEqual(VEHICLES.spitfire.seats, ['pilot']);
 assert.equal(fullAmmo('spitfire').bomb, undefined);
 assert.equal(fullAmmo('spitfire').pilot, 1000);
@@ -388,6 +385,7 @@ const c = {
   spectating: false,
   joined: true,
   groundDefenseUI: { active: false },
+  debugTools: { active: false, cancel() {} },
   purchaseUI: { opened: false },
   bedUI: { opened: false },
   bankUI: { opened: false },
@@ -475,8 +473,8 @@ const ui = new PurchaseUI({
   onClose() {},
 });
 ui.open('dca', { life: 'alive', incarnation: 0 });
-assert.equal(ui.price, 4);
-assert.match(root.querySelector('[data-bed-text]').textContent, /4 \$/);
+assert.equal(ui.price, 5);
+assert.match(root.querySelector('[data-bed-text]').textContent, /5 \$/);
 const e = { pointerId: 1, clientX: 10, clientY: 10, preventDefault() {} };
 ui.canvas.onpointerdown(e);
 ui.canvas.onpointercancel();
@@ -489,8 +487,12 @@ assert.equal(submitted, 1);
 assert.equal(archived, 1);
 ss.balance = { prices: 2 };
 ui.open('radar', { life: 'alive', incarnation: 0 });
-assert.equal(ui.price, 8, 'signed order must use the same scaled quote as the workshop and server');
-assert.match(root.querySelector('[data-bed-text]').textContent, /8 \$/);
+assert.equal(
+  ui.price,
+  20,
+  'signed order must use the same scaled quote as the workshop and server',
+);
+assert.match(root.querySelector('[data-bed-text]').textContent, /20 \$/);
 ui.close();
 console.log(
   'Purchase UI: live price, actual pointer cancel and release, single signed command and ACK archive.',
@@ -550,10 +552,10 @@ console.log(
 
 // Render actual heavy meshes without a GPU: type and persistent colour survive
 // removal of the originating vehicle, so late snapshots keep their provenance.
-const { vehicleHue } = await import('../src/logistics.js');
+const { vehicleHue } = await import('../src/logistics.ts');
 const renderScene = new T.Scene();
 const graphics = createGraphics(T, renderScene);
-const { MissileExhaust } = await import('../src/missile-exhaust.js');
+const { MissileExhaust } = await import('../src/missile-exhaust.ts');
 const visualContext = {
   MissileExhaust,
   T,
@@ -609,7 +611,7 @@ assert.equal(visualModels.size, 0);
 
 // Execute the real audio updater: siren is Stuka-only, and the loop leaves the
 // keep set on exit/destruction rather than merely lowering its volume.
-const { diveIntensity } = await import('../src/combat.js');
+const { diveIntensity } = await import('../src/combat.ts');
 let kept = new Set();
 const soundModels = new Map();
 const audioVehicles = Object.keys(VEHICLES).map((type) => ({

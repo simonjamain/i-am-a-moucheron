@@ -1,9 +1,8 @@
-import { airField } from '../src/air-current.js';
-import { appearanceId } from '../src/character-appearances.js';
+import { appearanceId } from '../src/character-appearances.ts';
 import { prepareRoster, forecast } from './wave-preparation.js';
 import { feedingPoint } from '../src/ground-defense-state.js';
 import { DEFAULT_BALANCE, money } from '../src/balance.js';
-import { deliveryStart, deliveryLanding, deliveryHeightAt } from '../src/delivery.js';
+import { deliveryStart, deliveryLanding, deliveryHeightAt } from '../src/delivery.ts';
 import {
   newGroundDefense,
   groundCommand,
@@ -13,15 +12,15 @@ import {
   floorStructures,
 } from '../src/ground-defense-state.js';
 import { advanceGroundCrowd } from '../src/ground-crowd.js';
-import { HELI, rotateLocal } from '../src/helicopter.js';
 import { clampProximity } from '../src/mobile-flak.js';
 import { collisionDamage, washTarget, WASH } from '../src/vehicle-care.js';
-import { purchaseCount } from '../src/equipment.js';
-import { bedAccess, bedSpawn } from '../src/beds.js';
-import { impactDamage } from '../src/field-physics.js';
+import { purchaseCount } from '../src/equipment.ts';
+import { bedAccess, bedSpawn } from '../src/beds.ts';
+import { impactDamage } from '../src/field-physics.ts';
 import { randomUUID } from 'node:crypto';
-import { MAP, ACTOR_UNIT, enemySizeFactor, flakPitchAllowed } from '../src/scale.js';
-import { OFFICE_LAYOUT, RAID_DURATION } from '../src/layout.js';
+import { MAP, ACTOR_UNIT, enemySizeFactor } from '../src/scale.ts';
+import { OFFICE_LAYOUT } from '../src/layout.ts';
+import { setActiveLayout, isLayoutId, DEFAULT_LAYOUT_ID, layoutSolids } from '../src/layouts.ts';
 import {
   VEHICLES,
   vehiclePad,
@@ -29,15 +28,16 @@ import {
   vehicleAccess,
   leftVehiclePad,
   vehicleMaxHP,
-} from '../src/fleet.js';
-import { AIRDROP_KINDS, airdropCommand, airdropSurface, headingOf } from '../src/airdrop.js';
+  TRAILER_LIMITS,
+} from '../src/fleet.ts';
+import { AIRDROP_KINDS, airdropCommand, airdropSurface, headingOf } from '../src/airdrop.ts';
 import { baseWorld, baseBody, reconcileBase } from '../src/base.js';
 import {
   createSoul,
   advanceArena,
   relayBodyReport,
   deskOccupant,
-} from '../src/purgatory-physics.js';
+} from '../src/purgatory-physics.ts';
 import {
   wavePlan,
   ENEMY_TYPES,
@@ -46,27 +46,29 @@ import {
   assignMidgeSwarmSizes,
   MAX_OFFSPRING_ROSTER,
 } from '../src/waves.js';
-import { SHOP, shopPrice, supportedPlacement, waveStipend } from '../src/equipment.js';
+import { SHOP, shopPrice, supportedPlacement } from '../src/equipment.ts';
 import { advancePaidService } from '../src/paid-service.js';
-import { SENTRY, fireGroundSentries } from '../src/ground-sentry.js';
-import { FORTIFICATIONS, isFortification } from '../src/ground-fortifications.js';
-import { FIXED_DCA, heavyDcaMuzzle, isFixedDca } from '../src/fixed-dca.js';
-import { PISTOL_CAPACITY } from '../src/ground-ammo.js';
+import { SENTRY, fireGroundSentries } from '../src/ground-sentry.ts';
+import { FORTIFICATIONS, isFortification } from '../src/ground-fortifications.ts';
+import { FIXED_DCA, heavyDcaMuzzle, isFixedDca } from '../src/fixed-dca.ts';
+import { PISTOL_CAPACITY } from '../src/ground-ammo.ts';
 import {
   fullAmmo,
   ammoCapacity,
   advanceSupplies,
   FUEL_SECONDS,
   installationCount,
-} from '../src/logistics.js';
-import { stationAccess, stationExit } from '../src/sortie.js';
-import { howitzerMuzzle, howitzerPitchAllowed } from '../src/howitzer-geometry.js';
-import { validMotion } from '../src/network.js';
-import { snapshotRosterCore, snapshotRosterKey } from '../src/snapshot-wire.js';
-import { newBank, signLoan, settleLoans, repayLoan } from '../src/bank.js';
-import { canUseWeapon, HEAVY, TANK_MG, availableShell, heavyInterval } from '../src/armament.js';
-import { sweptSphereMayTouch } from '../src/swept-broadphase.js';
+} from '../src/logistics.ts';
+import { stationAccess, stationExit } from '../src/sortie.ts';
+import { howitzerMuzzle } from '../src/howitzer-geometry.ts';
+import { validMotion } from '../src/network.ts';
+import { snapshotRosterCore, snapshotRosterKey } from '../src/snapshot-wire.ts';
+import { appendDebugEnemy, debugPlacement, standingDummies } from '../src/debug-enemies.ts';
+import { newBank, signLoan, settleLoans, repayLoan } from '../src/bank.ts';
+import { canUseWeapon, HEAVY, TANK_MG, availableShell } from '../src/armament.ts';
+import { sweptSphereMayTouch } from '../src/swept-broadphase.ts';
 import { createOrdnance, segmentSphere } from '../src/ordnance.js';
+import { StatsLedger } from './stats.ts';
 
 const uid = () => randomUUID();
 const values = (m) => [...m.values()];
@@ -84,9 +86,6 @@ export const RESUME_MS = 30000;
 // A launch whose impact has not been reported is forgotten this long after
 // the end of its lifetime.
 export const IMPACT_GRACE_MS = 3000;
-// The shooter's browser fires on its own cadence without waiting for a reply;
-// network jitter can bring two launches closer on arrival.
-export const HEAVY_CADENCE_TOLERANCE_MS = 100;
 function requireGame(ok, message, status = 409) {
   if (!ok) throw Object.assign(new Error(message), { status });
 }
@@ -99,6 +98,7 @@ const world = (p) =>
         ? 'super'
         : 'purgatory';
 const signature = (s) => s === true;
+const SENTRY_SOURCE = Object.freeze({ item: 'sentry', seat: 'auto', weapon: 'sentry' });
 const initialState = () => ({
   p: [OFFICE_LAYOUT.base.originX, OFFICE_LAYOUT.base.departureY, OFFICE_LAYOUT.base.originZ - 8],
   q: [0, 0, 0, 1],
@@ -120,9 +120,11 @@ export function initialStation() {
     free: true,
   };
 }
-function roomState(code, now) {
+function roomState(code, now, layout = DEFAULT_LAYOUT_ID) {
+  setActiveLayout(layout);
   return {
     code,
+    layout,
     balance: { ...DEFAULT_BALANCE },
     lab: { enabled: false },
     balanceRevision: 0,
@@ -141,7 +143,6 @@ function roomState(code, now) {
     next_wave_at: 0,
     dollars: 0,
     rewardCount: 0,
-    upgrades: {},
     bank: newBank(),
     pilots: new Map(),
     vehicles: new Map(),
@@ -208,13 +209,16 @@ export function groundAgentsView(agents) {
 export class Game {
   constructor({
     now = Date.now,
-    solids = [],
+    solids = null,
     roomTTL = 30 * 60_000,
     maxRooms = 128,
     snapshotShareMs = 0,
     resumable = false,
+    stats = new StatsLedger(),
   } = {}) {
     this.rooms = new Map();
+    // Puissance pratique des équipements (docs/stats.md).
+    this.stats = stats;
     this.now = now;
     // > 0: `sync` replies of one room share a snapshot built at most this many
     // ms earlier (see snapshot()). 0 keeps one exact snapshot per command.
@@ -223,9 +227,21 @@ export class Game {
     // delay (PRESENCE_MS), so that a new connection can resume it (join with
     // `resume`). false: the pilot expires and releases its seat at once.
     this.resumable = resumable;
-    this.solids = solids;
+    // Colliders of the room being handled; a fixed list (tests) overrides them.
+    this.fixedSolids = solids;
     this.roomTTL = roomTTL;
     this.maxRooms = maxRooms;
+  }
+  get solids() {
+    return this.fixedSolids ?? layoutSolids();
+  }
+  set solids(list) {
+    this.fixedSolids = list;
+  }
+  // Every operation on a room runs with that room's layout active.
+  use(r) {
+    setActiveLayout(r.layout);
+    return r;
   }
   live(r) {
     return values(r.pilots).filter((p) => p.seen > this.now() - PRESENCE_MS);
@@ -237,8 +253,13 @@ export class Game {
     let r = this.rooms.get(code);
     if (!r) {
       requireGame(this.rooms.size < this.maxRooms, 'Le serveur est complet.', 503);
-      this.rooms.set(code, (r = roomState(code, this.now())));
+      // The plan is chosen by whoever opens the room, then fixed for its life.
+      this.rooms.set(
+        code,
+        (r = roomState(code, this.now(), isLayoutId(b.layout) ? b.layout : DEFAULT_LAYOUT_ID)),
+      );
     }
+    this.use(r);
     this.advance(r);
     // Reconnection: reattach the same pilot (body, seat, life, papers) while it
     // is still present. Never creates another pilot: the caller reloads instead.
@@ -319,7 +340,7 @@ export class Game {
     const r = this.rooms.get(code),
       p = r?.pilots.get(id);
     requireGame(p, 'Connexion expirée. Rechargez la page.', 401);
-    return { r, p };
+    return { r: this.use(r), p };
   }
   release(r, p) {
     p.occupation++;
@@ -332,6 +353,7 @@ export class Game {
     const r = this.rooms.get(code),
       p = r?.pilots.get(id);
     if (!p) return;
+    this.use(r);
     // A resumable pilot stays until its presence expires (advance() then
     // releases its seat and refunds its orders), unless a connection resumes it.
     if (this.resumable) return;
@@ -344,7 +366,7 @@ export class Game {
   }
   fleet(r) {
     for (const vehicle of r.vehicles.values()) if (!vehicle.state.landed) vehicle.ready = 0;
-    for (const type of ['fighter', 'bomber'])
+    for (const type of ['fighter', 'bomber', 'tank'])
       if (
         !values(r.vehicles).some(
           (v) => v.type === type && v.origin === 'starter' && v.ready && v.state.hp > 0,
@@ -373,6 +395,9 @@ export class Game {
       );
       r.dollars = result.dollars;
       r.lastPaidServiceAt = now;
+      if (!r.lab.enabled)
+        for (const [item, dollars] of Object.entries(result.spentBy))
+          this.stats.service(r, item, dollars);
     }
   }
   createVehicle(r, type, origin = 'purchase', placement = null) {
@@ -441,7 +466,7 @@ export class Game {
   releaseSoul(r, s) {
     if (s.status !== 'waiting') return;
     s.status = 'gone';
-    if (s.kind === 'enemy') this.reward(r, 1);
+    if (s.kind === 'enemy') this.reward(r, ENEMY_TYPES[s.enemy_type].power);
   }
   reward(r, amount) {
     const credit = money(amount, r.balance.rewards);
@@ -543,12 +568,7 @@ export class Game {
     if (now - r.sentryClock < SENTRY.intervalMs) return;
     r.sentryClock = now;
     const plan = this.plan(r);
-    const frames = swarmFrame(
-      plan.roster,
-      (now - r.started) / 1000,
-      r.groundAgents,
-      airField(r.groundDefense, now),
-    );
+    const frames = swarmFrame(plan.roster, (now - r.started) / 1000, r.groundAgents);
     const targets = frames.map((frame, index) =>
       frame && !r.kills.has(index) && (r.enemyDamage[index] || 0) < plan.roster[index].hp
         ? { id: index, p: frame.p, dead: false }
@@ -560,6 +580,7 @@ export class Game {
       now,
       (target, sentry, damage) => {
         const id = target.id;
+        this.creditEnemy(r, SENTRY_SOURCE, id, plan.roster[id], damage * r.balance.damage);
         r.enemyDamage[id] = (r.enemyDamage[id] || 0) + damage * r.balance.damage;
         if (r.enemyDamage[id] >= plan.roster[id].hp) this.defeatEnemy(r, id, target.p);
         r.effects.push({
@@ -574,9 +595,67 @@ export class Game {
     );
     if (fired) r.groundDefense.revision++;
   }
+  // ------------------------------------------------------------ statistiques
+  // Poste tenu par un pilote vivant : { item, seat }, ou null (docs/stats.md).
+  statSeat(r, p) {
+    if (p.life !== 'alive') return null;
+    if (p.mode === 'turret') {
+      const kind = r.equipment[p.state?.turret]?.kind;
+      return kind ? { item: kind, seat: 'operator' } : null;
+    }
+    const v = p.vehicle_id ? r.vehicles.get(p.vehicle_id) : null;
+    if (v && p.seat) return { item: v.type, seat: p.seat };
+    return p.mode === 'foot' ? { item: 'pistol', seat: 'foot' } : null;
+  }
+  hitSource(r, p, b, rapid) {
+    const seat = this.statSeat(r, p);
+    if (!seat) return null;
+    if (rapid) return { ...seat, weapon: 'rapid' };
+    if (seat.item === 'pistol') return { ...seat, weapon: 'pistol' };
+    return { ...seat, weapon: typeof b.weapon === 'string' ? b.weapon.slice(0, 24) : 'mg' };
+  }
+  heavySource(r, p, shot) {
+    const station = shot.station == null ? null : r.equipment[shot.station];
+    if (station?.kind) return { item: station.kind, seat: 'operator', weapon: shot.weapon };
+    const v = shot.vehicle ? r.vehicles.get(shot.vehicle) : null;
+    if (!v) return null;
+    return {
+      item: v.type,
+      seat: p.vehicle_id === v.id && p.seat ? p.seat : '?',
+      weapon: shot.weapon,
+    };
+  }
+  // Credits the shooter's seat with the share of the enemy's power the damage
+  // removes: no last-hit bias, nothing for damage beyond the remaining HP.
+  creditEnemy(r, source, index, enemy, amount) {
+    if (r.lab.enabled || !source || !enemy || !(enemy.hp > 0)) return;
+    const done = r.enemyDamage[index] || 0,
+      effective = Math.max(0, Math.min(amount, enemy.hp - done));
+    if (effective > 0)
+      this.stats.credit(
+        r,
+        source,
+        (effective / enemy.hp) * enemy.power,
+        enemy.ground ? 'ground' : 'air',
+      );
+  }
+  // Seat-seconds of the crews in combat; the clock only runs during a wave.
+  sampleStats(r, now) {
+    const dt = this.stats.step(r, now, r.phase === 'combat' && !r.lab.enabled);
+    if (!dt) return;
+    for (const p of r.pilots.values()) {
+      const seat = this.statSeat(r, p);
+      if (seat) this.stats.occupy(r, seat.item, seat.seat, dt);
+    }
+    for (const v of r.vehicles.values())
+      if (v.seats.size && v.state.hp > 0)
+        this.stats.vehicleTime(r, v.type, VEHICLES[v.type].seats.length, dt);
+  }
   advance(r) {
+    this.use(r);
     if (r.lab.enabled) r.dollars = LAB_FUNDS;
     const now = this.now();
+    this.sampleStats(r, now);
     this.advanceGround(r, now);
     this.advanceSentries(r, now);
     this.expireOrdnance(r, now);
@@ -589,12 +668,17 @@ export class Game {
       if (isFortification(station?.kind) && station.hp <= 0) this.kill(r, p, p.incarnation);
     }
     for (const v of r.vehicles.values())
-      if (v.state.hp <= 0)
+      if (v.state.hp <= 0) {
+        if (!v.statLost && !r.lab.enabled) {
+          v.statLost = true;
+          this.stats.loss(r, v.type);
+        }
         for (const id of [...v.seats.values()]) {
           const mate = r.pilots.get(id);
           if (mate) this.kill(r, mate, mate.incarnation);
           else for (const [seat, occupant] of v.seats) if (occupant === id) v.seats.delete(seat);
         }
+      }
     for (const [id, p] of r.pilots)
       if (p.seen <= now - (this.resumable ? RESUME_MS : PRESENCE_MS)) {
         this.release(r, p);
@@ -634,12 +718,21 @@ export class Game {
           : (now - r.started) / 1000 >= e.spawn + e.duration),
     );
     if (r.phase === 'combat' && r.kills.size + escaped.length >= plan.roster.length) {
-      r.infestation += escaped.reduce((n, e) => n + e.leak, 0);
+      const leaked = escaped.reduce((n, e) => n + e.power, 0);
+      r.infestation = money(r.infestation + leaked);
+      if (!r.lab.enabled)
+        this.stats.flush(r, {
+          wave: r.wave,
+          n: r.pilots.size,
+          power: plan.roster.reduce((n, e) => n + e.power, 0),
+          killed: plan.roster.reduce((n, e, i) => n + (r.kills.has(i) ? e.power : 0), 0),
+          leaked,
+          lost: r.infestation >= 20,
+        });
       // Debug mode: bin damage keeps counting, but the room cannot be lost.
       r.phase = r.infestation >= 20 && !r.lab.enabled ? 'lost' : 'prep';
       r.next_wave_at = now + r.balance.pause * 1000;
       if (r.phase === 'prep') {
-        this.reward(r, waveStipend(r.wave));
         this.prepareWave(r);
       }
       r.dollars = Math.round(r.dollars * 100 - settleLoans(r.bank, r.wave)) / 100;
@@ -678,12 +771,13 @@ export class Game {
     if (r.lab.enabled) r.dollars = LAB_FUNDS;
   }
   resetRoom(r, lab = r.lab) {
+    this.stats.discard(r);
     const pilots = r.pilots;
     const identities = r.identityTokens;
     const balance = r.balance;
     const owner = r.balanceOwnerToken;
     const revision = r.balanceRevision;
-    Object.assign(r, roomState(r.code, this.now()));
+    Object.assign(r, roomState(r.code, this.now(), r.layout));
     r.balance = balance;
     r.balanceOwnerToken = owner;
     r.balanceRevision = revision + 1;
@@ -749,9 +843,33 @@ export class Game {
       if (!r.mission_started) this.setLabWave(r, 1);
       return;
     }
-    // Issue #135: debug is a plain toggle. Only enable/exit exist; the former
-    // test tools (cards, waves, scenarios) are gone. Leaving resets the game so
-    // no test progress leaks into a normal game.
+    // Enemies placed from the shop's debug columns (debug-enemies.ts), one per
+    // order, appended to the running wave like a brood.
+    if (action === 'place' || action === 'clear-dummies') {
+      requireGame(r.lab.enabled, 'Activez le mode debug pour poser un ennemi.');
+      requireGame(r.phase === 'combat', 'Lancez une vague pour poser un ennemi.');
+      const plan = this.plan(r);
+      if (action === 'clear-dummies') {
+        for (const index of standingDummies(plan.roster, r.kills)) r.kills.add(index);
+        return;
+      }
+      let placement;
+      try {
+        placement = debugPlacement(b);
+      } catch (error) {
+        requireGame(false, error.message, 400);
+      }
+      appendDebugEnemy(plan.roster, placement, {
+        time: (this.now() - r.started) / 1000,
+        balance: r.balance,
+        seq: (r.debugEnemySeq = (r.debugEnemySeq || 0) + 1),
+      });
+      r.rosterRevision++;
+      return;
+    }
+    // Issue #135: debug is otherwise a plain toggle; the former test tools
+    // (cards, waves, scenarios) are gone. Leaving resets the game so no test
+    // progress leaks into a normal game.
     requireGame(action === 'exit', 'Action de debug inconnue.', 400);
     requireGame(r.lab.enabled, 'Le mode debug est déjà inactif.');
     this.resetRoom(r, { enabled: false });
@@ -760,10 +878,14 @@ export class Game {
     return r.plan || wavePlan(r.code, r.wave, r.started);
   }
   prepareWave(r) {
-    r.upcomingPlan = prepareRoster(r.wave + 1, r.balance);
+    // N counts every pilot of the room, those in purgatory included.
+    const players = Math.max(1, r.pilots.size);
+    r.upcomingPlan = prepareRoster(r.wave + 1, r.balance, undefined, players);
     r.preparation = {
       id: uid(),
       wave: r.wave + 1,
+      power: money(r.upcomingPlan.budget),
+      players,
       groups: forecast(r.upcomingPlan.roster),
     };
   }
@@ -819,6 +941,7 @@ export class Game {
     };
   }
   roomSnapshot(r) {
+    this.use(r);
     const now = this.now(),
       plan = this.plan(r),
       activePilots = this.live(r),
@@ -856,6 +979,7 @@ export class Game {
           : elapsed >= enemy.spawn + enemy.duration)
       )
         arrived.push(enemy.id);
+    const arrivedPower = arrived.reduce((sum, id) => sum + (plan.roster[id]?.power ?? 0), 0);
     return clone({
       code: r.code,
       balance: r.balance,
@@ -872,11 +996,9 @@ export class Game {
       mission_started: r.mission_started,
       next_wave_at: r.next_wave_at,
       preparation: r.preparation,
-      groundNavigationActive:
-        r.groundEnabled || r.groundDefense.structures.some((s) => s.kind !== 'fan'),
+      groundNavigationActive: r.groundEnabled || r.groundDefense.structures.length > 0,
       dollars: r.dollars,
       bank: r.bank,
-      upgrades: r.upgrades,
       rewardCount: r.rewardCount,
       equipment: r.equipment,
       groundDefense: groundSnapshot(r.groundDefense, this.now()),
@@ -896,14 +1018,14 @@ export class Game {
       seatRequests: values(r.requests),
       effects: r.effects.slice(-64),
       ordnance: r.ordnance,
-      waveReward: money(waveStipend(r.wave), r.balance.rewards),
-      difficulty: r.wave ? plan.budget : 0,
+      difficulty: r.wave ? money(plan.budget) : 0,
       enemyDamage: r.enemyDamage,
-      raidDuration: RAID_DURATION,
+      layout: r.layout,
       mapScale: { numerator: MAP.numerator, denominator: MAP.denominator },
       total: plan.roster.length,
       arrived,
       leaked: r.phase === 'combat' ? arrived.length : 0,
+      leakedPower: r.phase === 'combat' ? money(arrivedPower) : 0,
       now,
       sentAt: now,
       souls: souls.purgatory,
@@ -990,8 +1112,12 @@ export class Game {
           ? s.omega
           : old.omega || [0, 0, 0],
       trailerAngle: Number.isFinite(s.trailerAngle)
-        ? Math.max(-0.65, Math.min(0.65, s.trailerAngle))
+        ? Math.max(-TRAILER_LIMITS.yaw, Math.min(TRAILER_LIMITS.yaw, s.trailerAngle))
         : 0,
+      trailerPitch: Number.isFinite(s.trailerPitch)
+        ? Math.max(-TRAILER_LIMITS.pitch, Math.min(TRAILER_LIMITS.pitch, s.trailerPitch))
+        : 0,
+      steer: Number.isFinite(s.steer) ? Math.max(-1, Math.min(1, s.steer)) : 0,
       landed: flying ? !!s.landed : !!old.landed,
       aimPoint:
         Array.isArray(s.aimPoint) &&
@@ -1309,6 +1435,7 @@ export class Game {
       requireGame(false, error.message, 400);
     }
     r.dollars = money(r.dollars - transaction.price);
+    if (!r.lab.enabled) this.stats.purchase(r, b.kind, transaction.price);
     if (b.action === 'build' && isFortification(b.kind))
       this.registerFortification(r, transaction.ids[0]);
     if (b.action === 'remove') {
@@ -1435,13 +1562,6 @@ export class Game {
     const key = p.id + ':' + p.incarnation + ':' + b.shot;
     if (r.fixedDcaShots.has(key)) return;
     requireGame(gun.ammo >= 1, 'Cette arme est à court de munitions.');
-    const interval =
-      ((FORTIFICATIONS[gun.kind]?.interval ?? FIXED_DCA[gun.kind].interval) * 1000) /
-      (r.balance.fireRate || 1);
-    requireGame(
-      this.now() >= (gun.lastShotAt ?? -Infinity) + interval,
-      'Cette arme recharge son canon.',
-    );
     requireGame(r.fixedDcaShots.size < 128000, 'Trop de tirs enregistrés.', 429);
     gun.ammo -= 1;
     gun.lastShotAt = this.now();
@@ -1511,18 +1631,12 @@ export class Game {
       Array.isArray(direction) &&
         direction.length === 3 &&
         direction.every(Number.isFinite) &&
-        Math.hypot(...direction) > 0.5 &&
-        (weapon === 'antitank' ? howitzerPitchAllowed(direction) : flakPitchAllowed(direction)),
+        Math.hypot(...direction) > 0.5,
       'Visée invalide.',
       400,
     );
     requireGame(gun.ammo >= 1, 'Ce canon est à court d’obus.');
     const profile = HEAVY[weapon];
-    requireGame(
-      this.now() + HEAVY_CADENCE_TOLERANCE_MS >=
-        (gun.lastShotAt ?? -Infinity) + (profile.interval * 1000) / (r.balance.fireRate || 1),
-      'Ce canon recharge.',
-    );
     requireGame(
       r.ordnance.length < 128 && r.ordnanceShots.size < 128000,
       'Trop de projectiles actifs.',
@@ -1551,13 +1665,14 @@ export class Game {
     });
   }
   pistolImpact(r, p, shot) {
-    // A foot soldier has no other damaging firearm. Require a validated
-    // trace and allow only one impact (enemy, friendly or soul) per shot.
+    // Allow only one impact (enemy, friendly or soul) per shot.
     if (p.mode !== 'foot') return true;
+    // Game rule: the pistol only exists in purgatory.
+    requireGame(world(p) !== 'office', 'Aucun pistolet dans le bureau.');
     requireGame(
-      typeof shot === 'string' &&
-        r.hits.has(JSON.stringify(['pistol-trace', p.id, p.incarnation, shot])),
-      'Tir de pistolet non validé.',
+      typeof shot === 'string' && shot.length <= 120,
+      'Identifiant de tir invalide.',
+      400,
     );
     const key = JSON.stringify(['pistol-impact', p.id, p.incarnation, shot]);
     if (r.pistolImpacts.has(key)) return false;
@@ -1654,15 +1769,11 @@ export class Game {
         ...values(r.vehicles).map((v) => ({ x: v.state.p[0], y: v.state.p[1], z: v.state.p[2] })),
       ]);
     requireGame(!carrier || drop, 'Aucune colonne de livraison libre près de cet appareil.');
-    const price = shopPrice(
-      b.item,
-      r.upgrades,
-      purchaseCount(this.purchaseSnapshot(r), b.item),
-      r.balance,
-    );
+    const price = shopPrice(b.item, purchaseCount(this.purchaseSnapshot(r), b.item), r.balance);
     requireGame(price === b.expectedPrice, 'Le tarif a changé. Relisez le bon.');
     requireGame(r.dollars >= price, 'La caisse commune ne contient pas assez de dollars.');
     r.dollars = money(r.dollars - price);
+    if (!r.lab.enabled) this.stats.purchase(r, b.item, price);
     r.purchases.set(b.request, {
       token: b.request,
       owner: p.id,
@@ -1741,12 +1852,7 @@ export class Game {
       now - c.at < CONTACT_FRAME_MS
     )
       return c.frames;
-    const frames = swarmFrame(
-      plan.roster,
-      (now - r.started) / 1000,
-      r.groundAgents,
-      airField(r.groundDefense, now),
-    );
+    const frames = swarmFrame(plan.roster, (now - r.started) / 1000, r.groundAgents);
     r.contactFrameCache = {
       roster: plan.roster,
       revision: r.rosterRevision,
@@ -1776,7 +1882,8 @@ export class Game {
       const contacts = [],
         latched = new Set(v.contactWave === r.wave ? v.contacts : []);
       frames.forEach((frame, i) => {
-        if (!frame || r.kills.has(i)) return;
+        // Debug dummies never wear vehicles down (their HP is symbolic).
+        if (!frame || r.kills.has(i) || plan.roster[i].dummy) return;
         const radius = MAP.metres(
           plan.roster[i].size * 0.7 * enemySizeFactor(plan.roster[i].type) + 0.3,
         );
@@ -1848,12 +1955,7 @@ export class Game {
       requireGame(r.orders.get(request) === b.item, 'Référence d’achat déjà utilisée.');
       return;
     }
-    const price = shopPrice(
-      b.item,
-      r.upgrades,
-      purchaseCount(this.purchaseSnapshot(r), b.item),
-      r.balance,
-    );
+    const price = shopPrice(b.item, purchaseCount(this.purchaseSnapshot(r), b.item), r.balance);
     requireGame(
       prepaid || b.expectedPrice === undefined || b.expectedPrice === price,
       'Le tarif a changé.',
@@ -1862,7 +1964,6 @@ export class Game {
       prepaid || r.dollars >= price,
       'La caisse commune ne contient pas assez de dollars.',
     );
-    requireGame(!item.max || (r.upgrades[b.item] || 0) < item.max, 'Amélioration déjà au maximum.');
     if (item.kind === 'placement' || (item.kind === 'vehicle' && prepaid)) {
       requireGame(
         p.mode === 'foot' &&
@@ -1909,8 +2010,10 @@ export class Game {
       if (item.kind === 'vehicle') this.createVehicle(r, b.item, 'purchase', placement);
       else this.installEquipment(r, b.item, placement);
     } else if (item.kind === 'vehicle') this.createVehicle(r, b.item);
-    else r.upgrades[b.item] = (r.upgrades[b.item] || 0) + 1;
-    if (!prepaid) r.dollars = money(r.dollars - price);
+    if (!prepaid) {
+      r.dollars = money(r.dollars - price);
+      if (!r.lab.enabled) this.stats.purchase(r, b.item, price);
+    }
     r.orders.set(request, b.item);
   }
   installEquipment(r, kind, placement) {
@@ -2124,7 +2227,6 @@ export class Game {
         !r.ordnance.some((s) => !s.done && s.vehicle === v.id && s.weapon === 'missile'),
         'Un missile est déjà en vol.',
       );
-      requireGame(this.now() >= (v.nextMissileAt || 0), 'Missile en recharge.');
       v.missileOccupation = p.occupation;
     }
     const selected =
@@ -2132,12 +2234,6 @@ export class Game {
     requireGame(selected && v.supplies.ammo[selected] >= 1, 'Réserve vide.');
     const lane = selected === 'bomb' ? 'bomb' : 'cannon';
     v.lastHeavy ??= {};
-    requireGame(
-      this.now() + HEAVY_CADENCE_TOLERANCE_MS >=
-        (v.lastHeavy[lane] ?? -Infinity) +
-          (heavyInterval(selected, v.type) / r.balance.fireRate) * 1000,
-      'Arme en recharge.',
-    );
     requireGame(
       r.ordnance.length < 128 && r.ordnanceShots.size < 128000,
       'Trop de projectiles actifs.',
@@ -2153,25 +2249,7 @@ export class Game {
       400,
     );
     if (selected === 'rocket') v.rocketSide = -(v.rocketSide || -1);
-    if (selected === 'proximity') {
-      const [x, y, z, w] = v.state.q;
-      requireGame(
-        flakPitchAllowed(rotateLocal([-x, -y, -z, w], direction)),
-        'Butée de la DCA atteinte.',
-      );
-      v.proximity = clampProximity(b.proximity);
-    }
-    if (selected === 'missile') {
-      const local = rotateLocal(
-        [-v.state.q[0], -v.state.q[1], -v.state.q[2], v.state.q[3]],
-        direction,
-      );
-      const pitch = Math.asin(Math.max(-1, Math.min(1, local[1] / Math.hypot(...local))));
-      requireGame(
-        pitch >= HELI.minPitch - 1e-8 && pitch <= HELI.maxPitch + 1e-8,
-        'Butée du copilote atteinte.',
-      );
-    }
+    if (selected === 'proximity') v.proximity = clampProximity(b.proximity);
     v.supplies.ammo[selected]--;
     v.supplies.revision++;
     v.lastHeavy[lane] = this.now();
@@ -2205,8 +2283,8 @@ export class Game {
     const v = r.vehicles.get(shot.vehicle);
     if (v) v.nextMissileAt = now + 2000 / r.balance.fireRate;
   }
-  // Impact computed by the shooter: applied once, capped by the power of the
-  // launch recorded here. Damage to friends is the shooter's decision too.
+  // Impact computed by the shooter and trusted: applied once. Damage to friends is the
+  // shooter's decision too.
   heavyImpact(r, p, b) {
     requireGame(typeof b.shot === 'string' && b.shot.length <= 120, 'Impact invalide.', 400);
     const shot = r.ordnance.find((s) => s.shot === b.shot && s.shooter === p.id);
@@ -2226,8 +2304,8 @@ export class Game {
     );
     const now = this.now(),
       profile = HEAVY[shot.weapon],
-      cap = Math.ceil(profile.damage * shot.bonus) + 1,
-      amount = (n) => (Number.isFinite(n) ? Math.max(0, Math.min(cap, n)) : 0);
+      // The shooter's report is trusted as is (cooperative game, no cheat control).
+      amount = (n) => (Number.isFinite(n) ? Math.max(0, n) : 0);
     r.ordnance = r.ordnance.filter((s) => s !== shot);
     this.endOrdnance(r, shot, now);
     r.effects.push({
@@ -2244,6 +2322,7 @@ export class Game {
       for (const [index, damage, position] of list(b.enemies)) {
         const e = roster[index];
         if (!Number.isInteger(index) || !e || r.kills.has(index)) continue;
+        this.creditEnemy(r, this.heavySource(r, p, shot), index, e, amount(damage));
         r.enemyDamage[index] = (r.enemyDamage[index] || 0) + amount(damage);
         if (r.enemyDamage[index] >= e.hp)
           this.defeatEnemy(
@@ -2370,17 +2449,10 @@ export class Game {
       e = plan.roster[index];
     if (!e) return false;
     r.kills.add(index);
-    if (!e.offspringOnly) this.soul(r, 'enemy', r.wave + ':' + index, e.name, 'purgatory', e.type);
+    this.soul(r, 'enemy', r.wave + ':' + index, e.name, 'purgatory', e.type);
     if (e.onDeath?.spawn) {
       const at = (this.now() - r.started) / 1000;
-      const location =
-        position ||
-        swarmFrame(
-          plan.roster,
-          at,
-          r.groundAgents,
-          airField(r.groundDefense, r.started + at * 1000),
-        )[index]?.p;
+      const location = position || swarmFrame(plan.roster, at, r.groundAgents)[index]?.p;
       if (location) {
         const children = spawnOffspring(
           e,
@@ -2432,14 +2504,13 @@ export class Game {
     if (r.kills.has(b.enemy)) return;
     const rapid = typeof b.shot === 'string' && b.shot.startsWith(p.id + ':rapid:');
     if (rapid ? !this.rapidImpactAllowed(r, p, b.shot) : !this.pistolImpact(r, p, b.shot)) return;
-    const damage = rapid
-      ? 75 * (1 + (r.upgrades.weapons || 0))
-      : Math.max(1, Math.min(800, Number(b.amount) || 75));
+    const damage = rapid ? 75 : Math.max(1, Math.min(800, Number(b.amount) || 75));
     const amount = damage * r.balance.damage;
     this.once(
       r,
       JSON.stringify(['enemy', r.wave, b.enemy, p.id, String(b.shot || 'legacy').slice(0, 120)]),
       () => {
+        this.creditEnemy(r, this.hitSource(r, p, b, rapid), b.enemy, e, amount);
         r.enemyDamage[b.enemy] = (r.enemyDamage[b.enemy] || 0) + amount;
         if (r.enemyDamage[b.enemy] >= e.hp) this.defeatEnemy(r, b.enemy);
       },
@@ -2458,7 +2529,7 @@ export class Game {
         : undefined;
     const amount =
       (rapid
-        ? 75 * (1 + (r.upgrades.weapons || 0))
+        ? 75
         : p.mode === 'foot'
           ? 10
           : p.mode === 'turret'

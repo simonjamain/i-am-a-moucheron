@@ -1,4 +1,4 @@
-import { INSECT_SCALE, enemySizeFactor } from './scale.js';
+import { INSECT_SCALE, enemySizeFactor } from './scale.ts';
 import { advanceGroundUnit, groundUnit } from './ground-creatures.js';
 
 // Soft personal space in room metres, distinct from projectile hit volumes.
@@ -62,7 +62,7 @@ export function crowdSeparation(entries) {
 
 export function advanceGroundCrowd(agents, roster, kills, previous, elapsed, world) {
   const ground = roster.flatMap((enemy, index) =>
-    enemy.ground && !kills.has(index)
+    enemy.ground && !enemy.dummy && !kills.has(index)
       ? [{ enemy, availableAt: enemy.spawn + (enemy.entryHold || 0) }]
       : [],
   );

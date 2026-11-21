@@ -3,14 +3,14 @@
 import assert from 'node:assert/strict';
 import * as T from '../vendor/three.module.min.js';
 import { createGraphics } from '../src/graphics.js';
-import { paintVehicle } from '../src/vehicle-livery.js';
+import { paintVehicle } from '../src/vehicle-livery.ts';
 import { BIPLANE_DATA } from '../src/meshy-biplane-data.js';
 import { BIPLANE_BOMBER_DATA } from '../src/meshy-biplane-bomber-data.js';
-import { VEHICLES, pilotFireInterval, SEAT_NAMES } from '../src/fleet.js';
-import { ammoCapacity, fullAmmo } from '../src/logistics.js';
-import { HEAVY, heavyInterval, canUseWeapon } from '../src/armament.js';
-import { stepFlight } from '../src/flight.js';
-import { ACTOR_UNIT, MAP } from '../src/scale.js';
+import { VEHICLES, pilotFireInterval, SEAT_NAMES } from '../src/fleet.ts';
+import { ammoCapacity, fullAmmo } from '../src/logistics.ts';
+import { HEAVY, heavyInterval, canUseWeapon } from '../src/armament.ts';
+import { stepFlight } from '../src/flight.ts';
+import { ACTOR_UNIT, MAP } from '../src/scale.ts';
 
 const graphics = createGraphics(T, new T.Scene());
 const triangles = (model) => {

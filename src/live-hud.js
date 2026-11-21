@@ -1,6 +1,6 @@
-import { MAP } from './scale.js';
-import { formatDistance } from './units.js';
-import { VEHICLES, vehicleMaxHP } from './fleet.js';
+import { MAP } from './scale.ts';
+import { formatDistance } from './units.ts';
+import { VEHICLES, vehicleMaxHP, isBomber } from './fleet.ts';
 
 // Single source of the bottom-left command help. Each context lists only the inputs
 // that client.js really routes for the current role, seat, station or tool.
@@ -8,7 +8,7 @@ const AIR_EXIT = 'F : sauter / sortir · Espace en chute : parachute';
 const GROUND_EXIT = 'F : sortir';
 const BUILD = 'G / clic molette : construire';
 const LINE_TOOLS = ['barricade', 'sticky'];
-const ORIENTED_TOOLS = ['sugar', 'fan'];
+const ORIENTED_TOOLS = ['sugar'];
 const STATIONS = {
   dca: ['Clic / Espace : obus', 'Maj/Ctrl, [ ] ou molette : fusée'],
   dcaRapid: ['Clic / Espace : balles'],
@@ -131,7 +131,7 @@ function vehicleHints({ type, supplies }, seat, build) {
           'A/E : gouverne',
           'Maj/Ctrl ou molette : gaz',
           'C : regard libre',
-          type !== 'bomber' && 'Clic : MG',
+          !isBomber(type) && 'Clic : MG',
           supplies?.ammo?.bomb !== undefined && 'Espace : bombes',
         ]
       : ['Souris : tourelle', 'Clic / Espace : MG']),

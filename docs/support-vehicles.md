@@ -5,7 +5,7 @@ métier HEL-01 à HEL-05 et DCM-01/DCM-02 sont implémentées et couvertes par l
 contrôles de domaine. HEL-06 et DCM-03 gardent leur validation finale **en cours** :
 les échanges entre deux pairs UDP natifs sont vérifiés, mais le réseau du navigateur
 de contrôle refuse UDP. Aucun essai humain de pilotage, d'écoute, de rendu WebGL
-ou de partie WAN n'est revendiqué. Le Site Worker historique reste inchangé.
+ou de partie WAN n'est revendiqué.
 
 ## Achat, accès et réserves
 
@@ -16,16 +16,15 @@ communes. Les quatre nouveaux rôles ont leurs contrats propres, soit 200 varian
 supplémentaires et **600 variantes** au total. Les stations habituelles remplissent
 carburant et chaque stock en dix secondes, véhicule posé et arrêté.
 
-| Véhicule       |                   Prix |  Coque |              Vitesse de référence | Carburant                           |
-| -------------- | ---------------------: | -----: | --------------------------------: | ----------------------------------- |
-| Hélicoptère H2 | 30 $ (1,25 × Spitfire) | 200 PV | 42 m/s (60 % du chasseur initial) | 300 s en vol                        |
-| DCA mobile D2  |                   20 $ | 100 PV |                            10 m/s | 300 s à pleine commande de conduite |
+| Véhicule       | Prix |  Coque |              Vitesse de référence | Carburant                           |
+| -------------- | ---: | -----: | --------------------------------: | ----------------------------------- |
+| Hélicoptère H2 | 50 $ | 200 PV | 42 m/s (60 % du chasseur initial) | 300 s en vol                        |
+| DCA mobile D2  | 15 $ | 100 PV |                            10 m/s | 300 s à pleine commande de conduite |
 
 Les valeurs D2 non imposées sont des choix d'équilibrage. Son articulation est
 cinématique : angle de remorque limité à ±0,65 rad, redressement proportionnel au
 roulage, sans simulation séparée de masse/attelage. Les enveloppes de collision
 couvrent tracteur et remorque ; ce n'est pas une simulation de poids lourd.
-Les améliorations de moteur s'appliquent au H2 comme aux avions.
 
 ## Hélicoptère
 
@@ -45,11 +44,11 @@ collisions continuent, sans stationnaire. Une arrivée verticale au sol au-delà
 de 8 m/s de référence détruit la coque. Le carburant dure cinq minutes de vol,
 indépendamment de la poussée collective demandée.
 
-| Poste / arme       | Stock | Cadence                               | Dégâts et rayon de référence             |
-| ------------------ | ----: | ------------------------------------- | ---------------------------------------- |
-| Pilote, roquettes  |    30 | au moins 0,3 s                        | HE du tank : 120→30, rayon 12 m          |
-| Copilote, MG       | 1 000 | 15 balles/s                           | 75 de base, améliorations MG habituelles |
-| Copilote, missiles |    10 | un en vol, puis 2 s après destruction | DCA explosive : 80→20, rayon 8 m         |
+| Poste / arme       | Stock | Cadence                               | Dégâts et rayon de référence     |
+| ------------------ | ----: | ------------------------------------- | -------------------------------- |
+| Pilote, roquettes  |    30 | au moins 0,3 s                        | HE du tank : 120→30, rayon 12 m  |
+| Copilote, MG       | 1 000 | 15 balles/s                           | 75                               |
+| Copilote, missiles |    10 | un en vol, puis 2 s après destruction | DCA explosive : 80→20, rayon 8 m |
 
 Les roquettes alternent leurs origines gauche/droite et partent dans l'axe du
 véhicule, sans viser indépendamment avec la souris. Le copilote vise avec une
@@ -75,7 +74,7 @@ Les effets ne produisent aucun second impact.
 
 ### Effets des roquettes et du missile (version 240)
 
-`src/missile-exhaust.js` applique un profil par projectile (`EXHAUST_PROFILES`) : fumée
+`src/missile-exhaust.ts` applique un profil par projectile (`EXHAUST_PROFILES`) : fumée
 plus sombre et plus épaisse qu'auparavant, flamme plus grande et plus vive, et halo
 additif de taille constante à l'écran, visible de loin. Le missile guidé a la traînée la
 plus dense et un halo plus grand qui pulse. Cadences, dégâts, guidage et vitesses sont
@@ -144,8 +143,8 @@ Le navigateur charge le client, puis affiche « UDP indisponible sur ce réseau 
 La validation finale demande encore, sur une VM UDP joignable, une partie solo
 puis pilote/copilote, une conduite/tir simultanés, l'entrée tardive, les changements
 de poste et les morts, l'écoute et le confort visuel des modèles et du pilotage.
-**Aucune VM externe n'a été provisionnée ni déployée.** Installer le ZIP selon
-[le guide UDP](udp-server.md), puis recharger les navigateurs après redémarrage.
+**Aucune VM externe n'a été provisionnée ni déployée.** Voir
+[le guide UDP](udp-server.md) ; recharger les navigateurs après chaque déploiement.
 
 Le [lot confort de jeu, version 37](comfort.md) précise réparation, zoom, jauges,
 radar à pied, remise à zéro, fourmis et projectiles du pistolet courants.

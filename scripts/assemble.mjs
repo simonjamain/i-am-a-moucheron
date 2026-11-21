@@ -1,38 +1,38 @@
 import { uiPreview } from './build-ui-preview.mjs';
-import * as T from '../vendor/three.module.min.js';
-import { createOffice } from '../src/office.js';
-import { createGraphics } from '../src/graphics.js';
+import { layoutSolids, LAYOUTS } from '../src/layouts.ts';
 import { createHash } from 'node:crypto';
 import { readFile, writeFile } from 'node:fs/promises';
+import { existsSync, readdirSync } from 'node:fs';
+import { stripTypeScriptTypes } from 'node:module';
 
-const collisionScene = new T.Scene();
-const officeBounds = createOffice(T, collisionScene, {
-  ...createGraphics(T, collisionScene),
-  textLabel: () => new T.Group(),
-}).colliders;
-await writeFile(
-  'src/route-obstacles.js',
-  '// Generated from office colliders.\nexport const ROUTE_OBSTACLES=' +
-    JSON.stringify(
-      officeBounds.map((b) => ({
-        min: { x: b.min.x, y: b.min.y, z: b.min.z },
-        max: { x: b.max.x, y: b.max.y, z: b.max.z },
-      })),
-    ) +
-    ';\n',
-);
+// Browser URLs stay `/<name>.js`; the source is `src/<name>.ts` when migrated
+// (types erased in place, see docs/typescript.md) or `src/<name>.js` otherwise.
+const moduleSource = (name) =>
+  existsSync('src/' + name + '.ts') ? 'src/' + name + '.ts' : 'src/' + name + '.js';
+const readAsset = async (file) => {
+  const text = await readFile(file, 'utf8');
+  return file.endsWith('.ts') ? stripTypeScriptTypes(text, { mode: 'strip' }) : text;
+};
+
+// Colliders of the default layout, kept as a fixture for tests. The Node server and
+// the browser derive each room's colliders from the active layout.
+const officeBounds = layoutSolids(LAYOUTS[0]);
 await writeFile('docs/ui-review.html', uiPreview(await readFile('src/index.html', 'utf8')));
-// One asset manifest drives both browser module serving and Worker packaging.
+// One asset manifest drives the browser module serving of the Node server.
 const files = {
   '/': 'src/index.html',
   '/ui-review.html': 'docs/ui-review.html',
-  '/client.js': 'src/client.js',
-  '/boot.js': 'src/boot.js',
+  '/client.js': moduleSource('client'),
+  '/boot.js': moduleSource('boot'),
   '/three.js': 'vendor/three.module.min.js',
+  // Physics engine, loaded on demand (see docs/physics-engine.md).
+  '/rapier.js': 'vendor/rapier.compat.mjs',
   ...Object.fromEntries(
     [
       'balance',
       'lab-ui',
+      'debug-enemies',
+      'debug-tools',
       'ground-defense-ui',
       'ground-motion',
       'ground-placement',
@@ -43,6 +43,8 @@ const files = {
       'meshy-texture',
       'meshy-biplane-data',
       'meshy-biplane-bomber-data',
+      'meshy-m1-data',
+      'meshy-b3-data',
       'meshy-rig',
       'vehicle-anchors',
       'castor-model',
@@ -66,10 +68,10 @@ const files = {
       'meshy-tank-data',
       'meshy-flaktruck-data',
       'biplane-model',
+      'm1-model',
+      'b3-model',
       'meshy-h2-data',
       'h2-model',
-      'air-current',
-      'air-trails',
       'wave-council-ui',
       'wave-forecast-scene',
       'wave-ground-paths',
@@ -89,7 +91,7 @@ const files = {
       'howitzer-data',
       'model-preview',
       'ground-defense',
-      'route-obstacles',
+      'layouts',
       'changelog',
       'flight-tuning',
       'flight-tuning-ui',
@@ -101,6 +103,8 @@ const files = {
       'units',
       'castor-wheels',
       'castor-top-view',
+      'entry-ring',
+      'render-info',
       'service-zones',
       'station-model',
       'bed-model',
@@ -146,7 +150,19 @@ const files = {
       'ant-data',
       'spider-model',
       'spider-data',
-      'spiderling-batch',
+      'roach-model',
+      'roach-data',
+      'rat-model',
+      'rat-data',
+      'flyer-batch',
+      'beetle-model',
+      'beetle-data',
+      'bee-model',
+      'bee-data',
+      'mosquito-model',
+      'mosquito-data',
+      'spiderling-model',
+      'spiderling-data',
       'insect-status',
       'blood-effects',
       'crash-effects',
@@ -154,6 +170,7 @@ const files = {
       'control-focus',
       'network',
       'udp-client',
+      'ws-client',
       'udp-protocol',
       'snapshot-wire',
       'motion-wire',
@@ -162,7 +179,6 @@ const files = {
       'swept-broadphase',
       'mouse-flight',
       'purgatory-physics',
-      'audio',
       'base',
       'layout',
       'renderer',
@@ -173,8 +189,17 @@ const files = {
       'field-physics',
       'personal-aim',
       'scale',
+      'enemy-power',
       'fleet',
-      'tank',
+      'physics-world',
+      'castor-physics',
+      'tank-physics',
+      'tank-recoil',
+      'camera-follow',
+      'tank-gear',
+      'tessellate',
+      'track-suspension',
+      'truck-physics',
       'tank-view',
       'armament',
       'ordnance',
@@ -195,14 +220,18 @@ const files = {
       'routes',
       'route-speed',
       'route-navigation',
-      'route-obstacles',
-    ].map((name) => ['/' + name + '.js', 'src/' + name + '.js']),
+      'layouts',
+      // Folder modules (the audio library and its game adapter) keep their path.
+      ...['audio', 'game-audio'].flatMap((dir) =>
+        readdirSync('src/' + dir)
+          .filter((file) => file.endsWith('.ts'))
+          .map((file) => dir + '/' + file.slice(0, -3)),
+      ),
+    ].map((name) => ['/' + name + '.js', moduleSource(name)]),
   ),
 };
 const assets = Object.fromEntries(
-  await Promise.all(
-    Object.entries(files).map(async ([url, path]) => [url, await readFile(path, 'utf8')]),
-  ),
+  await Promise.all(Object.entries(files).map(async ([url, path]) => [url, await readAsset(path)])),
 );
 // Content-address the complete module graph. Entry HTML is revalidated; these
 // URLs can be cached immutably and never resolve to another build's bytes.
@@ -214,9 +243,9 @@ const version = createHash('sha256')
 for (const url of Object.keys(assets)) {
   if (url.endsWith('.js'))
     assets[url] = assets[url].replace(
-      /(\bfrom\s*['"]|\bimport\s*\(?\s*['"])(\.?\.?\/[^'"?]+\.js)(['"])/g,
+      /(\bfrom\s*['"]|\bimport\s*\(?\s*['"])(\.?\.?\/[^'"?]+\.[jt]s)(['"])/g,
       (_, prefix, path, quote) => {
-        const target = new URL(path, 'https://assets.local' + url).pathname;
+        const target = new URL(path, 'https://assets.local' + url).pathname.replace(/\.ts$/, '.js');
         if (!Object.hasOwn(assets, target)) throw Error('Unpackaged module: ' + target);
         return prefix + '/assets/' + version + target + quote;
       },
@@ -227,22 +256,13 @@ assets['/'] = assets['/'].replaceAll(
   (await readFile('VERSION', 'utf8')).trim(),
 );
 assets['/'] = assets['/'].replace('src="/boot.js"', 'src="/assets/' + version + '/boot.js"');
-const inline = (source) => source.replace(/^import .*;$/gm, '').replace(/^export /gm, '');
-const arena = inline(assets['/purgatory-physics.js']);
-const base = inline(assets['/base.js']);
-const layout = inline(assets['/layout.js']);
-const routes = inline(assets['/routes.js']);
-const waves = inline(assets['/waves.js']);
-const scale = inline(assets['/scale.js']);
-const fleet = inline(assets['/fleet.js']);
-const ballistics = inline(assets['/ballistics.js']);
-const equipment = inline(assets['/equipment.js']);
-const sortie = inline(assets['/ground-fortifications.js']) + '\n' + inline(assets['/sortie.js']);
-const server = await readFile('src/server.js', 'utf8');
 await writeFile(
-  'worker/assets.js',
+  'server/assets.js',
   'export const BUILD_VERSION=' +
     JSON.stringify(version) +
+    ';\n' +
+    'export const GAME_VERSION=' +
+    Number((await readFile('VERSION', 'utf8')).trim()) +
     ';\n' +
     'export const ASSETS=' +
     JSON.stringify(assets) +
@@ -255,45 +275,4 @@ await writeFile(
       })),
     ) +
     ';\n',
-);
-await writeFile(
-  'worker/index.js',
-  [
-    'const BUILD_VERSION=' + JSON.stringify(version) + ';',
-    'const ASSETS=' + JSON.stringify(assets) + ';',
-    scale,
-    layout,
-    inline(assets['/route-obstacles.js']),
-    inline(assets['/route-navigation.js']),
-    inline(assets['/brick-rules.js']),
-    inline(assets['/ground-defense.js']),
-    routes,
-    inline(assets['/air-current.js']),
-    inline(assets['/route-speed.js']),
-    waves,
-    fleet,
-    ballistics,
-    inline(assets['/oriented-collider.js']),
-    inline(assets['/ground-ammo.js']),
-    inline(assets['/fixed-dca.js']),
-    equipment,
-    inline(assets['/armament.js']),
-    inline(assets['/logistics.js']),
-    'const OFFICE_SOLIDS=' +
-      JSON.stringify(
-        officeBounds.map((b) => ({
-          min: { x: b.min.x, y: b.min.y, z: b.min.z },
-          max: { x: b.max.x, y: b.max.y, z: b.max.z },
-        })),
-      ) +
-      ';',
-    'const ARENA_ENGINE=(()=>{' +
-      arena +
-      ';return {createSoul,advanceArena,deskOccupant,relayBodyReport};})();',
-    'const BASE_ENGINE=(()=>{const {createSoul,advanceArena}=ARENA_ENGINE;' +
-      base +
-      ';return {aircraftBay,baseWorld,baseBody,baseAccess,reconcileBase,advanceBase,aircraftPose};})();',
-    'const SORTIE_ENGINE=(()=>{' + sortie + ';return {AA_STATIONS,stationAccess};})();',
-    server,
-  ].join('\n'),
 );

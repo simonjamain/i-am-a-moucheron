@@ -1,13 +1,13 @@
 import assert from 'node:assert/strict';
 import { UdpClient } from '../src/udp-client.js';
-import { encodeMotionBatch, encodeMotionState } from '../src/motion-wire.js';
+import { encodeMotionBatch, encodeMotionState } from '../src/motion-wire.ts';
 import {
   encodeReply,
   ReplyAssembler,
   udpDescription,
   udpCandidate,
   CHUNK_BYTES,
-} from '../src/udp-protocol.js';
+} from '../src/udp-protocol.ts';
 
 let fetches = 0,
   protocol = 'udp';
@@ -93,7 +93,7 @@ try {
 assert.equal(client.protocol, 'udp');
 assert.deepEqual(client.pc.channels[0].options, { ordered: true });
 assert.deepEqual(client.pc.channels[1].options, { ordered: false, maxRetransmits: 0 });
-const request = client.request('buy', { item: 'engine', request: 'id-000001' });
+const request = client.request('buy', { item: 'radar', request: 'id-000001' });
 const m = JSON.parse(client.commands.sent.at(-1));
 assert.equal(m.path, 'buy');
 for (const chunk of encodeReply(

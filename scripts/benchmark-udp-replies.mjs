@@ -1,6 +1,6 @@
 import { encodeReplyV1 } from './fixtures/udp-reply-v1.mjs';
 import { performance } from 'node:perf_hooks';
-import { encodeReplyText } from '../src/udp-protocol.js';
+import { encodeReplyText } from '../src/udp-protocol.ts';
 import { wavePlan } from '../src/waves.js';
 import { Game } from '../server/game.js';
 const join = new Game({ now: () => 100000 }).join({ code: 'JSONBENCH', name: 'Benchmark' });

@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
 import * as T from '../vendor/three.module.min.js';
 import { createGraphics } from '../src/graphics.js';
-import { ACTOR_UNIT } from '../src/scale.js';
-import { VEHICLES } from '../src/fleet.js';
-import { paintVehicle } from '../src/vehicle-livery.js';
+import { ACTOR_UNIT } from '../src/scale.ts';
+import { VEHICLES, vehicleUnit } from '../src/fleet.ts';
+import { paintVehicle } from '../src/vehicle-livery.ts';
 const graphics = createGraphics(T, new T.Scene());
 for (const [type, factory] of [
   ['interceptor', 'makeStuka'],
@@ -24,7 +24,9 @@ for (const [type, factory] of [
   assert.ok(parts.length >= 1);
   let count = 0;
   for (const [i, mesh] of parts.entries()) {
-    assert.equal(mesh.geometry, other[i].geometry, 'shared GPU geometry');
+    // The tank's belts bend with the terrain: each tank owns its geometry (track-suspension.ts).
+    if (mesh.parent?.userData.belt) assert.notEqual(mesh.geometry, other[i].geometry);
+    else assert.equal(mesh.geometry, other[i].geometry, 'shared GPU geometry');
     const geometry = mesh.geometry;
     count += (geometry.index?.count || geometry.attributes.position.count) / 3;
     for (const attribute of Object.values(geometry.attributes))
@@ -77,7 +79,7 @@ for (const [type, factory] of [
     assert.equal(b.userData.trailer.rotation.y, 0);
     assert.ok(parts.filter((o) => o.parent === trailer).length >= 1);
   }
-  b.scale.setScalar(ACTOR_UNIT);
+  b.scale.setScalar(vehicleUnit(type));
   b.position.y = VEHICLES[type].gear;
   assert.ok(Math.abs(new T.Box3().setFromObject(b).min.y) < 0.02 * ACTOR_UNIT, 'wheel contact');
   console.log(`${type}: ${count} hull triangles; sharing, livery, contact and articulation OK`);

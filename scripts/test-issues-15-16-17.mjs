@@ -2,8 +2,8 @@ import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import { readFileSync } from 'node:fs';
 import * as T from '../vendor/three.module.min.js';
-import { MAP } from '../src/scale.js';
-import * as delivery from '../src/delivery.js';
+import { MAP } from '../src/scale.ts';
+import * as delivery from '../src/delivery.ts';
 import { Game } from '../server/game.js';
 import { wavePlan, ENEMY_TYPES } from '../src/waves.js';
 const source = readFileSync('src/client.js', 'utf8');
@@ -97,9 +97,9 @@ for (const fixture of JSON.parse(
 console.log('#17: current director source stats, route seeds, and fixed room-metre speeds.');
 
 // #16: real keyboard handler must not swallow pilot Shift/Ctrl as weapon selection.
-const { contextKey } = await import('../src/equipment-controls.js');
+const { contextKey } = await import('../src/equipment-controls.ts');
 const { gameKey, equipmentExitAction, equipmentEnterAllowed } =
-  await import('../src/control-focus.js');
+  await import('../src/control-focus.ts');
 let keyHandler;
 const input = {
   addEventListener: (_, h) => (keyHandler = h),
@@ -107,6 +107,7 @@ const input = {
   spectating: false,
   joined: true,
   groundDefenseUI: { active: false },
+  debugTools: { active: false, cancel() {} },
   purchaseUI: { opened: false },
   bedUI: { opened: false },
   bankUI: { opened: false },
@@ -179,7 +180,7 @@ for (const surfaceY of [0, 0.9]) {
     signature: true,
     epoch: room.base.epoch,
     incarnation: p.incarnation,
-    expectedPrice: 4,
+    expectedPrice: 10,
   };
   let s = game.command(room.code, p.id, 'purchase-sign', order);
   const initial = s.deliveries[0].y;
@@ -231,7 +232,7 @@ assert.equal(timingRoom.infestation, 0);
 now = timingRoom.started + 1000 * (ant.spawn + ant.duration) + 1;
 timingGame.advance(timingRoom);
 assert.equal(timingRoom.phase, 'prep');
-assert.equal(timingRoom.infestation, 1);
+assert.equal(timingRoom.infestation, Math.round(ENEMY_TYPES.ant.power * 100) / 100);
 console.log(
   '#17 server deadline: no leak/completion at the old arrival, correct completion at the new one.',
 );

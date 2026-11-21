@@ -1,4 +1,4 @@
-import { rayCollider } from '../src/oriented-collider.js';
+import { rayCollider } from '../src/oriented-collider.ts';
 import assert from 'node:assert/strict';
 import { Game } from '../server/game.js';
 import {
@@ -11,13 +11,28 @@ import {
 import { DEFAULT_BALANCE } from '../src/balance.js';
 import { ENEMY_TYPES } from '../src/waves.js';
 
+// Deterministic PRNG (mulberry32): a failure names its seed and replays exactly.
+const seeded = (seed) => {
+  let a = seed >>> 0;
+  return (n) => {
+    a = (a + 0x6d2b79f5) >>> 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return Math.floor((((t ^ (t >>> 14)) >>> 0) / 4294967296) * n);
+  };
+};
+const SEEDS = Number(process.env.WAVE_SEEDS || 25);
+const draws = [() => 0, (n) => n - 1];
+for (let seed = 1; seed <= SEEDS; seed++) draws.push(seeded(seed));
 for (const wave of [1, 2, 5, 10, 15, 100])
-  for (const draw of [() => 0, (n) => n - 1, undefined]) {
+  for (const [drawIndex, draw] of draws.entries()) {
     const plan = prepareRoster(wave, DEFAULT_BALANCE, draw);
-    assert.equal(
-      plan.roster.reduce((sum, e) => sum + ENEMY_TYPES[e.type].cost, 0),
-      directorBudget(wave),
-    );
+    // Powers are fractional: the roster uses the budget up to the weakest species.
+    const spent = plan.roster.reduce((sum, e) => sum + e.power, 0);
+    const tolerance = directorBudget(wave) * 1e-9 + 1e-6;
+    assert.ok(spent <= directorBudget(wave) + tolerance, 'never above the budget');
+    assert.ok(spent > directorBudget(wave) - ENEMY_TYPES.ant.power - tolerance, 'budget is used');
+    assert.ok(Math.abs(plan.budget - spent) <= tolerance);
     assert.ok(plan.roster.length <= 900);
     // Each announced group is one pack, whose members leave one after the other.
     for (const group of forecast(plan.roster)) {
@@ -41,7 +56,14 @@ for (const wave of [1, 2, 5, 10, 15, 100])
       if (g.type === 'brute') assert.ok(g.count <= 2);
       assert.ok(g.count <= PACKS[g.type].max + PACKS[g.type].min, g.type + ' pack size');
     }
-    assert.ok(groups.length <= 60, 'few groups: ' + groups.length);
+    // The 900-enemy ceiling is reached around wave 9 (growth 1.5): beyond it the
+    // frise is not meant to stay short, strong species keep their small packs.
+    // Below it, 80 still catches a regression to one-enemy-per-group.
+    if (wave <= 8)
+      assert.ok(
+        groups.length <= 80,
+        `few groups: ${groups.length} (wave ${wave}, draw ${drawIndex}; seeds start at index 2)`,
+      );
     for (const e of plan.roster)
       if (e.ground) {
         const mates = plan.roster.filter((o) => o.group === e.group && o.id < e.id);
@@ -53,7 +75,7 @@ const ants = (wave) =>
   prepareRoster(wave, DEFAULT_BALANCE, () => 0).roster.filter((e) => e.type === 'ant').length;
 assert.ok(ants(1) >= 8 && ants(5) > ants(1) && ants(10) > ants(5), 'ants grow');
 assert.ok(
-  prepareRoster(10, DEFAULT_BALANCE, (n) => n - 1).roster.filter((e) => e.type === 'midge')
+  prepareRoster(20, DEFAULT_BALANCE, (n) => n - 1).roster.filter((e) => e.type === 'midge')
     .length >= 300,
   'swarms of hundreds of midges',
 );
@@ -89,8 +111,14 @@ assert.ok(
 );
 assert.equal(
   prep.groups.reduce((sum, g) => sum + g.count, 0),
-  32,
+  room.upcomingPlan.roster.length,
 );
+const twoPlayers = 32 * 2 ** 0.9;
+assert.ok(
+  prep.power <= twoPlayers + 0.01 && prep.power > twoPlayers - 1,
+  'two players: 32 × 2^0.9',
+);
+assert.equal(prep.players, 2);
 // No vote and no cards: the preparation only announces the wave.
 for (const key of ['cards', 'votes', 'winner']) assert.equal(prep[key], undefined, key);
 for (const key of ['blueprints', 'blueprintLevels', 'activeBlueprints'])
@@ -107,7 +135,7 @@ assert.equal(request(late.id, 'start', { preparation: prep.id }).wave, 1);
 for (const e of room.plan.roster) room.kills.add(e.id);
 snap = request(a.id, 'sync', { state: a.state, mode: 'foot' });
 prep = snap.preparation;
-assert.equal(snap.next_wave_at - now, 60000, 'one-minute countdown');
+assert.equal(snap.next_wave_at - now, 180000, 'three-minute countdown');
 // Without anybody launching, the countdown starts the announced wave.
 now = snap.next_wave_at;
 snap = request(a.id, 'sync', { state: a.state, mode: 'foot' });
@@ -125,7 +153,7 @@ console.log(
 const { readFileSync } = await import('node:fs');
 const { runInNewContext } = await import('node:vm');
 const T = await import('../vendor/three.module.min.js');
-const { nearestInsectHit } = await import('../src/insect-hits.js');
+const { nearestInsectHit, nearestSolidHit } = await import('../src/insect-hits.ts');
 const src = readFileSync('src/client.js', 'utf8');
 const step = src.slice(
   src.indexOf('function stepProjectileSlice('),
@@ -159,6 +187,10 @@ for (const wall of [false, true]) {
   runInNewContext(step + ';stepProjectileSlice(.5);stepProjectileSlice(3);', {
     T,
     rayCollider,
+    nearestSolidHit,
+    projectileRay: new T.Raycaster(),
+    scratchPoint: new T.Vector3(),
+    solidTargets: () => [],
     scene,
     trails,
     colliders,

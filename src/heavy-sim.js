@@ -13,11 +13,11 @@
 //   equipment              [{ x, y, z }] ground equipment (proximity fuse)
 //   guidance(projectile)   missile direction, or null when not guided
 //   missileLost(projectile) true when the launching helicopter is gone
-import { MAP, enemySizeFactor, INSECT_SCALE, MIDGE_SPHERE_RADIUS } from './scale.js';
-import { HEAVY, heavyDamage } from './armament.js';
-import { VEHICLES } from './fleet.js';
+import { MAP, enemySizeFactor, INSECT_SCALE, MIDGE_SPHERE_RADIUS } from './scale.ts';
+import { HEAVY, heavyDamage } from './armament.ts';
+import { VEHICLES } from './fleet.ts';
 import { integrateOrdnance, segmentSphere, segmentBox } from './ordnance.js';
-import { sweptSphereMayTouch } from './swept-broadphase.js';
+import { sweptSphereMayTouch } from './swept-broadphase.ts';
 import { steerMissile } from './helicopter.js';
 import {
   sweptVehicle,

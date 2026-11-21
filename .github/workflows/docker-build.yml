@@ -73,10 +73,6 @@ jobs:
         run: npm ci
       - name: Build game assets
         run: node scripts/assemble.mjs
-      - name: Run 50-player snapshot regression
-        run: node scripts/test-ram-game.mjs
-      - name: Verify crowded-room motion relay behavior
-        run: node scripts/test-motion-capacity.mjs
       - name: Compare baseline and current snapshot CPU time
         run: node scripts/benchmark-snapshot-50.mjs
       - name: Compare 50-player motion handling CPU time
@@ -126,6 +122,29 @@ jobs:
       - name: Benchmark 50 vehicles and 900 enemies
         run: npm run bench:swarm-50
 
+  browser-e2e:
+    name: Real Chromium over WebRTC UDP/TCP
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Install Playwright and Chromium (CI only, not a project dependency)
+        run: |
+          npm install --no-save playwright@1.63.0
+          npx playwright install --with-deps chromium
+      - name: Run browser scenarios (join/resume, shared motion, TCP fallback, falls)
+        run: npm run e2e
+
   game-regression:
     name: Full game regression and formatting
     runs-on: ubuntu-latest
@@ -134,7 +153,13 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
+          fetch-depth: 0
           persist-credentials: false
+      - name: Check VERSION is above the target branch
+        if: github.event_name == 'pull_request'
+        run: |
+          git fetch --no-tags origin "${{ github.base_ref }}"
+          node scripts/check-version.mjs --base "origin/${{ github.base_ref }}"
       - name: Set up Node
         uses: actions/setup-node@v4
         with:

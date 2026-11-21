@@ -1,7 +1,6 @@
 # Confort de jeu — version 37
 
-Lot du 30 octobre 2026, sources Node/RAM/UDP. Le Worker public historique reste
-inchangé. La référence des commandes demeure [controls](controls.md).
+Lot du 30 octobre 2026, sources Node/RAM/UDP. La référence des commandes demeure [controls](controls.md).
 
 ## Version et livraison
 
@@ -13,7 +12,7 @@ Dans un clone : `npm run prepare:version` installe le hook Git local, puis
 Après `git add`, `npm run check:version` refuse un index sans incrément par rapport
 à HEAD. Le hook exécute cette vérification avant chaque commit, documentaire inclus.
 Les hooks ne s'installent pas automatiquement dans les autres clones : y relancer
-la préparation. Le ZIP se lance sans Git.
+la préparation.
 
 ## Stations et affichage au viseur
 
@@ -85,5 +84,4 @@ Le navigateur de contrôle permet de vérifier l'interface ; WebGL, Pointer Lock
 confort de tir et coopération WAN restent à confirmer sur VM. HEL-06/DCM-03
 conservent donc leur validation humaine en cours.
 
-Les [issues 15–17](issues-15-16-17.md) précisent la descente continue des colis,
-le mapping Maj/Ctrl et tangage du H2, et la réduction supplémentaire des vitesses terrestres.
+Colis : [logistique](logistics-contracts.md#colis-parachutés) ; H2 : [commandes](helicopter-controls.md#mapping-pilote-h2).

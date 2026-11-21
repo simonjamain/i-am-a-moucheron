@@ -1,6 +1,7 @@
 import { prepareCreatureVat } from '/creature-batch.js';
 import { MIDGE } from '/midge-model.js';
 import { WALKERS } from '/walker-batch.js';
+import { FLYERS, FlyerBatch } from '/flyer-batch.js';
 import { rayCollider, colliderContainsXZ } from '/oriented-collider.js';
 import { makeServiceStation, animateRadar, makeInstallationCollider } from '/station-model.js';
 import { ReloadHUD, seatReloads, heavyReadyAt, heavyLane, reloadProgress } from '/reload-hud.js';
@@ -10,10 +11,12 @@ import { makeFortificationStation } from '/fortification-model.js';
 import { placementFacing } from '/placement-aim.js';
 import { placementAim } from '/placement-aim.js';
 import { WaveCouncilUI } from '/wave-council-ui.js';
-import { WaveForecastScene } from '/wave-forecast-scene.js';
+import { WaveForecastScene, speciesSymbols } from '/wave-forecast-scene.js';
 import { GroundDefenseUI } from '/ground-defense-ui.js';
 import { GroundMotionTrack } from '/ground-motion.js';
 import { LabUI } from '/lab-ui.js';
+import { DebugTools } from '/debug-tools.js';
+import { SENTRY } from '/ground-sentry.js';
 import { mountChangelog } from '/changelog.js';
 import { deliveryHeightAt } from '/delivery.js';
 import { reserveAlerts, missileStatus, ArrivalSignals } from '/reserve-feedback.js';
@@ -44,6 +47,8 @@ import { InteractionTiming } from '/interaction-timing.js';
 import { BedUI } from '/bed-ui.js';
 import { bedAccess } from '/beds.js';
 import { tankSight } from '/tank-view.js';
+import { applyGunRecoil, recoilAmount } from '/tank-recoil.js';
+import { followMoving } from '/camera-follow.js';
 import { shoulderView, aimPistol, muzzleAim } from '/personal-aim.js';
 import { BankUI } from '/bank-ui.js';
 import { ContextHUD, equipmentHUD } from '/hud.js';
@@ -56,11 +61,10 @@ import { BloodEffects } from '/blood-effects.js';
 import { stepVacantAircraft } from '/vacant-flight.js';
 import { CONTRACTS, ContractBook, contractKey } from '/contracts.js';
 import { RewardQueue } from '/rewards.js';
-import { SHOP, shopPrice, upgradedVehicle, supportedPlacement } from '/equipment.js';
+import { SHOP, shopPrice, supportedPlacement } from '/equipment.js';
 import { stepBallisticVelocity, toggleParachute } from '/ballistics.js';
 import { makeTracer, updateTracer } from '/tracers.js';
-import { airField } from '/air-current.js';
-import { wavePlan, swarmFrame, entryStatus } from '/waves.js';
+import { wavePlan, swarmFrame, entryStatus, ENEMY_TYPES } from '/waves.js';
 import { MAP, ACTOR_UNIT, HUMAN_SCALE, INSECT_SCALE, REFERENCE, FLAK } from '/scale.js';
 import {
   VEHICLES,
@@ -70,8 +74,10 @@ import {
   vehicleAccess,
   pilotFireInterval,
   isRotorcraft,
+  isBomber,
   isPassengerSeat,
   vehicleMaxHP,
+  vehicleUnit,
 } from '/fleet.js';
 import { headingOf, airdropSurface, AIR_VIEW_HEIGHT, zoomAirView } from '/airdrop.js';
 import {
@@ -83,6 +89,15 @@ import {
   CombatEffects,
 } from '/combat.js';
 import { OFFICE_LAYOUT, ROOM_SCALE } from '/layout.js';
+import {
+  LAYOUTS,
+  DEFAULT_LAYOUT_ID,
+  activeLayout,
+  setActiveLayout,
+  isLayoutId,
+  layoutSolids,
+  layoutThumbnail,
+} from '/layouts.js';
 import {
   aimGun,
   gunnerView,
@@ -98,6 +113,8 @@ import {
   InsectIndex,
   nearestInsectHit,
   nearestMeshHit,
+  nearestSolidHit,
+  solidTarget,
   HitEffects,
   insectContact,
 } from '/insect-hits.js';
@@ -109,14 +126,16 @@ import {
   gameKey,
   flightInput,
   lookDelta,
+  lookScale,
 } from '/control-focus.js';
 import { createRenderer } from '/renderer.js';
+import { makeEntryRing } from '/entry-ring.js';
+import { renderInfo } from '/render-info.js';
 import { createGraphics } from '/graphics.js';
 import { availableAppearance, turnToward, loadCharacter } from '/character-model.js';
 import { createAppearancePicker } from '/appearance-picker.js';
 import { MidgeBatch } from '/midge-batch.js';
 import { WalkerBatch } from '/walker-batch.js';
-import { SpiderlingBatch } from '/spiderling-batch.js';
 import { createOffice } from '/office.js';
 import {
   aircraftBay,
@@ -127,7 +146,8 @@ import {
   aircraftPose,
   footstepsAudible,
 } from '/base.js';
-import { SpatialAudio, swarmAudioGroups } from '/audio.js';
+import { GameSound } from '/game-audio/game-sound.js';
+import { swarmAudioGroups } from '/game-audio/swarm.js';
 import { advanceArena, deskOccupant, bodyMotion, mergeOwnedArena } from '/purgatory-physics.js';
 import {
   flightClickAction,
@@ -137,17 +157,34 @@ import {
 } from '/mouse-flight.js';
 import { PeerMotion, MotionTrack } from '/network.js';
 import { UdpClient } from '/udp-client.js';
+import { WsClient } from '/ws-client.js';
 import { ServerClock } from '/server-clock.js';
 import { stepHeavy, heavyImpact } from '/heavy-sim.js';
 import { createOrdnance, integrateOrdnance } from '/ordnance.js';
-import { ROUTE_OBSTACLES } from '/route-obstacles.js';
 import { howitzerMuzzle } from '/howitzer-geometry.js';
 import { RECONNECT_AFTER_MS, RECONNECT_WINDOW_MS } from '/udp-protocol.js';
 import { HoldZoom, advanceFuse, contextKey, rangeReadout } from '/equipment-controls.js';
 import { formatDistance, formatSpeed } from '/units.js';
-import { HEAVY, TANK_MG, availableShell, heavyInterval } from '/armament.js';
-import { stepTank } from '/tank.js';
-import { animateCastorWheels, trackGroundMotion } from '/castor-wheels.js';
+import { HEAVY, TANK_GUN_MAX_PITCH, TANK_MG, availableShell, heavyInterval } from '/armament.js';
+import { loadRapier } from '/physics-world.js';
+import { CastorRig } from '/castor-physics.js';
+import { TankRig } from '/tank-physics.js';
+import { updateSuspension } from '/track-suspension.js';
+import { TRACK_HALF } from '/tank-gear.js';
+import {
+  PIVOT_MODEL_Z as TRUCK_STEER_PIVOT,
+  WHEELBASE_MODEL as TRUCK_WHEELBASE,
+  TRAILER_WHEEL_MODEL_RADIUS as TRAILER_WHEEL_RADIUS,
+  TruckRig,
+  WHEEL_MODEL_RADIUS as TRUCK_WHEEL_RADIUS,
+} from '/truck-physics.js';
+import {
+  animateCastorWheels,
+  animateDrivenWheels,
+  animateRollingWheels,
+  animateTrackedWheels,
+  trackGroundMotion,
+} from '/castor-wheels.js';
 import { ServiceZones, serviceZoneList } from '/service-zones.js';
 import { EngineSmoke, damageRatio } from '/engine-smoke.js';
 import { shopColumns } from '/shop-catalog.js';
@@ -186,7 +223,7 @@ try {
   // Private browsing may disable localStorage entirely.
 }
 let flightTuning = loadFlightTuning(flightStorage);
-const sound = new SpatialAudio(audioSettings);
+const sound = new GameSound(audioSettings);
 const rewardQueue = new RewardQueue(() => sound.play('dollar', camera.position, { ref: 100000 }));
 setInterval(() => rewardQueue.tick(performance.now()), 40);
 for (const event of ['pointerdown', 'keydown'])
@@ -237,6 +274,8 @@ const {
   makePlane,
   makeSpitfire,
   makeBomber,
+  makeLightFighter,
+  makeMediumBomber,
   makeStuka,
   makeBomb,
   makeTank,
@@ -248,13 +287,26 @@ const {
   humanoid,
   pm,
 } = createGraphics(T, scene);
-const { colliders } = createOffice(T, scene, {
-  box,
-  cyl,
-  ball,
-  mat,
-  textLabel,
-});
+// The room's plan is fixed once it is created: `?plan=` or the last choice picks
+// the one to open; joining an existing room switches to that room's plan.
+const planParam = new URLSearchParams(location.search).get('plan');
+let storedPlan = null;
+try {
+  storedPlan = localStorage.getItem('moucheron-plan');
+} catch {}
+setActiveLayout(
+  isLayoutId(planParam) ? planParam : isLayoutId(storedPlan) ? storedPlan : DEFAULT_LAYOUT_ID,
+);
+let office = createOffice(T, scene, { box, cyl, ball });
+const colliders = office.colliders;
+// Swaps the drawn room and its colliders in place (shared arrays keep working).
+function applyLayout(planId) {
+  if (!isLayoutId(planId) || planId === office.layout.id) return;
+  setActiveLayout(planId);
+  office.dispose();
+  office = createOffice(T, scene, { box, cyl, ball });
+  colliders.splice(0, colliders.length, ...office.colliders);
+}
 let me = makePlane('#e3ebc0');
 me.scale.setScalar(ACTOR_UNIT);
 me.visible = false;
@@ -270,11 +322,18 @@ const walkerVats = {};
 if (renderer.isWebGLRenderer)
   for (const [type, walker] of Object.entries(WALKERS))
     walkerVats[type] = await prepareCreatureVat(T, walker.creature);
+const flyerVats = {};
+if (renderer.isWebGLRenderer)
+  for (const [type, flyer] of Object.entries(FLYERS))
+    flyerVats[type] = await prepareCreatureVat(T, flyer.creature);
 const midgeBatch = new MidgeBatch(T, scene, { enabled: !!renderer.isWebGLRenderer, vat: midgeVat });
-const spiderlingBatch = new SpiderlingBatch(T, scene, { enabled: !!renderer.isWebGLRenderer });
 const walkerBatch = new WalkerBatch(T, scene, {
   enabled: !!renderer.isWebGLRenderer,
   vats: walkerVats,
+});
+const flyerBatch = new FlyerBatch(T, scene, {
+  enabled: !!renderer.isWebGLRenderer,
+  vats: flyerVats,
 });
 const midgeForward = new T.Vector3(0, 0, -1);
 const midgeHeading = new T.Vector3();
@@ -516,7 +575,13 @@ canvas.addEventListener('pointermove', (e) => {
           : myVehicle?.type === 'tank'
             ? -0.65
             : -0.1,
-      crewSeat === 'ventral' ? -0.05 : myVehicle?.type === 'helicopter' ? HELI.maxPitch : 1.35,
+      crewSeat === 'ventral'
+        ? -0.05
+        : myVehicle?.type === 'helicopter'
+          ? HELI.maxPitch
+          : tankCannonSeat()
+            ? TANK_GUN_MAX_PITCH
+            : 1.35,
     );
     groundView.x = e.clientX;
     groundView.y = e.clientY;
@@ -665,6 +730,8 @@ function localMotion() {
     landed,
     gas,
     trailerAngle: myVehicle?.state.trailerAngle || 0,
+    trailerPitch: myVehicle?.state.trailerPitch || 0,
+    steer: myVehicle?.state.steer || 0,
     omega: omega.toArray(),
     turret: turretIndex,
     turretDirection: weaponDirection().toArray(),
@@ -694,13 +761,21 @@ function networkStatus() {
   if (globalThis.MOUCHERON_UDP) {
     const s = peerMotion?.stats();
     $('net').textContent =
-      (s?.udp ? '● UDP' : reconnecting ? '● RECONNEXION…' : '● UDP INTERROMPU') +
+      (s?.udp
+        ? '● UDP'
+        : s?.tcp
+          ? '● TCP (SECOURS)'
+          : reconnecting
+            ? '● RECONNEXION…'
+            : '● CONNEXION INTERROMPUE') +
       ' · ' +
       snap.pilots.length +
       ' PILOTE' +
       (snap.pilots.length > 1 ? 'S' : '');
     $('net').title =
-      'Serveur en mémoire · mouvements à 20 Hz · commandes fiables sur UDP' +
+      (s?.tcp
+        ? 'Réseau sans UDP : partie en TCP (WebSocket), moins fluide si le réseau perd des paquets'
+        : 'Serveur en mémoire · mouvements à 20 Hz · commandes fiables sur UDP') +
       (s?.error ? ' · ' + s.error : '');
     return;
   }
@@ -816,17 +891,18 @@ addEventListener('pointermove', (event) => {
     event.pointerType !== 'mouse'
   )
     return;
-  const dx = event.movementX,
+  const scale = lookScale(camera.fov),
+    dx = event.movementX,
     dy = event.movementY;
   if (airView()) return; // vertical view: keyboard only, no mouse
   if (myVehicle?.type === 'tank' && crewSeat === 'cannon' && keys.KeyC) {
-    lookDelta(freeLook, dx, dy);
+    lookDelta(freeLook, dx, dy, scale);
     return;
   }
   if ((turretIndex >= 0 || (myVehicle && crewSeat !== 'pilot')) && !respawnAt) {
-    turretAim.yaw -= dx * 0.003;
+    turretAim.yaw -= dx * 0.003 * scale;
     turretAim.pitch = clampTurretPitch(
-      turretAim.pitch - dy * 0.003,
+      turretAim.pitch - dy * 0.003 * scale,
       crewSeat === 'ventral'
         ? -1.5
         : myVehicle?.type === 'helicopter'
@@ -834,13 +910,19 @@ addEventListener('pointermove', (event) => {
           : myVehicle?.type === 'tank'
             ? -0.65
             : -0.1,
-      crewSeat === 'ventral' ? -0.05 : myVehicle?.type === 'helicopter' ? HELI.maxPitch : 1.35,
+      crewSeat === 'ventral'
+        ? -0.05
+        : myVehicle?.type === 'helicopter'
+          ? HELI.maxPitch
+          : tankCannonSeat()
+            ? TANK_GUN_MAX_PITCH
+            : 1.35,
     );
     return;
   }
   if (onFoot || respawnAt) {
-    groundView.yaw -= dx * 0.005;
-    groundView.pitch = T.MathUtils.clamp(groundView.pitch + dy * 0.004, -1.52, 1.52);
+    groundView.yaw -= dx * 0.005 * scale;
+    groundView.pitch = T.MathUtils.clamp(groundView.pitch + dy * 0.004 * scale, -1.52, 1.52);
     return;
   }
   if (castorTopView()) {
@@ -852,7 +934,7 @@ addEventListener('pointermove', (event) => {
     return;
   }
   if (keys.KeyC) {
-    lookDelta(freeLook, dx, dy);
+    lookDelta(freeLook, dx, dy, scale);
     return;
   }
   {
@@ -862,7 +944,7 @@ addEventListener('pointermove', (event) => {
       camera.quaternion,
       dx,
       flightTuning.invertY ? -dy : dy,
-      0.0026 * flightTuning.mouseSensitivity,
+      0.0026 * flightTuning.mouseSensitivity * scale,
     );
   }
 });
@@ -886,6 +968,7 @@ canvas.addEventListener('mousedown', (event) => {
     { active: canCapture(), locked: controlFocus.active },
   );
   if (action === 'capture') captureMouse();
+  else if (action === 'fire' && debugTools.active) debugTools.press();
   else if (action === 'fire' && groundDefenseUI.active) groundDefenseUI.press();
   else if (action === 'fire' && respawnAt) pistol();
   else if (action === 'fire' && (!onFoot || turretIndex >= 0 || !!myVehicle) && !respawnAt)
@@ -1011,24 +1094,57 @@ const appearancePicker = createAppearancePicker(T, {
     } catch {}
   },
 });
+// Game transport: UDP (WebRTC) first. Networks that block UDP (many company
+// networks only let HTTPS out) fall back to TCP over a WebSocket, with the same
+// protocol. Once UDP has failed in this page, reconnections go straight to TCP.
+const UDP_OPEN_MS = 5000;
+let transport = 'udp';
+async function openConnection() {
+  const open = async (Client, extra = {}) => {
+    const client = new Client({
+      // A stuck connection is replaced by a fresh one well before the
+      // server forgets this pilot (see reconnect()).
+      disconnectGrace: RECONNECT_AFTER_MS,
+      onMotion: (peer, state, time, seq, captured) =>
+        track(peer).push(state, time, seq, 'rtc', captured),
+      onClose: (error) => {
+        // A UDP attempt abandoned for the TCP fallback is not a lost game.
+        if (client !== peerMotion) return;
+        $('net').textContent = '● CONNEXION INTERROMPUE';
+        $('net').title = error.message;
+        reconnect();
+      },
+      ...extra,
+    });
+    try {
+      return await client.connect();
+    } catch (e) {
+      client.stop();
+      throw e;
+    }
+  };
+  let udpError = '';
+  if (transport === 'udp')
+    try {
+      return await open(UdpClient, { openTimeout: UDP_OPEN_MS });
+    } catch (e) {
+      udpError = e.message;
+    }
+  try {
+    const client = await open(WsClient);
+    transport = 'tcp';
+    return client;
+  } catch (e) {
+    throw Error((udpError ? 'UDP : ' + udpError + ' TCP : ' : '') + e.message);
+  }
+}
 async function api(path, body) {
   const sent = Date.now();
   if (globalThis.MOUCHERON_UDP) {
     if (path === 'join') {
       peerMotion?.stop();
-      peerMotion = new UdpClient({
-        // A stuck connection is replaced by a fresh one well before the
-        // server forgets this pilot (see reconnect()).
-        disconnectGrace: RECONNECT_AFTER_MS,
-        onMotion: (peer, state, time, seq, captured) =>
-          track(peer).push(state, time, seq, 'rtc', captured),
-        onClose: (error) => {
-          $('net').textContent = '● UDP INTERROMPU';
-          $('net').title = error.message;
-          reconnect();
-        },
-      });
-      await peerMotion.connect();
+      peerMotion = null;
+      peerMotion = await openConnection();
     }
     const v = await peerMotion.request(
       path,
@@ -1080,6 +1196,8 @@ function accept(s, force = false) {
       (s.now === snap.now && (s.balanceRevision ?? 0) < (snap.balanceRevision ?? 0)))
   )
     return;
+  // A joined room keeps the plan it was created with.
+  if (s.layout) applyLayout(s.layout);
   // GameSession omits unchanged rosters on repeated sync replies.
   // Reuse the previously acknowledged roster before any snapshot consumer runs.
   if (
@@ -1107,7 +1225,7 @@ function accept(s, force = false) {
     trails.length = 0;
     rapidImpacts.length = 0;
     aircraftFire.invalidate();
-    vacantAircraft.clear();
+    clearVacantAircraft();
     entryNoticeWave = -1;
     paperArchive.length = 0;
     renderArchive();
@@ -1428,12 +1546,12 @@ function accept(s, force = false) {
   for (const [enemy, damage] of Object.entries(s.enemyDamage || {}))
     localEnemyDamage.set(Number(enemy), Math.max(localEnemyDamage.get(Number(enemy)) || 0, damage));
   networkStatus();
-  $('threat').textContent = 'MENACE ' + s.difficulty;
+  $('threat').textContent = 'MENACE ' + powerText(s.difficulty);
   $('wave').textContent = String(s.wave).padStart(2, '0');
   // Debug mode cannot be lost: show the bin's remaining HP, even negative.
   $('infest').textContent = s.lab?.enabled
-    ? 20 - (s.infestation + s.leaked) + ' / 20 PV'
-    : s.infestation + s.leaked + ' / 20';
+    ? powerText(20 - (s.infestation + s.leakedPower)) + ' / 20 PV'
+    : powerText(s.infestation + s.leakedPower) + ' / 20';
   $('infest').previousElementSibling.textContent = s.lab?.enabled ? 'Poubelle' : 'Infestation';
   for (const arrived of arrivalSignals.update(
     s.code + ':' + s.base?.epoch + ':' + s.wave,
@@ -1474,6 +1592,35 @@ function accept(s, force = false) {
   waveCouncil.accept(s, id);
   updateCountdown();
 }
+// Plan picker: the choice previews in the background and only applies when this
+// join creates the room; an existing room keeps its own plan.
+function renderPlanPicker() {
+  const box = $('plans');
+  if (!box) return;
+  box.replaceChildren(
+    ...LAYOUTS.map((layout) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.setAttribute('role', 'radio');
+      b.setAttribute('aria-checked', String(layout.id === activeLayout().id));
+      b.title = `${layout.name} : ${layout.summary}`;
+      b.setAttribute('aria-label', layout.name);
+      b.innerHTML = layoutThumbnail(layout);
+      const name = document.createElement('span');
+      name.textContent = layout.name;
+      b.append(name);
+      b.addEventListener('click', () => {
+        applyLayout(layout.id);
+        try {
+          localStorage.setItem('moucheron-plan', layout.id);
+        } catch {}
+        renderPlanPicker();
+      });
+      return b;
+    }),
+  );
+}
+renderPlanPicker();
 $('form').addEventListener('submit', async (e) => {
   e.preventDefault();
   $('join').disabled = true;
@@ -1489,6 +1636,7 @@ $('form').addEventListener('submit', async (e) => {
       code,
       resumeKey,
       appearance: appearancePicker.value,
+      layout: activeLayout().id,
     });
     identityKey = r.resumeKey || null;
     if (r.resumeKey)
@@ -1560,7 +1708,7 @@ async function reconnect() {
         wait = Math.min(wait * 2, 2000);
       }
     }
-    $('net').textContent = '● UDP INTERROMPU — RECHARGEZ';
+    $('net').textContent = '● CONNEXION INTERROMPUE — RECHARGEZ';
   } finally {
     reconnecting = false;
   }
@@ -1666,6 +1814,23 @@ mountChangelog({
     clearControls();
   },
 });
+{
+  const report = renderInfo(T, renderer).join('\n');
+  $('renderInfoText').textContent = report;
+  $('renderInfoCopy').onclick = async () => {
+    try {
+      await navigator.clipboard.writeText(report);
+      $('renderInfoCopy').textContent = 'Copié';
+    } catch {
+      $('renderInfoCopy').textContent = 'Copie impossible : sélectionnez le texte';
+    }
+  };
+  if (!renderer.isWebGLRenderer)
+    notify(
+      'La 3D n’est pas disponible dans ce navigateur : l’affichage est simplifié. Activez l’accélération matérielle de Chrome.',
+      12,
+    );
+}
 function launchWave() {
   if (snap?.phase === 'lost') return action('reset', { epoch: snap.base.epoch });
   if (!snap?.mission_started) return action('start');
@@ -1681,6 +1846,7 @@ addEventListener('keydown', (event) => {
   if (!joined || spectating) return;
   if (event.code === 'Escape') {
     groundDefenseUI.cancel();
+    debugTools.cancel();
     if (purchaseUI.opened) {
       purchaseUI.close();
       return;
@@ -1784,6 +1950,11 @@ addEventListener('keydown', (event) => {
   if (exitAction) {
     event.preventDefault();
     vehicleAction(exitAction, { state: localMotion() });
+    return;
+  }
+  if (debugTools.active && ['KeyE', 'Enter'].includes(interactionKey)) {
+    event.preventDefault();
+    if (!event.repeat && canCapture()) debugTools.press();
     return;
   }
   if (placingEquipment && ['KeyE', 'Enter'].includes(interactionKey)) {
@@ -1936,7 +2107,7 @@ setInterval(async () => {
     // A refused burst (429) is not a lost connection: the next sync retries.
     if (e.status === 429 || reconnecting) return;
     $('net').textContent = globalThis.MOUCHERON_UDP
-      ? '● UDP INTERROMPU — RECHARGEZ'
+      ? '● CONNEXION INTERROMPUE — RECHARGEZ'
       : '● RECONNEXION…';
   } finally {
     pending = false;
@@ -2528,12 +2699,7 @@ function physicalPurgatory(dt, now) {
       g =
         b.kind === 'player'
           ? humanoid(b.entity === id ? '#d5ef73' : '#8bc9d6', false, appearanceOf(b.entity))
-          : new T.Group();
-      if (b.kind === 'enemy') {
-        pm(g, 0.75, 0.8, 1.1, '#695441', 0, 0.8);
-        pm(g, 1.6, 0.07, 0.6, '#d3dedc', 0, 1.25);
-        for (const x of [-0.23, 0.23]) ball(x, 0.98, 0.55, 0.11, '#e7ab63', g);
-      }
+          : soulInsect(b.enemyType);
 
       g.position.set(b.x, 0, b.z);
       if (b.kind === 'player') equipPistolModel(g);
@@ -2591,6 +2757,7 @@ function physicalPurgatory(dt, now) {
   for (const b of soulArena.bodies)
     if (b.kind === 'enemy' && !b.gone) {
       const g = soulMeshes.get(b.id);
+      g?.userData.animate?.(dt, { speed: Math.hypot(b.vx, b.vz) * SOUL_METRES });
       if (g) soulStatus.update(b.id, g, b.health, b.maxHealth || 100, purgCamera, now / 1000);
     }
   soulStatus.keep(
@@ -2713,6 +2880,7 @@ function reconcileEquipment(next) {
     stationRings[i] = ring;
   }
 }
+const tankCannonSeat = () => myVehicle?.type === 'tank' && crewSeat === 'cannon';
 function clampTurretPitch(value, min, max) {
   const antiAir =
     isFixedDca(stations[turretIndex]?.kind) ||
@@ -2918,7 +3086,7 @@ function airViewCamera(dt) {
     Math.max(0, me.position.y - VEHICLES.flyingcastor.gear),
   );
   const eye = new T.Vector3(me.position.x, ground + airViewHeight, me.position.z);
-  camera.position.lerp(eye, 1 - Math.exp(-10 * dt));
+  followMoving(camera.position, eye, new T.Vector3(vel.x, 0, vel.z), 10, dt);
   camera.up
     .lerp(new T.Vector3(-Math.sin(yaw), 0, -Math.cos(yaw)), 1 - Math.exp(-10 * dt))
     .normalize();
@@ -3002,11 +3170,14 @@ function updateVehicles(dt) {
             new T.Euler(T.MathUtils.clamp(turretAim.pitch, -1.2, 0.6), turretAim.yaw, 0, 'YXZ'),
           ),
         );
-      camera.position.lerp(
+      followMoving(
+        camera.position,
         me.position
           .clone()
           .add(new T.Vector3(0, 7, 21).multiplyScalar(ACTOR_UNIT).applyQuaternion(orbit)),
-        1 - Math.exp(-10 * dt),
+        vel,
+        10,
+        dt,
       );
       camera.up.set(0, 1, 0);
       camera.lookAt(
@@ -3047,7 +3218,13 @@ function updateVehicles(dt) {
             : myVehicle?.type === 'tank'
               ? -0.65
               : -0.05,
-        crewSeat === 'ventral' ? -0.05 : myVehicle?.type === 'helicopter' ? HELI.maxPitch : 1.2,
+        crewSeat === 'ventral'
+          ? -0.05
+          : myVehicle?.type === 'helicopter'
+            ? HELI.maxPitch
+            : tankCannonSeat()
+              ? TANK_GUN_MAX_PITCH
+              : 1.2,
       );
     }
     if (myVehicle.type === 'helicopter' && crewSeat === 'copilot') {
@@ -3061,6 +3238,10 @@ function updateVehicles(dt) {
         ],
       up = new T.Vector3(0, 1, 0).applyQuaternion(me.quaternion);
     aimGun(T, mount, dir, mount.parent.getWorldQuaternion(new T.Quaternion()));
+    if (myVehicle.type === 'tank' && crewSeat === 'cannon') {
+      applyGunRecoil(mount.userData.barrel, gunRecoilFor(myVehicle.id));
+      mount.updateWorldMatrix(true, true);
+    }
     const scoped = ['tank', 'flaktruck'].includes(myVehicle.type) && crewSeat === 'cannon';
     const view =
       myVehicle.type === 'helicopter'
@@ -3068,7 +3249,8 @@ function updateVehicles(dt) {
         : scoped
           ? tankSight(T, mount, dir, up, observing ? freeLook : null)
           : gunnerView(T, mount, dir, up, crewSeat === 'ventral');
-    if (scoped) me.visible = observing;
+    if (scoped)
+      me.visible = true; // the gun and the hull stay in view, over the shoulder
     else if (myVehicle.type === 'helicopter') me.visible = true;
     camera.position.copy(view.eye);
     camera.up.copy(up);
@@ -3300,21 +3482,7 @@ function fireRapidDca(station, gun, direction, dt, interval, firing, owned) {
 $('fuseMinus').onclick = () => (flakRange = fuseRange(flakRange - FLAK.step));
 $('fusePlus').onclick = () => (flakRange = fuseRange(flakRange + FLAK.step));
 
-const entryRing = new T.Mesh(
-  new T.RingGeometry(1.08, 1.24, 40),
-  new T.MeshBasicMaterial({
-    color: '#d5ef73',
-    side: T.DoubleSide,
-    transparent: true,
-    opacity: 0.9,
-    depthWrite: false,
-    polygonOffset: true,
-    polygonOffsetFactor: -2,
-    polygonOffsetUnits: -2,
-  }),
-);
-entryRing.rotation.x = -Math.PI / 2;
-entryRing.renderOrder = 5;
+const entryRing = makeEntryRing(T);
 const entryRings = new Map();
 function roleEntry(type, seat, role = seatRole(type, seat)) {
   const g = new T.Group();
@@ -3493,15 +3661,7 @@ function enemies(now) {
   const active = new Set(),
     t = (serverNow - snap.started) / 1000,
     roster = currentRoster(),
-    frame =
-      snap.phase === 'combat'
-        ? swarmFrame(
-            roster,
-            t,
-            groundMotion.sample(serverNow),
-            airField(snap.groundDefense, snap.started + t * 1000),
-          )
-        : [];
+    frame = snap.phase === 'combat' ? swarmFrame(roster, t, groundMotion.sample(serverNow)) : [];
   for (let i = 0; i < frame.length; i++) {
     const state = frame[i];
     if (!state || localKills.has(i)) continue;
@@ -3519,15 +3679,19 @@ function enemies(now) {
       g =
         profile.type === 'midge' && midgeBatch.enabled
           ? midgeBatch.create(profile.phase)
-          : profile.type === 'spiderling' && spiderlingBatch.enabled
-            ? spiderlingBatch.create()
-            : walkerBatch.enabled && walkerBatch.handles(profile.type)
-              ? walkerBatch.create(profile.type, profile.phase)
+          : walkerBatch.enabled && walkerBatch.handles(profile.type)
+            ? walkerBatch.create(profile.type, profile.phase)
+            : flyerBatch.handles(profile.type)
+              ? flyerBatch.create(profile.type, profile.phase)
               : insect(profile.type);
       g.userData.enemyWave = snap.wave;
       g.userData.enemyType = profile.type;
       g.userData.entryStatus = entryStatus(profile, t);
-      if (g.userData.entryStatus === 'in-flight' && entryNoticeWave !== snap.wave) {
+      if (
+        g.userData.entryStatus === 'in-flight' &&
+        !profile.debug &&
+        entryNoticeWave !== snap.wave
+      ) {
         entryNoticeWave = snap.wave;
         notify('Ennemis déjà en route · découverte tardive de la vague', 4);
       }
@@ -3536,7 +3700,7 @@ function enemies(now) {
     }
     // An instanced midge has no meshes or animation hierarchy in the scene.
     // Update only its inexpensive logical transform used by impacts, audio and HUD.
-    if (g.userData.instancedMidge || g.userData.instancedSpiderling || g.userData.instancedWalker) {
+    if (g.userData.instancedMidge || g.userData.instancedWalker || g.userData.instancedFlyer) {
       const [x, y, z] = state.p;
       const dx = x - g.position.x,
         dy = y - g.position.y,
@@ -3544,8 +3708,17 @@ function enemies(now) {
       const dt = Math.max(0.01, (now - (g.userData.lastMoveAt || now - 16)) / 1000);
       const velocity = g.userData.velocity || (g.userData.velocity = new T.Vector3());
       velocity.set(dx / dt, dy / dt, dz / dt);
+      // Debug dummy: still, facing its placer, walking or beating its wings in place.
+      if (profile.dummy) {
+        if (g.userData.instancedWalker)
+          walkerBatch.treadmill(g, state.dir, profile.travelSpeed || profile.speedMps, dt);
+        else {
+          midgeHeading.fromArray(state.dir).normalize();
+          g.quaternion.setFromUnitVectors(midgeForward, midgeHeading);
+        }
+      }
       // Walkers turn on the floor plane and step with the distance covered.
-      if (g.userData.instancedWalker) walkerBatch.step(g, dx, dz, dt);
+      else if (g.userData.instancedWalker) walkerBatch.step(g, dx, dz, dt);
       else if (g.userData.hasPosition && dx * dx + dy * dy + dz * dz > 1e-12) {
         midgeHeading.set(dx, dy, dz).normalize();
         midgeTarget.setFromUnitVectors(midgeForward, midgeHeading);
@@ -3581,15 +3754,11 @@ function enemies(now) {
     // Rigged midge outside the GPU batch (no WebGL): pose its flight cycle.
     g.userData.flight?.animate(now, profile.phase);
     g.userData.wings.forEach(
-      (w, j) =>
-        (w.rotation.z =
-          Math.sin(now * (profile.type === 'brute' ? 0.04 : 0.065) + profile.phase) *
-          (j ? 1 : -1) *
-          0.65),
+      (w, j) => (w.rotation.z = Math.sin(now * 0.065 + profile.phase) * (j ? 1 : -1) * 0.65),
     );
   }
   for (const [i, g] of insects)
-    if (active.has(i)) {
+    if (active.has(i) && !roster[i].dummy) {
       const profile = roster[i];
       insectStatus.update(
         i,
@@ -3601,7 +3770,7 @@ function enemies(now) {
         insectScale(profile.type, 1, profile.size),
       );
     }
-  insectStatus.keep(active);
+  insectStatus.keep(new Set([...active].filter((i) => !roster[i].dummy)));
   for (const [i, g] of insects)
     if (!active.has(i)) {
       scene.remove(g);
@@ -3635,18 +3804,22 @@ function vehicleModel(v) {
                     ? makeStuka('#7b8155')
                     : v.type === 'bomber'
                       ? makeBomber('#c5ba92')
-                      : makePlane('#7b8155');
+                      : v.type === 'medbomber'
+                        ? makeMediumBomber()
+                        : v.type === 'lightfighter'
+                          ? makeLightFighter()
+                          : makePlane('#7b8155');
     paintVehicle(
       T,
       g,
       v.supplies?.sequence || 0,
-      v.type === 'bomber'
+      isBomber(v.type)
         ? '#c5ba92'
         : ['interceptor', 'tank'].includes(v.type)
           ? '#8eb7c6'
           : '#e3ebc0',
     );
-    g.scale.setScalar(ACTOR_UNIT);
+    g.scale.setScalar(vehicleUnit(v.type));
     g.userData.vehicleType = v.type;
 
     fleetModels.set(v.id, g);
@@ -3681,7 +3854,55 @@ function updateOthers(dt) {
       else g.position.lerp(pos, 1 - Math.exp(-24 * dt));
       g.quaternion.slerp(new T.Quaternion().fromArray(motion.q), 1 - Math.exp(-24 * dt));
     }
-    if (g.userData.trailer) g.userData.trailer.rotation.y = motion.trailerAngle || 0;
+    if (g.userData.trailer)
+      g.userData.trailer.rotation.set(motion.trailerPitch || 0, motion.trailerAngle || 0, 0, 'YXZ');
+    if (g.userData.truckWheels) {
+      const forward = new T.Vector3(0, 0, -1).applyQuaternion(g.quaternion);
+      const velocity = isSelf ? vel : new T.Vector3().fromArray(motion.v);
+      const ground = trackGroundMotion(
+        (g.userData.wheelMemory ??= {}),
+        Math.atan2(-forward.x, -forward.z),
+        velocity.dot(forward),
+        dt,
+      );
+      animateDrivenWheels(
+        g.userData.truckWheels,
+        {
+          steer: isSelf ? (myVehicle?.state.steer ?? 0) : motion.steer || 0,
+          ...ground,
+        },
+        {
+          scale: ACTOR_UNIT,
+          pivotZ: TRUCK_STEER_PIVOT,
+          wheelbase: TRUCK_WHEELBASE,
+          radius: TRUCK_WHEEL_RADIUS,
+        },
+        dt,
+      );
+      animateRollingWheels(
+        g.userData.trailerWheels,
+        ground.forwardSpeed * Math.cos(motion.trailerAngle || 0),
+        { scale: ACTOR_UNIT, radius: TRAILER_WHEEL_RADIUS },
+        dt,
+      );
+    }
+    if (g.userData.suspension)
+      updateSuspension(g, g.userData.suspension, g.userData.tracks, colliders, TRACK_HALF, dt);
+    if (g.userData.runningGear) {
+      const forward = new T.Vector3(0, 0, -1).applyQuaternion(g.quaternion);
+      const velocity = isSelf ? vel : new T.Vector3().fromArray(motion.v);
+      animateTrackedWheels(
+        g.userData.runningGear,
+        trackGroundMotion(
+          (g.userData.wheelMemory ??= {}),
+          Math.atan2(-forward.x, -forward.z),
+          velocity.dot(forward),
+          dt,
+        ),
+        vehicleUnit(v.type),
+        dt,
+      );
+    }
     if (g.userData.wheels) {
       const forward = new T.Vector3(0, 0, -1).applyQuaternion(g.quaternion);
       const velocity = isSelf ? vel : new T.Vector3().fromArray(motion.v);
@@ -3718,6 +3939,10 @@ function updateOthers(dt) {
       if (hull) hull.visible = !(airView() && myVehicle?.id === v.id);
       if (g.userData.tailRotor) g.userData.tailRotor.rotation.x += rotation * 4;
     }
+    if (v.type === 'tank') {
+      trackTankShots();
+      applyGunRecoil(g.userData.turrets[0].userData.barrel, gunRecoilFor(v.id));
+    }
     g.userData.animateGun?.(dt, performance.now() < (g.userData.gunFiredUntil || 0));
     updateInscriptions(T, g, v, snap.pilots);
     g.visible = v.state.hp > 0;
@@ -3731,14 +3956,16 @@ function updateOthers(dt) {
           (v.state.engine && v.supplies?.fuel > 0 && v.seats.some((s) => s.seat === 'pilot')
             ? 45
             : 0);
-    if (['bomber', 'tank', 'flaktruck', 'helicopter'].includes(v.type))
+    if (['bomber', 'medbomber', 'tank', 'flaktruck', 'helicopter'].includes(v.type))
       for (const [i, seat] of (v.type === 'helicopter'
         ? ['copilot']
         : v.type === 'flaktruck'
           ? ['cannon']
           : v.type === 'tank'
             ? ['cannon', 'top']
-            : ['dorsal']
+            : v.type === 'medbomber'
+              ? ['dorsal', 'tail', 'ventral']
+              : ['dorsal']
       ).entries()) {
         const occ = v.seats.find((s) => s.seat === seat),
           gunner = snap.pilots.find((p) => p.id === occ?.pilot);
@@ -3786,7 +4013,7 @@ function updateOthers(dt) {
         }
       }
     const remotePilotRounds =
-      !isSelf && v.type !== 'bomber'
+      !isSelf && !isBomber(v.type)
         ? remoteShotCount(
             g,
             'pilot:' + (p?.id || ''),
@@ -4033,9 +4260,42 @@ function flushRapidImpacts(now) {
     else notify(error.message, 2);
   });
 }
+// The ground vehicles (Castor, medium tank, anti-air truck) are driven by the Rapier physics engine, loaded behind
+// the loading screen (see homeReady): the module, the rig of the vehicle type we drive,
+// and one rig per empty vehicle of these types that this client simulates as the room's
+// host. The aircraft still use their original physics (see docs/physics-engine.md).
+let rapier = null;
+const RAPIER_RIGS = { castor: CastorRig, tank: TankRig, flaktruck: TruckRig };
+const drivenRigs = new Map();
+const vacantRigs = new Map();
+
+// Vehicles and pilots a shot can hit, prepared once per frame (matrices, solid
+// meshes, padded box) instead of once per projectile and per slice.
+const projectileRay = new T.Raycaster(),
+  scratchPoint = new T.Vector3();
+let frameTargets = null;
+function solidTargets() {
+  if (frameTargets) return frameTargets;
+  frameTargets = [];
+  for (const v of snap?.vehicles || []) {
+    const model = fleetModels.get(v.id);
+    const target = model?.visible && solidTarget(T, model, { vehicle: v.id });
+    if (target) frameTargets.push(target);
+  }
+  for (const p of snap?.pilots || []) {
+    if (p.id === id || p.life !== 'alive' || p.vehicle_id) continue;
+    const model =
+      p.mode === 'turret' ? turrets[p.state.turret]?.userData.person : basePeople.get(p.id);
+    const target = model?.visible && solidTarget(T, model, { target: p.id });
+    if (target) frameTargets.push(target);
+  }
+  return frameTargets;
+}
 function stepProjectiles(dt) {
+  frameTargets = null;
   const n = Math.max(1, Math.ceil(dt * 120));
   for (let i = 0; i < n; i++) stepProjectileSlice(dt / n);
+  frameTargets = null;
 }
 function stepProjectileSlice(dt) {
   for (let i = trails.length - 1; i >= 0; i--) {
@@ -4054,30 +4314,16 @@ function stepProjectileSlice(dt) {
     }
     if (b.owned && !respawnAt) {
       let hit = null;
-      const ray = new T.Raycaster(origin, dir, 0, distance);
-      for (const v of snap?.vehicles || []) {
-        if (v.id === b.originVehicle) continue;
-        const model = fleetModels.get(v.id);
-        if (!model?.visible) continue;
-        model.updateWorldMatrix(true, true);
-        const h = nearestMeshHit(ray, model);
-        if (h && (!hit || h.distance < hit.distance)) hit = { ...h, vehicle: v.id };
-      }
-      for (const p of snap?.pilots || []) {
-        if (p.id === id || p.life !== 'alive' || p.vehicle_id) continue;
-        const model =
-          p.mode === 'turret' ? turrets[p.state.turret]?.userData.person : basePeople.get(p.id);
-        if (!model?.visible) continue;
-        model.updateWorldMatrix(true, true);
-        const h = nearestMeshHit(ray, model);
-        if (h && (!hit || h.distance < hit.distance)) hit = { ...h, target: p.id };
-      }
-      const solidRay = new T.Ray(origin, dir);
+      projectileRay.set(origin, dir);
+      projectileRay.near = 0;
+      projectileRay.far = distance;
+      hit = nearestSolidHit(T, projectileRay, solidTargets(), b.originVehicle);
       for (const box of colliders) {
-        const point = rayCollider(T, solidRay, box, new T.Vector3());
+        const point = rayCollider(T, projectileRay.ray, box, scratchPoint);
         if (point) {
           const d = origin.distanceTo(point);
-          if (d <= distance && (!hit || d < hit.distance)) hit = { point, distance: d, wall: true };
+          if (d <= distance && (!hit || d < hit.distance))
+            hit = { point: point.clone(), distance: d, wall: true };
         }
       }
       const blocker = hit;
@@ -4119,13 +4365,7 @@ function stepProjectileSlice(dt) {
             else if (hit.target)
               report('friendly-hit', { target: hit.target, shot: b.shot, weapon: b.weapon });
             else if (enemyHit && b.wave === snap?.wave)
-              damageEnemy(
-                hit.id,
-                b.baseDamage * (1 + (snap.upgrades?.weapons || 0)),
-                b.shot,
-                hit.point,
-                report,
-              );
+              damageEnemy(hit.id, b.baseDamage, b.shot, hit.point, report);
           };
           if (b.authorization?.accepted === null) b.authorization.impact = apply;
           else if (b.authorization?.accepted !== false) apply();
@@ -4164,29 +4404,23 @@ function physics(dt) {
       ? Number(!!(keys.ShiftLeft || keys.ShiftRight)) -
         Number(!!(keys.ControlLeft || keys.ControlRight))
       : 0;
-    const keyboardTilt =
-      keys.KeyS ||
-      keys.ArrowDown ||
-      keys.KeyZ ||
-      keys.ArrowUp ||
-      keys.KeyQ ||
-      keys.ArrowLeft ||
-      keys.KeyD ||
-      keys.ArrowRight ||
-      keyboardOnly;
+    // Z/S force the pitch and Q/D force the roll, each on its own: without
+    // Z/S the pitch keeps following the mouse height (orbiting a target).
+    const pitchKeys = keys.KeyS || keys.ArrowDown || keys.KeyZ || keys.ArrowUp;
+    const rollKeys = keys.KeyQ || keys.ArrowLeft || keys.KeyD || keys.ArrowRight;
     stepHelicopter(
       T,
       state,
       {
         collective,
         pitch:
-          active && !keyboardTilt
+          active && !pitchKeys && !keyboardOnly
             ? undefined
             : active
               ? Number(!!(keys.KeyS || keys.ArrowDown)) - Number(!!(keys.KeyZ || keys.ArrowUp))
               : 0,
         roll:
-          active && !keyboardTilt
+          active && !rollKeys && !keyboardOnly
             ? undefined
             : active
               ? Number(!!(keys.KeyQ || keys.ArrowLeft)) - Number(!!(keys.KeyD || keys.ArrowRight))
@@ -4196,7 +4430,7 @@ function physics(dt) {
       },
       colliders,
       dt,
-      upgradedVehicle(VEHICLES[myVehicle.type], snap?.upgrades),
+      VEHICLES[myVehicle.type],
     );
     if (keyboardOnly) mouseDirection.set(0, 0, -1).applyQuaternion(me.quaternion);
     if (state.hp <= 0) {
@@ -4220,17 +4454,10 @@ function physics(dt) {
     const active = controlFocus.active && canCapture(),
       manual = flightInput(keys, pad, active);
     const state = { ...localMotion(), fuelAvailable: remainingFuel() > 0 };
-    stepTank(
-      T,
-      state,
-      {
-        forward: -manual.pitch,
-        turn: manual.roll || -manual.yaw,
-      },
-      colliders,
-      dt,
-      VEHICLES[myVehicle.type],
-    );
+    const drive = { forward: -manual.pitch, turn: manual.roll || -manual.yaw };
+    if (!drivenRigs.has(myVehicle.type))
+      drivenRigs.set(myVehicle.type, new RAPIER_RIGS[myVehicle.type](rapier));
+    drivenRigs.get(myVehicle.type).step(state, drive, colliders, dt, VEHICLES[myVehicle.type]);
     if (state.hp <= 0) {
       crash();
       return;
@@ -4239,7 +4466,9 @@ function physics(dt) {
     me.quaternion.fromArray(state.q);
     vel.fromArray(state.v);
     myVehicle.state.trailerAngle = state.trailerAngle || 0;
-    if (me.userData.trailer) me.userData.trailer.rotation.y = state.trailerAngle || 0;
+    myVehicle.state.trailerPitch = state.trailerPitch || 0;
+    myVehicle.state.steer = state.steer || 0;
+    me.userData.trailer?.rotation.set(state.trailerPitch || 0, state.trailerAngle || 0, 0, 'YXZ');
     landed = state.landed;
     gas = state.gas;
     shooting =
@@ -4289,7 +4518,7 @@ function physics(dt) {
       roll,
       yaw,
       scale: MAP.ratio,
-      profile: upgradedVehicle(VEHICLES[myVehicle?.type || 'fighter'], snap?.upgrades),
+      profile: VEHICLES[myVehicle?.type || 'fighter'],
     },
     dt,
   );
@@ -4331,7 +4560,7 @@ function physics(dt) {
     prop.rotation.z += dt * gas * (engine && remainingFuel() > 0 ? 70 : 0);
   $('stallWarning').classList.toggle('hidden', stall > 0.8);
   shooting =
-    active && myVehicle && myVehicle.type !== 'bomber' && hasAmmo() && (manual.fire || mouseFire);
+    active && myVehicle && !isBomber(myVehicle.type) && hasAmmo() && (manual.fire || mouseFire);
   const burst = advanceAutomaticFire(
     cooldown,
     dt,
@@ -4487,21 +4716,17 @@ function updateAudio() {
         rate: 0.65 + (crewSeat === 'pilot' ? gas : myVehicle.state.gas || 0) * 1.2,
         level: 0.65 * (isRotorcraft(myVehicle.type) ? (myVehicle.state.rotorPower ?? 1) : 1),
         ref: 14,
+        priority: 2,
       });
     }
-    const planes = [...others.entries()]
-      .filter(
-        ([key, g]) =>
-          g.visible &&
-          key !== myVehicle?.id &&
-          snap?.vehicles.find((v) => v.id === key)?.seats.length > 0,
-      )
-      .sort(
-        (a, b) =>
-          a[1].position.distanceToSquared(activeCamera.position) -
-          b[1].position.distanceToSquared(activeCamera.position),
-      )
-      .slice(0, 10);
+    // Every crewed plane gets a logical engine loop; the voice manager keeps
+    // the loudest ones real and the others virtual.
+    const planes = [...others.entries()].filter(
+      ([key, g]) =>
+        g.visible &&
+        key !== myVehicle?.id &&
+        snap?.vehicles.find((v) => v.id === key)?.seats.length > 0,
+    );
     for (const [id, g] of planes) {
       const pilot = snap?.vehicles.find((p) => p.id === id);
       if (pilot?.state.engine === 0 || pilot?.supplies?.fuel <= 0) continue;
@@ -4557,14 +4782,7 @@ function updateAudio() {
   } else {
     activeSwarmAudioKeys.clear();
     lastSwarmAudioAt = -Infinity;
-    for (const b of (soulArena?.bodies || [])
-      .filter((b) => b.kind === 'enemy' && !b.gone)
-      .sort(
-        (a, b) =>
-          Math.hypot(a.x - activeCamera.position.x, a.z - activeCamera.position.z) -
-          Math.hypot(b.x - activeCamera.position.x, b.z - activeCamera.position.z),
-      )
-      .slice(0, 6)) {
+    for (const b of (soulArena?.bodies || []).filter((b) => b.kind === 'enemy' && !b.gone)) {
       const key = 'soul-bug-' + b.id;
       keep.add(key);
       sound.loop(key, 'insect', { x: b.x, y: 0.9, z: b.z }, { ref: 5, level: 0.6, rate: 0.8 });
@@ -4574,6 +4792,7 @@ function updateAudio() {
 }
 let prev = performance.now(),
   acc = 0;
+const powerText = (v) => String(Math.round(v * 100) / 100).replace('.', ',');
 function updateCountdown() {
   const seconds = Math.max(
     0,
@@ -4585,10 +4804,7 @@ function updateCountdown() {
     return;
   }
   $('phaseText').textContent = snap.mission_started
-    ? (snap.wave > 0 ? 'Prime de vague : +' + snap.waveReward + ' $ · ' : '') +
-      'Prochaine vague dans ' +
-      seconds +
-      ' s'
+    ? 'Prochaine vague dans ' + seconds + ' s'
     : 'Lancez la préparation de la première vague.';
   $('start').textContent = !snap.mission_started
     ? 'Lancer la partie →'
@@ -4681,7 +4897,7 @@ function frame(now) {
       if (airView()) airViewCamera(dt);
       else if (castorTopView()) {
         const pose = topViewPose(T, me.position, topViewHeight);
-        camera.position.lerp(pose.eye, 1 - Math.exp(-10 * dt));
+        followMoving(camera.position, pose.eye, new T.Vector3(vel.x, 0, vel.z), 10, dt);
         camera.up.lerp(pose.up, 1 - Math.exp(-10 * dt)).normalize();
         camera.lookAt(pose.target);
         camera.updateMatrixWorld();
@@ -4706,7 +4922,7 @@ function frame(now) {
         )
           .multiplyScalar(ACTOR_UNIT)
           .applyQuaternion(orbit);
-        camera.position.lerp(me.position.clone().add(offset), 1 - Math.exp(-10 * dt));
+        followMoving(camera.position, me.position.clone().add(offset), vel, 10, dt);
         camera.up.set(0, 1, 0).applyQuaternion(orbit);
         camera.lookAt(
           me.position
@@ -4728,8 +4944,13 @@ function frame(now) {
     $('altitudeFog').style.opacity = 0;
     serviceZones.update([]);
     engineSmoke.clear();
-    camera.position.set(-1.65 + Math.sin(now * 0.00008) * 0.08, 1.08, 2.6);
-    camera.lookAt(OFFICE_LAYOUT.base.originX, 0.91, OFFICE_LAYOUT.base.originZ - 0.08);
+    const lobbyBase = OFFICE_LAYOUT.base;
+    camera.position.set(
+      lobbyBase.originX + 0.15 + Math.sin(now * 0.00008) * 0.08,
+      lobbyBase.deckY + 0.18,
+      lobbyBase.originZ + 0.47,
+    );
+    camera.lookAt(lobbyBase.originX, lobbyBase.deckY + 0.01, lobbyBase.originZ - 0.08);
     me.userData.prop.rotation.z += dt * 15;
   }
   stepProjectiles(dt);
@@ -4742,12 +4963,13 @@ function frame(now) {
   if (joined) updateBaseWorld(dt, now);
   updateVehicles(dt);
   updatePlacement();
+  updateDebugTools();
   for (const model of turrets) if (model?.userData.dish) animateRadar(model, dt, joined);
   updateFallingEnemies(dt);
   updateContextHUD();
   midgeBatch.flush(insects, now, camera);
-  spiderlingBatch.flush(insects);
   walkerBatch.flush(insects);
+  flyerBatch.flush(insects, now);
   tracerPool.flush();
   const fogCamera =
     spectating && observationCamera
@@ -4809,6 +5031,8 @@ const ghosts = {
   bed: installationModel({ kind: 'bed', x: 0, y: 0, z: 0 }),
   fighter: makePlane('#badb84'),
   bomber: makeBomber('#badb84'),
+  lightfighter: makeLightFighter(),
+  medbomber: makeMediumBomber(),
   interceptor: makeStuka('#badb84'),
   helicopter: makeHelicopter('#badb84'),
   flaktruck: makeFlakTruck('#badb84'),
@@ -4819,7 +5043,7 @@ const ghosts = {
 };
 let ghost = ghosts.dca;
 for (const [kind, model] of Object.entries(ghosts)) {
-  if (VEHICLES[kind]) model.scale.setScalar(ACTOR_UNIT);
+  if (VEHICLES[kind]) model.scale.setScalar(vehicleUnit(kind));
   if (isFixedDca(kind)) scene.add(model);
   model.visible = false;
   model.traverse((o) => {
@@ -4836,6 +5060,7 @@ function toggleShop() {
   if (flightTuningUI.opened || bankUI.opened || bedUI.opened || purchaseUI.opened) return;
   if (!joined || respawnAt || !$('papers').classList.contains('hidden')) return;
   if (placingEquipment) cancelPlacement();
+  debugTools.cancel();
   const open = $('shop').classList.contains('hidden');
   $('shop').classList.toggle('hidden', !open);
   if (open) {
@@ -4852,7 +5077,6 @@ function renderShop() {
   const key = JSON.stringify([
     snap.dollars,
     snap.lab?.enabled,
-    snap.upgrades,
     snap.equipment?.length,
     snap.purchases,
     !!myVehicle,
@@ -4873,14 +5097,12 @@ function renderShop() {
         section.append(shopCard(item));
     $('shopItems').append(section);
   }
+  // Debug mode: dummies and live enemies to place (debug-tools.ts).
+  $('shopItems').classList.toggle('debugShop', !!snap.lab?.enabled);
+  if (snap.lab?.enabled) $('shopItems').append(...debugTools.shopSections());
 }
-const SHOP_GLYPHS = { engine: '⚙', weapons: '✹' };
 let shopThumbs;
 function shopPicture(item, holder) {
-  if (SHOP_GLYPHS[item]) {
-    holder.textContent = SHOP_GLYPHS[item];
-    return;
-  }
   try {
     shopThumbs ||= new ShopThumbnails(T);
     shopThumbs.picture(item).then((url) => {
@@ -4900,25 +5122,18 @@ function shopCard(item) {
     picture = document.createElement('div'),
     title = document.createElement('h4'),
     cost = document.createElement('strong'),
-    level = snap.upgrades?.[item] || 0,
     owned = !myVehicle && snap.purchases?.find((o) => o.owner === id && o.item === item),
-    price = shopPrice(item, snap.upgrades, purchaseCount(snap, item), snap.balance);
+    price = shopPrice(item, purchaseCount(snap, item), snap.balance);
   card.type = 'button';
   card.className = 'shopCard';
   card.dataset.item = item;
   picture.className = 'shopPicture';
   shopPicture(item, picture);
-  title.textContent = profile.name + (profile.max > 1 ? ' · ' + level + '/' + profile.max : '');
-  cost.textContent =
-    profile.max && level >= profile.max
-      ? 'Acquis'
-      : owned
-        ? 'Déjà payé · Reprendre la pose'
-        : price + ' $';
+  title.textContent = profile.name;
+  cost.textContent = owned ? 'Déjà payé · Reprendre la pose' : price + ' $';
   card.disabled =
     purchaseBusy ||
     (!owned && snap.dollars < price) ||
-    (profile.max && level >= profile.max) ||
     (['placement', 'vehicle'].includes(profile.kind) &&
       !myVehicle &&
       (turretIndex >= 0 || selfBase()?.grounded === false));
@@ -4945,7 +5160,7 @@ async function purchase(item) {
       await api('buy', {
         id,
         item,
-        expectedPrice: shopPrice(item, snap.upgrades, purchaseCount(snap, item), snap.balance),
+        expectedPrice: shopPrice(item, purchaseCount(snap, item), snap.balance),
         request:
           globalThis.crypto?.randomUUID?.() ||
           Date.now().toString(36) +
@@ -5043,7 +5258,7 @@ function fallEnemy(enemy) {
   if (!g) return;
   insects.delete(enemy);
   insectStatus.remove(enemy);
-  if (g.userData.instancedMidge || g.userData.instancedSpiderling || g.userData.instancedWalker) {
+  if (g.userData.instancedMidge || g.userData.instancedWalker || g.userData.instancedFlyer) {
     // Only up to 80 fallen bodies need real meshes; living insects stay batched.
     const corpse = insect(g.userData.enemyType);
     // A walker falls in the stride it was taking.
@@ -5353,11 +5568,19 @@ function renderDeliveries() {
     }
 }
 const vacantAircraft = new Map();
+function releaseVacantRig(key) {
+  vacantRigs.get(key)?.dispose();
+  vacantRigs.delete(key);
+}
+function clearVacantAircraft() {
+  vacantAircraft.clear();
+  for (const key of [...vacantRigs.keys()]) releaseVacantRig(key);
+}
 function simulateVacantAircraft(dt) {
   if (!snap) return;
   const host = [...snap.pilots].sort((a, b) => a.id.localeCompare(b.id))[0]?.id;
   if (host !== id) {
-    vacantAircraft.clear();
+    clearVacantAircraft();
     return;
   }
   const active = new Set();
@@ -5381,14 +5604,19 @@ function simulateVacantAircraft(dt) {
         { collective: 0, occupied: v.seats.length > 0 },
         colliders,
         dt,
-        upgradedVehicle(VEHICLES[v.type], snap?.upgrades),
+        VEHICLES[v.type],
       );
-    else if (VEHICLES[v.type].ground)
-      stepTank(T, s, { forward: 0, turn: 0 }, colliders, dt, VEHICLES[v.type]);
-    else stepVacantAircraft(T, s, upgradedVehicle(VEHICLES[v.type], snap.upgrades), colliders, dt);
+    else if (RAPIER_RIGS[v.type]) {
+      if (!vacantRigs.has(v.id)) vacantRigs.set(v.id, new RAPIER_RIGS[v.type](rapier));
+      vacantRigs.get(v.id).step(s, { forward: 0, turn: 0 }, colliders, dt, VEHICLES[v.type]);
+    } else stepVacantAircraft(T, s, VEHICLES[v.type], colliders, dt);
     Object.assign(v.state, s);
   }
-  for (const key of vacantAircraft.keys()) if (!active.has(key)) vacantAircraft.delete(key);
+  for (const key of [...vacantAircraft.keys()])
+    if (!active.has(key)) {
+      vacantAircraft.delete(key);
+      releaseVacantRig(key);
+    }
 }
 
 function equipPistolModel(person) {
@@ -5549,6 +5777,44 @@ function launchLocal(projectile) {
   localShots.set(projectile.shot, projectile);
   return projectile;
 }
+// Main-gun recoil: seen on every client from the shell's launch record, felt by the machine
+// that simulates the hull (its driver, or the room host when nobody drives).
+const gunKicks = new Map(),
+  kickSeen = new Set();
+function noteTankShot(vehicleId, shot, aim, atMs) {
+  if (kickSeen.has(shot)) return;
+  kickSeen.add(shot);
+  if (kickSeen.size > 400) kickSeen.delete(kickSeen.values().next().value);
+  gunKicks.set(vehicleId, atMs);
+  const rig =
+    myVehicle?.id === vehicleId && crewSeat === 'pilot'
+      ? drivenRigs.get('tank')
+      : vacantRigs.get(vehicleId);
+  rig?.kick?.(aim);
+}
+function trackTankShots() {
+  const now = serverClock.now(performance.now()) ?? Date.now() + clockOffset;
+  for (const record of snap?.ordnance || []) {
+    if (kickSeen.has(record.shot)) continue;
+    const owner = snap.vehicles.find((v) => v.id === record.vehicle);
+    if (owner?.type !== 'tank' || !HEAVY[record.weapon] || record.weapon === 'bomb') continue;
+    const age = now - record.at;
+    if (age > 600) kickSeen.add(record.shot);
+    else {
+      const n = Math.hypot(...record.v) || 1;
+      noteTankShot(
+        record.vehicle,
+        record.shot,
+        record.v.map((x) => x / n),
+        performance.now() - Math.max(0, age),
+      );
+    }
+  }
+}
+function gunRecoilFor(vehicleId) {
+  const at = gunKicks.get(vehicleId);
+  return at === undefined ? 0 : recoilAmount((performance.now() - at) / 1000);
+}
 async function fireHeavy(weapon = null) {
   if (
     !joined ||
@@ -5582,6 +5848,8 @@ async function fireHeavy(weapon = null) {
   );
   const vehicle = launchVehicle();
   if (weapon === 'rocket') rocketSides.set(myVehicle.id, vehicle.rocketSide);
+  if (myVehicle.type === 'tank' && crewSeat === 'cannon')
+    noteTankShot(myVehicle.id, shot, direction, performance.now());
   const projectile = launchLocal(
     createOrdnance({ shot, weapon, vehicle, shooter: id, direction, now, wave: snap.wave }),
   );
@@ -5638,22 +5906,14 @@ function heavyWorld() {
     players.push({ id: p.id, p: [w.x, w.y + MAP.metres(0.9), w.z] });
   }
   return {
-    solids: ROUTE_OBSTACLES,
+    solids: layoutSolids(),
     roster,
     killed: (i) => kills.has(i),
     frames: (time, projectile) => {
       if (snap?.phase !== 'combat' || projectile.wave !== snap.wave) return [];
       const at = Math.round(time / 50) * 50;
       if (!cache.has(at))
-        cache.set(
-          at,
-          swarmFrame(
-            roster,
-            (at - snap.started) / 1000,
-            groundMotion.sample(at),
-            airField(snap.groundDefense, at),
-          ),
-        );
+        cache.set(at, swarmFrame(roster, (at - snap.started) / 1000, groundMotion.sample(at)));
       return cache.get(at);
     },
     vehicles: (snap?.vehicles || []).map(pose),
@@ -5944,13 +6204,12 @@ function updateContextHUD() {
       proximity: mobileProximity,
       guiding: !!activeMissile(),
     });
-    $('cursorHPbar').max = vehicleMaxHP(myVehicle?.type);
-    $('cursorHPbar').value = stats.hp;
-    $('cursorAmmoBar').max = Math.max(
-      1,
-      ammoCapacity(myVehicle.type, currentAmmoKey(), snap.balance),
+    setBar($('cursorHPbar'), stats.hp, vehicleMaxHP(myVehicle?.type));
+    setBar(
+      $('cursorAmmoBar'),
+      stats.ammo,
+      Math.max(1, ammoCapacity(myVehicle.type, currentAmmoKey(), snap.balance)),
     );
-    $('cursorAmmoBar').value = stats.ammo;
     $('cursorAmmoBar').classList.toggle(
       'hidden',
       ammoCapacity(myVehicle.type, currentAmmoKey(), snap.balance) <= 0,
@@ -5963,9 +6222,9 @@ function updateContextHUD() {
       0,
       Math.min(100, (crewSeat === 'pilot' ? gas : myVehicle.state.gas || 0) * 100),
     );
-    $('cursorFuel').value = fuelPercent;
+    setBar($('cursorFuel'), fuelPercent, 100);
     setGaugeLabel($('cursorFuelLabel'), 'Carburant ', Math.round(fuelPercent) + ' %');
-    $('cursorGas').value = power;
+    setBar($('cursorGas'), power, 100);
     setGaugeLabel($('cursorGasLabel'), 'Gaz ', Math.round(power) + ' %');
     $('cursorStats').style.left = 'calc(' + ($('crosshair').style.left || '50%') + ' + 30px)';
     $('cursorStats').style.top = 'calc(' + ($('crosshair').style.top || '50%') + ' + 22px)';
@@ -6034,6 +6293,57 @@ $('flightSettingsOpen').onclick = () => {
     return;
   flightTuningUI.open();
 };
+const debugTools = new DebugTools({
+  T,
+  scene,
+  document,
+  camera,
+  command: async (body) => {
+    try {
+      accept(await api('lab', { id, epoch: snap.base.epoch, ...body }));
+      return true;
+    } catch (error) {
+      notify(error.message, 3);
+      return false;
+    }
+  },
+  notify,
+  aimSurface: () => {
+    const origin = camera.getWorldPosition(new T.Vector3());
+    const point = placementAim(
+      origin,
+      origin,
+      camera.getWorldDirection(new T.Vector3()),
+      colliders,
+      MAP.metres(1000),
+    );
+    return point && new T.Vector3(point.x, point.y, point.z);
+  },
+  closeShop: () => {
+    $('shop').classList.add('hidden');
+    captureMouse();
+  },
+  names: Object.fromEntries(Object.entries(ENEMY_TYPES).map(([k, e]) => [k, e.name])),
+  grounded: Object.fromEntries(Object.entries(ENEMY_TYPES).map(([k, e]) => [k, !!e.ground])),
+  symbols: speciesSymbols,
+  sentryRange: SENTRY.range,
+});
+// Debug mode: placement marker, hit volumes, turret and sugar ranges, dummy damage.
+function updateDebugTools() {
+  const on = joined && !!snap?.lab?.enabled;
+  if (debugTools.active && !on) debugTools.cancel();
+  else if (debugTools.active) debugTools.render();
+  debugTools.showHitboxes(insects.values(), on);
+  debugTools.showRanges(snap?.groundDefense?.structures, on);
+  if (snap)
+    debugTools.showDummyDamage(
+      on ? insects : new Map(),
+      currentRoster(),
+      (i) => localEnemyDamage.get(i) || 0,
+      snap.wave,
+      performance.now() / 1000,
+    );
+}
 const labUI = new LabUI({
   button: $('labOpen'),
   snapshot: () => (joined ? snap : null),
@@ -6367,6 +6677,11 @@ function updateVehicleCare(dt) {
     }
   }
 }
+// Gauge bars are plain boxes: native <progress> ignores a 4 px height in most browsers.
+function setBar(element, value, max) {
+  const ratio = max > 0 ? Math.max(0, Math.min(1, value / max)) : 0;
+  element.firstElementChild.style.width = ratio * 100 + '%';
+}
 function setGaugeLabel(element, label, value) {
   const strong = document.createElement('strong');
   strong.textContent = value;
@@ -6445,6 +6760,25 @@ $('enterPurgatory').onclick = async () => {
     $('enterPurgatory').disabled = false;
   }
 };
+// The real insect model, standing in the purgatory queue: the rig faces -Z, the
+// soul's heading is +Z, so it sits in a turned pivot, and it is fitted to the
+// soul's size (the office scale would make a rat fill the room).
+function soulInsect(type = 'midge') {
+  if (!ENEMY_TYPES[type]) type = 'midge';
+  const outer = new T.Group(),
+    model = insect(type);
+  model.rotation.y = Math.PI;
+  outer.add(model);
+  outer.updateMatrixWorld(true);
+  const size = new T.Box3().setFromObject(model).getSize(new T.Vector3()),
+    longest = Math.max(size.x, size.z, 1e-6),
+    wanted = Math.min(1.9, Math.max(0.45, 0.8 * Math.sqrt(ENEMY_TYPES[type].size)));
+  model.scale.multiplyScalar(wanted / longest);
+  outer.userData.disposables = model.userData.disposables;
+  outer.userData.animate = (dt, info) => model.userData.animate?.(dt, info);
+  return outer;
+}
+
 function observedPurgatory(dt) {
   const arena = observationRealm === 'super' ? snap?.superArena : snap?.arena;
   const active = new Set();
@@ -6456,7 +6790,7 @@ function observedPurgatory(dt) {
       model =
         body.kind === 'player'
           ? humanoid('#8bc9d6', false, appearanceOf(body.entity))
-          : insect(body.enemyType || 'midge');
+          : soulInsect(body.enemyType);
       purgScene.add(model);
       soulMeshes.set(body.id, model);
       model.rotation.y = body.face || 0;
@@ -6475,13 +6809,46 @@ function observedPurgatory(dt) {
     }
 }
 
-// Readiness for the initial loader: selected appearance and its first draw.
-export const homeReady = loadCharacter(appearancePicker.value).then(
+// Shader programs are compiled the first time a material is drawn, which froze
+// the game for about 150 ms when the first shot appeared. Draw one of each fire
+// effect (tracer batches, impact, blood, muzzle flash, blast) in front of the
+// camera, through the real render path, while the loading screen still covers
+// the canvas; then expire them. Nothing else is touched: no sound, no network.
+function warmShaders() {
+  if (!renderer.isWebGLRenderer) return;
+  const forward = new T.Vector3(0, 0, -1).applyQuaternion(camera.quaternion),
+    at = camera.position.clone().addScaledVector(forward, 2);
+  const tracers = [false, true].map((shell) => tracerPool.acquire(at, forward, '#ffffff', shell));
+  tracerPool.flush();
+  hitEffects.burst(at, camera);
+  bloodEffects.burst(at);
+  combatEffects.muzzle(at, forward);
+  combatEffects.blast(at);
+  toon.render(scene, camera);
+  for (const tracer of tracers) tracer?.userData.dispose();
+  tracerPool.flush();
+  hitEffects.update(10, camera);
+  bloodEffects.update(10);
+  combatEffects.update(10, camera);
+}
+
+// Readiness for the initial loader: selected appearance and its first draw, and
+// the Rapier physics engine (4 MB), which the Castor cannot be driven without.
+const characterReady = loadCharacter(appearancePicker.value).then(
   () =>
     new Promise((resolve) =>
       requestAnimationFrame(() => {
+        try {
+          warmShaders();
+        } catch (error) {
+          console.warn('Shader warm-up skipped', error);
+        }
         appearancePicker.draw(renderer, 0);
         resolve();
       }),
     ),
 );
+const rapierReady = loadRapier(() => import('/rapier.js')).then((RAPIER) => {
+  rapier = RAPIER;
+});
+export const homeReady = Promise.all([characterReady, rapierReady]).then(() => {});

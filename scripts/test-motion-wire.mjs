@@ -1,12 +1,12 @@
 import assert from 'node:assert/strict';
-import { validMotion } from '../src/network.js';
+import { validMotion } from '../src/network.ts';
 import {
   decodeMotionBatch,
   decodeMotionState,
   encodeMotionBatch,
   encodeMotionState,
   MOTION_BATCH_BYTES,
-} from '../src/motion-wire.js';
+} from '../src/motion-wire.ts';
 
 const json = (v) => JSON.parse(JSON.stringify(v));
 let seed = 7;
@@ -34,6 +34,8 @@ const foot = () => ({
   landed: false,
   gas: 0.65,
   trailerAngle: 0,
+  trailerPitch: 0,
+  steer: 0,
   omega: [0, 0, 0],
   turret: -1,
   turretDirection: [r(1), r(1), r(1)],

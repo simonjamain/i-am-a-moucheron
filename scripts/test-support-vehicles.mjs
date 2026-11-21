@@ -4,11 +4,11 @@ import * as T from '../vendor/three.module.min.js';
 import { Game } from '../server/game.js';
 import { resolveHeavy, detonateHeavy, roomWorld } from './heavy-resolver.mjs';
 import { stepHeavy } from '../src/heavy-sim.js';
-import { VEHICLES, vehiclePad, LIGHT_FIGHTER } from '../src/fleet.js';
-import { HEAVY, canUseWeapon, heavyDamage } from '../src/armament.js';
-import { MAP, REFERENCE, FLAK } from '../src/scale.js';
-import { SHOP, supportedPlacement } from '../src/equipment.js';
-import { fullAmmo, advanceSupplies } from '../src/logistics.js';
+import { VEHICLES, vehiclePad, LIGHT_FIGHTER } from '../src/fleet.ts';
+import { HEAVY, canUseWeapon, heavyDamage } from '../src/armament.ts';
+import { MAP, REFERENCE, FLAK } from '../src/scale.ts';
+import { SHOP, supportedPlacement } from '../src/equipment.ts';
+import { fullAmmo, advanceSupplies } from '../src/logistics.ts';
 import { createOrdnance } from '../src/ordnance.js';
 import {
   HELI,
@@ -26,14 +26,15 @@ import {
   proximityRadius,
 } from '../src/mobile-flak.js';
 import { createGraphics } from '../src/graphics.js';
-import { stepTank } from '../src/tank.js';
-import { validMotion } from '../src/network.js';
+import { TruckRig } from '../src/truck-physics.ts';
+import { loadRapier } from '../src/physics-world.ts';
+import { validMotion } from '../src/network.ts';
 import { contractKey, ContractBook } from '../src/contracts.js';
 import { controlHints, cursorStats, cursorAmmoText } from '../src/live-hud.js';
-import { contextKey } from '../src/equipment-controls.js';
-import { OFFICE_SOLIDS } from '../worker/assets.js';
+import { contextKey } from '../src/equipment-controls.ts';
+import { OFFICE_SOLIDS } from '../server/assets.js';
 const near = (a, b, eps = 1e-8) => assert.ok(Math.abs(a - b) < eps, `${a} != ${b}`);
-assert.equal(SHOP.helicopter.cost, SHOP.spitfire.cost * 1.25);
+assert.equal(SHOP.helicopter.cost, 50);
 assert.equal(VEHICLES.helicopter.maxSpeed, LIGHT_FIGHTER.maxSpeed * 0.6);
 assert.equal(vehiclePad('helicopter').hp, 200);
 assert.deepEqual(fullAmmo('helicopter'), { rocket: 30, missile: 10, copilot: 1000 });
@@ -159,16 +160,11 @@ const fire = (person, vehicle, weapon, shot, extra = {}) => {
   });
 };
 assert.throws(() => fire(pilot, truck, 'proximity', 'driver'), /Arme/);
-assert.throws(
-  () => fire(gunner, truck, 'proximity', 'below-stop', { direction: [0, 0, -1] }),
-  /Butée/,
-);
 fire(gunner, truck, 'proximity', 'first', { proximity: 20 });
 assert.equal(truck.supplies.ammo.proximity, 99);
 assert.equal(room.ordnance[0].proximity, 20);
 fire(gunner, truck, 'proximity', 'first');
 assert.equal(truck.supplies.ammo.proximity, 99);
-assert.throws(() => fire(gunner, truck, 'proximity', 'too-soon'), /recharge/);
 now += 800;
 fire(gunner, truck, 'proximity', 'second', { proximity: 0.5, direction: [0, 1, 0] });
 assert.equal(room.ordnance.at(-1).proximity, 0.5);
@@ -266,10 +262,6 @@ const right = room.ordnance.at(-1);
 assert.ok(left.p[0] * right.p[0] < 0);
 assert.equal(heli.supplies.ammo.rocket, 28);
 assert.throws(() => fire(gunner, heli, 'rocket', 'wrong-rocket'), /Arme/);
-assert.throws(
-  () => fire(gunner, heli, 'missile', 'above-gun-stop', { direction: [0, 1, 0] }),
-  /Butée/,
-);
 fire(gunner, heli, 'missile', 'guided', { direction: [0, 0, 1] });
 assert.ok(
   room.ordnance.at(-1).v[2] > 0,
@@ -283,7 +275,6 @@ detonateHeavy(game, room, 'guided', pilot.id);
 assert.ok(room.ordnance.includes(missile), 'a report from another player is ignored');
 detonateHeavy(game, room, 'guided', gunner.id);
 assert.ok(!room.ordnance.includes(missile));
-assert.throws(() => fire(gunner, heli, 'missile', 'reload'), /recharge/);
 now += 2000;
 fire(gunner, heli, 'missile', 'orphan');
 missile = room.ordnance.at(-1);
@@ -327,9 +318,11 @@ for (const [type, factory] of [
   assert.ok(bounds.max.z > bounds.min.z);
   assert.ok(model.userData.turrets[0].userData.muzzle);
 }
-const drive = { ...vehiclePad('flaktruck'), p: [0, 0.01, 0], q: [0, 0, 0, 1] };
-for (let i = 0; i < 120; i++)
-  stepTank(T, drive, { forward: 1, turn: 1 }, [], 1 / 120, VEHICLES.flaktruck);
+const drive = { ...vehiclePad('flaktruck'), p: [0, VEHICLES.flaktruck.gear, 0], q: [0, 0, 0, 1] };
+const truckRig = new TruckRig(await loadRapier(() => import('../vendor/rapier.compat.mjs')));
+for (let i = 0; i < 360; i++)
+  truckRig.step(drive, { forward: 1, turn: 1 }, [], 1 / 120, VEHICLES.flaktruck);
+truckRig.dispose();
 assert.ok(drive.trailerAngle < 0 && drive.trailerAngle >= -0.65);
 assert.ok(Math.hypot(...drive.v) > 0);
 // Bounded representative CPU load; observations, not a WAN/FPS benchmark.

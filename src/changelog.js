@@ -1,6 +1,263 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 381,
+    changes: ['Les moyeux des roues du char suivent maintenant les roues sur le relief.'],
+  },
+  {
+    version: 377,
+    changes: [
+      'Le tireur du char voit son canon de près, sans que la tourelle gêne quand il relève la visée.',
+    ],
+  },
+  {
+    version: 375,
+    changes: ['Le canon du char ne se relève plus qu’à 30 degrés.'],
+  },
+  {
+    version: 374,
+    changes: [
+      'La caméra suit mieux le véhicule : moins de petits sauts en arrière quand l’image saccade.',
+    ],
+  },
+  {
+    version: 373,
+    changes: [
+      'Le canon du char pivote à l’avant de la tourelle, et seul le tube recule quand il tire.',
+    ],
+  },
+  {
+    version: 372,
+    changes: [
+      'Un diagnostic d’affichage, dans « Nouveautés », aide à comprendre pourquoi certains joueurs ne voient pas tout.',
+    ],
+  },
+  {
+    version: 371,
+    changes: ['Les ronds au sol des sièges et équipements restent visibles sur tous les écrans.'],
+  },
+  {
+    version: 370,
+    changes: ['Le tireur du char voit son canon de plus haut, sans la mitrailleuse devant.'],
+  },
+  {
+    version: 369,
+    changes: [
+      'Le canon du char recule à chaque tir et secoue la caisse. Le tireur voit le canon par-dessus l’épaule.',
+      'Un char abandonné reste bien à l’arrêt.',
+    ],
+  },
+  {
+    version: 366,
+    changes: [
+      'Les chenilles du char épousent le relief : galets et chenille montent sur les obstacles.',
+    ],
+  },
+  {
+    version: 365,
+    changes: ['Le char est un cinquième plus grand, et ses roues tournent avec les chenilles.'],
+  },
+  {
+    version: 364,
+    changes: [
+      'Camion anti-aérien : seules les roues avant braquent, selon le clavier, même à l’arrêt ; roues de remorque bien placées.',
+    ],
+  },
+  {
+    version: 363,
+    changes: [
+      'Camion anti-aérien : les roues tournent et braquent, la remorque pique et se cabre, et peut se replier à plus de 90°.',
+      'Le camion anti-aérien va deux fois plus vite. Le camion, le char et le Castor accélèrent plus doucement.',
+      'Char : avancer et tourner en même temps marche tout de suite, comme avec deux chenilles.',
+    ],
+  },
+  {
+    version: 362,
+    changes: [
+      'Tous les ennemis peuvent apparaître dès la première vague : seule la puissance de la vague décide de qui peut venir.',
+    ],
+  },
+  {
+    version: 361,
+    changes: [
+      'La remorque du camion anti-aérien se balance dans les virages et se met en portefeuille en marche arrière.',
+      'Le camion est plus rapide.',
+    ],
+  },
+  {
+    version: 360,
+    changes: [
+      'Rat, scarabées, abeilles, moustiques et cafards sont plus costauds ; les bébés araignées ont presque aucune vie.',
+      'Tous les ennemis, bébés araignées compris, passent au purgatoire avec leur vrai modèle et rapportent des dollars.',
+      'Au purgatoire, les ennemis signent leurs papiers deux fois plus vite.',
+    ],
+  },
+  {
+    version: 358,
+    changes: [
+      'Le char moyen roule comme un vrai char : suspension qui pique du nez au freinage, pivot sur place, franchit les petites marches.',
+      'Le char est plus rapide.',
+    ],
+  },
+  {
+    version: 357,
+    changes: [
+      'Le Castor se conduit comme un vrai véhicule à roues : départ progressif, freins, virages qui se resserrent à basse vitesse.',
+    ],
+  },
+  { version: 355, changes: ['Le Castor volant est 30 % plus petit.'] },
+  {
+    version: 354,
+    changes: [
+      'Hélicoptère : avec Q/D, le nez suit toujours la hauteur de la souris, pour tourner autour d’une cible.',
+      'Les barres sous les statistiques s’affichent sur tous les navigateurs.',
+      'La flamme des mitrailleuses part dans le sens du tir.',
+      'La bulle des stations de ravitaillement a la taille de celle du Castor.',
+    ],
+  },
+  {
+    version: 351,
+    changes: ['Tirer sur une nuée est plus fluide, et le premier tir ne fige plus l’image.'],
+  },
+  {
+    version: 348,
+    changes: [
+      'Les vagues deviennent plus difficiles plus vite : la puissance monte de moitié à chaque vague.',
+    ],
+  },
+  {
+    version: 345,
+    changes: [
+      'Zoom (clic droit) : la souris est plus fine, les sauts de visée ne sont plus agrandis.',
+    ],
+  },
+  {
+    version: 343,
+    changes: [
+      'Chaque ennemi a une puissance : plus il est fort, plus son âme libérée rapporte et plus il abîme la poubelle.',
+      'Les vagues suivent le nombre de joueurs. Plus de prime de fin de vague : seules les âmes libérées rapportent.',
+      'La puissance de la prochaine vague est annoncée.',
+      'Nouveaux prix pour tous les appareils, véhicules et installations du magasin.',
+      'Un char moyen gratuit et infini attend au sol, avec les deux avions de base.',
+      'La motorisation et les munitions renforcées n’existent plus.',
+    ],
+  },
+  {
+    version: 340,
+    changes: ['Le temps de préparation entre deux vagues passe à 3 minutes.'],
+  },
+  {
+    version: 339,
+    changes: [
+      'La zone de tir du scarabée est maintenant une sphère parfaite, autour de son corps.',
+    ],
+  },
+  {
+    version: 338,
+    changes: [
+      'En plein combat, les sons proches et importants ne sont plus coupés par le vacarme lointain.',
+      'Le bruit des moteurs ne se limite plus aux dix avions les plus proches : on entend ceux qui comptent le plus.',
+    ],
+  },
+  {
+    version: 334,
+    changes: [
+      'Le rat marche au ras du sol. Le moucheron est plus dur à toucher, les autres insectes volants plus faciles.',
+    ],
+  },
+  {
+    version: 329,
+    changes: [
+      'Les tapis du bureau sont retirés : ils coupaient les personnages et les équipements en deux.',
+    ],
+  },
+  {
+    version: 328,
+    changes: [
+      'Le chasseur léger et le bombardier moyen à quatre places sont de retour chez le marchand.',
+    ],
+  },
+  {
+    version: 327,
+    changes: [
+      'Le choix du plan de bureau tient sur une ligne : le bouton Rejoindre reste visible sur les petits écrans.',
+    ],
+  },
+  {
+    version: 324,
+    changes: [
+      'Six plans de bureau au choix quand on crée une partie : corbeille au centre, cloison avec une seule porte, archives en serpentin…',
+      'On démarre maintenant au sol, près de la corbeille.',
+    ],
+  },
+  {
+    version: 322,
+    changes: [
+      'En mode debug, on peut de nouveau poser un ennemi par terre, et pas seulement sur un meuble.',
+    ],
+  },
+  {
+    version: 320,
+    changes: [
+      'En mode debug, le marchand permet de poser des mannequins immobiles qui affichent les dégâts reçus, ou de vrais ennemis.',
+      'En mode debug, les zones touchables des ennemis et la portée des tourelles et du sucre sont visibles.',
+    ],
+  },
+  {
+    version: 319,
+    changes: ['Le ventilateur est retiré pour l’instant : il ne se construit plus.'],
+  },
+  {
+    version: 318,
+    changes: [
+      'L’abeille, le moustique et le scarabée sont plus grands, et plus faciles à toucher en proportion.',
+    ],
+  },
+  {
+    version: 317,
+    changes: ['Les bébés araignées ont un nouveau modèle grognon qui trottine sur ses pattes.'],
+  },
+  {
+    version: 312,
+    changes: ['Le voltigeur disparaît : il n’apparaît plus dans aucune vague.'],
+  },
+  {
+    version: 311,
+    changes: [
+      'Le moustique a un nouveau modèle : il vole en vibrant des ailes, ses longues pattes pendantes.',
+    ],
+  },
+  {
+    version: 310,
+    changes: [
+      'Le rat géant a un nouveau modèle de souris qui trottine avec une vraie animation de marche.',
+    ],
+  },
+  {
+    version: 309,
+    changes: [
+      'La carapace devient l’abeille : un nouveau modèle rayé jaune et noir qui bourdonne en battant vite des ailes.',
+    ],
+  },
+  {
+    version: 308,
+    changes: [
+      'Le cafard a un nouveau modèle : il trottine sur ses six pattes en agitant ses longues antennes.',
+    ],
+  },
+  {
+    version: 307,
+    changes: [
+      'Le bourdon blindé devient le scarabée : un nouveau modèle bleu et orange qui vole en battant des ailes, pattes pendantes.',
+    ],
+  },
+  {
+    version: 306,
+    changes: [
+      'Sur les réseaux qui bloquent l’UDP (réseaux d’entreprise), la partie se lance quand même, en mode secours « TCP ».',
+    ],
+  },
+  {
     version: 305,
     changes: [
       'Tous les avions, y compris les deux de départ, décollent maintenant depuis une surface plane.',

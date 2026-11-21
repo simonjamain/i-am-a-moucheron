@@ -1,16 +1,18 @@
-// Meshy ant and egg-laying spider: provenance, rig orientation, planted-foot
+// Meshy ant, egg-laying spider, spiderling and cockroach: provenance, rig orientation, planted-foot
 // walk cycles (tripod / alternating tetrapod), distance-driven gait proxies,
-// ellipsoid hits and the shared VAT bake (src/walker-gait.js, src/walker-batch.js).
+// ellipsoid hits and the shared VAT bake (src/walker-gait.ts, src/walker-batch.js).
 import assert from 'node:assert/strict';
 import * as T from '../vendor/three.module.min.js';
 import { ANT_DATA } from '../src/ant-data.js';
 import { SPIDER_DATA } from '../src/spider-data.js';
+import { ROACH_DATA } from '../src/roach-data.js';
+import { SPIDERLING_DATA } from '../src/spiderling-data.js';
 import { WALKERS, WalkerBatch, walkerStride } from '../src/walker-batch.js';
-import { footCycle, nearestRest, REST_PHASES, SWING } from '../src/walker-gait.js';
+import { footCycle, nearestRest, REST_PHASES, SWING } from '../src/walker-gait.ts';
 import { createGraphics } from '../src/graphics.js';
-import { nearestInsectHit, insectContact, InsectIndex } from '../src/insect-hits.js';
-import { GROUND_FOOT_DEPTH, GROUND_FOOT_CLEARANCE, INSECT_SCALE } from '../src/scale.js';
-import { insectScale } from '../src/insect-status.js';
+import { nearestInsectHit, insectContact, InsectIndex } from '../src/insect-hits.ts';
+import { GROUND_FOOT_DEPTH, GROUND_FOOT_CLEARANCE, INSECT_SCALE } from '../src/scale.ts';
+import { insectScale } from '../src/insect-status.ts';
 
 const near = (a, b, eps, label) => assert.ok(Math.abs(a - b) < eps, label + ': ' + a + ' vs ' + b);
 
@@ -23,11 +25,20 @@ assert.equal(
   SPIDER_DATA.source.sha256,
   'e8d8f32d7739467f6758b4220dc373bfcbacae42a004fdc4d29bbfc36d1c3faa',
 );
+assert.equal(
+  ROACH_DATA.source.sha256,
+  '4ca70cae6e412b2787c81aa7cddd49c7f382b501859a1a8fc29ab3644c155fc3',
+);
 assert.equal(ANT_DATA.bones.length, 52);
+assert.equal(ROACH_DATA.bones.length, 40);
+assert.equal(WALKERS.roach.bones.legs.length, 6);
+// Roach import: every welded shell keeps only its own leg chain.
+assert.ok(ROACH_DATA.source.legWeightsMoved > 300, 'cross-leg weights cleaned');
 assert.equal(SPIDER_DATA.bones.length, 30);
 assert.equal(WALKERS.ant.bones.legs.length, 6);
 assert.equal(WALKERS.spider.bones.legs.length, 8);
 for (const walker of Object.values(WALKERS)) {
+  if (walker.clip) continue; // clip-driven rat: scripts/test-rat-model.mjs
   const names = new Set(walker.creature.data.bones.map((b) => b.name));
   for (const leg of walker.bones.legs)
     for (const key of ['hip', 'knee', 'tip']) assert.ok(names.has(leg[key]), leg[key]);
@@ -53,11 +64,16 @@ near(nearestRest(0.02), -0.05, 1e-9, 'nearest rest wraps');
 // 3. Rigs: head towards -Z, feet on the shared ground lift, no foot below it
 // during the whole cycle, planted feet move backwards at the body speed.
 for (const [type, walker] of Object.entries(WALKERS)) {
+  if (walker.clip) continue;
   const rig = walker.creature.createRig(T);
   const h = walker.creature.helpers(T);
   const world = (name) => rig.bones[name].getWorldPosition(new T.Vector3());
-  const head = type === 'ant' ? 'Bone_002' : 'Bone_001';
-  const tail = type === 'ant' ? 'Bone_005' : 'Bone_022';
+  const head = { ant: 'Bone_002', spider: 'Bone_001', roach: 'Bone_005', spiderling: 'Bone_001' }[
+    type
+  ];
+  const tail = { ant: 'Bone_005', spider: 'Bone_022', roach: 'Bone_002', spiderling: 'Bone_021' }[
+    type
+  ];
   assert.ok(world(head).z < world(tail).z - 0.5, type + ': head forward (-Z)');
   const box = new T.Box3().setFromObject(rig.container);
   near(box.min.y, -GROUND_FOOT_DEPTH + GROUND_FOOT_CLEARANCE, 0.02, type + ': feet on the lift');
@@ -157,10 +173,48 @@ const spider = batch.create('spider', 0);
 spider.position.set(0.2, 0, 0);
 spider.scale.setScalar(insectScale('spider', INSECT_SCALE, 2.3));
 insects.set(1, spider);
+const roach = batch.create('roach', 0.4);
+roach.position.set(-0.2, 0, 0);
+roach.scale.setScalar(insectScale('roach', INSECT_SCALE, 1.2));
+insects.set(2, roach);
 batch.flush(insects);
 assert.equal(batch.batches.ant.mesh.count, 1);
 assert.equal(batch.batches.spider.mesh.count, 1);
-assert.equal(scene.children.length, 2, 'one instanced mesh per species');
+assert.equal(batch.batches.roach.mesh.count, 1);
+assert.equal(scene.children.length, 3, 'one instanced mesh per species');
+insects.delete(2);
+
+// Roach hit volume: the body (without legs or antennae) fills the ellipsoid.
+{
+  const creature = WALKERS.roach.creature;
+  const joints = Uint8Array.from(atob(ROACH_DATA.joints), (c) => c.charCodeAt(0));
+  const limbs = new Set(
+    ROACH_DATA.bones
+      .map((b, i) => [b.name, i])
+      .filter(([name]) => {
+        const k = Number(name.slice(5));
+        return k >= 6 && k <= 39; // legs Bone_006..029, antennae Bone_030..039
+      })
+      .map(([, i]) => i),
+  );
+  const bake = creature.bake(T, 2);
+  const [cx, cy, cz] = WALKERS.roach.hit.centre,
+    [rx, ry, rz] = WALKERS.roach.hit.radii;
+  let body = 0,
+    inside = 0,
+    tolerant = 0;
+  for (let v = 0; v < bake.count; v++) {
+    if (limbs.has(joints[v * 4])) continue;
+    const [x, y, z] = bake.positions.slice(v * 3, v * 3 + 3);
+    const q = ((x - cx) / rx) ** 2 + ((y - cy) / ry) ** 2 + ((z - cz) / rz) ** 2;
+    body++;
+    if (q <= 1) inside++;
+    if (q <= 1.25 ** 2) tolerant++;
+  }
+  assert.ok(body > 250, 'roach body sample ' + body);
+  assert.ok(inside / body > 0.85, 'roach body in its hit ellipsoid ' + inside / body);
+  assert.ok(tolerant / body > 0.99, 'roach body in the tolerant ellipsoid ' + tolerant / body);
+}
 
 // 5. Hits: the ellipsoid follows the heading; legs are not part of it; contact
 // and indexed hits agree with the exhaustive path and with the rigged model.
@@ -209,6 +263,66 @@ assert.ok(
   'soul walks',
 );
 
+// Spiderling: approved source, duplicate leg chain folded, walking palps
+// excluded from the gait, fallback rig, hits as generous as the old sphere.
+{
+  assert.equal(
+    SPIDERLING_DATA.source.sha256,
+    'eaeaff76e5384386dd19894b7acdf06a6513b675ecd9fd5d069891b4a5d996da',
+  );
+  assert.equal(SPIDERLING_DATA.bones.length, 29);
+  const walker = WALKERS.spiderling;
+  assert.equal(walker.bones.legs.length, 6);
+  assert.ok(SPIDERLING_DATA.source.aliasedWeights > 50, 'leg 2 +X folded into one chain');
+  assert.ok(SPIDERLING_DATA.source.legWeightsMoved > 200, 'cross-leg weights cleaned');
+  const joints = Uint8Array.from(atob(SPIDERLING_DATA.joints), (c) => c.charCodeAt(0));
+  const weights = Uint8Array.from(atob(SPIDERLING_DATA.weights), (c) => c.charCodeAt(0));
+  const dropped = ['Bone_008', 'Bone_007', 'Bone_006'].map((n) => walker.creature.boneIndex(n));
+  for (let k = 0; k < joints.length; k++)
+    if (weights[k] > 0) assert.ok(!dropped.includes(joints[k]), 'duplicate chain unused');
+  // Palps never reach under the floor while the legs walk.
+  const palps = new Set(walker.bones.palps.flat().map((n) => walker.creature.boneIndex(n)));
+  const bake = walker.creature.bake(T, 12);
+  for (let f = 0; f < 12; f++)
+    for (let v = 0; v < bake.count; v++)
+      if (palps.has(joints[v * 4]))
+        assert.ok(
+          bake.positions[(f * bake.count + v) * 3 + 1] > -GROUND_FOOT_DEPTH + GROUND_FOOT_CLEARANCE,
+          'palps above the floor',
+        );
+  // Body inside the hit volume, which also spans the inner legs (old 1.2 sphere).
+  const core = new Set(
+    ['Bone_000', 'Bone_001', 'Bone_022', 'Bone_021'].map((n) => walker.creature.boneIndex(n)),
+  );
+  const [cx, cy, cz] = walker.hit.centre,
+    [rx, ry, rz] = walker.hit.radii;
+  let body = 0,
+    inside = 0;
+  for (let v = 0; v < bake.count; v++) {
+    if (!core.has(joints[v * 4])) continue;
+    const [x, y, z] = bake.positions.slice(v * 3, v * 3 + 3);
+    body++;
+    if (((x - cx) / rx) ** 2 + ((y - cy) / ry) ** 2 + ((z - cz) / rz) ** 2 <= 1) inside++;
+  }
+  assert.ok(
+    body > 200 && inside / body > 0.97,
+    'spiderling body in its hit volume ' + inside / body,
+  );
+  assert.ok(rx >= 1 && rz >= 1, 'hit footprint close to the former 1.2 sphere');
+  const proxy = new WalkerBatch(T, new T.Scene(), { shadows: false }).create('spiderling', 2);
+  assert.ok(proxy.userData.instancedWalker && proxy.userData.enemyType === 'spiderling');
+  const fallback = createGraphics(T, new T.Scene()).insect('spiderling');
+  assert.ok(fallback.userData.walk, 'rigged fallback (corpses) walks');
+  for (const model of [proxy, fallback]) {
+    model.position.set(0, 0, -10);
+    model.updateMatrixWorld(true);
+    const insects = new Map([[5, model]]);
+    const ahead = new T.Vector3(0, 0, -1);
+    assert.equal(nearestInsectHit(T, new T.Vector3(0, 0.1, 0), ahead, insects)?.id, 5);
+    assert.ok(!nearestInsectHit(T, new T.Vector3(1.6, 0.1, 0), ahead, insects));
+  }
+}
+
 console.log(
   JSON.stringify({
     ant: {
@@ -221,8 +335,13 @@ console.log(
       bones: SPIDER_DATA.bones.length,
       vatBytes: batch.batches.spider.vat.bytes,
     },
+    roach: {
+      triangles: ROACH_DATA.source.triangles,
+      bones: ROACH_DATA.bones.length,
+      vatBytes: batch.batches.roach.vat.bytes,
+    },
   }),
 );
 console.log(
-  'PASS: Meshy ant and spider rigs, planted-foot gaits, distance-driven proxies, ellipsoid hits and VAT bakes.',
+  'PASS: Meshy ant, spider, spiderling and cockroach rigs, planted-foot gaits, distance-driven proxies, ellipsoid hits and VAT bakes.',
 );

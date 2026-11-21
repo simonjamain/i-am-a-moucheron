@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { Game } from '../server/game.js';
-import { ACTOR_UNIT } from '../src/scale.js';
-import { OFFICE_LAYOUT } from '../src/layout.js';
+import { ACTOR_UNIT } from '../src/scale.ts';
+import { OFFICE_LAYOUT } from '../src/layout.ts';
 
 let now = 100000;
 const game = new Game({ now: () => now });

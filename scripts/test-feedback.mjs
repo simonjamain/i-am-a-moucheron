@@ -2,12 +2,12 @@ import './normal-dossiers.mjs';
 import assert from 'node:assert/strict';
 import * as T from '../vendor/three.module.min.js';
 import { createGraphics } from '../src/graphics.js';
-import { InsectStatus, insectScale, woundState } from '../src/insect-status.js';
-import { nearestInsectHit, nearestMeshHit } from '../src/insect-hits.js';
-import { INSECT_SCALE } from '../src/scale.js';
+import { InsectStatus, insectScale, woundState } from '../src/insect-status.ts';
+import { nearestInsectHit, nearestMeshHit } from '../src/insect-hits.ts';
+import { INSECT_SCALE } from '../src/scale.ts';
 import { wavePlan, swarmFrame, entryStatus } from '../src/waves.js';
 import { PORTALS, MIN_SPAWN_DISTANCE } from '../src/routes.js';
-import { mergeOwnedArena } from '../src/purgatory-physics.js';
+import { mergeOwnedArena } from '../src/purgatory-physics.ts';
 const scene = new T.Scene(),
   { insect } = createGraphics(T, scene),
   old = insect('midge'),
@@ -17,7 +17,7 @@ larger.scale.setScalar(insectScale('midge', INSECT_SCALE));
 const a = new T.Box3().setFromObject(old).getSize(new T.Vector3()),
   b = new T.Box3().setFromObject(larger).getSize(new T.Vector3());
 assert.ok(Math.abs(b.x / a.x - 1.35 * 1.5 * 3) < 1e-8);
-assert.equal(insectScale('brute', 2), 6);
+assert.equal(insectScale('brute', 2), 2 * 3.559); // base × species factor (scarabée 17 mm, v318)
 let oldHits = 0,
   newHits = 0;
 for (let x = -0.004; x <= 0.004; x += 0.0001)
@@ -106,17 +106,8 @@ assert.ok(
   'late discovery keeps its actual near-bin position rather than teleporting',
 );
 // The very first join snapshot needs the same anchored clock as later syncs.
-const { default: worker } = await import('../worker/index.js');
-const { localDB } = await import('./local-db.mjs');
-const DB = localDB();
-const joinResponse = await worker.fetch(
-  new Request('https://test/api/join', {
-    method: 'POST',
-    body: JSON.stringify({ name: 'Clock', code: 'ENTRYTIME' }),
-  }),
-  { DB },
-);
-const join = await joinResponse.json();
+const { Game } = await import('../server/game.js');
+const join = new Game({ now: () => 1000 }).join({ name: 'Clock', code: 'ENTRYTIME' });
 assert.ok(join.snapshot.sentAt >= join.snapshot.now);
 const { readFileSync } = await import('node:fs'),
   { default: vm } = await import('node:vm');

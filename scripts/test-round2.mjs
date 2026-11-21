@@ -1,16 +1,16 @@
 import assert from 'node:assert/strict';
 import * as T from '../vendor/three.module.min.js';
-import { wheelPose } from '../src/castor-wheels.js';
+import { wheelPose } from '../src/castor-wheels.ts';
 import { stepHelicopter } from '../src/helicopter.js';
-import { VEHICLES, vehiclePad } from '../src/fleet.js';
-import { CombatEffects } from '../src/combat.js';
+import { VEHICLES, vehiclePad } from '../src/fleet.ts';
+import { CombatEffects } from '../src/combat.ts';
 import { makeBiplaneBomber } from '../src/biplane-model.js';
-import { aimGun } from '../src/sortie.js';
+import { aimGun } from '../src/sortie.ts';
 import { makeH2 } from '../src/h2-model.js';
-import { nearestWeaponMuzzle } from '../src/muzzle.js';
-import { makeServiceStation } from '../src/station-model.js';
-import { fogOpticalDepth, officeFogOpacity } from '../src/office-fog.js';
-import { brickLayout, BRICK_PITCH, BRICK_HEIGHT, BRICK_ROW } from '../src/brick-wall.js';
+import { nearestWeaponMuzzle } from '../src/muzzle.ts';
+import { makeServiceStation } from '../src/station-model.ts';
+import { fogOpticalDepth, officeFogOpacity } from '../src/office-fog.ts';
+import { brickLayout, BRICK_PITCH, BRICK_HEIGHT, BRICK_ROW } from '../src/brick-wall.ts';
 import { groundCommand, newGroundDefense, lengthPrice } from '../src/ground-defense-state.js';
 const wheel = { x: -1, z: -2 },
   opts = { scale: 0.003, turnRate: 1, frontZ: -2 };
@@ -48,8 +48,9 @@ effects.update(0.01);
 const flash = effects.items[0].g;
 assert.ok(flash.position.distanceTo(anchor.getWorldPosition(new T.Vector3())) < 1e-9);
 assert.ok(
-  flash.quaternion.angleTo(anchor.getWorldQuaternion(new T.Quaternion())) < 1e-7,
-  'flash follows barrel despite dispersion',
+  new T.Vector3(0, 0, -1).applyQuaternion(flash.quaternion).distanceTo(new T.Vector3(1, 0, 0)) <
+    1e-7,
+  'flash leaves along the shot, from the moving barrel tip',
 );
 const h = makeH2(T, scene);
 assert.equal(h.userData.turrets[0].userData.muzzles.length, 2);
@@ -94,7 +95,7 @@ console.log(
 );
 
 // A partial stop/resume must be visually identical to a single continuous run.
-const { wallVisualRuns } = await import('../src/brick-rules.js');
+const { wallVisualRuns } = await import('../src/brick-rules.ts');
 const resumed = wallVisualRuns([
   { kind: 'barricade', id: 'a', a: [0, 0], b: [0.036, 0], hp: 100 },
   { kind: 'barricade', id: 'b', a: [0.036, 0], b: [0.084, 0], hp: 100 },

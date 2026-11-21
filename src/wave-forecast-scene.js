@@ -1,5 +1,6 @@
 import { PORTALS, portalExit } from './routes.js';
-import { PheromoneTrails } from './pheromone-trail.js';
+import { activeLayout } from './layouts.ts';
+import { PheromoneTrails } from './pheromone-trail.ts';
 
 export const speciesSymbols = {
   ant: '🐜',
@@ -8,9 +9,8 @@ export const speciesSymbols = {
   spider: '🕷',
   spiderling: '🕷',
   midge: '🪰',
-  dart: '🪰➚',
-  guard: '🪲',
-  brute: '🐝',
+  guard: '🐝',
+  brute: '🪲🛡',
   mosquito: '🦟',
 };
 export const entranceLabel = (group) => (group.ground ? 'S' : 'A') + (group.portalIndex + 1);
@@ -56,9 +56,12 @@ export class WaveForecastScene {
       cmd = null;
     // While walking, coalesce requests. The expensive navigation grid is built
     // off the render thread; stale snapshots and stale drafts never overwrite it.
-    const key = [prep.id, snap.groundDefense.navigationRevision, JSON.stringify(cmd || null)].join(
-      ':',
-    );
+    const key = [
+      prep.id,
+      activeLayout().id,
+      snap.groundDefense.navigationRevision,
+      JSON.stringify(cmd || null),
+    ].join(':');
     this.key = key;
     if (this.busy || this.rendered === key || now < (this.nextAt || 0)) return;
     if (!this.worker) {
@@ -78,6 +81,7 @@ export class WaveForecastScene {
     this.nextAt = now + 110;
     this.worker.postMessage({
       key,
+      layout: activeLayout().id,
       groups: this.entrances,
       walls: snap.groundDefense.structures.filter((s) => ['barricade', 'bunker'].includes(s.kind)),
       command: cmd || null,

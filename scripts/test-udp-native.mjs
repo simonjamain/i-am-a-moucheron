@@ -1,12 +1,12 @@
-import { supportedPlacement } from '../src/equipment.js';
-import { OFFICE_SOLIDS } from '../worker/assets.js';
-import { ACTOR_UNIT, MAP } from '../src/scale.js';
-import { OFFICE_LAYOUT } from '../src/layout.js';
+import { supportedPlacement } from '../src/equipment.ts';
+import { OFFICE_SOLIDS } from '../server/assets.js';
+import { ACTOR_UNIT, MAP } from '../src/scale.ts';
+import { OFFICE_LAYOUT } from '../src/layout.ts';
 import assert from 'node:assert/strict';
 import { PeerConnection, cleanup } from 'node-datachannel';
 import { createGameServer } from '../server/index.js';
-import { decodeMotionBatch } from '../src/motion-wire.js';
-import { ReplyAssembler, PROTOCOL, COMMAND_CHANNEL, MOTION_CHANNEL } from '../src/udp-protocol.js';
+import { decodeMotionBatch } from '../src/motion-wire.ts';
+import { ReplyAssembler, PROTOCOL, COMMAND_CHANNEL, MOTION_CHANNEL } from '../src/udp-protocol.ts';
 
 const app = createGameServer({
   portBegin: 42000,
@@ -42,7 +42,7 @@ async function client() {
       v = assembler.receive(p);
     if (v) replies.set(p.id, v);
   });
-  // The server relays motion as shared binary batches (src/motion-wire.js).
+  // The server relays motion as shared binary batches (src/motion-wire.ts).
   motion.onMessage((raw) => {
     if (typeof raw === 'string') packets.push(JSON.parse(raw));
     else for (const entry of decodeMotionBatch(raw).entries) packets.push(entry);
@@ -146,23 +146,23 @@ try {
   const person = gameRoom.pilots.get(bj.body.id);
   app.game.release(gameRoom, person);
   person.mode = 'foot';
-  gameRoom.dollars = 50;
+  gameRoom.dollars = 100;
   const sign = await b.request('purchase-sign', {
     item: 'radar',
     request: 'native-radar-order',
-    expectedPrice: 4,
+    expectedPrice: 10,
     signature: true,
     epoch: gameRoom.base.epoch,
     incarnation: person.incarnation,
   });
   assert.equal(sign.status, 200);
-  assert.equal(sign.body.dollars, 46);
+  assert.equal(sign.body.dollars, 90);
   const observedOrder = await a.request('sync', { mode: 'foot', state });
   assert.ok(observedOrder.body.purchases.some((o) => o.owner === person.id && o.item === 'radar'));
   const purchased = await b.request('purchase-sign', {
     item: 'spitfire',
     request: 'native-spit-order',
-    expectedPrice: 24,
+    expectedPrice: 75,
     signature: true,
     epoch: gameRoom.base.epoch,
     incarnation: person.incarnation,

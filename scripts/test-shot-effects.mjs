@@ -3,7 +3,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import * as T from '../vendor/three.module.min.js';
-import { EXHAUST_PROFILES, MissileExhaust } from '../src/missile-exhaust.js';
+import { EXHAUST_PROFILES, MissileExhaust } from '../src/missile-exhaust.ts';
 import { GroundDefenseUI } from '../src/ground-defense-ui.js';
 import { newGroundDefense } from '../src/ground-defense-state.js';
 

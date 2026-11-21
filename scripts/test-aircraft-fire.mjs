@@ -1,11 +1,11 @@
-import { nearestWeaponMuzzle } from '../src/muzzle.js';
-import { TracerPool } from '../src/tracers.js';
-import { GunSalvos, advanceAutomaticFire } from '../src/salvos.js';
+import { nearestWeaponMuzzle } from '../src/muzzle.ts';
+import { TracerPool } from '../src/tracers.ts';
+import { GunSalvos, advanceAutomaticFire } from '../src/salvos.ts';
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import { readFileSync } from 'node:fs';
 import * as T from '../vendor/three.module.min.js';
-import { AircraftFire } from '../src/aircraft-fire.js';
+import { AircraftFire } from '../src/aircraft-fire.ts';
 
 const deferred = () => {
   let resolve, reject;

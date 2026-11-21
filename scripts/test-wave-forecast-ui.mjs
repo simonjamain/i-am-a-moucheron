@@ -7,7 +7,7 @@ import { enemyRoute, portalExit, PORTALS } from '../src/routes.js';
 const groups = [
   { ground: true, type: 'ant', portalIndex: 1, count: 5, spawn: 6 },
   { ground: false, type: 'midge', portalIndex: 0, count: 3, spawn: 1 },
-  { ground: false, type: 'dart', portalIndex: 0, count: 1, spawn: 6 },
+  { ground: false, type: 'mosquito', portalIndex: 0, count: 1, spawn: 6 },
 ];
 assert.deepEqual(timelineColumns(groups), [
   [1, [groups[1]]],
@@ -79,12 +79,12 @@ const snap = {
   vehicles: [],
   pilots: [{ id: 'p' }, { id: 'q' }],
   dollars: 12,
-  preparation: { id: 'e1', wave: 1, groups },
+  preparation: { id: 'e1', wave: 1, power: 32, groups },
 };
 ui.accept(snap, 'p');
 ui.countdown(45);
 assert.equal(ui.dialog.open, false);
-assert.equal(ui.button.textContent, 'Vague 1 · 45 s');
+assert.equal(ui.button.textContent, 'Vague 1 · puissance 32 · 45 s');
 assert.doesNotMatch(ui.button.textContent, /vote/);
 ui.button.onclick();
 assert.equal(ui.timeline.children.length, 2);

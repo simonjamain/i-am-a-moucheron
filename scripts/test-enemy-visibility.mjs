@@ -1,13 +1,12 @@
-import { airField } from '../src/air-current.js';
-import { ServerClock } from '../src/server-clock.js';
-import { GroundMotionTrack } from '../src/ground-motion.js';
-import { InsectIndex } from '../src/insect-hits.js';
+import { ServerClock } from '../src/server-clock.ts';
+import { GroundMotionTrack } from '../src/ground-motion.ts';
+import { InsectIndex } from '../src/insect-hits.ts';
 import assert from 'node:assert/strict';
 import * as T from '../vendor/three.module.min.js';
 import { createGraphics } from '../src/graphics.js';
 import { ENEMY_TYPES, wavePlan, swarmFrame } from '../src/waves.js';
-import { insectScale } from '../src/insect-status.js';
-import { INSECT_SCALE } from '../src/scale.js';
+import { insectScale } from '../src/insect-status.ts';
+import { INSECT_SCALE } from '../src/scale.ts';
 const scene = new T.Scene(),
   graphics = createGraphics(T, scene);
 const missing = [];
@@ -29,7 +28,8 @@ console.log(
   'Ground enemies present from wave one; finite visible spawn frames through wave twelve.',
 );
 // A live enemy must never be completely swallowed by solid furniture.
-import { ROUTE_OBSTACLES } from '../src/route-obstacles.js';
+import { layoutSolids } from '../src/layouts.ts';
+const ROUTE_OBSTACLES = layoutSolids();
 const counts = {};
 for (const wave of [1, 2, 4, 6, 8, 12]) {
   const roster = wavePlan('VISIBLE', wave, 1000).roster;
@@ -85,6 +85,7 @@ const state = {
   midgeBatch: { enabled: false },
   spiderlingBatch: { enabled: false },
   walkerBatch: { enabled: false },
+  flyerBatch: { enabled: false, handles: () => false },
   midgeForward: new T.Vector3(0, 0, -1),
   midgeHeading: new T.Vector3(),
   midgeTarget: new T.Quaternion(),
@@ -105,7 +106,6 @@ const state = {
   serverClock: new ServerClock(),
   currentRoster: () => state.snap.roster,
   swarmFrame,
-  airField,
   localKills: new Set(),
   entryStatus: () => 'in-flight',
   entryNoticeWave: -1,

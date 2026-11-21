@@ -1,7 +1,6 @@
 # Construire et exécuter avec Docker
 
-La référence de livraison est le dépôt GitHub (ZIP des sources seulement sur
-demande, voir [l’exploitation](operations.md)). Le dépôt fournit aussi un `Dockerfile` pour
+La référence de livraison est le dépôt GitHub (voir [l’exploitation](operations.md)). Le dépôt fournit aussi un `Dockerfile` pour
 construire localement la même version du serveur Node/UDP. Le workflow de
 [publication](../.github/workflows/docker.yml) construit et publie sur GHCR à
 chaque push sur `main` : `ghcr.io/simonjamain/i-am-a-moucheron:latest` et un
@@ -40,14 +39,18 @@ docker run … -e UDP_ADVERTISE_ADDRESS=ADRESSE_IP_PUBLIQUE \
 `UDP_ADVERTISE_PORT` doit égaler le port publié côté hôte ; voir
 [le port UDP unique](udp-server.md#port-udp-unique-réseaux-dentreprise).
 
+Pour conserver les [statistiques](stats.md) d'une version à l'autre, monter un volume
+inscriptible par l'utilisateur `node` et définir `STATS_FILE` (par exemple
+`-v moucheron-stats:/stats -e STATS_FILE=/stats/stats.json`) ; la page `/stats` les affiche.
+
 Une seule instance conserve toutes les salles en RAM. Redémarrer ou recréer le
 conteneur efface les parties en cours. Le contrôle `/healthz` valide HTTP, pas la
 connectivité UDP : la vérifier avec deux joueurs sur des réseaux distincts.
 
-Les fichiers Compose et l’exemple Traefik du dépôt restent liés à l’ancienne
-image importable `2026.10.29-udp.2`. Ses instructions sont conservées dans
-[l’archive du paquet Docker](archive/docker-package-2026-10-29.md) ; elles ne
-doivent pas être prises pour une livraison de l’état courant.
+`compose.yaml` et `compose.traefik.yaml` référencent encore l’ancien tag local
+`i-am-a-moucheron:2026.10.29-udp.2`, qui n’est plus produit : ils ne suivent pas
+l’état courant. Utiliser la commande `docker build` / `docker run` ci-dessus ou
+l’image GHCR `latest`.
 
 ## Contrôle de contribution et protection de main
 

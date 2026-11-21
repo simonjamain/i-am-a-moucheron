@@ -1,12 +1,12 @@
 import assert from 'node:assert/strict';
 import * as T from '../vendor/three.module.min.js';
 import { createGraphics } from '../src/graphics.js';
-import { InsectIndex, nearestInsectHit } from '../src/insect-hits.js';
+import { InsectIndex, nearestInsectHit } from '../src/insect-hits.ts';
 const scene = new T.Scene();
 const graphics = createGraphics(T, scene);
 const insects = new Map();
 for (let i = 0; i < 180; i++) {
-  const g = graphics.insect(['midge', 'ant', 'roach', 'dart', 'guard', 'brute'][i % 6]);
+  const g = graphics.insect(['midge', 'ant', 'roach', 'mosquito', 'guard', 'brute'][i % 6]);
   g.position.set(
     (i % 10) * 0.12 - 0.6,
     Math.floor(i / 60) * 0.12,

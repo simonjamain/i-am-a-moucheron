@@ -147,6 +147,8 @@
         top: 50%;
         transform: translateY(-45%);
         width: 430px;
+        max-height: 96vh;
+        overflow-y: auto;
         z-index: 3;
       }
       h1 {
@@ -196,6 +198,33 @@
       }
       input:focus {
         border-color: var(--acid);
+      }
+      .plans {
+        display: grid;
+        grid-template-columns: repeat(6, 1fr);
+        gap: 5px;
+        margin: 12px 0 4px;
+      }
+      .plans button {
+        display: grid;
+        gap: 4px;
+        padding: 3px;
+        background: #0c211f;
+        color: var(--cream);
+        border: 1px solid #ffffff26;
+        border-radius: 4px;
+        font: inherit;
+        font-size: 0; /* names are in the tooltip; keeps the join button in view */
+        letter-spacing: 0.5px;
+        cursor: pointer;
+      }
+      .plans button[aria-checked='true'] {
+        border-color: var(--acid);
+      }
+      .plans svg {
+        width: 100%;
+        height: auto;
+        display: block;
       }
       .appearance {
         margin-top: 16px;
@@ -1604,6 +1633,45 @@
         font-size: 18px;
         color: #d5ef73;
       }
+      /* Debug mode (debug-tools.ts): two compact columns of enemies to place. */
+      #shopItems.debugShop {
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+      }
+      #shopItems .debugCard {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 8px;
+      }
+      #shopItems .debugCard .shopPicture {
+        flex: none;
+        width: 38px;
+        height: 38px;
+        margin: 0;
+        font-size: 24px;
+      }
+      #shopItems .debugCard h4 {
+        margin: 0;
+        font-size: 14px;
+      }
+      #shopItems .debugClear {
+        justify-content: center;
+        color: #ffd2b0;
+      }
+      .debugPlacement {
+        position: fixed;
+        z-index: 6;
+        bottom: 22px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #15352eea;
+        border: 1px solid #ff5ad2;
+        border-radius: 8px;
+        padding: 10px 16px;
+        color: #f2f2e6;
+        font-weight: 700;
+        pointer-events: none;
+      }
       #placementControls {
         position: fixed;
         z-index: 6;
@@ -2235,11 +2303,19 @@
       #cursorAmmo {
         font-weight: 700;
       }
-      #cursorStats progress {
+      #cursorStats .bar {
         display: block;
         width: 95px;
         height: 4px;
-        accent-color: #c0e27d;
+        background: rgba(0, 0, 0, 0.55);
+        border-radius: 2px;
+        overflow: hidden;
+      }
+      #cursorStats .bar i {
+        display: block;
+        height: 100%;
+        width: 0;
+        background: #c0e27d;
       }
       #cursorAmmo {
         display: block;
@@ -2345,6 +2421,16 @@
         overflow-y: auto;
         overscroll-behavior: contain;
         padding: 0 18px 12px;
+      }
+      #renderInfo {
+        padding: 0 18px 14px;
+        font-size: 12px;
+      }
+      #renderInfo pre {
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+        margin: 6px 0;
+        font-size: 11px;
       }
       #changelogEntries section {
         padding: 12px 0;
@@ -2477,6 +2563,7 @@
           </button>
           <output id="appearanceName" aria-live="polite"></output>
         </div>
+        <div id="plans" class="plans" role="radiogroup" aria-label="Plan du bureau"></div>
         <button id="join" class="primary" type="submit">Rejoindre la base <span>↗</span></button>
         <p id="error" role="alert"></p>
       </form>
@@ -2601,10 +2688,10 @@
     <div id="reserveAlerts" aria-live="polite"></div>
     <div id="cursorStats" class="hidden">
       <span id="cursorSpeed"></span> · <span id="cursorHealth"></span
-      ><progress id="cursorHPbar" max="100" value="100"></progress><span id="cursorAmmo"></span
-      ><progress id="cursorAmmoBar" max="1" value="1"></progress> <span id="cursorFuelLabel"></span
-      ><progress id="cursorFuel" max="100"></progress> <span id="cursorGasLabel"></span
-      ><progress id="cursorGas" max="100"></progress>
+      ><span id="cursorHPbar" class="bar"><i></i></span><span id="cursorAmmo"></span
+      ><span id="cursorAmmoBar" class="bar"><i></i></span> <span id="cursorFuelLabel"></span
+      ><span id="cursorFuel" class="bar"><i></i></span> <span id="cursorGasLabel"></span
+      ><span id="cursorGas" class="bar"><i></i></span>
     </div>
     <div id="dirtView" aria-hidden="true"></div>
     <p id="dirtWarning" class="hidden">Attention, nettoyez votre véhicule en urinant dessus.</p>
@@ -2809,6 +2896,11 @@
         <button id="changelogClose" type="button" aria-label="Fermer les nouveautés">✕</button>
       </header>
       <div id="changelogEntries" tabindex="0" aria-label="Historique des versions"></div>
+      <details id="renderInfo">
+        <summary>Diagnostic d’affichage</summary>
+        <pre id="renderInfoText"></pre>
+        <button id="renderInfoCopy" type="button">Copier</button>
+      </details>
     </dialog>
   </body>
 </html>

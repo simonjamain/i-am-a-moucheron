@@ -3,8 +3,7 @@
 La composition de vague décrite dans ce lot a ensuite été densifiée : voir
 [les nuées de version 38](dense-swarms.md), 20 moucherons et 4 fourmis au départ.
 
-Lot MORT-01 à RAD-02, Node/RAM/UDP, 29 octobre 2026. Source livrée en ZIP ; le
-Worker historique n’héberge pas ces nouvelles règles. Les spécifications du backlog
+Lot MORT-01 à RAD-02, Node/RAM/UDP, 29 octobre 2026. Les spécifications du backlog
 sont les décisions validées ; ce document décrit leur réalisation et ses limites.
 
 ## Mort et observation volontaire
@@ -44,16 +43,15 @@ zoom. Les informations tank et DCA restent contextuelles, avec leur aide complè
 
 ## Réserves gratuites et achats de véhicules
 
-Chaque type initial garde **un exemplaire de réserve prêt**. Le premier décollage
+Chaque type initial (chasseur, bombardier et char moyen) garde **un exemplaire de réserve prêt**. Le premier décollage
 retire définitivement `ready` à cette coque et crée son remplaçant ; les avions
 utilisés restent en partie. Revenir se poser ne recrée pas une réserve supplémentaire.
 Détruire un exemplaire prêt le remplace ; détruire un avion déjà utilisé ne crée
 pas un deuxième remplaçant. Le tick et les commandes synchrones arbitrent les cas
 concurrents. Les coques achetées n’entrent jamais dans cette réserve gratuite.
 
-Tous les modèles sont vendus : chasseur M1 **8 $**, bombardier B3 **16 $**, Stuka
-**12 $**, tank **10 $**, Spitfire **24 $**. Les deux nouveaux prix sont choisis dans
-l’économie existante ; `shopPrice` reste partagé. Achat **à pied**, signature du
+Tous les modèles sont vendus aux prix de [progression](progression.md#revenus-et-prix) ;
+`shopPrice` reste partagé. Achat **à pied**, signature du
 bon puis aperçu et E pour poser, au sol ou sur mobilier réellement porteur.
 Aucun appareil acheté n’apparaît automatiquement à Alpha. La route publique
 `buy` refuse désormais les véhicules : passer par `purchase-sign` et
@@ -110,7 +108,7 @@ Git `94c54a4`, données brutes [JSON](return-performance.json).
 Les parcours font le tour de plusieurs zones éloignées, aussi pour les premières
 vagues. Les routes aériennes utilisent le haut de la pièce et une traversée plus
 basse. Depuis la version 225, les routes terrestres vont directement à la corbeille
-par le champ de navigation partagé ([navigation terrestre](gameplay.md#navigation-terrestre)). A* et contrôles de segments évitent le
+par le champ de navigation partagé ([navigation terrestre](gameplay.md#navigation-terrestre)). A\* et contrôles de segments évitent le
 mobilier statique ; aucun obstacle dynamique nouvellement posé ne provoque un
 recalcul de navigation général.
 
@@ -164,9 +162,10 @@ d’explosion, même si la coque disparaît. Dégâts centre 240 et bord 60 inch
 rayon visuel et dégâts doublés ensemble ; obstacles et déduplication conservés.
 
 Le moucheron est encore agrandi de **50 %** : facteur visuel historique **2,025**, désormais **6,075** après le [correctif de visibilité](enemy-visibility.md) par
-rapport au modèle antérieur à VIS-02. Sa tolérance de tir est **1,2 ×** ce nouveau
-modèle. Les intersections ellipsoïdales ne modifient pas les meshes rendus ni les
-PV. Les autres espèces suivent désormais les [facteurs de visibilité](enemy-visibility.md) ; leurs tolérances de collision restent inchangées.
+rapport au modèle antérieur à VIS-02. Sa tolérance de tir était **1,2 ×** ce nouveau
+modèle ; depuis la v334 elle est de **0,84 ×** (hitbox réduite de 30 %), alors que l'abeille, le
+moustique et le scarabée passent de 1 à **1,3 ×** (hitbox agrandie de 30 %). Les intersections ellipsoïdales ne modifient pas les meshes rendus ni les
+PV. Les autres espèces suivent désormais les [facteurs de visibilité](enemy-visibility.md) ; leurs tolérances de collision restent inchangées, hors les volants ci-dessus.
 
 Les teintes et initiales corporelles des joueurs ont été retirées avec l'arrivée
 du [personnage animé](asset-pipeline.md#personnage-joueur-meshy--mixamo) : tous

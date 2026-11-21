@@ -5,11 +5,8 @@ outputs/
 
 node_modules/
 
-# Local state from historical Sites tooling is not project configuration.
-.openai/
-.sites-checkout/
-.sites-runtime/
 
 # Private Meshy originals and temporary optimization candidates
 /assets/originals/
 /assets/optimized/
+.site/

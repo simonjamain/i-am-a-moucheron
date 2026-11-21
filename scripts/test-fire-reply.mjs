@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { Game } from '../server/game.js';
 import { GameSession } from '../server/session.js';
-import { PROTOCOL, ReplyAssembler } from '../src/udp-protocol.js';
+import { PROTOCOL, ReplyAssembler } from '../src/udp-protocol.ts';
 
 // Regression: firing a machine gun from a vehicle sent a reply that is not a
 // room snapshot (aircraft-fire), encoded as a snapshot patch since v248. The

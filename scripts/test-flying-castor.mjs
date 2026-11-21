@@ -8,35 +8,36 @@ import { readFileSync } from 'node:fs';
 import * as T from '../vendor/three.module.min.js';
 import { MODEL_DATA } from '../src/meshy-flying-castor-data.js';
 import { createGraphics } from '../src/graphics.js';
+import { ACTOR_UNIT } from '../src/scale.ts';
 import {
   VEHICLES,
   SEAT_NAMES,
   isRotorcraft,
   isSupportVehicle,
   isPassengerSeat,
-} from '../src/fleet.js';
-import { SHOP } from '../src/equipment.js';
-import { SHOP_CATEGORIES } from '../src/shop-catalog.js';
-import { canUseWeapon } from '../src/armament.js';
-import { fullAmmo, CASTOR_SERVICE_RADIUS } from '../src/logistics.js';
+} from '../src/fleet.ts';
+import { SHOP } from '../src/equipment.ts';
+import { SHOP_CATEGORIES } from '../src/shop-catalog.ts';
+import { canUseWeapon } from '../src/armament.ts';
+import { fullAmmo, CASTOR_SERVICE_RADIUS } from '../src/logistics.ts';
 import { CONTRACTS, contractKey } from '../src/contracts.js';
 import { withinService } from '../src/paid-service.js';
 import { serviceZoneList } from '../src/service-zones.js';
 import { stepHelicopter, HELI } from '../src/helicopter.js';
-import { DELIVERY_SPEED, deliveryHeightAt } from '../src/delivery.js';
+import { DELIVERY_SPEED, deliveryHeightAt } from '../src/delivery.ts';
 import {
   AIRDROP_KINDS,
   AIRDROP_TAPE,
   airdropCommand,
   airdropSurface,
   headingOf,
-} from '../src/airdrop.js';
+} from '../src/airdrop.ts';
 import { airdropPlacement } from '../src/ground-placement.js';
 import { navigationStructures, floorStructures } from '../src/ground-defense-state.js';
-import { seatRole } from '../src/seat-icons.js';
+import { seatRole } from '../src/seat-icons.ts';
 import { controlHintItems } from '../src/live-hud.js';
 import { Game } from '../server/game.js';
-import { OFFICE_SOLIDS } from '../worker/assets.js';
+import { OFFICE_SOLIDS } from '../server/assets.js';
 
 const near = (a, b, eps, label) => assert.ok(Math.abs(a - b) < eps, label + ': ' + a + ' vs ' + b);
 
@@ -87,7 +88,7 @@ for (const rotor of one.userData.rotors) {
 front.rotation.y = 1;
 assert.equal(two.userData.rotor.rotation.y, 0, 'rotors are per helicopter');
 const box = new T.Box3().setFromObject(one);
-near(box.min.y, -VEHICLES.flyingcastor.gear / VEHICLES.flyingcastor.gear, 1e-3, 'skids at gear');
+near(box.min.y, -VEHICLES.flyingcastor.gear / ACTOR_UNIT, 1e-3, 'skids at gear');
 assert.equal(one.userData.engines.length, 2, 'smoke under each rotor');
 
 // 2. Fleet, shop, crew and support.
@@ -99,7 +100,7 @@ assert.ok(isSupportVehicle('flyingcastor') && isSupportVehicle('castor'));
 assert.ok(!isSupportVehicle('helicopter'));
 assert.ok(spec.seats.slice(1).every((s) => isPassengerSeat(s) && SEAT_NAMES[s] === 'Passager'));
 assert.equal(seatRole('flyingcastor', 'passenger2'), 'passenger');
-assert.equal(SHOP.flyingcastor.cost, 30);
+assert.equal(SHOP.flyingcastor.cost, 35);
 assert.equal(SHOP.flyingcastor.kind, 'vehicle');
 assert.ok(SHOP_CATEGORIES.find((c) => c.id === 'air').items.includes('flyingcastor'));
 for (const seat of spec.seats) {
@@ -135,8 +136,7 @@ near(Math.hypot(tape.b[0] - tape.a[0], tape.b[1] - tape.a[1]), AIRDROP_TAPE, 1e-
 near((tape.a[0] + tape.b[0]) / 2, 1, 1e-12, 'tape centred');
 near(Math.atan2(-(tape.a[0] - tape.b[0]), -(tape.a[1] - tape.b[1])), yaw, 1e-9, 'tape heading');
 assert.equal(airdropCommand('sentry', { x: 1, z: 2, yaw }).angle, yaw);
-near(Math.abs(airdropCommand('fan', { x: 1, z: 2, yaw }).angle - yaw), Math.PI, 1e-9, 'fan');
-assert.deepEqual(AIRDROP_KINDS, ['sugar', 'sticky', 'fan', 'sentry', 'bunker', 'antitank']);
+assert.deepEqual(AIRDROP_KINDS, ['sugar', 'sticky', 'sentry', 'bunker', 'antitank']);
 const desk = [-1.8, 1.6]; // office desk top at 0.90 m
 near(airdropSurface(OFFICE_SOLIDS, ...desk, 1.3), 0.9, 1e-6, 'desk top');
 near(airdropSurface(OFFICE_SOLIDS, ...desk, 0.5), 0, 1e-6, 'under the desk: floor');
@@ -261,7 +261,7 @@ hover(target.position[0] + 0.1, 0.5, target.position[1]);
 s = run(guest, { action: 'remove', target: target.id });
 assert.ok(!s.groundDefense.structures.some((x) => x.id === target.id), 'removed from the air');
 v.state.hp = 0;
-assert.throws(() => run(pilot, { action: 'build', kind: 'fan' }), /réservée|purgatoire/);
+assert.throws(() => run(pilot, { action: 'build', kind: 'sugar' }), /réservée|purgatoire/);
 
 // 6. Client wiring: V vertical view for every seat, keyboard-only flight,
 // A/E turn, hull hidden over the drop point, falling drops drawn.

@@ -1,11 +1,11 @@
-import { WALKER_FALL } from '../src/field-physics.js';
+import { WALKER_FALL } from '../src/field-physics.ts';
 import assert from 'node:assert/strict';
 import * as T from '../vendor/three.module.min.js';
 import { createOffice } from '../src/office.js';
 import { createGraphics } from '../src/graphics.js';
-import { MAP, ACTOR_UNIT, REFERENCE } from '../src/scale.js';
+import { MAP, ACTOR_UNIT, REFERENCE } from '../src/scale.ts';
 import { reconcileBase, advanceBase } from '../src/base.js';
-import { OFFICE_LAYOUT } from '../src/layout.js';
+import { OFFICE_LAYOUT } from '../src/layout.ts';
 import {
   BULLET_SPEED,
   FIRE_INTERVAL,
@@ -13,8 +13,8 @@ import {
   resolveLanding,
   stepWalker,
   GEAR_HEIGHT,
-} from '../src/sortie.js';
-import { createSoul, advanceArena, mergeOwnedArena } from '../src/purgatory-physics.js';
+} from '../src/sortie.ts';
+import { createSoul, advanceArena, mergeOwnedArena } from '../src/purgatory-physics.ts';
 assert.equal(BULLET_SPEED, MAP.metres(REFERENCE.bullet));
 assert.equal(FIRE_INTERVAL, 0.06);
 const scene = new T.Scene(),

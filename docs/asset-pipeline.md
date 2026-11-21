@@ -115,7 +115,7 @@ Premier asset passé par la règle ci-dessus ([issue #99](https://github.com/sim
 Huit modèles fournis et validés par l'utilisateur ([issue #111](https://github.com/simonjamain/i-am-a-moucheron/issues/111)
 pour le premier, cinq ajoutés en version 280, l'opératrice en version 282, l'opérateur en version 283), déjà générés, riggés et animés par
 l'utilisateur dans Meshy/Mixamo : aucune génération ni crédit Meshy de notre côté.
-Le joueur choisit le sien à l'accueil (`src/character-appearances.js`, ordre du
+Le joueur choisit le sien à l'accueil (`src/character-appearances.ts`, ordre du
 sélecteur ; le premier sert de défaut et de repli pour une valeur inconnue). Les noms
 ne sont pas affichés : ils ne sont lus que par les lecteurs d'écran.
 
@@ -212,7 +212,7 @@ Premier modèle d'animal ; modèle « Angry Little Fly » fourni par l'utilisate
 
 Deux modèles fournis par l'utilisateur, déjà riggés par Meshy, sans clip ; ils
 suivent la même chaîne que le moucheron, généralisée dans `src/rigged-creature.js`
-(décodage, rig, cuisson) et `src/creature-batch.js` (texture d'animation de sommets,
+(décodage, rig, cuisson) et `src/creature-batch.ts` (texture d'animation de sommets,
 un `InstancedMesh` par espèce, ombres via un matériau de profondeur dédié).
 
 - Originaux hors dépôt : `assets/originals/ant/red-ant-warrior.glb` (SHA-256
@@ -226,7 +226,7 @@ un `InstancedMesh` par espèce, ombres via un matériau de profondeur dédié).
 - Os (`ANT_BONES`, `SPIDER_BONES`) : fourmi — 6 pattes hanche/genou/tarse,
   gastre à trois segments, tête, antennes à deux segments, mandibules ; araignée —
   8 pattes hanche/genou/tarse, céphalothorax, abdomen à deux segments.
-- Marche (`src/walker-gait.js`) : pieds plantés qui reculent à la vitesse du corps
+- Marche (`src/walker-gait.ts`) : pieds plantés qui reculent à la vitesse du corps
   pendant 60 % du cycle, levés en arc pendant les 40 % restants, résolus par une
   cinématique inverse à deux os par patte (`solveLeg`). Fourmi : démarche tripode
   (avant-gauche, milieu-droit, arrière-gauche ensemble) ; araignée : tétrapode
@@ -246,7 +246,7 @@ un `InstancedMesh` par espèce, ombres via un matériau de profondeur dédié).
   `−GROUND_FOOT_DEPTH + GROUND_FOOT_CLEARANCE` : le relèvement partagé de
   `swarmFrame()` reste inchangé et les pieds dégagent le plancher.
 - Collision : ellipsoïde du corps sans les pattes (`ANT_HIT`, `SPIDER_HIT`),
-  suivi par `insect-hits.js` (`hitEllipsoid`, `hitCentre`) pour le tir, l'index
+  suivi par `insect-hits.ts` (`hitEllipsoid`, `hitCentre`) pour le tir, l'index
   spatial et le contact des aéronefs ; identique entre proxys instanciés et rigs.
 - Rendu de secours (`graphics.insect`) : `SkinnedMesh` réel du même rig pour les
   cadavres (posés dans la foulée en cours), les âmes du purgatoire (qui marchent à
@@ -260,6 +260,208 @@ un `InstancedMesh` par espèce, ombres via un matériau de profondeur dédié).
   niveau de détail ; une créature arrêtée est figée (antennes comprises).
 
 ![Poses de marche](walkers-model-review.jpg)
+
+### Cafard (version 308)
+
+Modèle Meshy « Low Poly Cockroach » fourni par l'utilisateur, même chaîne que la
+fourmi ; il remplace le cafard procédural (anciennement une fourmi agrandie).
+
+- Original hors dépôt : `assets/originals/roach/low-poly-cockroach.glb` (SHA-256
+  `4ca70cae…5fc3`), 490 triangles, 813 sommets, SmartRig de 40 os : 6 pattes à
+  quatre os (hanche, genou/tibia, tarse, pied), tête, antennes à cinq segments,
+  abdomen à deux segments. Texture JPEG 512 px (58 Ko).
+- Import : `PYTHONPATH=scripts python3 scripts/import-creature.py roach <GLB>` écrit
+  `src/roach-data.js`. Le rig Meshy répartissait des poids sur les os de pattes
+  voisines et portait la carapace par les hanches : l'espèce déclare ses chaînes
+  de pattes et un os moyeu (`Bone_001`), et chaque coque soudée ne garde que sa
+  propre chaîne, le reste allant au moyeu (537 influences). Géométrie, UV et
+  texture inchangées ; fourmi et araignée ne sont pas concernées.
+- Marche (`src/roach-model.js`) : démarche tripode comme la fourmi, foulée
+  0,6 m-modèle, corps bas, abdomen qui balance, tête qui hoche, longues antennes
+  qui balaient en ondulant ; cadence apparente plafonnée à 9 cycles/s.
+- Échelle : facteur 0,52 (2,1 unités antennes comprises, comme la fourmi ; le
+  facteur d'espèce et la taille de vague restent ceux du cafard). Les tibias
+  courent presque à plat jusqu'au pied : en pivotant sur le pied planté, leur
+  autre extrémité plonge. La présentation relève donc le modèle de 0,035 unité
+  (`ROACH_MODEL.raise`) pour qu'aucun sommet ne passe sous la ligne des pieds.
+- Collision : ellipsoïde du corps sans pattes ni antennes (`ROACH_HIT`).
+- Vérification : `scripts/test-walker-models.mjs` couvre aussi le cafard (pieds
+  plantés, sol, boucle, cuisson, zone de tir) ; rendu WebGL instancié contrôlé
+  hors jeu.
+
+![Poses de marche du cafard et rendu instancié](roach-model-review.jpg)
+
+### Rat (version 310)
+
+Modèle Meshy « Low Poly Mouse » fourni par l'utilisateur **avec son propre clip de
+marche** ; il remplace le rat procédural. C'est le premier ennemi dont le cycle
+rejoue un clip au lieu d'une démarche calculée.
+
+- Original hors dépôt : `assets/originals/rat/mouse-walking.glb` (SHA-256
+  `fa7bf0c8…3eae`), 420 triangles, 698 sommets, un seul maillage soudé, squelette
+  de 27 os (bassin, poitrine, tête, queue à cinq segments, quatre pattes à quatre
+  os). Export Blender : armature à l'échelle 0,01 tournée depuis Z-haut, et
+  échelle constante 1,8233 sur `Hips` pendant le clip. Texture JPEG 512 px (54 Ko).
+- Import : `PYTHONPATH=scripts python3 scripts/import-rat.py <GLB>` écrit
+  `src/rat-data.js`. Squelette de repos sans échelle (mètres-modèle, ×100) et
+  matrices de liaison recalculées ; poids, UV et géométrie inchangés. Le clip
+  (« Armature|Unreal Take|baselayer », 1 s, 31 clés, sur place) est rééchantillonné
+  en transformations monde de chaque os aux 30 clés, divisées par l'échelle de
+  `Hips` (remise à l'échelle uniforme, aspect inchangé).
+- Cycle (`src/rat-model.js`) : la pose interpole les clés et les convertit en deltas
+  pour `rigged-creature` ; le test vérifie que chaque os retombe sur le clip.
+  Seule retouche : au décollement, les orteils arrière pointent vers le bas, 8 cm
+  sous les semelles posées ; ils pivotent sur l'axe latéral juste assez pour rester
+  au-dessus du plan des semelles, ce qui permet de poser les pattes au sol. Les
+  orteils avant tournoient trop vite pendant l'élan pour une correction lisse : ils
+  gardent le clip et peuvent plonger jusqu'à 0,2 unité sous la ligne des pieds au
+  décollement, et les pattes avant posées flottent d'environ 0,08 unité.
+- Marche : entrée `rat` de `WALKERS` marquée `clip`, phase pilotée par la distance
+  (foulée 0,35 m-modèle, vitesse des pattes arrière posées), cadence plafonnée à
+  4 boucles/s.
+- Échelle : facteur 3,5, environ 4,4 unités queue comprise comme l'ancien rat ;
+  corps centré sur le proxy, queue derrière. Zone de tir : ellipsoïde du corps et de
+  la tête sans queue ni pattes (`RAT_HIT`).
+- Vérification : `scripts/test-rat-model.mjs` (provenance, clip rejoué os par os,
+  boucle, semelles arrière sur la ligne des pieds, foulée, tirs, proxy, cuisson) ;
+  rendu WebGL instancié contrôlé hors jeu. Le rendu en partie réelle reste à juger,
+  en particulier les pattes avant.
+
+![Poses de marche du rat](rat-model-review.jpg)
+
+### Bébé araignée (version 317)
+
+Modèle Meshy « Grumpy Spider » fourni par l'utilisateur, déjà riggé, sans clip ; il
+remplace les bébés procéduraux (sphères et boîtes d’un ancien module de lot,
+supprimé). Même chaîne que l'araignée pondeuse.
+
+- Original hors dépôt : `assets/originals/spiderling/grumpy-spider.glb` (SHA-256
+  `eaeaff76…96da`), 280 triangles, 524 sommets, SmartRig de 29 os, texture JPEG
+  512 px (47 Ko). Tête vers +Z.
+- Import : `PYTHONPATH=scripts python3 scripts/import-creature.py spiderling <GLB>`
+  écrit `src/spiderling-data.js`. Meshy a donné à la patte 2 +X deux chaînes d'os
+  superposées (mêmes pivots) et réparti sa coque entre elles : la nouvelle option
+  `alias` de l'espèce replie `Bone_008`/`007`/`006` sur `Bone_014`/`013`/`012`
+  (107 influences). Puis chaque coque ne garde que sa chaîne, le reste allant au
+  moyeu `Bone_001` (435 influences). Ant, araignée et cafard ne sont pas concernés.
+- Marche (`src/spiderling-model.js`) : démarche tétrapode des six pattes à trois os,
+  foulée 0,7 m-modèle, cadence plafonnée à 10 cycles/s. La paire avant, courte (deux
+  os), plongeait sous le sol avec le calcul de pas : elle est animée à part, en
+  palpes levées qui tâtent le sol. Présentation relevée de 0,025 unité comme le
+  cafard. Facteur 0,5 (2,1 unités pattes écartées, comme les autres marcheurs).
+- Rendu : entrée `spiderling` de `WALKERS`, un `InstancedMesh` par espèce (100
+  bébés en un appel de dessin, contrôlé hors jeu). Zone de tir : ellipsoïde du corps
+  et du haut des pattes, rayons 1,05 × 0,6 × 1,1, proche de l'ancienne sphère de
+  1,2 unité pour que ces petites nuées rapides restent aussi faciles à toucher.
+- Vérification : `scripts/test-walker-models.mjs` (provenance, chaîne repliée,
+  pieds plantés, sol, palpes au-dessus du sol, boucle, cuisson, tirs, proxy et
+  repli riggé). Le rendu de grosses éclosions en partie réelle reste à juger.
+
+![Poses de marche du bébé araignée](spiderling-model-review.jpg)
+
+## Scarabée Meshy (vol, version 307)
+
+Modèle fourni par l'utilisateur, déjà riggé par Meshy, sans clip ; il remplace le
+« bourdon blindé » procédural de l'espèce `brute`, renommée « Scarabée ».
+
+- Original hors dépôt : `assets/originals/beetle/low-poly-beetle.glb` (fichier Meshy
+  « Low Poly Cockroach », un scarabée bleu et orange), SHA-256 `a7d151ca…aa1f`.
+  598 triangles, 872 sommets, SmartRig de 48 os, texture PNG 2K réduite en JPEG
+  512 px (58 Ko). Tête vers +Z, Y vers le haut, pieds à y = 0.
+- Import : `PYTHONPATH=scripts python3 scripts/import-beetle.py <GLB>` écrit
+  `src/beetle-data.js` (124 Ko). Deux corrections de poids, sans toucher géométrie,
+  UV ni texture : chaque aile membraneuse (coque séparée de 28 et 29 sommets, pondérée
+  par Meshy sur un mélange d'os d'aile, d'élytre et de patte) reçoit son os
+  `Wing_L` (+X) ou `Wing_R` (−X), enfant du thorax `Bone_002`, charnière aux sommets
+  les plus internes, à 100 % ; la coque du corps (tête, élytres, abdomen) cède au
+  thorax les poids qu'elle portait sur les os de pattes animés (223 influences),
+  pour que les pattes ne tirent jamais la carapace. Pas de simplification :
+  modèle très léger, monobloc articulé.
+- Vol (`src/beetle-model.js`) : boucle de 1 s, 6 battements (plus lent et lourd
+  que le moucheron), 60 images. Ailes de −14° à +46° avec balayage avant/arrière et
+  torsion aux retournements. Comme une cétoine, il vole **élytres fermées** : elles
+  font partie de la coque du corps, les ouvrir déchirerait le maillage. Corps cabré
+  de 7°, léger rebond à chaque battement, roulis lent ; six pattes pendantes,
+  repliées vers l'arrière, qui pagaient doucement.
+- Rendu (`src/flyer-batch.js`) : texture d'animation de sommets cuite au chargement,
+  un `InstancedMesh` par espèce, battement sur l'horloge partagée avec un décalage
+  de boucle par insecte ; le client oriente le proxy vers son déplacement 3D comme
+  un moucheron. Cadavres, âmes du purgatoire et rendu sans WebGL : `SkinnedMesh`
+  réel du même rig (`graphics.insect`). D'autres volants s'ajoutent par une
+  entrée de `FLYERS` : l'abeille (309) et le moustique (311) l'ont fait.
+- Échelle et collision : facteur 0,75, corps de 2,2 unités et 2,9 d'envergure ;
+  depuis la version 318, le facteur d'espèce `brute` (3,559 dans `scale.ts`)
+  lui donne 17 mm de haut au bureau. Zone de tir : ellipsoïde de
+  la carapace sans ailes ni pattes (`BEETLE_HIT`), partagé par le proxy et le rig.
+- Vérification : `scripts/test-beetle-model.mjs` (provenance, os d'ailes rigides,
+  carapace rigide pendant tout le cycle, orientation, battement symétrique, boucle
+  sans raccord, pattes pendantes, cuisson, proxys et tirs ellipsoïdaux). Rendu
+  WebGL contrôlé hors jeu (8 scarabées instanciés en un appel de dessin, phases
+  décalées) ; la lisibilité en partie réelle reste à juger.
+
+![Poses du cycle de vol et rendu instancié](beetle-model-review.jpg)
+
+### Abeille (version 309)
+
+Modèle fourni par l'utilisateur, déjà riggé par Meshy, sans clip ; il remplace la
+« carapace » procédurale de l'espèce `guard`, renommée « Abeille ».
+
+- Original hors dépôt : `assets/originals/guard/bee.glb` (Meshy « Angry Low Poly
+  Bee »), SHA-256 `a126aa44…2821d`. 582 triangles, 874 sommets, SmartRig de 45 os,
+  texture réduite en JPEG 512 px (73 Ko). Tête vers +Z, Y vers le haut.
+- Import : `PYTHONPATH=scripts python3 scripts/import-bee.py <GLB>` écrit
+  `src/bee-data.js`. Treize coques soudées : corps, six pattes, deux antennes et
+  quatre ailes. Les os d'ailes Meshy (`Bone_026` à +X, `Bone_028` à −X, enfants du
+  thorax) sont gardés ; l'aile antérieure et la postérieure de chaque côté suivent
+  l'os racine à 100 %, comme les ailes d'une abeille accrochées entre elles. Le corps
+  et les antennes cèdent au parent de chaque chaîne leurs poids sur les os d'ailes et
+  de pattes (531 influences) ; chaque patte ne garde que sa chaîne (140 influences
+  rendues à son moyeu). Géométrie, UV et texture inchangés, pas de simplification.
+- Vol (`src/bee-model.js`) : boucle de 1 s, 12 battements (bourdonnement plus vif que
+  le scarabée), 6 images par battement, 72 images. Ailes de −20° à +52° avec balayage
+  et torsion, abdomen abaissé qui pompe deux fois par boucle, tête et antennes qui
+  frémissent, pattes pendantes.
+- Rendu et collision : entrée `guard` de `FLYERS` (même chaîne que le scarabée).
+  Facteur 0,75, corps de 1,6 unité dard compris ; depuis la version 318, le
+  facteur d'espèce `guard` (5,265 dans `scale.ts`) lui donne 15 mm de haut au
+  bureau. Zone de tir : ellipsoïde du corps
+  sans ailes, pattes ni antennes (`BEE_HIT`).
+- Vérification : `scripts/test-bee-model.mjs` (provenance, ailes rigides, aucun poids
+  du corps sur les ailes, orientation, battement symétrique, boucle sans raccord,
+  pattes pendantes, cuisson, proxys et tirs). Rendu WebGL instancié contrôlé hors jeu
+  avec des scarabées dans la même scène ; la lisibilité en partie réelle reste à juger.
+
+![Poses du cycle de vol de l'abeille](bee-model-review.jpg)
+
+### Moustique (version 311)
+
+Modèle Meshy « Low Poly Mosquito » fourni par l'utilisateur, déjà riggé, sans clip ;
+il remplace le moustique procédural. Même chaîne que l'abeille.
+
+- Original hors dépôt : `assets/originals/mosquito/mosquito.glb` (SHA-256
+  `c13dff6e…1c15`), 478 triangles, 815 sommets, SmartRig de 62 os, texture JPEG
+  512 px (54 Ko). Tête et trompe vers +Z, Y vers le haut.
+- Import : `PYTHONPATH=scripts python3 scripts/import-mosquito.py <GLB>` écrit
+  `src/mosquito-data.js`. Douze coques soudées : corps, six pattes, deux ailes, yeux
+  et trompe. Chaque aile (chaîne Meshy de trois os, `Bone_034` à +X, `Bone_037` à
+  −X) suit son os racine à 100 %. Le corps et les pièces de tête cèdent au parent de
+  chaque chaîne leurs poids sur les os d'ailes et de pattes (250 influences) ;
+  chaque patte ne garde que sa chaîne (118 influences rendues à son moyeu).
+  Géométrie, UV et texture inchangées, pas de simplification.
+- Vol (`src/mosquito-model.js`) : boucle de 1 s, 15 battements étroits et rapides,
+  4 images par battement, 60 images. Abdomen qui ondule, tête qui frémit, six longues
+  pattes pendantes, la paire avant tendue vers l'avant, les autres traînant derrière.
+- Rendu et collision : entrée `mosquito` de `FLYERS`. Facteur 1 : environ 3,6
+  unités trompe comprise et 3,4 d'envergure, pour garder une silhouette lisible
+  (6×2 pixels à 2 m, `test-enemy-readability`) ; depuis la version 318, le facteur d'espèce `mosquito` (7,368 dans
+  `scale.ts`) lui donne 12 mm de haut au bureau. Zone de tir : ellipsoïde du corps sans ailes, pattes ni
+  trompe (`MOSQUITO_HIT`). Les esquives erratiques de `waves.js` sont inchangées.
+- Vérification : `scripts/test-mosquito-model.mjs` (provenance, ailes rigides, aucun
+  poids du corps sur les ailes, orientation, battement symétrique, boucle, pattes
+  pendantes, cuisson, proxys et tirs). Rendu WebGL instancié contrôlé hors jeu avec
+  des abeilles ; la lisibilité en partie réelle reste à juger.
+
+![Poses du cycle de vol du moustique](mosquito-model-review.jpg)
 
 ## Canon anti-matériel (obusier Meshy)
 
@@ -282,11 +484,11 @@ Modèle fourni par l'utilisateur pour l'[issue #113](https://github.com/simonjam
 - Échelle joueur : roues de 1,10 m (mètres de référence), soit un canon d'environ
   6,4 m de long et 2 m de haut à côté du joueur de 1,80 m ; emprise de pose et
   collision 0,0105 (rayon balayé par la bouche, 3,4 m).
-- Mouvements (`src/howitzer-model.js`) : pointage 45°/s, élévation 30°/s entre
+- Mouvements (`src/howitzer-model.ts`) : pointage 45°/s, élévation 30°/s entre
   −5° et +40° (au-delà, la culasse traverserait les flèches) ; le tir part dans la
   direction réelle du tube. Recul de 30 % du tube en 0,06 s, retour en 0,6 s,
   secousse de 6 cm de l'affût. `scripts/test-howitzer.mjs` couvre ces points.
-- Tir : `src/howitzer-geometry.js` (sans three.js) reprend les pivots mesurés sur
+- Tir : `src/howitzer-geometry.ts` (sans three.js) reprend les pivots mesurés sur
   le modèle pour que l'obus `HEAVY.antitank` parte de la vraie bouche ; le test
   vérifie l'écart modèle/géométrie (< 2 cm). L'obus est simulé par le tireur
   (`src/heavy-sim.js`) ; `scripts/test-antitank-shell.mjs` couvre sa balistique,

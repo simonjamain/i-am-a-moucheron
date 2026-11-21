@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
 import { Game } from '../server/game.js';
 import { baseWorld } from '../src/base.js';
-import { vehicleEntry, VEHICLES } from '../src/fleet.js';
-import { ACTOR_UNIT } from '../src/scale.js';
-import { OFFICE_LAYOUT } from '../src/layout.js';
+import { vehicleEntry, VEHICLES } from '../src/fleet.ts';
+import { ACTOR_UNIT } from '../src/scale.ts';
+import { OFFICE_LAYOUT } from '../src/layout.ts';
 import { CONTRACTS } from '../src/contracts.js';
 const game = new Game({ now: () => 100000 });
 const players = Array.from({ length: 3 }, (_, i) =>

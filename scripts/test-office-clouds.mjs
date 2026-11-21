@@ -2,16 +2,16 @@ import assert from 'node:assert/strict';
 import * as T from '../vendor/three.module.min.js';
 import { createOffice } from '../src/office.js';
 import { createGraphics } from '../src/graphics.js';
-import { OFFICE_LAYOUT } from '../src/layout.js';
+import { OFFICE_LAYOUT } from '../src/layout.ts';
 import {
   officeFogCeiling,
   officeFogOpacity,
   fogOpticalDepth,
   installOfficeFog,
-} from '../src/office-fog.js';
+} from '../src/office-fog.ts';
 import { stepHelicopter } from '../src/helicopter.js';
 import { stepVacantAircraft } from '../src/vacant-flight.js';
-import { VEHICLES, vehiclePad } from '../src/fleet.js';
+import { VEHICLES, vehiclePad } from '../src/fleet.ts';
 
 const scene = new T.Scene();
 const office = createOffice(T, scene, createGraphics(T, scene));

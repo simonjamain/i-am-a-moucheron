@@ -1,25 +1,29 @@
 import assert from 'node:assert/strict';
 import { Game } from '../server/game.js';
-import {
-  ENEMY_TYPES,
-  debugSwarmRoster,
-  swarmFrame,
-  validateDebugSpawn,
-  wavePlan,
-} from '../src/waves.js';
+import { PACKS, prepareRoster } from '../server/wave-preparation.js';
+import { DEFAULT_BALANCE } from '../src/balance.js';
+import { ENEMY_TYPES, debugSwarmRoster, swarmFrame, wavePlan } from '../src/waves.js';
 
-assert.equal(ENEMY_TYPES.rat.hp, 5000);
-assert.equal(ENEMY_TYPES.mosquito.hp, 70);
+assert.equal(ENEMY_TYPES.rat.hp, 10000);
+assert.equal(ENEMY_TYPES.mosquito.hp, 150);
 assert.equal(ENEMY_TYPES.spider.hp, 1200);
 assert.equal(ENEMY_TYPES.spider.onDeath.count, 100);
-assert.equal(ENEMY_TYPES.spiderling.leak, 1);
-assert.throws(() => validateDebugSpawn({ spiderling: 1 }), /invalide/);
+assert.ok(Math.abs(ENEMY_TYPES.spiderling.power - 0.08) < 0.005);
+// The flyer « voltigeur » (`dart`) was removed from the game: no profile, no
+// pack and no wave may bring it back.
+assert.ok(!Object.hasOwn(ENEMY_TYPES, 'dart') && !Object.hasOwn(PACKS, 'dart'));
+for (const w of [2, 5, 20])
+  assert.ok(
+    !prepareRoster(w, DEFAULT_BALANCE).roster.some((e) => e.type === 'dart'),
+    'director wave ' + w,
+  );
 for (const w of [1, 2, 3, 10]) {
   const types = wavePlan('BESTIARY', w).roster.map((e) => e.type);
   if (w < 3) assert.ok(!types.includes('mosquito'));
   if (w < 11) assert.ok(!types.includes('spider'));
   if (w < 15) assert.ok(!types.includes('rat'));
   assert.ok(!types.includes('spiderling'));
+  assert.ok(!types.includes('dart'));
 }
 let now = 100000;
 const game = new Game({ now: () => now });
@@ -59,7 +63,10 @@ assert.deepEqual(
 assert.ok(
   r.plan.roster
     .slice(3)
-    .every((e) => e.type === 'spiderling' && e.leak === 1 && e.offspringOf === 0),
+    .every(
+      (e) =>
+        e.type === 'spiderling' && e.power === ENEMY_TYPES.spiderling.power && e.offspringOf === 0,
+    ),
 );
 gunShot();
 command('hit', { wave: r.wave, enemy: 0, amount: 800, shot: 'three' });
@@ -70,10 +77,10 @@ const snapshot = command('sync', { state: state.state, mode: state.mode });
 assert.equal(snapshot.total, 103);
 assert.equal(snapshot.rosterRevision, 2);
 assert.ok(snapshot.kills.includes(0));
-// Every surviving child arrives separately: 100 infestation means defeat.
+// Every surviving child arrives separately and hurts the bin by its power.
 for (const child of r.plan.roster.slice(3)) child.spawn = -child.duration - 1;
 now += 30000000;
 game.advance(r);
 assert.equal(r.phase, 'lost');
-assert.ok(r.infestation >= 100);
+assert.ok(r.infestation >= 100 * ENEMY_TYPES.spiderling.power - 0.01);
 console.log('Bestiaire : OK');

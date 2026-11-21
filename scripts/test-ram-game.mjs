@@ -1,11 +1,12 @@
+import { ENEMY_TYPES } from '../src/waves.js';
 import assert from 'node:assert/strict';
 import { Game } from '../server/game.js';
 import { baseWorld } from '../src/base.js';
-import { vehicleEntry } from '../src/fleet.js';
-import { ACTOR_UNIT } from '../src/scale.js';
-import { OFFICE_LAYOUT } from '../src/layout.js';
+import { vehicleEntry } from '../src/fleet.ts';
+import { ACTOR_UNIT } from '../src/scale.ts';
+import { OFFICE_LAYOUT } from '../src/layout.ts';
 import { GameSession } from '../server/session.js';
-import { ReplyAssembler } from '../src/udp-protocol.js';
+import { ReplyAssembler } from '../src/udp-protocol.ts';
 
 let now = 100000;
 const game = new Game({ now: () => now, roomTTL: 30000 });
@@ -87,33 +88,32 @@ assert.throws(
 assert.equal(game.snapshot(room).enemyDamage[0] ?? 0, 0);
 // A fixed gun operator reports the wave hits instead; each shot counts once.
 room.pilots.get(a.id).mode = 'turret';
-for (let enemy = 0; enemy < s.total; enemy++) {
+// Any species can open a wave: hit each one until dead (spiders add their brood as they fall).
+let total = 0;
+for (let enemy = 0; enemy < game.plan(room).roster.length; enemy++) {
   const one = 'wave1:' + enemy + ':one';
-  const two = 'wave1:' + enemy + ':two';
   call(a.id, 'hit', { wave: 1, enemy, amount: 75, shot: one });
   call(a.id, 'hit', { wave: 1, enemy, amount: 75, shot: one });
-  call(a.id, 'hit', { wave: 1, enemy, amount: 75, shot: two });
+  for (let n = 0; !room.kills.has(enemy) && n < 400; n++)
+    call(a.id, 'hit', { wave: 1, enemy, amount: 75, shot: 'wave1:' + enemy + ':' + n });
+  total++;
 }
 room.pilots.get(a.id).mode = 'foot';
 s = game.snapshot(room);
 assert.equal(s.phase, 'prep');
-assert.equal(s.dollars, 4);
-assert.equal(s.kills.length, firstTotal);
-assert.equal(s.souls.length, Math.min(firstTotal, 24));
+assert.equal(s.dollars, 0, 'no wave stipend: only freed souls pay');
+assert.equal(s.kills.length, total);
+assert.equal(s.souls.length, Math.min(total, 24));
 assert.equal(s.enemyDamage[0], 150);
 room.dollars = 30;
-s = call(a.id, 'buy', { item: 'engine', request: 'purchase-engine', expectedPrice: 4 });
-assert.equal(s.upgrades.engine, 1);
-call(a.id, 'buy', { item: 'engine', request: 'purchase-engine', expectedPrice: 4 });
-assert.equal(room.dollars, 26);
-assert.throws(
-  () => call(a.id, 'buy', { item: 'weapons', request: 'purchase-engine' }),
-  /déjà utilisée/,
-);
-assert.throws(
-  () => call(a.id, 'buy', { item: 'engine', request: 'purchase-engine-2', expectedPrice: 4 }),
-  /tarif/,
-);
+for (const gone of ['engine', 'weapons'])
+  assert.throws(
+    () => call(a.id, 'buy', { item: gone, request: 'purchase-' + gone, expectedPrice: 4 }),
+    /Achat invalide/,
+    'upgrades no longer exist',
+  );
+assert.equal(room.dollars, 30);
+assert.equal(s.upgrades, undefined);
 
 function approach(id, vehicle, seat) {
   const entry = vehicleEntry(vehicle, seat),
@@ -167,7 +167,7 @@ bomber.state.gas = 1;
 // An aircraft now receives paid service while flying through a station's sphere.
 // Move it away to test fuel consumption with no available service.
 bomber.state.p = [...bomber.state.p];
-bomber.state.p[0] += 0.3;
+bomber.state.p[0] += 0.8;
 const fuel = bomber.supplies.fuel;
 now += 1000;
 call(a.id, 'aircraft-fire', { shots: ['d'] });
@@ -233,7 +233,11 @@ for (let i = 0; i < 10; i++) {
   call(a.id, 'soul-hit', { soul: enemy.id, shot: 'soul' + i });
 }
 call(a.id, 'soul-hit', { soul: enemy.id, shot: 'soul9' });
-assert.equal(room.dollars, dollars + 1);
+assert.equal(
+  room.dollars,
+  Math.round((dollars + ENEMY_TYPES[enemy.enemy_type].power) * 100) / 100,
+  'a freed soul pays the power of its species',
+);
 const epoch = room.base.epoch;
 call(b.id, 'reset');
 assert.notEqual(room.base.epoch, epoch);

@@ -1,48 +1,39 @@
 # Exploitation, livraison et vérifications
 
-## Déployer les sources courantes
+## Déploiement
 
-Le dépôt GitHub est la référence ; un **ZIP des sources** n'est produit que si la livraison demandée le nécessite (voir `AGENTS.md`), sans `node_modules`, données
-de partie, image Docker ni métadonnées Git. Extraire puis utiliser Node 22.13+ :
+Le dépôt GitHub est la référence. Chaque commit sur `main` déclenche le workflow
+[docker.yml](../.github/workflows/docker.yml), qui publie l’image
+`ghcr.io/simonjamain/i-am-a-moucheron:latest` (et un tag `sha-<commit>`). Un
+environnement extérieur au dépôt récupère périodiquement la dernière image `latest`
+et la déploie sur le VPS. Il n’y a ni ZIP de livraison ni autre cible de publication ;
+les agents ne provisionnent pas de serveur et gardent secrets et administration du
+VPS hors des contributions. Une installation sur le VPS n’est pas revendiquée sans
+accès et résultat vérifiés.
+
+Pour jouer ou tester en local avec Node 22.18+ :
 
 ```sh
 npm ci
 npm start
 ```
 
-Le serveur Node garde toutes les salles en RAM ; un redémarrage efface les parties.
-HTTP sert les assets, `/healthz` et la négociation WebRTC. Le gameplay utilise UDP
-uniquement ; les anciennes routes HTTP renvoient 410. HTTPS, IP annoncée, pare-feu
-et plage UDP sont détaillés dans [serveur UDP](udp-server.md). L’utilisateur
-installe sur sa VM ; les agents ne provisionnent pas de serveur externe.
-Le [Dockerfile](../Dockerfile) reste une option de construction personnelle.
-Les archives Docker `.1` et `.2` sont historiques, antérieures aux retours terrain.
-
-## Sources et Site historique
-
-Le Site historique `appgprj_6ae1e591360481919010bdf89f8da3f0` est indépendant.
-Son identité et sa configuration ne font plus partie du paquet courant.
-Le dépôt GitHub est la référence ; le build et sa validation ciblent Node sur VPS.
-Une intervention sur le Site historique utilise son ancien dépôt via Sites,
-sans réintroduire ses instructions ou son manifeste dans le runtime Node.
-
-Le Site public Worker/D1 reste distinct du runtime Node/UDP. Les nouvelles
-commandes d’armes lourdes, banque, lits, impacts de chute, bons prépayés et nettoyage ciblent Node. **Ne pas
-publier leur client sur le Worker**, qui ne possède pas ces opérations. Les
-sources sont poussées au dépôt, puis livrées en ZIP. Une installation sur VM
-n’est pas revendiquée sans accès et résultat vérifiés. La publication historique
-et les tests D1 restent disponibles pour compatibilité avec les versions précédentes.
+Le serveur Node garde toutes les salles en RAM ; un redémarrage (et donc chaque
+déploiement) efface les parties. HTTP sert les assets, `/healthz` et la négociation
+WebRTC. Le gameplay utilise UDP, avec un secours TCP WebSocket ; les anciennes routes
+HTTP renvoient 410. HTTPS, IP annoncée, pare-feu et plage UDP sont détaillés dans
+[serveur UDP](udp-server.md). Construire l’image soi-même : [guide Docker](docker.md).
 
 ## Assemblage et contrôles
 
 Modifier `src/`, `server/`, `scripts/` et les documents de référence. L’assembleur
-produit `worker/assets.js` pour Node, le Worker historique et l’aperçu des vrais
+produit `server/assets.js` pour Node et l’aperçu des vrais
 composants `/ui-review.html` sur données de démonstration. Les modules navigateur
-ont des URL fondées sur leur contenu. Les migrations `drizzle/` déjà publiées
-restent immuables ; Node ne les charge pas.
+ont des URL fondées sur leur contenu.
 
 ```sh
 npm run format:check
+npm run typecheck
 npm test
 npm run check:docs
 npm run check:version
@@ -52,31 +43,56 @@ node scripts/validate-artifact.mjs
 
 `check:version` compare `VERSION` indexé à celui de `HEAD` : indexer l'augmentation
 (`npm run version:next`) avant de l'exécuter. Le hook `.githooks/pre-commit`
-(activé par `npm run prepare:version`) lance ce contrôle puis `scripts/build.sh`.
-La CI `Docker build validation` exécute aussi `npm test`, `check:docs`, le build
-et `validate-artifact.mjs` ; `docker build` local reste exigé avant livraison
+(activé par `npm run prepare:version`) ne lance que ce contrôle ; le build reste
+à exécuter à la main.
+Le workflow `Docker build validation` contient aussi le job `Full game regression and formatting` :
+`npm test`, `format:check`, `check:docs`, le build et `validate-artifact.mjs` ; `docker build` local reste exigé avant livraison
 ([Docker](docker.md)).
+Le workflow `Docs site` construit le [site de documentation](site.md) en mode strict à
+chaque PR et le publie sur GitHub Pages depuis `main`.
 
-Audit des contrôles (suite complète mesurée : 144 scripts, environ 40 s cumulées,
-tous < 3 s) : lancer `npm test` en entier plutôt qu'une sélection, le retour est
-déjà rapide. `npm run format:check` est la seule commande de format, en local et
+Audit des contrôles (suite complète : `npm test -- --list` donne le décompte, environ 50 s cumulées) :
+`npm test` lance `scripts/run-tests.mjs`, qui assemble puis exécute la liste ordonnée
+de `scripts/suite.mjs`, chaque script dans son propre processus, et résume tous les
+échecs à la fin. `npm test -- <fragment>` cible les scripts dont le nom contient le
+fragment, `--bail` s'arrête au premier échec. Avant une livraison, lancer la suite
+entière ; elle inclut `tsc` (`test-typescript.mjs`) et la cohérence des tables par
+espèce et par véhicule (`test-registries.mjs`). `test-suite-wiring.mjs` échoue si un
+`scripts/test-*.mjs` n'est pas dans `scripts/suite.mjs` (seul `test-udp-capacity-50.mjs`,
+lourd, a sa commande `test:capacity`) : un test orphelin ne protège rien.
+`npm run format:check` est la seule commande de format, en local et
 en CI (job `Full game regression and formatting`) ; les données générées
 (`src/*data.js` importées, `docs/ui-review.html`) sont dans `.prettierignore`.
 Le job `Docker build` démarre l'image construite et vérifie `/healthz`
 (`ok`, `storage=ram`, `transport=webrtc-udp`) et le 410 de `/api/join` : il prouve
 que l'image démarre, pas les pairs UDP dans le conteneur, WebGL ni le WAN.
-`check:version` n'est pas exécuté en CI (il compare l'index à `HEAD`).
+`check:version` compare l'index à `HEAD` (hook pre-commit) ; en CI des PR, `check:version --base origin/<cible>` (job `Full game regression and formatting`) échoue si `VERSION` n'est pas supérieur à celui de la branche cible. `test-version-guard.mjs` exerce les deux modes. Le job de benchmark ne relance plus `test-ram-game`/`test-motion-capacity`, déjà dans `npm test`.
+
+Scénarios navigateur réel : `npm run e2e` (Chromium Playwright, WebRTC UDP puis repli
+TCP : reprise de pilote, mouvements partagés entre deux pages, chute vue
+par un second client, environ 3 min). Hors `npm test` car ils exigent
+Chromium ; le job CI `Real Chromium over WebRTC UDP/TCP` les exécute à chaque PR
+(Playwright installé à la volée, pas une dépendance du projet). `npm run e2e:loading` (échoue par intermittence sur le runner : `canvas` absent en `#loading.departing` au rechargement à chaud, course non tranchée) et `npm run e2e:layouts` (sélecteur de plans, 135 s en local) expire sur le runner CI (90 s d'attente
+page) restent manuels jusqu'à diagnostic. Lancer le script ciblé
+(`e2e:resume`, `e2e:motion`, `e2e:tcp`) pendant l'itération. Ils prouvent la poignée de main
+WebRTC et les flux en loopback, pas WebGL (rendu supprimé ou logiciel), le WAN ni le confort.
+Ils ouvrent des pages de 320×240 : le WebGL logiciel dessine chaque pixel sur le CPU, et
+sur deux cœurs deux pages 1280×720 se privaient mutuellement (le serveur coupe un pilote
+muet depuis 15 s ; échec reproduit avec `taskset -c 0,1`, disparu avec la petite page).
+Leurs attentes tolèrent aussi un runner lent : la reprise attend jusqu'à 45 s, le mouvement de
+l'autre pilote est attendu par sondage (30 s) et l'absence de nouvelle tentative UDP se
+vérifie en comptant les `RTCPeerConnection` de la page, non au chronomètre.
+`test-wave-preparation.mjs` utilise des graines fixes (`WAVE_SEEDS=2000` pour élargir) : plus
+de test aléatoire intermittent.
 
 Le build produit `dist/` avec serveur, modules partagés, assets et manifestes npm.
 Dans ce répertoire : `npm ci --omit=dev && npm start`. Le validateur vérifie
 la syntaxe ESM du serveur, les imports locaux du runtime et les assets UDP.
 Il ne prouve ni l’installation des dépendances natives ni un déploiement WAN.
 La suite complète inclut les tests de règles Node, physique, signatures, assets,
-interface et les deux clients natifs UDP. Les tests Worker utilisent SQLite pour
-la compatibilité historique ; cette dépendance n’est pas dans le serveur Node.
+interface et les deux clients natifs UDP.
 `AGENTS.md` exige une revue des documents concernés par la modification en plus
-du contrôle mécanique des liens. Un audit global fait l’objet d’une tâche dédiée. La [revue du 29 octobre 2026](archive/reference-audit-2026-10-29.md)
-reste une trace historique, pas une seconde référence métier.
+du contrôle mécanique des liens ; un audit global fait l’objet d’une tâche dédiée.
 
 Le test ciblé `node scripts/test-laboratory.mjs` couvre l’interrupteur debug (activation, désactivation), l’isolation des rooms, les autorisations, le déblocage, le refus des anciens outils de test et le retour à une partie normale.
 
@@ -93,43 +109,16 @@ partie UDP sur son réseau. Le chargement du client et les panneaux sont testabl
 ainsi que la géométrie Three.js sans GPU. Les images comparatives des modèles
 sont des projections CPU des triangles. Pointer Lock, confort du pilotage,
 tactile physique, écoute, charge maximale et WAN restent à vérifier sur la VM.
-La capacité configurée (100 joueurs) ne prouve pas des performances à cette charge ;
+La capacité configurée (128 connexions simultanées, `maxConnections` de `server/index.js`) ne prouve pas des performances à cette charge ;
 la cible de jeu reste un petit groupe de 5–10 joueurs.
 
-## Référence métier du lot courant
-
-[Retours terrain](field-update.md) : causes d’embarquement, mesure avant/après de E,
-visée, chute, lits, résurrection, lunette et prêts. Les résultats mesurés avec un
-retard de réponse injecté ne sont pas des mesures de latence réseau réelle.
-Le ZIP final contient tous les fichiers nécessaires à `npm ci && npm start`,
-les tests, le backlog et les références à jour.
-
-Dernier lot : [lisibilité et nettoyage](clean-flight.md), incluant le Spitfire.
-Recharger tous les navigateurs après installation du nouveau ZIP ; le serveur
-Node conserve ses assets assemblés au démarrage et doit être redémarré après modification.
-
-Lot courant : [retours multijoueurs](multiplayer-return.md). Les mesures CPU
-comparatives sont reproductibles avec `node scripts/review-return-performance.mjs`
-dans un clone Git contenant le commit de référence. Le ZIP permet de jouer sans
-Git ; les benchmarks historiques demandent leur référence Git.
-
-## Lot véhicules d’appui
-
-[Hélicoptère et DCA mobile](support-vehicles.md) : code livré en ZIP, contrôles
-locaux et deux pairs UDP vérifiés. HEL-06/DCM-03 restent en cours pour les essais
-humains WebGL/WAN. Le navigateur de contrôle charge le client mais refuse UDP ;
-les quatre HUD sont également consultables dans l’aperçu sans réseau.
-`test-support-vehicles.mjs` fait partie de `npm test`. Le dépôt GitHub évolue indépendamment du Site historique ; le client Node
-ne doit pas être publié sur le Worker historique.
-
-Le [lot confort de jeu, version 37](comfort.md) précise réparation, zoom, jauges,
-radar à pied, remise à zéro, fourmis et projectiles du pistolet courants.
-
-Les [nuées densifiées](dense-swarms.md) multiplient les moucherons par cinq
-et utilisent une grille spatiale pour le voisinage.
-
-La [correction des commandes H2](helicopter-controls.md) couvre Z/O/Haut, S/Bas,
-stationnaire, poussée locale et axe des roquettes.
+Recharger tous les navigateurs après un déploiement ; le serveur Node conserve ses
+assets assemblés au démarrage et doit être redémarré après modification. Les
+comparaisons CPU de rendu se reproduisent avec `node scripts/review-return-performance.mjs`
+dans un clone Git contenant le commit de référence. Références métier :
+[retours terrain](field-update.md), [lisibilité et nettoyage](clean-flight.md),
+[retours multijoueurs](multiplayer-return.md), [véhicules d’appui](support-vehicles.md)
+(validation WebGL/WAN de HEL-06/DCM-03 non faite ; le navigateur de contrôle refuse UDP).
 
 ## Tir automatique avec latence simulée
 
@@ -194,14 +183,8 @@ réelles.
 
 ## Contributions GitHub
 
-Le [guide de contribution](../CONTRIBUTING.md) décrit les branches parallèles,
-la revue, les essais et la décision de fusion. Les environnements temporaires
-GitHub Actions ne sont pas encore configurés ; leur fonctionnement cible et
-leurs contraintes UDP y sont consignés. Aucun déploiement VPS automatique
-n’est revendiqué par la seule présence de ces instructions.
-
-Le [lot de retours du 30 octobre, version 48](returns-30-october.md) décrit les correctifs
-physiques, sons/HUD, livraisons sous parachute et parcours du purgatoire.
+Branches parallèles, revue, essais et fusion : [CONTRIBUTING](../CONTRIBUTING.md).
+Les environnements temporaires par PR ne sont pas encore configurés.
 
 ## Mesure reproductible des snapshots (50 joueurs)
 

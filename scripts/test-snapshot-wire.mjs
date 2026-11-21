@@ -6,7 +6,7 @@ import {
   unpackRoster,
   encodeSnapshotForWire,
   decodeSnapshotFromWire,
-} from '../src/snapshot-wire.js';
+} from '../src/snapshot-wire.ts';
 
 const params = {
   room: 'WIRE10K',

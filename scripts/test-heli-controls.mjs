@@ -3,10 +3,10 @@ import vm from 'node:vm';
 import { readFileSync } from 'node:fs';
 import * as T from '../vendor/three.module.min.js';
 import { stepHelicopter } from '../src/helicopter.js';
-import { MAP } from '../src/scale.js';
-import { VEHICLES, vehiclePad, isRotorcraft } from '../src/fleet.js';
+import { MAP } from '../src/scale.ts';
+import { VEHICLES, vehiclePad, isRotorcraft } from '../src/fleet.ts';
 import { Game } from '../server/game.js';
-import { HEAVY } from '../src/armament.js';
+import { HEAVY } from '../src/armament.ts';
 const source = readFileSync('src/client.js', 'utf8');
 const physics = source.slice(
   source.indexOf('function physics(dt)'),
@@ -21,7 +21,7 @@ function client(key) {
     VEHICLES,
     isRotorcraft,
     airView: () => false,
-    snap: { upgrades: {} },
+    snap: {},
     respawnAt: 0,
     onFoot: false,
     myVehicle: { type: 'helicopter', state: structuredClone(state) },
@@ -41,7 +41,6 @@ function client(key) {
     heliRotorPower: 1,
     mouseDirection: new T.Vector3(0, 0, -1),
     colliders: [],
-    upgradedVehicle: (x) => x,
     pad: { fire: false },
     mouseFire: false,
     shooting: false,
@@ -223,6 +222,15 @@ for (const [key, sign] of [
     Math.abs(new T.Euler().setFromQuaternion(c.me.quaternion, 'YXZ').z) < 0.005,
     'focus loss releases roll and levels',
   );
+}
+// Q/D force the roll only: the pitch keeps following the mouse height.
+for (const key of ['KeyQ', 'KeyD']) {
+  const c = client(key);
+  c.mouseDirection.set(0, Math.sin(0.5), -Math.cos(0.5));
+  for (let i = 0; i < 120; i++) vm.runInContext('physics(1/120)', c);
+  const euler = new T.Euler().setFromQuaternion(c.me.quaternion, 'YXZ');
+  assert.ok(Math.abs(euler.z) > 0.45, key + ' still forces the roll');
+  assert.ok(Math.abs(euler.x) > 0.1, key + ' leaves the pitch to the mouse height');
 }
 const copilot = client('KeyQ');
 copilot.crewSeat = 'copilot';

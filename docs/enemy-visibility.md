@@ -3,8 +3,7 @@
 La composition de vague décrite dans ce lot a ensuite été densifiée : voir
 [les nuées de version 38](dense-swarms.md), 20 moucherons et 4 fourmis au départ.
 
-Le correctif cible le runtime Node/UDP et se livre en sources. Le Site public
-Worker historique n'est pas redéployé avec ce client.
+Le correctif cible le runtime Node/UDP.
 
 ## Défauts reproduits
 
@@ -36,7 +35,7 @@ recevant tardivement une transition. Les six types sont vérifiés dans ce parco
 Les dimensions linéaires des **moucherons seulement** sont multipliées par **3
 par rapport à la livraison précédente** : facteur total 6,075 par rapport au
 modèle initial, soit un volume théorique multiplié par 27 à forme constante.
-Les PV et dégâts restent inchangés. `MIDGE_SIZE_FACTOR` dans `scale.js` est
+Les PV et dégâts restent inchangés. `MIDGE_SIZE_FACTOR` dans `scale.ts` est
 partagé par le modèle, les effets de blessure et les volumes de collision serveur.
 La tolérance de visée supplémentaire de 20 % est conservée, sans empiler deux
 agrandissements côté client. Dans ce premier correctif, les autres insectes conservaient leurs dimensions ;
@@ -76,6 +75,9 @@ mesuraient respectivement 2,32×0,54, 3,83×0,88 et 5,19×1,20 pixels.
 `node scripts/test-enemy-readability.mjs` reproduit cet échec en projetant les
 bornes des vrais meshes Three.js, sans agrandir artificiellement un marqueur.
 
+> Note (version 312) : le voltigeur (`dart`) a depuis été retiré du jeu ; ce relevé
+> historique le mentionne encore.
+
 | Espèce    | Facteur courant par rapport au modèle initial | Dimensions du décor L×H×P (mm) | Projection frontale à 2 m (pixels) |
 | --------- | --------------------------------------------: | ------------------------------ | ---------------------------------- |
 | Fourmi    |                                             6 | 12,40×5,37×15,46               | 5,60×2,42                          |
@@ -91,7 +93,7 @@ contrôlé est de 6×2 pixels, avec exception fourmi à 5×1,7 pixels après la 
 VAG-07 de demi-taille. Voir [confort](comfort.md) pour ce changement validé.
 L'agrandissement n'est pas dépendant de la caméra : la géométrie visible, les
 tirs et les contacts conservent la même taille à plusieurs joueurs.
-`ENEMY_SIZE_FACTORS` et `enemySizeFactor()` dans `scale.js` centralisent les six
+`ENEMY_SIZE_FACTORS` et `enemySizeFactor()` dans `scale.ts` centralisent les six
 facteurs. PV, dégâts, composition et primes restent inchangés ; VAG-07 divise
 ensuite par deux la vitesse effective des seules fourmis. Les cinq espèces autres que le moucheron ne conservent donc **plus**
 leurs anciennes dimensions : cette reprise remplace la règle du premier correctif.
@@ -121,5 +123,18 @@ inclut les tests de dégâts et les deux pairs UDP natifs.
 La projection géométrique n'est pas une observation du confort WebGL : à une
 distance plus grande, dans une autre orientation ou derrière un meuble, la taille
 apparente et l'occultation changent. Aucun affichage à travers les obstacles ni
-marqueur de remplacement n'est introduit. Le Site historique n'est pas redéployé ;
-le ZIP des sources Node/UDP doit être installé, puis serveur et clients relancés.
+marqueur de remplacement n'est introduit. Après déploiement, recharger les clients.
+
+## Blessures et apparitions
+
+- Une barre de PV (sans texte, hors raycast) apparaît sur chaque insecte blessé,
+  PNJ du purgatoire compris, seulement si 0 < PV < max. Trois volutes de fumée
+  s'y ajoutent, et deux flammes à 30 % de PV ou moins ; aucun dégât en plus. Les
+  objets suivent l'insecte et sont réutilisés.
+- Une mort aérienne visible lance un son de chute de quatre secondes (16 voix au
+  plus), qui suit le corps et s'arrête à l'impact.
+- Les noms flottants des véhicules et personnages sont supprimés.
+- Tous les portails sont sur la périphérie, à au moins 3 m du décor de la
+  corbeille. Un ennemi découvert déjà près de la corbeille (connexion tardive,
+  `in-flight`) n'est pas replacé au mur : le client affiche une indication de
+  découverte tardive. Contrôle : `test-feedback.mjs`.

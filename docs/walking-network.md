@@ -8,7 +8,7 @@ continue de valider et d'appliquer les 20 mises à jour/s. Cela réduit le débi
 relayé, avec une interpolation distante moins fréquente ; le canal
 `commands-v1` est fiable et ordonné. Le serveur relaie les mouvements, sans
 maillage entre navigateurs : depuis la version 252, toutes les 50 ms, il envoie
-à tous les joueurs d'une salle les mêmes lots binaires (`src/motion-wire.js`)
+à tous les joueurs d'une salle les mêmes lots binaires (`src/motion-wire.ts`)
 contenant les mouvements acceptés depuis le lot précédent ; chacun ignore sa
 propre entrée. Le navigateur envoie toujours son mouvement en JSON, avec son
 heure de capture : les récepteurs placent les échantillons à cette heure et
@@ -16,7 +16,8 @@ adaptent leur délai d'affichage ; voir
 [performances](performance.md#interpolation-des-joueurs-distants-à-lheure-de-capture-version-256). Les commandes portent un identifiant croissant et
 reçoivent leur résultat d'exécution. Identité de session, incarnation et numéro
 d'occupation empêchent une ancienne position de modifier un nouveau corps ou
-un nouveau poste. Aucun repli HTTP, TCP ou WebSocket ne transporte du gameplay.
+un nouveau poste. Aucun repli HTTP ne transporte du gameplay ; un réseau sans
+UDP joue avec le même protocole sur un WebSocket (secours TCP).
 Voir [déploiement et garanties UDP](udp-server.md).
 
 Le navigateur reste propriétaire de sa physique, les autres corps sont des
@@ -26,10 +27,6 @@ sans joueur, le serveur poursuit leur service à chaque tick de salle (250 ms).
 Les tirs d'avion restent prédits immédiatement, puis débités par lots fiables.
 Les armes lourdes sont aussi simulées par leur tireur, qui rapporte leurs impacts ;
 voir [véhicules et armes](vehicles-bank.md).
-
-Les sections suivantes documentent le backend Sites historique, maintenu pour
-la version publique durant la migration. Les références HTTP/D1 de ces sections
-ne s'appliquent pas au serveur Node.
 
 # Cooperative client-owned character physics
 
@@ -78,10 +75,8 @@ et pas.
 
 - `scripts/test-client-authority.mjs`: old snapshots delayed by 40/160/320/1500 ms
   cannot overwrite the owning player's position; metadata and reset checks.
-- `scripts/test-client-physics.mjs`: actual Worker HTTP routes and SQLite storage
-  with two players; client reports are accepted, polling never simulates bodies,
-  signatures use the attached fresh body, remote
-  proxies stay fixed, disconnect changes host, and reset changes epoch.
+- `scripts/test-client-physics.mjs`: remote proxies are never moved by the local
+  integrator.
 - Existing flight, network, physics, audio, boarding and pointer tests still run.
 - Browser smoke check in software rendering fallback: join, local walking and
   purgatory transitions and document controls. The cloud browser cannot create WebGL;

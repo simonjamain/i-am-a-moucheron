@@ -1,7 +1,7 @@
 import { performance } from 'node:perf_hooks';
 import assert from 'node:assert/strict';
 import { segmentSphere } from '../src/ordnance.js';
-import { sweptSphereMayTouch } from '../src/swept-broadphase.js';
+import { sweptSphereMayTouch } from '../src/swept-broadphase.ts';
 
 // CPU-only: same vehicle contact path, 50 segments by 900 enemies.
 let seed = 167;

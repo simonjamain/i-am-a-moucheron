@@ -3,8 +3,7 @@
 La composition de vague décrite dans ce lot a ensuite été densifiée : voir
 [les nuées de version 38](dense-swarms.md), 20 moucherons et 4 fourmis au départ.
 
-État du lot du 29 octobre 2026, pour le **serveur Node RAM/UDP**. Le Worker Sites
-reste historique : ce lot ne doit pas être publié sur son backend D1.
+État du lot du 29 octobre 2026, pour le **serveur Node RAM/UDP**.
 Les écrans HUD et banquier ont été validés puis intégrés au jeu. L’aperçu
 `/ui-review.html`, généré depuis le HTML et les modules réellement servis, permet
 de les essayer avec une caisse de démonstration indépendante et temporaire.
@@ -70,8 +69,8 @@ deux postes tireurs. Les réserves de MG sont complètement indépendantes.
 
 Le Stuka est une silhouette à ailes en mouette, carénages de train et bombes
 externes. Sa vitesse maximale de référence est 54 m/s et son facteur de virage
-0,65, contre 70 et 1 pour le chasseur initial. Il coûte 12 $ par exemplaire,
-le tank 10 $. Le bombardier conserve ses deux postes de mitrailleurs.
+0,65, contre 70 et 1 pour le chasseur initial. Il coûte 25 $ par exemplaire,
+le tank 5 $. Le bombardier conserve ses deux postes de mitrailleurs.
 
 Les bombes héritent de la vitesse de l’avion et subissent la gravité. Un piqué
 dont la direction avant descend de plus de 0,65 applique un facteur **1,35** aux
@@ -120,7 +119,7 @@ suivis. La durée actuelle est le temps d’entrée plus longueur du nouveau tra
 divisée par cette vitesse. Les longues routes ne sont plus accélérées pour
 rentrer dans un délai artificiel. Les apparitions restent périphériques.
 
-Les terrestres suivent une grille A* puis une simplification avec visibilité
+Les terrestres suivent une grille A\* puis une simplification avec visibilité
 libre ; les aériens font des détours en altitude avant la descente vers la poubelle.
 Les obstacles de navigation sont générés depuis les colliders du bureau.
 Les grilles d’aération décoratives sont les points de sortie, pas des obstacles
@@ -186,7 +185,7 @@ fin de vague et le solde négatif, les stocks et bascules, délais et doublons,
 les impacts au sol, les contrats malicieux, les accès de rôle, la conduite sur
 support, les trajets de plusieurs vagues/graines et les effets de crash bornés.
 Les tests de prédiction et les tests réseau natifs couvrent aussi les nouvelles
-armes sans WebSocket ni repli HTTP. La suite historique Worker reste distincte.
+armes sans WebSocket ni repli HTTP.
 
 Le navigateur de prévisualisation a vérifié les maquettes et le chargement du
 client, sans partie WebRTC vers cette VM. Captures de référence :
@@ -198,7 +197,7 @@ chaud de 250 ms localement ; ce n’est pas une mesure de latence réseau ni une
 garantie de capacité. Les collisions utilisent une présélection spatiale.
 
 Le paquet Docker `2026.10.29-udp.2` contient uniquement le lot véhicules/banque,
-avant les [retours terrain](field-update.md), livrés en ZIP de sources. La version `.1`
+avant les [retours terrain](field-update.md). La version `.1`
 est antérieure au Stuka, au tank et aux interfaces intégrées. Voir [Docker](docker.md).
 
 ## Ancien HUD contextuel, remplacé

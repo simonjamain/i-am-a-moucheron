@@ -1,19 +1,18 @@
-import { WALL_SEGMENT, WALL_SEGMENT_PRICE, HALF_BRICK, wallLength } from './brick-rules.js';
-import { FAN_COST, FAN_FADE_MS } from './air-current.js';
-import { SENTRY } from './ground-sentry.js';
-import { FORTIFICATIONS, isFortification } from './ground-fortifications.js';
-import { onFloor, levelOf, FLOOR_LEVEL } from './airdrop.js';
+import { WALL_SEGMENT, WALL_SEGMENT_PRICE, HALF_BRICK, wallLength } from './brick-rules.ts';
+import { SENTRY } from './ground-sentry.ts';
+import { FORTIFICATIONS, isFortification } from './ground-fortifications.ts';
+import { onFloor, levelOf, FLOOR_LEVEL } from './airdrop.ts';
 import {
   splitBarricade,
   buildGroundFlow,
   distanceToSegment,
   STICKY_WIDTH,
   GROUND_BOUNDS,
-  GROUND_GOAL,
+  groundGoal,
   GROUND_CELL,
-  GROUND_STATIC_OBSTACLES,
+  groundStaticObstacles,
 } from './ground-defense.js';
-export { GROUND_BOUNDS, GROUND_GOAL, GROUND_CELL };
+export { GROUND_BOUNDS, groundGoal, GROUND_CELL };
 
 export const GROUND_LIMIT = 512;
 export const GROUND_BAIT_TYPES = Object.freeze({
@@ -43,7 +42,6 @@ export function newGroundDefense() {
     navigationRevision: 0,
     nextId: 0,
     structures: [],
-    retiringFans: [],
     drops: [], // Castor volant constructions still falling (server-owned)
     dropSeq: 0,
   };
@@ -73,7 +71,6 @@ function fail(message) {
   throw new Error(message);
 }
 export function groundSnapshot(state, now = Date.now()) {
-  state.retiringFans = (state.retiringFans || []).filter((f) => now < f.removedAt + FAN_FADE_MS);
   return {
     revision: state.revision,
     navigationRevision: state.navigationRevision,
@@ -85,7 +82,6 @@ export function groundSnapshot(state, now = Date.now()) {
           ),
         }
       : {}),
-    ...(state.retiringFans.length ? { retiringFans: structuredClone(state.retiringFans) } : {}),
   };
 }
 // Structures that block ground movement (and that ground insects may break).
@@ -112,13 +108,13 @@ export function previewStructures(command) {
     ];
   return [];
 }
-export function groundFlow(state, goal = GROUND_GOAL) {
+export function groundFlow(state, goal = groundGoal()) {
   return buildGroundFlow({
     bounds: GROUND_BOUNDS,
     cellSize: GROUND_CELL,
     goal,
     barricades: navigationStructures(state.structures),
-    staticObstacles: GROUND_STATIC_OBSTACLES,
+    staticObstacles: groundStaticObstacles(),
   });
 }
 // One synchronous command is an atomic room transaction. Never accept costs, HP,
@@ -130,8 +126,7 @@ export function groundCommand(state, command, foot, dollars, now = Date.now(), a
   if (action === 'build') {
     const { kind, a } = command;
     let { b } = command;
-    const pointItem =
-      kind === 'sugar' || kind === 'fan' || kind === 'sentry' || isFortification(kind);
+    const pointItem = kind === 'sugar' || kind === 'sentry' || isFortification(kind);
     if (isFortification(kind)) {
       if (!access.castor) fail('Cette défense occupable se construit depuis le Castor.');
       if (state.structures.filter((s) => s.kind === kind).length >= FORTIFICATIONS[kind].maxPerRoom)
@@ -143,7 +138,7 @@ export function groundCommand(state, command, foot, dollars, now = Date.now(), a
         fail('Nombre maximal de tourelles atteint.');
     }
     if (
-      !['barricade', 'sticky', 'sugar', 'fan', 'sentry', 'bunker', 'antitank'].includes(kind) ||
+      !['barricade', 'sticky', 'sugar', 'sentry', 'bunker', 'antitank'].includes(kind) ||
       !finitePoint(a) ||
       (!pointItem && !finitePoint(b))
     )
@@ -165,11 +160,9 @@ export function groundCommand(state, command, foot, dollars, now = Date.now(), a
       ? FORTIFICATIONS[kind].cost
       : kind === 'sentry'
         ? SENTRY.cost
-        : kind === 'fan'
-          ? FAN_COST
-          : kind === 'sugar'
-            ? GROUND_BAIT_TYPES.sugar.cost
-            : lengthPrice(kind, distance);
+        : kind === 'sugar'
+          ? GROUND_BAIT_TYPES.sugar.cost
+          : lengthPrice(kind, distance);
     if (dollars + 1e-8 < price) fail('Caisse commune insuffisante.');
     // Castor volant drops land on furniture too: those keep their height.
     const level = Number.isFinite(access.y) && access.y > FLOOR_LEVEL ? access.y : 0;
@@ -190,18 +183,16 @@ export function groundCommand(state, command, foot, dollars, now = Date.now(), a
                 kind,
                 position: [...a],
                 angle: Number.isFinite(command.angle) ? command.angle % (2 * Math.PI) : 0,
-                ...(kind === 'fan'
-                  ? { placedAt: now }
-                  : kind === 'sentry'
-                    ? { hp: SENTRY.hp, maxHp: SENTRY.hp, ammo: SENTRY.ammo }
-                    : isFortification(kind)
-                      ? {
-                          hp: FORTIFICATIONS[kind].hp,
-                          maxHp: FORTIFICATIONS[kind].hp,
-                          ammo: FORTIFICATIONS[kind].ammo,
-                          ...(kind === 'bunker' ? bunkerSegment(a) : {}),
-                        }
-                      : { type: 'sugar', radius: GROUND_BAIT_TYPES.sugar.radius }),
+                ...(kind === 'sentry'
+                  ? { hp: SENTRY.hp, maxHp: SENTRY.hp, ammo: SENTRY.ammo }
+                  : isFortification(kind)
+                    ? {
+                        hp: FORTIFICATIONS[kind].hp,
+                        maxHp: FORTIFICATIONS[kind].hp,
+                        ammo: FORTIFICATIONS[kind].ammo,
+                        ...(kind === 'bunker' ? bunkerSegment(a) : {}),
+                      }
+                    : { type: 'sugar', radius: GROUND_BAIT_TYPES.sugar.radius }),
               },
             ];
     if (level) for (const item of items) item.y = level;
@@ -272,10 +263,6 @@ export function groundCommand(state, command, foot, dollars, now = Date.now(), a
     item.hp = item.maxHp;
     state.revision++;
     return { price: 1, ids: [item.id] };
-  }
-  if (item.kind === 'fan') {
-    state.retiringFans = (state.retiringFans || []).filter((f) => now < f.removedAt + FAN_FADE_MS);
-    state.retiringFans.push({ ...item, removedAt: now });
   }
   state.structures.splice(index, 1);
   state.revision++;

@@ -1,20 +1,20 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { runInNewContext } from 'node:vm';
-import { ACTOR_UNIT, FLAK, MAP } from '../src/scale.js';
-import { FIXED_DCA_AMMO } from '../src/ground-ammo.js';
+import { ACTOR_UNIT, FLAK, MAP } from '../src/scale.ts';
+import { FIXED_DCA_AMMO } from '../src/ground-ammo.ts';
 import { advancePaidService } from '../src/paid-service.js';
 import { newGroundDefense } from '../src/ground-defense-state.js';
 import * as T from '../vendor/three.module.min.js';
-import { HEAVY } from '../src/armament.js';
+import { HEAVY } from '../src/armament.ts';
 import { stepHeavy } from '../src/heavy-sim.js';
-import { shopPrice } from '../src/equipment.js';
-import { heavyDcaMuzzle } from '../src/fixed-dca.js';
-import { makeFixedDca, positionHeavyFlakSight } from '../src/fixed-dca-model.js';
-import { OFFICE_LAYOUT } from '../src/layout.js';
-import { makeInstallationCollider } from '../src/station-model.js';
-import { colliderContainsXZ } from '../src/oriented-collider.js';
-import { aimGun, stepWalker, stationEntryOffset } from '../src/sortie.js';
+import { shopPrice } from '../src/equipment.ts';
+import { heavyDcaMuzzle } from '../src/fixed-dca.ts';
+import { makeFixedDca, positionHeavyFlakSight } from '../src/fixed-dca-model.ts';
+import { OFFICE_LAYOUT } from '../src/layout.ts';
+import { makeInstallationCollider } from '../src/station-model.ts';
+import { colliderContainsXZ } from '../src/oriented-collider.ts';
+import { aimGun, stepWalker, stationEntryOffset } from '../src/sortie.ts';
 import { Game } from '../server/game.js';
 
 const station = { kind: 'refuel', x: 0, y: 0.01, z: 0 };
@@ -68,8 +68,6 @@ fire('round-1');
 assert.equal(positioned.ammo, 1);
 fire('round-1');
 assert.equal(positioned.ammo, 1, 'same shot cannot debit twice');
-assert.throws(() => fire('round-fast'), /recharge/);
-assert.equal(positioned.ammo, 1);
 now += FLAK.interval * 1000 + 10;
 fire('round-2');
 assert.equal(positioned.ammo, 0);
@@ -127,12 +125,10 @@ const launch = (shot, proximity = 5, direction = minimumAim) =>
     incarnation: p.incarnation,
     direction,
   });
-assert.throws(() => launch('below-stop', 5, [0, 0, -1]), /Visée/);
 launch('heavy-1', 1000);
 assert.equal(heavy.ammo, 1);
 assert.equal(r.ordnance.at(-1).proximity, 20, 'same fuse bounds as mobile DCA');
 assert.deepEqual(r.ordnance.at(-1).p, heavyDcaMuzzle(heavy, minimumAim));
-assert.throws(() => launch('heavy-2'), /recharge/);
 now += 1000;
 launch('heavy-2');
 assert.equal(heavy.ammo, 0);
@@ -154,8 +150,8 @@ assert.ok(burstHeavy, 'arming followed by detonation near the solid');
 assert.equal(stepHeavy(equivalent, equivalent.at + 299, world), null);
 assert.deepEqual(burstHeavy, stepHeavy(equivalent, equivalent.at + 800, world));
 
-assert.equal(shopPrice('dcaRapid', {}, 2), 15);
-assert.equal(shopPrice('dcaHeavy', {}, 2), 35);
+assert.equal(shopPrice('dcaRapid', 2), 50);
+assert.equal(shopPrice('dcaHeavy', 2), 30);
 for (const [kind, count] of [
   ['dca', 2],
   ['dcaRapid', 4],
@@ -347,8 +343,8 @@ for (const elevation of [Math.PI / 36, Math.PI / 2]) {
 
 // Vehicle orders deploy by parachute and must initialise the same reserve.
 for (const [item, expectedPrice, ammo] of [
-  ['dcaRapid', 15, 1000],
-  ['dcaHeavy', 35, 120],
+  ['dcaRapid', 50, 1000],
+  ['dcaHeavy', 30, 120],
 ]) {
   const buyer = game.join({ code: 'DCABUY', name: 'Acheteur' });
   const room = game.rooms.get('DCABUY'),

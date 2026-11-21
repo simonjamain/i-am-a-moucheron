@@ -5,7 +5,7 @@ import { DEFAULT_BALANCE } from '../src/balance.js';
 import { advanceGroundCrowd } from '../src/ground-crowd.js';
 import { newGroundDefense, groundFlow } from '../src/ground-defense-state.js';
 import { swarmFrame } from '../src/waves.js';
-import { INSECT_SCALE, enemySizeFactor } from '../src/scale.js';
+import { INSECT_SCALE, enemySizeFactor } from '../src/scale.ts';
 
 const state = newGroundDefense();
 const world = {
@@ -20,7 +20,7 @@ const seeded = (seed) => (n) => {
 };
 let closest = Infinity;
 for (const seed of [1, 2, 3, 4, 5, 6]) {
-  const { roster } = prepareRoster(5, DEFAULT_BALANCE, seeded(seed));
+  const { roster } = prepareRoster(10, DEFAULT_BALANCE, seeded(seed));
   const ants = roster.filter((e) => e.type === 'ant');
   assert.ok(ants.length >= 40, 'a real pack of ants');
   const units = {};

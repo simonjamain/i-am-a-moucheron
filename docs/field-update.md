@@ -1,8 +1,7 @@
 # Retours terrain : accès, visée, chutes et réapparition
 
 Référence technique du lot BUG-04 à ECO-02, serveur **Node RAM/UDP**.
-Les sources se livrent en ZIP ; l’ancienne image Docker `.2` ne contient pas ce lot.
-Le Site public Worker reste historique et n’est pas remplacé par ce client Node.
+L’ancienne image Docker `.2` ne contient pas ce lot.
 
 ## Embarquement et délai après E
 
@@ -53,7 +52,7 @@ Un point situé derrière la bouche n’entraîne pas de tir dans le dos. Mobili
 bureau, guichet et sol des purgatoires bloquent le tir. Les rayons suivent le second rayon ; le traceur immobile a ensuite nécessité une correction spécifique ARM-05, décrite dans le dernier lot. Portée conservée : 150 m de référence, soit 0,45 m au bureau et
 150 m au purgatoire ; 10 dégâts, semi-automatique, sans recharge, interdit en poste.
 
-`personal-aim.js`, le diagnostic exécutant le vrai `pistol()` et les tests géométriques
+`personal-aim.ts`, le diagnostic exécutant le vrai `pistol()` et les tests géométriques
 couvrent orientations, deux échelles, cible proche/lointaine et obstruction. Le
 ressenti avec Pointer Lock réel reste à observer sur une machine équipée de WebGL.
 
@@ -72,7 +71,7 @@ L’ancien corps local est retiré lors du changement d’incarnation : ses coor
 ne doivent pas gagner contre la nouvelle destination dans la fusion des snapshots.
 Vitesse, parachute, rotation de caméra et commandes sont réinitialisés.
 
-Un lit coûte 4 $, puis +2 $ par lit acheté, sur la caisse commune. Sa pose réserve
+Un lit coûte 15 $, puis +2 $ par lit acheté, sur la caisse commune. Sa pose réserve
 une surface de 6 × 4,2 m de référence, soit 18 × 12,6 mm du décor, avec support
 continu, place pour le corps et hauteur libre. Il peut être posé sur un meuble.
 Un cercle permet E puis un **contrat personnel signé**. Chaque joueur a un seul
@@ -121,7 +120,7 @@ le langage visuel des documents et garde les commandes du monde neutralisées.
 
 ## Vagues et prêts
 
-Le lancement initial reste à 10 s. Les pauses **entre vagues** passent à 60 s ;
+Le lancement initial reste à 10 s. Les pauses **entre vagues** passent à 60 s (puis 180 s depuis la v340) ;
 le bouton de lancement anticipé est conservé. Le serveur arbitre démarrage manuel
 et automatique sans double vague. Une seule échéance de prêt reste prélevée à
 chaque fin de vague.

@@ -1,6 +1,6 @@
 import { BIPLANE_DATA } from './meshy-biplane-data.js';
 import { BIPLANE_BOMBER_DATA } from './meshy-biplane-bomber-data.js';
-import { buildMeshyRig, gunMount } from './meshy-rig.js';
+import { buildMeshyRig, gunMount } from './meshy-rig.ts';
 
 // Biplane fighter (M1 slot): propeller and one central machine gun, sculpted on
 // the hull, whose muzzle is the single pilot barrel. Damage shows as engine

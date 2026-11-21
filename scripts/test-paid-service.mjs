@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { fullAmmo, FUEL_SECONDS } from '../src/logistics.js';
+import { fullAmmo, FUEL_SECONDS } from '../src/logistics.ts';
 import { advancePaidService, fairServiceShares, withinService } from '../src/paid-service.js';
 
 const station = { kind: 'refuel', x: 0, y: 0, z: 0 };

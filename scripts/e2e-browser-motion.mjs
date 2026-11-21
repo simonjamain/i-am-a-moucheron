@@ -1,4 +1,4 @@
-// Manual end-to-end check (not part of npm test): two real Chromium pages join
+// End-to-end check (npm run e2e and CI job browser-e2e; not part of npm test): two real Chromium pages join
 // the same room on a local UDP server; each must receive the other's motion as
 // shared binary batches, decoded by the game's own module, without page errors.
 //   node scripts/assemble.mjs && node scripts/e2e-browser-motion.mjs [bind-ip]
@@ -22,6 +22,10 @@ const url = 'http://127.0.0.1:' + app.server.address().port + '/';
 const browser = await chromium.launch({
   args: ['--allow-loopback-in-peer-connection', '--disable-features=WebRtcHideLocalIpsWithMdns'],
 });
+// Software WebGL renders every pixel on the CPU; a small page keeps two
+// browsers from starving each other on a shared runner (the server drops a
+// pilot silent for 15 s). The scenario checks networking, not the picture.
+const SMALL_VIEWPORT = { width: 320, height: 240 };
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const until = async (test, ms, label) => {
   const start = Date.now();
@@ -64,11 +68,13 @@ const harness = () => {
 try {
   const pages = [];
   for (const name of ['Alpha', 'Bravo']) {
-    const page = await browser.newPage();
+    const page = await browser.newPage({ viewport: SMALL_VIEWPORT });
     page.errors = [];
     page.on('pageerror', (e) => page.errors.push(e.message));
     await page.addInitScript(harness);
     await page.goto(url);
+    // The lobby is usable once the loading screen has left (see e2e-loading).
+    await page.locator('#loading').waitFor({ state: 'detached', timeout: 60000 });
     await page.fill('#name', name);
     await page.fill('#code', 'E2EMOTION');
     await page.click('#join');
@@ -87,21 +93,51 @@ try {
     10000,
     'binary motion batches reach the browser',
   );
-  // Decode in the page with the game's own module.
-  const peers = await pages[0].evaluate(async () => {
-    const { decodeMotionBatch } = await import('/motion-wire.js');
-    const found = new Set();
-    for (const data of motionMessages)
-      for (const entry of decodeMotionBatch(data).entries)
-        // Senders attach their capture time; receivers space samples by it.
-        if (Number.isFinite(entry.captured)) found.add(entry.peer);
-    return [...found];
-  });
+  // Decode in the page with the game's own module. The first batches may carry
+  // only Alpha's own echo, so wait until Bravo's motion is among them instead
+  // of decoding once: a slow runner delivers it later, not never.
+  // Without a capture time a batch entry is useless to receivers (see below).
+  const decodePeers = () =>
+    pages[0].evaluate(async () => {
+      const { decodeMotionBatch } = await import('/motion-wire.js');
+      const timed = new Set(),
+        all = new Set();
+      for (const data of motionMessages)
+        for (const entry of decodeMotionBatch(data).entries) {
+          all.add(entry.peer);
+          // Senders attach their capture time; receivers space samples by it.
+          if (Number.isFinite(entry.captured)) timed.add(entry.peer);
+        }
+      return { timed: [...timed], all: [...all], batches: motionMessages.length };
+    });
   const bravo = ids.find((id) => room.pilots.get(id).name === 'Bravo');
-  assert.ok(
-    peers.includes(bravo),
-    'Alpha receives Bravo motion, with its capture time, in shared batches',
-  );
+  try {
+    await until(
+      async () => (await decodePeers()).timed.includes(bravo),
+      45000,
+      'Alpha receives Bravo motion, with its capture time, in shared batches',
+    );
+  } catch (error) {
+    // Say what each side saw, so a runner-only failure can be diagnosed.
+    const sessions = [...app.connections].map((c) => ({
+      pilot: c.session.player?.id,
+      name: c.session.player?.name,
+      transport: c.transport,
+      lastSeq: c.session.lastSeq,
+      lastMotionMsAgo: Number.isFinite(c.session.lastAt) ? Date.now() - c.session.lastAt : null,
+    }));
+    throw new Error(
+      error.message +
+        ' | bravo=' +
+        bravo +
+        ' alpha-saw=' +
+        JSON.stringify(await decodePeers()) +
+        ' room=' +
+        JSON.stringify([...room.pilots.values()].map((p) => [p.id.slice(0, 4), p.name])) +
+        ' server-sessions=' +
+        JSON.stringify(sessions),
+    );
+  }
   const sizes = await pages[0].evaluate(() => motionMessages.map((m) => m.byteLength));
   assert.ok(Math.max(...sizes) <= 1100, 'batches fit the UDP payload');
   for (const page of pages) assert.deepEqual(page.errors, [], 'no page error');

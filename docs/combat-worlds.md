@@ -5,15 +5,13 @@
 | Cible             |  PV |
 | ----------------- | --: |
 | Moucheron, fourmi | 100 |
-| Voltigeur         | 200 |
 | Cafard            | 300 |
-| Carapace          | 400 |
-| Bourdon blindé    | 800 |
+| Abeille           | 400 |
+| Scarabée          | 800 |
 | Joueur            | 100 |
 
-Une mitrailleuse inflige 75 dégâts de base. L’amélioration existante conserve
-son multiplicateur relatif : 75 × (1 + niveau), jusqu’au niveau 3 ; elle ne
-s’applique pas au pistolet, qui n'existe qu'au purgatoire. Celui-ci inflige
+Une mitrailleuse inflige 75 dégâts (l'ancienne amélioration de munitions est
+retirée). Le pistolet n'existe qu'au purgatoire et inflige
 toujours 10 dégâts, un tir par appui, sans délai entre deux appuis distincts.
 Maintenir ne répète pas le tir. Le corps visible de l'âme porte le pistolet ; le
 rayon vise le réticule. Au bureau, le personnage n'a pas d'arme à pied.
@@ -25,13 +23,13 @@ sans explosion. Sa fusée programmée, en l’absence d’impact précédent, ex
 80 dégâts au centre, décroissance linéaire à 20 au bord inclus, zéro au-delà.
 Les obstacles masquent le souffle. Les contacts solides conservent la distance
 minimale de sécurité. Un projectile supprimé ne déclenche aucun second impact.
-`combat.js` porte la classification d’impact et la courbe de souffle.
+`combat.ts` porte la classification d’impact et la courbe de souffle.
 
 ## Autorité et persistance
 
 Les clients conservent leur autorité sur les mouvements et les impacts déclarés.
 Le serveur Node valide les opérations en RAM. Les noms de tables et transactions
-SQL cités ci-dessous décrivent le Worker historique, conservé séparément. `health_hits` déduplique par tireur, cible,
+SQL cités ci-dessous sont l’ancien modèle de persistance, abandonné : le serveur garde ces registres en RAM. `health_hits` déduplique par tireur, cible,
 tir et incarnation. Une transaction retire les PV une fois. Une transition de
 mort est conditionnée par l’incarnation courante, puis l’incrémente ; les retries
 ne peuvent pas réinitialiser le dossier d’une nouvelle vie. Les instantanés
@@ -43,7 +41,6 @@ La file PNJ appartient uniquement au purgatoire classique. Le registre
 `soul_rewards` arbitre entre service et tir : le premier libère l’âme et crédite
 un dollar ; les autres demandes n’ajoutent rien. Les PV PNJ viennent de leur type,
 et leurs dégâts ne sont pas remplacés par les rapports de mouvement du client.
-La migration additive `0009_player_worlds.sql` conserve les données existantes.
 
 ## Sièges et sons
 

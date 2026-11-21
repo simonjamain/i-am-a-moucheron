@@ -1,35 +1,11 @@
 import { splitBarricade } from './ground-defense.js';
-import { createBrickWall } from './brick-wall.js';
-import { createSentryModel } from './sentry-model.js';
+import { createBrickWall } from './brick-wall.ts';
+import { createSentryModel } from './sentry-model.ts';
 
 // One model factory for both placed structures and placement previews.
 export function createGroundModel(T, structure) {
   const group = new T.Group();
-  if (structure.kind === 'fan') {
-    group.position.set(structure.position[0], 0.032, structure.position[1]);
-    group.rotation.y = structure.angle;
-    const hoop = new T.Mesh(
-      new T.TorusGeometry(0.027, 0.002, 6, 20),
-      new T.MeshBasicMaterial({ color: '#71a2a7' }),
-    );
-    group.add(hoop);
-    for (let i = 0; i < 3; i++) {
-      const blade = new T.Mesh(
-        new T.BoxGeometry(0.024, 0.009, 0.004),
-        new T.MeshBasicMaterial({ color: '#dcdfcf' }),
-      );
-      blade.rotation.z = (i * 2 * Math.PI) / 3;
-      blade.position.set(0.013 * Math.cos(blade.rotation.z), 0.013 * Math.sin(blade.rotation.z), 0);
-      group.add(blade);
-    }
-    const nose = new T.Mesh(
-      new T.ConeGeometry(0.008, 0.018, 6),
-      new T.MeshBasicMaterial({ color: '#e9ad58' }),
-    );
-    nose.rotation.x = Math.PI / 2;
-    nose.position.z = 0.01;
-    group.add(nose);
-  } else if (structure.kind === 'sugar') {
+  if (structure.kind === 'sugar') {
     const [x, z] = structure.position;
     const paper = new T.Mesh(
       new T.BoxGeometry(0.042, 0.002, 0.03),
