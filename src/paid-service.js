@@ -1,6 +1,6 @@
 import { VEHICLES, isSupportVehicle } from './fleet.ts';
 import { levelOf } from './airdrop.ts';
-import { SENTRY } from './ground-sentry.ts';
+import { isTurret, turretSpec } from './ground-sentry.ts';
 import { FORTIFICATIONS } from './ground-fortifications.ts';
 import { distanceToSegment } from './ground-defense.js';
 import { FIXED_DCA } from './fixed-dca.ts';
@@ -149,7 +149,7 @@ export function advancePaidService(
     const sources = serviceSources(installations, fleet);
     for (const wall of groundDefense.structures) {
       if (
-        !['barricade', 'sentry', 'antitank'].includes(wall.kind) ||
+        !['barricade', 'sentry', 'gatling', 'antitank'].includes(wall.kind) ||
         !Number.isFinite(wall.hp) ||
         !Number.isFinite(wall.maxHp) ||
         wall.hp <= 0 ||
@@ -158,7 +158,7 @@ export function advancePaidService(
         continue;
       if (
         !sources.some(({ p, radius }) =>
-          ['sentry', 'antitank'].includes(wall.kind)
+          isTurret(wall.kind) || wall.kind === 'antitank'
             ? Math.hypot(
                 wall.position[0] - p[0],
                 p[1] - levelOf(wall) - 0.025,
@@ -186,7 +186,9 @@ export function advancePaidService(
       });
     }
     for (const sentry of groundDefense.structures) {
-      if (sentry.kind !== 'sentry' || sentry.hp <= 0 || sentry.ammo >= SENTRY.ammo) continue;
+      if (!isTurret(sentry.kind) || sentry.hp <= 0) continue;
+      const capacity = turretSpec(sentry.kind).ammo;
+      if (sentry.ammo >= capacity) continue;
       if (
         !sources.some(
           ({ p, radius }) =>
@@ -198,11 +200,11 @@ export function advancePaidService(
         )
       )
         continue;
-      const amount = Math.min(SENTRY.ammo - sentry.ammo, (SENTRY.ammo * dt) / SERVICE_SECONDS);
+      const amount = Math.min(capacity - sentry.ammo, (capacity * dt) / SERVICE_SECONDS);
       const cost = amount * SERVICE_RATES.machineGun;
       if (cost > 0)
         jobs.push({
-          owner: 'sentry',
+          owner: sentry.kind,
           cost,
           needs: [
             {

@@ -65,9 +65,17 @@ const handler = client.slice(
   client.indexOf("if (e.kind === 'sentry-shot'"),
   client.indexOf("if (e.kind === 'blast')"),
 );
-assert.match(handler, /groundDefenseUI\.sentryShot\(e\.sentry, e\.target\)/);
-assert.match(handler, /emitBullet\(origin, direction, TRACER_COLOR, false, false\)/);
-assert.match(handler, /combatEffects\.muzzle\(origin, direction\)/);
+assert.match(handler, /sentryShotVisual\(e\.sentry, e\.target, e\.p,/);
+const visual = client.slice(
+  client.indexOf('function sentryShotVisual('),
+  client.indexOf('function emitBullet('),
+);
+assert.match(visual, /groundDefenseUI\.sentryShot\(sentry, target\)/);
+assert.match(
+  visual,
+  /emitBullet\(origin, direction, TRACER_COLOR, false, false, null, null, silent\)/,
+);
+assert.match(visual, /combatEffects\.muzzle\(origin, direction\)/);
 
 class Element {
   constructor(tag) {

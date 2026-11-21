@@ -1,6 +1,7 @@
 import { splitBarricade } from './ground-defense.js';
 import { createBrickWall } from './brick-wall.ts';
 import { createSentryModel } from './sentry-model.ts';
+import { createGatlingModel } from './gatling-model.ts';
 
 // One model factory for both placed structures and placement previews.
 export function createGroundModel(T, structure) {
@@ -45,11 +46,11 @@ export function createGroundModel(T, structure) {
     ring.rotation.x = -Math.PI / 2;
     ring.position.set(0, 0.002, 0);
     group.add(ring);
-  } else if (structure.kind === 'sentry') {
+  } else if (structure.kind === 'sentry' || structure.kind === 'gatling') {
     const [x, z] = structure.position;
     group.position.set(x, 0, z);
     group.rotation.y = structure.angle || 0;
-    const sentry = createSentryModel(T);
+    const sentry = structure.kind === 'gatling' ? createGatlingModel(T) : createSentryModel(T);
     group.userData.sentry = sentry;
     group.add(sentry.group);
   } else if (structure.kind === 'barricade') {

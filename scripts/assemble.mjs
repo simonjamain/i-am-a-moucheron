@@ -83,6 +83,8 @@ const files = {
       'meshy-t01-tete-data',
       'meshy-t01-canon-data',
       'meshy-t01-capteur-data',
+      'meshy-gatling-data',
+      'gatling-model',
       'ground-fortifications',
       'ground-model',
       'fortification-model',
