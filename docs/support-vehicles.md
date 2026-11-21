@@ -48,7 +48,7 @@ indépendamment de la poussée collective demandée.
 | ------------------ | ----: | ------------------------------------- | ----------------------------- |
 | Pilote, roquettes  |    30 | au moins 0,3 s                        | Roquette : 120→30, rayon 12 m |
 | Copilote, MG       | 1 000 | 15 balles/s                           | 75                            |
-| Copilote, missiles |    10 | un en vol, puis 2 s après destruction | Missile : 80→20, rayon 8 m    |
+| Copilote, missiles |    10 | un en vol, puis 2 s après destruction | Missile : 360→70, rayon 30 m  |
 
 Les roquettes alternent leurs origines gauche/droite et partent dans l'axe du
 véhicule, sans viser indépendamment avec la souris. Le copilote vise avec une

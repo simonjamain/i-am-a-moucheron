@@ -28,7 +28,7 @@ by the map ratio. The Anti-Aircraft Museum lists an 800 m/s muzzle velocity for
 its L/60 40 mm Bofors:
 https://ilmatorjuntamuseo.fi/ilmatorjuntamuseo/kokoelman_helmet/40-itk-36-59-galileo-bofors/
 The 0.7 s game cadence, distance-programmed airburst, 100–1200 m reference fuse
-and 30 m blast radius of the light flak (shared by the mobile flak; 8 m for the missile) are gameplay choices; this is not a historical fuze simulation.
+and 30 m blast radius of the light flak (shared by the mobile flak; the helicopter missile also blasts 30 m) are gameplay choices; this is not a historical fuze simulation.
 Early impacts before arming are inert. Blasts use falloff and solid-furniture
 occlusion, and can damage teammates and shared hulls. Two separate yaw/pitch
 joints keep the DCA trunnion anchored; alternating muzzle objects determine the
