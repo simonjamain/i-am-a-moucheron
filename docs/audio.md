@@ -46,9 +46,10 @@ Contrat :
 
 ## Adaptateur du jeu `src/game-audio/`
 
-- `synth.ts` : les 27 sons synthétisés (aucun fichier audio) et leurs niveaux.
-- `catalog.ts` : catalogue ; boucles `ambience`, `engine`, `dive`, `insect`
-  pilotées par `{ rate, level }`.
+- `synth.ts` : les 28 sons synthétisés (aucun fichier audio) et leurs niveaux.
+- `catalog.ts` : catalogue ; boucles `ambience`, `engine`, `dive`, `insect`, `gatling`
+  pilotées par `{ rate, level }` (la boucle `gatling` de 1 s, six impulsions sans couture, remplace
+  un son par tir : voir [la Gatling](gatling-turret.md#son-continu)).
 - `scores.ts` : score = priorité du son × niveau × atténuation inverse
   (`ref`, roll-off 1,3, distance max 200 ou 55 au purgatoire). Les sons d'interface
   (récompense, compte à rebours) passent avant le combat, l'ambiance en dernier.

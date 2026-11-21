@@ -5,7 +5,38 @@ import { groundPlacement, airdropPlacement } from './ground-placement.js';
 import { deliveryHeightAt } from './delivery.ts';
 import { lengthPrice } from './ground-defense-state.js';
 import { BRICK_PITCH } from './brick-wall.ts';
-import { sentryAimAngles, sentryAngleDelta, SENTRY_MUZZLE_HEIGHT } from './sentry-model.ts';
+import {
+  sentryAimAngles,
+  sentryAngleDelta,
+  SENTRY_MUZZLE_HEIGHT,
+  SENTRY_MIN_ELEVATION,
+  SENTRY_MAX_ELEVATION,
+} from './sentry-model.ts';
+import {
+  GATLING_MIN_ELEVATION,
+  GATLING_MAX_ELEVATION,
+  GATLING_MUZZLE_HEIGHT,
+  GATLING_MAX_SPIN,
+  stepGatlingSpin,
+  firingBarrel,
+} from './gatling-model.ts';
+import { GATLING, isTurret } from './ground-sentry.ts';
+
+// Barrel pivot height and elevation limits of each turret model.
+const turretGeometry = (kind) =>
+  kind === 'gatling'
+    ? {
+        height: GATLING_MUZZLE_HEIGHT,
+        limits: { min: GATLING_MIN_ELEVATION, max: GATLING_MAX_ELEVATION },
+      }
+    : {
+        height: SENTRY_MUZZLE_HEIGHT,
+        limits: { min: SENTRY_MIN_ELEVATION, max: SENTRY_MAX_ELEVATION },
+      };
+// A Gatling keeps spinning (and its sound running) this long after its last round.
+const GATLING_TAIL_MS = 250;
+// Local pitch-pivot kick of one Gatling round, in model units (T-01: 0.003).
+const GATLING_RECOIL = 0.014;
 // One LEGO brick of the wall model (brick-wall.js), and the trail section bounds.
 export { BRICK_PITCH };
 export const TRAIL_MIN = 0.01;
@@ -67,6 +98,7 @@ export class GroundDefenseUI {
       ['repair', 'Réparer'],
       ['remove', 'Enlever'],
       ['sentry', 'Tourelle auto'],
+      ['gatling', 'Tourelle auto Gatling'],
       ['antitank', 'Canon anti-matériel'],
     ];
     this.wheel = document.createElement('div');
@@ -175,7 +207,7 @@ export class GroundDefenseUI {
       this.notify('Le Castor volant ne largue pas de mur LEGO.', 3);
       return false;
     }
-    if (['sentry', 'antitank'].includes(kind) && !this.builder()) {
+    if (['sentry', 'gatling', 'antitank'].includes(kind) && !this.builder()) {
       this.notify('Construisez cette défense depuis un Castor.', 3);
       return false;
     }
@@ -534,9 +566,11 @@ export class GroundDefenseUI {
     this.lastSentryFrame = now;
     const weight = 1 - Math.exp(-12 * Math.max(0, dt));
     for (const structure of snap?.groundDefense?.structures || []) {
-      if (structure.kind !== 'sentry') continue;
+      if (!isTurret(structure.kind)) continue;
       const model = this.sentries.get(String(structure.id));
       if (!model) continue;
+      const gatling = model.kind === 'gatling';
+      const { height, limits } = turretGeometry(model.kind);
       if (
         structure.hp > 0 &&
         Array.isArray(structure.aimTarget) &&
@@ -544,37 +578,103 @@ export class GroundDefenseUI {
         structure.aimTarget.every(Number.isFinite)
       ) {
         const { yaw, pitch } = sentryAimAngles(
-          [structure.position[0], (structure.y || 0) + SENTRY_MUZZLE_HEIGHT, structure.position[1]],
+          [structure.position[0], (structure.y || 0) + height, structure.position[1]],
           structure.aimTarget,
+          limits,
         );
         model.targetYaw = yaw - (structure.angle || 0);
         model.targetPitch = pitch;
       }
       model.yaw.rotation.y += sentryAngleDelta(model.yaw.rotation.y, model.targetYaw) * weight;
       // Short barrel recoil after each authoritative shot (issue #108).
-      model.recoil = (model.recoil || 0) * Math.exp(-18 * Math.max(0, dt));
-      model.pitch.position.z = (model.basePitchZ ??= model.pitch.position.z) + model.recoil * 0.003;
+      model.recoil = (model.recoil || 0) * Math.exp(-(gatling ? 30 : 18) * Math.max(0, dt));
+      model.pitch.position.z =
+        (model.basePitchZ ??= model.pitch.position.z) +
+        model.recoil * (gatling ? GATLING_RECOIL : 0.003);
       model.pitch.rotation.x += (model.targetPitch - model.pitch.rotation.x) * weight;
+      if (gatling) {
+        // The whole bundle (barrels and collars) turns about the central axis;
+        // it only winds up while rounds are really leaving the turret.
+        stepGatlingSpin(model.spinState, dt, structure.hp > 0 && now < (model.fireUntil || 0));
+        model.spin.rotation.z = model.spinState.angle;
+      }
       model.lens.material.color.set(structure.ammo > 0 ? '#1ecbd9' : '#87574c');
     }
+  }
+  // A Gatling effect from the server carries `shots` rounds for the last 250 ms:
+  // they are released one by one at the weapon's cadence (see takeGatlingShots).
+  noteGatlingBurst(id, shots = 1, target = null, now = performance.now()) {
+    const model = this.sentries.get(String(id));
+    if (model?.kind !== 'gatling') return false;
+    model.queued = Math.min(6, (model.queued || 0) + Math.max(1, shots));
+    if (target) model.queuedTarget = target;
+    model.nextShotAt = Math.max(model.nextShotAt || 0, now);
+    model.fireUntil = Math.max(
+      model.fireUntil || 0,
+      now + model.queued * GATLING.intervalMs + GATLING_TAIL_MS,
+    );
+    return true;
+  }
+  // Rounds due now: [{ id, target }]. At most two per call so a stalled frame never dumps a burst.
+  takeGatlingShots(now = performance.now()) {
+    const due = [];
+    for (const [id, model] of this.sentries) {
+      if (model.kind !== 'gatling' || !model.queued) continue;
+      let taken = 0;
+      while (model.queued > 0 && now >= model.nextShotAt && taken < 2) {
+        model.queued--;
+        taken++;
+        due.push({ id, target: model.queuedTarget });
+        model.nextShotAt += GATLING.intervalMs;
+      }
+      if (now - model.nextShotAt > 300) model.nextShotAt = now;
+    }
+    return due;
+  }
+  // Continuous gunfire loops: one per firing Gatling (the three nearest to the
+  // listener), pitched and cadenced by the rotor speed, instead of a sound per round.
+  gatlingSounds(listener, now = performance.now(), limit = 3) {
+    const sounds = [];
+    for (const [id, model] of this.sentries) {
+      if (model.kind !== 'gatling' || !(now < (model.fireUntil || 0))) continue;
+      const p = model.container.position;
+      const position = { x: p.x, y: p.y + GATLING_MUZZLE_HEIGHT, z: p.z };
+      const spin = Math.min(1, model.spinState.speed / GATLING_MAX_SPIN);
+      sounds.push({
+        key: 'gatling-' + id,
+        position,
+        rate: 0.55 + 0.45 * spin,
+        level: 0.5 + 0.5 * spin,
+        distance: listener
+          ? Math.hypot(position.x - listener.x, position.y - listener.y, position.z - listener.z)
+          : 0,
+      });
+    }
+    return sounds.sort((a, b) => a.distance - b.distance).slice(0, limit);
   }
   // World position and direction of a turret's real muzzle, and recoil kick.
   sentryShot(id, target) {
     const model = this.sentries.get(String(id));
     if (!model?.muzzle) return null;
     const T = this.T;
+    const gatling = model.kind === 'gatling';
+    const { height, limits } = turretGeometry(model.kind);
     if (target) {
       // Snap toward the server's target so the tracer leaves along the barrel.
       const origin = model.container.position;
-      const angles = sentryAimAngles([origin.x, origin.y + SENTRY_MUZZLE_HEIGHT, origin.z], target);
+      const angles = sentryAimAngles([origin.x, origin.y + height, origin.z], target, limits);
       if (angles) {
         model.targetYaw = angles.yaw - (model.container.rotation.y || 0);
         model.targetPitch = angles.pitch;
       }
     }
-    model.recoil = 1;
+    model.recoil = gatling ? Math.min(1, (model.recoil || 0) + 0.6) : 1;
     model.container.updateMatrixWorld(true);
-    const position = model.muzzle.getWorldPosition(new T.Vector3());
+    // Each Gatling round leaves from the barrel that is at the top of the bundle.
+    const node = gatling
+      ? model.barrels[firingBarrel(model.spinState.angle)] || model.muzzle
+      : model.muzzle;
+    const position = node.getWorldPosition(new T.Vector3());
     const direction = target
       ? new T.Vector3().fromArray(target).sub(position).normalize()
       : new T.Vector3(0, 0, -1).applyQuaternion(
@@ -596,7 +696,7 @@ export class GroundDefenseUI {
     // dozens of meshes and resetting their pivots every 500 ms is expensive.
     const retained = new Map();
     for (const structure of structures) {
-      if (structure.kind !== 'sentry') continue;
+      if (!isTurret(structure.kind)) continue;
       const existing = this.sentries.get(String(structure.id));
       if (!existing) continue;
       existing.container.position.set(
@@ -621,7 +721,7 @@ export class GroundDefenseUI {
     ]) {
       // Occupied fortifications are already rendered with their articulated gun and operator.
       if (structure.kind === 'antitank') continue;
-      if (structure.kind === 'sentry' && this.sentries.has(String(structure.id))) continue;
+      if (isTurret(structure.kind) && this.sentries.has(String(structure.id))) continue;
       const group = createGroundModel(T, structure);
       group.position.y += structure.y || 0; // dropped on furniture by a Castor volant
       if (group.userData.sentry)
@@ -639,7 +739,7 @@ export class GroundDefenseUI {
       if (s.kind === 'antitank') {
         ctx.fillStyle = '#9eb9a0';
         ctx.fillRect(108 + s.position[0] / 0.04, 108 + (s.position[1] / 0.04) * 0.88, 7, 7);
-      } else if (s.kind === 'sentry') {
+      } else if (isTurret(s.kind)) {
         ctx.fillStyle = s.ammo > 0 ? '#a0c89b' : '#6e6660';
         ctx.fillRect(108 + s.position[0] / 0.04, 108 + (s.position[1] / 0.04) * 0.88, 5, 5);
       } else if (s.kind === 'sugar') {

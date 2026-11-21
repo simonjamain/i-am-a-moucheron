@@ -1447,18 +1447,10 @@ function accept(s, force = false) {
     // Issue #108: Castor auto-turret shots are visible to everyone, from the
     // model's real muzzle: tracer, flash and recoil.
     if (e.kind === 'sentry-shot' && !respawnAt && Date.now() + clockOffset - e.at < 400) {
-      const shot = groundDefenseUI.sentryShot(e.sentry, e.target);
-      const origin = shot?.position || new T.Vector3().fromArray(e.p);
-      const direction =
-        shot?.direction ||
-        new T.Vector3()
-          .fromArray(e.target || e.p)
-          .sub(origin)
-          .normalize();
-      if (direction.lengthSq() > 0) {
-        emitBullet(origin, direction, TRACER_COLOR, false, false);
-        combatEffects.muzzle(origin, direction);
-      }
+      // Gatling: rounds are released one by one by the frame loop at the
+      // weapon's cadence, under one continuous sound loop (no sound per round).
+      if (e.turret !== 'gatling' || !groundDefenseUI.noteGatlingBurst(e.sentry, e.shots, e.target))
+        sentryShotVisual(e.sentry, e.target, e.p, e.turret === 'gatling');
     }
     if (e.kind === 'blast') {
       combatEffects.blast(new T.Vector3().fromArray(e.p), e.radius || MAP.metres(FLAK.radius));
@@ -4226,10 +4218,26 @@ const aircraftFire = new AircraftFire(
       Date.now().toString(36) + '-' + Math.random().toString(36).slice(2),
   },
 );
-function emitBullet(pos, dir, color, owned, aa, launch = null, muzzleNode = null) {
+// Tracer, muzzle flash and recoil of one automatic-turret round, from its real muzzle.
+function sentryShotVisual(sentry, target, fallback, silent) {
+  const shot = groundDefenseUI.sentryShot(sentry, target);
+  if (!shot && !fallback) return;
+  const origin = shot?.position || new T.Vector3().fromArray(fallback);
+  const direction =
+    shot?.direction ||
+    new T.Vector3()
+      .fromArray(target || fallback)
+      .sub(origin)
+      .normalize();
+  if (direction.lengthSq() > 0) {
+    emitBullet(origin, direction, TRACER_COLOR, false, false, null, null, silent);
+    combatEffects.muzzle(origin, direction);
+  }
+}
+function emitBullet(pos, dir, color, owned, aa, launch = null, muzzleNode = null, silent = false) {
   const stamp = performance.now(),
     cue = stamp - spitSoundAt >= 40 || aa;
-  if (!respawnAt && cue) {
+  if (!respawnAt && cue && !silent) {
     sound.play(aa ? 'flak' : 'shot', pos, { ref: aa ? 35 : 12 });
     spitSoundAt = stamp;
   }
@@ -4877,6 +4885,10 @@ function updateAudio() {
           rate: source.rate,
         });
     }
+    for (const gun of groundDefenseUI.gatlingSounds(activeCamera.position)) {
+      keep.add(gun.key);
+      sound.loop(gun.key, 'gatling', gun.position, { rate: gun.rate, level: gun.level, ref: 10 });
+    }
     for (const key of activeSwarmAudioKeys) keep.add(key);
   } else {
     activeSwarmAudioKeys.clear();
@@ -4920,6 +4932,9 @@ function frame(now) {
     camera.updateProjectionMatrix();
   }
   groundDefenseUI.update();
+  if (!respawnAt)
+    for (const round of groundDefenseUI.takeGatlingShots())
+      sentryShotVisual(round.id, round.target, null, true);
   forecastScene.update(
     snap,
     groundDefenseUI.active && groundDefenseUI.enabled() ? groundDefenseUI.candidate : null,

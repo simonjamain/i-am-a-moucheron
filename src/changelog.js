@@ -1,9 +1,15 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
-    version: 386,
+    version: 387,
     changes: [
       'Bombardier moyen : le poste visé est cerné d’un trait net, qui le détache bien de l’avion.',
+    ],
+  },
+  {
+    version: 386,
+    changes: [
+      'Nouvelle tourelle Gatling pour le Castor et le Castor volant : six canons qui tournent et un tir continu.',
     ],
   },
   {

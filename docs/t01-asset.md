@@ -1,5 +1,7 @@
 # Tourelle automatique T-01 — quatre modules Meshy
 
+Une seconde tourelle, [la Gatling](gatling-turret.md), partage ses règles de base.
+
 La tourelle automatique du **G1 Castor** est un assemblage de quatre modèles Meshy indépendants. Ces exports sont des maillages et textures véritables, et non une redécoupe de l'ancien GLB monobloc. La tourelle conserve un **canon unique**, une optique visible et la direction artistique low-poly olive/sable/jaune/noir du G1.
 
 ## Origines contrôlées

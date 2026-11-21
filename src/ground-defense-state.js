@@ -1,5 +1,5 @@
 import { WALL_SEGMENT, WALL_SEGMENT_PRICE, HALF_BRICK, wallLength } from './brick-rules.ts';
-import { SENTRY } from './ground-sentry.ts';
+import { SENTRY, isTurret, turretSpec } from './ground-sentry.ts';
 import { FORTIFICATIONS, isFortification } from './ground-fortifications.ts';
 import { onFloor, levelOf, FLOOR_LEVEL } from './airdrop.ts';
 import {
@@ -119,19 +119,19 @@ export function groundCommand(state, command, foot, dollars, now = Date.now(), a
   if (action === 'build') {
     const { kind, a } = command;
     let { b } = command;
-    const pointItem = kind === 'sugar' || kind === 'sentry' || isFortification(kind);
+    const pointItem = kind === 'sugar' || isTurret(kind) || isFortification(kind);
     if (isFortification(kind)) {
       if (!access.castor) fail('Cette défense occupable se construit depuis le Castor.');
       if (state.structures.filter((s) => s.kind === kind).length >= FORTIFICATIONS[kind].maxPerRoom)
         fail('Nombre maximal de défenses occupables atteint.');
     }
-    if (kind === 'sentry') {
+    if (isTurret(kind)) {
       if (!access.castor) fail('Cette tourelle se construit depuis le Castor.');
-      if (state.structures.filter((s) => s.kind === 'sentry').length >= SENTRY.maxPerRoom)
+      if (state.structures.filter((s) => isTurret(s.kind)).length >= SENTRY.maxPerRoom)
         fail('Nombre maximal de tourelles atteint.');
     }
     if (
-      !['barricade', 'sticky', 'sugar', 'sentry', 'antitank'].includes(kind) ||
+      !['barricade', 'sticky', 'sugar', 'sentry', 'gatling', 'antitank'].includes(kind) ||
       !finitePoint(a) ||
       (!pointItem && !finitePoint(b))
     )
@@ -151,8 +151,8 @@ export function groundCommand(state, command, foot, dollars, now = Date.now(), a
       fail('Trop de constructions dans la salle.');
     const price = isFortification(kind)
       ? FORTIFICATIONS[kind].cost
-      : kind === 'sentry'
-        ? SENTRY.cost
+      : isTurret(kind)
+        ? turretSpec(kind).cost
         : kind === 'sugar'
           ? GROUND_BAIT_TYPES.sugar.cost
           : lengthPrice(kind, distance);
@@ -176,8 +176,12 @@ export function groundCommand(state, command, foot, dollars, now = Date.now(), a
                 kind,
                 position: [...a],
                 angle: Number.isFinite(command.angle) ? command.angle % (2 * Math.PI) : 0,
-                ...(kind === 'sentry'
-                  ? { hp: SENTRY.hp, maxHp: SENTRY.hp, ammo: SENTRY.ammo }
+                ...(isTurret(kind)
+                  ? {
+                      hp: turretSpec(kind).hp,
+                      maxHp: turretSpec(kind).hp,
+                      ammo: turretSpec(kind).ammo,
+                    }
                   : isFortification(kind)
                     ? {
                         hp: FORTIFICATIONS[kind].hp,
@@ -200,10 +204,12 @@ export function groundCommand(state, command, foot, dollars, now = Date.now(), a
         state.structures.some((existing) => {
           // Only constructions on the same surface (floor or furniture) collide.
           if (Math.abs(levelOf(existing) - level) > 0.02) return false;
-          if (['sentry', 'antitank'].includes(existing.kind) && existing.hp > 0)
+          if ((isTurret(existing.kind) || existing.kind === 'antitank') && existing.hp > 0)
             return (
               Math.hypot(sample[0] - existing.position[0], sample[1] - existing.position[1]) <
-              (existing.kind === 'sentry' ? SENTRY.footprint : FORTIFICATIONS.antitank.footprint)
+              (isTurret(existing.kind)
+                ? turretSpec(existing.kind).footprint
+                : FORTIFICATIONS.antitank.footprint)
             );
           if (existing.kind !== 'barricade' || existing.hp <= 0) return false;
           if (!item.position) {
@@ -242,7 +248,7 @@ export function groundCommand(state, command, foot, dollars, now = Date.now(), a
   if (!nearFoot(position, foot)) fail('Approchez-vous de la construction.');
   if (action === 'repair') {
     if (
-      !['barricade', 'sentry', 'antitank'].includes(item.kind) ||
+      !['barricade', 'sentry', 'gatling', 'antitank'].includes(item.kind) ||
       item.hp <= 0 ||
       item.hp >= item.maxHp
     )

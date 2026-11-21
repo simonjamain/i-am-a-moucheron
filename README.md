@@ -92,7 +92,7 @@ dépassés ; en cas de doute, le code et les références du thème font foi.
 
 **Rendu, son et modèles**
 
-- [art-direction](docs/art-direction.md) : direction artistique · [ui-guidelines](docs/ui-guidelines.md) : règles d’interface · [audio](docs/audio.md) · [toon-rendering](docs/toon-rendering.md) · [shadow-visibility](docs/shadow-visibility.md) · [asset-pipeline](docs/asset-pipeline.md) : modèles Meshy et outil GLB · [meshy-fleet](docs/meshy-fleet.md), [b3-model](docs/b3-model.md), [h2-model](docs/h2-model.md), [m1-model](docs/m1-model.md), [t01-asset](docs/t01-asset.md)
+- [art-direction](docs/art-direction.md) : direction artistique · [ui-guidelines](docs/ui-guidelines.md) : règles d’interface · [audio](docs/audio.md) · [toon-rendering](docs/toon-rendering.md) · [shadow-visibility](docs/shadow-visibility.md) · [asset-pipeline](docs/asset-pipeline.md) : modèles Meshy et outil GLB · [meshy-fleet](docs/meshy-fleet.md), [b3-model](docs/b3-model.md), [h2-model](docs/h2-model.md), [m1-model](docs/m1-model.md), [t01-asset](docs/t01-asset.md), [gatling-turret](docs/gatling-turret.md)
 
 **Exploitation et contribution**
 
