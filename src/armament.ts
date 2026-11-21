@@ -72,6 +72,9 @@ const HEAVY_BY_NAME: Readonly<Record<string, HeavyWeapon | undefined>> = HEAVY;
 /** Highest elevation of the medium tank's main gun, in the hull's frame (30°). */
 export const TANK_GUN_MAX_PITCH = (30 * Math.PI) / 180;
 
+/** Share of its damage the armour-piercing shell keeps after each enemy it crosses. */
+export const AP_PIERCE_KEEP = 0.8;
+
 export const TANK_MG = Object.freeze({
   pilot: { interval: 0.09, damage: 33 },
   top: { interval: 0.06, damage: 75 },
