@@ -8,16 +8,19 @@ travail avance par lots (note de reprise : [collisions en triangles](tasks/colli
 
 ## Principe
 
-- **Un BVH par modèle** (`src/collision-mesh.ts`, sans Three.js, partageable avec
-  le serveur et les workers) : arbre de boîtes englobantes sur les triangles du
-  modèle, construit une fois, dans le repère du modèle.
-- **Un solide maillé par objet posé** (`MeshSolid`, `src/office-collision.ts`) : ses
-  bornes dans la pièce servent de tri rapide, et son repère (position, lacet) ramène
-  chaque requête dans le repère du modèle. Les copies d'un même modèle partagent
-  son BVH.
-- **Requêtes** : rayon (point d'impact le plus proche, normale tournée vers le rayon)
-  et point le plus proche dans un rayon donné (contact d'une sphère). Le balayage
-  d'une forme le long d'un trajet viendra avec le vol (lot 3).
+- **Rapier**, le moteur physique déjà utilisé par les véhicules
+  ([moteur physique](physics-engine.md)), porte le décor : `DecorCollision`
+  (`src/office-collision.ts`) crée un monde Rapier par plan, avec un collider fixe
+  en triangles (`trimesh`) par objet posé, à sa position et sa rotation. Rapier
+  garde sa propre structure d'accélération ; aucun moteur de collision maison.
+- **Unités** : le monde Rapier est à l'échelle humaine (`toPhysics`, comme les
+  véhicules) ; les requêtes prennent et rendent des mètres du jeu.
+- **Requêtes** : rayon (impact le plus proche, sur tout le décor ou un seul objet,
+  normale tournée vers le rayon) et point le plus proche. Le balayage d'une forme le
+  long d'un trajet (`castShape`) viendra avec le vol (lot 3).
+- **Côté client seulement** : la physique tourne dans le navigateur. Rapier est déjà
+  chargé au démarrage (`homeReady`) ; le monde du décor se construit dès qu'il est
+  prêt, puis à chaque changement de plan (`office.buildDecor`).
 
 ## Ce qui collisionne
 
@@ -30,8 +33,8 @@ travail avance par lots (note de reprise : [collisions en triangles](tasks/colli
 
 ## Lots
 
-1. **Monde de collision en triangles** (version 406) : construction, requêtes exactes,
-   affichage en mode debug. Les boîtes restent les solides du jeu pendant ce lot.
+1. **Monde de collision en triangles** (version 407) : monde Rapier du décor,
+   requêtes exactes, affichage en mode debug. Les boîtes restent les solides du jeu pendant ce lot.
 2. Tirs, visée de pose, caméra, largages : rayons sur les triangles.
 3. Avions, marche et véhicules au contact des triangles.
 4. Navigation des fourmis et serveur.
@@ -44,16 +47,14 @@ fer jaune (`MESH_COLLIDER_COLOR`), en plus des boîtes cyan
 
 ## Mesures
 
-Node 22, Diagonale :
+Node 22, Rapier 0.21 (même module que le navigateur), Diagonale :
 
-| Mesure                                                   | Valeur      |
-| -------------------------------------------------------- | ----------- |
-| Solides maillés / triangles                              | 79 / 80 168 |
-| Construction des BVH (première fois, tous les modèles)   | 120 ms      |
-| Construction suivante (BVH en cache)                     | 0,2 ms      |
-| Rayon à travers toute la pièce (tri par bornes puis BVH) | 10 µs       |
-| Contact d'une sphère de 5 cm                             | 0,7 µs      |
+| Mesure                                | Valeur      |
+| ------------------------------------- | ----------- |
+| Colliders / triangles                 | 79 / 80 168 |
+| Construction du monde Rapier du décor | 150 ms      |
+| Rayon à travers toute la pièce        | 16 µs       |
 
-`scripts/test-collision-mesh.mjs` compare chaque rayon à un test sur tous les
-triangles (aucun écart), vérifie les points les plus proches, les objets tournés, les
+`scripts/test-collision-mesh.mjs` charge le même Rapier que le navigateur et
+compare chaque rayon à un test sur tous les triangles (aucun écart), vérifie les points les plus proches, les objets tournés, les
 formes approchées et la fente de la photocopieuse, qui reste ouverte.

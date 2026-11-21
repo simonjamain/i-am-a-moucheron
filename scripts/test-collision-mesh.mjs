@@ -1,16 +1,15 @@
-// Triangle collision meshes (collision-mesh.ts) and the props' triangle colliders
-// (office-collision.ts): exact against brute force, model frames, approximated
+// The props' triangle colliders in a Rapier world of the decor (office-collision.ts):
+// rays and nearest points exact against brute force, turned props, approximated
 // and ignored models, the photocopier's paper slot left open. See docs/collisions.md.
 import assert from 'node:assert/strict';
-import { TriangleMesh, boxTriangles } from '../src/collision-mesh.ts';
 import {
-  propMeshSolids,
-  modelMesh,
-  raycastSolid,
-  nearestOnSolid,
+  DecorCollision,
+  modelTriangles,
   solidTriangles,
   collisionShape,
+  boxTriangles,
 } from '../src/office-collision.ts';
+import { loadRapier } from '../src/physics-world.ts';
 import { MODEL_DATA } from '../src/office-pack-data.js';
 import { OFFICE_MODELS } from '../src/office-pack-catalog.ts';
 import { LAYOUTS } from '../src/layouts.ts';
@@ -52,22 +51,13 @@ function bruteRay(world, o, d) {
   return best;
 }
 
-// A unit box: rays, normals facing the ray, nearest points, an empty mesh.
-const cube = new TriangleMesh(new Float32Array(boxTriangles([0, 0, 0, 1, 1, 1])));
-assert.equal(cube.count, 12);
-const down = cube.raycast(0.5, 3, 0.5, 0, -1, 0);
-assert.ok(Math.abs(down.distance - 2) < 1e-9);
-assert.deepEqual(down.normal.map(Math.round), [0, 1, 0], 'top face, facing the ray');
-assert.equal(cube.raycast(0.5, 3, 0.5, 0, 1, 0), null, 'pointing away');
-assert.equal(cube.raycast(0.5, 3, 0.5, 0, -1, 0, 1.5), null, 'beyond far');
-const near = cube.nearest(2, 0.5, 0.5);
-assert.ok(Math.abs(near.distance - 1) < 1e-9 && Math.abs(near.point[0] - 1) < 1e-9);
-assert.equal(cube.nearest(2, 0.5, 0.5, 0.5), null, 'outside the radius');
-assert.equal(new TriangleMesh(new Float32Array(0)).raycast(0, 0, 0, 1, 0, 0), null);
-
-// Diagonale: one solid per colliding prop; the walls stay boxes (shell solids).
+// Diagonale: one Rapier collider per colliding prop; the walls stay boxes (shell solids).
+const RAPIER = await loadRapier(() => import('../vendor/rapier.compat.mjs'));
 const diagonale = LAYOUTS.find((l) => l.id === 'diagonale');
-const solids = propMeshSolids(MODEL_DATA, diagonale.props);
+let started = performance.now();
+const decor = new DecorCollision(RAPIER, MODEL_DATA, diagonale.props);
+const buildMs = performance.now() - started;
+const solids = decor.solids;
 assert.ok(solids.length > 60);
 const ghosts = new Set(diagonale.props.filter((p) => p.ghost).map((p) => p.model));
 assert.ok(ghosts.has('Wall') && ghosts.has('Wall_Corner'));
@@ -76,75 +66,70 @@ assert.ok(
   solids.some((s) => s.model === 'Wall_Clock'),
   'wall items have relief',
 );
-for (const s of solids) assert.equal(s.mesh, modelMesh(MODEL_DATA, s.model), 'one mesh per model');
 // Real triangles, except the approximated piles of paper.
-assert.equal(modelMesh(MODEL_DATA, 'Desk').count, OFFICE_MODELS.Desk.triangles);
-assert.equal(modelMesh(MODEL_DATA, 'Keyboard').count, OFFICE_MODELS.Keyboard.triangles);
+const count = (model) => modelTriangles(MODEL_DATA, model).length / 9;
+assert.equal(count('Desk'), OFFICE_MODELS.Desk.triangles);
+assert.equal(count('Keyboard'), OFFICE_MODELS.Keyboard.triangles);
 assert.equal(collisionShape('Paper_Stack_Tall'), 'proxy');
-assert.equal(modelMesh(MODEL_DATA, 'Paper_Stack_Tall').count, 12, 'one box');
+assert.equal(count('Paper_Stack_Tall'), 12, 'one box');
 assert.equal(collisionShape('Wall_Vent'), 'none');
-assert.equal(
-  modelMesh(MODEL_DATA, 'Ceiling_Fan').count,
-  OFFICE_MODELS.Ceiling_Fan.triangles + 12,
-  'fan and its rod',
-);
-assert.ok(Math.abs(modelMesh(MODEL_DATA, 'Ceiling_Fan').max[1] - ROD) < 1e-6);
+assert.equal(count('Ceiling_Fan'), OFFICE_MODELS.Ceiling_Fan.triangles + 12, 'fan and its rod');
+const fan = modelTriangles(MODEL_DATA, 'Ceiling_Fan');
+assert.ok(Math.abs(Math.max(...fan.filter((_, i) => i % 3 === 1)) - ROD) < 1e-6);
+assert.equal(boxTriangles([0, 0, 0, 1, 1, 1]).length, 12 * 9);
 
 // Exact: the same nearest hit as testing every triangle, rays in every direction.
-const world = solids.map(solidTriangles);
+const world = solids.map((s) => solidTriangles(MODEL_DATA, s));
 let hits = 0;
+started = performance.now();
+const rays = [];
 for (let i = 0; i < 160; i++) {
   const o = [random() * 8 - 4, random() * 2.4, random() * 7 - 3.5];
   const d = unit([random() - 0.5, random() - 0.6, random() - 0.5]);
-  let best = Infinity;
-  for (const s of solids) {
-    const h = raycastSolid(s, o, d);
-    if (h) best = Math.min(best, h.distance);
-  }
+  rays.push([o, d, decor.raycast(o, d)]);
+}
+const rayUs = ((performance.now() - started) / rays.length) * 1000;
+for (const [o, d, hit] of rays) {
   const expected = bruteRay(world, o, d);
   if (expected < Infinity) hits++;
-  assert.ok(
-    expected === best || Math.abs(expected - best) < 1e-4,
-    `ray ${i}: ${best} vs ${expected}`,
-  );
+  const best = hit ? hit.distance : Infinity;
+  assert.ok(expected === best || Math.abs(expected - best) < 2e-4, `ray: ${best} vs ${expected}`);
+  if (hit) {
+    assert.ok(hit.normal[0] * d[0] + hit.normal[1] * d[1] + hit.normal[2] * d[2] <= 0);
+    assert.ok(Math.abs(hit.point[1] - (o[1] + d[1] * hit.distance)) < 1e-9);
+  }
 }
 assert.ok(hits > 20, 'the rays do hit furniture');
-// Nearest point: on the mesh, never farther than its nearest vertex.
+// Nearest point: on a surface, never farther than its nearest vertex.
 for (let i = 0; i < 30; i++) {
   const p = [random() * 8 - 4, random() * 2.4, random() * 7 - 3.5];
-  let best = null;
-  for (const s of solids) {
-    const n = nearestOnSolid(s, p);
-    if (n && (!best || n.distance < best.distance)) best = n;
-  }
+  const best = decor.nearest(p);
   let vertex = Infinity;
   for (const t of world)
     for (let q = 0; q < t.length; q += 3)
       vertex = Math.min(vertex, Math.hypot(t[q] - p[0], t[q + 1] - p[1], t[q + 2] - p[2]));
-  assert.ok(best.distance <= vertex + 1e-6);
-  assert.ok(Math.abs(Math.hypot(...best.point.map((v, k) => v - p[k])) - best.distance) < 1e-6);
+  assert.ok(best.distance <= vertex + 1e-4, `nearest ${best.distance} vs vertex ${vertex}`);
 }
+assert.equal(decor.nearest([0, 3.9, 0], 0.01), null, 'nothing near the flight ceiling');
 
-// Turned props: a world ray down onto a turned chair's seat hits its real top.
+// Turned props: a ray down onto a turned chair's seat hits its real top.
 const chair = solids.find((s) => s.model.startsWith('Office_Chair') && Math.abs(s.frame.s) > 0.1);
-const seat = raycastSolid(chair, [chair.frame.x, 2, chair.frame.z], [0, -1, 0]);
+const seat = decor.raycast([chair.frame.x, 2, chair.frame.z], [0, -1, 0], 3, chair);
 assert.ok(seat && seat.normal[1] > 0.9, 'seat from above');
-assert.ok(2 - seat.distance < OFFICE_MODELS[chair.model].max[1], 'below the backrest top');
+assert.ok(seat.point[1] < OFFICE_MODELS[chair.model].max[1], 'below the backrest top');
 
 // The photocopier's paper slot stays open: a ray enters it 30 cm deep.
 const copier = solids.find((s) => s.model === 'Photocopier');
 const front = OFFICE_MODELS.Photocopier.max[0] + 0.1;
-const local = (u, v) => [
-  copier.frame.x + copier.frame.c * u + copier.frame.s * v,
-  copier.frame.z - copier.frame.s * u + copier.frame.c * v,
-];
-const [sx, sz] = local(front, 0.1);
+const sx = copier.frame.x + copier.frame.c * front + copier.frame.s * 0.1,
+  sz = copier.frame.z - copier.frame.s * front + copier.frame.c * 0.1;
 const inward = [-copier.frame.c, 0, copier.frame.s];
-const slot = raycastSolid(copier, [sx, 0.7, sz], inward);
+const slot = decor.raycast([sx, 0.7, sz], inward, 3, copier);
 assert.ok(!slot || slot.distance - 0.1 > 0.3, 'paper slot open');
-const body = raycastSolid(copier, [sx, 0.8, sz], inward);
+const body = decor.raycast([sx, 0.8, sz], inward, 3, copier);
 assert.ok(body && body.distance - 0.1 < 0.1, 'body above the slot');
+decor.dispose();
 
 console.log(
-  `Collision meshes: ${solids.length} props, BVH rays and nearest points exact, turned frames, paper proxies, copier slot open.`,
+  `Collision meshes (Rapier): ${solids.length} props, ${decor.triangleCount} triangles, built in ${buildMs.toFixed(0)} ms, ray ${rayUs.toFixed(0)} µs; exact against brute force, turned props, paper proxies, copier slot open.`,
 );

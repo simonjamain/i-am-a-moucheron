@@ -8,7 +8,7 @@ import {
 import { activeLayout, layoutPieces, pieceBounds, LAYOUT_ROOM } from './layouts.ts';
 import { addOfficeProps } from './office-pack.ts';
 import { ROD } from './office-props.ts';
-import { propMeshSolids } from './office-collision.ts';
+import { DecorCollision, solidTriangles } from './office-collision.ts';
 import { MODEL_DATA } from './office-pack-data.js';
 // Draws the active layout (see layouts.ts): floor, blocking-out volumes, the
 // office pack models (walls, door, vents, bin, furniture and objects) and the
@@ -94,19 +94,34 @@ export function createOffice(T, scene, { box, cyl }) {
     } else hole.position.set(x, 0, -Z + face);
     root.add(hole);
   }
-  // Triangle colliders of the props (office-collision.ts): built here, used by
-  // the debug view for now; the box colliders above remain the game's solids.
-  const meshSolids = propMeshSolids(MODEL_DATA, layout.props);
+  // Triangle colliders of the props, in a Rapier world of the decor
+  // (office-collision.ts), built once Rapier is loaded. Used by the debug view for
+  // now: the box colliders above remain the game's solids.
+  let decor = null,
+    decorWire = [];
   return {
     layout,
     root,
     colliders,
-    meshSolids,
+    get decor() {
+      return decor;
+    },
+    get decorWire() {
+      return decorWire;
+    },
+    buildDecor(RAPIER) {
+      if (decor || !RAPIER) return decor;
+      decor = new DecorCollision(RAPIER, MODEL_DATA, layout.props);
+      decorWire = decor.solids.map((s) => solidTriangles(MODEL_DATA, s));
+      return decor;
+    },
     solidObjects,
     // Renders the lamps' shadows once, with the room alone (see office-lights.ts).
     bakeShadows: (renderer) => bakeOfficeShadows(T, renderer, root),
     // Removes the room from the scene. Pack geometries are shared: keep them.
     dispose() {
+      decor?.dispose();
+      decor = null;
       scene.remove(root);
       root.traverse((o) => {
         if (o.isLight) o.dispose();

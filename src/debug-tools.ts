@@ -12,7 +12,6 @@ import type * as THREE from 'three';
 import { DEBUG_ENEMY_TYPES, type DebugEnemyKind } from './debug-enemies.ts';
 import type { EnemyType, Three } from './types.ts';
 import { ENEMY_POWER } from './waves.js';
-import { solidTriangles, type MeshSolid } from './office-collision.ts';
 
 /** Hit volume as insect-hits.js tests it: ellipsoid or sphere proxy. */
 export interface HitProxy {
@@ -323,18 +322,20 @@ export class DebugTools {
   }
 
   // Collision volumes: boxes (one batch of edges and one of faces) and the
-  // triangle colliders of the props (edges only, in another colour).
+  // triangle colliders of the props (world triangles, 9 floats each; edges only,
+  // in another colour).
   showColliders(
     boxes: readonly THREE.Box3[],
     enabled: boolean,
-    meshes: readonly MeshSolid[] = [],
+    meshes: readonly Float32Array[] = [],
   ): void {
     const T = this.T;
     let key = '';
     if (enabled) {
       let sum = 0;
-      for (const b of [...boxes, ...meshes])
+      for (const b of boxes)
         sum += b.min.x + 3 * b.min.y + 7 * b.min.z + 11 * b.max.x + 13 * b.max.y + 17 * b.max.z;
+      for (const t of meshes) sum += t.length + (t[0] ?? 0) + 3 * (t[t.length - 1] ?? 0);
       key = boxes.length + '/' + meshes.length + ':' + sum.toFixed(5);
     }
     if (key === this.colliderKey) return;
@@ -349,8 +350,7 @@ export class DebugTools {
     if (!enabled) return;
     if (meshes.length) {
       const segments: number[] = [];
-      for (const solid of meshes) {
-        const t = solidTriangles(solid);
+      for (const t of meshes) {
         for (let i = 0; i < t.length; i += 9)
           for (const [a, b] of [
             [0, 3],

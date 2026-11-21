@@ -1,11 +1,12 @@
-// Collision meshes of the office pack props: each placed prop collides with the
-// real triangles of its model (collision-mesh.ts), except a few models whose
-// shape is approximated on purpose (paper stacks, crumpled paper) and the flat
-// wall items that never block. A mesh is built once per model, in its own frame;
-// every placed copy is a MeshSolid: its world bounds (broad phase) plus a yaw
-// frame that carries queries into the model frame. See docs/collisions.md.
-import { TriangleMesh, boxTriangles, type MeshHit, type MeshNearest } from './collision-mesh.ts';
+// Collision of the office pack props on the real triangles of their models, in a
+// Rapier world of the decor (one trimesh collider per placed prop). Rapier keeps
+// its own acceleration structure; this module turns props into colliders and
+// answers ray and nearest-point queries in game metres. A few models are
+// approximated on purpose (paper stacks, crumpled paper) and flat wall items
+// never block. Physics only runs on the client. See docs/collisions.md.
+import type { Collider as RapierCollider, World } from '@dimforge/rapier3d-compat';
 import { modelBoxes, ROD, type OfficeModel, type Prop } from './office-props.ts';
+import { toPhysics, toWorld, type Rapier } from './physics-world.ts';
 
 /** How a model collides: its triangles, boxes standing for it, or not at all. */
 export type CollisionShape = 'mesh' | 'proxy' | 'none';
@@ -37,27 +38,45 @@ const bytes = (base64: string): Uint8Array => {
   return out;
 };
 
-/** A placed prop as a collider: world bounds, yaw frame and the model's mesh. */
-export interface MeshSolid {
-  min: { x: number; y: number; z: number };
-  max: { x: number; y: number; z: number };
-  model: OfficeModel;
-  mesh: TriangleMesh;
-  /** Origin of the prop and its yaw (c = cos, s = sin), Three.js convention. */
-  frame: { x: number; y: number; z: number; c: number; s: number };
+/** Twelve triangles of an axis-aligned box [minX, minY, minZ, maxX, maxY, maxZ]. */
+export function boxTriangles(b: readonly number[]): number[] {
+  const [x0, y0, z0, x1, y1, z1] = b;
+  const v = [
+    [x0, y0, z0],
+    [x1, y0, z0],
+    [x1, y1, z0],
+    [x0, y1, z0],
+    [x0, y0, z1],
+    [x1, y0, z1],
+    [x1, y1, z1],
+    [x0, y1, z1],
+  ];
+  // Outward winding (counter-clockwise seen from outside).
+  const faces = [
+    [0, 3, 2, 1],
+    [4, 5, 6, 7],
+    [0, 4, 7, 3],
+    [1, 2, 6, 5],
+    [0, 1, 5, 4],
+    [3, 7, 6, 2],
+  ];
+  const out: number[] = [];
+  for (const [a, b2, c, d] of faces)
+    out.push(...v[a], ...v[b2], ...v[c], ...v[a], ...v[c], ...v[d]);
+  return out;
 }
 
-const meshes = new WeakMap<PackData, Map<OfficeModel, TriangleMesh>>();
-/** Collision mesh of a model in its own frame (cached per data module). */
-export function modelMesh(data: PackData, model: OfficeModel): TriangleMesh {
-  let cache = meshes.get(data);
-  if (!cache) meshes.set(data, (cache = new Map()));
+const triangles = new WeakMap<PackData, Map<OfficeModel, Float32Array>>();
+/** Collision triangles of a model in its own frame, metres, 9 floats each (cached). */
+export function modelTriangles(data: PackData, model: OfficeModel): Float32Array {
+  let cache = triangles.get(data);
+  if (!cache) triangles.set(data, (cache = new Map()));
   const known = cache.get(model);
   if (known) return known;
   const out: number[] = [];
-  if (collisionShape(model) === 'proxy')
-    for (const b of modelBoxes(model)) out.push(...boxTriangles(b));
-  else if (collisionShape(model) === 'mesh') {
+  const shape = collisionShape(model);
+  if (shape === 'proxy') for (const b of modelBoxes(model)) out.push(...boxTriangles(b));
+  else if (shape === 'mesh') {
     const part = data.parts.find((p) => p.part === model);
     if (!part) throw Error('office pack model missing: ' + model);
     const p = bytes(part.positions),
@@ -69,98 +88,146 @@ export function modelMesh(data: PackData, model: OfficeModel): TriangleMesh {
     // Hanging models: the rod above the hanging point, up into the clouds.
     if (model === 'Ceiling_Fan') out.push(...boxTriangles([-0.008, 0, -0.008, 0.008, ROD, 0.008]));
   }
-  const mesh = new TriangleMesh(new Float32Array(out));
-  cache.set(model, mesh);
-  return mesh;
+  const result = new Float32Array(out);
+  cache.set(model, result);
+  return result;
 }
 
-/** Colliders of the props: one MeshSolid per colliding, non-ghost prop. */
-export function propMeshSolids(data: PackData, props: readonly Prop[]): MeshSolid[] {
-  const solids: MeshSolid[] = [];
-  for (const p of props) {
-    if (p.ghost || collisionShape(p.model) === 'none') continue;
-    const mesh = modelMesh(data, p.model);
-    if (!mesh.count) continue;
-    const c = Math.cos(p.yaw),
-      s = Math.sin(p.yaw);
-    let x0 = Infinity,
-      x1 = -Infinity,
-      z0 = Infinity,
-      z1 = -Infinity;
-    for (const lx of [mesh.min[0], mesh.max[0]])
-      for (const lz of [mesh.min[2], mesh.max[2]]) {
-        const x = p.x + c * lx + s * lz,
-          z = p.z - s * lx + c * lz;
-        x0 = Math.min(x0, x);
-        x1 = Math.max(x1, x);
-        z0 = Math.min(z0, z);
-        z1 = Math.max(z1, z);
+/** A placed prop in the decor world: its model, yaw frame and Rapier collider. */
+export interface DecorSolid {
+  model: OfficeModel;
+  /** Origin of the prop and its yaw (c = cos, s = sin), Three.js convention. */
+  frame: { x: number; y: number; z: number; c: number; s: number };
+  collider: RapierCollider;
+}
+/** Ray hit, in game metres: distance along the unit direction, point, normal. */
+export interface DecorHit {
+  distance: number;
+  point: [number, number, number];
+  normal: [number, number, number];
+  solid: DecorSolid;
+}
+/** Closest point of the decor to a query point, in game metres. */
+export interface DecorNearest {
+  distance: number;
+  point: [number, number, number];
+  solid: DecorSolid;
+}
+
+/**
+ * The decor of one layout as a Rapier world (physics units, see physics-world.ts):
+ * one fixed trimesh collider per colliding prop. Queries take and return game
+ * metres. Built once per layout; `dispose` frees the world.
+ */
+export class DecorCollision {
+  R: Rapier;
+  world: World;
+  solids: DecorSolid[] = [];
+  byHandle = new Map<number, DecorSolid>();
+  triangleCount = 0;
+
+  constructor(R: Rapier, data: PackData, props: readonly Prop[]) {
+    this.R = R;
+    this.world = new R.World({ x: 0, y: 0, z: 0 });
+    const shapes = new Map<OfficeModel, { vertices: Float32Array; indices: Uint32Array }>();
+    for (const p of props) {
+      if (p.ghost || collisionShape(p.model) === 'none') continue;
+      let shape = shapes.get(p.model);
+      if (!shape) {
+        const t = modelTriangles(data, p.model);
+        const vertices = new Float32Array(t.length);
+        for (let i = 0; i < t.length; i++) vertices[i] = toPhysics(t[i]);
+        const indices = new Uint32Array(t.length / 3);
+        for (let i = 0; i < indices.length; i++) indices[i] = i;
+        shapes.set(p.model, (shape = { vertices, indices }));
       }
-    solids.push({
-      min: { x: x0, y: p.y + mesh.min[1], z: z0 },
-      max: { x: x1, y: p.y + mesh.max[1], z: z1 },
-      model: p.model,
-      mesh,
-      frame: { x: p.x, y: p.y, z: p.z, c, s },
-    });
+      if (!shape.indices.length) continue;
+      const desc = R.ColliderDesc.trimesh(shape.vertices, shape.indices)
+        .setTranslation(toPhysics(p.x), toPhysics(p.y), toPhysics(p.z))
+        .setRotation({ x: 0, y: Math.sin(p.yaw / 2), z: 0, w: Math.cos(p.yaw / 2) })
+        .setFriction(0.4);
+      const collider = this.world.createCollider(desc);
+      const solid: DecorSolid = {
+        model: p.model,
+        frame: { x: p.x, y: p.y, z: p.z, c: Math.cos(p.yaw), s: Math.sin(p.yaw) },
+        collider,
+      };
+      this.solids.push(solid);
+      this.byHandle.set(collider.handle, solid);
+      this.triangleCount += shape.indices.length / 3;
+    }
+    // Fills the broad phase, so queries see every collider (nothing moves).
+    this.world.step();
   }
-  return solids;
+
+  /**
+   * Closest hit of a ray (game metres, unit direction) within `far`, on the whole
+   * decor or on one solid only; null when nothing is hit.
+   */
+  raycast(
+    origin: readonly number[],
+    direction: readonly number[],
+    far = 1e3,
+    only?: DecorSolid,
+  ): DecorHit | null {
+    const R = this.R;
+    const ray = new R.Ray(
+      { x: toPhysics(origin[0]), y: toPhysics(origin[1]), z: toPhysics(origin[2]) },
+      { x: direction[0], y: direction[1], z: direction[2] },
+    );
+    const hit = only
+      ? only.collider.castRayAndGetNormal(ray, toPhysics(far), false)
+      : this.world.castRayAndGetNormal(ray, toPhysics(far), false);
+    if (!hit) return null;
+    const solid = only ?? this.byHandle.get((hit as { collider: RapierCollider }).collider.handle);
+    if (!solid) return null;
+    const distance = toWorld(hit.timeOfImpact);
+    let normal: [number, number, number] = [hit.normal.x, hit.normal.y, hit.normal.z];
+    // Facing the ray: the side that was hit.
+    if (normal[0] * direction[0] + normal[1] * direction[1] + normal[2] * direction[2] > 0)
+      normal = [-normal[0], -normal[1], -normal[2]];
+    return {
+      distance,
+      point: [0, 1, 2].map((k) => origin[k] + direction[k] * distance) as [number, number, number],
+      normal,
+      solid,
+    };
+  }
+
+  /** Closest point of the decor's surfaces within `radius` of a point, or null. */
+  nearest(point: readonly number[], radius = Infinity): DecorNearest | null {
+    const projection = this.world.projectPoint(
+      { x: toPhysics(point[0]), y: toPhysics(point[1]), z: toPhysics(point[2]) },
+      false,
+    );
+    if (!projection) return null;
+    const solid = this.byHandle.get(projection.collider.handle);
+    if (!solid) return null;
+    const p: [number, number, number] = [
+      toWorld(projection.point.x),
+      toWorld(projection.point.y),
+      toWorld(projection.point.z),
+    ];
+    const distance = Math.hypot(p[0] - point[0], p[1] - point[1], p[2] - point[2]);
+    return distance <= radius ? { distance, point: p, solid } : null;
+  }
+
+  dispose(): void {
+    this.world.free();
+    this.solids = [];
+    this.byHandle.clear();
+  }
 }
 
-// World <-> model frame (yaw only): local = R^T (world - origin).
-const toLocal = (f: MeshSolid['frame'], x: number, z: number): [number, number] => [
-  f.c * x - f.s * z,
-  f.s * x + f.c * z,
-];
-const toWorld = (f: MeshSolid['frame'], x: number, z: number): [number, number] => [
-  f.c * x + f.s * z,
-  -f.s * x + f.c * z,
-];
-
-/** Closest hit of a world ray (unit direction) on the solid, normal in world axes. */
-export function raycastSolid(
-  solid: MeshSolid,
-  origin: readonly number[],
-  direction: readonly number[],
-  far = Infinity,
-): MeshHit | null {
-  const f = solid.frame;
-  const [ox, oz] = toLocal(f, origin[0] - f.x, origin[2] - f.z);
-  const [dx, dz] = toLocal(f, direction[0], direction[2]);
-  const hit = solid.mesh.raycast(ox, origin[1] - f.y, oz, dx, direction[1], dz, far);
-  if (!hit) return null;
-  const [nx, nz] = toWorld(f, hit.normal[0], hit.normal[2]);
-  hit.normal = [nx, hit.normal[1], nz];
-  return hit;
-}
-
-/** Closest point of the solid within `radius` of a world point, in world axes. */
-export function nearestOnSolid(
-  solid: MeshSolid,
-  point: readonly number[],
-  radius = Infinity,
-): MeshNearest | null {
-  const f = solid.frame;
-  const [px, pz] = toLocal(f, point[0] - f.x, point[2] - f.z);
-  const near = solid.mesh.nearest(px, point[1] - f.y, pz, radius);
-  if (!near) return null;
-  const [wx, wz] = toWorld(f, near.point[0], near.point[2]);
-  near.point = [wx + f.x, near.point[1] + f.y, wz + f.z];
-  const [nx, nz] = toWorld(f, near.normal[0], near.normal[2]);
-  near.normal = [nx, near.normal[1], nz];
-  return near;
-}
-
-/** World positions of every triangle of the solid (9 floats each), for drawing. */
-export function solidTriangles(solid: MeshSolid): Float32Array {
+/** World positions of every collision triangle of a solid (9 floats each), for drawing. */
+export function solidTriangles(data: PackData, solid: DecorSolid): Float32Array {
   const f = solid.frame,
-    t = solid.mesh.triangles,
+    t = modelTriangles(data, solid.model),
     out = new Float32Array(t.length);
   for (let i = 0; i < t.length; i += 3) {
-    const [x, z] = toWorld(f, t[i], t[i + 2]);
-    out[i] = x + f.x;
-    out[i + 1] = t[i + 1] + f.y;
-    out[i + 2] = z + f.z;
+    out[i] = f.x + f.c * t[i] + f.s * t[i + 2];
+    out[i + 1] = f.y + t[i + 1];
+    out[i + 2] = f.z - f.s * t[i] + f.c * t[i + 2];
   }
   return out;
 }
