@@ -32,6 +32,42 @@ export const PURCHASE_MOTIVES: ClauseRule = Object.freeze({
   ]),
 });
 
+const COMFORT: Clause = { id: 'comfort', text: 'Convenance personnelle', refused: true };
+const motives = (title: string, first: string, second: string): ClauseRule =>
+  Object.freeze({
+    title,
+    exclusive: true,
+    min: 1,
+    clauses: Object.freeze([{ id: 'first', text: first }, { id: 'second', text: second }, COMFORT]),
+  });
+
+/** First document of a boarding dossier (vehicle seat or fixed defence). */
+export const BOARDING_MOTIVES = motives(
+  'Motif de la prise de poste (cocher une case)',
+  'Défense de la poubelle',
+  'Relève de l’équipage précédent',
+);
+/** First document of a return from the purgatory (or from Super Saint-Pierre). */
+export const RETURN_MOTIVES = motives(
+  'Motif du retour (cocher une case)',
+  'Mission inachevée à la base',
+  'Erreur administrative du service des âmes',
+);
+/** Personal bed contract, and its cancellation. */
+export const BED_MOTIVES = motives(
+  'Motif de la domiciliation (cocher une case)',
+  'Proximité de la ligne de défense',
+  'Rapprochement d’escadrille',
+);
+export const BED_CANCEL_MOTIVES = motives(
+  'Motif de la résiliation (cocher une case)',
+  'Déménagement vers le front',
+  'Lit devenu impraticable',
+);
+/** The refusal printed under the REFUSÉ stamp. */
+export const REFUSAL_TEXT =
+  'Demande refusée : la convenance personnelle n’est pas un motif réglementaire.';
+
 /** Ticked clauses of one document: completeness and refusal. */
 export class ClauseState {
   readonly rule: ClauseRule;

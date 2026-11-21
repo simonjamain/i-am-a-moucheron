@@ -1,6 +1,13 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 393,
+    changes: [
+      'Tous les documents deviennent de vraies feuilles : prise de poste, retour du purgatoire et contrat de lit.',
+      'La première pièce demande un motif coché au crayon ; la convenance personnelle reste refusée.',
+    ],
+  },
+  {
     version: 392,
     changes: [
       'Bon de commande plus lisible : montants alignés, cases carrées, plus de bouton Gommer ni de fond grisé.',
