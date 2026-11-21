@@ -56,6 +56,8 @@ export interface DebugToolsOptions {
 }
 /** Colour of the room's collision volumes in debug mode (cyan, unlike hit volumes). */
 export const COLLIDER_COLOR = 0x46d2ff;
+/** Colour of the props' triangle colliders in debug mode (office-collision.ts). */
+export const MESH_COLLIDER_COLOR = 0xffd23f;
 /** Hover distance of a placed flyer in front of the camera, in metres. */
 export const FLYER_HOVER_DISTANCE = 0.1;
 /** Window of the cumulated damage shown under a dummy's last hit. */
@@ -319,15 +321,22 @@ export class DebugTools {
     this.hitboxes.instanceMatrix.needsUpdate = true;
   }
 
-  // Collision volumes (axis-aligned boxes): one batch of edges and one of faces.
-  showColliders(boxes: readonly THREE.Box3[], enabled: boolean): void {
+  // Collision volumes: boxes (one batch of edges and one of faces) and the
+  // triangle colliders of the props (world triangles, 9 floats each; edges only,
+  // in another colour).
+  showColliders(
+    boxes: readonly THREE.Box3[],
+    enabled: boolean,
+    meshes: readonly Float32Array[] = [],
+  ): void {
     const T = this.T;
     let key = '';
     if (enabled) {
       let sum = 0;
       for (const b of boxes)
         sum += b.min.x + 3 * b.min.y + 7 * b.min.z + 11 * b.max.x + 13 * b.max.y + 17 * b.max.z;
-      key = boxes.length + ':' + sum.toFixed(5);
+      for (const t of meshes) sum += t.length + (t[0] ?? 0) + 3 * (t[t.length - 1] ?? 0);
+      key = boxes.length + '/' + meshes.length + ':' + sum.toFixed(5);
     }
     if (key === this.colliderKey) return;
     this.colliderKey = key;
@@ -338,7 +347,37 @@ export class DebugTools {
       (mesh.material as THREE.Material).dispose();
       (mesh as unknown as THREE.InstancedMesh).dispose?.();
     }
-    if (!enabled || !boxes.length) return;
+    if (!enabled) return;
+    if (meshes.length) {
+      const segments: number[] = [];
+      for (const t of meshes) {
+        for (let i = 0; i < t.length; i += 9)
+          for (const [a, b] of [
+            [0, 3],
+            [3, 6],
+            [6, 0],
+          ])
+            segments.push(
+              t[i + a],
+              t[i + a + 1],
+              t[i + a + 2],
+              t[i + b],
+              t[i + b + 1],
+              t[i + b + 2],
+            );
+      }
+      const geometry = new T.BufferGeometry();
+      geometry.setAttribute('position', new T.Float32BufferAttribute(segments, 3));
+      const wire = new T.LineSegments(
+        geometry,
+        new T.LineBasicMaterial({ color: MESH_COLLIDER_COLOR, transparent: true, opacity: 0.55 }),
+      );
+      wire.userData.projectileSolid = false;
+      wire.frustumCulled = false;
+      wire.renderOrder = 10;
+      this.colliders.add(wire);
+    }
+    if (!boxes.length) return;
     const color = COLLIDER_COLOR;
     const faces = new T.InstancedMesh(
       new T.BoxGeometry(1, 1, 1),

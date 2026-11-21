@@ -122,6 +122,7 @@ export const SUITE = [
   'test-layouts',
   'test-office-pack',
   'test-office-lights',
+  'test-collision-mesh',
   'test-pheromone-trail',
   'test-enemy-bestiary',
   'test-enemy-speeds',

@@ -315,6 +315,7 @@ function applyLayout(planId) {
   office.dispose();
   office = createOffice(T, scene, { box, cyl, ball });
   office.bakeShadows(renderer);
+  office.buildDecor(rapier);
   colliders.splice(0, colliders.length, ...office.colliders);
 }
 let me = makePlane('#e3ebc0');
@@ -6423,7 +6424,7 @@ function updateDebugTools() {
   else if (debugTools.active) debugTools.render();
   debugTools.showHitboxes(insects.values(), on);
   debugTools.showRanges(snap?.groundDefense?.structures, on);
-  debugTools.showColliders(colliders, on);
+  debugTools.showColliders(colliders, on, office.decorWire);
   if (snap)
     debugTools.showDummyDamage(
       on ? insects : new Map(),
@@ -6920,5 +6921,6 @@ const characterReady = loadCharacter(appearancePicker.value).then(
 );
 const rapierReady = loadRapier(() => import('/rapier.js')).then((RAPIER) => {
   rapier = RAPIER;
+  office.buildDecor(RAPIER);
 });
 export const homeReady = Promise.all([characterReady, rapierReady]).then(() => {});

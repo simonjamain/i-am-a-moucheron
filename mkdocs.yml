@@ -84,6 +84,7 @@ nav:
       - Rendu dessin animé: toon-rendering.md
       - Ombres d’atterrissage: shadow-visibility.md
       - Éclairage du bureau: office-lighting.md
+      - Collisions sur les triangles: collisions.md
       - Visibilité des ennemis: enemy-visibility.md
       - Audio: audio.md
       - Pipeline des assets Meshy: asset-pipeline.md
@@ -132,5 +133,6 @@ nav:
       - Santé de la documentation: sante.md
       - Tâches en cours:
           - tasks/README.md
+          - tasks/collision-triangles.md
           - tasks/scaling-plan.md
           - tasks/typescript-migration.md
