@@ -121,6 +121,7 @@ nav:
       - Réseau et corps partagés: walking-network.md
       - Serveur UDP: udp-server.md
       - Physique Rapier: physics-engine.md
+      - Vol du biplan sur Rapier: plane-physics.md
       - Performances: performance.md
       - TypeScript: typescript.md
   - Contribuer:

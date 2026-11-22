@@ -203,6 +203,7 @@ const files = {
       'physics-world',
       'castor-physics',
       'tank-physics',
+      'plane-physics',
       'tank-recoil',
       'camera-follow',
       'tank-gear',
