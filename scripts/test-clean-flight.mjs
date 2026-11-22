@@ -662,6 +662,13 @@ const audioContext = {
     play() {},
     keep: (s) => (kept = new Set(s)),
   },
+  // Air rubbing along the wings of a stalled fighter (src/air-ribbons.ts).
+  airRibbons: {
+    levels: new Map([
+      ['fighter', { level: 0.9 }],
+      ['bomber', { level: 0.01 }],
+    ]),
+  },
   // One firing Gatling: a single continuous voice, never a sound per round.
   groundDefenseUI: {
     gatlingSounds: () => [
@@ -688,6 +695,11 @@ vm.runInContext(
 vm.runInContext('updateAudio()', audioContext);
 assert.ok(kept.has('gatling-1'), 'the firing Gatling keeps its continuous loop');
 assert.ok(loops.some(([key, kind]) => key === 'gatling-1' && kind === 'gatling'));
+assert.ok(
+  loops.some(([key, kind]) => key === 'airflow-fighter' && kind === 'airflow'),
+  'a stalled plane hisses',
+);
+assert.ok(!loops.some(([key]) => key === 'airflow-bomber'), 'calm air stays silent');
 assert.deepEqual(
   [...kept].filter((k) => k.startsWith('dive-')),
   ['dive-interceptor'],

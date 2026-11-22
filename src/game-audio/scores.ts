@@ -16,6 +16,7 @@ export const SOUND_PRIORITY: Readonly<Record<SoundKind, number>> = {
   spawn: 7,
   crash: 6,
   dive: 5,
+  airflow: 5,
   fall: 5,
   flak: 5,
   engine: 4,

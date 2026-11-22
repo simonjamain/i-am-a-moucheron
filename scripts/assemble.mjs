@@ -130,6 +130,7 @@ const files = {
       'reload-hud',
       'office-fog',
       'engine-smoke',
+      'air-ribbons',
       'toon',
       'shop-catalog',
       'shop-thumbs',
