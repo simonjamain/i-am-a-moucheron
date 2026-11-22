@@ -47,6 +47,7 @@ assert.match(
 );
 assert.match(controlHints({ building: { mode: 'sugar' } }), /R : orienter/);
 assert.match(controlHints({ building: { mode: 'repair' } }), /Clic \/ E : réparer/);
+assert.doesNotMatch(controlHints({ building: { mode: 'barricade' } }), /false/);
 
 // Fixed stations: DCA fuse and heavy cannon, all left with F.
 assert.match(controlHints({ turret: true }), /fusée/);

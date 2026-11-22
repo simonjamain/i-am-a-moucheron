@@ -1,6 +1,41 @@
 import { MAP } from './scale.ts';
 import { formatDistance } from './units.ts';
 import { VEHICLES, vehicleMaxHP, isBomber } from './fleet.ts';
+import type { VehicleType } from './fleet.ts';
+
+/** Ammunition stocks read by the HUD (absent kinds are not carried). */
+export interface HudAmmo {
+  bomb?: number;
+  rocket?: number;
+  copilot?: number;
+  missile?: number;
+  proximity?: number;
+}
+/** The vehicle fields read by the HUD (a room vehicle or snapshot entry). */
+export interface HudVehicle {
+  type: string;
+  supplies?: { ammo: HudAmmo } | null;
+}
+export interface BuildingHintContext {
+  mode?: string;
+  castor?: boolean;
+  anchored?: boolean;
+  air?: boolean;
+}
+export interface ControlHintContext {
+  vehicle?: HudVehicle | null;
+  seat?: string | null;
+  dead?: boolean;
+  turret?: boolean;
+  station?: string | null;
+  airborne?: boolean;
+  placing?: boolean;
+  observing?: boolean;
+  build?: boolean;
+  wheel?: boolean;
+  building?: BuildingHintContext | null;
+}
+type HintItem = string | false | null;
 
 // Single source of the bottom-left command help. Each context lists only the inputs
 // that client.js really routes for the current role, seat, station or tool.
@@ -9,19 +44,24 @@ const GROUND_EXIT = 'F : sortir';
 const BUILD = 'G / clic molette : construire';
 const LINE_TOOLS = ['barricade', 'sticky'];
 const ORIENTED_TOOLS = ['sugar'];
-const STATIONS = {
+const STATIONS: Readonly<Record<string, readonly string[]>> = {
   dca: ['Clic / Espace : obus', 'Maj/Ctrl, [ ] ou molette : fusée'],
   dcaRapid: ['Clic / Espace : balles'],
   dcaHeavy: ['Clic / Espace : obus', 'Molette : proximité'],
   antitank: ['Clic / Espace : obus anti-matériel'],
 };
 
-function postsHint(type) {
-  const count = VEHICLES[type]?.seats.length || 1;
+function postsHint(type: string): string | null {
+  const count = VEHICLES[type as VehicleType]?.seats.length || 1;
   return count > 1 ? '1–' + count + ' : postes (contrats)' : null;
 }
 
-function buildingHints({ mode = 'barricade', castor = false, anchored = false, air = false }) {
+function buildingHints({
+  mode = 'barricade',
+  castor = false,
+  anchored = false,
+  air = false,
+}: BuildingHintContext): HintItem[] {
   // Castor volant: drops straight below, turned like the helicopter.
   if (air)
     return [
@@ -49,7 +89,11 @@ function buildingHints({ mode = 'barricade', castor = false, anchored = false, a
   ];
 }
 
-function vehicleHints({ type, supplies }, seat, build) {
+function vehicleHints(
+  { type, supplies }: HudVehicle,
+  seat: string | null | undefined,
+  build: boolean,
+): HintItem[] {
   if (type === 'castor')
     return [
       'Z/S : avancer/reculer',
@@ -152,15 +196,15 @@ export function controlHintItems({
   build = false,
   wheel = false,
   building = null,
-} = {}) {
+}: ControlHintContext = {}): HintItem[] {
   if (observing) return ['Observation · Accéder au purgatoire avec le bouton'];
   if (wheel)
     return ['Souris : choisir un outil', 'Relâcher G / clic molette : valider', 'Échap : annuler'];
-  if (building) return buildingHints(building);
+  if (building) return buildingHints(building).filter(Boolean);
   if (placing)
     return ['ZQSD / flèches : marcher', 'Souris : orienter', 'E : poser', 'Échap : conserver'];
   const common = ['N : banque', 'Échap : curseur'];
-  let items;
+  let items: HintItem[];
   if (station)
     items = [
       'Souris : viser',
@@ -190,10 +234,29 @@ export function controlHintItems({
   return [...items, ...common].filter(Boolean);
 }
 
-export function controlHints(context = {}) {
+export function controlHints(context: ControlHintContext = {}): string {
   return controlHintItems(context).join(' · ');
 }
-export function cursorStats({ vehicle, seat, hp, speed, ammo }) {
+export interface CursorStatsInput {
+  vehicle: HudVehicle | null | undefined;
+  seat: string | null | undefined;
+  hp: number;
+  speed: number;
+  ammo?: number | null;
+}
+export interface CursorStats {
+  speed: number;
+  hp: number;
+  ammo: number;
+  bombs: number | null;
+}
+export function cursorStats({
+  vehicle,
+  seat,
+  hp,
+  speed,
+  ammo,
+}: CursorStatsInput): CursorStats | null {
   if (!vehicle) return null;
   const bombs = seat === 'pilot' ? vehicle.supplies?.ammo.bomb : undefined;
   return {
@@ -204,9 +267,22 @@ export function cursorStats({ vehicle, seat, hp, speed, ammo }) {
   };
 }
 
-export function cursorAmmoText({ vehicle, seat, ammo, proximity = 5, guiding = false }) {
-  const count = (value) => Math.max(0, Math.floor(value || 0));
-  const stock = vehicle.supplies?.ammo || {};
+export interface CursorAmmoInput {
+  vehicle: HudVehicle;
+  seat: string | null | undefined;
+  ammo?: number | null;
+  proximity?: number;
+  guiding?: boolean;
+}
+export function cursorAmmoText({
+  vehicle,
+  seat,
+  ammo,
+  proximity = 5,
+  guiding = false,
+}: CursorAmmoInput): string {
+  const count = (value: number | null | undefined): number => Math.max(0, Math.floor(value || 0));
+  const stock: HudAmmo = vehicle.supplies?.ammo || {};
   const fuel = ''; // Dedicated percentage gauge beside the crosshair.
   if (vehicle.type === 'flyingcastor') return seat === 'pilot' ? 'Pilote' : 'Passager';
   if (vehicle.type === 'helicopter')

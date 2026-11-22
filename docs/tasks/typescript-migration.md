@@ -6,39 +6,43 @@
   `scripts/` ; `npm run typecheck` vert ; comportement de jeu, URL servies, image
   Docker inchangé. Règles : [TypeScript](../typescript.md).
 
-## État réel (v378)
+## État réel (v413)
 
 - Outillage en place : `tsconfig.json`, `npm run typecheck`, `npm run ts:migrate`,
   lecture `.ts` et effacement des types dans `scripts/assemble.mjs`, garde
   `scripts/test-typescript.mjs`, types partagés `src/types.ts`, lanceur
   `scripts/run-tests.mjs` + manifeste `scripts/suite.mjs`.
-- Migrés : 93 modules de `src/` (liste : `ls src/*.ts`), `server/stats.ts`,
-  `server/stats-page.ts`, `scripts/audio-library-types.ts`.
-- Lot 4 (v378) : 32 feuilles du graphe d'imports.
-  - Réseau et domaine : `network`, `layouts` (`FurnitureKind` dérivé des clés de la
-    table), `logistics`, `delivery`, `sortie`, `beds`, `shop-catalog`,
-    `equipment-controls`, `boot`.
-  - Collisions et créatures : `insect-hits`, `purgatory-physics`, `creature-batch`,
-    `pheromone-trail`.
-  - Effets : `blood-effects`, `engine-smoke`, `tracers`, `missile-exhaust`,
-    `crash-effects`.
-  - Rendu et modèles : `toon`, `renderer`, `model-preview`, `howitzer-model`,
-    `fixed-dca-model`, `castor-top-view`, `sentry-model`, `meshy-rig`, `office-fog`,
-    `station-model`, `castor-model`, `brick-wall`, `flying-castor-model`, `bed-model`.
-  - Contrôle d'équivalence : chaque module, une fois ses types effacés et passé à
-    Prettier, a été comparé à l'ancien `.js`. Seuls diffèrent les déclarations de
-    champs de classe, des alias locaux (`const PROFILES = VEHICLES`) et des
-    paramètres renommés dans des rappels `traverse`.
-  - `boot.ts` importe des URL réservées au navigateur (`/three.js`, `/client.js`)
-    sous `// @ts-expect-error`. `scripts/test-loading-exit.mjs` efface désormais les
-    types avant d'exécuter `boot.ts`.
-- Restent écrits à la main : 104 `.js` dans `src/` (dont `client.js`, ≈ 6 800
-  lignes, `contracts.ts`, `waves.js`, `changelog.ts` et les données générées),
-  `server/*.js` et les `scripts/*.mjs`. `npm run ts:migrate -- --leaves` donne la
-  liste des modules prêts.
-- Hors de cet environnement : partie WebGL réelle et pilotage humain. Le test
-  `npm run e2e:layouts` échoue aussi sur `main` non modifié (délai dépassé à
-  « Connexion au salon… ») : c'est un défaut d'environnement, pas une régression.
+- Migrés : 121 fichiers `.ts` dans `src/` (liste : `ls src/*.ts`), `server/session.ts`,
+  `server/stats.ts`, `server/stats-page.ts`, `scripts/audio-library-types.ts`.
+- Lot 5 (v413, routine du 22 novembre 2026) : les 22 feuilles prêtes (toutes sauf
+  `vehicle-anchors.js`, généré).
+  - Protocole : `udp-client`, `server/session`.
+  - Domaine : `contracts`, `ground-defense`, `service-zones`, `base`,
+    `route-navigation`, `vacant-flight`, `reserve-feedback`, `changelog`.
+  - Interface : `bank-ui`, `bed-ui`, `live-hud`, `flight-tuning-ui`.
+  - Modèles : `character-model`, `rigged-creature`, `m1-model`, `b3-model`,
+    `fortification-model`, `biplane-model`, `h2-model`, `office`.
+  - Aucun `any` ajouté ; types locaux exportés depuis leur module. Contrôle
+    d'équivalence (types effacés + Prettier contre l'ancien `.js`) : seuls des
+    champs de classe déclarés et des commentaires de types diffèrent.
+  - Défaut révélé par le typage et corrigé : en construction, `controlHintItems`
+    renvoyait `false` pour l'outil non orientable (régression dans
+    `test-control-hints.mjs`).
+  - `ts-migrate.mjs` réécrit aussi les chemins `src/<m>.js` des commentaires.
+- Candidats pour `src/types.ts` relevés au lot 5 : `StatusError`
+  (`Error & { status?: number }`, défini deux fois), `Timer`, `SessionPlayer`
+  (utilisé par `server/index.js`), le véhicule « type + supplies » (`HudVehicle`,
+  `ReserveVehicle`) et l'epoch de base des instantanés (`BankSnapshot`,
+  `BedSnapshot`, à élargir pour `purchase-ui.js` qui étend `BedUI`).
+- Restent écrits à la main : 85 `.js` dans `src/` (dont `client.js`, ≈ 7 000
+  lignes, `waves.js`, `graphics.js`, `hud.js` et les données générées),
+  `server/game.js`, `server/index.js`, `server/wave-preparation.js` et les
+  `scripts/*.mjs`. `npm run ts:migrate -- --leaves` donne la liste des modules
+  prêts.
+- Outil `scripts/review-shadows.html` : importe directement `../src/*.js` alors que
+  plusieurs modules sont en `.ts` depuis les lots précédents ; il ne fonctionne plus
+  sans passer par l'assembleur (défaut antérieur, non corrigé ici).
+- Hors de cet environnement : partie WebGL réelle et pilotage humain.
 
 ## Décision en attente (utilisateur)
 
@@ -50,11 +54,11 @@ vérification devient lente.
 
 1. Feuilles du graphe d'imports : `npm run ts:migrate -- --leaves` (liste à jour ;
    `vehicle-anchors.js` est généré par `import-meshy-vehicle.py`, voir la décision).
-2. Protocole : `udp-client`, `ws-client` (`network` fait).
+2. Protocole : `ws-client` (`network`, `udp-client`, `server/session` faits).
 3. Domaine : `routes`, `waves` (puis dériver `EnemyType` de
-   `keyof typeof ENEMY_TYPES` et retirer la copie de `src/types.ts`), `contracts`
-   (`layouts` et `logistics` faits).
-4. Serveur : `server/wave-preparation`, `session`, `game`, `index`.
+   `keyof typeof ENEMY_TYPES` et retirer la copie de `src/types.ts`).
+4. Serveur : `server/wave-preparation`, `game`, `index` (`session` fait) ; regrouper
+   alors les types partagés relevés ci-dessus dans `src/types.ts`.
 5. Rendu/UI puis `client.js` (extraire des modules avant de migrer).
 6. `scripts/*.mjs` en dernier : ils importent déjà les `.ts`.
 
