@@ -57,7 +57,6 @@ import { AircraftFire } from '/aircraft-fire.js';
 import { inRadarCoverage } from '/logistics.js';
 import { InsectStatus, insectScale } from '/insect-status.js';
 import { BloodEffects } from '/blood-effects.js';
-import { stepVacantAircraft } from '/vacant-flight.js';
 import { CONTRACTS, ContractBook, contractKey } from '/contracts.js';
 import { stamp } from '/paper-form.js';
 import { RewardQueue } from '/rewards.js';
@@ -1333,7 +1332,6 @@ function accept(s, force = false) {
     trails.length = 0;
     rapidImpacts.length = 0;
     aircraftFire.invalidate();
-    clearVacantAircraft();
     entryNoticeWave = -1;
   }
   const wasDead = !!respawnAt;
@@ -2165,7 +2163,6 @@ setInterval(async () => {
         state: localMotion(),
         signalSince,
         damageSince: damageSeen,
-        vacant: [...vacantAircraft].map(([id, state]) => ({ id, state })),
         soulInput: respawnAt ? soulIntent() : null,
         baseInput: onFoot && !respawnAt ? baseIntent() : null,
         ground: groundReport(),
@@ -5049,7 +5046,6 @@ function frame(now) {
     while (acc >= 1 / 120) {
       if (smooth) meView.step(meTarget, () => physics(1 / 120));
       else physics(1 / 120);
-      simulateVacantAircraft(1 / 120);
       acc -= 1 / 120;
     }
     if (smooth && !onFoot && !respawnAt && myVehicle) meView.show(meTarget, acc * 120);
@@ -5636,52 +5632,6 @@ function renderDeliveries() {
       deliveryModels.delete(token);
     }
 }
-const vacantAircraft = new Map();
-function clearVacantAircraft() {
-  vacantAircraft.clear();
-}
-function simulateVacantAircraft(dt) {
-  if (!snap) return;
-  const host = [...snap.pilots].sort((a, b) => a.id.localeCompare(b.id))[0]?.id;
-  if (host !== id) {
-    clearVacantAircraft();
-    return;
-  }
-  const active = new Set();
-  for (const v of snap.vehicles) {
-    if (v.state.hp <= 0 || v.seats.some((s) => s.seat === 'pilot')) continue;
-    // Parked aircraft and ground vehicles are simulated by the server (src/parked-host.ts):
-    // their state arrives.
-    if (PLANE_TYPES.has(v.type) || HELI_TYPES.has(v.type) || RAPIER_RIGS[v.type]) continue;
-
-    active.add(v.id);
-    let s = vacantAircraft.get(v.id);
-    if (!s) {
-      s = structuredClone(v.state);
-      vacantAircraft.set(v.id, s);
-    }
-    s.hp = v.state.hp;
-    s.engine = v.state.engine;
-    s.wing = v.state.wing;
-    s.fuelAvailable = v.supplies?.fuel > 0;
-    if (isRotorcraft(v.type))
-      stepHelicopter(
-        T,
-        s,
-        { collective: 0, occupied: v.seats.length > 0 },
-        colliders,
-        dt,
-        VEHICLES[v.type],
-      );
-    else stepVacantAircraft(T, s, VEHICLES[v.type], colliders, dt, office.decor);
-    Object.assign(v.state, s);
-  }
-  for (const key of [...vacantAircraft.keys()])
-    if (!active.has(key)) {
-      vacantAircraft.delete(key);
-    }
-}
-
 function remainingFuel() {
   const supply = myVehicle?.supplies;
   if (!supply) return 300;

@@ -103,8 +103,8 @@ chargé à la première sortie, le décor d'un plan est construit une fois par p
 - Un choc au-delà de `PLANE_CRASH_IMPACT`, une chute mortelle (rigs terrestres) ou une sortie de
   la pièce détruit le véhicule (`hp = 0`). Les constructions posées par les joueurs ne sont
   pas encore dans ce monde (seulement la pièce et le décor).
-- Le client hôte ne simule plus aucun véhicule vide (`simulateVacantAircraft` ne trouve plus rien
-  à faire ; les hélicoptères sont au serveur aussi, voir [heli-physics.md](heli-physics.md)).
+- Aucun client ne simule de véhicule vide : tous les types sont au serveur (hélicoptères compris,
+  voir [heli-physics.md](heli-physics.md)) et le rapport `vacant` des clients n'existe plus.
 
 ## Intégration
 

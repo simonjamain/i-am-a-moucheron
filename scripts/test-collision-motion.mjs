@@ -8,7 +8,6 @@ import { DecorCollision, sweptHitsDecor } from '../src/office-collision.ts';
 import { MODEL_DATA } from '../src/office-pack-data.js';
 import { LAYOUTS, layoutSolids, setActiveLayout } from '../src/layouts.ts';
 import { resolveLanding, stepWalker } from '../src/sortie.ts';
-import { stepVacantAircraft } from '../src/vacant-flight.ts';
 import { ACTOR_UNIT, MAP } from '../src/scale.ts';
 import { OFFICE_LAYOUT } from '../src/layout.ts';
 import { VEHICLES } from '../src/fleet.ts';
@@ -83,19 +82,6 @@ assert.equal(
   true,
   'into the body',
 );
-// A vacant aircraft gliding into a fan is destroyed by the decor.
-const vacant = {
-  p: [blade[0] - 0.05, blade[1], blade[2]],
-  q: [0, -Math.SQRT1_2, 0, Math.SQRT1_2],
-  v: [MAP.metres(60), 0, 0],
-  w: [0, 0, 0],
-  hp: 100,
-  gas: 0,
-};
-for (let i = 0; i < 120 && vacant.hp > 0; i++)
-  stepVacantAircraft(T, vacant, VEHICLES.fighter, solids, 1 / 60, decor);
-assert.equal(vacant.hp, 0, 'vacant aircraft crashed into the fan');
-
 // Walker: stands on the real top of a desk and is pushed off a bookshelf's side.
 const origin = OFFICE_LAYOUT.base;
 const walkerAt = (x, y, z) => ({

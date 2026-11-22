@@ -74,8 +74,7 @@ travail avance par lots (note de reprise : [collisions en triangles](tasks/colli
      précédente en traverse un (`sweptHitsDecor`) : pas de passage à travers une
      pale, une feuille ou un panneau ; atterrissage (`resolveLanding`, `sortie.ts`)
      sur la surface tournée vers le haut sous l'avion (`supportBelow`), dans la
-     même fenêtre que sur les boîtes ; les appareils sans pilote
-     (`stepVacantAircraft`) suivent les mêmes règles ;
+     même fenêtre que sur les boîtes ;
    - **marche** (`stepWalker`) : appui sur la vraie surface sous le marcheur ; les
      faces proches des jambes, de la poitrine et de la tête le repoussent ;
    - **véhicules Rapier** (char, camion, Castor) : `PhysicsWorld.useDecor` copie les
