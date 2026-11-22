@@ -86,6 +86,8 @@ export const RESUME_MS = 30000;
 // A launch whose impact has not been reported is forgotten this long after
 // the end of its lifetime.
 export const IMPACT_GRACE_MS = 3000;
+// Active launches kept per room: only protects the room, the shooters simulate them.
+export const MAX_ORDNANCE = 10_000;
 function requireGame(ok, message, status = 409) {
   if (!ok) throw Object.assign(new Error(message), { status });
 }
@@ -1662,7 +1664,7 @@ export class Game {
     requireGame(gun.ammo >= 1, 'Ce canon est à court d’obus.');
     const profile = HEAVY[weapon];
     requireGame(
-      r.ordnance.length < 128 && r.ordnanceShots.size < 128000,
+      r.ordnance.length < MAX_ORDNANCE && r.ordnanceShots.size < 128000,
       'Trop de projectiles actifs.',
       429,
     );
@@ -2258,7 +2260,7 @@ export class Game {
     const lane = selected === 'bomb' ? 'bomb' : 'cannon';
     v.lastHeavy ??= {};
     requireGame(
-      r.ordnance.length < 128 && r.ordnanceShots.size < 128000,
+      r.ordnance.length < MAX_ORDNANCE && r.ordnanceShots.size < 128000,
       'Trop de projectiles actifs.',
       429,
     );

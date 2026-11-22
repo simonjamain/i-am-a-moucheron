@@ -6004,7 +6004,17 @@ function heavyWorld() {
     players.push({ id: p.id, p: [w.x, w.y + MAP.metres(0.9), w.z] });
   }
   return {
-    solids: layoutSolids(),
+    // Props are hit on their triangles (decorRay) once the decor world exists.
+    solids: office.decor ? layoutSolids().filter((b) => !b.decor) : layoutSolids(),
+    decorRay: (a, b) => {
+      const decor = office.decor;
+      if (!decor) return null;
+      const length = Math.hypot(b[0] - a[0], b[1] - a[1], b[2] - a[2]);
+      if (length < 1e-12) return null;
+      const dir = [(b[0] - a[0]) / length, (b[1] - a[1]) / length, (b[2] - a[2]) / length];
+      const hit = decor.raycast(a, dir, length);
+      return hit ? hit.distance / length : null;
+    },
     roster,
     killed: (i) => kills.has(i),
     frames: (time, projectile) => {
