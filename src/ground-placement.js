@@ -1,5 +1,5 @@
 import { GROUND_BOUNDS, groundCommand } from './ground-defense-state.js';
-import { distanceToSegment } from './ground-defense.js';
+import { distanceToSegment } from './ground-defense.ts';
 import { airdropCommand } from './airdrop.ts';
 
 // Castor volant: every drop is centred straight below the helicopter and turned

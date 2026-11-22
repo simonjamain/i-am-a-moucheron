@@ -1,4 +1,4 @@
-import { splitBarricade } from './ground-defense.js';
+import { splitBarricade } from './ground-defense.ts';
 import { createBrickWall } from './brick-wall.ts';
 import { createSentryModel } from './sentry-model.ts';
 import { createGatlingModel } from './gatling-model.ts';

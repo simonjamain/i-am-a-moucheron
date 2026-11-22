@@ -10,8 +10,76 @@ import {
 } from './udp-protocol.ts';
 import { validMotion } from './network.ts';
 import { decodeMotionBatch } from './motion-wire.ts';
+import type { Reply } from './udp-protocol.ts';
+import type { MotionState } from './network.ts';
+
+/** Remote motion callback: peer, state, receive time, sequence, sender capture time. */
+export type UdpMotionHandler = (
+  peer: string,
+  state: MotionState,
+  at: number,
+  seq: number,
+  captured?: number | null,
+) => void;
+export interface UdpClientOptions {
+  Peer?: typeof RTCPeerConnection | null;
+  fetcher?: typeof fetch;
+  onMotion?: UdpMotionHandler;
+  onClose?: (error: Error) => void;
+  timeout?: number;
+  openTimeout?: number;
+  disconnectGrace?: number;
+}
+/** Body of a successful command reply (a snapshot or another report). */
+export type UdpReplyBody = Reply['body'];
+type StatusError = Error & { status?: number };
+type Timer = ReturnType<typeof setTimeout>;
+interface PendingCommand {
+  resolve: (body: UdpReplyBody) => void;
+  reject: (error: StatusError) => void;
+  timer: Timer;
+}
+/** Batch entry before validation: checked field by field in receiveBatch(). */
+interface UncheckedBatchEntry {
+  peer: string;
+  seq: number;
+  age: number;
+  state: unknown;
+  captured: number | null;
+}
+/** Snapshot fields read by observe(). */
+export interface UdpObservedSnapshot {
+  pilots?: readonly { id?: string; incarnation: number; occupation: number; mode: string }[];
+}
 
 export class UdpClient {
+  Peer: typeof RTCPeerConnection | null | undefined;
+  fetcher: typeof fetch;
+  onMotion: UdpMotionHandler;
+  onClose: (error: Error) => void;
+  timeout: number;
+  openTimeout: number;
+  disconnectGrace: number;
+  graceTimer: Timer | null;
+  pending: Map<number, PendingCommand>;
+  assembler: ReplyAssembler;
+  seq: number;
+  motionSeq: number;
+  remoteSeq: Map<string, number>;
+  members: Set<string>;
+  freshAt: Map<string, number>;
+  protocol: string;
+  enabled: boolean;
+  closed: boolean;
+  received: number;
+  incarnation: number;
+  occupation: number;
+  mode: string;
+  pc?: RTCPeerConnection;
+  commands!: RTCDataChannel;
+  motion!: RTCDataChannel;
+  self?: string;
+  lastError?: string;
   constructor({
     Peer = globalThis.RTCPeerConnection,
     fetcher = globalThis.fetch?.bind(globalThis),
@@ -22,7 +90,7 @@ export class UdpClient {
     // (WsClient) sooner than the command timeout on networks blocking UDP.
     openTimeout = timeout,
     disconnectGrace = DISCONNECT_GRACE_MS,
-  } = {}) {
+  }: UdpClientOptions = {}) {
     this.Peer = Peer;
     this.fetcher = fetcher;
     this.onMotion = onMotion;
@@ -46,7 +114,7 @@ export class UdpClient {
     this.occupation = 0;
     this.mode = 'foot';
   }
-  async connect() {
+  async connect(): Promise<this> {
     if (!this.Peer) throw Error('Ce navigateur ne prend pas en charge WebRTC sur UDP.');
     const pc = (this.pc = new this.Peer({ iceServers: [], bundlePolicy: 'max-bundle' }));
     this.commands = pc.createDataChannel(COMMAND_CHANNEL, { ordered: true });
@@ -91,7 +159,7 @@ export class UdpClient {
         }, this.disconnectGrace);
         return;
       }
-      clearTimeout(this.graceTimer);
+      clearTimeout(this.graceTimer as Timer);
       this.graceTimer = null;
       if (['failed', 'closed'].includes(state))
         this.fail(Error('Connexion UDP interrompue. Rechargez pour rejoindre la partie.'));
@@ -103,12 +171,12 @@ export class UdpClient {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         signal: AbortSignal.timeout(this.timeout),
-        body: JSON.stringify({ v: PROTOCOL, sdp: udpDescription(pc.localDescription.sdp) }),
+        body: JSON.stringify({ v: PROTOCOL, sdp: udpDescription(pc.localDescription!.sdp) }),
       });
       const answer = await response.json();
       if (!response.ok) throw Error(answer.error || 'Serveur UDP indisponible.');
-      await pc.setRemoteDescription({ type: 'answer', sdp: udpDescription(answer.sdp) });
-      await new Promise((resolve, reject) => {
+      await pc.setRemoteDescription({ type: 'answer', sdp: udpDescription(answer.sdp) as string });
+      await new Promise<void>((resolve, reject) => {
         const timer = setTimeout(() => {
           clearInterval(poll);
           reject(Error('UDP indisponible sur ce réseau.'));
@@ -134,7 +202,7 @@ export class UdpClient {
     return this;
   }
   // One reply packet (possibly a chunk) on the reliable command stream.
-  receiveReply(data) {
+  receiveReply(data: unknown): void {
     try {
       if (typeof data !== 'string' || data.length > 100000) throw Error('Paquet invalide.');
       const packet = JSON.parse(data);
@@ -147,35 +215,37 @@ export class UdpClient {
       this.pending.delete(packet.id);
       clearTimeout(pending.timer);
       if (reply.status >= 400)
-        pending.reject(Object.assign(Error(reply.body.error), { status: reply.status }));
+        pending.reject(
+          Object.assign(Error((reply.body as { error?: string }).error), { status: reply.status }),
+        );
       else pending.resolve(reply.body);
     } catch (e) {
-      this.fail(e);
+      this.fail(e as Error);
     }
   }
   // Transport hooks, replaced by WsClient (TCP fallback).
-  ready() {
+  ready(): boolean {
     return !this.closed && this.protocol === 'udp' && this.commands?.readyState === 'open';
   }
-  buffered() {
+  buffered(): number {
     return this.commands.bufferedAmount;
   }
-  transmit(data) {
+  transmit(data: string): void {
     this.commands.send(data);
   }
-  motionReady() {
+  motionReady(): boolean {
     return (
       this.protocol === 'udp' &&
       this.motion?.readyState === 'open' &&
       this.motion.bufferedAmount <= 4096
     );
   }
-  transmitMotion(data) {
+  transmitMotion(data: string): void {
     this.motion.send(data);
   }
-  gather(pc) {
+  gather(pc: RTCPeerConnection): Promise<void> {
     if (pc.iceGatheringState === 'complete') return Promise.resolve();
-    return new Promise((resolve, reject) => {
+    return new Promise<void>((resolve, reject) => {
       const finish = () => {
         clearTimeout(timer);
         pc.removeEventListener('icegatheringstatechange', check);
@@ -194,14 +264,14 @@ export class UdpClient {
       check();
     });
   }
-  request(path, body) {
+  request(path: string, body: unknown): Promise<UdpReplyBody> {
     if (!this.ready()) return Promise.reject(Error('Connexion indisponible.'));
     if (this.pending.size >= 32 || this.buffered() > 256 * 1024)
       return Promise.reject(Object.assign(Error('Connexion saturée.'), { status: 429 }));
     const id = ++this.seq,
       data = JSON.stringify({ v: PROTOCOL, id, path, body });
     if (data.length > MAX_COMMAND_BYTES) return Promise.reject(Error('Commande trop volumineuse.'));
-    return new Promise((resolve, reject) => {
+    return new Promise<UdpReplyBody>((resolve, reject) => {
       const timer = setTimeout(
         () => this.fail(Error('Confirmation UDP absente. Rechargez la partie.')),
         this.timeout,
@@ -210,13 +280,13 @@ export class UdpClient {
       try {
         this.transmit(data);
       } catch (e) {
-        this.fail(e);
+        this.fail(e as Error);
       }
     });
   }
   // Deliberate departure: tell the server (best effort, no reply awaited) so
   // that the pilot and its seat are released at once, then close.
-  leave() {
+  leave(): void {
     if (this.ready())
       try {
         this.transmit(JSON.stringify({ v: PROTOCOL, id: ++this.seq, path: 'leave', body: {} }));
@@ -230,7 +300,7 @@ export class UdpClient {
   // Shared binary batch from the server: every player of the room receives the
   // same chunks, including its own entry, which is skipped. The entry age (time
   // spent in the server batch) is removed from the receive time.
-  receiveBatch(data) {
+  receiveBatch(data: unknown): void {
     if (!(data instanceof ArrayBuffer) || data.byteLength > 4096) return;
     let batch;
     try {
@@ -239,7 +309,7 @@ export class UdpClient {
       return;
     }
     const now = performance.now();
-    for (const { peer, seq, age, state, captured } of batch.entries) {
+    for (const { peer, seq, age, state, captured } of batch.entries as UncheckedBatchEntry[]) {
       if (
         peer === this.self ||
         !this.members.has(peer) ||
@@ -255,7 +325,7 @@ export class UdpClient {
       this.onMotion(peer, state, now - Math.min(age, 1000), seq, captured);
     }
   }
-  observe(snapshot, self) {
+  observe(snapshot: UdpObservedSnapshot | null | undefined, self: string): void {
     this.self = self;
     const p = snapshot?.pilots?.find((p) => p.id === self);
     if (p) {
@@ -264,7 +334,7 @@ export class UdpClient {
       this.mode = p.mode;
     }
   }
-  send(state) {
+  send(state: MotionState): void {
     if (!this.motionReady()) return;
     const data = JSON.stringify({
       v: PROTOCOL,
@@ -280,10 +350,10 @@ export class UdpClient {
     try {
       this.transmitMotion(data);
     } catch (e) {
-      this.fail(e);
+      this.fail(e as Error);
     }
   }
-  reconcile(ids) {
+  reconcile(ids: Iterable<string>): void {
     this.members = new Set(ids);
     for (const id of this.freshAt.keys())
       if (!this.members.has(id)) {
@@ -291,13 +361,13 @@ export class UdpClient {
         this.remoteSeq.delete(id);
       }
   }
-  fresh(id) {
+  fresh(id: string): boolean {
     return performance.now() - (this.freshAt.get(id) ?? -Infinity) < 750;
   }
-  async measure() {
+  async measure(): Promise<void> {
     if (!this.pc || this.closed) return;
     const report = await this.pc.getStats();
-    let pair;
+    let pair: RTCIceCandidatePairStats | undefined;
     report.forEach((s) => {
       if (s.type === 'transport' && s.selectedCandidatePairId)
         pair = report.get(s.selectedCandidatePairId);
@@ -326,16 +396,16 @@ export class UdpClient {
       error: this.lastError || '',
     };
   }
-  fail(error) {
+  fail(error: Error): void {
     if (this.closed) return;
     this.lastError = error.message;
     this.stop();
     this.onClose(error);
   }
-  stop() {
+  stop(): void {
     if (this.closed) return;
     this.closed = true;
-    clearTimeout(this.graceTimer);
+    clearTimeout(this.graceTimer as Timer);
     this.graceTimer = null;
     this.protocol = '';
     for (const p of this.pending.values()) {

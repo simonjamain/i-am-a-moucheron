@@ -1,5 +1,5 @@
 import { RAT_DATA as D } from './rat-data.js';
-import { defineCreature } from './rigged-creature.js';
+import { defineCreature } from './rigged-creature.ts';
 import { groundPresentation, REST_PHASES } from './walker-gait.ts';
 
 // Rat enemy: user-supplied Meshy "Low Poly Mouse" with its 27-bone skeleton

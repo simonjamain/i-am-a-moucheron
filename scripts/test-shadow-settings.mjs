@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import * as T from '../vendor/three.module.min.js';
 import { applyShadowPreset } from '../src/shadow-settings.ts';
-import { createOffice } from '../src/office.js';
+import { createOffice } from '../src/office.ts';
 import { createGraphics } from '../src/graphics.js';
 const scene = new T.Scene();
 createOffice(T, scene, { ...createGraphics(T, scene), textLabel: () => new T.Group() });

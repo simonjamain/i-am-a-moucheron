@@ -1,5 +1,12 @@
 // Authored offline catalogue. No generative service is used in a game session.
-export const CONTRACTS = {
+/** One authored contract sheet. */
+export interface ContractDoc {
+  title: string;
+  code: string;
+  text: string;
+}
+/** Contracts by `context:seat` key: one list of variants per sheet index. */
+export const CONTRACTS: Record<string, ContractDoc[][]> = {
   'boarding:pilot': [
     [
       {
@@ -1428,10 +1435,12 @@ const FORTIFICATION_CLOSINGS = [
   'Le bureau des exceptions ne traite que les cas ordinaires afin de préserver ses statistiques. Le caractère exceptionnel de votre situation lui interdit donc de la recevoir.',
 ];
 for (const [kind, forms] of Object.entries(FORTIFICATION_FORMS))
-  CONTRACTS['equipment:' + kind] = [
-    ['take', 'Prise de poste'],
-    ['fire', 'Autorisation de tir'],
-  ].map(([form, title], index) =>
+  CONTRACTS['equipment:' + kind] = (
+    [
+      ['take', 'Prise de poste'],
+      ['fire', 'Autorisation de tir'],
+    ] as const
+  ).map(([form, title], index) =>
     forms.clauses.flatMap((clause, c) =>
       FORTIFICATION_CLOSINGS.map((closing, k) => ({
         title: title + ' · ' + forms.name,
@@ -1441,9 +1450,14 @@ for (const [kind, forms] of Object.entries(FORTIFICATION_FORMS))
     ),
   );
 // For the 'equipment' context, `type` is the station kind (dca, antitank).
-export function contractKey(context, seat = 'pilot', type = null) {
+export function contractKey(
+  context: string,
+  seat: string = 'pilot',
+  type: string | null = null,
+): string {
   if (type === 'flyingcastor' && /^passenger/.test(seat)) seat = 'passenger';
-  if (['helicopter', 'flaktruck', 'flyingcastor'].includes(type)) seat = type + '-' + seat;
+  if ((['helicopter', 'flaktruck', 'flyingcastor'] as (string | null)[]).includes(type))
+    seat = type + '-' + seat;
   if (type === 'tank' && seat === 'pilot') seat = 'tank-pilot';
   return (
     context +
@@ -1458,14 +1472,17 @@ export function contractKey(context, seat = 'pilot', type = null) {
   );
 }
 export class ContractBook {
-  constructor(random = Math.random) {
+  random: () => number;
+  last: Map<string, number>;
+  current: Map<string, ContractDoc>;
+  constructor(random: () => number = Math.random) {
     this.random = random;
     this.last = new Map();
     this.current = new Map();
   }
-  get(key, index, session) {
+  get(key: string, index: number, session: string | number): ContractDoc {
     const stable = key + ':' + index + ':' + session;
-    if (this.current.has(stable)) return this.current.get(stable);
+    if (this.current.has(stable)) return this.current.get(stable)!;
     const choices = CONTRACTS[key]?.[index];
     if (!choices) throw Error('Contrat inconnu: ' + key + ':' + index);
     const previous = this.last.get(key + ':' + index),

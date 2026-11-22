@@ -30,7 +30,7 @@ Rendu et interface :
    `src/debug-enemies.ts` — place dans `DEBUG_ENEMY_TYPES` (cartes du mode debug,
    vérifié par `scripts/test-debug-enemies.mjs`).
 8. Vérifier les cas particuliers par nom d'espèce : `grep -n "'midge'\|'spiderling'" src server`.
-9. Documenter dans [le bestiaire](enemy-bestiary.md) et `src/changelog.js`.
+9. Documenter dans [le bestiaire](enemy-bestiary.md) et `src/changelog.ts`.
 
 ## Nouveau véhicule
 
@@ -49,7 +49,7 @@ sans liste de types à recopier ailleurs.
 2. `src/equipment.ts` — article `SHOP` de `kind: 'vehicle'` (prix, description ; forme
    `ShopItem` vérifiée par `satisfies`, clés exportées en `ShopKey`).
 3. `src/shop-catalog.ts` — colonne dans `SHOP_CATEGORIES`.
-4. `src/contracts.js` — contrats d'embarquement de chaque siège (`contractKey`,
+4. `src/contracts.ts` — contrats d'embarquement de chaque siège (`contractKey`,
    tableau des rôles pour les sièges spécifiques).
 5. Armes et réserves : `src/armament.ts` (nouvelle arme lourde : entrée `HEAVY`, forme
    `HeavyWeapon`), `src/logistics.ts`, `src/ordnance.js`.
@@ -57,4 +57,4 @@ sans liste de types à recopier ailleurs.
    postes visables de chaque siège dans `src/seat-posts.ts` (`scripts/test-seat-posts.mjs`
    exige un poste par siège).
 7. Autorité : `server/game.js` pour toute arme lourde ou règle simulée au serveur.
-8. Documenter dans [véhicules et banque](vehicles-bank.md) et `src/changelog.js`.
+8. Documenter dans [véhicules et banque](vehicles-bank.md) et `src/changelog.ts`.

@@ -1,5 +1,45 @@
 import { CHARACTER_DATA as COWBOY } from './character-data.js';
 import { DEFAULT_APPEARANCE, appearanceId } from './character-appearances.ts';
+import type * as THREE from 'three';
+import type { AppearanceId } from './character-appearances.ts';
+import type { RiggedMeshData, TypedArrayType } from './rigged-creature.ts';
+import type { Three } from './types.ts';
+
+/** One animation track of an imported clip: base64 times and values. */
+export interface CharacterTrackData {
+  bone: number;
+  path: string;
+  times: string;
+  values: string;
+}
+export interface CharacterClipData {
+  duration: number;
+  tracks: readonly CharacterTrackData[];
+}
+/** An imported appearance (character-*-data.js). */
+export interface CharacterData extends RiggedMeshData {
+  clips: Record<string, CharacterClipData>;
+}
+export type CharacterGait = 'idle' | 'walk' | 'run' | 'fall';
+interface CharacterShared {
+  data: CharacterData;
+  geometry: THREE.BufferGeometry;
+  material: THREE.MeshStandardMaterial;
+  boneInverses: THREE.Matrix4[];
+  gaits: Partial<Record<CharacterGait, THREE.AnimationClip>>;
+  restPose: boolean;
+  scale: number;
+}
+/** Per-frame input of Character.update. */
+export interface CharacterState {
+  /** Ground speed (m/s). */
+  speed?: number;
+  /** World aim direction, or null. */
+  aim?: THREE.Vector3 | null;
+  seated?: boolean;
+  falling?: boolean;
+  parachute?: boolean;
+}
 
 // Issue #111: the playable character (user-approved Meshy + Mixamo GLB). One
 // shared geometry/material/clip set per appearance; each player owns its bones,
@@ -18,7 +58,7 @@ export const LANDING_DURATION = 0.38;
 export const GAIT = Object.freeze({ walk: 0.35, run: 3, walkClip: 1.4, runClip: 5 });
 
 // Literal specifiers so scripts/assemble.mjs can version and check them.
-const LOADERS = {
+const LOADERS: Partial<Record<AppearanceId, () => Promise<{ CHARACTER_DATA: CharacterData }>>> = {
   frontier: () => import('./character-frontier-data.js'),
   'sky-pilot': () => import('./character-sky-pilot-data.js'),
   toby: () => import('./character-toby-data.js'),
@@ -27,31 +67,31 @@ const LOADERS = {
   signaler: () => import('./character-signaler-data.js'),
   operator: () => import('./character-operator-data.js'),
 };
-const DATA = new Map([[DEFAULT_APPEARANCE, COWBOY]]);
-const pending = new Map();
+const DATA = new Map<AppearanceId, CharacterData>([[DEFAULT_APPEARANCE, COWBOY]]);
+const pending = new Map<AppearanceId, Promise<AppearanceId>>();
 // Resolves once the appearance can be created synchronously (createCharacter).
-export function loadCharacter(id) {
+export function loadCharacter(id: unknown): Promise<AppearanceId> {
   id = appearanceId(id);
-  if (DATA.has(id)) return Promise.resolve(id);
-  if (!pending.has(id))
+  if (DATA.has(id as AppearanceId)) return Promise.resolve(id as AppearanceId);
+  if (!pending.has(id as AppearanceId))
     pending.set(
-      id,
-      LOADERS[id]().then(
-        (module) => (DATA.set(id, module.CHARACTER_DATA), id),
+      id as AppearanceId,
+      LOADERS[id as AppearanceId]!().then(
+        (module) => (DATA.set(id as AppearanceId, module.CHARACTER_DATA), id as AppearanceId),
         (error) => {
-          pending.delete(id);
+          pending.delete(id as AppearanceId);
           throw error;
         },
       ),
     );
-  return pending.get(id);
+  return pending.get(id as AppearanceId)!;
 }
-export const characterLoaded = (id) => DATA.has(appearanceId(id));
+export const characterLoaded = (id: unknown): boolean => DATA.has(appearanceId(id));
 // The appearance actually drawn now: the requested one once loaded (loading is
 // started here), the default meanwhile.
-export function availableAppearance(id) {
+export function availableAppearance(id: unknown): AppearanceId {
   id = appearanceId(id);
-  if (DATA.has(id)) return id;
+  if (DATA.has(id as AppearanceId)) return id as AppearanceId;
   loadCharacter(id).catch(() => {});
   return DEFAULT_APPEARANCE;
 }
@@ -60,26 +100,32 @@ export function availableAppearance(id) {
 // the model turns toward it with an exponential approach along the shortest arc
 // (time constant 1 / TURN_RATE s, about 0.25 s for a half turn).
 export const TURN_RATE = 12;
-export function turnToward(current, target, dt, rate = TURN_RATE) {
+export function turnToward(
+  current: number,
+  target: number,
+  dt: number | null | undefined,
+  rate: number = TURN_RATE,
+): number {
   const delta = Math.atan2(Math.sin(target - current), Math.cos(target - current));
   return current + delta * (1 - Math.exp(-rate * Math.max(0, dt || 0)));
 }
 
-const bytes = (b64) => Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
-const view = (b64, Type) => {
+const bytes = (b64: string) => Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+const view = <A>(b64: string, Type: TypedArrayType<A>): A => {
   const raw = bytes(b64);
   return new Type(raw.buffer, raw.byteOffset, raw.byteLength / Type.BYTES_PER_ELEMENT);
 };
 // Same rule as three.js PropertyBinding.sanitizeNodeName (":" is reserved).
-export const boneName = (name) => name.replace(/\s/g, '_').replace(/[\[\]\.:\/]/g, '');
+export const boneName = (name: string): string =>
+  name.replace(/\s/g, '_').replace(/[\[\]\.:\/]/g, '');
 
-const cache = new WeakMap();
-function shared(T, id) {
+const cache = new WeakMap<Three, Map<AppearanceId, CharacterShared>>();
+function shared(T: Three, id: AppearanceId): CharacterShared {
   let byId = cache.get(T);
   if (!byId) cache.set(T, (byId = new Map()));
   let s = byId.get(id);
   if (s) return s;
-  const D = DATA.get(id);
+  const D = DATA.get(id)!;
   const geometry = new T.BufferGeometry();
   geometry.setAttribute('position', new T.BufferAttribute(view(D.positions, Float32Array), 3));
   geometry.setAttribute('uv', new T.BufferAttribute(view(D.uvs, Float32Array), 2));
@@ -101,7 +147,7 @@ function shared(T, id) {
   const material = new T.MeshStandardMaterial({ map: texture, roughness: 0.8, side: T.DoubleSide });
   const inverses = view(D.inverseBindMatrices, Float32Array);
   const boneInverses = D.bones.map((_, i) => new T.Matrix4().fromArray(inverses, i * 16));
-  const clips = {};
+  const clips: Record<string, THREE.AnimationClip> = {};
   for (const [name, clip] of Object.entries(D.clips)) {
     const tracks = clip.tracks.map((track) => {
       const times = view(track.times, Float32Array);
@@ -121,8 +167,8 @@ function shared(T, id) {
   // Gait → clip: the default export keeps its Mixamo names, the others are
   // imported under their gait. Without an idle clip, a one-key bind pose stands
   // in (arms are then lowered procedurally, see update()).
-  const gaits = {};
-  for (const gait of ['idle', 'walk', 'run'])
+  const gaits: CharacterShared['gaits'] = {};
+  for (const gait of ['idle', 'walk', 'run'] as const)
     gaits[gait] = clips[id === DEFAULT_APPEARANCE ? CHARACTER_CLIPS[gait] : gait];
   const fallName = Object.keys(clips).find((name) => /fall|free.?fall/i.test(name));
   if (fallName) gaits.fall = clips[fallName];
@@ -147,7 +193,13 @@ function shared(T, id) {
 
 // Rotate `bone` (weighted) so that the segment bone → child points along `direction`
 // (world space). Independent of the bone's local axes.
-function pointBone(T, bone, child, direction, weight) {
+function pointBone(
+  T: Three,
+  bone: THREE.Bone | undefined,
+  child: THREE.Bone | undefined,
+  direction: THREE.Vector3,
+  weight: number,
+): void {
   if (!bone || !child || weight <= 0) return;
   bone.updateWorldMatrix(true, true);
   const from = child.getWorldPosition(new T.Vector3()).sub(bone.getWorldPosition(new T.Vector3()));
@@ -157,13 +209,13 @@ function pointBone(T, bone, child, direction, weight) {
     direction.clone().normalize(),
   );
   const world = bone.getWorldQuaternion(new T.Quaternion());
-  const parent = bone.parent.getWorldQuaternion(new T.Quaternion()).invert();
+  const parent = bone.parent!.getWorldQuaternion(new T.Quaternion()).invert();
   const target = parent.multiply(turn.multiply(world));
   bone.quaternion.slerp(target, Math.min(1, weight));
   bone.updateWorldMatrix(false, true);
 }
 
-export function createCharacter(T, appearance = DEFAULT_APPEARANCE) {
+export function createCharacter(T: Three, appearance: unknown = DEFAULT_APPEARANCE) {
   const id = DATA.has(appearanceId(appearance)) ? appearanceId(appearance) : DEFAULT_APPEARANCE;
   const { data: D, geometry, material, boneInverses, gaits, restPose, scale } = shared(T, id);
   const bones = D.bones.map((b) => {
@@ -195,7 +247,7 @@ export function createCharacter(T, appearance = DEFAULT_APPEARANCE) {
   mesh.computeBoundingBox();
   mesh.computeBoundingSphere();
   const byName = Object.fromEntries(bones.map((b) => [b.name, b]));
-  const bone = (n) => byName['mixamorig' + n];
+  const bone = (n: string): THREE.Bone => byName['mixamorig' + n];
   const mixer = new T.AnimationMixer(container);
   const actions = Object.fromEntries(
     Object.entries(gaits).map(([gait, clip]) => [gait, mixer.clipAction(clip)]),
@@ -207,7 +259,7 @@ export function createCharacter(T, appearance = DEFAULT_APPEARANCE) {
     landing = 0,
     airBlend = 0,
     hang = 0;
-  const v = (x, y, z) => new T.Vector3(x, y, z);
+  const v = (x: number, y: number, z: number) => new T.Vector3(x, y, z);
   const character = {
     appearance: id,
     container,
@@ -217,7 +269,7 @@ export function createCharacter(T, appearance = DEFAULT_APPEARANCE) {
     bones: byName,
     gait: () => current,
     // state: { speed (m/s), aim (world Vector3 or null), seated, falling }
-    update(dt, state = {}) {
+    update(dt: number | null | undefined, state: CharacterState = {}): void {
       const speed = state.speed || 0;
       const inAir = !!(state.falling || state.parachute);
       if (airborne && !inAir && !state.seated) landing = LANDING_DURATION;
@@ -255,7 +307,7 @@ export function createCharacter(T, appearance = DEFAULT_APPEARANCE) {
       root.position.z = -0.85 * Math.sin(root.rotation.x);
       container.updateMatrixWorld(true);
       const q = container.getWorldQuaternion(new T.Quaternion());
-      const local = (x, y, z) => v(x, y, z).applyQuaternion(q);
+      const local = (x: number, y: number, z: number) => v(x, y, z).applyQuaternion(q);
       if (state.seated) {
         // Thighs forward, shins down, hands forward on the controls.
         for (const side of ['Left', 'Right']) {

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { PLAYER_CHANGELOG, mountChangelog } from '../src/changelog.js';
+import { PLAYER_CHANGELOG, mountChangelog } from '../src/changelog.ts';
 
 const currentVersion = Number(readFileSync('VERSION', 'utf8').trim());
 assert.ok(PLAYER_CHANGELOG[0]?.version <= currentVersion, 'aucune nouveauté future');

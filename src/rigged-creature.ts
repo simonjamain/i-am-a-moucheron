@@ -5,9 +5,94 @@
 // in model space around each bone's own pivot, so species code never depends
 // on the SmartRig bones' local axes.
 
+import type * as THREE from 'three';
+import type { Three } from './types.ts';
+
+/** A typed-array constructor (Float32Array, Uint16Array, ...). */
+export interface TypedArrayType<A> {
+  new (buffer: ArrayBufferLike, byteOffset: number, length: number): A;
+  readonly BYTES_PER_ELEMENT: number;
+}
+/** A skeleton bone of an imported rig: parent index (-1 for roots), rest t and r. */
+export interface RiggedBoneData {
+  name: string;
+  parent: number;
+  t: readonly number[];
+  r: readonly number[];
+}
+/** Base64 buffers of an imported skinned mesh (scripts/import-creature.py). */
+export interface RiggedMeshData {
+  positions: string;
+  uvs: string;
+  joints: string;
+  weights: string;
+  indices: string;
+  texture: string;
+  inverseBindMatrices: string;
+  bones: readonly RiggedBoneData[];
+}
+export interface CreatureData extends RiggedMeshData {
+  source?: unknown;
+}
+/** Model-space delta of one bone around its own pivot. */
+export interface BoneDelta {
+  rotation?: THREE.Quaternion;
+  offset?: readonly number[];
+}
+export type CreaturePose = Record<string, BoneDelta | undefined>;
+export interface LegSolve {
+  hipDelta: THREE.Quaternion;
+  kneeDelta: THREE.Quaternion;
+  landed: THREE.Vector3;
+  clamped: boolean;
+}
+type LegArgs = [
+  hip: THREE.Vector3,
+  knee: THREE.Vector3,
+  foot: THREE.Vector3,
+  target: THREE.Vector3,
+  bindHip?: THREE.Vector3,
+];
+export interface CreatureHelpers {
+  bind(name: string): THREE.Vector3;
+  lowest(name: string): THREE.Vector3 | null;
+  euler(x: number, y: number, z: number, order?: THREE.EulerOrder): THREE.Quaternion;
+  solveLeg(...args: LegArgs): LegSolve;
+}
+export interface CreatureConfig {
+  name: string;
+  presentation(T: Three): THREE.Matrix4;
+  pose(T: Three, t: number, helpers: CreatureHelpers): CreaturePose;
+  rest: number;
+  frames: number;
+}
+interface CreatureShared {
+  geometry: THREE.BufferGeometry;
+  texture: THREE.Texture;
+  boneInverses: THREE.Matrix4[];
+  bindWorld: THREE.Quaternion[];
+  bindPosition: THREE.Vector3[];
+}
+/** One rigged instance (SkinnedMesh) posed by the procedural cycle. */
+export interface CreatureRig {
+  container: THREE.Group;
+  rig: THREE.Group;
+  mesh: THREE.SkinnedMesh<THREE.BufferGeometry, THREE.Material>;
+  skeleton: THREE.Skeleton;
+  bones: Record<string, THREE.Bone>;
+  phase: number;
+  pose(t: number): CreatureRig;
+}
+export interface CreatureBakeResult {
+  frames: number;
+  count: number;
+  positions: Float32Array;
+  normals: Float32Array;
+}
+
 export const TAU = Math.PI * 2;
-const bytes = (b64) => Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
-const view = (b64, Type) => {
+const bytes = (b64: string) => Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+const view = <A>(b64: string, Type: TypedArrayType<A>): A => {
   const raw = bytes(b64);
   return new Type(raw.buffer, raw.byteOffset, raw.byteLength / Type.BYTES_PER_ELEMENT);
 };
@@ -17,7 +102,14 @@ const view = (b64, Type) => {
 // the hip turns the straightened chain towards the target. Positions are
 // bind-pose model-space Vector3 (hip may carry a body offset); lengths come
 // from the bind pose. Targets beyond reach are clamped along the hip line.
-export function solveLeg(T, hip, knee, foot, target, bindHip = hip) {
+export function solveLeg(
+  T: Three,
+  hip: THREE.Vector3,
+  knee: THREE.Vector3,
+  foot: THREE.Vector3,
+  target: THREE.Vector3,
+  bindHip: THREE.Vector3 = hip,
+): LegSolve {
   const a = new T.Vector3().subVectors(knee, bindHip),
     b = new T.Vector3().subVectors(foot, knee);
   const la = a.length(),
@@ -42,10 +134,10 @@ export function solveLeg(T, hip, knee, foot, target, bindHip = hip) {
 //   pose(T, t, helpers): model-space deltas {bone: {rotation?, offset?}} at cycle
 //   phase t in [0, 1); rest: phase of the bind-like resting pose; frames: VAT
 //   frames per cycle.
-export function defineCreature(D, config) {
+export function defineCreature<Data extends CreatureData>(D: Data, config: CreatureConfig) {
   const index = Object.fromEntries(D.bones.map((b, i) => [b.name, i]));
-  const cache = new WeakMap();
-  function shared(T) {
+  const cache = new WeakMap<Three, CreatureShared>();
+  function shared(T: Three): CreatureShared {
     let s = cache.get(T);
     if (s) return s;
     const geometry = new T.BufferGeometry();
@@ -78,13 +170,13 @@ export function defineCreature(D, config) {
   }
   // Bind-pose vertex of `bone` (dominant weight) with the lowest y: the point
   // that touches the ground for a foot bone.
-  const lowest = new Map();
-  function lowestVertex(T, name) {
+  const lowest = new Map<string, THREE.Vector3 | null>();
+  function lowestVertex(T: Three, name: string): THREE.Vector3 | null {
     if (!lowest.has(name)) {
       const { geometry } = shared(T);
       const p = geometry.attributes.position.array,
         j = geometry.attributes.skinIndex.array;
-      let best = null;
+      let best: THREE.Vector3 | null = null;
       for (let v = 0; v < p.length / 3; v++)
         if (j[v * 4] === index[name] && (!best || p[v * 3 + 1] < best.y))
           best = new T.Vector3().fromArray(p, v * 3);
@@ -92,16 +184,16 @@ export function defineCreature(D, config) {
     }
     return lowest.get(name)?.clone() ?? null;
   }
-  const helpers = (T) => ({
+  const helpers = (T: Three): CreatureHelpers => ({
     bind: (name) => shared(T).bindPosition[index[name]].clone(),
     lowest: (name) => lowestVertex(T, name),
     euler: (x, y, z, order = 'XYZ') => new T.Quaternion().setFromEuler(new T.Euler(x, y, z, order)),
     solveLeg: (...args) => solveLeg(T, ...args),
   });
-  const pose = (T, t) => config.pose(T, ((t % 1) + 1) % 1, helpers(T));
+  const pose = (T: Three, t: number): CreaturePose => config.pose(T, ((t % 1) + 1) % 1, helpers(T));
 
   // One rigged instance (SkinnedMesh): corpses, previews, non-WebGL fallback.
-  function createRig(T, material) {
+  function createRig(T: Three, material?: THREE.Material | null): CreatureRig {
     const { geometry, texture, boneInverses, bindWorld } = shared(T);
     const bones = D.bones.map((b) => {
       const bone = new T.Bone();
@@ -131,7 +223,7 @@ export function defineCreature(D, config) {
     container.add(rig);
     const inverseParent = new T.Quaternion();
     const offset = new T.Vector3();
-    const instance = {
+    const instance: CreatureRig = {
       container,
       rig,
       mesh,
@@ -169,7 +261,10 @@ export function defineCreature(D, config) {
   }
 
   // Skin the cycle into frames (positions and normals in presentation space).
-  function* bakeSteps(T, frames = config.frames) {
+  function* bakeSteps(
+    T: Three,
+    frames: number = config.frames,
+  ): Generator<undefined, CreatureBakeResult, unknown> {
     const { geometry, boneInverses } = shared(T);
     const instance = createRig(T, new T.MeshBasicMaterial());
     const bones = instance.skeleton.bones;
@@ -230,9 +325,9 @@ export function defineCreature(D, config) {
     instance.mesh.material.dispose();
     return { frames, count, positions, normals };
   }
-  function bake(T, frames = config.frames) {
+  function bake(T: Three, frames: number = config.frames): CreatureBakeResult {
     const steps = bakeSteps(T, frames);
-    let result;
+    let result: IteratorResult<undefined, CreatureBakeResult>;
     do {
       result = steps.next();
     } while (!result.done);
@@ -245,12 +340,12 @@ export function defineCreature(D, config) {
     source: D.source,
     frames: config.frames,
     rest: config.rest,
-    boneIndex: (name) => index[name],
+    boneIndex: (name: string) => index[name],
     helpers,
-    presentation: (T) => config.presentation(T),
+    presentation: (T: Three) => config.presentation(T),
     pose,
-    geometry: (T) => shared(T).geometry,
-    texture: (T) => shared(T).texture,
+    geometry: (T: Three) => shared(T).geometry,
+    texture: (T: Three) => shared(T).texture,
     createRig,
     bake,
     bakeSteps,

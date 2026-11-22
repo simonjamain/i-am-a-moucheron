@@ -4,7 +4,7 @@ import { PeerConnection } from 'node-datachannel';
 import { WebSocketServer } from 'ws';
 import { ASSETS, BUILD_VERSION, GAME_VERSION } from './assets.js';
 import { Game, SNAPSHOT_SHARE_MS } from './game.js';
-import { GameSession } from './session.js';
+import { GameSession } from './session.ts';
 import { StatsLedger } from './stats.ts';
 import { STATS_PAGE } from './stats-page.ts';
 import { encodeMotionBatch, encodeMotionState } from '../src/motion-wire.ts';

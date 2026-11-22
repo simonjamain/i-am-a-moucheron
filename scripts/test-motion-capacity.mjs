@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { Game } from '../server/game.js';
-import { GameSession } from '../server/session.js';
+import { GameSession } from '../server/session.ts';
 import { PROTOCOL } from '../src/udp-protocol.ts';
 
 const now = () => 100000;

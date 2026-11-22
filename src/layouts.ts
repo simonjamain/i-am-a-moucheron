@@ -1147,7 +1147,7 @@ export const onLayoutChange = (listener: LayoutListener): (() => boolean) => {
   return () => layoutListeners.delete(listener);
 };
 
-// ---- geometry: primitives drawn by office.js and used as colliders ----------
+// ---- geometry: primitives drawn by office.ts and used as colliders ----------
 /** A drawn primitive; `solid` ones are colliders. Cylinders: w = bottom radius. */
 export interface LayoutPiece {
   shape: 'box' | 'cyl';
@@ -1270,7 +1270,7 @@ export function layoutPieces(layout: Readonly<OfficeLayout> = activeLayoutValue)
       );
     } else P.push(mkPiece('box', it.x, k.h / 2, it.z, it.w, k.h, it.d, k.color, solid));
   }
-  // Colliders of the models (walls, vents, bin, props): drawn by office.js.
+  // Colliders of the models (walls, vents, bin, props): drawn by office.ts.
   // Touching boxes of a row (bookshelves, panels) become one: no seam to catch on.
   // Boxes of the pack props are marked `decor`: their triangles stand for them
   // where the decor's collision world is used (office-collision.ts).

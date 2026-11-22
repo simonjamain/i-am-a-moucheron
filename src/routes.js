@@ -1,5 +1,5 @@
-import { floorPath, blockedSegment } from './route-navigation.js';
-import { staticGroundFlow } from './ground-defense.js';
+import { floorPath, blockedSegment } from './route-navigation.ts';
+import { staticGroundFlow } from './ground-defense.ts';
 import { activeLayout } from './layouts.ts';
 export const MIN_SPAWN_DISTANCE = 3;
 // Portals describe the decorative vent/hole, not the first living position.

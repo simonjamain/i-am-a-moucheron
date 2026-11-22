@@ -1,5 +1,5 @@
 import { MOSQUITO_DATA as D } from './mosquito-data.js';
-import { defineCreature, TAU } from './rigged-creature.js';
+import { defineCreature, TAU } from './rigged-creature.ts';
 
 // Mosquito: user-supplied Meshy "Low Poly Mosquito" with its 62-bone SmartRig
 // (no clip). Weights are cleaned at import (scripts/import-mosquito.py): each

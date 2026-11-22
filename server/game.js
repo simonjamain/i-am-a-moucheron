@@ -31,7 +31,7 @@ import {
   TRAILER_LIMITS,
 } from '../src/fleet.ts';
 import { AIRDROP_KINDS, airdropCommand, airdropSurface, headingOf } from '../src/airdrop.ts';
-import { baseWorld, baseBody, reconcileBase } from '../src/base.js';
+import { baseWorld, baseBody, reconcileBase } from '../src/base.ts';
 import {
   createSoul,
   advanceArena,

@@ -3,10 +3,38 @@ import { resolveLanding, withoutDecor } from './sortie.ts';
 import { MAP, ACTOR_UNIT } from './scale.ts';
 import { sweptHitsDecor } from './office-collision.ts';
 import { OFFICE_LAYOUT } from './layout.ts';
+import type * as THREE from 'three';
+import type { FlightProfile } from './flight.ts';
+import type { DecorQuery } from './sortie.ts';
+import type { DecorCollision } from './office-collision.ts';
+import type { Three } from './types.ts';
+/** Networked aircraft state stepped in place while its cockpit is vacant. */
+export interface VacantAircraftState {
+  hp: number;
+  p: number[];
+  v: number[];
+  q: number[];
+  omega?: number[] | null;
+  gas?: number;
+  landed?: boolean;
+  wing?: unknown;
+  engine?: boolean | number;
+  fuelAvailable?: boolean;
+}
+export type VacantAircraftProfile = FlightProfile & { gear?: number };
+/** The decor world as used here: landing support plus swept contact. */
+export type VacantDecor = DecorQuery & Pick<DecorCollision, 'touches' | 'raycast'>;
 // This is the ordinary aircraft integrator with neutral controls, not an
 // autopilot. A selected client owns it only while the cockpit is vacant.
 // `decor`: the props' triangle colliders (office-collision.ts), when built.
-export function stepVacantAircraft(T, state, profile, allColliders, dt, decor = null) {
+export function stepVacantAircraft(
+  T: Three,
+  state: VacantAircraftState,
+  profile: VacantAircraftProfile,
+  allColliders: readonly THREE.Box3[],
+  dt: number,
+  decor: VacantDecor | null = null,
+): VacantAircraftState {
   const colliders = withoutDecor(allColliders, decor);
   if (state.hp <= 0) return state;
   const position = new T.Vector3().fromArray(state.p),

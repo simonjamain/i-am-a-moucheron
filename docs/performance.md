@@ -167,7 +167,7 @@ mathématique de la sphère pour les intersections et le même index spatial.
 Le serveur ajoute un rejet AABB rapide avant les intersections segment–sphère
 des armes lourdes. Aucun changement d'autorité des impacts.
 
-`server/session.js` omet `roster` des réponses `sync` répétées
+`server/session.ts` omet `roster` des réponses `sync` répétées
 avec le même `wave`, `started` et `balanceRevision`. Les réponses
 sur nouvelle vague ou nouvelle révision transmettent toujours le roster,
 et `client.js` reconstitue le champ omis depuis l'état précédent.

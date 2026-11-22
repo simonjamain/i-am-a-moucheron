@@ -13,7 +13,7 @@ import { FLYERS } from '../src/flyer-batch.js';
 import { VEHICLES } from '../src/fleet.ts';
 import { SHOP } from '../src/equipment.ts';
 import { SHOP_CATEGORIES } from '../src/shop-catalog.ts';
-import { CONTRACTS, contractKey } from '../src/contracts.js';
+import { CONTRACTS, contractKey } from '../src/contracts.ts';
 
 const all = Object.keys(ENEMY_TYPES).sort();
 const pick = (filter) =>
@@ -68,7 +68,7 @@ for (const type of vehicles) {
   for (const seat of seats)
     assert.ok(
       CONTRACTS[contractKey('boarding', seat, type)]?.length,
-      `No boarding contract for ${type}/${seat} (src/contracts.js, contractKey)`,
+      `No boarding contract for ${type}/${seat} (src/contracts.ts, contractKey)`,
     );
 }
 console.log(
