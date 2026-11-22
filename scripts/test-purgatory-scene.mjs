@@ -17,6 +17,7 @@ import { propFootprint, modelBoxes } from '../src/office-props.ts';
 import { WALK_WORLDS } from '../src/scale.ts';
 import { VIP_GUARD as GUARD_RIG, VIP_GUARD_MODEL } from '../src/vip-guard-model.ts';
 import { VIP_GUARD_DATA } from '../src/vip-guard-data.js';
+import { PostHighlight, selectionRect } from '../src/post-highlight.ts';
 
 const U = WALK_WORLDS.purgatory.sceneScale;
 const walk = PURGATORY_RULES.bounds({ bodies: [] });
@@ -137,6 +138,43 @@ const aim = new T.Raycaster(
   new T.Vector3(0, 0, -1),
 );
 assert.ok(aim.intersectObject(built.guard, true).length > 0, 'the guard can be aimed at');
+// Its outline mask is skinned on his own skeleton: it follows the breath and
+// the look instead of staying in the bind pose.
+const highlight = new PostHighlight(T, built.guard, {
+  seats: [],
+  local: [0, 0, 0],
+  radius: 0,
+  outline: { meshes: [] },
+});
+const masks = [];
+built.guard.traverse((o) => o.name === 'post-outline' && masks.push(o));
+const skin = built.scene.getObjectByName('vigile-vip-meshy');
+assert.equal(masks.length, 1, 'one mask for the guard mesh');
+assert.ok(
+  masks[0].isSkinnedMesh && masks[0].skeleton === skin.skeleton,
+  'mask on the guard skeleton',
+);
+assert.ok(masks[0].bindMatrix.equals(skin.bindMatrix));
+// The outline pass only covers the guard's part of the screen.
+const view = new T.PerspectiveCamera(62, 16 / 9, 0.1, 150);
+view.position.set(centre.x - 2, centre.y + 1, centre.z + 6);
+view.lookAt(centre);
+view.updateMatrixWorld();
+const screen = { x: 1920, y: 1080 };
+assert.equal(selectionRect(T, view, screen, 8), null, 'nothing shown, no pass');
+highlight.show();
+built.scene.updateMatrixWorld(true);
+const rect = selectionRect(T, view, screen, 8);
+assert.ok(
+  rect && rect.w * rect.h < 0.25 * screen.x * screen.y,
+  'a small rectangle: ' + JSON.stringify(rect),
+);
+const middle = new T.Vector3().copy(centre).project(view);
+const px = ((middle.x + 1) / 2) * screen.x,
+  py = ((middle.y + 1) / 2) * screen.y;
+assert.ok(px > rect.x && px < rect.x + rect.w && py > rect.y && py < rect.y + rect.h, 'around him');
+highlight.hide();
+assert.equal(selectionRect(T, view, screen, 8), null);
 const guardSpot = built.scene.getObjectByName('vigile-vip').position;
 assert.ok(Math.hypot(guardSpot.x - VIP_GUARD.x, guardSpot.z - VIP_GUARD.z) < 1e-9);
 
