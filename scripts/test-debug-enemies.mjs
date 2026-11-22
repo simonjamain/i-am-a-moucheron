@@ -19,7 +19,7 @@ import { ENEMY_TYPES, swarmFrame } from '../src/waves.js';
 import { DEFAULT_BALANCE } from '../src/balance.js';
 import { enemyRoute, PORTALS } from '../src/routes.js';
 import { fireGroundSentries, SENTRY } from '../src/ground-sentry.ts';
-import { GROUND_BOUNDS } from '../src/ground-defense.js';
+import { GROUND_BOUNDS } from '../src/ground-defense.ts';
 
 // 1. Every species, both kinds; inputs validated.
 assert.deepEqual(

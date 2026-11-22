@@ -6,7 +6,7 @@
 // A lost packet stalls everything behind it on TCP: smoothness is lower than
 // over UDP, which the game always tries first.
 import { TCP_PATH } from './udp-protocol.ts';
-import { UdpClient } from './udp-client.js';
+import { UdpClient } from './udp-client.ts';
 
 const encoder = new TextEncoder();
 

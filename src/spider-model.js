@@ -1,5 +1,5 @@
 import { SPIDER_DATA as D } from './spider-data.js';
-import { defineCreature, TAU } from './rigged-creature.js';
+import { defineCreature, TAU } from './rigged-creature.ts';
 import { walkLegs, groundPresentation, REST_PHASES } from './walker-gait.ts';
 
 // Egg-laying spider: user-supplied Meshy "Spotted Velvet Spider" with its

@@ -8,7 +8,7 @@
 //    nearest point of a vent's usual corridor, then follow it (routes.js).
 import { ENEMY_TYPES, assignMidgeSwarmSizes, enemyTravelSpeed } from './waves.js';
 import { routeDuration } from './routes.js';
-import { GROUND_BOUNDS } from './ground-defense.js';
+import { GROUND_BOUNDS } from './ground-defense.ts';
 import { GROUND_FOOT_DEPTH, INSECT_SCALE, enemySizeFactor } from './scale.ts';
 import type { EnemyType, Vec3 } from './types.ts';
 

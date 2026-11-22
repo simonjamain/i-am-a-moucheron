@@ -5,7 +5,7 @@ import { shopColumns } from '../src/shop-catalog.ts';
 import { VEHICLES, isBomber, vehicleEntry } from '../src/fleet.ts';
 import { canUseWeapon } from '../src/armament.ts';
 import { ammoCapacity, fullAmmo } from '../src/logistics.ts';
-import { baseWorld } from '../src/base.js';
+import { baseWorld } from '../src/base.ts';
 import { ACTOR_UNIT } from '../src/scale.ts';
 import { OFFICE_LAYOUT } from '../src/layout.ts';
 

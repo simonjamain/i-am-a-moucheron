@@ -6,7 +6,7 @@ import {
   finishMeal,
   stickyTraversal,
   STICKY_WIDTH,
-} from '../src/ground-defense.js';
+} from '../src/ground-defense.ts';
 const wall = splitBarricade([0.2, 0.5], [0.8, 0.5], 'wall');
 assert.equal(wall.length, 13);
 assert.ok(

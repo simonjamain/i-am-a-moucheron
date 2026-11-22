@@ -5,10 +5,31 @@
 // in the sphere (the Castor driver always does).
 import { CASTOR_SERVICE_RADIUS, SERVICE_RADIUS } from './logistics.ts';
 import { isSupportVehicle } from './fleet.ts';
+import type { Installation } from './logistics.ts';
+import type { Three, Vec3Like } from './types.ts';
+import type * as THREE from 'three';
+
+/** A refuel installation, optionally bound to a numbered placement slot. */
+export type ZoneInstallation = Installation & { slot?: number | string };
+/** The fleet fields read for Castor zones. */
+export interface ZoneVehicle {
+  id: string;
+  type: string;
+  state: { p: Vec3Like; hp: number };
+}
+export interface ServiceZone {
+  key: string;
+  vehicle?: string;
+  p: Vec3Like;
+  radius: number;
+}
 
 export const ZONE_COLOR = '#58e36f';
 
-export function serviceZoneList(installations = [], fleet = []) {
+export function serviceZoneList(
+  installations: readonly ZoneInstallation[] = [],
+  fleet: readonly ZoneVehicle[] = [],
+): ServiceZone[] {
   return [
     ...installations
       .filter((s) => s.kind === 'refuel')
@@ -28,7 +49,7 @@ export function serviceZoneList(installations = [], fleet = []) {
   ];
 }
 
-function zoneMaterial(T) {
+function zoneMaterial(T: Three): THREE.ShaderMaterial {
   return new T.ShaderMaterial({
     uniforms: { color: { value: new T.Color(ZONE_COLOR) } },
     vertexShader: `
@@ -61,7 +82,12 @@ function zoneMaterial(T) {
 }
 
 export class ServiceZones {
-  constructor(T, scene) {
+  T: Three;
+  scene: THREE.Object3D;
+  geometry: THREE.SphereGeometry;
+  material: THREE.ShaderMaterial;
+  meshes: Map<string, THREE.Mesh>;
+  constructor(T: Three, scene: THREE.Object3D) {
     this.T = T;
     this.scene = scene;
     this.geometry = new T.SphereGeometry(1, 32, 16);
@@ -71,8 +97,11 @@ export class ServiceZones {
 
   // zones: output of serviceZoneList; `position(zone)` may override a centre
   // (the displayed, smoothed Castor model instead of the raw snapshot).
-  update(zones, position = () => null) {
-    const seen = new Set();
+  update(
+    zones: readonly ServiceZone[],
+    position: (zone: ServiceZone) => THREE.Vector3 | null | undefined = () => null,
+  ): void {
+    const seen = new Set<string>();
     for (const zone of zones) {
       seen.add(zone.key);
       let mesh = this.meshes.get(zone.key);

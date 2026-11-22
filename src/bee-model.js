@@ -1,5 +1,5 @@
 import { BEE_DATA as D } from './bee-data.js';
-import { defineCreature, TAU } from './rigged-creature.js';
+import { defineCreature, TAU } from './rigged-creature.ts';
 
 // Bee (`guard`): user-supplied Meshy "Angry Low Poly Bee" with its 45-bone
 // SmartRig (no clip). Weights are cleaned at import (scripts/import-bee.py):

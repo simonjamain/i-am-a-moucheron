@@ -27,7 +27,7 @@ l'ancien [convertisseur simplifié](../scripts/import-meshy-m1.py).
 Les positions, UV et indices sont encodés sur 16 bits. La texture est partagée
 entre exemplaires ; le disque coloré leur est propre.
 
-`src/m1-model.js` conserve une aile et une hélice articulées séparément,
+`src/m1-model.ts` conserve une aile et une hélice articulées séparément,
 ainsi que les deux canons et leurs sorties de tir. Les volumes de collision,
 la physique et les règles de la [flotte](scale-fleet-weapons.md) restent inchangés.
 Le retour au maillage original augmente le nombre de triangles ; aucun gain de

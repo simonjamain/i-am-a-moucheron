@@ -9,7 +9,7 @@ import {
   CHARACTER_HEIGHT,
   LEGACY_HEIGHT,
   GAIT,
-} from '../src/character-model.js';
+} from '../src/character-model.ts';
 import { createGraphics } from '../src/graphics.js';
 import { aimPistol } from '../src/personal-aim.ts';
 import { HUMAN_SCALE, MAP } from '../src/scale.ts';

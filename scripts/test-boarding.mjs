@@ -9,7 +9,7 @@ import {
   advanceBase,
   reconcileBase,
   baseWorld,
-} from '../src/base.js';
+} from '../src/base.ts';
 const bay = aircraftBay(0);
 const p = { id: 'test', name: 'T', bay: 0, life: 'alive', mode: 'foot', board_paper: 0 };
 p.state = JSON.stringify({

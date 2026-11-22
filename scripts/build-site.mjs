@@ -7,7 +7,7 @@ import { execFileSync } from 'node:child_process';
 import { mkdir, readFile, readdir, rm, writeFile, copyFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
-import { PLAYER_CHANGELOG } from '../src/changelog.js';
+import { PLAYER_CHANGELOG } from '../src/changelog.ts';
 
 const OUT = '.site/src';
 const REPO_URL = 'https://github.com/simonjamain/i-am-a-moucheron';

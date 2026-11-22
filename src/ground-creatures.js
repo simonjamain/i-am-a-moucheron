@@ -1,4 +1,4 @@
-import { chooseBait, distanceToSegment, finishMeal, stickyTraversal } from './ground-defense.js';
+import { chooseBait, distanceToSegment, finishMeal, stickyTraversal } from './ground-defense.ts';
 import { enemyRoutePosition } from './routes.js';
 import { feedingPoint, GROUND_BAIT_TYPES, groundGoal } from './ground-defense-state.js';
 

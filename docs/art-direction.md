@@ -117,7 +117,7 @@ la source. Fonctionnement : [audio](audio.md).
 ## Ton des textes
 
 - **Pince-sans-rire administratif** : phrases sérieuses, réglementaires, au service d’une
-  situation absurde. Les contrats actuels (`src/contracts.js`) sont la référence, par
+  situation absurde. Les contrats actuels (`src/contracts.ts`) sont la référence, par
   exemple : « Le transfert de responsabilité ne s’effectue ni par un soupir ni par un
   message oublié sur le siège. »
 - Pas de clin d’œil appuyé, d’émoji ni de point d’exclamation pour faire rire : la

@@ -75,6 +75,20 @@ Pièges vus au lot 4 :
   (`git show <base>:src/<m>.js`). Seuls des champs de classe déclarés ou des alias
   doivent apparaître.
 
+Pièges vus au lot 5 :
+
+- Les tests passent souvent un faux `document` sans `createElementNS` ni
+  `activeElement` : typer ce paramètre par une petite interface locale
+  (`BankDocument`) plutôt que `Document`, pour garder ces tests exécutables.
+- Un champ de classe déclaré (`tick?: () => void`) reste `undefined` à l'effacement :
+  ne pas lui donner de valeur par défaut, sinon le comportement change.
+- Les propriétés DOM typées `string` reçoivent parfois des nombres (`input.min = 0`) :
+  garder la valeur d'origine sous `as unknown as string` plutôt que convertir, et
+  signaler la conversion à faire dans une contribution dédiée.
+- Le typage révèle des défauts (une liste d'aide qui contenait `false`) : les
+  corriger à part, avec un test de régression et une entrée de changelog, jamais
+  silencieusement pendant la migration.
+
 ## Écart avec la consigne précédente
 
 `docs/code-structure.md` décrivait « JavaScript ESM natif » et `README.md`

@@ -1,12 +1,20 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
-export const PLAYER_CHANGELOG = [
+export interface ChangelogEntry {
+  version: number;
+  changes: string[];
+}
+export const PLAYER_CHANGELOG: ChangelogEntry[] = [
   {
-    version: 413,
+    version: 414,
     changes: [
       'Moins de cases à cocher : on monte à bord, on revient du purgatoire et on choisit son lit en signant directement.',
       'Les bons de commande proposent des motifs plus variés, et la convenance personnelle annonce d’emblée qu’elle sera refusée.',
       'À la banque, plus d’objet du prêt : une seule case pour reconnaître que l’emprunt plombe l’équipe pendant ses vagues.',
     ],
+  },
+  {
+    version: 413,
+    changes: ['En construction, l’aide en bas de l’écran n’affiche plus un « false » égaré.'],
   },
   {
     version: 412,
@@ -1125,7 +1133,22 @@ export const PLAYER_CHANGELOG = [
 ];
 
 // Utiliser uniquement du texte, jamais du HTML provenant du changelog.
-export function mountChangelog({ dialog, trigger, close, list, document, onOpen }) {
+export interface ChangelogMount {
+  dialog: HTMLDialogElement;
+  trigger: EventTarget;
+  close: EventTarget;
+  list: Element;
+  document: Document;
+  onOpen: () => void;
+}
+export function mountChangelog({
+  dialog,
+  trigger,
+  close,
+  list,
+  document,
+  onOpen,
+}: ChangelogMount): void {
   const fragment = document.createDocumentFragment();
   for (const entry of PLAYER_CHANGELOG) {
     const section = document.createElement('section');

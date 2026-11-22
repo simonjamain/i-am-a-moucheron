@@ -7,6 +7,7 @@
 // `npm run typecheck`. References rewritten:
 // - relative import specifiers in src/, server/, scripts/ (`./scale.js`, `../src/scale.js`);
 // - repository-relative path strings used by tests (`'src/scale.js'`, `new URL('../src/scale.js', …)`);
+// - unquoted repository paths in code comments (`// see src/scale.js`);
 // - Markdown mentions (`src/scale.js`, and a bare `scale.js` when that basename is unique).
 // Browser URLs (`'/scale.js'` in client.js, the assembler's served URLs) stay `.js`:
 // the assembler serves the stripped TypeScript at the same URL.
@@ -56,14 +57,18 @@ const docFiles = await walk('.', (f) => f.endsWith('.md'));
 // the file (import specifiers, new URL) or to the repository root (test fixtures).
 function rewriteCode(file, text) {
   const dir = path.dirname(file);
-  return text.replace(/(['"`])((?:\.{1,2}\/|src\/|server\/)[^'"`\s]*?\.js)\1/g, (all, q, spec) => {
-    const candidates = spec.startsWith('.')
-      ? [path.normalize(path.join(dir, spec))]
-      : [path.normalize(spec)];
-    // `../src/x.js` inside scripts/ also appears in readFile calls relative to cwd.
-    if (spec.startsWith('../')) candidates.push(path.normalize(spec.replace(/^\.\.\//, '')));
-    return candidates.some((c) => migrated.has(c)) ? q + spec.replace(/\.js$/, '.ts') + q : all;
-  });
+  return text
+    .replace(/(['"`])((?:\.{1,2}\/|src\/|server\/)[^'"`\s]*?\.js)\1/g, (all, q, spec) => {
+      const candidates = spec.startsWith('.')
+        ? [path.normalize(path.join(dir, spec))]
+        : [path.normalize(spec)];
+      // `../src/x.js` inside scripts/ also appears in readFile calls relative to cwd.
+      if (spec.startsWith('../')) candidates.push(path.normalize(spec.replace(/^\.\.\//, '')));
+      return candidates.some((c) => migrated.has(c)) ? q + spec.replace(/\.js$/, '.ts') + q : all;
+    })
+    .replace(/(?<![\w./-])((?:src|server)\/[\w-]+)\.js(?![\w])/g, (all, stem) =>
+      migrated.has(stem + '.js') ? stem + '.ts' : all,
+    );
 }
 
 const allBasenames = new Map();

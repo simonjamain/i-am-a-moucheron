@@ -8,7 +8,7 @@ import { resolveLanding } from '../src/sortie.ts';
 import { MAP } from '../src/scale.ts';
 import { fullAmmo } from '../src/logistics.ts';
 import { SHOP, shopPrice, purchaseCount } from '../src/equipment.ts';
-import { reserveAlerts, missileStatus, ArrivalSignals } from '../src/reserve-feedback.js';
+import { reserveAlerts, missileStatus, ArrivalSignals } from '../src/reserve-feedback.ts';
 import { deliveryLanding, DELIVERY_SPEED } from '../src/delivery.ts';
 import { wavePlan } from '../src/waves.js';
 import { createOrdnance } from '../src/ordnance.js';

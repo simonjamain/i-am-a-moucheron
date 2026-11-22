@@ -5,7 +5,7 @@ import { MAP, mapScale, ACTOR_UNIT, HUMAN_SCALE, REFERENCE, FLAK } from '../src/
 import { VEHICLES, vehiclePad, vehicleEntry } from '../src/fleet.ts';
 import { OFFICE_LAYOUT } from '../src/layout.ts';
 import { createGraphics } from '../src/graphics.js';
-import { createOffice } from '../src/office.js';
+import { createOffice } from '../src/office.ts';
 import { stepFlight } from '../src/flight.ts';
 import { spreadDirection, fuseRange, blastDamage, diveIntensity } from '../src/combat.ts';
 import { makeAntiaircraft, AA_STATIONS } from '../src/sortie.ts';

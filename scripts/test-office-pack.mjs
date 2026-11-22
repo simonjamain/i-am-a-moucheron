@@ -16,7 +16,7 @@ import {
 } from '../src/layouts.ts';
 import { OFFICE_CLOUD_TOP, OFFICE_FOG_START, FOG_START_RATIO } from '../src/office-fog.ts';
 import { createGraphics } from '../src/graphics.js';
-import { createOffice } from '../src/office.js';
+import { createOffice } from '../src/office.ts';
 
 const near = (a, b, eps, label) => assert.ok(Math.abs(a - b) <= eps, `${label}: ${a} vs ${b}`);
 const { x: X, z: Z } = LAYOUT_ROOM;

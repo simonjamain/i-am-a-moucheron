@@ -6,11 +6,110 @@ import {
   snapshotRosterCore,
   snapshotRosterKey,
 } from '../src/snapshot-wire.ts';
+import type { WireSnapshot, WireState } from '../src/snapshot-wire.ts';
+import type { MotionState } from '../src/network.ts';
+
+/** Room and pilot identifying this connection once joined. */
+export interface SessionPlayer {
+  code: string;
+  id: string;
+}
+/** Roster metadata of the last snapshot sent with a roster. */
+export interface SessionRosterMeta {
+  core: string;
+  revision: number | undefined;
+  total: unknown;
+}
+/** Accepted motion handed to the room relay. */
+export interface SessionRelayEntry {
+  peer: string;
+  seq: number;
+  captured: number | undefined;
+  state: MotionState;
+}
+/** Reply of Game.join() as this session reads it. */
+export type SessionJoinReply = {
+  id: string;
+  resumed?: boolean;
+  snapshot: WireSnapshot & { code: string };
+  [field: string]: unknown;
+};
+/** Room state fields this session touches. */
+export interface SessionRoom {
+  touched: number;
+  pilots: { size: number };
+}
+/** Pilot state fields this session reads or touches. */
+export interface SessionPilot {
+  id: string;
+  incarnation: unknown;
+  occupation: unknown;
+  mode: unknown;
+  vehicle_id: unknown;
+  seat: unknown;
+  seen: number;
+  state: { fire: unknown };
+}
+/** The part of server/game.js Game used by a session. */
+export interface SessionGame {
+  join(body: object): SessionJoinReply;
+  command(
+    code: string,
+    id: string,
+    path: string,
+    body: object,
+    options: { rosterKey: string | null; rosterMeta: SessionRosterMeta | null },
+  ): SessionCommandReply | null | undefined;
+  player(code: string, id: string): { r: SessionRoom; p: SessionPilot };
+  sync(
+    r: SessionRoom,
+    p: SessionPilot,
+    body: { mode: unknown; state: unknown; ground: unknown },
+  ): unknown;
+  disconnect(code: string, id: string): unknown;
+}
+export interface GameSessionOptions {
+  send: (chunk: string) => void;
+  relay: (player: SessionPlayer, entry: SessionRelayEntry) => void;
+  close?: () => void;
+  onJoin?: (player: SessionPlayer) => void;
+  now?: () => number;
+}
+/** Reply of any other command: a room snapshot, or another report (fire). */
+export type SessionCommandReply = WireSnapshot & { snapshot?: never };
+interface SessionReply {
+  status: number;
+  body: unknown;
+}
+type StatusError = Error & { status?: number };
 
 // Session identity comes from its DTLS connection, never from a player ID supplied
 // in a command. Old command IDs can never execute again after cache eviction.
 export class GameSession {
-  constructor(game, { send, relay, close, onJoin, now = Date.now } = {}) {
+  game: SessionGame;
+  send: (chunk: string) => void;
+  relay: (player: SessionPlayer, entry: SessionRelayEntry) => void;
+  close: (() => void) | undefined;
+  onJoin: ((player: SessionPlayer) => void) | undefined;
+  now: () => number;
+  replies: Map<number, string>;
+  replyBytes: number;
+  highWater: number;
+  lastSeq: number;
+  player: SessionPlayer | null;
+  closed: boolean;
+  window: number;
+  count: number;
+  motionCount: number;
+  lastAt: number;
+  lastRosterKey: string | null;
+  lastRosterMeta: SessionRosterMeta | null;
+  lastWireSnapshot: WireState | null;
+  motionRefreshAt: number;
+  constructor(
+    game: SessionGame,
+    { send, relay, close, onJoin, now = Date.now }: GameSessionOptions = {} as GameSessionOptions,
+  ) {
     this.game = game;
     this.send = send;
     this.relay = relay;
@@ -32,7 +131,7 @@ export class GameSession {
     this.lastWireSnapshot = null;
     this.motionRefreshAt = -Infinity;
   }
-  rate(motion = false) {
+  rate(motion = false): boolean {
     const now = this.now();
     if (now - this.window >= 1000) {
       this.window = now;
@@ -42,7 +141,7 @@ export class GameSession {
     if (motion) return ++this.motionCount <= 60;
     return ++this.count <= 120;
   }
-  command(raw) {
+  command(raw: unknown): void {
     if (this.closed) return;
     if (typeof raw !== 'string' || raw.length > MAX_COMMAND_BYTES) {
       this.stop();
@@ -75,7 +174,7 @@ export class GameSession {
       return;
     }
     if (this.replies.has(m.id)) {
-      this.output(this.replies.get(m.id), m.id);
+      this.output(this.replies.get(m.id)!, m.id);
       return;
     }
     if (m.id <= this.highWater) {
@@ -86,9 +185,9 @@ export class GameSession {
       return;
     }
     this.highWater = m.id;
-    let reply;
+    let reply: SessionReply;
     try {
-      let body;
+      let body: SessionJoinReply | SessionCommandReply | null | undefined;
       if (m.path === 'join') {
         if (this.player) throw Object.assign(Error('Session déjà ouverte.'), { status: 409 });
         body = this.game.join(m.body);
@@ -110,7 +209,9 @@ export class GameSession {
       else {
         // All commands (not only sync) share one roster baseline. Omit it
         // BEFORE snapshot cloning, then compact initial rosters and event deltas.
-        const snapshot = { ...(m.path === 'join' ? body.snapshot : body) };
+        const snapshot: WireSnapshot = {
+          ...(m.path === 'join' ? body!.snapshot : body),
+        };
         // Read roster metadata before encoding: most fields then move into $patch.
         const key = snapshotRosterKey(snapshot),
           meta = {
@@ -136,10 +237,14 @@ export class GameSession {
       }
     } catch (e) {
       reply = {
-        status: e.status || 500,
-        body: { error: e.status ? e.message : 'Erreur du serveur de jeu.' },
+        status: (e as StatusError).status || 500,
+        body: {
+          error: (e as StatusError).status
+            ? (e as StatusError).message
+            : 'Erreur du serveur de jeu.',
+        },
       };
-      if (!e.status) console.error(e);
+      if (!(e as StatusError).status) console.error(e);
     }
     // Cache JSON strings, not references to mutable domain state.
     const encoded = JSON.stringify(reply);
@@ -147,12 +252,12 @@ export class GameSession {
     this.replyBytes += encoded.length;
     while (this.replies.size > 32 || this.replyBytes > 4 * 1024 * 1024) {
       const oldest = this.replies.keys().next().value;
-      this.replyBytes -= this.replies.get(oldest).length;
-      this.replies.delete(oldest);
+      this.replyBytes -= this.replies.get(oldest!)!.length;
+      this.replies.delete(oldest!);
     }
     this.output(encoded, m.id);
   }
-  output(value, id) {
+  output(value: string | SessionReply, id: number): void {
     try {
       for (const chunk of typeof value === 'string'
         ? encodeReplyText(value, id)
@@ -162,7 +267,7 @@ export class GameSession {
       this.stop();
     }
   }
-  motion(raw) {
+  motion(raw: unknown): void {
     if (
       this.closed ||
       !this.player ||
@@ -204,10 +309,10 @@ export class GameSession {
           state: { ...m.state, fire: p.state.fire },
         });
     } catch (e) {
-      if (e.status === 401) this.stop();
+      if ((e as StatusError).status === 401) this.stop();
     }
   }
-  stop() {
+  stop(): void {
     if (this.closed) return;
     this.closed = true;
     if (this.player) this.game.disconnect(this.player.code, this.player.id);

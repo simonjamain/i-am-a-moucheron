@@ -10,7 +10,7 @@ import {
   topViewGroundPoint,
   topViewPose,
 } from '../src/castor-top-view.ts';
-import { ServiceZones, serviceZoneList } from '../src/service-zones.js';
+import { ServiceZones, serviceZoneList } from '../src/service-zones.ts';
 import { CASTOR_SERVICE_RADIUS, SERVICE_RADIUS } from '../src/logistics.ts';
 import { withinService } from '../src/paid-service.js';
 

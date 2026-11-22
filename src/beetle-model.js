@@ -1,5 +1,5 @@
 import { BEETLE_DATA as D } from './beetle-data.js';
-import { defineCreature, TAU } from './rigged-creature.js';
+import { defineCreature, TAU } from './rigged-creature.ts';
 
 // Armoured beetle (`brute`): user-supplied Meshy "Low Poly Cockroach" (a blue
 // and orange beetle) with its 48-bone SmartRig plus two hind-wing bones added at

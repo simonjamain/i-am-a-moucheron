@@ -124,7 +124,7 @@ est un interrupteur direct ([mode debug](laboratory.md)).
 
 ## Aide contextuelle
 
-`controlHintItems()` dans `src/live-hud.js` est la source unique de l’aide affichée
+`controlHintItems()` dans `src/live-hud.ts` est la source unique de l’aide affichée
 en bas à gauche (`#commandHelp`). `client.js` lui transmet le véhicule et le siège,
 le type de poste fixe occupé (DCA, canon antichar), l’état à pied,
 en chute ou au purgatoire, la disponibilité de la construction, la roue ouverte
@@ -188,7 +188,7 @@ et neutralise les commandes maintenues ; **Échap** le ferme sans recapture
 automatique, tandis que le bouton fermer peut reprendre la capture. La partie
 continue pendant l'ouverture du panneau.
 
-Sources : `flight-tuning.ts` (plages et stockage), `flight-tuning-ui.js`
+Sources : `flight-tuning.ts` (plages et stockage), `flight-tuning-ui.ts`
 (panneau), `mouse-flight.ts` (instructeur) et
 `test-flight-tuning.mjs` (régression). La sensation du pilotage reste à
 valider dans une vraie partie WebGL/UDP.

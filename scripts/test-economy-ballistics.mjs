@@ -6,7 +6,7 @@ import { MAP } from '../src/scale.ts';
 import { supportedPlacement } from '../src/equipment.ts';
 import { OFFICE_LAYOUT } from '../src/layout.ts';
 import { createGraphics } from '../src/graphics.js';
-import { createOffice } from '../src/office.js';
+import { createOffice } from '../src/office.ts';
 import { enemyRoute, enemyRoutePosition, PORTALS } from '../src/routes.js';
 import { wavePlan, swarmFrame } from '../src/waves.js';
 import { CombatEffects } from '../src/combat.ts';

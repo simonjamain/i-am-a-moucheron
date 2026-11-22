@@ -24,7 +24,7 @@
     marcheur (`stepWalker` avec `decor`), appareils sans pilote, véhicules Rapier
     (`PhysicsWorld.useDecor`). Restent visuels sur boîtes : `crash-effects.ts`,
     `track-suspension.ts`. Ressenti en vol non validé par un humain.
-  - Lot 4 : navigation des fourmis (`ground-defense.js`, grille depuis la
+  - Lot 4 : navigation des fourmis (`ground-defense.ts`, grille depuis la
     géométrie), serveur et workers (boîtes grossières ou triangles).
 - Vérifications : `node scripts/test-collision-mesh.mjs`, `npm test`.
 - Prochaine action : lot 4, serveur (largages, livraisons, lits, Castor) et navigation des fourmis sur la géométrie.

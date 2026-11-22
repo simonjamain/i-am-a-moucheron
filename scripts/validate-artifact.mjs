@@ -10,7 +10,7 @@ assert.equal(pkg.type, 'module');
 assert.equal(pkg.scripts.start, 'node server/index.js');
 assert.ok(pkg.dependencies['node-datachannel']);
 await access(resolve(root, 'package-lock.json'));
-for (const file of ['server/index.js', 'server/game.js', 'server/session.js']) {
+for (const file of ['server/index.js', 'server/game.js', 'server/session.ts']) {
   execFileSync(process.execPath, ['--check', resolve(root, file)]);
 }
 // Validate local module dependencies in the packaged runtime, not the source tree.

@@ -1,20 +1,83 @@
 import { ClauseSheet, loanConsent, handPath, stamp } from './paper-form.ts';
+import type { Bank, Loan } from './bank.ts';
 // The bank's prospectus (docs/ui-guidelines.md, « Menus : des documents qui sortent du
 // monde »): one paper sheet with the three slots printed as coupons. Ticking an offer
 // shows its terms and amortization table; one box acknowledges the debt (the bank
 // asks for no motive, it collects instalments), then the signature deposits it. A signed loan stays readable as a stamped contract whose paid
 // instalments are stamped PAYÉ.
-export const dollars = (cents) =>
+export const dollars = (cents: number): string =>
   (cents / 100).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) +
   ' $';
-const rate = (loan) => (loan.rate * 100).toLocaleString('fr-FR') + ' %';
-export function loanText(loan) {
+const rate = (loan: Pick<Loan, 'rate'>): string => (loan.rate * 100).toLocaleString('fr-FR') + ' %';
+export function loanText(loan: Loan): string {
   return `La Banque de la Dernière Volonté prête ${dollars(loan.principal)} à la caisse commune. Taux fixe : ${rate(loan)} par vague, sur ${loan.waves} vagues. Échéance : ${dollars(loan.payment)}, coût total : ${dollars(loan.total)}. La dernière échéance ajuste les arrondis. Les prélèvements continuent même avec un solde négatif. Un nouvel emprunt exige un solde non négatif. Votre avion peut tomber ; vos échéances restent debout.`;
 }
 const SVG = 'http://www.w3.org/2000/svg';
 
+/** The snapshot fields read by the bank prospectus. */
+export interface BankSnapshot {
+  dollars?: number;
+  bank?: Bank | null;
+  base?: { epoch?: number } | null;
+}
+/** The ticked coupon: a loan slot, its serial and the game epoch it was read in. */
+export interface BankSelection {
+  slot: number;
+  serial: number;
+  epoch: number | undefined;
+}
+/** The document methods used; `createElementNS` is absent in DOM-less tests. */
+export interface BankDocument {
+  createElement: Document['createElement'];
+  createElementNS?: Document['createElementNS'];
+  activeElement?: Document['activeElement'];
+}
+/** A signature stroke point, normalised to the canvas. */
+type InkPoint = [number, number];
+export interface BankUIOptions {
+  root: HTMLElement;
+  document: BankDocument;
+  snapshot: () => BankSnapshot | null | undefined;
+  command: (path: string, body: Record<string, unknown>) => Promise<unknown>;
+  accept: (result: unknown) => void;
+  onOpen: () => void;
+  onClose: () => void;
+  onSigned?: () => void;
+}
+
 export class BankUI {
-  constructor({ root, document, snapshot, command, accept, onOpen, onClose, onSigned = () => {} }) {
+  root!: HTMLElement;
+  document!: BankDocument;
+  snapshot!: BankUIOptions['snapshot'];
+  command!: BankUIOptions['command'];
+  accept!: BankUIOptions['accept'];
+  onOpen!: () => void;
+  onClose!: () => void;
+  onSigned!: () => void;
+  opened: boolean;
+  busy: boolean;
+  selection: BankSelection | null;
+  clauses: ClauseSheet | null;
+  points: InkPoint[];
+  pointer: number | null;
+  cards: HTMLElement;
+  sheet: HTMLElement;
+  status: HTMLElement;
+  canvas: HTMLCanvasElement;
+  ink: CanvasRenderingContext2D;
+  signed?: number | null;
+  key?: string | null;
+  tick?: string;
+  constructor({
+    root,
+    document,
+    snapshot,
+    command,
+    accept,
+    onOpen,
+    onClose,
+    onSigned = () => {},
+  }: BankUIOptions) {
     Object.assign(this, { root, document, snapshot, command, accept, onOpen, onClose, onSigned });
     this.opened = false;
     this.busy = false;
@@ -22,10 +85,10 @@ export class BankUI {
     this.clauses = null;
     this.points = [];
     this.pointer = null;
-    root.onkeydown = (event) => {
+    root.onkeydown = (event: KeyboardEvent) => {
       if (event.key !== 'Tab') return;
       const focusable = [
-        ...root.querySelectorAll('button:not(:disabled), [tabindex="0"], canvas'),
+        ...root.querySelectorAll<HTMLElement>('button:not(:disabled), [tabindex="0"], canvas'),
       ].filter((el) => !el.closest('.hidden'));
       const first = focusable[0],
         last = focusable.at(-1);
@@ -37,13 +100,13 @@ export class BankUI {
         first?.focus();
       }
     };
-    this.cards = root.querySelector('[data-bank-cards]');
-    this.sheet = root.querySelector('[data-bank-sheet]');
-    this.status = root.querySelector('[data-bank-status]');
-    this.canvas = root.querySelector('canvas');
-    this.ink = this.canvas.getContext('2d');
-    root.querySelector('[data-bank-close]').onclick = () => this.close();
-    this.canvas.onpointerdown = (e) => {
+    this.cards = root.querySelector<HTMLElement>('[data-bank-cards]')!;
+    this.sheet = root.querySelector<HTMLElement>('[data-bank-sheet]')!;
+    this.status = root.querySelector<HTMLElement>('[data-bank-status]')!;
+    this.canvas = root.querySelector('canvas')!;
+    this.ink = this.canvas.getContext('2d')!;
+    root.querySelector<HTMLButtonElement>('[data-bank-close]')!.onclick = () => this.close();
+    this.canvas.onpointerdown = (e: PointerEvent) => {
       e.preventDefault();
       if (this.busy || this.pointer !== null || !this.selection) return;
       if (!this.canSign()) {
@@ -54,12 +117,12 @@ export class BankUI {
       this.canvas.setPointerCapture?.(e.pointerId);
       this.points = [this.point(e)];
     };
-    this.canvas.onpointermove = (e) => {
+    this.canvas.onpointermove = (e: PointerEvent) => {
       if (this.pointer !== e.pointerId) return;
       this.points.push(this.point(e));
       this.draw();
     };
-    this.canvas.onpointerup = (e) => {
+    this.canvas.onpointerup = (e: PointerEvent) => {
       if (this.pointer !== e.pointerId) return;
       this.points.push(this.point(e));
       this.pointer = null;
@@ -78,7 +141,7 @@ export class BankUI {
       this.pointer = null;
     };
   }
-  point(e) {
+  point(e: PointerEvent): InkPoint {
     const r = this.canvas.getBoundingClientRect();
     return [
       Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)),
@@ -140,7 +203,7 @@ export class BankUI {
     this.onOpen();
     this.root.classList.remove('hidden', 'locked');
     this.render();
-    this.root.querySelector('[data-bank-close]').focus?.();
+    this.root.querySelector<HTMLButtonElement>('[data-bank-close]')!.focus?.();
   }
   close() {
     if (this.busy) return;
@@ -151,39 +214,46 @@ export class BankUI {
     this.onClose();
   }
   // Ticks a coupon: an offer to read and sign, or a signed contract to consult.
-  select(loan) {
+  select(loan: Loan): void {
     if (this.busy) return;
     if (loan.status === 'offer' && this.balance() < 0) {
       this.status.textContent = 'Aucun nouvel emprunt tant que la caisse commune est négative.';
       return;
     }
     if (this.selection?.slot === loan.slot && this.selection.serial === loan.serial) return;
-    this.selection = { slot: loan.slot, serial: loan.serial, epoch: this.snapshot().base?.epoch };
+    this.selection = { slot: loan.slot, serial: loan.serial, epoch: this.snapshot()!.base?.epoch };
     this.tick = handPath('tick');
     this.signed = null;
     this.clear();
     this.status.textContent = '';
     this.clauses =
       loan.status === 'offer'
-        ? new ClauseSheet(loanConsent(loan.waves), this.root.querySelector('[data-clauses]'), () =>
-            this.refreshLock(),
+        ? new ClauseSheet(
+            loanConsent(loan.waves),
+            this.root.querySelector<HTMLElement>('[data-clauses]'),
+            () => this.refreshLock(),
           )
         : null;
-    const mark = this.root.querySelector('[data-stamp]');
+    const mark = this.root.querySelector<HTMLElement>('[data-stamp]');
     if (loan.status === 'active') stamp(mark, 'APPROUVÉ');
     else mark?.classList.remove('printed');
     this.key = null;
     this.render();
     this.refreshLock();
   }
-  element(tag, text, parent, className) {
+  element<K extends keyof HTMLElementTagNameMap>(
+    tag: K,
+    text: string,
+    parent?: HTMLElement | null,
+    className?: string,
+  ): HTMLElementTagNameMap[K] {
     const el = this.document.createElement(tag);
     el.textContent = text;
     if (className) el.className = className;
     parent?.append(el);
     return el;
   }
-  coupon(loan, balance) {
+  coupon(loan: Loan, balance: number): void {
     const card = this.element('article', '', this.cards, 'coupon'),
       active = loan.status === 'active',
       chosen = this.selection?.slot === loan.slot && this.selection.serial === loan.serial,
@@ -193,7 +263,7 @@ export class BankUI {
     card.setAttribute?.('aria-disabled', String(unavailable || this.busy));
     card.tabIndex = 0;
     card.onclick = () => this.select(loan);
-    card.onkeydown = (e) => {
+    card.onkeydown = (e: KeyboardEvent) => {
       if (e.key !== ' ' && e.key !== 'Enter') return;
       e.preventDefault();
       this.select(loan);
@@ -210,7 +280,7 @@ export class BankUI {
       if (chosen) {
         const tick = this.document.createElementNS(SVG, 'path');
         tick.setAttribute('class', 'clauseTick');
-        tick.setAttribute('d', this.tick);
+        tick.setAttribute('d', this.tick!);
         svg.append(tick);
       }
       head.append(svg);
@@ -239,7 +309,7 @@ export class BankUI {
       return;
     }
     const balance = this.balance();
-    this.root.querySelector('[data-bank-balance]').textContent =
+    this.root.querySelector<HTMLElement>('[data-bank-balance]')!.textContent =
       `Caisse commune : ${dollars(balance)}`;
     let selected = this.selected();
     if (
@@ -252,7 +322,7 @@ export class BankUI {
       selected = null;
       this.clear();
       this.root.classList.remove('locked');
-      this.root.querySelector('[data-stamp]')?.classList.remove('printed');
+      this.root.querySelector<HTMLElement>('[data-stamp]')?.classList.remove('printed');
       this.status.textContent =
         'Le contrat a changé. Relisez le prospectus avant de signer à nouveau.';
     }
@@ -260,7 +330,7 @@ export class BankUI {
     if (selected?.status === 'active' && this.clauses && !this.busy) {
       this.clauses = null;
       this.root.classList.remove('locked');
-      stamp(this.root.querySelector('[data-stamp]'), 'APPROUVÉ');
+      stamp(this.root.querySelector<HTMLElement>('[data-stamp]'), 'APPROUVÉ');
     }
     const key = JSON.stringify([bank, balance, this.busy, this.selection]);
     if (key !== this.key) {
@@ -269,19 +339,21 @@ export class BankUI {
       for (const loan of bank.slots) this.coupon(loan, balance);
     }
     this.sheet.classList.toggle('hidden', !selected);
-    this.root.querySelector('[data-bank-hint]').classList.toggle('hidden', !!selected);
-    this.root.querySelector('[data-bank-close]').disabled = this.busy;
+    this.root
+      .querySelector<HTMLElement>('[data-bank-hint]')!
+      .classList.toggle('hidden', !!selected);
+    this.root.querySelector<HTMLButtonElement>('[data-bank-close]')!.disabled = this.busy;
     if (!selected) return;
     const offer = selected.status === 'offer';
-    this.root.querySelector('[data-clauses]').classList.toggle('hidden', !offer);
+    this.root.querySelector<HTMLElement>('[data-clauses]')!.classList.toggle('hidden', !offer);
     this.root
-      .querySelector('[data-bank-sign]')
+      .querySelector<HTMLElement>('[data-bank-sign]')!
       .classList.toggle('hidden', !offer && this.signed !== selected.serial);
-    this.root.querySelector('[data-bank-title]').textContent = offer
+    this.root.querySelector<HTMLElement>('[data-bank-title]')!.textContent = offer
       ? `Offre de prêt n° ${selected.serial}`
       : `Contrat de prêt n° ${selected.serial}`;
-    this.root.querySelector('[data-bank-text]').textContent = loanText(selected);
-    const schedule = this.root.querySelector('[data-bank-schedule]');
+    this.root.querySelector<HTMLElement>('[data-bank-text]')!.textContent = loanText(selected);
+    const schedule = this.root.querySelector<HTMLElement>('[data-bank-schedule]')!;
     const scheduleKey = JSON.stringify([snapshot.base?.epoch, selected.serial, selected.paid]);
     if (schedule.dataset.key !== scheduleKey) {
       schedule.dataset.key = scheduleKey;
@@ -314,7 +386,7 @@ export class BankUI {
         signature: true,
       });
       this.accept(result);
-      if (this.snapshot().base?.epoch !== selected.epoch) {
+      if (this.snapshot()!.base?.epoch !== selected.epoch) {
         this.selection = null;
         this.clauses = null;
         this.clear();
@@ -328,10 +400,10 @@ export class BankUI {
       this.pointer = null;
       this.points = [];
       this.root.classList.remove('locked');
-      stamp(this.root.querySelector('[data-stamp]'), 'APPROUVÉ');
+      stamp(this.root.querySelector<HTMLElement>('[data-stamp]'), 'APPROUVÉ');
       this.status.textContent = 'SIGNÉ · Capital versé à la caisse commune.';
     } catch (e) {
-      this.status.textContent = e.message;
+      this.status.textContent = (e as Error).message;
       this.clear();
     } finally {
       this.busy = false;

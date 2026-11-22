@@ -29,7 +29,7 @@ Les règles de trois/cinq signatures restent inchangées après l’accès volon
 
 ## HUD et aide permanente
 
-Les panneaux latéraux repliables sont retirés de l’affichage. `live-hud.js` fournit
+Les panneaux latéraux repliables sont retirés de l’affichage. `live-hud.ts` fournit
 une aide blanche permanente en bas à gauche, selon marche, chute, placement et
 poste. Ni survol ni ouverture temporaire. Les anciens blocs d’aide superposés sont
 masqués. Les menus suspendent les commandes ; l’observation les neutralise.
