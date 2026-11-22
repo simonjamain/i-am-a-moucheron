@@ -42,6 +42,7 @@ const context = {
   swarmFrame,
   baseWorld,
   layoutSolids: () => ROUTE_OBSTACLES,
+  office: { decor: null },
   id: 'shooter',
   myVehicle: null,
   crewSeat: null,

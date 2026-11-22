@@ -42,6 +42,13 @@ travail avance par lots (note de reprise : [collisions en triangles](tasks/colli
      plus proche parmi les boîtes restantes (coque, sol, constructions) et les
      triangles du décor ; les boîtes des objets du pack (marquées `decor` par
      `layoutPieces`) sont ignorées dès que le monde du décor existe ;
+   - **Projectiles lourds (version 411)** : obus, roquettes et missiles sont un point
+     qui avance par sous-pas de 1/120 s ; `stepHeavy` (`src/heavy-sim.js`) tire un rayon
+     le long de chaque sous-pas sur les triangles (`world.decorRay`, fourni par
+     `client.js` : `DecorCollision.raycast`), comme une balle. Leurs boîtes `decor`
+     sont écartées dès que le monde du décor existe. Les fusées de proximité
+     gardent les boîtes (leur détonation se fait à distance). Le serveur ne simule
+     pas ces tirs : `MAX_ORDNANCE` (10 000) ne protège que la salle ;
    - **2b (version 409)**, pose d'équipement par le joueur sur les vraies surfaces.
      `supportedPlacement` (`src/equipment.ts`) prend un appui `DecorSupport` :
      côté client, le monde du décor cherche une surface plane et horizontale sous

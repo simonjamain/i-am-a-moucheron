@@ -89,6 +89,8 @@ export function stepHeavy(projectile, end, world) {
       if (t !== null && t >= 0 && t <= 1 && (!hit || t < hit.t)) hit = { t, ...target };
     };
     for (const solid of nearbySolids) consider(segmentBox(a, b, solid), { solid: true });
+    // The props' real triangles (a ray along the step, like any bullet).
+    consider(world.decorRay?.(a, b) ?? null, { solid: true });
     if (b[1] <= 0) consider(a[1] / Math.max(1e-12, a[1] - b[1]), { solid: true });
     const frames = world.frames(projectile.updated, projectile);
     const crossings = [];

@@ -1,6 +1,13 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 411,
+    changes: [
+      'Obus, roquettes et missiles touchent la vraie forme des meubles, comme les balles : on peut les passer sous une chaise.',
+      'Beaucoup plus de projectiles peuvent voler en même temps.',
+    ],
+  },
+  {
     version: 410,
     changes: [
       'Avions, piétons et véhicules touchent la vraie forme des meubles : on se pose sur une assise, on passe sous un bureau.',

@@ -97,6 +97,7 @@ export const SUITE = [
   'test-server-clock',
   'test-motion-smoothing',
   'test-heavy-impact',
+  'test-heavy-decor',
   'test-client-heavy',
   'test-heli-controls',
   'test-service-placement',
