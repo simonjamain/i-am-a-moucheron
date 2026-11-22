@@ -42,29 +42,28 @@ assert.ok(HOSTED_PLANES.has('fighter'));
   assert.ok(host.body('a').isSleeping(), 'the engine put it to sleep');
 }
 
-// 2. A 7° slope (rising towards the nose): parked with the brakes on, it does not creep
-// away, is not destroyed, and sleeps.
-{
+// 2. A 7° slope, nose uphill and nose downhill: parked with the brakes on, the aircraft
+// does not creep away, is not destroyed, and sleeps.
+for (const [name, sign] of [
+  ['nose uphill', 1],
+  ['nose downhill', -1],
+]) {
   const host = new PlaneHost(RAPIER, null, []);
   const slope = (7 * Math.PI) / 180;
+  // The surface rises towards -z (the nose) for a positive angle about x.
   host.physics.world.createCollider(
     RAPIER.ColliderDesc.cuboid(60, 0.5, 400)
       .setTranslation(0, -0.5 * Math.cos(slope), 0)
-      .setRotation({ x: Math.sin(-slope / 2), y: 0, z: 0, w: Math.cos(-slope / 2) })
+      .setRotation({ x: Math.sin((sign * slope) / 2), y: 0, z: 0, w: Math.cos((sign * slope) / 2) })
       .setFriction(1),
   );
-  // The plane first falls onto the slope from a little above it (slope height at z = 0 is 0).
   host.sync([plane('s', 0, 2.4, { landed: false })]);
   const { updates } = run(host, 14);
   const last = updates.filter((u) => u.id === 's').at(-1);
   const speed = Math.hypot(...last.v) / MAP.metres(1);
-  assert.ok(!last.destroyed, 'it is not destroyed by the slope');
-  assert.ok(speed < 0.1, `it holds on the slope (speed ${speed.toFixed(3)} m/s)`);
-  assert.ok(host.body('s').isSleeping(), 'and falls asleep');
-  // Pitch follows the slope instead of snapping to the horizontal.
-  const q = last.q,
-    forwardY = -(2 * (q[1] * q[2] - q[0] * q[3])) * -1; // y of (0, 0, -1) rotated by q
-  assert.ok(Number.isFinite(forwardY));
+  assert.ok(!last.destroyed, name + ': not destroyed by the slope');
+  assert.ok(speed < 0.1, `${name}: it holds on the slope (speed ${speed.toFixed(3)} m/s)`);
+  assert.ok(host.body('s').isSleeping(), name + ': and falls asleep');
 }
 
 // 3. A sleeper costs nothing, and is woken only by being removed or hit; many planes.

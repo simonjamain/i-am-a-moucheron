@@ -1,5 +1,5 @@
 import type { RigidBody } from '@dimforge/rapier3d-compat';
-import { MAP } from './scale.ts';
+import { ACTOR_UNIT, MAP } from './scale.ts';
 import type { VehicleProfile } from './fleet.ts';
 import {
   DEBUG_COLORS,
@@ -58,9 +58,9 @@ export interface PlaneParams {
 }
 export const PLANE_PARAMS: Readonly<PlaneParams> = Object.freeze({
   stallSpeed: 17,
-  stallAngle: 0.3,
+  stallAngle: 0.38,
   liftSlope: 4.5,
-  zeroLift: 0.055,
+  zeroLift: 0.07,
   dragZero: 0.02,
   inducedDrag: 0.07,
   thrust: 3.2,
@@ -148,28 +148,78 @@ interface Gear {
   x: number;
   y: number;
   z: number;
+  /** Length of the ray (the spring fully extended) and the static compression, in
+   * reference metres: the travel is `rest`, the aircraft sits `sag` lower at rest. */
+  rest: number;
+  sag: number;
   /** Share of the weight it carries at rest, and its sideways grip. */
   share: number;
   grip: number;
 }
-// Biplane geometry in reference metres (forward is -z). The wheels touch the ground
-// 1.95 m under the centre (VEHICLES.fighter.gear); the tail skid lowers the nose.
-const REST = 1.2;
-const GEARS: readonly Gear[] = [
-  { x: -1.35, y: -0.75, z: -0.7, share: 0.4, grip: 1 },
-  { x: 1.35, y: -0.75, z: -0.7, share: 0.4, grip: 1 },
-  { x: 0, y: -0.2, z: 3.5, share: 0.2, grip: 0.15 },
+// Biplane geometry measured on the model (src/meshy-biplane-data.js, model units: x to the
+// right, y up, the nose towards -z) and converted to reference metres. The wheels' hubs
+// are those of the model; its lowest point (wheel bottoms) is VEHICLES.fighter.gear below
+// the model origin, the tail skid is the model's lowest rear point.
+/** Reference metres per model unit: one model unit is ACTOR_UNIT world metres. */
+export const MODEL_TO_REF = ACTOR_UNIT / MAP.metres(1);
+const M = MODEL_TO_REF;
+const WHEEL_X = 0.775,
+  WHEEL_Z = -1.546,
+  GROUND_Y = -1.05, // bottom of the wheels
+  TAIL_Z = 2.0,
+  TAIL_Y = -0.03; // lowest point of the rudder: the model has no tail wheel, it stands here
+/** Static compression of the main springs (reference metres); `GEAR_SAG` is what a
+ * parked aircraft shows, the wheels then ride this much higher. */
+export const GEAR_SAG = 0.14;
+const MAIN_REST = 1.2;
+const TAIL_REST = 0.6; // the tail wheel's travel is half the mains'
+const TAIL_SAG = 0.07;
+/** The gear springs (exported for the checks against the model and the debug view). */
+export const GEARS: readonly Gear[] = [
+  {
+    x: -WHEEL_X * M,
+    y: GROUND_Y * M + MAIN_REST,
+    z: WHEEL_Z * M,
+    rest: MAIN_REST,
+    sag: GEAR_SAG,
+    share: 0.4,
+    grip: 1,
+  },
+  {
+    x: WHEEL_X * M,
+    y: GROUND_Y * M + MAIN_REST,
+    z: WHEEL_Z * M,
+    rest: MAIN_REST,
+    sag: GEAR_SAG,
+    share: 0.4,
+    grip: 1,
+  },
+  {
+    x: 0,
+    y: TAIL_Y * M + TAIL_REST,
+    z: TAIL_Z * M,
+    rest: TAIL_REST,
+    sag: TAIL_SAG,
+    share: 0.2,
+    grip: 0.15,
+  },
 ];
-const SAG = 0.14; // static compression of a spring (reference metres)
+// Centre of mass (model units): behind the main wheels (the tail carries about a fifth of
+// the weight, as on a tail-dragger) and a little above the middle of the fuselage.
+const COM = [0, 0.15 * M, -0.9 * M] as const;
 
-// Body colliders (half extents and centre, reference metres): they only matter when
-// the airframe hits something, the gear carries the aircraft on the ground.
+// Body colliders: boxes around the model's parts (centre and half extents in model units,
+// the same frame as the gear). They only matter when the airframe hits something: the
+// gear carries the aircraft on the ground.
 const PARTS = [
-  { name: 'fuselage', half: [0.35, 0.45, 2.9], at: [0, 0, 0.3] },
-  { name: 'upperWing', half: [5.0, 0.07, 0.95], at: [0, 1.15, -0.5] },
-  { name: 'lowerWing', half: [4.6, 0.07, 0.85], at: [0, -0.55, -0.4] },
-  { name: 'tail', half: [1.3, 0.06, 0.55], at: [0, 0.35, 3.5] },
-  { name: 'fin', half: [0.06, 0.55, 0.55], at: [0, 0.9, 3.55] },
+  { name: 'fuselage', half: [0.4, 0.525, 1.285], at: [0, 0.185, -0.685] },
+  // The rear fuselage tapers up: its lowest edge stays above the tail skid (the gear's
+  // lowest rear point), or it would carry the tail instead of the tail wheel.
+  { name: 'rearFuselage', half: [0.14, 0.235, 0.6], at: [0, 0.045, 0.6] },
+  { name: 'fin', half: [0.05, 0.45, 0.3], at: [0, 0.5, 1.9] },
+  { name: 'upperWing', half: [2.8, 0.09, 0.455], at: [0, 0.74, -0.655] },
+  { name: 'lowerWing', half: [2.68, 0.11, 0.4], at: [0, -0.13, -0.88] },
+  { name: 'tail', half: [0.92, 0.045, 0.31], at: [0, 0.215, 1.67] },
 ] as const;
 
 export class PlaneRig implements DebugRig {
@@ -217,7 +267,7 @@ export class PlaneRig implements DebugRig {
         .setCcdEnabled(true)
         .setAdditionalMassProperties(
           m,
-          { x: 0, y: 0, z: 0 },
+          { x: COM[0] * K, y: COM[1] * K, z: COM[2] * K },
           {
             x: (m * (height * height + length * length)) / 12,
             y: (m * (span * span + length * length)) / 12,
@@ -229,8 +279,10 @@ export class PlaneRig implements DebugRig {
     for (const part of PARTS)
       this.colliders.push(
         this.physics.world.createCollider(
-          RAPIER.ColliderDesc.cuboid(...(part.half.map((v) => v * K) as [number, number, number]))
-            .setTranslation(part.at[0] * K, part.at[1] * K, part.at[2] * K)
+          RAPIER.ColliderDesc.cuboid(
+            ...(part.half.map((v) => v * M * K) as [number, number, number]),
+          )
+            .setTranslation(part.at[0] * M * K, part.at[1] * M * K, part.at[2] * M * K)
             .setDensity(0)
             .setFriction(0.5)
             .setRestitution(0.05),
@@ -418,9 +470,12 @@ export class PlaneRig implements DebugRig {
       y: -controls.yaw * 0.8 * auth.yaw * turn,
       z: controls.roll * 2.25 * auth.roll * lift * turn,
     };
-    let rx = wl.x + (target.x - wl.x) * response,
+    // Standing on its wheels at low speed, pitch and roll are the gear's and gravity's
+    // business (the aircraft settles onto its tail wheel): no rate is imposed on them.
+    const settling = onWheels && lift === 0;
+    let rx = settling ? wl.x : wl.x + (target.x - wl.x) * response,
       ry = wl.y + (target.y - wl.y) * response,
-      rz = wl.z + (target.z - wl.z) * response;
+      rz = settling ? wl.z : wl.z + (target.z - wl.z) * response;
     rx += -2.2 * q2 * alpha * dt;
     ry += -2.0 * q2 * beta * dt;
     const effective = alpha + params.zeroLift;
@@ -439,7 +494,7 @@ export class PlaneRig implements DebugRig {
       const origin = { x: p.x + mount.x, y: p.y + mount.y, z: p.z + mount.z };
       const hit = this.physics.world.castRayAndGetNormal(
         new this.physics.R.Ray(origin, down),
-        REST * K,
+        gear.rest * K,
         true,
         undefined,
         undefined,
@@ -447,9 +502,9 @@ export class PlaneRig implements DebugRig {
         body,
       );
       const rayEnd = [
-        origin.x + down.x * REST * K,
-        origin.y + down.y * REST * K,
-        origin.z + down.z * REST * K,
+        origin.x + down.x * gear.rest * K,
+        origin.y + down.y * gear.rest * K,
+        origin.z + down.z * gear.rest * K,
       ];
       const record = {
         origin: [origin.x, origin.y, origin.z],
@@ -459,7 +514,7 @@ export class PlaneRig implements DebugRig {
       };
       this.debug.gear.push(record);
       if (!hit) return;
-      const compression = (REST * K - hit.timeOfImpact) / K; // reference metres
+      const compression = (gear.rest * K - hit.timeOfImpact) / K; // reference metres
       if (compression <= 0) return;
       this.compression[i] = compression;
       const contact = {
@@ -475,7 +530,7 @@ export class PlaneRig implements DebugRig {
       };
       const nrm = hit.normal,
         rise = point.x * nrm.x + point.y * nrm.y + point.z * nrm.z; // m/s (physics)
-      const k = (gear.share * (m * G * K)) / (SAG * K); // N per physics metre
+      const k = (gear.share * (m * G * K)) / (gear.sag * K); // N per physics metre
       const c = 2 * 0.6 * Math.sqrt(k * m * gear.share);
       const load = Math.max(0, k * compression * K - c * rise);
       // Wheel frame on the ground: along the nose, across.

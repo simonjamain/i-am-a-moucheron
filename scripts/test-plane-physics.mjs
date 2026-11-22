@@ -5,8 +5,12 @@ import * as T from '../vendor/three.module.min.js';
 import { mouseFlightControls } from '../src/mouse-flight.ts';
 import { MAP } from '../src/scale.ts';
 import { VEHICLES } from '../src/fleet.ts';
+import { BIPLANE_DATA } from '../src/meshy-biplane-data.js';
 import { loadRapier, toPhysics } from '../src/physics-world.ts';
 import {
+  GEARS,
+  GEAR_SAG,
+  MODEL_TO_REF,
   K,
   PLANE_PARAMS,
   PlaneRig,
@@ -108,11 +112,11 @@ assert.ok(dragCoefficient(stall * 1.8) > 3 * dragCoefficient(0.05), 'stalled win
 {
   const rig = new PlaneRig(RAPIER);
   const slope = (7 * Math.PI) / 180;
-  const angle = -slope; // surface rising towards -z (the nose): rotation about x
+  const angle = slope; // surface rising towards -z (the nose): rotation about x
   const half = [40, 0.5, 400];
   rig.physics.world.createCollider(
     RAPIER.ColliderDesc.cuboid(...half)
-      .setTranslation(0, -0.5 * Math.cos(slope), -150 * 0.17)
+      .setTranslation(0, -0.5 * Math.cos(slope), 0)
       .setRotation({ x: Math.sin(angle / 2), y: 0, z: 0, w: Math.cos(angle / 2) })
       .setFriction(1),
   );
@@ -209,5 +213,31 @@ for (const [name, yawDeg, pitchDeg] of [
     Math.abs(euler(rudder).y) > 0.1,
     'the rudder in the propeller wash turns it once it moves',
   );
+}
+// 9. The physics are where the model is: the main springs sit on the model's wheel hubs
+// (the wheels are parts of the model, lifted by the compression), the tail wheel has half
+// the travel of the mains, and at rest the aircraft rests on its three wheels, tail down.
+{
+  const hubs = ['wheelL', 'wheelR'].map((name) => BIPLANE_DATA.rig.find((n) => n.name === name));
+  assert.ok(hubs.every(Boolean), 'the model has its two wheel parts');
+  hubs.forEach((hub, i) => {
+    const gear = GEARS[i];
+    assert.ok(Math.abs(gear.x - hub.pivot[0] * MODEL_TO_REF) < 0.05, 'wheel ' + i + ' across');
+    assert.ok(Math.abs(gear.z - hub.pivot[2] * MODEL_TO_REF) < 0.05, 'wheel ' + i + ' along');
+  });
+  assert.ok(Math.abs(GEARS[2].rest * 2 - GEARS[0].rest) < 1e-9, 'tail travel is half the mains');
+  const parked = fresh({ y: 1.85, gas: 0 });
+  const rig = fly(parked, none, 4, new PlaneRig(RAPIER));
+  assert.ok(
+    rig.compression.every((c) => c > 0),
+    'rests on its three wheels',
+  );
+  assert.ok(
+    Math.abs(rig.compression[0] - GEAR_SAG) < 0.06,
+    'main springs sag about their static value',
+  );
+  assert.ok(rig.compression[2] <= GEARS[2].rest, 'the tail spring stays within its travel');
+  const e = new T.Euler().setFromQuaternion(new T.Quaternion(...parked.q), 'YXZ');
+  assert.ok(e.x > 0.15 && e.x < 0.35, `three-point attitude, nose up (${e.x.toFixed(2)} rad)`);
 }
 console.log('test-plane-physics ok', { K: +K.toFixed(4), toPhysics: +toPhysics(m(1)).toFixed(4) });
