@@ -300,12 +300,35 @@ interface BoardingBody {
   parachute?: boolean;
 }
 
+/**
+ * Half-width of the fuselage (centreline to hull side, reference metres) of the aircraft whose
+ * `span` is the wing or rotor span: the door stands beside the hull, not at the wingtip, so
+ * that a vehicle parked at the edge of the void can still be left. Ground vehicles and the
+ * Castor volant use half their `span`, which is their body width.
+ */
+export const HULL_HALF_WIDTH: Readonly<Partial<Record<VehicleType, number>>> = {
+  fighter: 0.9,
+  lightfighter: 0.9,
+  spitfire: 0.9,
+  interceptor: 1.3,
+  bomber: 1.4,
+  medbomber: 1.5,
+  helicopter: 1.7,
+};
+/** Gap between the hull side and the player leaving (reference metres). */
+const DOOR_MARGIN = 1;
+/** Distance of the door from the vehicle's centreline (reference metres). */
+export function doorOffset(type: VehicleType): number {
+  const hull = HULL_HALF_WIDTH[type];
+  return (hull ?? VEHICLES[type].span / 2) + DOOR_MARGIN;
+}
+
 export function vehicleEntry(v: VehicleRef, seat: string = 'pilot'): XYZ {
   const profile: VehicleProfile = VEHICLES[v.type];
   const p = v.state.p,
     q = v.state.q,
     s =
-      (profile.span / 2 + 1.8) *
+      doorOffset(v.type) *
       (v.type === 'fighter' ||
       v.type === 'lightfighter' ||
       seat === 'tail' ||

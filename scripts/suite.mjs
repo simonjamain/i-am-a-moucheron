@@ -129,6 +129,7 @@ export const SUITE = [
   'test-pheromone-trail',
   'test-enemy-bestiary',
   'test-enemy-speeds',
+  'test-vehicle-exit',
   'test-ground-placement',
   'test-hull-gun',
   'test-placement-models',

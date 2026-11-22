@@ -254,3 +254,14 @@ un état rouge si la pose est refusée. Les véhicules font face au personnage ;
 leur orientation est conservée par le serveur. La surface porteuse est vérifiée
 avec l’emprise tournée du véhicule. Les constructions à pied et depuis le Castor
 emploient les mêmes modèles que les objets posés.
+
+## Sortie d'un véhicule
+
+**F** fait sortir de tout véhicule posé et à peu près immobile : le joueur apparaît
+contre la carlingue ou le châssis, à hauteur de son siège (pilote vers l'avant,
+mitrailleur dorsal vers l'arrière), et non plus au bout des ailes ou du rotor, ce
+qui le faisait tomber quand l'appareil était garé au bord du vide.
+Le décalage latéral est `doorOffset` (`src/fleet.ts`) : demi-largeur de la coque
+(`HULL_HALF_WIDTH` pour les avions et l'hélicoptère, la moitié de l'envergure pour les
+véhicules terrestres et le Castor volant) plus 1 m de marge. Le serveur et le client
+utilisent la même fonction, avec le siège réellement occupé.

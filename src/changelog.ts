@@ -5,6 +5,12 @@ export interface ChangelogEntry {
 }
 export const PLAYER_CHANGELOG: ChangelogEntry[] = [
   {
+    version: 436,
+    changes: [
+      'On descend des véhicules juste à côté de la carlingue ou du châssis, plus au bout des ailes : fini les chutes dans le vide.',
+    ],
+  },
+  {
     version: 435,
     changes: [
       'Les hélicoptères ont une vraie physique : le rotor pousse, ils reposent sur leur train, et un frôlement ne les détruit plus.',
