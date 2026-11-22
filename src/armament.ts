@@ -1,4 +1,5 @@
-import { FLAK, REFERENCE, MAP } from './scale.ts';
+import { MAP } from './scale.ts';
+import { PROJECTILES, type ProjectileId } from './projectiles.ts';
 import { isBomber } from './fleet.ts';
 /** A heavy (explosive or armour-piercing) weapon; distances in map units. */
 export interface HeavyWeapon {
@@ -9,63 +10,30 @@ export interface HeavyWeapon {
   speed: number;
   lifetime: number;
 }
+/** A heavy weapon: its own rate of fire on top of its projectile type (src/projectiles.ts). */
+const heavy = (id: ProjectileId, interval: number): HeavyWeapon => {
+  const p = PROJECTILES[id];
+  return {
+    interval,
+    damage: p.damage,
+    edge: p.edge,
+    radius: MAP.metres(p.radius),
+    speed: MAP.metres(p.speed),
+    lifetime: p.lifetime,
+  };
+};
 export const HEAVY = Object.freeze({
-  rocket: {
-    interval: 0.3,
-    damage: 120,
-    edge: 30,
-    radius: MAP.metres(12),
-    speed: MAP.metres(180),
-    lifetime: 6,
-  },
-  missile: {
-    interval: 0,
-    damage: 360,
-    edge: 70,
-    radius: MAP.metres(30),
-    speed: MAP.metres(100),
-    lifetime: 10,
-  },
+  rocket: heavy('rocket', 0.3),
+  missile: heavy('missile', 0),
   // Mobile AA shell: same blast as the fixed light flak, only the rate differs.
-  proximity: {
-    interval: 0.8,
-    damage: 80,
-    edge: 20,
-    radius: MAP.metres(FLAK.lightRadius),
-    speed: MAP.metres(REFERENCE.shell * 0.7),
-    lifetime: 6,
-  },
-  dcaHeavy: {
-    interval: 1,
-    damage: 240,
-    edge: 60,
-    radius: MAP.metres(40),
-    speed: MAP.metres(REFERENCE.shell * 0.7),
-    lifetime: 6,
-  },
-  bomb: { interval: 0.5, damage: 240, edge: 60, radius: MAP.metres(20), speed: 0, lifetime: 35 },
-  he: {
-    interval: 2,
-    damage: 320,
-    edge: 30,
-    radius: MAP.metres(20),
-    speed: MAP.metres(320),
-    // Long enough to cross the whole office (issue #103); walls still stop it.
-    lifetime: 13,
-  },
-  ap: { interval: 2, damage: 800, edge: 0, radius: 0, speed: MAP.metres(600), lifetime: 8 },
+  proximity: heavy('proximity', 0.8),
+  dcaHeavy: heavy('dcaHeavy', 1),
+  bomb: heavy('bomb', 0.5),
+  he: heavy('he', 2),
+  ap: heavy('ap', 2),
   // Fixed anti-materiel howitzer (#113): ballistic like the tank shells, faster
   // than both, more damage than HE on a small 5 m blast.
-  antitank: {
-    // Same values as FORTIFICATIONS.antitank (no import, to keep this
-    // module light; scripts/test-howitzer.mjs checks they match).
-    interval: 1.8,
-    damage: 800,
-    edge: 90,
-    radius: MAP.metres(5),
-    speed: MAP.metres(750),
-    lifetime: 8,
-  },
+  antitank: heavy('antitank', 1.8),
 } satisfies Record<string, HeavyWeapon>);
 export type HeavyKind = keyof typeof HEAVY;
 const HEAVY_BY_NAME: Readonly<Record<string, HeavyWeapon | undefined>> = HEAVY;
@@ -76,12 +44,12 @@ export const TANK_GUN_MAX_PITCH = (30 * Math.PI) / 180;
 export const AP_PIERCE_KEEP = 0.8;
 
 export const TANK_MG = Object.freeze({
-  pilot: { interval: 0.09, damage: 33 },
-  top: { interval: 0.06, damage: 75 },
-  coax: { interval: 0.06, damage: 50 },
+  pilot: { interval: 0.09, projectile: 'mgLight', damage: PROJECTILES.mgLight.damage },
+  top: { interval: 0.06, projectile: 'mg', damage: PROJECTILES.mg.damage },
+  coax: { interval: 0.06, projectile: 'coax', damage: PROJECTILES.coax.damage },
 });
 /** Damage per bullet of the Castor driver's machine gun. */
-export const CASTOR_GUN_DAMAGE = 40;
+export const CASTOR_GUN_DAMAGE = PROJECTILES.castorGun.damage;
 export type Shell = 'he' | 'ap';
 export function availableShell(
   ammo: Partial<Record<string, number>>,

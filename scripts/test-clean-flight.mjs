@@ -1,3 +1,4 @@
+import { PROJECTILES } from '../src/projectiles.ts';
 import { nearestWeaponMuzzle } from '../src/muzzle.ts';
 import { TracerPool } from '../src/tracers.ts';
 import { GunSalvos } from '../src/salvos.ts';
@@ -582,6 +583,7 @@ const visualContext = {
   structuredClone,
   performance,
   integrateOrdnance,
+  PROJECTILES,
   localShots: new Map(),
   effectSeen: new Set(),
   serverClock: { now: () => Date.now() },
