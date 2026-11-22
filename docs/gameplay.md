@@ -113,7 +113,7 @@ parachute à **1/3 m/s dans le décor** (trois fois moins vite qu'avant la versi
 Le serveur y déploie l'équipement une seule fois ; le colis n'est pas utilisable
 en vol. Voir [colis parachutés](logistics-contracts.md#colis-parachutés).
 
-Le tank a un pilote/MG avant, un tireur canon/coaxiale et un mitrailleur supérieur.
+Le tank a un pilote/MG avant (orientable à la souris dans un cône de ±15° autour de l'avant de la coque, `src/hull-gun.ts`), un tireur canon/coaxiale et un mitrailleur supérieur.
 Le Stuka et le pilote du bombardier larguent des bombes en maintenant Espace
 (0,5 s ; 6 et 50 bombes respectivement). Le clic gauche sert aux MG ; au canon du
 tank, clic gauche tire HE/AP et Espace la coaxiale. B est supprimé. Les stocks, commandes et dégâts sont détaillés

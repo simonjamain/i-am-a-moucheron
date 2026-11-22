@@ -151,7 +151,7 @@ function vehicleHints(
   if (type === 'tank')
     return [
       ...(seat === 'pilot'
-        ? ['Z/S : avancer/reculer', 'Q/D : tourner', 'Clic : MG']
+        ? ['Z/S : avancer/reculer', 'Q/D : tourner', 'Souris : viser (±15°)', 'Clic : MG']
         : seat === 'cannon'
           ? [
               'Souris : tourelle',

@@ -9,6 +9,7 @@ import { ReloadHUD, seatReloads, heavyReadyAt, heavyLane, reloadProgress } from 
 import { makeBed } from '/bed-model.js';
 import { officeFogOpacity, installOfficeFog, officeFogCeiling } from '/office-fog.js';
 import { makeFortificationStation } from '/fortification-model.js';
+import { hullGunDirection } from '/hull-gun.js';
 import { placementFacing } from '/placement-aim.js';
 import { placementAim } from '/placement-aim.js';
 import { WaveCouncilUI } from '/wave-council-ui.js';
@@ -2890,6 +2891,8 @@ function turretDirection(aim = turretAim) {
 }
 function weaponDirection() {
   if (myVehicle?.type === 'castor' && crewSeat === 'pilot') return mouseDirection.clone();
+  if (myVehicle?.type === 'tank' && crewSeat === 'pilot')
+    return hullGunDirection(T, me.quaternion, mouseDirection);
   if (isRotorcraft(myVehicle?.type) && crewSeat === 'pilot')
     return new T.Vector3(0, 0, -1).applyQuaternion(me.quaternion);
   const d = turretDirection(
@@ -4097,7 +4100,9 @@ function updateOthers(dt) {
       const direction =
         v.type === 'castor'
           ? new T.Vector3().fromArray(motion.turretDirection || [0, 0, -1]).normalize()
-          : new T.Vector3(0, 0, -1).applyQuaternion(g.quaternion);
+          : v.type === 'tank' && motion.turretDirection
+            ? hullGunDirection(T, g.quaternion, new T.Vector3().fromArray(motion.turretDirection))
+            : new T.Vector3(0, 0, -1).applyQuaternion(g.quaternion);
       if (v.type === 'spitfire') {
         g.updateWorldMatrix(true, true);
         g.userData.remoteSalvos ??= new GunSalvos();
@@ -4578,7 +4583,9 @@ function physics(dt) {
       shoot(
         myVehicle.type === 'castor'
           ? mouseDirection.clone()
-          : new T.Vector3(0, 0, -1).applyQuaternion(me.quaternion),
+          : myVehicle.type === 'tank'
+            ? hullGunDirection(T, me.quaternion, mouseDirection)
+            : new T.Vector3(0, 0, -1).applyQuaternion(me.quaternion),
       );
     return;
   }
@@ -5732,6 +5739,8 @@ function simulateVacantAircraft(dt) {
   const active = new Set();
   for (const v of snap.vehicles) {
     if (v.state.hp <= 0 || v.seats.some((s) => s.seat === 'pilot')) continue;
+    // Parked biplanes are simulated by the server (src/plane-host.ts): their state arrives.
+    if (PLANE_RIGS.has(v.type)) continue;
 
     active.add(v.id);
     let s = vacantAircraft.get(v.id);

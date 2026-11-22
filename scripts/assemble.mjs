@@ -131,6 +131,7 @@ const files = {
       'delivery',
       'salvos',
       'muzzle',
+      'hull-gun',
       'purchase-ui',
       'paper-form',
       'vehicle-care',
