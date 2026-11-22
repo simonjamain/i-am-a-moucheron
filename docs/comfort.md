@@ -4,15 +4,10 @@ Lot du 30 octobre 2026, sources Node/RAM/UDP. La référence des commandes demeu
 
 ## Version et livraison
 
-`VERSION` est la source unique du numéro entier affiché en haut à gauche, y compris
-au lancement, dans les menus et purgatoires. L'assembleur injecte sa valeur dans
-le HTML servi ; le hash des modules reste un identifiant de cache distinct.
-Dans un clone : `npm run prepare:version` installe le hook Git local, puis
-`npm run version:next` prépare le prochain numéro après synchronisation.
-Après `git add`, `npm run check:version` refuse un index sans incrément par rapport
-à HEAD. Le hook exécute cette vérification avant chaque commit, documentaire inclus.
-Les hooks ne s'installent pas automatiquement dans les autres clones : y relancer
-la préparation.
+Le numéro entier affiché en haut à gauche, y compris au lancement, dans les menus et
+purgatoires, est calculé depuis l'historique Git (voir [version et nouveautés](changelog.md)) ;
+`VERSION` n'est qu'un fichier généré. L'assembleur injecte sa valeur dans le HTML servi ;
+le hash des modules reste un identifiant de cache distinct.
 
 ## Stations et affichage au viseur
 

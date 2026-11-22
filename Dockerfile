@@ -6,7 +6,7 @@ RUN npm ci --omit=dev && node -e "import('node-datachannel').then(m => { m.prelo
 COPY VERSION ./VERSION
 COPY src ./src
 COPY server ./server
-COPY scripts/assemble.mjs scripts/build-ui-preview.mjs ./scripts/
+COPY scripts/assemble.mjs scripts/build-ui-preview.mjs scripts/build-info.ts ./scripts/
 COPY vendor ./vendor
 COPY docs/ui-review.html ./docs/ui-review.html
 RUN node scripts/assemble.mjs

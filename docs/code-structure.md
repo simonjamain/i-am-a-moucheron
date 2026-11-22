@@ -70,7 +70,7 @@ entre deux pairs.
 ## Génération, tests et compatibilité
 
 `scripts/assemble.mjs` utilise la géométrie réelle du bureau pour générer les
-colliders et le graphe d’assets à URL de contenu. `server/assets.js` est utilisé
+colliders et le graphe d’assets à URL de contenu. `server/assets.js` (généré, non versionné) est utilisé
 par Node. `dist/` (ignoré par Git) est la sortie du build Node autonome.
 
 `scripts/build-ui-preview.mjs` extrait HTML/CSS réels et les composants HUD,
