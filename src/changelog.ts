@@ -5,6 +5,13 @@ export interface ChangelogEntry {
 }
 export const PLAYER_CHANGELOG: ChangelogEntry[] = [
   {
+    version: 434,
+    changes: [
+      'On peut quitter un véhicule à tout moment, même en mouvement, au sol ou en vol : on garde sa vitesse en sortant.',
+      'On peut aussi monter dans un véhicule qui roule, si on est assez près.',
+    ],
+  },
+  {
     version: 432,
     changes: [
       'Le Spitfire tourne bien mieux : tirer à fond sur le manche ne le fait plus décrocher quand il va vite.',

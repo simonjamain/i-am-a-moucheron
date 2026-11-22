@@ -2149,11 +2149,9 @@ export class Game {
       requireGame(v, 'Vous n’êtes pas à bord.');
       if (p.seat === 'pilot' && b.state && validMotion(b.state))
         v.state = { ...v.state, ...b.state, hp: Math.min(v.state.hp, b.state.hp) };
-      const grounded = !!v.state.landed;
-      requireGame(
-        !grounded || Math.hypot(...v.state.v) <= MAP.metres(3),
-        'Arrêtez l’avion avant de sortir.',
-      );
+      // Leaving is always possible. Touching the ground and (nearly) still: at the door;
+      // otherwise where the vehicle is, carrying its speed.
+      const grounded = !!v.state.landed && Math.hypot(...v.state.v) <= MAP.metres(3);
       // The server parks the vehicle the driver leaves (src/parked-host.ts): brakes on, engine off.
       if (p.seat === 'pilot' && isHosted(v.type)) {
         v.hosted = true;
