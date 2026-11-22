@@ -2783,13 +2783,20 @@ function physicalPurgatory(dt, now) {
       purgScene.add(g);
       soulMeshes.set(b.id, g);
     }
-    g.position.lerp(
-      new T.Vector3(b.x, b.kind === 'player' ? b.y || 0 : 0, b.z),
-      1 - Math.exp(-20 * dt),
-    );
+    g.position.lerp(new T.Vector3(b.x, 0, b.z), 1 - Math.exp(-20 * dt));
+    // Height is not eased for our own body (it is simulated every frame): a jump keeps its apex.
+    if (b.kind === 'player')
+      g.position.y =
+        b.entity === id
+          ? b.y || 0
+          : g.position.y + ((b.y || 0) - g.position.y) * (1 - Math.exp(-30 * dt));
     if (b.kind === 'player') {
-      const speed = poseWalker(g, b, dt);
-      walkerSteps(b, speed, { x: b.x, y: 0.1, z: b.z }, 'step:' + b.id, 6);
+      const speed = poseWalker(g, b, dt, {
+        falling: b.grounded === false,
+        vy: (b.vy || 0) / WALK_WORLDS.purgatory.sceneScale,
+      });
+      if (b.grounded !== false)
+        walkerSteps(b, speed, { x: b.x, y: 0.1, z: b.z }, 'step:' + b.id, 6);
     } else {
       // Insects hover in the queue.
       g.rotation.x = Math.sin(now * 0.009 + b.id) * 0.06;
@@ -3488,6 +3495,8 @@ function updateBaseWorld(dt, now) {
     }
     const w = baseWorld(b);
     g.position.lerp(new T.Vector3(w.x, w.y, w.z), 1 - Math.exp(-20 * dt));
+    // Our own body is simulated every frame: its height is not eased, so a jump keeps its apex.
+    if (b.entity === id) g.position.y = w.y;
     if (!g.userData.chute) {
       const chute = new T.Group();
       const canopy = new T.Mesh(
@@ -3515,6 +3524,7 @@ function updateBaseWorld(dt, now) {
     const speed = poseWalker(g, b, dt, {
       falling: b.grounded === false,
       parachute: !!b.parachute,
+      vy: (b.vy || 0) / MAP.ratio,
     });
     if (!respawnAt) walkerSteps(b, speed, w, 'base-step:' + b.entity, 7);
   }

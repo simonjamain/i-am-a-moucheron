@@ -2,6 +2,7 @@ import { CHARACTER_DATA as COWBOY } from './character-data.js';
 import { DEFAULT_APPEARANCE, appearanceId } from './character-appearances.ts';
 import type * as THREE from 'three';
 import type { AppearanceId } from './character-appearances.ts';
+import { airPose, riseOf, isFreeFall, FREE_FALL_LEAN } from './walker-air-pose.ts';
 import type { RiggedMeshData, TypedArrayType } from './rigged-creature.ts';
 import type { Three } from './types.ts';
 
@@ -35,8 +36,11 @@ export interface CharacterState {
   /** Ground speed (m/s). */
   speed?: number;
   seated?: boolean;
+  /** Off the ground: jumping, falling or under the canopy. */
   falling?: boolean;
   parachute?: boolean;
+  /** Vertical speed (reference m/s, up positive): tells a jump from a free fall. */
+  vy?: number;
 }
 
 // Issue #111: the playable character (user-approved Meshy + Mixamo GLB). One
@@ -256,7 +260,8 @@ export function createCharacter(T: Three, appearance: unknown = DEFAULT_APPEARAN
   let airborne = false,
     landing = 0,
     airBlend = 0,
-    hang = 0;
+    hang = 0,
+    fallBlend = 0;
   const v = (x: number, y: number, z: number) => new T.Vector3(x, y, z);
   const character = {
     appearance: id,
@@ -266,7 +271,7 @@ export function createCharacter(T: Three, appearance: unknown = DEFAULT_APPEARAN
     mixer,
     bones: byName,
     gait: () => current,
-    // state: { speed (m/s), seated, falling, parachute }
+    // state: { speed (m/s), seated, falling, parachute, vy }
     update(dt: number | null | undefined, state: CharacterState = {}): void {
       const speed = state.speed || 0;
       const inAir = !!(state.falling || state.parachute);
@@ -274,12 +279,15 @@ export function createCharacter(T: Three, appearance: unknown = DEFAULT_APPEARAN
       airborne = inAir;
       if (inAir || state.seated) landing = 0;
       const poseStep = 1 - Math.exp(-12 * Math.max(0, dt || 0));
-      airBlend += ((inAir ? 1 : 0) - airBlend) * poseStep;
+      const vy = state.vy ?? -99;
+      const freeFall = inAir && !state.parachute && isFreeFall(vy);
+      airBlend += ((inAir ? 1 : 0) - airBlend) * (1 - Math.exp(-18 * Math.max(0, dt || 0)));
       hang += ((state.parachute ? 1 : 0) - hang) * poseStep;
+      fallBlend += ((freeFall ? 1 : 0) - fallBlend) * (1 - Math.exp(-8 * Math.max(0, dt || 0)));
       const landingWeight = Math.sin(Math.PI * Math.min(1, landing / LANDING_DURATION));
       landing = Math.max(0, landing - Math.max(0, dt || 0));
       const next =
-        inAir && !state.parachute && actions.fall
+        freeFall && actions.fall
           ? 'fall'
           : state.seated || inAir || landing > 0
             ? 'idle'
@@ -299,7 +307,8 @@ export function createCharacter(T: Three, appearance: unknown = DEFAULT_APPEARAN
           ? 1
           : Math.max(0.5, Math.min(1.5, speed / authored));
       mixer.update(Math.max(0, Math.min(0.1, dt || 0)));
-      const lean = inAir && !state.parachute && !actions.fall ? 1.05 : 0;
+      // Free fall: the body tips toward horizontal, face down (the pose itself is in airPose).
+      const lean = !actions.fall && freeFall ? FREE_FALL_LEAN : 0;
       root.rotation.x += (lean - root.rotation.x) * (1 - Math.exp(-10 * Math.max(0, dt || 0)));
       if (lean === 0 && Math.abs(root.rotation.x) < 0.001) root.rotation.x = 0;
       root.position.z = -0.85 * Math.sin(root.rotation.x);
@@ -334,31 +343,14 @@ export function createCharacter(T: Three, appearance: unknown = DEFAULT_APPEARAN
           pointBone(T, bone(side + 'Arm'), bone(side + 'ForeArm'), local(s * 0.18, -1, 0), w);
           pointBone(T, bone(side + 'ForeArm'), bone(side + 'Hand'), local(s * 0.08, -1, 0.12), w);
         }
-      } else if (airBlend > 0.001 && (state.parachute || !actions.fall)) {
-        // Arms raised and spread, legs slightly apart.
+      } else if (airBlend > 0.001 && (state.parachute || !actions.fall || !freeFall)) {
+        // Jump, free fall and canopy: procedural poses (src/walker-air-pose.ts).
         for (const side of ['Left', 'Right']) {
-          const s = side === 'Left' ? 1 : -1;
-          pointBone(
-            T,
-            bone(side + 'Arm'),
-            bone(side + 'ForeArm'),
-            local(s * (1 - 0.7 * hang), 0.1 + 0.7 * hang, 0),
-            airBlend,
-          );
-          pointBone(
-            T,
-            bone(side + 'ForeArm'),
-            bone(side + 'Hand'),
-            local(s * (0.8 - 0.68 * hang), 0.05 + 0.95 * hang, 0.3 * (1 - hang)),
-            airBlend,
-          );
-          pointBone(
-            T,
-            bone(side + 'UpLeg'),
-            bone(side + 'Leg'),
-            local(s * (0.3 - 0.18 * hang), -1, -0.15 + 0.45 * hang),
-            airBlend,
-          );
+          const p = airPose(side === 'Left' ? 1 : -1, riseOf(vy), fallBlend, hang);
+          pointBone(T, bone(side + 'Arm'), bone(side + 'ForeArm'), local(...p.arm), airBlend);
+          pointBone(T, bone(side + 'ForeArm'), bone(side + 'Hand'), local(...p.fore), airBlend);
+          pointBone(T, bone(side + 'UpLeg'), bone(side + 'Leg'), local(...p.upLeg), airBlend);
+          pointBone(T, bone(side + 'Leg'), bone(side + 'Foot'), local(...p.leg), airBlend);
         }
       }
       if (landingWeight > 0 && !inAir && !state.seated) {
