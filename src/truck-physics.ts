@@ -183,6 +183,8 @@ export class TruckRig implements DebugRig {
   pose: { p: number[]; q: number[] } | null = null;
   /** Vertical speed at the previous step. */
   fallSpeed = 0;
+  /** The world has stepped since this rig was created (see CastorRig.stepped). */
+  private stepped = false;
 
   constructor(RAPIER: Rapier, params: TruckParams = TRUCK_PHYSICS, physics?: PhysicsWorld) {
     this.params = params;
@@ -398,9 +400,12 @@ export class TruckRig implements DebugRig {
 
     this.hitchTorques();
 
-    this.tractorWheels.updateVehicle(dt);
-    this.trailerWheels.updateVehicle(dt);
+    if (this.stepped) {
+      this.tractorWheels.updateVehicle(dt);
+      this.trailerWheels.updateVehicle(dt);
+    }
     this.physics.step(dt);
+    this.stepped = true;
 
     const t = this.tractor.translation(),
       r = this.tractor.rotation(),

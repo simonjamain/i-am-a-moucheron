@@ -22,6 +22,9 @@ export function poseWheels(model: THREE.Object3D, compression: readonly number[]
   const wheels = model.userData.wheels as THREE.Object3D[] | undefined;
   if (!wheels) return;
   wheels.forEach((wheel, i) => {
+    // Only the wheels registered by `rigWheels`: the Castor's six wheels (userData.wheels too)
+    // have no rest height, and `undefined + x` made them vanish (NaN position).
+    if (typeof wheel.userData.restY !== 'number') return;
     wheel.position.y = wheel.userData.restY + (compression[i] ?? 0) / MODEL_TO_REF;
     wheel.rotation.x += spin;
   });
