@@ -148,9 +148,10 @@ pendant le dépôt d’un autre dossier. La navigation clavier reste dans le pan
 
 Le guichet est un **prospectus en papier** ([règles d’interface](ui-guidelines.md)) :
 les trois emplacements y sont imprimés comme des coupons. Cocher une offre affiche
-son texte humoristique et son tableau d’amortissement ; il faut ensuite cocher
-l’**objet du prêt** (`LOAN_MOTIVES`) avant de signer. La banque est le seul service
-qui accepte « Convenance personnelle ». Relâcher un trait valide transmet une seule
+son texte humoristique et son tableau d’amortissement ; il faut ensuite cocher la
+**reconnaissance de dette** (`loanConsent`, une seule case : « cet emprunt plombe mon
+équipe pendant les N vagues à venir ») avant de signer. La banque ne demande aucun
+motif. Relâcher un trait valide transmet une seule
 commande fiable ; le contrat reçoit le tampon « APPROUVÉ ». Une erreur affiche son
 message et permet de signer à nouveau. Une annulation du pointeur ne signe jamais.
 Un contrat actif se consulte en cochant son coupon : capital restant, vagues

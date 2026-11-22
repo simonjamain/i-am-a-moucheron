@@ -1,13 +1,14 @@
 import { BedUI } from './bed-ui.js';
 import { SHOP, shopPrice, purchaseCount } from './equipment.ts';
-import { PURCHASE_MOTIVES } from './paper-form.ts';
+import { purchaseMotives } from './paper-form.ts';
 // Workshop order on the same paper document as the bed contract (BedUI): motive,
-// common-fund ledger, signature, stamp; « convenance personnelle » is refused and
-// the order must be started again from the workshop.
+// common-fund ledger, signature, stamp. Each order draws its motives; « convenance
+// personnelle (systématiquement refusé) » is refused and the order must be started
+// again from the workshop.
 const money = (n) => (Math.round(n * 100) / 100).toLocaleString('fr-FR') + ' $';
 export class PurchaseUI extends BedUI {
   motives() {
-    return PURCHASE_MOTIVES;
+    return purchaseMotives();
   }
   signedText() {
     return 'SIGNÉ · Commande transmise à l’intendance.';

@@ -479,7 +479,7 @@ ui.canvas.onpointerup({ ...e, clientX: 90 });
 await new Promise((r) => setImmediate(r));
 assert.equal(submitted, 0, 'no order without a ticked motive');
 assert.match(root.querySelector('[data-bed-status]').textContent, /Cochez un motif/);
-ui.clauses.toggle('defense');
+ui.clauses.toggle(ui.clauses.state.rule.clauses[0].id);
 ui.canvas.onpointerdown(e);
 ui.canvas.onpointercancel();
 ui.canvas.onpointerup({ ...e, clientX: 90 });

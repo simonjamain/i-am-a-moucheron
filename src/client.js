@@ -60,7 +60,7 @@ import { InsectStatus, insectScale } from '/insect-status.js';
 import { BloodEffects } from '/blood-effects.js';
 import { stepVacantAircraft } from '/vacant-flight.js';
 import { CONTRACTS, ContractBook, contractKey } from '/contracts.js';
-import { BOARDING_MOTIVES, RETURN_MOTIVES, REFUSAL_TEXT, ClauseSheet, stamp } from '/paper-form.js';
+import { stamp } from '/paper-form.js';
 import { RewardQueue } from '/rewards.js';
 import { SHOP, shopPrice, supportedPlacement } from '/equipment.js';
 import { stepBallisticVelocity, toggleParachute } from '/ballistics.js';
@@ -2246,10 +2246,8 @@ function isSuper() {
 $('punch').onclick = null;
 $('heavyPunch').onclick = null;
 $('soulDash').onclick = null;
-// Paper dossier state (see paperMotives below).
-let paperClauses = null,
-  paperShown = false,
-  paperRefusing = false,
+// Paper dossier state.
+let paperShown = false,
   paperLingerUntil = 0,
   paperLingerTimer = 0;
 let soulBody = null,
@@ -2313,11 +2311,6 @@ function redrawInk() {
 sig.onpointerdown = (e) => {
   e.preventDefault();
   if (boardingBusy || soulBusy || boardingSelectionBusy || signaturePointer !== null) return;
-  if (paperRefusing) return;
-  if (paperClauses && !paperClauses.complete) {
-    $('paperMessage').textContent = 'Cochez un motif avant de signer.';
-    return;
-  }
   signaturePointer = e.pointerId;
   try {
     sig.setPointerCapture(e.pointerId);
@@ -2365,41 +2358,10 @@ $('paperClose').onclick = (event) => {
 $('signSubmit').onclick = submitPaper;
 let paperSuppressed = false;
 let paperSubmission = null;
-// Paper dossier (docs/ui-guidelines.md): the first document of a boarding or of a
-// return from the purgatory has a motive to tick; « convenance personnelle » is
-// refused and closes the dossier. Seat changes and exchanges keep a bare signature.
-function paperMotives(context, index) {
-  if (index !== 0) return null;
-  if (context === 'boarding' || context === 'equipment') return BOARDING_MOTIVES;
-  if (context === 'purgatory' || context === 'super') return RETURN_MOTIVES;
-  return null;
-}
+// Paper dossier (docs/ui-guidelines.md): every document is signed as it is; only
+// workshop orders ask for a motive.
 function paperInkHint() {
-  return paperClauses && !paperClauses.complete
-    ? 'Cochez un motif, puis signez.'
-    : 'Signez librement dans le cadre';
-}
-function refreshPaperLock() {
-  $('papers').classList.toggle('locked', !!paperClauses && !paperClauses.complete);
-  if (!inkReady()) $('inkState').textContent = paperInkHint();
-}
-// Really refused: nothing is sent; the dossier closes and must be started again.
-function refusePaper() {
-  paperRefusing = true;
-  stamp($('paperStamp'), 'REFUSÉ', true);
-  sound.play('stamp', paperSource(), { ref: 8 });
-  $('paperMessage').textContent =
-    REFUSAL_TEXT + (respawnAt ? ' Recommencez au guichet.' : ' Recommencez depuis le poste.');
-  setTimeout(() => {
-    paperRefusing = false;
-    boardingOpen = false;
-    clearSignature();
-    paperContext = '';
-    if (respawnAt) paperSuppressed = true;
-    paperLingerUntil = performance.now() + 500;
-    renderPaper();
-    captureMouse();
-  }, 1300);
+  return 'Signez librement dans le cadre';
 }
 const contractBook = new ContractBook();
 const documents = Object.fromEntries(
@@ -2517,12 +2479,8 @@ function renderPaper() {
     paperContext = key;
     signatureForm = index;
     $('paperMessage').textContent = '';
-    const motives = paperMotives(context, index);
-    paperClauses = motives ? new ClauseSheet(motives, $('paperClauses'), refreshPaperLock) : null;
-    if (!motives) $('paperClauses').replaceChildren();
     clearSignature();
     redrawInk();
-    refreshPaperLock();
   }
   const doc = contractBook.get(
       contractKey(
@@ -2575,11 +2533,7 @@ function renderPaper() {
           : 'Déposer le document signé →';
 }
 async function submitPaper() {
-  if (boardingBusy || soulBusy || paperRefusing || !inkReady()) return;
-  if (paperClauses?.refused) {
-    refusePaper();
-    return;
-  }
+  if (boardingBusy || soulBusy || !inkReady()) return;
   const signature = true;
   paperSubmission = {
     context: activeTransfer

@@ -1,8 +1,18 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 413,
+    changes: [
+      'Moins de cases à cocher : on monte à bord, on revient du purgatoire et on choisit son lit en signant directement.',
+      'Les bons de commande proposent des motifs plus variés, et la convenance personnelle annonce d’emblée qu’elle sera refusée.',
+      'À la banque, plus d’objet du prêt : une seule case pour reconnaître que l’emprunt plombe l’équipe pendant ses vagues.',
+    ],
+  },
+  {
     version: 412,
-    changes: ['Les fusées de proximité explosent en s’éloignant de la vraie forme des meubles, plus de la boîte autour.'],
+    changes: [
+      'Les fusées de proximité explosent en s’éloignant de la vraie forme des meubles, plus de la boîte autour.',
+    ],
   },
   {
     version: 411,

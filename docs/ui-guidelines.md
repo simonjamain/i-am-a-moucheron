@@ -65,22 +65,22 @@ remplir, signatures, tampons, cachets « APPROUVÉ ».
 
 Tous les documents du jeu sont en papier :
 
-| Document                                                        | Motif à cocher (jamais d’office)     |
-| --------------------------------------------------------------- | ------------------------------------ |
-| Dossier de prise de poste (appareil ou défense fixe), 1ʳᵉ pièce | `BOARDING_MOTIVES`                   |
-| Retour du purgatoire ou de Super Saint-Pierre, 1ʳᵉ pièce        | `RETURN_MOTIVES`                     |
-| Contrat de lit / résiliation                                    | `BED_MOTIVES` / `BED_CANCEL_MOTIVES` |
-| Bon de commande de l’atelier                                    | `PURCHASE_MOTIVES`                   |
-| Prospectus de la banque (offre cochée puis objet du prêt)       | `LOAN_MOTIVES`                       |
-| Pièces suivantes, changement et échange de poste                | aucun (signature seule)              |
+| Document                                             | Case à cocher (jamais d’office)                  |
+| ---------------------------------------------------- | ------------------------------------------------ |
+| Bon de commande de l’atelier                         | un motif, `purchaseMotives()`                    |
+| Prospectus de la banque, après le choix de l’offre   | la reconnaissance de dette, `loanConsent(waves)` |
+| Dossiers de prise de poste et de retour, lit, autres | aucune (signature seule)                         |
 
-Chaque motif propose « Convenance personnelle », **réellement refusée** (sauf à la banque,
-seul service qui l’accepte : elle ne juge pas les motifs, elle prélève les échéances) : tampon « REFUSÉ »,
-rien n’est envoyé au serveur, le document se ferme et il faut recommencer (viser de nouveau le
-poste, revenir au lit, à l’atelier ou au guichet). Une signature acceptée reçoit le tampon
-« APPROUVÉ » sur la feuille, qui s’efface pendant que la partie reprend. Les changements et
-échanges de poste, faits en plein vol, gardent une signature seule pour rester rapides.
-Composant partagé : `src/paper-form.ts` (motifs, cases, coche au crayon, tampons) ; le lit et
+Seul le **bon de commande** demande un motif. Chaque commande tire trois motifs au hasard
+dans `PURCHASE_MOTIVE_POOL`, puis propose toujours « Convenance personnelle
+(systématiquement refusé) » : le formulaire annonce qu’il la refusera et la propose quand
+même. Cochée, elle est **réellement refusée** : tampon « REFUSÉ », rien n’est envoyé au
+serveur, le document se ferme et il faut recommencer depuis l’atelier. La banque ne demande
+pas de motif (elle ne juge pas, elle prélève) : une seule case reconnaît que l’emprunt pèse
+sur l’équipe pendant ses vagues. Les autres documents se signent tels quels. Une signature
+acceptée reçoit le tampon « APPROUVÉ » sur la feuille, qui s’efface pendant que la partie
+reprend.
+Composant partagé : `src/paper-form.ts` (cases, coche au crayon, tampons) ; le lit et
 le bon de commande en héritent par `src/bed-ui.js`, le dossier est rendu par `renderPaper`
 (`src/client.js`) et le prospectus bancaire par `src/bank-ui.js` (coupons cochés au crayon,
 tampons « SIGNÉ » et « PAYÉ » sur le contrat et ses échéances). Le banquier s’ouvre à
