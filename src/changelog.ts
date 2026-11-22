@@ -5,6 +5,10 @@ export interface ChangelogEntry {
 }
 export const PLAYER_CHANGELOG: ChangelogEntry[] = [
   {
+    version: 420,
+    changes: ['Le conducteur du char peut orienter sa mitrailleuse de 15° autour de l’avant.'],
+  },
+  {
     version: 419,
     changes: [
       'Un biplan laissé par son pilote reste garé, freins serrés, même sur un sol penché : il ne se redresse plus tout seul.',
