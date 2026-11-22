@@ -5,6 +5,20 @@ export interface ChangelogEntry {
 }
 export const PLAYER_CHANGELOG: ChangelogEntry[] = [
   {
+    version: 428,
+    changes: [
+      'Tous les avions volent avec la même physique que le biplan, roues qui suivent les ressorts comprises.',
+      'Un char, un camion ou un Castor laissé par son conducteur reste garé, même sur une pente.',
+    ],
+  },
+  {
+    version: 427,
+    changes: [
+      'Quand on regarde trop haut ou trop loin, l’équipement se pose à la distance maximale au lieu de disparaître.',
+      'Clic gauche pour poser, clic droit pour garder l’achat pour plus tard ; l’encart de pose disparaît.',
+    ],
+  },
+  {
     version: 426,
     changes: [
       'Le biplan décolle un peu plus tôt : il se redresse tout seul en prenant de la vitesse.',
