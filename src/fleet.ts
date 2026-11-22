@@ -323,6 +323,13 @@ export function doorOffset(type: VehicleType): number {
   return (hull ?? VEHICLES[type].span / 2) + DOOR_MARGIN;
 }
 
+/**
+ * The player appears this high above the surface under the vehicle (office metres) and
+ * drops onto the real support at the door: a tilted hull or a raised edge there must
+ * never leave the feet under the surface, where the walker would fall through it.
+ */
+export const EXIT_LIFT = 0.3 * ACTOR_UNIT;
+
 export function vehicleEntry(v: VehicleRef, seat: string = 'pilot'): XYZ {
   const profile: VehicleProfile = VEHICLES[v.type];
   const p = v.state.p,
@@ -353,7 +360,7 @@ export function vehicleEntry(v: VehicleRef, seat: string = 'pilot'): XYZ {
     z = 2 * (q[0] * q[2] - q[3] * q[1]);
   return {
     x: p[0] + (x * s + 2 * (q[0] * q[2] + q[3] * q[1]) * along) * MAP.ratio,
-    y: p[1] - profile.gear,
+    y: p[1] - profile.gear + EXIT_LIFT,
     z: p[2] + (z * s + (1 - 2 * (q[0] * q[0] + q[1] * q[1])) * along) * MAP.ratio,
   };
 }

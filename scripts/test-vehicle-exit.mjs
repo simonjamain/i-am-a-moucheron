@@ -22,3 +22,37 @@ for (const [type, profile] of Object.entries(VEHICLES))
     );
   }
 console.log('Vehicle exit: door beside the hull for every vehicle and seat');
+
+// Sur un meuble : le joueur apparaît au-dessus de la surface, jamais sous elle.
+{
+  const { EXIT_LIFT } = await import('../src/fleet.ts');
+  const surface = 0.4;
+  for (const type of ['fighter', 'bomber', 'helicopter', 'tank'].filter((t) => VEHICLES[t])) {
+    const v = { type, state: { p: [0, surface + VEHICLES[type].gear, 0], q: [0, 0, 0, 1] } };
+    const y = vehicleEntry(v, 'pilot').y;
+    assert.ok(y > surface, type + ' : sortie sous la surface');
+    assert.ok(Math.abs(y - surface - EXIT_LIFT) < 1e-9);
+  }
+  console.log('Sortie : apparition au-dessus de la surface (meubles) OK');
+}
+
+// Le marcheur posé là se pose sur le meuble ; sous la surface il la traverserait.
+{
+  const { stepWalker } = await import('../src/sortie.ts');
+  const { OFFICE_LAYOUT } = await import('../src/layout.ts');
+  const { EXIT_LIFT } = await import('../src/fleet.ts');
+  const { ACTOR_UNIT } = await import('../src/scale.ts');
+  const o = OFFICE_LAYOUT.base,
+    top = 0.4,
+    desk = {
+      min: { x: o.originX - 1, y: 0, z: o.originZ - 1 },
+      max: { x: o.originX + 1, y: top, z: o.originZ + 1 },
+    };
+  const settle = (y) => {
+    const body = { x: 0, z: 0, y, vy: 0, grounded: true };
+    for (let i = 0; i < 60; i++) stepWalker(body, 1 / 60, [desk], null);
+    return body.y;
+  };
+  assert.ok(settle(top + EXIT_LIFT) > top, 'sortie sur un meuble : reste dessus');
+  assert.ok(settle(top - 0.2 * ACTOR_UNIT) < top, 'témoin : trop bas, le marcheur traverse');
+}
