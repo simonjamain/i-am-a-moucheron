@@ -91,6 +91,10 @@ chargé à la première sortie, le décor d'un plan est construit une fois par p
   véhicule terrestre, mis en sommeil après une seconde de repos, puis réveillé tout seul si
   quelque chose le heurte. Un dormeur ne coûte rien et n'envoie plus de mises à jour. Dès
   qu'un pilote s'assoit, le véhicule quitte le monde du serveur et le client reprend l'autorité.
+- **Repos = vitesse nulle** : un véhicule terrestre au repos (même critère que le sommeil) rapporte
+  `v` et `omega` nuls, et ses corps sont remis à zéro avant de dormir. Le solveur laisse sinon un
+  résidu (≈ 0,6 m/s vers le haut) que les clients prolongent : l'engin acheté montait alors
+  lentement dans l'affichage. Test : `test-parked-host.mjs` (4b).
 - **Véhicules de départ et achetés** : ils naissent déjà dans ce monde (`hosted` dès `createVehicle`),
   se posent sur le pont puis s'endorment seuls. Anti-boucle de réapparition (`Game.fleet`,
   `advanceParked`) : pendant 5 s après sa naissance un engin ne peut pas être « parti du pont » ;

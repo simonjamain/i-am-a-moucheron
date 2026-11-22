@@ -177,8 +177,19 @@ export class ParkedHost {
             Math.abs(s.v[1]) < MAP.metres(1.2) &&
             Math.hypot(...(s.omega ?? [0, 0, 0])) < 0.05;
           entry.calm = calm ? entry.calm + STEP : 0;
+          // At rest the vehicle reports no motion: the solver's residue (a few tenths of a
+          // metre per second, upwards, and a slight spin) is not a speed, and clients carry a
+          // vehicle on at its reported velocity, so it would creep upwards in the display.
+          if (calm) {
+            s.v = [0, 0, 0];
+            if (s.omega) s.omega = [0, 0, 0];
+          }
           if (entry.calm >= CALM) {
-            for (const body of entry.ground.bodies) body.sleep();
+            for (const body of entry.ground.bodies) {
+              body.setLinvel({ x: 0, y: 0, z: 0 }, false);
+              body.setAngvel({ x: 0, y: 0, z: 0 }, false);
+              body.sleep();
+            }
             entry.frozen = true;
             entry.calm = 0;
           }
