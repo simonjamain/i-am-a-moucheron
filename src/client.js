@@ -10,7 +10,7 @@ import { makeBed } from '/bed-model.js';
 import { officeFogOpacity, installOfficeFog, officeFogCeiling } from '/office-fog.js';
 import { makeFortificationStation } from '/fortification-model.js';
 import { placementFacing } from '/placement-aim.js';
-import { placementAim } from '/placement-aim.js';
+import { placementAim, reachClampedPlacement } from '/placement-aim.js';
 import { WaveCouncilUI } from '/wave-council-ui.js';
 import { WaveForecastScene, speciesSymbols } from '/wave-forecast-scene.js';
 import { GroundDefenseUI } from '/ground-defense-ui.js';
@@ -980,6 +980,12 @@ canvas.addEventListener('mousemove', (e) => {
   aimMouse = [e.clientX, e.clientY];
 });
 canvas.addEventListener('mousedown', (event) => {
+  if (placingEquipment && canCapture() && controlFocus.active && [0, 2].includes(event.button)) {
+    event.preventDefault();
+    if (event.button === 0) placePurchased();
+    else cancelPlacement();
+    return;
+  }
   if (event.button === 0 && useAimedPost()) {
     event.preventDefault();
     return;
@@ -5317,7 +5323,6 @@ function cancelPlacement() {
   placementCandidate = null;
   placementToken = null;
   ghost.visible = false;
-  $('placementControls').classList.add('hidden');
 }
 function cameraPlacement(reach) {
   const b = selfBase();
@@ -5334,7 +5339,14 @@ function updatePlacement() {
     return;
   }
   const w = { ...baseWorld(body), face: body.face };
-  const p = cameraPlacement(MAP.metres(9)),
+  const reach = MAP.metres(9);
+  const p = reachClampedPlacement(
+      w,
+      camera.position,
+      camera.getWorldDirection(new T.Vector3()),
+      reach,
+      (origin, direction) => aimPlacement(w, origin, direction, reach),
+    ),
     candidate =
       body.grounded !== false && p
         ? supportedPlacement(
@@ -5362,16 +5374,9 @@ function updatePlacement() {
   ghost.traverse((o) => {
     if (o.isMesh) o.material.color.set(candidate ? '#badb84' : '#e87b68');
   });
-  $('placeConfirm').disabled = !candidate || purchaseBusy;
-  $('placeConfirm').textContent = 'E · Poser · déjà payé';
-  $('placementStatus').textContent = candidate
-    ? 'Surface libre · E : poser · déjà payé'
-    : 'Surface trop petite, occupée ou hors de portée';
 }
 $('shopOpen').onclick = toggleShop;
 $('shopClose').onclick = toggleShop;
-$('placeCancel').onclick = cancelPlacement;
-$('placeConfirm').onclick = placePurchased;
 
 const fallingEnemies = [];
 function disposeCorpse(corpse) {
@@ -6593,8 +6598,7 @@ function beginPlacement(order) {
   ghost = ghosts[order.item];
   placingEquipment = true;
   $('shop').classList.add('hidden');
-  $('placementControls').classList.remove('hidden');
-  notify('Achat payé · E : poser · Échap : conserver pour plus tard', 4);
+  notify('Achat payé · clic gauche ou E : poser · clic droit ou Échap : conserver', 4);
   captureMouse();
 }
 async function placePurchased() {

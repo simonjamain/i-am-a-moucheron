@@ -250,3 +250,28 @@ ui.press();
 assert.equal(ui.anchor, null, 'invalid aim cannot anchor');
 assert.equal(commands.length, 3, 'invalid aim cannot purchase');
 console.log('Camera ray: surfaces, occlusion, reach; Meshy wall: variable count and bounds OK');
+
+// Aim beyond reach lands at the farthest reachable distance (never vanishes).
+{
+  const { reachClampedPlacement } = await import('../src/placement-aim.ts');
+  const body = { x: 0, y: 0, z: 0 };
+  const origin = { x: 0, y: 0.05, z: 0 };
+  const floor = (o, d) => (d.y < 0 ? { x: o.x, y: 0, z: o.z } : null); // a flat floor, hit only by downward rays
+  const up = { x: 0, y: 0.9, z: -0.4 };
+  const p = reachClampedPlacement(body, origin, up, 0.5, (o, d) =>
+    Math.hypot(o.x - body.x, o.z - body.z) <= 0.5 + 1e-8 ? floor(o, d) : null,
+  );
+  assert.ok(p, 'looking too high still gives a preview');
+  assert.ok(Math.abs(Math.hypot(p.x, p.z) - 0.5) < 1e-9, 'at the maximum distance');
+  assert.ok(p.z < 0 && Math.abs(p.x) < 1e-9, 'along the aimed heading');
+  const direct = reachClampedPlacement(body, origin, { x: 0, y: -1, z: 0 }, 0.5, () => ({
+    x: 0.1,
+    y: 0,
+    z: 0,
+  }));
+  assert.deepEqual(direct, { x: 0.1, y: 0, z: 0 }, 'an in-reach hit is untouched');
+  assert.equal(
+    reachClampedPlacement(body, origin, { x: 0, y: 1, z: 0 }, 0.5, () => null),
+    null,
+  );
+}

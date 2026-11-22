@@ -5,6 +5,13 @@ export interface ChangelogEntry {
 }
 export const PLAYER_CHANGELOG: ChangelogEntry[] = [
   {
+    version: 419,
+    changes: [
+      'Quand on regarde trop haut ou trop loin, l’équipement se pose à la distance maximale au lieu de disparaître.',
+      'Clic gauche pour poser, clic droit pour garder l’achat pour plus tard ; l’encart de pose disparaît.',
+    ],
+  },
+  {
     version: 418,
     changes: [
       'Au sol, le biplan ne répond plus aux gouvernes sans air : il faut rouler un peu, avec un filet de gaz, pour le diriger.',

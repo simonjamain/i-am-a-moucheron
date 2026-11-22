@@ -72,3 +72,31 @@ export function placementFacing(
 ): number {
   return Math.atan2(position.x - builder.x, position.z - builder.z);
 }
+
+// Aim beyond reach (too high, or a floor too far away): instead of vanishing, the
+// preview lands at the farthest distance the builder can reach, along the same
+// horizontal heading, on the first top surface found below the camera height.
+export function reachClampedPlacement(
+  body: XYZ | null | undefined,
+  origin: XYZ | null | undefined,
+  direction: XYZ | null | undefined,
+  reach: number,
+  cast: (origin: XYZ, direction: XYZ) => XYZ | null,
+): XYZ | null {
+  const direct = cast(origin as XYZ, direction as XYZ);
+  if (direct || !body || !origin || !direction || !Number.isFinite(reach)) return direct;
+  const length = Math.hypot(direction.x, direction.z);
+  if (!(length > 1e-6)) return null;
+  const heading = { x: direction.x / length, z: direction.z / length };
+  for (const fraction of [1, 0.85, 0.7, 0.55, 0.4, 0.25]) {
+    const distance = reach * fraction;
+    const from = {
+      x: body.x + heading.x * distance,
+      y: origin.y,
+      z: body.z + heading.z * distance,
+    };
+    const point = cast(from, { x: 0, y: -1, z: 0 });
+    if (point) return point;
+  }
+  return null;
+}
