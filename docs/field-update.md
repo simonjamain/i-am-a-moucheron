@@ -63,6 +63,16 @@ Les valeurs CHU-01 de cette livraison ont été remplacées par CHU-02 : gravit�
 par sous-pas, le parachute progressif et la déduplication restent. Constantes,
 mesures de chute et origine du changement : [physique actuelle](multiplayer-return.md#gravité-parachute-et-pistolet).
 
+**Saut.** Espace à pied, au sol, lance un saut (`jumpWalker`, `src/field-physics.ts`) : vitesse de
+décollage de 3,5 m/s de référence (apex d'environ 0,6 m), même gravité que la chute, pas de dégât
+à l'atterrissage (bien sous la vitesse sûre). Le bureau l'intègre dans `stepWalker` (surfaces réelles
+sous le personnage) ; le purgatoire, plat, dans `stepFlatJump`. Les deux partagent le même départ de
+saut et les mêmes champs réseau (`y`, `vy`, `grounded`), donc les autres joueurs voient le saut. Pendant
+un saut, le contrôle au sol et la limite de vitesse sont conservés (`walk-arena.ts` ne parle de chute
+libre qu'au-delà de 1,1 × la vitesse de décollage vers le bas). Le parachute ne s'ouvre qu'après une
+vraie chute (0,75 × la vitesse sûre d'impact vers le bas) : un saut ordinaire ne l'ouvre pas, Espace en
+l'air le laisse alors inactif ; replier un parachute ouvert reste possible à tout moment.
+
 ## Départ, lits et contrats personnels
 
 La fin des trois papiers du purgatoire restaure 100 PV et recrée le corps dans

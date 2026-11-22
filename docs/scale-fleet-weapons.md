@@ -85,8 +85,7 @@ les radars sont décrits dans
 [logistique et contrats](logistics-contracts.md). La DCA fixe et le pistolet restent
 à munitions illimitées ; la panne sèche supprime la poussée, sans figer le vol.
 
-Current [Spitfire, impacts and reticle](clean-flight.md) keep angular rates unscaled;
-cleaning range is explicitly two world metres, unlike miniature ballistic ranges.
+Current [Spitfire, impacts and reticle](clean-flight.md) keep angular rates unscaled.
 
 Le H2 et le D2 sont décrits dans [véhicules d’appui](support-vehicles.md).
 La proximité D2 est exprimée en mètres de référence (0,5–20), contrairement au

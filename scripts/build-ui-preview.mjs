@@ -16,7 +16,7 @@ export function uiPreview(html) {
   );
   const live = html.slice(
     html.indexOf('<div id="commandHelp"'),
-    html.indexOf('<div id="dirtView"'),
+    html.indexOf('<div id="tankReticle"'),
   );
   const death = html.slice(
     html.indexOf('<div id="deathWatch"'),

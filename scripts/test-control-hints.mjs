@@ -26,7 +26,7 @@ for (const expected of [
   /Molette : zoom/,
   /G \/ clic molette : construire/,
   /E : interagir/,
-  /Espace : jet/,
+  /Espace : sauter/,
   /P : achats/,
 ])
   assert.match(foot, expected);

@@ -19,7 +19,7 @@ import { stepFlight } from '../src/flight.ts';
 import { swarmAudioGroups } from '../src/game-audio/swarm.ts';
 import { AircraftFire } from '../src/aircraft-fire.ts';
 import { wavePlan, swarmFrame } from '../src/waves.js';
-import { collisionDamage, washTarget, WASH } from '../src/vehicle-care.js';
+import { collisionDamage } from '../src/vehicle-care.js';
 import { ballisticMarks } from '../src/tank-reticle.js';
 import { integrateOrdnance } from '../src/ordnance.js';
 import { PurchaseUI } from '../src/purchase-ui.js';
@@ -267,7 +267,7 @@ cr.enemyDamage[index] = 40;
 const expected = collisionDamage(plan.roster[index].hp, 40);
 cg.vehicleContacts(cr, now);
 assert.equal(hull.state.hp, 100 - expected);
-assert.equal(hull.dirt, WASH.dirtPerImpact);
+assert.equal(hull.dirt, undefined, 'there is no dirt any more');
 cg.vehicleContacts(cr, now);
 assert.equal(hull.state.hp, 100 - expected, 'persistent contact does not repeat');
 hull.state.p = [point[0] + 1, point[1], point[2]];
@@ -276,78 +276,11 @@ cg.vehicleContacts(cr, now);
 hull.state.p = [...point];
 cg.vehicleContacts(cr, now);
 assert.equal(hull.state.hp, 100 - 2 * expected);
-assert.equal(hull.dirt, 2 * WASH.dirtPerImpact);
 cr.kills.add(index);
 cg.vehicleContacts(cr, now);
 assert.equal(hull.state.hp, 100 - 2 * expected);
 console.log(
-  'Contacts: 5% remaining enemy HP, wounded enemy, persistent contact, separation/reimpact, killed enemy exclusion, shared hull dirt.',
-);
-
-// Cleaning ray: real range and first obstruction; authority rate and clean event.
-const wg = new Game({ now: () => now }),
-  wj = wg.join({ code: 'WASH' }),
-  wk = wg.join({ code: 'WASH' }),
-  wr = wg.rooms.get('WASH');
-const people = [wr.pilots.get(wj.id), wr.pilots.get(wk.id)];
-const target = [...wr.vehicles.values()][0];
-target.state.p = [0, 0.6, -0.5];
-target.dirt = 1;
-target.state.landed = false;
-const origin = [0, 0.6, 0],
-  dir = [0, 0, -1];
-assert.equal(washTarget(origin, dir, [target], []), target);
-assert.equal(washTarget(origin, [0, 0, 1], [target], []), null);
-assert.equal(washTarget([0, 0.6, 3], dir, [target], []), null);
-assert.equal(
-  washTarget(
-    origin,
-    dir,
-    [target],
-    [{ min: { x: -1, y: 0, z: -0.2 }, max: { x: 1, y: 1, z: -0.1 } }],
-  ),
-  null,
-);
-for (const person of people)
-  Object.assign(wg.base(wr, person), {
-    x: (0 - OFFICE_LAYOUT.base.originX) / ACTOR_UNIT,
-    z: OFFICE_LAYOUT.base.originZ / ACTOR_UNIT,
-    y: 0.6 - MAP.metres(0.9),
-    grounded: true,
-  });
-const wash = (person) =>
-  wg.command('WASH', person.id, 'wash', {
-    direction: dir,
-    epoch: wr.base.epoch,
-    incarnation: person.incarnation,
-  });
-wash(people[0]);
-for (let i = 0; i < 25; i++) {
-  now += 200;
-  people.forEach((p) => (p.seen = now));
-  wash(people[0]);
-}
-assert.ok(Math.abs(target.dirt - 0.5) < 1e-8);
-wash(people[1]);
-for (let i = 0; i < 13; i++) {
-  now += 200;
-  people.forEach((p) => (p.seen = now));
-  wash(people[0]);
-  wash(people[1]);
-}
-assert.equal(target.dirt, 0);
-assert.equal(wr.effects.filter((e) => e.kind === 'clean').length, 1);
-wash(people[0]);
-assert.equal(wr.effects.filter((e) => e.kind === 'clean').length, 1);
-wg.assign(wr, people[0], target, 'pilot', null);
-assert.throws(() => wash(people[0]), /Sortez/);
-wg.command('WASH', people[1].id, 'reset');
-assert.equal(
-  [...wr.vehicles.values()].some((v) => v.dirt),
-  false,
-);
-console.log(
-  'Cleaning: 2 world metres, wrong direction/range/solid blocked, 10s single flow, additive cooperation, one clean event, occupants forbidden, reset.',
+  'Contacts: 5% remaining enemy HP, wounded enemy, persistent contact, separation/reimpact, killed enemy exclusion.',
 );
 
 // Reticle shares authority integration, sampled at physical world distances.

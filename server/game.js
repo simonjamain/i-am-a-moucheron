@@ -13,7 +13,7 @@ import {
 } from '../src/ground-defense-state.js';
 import { advanceGroundCrowd } from '../src/ground-crowd.js';
 import { clampProximity } from '../src/mobile-flak.js';
-import { collisionDamage, washTarget, WASH } from '../src/vehicle-care.js';
+import { collisionDamage } from '../src/vehicle-care.js';
 import { purchaseCount } from '../src/equipment.ts';
 import { bedAccess, bedSpawn } from '../src/beds.ts';
 import { impactDamage } from '../src/field-physics.ts';
@@ -493,7 +493,6 @@ export class Game {
       room: r.code,
       type,
       state,
-      dirt: 0,
       ready: 1,
       created: this.now(),
       seats: new Map(),
@@ -1301,7 +1300,6 @@ export class Game {
     else if (path === 'sync') this.sync(r, p, b);
     else if (path === 'purchase-sign') this.purchaseSign(r, p, b);
     else if (path === 'place-purchase') this.placePurchase(r, p, b);
-    else if (path === 'wash') this.wash(r, p, b);
     else if (path === 'fixed-dca-fire') {
       const result = this.fixedDcaFire(r, p, b);
       if (result) return result;
@@ -1927,7 +1925,6 @@ export class Game {
             0,
             v.state.hp - collisionDamage(plan.roster[i].hp, r.enemyDamage[i] || 0),
           );
-          v.dirt = Math.min(1, (v.dirt || 0) + WASH.dirtPerImpact);
         }
         if (impact) contacts.push(i);
       });
@@ -1935,42 +1932,6 @@ export class Game {
       v.contactWave = r.wave;
       v.contactPosition = [...v.state.p];
     }
-  }
-  wash(r, p, b) {
-    requireGame(
-      p.life === 'alive' &&
-        p.mode === 'foot' &&
-        b.epoch === r.base.epoch &&
-        b.incarnation === p.incarnation,
-      'Sortez du véhicule pour nettoyer.',
-    );
-    const body = this.base(r, p, b.ground),
-      w = body && baseWorld(body);
-    requireGame(
-      w &&
-        Array.isArray(b.direction) &&
-        b.direction.length === 3 &&
-        b.direction.every(Number.isFinite),
-      'Jet invalide.',
-    );
-    const origin = [w.x, w.y + MAP.metres(0.9), w.z];
-    const target = washTarget(origin, b.direction, values(r.vehicles), this.solids);
-    const elapsed =
-      p.washAt === undefined ? 0 : Math.max(0, Math.min(0.25, (this.now() - p.washAt) / 1000));
-    p.washAt = this.now();
-    p.state.washing = { origin, direction: b.direction, at: this.now() };
-    if (!target || !target.dirt) return;
-    const before = target.dirt;
-    target.dirt = Math.max(0, before - elapsed / WASH.seconds);
-    if (target.dirt < 1e-8) target.dirt = 0;
-    if (before > 0 && !target.dirt)
-      r.effects.push({
-        id: ++r.effectSeq,
-        kind: 'clean',
-        vehicle: target.id,
-        p: [...target.state.p],
-        at: this.now(),
-      });
   }
   buy(r, p, b, prepaid = null) {
     const item = SHOP[b.item],

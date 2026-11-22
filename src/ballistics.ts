@@ -1,4 +1,7 @@
 import { MAP, REFERENCE } from './scale.ts';
+import { WALKER_FALL } from './field-physics.ts';
+/** Share of the safe landing speed a walker must fall at before the canopy can open. */
+const OPEN_PARACHUTE_SPEED = 0.75;
 import type { Vector3 } from 'three';
 
 /** Vertical fall state integrated by stepFall (office metres, m/s). */
@@ -45,6 +48,8 @@ export function stepFall(body: FallingBody, dt: number, ratio: number = MAP.rati
 }
 export function toggleParachute(body: FallingBody | null | undefined): boolean {
   if (!body || body.grounded !== false) return false;
+  // Opening needs a real fall: the descent of an ordinary jump never reaches this speed.
+  if (!body.parachute && body.vy > -OPEN_PARACHUTE_SPEED * WALKER_FALL.safeImpact) return false;
   body.parachute = !body.parachute;
   return true;
 }
