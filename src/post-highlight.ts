@@ -9,7 +9,10 @@ import type { SeatPost } from './seat-posts.ts';
 // over the finished frame. The whole part stands out from its vehicle, even across
 // the vehicle's own surfaces. A shared hull (cockpit, turret glazing) is clipped to a
 // sphere around the post. An installation (fixed defence, bed) is outlined whole.
-// Signal blue marks a free post.
+// Signal blue marks a free post. A skinned model (the purgatory's guard) gets a
+// skinned mask on the same skeleton, so the line follows its animation. The
+// outline pass only covers the screen rectangle of the shown parts (plus the line
+// width): its per-pixel search is costly over a whole high-resolution screen.
 
 /** Interaction signal, shared with the CSS token --signal (docs/art-direction.md). */
 export const SIGNAL_COLOR = '#2ec4d6';
@@ -28,9 +31,13 @@ export function postMaskMaterial(T: Three): THREE.ShaderMaterial {
       clipRadius: { value: 0 },
     },
     vertexShader: `
+      #include <skinning_pars_vertex>
       varying vec3 vWorld;
       void main() {
-        vec4 world = modelMatrix * vec4(position, 1.0);
+        vec3 transformed = vec3(position);
+        #include <skinbase_vertex>
+        #include <skinning_vertex>
+        vec4 world = modelMatrix * vec4(transformed, 1.0);
         vWorld = world.xyz;
         gl_Position = projectionMatrix * viewMatrix * world;
       }`,
@@ -47,6 +54,9 @@ export function postMaskMaterial(T: Three): THREE.ShaderMaterial {
     depthWrite: false,
   });
 }
+
+/** Mask meshes currently shown, whatever their post (bounds of the outline pass). */
+const shown = new Set<THREE.Mesh>();
 
 /** Mask meshes of one post of one vehicle model, created hidden. */
 export class PostHighlight {
@@ -77,7 +87,15 @@ export class PostHighlight {
       });
     for (const source of sources) {
       const material = postMaskMaterial(T);
-      const mesh = new T.Mesh(source.geometry, material);
+      const skinned = source as THREE.SkinnedMesh;
+      let mesh: THREE.Mesh;
+      if (skinned.isSkinnedMesh) {
+        // Same skeleton and bind matrix: the mask moves with the animated model.
+        const mask = new T.SkinnedMesh(source.geometry, material);
+        mask.bind(skinned.skeleton, skinned.bindMatrix);
+        mask.frustumCulled = false;
+        mesh = mask;
+      } else mesh = new T.Mesh(source.geometry, material);
       mesh.name = 'post-outline';
       mesh.visible = false;
       mesh.castShadow = mesh.receiveShadow = false;
@@ -98,20 +116,79 @@ export class PostHighlight {
       material.uniforms.clipCentre.value.copy(centre);
       material.uniforms.clipRadius.value = (this.post.outline.clipRadius || 0) * scale;
       mesh.visible = true;
+      shown.add(mesh);
     }
   }
 
   hide(): void {
-    for (const { mesh } of this.parts) mesh.visible = false;
+    for (const { mesh } of this.parts) {
+      mesh.visible = false;
+      shown.delete(mesh);
+    }
   }
 
   dispose(): void {
     for (const { mesh, material } of this.parts) {
+      shown.delete(mesh);
       mesh.removeFromParent();
       material.dispose();
     }
     this.parts.length = 0;
   }
+}
+
+/**
+ * Drawing-buffer rectangle (origin bottom-left) covering the shown mask meshes,
+ * grown by `margin` pixels; the whole screen when a part reaches behind the
+ * camera; null when nothing is shown or everything is off screen.
+ */
+export function selectionRect(
+  T: Three,
+  camera: THREE.Camera,
+  size: { x: number; y: number },
+  margin: number,
+): { x: number; y: number; w: number; h: number } | null {
+  if (!shown.size) return null;
+  let x0 = Infinity,
+    y0 = Infinity,
+    x1 = -Infinity,
+    y1 = -Infinity;
+  const corner = new T.Vector3(),
+    clip = new T.Vector4();
+  const viewProjection = new T.Matrix4().multiplyMatrices(
+    camera.projectionMatrix,
+    camera.matrixWorldInverse,
+  );
+  for (const mesh of shown) {
+    const geometry = mesh.geometry;
+    if (!geometry.boundingBox) geometry.computeBoundingBox();
+    // A skinned part moves around its bind pose: a generous box.
+    const box = geometry.boundingBox!.clone();
+    if ((mesh as THREE.SkinnedMesh).isSkinnedMesh)
+      box.expandByScalar(0.1 * box.getSize(corner).length());
+    for (let i = 0; i < 8; i++) {
+      corner
+        .set(
+          i & 1 ? box.max.x : box.min.x,
+          i & 2 ? box.max.y : box.min.y,
+          i & 4 ? box.max.z : box.min.z,
+        )
+        .applyMatrix4(mesh.matrixWorld);
+      clip.set(corner.x, corner.y, corner.z, 1).applyMatrix4(viewProjection);
+      if (clip.w <= 1e-6) return { x: 0, y: 0, w: size.x, h: size.y };
+      const px = ((clip.x / clip.w + 1) / 2) * size.x,
+        py = ((clip.y / clip.w + 1) / 2) * size.y;
+      x0 = Math.min(x0, px);
+      y0 = Math.min(y0, py);
+      x1 = Math.max(x1, px);
+      y1 = Math.max(y1, py);
+    }
+  }
+  const x = Math.max(0, Math.floor(x0 - margin)),
+    y = Math.max(0, Math.floor(y0 - margin)),
+    right = Math.min(size.x, Math.ceil(x1 + margin)),
+    top = Math.min(size.y, Math.ceil(y1 + margin));
+  return right > x && top > y ? { x, y, w: right - x, h: top - y } : null;
 }
 
 /** Screen-space outline of the visible mask meshes, over the finished frame. */
@@ -207,9 +284,19 @@ export class SelectionOutline {
     uniforms.radius.value = Math.min(MAX_RADIUS, SELECTION_WIDTH * (size.y / 900));
     uniforms.lineColor.value.set(this.color).convertLinearToSRGB();
     renderer.setRenderTarget(null);
+    const rect = selectionRect(T, camera, size, uniforms.radius.value + 2);
+    if (!rect) return;
+    // Only the pixels that can carry the line: the outline searches a disc of
+    // the line width around each pixel.
+    const ratio = renderer.getPixelRatio(),
+      scissor = renderer.getScissorTest();
+    renderer.setScissorTest(true);
+    renderer.setScissor(rect.x / ratio, rect.y / ratio, rect.w / ratio, rect.h / ratio);
     renderer.autoClear = false;
     renderer.render(this.quad, this.camera);
     renderer.autoClear = autoClear;
+    renderer.setScissorTest(scissor);
+    renderer.setScissor(0, 0, size.x / ratio, size.y / ratio);
   }
 
   dispose(): void {

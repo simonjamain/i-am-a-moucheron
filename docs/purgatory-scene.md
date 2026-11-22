@@ -95,6 +95,11 @@ Le vigile s’utilise comme un poste d’engin ([règles d’interface](ui-guide
 curseur libéré avec Échap) est entouré du **bleu signal** (`PostHighlight`,
 `SelectionOutline`, comme pour monter dans un appareil) ; un clic ouvre le coupe-file,
 comme **E**. Une fois le coupe-file payé, ou hors de portée, il n’est plus entouré.
+Le masque du contour est animé par le squelette du vigile (respiration, regards), et le
+tracé ne couvre que son rectangle d’écran : sur l’écran plein du premier essai, le survol
+faisait passer une partie de 120 à 72 images/s (trace Chrome, travail JavaScript inchangé,
+carte graphique saturée) ; en rendu logiciel, la cadence au survol passe de 3,0 à 5,5
+images/s (6,0 sans survol).
 
 ![Vigile visé, entouré du bleu signal](purgatory-guard-hover.jpg)
 
