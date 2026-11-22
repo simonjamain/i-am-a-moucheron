@@ -5,6 +5,12 @@ export interface ChangelogEntry {
 }
 export const PLAYER_CHANGELOG: ChangelogEntry[] = [
   {
+    version: 425,
+    changes: [
+      'Le point de visée est plus petit, et à pied on retrouve le même viseur que dans les véhicules.',
+    ],
+  },
+  {
     version: 424,
     changes: [
       'Le viseur principal n’est plus qu’un point : il ne cache plus le cercle de rechargement.',
