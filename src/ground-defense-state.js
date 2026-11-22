@@ -1,5 +1,5 @@
 import { WALL_SEGMENT, WALL_SEGMENT_PRICE, HALF_BRICK, wallLength } from './brick-rules.ts';
-import { SENTRY, isTurret, turretSpec } from './ground-sentry.ts';
+import { SENTRY, isTurret, turretSpec, upgradesOf, upgradeCost } from './ground-sentry.ts';
 import { FORTIFICATIONS, isFortification } from './ground-fortifications.ts';
 import { onFloor, levelOf, FLOOR_LEVEL } from './airdrop.ts';
 import {
@@ -131,7 +131,7 @@ export function groundCommand(state, command, foot, dollars, now = Date.now(), a
         fail('Nombre maximal de tourelles atteint.');
     }
     if (
-      !['barricade', 'sticky', 'sugar', 'sentry', 'gatling', 'antitank'].includes(kind) ||
+      !['barricade', 'sticky', 'sugar', 'sentry', 'antitank'].includes(kind) ||
       !finitePoint(a) ||
       (!pointItem && !finitePoint(b))
     )
@@ -239,13 +239,28 @@ export function groundCommand(state, command, foot, dollars, now = Date.now(), a
     if (kind === 'barricade' && !level) state.navigationRevision++;
     return { price, ids: items.map((item) => item.id) };
   }
-  if (!['repair', 'remove'].includes(action)) fail('Action de défense inconnue.');
+  if (!['repair', 'remove', 'upgrade'].includes(action)) fail('Action de défense inconnue.');
   if (typeof command.id !== 'string') fail('Identifiant de construction invalide.');
   const index = state.structures.findIndex((s) => s.id === command.id);
   if (index < 0) fail('Construction introuvable.');
   const item = state.structures[index];
   const position = item.position || [(item.a[0] + item.b[0]) / 2, (item.a[1] + item.b[1]) / 2];
   if (!nearFoot(position, foot)) fail('Approchez-vous de la construction.');
+  if (action === 'upgrade') {
+    // Refit into a variant of the tree (src/ground-sentry.ts): fully repaired and
+    // reloaded, for the price of the variant. Never a downgrade, never a sidestep.
+    const variant = command.variant;
+    if (!isTurret(item.kind) || item.hp <= 0 || !upgradesOf(item.kind).includes(variant))
+      fail('Cette tourelle ne peut pas être améliorée.');
+    const price = upgradeCost(variant);
+    if (dollars + 1e-8 < price) fail('Caisse commune insuffisante.');
+    const spec = turretSpec(variant);
+    Object.assign(item, { kind: variant, hp: spec.hp, maxHp: spec.hp, ammo: spec.ammo });
+    delete item.lastShotAt;
+    delete item.aimTarget;
+    state.revision++;
+    return { price, ids: [item.id] };
+  }
   if (action === 'repair') {
     if (
       !['barricade', 'sentry', 'gatling', 'antitank'].includes(item.kind) ||

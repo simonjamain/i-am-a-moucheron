@@ -140,6 +140,7 @@ const files = {
       'hull-gun',
       'purchase-ui',
       'vip-pass-ui',
+      'upgrade-ui',
       'paper-form',
       'vehicle-care',
       'tank-reticle',

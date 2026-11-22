@@ -389,6 +389,7 @@ const c = {
   debugTools: { active: false, cancel() {} },
   purchaseUI: { opened: false },
   vipUI: { opened: false },
+  upgradeUI: { opened: false },
   bedUI: { opened: false },
   bankUI: { opened: false },
   balanceUI: { opened: false },

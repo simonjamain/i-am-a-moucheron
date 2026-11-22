@@ -1514,7 +1514,8 @@ export class Game {
       requireGame(false, error.message, 400);
     }
     r.dollars = money(r.dollars - transaction.price);
-    if (!r.lab.enabled) this.stats.purchase(r, b.kind, transaction.price);
+    if (!r.lab.enabled)
+      this.stats.purchase(r, b.action === 'upgrade' ? b.variant : b.kind, transaction.price);
     if (b.action === 'build' && isFortification(b.kind))
       this.registerFortification(r, transaction.ids[0]);
     if (b.action === 'remove') {

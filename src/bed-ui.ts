@@ -124,6 +124,13 @@ export class BedUI {
   canSign(): boolean {
     return !this.clauses || this.clauses.complete;
   }
+  // The signature is turned down (REFUSÉ, nothing sent): by default a refused clause.
+  declined(): boolean {
+    return !!this.clauses?.refused;
+  }
+  refusalText(): string {
+    return REFUSAL_TEXT;
+  }
   // Why the signature line is locked.
   lockedText(): string {
     return 'Cochez un motif avant de signer.';
@@ -231,13 +238,13 @@ export class BedUI {
     this.keepInk = true;
     this.refusing = true;
     stamp(this.root.querySelector<HTMLElement>('[data-stamp]'), 'REFUSÉ', true);
-    this.status(REFUSAL_TEXT + ' ' + this.restartText());
+    this.status(this.refusalText() + ' ' + this.restartText());
     this.invalidated = true;
     this.closeLingering(REFUSAL_LINGER_MS);
   }
   async submit() {
     if (this.busy || !this.opened) return;
-    if (this.clauses?.refused) {
+    if (this.declined()) {
       this.refuse();
       return;
     }
