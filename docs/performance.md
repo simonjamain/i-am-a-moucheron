@@ -456,6 +456,27 @@ vsync manqué) rapproche le véhicule de la caméra à l'écran pour cette image
 saut de 1,3 unité à 60 u/s pour une image de 100 ms, 0,05 pour une alternance 8/33 ms.
 `src/camera-follow.ts` (`followMoving`) résout le suivi exactement pour une cible qui avance à la
 vitesse du véhicule : le retard reste `v/k` quelle que soit la durée de l'image
-(`test-camera-follow.mjs`). Non traité : la physique Rapier et le vol utilisent le `dt` brut de
-`requestAnimationFrame` ; un pas fixe avec interpolation serait l'étape suivante si des saccades
-persistent (à mesurer avec `?perf=1`).
+(`test-camera-follow.mjs`).
+
+**Cadence de l'engin piloté** (v437). La physique tourne déjà à pas fixe (1/120 s, accumulateur de
+`frame()`), mais l'image affichée était celle du dernier pas : sur un écran qui n'est pas un multiple
+de 120 Hz (75, 90, 144, 165 Hz) ou avec de la gigue, l'engin avance de 0, 1 ou 2 pas d'une image à
+l'autre, un mouvement irrégulier perçu comme une saccade. `src/render-interpolation.ts` affiche la
+pose entre les deux derniers pas, selon le reste de l'accumulateur ; la physique, les tirs et le HUD
+relisent la pose du pas (`restore` avant le pas suivant ; une téléportation n'est pas interpolée).
+`scripts/test-render-interpolation.mjs` rejoue la boucle sur 6 cadences, avec et sans gigue :
+écart-type de l'avance par image rapportée à l'avance idéale, 0,22 à 0,65 avant (cadences hors
+multiples de 120 Hz ou avec gigue), 0,000 après, sans aucun recul. C'est un modèle de la boucle ;
+le ressenti réel dépend de l'écran.
+
+**Engins des autres** (v437). La position affichée venait du flux réseau retardé (60 à 350 ms) ou,
+sans pilote, de l'état du serveur, suivie par `lerp(1 − e^(−24·dt))` : retard variable avec `dt`, et à
+chaque changement de source (le pilote sort : l'état serveur est plus récent que le flux retardé ;
+quelqu'un monte : l'inverse) la cible faisait un saut, en arrière à la montée, que le rattrapage
+transformait en glissade vers l'arrière. `src/pose-smoother.ts` affiche cible + erreur : le saut est
+absorbé (l'engin continue exactement sur sa lancée) puis l'erreur décroît (τ = 0,2 s), jamais plus vite
+que la moitié du chemin parcouru le long de la vitesse, donc sans recul. Pas de retard en régime
+établi. L'état du serveur est de plus prolongé par la vitesse selon l'âge du snapshot.
+`scripts/test-pose-smoother.mjs` : 3 images en arrière à 60 Hz et 8 à 144 Hz avec l'ancien affichage au
+changement de source, aucune avec le nouveau. Non traité : la rotation des engins des autres reste
+suivie par `slerp` ; mesure réelle avec `?perf=1` à faire par un joueur.

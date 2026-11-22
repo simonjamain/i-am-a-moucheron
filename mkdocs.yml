@@ -131,6 +131,7 @@ nav:
       - Consignes des agents: agents.md
       - Exploitation et vérifications: operations.md
       - Docker: docker.md
+      - Version et nouveautés: changelog.md
       - Ajouter du contenu: adding-content.md
       - Site de documentation: site.md
       - Santé de la documentation: sante.md

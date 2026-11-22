@@ -184,6 +184,6 @@ la caisse commune. Cette règle concerne le runtime Node/UDP.
 
 ### À pied, sans arme
 
-Le pistolet est retiré (version 437) : personne n'a d'arme à pied, au bureau comme au
+Le pistolet est retiré : personne n'a d'arme à pied, au bureau comme au
 purgatoire. Le serveur ignore un impact (`hit`, `friendly-hit`) déclaré par un joueur à
 pied ; les commandes `pistol-trace` et `soul-hit` n'existent plus.

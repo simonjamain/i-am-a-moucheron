@@ -36,15 +36,14 @@ npm run format:check
 npm run typecheck
 npm test
 npm run check:docs
-npm run check:version
 npm run build
 node scripts/validate-artifact.mjs
 ```
 
-`check:version` compare `VERSION` indexé à celui de `HEAD` : indexer l'augmentation
-(`npm run version:next`) avant de l'exécuter. Le hook `.githooks/pre-commit`
-(activé par `npm run prepare:version`) ne lance que ce contrôle ; le build reste
-à exécuter à la main.
+`VERSION`, `server/assets.js` et `src/changelog-recent.ts` sont générés (Git les ignore ; voir
+[version et nouveautés](changelog.md)) : `npm test` et l'assembleur les produisent.
+À chaque push sur `main`, le workflow `Conflict alert` signale aux PR devenues
+conflictuelles (label `conflit` et commentaire) qu'elles doivent intégrer `main`.
 Le workflow `Docker build validation` contient aussi le job `Full game regression and formatting` :
 `npm test`, `format:check`, `check:docs`, le build et `validate-artifact.mjs` ; `docker build` local reste exigé avant livraison
 ([Docker](docker.md)).
@@ -74,7 +73,6 @@ de `npm test` filtré sur le protocole (domaine RAM, pairs natifs UDP, port part
 | Étape        | Commande                                                                                                                 | Ce qu'elle prouve                                                    | Ce qu'elle ne prouve pas |
 | ------------ | ------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------- | ------------------------ |
 | Itération    | `npm test -- <fragment>`                                                                                                 | règles, physique, protocole du système touché                        | le reste de la suite     |
-| Avant commit | `npm run check:version` (hook)                                                                                           | `VERSION` augmenté                                                   | rien d'autre             |
 | Avant PR     | suite entière, `format:check`, `check:docs`, `build` + `validate-artifact`, `docker build`                               | domaine Node, deux pairs UDP natifs en loopback, types, artefact     | WebGL, navigateur, WAN   |
 | CI de PR     | `Full game regression and formatting`, `Docker build`, `Real Chromium over WebRTC UDP/TCP`, `Docs site`, outils d'assets | idem, plus image qui démarre, Chromium réel en loopback, site strict | rendu GPU, confort, WAN  |
 | Après fusion | essai humain sur le VPS                                                                                                  | partie réelle                                                        | —                        |
@@ -88,7 +86,6 @@ en CI (job `Full game regression and formatting`) ; les données générées
 Le job `Docker build` démarre l'image construite et vérifie `/healthz`
 (`ok`, `storage=ram`, `transport=webrtc-udp`) et le 410 de `/api/join` : il prouve
 que l'image démarre, pas les pairs UDP dans le conteneur, WebGL ni le WAN.
-`check:version` compare l'index à `HEAD` (hook pre-commit) ; en CI des PR, `check:version --base origin/<cible>` (job `Full game regression and formatting`) échoue si `VERSION` n'est pas supérieur à celui de la branche cible. `test-version-guard.mjs` exerce les deux modes. Le job de benchmark ne relance plus `test-ram-game`/`test-motion-capacity`, déjà dans `npm test`.
 
 Scénarios navigateur réel : `npm run e2e` (Chromium Playwright, WebRTC UDP puis repli
 TCP : reprise de pilote, mouvements partagés entre deux pages, chute vue

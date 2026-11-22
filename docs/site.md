@@ -29,7 +29,7 @@ rechargé à chaud de `.site/src`, à régénérer après modification des sourc
   sous les noms `projet.md`, `contribuer.md` et `agents.md` ;
 - réécrit les liens entre documents pour cette disposition ; un lien vers un fichier
   de code (`src/…`, `scripts/…`) ouvre ce fichier sur GitHub ;
-- génère **Nouveautés** depuis `src/changelog.ts` (le même historique qu'en jeu),
+- génère **Nouveautés** depuis `src/changelog.ts` (le même historique qu'en jeu, fragments récents compris),
   la **Galerie visuelle** (toutes les images de `docs/` et les pages qui les utilisent),
   les **Écrans intégrés** (l'aperçu `ui-review.html` avec ses vrais modules de jeu) et
   la **Santé de la documentation** (fraîcheur, renvois, pages hors menu ou au titre daté).

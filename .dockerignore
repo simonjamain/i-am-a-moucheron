@@ -10,6 +10,7 @@
 !scripts/
 !scripts/assemble.mjs
 !scripts/build-ui-preview.mjs
+!scripts/build-info.ts
 !vendor/
 !vendor/**
 !docs/

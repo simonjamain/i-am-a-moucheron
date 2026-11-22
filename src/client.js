@@ -37,6 +37,8 @@ import { purchaseCount } from '/equipment.js';
 import { WASH } from '/vehicle-care.js';
 import { HELI, stepHeliAim, stepHelicopter } from '/helicopter.js';
 import { HeliRig, HELI_TYPES } from '/heli-physics.js';
+import { RenderInterpolation } from '/render-interpolation.js';
+import { PoseSmoother } from '/pose-smoother.js';
 import { clampProximity, MOBILE_FUSE } from '/mobile-flak.js';
 import { ballisticMarks } from '/tank-reticle.js';
 import { InteractionTiming } from '/interaction-timing.js';
@@ -3911,6 +3913,8 @@ function remoteShotCount(model, role, dt, interval, firing) {
   model.userData.remoteCooldowns.set(role, result.cooldown);
   return result.shots;
 }
+// The display of the vehicles others drive or the server keeps (src/pose-smoother.ts).
+const poseSmoothers = new Map();
 function updateOthers(dt) {
   if (!snap) return;
   const active = new Set();
@@ -3922,9 +3926,19 @@ function updateOthers(dt) {
       motion = p ? remoteMotion(p) : v.state,
       isSelf = myVehicle?.id === v.id && crewSeat === 'pilot';
     if (!isSelf) {
-      const pos = new T.Vector3().fromArray(motion.p);
-      if (g.position.distanceTo(pos) > MAP.metres(30)) g.position.copy(pos);
-      else g.position.lerp(pos, 1 - Math.exp(-24 * dt));
+      // Nobody aboard: the server's state, as old as its snapshot; carried on at its own speed.
+      const age = p
+        ? 0
+        : Math.min(0.25, Math.max(0, (performance.now() - (snap.receivedAt || 0)) / 1000));
+      const velocity = motion.v || [0, 0, 0];
+      const raw = motion.p.map((x, i) => x + velocity[i] * age);
+      const pos = new T.Vector3().fromArray(raw);
+      let smoother = poseSmoothers.get(v.id);
+      if (!smoother) poseSmoothers.set(v.id, (smoother = new PoseSmoother()));
+      if (g.position.distanceTo(pos) > MAP.metres(30)) {
+        g.position.copy(pos);
+        smoother.reset();
+      } else g.position.fromArray(smoother.update(raw, velocity, dt));
       g.quaternion.slerp(new T.Quaternion().fromArray(motion.q), 1 - Math.exp(-24 * dt));
     }
     if (g.userData.trailer)
@@ -4152,6 +4166,7 @@ function updateOthers(dt) {
         o.material?.dispose?.();
       });
       fleetModels.delete(k);
+      poseSmoothers.delete(k);
       others.delete(k);
       for (const key of [...postHighlights.keys()])
         if (key.startsWith(k + ':')) postHighlights.delete(key);
@@ -4977,6 +4992,14 @@ function updateCountdown() {
     : 'Lancer la vague maintenant →';
   $('start').disabled = !!snap.mission_started && !snap.preparation;
 }
+const meView = new RenderInterpolation();
+const meTarget = {
+  read: () => [...me.position.toArray(), ...me.quaternion.toArray()],
+  write: (p) => {
+    me.position.set(p[0], p[1], p[2]);
+    me.quaternion.set(p[3], p[4], p[5], p[6]);
+  },
+};
 function frame(now) {
   requestAnimationFrame(frame);
   const dt = Math.min(Math.max(0, (now - prev) / 1000), 0.25);
@@ -5032,11 +5055,18 @@ function frame(now) {
     engineSmoke.update(dt, camera, innerHeight);
     updateOrdnance(dt);
     acc += dt;
+    // The vehicle I drive is shown between its last two physics steps (src/render-interpolation.ts):
+    // the screen's frames and the 120 Hz steps do not line up, and the raw last step stutters.
+    meView.restore(meTarget);
+    const smooth = !!myVehicle && !onFoot && !respawnAt && crewSeat === 'pilot';
+    if (!smooth) meView.reset();
     while (acc >= 1 / 120) {
-      physics(1 / 120);
+      if (smooth) meView.step(meTarget, () => physics(1 / 120));
+      else physics(1 / 120);
       simulateVacantAircraft(1 / 120);
       acc -= 1 / 120;
     }
+    if (smooth && !onFoot && !respawnAt && myVehicle) meView.show(meTarget, acc * 120);
     if (turretIndex >= 0) {
       $('crosshair').classList.remove('hidden');
       $('crosshair').classList.remove('offscreen');

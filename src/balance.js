@@ -63,7 +63,7 @@ export const BALANCE_FIELDS = Object.freeze({
     min: 0.25,
     step: 0.25,
     value: 1,
-    when: 'Prochain tir (pistolet semi-automatique inchangé)',
+    when: 'Prochain tir',
   },
   ammo: {
     label: 'Capacité des munitions',

@@ -1,0 +1,36 @@
+name: Conflict alert
+
+# Après chaque push sur main, prévient les PR ouvertes qui sont devenues conflictuelles
+# (label `conflit` + commentaire qui réveille l'agent abonné). Voir docs/operations.md.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: read
+  issues: write
+
+concurrency:
+  group: conflict-alert
+  cancel-in-progress: true
+
+jobs:
+  alert:
+    name: Alert conflicting pull requests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Label and comment conflicting pull requests
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node scripts/conflict-alert.ts

@@ -178,7 +178,7 @@ la limite atteinte refuse de nouveaux éléments, sans oublier les doublons.
 Une partie exceptionnellement longue peut nécessiter une remise à zéro.
 
 Aucun domaine ni serveur externe n'est configuré par le dépôt. L'assemblage produit
-`server/assets.js`, importé par Node.
+`server/assets.js` (non versionné), importé par Node.
 
 ## Vérifications
 

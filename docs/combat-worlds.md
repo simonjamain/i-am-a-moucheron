@@ -12,7 +12,7 @@
 
 Une mitrailleuse inflige 75 dégâts (l'ancienne amélioration de munitions est
 retirée). Personne n'a d'arme à pied, au bureau comme au purgatoire (le pistolet
-est retiré depuis la version 437) : le serveur ignore un impact déclaré à pied.
+est retiré) : le serveur ignore un impact déclaré à pied.
 Le personnage est le même modèle animé partout (repos, marche, course, assis, chute) ;
 voir le [pipeline d'assets](asset-pipeline.md#personnage-joueur-meshy--mixamo).
 

@@ -175,7 +175,7 @@ un **coupe-file** (numéro de la vague en dollars, sur la caisse commune) et pas
 la file VIP, servie dès que Saint Pierre a fini l’insecte en cours
 ([file VIP](purgatory-queue.md#file-vip-coupe-file-payant)).
 Les collisions permettent de se bousculer. Personne ne porte d'arme à pied, ni au
-bureau ni au purgatoire (le pistolet a été retiré en version 437) : l'âme est le même
+bureau ni au purgatoire : l'âme est le même
 personnage, avec les mêmes animations, qu'au bureau. Voir [file physique](purgatory-queue.md).
 
 Aucune prime de vague n'est versée (supprimée par l'issue #210) : les âmes libérées

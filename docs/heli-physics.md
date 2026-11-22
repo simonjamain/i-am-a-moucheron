@@ -7,6 +7,7 @@ pour les engins vides (`ParkedHost`), train à ressorts par rayons, volumes mesu
 L'ancien pas (`stepHelicopter`, `src/helicopter.js`) ne sert plus que le temps que Rapier charge.
 
 ## Pilotage conservé, corps réel
+
 Le pilotage « instructeur » est inchangé pour le joueur : la souris donne l'assiette cible
 (45° au plus, un seul budget pour tangage et roulis), le collectif une vitesse verticale
 (montée 8 m/s, descente jusqu'à 30 m/s), le neutre tient le stationnaire ; A/E tournent
@@ -33,11 +34,13 @@ Le pilotage « instructeur » est inchangé pour le joueur : la souris donne l'a
   Un frôlement ne détruit plus, contrairement à l'ancien « toute boîte touchée = mort ».
 
 ## Engin vide
+
 Quand le pilote sort, le serveur reprend l'hélicoptère (`ParkedHost`) : le rotor ralentit (en
 vol, il tombe), les freins sont serrés, et il s'endort au sol une fois le rotor arrêté. Le
 client hôte ne simule plus aucun engin vide, tous les types étant au serveur.
 
 ## Géométrie
+
 `HELI_GEOMETRY` (en unités du modèle, relevée sur les îlots du maillage avec
 `scripts/split-vehicle-parts.mjs`) : moyeux des roues ou patins, sol, centre de masse (la part de
 poids portée par chaque ressort suit le centre de masse), boîtes et disques. Le Castor volant
@@ -45,6 +48,7 @@ a son profil `gear` aligné sur ses patins (1 unité). Les boîtes sont ajustée
 îlots, comme celles du biplan : à vérifier avec le bouton « Physique ».
 
 ## Non fait
+
 Effet de sol, décrochage de pale, effet de couple du rotor, tangage différentiel du tandem :
 le Castor volant a le comportement de l'hélicoptère d'attaque avec ses volumes. Les
 constructions posées par les joueurs ne sont pas dans le monde du serveur.
