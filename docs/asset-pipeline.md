@@ -184,7 +184,7 @@ Premier modèle d'animal ; modèle « Angry Little Fly » fourni par l'utilisate
   l'empreinte et écrit `src/midge-data.js` (192 Ko : positions/UV float32, poids
   8 bits renormalisés, texture JPEG 512 px de 72 Ko). Pas de simplification :
   modèle déjà léger, monobloc articulé (l'outil Docker le refuserait sans
-  régions), et le coût est borné par le niveau de détail ci-dessous.
+  régions), et il n'y a volontairement aucun niveau de détail (voir Rendu).
 - Vol (`src/midge-model.js`) : cycle procédural posé sur les os, boucle de 1 s
   contenant 7 battements (7 Hz). Ailes : élévation de −11° à +54°, balayage
   avant/arrière et torsion aux retournements (pointe en huit). Corps qui monte à
@@ -193,18 +193,21 @@ Premier modèle d'animal ; modèle « Angry Little Fly » fourni par l'utilisate
 - Rendu (`src/midge-batch.js`) : le cycle est skinné une fois sur CPU en
   84 images (positions et normales, demi-flottants, 2,6 Mo de texture GPU) ; un
   seul `InstancedMesh` lit cette texture d'animation de sommets avec une phase par
-  moucheron. Près de la caméra (rayon apparent > 1 % de la distance, 1 000 au
-  plus) : modèle Meshy ; au-delà, les trois lots d'ellipsoïdes historiques,
-  recolorés. Cadavres et rendu sans WebGL : `SkinnedMesh` réel du même rig.
+  moucheron. **Aucun niveau de détail** (retiré en version 429) : tous les
+  moucherons vivants, proches ou lointains, utilisent le modèle Meshy, sans
+  plafond ni distance. Un futur niveau de détail devra être uniforme pour toutes
+  les créatures et fera partie du pipeline d'assets. Cadavres et rendu sans WebGL : `SkinnedMesh` réel du même rig.
   Les collisions restent la sphère `MIDGE_SPHERE_RADIUS` (inchangée).
 - Échelle : facteur 0,8 et thorax à l'origine, soit un corps de 18 mm en jeu
   (16 mm auparavant), tête vers −Z comme le cap appliqué par le client.
-- Mesures (SwiftShader, rendu logiciel, 960×540, indicatif) : 300 moucherons
-  136 ms/image contre 43 ms en ellipsoïdes, 1 500 : 623 contre 203 ms. CPU du
-  `flush` inchangé (~23 ms pour 9 999). Les FPS sur GPU réel restent à mesurer.
+- Mesures anciennes (SwiftShader, rendu logiciel, 960×540, indicatif, avec les
+  ellipsoïdes de loin désormais retirés) : 300 moucherons 136 ms/image contre
+  43 ms en ellipsoïdes. Non représentatives d'un GPU réel, que les tests
+  automatisés ne mesurent pas ; le coût sans niveau de détail reste à constater
+  en jeu.
 - Vérification : `scripts/test-midge-model.mjs` (provenance, os d'ailes,
   orientation, battement symétrique, boucle sans raccord) et
-  `scripts/test-midge-batch.mjs` (niveau de détail, phases, lots).
+  `scripts/test-midge-batch.mjs` (modèle Meshy pour tous, phases, un seul lot).
 
 ![Poses du cycle de vol](midge-model-review.jpg)
 

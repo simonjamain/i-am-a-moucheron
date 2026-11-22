@@ -5,6 +5,10 @@ export interface ChangelogEntry {
 }
 export const PLAYER_CHANGELOG: ChangelogEntry[] = [
   {
+    version: 429,
+    changes: ['Les moucherons gardent leur vrai modèle, même de loin : plus de boules brunes.'],
+  },
+  {
     version: 428,
     changes: [
       'Tous les avions volent avec la même physique que le biplan, roues qui suivent les ressorts comprises.',

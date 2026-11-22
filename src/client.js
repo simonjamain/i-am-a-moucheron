@@ -5157,7 +5157,7 @@ function frame(now) {
   for (const model of turrets) if (model?.userData.dish) animateRadar(model, dt, joined);
   updateFallingEnemies(dt);
   updateContextHUD();
-  midgeBatch.flush(insects, now, camera);
+  midgeBatch.flush(insects, now);
   walkerBatch.flush(insects);
   flyerBatch.flush(insects, now);
   tracerPool.flush();
