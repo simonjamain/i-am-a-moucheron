@@ -5,9 +5,15 @@ export interface ChangelogEntry {
 }
 export const PLAYER_CHANGELOG: ChangelogEntry[] = [
   {
-    version: 422,
+    version: 423,
     changes: [
       'Le biplan repose sur ses vraies roues, qui suivent les ressorts ; la roulette arrière a moins de course.',
+    ],
+  },
+  {
+    version: 422,
+    changes: [
+      'Au volant du char, le viseur des munitions montre où la mitrailleuse pointe vraiment.',
     ],
   },
   {

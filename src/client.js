@@ -1119,7 +1119,9 @@ function updateAimHUD() {
     gun,
     myVehicle?.type === 'castor'
       ? mouseDirection
-      : new T.Vector3(0, 0, -1).applyQuaternion(me.quaternion),
+      : myVehicle?.type === 'tank'
+        ? hullGunDirection(T, me.quaternion, mouseDirection)
+        : new T.Vector3(0, 0, -1).applyQuaternion(me.quaternion),
   );
 }
 updateControlHUD();
