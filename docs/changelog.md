@@ -6,7 +6,7 @@ parallèle ne peuvent plus se mettre en conflit sur le numéro ou sur le changel
 
 ## Numéro de version
 
-- La version est un entier : `430 + nombre de commits` de `main` (première parentée)
+- La version est un entier : `437 + nombre de commits` de `main` (première parentée)
   depuis le commit de référence `BASELINE` de `scripts/build-info.ts`.
 - Les PR sont fusionnées en squash : une PR fusionnée = un commit = un numéro.
 - `VERSION` n'est **plus versionné** : `node scripts/build-info.ts` l'écrit (ignoré par
@@ -15,7 +15,7 @@ parallèle ne peuvent plus se mettre en conflit sur le numéro ou sur le changel
 - Sur une branche, le numéro compte aussi les commits non fusionnés : il sert de repère
   de développement, le numéro définitif est celui du commit de fusion.
 - Il faut l'historique complet (`git fetch --unshallow`, `fetch-depth: 0` en CI). Dans un
-  clone superficiel, le script avertit et retombe sur 430 ; avec `--strict` (workflows
+  clone superficiel, le script avertit et retombe sur 437 ; avec `--strict` (workflows
   Docker) il échoue plutôt que de publier un mauvais numéro.
 - Docker n'a pas accès à `.git` : les workflows lancent `node scripts/build-info.ts --strict`
   avant `docker build`, et le `Dockerfile` copie `VERSION` et `src/changelog-recent.ts`.
@@ -36,7 +36,7 @@ Pour chaque changement visible en jeu, ajouter **un nouveau fichier** dans
 À la génération, la version d'un fragment est celle du commit qui l'a ajouté ; les
 fragments d'un même commit se regroupent sous un seul numéro. `src/changelog-recent.ts`
 (généré, ignoré par Git) les expose à `src/changelog.ts`, qui les place avant
-l'historique figé de `src/changelog-history.ts` (versions jusqu'à 430, à ne plus modifier).
+l'historique figé de `src/changelog-history.ts` (versions jusqu’à 437, à ne plus modifier).
 Le bouton **Nouveautés** et le [site de documentation](site.md) affichent le même résultat.
 `npm test` (`test-changelog`, `test-build-info`) vérifie le format des fragments, le calcul
 des versions et le rendu.

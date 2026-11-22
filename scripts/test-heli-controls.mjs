@@ -3,6 +3,7 @@ import vm from 'node:vm';
 import { readFileSync } from 'node:fs';
 import * as T from '../vendor/three.module.min.js';
 import { stepHelicopter } from '../src/helicopter.js';
+import { HELI_TYPES, HeliRig } from '../src/heli-physics.ts';
 import { MAP } from '../src/scale.ts';
 import { VEHICLES, vehiclePad, isRotorcraft } from '../src/fleet.ts';
 import { Game } from '../server/game.js';
@@ -17,6 +18,12 @@ function client(key) {
   const c = vm.createContext({
     T,
     stepHelicopter,
+    // The physics engine has not loaded: the old step flies (the engine path: test-heli-physics).
+    rapier: null,
+    HELI_TYPES,
+    HeliRig,
+    heliRig: null,
+    omega: new T.Vector3(),
     MAP,
     VEHICLES,
     isRotorcraft,

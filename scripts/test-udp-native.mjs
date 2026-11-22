@@ -184,6 +184,7 @@ try {
   });
   assert.equal(placed.status, 200);
   const spit = [...gameRoom.vehicles.values()].find((v) => v.type === 'spitfire');
+  spit.hosted = false; // moved by hand below: the server's physics must not carry it elsewhere
   spit.state.p = [1.5, 2, -0.5];
   spit.state.landed = false;
   spit.dirt = 0.001;

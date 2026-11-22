@@ -3,6 +3,7 @@ import { OFFICE_LAYOUT } from './layout.ts';
 import { MAP } from './scale.ts';
 import type { VehicleProfile } from './fleet.ts';
 import { PLANE_CRASH_IMPACT, PLANE_TYPES, PlaneRig, type PlaneState } from './plane-physics.ts';
+import { HELI_CRASH_IMPACT, HELI_TYPES, HeliRig } from './heli-physics.ts';
 import { TankRig } from './tank-physics.ts';
 import { CastorRig } from './castor-physics.ts';
 import { TruckRig } from './truck-physics.ts';
@@ -11,9 +12,8 @@ import { PhysicsWorld, toWorld, type Rapier, type Solid } from './physics-world.
 /** Ground vehicles the server simulates while nobody is aboard. */
 const GROUND_RIGS = { tank: TankRig, castor: CastorRig, flaktruck: TruckRig } as const;
 export const HOSTED_GROUND: ReadonlySet<string> = new Set(Object.keys(GROUND_RIGS));
-/** Aircraft the server simulates while nobody is aboard (the helicopters: still the host
- * client's step). */
-export const HOSTED_PLANES: ReadonlySet<string> = PLANE_TYPES;
+/** Aircraft the server simulates while nobody is aboard. */
+export const HOSTED_PLANES: ReadonlySet<string> = new Set([...PLANE_TYPES, ...HELI_TYPES]);
 /** Everything the server parks. */
 export const isHosted = (type: string): boolean =>
   HOSTED_PLANES.has(type) || HOSTED_GROUND.has(type);
@@ -31,7 +31,7 @@ export interface HostedVehicle {
 }
 type GroundRig = TankRig | CastorRig | TruckRig;
 interface Entry extends HostedVehicle {
-  plane?: PlaneRig;
+  plane?: PlaneRig | HeliRig;
   ground?: GroundRig;
   impact: number;
   /** Ground vehicles: seconds at rest, and put to sleep. */
@@ -118,7 +118,10 @@ export class ParkedHost {
         frozen: false,
         reported: false,
       };
-      if (PLANE_TYPES.has(vehicle.type)) {
+      if (HELI_TYPES.has(vehicle.type)) {
+        entry.plane = new HeliRig(this.R, vehicle.type, this.physics, true);
+        entry.plane.adopt({ ...state, gas: 0 });
+      } else if (PLANE_TYPES.has(vehicle.type)) {
         entry.plane = new PlaneRig(this.R, vehicle.type, this.physics, true);
         entry.plane.adopt({ ...state, gas: 0 });
       } else if (vehicle.type in GROUND_RIGS) {
@@ -205,7 +208,8 @@ export class ParkedHost {
           w = body.angvel();
         const world = [toWorld(p.x), toWorld(p.y), toWorld(p.z)];
         const destroyed =
-          entry.impact > PLANE_CRASH_IMPACT ||
+          entry.impact >
+            (entry.plane instanceof HeliRig ? HELI_CRASH_IMPACT : PLANE_CRASH_IMPACT) ||
           world[1] > bounds.ceiling ||
           Math.abs(world[0]) > bounds.x ||
           Math.abs(world[2]) > bounds.z;
@@ -222,6 +226,7 @@ export class ParkedHost {
             omega: [w.x, w.y, w.z],
             landed: entry.plane.compression[0] > 0 || entry.plane.compression[1] > 0,
             gas: 0,
+            ...(entry.plane instanceof HeliRig ? { rotorPower: entry.plane.rotorPower } : {}),
           },
           destroyed,
         });

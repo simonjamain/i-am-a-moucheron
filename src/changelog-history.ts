@@ -1,4 +1,4 @@
-// Historique figé des nouveautés jusqu'à la version 430, rédigé pour les joueurs.
+// Historique figé des nouveautés jusqu'à la version 437, rédigé pour les joueurs.
 // Ne plus y toucher : les nouveautés suivantes viennent des fragments de `changelog.d/`
 // (voir docs/changelog.md).
 export interface ChangelogEntry {
@@ -6,6 +6,47 @@ export interface ChangelogEntry {
   changes: string[];
 }
 export const HISTORY_CHANGELOG: ChangelogEntry[] = [
+  {
+    version: 437,
+    changes: [
+      'Votre véhicule avance plus régulièrement à l’écran, surtout sur les écrans 75, 144 ou 165 Hz : moins de saccades.',
+      'Les véhicules des autres, ou laissés vides, ne reculent plus d’un coup quand on y monte ou qu’on en sort.',
+    ],
+  },
+  {
+    version: 436,
+    changes: [
+      'On descend des véhicules juste à côté de la carlingue ou du châssis, plus au bout des ailes : fini les chutes dans le vide.',
+    ],
+  },
+  {
+    version: 435,
+    changes: [
+      'Les hélicoptères ont une vraie physique : le rotor pousse, ils reposent sur leur train, et un frôlement ne les détruit plus.',
+      'Un hélicoptère laissé vide ralentit son rotor et s’endort, comme les autres véhicules.',
+    ],
+  },
+  {
+    version: 434,
+    changes: [
+      'On peut quitter un véhicule à tout moment, même en mouvement, au sol ou en vol : on garde sa vitesse en sortant.',
+      'On peut aussi monter dans un véhicule qui roule, si on est assez près.',
+    ],
+  },
+  {
+    version: 432,
+    changes: [
+      'Le Spitfire tourne bien mieux : tirer à fond sur le manche ne le fait plus décrocher quand il va vite.',
+      'Le bombardier moyen a des volumes plus justes, et le mode debug n’affiche plus les volumes tout seul.',
+    ],
+  },
+  {
+    version: 431,
+    changes: [
+      'Au purgatoire, un vigile vend un coupe-file (vague N : N $) pour la file VIP, servie juste après l’insecte en cours.',
+      'La file des insectes reste gratuite, pratique quand elle est vide.',
+    ],
+  },
   {
     version: 430,
     changes: ['Correction : acheter un équipement ne fige plus le jeu quand on vise trop haut.'],

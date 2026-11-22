@@ -16,6 +16,17 @@ export const MODELS = {
   interceptor: ['meshy-stuka-data.js', 'MODEL_DATA'],
   spitfire: ['meshy-spitfire-data.js', 'MODEL_DATA'],
 };
+// The medium bomber's fuselage island also holds the dorsal turret and the fin: one box around
+// it all is far too bulky. Three volumes instead, nose / body / fin, fitted on the model.
+const BOX_SPLITS = {
+  medbomber: {
+    part0: [
+      { name: 'nose', half: [0.45, 0.525, 0.7], at: [0, 0.025, -4.0] },
+      { name: 'body', half: [0.65, 0.75, 3.15], at: [0, 0.45, -0.15] },
+      { name: 'fin', half: [0.15, 0.81, 0.8], at: [0, 1.61, 3.4] },
+    ],
+  },
+};
 const r3 = (v) => +v.toFixed(3);
 // The biplane fighter, fitted by hand on its model (same values as the first flight tests).
 const FIGHTER = {
@@ -143,6 +154,8 @@ if (import.meta.url === pathToFileURL(process.argv[1]).href) {
   for (const [type, [file, name]] of Object.entries(MODELS)) {
     const module = await import(pathToFileURL('src/' + file).href);
     out[type] = measure(module[name]);
+    const parts = BOX_SPLITS[type];
+    if (parts) out[type].boxes = out[type].boxes.flatMap((b) => parts[b.name] ?? [b]);
     console.log(type, JSON.stringify({ ...out[type], boxes: out[type].boxes.length }));
   }
   const text =

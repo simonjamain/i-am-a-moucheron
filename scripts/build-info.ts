@@ -16,8 +16,8 @@ import { pathToFileURL } from 'node:url';
 
 // Dernier commit numéroté à la main (VERSION 430) : tout ce qui suit est compté.
 export const BASELINE = {
-  commit: '3787042d8a572002db4b3a80da5077c17c50483e',
-  version: 430,
+  commit: 'c6d0d5f9c5acea1f975449ceaf9532e4e0ed41f0',
+  version: 437,
 };
 export const FRAGMENT_DIR = 'changelog.d';
 export const MAX_CHANGE_LENGTH = 130;

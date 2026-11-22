@@ -45,6 +45,8 @@ export interface SoulBody {
   maxHealth?: number;
   enemyType?: string;
   paper?: unknown;
+  /** Player who paid the VIP lane's pass (server metadata). */
+  vip?: boolean;
 }
 
 export interface ArenaEvent {
@@ -70,6 +72,8 @@ export interface ArenaObstacle {
   w: number;
   d: number;
   y?: number;
+  /** Only stops bodies without the VIP pass (the lane's rope gate). */
+  vip?: boolean;
 }
 
 export interface Arena {
@@ -194,10 +198,47 @@ export function createSoul(s: SoulSeed, index: number, now: number): SoulBody {
     served: 0,
   };
 }
+// VIP lane (docs/purgatory-queue.md): a roped lane on the right of the insects'
+// queue, closed by a rope gate that only lets players with the pass through. It
+// ends at Saint Pierre's second window, where he serves a VIP once the insect at
+// his first window is done. The pass is bought from the guard at the gate.
+export const VIP_DESK = Object.freeze({ x: 5.2, z: 1.1, r: 1 });
+export const VIP_GATE_Z = 9.2;
+export const VIP_LANE: readonly ArenaObstacle[] = Object.freeze([
+  { x: 3.9, z: VIP_GATE_Z / 2, w: 0.12, d: VIP_GATE_Z },
+  { x: 6.5, z: VIP_GATE_Z / 2, w: 0.12, d: VIP_GATE_Z },
+  { x: 5.2, z: VIP_GATE_Z, w: 2.72, d: 0.12, vip: true },
+]);
+export const VIP_GUARD = Object.freeze({ x: 7.1, z: 9.9, reach: 3.5 });
+/** Where a player's soul appears: before both queues, near the guard. */
+export const SOUL_ENTRANCE = Object.freeze({ x: 4.2, z: 11 });
+/** Price of the pass in dollars: the wave number (wave 1: 1 $). */
+export function vipPrice(wave: number): number {
+  return Math.max(1, Math.floor(Number(wave) || 0));
+}
+export function inVipDesk(b: SoulBody): boolean {
+  return !b.gone && Math.hypot(b.x - VIP_DESK.x, b.z - VIP_DESK.z) < VIP_DESK.r;
+}
+export function nearVipGuard(b: PlanarPoint): boolean {
+  return Math.hypot(b.x - VIP_GUARD.x, b.z - VIP_GUARD.z) < VIP_GUARD.reach;
+}
 export function inDeskZone(b: SoulBody): boolean {
   return !b.gone && b.z >= 0.48 && Math.hypot(b.x, b.z - 1.1) < 1.25;
 }
 export function deskOccupant(a: Arena, now: number = a.time): SoulBody | null {
+  const main = queueDeskOccupant(a, now);
+  // Saint Pierre finishes the insect he started, then serves the VIP window.
+  if (main?.kind === 'enemy' && main.served > 0) return main;
+  const vip = a.bodies
+    .filter((b) => b.kind === 'player' && b.vip && b.koUntil <= now && inVipDesk(b))
+    .sort(
+      (x, y) =>
+        Math.hypot(x.x - VIP_DESK.x, x.z - VIP_DESK.z) -
+          Math.hypot(y.x - VIP_DESK.x, y.z - VIP_DESK.z) || x.id - y.id,
+    )[0];
+  return vip || main;
+}
+function queueDeskOccupant(a: Arena, now: number): SoulBody | null {
   return (
     a.bodies
       .filter(
@@ -369,6 +410,7 @@ export function advanceArena(a: Arena, to: number, owner: SoulEntity = null): Ar
         for (const o of a.obstacles || []) {
           if (Number.isFinite(o.y) && Math.abs((b.y ?? o.y!) - o.y!) > 1.7 * (a.verticalUnit || 1))
             continue;
+          if (o.vip && b.vip) continue;
           const dx = b.x - o.x,
             dz = b.z - o.z,
             px = o.w / 2 + b.r - Math.abs(dx),
@@ -498,7 +540,12 @@ export function mergeOwnedArena(
       old &&
       (b.entity === entity || (b.kind === 'enemy' && a.host === entity && previous.host === entity))
     ) {
-      const metadata = { health: b.health, maxHealth: b.maxHealth, enemyType: b.enemyType };
+      const metadata = {
+        health: b.health,
+        maxHealth: b.maxHealth,
+        enemyType: b.enemyType,
+        vip: b.vip,
+      };
       const paper = b.paper,
         gone = b.gone;
       Object.assign(b, structuredClone(old));

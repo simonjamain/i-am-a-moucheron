@@ -32,7 +32,7 @@ call('vehicle-select', { vehicle: biplane.id, seat: 'pilot', ground: g });
 for (const form of [1, 2])
   call('vehicle-sign', { vehicle: biplane.id, seat: 'pilot', signature: true, form, ground: g });
 assert.equal(biplane.seats.get('pilot'), player.id);
-assert.ok(!biplane.hosted, 'flown: not hosted');
+assert.ok(biplane.seats.has('pilot'), 'flown');
 
 // The aircraft is stopped on the ground: the pilot gets out, the server parks it.
 const rest = structuredClone(biplane.state);
@@ -99,5 +99,34 @@ assert.ok(
 );
 room.parkedHost.kick(tank.id, [0, 0, -1]);
 assert.ok(!room.parkedHost.asleep(tank.id), 'a gun shot wakes it');
+
+// Leaving is always possible, moving or not, on the ground or in the air: the pilot comes out
+// where the aircraft is, carrying its speed; a standing one drops him at the door.
+const board = () => {
+  const g = ground();
+  call('vehicle-select', { vehicle: biplane.id, seat: 'pilot', ground: g });
+  for (const form of [1, 2])
+    call('vehicle-sign', { vehicle: biplane.id, seat: 'pilot', signature: true, form, ground: g });
+  assert.equal(biplane.seats.get('pilot'), player.id);
+};
+const walker = () => room.pilots.get(player.id).state.walkSpawn;
+for (const [name, motion, airborne] of [
+  ['rolling fast', { landed: true, v: [0, 0, -MAP.metres(12)] }, true],
+  ['in the air', { landed: false, v: [0, 0, -MAP.metres(40)] }, true],
+  ['standing', { landed: true, v: [0, 0, 0] }, false],
+]) {
+  tick();
+  biplane.hosted = false;
+  board();
+  biplane.state = { ...biplane.state, ...motion };
+  call('vehicle-exit', { state: { ...biplane.state } });
+  assert.equal(room.pilots.get(player.id).mode, 'foot', name + ': got out');
+  assert.equal(
+    walker().airborne,
+    airborne,
+    name + ': ' + (airborne ? 'keeps moving' : 'at the door'),
+  );
+  if (airborne) assert.equal(walker().vz, motion.v[2], name + ': carries the speed');
+}
 game.rooms.forEach((r) => r.parkedHost?.dispose());
 console.log('test-plane-server ok');

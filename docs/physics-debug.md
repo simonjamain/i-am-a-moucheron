@@ -5,8 +5,8 @@ la room** (qui remet la partie à zéro) ; chacun est local au navigateur et mé
 (`localStorage`, `view.volumes` / `view.physics`) :
 
 - **Volumes** : ce que montrait déjà le mode debug (hit boxes des ennemis, boîtes et
-  triangles de collision du décor, portées des défenses). Le mode debug de la room les
-  affiche toujours.
+  triangles de collision du décor, portées des défenses). Le mode debug de la room ne
+  les affiche plus : le bouton est seul à décider.
 - **Physique** : les corps rigides Rapier des engins, vus par `src/physics-debug.ts`
   (`PhysicsOverlay`, lignes dessinées au-dessus de la scène, sans test de profondeur).
 

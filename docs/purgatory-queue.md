@@ -11,6 +11,25 @@ corps du joueur. Une âme libérée n’est jamais réintroduite par un ancien r
 
 Les PNJ sont les vrais modèles des insectes tués, mis à l'échelle de l'âme.
 
+## File VIP (coupe-file payant)
+
+Une âme de joueur apparaît à l’entrée (`SOUL_ENTRANCE`), devant les deux files. La file
+des insectes reste gratuite : on peut s’y placer, notamment quand elle est vide. À sa
+droite, une **file VIP** bordée de cordons (`VIP_LANE`) mène au second guichet de
+Saint Pierre (`VIP_DESK`). Un cordon doré la ferme ; un vigile (`VIP_GUARD`) se tient
+à côté. **E** près de lui ouvre un petit contrat papier, le coupe-file (`src/vip-pass-ui.ts`,
+signature seule, aucune case) : il coûte **le numéro de la vague en dollars** (vague 1 :
+1 $, vague 3 : 3 $ ; `vipPrice`), prélevés une fois sur la caisse commune. Le serveur
+(`vip-pass`) refuse si la caisse ne peut pas payer ; un second paiement est sans effet.
+
+Une âme qui a payé (`vip` sur son corps) traverse le cordon doré, seul obstacle réservé
+aux non-payants. Au second guichet, Saint Pierre finit l’insecte en cours
+(`served > 0`), puis sert l’âme VIP avant les insectes, qui attendent pendant qu’elle
+signe ses trois documents. Saint Pierre se déplace derrière le comptoir vers le
+guichet qu’il sert. Le super purgatoire n’a ni insectes ni file VIP.
+`test-purgatory-vip.mjs` vérifie le cordon, la priorité, le prix, le refus et la
+signature au guichet VIP.
+
 Les coups, gardes, esquives de combat et KO sont supprimés. Le pistolet utilise
 de vrais PV persistants, sans récupération automatique ; tuer un PNJ le libère
 avec une seule récompense. Les collisions et la marche restent actives.

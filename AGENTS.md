@@ -136,7 +136,7 @@ Détail : [version et nouveautés](docs/changelog.md).
 
 ## Version
 
-Le numéro de version est calculé depuis Git (`430 +` commits de `main` depuis le commit
+Le numéro de version est calculé depuis Git (`437 +` commits de `main` depuis le commit
 de référence) : **ne plus créer, éditer ni committer `VERSION`**, `server/assets.js` ni
 `src/changelog-recent.ts`, tous générés et ignorés par Git (`npm test`, `npm start` et
 l'assembleur les régénèrent ; `node scripts/build-info.ts` seul suffit). Il faut

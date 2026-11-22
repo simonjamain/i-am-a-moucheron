@@ -346,9 +346,19 @@ export const AIRCRAFT_GEOMETRY: Readonly<Record<string, AircraftGeometry>> = {
     com: [0, 0.15, -0.559],
     boxes: [
       {
-        name: 'part0',
-        half: [0.752, 1.28, 4.441],
-        at: [0.026, 1.141, -0.25],
+        name: 'nose',
+        half: [0.45, 0.525, 0.7],
+        at: [0, 0.025, -4],
+      },
+      {
+        name: 'body',
+        half: [0.65, 0.75, 3.15],
+        at: [0, 0.45, -0.15],
+      },
+      {
+        name: 'fin',
+        half: [0.15, 0.81, 0.8],
+        at: [0, 1.61, 3.4],
       },
       {
         name: 'part1',

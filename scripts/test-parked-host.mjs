@@ -121,7 +121,9 @@ for (const type of PLANE_TYPES)
 // 7° slope too, uphill or downhill, never creeping away.
 {
   assert.deepEqual([...HOSTED_GROUND].sort(), ['castor', 'flaktruck', 'tank']);
-  assert.ok(isHosted('tank') && isHosted('spitfire') && !isHosted('helicopter'));
+  assert.ok(
+    isHosted('tank') && isHosted('spitfire') && isHosted('helicopter') && isHosted('flyingcastor'),
+  );
   for (const type of HOSTED_GROUND)
     for (const [name, sign] of [
       ['flat', 0],

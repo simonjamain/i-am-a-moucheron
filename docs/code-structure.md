@@ -146,7 +146,7 @@ des terrestres associe `ground-crowd.js` (sous-pas communs et voisinage spatial)
 
 `character-appearances.ts` liste les huit personnages au choix (validés aussi par le serveur à la connexion) et `appearance-picker.js` affiche le sélecteur de l'accueil ; `character-model.ts` anime le personnage joueur choisi (`character-data.js` par défaut, les autres `character-<id>-data.js` chargés à la demande) (squelette Mixamo, repos/marche/course, poses procédurales assis, chute et pistolet) ; `graphics.humanoid()` l'enveloppe dans le cadre invisible du pistolet ([pipeline d'assets](asset-pipeline.md#personnage-joueur-meshy--mixamo)).
 
-`paper-form.ts` fournit les documents papier (clauses à cocher à la main, coche au crayon, tampons, clause refusée) ; `purchase-ui.js` l’applique au bon de commande ([règles d’interface](ui-guidelines.md#menus--des-documents-qui-sortent-du-monde)).
+`paper-form.ts` fournit les documents papier (clauses à cocher à la main, coche au crayon, tampons, clause refusée) ; `purchase-ui.js` l’applique au bon de commande ([règles d’interface](ui-guidelines.md#menus--des-documents-qui-sortent-du-monde)), `vip-pass-ui.ts` au coupe-file de la [file VIP](purgatory-queue.md#file-vip-coupe-file-payant) du purgatoire.
 
 `seat-posts.ts` (partagé client/serveur) donne les postes visables de chaque engin (un par siège, une cabine pour les passagers), leurs zones de visée, le choix du poste touché (`aimPost`) et la portée ; `post-highlight.ts` dessine le contour bleu signal du poste ou de l’installation survolés, en post-traitement à l’écran comme les contours du rendu dessin animé (masque des pièces du poste, puis trait autour de sa silhouette) ([règles d’interface](ui-guidelines.md#monter-dans-un-engin--viser-le-poste)).
 

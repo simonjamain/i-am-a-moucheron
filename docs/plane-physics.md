@@ -2,8 +2,8 @@
 
 Les avions à voilure fixe (biplan, bombardier biplan, chasseur léger, bombardier moyen,
 intercepteur, Spitfire : `PLANE_TYPES`) sont des corps rigides Rapier (`src/plane-physics.ts`,
-classe `PlaneRig`), pilotés par des forces. Seuls les hélicoptères (hélicoptère d'attaque,
-Castor volant) gardent leur pas propre (`src/helicopter.ts`) ; à planifier ensuite.
+classe `PlaneRig`), pilotés par des forces. Les hélicoptères ont le même schéma :
+[heli-physics.md](heli-physics.md).
 
 ## Un modèle par avion
 
@@ -34,6 +34,11 @@ par « instructeur », comme War Thunder ; déjà dans `src/mouse-flight.ts`).
 - **Portance** `CL(α)` : linéaire jusqu'à l'angle de décrochage (0,3 rad), puis chute à une
   courbe de plaque ; une incidence fixe (`zeroLift`) évite d'avoir à tenir le manche en
   croisière. Accélération de portance = `g (v/Vdécrochage)² CL / CLmax`.
+- **Protection d'incidence.** Avec de la vitesse (au-delà de 1,2 à 1,8 fois le décrochage), la
+  commande de cabrage s'éteint à l'approche de l'angle de décrochage : tirer à fond donne le
+  meilleur virage des ailes, pas un taux de rotation que la portance ne suit pas (le nez
+  courait devant la trajectoire et l'avion décrochait à pleine vitesse). Faute de vitesse la
+  protection disparaît : le décrochage reste possible.
 - **Traînée** : `CD0 + k CL²`, plus un terme en `sin² α` une fois décroché.
 - **Poussée** le long du nez, qui diminue avec la vitesse (hélice).
 - **Stabilité** : l'air ramène le nez dans le sens de la trajectoire (tangage, lacet) et
@@ -86,13 +91,20 @@ chargé à la première sortie, le décor d'un plan est construit une fois par p
   véhicule terrestre, mis en sommeil après une seconde de repos, puis réveillé tout seul si
   quelque chose le heurte. Un dormeur ne coûte rien et n'envoie plus de mises à jour. Dès
   qu'un pilote s'assoit, le véhicule quitte le monde du serveur et le client reprend l'autorité.
+- **Véhicules de départ et achetés** : ils naissent déjà dans ce monde (`hosted` dès `createVehicle`),
+  se posent sur le pont puis s'endorment seuls. Anti-boucle de réapparition (`Game.fleet`,
+  `advanceParked`) : pendant 5 s après sa naissance un engin ne peut pas être « parti du pont » ;
+  il ne l'est qu'après 1,5 s continues en l'air (un rebond n'en est pas un) ; un remplaçant naît
+  décalé s'il y a encore un engin du même type sur le pont (sinon la physique détruirait les deux) ;
+  et si le précédent engin de départ n'a jamais été piloté, un remplaçant n'arrive que 10 s après
+  le dernier. `scripts/test-start-pad.mjs`.
 - Le recul d'un char garé qui tire (tireur de canon) est appliqué par le serveur
   (`ParkedHost.kick`).
 - Un choc au-delà de `PLANE_CRASH_IMPACT`, une chute mortelle (rigs terrestres) ou une sortie de
   la pièce détruit le véhicule (`hp = 0`). Les constructions posées par les joueurs ne sont
   pas encore dans ce monde (seulement la pièce et le décor).
-- Le client hôte ne simule plus ces véhicules vides (`simulateVacantAircraft`) ; seuls les
-  hélicoptères vides gardent la simulation du client hôte.
+- Le client hôte ne simule plus aucun véhicule vide (`simulateVacantAircraft` ne trouve plus rien
+  à faire ; les hélicoptères sont au serveur aussi, voir [heli-physics.md](heli-physics.md)).
 
 ## Intégration
 
