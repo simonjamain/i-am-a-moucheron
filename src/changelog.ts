@@ -5,6 +5,12 @@ export interface ChangelogEntry {
 }
 export const PLAYER_CHANGELOG: ChangelogEntry[] = [
   {
+    version: 426,
+    changes: [
+      'Le biplan décolle un peu plus tôt : il se redresse tout seul en prenant de la vitesse.',
+    ],
+  },
+  {
     version: 425,
     changes: [
       'Le point de visée est plus petit, et à pied on retrouve le même viseur que dans les véhicules.',
