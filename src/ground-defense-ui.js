@@ -98,7 +98,6 @@ export class GroundDefenseUI {
       ['repair', 'Réparer'],
       ['remove', 'Enlever'],
       ['sentry', 'Tourelle auto'],
-      ['gatling', 'Tourelle auto Gatling'],
       ['antitank', 'Canon anti-matériel'],
     ];
     this.wheel = document.createElement('div');
@@ -207,7 +206,7 @@ export class GroundDefenseUI {
       this.notify('Le Castor volant ne largue pas de mur LEGO.', 3);
       return false;
     }
-    if (['sentry', 'gatling', 'antitank'].includes(kind) && !this.builder()) {
+    if (['sentry', 'antitank'].includes(kind) && !this.builder()) {
       this.notify('Construisez cette défense depuis un Castor.', 3);
       return false;
     }
@@ -699,7 +698,8 @@ export class GroundDefenseUI {
     for (const structure of structures) {
       if (!isTurret(structure.kind)) continue;
       const existing = this.sentries.get(String(structure.id));
-      if (!existing) continue;
+      // An upgraded turret changes model: it is rebuilt below.
+      if (!existing || existing.kind !== structure.kind) continue;
       existing.container.position.set(
         structure.position[0],
         structure.y || 0,
@@ -728,6 +728,7 @@ export class GroundDefenseUI {
       if (group.userData.sentry)
         this.sentries.set(String(structure.id), {
           ...group.userData.sentry,
+          kind: structure.kind,
           container: group,
           targetYaw: 0,
           targetPitch: 0,

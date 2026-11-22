@@ -1,3 +1,6 @@
+import { MAP } from './scale.ts';
+import { POST_REACH } from './seat-posts.ts';
+
 // Server-owned automatic defense: each accepted round costs one cartridge.
 export const SENTRY = Object.freeze({
   cost: 5,
@@ -37,6 +40,47 @@ export const TURRET_KINDS: readonly TurretKind[] = Object.freeze(['sentry', 'gat
 export const isTurret = (kind: unknown): kind is TurretKind =>
   kind === 'sentry' || kind === 'gatling';
 export const turretSpec = (kind: TurretKind): TurretSpec => (kind === 'gatling' ? GATLING : SENTRY);
+
+/**
+ * Upgrade tree of the automatic turrets: each kind lists the variants it can be
+ * refitted into (a paper form, docs/gatling-turret.md). Only the roots are sold;
+ * a leaf has no entry and can no longer be interacted with.
+ */
+export const TURRET_UPGRADES: Readonly<Record<TurretKind, readonly TurretKind[]>> = Object.freeze({
+  sentry: Object.freeze(['gatling'] as TurretKind[]),
+  gatling: Object.freeze([] as TurretKind[]),
+});
+export const TURRET_NAMES: Readonly<Record<TurretKind, string>> = Object.freeze({
+  sentry: 'Tourelle auto',
+  gatling: 'Tourelle auto Gatling',
+});
+/** Turret kinds sold at the Castor (the others are only reached by upgrading). */
+export const BUYABLE_TURRETS: readonly TurretKind[] = Object.freeze(['sentry']);
+export const isBuyableTurret = (kind: unknown): boolean =>
+  BUYABLE_TURRETS.includes(kind as TurretKind);
+/** Variants a turret of this kind can become (empty: nothing left to upgrade). */
+export const upgradesOf = (kind: unknown): readonly TurretKind[] =>
+  isTurret(kind) ? TURRET_UPGRADES[kind] : [];
+/**
+ * A turret that a player at `p` can refit: standing (not ruined), with a variant left,
+ * within the reach of every post (vehicles included, src/seat-posts.ts) of its edge.
+ */
+export function upgradeInReach(
+  turret: { kind: string; hp: number; y?: number; position: readonly number[] },
+  p: { x: number; y: number; z: number } | null | undefined,
+): boolean {
+  return (
+    !!p &&
+    isTurret(turret.kind) &&
+    turret.hp > 0 &&
+    upgradesOf(turret.kind).length > 0 &&
+    Math.abs(p.y - (turret.y || 0)) < MAP.metres(2) &&
+    Math.hypot(p.x - turret.position[0], p.z - turret.position[1]) <
+      turretSpec(turret.kind).footprint + MAP.metres(POST_REACH)
+  );
+}
+/** Price of upgrading into `to`: the price of that variant when bought outright. */
+export const upgradeCost = (to: TurretKind): number => turretSpec(to).cost;
 
 /** Server structure record (only the fields the sentry loop reads or writes). */
 export interface SentryStructure {

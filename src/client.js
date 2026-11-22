@@ -18,7 +18,7 @@ import { GroundDefenseUI } from '/ground-defense-ui.js';
 import { GroundMotionTrack } from '/ground-motion.js';
 import { LabUI } from '/lab-ui.js';
 import { DebugTools } from '/debug-tools.js';
-import { SENTRY } from '/ground-sentry.js';
+import { SENTRY, upgradeInReach } from '/ground-sentry.js';
 import { mountChangelog } from '/changelog.js';
 import { deliveryHeightAt } from '/delivery.js';
 import { reserveAlerts, missileStatus, ArrivalSignals } from '/reserve-feedback.js';
@@ -44,6 +44,7 @@ import { ballisticMarks } from '/tank-reticle.js';
 import { InteractionTiming } from '/interaction-timing.js';
 import { BedUI } from '/bed-ui.js';
 import { VipPassUI } from '/vip-pass-ui.js';
+import { UpgradeUI } from '/upgrade-ui.js';
 import { bedAccess } from '/beds.js';
 import { tankSight } from '/tank-view.js';
 import { applyGunRecoil, recoilAmount } from '/tank-recoil.js';
@@ -1399,6 +1400,7 @@ function accept(s, force = false) {
   snap = s;
   bedUI.observe(self);
   purchaseUI.observe(self);
+  upgradeUI.observe(self);
   vipUI.observe(self);
   renderCrew();
   reconcileEquipment([...(s.equipment || []), s.initialStation].filter(Boolean));
@@ -1914,6 +1916,10 @@ addEventListener('keydown', (event) => {
       vipUI.close();
       return;
     }
+    if (upgradeUI.opened) {
+      upgradeUI.close();
+      return;
+    }
     if (bedUI.opened) {
       bedUI.close();
       return;
@@ -1952,7 +1958,14 @@ addEventListener('keydown', (event) => {
     toggleBank();
     return;
   }
-  if (flightTuningUI.opened || bankUI.opened || bedUI.opened || purchaseUI.opened || vipUI.opened)
+  if (
+    flightTuningUI.opened ||
+    bankUI.opened ||
+    bedUI.opened ||
+    purchaseUI.opened ||
+    vipUI.opened ||
+    upgradeUI.opened
+  )
     return;
   if (interactionKey === 'KeyG') {
     if (groundDefenseUI.handleWheelKey(interactionKey, true, event.repeat)) event.preventDefault();
@@ -2464,6 +2477,7 @@ function renderPaper() {
     !bedUI.opened &&
     !purchaseUI.opened &&
     !vipUI.opened &&
+    !upgradeUI.opened &&
     !boardingSelectionBusy &&
     eligible &&
     index < documents[context]?.length;
@@ -3528,6 +3542,8 @@ function usableStation(st, w, body) {
   if (st.kind === 'bed') return !!body.grounded && bedAccess(w, st);
   return (isFixedDca(st.kind) || (isFortification(st.kind) && st.hp > 0)) && stationAccess(w, st);
 }
+/** Smallest aiming sphere of a turret, in world units (its model is tiny). */
+const TURRET_AIM_RADIUS = 0.012;
 /** Aiming sphere of an installation, in world space (its bounding sphere, tightened). */
 function stationSphere(gun) {
   if (!gun.userData.aimSphere) {
@@ -3555,7 +3571,8 @@ function updateAimedPost() {
     !bankUI.opened &&
     !bedUI.opened &&
     !purchaseUI.opened &&
-    !vipUI.opened
+    !vipUI.opened &&
+    !upgradeUI.opened
   ) {
     const rect = canvas.getBoundingClientRect();
     const free = document.pointerLockElement !== canvas && aimMouse;
@@ -3599,12 +3616,27 @@ function updateAimedPost() {
       ]);
       if (hit && (!next || hit.distance < next.distance)) next = { ...hit, station: index };
     }
+    for (const st of snap?.groundDefense?.structures || []) {
+      const model = groundDefenseUI.sentries.get(String(st.id))?.container;
+      if (!model || !upgradeInReach(st, w)) continue;
+      const sphere = stationSphere(model);
+      const hit = pickPost(origin, direction, [
+        {
+          seat: 'turret',
+          centre: sphere.center.toArray(),
+          radius: Math.max(sphere.radius, TURRET_AIM_RADIUS),
+        },
+      ]);
+      if (hit && (!next || hit.distance < next.distance)) next = { ...hit, turret: st, model };
+    }
   }
   const key = !next
     ? null
-    : next.vehicle
-      ? next.vehicle.id + ':' + next.seat
-      : 'station:' + next.station + ':' + stations[next.station].slot;
+    : next.turret
+      ? 'turret:' + next.turret.id
+      : next.vehicle
+        ? next.vehicle.id + ':' + next.seat
+        : 'station:' + next.station + ':' + stations[next.station].slot;
   if (shownPost && shownPost !== key) postHighlight(shownPost)?.hide();
   aimedPost = next;
   shownPost = key;
@@ -3615,7 +3647,17 @@ function updateAimedPost() {
     return;
   }
   let highlight, names;
-  if (next.vehicle) {
+  if (next.turret) {
+    // The whole turret is outlined; a free post needs no label.
+    next.model.userData.highlight ??= new PostHighlight(T, next.model, {
+      seats: [],
+      local: [0, 0, 0],
+      radius: 0,
+      outline: { meshes: [] },
+    });
+    highlight = next.model.userData.highlight;
+    names = [];
+  } else if (next.vehicle) {
     highlight = postHighlights.get(key);
     if (!highlight) {
       highlight = new PostHighlight(
@@ -3658,6 +3700,8 @@ function updateAimedPost() {
   }
 }
 function postHighlight(key) {
+  if (key.startsWith('turret:'))
+    return groundDefenseUI.sentries.get(key.slice(7))?.container.userData.highlight;
   if (!key.startsWith('station:')) return postHighlights.get(key);
   const [, index, slot] = key.split(':');
   const gun = turrets[+index];
@@ -3666,6 +3710,13 @@ function postHighlight(key) {
 /** Uses the aimed object when it is free (boarding form, station, bed); true when handled. */
 function useAimedPost() {
   if (!aimedPost || !onFoot || myVehicle || respawnAt) return false;
+  if (aimedPost.turret) {
+    upgradeUI.openTurret(
+      aimedPost.turret,
+      snap.pilots.find((p) => p.id === id),
+    );
+    return upgradeUI.opened;
+  }
   if (aimedPost.station !== undefined) {
     const st = stations[aimedPost.station];
     if (!st) return false;
@@ -5239,7 +5290,14 @@ for (const [kind, model] of Object.entries(ghosts)) {
   });
 }
 function toggleShop() {
-  if (flightTuningUI.opened || bankUI.opened || bedUI.opened || purchaseUI.opened || vipUI.opened)
+  if (
+    flightTuningUI.opened ||
+    bankUI.opened ||
+    bedUI.opened ||
+    purchaseUI.opened ||
+    vipUI.opened ||
+    upgradeUI.opened
+  )
     return;
   if (!joined || respawnAt || sheetOpen('papers')) return;
   if (placingEquipment) cancelPlacement();
@@ -6281,6 +6339,7 @@ $('flightSettingsOpen').onclick = () => {
     bedUI.opened ||
     purchaseUI.opened ||
     vipUI.opened ||
+    upgradeUI.opened ||
     boardingBusy ||
     boardingSelectionBusy
   )
@@ -6405,7 +6464,14 @@ const bankUI = new BankUI({
 });
 function toggleBank() {
   if (spectating) return;
-  if (flightTuningUI.opened || bedUI.opened || purchaseUI.opened || vipUI.opened) return;
+  if (
+    flightTuningUI.opened ||
+    bedUI.opened ||
+    purchaseUI.opened ||
+    vipUI.opened ||
+    upgradeUI.opened
+  )
+    return;
   if (!joined || boardingBusy || boardingSelectionBusy) return;
   if (bankUI.opened) bankUI.close();
   else bankUI.open();
@@ -6449,6 +6515,32 @@ function vipSelf() {
   if (!respawnAt || isSuper() || spectating) return null;
   return soulArena?.bodies.find((b) => b.kind === 'player' && b.entity === id && !b.gone) || null;
 }
+// Refit order of an automatic turret (docs/gatling-turret.md): signed on paper, paid
+// from the common fund; the server refits it (fully repaired and reloaded).
+const upgradeUI = new UpgradeUI({
+  root: $('upgradePanel'),
+  snapshot: () => snap,
+  command: () =>
+    api('ground-defense', {
+      id,
+      epoch: snap.base.epoch,
+      ground: groundReport(),
+      action: 'upgrade',
+      target: upgradeUI.turret.id,
+      variant: upgradeUI.variant(),
+    }),
+  accept,
+  ground: groundReport,
+  onOpen: () => {
+    releaseMouse();
+    $('shop').classList.add('hidden');
+    renderPaper();
+  },
+  onClose: () => {
+    renderPaper();
+    captureMouse();
+  },
+});
 function openVipPass() {
   const body = vipSelf();
   if (!body || body.vip || !nearVipGuard(body) || vipUI.opened) return false;
