@@ -22,19 +22,19 @@ mapping, including modifier changes while a key is held.
 
 ## Other contexts
 
-| Context                | Input                          | Action                                   |
-| ---------------------- | ------------------------------ | ---------------------------------------- |
-| On foot                | ZQSD / arrows + mouse          | Third-person movement and camera         |
-| On foot near equipment | E                              | Open the equipment dossier               |
-| Any equipment seat     | F                              | Exit (grounded aircraft must be stopped) |
-| Airborne character     | Space                          | Open / retract parachute                 |
-| Alive                  | P                              | Open / close purchase menu               |
-| Placement preview      | E (Enter alias) / Escape       | Confirm / cancel                         |
-| DCA                    | [ / ], Shift / Ctrl held       | Step / continuous airburst distance      |
-| On foot (office)       | Grounded Space                 | Continuous cleaning jet                  |
-| Multi-seat vehicle     | Physical Digit1–Digit7 / panel | Contractual change or exchange           |
-| Purgatory              | E                              | Open paperwork when physically eligible  |
-| Paperwork              | Release valid ink stroke       | Submit and stamp automatically           |
+| Context                     | Input                          | Action                                   |
+| --------------------------- | ------------------------------ | ---------------------------------------- |
+| On foot                     | ZQSD / arrows + mouse          | Third-person movement and camera         |
+| On foot near equipment      | E                              | Open the equipment dossier               |
+| Any equipment seat          | F                              | Exit (grounded aircraft must be stopped) |
+| Airborne character          | Space                          | Open / retract parachute                 |
+| Alive                       | P                              | Open / close purchase menu               |
+| Placement preview           | E (Enter alias) / Escape       | Confirm / cancel                         |
+| DCA                         | [ / ], Shift / Ctrl held       | Step / continuous airburst distance      |
+| On foot (office, purgatory) | Grounded Space                 | Jump                                     |
+| Multi-seat vehicle          | Physical Digit1–Digit7 / panel | Contractual change or exchange           |
+| Purgatory                   | E                              | Open paperwork when physically eligible  |
+| Paperwork                   | Release valid ink stroke       | Submit and stamp automatically           |
 
 E only selects equipment on foot; in an airplane pilot seat A/E control the
 rudder, not equipment interaction. Manual input overrides the mouse instructor
@@ -72,7 +72,7 @@ marche et court les mains libres, avec le même modèle et les mêmes animations
 partout. Espace en chute conserve la commande de parachute.
 E / Y-Triangle ouvre le dossier au guichet ou près d’un équipement.
 Touches physiques Digit1–Digit7 ou panneau « Postes » : même contrat pour changer de siège ou proposer un
-échange. Espace au sol maintient un jet ; en chute, il garde le parachute. Le destinataire signe pour accepter ou utilise « Refuser l’échange ».
+échange. Espace au sol fait sauter ; en chute, il garde le parachute. Le destinataire signe pour accepter ou utilise « Refuser l’échange ».
 Les commandes de mêlée et de KO sont retirées.
 
 Les documents ne se déchirent plus. Aucun contrat ne modifie les
@@ -113,7 +113,7 @@ tardive ne supprime pas la vitesse instantanément. Les dégâts dépendent de l
 vitesse verticale à l’impact. Voir [retours terrain](field-update.md).
 
 Le [lot lisibilité et nettoyage](clean-flight.md) détaille les bons signés, la pose par E,
-les touches physiques, le jet et les nouvelles commandes du Spitfire.
+les touches physiques et les nouvelles commandes du Spitfire.
 
 ## HUD épuré (issue #135)
 

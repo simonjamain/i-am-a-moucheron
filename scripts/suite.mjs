@@ -7,6 +7,7 @@ export const SUITE = [
   'test-mouse-flight',
   'test-flight-tuning',
   'test-walk-arena',
+  'test-walker-jump',
   'test-audio',
   'test-audio-library',
   'test-audio-boundary',

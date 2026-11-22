@@ -187,27 +187,12 @@ try {
   spit.hosted = false; // moved by hand below: the server's physics must not carry it elsewhere
   spit.state.p = [1.5, 2, -0.5];
   spit.state.landed = false;
-  spit.dirt = 0.001;
   Object.assign(app.game.base(gameRoom, person), {
     x: (1.5 - OFFICE_LAYOUT.base.originX) / ACTOR_UNIT,
     z: OFFICE_LAYOUT.base.originZ / ACTOR_UNIT,
     y: 2 - MAP.metres(0.9),
     grounded: true,
   });
-  const washBody = {
-    direction: [0, 0, -1],
-    epoch: gameRoom.base.epoch,
-    incarnation: person.incarnation,
-  };
-  assert.equal((await b.request('wash', washBody)).status, 200);
-  await new Promise((r) => setTimeout(r, 40));
-  assert.equal((await b.request('wash', washBody)).status, 200);
-  const washed = await a.request('sync', { mode: 'foot', state });
-  assert.equal(washed.body.vehicles.find((v) => v.id === spit.id).dirt, 0);
-  assert.equal(
-    washed.body.effects.filter((e) => e.kind === 'clean' && e.vehicle === spit.id).length,
-    1,
-  );
   // Reconnection: a fresh connection resumes the same pilot; the server closes
   // the old connection; a dropped connection leaves the pilot resumable.
   {
