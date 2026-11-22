@@ -118,7 +118,11 @@ Castor volant donne la première des trois places passagers libre), contour dans
 mitrailleuse sur le toit plutôt que la tourelle qui l’entoure) ; les sphères de visée
 ajoutent de la marge autour des petites pièces, sauf si l’engin les cache. Le contour est
 tracé à l’écran, par-dessus l’image, autour de la silhouette du poste (comme les contours du
-[rendu dessin animé](toon-rendering.md)) : aucun volume n’est ajouté au modèle.
+[rendu dessin animé](toon-rendering.md)) : aucun volume n’est ajouté au modèle. Ce tracé
+cherche, pour chaque pixel, le masque dans un disque de la largeur du trait : il ne couvre
+donc que le rectangle d’écran des pièces surlignées, élargi du trait (`selectionRect`), et
+non tout l’écran, coûteux en haute résolution. Un modèle animé par squelette (le vigile du
+purgatoire) a un masque sur le même squelette : le contour suit son animation.
 Le clic gauche, ou la touche d’interaction, sur le poste visé ouvre son dossier (ou le contrat
 du lit) ; le serveur vérifie seulement que le joueur se tient près de l’engin ou de
 l’installation, de n’importe quel côté.
