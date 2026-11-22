@@ -161,7 +161,7 @@ avec plusieurs avions, dégâts, latence et fluidité.
 calculées directement depuis ID, route et temps, avec une complexité
 essentiellement linéaire par trame moucheron. Les autres espèces conservent
 la grille de voisinage existante. `src/midge-batch.js` réduit les meshes
-WebGL **vivants** des moucherons à trois lots instanciés, sans rendre les
+WebGL **vivants** des moucherons à un seul lot instancié (modèle Meshy pour tous, sans niveau de détail), sans rendre les
 collisions dépendantes du rendu. `src/insect-hits.ts` utilise le rayon
 mathématique de la sphère pour les intersections et le même index spatial.
 Le serveur ajoute un rejet AABB rapide avant les intersections segment–sphère
