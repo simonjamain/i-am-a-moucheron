@@ -6062,6 +6062,16 @@ function heavyWorld() {
       const hit = decor.raycast(a, dir, length);
       return hit ? hit.distance / length : null;
     },
+    // The same ray, with the prop's surface normal (a shell with a ricochet angle bounces on it).
+    decorHit: (a, b) => {
+      const decor = office.decor;
+      if (!decor) return null;
+      const length = Math.hypot(b[0] - a[0], b[1] - a[1], b[2] - a[2]);
+      if (length < 1e-12) return null;
+      const dir = [(b[0] - a[0]) / length, (b[1] - a[1]) / length, (b[2] - a[2]) / length];
+      const hit = decor.raycast(a, dir, length);
+      return hit ? { t: hit.distance / length, normal: hit.normal } : null;
+    },
     // Distance to the nearest prop triangle within `radius`, or null (proximity fuses).
     decorNearest: (point, radius) => office.decor?.nearest(point, radius)?.distance ?? null,
     roster,
@@ -6130,6 +6140,20 @@ function flushPierces(projectile) {
   showHeavyImpact(report);
   action('heavy-impact', report);
 }
+// A shell that ricocheted: effect here, and the new flight for the server and the other players.
+function flushBounces(projectile) {
+  const skids = projectile.skids;
+  if (!skids?.length) return;
+  projectile.skids = [];
+  for (const skid of skids) {
+    hitEffects.burst(new T.Vector3().fromArray(skid.at), camera, {
+      key: projectile.shot + ':' + skid.bounces,
+    });
+    sound.play('ricochet', new T.Vector3().fromArray(skid.at), { ref: 20 });
+  }
+  const { p, v, age, updated, bounces } = skids.at(-1);
+  action('heavy-bounce', { shot: projectile.shot, p, v, age, updated, bounces });
+}
 function finishHeavy(projectile, impact, world) {
   if (projectile.weapon === 'missile') {
     predictedReloads.set(
@@ -6153,6 +6177,7 @@ function updateLocalHeavy() {
   for (const projectile of [...localShots.values()]) {
     const impact = stepHeavy(projectile, now, world);
     flushPierces(projectile);
+    flushBounces(projectile);
     if (impact || projectile.done) finishHeavy(projectile, impact, world);
   }
 }
@@ -6182,7 +6207,9 @@ function displayedShots() {
     if (record.shooter === id || localShots.has(record.shot) || effectSeen.has(record.shot))
       continue;
     let flight = remoteFlights.get(record.shot);
-    if (!flight) remoteFlights.set(record.shot, (flight = structuredClone(record)));
+    // A ricochet reported by the shooter (heavy-bounce) replaces the flight from the new launch.
+    if (!flight || (record.bounces ?? 0) !== (flight.bounces ?? 0))
+      remoteFlights.set(record.shot, (flight = structuredClone(record)));
     const owner = snap.pilots.find((p) => p.id === record.shooter);
     const relayed = owner && remoteMotion(owner)?.missile;
     if (record.weapon === 'missile' && relayed?.shot === record.shot) {

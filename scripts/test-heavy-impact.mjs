@@ -39,6 +39,26 @@ assert.deepEqual(
   'the server does not fly it',
 );
 assert.equal(r.effects.filter((e) => e.shot === 'one').length, 0);
+// 1b. A ricochet reported by the shooter restarts the recorded flight; nobody else can, and an
+// older report never overwrites a newer one.
+const bounced = {
+  shot: 'one',
+  p: [0.1, 0.2, 0.3],
+  v: [1, 2, 3],
+  age: 0.5,
+  updated: now,
+  bounces: 1,
+};
+command(friend, 'heavy-bounce', bounced);
+assert.equal(record.bounces, undefined, "only the shooter's report counts");
+command(shooter, 'heavy-bounce', bounced);
+assert.deepEqual([record.p, record.v, record.bounces], [[0.1, 0.2, 0.3], [1, 2, 3], 1]);
+command(shooter, 'heavy-bounce', { ...bounced, p: [9, 9, 9], bounces: 1 });
+assert.deepEqual(record.p, [0.1, 0.2, 0.3], 'a repeated or older bounce is ignored');
+assert.throws(() => command(shooter, 'heavy-bounce', { ...bounced, bounces: 2, v: [1, NaN, 3] }));
+command(shooter, 'heavy-bounce', { ...bounced, shot: 'unknown', bounces: 3 });
+Object.assign(record, launch);
+delete record.bounces;
 // 2. Combat: an enemy, a friend's vehicle and a friend on foot in the report.
 Object.assign(r, { phase: 'combat', wave: 1, started: now, next_wave_at: 0 });
 r.upcomingPlan = r.preparation = null;
