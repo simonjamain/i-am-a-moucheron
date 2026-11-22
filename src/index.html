@@ -371,6 +371,16 @@
       .stat b.lime {
         color: var(--acid);
       }
+      #hud #roomTag .viewToggle {
+        opacity: 0.55;
+        padding: 5px 8px;
+      }
+      #hud #roomTag .viewToggle[aria-pressed='true'] {
+        opacity: 1;
+        background: #d5ef73;
+        color: #132e23;
+        font-weight: bold;
+      }
       #labOpen.debugOn {
         background: #d5ef73;
         color: #132e23;
@@ -2375,6 +2385,22 @@
           <button id="flightSettingsOpen">Pilotage</button>
           <button id="labOpen" aria-pressed="false" title="Mode debug commun à la room">
             Debug : OFF
+          </button>
+          <button
+            id="viewVolumes"
+            class="viewToggle"
+            aria-pressed="false"
+            title="Volumes de collision, hitboxes et portées (vue locale, sans mode debug)"
+          >
+            Volumes
+          </button>
+          <button
+            id="viewPhysics"
+            class="viewToggle"
+            aria-pressed="false"
+            title="Physique : corps rigides, suspensions, forces (vue locale)"
+          >
+            Physique
           </button>
         </div>
       </header>

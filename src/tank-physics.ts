@@ -3,6 +3,13 @@ import { MAP } from './scale.ts';
 import { vehicleScale, type VehicleProfile } from './fleet.ts';
 import { AXLES, GUN_PIVOT, TRACK_HALF } from './tank-gear.ts';
 import {
+  DEBUG_COLORS,
+  cross,
+  drawColliders,
+  type DebugRig,
+  type DebugSink,
+} from './physics-debug.ts';
+import {
   FALL_KILL_SPEED,
   GRAVITY,
   MODEL_UNIT,
@@ -108,7 +115,7 @@ const hullPoints = (): Float32Array => {
   return new Float32Array(ring.flatMap(([z, y]) => [-w, y, z, w, y, z]));
 };
 
-export class TankRig {
+export class TankRig implements DebugRig {
   params: TankParams;
   physics: PhysicsWorld;
   body: RigidBody;
@@ -161,6 +168,35 @@ export class TankRig {
     this.restLength = params.sag + params.droop;
     // The spring top is where the ground is at the springs' rest length plus the sag.
     this.mountY = -GROUND_CLEARANCE + (this.restLength - params.sag);
+  }
+
+  /** Debug view (physics-debug.ts): the hull, each spring at rest length and compressed. */
+  debugDraw(sink: DebugSink): void {
+    drawColliders(this.physics.world, [this.body], sink);
+    const q = this.body.rotation(),
+      p = this.body.translation(),
+      up = rotate(q, { x: 0, y: 1, z: 0 });
+    MOUNTS.forEach((mount, i) => {
+      const o = rotate(q, { x: mount.x, y: this.mountY, z: mount.z }),
+        origin = [p.x + o.x, p.y + o.y, p.z + o.z];
+      const along = (t: number): number[] => [
+        origin[0] - up.x * t,
+        origin[1] - up.y * t,
+        origin[2] - up.z * t,
+      ];
+      const full = this.params.sag + this.params.bump,
+        c = this.wheelCompression[i];
+      sink(origin, along(this.restLength), DEBUG_COLORS.rest);
+      // Travel: how far the spring can be pushed in before it bottoms out.
+      sink(along(this.restLength), along(this.restLength - full), DEBUG_COLORS.travel);
+      cross(sink, origin, 0.03, DEBUG_COLORS.contact);
+      if (c > 0) {
+        sink(origin, along(this.restLength - c), DEBUG_COLORS.compressed);
+        cross(sink, along(this.restLength - c), 0.04, DEBUG_COLORS.contact);
+      }
+    });
+    const com = this.body.worldCom();
+    cross(sink, [com.x, com.y, com.z], 0.06, DEBUG_COLORS.centre);
   }
 
   adopt(state: TankState): void {

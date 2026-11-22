@@ -291,3 +291,4 @@ freiner, reculer, heurter un bureau et un mur oblique, tomber d'un bureau. Avec 
 suivre le même trajet sans saccade.
 
 Le biplan vole aussi sur Rapier : [vol du biplan](plane-physics.md).
+Le bouton « Physique » de l'en-tête dessine corps rigides, suspensions et forces : [affichage de la physique](physics-debug.md).

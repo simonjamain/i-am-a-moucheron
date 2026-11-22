@@ -179,6 +179,7 @@ import { loadRapier } from '/physics-world.js';
 import { CastorRig } from '/castor-physics.js';
 import { TankRig } from '/tank-physics.js';
 import { PlaneRig, PLANE_CRASH_IMPACT } from '/plane-physics.js';
+import { PhysicsOverlay } from '/physics-debug.js';
 import { updateSuspension } from '/track-suspension.js';
 import { TRACK_HALF } from '/tank-gear.js';
 import {
@@ -6462,16 +6463,55 @@ const debugTools = new DebugTools({
 });
 // Debug mode: placement marker, hit volumes, turret and sugar ranges, collision
 // volumes of the room, dummy damage.
+// Two local views, independent of the room's debug mode (which restarts the game): the
+// volumes (hit boxes, collision boxes, ranges) and the physics (rigid bodies, springs,
+// forces, see physics-debug.ts). Each button remembers its state in this browser.
+const physicsOverlay = new PhysicsOverlay(T, scene);
+const views = { volumes: false, physics: false };
+function setupViewToggles() {
+  for (const [key, id] of [
+    ['volumes', 'viewVolumes'],
+    ['physics', 'viewPhysics'],
+  ]) {
+    const button = $(id);
+    try {
+      views[key] = localStorage.getItem('view.' + key) === '1';
+    } catch {
+      // storage unavailable: the view starts off
+    }
+    const show = () => button.setAttribute('aria-pressed', String(views[key]));
+    show();
+    button.addEventListener('click', () => {
+      views[key] = !views[key];
+      show();
+      try {
+        localStorage.setItem('view.' + key, views[key] ? '1' : '0');
+      } catch {
+        // not persisted
+      }
+    });
+  }
+}
+setupViewToggles();
+function physicsRigs() {
+  const rigs = [];
+  if (planeRig) rigs.push(planeRig);
+  for (const rig of drivenRigs.values()) rigs.push(rig);
+  for (const rig of vacantRigs.values()) rigs.push(rig);
+  return rigs;
+}
 function updateDebugTools() {
-  const on = joined && !!snap?.lab?.enabled;
-  if (debugTools.active && !on) debugTools.cancel();
+  const lab = joined && !!snap?.lab?.enabled;
+  const on = lab || (joined && views.volumes);
+  physicsOverlay.update(physicsRigs(), joined && views.physics);
+  if (debugTools.active && !lab) debugTools.cancel();
   else if (debugTools.active) debugTools.render();
   debugTools.showHitboxes(insects.values(), on);
   debugTools.showRanges(snap?.groundDefense?.structures, on);
   debugTools.showColliders(colliders, on, office.decorWire);
   if (snap)
     debugTools.showDummyDamage(
-      on ? insects : new Map(),
+      lab ? insects : new Map(),
       currentRoster(),
       (i) => localEnemyDamage.get(i) || 0,
       snap.wave,
