@@ -48,6 +48,7 @@ import { bedAccess } from '/beds.js';
 import { tankSight } from '/tank-view.js';
 import { applyGunRecoil, recoilAmount } from '/tank-recoil.js';
 import { followMoving } from '/camera-follow.js';
+import { clearEye } from '/camera-clearance.js';
 import { shoulderCamera, GROUND_VIEW_DISTANCE, GROUND_VIEW_PITCH } from '/personal-aim.js';
 import { BankUI } from '/bank-ui.js';
 import { ContextHUD, equipmentHUD } from '/hud.js';
@@ -352,6 +353,24 @@ function solidRayDistance(ray, far, boxes = colliders) {
     if (hit) best = Math.min(best, hit.distance);
   }
   return best <= far ? best : Infinity;
+}
+// Camera clearance (camera-clearance.ts): the nearest solid between a followed point and
+// the wanted eye, in the office or in the purgatory.
+function castCamera(boxes) {
+  return (o, d, far) =>
+    solidRayDistance(
+      new T.Ray(new T.Vector3(o.x, o.y, o.z), new T.Vector3(d.x, d.y, d.z)),
+      far,
+      boxes,
+    );
+}
+// Chase camera: follows the wanted eye (eased), but never ends behind a solid.
+function followClear(target, wanted, velocity, dt) {
+  const cast = castCamera(colliders);
+  const eye = clearEye(target, wanted, cast);
+  followMoving(camera.position, eye, velocity, 10, dt);
+  const safe = clearEye(target, camera.position, cast);
+  camera.position.set(safe.x, safe.y, safe.z);
 }
 // Placement aim on top faces (placement-aim.ts), on the props' real triangles once
 // the decor world is built: a top face of a prop (normal up) is a candidate
@@ -693,22 +712,17 @@ function groundCamera(cam, position, dt, purg = false) {
   const viewScale = (purg ? WALK_WORLDS.purgatory : WALK_WORLDS.office).sceneScale;
   const {
     target,
-    offset,
     eye: desired,
     forward,
     tilted,
   } = shoulderCamera(T, position, groundView.yaw, groundView.pitch, groundView.distance, viewScale);
-  // Pull the camera in before solid office furniture instead of looking through it.
-  {
-    const ray = new T.Ray(target, offset.clone().normalize());
-    let distance = offset.length();
-    const hit = solidRayDistance(ray, distance, purg ? purgColliders : colliders);
-    if (hit < Infinity)
-      distance = Math.min(distance, Math.max(0.08 * viewScale, hit - 0.08 * viewScale));
-    desired.copy(target).addScaledVector(offset.normalize(), distance);
-  }
+  // Pull the camera in before solid office furniture instead of looking through it, also
+  // after the easing (a pulled-in camera must not glide through the obstacle).
+  const cast = castCamera(purg ? purgColliders : colliders);
+  desired.copy(clearEye(target, desired, cast));
   if (changed) cam.position.copy(desired);
   else cam.position.lerp(desired, 1 - Math.exp(-14 * dt));
+  cam.position.copy(clearEye(target, cam.position, cast));
   cam.up.set(0, 1, 0);
   // Looking above the reachable orbit: the camera stays low and tilts up.
   if (tilted)
@@ -3150,13 +3164,12 @@ function updateVehicles(dt) {
             new T.Euler(T.MathUtils.clamp(turretAim.pitch, -1.2, 0.6), turretAim.yaw, 0, 'YXZ'),
           ),
         );
-      followMoving(
-        camera.position,
+      followClear(
+        me.position,
         me.position
           .clone()
           .add(new T.Vector3(0, 7, 21).multiplyScalar(ACTOR_UNIT).applyQuaternion(orbit)),
         vel,
-        10,
         dt,
       );
       camera.up.set(0, 1, 0);
@@ -5121,7 +5134,7 @@ function frame(now) {
         )
           .multiplyScalar(ACTOR_UNIT)
           .applyQuaternion(orbit);
-        followMoving(camera.position, me.position.clone().add(offset), vel, 10, dt);
+        followClear(me.position, me.position.clone().add(offset), vel, dt);
         camera.up.set(0, 1, 0).applyQuaternion(orbit);
         camera.lookAt(
           me.position

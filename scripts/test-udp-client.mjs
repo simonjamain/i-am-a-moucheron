@@ -208,7 +208,13 @@ assert.doesNotMatch(
     [other],
     'only other room members are applied',
   );
-  assert.ok(seen[0].time <= before - 99 + 5, 'the batch age is removed from the receive time');
+  const after = performance.now();
+  // Receive time = now - age (100 ms here), where now lies between the two readings: exact
+  // whatever the load, unlike a fixed tolerance on the time spent between them.
+  assert.ok(
+    seen[0].time >= before - 100 - 1e-6 && seen[0].time <= after - 100 + 1e-6,
+    'the batch age is removed from the receive time',
+  );
   send([{ peer: other, seq: 6, at: 10000, bytes }]);
   assert.equal(seen.length, 1, 'older sequences are ignored');
   batchClient.motion.onmessage({ data: new Uint8Array([0x4d, 1, 2]).buffer });

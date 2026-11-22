@@ -156,6 +156,7 @@ export const SUITE = [
   'test-heli-physics',
   'test-start-pad',
   'test-camera-follow',
+  'test-camera-clearance',
   'test-truck-physics',
   'test-truck-wheels',
   'test-castor-meshy',

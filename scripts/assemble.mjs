@@ -220,6 +220,7 @@ const files = {
       'pose-smoother',
       'tank-recoil',
       'camera-follow',
+      'camera-clearance',
       'tank-gear',
       'tessellate',
       'track-suspension',
