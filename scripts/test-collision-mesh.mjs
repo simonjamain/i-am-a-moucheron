@@ -156,6 +156,39 @@ assert.ok(Math.abs(place(desk.x, 0.745, desk.z + 0.3).y - 0.74005) < 1e-4, 'desk
 assert.equal(place(desk.x + 0.85, 0.745, desk.z), null, 'nothing beyond the desk edge');
 const keyboard = diagonale.props.find((p) => p.model === 'Keyboard');
 assert.equal(place(keyboard.x, 0.777, keyboard.z), null, 'uneven keys: no support');
+// Vehicles are less picky: the blades of a fan (uneven, tilted) carry a fighter, which
+// rests on the highest contact under its hull. Equipment keeps the strict rules.
+const rugged = (model, kind) => {
+  let accepted = 0;
+  for (const fan of diagonale.props.filter((p) => p.model === model))
+    for (let i = 0; i < 12; i++)
+      for (let j = 0; j < 12; j++) {
+        const x = fan.x + (i - 6) * 0.06,
+          z = fan.z + (j - 6) * 0.06;
+        const top = decor.raycast([x, 2.5, z], [0, -1, 0], 3);
+        if (!top || top.point[1] < 0.05) continue;
+        const at = supportedPlacement({ x, y: top.point[1], z, angle: 0 }, boxes, [], kind, decor);
+        if (!at) continue;
+        accepted++;
+        assert.ok(Math.abs(at.y - 0.00005 - top.point[1]) <= 0.02, model + ': on its contact');
+      }
+  return accepted;
+};
+assert.ok(rugged('Ceiling_Fan', 'fighter') > 20, 'a fighter can be placed on the fan blades');
+assert.ok(
+  rugged('Ceiling_Fan', 'dca') < rugged('Ceiling_Fan', 'fighter'),
+  'equipment stays stricter',
+);
+assert.equal(placeVehicleEdge(), null, 'still nothing beyond the desk');
+function placeVehicleEdge() {
+  return supportedPlacement(
+    { x: desk.x + 0.85, y: 0.745, z: desk.z, angle: 0 },
+    boxes,
+    [],
+    'fighter',
+    decor,
+  );
+}
 // The server trusts heights inside a prop's box only.
 assert.equal(server(desk.x, 0.745, desk.z + 0.3, 1.5), null, 'claimed height above the desk');
 assert.ok(server(0.6, 0, -0.4, 0), 'open floor stays a box rule');
