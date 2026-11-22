@@ -1,6 +1,6 @@
 // Shared walking cycle for rigged ground creatures (ant, spider): planted
 // feet slide backwards at the body's speed, lift in an arc during the swing,
-// and a two-bone leg solve (src/rigged-creature.js) turns hip and knee so the
+// and a two-bone leg solve (src/rigged-creature.ts) turns hip and knee so the
 // foot reaches its target. The cycle phase is one stride (0..1); the client
 // advances it with the distance travelled, so feet never slide on the floor.
 import type * as THREE from 'three';
@@ -29,7 +29,7 @@ export interface LegSolution {
   hipDelta: THREE.Quaternion;
   kneeDelta: THREE.Quaternion;
 }
-/** Subset of the rigged-creature helpers (src/rigged-creature.js) used here. */
+/** Subset of the rigged-creature helpers (src/rigged-creature.ts) used here. */
 export interface GaitHelpers {
   bind(name: string): THREE.Vector3;
   lowest(name: string): THREE.Vector3;

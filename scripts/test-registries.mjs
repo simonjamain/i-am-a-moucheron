@@ -68,7 +68,7 @@ for (const type of vehicles) {
   for (const seat of seats)
     assert.ok(
       CONTRACTS[contractKey('boarding', seat, type)]?.length,
-      `No boarding contract for ${type}/${seat} (src/contracts.js, contractKey)`,
+      `No boarding contract for ${type}/${seat} (src/contracts.ts, contractKey)`,
     );
 }
 console.log(
