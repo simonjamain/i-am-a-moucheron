@@ -1,3 +1,4 @@
+import { WALK_WORLDS, walkAcceleration } from './scale.ts';
 // Client-owned 2.5D locomotion, collisions and physical queue. Combat uses shared hit points.
 
 export type SoulKind = 'player' | 'enemy';
@@ -108,6 +109,8 @@ export interface SoulSeed {
 // it so the slimmer character no longer snags on other players and furniture.
 export const SOUL_RADIUS = 0.24,
   STEP = 1 / 60;
+// A soul walks exactly like a person in the office (scale.ts, walkAcceleration).
+const SOUL_ACCELERATION = walkAcceleration(WALK_WORLDS.purgatory);
 const clamp = (v: number, a: number, b: number): number => Math.max(a, Math.min(b, v));
 export const QUEUE_SPACING = 1.85,
   NPC_BALANCE = 60,
@@ -339,7 +342,7 @@ export function advanceArena(a: Arena, to: number, owner: SoulEntity = null): Ar
       }
       const guarding = false,
         attacking = false;
-      const accel = b.kind === 'enemy' ? 14 : (a.acceleration ?? 32),
+      const accel = b.kind === 'enemy' ? 14 : (a.acceleration ?? SOUL_ACCELERATION),
         drag =
           a.verticalUnit && b.grounded === false
             ? b.parachute

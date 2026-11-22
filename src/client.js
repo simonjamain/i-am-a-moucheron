@@ -64,7 +64,16 @@ import { SHOP, shopPrice, supportedPlacement } from '/equipment.js';
 import { stepBallisticVelocity, toggleParachute } from '/ballistics.js';
 import { makeTracer, updateTracer } from '/tracers.js';
 import { wavePlan, swarmFrame, entryStatus, ENEMY_TYPES } from '/waves.js';
-import { MAP, ACTOR_UNIT, HUMAN_SCALE, INSECT_SCALE, REFERENCE, FLAK } from '/scale.js';
+import {
+  MAP,
+  ACTOR_UNIT,
+  INSECT_SCALE,
+  REFERENCE,
+  FLAK,
+  WALK_WORLDS,
+  humanoidScale,
+  walkSpeed,
+} from '/scale.js';
 import {
   VEHICLES,
   SEAT_NAMES,
@@ -272,10 +281,6 @@ const zoomScope = () =>
       ])
     : null;
 camera.position.set(-1.65, 1.05, 2.6);
-// Ground speeds in m/s for the character gait: office arena units are actor
-// units (10.4/5.6 m); purgatory souls are 2.46-unit humanoids, about 1.8 m tall.
-const BASE_METRES = 10.4 / 5.6,
-  SOUL_METRES = 1.8 / 2.46;
 const hitEffects = new HitEffects(T, scene, { scale: ACTOR_UNIT });
 const bloodEffects = new BloodEffects(T, scene);
 const insectStatus = new InsectStatus(T, scene, { scale: INSECT_SCALE });
@@ -649,6 +654,33 @@ canvas.addEventListener(
   },
   { passive: false },
 );
+// One person on foot, whatever the world (office or purgatories): same model,
+// size, facing, gait, footsteps and camera, from scale.ts WALK_WORLDS.
+function makeWalker(entity, world) {
+  const g = humanoid(entity === id ? '#d5ef73' : '#8bc9d6', false, appearanceOf(entity));
+  g.scale.setScalar(humanoidScale(world));
+  g.userData.walkWorld = world;
+  return g;
+}
+function walkerYaw(world, face) {
+  return world.mirrorZ ? Math.PI - face : face;
+}
+// Turns the model toward the body's facing and plays its animation; returns the
+// ground speed in m/s. `state`: { falling, parachute } (character-model.ts).
+function poseWalker(g, body, dt, state = {}) {
+  const world = g.userData.walkWorld;
+  wearAppearance(g, body.entity);
+  g.rotation.y = turnToward(g.rotation.y, walkerYaw(world, body.face || 0), dt);
+  const speed = walkSpeed(world, body);
+  g.userData.animate?.(dt, { speed, ...state });
+  return speed;
+}
+const STEP_MIN_SPEED = 1.1, // m/s
+  STEP_STRIDE = 1.76; // metres between two footstep sounds
+function walkerSteps(body, speed, at, key, ref) {
+  if (footstepsAudible(body, speed, STEP_MIN_SPEED))
+    sound.play('step', at, { key, cooldown: Math.max(0.18, STEP_STRIDE / speed), ref });
+}
 function groundCamera(cam, position, dt, purg = false) {
   const name = purg ? 'purgatory' : 'base',
     changed = groundView.scene !== name;
@@ -658,7 +690,7 @@ function groundCamera(cam, position, dt, purg = false) {
     groundView.pitch = GROUND_VIEW_PITCH;
   }
   if (groundActive()) groundView.yaw -= pad.yaw * dt * 1.8;
-  const viewScale = purg ? 1 : MAP.ratio;
+  const viewScale = (purg ? WALK_WORLDS.purgatory : WALK_WORLDS.office).sceneScale;
   const {
     target,
     offset,
@@ -2604,7 +2636,7 @@ purgScene.add(new T.HemisphereLight('#fff5dc', '#486975', 3));
 const pl = new T.DirectionalLight('#fff4ca', 3);
 pl.position.set(5, 20, 10);
 purgScene.add(pl);
-const purgCamera = new T.PerspectiveCamera(52, innerWidth / innerHeight, 0.1, 150),
+const purgCamera = new T.PerspectiveCamera(62, innerWidth / innerHeight, 0.1, 150),
   soulMeshes = new Map();
 const soulStatus = new InsectStatus(T, purgScene, { scale: 1 });
 function soulSlot(i) {
@@ -2728,44 +2760,25 @@ function physicalPurgatory(dt, now) {
     let g = soulMeshes.get(b.id);
     if (!g) {
       g =
-        b.kind === 'player'
-          ? humanoid(b.entity === id ? '#d5ef73' : '#8bc9d6', false, appearanceOf(b.entity))
-          : soulInsect(b.enemyType);
-
+        b.kind === 'player' ? makeWalker(b.entity, WALK_WORLDS.purgatory) : soulInsect(b.enemyType);
       g.position.set(b.x, 0, b.z);
       purgScene.add(g);
       soulMeshes.set(b.id, g);
     }
-    const ko = b.koUntil > soulArena.time,
-      speed = Math.hypot(b.vx, b.vz);
+    const ko = b.koUntil > soulArena.time;
     g.position.lerp(new T.Vector3(b.x, 0, b.z), 1 - Math.exp(-20 * dt));
     if (b.kind === 'player') {
-      // Same character as in the office: it turns toward its facing and the
-      // model's own idle/walk/run/fall animations do the rest (below).
-      g.rotation.y = turnToward(g.rotation.y, b.face, dt);
-      if (speed > 0.7 && !ko)
-        sound.play(
-          'step',
-          { x: b.x, y: 0.1, z: b.z },
-          { key: 'step:' + b.id, cooldown: Math.max(0.18, 0.95 / speed), ref: 6 },
-        );
+      const speed = poseWalker(g, b, dt, { falling: ko });
+      if (!ko) walkerSteps(b, speed, { x: b.x, y: 0.1, z: b.z }, 'step:' + b.id, 6);
     } else {
       g.rotation.x = ko ? 1.4 : Math.sin(now * 0.009 + b.id) * 0.06;
       g.position.y = ko ? -0.2 : Math.sin(now * 0.008 + b.id) * 0.08;
     }
   }
   for (const b of soulArena.bodies)
-    if (b.kind === 'player' && soulMeshes.has(b.id)) {
-      wearAppearance(soulMeshes.get(b.id), b.entity);
-      soulMeshes.get(b.id).userData.animate?.(dt, {
-        speed: Math.hypot(b.vx, b.vz) * SOUL_METRES,
-        falling: b.koUntil > soulArena.time,
-      });
-    }
-  for (const b of soulArena.bodies)
     if (b.kind === 'enemy' && !b.gone) {
       const g = soulMeshes.get(b.id);
-      g?.userData.animate?.(dt, { speed: Math.hypot(b.vx, b.vz) * SOUL_METRES });
+      g?.userData.animate?.(dt, { speed: walkSpeed(WALK_WORLDS.purgatory, b) });
       if (g) soulStatus.update(b.id, g, b.health, b.maxHealth || 100, purgCamera, now / 1000);
     }
   soulStatus.keep(
@@ -3469,20 +3482,15 @@ function updateBaseWorld(dt, now) {
     active.add(b.entity);
     let g = basePeople.get(b.entity);
     if (!g) {
-      g = humanoid(b.entity === id ? '#d5ef73' : '#8bc9d6', false, appearanceOf(b.entity));
-      g.scale.setScalar(HUMAN_SCALE);
-
+      g = makeWalker(b.entity, WALK_WORLDS.office);
       scene.add(g);
       basePeople.set(b.entity, g);
       const w = baseWorld(b);
       g.position.set(w.x, w.y, w.z);
-      g.rotation.y = Math.PI - b.face;
+      g.rotation.y = walkerYaw(WALK_WORLDS.office, b.face);
     }
-    wearAppearance(g, b.entity);
     const w = baseWorld(b);
     g.position.lerp(new T.Vector3(w.x, w.y, w.z), 1 - Math.exp(-20 * dt));
-    // The facing snaps to the input; the model turns toward it smoothly.
-    g.rotation.y = turnToward(g.rotation.y, Math.PI - b.face, dt);
     if (!g.userData.chute) {
       const chute = new T.Group();
       const canopy = new T.Mesh(
@@ -3506,19 +3514,12 @@ function updateBaseWorld(dt, now) {
       g.userData.chute = chute;
     }
     g.userData.chute.visible = !!b.parachute;
-    const speed = Math.hypot(b.vx, b.vz);
-    // No weapon in the office: the character keeps its own idle/walk/run animation.
-    g.userData.animate?.(dt, {
-      speed: speed * BASE_METRES,
+    // The facing snaps to the input; the model turns toward it smoothly.
+    const speed = poseWalker(g, b, dt, {
       falling: b.grounded === false,
       parachute: !!b.parachute,
     });
-    if (!respawnAt && footstepsAudible(b, speed))
-      sound.play('step', w, {
-        key: 'base-step:' + b.entity,
-        cooldown: Math.max(0.18, 0.95 / speed),
-        ref: 7,
-      });
+    if (!respawnAt) walkerSteps(b, speed, w, 'base-step:' + b.entity, 7);
   }
   for (const [id, g] of basePeople)
     if (!active.has(id)) {
@@ -6887,18 +6888,15 @@ function observedPurgatory(dt) {
     if (!model) {
       model =
         body.kind === 'player'
-          ? humanoid('#8bc9d6', false, appearanceOf(body.entity))
+          ? makeWalker(body.entity, WALK_WORLDS.purgatory)
           : soulInsect(body.enemyType);
       purgScene.add(model);
       soulMeshes.set(body.id, model);
       model.rotation.y = body.face || 0;
     }
-    if (body.kind === 'player') wearAppearance(model, body.entity);
     model.position.set(body.x, 0, body.z);
-    model.rotation.y = turnToward(model.rotation.y, body.face || 0, dt);
-    model.userData.animate?.(dt, {
-      speed: Math.hypot(body.vx || 0, body.vz || 0) * SOUL_METRES,
-    });
+    if (body.kind === 'player') poseWalker(model, body, dt);
+    else model.userData.animate?.(dt, { speed: walkSpeed(WALK_WORLDS.purgatory, body) });
   }
   for (const [key, model] of soulMeshes)
     if (!active.has(key)) {

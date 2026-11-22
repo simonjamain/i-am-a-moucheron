@@ -152,7 +152,8 @@ order.reduce((at, key) => {
   return i;
 }, -1);
 assert.match(client, /appearance: appearancePicker\.value/);
-assert.match(client, /turnToward\(g\.rotation\.y, Math\.PI - b\.face, dt\)/);
+// Every walker (office and purgatories) turns smoothly toward its facing.
+assert.match(client, /turnToward\(g\.rotation\.y, walkerYaw\(world, body\.face \|\| 0\), dt\)/);
 assert.doesNotMatch(client, /g\.rotation\.y = Math\.PI - b\.face;\n\s+if \(!g\.userData\.chute\)/);
 // No second WebGL context nor read-back of the game canvas (each one left
 // Chrome several times slower for the whole game): draw straight into it.
