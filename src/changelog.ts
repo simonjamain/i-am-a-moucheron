@@ -5,6 +5,12 @@ export interface ChangelogEntry {
 }
 export const PLAYER_CHANGELOG: ChangelogEntry[] = [
   {
+    version: 424,
+    changes: [
+      'Le viseur principal n’est plus qu’un point : il ne cache plus le cercle de rechargement.',
+    ],
+  },
+  {
     version: 423,
     changes: [
       'Le biplan repose sur ses vraies roues, qui suivent les ressorts ; la roulette arrière a moins de course.',
