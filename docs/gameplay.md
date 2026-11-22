@@ -82,8 +82,8 @@ par type initial est conservé ; dès son décollage, un successeur gratuit appa
 un tank, un hélicoptère biplace ou une DCA mobile, dont la destruction est définitive. Les sièges sont exclusifs.
 
 Chaque accès publié aux équipements, y compris une nouvelle entrée, passe par un
-dossier de deux documents obligatoires, sur papier : la première pièce exige de cocher un
-motif (« Convenance personnelle » est refusée et oblige à recommencer). Il n’y a plus de
+dossier de deux documents obligatoires, sur papier, signés tels quels (seul le bon de
+commande de l’atelier demande un motif). Il n’y a plus de
 cercle au sol : on vise directement le poste (cockpit, trappe, tourelle) ou l’installation
 (DCA fixe, canon, lit), qui s’entoure de bleu signal s’il est libre (ou d’un contour clair
 avec le nom de son occupant), et un clic ouvre son dossier, de n’importe quel côté

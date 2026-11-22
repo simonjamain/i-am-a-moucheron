@@ -1,10 +1,9 @@
-import { ClauseSheet, LOAN_MOTIVES, handPath, stamp } from './paper-form.ts';
+import { ClauseSheet, loanConsent, handPath, stamp } from './paper-form.ts';
 import type { Bank, Loan } from './bank.ts';
 // The bank's prospectus (docs/ui-guidelines.md, « Menus : des documents qui sortent du
 // monde »): one paper sheet with the three slots printed as coupons. Ticking an offer
-// shows its terms and amortization table; the loan's purpose is ticked (the bank
-// accepts every motive, « convenance personnelle » included), then the signature
-// deposits it. A signed loan stays readable as a stamped contract whose paid
+// shows its terms and amortization table; one box acknowledges the debt (the bank
+// asks for no motive, it collects instalments), then the signature deposits it. A signed loan stays readable as a stamped contract whose paid
 // instalments are stamped PAYÉ.
 export const dollars = (cents: number): string =>
   (cents / 100).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) +
@@ -111,7 +110,7 @@ export class BankUI {
       e.preventDefault();
       if (this.busy || this.pointer !== null || !this.selection) return;
       if (!this.canSign()) {
-        this.status.textContent = 'Cochez l’objet du prêt avant de signer.';
+        this.status.textContent = 'Cochez la reconnaissance de dette avant de signer.';
         return;
       }
       this.pointer = e.pointerId;
@@ -184,14 +183,14 @@ export class BankUI {
     const loan = this.selected();
     return loan?.status === 'offer' && !!this.clauses?.complete && this.balance() >= 0;
   }
-  // Locks the signature line until an offer and the loan's purpose are ticked.
+  // Locks the signature line until an offer and the debt acknowledgement are ticked.
   refreshLock() {
     const offer = this.selected()?.status === 'offer';
     this.root.classList.toggle('locked', offer && !this.canSign());
     if (offer)
       this.status.textContent = this.canSign()
         ? 'Signez puis relâchez pour déposer le document.'
-        : 'Cochez l’objet du prêt, puis signez.';
+        : 'Cochez la reconnaissance de dette, puis signez.';
   }
   open() {
     if (!this.snapshot()?.bank) return;
@@ -230,7 +229,7 @@ export class BankUI {
     this.clauses =
       loan.status === 'offer'
         ? new ClauseSheet(
-            LOAN_MOTIVES,
+            loanConsent(loan.waves),
             this.root.querySelector<HTMLElement>('[data-clauses]'),
             () => this.refreshLock(),
           )

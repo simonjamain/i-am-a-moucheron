@@ -20,64 +20,57 @@ export interface ClauseRule {
   min: number;
 }
 
-/** Motive of an order from the workshop (bon de commande). */
-export const PURCHASE_MOTIVES: ClauseRule = Object.freeze({
-  title: 'Motif de la commande (cocher une case)',
-  exclusive: true,
-  min: 1,
-  clauses: Object.freeze([
-    { id: 'defense', text: 'Défense de la poubelle' },
-    { id: 'replacement', text: 'Remplacement de matériel égaré' },
-    { id: 'comfort', text: 'Convenance personnelle', refused: true },
-  ]),
+/**
+ * Motives a workshop order can give (bon de commande). Each order draws a few of
+ * them, then always offers « convenance personnelle », marked as refused: the
+ * form knows it will refuse it and offers it anyway.
+ */
+export const PURCHASE_MOTIVE_POOL: readonly Clause[] = Object.freeze([
+  { id: 'defense', text: 'Défense de la poubelle (encore)' },
+  { id: 'lost', text: 'Le précédent a été perdu en vol, avec le pilote' },
+  { id: 'ant', text: 'Le précédent a été emporté par une fourmi' },
+  { id: 'neighbours', text: 'L’escadrille d’en face en a un' },
+  { id: 'audit', text: 'Inventaire à compléter avant l’audit de fin de vague' },
+  { id: 'shiny', text: 'Ça brille et c’est dans le budget' },
+  { id: 'chief', text: 'Mon chef d’escadrille a dit oui, de loin' },
+  { id: 'bin', text: 'Remplacement de matériel tombé au fond de la poubelle' },
+  { id: 'budget', text: 'Crédit à dépenser avant la fin de l’exercice' },
+]);
+export const COMFORT: Clause = Object.freeze({
+  id: 'comfort',
+  text: 'Convenance personnelle (systématiquement refusé)',
+  refused: true,
 });
-
-const COMFORT: Clause = { id: 'comfort', text: 'Convenance personnelle', refused: true };
-const motives = (title: string, first: string, second: string): ClauseRule =>
-  Object.freeze({
-    title,
+/** Motives of one order: three drawn from the pool, then the refused one. */
+export function purchaseMotives(random: () => number = Math.random): ClauseRule {
+  const pool = [...PURCHASE_MOTIVE_POOL];
+  const drawn: Clause[] = [];
+  while (drawn.length < 3) drawn.push(...pool.splice(Math.floor(random() * pool.length), 1));
+  return Object.freeze({
+    title: 'Motif de la commande (cocher une case)',
     exclusive: true,
     min: 1,
-    clauses: Object.freeze([{ id: 'first', text: first }, { id: 'second', text: second }, COMFORT]),
+    clauses: Object.freeze([...drawn, COMFORT]),
   });
+}
 
-/** First document of a boarding dossier (vehicle seat or fixed defence). */
-export const BOARDING_MOTIVES = motives(
-  'Motif de la prise de poste (cocher une case)',
-  'Défense de la poubelle',
-  'Relève de l’équipage précédent',
-);
-/** First document of a return from the purgatory (or from Super Saint-Pierre). */
-export const RETURN_MOTIVES = motives(
-  'Motif du retour (cocher une case)',
-  'Mission inachevée à la base',
-  'Erreur administrative du service des âmes',
-);
-/** Personal bed contract, and its cancellation. */
-export const BED_MOTIVES = motives(
-  'Motif de la domiciliation (cocher une case)',
-  'Proximité de la ligne de défense',
-  'Rapprochement d’escadrille',
-);
-export const BED_CANCEL_MOTIVES = motives(
-  'Motif de la résiliation (cocher une case)',
-  'Déménagement vers le front',
-  'Lit devenu impraticable',
-);
 /**
- * Purpose of a bank loan. The bank is the one office that accepts « convenance
- * personnelle »: it does not judge motives, it collects instalments.
+ * The one box of a bank loan: the team knows what it signs up for. No motive:
+ * the bank does not judge motives, it collects instalments.
  */
-export const LOAN_MOTIVES: ClauseRule = Object.freeze({
-  title: 'Objet du prêt (cocher une case)',
-  exclusive: true,
-  min: 1,
-  clauses: Object.freeze([
-    { id: 'defense', text: 'Défense de la poubelle' },
-    { id: 'equipment', text: 'Achat de matériel' },
-    { id: 'comfort', text: 'Convenance personnelle' },
-  ]),
-});
+export function loanConsent(waves: number): ClauseRule {
+  return Object.freeze({
+    title: 'Reconnaissance de dette',
+    exclusive: false,
+    min: 1,
+    clauses: Object.freeze([
+      {
+        id: 'consent',
+        text: `Je comprends que cet emprunt plombe mon équipe pendant les ${waves} vagues à venir, et que c’est moi qui ai signé.`,
+      },
+    ]),
+  });
+}
 /** The refusal printed under the REFUSÉ stamp. */
 export const REFUSAL_TEXT =
   'Demande refusée : la convenance personnelle n’est pas un motif réglementaire.';

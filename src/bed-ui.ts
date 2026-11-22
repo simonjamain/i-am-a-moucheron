@@ -1,11 +1,12 @@
-import { BED_CANCEL_MOTIVES, BED_MOTIVES, ClauseSheet, REFUSAL_TEXT, stamp } from './paper-form.ts';
+import { ClauseSheet, REFUSAL_TEXT, stamp } from './paper-form.ts';
 import type { ClauseRule } from './paper-form.ts';
 // Paper document with a signature (docs/ui-guidelines.md): personal bed contract,
-// base of the workshop order (PurchaseUI). A motive is ticked first (never by
-// default); the signature, released, sends the document; APPROUVÉ is stamped on
-// the signed sheet, which leaves the screen while the game goes on. The clause
-// « convenance personnelle » is really refused: REFUSÉ, nothing sent, the sheet
-// closes and the request must be started again.
+// base of the workshop order (PurchaseUI). The bed contract is signed as it is;
+// the order first asks for a ticked motive (never by default). The signature,
+// released, sends the document; APPROUVÉ is stamped on the signed sheet, which
+// leaves the screen while the game goes on. The order's « convenance personnelle »
+// is really refused: REFUSÉ, nothing sent, the sheet closes and the request must
+// be started again.
 const STAMP_LINGER_MS = 900;
 const REFUSAL_LINGER_MS = 1600;
 /** The snapshot fields read by the bed contract. */
@@ -60,7 +61,7 @@ export class BedUI {
   cancel?: boolean;
   epoch?: unknown;
   incarnation?: number;
-  clauses?: ClauseSheet;
+  clauses?: ClauseSheet | null;
   constructor({ root, snapshot, command, accept, ground, onOpen, onClose }: BedUIOptions) {
     Object.assign(this, { root, snapshot, command, accept, ground, onOpen, onClose });
     this.opened = false;
@@ -108,9 +109,10 @@ export class BedUI {
   status(text: string): void {
     this.root.querySelector<HTMLElement>('[data-bed-status]')!.textContent = text;
   }
-  // Clauses of the document being opened (a ClauseRule from paper-form.ts).
-  motives(): ClauseRule {
-    return this.cancel ? BED_CANCEL_MOTIVES : BED_MOTIVES;
+  // Clauses of the document being opened (a ClauseRule from paper-form.ts), or
+  // null for a document signed as it is (the bed contract).
+  motives(): ClauseRule | null {
+    return null;
   }
   // Text after a confirmed signature, and where to start again after a refusal.
   signedText(): string {
@@ -120,7 +122,7 @@ export class BedUI {
     return 'Revenez au lit pour recommencer.';
   }
   canSign(): boolean {
-    return !!this.clauses?.complete;
+    return !this.clauses || this.clauses.complete;
   }
   refreshLock() {
     this.root.classList[this.canSign() ? 'remove' : 'add']('locked');
@@ -176,11 +178,10 @@ export class BedUI {
     this.root.querySelector<HTMLElement>('[data-bed-text]')!.textContent = this.cancel
       ? 'Je renonce à ce lit comme destination de retour. Ma prochaine résurrection utilisera la zone de départ. Aucun déménagement immédiat : les draps ne constituent pas un moyen de transport.'
       : 'Après mon passage au purgatoire, je demande à réapparaître à ce lit. Ce contrat remplace mon précédent point personnel et ne réserve pas le matelas aux autres joueurs. Si le lit disparaît ou devient impraticable, retour au départ. Le service décline toute responsabilité pour les ronflements des ressuscités.';
-    this.clauses = new ClauseSheet(
-      this.motives(),
-      this.root.querySelector<HTMLElement>('[data-clauses]'),
-      () => this.refreshLock(),
-    );
+    const motives = this.motives(),
+      box = this.root.querySelector<HTMLElement>('[data-clauses]');
+    this.clauses = motives ? new ClauseSheet(motives, box, () => this.refreshLock()) : null;
+    if (!motives) box?.replaceChildren?.();
     this.refreshLock();
     this.root.classList.remove('hidden');
     this.onOpen();
