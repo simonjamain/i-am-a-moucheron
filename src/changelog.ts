@@ -5,6 +5,13 @@ export interface ChangelogEntry {
 }
 export const PLAYER_CHANGELOG: ChangelogEntry[] = [
   {
+    version: 428,
+    changes: [
+      'Tous les avions volent avec la même physique que le biplan, roues qui suivent les ressorts comprises.',
+      'Un char, un camion ou un Castor laissé par son conducteur reste garé, même sur une pente.',
+    ],
+  },
+  {
     version: 427,
     changes: [
       'Quand on regarde trop haut ou trop loin, l’équipement se pose à la distance maximale au lieu de disparaître.',

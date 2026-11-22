@@ -147,7 +147,7 @@ export const SUITE = [
   'test-tank-recoil',
   'test-plane-physics',
   'test-physics-debug',
-  'test-plane-host',
+  'test-parked-host',
   'test-plane-server',
   'test-camera-follow',
   'test-truck-physics',

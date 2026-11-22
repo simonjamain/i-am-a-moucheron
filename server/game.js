@@ -28,7 +28,7 @@ import {
   LAYOUTS,
 } from '../src/layouts.ts';
 import { loadRapier } from '../src/physics-world.ts';
-import { PlaneHost, HOSTED_PLANES } from '../src/plane-host.ts';
+import { ParkedHost, isHosted } from '../src/parked-host.ts';
 import { DecorCollision } from '../src/office-collision.ts';
 import { MODEL_DATA } from '../src/office-pack-data.js';
 import {
@@ -98,7 +98,7 @@ export const RESUME_MS = 30000;
 export const IMPACT_GRACE_MS = 3000;
 // Active launches kept per room: only protects the room, the shooters simulate them.
 export const MAX_ORDNANCE = 10_000;
-// Physics of the aircraft nobody flies (src/plane-host.ts). The engine (a 4 MB WebAssembly
+// Physics of the vehicles nobody drives (src/parked-host.ts). The engine (a 4 MB WebAssembly
 // module) is loaded the first time a pilot leaves such an aircraft, and the decor's
 // triangles of a layout are built once per process (about 150 ms).
 let rapier = null;
@@ -401,7 +401,7 @@ export class Game {
   sweep() {
     for (const [code, r] of this.rooms)
       if (!this.live(r).length && this.now() - r.touched > this.roomTTL) {
-        r.planeHost?.dispose();
+        r.parkedHost?.dispose();
         this.rooms.delete(code);
       }
   }
@@ -725,7 +725,7 @@ export class Game {
     this.advanceGround(r, now);
     this.advanceSentries(r, now);
     this.expireOrdnance(r, now);
-    this.advancePlanes(r, now);
+    this.advanceParked(r, now);
     this.vehicleContacts(r, now);
     // A destroyed hull can arrive through motion before the client's death
     // command. Resolve its crew here even if that client disconnects.
@@ -844,8 +844,8 @@ export class Game {
     const balance = r.balance;
     const owner = r.balanceOwnerToken;
     const revision = r.balanceRevision;
-    r.planeHost?.dispose();
-    r.planeHost = null;
+    r.parkedHost?.dispose();
+    r.parkedHost = null;
     Object.assign(r, roomState(r.code, this.now(), r.layout));
     r.balance = balance;
     r.balanceOwnerToken = owner;
@@ -1224,7 +1224,7 @@ export class Game {
       if (p.id === host)
         for (const report of vacant.slice(0, 100)) {
           const v = r.vehicles.get(report.id);
-          if (!v || v.seats.has('pilot') || HOSTED_PLANES.has(v.type) || !validMotion(report.state))
+          if (!v || v.seats.has('pilot') || isHosted(v.type) || !validMotion(report.state))
             continue;
           v.state = {
             ...report.state,
@@ -2106,8 +2106,8 @@ export class Game {
         !grounded || Math.hypot(...v.state.v) <= MAP.metres(3),
         'Arrêtez l’avion avant de sortir.',
       );
-      // The server parks the aircraft the pilot leaves (src/plane-host.ts): brakes on, engine off.
-      if (p.seat === 'pilot' && HOSTED_PLANES.has(v.type)) {
+      // The server parks the vehicle the driver leaves (src/parked-host.ts): brakes on, engine off.
+      if (p.seat === 'pilot' && isHosted(v.type)) {
         v.hosted = true;
         v.state = { ...v.state, gas: 0 };
       }
@@ -2338,14 +2338,16 @@ export class Game {
       }),
     );
     r.ordnance.at(-1).bonus *= r.balance.damage;
+    // A parked tank (nobody drives it) recoils on the server's physics.
+    if (v.type === 'tank' && selected !== 'bomb') r.parkedHost?.kick(v.id, direction);
   }
   // Heavy weapons are simulated by their shooter (src/heavy-sim.js): the room
   // keeps each launch (origin, velocity, time) for the other players' display
   // and forgets it on its impact report or after its lifetime plus a delay.
-  // Parked aircraft (the pilot left them): the room's physics world brings them to rest
-  // where they stand, brakes on, and the engine puts them to sleep. Only aircraft left by
+  // Parked vehicles (the pilot left them): the room's physics world brings them to rest
+  // where they stand, brakes on, and the engine puts them to sleep. Only vehicles left by
   // a pilot are simulated; the others keep their state without any computation.
-  advancePlanes(r, now) {
+  advanceParked(r, now) {
     const wanted = [];
     for (const v of r.vehicles.values()) {
       if (!v.hosted) continue;
@@ -2353,31 +2355,22 @@ export class Game {
         v.hosted = false;
         continue;
       }
-      wanted.push({ id: v.id, state: v.state, profile: VEHICLES[v.type] });
+      wanted.push({ id: v.id, type: v.type, state: v.state, profile: VEHICLES[v.type] });
     }
     if (!wanted.length) {
-      r.planeHost?.sync([]);
+      r.parkedHost?.sync([]);
       return;
     }
     const R = physicsEngine();
     if (!R) return; // still loading: the aircraft stays where it was left
-    r.planeHost ??= new PlaneHost(R, decorFor(r.layout), this.fixedSolids ?? layoutSolids());
-    r.planeHost.sync(wanted);
-    for (const u of r.planeHost.step(now)) {
+    r.parkedHost ??= new ParkedHost(R, decorFor(r.layout), this.fixedSolids ?? layoutSolids());
+    r.parkedHost.sync(wanted);
+    for (const u of r.parkedHost.step(now)) {
       const v = r.vehicles.get(u.id);
       if (!v) continue;
-      v.state = {
-        ...v.state,
-        p: u.p,
-        q: u.q,
-        v: u.v,
-        omega: u.omega,
-        landed: u.landed,
-        gas: 0,
-        ...(u.destroyed ? { hp: 0 } : {}),
-      };
+      v.state = { ...v.state, ...u.state, ...(u.destroyed ? { hp: 0 } : {}) };
       if (u.destroyed) v.hosted = false;
-      if (!u.landed || v.state.hp <= 0) v.ready = 0;
+      if (!v.state.landed || v.state.hp <= 0) v.ready = 0;
     }
   }
   expireOrdnance(r, now) {

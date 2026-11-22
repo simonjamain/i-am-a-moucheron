@@ -79,12 +79,18 @@ export class PhysicsWorld {
   world: World;
   solids = new Map<Solid, { collider: RapierCollider; signature: string }>();
   floor: RapierCollider;
+  /** Gravity of the world (m/s²). */
+  gravity: number;
+  /** Shared worlds (src/parked-host.ts): rigs ask for a step, the host steps once. */
+  deferred = false;
+  private requested = 0;
   /** The decor whose triangles stand for the props' boxes, and their copies here. */
   decor: { addTo(world: World): RapierCollider[] } | null = null;
   decorColliders: RapierCollider[] = [];
 
   constructor(RAPIER: Rapier, { gravity = GRAVITY } = {}) {
     this.R = RAPIER;
+    this.gravity = gravity;
     this.world = new RAPIER.World({ x: 0, y: -gravity, z: 0 });
     // The office floor (y = 0) is a wide slab, not a box of the layout.
     this.floor = this.world.createCollider(
@@ -145,7 +151,19 @@ export class PhysicsWorld {
   }
 
   step(dt: number): void {
+    if (this.deferred) {
+      this.requested = dt;
+      return;
+    }
     this.world.timestep = dt;
+    this.world.step();
+  }
+
+  /** Steps a shared world once for all the rigs that asked for a step. */
+  flush(): void {
+    if (!this.requested) return;
+    this.world.timestep = this.requested;
+    this.requested = 0;
     this.world.step();
   }
 

@@ -1,9 +1,23 @@
-# Vol du biplan sur Rapier
+# Vol des avions sur Rapier
 
-Le biplan (type `fighter`) est un corps rigide Rapier (`src/plane-physics.ts`, classe
-`PlaneRig`), piloté par des forces. Les autres avions gardent le pas arcade de
-`src/flight.ts` tant qu'ils ne sont pas portés. Les avions vides laissés dans la salle
-(`vacant-flight.ts`) utilisent encore l'ancien modèle.
+Les avions à voilure fixe (biplan, bombardier biplan, chasseur léger, bombardier moyen,
+intercepteur, Spitfire : `PLANE_TYPES`) sont des corps rigides Rapier (`src/plane-physics.ts`,
+classe `PlaneRig`), pilotés par des forces. Seuls les hélicoptères (hélicoptère d'attaque,
+Castor volant) gardent leur pas propre (`src/helicopter.ts`) ; à planifier ensuite.
+
+## Un modèle par avion
+
+La géométrie de chaque avion est mesurée sur son modèle (`scripts/measure-aircraft.mjs` écrit
+`src/aircraft-geometry.ts` : moyeux des roues, point d'appui de la queue, boîtes autour des
+îlots du maillage, en unités de modèle). Le biplan garde ses valeurs réglées à la main (validées
+en vol) ; pour les autres, une boîte est relevée au-dessus de la droite roues–queue (sinon
+elle porterait l'avion à la place du train). `planeSpec(type)` en tire le train (course des
+roues principales ≈ 0,6 de la hauteur au sol, roulette à demi-course), le centre de masse
+(derrière les roues : un cinquième du poids sur la queue) et les paramètres de vol
+(décrochage à 0,32 de la vitesse maximale du type, `thrustLimit` à 1,33, poussée selon
+`VEHICLES[type].thrust`, masse selon l'envergure). Les roues principales de chaque modèle sont
+des pièces du modèle (`scripts/rig-biplane-wheels.mjs`, `scripts/rig-aircraft-wheels.mjs` :
+`wheelL` / `wheelR`, moyeux compris).
 
 ## Méthode
 
@@ -54,30 +68,35 @@ par « instructeur », comme War Thunder ; déjà dans `src/mouse-flight.ts`).
   au-delà de 2,5 l'avion prend des dégâts, au-delà de `PLANE_CRASH_IMPACT` (16) il est
   détruit. Murs et plafond de la pièce gardent la règle à vitesse du client.
 
-## Avion garé : le serveur (`src/plane-host.ts`)
+## Véhicule garé : le serveur (`src/parked-host.ts`)
 
-Quand le pilote d'un biplan en sort (à l'arrêt ou en parachute), l'avion est marqué
-`hosted` par le serveur (`vehicle-exit`, `server/game.js`) et simulé **par le serveur** avec
-le même `PlaneRig` : moteur coupé, freins serrés (courbe de friction raide : pas de
-reptation sur une pente). Rapier tourne dans Node (`@dimforge/rapier3d-compat`, passé en
-dépendance de production ; chargé à la première sortie, le décor d'un plan est construit
-une fois par processus, environ 150 ms).
+Quand le pilote d'un avion, d'un char, d'un camion antiaérien ou d'un Castor en sort (à l'arrêt
+ou en parachute), le serveur marque le véhicule `hosted` (`vehicle-exit`, `server/game.js`) et le
+simule **lui-même** avec le même rig que le client : moteur coupé, freins serrés (avion : courbe de
+friction raide, pas de reptation sur une pente ; char, camion, Castor : frein de parking de
+leur rig). Rapier tourne dans Node (`@dimforge/rapier3d-compat`, dépendance de production ;
+chargé à la première sortie, le décor d'un plan est construit une fois par processus, environ
+150 ms).
 
-- Un `PlaneHost` par room : un seul monde Rapier, le décor copié une fois, tous les avions
-  garés dedans. Pas pour les avions jamais utilisés (ils gardent leur état sans calcul).
-- **Sommeil** : laissé à Rapier (les forces n'appliquent pas de réveil pour un avion garé) :
-  au repos il s'endort et ne coûte plus rien ; un avion endormi n'envoie plus de mises à
-  jour. Dès qu'un pilote s'assoit, l'avion quitte le monde du serveur et le client reprend
-  l'autorité.
-- Un choc au-delà de `PLANE_CRASH_IMPACT` ou une sortie de la pièce détruit l'avion
-  (`hp = 0`). Les constructions posées par les joueurs ne sont pas encore dans ce monde
-  (seulement la pièce et le décor).
-- Le client hôte ne simule plus les biplans vides (`simulateVacantAircraft`) ; les autres
-  engins vides gardent leur simulation actuelle, à porter ensuite sur le même principe.
+- Un `ParkedHost` par room : **un seul monde Rapier** (gravité de 9,81, les avions ont leur propre
+  gravité par `gravityScale`), le décor copié une fois, tous les véhicules garés dedans ; les
+  rigs demandent leur pas et l'hôte le fait une fois (`PhysicsWorld.deferred` / `flush`). Rien
+  n'est simulé pour un véhicule jamais utilisé.
+- **Sommeil** : pour un avion, laissé à Rapier (aucune force appliquée à un dormeur) ; pour un
+  véhicule terrestre, mis en sommeil après une seconde de repos, puis réveillé tout seul si
+  quelque chose le heurte. Un dormeur ne coûte rien et n'envoie plus de mises à jour. Dès
+  qu'un pilote s'assoit, le véhicule quitte le monde du serveur et le client reprend l'autorité.
+- Le recul d'un char garé qui tire (tireur de canon) est appliqué par le serveur
+  (`ParkedHost.kick`).
+- Un choc au-delà de `PLANE_CRASH_IMPACT`, une chute mortelle (rigs terrestres) ou une sortie de
+  la pièce détruit le véhicule (`hp = 0`). Les constructions posées par les joueurs ne sont
+  pas encore dans ce monde (seulement la pièce et le décor).
+- Le client hôte ne simule plus ces véhicules vides (`simulateVacantAircraft`) ; seuls les
+  hélicoptères vides gardent la simulation du client hôte.
 
 ## Intégration
 
-`client.js` : `PLANE_RIGS` liste les types portés ; pour ceux-là, le pas de vol, la pose
+`client.js` : `PLANE_TYPES` liste les types portés (un rig par type piloté) ; pour ceux-là, le pas de vol, la pose
 au sol (`resolveLanding`) et les tests de boîtes de l'ancien chemin sont remplacés par
 `planeRig.step`. L'instructeur reçoit les vitesses angulaires dans le repère de l'avion.
 

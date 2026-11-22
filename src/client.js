@@ -185,8 +185,8 @@ import {
 import { loadRapier } from '/physics-world.js';
 import { CastorRig } from '/castor-physics.js';
 import { TankRig } from '/tank-physics.js';
-import { PlaneRig, PLANE_CRASH_IMPACT } from '/plane-physics.js';
-import { WHEEL_RADIUS, parkedCompression, poseBiplaneWheels } from '/biplane-model.js';
+import { PlaneRig, PLANE_CRASH_IMPACT, PLANE_TYPES } from '/plane-physics.js';
+import { parkedCompression, poseWheels } from '/aircraft-wheels.js';
 import { PhysicsOverlay } from '/physics-debug.js';
 import { updateSuspension } from '/track-suspension.js';
 import { TRACK_HALF } from '/tank-gear.js';
@@ -4043,7 +4043,7 @@ function updateOthers(dt) {
     g.userData.animateGun?.(dt, performance.now() < (g.userData.gunFiredUntil || 0));
     updateInscriptions(T, g, v, snap.pilots);
     g.visible = v.state.hp > 0;
-    if (!isSelf && g.userData.wheels) poseBiplaneWheels(g, parkedCompression(!!v.state.landed));
+    if (!isSelf && g.userData.wheels) poseWheels(g, parkedCompression(g, !!v.state.landed));
     // Damage shows as engine smoke, never as a change of shape.
     if (!VEHICLES[v.type].ground && g.visible)
       engineSmoke.emit(g, damageRatio(isSelf ? hp : v.state.hp, VEHICLES[v.type].maxHP || 100), dt);
@@ -4389,10 +4389,8 @@ let rapier = null;
 const RAPIER_RIGS = { castor: CastorRig, tank: TankRig, flaktruck: TruckRig };
 // The biplane is flown by the same engine (src/plane-physics.ts); the other aircraft still
 // use the arcade flight step until they are ported.
-const PLANE_RIGS = new Set(['fighter']);
 let planeRig = null;
 const drivenRigs = new Map();
-const vacantRigs = new Map();
 
 // Vehicles and pilots a shot can hit, prepared once per frame (matrices, solid
 // meshes, padded box) instead of once per projectile and per slice.
@@ -4626,10 +4624,13 @@ function physics(dt) {
   const { pitch, roll, yaw } = steering;
   gas = T.MathUtils.clamp(gas + manual.throttle * dt * 0.4, 0, 1);
   const wind = new T.Vector3();
-  const usePlane = !!rapier && PLANE_RIGS.has(myVehicle.type);
+  const usePlane = !!rapier && PLANE_TYPES.has(myVehicle.type);
   let forward, stall, previousPosition, landing;
   if (usePlane) {
-    planeRig ??= new PlaneRig(rapier);
+    if (planeRig?.spec.type !== myVehicle.type) {
+      planeRig?.physics.dispose();
+      planeRig = new PlaneRig(rapier, myVehicle.type);
+    }
     planeRig.physics.useDecor(office.decor);
     const state = {
       p: me.position.toArray(),
@@ -4655,10 +4656,12 @@ function physics(dt) {
     omega.fromArray(state.omega).applyQuaternion(me.quaternion.clone().invert());
     forward = new T.Vector3(0, 0, -1).applyQuaternion(me.quaternion);
     // The wheels follow the springs and turn with the ground speed.
-    poseBiplaneWheels(
+    poseWheels(
       me,
       planeRig.compression,
-      state.landed ? (-vel.dot(forward) * dt) / (WHEEL_RADIUS * ACTOR_UNIT) : 0,
+      state.landed
+        ? (-vel.dot(forward) * dt) / ((me.userData.wheelRadius ?? 0.285) * ACTOR_UNIT)
+        : 0,
     );
     stall = planeRig.stall;
     landing = {
@@ -5751,13 +5754,8 @@ function renderDeliveries() {
     }
 }
 const vacantAircraft = new Map();
-function releaseVacantRig(key) {
-  vacantRigs.get(key)?.dispose();
-  vacantRigs.delete(key);
-}
 function clearVacantAircraft() {
   vacantAircraft.clear();
-  for (const key of [...vacantRigs.keys()]) releaseVacantRig(key);
 }
 function simulateVacantAircraft(dt) {
   if (!snap) return;
@@ -5769,8 +5767,9 @@ function simulateVacantAircraft(dt) {
   const active = new Set();
   for (const v of snap.vehicles) {
     if (v.state.hp <= 0 || v.seats.some((s) => s.seat === 'pilot')) continue;
-    // Parked biplanes are simulated by the server (src/plane-host.ts): their state arrives.
-    if (PLANE_RIGS.has(v.type)) continue;
+    // Parked aircraft and ground vehicles are simulated by the server (src/parked-host.ts):
+    // their state arrives.
+    if (PLANE_TYPES.has(v.type) || RAPIER_RIGS[v.type]) continue;
 
     active.add(v.id);
     let s = vacantAircraft.get(v.id);
@@ -5791,17 +5790,12 @@ function simulateVacantAircraft(dt) {
         dt,
         VEHICLES[v.type],
       );
-    else if (RAPIER_RIGS[v.type]) {
-      if (!vacantRigs.has(v.id)) vacantRigs.set(v.id, new RAPIER_RIGS[v.type](rapier));
-      vacantRigs.get(v.id).physics?.useDecor(office.decor);
-      vacantRigs.get(v.id).step(s, { forward: 0, turn: 0 }, colliders, dt, VEHICLES[v.type]);
-    } else stepVacantAircraft(T, s, VEHICLES[v.type], colliders, dt, office.decor);
+    else stepVacantAircraft(T, s, VEHICLES[v.type], colliders, dt, office.decor);
     Object.assign(v.state, s);
   }
   for (const key of [...vacantAircraft.keys()])
     if (!active.has(key)) {
       vacantAircraft.delete(key);
-      releaseVacantRig(key);
     }
 }
 
@@ -5944,11 +5938,8 @@ function noteTankShot(vehicleId, shot, aim, atMs) {
   kickSeen.add(shot);
   if (kickSeen.size > 400) kickSeen.delete(kickSeen.values().next().value);
   gunKicks.set(vehicleId, atMs);
-  const rig =
-    myVehicle?.id === vehicleId && crewSeat === 'pilot'
-      ? drivenRigs.get('tank')
-      : vacantRigs.get(vehicleId);
-  rig?.kick?.(aim);
+  // A tank nobody drives is the server's (src/parked-host.ts): it applies the recoil itself.
+  if (myVehicle?.id === vehicleId && crewSeat === 'pilot') drivenRigs.get('tank')?.kick?.(aim);
 }
 function trackTankShots() {
   const now = serverClock.now(performance.now()) ?? Date.now() + clockOffset;
@@ -6555,7 +6546,6 @@ function physicsRigs() {
   const rigs = [];
   if (planeRig) rigs.push(planeRig);
   for (const rig of drivenRigs.values()) rigs.push(rig);
-  for (const rig of vacantRigs.values()) rigs.push(rig);
   return rigs;
 }
 function updateDebugTools() {
