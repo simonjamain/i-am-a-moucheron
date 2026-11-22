@@ -458,7 +458,7 @@ saut de 1,3 unité à 60 u/s pour une image de 100 ms, 0,05 pour une alternance 
 vitesse du véhicule : le retard reste `v/k` quelle que soit la durée de l'image
 (`test-camera-follow.mjs`).
 
-**Cadence de l'engin piloté** (v436). La physique tourne déjà à pas fixe (1/120 s, accumulateur de
+**Cadence de l'engin piloté** (v437). La physique tourne déjà à pas fixe (1/120 s, accumulateur de
 `frame()`), mais l'image affichée était celle du dernier pas : sur un écran qui n'est pas un multiple
 de 120 Hz (75, 90, 144, 165 Hz) ou avec de la gigue, l'engin avance de 0, 1 ou 2 pas d'une image à
 l'autre, un mouvement irrégulier perçu comme une saccade. `src/render-interpolation.ts` affiche la
@@ -469,7 +469,7 @@ relisent la pose du pas (`restore` avant le pas suivant ; une téléportation n'
 multiples de 120 Hz ou avec gigue), 0,000 après, sans aucun recul. C'est un modèle de la boucle ;
 le ressenti réel dépend de l'écran.
 
-**Engins des autres** (v436). La position affichée venait du flux réseau retardé (60 à 350 ms) ou,
+**Engins des autres** (v437). La position affichée venait du flux réseau retardé (60 à 350 ms) ou,
 sans pilote, de l'état du serveur, suivie par `lerp(1 − e^(−24·dt))` : retard variable avec `dt`, et à
 chaque changement de source (le pilote sort : l'état serveur est plus récent que le flux retardé ;
 quelqu'un monte : l'inverse) la cible faisait un saut, en arrière à la montée, que le rattrapage
