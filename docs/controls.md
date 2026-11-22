@@ -129,7 +129,7 @@ en bas à gauche (`#commandHelp`). `client.js` lui transmet le véhicule et le s
 le type de poste fixe occupé (DCA, canon antichar), l’état à pied,
 en chute ou au purgatoire, la disponibilité de la construction, la roue ouverte
 et l’outil actif (avec son point d’ancrage). L’aide change donc à l’entrée, à la
-sortie et au changement de poste. À pied : molette pour le zoom caméra, **G** ou
+sortie et au changement de poste. À pied : molette pour le zoom caméra (au plus près par défaut, dézoom jusqu'à 9 ; la caméra pivote à 1,85 de haut et peut regarder le ciel en restant au ras du sol, `shoulderCamera` dans `src/personal-aim.ts`), **G** ou
 clic molette pour la roue de construction. Au Castor : conduite Z/S Q/D, clic
 pour la mitrailleuse, **G**/clic molette, **V** vue de dessus (prioritaire sur le
 raccourci de la fenêtre « Prochaine vague » pour le conducteur), **F** pour sortir. Les postes

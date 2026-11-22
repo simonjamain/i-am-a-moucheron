@@ -5,6 +5,13 @@ export interface ChangelogEntry {
 }
 export const PLAYER_CHANGELOG: ChangelogEntry[] = [
   {
+    version: 419,
+    changes: [
+      'À pied, la caméra démarre au plus près du personnage et pivote un peu plus haut.',
+      'On peut enfin regarder le ciel sans que la caméra s’enfonce dans le sol.',
+    ],
+  },
+  {
     version: 418,
     changes: [
       'Au sol, le biplan ne répond plus aux gouvernes sans air : il faut rouler un peu, avec un filet de gaz, pour le diriger.',

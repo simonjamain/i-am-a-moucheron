@@ -50,7 +50,13 @@ import { bedAccess } from '/beds.js';
 import { tankSight } from '/tank-view.js';
 import { applyGunRecoil, recoilAmount } from '/tank-recoil.js';
 import { followMoving } from '/camera-follow.js';
-import { shoulderView, aimPistol, muzzleAim } from '/personal-aim.js';
+import {
+  shoulderCamera,
+  aimPistol,
+  muzzleAim,
+  GROUND_VIEW_DISTANCE,
+  GROUND_VIEW_PITCH,
+} from '/personal-aim.js';
 import { BankUI } from '/bank-ui.js';
 import { ContextHUD, equipmentHUD } from '/hud.js';
 import { paintVehicle, updateInscriptions } from '/vehicle-livery.js';
@@ -528,7 +534,15 @@ let soulArena = null,
   soulShake = 0;
 const soulEffects = [];
 // Shared ground camera: yaw is world-space in both scenes; baseIntent maps back to deck coordinates.
-const groundView = { yaw: 0, pitch: 0.24, distance: 5.8, scene: '', pointer: null, x: 0, y: 0 };
+const groundView = {
+  yaw: 0,
+  pitch: GROUND_VIEW_PITCH,
+  distance: GROUND_VIEW_DISTANCE.initial,
+  scene: '',
+  pointer: null,
+  x: 0,
+  y: 0,
+};
 function groundActive() {
   return (
     joined &&
@@ -628,8 +642,8 @@ canvas.addEventListener(
     e.preventDefault();
     groundView.distance = T.MathUtils.clamp(
       groundView.distance + Math.sign(e.deltaY) * 0.5,
-      3.2,
-      9,
+      GROUND_VIEW_DISTANCE.min,
+      GROUND_VIEW_DISTANCE.max,
     );
   },
   { passive: false },
@@ -640,7 +654,7 @@ function groundCamera(cam, position, dt, purg = false) {
   if (changed) {
     groundView.scene = name;
     groundView.yaw = purg ? 0 : Math.PI;
-    groundView.pitch = 0.24;
+    groundView.pitch = GROUND_VIEW_PITCH;
   }
   if (groundActive()) groundView.yaw -= pad.yaw * dt * 1.8;
   const viewScale = purg ? 1 : MAP.ratio;
@@ -648,7 +662,9 @@ function groundCamera(cam, position, dt, purg = false) {
     target,
     offset,
     eye: desired,
-  } = shoulderView(T, position, groundView.yaw, groundView.pitch, groundView.distance, viewScale);
+    forward,
+    tilted,
+  } = shoulderCamera(T, position, groundView.yaw, groundView.pitch, groundView.distance, viewScale);
   // Pull the camera in before solid office furniture instead of looking through it.
   {
     const ray = new T.Ray(target, offset.clone().normalize());
@@ -661,7 +677,10 @@ function groundCamera(cam, position, dt, purg = false) {
   if (changed) cam.position.copy(desired);
   else cam.position.lerp(desired, 1 - Math.exp(-14 * dt));
   cam.up.set(0, 1, 0);
-  cam.lookAt(target);
+  // Looking above the reachable orbit: the camera stays low and tilts up.
+  if (tilted)
+    cam.lookAt(cam.position.clone().addScaledVector(forward, groundView.distance * viewScale));
+  else cam.lookAt(target);
   cam.updateMatrixWorld();
   cam.aspect = innerWidth / innerHeight;
   cam.updateProjectionMatrix();
