@@ -5400,6 +5400,7 @@ function updatePlacement() {
       camera.getWorldDirection(new T.Vector3()),
       reach,
       (origin, direction) => aimPlacement(w, origin, direction, reach),
+      (x, y, z) => new T.Vector3(x, y, z),
     ),
     candidate =
       body.grounded !== false && p

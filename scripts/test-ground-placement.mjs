@@ -274,4 +274,26 @@ console.log('Camera ray: surfaces, occlusion, reach; Meshy wall: variable count 
     reachClampedPlacement(body, origin, { x: 0, y: 1, z: 0 }, 0.5, () => null),
     null,
   );
+  // Regression: the client casts with real THREE vectors (origin.clone()); the fallback
+  // rays must use the supplied vector factory, not plain objects (freeze at purchase).
+  class Vec {
+    constructor(x, y, z) {
+      Object.assign(this, { x, y, z });
+    }
+    clone() {
+      return new Vec(this.x, this.y, this.z);
+    }
+  }
+  const real = reachClampedPlacement(
+    body,
+    new Vec(0, 0.05, 0),
+    new Vec(0, 0.9, -0.4),
+    0.5,
+    (o, d) => {
+      o.clone();
+      return d.y < 0 ? { x: o.x, y: 0, z: o.z } : null;
+    },
+    (x, y, z) => new Vec(x, y, z),
+  );
+  assert.ok(real, 'fallback rays are built with the supplied vector type');
 }

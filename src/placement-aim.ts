@@ -82,6 +82,8 @@ export function reachClampedPlacement(
   direction: XYZ | null | undefined,
   reach: number,
   cast: (origin: XYZ, direction: XYZ) => XYZ | null,
+  // Builds the vectors handed to `cast` (the client needs real THREE.Vector3).
+  vector: (x: number, y: number, z: number) => XYZ = (x, y, z) => ({ x, y, z }),
 ): XYZ | null {
   const direct = cast(origin as XYZ, direction as XYZ);
   if (direct || !body || !origin || !direction || !Number.isFinite(reach)) return direct;
@@ -90,12 +92,8 @@ export function reachClampedPlacement(
   const heading = { x: direction.x / length, z: direction.z / length };
   for (const fraction of [1, 0.85, 0.7, 0.55, 0.4, 0.25]) {
     const distance = reach * fraction;
-    const from = {
-      x: body.x + heading.x * distance,
-      y: origin.y,
-      z: body.z + heading.z * distance,
-    };
-    const point = cast(from, { x: 0, y: -1, z: 0 });
+    const from = vector(body.x + heading.x * distance, origin.y, body.z + heading.z * distance);
+    const point = cast(from, vector(0, -1, 0));
     if (point) return point;
   }
   return null;

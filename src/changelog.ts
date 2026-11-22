@@ -5,6 +5,10 @@ export interface ChangelogEntry {
 }
 export const PLAYER_CHANGELOG: ChangelogEntry[] = [
   {
+    version: 429,
+    changes: ['Correction : acheter un équipement ne fige plus le jeu quand on vise trop haut.'],
+  },
+  {
     version: 428,
     changes: [
       'Tous les avions volent avec la même physique que le biplan, roues qui suivent les ressorts comprises.',
