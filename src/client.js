@@ -3060,7 +3060,7 @@ function optimisticExit() {
       : true,
     p = vehicle
       ? grounded
-        ? vehicleEntry({ ...vehicle, state: pose })
+        ? vehicleEntry({ ...vehicle, state: pose }, crewSeat)
         : { x: pose.p[0], y: pose.p[1], z: pose.p[2] }
       : stationExit(stations[turretIndex]);
   const walkSpawn = {
