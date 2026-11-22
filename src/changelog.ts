@@ -5,6 +5,13 @@ export interface ChangelogEntry {
 }
 export const PLAYER_CHANGELOG: ChangelogEntry[] = [
   {
+    version: 432,
+    changes: [
+      'Le Spitfire tourne bien mieux : tirer à fond sur le manche ne le fait plus décrocher quand il va vite.',
+      'Le bombardier moyen a des volumes plus justes, et le mode debug n’affiche plus les volumes tout seul.',
+    ],
+  },
+  {
     version: 431,
     changes: [
       'Au purgatoire, un vigile vend un coupe-file (vague N : N $) pour la file VIP, servie juste après l’insecte en cours.',

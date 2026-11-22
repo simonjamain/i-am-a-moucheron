@@ -6636,7 +6636,7 @@ function physicsRigs() {
 }
 function updateDebugTools() {
   const lab = joined && !!snap?.lab?.enabled;
-  const on = lab || (joined && views.volumes);
+  const on = joined && views.volumes;
   physicsOverlay.update(physicsRigs(), joined && views.physics);
   if (debugTools.active && !lab) debugTools.cancel();
   else if (debugTools.active) debugTools.render();

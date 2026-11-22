@@ -328,6 +328,20 @@ for (const type of PLANE_TYPES) {
       `${type}: level flight (${altitude(state).toFixed(1)} m)`,
     );
   }
+  // Full stick back with speed to spare: the best turn the wings give, never a stall.
+  {
+    const state = fresh({ y: 200, speed: 1.9 * vs, gas: 1 });
+    let worst = 0;
+    // (once the turn has bled the speed below 1.5 times the stall speed, stalling is fair)
+    fly(state, { pitch: 1, roll: 0, yaw: 0 }, 3, new PlaneRig(RAPIER, type), (s, rig) => {
+      if (speedOf(s) > 1.5 * vs)
+        worst = Math.max(worst, Math.abs(rig.alpha + spec.params.zeroLift));
+    });
+    assert.ok(
+      worst < spec.params.stallAngle,
+      `${type}: no stall pulling hard at speed (${worst.toFixed(2)} rad)`,
+    );
+  }
   // Mouse aim: right and up by 60° and 15°, without stalling.
   {
     const state = fresh({ y: 90, speed: 2.34 * vs, gas: 0.8 });
