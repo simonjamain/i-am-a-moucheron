@@ -5,6 +5,13 @@ export interface ChangelogEntry {
 }
 export const PLAYER_CHANGELOG: ChangelogEntry[] = [
   {
+    version: 431,
+    changes: [
+      'Au purgatoire, un vigile vend un coupe-file (vague N : N $) pour la file VIP, servie juste après l’insecte en cours.',
+      'La file des insectes reste gratuite, pratique quand elle est vide.',
+    ],
+  },
+  {
     version: 430,
     changes: ['Correction : acheter un équipement ne fige plus le jeu quand on vise trop haut.'],
   },

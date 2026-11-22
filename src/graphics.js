@@ -348,7 +348,9 @@ export function createGraphics(T, scene) {
   // `appearance`: id from character-appearances.ts (default if unknown or not
   // loaded yet). userData.setAppearance(id) swaps the model in place, keeping
   // the frame, the pistol and everything attached to the group.
+  // `saint`: true for Saint Pierre, 'guard' for the VIP lane's guard (both blocky).
   function humanoid(color, saint = false, appearance) {
+    if (saint === 'guard') return legacyHumanoid(color, false, true);
     if (saint) return legacyHumanoid(color, true);
     const g = new T.Group(),
       rig = new T.Group();
@@ -413,7 +415,7 @@ export function createGraphics(T, scene) {
     wear(appearance);
     return g;
   }
-  function legacyHumanoid(color, saint = false) {
+  function legacyHumanoid(color, saint = false, guard = false) {
     const g = new T.Group(),
       rig = new T.Group();
     g.add(rig);
@@ -447,6 +449,12 @@ export function createGraphics(T, scene) {
       arms.push({ pivot, elbow });
     }
     g.userData = { rig, legs, arms, lean: 0, leanV: 0 };
+    if (guard) {
+      // Bouncer: black glasses, tie, broad shoulders.
+      pm(rig, 0.56, 0.1, 0.08, '#0b0d10', 0, 2.17, 0.32);
+      pm(rig, 0.1, 0.5, 0.04, '#b0262b', 0, 1.5, 0.26);
+      pm(rig, 1.05, 0.22, 0.56, color, 0, 1.78);
+    }
     if (saint) {
       pm(rig, 0.65, 0.38, 0.6, '#eeeece', 0, 1.93, 0.1);
       const halo = new T.Mesh(new T.TorusGeometry(0.5, 0.05, 8, 24), mat('#ffda65'));
