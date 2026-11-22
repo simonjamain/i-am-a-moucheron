@@ -109,7 +109,7 @@ const src = readFileSync('src/client.js', 'utf8');
 const step =
   src.slice(src.indexOf('const solidRayPoint ='), src.indexOf("let me = makePlane('#e3ebc0');")) +
   src.slice(src.indexOf('function contactOf('), src.indexOf('// Fixed timestep flight:'));
-function fly(angle, bounces = 0, slices = 1) {
+function fly(angle, bounces = 0, slices = 1, owned = true) {
   const model = new T.Object3D();
   model.userData.dispose = () => {};
   model.position.set(0, 0.5, 0);
@@ -118,7 +118,7 @@ function fly(angle, bounces = 0, slices = 1) {
     m: model,
     v: new T.Vector3(0, -Math.sin(deg(angle)) * speed, -Math.cos(deg(angle)) * speed),
     life: 3,
-    owned: true,
+    owned,
     projectile: 'mg',
     bounces,
     baseDamage: 75,
@@ -188,4 +188,67 @@ assert.equal(last.trails.length, 0, 'the sixth eligible contact ends the bullet'
 assert.equal(last.hits, 0, 'and still does no damage');
 console.log(
   'PASS: live projectile step skids shallow bullets, stops steep ones, ends after five bounces.',
+);
+
+// Another player's tracer is display only: it skids like any bullet, or ends on the fixed decor,
+// and never reports damage.
+const remoteSkid = fly(6, 0, 1, false);
+assert.equal(remoteSkid.trails.length, 1);
+assert.equal(remoteSkid.trail.bounces, 1);
+assert.equal(remoteSkid.hits, 0);
+const remoteStop = fly(40, 0, 1, false);
+assert.equal(remoteStop.trails.length, 0, 'a steep remote tracer ends on the floor');
+assert.equal(remoteStop.bursts, 1, 'with the impact flash');
+assert.equal(remoteStop.hits, 0, 'and no damage');
+// A round the shooter reports against a moving surface turns the matching remote tracer.
+const { RemoteRounds } = await import('../src/remote-rounds.ts');
+const model = new T.Object3D();
+const mine = {
+  m: model,
+  v: new T.Vector3(0, 0, -50),
+  shooter: 'alice',
+  round: 7,
+  owned: false,
+  bounces: 0,
+};
+const other = { ...mine, m: new T.Object3D(), v: new T.Vector3(0, 0, -50), round: 8 };
+let flashes = 0;
+const skidContext = {
+  RemoteRounds,
+  trails: [mine, other],
+  T,
+  updateTracer() {},
+  camera: null,
+  hitEffects: { burst: () => flashes++ },
+  remoteShotCount: () => 0,
+  Number,
+  Array,
+};
+const rounds = src.slice(
+  src.indexOf('const remoteRounds = new RemoteRounds()'),
+  src.indexOf('function remoteShotCount('),
+);
+const entry = [7, 1, 1, 2, 3, 0, 10, -5];
+const apply = runInNewContext(
+  rounds + '; (motion) => applyRemoteSkids("alice", motion)',
+  skidContext,
+);
+apply({ skids: [entry] });
+assert.deepEqual(mine.m.position.toArray(), [1, 2, 3]);
+assert.deepEqual(mine.v.toArray(), [0, 10, -5]);
+assert.equal(mine.bounces, 1);
+assert.deepEqual(other.v.toArray(), [0, 0, -50], 'another round of the same shooter is untouched');
+apply({ skids: [entry] });
+assert.equal(flashes, 1, 'the same report, repeated in later motion states, applies once');
+apply({ skids: [[7, 1, 9, 9, 9, 9, 9, 9]] });
+assert.deepEqual(mine.m.position.toArray(), [1, 2, 3], 'an older bounce never overwrites');
+const fired = runInNewContext(
+  rounds + '; (shooter, motion, dt) => remoteFired({}, "pilot", shooter, motion, dt, 0.05, true)',
+  { ...skidContext },
+);
+assert.deepEqual(fired('bob', { rounds: 5 }, 0.016), [], 'first sight only syncs');
+assert.deepEqual(fired('bob', { rounds: 7 }, 0.016), [6], 'new numbers leave one by one');
+assert.deepEqual(fired('bob', { rounds: 7 }, 0.06), [7]);
+console.log(
+  'PASS: remote tracers end or skid on the decor; reported ricochets and rounds are replayed.',
 );

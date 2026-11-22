@@ -107,6 +107,7 @@ export const MOTION_SCHEMA: Schema = [
   ['turretDirection', 'vec3'],
   ['aimPoint', 'vec3'],
   ['ground', GROUND],
+  ['rounds', 'num'],
 ];
 
 class Writer {
@@ -407,7 +408,8 @@ export function decodeMotionState(bytes: Uint8Array): MotionObject {
 // time since the server accepted it), the capture time on the sender's clock
 // (flag + float64) and the encoded state.
 // Version 5: ground bodies no longer carry the removed fist-fight state.
-export const MOTION_BATCH_VERSION = 5;
+// Version 6: the player's round counter (`rounds`) joins the schema.
+export const MOTION_BATCH_VERSION = 6;
 export const MOTION_BATCH_BYTES = 1100;
 const MAGIC = 0x4d;
 export function encodeMotionBatch(

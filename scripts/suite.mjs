@@ -155,6 +155,7 @@ export const SUITE = [
   'test-projectiles',
   'test-ricochet',
   'test-heavy-ricochet',
+  'test-remote-rounds',
   'test-render-interpolation',
   'test-heli-physics',
   'test-start-pad',
