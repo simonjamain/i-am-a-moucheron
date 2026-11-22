@@ -360,6 +360,24 @@ supprimé). Même chaîne que l'araignée pondeuse.
 
 ![Poses de marche du bébé araignée](spiderling-model-review.jpg)
 
+### Vigile de la file VIP
+
+Modèle Meshy « Guardian in Black » fourni et validé par l'utilisateur (ange en
+costume noir, lunettes noires, oreillette, ailes et auréole), déjà riggé, sans clip :
+aucune génération ni crédit Meshy de notre côté.
+
+- Original hors dépôt : `assets/originals/vip-guard/guardian-in-black.glb` (SHA-256
+  `b12c8906…afb0`), 1 479 triangles, 1 871 sommets, SmartRig de 48 os, texture PNG
+  2K réduite en JPEG 512 px (80 Ko). Pieds à y = 0, 1,7 m auréole comprise.
+- Import : `PYTHONPATH=scripts python3 scripts/import-creature.py vip-guard <GLB>`
+  écrit `src/vip-guard-data.js` (197 Ko).
+- Pose (`src/vip-guard-model.ts`) : attente procédurale par `defineCreature`
+  (respiration, regards), aucune pièce mobile autre que le squelette. Os utilisés :
+  colonne `Bone_005`, poitrine `Bone_004`, cou `Bone_029`, tête `Bone_028`, épaules
+  `Bone_021`/`Bone_026`. Les ailes (`Bone_030` à `Bone_035`) restent immobiles.
+- Intégration : un seul exemplaire au purgatoire ([décor](purgatory-scene.md#le-vigile-de-la-file-vip)),
+  vérifié par `scripts/test-purgatory-scene.mjs`.
+
 ## Scarabée Meshy (vol, version 307)
 
 Modèle fourni par l'utilisateur, déjà riggé par Meshy, sans clip ; il remplace le

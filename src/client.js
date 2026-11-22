@@ -158,14 +158,8 @@ import {
 import { GameSound } from '/game-audio/game-sound.js';
 import { swarmAudioGroups } from '/game-audio/swarm.js';
 import { bodyMotion, mergeOwnedArena } from '/walk-arena.js';
-import {
-  advancePurgatory,
-  deskOccupant,
-  nearVipGuard,
-  VIP_DESK,
-  VIP_GUARD,
-  VIP_LANE,
-} from '/purgatory-queue.js';
+import { advancePurgatory, deskOccupant, nearVipGuard, VIP_DESK } from '/purgatory-queue.js';
+import { createPurgatoryScene } from '/purgatory-scene.js';
 import {
   flightClickAction,
   rotateMouseAim,
@@ -2632,102 +2626,20 @@ async function submitPaper() {
     if (!paperShown) captureMouse();
   }
 }
-const purgScene = new T.Scene();
-const purgColliders = [
-  new T.Box3(new T.Vector3(-3.5, 0, -2.9), new T.Vector3(7, 1.6, -0.9)),
-  new T.Box3(new T.Vector3(-100, -0.3, -100), new T.Vector3(100, -0.05, 200)),
-];
-purgScene.background = new T.Color('#172c39');
-purgScene.fog = new T.Fog('#172c39', 35, 85);
-purgScene.add(new T.HemisphereLight('#fff5dc', '#486975', 3));
-const pl = new T.DirectionalLight('#fff4ca', 3);
-pl.position.set(5, 20, 10);
-purgScene.add(pl);
+// The purgatory's decor: an administration on a cloud (docs/purgatory-scene.md).
+const purgatory = createPurgatoryScene(T, {
+  humanoid,
+  box: pm,
+  shaders: !!renderer.isWebGLRenderer,
+});
+const purgScene = purgatory.scene,
+  purgColliders = purgatory.colliders;
 const purgCamera = new T.PerspectiveCamera(62, innerWidth / innerHeight, 0.1, 150),
   soulMeshes = new Map();
 const soulStatus = new InsectStatus(T, purgScene, { scale: 1 });
 function soulSlot(i) {
   return { x: i % 2 ? 1.1 : -1.1, z: 3 + Math.floor(i / 2) * 2.8 };
 }
-pm(purgScene, 28, 0.3, 120, '#7b8986', 0, -0.23, 140);
-for (let z = -8; z < 90; z += 2)
-  for (let x = -13; x < 14; x += 2)
-    pm(purgScene, 2, 0.3, 2, (x + z) % 4 ? '#7b8986' : '#85948f', x, -0.2, z);
-pm(purgScene, 7, 1.6, 2, '#725f45', 0, 0.8, -1.9);
-for (let z = 3; z < 65; z += 3) {
-  pm(purgScene, 0.12, 0.03, 1.4, '#d5ef73', -3, 0, z);
-  pm(purgScene, 0.12, 0.03, 1.4, '#d5ef73', 3, 0, z);
-}
-const saint = humanoid('#eee9cf', true);
-saint.position.set(0, 0, -3.2);
-purgScene.add(saint);
-const saintLabel = textLabel('SAINT PIERRE · RÉSURRECTIONS', '#fff1ad', 7);
-saintLabel.position.set(0, 4, -3.2);
-purgScene.add(saintLabel);
-const superSaintLabel = textLabel('SUPER SAINT-PIERRE · RÉCIDIVES', '#e8baff', 8);
-superSaintLabel.position.set(0, 5.5, -3.2);
-purgScene.add(superSaintLabel);
-const deskZone = new T.Mesh(
-  new T.RingGeometry(0.95, 1.28, 48),
-  new T.MeshBasicMaterial({
-    color: '#ffd979',
-    side: T.DoubleSide,
-    transparent: true,
-    opacity: 0.8,
-  }),
-);
-deskZone.rotation.x = -Math.PI / 2;
-deskZone.position.set(0, 0.04, 1);
-purgScene.add(deskZone);
-const zoneLabel = textLabel('PLACE AU GUICHET', '#ffdf8d', 4);
-zoneLabel.position.set(0, 0.2, 1.1);
-zoneLabel.rotation.x = -Math.PI / 2;
-purgScene.add(zoneLabel);
-// VIP lane (docs/purgatory-queue.md): ropes on posts from the physics' obstacles,
-// a second window on the counter, its golden circle, the guard at the gate.
-const vipDecor = new T.Group();
-purgScene.add(vipDecor);
-pm(vipDecor, 3.6, 1.6, 2, '#5f4e39', VIP_DESK.x, 0.8, -1.9);
-let vipGate = null;
-for (const o of VIP_LANE) {
-  const along = o.d > o.w,
-    length = along ? o.d : o.w;
-  const rope = pm(
-    vipDecor,
-    along ? 0.06 : length,
-    0.06,
-    along ? length : 0.06,
-    o.vip ? '#d8b25a' : '#9e2433',
-    o.x,
-    0.82,
-    o.z,
-  );
-  if (o.vip) vipGate = rope;
-  for (let t = -length / 2; t <= length / 2 + 0.01; t += length / Math.ceil(length / 2.4))
-    pm(vipDecor, 0.12, 0.9, 0.12, '#d8b25a', o.x + (along ? 0 : t), 0.45, o.z + (along ? t : 0));
-}
-const vipZone = new T.Mesh(
-  new T.RingGeometry(VIP_DESK.r - 0.3, VIP_DESK.r, 48),
-  new T.MeshBasicMaterial({
-    color: '#ffd979',
-    side: T.DoubleSide,
-    transparent: true,
-    opacity: 0.8,
-  }),
-);
-vipZone.rotation.x = -Math.PI / 2;
-vipZone.position.set(VIP_DESK.x, 0.04, VIP_DESK.z);
-vipDecor.add(vipZone);
-const vipLabel = textLabel('FILE VIP · ÂMES HUMAINES', '#ffdf8d', 5);
-vipLabel.position.set(VIP_DESK.x, 2.9, -1.2);
-vipDecor.add(vipLabel);
-const vipGuard = humanoid('#1d2228', 'guard');
-vipGuard.position.set(VIP_GUARD.x, 0, VIP_GUARD.z);
-vipGuard.rotation.y = -Math.PI / 2;
-vipDecor.add(vipGuard);
-const vipGuardLabel = textLabel('VIGILE · COUPE-FILE', '#e6e1cf', 2.4);
-vipGuardLabel.position.set(VIP_GUARD.x, 2.75, VIP_GUARD.z);
-vipDecor.add(vipGuardLabel);
 function soulImpact(e) {
   if (e.kind === 'stamp') sound.play('stamp', { x: e.x, y: 1.2, z: e.z }, { ref: 7 });
 }
@@ -2746,20 +2658,15 @@ function physicalPurgatory(dt, now) {
       soulEventSeen = event.id;
       if (event.origin !== id && Date.now() + clockOffset - event.at < 1000) soulImpact(event);
     }
-  saint.scale.setScalar(isSuper() ? 1.4 : 1);
   // Saint Pierre walks behind the counter to the window he serves.
   const served = deskOccupant(soulArena);
-  const counter = !isSuper() && served && served.x > VIP_DESK.x / 2 ? VIP_DESK.x : 0;
-  saint.position.x += (counter - saint.position.x) * (1 - Math.exp(-3 * dt));
-  saintLabel.position.x = saint.position.x;
-  superSaintLabel.position.x = saint.position.x;
-  vipDecor.visible = !isSuper();
-  // The rope gate swings aside for this soul once its pass is paid.
-  if (vipGate) vipGate.visible = !self.vip;
-  vipZone.material.color.set(served?.id === self.id && self.vip ? '#d5ef73' : '#ffd979');
-  saintLabel.visible = !isSuper();
-  superSaintLabel.visible = isSuper();
-  purgScene.background.set(isSuper() ? '#30223d' : '#172c39');
+  purgatory.update(dt, now, {
+    super: isSuper(),
+    saintX: !isSuper() && served && served.x > VIP_DESK.x / 2 ? VIP_DESK.x : 0,
+    vip: !!self.vip,
+    deskServed: served?.id === self.id && !(self.vip && self.x > VIP_DESK.x / 2),
+    vipServed: served?.id === self.id && !!self.vip,
+  });
   const active = new Set();
   for (const b of soulArena.bodies) {
     if (b.gone) continue;
@@ -2804,9 +2711,6 @@ function physicalPurgatory(dt, now) {
     }
   const rendered = soulMeshes.get(self.id)?.position || new T.Vector3(self.x, 0, self.z);
   groundCamera(purgCamera, rendered, dt, true);
-  deskZone.material.color.set(
-    served?.id === self.id && !(self.vip && self.x > VIP_DESK.x / 2) ? '#d5ef73' : '#ffd979',
-  );
   renderPurgatory();
 }
 const turrets = [];
@@ -5165,10 +5069,14 @@ function frame(now) {
         : camera;
   $('altitudeFog').style.opacity = joined && fogCamera ? officeFogOpacity(fogCamera.position.y) : 0;
   if (spectating && observationCamera) {
-    if (observationRealm !== 'office') observedPurgatory(dt);
+    if (observationRealm !== 'office') {
+      observedPurgatory(dt);
+      purgatory.prerender(renderer, observationCamera);
+    }
     toon.render(observationRealm === 'office' ? scene : purgScene, observationCamera);
   } else if (respawnAt && soulBody) {
     physicalPurgatory(dt, now);
+    purgatory.prerender(renderer, purgCamera);
     toon.render(purgScene, purgCamera);
   } else toon.render(scene, camera);
   appearancePicker.draw(renderer, dt);
@@ -6864,6 +6772,14 @@ function soulInsect(type = 'midge') {
 
 function observedPurgatory(dt) {
   const arena = observationRealm === 'super' ? snap?.superArena : snap?.arena;
+  const served = arena ? deskOccupant(arena) : null;
+  purgatory.update(dt, performance.now(), {
+    super: observationRealm === 'super',
+    saintX: observationRealm !== 'super' && served && served.x > VIP_DESK.x / 2 ? VIP_DESK.x : 0,
+    vip: false,
+    deskServed: false,
+    vipServed: false,
+  });
   const active = new Set();
   for (const body of arena?.bodies || []) {
     if (body.entity === id || body.gone) continue;
