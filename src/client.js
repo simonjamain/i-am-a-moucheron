@@ -5713,6 +5713,8 @@ function simulateVacantAircraft(dt) {
   const active = new Set();
   for (const v of snap.vehicles) {
     if (v.state.hp <= 0 || v.seats.some((s) => s.seat === 'pilot')) continue;
+    // Parked biplanes are simulated by the server (src/plane-host.ts): their state arrives.
+    if (PLANE_RIGS.has(v.type)) continue;
 
     active.add(v.id);
     let s = vacantAircraft.get(v.id);
