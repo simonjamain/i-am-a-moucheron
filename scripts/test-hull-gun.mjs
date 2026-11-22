@@ -22,8 +22,8 @@ for (const wanted of [
 }
 assert.ok(clampToCone(T, new T.Vector3(1, 0, 0), forward).x > 0, 'keeps the aimed side');
 assert.ok(clampToCone(T, new T.Vector3(-1, 0, 0), forward).x < 0);
-// Straight behind: still a valid direction.
-assert.ok(Math.abs(angle(clampToCone(T, new T.Vector3(0, 0, 1), forward), forward) - 15) < 1e-6);
+// Exactly behind: no side to keep, the gun falls back on the hull axis.
+assert.ok(clampToCone(T, new T.Vector3(0, 0, 1), forward).distanceTo(forward) < 1e-9);
 // Follows the hull orientation: hull turned 90 degrees left, aim along the world -Z.
 const hull = new T.Quaternion().setFromAxisAngle(new T.Vector3(0, 1, 0), Math.PI / 2);
 const turned = hullGunDirection(T, hull, new T.Vector3(0, 0, -1));
