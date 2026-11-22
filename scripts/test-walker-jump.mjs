@@ -5,6 +5,8 @@ import { toggleParachute } from '../src/ballistics.ts';
 import { advanceBase, OFFICE_RULES } from '../src/base.ts';
 import { createWalker } from '../src/walk-arena.ts';
 import { MAP, WALK_WORLDS } from '../src/scale.ts';
+import { airPose, jumpPose, riseOf, isFreeFall, FREE_FALL_LEAN } from '../src/walker-air-pose.ts';
+import { WALKER_FREEFALL_SPEED } from '../src/field-physics.ts';
 import { OFFICE_LAYOUT } from '../src/layout.ts';
 
 // Office: a walker standing on the deck jumps, rises about 0.6 m, comes back, lands unhurt.
@@ -38,8 +40,8 @@ while (!body.grounded && steps++ < 600) {
 assert.ok(body.grounded, 'it lands');
 assert.equal(damage, 0, 'a jump never hurts');
 const height = (apex - ground) / MAP.ratio;
-assert.ok(height > 0.55 && height < 0.7, 'apex about 0.6 m (' + height + ')');
-assert.ok(steps > 40 && steps < 90, 'about 0.7 s in the air (' + steps + ' steps)');
+assert.ok(height > 1.1 && height < 1.35, 'apex about 1.2 m (' + height + ')');
+assert.ok(steps > 50 && steps < 75, 'about 1 s in the air (' + steps + ' steps)');
 assert.equal(jumpWalker(body), true, 'and it can jump again');
 // No jump with the canopy out.
 const chute = { ...start(), parachute: true };
@@ -74,7 +76,7 @@ for (let i = 0; i < 200 && !soul.grounded; i++) {
 }
 assert.ok(soul.grounded && soul.y === 0 && soul.vy === 0, 'lands on the floor');
 assert.ok(
-  Math.abs(top / scale - 0.62) < 0.05,
+  Math.abs(top / scale - 1.22) < 0.08,
   'same apex in reference metres (' + top / scale + ')',
 );
 stepFlatJump(soul, 1 / 60, scale);

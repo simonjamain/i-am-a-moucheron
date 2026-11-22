@@ -237,6 +237,7 @@ const files = {
       'materials',
       'ricochet',
       'remote-rounds',
+      'walker-air-pose',
       'ordnance',
       'bank',
       'beds',

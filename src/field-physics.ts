@@ -9,8 +9,13 @@ export const WALKER_FALL = Object.freeze({
   safeImpact: 6 * MAP.ratio,
   fatalImpact: 20 * MAP.ratio,
 });
-/** The jump: take-off speed in reference m/s (apex about 0.6 m); scaled by the world's units. */
-export const WALKER_JUMP_SPEED = 3.5;
+/** The jump: take-off speed in reference m/s (apex about 1.2 m); scaled by the world's units. */
+export const WALKER_JUMP_SPEED = 4.9;
+/**
+ * Descent speed (reference m/s) from which a fall is a fall: the free-fall pose, free-fall air
+ * rules, and the canopy may open. A jump comes back down slower than this.
+ */
+export const WALKER_FREEFALL_SPEED = 5.6;
 /** Walker body integrated by stepWalkerFall (office metres, m/s). */
 export interface WalkerBody {
   y: number;
