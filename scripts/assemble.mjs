@@ -237,7 +237,6 @@ const files = {
       'equipment-controls',
       'combat',
       'contracts',
-      'vacant-flight',
       'rewards',
       'waves',
       'tracers',

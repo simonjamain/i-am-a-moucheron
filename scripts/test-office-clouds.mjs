@@ -10,7 +10,6 @@ import {
   installOfficeFog,
 } from '../src/office-fog.ts';
 import { stepHelicopter } from '../src/helicopter.js';
-import { stepVacantAircraft } from '../src/vacant-flight.ts';
 import { VEHICLES, vehiclePad } from '../src/fleet.ts';
 
 const scene = new T.Scene();
@@ -53,10 +52,9 @@ for (const [height, alive] of [
   [3.94, true],
   [3.96, false],
 ]) {
-  for (const type of ['fighter', 'helicopter']) {
+  for (const type of ['helicopter']) {
     const state = { ...vehiclePad(type), p: [0, height, 0], q: [0, 0, 0, 1], v: [0, 0, 0] };
-    if (type === 'helicopter') stepHelicopter(T, state, {}, [], 1 / 120, VEHICLES[type]);
-    else stepVacantAircraft(T, state, VEHICLES[type], [], 1 / 120);
+    stepHelicopter(T, state, {}, [], 1 / 120, VEHICLES[type]);
     assert.equal(state.hp > 0, alive, `${type} at ${height} m`);
   }
 }

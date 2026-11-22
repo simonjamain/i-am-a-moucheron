@@ -18,7 +18,7 @@
   `vehicle-anchors.js`, généré).
   - Protocole : `udp-client`, `server/session`.
   - Domaine : `contracts`, `ground-defense`, `service-zones`, `base`,
-    `route-navigation`, `vacant-flight`, `reserve-feedback`, `changelog`.
+    `route-navigation`, `reserve-feedback`, `changelog`.
   - Interface : `bank-ui`, `bed-ui`, `live-hud`, `flight-tuning-ui`.
   - Modèles : `character-model`, `rigged-creature`, `m1-model`, `b3-model`,
     `fortification-model`, `biplane-model`, `h2-model`, `office`.

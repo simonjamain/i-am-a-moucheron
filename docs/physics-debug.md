@@ -29,5 +29,5 @@ de la flèche de poids est une portance de 1 g.
 
 Le rig implémente `debugDraw(sink)` (`DebugRig`) et dessine en mètres physiques avec
 `drawColliders`, `drawWheels` (contrôleurs de roues Rapier), `arrow` et `cross`. Le client
-parcourt `planeRig`, `drivenRigs` et `vacantRigs` (`physicsRigs()` dans `client.js`).
+parcourt `planeRig`, `heliRig` et `drivenRigs` (`physicsRigs()` dans `client.js`).
 `scripts/test-physics-debug.mjs` vérifie le biplan, le char, le camion et le Castor.
