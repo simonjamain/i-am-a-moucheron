@@ -202,7 +202,12 @@ export function controlHintItems({
     return ['Souris : choisir un outil', 'Relâcher G / clic molette : valider', 'Échap : annuler'];
   if (building) return buildingHints(building).filter(Boolean);
   if (placing)
-    return ['ZQSD / flèches : marcher', 'Souris : orienter', 'E : poser', 'Échap : conserver'];
+    return [
+      'ZQSD / flèches : marcher',
+      'Souris : orienter',
+      'Clic gauche / E : poser',
+      'Clic droit / Échap : conserver',
+    ];
   const common = ['N : banque', 'Échap : curseur'];
   let items: HintItem[];
   if (station)
