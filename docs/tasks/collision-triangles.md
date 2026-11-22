@@ -1,7 +1,8 @@
 # collision-triangles — décor collisionnant sur ses triangles
 
-- Tâche / PR : demande de l'utilisateur (session « Cartoon Office Pack ») ; lot 1 en PR.
-- Branche : `claude/tender-edison-l0y0if`.
+- Tâche / PR : demande de l'utilisateur (session « Cartoon Office Pack ») ; lots 1 à 3
+  fusionnés (#280 à #283, v407–v410).
+- Branche : aucune en cours ; repartir de `main`.
 - Résultat attendu : tout le jeu (tirs, pose, caméra, vol, marche, véhicules,
   fourmis, serveur) collisionne sur les triangles des modèles du pack ; seules les
   piles de feuilles et les boules de papier restent approximées ; la fente de

@@ -67,7 +67,7 @@ The regression includes the actual hull-plus-Sprite hierarchy that crashed.
 
 Ground controls target a 6 m/s reference run (18 mm/s on this map), retaining
 acceleration and braking. The current character fall uses miniature-scaled human gravity, gradual canopy inflation and
-vertical impact damage, described in [current fall model](multiplayer-return.md#gravité-parachute-et-pistolet).
+vertical impact damage (`WALKER_FALL`, `src/field-physics.ts`; see [walking network](walking-network.md#incarnation-chute-et-retour)).
 Aircraft/projectile tuning remains separate from character gravity.
 
 The current raid uses seeded arc-length routes with preserved effective speed,
@@ -82,11 +82,11 @@ solid-object occlusion rather than appearing through furniture.
 
 Les réserves finies des avions, les teintes et inscriptions de carrosserie et
 les radars sont décrits dans
-[logistique et contrats](logistics-contracts.md). La DCA fixe et le pistolet restent
-à munitions illimitées ; la panne sèche supprime la poussée, sans figer le vol.
+[logistique et contrats](logistics-contracts.md). DCA fixe et pistolet ont 120
+munitions (`src/ground-ammo.ts`) ; la panne sèche supprime la poussée, sans figer le vol.
 
-Current [Spitfire, impacts and reticle](clean-flight.md) keep angular rates unscaled;
-cleaning range is explicitly two world metres, unlike miniature ballistic ranges.
+Angular rates are never scaled; the cleaning jet range is two world metres
+(`WASH`, `src/vehicle-care.js`), unlike miniature ballistic ranges.
 
 Le H2 et le D2 sont décrits dans [véhicules d’appui](support-vehicles.md).
 La proximité D2 est exprimée en mètres de référence (0,5–20), contrairement au

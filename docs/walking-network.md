@@ -97,19 +97,24 @@ Les débits sont rapportés par lots idempotents en arrière-plan ; les réponse
 créent pas de projectiles. Le modèle de confiance reste coopératif, comme les
 mouvements et impacts. Voir [logistique et contrats](logistics-contracts.md).
 
-## Incarnation, chute et retour courant
+## Incarnation, chute et retour
 
-Sur Node, une nouvelle incarnation recrée aussi le corps local du bureau pour
-éviter de conserver le lieu de mort. Un rapport d’impact vertical est dédupliqué
-par joueur/incarnation/tir. Les destinations signées et le secret privé de reprise
-du contrat de lit sont détaillés dans [retours terrain](field-update.md).
+À la mort, le serveur retire le joueur des sièges et des corps actifs : l'état
+`awaitingPurgatory` le laisse sans âme et refuse ses actions, sauf synchronisation,
+accès au purgatoire et reset. Le client fige la caméra et continue d'afficher la
+partie ; aucune minuterie n'impose la suite. « Accéder au purgatoire » envoie
+`enter-purgatory`, idempotent par incarnation. Une reconnexion dans les 30 s reprend
+le même pilote ([reprise de session](udp-server.md#transport-et-fiabilité)) ; au-delà
+ou après rechargement, c'est un nouveau joueur.
 
-Le [lot suivant de lisibilité et nettoyage](clean-flight.md) précise les commandes
-contextuelles actuelles, les effets partagés et les nouvelles collisions de coque.
-
-La mort possède un état [d’observation sans corps](multiplayer-return.md#mort-et-observation-volontaire),
-avec snapshots maintenus mais commandes neutralisées. La gravité du personnage
-est maintenant mise à l’échelle ; le serveur garde les impacts dédupliqués.
+Une nouvelle incarnation recrée le corps local du bureau (l'ancien ne doit pas
+gagner dans la fusion des snapshots) et réinitialise vitesse, parachute et caméra.
+Chute : gravité humaine au ratio du monde, vitesse limite, voile progressif
+(gonflage 0,25 s), freinage sans troncature instantanée, dégâts entre un seuil sûr
+et un seuil mortel (`WALKER_FALL`, `src/field-physics.ts`), résolus par sous-pas. Un
+rapport d'impact vertical est dédupliqué par joueur, incarnation et tir. Le regard à
+pied va jusqu'à ±1,52 rad. Lits et secret de reprise :
+[lits et réapparition](logistics-contracts.md#lits-et-réapparition).
 
 Les [véhicules d’appui](support-vehicles.md) ajoutent l’angle d’articulation et le
 collectif aux mouvements partagés, ainsi que le point visé du copilote. Lancement

@@ -54,8 +54,9 @@ W rapporte donc au plus W $. L'ancienne prime `min(20, 3 + n)` n'existe plus.
 
 Il n’y a plus d’améliorations achetables (motorisation, munitions renforcées) :
 la colonne du magasin, leurs prix et leur code ont disparu. Le chasseur, le
-bombardier et le char moyen ont chacun une **réserve gratuite et infinie** au sol
-à Alpha (voir [réserves](multiplayer-return.md#réserves-gratuites-et-achats-de-véhicules)).
+bombardier et le char moyen ont chacun **un exemplaire de réserve prêt** : son
+premier départ crée un remplaçant gratuit (`fleet()` dans `server/game.js`) ; les
+coques achetées n'entrent jamais dans cette réserve.
 
 Sans revenu d’âme, les primes ne financent plus rien : seules les âmes libérées
 rapportent. La monnaie appartient à la salle.
@@ -79,22 +80,7 @@ Le ressenti des trajectoires et du combat reste à confirmer en partie réelle.
 Les portails restent à au moins trois mètres du décor de la corbeille ;
 [visibilité des ennemis](enemy-visibility.md#blessures-et-apparitions) précise les premières images et la connexion tardive.
 
-Sur Node, les primes et commandes sont dédupliquées en RAM. Les noms de tables
-et migrations mentionnés plus haut décrivent l'ancien modèle à base de données,
-abandonné. La progression disparaît au redémarrage.
-
-Installations Node : le [bon signé](clean-flight.md#prix-bon-signé-et-pose) débite
-avant la pose ; annuler l’aperçu ne fait pas perdre l’objet payé.
-
-Historique VAG-04/VAG-05 : [parcours et budget](multiplayer-return.md#parcours-et-fourmis-précoces),
-budget initial 8, autrefois quatre fourmis en vague 1 ; le directeur historique garantissait
-deux fourmis à toutes les vagues, avec coûts/PV inchangés.
-Les achats de chasseur et bombardier supplémentaires coûtent 8 $ et 16 $.
-
-Le H2 coûte 30 $, le camion D2 20 $, sans remplacement gratuit. Voir
-[les véhicules d’appui](support-vehicles.md) pour les choix d’équilibrage.
-
-Le [lot confort de jeu, version 37](comfort.md) précise réparation, zoom, jauges,
-radar à pied, remise à zéro, fourmis et projectiles du pistolet courants.
+Les commandes sont dédupliquées en RAM ; la progression disparaît au redémarrage.
+Achat et pose : [bon signé](economy-physics.md#achats--bon-signé-et-pose).
 
 Colis : [logistique](logistics-contracts.md#colis-parachutés) ; H2 : [commandes](helicopter-controls.md#mapping-pilote-h2).

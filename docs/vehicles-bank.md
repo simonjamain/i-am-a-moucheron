@@ -182,65 +182,47 @@ Aucun nouveau prêt n’est signé avec un solde négatif. Le prêt terminé
 est remplacé par une nouvelle offre vierge dans le même emplacement. Un reset
 efface prêts, offres et monnaie avec le reste de la partie.
 
-## Vérifications et limites
+## Vérifications
 
-`npm run test:next` couvre l’amortissement, les trois emplacements, les débits de
-fin de vague et le solde négatif, les stocks et bascules, délais et doublons,
-les impacts au sol, les contrats malicieux, les accès de rôle, la conduite sur
-support, les trajets de plusieurs vagues/graines et les effets de crash bornés.
-Les tests de prédiction et les tests réseau natifs couvrent aussi les nouvelles
-armes sans WebSocket ni repli HTTP.
+`npm run test:next` (`test-next-backlog.mjs`) couvre l'amortissement, les trois
+emplacements de prêts, les débits de fin de vague et le solde négatif, les stocks,
+les impacts au sol, les accès de rôle, la conduite sur support, les trajets et les
+effets de crash bornés ; `test-hud-bank-ui.mjs` exerce les vrais gestionnaires de
+signature de la banque. Captures de référence : [DCA](ui-review-dca.jpg),
+[banquier](ui-review-bank.jpg).
 
-Le navigateur de prévisualisation a vérifié les maquettes et le chargement du
-client, sans partie WebRTC vers cette VM. Captures de référence :
-[DCA](ui-review-dca.jpg) et [banquier](ui-review-bank.jpg).
-WebGL est désactivé dans ce navigateur ; le ressenti du pilotage, la qualité
-WebGL et les essais WAN sont à vérifier sur l’installation réelle. Une charge
-synthétique de 128 bombes et 180 ennemis a donné typiquement 13–28 ms par tick
-chaud de 250 ms localement ; ce n’est pas une mesure de latence réseau ni une
-garantie de capacité. Les collisions utilisent une présélection spatiale.
+## Tank : lunette et observation
 
-Le paquet Docker `2026.10.29-udp.2` contient uniquement le lot véhicules/banque,
-avant les [retours terrain](field-update.md). La version `.1`
-est antérieure au Stuka, au tank et aux interfaces intégrées. Voir [Docker](docker.md).
+Le tireur canon vise par une lunette alignée sur la bouche ; son propre tank y est
+masqué. La coaxiale a son propre nœud de bouche, rayon parallèle au canon (sans
+correction de parallaxe). Les obus partent du canon du modèle, simulés par le tireur.
+La mire (`tank-reticle.js`, `ballisticMarks`) réutilise `integrateOrdnance` à pas de
+1/120 s comme le serveur, avec la vitesse de l'obus choisi, gravité, traînée et vitesse
+héritée ; repères `TANK_MARKS` de 15 cm à 9 m du décor, masqués hors écran ou trop
+serrés. **C** maintenu passe en observation à la troisième personne : la souris ne
+tourne plus la tourelle, MG et canon sont suspendus, la mire masquée ; relâcher C,
+changer de siège, ouvrir un menu ou mourir en sort.
 
-## Ancien HUD contextuel, remplacé
+## Spitfire
 
-Les pilotes ont le vol/conduite à gauche et l’armement à droite ; les tireurs
-ont la visée ou le canon à gauche et leur MG à droite. Le tank affiche le type
-d’obus effectivement disponible, HE/AP et le stock coaxial indépendant. Stuka et
-bombardier affichent leurs bombes. Les compteurs MG tiennent compte des débits
-locaux encore en attente ; les bombes/obus sont débités dès le tir, puis corrigés par le snapshot serveur.
+Achat à 75 $, monoplace sans bombes, six mitrailleuses (trois par aile, six bouches
+distinctes). Par rapport au chasseur léger (`src/fleet.ts`) : vitesse maximale ×1,75,
+rotation ×1,45, poussée 70. Stock de **1 000 balles communes** (`src/logistics.ts`) ;
+chaque arme tire toutes les 0,06 s avec de petits décalages dans la salve
+(`salvos.ts`, file bornée et annulée au changement de poste, menu, perte de focus ou
+décès) et la dernière salve peut être partielle. Perdu définitivement à sa destruction.
+Seul le Stuka occupé a la sirène de piqué.
 
-Les rails restent compacts. Leurs détails s’ouvrent 2,5 s à l’entrée, lors d’un
-réglage, changement d’arme, dégâts, seuil critique, décrochage ou début/fin de ravitaillement ;
-ils sont aussi consultables au survol ou au focus clavier. La vitesse ne les
-maintient pas ouverts en permanence. Les menus masquent les rails et la jauge.
-L’état de combat reste en petit cartouche haut ; les changements de vague ont
-une notification de trois secondes. Les commandes d’intervague restent accessibles.
+## Salissure et nettoyage
 
-`test-hud-bank-ui.mjs` exerce les vrais gestionnaires de signature, annulation,
-répétition, attente serveur, erreurs, documents périmés/reset et soldes négatifs,
-ainsi que les variantes et le repli d’obus du HUD. Le navigateur a signé une
-offre dans le composant réel, vérifié les cartes, le tableau et le rendu des rails
-sur des données de démonstration. La connexion UDP et WebGL du navigateur distant
-ne permettent pas de conclure sur une partie WAN ; les tests natifs restent distincts.
+Le serveur balaie le déplacement de chaque coque contre les insectes : un contact
+retire à la coque **5 % des PV restants de l'insecte**, une fois par paire coque–ennemi
+jusqu'à séparation (tank et coques vacantes compris). Chaque impact ajoute 0,18 de
+salissure (plafond 1, `WASH` dans `src/vehicle-care.js`) : la peinture brunit et un
+voile couvre la vue des occupants (opacité au plus 0,42) ; le conseil de nettoyage
+apparaît à 0,55. La salissure ne change aucune performance et reste sur la coque.
+À pied au sol, Espace maintenu projette un jet de 2 m qui nettoie la première coque
+visée en 10 s environ, plus vite à plusieurs ; impossible depuis un siège ou au
+purgatoire. La coque redevenue propre déclenche un seul événement partagé.
 
-Capture historique avant ECO-02 : [interface du lot précédent](ui-bank-integrated.jpg).
-Les réglages actuels de lunette/coaxiale, de prêts et de réapparition sont dans
-[retours terrain](field-update.md).
-
-Le [lot lisibilité, nettoyage et Spitfire](clean-flight.md) ajoute le S6 acheté,
-les raccourcis physiques de poste, les projectiles aux couleurs de la coque,
-la mire balistique et la salissure commune. Il remplace les anciens dégâts
-de collision avec un insecte et les anciennes commandes d’armes lourdes.
-
-Le [dernier lot](multiplayer-return.md) remplace les rails par statistiques au
-viseur et aide permanente, étend la réserve gratuite et déploie tous les achats
-de véhicules à l’emplacement choisi. Le Spitfire a désormais 1 000 balles.
-
-## Véhicules d’appui du 30 octobre
-
-Le [H2 et le D2](support-vehicles.md) complètent cette flotte. L’assistance sans
-pilote du H2 est spécifique ; les avions continuent leur physique neutre.
-Les quatre rôles supplémentaires portent le catalogue courant à 600 variantes.
+Projectiles, MG, obus et bombes portent la teinte persistante de leur coque.

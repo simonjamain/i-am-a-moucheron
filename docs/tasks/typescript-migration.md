@@ -12,7 +12,7 @@
   lecture `.ts` et effacement des types dans `scripts/assemble.mjs`, garde
   `scripts/test-typescript.mjs`, types partagés `src/types.ts`, lanceur
   `scripts/run-tests.mjs` + manifeste `scripts/suite.mjs`.
-- Migrés : 121 fichiers `.ts` dans `src/` (liste : `ls src/*.ts`), `server/session.ts`,
+- Migrés : 122 fichiers `.ts` dans `src/` (liste : `ls src/*.ts`), `server/session.ts`,
   `server/stats.ts`, `server/stats-page.ts`, `scripts/audio-library-types.ts`.
 - Lot 5 (v413, routine du 22 novembre 2026) : les 22 feuilles prêtes (toutes sauf
   `vehicle-anchors.js`, généré).

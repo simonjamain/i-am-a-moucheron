@@ -109,11 +109,6 @@ nav:
       - Logistique et feuillets: logistics-contracts.md
       - File des purgatoires: purgatory-queue.md
       - Mode debug: laboratory.md
-      - Retours de terrain (lots):
-          - Confort: comfort.md
-          - Lisibilité et Spitfire: clean-flight.md
-          - Accès, visée et chutes: field-update.md
-          - Multijoueur et HUD: multiplayer-return.md
   - Technique:
       - Présentation du projet: projet.md
       - Carte du code: code-structure.md
@@ -135,5 +130,4 @@ nav:
       - Tâches en cours:
           - tasks/README.md
           - tasks/collision-triangles.md
-          - tasks/scaling-plan.md
           - tasks/typescript-migration.md

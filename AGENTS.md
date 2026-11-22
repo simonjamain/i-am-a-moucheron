@@ -1,19 +1,19 @@
-# Travail sur Flight Lab
+# Travail sur i am a moucheron
 
 ## Contexte utile
 
 Le dépôt GitHub est la référence ; développer dans une branche dédiée et livrer
-une pull request. Lire [README](README.md), puis les documents liés à la tâche.
-Pour le gameplay, lire [gameplay](docs/gameplay.md) ; pour le réseau ou la physique
-partagée, [walking-network](docs/walking-network.md) ; pour les achats, signatures
-ou chutes, [economy-physics](docs/economy-physics.md). Pour les vérifications et
-l'exploitation, lire [operations](docs/operations.md).
+une pull request. Lire [README](README.md) (index des documents par thème), puis les
+documents liés à la tâche : [gameplay](docs/gameplay.md) pour les règles,
+[carte du code](docs/code-structure.md) pour trouver les modules,
+[walking-network](docs/walking-network.md) pour le réseau ou la physique partagée,
+[economy-physics](docs/economy-physics.md) pour achats, signatures et balistique,
+[operations](docs/operations.md) pour les vérifications.
 Lire [CONTRIBUTING](CONTRIBUTING.md) avant de prendre une tâche ou préparer une PR.
-Pour reprendre une tâche interrompue, lire sa note dans `docs/tasks/`, la discussion
-GitHub et le diff ; vérifier les affirmations contre l'état de la branche. Les
-tâches ouvertes sont les issues GitHub ; il n'y a plus de BACKLOG ni d'archive de
-docs (l'historique est dans Git). Les documents de `docs/` décrivant un « lot »
-daté peuvent citer des versions dépassées : le code et la référence du thème font foi.
+Les tâches ouvertes sont les issues GitHub ; l'historique est dans Git. Pour
+reprendre une tâche interrompue, lire sa note dans `docs/tasks/`, la discussion
+GitHub et le diff, et vérifier les affirmations contre la branche. En cas d'écart
+entre un document et le code, le code fait foi : corriger le document.
 
 ## Confiance envers les joueurs
 
@@ -78,41 +78,31 @@ Traiter le périmètre autorisé jusqu'à une livraison vérifiée ; choisir les
 courants selon les conventions et consigner les hypothèses utiles. Demander une
 précision seulement si une décision ou un accès indispensable manque.
 Une tâche a un responsable ; plusieurs tâches peuvent avancer en parallèle.
-L'auteur maintient sa branche et résout ses conflits jusqu'à la fusion. Après
+L'auteur maintient sa branche et résout ses conflits jusqu'à la fusion ; après
 intégration de changements concurrents, refaire les contrôles concernés et
-signaler les essais humains à renouveler. Par défaut, l'agent auteur fusionne lui-même sa PR dès qu'il estime la contribution
-terminée **et** que les contrôles requis sont réussis. L'utilisateur n'a pas à
-redemander la fusion ni à fournir une revue manuelle préalable. Avant toute fusion,
-relire le diff, vérifier les critères d'acceptation, les contrôles GitHub Actions
-(y compris `Docker build`), l'absence de conflit et les protections de `main`.
-Si Docker n'est pas disponible localement, attendre la réussite du contrôle
-`Docker build` de la PR. Utiliser une fusion **squash** lorsque GitHub l'autorise.
-Utiliser l'**auto-merge** de GitHub (activé sur le dépôt, contrôles requis sur
-`main`) : une fois la contribution terminée, le diff relu et les critères
-vérifiés, activer l'auto-merge en squash sur la PR (`enable_pr_auto_merge` avec
-`SQUASH`) au lieu d'attendre les contrôles pour fusionner à la main ; GitHub
-fusionne dès que tous les contrôles requis passent. Si GitHub répond que la PR est
-déjà fusionnable (statut propre), fusionner directement en squash. Rester
-responsable de la PR jusqu'à la fusion effective : corriger un contrôle rouge ou
-un conflit, puis vérifier que la fusion a eu lieu. Ne pas activer l'auto-merge
-tant qu'un essai attendu, un contrôle ou une relecture reste à faire.
-Ne jamais contourner une protection ni déclarer réussi un essai non exécuté :
-en cas d'échec, de contrôle absent, de conflit ou de permission insuffisante,
-laisser la PR ouverte, documenter précisément le blocage et le signaler.
-Après fusion, vérifier l'état de `main` et la fermeture des issues liées.
+signaler les essais humains à renouveler.
 
-Les déploiements temporaires relèvent de GitHub Actions, selon l'état décrit dans
-CONTRIBUTING. Vérifier le résultat réellement retourné ; signaler un environnement
-absent ou en échec. Garder secrets et administration du VPS hors des contributions.
-Le déploiement est automatique : chaque commit sur `main` publie l'image
-`latest` sur GHCR (workflow `docker.yml`), et un environnement extérieur au dépôt
-récupère périodiquement la dernière image pour la déployer sur le VPS. Il n'y a
-ni ZIP à produire ni autre cible de publication ; la livraison est la PR fusionnée.
-Avant toute livraison de contribution, construire systématiquement l’image Docker
-selon [le guide Docker](docs/docker.md), même sans livrer d’image. Après les
-dernières modifications ou une synchronisation, refaire ce build et consigner
-commande, résultat et commit testé dans la PR. Si Docker est indisponible, le
-signaler et vérifier le contrôle GitHub Actions `Docker build` avant la fusion.
+**Fusion autonome.** L'agent auteur fusionne lui-même sa PR, sans revue manuelle
+préalable ni nouvelle demande de l'utilisateur, dès que la contribution est
+terminée : diff relu, critères d'acceptation vérifiés, aucun conflit, aucun essai
+ou relecture en attente. Il active alors l'**auto-merge** GitHub en **squash**
+(`enable_pr_auto_merge` avec `SQUASH`) ; GitHub fusionne quand les contrôles requis
+de `main` passent (dont `Docker build`). Si GitHub répond que la PR est déjà
+fusionnable, fusionner directement en squash. Rester responsable jusqu'à la fusion
+effective : corriger un contrôle rouge ou un conflit, puis vérifier `main` et la
+fermeture des issues liées. Ne jamais contourner une protection ni déclarer réussi
+un essai non exécuté : en cas d'échec, de contrôle absent, de conflit ou de
+permission insuffisante, laisser la PR ouverte, documenter le blocage et le signaler.
+
+**Déploiement.** La livraison est la PR fusionnée : chaque commit sur `main` publie
+l'image `latest` sur GHCR (`docker.yml`), récupérée périodiquement par un
+environnement extérieur au dépôt qui la déploie sur le VPS. Pas d'autre cible ni
+d'environnement temporaire par PR (voir CONTRIBUTING) ; garder secrets et
+administration du VPS hors des contributions. Avant toute livraison, et de nouveau
+après les dernières modifications ou une synchronisation, construire l'image selon
+[le guide Docker](docs/docker.md) et consigner commande, résultat et commit testé
+dans la PR ; si Docker est indisponible, le signaler et attendre le contrôle
+`Docker build`.
 
 ## Direction artistique et interface
 

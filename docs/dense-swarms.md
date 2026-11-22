@@ -100,13 +100,11 @@ demandent encore des mesures en conditions réelles et plusieurs joueurs.
 Le comportement de pilotage et des tourelles multijoueurs ne change pas dans
 ce chantier. Il n'y a pas de nouveau plafond imposé au réglage de population.
 
-## Correction de la vitesse physique — suite au retour de partie
+## Vitesse de progression
 
-La vitesse de progression est désormais fixée par espèce dans `ENEMY_TYPES.speedMps` : mètres de la pièce/seconde, quelle que soit la taille de l'insecte ou de sa formation. Les anciennes calibrations sur la longueur des itinéraires historiques ne gouvernent plus la durée des vagues ; la durée d'un ennemi vient de la longueur de **son trajet réel** divisée par sa vitesse explicite. Les oscillations locales restent petites, et le moustique utilise une fréquence d'esquive réduite. Les bébés araignées utilisent leur propre vitesse, sans accélération cachée.
-Voir [bestiaire](enemy-bestiary.md) et `scripts/test-enemy-speeds.mjs`.
-
-## Souffle des ventilateurs (retiré)
-
-Le ventilateur et son champ de souffle (`air-current.ts`, `air-trails.js`,
-`scripts/test-air-fans.mjs`) sont retirés en version 319 : les couloirs aériens
-ne sont plus déformés. L'historique Git conserve l'implémentation.
+Chaque espèce a une vitesse fixe `ENEMY_TYPES.speedMps` (mètres de la pièce par
+seconde), indépendante de sa taille et de sa formation : la durée d'un ennemi est la
+longueur de **son trajet réel** divisée par cette vitesse. Les oscillations locales
+restent petites ; le moustique a une fréquence d'esquive réduite ; les bébés araignées
+ont leur propre vitesse. Voir [bestiaire](enemy-bestiary.md) et
+`scripts/test-enemy-speeds.mjs`.

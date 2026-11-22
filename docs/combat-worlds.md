@@ -67,14 +67,19 @@ Le navigateur de contrôle utilise le rendu logiciel et refuse Pointer Lock :
 le ressenti du tir, du pilotage et l’écoute multijoueur restent à confirmer sur
 des appareils réels.
 
-Les dégâts de chute, la remise à zéro du corps à la résurrection et les contrats
-de lit utilisent les règles de [retours terrain](field-update.md). Les deux
-purgatoires et leurs nombres de signatures restent inchangés.
+Chute et observation avant l'âme : [incarnation, chute et retour](walking-network.md#incarnation-chute-et-retour) ;
+lits : [lits et réapparition](logistics-contracts.md#lits-et-réapparition). La récidive
+super → super reste immédiate.
 
-Le [lot suivant de lisibilité et nettoyage](clean-flight.md) précise les commandes
-contextuelles actuelles, les effets partagés et les nouvelles collisions de coque.
+## Pistolet du purgatoire
 
-Avant création d’une âme de joueur, une [observation volontaire](multiplayer-return.md#mort-et-observation-volontaire)
-neutralise les actions sans conserver de corps actif. La récidive super → super reste immédiate.
+Caméra à la troisième personne, cible à 1,55 m de référence au-dessus des pieds et
+décalage d'épaule de 0,70 m, multipliés par le ratio du monde. Le bras droit suit la
+visée ; la bouche est un nœud réel du modèle. Un premier rayon trouve le point sous
+le réticule, un second part du canon vers ce point et revérifie cibles et obstacles
+(mobilier, guichet et sol bloquent ; jamais de tir dans le dos). Portée 150 m de
+référence, 10 dégâts, semi-automatique, 120 balles par incarnation sans recharge,
+interdit en poste. Le traceur part devant la bouche (`makeShotTrace`). Code :
+`personal-aim.ts` ; régression : `test-pistol-ammo.mjs`, `diagnose-rear-trace.mjs`.
 
 Nouveaux PV : moustique 70, rat 5 000, araignée pondeuse 1 200, bébé araignée 20. Voir [bestiaire](enemy-bestiary.md) pour la naissance et les conséquences des 100 points potentiels d'infestation.

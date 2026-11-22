@@ -32,19 +32,14 @@ L'auteur est responsable des corrections et de l'adaptation de sa branche jusqu'
 la fusion. Après une mise à jour depuis `main` ou une résolution de conflit,
 relancer les contrôles concernés ; si le comportement testé change, renouveler
 l'essai en jeu. Identifier le commit testé pour éviter une validation périmée.
-La fusion est autonome par défaut : l'agent qui a réalisé la contribution
-fusionne sa PR dès qu'elle est prête, sans demander de validation manuelle à
-l'utilisateur. Avant cela, il doit constater la réussite des contrôles requis
-sur le dernier commit (notamment `Docker build`), relire le diff et les critères
-d'acceptation, et vérifier l'absence de conflit. Utiliser **squash** si autorisé.
-Activer l'**auto-merge** en squash sur la PR terminée : GitHub la fusionne dès que
-les contrôles requis de `main` passent (fusion directe seulement si la PR est déjà
-fusionnable). L'auteur reste responsable jusqu'à la fusion effective.
-Les essais humains impossibles à réaliser sont décrits honnêtement dans la PR ;
-ils ne doivent pas être présentés comme exécutés. Si un contrôle requis échoue,
-reste absent ou si GitHub bloque la fusion, laisser la PR ouverte et signaler
-le blocage. Ne jamais contourner les protections ni les permissions GitHub.
-Après fusion, vérifier la fermeture des issues concernées et le résultat sur `main`.
+La fusion est autonome : l'auteur (humain ou agent) fusionne sa PR en squash, sans
+validation manuelle préalable, une fois le diff et les critères relus, l'absence de
+conflit vérifiée et les contrôles requis réussis sur le dernier commit (dont
+`Docker build`). Activer l'auto-merge en squash ; fusionner directement si GitHub
+dit la PR déjà fusionnable. Les essais humains non réalisés sont décrits comme tels.
+Si un contrôle requis échoue ou manque, ou si GitHub bloque, laisser la PR ouverte
+et signaler le blocage ; ne jamais contourner protections ni permissions. Après
+fusion, vérifier `main` et la fermeture des issues.
 Il n'y a pas de circuit de validation supplémentaire extérieur à GitHub.
 
 ## Clôturer une issue à la fusion
@@ -59,34 +54,11 @@ est encore ouverte, la fermer comme terminée après avoir vérifié le contenu 
 `main`. Mentionner la PR fusionnée et conserver les limites des essais dans la PR.
 Voir la [documentation GitHub sur les liens entre PR et issues](https://docs.github.com/fr/issues/tracking-your-work-with-issues/using-issues/linking-a-pull-request-to-an-issue).
 
-## Environnements temporaires : cible à configurer
+## Environnements de test
 
-Le dépôt ne fournit pas encore de workflow de déploiement temporaire. Jusqu'à
-sa mise en place, indiquer « indisponible » et donner une procédure locale ;
-ne pas annoncer un lien de test automatique.
-
-Le fonctionnement retenu est un environnement par PR, construit et mis à jour
-par GitHub Actions, avec client et serveur isolés des autres PR et de la
-production. La pipeline publiera le lien et le commit déployé, puis supprimera
-l'environnement à la fermeture de la PR. Prévoir HTTPS, négociation WebRTC,
-allocation de plages UDP distinctes, limites de ressources et nettoyage des
-échecs. Le mécanisme devra gérer les contributions externes sans leur exposer
-les secrets de déploiement ni un accès d'administration au VPS.
-
-Les agents consultent les résultats de la pipeline ; l'infrastructure est
-configurée une fois par les mainteneurs. Le déploiement sur VPS et ses secrets
-restent à configurer séparément. La production est déployée à partir de l’image
-`latest` publiée sur GHCR à chaque commit sur `main`.
-
-## Sources de la méthode
-
-Ces recommandations sont adaptées au projet ; elles ne constituent pas une
-mesure comparative des agents ou une garantie de correction.
-
-- [Claude Code : bonnes pratiques](https://code.claude.com/docs/en/best-practices) :
-  instructions courtes, procédures à la demande et vérifications exécutables.
-- [Anthropic : agents sur plusieurs sessions](https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents) :
-  progression incrémentale, notes de reprise et essais de bout en bout.
-
-Consultées le 30 octobre 2026. Les notes séparées par tâche et le parcours de PR
-sont des choix de ce projet pour permettre les contributions parallèles.
+Aucun environnement temporaire par PR n'existe : indiquer « indisponible » dans la PR
+et donner une procédure locale. La production suit l'image `latest` publiée sur GHCR
+à chaque commit sur `main` ([operations](docs/operations.md#déploiement)). Un futur
+environnement par PR devra isoler client, serveur et plages UDP, publier lien et
+commit déployé, puis se supprimer à la fermeture, sans exposer de secret aux
+contributions externes.

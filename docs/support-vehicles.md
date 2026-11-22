@@ -146,9 +146,6 @@ de poste et les morts, l'écoute et le confort visuel des modèles et du pilotag
 **Aucune VM externe n'a été provisionnée ni déployée.** Voir
 [le guide UDP](udp-server.md) ; recharger les navigateurs après chaque déploiement.
 
-Le [lot confort de jeu, version 37](comfort.md) précise réparation, zoom, jauges,
-radar à pied, remise à zéro, fourmis et projectiles du pistolet courants.
-
 La [correction des commandes H2](helicopter-controls.md) détaille les défauts
 reproduits, le collectif local, la jauge au neutre et les tests de roquettes.
 

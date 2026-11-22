@@ -121,7 +121,7 @@ sont stockés alignés sur −Z, ce qu'attend `aimGun`, et leurs bouches
 - **Stuka** (version 266) : hélice, ailes en mouette (îlots séparés), bombe ventrale
   dans la coque ; deux bouches au bord d'attaque à 40 % de l'envergure (pas de
   canon sculpté) ; envergure 7,7 conservée. Les anciennes bombes décoratives sous
-  les ailes sont retirées. `src/meshy-fleet.js` (coques statiques) est supprimé.
+  les ailes sont retirées.
 
 L'importeur écrit aussi `src/vehicle-anchors.js`, partagé par le client et le
 serveur, pour que la physique suive le modèle : pivot et longueur du canon du T3

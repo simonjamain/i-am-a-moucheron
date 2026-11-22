@@ -47,46 +47,29 @@ Une seule instance conserve toutes les salles en RAM. Redémarrer ou recréer le
 conteneur efface les parties en cours. Le contrôle `/healthz` valide HTTP, pas la
 connectivité UDP : la vérifier avec deux joueurs sur des réseaux distincts.
 
-`compose.yaml` et `compose.traefik.yaml` référencent encore l’ancien tag local
-`i-am-a-moucheron:2026.10.29-udp.2`, qui n’est plus produit : ils ne suivent pas
-l’état courant. Utiliser la commande `docker build` / `docker run` ci-dessus ou
-l’image GHCR `latest`.
+`compose.yaml` (et sa surcouche `compose.traefik.yaml`) référence encore l’ancien
+tag local `i-am-a-moucheron:2026.10.29-udp.2`, qui n’est plus produit : préférer les
+commandes ci-dessus ou l’image GHCR `latest`.
 
-## Contrôle de contribution et protection de main
+## Contrôle de contribution
 
-Chaque contribution construit l’image complète avec la commande `docker build`
-ci-dessus. Rapporter le résultat et le commit testé dans la PR. Si Docker manque
-localement, le signaler et attendre le résultat de GitHub Actions.
+Chaque contribution construit l’image avec la commande `docker build` ci-dessus et
+rapporte le résultat et le commit testé dans la PR ; si Docker manque localement,
+le signaler et attendre le contrôle GitHub Actions.
 
 Le workflow [Docker build validation](../.github/workflows/docker-build.yml)
-exécute le contrôle **Docker build** sur toutes les PR et les groupes de fusion. Il construit et charge l’image `linux/amd64` sans la
-publier ni utiliser de secrets de déploiement. Aucun filtre de fichiers ne saute
-le contrôle sur les contributions documentaires. Le job démarre ensuite l'image construite et contrôle `/healthz` et le refus 410
-de `/api/join` (sans tester UDP). Le workflow de publication
-GHCR reste distinct et ne se déclenche que sur les pushs sur `main` : les
-branches de contribution et les tags Git ne publient aucune image. Sur `main`,
-seul le workflow de publication reconstruit l’image, sans doubler le build de
-vérification. Les exécutions de publication ne sont pas annulées par les pushs
-suivants ; leur succès et le tag SHA permettent de vérifier chaque livraison.
+exécute le contrôle requis **Docker build** sur toutes les PR (y compris
+documentaires) et les groupes de fusion : il construit l’image `linux/amd64` sans
+la publier ni utiliser de secret, la démarre et contrôle `/healthz` et le 410 de
+`/api/join` (sans tester UDP). La publication GHCR ([docker.yml](../.github/workflows/docker.yml))
+ne se déclenche que sur `main` ; ses exécutions ne sont pas annulées par les pushs
+suivants et le tag SHA identifie chaque livraison.
 
-Pour bloquer effectivement la fusion, un administrateur doit configurer dans
-GitHub une protection ou un ruleset actif sur `main` : exiger une PR et le
-status check **Docker build** (application GitHub Actions), avec une branche à
-jour avant fusion. Conserver les autres protections existantes. Appliquer la
-règle aux administrateurs et éviter les exceptions de contournement si toutes
-les fusions doivent être bloquées en cas d’échec. Le fichier de workflow seul
-ne peut pas rendre un contrôle obligatoire.
-
-Les agents n'ont pas les droits d'administration : cette protection n'est pas
-lisible ni modifiable depuis une contribution. Vérifier son activation dans les
-paramètres du dépôt ; si la fusion est bloquée, laisser la PR ouverte.
-
-Référence : [contrôles obligatoires GitHub](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches#require-status-checks-before-merging).
+Les contrôles requis de `main` sont réglés dans les paramètres du dépôt, hors de
+portée des agents : si GitHub bloque la fusion, laisser la PR ouverte et le signaler.
 
 ## Outillage de modèles GLB (hors VPS de jeu)
 
-L'image Docker de développement Meshy est distincte de l'image du serveur.
-Elle est construite et utilisée à la demande par `compose.assets.yaml`.
-La CI vérifie le même outil sur une fixture texturée et GHCR le publiera
-après fusion sur `main`, sans aucun service permanent.
-Voir [pipeline d'assets](asset-pipeline.md).
+L'image de développement Meshy est distincte de l'image du serveur : construite à
+la demande par `compose.assets.yaml`, vérifiée en CI (`assets-check.yml`) et publiée
+sur GHCR depuis `main` (`assets-publish.yml`). Voir [pipeline d'assets](asset-pipeline.md).

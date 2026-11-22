@@ -26,15 +26,6 @@ plus à rien). Fermer un dossier et refuser un échange restent des actions dist
 Les actions sont bloquées pendant un envoi ; après erreur, le document peut être traité
 de nouveau.
 
-### Annexes malicieuses retirées (version 264)
-
-Les annexes malicieuses (5 % des dossiers, quatre clauses piégées : commandes à
-contre-sens, tourelle contrariée, dégâts divisés par deux, cadence divisée par
-deux) ont été **entièrement retirées** : `malice.js`, la commande
-`dossier-choice`, le suivi des dossiers et le champ `contractClause` des pilotes
-n'existent plus côté Node. Un dossier d'accès ne contient que ses documents
-obligatoires ; chaque poste tire avec la cadence et les dégâts de son arme.
-
 ## Réserves des appareils
 
 Les quantités appartiennent à l’appareil dans une table distincte du mouvement.
@@ -144,16 +135,25 @@ réseau déterministes, pas une mesure de latence WAN ou de charge maximale.
 Le modèle reste coopératif : positions et impacts sont déclarés par les clients.
 Recharger tous les clients après publication pour utiliser le même protocole.
 
-Les lits sont une installation supplémentaire, avec progression de prix indépendante
-15 $, 17 $, 19 $… et contrat personnel de réapparition. Ils ne ravitaillent pas et
-ne détectent pas d’ennemis. Voir [lits](field-update.md#départ-lits-et-contrats-personnels).
+## Lits et réapparition
 
-Les [prix prépayés, projectiles teintés et nettoyage](clean-flight.md) complètent ces règles.
-Les compteurs de prix et la limite d’installations incluent désormais les commandes
-payées non posées ; leurs tarifs ne sont pas débités une seconde fois à la pose.
+Un lit coûte 15 $, puis +2 $ par lit (caisse commune) ; il ne ravitaille pas et ne
+détecte rien. Sa pose réserve 6 × 4,2 m de référence avec support continu et hauteur
+libre, y compris sur un meuble. Le viser puis E ouvre un **contrat personnel signé** :
+un seul lit actif par joueur, plusieurs joueurs par lit ; en signer un autre remplace
+le précédent, E au lit actif propose la résiliation signée. Après le purgatoire, la
+résurrection utilise le côté libre du lit après revalidation du support ; lit absent
+ou impraticable : retour au départ avec message. Contrats et mouvements périmés sont
+refusés par epoch et incarnation.
 
-La parabole tourne et sa couverture circulaire apparaît sur la carte ; ce balayage
-ne ralentit pas la détection. Voir [retours multijoueurs](multiplayer-return.md).
+Un secret de reprise, renvoyé seulement à la connexion et gardé dans le
+`sessionStorage` par salle, retrouve le contrat de lit après rechargement dans la
+même session ; il n'apparaît jamais dans les snapshots et ne restaure ni véhicule ni
+vie. Registre limité à 2 048 contrats par salle. Achat et pose :
+[bon signé](economy-physics.md#achats--bon-signé-et-pose).
+
+Le radar couvre un cylindre de 2 m de rayon à toutes hauteurs ; sa couverture
+apparaît sur la carte et le balayage décoratif ne ralentit pas la détection.
 
 ## Réserves des véhicules d’appui
 
@@ -161,11 +161,7 @@ H2 et D2 partagent les stations et les garanties des bons et occupations. Le H2
 compte 300 secondes de **vol**, y compris en stationnaire, plutôt qu’un temps
 proportionnel au collectif. D2 : consommation proportionnelle à la conduite.
 Stocks et cadences : [hélicoptère et DCA mobile](support-vehicles.md).
-La DCA **fixe** reste illimitée ; la DCA mobile possède 100 obus.
-Le catalogue courant comprend 600 variantes, avec quatre rôles supplémentaires.
-
-Le [lot confort de jeu, version 37](comfort.md) précise réparation, zoom, jauges,
-radar à pied, remise à zéro, fourmis et projectiles du pistolet courants.
+La DCA fixe a 120 obus (`FIXED_DCA_AMMO`) ; la DCA mobile 100.
 
 Le [bombardier biplan](biplane-models.md) porte les noms de ses occupants sur des plaques collées au fuselage ; son camouflage reste fixe.
 

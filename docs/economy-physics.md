@@ -26,7 +26,7 @@ local transition and rollback if the server refuses. Sync responses are held
 while that transition is pending, avoiding a stale snapshot moving the player
 back into the cockpit. Entry still waits for authoritative seat allocation;
 network round-trip time cannot honestly be removed. There is no added boarding
-or exit timer. P toggles the workshop; a signed prepaid order opens placement, E (Enter alias) places, Escape retains the order for later. See [current purchase flow](clean-flight.md#prix-bon-signé-et-pose).
+or exit timer. P toggles the workshop; a signed prepaid order opens placement, E (Enter alias) places, Escape retains the order for later. See [purchases](#achats--bon-signé-et-pose).
 
 Space toggles the canopy whenever the on-foot body is airborne, including with
 a free cursor. All exits and forced ejections start without a parachute. Exit
@@ -126,20 +126,24 @@ et réserves des avions sont détaillés dans [logistique et contrats](logistics
 La DCA conserve ses deux signatures obligatoires et ses munitions illimitées.
 La station gratuite d’Alpha ne fournit pas de DCA gratuite.
 
-## Current character fall and personal respawn
+## Achats : bon signé et pose
 
-The freefall/canopy reference values earlier in this historical section are
-replaced for the character by world-metre gravity, gradual inflation and impact
-damage in [field updates](field-update.md). Projectile and aircraft ballistics
-retain their separate miniature tuning. Beds use common funds and personal
-signed contracts; new loans use 10–20 % per wave without rewriting signed schedules.
+`shopPrice` (`src/equipment.ts`) est le calcul commun des tarifs ; `purchaseCount`
+compte les objets posés **et les commandes payées en attente**, par type (la station
+gratuite d'Alpha est exclue). Parcours, identique pour installations et véhicules :
+atelier (à pied) → bon au prix courant → signature → confirmation serveur → aperçu
+de pose → **E** pose (Entrée en alias ; maintenir E ne multiplie pas les poses), au
+sol ou sur un mobilier réellement porteur. Le serveur revérifie support, empreinte
+(envergure et longueur des véhicules), hauteur libre, proximité, chevauchements et
+capacité ; une pose invalide, répétée ou concurrente ne duplique ni objet ni débit
+et conserve l'achat. Échap annule l'aperçu ; l'atelier propose « Déjà payé · Reprendre
+la pose ». Un prix de bon périmé est refusé avant paiement.
 
-Current Node installations use [signed prepaid orders](clean-flight.md#prix-bon-signé-et-pose),
-not payment at placement. Their pending counts participate in quotes and the 24-item cap.
-
-Les [retours multijoueurs](multiplayer-return.md) remplacent le déploiement direct
-des appareils achetés, la gravité non miniature et les parcours courts. Les achats
-de véhicules se signent et se posent à pied, notamment sur le plancher.
+Les commandes prépayées sont personnelles à la connexion, survivent à la mort et
+comptent dans la limite de 24 installations. À l'expiration du joueur, les objets
+non posés sont remboursés une fois à la caisse commune ; une reprise de session garde
+le même identifiant et ses commandes, un rechargement de page non. Le reset efface
+commandes et monnaie. Les achats passent par `purchase-sign` puis `place-purchase`.
 
 ## Pose dans une zone de service
 

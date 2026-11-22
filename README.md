@@ -17,10 +17,8 @@ ouvertes vivent dans les issues GitHub ; l’historique est dans Git.
 
 ## Contributions
 
-Le développement collaboratif passe par GitHub :
-[contribuer](CONTRIBUTING.md), proposer une PR et
-[transmettre une tâche](docs/tasks/README.md). Les environnements temporaires
-par PR restent à configurer ; voir CONTRIBUTING pour leur état et la cible.
+Le développement collaboratif passe par GitHub : [contribuer](CONTRIBUTING.md),
+proposer une PR et [transmettre une tâche](docs/tasks/README.md).
 
 ## Stack et démarrage
 
@@ -38,28 +36,12 @@ npm ci
 npm start
 ```
 
-Livraison : PR GitHub fusionnée sur `main`. Chaque commit sur `main` publie l’image
-`latest` sur GHCR ; un environnement extérieur au dépôt la récupère périodiquement
-et la déploie sur le VPS. Le [guide Docker](docs/docker.md) décrit la construction locale.
-
-Node 22.18+ ; HTTP sur le port 3000, UDP sur 41000–41099. En production,
-servir HTTP derrière HTTPS et exposer les ports UDP directement sur la VM.
-Voir [le guide du serveur UDP](docs/udp-server.md) pour les variables et les tests.
-`npm run dev` lance ce même serveur ; redémarrer après modification.
-
-Le serveur Node/UDP est l'unique runtime du jeu.
-
-```sh
-npm run format:check
-npm test
-npm run build
-node scripts/validate-artifact.mjs
-```
-
-Modifier `src/` et `scripts/`, puis assembler. `server/assets.js` (versionné) et `dist/` (ignoré par Git) sont
-générés.
-`npm run build` produit un runtime Node autonome dans `dist/` : y exécuter
-`npm ci --omit=dev && npm start`. Le validateur contrôle ce paquet Node.
+Node 22.18+ ; HTTP sur le port 3000, UDP sur 41000–41099 (variables et
+production : [serveur UDP](docs/udp-server.md)). Le serveur assemble les assets au
+démarrage : le redémarrer après modification. `server/assets.js` (versionné) et
+`dist/` (ignoré) sont générés. Contrôles avant livraison : [operations](docs/operations.md).
+Livraison : PR fusionnée sur `main`, publiée automatiquement sur GHCR puis déployée
+sur le VPS ([Docker](docs/docker.md)).
 
 ## Documents par thème
 
@@ -67,14 +49,12 @@ La documentation se lit aussi sur le site <https://simonjamain.github.io/i-am-a-
 généré depuis ce dépôt ([fonctionnement](docs/site.md)) : menus par public, recherche,
 nouveautés, galerie visuelle, écrans intégrés et santé de la documentation.
 
-Les constantes et commandes exactes restent dans le code et `package.json`. Les
-documents marqués _(lot)_ racontent une livraison datée : ils décrivent des
-comportements encore valides mais peuvent citer des versions ou des états
-dépassés ; en cas de doute, le code et les références du thème font foi.
+Les constantes et commandes exactes restent dans le code et `package.json` ; en cas
+d'écart, le code fait foi et le document se corrige dans la même PR.
 
 **Jeu et règles**
 
-- [gameplay](docs/gameplay.md) : règles et parcours joueur · [controls](docs/controls.md) : touches, pointeur · [comfort](docs/comfort.md), [clean-flight](docs/clean-flight.md), [field-update](docs/field-update.md), [multiplayer-return](docs/multiplayer-return.md) _(lots)_
+- [gameplay](docs/gameplay.md) : règles et parcours joueur · [controls](docs/controls.md) : touches, pointeur
 - [progression](docs/progression.md) : vagues, récompenses, achats · [enemy-power](docs/enemy-power.md) : puissance et budget · [economy-physics](docs/economy-physics.md) : économie, signatures, balistique · [stats](docs/stats.md) : statistiques des équipements
 - [combat-worlds](docs/combat-worlds.md) · [logistics-contracts](docs/logistics-contracts.md) · [purgatory-queue](docs/purgatory-queue.md) · [laboratory](docs/laboratory.md) (mode debug) · [office-layouts](docs/office-layouts.md)
 
@@ -84,7 +64,7 @@ dépassés ; en cas de doute, le code et les références du thème font foi.
 
 **Véhicules et armes**
 
-- [scale-fleet-weapons](docs/scale-fleet-weapons.md) : unités, flotte, DCA · [vehicles-bank](docs/vehicles-bank.md) : Stuka, tank, banque · [support-vehicles](docs/support-vehicles.md) : H2 et camion D2 · [helicopter-controls](docs/helicopter-controls.md) · [biplane-models](docs/biplane-models.md) · [physics-engine](docs/physics-engine.md) : Rapier
+- [scale-fleet-weapons](docs/scale-fleet-weapons.md) : unités, flotte, DCA · [vehicles-bank](docs/vehicles-bank.md) : Stuka, tank, banque · [support-vehicles](docs/support-vehicles.md) : H2 et camion D2 · [helicopter-controls](docs/helicopter-controls.md) · [biplane-models](docs/biplane-models.md) · [physics-engine](docs/physics-engine.md) : Rapier au sol · [plane-physics](docs/plane-physics.md) : biplan sur Rapier
 
 **Architecture et réseau**
 
@@ -93,18 +73,11 @@ dépassés ; en cas de doute, le code et les références du thème font foi.
 
 **Rendu, son et modèles**
 
-- [art-direction](docs/art-direction.md) : direction artistique · [ui-guidelines](docs/ui-guidelines.md) : règles d’interface · [audio](docs/audio.md) · [toon-rendering](docs/toon-rendering.md) · [shadow-visibility](docs/shadow-visibility.md) · [asset-pipeline](docs/asset-pipeline.md) : modèles Meshy et outil GLB · [meshy-fleet](docs/meshy-fleet.md), [b3-model](docs/b3-model.md), [h2-model](docs/h2-model.md), [m1-model](docs/m1-model.md), [t01-asset](docs/t01-asset.md), [gatling-turret](docs/gatling-turret.md)
+- [art-direction](docs/art-direction.md) : direction artistique · [ui-guidelines](docs/ui-guidelines.md) : règles d’interface · [audio](docs/audio.md) · [toon-rendering](docs/toon-rendering.md) · [shadow-visibility](docs/shadow-visibility.md) · [office-lighting](docs/office-lighting.md) · [loading-screen](docs/loading-screen.md) · [collisions](docs/collisions.md) · [asset-pipeline](docs/asset-pipeline.md) : modèles Meshy et outil GLB · [meshy-fleet](docs/meshy-fleet.md), [b3-model](docs/b3-model.md), [h2-model](docs/h2-model.md), [m1-model](docs/m1-model.md), [t01-asset](docs/t01-asset.md), [gatling-turret](docs/gatling-turret.md)
 
 **Exploitation et contribution**
 
-- [operations](docs/operations.md) : contrôles, tests, limites de validation · [docker](docs/docker.md) · [CONTRIBUTING](CONTRIBUTING.md) · [notes de reprise](docs/tasks/README.md) (en cours : [migration TypeScript](docs/tasks/typescript-migration.md), [montée en charge](docs/tasks/scaling-plan.md))
+- [operations](docs/operations.md) : contrôles, tests, limites de validation · [docker](docs/docker.md) · [CONTRIBUTING](CONTRIBUTING.md) · [notes de reprise](docs/tasks/README.md) (en cours : [migration TypeScript](docs/tasks/typescript-migration.md), [collisions en triangles](docs/tasks/collision-triangles.md)) · [site de documentation](docs/site.md)
 
 `/ui-review.html` (aperçu des vrais composants HUD/banque sur données temporaires, publié aussi sur le site : [écrans intégrés](https://simonjamain.github.io/i-am-a-moucheron/ecrans/))
 est généré par l’assemblage (`scripts/assemble.mjs`, lancé par `npm start`, `npm test` et `npm run build`).
-
-## Outillage de modèles Meshy
-
-[Optimisation géométrique GLB gratuite, Docker Compose et CI](docs/asset-pipeline.md) :
-un outil **de développement** ponctuel séparé du serveur de jeu, qui conserve
-UV, textures et pièces protégées. Les fichiers monoblocs nécessitent d'abord
-une séparation des pièces mobiles ; aucune conversion automatique de la flotte.

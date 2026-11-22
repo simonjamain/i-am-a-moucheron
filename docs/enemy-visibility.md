@@ -90,7 +90,7 @@ bornes des vrais meshes Three.js, sans agrandir artificiellement un marqueur.
 Ces dimensions incluent ailes ou pattes et le profil de taille de l'espèce. Ce
 sont des choix de lisibilité du jeu, pas des proportions biologiques. Le seuil
 contrôlé est de 6×2 pixels, avec exception fourmi à 5×1,7 pixels après la demande
-VAG-07 de demi-taille. Voir [confort](comfort.md) pour ce changement validé.
+VAG-07 de demi-taille.
 L'agrandissement n'est pas dépendant de la caméra : la géométrie visible, les
 tirs et les contacts conservent la même taille à plusieurs joueurs.
 `ENEMY_SIZE_FACTORS` et `enemySizeFactor()` dans `scale.ts` centralisent les six

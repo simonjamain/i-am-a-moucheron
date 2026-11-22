@@ -1,20 +1,11 @@
-# Physique Rapier — les véhicules au sol (versions 352 à 381)
+# Physique Rapier — véhicules au sol
 
-Le jeu écrit sa physique à la main (vol, hélicoptère, `stepWalker`, balistique). Les
-véhicules au sol roulent sur un vrai moteur, **Rapier** (Rust compilé en
-WebAssembly). Version 352 : essai derrière `?rapier`. Version 353 : par défaut.
-Version 354 : **l'ancienne conduite du Castor est supprimée** (au volant et à vide) ;
-Rapier est chargé **derrière l'écran de chargement** (`homeReady` attend son
-téléchargement) et un échec de chargement est une erreur de démarrage, comme une
-ressource manquante.
-
-Version 358 : le **char moyen** passe aussi sur Rapier. Version 359 : le **camion DCA**
-et sa remorque aussi ; l'ancienne conduite au sol (`tank.js`) est supprimée.
-
-Migration en cours : tous les véhicules **au sol** sont sur Rapier. Les avions, les
-hélicoptères et la marche gardent leur physique d'origine (`flight.ts`, `helicopter.js`,
-`sortie.ts`). Elle est obsolète : chaque migration en retire le code correspondant, et à
-terme elle disparaît entièrement.
+Les véhicules au sol (Castor, char moyen, camion DCA et sa remorque) roulent sur
+**Rapier** (Rust compilé en WebAssembly). Rapier est chargé derrière l'écran de
+chargement (`homeReady` attend son téléchargement) ; un échec de chargement est une
+erreur de démarrage. Le biplan vole aussi sur Rapier ([vol du biplan](plane-physics.md)).
+Les autres avions, les hélicoptères et la marche gardent leur physique maison
+(`flight.ts`, `helicopter.js`, `sortie.ts`), à retirer au fil des migrations.
 
 ## Décision et périmètre
 
@@ -83,7 +74,7 @@ pièce), pas comme vitesse.
   sans rebond ni dégâts, et glisse ou s'arrête selon l'angle ; la masse est basse, pas de
   retournement dans les essais de slalom.
 
-## Le char sur Rapier (version 358)
+## Le char sur Rapier
 
 Même contrat que le Castor (`p`, `q`, `v`, `omega`), un rig par char conduit et un par
 char vide simulé par l'hôte. Le modèle d'un char à chenilles :
@@ -122,7 +113,7 @@ char vide simulé par l'hôte. Le modèle d'un char à chenilles :
 - **Géométrie du train de roulement** (galets, rayon, ligne de chenille) mesurée sur le
   maillage de la caisse ; `test-tank-physics.mjs` la contrôle sur les sommets du modèle.
 
-### Moyeux dans les roues (version 381)
+### Moyeux dans les roues
 
 Les capuchons hexagonaux des moyeux (« axes » des galets, du barbotin avant et du pignon arrière)
 étaient restés dans la caisse quand les roues ont été extraites : ils ne suivaient pas les roues
@@ -130,7 +121,7 @@ qui montaient avec le relief. `scripts/rig-tank-hubs.mjs` déplace chacun des do
 triangles dans la pièce de sa roue (aucun triangle, UV ni texture ne change) ; ils tournent et
 montent avec elle. `test-track-suspension.mjs` le contrôle.
 
-### Chenilles déformables (version 366)
+### Chenilles déformables
 
 - **Pourquoi cosmétique** : un char distant est simulé sur une autre machine, sans ses ressorts.
   `src/track-suspension.ts` reconstruit donc le relief sous chaque essieu depuis la pose et les
@@ -144,7 +135,7 @@ montent avec elle. `test-track-suspension.mjs` le contrôle.
   hauteur : le brin haut reste en place). `src/tank-gear.ts` donne les essieux, partagés avec la
   physique. `test-track-suspension.mjs` le contrôle.
 
-### Frein de parking, recul et vue du tireur (version 369)
+### Frein de parking, recul et vue du tireur
 
 - **Frein de parking** : sans touche, sans virage, au sol et sous 0,12 m/s, le char est immobilisé
   (vitesse horizontale et lacet annulés, poussée horizontale des ressorts compensée) ; la vitesse
@@ -177,7 +168,7 @@ montent avec elle. `test-track-suspension.mjs` le contrôle.
 Pistes (pas encore faites) : roues du Castor animées par le braquage de la physique plutôt que
 déduites du taux de lacet.
 
-## Le camion DCA sur Rapier (versions 359 et 363)
+## Le camion DCA sur Rapier
 
 Deux corps rigides, le tracteur (6x4) et la remorque du canon, liés par une **rotule**
 (version 363) : trois rotations, chacune avec sa butée souple (couples de rappel sur les deux
@@ -235,7 +226,7 @@ sur l'ancienne version doit être rechargée.
   bornée à 2,8 m/s² (0,29 g, un camion chargé). La remorque est de niveau au repos (ses
   roues physiques touchent le sol même si le maillage de la remorque flotte de 0,18 unité).
 
-## Accélérations (version 363)
+## Accélérations
 
 Les accélérations au départ étaient trop vives : Castor 4 → 2,5 m/s², char 2,4 → 1,2 m/s²,
 camion 2,4 → 1,2 m/s². Les vitesses maximales restent celles des profils (Castor 9 m/s, char

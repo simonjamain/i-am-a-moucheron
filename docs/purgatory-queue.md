@@ -21,5 +21,5 @@ Voir [combat et mondes](combat-worlds.md) et [gameplay](gameplay.md).
 attroupement, l’attente derrière le signataire et le retour à la place après
 bousculade. Les tests de combat sont dans `test-backlog.mjs`.
 
-Les joueurs morts ne rejoignent la file qu’après [accès volontaire](multiplayer-return.md#mort-et-observation-volontaire).
+Les joueurs morts ne rejoignent la file qu’après [accès volontaire](walking-network.md#incarnation-chute-et-retour).
 L’observation ne réserve aucune place ni corps au guichet.

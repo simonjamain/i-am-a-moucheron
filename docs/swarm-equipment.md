@@ -7,7 +7,7 @@ additive halo and an 11-reference-metre streak. A bounded minimum projected widt
 improves distant readability; collision still uses the actual swept segment,
 not the exaggerated visual width/length. Shells have a shorter orange streak.
 Every tracer owns and disposes its materials/geometry. The existing 256-projectile
-cap remains. Local and remote vehicle shots share their hull hue; personal pistol shots use the same luminous style. See [current projectile rules](clean-flight.md#provenance-et-mire).
+cap remains. Local and remote vehicle shots share their hull hue; personal pistol shots use the same luminous style.
 
 Bomber dorsal and tail turrets now have one barrel each, a yaw joint, a separate
 elevation joint and an explicit muzzle node. `aimGun` uses the parent's inverse
@@ -80,8 +80,7 @@ wave-clear and defeat motifs. Mute, gain, scene isolation and hidden-tab cleanup
 remain. The siren source is actually in the scaled office, replacing an obsolete
 pre-scale coordinate that made the old wave cue nearly inaudible.
 
-The [latest return lot](multiplayer-return.md) adds early ants, extended routes
-and midge-only extra 20% hit tolerance. Other enemy sizes now follow the [readability correction](enemy-visibility.md).
+Enemy sizes and hit tolerances: [enemy visibility](enemy-visibility.md).
 
 Current fivefold midge population, source budgets, clustered timing, spatial
 calculation and limits: [dense swarms](dense-swarms.md).

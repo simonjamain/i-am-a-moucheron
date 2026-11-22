@@ -60,67 +60,48 @@ physics continues with neutral control surfaces while UI owns the pointer.
 overrides and client integration, suspended inputs, capture/release, and the
 pending-capture/form race.
 
-## Pistolet et postes
+## Armes et postes
 
-Au bureau, personne ne porte d'arme à pied : le personnage marche et court les
-mains libres. Le pistolet n'existe qu'au purgatoire : clic gauche, bouton
-« Tir · pistolet » ou A/Croix, un tir par appui, sans rechargement. Espace en
-chute conserve la commande de parachute.
-E / Y-Triangle ouvre le dossier au guichet ou près d’un équipement.
-Touches physiques Digit1–Digit7 ou panneau « Postes » : même contrat pour changer de siège ou proposer un
-échange. Espace au sol maintient un jet ; en chute, il garde le parachute. Le destinataire signe pour accepter ou utilise « Refuser l’échange ».
-Les commandes de mêlée et de KO sont retirées.
+| Contexte                   | Clic gauche               | Espace maintenu                            |
+| -------------------------- | ------------------------- | ------------------------------------------ |
+| Tireur canon du tank       | Canon HE/AP               | Coaxiale                                   |
+| Pilote d’avion             | MG si présentes           | Bombes si présentes (toutes les 0,5 s)     |
+| Autres mitrailleurs et DCA | Tir                       | Tir                                        |
+| À pied au bureau           | —                         | Jet de nettoyage                           |
+| À pied au purgatoire       | Pistolet semi-automatique | —                                          |
+| Personnage en chute        | —                         | Ouverture/repli du parachute, un par appui |
 
-Les documents ne se déchirent plus. Aucun contrat ne modifie les
-commandes (annexes malicieuses retirées en version 264). Voir
-[logistique et contrats](logistics-contracts.md).
+Personne n'est armé à pied au bureau ; le pistolet n'existe qu'au purgatoire (clic
+gauche, bouton « Tir · pistolet » ou A/Croix, sans rechargement). E / Y-Triangle
+ouvre le dossier au guichet ou du poste visé (au centre de l'écran, ou sous le
+curseur libéré) : poste d'un engin, DCA fixe, canon anti-matériel ou lit ; au lit
+actif, E propose la résiliation signée. Touches physiques Digit1–Digit7 ou panneau
+« Postes » : contrat pour changer de siège ou proposer un échange ; le destinataire
+signe ou « Refuse l'échange ». Aucun contrat ne modifie les commandes.
+Relâchement, menu, perte de focus et changement de poste effacent les commandes
+maintenues.
 
-## Nouveau lot Node : zoom et armes lourdes
+Clic droit maintenu : zoom dans un poste avec pointeur capturé. DCA : Shift maintenu
+allonge la fusée, Ctrl la raccourcit (30 cm à 3,60 m du bureau en environ 3 s ;
+`advanceFuse()` dans `src/equipment-controls.ts`, `scripts/test-fuse-continuous.mjs`) ;
+molette et [ ] par pas de 25 m. Tank : Z/S ou flèches pour avancer/reculer, Q/D pour
+tourner, Shift choisit HE, Ctrl AP ; au canon, lunette graduée sur la trajectoire
+réelle de l'obus et **C** maintenu pour observer sans tourner la tourelle (tirs
+suspendus). Détails : [véhicules et banque](vehicles-bank.md#tank--lunette-et-observation).
 
-Clic droit maintenu : zoom dans un poste avec pointeur capturé ; relâcher restaure
-la vue. DCA : Shift maintenu augmente la fusée en continu, Ctrl maintenu la réduit
-(de 30 cm à 3,60 m du bureau en environ 3 s), relâcher arrête aussitôt et les deux
-touches ensemble s'annulent ; distance réelle affichée en direct.
-`advanceFuse()` (`src/equipment-controls.ts`) porte ce réglage, couvert par
-`scripts/test-fuse-continuous.mjs`. Molette et [ ] gardent des pas de 25 m. Tank : Z/S ou flèches pour avancer/reculer, Q/D pour tourner ; Shift choisit
-HE, Ctrl AP. Au tireur principal, clic gauche tire le canon et Espace la coaxiale. Les graduations
-de la lunette vont de 15 cm à 9 m du bureau (l'autre bout de la pièce), échantillonnées sur la trajectoire réelle de l'obus choisi (HE/AP,
-même intégration que le serveur) ; obus HE 13 s et AP 8 s de vol maximal. Aux pilotes,
-clic gauche tire la MG et Espace maintenu largue les bombes disponibles toutes les
-0,5 s. B est supprimé. Les autres mitrailleurs et DCA gardent clic/Espace pour tirer. À pied, sans
-cercle au sol, clic gauche ou E sur le poste visé (au centre de l’écran, ou sous le curseur
-libéré) ouvre son dossier : poste d’un engin, DCA fixe, canon anti-matériel ou lit.
-Les mutations à bord restent dans le menu des postes. Voir [référence du lot](vehicles-bank.md).
+Le banquier s'ouvre avec **N** ou le bouton Banquier, depuis tous les postes et
+mondes. Cocher une offre, puis l'objet du prêt, puis signer et relâcher dépose le
+contrat ; Échap ferme. La souris est libérée et les commandes neutralisées pendant
+la consultation ; la partie continue.
 
-Le banquier s’ouvre avec **N** ou le bouton Banquier, depuis tous les postes et
-mondes (sa « ligne directe »). Cocher une offre, puis l’objet du prêt, puis signer et
-relâcher dépose le contrat. Échap ferme. La souris est libérée et les commandes
-neutralisées pendant la consultation ; la partie continue. Les rails contextuels
-s’ouvrent au réglage/événement et au survol/focus.
+## HUD
 
-## Retours terrain
-
-Au sol près d’un lit, le viser puis clic ou E ouvre le contrat personnel ; au lit actif,
-la résiliation signée. Après purgatoire, retour au lit valide ou au départ.
-Au canon du tank : vue de lunette, **C maintenu** pour observer à la troisième
-personne sans déplacer le canon ; les tirs sont suspendus jusqu’au relâchement.
-Espace permet plusieurs cycles d’ouverture/fermeture du parachute ; une ouverture
-tardive ne supprime pas la vitesse instantanément. Les dégâts dépendent de la
-vitesse verticale à l’impact. Voir [retours terrain](field-update.md).
-
-Le [lot lisibilité et nettoyage](clean-flight.md) détaille les bons signés, la pose par E,
-les touches physiques, le jet et les nouvelles commandes du Spitfire.
-
-## HUD épuré (issue #135)
-
-Plus de panneau d'instructions à pied à gauche, ni d'aide plein écran (bouton
-« Aide », « Commandes ? », touche H et bouton d'aide de manette retirés), ni de
-bouton « Défense », « Recommencer la partie » ou nom de room copiant le lien. Le
-lien d'invitation reste celui de la barre d'adresse (`?room=`). Aucune commande
-tactile n'est affichée, même sur un écran tactile (jeu desktop-first).
-Le radar, ancré en haut et à droite, est agrandi vers le bas et la gauche dans
-l'espace libéré (211 px au lieu de 150, même carré). Le bouton **Debug : OFF / ON**
-est un interrupteur direct ([mode debug](laboratory.md)).
+Pas de panneau d'instructions, d'aide plein écran ni de commande tactile (jeu
+desktop-first) ; le lien d'invitation est celui de la barre d'adresse (`?room=`).
+Le radar est ancré en haut à droite. Coque, vitesse et munitions sont près du
+viseur, l'aide de contexte en bas à gauche. Après la mort, toute commande de jeu
+est neutralisée jusqu'au clic « Accéder au purgatoire » (même attente avant le
+super purgatoire). Le regard à pied va presque à ±87°, sans retournement.
 
 ## Aide contextuelle
 
@@ -136,16 +117,6 @@ raccourci de la fenêtre « Prochaine vague » pour le conducteur), **F** pour s
 fixes et véhicules terrestres n’affichent ni parachute ni « sauter ».
 `scripts/test-control-hints.mjs` vérifie chaque rôle et chaque siège de `VEHICLES`.
 
-## HUD et observation courants
-
-Les informations de coque et munitions sont près du viseur ; l’aide de contexte
-reste en bas à gauche, sans panneaux temporaires. Après mort, toute commande de
-jeu est neutralisée ; cliquer « Accéder au purgatoire » pour créer son âme et
-reprendre les contrôles. Même attente avant le super purgatoire. Le regard à
-pied va presque à ±87°, sans retournement. Tous les véhicules achetés passent
-par signature puis pose E ; annulation/reprise identique aux installations.
-Voir [retours multijoueurs](multiplayer-return.md).
-
 ## Hélicoptère et DCA mobile
 
 Hélicoptère, pilote : souris pour incliner, Maj/Ctrl pour monter/descendre, Z/S et Haut/Bas pour piquer/cabrer, Q/D et Gauche/Droite pour le roulis,
@@ -156,11 +127,6 @@ second appui distinct : détoner le missile. Aucun changement d’arme pendant s
 Camion : conduite Z/S et Q/D au conducteur ; souris et clic au tireur, molette
 pour la proximité (1,5 mm à 6 cm du bureau). 1/2 : mutations signées.
 Les réserves, butées et unités sont détaillées dans [véhicules d’appui](support-vehicles.md).
-
-Le [lot confort de jeu, version 37](comfort.md) précise réparation, zoom, jauges,
-radar à pied, remise à zéro, fourmis et projectiles du pistolet courants.
-
-Le [mapping pilote H2 actuel](helicopter-controls.md#mapping-pilote-h2) retire les anciens alias O/W sans changer les armes du copilote.
 
 ## Réglages personnels des avions
 

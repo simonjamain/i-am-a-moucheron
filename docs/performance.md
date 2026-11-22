@@ -1,5 +1,21 @@
 # Performances — mesures et limites
 
+## Montée en charge : décisions
+
+| Piste                                        | Décision          | Raison                                                                                                                 |
+| -------------------------------------------- | ----------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| Pas d'anti-triche, pas d'information secrète | Retenue           | Permet **un seul état de salle par tick**, identique pour tous ; seules les confirmations restent par joueur.          |
+| Délester les calculs vers les clients        | Retenue, encadrée | Simulations déterministes calculées par chaque client ; le serveur arbitre argent, sièges, achats, vagues. Pas d'hôte. |
+| Backend compilé (Go, Rust)                   | Reportée          | Le coût mesuré est algorithmique (×5 à ×10 déjà gagné en JS). Règles partagées client/serveur à préserver.             |
+| Messages fiables sans TCP                    | Déjà le cas       | SCTP/DTLS/UDP. Le problème est l'ordre et le volume : l'état passe en non fiable avec bases confirmées.                |
+| WebTransport (QUIC)                          | Plus tard         | Flux indépendants et datagrammes ; serveurs plus mûrs en Go/Rust : candidat pour une passerelle de transport.          |
+| Relais TURN UDP                              | À décider         | Ouvre les réseaux sans UDP direct ; décision d'infrastructure.                                                         |
+
+Cible : des dizaines de joueurs et des milliers d'ennemis dans un navigateur.
+Bancs de référence : `npm run bench:room-sync` (CPU serveur et taille des `sync`)
+et `npm run test:capacity` (50 pairs UDP natifs locaux). Essais WAN et parties
+réelles à grande échelle : non effectués.
+
 ## Collisions des tirs
 
 `InsectIndex` dans `src/insect-hits.ts` sélectionne les candidats avec une grille
@@ -38,7 +54,7 @@ chaque espèce ; vérifier les impacts, les alliés, le mobilier et les fins de 
 L'environnement temporaire est indisponible ; utiliser `npm ci && npm start`
 et le réseau UDP décrit dans [l'exploitation](operations.md).
 
-## Cibles solides préparées une fois par image (version 351)
+## Cibles solides préparées une fois par image
 
 Une trace Chrome (12 s de tir à la DCA haute cadence sur une nuée, écran à haut
 taux de rafraîchissement) montrait `stepProjectiles` à 3,5 s sur 6,7 s passées dans
@@ -130,7 +146,7 @@ composition doit être jugée visuellement ; la parité de matrices/couleurs ne
 suffit pas. Cette contribution reste candidate tant que cette observation et
 les mesures de rendu réel sont indisponibles.
 
-## Montée en charge : collisions véhicule–ennemi (version 78)
+## Montée en charge : collisions véhicule–ennemi
 
 Le serveur calcule les contacts entre les véhicules et les ennemis des vagues.
 Dans le parcours précédent, il effectuait une distance euclidienne avant une
@@ -205,7 +221,7 @@ le nombre de sources, les morts, les exclusions et le plafond de gain ;
 sonore en navigateur, notamment lors du franchissement des frontières de cellules,
 avec une nuée entourant la caméra ou plusieurs moteurs d'avions simultanés.
 
-## Trafic UDP des grandes nuées — états différentiels (version 114)
+## Trafic UDP des grandes nuées — états différentiels
 
 Le roster immuable est désormais omis **avant** la copie `structuredClone`
 dans `Game.snapshot()` pour toutes les commandes, et pas seulement pour
@@ -229,7 +245,7 @@ révisions et deltas). Les économies de volume ne garantissent ni l'absence de
 déconnexions ni les FPS sur WAN. Mesurer les débits, la saturation du canal
 fiable, les temps CPU, les délais de confirmations et les fermetures ICE/DTLS.
 
-## Coût des `sync` en salle chargée (version 247)
+## Coût des `sync` en salle chargée
 
 `advance()` s'exécute à chaque commande, deux fois par `sync`. Sa partie
 `vehicleContacts()` recalculait la position de toute la nuée (`swarmFrame()`)
@@ -255,11 +271,11 @@ conteneur de développement, Node 22 (médiane ms par `sync`) :
 À 50 joueurs envoyant 4 `sync`/s, le besoin passe d'environ 1 à 1,5 cœur à
 environ 0,4 cœur. La taille d'un `sync` courant reste ~60 Ko à 50 joueurs
 (`pilots`, `base`, `groundAgents`) : c'est la phase suivante du
-[plan de montée en charge](tasks/scaling-plan.md). `test-contact-frames.mjs`
+[décisions de montée en charge](#montée-en-charge--décisions). `test-contact-frames.mjs`
 vérifie la parité avec un calcul direct, la fenêtre, les invalidations et un
 contact balayé à partir de positions en cache.
 
-## Réponses `sync` en patchs structurels (version 248)
+## Réponses `sync` en patchs structurels
 
 Chaque réponse fiable ne transporte plus les champs inchangés du snapshot.
 `encodeSnapshotForWire()` compare les champs (hors roster, morts et dégâts,
@@ -291,12 +307,12 @@ conteneur de développement, Node 22 :
 240 Ko/s à 38 Ko/s par joueur, et le débit sortant du serveur d'environ 12 Mo/s
 à 1,9 Mo/s. Le reste est surtout la position des joueurs (`pilots`, `base`),
 déjà portée par le canal de mouvement : elle sortira des réponses fiables dans
-une phase suivante du [plan](tasks/scaling-plan.md).
+une phase suivante du [décisions](#montée-en-charge--décisions).
 `test-snapshot-patch.mjs` vérifie 5 000 cas aléatoires (clés retirées, listes
 raccourcies, `undefined`, `NaN`, changements de type) et une vraie session dont
 chaque réponse décodée égale la base enregistrée par le serveur.
 
-## Snapshot partagé et positions distantes à 1 Hz (version 249)
+## Snapshot partagé et positions distantes à 1 Hz
 
 **Snapshot partagé.** `Game.snapshot()` construisait et clonait la salle pour
 chaque `sync` de chaque joueur. Avec `snapshotShareMs` (50 ms en production,
@@ -332,12 +348,12 @@ Trois séries, médiane ms par `sync` et taille d'un `sync` courant :
 Le gain croît avec le nombre de joueurs : à 10 joueurs, peu de `sync` tombent
 dans la même fenêtre. Le reste du volume est surtout `groundAgents` (position
 et direction des insectes au sol, simulées par le serveur) ; voir le
-[plan](tasks/scaling-plan.md). `test-shared-snapshot.mjs` vérifie la fenêtre,
+[décisions](#montée-en-charge--décisions). `test-shared-snapshot.mjs` vérifie la fenêtre,
 l'heure exacte, la reconstruction après commande et nouvelle vague, le partage
 désactivé par défaut, la rétention des positions, les champs immédiats et les
 discontinuités.
 
-## Vue réseau des insectes au sol (version 251)
+## Vue réseau des insectes au sol
 
 Les insectes au sol sont simulés par le serveur (`advanceGroundUnit`). Le
 snapshot transmettait l'objet de simulation entier : appâts goûtés, repas,
@@ -358,7 +374,7 @@ et ses dégâts gardent l'état complet et non arrondi.
 CPU par `sync` inchangé (1,5–2,1 ms dans les deux cas). `test-ground-view.mjs`
 vérifie les champs envoyés, la précision et l'état complet du serveur.
 
-## Mouvements relayés en lots binaires partagés (version 252)
+## Mouvements relayés en lots binaires partagés
 
 Le relais des mouvements était devenu le premier poste réseau : un message JSON
 de 630 à 820 octets par joueur et par destinataire, soit, à 50 joueurs (10 Hz
@@ -385,7 +401,7 @@ horodatages, entiers et chaînes exacts. `npm run e2e:motion` a vérifié dans d
 Chromium réels la réception (lots de 225 octets au plus à deux joueurs) et le
 décodage par le module du jeu.
 
-## Horloge serveur lissée pour les ennemis (version 255)
+## Horloge serveur lissée pour les ennemis
 
 Les positions des nuées et des insectes au sol sont calculées par chaque
 navigateur à partir de l'heure du serveur. `enemies()` la recalait sur chaque
@@ -406,7 +422,7 @@ resynchroniser au-delà de 500 ms d'écart (première réponse, onglet endormi).
 
 Ce sont des mesures de simulation ; le ressenti doit être confirmé en partie.
 
-## Interpolation des joueurs distants à l'heure de capture (version 256)
+## Interpolation des joueurs distants à l'heure de capture
 
 Les autres joueurs étaient datés à l'**arrivée** de leurs mouvements, avec un
 délai d'affichage fixe de 100 ms. Les variations du trajet déformaient donc
@@ -445,7 +461,7 @@ Browser motion: 26 binary batches received by Alpha (max 234 B), Bravo decoded, 
 réels que l'heure de capture arrive dans les lots. Le ressenti, en particulier
 pilote et mitrailleur d'un même bombardier, reste à confirmer en partie.
 
-## Caméra de poursuite et durée des images (version 374)
+## Caméra de poursuite et durée des images
 
 Symptôme : de petits sauts en arrière du véhicule, d'une image, à intervalles réguliers, sur tous
 les véhicules. Cause probable (calcul, pas encore confirmée par un essai en jeu) : la caméra de
