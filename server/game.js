@@ -18,7 +18,7 @@ import { purchaseCount } from '../src/equipment.ts';
 import { bedAccess, bedSpawn } from '../src/beds.ts';
 import { impactDamage } from '../src/field-physics.ts';
 import { randomUUID } from 'node:crypto';
-import { MAP, ACTOR_UNIT, enemySizeFactor } from '../src/scale.ts';
+import { MAP, ACTOR_UNIT, FLAK, enemySizeFactor } from '../src/scale.ts';
 import { OFFICE_LAYOUT } from '../src/layout.ts';
 import { setActiveLayout, isLayoutId, DEFAULT_LAYOUT_ID, layoutSolids } from '../src/layouts.ts';
 import {
@@ -46,11 +46,11 @@ import {
   assignMidgeSwarmSizes,
   MAX_OFFSPRING_ROSTER,
 } from '../src/waves.js';
-import { SHOP, shopPrice, supportedPlacement } from '../src/equipment.ts';
+import { SHOP, shopPrice, supportedPlacement, decorTrust } from '../src/equipment.ts';
 import { advancePaidService } from '../src/paid-service.js';
-import { SENTRY, fireGroundSentries } from '../src/ground-sentry.ts';
+import { SENTRY, GATLING, isTurret, fireGroundSentries } from '../src/ground-sentry.ts';
 import { FORTIFICATIONS, isFortification } from '../src/ground-fortifications.ts';
-import { FIXED_DCA, heavyDcaMuzzle, isFixedDca } from '../src/fixed-dca.ts';
+import { FIXED_DCA, RAPID_DCA_DAMAGE, heavyDcaMuzzle, isFixedDca } from '../src/fixed-dca.ts';
 import { PISTOL_CAPACITY } from '../src/ground-ammo.ts';
 import {
   fullAmmo,
@@ -64,7 +64,7 @@ import { howitzerMuzzle } from '../src/howitzer-geometry.ts';
 import { validMotion } from '../src/network.ts';
 import { snapshotRosterCore, snapshotRosterKey } from '../src/snapshot-wire.ts';
 import { appendDebugEnemy, debugPlacement, standingDummies } from '../src/debug-enemies.ts';
-import { newBank, signLoan, settleLoans, repayLoan } from '../src/bank.ts';
+import { newBank, signLoan, settleLoans } from '../src/bank.ts';
 import { canUseWeapon, HEAVY, TANK_MG, availableShell } from '../src/armament.ts';
 import { sweptSphereMayTouch } from '../src/swept-broadphase.ts';
 import { createOrdnance, segmentSphere } from '../src/ordnance.js';
@@ -99,6 +99,7 @@ const world = (p) =>
         : 'purgatory';
 const signature = (s) => s === true;
 const SENTRY_SOURCE = Object.freeze({ item: 'sentry', seat: 'auto', weapon: 'sentry' });
+const GATLING_SOURCE = Object.freeze({ item: 'gatling', seat: 'auto', weapon: 'gatling' });
 const initialState = () => ({
   p: [OFFICE_LAYOUT.base.originX, OFFICE_LAYOUT.base.departureY, OFFICE_LAYOUT.base.originZ - 8],
   q: [0, 0, 0, 1],
@@ -562,10 +563,11 @@ export class Game {
   advanceSentries(r, now) {
     if (
       r.phase !== 'combat' ||
-      !r.groundDefense.structures.some((s) => s.kind === 'sentry' && s.hp > 0 && s.ammo >= 1)
+      !r.groundDefense.structures.some((s) => isTurret(s.kind) && s.hp > 0 && s.ammo >= 1)
     )
       return;
-    if (now - r.sentryClock < SENTRY.intervalMs) return;
+    const gatling = r.groundDefense.structures.some((s) => s.kind === 'gatling');
+    if (now - r.sentryClock < (gatling ? GATLING.intervalMs / 2 : SENTRY.intervalMs)) return;
     r.sentryClock = now;
     const plan = this.plan(r);
     const frames = swarmFrame(plan.roster, (now - r.started) / 1000, r.groundAgents);
@@ -574,23 +576,47 @@ export class Game {
         ? { id: index, p: frame.p, dead: false }
         : null,
     );
+    // A Gatling fires up to two rounds per server tick: one effect per turret
+    // and tick carries the count, the client spreads the rounds over time.
+    const bursts = new Map();
     const fired = fireGroundSentries(
       r.groundDefense.structures,
       targets,
       now,
       (target, sentry, damage) => {
         const id = target.id;
-        this.creditEnemy(r, SENTRY_SOURCE, id, plan.roster[id], damage * r.balance.damage);
+        this.creditEnemy(
+          r,
+          sentry.kind === 'gatling' ? GATLING_SOURCE : SENTRY_SOURCE,
+          id,
+          plan.roster[id],
+          damage * r.balance.damage,
+        );
         r.enemyDamage[id] = (r.enemyDamage[id] || 0) + damage * r.balance.damage;
-        if (r.enemyDamage[id] >= plan.roster[id].hp) this.defeatEnemy(r, id, target.p);
-        r.effects.push({
+        if (r.enemyDamage[id] >= plan.roster[id].hp) {
+          this.defeatEnemy(r, id, target.p);
+          target.dead = true;
+        }
+        const burst = bursts.get(sentry.id);
+        if (burst) {
+          burst.shots++;
+          burst.target = target.p;
+          return;
+        }
+        const effect = {
           id: ++r.effectSeq,
           kind: 'sentry-shot',
           sentry: sentry.id,
           p: [sentry.position[0], (sentry.y || 0) + 0.03, sentry.position[1]],
           target: target.p,
           at: now,
-        });
+        };
+        if (sentry.kind === 'gatling') {
+          effect.turret = 'gatling';
+          effect.shots = 1;
+          bursts.set(sentry.id, effect);
+        }
+        r.effects.push(effect);
       },
     );
     if (fired) r.groundDefense.revision++;
@@ -1227,16 +1253,11 @@ export class Game {
     } else if (path === 'reset') {
       if (b.epoch !== undefined && b.epoch !== r.base.epoch) return this.snapshot(r, options);
       this.resetRoom(r);
-    } else if (path === 'bank-sign' || path === 'bank-repay') {
+    } else if (path === 'bank-sign') {
       requireGame(
         b.epoch === undefined || b.epoch === r.base.epoch,
         'La partie a changé. Relisez le contrat.',
       );
-      if (path === 'bank-repay' && b.expectedRemaining !== undefined)
-        requireGame(
-          b.expectedRemaining === r.bank.slots[b.slot]?.remaining,
-          'Le capital restant a changé. Relisez le remboursement.',
-        );
       requireGame(
         Number.isInteger(b.slot) && b.slot >= 0 && b.slot < 3 && Number.isSafeInteger(b.serial),
         'Contrat bancaire invalide.',
@@ -1245,12 +1266,7 @@ export class Game {
       requireGame(signature(b.signature), 'Signez le contrat bancaire.');
       try {
         const cents = Math.round(r.dollars * 100);
-        r.dollars =
-          (cents +
-            (path === 'bank-sign'
-              ? signLoan(r.bank, b.slot, b.serial, cents, r.wave)
-              : -repayLoan(r.bank, b.slot, b.serial, cents))) /
-          100;
+        r.dollars = (cents + signLoan(r.bank, b.slot, b.serial, cents, r.wave)) / 100;
       } catch (e) {
         requireGame(false, e.message);
       }
@@ -1327,7 +1343,15 @@ export class Game {
         400,
       );
       if (!r.effects.some((e) => e.shot === b.shot))
-        r.effects.push({ id: ++r.effectSeq, kind: 'blast', p: b.p, shot: b.shot, at: this.now() });
+        r.effects.push({
+          id: ++r.effectSeq,
+          kind: 'blast',
+          p: b.p,
+          shot: b.shot,
+          radius:
+            Math.min(MAP.metres(FLAK.lightRadius), Math.max(0, Number(b.radius) || 0)) || undefined,
+          at: this.now(),
+        });
     } else if (path === 'death') {
       if (
         p.life === 'alive' &&
@@ -2002,6 +2026,8 @@ export class Game {
             })),
         ],
         b.item,
+        // On furniture, the client found the surface on the props' triangles.
+        decorTrust(this.solids, b.position.y - 0.00005),
       );
       requireGame(
         placement && Math.abs(placement.y - b.position.y) <= 0.0003,
@@ -2063,10 +2089,7 @@ export class Game {
       'Approchez d’un appareil disponible.',
     );
     const body = this.base(r, p, b.ground);
-    requireGame(
-      body && vehicleAccess(baseWorld(body), v, seat),
-      'Rejoignez le cercle de ce poste.',
-    );
+    requireGame(body && vehicleAccess(baseWorld(body), v, seat), 'Approchez-vous de cet appareil.');
     requireGame(VEHICLES[v.type].seats.includes(seat), 'Poste invalide.');
     requireGame(!v.seats.has(seat), 'Ce poste est occupé.');
     if (path === 'vehicle-select') {
@@ -2304,10 +2327,14 @@ export class Game {
     );
     const now = this.now(),
       profile = HEAVY[shot.weapon],
+      // A piercing shell reports each enemy it crosses while it flies on.
+      partial = shot.weapon === 'ap' && b.partial === true,
       // The shooter's report is trusted as is (cooperative game, no cheat control).
       amount = (n) => (Number.isFinite(n) ? Math.max(0, n) : 0);
-    r.ordnance = r.ordnance.filter((s) => s !== shot);
-    this.endOrdnance(r, shot, now);
+    if (!partial) {
+      r.ordnance = r.ordnance.filter((s) => s !== shot);
+      this.endOrdnance(r, shot, now);
+    }
     r.effects.push({
       id: ++r.effectSeq,
       kind: shot.weapon === 'ap' ? 'piercing' : 'blast',
@@ -2504,7 +2531,7 @@ export class Game {
     if (r.kills.has(b.enemy)) return;
     const rapid = typeof b.shot === 'string' && b.shot.startsWith(p.id + ':rapid:');
     if (rapid ? !this.rapidImpactAllowed(r, p, b.shot) : !this.pistolImpact(r, p, b.shot)) return;
-    const damage = rapid ? 75 : Math.max(1, Math.min(800, Number(b.amount) || 75));
+    const damage = rapid ? RAPID_DCA_DAMAGE : Math.max(1, Math.min(800, Number(b.amount) || 75));
     const amount = damage * r.balance.damage;
     this.once(
       r,
@@ -2529,7 +2556,7 @@ export class Game {
         : undefined;
     const amount =
       (rapid
-        ? 75
+        ? RAPID_DCA_DAMAGE
         : p.mode === 'foot'
           ? 10
           : p.mode === 'turret'
@@ -2568,16 +2595,7 @@ export class Game {
         amount,
         at: this.now(),
       });
-      const shelter = target.mode === 'turret' ? r.equipment[target.state.turret] : null;
-      let toBody = amount;
-      if (shelter?.kind === 'bunker' && shelter.hp > 0) {
-        const absorbed = Math.min(shelter.hp, amount * 0.85);
-        shelter.hp = Math.max(0, shelter.hp - absorbed);
-        toBody -= absorbed;
-        r.groundDefense.revision++;
-        if (shelter.hp === 0) r.groundDefense.navigationRevision++;
-      }
-      target.health = Math.max(0, target.health - toBody);
+      target.health = Math.max(0, target.health - amount);
       if (!target.health) this.kill(r, target, target.incarnation);
     });
   }

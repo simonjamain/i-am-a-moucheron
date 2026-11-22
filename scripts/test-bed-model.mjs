@@ -41,7 +41,7 @@ const context = vm.createContext({ T, MAP, makeBed, makeServiceStation, scene: n
 vm.runInContext(
   source.slice(
     source.indexOf('function installationModel(st)'),
-    source.indexOf("$('paperTear').onclick"),
+    source.indexOf('function heliAimPoint()'),
   ),
   context,
 );

@@ -3,6 +3,7 @@ import { MIDGE } from '/midge-model.js';
 import { WALKERS } from '/walker-batch.js';
 import { FLYERS, FlyerBatch } from '/flyer-batch.js';
 import { rayCollider, colliderContainsXZ } from '/oriented-collider.js';
+import { sweptHitsDecor } from '/office-collision.js';
 import { makeServiceStation, animateRadar, makeInstallationCollider } from '/station-model.js';
 import { ReloadHUD, seatReloads, heavyReadyAt, heavyLane, reloadProgress } from '/reload-hud.js';
 import { makeBed } from '/bed-model.js';
@@ -26,7 +27,7 @@ import { nextPilotMuzzle, nearestWeaponMuzzle } from '/muzzle.js';
 import { advanceAutomaticFire } from '/salvos.js';
 import { ammoCapacity } from '/logistics.js';
 import { PISTOL_CAPACITY } from '/ground-ammo.js';
-import { FIXED_DCA, heavyDcaMuzzle, isFixedDca } from '/fixed-dca.js';
+import { FIXED_DCA, RAPID_DCA_DAMAGE, heavyDcaMuzzle, isFixedDca } from '/fixed-dca.js';
 import { makeFixedDca, positionHeavyFlakSight } from '/fixed-dca-model.js';
 import { FORTIFICATIONS, isFortification } from '/ground-fortifications.js';
 import { HOWITZER } from '/howitzer-model.js';
@@ -53,13 +54,13 @@ import { shoulderView, aimPistol, muzzleAim } from '/personal-aim.js';
 import { BankUI } from '/bank-ui.js';
 import { ContextHUD, equipmentHUD } from '/hud.js';
 import { paintVehicle, updateInscriptions } from '/vehicle-livery.js';
-import { drawSeatIcon, seatRole } from '/seat-icons.js';
 import { AircraftFire } from '/aircraft-fire.js';
 import { inRadarCoverage } from '/logistics.js';
 import { InsectStatus, insectScale } from '/insect-status.js';
 import { BloodEffects } from '/blood-effects.js';
 import { stepVacantAircraft } from '/vacant-flight.js';
 import { CONTRACTS, ContractBook, contractKey } from '/contracts.js';
+import { BOARDING_MOTIVES, RETURN_MOTIVES, REFUSAL_TEXT, ClauseSheet, stamp } from '/paper-form.js';
 import { RewardQueue } from '/rewards.js';
 import { SHOP, shopPrice, supportedPlacement } from '/equipment.js';
 import { stepBallisticVelocity, toggleParachute } from '/ballistics.js';
@@ -103,9 +104,9 @@ import {
   gunnerView,
   BULLET_SPEED,
   stationAccess,
-  stationEntryOffset,
   stationExit,
   resolveLanding,
+  withoutDecor,
   stepWalker,
   GEAR_HEIGHT,
 } from '/sortie.js';
@@ -129,7 +130,8 @@ import {
   lookScale,
 } from '/control-focus.js';
 import { createRenderer } from '/renderer.js';
-import { makeEntryRing } from '/entry-ring.js';
+import { SEAT_POSTS, aimPost, pickPost, freeSeat } from '/seat-posts.js';
+import { PostHighlight, SelectionOutline, SIGNAL_COLOR, TAKEN_COLOR } from '/post-highlight.js';
 import { renderInfo } from '/render-info.js';
 import { createGraphics } from '/graphics.js';
 import { availableAppearance, turnToward, loadCharacter } from '/character-model.js';
@@ -165,7 +167,14 @@ import { howitzerMuzzle } from '/howitzer-geometry.js';
 import { RECONNECT_AFTER_MS, RECONNECT_WINDOW_MS } from '/udp-protocol.js';
 import { HoldZoom, advanceFuse, contextKey, rangeReadout } from '/equipment-controls.js';
 import { formatDistance, formatSpeed } from '/units.js';
-import { HEAVY, TANK_GUN_MAX_PITCH, TANK_MG, availableShell, heavyInterval } from '/armament.js';
+import {
+  CASTOR_GUN_DAMAGE,
+  HEAVY,
+  TANK_GUN_MAX_PITCH,
+  TANK_MG,
+  availableShell,
+  heavyInterval,
+} from '/armament.js';
 import { loadRapier } from '/physics-world.js';
 import { CastorRig } from '/castor-physics.js';
 import { TankRig } from '/tank-physics.js';
@@ -240,6 +249,7 @@ document.addEventListener('visibilitychange', () => {
 addEventListener('pagehide', () => sound.close());
 const renderer = createRenderer(T, canvas);
 const toon = new ToonRenderer(T, renderer);
+const postSelection = new SelectionOutline(T, renderer);
 
 const camera = new T.PerspectiveCamera(62, innerWidth / innerHeight, 0.00005, 40);
 const holdZoom = new HoldZoom();
@@ -298,6 +308,7 @@ setActiveLayout(
   isLayoutId(planParam) ? planParam : isLayoutId(storedPlan) ? storedPlan : DEFAULT_LAYOUT_ID,
 );
 let office = createOffice(T, scene, { box, cyl, ball });
+office.bakeShadows(renderer);
 const colliders = office.colliders;
 // Swaps the drawn room and its colliders in place (shared arrays keep working).
 function applyLayout(planId) {
@@ -305,7 +316,48 @@ function applyLayout(planId) {
   setActiveLayout(planId);
   office.dispose();
   office = createOffice(T, scene, { box, cyl, ball });
+  office.bakeShadows(renderer);
+  office.buildDecor(rapier);
   colliders.splice(0, colliders.length, ...office.colliders);
+}
+// Nearest solid along a ray (unit direction), within `far`: the boxes (shell,
+// floor, constructions, and the pack props until the decor world is built), then
+// the props' real triangles (office.decor, see office-collision.ts). Infinity
+// when nothing is hit. Purgatory boxes have no decor world.
+const solidRayPoint = new T.Vector3();
+function solidRayDistance(ray, far, boxes = colliders) {
+  const decor = boxes === colliders ? office.decor : null;
+  let best = Infinity;
+  for (const box of boxes) {
+    if (decor && box.decor) continue;
+    const p = rayCollider(T, ray, box, solidRayPoint);
+    if (p) best = Math.min(best, ray.origin.distanceTo(p));
+  }
+  if (decor && best > 0) {
+    const hit = decor.raycast(ray.origin.toArray(), ray.direction.toArray(), Math.min(far, best));
+    if (hit) best = Math.min(best, hit.distance);
+  }
+  return best <= far ? best : Infinity;
+}
+// Placement aim on top faces (placement-aim.ts), on the props' real triangles once
+// the decor world is built: a top face of a prop (normal up) is a candidate
+// point, any other face of a prop blocks the aim. Shell, floor and constructions
+// stay boxes.
+function aimPlacement(body, origin, direction, reach) {
+  const decor = office.decor;
+  if (!decor) return placementAim(body, origin, direction, colliders, reach);
+  const boxes = colliders.filter((b) => !b.decor);
+  const boxPoint = placementAim(body, origin, direction, boxes, reach);
+  const boxHit = solidRayDistance(
+    new T.Ray(origin.clone(), direction.clone().normalize()),
+    1e3,
+    boxes,
+  );
+  const hit = decor.raycast(origin.toArray(), direction.clone().normalize().toArray(), boxHit);
+  if (!hit) return boxPoint;
+  if (hit.normal[1] < 0.7) return null;
+  const [x, y, z] = hit.point;
+  return Math.hypot(x - body.x, z - body.z) <= reach + 1e-8 ? { x, y, z } : null;
 }
 let me = makePlane('#e3ebc0');
 me.scale.setScalar(ACTOR_UNIT);
@@ -432,25 +484,6 @@ function selfBase() {
 function assignedBay() {
   return aircraftBay(snap?.pilots.find((p) => p.id === id)?.bay || 0);
 }
-function nearestVehicle() {
-  const body = selfBase();
-  if (!body || body.parachute) return null;
-  const w = baseWorld(body);
-  return (
-    (snap?.vehicles || [])
-      .filter((v) => v.state.landed)
-      .flatMap((v) =>
-        VEHICLES[v.type].seats
-          .filter((seat) => !v.seats.some((s) => s.seat === seat) && vehicleAccess(w, v, seat))
-          .map((entrySeat) => ({ ...v, entrySeat })),
-      )
-      .sort(
-        (a, b) =>
-          Math.hypot(w.x - a.state.p[0], w.z - a.state.p[2]) -
-          Math.hypot(w.x - b.state.p[0], w.z - b.state.p[2]),
-      )[0] || null
-  );
-}
 async function chooseVehicle(vehicle, seat = vehicle?.entrySeat || 'pilot') {
   if (!vehicle || boardingBusy || boardingSelectionBusy) return;
   selectedEquipment = null;
@@ -487,20 +520,6 @@ async function chooseVehicle(vehicle, seat = vehicle?.entrySeat || 'pilot') {
     finishBoardingFeedback(timing, boardingOpen ? 'ready' : 'failed');
   }
 }
-function openBoarding() {
-  if (!onFoot || respawnAt || myVehicle) return;
-  const v = nearestVehicle();
-  if (!v) {
-    notify('Rejoignez la porte d’un appareil prêt au départ.', 2);
-    return;
-  }
-  const seat = VEHICLES[v.type].seats.find((s) => !v.seats.some((t) => t.seat === s));
-  if (!seat) {
-    notify('Cet équipage est complet.', 2);
-    return;
-  }
-  chooseVehicle(v, v.entrySeat || seat);
-}
 let soulArena = null,
   soulArenaRevision = -1,
   soulEventSeen = 0,
@@ -513,11 +532,11 @@ function groundActive() {
     joined &&
     !spectating &&
     ((onFoot && !myVehicle) || turretIndex >= 0 || !!respawnAt) &&
-    $('papers').classList.contains('hidden') &&
+    !sheetOpen('papers') &&
     !$('changelogDialog').open &&
     !$('waveCouncil').open &&
-    $('bedPanel').classList.contains('hidden') &&
-    $('purchasePanel').classList.contains('hidden') &&
+    !sheetOpen('bedPanel') &&
+    !sheetOpen('purchasePanel') &&
     $('flightSettingsPanel').classList.contains('hidden') &&
     $('bank').classList.contains('hidden') &&
     $('shop').classList.contains('hidden') &&
@@ -632,14 +651,9 @@ function groundCamera(cam, position, dt, purg = false) {
   {
     const ray = new T.Ray(target, offset.clone().normalize());
     let distance = offset.length();
-    for (const box of purg ? purgColliders : colliders) {
-      const hit = rayCollider(T, ray, box, new T.Vector3());
-      if (hit)
-        distance = Math.min(
-          distance,
-          Math.max(0.08 * viewScale, target.distanceTo(hit) - 0.08 * viewScale),
-        );
-    }
+    const hit = solidRayDistance(ray, distance, purg ? purgColliders : colliders);
+    if (hit < Infinity)
+      distance = Math.min(distance, Math.max(0.08 * viewScale, hit - 0.08 * viewScale));
     desired.copy(target).addScaledVector(offset.normalize(), distance);
   }
   if (changed) cam.position.copy(desired);
@@ -854,18 +868,24 @@ const controlFocus = new ControlFocus({
 function releaseMouse() {
   controlFocus.release();
 }
+// A paper document is open while shown, except a stamped sheet that is leaving the
+// screen: the game (mouse capture, controls) takes over as soon as it is done.
+function sheetOpen(name) {
+  const el = $(name);
+  return !el.classList.contains('hidden') && !el.classList.contains('leaving');
+}
 function canCapture() {
   return (
     joined &&
     !spectating &&
-    $('papers').classList.contains('hidden') &&
+    !sheetOpen('papers') &&
     !$('changelogDialog').open &&
     !$('waveCouncil').open &&
     $('shop').classList.contains('hidden') &&
     $('flightSettingsPanel').classList.contains('hidden') &&
     $('bank').classList.contains('hidden') &&
-    $('bedPanel').classList.contains('hidden') &&
-    $('purchasePanel').classList.contains('hidden')
+    !sheetOpen('bedPanel') &&
+    !sheetOpen('purchasePanel')
   );
 }
 function updateControlHUD() {
@@ -950,8 +970,18 @@ addEventListener('pointermove', (event) => {
 });
 canvas.addEventListener('pointerleave', () => {
   mousePrevious = null;
+  aimMouse = null;
+});
+// Free-cursor position, for aiming at posts (updateAimedPost).
+let aimMouse = null;
+canvas.addEventListener('mousemove', (e) => {
+  aimMouse = [e.clientX, e.clientY];
 });
 canvas.addEventListener('mousedown', (event) => {
+  if (event.button === 0 && useAimedPost()) {
+    event.preventDefault();
+    return;
+  }
   if (event.button === 1 && groundDefenseUI.openWheel()) {
     event.preventDefault();
     return;
@@ -1227,11 +1257,6 @@ function accept(s, force = false) {
     aircraftFire.invalidate();
     clearVacantAircraft();
     entryNoticeWave = -1;
-    paperArchive.length = 0;
-    renderArchive();
-    try {
-      sessionStorage.removeItem('moucheron-dossier:' + room);
-    } catch {}
   }
   const wasDead = !!respawnAt;
   const self = s.pilots.find((p) => p.id === id);
@@ -1371,9 +1396,7 @@ function accept(s, force = false) {
       notify(
         kind === 'antitank'
           ? 'Canon lourd · Souris : pointer (lent) · Clic : obus · F : sortir'
-          : kind === 'bunker'
-            ? 'Bunker LEGO · Clic : balles · F : sortir'
-            : stationLabel(stations[turretIndex]) +
+          : stationLabel(stations[turretIndex]) +
               ' · ' +
               (kind === 'dcaRapid'
                 ? 'Clic : balles'
@@ -1436,18 +1459,10 @@ function accept(s, force = false) {
     // Issue #108: Castor auto-turret shots are visible to everyone, from the
     // model's real muzzle: tracer, flash and recoil.
     if (e.kind === 'sentry-shot' && !respawnAt && Date.now() + clockOffset - e.at < 400) {
-      const shot = groundDefenseUI.sentryShot(e.sentry, e.target);
-      const origin = shot?.position || new T.Vector3().fromArray(e.p);
-      const direction =
-        shot?.direction ||
-        new T.Vector3()
-          .fromArray(e.target || e.p)
-          .sub(origin)
-          .normalize();
-      if (direction.lengthSq() > 0) {
-        emitBullet(origin, direction, TRACER_COLOR, false, false);
-        combatEffects.muzzle(origin, direction);
-      }
+      // Gatling: rounds are released one by one by the frame loop at the
+      // weapon's cadence, under one continuous sound loop (no sound per round).
+      if (e.turret !== 'gatling' || !groundDefenseUI.noteGatlingBurst(e.sentry, e.shots, e.target))
+        sentryShotVisual(e.sentry, e.target, e.p, e.turret === 'gatling');
     }
     if (e.kind === 'blast') {
       combatEffects.blast(new T.Vector3().fromArray(e.p), e.radius || MAP.metres(FLAK.radius));
@@ -1652,11 +1667,6 @@ $('form').addEventListener('submit', async (e) => {
           track(peer).push(state, time, seq, 'rtc', captured),
       });
     room = r.snapshot.code;
-    paperArchive.length = 0;
-    try {
-      paperArchive.push(...JSON.parse(sessionStorage.getItem('moucheron-dossier:' + room) || '[]'));
-    } catch {}
-    renderArchive();
     spawnPos.fromArray(r.state.p);
     me.position.copy(spawnPos);
     vel.fromArray(r.state.v);
@@ -1778,7 +1788,7 @@ const groundDefenseUI = new GroundDefenseUI({
     return b && { ...b, ...baseWorld(b) };
   },
   builder: castorBuilder,
-  fortificationModel: (st) => makeFortificationStation(T, st, { box, cyl }),
+  fortificationModel: (st) => makeFortificationStation(T, st),
   serverNow: () => Date.now() + clockOffset,
   enabled: () => canCapture() && !placingEquipment,
   captureMouse,
@@ -1862,7 +1872,7 @@ addEventListener('keydown', (event) => {
     cancelPlacement();
     $('shop').classList.add('hidden');
     releaseMouse();
-    if (!$('papers').classList.contains('hidden')) $('paperClose').click();
+    if (sheetOpen('papers')) $('paperClose').click();
     return;
   }
   if (
@@ -1945,7 +1955,7 @@ addEventListener('keydown', (event) => {
     vehicle: myVehicle,
     turret: turretIndex,
     dead: !!respawnAt,
-    formOpen: !$('papers').classList.contains('hidden'),
+    formOpen: sheetOpen('papers'),
   });
   if (exitAction) {
     event.preventDefault();
@@ -1974,9 +1984,9 @@ addEventListener('keydown', (event) => {
     !myVehicle &&
     turretIndex < 0 &&
     !respawnAt &&
-    $('papers').classList.contains('hidden') &&
-    $('bedPanel').classList.contains('hidden') &&
-    $('purchasePanel').classList.contains('hidden') &&
+    !sheetOpen('papers') &&
+    !sheetOpen('bedPanel') &&
+    !sheetOpen('purchasePanel') &&
     $('flightSettingsPanel').classList.contains('hidden') &&
     $('bank').classList.contains('hidden') &&
     $('shop').classList.contains('hidden') &&
@@ -2236,6 +2246,12 @@ function isSuper() {
 $('punch').onclick = null;
 $('heavyPunch').onclick = null;
 $('soulDash').onclick = null;
+// Paper dossier state (see paperMotives below).
+let paperClauses = null,
+  paperShown = false,
+  paperRefusing = false,
+  paperLingerUntil = 0,
+  paperLingerTimer = 0;
 let soulBody = null,
   signatureForm = -1,
   signaturePoints = [],
@@ -2257,7 +2273,7 @@ function clearSignature() {
   signaturePointer = null;
   if (pointer !== null && sig.hasPointerCapture?.(pointer)) sig.releasePointerCapture(pointer);
   signaturePoints = [];
-  if ($('inkState')) $('inkState').textContent = 'Signez librement dans le cadre';
+  if ($('inkState')) $('inkState').textContent = paperInkHint();
   ink.clearRect(0, 0, sig.width, sig.height);
   $('signSubmit').disabled = true;
 }
@@ -2292,13 +2308,16 @@ function redrawInk() {
   }
   ink.stroke();
   $('signSubmit').disabled = !inkReady() || soulBusy || boardingBusy;
-  $('inkState').textContent = inkReady()
-    ? 'Relâchez pour signer'
-    : 'Signez librement dans le cadre';
+  $('inkState').textContent = inkReady() ? 'Relâchez pour signer' : paperInkHint();
 }
 sig.onpointerdown = (e) => {
   e.preventDefault();
   if (boardingBusy || soulBusy || boardingSelectionBusy || signaturePointer !== null) return;
+  if (paperRefusing) return;
+  if (paperClauses && !paperClauses.complete) {
+    $('paperMessage').textContent = 'Cochez un motif avant de signer.';
+    return;
+  }
   signaturePointer = e.pointerId;
   try {
     sig.setPointerCapture(e.pointerId);
@@ -2334,7 +2353,6 @@ sig.onpointercancel = () => clearSignature();
 sig.onlostpointercapture = () => {
   signaturePointer = null;
 };
-$('signClear').onclick = clearSignature;
 $('paperClose').onclick = (event) => {
   if (boardingBusy) return;
   boardingOpen = false;
@@ -2347,32 +2365,41 @@ $('paperClose').onclick = (event) => {
 $('signSubmit').onclick = submitPaper;
 let paperSuppressed = false;
 let paperSubmission = null;
-const paperArchive = [];
-function renderArchive() {
-  const root = $('signedPapers');
-  root.setAttribute(
-    'aria-label',
-    paperArchive.length + ' documents signés depuis le début de la partie',
-  );
-  $('archiveCount').textContent =
-    paperArchive.length + ' document' + (paperArchive.length > 1 ? 's' : '') + ' au dossier';
-  root.replaceChildren();
-  for (const [i, p] of paperArchive.entries()) {
-    const card = document.createElement('article');
-    card.style.setProperty('--tilt', ((i * 7) % 9) - 4 + 'deg');
-    card.style.setProperty('--sheet-index', i);
-    card.title = `Document ${i + 1} · ${p.title}`;
-    const title = document.createElement('span');
-    title.textContent = p.title;
-    const img = document.createElement('img');
-    img.src = p.ink;
-    img.alt = 'Signature apposée';
-    const stamp = document.createElement('b');
-    stamp.textContent = 'VALIDÉ';
-    card.append(title, img, stamp);
-    root.append(card);
-    root.scrollLeft = root.scrollWidth;
-  }
+// Paper dossier (docs/ui-guidelines.md): the first document of a boarding or of a
+// return from the purgatory has a motive to tick; « convenance personnelle » is
+// refused and closes the dossier. Seat changes and exchanges keep a bare signature.
+function paperMotives(context, index) {
+  if (index !== 0) return null;
+  if (context === 'boarding' || context === 'equipment') return BOARDING_MOTIVES;
+  if (context === 'purgatory' || context === 'super') return RETURN_MOTIVES;
+  return null;
+}
+function paperInkHint() {
+  return paperClauses && !paperClauses.complete
+    ? 'Cochez un motif, puis signez.'
+    : 'Signez librement dans le cadre';
+}
+function refreshPaperLock() {
+  $('papers').classList.toggle('locked', !!paperClauses && !paperClauses.complete);
+  if (!inkReady()) $('inkState').textContent = paperInkHint();
+}
+// Really refused: nothing is sent; the dossier closes and must be started again.
+function refusePaper() {
+  paperRefusing = true;
+  stamp($('paperStamp'), 'REFUSÉ', true);
+  sound.play('stamp', paperSource(), { ref: 8 });
+  $('paperMessage').textContent =
+    REFUSAL_TEXT + (respawnAt ? ' Recommencez au guichet.' : ' Recommencez depuis le poste.');
+  setTimeout(() => {
+    paperRefusing = false;
+    boardingOpen = false;
+    clearSignature();
+    paperContext = '';
+    if (respawnAt) paperSuppressed = true;
+    paperLingerUntil = performance.now() + 500;
+    renderPaper();
+    captureMouse();
+  }, 1300);
 }
 const contractBook = new ContractBook();
 const documents = Object.fromEntries(
@@ -2387,7 +2414,6 @@ const documents = Object.fromEntries(
   ].map((context) => [context, CONTRACTS[contractKey(context)]]),
 );
 let activeTransfer = null;
-let replacementCounter = 0;
 
 function paperSource() {
   if (respawnAt) return { x: 0, y: 1.5, z: -1 };
@@ -2452,12 +2478,21 @@ function renderPaper() {
     eligible &&
     index < documents[context]?.length;
   $('paperClose').disabled = boardingBusy;
-  $('signClear').disabled = boardingBusy;
-  $('paperTear').disabled = boardingBusy || soulBusy;
-  $('papers').classList.toggle('hidden', !visible);
-  $('paperBackdrop').classList.toggle('hidden', !visible);
+  paperShown = visible;
+  // A stamped or refused sheet stays a moment on screen while the game goes on.
+  const lingering = !visible && performance.now() < paperLingerUntil;
+  $('papers').classList.toggle('hidden', !visible && !lingering);
+  $('papers').classList.toggle('leaving', lingering);
   if (!visible) {
-    if (!boardingBusy) $('stampEcho').classList.remove('show');
+    if (lingering && !paperLingerTimer)
+      paperLingerTimer = setTimeout(
+        () => {
+          paperLingerTimer = 0;
+          renderPaper();
+        },
+        paperLingerUntil - performance.now() + 20,
+      );
+    if (!boardingBusy && !lingering) $('paperStamp').classList.remove('printed', 'refused');
     return;
   }
   if (controlFocus.active || document.pointerLockElement === canvas) releaseMouse();
@@ -2476,16 +2511,18 @@ function renderPaper() {
         ':' +
         (pilot?.board_paper || 0) +
         ':' +
-        (pilot?.state.boarding?.token || pilot?.state.equipmentBoarding?.token || '') +
-        ':' +
-        replacementCounter;
+        (pilot?.state.boarding?.token || pilot?.state.equipmentBoarding?.token || '');
   if (paperContext !== key) {
-    $('stampEcho').classList.remove('show');
+    $('paperStamp').classList.remove('printed', 'refused');
     paperContext = key;
     signatureForm = index;
     $('paperMessage').textContent = '';
+    const motives = paperMotives(context, index);
+    paperClauses = motives ? new ClauseSheet(motives, $('paperClauses'), refreshPaperLock) : null;
+    if (!motives) $('paperClauses').replaceChildren();
     clearSignature();
     redrawInk();
+    refreshPaperLock();
   }
   const doc = contractBook.get(
       contractKey(
@@ -2524,8 +2561,7 @@ function renderPaper() {
         : isSuper()
           ? 'Retour au purgatoire classique'
           : 'Retour à la base Alpha';
-  $('paperProgress').textContent =
-    `Document ${index + 1} sur ${total} · ${index} traité${index > 1 ? 's' : ''}`;
+  $('paperProgress').textContent = `${index + 1} sur ${total}`;
 
   $('signSubmit').disabled = !inkReady() || soulBusy || boardingBusy;
   $('signSubmit').textContent = boardingBusy
@@ -2539,9 +2575,12 @@ function renderPaper() {
           : 'Déposer le document signé →';
 }
 async function submitPaper() {
-  if (boardingBusy || soulBusy || !inkReady()) return;
-  const signature = true,
-    archive = { title: $('paperTitle').textContent, ink: sig.toDataURL('image/png') };
+  if (boardingBusy || soulBusy || paperRefusing || !inkReady()) return;
+  if (paperClauses?.refused) {
+    refusePaper();
+    return;
+  }
+  const signature = true;
   paperSubmission = {
     context: activeTransfer
       ? activeTransfer.recipient
@@ -2565,10 +2604,7 @@ async function submitPaper() {
   };
   boardingBusy = true;
   $('paperMessage').textContent = 'Signature apposée · Transmission du document';
-  const echo = $('stampEcho');
-  echo.classList.remove('show');
-  void echo.offsetWidth;
-  echo.classList.add('show');
+  stamp($('paperStamp'), 'APPROUVÉ');
   sound.play('stamp', paperSource(), { ref: 8 });
   renderPaper();
   try {
@@ -2592,25 +2628,23 @@ async function submitPaper() {
       },
     );
     const result = await response;
-    paperArchive.push(archive);
-    try {
-      sessionStorage.setItem('moucheron-dossier:' + room, JSON.stringify(paperArchive));
-    } catch {}
-    renderArchive();
     paperSubmission = null;
     if (activeTransfer) boardingOpen = false;
     accept(result);
     $('paperMessage').textContent = 'Document validé · Classé dans votre dossier';
+    paperLingerUntil = performance.now() + 900;
   } catch (e) {
     clearSignature();
-    $('stampEcho').classList.remove('show');
+    $('paperStamp').classList.remove('printed', 'refused');
     $('paperMessage').textContent = e.message;
   } finally {
     boardingBusy = false;
     paperSubmission = null;
 
     renderPaper();
-    if ($('papers').classList.contains('hidden')) captureMouse();
+    // The dossier is done (boarded, seat changed, back from the purgatory): the
+    // mouse is captured again even while the stamped sheet is still leaving.
+    if (!paperShown) captureMouse();
   }
 }
 $('soulPaperButton').onclick = () => {
@@ -2818,9 +2852,7 @@ function reconcileEquipment(next) {
       gun.traverse((o) => o.userData.meshyShared || o.geometry?.dispose());
       const at = colliders.indexOf(gun.userData.collider);
       if (at >= 0) colliders.splice(at, 1);
-      scene.remove(stationRings[i]);
-      stationRings[i]?.userData.dispose?.();
-      stationRings[i] = null;
+      gun.userData.highlight?.dispose();
       turrets[i] = null;
     }
   stations = next;
@@ -2829,17 +2861,13 @@ function reconcileEquipment(next) {
     const gun = isFixedDca(st.kind)
       ? makeFixedDca(T, st)
       : isFortification(st.kind)
-        ? makeFortificationStation(T, st, { box, cyl })
+        ? makeFortificationStation(T, st)
         : installationModel(st);
     scene.add(gun);
     gun.rotation.y = st.angle || 0;
     gun.userData.kind = st.kind;
     gun.userData.slot = st.slot;
-    const radius = isFortification(st.kind)
-      ? st.kind === 'bunker'
-        ? 0.075
-        : FORTIFICATIONS.antitank.footprint
-      : MAP.metres(2);
+    const radius = isFortification(st.kind) ? FORTIFICATIONS.antitank.footprint : MAP.metres(2);
     const collider =
       st.kind === 'refuel' || st.kind === 'bed'
         ? makeInstallationCollider(T, gun)
@@ -2869,15 +2897,6 @@ function reconcileEquipment(next) {
     gun.userData.person = person;
     gun.userData.shotAt = 0;
     turrets[i] = gun;
-    // Occupiable equipment circles carry their role icon (issue #106).
-    const ring =
-      isFixedDca(st.kind) || isFortification(st.kind)
-        ? roleEntry(null, null, st.kind === 'antitank' ? 'cannon' : 'gunner')
-        : entryRing.clone();
-    ring.position.set(st.x + stationEntryOffset(st), st.y + ACTOR_UNIT * 0.12, st.z);
-    ring.scale.setScalar(ACTOR_UNIT);
-    if (isFixedDca(st.kind) || st.kind === 'bed' || isFortification(st.kind)) scene.add(ring);
-    stationRings[i] = ring;
   }
 }
 const tankCannonSeat = () => myVehicle?.type === 'tank' && crewSeat === 'cannon';
@@ -2911,19 +2930,6 @@ function stationLabel(st) {
     : st.kind === 'antitank'
       ? 'Canon lourd anti-matériel'
       : st.name || FORTIFICATIONS[st.kind]?.name || 'Poste';
-}
-function nearestStation() {
-  const b = selfBase();
-  if (!b || b.parachute || turretIndex >= 0) return null;
-  const w = baseWorld(b);
-  let nearest = null;
-  stations.forEach((s, index) => {
-    if ((isFixedDca(s.kind) || (isFortification(s.kind) && s.hp > 0)) && stationAccess(w, s)) {
-      const d = Math.hypot(w.x - s.x, w.z - s.z);
-      if (!nearest || d < nearest.distance) nearest = { index, distance: d };
-    }
-  });
-  return nearest;
 }
 async function vehicleAction(path, extra = {}) {
   if (vehicleBusy || respawnAt) return;
@@ -3009,21 +3015,7 @@ function optimisticExit() {
     optimisticExitPending = false;
   };
 }
-function nearestBed() {
-  const body = selfBase();
-  return body?.grounded && !myVehicle && turretIndex < 0 && !respawnAt
-    ? snap.equipment.find((bed) => bed.kind === 'bed' && bedAccess(baseWorld(body), bed))
-    : null;
-}
 function interactVehicle() {
-  const bed = nearestBed();
-  if (bed) {
-    bedUI.open(
-      bed,
-      snap.pilots.find((p) => p.id === id),
-    );
-    return;
-  }
   if (myVehicle) {
     vehicleAction('vehicle-exit', { state: localMotion() });
     return;
@@ -3032,12 +3024,8 @@ function interactVehicle() {
     vehicleAction('turret');
     return;
   }
-  const near = nearestStation();
-  if (near) {
-    chooseEquipment(near.index);
-    return;
-  }
-  openBoarding();
+  if (useAimedPost()) return;
+  notify(aimedPost ? 'Ce poste est occupé.' : 'Visez le poste à occuper, puis cliquez.', 2);
 }
 async function chooseEquipment(index) {
   if (vehicleBusy || boardingBusy || boardingSelectionBusy) return;
@@ -3109,7 +3097,7 @@ function updateVehicles(dt) {
     'hidden',
     turretIndex < 0 && (!crew || isPassengerSeat(crewSeat)),
   );
-  // Only the DCA has a time fuse; bunker and heavy gun have none.
+  // Only the DCA has a time fuse; the heavy gun has none.
   $('flakControls').classList.toggle(
     'hidden',
     turretIndex < 0 || stations[turretIndex]?.kind !== 'dca',
@@ -3123,7 +3111,7 @@ function updateVehicles(dt) {
         ' · ' +
         Math.round(occupiedStation.hp ?? hp) +
         ' PV · ' +
-        (['bunker', 'dcaRapid'].includes(occupiedStation.kind) ? 'Balles ' : 'Obus ') +
+        (occupiedStation.kind === 'dcaRapid' ? 'Balles ' : 'Obus ') +
         Math.floor(occupiedStation.ammo ?? 0) +
         '/' +
         (FORTIFICATIONS[occupiedStation.kind]?.ammo ?? FIXED_DCA[occupiedStation.kind]?.ammo ?? 0)
@@ -3341,11 +3329,7 @@ function updateVehicles(dt) {
       } else if (heavyDca) {
         positionHeavyFlakSight(T, camera, gun);
       } else {
-        camera.position.set(
-          station.x,
-          station.y + MAP.metres(station.kind === 'bunker' ? 17 : 5),
-          station.z,
-        );
+        camera.position.set(station.x, station.y + MAP.metres(5), station.z);
         if (isFixedDca(station.kind)) gun.userData.pitch.getWorldQuaternion(camera.quaternion);
         else camera.lookAt(camera.position.clone().addScaledVector(dir, MAP.metres(100)));
       }
@@ -3395,22 +3379,7 @@ function updateVehicles(dt) {
               notify(e.message, 2);
             });
         } else {
-          const fort = FORTIFICATIONS[station.kind];
-          const shot = fort
-            ? emitBullet(
-                muzzle,
-                dir,
-                TRACER_COLOR,
-                true,
-                false,
-                {
-                  wave: snap.wave,
-                  baseDamage: fort.damage,
-                  velocity: new T.Vector3(),
-                },
-                muzzleNode,
-              )
-            : bullet(muzzle, dir, TRACER_COLOR, true, true, muzzleNode);
+          const shot = bullet(muzzle, dir, TRACER_COLOR, true, true, muzzleNode);
           if (shot) action('fixed-dca-fire', { station: index, shot, incarnation });
         }
       }
@@ -3424,7 +3393,7 @@ function updateVehicles(dt) {
         howitzer?.fire();
         combatEffects.muzzle(muzzle, dir, muzzleNode);
         sound.play('flak', muzzle, { ref: 35 });
-      } else bullet(muzzle, dir, TRACER_COLOR, false, station.kind !== 'bunker', muzzleNode);
+      } else bullet(muzzle, dir, TRACER_COLOR, false, true, muzzleNode);
     }
   }
 }
@@ -3449,7 +3418,12 @@ function fireRapidDca(station, gun, direction, dt, interval, firing, owned) {
       TRACER_COLOR,
       owned,
       false,
-      { velocity: new T.Vector3(), weapon: 'dcaRapid', authorization },
+      {
+        velocity: new T.Vector3(),
+        weapon: 'dcaRapid',
+        baseDamage: RAPID_DCA_DAMAGE,
+        authorization,
+      },
       muzzle,
     );
     if (queue && shot) queue.set(shot, authorization);
@@ -3482,29 +3456,6 @@ function fireRapidDca(station, gun, direction, dt, interval, firing, owned) {
 $('fuseMinus').onclick = () => (flakRange = fuseRange(flakRange - FLAK.step));
 $('fusePlus').onclick = () => (flakRange = fuseRange(flakRange + FLAK.step));
 
-const entryRing = makeEntryRing(T);
-const entryRings = new Map();
-function roleEntry(type, seat, role = seatRole(type, seat)) {
-  const g = new T.Group();
-  g.add(entryRing.clone());
-  const c = document.createElement('canvas');
-  c.width = c.height = 128;
-  drawSeatIcon(c.getContext('2d'), role, 128);
-  const texture = new T.CanvasTexture(c),
-    geometry = new T.PlaneGeometry(1, 1),
-    material = new T.MeshBasicMaterial({ map: texture, transparent: true, depthWrite: false });
-  const icon = new T.Mesh(geometry, material);
-  icon.rotation.x = -Math.PI / 2;
-  icon.position.y = 0.01;
-  g.add(icon);
-  g.userData.dispose = () => {
-    texture.dispose();
-    geometry.dispose();
-    material.dispose();
-  };
-  return g;
-}
-const stationRings = [];
 const serviceZones = new ServiceZones(T, scene);
 const engineSmoke = new EngineSmoke(T, scene);
 function updateBaseWorld(dt, now) {
@@ -3525,7 +3476,7 @@ function updateBaseWorld(dt, now) {
   remoteBodies(baseArena, 'base');
   advanceBase(baseArena, baseArena.time + dt * 1000, id);
   if (body && onFoot && !respawnAt && turretIndex < 0) {
-    const impact = stepWalker(body, dt, colliders);
+    const impact = stepWalker(body, dt, colliders, office.decor);
     if (impact?.damage)
       action('fall-impact', {
         speed: impact.speed,
@@ -3595,40 +3546,184 @@ function updateBaseWorld(dt, now) {
       scene.remove(g);
       basePeople.delete(id);
     }
-  const v = nearestVehicle();
-  for (const ring of stationRings.filter(Boolean))
-    ring.visible = onFoot && !respawnAt && !myVehicle && turretIndex < 0;
-  const visibleEntries = new Set();
-  for (const vehicle of snap.vehicles || []) {
-    if (vehicle.state.hp <= 0 || !vehicle.state.landed) continue;
-    for (const seat of VEHICLES[vehicle.type].seats) {
-      if (vehicle.seats.some((s) => s.seat === seat)) continue;
-      const key = vehicle.id + ':' + seat;
-      visibleEntries.add(key);
-      let ring = entryRings.get(key);
-      if (!ring) {
-        ring = roleEntry(vehicle.type, seat);
-        entryRings.set(key, ring);
-        scene.add(ring);
-      }
-      const e = vehicleEntry(vehicle, seat);
-      ring.visible = onFoot && !respawnAt && !myVehicle && turretIndex < 0;
-      ring.position.set(e.x, e.y + ACTOR_UNIT * 0.12, e.z);
-      ring.scale.setScalar(ACTOR_UNIT);
-    }
-  }
-  for (const [key, ring] of entryRings)
-    if (!visibleEntries.has(key)) {
-      scene.remove(ring);
-      ring.userData.dispose?.();
-      entryRings.delete(key);
-    }
   if (onFoot && !respawnAt && body && !myVehicle && turretIndex < 0) {
     const g = basePeople.get(id),
       w = g?.position || baseWorld(body);
     groundCamera(camera, w, dt);
     renderPaper();
   }
+  updateAimedPost();
+}
+// Everything usable is used by aiming at it (src/seat-posts.ts, docs/ui-guidelines.md):
+// vehicle posts, fixed defences and beds. The object under the crosshair (or the free
+// cursor) gets an outline, signal blue when free; a click or the interaction key uses it.
+let aimedPost = null,
+  shownPost = null;
+const postHighlights = new Map();
+const postRay = new T.Raycaster();
+/** Station (fixed defence or bed) usable from where the player stands. */
+function usableStation(st, w, body) {
+  if (st.kind === 'bed') return !!body.grounded && bedAccess(w, st);
+  return (isFixedDca(st.kind) || (isFortification(st.kind) && st.hp > 0)) && stationAccess(w, st);
+}
+/** Aiming sphere of an installation, in world space (its bounding sphere, tightened). */
+function stationSphere(gun) {
+  if (!gun.userData.aimSphere) {
+    const box = new T.Box3();
+    gun.updateMatrixWorld(true);
+    gun.traverseVisible((o) => o.isMesh && box.expandByObject(o));
+    const sphere = box.getBoundingSphere(new T.Sphere());
+    sphere.radius *= 0.8;
+    gun.userData.aimSphere = sphere;
+  }
+  return gun.userData.aimSphere;
+}
+function updateAimedPost() {
+  const body = selfBase();
+  let next = null;
+  if (
+    onFoot &&
+    !respawnAt &&
+    !myVehicle &&
+    turretIndex < 0 &&
+    body &&
+    !body.parachute &&
+    !boardingOpen &&
+    !boardingSelectionBusy &&
+    !bankUI.opened &&
+    !bedUI.opened &&
+    !purchaseUI.opened
+  ) {
+    const rect = canvas.getBoundingClientRect();
+    const free = document.pointerLockElement !== canvas && aimMouse;
+    camera.updateMatrixWorld();
+    postRay.setFromCamera(
+      new T.Vector2(
+        free ? ((aimMouse[0] - rect.left) / rect.width) * 2 - 1 : 0,
+        free ? 1 - ((aimMouse[1] - rect.top) / rect.height) * 2 : 0,
+      ),
+      camera,
+    );
+    const w = baseWorld(body),
+      origin = postRay.ray.origin.toArray(),
+      direction = postRay.ray.direction.toArray();
+    for (const v of snap?.vehicles || []) {
+      if (!v.state.landed || !SEAT_POSTS[v.type] || !vehicleAccess(w, v)) continue;
+      const g = fleetModels.get(v.id);
+      if (!g) continue;
+      g.updateMatrixWorld(true);
+      const k = g.getWorldScale(new T.Vector3()).x;
+      const block = postRay.intersectObject(g, true)[0];
+      const hit = aimPost(
+        origin,
+        direction,
+        SEAT_POSTS[v.type].map((post) => ({
+          seat: post.seats[0],
+          centre: g.localToWorld(new T.Vector3(...post.local)).toArray(),
+          radius: post.radius * k,
+        })),
+        block ? { point: block.point.toArray(), distance: block.distance } : null,
+      );
+      if (!hit || (next && hit.distance >= next.distance)) continue;
+      next = { ...hit, vehicle: v };
+    }
+    for (const [index, st] of stations.entries()) {
+      const gun = turrets[index];
+      if (!gun || !usableStation(st, w, body)) continue;
+      const sphere = stationSphere(gun);
+      const hit = pickPost(origin, direction, [
+        { seat: 'station', centre: sphere.center.toArray(), radius: sphere.radius },
+      ]);
+      if (hit && (!next || hit.distance < next.distance)) next = { ...hit, station: index };
+    }
+  }
+  const key = !next
+    ? null
+    : next.vehicle
+      ? next.vehicle.id + ':' + next.seat
+      : 'station:' + next.station + ':' + stations[next.station].slot;
+  if (shownPost && shownPost !== key) postHighlight(shownPost)?.hide();
+  aimedPost = next;
+  shownPost = key;
+  const label = $('postLabel');
+  if (!next) {
+    label.hidden = true;
+    postSelection.color = null;
+    return;
+  }
+  let highlight, names;
+  if (next.vehicle) {
+    highlight = postHighlights.get(key);
+    if (!highlight) {
+      highlight = new PostHighlight(
+        T,
+        fleetModels.get(next.vehicle.id),
+        SEAT_POSTS[next.vehicle.type].find((post) => post.seats[0] === next.seat),
+      );
+      postHighlights.set(key, highlight);
+    }
+    names = freeSeat(highlight.post, next.vehicle.seats)
+      ? []
+      : next.vehicle.seats
+          .filter((s) => highlight.post.seats.includes(s.seat))
+          .map((s) => snap.pilots.find((p) => p.id === s.pilot)?.name);
+  } else {
+    const gun = turrets[next.station];
+    // The whole installation is outlined (no mesh names: every visible part).
+    gun.userData.highlight ??= new PostHighlight(T, gun, {
+      seats: [],
+      local: [0, 0, 0],
+      radius: 0,
+      outline: { meshes: [] },
+    });
+    highlight = gun.userData.highlight;
+    const occupant = snap.pilots.find(
+      (p) => p.mode === 'turret' && p.state.turret === next.station,
+    );
+    names = occupant ? [occupant.name] : [];
+  }
+  highlight.show();
+  const taken = names.length > 0;
+  postSelection.color = taken ? TAKEN_COLOR : SIGNAL_COLOR;
+  // A taken post names its occupants; a free post needs no text.
+  label.hidden = !taken;
+  if (taken) {
+    label.textContent = names.filter(Boolean).join(', ') || 'Occupé';
+    const free = document.pointerLockElement !== canvas && aimMouse;
+    label.style.left = (free ? aimMouse[0] : innerWidth / 2) + 'px';
+    label.style.top = (free ? aimMouse[1] : innerHeight / 2) + 'px';
+  }
+}
+function postHighlight(key) {
+  if (!key.startsWith('station:')) return postHighlights.get(key);
+  const [, index, slot] = key.split(':');
+  const gun = turrets[+index];
+  return gun && String(gun.userData.slot) === slot ? gun.userData.highlight : null;
+}
+/** Uses the aimed object when it is free (boarding form, station, bed); true when handled. */
+function useAimedPost() {
+  if (!aimedPost || !onFoot || myVehicle || respawnAt) return false;
+  if (aimedPost.station !== undefined) {
+    const st = stations[aimedPost.station];
+    if (!st) return false;
+    if (st.kind === 'bed') {
+      bedUI.open(
+        st,
+        snap.pilots.find((p) => p.id === id),
+      );
+      return true;
+    }
+    if (snap.pilots.some((p) => p.mode === 'turret' && p.state.turret === aimedPost.station))
+      return false;
+    chooseEquipment(aimedPost.station);
+    return true;
+  }
+  const { vehicle } = aimedPost;
+  const post = SEAT_POSTS[vehicle.type].find((p) => p.seats[0] === aimedPost.seat);
+  const seat = post && freeSeat(post, vehicle.seats);
+  if (!seat) return false;
+  chooseVehicle({ ...vehicle, entrySeat: seat }, seat);
+  return true;
 }
 function currentRoster() {
   return snap?.roster || wavePlan(room, snap?.wave || 0, snap?.started || 0).roster;
@@ -4077,6 +4172,8 @@ function updateOthers(dt) {
       });
       fleetModels.delete(k);
       others.delete(k);
+      for (const key of [...postHighlights.keys()])
+        if (key.startsWith(k + ':')) postHighlights.delete(key);
     }
 }
 function bullet(pos, dir, color = TRACER_COLOR, owned = false, aa = false, muzzleNode = null) {
@@ -4091,7 +4188,7 @@ function bullet(pos, dir, color = TRACER_COLOR, owned = false, aa = false, muzzl
       weapon: currentAmmoKey(),
       baseDamage:
         myVehicle.type === 'castor'
-          ? 20
+          ? CASTOR_GUN_DAMAGE
           : myVehicle.type === 'tank'
             ? TANK_MG[currentAmmoKey()].damage
             : 75,
@@ -4132,10 +4229,26 @@ const aircraftFire = new AircraftFire(
       Date.now().toString(36) + '-' + Math.random().toString(36).slice(2),
   },
 );
-function emitBullet(pos, dir, color, owned, aa, launch = null, muzzleNode = null) {
+// Tracer, muzzle flash and recoil of one automatic-turret round, from its real muzzle.
+function sentryShotVisual(sentry, target, fallback, silent) {
+  const shot = groundDefenseUI.sentryShot(sentry, target);
+  if (!shot && !fallback) return;
+  const origin = shot?.position || new T.Vector3().fromArray(fallback);
+  const direction =
+    shot?.direction ||
+    new T.Vector3()
+      .fromArray(target || fallback)
+      .sub(origin)
+      .normalize();
+  if (direction.lengthSq() > 0) {
+    emitBullet(origin, direction, TRACER_COLOR, false, false, null, null, silent);
+    combatEffects.muzzle(origin, direction);
+  }
+}
+function emitBullet(pos, dir, color, owned, aa, launch = null, muzzleNode = null, silent = false) {
   const stamp = performance.now(),
     cue = stamp - spitSoundAt >= 40 || aa;
-  if (!respawnAt && cue) {
+  if (!respawnAt && cue && !silent) {
     sound.play(aa ? 'flak' : 'shot', pos, { ref: aa ? 35 : 12 });
     spitSoundAt = stamp;
   }
@@ -4191,22 +4304,20 @@ function shoot(forward) {
   if (muzzle) bullet(muzzle, spreadDirection(T, forward), TRACER_COLOR, true);
 }
 function explosion(b, point) {
-  combatEffects.blast(point);
+  const radius = MAP.metres(FLAK.lightRadius);
+  combatEffects.blast(point, radius);
   effectSeen.add(b.shot);
   sound.play('crash', point, { ref: 22 });
-  action('blast', { shot: b.shot, p: point.toArray() });
-  const radius = MAP.metres(FLAK.radius);
+  action('blast', { shot: b.shot, p: point.toArray(), radius });
   const exposed = (position) => {
     const delta = position.clone().sub(point),
       length = delta.length();
     if (length < 1e-9) return true;
-    const ray = new T.Ray(point, delta.normalize());
-    return !colliders.some((box) => {
-      const p = rayCollider(T, ray, box, new T.Vector3());
-      if (!p) return false;
-      const d = p.distanceTo(point);
-      return d > MAP.metres(0.03) && d < length - MAP.metres(0.02);
-    });
+    // Ignore the surface the blast stands on (3 cm) and the target's own (2 cm).
+    const skip = MAP.metres(0.03),
+      dir = delta.normalize();
+    const ray = new T.Ray(point.clone().addScaledVector(dir, skip), dir);
+    return solidRayDistance(ray, length - skip - MAP.metres(0.02)) === Infinity;
   };
   for (const [enemy, g] of insects) {
     if (
@@ -4216,12 +4327,17 @@ function explosion(b, point) {
       !exposed(g.position)
     )
       continue;
-    damageEnemy(enemy, blastDamage(g.position.distanceTo(point)), b.shot + ':' + enemy, g.position);
+    damageEnemy(
+      enemy,
+      blastDamage(g.position.distanceTo(point), radius),
+      b.shot + ':' + enemy,
+      g.position,
+    );
   }
   for (const v of snap?.vehicles || []) {
     const g = fleetModels.get(v.id);
     if (!g?.visible) continue;
-    const damage = blastDamage(g.position.distanceTo(point));
+    const damage = blastDamage(g.position.distanceTo(point), radius);
     if (damage && exposed(g.position))
       action('friendly-hit', { vehicle: v.id, shot: b.shot + ':' + v.id, amount: damage });
   }
@@ -4241,7 +4357,7 @@ function explosion(b, point) {
               )
             : null;
     if (!pos) continue;
-    const amount = blastDamage(pos.distanceTo(point));
+    const amount = blastDamage(pos.distanceTo(point), radius);
     if (amount && exposed(pos))
       action('friendly-hit', { target: p.id, shot: b.shot + ':' + p.id, amount });
   }
@@ -4271,8 +4387,7 @@ const vacantRigs = new Map();
 
 // Vehicles and pilots a shot can hit, prepared once per frame (matrices, solid
 // meshes, padded box) instead of once per projectile and per slice.
-const projectileRay = new T.Raycaster(),
-  scratchPoint = new T.Vector3();
+const projectileRay = new T.Raycaster();
 let frameTargets = null;
 function solidTargets() {
   if (frameTargets) return frameTargets;
@@ -4318,14 +4433,9 @@ function stepProjectileSlice(dt) {
       projectileRay.near = 0;
       projectileRay.far = distance;
       hit = nearestSolidHit(T, projectileRay, solidTargets(), b.originVehicle);
-      for (const box of colliders) {
-        const point = rayCollider(T, projectileRay.ray, box, scratchPoint);
-        if (point) {
-          const d = origin.distanceTo(point);
-          if (d <= distance && (!hit || d < hit.distance))
-            hit = { point: point.clone(), distance: d, wall: true };
-        }
-      }
+      const wall = solidRayDistance(projectileRay.ray, distance);
+      if (wall < Infinity && (!hit || wall < hit.distance))
+        hit = { point: origin.clone().addScaledVector(dir, wall), distance: wall, wall: true };
       const blocker = hit;
       const insect = nearestInsectHit(
         T,
@@ -4457,6 +4567,7 @@ function physics(dt) {
     const drive = { forward: -manual.pitch, turn: manual.roll || -manual.yaw };
     if (!drivenRigs.has(myVehicle.type))
       drivenRigs.set(myVehicle.type, new RAPIER_RIGS[myVehicle.type](rapier));
+    drivenRigs.get(myVehicle.type).physics?.useDecor(office.decor);
     drivenRigs.get(myVehicle.type).step(state, drive, colliders, dt, VEHICLES[myVehicle.type]);
     if (state.hp <= 0) {
       crash();
@@ -4536,6 +4647,7 @@ function physics(dt) {
     previousPosition,
     colliders,
     dt,
+    office.decor,
   );
   const wasLanded = landed;
   landed = landing.landed;
@@ -4577,8 +4689,17 @@ function physics(dt) {
     p.y > OFFICE_LAYOUT.bounds.ceiling ||
     Math.abs(p.x) > OFFICE_LAYOUT.bounds.x ||
     Math.abs(p.z) > OFFICE_LAYOUT.bounds.z;
+  // Props collide on their real triangles once the decor world is built: the
+  // padded point touching a triangle, or the step's segment crossing one.
+  if (!collision && office.decor)
+    collision = sweptHitsDecor(
+      office.decor,
+      previousPosition.toArray(),
+      p.toArray(),
+      0.3 * ACTOR_UNIT,
+    );
   if (!collision)
-    for (const b of colliders)
+    for (const b of withoutDecor(colliders, office.decor))
       if (
         !(
           landed &&
@@ -4778,6 +4899,10 @@ function updateAudio() {
           rate: source.rate,
         });
     }
+    for (const gun of groundDefenseUI.gatlingSounds(activeCamera.position)) {
+      keep.add(gun.key);
+      sound.loop(gun.key, 'gatling', gun.position, { rate: gun.rate, level: gun.level, ref: 10 });
+    }
     for (const key of activeSwarmAudioKeys) keep.add(key);
   } else {
     activeSwarmAudioKeys.clear();
@@ -4821,6 +4946,9 @@ function frame(now) {
     camera.updateProjectionMatrix();
   }
   groundDefenseUI.update();
+  if (!respawnAt)
+    for (const round of groundDefenseUI.takeGatlingShots())
+      sentryShotVisual(round.id, round.target, null, true);
   forecastScene.update(
     snap,
     groundDefenseUI.active && groundDefenseUI.enabled() ? groundDefenseUI.candidate : null,
@@ -4988,6 +5116,8 @@ function frame(now) {
     toon.render(purgScene, purgCamera);
   } else toon.render(scene, camera);
   appearancePicker.draw(renderer, dt);
+  // Outline of the aimed post, over the office frame only (src/post-highlight.ts).
+  if (!spectating && !respawnAt) postSelection.render(scene, camera);
   updateAudio();
   gunSalvos.update(
     !spectating && canCapture() && myVehicle?.type === 'spitfire' && !respawnAt
@@ -5058,7 +5188,7 @@ for (const [kind, model] of Object.entries(ghosts)) {
 }
 function toggleShop() {
   if (flightTuningUI.opened || bankUI.opened || bedUI.opened || purchaseUI.opened) return;
-  if (!joined || respawnAt || !$('papers').classList.contains('hidden')) return;
+  if (!joined || respawnAt || sheetOpen('papers')) return;
   if (placingEquipment) cancelPlacement();
   debugTools.cancel();
   const open = $('shop').classList.contains('hidden');
@@ -5191,13 +5321,7 @@ function cameraPlacement(reach) {
   const b = selfBase();
   return (
     b &&
-    placementAim(
-      baseWorld(b),
-      camera.position,
-      camera.getWorldDirection(new T.Vector3()),
-      colliders,
-      reach,
-    )
+    aimPlacement(baseWorld(b), camera.position, camera.getWorldDirection(new T.Vector3()), reach)
   );
 }
 function updatePlacement() {
@@ -5226,6 +5350,7 @@ function updatePlacement() {
                 })),
             ],
             placementKind,
+            office.decor ?? undefined,
           )
         : null;
   placementCandidate = candidate;
@@ -5608,8 +5733,9 @@ function simulateVacantAircraft(dt) {
       );
     else if (RAPIER_RIGS[v.type]) {
       if (!vacantRigs.has(v.id)) vacantRigs.set(v.id, new RAPIER_RIGS[v.type](rapier));
+      vacantRigs.get(v.id).physics?.useDecor(office.decor);
       vacantRigs.get(v.id).step(s, { forward: 0, turn: 0 }, colliders, dt, VEHICLES[v.type]);
-    } else stepVacantAircraft(T, s, VEHICLES[v.type], colliders, dt);
+    } else stepVacantAircraft(T, s, VEHICLES[v.type], colliders, dt, office.decor);
     Object.assign(v.state, s);
   }
   for (const key of [...vacantAircraft.keys()])
@@ -5664,40 +5790,12 @@ function installationModel(st) {
   return g;
 }
 
-$('paperTear').onclick = async () => {
-  if (boardingBusy || soulBusy || $('papers').classList.contains('hidden')) return;
-  let message = '';
-  boardingBusy = true;
-  $('paperTear').disabled = true;
-  $('signClear').disabled = true;
-  $('signSubmit').disabled = true;
-  clearSignature();
-  $('stampEcho').classList.remove('show');
-  $('papers').classList.add('tearing');
-  try {
-    await new Promise((resolve) => setTimeout(resolve, 320));
-    replacementCounter++;
-    message = 'Document déchiré · Un nouvel exemplaire vous attend.';
-  } catch (e) {
-    message = e.message;
-  } finally {
-    boardingBusy = false;
-    $('papers').classList.remove('tearing');
-    paperContext = '';
-    renderPaper();
-    $('paperMessage').textContent = message;
-  }
-};
-
 function heliAimPoint() {
   const direction = weaponDirection(),
     origin = camera.position.clone(),
     ray = new T.Ray(origin, direction);
-  let distance = MAP.metres(250);
-  for (const box of colliders) {
-    const p = rayCollider(T, ray, box, new T.Vector3());
-    if (p) distance = Math.min(distance, p.distanceTo(origin));
-  }
+  const reach = MAP.metres(250);
+  const distance = Math.min(reach, solidRayDistance(ray, reach));
   return origin.addScaledVector(direction, distance).toArray();
 }
 function activeMissile() {
@@ -5952,6 +6050,27 @@ function showHeavyImpact(report) {
     }
   }
 }
+// Armour-piercing shell: each enemy crossed is hit and reported at once, the
+// shell flies on (it keeps 80 % of its damage per enemy, see stepHeavy).
+function flushPierces(projectile) {
+  const enemies = projectile.fresh;
+  if (!enemies?.length) return;
+  projectile.fresh = [];
+  const report = {
+    shot: projectile.shot,
+    weapon: 'ap',
+    partial: true,
+    kind: 'piercing',
+    p: enemies.at(-1)[2],
+    radius: 0,
+    enemies,
+    vehicles: [],
+    players: [],
+    kills: [],
+  };
+  showHeavyImpact(report);
+  action('heavy-impact', report);
+}
 function finishHeavy(projectile, impact, world) {
   if (projectile.weapon === 'missile') {
     predictedReloads.set(
@@ -5974,6 +6093,7 @@ function updateLocalHeavy() {
     world = heavyWorld();
   for (const projectile of [...localShots.values()]) {
     const impact = stepHeavy(projectile, now, world);
+    flushPierces(projectile);
     if (impact || projectile.done) finishHeavy(projectile, impact, world);
   }
 }
@@ -6310,11 +6430,10 @@ const debugTools = new DebugTools({
   notify,
   aimSurface: () => {
     const origin = camera.getWorldPosition(new T.Vector3());
-    const point = placementAim(
+    const point = aimPlacement(
       origin,
       origin,
       camera.getWorldDirection(new T.Vector3()),
-      colliders,
       MAP.metres(1000),
     );
     return point && new T.Vector3(point.x, point.y, point.z);
@@ -6328,13 +6447,15 @@ const debugTools = new DebugTools({
   symbols: speciesSymbols,
   sentryRange: SENTRY.range,
 });
-// Debug mode: placement marker, hit volumes, turret and sugar ranges, dummy damage.
+// Debug mode: placement marker, hit volumes, turret and sugar ranges, collision
+// volumes of the room, dummy damage.
 function updateDebugTools() {
   const on = joined && !!snap?.lab?.enabled;
   if (debugTools.active && !on) debugTools.cancel();
   else if (debugTools.active) debugTools.render();
   debugTools.showHitboxes(insects.values(), on);
   debugTools.showRanges(snap?.groundDefense?.structures, on);
+  debugTools.showColliders(colliders, on, office.decorWire);
   if (snap)
     debugTools.showDummyDamage(
       on ? insects : new Map(),
@@ -6367,14 +6488,7 @@ const bankUI = new BankUI({
     renderPaper();
     captureMouse();
   },
-  archive: (record) => {
-    paperArchive.push(record);
-    try {
-      sessionStorage.setItem('moucheron-dossier:' + room, JSON.stringify(paperArchive));
-    } catch {}
-    renderArchive();
-    sound.play('stamp', paperSource(), { ref: 6 });
-  },
+  onSigned: () => sound.play('stamp', paperSource(), { ref: 6 }),
 });
 function toggleBank() {
   if (spectating) return;
@@ -6399,14 +6513,6 @@ const bedUI = new BedUI({
   onClose: () => {
     renderPaper();
     captureMouse();
-  },
-  archive: (record) => {
-    paperArchive.push(record);
-    renderArchive();
-    try {
-      sessionStorage.setItem('moucheron-dossier:' + room, JSON.stringify(paperArchive));
-    } catch {}
-    notify('Contrat de réapparition enregistré', 3);
   },
 });
 
@@ -6491,10 +6597,6 @@ const purchaseUI = new PurchaseUI({
         notify('Colis en descente · 1 m/s dans la pièce', 6);
       captureMouse();
     }
-  },
-  archive: (record) => {
-    paperArchive.push({ ...record, title: 'Bon de commande · ' + SHOP[purchaseUI.item].name });
-    renderArchive();
   },
 });
 
@@ -6645,10 +6747,10 @@ function updateVehicleCare(dt) {
     // Decorative particles stop at the first physical surface. Damage/cleaning remains server-owned.
     let range = WASH.range;
     const ray = new T.Ray(origin, direction);
-    for (const b of stream.targetScene === scene ? colliders : purgColliders) {
-      const hit = rayCollider(T, ray, b, new T.Vector3());
-      if (hit) range = Math.min(range, hit.distanceTo(origin));
-    }
+    range = Math.min(
+      range,
+      solidRayDistance(ray, range, stream.targetScene === scene ? colliders : purgColliders),
+    );
     for (let i = 0; i < 28; i++) {
       const t = ((now / 180 + i / 28) % 1) * range;
       const point = origin.clone().addScaledVector(direction, t);
@@ -6850,5 +6952,6 @@ const characterReady = loadCharacter(appearancePicker.value).then(
 );
 const rapierReady = loadRapier(() => import('/rapier.js')).then((RAPIER) => {
   rapier = RAPIER;
+  office.buildDecor(RAPIER);
 });
 export const homeReady = Promise.all([characterReady, rapierReady]).then(() => {});

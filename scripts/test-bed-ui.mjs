@@ -26,7 +26,6 @@ class Element {
 }
 let resolve,
   calls = 0,
-  archived = 0,
   opened = 0,
   closed = 0;
 const snap = { base: { epoch: 'a' } },
@@ -44,12 +43,17 @@ const ui = new BedUI({
   accept() {},
   onOpen: () => opened++,
   onClose: () => closed++,
-  archive: () => archived++,
 });
 const self = { bedId: null, incarnation: 0, life: 'alive' };
 ui.open({ slot: 2 }, self);
 assert.equal(opened, 1);
 const e = { pointerId: 1, clientX: 10, clientY: 10, preventDefault() {} };
+// Paper document: no motive ticked by default, the signature is locked until one is.
+ui.canvas.onpointerdown(e);
+ui.canvas.onpointerup({ ...e, clientX: 90 });
+assert.equal(calls, 0, 'no contract without a ticked motive');
+assert.match(root.querySelector('[data-bed-status]').textContent, /Cochez un motif/);
+ui.clauses.toggle('first');
 ui.canvas.onpointerdown(e);
 ui.canvas.onpointermove({ ...e, clientX: 80 });
 ui.canvas.onpointercancel();
@@ -65,13 +69,19 @@ ui.canvas.onpointerup({ ...e, clientX: 90 });
 assert.equal(calls, 1);
 resolve(snap);
 await new Promise((r) => setImmediate(r));
-assert.equal(archived, 1);
 assert.equal(closed, 1);
 ui.open({ slot: 2 }, { ...self, bedId: 2 });
 assert.equal(ui.cancel, true);
 assert.match(root.querySelector('h2').textContent, /Résiliation/);
+assert.match(ui.clauses.state.rule.title, /résiliation/, 'cancellation has its own motives');
+ui.clauses.toggle('comfort');
+ui.canvas.onpointerdown(e);
+ui.canvas.onpointerup({ ...e, clientX: 90 });
+assert.equal(calls, 1, 'convenance personnelle is refused: nothing sent');
+assert.ok(!ui.opened && ui.invalidated, 'a refused contract closes and must be started again');
+ui.open({ slot: 2 }, { ...self, bedId: 2 });
 ui.observe({ ...self, incarnation: 1, life: 'dead' });
 assert.equal(ui.opened, false, 'death clears pending local sheet');
 console.log(
-  'Bed UI: cancel/valid ink, single pending command, ACK archive, personal cancellation sheet, incarnation cleanup.',
+  'Bed UI: cancel/valid ink, single pending command, ACK, personal cancellation sheet, incarnation cleanup.',
 );

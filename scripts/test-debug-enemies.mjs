@@ -3,6 +3,8 @@
 // HP and speed and head for the bin (walkers on the floor, flyers through the
 // nearest corridor). Server rules, roster entries and routes
 // (src/debug-enemies.ts, server/game.js labCommand, src/routes.js).
+import { modelTriangles } from '../src/office-collision.ts';
+import { MODEL_DATA } from '../src/office-pack-data.js';
 import { OFFICE_LAYOUT } from '../src/layout.ts';
 import assert from 'node:assert/strict';
 import { Game } from '../server/game.js';
@@ -183,7 +185,7 @@ console.log(
 // 6. Client tools (debug-tools.ts): shop columns, dummy damage readout,
 // hit-volume wireframes matching insect-hits.js, turret and sugar ranges.
 const T = await import('../vendor/three.module.min.js');
-const { DebugTools, DamageMeter, DAMAGE_WINDOW_S, formatDamage } =
+const { DebugTools, DamageMeter, DAMAGE_WINDOW_S, formatDamage, MESH_COLLIDER_COLOR } =
   await import('../src/debug-tools.ts');
 const { nearestInsectHit } = await import('../src/insect-hits.ts');
 const { WalkerBatch } = await import('../src/walker-batch.js');
@@ -289,6 +291,40 @@ assert.equal(bubble.geometry.parameters.radius, SENTRY_RULES.range);
 assert.deepEqual(bubble.position.toArray(), [1, 0.925, 2], 'centre used by the turret');
 tools.showRanges([{ kind: 'sentry', id: '1', position: [1, 2] }], false);
 assert.equal(tools.ranges.children.length, 0);
+// Collision volumes: every box drawn as faces + 12 edges, rebuilt on change only.
+const boxes = [
+  new T.Box3(new T.Vector3(-1, 0, -1), new T.Vector3(1, 0.74, 1)),
+  new T.Box3(new T.Vector3(2, 0, 2), new T.Vector3(2.5, 1.8, 2.4)),
+];
+tools.showColliders(boxes, true);
+const [faces, edges] = tools.colliders.children;
+assert.equal(faces.count, 2);
+assert.ok(faces.material.transparent && faces.material.opacity < 0.3, 'faint faces');
+assert.equal(edges.geometry.attributes.position.count, 2 * 24, '12 edges per box');
+const fm = new T.Matrix4();
+faces.getMatrixAt(1, fm);
+assert.deepEqual(
+  new T.Box3(new T.Vector3(-0.5, -0.5, -0.5), new T.Vector3(0.5, 0.5, 0.5))
+    .applyMatrix4(fm)
+    .min.toArray()
+    .map((v) => +v.toFixed(6)),
+  [2, 0, 2],
+  'face box = collider',
+);
+tools.showColliders(boxes, true);
+assert.equal(tools.colliders.children[0], faces, 'unchanged colliders: no rebuild');
+boxes.push(new T.Box3(new T.Vector3(0, 0, 0), new T.Vector3(0.1, 0.1, 0.1)));
+tools.showColliders(boxes, true);
+assert.equal(tools.colliders.children[0].count, 3, 'new collider shown');
+// Triangle colliders of the props: one batch of edges, three per triangle.
+const mug = [modelTriangles(MODEL_DATA, 'Mug')];
+tools.showColliders(boxes, true, mug);
+const wire = tools.colliders.children.find(
+  (c) => c.material.color.getHex() === MESH_COLLIDER_COLOR,
+);
+assert.equal(wire.geometry.attributes.position.count, (mug[0].length / 9) * 6);
+tools.showColliders(boxes, false, mug);
+assert.equal(tools.colliders.children.length, 0, 'hidden outside debug mode');
 console.log(
-  'PASS: debug shop columns, placement, damage readout, hit volumes, treadmill and ranges.',
+  'PASS: debug shop columns, placement, damage readout, hit volumes, treadmill, ranges and collision volumes.',
 );

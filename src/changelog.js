@@ -1,6 +1,168 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 410,
+    changes: [
+      'Avions, piétons et véhicules touchent la vraie forme des meubles : on se pose sur une assise, on passe sous un bureau.',
+      'Une pale de ventilateur ou une feuille ne se traverse plus, même très vite.',
+    ],
+  },
+  {
+    version: 409,
+    changes: [
+      'Les équipements se posent sur la vraie surface des meubles : assise d’une chaise, dessus de la photocopieuse.',
+    ],
+  },
+  {
+    version: 408,
+    changes: [
+      'Les tirs, les explosions et la caméra suivent la vraie forme des meubles : on tire entre les pieds d’une chaise.',
+    ],
+  },
+  {
+    version: 407,
+    changes: [
+      'Mode debug : les vraies formes de collision des meubles s’affichent en jaune, en préparation de collisions fidèles.',
+    ],
+  },
+  {
+    version: 405,
+    changes: [
+      'Les globes des ventilateurs sont allumés.',
+      'Les contours noirs s’effacent dans les nuages et le brouillard, comme les objets qu’ils dessinent.',
+    ],
+  },
+  {
+    version: 404,
+    changes: [
+      'Mode debug : les volumes de collision des murs, meubles et ventilateurs s’affichent en fil de fer.',
+    ],
+  },
+  {
+    version: 403,
+    changes: [
+      'Diagonale s’éclaire par deux ventilateurs lumineux qui pendent sous les nuages : attention aux pales en vol.',
+      'Ombres plus douces sous la lumière des lampes ; l’ombre des avions et des insectes tombe juste sous eux.',
+    ],
+  },
+  {
+    version: 401,
+    changes: [
+      'Nouveau décor : vrais meubles de bureau, écrans, cuisine, porte et désordre sur les bureaux, dans tous les plans.',
+      'Le plan Diagonale devient un bureau complet. Bouches d’aération et trous de souris sont collés aux murs.',
+      'Bureaux plus bas (0,74 m) : la corbeille du plan « Corbeille sur le bureau » s’atteint par-dessous.',
+    ],
+  },
+  {
+    version: 400,
+    changes: [
+      'Missiles guidés de l’hélicoptère : explosion bien plus puissante, qui touche jusqu’à 30 m autour.',
+    ],
+  },
+  {
+    version: 399,
+    changes: ['Les documents ne se déchirent plus : le bouton « Déchirer ce document » disparaît.'],
+  },
+  {
+    version: 398,
+    changes: [
+      'Obus perforant du char : il frappe chaque ennemi au moment où il le traverse, en perdant 20 % de ses dégâts à chacun.',
+    ],
+  },
+  {
+    version: 397,
+    changes: [
+      'Plus de ronds au sol : on monte dans tous les engins en visant le poste (verrière, tourelle, trappe).',
+      'DCA fixes, canon anti-matériel et lits s’utilisent aussi en les visant, puis clic ou E.',
+    ],
+  },
+  {
+    version: 396,
+    changes: [
+      'Char moyen : la mitrailleuse du pilote tire plus fort et l’obus explosif frappe bien plus fort, sur 20 m.',
+      'L’obus perforant du char traverse maintenant tous les ennemis sur sa route.',
+      'Le camion anti-aérien explose aussi large que le flak léger ; la mitrailleuse du Castor fait deux fois plus de dégâts.',
+    ],
+  },
+  {
+    version: 395,
+    changes: [
+      'Le banquier devient un prospectus en papier : cochez une offre, puis l’objet du prêt, et signez.',
+      'Les échéances payées sont tamponnées PAYÉ. Le remboursement anticipé disparaît.',
+    ],
+  },
+  {
+    version: 394,
+    changes: [
+      'Après une signature (montée à bord, changement de place), la souris est reprise tout de suite.',
+      'Les anciens contrats signés ne s’empilent plus sous la feuille.',
+    ],
+  },
+  {
+    version: 393,
+    changes: [
+      'Tous les documents deviennent de vraies feuilles : prise de poste, retour du purgatoire et contrat de lit.',
+      'La première pièce demande un motif coché au crayon ; la convenance personnelle reste refusée.',
+    ],
+  },
+  {
+    version: 392,
+    changes: [
+      'Bon de commande plus lisible : montants alignés, cases carrées, plus de bouton Gommer ni de fond grisé.',
+    ],
+  },
+  {
+    version: 391,
+    changes: [
+      'Le bon de commande devient une vraie feuille : cochez un motif au crayon, signez, et le tampon tombe.',
+      'La convenance personnelle n’est pas un motif réglementaire : la commande est refusée.',
+    ],
+  },
+  {
+    version: 390,
+    changes: [
+      'La tourelle Gatling tire deux fois plus vite : 12 tirs par seconde.',
+      'Les balles de la tourelle automatique font deux fois plus de dégâts.',
+    ],
+  },
+  {
+    version: 389,
+    changes: [
+      'Gatling : toute la partie haute de la tourelle se lève pour viser, pas seulement les canons.',
+    ],
+  },
+  {
+    version: 388,
+    changes: ['Gatling : la base du faisceau de canons s’incline maintenant avec le canon.'],
+  },
+  {
+    version: 387,
+    changes: [
+      'Bombardier moyen : le poste visé est cerné d’un trait net, qui le détache bien de l’avion.',
+    ],
+  },
+  {
+    version: 386,
+    changes: [
+      'Nouvelle tourelle Gatling pour le Castor et le Castor volant : six canons qui tournent et un tir continu.',
+    ],
+  },
+  {
+    version: 385,
+    changes: [
+      'Flak léger : l’explosion touche à 30 m. Flak lourd : à 40 m. DCA haute cadence : 62 dégâts par balle.',
+      'Canon anti-matériel : 800 dégâts au cœur de l’impact et 50 obus. Tourelle automatique : 5 $.',
+      'Le bunker LEGO disparaît.',
+    ],
+  },
+  {
+    version: 384,
+    changes: [
+      'Bombardier moyen : visez le poste voulu (cockpit ou tourelle) et cliquez pour monter, de n’importe quel côté.',
+      'Le poste visé s’entoure de bleu ; un poste occupé affiche le nom de son occupant.',
+    ],
+  },
+  {
     version: 381,
     changes: ['Les moyeux des roues du char suivent maintenant les roues sur le relief.'],
   },

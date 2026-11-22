@@ -24,7 +24,8 @@ par PR restent à configurer ; voir CONTRIBUTING pour leur état et la cible.
 
 ## Stack et démarrage
 
-ESM natif en migration vers TypeScript ([fonctionnement](docs/typescript.md)), Three.js embarqué dans `vendor/`, modèles procéduraux et Meshy embarqués, et
+ESM natif en migration vers TypeScript ([fonctionnement](docs/typescript.md)), Three.js embarqué dans `vendor/`, modèles procéduraux et Meshy embarqués, décor du
+bureau issu du Cartoon Office Pack de BloxBits (acheté, réservé à ce jeu : [licence](src/office-pack-LICENSE.md)), et
 sons Web Audio. Le serveur Node utilise **uniquement la RAM**, sans base de
 données. Les joueurs se connectent en étoile par WebRTC sur UDP : mouvements
 sans retransmission, commandes importantes fiables avec confirmations.
@@ -92,7 +93,7 @@ dépassés ; en cas de doute, le code et les références du thème font foi.
 
 **Rendu, son et modèles**
 
-- [audio](docs/audio.md) · [toon-rendering](docs/toon-rendering.md) · [shadow-visibility](docs/shadow-visibility.md) · [asset-pipeline](docs/asset-pipeline.md) : modèles Meshy et outil GLB · [meshy-fleet](docs/meshy-fleet.md), [b3-model](docs/b3-model.md), [h2-model](docs/h2-model.md), [m1-model](docs/m1-model.md), [t01-asset](docs/t01-asset.md)
+- [art-direction](docs/art-direction.md) : direction artistique · [ui-guidelines](docs/ui-guidelines.md) : règles d’interface · [audio](docs/audio.md) · [toon-rendering](docs/toon-rendering.md) · [shadow-visibility](docs/shadow-visibility.md) · [asset-pipeline](docs/asset-pipeline.md) : modèles Meshy et outil GLB · [meshy-fleet](docs/meshy-fleet.md), [b3-model](docs/b3-model.md), [h2-model](docs/h2-model.md), [m1-model](docs/m1-model.md), [t01-asset](docs/t01-asset.md), [gatling-turret](docs/gatling-turret.md)
 
 **Exploitation et contribution**
 

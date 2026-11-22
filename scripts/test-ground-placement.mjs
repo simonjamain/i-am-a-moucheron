@@ -133,7 +133,7 @@ for (let i = 0; i < ui.tools.length; i++) {
   const angle = (i * 2 * Math.PI) / ui.tools.length;
   ui.moveWheel(80 * Math.sin(angle), -80 * Math.cos(angle));
   ui.finishWheel();
-  if (['sentry', 'bunker', 'antitank'].includes(ui.tools[i][0]))
+  if (['sentry', 'gatling', 'antitank'].includes(ui.tools[i][0]))
     assert.equal(ui.mode, 'remove', 'Castor-only locked tools cannot be selected on foot');
   else assert.equal(ui.mode, ui.tools[i][0]);
 }
@@ -160,7 +160,11 @@ assert.equal(ui.radial, false);
 ui.cancel();
 context = 'castor';
 assert.equal(ui.handleWheelKey('KeyG', true), true, 'G opens the wheel as Castor driver');
-ui.moveWheel(80, 0);
+// Third sector (ruban), whatever the number of tools on the wheel.
+ui.moveWheel(
+  80 * Math.sin((4 * Math.PI) / ui.tools.length),
+  -80 * Math.cos((4 * Math.PI) / ui.tools.length),
+);
 assert.equal(ui.finishWheel(), false, 'middle mouse release must not end the G wheel');
 assert.equal(ui.radial, true);
 assert.equal(ui.handleWheelKey('KeyG', false), true);

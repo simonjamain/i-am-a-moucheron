@@ -44,11 +44,11 @@ collisions continuent, sans stationnaire. Une arrivée verticale au sol au-delà
 de 8 m/s de référence détruit la coque. Le carburant dure cinq minutes de vol,
 indépendamment de la poussée collective demandée.
 
-| Poste / arme       | Stock | Cadence                               | Dégâts et rayon de référence     |
-| ------------------ | ----: | ------------------------------------- | -------------------------------- |
-| Pilote, roquettes  |    30 | au moins 0,3 s                        | HE du tank : 120→30, rayon 12 m  |
-| Copilote, MG       | 1 000 | 15 balles/s                           | 75                               |
-| Copilote, missiles |    10 | un en vol, puis 2 s après destruction | DCA explosive : 80→20, rayon 8 m |
+| Poste / arme       | Stock | Cadence                               | Dégâts et rayon de référence  |
+| ------------------ | ----: | ------------------------------------- | ----------------------------- |
+| Pilote, roquettes  |    30 | au moins 0,3 s                        | Roquette : 120→30, rayon 12 m |
+| Copilote, MG       | 1 000 | 15 balles/s                           | 75                            |
+| Copilote, missiles |    10 | un en vol, puis 2 s après destruction | Missile : 360→70, rayon 30 m  |
 
 Les roquettes alternent leurs origines gauche/droite et partent dans l'axe du
 véhicule, sans viser indépendamment avec la souris. Le copilote vise avec une

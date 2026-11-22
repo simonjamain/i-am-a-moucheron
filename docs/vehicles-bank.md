@@ -24,11 +24,10 @@ Dans un tank, Shift sélectionne HE et Ctrl AP ; ces touches ne changent aucune
 fusée de DCA. La conduite utilise Z/S ou flèches pour avancer/reculer, Q/D pour
 tourner. Au tireur canon, clic gauche tire HE/AP et Espace la coaxiale ; les autres postes gardent clic/Espace pour la MG. En avion, Espace maintient le largage des bombes. B ne tire plus.
 
-Chaque poste libre a son cercle au sol, avec une icône de rôle (P pilote,
-D dorsal, Q queue, C canon, M supérieur). Approcher puis presser E ouvre directement
-le bon dossier. La sélection par liste est retirée de ce parcours. Le serveur
-contrôle la proximité du cercle correspondant et l’exclusivité du siège à la
-seconde signature. Les mutations et échanges à bord conservent leurs contrats.
+On monte en visant le poste lui-même (verrière, trappe, tourelle), de n’importe quel
+côté ; clic ou E ouvre directement le bon dossier
+([règles d’interface](ui-guidelines.md#monter-dans-un-engin--viser-le-poste)). Le serveur
+contrôle la proximité de l’engin et l’exclusivité du siège à la seconde signature. Les mutations et échanges à bord conservent leurs contrats.
 Les trois postes du tank ont des contrats adaptés, ajoutant 150 variantes au
 catalogue de 250 documents. Les traits de signature restent soumis à leurs
 protections existantes ; aucun effacement préalable n’est nécessaire.
@@ -55,11 +54,11 @@ Les changements de siège ne recréent aucune réserve.
 | Stuka, mitrailleuses         | 1 000   | 0,06 s           | 75                        |
 | Stuka, bombes                | 6       | 0,5 s            | 240 au centre, 60 au bord |
 | Bombardier, bombes du pilote | 50      | 0,5 s            | mêmes bombes              |
-| Tank, MG du pilote           | 1 000   | 0,09 s           | 25                        |
+| Tank, MG du pilote           | 1 000   | 0,09 s           | 33                        |
 | Tank, MG coaxiale            | 1 500   | 0,06 s           | 50                        |
 | Tank, MG supérieure          | 1 500   | 0,06 s           | 75                        |
-| Tank, obus HE                | 30      | 2 s              | 120 au centre, 30 au bord |
-| Tank, obus AP                | 30      | 2 s              | 320 sur la cible touchée  |
+| Tank, obus HE                | 30      | 2 s              | 320 au centre, 30 à 20 m  |
+| Tank, obus AP                | 30      | 2 s              | 800, −20 % par ennemi     |
 
 Chaque MG du tank a 90 s de tir nominal ; chaque réserve d’obus a 60 s.
 HE et AP partagent le même délai de canon, empêchant de contourner ce délai en
@@ -76,8 +75,9 @@ Les bombes héritent de la vitesse de l’avion et subissent la gravité. Un piq
 dont la direction avant descend de plus de 0,65 applique un facteur **1,35** aux
 dégâts, soit 324 au centre : il permet notamment d’abattre un cafard de 300 PV
 avec une bombe bien placée. Le rayon d’une bombe Stuka est de 20 m de référence
-(0,060 m du décor), celui du gros bombardier de 40 m (0,120 m), celui d’un HE de 12 m (0,036 m). Les AP sont des projectiles
-directs sans dégâts de zone. Le décor bloque trajectoires et explosions.
+(0,060 m du décor), celui du gros bombardier de 40 m (0,120 m), celui d’un HE de 20 m (0,060 m). Les AP sont des projectiles
+perforants sans dégâts de zone : ils traversent les ennemis, appliquent leurs dégâts au contact (800, puis
+×0,8 à chaque ennemi : 800, 640, 512…, une fois par ennemi) et ne s’arrêtent que sur le décor, un appareil ou un joueur. Le décor bloque trajectoires et explosions.
 
 Les stations habituelles rechargent toutes les réserves en dix secondes selon
 les mêmes conditions d’arrêt et d’appui au sol. Les niveaux fractionnaires sont
@@ -138,23 +138,27 @@ si le dernier mouvement signale la destruction sans commande de mort ultérieure
 ## Banque et documents signés
 
 L’API expose toujours trois emplacements, contenant une offre stable ou un prêt
-signé. Les signatures et remboursements portent le numéro de l’emplacement et
-le numéro unique de l’offre ; une ancienne offre ne peut pas recréditer la caisse.
+signé. Une signature porte le numéro de l’emplacement et le numéro unique de
+l’offre ; une ancienne offre ne peut pas recréditer la caisse.
 Ces opérations sont accessibles à tout moment par le domaine serveur.
 Le bouton Banquier ou N ouvre le guichet à tout moment, y compris embarqué ou
 au purgatoire. La consultation libère la souris et neutralise les commandes ;
 la partie continue. Échap ou la croix ferment le panneau. Il ne s’ouvre pas
 pendant le dépôt d’un autre dossier. La navigation clavier reste dans le panneau.
 
-Chaque offre donne accès à un document humoristique, au tableau d’amortissement
-et à un cadre de signature. Relâcher un trait valide transmet une seule commande
-fiable. Le dossier attend sa confirmation ; une erreur affiche son message et
-permet de signer à nouveau. Une annulation du pointeur ne signe jamais. Le contrat
-actif reste consultable avec son capital restant, ses vagues restantes et les
-échéances payées. Le remboursement anticipé exige une nouvelle signature. Une
-échéance ou un reset intervenus pendant la lecture invalident le document ; le
-serveur revérifie aussi son epoch et le montant attendu. Les documents confirmés
-rejoignent l’archive locale des signatures, sans envoyer leur image au serveur.
+Le guichet est un **prospectus en papier** ([règles d’interface](ui-guidelines.md)) :
+les trois emplacements y sont imprimés comme des coupons. Cocher une offre affiche
+son texte humoristique et son tableau d’amortissement ; il faut ensuite cocher
+l’**objet du prêt** (`LOAN_MOTIVES`) avant de signer. La banque est le seul service
+qui accepte « Convenance personnelle ». Relâcher un trait valide transmet une seule
+commande fiable ; le contrat reçoit le tampon « APPROUVÉ ». Une erreur affiche son
+message et permet de signer à nouveau. Une annulation du pointeur ne signe jamais.
+Un contrat actif se consulte en cochant son coupon : capital restant, vagues
+restantes, et un tampon « PAYÉ » sur chaque échéance prélevée. Il n’y a pas de
+remboursement anticipé : un prêt se rembourse par ses échéances. Un reset pendant
+la lecture, ou la disparition de l’offre, invalide le document ; le serveur
+revérifie aussi son epoch. L’image de la signature n’est ni conservée ni envoyée
+au serveur.
 
 | Capital proposé | Taux fixe par vague | Nombre de vagues |
 | --------------- | ------------------- | ---------------- |
@@ -173,8 +177,7 @@ le capital restant sont conservés dans le contrat signé.
 Une signature crédite immédiatement le capital. Une seule échéance est prélevée
 par prêt à chaque fin de vague, y compris une vague perdue, sans double prélèvement
 sur les polls suivants. Le solde peut devenir négatif et les échéances continuent.
-Aucun nouveau prêt n’est signé avec un solde négatif. Le remboursement anticipé
-coûte seulement le capital restant et exige les fonds disponibles. Le prêt terminé
+Aucun nouveau prêt n’est signé avec un solde négatif. Le prêt terminé
 est remplacé par une nouvelle offre vierge dans le même emplacement. Un reset
 efface prêts, offres et monnaie avec le reste de la partie.
 

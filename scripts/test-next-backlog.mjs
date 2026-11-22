@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import * as T from '../vendor/three.module.min.js';
-import { amortization, newBank, signLoan, settleLoans, repayLoan } from '../src/bank.ts';
+import { amortization, newBank, signLoan, settleLoans } from '../src/bank.ts';
 import { Game } from '../server/game.js';
 import { roomWorld, resolveHeavy } from './heavy-resolver.mjs';
 import { heavyImpact } from '../src/heavy-sim.js';
@@ -49,10 +49,7 @@ assert.ok(bank.slots.every((s) => s.status === 'offer'));
 assert.ok(bank.slots.every((s) => s.serial > 3));
 assert.throws(() => signLoan(bank, 0, bank.slots[0].serial, -1, 4), /négatif/);
 signLoan(bank, 0, bank.slots[0].serial, 0, 4);
-assert.throws(() => repayLoan(bank, 0, bank.slots[0].serial, 0), /insuffisant/);
-const paid = repayLoan(bank, 0, bank.slots[0].serial, 10000, () => 0.5);
-assert.ok(paid > 0);
-assert.equal(bank.slots[0].status, 'offer');
+assert.equal(bank.slots[0].status, 'active');
 const zoom = new HoldZoom();
 zoom.press('tank:cannon');
 assert.equal(zoom.fov('tank:cannon'), 28);
@@ -144,9 +141,7 @@ call('buy', { item: 'tank', request: 'tank-order' });
 const tank = [...r.vehicles.values()].find((v) => v.type === 'tank');
 for (const seat of VEHICLES.tank.seats) {
   const entry = vehicleEntry(tank, seat);
-  assert.ok(vehicleAccess(entry, tank, seat));
-  for (const other of VEHICLES.tank.seats)
-    if (other !== seat) assert.equal(vehicleAccess(entry, tank, other), false);
+  assert.ok(vehicleAccess(entry, tank), 'every post reachable from any side');
 }
 // Independent gunner fires without any driver. Heavy reports spend once and
 // one cannon cooldown spans both ammunition types.

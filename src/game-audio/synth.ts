@@ -21,6 +21,8 @@ const profiles = {
   engine: { duration: 1, level: 0.16 },
   insect: { duration: 1, level: 0.12 },
   shot: { duration: 0.13, level: 0.28 },
+  // Seamless 1 s loop of twelve rounds (the Gatling's 12 rounds/s): one voice for a whole burst.
+  gatling: { duration: 1, level: 0.24 },
   impact: { duration: 0.24, level: 0.35 },
   crash: { duration: 0.8, level: 0.4 },
   punch: { duration: 0.18, level: 0.24 },
@@ -72,7 +74,20 @@ export function synthesize(kind: SoundKind, sampleRate = 24000): Float32Array<Ar
         0.3 * Math.sin(t * 80 * Math.PI * 2) +
         0.18 * Math.sin(t * 160 * Math.PI * 2) +
         low * 0.7 * (0.7 + 0.3 * Math.sin(t * 24 * Math.PI * 2));
-    else if (kind === 'dive')
+    else if (kind === 'gatling') {
+      // Every component repeats at k/12 s, so the loop is seamless at any rate multiple of 12.
+      const tp = t % (1 / 12);
+      const attack = Math.min(1, tp / 0.0008);
+      v =
+        0.6 *
+        (attack *
+          (noise * 0.6 * Math.exp(-tp * 110) +
+            Math.sin(2 * Math.PI * 95 * tp) * 0.7 * Math.exp(-tp * 45) +
+            Math.sin(2 * Math.PI * 1650 * tp) * 0.16 * Math.exp(-tp * 60)) +
+          Math.sin(t * 48 * Math.PI * 2) * 0.14 +
+          Math.sin(t * 132 * Math.PI * 2) * 0.07 +
+          low * 0.25 * (0.6 + 0.4 * Math.sin(t * 12 * Math.PI * 2)));
+    } else if (kind === 'dive')
       v = 0.4 * Math.sin(2 * Math.PI * 420 * t) + 0.2 * Math.sin(2 * Math.PI * 840 * t) + low * 0.2;
     else if (kind === 'insect')
       v =

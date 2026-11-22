@@ -1,5 +1,5 @@
 import { WALL_SEGMENT, WALL_SEGMENT_PRICE, HALF_BRICK, wallLength } from './brick-rules.ts';
-import { SENTRY } from './ground-sentry.ts';
+import { SENTRY, isTurret, turretSpec } from './ground-sentry.ts';
 import { FORTIFICATIONS, isFortification } from './ground-fortifications.ts';
 import { onFloor, levelOf, FLOOR_LEVEL } from './airdrop.ts';
 import {
@@ -85,15 +85,12 @@ export function groundSnapshot(state, now = Date.now()) {
   };
 }
 // Structures that block ground movement (and that ground insects may break).
-export const BLOCKING_KINDS = Object.freeze(['barricade', 'bunker']);
+export const BLOCKING_KINDS = Object.freeze(['barricade']);
 export function navigationStructures(structures = []) {
   return structures.filter((s) => BLOCKING_KINDS.includes(s.kind) && s.hp > 0 && onFloor(s));
 }
 // What floor walkers meet (walls, tape, sugar): never constructions on furniture.
 export const floorStructures = (structures = []) => structures.filter(onFloor);
-export function bunkerSegment(position) {
-  return { a: [position[0] - 0.045, position[1]], b: [position[0] + 0.045, position[1]] };
-}
 // Blocking pieces a local build draft would add, mirroring groundCommand.
 export function previewStructures(command) {
   if (command?.kind === 'barricade' && command.a && command.b)
@@ -102,10 +99,6 @@ export function previewStructures(command) {
       kind: 'barricade',
       hp: GROUND_WALL_HP,
     }));
-  if (command?.kind === 'bunker' && command.a)
-    return [
-      { id: 'preview', kind: 'bunker', hp: FORTIFICATIONS.bunker.hp, ...bunkerSegment(command.a) },
-    ];
   return [];
 }
 export function groundFlow(state, goal = groundGoal()) {
@@ -126,19 +119,19 @@ export function groundCommand(state, command, foot, dollars, now = Date.now(), a
   if (action === 'build') {
     const { kind, a } = command;
     let { b } = command;
-    const pointItem = kind === 'sugar' || kind === 'sentry' || isFortification(kind);
+    const pointItem = kind === 'sugar' || isTurret(kind) || isFortification(kind);
     if (isFortification(kind)) {
       if (!access.castor) fail('Cette défense occupable se construit depuis le Castor.');
       if (state.structures.filter((s) => s.kind === kind).length >= FORTIFICATIONS[kind].maxPerRoom)
         fail('Nombre maximal de défenses occupables atteint.');
     }
-    if (kind === 'sentry') {
+    if (isTurret(kind)) {
       if (!access.castor) fail('Cette tourelle se construit depuis le Castor.');
-      if (state.structures.filter((s) => s.kind === 'sentry').length >= SENTRY.maxPerRoom)
+      if (state.structures.filter((s) => isTurret(s.kind)).length >= SENTRY.maxPerRoom)
         fail('Nombre maximal de tourelles atteint.');
     }
     if (
-      !['barricade', 'sticky', 'sugar', 'sentry', 'bunker', 'antitank'].includes(kind) ||
+      !['barricade', 'sticky', 'sugar', 'sentry', 'gatling', 'antitank'].includes(kind) ||
       !finitePoint(a) ||
       (!pointItem && !finitePoint(b))
     )
@@ -158,8 +151,8 @@ export function groundCommand(state, command, foot, dollars, now = Date.now(), a
       fail('Trop de constructions dans la salle.');
     const price = isFortification(kind)
       ? FORTIFICATIONS[kind].cost
-      : kind === 'sentry'
-        ? SENTRY.cost
+      : isTurret(kind)
+        ? turretSpec(kind).cost
         : kind === 'sugar'
           ? GROUND_BAIT_TYPES.sugar.cost
           : lengthPrice(kind, distance);
@@ -183,14 +176,17 @@ export function groundCommand(state, command, foot, dollars, now = Date.now(), a
                 kind,
                 position: [...a],
                 angle: Number.isFinite(command.angle) ? command.angle % (2 * Math.PI) : 0,
-                ...(kind === 'sentry'
-                  ? { hp: SENTRY.hp, maxHp: SENTRY.hp, ammo: SENTRY.ammo }
+                ...(isTurret(kind)
+                  ? {
+                      hp: turretSpec(kind).hp,
+                      maxHp: turretSpec(kind).hp,
+                      ammo: turretSpec(kind).ammo,
+                    }
                   : isFortification(kind)
                     ? {
                         hp: FORTIFICATIONS[kind].hp,
                         maxHp: FORTIFICATIONS[kind].hp,
                         ammo: FORTIFICATIONS[kind].ammo,
-                        ...(kind === 'bunker' ? bunkerSegment(a) : {}),
                       }
                     : { type: 'sugar', radius: GROUND_BAIT_TYPES.sugar.radius }),
               },
@@ -208,14 +204,12 @@ export function groundCommand(state, command, foot, dollars, now = Date.now(), a
         state.structures.some((existing) => {
           // Only constructions on the same surface (floor or furniture) collide.
           if (Math.abs(levelOf(existing) - level) > 0.02) return false;
-          if (['sentry', 'bunker', 'antitank'].includes(existing.kind) && existing.hp > 0)
+          if ((isTurret(existing.kind) || existing.kind === 'antitank') && existing.hp > 0)
             return (
               Math.hypot(sample[0] - existing.position[0], sample[1] - existing.position[1]) <
-              (existing.kind === 'sentry'
-                ? SENTRY.footprint
-                : existing.kind === 'antitank'
-                  ? FORTIFICATIONS.antitank.footprint
-                  : 0.07)
+              (isTurret(existing.kind)
+                ? turretSpec(existing.kind).footprint
+                : FORTIFICATIONS.antitank.footprint)
             );
           if (existing.kind !== 'barricade' || existing.hp <= 0) return false;
           if (!item.position) {
@@ -242,7 +236,7 @@ export function groundCommand(state, command, foot, dollars, now = Date.now(), a
     state.nextId++;
     state.structures.push(...items);
     state.revision++;
-    if ((kind === 'barricade' || kind === 'bunker') && !level) state.navigationRevision++;
+    if (kind === 'barricade' && !level) state.navigationRevision++;
     return { price, ids: items.map((item) => item.id) };
   }
   if (!['repair', 'remove'].includes(action)) fail('Action de défense inconnue.');
@@ -254,7 +248,7 @@ export function groundCommand(state, command, foot, dollars, now = Date.now(), a
   if (!nearFoot(position, foot)) fail('Approchez-vous de la construction.');
   if (action === 'repair') {
     if (
-      !['barricade', 'bunker', 'sentry', 'antitank'].includes(item.kind) ||
+      !['barricade', 'sentry', 'gatling', 'antitank'].includes(item.kind) ||
       item.hp <= 0 ||
       item.hp >= item.maxHp
     )
@@ -266,15 +260,13 @@ export function groundCommand(state, command, foot, dollars, now = Date.now(), a
   }
   state.structures.splice(index, 1);
   state.revision++;
-  if (item.kind === 'barricade' || item.kind === 'bunker') state.navigationRevision++;
+  if (item.kind === 'barricade') state.navigationRevision++;
   return { price: 0, ids: [item.id] };
 }
 // Invoked by authoritative server combat only; never expose as a network command.
 export function damageBarricade(state, id, damage) {
   if (!Number.isFinite(damage) || damage <= 0) fail('Dégâts invalides.');
-  const item = state.structures.find(
-    (s) => s.id === id && ['barricade', 'bunker'].includes(s.kind),
-  );
+  const item = state.structures.find((s) => s.id === id && s.kind === 'barricade');
   if (!item || item.hp <= 0) return false;
   item.hp = Math.max(0, item.hp - damage);
   state.revision++;

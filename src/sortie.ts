@@ -83,7 +83,7 @@ export const AA_STATIONS: Station[] = [
 ];
 // Where the entry circle sits, beside the station (+X), inside its access
 // radius. The player-scale howitzer (#113) sweeps 3.4 m around its axle: its
-// circle stands just outside that sweep; the large bunker keeps its distances.
+// circle stands just outside that sweep.
 export function stationEntryOffset(station: Station | null | undefined): number {
   return station?.kind === 'antitank'
     ? MAP.metres(4.5)
@@ -120,15 +120,32 @@ export function stationExit(station: Station): XYZ {
     z: station.z,
   };
 }
+/** The decor's triangle colliders, as used by the walker and the landing gear. */
+export interface DecorQuery {
+  supportBelow(x: number, from: number, z: number, depth: number, flat?: number): number | null;
+  nearest(
+    point: readonly number[],
+    radius?: number,
+  ): { distance: number; point: readonly number[] } | null;
+}
+/** The colliders without the boxes of the pack props when the decor stands for them. */
+export const withoutDecor = <C extends Collider>(
+  colliders: readonly C[],
+  decor: unknown,
+): readonly C[] =>
+  decor ? colliders.filter((b) => !(b as C & { decor?: boolean }).decor) : colliders;
 // Swept contact with horizontal surfaces. Hard, inverted and side-on arrivals
 // remain crashes; a gentle wheels-first touchdown becomes rolling contact.
 export function resolveLanding(
   T: Three,
   state: LandingState,
   previous: XYZ,
-  colliders: readonly Collider[],
+  allColliders: readonly Collider[],
   dt: number,
+  decor?: DecorQuery | null,
 ): LandingResult {
+  // With the decor world, props land on their real surfaces, not their boxes.
+  const colliders = withoutDecor(allColliders, decor);
   const { position: p, vel, q, omega } = state;
   const gear = state.gear ?? GEAR_HEIGHT;
   const up = new T.Vector3(0, 1, 0).applyQuaternion(q);
@@ -144,6 +161,15 @@ export function resolveLanding(
     if (!colliderContainsXZ(box, p.x, p.z, -0.5 * ACTOR_UNIT)) continue;
     const y = box.max.y + gear;
     if (previous.y >= y - 0.12 * ACTOR_UNIT && p.y <= y + 0.1 * ACTOR_UNIT && y > top) top = y;
+  }
+  if (decor) {
+    // Same window as the boxes: wheels between 0.12 above and 0.1 below contact.
+    const from = Math.max(previous.y, p.y) - gear + 0.12 * ACTOR_UNIT;
+    const surface = decor.supportBelow(p.x, from, p.z, from - (p.y - gear - 0.1 * ACTOR_UNIT));
+    if (surface !== null) {
+      const y = surface + gear;
+      if (previous.y >= y - 0.12 * ACTOR_UNIT && p.y <= y + 0.1 * ACTOR_UNIT && y > top) top = y;
+    }
   }
   if (!Number.isFinite(top) || vel.y > 0) return { landed: false, contact: false };
   const safe = up.y > 0.88 && vel.y > -MAP.metres(5);
@@ -162,8 +188,10 @@ export function resolveLanding(
 export function stepWalker(
   body: Walker,
   dt: number,
-  colliders: readonly Collider[],
+  allColliders: readonly Collider[],
+  decor?: DecorQuery | null,
 ): WalkerImpact | null {
+  const colliders = withoutDecor(allColliders, decor);
   const origin = OFFICE_LAYOUT.base;
   let x = origin.originX + body.x * ACTOR_UNIT,
     z = origin.originZ - body.z * ACTOR_UNIT;
@@ -174,6 +202,11 @@ export function stepWalker(
   for (const box of colliders) {
     if (colliderContainsXZ(box, x, z) && box.max.y <= previousY + 0.15 * ACTOR_UNIT)
       top = Math.max(top, box.max.y);
+  }
+  if (decor) {
+    const from = previousY + 0.15 * ACTOR_UNIT;
+    const surface = decor.supportBelow(x, from, z, from);
+    if (surface !== null) top = Math.max(top, surface);
   }
   let impact: WalkerImpact | null = null;
   const contactY = top + 0.05 * ACTOR_UNIT;
@@ -215,6 +248,29 @@ export function stepWalker(
     } else if (normalSpeed < 0) {
       body.vx -= normalSpeed * pushed.nx;
       body.vz += normalSpeed * pushed.nz;
+    }
+  }
+  // The decor's faces near the legs, chest and head push the walker out, like the
+  // sides of the boxes; what lies under or over it (support, a table top) does not.
+  if (decor) {
+    const radius = body.r * ACTOR_UNIT;
+    for (const h of [0.4, 0.9, 1.5]) {
+      const near = decor.nearest([x, body.y + h * ACTOR_UNIT, z], radius);
+      if (!near) continue;
+      const dx = x - near.point[0],
+        dz = z - near.point[2];
+      const flat = Math.hypot(dx, dz);
+      if (flat < 1e-7 || flat < 0.5 * near.distance) continue;
+      const nx = dx / flat,
+        nz = dz / flat;
+      x = near.point[0] + nx * radius;
+      z = near.point[2] + nz * radius;
+      // Body z is opposite world z. Remove only velocity into the contact face.
+      const normalSpeed = body.vx * nx - body.vz * nz;
+      if (normalSpeed < 0) {
+        body.vx -= normalSpeed * nx;
+        body.vz += normalSpeed * nz;
+      }
     }
   }
   body.x = (x - origin.originX) / ACTOR_UNIT;

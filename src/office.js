@@ -1,10 +1,22 @@
-import { applyShadowPreset } from './shadow-settings.ts';
-import { activeLayout, layoutPieces } from './layouts.ts';
-// Draws the active layout (see layouts.js): room shell, furniture volumes, bin,
-// vents and floor holes. Everything goes into one group so a room's plan can be
-// replaced (`dispose`) without touching the rest of the scene. Colliders are the
-// bounds of the very primitives drawn here.
-export function createOffice(T, scene, { box, cyl, ball }) {
+import {
+  officeLamps,
+  addOfficeLights,
+  lightRoom,
+  bakeOfficeShadows,
+  LAMP_LOOK,
+} from './office-lights.ts';
+import { activeLayout, layoutPieces, pieceBounds, LAYOUT_ROOM } from './layouts.ts';
+import { addOfficeProps } from './office-pack.ts';
+import { ROD } from './office-props.ts';
+import { DecorCollision, solidTriangles } from './office-collision.ts';
+import { MODEL_DATA } from './office-pack-data.js';
+// Draws the active layout (see layouts.ts): floor, blocking-out volumes, the
+// office pack models (walls, door, vents, bin, furniture and objects) and the
+// mouse holes. Everything goes into one group so a room's plan can be replaced
+// (`dispose`) without touching the rest of the scene. Colliders are exactly the
+// layout solids: drawn primitives, or the hitboxes of the models.
+const SKIRTING = 0.017;
+export function createOffice(T, scene, { box, cyl }) {
   const layout = activeLayout();
   const root = new T.Group();
   scene.add(root);
@@ -16,26 +28,26 @@ export function createOffice(T, scene, { box, cyl, ball }) {
     solidObjects.push(m);
     return m;
   };
-  // Lights belong to the scene, not to a plan: they are added once.
-  if (!scene.children.some((o) => o.isDirectionalLight)) {
-    const sky = new T.HemisphereLight('#eff3dd', '#50634e', 2.5);
-    const sun = new T.DirectionalLight('#fff4d9', 3);
-    sun.position.set(-3, 6, 2);
-    sun.castShadow = true;
-    sun.shadow.mapSize.set(2048, 2048);
-    Object.assign(sun.shadow.camera, {
-      left: -5,
-      right: 5,
-      top: 5,
-      bottom: -5,
-      near: 0.01,
-      far: 15,
-    });
-    sun.shadow.bias = -0.00001;
-    scene.add(sky, sun);
-    applyShadowPreset(T, null, scene);
-  }
+  // Sky and sun belong to the scene (set for this plan); lamps belong to the plan.
+  const lamps = officeLamps(layout.props);
+  lightRoom(
+    T,
+    scene,
+    lamps.some((l) => l.kind === 'fan'),
+  );
+  addOfficeLights(T, lamps, root);
   for (const p of layoutPieces(layout)) {
+    if (p.visible === false) {
+      const b = pieceBounds(p);
+      const box = new T.Box3(
+        new T.Vector3(b.min.x, b.min.y, b.min.z),
+        new T.Vector3(b.max.x, b.max.y, b.max.z),
+      );
+      // Box of a pack prop: rays use the prop's triangles instead (office.decor).
+      if (p.decor) box.decor = true;
+      colliders.push(box);
+      continue;
+    }
     let m;
     if (p.shape === 'cyl') m = cyl(p.x, p.y, p.z, p.radiusTop ?? p.w, p.w, p.h, p.color, root);
     else m = box(p.x, p.y, p.z, p.w, p.h, p.d, p.color, root);
@@ -47,42 +59,76 @@ export function createOffice(T, scene, { box, cyl, ball }) {
     if (p.solid) register(m);
     else m.castShadow = false;
   }
-  // Decoration of the shell (never solid): floor boards and the window.
-  for (let x = -4; x < 4.2; x += 0.3) box(x, 0.0002, 0, 0.002, 0.0004, 7.2, '#657963', root);
-  box(-4.145, 1.7, -0.6, 0.025, 1.3, 2, '#e4ecd5', root);
-  for (const z of [-1.25, -0.6, 0.05]) box(-4.12, 1.7, z, 0.035, 1.3, 0.035, '#678a78', root);
-  box(-4.12, 1.7, -0.6, 0.035, 0.035, 2, '#678a78', root);
-  // Bin: the destination of every wave. Its colliders are in the layout pieces.
-  const bin = new T.Group();
-  bin.position.set(layout.bin.x, layout.bin.y, layout.bin.z);
-  root.add(bin);
-  cyl(0, 0.305, 0, 0.167, 0.167, 0.015, '#79947a', bin);
-  cyl(0, 0.313, 0, 0.145, 0.145, 0.003, '#243b2e', bin);
-  for (let i = 0; i < 6; i++)
-    ball(Math.sin(i * 2.4) * 0.09, 0.315, Math.cos(i * 2.4) * 0.09, 0.033, '#c6c5a3', bin);
-  // Vents (air) and holes (ground), in the walls of this layout.
-  for (const [x, y, z] of layout.portals.air) {
-    const side = Math.abs(x) > 4;
-    box(x, y, z, side ? 0.018 : 0.34, 0.24, side ? 0.34 : 0.018, '#304a43', root);
-    for (let j = -2; j <= 2; j++) {
-      if (side)
-        box(x + (x < 0 ? 0.012 : -0.012), y + j * 0.035, z, 0.02, 0.012, 0.3, '#8c9b87', root);
-      else box(x, y + j * 0.035, z + 0.012, 0.3, 0.012, 0.02, '#8c9b87', root);
-    }
+  // Pack models are instanced per model: their colliders are the layout solids above.
+  addOfficeProps(T, layout.props, root);
+  // Hanging models: a thin rod from their hanging point up into the clouds.
+  for (const p of layout.props)
+    if (p.model === 'Ceiling_Fan')
+      cyl(
+        p.x,
+        p.y + ROD / 2,
+        p.z,
+        0.008,
+        0.008,
+        ROD,
+        LAMP_LOOK.rod,
+        root,
+      ).userData.projectileSolid = false;
+  // Mouse holes: dark arches on the skirting board, at the foot of the wall.
+  const arch = new T.Shape();
+  arch.moveTo(-0.075, 0);
+  arch.lineTo(-0.075, 0.045);
+  arch.absarc(0, 0.045, 0.075, Math.PI, 0, true);
+  arch.lineTo(0.075, 0);
+  arch.closePath();
+  const holeGeometry = new T.ShapeGeometry(arch, 12);
+  const holeMaterial = new T.MeshBasicMaterial({ color: '#14231e' });
+  const { x: X, z: Z } = LAYOUT_ROOM;
+  for (const [x, , z] of layout.portals.ground) {
+    const hole = new T.Mesh(holeGeometry, holeMaterial);
+    hole.name = 'mouse-hole';
+    hole.userData.projectileSolid = false;
+    const face = SKIRTING + 0.001;
+    if (Math.abs(x) > X - 0.2) {
+      hole.position.set(Math.sign(x) * (X - face), 0, z);
+      hole.rotation.y = x < 0 ? Math.PI / 2 : -Math.PI / 2;
+    } else hole.position.set(x, 0, -Z + face);
+    root.add(hole);
   }
-  for (const [x, y, z] of layout.portals.ground) {
-    const hole = ball(x, y + 0.035, z, 0.075, '#14231e', root);
-    hole.scale.set(Math.abs(x) > 4 ? 0.12 : 1, 0.85, Math.abs(x) > 4 ? 1 : 0.12);
-  }
+  // Triangle colliders of the props, in a Rapier world of the decor
+  // (office-collision.ts), built once Rapier is loaded. Used by the debug view for
+  // now: the box colliders above remain the game's solids.
+  let decor = null,
+    decorWire = [];
   return {
     layout,
     root,
     colliders,
+    get decor() {
+      return decor;
+    },
+    get decorWire() {
+      return decorWire;
+    },
+    buildDecor(RAPIER) {
+      if (decor || !RAPIER) return decor;
+      decor = new DecorCollision(RAPIER, MODEL_DATA, layout.props);
+      decorWire = decor.solids.map((s) => solidTriangles(MODEL_DATA, s));
+      return decor;
+    },
     solidObjects,
-    // Removes the room from the scene; geometries are owned by this group only.
+    // Renders the lamps' shadows once, with the room alone (see office-lights.ts).
+    bakeShadows: (renderer) => bakeOfficeShadows(T, renderer, root),
+    // Removes the room from the scene. Pack geometries are shared: keep them.
     dispose() {
+      decor?.dispose();
+      decor = null;
       scene.remove(root);
-      root.traverse((o) => o.geometry?.dispose());
+      root.traverse((o) => {
+        if (o.isLight) o.dispose();
+        else if (o.isInstancedMesh) o.dispose();
+        else o.geometry?.dispose();
+      });
     },
   };
 }

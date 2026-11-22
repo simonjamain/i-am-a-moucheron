@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { Game } from '../server/game.js';
 import { VEHICLES } from '../src/fleet.ts';
+import { HEAVY, heavyDamage } from '../src/armament.ts';
 import { FORTIFICATIONS } from '../src/ground-fortifications.ts';
 import { stationAccess, stationEntryOffset, stationExit } from '../src/sortie.ts';
 import { ACTOR_UNIT, MAP } from '../src/scale.ts';
@@ -30,28 +31,30 @@ const build = (kind, a, request) =>
   });
 
 // No plan to win: the Castor driver builds them for their dollar price.
-const first = build('bunker', [0, 0], 'fort:bunker');
-assert.equal(first.dollars, 30);
-const bunker = room.groundDefense.structures.find((s) => s.kind === 'bunker');
-assert.equal(bunker.hp, FORTIFICATIONS.bunker.hp);
-assert.equal(bunker.ammo, FORTIFICATIONS.bunker.ammo);
-assert.equal(room.equipment[bunker.slot], bunker, 'stable live station reference');
-assert.equal(build('bunker', [0, 0], 'fort:bunker').dollars, 30);
-assert.equal(room.equipment.filter((s) => s.kind === 'bunker').length, 1);
-const second = build('antitank', [0.19, 0], 'fort:antitank');
-assert.equal(second.dollars, 16);
+const first = build('antitank', [0, 0], 'fort:antitank');
+assert.equal(first.dollars, 40 - FORTIFICATIONS.antitank.cost);
 const gun = room.groundDefense.structures.find((s) => s.kind === 'antitank');
+assert.equal(gun.hp, FORTIFICATIONS.antitank.hp);
 assert.equal(gun.ammo, FORTIFICATIONS.antitank.ammo);
-assert.equal(room.equipment[gun.slot], gun);
+assert.equal(FORTIFICATIONS.antitank.ammo, 50);
+assert.equal(FORTIFICATIONS.antitank.damage, 800);
+assert.equal(HEAVY.antitank.damage, 800, 'heavy gun: 800 at the heart of the impact');
+assert.equal(heavyDamage('antitank', 0), 800);
+assert.equal(room.equipment[gun.slot], gun, 'stable live station reference');
+assert.equal(build('antitank', [0, 0], 'fort:antitank').dollars, first.dollars);
+assert.equal(room.equipment.filter((s) => s.kind === 'antitank').length, 1);
+assert.throws(() => build('bunker', [0.5, 0], 'fort:bunker'), /invalide/, 'no bunker any more');
+const second = build('antitank', [0.19, 0], 'fort:spare');
+assert.equal(second.dollars, 40 - 2 * FORTIFICATIONS.antitank.cost);
+const spare = room.groundDefense.structures.find((s) => s.kind === 'antitank' && s !== gun);
 
-// The visible access ring sits beside the post: 8 cm for the bunker, just
+// The visible access ring sits beside the post: just
 // outside the 3.4 m sweep of the player-scale heavy gun (#113). All stages
 // must accept that same reachable position.
-const reach = { bunker: 0.09, antitank: MAP.metres(6) };
-assert.equal(stationEntryOffset({ kind: 'bunker' }), 0.08);
+const reach = { antitank: MAP.metres(6) };
 assert.equal(stationEntryOffset({ kind: 'antitank' }), MAP.metres(4.5));
 assert.ok(MAP.metres(4.5) > FORTIFICATIONS.antitank.footprint, 'ring outside the gun sweep');
-for (const kind of ['bunker', 'antitank']) {
+for (const kind of ['antitank']) {
   const station = room.groundDefense.structures.find((s) => s.kind === kind);
   const position = { x: station.x + stationEntryOffset(station), y: station.y, z: station.z };
   assert.ok(stationAccess(position, station), `${kind}: signature visible at access ring`);
@@ -89,7 +92,7 @@ for (const kind of ['bunker', 'antitank']) {
   assert.equal(members[0].mode, 'foot');
   assert.equal(members[0].state.turret, null);
   const exit = stationExit(station);
-  assert.equal(exit.x, station.x + (kind === 'antitank' ? MAP.metres(4.5) : 0.09));
+  assert.equal(exit.x, station.x + MAP.metres(4.5));
   assert.equal(members[0].state.walkSpawn.x, (exit.x - OFFICE_LAYOUT.base.originX) / ACTOR_UNIT);
   assert.equal(members[0].state.walkSpawn.y, exit.y);
   sign(members[1]);
@@ -146,15 +149,11 @@ room.dollars = 16;
 const removed = game.command('FORTIFY', p.id, 'ground-defense', {
   epoch: room.base.epoch,
   action: 'remove',
-  target: bunker.id,
+  target: spare.id,
   request: 'fort:remove',
 });
 assert.equal(removed.dollars, 16);
-assert.equal(
-  room.equipment[bunker.slot].kind,
-  'retired',
-  'retired slot does not shift gun indices',
-);
+assert.equal(room.equipment[spare.slot].kind, 'retired', 'retired slot does not shift gun indices');
 assert.equal(room.equipment[gun.slot], gun);
 
 console.log(

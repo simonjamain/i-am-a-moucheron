@@ -28,6 +28,12 @@ nul sur un plan, même rasant) prend la couleur du trait (`#1b1510`). L'épaisse
 (0 à 4 px) suit la hauteur de l'écran. La passe applique aussi le _tone mapping_ et la
 conversion sRGB, sauf au ciel (couleur de fond, jamais tone-mappée). Les effets
 transparents (fumée, sprites) n'écrivent pas de profondeur : ils n'ont pas de contour.
+Depuis la version 405, le trait **s'efface dans le brouillard** comme la surface
+qu'il borde : la passe reconstruit le point du monde de la surface la plus proche
+autour du pixel (profondeur, focale et position de la caméra) et applique la même
+formule que les matériaux (couche de nuages du bureau, `officeFogLayer`, plus le
+brouillard de distance ; brouillard linéaire au purgatoire). Une tige qui monte
+dans les nuages n'y laisse donc plus de trait noir.
 Les contours ajoutent une passe plein écran et un rendu multi-échantillonné : la
 mesure des images par seconde reste à faire sur des machines réelles.
 
@@ -48,7 +54,8 @@ Contrôles : `test-tracer-contrast.mjs`, `test-instanced-tracers.mjs`.
 ## Brouillard spatial et plafond
 
 Le brouillard de distance blanc est léger (densité 0,018). La couche de nuages
-commence à **2,2125 m** ; le plafond de vol est à **3,95 m**
+commence à **2,2125 m** (`OFFICE_FOG_START`) et s'épaissit jusqu'au haut des murs,
+**2,7 m** (`OFFICE_CLOUD_TOP`, hauteur des murs du pack de bureau) ; le plafond de vol est à **3,95 m**
 (`LAYOUT_BOUNDS.ceiling`, `src/layout.ts`, partagé par l'avion local et le Hind). La densité
 croît avec la hauteur et les matériaux calculent l'épaisseur traversée par chaque
 rayon : regarder vers le haut depuis le sol révèle la couche. Un voile blanc

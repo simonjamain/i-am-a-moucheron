@@ -5,9 +5,21 @@
 import { ACTOR_UNIT, MAP } from './scale.ts';
 import type { Collider } from './oriented-collider.ts';
 import type { Vec2, Vec3 } from './types.ts';
+import {
+  FACE,
+  modelTop,
+  propColliders,
+  propFootprint,
+  type Facing,
+  type OfficeModel,
+  type Prop,
+} from './office-props.ts';
 
 export const FLOOR_Y = 0.00005;
-export const LAYOUT_ROOM = Object.freeze({ x: 4.2, z: 3.6, wall: 3 });
+/** Height of the office pack's walls (one 1.2 m module is 2.7 m high). */
+export const WALL_HEIGHT = 2.7;
+/** Inner faces of the walls: x = ±x, z = −z (the room has no front wall). */
+export const LAYOUT_ROOM = Object.freeze({ x: 4.2, z: 3.6, wall: WALL_HEIGHT });
 export const LAYOUT_BOUNDS = Object.freeze({ x: 4.15, z: 3.55, ceiling: 3.95 });
 /** Size and look of one furniture kind. */
 export interface FurnitureKindSpec {
@@ -39,6 +51,84 @@ export interface Furniture {
   w: number;
   d: number;
   label: string;
+  /** Footprint of a model (drawn and collided as a prop, not as a box). */
+  prop?: true;
+}
+/** A model placed by a layout; `kind` and `label` list it as furniture (thumbnail). */
+export interface PropSpec extends Prop {
+  kind?: FurnitureKind;
+  label?: string;
+}
+/**
+ * Places a model of the office pack at (x, z), its front turned toward `facing`
+ * (or by a yaw in radians), optionally raised to `y` (on a desk, on a wall).
+ */
+export const put = (
+  model: OfficeModel,
+  x: number,
+  z: number,
+  facing: Facing | number = 'east',
+  extra: { y?: number; kind?: FurnitureKind; label?: string } = {},
+): PropSpec => ({
+  model,
+  x,
+  y: extra.y ?? 0,
+  z,
+  yaw: typeof facing === 'number' ? facing : FACE[facing],
+  ...(extra.kind ? { kind: extra.kind, label: extra.label ?? '' } : {}),
+});
+/** Height of a desk top (Desk, Desk_L, Meeting_Table, Break_Table). */
+export const DESK_TOP = 0.74;
+/** Top of an archive box (File_Box), where another one is stacked. */
+const BOX_TOP = modelTop('File_Box');
+/**
+ * Places a model relative to another prop (a desk): `u` along its front (+X),
+ * `v` along its width (+Z), `turn` added to its yaw; on its top when `top` is set.
+ */
+export function onProp(
+  base: Prop,
+  model: OfficeModel,
+  u: number,
+  v: number,
+  turn = 0,
+  top: number | null = DESK_TOP,
+): PropSpec {
+  const c = Math.cos(base.yaw),
+    s = Math.sin(base.yaw);
+  return {
+    model,
+    x: base.x + c * u + s * v,
+    y: base.y + (top ?? 0),
+    z: base.z - s * u + c * v,
+    yaw: base.yaw + turn,
+  };
+}
+/** Same as onProp, on the floor next to the prop (chairs, towers, bins). */
+export const besideProp = (base: Prop, model: OfficeModel, u: number, v: number, turn = 0) =>
+  onProp(base, model, u, v, turn, null);
+/** Wall-mounted model: its back on the inner face of a wall, `y` above the floor. */
+export function onWall(
+  model: OfficeModel,
+  wall: 'left' | 'right' | 'back',
+  at: number,
+  y: number,
+  off = 0,
+): PropSpec {
+  const { x: X, z: Z } = LAYOUT_ROOM;
+  if (wall === 'back') return put(model, at, -Z + off, 'south', { y });
+  return wall === 'left'
+    ? put(model, -X + off, at, 'east', { y })
+    : put(model, X - off, at, 'west', { y });
+}
+/** Height of the hanging point of ceiling fans: blades just below 2 m. */
+export const FAN_TOP = 2.34;
+/** Model hanging from a rod that rises into the clouds (see office-props.ts). */
+export const hanging = (model: OfficeModel, x: number, z: number, top = FAN_TOP): PropSpec =>
+  put(model, x, z, 'east', { y: top });
+/** Wall holding the door, and the centre of its module along that wall. */
+export interface DoorSpec {
+  wall: 'left' | 'right' | 'back';
+  at: number;
 }
 const furn = (
   kind: FurnitureKind,
@@ -73,7 +163,12 @@ interface LayoutSpec {
   ground: Vec2[];
   air: Vec3[];
   airPaths: AirPathPoint[][];
-  furniture: Furniture[];
+  /** Plain coloured volumes (blocking-out); models go in `props`. */
+  furniture?: Furniture[];
+  props?: PropSpec[];
+  door?: DoorSpec;
+  /** Back-wall modules (0 = left) that are windows; default: every module without a vent. */
+  windows?: number[];
   hidden?: Vec2[];
   passages?: Vec2[];
 }
@@ -101,7 +196,12 @@ export interface OfficeLayout {
   base: LayoutBase;
   portals: { ground: Vec3[]; air: Vec3[] };
   airRoutes: Vec3[][];
+  /** Volumes listed on the thumbnail: blocking-out boxes and props with a kind. */
   furniture: Furniture[];
+  /** Every drawn model: room shell, vents, bin and the layout's own props. */
+  props: Prop[];
+  /** Colliders of the room shell (wall bodies and skirting boards). */
+  shellSolids: Collider[];
   hidden: Vec2[];
   passages: Vec2[];
 }
@@ -151,6 +251,127 @@ function airCourse(
     [bin.x, rim, bin.z],
   ];
 }
+const propOf = ({ model, x, y, z, yaw }: PropSpec): Prop => ({ model, x, y, z, yaw });
+function asFurniture(p: PropSpec): Furniture {
+  const f = propFootprint(p);
+  const w = f.max.x - f.min.x,
+    d = f.max.z - f.min.z;
+  return {
+    kind: p.kind!,
+    x: f.min.x + w / 2,
+    z: f.min.z + d / 2,
+    w,
+    d,
+    label: p.label ?? '',
+    prop: true,
+  };
+}
+
+// ---- room shell: wall modules of the office pack ----------------------------
+// Each wall is a row of 1.2 m modules whose body face is exactly on the room
+// boundary (x = ±4.2, z = −3.6). The pack's walls are 0.112 m thick with a
+// 0.017 m skirting board (0.1 m high) on each side. Back-wall modules without a
+// vent are windows, one module holds the closed office door, vents are flush on
+// the wall face, centred on their air entry.
+const WALL_BODY = 0.056,
+  SKIRTING = 0.017,
+  SKIRTING_H = 0.1,
+  MODULE = 1.2,
+  VENT_H = 0.3;
+const box = (x0: number, y0: number, z0: number, x1: number, y1: number, z1: number): Collider => ({
+  min: { x: x0, y: y0, z: z0 },
+  max: { x: x1, y: y1, z: z1 },
+});
+function roomShell(
+  air: readonly Vec3[],
+  door?: DoorSpec,
+  windows?: readonly number[],
+): { props: Prop[]; solids: Collider[] } {
+  const { x: X, z: Z } = LAYOUT_ROOM;
+  const props: Prop[] = [];
+  const near = (a: number, b: number) => Math.abs(a - b) < MODULE / 2 + 0.3;
+  const vents = air.map(([x, y, z]) => ({
+    wall: Math.abs(x) > X - 0.2 ? (x < 0 ? 'left' : 'right') : 'back',
+    x,
+    y,
+    z,
+  }));
+  const module = (wall: DoorSpec['wall'], at: number): OfficeModel => {
+    if (door && door.wall === wall && Math.abs(door.at - at) < 0.01) return 'Wall_Door';
+    const along = (v: (typeof vents)[number]) => (wall === 'back' ? v.x : v.z);
+    if (wall === 'back' && !vents.some((v) => v.wall === 'back' && near(along(v), at))) {
+      const index = Math.round((at + X - MODULE / 2) / MODULE);
+      if (!windows || windows.includes(index)) return 'Wall_Window';
+    }
+    return 'Wall';
+  };
+  for (let i = 0; i < 7; i++) {
+    const at = -X + MODULE / 2 + i * MODULE;
+    props.push({
+      model: module('back', at),
+      x: at,
+      y: 0,
+      z: -Z - WALL_BODY,
+      yaw: FACE.south,
+      ghost: true,
+    });
+  }
+  for (let i = 0; i < 6; i++) {
+    const at = -Z + MODULE / 2 + i * MODULE;
+    props.push({
+      model: module('left', at),
+      x: -X - WALL_BODY,
+      y: 0,
+      z: at,
+      yaw: FACE.east,
+      ghost: true,
+    });
+    props.push({
+      model: module('right', at),
+      x: X + WALL_BODY,
+      y: 0,
+      z: at,
+      yaw: FACE.west,
+      ghost: true,
+    });
+  }
+  for (const sx of [-1, 1])
+    props.push({
+      model: 'Wall_Corner',
+      x: sx * (X + WALL_BODY),
+      y: 0,
+      z: -Z - WALL_BODY,
+      yaw: 0,
+      ghost: true,
+    });
+  if (door) {
+    const doorProp: Prop =
+      door.wall === 'back'
+        ? { model: 'Office_Door', x: door.at, y: 0, z: -Z - WALL_BODY, yaw: FACE.south }
+        : door.wall === 'left'
+          ? { model: 'Office_Door', x: -X - WALL_BODY, y: 0, z: door.at, yaw: FACE.east }
+          : { model: 'Office_Door', x: X + WALL_BODY, y: 0, z: door.at, yaw: FACE.west };
+    props.push(doorProp);
+  }
+  for (const v of vents) {
+    const y = v.y - VENT_H / 2;
+    if (v.wall === 'back') props.push({ model: 'Wall_Vent', x: v.x, y, z: -Z, yaw: FACE.south });
+    else if (v.wall === 'left')
+      props.push({ model: 'Wall_Vent', x: -X, y, z: v.z, yaw: FACE.east });
+    else props.push({ model: 'Wall_Vent', x: X, y, z: v.z, yaw: FACE.west });
+  }
+  const T = 2 * WALL_BODY,
+    H = WALL_HEIGHT;
+  const solids = [
+    box(-X - T, 0, -Z - T, X + T, H, -Z),
+    box(-X - T, 0, -Z, -X, H, Z),
+    box(X, 0, -Z, X + T, H, Z),
+    box(-X, 0, -Z, X, SKIRTING_H, -Z + SKIRTING),
+    box(-X, 0, -Z + SKIRTING, -X + SKIRTING, SKIRTING_H, Z),
+    box(X - SKIRTING, 0, -Z + SKIRTING, X, SKIRTING_H, Z),
+  ];
+  return { props, solids };
+}
 const LAYOUT_GROUND_Y = 0.0007;
 const groundAt = (x: number, z: number): Vec3 => [x, LAYOUT_GROUND_Y, z];
 
@@ -160,6 +381,8 @@ function buildLayout(spec: LayoutSpec): Readonly<OfficeLayout> {
   const u = ACTOR_UNIT;
   const originX = spec.spawn[0],
     originZ = spec.spawn[1];
+  const shell = roomShell(spec.air, spec.door, spec.windows);
+  const binProp: Prop = { model: 'Trash_Bin', x: bin.x, y: bin.y, z: bin.z, yaw: 0 };
   const out: OfficeLayout = {
     id: spec.id,
     name: spec.name,
@@ -186,12 +409,182 @@ function buildLayout(spec: LayoutSpec): Readonly<OfficeLayout> {
     airRoutes: spec.air.map((entry, i) =>
       airCourse(entry, spec.airPaths[i], rim, bin, spec.circuit, i),
     ),
-    furniture: spec.furniture,
+    furniture: [
+      ...(spec.furniture || []),
+      ...(spec.props || []).filter((p) => p.kind).map(asFurniture),
+    ],
+    props: [...shell.props, binProp, ...(spec.props || []).map(propOf)],
+    shellSolids: shell.solids,
     hidden: spec.hidden || [],
     passages: spec.passages || [],
   };
   return Object.freeze(out);
 }
+
+/**
+ * A workstation: the desk, its screen, keyboard and mouse, the chair pulled up to
+ * it (turned by `chairTurn`), then any `extras` (placed with onProp/besideProp).
+ */
+function station(
+  desk: PropSpec,
+  screen: OfficeModel,
+  side: number,
+  chair: OfficeModel,
+  chairTurn = 0,
+  extras: (d: PropSpec) => PropSpec[] = () => [],
+): PropSpec[] {
+  return [
+    desk,
+    onProp(desk, screen, -0.03, side),
+    onProp(desk, 'Keyboard', 0.2, side),
+    onProp(desk, 'Mouse', 0.22, side - 0.3),
+    besideProp(desk, chair, 0.62 + 0.3 * Math.abs(chairTurn), side, Math.PI + chairTurn),
+    ...extras(desk),
+  ];
+}
+type StationChoice = [OfficeModel, OfficeModel, (d: PropSpec) => PropSpec[]];
+/** Two desks back to back around (x, z), their length along X. */
+function island(
+  x: number,
+  z: number,
+  label: string,
+  south: StationChoice,
+  north: StationChoice,
+): PropSpec[] {
+  const a = put('Desk', x, z + 0.379, 'south', { kind: 'desk', label });
+  const b = put('Desk', x, z - 0.379, 'north', { kind: 'desk', label });
+  return [
+    ...station(a, south[0], 0.12, south[1], 0, south[2]),
+    ...station(b, north[0], -0.1, north[1], 0.3, north[2]),
+  ];
+}
+/** A run of pack walls inside the room, along Z at `x`, from z0 (module lengths). */
+function partition(x: number, z0: number, modules: (1.2 | 0.6)[]): PropSpec[] {
+  const out: PropSpec[] = [];
+  let z = z0;
+  for (const m of modules) {
+    out.push(put(m === 1.2 ? 'Wall' : 'Wall_Half', x, z + m / 2, 'east', { kind: 'wall' }));
+    z += m;
+  }
+  return out;
+}
+
+// ---- Diagonale: a complete accounting office, every object placed by hand --
+// Desks face their chair (+X of the model): pairs back to back on each island.
+const DIAGONALE_PROPS: PropSpec[] = (() => {
+  const P: PropSpec[] = [];
+  const add = (...items: PropSpec[]) => (P.push(...items), items[0]);
+  // Island A (front left) and island B (front right of the window), back to back.
+  const a1 = add(put('Desk', -1.9, 1.679, 'south', { kind: 'desk', label: 'Bureau A' }));
+  const a2 = add(put('Desk', -1.9, 0.921, 'north', { kind: 'desk', label: 'Bureau A' }));
+  const b1 = add(put('Desk', 0.8, 1.679, 'south', { kind: 'desk', label: 'Bureau B' }));
+  const b2 = add(put('Desk', 0.8, 0.921, 'north', { kind: 'desk', label: 'Bureau B' }));
+  add(
+    // A1: tidy, the lamp still on.
+    onProp(a1, 'CRT_Monitor', -0.03, 0.12),
+    onProp(a1, 'Keyboard', 0.2, 0.12),
+    onProp(a1, 'Mouse', 0.22, -0.2, 0.2),
+    onProp(a1, 'Desk_Lamp', -0.25, -0.62, Math.PI),
+    onProp(a1, 'Mug', 0.12, 0.55, 0.9),
+    onProp(a1, 'Paper_Stack', 0.15, -0.5, 0.15),
+    besideProp(a1, 'Office_Chair_Blue', 0.62, 0.1, Math.PI),
+    // A2: the blue screen, papers everywhere.
+    onProp(a2, 'CRT_Monitor_BSOD', -0.03, -0.1),
+    onProp(a2, 'Keyboard', 0.22, -0.1, 0.12),
+    onProp(a2, 'Mouse', 0.2, 0.2),
+    onProp(a2, 'Paper_Stack_Tall', 0.1, 0.55, 0.3),
+    onProp(a2, 'Pen_Cup', -0.2, -0.55),
+    onProp(a2, 'Desk_Phone', -0.2, 0.24, -0.4),
+    onProp(a2, 'Mug_Dark', 0.28, -0.52),
+    besideProp(a2, 'Office_Chair_Grey', 0.86, -0.25, Math.PI + 0.45),
+    besideProp(a2, 'Paper_Crumpled', 0.55, 0.55),
+    // B1: calendar and cactus, the tower under the desk.
+    onProp(b1, 'CRT_Monitor', -0.03, -0.1),
+    onProp(b1, 'Keyboard', 0.2, -0.1),
+    onProp(b1, 'Mouse', 0.22, 0.2),
+    onProp(b1, 'Folder_Stack', 0.05, 0.48, 0.3),
+    onProp(b1, 'Desk_Calendar', -0.25, 0.62, 0.4),
+    onProp(b1, 'Plant_Cactus', -0.22, -0.55),
+    onProp(b1, 'Mug_Red', 0.25, -0.45, 2),
+    besideProp(b1, 'Computer_Tower', -0.05, 0.5, 0),
+    besideProp(b1, 'Office_Chair_Blue', 0.68, -0.05, Math.PI - 0.25),
+    // B2: the fan and the paper tower.
+    onProp(b2, 'CRT_Monitor_Off', -0.03, 0.15),
+    onProp(b2, 'Keyboard', 0.2, 0.15),
+    onProp(b2, 'Desk_Fan', -0.2, -0.6, 0.2),
+    onProp(b2, 'Paper_Stack_Tall', 0.12, -0.25, -0.2),
+    onProp(b2, 'Stapler', 0.3, -0.58, 0.7),
+    onProp(b2, 'Mug_Yellow', 0.27, 0.55),
+    onProp(b2, 'Pencil', 0.25, 0.42, 0.5),
+    besideProp(b2, 'Office_Chair_Grey', 0.64, 0.15, Math.PI),
+    besideProp(b2, 'Paper_Crumpled_Yellow', 0.85, -0.6),
+  );
+  // Archives along the back wall, the corridor behind them kept for the walkers.
+  for (const x of [-3.1, -2.3, -1.5])
+    add(
+      put('Bookshelf', x, -2.75, 'south', { kind: 'shelf', label: x === -2.3 ? 'Archives' : '' }),
+    );
+  add(
+    put('File_Box', -3.45, -2.35, 0.2),
+    put('File_Box', -3.45, -2.35, 0.05, { y: BOX_TOP }),
+    put('File_Box_Empty', -2.85, -2.22, -0.3),
+    put('Paper_Crumpled_Sheet', -2.2, -2.25, 1.1),
+    put('Plant_Snake_Large', -3.86, -3.25, 0.2, { kind: 'plant' }),
+    put('Water_Cooler', -3.96, -1.4, 'east', { kind: 'fountain' }),
+    put('Filing_Cabinet', -3.85, 1.05, 'east', { kind: 'shelf' }),
+  );
+  // Whiteboard and low screen in the middle; the kitchen against the back wall.
+  add(
+    put('Whiteboard', -0.5, -1.75, 'south', { kind: 'paravent' }),
+    put('Cubicle_Panel_Half', 0.32, -1.4, 'east', { kind: 'cloison' }),
+    // Coffee corner on the left wall, the vending machine against the screen.
+    put('Kitchen_Counter', -3.87, 2.4, 'east', { kind: 'box', label: 'Cuisine' }),
+    put('Coffee_Maker', -4.03, 2.0, 'east', { y: 0.9 }),
+    put('Microwave', -3.98, 2.6, 'east', { y: 0.9 }),
+    put('Mug', -3.75, 2.2, 2.5, { y: 0.9 }),
+    put('Water_Bottle', -3.72, 2.88, 0, { y: 0.9 }),
+    put('Vending_Machine', 3.75, 2.98, 'west', { kind: 'box', label: 'Distributeur' }),
+    put('Visitor_Chair_Grey', 1.62, 2.4, 'east'),
+    put('Cubicle_Panel', 1.5, -1.65, 'south', { kind: 'cloison' }),
+  );
+  // Right: photocopier, cardboard boxes, the corridor from the door.
+  add(
+    put('Photocopier', 3.8, -0.4, 'west', { kind: 'copier', label: 'Photoc.' }),
+    put('Paper_Tray', 3.15, -0.9, 0.3),
+    put('File_Box', 2.2, 0.2, 0, { kind: 'box', label: 'Cartons' }),
+    put('File_Box', 2.62, 0.18, 0.1, { kind: 'box' }),
+    put('File_Box', 2.4, 0.2, -0.15, { y: BOX_TOP }),
+    put('File_Box_Empty', 2.45, 0.62, 0.5),
+    put('Cubicle_Panel', 3.4, 0.6, 'east', { kind: 'cloison' }),
+    put('Cubicle_Panel_Half', 3.4, 1.5, 'east', { kind: 'cloison' }),
+    put('Coat_Rack', 3.92, 0.45),
+  );
+  // Waiting corner, front right; crumpled papers around the bin (missed shots).
+  add(
+    put('Sofa_Grey', 2.45, 3.15, 'north', { kind: 'box', label: 'Attente' }),
+    put('Coffee_Table', 2.45, 2.4, 'north'),
+    put('Paper_Stack_Small', 2.3, 2.45, 0.4, { y: 0.42 }),
+    put('Plant_Tall', 1.3, 3.25, 0.3, { kind: 'plant' }),
+    put('Paper_Crumpled', 3.15, -2.85),
+    put('Paper_Crumpled_Pile', 3.95, -2.55, 0.7),
+    put('Paper_Crumpled', 3.3, -3.35, 1),
+    put('Paper_Crumpled_Yellow', 3.85, -3.4),
+  );
+  // On the walls.
+  add(
+    onWall('Wall_Clock', 'back', 0, 1.95),
+    onWall('Corkboard', 'left', -0.9, 0.95),
+    onWall('Wall_Calendar', 'left', 1.05, 1.55, 0.01),
+    onWall('Wall_Outlet', 'left', 2.95, 1.0),
+    onWall('Wall_Outlet', 'back', 0.35, 0.25),
+    onWall('Fire_Extinguisher', 'right', 1.05, 0.75),
+    onWall('Light_Switch', 'right', 2.5, 1.05),
+  );
+  // Two lit ceiling fans hanging below the clouds, inside the enemies' ring and
+  // clear of their dives: obstacles for pilots, light for the islands.
+  add(hanging('Ceiling_Fan', -0.7, 1.1), hanging('Ceiling_Fan', -0.85, -0.95));
+  return P;
+})();
 
 export const LAYOUTS = Object.freeze([
   buildLayout({
@@ -224,7 +617,7 @@ export const LAYOUTS = Object.freeze([
       [
         [-3.0, -1.2],
         [-1.5, -0.2],
-        [0, 0.6],
+        [0.1, 0.35],
         [1.8, 0.3],
         [3.0, -1.0],
         [3.5, -2.8],
@@ -239,25 +632,15 @@ export const LAYOUTS = Object.freeze([
       [
         [3.3, 1.8],
         [2.2, 0.8],
-        [0.5, 1.0],
+        [0.6, 0.7],
         [-0.6, -0.2],
         [1.6, -1.6],
         [3.5, -2.9],
       ],
     ],
-    furniture: [
-      furn('desk', -1.9, 1.3, 2.2, 1.1, 'Bureau A'),
-      furn('desk', 0.8, 1.3, 2.2, 1.1, 'Bureau B'),
-      furn('shelf', -2.3, -2.9, 2.0, 0.4, 'Archives'),
-      furn('paravent', -0.4, -1.7, 1.2, 0.1),
-      furn('paravent', 0.15, -1.3, 0.1, 0.8),
-      furn('cloison', 1.5, -1.65, 1.1, 0.1),
-      furn('cloison', 3.4, 1.0, 0.12, 2.0),
-      furn('box', 2.4, 0.2, 0.8, 0.6, 'Cartons'),
-      furn('copier', 3.75, -0.4, 0.7, 0.5, 'Photoc.'),
-      furn('fountain', -3.9, -1.4, 0.4, 0.4),
-      furn('plant', -3.8, -3.2, 0.4, 0.4),
-    ],
+    props: DIAGONALE_PROPS,
+    door: { wall: 'right', at: 1.8 },
+    windows: [0, 1, 2, 4, 5, 6],
     hidden: [
       [0.2, -2.4],
       [2.0, -2.4],
@@ -313,18 +696,60 @@ export const LAYOUTS = Object.freeze([
         [0.2, -0.3],
       ],
     ],
-    furniture: [
-      furn('desk', -2.3, 1.7, 1.8, 0.9, 'Îlot 1'),
-      furn('desk', 2.3, 1.7, 1.8, 0.9, 'Îlot 2'),
-      furn('desk', -2.3, -1.7, 1.8, 0.9, 'Îlot 3'),
-      furn('desk', 2.3, -1.7, 1.8, 0.9, 'Îlot 4'),
-      furn('cloison', 0, -1.2, 1.2, 0.1),
-      furn('cloison', 0, 1.2, 1.2, 0.1),
-      furn('cloison', -1.2, 0, 0.1, 1.2),
-      furn('cloison', 1.2, 0, 0.1, 1.2),
-      furn('copier', -0.5, 3.2, 0.7, 0.5, 'Photoc.'),
-      furn('plant', 3.9, -0.9, 0.4, 0.4),
-      furn('box', -3.4, 0.1, 0.6, 0.6, 'Cartons'),
+    door: { wall: 'right', at: -1.8 },
+    props: [
+      ...island(
+        -2.3,
+        1.7,
+        'Îlot 1',
+        [
+          'CRT_Monitor',
+          'Office_Chair_Blue',
+          (d) => [onProp(d, 'Mug', 0.15, 0.55), onProp(d, 'Desk_Lamp', -0.18, -0.5)],
+        ],
+        ['CRT_Monitor_Off', 'Office_Chair_Grey', (d) => [onProp(d, 'Paper_Stack', 0.05, 0.4)]],
+      ),
+      ...island(
+        2.3,
+        1.7,
+        'Îlot 2',
+        ['CRT_Monitor', 'Office_Chair_Grey', (d) => [onProp(d, 'Desk_Phone', -0.12, -0.45)]],
+        [
+          'CRT_Monitor_BSOD',
+          'Office_Chair_Blue',
+          (d) => [onProp(d, 'Paper_Stack_Tall', 0.1, 0.5, 0.3)],
+        ],
+      ),
+      ...island(
+        -2.3,
+        -1.7,
+        'Îlot 3',
+        ['CRT_Monitor', 'Office_Chair_Blue', (d) => [onProp(d, 'Plant_Cactus', -0.2, -0.5)]],
+        ['CRT_Monitor', 'Office_Chair_Grey', (d) => [onProp(d, 'Mug_Red', 0.25, 0.5)]],
+      ),
+      ...island(
+        2.3,
+        -1.7,
+        'Îlot 4',
+        [
+          'CRT_Monitor_Off',
+          'Office_Chair_Grey',
+          (d) => [onProp(d, 'Paper_Stack_Tall', 0.05, -0.45)],
+        ],
+        ['CRT_Monitor', 'Office_Chair_Blue', (d) => [onProp(d, 'Desk_Fan', -0.18, 0.5)]],
+      ),
+      put('Cubicle_Panel', 0, -1.2, 'south', { kind: 'cloison' }),
+      put('Cubicle_Panel', 0, 1.2, 'north', { kind: 'cloison' }),
+      put('Cubicle_Panel', -1.2, 0, 'east', { kind: 'cloison' }),
+      put('Cubicle_Panel', 1.2, 0, 'west', { kind: 'cloison' }),
+      put('Photocopier', -0.5, 3.2, 'north', { kind: 'copier', label: 'Photoc.' }),
+      put('Plant_Tall', 3.9, -0.9, 0.4, { kind: 'plant' }),
+      put('File_Box', -3.4, 0.0, 0.1, { kind: 'box', label: 'Cartons' }),
+      put('File_Box', -3.4, 0.38, -0.1, { kind: 'box' }),
+      put('File_Box_Empty', -3.4, 0.19, 0.2, { y: BOX_TOP }),
+      put('Paper_Crumpled', 0.35, 0.25),
+      put('Paper_Crumpled_Yellow', -0.3, -0.35),
+      onWall('Wall_Clock', 'left', 1.2, 1.7),
     ],
     passages: [
       [0.9, -0.9],
@@ -386,15 +811,34 @@ export const LAYOUTS = Object.freeze([
         [3.4, -2.7],
       ],
     ],
-    furniture: [
-      furn('wall', 0.2, -2.0, 0.15, 3.2),
-      furn('wall', 0.2, 2.2, 0.15, 2.8),
-      furn('desk', -2.4, 1.5, 2.0, 1.0, 'Bureau A'),
-      furn('desk', -2.4, -1.9, 2.0, 1.0, 'Bureau B'),
-      furn('paravent', 1.3, 0.2, 0.1, 1.4),
-      furn('copier', 3.3, 0.9, 0.8, 0.5, 'Photoc.'),
-      furn('plant', 3.9, 2.9, 0.4, 0.4),
-      furn('box', -3.6, -0.2, 0.6, 0.6, 'Cartons'),
+    door: { wall: 'right', at: 1.8 },
+    props: [
+      // The full partition: two runs of pack walls, one opening in between.
+      ...partition(0.2, -3.6, [1.2, 1.2, 0.6]),
+      ...partition(0.2, 0.6, [0.6, 1.2, 1.2]),
+      ...station(
+        put('Desk', -2.4, 1.5, 'south', { kind: 'desk', label: 'Bureau A' }),
+        'CRT_Monitor',
+        0.1,
+        'Office_Chair_Blue',
+        0,
+        (d) => [onProp(d, 'Mug', 0.15, 0.55), onProp(d, 'Paper_Stack', 0.05, -0.45)],
+      ),
+      ...station(
+        put('Desk', -2.4, -1.9, 'north', { kind: 'desk', label: 'Bureau B' }),
+        'CRT_Monitor_BSOD',
+        -0.1,
+        'Office_Chair_Grey',
+        0.4,
+        (d) => [onProp(d, 'Desk_Lamp', -0.18, 0.5), onProp(d, 'Pen_Cup', -0.2, -0.55)],
+      ),
+      put('Whiteboard', 1.3, 0.2, 'east', { kind: 'paravent' }),
+      put('Photocopier', 3.3, 0.9, 'west', { kind: 'copier', label: 'Photoc.' }),
+      put('Plant_Tall', 3.85, 3.25, 0.5, { kind: 'plant' }),
+      put('File_Box', -3.6, -0.38, 0, { kind: 'box', label: 'Cartons' }),
+      put('File_Box', -3.6, -0.02, 0.1, { kind: 'box' }),
+      put('Paper_Crumpled_Pile', 3.95, -2.45, 0.4),
+      onWall('Wall_Clock', 'right', -0.6, 1.8),
     ],
     hidden: [
       [0.3, -3.5],
@@ -450,16 +894,36 @@ export const LAYOUTS = Object.freeze([
         [0.2, -2.7],
       ],
     ],
-    furniture: [
-      furn('desk', -2.6, -1.3, 2.0, 1.0, 'Bureau G'),
-      furn('desk', 2.6, -1.3, 2.0, 1.0, 'Bureau D'),
-      furn('paravent', 0, -1.7, 1.6, 0.1),
-      furn('cloison', -1.4, 1.4, 1.4, 0.1),
-      furn('cloison', 1.4, 1.4, 1.4, 0.1),
-      furn('plant', 3.9, -3.2, 0.4, 0.4),
-      furn('fountain', -3.9, -3.2, 0.4, 0.4),
-      furn('box', 3.2, 0.2, 0.8, 0.6, 'Cartons'),
-      furn('copier', -3.3, 0.2, 0.8, 0.5, 'Photoc.'),
+    door: { wall: 'back', at: -2.4 },
+    props: [
+      ...station(
+        put('Desk', -2.6, -1.3, 'south', { kind: 'desk', label: 'Bureau G' }),
+        'CRT_Monitor',
+        0.1,
+        'Office_Chair_Blue',
+        0,
+        (d) => [onProp(d, 'Desk_Phone', -0.12, -0.45), onProp(d, 'Mug_Yellow', 0.25, 0.55)],
+      ),
+      ...station(
+        put('Desk', 2.6, -1.3, 'south', { kind: 'desk', label: 'Bureau D' }),
+        'CRT_Monitor_Off',
+        -0.1,
+        'Office_Chair_Grey',
+        -0.3,
+        (d) => [onProp(d, 'Folder_Stack', 0.05, 0.45), onProp(d, 'Desk_Lamp_Red', -0.18, -0.5)],
+      ),
+      put('Cubicle_Panel', -0.3, -1.7, 'south', { kind: 'paravent' }),
+      put('Cubicle_Panel_Half', 0.6, -1.7, 'south', { kind: 'paravent' }),
+      put('Cubicle_Panel', -1.4, 1.4, 'south', { kind: 'cloison' }),
+      put('Cubicle_Panel', 1.4, 1.4, 'south', { kind: 'cloison' }),
+      put('Plant_Snake_Large', 3.84, -3.24, 0, { kind: 'plant' }),
+      put('Water_Cooler', -3.96, -3.2, 'east', { kind: 'fountain' }),
+      put('File_Box', 3.0, 0.2, 0, { kind: 'box', label: 'Cartons' }),
+      put('File_Box', 3.42, 0.2, 0.1, { kind: 'box' }),
+      put('File_Box', 3.2, 0.2, -0.1, { y: BOX_TOP }),
+      put('Photocopier', -3.3, 0.2, 'east', { kind: 'copier', label: 'Photoc.' }),
+      put('Paper_Crumpled', 0.4, -2.7),
+      onWall('Wall_Clock', 'left', -1.2, 1.8),
     ],
     hidden: [
       [-0.8, -2.9],
@@ -523,14 +987,36 @@ export const LAYOUTS = Object.freeze([
         [3.5, -3.0],
       ],
     ],
-    furniture: [
-      furn('shelf', -1.7, 2.4, 5.0, 0.35, 'Rayonnage 1'),
-      furn('shelf', 1.7, 0.6, 5.0, 0.35, 'Rayonnage 2'),
-      furn('shelf', -1.7, -1.2, 5.0, 0.35, 'Rayonnage 3'),
-      furn('box', -2.6, -2.6, 1.2, 0.8, 'Cartons'),
-      furn('plant', -3.8, -3.2, 0.4, 0.4),
-      furn('copier', -0.5, -3.25, 0.7, 0.5, 'Photoc.'),
-      furn('cloison', 2.2, -1.0, 0.1, 0.8),
+    door: { wall: 'right', at: -0.6 },
+    props: [
+      put('Bookshelf', -3.78, 2.4, 'south', { kind: 'shelf' }),
+      put('Bookshelf', -2.98, 2.4, 'south', { kind: 'shelf' }),
+      put('Bookshelf', -2.18, 2.4, 'south', { kind: 'shelf', label: 'Rayonnage 1' }),
+      put('Bookshelf', -1.38, 2.4, 'south', { kind: 'shelf' }),
+      put('Bookshelf', -0.58, 2.4, 'south', { kind: 'shelf' }),
+      put('Bookshelf', 0.22, 2.4, 'south', { kind: 'shelf' }),
+      put('Bookshelf', 3.78, 0.6, 'north', { kind: 'shelf' }),
+      put('Bookshelf', 2.98, 0.6, 'north', { kind: 'shelf' }),
+      put('Bookshelf', 2.18, 0.6, 'north', { kind: 'shelf', label: 'Rayonnage 2' }),
+      put('Bookshelf', 1.38, 0.6, 'north', { kind: 'shelf' }),
+      put('Bookshelf', 0.58, 0.6, 'north', { kind: 'shelf' }),
+      put('Bookshelf', -0.22, 0.6, 'north', { kind: 'shelf' }),
+      put('Bookshelf', -3.78, -1.2, 'south', { kind: 'shelf' }),
+      put('Bookshelf', -2.98, -1.2, 'south', { kind: 'shelf' }),
+      put('Bookshelf', -2.18, -1.2, 'south', { kind: 'shelf', label: 'Rayonnage 3' }),
+      put('Bookshelf', -1.38, -1.2, 'south', { kind: 'shelf' }),
+      put('Bookshelf', -0.58, -1.2, 'south', { kind: 'shelf' }),
+      put('Bookshelf', 0.22, -1.2, 'south', { kind: 'shelf' }),
+      put('File_Box', -3.0, -2.6, 0, { kind: 'box', label: 'Cartons' }),
+      put('File_Box', -2.5, -2.6, 0.1, { kind: 'box' }),
+      put('File_Box', -2.7, -2.22, -0.1, { kind: 'box' }),
+      put('File_Box_Empty', -2.7, -2.6, 0.2, { y: BOX_TOP }),
+      put('File_Box', -2.0, -2.95, 1.4, { kind: 'box' }),
+      put('Plant_Snake_Large', -3.86, -3.25, 0.2, { kind: 'plant' }),
+      put('Photocopier', -0.5, -3.25, 'south', { kind: 'copier', label: 'Photoc.' }),
+      put('Cubicle_Panel_Half', 2.2, -1.0, 'east', { kind: 'cloison' }),
+      put('Paper_Crumpled_Sheet', 0.8, -0.3, 0.6),
+      put('Paper_Crumpled', 3.2, -2.75),
     ],
     hidden: [
       [-4.1, -1.15],
@@ -548,10 +1034,10 @@ export const LAYOUTS = Object.freeze([
     id: 'bureau-direction',
     circuit: [0, 0, 2.9, 2.25],
     name: 'Corbeille sur le bureau',
-    summary: 'La corbeille est posée sur un bureau de direction ; le sol y monte par deux rampes.',
-    bin: { x: 3.5, y: 0.9, z: -2.75 },
+    summary: 'La corbeille est posée sur un bureau de direction ; le sol y monte par-dessous.',
+    bin: { x: 3.5, y: DESK_TOP, z: -2.75 },
     goal: [3.5, -2.75],
-    finish: [[3.5, 1.28, -2.75]],
+    finish: [[3.5, DESK_TOP + 0.38, -2.75]],
     spawn: [2.9, -1.1],
     ground: [
       [-4.11, 3.2],
@@ -594,21 +1080,37 @@ export const LAYOUTS = Object.freeze([
         [3.5, -2.7],
       ],
     ],
-    furniture: [
-      // Executive desk 1.2..4.2 × -3.3..-1.9: its skirt is solid except the
-      // two ramps, so insects reach it through the openings only.
-      furn('skirt', 1.55, -1.9, 0.7, 0.08),
-      furn('skirt', 3.3, -1.9, 1.8, 0.08),
-      furn('skirt', 1.2, -3.2, 0.08, 0.2),
-      furn('skirt', 1.2, -2.25, 0.08, 0.7),
-      furn('desk', 2.7, -2.6, 3.0, 1.4, 'Bureau de direction'),
-      furn('paravent', -1.4, -0.9, 1.2, 0.1),
-      furn('paravent', -0.85, -0.5, 0.1, 0.8),
-      furn('cloison', 0.5, 2.0, 1.4, 0.1),
-      furn('desk', -2.5, -2.7, 1.8, 0.9, 'Bureau'),
-      furn('plant', 3.9, 0.6, 0.4, 0.4),
-      furn('fountain', -3.9, -3.2, 0.4, 0.4),
-      furn('box', 0.0, -2.9, 0.8, 0.6, 'Cartons'),
+    door: { wall: 'right', at: 1.8 },
+    props: [
+      // Executive desk: two desks end to end; insects walk in under it from the
+      // front and climb into the bin standing on it.
+      put('Desk', 1.92, -2.75, 'south', { kind: 'desk', label: 'Bureau de direction' }),
+      put('Desk', 3.43, -2.75, 'south', { kind: 'desk', label: 'Bureau de direction' }),
+      put('CRT_Monitor', 1.92, -3.0, 'south', { y: DESK_TOP }),
+      put('Keyboard', 1.92, -2.55, 'south', { y: DESK_TOP }),
+      put('Banker_Lamp', 1.45, -2.95, 'south', { y: DESK_TOP }),
+      put('Desk_Phone', 2.35, -2.95, -1.2, { y: DESK_TOP }),
+      put('Paper_Stack', 2.85, -2.55, 0.4, { y: DESK_TOP }),
+      put('Executive_Chair_Black', 1.95, -1.9, 'north'),
+      put('Visitor_Chair_Grey', 3.0, -1.55, 1.3),
+      put('Paper_Crumpled', 3.1, -2.1),
+      put('Paper_Crumpled_Yellow', 3.9, -2.05),
+      put('Cubicle_Panel', -1.4, -0.9, 'south', { kind: 'paravent' }),
+      put('Cubicle_Panel_Half', -0.85, -0.45, 'east', { kind: 'paravent' }),
+      put('Cubicle_Panel', 0.5, 2.0, 'south', { kind: 'cloison' }),
+      ...station(
+        put('Desk', -2.5, -2.7, 'south', { kind: 'desk', label: 'Bureau' }),
+        'CRT_Monitor',
+        0.1,
+        'Office_Chair_Blue',
+        0.2,
+        (d) => [onProp(d, 'Paper_Stack', 0.05, -0.45), onProp(d, 'Mug', 0.15, 0.55)],
+      ),
+      put('Plant_Tall', 3.9, 0.6, 0.3, { kind: 'plant' }),
+      put('Water_Cooler', -3.96, -3.2, 'east', { kind: 'fountain' }),
+      put('File_Box', -0.2, -2.9, 0, { kind: 'box', label: 'Cartons' }),
+      put('File_Box', 0.22, -2.9, 0.1, { kind: 'box' }),
+      put('Filing_Cabinet', 3.85, -0.6, 'west', { kind: 'shelf' }),
     ],
     hidden: [
       [-1.9, -1.0],
@@ -659,6 +1161,10 @@ export interface LayoutPiece {
   solid: boolean;
   grid?: Vec3;
   radiusTop?: number;
+  /** False for colliders of models drawn elsewhere (office pack props). */
+  visible?: boolean;
+  /** Box of an office pack prop, replaced by its triangles where they are used. */
+  decor?: true;
 }
 const mkPiece = (
   shape: LayoutPiece['shape'],
@@ -701,6 +1207,43 @@ function deskPieces(it: Furniture, top: number): LayoutPiece[] {
   );
   return out;
 }
+const FLOOR_COLOR = '#8d8f7f';
+const colliderPiece = (c: Collider): LayoutPiece =>
+  mkPiece(
+    'box',
+    (c.min.x + c.max.x) / 2,
+    (c.min.y + c.max.y) / 2,
+    (c.min.z + c.max.z) / 2,
+    c.max.x - c.min.x,
+    c.max.y - c.min.y,
+    c.max.z - c.min.z,
+    '',
+  );
+const same = (a: number, b: number) => Math.abs(a - b) < 1e-4;
+// Merges boxes that share a whole face (same extent on the two other axes).
+function mergeTouching(list: Collider[]): Collider[] {
+  const out = list.map((c) => ({ min: { ...c.min }, max: { ...c.max } }));
+  const axes = ['x', 'y', 'z'] as const;
+  for (let merged = true; merged;) {
+    merged = false;
+    for (let i = 0; i < out.length && !merged; i++)
+      for (let j = i + 1; j < out.length && !merged; j++) {
+        const a = out[i],
+          b = out[j];
+        for (const k of axes) {
+          const others = axes.filter((o) => o !== k);
+          if (!others.every((o) => same(a.min[o], b.min[o]) && same(a.max[o], b.max[o]))) continue;
+          if (!same(a.max[k], b.min[k]) && !same(b.max[k], a.min[k])) continue;
+          a.min[k] = Math.min(a.min[k], b.min[k]);
+          a.max[k] = Math.max(a.max[k], b.max[k]);
+          out.splice(j, 1);
+          merged = true;
+          break;
+        }
+      }
+  }
+  return out;
+}
 const piecesCache = new Map<string, LayoutPiece[]>();
 // Primitives of one layout: room shell, furniture, bin. `solid` ones are the
 // colliders (axis-aligned boxes), exactly what the scene draws.
@@ -708,11 +1251,9 @@ export function layoutPieces(layout: Readonly<OfficeLayout> = activeLayoutValue)
   const hit = piecesCache.get(layout.id);
   if (hit) return hit;
   const P: LayoutPiece[] = [];
-  P.push(mkPiece('box', 0, -0.04, 0, 8.4, 0.08, 7.2, '#7b8675'));
-  P.push(mkPiece('box', 0, 1.5, -3.6, 8.4, 3, 0.08, '#b7c0ac'));
-  P.push(mkPiece('box', -4.2, 1.5, 0, 0.08, 3, 7.2, '#b4c6b7'));
-  P.push(mkPiece('box', 4.2, 1.5, 0, 0.08, 3, 7.2, '#adc0b1'));
+  P.push(mkPiece('box', 0, -0.04, 0, 8.4, 0.08, 7.2, FLOOR_COLOR));
   for (const it of layout.furniture) {
+    if (it.prop) continue;
     const k = FURNITURE_KINDS[it.kind];
     const solid = k.solid !== false;
     if (it.kind === 'desk') P.push(...deskPieces(it, k.h));
@@ -729,10 +1270,14 @@ export function layoutPieces(layout: Readonly<OfficeLayout> = activeLayoutValue)
       );
     } else P.push(mkPiece('box', it.x, k.h / 2, it.z, it.w, k.h, it.d, k.color, solid));
   }
-  const b = layout.bin;
-  P.push(
-    mkPiece('cyl', b.x, b.y + 0.15, b.z, 0.12, 0.3, 0.12, '#3c5748', true, { radiusTop: 0.16 }),
-  );
+  // Colliders of the models (walls, vents, bin, props): drawn by office.js.
+  // Touching boxes of a row (bookshelves, panels) become one: no seam to catch on.
+  // Boxes of the pack props are marked `decor`: their triangles stand for them
+  // where the decor's collision world is used (office-collision.ts).
+  for (const c of mergeTouching(layout.shellSolids))
+    P.push({ ...colliderPiece(c), visible: false });
+  for (const c of mergeTouching(layout.props.flatMap(propColliders)))
+    P.push({ ...colliderPiece(c), visible: false, decor: true });
   piecesCache.set(layout.id, P);
   return P;
 }
@@ -757,7 +1302,7 @@ export function layoutSolids(layout: Readonly<OfficeLayout> = activeLayoutValue)
       layout.id,
       (s = layoutPieces(layout)
         .filter((p) => p.solid)
-        .map(pieceBounds)),
+        .map((p) => (p.decor ? { ...pieceBounds(p), decor: true as const } : pieceBounds(p)))),
     );
   return s;
 }

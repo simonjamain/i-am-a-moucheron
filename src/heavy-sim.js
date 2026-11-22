@@ -14,7 +14,7 @@
 //   guidance(projectile)   missile direction, or null when not guided
 //   missileLost(projectile) true when the launching helicopter is gone
 import { MAP, enemySizeFactor, INSECT_SCALE, MIDGE_SPHERE_RADIUS } from './scale.ts';
-import { HEAVY, heavyDamage } from './armament.ts';
+import { AP_PIERCE_KEEP, HEAVY, heavyDamage } from './armament.ts';
 import { VEHICLES } from './fleet.ts';
 import { integrateOrdnance, segmentSphere, segmentBox } from './ordnance.js';
 import { sweptSphereMayTouch } from './swept-broadphase.ts';
@@ -91,12 +91,19 @@ export function stepHeavy(projectile, end, world) {
     for (const solid of nearbySolids) consider(segmentBox(a, b, solid), { solid: true });
     if (b[1] <= 0) consider(a[1] / Math.max(1e-12, a[1] - b[1]), { solid: true });
     const frames = world.frames(projectile.updated, projectile);
+    const crossings = [];
     for (let i = 0; i < frames.length; i++) {
       if (!frames[i] || world.killed(i)) continue;
       const radius = enemyRadius(world.roster[i]);
       // Cheap swept-AABB rejection before the exact segment/sphere calculation.
       if (!sweptSphereMayTouch(a, b, frames[i].p, radius)) continue;
-      consider(segmentSphere(a, b, frames[i].p, radius), { enemy: i });
+      const t = segmentSphere(a, b, frames[i].p, radius);
+      // The armour-piercing shell goes through enemies: it only notes them
+      // (once each, where they stood) and flies on until a wall or a vehicle.
+      if (projectile.weapon === 'ap') {
+        if (t !== null && t >= 0 && t <= 1 && !projectile.pierced?.[i])
+          crossings.push({ t, index: i, p: frames[i].p });
+      } else consider(t, { enemy: i });
     }
     for (const v of world.vehicles)
       if (v.id !== projectile.vehicle && v.state.hp > 0)
@@ -107,6 +114,22 @@ export function stepHeavy(projectile, end, world) {
       // A fixed gun's own crew stands behind the muzzle, never in its path.
       if (p.id !== projectile.shooter)
         consider(segmentSphere(a, b, p.p, MAP.metres(0.6)), { player: p.id });
+    // Each crossed enemy takes the shell's remaining damage on contact, then
+    // the shell keeps 80 % of it for the next one. Enemies behind the wall or
+    // vehicle that stops the shell in this step are not reached.
+    crossings
+      .sort((x, y) => x.t - y.t)
+      .forEach((c) => {
+        if (hit && c.t > hit.t) return;
+        projectile.pierced ??= {};
+        const count = Object.keys(projectile.pierced).length;
+        projectile.pierced[c.index] = c.p;
+        (projectile.fresh ??= []).push([
+          c.index,
+          HEAVY.ap.damage * (projectile.bonus ?? 1) * AP_PIERCE_KEEP ** count,
+          c.p,
+        ]);
+      });
     if (hit) {
       const point = a.map((v, i) => v + (b[i] - v) * hit.t);
       projectile.p = point;
@@ -245,7 +268,6 @@ export function heavyImpact(projectile, hit, frames, point, world) {
     report.enemies.push([index, amount, frames[index]?.p || null]);
   };
   if (weapon === 'ap') {
-    if (hit.enemy !== undefined) enemy(hit.enemy, profile.damage * projectile.bonus);
     if (hit.vehicle) report.vehicles.push([hit.vehicle, profile.damage * projectile.bonus]);
     if (hit.player) report.kills.push(hit.player);
     return report;

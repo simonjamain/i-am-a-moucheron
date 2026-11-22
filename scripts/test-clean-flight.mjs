@@ -382,6 +382,7 @@ const requests = [];
 const c = {
   addEventListener: (_, h) => (handler = h),
   $: () => ({ classList: { contains: () => true } }),
+  sheetOpen: () => false,
   spectating: false,
   joined: true,
   groundDefenseUI: { active: false },
@@ -455,8 +456,7 @@ class Element {
 }
 const root = new Element(),
   ss = { base: { epoch: 'test' }, upgrades: {}, equipment: [] };
-let submitted = 0,
-  archived = 0;
+let submitted = 0;
 const ui = new PurchaseUI({
   root,
   snapshot: () => ss,
@@ -466,9 +466,6 @@ const ui = new PurchaseUI({
     return ss;
   },
   accept() {},
-  archive() {
-    archived++;
-  },
   onOpen() {},
   onClose() {},
 });
@@ -476,6 +473,13 @@ ui.open('dca', { life: 'alive', incarnation: 0 });
 assert.equal(ui.price, 5);
 assert.match(root.querySelector('[data-bed-text]').textContent, /5 \$/);
 const e = { pointerId: 1, clientX: 10, clientY: 10, preventDefault() {} };
+// No motive is ticked by default: the signature stays locked until one is.
+ui.canvas.onpointerdown(e);
+ui.canvas.onpointerup({ ...e, clientX: 90 });
+await new Promise((r) => setImmediate(r));
+assert.equal(submitted, 0, 'no order without a ticked motive');
+assert.match(root.querySelector('[data-bed-status]').textContent, /Cochez un motif/);
+ui.clauses.toggle('defense');
 ui.canvas.onpointerdown(e);
 ui.canvas.onpointercancel();
 ui.canvas.onpointerup({ ...e, clientX: 90 });
@@ -484,7 +488,15 @@ ui.canvas.onpointerdown(e);
 ui.canvas.onpointerup({ ...e, clientX: 90 });
 await new Promise((r) => setImmediate(r));
 assert.equal(submitted, 1);
-assert.equal(archived, 1);
+// « Convenance personnelle » is really refused: no command, the document closes.
+ui.open('dca', { life: 'alive', incarnation: 0 });
+ui.clauses.toggle('comfort');
+assert.ok(ui.canSign(), 'the refused clause still counts as a ticked motive');
+ui.canvas.onpointerdown(e);
+ui.canvas.onpointerup({ ...e, clientX: 90 });
+await new Promise((r) => setImmediate(r));
+assert.equal(submitted, 1, 'a refused order sends nothing');
+assert.ok(!ui.opened && ui.invalidated, 'a refused order closes and must be started again');
 ss.balance = { prices: 2 };
 ui.open('radar', { life: 'alive', incarnation: 0 });
 assert.equal(
@@ -495,7 +507,7 @@ assert.equal(
 assert.match(root.querySelector('[data-bed-text]').textContent, /20 \$/);
 ui.close();
 console.log(
-  'Purchase UI: live price, actual pointer cancel and release, single signed command and ACK archive.',
+  'Purchase UI: live price, actual pointer cancel and release, single signed command after ACK.',
 );
 
 // Execute the actual six-gun volley AND bullet gate with exactly six rounds.
@@ -613,6 +625,7 @@ assert.equal(visualModels.size, 0);
 // keep set on exit/destruction rather than merely lowering its volume.
 const { diveIntensity } = await import('../src/combat.ts');
 let kept = new Set();
+const loops = [];
 const soundModels = new Map();
 const audioVehicles = Object.keys(VEHICLES).map((type) => ({
   id: type,
@@ -641,9 +654,15 @@ const audioContext = {
     scene: 'flight',
     setScene() {},
     listener() {},
-    loop() {},
+    loop: (key, kind) => loops.push([key, kind]),
     play() {},
     keep: (s) => (kept = new Set(s)),
+  },
+  // One firing Gatling: a single continuous voice, never a sound per round.
+  groundDefenseUI: {
+    gatlingSounds: () => [
+      { key: 'gatling-1', position: { x: 0, y: 0, z: 0 }, rate: 1, level: 1, distance: 0 },
+    ],
   },
   snap: { vehicles: audioVehicles, phase: 'prep', next_wave_at: 0, fan: false },
   clockOffset: 0,
@@ -663,6 +682,8 @@ vm.runInContext(
   audioContext,
 );
 vm.runInContext('updateAudio()', audioContext);
+assert.ok(kept.has('gatling-1'), 'the firing Gatling keeps its continuous loop');
+assert.ok(loops.some(([key, kind]) => key === 'gatling-1' && kind === 'gatling'));
 assert.deepEqual(
   [...kept].filter((k) => k.startsWith('dive-')),
   ['dive-interceptor'],

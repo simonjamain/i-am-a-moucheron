@@ -71,8 +71,7 @@ Touches physiques Digit1–Digit7 ou panneau « Postes » : même contrat pour c
 échange. Espace au sol maintient un jet ; en chute, il garde le parachute. Le destinataire signe pour accepter ou utilise « Refuser l’échange ».
 Les commandes de mêlée et de KO sont retirées.
 
-Les formulaires proposent « Déchirer ce document ». Un document obligatoire est
-remplacé, sans annuler les signatures précédentes. Aucun contrat ne modifie les
+Les documents ne se déchirent plus. Aucun contrat ne modifie les
 commandes (annexes malicieuses retirées en version 264). Voir
 [logistique et contrats](logistics-contracts.md).
 
@@ -88,20 +87,21 @@ HE, Ctrl AP. Au tireur principal, clic gauche tire le canon et Espace la coaxial
 de la lunette vont de 15 cm à 9 m du bureau (l'autre bout de la pièce), échantillonnées sur la trajectoire réelle de l'obus choisi (HE/AP,
 même intégration que le serveur) ; obus HE 13 s et AP 8 s de vol maximal. Aux pilotes,
 clic gauche tire la MG et Espace maintenu largue les bombes disponibles toutes les
-0,5 s. B est supprimé. Les autres mitrailleurs et DCA gardent clic/Espace pour tirer. E signe depuis
-le cercle du poste approché ; la liste des postes n’est plus nécessaire à pied.
+0,5 s. B est supprimé. Les autres mitrailleurs et DCA gardent clic/Espace pour tirer. À pied, sans
+cercle au sol, clic gauche ou E sur le poste visé (au centre de l’écran, ou sous le curseur
+libéré) ouvre son dossier : poste d’un engin, DCA fixe, canon anti-matériel ou lit.
 Les mutations à bord restent dans le menu des postes. Voir [référence du lot](vehicles-bank.md).
 
 Le banquier s’ouvre avec **N** ou le bouton Banquier, depuis tous les postes et
-mondes. Signer dans son cadre puis relâcher dépose le contrat ; remboursement
-anticipé également signé. Échap ferme. La souris est libérée et les commandes
+mondes (sa « ligne directe »). Cocher une offre, puis l’objet du prêt, puis signer et
+relâcher dépose le contrat. Échap ferme. La souris est libérée et les commandes
 neutralisées pendant la consultation ; la partie continue. Les rails contextuels
 s’ouvrent au réglage/événement et au survol/focus.
 
 ## Retours terrain
 
-Au sol près d’un lit : E ouvre le contrat personnel ; E au lit actif propose la
-résiliation signée. Après purgatoire, retour au lit valide ou au départ.
+Au sol près d’un lit, le viser puis clic ou E ouvre le contrat personnel ; au lit actif,
+la résiliation signée. Après purgatoire, retour au lit valide ou au départ.
 Au canon du tank : vue de lunette, **C maintenu** pour observer à la troisième
 personne sans déplacer le canon ; les tirs sont suspendus jusqu’au relâchement.
 Espace permet plusieurs cycles d’ouverture/fermeture du parachute ; une ouverture
@@ -126,7 +126,7 @@ est un interrupteur direct ([mode debug](laboratory.md)).
 
 `controlHintItems()` dans `src/live-hud.js` est la source unique de l’aide affichée
 en bas à gauche (`#commandHelp`). `client.js` lui transmet le véhicule et le siège,
-le type de poste fixe occupé (DCA, bunker LEGO, canon antichar), l’état à pied,
+le type de poste fixe occupé (DCA, canon antichar), l’état à pied,
 en chute ou au purgatoire, la disponibilité de la construction, la roue ouverte
 et l’outil actif (avec son point d’ancrage). L’aide change donc à l’entrée, à la
 sortie et au changement de poste. À pied : molette pour le zoom caméra, **G** ou
@@ -203,7 +203,7 @@ et **A** (air) et les silhouettes reprennent ceux des entrées dans le bureau.
 Le trajet terrestre confirmé apparaît comme une piste de phéromones orange
 semi-transparente bordée de sombre, parcourue de chevrons blancs qui glissent vers
 la poubelle : c'est le chemin réellement marché tant que la carte ne change pas.
-Pendant la pose d’une barricade ou d’un bunker, la piste claire à chevrons orange
+Pendant la pose d’une barricade, la piste claire à chevrons orange
 montre le détour proposé avant le clic de validation. Les trajets aériens gardent
 leurs nuages colorés par aération (`src/pheromone-trail.ts`, version 239).
 
@@ -214,9 +214,9 @@ préparation ; sinon la vague part à la fin du compte à rebours
 
 ## Défenses terrestres
 
-Le conducteur du Castor peut poser, sans plan à débloquer, un « Bunker LEGO » (10 $) et un « Canon lourd » (14 $). Descendez, approchez du poste et utilisez la commande d’interaction pour signer le dossier et occuper le siège ; utilisez la visée et le tir habituels, puis la même commande pour sortir. Le canon lourd pivote lentement (45°/s, roues en sens inverse) vers la visée, entre −5° et +40° d’élévation, et tire là où pointe réellement son tube un obus sans fusée (comme le tank), simulé par le tireur ; la caméra se place derrière la culasse. Les munitions se rechargent de manière payante à proximité d’une station ou du Castor.
+Le conducteur du Castor peut poser, sans plan à débloquer, un « Canon lourd » (14 $). Descendez, approchez du poste et utilisez la commande d’interaction pour signer le dossier et occuper le siège ; utilisez la visée et le tir habituels, puis la même commande pour sortir. Le canon lourd pivote lentement (45°/s, roues en sens inverse) vers la visée, entre −5° et +40° d’élévation, et tire là où pointe réellement son tube un obus sans fusée (comme le tank), simulé par le tireur ; la caméra se place derrière la culasse. Les munitions se rechargent de manière payante à proximité d’une station ou du Castor.
 
-Le conducteur du Castor peut choisir, sans plan à débloquer, « Tourelle auto » dans la roue de construction et la poser d’un clic (9 $). La tourelle consomme ses 180 balles ; le service de recharge est payant et local.
+Le conducteur du Castor peut choisir, sans plan à débloquer, « Tourelle auto » dans la roue de construction et la poser d’un clic (5 $). La tourelle consomme ses 180 balles (60 dégâts chacune) ; le service de recharge est payant et local. « Tourelle auto Gatling » (25 $, 12 tirs/s, 1 000 balles, tir continu sans son par tir) se choisit et se pose de la même façon : [la Gatling](gatling-turret.md).
 
 **G** ou clic molette (roue de construction) à pied ou au poste conducteur du Castor au sol, puis choix d’un outil ; il n’y a plus de bouton « Défense » (issue #135) : aperçu au point visé par la caméra
 indépendamment de la marche, E ou clic gauche pour valider, R pour orienter le sucre, Échap

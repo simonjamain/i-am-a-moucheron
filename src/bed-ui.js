@@ -1,6 +1,15 @@
+import { BED_CANCEL_MOTIVES, BED_MOTIVES, ClauseSheet, REFUSAL_TEXT, stamp } from './paper-form.ts';
+// Paper document with a signature (docs/ui-guidelines.md): personal bed contract,
+// base of the workshop order (PurchaseUI). A motive is ticked first (never by
+// default); the signature, released, sends the document; APPROUVÉ is stamped on
+// the signed sheet, which leaves the screen while the game goes on. The clause
+// « convenance personnelle » is really refused: REFUSÉ, nothing sent, the sheet
+// closes and the request must be started again.
+const STAMP_LINGER_MS = 900;
+const REFUSAL_LINGER_MS = 1600;
 export class BedUI {
-  constructor({ root, snapshot, command, accept, ground, onOpen, onClose, archive }) {
-    Object.assign(this, { root, snapshot, command, accept, ground, onOpen, onClose, archive });
+  constructor({ root, snapshot, command, accept, ground, onOpen, onClose }) {
+    Object.assign(this, { root, snapshot, command, accept, ground, onOpen, onClose });
     this.opened = false;
     this.busy = false;
     this.canvas = root.querySelector('canvas');
@@ -8,12 +17,13 @@ export class BedUI {
     this.pointer = null;
     this.points = [];
     root.querySelector('[data-bed-close]').onclick = () => this.close();
-    root.querySelector('[data-bed-clear]').onclick = () => {
-      if (!this.busy) this.clear();
-    };
     this.canvas.onpointerdown = (e) => {
       e.preventDefault();
-      if (this.busy || this.pointer !== null) return;
+      if (this.busy || this.pointer !== null || this.refusing) return;
+      if (!this.canSign()) {
+        this.status('Cochez un motif avant de signer.');
+        return;
+      }
       this.pointer = e.pointerId;
       this.canvas.setPointerCapture?.(e.pointerId);
       this.points = [this.point(e)];
@@ -42,6 +52,29 @@ export class BedUI {
       this.pointer = null;
     };
   }
+  status(text) {
+    this.root.querySelector('[data-bed-status]').textContent = text;
+  }
+  // Clauses of the document being opened (a ClauseRule from paper-form.ts).
+  motives() {
+    return this.cancel ? BED_CANCEL_MOTIVES : BED_MOTIVES;
+  }
+  // Text after a confirmed signature, and where to start again after a refusal.
+  signedText() {
+    return 'SIGNÉ · Destination mise à jour.';
+  }
+  restartText() {
+    return 'Revenez au lit pour recommencer.';
+  }
+  canSign() {
+    return !!this.clauses?.complete;
+  }
+  refreshLock() {
+    this.root.classList[this.canSign() ? 'remove' : 'add']('locked');
+    this.status(
+      this.canSign() ? 'Signez puis relâchez pour confirmer.' : 'Cochez un motif, puis signez.',
+    );
+  }
   point(e) {
     const r = this.canvas.getBoundingClientRect();
     return [
@@ -49,12 +82,13 @@ export class BedUI {
       Math.max(0, Math.min(1, (e.clientY - r.top) / r.height)),
     ];
   }
+  // The signature stays on a stamped sheet until it leaves the screen.
   clear() {
     const p = this.pointer;
     this.pointer = null;
     this.points = [];
     if (p !== null && this.canvas.hasPointerCapture?.(p)) this.canvas.releasePointerCapture(p);
-    this.ink.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    if (!this.keepInk) this.ink.clearRect(0, 0, this.canvas.width, this.canvas.height);
   }
   draw() {
     this.ink.clearRect(0, 0, this.canvas.width, this.canvas.height);
@@ -70,6 +104,12 @@ export class BedUI {
   }
   open(bed, self) {
     if (this.busy) return;
+    clearTimeout(this.linger);
+    this.root.classList.remove('leaving');
+    this.root.querySelector('[data-stamp]')?.classList.remove('printed');
+    this.keepInk = false;
+    this.stamped = false;
+    this.refusing = false;
     this.opened = true;
     this.invalidated = false;
     this.bed = bed.slot;
@@ -83,8 +123,10 @@ export class BedUI {
     this.root.querySelector('[data-bed-text]').textContent = this.cancel
       ? 'Je renonce à ce lit comme destination de retour. Ma prochaine résurrection utilisera la zone de départ. Aucun déménagement immédiat : les draps ne constituent pas un moyen de transport.'
       : 'Après mon passage au purgatoire, je demande à réapparaître à ce lit. Ce contrat remplace mon précédent point personnel et ne réserve pas le matelas aux autres joueurs. Si le lit disparaît ou devient impraticable, retour au départ. Le service décline toute responsabilité pour les ronflements des ressuscités.';
-    this.root.querySelector('[data-bed-status]').textContent =
-      'Signez puis relâchez pour confirmer.';
+    this.clauses = new ClauseSheet(this.motives(), this.root.querySelector('[data-clauses]'), () =>
+      this.refreshLock(),
+    );
+    this.refreshLock();
     this.root.classList.remove('hidden');
     this.onOpen();
   }
@@ -101,17 +143,47 @@ export class BedUI {
   }
   close() {
     if (this.busy) return;
+    if (this.stamped) {
+      this.stamped = false;
+      this.closeLingering(STAMP_LINGER_MS);
+      return;
+    }
     this.opened = false;
     this.clear();
     this.root.classList.add('hidden');
     this.onClose();
   }
+  // Closes now (the game takes over) while the stamped sheet stays a moment on screen.
+  closeLingering(ms) {
+    this.opened = false;
+    this.clear();
+    this.root.classList.add('leaving');
+    this.onClose();
+    clearTimeout(this.linger);
+    this.linger = setTimeout(() => {
+      this.root.classList.add('hidden');
+      this.root.classList.remove('leaving');
+      this.keepInk = false;
+    }, ms);
+  }
+  // Really refused: no command is sent; the document closes and must be started again.
+  refuse() {
+    this.keepInk = true;
+    this.refusing = true;
+    stamp(this.root.querySelector('[data-stamp]'), 'REFUSÉ', true);
+    this.status(REFUSAL_TEXT + ' ' + this.restartText());
+    this.invalidated = true;
+    this.closeLingering(REFUSAL_LINGER_MS);
+  }
   async submit() {
     if (this.busy || !this.opened) return;
+    if (this.clauses?.refused) {
+      this.refuse();
+      return;
+    }
     this.busy = true;
     this.root.querySelector('[data-bed-close]').disabled = true;
-    this.root.querySelector('[data-bed-status]').textContent = 'Transmission du contrat…';
-    const ink = this.canvas.toDataURL('image/png');
+    this.status('Transmission du contrat…');
     let success = false;
     try {
       const result = await this.command({
@@ -123,16 +195,13 @@ export class BedUI {
         ground: this.ground(),
       });
       this.accept(result);
-      if (this.snapshot().base.epoch === this.epoch)
-        this.archive({
-          title: this.cancel ? 'Résiliation du lit' : 'Contrat de réapparition',
-          ink,
-        });
-      this.root.querySelector('[data-bed-status]').textContent = 'SIGNÉ · Destination mise à jour.';
-      this.clear();
+      stamp(this.root.querySelector('[data-stamp]'), 'APPROUVÉ');
+      this.status(this.signedText());
+      this.keepInk = true;
+      this.stamped = true;
       success = true;
     } catch (e) {
-      this.root.querySelector('[data-bed-status]').textContent = e.message;
+      this.status(e.message);
       this.clear();
     } finally {
       this.busy = false;

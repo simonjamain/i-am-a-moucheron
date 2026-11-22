@@ -27,7 +27,7 @@ l’infestation. La mort ouvre une observation à caméra fixe ; un clic volonta
 Avant chaque vague, le serveur annonce les entrées et les horaires des groupes. La préparation dure une minute par défaut ; tout joueur peut lancer la vague avant la fin du compte à rebours. Il n'y a ni vote ni plan à débloquer entre les vagues (retirés en version 264) : équipements et véhicules s'achètent simplement à leur prix en dollars. La première vague part des fourmis et des moucherons, complétés par n’importe quelle espèce que son budget permet (aucun déblocage), puis son budget, exprimé en **puissance**, est multiplié par 1,5 à chaque étape, sans plafond, et par `N^0,9` pour `N` joueurs. La frise et le bouton de vague affichent la puissance de la vague annoncée. Voir [progression](progression.md) et [équilibrage](enemy-power.md#unité-commune). Des groupes aériens arrivent depuis
 plusieurs aérations, se séparent et se rejoignent ; fourmis et cafards sortent
 de trous et marchent vers la poubelle par le chemin le plus direct qui contourne le
-mobilier, les barricades et les bunkers (voir [navigation terrestre](#navigation-terrestre)).
+mobilier et les barricades (voir [navigation terrestre](#navigation-terrestre)).
 La durée nominale des trajets dépend de leur longueur à vitesse conservée.
 
 Les règles de la room sont fixes : l'ancien panneau **Équilibrage et nuées** est retiré
@@ -42,8 +42,10 @@ impossible. Les dégâts de la poubelle restent calculés et le HUD affiche ses 
 même négatifs (« -75 / 20 PV »). Désactiver réinitialise la partie aux règles normales.
 Pendant une vague, le marchand (P) propose en plus deux colonnes pour poser un ennemi
 au point visé : **Mannequins** (immobiles, invulnérables, avec le dernier dégât reçu
-affiché en gros) et **Ennemis réels**. Les hitbox des ennemis et la portée des
-tourelles et du sucre sont toujours visibles.
+affiché en gros) et **Ennemis réels**. Les hitbox des ennemis, la portée des
+tourelles et du sucre, et les volumes de collision du décor (murs, meubles,
+ventilateurs, constructions : fil de fer cyan sur faces légèrement teintées) sont
+toujours visibles.
 Voir [mode debug](laboratory.md).
 
 ## Accueil et noms
@@ -80,11 +82,18 @@ par type initial est conservé ; dès son décollage, un successeur gratuit appa
 un tank, un hélicoptère biplace ou une DCA mobile, dont la destruction est définitive. Les sièges sont exclusifs.
 
 Chaque accès publié aux équipements, y compris une nouvelle entrée, passe par un
-cercle au sol et un dossier de deux documents obligatoires. La signature s’effectue à la souris
+dossier de deux documents obligatoires, sur papier : la première pièce exige de cocher un
+motif (« Convenance personnelle » est refusée et oblige à recommencer). Il n’y a plus de
+cercle au sol : on vise directement le poste (cockpit, trappe, tourelle) ou l’installation
+(DCA fixe, canon, lit), qui s’entoure de bleu signal s’il est libre (ou d’un contour clair
+avec le nom de son occupant), et un clic ouvre son dossier, de n’importe quel côté
+([règles d’interface](ui-guidelines.md#monter-dans-un-engin--viser-le-poste)). La signature s’effectue à la souris
 ou au toucher et part automatiquement au relâchement d’un trait valide. Le tampon
 est immédiat ; la réponse serveur confirme le document et l’attribution du siège.
-L’archive locale empile les documents confirmés pendant la session, à travers les
-morts. Elle est vidée à la réception d’une remise à zéro de la partie.
+Aucune archive des documents signés n’est conservée (retirée en version 394) : la
+signature n’existe que sur la feuille, le temps de son tampon. Dès qu’un dossier est
+terminé (siège attribué, changement de poste, retour à la base), la souris est
+recapturée, même pendant que la feuille tamponnée quitte l’écran.
 
 Le pilotage par défaut vise un point à la souris avec assistance, inspiré du
 principe de War Thunder. Z/S et les flèches haut/bas pilotent le tangage, Q/D et
@@ -109,8 +118,9 @@ Le Stuka et le pilote du bombardier larguent des bombes en maintenant Espace
 (0,5 s ; 6 et 50 bombes respectivement). Le clic gauche sert aux MG ; au canon du
 tank, clic gauche tire HE/AP et Espace la coaxiale. B est supprimé. Les stocks, commandes et dégâts sont détaillés
 dans [véhicules et banque](vehicles-bank.md). Le HUD affiche les statistiques de coque près du viseur et une aide permanente
-en bas à gauche. Les anciens panneaux repliables sont masqués ; la jauge DCA reste. Le banquier (bouton ou N) propose trois emplacements
-de prêts partagés, consultables et signables dans tous les postes et mondes.
+en bas à gauche. Les anciens panneaux repliables sont masqués ; la jauge DCA reste. Le banquier (bouton ou N) présente sur un prospectus
+en papier trois emplacements de prêts partagés, consultables et signables dans tous les
+postes et mondes ; il n’y a pas de remboursement anticipé.
 
 Chaque impact infligeant des dégâts à un insecte déclenche une gerbe de grosses gouttes
 rouges, y compris sur un coup fatal. Cet effet purement visuel fonctionne aussi à partir
@@ -241,8 +251,7 @@ bombardier. Les personnages distinguent chute libre, parachute et réception (0,
 ## Identification, contrats et ravitaillement
 
 Les appareils ont une teinte persistante et les pseudos de leur équipage inscrits
-sur la carrosserie. Déchirer un document fournit un nouvel exemplaire
-obligatoire. Les annexes malicieuses (clauses piégées) ont été retirées en
+sur la carrosserie. Les annexes malicieuses (clauses piégées) ont été retirées en
 version 264 : aucun contrat ne modifie plus commandes, visée, cadence ou dégâts.
 
 Les avions disposent de cinq minutes de carburant à plein gaz et d’environ une
@@ -263,7 +272,7 @@ et limites de vérification.
 Au purgatoire, le pistolet tire depuis la main vers le point du réticule, avec
 caméra à l’épaule et obstacles revérifiés depuis le canon. La chute utilise la gravité humaine multipliée par le ratio du personnage,
 un parachute progressif et des dégâts d’impact verticaux. Le retour après
-purgatoire se fait au départ, sauf contrat personnel de lit signé (E au lit).
+purgatoire se fait au départ, sauf contrat personnel de lit signé (en visant le lit).
 Les lits s’achètent 4 $, puis +2 $ ; plusieurs joueurs peuvent signer le même.
 Le tireur canon du tank utilise une lunette ; C maintenu observe sans tourner
 la tourelle et suspend les tirs. Les nouvelles offres de prêt sont à 10–20 %
@@ -337,7 +346,7 @@ Le sucre coûte
 signalent un refus ; le serveur revalide position, caisse et occupation avant
 paiement. La pose exige le sol du bureau, sans parachute. Les défenses sont
 partagées par room et effacées à sa remise à zéro. Les terrestres utilisent
-toujours la navigation serveur, qui tient compte des barricades, bunkers, appâts
+toujours la navigation serveur, qui tient compte des barricades, appâts
 et rubans ; les volants gardent leurs parcours. Le radar conserve les constructions et rayons
 d’appât ; il ne sert pas à construire. Le rendu et le confort de pose demandent
 encore un essai WebGL/UDP en partie réelle.
@@ -346,13 +355,13 @@ encore un essai WebGL/UDP en partie réelle.
 
 Le serveur simule chaque insecte terrestre dès le début du combat, avec ou sans
 défense. Une grille de 5 cm (`buildGroundFlow`, `src/ground-defense.js`) bloque le
-mobilier au sol, les barricades et les bunkers ; elle n'est reconstruite qu'à un
+mobilier au sol et les barricades ; elle n'est reconstruite qu'à un
 changement de `navigationRevision`. Le trajet est lissé à angle libre : depuis sa
 position, l'insecte vise le point le plus lointain de la descente encore visible
 en ligne droite, avec une marge d'environ une demi-case, et garde ce point jusqu'à
 l'atteindre. L'aperçu du conseil de vague (`smoothRoute`) enchaîne les mêmes points :
-la piste de phéromones orange (chevrons vers la poubelle) indique le trajet de référence. Chaque insecte s'en écarte localement pour éviter ses voisins. Un brouillon de barricade ou
-de bunker montre le détour avant validation. Sans chemin, l'aperçu affiche
+la piste de phéromones orange (chevrons vers la poubelle) indique le trajet de référence. Chaque insecte s'en écarte localement pour éviter ses voisins. Un brouillon de barricade
+montre le détour avant validation. Sans chemin, l'aperçu affiche
 « Passage fermé » ; les cafards, araignées et rats attaquent alors la barricade la
 plus proche. Le sucre détourne seulement les insectes entrés dans son rayon et
 n'est pas tracé. La route nominale (`enemyRoute`) suit aussi ce champ sur un bureau
@@ -386,13 +395,12 @@ Le [bombardier biplan à deux places](biplane-models.md) conserve son camouflage
 
 ## G1 Castor (première étape, version 179)
 
-Le **G1 Castor** est un camion monoplace à six roues, achetable pour **15 $** avec le bon signé des véhicules. Z/S et Q/D permettent de conduire ; la souris vise sa mitrailleuse légère (500 balles, recharges payantes). **V** bascule une **vue de dessus** : caméra à 40 cm à la verticale du camion, nord (axe −Z, le haut du radar) en haut de l’écran quel que soit le cap du camion, et viseur au sol déplacé à la souris pour poser les défenses dans les 24 cm de portée et tirer (`src/castor-top-view.ts`). Vitesse maximale 52 (deux fois le
+Le **G1 Castor** est un camion monoplace à six roues, achetable pour **15 $** avec le bon signé des véhicules. Z/S et Q/D permettent de conduire ; la souris vise sa mitrailleuse légère (500 balles à 40 dégâts, recharges payantes). **V** bascule une **vue de dessus** : caméra à 40 cm à la verticale du camion, nord (axe −Z, le haut du radar) en haut de l’écran quel que soit le cap du camion, et viseur au sol déplacé à la souris pour poser les défenses dans les 24 cm de portée et tirer (`src/castor-top-view.ts`). Vitesse maximale 52 (deux fois le
 réglage initial), avec une accélération forte au départ qui décroît près du
 maximum. Les six roues roulent à la vitesse du sol de leur côté (sens, marche
 arrière et arrêt compris) ; au pivot sur place, gauche et droite tournent en sens
 opposés et les roues avant braquent selon la vitesse de rotation
 (`src/castor-wheels.ts`, `scripts/test-castor-wheels.mjs`). Plus rapide que le tank, il possède un rayon de soutien sphérique de **50 cm**, matérialisé en jeu par une sphère verte translucide (comme les 50 cm des stations de ravitaillement fixes, `src/service-zones.js`), qui peut soigner et ravitailler les alliés en mouvement ou en vol et se réapprovisionner lui-même. Le service utilise la caisse commune.
-Les ronds d'entrée au sol (sièges, équipements) sont tracés par un shader (`src/entry-ring.ts`) : leur trait garde au moins ~1,6 pixel d'écran, sans dépendre de l'anticrénelage du GPU, pour rester visibles sur tous les écrans.
 
 **La construction en roulant est disponible depuis la version 188.** Le Castor utilise désormais **ses trois modèles Meshy texturés** : châssis, tourelle et roues indépendantes. Les couleurs originales sont préservées, sans pastille d’identification ([flotte Meshy](meshy-fleet.md)). Voir [l'issue #76](https://github.com/simonjamain/i-am-a-moucheron/issues/76).
 
@@ -418,9 +426,9 @@ correction des six roues est conservée.
 
 ### Constructions du Castor
 
-Au volant du Castor, on peut construire un bunker LEGO (10 $) et un canon antichar lourd (14 $), sans plan à débloquer : seul le prix compte. Le bunker protège son occupant d’une grande partie des impacts et possède sa propre mitrailleuse ; le canon est prévu pour les boss terrestres. Ce canon est un obusier à taille humaine qui pivote lentement sur ses roues, s’élève de −5° à +40° et recule à chaque tir. Il tire un obus simulé par le tireur, comme le canon du tank (gravité, obstacles, impact direct), mais plus rapide (750 m/s), plus puissant (360 dégâts, pleins sur la cible touchée) et à petite explosion (5 m) ; il n’a pas de fusée de DCA. Le cercle d’accès, l’ouverture du dossier et les signatures partagent la même portée autour du poste, au même niveau : 9 cm pour le bunker ; pour le canon, un cercle à 4,5 m de l’essieu, hors du balayage du tube, et une portée de 6 m. Chaque cercle porte l’icône de son rôle et chaque poste a ses propres textes et contrats. Les deux postes demandent la signature d’un dossier, disposent de munitions finies et se rechargent uniquement auprès des sources de service payantes.
+Au volant du Castor, on peut construire un canon antichar lourd (14 $), sans plan à débloquer : seul le prix compte. Le canon est prévu pour les boss terrestres. Ce canon est un obusier à taille humaine qui pivote lentement sur ses roues, s’élève de −5° à +40° et recule à chaque tir. Il tire un obus simulé par le tireur, comme le canon du tank (gravité, obstacles, impact direct), mais plus rapide (750 m/s), plus puissant (800 dégâts au cœur de l’impact, pleins sur la cible touchée) et à petite explosion (5 m) ; il n’a pas de fusée de DCA. L’ouverture du dossier (en visant le canon) et les signatures partagent la même portée autour du poste, au même niveau : 6 m pour le canon. Chaque poste a ses propres textes et contrats. Le poste demande la signature d’un dossier, dispose de 50 obus finis et se rechargent uniquement auprès des sources de service payantes.
 
-La « Tourelle automatique du Castor » se construit pour 9 $ au volant du G1, sans plan à débloquer. Elle tire automatiquement (180 balles finies) et se recharge contre paiement auprès du Castor ou des stations. Aucun tir ni achat à distance. Son modèle définitif combine quatre modules Meshy texturés (socle fixe, tête qui pivote sur 360°, canon unique inclinable de −10° à +90° et capteur/radar séparé). Les géométries et UV Meshy sont conservés, avec une copie des textures rééchantillonnée en WebP 1K pour le navigateur ; voir [l'asset T-01](t01-asset.md). Les déplacements visuels suivent la dernière cible validée par le serveur ; les dégâts et les munitions restent autoritaires côté serveur. Le GLB texturé définitif doit être importé séparément après vérification des parties mobiles et de leurs UV.
+La « Tourelle automatique du Castor » se construit pour 5 $ au volant du G1, sans plan à débloquer. Elle tire automatiquement (180 balles finies) et se recharge contre paiement auprès du Castor ou des stations. Aucun tir ni achat à distance. Son modèle définitif combine quatre modules Meshy texturés (socle fixe, tête qui pivote sur 360°, canon unique inclinable de −10° à +90° et capteur/radar séparé). Les géométries et UV Meshy sont conservés, avec une copie des textures rééchantillonnée en WebP 1K pour le navigateur ; voir [l'asset T-01](t01-asset.md). Les déplacements visuels suivent la dernière cible validée par le serveur ; les dégâts et les munitions restent autoritaires côté serveur. Le GLB texturé définitif doit être importé séparément après vérification des parties mobiles et de leurs UV.
 
 ## Castor volant (version 292)
 
@@ -435,8 +443,8 @@ Depuis la version 355, modèle, envergure, longueur et patins sont réduits de 3
 
 **Tous les occupants** (pilote et passagers) ouvrent la roue (**G** / clic
 molette) et **larguent** les constructions du Castor, sauf les murs LEGO :
-sucre, ruban (un morceau de 10 cm), tourelle automatique, bunker
-LEGO et canon anti-matériel, au même prix. L'objet part **toujours à la
+sucre, ruban (un morceau de 10 cm), tourelle automatique, tourelle
+Gatling et canon anti-matériel, au même prix. L'objet part **toujours à la
 verticale de l'hélicoptère** et **suit son cap** ; un aperçu transparent montre où il tombera. Clic gauche ou Entrée
 larguent, dans n'importe quelle condition de vol. La caisse est débitée au
 largage ; l'objet tombe comme les autres livraisons (1/3 m/s), puis le serveur
@@ -455,7 +463,7 @@ l'appareil avec la souris.
 
 Les constructions posées sur un meuble gardent leur hauteur : tourelles et
 postes y tirent depuis leur emplacement réel, et le soutien les mesure en 3D.
-Les insectes au sol ne les rencontrent pas : un bunker sur un bureau ne bloque
+Les insectes au sol ne les rencontrent pas : une barricade sur un bureau ne bloque
 pas leur chemin, un ruban ou du sucre sur un meuble ne les retient pas. Voir
 [la flotte Meshy](meshy-fleet.md#castor-volant--hélicoptère-meshy-version-292).
 

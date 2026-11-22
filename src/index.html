@@ -12,7 +12,7 @@
       rel="stylesheet"
       media="print"
       onload="this.media = 'all'"
-      href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&amp;family=Space+Grotesk:wght@400;500;600;700&amp;display=swap"
+      href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&amp;family=Space+Grotesk:wght@400;500;600;700&amp;family=Courier+Prime:wght@400;700&amp;display=swap"
     />
     <style>
       :root {
@@ -21,6 +21,15 @@
         --acid: #d5ef73;
         --dark: #0c201e;
         --line: #ffffff20;
+        /* Interaction signal, shared with the 3D outline (src/post-highlight.ts). */
+        --signal: #2ec4d6;
+        /* Paper documents (src/paper-form.ts, docs/ui-guidelines.md). */
+        --paper: #f7f1e1;
+        --paper-line: #c9bfa4;
+        --ink: #1b1510;
+        --pencil: #3b3a36;
+        --stamp-ink: #5b3f9e;
+        --typewriter: 'Courier Prime', 'Courier New', monospace;
       }
       * {
         box-sizing: border-box;
@@ -411,6 +420,18 @@
         padding: 9px 14px;
         font-size: 12px;
       }
+      #postLabel {
+        position: fixed;
+        z-index: 4;
+        transform: translate(-50%, 22px);
+        padding: 3px 8px;
+        border-radius: 4px;
+        background: color-mix(in srgb, var(--dark) 80%, transparent);
+        color: var(--cream);
+        font-size: 12px;
+        pointer-events: none;
+        white-space: nowrap;
+      }
       #crosshair {
         position: absolute;
         top: 50%;
@@ -706,14 +727,6 @@
         color: #b6c7ba;
         text-align: right;
       }
-      #papers {
-        display: grid;
-        gap: 8px;
-        margin: 12px 0;
-      }
-      #papers button {
-        text-align: left;
-      }
       #punch {
         width: 100%;
       }
@@ -772,25 +785,6 @@
       #soulStatus {
         min-height: 0;
         margin: 6px 0;
-        font-size: 12px;
-      }
-      #signature {
-        display: block;
-        width: 100%;
-        height: 100px;
-        background: #faf4dc;
-        border-radius: 4px;
-        touch-action: none;
-        margin: 8px 0;
-      }
-      #papers {
-        background: #eee5c9;
-        color: #283c32;
-        padding: 12px;
-        border-radius: 6px;
-      }
-      #papers p {
-        margin: 4px 0;
         font-size: 12px;
       }
       .soulControls {
@@ -907,15 +901,6 @@
       #soulStatus {
         line-height: 1.5;
       }
-      #papers {
-        background: #183832;
-        color: var(--cream);
-        padding: 10px;
-        border-radius: 6px;
-      }
-      #papers p {
-        color: #b4c6be;
-      }
       @media (max-width: 700px) {
         .soulCombat {
           grid-template-columns: repeat(4, 1fr);
@@ -942,49 +927,6 @@
           font-size: 11px;
         }
       }
-      #papers {
-        position: fixed;
-        z-index: 8;
-        right: 24px;
-        top: 90px;
-        bottom: 24px;
-        width: min(500px, calc(100vw - 48px));
-        background: #dcd9c9;
-        color: #20372d;
-        padding: 0;
-        border: 1px solid #f5eed3;
-        border-radius: 12px;
-        box-shadow: 0 20px 80px #0008;
-        overflow: auto;
-        pointer-events: auto;
-        display: block;
-      }
-      #papers .dossierTop {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-        background: #203b32;
-        color: #eef1d7;
-        padding: 12px 18px;
-        font-size: 10px;
-        letter-spacing: 1px;
-        text-transform: uppercase;
-      }
-      #papers .dossierTop button {
-        padding: 3px 7px;
-        background: transparent;
-        border: 0;
-        color: #eef1d7;
-      }
-      #papers .dossierProgress {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 10px 20px;
-        min-height: 44px;
-        font-size: 11px;
-      }
       @keyframes stampIn {
         from {
           transform: scale(1.5) rotate(-12deg);
@@ -993,155 +935,14 @@
           transform: scale(1) rotate(-7deg);
         }
       }
-      #papers .paperSheet {
-        background: #faf5e3;
-        color: #20372d;
-        margin: 0 16px 14px;
-        padding: 20px;
-        border: 1px solid #b6b298;
-        border-radius: 3px;
-        box-shadow: 0 3px 10px #0001;
-      }
-      #papers .paperHeading {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        font-size: 10px;
-        letter-spacing: 1px;
-        color: #647264;
-      }
       .paperSeal {
         font-size: 27px;
-      }
-      #papers h2 {
-        font:
-          33px 'Barlow Condensed',
-          sans-serif;
-        text-transform: uppercase;
-        line-height: 1.05;
-        margin: 14px 0;
-      }
-      #papers .paperIdentity {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 12px;
-        border-top: 1px solid #b5b29b;
-        border-bottom: 1px solid #b5b29b;
-        padding: 12px 0;
-      }
-      #papers small {
-        display: block;
-        font-size: 9px;
-        font-weight: 400;
-        color: #687165;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-      }
-      #papers .paperIdentity strong {
-        display: block;
-        font-size: 12px;
-        margin-top: 4px;
-        overflow-wrap: anywhere;
-      }
-      #papers #paperBody {
-        font:
-          13px/1.65 Georgia,
-          serif;
-        color: #3c4b3e;
-        margin: 16px 0;
-      }
-      .signatureLabel {
-        font-size: 11px;
-        font-weight: 700;
-      }
-      .signatureLabel small {
-        margin-top: 4px;
-      }
-      .signatureWell {
-        position: relative;
-        border: 1px solid #a4ad97;
-        background: #fffdf4;
-        border-radius: 5px;
-        margin-top: 9px;
-      }
-      .signatureBaseline {
-        position: absolute;
-        left: 12px;
-        right: 12px;
-        bottom: 25%;
-        border-bottom: 1px dashed #c2c7b7;
-        pointer-events: none;
-      }
-      #papers #signature {
-        display: block;
-        width: 100%;
-        height: 135px;
-        background: transparent;
-        border: 0;
-        touch-action: none;
-        cursor: crosshair;
-      }
-      #papers .inkTools {
-        display: flex;
-        gap: 6px;
-        align-items: center;
-        flex-wrap: wrap;
-        margin-top: 7px;
       }
       #inkState {
         font-size: 10px;
         color: #687165;
         flex: 1;
         min-width: 110px;
-      }
-      #papers .inkTools button {
-        color: #304a39;
-        border: 1px solid #b3bda6;
-        background: transparent;
-        font-size: 10px;
-        padding: 6px;
-      }
-      #papers #signSubmit[hidden] {
-        display: none;
-      }
-      #papers #signSubmit {
-        display: block;
-        width: calc(100% - 32px);
-        margin: 0 16px 10px;
-        padding: 13px;
-      }
-      #papers #paperMessage {
-        min-height: 20px;
-        color: #315d41;
-        font-size: 11px;
-        padding: 0 20px 12px;
-        margin: 0;
-      }
-      @media (max-width: 700px) {
-        #papers {
-          left: 10px;
-          right: 10px;
-          top: 65px;
-          bottom: 10px;
-          width: auto;
-        }
-        #papers .paperSheet {
-          padding: 14px;
-          margin: 0 10px 10px;
-        }
-        #papers h2 {
-          font-size: 28px;
-        }
-        #papers #paperBody {
-          font-size: 12px;
-          margin: 10px 0;
-        }
-        #papers #signature {
-          height: 115px;
-        }
-        #papers .dossierTop {
-          padding: 10px 14px;
-        }
       }
       #sortieControls {
         position: fixed;
@@ -1180,145 +981,16 @@
           max-width: 210px;
         }
       }
-      /* The signed sheet is the centre of the game: paper, ink, stamp, archive. */
-      #paperBackdrop {
-        position: fixed;
-        inset: 0;
-        z-index: 7;
-        background: #0a1c1c88;
-        backdrop-filter: blur(5px);
+      .paperPanel {
+        align-content: center;
+        gap: 10px;
       }
-      #papers {
-        z-index: 8;
-        left: 50%;
-        right: auto;
-        top: 50%;
-        bottom: auto;
-        transform: translate(-50%, -50%);
-        width: min(600px, calc(100vw - 32px));
-        max-height: 94dvh;
-        overflow: visible;
-        background: #dcd9c9;
-        border-radius: 10px;
-        box-shadow: 0 35px 110px #0008;
-        animation: paperEnter 0.3s ease-out;
-      }
-      #papers:before,
-      #papers:after {
-        content: '';
-        position: absolute;
-        inset: 10px -7px -7px;
-        z-index: -1;
-        background: #e9e2cd;
-        border: 1px solid #aeb2a0;
-        border-radius: 5px;
-        transform: rotate(-2deg);
-      }
-      #papers:after {
-        inset: 15px 0 -10px;
-        transform: rotate(2deg);
-        background: #c9cdbb;
-        z-index: -2;
-      }
-      #papers .dossierTop {
-        border-radius: 9px 9px 0 0;
-        padding: 13px 20px;
-      }
-      #papers .dossierProgress {
-        min-height: 38px;
-        padding: 10px 24px;
-      }
-      #papers .paperSheet {
-        margin: 0 18px;
-        padding: 22px 26px 16px;
-        position: relative;
-      }
-      #papers h2 {
-        font-size: 38px;
-        letter-spacing: -0.6px;
-        margin: 12px 0 18px;
-      }
-      #papers #paperBody {
-        font-size: 14px;
-        line-height: 1.6;
-        margin: 15px 0;
-      }
-      #papers .paperIdentity {
-        padding: 12px 0;
-      }
-      #papers #signature {
-        width: 100%;
-        height: 126px;
-        touch-action: none;
-      }
-      #papers .inkTools {
+      .paperPanel .docActions {
         display: flex;
         justify-content: space-between;
-        align-items: center;
+        align-items: baseline;
         gap: 12px;
-        margin-top: 8px;
-      }
-      #papers #signClear {
-        padding: 5px 9px;
-        color: #526452;
-        background: transparent;
-        border: 1px solid #a4ad97;
-        font-size: 11px;
-      }
-      #papers #signSubmit[hidden] {
-        display: none;
-      }
-      #papers #signSubmit {
-        display: block;
-        width: calc(100% - 36px);
-        margin: 14px 18px 0;
-        padding: 15px;
-        font-size: 14px;
-      }
-      #papers #paperMessage {
-        min-height: 19px;
-        margin: 8px 22px;
-        color: #385f45;
-        font-size: 11px;
-      }
-      #signedPapers {
-        display: flex;
-        justify-content: center;
-        gap: 10px;
-        min-height: 50px;
-        padding: 0 18px 12px;
-        pointer-events: none;
-      }
-      #signedPapers article {
-        width: 112px;
-        height: 55px;
-        position: relative;
-        background: #faf5e3;
-        border: 1px solid #a4ad97;
-        box-shadow: 0 2px 5px #23352c30;
-        transform: rotate(var(--tilt));
-        padding: 7px;
-        font-size: 8px;
-        color: #586e58;
-        animation: archiveIn 0.45s ease-out;
-      }
-      #signedPapers img {
-        position: absolute;
-        bottom: 4px;
-        left: 8px;
-        width: 75px;
-        height: 23px;
-        object-fit: contain;
-      }
-      #signedPapers b {
-        position: absolute;
-        bottom: 5px;
-        right: 4px;
-        font-size: 8px;
-        color: #287c51;
-        border: 1px solid #287c51;
-        transform: rotate(-12deg);
-        padding: 2px;
+        font-size: 12px;
       }
       #flakControls {
         width: 100%;
@@ -1347,168 +1019,12 @@
           transform: translate(-50%, -50%) rotate(0);
         }
       }
-      @keyframes archiveIn {
-        from {
-          opacity: 0;
-          transform: translateY(-30px) rotate(-8deg);
-        }
-        to {
-          opacity: 1;
-          transform: translateY(0) rotate(var(--tilt));
-        }
-      }
-      @media (max-height: 750px) {
-        #papers {
-          max-height: 98dvh;
-          overflow: auto;
-        }
-        #papers .paperSheet {
-          padding: 12px 20px;
-        }
-        #papers h2 {
-          font-size: 29px;
-          margin: 8px 0;
-        }
-        #papers #paperBody {
-          font-size: 12px;
-          margin: 10px 0;
-        }
-        #papers #signature {
-          height: 92px;
-        }
-        #signedPapers {
-          min-height: 40px;
-          padding-bottom: 8px;
-        }
-        #signedPapers article {
-          height: 40px;
-        }
-        #papers #signSubmit[hidden] {
-          display: none;
-        }
-        #papers #signSubmit {
-          margin-top: 10px;
-          padding: 11px;
-        }
-      }
-      @media (prefers-reduced-motion: reduce) {
-        #papers,
-        #papers * {
-          animation: none !important;
-        }
-      }
-      @media (max-width: 650px) {
-        #papers {
-          width: calc(100vw - 24px);
-          max-height: 96dvh;
-          overflow: auto;
-        }
-        #papers .paperSheet {
-          padding: 16px;
-        }
-        #papers h2 {
-          font-size: 29px;
-        }
-        #papers #paperBody {
-          font-size: 12.5px;
-        }
-        #papers #signature {
-          height: 110px;
-        }
-        #signedPapers {
-          min-height: 44px;
-        }
-      }
-
-      /* The active document is flat; only archived signed sheets tilt. */
-      #papers:before,
-      #papers:after {
-        display: none;
-      }
-      #signedPapers:empty {
-        min-height: 0;
-        height: 0;
-        padding: 0;
-      }
-      #papers {
-        background: #f5efdc;
-        border-radius: 5px;
-      }
-      #papers .paperSheet {
-        transform: none;
-        margin: 0 18px;
-        background: #faf5e3;
-        border-radius: 2px;
-      }
-      #papers h2 {
-        font-size: 36px;
-        line-height: 1.05;
-        margin: 10px 0 16px;
-      }
-      #papers #paperBody {
-        font-size: 19px;
-        line-height: 1.45;
-        margin: 14px 0;
-      }
-      #papers .paperIdentity {
-        padding: 8px 0;
-      }
-      #papers .paperIdentity strong {
-        font-size: 15px;
-      }
       #threat {
         display: block;
         color: #d5ef73;
         font-size: 9px;
         letter-spacing: 1px;
         margin-top: 4px;
-      }
-      #papers #archiveCount {
-        margin: 6px 22px;
-        font-size: 11px;
-        color: #526452;
-      }
-      #signedPapers {
-        justify-content: flex-start;
-        overflow-x: auto;
-        overflow-y: hidden;
-        pointer-events: auto;
-        padding: 12px 22px 18px;
-        min-height: 90px;
-        scrollbar-width: thin;
-      }
-      #signedPapers article {
-        flex: 0 0 110px;
-        width: 110px;
-        height: 64px;
-        margin-right: -52px;
-        transition: transform 0.15s;
-      }
-      #signedPapers article:last-child {
-        margin-right: 0;
-      }
-      #signedPapers article:hover {
-        transform: translateY(-7px) rotate(0);
-        z-index: 2;
-      }
-      @media (max-height: 760px) {
-        #papers #paperBody {
-          font-size: 17px;
-        }
-        #signedPapers {
-          min-height: 65px;
-        }
-        #signedPapers article {
-          height: 45px;
-        }
-      }
-      @media (max-width: 650px) {
-        #papers #paperBody {
-          font-size: 17px;
-        }
-        #papers h2 {
-          font-size: 29px;
-        }
       }
 
       #economyControls {
@@ -1746,21 +1262,6 @@
           transform: scale(1) rotate(-12deg);
         }
       }
-      #papers.tearing {
-        pointer-events: none;
-        animation: tear-sheet 0.32s ease-in both;
-      }
-      @keyframes tear-sheet {
-        40% {
-          clip-path: polygon(0 0, 100% 0, 100% 47%, 52% 50%, 100% 53%, 100% 100%, 0 100%);
-          transform: rotate(-3deg);
-        }
-        100% {
-          opacity: 0;
-          transform: translateY(60px) rotate(8deg);
-          clip-path: polygon(0 0, 100% 0, 100% 43%, 40% 50%, 100% 57%, 100% 100%, 0 100%);
-        }
-      }
 
       #dirtView {
         position: fixed;
@@ -1804,11 +1305,6 @@
       }
     </style>
     <style>
-      #papers #paperBody {
-        white-space: pre-line;
-        max-height: 32vh;
-        overflow: auto;
-      }
       #crewPanel {
         position: fixed;
         right: 16px;
@@ -1824,21 +1320,6 @@
         display: block;
         margin: 6px 0;
         width: 100%;
-      }
-      #papers.tearing {
-        pointer-events: none;
-        animation: tear-sheet 0.32s ease-in both;
-      }
-      @keyframes tear-sheet {
-        40% {
-          clip-path: polygon(0 0, 100% 0, 100% 47%, 52% 50%, 100% 53%, 100% 100%, 0 100%);
-          transform: rotate(-3deg);
-        }
-        100% {
-          opacity: 0;
-          transform: translateY(60px) rotate(8deg);
-          clip-path: polygon(0 0, 100% 0, 100% 43%, 40% 50%, 100% 57%, 100% 100%, 0 100%);
-        }
       }
 
       /* Validated contextual rails: keep the centre clear during combat. */
@@ -1996,7 +1477,7 @@
       #aimRange small {
         font-size: 9px;
       }
-      :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel) {
+      #flightSettingsPanel {
         position: fixed;
         inset: 0;
         z-index: 45;
@@ -2005,7 +1486,7 @@
         background: #09211bd6;
         padding: 20px;
       }
-      :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel) > article {
+      #flightSettingsPanel > article {
         width: min(1080px, 100%);
         max-height: 90dvh;
         overflow: auto;
@@ -2016,28 +1497,28 @@
         box-shadow: 0 14px 60px #0007;
         font-family: Georgia, serif;
       }
-      :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel) header {
+      #flightSettingsPanel header {
         position: static;
         display: flex;
         align-items: start;
         justify-content: space-between;
         gap: 20px;
       }
-      :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel) h2 {
+      #flightSettingsPanel h2 {
         margin: 0 0 8px;
         font-size: 30px;
         font-style: italic;
         font-weight: 400;
       }
-      :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel) h3 {
+      #flightSettingsPanel h3 {
         font-size: 32px;
         font-weight: 400;
         margin: 22px 0;
       }
-      :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel) p {
+      #flightSettingsPanel p {
         line-height: 1.6;
       }
-      :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel) button {
+      #flightSettingsPanel button {
         background: #294938;
         color: #f3edcf;
         padding: 10px 14px;
@@ -2045,62 +1526,358 @@
         border-radius: 4px;
         cursor: pointer;
       }
-      :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel) button:disabled {
+      #flightSettingsPanel button:disabled {
         opacity: 0.5;
         cursor: default;
       }
-      :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel) [data-bank-cards] {
+      /* Paper documents (bon de commande, lit, dossier): no HTML form look, see docs/ui-guidelines.md. */
+      .paperPanel {
+        position: fixed;
+        inset: 0;
+        z-index: 45;
+        display: grid;
+        place-items: center;
+        padding: 20px;
+        background: transparent;
+        overflow: hidden;
+      }
+      .paperPanel > article.paperDoc {
+        position: relative;
+        max-height: none;
+        overflow: visible;
+        width: min(640px, 100%);
+        background: var(--paper);
+        color: var(--ink);
+        border: 0;
+        border-radius: 2px;
+        padding: 26px 30px 30px;
+        font: 15px/1.5 var(--typewriter);
+        transform: rotate(-0.7deg);
+        box-shadow:
+          0 1px 0 var(--paper-line),
+          0 20px 50px #0008;
+        animation: paperIn 0.28s ease-out;
+      }
+      @keyframes paperIn {
+        from {
+          transform: translateY(40vh) rotate(4deg);
+        }
+      }
+      .paperPanel .docTop {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        gap: 8px;
+        font-size: 11px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+      .paperPanel .paperDoc header {
+        position: static;
+        display: flex;
+        align-items: start;
+        justify-content: space-between;
+        gap: 20px;
+        border-bottom: 2px solid var(--ink);
+        margin: 8px 0 12px;
+      }
+      .paperPanel .paperDoc h2 {
+        font: 700 21px var(--typewriter);
+        font-style: normal;
+        text-transform: uppercase;
+        margin: 0 0 6px;
+      }
+      .paperPanel .paperDoc p {
+        line-height: 1.5;
+        margin: 0 0 12px;
+      }
+      .paperPanel .paperDoc [data-bed-text] {
+        font-size: 12px;
+      }
+      .paperPanel .docLedger {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 2px 24px;
+        margin: 0 0 14px;
+        font-variant-numeric: tabular-nums;
+      }
+      .paperPanel .docLedger dd {
+        margin: 0;
+        text-align: right;
+      }
+      .paperPanel .docLedger .total {
+        border-top: 2px solid var(--ink);
+        padding-top: 4px;
+        font-weight: 700;
+      }
+      .paperPanel .paperDoc button {
+        background: none;
+        color: var(--ink);
+        padding: 2px 4px;
+        font: 700 13px var(--typewriter);
+        text-decoration: underline dotted;
+      }
+      .paperPanel .clauses {
+        display: grid;
+        gap: 4px;
+        margin: 4px 0 14px;
+      }
+      .paperPanel .clauseTitle {
+        margin: 0 0 2px;
+      }
+      .paperPanel .clause {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        width: fit-content;
+        cursor: pointer;
+        outline-offset: 2px;
+      }
+      .paperPanel .clause:focus-visible {
+        outline: 2px dashed var(--pencil);
+      }
+      .paperPanel .clause svg {
+        width: 24px;
+        height: 24px;
+        flex: none;
+        overflow: visible;
+      }
+      .paperPanel .clauseBox,
+      .paperPanel .clauseTick {
+        fill: none;
+        stroke: var(--pencil);
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+      .paperPanel .clauseBox {
+        stroke-width: 1.4;
+      }
+      .paperPanel .clauseTick {
+        stroke-width: 2.6;
+        stroke-dasharray: 40;
+        stroke-dashoffset: 40;
+      }
+      .paperPanel .clause[aria-checked='true'] .clauseTick {
+        stroke-dashoffset: 0;
+        transition: stroke-dashoffset 0.18s ease-out;
+      }
+      .paperPanel .signLine {
+        display: flex;
+        align-items: end;
+        gap: 10px;
+      }
+      .paperPanel .paperDoc canvas {
+        display: block;
+        touch-action: none;
+        flex: 1;
+        min-width: 0;
+        width: 100%;
+        height: 110px;
+        border: 0;
+        border-bottom: 1px solid var(--ink);
+        background: transparent;
+        transition: opacity 0.2s;
+      }
+      .paperPanel.locked .paperDoc canvas {
+        opacity: 0.35;
+        cursor: not-allowed;
+      }
+      .paperPanel .docStamp {
+        position: absolute;
+        right: 34px;
+        top: 96px;
+        padding: 4px 14px;
+        border: 4px double var(--stamp-ink);
+        color: var(--stamp-ink);
+        font: 700 28px var(--typewriter);
+        letter-spacing: 0.08em;
+        opacity: 0;
+        mix-blend-mode: multiply;
+        pointer-events: none;
+        transform: rotate(-14deg) scale(1.6);
+      }
+      .paperPanel .docStamp.printed {
+        opacity: 0.85;
+        transform: rotate(-14deg) scale(1);
+        transition:
+          transform 0.16s ease-in,
+          opacity 0.16s ease-in;
+      }
+      .paperPanel .docStamp.refused {
+        transform: rotate(9deg) scale(1.6);
+      }
+      .paperPanel .docStamp.refused.printed {
+        transform: rotate(9deg) scale(1);
+      }
+      .paperPanel.leaving {
+        pointer-events: none;
+        background: transparent;
+        animation: paperOut 0.35s ease-in forwards;
+        animation-delay: 0.5s;
+      }
+      @keyframes paperOut {
+        to {
+          opacity: 0;
+          transform: translateY(30vh);
+        }
+      }
+      /* Bank prospectus: three coupons, then the ticked offer's terms beside its schedule. */
+      .paperPanel.bankPanel > article.paperDoc {
+        width: min(900px, 100%);
+      }
+      .bankPanel .docMotto,
+      .bankPanel .docHint,
+      .bankPanel .docBalance {
+        font-size: 12px;
+      }
+      .bankPanel .docBalance {
+        font-weight: 700;
+      }
+      .bankPanel .coupons {
         display: grid;
         grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 16px;
-        margin: 20px 0;
+        gap: 12px;
+        margin: 0 0 12px;
       }
-      :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel) [data-bank-cards] article {
-        padding: 18px;
-        border: 1px solid #a7a17c;
-        background: #fff8df55;
-      }
-      :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel) [data-bank-cards] button {
-        display: block;
-        width: 100%;
-        margin-top: 14px;
-      }
-      :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel) [data-bank-cards] small {
-        letter-spacing: 1px;
-      }
-      :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel) [data-bank-status] {
-        min-height: 1.5em;
-        font-weight: bold;
-      }
-      :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel) [data-bank-text] {
-        white-space: pre-line;
-      }
-      :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel) canvas {
-        width: min(100%, 650px);
-        height: 150px;
-        touch-action: none;
-        border: 1px solid #8b9976;
-        display: block;
-        background: #fff9e5;
-      }
-      :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel) .bankTable {
-        overflow: auto;
-        margin: 15px 0;
-      }
-      :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel) table {
-        width: 100%;
-        border-collapse: collapse;
+      .bankPanel .coupon {
+        position: relative;
+        display: grid;
+        gap: 1px;
+        padding: 8px 12px;
+        border: 2px dashed var(--paper-line);
         font-size: 12px;
+        font-variant-numeric: tabular-nums;
+        cursor: pointer;
+        outline-offset: 2px;
       }
-      :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel) th,
-      :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel) td {
-        padding: 8px;
-        text-align: left;
-        border-bottom: 1px solid #b6b18c;
+      .bankPanel .coupon:focus-visible {
+        outline: 2px dashed var(--pencil);
+      }
+      .bankPanel .coupon[aria-checked='true'] {
+        border-color: var(--ink);
+      }
+      .bankPanel .coupon[aria-disabled='true'] {
+        cursor: not-allowed;
+        opacity: 0.55;
+      }
+      .bankPanel .couponHead {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        font-size: 11px;
+      }
+      .bankPanel .couponHead svg {
+        width: 24px;
+        height: 24px;
+        flex: none;
+        overflow: visible;
+      }
+      .bankPanel .couponHead .clauseTick {
+        stroke-dashoffset: 0;
+      }
+      .bankPanel .couponAmount {
+        font-size: 21px;
+      }
+      .bankPanel .couponStamp {
+        position: absolute;
+        right: 10px;
+        top: 26px;
+        padding: 0 6px;
+        border: 2px solid var(--stamp-ink);
+        color: var(--stamp-ink);
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        transform: rotate(-10deg);
+        mix-blend-mode: multiply;
+      }
+      .bankPanel .loanSheet {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 20px;
+        align-items: start;
+      }
+      .bankPanel .loanSheet h3 {
+        font: 700 15px var(--typewriter);
+        text-transform: uppercase;
+        margin: 0 0 6px;
+      }
+      .bankPanel [data-bank-text] {
+        font-size: 11px;
+        line-height: 1.4;
+      }
+      .bankPanel .docSchedule {
+        border-collapse: collapse;
+        font-size: 11px;
+        font-variant-numeric: tabular-nums;
+      }
+      .bankPanel .docSchedule th,
+      .bankPanel .docSchedule td {
+        padding: 2px 6px;
+        text-align: right;
+        border-bottom: 1px solid var(--paper-line);
         white-space: nowrap;
       }
-      :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel) .bankHint {
-        font-size: 12px;
+      .bankPanel .docSchedule th {
+        border-bottom: 2px solid var(--ink);
+      }
+      .bankPanel .docSchedule td.paid {
+        color: var(--stamp-ink);
+        font-weight: 700;
+        letter-spacing: 0.08em;
+      }
+      .bankPanel [data-bank-status] {
+        min-height: 1.5em;
+        margin: 8px 0 0;
+      }
+      .bankPanel .docStamp {
+        top: auto;
+        bottom: 56px;
+        right: 48px;
+      }
+      @media (max-width: 760px) {
+        .bankPanel .coupons {
+          gap: 6px;
+        }
+        .bankPanel .coupon {
+          padding: 6px;
+          font-size: 11px;
+        }
+        .bankPanel .couponAmount {
+          font-size: 15px;
+        }
+        .bankPanel .loanSheet {
+          grid-template-columns: 1fr;
+          gap: 8px;
+        }
+        .bankPanel .docMotto {
+          display: none;
+        }
+        .bankPanel [data-bank-text] {
+          font-size: 11px;
+          line-height: 1.3;
+        }
+      }
+      /* Short screens: the sheet stays whole, never scrolled. */
+      @media (max-height: 720px) {
+        .paperPanel > article.paperDoc {
+          padding: 16px 22px 18px;
+          font-size: 13px;
+        }
+        .paperPanel .paperDoc [data-bed-text] {
+          font-size: 11px;
+          line-height: 1.35;
+        }
+        .paperPanel .paperDoc canvas {
+          height: 70px;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .paperPanel > article.paperDoc,
+        .paperPanel.leaving {
+          animation: none;
+        }
       }
       @media (max-width: 700px) {
         #contextHUD .contextRail {
@@ -2129,14 +1906,11 @@
           top: 34px;
           bottom: auto;
         }
-        :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel) {
+        #flightSettingsPanel {
           padding: 8px;
         }
-        :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel) > article {
+        #flightSettingsPanel > article {
           padding: 14px;
-        }
-        :is(#bank, #bedPanel, #purchasePanel, #flightSettingsPanel) [data-bank-cards] {
-          grid-template-columns: 1fr;
         }
       }
       /* One top bar: the session (wave, enemies, infestation, wallet, shops) on
@@ -2610,6 +2384,7 @@
         <p id="phaseText">Les pilotes prennent position.</p>
         <button id="start" class="primary">Lancer la vague →</button>
       </div>
+      <div id="postLabel" role="status" hidden></div>
       <div id="crosshair" aria-label="Direction des canons"><div id="reloadArcs"></div></div>
       <div id="contextHUD" class="hidden" aria-label="Informations du poste">
         <section class="contextRail left" tabindex="0" aria-label="État du poste">
@@ -2701,80 +2476,87 @@
       Préparation du dossier…
     </div>
     <div id="stampEcho" aria-hidden="true">SIGNÉ</div>
-    <div id="paperBackdrop" class="hidden"></div>
-    <section id="papers" class="hidden" aria-labelledby="paperTitle">
-      <div class="dossierTop">
-        <span id="paperIssuer"></span
-        ><button id="paperClose" aria-label="Fermer le dossier">✕</button>
-      </div>
-      <div class="dossierProgress">
-        <span id="paperProgress"></span>
-      </div>
-      <article class="paperSheet">
-        <div class="paperHeading"><span class="paperSeal">✳</span><span id="paperCode"></span></div>
-        <h2 id="paperTitle"></h2>
-        <div class="paperIdentity">
-          <div><small>Déclarant</small><strong id="paperOwner"></strong></div>
-          <div><small>Affectation</small><strong id="paperVehicle"></strong></div>
-        </div>
-        <p id="paperBody"></p>
-        <div class="signatureLabel">
-          Signature manuscrite <small>Relâchez la souris ou le doigt pour valider</small>
-        </div>
-        <div class="signatureWell">
+    <div id="paperBackdrop" class="hidden" hidden></div>
+    <section id="papers" class="paperPanel hidden" aria-labelledby="paperTitle">
+      <article class="paperDoc">
+        <div class="docTop"><span id="paperIssuer"></span><span id="paperCode"></span></div>
+        <header>
+          <h2 id="paperTitle"></h2>
+          <button id="paperClose" aria-label="Fermer le dossier">✕</button>
+        </header>
+        <dl class="docLedger">
+          <dt>Déclarant</dt>
+          <dd id="paperOwner"></dd>
+          <dt>Affectation</dt>
+          <dd id="paperVehicle"></dd>
+          <dt>Pièce</dt>
+          <dd id="paperProgress"></dd>
+        </dl>
+        <p id="paperBody" data-bed-text></p>
+        <div id="paperClauses" class="clauses"></div>
+        <div class="signLine">
           <canvas
             id="signature"
             width="800"
             height="220"
             aria-label="Dessiner votre signature"
-          ></canvas
-          ><span class="signatureBaseline"></span>
+          ></canvas>
         </div>
-        <div class="inkTools">
-          <span id="inkState">Signez librement dans le cadre</span
-          ><button id="signClear">Effacer</button
-          ><button id="paperTear">Déchirer ce document</button>
+        <p id="paperMessage" role="status" aria-live="polite"></p>
+        <div class="docActions">
+          <span id="inkState"></span>
         </div>
+        <div id="paperStamp" class="docStamp" aria-hidden="true"></div>
+        <button id="signSubmit" hidden disabled>Déposer le document signé</button>
       </article>
-      <button id="signSubmit" class="primary" hidden disabled>Déposer le document signé →</button>
-      <p id="paperMessage" role="status" aria-live="polite"></p>
-      <p id="archiveCount"></p>
-      <div id="signedPapers" aria-label="Documents déjà signés"></div>
     </section>
     <section
       id="bedPanel"
-      class="hidden"
+      class="paperPanel hidden"
       role="dialog"
       aria-modal="true"
       aria-labelledby="bedTitle"
     >
-      <article>
+      <article class="paperDoc">
+        <div class="docTop">
+          <span>Service des domiciles posthumes</span><span>Formulaire L-7 · 2 exemplaires</span>
+        </div>
         <header>
           <h2 id="bedTitle">Contrat de réapparition</h2>
           <button data-bed-close aria-label="Fermer le contrat de lit">✕</button>
         </header>
         <p data-bed-text></p>
-        <canvas width="800" height="200" aria-label="Signer le contrat personnel de lit"></canvas
-        ><button data-bed-clear>Effacer</button>
+        <div data-clauses class="clauses"></div>
+        <div class="signLine">
+          <canvas width="800" height="200" aria-label="Signer le contrat personnel de lit"></canvas>
+        </div>
         <p data-bed-status role="status" aria-live="polite"></p>
+        <div data-stamp class="docStamp" aria-hidden="true"></div>
       </article>
     </section>
     <section
       id="purchasePanel"
-      class="hidden"
+      class="paperPanel hidden"
       role="dialog"
       aria-modal="true"
       aria-labelledby="purchaseTitle"
     >
-      <article>
+      <article class="paperDoc">
+        <div class="docTop">
+          <span>Intendance · Base Alpha</span><span>Formulaire R-12 · 3 exemplaires</span>
+        </div>
         <header>
-          <h2 id="purchaseTitle">Contrat de réapparition</h2>
+          <h2 id="purchaseTitle">Bon de commande</h2>
           <button data-bed-close aria-label="Fermer le bon de commande">✕</button>
         </header>
+        <dl data-ledger class="docLedger"></dl>
         <p data-bed-text></p>
-        <canvas width="800" height="200" aria-label="Signer le bon de commande"></canvas
-        ><button data-bed-clear>Effacer</button>
+        <div data-clauses class="clauses"></div>
+        <div class="signLine">
+          <canvas width="800" height="200" aria-label="Signer le bon de commande"></canvas>
+        </div>
         <p data-bed-status role="status" aria-live="polite"></p>
+        <div data-stamp class="docStamp" aria-hidden="true"></div>
       </article>
     </section>
     <section
@@ -2803,46 +2585,53 @@
         </footer>
       </article>
     </section>
-    <section id="bank" class="hidden" role="dialog" aria-modal="true" aria-labelledby="bankTitle">
-      <article>
+    <section
+      id="bank"
+      class="paperPanel bankPanel hidden"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="bankTitle"
+    >
+      <article class="paperDoc">
+        <div class="docTop">
+          <span>Banque de la Dernière Volonté · Ligne directe</span
+          ><span>Prospectus P-3 · Offres et contrats</span>
+        </div>
         <header>
           <div>
-            <h2 id="bankTitle">Banque de la Dernière Volonté</h2>
-            <p>« Votre avenir est incertain. Vos échéances, beaucoup moins. »</p>
+            <h2 id="bankTitle">Prospectus de prêt</h2>
+            <p class="docMotto">« Votre avenir est incertain. Vos échéances, beaucoup moins. »</p>
           </div>
-          <button data-bank-close aria-label="Fermer le banquier">✕</button>
+          <button data-bank-close aria-label="Fermer le prospectus">✕</button>
         </header>
-        <div data-bank-cards></div>
-        <section data-bank-sheet class="hidden">
-          <button data-bank-back>← Les trois contrats</button>
-          <h3 data-bank-title></h3>
-          <p data-bank-text></p>
-          <details>
-            <summary>Tableau d’amortissement</summary>
-            <div class="bankTable">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Échéance</th>
-                    <th>Montant</th>
-                    <th>Intérêts</th>
-                    <th>Capital</th>
-                    <th>Restant</th>
-                  </tr>
-                </thead>
-                <tbody data-bank-schedule></tbody>
-              </table>
+        <p data-bank-balance class="docBalance"></p>
+        <div data-bank-cards class="coupons"></div>
+        <p data-bank-hint class="docHint">Cochez une offre pour lire ses conditions.</p>
+        <section data-bank-sheet class="loanSheet hidden">
+          <div>
+            <h3 data-bank-title></h3>
+            <p data-bank-text></p>
+            <div data-clauses class="clauses"></div>
+            <div data-bank-sign class="signLine">
+              <canvas width="800" height="200" aria-label="Signer le contrat de prêt"></canvas>
             </div>
-          </details>
-          <p class="bankHint" data-bank-sign-hint></p>
-          <canvas width="800" height="200" aria-label="Signer le document bancaire"></canvas
-          ><button data-bank-clear>Effacer la signature</button>
+          </div>
+          <table class="docSchedule">
+            <thead>
+              <tr>
+                <th>Vague</th>
+                <th>Échéance</th>
+                <th>Intérêts</th>
+                <th>Capital</th>
+                <th>Restant</th>
+                <th aria-label="Payé"></th>
+              </tr>
+            </thead>
+            <tbody data-bank-schedule></tbody>
+          </table>
         </section>
         <p data-bank-status role="status" aria-live="polite"></p>
-        <p data-bank-balance></p>
-        <p class="bankHint">
-          Échap : fermer · N : banquier · La partie continue pendant la consultation.
-        </p>
+        <div data-stamp class="docStamp" aria-hidden="true"></div>
       </article>
     </section>
     <section id="shop" class="hidden" aria-label="Équipement et améliorations">

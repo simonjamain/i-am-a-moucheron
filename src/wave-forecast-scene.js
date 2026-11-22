@@ -49,9 +49,7 @@ export class WaveForecastScene {
     if (
       cmd?.action === 'repair' ||
       (cmd?.action === 'remove' &&
-        !snap.groundDefense.structures.some(
-          (s) => s.id === cmd.id && ['barricade', 'bunker'].includes(s.kind),
-        ))
+        !snap.groundDefense.structures.some((s) => s.id === cmd.id && s.kind === 'barricade'))
     )
       cmd = null;
     // While walking, coalesce requests. The expensive navigation grid is built
@@ -83,7 +81,7 @@ export class WaveForecastScene {
       key,
       layout: activeLayout().id,
       groups: this.entrances,
-      walls: snap.groundDefense.structures.filter((s) => ['barricade', 'bunker'].includes(s.kind)),
+      walls: snap.groundDefense.structures.filter((s) => s.kind === 'barricade'),
       command: cmd || null,
     });
   }

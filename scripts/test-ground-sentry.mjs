@@ -73,6 +73,7 @@ vehicle.seats.set('pilot', joined.id);
 p.mode = 'flight';
 p.seat = 'pilot';
 p.vehicle_id = vehicle.id;
+assert.equal(SENTRY.cost, 5);
 room.dollars = 20;
 const command = (req) =>
   game.command('SENTRY', joined.id, 'ground-defense', {
@@ -80,10 +81,10 @@ const command = (req) =>
     ...req,
   });
 let snap = command({ action: 'build', kind: 'sentry', a: [0, 0], request: 'sentry:first' });
-assert.equal(snap.dollars, 11);
+assert.equal(snap.dollars, 20 - SENTRY.cost);
 assert.equal(snap.groundDefense.structures.length, 1);
 snap = command({ action: 'build', kind: 'sentry', a: [0, 0], request: 'sentry:first' });
-assert.equal(snap.dollars, 11, 'idempotent network retry');
+assert.equal(snap.dollars, 20 - SENTRY.cost, 'idempotent network retry');
 assert.equal(snap.groundDefense.structures.length, 1);
 p.mode = 'foot';
 p.vehicle_id = null;

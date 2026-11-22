@@ -14,8 +14,8 @@ A valid local ink stroke submits on pointer-up, never on pointer-cancel. The
 client locks the current document while its request is pending. The old 650 ms
 minimum animation wait was removed. A stamp appears immediately in an independent
 non-interactive overlay, so the next document need not wait for its fade-out.
-Only `signature: true` is transmitted; the ink image stays in the local session
-archive. The server still checks document order, physical proximity, desk
+Only `signature: true` is transmitted; the ink is never stored nor sent (the
+signed-document archive was removed in version 394). The server still checks document order, physical proximity, desk
 occupancy and exclusive seat claims. This acknowledgement is not handwriting
 verification and adds no anti-cheat claim. All previous array-format submissions
 remain compatible. Text was already local and no image upload existed in v021.
@@ -121,7 +121,7 @@ expiry and the existing flight, collision, network, document and combat flows.
 
 ## Extensions aux dossiers et installations
 
-Les déchirures, prix indépendants des installations
+Les prix indépendants des installations
 et réserves des avions sont détaillés dans [logistique et contrats](logistics-contracts.md).
 La DCA conserve ses deux signatures obligatoires et ses munitions illimitées.
 La station gratuite d’Alpha ne fournit pas de DCA gratuite.

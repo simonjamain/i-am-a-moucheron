@@ -81,7 +81,10 @@ export const FLAK = Object.freeze({
   maxRange: 1200,
   step: 25,
   range: 300,
+  // Default blast radius; the light flak and the mobile AA shell share `lightRadius`.
   radius: 8,
+  // Blast radius of the light flak's and mobile AA's shell (m), damage falling off to its edge.
+  lightRadius: 30,
 });
 
 // Directions are relative to the gun's vertical axis, including the D2 hull.

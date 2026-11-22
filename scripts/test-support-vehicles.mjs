@@ -40,9 +40,10 @@ assert.equal(vehiclePad('helicopter').hp, 200);
 assert.deepEqual(fullAmmo('helicopter'), { rocket: 30, missile: 10, copilot: 1000 });
 assert.deepEqual(fullAmmo('flaktruck'), { proximity: 100 });
 assert.equal(HEAVY.proximity.speed, MAP.metres(REFERENCE.shell * 0.7));
-assert.equal(HEAVY.proximity.radius, MAP.metres(FLAK.radius));
-assert.equal(HEAVY.rocket.radius, HEAVY.he.radius);
-assert.equal(HEAVY.missile.damage, 80);
+assert.equal(HEAVY.proximity.radius, MAP.metres(FLAK.lightRadius), 'same blast as the light flak');
+assert.equal(HEAVY.missile.damage, 360);
+assert.equal(HEAVY.missile.edge, 70);
+assert.equal(HEAVY.missile.radius, MAP.metres(30));
 for (const type of ['helicopter', 'flaktruck']) {
   const state = vehiclePad(type);
   state.p = [0, 2, 0];
@@ -269,6 +270,8 @@ assert.ok(
 );
 let missile = room.ordnance.at(-1);
 assert.equal(missile.occupation, gunner.occupation);
+// Its 30 m blast would kill the crew at the muzzle: detonate it far away.
+missile.p = [0, 2, -20];
 assert.throws(() => fire(gunner, heli, 'missile', 'second-guided'), /déjà/);
 // Only the shooter's impact report counts: the pilot cannot detonate it.
 detonateHeavy(game, room, 'guided', pilot.id);

@@ -9,12 +9,12 @@ import * as T from '../vendor/three.module.min.js';
 import { HEAVY } from '../src/armament.ts';
 import { stepHeavy } from '../src/heavy-sim.js';
 import { shopPrice } from '../src/equipment.ts';
-import { heavyDcaMuzzle } from '../src/fixed-dca.ts';
+import { heavyDcaMuzzle, RAPID_DCA_DAMAGE } from '../src/fixed-dca.ts';
 import { makeFixedDca, positionHeavyFlakSight } from '../src/fixed-dca-model.ts';
 import { OFFICE_LAYOUT } from '../src/layout.ts';
 import { makeInstallationCollider } from '../src/station-model.ts';
 import { colliderContainsXZ } from '../src/oriented-collider.ts';
-import { aimGun, stepWalker, stationEntryOffset } from '../src/sortie.ts';
+import { aimGun, stepWalker } from '../src/sortie.ts';
 import { Game } from '../server/game.js';
 
 const station = { kind: 'refuel', x: 0, y: 0.01, z: 0 };
@@ -106,9 +106,10 @@ assert.equal(ally.health, 100, 'a refused round cannot damage an ally');
 now += 15;
 assert.deepEqual(fireRapid([rapidShot(8)]), [rapidShot(8)]);
 rapidHit(rapidShot(8));
-assert.equal(ally.health, 25);
+assert.equal(RAPID_DCA_DAMAGE, 62);
+assert.equal(ally.health, 100 - RAPID_DCA_DAMAGE);
 rapidHit(rapidShot(8));
-assert.equal(ally.health, 25, 'an impact is applied only once');
+assert.equal(ally.health, 100 - RAPID_DCA_DAMAGE, 'an impact is applied only once');
 now += 15;
 assert.deepEqual(fireRapid([rapidShot(9), rapidShot(10)]), [rapidShot(9)], 'last partial burst');
 assert.equal(rapid.ammo, 0);
@@ -132,7 +133,7 @@ assert.deepEqual(r.ordnance.at(-1).p, heavyDcaMuzzle(heavy, minimumAim));
 now += 1000;
 launch('heavy-2');
 assert.equal(heavy.ammo, 0);
-assert.equal(HEAVY.dcaHeavy.radius, HEAVY.proximity.radius * 3);
+assert.equal(HEAVY.dcaHeavy.radius, MAP.metres(40), 'heavy flak blast reaches 40 m');
 assert.equal(HEAVY.dcaHeavy.damage, HEAVY.proximity.damage * 3);
 assert.equal(HEAVY.dcaHeavy.edge, HEAVY.proximity.edge * 3);
 const record = r.ordnance.at(-1);
@@ -260,13 +261,10 @@ const stationClient = readFileSync('src/client.js', 'utf8');
     ACTOR_UNIT,
     scene: new T.Scene(),
     colliders,
-    stationRings: [],
-    roleEntry: () => new T.Group(),
     humanoid: () => new T.Group(),
     flak,
     makeFixedDca,
     makeInstallationCollider,
-    stationEntryOffset,
     isFixedDca: () => true,
     isFortification: () => false,
   });

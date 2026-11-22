@@ -18,9 +18,19 @@ export const SENTRY_SCALE = 0.22;
 // Elevation pivot height (yaw 14 mm + pitch 22 mm unscaled), in office metres.
 export const SENTRY_MUZZLE_HEIGHT = 0.036 * SENTRY_SCALE;
 
+export interface ElevationLimits {
+  readonly min: number;
+  readonly max: number;
+}
+const T01_LIMITS: ElevationLimits = Object.freeze({
+  min: SENTRY_MIN_ELEVATION,
+  max: SENTRY_MAX_ELEVATION,
+});
+
 export function sentryAimAngles(
   origin: readonly number[],
   target: readonly number[],
+  limits: ElevationLimits = T01_LIMITS,
 ): { yaw: number; pitch: number } {
   if (
     !Array.isArray(origin) ||
@@ -36,10 +46,7 @@ export function sentryAimAngles(
   const dz = target[2] - origin[2];
   // The assembled cannon points along local -Z at zero elevation.
   const yaw = Math.atan2(-dx, -dz);
-  const pitch = Math.max(
-    SENTRY_MIN_ELEVATION,
-    Math.min(SENTRY_MAX_ELEVATION, Math.atan2(dy, Math.hypot(dx, dz))),
-  );
+  const pitch = Math.max(limits.min, Math.min(limits.max, Math.atan2(dy, Math.hypot(dx, dz))));
   return { yaw, pitch };
 }
 

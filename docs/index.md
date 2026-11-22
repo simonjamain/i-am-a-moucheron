@@ -19,7 +19,7 @@ Les [règles et le parcours](gameplay.md), les [commandes](controls.md), les
 
 ### Conception — pour les concepteurs
 
-La [galerie visuelle](https://simonjamain.github.io/i-am-a-moucheron/galerie/),
+La [direction artistique](art-direction.md), les [règles d’interface](ui-guidelines.md), la [galerie visuelle](https://simonjamain.github.io/i-am-a-moucheron/galerie/),
 les [écrans intégrés](https://simonjamain.github.io/i-am-a-moucheron/ecrans/), le
 [rendu dessin animé](toon-rendering.md) et le [pipeline des modèles](asset-pipeline.md).
 
