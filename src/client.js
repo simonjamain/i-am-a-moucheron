@@ -2,7 +2,7 @@ import { prepareCreatureVat } from '/creature-batch.js';
 import { MIDGE } from '/midge-model.js';
 import { WALKERS } from '/walker-batch.js';
 import { FLYERS, FlyerBatch } from '/flyer-batch.js';
-import { rayCollider, colliderContainsXZ } from '/oriented-collider.js';
+import { rayCollider, colliderContainsXZ, colliderNormal } from '/oriented-collider.js';
 import { sweptHitsDecor } from '/office-collision.js';
 import { makeServiceStation, animateRadar, makeInstallationCollider } from '/station-model.js';
 import { ReloadHUD, seatReloads, heavyReadyAt, heavyLane, reloadProgress } from '/reload-hud.js';
@@ -18,7 +18,7 @@ import { GroundDefenseUI } from '/ground-defense-ui.js';
 import { GroundMotionTrack } from '/ground-motion.js';
 import { LabUI } from '/lab-ui.js';
 import { DebugTools } from '/debug-tools.js';
-import { SENTRY } from '/ground-sentry.js';
+import { SENTRY, upgradeInReach } from '/ground-sentry.js';
 import { mountChangelog } from '/changelog.js';
 import { deliveryHeightAt } from '/delivery.js';
 import { reserveAlerts, missileStatus, ArrivalSignals } from '/reserve-feedback.js';
@@ -44,6 +44,7 @@ import { ballisticMarks } from '/tank-reticle.js';
 import { InteractionTiming } from '/interaction-timing.js';
 import { BedUI } from '/bed-ui.js';
 import { VipPassUI } from '/vip-pass-ui.js';
+import { UpgradeUI } from '/upgrade-ui.js';
 import { bedAccess } from '/beds.js';
 import { tankSight } from '/tank-view.js';
 import { applyGunRecoil, recoilAmount } from '/tank-recoil.js';
@@ -57,7 +58,6 @@ import { AircraftFire } from '/aircraft-fire.js';
 import { inRadarCoverage } from '/logistics.js';
 import { InsectStatus, insectScale } from '/insect-status.js';
 import { BloodEffects } from '/blood-effects.js';
-import { stepVacantAircraft } from '/vacant-flight.js';
 import { CONTRACTS, ContractBook, contractKey } from '/contracts.js';
 import { stamp } from '/paper-form.js';
 import { RewardQueue } from '/rewards.js';
@@ -171,6 +171,10 @@ import { UdpClient } from '/udp-client.js';
 import { WsClient } from '/ws-client.js';
 import { ServerClock } from '/server-clock.js';
 import { stepHeavy, heavyImpact } from '/heavy-sim.js';
+import { PROJECTILES } from '/projectiles.js';
+import { bounce } from '/ricochet.js';
+import { RemoteRounds } from '/remote-rounds.js';
+import { vehicleMaterial, insectMaterial } from '/materials.js';
 import { createOrdnance, integrateOrdnance } from '/ordnance.js';
 import { howitzerMuzzle } from '/howitzer-geometry.js';
 import { RECONNECT_AFTER_MS, RECONNECT_WINDOW_MS } from '/udp-protocol.js';
@@ -346,6 +350,34 @@ function solidRayDistance(ray, far, boxes = colliders) {
     if (hit) best = Math.min(best, hit.distance);
   }
   return best <= far ? best : Infinity;
+}
+// Like solidRayDistance, with the unit normal of the surface met (a projectile ricochets on it).
+const solidRayBest = new T.Vector3();
+function solidRayHit(ray, far, boxes = colliders) {
+  const decor = boxes === colliders ? office.decor : null;
+  let best = Infinity,
+    bestBox = null,
+    normal = null;
+  for (const box of boxes) {
+    if (decor && box.decor) continue;
+    const p = rayCollider(T, ray, box, solidRayPoint);
+    if (!p) continue;
+    const d = ray.origin.distanceTo(p);
+    if (d < best) {
+      best = d;
+      bestBox = box;
+      solidRayBest.copy(p);
+    }
+  }
+  if (bestBox) normal = colliderNormal(bestBox, solidRayBest.toArray());
+  if (decor && best > 0) {
+    const hit = decor.raycast(ray.origin.toArray(), ray.direction.toArray(), Math.min(far, best));
+    if (hit && hit.distance < best) {
+      best = hit.distance;
+      normal = hit.normal;
+    }
+  }
+  return best <= far ? { distance: best, normal } : null;
 }
 // Camera clearance (camera-clearance.ts): the nearest solid between a followed point and
 // the wanted eye, in the office or in the purgatory.
@@ -793,6 +825,8 @@ function localMotion() {
     wing,
     engine,
     fire: !respawnAt && shooting,
+    rounds: roundsFired,
+    skids: skidReport(performance.now()),
     vehicle: myVehicle?.id || null,
     seat: crewSeat,
     soul: respawnAt ? soulBody : null,
@@ -1327,7 +1361,6 @@ function accept(s, force = false) {
     trails.length = 0;
     rapidImpacts.length = 0;
     aircraftFire.invalidate();
-    clearVacantAircraft();
     entryNoticeWave = -1;
   }
   const wasDead = !!respawnAt;
@@ -1395,6 +1428,7 @@ function accept(s, force = false) {
   snap = s;
   bedUI.observe(self);
   purchaseUI.observe(self);
+  upgradeUI.observe(self);
   vipUI.observe(self);
   renderCrew();
   reconcileEquipment([...(s.equipment || []), s.initialStation].filter(Boolean));
@@ -1910,6 +1944,10 @@ addEventListener('keydown', (event) => {
       vipUI.close();
       return;
     }
+    if (upgradeUI.opened) {
+      upgradeUI.close();
+      return;
+    }
     if (bedUI.opened) {
       bedUI.close();
       return;
@@ -1948,7 +1986,14 @@ addEventListener('keydown', (event) => {
     toggleBank();
     return;
   }
-  if (flightTuningUI.opened || bankUI.opened || bedUI.opened || purchaseUI.opened || vipUI.opened)
+  if (
+    flightTuningUI.opened ||
+    bankUI.opened ||
+    bedUI.opened ||
+    purchaseUI.opened ||
+    vipUI.opened ||
+    upgradeUI.opened
+  )
     return;
   if (interactionKey === 'KeyG') {
     if (groundDefenseUI.handleWheelKey(interactionKey, true, event.repeat)) event.preventDefault();
@@ -2159,7 +2204,6 @@ setInterval(async () => {
         state: localMotion(),
         signalSince,
         damageSince: damageSeen,
-        vacant: [...vacantAircraft].map(([id, state]) => ({ id, state })),
         soulInput: respawnAt ? soulIntent() : null,
         baseInput: onFoot && !respawnAt ? baseIntent() : null,
         ground: groundReport(),
@@ -2461,6 +2505,7 @@ function renderPaper() {
     !bedUI.opened &&
     !purchaseUI.opened &&
     !vipUI.opened &&
+    !upgradeUI.opened &&
     !boardingSelectionBusy &&
     eligible &&
     index < documents[context]?.length;
@@ -3302,6 +3347,7 @@ function fireRapidDca(station, gun, direction, dt, interval, firing, owned) {
       {
         velocity: new T.Vector3(),
         weapon: 'dcaRapid',
+        projectile: 'rapidDca',
         baseDamage: RAPID_DCA_DAMAGE,
         authorization,
       },
@@ -3435,6 +3481,8 @@ function usableStation(st, w, body) {
   if (st.kind === 'bed') return !!body.grounded && bedAccess(w, st);
   return (isFixedDca(st.kind) || (isFortification(st.kind) && st.hp > 0)) && stationAccess(w, st);
 }
+/** Smallest aiming sphere of a turret, in world units (its model is tiny). */
+const TURRET_AIM_RADIUS = 0.012;
 /** Aiming sphere of an installation, in world space (its bounding sphere, tightened). */
 function stationSphere(gun) {
   if (!gun.userData.aimSphere) {
@@ -3462,7 +3510,8 @@ function updateAimedPost() {
     !bankUI.opened &&
     !bedUI.opened &&
     !purchaseUI.opened &&
-    !vipUI.opened
+    !vipUI.opened &&
+    !upgradeUI.opened
   ) {
     const rect = canvas.getBoundingClientRect();
     const free = document.pointerLockElement !== canvas && aimMouse;
@@ -3506,12 +3555,27 @@ function updateAimedPost() {
       ]);
       if (hit && (!next || hit.distance < next.distance)) next = { ...hit, station: index };
     }
+    for (const st of snap?.groundDefense?.structures || []) {
+      const model = groundDefenseUI.sentries.get(String(st.id))?.container;
+      if (!model || !upgradeInReach(st, w)) continue;
+      const sphere = stationSphere(model);
+      const hit = pickPost(origin, direction, [
+        {
+          seat: 'turret',
+          centre: sphere.center.toArray(),
+          radius: Math.max(sphere.radius, TURRET_AIM_RADIUS),
+        },
+      ]);
+      if (hit && (!next || hit.distance < next.distance)) next = { ...hit, turret: st, model };
+    }
   }
   const key = !next
     ? null
-    : next.vehicle
-      ? next.vehicle.id + ':' + next.seat
-      : 'station:' + next.station + ':' + stations[next.station].slot;
+    : next.turret
+      ? 'turret:' + next.turret.id
+      : next.vehicle
+        ? next.vehicle.id + ':' + next.seat
+        : 'station:' + next.station + ':' + stations[next.station].slot;
   if (shownPost && shownPost !== key) postHighlight(shownPost)?.hide();
   aimedPost = next;
   shownPost = key;
@@ -3522,7 +3586,17 @@ function updateAimedPost() {
     return;
   }
   let highlight, names;
-  if (next.vehicle) {
+  if (next.turret) {
+    // The whole turret is outlined; a free post needs no label.
+    next.model.userData.highlight ??= new PostHighlight(T, next.model, {
+      seats: [],
+      local: [0, 0, 0],
+      radius: 0,
+      outline: { meshes: [] },
+    });
+    highlight = next.model.userData.highlight;
+    names = [];
+  } else if (next.vehicle) {
     highlight = postHighlights.get(key);
     if (!highlight) {
       highlight = new PostHighlight(
@@ -3565,6 +3639,8 @@ function updateAimedPost() {
   }
 }
 function postHighlight(key) {
+  if (key.startsWith('turret:'))
+    return groundDefenseUI.sentries.get(key.slice(7))?.container.userData.highlight;
   if (!key.startsWith('station:')) return postHighlights.get(key);
   const [, index, slot] = key.split(':');
   const gun = turrets[+index];
@@ -3573,6 +3649,13 @@ function postHighlight(key) {
 /** Uses the aimed object when it is free (boarding form, station, bed); true when handled. */
 function useAimedPost() {
   if (!aimedPost || !onFoot || myVehicle || respawnAt) return false;
+  if (aimedPost.turret) {
+    upgradeUI.openTurret(
+      aimedPost.turret,
+      snap.pilots.find((p) => p.id === id),
+    );
+    return upgradeUI.opened;
+  }
   if (aimedPost.station !== undefined) {
     const st = stations[aimedPost.station];
     if (!st) return false;
@@ -3792,6 +3875,36 @@ function vehicleModel(v) {
   }
   return g;
 }
+// The rounds another player fired since last frame: their own round numbers when their motion
+// carries the counter (src/remote-rounds.ts), else a local cadence with no identity (null).
+const remoteRounds = new RemoteRounds();
+function remoteFired(model, role, shooter, motion, dt, interval, firing) {
+  if (shooter && Number.isInteger(motion.rounds)) {
+    remoteRounds.observe(shooter, motion.rounds);
+    applyRemoteSkids(shooter, motion);
+    return remoteRounds.release(shooter, dt, interval);
+  }
+  return Array.from({ length: remoteShotCount(model, role, dt, interval, firing) }, () => null);
+}
+// A ricochet the shooter reports against a moving surface: the named round turns there.
+const appliedSkids = new Set();
+function applyRemoteSkids(shooter, motion) {
+  if (!Array.isArray(motion.skids)) return;
+  for (const entry of motion.skids) {
+    const [round, bounces, px, py, pz, vx, vy, vz] = entry;
+    const key = shooter + ':' + round + ':' + bounces;
+    if (appliedSkids.has(key) || !entry.every?.(Number.isFinite)) continue;
+    appliedSkids.add(key);
+    if (appliedSkids.size > 512) appliedSkids.delete(appliedSkids.values().next().value);
+    const b = trails.find((t) => !t.owned && t.shooter === shooter && t.round === round);
+    if (!b || b.bounces >= bounces) continue;
+    b.m.position.set(px, py, pz);
+    b.v.set(vx, vy, vz);
+    b.bounces = bounces;
+    updateTracer(T, b.m, b.v.clone().normalize(), camera);
+    hitEffects.burst(b.m.position, camera, { key });
+  }
+}
 function remoteShotCount(model, role, dt, interval, firing) {
   model.userData.remoteCooldowns ??= new Map();
   const result = advanceAutomaticFire(
@@ -3956,12 +4069,14 @@ function updateOthers(dt) {
           new T.Vector3().fromArray(m.turretDirection || [0, 0, -1]),
           mount.parent.getWorldQuaternion(new T.Quaternion()),
         );
-        const remoteRounds =
+        const remoteRoundList =
           gunner.id === id
-            ? 0
-            : remoteShotCount(
+            ? []
+            : remoteFired(
                 g,
                 seat + ':' + gunner.id,
+                gunner.id,
+                m,
                 dt,
                 (v.type === 'helicopter'
                   ? HELI.gunInterval
@@ -3972,7 +4087,7 @@ function updateOthers(dt) {
                 !!m.fire &&
                   v.supplies?.ammo[v.type === 'tank' && seat === 'cannon' ? 'coax' : seat] >= 1,
               );
-        for (let shot = 0; shot < remoteRounds; shot++) {
+        for (const round of remoteRoundList) {
           const o = (
             v.type === 'tank' && seat === 'cannon'
               ? mount.userData.coaxMuzzle
@@ -3987,21 +4102,25 @@ function updateOthers(dt) {
             v.type === 'tank' && seat === 'cannon'
               ? mount.userData.coaxMuzzle
               : mount.userData.muzzles?.[0] || mount.userData.muzzle,
+            { shooter: gunner.id, round },
           );
         }
       }
     const remotePilotRounds =
       !isSelf && !isBomber(v.type)
-        ? remoteShotCount(
+        ? remoteFired(
             g,
             'pilot:' + (p?.id || ''),
+            // The Spitfire's rounds are six-gun salvos on a cadence of their own.
+            v.type === 'spitfire' ? null : p?.id,
+            motion,
             dt,
             (v.type === 'castor' ? 0.16 : pilotFireInterval(v.type)) *
               (1 / (snap?.balance?.fireRate ?? 1)),
             !!motion.fire && v.supplies?.ammo.pilot >= 1,
           )
-        : 0;
-    for (let shot = 0; shot < remotePilotRounds; shot++) {
+        : [];
+    for (const round of remotePilotRounds) {
       const direction =
         v.type === 'castor'
           ? new T.Vector3().fromArray(motion.turretDirection || [0, 0, -1]).normalize()
@@ -4026,6 +4145,7 @@ function updateOthers(dt) {
             false,
             false,
             nearestWeaponMuzzle(T, g, muzzle),
+            { shooter: p?.id, round },
           );
       }
     }
@@ -4062,7 +4182,15 @@ function updateOthers(dt) {
         if (key.startsWith(k + ':')) postHighlights.delete(key);
     }
 }
-function bullet(pos, dir, color = TRACER_COLOR, owned = false, aa = false, muzzleNode = null) {
+function bullet(
+  pos,
+  dir,
+  color = TRACER_COLOR,
+  owned = false,
+  aa = false,
+  muzzleNode = null,
+  tag = null,
+) {
   muzzleNode ??= owned && myVehicle ? nearestWeaponMuzzle(T, me, pos) : null;
   if (muzzleNode) pos = muzzleNode.getWorldPosition(new T.Vector3());
   if (owned && !aa && myVehicle) {
@@ -4072,6 +4200,12 @@ function bullet(pos, dir, color = TRACER_COLOR, owned = false, aa = false, muzzl
       vehicle: myVehicle.id,
       wave: snap?.wave,
       weapon: currentAmmoKey(),
+      projectile:
+        myVehicle.type === 'castor'
+          ? 'castorGun'
+          : myVehicle.type === 'tank'
+            ? TANK_MG[currentAmmoKey()].projectile
+            : 'mg',
       baseDamage:
         myVehicle.type === 'castor'
           ? CASTOR_GUN_DAMAGE
@@ -4085,10 +4219,29 @@ function bullet(pos, dir, color = TRACER_COLOR, owned = false, aa = false, muzzl
       origin = pos.clone(),
       direction = dir.clone();
     if (aircraftFire.fire(vehicle, seat, myVehicle.supplies, currentAmmoKey()))
-      emitBullet(origin, direction, vehicleColor(myVehicle), owned, aa, launch, muzzleNode);
+      emitBullet(
+        origin,
+        direction,
+        vehicleColor(myVehicle),
+        owned,
+        aa,
+        launch,
+        muzzleNode,
+        false,
+        tag,
+      );
     return;
   }
-  return emitBullet(pos, dir, color, owned, aa, null, muzzleNode);
+  return emitBullet(pos, dir, color, owned, aa, null, muzzleNode, false, tag);
+}
+// Rounds this player has fired, in the order they left (reported in the motion state).
+let roundsFired = 0;
+// Ricochets off moving surfaces (tank, beetle), reported for the other players for a short while.
+const recentSkids = [];
+const SKID_REPORT_MS = 600;
+function skidReport(now) {
+  while (recentSkids.length && now - recentSkids[0].at > SKID_REPORT_MS) recentSkids.shift();
+  return recentSkids.length ? recentSkids.slice(-8).map((k) => k.entry) : undefined;
 }
 const tracerPool = new TracerPool(T, scene, 256, { instanced: renderer.isWebGLRenderer === true });
 const gunSalvos = new GunSalvos();
@@ -4131,7 +4284,17 @@ function sentryShotVisual(sentry, target, fallback, silent) {
     combatEffects.muzzle(origin, direction);
   }
 }
-function emitBullet(pos, dir, color, owned, aa, launch = null, muzzleNode = null, silent = false) {
+function emitBullet(
+  pos,
+  dir,
+  color,
+  owned,
+  aa,
+  launch = null,
+  muzzleNode = null,
+  silent = false,
+  tag = null,
+) {
   const stamp = performance.now(),
     cue = stamp - spitSoundAt >= 40 || aa;
   if (!respawnAt && cue && !silent) {
@@ -4151,14 +4314,16 @@ function emitBullet(pos, dir, color, owned, aa, launch = null, muzzleNode = null
     while (root.parent && root.parent !== scene) root = root.parent;
     root.userData.gunFiredUntil = performance.now() + 100;
   }
-  const velocity = dir.clone().multiplyScalar(MAP.metres(aa ? REFERENCE.shell : REFERENCE.bullet));
+  const typeId = launch?.projectile ?? (aa ? 'flak' : 'mg'),
+    kind = PROJECTILES[typeId];
+  const velocity = dir.clone().multiplyScalar(MAP.metres(kind.speed));
   if (launch) velocity.add(launch.velocity);
   else if (!aa && owned && myVehicle)
     velocity.add(crewSeat === 'pilot' ? vel : new T.Vector3().fromArray(myVehicle.state.v));
   trails.push({
     m,
     v: velocity,
-    life: aa ? 3 : 2,
+    life: kind.lifetime,
     shell: aa,
     travelled: 0,
     fuse: MAP.metres(flakRange),
@@ -4166,7 +4331,12 @@ function emitBullet(pos, dir, color, owned, aa, launch = null, muzzleNode = null
     owned,
     shot: id + (launch?.weapon === 'dcaRapid' ? ':rapid:' : ':') + ++shotSequence,
     wave: launch?.wave ?? snap?.wave,
-    baseDamage: launch?.baseDamage ?? 75,
+    projectile: typeId,
+    bounces: 0,
+    // Own rounds are numbered (reported in `rounds`); another player's carry their number.
+    shooter: owned ? id : (tag?.shooter ?? null),
+    round: owned && !aa ? ++roundsFired : (tag?.round ?? null),
+    baseDamage: launch?.baseDamage ?? kind.damage,
     weapon: launch?.weapon,
     authorization: launch?.authorization,
   });
@@ -4301,7 +4471,66 @@ function stepProjectiles(dt) {
   for (let i = 0; i < n; i++) stepProjectileSlice(dt / n);
   frameTargets = null;
 }
+// The material a bullet meets and the surface normal there, for the ricochet decision.
+function contactOf(hit) {
+  if (hit.wall) return { material: 'decor', normal: hit.normal };
+  if (hit.vehicle) {
+    const type = snap?.vehicles.find((v) => v.id === hit.vehicle)?.type;
+    const normal = hit.face?.normal
+      ? hit.face.normal.clone().transformDirection(hit.object.matrixWorld).toArray()
+      : null;
+    return { material: vehicleMaterial(type), normal };
+  }
+  if (hit.id !== undefined) {
+    const model = insects.get(hit.id);
+    const type = currentRoster()[hit.id]?.type;
+    const normal = model
+      ? hit.point.clone().sub(model.getWorldPosition(new T.Vector3())).toArray()
+      : null;
+    return { material: insectMaterial(type), normal };
+  }
+  return null;
+}
+// What a bullet's contact does when it may skid: the effects and the new flight, or null (it hits).
+function ricochetOf(b, hit, dir) {
+  const contact = contactOf(hit);
+  if (!contact?.normal) return null;
+  const result = bounce(dir.toArray(), contact.normal, b.projectile, contact.material, b.bounces);
+  if (!result) return null;
+  return {
+    apply(travelled) {
+      hitEffects.burst(hit.point, camera, { key: b.shot + ':' + b.bounces });
+      sound.play('ricochet', hit.point, { ref: 12, cooldown: 0.05, key: 'ricochet' });
+      b.travelled += travelled;
+      b.life -= SLICE_DT;
+      if (result.kind === 'spent') b.life = 0;
+      else {
+        const speed = b.v.length() * result.speedFactor;
+        b.v.fromArray(result.direction).normalize().multiplyScalar(speed);
+        const n = new T.Vector3().fromArray(contact.normal).normalize();
+        if (n.dot(dir) > 0) n.negate();
+        b.m.position.copy(hit.point).addScaledVector(n, MAP.metres(0.02));
+        b.bounces++;
+        updateTracer(T, b.m, b.v.clone().normalize(), camera);
+        // Static surfaces bounce the same way for everyone; a moving one (tank, beetle) is
+        // only known here, so the other players are told which round turned where.
+        if (b.owned && b.round && contact.material !== 'decor')
+          recentSkids.push({
+            at: performance.now(),
+            entry: [b.round, b.bounces, ...b.m.position.toArray(), ...b.v.toArray()],
+          });
+      }
+      if (b.life <= 0) {
+        scene.remove(b.m);
+        b.m.userData.dispose();
+        trails.splice(trails.indexOf(b), 1);
+      }
+    },
+  };
+}
+let SLICE_DT = 1 / 120;
 function stepProjectileSlice(dt) {
+  SLICE_DT = dt;
   for (let i = trails.length - 1; i >= 0; i--) {
     const b = trails[i],
       origin = b.m.position.clone();
@@ -4322,9 +4551,14 @@ function stepProjectileSlice(dt) {
       projectileRay.near = 0;
       projectileRay.far = distance;
       hit = nearestSolidHit(T, projectileRay, solidTargets(), b.originVehicle);
-      const wall = solidRayDistance(projectileRay.ray, distance);
-      if (wall < Infinity && (!hit || wall < hit.distance))
-        hit = { point: origin.clone().addScaledVector(dir, wall), distance: wall, wall: true };
+      const wallHit = solidRayHit(projectileRay.ray, distance);
+      if (wallHit && (!hit || wallHit.distance < hit.distance))
+        hit = {
+          point: origin.clone().addScaledVector(dir, wallHit.distance),
+          distance: wallHit.distance,
+          wall: true,
+          normal: wallHit.normal,
+        };
       const blocker = hit;
       const insect = nearestInsectHit(
         T,
@@ -4336,6 +4570,11 @@ function stepProjectileSlice(dt) {
         insectIndex,
       );
       hit = insect || blocker;
+      const skid = hit && !b.shell ? ricochetOf(b, hit, dir) : null;
+      if (skid) {
+        skid.apply(hit.distance);
+        continue;
+      }
       if (hit) {
         if (b.shell) {
           const impact = shellImpact(hit, b.travelled + hit.distance, MAP.metres(FLAK.minRange));
@@ -4372,6 +4611,37 @@ function stepProjectileSlice(dt) {
         b.life = 0;
         fused = false;
       } else if (fused) explosion(b, origin.clone().addScaledVector(dir, distance));
+    }
+    if (!b.owned && !b.shell) {
+      // Tracers of other players are display only: they skid off the fixed decor like any
+      // bullet, or end on it, and never hurt.
+      projectileRay.set(origin, dir);
+      projectileRay.near = 0;
+      projectileRay.far = distance;
+      const wallHit = solidRayHit(projectileRay.ray, distance);
+      const skid = wallHit
+        ? ricochetOf(
+            b,
+            {
+              wall: true,
+              point: origin.clone().addScaledVector(dir, wallHit.distance),
+              distance: wallHit.distance,
+              normal: wallHit.normal,
+            },
+            dir,
+          )
+        : null;
+      if (skid) {
+        skid.apply(wallHit.distance);
+        continue;
+      }
+      if (wallHit) {
+        distance = wallHit.distance;
+        hitEffects.burst(origin.clone().addScaledVector(dir, distance), camera, {
+          key: b.shot,
+        });
+        b.life = 0;
+      }
     }
     b.m.position.addScaledVector(dir, distance);
     b.travelled += distance;
@@ -4953,7 +5223,6 @@ function frame(now) {
     while (acc >= 1 / 120) {
       if (smooth) meView.step(meTarget, () => physics(1 / 120));
       else physics(1 / 120);
-      simulateVacantAircraft(1 / 120);
       acc -= 1 / 120;
     }
     if (smooth && !onFoot && !respawnAt && myVehicle) meView.show(meTarget, acc * 120);
@@ -5151,7 +5420,14 @@ for (const [kind, model] of Object.entries(ghosts)) {
   });
 }
 function toggleShop() {
-  if (flightTuningUI.opened || bankUI.opened || bedUI.opened || purchaseUI.opened || vipUI.opened)
+  if (
+    flightTuningUI.opened ||
+    bankUI.opened ||
+    bedUI.opened ||
+    purchaseUI.opened ||
+    vipUI.opened ||
+    upgradeUI.opened
+  )
     return;
   if (!joined || respawnAt || sheetOpen('papers')) return;
   if (placingEquipment) cancelPlacement();
@@ -5544,52 +5820,6 @@ function renderDeliveries() {
       deliveryModels.delete(token);
     }
 }
-const vacantAircraft = new Map();
-function clearVacantAircraft() {
-  vacantAircraft.clear();
-}
-function simulateVacantAircraft(dt) {
-  if (!snap) return;
-  const host = [...snap.pilots].sort((a, b) => a.id.localeCompare(b.id))[0]?.id;
-  if (host !== id) {
-    clearVacantAircraft();
-    return;
-  }
-  const active = new Set();
-  for (const v of snap.vehicles) {
-    if (v.state.hp <= 0 || v.seats.some((s) => s.seat === 'pilot')) continue;
-    // Parked aircraft and ground vehicles are simulated by the server (src/parked-host.ts):
-    // their state arrives.
-    if (PLANE_TYPES.has(v.type) || HELI_TYPES.has(v.type) || RAPIER_RIGS[v.type]) continue;
-
-    active.add(v.id);
-    let s = vacantAircraft.get(v.id);
-    if (!s) {
-      s = structuredClone(v.state);
-      vacantAircraft.set(v.id, s);
-    }
-    s.hp = v.state.hp;
-    s.engine = v.state.engine;
-    s.wing = v.state.wing;
-    s.fuelAvailable = v.supplies?.fuel > 0;
-    if (isRotorcraft(v.type))
-      stepHelicopter(
-        T,
-        s,
-        { collective: 0, occupied: v.seats.length > 0 },
-        colliders,
-        dt,
-        VEHICLES[v.type],
-      );
-    else stepVacantAircraft(T, s, VEHICLES[v.type], colliders, dt, office.decor);
-    Object.assign(v.state, s);
-  }
-  for (const key of [...vacantAircraft.keys()])
-    if (!active.has(key)) {
-      vacantAircraft.delete(key);
-    }
-}
-
 function remainingFuel() {
   const supply = myVehicle?.supplies;
   if (!supply) return 300;
@@ -5835,6 +6065,16 @@ function heavyWorld() {
       const hit = decor.raycast(a, dir, length);
       return hit ? hit.distance / length : null;
     },
+    // The same ray, with the prop's surface normal (a shell with a ricochet angle bounces on it).
+    decorHit: (a, b) => {
+      const decor = office.decor;
+      if (!decor) return null;
+      const length = Math.hypot(b[0] - a[0], b[1] - a[1], b[2] - a[2]);
+      if (length < 1e-12) return null;
+      const dir = [(b[0] - a[0]) / length, (b[1] - a[1]) / length, (b[2] - a[2]) / length];
+      const hit = decor.raycast(a, dir, length);
+      return hit ? { t: hit.distance / length, normal: hit.normal } : null;
+    },
     // Distance to the nearest prop triangle within `radius`, or null (proximity fuses).
     decorNearest: (point, radius) => office.decor?.nearest(point, radius)?.distance ?? null,
     roster,
@@ -5903,6 +6143,20 @@ function flushPierces(projectile) {
   showHeavyImpact(report);
   action('heavy-impact', report);
 }
+// A shell that ricocheted: effect here, and the new flight for the server and the other players.
+function flushBounces(projectile) {
+  const skids = projectile.skids;
+  if (!skids?.length) return;
+  projectile.skids = [];
+  for (const skid of skids) {
+    hitEffects.burst(new T.Vector3().fromArray(skid.at), camera, {
+      key: projectile.shot + ':' + skid.bounces,
+    });
+    sound.play('ricochet', new T.Vector3().fromArray(skid.at), { ref: 20 });
+  }
+  const { p, v, age, updated, bounces } = skids.at(-1);
+  action('heavy-bounce', { shot: projectile.shot, p, v, age, updated, bounces });
+}
 function finishHeavy(projectile, impact, world) {
   if (projectile.weapon === 'missile') {
     predictedReloads.set(
@@ -5926,6 +6180,7 @@ function updateLocalHeavy() {
   for (const projectile of [...localShots.values()]) {
     const impact = stepHeavy(projectile, now, world);
     flushPierces(projectile);
+    flushBounces(projectile);
     if (impact || projectile.done) finishHeavy(projectile, impact, world);
   }
 }
@@ -5941,14 +6196,9 @@ function detonateLocalMissile(projectile) {
   );
 }
 // Neutral shell colours by weapon, identical for every player (issue #106).
-const SHELL_COLORS = {
-  he: '#e0a33c',
-  ap: '#cfd6dc',
-  antitank: '#d9b45a',
-  dcaHeavy: '#e0a33c',
-  rocket: '#e0a33c',
-  missile: '#e6e1cf',
-};
+const SHELL_COLORS = Object.fromEntries(
+  Object.entries(PROJECTILES).flatMap(([name, p]) => (p.color ? [[name, p.color]] : [])),
+);
 // Other players' shells: flown here from their recorded launch, for display.
 const remoteFlights = new Map();
 function displayedShots() {
@@ -5960,7 +6210,9 @@ function displayedShots() {
     if (record.shooter === id || localShots.has(record.shot) || effectSeen.has(record.shot))
       continue;
     let flight = remoteFlights.get(record.shot);
-    if (!flight) remoteFlights.set(record.shot, (flight = structuredClone(record)));
+    // A ricochet reported by the shooter (heavy-bounce) replaces the flight from the new launch.
+    if (!flight || (record.bounces ?? 0) !== (flight.bounces ?? 0))
+      remoteFlights.set(record.shot, (flight = structuredClone(record)));
     const owner = snap.pilots.find((p) => p.id === record.shooter);
     const relayed = owner && remoteMotion(owner)?.missile;
     if (record.weapon === 'missile' && relayed?.shot === record.shot) {
@@ -6239,6 +6491,7 @@ $('flightSettingsOpen').onclick = () => {
     bedUI.opened ||
     purchaseUI.opened ||
     vipUI.opened ||
+    upgradeUI.opened ||
     boardingBusy ||
     boardingSelectionBusy
   )
@@ -6363,7 +6616,14 @@ const bankUI = new BankUI({
 });
 function toggleBank() {
   if (spectating) return;
-  if (flightTuningUI.opened || bedUI.opened || purchaseUI.opened || vipUI.opened) return;
+  if (
+    flightTuningUI.opened ||
+    bedUI.opened ||
+    purchaseUI.opened ||
+    vipUI.opened ||
+    upgradeUI.opened
+  )
+    return;
   if (!joined || boardingBusy || boardingSelectionBusy) return;
   if (bankUI.opened) bankUI.close();
   else bankUI.open();
@@ -6407,6 +6667,32 @@ function vipSelf() {
   if (!respawnAt || isSuper() || spectating) return null;
   return soulArena?.bodies.find((b) => b.kind === 'player' && b.entity === id && !b.gone) || null;
 }
+// Refit order of an automatic turret (docs/gatling-turret.md): signed on paper, paid
+// from the common fund; the server refits it (fully repaired and reloaded).
+const upgradeUI = new UpgradeUI({
+  root: $('upgradePanel'),
+  snapshot: () => snap,
+  command: () =>
+    api('ground-defense', {
+      id,
+      epoch: snap.base.epoch,
+      ground: groundReport(),
+      action: 'upgrade',
+      target: upgradeUI.turret.id,
+      variant: upgradeUI.variant(),
+    }),
+  accept,
+  ground: groundReport,
+  onOpen: () => {
+    releaseMouse();
+    $('shop').classList.add('hidden');
+    renderPaper();
+  },
+  onClose: () => {
+    renderPaper();
+    captureMouse();
+  },
+});
 function openVipPass() {
   const body = vipSelf();
   if (!body || body.vip || !nearVipGuard(body) || vipUI.opened) return false;

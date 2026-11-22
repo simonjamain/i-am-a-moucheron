@@ -31,65 +31,75 @@ assert.equal(GATLING.ammo, 1000);
 assert.equal(GATLING.range, SENTRY.range, 'même portée que la tourelle automatique');
 assert.ok(Math.abs(1000 / GATLING.intervalMs - 12) < 1e-9, '12 tirs par seconde');
 
+// La Gatling ne s'achète plus : on y arrive en améliorant une tourelle automatique.
+const asCastor = { castor: true };
+function placeGatling(state, a, dollars = 999, now = 0) {
+  groundCommand(state, { action: 'build', kind: 'sentry', a }, a, dollars, now, asCastor);
+  const built = state.structures.at(-1);
+  groundCommand(state, { action: 'upgrade', id: built.id, variant: 'gatling' }, a, dollars, now);
+  return built;
+}
 const defense = newGroundDefense();
 assert.throws(
-  () => groundCommand(defense, { action: 'build', kind: 'gatling', a: [0, 0] }, [0, 0], 99),
-  /Castor/,
-);
-assert.throws(
   () =>
-    groundCommand(defense, { action: 'build', kind: 'gatling', a: [0, 0] }, [0, 0], 24.9, 1, {
-      castor: true,
-    }),
+    groundCommand(
+      defense,
+      { action: 'build', kind: 'gatling', a: [0, 0] },
+      [0, 0],
+      99,
+      1,
+      asCastor,
+    ),
+  /invalide/,
+  'la Gatling ne se construit pas directement',
+);
+groundCommand(defense, { action: 'build', kind: 'sentry', a: [0, 0] }, [0, 0], 99, 1, asCastor);
+const id = defense.structures[0].id;
+assert.throws(
+  () => groundCommand(defense, { action: 'upgrade', id, variant: 'gatling' }, [0, 0], 24.9),
   /insuffisante/,
 );
-const bought = groundCommand(
-  defense,
-  { action: 'build', kind: 'gatling', a: [0, 0] },
-  [0, 0],
-  50,
-  1000,
-  { castor: true },
-);
+assert.equal(defense.structures[0].kind, 'sentry', 'refus : rien ne change');
+const bought = groundCommand(defense, { action: 'upgrade', id, variant: 'gatling' }, [0, 0], 50);
 assert.equal(bought.price, 25);
 const gun = defense.structures[0];
 assert.deepEqual([gun.kind, gun.hp, gun.maxHp, gun.ammo], ['gatling', 150, 150, 1000]);
 assert.throws(
   () =>
-    groundCommand(defense, { action: 'build', kind: 'sentry', a: [0, 0.01] }, [0, 0], 50, 1, {
-      castor: true,
-    }),
+    groundCommand(
+      defense,
+      { action: 'build', kind: 'sentry', a: [0, 0.01] },
+      [0, 0],
+      50,
+      1,
+      asCastor,
+    ),
   /occupé/,
   'une Gatling occupe son emplacement comme les autres tourelles',
 );
 // Plafond partagé par les deux types de tourelle.
 const crowd = newGroundDefense();
-for (let i = 0; i < SENTRY.maxPerRoom; i++)
-  groundCommand(
-    crowd,
-    {
-      action: 'build',
-      kind: i % 2 ? 'gatling' : 'sentry',
-      a: [(i % 6) * 0.05, Math.floor(i / 6) * 0.05],
-    },
-    [(i % 6) * 0.05, Math.floor(i / 6) * 0.05],
-    999,
-    1,
-    { castor: true },
-  );
+for (let i = 0; i < SENTRY.maxPerRoom; i++) {
+  const at = [(i % 6) * 0.05, Math.floor(i / 6) * 0.05];
+  if (i % 2) placeGatling(crowd, at);
+  else groundCommand(crowd, { action: 'build', kind: 'sentry', a: at }, at, 999, 1, asCastor);
+}
 assert.throws(
   () =>
-    groundCommand(crowd, { action: 'build', kind: 'gatling', a: [0.5, 0.5] }, [0.5, 0.5], 999, 1, {
-      castor: true,
-    }),
+    groundCommand(
+      crowd,
+      { action: 'build', kind: 'sentry', a: [0.5, 0.5] },
+      [0.5, 0.5],
+      999,
+      1,
+      asCastor,
+    ),
   /maximal/,
 );
 
 // --- Cadence : 12 tirs/s malgré un tick serveur de 250 ms ------------------------
 const range = newGroundDefense();
-groundCommand(range, { action: 'build', kind: 'gatling', a: [0, 0] }, [0, 0], 99, 0, {
-  castor: true,
-});
+placeGatling(range, [0, 0], 99);
 const turret = range.structures[0];
 const damage = [];
 let shots = 0;
@@ -115,9 +125,7 @@ assert.equal(
 );
 // Une cible tuée au premier tir n'est pas touchée deux fois dans le même tick.
 const dying = newGroundDefense();
-groundCommand(dying, { action: 'build', kind: 'gatling', a: [0, 0] }, [0, 0], 99, 0, {
-  castor: true,
-});
+placeGatling(dying, [0, 0], 99);
 const victim = { id: 7, p: [0.1, 0, 0], dead: false };
 dying.structures[0].lastShotAt = 1000;
 const hitIds = [];
@@ -128,9 +136,7 @@ fireGroundSentries(dying.structures, [victim], 1400, (t) => {
 assert.deepEqual(hitIds, [7], 'pas de second tir sur une cible déjà abattue');
 // Les munitions limitent les tirs.
 const low = newGroundDefense();
-groundCommand(low, { action: 'build', kind: 'gatling', a: [0, 0] }, [0, 0], 99, 0, {
-  castor: true,
-});
+placeGatling(low, [0, 0], 99);
 low.structures[0].ammo = 1;
 low.structures[0].lastShotAt = 1000;
 assert.equal(
@@ -150,8 +156,7 @@ assert.equal(
 );
 
 // --- Castor et Castor volant -------------------------------------------------------
-assert.ok(AIRDROP_KINDS.includes('gatling'), 'le Castor volant peut larguer la Gatling');
-assert.equal(airdropCommand('gatling', { x: 1, z: 2, yaw: 0.5 }).kind, 'gatling');
+assert.ok(!AIRDROP_KINDS.includes('gatling'), 'la Gatling ne se largue pas : elle s’améliore');
 const tools = new GroundDefenseUI({
   T,
   scene: new T.Scene(),
@@ -167,7 +172,10 @@ const tools = new GroundDefenseUI({
     body: { append() {} },
   },
 }).tools;
-assert.ok(tools.some(([kind, label]) => kind === 'gatling' && /Gatling/.test(label)));
+assert.ok(
+  !tools.some(([kind]) => kind === 'gatling'),
+  'la Gatling n’est plus dans le menu d’achat',
+);
 
 // --- Modèle : quatre pièces, un seul atlas, rotation du faisceau ---------------------
 assert.equal(
@@ -382,20 +390,37 @@ pilot.mode = 'flight';
 pilot.seat = 'pilot';
 pilot.vehicle_id = castor.id;
 room.dollars = 40;
-const build = (request) =>
+const order = (request, body) =>
   game.command('GATLING', joined.id, 'ground-defense', {
     epoch: room.base.epoch,
-    action: 'build',
-    kind: 'gatling',
-    a: [0, 0],
     request,
+    ...body,
   });
-let snap = build('gatling:first');
-assert.equal(snap.dollars, 15, '25 $ débités');
+assert.throws(
+  () => order('gatling:direct', { action: 'build', kind: 'gatling', a: [0, 0] }),
+  /invalide/,
+  'la Gatling ne se commande plus à l’achat',
+);
+let snap = order('gatling:base', { action: 'build', kind: 'sentry', a: [0, 0] });
+assert.equal(snap.dollars, 35, '5 $ débités pour la tourelle de base');
+const baseId = snap.groundDefense.structures[0].id;
+room.groundDefense.structures[0].hp = 10; // abîmée : la refonte la remet à neuf
+room.groundDefense.structures[0].ammo = 3;
+snap = order('gatling:first', { action: 'upgrade', target: baseId, variant: 'gatling' });
+assert.equal(snap.dollars, 10, '25 $ débités pour la refonte');
+assert.deepEqual(
+  [snap.groundDefense.structures[0].kind, snap.groundDefense.structures[0].hp],
+  ['gatling', 150],
+);
 assert.equal(snap.groundDefense.structures[0].ammo, 1000);
-snap = build('gatling:first');
-assert.equal(snap.dollars, 15, 'nouvel essai réseau idempotent');
+snap = order('gatling:first', { action: 'upgrade', target: baseId, variant: 'gatling' });
+assert.equal(snap.dollars, 10, 'nouvel essai réseau idempotent');
 assert.equal(snap.groundDefense.structures.length, 1);
+assert.throws(
+  () => order('gatling:again', { action: 'upgrade', target: baseId, variant: 'gatling' }),
+  /ne peut pas être améliorée/,
+  'plus d’amélioration possible au dernier stade',
+);
 
 // --- Tick serveur : un effet par tourelle et par tick porte le nombre de tirs ----------
 let clock = 200000;

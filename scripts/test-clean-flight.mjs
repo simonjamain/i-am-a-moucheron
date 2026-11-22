@@ -1,3 +1,4 @@
+import { PROJECTILES } from '../src/projectiles.ts';
 import { nearestWeaponMuzzle } from '../src/muzzle.ts';
 import { TracerPool } from '../src/tracers.ts';
 import { GunSalvos } from '../src/salvos.ts';
@@ -389,6 +390,7 @@ const c = {
   debugTools: { active: false, cancel() {} },
   purchaseUI: { opened: false },
   vipUI: { opened: false },
+  upgradeUI: { opened: false },
   bedUI: { opened: false },
   bankUI: { opened: false },
   balanceUI: { opened: false },
@@ -581,6 +583,7 @@ const visualContext = {
   structuredClone,
   performance,
   integrateOrdnance,
+  PROJECTILES,
   localShots: new Map(),
   effectSeen: new Set(),
   serverClock: { now: () => Date.now() },

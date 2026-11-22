@@ -91,6 +91,19 @@ chargé à la première sortie, le décor d'un plan est construit une fois par p
   véhicule terrestre, mis en sommeil après une seconde de repos, puis réveillé tout seul si
   quelque chose le heurte. Un dormeur ne coûte rien et n'envoie plus de mises à jour. Dès
   qu'un pilote s'assoit, le véhicule quitte le monde du serveur et le client reprend l'autorité.
+- **Repos = vitesse nulle** : un véhicule terrestre au repos (même critère que le sommeil) rapporte
+  `v` et `omega` nuls, et ses corps sont remis à zéro avant de dormir. Le solveur laisse sinon un
+  résidu (≈ 0,6 m/s vers le haut) que les clients prolongent : l'engin acheté montait alors
+  lentement dans l'affichage. Test : `test-parked-host.mjs` (4b).
+- **Engin ajouté à un monde déjà actif** : un Castor ou un camion posé exactement à sa hauteur de
+  repos (achat, sortie du conducteur) dans le monde partagé d'une room qui a déjà avancé voyait son
+  corps **désactivé** par Rapier, parce que la suspension (`updateVehicle`) était appliquée avant
+  le premier pas du monde. Il restait figé à sa création avec la vitesse de ce premier pas. Les
+  rigs (`CastorRig`, `TruckRig`) attendent donc un pas de monde avant la première suspension.
+  Test : `test-parked-host.mjs` (4c).
+- **Roues du Castor** : `poseWheels` ne touche que les roues enregistrées par `rigWheels` (avions) ;
+  les six roues du Castor n'ont pas de hauteur de repos et disparaissaient (position `NaN`) dès que
+  l'engin n'était plus piloté par soi. Test : `test-aircraft-wheels.mjs`.
 - **Véhicules de départ et achetés** : ils naissent déjà dans ce monde (`hosted` dès `createVehicle`),
   se posent sur le pont puis s'endorment seuls. Anti-boucle de réapparition (`Game.fleet`,
   `advanceParked`) : pendant 5 s après sa naissance un engin ne peut pas être « parti du pont » ;
@@ -103,8 +116,8 @@ chargé à la première sortie, le décor d'un plan est construit une fois par p
 - Un choc au-delà de `PLANE_CRASH_IMPACT`, une chute mortelle (rigs terrestres) ou une sortie de
   la pièce détruit le véhicule (`hp = 0`). Les constructions posées par les joueurs ne sont
   pas encore dans ce monde (seulement la pièce et le décor).
-- Le client hôte ne simule plus aucun véhicule vide (`simulateVacantAircraft` ne trouve plus rien
-  à faire ; les hélicoptères sont au serveur aussi, voir [heli-physics.md](heli-physics.md)).
+- Aucun client ne simule de véhicule vide : tous les types sont au serveur (hélicoptères compris,
+  voir [heli-physics.md](heli-physics.md)) et le rapport `vacant` des clients n'existe plus.
 
 ## Intégration
 

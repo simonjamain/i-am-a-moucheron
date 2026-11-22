@@ -87,7 +87,7 @@ des insectes, avec volumes sphériques bornés issus de leur taille. Il déduit
 L’ancienne soustraction client liée au coût de l’ennemi est supprimée. Le contact
 est mémorisé par coque et ennemi jusqu’à séparation ; lecture d’instantané ou
 client supplémentaire n’inflige pas un second impact. La règle vaut aussi pour
-le tank et les coques vacantes ; décor et tirs conservent leurs règles distinctes.
+le tank et les coques sans pilote ; décor et tirs conservent leurs règles distinctes.
 Les positions restent déclaratives dans le modèle coopératif du jeu.
 
 Chaque impact ajoute **0,18** de salissure, plafonnée à 1. La peinture extérieure

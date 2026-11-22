@@ -124,6 +124,7 @@ nav:
       - Physique Rapier: physics-engine.md
       - Vol du biplan sur Rapier: plane-physics.md
       - Vol des hélicoptères sur Rapier: heli-physics.md
+      - Types de projectiles: projectiles.md
       - Affichage de la physique: physics-debug.md
       - Performances: performance.md
       - TypeScript: typescript.md

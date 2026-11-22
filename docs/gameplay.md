@@ -446,8 +446,8 @@ Depuis la version 355, modèle, envergure, longueur et patins sont réduits de 3
 
 **Tous les occupants** (pilote et passagers) ouvrent la roue (**G** / clic
 molette) et **larguent** les constructions du Castor, sauf les murs LEGO :
-sucre, ruban (un morceau de 10 cm), tourelle automatique, tourelle
-Gatling et canon anti-matériel, au même prix. L'objet part **toujours à la
+sucre, ruban (un morceau de 10 cm), tourelle automatique
+et canon anti-matériel, au même prix (la Gatling s'obtient en améliorant la tourelle automatique). L'objet part **toujours à la
 verticale de l'hélicoptère** et **suit son cap** ; un aperçu transparent montre où il tombera. Clic gauche ou Entrée
 larguent, dans n'importe quelle condition de vol. La caisse est débitée au
 largage ; l'objet tombe comme les autres livraisons (1/3 m/s), puis le serveur

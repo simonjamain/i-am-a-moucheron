@@ -34,21 +34,3 @@ for (const [key, forms] of Object.entries(CONTRACTS))
   }
 assert.equal(docs, 81);
 console.log('PASS: reward sounds and 810 contract variants.');
-const T = await import('../vendor/three.module.min.js');
-const { stepVacantAircraft } = await import('../src/vacant-flight.ts');
-const { VEHICLES } = await import('../src/fleet.ts');
-const { MAP } = await import('../src/scale.ts');
-const vacant = {
-  p: [0, 2, 0],
-  q: [0, 0, 0, 1],
-  v: [0, 0, -MAP.metres(30)],
-  hp: 100,
-  engine: 1,
-  wing: 1,
-  landed: false,
-  gas: 0.65,
-};
-for (let i = 0; i < 120; i++) stepVacantAircraft(T, vacant, VEHICLES.bomber, [], 1 / 120);
-assert.ok(vacant.p[2] < -0.05);
-assert.ok(vacant.p[1] < 2);
-console.log('PASS: vacant cockpit physics.');

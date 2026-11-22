@@ -36,7 +36,10 @@ const ctx = vm.createContext({
   clockOffset: 0,
 });
 vm.runInContext(
-  source.slice(source.indexOf('const deliveryModels ='), source.indexOf('const vacantAircraft =')),
+  source.slice(
+    source.indexOf('const deliveryModels ='),
+    source.indexOf('function remainingFuel()'),
+  ),
   ctx,
 );
 vm.runInContext('renderDeliveries()', ctx);
@@ -111,6 +114,7 @@ const input = {
   debugTools: { active: false, cancel() {} },
   purchaseUI: { opened: false },
   vipUI: { opened: false },
+  upgradeUI: { opened: false },
   bedUI: { opened: false },
   bankUI: { opened: false },
   balanceUI: { opened: false },

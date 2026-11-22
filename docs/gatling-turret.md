@@ -1,10 +1,28 @@
 # Tourelle automatique Gatling
 
-Deuxième tourelle automatique du **Castor** et du **Castor volant**, à côté de la
-[T-01](t01-asset.md). Elle se choisit dans la roue d'outils (G) sous le nom
-**Tourelle auto Gatling**. Comportement identique à la T-01 : elle se construit
-depuis un Castor (posée au sol) ou se largue depuis le Castor volant, tire sur
-l'ennemi le plus proche dans sa portée, se répare et se recharge aux zones de service.
+Deuxième tourelle automatique, **amélioration** de la [T-01](t01-asset.md) : elle ne
+s'achète plus (ni roue d'outils, ni largage du Castor volant) et s'obtient en
+refondant une T-01 déjà posée ([Amélioration](#amélioration)). Comportement identique
+à la T-01 : elle tire sur l'ennemi le plus proche dans sa portée, se répare et se
+recharge aux zones de service.
+
+## Amélioration
+
+Un joueur à pied qui vise une T-01 à portée voit la tourelle cernée du bleu d'interaction
+(le contour des postes de véhicules) ; un clic gauche ouvre l'**ordre de refonte**, un
+document papier comme les autres : une case par variante de l'arbre, jamais cochée
+d'office, puis la signature. La case peut être décochée, la signature reste verrouillée
+tant qu'aucune n'est cochée. Signer sans assez d'argent dans la caisse commune donne le
+tampon « REFUSÉ » et rien n'est envoyé. La portée est celle des postes de véhicules
+(demi-taille de la tourelle + `POST_REACH`, `upgradeInReach`) ; tous les joueurs peuvent
+améliorer.
+
+Le serveur (`groundCommand`, action `upgrade`) change le type pour la variante demandée,
+débite le **prix de la variante** (25 $ pour la Gatling), **répare** la tourelle et
+**remplit ses munitions** au maximum de la variante. Une tourelle au dernier stade (ni
+variante restante) n'est plus ni cernée ni interactive. L'arbre vit dans
+`TURRET_UPGRADES` (`src/ground-sentry.ts`) : ajouter une variante, c'est l'y inscrire et
+ajouter son type de tourelle, le formulaire s'adapte.
 
 ## Règles
 

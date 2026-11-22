@@ -1,12 +1,13 @@
 import { pilotFireInterval } from './fleet.ts';
 import { FIXED_DCA_AMMO } from './ground-ammo.ts';
 import { FLAK, MAP } from './scale.ts';
+import { PROJECTILES } from './projectiles.ts';
 import type { Vec3, XYZ } from './types.ts';
 
 // The Spitfire fires one round per gun every 60 ms.
 export const RAPID_DCA_GUN_INTERVAL = pilotFireInterval('spitfire');
 // Damage of one round of the high-rate DCA (the Spitfire's guns do 75).
-export const RAPID_DCA_DAMAGE = 62;
+export const RAPID_DCA_DAMAGE = PROJECTILES.rapidDca.damage;
 export const FIXED_DCA = Object.freeze({
   dca: { ammo: FIXED_DCA_AMMO, interval: FLAK.interval, clearance: 2.6, height: 3.2 },
   dcaRapid: { ammo: 1000, interval: RAPID_DCA_GUN_INTERVAL / 4, clearance: 2.6, height: 3.4 },

@@ -70,6 +70,7 @@ Tous les documents du jeu sont en papier :
 | Bon de commande de l’atelier                         | un motif, `purchaseMotives()`                    |
 | Prospectus de la banque, après le choix de l’offre   | la reconnaissance de dette, `loanConsent(waves)` |
 | Coupe-file VIP du purgatoire (vigile)                | aucune (signature seule, paiement)               |
+| Ordre de refonte d’une tourelle auto                 | une variante, `UpgradeUI` (`src/upgrade-ui.ts`)  |
 | Dossiers de prise de poste et de retour, lit, autres | aucune (signature seule)                         |
 
 Seul le **bon de commande** demande un motif. Chaque commande tire trois motifs au hasard
@@ -78,7 +79,7 @@ dans `PURCHASE_MOTIVE_POOL`, puis propose toujours « Convenance personnelle
 même. Cochée, elle est **réellement refusée** : tampon « REFUSÉ », rien n’est envoyé au
 serveur, le document se ferme et il faut recommencer depuis l’atelier. La banque ne demande
 pas de motif (elle ne juge pas, elle prélève) : une seule case reconnaît que l’emprunt pèse
-sur l’équipe pendant ses vagues. Les autres documents se signent tels quels. Une signature
+sur l’équipe pendant ses vagues. L’**ordre de refonte** d’une tourelle propose une case par variante de son arbre ; signé sans assez d’argent dans la caisse, il reçoit le tampon « REFUSÉ » et rien n’est envoyé. Les autres documents se signent tels quels. Une signature
 acceptée reçoit le tampon « APPROUVÉ » sur la feuille, qui s’efface pendant que la partie
 reprend.
 Composant partagé : `src/paper-form.ts` (cases, coche au crayon, tampons) ; le lit et

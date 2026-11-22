@@ -5,7 +5,7 @@ import { MAP } from '../src/scale.ts';
 import { loadRapier } from '../src/physics-world.ts';
 import { ParkedHost, HOSTED_PLANES, HOSTED_GROUND, isHosted } from '../src/parked-host.ts';
 import { PLANE_TYPES } from '../src/plane-physics.ts';
-import { VEHICLES } from '../src/fleet.ts';
+import { VEHICLES, vehiclePad } from '../src/fleet.ts';
 
 const RAPIER = await loadRapier(() => import('../vendor/rapier.compat.mjs'));
 const m = (v) => MAP.metres(v);
@@ -115,6 +115,67 @@ for (const type of PLANE_TYPES)
     updates.filter((u) => u.id === 'glide').every((u) => Number.isFinite(u.state.p[1])),
     'the glider stays finite',
   );
+}
+// 4b. A ground vehicle at rest reports no motion. The solver leaves a residue on a parked
+// vehicle (a few tenths of a metre per second upwards, a slight spin); clients carry a vehicle
+// on at its reported velocity, so a stale residue made a bought Castor or DCA truck creep
+// upwards in the display (and a bought tank, a little less).
+{
+  for (const type of HOSTED_GROUND) {
+    const host = new ParkedHost(RAPIER, null, []);
+    host.physics.world.createCollider(
+      RAPIER.ColliderDesc.cuboid(60, 0.5, 60).setTranslation(0, -0.5, 0),
+    );
+    const pad = { ...plane('g', 0, 0, {}, type), profile: VEHICLES[type] };
+    pad.state.p = [0, VEHICLES[type].gear, 0];
+    host.sync([pad]);
+    const { updates } = run(host, 6);
+    const mine = updates.filter((u) => u.id === 'g');
+    const last = mine.at(-1).state;
+    assert.ok(host.asleep('g'), type + ' fell asleep');
+    assert.deepEqual(last.v, [0, 0, 0], type + ' asleep: no velocity reported');
+    assert.deepEqual(last.omega ?? [0, 0, 0], [0, 0, 0], type + ' asleep: no spin reported');
+    // While it settles and the solver's residue is small, the report is already zero.
+    const calm = mine.filter((u) => Math.hypot(...u.state.v) === 0);
+    assert.ok(calm.length > 0, type + ' reports rest before it is put to sleep');
+    // The body itself carries no velocity either: waking it later starts from rest.
+    const v = host.body('g').linvel(),
+      w = host.body('g').angvel();
+    assert.equal(Math.hypot(v.x, v.y, v.z, w.x, w.y, w.z), 0, type + ' body at rest');
+  }
+}
+// 4c. A vehicle added to a world that has already stepped is simulated like the others. A bought
+// Castor or DCA truck is added to the room's world, which has been stepping since the starter
+// vehicles were born, exactly at its resting height (placed on the floor); a vehicle someone
+// leaves is added the same way. Its suspension was updated before Rapier had stepped the new
+// body, which left the body disabled for good: frozen where it was created, with the velocity
+// of its first step (the display then carried it upwards).
+{
+  const bornAt = (id, type, dx) => {
+    const pad = vehiclePad(type);
+    return {
+      id,
+      type,
+      profile: VEHICLES[type],
+      state: { ...pad, p: [pad.p[0] + dx, pad.p[1], pad.p[2]], v: [0, 0, 0], omega: [0, 0, 0] },
+    };
+  };
+  for (const type of ['castor', 'flaktruck', 'tank'])
+    for (const settleSeconds of [0.25, 4]) {
+      const host = new ParkedHost(RAPIER, null, []);
+      const first = bornAt('first', 'tank', -0.3);
+      host.sync([first]);
+      const { t } = run(host, settleSeconds);
+      const late = bornAt('late', type, 0.3);
+      host.sync([first, late]);
+      const { updates } = run(host, 6, t);
+      const label = `${type} added after ${settleSeconds} s of stepping`;
+      assert.ok(host.body('late').isEnabled(), label + ': the body is simulated, not disabled');
+      const last = updates.filter((u) => u.id === 'late').at(-1).state;
+      assert.notEqual(last.p[1], late.state.p[1], label + ': its suspension settled it');
+      assert.ok(host.asleep('late'), label + ': it comes to rest and sleeps');
+      assert.deepEqual(last.v, [0, 0, 0], label + ': no velocity once at rest');
+    }
 }
 // 5. The ground vehicles share the world with the aircraft: each settles where it was left
 // (a few millimetres above the floor), brakes on, is not destroyed, and is put to sleep; on a

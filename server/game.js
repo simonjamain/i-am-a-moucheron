@@ -79,6 +79,7 @@ import { snapshotRosterCore, snapshotRosterKey } from '../src/snapshot-wire.ts';
 import { appendDebugEnemy, debugPlacement, standingDummies } from '../src/debug-enemies.ts';
 import { newBank, signLoan, settleLoans } from '../src/bank.ts';
 import { canUseWeapon, HEAVY, TANK_MG, availableShell } from '../src/armament.ts';
+import { PROJECTILES } from '../src/projectiles.ts';
 import { sweptSphereMayTouch } from '../src/swept-broadphase.ts';
 import { createOrdnance, segmentSphere } from '../src/ordnance.js';
 import { StatsLedger } from './stats.ts';
@@ -1212,6 +1213,14 @@ export class Game {
       wing: s.wing,
       engine: s.engine,
       fire: (flying || ['crew', 'turret'].includes(p.mode)) && s.fire,
+      // Rounds fired so far and the ricochets off moving surfaces reported lately: the other
+      // players replay them (src/remote-rounds.ts). Only their shape is checked.
+      rounds: Number.isInteger(s.rounds) && s.rounds >= 0 ? Math.min(s.rounds, 2 ** 31 - 1) : 0,
+      skids: Array.isArray(s.skids)
+        ? s.skids
+            .filter((k) => Array.isArray(k) && k.length === 8 && k.every(Number.isFinite))
+            .slice(0, 8)
+        : undefined,
       ground: s.ground || null,
       gas: Number.isFinite(s.gas) ? Math.max(0, Math.min(1, s.gas)) : (old.gas ?? 0.65),
       omega:
@@ -1252,32 +1261,6 @@ export class Game {
     }
     // Motion reports have no vacant aircraft. Avoid sorting all connected pilots
     // 20 times/second per player just to iterate over an empty report list.
-    const vacant = Array.isArray(b.vacant) ? b.vacant : [];
-    if (vacant.length) {
-      let host = null;
-      const liveSince = this.now() - PRESENCE_MS;
-      for (const candidate of r.pilots.values())
-        if (candidate.seen > liveSince && (host === null || candidate.id < host))
-          host = candidate.id;
-      if (p.id === host)
-        for (const report of vacant.slice(0, 100)) {
-          const v = r.vehicles.get(report.id);
-          if (!v || v.seats.has('pilot') || isHosted(v.type) || !validMotion(report.state))
-            continue;
-          v.state = {
-            ...report.state,
-            hp:
-              report.state.hp === v.reportedHP ? v.state.hp : Math.min(v.state.hp, report.state.hp),
-          };
-          v.reportedHP = report.state.hp;
-          if (!v.state.landed || v.state.hp <= 0) v.ready = 0;
-          if (v.state.hp <= 0)
-            for (const id of [...v.seats.values()]) {
-              const mate = r.pilots.get(id);
-              if (mate) this.kill(r, mate, mate.incarnation);
-            }
-        }
-    }
     if (p.life === 'alive' && p.mode === 'foot') this.base(r, p, b.ground);
     if (p.life === 'dead') this.arena(r, world(p), p, b.ground);
   }
@@ -1298,6 +1281,7 @@ export class Game {
           'leave',
           // A shell still in flight when its shooter dies keeps its effect.
           'heavy-impact',
+          'heavy-bounce',
           'fixed-dca-impacts',
         ].includes(path),
       'Accédez au purgatoire avant d’agir.',
@@ -1407,6 +1391,7 @@ export class Game {
     else if (path === 'aircraft-fire') return clone(this.fire(r, p, b));
     else if (path === 'fixed-dca-impacts') return this.rapidDcaImpacts(r, p, b.impacts);
     else if (path === 'heavy-impact') this.heavyImpact(r, p, b);
+    else if (path === 'heavy-bounce') this.heavyBounce(r, p, b);
     else if (path === 'heavy-fire') this.heavyFire(r, p, b);
     else if (path === 'hit') this.hit(r, p, b);
     else if (path === 'friendly-hit') this.friendly(r, p, b);
@@ -1540,7 +1525,8 @@ export class Game {
       requireGame(false, error.message, 400);
     }
     r.dollars = money(r.dollars - transaction.price);
-    if (!r.lab.enabled) this.stats.purchase(r, b.kind, transaction.price);
+    if (!r.lab.enabled)
+      this.stats.purchase(r, b.action === 'upgrade' ? b.variant : b.kind, transaction.price);
     if (b.action === 'build' && isFortification(b.kind))
       this.registerFortification(r, transaction.ids[0]);
     if (b.action === 'remove') {
@@ -2365,6 +2351,32 @@ export class Game {
     const v = r.vehicles.get(shot.vehicle);
     if (v) v.nextMissileAt = now + 2000 / r.balance.fireRate;
   }
+  // A shell that ricocheted: its flight restarts from the shooter's new position and velocity,
+  // for the players who fly it from the record. Same trust as the impact.
+  heavyBounce(r, p, b) {
+    requireGame(typeof b.shot === 'string' && b.shot.length <= 120, 'Rebond invalide.', 400);
+    const shot = r.ordnance.find((s) => s.shot === b.shot && s.shooter === p.id);
+    if (!shot) return;
+    const vector = (v) => Array.isArray(v) && v.length === 3 && v.every(Number.isFinite);
+    requireGame(
+      vector(b.p) &&
+        vector(b.v) &&
+        Number.isFinite(b.age) &&
+        Number.isFinite(b.updated) &&
+        Number.isInteger(b.bounces),
+      'Rebond invalide.',
+      400,
+    );
+    // Only the latest bounce counts if reports arrive out of order.
+    if (b.bounces <= (shot.bounces ?? 0)) return;
+    Object.assign(shot, {
+      p: [...b.p],
+      v: [...b.v],
+      age: b.age,
+      updated: b.updated,
+      bounces: b.bounces,
+    });
+  }
   // Impact computed by the shooter and trusted: applied once. Damage to friends is the
   // shooter's decision too.
   heavyImpact(r, p, b) {
@@ -2591,7 +2603,9 @@ export class Game {
     const rapid = typeof b.shot === 'string' && b.shot.startsWith(p.id + ':rapid:');
     // Nobody carries a weapon on foot (docs/gameplay.md).
     if (rapid ? !this.rapidImpactAllowed(r, p, b.shot) : p.mode === 'foot') return;
-    const damage = rapid ? RAPID_DCA_DAMAGE : Math.max(1, Math.min(800, Number(b.amount) || 75));
+    const damage = rapid
+      ? RAPID_DCA_DAMAGE
+      : Math.max(1, Math.min(800, Number(b.amount) || PROJECTILES.mg.damage));
     const amount = damage * r.balance.damage;
     this.once(
       r,
@@ -2619,7 +2633,7 @@ export class Game {
         ? RAPID_DCA_DAMAGE
         : p.mode === 'turret'
           ? Math.max(0, Math.min(200, Math.round(Number(b.amount) || 80)))
-          : (tankDamage ?? 75)) * r.balance.damage;
+          : (tankDamage ?? PROJECTILES.mg.damage)) * r.balance.damage;
     if (b.vehicle) {
       const v = r.vehicles.get(b.vehicle);
       requireGame(world(p) === 'office' && v, 'Appareil hors de cet espace.');
