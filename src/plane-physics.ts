@@ -495,6 +495,19 @@ export class PlaneRig implements DebugRig {
       y: -controls.yaw * 0.8 * auth.yaw * turn,
       z: controls.roll * 2.25 * auth.roll * lift * turn,
     };
+    // Angle-of-attack protection: with enough speed, pulling on the stick asks for the best
+    // turn the wings can give, not for a nose rate the lift cannot follow (the nose would run
+    // ahead of the flight path and stall at high speed). The pitch command fades out as the
+    // angle nears the stall; it only stalls for want of speed, which lifts the protection.
+    const incidence = alpha + params.zeroLift;
+    if (target.x * incidence > 0) {
+      const protection = Math.min(1, Math.max(0, (speed / params.stallSpeed - 1.2) / 0.6)),
+        room = Math.min(
+          1,
+          Math.max(0, (0.9 * params.stallAngle - Math.abs(incidence)) / (0.3 * params.stallAngle)),
+        );
+      target.x *= 1 - protection * (1 - room);
+    }
     // Standing on its wheels at low speed, pitch and roll are the gear's and gravity's
     // business (the aircraft settles onto its tail wheel): no rate is imposed on them.
     const settling = onWheels && lift === 0;

@@ -133,6 +133,7 @@ const files = {
       'muzzle',
       'hull-gun',
       'purchase-ui',
+      'vip-pass-ui',
       'paper-form',
       'vehicle-care',
       'tank-reticle',

@@ -47,6 +47,7 @@ import { clampProximity, MOBILE_FUSE } from '/mobile-flak.js';
 import { ballisticMarks } from '/tank-reticle.js';
 import { InteractionTiming } from '/interaction-timing.js';
 import { BedUI } from '/bed-ui.js';
+import { VipPassUI } from '/vip-pass-ui.js';
 import { bedAccess } from '/beds.js';
 import { tankSight } from '/tank-view.js';
 import { applyGunRecoil, recoilAmount } from '/tank-recoil.js';
@@ -157,7 +158,17 @@ import {
 } from '/base.js';
 import { GameSound } from '/game-audio/game-sound.js';
 import { swarmAudioGroups } from '/game-audio/swarm.js';
-import { advanceArena, deskOccupant, bodyMotion, mergeOwnedArena } from '/purgatory-physics.js';
+import {
+  advanceArena,
+  deskOccupant,
+  bodyMotion,
+  mergeOwnedArena,
+  nearVipGuard,
+  vipPrice,
+  VIP_DESK,
+  VIP_GUARD,
+  VIP_LANE,
+} from '/purgatory-physics.js';
 import {
   flightClickAction,
   rotateMouseAim,
@@ -1370,6 +1381,7 @@ function accept(s, force = false) {
   snap = s;
   bedUI.observe(self);
   purchaseUI.observe(self);
+  vipUI.observe(self);
   renderCrew();
   reconcileEquipment([...(s.equipment || []), s.initialStation].filter(Boolean));
   renderShop();
@@ -1907,6 +1919,10 @@ addEventListener('keydown', (event) => {
       purchaseUI.close();
       return;
     }
+    if (vipUI.opened) {
+      vipUI.close();
+      return;
+    }
     if (bedUI.opened) {
       bedUI.close();
       return;
@@ -1945,7 +1961,8 @@ addEventListener('keydown', (event) => {
     toggleBank();
     return;
   }
-  if (flightTuningUI.opened || bankUI.opened || bedUI.opened || purchaseUI.opened) return;
+  if (flightTuningUI.opened || bankUI.opened || bedUI.opened || purchaseUI.opened || vipUI.opened)
+    return;
   if (interactionKey === 'KeyG') {
     if (groundDefenseUI.handleWheelKey(interactionKey, true, event.repeat)) event.preventDefault();
     return;
@@ -2100,8 +2117,10 @@ addEventListener('keydown', (event) => {
   keys[code] = true;
 
   if (respawnAt && code === 'KeyE' && !event.repeat) {
-    paperSuppressed = false;
-    renderPaper();
+    if (!openVipPass()) {
+      paperSuppressed = false;
+      renderPaper();
+    }
   }
   if (
     equipmentEnterAllowed({ onFoot, vehicle: myVehicle, turret: turretIndex, dead: !!respawnAt }) &&
@@ -2265,14 +2284,19 @@ function renderPurgatory() {
     stunned = body?.koUntil > Date.now() + clockOffset;
   const occupant = soulArena && deskOccupant(soulArena, Date.now() + clockOffset),
     owns = body && occupant?.id === body.id;
+  const vipBody = vipSelf();
   $('soulPosition').textContent =
     i < 0
       ? 'Matérialisation…'
       : owns
         ? 'Guichet à vous · Signez !'
-        : occupant
-          ? `Guichet occupé : ${occupant.name}`
-          : 'Entrez dans le cercle doré devant Saint Pierre';
+        : vipBody && !vipBody.vip && nearVipGuard(vipBody)
+          ? `E : coupe-file VIP · ${vipPrice(snap?.wave ?? 0)} $ sur la caisse commune`
+          : vipBody?.vip
+            ? 'Coupe-file payé · Avancez jusqu’au guichet VIP'
+            : occupant
+              ? `Guichet occupé : ${occupant.name}`
+              : 'Faites la queue avec les insectes, ou payez le vigile pour la file VIP';
   $('saintName').textContent = isSuper() ? '☁ Super Saint-Pierre' : '☁ Saint Pierre';
   $('soulTitle').textContent = isSuper()
     ? 'Bienvenue au super purgatoire.'
@@ -2482,6 +2506,7 @@ function renderPaper() {
     !bankUI.opened &&
     !bedUI.opened &&
     !purchaseUI.opened &&
+    !vipUI.opened &&
     !boardingSelectionBusy &&
     eligible &&
     index < documents[context]?.length;
@@ -2653,7 +2678,7 @@ $('soulPaperButton').onclick = () => {
 };
 const purgScene = new T.Scene();
 const purgColliders = [
-  new T.Box3(new T.Vector3(-3.5, 0, -2.9), new T.Vector3(3.5, 1.6, -0.9)),
+  new T.Box3(new T.Vector3(-3.5, 0, -2.9), new T.Vector3(7, 1.6, -0.9)),
   new T.Box3(new T.Vector3(-100, -0.3, -100), new T.Vector3(100, -0.05, 200)),
 ];
 purgScene.background = new T.Color('#172c39');
@@ -2702,6 +2727,51 @@ const zoneLabel = textLabel('PLACE AU GUICHET', '#ffdf8d', 4);
 zoneLabel.position.set(0, 0.2, 1.1);
 zoneLabel.rotation.x = -Math.PI / 2;
 purgScene.add(zoneLabel);
+// VIP lane (docs/purgatory-queue.md): ropes on posts from the physics' obstacles,
+// a second window on the counter, its golden circle, the guard at the gate.
+const vipDecor = new T.Group();
+purgScene.add(vipDecor);
+pm(vipDecor, 3.6, 1.6, 2, '#5f4e39', VIP_DESK.x, 0.8, -1.9);
+let vipGate = null;
+for (const o of VIP_LANE) {
+  const along = o.d > o.w,
+    length = along ? o.d : o.w;
+  const rope = pm(
+    vipDecor,
+    along ? 0.06 : length,
+    0.06,
+    along ? length : 0.06,
+    o.vip ? '#d8b25a' : '#9e2433',
+    o.x,
+    0.82,
+    o.z,
+  );
+  if (o.vip) vipGate = rope;
+  for (let t = -length / 2; t <= length / 2 + 0.01; t += length / Math.ceil(length / 2.4))
+    pm(vipDecor, 0.12, 0.9, 0.12, '#d8b25a', o.x + (along ? 0 : t), 0.45, o.z + (along ? t : 0));
+}
+const vipZone = new T.Mesh(
+  new T.RingGeometry(VIP_DESK.r - 0.3, VIP_DESK.r, 48),
+  new T.MeshBasicMaterial({
+    color: '#ffd979',
+    side: T.DoubleSide,
+    transparent: true,
+    opacity: 0.8,
+  }),
+);
+vipZone.rotation.x = -Math.PI / 2;
+vipZone.position.set(VIP_DESK.x, 0.04, VIP_DESK.z);
+vipDecor.add(vipZone);
+const vipLabel = textLabel('FILE VIP · ÂMES HUMAINES', '#ffdf8d', 5);
+vipLabel.position.set(VIP_DESK.x, 2.9, -1.2);
+vipDecor.add(vipLabel);
+const vipGuard = humanoid('#1d2228', 'guard');
+vipGuard.position.set(VIP_GUARD.x, 0, VIP_GUARD.z);
+vipGuard.rotation.y = -Math.PI / 2;
+vipDecor.add(vipGuard);
+const vipGuardLabel = textLabel('VIGILE · COUPE-FILE', '#e6e1cf', 2.4);
+vipGuardLabel.position.set(VIP_GUARD.x, 2.75, VIP_GUARD.z);
+vipDecor.add(vipGuardLabel);
 function soulImpact(e) {
   if (e.kind === 'stamp') sound.play('stamp', { x: e.x, y: 1.2, z: e.z }, { ref: 7 });
 }
@@ -2721,6 +2791,16 @@ function physicalPurgatory(dt, now) {
       if (event.origin !== id && Date.now() + clockOffset - event.at < 1000) soulImpact(event);
     }
   saint.scale.setScalar(isSuper() ? 1.4 : 1);
+  // Saint Pierre walks behind the counter to the window he serves.
+  const served = deskOccupant(soulArena);
+  const counter = !isSuper() && served && served.x > VIP_DESK.x / 2 ? VIP_DESK.x : 0;
+  saint.position.x += (counter - saint.position.x) * (1 - Math.exp(-3 * dt));
+  saintLabel.position.x = saint.position.x;
+  superSaintLabel.position.x = saint.position.x;
+  vipDecor.visible = !isSuper();
+  // The rope gate swings aside for this soul once its pass is paid.
+  if (vipGate) vipGate.visible = !self.vip;
+  vipZone.material.color.set(served?.id === self.id && self.vip ? '#d5ef73' : '#ffd979');
   saintLabel.visible = !isSuper();
   superSaintLabel.visible = isSuper();
   purgScene.background.set(isSuper() ? '#30223d' : '#172c39');
@@ -2831,7 +2911,9 @@ function physicalPurgatory(dt, now) {
   soulShake = Math.max(0, soulShake - dt);
   const rendered = soulMeshes.get(self.id)?.position || new T.Vector3(self.x, 0, self.z);
   groundCamera(purgCamera, rendered, dt, true);
-  deskZone.material.color.set(deskOccupant(soulArena)?.id === self.id ? '#d5ef73' : '#ffd979');
+  deskZone.material.color.set(
+    served?.id === self.id && !(self.vip && self.x > VIP_DESK.x / 2) ? '#d5ef73' : '#ffd979',
+  );
   renderPurgatory();
 }
 const turrets = [];
@@ -3594,7 +3676,8 @@ function updateAimedPost() {
     !boardingSelectionBusy &&
     !bankUI.opened &&
     !bedUI.opened &&
-    !purchaseUI.opened
+    !purchaseUI.opened &&
+    !vipUI.opened
   ) {
     const rect = canvas.getBoundingClientRect();
     const free = document.pointerLockElement !== canvas && aimMouse;
@@ -5157,7 +5240,7 @@ function frame(now) {
   for (const model of turrets) if (model?.userData.dish) animateRadar(model, dt, joined);
   updateFallingEnemies(dt);
   updateContextHUD();
-  midgeBatch.flush(insects, now, camera);
+  midgeBatch.flush(insects, now);
   walkerBatch.flush(insects);
   flyerBatch.flush(insects, now);
   tracerPool.flush();
@@ -5249,7 +5332,8 @@ for (const [kind, model] of Object.entries(ghosts)) {
   });
 }
 function toggleShop() {
-  if (flightTuningUI.opened || bankUI.opened || bedUI.opened || purchaseUI.opened) return;
+  if (flightTuningUI.opened || bankUI.opened || bedUI.opened || purchaseUI.opened || vipUI.opened)
+    return;
   if (!joined || respawnAt || sheetOpen('papers')) return;
   if (placingEquipment) cancelPlacement();
   debugTools.cancel();
@@ -5400,6 +5484,7 @@ function updatePlacement() {
       camera.getWorldDirection(new T.Vector3()),
       reach,
       (origin, direction) => aimPlacement(w, origin, direction, reach),
+      (x, y, z) => new T.Vector3(x, y, z),
     ),
     candidate =
       body.grounded !== false && p
@@ -6469,6 +6554,7 @@ $('flightSettingsOpen').onclick = () => {
     bankUI.opened ||
     bedUI.opened ||
     purchaseUI.opened ||
+    vipUI.opened ||
     boardingBusy ||
     soulBusy ||
     boardingSelectionBusy
@@ -6550,7 +6636,7 @@ function physicsRigs() {
 }
 function updateDebugTools() {
   const lab = joined && !!snap?.lab?.enabled;
-  const on = lab || (joined && views.volumes);
+  const on = joined && views.volumes;
   physicsOverlay.update(physicsRigs(), joined && views.physics);
   if (debugTools.active && !lab) debugTools.cancel();
   else if (debugTools.active) debugTools.render();
@@ -6593,7 +6679,7 @@ const bankUI = new BankUI({
 });
 function toggleBank() {
   if (spectating) return;
-  if (flightTuningUI.opened || bedUI.opened || purchaseUI.opened) return;
+  if (flightTuningUI.opened || bedUI.opened || purchaseUI.opened || vipUI.opened) return;
   if (!joined || boardingBusy || soulBusy || boardingSelectionBusy) return;
   if (bankUI.opened) bankUI.close();
   else bankUI.open();
@@ -6616,6 +6702,36 @@ const bedUI = new BedUI({
     captureMouse();
   },
 });
+
+// VIP lane pass (docs/purgatory-queue.md): E next to the guard opens the slip.
+const vipUI = new VipPassUI({
+  root: $('vipPanel'),
+  snapshot: () => snap,
+  command: (body) => api('vip-pass', { id, ...body }),
+  accept,
+  ground: groundReport,
+  onOpen: () => {
+    releaseMouse();
+    renderPaper();
+  },
+  onClose: () => {
+    renderPaper();
+    captureMouse();
+  },
+});
+function vipSelf() {
+  if (!respawnAt || isSuper() || spectating) return null;
+  return soulArena?.bodies.find((b) => b.kind === 'player' && b.entity === id && !b.gone) || null;
+}
+function openVipPass() {
+  const body = vipSelf();
+  if (!body || body.vip || !nearVipGuard(body) || vipUI.opened || soulBusy) return false;
+  vipUI.open(
+    { slot: -1 },
+    snap.pilots.find((p) => p.id === id),
+  );
+  return vipUI.opened;
+}
 
 const interactionTiming = new InteractionTiming();
 function beginBoardingFeedback(kind, seat) {

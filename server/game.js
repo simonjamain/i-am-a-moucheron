@@ -47,6 +47,10 @@ import {
   advanceArena,
   relayBodyReport,
   deskOccupant,
+  inVipDesk,
+  SOUL_ENTRANCE,
+  VIP_LANE,
+  vipPrice,
 } from '../src/purgatory-physics.ts';
 import {
   wavePlan,
@@ -533,10 +537,13 @@ export class Game {
       let b = a.bodies.find((b) => b.id === s.id);
       if (!b) {
         b = createSoul(s, i, now);
-        if (s.kind === 'player') Object.assign(b, { x: 3.2, z: Math.max(3.2, 1.1 + i * 1.85) });
+        // Players appear before both queues: the insects' (free) and the VIP lane.
+        if (s.kind === 'player')
+          Object.assign(b, { x: SOUL_ENTRANCE.x, z: SOUL_ENTRANCE.z + (i % 4) * 0.6 });
         a.bodies.push(b);
       }
       b.paper = s.paper;
+      b.vip = !!s.vip;
       b.maxHealth = s.kind === 'enemy' ? ENEMY_TYPES[s.enemy_type].hp : 100;
       b.health =
         s.kind === 'enemy' ? b.maxHealth - s.damage : (r.pilots.get(s.entity)?.health ?? 100);
@@ -544,6 +551,8 @@ export class Game {
       b.koUntil = 0;
       b.attack = null;
     }
+    // The VIP lane's ropes stand only in the ordinary purgatory.
+    if (realm === 'purgatory') a.obstacles = VIP_LANE;
     a.host =
       shown
         .filter((s) => s.kind === 'player')
@@ -1374,6 +1383,7 @@ export class Game {
     else if (path === 'hit') this.hit(r, p, b);
     else if (path === 'friendly-hit') this.friendly(r, p, b);
     else if (path === 'soul-hit') this.soulHit(r, p, b);
+    else if (path === 'vip-pass') this.vipPass(r, p, b);
     else if (path === 'blast') {
       requireGame(
         p.life === 'alive' &&
@@ -2698,6 +2708,34 @@ export class Game {
       }
     });
   }
+  // VIP lane pass (docs/purgatory-queue.md): a signed slip, paid once from the
+  // common fund at the wave's price; refused when the fund cannot pay it.
+  vipPass(r, p, b) {
+    requireGame(
+      p.life === 'dead' && world(p) === 'purgatory' && signature(b.signature),
+      'Signez le coupe-file au purgatoire.',
+    );
+    requireGame(
+      b.epoch === r.base.epoch && b.incarnation === p.incarnation,
+      'Partie ou décès périmés.',
+    );
+    const s = values(r.souls).find(
+      (s) =>
+        s.kind === 'player' &&
+        s.entity === p.id &&
+        s.realm === 'purgatory' &&
+        s.status === 'waiting',
+    );
+    requireGame(s, 'Âme absente de la file.');
+    if (s.vip) return;
+    const price = vipPrice(r.wave);
+    requireGame(
+      Math.round(r.dollars * 100) >= price * 100,
+      `Caisse commune insuffisante : le coupe-file coûte ${price} $.`,
+    );
+    r.dollars = money(r.dollars - price);
+    s.vip = true;
+  }
   sign(r, p, b) {
     requireGame(p.life === 'dead' && signature(b.signature), 'Signez au purgatoire.');
     const realm = world(p),
@@ -2706,7 +2744,7 @@ export class Game {
       s = body && r.souls.get(body.id),
       forms = realm === 'super' ? 5 : 3;
     requireGame(
-      body && deskOccupant(a, this.now())?.id === body.id,
+      body && (deskOccupant(a, this.now())?.id === body.id || (s?.vip && inVipDesk(body))),
       'Placez votre corps dans la zone du guichet.',
     );
     requireGame(

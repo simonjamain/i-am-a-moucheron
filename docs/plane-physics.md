@@ -34,6 +34,11 @@ par « instructeur », comme War Thunder ; déjà dans `src/mouse-flight.ts`).
 - **Portance** `CL(α)` : linéaire jusqu'à l'angle de décrochage (0,3 rad), puis chute à une
   courbe de plaque ; une incidence fixe (`zeroLift`) évite d'avoir à tenir le manche en
   croisière. Accélération de portance = `g (v/Vdécrochage)² CL / CLmax`.
+- **Protection d'incidence.** Avec de la vitesse (au-delà de 1,2 à 1,8 fois le décrochage), la
+  commande de cabrage s'éteint à l'approche de l'angle de décrochage : tirer à fond donne le
+  meilleur virage des ailes, pas un taux de rotation que la portance ne suit pas (le nez
+  courait devant la trajectoire et l'avion décrochait à pleine vitesse). Faute de vitesse la
+  protection disparaît : le décrochage reste possible.
 - **Traînée** : `CD0 + k CL²`, plus un terme en `sin² α` une fois décroché.
 - **Poussée** le long du nez, qui diminue avec la vitesse (hélice).
 - **Stabilité** : l'air ramène le nez dans le sens de la trajectoire (tangage, lacet) et
