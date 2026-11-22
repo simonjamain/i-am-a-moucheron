@@ -33,7 +33,7 @@
     sous `// @ts-expect-error`. `scripts/test-loading-exit.mjs` efface désormais les
     types avant d'exécuter `boot.ts`.
 - Restent écrits à la main : 104 `.js` dans `src/` (dont `client.js`, ≈ 6 800
-  lignes, `contracts.js`, `waves.js`, `changelog.js` et les données générées),
+  lignes, `contracts.ts`, `waves.js`, `changelog.ts` et les données générées),
   `server/*.js` et les `scripts/*.mjs`. `npm run ts:migrate -- --leaves` donne la
   liste des modules prêts.
 - Hors de cet environnement : partie WebGL réelle et pilotage humain. Le test

@@ -90,7 +90,7 @@ ne laisser aucune couture où un insecte resterait accroché.
 
 `layoutPieces(layout)` produit les primitives (sol, volumes d'ébauche) et les
 boîtes des modèles ; les colliders sont exactement ces boîtes (`layoutSolids`).
-`office.js` dessine le sol, les ébauches et les modèles (`office-pack.ts` : un
+`office.ts` dessine le sol, les ébauches et les modèles (`office-pack.ts` : un
 `InstancedMesh` par modèle, un seul matériau pour tout le pack). Les modules lisent la disposition **active**
 (`activeLayout()`) : `OFFICE_LAYOUT`, `PORTALS`, `groundGoal()`,
 `groundStaticObstacles()`, `staticGroundFlow()`, `enemyRoute()` et

@@ -124,7 +124,7 @@ Justifier toute exception dans la PR.
 
 ## Nouveautés visibles par les joueurs
 
-Tenir `src/changelog.js` à jour **dans la même PR** pour chaque fonctionnalité ou
+Tenir `src/changelog.ts` à jour **dans la même PR** pour chaque fonctionnalité ou
 correction perceptible en jeu. Ajouter une entrée pour le nouveau numéro de
 `VERSION` (ou regrouper les nouveautés de ce numéro), dans l'ordre décroissant.
 Écrire une ou deux phrases très courtes en français courant, sans vocabulaire

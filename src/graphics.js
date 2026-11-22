@@ -6,17 +6,17 @@ import { MODEL_DATA as FLAKTRUCK } from './meshy-flaktruck-data.js';
 import { MODEL_DATA as STUKA } from './meshy-stuka-data.js';
 import { AXLE_PARTS } from './tank-gear.ts';
 import { prepareBelts, prepareSuspension } from './track-suspension.ts';
-import { makeH2 } from './h2-model.js';
-import { makeBiplane, makeBiplaneBomber } from './biplane-model.js';
-import { makeM1 } from './m1-model.js';
-import { makeB3 } from './b3-model.js';
+import { makeH2 } from './h2-model.ts';
+import { makeBiplane, makeBiplaneBomber } from './biplane-model.ts';
+import { makeM1 } from './m1-model.ts';
+import { makeB3 } from './b3-model.ts';
 import { makeCastorMeshy } from './castor-model.ts';
 import { makeFlyingCastorMeshy } from './flying-castor-model.ts';
-import { createCharacter, CHARACTER_HEIGHT, LEGACY_HEIGHT } from './character-model.js';
+import { createCharacter, CHARACTER_HEIGHT, LEGACY_HEIGHT } from './character-model.ts';
 import { createMidgeRig } from './midge-model.js';
 import { WALKERS, walkerStride } from './walker-batch.js';
 import { FLYERS } from './flyer-batch.js';
-import { TAU } from './rigged-creature.js';
+import { TAU } from './rigged-creature.ts';
 import {
   FLYER_HIT_TOLERANCE,
   GROUND_LEGS,

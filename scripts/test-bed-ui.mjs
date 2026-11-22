@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { BedUI } from '../src/bed-ui.js';
+import { BedUI } from '../src/bed-ui.ts';
 class Element {
   constructor() {
     this.elements = new Map();

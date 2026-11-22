@@ -1,5 +1,5 @@
 import { MIDGE_DATA as D } from './midge-data.js';
-import { defineCreature, TAU } from './rigged-creature.js';
+import { defineCreature, TAU } from './rigged-creature.ts';
 
 // Midge enemy: user-supplied Meshy "Angry Little Fly" with its SmartRig skeleton
 // plus two wing bones added at import. The GLB has no clip: the flight cycle

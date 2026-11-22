@@ -1,4 +1,4 @@
-import { BedUI } from './bed-ui.js';
+import { BedUI } from './bed-ui.ts';
 import { SHOP, shopPrice, purchaseCount } from './equipment.ts';
 import { PURCHASE_MOTIVES } from './paper-form.ts';
 // Workshop order on the same paper document as the bed contract (BedUI): motive,

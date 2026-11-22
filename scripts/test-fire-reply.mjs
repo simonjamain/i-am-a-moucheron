@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { Game } from '../server/game.js';
-import { GameSession } from '../server/session.js';
+import { GameSession } from '../server/session.ts';
 import { PROTOCOL, ReplyAssembler } from '../src/udp-protocol.ts';
 
 // Regression: firing a machine gun from a vehicle sent a reply that is not a

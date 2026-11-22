@@ -1,5 +1,5 @@
 import { SPIDERLING_DATA as D } from './spiderling-data.js';
-import { defineCreature, TAU } from './rigged-creature.js';
+import { defineCreature, TAU } from './rigged-creature.ts';
 import { walkLegs, groundPresentation, REST_PHASES } from './walker-gait.ts';
 
 // Spiderling (hatched by an egg-laying spider): user-supplied Meshy "Grumpy

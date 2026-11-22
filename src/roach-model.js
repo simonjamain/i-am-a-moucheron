@@ -1,5 +1,5 @@
 import { ROACH_DATA as D } from './roach-data.js';
-import { defineCreature, TAU } from './rigged-creature.js';
+import { defineCreature, TAU } from './rigged-creature.ts';
 import { walkLegs, groundPresentation, REST_PHASES } from './walker-gait.ts';
 
 // Cockroach enemy: user-supplied Meshy "Low Poly Cockroach" with its 40-bone

@@ -2,7 +2,7 @@ import { VEHICLES, isSupportVehicle } from './fleet.ts';
 import { levelOf } from './airdrop.ts';
 import { isTurret, turretSpec } from './ground-sentry.ts';
 import { FORTIFICATIONS } from './ground-fortifications.ts';
-import { distanceToSegment } from './ground-defense.js';
+import { distanceToSegment } from './ground-defense.ts';
 import { FIXED_DCA } from './fixed-dca.ts';
 import {
   ammoCapacity,

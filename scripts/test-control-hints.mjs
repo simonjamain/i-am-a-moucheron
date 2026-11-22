@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { controlHints, controlHintItems } from '../src/live-hud.js';
+import { controlHints, controlHintItems } from '../src/live-hud.ts';
 import { VEHICLES } from '../src/fleet.ts';
 
 const AIRPLANE_ONLY = /gouverne|tangage|roulis|gaz|cap\b/;

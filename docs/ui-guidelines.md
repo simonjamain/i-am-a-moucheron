@@ -81,8 +81,8 @@ poste, revenir au lit, à l’atelier ou au guichet). Une signature acceptée re
 « APPROUVÉ » sur la feuille, qui s’efface pendant que la partie reprend. Les changements et
 échanges de poste, faits en plein vol, gardent une signature seule pour rester rapides.
 Composant partagé : `src/paper-form.ts` (motifs, cases, coche au crayon, tampons) ; le lit et
-le bon de commande en héritent par `src/bed-ui.js`, le dossier est rendu par `renderPaper`
-(`src/client.js`) et le prospectus bancaire par `src/bank-ui.js` (coupons cochés au crayon,
+le bon de commande en héritent par `src/bed-ui.ts`, le dossier est rendu par `renderPaper`
+(`src/client.js`) et le prospectus bancaire par `src/bank-ui.ts` (coupons cochés au crayon,
 tampons « SIGNÉ » et « PAYÉ » sur le contrat et ses échéances). Le banquier s’ouvre à
 distance (touche N, « ligne directe ») ; un guichet visable dans le bureau viendra avec les
 autres objets. Jetons (`--paper`, `--ink`, `--pencil`, `--stamp-ink`, `--typewriter`) et

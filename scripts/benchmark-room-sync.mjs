@@ -3,7 +3,7 @@
 // Usage: node scripts/benchmark-room-sync.mjs [players enemies] ...
 import { performance } from 'node:perf_hooks';
 import { Game, SNAPSHOT_SHARE_MS } from '../server/game.js';
-import { GameSession } from '../server/session.js';
+import { GameSession } from '../server/session.ts';
 import { PROTOCOL } from '../src/udp-protocol.ts';
 
 const args = process.argv.slice(2).map(Number);

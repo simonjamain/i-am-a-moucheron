@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import * as T from '../vendor/three.module.min.js';
 import { ModelPreview } from '../src/model-preview.ts';
 import { createGroundModel } from '../src/ground-model.js';
-import { makeFortificationStation } from '../src/fortification-model.js';
+import { makeFortificationStation } from '../src/fortification-model.ts';
 import { createGraphics } from '../src/graphics.js';
 import { placementFacing } from '../src/placement-aim.ts';
 import { supportedPlacement } from '../src/equipment.ts';

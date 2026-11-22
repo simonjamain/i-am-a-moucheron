@@ -178,7 +178,7 @@ decor.dispose();
 // way to their triangles once the decor world is built; shell and floor stay boxes.
 const T = await import('../vendor/three.module.min.js');
 const { rayCollider } = await import('../src/oriented-collider.ts');
-const { createOffice } = await import('../src/office.js');
+const { createOffice } = await import('../src/office.ts');
 const { createGraphics } = await import('../src/graphics.js');
 const { setActiveLayout } = await import('../src/layouts.ts');
 const { runInNewContext } = await import('node:vm');

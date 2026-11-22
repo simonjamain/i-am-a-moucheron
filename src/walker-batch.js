@@ -16,7 +16,7 @@ import {
   SPIDERLING_MODEL,
 } from './spiderling-model.js';
 import { nearestRest } from './walker-gait.ts';
-import { TAU } from './rigged-creature.js';
+import { TAU } from './rigged-creature.ts';
 
 export const WALKERS = Object.freeze({
   ant: { creature: ANT, model: ANT_MODEL, hit: ANT_HIT, bones: ANT_BONES },

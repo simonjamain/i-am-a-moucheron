@@ -4,7 +4,7 @@ Depuis la version 403, un plan peut être éclairé par ses propres lampes au li
 soleil oblique historique. `diagonale` est le premier : deux **ventilateurs de
 plafond lumineux** (modèle `Ceiling_Fan` du [Cartoon Office Pack](office-layouts.md#décor--le-cartoon-office-pack))
 et la lampe de bureau de l'îlot A. Code : `src/office-lights.ts`, appelé par
-`src/office.js` ; contrôle : `scripts/test-office-lights.mjs`.
+`src/office.ts` ; contrôle : `scripts/test-office-lights.mjs`.
 
 ## Suspensions sous les nuages
 
