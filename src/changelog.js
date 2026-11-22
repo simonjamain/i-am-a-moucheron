@@ -1,6 +1,10 @@
 // Quelques étapes marquantes, rédigées pour les joueurs. Pas un journal technique.
 export const PLAYER_CHANGELOG = [
   {
+    version: 412,
+    changes: ['Les fusées de proximité explosent en s’éloignant de la vraie forme des meubles, plus de la boîte autour.'],
+  },
+  {
     version: 411,
     changes: [
       'Obus, roquettes et missiles touchent la vraie forme des meubles, comme les balles : on peut les passer sous une chaise.',

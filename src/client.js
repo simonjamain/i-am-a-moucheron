@@ -6015,6 +6015,8 @@ function heavyWorld() {
       const hit = decor.raycast(a, dir, length);
       return hit ? hit.distance / length : null;
     },
+    // Distance to the nearest prop triangle within `radius`, or null (proximity fuses).
+    decorNearest: (point, radius) => office.decor?.nearest(point, radius)?.distance ?? null,
     roster,
     killed: (i) => kills.has(i),
     frames: (time, projectile) => {

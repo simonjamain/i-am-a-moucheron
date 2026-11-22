@@ -47,7 +47,11 @@ travail avance par lots (note de reprise : [collisions en triangles](tasks/colli
      le long de chaque sous-pas sur les triangles (`world.decorRay`, fourni par
      `client.js` : `DecorCollision.raycast`), comme une balle. Leurs boîtes `decor`
      sont écartées dès que le monde du décor existe. Les fusées de proximité
-     gardent les boîtes (leur détonation se fait à distance). Le serveur ne simule
+     (version 412) suivent la même règle : contact par rayon (inerte avant armement), et
+     une fois armées, `world.decorNearest` (`DecorCollision.nearest`) donne la distance
+     au triangle le plus proche ; elles explosent quand cette distance, entrée dans le
+     rayon de proximité, recommence à croître (ou sort du rayon), donc en s'éloignant.
+     Les ennemis, joueurs, véhicules et postes restent des sphères/coques. Le serveur ne simule
      pas ces tirs : `MAX_ORDNANCE` (10 000) ne protège que la salle ;
    - **2b (version 409)**, pose d'équipement par le joueur sur les vraies surfaces.
      `supportedPlacement` (`src/equipment.ts`) prend un appui `DecorSupport` :

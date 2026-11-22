@@ -188,6 +188,19 @@ function stepProximity(projectile, end, world) {
       }
     };
     for (const box of nearby) solid(box);
+    // Props, on their real triangles: a ray along the step is a contact (inert
+    // before arming, like a box); once armed, the fuse waits for the closest
+    // approach inside the radius, so it fires as the shell moves away.
+    const touch = world.decorRay?.(a, b) ?? null;
+    if (touch !== null && (!armed || touch < armed.t - 1e-12)) consider(touch, 'inert');
+    if (armed && world.decorNearest) {
+      const near = world.decorNearest(b, radius);
+      const before = projectile.decorNear;
+      if (near === null) delete projectile.decorNear;
+      else projectile.decorNear = near;
+      if (before !== undefined && (near === null || near > before + radius * 1e-4))
+        consider(armed.t, 'fuse');
+    }
     solid({ min: { x: -100, y: -100, z: -100 }, max: { x: 100, y: 0, z: 100 } });
     const previousFrames =
       armed && frames.length ? world.frames(projectile.updated - dt * 1000, projectile) : [];
