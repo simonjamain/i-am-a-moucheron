@@ -1,34 +1,20 @@
-# Issue #11 — ombres d’atterrissage, candidat version 51
+# Ombres d’atterrissage
 
-**Validation WebGL et performance ouverte. Ne pas fusionner ce candidat avant
-la comparaison demandée dans l’issue #11.**
+Les ombres aident à juger la hauteur d'un appareil avant le contact. Deux
+préréglages de même coût (mêmes lumières, maillages et shadow map 2048²) vivent dans
+`src/shadow-settings.ts` ; `applyShadowPreset` applique `landing` par défaut :
 
-Depuis la version 403, un plan éclairé par ses lampes (Diagonale) garde ces ombres
-d'atterrissage avec un soleil presque vertical qui ne porte plus que les objets
-mobiles : voir [l'éclairage du bureau](office-lighting.md).
+| Préréglage | Filtre          | Ambiance | Soleil |
+| ---------- | --------------- | -------: | -----: |
+| `baseline` | PCF doux        |      2,5 |      3 |
+| `landing`  | PCF, rayon 1 px |      1,5 |      4 |
 
-## Mise à jour issue #135
-
-Les bords francs de BasicShadowMap étaient trop nets et crénelés. Le préréglage
-`landing` utilise désormais PCFShadowMap avec un rayon de flou de 1 texel : bords
-légèrement adoucis, mêmes intensités (ambiance 1,5, soleil 4), donc ombres toujours
-sombres sous les appareils. Des gros plans rendus (swiftshader) ont montré qu'un
-rayon de 1,5 ou 2 éclaircissait trop les petites ombres ; à confirmer en WebGL réel.
-
-## Solution préparée
-
-Le candidat conserve la même scène, le même soleil et la shadow map 2048 × 2048.
-Il remplace le filtrage PCF doux par BasicShadowMap pour obtenir un bord franc,
-et modifie uniquement les intensités : ambiance hémisphérique 2,5 → 1,5 ; soleil
-3 → 4. Le contraste augmente dans les zones couvertes par les ombres, tout en
-compensant une partie de l’éclairage direct. Pas de silhouette précise ajoutée,
-ni d’augmentation de résolution, de nombre de lumières, de géométrie ou de surfaces
-recevant/projetant les ombres. Les ombres utilisent toujours les vraies surfaces
-sol/bureaux. Le mode Basic peut rendre les bords crénelés : sa lisibilité et ses
-artefacts doivent être observés avant acceptation.
-
-`shadow-settings.ts` centralise le candidat et le préréglage précédent. Le rendu
-logiciel de secours n’apporte pas de preuve concernant ces ombres WebGL.
+`landing` assombrit et contraste les ombres sous les appareils ; un rayon de flou de
+1 texel adoucit les bords sans éclaircir les petites ombres (rayons 1,5 ou 2 testés
+sur des gros plans rendus en logiciel, à confirmer en WebGL réel). Les ombres portent
+sur les vraies surfaces sol/bureaux. Sur un plan éclairé par ses lampes (Diagonale),
+le soleil presque vertical ne porte plus que les objets mobiles :
+voir [l'éclairage du bureau](office-lighting.md).
 
 ## Comparaison reproductible
 
@@ -44,7 +30,7 @@ sur Internet. Le comparateur utilise les vrais modules et modèles du jeu.
 
 1. Garder matériel, navigateur, taille de fenêtre et résolution constants.
    Fermer les outils de développement pendant les mesures, rester au premier plan.
-2. Comparer « Avant » et « Candidat » sur le bureau puis le sol, avec les hauteurs
+2. Comparer « Avant » (`baseline`) et « Candidat » (`landing`) sur le bureau puis le sol, avec les hauteurs
    0,006 / 0,04 / 0,15 m du monde. Observer en particulier le H2 et les avions,
    l’appui des roues/patins, le contraste et les artefacts sur les surfaces.
 3. Lancer « Mesurer A/B/B/A » : sept véhicules, 120 insectes, caméra fixe,
@@ -63,18 +49,15 @@ sur Internet. Le comparateur utilise les vrais modules et modèles du jeu.
 Le benchmark reste un scénario de comparaison, pas une preuve de performance
 maximale du jeu ni de confort WAN. Il ne change pas automatiquement de qualité.
 
-## État des preuves
+Limite connue : `scripts/review-shadows.html` importe directement `../src/*.js` alors
+que plusieurs modules sont passés en `.ts` ; il ne fonctionne plus sans l'assembleur
+([migration TypeScript](tasks/typescript-migration.md)).
 
-- `test-shadow-settings.mjs` : scène identique avant/après — 355 meshes, 14 932
-  sommets, 354 objets projetant une ombre, 345 receveurs, shadow map 2048² et
-  frustum inchangé. C’est un inventaire CPU, pas un temps de frame GPU.
-- `test-shadow-review.mjs` : instrumentation vérifiée avec des doublures ; une
-  requête GPU est terminée une seule fois, et les échantillons sont enregistrés.
-  La construction réelle du comparateur vérifie aussi sept véhicules et 120
-  moucherons à la même échelle miniature que le client.
-- Rendu et mesures avant/après **non exécutés** : aucun exécutable Chromium trouvé
-  dans l’environnement ; Playwright indique son navigateur attendu comme absent.
-  Aucun FPS, temps GPU ou amélioration visuelle ne sont revendiqués.
+## Tests
 
-Prochaine étape : exécuter le comparateur sur un poste WebGL, analyser les traces
-et captures, puis décider de l’acceptation de ce candidat ou d’un ajustement.
+- `test-shadow-settings.mjs` : scène identique entre préréglages (meshes, sommets,
+  projeteurs, receveurs, shadow map, frustum) ; inventaire CPU, pas temps GPU.
+- `test-shadow-review.mjs` : instrumentation du comparateur avec des doublures
+  (requêtes GPU, échantillons, sept véhicules et 120 moucherons à l'échelle du client).
+
+Aucune mesure WebGL avant/après n'a été consignée.

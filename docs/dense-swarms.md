@@ -1,4 +1,4 @@
-# Nuées de moucherons — version 38
+# Nuées de moucherons
 
 Le directeur Node compte désormais chaque individu dans le [budget annoncé](progression.md). Les sections de version qui suivent décrivent les états historiques du directeur.
 

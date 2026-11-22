@@ -1,4 +1,4 @@
-# Chasseur et bombardier biplans — version 275
+# Chasseur et bombardier biplans
 
 Deux modèles Meshy fournis par l'utilisateur remplacent le chasseur léger **M1** et le
 bombardier **B3** comme avions de base du bureau (départ gratuit). Les deux anciens avions

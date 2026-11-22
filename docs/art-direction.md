@@ -124,7 +124,7 @@ la source. Fonctionnement : [audio](audio.md).
   gravité du ton fait l’effet.
 - Les consignes utiles restent claires : l’humour ne masque jamais ce que le joueur doit
   faire.
-- Les textes de jeu sont en français courant ; noms validés des engins : [gameplay](gameplay.md#accueil-et-noms).
+- Les textes de jeu sont en français courant ; noms validés des engins : [gameplay](gameplay.md#accueil).
 
 ## Références
 

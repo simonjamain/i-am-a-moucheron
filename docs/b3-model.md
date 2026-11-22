@@ -18,7 +18,7 @@ leurs tirs indépendamment, avec le protocole existant.
 
 Depuis la version 263, le B3 utilise le modèle refait par l'utilisateur (5 797
 triangles, tourelles dorsale, de queue et ventrale articulées) : voir
-[le remodelage de la flotte](meshy-fleet.md#remodelage-de-la-flotte-version-263).
+[le remodelage de la flotte](meshy-fleet.md#remodelage-de-la-flotte).
 L'historique ci-dessous décrit la version précédente.
 
 Le modèle est issu de la tâche Meshy `01a1a87e-d709-73c8-b5d8-3fe935a944b8`, depuis

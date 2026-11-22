@@ -72,7 +72,7 @@ et la direction arrivent par le canal de mouvement existant. Stocks, lancement
 et détonation utilisent les commandes fiables, liées à la génération d'occupation.
 Les effets ne produisent aucun second impact.
 
-### Effets des roquettes et du missile (version 240)
+### Effets des roquettes et du missile
 
 `src/missile-exhaust.ts` applique un profil par projectile (`EXHAUST_PROFILES`) : fumée
 plus sombre et plus épaisse qu'auparavant, flamme plus grande et plus vive, et halo

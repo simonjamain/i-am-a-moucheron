@@ -16,7 +16,7 @@ Le bouton **Debug : OFF / Debug : ON** (en haut à droite) est disponible dans c
   de collision des objets du décor s'y ajoutent en fil de fer jaune
   ([collisions en triangles](collisions.md)).
 
-## Tester les ennemis (version 320)
+## Tester les ennemis
 
 Pendant une **vague** en mode debug, le marchand (**P**) affiche deux colonnes
 supplémentaires, avec une carte par espèce (les neuf, bébé araignée compris) :

@@ -9,7 +9,7 @@ la coque, porte la couleur propre à chaque exemplaire.
 
 Depuis la version 263, le H2 utilise le modèle refait par l'utilisateur (5 102
 triangles, rotor à cinq pales, canon de nez articulé) : voir
-[le remodelage de la flotte](meshy-fleet.md#remodelage-de-la-flotte-version-263).
+[le remodelage de la flotte](meshy-fleet.md#remodelage-de-la-flotte).
 L'historique ci-dessous décrit la version précédente.
 
 - Génération Meshy : `01a1a814-67d0-73ec-833f-d66281bd2d07`.

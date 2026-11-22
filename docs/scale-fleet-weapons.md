@@ -59,7 +59,7 @@ no minimum animation wait and no archive of signed sheets. See [signature handli
 Mission start schedules the first wave at +10 s. Finishing a wave schedules the
 next at +60 s. Manual start can shorten subsequent breaks. Transitions use the shared wall clock and the maintenance tick.
 
-## Revision 020: collisions, movement and depth
+## Collisions, movement and depth
 
 Projectile ray queries traverse visible physical meshes only (`nearestMeshHit`).
 Camera-facing Sprite labels cannot intercept a shot or require a raycast camera.
@@ -93,11 +93,11 @@ La proximité D2 est exprimée en mètres de référence (0,5–20), contraireme
 radar en mètres du décor ; elle ne modifie pas le rayon de dégâts. Les nouvelles
 coques et stocks utilisent le même ratio centralisé.
 
-## Effets visuels des missiles et roquettes (version 120)
+## Effets visuels des missiles et roquettes
 
 Le client affiche une flamme orange avec un cœur lumineux derrière chaque roquette et missile, ainsi qu'une traînée de fumée qui se dissipe. L'effet est local au rendu : aucun message UDP supplémentaire ni changement de collision. Les fumées sont plafonnées à 320 éléments, les ressources des flammes sont partagées et les émissions sont interrompues à la disparition du projectile.
 
-## Affichage des unités (version 127)
+## Affichage des unités
 
 Les distances et vitesses de simulation restent inchangées. Depuis la version 237 ([issue #105](https://github.com/simonjamain/i-am-a-moucheron/issues/105)), le HUD affiche les **valeurs réelles du bureau** via `src/units.ts` : vitesses en cm/s ou m/s (`formatSpeed(v)`, `v` en m/s du décor), altitude et distances en mm, cm ou m (`formatDistance`). Les réglages exprimés en mètres de référence (fusée DCA 100–1 200, proximité D2 0,5–20, rayon d'éclatement 8) sont convertis par `MAP.metres` pour l'affichage : 30 cm–3,60 m, 1,5 mm–6,0 cm, 2,4 cm. Les graduations du char sont définies directement en mètres du décor (15 cm à 9 m). `scripts/test-units.mjs` vérifie ces conversions contre les dimensions du décor ; aucun équilibrage ni protocole réseau n'est modifié.
 

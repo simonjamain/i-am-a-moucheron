@@ -13,7 +13,7 @@ contenant les mouvements acceptés depuis le lot précédent ; chacun ignore sa
 propre entrée. Le navigateur envoie toujours son mouvement en JSON, avec son
 heure de capture : les récepteurs placent les échantillons à cette heure et
 adaptent leur délai d'affichage ; voir
-[performances](performance.md#interpolation-des-joueurs-distants-à-lheure-de-capture-version-256). Les commandes portent un identifiant croissant et
+[performances](performance.md#interpolation-des-joueurs-distants-à-lheure-de-capture). Les commandes portent un identifiant croissant et
 reçoivent leur résultat d'exécution. Identité de session, incarnation et numéro
 d'occupation empêchent une ancienne position de modifier un nouveau corps ou
 un nouveau poste. Aucun repli HTTP ne transporte du gameplay ; un réseau sans

@@ -261,7 +261,7 @@ un `InstancedMesh` par espèce, ombres via un matériau de profondeur dédié).
 
 ![Poses de marche](walkers-model-review.jpg)
 
-### Cafard (version 308)
+### Cafard
 
 Modèle Meshy « Low Poly Cockroach » fourni par l'utilisateur, même chaîne que la
 fourmi ; il remplace le cafard procédural (anciennement une fourmi agrandie).
@@ -291,7 +291,7 @@ fourmi ; il remplace le cafard procédural (anciennement une fourmi agrandie).
 
 ![Poses de marche du cafard et rendu instancié](roach-model-review.jpg)
 
-### Rat (version 310)
+### Rat
 
 Modèle Meshy « Low Poly Mouse » fourni par l'utilisateur **avec son propre clip de
 marche** ; il remplace le rat procédural. C'est le premier ennemi dont le cycle
@@ -329,7 +329,7 @@ rejoue un clip au lieu d'une démarche calculée.
 
 ![Poses de marche du rat](rat-model-review.jpg)
 
-### Bébé araignée (version 317)
+### Bébé araignée
 
 Modèle Meshy « Grumpy Spider » fourni par l'utilisateur, déjà riggé, sans clip ; il
 remplace les bébés procéduraux (sphères et boîtes d’un ancien module de lot,
@@ -359,7 +359,7 @@ supprimé). Même chaîne que l'araignée pondeuse.
 
 ![Poses de marche du bébé araignée](spiderling-model-review.jpg)
 
-## Scarabée Meshy (vol, version 307)
+## Scarabée Meshy (vol)
 
 Modèle fourni par l'utilisateur, déjà riggé par Meshy, sans clip ; il remplace le
 « bourdon blindé » procédural de l'espèce `brute`, renommée « Scarabée ».
@@ -401,7 +401,7 @@ Modèle fourni par l'utilisateur, déjà riggé par Meshy, sans clip ; il rempla
 
 ![Poses du cycle de vol et rendu instancié](beetle-model-review.jpg)
 
-### Abeille (version 309)
+### Abeille
 
 Modèle fourni par l'utilisateur, déjà riggé par Meshy, sans clip ; il remplace la
 « carapace » procédurale de l'espèce `guard`, renommée « Abeille ».
@@ -433,7 +433,7 @@ Modèle fourni par l'utilisateur, déjà riggé par Meshy, sans clip ; il rempla
 
 ![Poses du cycle de vol de l'abeille](bee-model-review.jpg)
 
-### Moustique (version 311)
+### Moustique
 
 Modèle Meshy « Low Poly Mosquito » fourni par l'utilisateur, déjà riggé, sans clip ;
 il remplace le moustique procédural. Même chaîne que l'abeille.
@@ -585,13 +585,13 @@ rééchantillonnées en WebP 1K pour l'exécution. La géométrie reste intacte
 sur un taux de réduction arbitraire. Toute simplification supplémentaire doit
 être mesurée et validée sur une copie avant substitution.
 
-## Castor volant (hélicoptère Meshy) — version 292
+## Castor volant (hélicoptère Meshy)
 
 GLB fourni et approuvé par l'utilisateur, importé sans simplification (2 767
 triangles, rotors séparés par îlots) : provenance, import et vérifications dans
-[la flotte Meshy](meshy-fleet.md#castor-volant--hélicoptère-meshy-version-292).
+[la flotte Meshy](meshy-fleet.md#castor-volant--hélicoptère-meshy).
 
-## Lit de réapparition Drawer Bed — version 291
+## Lit de réapparition Drawer Bed
 
 GLB fourni et approuvé par l’utilisateur pour intégration, sans nouvelle génération
 ni crédit Meshy. Source locale hors Git : `assets/originals/bed/drawer-bed.glb`,

@@ -10,7 +10,7 @@ selon le véhicule ; une pastille flottante porte la couleur d'identification.
 
 Depuis la version 267, le M1 utilise le modèle refait par l'utilisateur (2 357
 triangles, hélice articulée, deux mitrailleuses de nez) : voir
-[le remodelage de la flotte](meshy-fleet.md#remodelage-de-la-flotte-version-263).
+[le remodelage de la flotte](meshy-fleet.md#remodelage-de-la-flotte).
 L'historique ci-dessous décrit la version précédente.
 
 - Génération Meshy : `01a1a800-d23f-700f-a4c7-6f5cff0ed1fc`.

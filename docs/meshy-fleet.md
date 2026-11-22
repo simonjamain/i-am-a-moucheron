@@ -2,7 +2,7 @@
 
 Depuis la version 263, le Spitfire S6, le T3, le D2, le H2 et le B3 utilisent les
 modèles refaits par l'utilisateur, articulés pièce par pièce ; le chasseur et le bombardier biplans les ont rejoints en version 275 ([biplanes](biplane-models.md)) : voir
-[le remodelage de la flotte](#remodelage-de-la-flotte-version-263). Les sections
+[le remodelage de la flotte](#remodelage-de-la-flotte). Les sections
 suivantes décrivent la première génération, remplacée partout : le M1 et le
 Stuka suivent depuis la version 266.
 
@@ -71,7 +71,7 @@ vérifiés visuellement en jeu : silhouette, texture, repère, chaque poste et s
 armes, remorque D2, collision et fluidité avec plusieurs véhicules.
 Une compilation et un test sans GPU ne constituent pas cet essai.
 
-## Remodelage de la flotte (version 263)
+## Remodelage de la flotte
 
 L'utilisateur a refait cinq véhicules dans Meshy. Chaque GLB est **un seul
 maillage** texturé dont chaque pièce mobile est un **îlot séparé** :
@@ -144,7 +144,7 @@ hiérarchies et l'égalité entre bouches dessinées et origines de la physique
 B3). **Essai en jeu requis** : rendu, tirs de chaque poste, braquage de la
 remorque, collisions et performances à plusieurs véhicules en WebGL/UDP.
 
-## Castor G1 : modèle Meshy remodelé (version 262)
+## Castor G1 : modèle Meshy remodelé
 
 Le Castor de l'issue [#76](https://github.com/simonjamain/i-am-a-moucheron/issues/76) utilise désormais le modèle refait par l'utilisateur, `Meshy_AI_Tactical_Rescue_Rover_1110083041_texture_1.glb` (SHA-256 `b211b4234f6a2ac443357c7867c9a634288a098f6fd5bfa62e3b4b863e67c466`, 3 700 triangles, texture 2 048 px). Il remplace les trois anciennes tâches séparées (châssis `01a1afc9-29f8-…`, tourelle, roue ; ~30 000 triangles pour la seule coque), ainsi que le masquage des roues sculptées dans la coque, devenu inutile.
 
@@ -161,7 +161,7 @@ Le GLB est un seul maillage, mais **chaque pièce est un îlot séparé** (158 �
 
 Pour tout nouvel export GLB Meshy, voir le [pipeline de validation et de simplification](asset-pipeline.md) : les originaux approuvés restent la référence, et les variantes optimisées doivent préserver les textures et les pivots.
 
-## Castor volant : hélicoptère Meshy (version 292)
+## Castor volant : hélicoptère Meshy
 
 GLB fourni et approuvé par l'utilisateur, sans nouvelle génération : nom original
 `Meshy_AI_Rescue_Rotorcraft_1113100652_texture.glb`, SHA-256

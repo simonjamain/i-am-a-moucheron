@@ -1,4 +1,4 @@
-# Rendu dessin animé (cell shading et contours) — versions 277 et 278
+# Rendu dessin animé (cell shading et contours)
 
 Depuis la version 278, le rendu « toon » est **le rendu du jeu pour tous les joueurs** :
 trois paliers de lumière et des contours de 1,5 px (`TOON_LOOK` dans `src/toon.ts`),
