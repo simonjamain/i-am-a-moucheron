@@ -186,6 +186,7 @@ import { loadRapier } from '/physics-world.js';
 import { CastorRig } from '/castor-physics.js';
 import { TankRig } from '/tank-physics.js';
 import { PlaneRig, PLANE_CRASH_IMPACT } from '/plane-physics.js';
+import { WHEEL_RADIUS, parkedCompression, poseBiplaneWheels } from '/biplane-model.js';
 import { PhysicsOverlay } from '/physics-debug.js';
 import { updateSuspension } from '/track-suspension.js';
 import { TRACK_HALF } from '/tank-gear.js';
@@ -4019,6 +4020,7 @@ function updateOthers(dt) {
     g.userData.animateGun?.(dt, performance.now() < (g.userData.gunFiredUntil || 0));
     updateInscriptions(T, g, v, snap.pilots);
     g.visible = v.state.hp > 0;
+    if (!isSelf && g.userData.wheels) poseBiplaneWheels(g, parkedCompression(!!v.state.landed));
     // Damage shows as engine smoke, never as a change of shape.
     if (!VEHICLES[v.type].ground && g.visible)
       engineSmoke.emit(g, damageRatio(isSelf ? hp : v.state.hp, VEHICLES[v.type].maxHP || 100), dt);
@@ -4629,6 +4631,12 @@ function physics(dt) {
     // The instructor reads body rates; the engine keeps the angular velocity in the world.
     omega.fromArray(state.omega).applyQuaternion(me.quaternion.clone().invert());
     forward = new T.Vector3(0, 0, -1).applyQuaternion(me.quaternion);
+    // The wheels follow the springs and turn with the ground speed.
+    poseBiplaneWheels(
+      me,
+      planeRig.compression,
+      state.landed ? (-vel.dot(forward) * dt) / (WHEEL_RADIUS * ACTOR_UNIT) : 0,
+    );
     stall = planeRig.stall;
     landing = {
       landed: state.landed,

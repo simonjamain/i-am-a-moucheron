@@ -39,6 +39,16 @@ par « instructeur », comme War Thunder ; déjà dans `src/mouse-flight.ts`).
   d'adhérence latérale) : on s'oriente en avançant un peu, avec un filet de gaz sur la
   direction ; il n'y a plus de rotation forcée à l'arrêt. L'avion suit donc la pente d'un sol irrégulier
   (`castRayAndGetNormal` sur le décor et les solides).
+- **Alignement sur le modèle** : la géométrie vient du modèle (`src/meshy-biplane-data.js`,
+  unités de modèle × `MODEL_TO_REF` = 1,857 m de référence) : moyeux des roues (x ±0,775,
+  z −1,546), boîtes des ailes, du fuselage, du plan fixe et de la dérive mesurées sur les
+  îlots du maillage, béquille au bas de la gouverne de direction (le modèle n'a pas de
+  roulette). Le centre de masse est derrière les roues principales (queue à 20 % du poids).
+  Les roues principales sont des **pièces du modèle** (`scripts/rig-biplane-wheels.mjs`,
+  nœuds `wheelL` / `wheelR`) : le client les monte de la compression des ressorts
+  (`poseBiplaneWheels`) et les fait tourner avec la vitesse au sol ; les avions des autres
+  joueurs montrent les ressorts affaissés (`GEAR_SAG`) au sol et détendus en vol. La course
+  de la béquille est la moitié de celle des roues principales.
 - **Cellule** : cinq colliders (fuselage, deux ailes, empennage, dérive), CCD activé. Les
   impulsions de contact donnent `state.impact` (variation de vitesse en m/s de référence) :
   au-delà de 2,5 l'avion prend des dégâts, au-delà de `PLANE_CRASH_IMPACT` (16) il est
