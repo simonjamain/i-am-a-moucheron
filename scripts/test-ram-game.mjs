@@ -45,28 +45,19 @@ extra.live = () => {
 };
 extra.sync(motionRoom, flightPilot, { mode: 'flight', state: flightVehicle.state });
 extra.live = originalLive;
-// Not a fixed-wing aircraft: the server simulates the parked ones itself (src/parked-host.ts) and
-// ignores the host client's reports for them (checked below).
+// Every vehicle left by its pilot is simulated by the server (src/parked-host.ts), the
+// helicopters included: no client's report for a vacant hull is accepted, host or not.
 const emptyVehicle = extra.createVehicle(motionRoom, 'helicopter', 'purchase');
 const elected = [...motionRoom.pilots.values()].sort((x, y) => x.id.localeCompare(y.id))[0];
 const nonElected = [...motionRoom.pilots.values()].find((p) => p.id !== elected.id);
 const vacantState = { ...emptyVehicle.state, p: [0.25, 0.8, 0.2] };
-extra.sync(motionRoom, nonElected, {
-  mode: nonElected.mode,
-  state: nonElected.state,
-  vacant: [{ id: emptyVehicle.id, state: vacantState }],
-});
-assert.notDeepEqual(emptyVehicle.state.p, vacantState.p, 'non-host cannot control a vacant hull');
-extra.sync(motionRoom, elected, {
-  mode: elected.mode,
-  state: elected.state,
-  vacant: [{ id: emptyVehicle.id, state: vacantState }],
-});
-assert.deepEqual(
-  emptyVehicle.state.p,
-  vacantState.p,
-  'lexical first live host still controls vacant hull',
-);
+for (const reporter of [nonElected, elected])
+  extra.sync(motionRoom, reporter, {
+    mode: reporter.mode,
+    state: reporter.state,
+    vacant: [{ id: emptyVehicle.id, state: vacantState }],
+  });
+assert.notDeepEqual(emptyVehicle.state.p, vacantState.p, 'the server alone moves a vacant hull');
 const parkedBiplan = extra.createVehicle(motionRoom, 'fighter', 'purchase');
 const before = structuredClone(parkedBiplan.state.p);
 extra.sync(motionRoom, elected, {

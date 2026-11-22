@@ -209,6 +209,7 @@ const files = {
       'aircraft-wheels',
       'physics-debug',
       'plane-physics',
+      'heli-physics',
       'tank-recoil',
       'camera-follow',
       'tank-gear',
