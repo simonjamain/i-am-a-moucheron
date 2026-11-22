@@ -43,6 +43,11 @@ mouse assistance resumes on release. F is the exit key for aircraft pilots,
 gunners and DCA occupants. Forms and text inputs
 suspend gameplay shortcuts. Touch UI supplies contextual actions.
 
+Chase cameras (on foot, vehicles, Castor volant passengers) never end behind a solid: a ray from
+the followed point to the wanted eye pulls the eye in before the first obstacle, immediately, and
+it eases back out once the way is free (`src/camera-clearance.ts`, `test-camera-clearance.mjs`).
+A vehicle inside a box keeps a camera inside that box. Gunner views and the vertical view (V)
+are not concerned.
 Captured mouse movement directly orbits the ground character camera. Touch drag
 and gamepad controls remain available. Pointer lock is requested after joining,
 when closing a panel, or by a canvas click. Browsers require user activation and
