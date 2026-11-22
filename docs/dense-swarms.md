@@ -70,8 +70,8 @@ actifs**, sans promettre des FPS mesurés sur le navigateur ou le VPS.
   la présélection `InsectIndex` utilisent l'intersection rayon–sphère exacte.
   Les projectiles lourds serveur utilisent le même rayon et écartent les
   candidats impossibles avec une boîte englobante balayée.
-- Sur WebGL, `MidgeBatch` rassemble le corps, la tête et les deux ailes dans
-  **trois meshes instanciés** pour tous les moucherons vivants. Chaque ennemi
+- Sur WebGL, `MidgeBatch` rassemble tous les moucherons vivants dans
+  **un seul mesh instancié** (modèle Meshy animé, sans niveau de détail). Chaque ennemi
   conserve un objet léger avec son identifiant, sa position, son mouvement,
   ses PV et ses effets ; seuls les corps tombants (plafond 80) recréent un
   modèle complet. Le moteur de secours 2D conserve les modèles ordinaires.

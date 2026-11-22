@@ -5,8 +5,12 @@ export interface ChangelogEntry {
 }
 export const PLAYER_CHANGELOG: ChangelogEntry[] = [
   {
-    version: 429,
+    version: 430,
     changes: ['Correction : acheter un équipement ne fige plus le jeu quand on vise trop haut.'],
+  },
+  {
+    version: 429,
+    changes: ['Les moucherons gardent leur vrai modèle, même de loin : plus de boules brunes.'],
   },
   {
     version: 428,

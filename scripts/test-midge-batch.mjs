@@ -1,12 +1,11 @@
 import assert from 'node:assert/strict';
 import { performance } from 'node:perf_hooks';
 import * as T from '../vendor/three.module.min.js';
-import { MidgeBatch, MIDGE_LOD } from '../src/midge-batch.js';
+import { MidgeBatch } from '../src/midge-batch.js';
 import { nearestInsectHit, InsectIndex } from '../src/insect-hits.ts';
 
 const scene = new T.Scene();
-const batch = new MidgeBatch(T, scene, { capacity: 2 });
-const counts = () => [batch.detail?.mesh?.count ?? 0, ...batch.meshes.map((m) => m.count)];
+const batch = new MidgeBatch(T, scene);
 const insects = new Map();
 function add(id, x = 0, y = 0, z = -1) {
   const m = batch.create(id * 0.1);
@@ -18,9 +17,9 @@ function add(id, x = 0, y = 0, z = -1) {
 const first = add(0);
 add(1, 0.05, 0, -2);
 batch.flush(insects, 300);
-assert.equal(scene.children.length, 4, 'Meshy model + far body, head and wings: four draws');
+assert.equal(scene.children.length, 1, 'one draw for every midge');
 assert.ok(scene.children.every((o) => o.isInstancedMesh && !o.userData.projectileSolid));
-assert.deepEqual(counts(), [2, 0, 0, 0], 'without a camera every midge gets the Meshy model');
+assert.equal(batch.detail.mesh.count, 2, 'every midge gets the Meshy model');
 const matrix = new T.Matrix4();
 batch.detail.mesh.getMatrixAt(0, matrix);
 assert.ok(Math.abs(matrix.elements[14] + 1) < 1e-6, 'model matrix is positioned correctly');
@@ -28,18 +27,12 @@ assert.ok(
   batch.detail.phases.array[0] !== batch.detail.phases.array[1],
   'neighbouring midges beat out of step',
 );
-// Level of detail: tiny on screen -> three cheap ellipsoid batches.
+// No level of detail: a midge far from the camera still uses the Meshy model.
 const camera = new T.PerspectiveCamera();
-camera.position.set(0, 0, -1.5); // both within 1 m: radius 0.015 m -> ratio >= 0.015
+camera.position.set(0, 0, 500);
 camera.updateMatrixWorld();
 batch.flush(insects, 300, camera);
-assert.deepEqual(counts(), [2, 0, 0, 0], 'near midges keep the Meshy model');
-camera.position.set(0, 0, (0.01 * 1.5) / MIDGE_LOD.ratio + 3);
-camera.updateMatrixWorld();
-batch.flush(insects, 300, camera);
-assert.deepEqual(counts(), [0, 2, 2, 4], 'distant midges use the cheap batches');
-batch.meshes[0].getMatrixAt(0, matrix);
-assert.ok(Math.abs(matrix.elements[14] + 1) < 1e-6, 'far body matrix is positioned correctly');
+assert.equal(batch.detail.mesh.count, 2, 'distant midges keep the Meshy model');
 const loop = batch.detail.uniforms.vatTime;
 batch.flush(insects, 250);
 const before = loop.value;
@@ -72,11 +65,8 @@ for (let id = 300; id < 10000; id++)
 const start = performance.now();
 batch.flush(insects, 400);
 const cpuMs = performance.now() - start;
-assert.equal(batch.detail.mesh.count, MIDGE_LOD.limit, 'the Meshy model is capped');
-assert.equal(batch.meshes[0].count, 9999 - MIDGE_LOD.limit);
-assert.equal(batch.meshes[1].count, 9999 - MIDGE_LOD.limit);
-assert.equal(batch.meshes[2].count, 2 * (9999 - MIDGE_LOD.limit));
-assert.equal(scene.children.length, 4);
+assert.equal(batch.detail.mesh.count, 9999, 'all midges use the Meshy model, uncapped');
+assert.equal(scene.children.length, 1);
 console.log(
   JSON.stringify({
     instancedMidges: 9999,
@@ -94,5 +84,5 @@ assert.equal(scene.children.length, 0);
 fallback.dispose();
 assert.equal(first.parent, null, 'proxies never enter the Three.js scene');
 console.log(
-  'PASS: Meshy model with per-instance flight phase, distance LOD, shared instanced meshes, independent hit spheres, indexed hits, batch growth and disposal.',
+  'PASS: Meshy model for every midge with per-instance flight phase, no level of detail, one instanced mesh, independent hit spheres, indexed hits, batch growth and disposal.',
 );
