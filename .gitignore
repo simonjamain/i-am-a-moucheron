@@ -10,3 +10,6 @@ node_modules/
 /assets/originals/
 /assets/optimized/
 .site/
+VERSION
+server/assets.js
+src/changelog-recent.ts

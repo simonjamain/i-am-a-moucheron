@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { PLAYER_CHANGELOG, mountChangelog } from '../src/changelog.ts';
+import { FRAGMENT_DIR, isFragmentName, parseFragment } from './build-info.ts';
 
 const currentVersion = Number(readFileSync('VERSION', 'utf8').trim());
 assert.ok(PLAYER_CHANGELOG[0]?.version <= currentVersion, 'aucune nouveauté future');
@@ -11,6 +12,16 @@ for (let i = 0; i < PLAYER_CHANGELOG.length; i++) {
   if (i) assert.ok(PLAYER_CHANGELOG[i - 1].version > entry.version, 'versions décroissantes');
   assert.ok(entry.changes.length > 0);
   assert.ok(entry.changes.every((change) => typeof change === 'string' && change.length <= 130));
+}
+
+// Chaque fragment de changelog.d/ : au moins une phrase, courte, et rien d'autre que du texte.
+for (const name of readdirSync(FRAGMENT_DIR).filter(isFragmentName)) {
+  const changes = parseFragment(readFileSync(`${FRAGMENT_DIR}/${name}`, 'utf8'));
+  assert.ok(changes.length > 0, `${name} : fragment vide`);
+  for (const change of changes) {
+    assert.ok(change.length <= 130, `${name} : phrase de plus de 130 caractères`);
+    assert.doesNotMatch(change, /[<>]/, `${name} : pas de balise`);
+  }
 }
 
 // Test léger de l'interface, sans navigateur ni moteur 3D.

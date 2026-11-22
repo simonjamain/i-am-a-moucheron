@@ -11,6 +11,7 @@ tag `sha-<SHA complet>` pour retrouver le commit publié.
 Depuis la racine du dépôt :
 
 ```sh
+node scripts/build-info.ts   # VERSION et nouveautés (historique Git complet requis)
 docker build -t i-am-a-moucheron:local .
 docker run -d --name i-am-a-moucheron --restart unless-stopped --init \
   --read-only --tmpfs /tmp:size=16m,mode=1777 --cap-drop ALL \

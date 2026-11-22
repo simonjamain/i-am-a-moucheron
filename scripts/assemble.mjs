@@ -1,9 +1,13 @@
 import { uiPreview } from './build-ui-preview.mjs';
+import { writeBuildInfo } from './build-info.ts';
 import { layoutSolids, LAYOUTS } from '../src/layouts.ts';
 import { createHash } from 'node:crypto';
 import { readFile, writeFile } from 'node:fs/promises';
 import { existsSync, readdirSync } from 'node:fs';
 import { stripTypeScriptTypes } from 'node:module';
+
+// VERSION et nouveautés récentes viennent de l'historique Git (docs/changelog.md).
+const { version: gameVersion } = writeBuildInfo();
 
 // Browser URLs stay `/<name>.js`; the source is `src/<name>.ts` when migrated
 // (types erased in place, see docs/typescript.md) or `src/<name>.js` otherwise.
@@ -101,6 +105,8 @@ const files = {
       'office-lights',
       'office-collision',
       'changelog',
+      'changelog-history',
+      'changelog-recent',
       'flight-tuning',
       'flight-tuning-ui',
       'swept-geometry',
@@ -265,10 +271,7 @@ for (const url of Object.keys(assets)) {
       },
     );
 }
-assets['/'] = assets['/'].replaceAll(
-  '__GAME_VERSION__',
-  (await readFile('VERSION', 'utf8')).trim(),
-);
+assets['/'] = assets['/'].replaceAll('__GAME_VERSION__', String(gameVersion));
 assets['/'] = assets['/'].replace('src="/boot.js"', 'src="/assets/' + version + '/boot.js"');
 await writeFile(
   'server/assets.js',
@@ -276,7 +279,7 @@ await writeFile(
     JSON.stringify(version) +
     ';\n' +
     'export const GAME_VERSION=' +
-    Number((await readFile('VERSION', 'utf8')).trim()) +
+    gameVersion +
     ';\n' +
     'export const ASSETS=' +
     JSON.stringify(assets) +

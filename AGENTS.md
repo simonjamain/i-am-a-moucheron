@@ -124,24 +124,24 @@ Justifier toute exception dans la PR.
 
 ## Nouveautés visibles par les joueurs
 
-Tenir `src/changelog.ts` à jour **dans la même PR** pour chaque fonctionnalité ou
-correction perceptible en jeu. Ajouter une entrée pour le nouveau numéro de
-`VERSION` (ou regrouper les nouveautés de ce numéro), dans l'ordre décroissant.
-Écrire une ou deux phrases très courtes en français courant, sans vocabulaire
-technique : expliquer **ce qui change pour le joueur**, pas les fichiers, tests,
-performances internes ou CI. Ne rien ajouter pour une contribution uniquement
-technique. Ne pas inventer de version historique ni annoncer une fonctionnalité
-non livrée. Le bouton « Nouveautés » est accessible dans l'accueil et en partie ;
-`npm test` vérifie le format et le rendu de l'historique.
+Pour chaque fonctionnalité ou correction perceptible en jeu, ajouter **dans la même PR
+un nouveau fichier** `changelog.d/sujet-court-ab12.md` (suffixe aléatoire ; jamais le nom
+de la branche, jamais l'édition d'un fragment existant). Une phrase par ligne, en français
+courant, 130 caractères au plus, sans vocabulaire technique : expliquer **ce qui change
+pour le joueur**, pas les fichiers, tests, performances internes ou CI. Ne rien ajouter
+pour une contribution uniquement technique. Ne pas annoncer une fonctionnalité non livrée.
+Ne jamais éditer `src/changelog-history.ts` (historique figé). Le bouton « Nouveautés »
+est accessible dans l'accueil et en partie ; `npm test` vérifie format et rendu.
+Détail : [version et nouveautés](docs/changelog.md).
 
 ## Version
 
-`VERSION` reste la référence entière du jeu. Avant chaque commit, y compris
-documentaire, augmenter sa valeur ; après synchronisation, utiliser un numéro
-supérieur à la dernière version intégrée. Utiliser `npm run version:next` et
-`npm run check:version` selon leurs options et vérifier les assets assemblés.
-Cette convention reste en vigueur en attendant une évolution dédiée du
-versionnement pour les branches parallèles.
+Le numéro de version est calculé depuis Git (`430 +` commits de `main` depuis le commit
+de référence) : **ne plus créer, éditer ni committer `VERSION`**, `server/assets.js` ni
+`src/changelog-recent.ts`, tous générés et ignorés par Git (`npm test`, `npm start` et
+l'assembleur les régénèrent ; `node scripts/build-info.ts` seul suffit). Il faut
+l'historique complet du dépôt (`git fetch --unshallow` si le clone est superficiel).
+Il n'y a donc plus de conflit de numéro entre PR parallèles.
 
 ## Nouveaux assets Meshy — outil 3D
 

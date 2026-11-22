@@ -40,6 +40,12 @@ d'acceptation, et vérifier l'absence de conflit. Utiliser **squash** si autoris
 Activer l'**auto-merge** en squash sur la PR terminée : GitHub la fusionne dès que
 les contrôles requis de `main` passent (fusion directe seulement si la PR est déjà
 fusionnable). L'auteur reste responsable jusqu'à la fusion effective.
+Si une autre PR est fusionnée avant la vôtre, l'auto-merge reste bloqué par un conflit alors
+que tous les contrôles sont verts : le workflow `Conflict alert` pose alors le label `conflit`
+et un commentaire sur la PR. Dès ce message (ou si `mergeable_state` vaut `dirty`), intégrer
+`origin/main`, résoudre, relancer les contrôles concernés et pousser, sans attendre.
+Le numéro de version et les nouveautés ne produisent plus de conflit : ne pas éditer `VERSION`
+(généré) et ajouter un fragment `changelog.d/` neuf ([détail](docs/changelog.md)).
 Les essais humains impossibles à réaliser sont décrits honnêtement dans la PR ;
 ils ne doivent pas être présentés comme exécutés. Si un contrôle requis échoue,
 reste absent ou si GitHub bloque la fusion, laisser la PR ouverte et signaler

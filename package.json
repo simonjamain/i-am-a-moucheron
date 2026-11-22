@@ -11,9 +11,6 @@
     "start": "node scripts/assemble.mjs && node server/index.js",
     "test:udp": "node scripts/run-tests.mjs ram-game motion-capacity udp-client udp-native udp-mux tcp-fallback",
     "check:docs": "node scripts/check-docs.mjs",
-    "check:version": "node scripts/check-version.mjs",
-    "prepare:version": "git config core.hooksPath .githooks",
-    "version:next": "node scripts/next-version.mjs",
     "test:capacity": "node scripts/assemble.mjs && node scripts/test-udp-capacity-50.mjs",
     "bench:swarm-50": "node scripts/benchmark-swept-broadphase.mjs",
     "bench:collisions": "node scripts/benchmark-insect-index.mjs",
@@ -26,6 +23,7 @@
     "e2e": "node scripts/assemble.mjs && node scripts/e2e-browser-resume.mjs && node scripts/e2e-browser-motion.mjs && node scripts/e2e-browser-tcp-fallback.mjs && node scripts/e2e-game-polish.mjs",
     "e2e:loading": "node scripts/assemble.mjs && node scripts/e2e-loading.mjs",
     "e2e:layouts": "node scripts/assemble.mjs && node scripts/e2e-layouts.mjs",
+    "pretypecheck": "node scripts/build-info.ts",
     "typecheck": "tsc -p tsconfig.json",
     "ts:migrate": "node scripts/ts-migrate.mjs"
   },

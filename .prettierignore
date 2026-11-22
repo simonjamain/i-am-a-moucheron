@@ -10,3 +10,4 @@ src/character-*data.js
 src/howitzer-data.js
 src/meshy-brick-data.js
 docs/ui-review.html
+src/changelog-recent.ts

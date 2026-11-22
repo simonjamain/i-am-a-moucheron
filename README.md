@@ -56,8 +56,8 @@ npm run build
 node scripts/validate-artifact.mjs
 ```
 
-Modifier `src/` et `scripts/`, puis assembler. `server/assets.js` (versionné) et `dist/` (ignoré par Git) sont
-générés.
+Modifier `src/` et `scripts/`, puis assembler. `server/assets.js`, `VERSION`, `src/changelog-recent.ts` et `dist/` (tous ignorés par Git) sont
+générés ([version et nouveautés](docs/changelog.md)).
 `npm run build` produit un runtime Node autonome dans `dist/` : y exécuter
 `npm ci --omit=dev && npm start`. Le validateur contrôle ce paquet Node.
 
