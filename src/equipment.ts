@@ -177,6 +177,11 @@ export interface FootprintQuery {
   rx: number;
   rz: number;
   height: number;
+  /**
+   * Vehicles rest on uneven decor (keys, fan blades, books): the support is the
+   * highest contact under the hull and the headroom starts a little above it.
+   */
+  rugged?: boolean;
 }
 /**
  * The office pack props as placement support, on their real triangles (see
@@ -250,6 +255,7 @@ export function supportedPlacement(
     rx: localRx,
     rz: localRz,
     height,
+    ...(profile ? { rugged: true } : {}),
   };
   const boxSurfaces: { max: { y: number } }[] = colliders.filter(
     (box) =>

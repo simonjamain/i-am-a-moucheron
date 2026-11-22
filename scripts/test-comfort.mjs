@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import * as T from '../vendor/three.module.min.js';
 import { Game } from '../server/game.js';
-import { VEHICLES, vehiclePad, vehicleEntry, vehicleAccess } from '../src/fleet.ts';
+import { VEHICLES, EXIT_LIFT, vehiclePad, vehicleEntry, vehicleAccess } from '../src/fleet.ts';
 import { stepHelicopter } from '../src/helicopter.js';
 import { fullAmmo } from '../src/logistics.ts';
 import { MAP, ENEMY_SIZE_FACTORS } from '../src/scale.ts';
@@ -23,7 +23,7 @@ assert.equal(h.hp, 200);
 for (const seat of VEHICLES.helicopter.seats) {
   const e = vehicleEntry({ type: 'helicopter', state: h }, seat);
   assert.ok(vehicleAccess(e, { type: 'helicopter', state: h }, seat));
-  close(e.y, support);
+  close(e.y, support + EXIT_LIFT); // above the support: the walker drops onto it
 }
 let now = 100000;
 const game = new Game({ now: () => now });

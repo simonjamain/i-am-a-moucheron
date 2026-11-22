@@ -18,6 +18,12 @@ const SUPPORT_DROP = 0.02;
 const SUPPORT_FLAT = 0.95;
 const SUPPORT_LEVEL = 0.002;
 const HEADROOM_GAP = 0.001;
+// Vehicles on uneven decor (FootprintQuery.rugged): any upward-ish contact under the
+// centre carries the hull (normal y above RUGGED_FLAT, about 60°); corners over
+// nothing or over lower ground just overhang; the highest contact is the support and
+// the headroom starts RUGGED_GAP above it, so a hull never spawns inside a blade.
+const RUGGED_FLAT = 0.5;
+const RUGGED_GAP = 0.004;
 
 /** How a model collides: its triangles, boxes standing for it, or not at all. */
 export type CollisionShape = 'mesh' | 'proxy' | 'none';
@@ -242,6 +248,25 @@ export class DecorCollision {
     const c = Math.cos(q.angle),
       s = Math.sin(q.angle);
     const from = q.y + SUPPORT_RISE;
+    if (q.rugged) {
+      const centre = this.raycast([q.x, from, q.z], [0, -1, 0], SUPPORT_RISE + SUPPORT_DROP);
+      if (!centre || centre.normal[1] < RUGGED_FLAT) return null;
+      let top = centre.point[1];
+      for (const [u, v] of [
+        [-q.rx, -q.rz],
+        [-q.rx, q.rz],
+        [q.rx, q.rz],
+        [q.rx, -q.rz],
+      ]) {
+        const hit = this.raycast(
+          [q.x + c * u + s * v, from, q.z - s * u + c * v],
+          [0, -1, 0],
+          SUPPORT_RISE + SUPPORT_DROP,
+        );
+        if (hit && hit.normal[1] >= RUGGED_FLAT) top = Math.max(top, hit.point[1]);
+      }
+      return top;
+    }
     const ys: number[] = [];
     for (const [u, v] of [
       [0, 0],
@@ -262,7 +287,8 @@ export class DecorCollision {
   /** True when no decor triangle lies in the footprint's headroom above `y`. */
   clear(q: FootprintQuery, y: number): boolean {
     const R = this.R;
-    const half = q.height / 2;
+    const gap = q.rugged ? RUGGED_GAP : HEADROOM_GAP;
+    const half = (q.height - (gap - HEADROOM_GAP)) / 2;
     const shape = new R.Cuboid(
       toPhysics(q.rx),
       toPhysics(half - HEADROOM_GAP / 2),
@@ -270,7 +296,7 @@ export class DecorCollision {
     );
     let blocked = false;
     this.world.intersectionsWithShape(
-      { x: toPhysics(q.x), y: toPhysics(y + HEADROOM_GAP + half), z: toPhysics(q.z) },
+      { x: toPhysics(q.x), y: toPhysics(y + gap + half), z: toPhysics(q.z) },
       { x: 0, y: Math.sin(q.angle / 2), z: 0, w: Math.cos(q.angle / 2) },
       shape,
       () => {
