@@ -65,7 +65,11 @@ travail avance par lots (note de reprise : [collisions en triangles](tasks/colli
      des meubles ne portent ni ne bloquent plus la pose. Sol, coque, constructions
      et équipements voisins gardent leurs règles. On pose ainsi sur l'assise d'une
      chaise ou le dessus de la photocopieuse ; le clavier, aux touches inégales, ne
-     porte rien. Les largages, livraisons, apparitions sur les lits et constructions
+     porte aucun équipement. Les **appareils** sont moins exigeants (`rugged`) : une
+     surface inclinée de 60° au plus sous le centre suffit, les coins sans
+     appui ou plus bas dépassent dans le vide, la coque repose sur le contact le plus
+     haut et le volume libre commence 1,3 m de référence au-dessus. On peut ainsi poser un
+     appareil sur un clavier ou les pales d'un ventilateur. Les largages, livraisons, apparitions sur les lits et constructions
      du Castor sont calculés par le serveur seul : ils restent sur les boîtes
      jusqu'au lot 4.
 3. **Avions, marche et véhicules au contact des triangles (version 410)** :
