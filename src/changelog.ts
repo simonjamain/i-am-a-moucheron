@@ -5,6 +5,13 @@ export interface ChangelogEntry {
 }
 export const PLAYER_CHANGELOG: ChangelogEntry[] = [
   {
+    version: 436,
+    changes: [
+      'Votre véhicule avance plus régulièrement à l’écran, surtout sur les écrans 75, 144 ou 165 Hz : moins de saccades.',
+      'Les véhicules des autres, ou laissés vides, ne reculent plus d’un coup quand on y monte ou qu’on en sort.',
+    ],
+  },
+  {
     version: 435,
     changes: [
       'Les hélicoptères ont une vraie physique : le rotor pousse, ils reposent sur leur train, et un frôlement ne les détruit plus.',
