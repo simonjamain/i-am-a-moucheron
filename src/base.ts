@@ -1,5 +1,5 @@
 import type { Vec3, XYZ } from './types.ts';
-import { MAP, ACTOR_UNIT, REFERENCE } from './scale.ts';
+import { ACTOR_UNIT, WALK_WORLDS, walkAcceleration } from './scale.ts';
 import { OFFICE_LAYOUT } from './layout.ts';
 import { advanceArena, createSoul } from './purgatory-physics.ts';
 import type { Arena, SoulBody, SoulEntity } from './purgatory-physics.ts';
@@ -99,8 +99,8 @@ export function reconcileBase(a: Partial<Arena>, pilots: BasePilot[], now: numbe
     maxZ: (OFFICE_LAYOUT.base.originZ + OFFICE_LAYOUT.bounds.z) / ACTOR_UNIT - 1,
   };
   a.verticalUnit = ACTOR_UNIT;
-  // Arena planar coordinates use ACTOR_UNIT; target a 6 m/s reference run.
-  a.acceleration = (MAP.metres(REFERENCE.walk) / ACTOR_UNIT) * 7.45;
+  // Same walking law as in the purgatory (scale.ts, walkAcceleration).
+  a.acceleration = walkAcceleration(WALK_WORLDS.office);
   const walkers = pilots.filter((p) => p.life === 'alive' && p.mode === 'foot'),
     ids = new Set<SoulEntity>(walkers.map((p) => p.id));
   a.bodies = a.bodies.filter((b) => ids.has(b.entity));

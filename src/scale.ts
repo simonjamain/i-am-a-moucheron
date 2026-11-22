@@ -33,7 +33,10 @@ export function mapScale(numerator: number, denominator = 1000): MapScale {
 export const MAPS = Object.freeze({ office: mapScale(3, 1000), purgatory: mapScale(1000, 1000) });
 export const MAP = MAPS.office;
 export const ACTOR_UNIT = MAP.metres(10.4 / 5.6);
-export const HUMAN_SCALE = MAP.metres(1.8 / 2.46);
+/** A person is 1.8 reference metres tall; the humanoid model is 2.46 of its own units. */
+export const PERSON_HEIGHT = 1.8;
+export const HUMANOID_UNITS = 2.46;
+export const HUMAN_SCALE = MAP.metres(PERSON_HEIGHT / HUMANOID_UNITS);
 export const MIDGE_SIZE_FACTOR = 1.35 * 1.5 * 3;
 // Office presentation/hit geometry factors. Keep wave budget/HP independent.
 export const ENEMY_SIZE_FACTORS: Readonly<Record<EnemyType, number>> = Object.freeze({
@@ -90,4 +93,46 @@ export const FLAK = Object.freeze({
 // Directions are relative to the gun's vertical axis, including the D2 hull.
 export function flakPitchAllowed(direction: readonly number[]): boolean {
   return direction[1] >= Math.hypot(...direction) * (Math.sin(FLAK.minPitch) - 1e-8);
+}
+
+/**
+ * A world where people walk (office, purgatories). Everything about a walker —
+ * model size, camera framing, acceleration, gait — derives from these two
+ * numbers, so a person walks, runs and is filmed the same way in every world.
+ */
+export interface WalkWorld {
+  /** Scene units per reference metre (model size, camera distances). */
+  readonly sceneScale: number;
+  /** Reference metres per arena unit (body positions and speeds). */
+  readonly arenaMetres: number;
+  /** The arena z axis points opposite to the scene's (office). */
+  readonly mirrorZ: boolean;
+}
+export const WALK_WORLDS: Readonly<Record<'office' | 'purgatory', WalkWorld>> = Object.freeze({
+  office: Object.freeze({
+    sceneScale: MAP.ratio,
+    arenaMetres: ACTOR_UNIT / MAP.ratio,
+    mirrorZ: true,
+  }),
+  // The purgatory scene is drawn in the humanoid's own units.
+  purgatory: Object.freeze({
+    sceneScale: HUMANOID_UNITS / PERSON_HEIGHT,
+    arenaMetres: PERSON_HEIGHT / HUMANOID_UNITS,
+    mirrorZ: false,
+  }),
+});
+/** Scale of the humanoid model in a world (1.8 m tall). */
+export function humanoidScale(world: WalkWorld): number {
+  return (world.sceneScale * PERSON_HEIGHT) / HUMANOID_UNITS;
+}
+/**
+ * Walking acceleration in arena units/s²: with the arena drag (7/s) the walker
+ * settles near the 6 m/s reference run (about 6.4 m/s) in every world.
+ */
+export function walkAcceleration(world: WalkWorld): number {
+  return (REFERENCE.walk / world.arenaMetres) * 7.45;
+}
+/** Ground speed of an arena body in reference m/s (drives the gait). */
+export function walkSpeed(world: WalkWorld, body: { vx?: number; vz?: number }): number {
+  return Math.hypot(body.vx || 0, body.vz || 0) * world.arenaMetres;
 }

@@ -71,6 +71,24 @@ jouent qu'avec un appui au sol (`footstepsAudible`) : jamais en chute libre ni s
 parachute. `scripts/test-walk-collisions.mjs` vérifie croisement, solidité, mobilier
 et pas.
 
+## Un seul marcheur pour tous les mondes
+
+Bureau et purgatoires partagent la même description d'un personnage à pied
+(`WALK_WORLDS` dans `src/scale.ts`). Chaque monde ne donne que ses unités :
+unités de scène par mètre (`sceneScale`) et mètres par unité d'arène (`arenaMetres`).
+Tout le reste en découle :
+
+- taille du modèle (`humanoidScale`, 1,8 m) ;
+- cadrage de la caméra d'épaule (`groundCamera`, même champ de vision de 62°) ;
+- accélération (`walkAcceleration`, course de référence de 6 m/s, environ 6,4 m/s atteints) ;
+- vitesse donnée à l'animation (`walkSpeed`).
+
+Au client, `makeWalker`, `poseWalker` et `walkerSteps` créent, orientent, animent et
+font marcher tous les personnages à pied. Le purgatoire n'a donc plus de caméra plus
+proche, de champ plus étroit, ni d'allure à mi-chemin entre marche et course (il
+plafonnait à 3,15 m/s). `scripts/test-walk-worlds.mjs` vérifie taille, cadrage et
+vitesse de pointe identiques.
+
 ## Verification
 
 - `scripts/test-client-authority.mjs`: old snapshots delayed by 40/160/320/1500 ms

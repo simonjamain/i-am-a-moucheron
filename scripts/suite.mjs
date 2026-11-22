@@ -35,6 +35,7 @@ export const SUITE = [
   'test-scene',
   'test-purgatory-queue',
   'test-purgatory-vip',
+  'test-walk-worlds',
   'test-controls',
   'test-cache',
   'test-changelog',
