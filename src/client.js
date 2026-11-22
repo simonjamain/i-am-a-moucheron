@@ -179,6 +179,7 @@ import { ServerClock } from '/server-clock.js';
 import { stepHeavy, heavyImpact } from '/heavy-sim.js';
 import { PROJECTILES } from '/projectiles.js';
 import { bounce } from '/ricochet.js';
+import { RemoteRounds } from '/remote-rounds.js';
 import { vehicleMaterial, insectMaterial } from '/materials.js';
 import { createOrdnance, integrateOrdnance } from '/ordnance.js';
 import { howitzerMuzzle } from '/howitzer-geometry.js';
@@ -830,6 +831,8 @@ function localMotion() {
     wing,
     engine,
     fire: !respawnAt && shooting,
+    rounds: roundsFired,
+    skids: skidReport(performance.now()),
     vehicle: myVehicle?.id || null,
     seat: crewSeat,
     soul: respawnAt ? soulBody : null,
@@ -3968,6 +3971,36 @@ function vehicleModel(v) {
   }
   return g;
 }
+// The rounds another player fired since last frame: their own round numbers when their motion
+// carries the counter (src/remote-rounds.ts), else a local cadence with no identity (null).
+const remoteRounds = new RemoteRounds();
+function remoteFired(model, role, shooter, motion, dt, interval, firing) {
+  if (shooter && Number.isInteger(motion.rounds)) {
+    remoteRounds.observe(shooter, motion.rounds);
+    applyRemoteSkids(shooter, motion);
+    return remoteRounds.release(shooter, dt, interval);
+  }
+  return Array.from({ length: remoteShotCount(model, role, dt, interval, firing) }, () => null);
+}
+// A ricochet the shooter reports against a moving surface: the named round turns there.
+const appliedSkids = new Set();
+function applyRemoteSkids(shooter, motion) {
+  if (!Array.isArray(motion.skids)) return;
+  for (const entry of motion.skids) {
+    const [round, bounces, px, py, pz, vx, vy, vz] = entry;
+    const key = shooter + ':' + round + ':' + bounces;
+    if (appliedSkids.has(key) || !entry.every?.(Number.isFinite)) continue;
+    appliedSkids.add(key);
+    if (appliedSkids.size > 512) appliedSkids.delete(appliedSkids.values().next().value);
+    const b = trails.find((t) => !t.owned && t.shooter === shooter && t.round === round);
+    if (!b || b.bounces >= bounces) continue;
+    b.m.position.set(px, py, pz);
+    b.v.set(vx, vy, vz);
+    b.bounces = bounces;
+    updateTracer(T, b.m, b.v.clone().normalize(), camera);
+    hitEffects.burst(b.m.position, camera, { key });
+  }
+}
 function remoteShotCount(model, role, dt, interval, firing) {
   model.userData.remoteCooldowns ??= new Map();
   const result = advanceAutomaticFire(
@@ -4132,12 +4165,14 @@ function updateOthers(dt) {
           new T.Vector3().fromArray(m.turretDirection || [0, 0, -1]),
           mount.parent.getWorldQuaternion(new T.Quaternion()),
         );
-        const remoteRounds =
+        const remoteRoundList =
           gunner.id === id
-            ? 0
-            : remoteShotCount(
+            ? []
+            : remoteFired(
                 g,
                 seat + ':' + gunner.id,
+                gunner.id,
+                m,
                 dt,
                 (v.type === 'helicopter'
                   ? HELI.gunInterval
@@ -4148,7 +4183,7 @@ function updateOthers(dt) {
                 !!m.fire &&
                   v.supplies?.ammo[v.type === 'tank' && seat === 'cannon' ? 'coax' : seat] >= 1,
               );
-        for (let shot = 0; shot < remoteRounds; shot++) {
+        for (const round of remoteRoundList) {
           const o = (
             v.type === 'tank' && seat === 'cannon'
               ? mount.userData.coaxMuzzle
@@ -4163,21 +4198,25 @@ function updateOthers(dt) {
             v.type === 'tank' && seat === 'cannon'
               ? mount.userData.coaxMuzzle
               : mount.userData.muzzles?.[0] || mount.userData.muzzle,
+            { shooter: gunner.id, round },
           );
         }
       }
     const remotePilotRounds =
       !isSelf && !isBomber(v.type)
-        ? remoteShotCount(
+        ? remoteFired(
             g,
             'pilot:' + (p?.id || ''),
+            // The Spitfire's rounds are six-gun salvos on a cadence of their own.
+            v.type === 'spitfire' ? null : p?.id,
+            motion,
             dt,
             (v.type === 'castor' ? 0.16 : pilotFireInterval(v.type)) *
               (1 / (snap?.balance?.fireRate ?? 1)),
             !!motion.fire && v.supplies?.ammo.pilot >= 1,
           )
-        : 0;
-    for (let shot = 0; shot < remotePilotRounds; shot++) {
+        : [];
+    for (const round of remotePilotRounds) {
       const direction =
         v.type === 'castor'
           ? new T.Vector3().fromArray(motion.turretDirection || [0, 0, -1]).normalize()
@@ -4202,6 +4241,7 @@ function updateOthers(dt) {
             false,
             false,
             nearestWeaponMuzzle(T, g, muzzle),
+            { shooter: p?.id, round },
           );
       }
     }
@@ -4238,7 +4278,15 @@ function updateOthers(dt) {
         if (key.startsWith(k + ':')) postHighlights.delete(key);
     }
 }
-function bullet(pos, dir, color = TRACER_COLOR, owned = false, aa = false, muzzleNode = null) {
+function bullet(
+  pos,
+  dir,
+  color = TRACER_COLOR,
+  owned = false,
+  aa = false,
+  muzzleNode = null,
+  tag = null,
+) {
   muzzleNode ??= owned && myVehicle ? nearestWeaponMuzzle(T, me, pos) : null;
   if (muzzleNode) pos = muzzleNode.getWorldPosition(new T.Vector3());
   if (owned && !aa && myVehicle) {
@@ -4267,10 +4315,29 @@ function bullet(pos, dir, color = TRACER_COLOR, owned = false, aa = false, muzzl
       origin = pos.clone(),
       direction = dir.clone();
     if (aircraftFire.fire(vehicle, seat, myVehicle.supplies, currentAmmoKey()))
-      emitBullet(origin, direction, vehicleColor(myVehicle), owned, aa, launch, muzzleNode);
+      emitBullet(
+        origin,
+        direction,
+        vehicleColor(myVehicle),
+        owned,
+        aa,
+        launch,
+        muzzleNode,
+        false,
+        tag,
+      );
     return;
   }
-  return emitBullet(pos, dir, color, owned, aa, null, muzzleNode);
+  return emitBullet(pos, dir, color, owned, aa, null, muzzleNode, false, tag);
+}
+// Rounds this player has fired, in the order they left (reported in the motion state).
+let roundsFired = 0;
+// Ricochets off moving surfaces (tank, beetle), reported for the other players for a short while.
+const recentSkids = [];
+const SKID_REPORT_MS = 600;
+function skidReport(now) {
+  while (recentSkids.length && now - recentSkids[0].at > SKID_REPORT_MS) recentSkids.shift();
+  return recentSkids.length ? recentSkids.slice(-8).map((k) => k.entry) : undefined;
 }
 const tracerPool = new TracerPool(T, scene, 256, { instanced: renderer.isWebGLRenderer === true });
 const gunSalvos = new GunSalvos();
@@ -4313,7 +4380,17 @@ function sentryShotVisual(sentry, target, fallback, silent) {
     combatEffects.muzzle(origin, direction);
   }
 }
-function emitBullet(pos, dir, color, owned, aa, launch = null, muzzleNode = null, silent = false) {
+function emitBullet(
+  pos,
+  dir,
+  color,
+  owned,
+  aa,
+  launch = null,
+  muzzleNode = null,
+  silent = false,
+  tag = null,
+) {
   const stamp = performance.now(),
     cue = stamp - spitSoundAt >= 40 || aa;
   if (!respawnAt && cue && !silent) {
@@ -4352,6 +4429,9 @@ function emitBullet(pos, dir, color, owned, aa, launch = null, muzzleNode = null
     wave: launch?.wave ?? snap?.wave,
     projectile: typeId,
     bounces: 0,
+    // Own rounds are numbered (reported in `rounds`); another player's carry their number.
+    shooter: owned ? id : (tag?.shooter ?? null),
+    round: owned && !aa ? ++roundsFired : (tag?.round ?? null),
     baseDamage: launch?.baseDamage ?? kind.damage,
     weapon: launch?.weapon,
     authorization: launch?.authorization,
@@ -4528,6 +4608,13 @@ function ricochetOf(b, hit, dir) {
         b.m.position.copy(hit.point).addScaledVector(n, MAP.metres(0.02));
         b.bounces++;
         updateTracer(T, b.m, b.v.clone().normalize(), camera);
+        // Static surfaces bounce the same way for everyone; a moving one (tank, beetle) is
+        // only known here, so the other players are told which round turned where.
+        if (b.owned && b.round && contact.material !== 'decor')
+          recentSkids.push({
+            at: performance.now(),
+            entry: [b.round, b.bounces, ...b.m.position.toArray(), ...b.v.toArray()],
+          });
       }
       if (b.life <= 0) {
         scene.remove(b.m);
@@ -4622,7 +4709,8 @@ function stepProjectileSlice(dt) {
       } else if (fused) explosion(b, origin.clone().addScaledVector(dir, distance));
     }
     if (!b.owned && !b.shell) {
-      // Tracers of other players only skid off the walls (display); they never stop or hurt.
+      // Tracers of other players are display only: they skid off the fixed decor like any
+      // bullet, or end on it, and never hurt.
       projectileRay.set(origin, dir);
       projectileRay.near = 0;
       projectileRay.far = distance;
@@ -4642,6 +4730,13 @@ function stepProjectileSlice(dt) {
       if (skid) {
         skid.apply(wallHit.distance);
         continue;
+      }
+      if (wallHit) {
+        distance = wallHit.distance;
+        hitEffects.burst(origin.clone().addScaledVector(dir, distance), camera, {
+          key: b.shot,
+        });
+        b.life = 0;
       }
     }
     b.m.position.addScaledVector(dir, distance);

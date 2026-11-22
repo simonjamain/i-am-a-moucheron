@@ -1213,6 +1213,14 @@ export class Game {
       wing: s.wing,
       engine: s.engine,
       fire: (flying || ['crew', 'turret'].includes(p.mode)) && s.fire,
+      // Rounds fired so far and the ricochets off moving surfaces reported lately: the other
+      // players replay them (src/remote-rounds.ts). Only their shape is checked.
+      rounds: Number.isInteger(s.rounds) && s.rounds >= 0 ? Math.min(s.rounds, 2 ** 31 - 1) : 0,
+      skids: Array.isArray(s.skids)
+        ? s.skids
+            .filter((k) => Array.isArray(k) && k.length === 8 && k.every(Number.isFinite))
+            .slice(0, 8)
+        : undefined,
       ground: s.ground || null,
       gas: Number.isFinite(s.gas) ? Math.max(0, Math.min(1, s.gas)) : (old.gas ?? 0.65),
       omega:

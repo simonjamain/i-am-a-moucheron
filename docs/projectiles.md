@@ -79,22 +79,42 @@ tir (le dernier rebond l'emporte, seul le tireur peut le faire), et les autres j
 l'obus depuis cet enregistrement, repartent de ce nouveau départ. Les armes à angle 0 (roquette, missile,
 bombe, flak, proximité, `antitank`) n'ont jamais cherché de normale : leur chemin n'a pas changé.
 
+## Balles des autres joueurs
+
+Chaque joueur simule **ses propres** balles (collisions, dégâts). Les autres ne reçoivent pas les balles :
+ils les rejouent pour l'affichage, sans jamais blesser.
+
+- **Compteur de tirs.** L'état de mouvement du tireur porte `rounds`, le nombre de balles tirées depuis le
+  début (champ propre du relais binaire, +5 octets par état relayé, +100 octets/s par joueur à 20 Hz ;
+  `scripts/benchmark-motion-rounds.mjs`). Un spectateur (`src/remote-rounds.ts`) transforme chaque nouveau
+  numéro en un traceur, cadencé par l'intervalle de l'arme, et lui donne ce numéro comme identité : le
+  compte est exact, plus de dérive d'une minuterie locale. Le Spitfire (salves de six canons) garde son
+  ancienne cadence locale et ses traceurs n'ont pas d'identité.
+- **Décor fixe.** Le traceur d'un autre joueur s'arrête sur le sol, les murs et les objets, avec l'éclat
+  d'impact, ou **ricoche** selon la même règle déterministe que chez le tireur : sans rien envoyer, tout le
+  monde voit le même rebond sur ce qui ne bouge pas.
+- **Surfaces mobiles (tank, scarabée).** Leur position diffère un peu d'un écran à l'autre : c'est le tireur
+  qui décide. Il ajoute à son état de mouvement `skids`, la liste des ricochets des 600 dernières ms
+  (`[numéro de balle, rebond, position (3), vitesse (3)]`, huit au plus, +40 octets chacun). La liste est
+  répétée dans les états suivants (canal sans garantie de livraison) ; le spectateur applique chaque
+  entrée une seule fois et seulement à la balle qui porte ce numéro. Le serveur ne vérifie que la forme.
+- Version du lot binaire de mouvement : 6.
+
 **Limites actuelles.**
 
-- Les **balles** (simulées par `stepProjectileSlice` dans `client.js`) ricochent contre le décor, les
-  véhicules et les insectes pour le tireur ; les armes lourdes comme ci-dessus.
-- Le côté « autres joueurs » du rebond d'un obus (`displayedShots` qui repart d'un `bounces` différent)
-  n'a pas de test automatique ; il est vérifié par lecture du code seulement.
-- Les traceurs des autres joueurs sont affichés d'après leurs tirs reçus, sans collision (ils traversent
-  les obstacles) : ils ne font que **ricocher visuellement sur le décor**, sans jamais s'arrêter ni
-  blesser. Les tirs des autres peuvent donc ne pas suivre exactement la même trajectoire que chez le
-  tireur.
+- Les balles du **Spitfire** n'ont pas d'identité : leurs ricochets sur les surfaces mobiles ne sont pas
+  rejoués chez les autres (ceux sur le décor fixe le sont).
+- Les balles des tourelles, de la DCA et des mitrailleuses d'hélicoptère-sentinelle emploient d'autres
+  chemins d'affichage et n'ont pas de numéro.
+- Le traceur d'un autre part du canon **affiché** (retardé de 60 à 350 ms), pas de la position exacte du
+  tireur ; sa dispersion (0,17°) n'est pas rejouée. L'identité et le compte sont exacts, pas le pixel.
+- Un traceur lancé depuis l'intérieur d'un obstacle (avion affiché dans un mur) s'arrête à la sortie.
+- Coût d'un test de collision avec le décor par traceur distant et par pas : mesuré sur boîtes seulement
+  (pas sur les triangles du décor réel). Aucun essai en jeu à plusieurs.
 - Aucune mesure de performance sur un grand nombre de balles qui ricochent.
 
 ## Suite prévue
 
 1. **Harmonisation** : cinq types de balle pour des tirs très proches. À valider avec le
    propriétaire du jeu avant tout changement de valeur.
-2. **Réseau des balles** : rafale avec graine et heure de départ, identifiants, événement de ricochet sur
-   ce qui bouge (étape suivante).
-3. **Pénétration** : résistance d'un matériau et pénétration d'un type, comparées à part du seuil d'angle.
+2. **Pénétration** : résistance d'un matériau et pénétration d'un type, comparées à part du seuil d'angle.

@@ -232,6 +232,7 @@ const files = {
       'projectiles',
       'materials',
       'ricochet',
+      'remote-rounds',
       'ordnance',
       'bank',
       'beds',
