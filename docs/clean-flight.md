@@ -7,7 +7,7 @@ Référence du lot ECO-03 à VEH-05, livré sur **Node, RAM et UDP** le 29 octob
 `shopPrice` reste le calcul commun des tarifs. `purchaseCount` compte les objets
 posés **et les commandes déjà payées en attente**, avec des compteurs indépendants
 par type. La station gratuite est exclue. L’erreur « Poser · 30 $ » était un texte
-HTML fixe ; le bouton affiche désormais « E · Poser · déjà payé ».
+HTML fixe ; l’encart de pose a ensuite été supprimé (les indications sont en bas à gauche).
 
 Pour DCA, station, radar et lit : atelier → bon avec prix courant → signature
 au relâchement → confirmation serveur → aperçu de pose directement. E pose,
@@ -158,3 +158,11 @@ vérifier sur la VM. Les tests ne revendiquent pas une validation visuelle 3D.
 
 [Comparaison du modèle Spitfire et du chasseur](spitfire-model.png) : projection
 CPU des triangles réels, sans capture WebGL.
+
+## Pose : visée hors de portée, clic gauche / droit
+
+Pas d'encart de pose : seules les indications en bas à gauche restent. Clic gauche
+(ou E, Entrée) pose ; clic droit (ou Échap) conserve l'achat pour plus tard. Si la
+visée sort de la portée (regard trop haut, sol trop loin), l'aperçu se place à la
+distance maximale de pose, sur la première surface sous la caméra, et reste
+achetable (`reachClampedPlacement`, `src/placement-aim.ts`).
