@@ -5,6 +5,12 @@ export interface ChangelogEntry {
 }
 export const PLAYER_CHANGELOG: ChangelogEntry[] = [
   {
+    version: 422,
+    changes: [
+      'Au volant du char, le viseur des munitions montre où la mitrailleuse pointe vraiment.',
+    ],
+  },
+  {
     version: 421,
     changes: [
       'À pied, la caméra démarre au plus près du personnage et pivote un peu plus haut.',
