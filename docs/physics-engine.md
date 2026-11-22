@@ -86,7 +86,7 @@ pièce), pas comme vitesse.
 ## Le char sur Rapier (version 358)
 
 Même contrat que le Castor (`p`, `q`, `v`, `omega`), un rig par char conduit et un par
-char vide simulé par l'hôte. Le modèle d'un char à chenilles :
+char vide simulé par le serveur ([véhicule garé](plane-physics.md)). Le modèle d'un char à chenilles :
 
 - **Échelle d'un vrai char** : le modèle est un char moyen réduit. Depuis la version 365 il est
   dessiné **20 % plus grand** (`VEHICLE_SCALE.tank` = 1,2 dans `fleet.ts`, `vehicleUnit(type)` :
@@ -154,7 +154,7 @@ montent avec elle. `test-track-suspension.mjs` le contrôle.
   déclenche `src/tank-recoil.ts` : le **tube seul** (nœud `cannonBarrel`) recule de 0,32 unité
   modèle en 0,05 s et revient en 0,55 s, le long de son axe ; le masque (le bloc autour de la
   base du tube) reste sur le pivot. Et, sur la machine qui simule la caisse
-  (conducteur, ou hôte si char vide), `TankRig.kick` : une impulsion `mass × recoil` (0,35 m/s)
+  (conducteur ; serveur si char vide), `TankRig.kick` : une impulsion `mass × recoil` (0,35 m/s)
   au pivot du canon, qui recule et fait tanguer la caisse sur ses ressorts.
 - **Pivot du canon** (version 373) : l'axe d'élévation est à l'avant de la tourelle, à la base du
   tube (`scripts/rig-tank-gun.mjs` : `cannonGun` porte le masque et la mitrailleuse coaxiale,
@@ -278,7 +278,7 @@ de jeu.
   contient donc le roulis et le tangage, qui étaient nuls. Les caméras de conduite suivent
   la souris, pas le châssis.
 - Chaque Castor sans pilote est simulé par un `CastorRig` (frein de maintien, gravité)
-  chez l'hôte de la salle ; le corps Rapier suit la pose du jeu à chaque pas et se
+  par le serveur ; le corps Rapier suit la pose du jeu à chaque pas et se
   téléporte si le jeu déplace le véhicule (placement, apparition).
 - Les roues affichées déduisent leur braquage du taux de lacet (`castor-wheels.ts`) ; le
   braquage réel de la physique n'est pas encore transmis au modèle.
