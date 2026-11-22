@@ -177,6 +177,7 @@ import { UdpClient } from '/udp-client.js';
 import { WsClient } from '/ws-client.js';
 import { ServerClock } from '/server-clock.js';
 import { stepHeavy, heavyImpact } from '/heavy-sim.js';
+import { PROJECTILES } from '/projectiles.js';
 import { createOrdnance, integrateOrdnance } from '/ordnance.js';
 import { howitzerMuzzle } from '/howitzer-geometry.js';
 import { RECONNECT_AFTER_MS, RECONNECT_WINDOW_MS } from '/udp-protocol.js';
@@ -4295,14 +4296,15 @@ function emitBullet(pos, dir, color, owned, aa, launch = null, muzzleNode = null
     while (root.parent && root.parent !== scene) root = root.parent;
     root.userData.gunFiredUntil = performance.now() + 100;
   }
-  const velocity = dir.clone().multiplyScalar(MAP.metres(aa ? REFERENCE.shell : REFERENCE.bullet));
+  const kind = PROJECTILES[aa ? 'flak' : 'mg'];
+  const velocity = dir.clone().multiplyScalar(MAP.metres(kind.speed));
   if (launch) velocity.add(launch.velocity);
   else if (!aa && owned && myVehicle)
     velocity.add(crewSeat === 'pilot' ? vel : new T.Vector3().fromArray(myVehicle.state.v));
   trails.push({
     m,
     v: velocity,
-    life: aa ? 3 : 2,
+    life: kind.lifetime,
     shell: aa,
     travelled: 0,
     fuse: MAP.metres(flakRange),
@@ -4310,7 +4312,7 @@ function emitBullet(pos, dir, color, owned, aa, launch = null, muzzleNode = null
     owned,
     shot: id + (launch?.weapon === 'dcaRapid' ? ':rapid:' : ':') + ++shotSequence,
     wave: launch?.wave ?? snap?.wave,
-    baseDamage: launch?.baseDamage ?? 75,
+    baseDamage: launch?.baseDamage ?? kind.damage,
     weapon: launch?.weapon,
     authorization: launch?.authorization,
   });
@@ -6041,14 +6043,9 @@ function detonateLocalMissile(projectile) {
   );
 }
 // Neutral shell colours by weapon, identical for every player (issue #106).
-const SHELL_COLORS = {
-  he: '#e0a33c',
-  ap: '#cfd6dc',
-  antitank: '#d9b45a',
-  dcaHeavy: '#e0a33c',
-  rocket: '#e0a33c',
-  missile: '#e6e1cf',
-};
+const SHELL_COLORS = Object.fromEntries(
+  Object.entries(PROJECTILES).flatMap(([name, p]) => (p.color ? [[name, p.color]] : [])),
+);
 // Other players' shells: flown here from their recorded launch, for display.
 const remoteFlights = new Map();
 function displayedShots() {

@@ -229,6 +229,7 @@ const files = {
       'truck-physics',
       'tank-view',
       'armament',
+      'projectiles',
       'ordnance',
       'bank',
       'beds',

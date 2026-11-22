@@ -79,6 +79,7 @@ import { snapshotRosterCore, snapshotRosterKey } from '../src/snapshot-wire.ts';
 import { appendDebugEnemy, debugPlacement, standingDummies } from '../src/debug-enemies.ts';
 import { newBank, signLoan, settleLoans } from '../src/bank.ts';
 import { canUseWeapon, HEAVY, TANK_MG, availableShell } from '../src/armament.ts';
+import { PROJECTILES } from '../src/projectiles.ts';
 import { sweptSphereMayTouch } from '../src/swept-broadphase.ts';
 import { createOrdnance, segmentSphere } from '../src/ordnance.js';
 import { StatsLedger } from './stats.ts';
@@ -2566,7 +2567,9 @@ export class Game {
     const rapid = typeof b.shot === 'string' && b.shot.startsWith(p.id + ':rapid:');
     // Nobody carries a weapon on foot (docs/gameplay.md).
     if (rapid ? !this.rapidImpactAllowed(r, p, b.shot) : p.mode === 'foot') return;
-    const damage = rapid ? RAPID_DCA_DAMAGE : Math.max(1, Math.min(800, Number(b.amount) || 75));
+    const damage = rapid
+      ? RAPID_DCA_DAMAGE
+      : Math.max(1, Math.min(800, Number(b.amount) || PROJECTILES.mg.damage));
     const amount = damage * r.balance.damage;
     this.once(
       r,
@@ -2594,7 +2597,7 @@ export class Game {
         ? RAPID_DCA_DAMAGE
         : p.mode === 'turret'
           ? Math.max(0, Math.min(200, Math.round(Number(b.amount) || 80)))
-          : (tankDamage ?? 75)) * r.balance.damage;
+          : (tankDamage ?? PROJECTILES.mg.damage)) * r.balance.damage;
     if (b.vehicle) {
       const v = r.vehicles.get(b.vehicle);
       requireGame(world(p) === 'office' && v, 'Appareil hors de cet espace.');
