@@ -1071,6 +1071,7 @@ canvas.addEventListener(
   { passive: false },
 );
 addEventListener('blur', releaseMouse);
+let walkingSight = false;
 function updateAimHUD() {
   const enabled =
     joined &&
@@ -1082,6 +1083,20 @@ function updateAimHUD() {
     !isPassengerSeat(crewSeat);
   const aim = $('mouseAim'),
     gun = $('crosshair');
+  // On foot the single sight is the main one (the dot), as in every vehicle.
+  const walking = joined && !spectating && !respawnAt && onFoot && !myVehicle && turretIndex < 0;
+  if (walking !== walkingSight) {
+    walkingSight = walking;
+    if (!walking) gun.classList.remove('hidden');
+  }
+  if (walking) {
+    aim.classList.remove('hidden', 'offscreen');
+    aim.style.left = '50%';
+    aim.style.top = '50%';
+    gun.classList.add('hidden');
+    $('mouseHint').classList.add('hidden');
+    return;
+  }
   // Vertical view: no mouse steering; the gun sight marks the drop point.
   aim.classList.toggle('hidden', !enabled || airView());
   $('mouseHint').classList.toggle('hidden', !enabled);

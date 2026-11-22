@@ -83,8 +83,15 @@ try {
   );
   await page.goto('http://127.0.0.1:' + app.server.address().port + '/contrast-review');
   await page.waitForFunction(() => window.ready);
-  for (const id of ['mouseAim', 'crosshair']) {
-    const styles = await page.locator('#' + id).evaluate((el) => ({
+  // The mouse aim is a lone dot (white fill, dark outline); the gun sight keeps its ring and dot.
+  const aim = await page.locator('#mouseAim').evaluate((el) => ({
+    fill: getComputedStyle(el).backgroundColor,
+    shadow: getComputedStyle(el).boxShadow,
+  }));
+  assert.equal(aim.fill, 'rgb(255, 255, 255)');
+  assert.notEqual(aim.shadow, 'none');
+  {
+    const styles = await page.locator('#crosshair').evaluate((el) => ({
       border: getComputedStyle(el).borderTopColor,
       shadow: getComputedStyle(el).boxShadow,
       dot: getComputedStyle(el, '::after').boxShadow,
