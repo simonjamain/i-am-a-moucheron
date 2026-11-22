@@ -96,26 +96,19 @@ assert.equal(a.mesh.geometry, b.mesh.geometry);
 assert.notEqual(a.mesh.geometry, c.mesh.geometry);
 assert.notEqual(a.skeleton, b.skeleton);
 
-// 3. Game humanoid: built with an appearance, swapped in place with its frame.
+// 3. Game humanoid: built with an appearance, swapped in place with its attachments.
 const scene = new T.Scene(),
   graphics = createGraphics(T, scene);
 const human = graphics.humanoid('#8bc9d6', false, 'frontier');
 scene.add(human);
 assert.equal(human.userData.appearance, 'frontier');
 const marker = new T.Object3D();
-human.userData.arms[1].elbow.add(marker);
+human.add(marker);
 human.userData.setAppearance('sky-pilot');
 assert.equal(human.userData.appearance, 'sky-pilot');
 assert.equal(human.userData.character.appearance, 'sky-pilot');
-assert.equal(
-  human.userData.rig.children.filter((o) => o.name === 'personnage').length,
-  1,
-  'old model removed',
-);
-assert.equal(marker.parent, human.userData.arms[1].elbow, 'pistol frame kept');
-human.updateMatrixWorld(true);
-const shoulder = world(human.userData.character.bones.mixamorigRightArm);
-assert.ok(world(human.userData.arms[1].pivot).distanceTo(shoulder) < 1e-6, 'pivot on the shoulder');
+assert.equal(human.children.filter((o) => o.name === 'personnage').length, 1, 'old model removed');
+assert.equal(marker.parent, human, 'attachments kept');
 human.userData.setAppearance('unknown');
 assert.equal(human.userData.appearance, 'cowboy');
 

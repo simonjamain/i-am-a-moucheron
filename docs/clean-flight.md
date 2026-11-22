@@ -42,7 +42,6 @@ surligné. Les saisies et formulaires neutralisent les raccourcis.
 | Pilote d’avion                       | Mitrailleuses si présentes | Bombes si présentes                                   |
 | Autres postes de mitrailleurs et DCA | Tir                        | Tir, raccourci conservé                               |
 | À pied au bureau                     | —                          | Jet de nettoyage                                      |
-| À pied au purgatoire                 | Pistolet semi-automatique  | —                                                     |
 | Personnage en chute                  | —                          | Ouverture/repli du parachute, un changement par appui |
 
 B n’a plus d’action d’arme. C maintenu au canon du tank conserve l’observation
@@ -68,8 +67,7 @@ Le ravitaillement habituel remplit ces nouvelles capacités en dix secondes.
 Les MG locales/distantes, obus et bombes utilisent le numéro de teinte persistant
 de leur véhicule, indépendamment de son occupant. Les six armes du Spitfire ont
 six bouches distinctes ; les traceurs distants utilisent ces mêmes points.
-Le pistolet utilise le cœur lumineux/halo des traceurs, avec un effet distant
-sans dégâts supplémentaires. Les HE sont des cylindres trapus, les AP des cônes
+Les HE sont des cylindres trapus, les AP des cônes
 allongés ; les bombes gardent leur corps à empennages. Les tailles visuelles des projectiles ne changent ni rayons de collision, ni dégâts.
 BOM-02 double explicitement le rayon visuel et de dégâts des bombes du B3,
 contrairement à celles du Stuka, dans le [dernier lot](multiplayer-return.md).

@@ -1,5 +1,5 @@
 // Issue #111: the player character (Meshy + Mixamo skeleton) replaces the
-// procedural humanoid without changing the pistol frame or the hit volumes.
+// procedural humanoid without changing the hit volumes; nobody carries a weapon.
 import assert from 'node:assert/strict';
 import * as T from '../vendor/three.module.min.js';
 import { CHARACTER_DATA } from '../src/character-data.js';
@@ -11,7 +11,6 @@ import {
   GAIT,
 } from '../src/character-model.ts';
 import { createGraphics } from '../src/graphics.js';
-import { aimPistol } from '../src/personal-aim.ts';
 import { HUMAN_SCALE, MAP } from '../src/scale.ts';
 
 const near = (a, b, eps, label) => assert.ok(Math.abs(a - b) < eps, label + ': ' + a + ' vs ' + b);
@@ -66,12 +65,8 @@ for (const side of ['Left', 'Right'])
     Math.abs(segment(side + 'Arm', side + 'ForeArm').y) < 0.3,
     side + ' arm spread horizontally in freefall',
   );
-const aim = new T.Vector3(0.3, 0.4, 1).normalize();
-c.update(0.05, { speed: 6, aim });
-assert.ok(segment('RightArm', 'RightForeArm').dot(aim) > 0.999, 'upper arm along the aim');
-assert.ok(segment('RightForeArm', 'RightHand').dot(aim) > 0.999, 'forearm along the aim');
-
-// 5. Game humanoid: 1.8 m tall, pistol grip in the palm, muzzle along the aim.
+// 5. Game humanoid: 1.8 m tall, the same unarmed character in the office and
+// the purgatory: its arms keep the run clip (within the clip blending noise).
 const scene = new T.Scene(),
   graphics = createGraphics(T, scene);
 const human = graphics.humanoid('#8bc9d6');
@@ -79,41 +74,18 @@ human.scale.setScalar(HUMAN_SCALE);
 human.rotation.y = 0.4;
 scene.add(human);
 near(new T.Box3().setFromObject(human).max.y, MAP.metres(1.8), 1e-7, 'human height');
-const gun = new T.Group();
-const muzzle = new T.Object3D();
-muzzle.position.set(0, -0.64, 0.05);
-gun.add(muzzle);
-const grip = new T.Object3D();
-grip.position.set(0, -0.25, 0);
-gun.add(grip);
-human.userData.arms[1].elbow.add(gun);
-human.userData.pistolMuzzle = muzzle;
-const direction = new T.Vector3(0.2, 0.15, 1).normalize();
-for (let i = 0; i < 6; i++) {
-  aimPistol(T, human, direction);
-  human.userData.animate(0.05, { speed: 1.4 });
-}
-human.updateWorldMatrix(true, true);
-const hand = world(human.userData.character.bones.mixamorigRightHand);
-const metre = MAP.metres(1);
-assert.ok(world(grip).distanceTo(hand) < 0.12 * metre, 'grip in the right hand');
-const shot = world(muzzle).sub(world(human.userData.arms[1].pivot)).normalize();
-assert.ok(shot.dot(direction) > 0.995, 'muzzle on the aim line');
-
-// 6. Office walkers carry no pistol: their arms keep the run clip (within the
-// clip blending noise); section 5 shows an armed soul's arm along the aim.
 const unarmed = graphics.humanoid('#8bc9d6'),
   reference = createCharacter(T);
 for (let i = 0; i < 6; i++) {
   unarmed.userData.animate(0.05, { speed: 6 });
   reference.update(0.05, { speed: 6 });
 }
-assert.equal(unarmed.userData.pistolMuzzle, undefined);
+assert.equal(unarmed.userData.arms, undefined, 'no weapon frame');
 const drift = (person, name) =>
   person.userData.character.bones[name].quaternion.angleTo(reference.bones[name].quaternion);
 for (const name of ['mixamorigRightArm', 'mixamorigRightForeArm', 'mixamorigLeftArm'])
   assert.ok(drift(unarmed, name) < 0.05, name + ' follows the clip');
 assert.ok(LEGACY_HEIGHT > CHARACTER_HEIGHT);
 console.log(
-  'Character: Meshy/Mixamo skeleton, shared resources, idle/walk/run gait, seated/falling/aim poses, pistol grip in hand (purgatory), unarmed clip in the office.',
+  'Character: Meshy/Mixamo skeleton, shared resources, idle/walk/run gait, seated/falling poses, unarmed clip everywhere.',
 );

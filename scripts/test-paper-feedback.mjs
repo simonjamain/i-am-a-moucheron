@@ -102,7 +102,7 @@ for (const seat of ['pilot', 'dorsal', 'tail']) {
 }
 const submit = source.slice(
   source.indexOf('async function submitPaper()'),
-  source.indexOf("$('soulPaperButton').onclick"),
+  source.indexOf('const purgScene = new T.Scene();'),
 );
 assert.equal(
   [

@@ -182,10 +182,8 @@ par obus**, au débit maximal de 12 obus/seconde. Sans station ou Castor présen
 à portée, la DCA ne se recharge pas ; plusieurs demandes partagent équitablement
 la caisse commune. Cette règle concerne le runtime Node/UDP.
 
-### Pistolet personnel
+### À pied, sans arme
 
-Le pistolet n'existe qu'au purgatoire : le serveur refuse `pistol-trace` dans le
-bureau, et sans trace aucun impact à pied n'y est accepté. Chaque incarnation
-dispose de 120 balles ; le serveur déduit chaque tir identifié et exige son accusé
-avant tout impact (un impact maximum par tir, joueurs et âmes). Aucun service ne
-vend de cartouches : les stations et le Castor ne rechargent plus les piétons.
+Le pistolet est retiré : personne n'a d'arme à pied, au bureau comme au
+purgatoire. Le serveur ignore un impact (`hit`, `friendly-hit`) déclaré par un joueur à
+pied ; les commandes `pistol-trace` et `soul-hit` n'existent plus.

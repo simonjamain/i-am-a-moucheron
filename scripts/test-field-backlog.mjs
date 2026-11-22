@@ -151,7 +151,7 @@ console.log(
   }),
 );
 
-const { shoulderView, aimPistol, muzzleAim } = await import('../src/personal-aim.ts');
+const { shoulderView } = await import('../src/personal-aim.ts');
 const { createGraphics } = await import('../src/graphics.js');
 for (const scale of [0.003, 1])
   for (const yaw of [0, Math.PI / 2, Math.PI, -Math.PI / 2]) {
@@ -162,26 +162,6 @@ for (const scale of [0.003, 1])
     cam.updateMatrixWorld();
     const p = new T.Vector3(0, 1.5 * scale, 0).project(cam);
     assert.ok(Math.abs(p.x) > 0.06, 'shoulder camera clears centre of body');
-    const g = createGraphics(T, new T.Scene()).humanoid('#999');
-    g.scale.setScalar(scale);
-    const arm = g.userData.arms[1],
-      muzzle = new T.Object3D();
-    muzzle.position.set(0, -0.8, 0);
-    arm.elbow.add(muzzle);
-    const direction = cam.getWorldDirection(new T.Vector3());
-    aimPistol(T, g, direction);
-    const target = cam.position.clone().addScaledVector(direction, 15 * scale),
-      aim = muzzleAim(T, cam, muzzle, target, 150 * scale);
-    assert.ok(aim);
-    assert.ok(aim.direction.dot(direction) > 0.98);
-    const blocker = new T.Box3().setFromCenterAndSize(
-      aim.origin.clone().addScaledVector(aim.direction, scale),
-      new T.Vector3(0.1, 0.1, 0.1).multiplyScalar(scale),
-    );
-    assert.ok(
-      new T.Ray(aim.origin, aim.direction).intersectBox(blocker, new T.Vector3()),
-      'muzzle sweep sees foreground obstacles',
-    );
   }
 const { tankSight, tankBarrelOrigin } = await import('../src/tank-view.js');
 const { vehicleUnit } = await import('../src/fleet.ts');

@@ -666,164 +666,11 @@
           bottom: 216px;
         }
       }
-      #purgatory {
-        position: fixed;
-        z-index: 7;
-        inset: 65px 0 0;
-        background: radial-gradient(ellipse at top, #45665bef, #102b2bf5 65%);
-        overflow: auto;
-        padding: 26px 20px;
-        display: grid;
-        place-items: center;
-      }
-      #purgatory article {
-        width: min(660px, 100%);
-        border: 1px solid #d3e5b444;
-        border-radius: 14px;
-        background: #102c29;
-        box-shadow: 0 22px 100px #0005;
-        padding: 28px;
-      }
-      #purgatory h2 {
-        font:
-          clamp(36px, 6vw, 56px) 'Barlow Condensed',
-          sans-serif;
-        text-transform: uppercase;
-        margin: 8px 0 12px;
-        line-height: 1;
-      }
-      #purgatory .desk {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        background: #d5ef73;
-        color: #17392d;
-        border-radius: 7px;
-        padding: 15px;
-        margin: 18px 0 10px;
-      }
-      #soulPosition {
-        font-weight: 700;
-        color: var(--acid);
-      }
-      #soulStatus {
-        color: #c8d4c6;
-        line-height: 1.6;
-        min-height: 44px;
-        font-size: 13px;
-      }
-      #soulQueue {
-        padding: 0;
-        list-style: none;
-        max-height: 245px;
-        overflow: auto;
-        margin: 10px 0 16px;
-      }
-      #soulQueue li {
-        display: flex;
-        justify-content: space-between;
-        gap: 12px;
-        padding: 10px 12px;
-        border-bottom: 1px solid #ffffff12;
-        font-size: 13px;
-      }
-      #soulQueue li.you {
-        background: #d5ef7320;
-        border: 1px solid #d5ef7380;
-        border-radius: 5px;
-        color: var(--acid);
-      }
-      #soulQueue small {
-        color: #b6c7ba;
-        text-align: right;
-      }
-      #punch {
-        width: 100%;
-      }
       button:disabled {
         cursor: default;
         opacity: 0.45;
       }
-      #soulError {
-        color: #ffb59c;
-        font-size: 12px;
-        min-height: 16px;
-        margin-bottom: 0;
-      }
-      #purgatory .small {
-        margin: 12px 0 0;
-      }
       @media (max-width: 700px) {
-        #purgatory {
-          padding: 12px;
-          inset: 65px 0 0;
-          place-items: start center;
-        }
-        #purgatory article {
-          padding: 18px;
-        }
-        #soulQueue {
-          max-height: 180px;
-        }
-        #purgatory h2 {
-          font-size: 36px;
-        }
-      }
-      #purgatory {
-        background: none;
-        pointer-events: none;
-        display: block;
-        padding: 18px;
-      }
-      #purgatory article {
-        width: min(520px, calc(100% - 24px));
-        background: #102c29dd;
-        padding: 16px;
-        position: absolute;
-        bottom: 16px;
-        left: 12px;
-        pointer-events: auto;
-      }
-      #purgatory h2 {
-        font-size: 26px;
-        margin: 4px 0;
-      }
-      #purgatory .desk {
-        padding: 8px;
-        margin: 6px 0;
-      }
-      #soulStatus {
-        min-height: 0;
-        margin: 6px 0;
-        font-size: 12px;
-      }
-      .soulControls {
-        display: flex;
-        gap: 6px;
-        margin-top: 8px;
-      }
-      .soulControls button {
-        touch-action: none;
-        flex: 1;
-        padding: 10px;
-      }
-      #purgatory .eyebrow {
-        font-size: 9px;
-      }
-      #punch {
-        padding: 10px;
-      }
-      #soulError:empty {
-        display: none;
-      }
-      @media (max-width: 700px) {
-        #purgatory article {
-          padding: 10px;
-          bottom: 8px;
-        }
-        #purgatory h2 {
-          font-size: 22px;
-        }
         #signature {
           height: 90px;
         }
@@ -883,31 +730,6 @@
         }
         #controlMode {
           display: none;
-        }
-      }
-      .soulCombat {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 6px;
-      }
-      .soulCombat button {
-        touch-action: none;
-        padding: 10px;
-        font-size: 11px;
-      }
-      #purgatory article {
-        max-width: 390px;
-      }
-      #soulStatus {
-        line-height: 1.5;
-      }
-      @media (max-width: 700px) {
-        .soulCombat {
-          grid-template-columns: repeat(4, 1fr);
-        }
-        .soulCombat button {
-          font-size: 9px;
-          padding: 8px 4px;
         }
       }
       @media (max-width: 700px) {
@@ -2414,34 +2236,6 @@
         <button id="captureMouse">Capturer la souris</button>
       </div>
     </div>
-    <section id="purgatory" class="hidden" aria-labelledby="soulTitle">
-      <article>
-        <div class="eyebrow">Service des retours à la vie · Guichet unique</div>
-        <h2 id="soulTitle">Bienvenue au purgatoire.</h2>
-        <div id="soulPosition" role="status">Transfert en cours…</div>
-        <p id="soulStatus"></p>
-        <div class="desk">
-          <strong id="saintName">☁ Saint Pierre</strong><small id="soulCount"></small>
-        </div>
-        <button id="soulPaperButton" class="primary hidden">Ouvrir le dossier · E</button>
-        <div class="soulCombat hidden">
-          <button id="punch" class="primary">Tir</button><button id="heavyPunch"></button
-          ><button data-key="ShiftLeft"></button><button id="soulDash"></button>
-        </div>
-        <div class="soulControls">
-          <button data-key="ArrowLeft">←</button><button data-key="ArrowUp">↑</button
-          ><button data-key="ArrowDown">↓</button><button data-key="ArrowRight">→</button>
-        </div>
-        <p id="soulError" role="status"></p>
-      </article>
-    </section>
-    <button
-      id="personalFire"
-      class="hidden"
-      style="position: fixed; right: 24px; bottom: 32px; z-index: 20"
-    >
-      Tir · pistolet
-    </button>
     <div id="deathWatch" class="hidden" role="dialog" aria-label="Observation après décès">
       <p>Vous êtes mort. La partie continue.</p>
       <button id="enterPurgatory">Accéder au purgatoire</button>

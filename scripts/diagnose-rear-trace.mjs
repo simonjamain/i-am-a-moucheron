@@ -13,9 +13,9 @@ const signedDistance = centre.clone().sub(origin).dot(direction);
 console.log(
   JSON.stringify({ centreAlongShot: signedDistance, referenceMetres: signedDistance / MAP.ratio }),
 );
-// The generic moving tracer is a rear-facing trail. A static pistol effect must
+// The generic moving tracer is a rear-facing trail. A static shot effect must
 // offset its head forward before displaying this shape; the fixed helper does.
 assert.ok(
   signedDistance > 0,
-  'static pistol streak is behind the muzzle, reproducing the reported backward shot',
+  'static streak is behind the muzzle, reproducing the reported backward shot',
 );

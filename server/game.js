@@ -65,7 +65,6 @@ import { advancePaidService } from '../src/paid-service.js';
 import { SENTRY, GATLING, isTurret, fireGroundSentries } from '../src/ground-sentry.ts';
 import { FORTIFICATIONS, isFortification } from '../src/ground-fortifications.ts';
 import { FIXED_DCA, RAPID_DCA_DAMAGE, heavyDcaMuzzle, isFixedDca } from '../src/fixed-dca.ts';
-import { PISTOL_CAPACITY } from '../src/ground-ammo.ts';
 import {
   fullAmmo,
   ammoCapacity,
@@ -203,7 +202,6 @@ function roomState(code, now, layout = DEFAULT_LAYOUT_ID) {
     bedContracts: new Map(),
     identityTokens: new Map(),
     hits: new Set(),
-    pistolImpacts: new Set(),
     kills: new Set(),
     enemyDamage: {},
     equipment: [],
@@ -369,7 +367,6 @@ export class Game {
       life: 'alive',
       mode: 'foot',
       health: 100,
-      pistolAmmo: PISTOL_CAPACITY,
       incarnation: 0,
       board_paper: 0,
       vehicle_id: null,
@@ -718,13 +715,12 @@ export class Game {
     }
     const v = p.vehicle_id ? r.vehicles.get(p.vehicle_id) : null;
     if (v && p.seat) return { item: v.type, seat: p.seat };
-    return p.mode === 'foot' ? { item: 'pistol', seat: 'foot' } : null;
+    return null;
   }
   hitSource(r, p, b, rapid) {
     const seat = this.statSeat(r, p);
     if (!seat) return null;
     if (rapid) return { ...seat, weapon: 'rapid' };
-    if (seat.item === 'pistol') return { ...seat, weapon: 'pistol' };
     return { ...seat, weapon: typeof b.weapon === 'string' ? b.weapon.slice(0, 24) : 'mg' };
   }
   heavySource(r, p, shot) {
@@ -909,7 +905,6 @@ export class Game {
       Object.assign(pilot, {
         life: 'alive',
         health: 100,
-        pistolAmmo: PISTOL_CAPACITY,
         incarnation: pilot.incarnation + 1,
         occupation: pilot.occupation + 1,
         mode: 'foot',
@@ -1185,7 +1180,6 @@ export class Game {
       if (s.kind === 'player' && s.entity === p.id) s.status = 'gone';
     p.life = 'dead';
     p.health = 100;
-    p.pistolAmmo = PISTOL_CAPACITY;
     p.incarnation++;
     p.mode = 'foot';
     p.board_paper = 0;
@@ -1327,7 +1321,6 @@ export class Game {
     else if (path === 'purchase-sign') this.purchaseSign(r, p, b);
     else if (path === 'place-purchase') this.placePurchase(r, p, b);
     else if (path === 'wash') this.wash(r, p, b);
-    else if (path === 'pistol-trace') this.pistolTrace(r, p, b);
     else if (path === 'fixed-dca-fire') {
       const result = this.fixedDcaFire(r, p, b);
       if (result) return result;
@@ -1420,7 +1413,6 @@ export class Game {
     else if (path === 'heavy-fire') this.heavyFire(r, p, b);
     else if (path === 'hit') this.hit(r, p, b);
     else if (path === 'friendly-hit') this.friendly(r, p, b);
-    else if (path === 'soul-hit') this.soulHit(r, p, b);
     else if (path === 'vip-pass') this.vipPass(r, p, b);
     else if (path === 'blast') {
       requireGame(
@@ -1778,66 +1770,6 @@ export class Game {
       wave: r.wave,
       radiusFactor: 1,
       bonus: r.balance.damage,
-    });
-  }
-  pistolImpact(r, p, shot) {
-    // Allow only one impact (enemy, friendly or soul) per shot.
-    if (p.mode !== 'foot') return true;
-    // Game rule: the pistol only exists in purgatory.
-    requireGame(world(p) !== 'office', 'Aucun pistolet dans le bureau.');
-    requireGame(
-      typeof shot === 'string' && shot.length <= 120,
-      'Identifiant de tir invalide.',
-      400,
-    );
-    const key = JSON.stringify(['pistol-impact', p.id, p.incarnation, shot]);
-    if (r.pistolImpacts.has(key)) return false;
-    requireGame(r.pistolImpacts.size < 128000, 'Trop de tirs enregistrés.', 429);
-    r.pistolImpacts.add(key);
-    return true;
-  }
-  pistolTrace(r, p, b) {
-    // The pistol only exists in purgatory: nobody fires on foot in the office.
-    requireGame(world(p) !== 'office', 'Aucune arme à pied dans le bureau.');
-    requireGame(
-      !p.state.awaitingPurgatory &&
-        p.mode === 'foot' &&
-        !p.vehicle_id &&
-        b.incarnation === p.incarnation,
-      'Pistolet indisponible.',
-    );
-    requireGame(
-      typeof b.shot === 'string' &&
-        b.shot.length <= 120 &&
-        ['origin', 'direction'].every(
-          (k) => Array.isArray(b[k]) && b[k].length === 3 && b[k].every(Number.isFinite),
-        ),
-      'Trace invalide.',
-    );
-    requireGame(Math.abs(Math.hypot(...b.direction) - 1) < 0.01, 'Direction invalide.');
-    const key = JSON.stringify(['pistol-trace', p.id, p.incarnation, b.shot]);
-    if (r.hits.has(key)) return;
-    requireGame(p.pistolAmmo >= 1, 'Pistolet à court de munitions.');
-    this.once(r, key, () => {
-      p.pistolAmmo--;
-      r.effects.push({
-        id: ++r.effectSeq,
-        kind: 'pistol-trace',
-        shooter: p.id,
-        p: b.origin,
-        direction: b.direction,
-        distance: Math.max(
-          0,
-          Math.min(
-            150 * (world(p) === 'office' ? MAP.ratio : 1),
-            Number.isFinite(b.distance)
-              ? b.distance
-              : 150 * (world(p) === 'office' ? MAP.ratio : 1),
-          ),
-        ),
-        realm: world(p),
-        at: this.now(),
-      });
     });
   }
   purchaseSnapshot(r) {
@@ -2660,7 +2592,8 @@ export class Game {
       return;
     if (r.kills.has(b.enemy)) return;
     const rapid = typeof b.shot === 'string' && b.shot.startsWith(p.id + ':rapid:');
-    if (rapid ? !this.rapidImpactAllowed(r, p, b.shot) : !this.pistolImpact(r, p, b.shot)) return;
+    // Nobody carries a weapon on foot (docs/gameplay.md).
+    if (rapid ? !this.rapidImpactAllowed(r, p, b.shot) : p.mode === 'foot') return;
     const damage = rapid ? RAPID_DCA_DAMAGE : Math.max(1, Math.min(800, Number(b.amount) || 75));
     const amount = damage * r.balance.damage;
     this.once(
@@ -2677,7 +2610,7 @@ export class Game {
   friendly(r, p, b) {
     requireGame(typeof b.shot === 'string' && b.shot.length <= 120, 'Impact invalide.');
     const rapid = b.shot.startsWith(p.id + ':rapid:');
-    if (rapid && !this.rapidImpactAllowed(r, p, b.shot)) return;
+    if (rapid ? !this.rapidImpactAllowed(r, p, b.shot) : p.mode === 'foot') return;
     const vehicle = r.vehicles.get(p.vehicle_id),
       key = b.weapon || p.seat;
     const tankDamage =
@@ -2687,15 +2620,12 @@ export class Game {
     const amount =
       (rapid
         ? RAPID_DCA_DAMAGE
-        : p.mode === 'foot'
-          ? 10
-          : p.mode === 'turret'
-            ? Math.max(0, Math.min(200, Math.round(Number(b.amount) || 80)))
-            : (tankDamage ?? 75)) * r.balance.damage;
+        : p.mode === 'turret'
+          ? Math.max(0, Math.min(200, Math.round(Number(b.amount) || 80)))
+          : (tankDamage ?? 75)) * r.balance.damage;
     if (b.vehicle) {
       const v = r.vehicles.get(b.vehicle);
       requireGame(world(p) === 'office' && v, 'Appareil hors de cet espace.');
-      if (!rapid && !this.pistolImpact(r, p, b.shot)) return;
       this.once(r, JSON.stringify(['hull', v.id, p.id, b.shot]), () => {
         v.state.hp = Math.max(0, v.state.hp - amount);
       });
@@ -2716,7 +2646,6 @@ export class Game {
         (b.incarnation === undefined || b.incarnation === target.incarnation),
       'Cible absente de cet espace.',
     );
-    if (!rapid && !this.pistolImpact(r, p, b.shot)) return;
     this.once(r, JSON.stringify(['health', target.id, target.incarnation, p.id, b.shot]), () => {
       r.damageEvents.push({
         id: ++r.damageSeq,
@@ -2727,25 +2656,6 @@ export class Game {
       });
       target.health = Math.max(0, target.health - amount);
       if (!target.health) this.kill(r, target, target.incarnation);
-    });
-  }
-  soulHit(r, p, b) {
-    requireGame(
-      p.mode === 'foot' &&
-        world(p) !== 'office' &&
-        typeof b.shot === 'string' &&
-        b.shot.length <= 120,
-      'Pistolet indisponible.',
-    );
-    if (r.hits.has(JSON.stringify(['soul', Number(b.soul), p.id, b.shot]))) return;
-    const s = r.souls.get(Number(b.soul));
-    requireGame(s?.kind === 'enemy' && s.realm === world(p), 'Âme absente.');
-    if (!this.pistolImpact(r, p, b.shot)) return;
-    this.once(r, JSON.stringify(['soul', s.id, p.id, b.shot]), () => {
-      if (s.status === 'waiting') {
-        s.damage += 10 * r.balance.damage;
-        if (s.damage >= ENEMY_TYPES[s.enemy_type].hp) this.releaseSoul(r, s);
-      }
     });
   }
   // VIP lane pass (docs/purgatory-queue.md): a signed slip, paid once from the
@@ -2806,7 +2716,6 @@ export class Game {
       s.status = 'gone';
       body.gone = true;
       p.health = 100;
-      p.pistolAmmo = PISTOL_CAPACITY;
       p.incarnation++;
       p.mode = 'foot';
       p.board_paper = 0;

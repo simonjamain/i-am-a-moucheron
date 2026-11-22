@@ -208,23 +208,6 @@ try {
     washed.body.effects.filter((e) => e.kind === 'clean' && e.vehicle === spit.id).length,
     1,
   );
-  // No pistol on foot in the office: the command is refused and nothing is relayed.
-  assert.equal(
-    (
-      await b.request('pistol-trace', {
-        shot: 'native-pistol',
-        origin: [1.5, 2, 0],
-        direction: [0, 0, -1],
-        incarnation: person.incarnation,
-      })
-    ).status,
-    409,
-  );
-  assert.ok(
-    !(await a.request('sync', { mode: 'foot', state })).body.effects.some(
-      (e) => e.kind === 'pistol-trace' && e.shooter === person.id,
-    ),
-  );
   // Reconnection: a fresh connection resumes the same pilot; the server closes
   // the old connection; a dropped connection leaves the pilot resumable.
   {

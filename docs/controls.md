@@ -31,7 +31,7 @@ mapping, including modifier changes while a key is held.
 | Alive                  | P                              | Open / close purchase menu               |
 | Placement preview      | E (Enter alias) / Escape       | Confirm / cancel                         |
 | DCA                    | [ / ], Shift / Ctrl held       | Step / continuous airburst distance      |
-| On foot / purgatories  | Click / grounded Space         | Pistol / continuous cleaning jet         |
+| On foot (office)       | Grounded Space                 | Continuous cleaning jet                  |
 | Multi-seat vehicle     | Physical Digit1–Digit7 / panel | Contractual change or exchange           |
 | Purgatory              | E                              | Open paperwork when physically eligible  |
 | Paperwork              | Release valid ink stroke       | Submit and stamp automatically           |
@@ -60,12 +60,11 @@ physics continues with neutral control surfaces while UI owns the pointer.
 overrides and client integration, suspended inputs, capture/release, and the
 pending-capture/form race.
 
-## Pistolet et postes
+## À pied et postes
 
-Au bureau, personne ne porte d'arme à pied : le personnage marche et court les
-mains libres. Le pistolet n'existe qu'au purgatoire : clic gauche, bouton
-« Tir · pistolet » ou A/Croix, un tir par appui, sans rechargement. Espace en
-chute conserve la commande de parachute.
+Personne ne porte d'arme à pied, au bureau comme au purgatoire : le personnage
+marche et court les mains libres, avec le même modèle et les mêmes animations
+partout. Espace en chute conserve la commande de parachute.
 E / Y-Triangle ouvre le dossier au guichet ou près d’un équipement.
 Touches physiques Digit1–Digit7 ou panneau « Postes » : même contrat pour changer de siège ou proposer un
 échange. Espace au sol maintient un jet ; en chute, il garde le parachute. Le destinataire signe pour accepter ou utilise « Refuser l’échange ».
@@ -242,10 +241,6 @@ DCA fixe : le nombre d'obus restants (sur 120) est affiché près de l'état du
 poste. Un clic gauche ou Espace déclenche un tir tant qu'il reste des munitions.
 Rechargement automatique auprès d'une station ou d'un Castor à portée, depuis
 la caisse commune ; aucun achat de munitions à distance.
-
-Le pistolet du purgatoire possède **120 balles** par incarnation ; tirer à vide
-n'inflige pas de dégâts. Aucune recharge : la réserve reste finie et la sortie par
-les formulaires demeure disponible. Chaque nouvelle incarnation repart à 120.
 
 ## Aperçu de pose
 

@@ -148,14 +148,12 @@ ne sont pas affichés : ils ne sont lus que par les lecteurs d'écran.
   ramenés à la même hauteur (1,7 m modèle) par une racine mise à l'échelle.
   Allure : repos sous 0,35 m/s, course dès 3 m/s, vitesse de lecture liée à la
   vitesse réelle. Sans clip de repos, une pose de liaison à une clé sert de repos et
-  les bras sont baissés le long du corps. Les poses absentes (pistolet au purgatoire,
-  assis en DCA, chute ou parachute) orientent les os en espace monde ; au bureau, les
-  joueurs n'ont pas d'arme et gardent les clips. `turnToward()` lisse l'orientation
+  les bras sont baissés le long du corps. Les poses absentes (assis en DCA, chute ou
+  parachute) orientent les os en espace monde ; personne n'a d'arme et les joueurs
+  gardent les clips, au bureau comme au purgatoire. `turnToward()` lisse l'orientation
   affichée vers la direction de marche (constante de temps 1/12 s).
-- Intégration : `graphics.humanoid(color, saint, appearance)` garde le cadre
-  invisible `arms`/`legs`/`rig` ; le bras du pistolet part de l'épaule du modèle et
-  sa longueur place la crosse dans la paume, recalculées à chaque changement de
-  modèle. Balistique, dégâts et règles de tir sont inchangés. Le sélecteur de
+- Intégration : `graphics.humanoid(color, saint, appearance)` renvoie un groupe qui
+  porte le modèle et l'échange sur place au changement d'apparence. Le sélecteur de
   l'accueil (`src/appearance-picker.js`) dessine, après chaque image, directement
   dans le canevas du jeu (viewport et ciseaux sur son rectangle) ; la page laisse ce
   rectangle transparent (couleur du panneau en `box-shadow`, trou de masque dans

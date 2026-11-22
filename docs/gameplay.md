@@ -174,11 +174,9 @@ Pour éviter d’attendre derrière des dizaines d’insectes, un joueur peut pa
 un **coupe-file** (numéro de la vague en dollars, sur la caisse commune) et passer par
 la file VIP, servie dès que Saint Pierre a fini l’insecte en cours
 ([file VIP](purgatory-queue.md#file-vip-coupe-file-payant)).
-Les collisions permettent de se bousculer. Le combat à mains nues est supprimé ;
-au purgatoire, chacun utilise son pistolet semi-automatique à 10 dégâts fixes,
-sans chargeur ni rechargement. Dans le bureau, personne ne porte d'arme à pied. Les armes
-personnelles sont inutilisables dans tous les équipements. Les PNJ ne ripostent
-pas et conservent leurs dégâts sans régénération. Voir [file physique](purgatory-queue.md).
+Les collisions permettent de se bousculer. Personne ne porte d'arme à pied, ni au
+bureau ni au purgatoire : l'âme est le même
+personnage, avec les mêmes animations, qu'au bureau. Voir [file physique](purgatory-queue.md).
 
 Aucune prime de vague n'est versée (supprimée par l'issue #210) : les âmes libérées
 sont la seule source de revenu liée aux vagues, et un ennemi raté ne rapporte rien.
@@ -239,7 +237,6 @@ Voir [combat et mondes](combat-worlds.md) pour les valeurs et garanties réseau.
 
 Noms flottants retirés, moucherons agrandis (facteur 6,075, tolérance de tir +20 %),
 blessures visibles et sons de chute : voir [visibilité des ennemis](enemy-visibility.md).
-Pistolet à l'épaule : [retours terrain](field-update.md#pistolet-à-lépaule).
 Alertes de réserves à 25 % et zéro : bloc discret rouge lentement pulsé (animation
 coupée si mouvement réduit) ; « Missile en vol » est prioritaire sur l'épuisement.
 Un appareil vivant, posé et arrêté en station récupère moteur et ailes avec ses PV.
@@ -276,8 +273,7 @@ et limites de vérification.
 
 ## Retours terrain intégrés
 
-Au purgatoire, le pistolet tire depuis la main vers le point du réticule, avec
-caméra à l’épaule et obstacles revérifiés depuis le canon. La chute utilise la gravité humaine multipliée par le ratio du personnage,
+La chute utilise la gravité humaine multipliée par le ratio du personnage,
 un parachute progressif et des dégâts d’impact verticaux. Le retour après
 purgatoire se fait au départ, sauf contrat personnel de lit signé (en visant le lit).
 Les lits s’achètent 4 $, puis +2 $ ; plusieurs joueurs peuvent signer le même.
@@ -496,14 +492,6 @@ une **station de ravitaillement ou un Castor vivant** est à sa portée. Le tari
 est le même que pour les autres obus, **1 $ pour 10 unités** ; en cas de manque
 d'argent, elle reçoit une part équitable avec les véhicules et les barricades.
 Une DCA isolée reste à sec jusqu'à l'installation ou au passage d'un soutien.
-
-### Pistolet à munitions limitées (version 198)
-
-Chaque nouvelle incarnation reçoit un pistolet avec **120 balles**. Un tir est
-décompté par le serveur avant de pouvoir blesser un insecte, un allié ou une âme :
-un impact ne peut utiliser qu'une fois le même identifiant de tir. Depuis la
-version 243, le pistolet n'existe plus qu'au purgatoire et rien ne le recharge :
-la paperasse reste le moyen de progression lorsque les munitions sont épuisées.
 
 ## Décollage et trajectoires aériennes (v305)
 

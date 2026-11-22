@@ -9,8 +9,7 @@ aucun code ne cherche à détecter, empêcher ou limiter la triche d'un client. 
 - Le client est autoritaire sur ce qu'il simule : positions, vitesses, visées, tirs, impacts et
   dégâts déclarés (voir [walking-network](walking-network.md) et [combat-worlds](combat-worlds.md)).
 - Le serveur **n'ajoute pas** de contrôle de plausibilité : pas de butée d'élévation d'un canon, pas
-  de cadence minimale entre deux tirs, pas de plafond sur les dégâts d'un impact, pas de trace
-  exigée avant un impact de pistolet, pas de limite de vitesse ou de saut de position.
+  de cadence minimale entre deux tirs, pas de plafond sur les dégâts d'un impact, pas de limite de vitesse ou de saut de position.
 - Le client garde ses butées et ses délais pour le confort de jeu (visée, rechargement affiché),
   pas pour se défendre d'un autre client.
 

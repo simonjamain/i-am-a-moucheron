@@ -14,16 +14,6 @@ const a = game.join({ code: 'RAMTEST', name: 'Alpha' }),
   b = game.join({ code: 'RAMTEST', name: 'Bravo' });
 let room = game.rooms.get('RAMTEST');
 const call = (id, path, body = {}) => game.command('RAMTEST', id, path, body);
-// Register pistol ammunition through the same authoritative command as the client.
-function pistolShot(id, shot) {
-  const shooter = room.pilots.get(id);
-  return call(id, 'pistol-trace', {
-    shot,
-    incarnation: shooter.incarnation,
-    origin: [0, 0, 0],
-    direction: [0, 0, -1],
-  });
-}
 assert.equal(room.pilots.size, 2);
 // Snapshot shape must remain compatible with many players and signed purchases.
 const extra = new Game({ now: () => now });
@@ -80,12 +70,8 @@ assert.equal(s.phase, 'combat');
 assert.equal(s.wave, 1);
 const firstTotal = s.total;
 assert.ok(firstTotal >= 8, 'first wave has its full budget');
-// Nobody fires on foot in the office: neither a trace nor an impact is accepted.
-assert.throws(() => pistolShot(a.id, 'office'), /bureau/);
-assert.throws(
-  () => call(a.id, 'hit', { wave: 1, enemy: 0, amount: 75, shot: 'office' }),
-  /pistolet/,
-);
+// Nobody carries a weapon on foot: an impact reported by a walker is ignored.
+call(a.id, 'hit', { wave: 1, enemy: 0, amount: 75, shot: 'office' });
 assert.equal(game.snapshot(room).enemyDamage[0] ?? 0, 0);
 // A fixed gun operator reports the wave hits instead; each shot counts once.
 room.pilots.get(a.id).mode = 'turret';
@@ -184,12 +170,8 @@ assert.equal(room.pilots.get(b.id).mode, 'foot');
 assert.equal(room.vehicles.has(bomber.id), true);
 call(a.id, 'vehicle-exit');
 assert.equal(room.pilots.get(a.id).state.walkSpawn.parachute, false);
-// No pistol in the office: a walker cannot hurt another walker.
-assert.throws(() => pistolShot(a.id, 'p0'), /bureau/);
-assert.throws(
-  () => call(a.id, 'friendly-hit', { target: b.id, incarnation: 0, shot: 'p0' }),
-  /pistolet/,
-);
+// No weapon on foot: a walker cannot hurt another walker.
+call(a.id, 'friendly-hit', { target: b.id, incarnation: 0, shot: 'p0' });
 assert.equal(room.pilots.get(b.id).health, 100);
 call(b.id, 'death', { incarnation: 0 });
 assert.equal(room.pilots.get(b.id).life, 'dead');
@@ -197,10 +179,10 @@ assert.equal(room.pilots.get(b.id).health, 100);
 call(a.id, 'death', { incarnation: 0 });
 call(a.id, 'enter-purgatory', { incarnation: room.pilots.get(a.id).incarnation });
 call(b.id, 'enter-purgatory', { incarnation: room.pilots.get(b.id).incarnation });
-for (let i = 0; i < 10; i++) {
-  pistolShot(a.id, 's' + i);
+for (let i = 0; i < 10; i++)
   call(a.id, 'friendly-hit', { target: b.id, incarnation: 1, shot: 's' + i });
-}
+assert.equal(room.pilots.get(b.id).state.realm, 'purgatory', 'souls are unarmed');
+game.kill(room, room.pilots.get(b.id), room.pilots.get(b.id).incarnation);
 assert.equal(room.pilots.get(b.id).state.realm, 'super');
 assert.throws(() => call(b.id, 'death', { incarnation: 1 }), /purgatoire/);
 call(b.id, 'enter-purgatory', { incarnation: room.pilots.get(b.id).incarnation });
@@ -229,11 +211,9 @@ assert.equal(room.pilots.get(b.id).life, 'alive');
 assert.equal(room.pilots.get(b.id).health, 100);
 const enemy = [...room.souls.values()].find((s) => s.kind === 'enemy' && s.status === 'waiting');
 const dollars = room.dollars;
-for (let i = 0; i < 10; i++) {
-  pistolShot(a.id, 'soul' + i);
-  call(a.id, 'soul-hit', { soul: enemy.id, shot: 'soul' + i });
-}
-call(a.id, 'soul-hit', { soul: enemy.id, shot: 'soul9' });
+assert.throws(() => call(a.id, 'soul-hit', { soul: enemy.id, shot: 'soul0' }), /inconnue/);
+game.releaseSoul(room, enemy);
+game.releaseSoul(room, enemy);
 assert.equal(
   room.dollars,
   Math.round((dollars + ENEMY_TYPES[enemy.enemy_type].power) * 100) / 100,
