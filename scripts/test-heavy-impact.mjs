@@ -91,7 +91,11 @@ assert.equal(r.effects.filter((e) => e.shot === 'two').length, 0);
 // 4. Forgotten launch: expires after its lifetime plus a delay, without effect.
 now += 5000;
 fire('three');
-now += HEAVY.antitank.lifetime * 1000 + IMPACT_GRACE_MS - 10;
+now += HEAVY.antitank.lifetime * 500;
+// Players stay connected during the long flight.
+for (const p of r.pilots.values()) p.seen = now;
+now += HEAVY.antitank.lifetime * 500 + IMPACT_GRACE_MS - 10;
+for (const p of r.pilots.values()) p.seen = now;
 game.advance(r);
 assert.ok(
   r.ordnance.some((s) => s.shot === 'three'),

@@ -230,6 +230,8 @@ const files = {
       'tank-view',
       'armament',
       'projectiles',
+      'materials',
+      'ricochet',
       'ordnance',
       'bank',
       'beds',
