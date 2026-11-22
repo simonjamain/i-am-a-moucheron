@@ -129,6 +129,7 @@ export const SUITE = [
   'test-enemy-bestiary',
   'test-enemy-speeds',
   'test-ground-placement',
+  'test-hull-gun',
   'test-placement-models',
   'test-ground-defense',
   'test-ground-structure',
