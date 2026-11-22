@@ -30,9 +30,11 @@ guichet qu’il sert. Le super purgatoire n’a ni insectes ni file VIP.
 `test-purgatory-vip.mjs` vérifie le cordon, la priorité, le prix, le refus et la
 signature au guichet VIP.
 
-Les coups, gardes, esquives de combat et KO sont supprimés. Le pistolet utilise
-de vrais PV persistants, sans récupération automatique ; tuer un PNJ le libère
-avec une seule récompense. Les collisions et la marche restent actives.
+Les coups, gardes, esquives de combat, KO et le pistolet sont supprimés : l'âme est
+le personnage du bureau, mêmes modèle et animations, sans arme. Un PNJ est libéré
+(avec une seule récompense) quand Saint Pierre l'a servi. Les collisions et la marche
+restent actives. Aucun panneau d'interface : le décor (vigile, cordons, guichets)
+indique quoi faire, avec la ligne des commandes en bas d'écran.
 
 Le super purgatoire est une arène séparée, sans PNJ, avec cinq contrats.
 Voir [combat et mondes](combat-worlds.md) et [gameplay](gameplay.md).

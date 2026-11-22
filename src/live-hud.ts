@@ -219,13 +219,7 @@ export function controlHintItems({
     ];
   else if (vehicle) items = vehicleHints(vehicle, seat, build);
   else if (dead)
-    items = [
-      'ZQSD / flèches : marcher',
-      'Molette : zoom',
-      'Clic : pistolet',
-      'Espace : jet',
-      'E : formulaires',
-    ];
+    items = ['ZQSD / flèches : marcher', 'Molette : zoom', 'Espace : jet', 'E : formulaires'];
   else if (airborne) items = ['ZQSD / flèches : diriger', 'Espace : parachute', 'Molette : zoom'];
   else
     items = [

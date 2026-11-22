@@ -11,11 +11,9 @@
 | Joueur            | 100 |
 
 Une mitrailleuse inflige 75 dégâts (l'ancienne amélioration de munitions est
-retirée). Le pistolet n'existe qu'au purgatoire et inflige
-toujours 10 dégâts, un tir par appui, sans délai entre deux appuis distincts.
-Maintenir ne répète pas le tir. Le corps visible de l'âme porte le pistolet ; le
-rayon vise le réticule. Au bureau, le personnage n'a pas d'arme à pied.
-Le personnage est un modèle animé (repos, marche, course, assis, chute) ;
+retirée). Personne n'a d'arme à pied, au bureau comme au purgatoire (le pistolet
+est retiré depuis la version 437) : le serveur ignore un impact déclaré à pied.
+Le personnage est le même modèle animé partout (repos, marche, course, assis, chute) ;
 voir le [pipeline d'assets](asset-pipeline.md#personnage-joueur-meshy--mixamo).
 
 Un obus de DCA au contact direct inflige 200 dégâts à sa seule cible et disparaît,

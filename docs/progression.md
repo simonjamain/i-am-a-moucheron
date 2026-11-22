@@ -29,7 +29,7 @@ Depuis la version 264, il n’y a **plus de vote ni de cartes de plans** entre l
 ## Revenus et prix
 
 Le directeur Node ne verse **aucune prime de vague** (`waveStipend` et l'affichage
-`waveReward` sont supprimés). Les âmes libérées par Saint-Pierre ou par le pistolet
+`waveReward` sont supprimés). Les âmes libérées par Saint-Pierre
 rapportent **la puissance de leur espèce** en dollars (multipliée par le réglage
 `rewards`) ; tuer dans le bureau ne crédite rien directement. Une vague de puissance
 W rapporte donc au plus W $. L'ancienne prime `min(20, 3 + n)` n'existe plus.

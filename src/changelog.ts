@@ -5,6 +5,13 @@ export interface ChangelogEntry {
 }
 export const PLAYER_CHANGELOG: ChangelogEntry[] = [
   {
+    version: 437,
+    changes: [
+      'Au purgatoire, l’âme est le même personnage qu’au bureau, avec les mêmes animations, et sans arme : le pistolet disparaît du jeu.',
+      'Le panneau du purgatoire et le bouton « Tir · pistolet » sont retirés.',
+    ],
+  },
+  {
     version: 436,
     changes: [
       'On descend des véhicules juste à côté de la carlingue ou du châssis, plus au bout des ailes : fini les chutes dans le vide.',

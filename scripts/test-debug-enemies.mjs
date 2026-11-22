@@ -107,10 +107,10 @@ fireGroundSentries([sentry], targets, now, (target, _s, damage) => {
   r.enemyDamage[target.id] = (r.enemyDamage[target.id] || 0) + damage;
 });
 assert.equal(r.enemyDamage[antIndex], SENTRY.damage, 'sentries target dummies');
-// Player hits: a strong pistol shot leaves the dummy standing.
+// Player hits (from a gun station): a strong shot leaves the dummy standing.
+r.pilots.get(id).mode = 'turret';
 const shot = (n) =>
   game.hit(r, r.pilots.get(id), { wave: r.wave, enemy: antIndex, amount: 800, shot: 'p' + n });
-game.pistolImpact = () => true; // accept the synthetic shots
 for (let i = 0; i < 50; i++) shot(i);
 assert.ok(r.enemyDamage[antIndex] > SENTRY.damage + 1000, 'player hits are counted');
 assert.ok(!r.kills.has(antIndex), 'a dummy never dies');

@@ -34,8 +34,6 @@ interface CharacterShared {
 export interface CharacterState {
   /** Ground speed (m/s). */
   speed?: number;
-  /** World aim direction, or null. */
-  aim?: THREE.Vector3 | null;
   seated?: boolean;
   falling?: boolean;
   parachute?: boolean;
@@ -43,7 +41,7 @@ export interface CharacterState {
 
 // Issue #111: the playable character (user-approved Meshy + Mixamo GLB). One
 // shared geometry/material/clip set per appearance; each player owns its bones,
-// skeleton and mixer. Missing animations (pistol aim, sitting, falling, and the
+// skeleton and mixer. Missing animations (sitting, falling, and the
 // idle of an export without one) are simple procedural poses that orient bones
 // in world space, so they do not depend on the Mixamo bones' local axes.
 // The default appearance is bundled; the others load on demand (loadCharacter).
@@ -268,7 +266,7 @@ export function createCharacter(T: Three, appearance: unknown = DEFAULT_APPEARAN
     mixer,
     bones: byName,
     gait: () => current,
-    // state: { speed (m/s), aim (world Vector3 or null), seated, falling }
+    // state: { speed (m/s), seated, falling, parachute }
     update(dt: number | null | undefined, state: CharacterState = {}): void {
       const speed = state.speed || 0;
       const inAir = !!(state.falling || state.parachute);
@@ -372,22 +370,6 @@ export function createCharacter(T: Three, appearance: unknown = DEFAULT_APPEARAN
         }
       } else root.position.y = 0;
       root.position.y += 0.85 * (1 - Math.cos(root.rotation.x));
-      if (state.aim && state.aim.lengthSq() > 1e-12) {
-        // Pistol: right arm straight along the aim, left hand supports it.
-        const aim = state.aim.clone().normalize();
-        pointBone(T, bone('RightArm'), bone('RightForeArm'), aim, 1);
-        pointBone(T, bone('RightForeArm'), bone('RightHand'), aim, 1);
-        const hand = bone('RightHand').getWorldPosition(new T.Vector3());
-        const shoulder = bone('LeftArm').getWorldPosition(new T.Vector3());
-        pointBone(T, bone('LeftArm'), bone('LeftForeArm'), hand.clone().sub(shoulder), 0.85);
-        pointBone(
-          T,
-          bone('LeftForeArm'),
-          bone('LeftHand'),
-          hand.sub(bone('LeftForeArm').getWorldPosition(new T.Vector3())),
-          0.85,
-        );
-      }
     },
   };
   return character;

@@ -195,33 +195,8 @@ const scene = new T.Scene(),
 const trace = makeShotTrace(T, scene, origin, dir, '#ffe');
 trace.updateWorldMatrix(true, true);
 assert.ok(trace.userData.core.getWorldPosition(new T.Vector3()).dot(dir) > 0);
-for (const scale of [MAP.ratio, 1])
-  for (const pitch of [-1.52, -0.8, 0, 0.8, 1.52]) {
-    const { shoulderView, muzzleAim, aimPistol } = await import('../src/personal-aim.ts');
-    const cam = new T.PerspectiveCamera();
-    const view = shoulderView(T, { x: 0, y: 0, z: 0 }, 1, pitch, 5.8, scale);
-    cam.position.copy(view.eye);
-    cam.lookAt(view.target);
-    cam.updateMatrixWorld();
-    const person = graphics.humanoid('#abc');
-    person.scale.setScalar(scale);
-    const muzzle = new T.Object3D();
-    muzzle.position.set(0, -0.64, 0.05);
-    person.userData.arms[1].elbow.add(muzzle);
-    const forward = cam.getWorldDirection(new T.Vector3());
-    aimPistol(T, person, forward);
-    const aim = muzzleAim(
-      T,
-      cam,
-      muzzle,
-      view.target.clone().addScaledVector(forward, 150 * scale),
-      150 * scale,
-    );
-    assert.ok(aim);
-    assert.ok(aim.direction.dot(forward) > 0.99);
-  }
 console.log(
-  'Fall/aim: scaled .02943 gravity, long desk fall, inherited velocity preserved, forward static tracer and almost vertical aim in both scales.',
+  'Fall/aim: scaled .02943 gravity, long desk fall, inherited velocity preserved, forward static tracer.',
 );
 
 const midge = graphics.insect('midge');
