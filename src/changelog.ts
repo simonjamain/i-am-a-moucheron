@@ -5,6 +5,13 @@ export interface ChangelogEntry {
 }
 export const PLAYER_CHANGELOG: ChangelogEntry[] = [
   {
+    version: 435,
+    changes: [
+      'Les hélicoptères ont une vraie physique : le rotor pousse, ils reposent sur leur train, et un frôlement ne les détruit plus.',
+      'Un hélicoptère laissé vide ralentit son rotor et s’endort, comme les autres véhicules.',
+    ],
+  },
+  {
     version: 434,
     changes: [
       'On peut quitter un véhicule à tout moment, même en mouvement, au sol ou en vol : on garde sa vitesse en sortant.',

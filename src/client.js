@@ -43,6 +43,7 @@ import { PurchaseUI } from '/purchase-ui.js';
 import { purchaseCount } from '/equipment.js';
 import { WASH } from '/vehicle-care.js';
 import { HELI, stepHeliAim, stepHelicopter } from '/helicopter.js';
+import { HeliRig, HELI_TYPES } from '/heli-physics.js';
 import { clampProximity, MOBILE_FUSE } from '/mobile-flak.js';
 import { ballisticMarks } from '/tank-reticle.js';
 import { InteractionTiming } from '/interaction-timing.js';
@@ -4474,6 +4475,7 @@ const RAPIER_RIGS = { castor: CastorRig, tank: TankRig, flaktruck: TruckRig };
 // The biplane is flown by the same engine (src/plane-physics.ts); the other aircraft still
 // use the arcade flight step until they are ported.
 let planeRig = null;
+let heliRig = null;
 const drivenRigs = new Map();
 
 // Vehicles and pilots a shot can hit, prepared once per frame (matrices, solid
@@ -4609,30 +4611,36 @@ function physics(dt) {
     // Z/S the pitch keeps following the mouse height (orbiting a target).
     const pitchKeys = keys.KeyS || keys.ArrowDown || keys.KeyZ || keys.ArrowUp;
     const rollKeys = keys.KeyQ || keys.ArrowLeft || keys.KeyD || keys.ArrowRight;
-    stepHelicopter(
-      T,
-      state,
-      {
-        collective,
-        pitch:
-          active && !pitchKeys && !keyboardOnly
-            ? undefined
-            : active
-              ? Number(!!(keys.KeyS || keys.ArrowDown)) - Number(!!(keys.KeyZ || keys.ArrowUp))
-              : 0,
-        roll:
-          active && !rollKeys && !keyboardOnly
-            ? undefined
-            : active
-              ? Number(!!(keys.KeyQ || keys.ArrowLeft)) - Number(!!(keys.KeyD || keys.ArrowRight))
-              : 0,
-        direction: active && !keyboardOnly ? mouseDirection.toArray() : null,
-        yaw: keyboardOnly && active ? Number(!!keys.KeyE) - Number(!!keys.KeyA) : 0,
-      },
-      colliders,
-      dt,
-      VEHICLES[myVehicle.type],
-    );
+    const heliControls = {
+      collective,
+      pitch:
+        active && !pitchKeys && !keyboardOnly
+          ? undefined
+          : active
+            ? Number(!!(keys.KeyS || keys.ArrowDown)) - Number(!!(keys.KeyZ || keys.ArrowUp))
+            : 0,
+      roll:
+        active && !rollKeys && !keyboardOnly
+          ? undefined
+          : active
+            ? Number(!!(keys.KeyQ || keys.ArrowLeft)) - Number(!!(keys.KeyD || keys.ArrowRight))
+            : 0,
+      direction: active && !keyboardOnly ? mouseDirection.toArray() : null,
+      yaw: keyboardOnly && active ? Number(!!keys.KeyE) - Number(!!keys.KeyA) : 0,
+    };
+    if (rapier && HELI_TYPES.has(myVehicle.type)) {
+      // The physics engine flies it (src/heli-physics.ts); before the engine has loaded, the old step.
+      if (heliRig?.spec.type !== myVehicle.type) {
+        heliRig?.physics.dispose();
+        heliRig = new HeliRig(rapier, myVehicle.type);
+      }
+      heliRig.physics.useDecor(office.decor);
+      state.omega = omega.clone().applyQuaternion(me.quaternion).toArray();
+      heliRig.step(state, heliControls, colliders, Math.min(dt, 0.1), VEHICLES[myVehicle.type]);
+      omega
+        .fromArray(state.omega)
+        .applyQuaternion(me.quaternion.clone().fromArray(state.q).invert());
+    } else stepHelicopter(T, state, heliControls, colliders, dt, VEHICLES[myVehicle.type]);
     if (keyboardOnly) mouseDirection.set(0, 0, -1).applyQuaternion(me.quaternion);
     if (state.hp <= 0) {
       crash();
@@ -5851,7 +5859,7 @@ function simulateVacantAircraft(dt) {
     if (v.state.hp <= 0 || v.seats.some((s) => s.seat === 'pilot')) continue;
     // Parked aircraft and ground vehicles are simulated by the server (src/parked-host.ts):
     // their state arrives.
-    if (PLANE_TYPES.has(v.type) || RAPIER_RIGS[v.type]) continue;
+    if (PLANE_TYPES.has(v.type) || HELI_TYPES.has(v.type) || RAPIER_RIGS[v.type]) continue;
 
     active.add(v.id);
     let s = vacantAircraft.get(v.id);
@@ -6628,6 +6636,7 @@ setupViewToggles();
 function physicsRigs() {
   const rigs = [];
   if (planeRig) rigs.push(planeRig);
+  if (heliRig) rigs.push(heliRig);
   for (const rig of drivenRigs.values()) rigs.push(rig);
   return rigs;
 }

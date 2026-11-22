@@ -2,8 +2,8 @@
 
 Les avions à voilure fixe (biplan, bombardier biplan, chasseur léger, bombardier moyen,
 intercepteur, Spitfire : `PLANE_TYPES`) sont des corps rigides Rapier (`src/plane-physics.ts`,
-classe `PlaneRig`), pilotés par des forces. Seuls les hélicoptères (hélicoptère d'attaque,
-Castor volant) gardent leur pas propre (`src/helicopter.ts`) ; à planifier ensuite.
+classe `PlaneRig`), pilotés par des forces. Les hélicoptères ont le même schéma :
+[heli-physics.md](heli-physics.md).
 
 ## Un modèle par avion
 
@@ -103,8 +103,8 @@ chargé à la première sortie, le décor d'un plan est construit une fois par p
 - Un choc au-delà de `PLANE_CRASH_IMPACT`, une chute mortelle (rigs terrestres) ou une sortie de
   la pièce détruit le véhicule (`hp = 0`). Les constructions posées par les joueurs ne sont
   pas encore dans ce monde (seulement la pièce et le décor).
-- Le client hôte ne simule plus ces véhicules vides (`simulateVacantAircraft`) ; seuls les
-  hélicoptères vides gardent la simulation du client hôte.
+- Le client hôte ne simule plus aucun véhicule vide (`simulateVacantAircraft` ne trouve plus rien
+  à faire ; les hélicoptères sont au serveur aussi, voir [heli-physics.md](heli-physics.md)).
 
 ## Intégration
 
