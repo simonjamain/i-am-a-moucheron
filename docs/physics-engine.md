@@ -289,3 +289,5 @@ de jeu.
 Essai en jeu : monter dans un Castor, accélérer, braquer à basse puis haute vitesse,
 freiner, reculer, heurter un bureau et un mur oblique, tomber d'un bureau. Avec une partie à plusieurs : un autre joueur doit voir le Castor
 suivre le même trajet sans saccade.
+
+Le biplan vole aussi sur Rapier : [vol du biplan](plane-physics.md).

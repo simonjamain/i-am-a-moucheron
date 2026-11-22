@@ -178,6 +178,7 @@ import {
 import { loadRapier } from '/physics-world.js';
 import { CastorRig } from '/castor-physics.js';
 import { TankRig } from '/tank-physics.js';
+import { PlaneRig, PLANE_CRASH_IMPACT } from '/plane-physics.js';
 import { updateSuspension } from '/track-suspension.js';
 import { TRACK_HALF } from '/tank-gear.js';
 import {
@@ -4336,6 +4337,10 @@ function flushRapidImpacts(now) {
 // host. The aircraft still use their original physics (see docs/physics-engine.md).
 let rapier = null;
 const RAPIER_RIGS = { castor: CastorRig, tank: TankRig, flaktruck: TruckRig };
+// The biplane is flown by the same engine (src/plane-physics.ts); the other aircraft still
+// use the arcade flight step until they are ported.
+const PLANE_RIGS = new Set(['fighter']);
+let planeRig = null;
 const drivenRigs = new Map();
 const vacantRigs = new Map();
 
@@ -4569,58 +4574,97 @@ function physics(dt) {
   const { pitch, roll, yaw } = steering;
   gas = T.MathUtils.clamp(gas + manual.throttle * dt * 0.4, 0, 1);
   const wind = new T.Vector3();
-  const { forward, stall } = stepFlight(
-    T,
-    {
-      q: me.quaternion,
-      vel,
-      omega,
-      wind,
+  const usePlane = !!rapier && PLANE_RIGS.has(myVehicle.type);
+  let forward, stall, previousPosition, landing;
+  if (usePlane) {
+    planeRig ??= new PlaneRig(rapier);
+    planeRig.physics.useDecor(office.decor);
+    const state = {
+      p: me.position.toArray(),
+      q: me.quaternion.toArray(),
+      v: vel.toArray(),
+      omega: omega.clone().applyQuaternion(me.quaternion).toArray(),
+      hp,
       gas,
-      wing,
-      engine: engine && remainingFuel() > 0,
-      pitch,
-      roll,
-      yaw,
-      scale: MAP.ratio,
-      profile: VEHICLES[myVehicle?.type || 'fighter'],
-    },
-    dt,
-  );
-  const previousPosition = me.position.clone();
-  me.position.addScaledVector(vel, dt);
-  const landing = resolveLanding(
-    T,
-    {
-      position: me.position,
-      vel,
-      q: me.quaternion,
-      omega,
-      gear: VEHICLES[myVehicle?.type || 'fighter'].gear,
-    },
-    previousPosition,
-    colliders,
-    dt,
-    office.decor,
-  );
-  const wasLanded = landed;
-  landed = landing.landed;
-  if (landed) {
-    // Rolling friction and rudder/taxi steering. Pull back with enough airspeed to lift off.
-    vel.x *= Math.exp(-dt * ROLLING_FRICTION);
-    vel.z *= Math.exp(-dt * ROLLING_FRICTION);
-    if (gas < 0.12) {
-      const speed = vel.length();
-      vel.multiplyScalar(Math.max(0, 1 - (MAP.metres(6) * dt) / Math.max(1e-9, speed)));
+      fuelAvailable: engine && remainingFuel() > 0,
+    };
+    previousPosition = me.position.clone();
+    planeRig.step(
+      state,
+      { pitch, roll, yaw },
+      colliders,
+      Math.min(dt, 0.1),
+      VEHICLES[myVehicle.type],
+    );
+    me.position.fromArray(state.p);
+    me.quaternion.fromArray(state.q);
+    vel.fromArray(state.v);
+    // The instructor reads body rates; the engine keeps the angular velocity in the world.
+    omega.fromArray(state.omega).applyQuaternion(me.quaternion.clone().invert());
+    forward = new T.Vector3(0, 0, -1).applyQuaternion(me.quaternion);
+    stall = planeRig.stall;
+    landing = {
+      landed: state.landed,
+      hard: state.impact > PLANE_CRASH_IMPACT,
+      impact: state.impact,
+    };
+    const wasLanded = landed;
+    landed = !!state.landed;
+    if (landed && !wasLanded) notify('Posé · Ctrl : réduire les gaz · F : sortir à l’arrêt', 3);
+  } else {
+    ({ forward, stall } = stepFlight(
+      T,
+      {
+        q: me.quaternion,
+        vel,
+        omega,
+        wind,
+        gas,
+        wing,
+        engine: engine && remainingFuel() > 0,
+        pitch,
+        roll,
+        yaw,
+        scale: MAP.ratio,
+        profile: VEHICLES[myVehicle?.type || 'fighter'],
+      },
+      dt,
+    ));
+    previousPosition = me.position.clone();
+    me.position.addScaledVector(vel, dt);
+    landing = resolveLanding(
+      T,
+      {
+        position: me.position,
+        vel,
+        q: me.quaternion,
+        omega,
+        gear: VEHICLES[myVehicle?.type || 'fighter'].gear,
+      },
+      previousPosition,
+      colliders,
+      dt,
+      office.decor,
+    );
+    const wasLanded = landed;
+    landed = landing.landed;
+    if (landed) {
+      // Rolling friction and rudder/taxi steering. Pull back with enough airspeed to lift off.
+      vel.x *= Math.exp(-dt * ROLLING_FRICTION);
+      vel.z *= Math.exp(-dt * ROLLING_FRICTION);
+      if (gas < 0.12) {
+        const speed = vel.length();
+        vel.multiplyScalar(Math.max(0, 1 - (MAP.metres(6) * dt) / Math.max(1e-9, speed)));
+      }
+      me.rotateY(-yaw * dt * 0.7);
+      if (pitch > 0 && vel.length() > MAP.metres(LIFTOFF_SPEED)) {
+        me.rotateX(dt * 0.7);
+        vel.y = MAP.metres(2);
+        me.position.y += 0.16 * ACTOR_UNIT;
+        landed = false;
+      }
+      if (!wasLanded) notify('Posé · Ctrl : réduire les gaz · F : sortir à l’arrêt', 3);
     }
-    me.rotateY(-yaw * dt * 0.7);
-    if (pitch > 0 && vel.length() > MAP.metres(LIFTOFF_SPEED)) {
-      me.rotateX(dt * 0.7);
-      vel.y = MAP.metres(2);
-      me.position.y += 0.16 * ACTOR_UNIT;
-      landed = false;
-    }
-    if (!wasLanded) notify('Posé · Ctrl : réduire les gaz · F : sortir à l’arrêt', 3);
   }
   for (const prop of me.userData.props || [me.userData.prop])
     prop.rotation.z += dt * gas * (engine && remainingFuel() > 0 ? 70 : 0);
@@ -4639,20 +4683,21 @@ function physics(dt) {
   const p = me.position;
   let collision =
     !!landing.hard ||
-    p.y < 0.4 * ACTOR_UNIT ||
+    (!usePlane && p.y < 0.4 * ACTOR_UNIT) ||
+    (usePlane && landing.impact > 2.5) ||
     p.y > OFFICE_LAYOUT.bounds.ceiling ||
     Math.abs(p.x) > OFFICE_LAYOUT.bounds.x ||
     Math.abs(p.z) > OFFICE_LAYOUT.bounds.z;
   // Props collide on their real triangles once the decor world is built: the
   // padded point touching a triangle, or the step's segment crossing one.
-  if (!collision && office.decor)
+  if (!collision && !usePlane && office.decor)
     collision = sweptHitsDecor(
       office.decor,
       previousPosition.toArray(),
       p.toArray(),
       0.3 * ACTOR_UNIT,
     );
-  if (!collision)
+  if (!collision && !usePlane)
     for (const b of withoutDecor(colliders, office.decor))
       if (
         !(
@@ -4668,7 +4713,9 @@ function physics(dt) {
         break;
       }
   if (collision && damageCd <= 0) {
-    const impact = vel.length() / MAP.ratio;
+    // The engine reports the speed change of a real contact; the room's walls and ceiling
+    // (not solids of the physics world) keep the speed-based rule.
+    const impact = usePlane && landing.impact > 2.5 ? landing.impact * 2 : vel.length() / MAP.ratio;
     sound.play(impact > 30 ? 'crash' : 'impact', p, { ref: 12 });
     hp = Math.max(0, hp - impact * 2.1);
     damageCd = 0.65;

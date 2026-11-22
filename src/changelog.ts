@@ -5,6 +5,13 @@ export interface ChangelogEntry {
 }
 export const PLAYER_CHANGELOG: ChangelogEntry[] = [
   {
+    version: 415,
+    changes: [
+      'Le biplan vole avec une vraie physique : il décroche s’il va trop lentement et se pose sur ses roues, même sur un sol penché.',
+      'La visée à la souris reste la même, mais l’avion la suit comme un vrai avion.',
+    ],
+  },
+  {
     version: 414,
     changes: [
       'Moins de cases à cocher : on monte à bord, on revient du purgatoire et on choisit son lit en signant directement.',
