@@ -5,7 +5,7 @@ import { MAP } from '../src/scale.ts';
 import { loadRapier } from '../src/physics-world.ts';
 import { ParkedHost, HOSTED_PLANES, HOSTED_GROUND, isHosted } from '../src/parked-host.ts';
 import { PLANE_TYPES } from '../src/plane-physics.ts';
-import { VEHICLES } from '../src/fleet.ts';
+import { VEHICLES, vehiclePad } from '../src/fleet.ts';
 
 const RAPIER = await loadRapier(() => import('../vendor/rapier.compat.mjs'));
 const m = (v) => MAP.metres(v);
@@ -143,6 +143,39 @@ for (const type of PLANE_TYPES)
       w = host.body('g').angvel();
     assert.equal(Math.hypot(v.x, v.y, v.z, w.x, w.y, w.z), 0, type + ' body at rest');
   }
+}
+// 4c. A vehicle added to a world that has already stepped is simulated like the others. A bought
+// Castor or DCA truck is added to the room's world, which has been stepping since the starter
+// vehicles were born, exactly at its resting height (placed on the floor); a vehicle someone
+// leaves is added the same way. Its suspension was updated before Rapier had stepped the new
+// body, which left the body disabled for good: frozen where it was created, with the velocity
+// of its first step (the display then carried it upwards).
+{
+  const bornAt = (id, type, dx) => {
+    const pad = vehiclePad(type);
+    return {
+      id,
+      type,
+      profile: VEHICLES[type],
+      state: { ...pad, p: [pad.p[0] + dx, pad.p[1], pad.p[2]], v: [0, 0, 0], omega: [0, 0, 0] },
+    };
+  };
+  for (const type of ['castor', 'flaktruck', 'tank'])
+    for (const settleSeconds of [0.25, 4]) {
+      const host = new ParkedHost(RAPIER, null, []);
+      const first = bornAt('first', 'tank', -0.3);
+      host.sync([first]);
+      const { t } = run(host, settleSeconds);
+      const late = bornAt('late', type, 0.3);
+      host.sync([first, late]);
+      const { updates } = run(host, 6, t);
+      const label = `${type} added after ${settleSeconds} s of stepping`;
+      assert.ok(host.body('late').isEnabled(), label + ': the body is simulated, not disabled');
+      const last = updates.filter((u) => u.id === 'late').at(-1).state;
+      assert.notEqual(last.p[1], late.state.p[1], label + ': its suspension settled it');
+      assert.ok(host.asleep('late'), label + ': it comes to rest and sleeps');
+      assert.deepEqual(last.v, [0, 0, 0], label + ': no velocity once at rest');
+    }
 }
 // 5. The ground vehicles share the world with the aircraft: each settles where it was left
 // (a few millimetres above the floor), brakes on, is not destroyed, and is put to sleep; on a

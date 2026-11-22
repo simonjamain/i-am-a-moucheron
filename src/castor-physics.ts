@@ -117,6 +117,12 @@ export class CastorRig implements DebugRig {
   pose: { p: number[]; q: number[] } | null = null;
   /** Vertical speed at the previous step. */
   fallSpeed = 0;
+  /**
+   * The world has stepped since this rig was created. The suspension (`updateVehicle`) must wait
+   * for it: on a body Rapier has not stepped yet, in a world that has stepped for other bodies
+   * (the server's shared world of parked vehicles), it leaves the body disabled for good.
+   */
+  private stepped = false;
 
   constructor(RAPIER: Rapier, params: CastorParams = CASTOR_PHYSICS, physics?: PhysicsWorld) {
     this.params = params;
@@ -260,8 +266,9 @@ export class CastorRig implements DebugRig {
       vehicle.setWheelBrake(i, brake * BRAKE_PER_DECEL);
       vehicle.setWheelSteering(i, wheelSteering(this.steer, WHEELS[i]));
     }
-    vehicle.updateVehicle(dt);
+    if (this.stepped) vehicle.updateVehicle(dt);
     this.physics.step(dt);
+    this.stepped = true;
 
     // Write back (world units). Landing: three wheels on the ground.
     const t = body.translation(),

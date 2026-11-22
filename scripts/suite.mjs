@@ -191,6 +191,7 @@ export const SUITE = [
   'test-bed-model',
   'test-tracer-contrast',
   'test-udp-mux',
+  'test-aircraft-wheels',
   'test-build-info',
   'test-conflict-alert',
   'test-suite-wiring',
