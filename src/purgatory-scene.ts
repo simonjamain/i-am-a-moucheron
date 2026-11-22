@@ -89,20 +89,11 @@ export function purgatoryProps(): Prop[] {
     if (i !== 1) P.push(put(i === 2 ? 'Pen_Cup' : 'Mug', x + 0.8, z + 0.1, north, DESK_TOP));
   });
   P.push(put('Paper_Stack', COUNTER.desks[1] + 0.85, COUNTER.z + 0.25, north, DESK_TOP));
-  // The back office behind Saint Pierre.
+  // Behind Saint Pierre: office equipment only, kept sober.
   P.push(put('Whiteboard', 0, -5.4, south));
-  for (const x of [-7.2, -6.2, -5.2]) P.push(put('Filing_Cabinet', x, -4.6, south));
-  for (const x of [-3.4, 3.4]) P.push(put('Bookshelf', x, -5.2, south));
-  for (const x of [8.2, 9.2]) P.push(put('Filing_Cabinet', x, -4.6, south));
-  P.push(put('Water_Cooler', -9, -3.2, south));
-  P.push(put('Coat_Rack', 10.6, -2.8, south));
-  P.push(put('Plant_Tall', -11.2, -2.2, east));
-  P.push(put('Plant_Snake_Large', 11.8, -1.4, west));
-  P.push(put('File_Box', 6.4, -4.2, south));
-  P.push(put('File_Box', 6.5, -4.2, south, 0.275 * U));
-  P.push(put('File_Box_Empty', 5.6, -4.4, south + 0.4));
-  P.push(put('Trash_Bin', -1.4, -3.4, south));
-  P.push(put('Paper_Crumpled_Pile', -1.1, -3.2, south));
+  for (const x of [-6.2, -5.2]) P.push(put('Filing_Cabinet', x, -4.6, south));
+  P.push(put('Photocopier', 4.8, -4.4, south));
+  P.push(put('Filing_Cabinet', 8.2, -4.6, south));
   // The hall's edges, just beyond the walkable rectangle: they mark where the
   // invisible wall stands. Left side faces +X, right side faces -X.
   const left = PURGATORY_HALL.minX - 1.5,
@@ -256,6 +247,8 @@ export interface PurgatoryScene {
   /** Camera blockers (counter, cloud floor). */
   colliders: THREE.Box3[];
   saint: THREE.Object3D;
+  /** The VIP lane's guard (aimed at and clicked to buy the pass). */
+  guard: THREE.Object3D;
   update(dt: number, now: number, state: PurgatoryState): void;
   /** Draw the sky clouds' layer for this camera (before rendering the scene). */
   prerender(renderer: THREE.WebGLRenderer, camera: THREE.Camera): void;
@@ -342,7 +335,7 @@ export function createPurgatoryScene(T: Three, options: PurgatorySceneOptions): 
         o.z + (along ? t : 0),
       );
   }
-  const vipPlate = signBoard(T, ['FILE VIP', 'Âmes humaines'], 1.8, 0.62);
+  const vipPlate = signBoard(T, ['ACCÈS VIP'], 1.8, 0.62);
   vipPlate.mesh.position.set(VIP_DESK.x, 0.2, COUNTER.z + 0.53);
   vipDecor.add(vipPlate.mesh);
   // A small standing sign by the gate, on the guard's side.
@@ -380,6 +373,7 @@ export function createPurgatoryScene(T: Three, options: PurgatorySceneOptions): 
       new T.Box3(new T.Vector3(-100, -0.3, -100), new T.Vector3(100, -0.05, 200)),
     ],
     saint,
+    guard: guard.container,
     update(dt, now, state) {
       const next = state.super ? 'super' : 'normal';
       if (next !== mood) {

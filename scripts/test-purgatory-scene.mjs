@@ -73,6 +73,11 @@ for (const d of desks) {
   assert.ok(box.max.z * U < 0, 'desk front behind the hall edge');
   assert.ok(box.min.z * U > COUNTER.saintZ, 'Saint Pierre stands behind the desks');
 }
+// Behind Saint Pierre: office equipment only, kept sober.
+const OFFICE_EQUIPMENT = new Set(['Whiteboard', 'Filing_Cabinet', 'Photocopier', 'Bookshelf']);
+const back = props.filter((p) => p.z * U < COUNTER.saintZ && Math.abs(p.x * U) < walk.maxX);
+assert.ok(back.length >= 2 && back.length <= 6, 'a sober back office: ' + back.length);
+for (const p of back) assert.ok(OFFICE_EQUIPMENT.has(p.model), p.model + ' behind Saint Pierre');
 const ropes = VIP_LANE.filter((o) => !o.vip);
 for (const p of props) {
   if (!modelBoxes(p.model).length) continue;
@@ -124,6 +129,14 @@ built.update(0.5, 1500, { super: true, saintX: 0, vip: true, deskServed: true, v
 assert.ok(built.saint.scale.x > 1.3, 'Super Saint-Pierre is taller');
 assert.ok(built.colliders.length >= 2);
 assert.ok(!built.scene.getObjectByName('purgatoire-nuages-ciel'), 'no shader clouds without WebGL');
+// The guard is aimed at like a vehicle post: a ray through him hits his mesh.
+built.scene.updateMatrixWorld(true);
+const centre = new T.Box3().setFromObject(built.guard).getCenter(new T.Vector3());
+const aim = new T.Raycaster(
+  new T.Vector3(centre.x, centre.y, centre.z + 6),
+  new T.Vector3(0, 0, -1),
+);
+assert.ok(aim.intersectObject(built.guard, true).length > 0, 'the guard can be aimed at');
 const guardSpot = built.scene.getObjectByName('vigile-vip').position;
 assert.ok(Math.hypot(guardSpot.x - VIP_GUARD.x, guardSpot.z - VIP_GUARD.z) < 1e-9);
 
