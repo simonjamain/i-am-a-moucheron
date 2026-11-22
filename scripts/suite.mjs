@@ -181,6 +181,7 @@ export const SUITE = [
   'test-udp-mux',
   'test-version-guard',
   'test-suite-wiring',
+  'test-run-tests',
   'test-registries',
   'test-typescript',
 ];

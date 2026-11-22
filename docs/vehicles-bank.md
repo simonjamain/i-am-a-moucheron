@@ -184,7 +184,7 @@ efface prêts, offres et monnaie avec le reste de la partie.
 
 ## Vérifications et limites
 
-`npm run test:next` couvre l’amortissement, les trois emplacements, les débits de
+`npm test -- next-backlog` couvre l’amortissement, les trois emplacements, les débits de
 fin de vague et le solde négatif, les stocks et bascules, délais et doublons,
 les impacts au sol, les contrats malicieux, les accès de rôle, la conduite sur
 support, les trajets de plusieurs vagues/graines et les effets de crash bornés.

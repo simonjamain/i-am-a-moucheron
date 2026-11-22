@@ -50,7 +50,7 @@ Tout nouveau module s'écrit en TypeScript ; migrer un module existant avec
 `npm run ts:migrate -- src/<module>.js` (candidats prêts : `npm run ts:migrate -- --leaves`),
 puis le typer jusqu'à ce que `npm run typecheck` passe. Règles (syntaxe effaçable, imports `.ts`, Three.js typé) : [TypeScript](docs/typescript.md). Pour itérer, cibler la suite :
 `npm test -- <fragment>` (ex. `npm test -- castor`), `--bail` pour s'arrêter au
-premier échec, `--list` pour la liste ; la suite complète reste due avant livraison.
+premier échec, `--list` pour la liste, `--jobs=1` pour désactiver le parallélisme ; la suite complète reste due avant livraison.
 Un nouveau script `scripts/test-*.mjs` s'ajoute à `scripts/suite.mjs`
 (`test-suite-wiring.mjs` le vérifie). Pour une
 nouvelle espèce ou un nouveau véhicule, suivre [ajouter du contenu](docs/adding-content.md).
