@@ -1,10 +1,12 @@
 import type { DynamicRayCastVehicleController, RigidBody } from '@dimforge/rapier3d-compat';
+import { drawColliders, drawWheels, type DebugRig, type DebugSink } from './physics-debug.ts';
 import { MODEL_DATA } from './meshy-castor-data.js';
 import { MAP } from './scale.ts';
 import { ackermannAngle } from './castor-wheels.ts';
 import type { VehicleProfile } from './fleet.ts';
 import {
   FALL_KILL_SPEED,
+  GRAVITY,
   MODEL_UNIT,
   PhysicsWorld,
   rotate,
@@ -105,7 +107,7 @@ export function steerLimit(speed: number, params: CastorParams = CASTOR_PHYSICS)
   return Math.min(params.steerLock, Math.atan((WHEELBASE * params.maxLateral) / v2));
 }
 
-export class CastorRig {
+export class CastorRig implements DebugRig {
   params: CastorParams;
   physics: PhysicsWorld;
   body: RigidBody;
@@ -175,6 +177,12 @@ export class CastorRig {
 
   // The game moves vehicles too (placement, respawn): follow its state when it
   // is not the one this rig wrote at the previous step.
+  /** Debug view (physics-debug.ts): the chassis and each wheel's spring. */
+  debugDraw(sink: DebugSink): void {
+    drawColliders(this.physics.world, [this.body], sink);
+    drawWheels(this.vehicle, this.body, sink, this.params.mass * GRAVITY);
+  }
+
   adopt(state: CastorState): void {
     const p = state.p.map(toPhysics),
       last = this.pose;

@@ -1,10 +1,12 @@
 import type { DynamicRayCastVehicleController, RigidBody } from '@dimforge/rapier3d-compat';
+import { drawColliders, drawWheels, type DebugRig, type DebugSink } from './physics-debug.ts';
 import { MAP } from './scale.ts';
 import { TRAILER_LIMITS, type VehicleProfile } from './fleet.ts';
 import { MODEL_DATA } from './meshy-flaktruck-data.js';
 import { wheelSteering, type Wheel } from './castor-physics.ts';
 import {
   FALL_KILL_SPEED,
+  GRAVITY,
   MODEL_UNIT,
   PhysicsWorld,
   rotate,
@@ -169,7 +171,7 @@ const eulerYXZ = (q: Quat) => ({
   roll: Math.atan2(2 * (q.x * q.y + q.w * q.z), 1 - 2 * (q.x * q.x + q.z * q.z)),
 });
 
-export class TruckRig {
+export class TruckRig implements DebugRig {
   params: TruckParams;
   physics: PhysicsWorld;
   tractor: RigidBody;
@@ -291,6 +293,13 @@ export class TruckRig {
   }
 
   // Place both bodies from the game's state when it is not the one this rig wrote.
+  /** Debug view (physics-debug.ts): the tractor and the trailer with their wheels' springs. */
+  debugDraw(sink: DebugSink): void {
+    drawColliders(this.physics.world, [this.tractor, this.trailer], sink);
+    drawWheels(this.tractorWheels, this.tractor, sink, this.tractor.mass() * GRAVITY);
+    drawWheels(this.trailerWheels, this.trailer, sink, this.trailer.mass() * GRAVITY);
+  }
+
   adopt(state: TruckState): void {
     const p = state.p.map(toPhysics),
       last = this.pose;

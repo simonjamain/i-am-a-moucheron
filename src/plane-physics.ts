@@ -2,6 +2,14 @@ import type { RigidBody } from '@dimforge/rapier3d-compat';
 import { MAP } from './scale.ts';
 import type { VehicleProfile } from './fleet.ts';
 import {
+  DEBUG_COLORS,
+  arrow,
+  cross,
+  drawColliders,
+  type DebugRig,
+  type DebugSink,
+} from './physics-debug.ts';
+import {
   PhysicsWorld,
   rotate,
   toPhysics,
@@ -137,7 +145,7 @@ const PARTS = [
   { name: 'fin', half: [0.06, 0.55, 0.55], at: [0, 0.9, 3.55] },
 ] as const;
 
-export class PlaneRig {
+export class PlaneRig implements DebugRig {
   physics: PhysicsWorld;
   body: RigidBody;
   params: PlaneParams;
@@ -149,6 +157,13 @@ export class PlaneRig {
   /** Compression of each gear spring at the last step (0 when in the air). */
   compression = [0, 0, 0];
   pose: { p: number[]; q: number[] } | null = null;
+  /** What the debug view draws: forces in newtons (world frame) and the gear springs. */
+  debug = {
+    lift: [0, 0, 0],
+    drag: [0, 0, 0],
+    thrust: [0, 0, 0],
+    gear: [] as { origin: number[]; end: number[]; hit: number[] | null; load: number[] }[],
+  };
   private colliders: import('@dimforge/rapier3d-compat').Collider[] = [];
 
   constructor(RAPIER: Rapier, params: PlaneParams = PLANE_PARAMS) {
@@ -237,6 +252,30 @@ export class PlaneRig {
     this.pose = { p: [p.x, p.y, p.z], q: [q.x, q.y, q.z, q.w] };
   }
 
+  /** Debug view (physics-debug.ts): colliders, gear springs and the main forces. */
+  debugDraw(sink: DebugSink): void {
+    const weight = this.params.mass * G * K,
+      p = this.body.translation(),
+      at = [p.x, p.y, p.z],
+      scale = 1 / weight;
+    drawColliders(this.physics.world, [this.body], sink);
+    for (const gear of this.debug.gear) {
+      sink(gear.origin, gear.end, DEBUG_COLORS.rest);
+      if (gear.hit) {
+        sink(gear.origin, gear.hit, DEBUG_COLORS.compressed);
+        cross(sink, gear.hit, 0.05, DEBUG_COLORS.contact);
+        arrow(sink, gear.hit, gear.load, scale, DEBUG_COLORS.load);
+      }
+    }
+    arrow(sink, at, this.debug.lift, scale, DEBUG_COLORS.lift);
+    arrow(sink, at, this.debug.drag, scale, DEBUG_COLORS.drag);
+    arrow(sink, at, this.debug.thrust, scale, DEBUG_COLORS.thrust);
+    arrow(sink, at, [0, -weight, 0], scale, DEBUG_COLORS.gravity);
+    const v = this.body.linvel();
+    arrow(sink, at, [v.x, v.y, v.z], 0.1, DEBUG_COLORS.velocity);
+    cross(sink, at, 0.06, DEBUG_COLORS.centre);
+  }
+
   private substep(
     state: PlaneState,
     controls: PlaneControls,
@@ -265,6 +304,8 @@ export class PlaneRig {
     let alpha = 0,
       beta = 0;
     const accel = { x: 0, y: 0, z: 0 }; // body frame, reference m/s² (gravity is the engine's)
+    const liftA = { x: 0, y: 0, z: 0 },
+      dragA = { x: 0, y: 0, z: 0 };
     if (speed > 0.5) {
       alpha = Math.atan2(-local.y, -local.z);
       beta = Math.atan2(local.x, -local.z);
@@ -276,12 +317,13 @@ export class PlaneRig {
       const flat = Math.hypot(local.y, local.z) || 1,
         dy = local.y / flat,
         dz = local.z / flat;
-      accel.y += dynamic * cl * -dz;
-      accel.z += dynamic * cl * dy;
-      accel.x += ((-dynamic * local.x) / speed) * cd;
-      accel.y += ((-dynamic * local.y) / speed) * cd;
-      accel.z += ((-dynamic * local.z) / speed) * cd;
-      accel.x += -dynamic * 0.9 * Math.sin(beta) * Math.abs(Math.cos(beta));
+      liftA.y = dynamic * cl * -dz;
+      liftA.z = dynamic * cl * dy;
+      dragA.x =
+        ((-dynamic * local.x) / speed) * cd -
+        dynamic * 0.9 * Math.sin(beta) * Math.abs(Math.cos(beta));
+      dragA.y = ((-dynamic * local.y) / speed) * cd;
+      dragA.z = ((-dynamic * local.z) / speed) * cd;
     }
     this.alpha = alpha;
     this.beta = beta;
@@ -292,8 +334,17 @@ export class PlaneRig {
     const thrust = engine
       ? params.thrust * gas * Math.max(0, 1 - (speed / params.thrustLimit) ** 2)
       : 0;
-    accel.z -= thrust;
+    accel.x = liftA.x + dragA.x;
+    accel.y = liftA.y + dragA.y;
+    accel.z = liftA.z + dragA.z - thrust;
     const worldAccel = rotate(q, accel);
+    const asForce = (a: { x: number; y: number; z: number }): number[] => {
+      const w = rotate(q, a);
+      return [w.x * K * m, w.y * K * m, w.z * K * m];
+    };
+    this.debug.lift = asForce(liftA);
+    this.debug.drag = asForce(dragA);
+    this.debug.thrust = asForce({ x: 0, y: 0, z: -thrust });
     body.addForce(
       { x: worldAccel.x * K * m, y: worldAccel.y * K * m, z: worldAccel.z * K * m },
       true,
@@ -326,6 +377,7 @@ export class PlaneRig {
     let grounded = false,
       mainsDown = 0;
     this.compression = [0, 0, 0];
+    this.debug.gear = [];
     GEARS.forEach((gear, i) => {
       const mount = rotate(q, { x: gear.x * K, y: gear.y * K, z: gear.z * K });
       const origin = { x: p.x + mount.x, y: p.y + mount.y, z: p.z + mount.z };
@@ -338,6 +390,18 @@ export class PlaneRig {
         undefined,
         body,
       );
+      const rayEnd = [
+        origin.x + down.x * REST * K,
+        origin.y + down.y * REST * K,
+        origin.z + down.z * REST * K,
+      ];
+      const record = {
+        origin: [origin.x, origin.y, origin.z],
+        end: rayEnd,
+        hit: null as number[] | null,
+        load: [0, 0, 0],
+      };
+      this.debug.gear.push(record);
       if (!hit) return;
       const compression = (REST * K - hit.timeOfImpact) / K; // reference metres
       if (compression <= 0) return;
@@ -376,15 +440,14 @@ export class PlaneRig {
       const braking = gas < 0.12 ? 0.55 : 0.02;
       const long = -load * braking * Math.tanh(along / 1.5),
         side = -load * gear.grip * 0.9 * Math.tanh(across / 0.8);
-      body.addForceAtPoint(
-        {
-          x: nrm.x * load + fx * long + ax * side,
-          y: nrm.y * load + fy * long + ay * side,
-          z: nrm.z * load + fz * long + az * side,
-        },
-        contact,
-        true,
-      );
+      const push = {
+        x: nrm.x * load + fx * long + ax * side,
+        y: nrm.y * load + fy * long + ay * side,
+        z: nrm.z * load + fz * long + az * side,
+      };
+      body.addForceAtPoint(push, contact, true);
+      record.hit = [contact.x, contact.y, contact.z];
+      record.load = [push.x, push.y, push.z];
       grounded = true;
       if (i < 2) mainsDown++;
     });

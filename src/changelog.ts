@@ -5,6 +5,12 @@ export interface ChangelogEntry {
 }
 export const PLAYER_CHANGELOG: ChangelogEntry[] = [
   {
+    version: 417,
+    changes: [
+      'Deux boutons discrets montrent les volumes de collision et la physique des engins, sans relancer la partie.',
+    ],
+  },
+  {
     version: 415,
     changes: [
       'Le biplan vole avec une vraie physique : il décroche s’il va trop lentement et se pose sur ses roues, même sur un sol penché.',
