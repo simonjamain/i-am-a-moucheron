@@ -151,6 +151,8 @@ export const SUITE = [
   'test-physics-debug',
   'test-parked-host',
   'test-plane-server',
+  'test-pose-smoother',
+  'test-render-interpolation',
   'test-heli-physics',
   'test-start-pad',
   'test-camera-follow',

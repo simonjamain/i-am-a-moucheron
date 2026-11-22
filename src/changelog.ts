@@ -5,6 +5,13 @@ export interface ChangelogEntry {
 }
 export const PLAYER_CHANGELOG: ChangelogEntry[] = [
   {
+    version: 437,
+    changes: [
+      'Votre véhicule avance plus régulièrement à l’écran, surtout sur les écrans 75, 144 ou 165 Hz : moins de saccades.',
+      'Les véhicules des autres, ou laissés vides, ne reculent plus d’un coup quand on y monte ou qu’on en sort.',
+    ],
+  },
+  {
     version: 436,
     changes: [
       'On descend des véhicules juste à côté de la carlingue ou du châssis, plus au bout des ailes : fini les chutes dans le vide.',

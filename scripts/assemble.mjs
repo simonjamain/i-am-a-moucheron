@@ -210,6 +210,8 @@ const files = {
       'physics-debug',
       'plane-physics',
       'heli-physics',
+      'render-interpolation',
+      'pose-smoother',
       'tank-recoil',
       'camera-follow',
       'tank-gear',
