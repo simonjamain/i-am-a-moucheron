@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { controlHints, controlHintItems } from '../src/live-hud.js';
+import { controlHints, controlHintItems } from '../src/live-hud.ts';
 import { VEHICLES } from '../src/fleet.ts';
 
 const AIRPLANE_ONLY = /gouverne|tangage|roulis|gaz|cap\b/;
@@ -47,6 +47,7 @@ assert.match(
 );
 assert.match(controlHints({ building: { mode: 'sugar' } }), /R : orienter/);
 assert.match(controlHints({ building: { mode: 'repair' } }), /Clic \/ E : réparer/);
+assert.doesNotMatch(controlHints({ building: { mode: 'barricade' } }), /false/);
 
 // Fixed stations: DCA fuse and heavy cannon, all left with F.
 assert.match(controlHints({ turret: true }), /fusée/);

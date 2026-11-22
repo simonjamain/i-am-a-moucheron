@@ -11,7 +11,7 @@ import {
   groundGoal,
   GROUND_CELL,
   groundStaticObstacles,
-} from './ground-defense.js';
+} from './ground-defense.ts';
 export { GROUND_BOUNDS, groundGoal, GROUND_CELL };
 
 export const GROUND_LIMIT = 512;

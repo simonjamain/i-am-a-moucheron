@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import * as T from '../vendor/three.module.min.js';
-import { createOffice } from '../src/office.js';
+import { createOffice } from '../src/office.ts';
 import { createGraphics } from '../src/graphics.js';
 import { OFFICE_LAYOUT } from '../src/layout.ts';
 import {
@@ -10,7 +10,7 @@ import {
   installOfficeFog,
 } from '../src/office-fog.ts';
 import { stepHelicopter } from '../src/helicopter.js';
-import { stepVacantAircraft } from '../src/vacant-flight.js';
+import { stepVacantAircraft } from '../src/vacant-flight.ts';
 import { VEHICLES, vehiclePad } from '../src/fleet.ts';
 
 const scene = new T.Scene();

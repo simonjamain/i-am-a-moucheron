@@ -58,7 +58,7 @@ export const SEAT_POSTS: Readonly<Record<string, readonly SeatPost[]>> = Object.
       0.7,
     ),
   ],
-  // B3 model (src/b3-model.js): pivots from meshy-b3-data.js. The cockpit and the
+  // B3 model (src/b3-model.ts): pivots from meshy-b3-data.js. The cockpit and the
   // tail and ventral glazings are part of the hull: their outline is the hull
   // clipped around the post, plus the post's own gun.
   medbomber: [

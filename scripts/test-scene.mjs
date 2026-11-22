@@ -1,9 +1,9 @@
 import './normal-dossiers.mjs';
 import assert from 'node:assert/strict';
 import * as T from '../vendor/three.module.min.js';
-import { createOffice } from '../src/office.js';
+import { createOffice } from '../src/office.ts';
 import { createGraphics } from '../src/graphics.js';
-import { aircraftPose } from '../src/base.js';
+import { aircraftPose } from '../src/base.ts';
 import { MAP, ACTOR_UNIT } from '../src/scale.ts';
 import { OFFICE_LAYOUT } from '../src/layout.ts';
 // Scene geometry can be checked without a GPU or DOM-backed text textures.

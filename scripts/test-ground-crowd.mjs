@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { advanceGroundCrowd, crowdSeparation, groundRadius } from '../src/ground-crowd.js';
-import { buildGroundFlow } from '../src/ground-defense.js';
+import { buildGroundFlow } from '../src/ground-defense.ts';
 import { swarmFrame } from '../src/waves.js';
 
 const makeUnit = (id, p) => ({

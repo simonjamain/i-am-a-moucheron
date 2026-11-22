@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { BankUI, loanText } from '../src/bank-ui.js';
+import { BankUI, loanText } from '../src/bank-ui.ts';
 import { equipmentHUD, ContextHUD } from '../src/hud.js';
 import { newBank, signLoan, settleLoans } from '../src/bank.ts';
 import { Game } from '../server/game.js';
@@ -107,15 +107,22 @@ assert.equal(ui.selection.serial, 1);
 assert.equal(coupon(0).getAttribute('aria-checked'), 'true', 'the ticked coupon');
 assert.equal(ui.sheet.classList.contains('hidden'), false);
 assert.equal(root.querySelector('[data-bank-schedule]').children.length, 4);
-assert.equal(root.classList.contains('locked'), true, 'signature locked before the purpose');
+assert.equal(
+  root.classList.contains('locked'),
+  true,
+  'signature locked before the debt is acknowledged',
+);
 const canvas = ui.canvas,
   pointer = { pointerId: 1, clientX: 10, clientY: 20, preventDefault() {} };
 canvas.onpointerdown(pointer);
 canvas.onpointerup({ ...pointer, clientX: 80 });
-assert.equal(calls, 0, 'no signature without the loan purpose');
-assert.match(ui.status.textContent, /objet du prêt/);
-ui.clauses.toggle('comfort');
-assert.equal(ui.clauses.refused, false, 'the bank accepts « convenance personnelle »');
+assert.equal(calls, 0, 'no signature without the acknowledgement');
+assert.match(ui.status.textContent, /reconnaissance de dette/);
+const consent = ui.clauses.state.rule.clauses;
+assert.equal(consent.length, 1, 'a single box, no motive');
+assert.match(consent[0].text, /pendant les 4 vagues à venir/, 'the loan length in the box');
+ui.clauses.toggle('consent');
+assert.equal(ui.clauses.refused, false);
 assert.equal(root.classList.contains('locked'), false);
 canvas.onpointerdown(pointer);
 canvas.onpointermove({ ...pointer, clientX: 60 });
@@ -153,7 +160,7 @@ assert.equal(rows[0].children.at(-1).textContent, 'PAYÉ');
 assert.equal(rows[1].children.at(-1).textContent, '');
 // A failed deposit shows its message and lets the player sign again.
 coupon(1).onclick();
-ui.clauses.toggle('defense');
+ui.clauses.toggle('consent');
 const failed = ui.submit();
 reject(Error('Réseau interrompu'));
 await failed;

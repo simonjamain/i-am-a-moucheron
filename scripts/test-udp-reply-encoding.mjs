@@ -55,7 +55,7 @@ assert.deepEqual(splitResult, JSON.parse(splitText));
 
 // Exercise the session boundary, including its immutable cache rather than just
 // invoking the encoder twice with the same object.
-const { GameSession } = await import('../server/session.js');
+const { GameSession } = await import('../server/session.ts');
 let executions = 0;
 const packets = [];
 const body = {

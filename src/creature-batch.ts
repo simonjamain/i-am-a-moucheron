@@ -1,4 +1,4 @@
-// One InstancedMesh per rigged species: its procedural cycle (src/rigged-creature.js)
+// One InstancedMesh per rigged species: its procedural cycle (src/rigged-creature.ts)
 // is skinned once on the CPU into a vertex animation texture (positions and
 // normals per frame, half floats) that the vertex shader samples per instance
 // phase. Hundreds or thousands of animated creatures then cost one draw call
@@ -27,7 +27,7 @@ export interface CreatureVat {
   bytes: number;
 }
 
-/** The part of a rigged creature (src/rigged-creature.js) the batch uses. */
+/** The part of a rigged creature (src/rigged-creature.ts) the batch uses. */
 export interface BatchCreature {
   name: string;
   bake(T: Three): CreatureBake;

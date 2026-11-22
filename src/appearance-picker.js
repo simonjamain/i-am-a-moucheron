@@ -4,7 +4,7 @@ import {
   loadCharacter,
   characterLoaded,
   CHARACTER_HEIGHT,
-} from './character-model.js';
+} from './character-model.ts';
 
 // Home screen character selector: a small turntable of the chosen appearance
 // between the name/room fields and the join button, with previous/next arrows

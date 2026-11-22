@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { UdpClient } from '../src/udp-client.js';
+import { UdpClient } from '../src/udp-client.ts';
 import { encodeMotionBatch, encodeMotionState } from '../src/motion-wire.ts';
 import {
   encodeReply,

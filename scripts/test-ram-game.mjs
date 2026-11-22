@@ -1,11 +1,11 @@
 import { ENEMY_TYPES } from '../src/waves.js';
 import assert from 'node:assert/strict';
 import { Game } from '../server/game.js';
-import { baseWorld } from '../src/base.js';
+import { baseWorld } from '../src/base.ts';
 import { vehicleEntry } from '../src/fleet.ts';
 import { ACTOR_UNIT } from '../src/scale.ts';
 import { OFFICE_LAYOUT } from '../src/layout.ts';
-import { GameSession } from '../server/session.js';
+import { GameSession } from '../server/session.ts';
 import { ReplyAssembler } from '../src/udp-protocol.ts';
 
 let now = 100000;

@@ -1,5 +1,31 @@
 import { WALL_SEGMENT, HALF_BRICK, wallLength } from './brick-rules.ts';
 import { activeLayout, layoutSolids } from './layouts.ts';
+import type { Collider } from './oriented-collider.ts';
+
+/** Horizontal floor point [x, z] in office metres (tuple or plain array). */
+export type GroundPoint = readonly number[];
+/** One straight barricade piece between two floor points. */
+export interface GroundBarricade {
+  id?: string;
+  a: GroundPoint;
+  b: GroundPoint;
+  thickness?: number;
+}
+export interface GroundFlowOptions {
+  /** [minX, minZ, maxX, maxZ]. */
+  bounds: readonly number[];
+  cellSize: number;
+  goal: GroundPoint;
+  barricades?: readonly GroundBarricade[];
+  staticObstacles?: readonly Collider[];
+}
+export interface GroundBait {
+  id: unknown;
+  type: string;
+  position: GroundPoint;
+  radius: number;
+}
+export type GroundFlow = ReturnType<typeof buildGroundFlow>;
 // Deterministic, room-shared ground navigation primitives (office metres).
 // These are independent of the airborne route system. Keep this module free of
 // heavy imports: routes.js imports it.
@@ -10,8 +36,8 @@ export const groundGoal = () => activeLayout().groundGoal;
 // Furniture footprints that block insects on the floor (desk legs, boxes, rows of
 // shelves, partition walls…): every solid standing on the floor inside the walking
 // area. The floor itself, the room walls and their skirting boards lie outside it.
-const obstacleCache = new Map();
-export function groundStaticObstacles() {
+const obstacleCache = new Map<string, Collider[]>();
+export function groundStaticObstacles(): Collider[] {
   const layout = activeLayout();
   let list = obstacleCache.get(layout.id);
   const [x0, z0, x1, z1] = GROUND_BOUNDS;
@@ -33,7 +59,11 @@ export function groundStaticObstacles() {
 export const MAX_BARRICADE_SEGMENT = WALL_SEGMENT;
 export const STICKY_WIDTH = 0.03;
 
-export function splitBarricade(a, b, id) {
+export function splitBarricade(
+  a: GroundPoint,
+  b: GroundPoint,
+  id: string | number,
+): { id: string; a: number[]; b: number[] }[] {
   if (![...a, ...b].every(Number.isFinite)) throw Error('Invalid barricade endpoints');
   const distance = Math.hypot(b[0] - a[0], b[1] - a[1]);
   if (distance <= 0) throw Error('Empty barricade');
@@ -49,7 +79,7 @@ export function splitBarricade(a, b, id) {
     };
   });
 }
-export function distanceToSegment(p, a, b) {
+export function distanceToSegment(p: GroundPoint, a: GroundPoint, b: GroundPoint): number {
   const dx = b[0] - a[0],
     dz = b[1] - a[1];
   const lengthSquared = dx * dx + dz * dz;
@@ -69,7 +99,13 @@ const NEIGHBOURS = [
   [1, 1],
 ];
 // Rebuild only when geometry changes; every insect reads the same flow field.
-export function buildGroundFlow({ bounds, cellSize, goal, barricades = [], staticObstacles = [] }) {
+export function buildGroundFlow({
+  bounds,
+  cellSize,
+  goal,
+  barricades = [],
+  staticObstacles = [],
+}: GroundFlowOptions) {
   if (!Number.isFinite(cellSize) || cellSize <= 0) throw Error('Invalid cell size');
   const [minX, minZ, maxX, maxZ] = bounds;
   if (![...bounds, ...goal].every(Number.isFinite) || minX >= maxX || minZ >= maxZ)
@@ -77,10 +113,16 @@ export function buildGroundFlow({ bounds, cellSize, goal, barricades = [], stati
   const width = Math.ceil((maxX - minX) / cellSize);
   const height = Math.ceil((maxZ - minZ) / cellSize);
   if (width * height > 100000) throw Error('Ground grid budget exceeded');
-  const index = (x, z) => z * width + x;
-  const inside = (x, z) => x >= 0 && z >= 0 && x < width && z < height;
-  const cell = (p) => [Math.floor((p[0] - minX) / cellSize), Math.floor((p[1] - minZ) / cellSize)];
-  const center = (x, z) => [minX + (x + 0.5) * cellSize, minZ + (z + 0.5) * cellSize];
+  const index = (x: number, z: number): number => z * width + x;
+  const inside = (x: number, z: number): boolean => x >= 0 && z >= 0 && x < width && z < height;
+  const cell = (p: GroundPoint): [number, number] => [
+    Math.floor((p[0] - minX) / cellSize),
+    Math.floor((p[1] - minZ) / cellSize),
+  ];
+  const center = (x: number, z: number): GroundPoint => [
+    minX + (x + 0.5) * cellSize,
+    minZ + (z + 0.5) * cellSize,
+  ];
   const blocked = new Uint8Array(width * height);
   for (let z = 0; z < height; z++)
     for (let x = 0; x < width; x++) {
@@ -103,8 +145,8 @@ export function buildGroundFlow({ bounds, cellSize, goal, barricades = [], stati
   if (!inside(gx, gz)) throw Error('Ground goal is outside the grid');
   const costs = new Float64Array(width * height).fill(Infinity);
   const next = new Int32Array(width * height).fill(-1);
-  const heap = [];
-  const push = (node, cost) => {
+  const heap: [cost: number, node: number][] = [];
+  const push = (node: number, cost: number): void => {
     heap.push([cost, node]);
     for (let i = heap.length - 1; i > 0;) {
       const parent = (i - 1) >> 1;
@@ -117,7 +159,7 @@ export function buildGroundFlow({ bounds, cellSize, goal, barricades = [], stati
     const first = heap[0],
       tail = heap.pop();
     if (heap.length) {
-      heap[0] = tail;
+      heap[0] = tail!;
       for (let i = 0; ;) {
         const l = i * 2 + 1,
           r = l + 1;
@@ -156,7 +198,7 @@ export function buildGroundFlow({ bounds, cellSize, goal, barricades = [], stati
       push(neighbour, candidate);
     }
   }
-  function route(from) {
+  function route(from: GroundPoint): GroundPoint[] | null {
     const [x, z] = cell(from);
     if (!inside(x, z)) return null;
     let n = index(x, z);
@@ -176,7 +218,7 @@ export function buildGroundFlow({ bounds, cellSize, goal, barricades = [], stati
   // The preview and the server both chain these waypoints, so the drawn path is
   // exactly the one walked while the map does not change.
   const sample = cellSize / 4;
-  function clear(a, b) {
+  function clear(a: GroundPoint, b: GroundPoint): boolean {
     const distance = Math.hypot(b[0] - a[0], b[1] - a[1]);
     const steps = Math.max(1, Math.ceil(distance / sample));
     for (let i = 0; i <= steps; i++) {
@@ -191,13 +233,13 @@ export function buildGroundFlow({ bounds, cellSize, goal, barricades = [], stati
     }
     return true;
   }
-  function waypoint(from) {
+  function waypoint(from: GroundPoint): GroundPoint | null {
     const [x, z] = cell(from);
     if (!inside(x, z)) return null;
     let n = index(x, z);
     if (!Number.isFinite(costs[n])) return null;
     if (n === target) return goal;
-    let best = null;
+    let best: GroundPoint | null = null;
     for (let steps = 0; steps < 512; steps++) {
       n = next[n];
       if (n < 0) return best;
@@ -208,17 +250,17 @@ export function buildGroundFlow({ bounds, cellSize, goal, barricades = [], stati
     }
     return best;
   }
-  function smoothRoute(from) {
+  function smoothRoute(from: GroundPoint): GroundPoint[] | null {
     if (!route(from)) return null;
     const points = [from];
-    for (let p = from, guard = 0; p !== goal && guard < costs.length; guard++) {
+    for (let p: GroundPoint | null = from, guard = 0; p !== goal && guard < costs.length; guard++) {
       p = waypoint(p);
       if (!p) return null;
       points.push(p);
     }
     return points;
   }
-  function nextStep(from) {
+  function nextStep(from: GroundPoint): GroundPoint | null {
     const [x, z] = cell(from);
     if (!inside(x, z)) return null;
     const here = index(x, z);
@@ -236,11 +278,15 @@ export function buildGroundFlow({ bounds, cellSize, goal, barricades = [], stati
     waypoint,
     clear,
     nextStep,
-    reachable: (p) => route(p) !== null,
+    reachable: (p: GroundPoint): boolean => route(p) !== null,
   };
 }
 // Attraction is deterministic; an insect cannot switch targets mid-meal.
-export function chooseBait(position, baits, tasted = []) {
+export function chooseBait<B extends GroundBait>(
+  position: GroundPoint,
+  baits: readonly B[],
+  tasted: Iterable<string> = [],
+): B | null {
   const excluded = new Set(tasted);
   return (
     baits
@@ -259,10 +305,10 @@ export function chooseBait(position, baits, tasted = []) {
       )[0]?.bait ?? null
   );
 }
-export function finishMeal(tasted, type) {
+export function finishMeal(tasted: Iterable<string>, type: string): string[] {
   return [...new Set([...tasted, type])];
 }
-export function stickyTraversal(gabarit) {
+export function stickyTraversal(gabarit: string): { stopSeconds: number; speedMultiplier: number } {
   // Gameplay tuning values belong in the future species balance table.
   if (gabarit === 'small') return { stopSeconds: 3, speedMultiplier: 1 };
   if (gabarit === 'medium') return { stopSeconds: 0, speedMultiplier: 0.3 };
@@ -270,9 +316,9 @@ export function stickyTraversal(gabarit) {
   throw Error('Unknown ground insect size');
 }
 
-const emptyFlows = new Map();
+const emptyFlows = new Map<string, GroundFlow>();
 // Flow field of an undefended room, shared by nominal routes and their timing.
-export function staticGroundFlow() {
+export function staticGroundFlow(): GroundFlow {
   const id = activeLayout().id;
   if (!emptyFlows.has(id))
     emptyFlows.set(
@@ -284,5 +330,5 @@ export function staticGroundFlow() {
         staticObstacles: groundStaticObstacles(),
       }),
     );
-  return emptyFlows.get(id);
+  return emptyFlows.get(id)!;
 }

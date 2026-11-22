@@ -10,19 +10,25 @@ import { addOfficeProps } from './office-pack.ts';
 import { ROD } from './office-props.ts';
 import { DecorCollision, solidTriangles } from './office-collision.ts';
 import { MODEL_DATA } from './office-pack-data.js';
+import type * as THREE from 'three';
+import type { Rapier } from './physics-world.ts';
+import type { StationGraphics } from './sortie.ts';
+import type { Three } from './types.ts';
+/** A layout box collider; `decor` marks a pack prop's box (rays use its triangles). */
+export type OfficeCollider = THREE.Box3 & { decor?: boolean };
 // Draws the active layout (see layouts.ts): floor, blocking-out volumes, the
 // office pack models (walls, door, vents, bin, furniture and objects) and the
 // mouse holes. Everything goes into one group so a room's plan can be replaced
 // (`dispose`) without touching the rest of the scene. Colliders are exactly the
 // layout solids: drawn primitives, or the hitboxes of the models.
 const SKIRTING = 0.017;
-export function createOffice(T, scene, { box, cyl }) {
+export function createOffice(T: Three, scene: THREE.Scene, { box, cyl }: StationGraphics) {
   const layout = activeLayout();
   const root = new T.Group();
   scene.add(root);
-  const colliders = [],
-    solidObjects = [];
-  const register = (m) => {
+  const colliders: OfficeCollider[] = [],
+    solidObjects: THREE.Mesh[] = [];
+  const register = (m: THREE.Mesh) => {
     m.updateWorldMatrix(true, true);
     colliders.push(new T.Box3().setFromObject(m));
     solidObjects.push(m);
@@ -39,7 +45,7 @@ export function createOffice(T, scene, { box, cyl }) {
   for (const p of layoutPieces(layout)) {
     if (p.visible === false) {
       const b = pieceBounds(p);
-      const box = new T.Box3(
+      const box: OfficeCollider = new T.Box3(
         new T.Vector3(b.min.x, b.min.y, b.min.z),
         new T.Vector3(b.max.x, b.max.y, b.max.z),
       );
@@ -98,8 +104,8 @@ export function createOffice(T, scene, { box, cyl }) {
   // Triangle colliders of the props, in a Rapier world of the decor
   // (office-collision.ts), built once Rapier is loaded. Used by the debug view for
   // now: the box colliders above remain the game's solids.
-  let decor = null,
-    decorWire = [];
+  let decor: DecorCollision | null = null,
+    decorWire: Float32Array[] = [];
   return {
     layout,
     root,
@@ -110,7 +116,7 @@ export function createOffice(T, scene, { box, cyl }) {
     get decorWire() {
       return decorWire;
     },
-    buildDecor(RAPIER) {
+    buildDecor(RAPIER: Rapier | null | undefined) {
       if (decor || !RAPIER) return decor;
       decor = new DecorCollision(RAPIER, MODEL_DATA, layout.props);
       decorWire = decor.solids.map((s) => solidTriangles(MODEL_DATA, s));
@@ -118,16 +124,17 @@ export function createOffice(T, scene, { box, cyl }) {
     },
     solidObjects,
     // Renders the lamps' shadows once, with the room alone (see office-lights.ts).
-    bakeShadows: (renderer) => bakeOfficeShadows(T, renderer, root),
+    bakeShadows: (renderer: THREE.WebGLRenderer | null | undefined) =>
+      bakeOfficeShadows(T, renderer, root),
     // Removes the room from the scene. Pack geometries are shared: keep them.
     dispose() {
       decor?.dispose();
       decor = null;
       scene.remove(root);
       root.traverse((o) => {
-        if (o.isLight) o.dispose();
-        else if (o.isInstancedMesh) o.dispose();
-        else o.geometry?.dispose();
+        if ((o as THREE.Light).isLight) (o as THREE.Light).dispose();
+        else if ((o as THREE.InstancedMesh).isInstancedMesh) (o as THREE.InstancedMesh).dispose();
+        else (o as THREE.Mesh).geometry?.dispose();
       });
     },
   };

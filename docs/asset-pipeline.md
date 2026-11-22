@@ -143,7 +143,7 @@ ne sont pas affichés : ils ne sont lus que par les lecteurs d'écran.
   des `import()` dynamiques (versionnés par `scripts/assemble.mjs`), chargés quand
   le sélecteur les montre ou qu'un joueur les porte. En attendant, le défaut est
   affiché puis remplacé sur place (`humanoid().userData.setAppearance`).
-- Rendu : `src/character-model.js` partage géométrie, matériau et clips par
+- Rendu : `src/character-model.ts` partage géométrie, matériau et clips par
   apparence ; chaque joueur possède ses os et son mixeur. Tous les modèles sont
   ramenés à la même hauteur (1,7 m modèle) par une racine mise à l'échelle.
   Allure : repos sous 0,35 m/s, course dès 3 m/s, vitesse de lecture liée à la
@@ -211,7 +211,7 @@ Premier modèle d'animal ; modèle « Angry Little Fly » fourni par l'utilisate
 ## Fourmi et araignée pondeuse Meshy (marche)
 
 Deux modèles fournis par l'utilisateur, déjà riggés par Meshy, sans clip ; ils
-suivent la même chaîne que le moucheron, généralisée dans `src/rigged-creature.js`
+suivent la même chaîne que le moucheron, généralisée dans `src/rigged-creature.ts`
 (décodage, rig, cuisson) et `src/creature-batch.ts` (texture d'animation de sommets,
 un `InstancedMesh` par espèce, ombres via un matériau de profondeur dédié).
 

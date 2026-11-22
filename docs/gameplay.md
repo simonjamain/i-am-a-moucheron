@@ -82,8 +82,8 @@ par type initial est conservé ; dès son décollage, un successeur gratuit appa
 un tank, un hélicoptère biplace ou une DCA mobile, dont la destruction est définitive. Les sièges sont exclusifs.
 
 Chaque accès publié aux équipements, y compris une nouvelle entrée, passe par un
-dossier de deux documents obligatoires, sur papier : la première pièce exige de cocher un
-motif (« Convenance personnelle » est refusée et oblige à recommencer). Il n’y a plus de
+dossier de deux documents obligatoires, sur papier, signés tels quels (seul le bon de
+commande de l’atelier demande un motif). Il n’y a plus de
 cercle au sol : on vise directement le poste (cockpit, trappe, tourelle) ou l’installation
 (DCA fixe, canon, lit), qui s’entoure de bleu signal s’il est libre (ou d’un contour clair
 avec le nom de son occupant), et un clic ouvre son dossier, de n’importe quel côté
@@ -354,7 +354,7 @@ encore un essai WebGL/UDP en partie réelle.
 ### Navigation terrestre
 
 Le serveur simule chaque insecte terrestre dès le début du combat, avec ou sans
-défense. Une grille de 5 cm (`buildGroundFlow`, `src/ground-defense.js`) bloque le
+défense. Une grille de 5 cm (`buildGroundFlow`, `src/ground-defense.ts`) bloque le
 mobilier au sol et les barricades ; elle n'est reconstruite qu'à un
 changement de `navigationRevision`. Le trajet est lissé à angle libre : depuis sa
 position, l'insecte vise le point le plus lointain de la descente encore visible
@@ -400,7 +400,7 @@ réglage initial), avec une accélération forte au départ qui décroît près 
 maximum. Les six roues roulent à la vitesse du sol de leur côté (sens, marche
 arrière et arrêt compris) ; au pivot sur place, gauche et droite tournent en sens
 opposés et les roues avant braquent selon la vitesse de rotation
-(`src/castor-wheels.ts`, `scripts/test-castor-wheels.mjs`). Plus rapide que le tank, il possède un rayon de soutien sphérique de **50 cm**, matérialisé en jeu par une sphère verte translucide (comme les 50 cm des stations de ravitaillement fixes, `src/service-zones.js`), qui peut soigner et ravitailler les alliés en mouvement ou en vol et se réapprovisionner lui-même. Le service utilise la caisse commune.
+(`src/castor-wheels.ts`, `scripts/test-castor-wheels.mjs`). Plus rapide que le tank, il possède un rayon de soutien sphérique de **50 cm**, matérialisé en jeu par une sphère verte translucide (comme les 50 cm des stations de ravitaillement fixes, `src/service-zones.ts`), qui peut soigner et ravitailler les alliés en mouvement ou en vol et se réapprovisionner lui-même. Le service utilise la caisse commune.
 
 **La construction en roulant est disponible depuis la version 188.** Le Castor utilise désormais **ses trois modèles Meshy texturés** : châssis, tourelle et roues indépendantes. Les couleurs originales sont préservées, sans pastille d’identification ([flotte Meshy](meshy-fleet.md)). Voir [l'issue #76](https://github.com/simonjamain/i-am-a-moucheron/issues/76).
 

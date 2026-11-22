@@ -1,21 +1,58 @@
+import type { Vec3, XYZ } from './types.ts';
 import { MAP, ACTOR_UNIT, REFERENCE } from './scale.ts';
 import { OFFICE_LAYOUT } from './layout.ts';
 import { advanceArena, createSoul } from './purgatory-physics.ts';
-export function aircraftBay(index) {
+import type { Arena, SoulBody, SoulEntity } from './purgatory-physics.ts';
+
+/** Walk spawn stored in a pilot's state (where the pilot left its aircraft). */
+export interface WalkSpawn {
+  x?: number;
+  y?: number;
+  z?: number;
+  vx?: number;
+  vy?: number;
+  vz?: number;
+  airborne?: boolean;
+  parachute?: boolean;
+}
+/** The pilot fields read by the base deck. */
+export interface BasePilot {
+  id: string;
+  bay: number;
+  name?: string;
+  life?: string;
+  mode?: string;
+  state?: string | null;
+  board_paper?: unknown;
+  walkSpawn?: WalkSpawn | null;
+}
+export interface BayPosition {
+  x: number;
+  z: number;
+  entryX: number;
+  entryZ: number;
+}
+export interface BaseBody extends SoulBody {
+  y: number;
+  vy: number;
+  grounded: boolean;
+  parachute: boolean;
+}
+export function aircraftBay(index: number): BayPosition {
   const col = index % 10,
     row = Math.floor(index / 10);
   const x = -29 + col * 6.4,
     z = 4 + row * 3.6;
   return { x, z, entryX: x + (col === 9 ? -3.15 : 3.15), entryZ: z };
 }
-export function baseWorld(p) {
+export function baseWorld(p: { x: number; y?: number; z: number }): XYZ {
   const b = OFFICE_LAYOUT.base;
   return { x: b.originX + p.x * ACTOR_UNIT, y: p.y ?? b.deckY, z: b.originZ - p.z * ACTOR_UNIT };
 }
 // Walking collision radius in actor units, for players and furniture alike.
 // Issue #135: half the former 0.32; shot hit volumes are separate.
 export const BASE_WALK_RADIUS = 0.16;
-export function baseBody(p, now) {
+export function baseBody(p: BasePilot, now: number): BaseBody {
   const bay = aircraftBay(p.bay);
   return {
     ...createSoul({ id: p.bay + 1, entity: p.id, kind: 'player', name: p.name }, 0, now),
@@ -34,10 +71,14 @@ export function baseBody(p, now) {
 }
 // Footsteps only while walking on a support: never in free fall or under the
 // parachute (issue #135), whatever the horizontal speed.
-export function footstepsAudible(body, speed, minimum = 0.6) {
+export function footstepsAudible(
+  body: SoulBody | null | undefined,
+  speed: number,
+  minimum: number = 0.6,
+): boolean {
   return !!body && body.grounded !== false && !body.parachute && speed > minimum;
 }
-export function baseAccess(body, bay) {
+export function baseAccess(body: SoulBody | null | undefined, bay: BayPosition): boolean {
   return (
     !!body &&
     !body.gone &&
@@ -46,7 +87,7 @@ export function baseAccess(body, bay) {
     Math.hypot(body.x - bay.entryX, body.z - bay.entryZ) < 1.25
   );
 }
-export function reconcileBase(a, pilots, now) {
+export function reconcileBase(a: Partial<Arena>, pilots: BasePilot[], now: number): Arena {
   a.bodies ??= [];
   a.time ??= now;
   a.events ??= [];
@@ -61,7 +102,7 @@ export function reconcileBase(a, pilots, now) {
   // Arena planar coordinates use ACTOR_UNIT; target a 6 m/s reference run.
   a.acceleration = (MAP.metres(REFERENCE.walk) / ACTOR_UNIT) * 7.45;
   const walkers = pilots.filter((p) => p.life === 'alive' && p.mode === 'foot'),
-    ids = new Set(walkers.map((p) => p.id));
+    ids = new Set<SoulEntity>(walkers.map((p) => p.id));
   a.bodies = a.bodies.filter((b) => ids.has(b.entity));
   for (const p of walkers) {
     let b = a.bodies.find((b) => b.entity === p.id);
@@ -86,15 +127,18 @@ export function reconcileBase(a, pilots, now) {
       { x, z: z + 0.2, w: 5.6, d: 1, y },
     ];
   });
-  return a;
+  return a as Arena;
 }
-export function advanceBase(a, now, owner = null) {
+export function advanceBase(a: Arena, now: number, owner: SoulEntity = null): Arena {
   advanceArena(a, now, owner);
   a.desk = null;
   return a;
 }
 
-export function aircraftPose(index, airborne = false) {
+export function aircraftPose(
+  index: number,
+  airborne: boolean = false,
+): { p: Vec3; q: [number, number, number, number]; v: Vec3 } {
   const bay = baseWorld(aircraftBay(index)),
     b = OFFICE_LAYOUT.base;
   return {

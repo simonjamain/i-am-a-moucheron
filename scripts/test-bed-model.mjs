@@ -8,7 +8,7 @@ import { makeInstallationCollider, makeServiceStation } from '../src/station-mod
 import { bedSpawn, bedAccess } from '../src/beds.ts';
 import { ShopThumbnails } from '../src/shop-thumbs.js';
 import { MAP, ACTOR_UNIT } from '../src/scale.ts';
-import { baseWorld } from '../src/base.js';
+import { baseWorld } from '../src/base.ts';
 assert.equal(
   MODEL_DATA.sourceSha256,
   '3ddaba9b3f39927101d6a16a429083a0a13811f8b18484e2a0f05a8cf9e64e49',

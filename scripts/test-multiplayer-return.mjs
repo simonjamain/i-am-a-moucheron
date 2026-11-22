@@ -13,13 +13,13 @@ import { WALKER_FALL, stepWalkerFall, impactDamage } from '../src/field-physics.
 import { createGraphics } from '../src/graphics.js';
 import { insectScale } from '../src/insect-status.ts';
 import { nearestInsectHit } from '../src/insect-hits.ts';
-import { controlHints, cursorStats } from '../src/live-hud.js';
+import { controlHints, cursorStats } from '../src/live-hud.ts';
 import { GunSalvos } from '../src/salvos.ts';
 import { makeShotTrace, TracerPool } from '../src/tracers.ts';
 import { wavePlan, swarmFrame } from '../src/waves.js';
 import { enemyRoute } from '../src/routes.js';
-import { staticGroundFlow } from '../src/ground-defense.js';
-import { blockedSegment } from '../src/route-navigation.js';
+import { staticGroundFlow } from '../src/ground-defense.ts';
+import { blockedSegment } from '../src/route-navigation.ts';
 import { HEAVY, heavyDamage } from '../src/armament.ts';
 import { createOrdnance } from '../src/ordnance.js';
 let now = 100000;
