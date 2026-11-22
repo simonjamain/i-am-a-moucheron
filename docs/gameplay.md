@@ -104,8 +104,11 @@ les autres axes assistés ; voir [commandes](controls.md). Avec le zoom (clic dr
 sensibilité de la souris suit le champ de vision (`lookScale`, `src/control-focus.ts`) :
 un cran de souris déplace l'image du même nombre de pixels, zoomé ou non. Un avion
 peut rouler et se poser si sa vitesse, sa descente et son attitude le permettent.
-Au sol, il faut l’arrêter pour en sortir. Toute sortie aérienne commence en chute
-libre avec la vitesse héritée ; le parachute s’ouvre et se replie manuellement.
+On peut en sortir à tout moment : à l’arrêt et au contact du sol, à la portière ; sinon (en
+mouvement, au sol ou en vol) à la position de l’engin, avec sa vitesse. Toute sortie
+en mouvement commence en chute libre avec la vitesse héritée ; le parachute s’ouvre et se
+replie manuellement. On peut de même monter dans un véhicule qui roule, s’il est à portée
+à chaque étape (il peut s’éloigner avant la signature).
 
 Les équipements commandés depuis un appareil descendent dans un colis sous
 parachute à **1/3 m/s dans le décor** (trois fois moins vite qu'avant la version

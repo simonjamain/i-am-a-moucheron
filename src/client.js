@@ -3017,10 +3017,6 @@ function stationLabel(st) {
 }
 async function vehicleAction(path, extra = {}) {
   if (vehicleBusy || respawnAt) return;
-  if (path === 'vehicle-exit' && crewSeat === 'pilot' && landed && vel.length() > MAP.metres(3)) {
-    notify('Réduisez les gaz et arrêtez-vous avant de sortir.', 3);
-    return;
-  }
   const exiting = path === 'vehicle-exit' || (path === 'turret' && turretIndex >= 0);
   const backup = exiting ? optimisticExit() : null;
   vehicleBusy = true;
@@ -3054,8 +3050,13 @@ function optimisticExit() {
   };
   const self = snap.pilots.find((p) => p.id === id),
     vehicle = myVehicle,
-    grounded = vehicle ? !!(crewSeat === 'pilot' ? landed : vehicle.state.landed) : true,
     pose = vehicle ? (crewSeat === 'pilot' ? localMotion() : vehicle.state) : null,
+    // Out of a vehicle that touches the ground and is (nearly) still: at its door. Out of one
+    // that moves, on the ground or not: where it is, carrying its speed.
+    grounded = vehicle
+      ? !!(crewSeat === 'pilot' ? landed : vehicle.state.landed) &&
+        Math.hypot(...pose.v) <= MAP.metres(3)
+      : true,
     p = vehicle
       ? grounded
         ? vehicleEntry({ ...vehicle, state: pose })
@@ -3693,7 +3694,7 @@ function updateAimedPost() {
       origin = postRay.ray.origin.toArray(),
       direction = postRay.ray.direction.toArray();
     for (const v of snap?.vehicles || []) {
-      if (!v.state.landed || !SEAT_POSTS[v.type] || !vehicleAccess(w, v)) continue;
+      if (!SEAT_POSTS[v.type] || !vehicleAccess(w, v)) continue;
       const g = fleetModels.get(v.id);
       if (!g) continue;
       g.updateMatrixWorld(true);
@@ -4752,9 +4753,7 @@ function physics(dt) {
       hard: state.impact > PLANE_CRASH_IMPACT,
       impact: state.impact,
     };
-    const wasLanded = landed;
     landed = !!state.landed;
-    if (landed && !wasLanded) notify('Posé · Ctrl : réduire les gaz · F : sortir à l’arrêt', 3);
   } else {
     ({ forward, stall } = stepFlight(
       T,
@@ -4790,7 +4789,6 @@ function physics(dt) {
       dt,
       office.decor,
     );
-    const wasLanded = landed;
     landed = landing.landed;
     if (landed) {
       // Rolling friction and rudder/taxi steering. Pull back with enough airspeed to lift off.
@@ -4807,7 +4805,6 @@ function physics(dt) {
         me.position.y += 0.16 * ACTOR_UNIT;
         landed = false;
       }
-      if (!wasLanded) notify('Posé · Ctrl : réduire les gaz · F : sortir à l’arrêt', 3);
     }
   }
   for (const prop of me.userData.props || [me.userData.prop])
