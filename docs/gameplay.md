@@ -167,6 +167,10 @@ apparaît dans une colonne « Autres » (`scripts/test-shop-catalog.mjs`).
 
 L’accès au bureau de Saint Pierre dépend de la présence physique dans sa zone.
 L’ordre de la file guide les PNJ sans donner une priorité abstraite de signature.
+Pour éviter d’attendre derrière des dizaines d’insectes, un joueur peut payer au vigile
+un **coupe-file** (numéro de la vague en dollars, sur la caisse commune) et passer par
+la file VIP, servie dès que Saint Pierre a fini l’insecte en cours
+([file VIP](purgatory-queue.md#file-vip-coupe-file-payant)).
 Les collisions permettent de se bousculer. Le combat à mains nues est supprimé ;
 au purgatoire, chacun utilise son pistolet semi-automatique à 10 dégâts fixes,
 sans chargeur ni rechargement. Dans le bureau, personne ne porte d'arme à pied. Les armes

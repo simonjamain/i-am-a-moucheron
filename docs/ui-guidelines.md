@@ -69,6 +69,7 @@ Tous les documents du jeu sont en papier :
 | ---------------------------------------------------- | ------------------------------------------------ |
 | Bon de commande de l’atelier                         | un motif, `purchaseMotives()`                    |
 | Prospectus de la banque, après le choix de l’offre   | la reconnaissance de dette, `loanConsent(waves)` |
+| Coupe-file VIP du purgatoire (vigile)                | aucune (signature seule, paiement)               |
 | Dossiers de prise de poste et de retour, lit, autres | aucune (signature seule)                         |
 
 Seul le **bon de commande** demande un motif. Chaque commande tire trois motifs au hasard

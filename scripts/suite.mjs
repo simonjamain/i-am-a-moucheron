@@ -34,6 +34,7 @@ export const SUITE = [
   'test-b3-crew',
   'test-scene',
   'test-purgatory-queue',
+  'test-purgatory-vip',
   'test-controls',
   'test-cache',
   'test-changelog',

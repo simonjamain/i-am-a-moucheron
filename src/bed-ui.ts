@@ -75,7 +75,7 @@ export class BedUI {
       e.preventDefault();
       if (this.busy || this.pointer !== null || this.refusing) return;
       if (!this.canSign()) {
-        this.status('Cochez un motif avant de signer.');
+        this.status(this.lockedText());
         return;
       }
       this.pointer = e.pointerId;
@@ -123,6 +123,10 @@ export class BedUI {
   }
   canSign(): boolean {
     return !this.clauses || this.clauses.complete;
+  }
+  // Why the signature line is locked.
+  lockedText(): string {
+    return 'Cochez un motif avant de signer.';
   }
   refreshLock() {
     this.root.classList[this.canSign() ? 'remove' : 'add']('locked');
