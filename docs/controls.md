@@ -264,4 +264,6 @@ qui le faisait tomber quand l'appareil était garé au bord du vide.
 Le décalage latéral est `doorOffset` (`src/fleet.ts`) : demi-largeur de la coque
 (`HULL_HALF_WIDTH` pour les avions et l'hélicoptère, la moitié de l'envergure pour les
 véhicules terrestres et le Castor volant) plus 1 m de marge. Le serveur et le client
-utilisent la même fonction, avec le siège réellement occupé.
+utilisent la même fonction, avec le siège réellement occupé. Le joueur apparaît
+`EXIT_LIFT` (0,3 unité d'acteur) au-dessus de la surface sous l'appareil et retombe sur
+le vrai support : posé sur un meuble, un pied sous la surface le ferait traverser.
