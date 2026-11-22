@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - name: Checkout repository (full history: the version is the commit count)
+      - name: Checkout repository with full history (the version is the commit count)
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
