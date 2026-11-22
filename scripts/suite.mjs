@@ -150,6 +150,7 @@ export const SUITE = [
   'test-physics-debug',
   'test-parked-host',
   'test-plane-server',
+  'test-start-pad',
   'test-camera-follow',
   'test-truck-physics',
   'test-truck-wheels',

@@ -106,6 +106,7 @@ assert.equal(wreckRoom.effects.filter((event) => event.kind === 'crash').length,
 assert.equal([...wreckRoom.souls.values()].filter((soul) => soul.kind === 'player').length, 0);
 assert.ok(crew.every((p) => p.state.awaitingPurgatory));
 const fighter = [...r.vehicles.values()].find((v) => v.type === 'fighter');
+fighter.seats.set('pilot', 'someone'); // flown away (an unflown starter is replaced with a delay)
 fighter.state.landed = false;
 fighter.ready = 0;
 game.fleet(r);

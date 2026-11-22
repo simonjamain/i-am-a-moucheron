@@ -100,6 +100,11 @@ export const RESUME_MS = 30000;
 // A launch whose impact has not been reported is forgotten this long after
 // the end of its lifetime.
 export const IMPACT_GRACE_MS = 3000;
+// Parked-vehicle settling: grace after creation, airborne time before a vehicle counts as
+// having left the pad, and the minimum gap between two replacement starters of a type.
+const SETTLE_MS = 5000;
+const AIRBORNE_MS = 1500;
+const STARTER_GAP_MS = 10000;
 // Active launches kept per room: only protects the room, the shooters simulate them.
 export const MAX_ORDNANCE = 10_000;
 // Physics of the vehicles nobody drives (src/parked-host.ts). The engine (a 4 MB WebAssembly
@@ -410,14 +415,27 @@ export class Game {
       }
   }
   fleet(r) {
-    for (const vehicle of r.vehicles.values()) if (!vehicle.state.landed) vehicle.ready = 0;
+    // The parked ones are judged by advanceParked (with its tolerance); the others, here.
+    for (const vehicle of r.vehicles.values())
+      if (!vehicle.state.landed && !vehicle.hosted) vehicle.ready = 0;
+    // A replacement starter at most every STARTER_GAP_MS per type: whatever happens to the
+    // vehicles, the pad never refills in a loop.
+    r.starterAt ??= {};
+    const used = {};
+    for (const v of r.vehicles.values()) if (v.origin === 'starter' && v.seats.size) v.used = true;
+    for (const v of r.vehicles.values()) if (v.origin === 'starter') used[v.type] = !!v.used;
     for (const type of ['fighter', 'bomber', 'tank'])
       if (
         !values(r.vehicles).some(
           (v) => v.type === type && v.origin === 'starter' && v.ready && v.state.hp > 0,
-        )
-      )
+        ) &&
+        // None left, or a pilot has used the previous one: replace at once. Otherwise (it died
+        // or left the pad unflown) wait, so that nothing can refill the pad in a loop.
+        (used[type] !== false || this.now() - (r.starterAt[type] ?? -Infinity) >= STARTER_GAP_MS)
+      ) {
+        r.starterAt[type] = this.now();
         this.createVehicle(r, type, 'starter');
+      }
     for (const v of r.vehicles.values()) {
       const now = Math.max(this.now(), v.updated);
       v.supplies = {
@@ -453,9 +471,23 @@ export class Game {
       state.p = [placement.x, placement.y + VEHICLES[type].gear, placement.z];
       if (Number.isFinite(placement.angle))
         state.q = [0, Math.sin(placement.angle / 2), 0, Math.cos(placement.angle / 2)];
-    } else if (near && origin !== 'starter') {
-      state.p[0] += (near % 4) * MAP.metres(VEHICLES[type].span + 5);
-      state.p[2] += Math.ceil(near / 4) * MAP.metres(VEHICLES[type].length + 5);
+    } else {
+      // A starter only counts the vehicles still standing on its pad: a replacement must not
+      // be born inside the one it replaces (the physics would blow both up).
+      const reach = MAP.metres(VEHICLES[type].span + VEHICLES[type].length);
+      const crowd =
+        origin === 'starter'
+          ? values(r.vehicles).filter(
+              (v) =>
+                v.type === type &&
+                v.state.hp > 0 &&
+                Math.hypot(v.state.p[0] - state.p[0], v.state.p[2] - state.p[2]) < reach,
+            ).length
+          : near;
+      if (crowd) {
+        state.p[0] += (crowd % 4) * MAP.metres(VEHICLES[type].span + 5);
+        state.p[2] += Math.ceil(crowd / 4) * MAP.metres(VEHICLES[type].length + 5);
+      }
     }
     const vehicle = {
       id,
@@ -476,6 +508,12 @@ export class Game {
         revision: 0,
       },
     };
+    // Born in the room's physics world like any parked vehicle: it settles on the pad, then
+    // sleeps. `settleUntil`: while it settles it cannot count as having left the pad.
+    if (isHosted(type)) {
+      vehicle.hosted = true;
+      vehicle.settleUntil = vehicle.created + SETTLE_MS;
+    }
     r.vehicles.set(id, vehicle);
     return vehicle;
   }
@@ -2380,7 +2418,11 @@ export class Game {
       if (!v) continue;
       v.state = { ...v.state, ...u.state, ...(u.destroyed ? { hp: 0 } : {}) };
       if (u.destroyed) v.hosted = false;
-      if (!v.state.landed || v.state.hp <= 0) v.ready = 0;
+      // Left the pad: dead, or in the air for a while once it has settled (a bounce or a
+      // gust on the pad is not leaving it).
+      if (v.state.landed || now < (v.settleUntil ?? 0)) v.airSince = null;
+      else v.airSince ??= now;
+      if (v.state.hp <= 0 || (v.airSince !== null && now - v.airSince >= AIRBORNE_MS)) v.ready = 0;
     }
   }
   expireOrdnance(r, now) {

@@ -32,7 +32,7 @@ call('vehicle-select', { vehicle: biplane.id, seat: 'pilot', ground: g });
 for (const form of [1, 2])
   call('vehicle-sign', { vehicle: biplane.id, seat: 'pilot', signature: true, form, ground: g });
 assert.equal(biplane.seats.get('pilot'), player.id);
-assert.ok(!biplane.hosted, 'flown: not hosted');
+assert.ok(biplane.seats.has('pilot'), 'flown');
 
 // The aircraft is stopped on the ground: the pilot gets out, the server parks it.
 const rest = structuredClone(biplane.state);

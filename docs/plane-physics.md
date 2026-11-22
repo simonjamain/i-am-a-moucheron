@@ -91,6 +91,13 @@ chargé à la première sortie, le décor d'un plan est construit une fois par p
   véhicule terrestre, mis en sommeil après une seconde de repos, puis réveillé tout seul si
   quelque chose le heurte. Un dormeur ne coûte rien et n'envoie plus de mises à jour. Dès
   qu'un pilote s'assoit, le véhicule quitte le monde du serveur et le client reprend l'autorité.
+- **Véhicules de départ et achetés** : ils naissent déjà dans ce monde (`hosted` dès `createVehicle`),
+  se posent sur le pont puis s'endorment seuls. Anti-boucle de réapparition (`Game.fleet`,
+  `advanceParked`) : pendant 5 s après sa naissance un engin ne peut pas être « parti du pont » ;
+  il ne l'est qu'après 1,5 s continues en l'air (un rebond n'en est pas un) ; un remplaçant naît
+  décalé s'il y a encore un engin du même type sur le pont (sinon la physique détruirait les deux) ;
+  et si le précédent engin de départ n'a jamais été piloté, un remplaçant n'arrive que 10 s après
+  le dernier. `scripts/test-start-pad.mjs`.
 - Le recul d'un char garé qui tire (tireur de canon) est appliqué par le serveur
   (`ParkedHost.kick`).
 - Un choc au-delà de `PLANE_CRASH_IMPACT`, une chute mortelle (rigs terrestres) ou une sortie de
