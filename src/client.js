@@ -1073,6 +1073,10 @@ canvas.addEventListener('mousedown', (event) => {
     else cancelPlacement();
     return;
   }
+  if (event.button === 0 && respawnAt && aimedGuard && openVipPass()) {
+    event.preventDefault();
+    return;
+  }
   if (event.button === 0 && useAimedPost()) {
     event.preventDefault();
     return;
@@ -2682,6 +2686,40 @@ const purgScene = purgatory.scene,
 const purgCamera = new T.PerspectiveCamera(62, innerWidth / innerHeight, 0.1, 150),
   soulMeshes = new Map();
 const soulStatus = new InsectStatus(T, purgScene, { scale: 1 });
+// The VIP guard is used like a post (docs/purgatory-scene.md): within his reach and
+// without a pass, the guard under the crosshair (or the free cursor) is outlined in
+// signal blue; a click, like the interaction key, opens the pass.
+let aimedGuard = false,
+  guardHighlight = null;
+const guardRay = new T.Raycaster();
+function updateAimedGuard() {
+  const body = vipSelf();
+  let next = false;
+  if (body && !body.vip && nearVipGuard(body) && !vipUI.opened) {
+    const rect = canvas.getBoundingClientRect();
+    const free = document.pointerLockElement !== canvas && aimMouse;
+    purgCamera.updateMatrixWorld();
+    guardRay.setFromCamera(
+      new T.Vector2(
+        free ? ((aimMouse[0] - rect.left) / rect.width) * 2 - 1 : 0,
+        free ? 1 - ((aimMouse[1] - rect.top) / rect.height) * 2 : 0,
+      ),
+      purgCamera,
+    );
+    next = guardRay.intersectObject(purgatory.guard, true).length > 0;
+  }
+  if (next !== aimedGuard) {
+    guardHighlight ??= new PostHighlight(T, purgatory.guard, {
+      seats: [],
+      local: [0, 0, 0],
+      radius: 0,
+      outline: { meshes: [] },
+    });
+    if (next) guardHighlight.show();
+    else guardHighlight.hide();
+  }
+  aimedGuard = next;
+}
 function soulSlot(i) {
   return { x: i % 2 ? 1.1 : -1.1, z: 3 + Math.floor(i / 2) * 2.8 };
 }
@@ -5345,8 +5383,11 @@ function frame(now) {
     toon.render(observationRealm === 'office' ? scene : purgScene, observationCamera);
   } else if (respawnAt && soulBody) {
     physicalPurgatory(dt, now);
+    updateAimedGuard();
     purgatory.prerender(renderer, purgCamera);
     toon.render(purgScene, purgCamera);
+    postSelection.color = aimedGuard ? SIGNAL_COLOR : null;
+    postSelection.render(purgScene, purgCamera);
   } else toon.render(scene, camera);
   appearancePicker.draw(renderer, dt);
   // Outline of the aimed post, over the office frame only (src/post-highlight.ts).

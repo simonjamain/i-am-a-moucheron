@@ -61,8 +61,8 @@ Le passage à WebGPU est suivi à part.
 - **Le guichet** : trois bureaux pour la file des insectes et un au guichet VIP, leur
   face tournée vers Saint Pierre (écran, clavier, lampe de son côté ; papiers, agrafeuse
   côté visiteurs). Leur bord avant reste derrière le bord de la salle (z < 0).
-- **L’arrière** : tableau blanc, classeurs, bibliothèques, fontaine à eau, portemanteau,
-  cartons d’archives, corbeille.
+- **L’arrière**, derrière Saint Pierre : uniquement de l’équipement de bureau, sans
+  surcharge (tableau blanc, trois classeurs, une photocopieuse).
 - **Les bords** : plantes, classeurs, bibliothèques, distributeur, fontaine, coin
   d’attente (canapé, table basse, chaises visiteurs) et quelques feuilles froissées
   perdues sur le nuage (petites, on marche dessus).
@@ -74,7 +74,7 @@ couleurs des documents papier (`--paper`, `--ink`, police machine à écrire) :
 
 - une plaque sur la façade du guichet : « SAINT PIERRE · Guichet des résurrections »,
   « SUPER SAINT-PIERRE · Direction des récidives » au super purgatoire ;
-- une plaque « FILE VIP · Âmes humaines » sur le bureau VIP ;
+- une plaque « ACCÈS VIP » sur le bureau VIP (ouvert à toute âme qui paie) ;
 - un pupitre « COUPE-FILE · Laissez-passer auprès du vigile » à côté de la barrière ;
 - « PLACE AU GUICHET » peint au sol devant le cercle du guichet.
 
@@ -89,6 +89,14 @@ animation ([pipeline des assets](asset-pipeline.md#vigile-de-la-file-vip)).
 donne une attente en boucle de 12 s : trois respirations (poitrine et épaules) et un
 regard de chaque côté le long de la file. Saint Pierre garde provisoirement son
 ancien modèle, en attendant le sien.
+
+Le vigile s’utilise comme un poste d’engin ([règles d’interface](ui-guidelines.md)) :
+à portée (`nearVipGuard`) et sans coupe-file, le vigile visé par le réticule (ou par le
+curseur libéré avec Échap) est entouré du **bleu signal** (`PostHighlight`,
+`SelectionOutline`, comme pour monter dans un appareil) ; un clic ouvre le coupe-file,
+comme **E**. Une fois le coupe-file payé, ou hors de portée, il n’est plus entouré.
+
+![Vigile visé, entouré du bleu signal](purgatory-guard-hover.jpg)
 
 ## Vérification
 
