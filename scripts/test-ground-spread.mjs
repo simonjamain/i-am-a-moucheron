@@ -1,5 +1,6 @@
 // Ground packs spread through physical avoidance, with no display-only lanes.
 import assert from 'node:assert/strict';
+import { Worker, isMainThread, parentPort, workerData } from 'node:worker_threads';
 import { prepareRoster } from '../server/wave-preparation.js';
 import { DEFAULT_BALANCE } from '../src/balance.js';
 import { advanceGroundCrowd } from '../src/ground-crowd.js';
@@ -18,8 +19,11 @@ const seeded = (seed) => (n) => {
   seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
   return Math.floor((seed / 4294967296) * n);
 };
-let closest = Infinity;
-for (const seed of [1, 2, 3, 4, 5, 6]) {
+// Each seed runs in its own worker (about 4 s of CPU each): same scenarios and
+// threshold, the suite's slowest script no longer serialises them.
+const SEEDS = [1, 2, 3, 4, 5, 6];
+function closestPair(seed) {
+  let closest = Infinity;
   const { roster } = prepareRoster(10, DEFAULT_BALANCE, seeded(seed));
   const ants = roster.filter((e) => e.type === 'ant');
   assert.ok(ants.length >= 40, 'a real pack of ants');
@@ -41,7 +45,24 @@ for (const seed of [1, 2, 3, 4, 5, 6]) {
           Math.hypot(live[i].p[0] - live[j].p[0], live[i].p[2] - live[j].p[2]),
         );
   }
+  return closest;
 }
+if (!isMainThread) {
+  parentPort.postMessage(closestPair(workerData));
+  process.exit(0);
+}
+const pairs = await Promise.all(
+  SEEDS.map(
+    (seed) =>
+      new Promise((resolve, reject) => {
+        const worker = new Worker(new URL(import.meta.url), { workerData: seed });
+        worker.once('message', resolve);
+        worker.once('error', reject);
+        worker.once('exit', (code) => code && reject(new Error(`seed ${seed} exited ${code}`)));
+      }),
+  ),
+);
+const closest = Math.min(...pairs);
 const radius = INSECT_SCALE * 0.8 * enemySizeFactor('ant') * 0.9;
 // After one second to emerge from the shared portal, bodies must have spread.
 // Soft contacts may overlap briefly at spawn, but must never remain stacked.

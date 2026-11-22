@@ -51,15 +51,37 @@ Le workflow `Docker build validation` contient aussi le job `Full game regressio
 Le workflow `Docs site` construit le [site de documentation](site.md) en mode strict à
 chaque PR et le publie sur GitHub Pages depuis `main`.
 
-Audit des contrôles (suite complète : `npm test -- --list` donne le décompte, environ 50 s cumulées) :
-`npm test` lance `scripts/run-tests.mjs`, qui assemble puis exécute la liste ordonnée
-de `scripts/suite.mjs`, chaque script dans son propre processus, et résume tous les
-échecs à la fin. `npm test -- <fragment>` cible les scripts dont le nom contient le
-fragment, `--bail` s'arrête au premier échec. Avant une livraison, lancer la suite
-entière ; elle inclut `tsc` (`test-typescript.mjs`) et la cohérence des tables par
-espèce et par véhicule (`test-registries.mjs`). `test-suite-wiring.mjs` échoue si un
-`scripts/test-*.mjs` n'est pas dans `scripts/suite.mjs` (seul `test-udp-capacity-50.mjs`,
-lourd, a sa commande `test:capacity`) : un test orphelin ne protège rien.
+`npm test` lance `scripts/run-tests.mjs`, qui assemble puis exécute la liste de
+`scripts/suite.mjs`, chaque script dans son propre processus, **en parallèle** (un par
+CPU ; `--jobs=1` pour l'ordre séquentiel), et résume tous les échecs et les cinq scripts
+les plus lents. La sortie de chaque script s'affiche d'un bloc à sa fin. Les scripts
+sont indépendants : serveurs sur le port 0 ou sur des plages UDP fixes distinctes,
+fichiers temporaires en `mkdtemp` ; un nouveau test qui ouvre un port fixe en choisit un
+libre. `npm test -- <fragment>` cible les scripts dont le nom contient le fragment,
+`--bail` ne démarre plus de script après le premier échec, `--list` affiche la liste.
+`test-run-tests.mjs` vérifie que le lanceur parallèle garde rouges un échec d'assertion,
+une promesse rejetée et un processus tué. Mesuré le 22 novembre 2026 (v416, conteneur à
+4 CPU, suite de 182 scripts) : environ 36 s en parallèle, borné par le CPU total ; 79 s
+avec `--jobs=1` (100 s avant que les six graines de `test-ground-spread.mjs` ne soient
+réparties sur des workers : ce script passe seul de 24 s à 8 s).
+Avant une livraison, lancer la suite entière ; elle inclut `tsc` (`test-typescript.mjs`)
+et la cohérence des tables par espèce et par véhicule (`test-registries.mjs`).
+`test-suite-wiring.mjs` échoue si un `scripts/test-*.mjs` n'est pas dans
+`scripts/suite.mjs` (seul `test-udp-capacity-50.mjs`, lourd, a sa commande
+`test:capacity`) : un test orphelin ne protège rien. `npm run test:udp` est un raccourci
+de `npm test` filtré sur le protocole (domaine RAM, pairs natifs UDP, port partagé, repli TCP).
+
+| Étape        | Commande                                                                                                                 | Ce qu'elle prouve                                                    | Ce qu'elle ne prouve pas |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------- | ------------------------ |
+| Itération    | `npm test -- <fragment>`                                                                                                 | règles, physique, protocole du système touché                        | le reste de la suite     |
+| Avant commit | `npm run check:version` (hook)                                                                                           | `VERSION` augmenté                                                   | rien d'autre             |
+| Avant PR     | suite entière, `format:check`, `check:docs`, `build` + `validate-artifact`, `docker build`                               | domaine Node, deux pairs UDP natifs en loopback, types, artefact     | WebGL, navigateur, WAN   |
+| CI de PR     | `Full game regression and formatting`, `Docker build`, `Real Chromium over WebRTC UDP/TCP`, `Docs site`, outils d'assets | idem, plus image qui démarre, Chromium réel en loopback, site strict | rendu GPU, confort, WAN  |
+| Après fusion | essai humain sur le VPS                                                                                                  | partie réelle                                                        | —                        |
+
+Les jobs CI de benchmark et de capacité (`50-player snapshot comparison`,
+`Physics contact regression and 50x900 benchmark`, `50 native UDP peers`) mesurent des
+performances ; ils ne remplacent pas les tests de règles.
 `npm run format:check` est la seule commande de format, en local et
 en CI (job `Full game regression and formatting`) ; les données générées
 (`src/*data.js` importées, `docs/ui-review.html`) sont dans `.prettierignore`.
