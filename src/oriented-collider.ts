@@ -27,6 +27,22 @@ export function colliderPoint(box: Collider, p: readonly number[]): readonly num
     z = p[2] - f.z;
   return [f.c * x - f.s * z, p[1], f.s * x + f.c * z];
 }
+/** Outward unit normal (world frame) of the face of `box` nearest to a point on its surface. */
+export function colliderNormal(box: Collider, point: readonly number[]): [number, number, number] {
+  const p = colliderPoint(box, point),
+    b = colliderBounds(box);
+  const faces: [number, [number, number, number]][] = [
+    [Math.abs(p[0] - b.min.x), [-1, 0, 0]],
+    [Math.abs(p[0] - b.max.x), [1, 0, 0]],
+    [Math.abs(p[1] - b.min.y), [0, -1, 0]],
+    [Math.abs(p[1] - b.max.y), [0, 1, 0]],
+    [Math.abs(p[2] - b.min.z), [0, 0, -1]],
+    [Math.abs(p[2] - b.max.z), [0, 0, 1]],
+  ];
+  const [, [nx, ny, nz]] = faces.reduce((best, face) => (face[0] < best[0] ? face : best));
+  const f = box.oriented;
+  return f ? [f.c * nx + f.s * nz, ny, -f.s * nx + f.c * nz] : [nx, ny, nz];
+}
 export function colliderBounds(box: Collider): Collider {
   return box.oriented?.bounds || box;
 }

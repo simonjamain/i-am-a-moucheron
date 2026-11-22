@@ -1,4 +1,4 @@
-import { rayCollider } from '../src/oriented-collider.ts';
+import { rayCollider, colliderNormal } from '../src/oriented-collider.ts';
 import assert from 'node:assert/strict';
 import { Game } from '../server/game.js';
 import {
@@ -154,10 +154,13 @@ const { readFileSync } = await import('node:fs');
 const { runInNewContext } = await import('node:vm');
 const T = await import('../vendor/three.module.min.js');
 const { nearestInsectHit, nearestSolidHit } = await import('../src/insect-hits.ts');
+const { bounce } = await import('../src/ricochet.ts');
+const { vehicleMaterial, insectMaterial } = await import('../src/materials.ts');
+const { MAP } = await import('../src/scale.ts');
 const src = readFileSync('src/client.js', 'utf8');
 const step =
   src.slice(src.indexOf('const solidRayPoint ='), src.indexOf("let me = makePlane('#e3ebc0');")) +
-  src.slice(src.indexOf('function stepProjectileSlice('), src.indexOf('// Fixed timestep flight:'));
+  src.slice(src.indexOf('function contactOf('), src.indexOf('// Fixed timestep flight:'));
 for (const wall of [false, true]) {
   const scene = new T.Scene(),
     insects = new Map(),
@@ -177,6 +180,8 @@ for (const wall of [false, true]) {
       v: new T.Vector3(1, 0, 0),
       life: 5,
       owned: true,
+      projectile: 'mg',
+      bounces: 0,
       baseDamage: 100,
       wave: 1,
       travelled: 0,
@@ -186,6 +191,7 @@ for (const wall of [false, true]) {
   runInNewContext(step + ';stepProjectileSlice(.5);stepProjectileSlice(3);', {
     T,
     rayCollider,
+    colliderNormal,
     nearestSolidHit,
     projectileRay: new T.Raycaster(),
     office: { decor: null },
@@ -202,6 +208,11 @@ for (const wall of [false, true]) {
     updateTracer() {},
     sound: { play() {} },
     hitEffects: { burst() {} },
+    bounce,
+    vehicleMaterial,
+    insectMaterial,
+    currentRoster: () => ({}),
+    MAP,
     respawnAt: 0,
     snap: { wave: 1 },
     localKills: new Set(),

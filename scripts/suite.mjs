@@ -153,6 +153,7 @@ export const SUITE = [
   'test-plane-server',
   'test-pose-smoother',
   'test-projectiles',
+  'test-ricochet',
   'test-render-interpolation',
   'test-heli-physics',
   'test-start-pad',
