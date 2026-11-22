@@ -2,7 +2,7 @@ import { prepareCreatureVat } from '/creature-batch.js';
 import { MIDGE } from '/midge-model.js';
 import { WALKERS } from '/walker-batch.js';
 import { FLYERS, FlyerBatch } from '/flyer-batch.js';
-import { rayCollider, colliderContainsXZ } from '/oriented-collider.js';
+import { rayCollider, colliderContainsXZ, colliderNormal } from '/oriented-collider.js';
 import { sweptHitsDecor } from '/office-collision.js';
 import { makeServiceStation, animateRadar, makeInstallationCollider } from '/station-model.js';
 import { ReloadHUD, seatReloads, heavyReadyAt, heavyLane, reloadProgress } from '/reload-hud.js';
@@ -177,6 +177,9 @@ import { UdpClient } from '/udp-client.js';
 import { WsClient } from '/ws-client.js';
 import { ServerClock } from '/server-clock.js';
 import { stepHeavy, heavyImpact } from '/heavy-sim.js';
+import { PROJECTILES } from '/projectiles.js';
+import { bounce } from '/ricochet.js';
+import { vehicleMaterial, insectMaterial } from '/materials.js';
 import { createOrdnance, integrateOrdnance } from '/ordnance.js';
 import { howitzerMuzzle } from '/howitzer-geometry.js';
 import { RECONNECT_AFTER_MS, RECONNECT_WINDOW_MS } from '/udp-protocol.js';
@@ -352,6 +355,34 @@ function solidRayDistance(ray, far, boxes = colliders) {
     if (hit) best = Math.min(best, hit.distance);
   }
   return best <= far ? best : Infinity;
+}
+// Like solidRayDistance, with the unit normal of the surface met (a projectile ricochets on it).
+const solidRayBest = new T.Vector3();
+function solidRayHit(ray, far, boxes = colliders) {
+  const decor = boxes === colliders ? office.decor : null;
+  let best = Infinity,
+    bestBox = null,
+    normal = null;
+  for (const box of boxes) {
+    if (decor && box.decor) continue;
+    const p = rayCollider(T, ray, box, solidRayPoint);
+    if (!p) continue;
+    const d = ray.origin.distanceTo(p);
+    if (d < best) {
+      best = d;
+      bestBox = box;
+      solidRayBest.copy(p);
+    }
+  }
+  if (bestBox) normal = colliderNormal(bestBox, solidRayBest.toArray());
+  if (decor && best > 0) {
+    const hit = decor.raycast(ray.origin.toArray(), ray.direction.toArray(), Math.min(far, best));
+    if (hit && hit.distance < best) {
+      best = hit.distance;
+      normal = hit.normal;
+    }
+  }
+  return best <= far ? { distance: best, normal } : null;
 }
 // Camera clearance (camera-clearance.ts): the nearest solid between a followed point and
 // the wanted eye, in the office or in the purgatory.
@@ -3409,6 +3440,7 @@ function fireRapidDca(station, gun, direction, dt, interval, firing, owned) {
       {
         velocity: new T.Vector3(),
         weapon: 'dcaRapid',
+        projectile: 'rapidDca',
         baseDamage: RAPID_DCA_DAMAGE,
         authorization,
       },
@@ -4216,6 +4248,12 @@ function bullet(pos, dir, color = TRACER_COLOR, owned = false, aa = false, muzzl
       vehicle: myVehicle.id,
       wave: snap?.wave,
       weapon: currentAmmoKey(),
+      projectile:
+        myVehicle.type === 'castor'
+          ? 'castorGun'
+          : myVehicle.type === 'tank'
+            ? TANK_MG[currentAmmoKey()].projectile
+            : 'mg',
       baseDamage:
         myVehicle.type === 'castor'
           ? CASTOR_GUN_DAMAGE
@@ -4295,14 +4333,16 @@ function emitBullet(pos, dir, color, owned, aa, launch = null, muzzleNode = null
     while (root.parent && root.parent !== scene) root = root.parent;
     root.userData.gunFiredUntil = performance.now() + 100;
   }
-  const velocity = dir.clone().multiplyScalar(MAP.metres(aa ? REFERENCE.shell : REFERENCE.bullet));
+  const typeId = launch?.projectile ?? (aa ? 'flak' : 'mg'),
+    kind = PROJECTILES[typeId];
+  const velocity = dir.clone().multiplyScalar(MAP.metres(kind.speed));
   if (launch) velocity.add(launch.velocity);
   else if (!aa && owned && myVehicle)
     velocity.add(crewSeat === 'pilot' ? vel : new T.Vector3().fromArray(myVehicle.state.v));
   trails.push({
     m,
     v: velocity,
-    life: aa ? 3 : 2,
+    life: kind.lifetime,
     shell: aa,
     travelled: 0,
     fuse: MAP.metres(flakRange),
@@ -4310,7 +4350,9 @@ function emitBullet(pos, dir, color, owned, aa, launch = null, muzzleNode = null
     owned,
     shot: id + (launch?.weapon === 'dcaRapid' ? ':rapid:' : ':') + ++shotSequence,
     wave: launch?.wave ?? snap?.wave,
-    baseDamage: launch?.baseDamage ?? 75,
+    projectile: typeId,
+    bounces: 0,
+    baseDamage: launch?.baseDamage ?? kind.damage,
     weapon: launch?.weapon,
     authorization: launch?.authorization,
   });
@@ -4445,7 +4487,59 @@ function stepProjectiles(dt) {
   for (let i = 0; i < n; i++) stepProjectileSlice(dt / n);
   frameTargets = null;
 }
+// The material a bullet meets and the surface normal there, for the ricochet decision.
+function contactOf(hit) {
+  if (hit.wall) return { material: 'decor', normal: hit.normal };
+  if (hit.vehicle) {
+    const type = snap?.vehicles.find((v) => v.id === hit.vehicle)?.type;
+    const normal = hit.face?.normal
+      ? hit.face.normal.clone().transformDirection(hit.object.matrixWorld).toArray()
+      : null;
+    return { material: vehicleMaterial(type), normal };
+  }
+  if (hit.id !== undefined) {
+    const model = insects.get(hit.id);
+    const type = currentRoster()[hit.id]?.type;
+    const normal = model
+      ? hit.point.clone().sub(model.getWorldPosition(new T.Vector3())).toArray()
+      : null;
+    return { material: insectMaterial(type), normal };
+  }
+  return null;
+}
+// What a bullet's contact does when it may skid: the effects and the new flight, or null (it hits).
+function ricochetOf(b, hit, dir) {
+  const contact = contactOf(hit);
+  if (!contact?.normal) return null;
+  const result = bounce(dir.toArray(), contact.normal, b.projectile, contact.material, b.bounces);
+  if (!result) return null;
+  return {
+    apply(travelled) {
+      hitEffects.burst(hit.point, camera, { key: b.shot + ':' + b.bounces });
+      sound.play('ricochet', hit.point, { ref: 12, cooldown: 0.05, key: 'ricochet' });
+      b.travelled += travelled;
+      b.life -= SLICE_DT;
+      if (result.kind === 'spent') b.life = 0;
+      else {
+        const speed = b.v.length() * result.speedFactor;
+        b.v.fromArray(result.direction).normalize().multiplyScalar(speed);
+        const n = new T.Vector3().fromArray(contact.normal).normalize();
+        if (n.dot(dir) > 0) n.negate();
+        b.m.position.copy(hit.point).addScaledVector(n, MAP.metres(0.02));
+        b.bounces++;
+        updateTracer(T, b.m, b.v.clone().normalize(), camera);
+      }
+      if (b.life <= 0) {
+        scene.remove(b.m);
+        b.m.userData.dispose();
+        trails.splice(trails.indexOf(b), 1);
+      }
+    },
+  };
+}
+let SLICE_DT = 1 / 120;
 function stepProjectileSlice(dt) {
+  SLICE_DT = dt;
   for (let i = trails.length - 1; i >= 0; i--) {
     const b = trails[i],
       origin = b.m.position.clone();
@@ -4466,9 +4560,14 @@ function stepProjectileSlice(dt) {
       projectileRay.near = 0;
       projectileRay.far = distance;
       hit = nearestSolidHit(T, projectileRay, solidTargets(), b.originVehicle);
-      const wall = solidRayDistance(projectileRay.ray, distance);
-      if (wall < Infinity && (!hit || wall < hit.distance))
-        hit = { point: origin.clone().addScaledVector(dir, wall), distance: wall, wall: true };
+      const wallHit = solidRayHit(projectileRay.ray, distance);
+      if (wallHit && (!hit || wallHit.distance < hit.distance))
+        hit = {
+          point: origin.clone().addScaledVector(dir, wallHit.distance),
+          distance: wallHit.distance,
+          wall: true,
+          normal: wallHit.normal,
+        };
       const blocker = hit;
       const insect = nearestInsectHit(
         T,
@@ -4480,6 +4579,11 @@ function stepProjectileSlice(dt) {
         insectIndex,
       );
       hit = insect || blocker;
+      const skid = hit && !b.shell ? ricochetOf(b, hit, dir) : null;
+      if (skid) {
+        skid.apply(hit.distance);
+        continue;
+      }
       if (hit) {
         if (b.shell) {
           const impact = shellImpact(hit, b.travelled + hit.distance, MAP.metres(FLAK.minRange));
@@ -4516,6 +4620,29 @@ function stepProjectileSlice(dt) {
         b.life = 0;
         fused = false;
       } else if (fused) explosion(b, origin.clone().addScaledVector(dir, distance));
+    }
+    if (!b.owned && !b.shell) {
+      // Tracers of other players only skid off the walls (display); they never stop or hurt.
+      projectileRay.set(origin, dir);
+      projectileRay.near = 0;
+      projectileRay.far = distance;
+      const wallHit = solidRayHit(projectileRay.ray, distance);
+      const skid = wallHit
+        ? ricochetOf(
+            b,
+            {
+              wall: true,
+              point: origin.clone().addScaledVector(dir, wallHit.distance),
+              distance: wallHit.distance,
+              normal: wallHit.normal,
+            },
+            dir,
+          )
+        : null;
+      if (skid) {
+        skid.apply(wallHit.distance);
+        continue;
+      }
     }
     b.m.position.addScaledVector(dir, distance);
     b.travelled += distance;
@@ -6041,14 +6168,9 @@ function detonateLocalMissile(projectile) {
   );
 }
 // Neutral shell colours by weapon, identical for every player (issue #106).
-const SHELL_COLORS = {
-  he: '#e0a33c',
-  ap: '#cfd6dc',
-  antitank: '#d9b45a',
-  dcaHeavy: '#e0a33c',
-  rocket: '#e0a33c',
-  missile: '#e6e1cf',
-};
+const SHELL_COLORS = Object.fromEntries(
+  Object.entries(PROJECTILES).flatMap(([name, p]) => (p.color ? [[name, p.color]] : [])),
+);
 // Other players' shells: flown here from their recorded launch, for display.
 const remoteFlights = new Map();
 function displayedShots() {

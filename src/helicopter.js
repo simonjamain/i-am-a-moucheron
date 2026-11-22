@@ -1,11 +1,12 @@
 import { colliderContainsXZ } from './oriented-collider.ts';
 import { segmentBox } from './swept-geometry.ts';
 import { MAP, ACTOR_UNIT } from './scale.ts';
+import { PROJECTILES } from './projectiles.ts';
 import { OFFICE_LAYOUT } from './layout.ts';
 import { VEHICLE_ANCHORS } from './vehicle-anchors.js';
 export const HELI = Object.freeze({
   gunInterval: 1 / 15,
-  gunDamage: 75,
+  gunDamage: PROJECTILES.mg.damage,
   maxTilt: Math.PI / 4,
   turretSpeed: Math.PI,
   descentSpeed: 30,
