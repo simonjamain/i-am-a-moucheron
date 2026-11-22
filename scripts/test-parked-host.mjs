@@ -116,6 +116,34 @@ for (const type of PLANE_TYPES)
     'the glider stays finite',
   );
 }
+// 4b. A ground vehicle at rest reports no motion. The solver leaves a residue on a parked
+// vehicle (a few tenths of a metre per second upwards, a slight spin); clients carry a vehicle
+// on at its reported velocity, so a stale residue made a bought Castor or DCA truck creep
+// upwards in the display (and a bought tank, a little less).
+{
+  for (const type of HOSTED_GROUND) {
+    const host = new ParkedHost(RAPIER, null, []);
+    host.physics.world.createCollider(
+      RAPIER.ColliderDesc.cuboid(60, 0.5, 60).setTranslation(0, -0.5, 0),
+    );
+    const pad = { ...plane('g', 0, 0, {}, type), profile: VEHICLES[type] };
+    pad.state.p = [0, VEHICLES[type].gear, 0];
+    host.sync([pad]);
+    const { updates } = run(host, 6);
+    const mine = updates.filter((u) => u.id === 'g');
+    const last = mine.at(-1).state;
+    assert.ok(host.asleep('g'), type + ' fell asleep');
+    assert.deepEqual(last.v, [0, 0, 0], type + ' asleep: no velocity reported');
+    assert.deepEqual(last.omega ?? [0, 0, 0], [0, 0, 0], type + ' asleep: no spin reported');
+    // While it settles and the solver's residue is small, the report is already zero.
+    const calm = mine.filter((u) => Math.hypot(...u.state.v) === 0);
+    assert.ok(calm.length > 0, type + ' reports rest before it is put to sleep');
+    // The body itself carries no velocity either: waking it later starts from rest.
+    const v = host.body('g').linvel(),
+      w = host.body('g').angvel();
+    assert.equal(Math.hypot(v.x, v.y, v.z, w.x, w.y, w.z), 0, type + ' body at rest');
+  }
+}
 // 5. The ground vehicles share the world with the aircraft: each settles where it was left
 // (a few millimetres above the floor), brakes on, is not destroyed, and is put to sleep; on a
 // 7° slope too, uphill or downhill, never creeping away.
