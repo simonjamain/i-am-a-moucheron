@@ -1273,6 +1273,7 @@ export class Game {
           'leave',
           // A shell still in flight when its shooter dies keeps its effect.
           'heavy-impact',
+          'heavy-bounce',
           'fixed-dca-impacts',
         ].includes(path),
       'Accédez au purgatoire avant d’agir.',
@@ -1382,6 +1383,7 @@ export class Game {
     else if (path === 'aircraft-fire') return clone(this.fire(r, p, b));
     else if (path === 'fixed-dca-impacts') return this.rapidDcaImpacts(r, p, b.impacts);
     else if (path === 'heavy-impact') this.heavyImpact(r, p, b);
+    else if (path === 'heavy-bounce') this.heavyBounce(r, p, b);
     else if (path === 'heavy-fire') this.heavyFire(r, p, b);
     else if (path === 'hit') this.hit(r, p, b);
     else if (path === 'friendly-hit') this.friendly(r, p, b);
@@ -2340,6 +2342,32 @@ export class Game {
     if (shot.weapon !== 'missile') return;
     const v = r.vehicles.get(shot.vehicle);
     if (v) v.nextMissileAt = now + 2000 / r.balance.fireRate;
+  }
+  // A shell that ricocheted: its flight restarts from the shooter's new position and velocity,
+  // for the players who fly it from the record. Same trust as the impact.
+  heavyBounce(r, p, b) {
+    requireGame(typeof b.shot === 'string' && b.shot.length <= 120, 'Rebond invalide.', 400);
+    const shot = r.ordnance.find((s) => s.shot === b.shot && s.shooter === p.id);
+    if (!shot) return;
+    const vector = (v) => Array.isArray(v) && v.length === 3 && v.every(Number.isFinite);
+    requireGame(
+      vector(b.p) &&
+        vector(b.v) &&
+        Number.isFinite(b.age) &&
+        Number.isFinite(b.updated) &&
+        Number.isInteger(b.bounces),
+      'Rebond invalide.',
+      400,
+    );
+    // Only the latest bounce counts if reports arrive out of order.
+    if (b.bounces <= (shot.bounces ?? 0)) return;
+    Object.assign(shot, {
+      p: [...b.p],
+      v: [...b.v],
+      age: b.age,
+      updated: b.updated,
+      bounces: b.bounces,
+    });
   }
   // Impact computed by the shooter and trusted: applied once. Damage to friends is the
   // shooter's decision too.

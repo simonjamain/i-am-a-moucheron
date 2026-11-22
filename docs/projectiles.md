@@ -69,11 +69,22 @@ au-dessus, elle touche comme avant (dégâts).
 Un matériau fin (papier, bois, métal, verre...) se déclare en ajoutant une entrée à `MATERIALS` et en
 l'affectant à des objets ; aucun code de balistique ne change.
 
+**Armes lourdes.** L'obus perforant (`ap`, 10°) et l'obus explosif (`he`, 5°) ricochent aussi, dans
+`stepHeavy` (`heavy-sim.js`) : sol, boîtes et triangles du décor, coques de véhicules (sphère : normale du
+centre vers l'impact) et insectes. La règle est la même (`src/ricochet.ts`) ; à un ricochet l'obus ne
+détone pas, repart réfléchi et ralenti, et s'arrête sans explosion au contact éligible suivant après 5
+rebonds (le tireur annonce alors une fin sans impact). Le tireur envoie `heavy-bounce` (`shot`, `p`,
+`v`, `age`, `updated`, `bounces`) : le serveur remplace la position et la vitesse de l'enregistrement du
+tir (le dernier rebond l'emporte, seul le tireur peut le faire), et les autres joueurs, qui font voler
+l'obus depuis cet enregistrement, repartent de ce nouveau départ. Les armes à angle 0 (roquette, missile,
+bombe, flak, proximité, `antitank`) n'ont jamais cherché de normale : leur chemin n'a pas changé.
+
 **Limites actuelles.**
 
-- Seules les **balles** (simulées par `stepProjectileSlice` dans `client.js`) ricochent. Les
-  obus perforant et explosif ont déjà leur angle, mais `heavy-sim.js` ne l'applique pas encore : c'est
-  l'étape suivante.
+- Les **balles** (simulées par `stepProjectileSlice` dans `client.js`) ricochent contre le décor, les
+  véhicules et les insectes pour le tireur ; les armes lourdes comme ci-dessus.
+- Le côté « autres joueurs » du rebond d'un obus (`displayedShots` qui repart d'un `bounces` différent)
+  n'a pas de test automatique ; il est vérifié par lecture du code seulement.
 - Les traceurs des autres joueurs sont affichés d'après leurs tirs reçus, sans collision (ils traversent
   les obstacles) : ils ne font que **ricocher visuellement sur le décor**, sans jamais s'arrêter ni
   blesser. Les tirs des autres peuvent donc ne pas suivre exactement la même trajectoire que chez le
@@ -84,5 +95,6 @@ l'affectant à des objets ; aucun code de balistique ne change.
 
 1. **Harmonisation** : cinq types de balle pour des tirs très proches. À valider avec le
    propriétaire du jeu avant tout changement de valeur.
-2. **Ricochet des armes lourdes** : obus perforant et explosif dans `heavy-sim.js`.
+2. **Réseau des balles** : rafale avec graine et heure de départ, identifiants, événement de ricochet sur
+   ce qui bouge (étape suivante).
 3. **Pénétration** : résistance d'un matériau et pénétration d'un type, comparées à part du seuil d'angle.

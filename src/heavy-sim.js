@@ -18,6 +18,10 @@ import { AP_PIERCE_KEEP, HEAVY, heavyDamage } from './armament.ts';
 import { VEHICLES } from './fleet.ts';
 import { integrateOrdnance, segmentSphere, segmentBox } from './ordnance.js';
 import { sweptSphereMayTouch } from './swept-broadphase.ts';
+import { PROJECTILES } from './projectiles.ts';
+import { bounce } from './ricochet.ts';
+import { vehicleMaterial, insectMaterial } from './materials.ts';
+import { colliderNormal } from './oriented-collider.ts';
 import { steerMissile } from './helicopter.js';
 import {
   sweptVehicle,
@@ -51,21 +55,27 @@ export function stepHeavy(projectile, end, world) {
   }
   const profile = HEAVY[projectile.weapon];
   end = Math.min(end, projectile.at + profile.lifetime * 1000);
-  const horizon = Math.max(0, (end - projectile.updated) / 1000);
-  const lower = projectile.p.map(
-    (v, i) =>
-      v +
-      Math.min(0, projectile.v[i]) * horizon -
-      (i === 1 ? MAP.metres(9.81) * horizon * horizon : 0),
-  );
-  const upper = projectile.p.map((v, i) => v + Math.max(0, projectile.v[i]) * horizon);
-  const nearbySolids = world.solids.filter(
-    (box) =>
-      projectile.weapon === 'missile' ||
-      ['x', 'y', 'z'].every(
-        (key, i) => box.max[key] >= lower[i] - 0.001 && box.min[key] <= upper[i] + 0.001,
-      ),
-  );
+  // The boxes the shell can reach before `end`; recomputed after a ricochet, which turns it.
+  const reachable = () => {
+    const horizon = Math.max(0, (end - projectile.updated) / 1000);
+    const lower = projectile.p.map(
+      (v, i) =>
+        v +
+        Math.min(0, projectile.v[i]) * horizon -
+        (i === 1 ? MAP.metres(9.81) * horizon * horizon : 0),
+    );
+    const upper = projectile.p.map((v, i) => v + Math.max(0, projectile.v[i]) * horizon);
+    return world.solids.filter(
+      (box) =>
+        projectile.weapon === 'missile' ||
+        ['x', 'y', 'z'].every(
+          (key, i) => box.max[key] >= lower[i] - 0.001 && box.min[key] <= upper[i] + 0.001,
+        ),
+    );
+  };
+  let nearbySolids = reachable();
+  // Only the shells with a ricochet angle (src/projectiles.ts) look for surface normals.
+  const skids = PROJECTILES[projectile.weapon]?.ricochetMaxAngle > 0;
   let impact = null;
   while (projectile.updated < end && !projectile.done) {
     const dt = Math.min(1 / 120, (end - projectile.updated) / 1000);
@@ -88,10 +98,14 @@ export function stepHeavy(projectile, end, world) {
     const consider = (t, target) => {
       if (t !== null && t >= 0 && t <= 1 && (!hit || t < hit.t)) hit = { t, ...target };
     };
-    for (const solid of nearbySolids) consider(segmentBox(a, b, solid), { solid: true });
+    for (const solid of nearbySolids)
+      consider(segmentBox(a, b, solid), { solid: true, box: skids ? solid : undefined });
     // The props' real triangles (a ray along the step, like any bullet).
-    consider(world.decorRay?.(a, b) ?? null, { solid: true });
-    if (b[1] <= 0) consider(a[1] / Math.max(1e-12, a[1] - b[1]), { solid: true });
+    const prop = skids ? (world.decorHit?.(a, b) ?? null) : null;
+    if (prop) consider(prop.t, { solid: true, normal: prop.normal });
+    else consider(world.decorRay?.(a, b) ?? null, { solid: true });
+    if (b[1] <= 0)
+      consider(a[1] / Math.max(1e-12, a[1] - b[1]), { solid: true, normal: [0, 1, 0] });
     const frames = world.frames(projectile.updated, projectile);
     const crossings = [];
     for (let i = 0; i < frames.length; i++) {
@@ -105,12 +119,14 @@ export function stepHeavy(projectile, end, world) {
       if (projectile.weapon === 'ap') {
         if (t !== null && t >= 0 && t <= 1 && !projectile.pierced?.[i])
           crossings.push({ t, index: i, p: frames[i].p });
-      } else consider(t, { enemy: i });
+      } else consider(t, { enemy: i, centre: skids ? frames[i].p : undefined });
     }
     for (const v of world.vehicles)
       if (v.id !== projectile.vehicle && v.state.hp > 0)
         consider(segmentSphere(a, b, v.state.p, MAP.metres(VEHICLES[v.type].span * 0.3)), {
           vehicle: v.id,
+          kind: v.type,
+          centre: skids ? v.state.p : undefined,
         });
     for (const p of world.players)
       // A fixed gun's own crew stands behind the muzzle, never in its path.
@@ -132,6 +148,15 @@ export function stepHeavy(projectile, end, world) {
           c.p,
         ]);
       });
+    if (hit && skids) {
+      const point = a.map((v, i) => v + (b[i] - v) * hit.t);
+      const result = skid(projectile, hit, a, b, point, world, frames);
+      if (result) {
+        if (result === 'spent') projectile.done = true;
+        else nearbySolids = reachable();
+        continue;
+      }
+    }
     if (hit) {
       const point = a.map((v, i) => v + (b[i] - v) * hit.t);
       projectile.p = point;
@@ -145,6 +170,52 @@ export function stepHeavy(projectile, end, world) {
   )
     projectile.done = true;
   return impact;
+}
+
+// A contact of a shell that may ricochet (src/ricochet.ts). Returns false when it hits as usual,
+// 'spent' when it stops harmlessly after its last bounce, or true when it flew on, turned: the
+// ricochet is noted in `projectile.skids` for the shooter to report (heavy-bounce).
+function skid(projectile, hit, a, b, point, world) {
+  const material = hit.solid
+    ? 'decor'
+    : hit.vehicle
+      ? vehicleMaterial(hit.kind)
+      : hit.enemy !== undefined
+        ? insectMaterial(world.roster[hit.enemy]?.type)
+        : null;
+  const normal =
+    hit.normal ??
+    (hit.box
+      ? colliderNormal(hit.box, point)
+      : hit.centre
+        ? point.map((v, i) => v - hit.centre[i])
+        : null);
+  if (!material || !normal) return false;
+  const direction = b.map((v, i) => v - a[i]);
+  const result = bounce(direction, normal, projectile.weapon, material, projectile.bounces ?? 0);
+  if (!result) return false;
+  if (result.kind === 'spent') {
+    projectile.p = point;
+    return 'spent';
+  }
+  const length = Math.hypot(...normal);
+  const n = normal.map((v) => v / length);
+  if (n.reduce((sum, v, i) => sum + v * direction[i], 0) > 0)
+    for (let i = 0; i < 3; i++) n[i] = -n[i];
+  const speed = Math.hypot(...projectile.v) * result.speedFactor,
+    out = Math.hypot(...result.direction) || 1;
+  projectile.p = point.map((v, i) => v + n[i] * MAP.metres(0.05));
+  projectile.v = result.direction.map((v) => (v / out) * speed);
+  projectile.bounces = (projectile.bounces ?? 0) + 1;
+  (projectile.skids ??= []).push({
+    p: [...projectile.p],
+    v: [...projectile.v],
+    age: projectile.age,
+    updated: projectile.updated,
+    bounces: projectile.bounces,
+    at: point,
+  });
+  return true;
 }
 
 function stepProximity(projectile, end, world) {
