@@ -1,19 +1,15 @@
+// Walking arena (walk-arena.ts) under the purgatory rules: bodies separate,
+// the desk serves the closest soul, stale inputs brake, reports carry motion only.
 import assert from 'node:assert/strict';
-import {
-  createSoul,
-  advanceArena,
-  deskOccupant,
-  bodyMotion,
-  relayBodyReport,
-  SOUL_RADIUS,
-} from '../src/purgatory-physics.ts';
+import { bodyMotion, relayBodyReport } from '../src/walk-arena.ts';
+import { createSoul, advancePurgatory, deskOccupant, SOUL_RADIUS } from '../src/purgatory-queue.ts';
 const make = (id, x = 0, z = 8) => ({
   ...createSoul({ id, entity: 'p' + id, kind: 'player' }, 0, 1000),
   x,
   z,
 });
 let a = { time: 1000, events: [], bodies: [make(1), make(2)] };
-advanceArena(a, 1050);
+advancePurgatory(a, 1050);
 // Overlapping souls separate to their contact distance (2 × movement radius).
 assert.ok(
   Math.hypot(a.bodies[0].x - a.bodies[1].x, a.bodies[0].z - a.bodies[1].z) > 2 * SOUL_RADIUS * 0.99,
@@ -25,11 +21,11 @@ assert.equal(deskOccupant(a), null);
 const b = a.bodies[1];
 b.input = { x: 1, z: 0 };
 b.inputAt = a.time;
-advanceArena(a, 1400);
+advancePurgatory(a, 1400);
 const speed = Math.hypot(b.vx, b.vz);
-advanceArena(a, 1900);
+advancePurgatory(a, 1900);
 assert.ok(Math.hypot(b.vx, b.vz) < speed);
-// Retired melee reports cannot restore a guard, KO or attack.
+// A report only carries motion: extra fields (old fist-fight state) are never copied.
 const m = {
   ...bodyMotion(b),
   koUntil: 999999,
@@ -37,10 +33,10 @@ const m = {
   attack: { start: 1900, hits: [], heavy: true },
 };
 relayBodyReport(a, b, { epoch: 'e', body: m, impacts: [{ kind: 'ko', seq: 1 }] }, 1900);
-assert.equal(b.attack, null);
-assert.equal(b.koUntil, 0);
-assert.equal(b.input.guard, false);
+assert.equal(b.attack, undefined);
+assert.equal(b.koUntil, undefined);
+assert.deepEqual(b.input, { x: 0, z: 0 });
 assert.equal(a.events.length, 0);
 console.log(
-  'PASS: physical separation, desk access, stale-input braking and obsolete combat reports ignored.',
+  'PASS: physical separation, desk access, stale-input braking and extra report fields ignored.',
 );

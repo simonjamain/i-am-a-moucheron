@@ -25,9 +25,6 @@ const profiles = {
   gatling: { duration: 1, level: 0.24 },
   impact: { duration: 0.24, level: 0.35 },
   crash: { duration: 0.8, level: 0.4 },
-  punch: { duration: 0.18, level: 0.24 },
-  block: { duration: 0.19, level: 0.22 },
-  ko: { duration: 0.4, level: 0.3 },
   step: { duration: 0.1, level: 0.11 },
   paper: { duration: 0.28, level: 0.17 },
   fall: { duration: 4, level: 0.22 },
@@ -115,12 +112,11 @@ export function synthesize(kind: SoundKind, sampleRate = 24000): Float32Array<Ar
         v =
           noise * 0.55 * Math.exp(-t * 35) +
           Math.sin(t * (180 - 280 * t) * Math.PI * 2) * 0.4 * Math.exp(-t * 25);
-      else if (kind === 'crash' || kind === 'impact' || kind === 'ko')
+      else if (kind === 'crash' || kind === 'impact')
         v =
           low * 2.3 +
           Math.sin(t * (kind === 'crash' ? 42 : 65) * Math.PI * 2) * Math.exp(-t * 12) * 0.6;
-      else if (kind === 'punch') v = Math.sin(t * (105 - 220 * t) * Math.PI * 2) * 0.6 + low * 0.8;
-      else if (kind === 'block' || kind === 'stamp')
+      else if (kind === 'stamp')
         v =
           Math.sin(t * 340 * Math.PI * 2) * Math.exp(-t * 35) * 0.35 +
           noise * 0.35 * Math.exp(-t * 28) +

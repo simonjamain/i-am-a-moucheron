@@ -29,7 +29,8 @@ for (const file of [
   'game-audio/game-sound',
   'flight',
   'input',
-  'purgatory-physics',
+  'walk-arena',
+  'purgatory-queue',
   'mouse-flight',
 ]) {
   const response = await get('/assets/' + version + '/' + file + '.js');

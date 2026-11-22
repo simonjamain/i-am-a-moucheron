@@ -11,6 +11,10 @@ corps du joueur. Une âme libérée n’est jamais réintroduite par un ancien r
 
 Les PNJ sont les vrais modèles des insectes tués, mis à l'échelle de l'âme.
 
+Code : `src/purgatory-queue.ts` (`PURGATORY_RULES`, `advancePurgatory`) ajoute ces
+règles au moteur de marche commun `src/walk-arena.ts` ; la file respecte toujours
+l’ordre d’arrivée (un joueur ne double pas un insecte arrivé avant lui).
+
 ## File VIP (coupe-file payant)
 
 Une âme de joueur apparaît à l’entrée (`SOUL_ENTRANCE`), devant les deux files. La file

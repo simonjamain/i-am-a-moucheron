@@ -3,7 +3,7 @@
 // from the common fund, then the rope gate lets this soul through to Saint
 // Pierre's second window. The server refuses it when the fund cannot pay.
 import { BedUI, type BedSelf } from './bed-ui.ts';
-import { vipPrice } from './purgatory-physics.ts';
+import { vipPrice } from './purgatory-queue.ts';
 
 const money = (n: number): string => (Math.round(n * 100) / 100).toLocaleString('fr-FR') + ' $';
 

@@ -156,16 +156,15 @@ import {
 } from '/base.js';
 import { GameSound } from '/game-audio/game-sound.js';
 import { swarmAudioGroups } from '/game-audio/swarm.js';
+import { bodyMotion, mergeOwnedArena } from '/walk-arena.js';
 import {
-  advanceArena,
+  advancePurgatory,
   deskOccupant,
-  bodyMotion,
-  mergeOwnedArena,
   nearVipGuard,
   VIP_DESK,
   VIP_GUARD,
   VIP_LANE,
-} from '/purgatory-physics.js';
+} from '/purgatory-queue.js';
 import {
   flightClickAction,
   rotateMouseAim,
@@ -417,8 +416,6 @@ let joined = false,
   observationCamera = null,
   observationRealm = 'office',
   deathPending = false,
-  soulBusy = false,
-  punchAt = 0,
   hp = 100,
   wing = 1,
   engine = 1,
@@ -490,7 +487,7 @@ function wearAppearance(model, pilotId) {
 }
 function baseIntent() {
   const i = soulIntent();
-  return { x: i.x, z: -i.z, guard: false };
+  return { x: i.x, z: -i.z };
 }
 function selfBase() {
   return baseArena?.bodies.find((b) => b.entity === id && !b.gone);
@@ -536,9 +533,7 @@ async function chooseVehicle(vehicle, seat = vehicle?.entrySeat || 'pilot') {
 }
 let soulArena = null,
   soulArenaRevision = -1,
-  soulEventSeen = 0,
-  soulShake = 0;
-const soulEffects = [];
+  soulEventSeen = 0;
 // Shared ground camera: yaw is world-space in both scenes; baseIntent maps back to deck coordinates.
 const groundView = {
   yaw: 0,
@@ -566,7 +561,7 @@ function groundActive() {
   );
 }
 function soulIntent() {
-  if (!groundActive() || spectating) return { x: 0, z: 0, guard: false };
+  if (!groundActive() || spectating) return { x: 0, z: 0 };
   let x =
       Number(!!(keys.ArrowRight || keys.KeyD)) -
       Number(!!(keys.ArrowLeft || keys.KeyA || keys.KeyQ)) -
@@ -581,7 +576,6 @@ function soulIntent() {
   return {
     x: (x * c + z * sn) / n,
     z: (z * c - x * sn) / n,
-    guard: false,
   };
 }
 canvas.style.touchAction = 'none';
@@ -755,7 +749,6 @@ function remoteBodies(a, scene) {
       for (const k of ['x', 'z', 'vx', 'vz', 'face', 'y', 'vy'])
         if (Number.isFinite(m[k])) b[k] = m[k];
       b.input = m.input || b.input;
-      b.attack = m.attack || null;
       b.parachute = !!m.parachute;
       b.grounded = m.grounded !== false;
     }
@@ -2328,12 +2321,12 @@ function redrawInk() {
     }
   }
   ink.stroke();
-  $('signSubmit').disabled = !inkReady() || soulBusy || boardingBusy;
+  $('signSubmit').disabled = !inkReady() || boardingBusy;
   $('inkState').textContent = inkReady() ? 'Relâchez pour signer' : paperInkHint();
 }
 sig.onpointerdown = (e) => {
   e.preventDefault();
-  if (boardingBusy || soulBusy || boardingSelectionBusy || signaturePointer !== null) return;
+  if (boardingBusy || boardingSelectionBusy || signaturePointer !== null) return;
   signaturePointer = e.pointerId;
   try {
     sig.setPointerCapture(e.pointerId);
@@ -2426,8 +2419,8 @@ function renderPaper() {
     index = 0;
   } else if (respawnAt) {
     const body = soulArena?.bodies.find((b) => b.entity === id && !b.gone);
-    const owner = soulArena && deskOccupant(soulArena, Date.now() + clockOffset);
-    eligible = !!body && owner?.id === body.id && body.koUntil <= Date.now() + clockOffset;
+    const owner = soulArena && deskOccupant(soulArena);
+    eligible = !!body && owner?.id === body.id;
     if (!eligible) paperSuppressed = false;
     context = isSuper() ? 'super' : 'purgatory';
     index = body?.paper || 0;
@@ -2545,7 +2538,7 @@ function renderPaper() {
           : 'Retour à la base Alpha';
   $('paperProgress').textContent = `${index + 1} sur ${total}`;
 
-  $('signSubmit').disabled = !inkReady() || soulBusy || boardingBusy;
+  $('signSubmit').disabled = !inkReady() || boardingBusy;
   $('signSubmit').textContent = boardingBusy
     ? 'Signature apposée…'
     : !['purgatory', 'super'].includes(context) && index === 1
@@ -2557,7 +2550,7 @@ function renderPaper() {
           : 'Déposer le document signé →';
 }
 async function submitPaper() {
-  if (boardingBusy || soulBusy || !inkReady()) return;
+  if (boardingBusy || !inkReady()) return;
   const signature = true;
   paperSubmission = {
     context: activeTransfer
@@ -2731,7 +2724,7 @@ function physicalPurgatory(dt, now) {
   self.input = soulIntent();
   self.inputAt = soulArena.time;
   remoteBodies(soulArena, isSuper() ? 'super' : 'soul');
-  advanceArena(soulArena, soulArena.time + dt * 1000, id);
+  advancePurgatory(soulArena, soulArena.time + dt * 1000, id);
 
   soulBody = { x: self.x, z: self.z, vx: self.vx, vz: self.vz, face: self.face };
   for (const event of snap.arena?.events || [])
@@ -2765,14 +2758,14 @@ function physicalPurgatory(dt, now) {
       purgScene.add(g);
       soulMeshes.set(b.id, g);
     }
-    const ko = b.koUntil > soulArena.time;
     g.position.lerp(new T.Vector3(b.x, 0, b.z), 1 - Math.exp(-20 * dt));
     if (b.kind === 'player') {
-      const speed = poseWalker(g, b, dt, { falling: ko });
-      if (!ko) walkerSteps(b, speed, { x: b.x, y: 0.1, z: b.z }, 'step:' + b.id, 6);
+      const speed = poseWalker(g, b, dt);
+      walkerSteps(b, speed, { x: b.x, y: 0.1, z: b.z }, 'step:' + b.id, 6);
     } else {
-      g.rotation.x = ko ? 1.4 : Math.sin(now * 0.009 + b.id) * 0.06;
-      g.position.y = ko ? -0.2 : Math.sin(now * 0.008 + b.id) * 0.08;
+      // Insects hover in the queue.
+      g.rotation.x = Math.sin(now * 0.009 + b.id) * 0.06;
+      g.position.y = Math.sin(now * 0.008 + b.id) * 0.08;
     }
   }
   for (const b of soulArena.bodies)
@@ -2795,27 +2788,6 @@ function physicalPurgatory(dt, now) {
       });
       soulMeshes.delete(k);
     }
-  for (let i = soulEffects.length - 1; i >= 0; i--) {
-    const e = soulEffects[i],
-      age = (now - e.born) / 1000;
-    e.group.position.y += dt * 1.4;
-    e.group.scale.setScalar(1 + age * 0.4);
-    for (const m of e.group.children)
-      if (m.userData.v) {
-        m.position.addScaledVector(m.userData.v, dt);
-        m.userData.v.y -= dt * 5;
-      }
-    if (age > 0.55) {
-      purgScene.remove(e.group);
-      e.group.traverse((o) => {
-        if (o.userData.meshyShared) return;
-        o.geometry?.dispose();
-        o.material?.map?.dispose();
-      });
-      soulEffects.splice(i, 1);
-    }
-  }
-  soulShake = Math.max(0, soulShake - dt);
   const rendered = soulMeshes.get(self.id)?.position || new T.Vector3(self.x, 0, self.z);
   groundCamera(purgCamera, rendered, dt, true);
   deskZone.material.color.set(
@@ -6347,7 +6319,6 @@ $('flightSettingsOpen').onclick = () => {
     purchaseUI.opened ||
     vipUI.opened ||
     boardingBusy ||
-    soulBusy ||
     boardingSelectionBusy
   )
     return;
@@ -6472,7 +6443,7 @@ const bankUI = new BankUI({
 function toggleBank() {
   if (spectating) return;
   if (flightTuningUI.opened || bedUI.opened || purchaseUI.opened || vipUI.opened) return;
-  if (!joined || boardingBusy || soulBusy || boardingSelectionBusy) return;
+  if (!joined || boardingBusy || boardingSelectionBusy) return;
   if (bankUI.opened) bankUI.close();
   else bankUI.open();
 }
@@ -6517,7 +6488,7 @@ function vipSelf() {
 }
 function openVipPass() {
   const body = vipSelf();
-  if (!body || body.vip || !nearVipGuard(body) || vipUI.opened || soulBusy) return false;
+  if (!body || body.vip || !nearVipGuard(body) || vipUI.opened) return false;
   vipUI.open(
     { slot: -1 },
     snap.pilots.find((p) => p.id === id),

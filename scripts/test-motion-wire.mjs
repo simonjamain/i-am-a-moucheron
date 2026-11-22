@@ -50,17 +50,9 @@ const foot = () => ({
       vx: r(),
       vz: r(),
       face: r(6),
-      balance: 100,
-      koUntil: 0,
-      hitAt: 1794205811325,
-      hitX: 0,
-      hitZ: 0,
-      nextAttack: 0,
-      nextDash: 1794205812000.5,
-      served: 0,
+      served: 1794205811325,
       queueTicket: 4,
-      input: { x: 0, z: 1, guard: false },
-      attack: { kind: 'shove', at: 12.5 },
+      input: { x: 0, z: 1 },
       gone: false,
       y: null,
       vy: 0,
@@ -121,7 +113,7 @@ for (const [name, make] of Object.entries({ foot, fly, soul }))
   }
 // Exact values where they matter: IDs, timestamps, integer counters, strings.
 const exact = decodeMotionState(encodeMotionState(foot()));
-assert.ok(Number.isInteger(exact.ground.body.hitAt));
+assert.ok(Number.isInteger(exact.ground.body.served));
 const fl = fly();
 const flown = decodeMotionState(encodeMotionState(fl));
 assert.equal(flown.vehicle, fl.vehicle, 'UUIDs are exact');

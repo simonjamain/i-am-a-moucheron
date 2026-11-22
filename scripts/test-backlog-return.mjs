@@ -12,7 +12,7 @@ import { reserveAlerts, missileStatus, ArrivalSignals } from '../src/reserve-fee
 import { deliveryLanding, DELIVERY_SPEED } from '../src/delivery.ts';
 import { wavePlan } from '../src/waves.js';
 import { createOrdnance } from '../src/ordnance.js';
-import { createSoul, inDeskZone, deskOccupant, advanceArena } from '../src/purgatory-physics.ts';
+import { createSoul, inDeskZone, deskOccupant, advancePurgatory } from '../src/purgatory-queue.ts';
 const floor = { min: { x: -4, y: -0.1, z: -3 }, max: { x: 4, y: 0, z: 3 } };
 for (const occupied of [false, true]) {
   const s = { ...vehiclePad('helicopter'), p: [0, 1, 0], q: [0, 0, 0, 1], landed: false };

@@ -30,6 +30,15 @@ voir [véhicules et armes](vehicles-bank.md).
 
 # Cooperative client-owned character physics
 
+**Modules.** `src/walk-arena.ts` is the walking engine shared by every world: bodies
+(`WalkBody`), fixed-step movement, collisions, bounds, obstacles and the network relay
+(`bodyMotion`, `mergeOwnedArena`, `relayBodyReport`). A world plugs its behaviour in
+through `WalkRules`: `OFFICE_RULES` (`src/base.ts`: falls, no NPC) and
+`PURGATORY_RULES` (`src/purgatory-queue.ts`: insects' queue, Saint Pierre's desk,
+VIP lane). A relayed body carries motion only (position, speed, facing, input, queue
+state); the old fist-fight state (KO, guard, attack, dash) is gone, and the motion
+wire is at version 5.
+
 Each player's browser owns its body at the base and in purgatory, as it already
 owns its aircraft. Movement and collision response are
 computed locally, without waiting for an HTTP response. Accepted snapshots merge
@@ -39,7 +48,7 @@ There is no server replay or reconciliation of local movement.
 
 The server stores and relays reported player body states. It never advances the
 base arena. When no human owns purgatory NPCs, it advances their service using
-advanceArena; this exception does not integrate player-owned movement. Form submissions carry the latest body report; the server uses
+`advancePurgatory`; this exception does not integrate player-owned movement. Form submissions carry the latest body report; the server uses
 that trusted position for proximity checks, validates signature acknowledgement and document order,
 and serializes signatures/boarding as before. This deliberately trusts players
 rather than attempting to prevent movement cheating.

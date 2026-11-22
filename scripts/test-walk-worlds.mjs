@@ -2,7 +2,9 @@
 // purgatory (scale.ts WALK_WORLDS): same height, same camera framing relative to
 // that height, same top speed in metres, so the same gait clip plays.
 import assert from 'node:assert/strict';
-import { advanceArena, createSoul } from '../src/purgatory-physics.ts';
+import { advanceArena } from '../src/walk-arena.ts';
+import { createSoul, PURGATORY_RULES } from '../src/purgatory-queue.ts';
+import { OFFICE_RULES } from '../src/base.ts';
 import {
   ACTOR_UNIT,
   HUMAN_SCALE,
@@ -27,21 +29,20 @@ for (const world of [office, purgatory])
 // The office law is unchanged.
 near(walkAcceleration(office), (MAP.metres(REFERENCE.walk) / ACTOR_UNIT) * 7.45, 1e-9, 'office');
 
-// Same top speed in metres: walk 4 s straight ahead in each world.
-function topSpeed(world, acceleration) {
+// Same top speed in metres: walk 4 s straight ahead under each world's own rules.
+function topSpeed(world, rules) {
   const b = createSoul({ id: 1, entity: 'p', kind: 'player' }, 0, 0);
   Object.assign(b, { x: 40, z: 40 }); // open floor, far from the counter
   const a = { bodies: [b], time: 0, events: [], eventSeq: 0 };
-  if (acceleration) a.acceleration = acceleration;
   for (let t = 0; t < 4000; t += 50) {
-    b.input = { x: 0, z: 1, guard: false };
+    b.input = { x: 0, z: 1 };
     b.inputAt = a.time;
-    advanceArena(a, a.time + 50, 'p');
+    advanceArena(a, a.time + 50, rules, 'p');
   }
   return walkSpeed(world, b);
 }
-const officeSpeed = topSpeed(office, walkAcceleration(office)),
-  soulSpeed = topSpeed(purgatory); // the purgatory arena sets no acceleration
+const officeSpeed = topSpeed(office, OFFICE_RULES),
+  soulSpeed = topSpeed(purgatory, PURGATORY_RULES);
 near(soulSpeed, officeSpeed, 1e-6, 'same top speed (m/s)');
 assert.ok(soulSpeed > GAIT.run, `both run (${soulSpeed.toFixed(2)} m/s)`);
 console.log(

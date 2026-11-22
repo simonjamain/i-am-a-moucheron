@@ -1,8 +1,8 @@
 import type { Vec3, XYZ } from './types.ts';
 import { ACTOR_UNIT, WALK_WORLDS, walkAcceleration } from './scale.ts';
 import { OFFICE_LAYOUT } from './layout.ts';
-import { advanceArena, createSoul } from './purgatory-physics.ts';
-import type { Arena, SoulBody, SoulEntity } from './purgatory-physics.ts';
+import { advanceArena, createWalker } from './walk-arena.ts';
+import type { Arena, WalkBody, WalkEntity, WalkRules } from './walk-arena.ts';
 
 /** Walk spawn stored in a pilot's state (where the pilot left its aircraft). */
 export interface WalkSpawn {
@@ -32,7 +32,7 @@ export interface BayPosition {
   entryX: number;
   entryZ: number;
 }
-export interface BaseBody extends SoulBody {
+export interface BaseBody extends WalkBody {
   y: number;
   vy: number;
   grounded: boolean;
@@ -54,31 +54,33 @@ export function baseWorld(p: { x: number; y?: number; z: number }): XYZ {
 export const BASE_WALK_RADIUS = 0.16;
 export function baseBody(p: BasePilot, now: number): BaseBody {
   const bay = aircraftBay(p.bay);
-  return {
-    ...createSoul({ id: p.bay + 1, entity: p.id, kind: 'player', name: p.name }, 0, now),
+  const at = {
     x: p.walkSpawn?.x ?? bay.entryX,
     z: p.walkSpawn?.z ?? Math.max(0.5, bay.z - 2.4),
+  };
+  return {
+    ...createWalker({ id: p.bay + 1, entity: p.id, kind: 'player', name: p.name }, at, now, {
+      r: BASE_WALK_RADIUS,
+    }),
     y: p.walkSpawn?.y ?? OFFICE_LAYOUT.base.deckY,
     vy: p.walkSpawn?.vy ?? 0,
     grounded: !p.walkSpawn?.airborne,
     vx: (p.walkSpawn?.vx ?? 0) / ACTOR_UNIT,
     vz: -(p.walkSpawn?.vz ?? 0) / ACTOR_UNIT,
     parachute: !!p.walkSpawn?.parachute,
-    r: BASE_WALK_RADIUS,
-    face: Math.PI,
     paper: p.board_paper,
   };
 }
 // Footsteps only while walking on a support: never in free fall or under the
 // parachute (issue #135), whatever the horizontal speed.
 export function footstepsAudible(
-  body: SoulBody | null | undefined,
+  body: WalkBody | null | undefined,
   speed: number,
   minimum: number = 0.6,
 ): boolean {
   return !!body && body.grounded !== false && !body.parachute && speed > minimum;
 }
-export function baseAccess(body: SoulBody | null | undefined, bay: BayPosition): boolean {
+export function baseAccess(body: WalkBody | null | undefined, bay: BayPosition): boolean {
   return (
     !!body &&
     !body.gone &&
@@ -98,11 +100,8 @@ export function reconcileBase(a: Partial<Arena>, pilots: BasePilot[], now: numbe
     minZ: (OFFICE_LAYOUT.base.originZ - OFFICE_LAYOUT.bounds.z) / ACTOR_UNIT + 1,
     maxZ: (OFFICE_LAYOUT.base.originZ + OFFICE_LAYOUT.bounds.z) / ACTOR_UNIT - 1,
   };
-  a.verticalUnit = ACTOR_UNIT;
-  // Same walking law as in the purgatory (scale.ts, walkAcceleration).
-  a.acceleration = walkAcceleration(WALK_WORLDS.office);
   const walkers = pilots.filter((p) => p.life === 'alive' && p.mode === 'foot'),
-    ids = new Set<SoulEntity>(walkers.map((p) => p.id));
+    ids = new Set<WalkEntity>(walkers.map((p) => p.id));
   a.bodies = a.bodies.filter((b) => ids.has(b.entity));
   for (const p of walkers) {
     let b = a.bodies.find((b) => b.entity === p.id);
@@ -129,10 +128,14 @@ export function reconcileBase(a: Partial<Arena>, pilots: BasePilot[], now: numbe
   });
   return a as Arena;
 }
-export function advanceBase(a: Arena, now: number, owner: SoulEntity = null): Arena {
-  advanceArena(a, now, owner);
-  a.desk = null;
-  return a;
+/** The office deck: falls in scene height units, no NPC, no queue. */
+export const OFFICE_RULES: WalkRules = Object.freeze({
+  // Same walking law as in the purgatory (scale.ts, walkAcceleration).
+  acceleration: walkAcceleration(WALK_WORLDS.office),
+  verticalUnit: ACTOR_UNIT,
+});
+export function advanceBase(a: Arena, now: number, owner: WalkEntity = null): Arena {
+  return advanceArena(a, now, OFFICE_RULES, owner);
 }
 
 export function aircraftPose(

@@ -54,7 +54,6 @@ const QUAT_SCALE = 1.5 / 32767;
 const INPUT: Schema = [
   ['x', 'real'],
   ['z', 'real'],
-  ['guard', 'bool'],
 ];
 const BODY: Schema = [
   ['id', 'num'],
@@ -63,17 +62,9 @@ const BODY: Schema = [
   ['vx', 'real'],
   ['vz', 'real'],
   ['face', 'real'],
-  ['balance', 'real'],
-  ['koUntil', 'num'],
-  ['hitAt', 'num'],
-  ['hitX', 'real'],
-  ['hitZ', 'real'],
-  ['nextAttack', 'num'],
-  ['nextDash', 'num'],
   ['served', 'num'],
   ['queueTicket', 'num'],
   ['input', INPUT],
-  ['attack', 'json'],
   ['gone', 'bool'],
   ['y', 'real'],
   ['vy', 'real'],
@@ -415,7 +406,8 @@ export function decodeMotionState(bytes: Uint8Array): MotionObject {
 // the peer ID, its motion sequence, the age of the state in the batch (ms,
 // time since the server accepted it), the capture time on the sender's clock
 // (flag + float64) and the encoded state.
-export const MOTION_BATCH_VERSION = 4;
+// Version 5: ground bodies no longer carry the removed fist-fight state.
+export const MOTION_BATCH_VERSION = 5;
 export const MOTION_BATCH_BYTES = 1100;
 const MAGIC = 0x4d;
 export function encodeMotionBatch(

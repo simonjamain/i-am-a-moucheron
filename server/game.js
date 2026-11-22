@@ -42,16 +42,16 @@ import {
 } from '../src/fleet.ts';
 import { AIRDROP_KINDS, airdropCommand, airdropSurface, headingOf } from '../src/airdrop.ts';
 import { baseWorld, baseBody, reconcileBase } from '../src/base.ts';
+import { relayBodyReport } from '../src/walk-arena.ts';
 import {
   createSoul,
-  advanceArena,
-  relayBodyReport,
+  advancePurgatory,
   deskOccupant,
   inVipDesk,
   SOUL_ENTRANCE,
   VIP_LANE,
   vipPrice,
-} from '../src/purgatory-physics.ts';
+} from '../src/purgatory-queue.ts';
 import {
   wavePlan,
   ENEMY_TYPES,
@@ -227,8 +227,8 @@ function roomState(code, now, layout = DEFAULT_LAYOUT_ID) {
     soulSeq: 0,
     effectSeq: 0,
     base: { epoch: uid() },
-    purgatory: { epoch: uid(), respectQueue: true },
-    super: { epoch: uid(), respectQueue: true },
+    purgatory: { epoch: uid() },
+    super: { epoch: uid() },
   };
 }
 
@@ -583,8 +583,6 @@ export class Game {
       b.health =
         s.kind === 'enemy' ? b.maxHealth - s.damage : (r.pilots.get(s.entity)?.health ?? 100);
       b.enemyType = s.enemy_type;
-      b.koUntil = 0;
-      b.attack = null;
     }
     // The VIP lane's ropes stand only in the ordinary purgatory.
     if (realm === 'purgatory') a.obstacles = VIP_LANE;
@@ -593,12 +591,12 @@ export class Game {
         .filter((s) => s.kind === 'player')
         .map((s) => s.entity)
         .sort()[0] || null;
-    if (!a.host) advanceArena(a, now);
+    if (!a.host) advancePurgatory(a, now);
     else a.time = now;
     const body = p && a.bodies.find((b) => b.entity === p.id && b.kind === 'player');
     if (body) relayBodyReport(a, body, report, now);
     for (const b of a.bodies) if (b.gone) this.releaseSoul(r, r.souls.get(b.id));
-    a.desk = deskOccupant(a, now)?.id ?? null;
+    a.desk = deskOccupant(a)?.id ?? null;
     a.events = a.events.slice(-128);
     a.revision = (a.revision || 0) + 1;
     return body;
@@ -1077,7 +1075,6 @@ export class Game {
         souls[soul.realm].push({
           ...soul,
           hp: body.health,
-          stunned_until: body.koUntil,
           body,
         });
     }
@@ -2694,7 +2691,7 @@ export class Game {
       s = body && r.souls.get(body.id),
       forms = realm === 'super' ? 5 : 3;
     requireGame(
-      body && (deskOccupant(a, this.now())?.id === body.id || (s?.vip && inVipDesk(body))),
+      body && (deskOccupant(a)?.id === body.id || (s?.vip && inVipDesk(body))),
       'Placez votre corps dans la zone du guichet.',
     );
     requireGame(
