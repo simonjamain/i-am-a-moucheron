@@ -184,9 +184,9 @@ export class TruckRig implements DebugRig {
   /** Vertical speed at the previous step. */
   fallSpeed = 0;
 
-  constructor(RAPIER: Rapier, params: TruckParams = TRUCK_PHYSICS) {
+  constructor(RAPIER: Rapier, params: TruckParams = TRUCK_PHYSICS, physics?: PhysicsWorld) {
     this.params = params;
-    this.physics = new PhysicsWorld(RAPIER);
+    this.physics = physics ?? new PhysicsWorld(RAPIER);
     const world = this.physics.world;
     const box = (m: number, width: number, height: number, length: number) => ({
       x: (m * (height * height + length * length)) / 12,
@@ -293,6 +293,11 @@ export class TruckRig implements DebugRig {
   }
 
   // Place both bodies from the game's state when it is not the one this rig wrote.
+  /** The rigid bodies of this rig (the parked-vehicle host puts them to sleep). */
+  get bodies(): RigidBody[] {
+    return [this.tractor, this.trailer];
+  }
+
   /** Debug view (physics-debug.ts): the tractor and the trailer with their wheels' springs. */
   debugDraw(sink: DebugSink): void {
     drawColliders(this.physics.world, [this.tractor, this.trailer], sink);

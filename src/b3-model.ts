@@ -2,6 +2,7 @@ import { B3_DATA } from './meshy-b3-data.js';
 import { buildMeshyRig, gunMount } from './meshy-rig.ts';
 import type * as THREE from 'three';
 import type { Three } from './types.ts';
+import { rigWheels } from './aircraft-wheels.ts';
 
 // Remodelled B3: two propellers, detachable-looking wings for damage, and the
 // three gunner turrets in seat order (dorsal, tail, ventral). The tail and
@@ -19,6 +20,7 @@ export function makeB3(T: Three, scene: THREE.Object3D): THREE.Group {
     prop: props[0],
     wing: nodes.wing,
   };
+  rigWheels(model, nodes, 'medbomber');
   scene.add(model);
   return model;
 }

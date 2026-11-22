@@ -1,5 +1,6 @@
 import { hitUserData } from './insect-hits.ts';
 import { buildMeshyRig, gunMount } from './meshy-rig.ts';
+import { rigWheels } from './aircraft-wheels.ts';
 import { MODEL_DATA as SPITFIRE } from './meshy-spitfire-data.js';
 import { MODEL_DATA as TANK } from './meshy-tank-data.js';
 import { MODEL_DATA as FLAKTRUCK } from './meshy-flaktruck-data.js';
@@ -84,6 +85,7 @@ export function createGraphics(T, scene) {
       vehicleType: 'spitfire',
       preserveTexture: true,
     };
+    rigWheels(g, nodes, 'spitfire');
     scene.add(g);
     return g;
   }
@@ -112,6 +114,7 @@ export function createGraphics(T, scene) {
       vehicleType: 'interceptor',
       preserveTexture: true,
     };
+    rigWheels(g, nodes, 'interceptor');
     scene.add(g);
     return g;
   }

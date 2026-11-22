@@ -1,4 +1,4 @@
-// The server parks the aircraft a pilot leaves (src/plane-host.ts through Game): brakes on,
+// The server parks the aircraft a pilot leaves (src/parked-host.ts through Game): brakes on,
 // physics on the decor, asleep when at rest; a pilot sitting down takes it back.
 import assert from 'node:assert/strict';
 import { Game } from '../server/game.js';
@@ -43,13 +43,13 @@ assert.equal(biplane.state.gas, 0, 'engine off');
 
 // The engine loads on first use: step the room until the physics runs and the aircraft sleeps.
 let host = null;
-for (let i = 0; i < 400 && !(host = room.planeHost)?.has?.(biplane.id); i++) {
+for (let i = 0; i < 400 && !(host = room.parkedHost)?.has?.(biplane.id); i++) {
   tick();
   await new Promise((r) => setTimeout(r, 5));
 }
-assert.ok(room.planeHost?.has(biplane.id), 'the room has its plane world');
+assert.ok(room.parkedHost?.has(biplane.id), 'the room has its plane world');
 for (let i = 0; i < 400; i++) tick();
-const body = room.planeHost.body(biplane.id);
+const body = room.parkedHost.body(biplane.id);
 assert.ok(body.isSleeping(), 'at rest, the engine put it to sleep');
 assert.ok(biplane.state.hp > 0, 'not damaged');
 assert.ok(
@@ -65,6 +65,39 @@ for (const form of [1, 2])
   call('vehicle-sign', { vehicle: biplane.id, seat: 'pilot', signature: true, form, ground: g2 });
 assert.equal(biplane.seats.get('pilot'), player.id);
 tick();
-assert.ok(!biplane.hosted && !room.planeHost.has(biplane.id), 'taken back by a pilot');
-game.rooms.forEach((r) => r.planeHost?.dispose());
+assert.ok(!biplane.hosted && !room.parkedHost.has(biplane.id), 'taken back by a pilot');
+
+// A ground vehicle (a tank here) is parked the same way: the server simulates it, puts it to
+// sleep once it is at rest, and a shot fired from its gun kicks it awake.
+biplane.state = { ...biplane.state, v: [0, 0, 0], landed: true };
+call('vehicle-exit', { state: { ...biplane.state } });
+const tank = game.createVehicle(room, 'tank', 'purchase');
+const tankEntry = vehicleEntry(tank, 'pilot');
+const tankGround = () => {
+  const body = game.base(room, room.pilots.get(player.id));
+  body.x = (tankEntry.x - OFFICE_LAYOUT.base.originX) / ACTOR_UNIT;
+  body.z = (OFFICE_LAYOUT.base.originZ - tankEntry.z) / ACTOR_UNIT;
+  body.y = tankEntry.y;
+  return { epoch: room.base.epoch, body: { ...body } };
+};
+const tg = tankGround();
+call('vehicle-select', { vehicle: tank.id, seat: 'pilot', ground: tg });
+for (const form of [1, 2])
+  call('vehicle-sign', { vehicle: tank.id, seat: 'pilot', signature: true, form, ground: tg });
+assert.equal(tank.seats.get('pilot'), player.id);
+tank.state = { ...tank.state, v: [0, 0, 0], landed: true };
+const tankRest = structuredClone(tank.state);
+call('vehicle-exit', { state: { ...tank.state } });
+assert.ok(tank.hosted, 'the tank is parked by the server');
+for (let i = 0; i < 700; i++) tick();
+assert.ok(room.parkedHost.has(tank.id), 'in the room world');
+assert.ok(room.parkedHost.asleep(tank.id), 'asleep at rest');
+assert.ok(tank.state.hp > 0, 'not damaged');
+assert.ok(
+  Math.hypot(tank.state.p[0] - tankRest.p[0], tank.state.p[2] - tankRest.p[2]) < MAP.metres(1),
+  'the tank stayed where it was left',
+);
+room.parkedHost.kick(tank.id, [0, 0, -1]);
+assert.ok(!room.parkedHost.asleep(tank.id), 'a gun shot wakes it');
+game.rooms.forEach((r) => r.parkedHost?.dispose());
 console.log('test-plane-server ok');

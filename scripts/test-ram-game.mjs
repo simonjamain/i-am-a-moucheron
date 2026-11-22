@@ -45,9 +45,9 @@ extra.live = () => {
 };
 extra.sync(motionRoom, flightPilot, { mode: 'flight', state: flightVehicle.state });
 extra.live = originalLive;
-// Not a biplan: the server simulates the parked biplans itself (src/plane-host.ts) and
+// Not a fixed-wing aircraft: the server simulates the parked ones itself (src/parked-host.ts) and
 // ignores the host client's reports for them (checked below).
-const emptyVehicle = extra.createVehicle(motionRoom, 'lightfighter', 'purchase');
+const emptyVehicle = extra.createVehicle(motionRoom, 'helicopter', 'purchase');
 const elected = [...motionRoom.pilots.values()].sort((x, y) => x.id.localeCompare(y.id))[0];
 const nonElected = [...motionRoom.pilots.values()].find((p) => p.id !== elected.id);
 const vacantState = { ...emptyVehicle.state, p: [0.25, 0.8, 0.2] };
@@ -74,7 +74,7 @@ extra.sync(motionRoom, elected, {
   state: elected.state,
   vacant: [{ id: parkedBiplan.id, state: { ...parkedBiplan.state, p: [0.25, 0.8, 0.2] } }],
 });
-assert.deepEqual(parkedBiplan.state.p, before, 'the server alone moves a parked biplan');
+assert.deepEqual(parkedBiplan.state.p, before, 'the server alone moves a parked aircraft');
 assert.equal(snapshot50.souls.length, 0);
 assert.equal(snapshot50.superSouls.length, 0);
 assert.equal(snapshot50.leaked, 0);

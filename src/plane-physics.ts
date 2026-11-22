@@ -1,6 +1,7 @@
 import type { RigidBody } from '@dimforge/rapier3d-compat';
 import { ACTOR_UNIT, MAP } from './scale.ts';
-import type { VehicleProfile } from './fleet.ts';
+import { VEHICLES, type VehicleProfile } from './fleet.ts';
+import { AIRCRAFT_GEOMETRY } from './aircraft-geometry.ts';
 import {
   DEBUG_COLORS,
   arrow,
@@ -156,83 +157,107 @@ interface Gear {
   share: number;
   grip: number;
 }
-// Biplane geometry measured on the model (src/meshy-biplane-data.js, model units: x to the
-// right, y up, the nose towards -z) and converted to reference metres. The wheels' hubs
-// are those of the model; its lowest point (wheel bottoms) is VEHICLES.fighter.gear below
-// the model origin, the tail skid is the model's lowest rear point.
 /** Reference metres per model unit: one model unit is ACTOR_UNIT world metres. */
 export const MODEL_TO_REF = ACTOR_UNIT / MAP.metres(1);
 const M = MODEL_TO_REF;
-const WHEEL_X = 0.775,
-  WHEEL_Z = -1.546,
-  GROUND_Y = -1.05, // bottom of the wheels
-  TAIL_Z = 2.0,
-  TAIL_Y = -0.03; // lowest point of the rudder: the model has no tail wheel, it stands here
-/** Static compression of the main springs (reference metres); `GEAR_SAG` is what a
- * parked aircraft shows, the wheels then ride this much higher. */
-export const GEAR_SAG = 0.14;
-const MAIN_REST = 1.2;
-const TAIL_REST = 0.6; // the tail wheel's travel is half the mains'
-const TAIL_SAG = 0.07;
-/** The gear springs (exported for the checks against the model and the debug view). */
-export const GEARS: readonly Gear[] = [
-  {
-    x: -WHEEL_X * M,
-    y: GROUND_Y * M + MAIN_REST,
-    z: WHEEL_Z * M,
-    rest: MAIN_REST,
-    sag: GEAR_SAG,
-    share: 0.4,
-    grip: 1,
-  },
-  {
-    x: WHEEL_X * M,
-    y: GROUND_Y * M + MAIN_REST,
-    z: WHEEL_Z * M,
-    rest: MAIN_REST,
-    sag: GEAR_SAG,
-    share: 0.4,
-    grip: 1,
-  },
-  {
-    x: 0,
-    y: TAIL_Y * M + TAIL_REST,
-    z: TAIL_Z * M,
-    rest: TAIL_REST,
-    sag: TAIL_SAG,
-    share: 0.2,
-    grip: 0.15,
-  },
-];
-// Centre of mass (model units): behind the main wheels (the tail carries about a fifth of
-// the weight, as on a tail-dragger) and a little above the middle of the fuselage.
-const COM = [0, 0.15 * M, -0.9 * M] as const;
 
-// Body colliders: boxes around the model's parts (centre and half extents in model units,
-// the same frame as the gear). They only matter when the airframe hits something: the
-// gear carries the aircraft on the ground.
-const PARTS = [
-  { name: 'fuselage', half: [0.4, 0.525, 1.285], at: [0, 0.185, -0.685] },
-  // The rear fuselage tapers up: its lowest edge stays above the tail skid (the gear's
-  // lowest rear point), or it would carry the tail instead of the tail wheel.
-  { name: 'rearFuselage', half: [0.14, 0.235, 0.6], at: [0, 0.045, 0.6] },
-  { name: 'fin', half: [0.05, 0.45, 0.3], at: [0, 0.5, 1.9] },
-  { name: 'upperWing', half: [2.8, 0.09, 0.455], at: [0, 0.74, -0.655] },
-  { name: 'lowerWing', half: [2.68, 0.11, 0.4], at: [0, -0.13, -0.88] },
-  { name: 'tail', half: [0.92, 0.045, 0.31], at: [0, 0.215, 1.67] },
-] as const;
+// The aircraft, from their models (src/aircraft-geometry.ts, measured on the meshes by
+// scripts/measure-aircraft.mjs; model units, x to the right, y up, the nose towards -z).
+// The main wheels stand on the model's wheel hubs, the tail rests where the model's tail
+// does, the centre of mass is behind the wheels (a fifth of the weight on the tail).
+export interface PlaneSpec {
+  type: string;
+  params: PlaneParams;
+  gears: readonly Gear[];
+  /** Colliders of the airframe: centre and half extents in reference metres. */
+  parts: readonly { name: string; half: number[]; at: number[] }[];
+  /** Centre of mass, reference metres. */
+  com: readonly number[];
+  /** Span, length and height of the airframe (reference metres): inertia. */
+  size: { span: number; length: number; height: number };
+  /** Static compression of the main springs (reference metres): a parked aircraft's
+   * wheels ride this much higher than when the springs are extended. */
+  sag: number;
+  /** Main wheel radius (model units), to spin them. */
+  wheelRadius: number;
+}
+// Fighter: the values the pilot flew and approved; the others derive theirs from their top
+// speed (stall at a third of it) with the same lift, drag and thrust law.
+const FIGHTER_GEAR = { rest: 1.2, sag: 0.14 };
+const TYPES = ['fighter', 'bomber', 'lightfighter', 'medbomber', 'interceptor', 'spitfire'];
+/** The aircraft flown by the physics engine (the helicopters keep their own step). */
+export const PLANE_TYPES: ReadonlySet<string> = new Set(TYPES);
+const specs = new Map<string, PlaneSpec>();
+export function planeSpec(type: string): PlaneSpec {
+  let spec = specs.get(type);
+  if (spec) return spec;
+  const geometry = AIRCRAFT_GEOMETRY[type],
+    profile = (VEHICLES as unknown as Record<string, VehicleProfile | undefined>)[type];
+  if (!geometry || !profile) throw Error('No plane physics for ' + type);
+  const ground = geometry.ground,
+    fixed = type === 'fighter';
+  const rest = fixed ? FIGHTER_GEAR.rest : 0.615 * -ground * M,
+    sag = fixed ? FIGHTER_GEAR.sag : 0.0718 * -ground * M;
+  const [left, right] = geometry.wheels;
+  const x = (Math.abs(left.x) + Math.abs(right.x)) / 2,
+    z = (left.z + right.z) / 2;
+  const gears: Gear[] = [
+    { x: -x * M, y: ground * M + rest, z: z * M, rest, sag, share: 0.4, grip: 1 },
+    { x: x * M, y: ground * M + rest, z: z * M, rest, sag, share: 0.4, grip: 1 },
+    // The tail wheel has half the travel of the mains.
+    {
+      x: 0,
+      y: geometry.tail.y * M + rest / 2,
+      z: geometry.tail.z * M,
+      rest: rest / 2,
+      sag: sag / 2,
+      share: 0.2,
+      grip: 0.15,
+    },
+  ];
+  const maxSpeed = profile.maxSpeed ?? 52.5;
+  const params: PlaneParams = fixed
+    ? PLANE_PARAMS
+    : {
+        ...PLANE_PARAMS,
+        stallSpeed: +(0.32 * maxSpeed).toFixed(1),
+        thrustLimit: +(1.33 * maxSpeed).toFixed(1),
+        // A stronger engine accelerates harder (the Spitfire's is nine times the biplane's).
+        thrust: +(
+          PLANE_PARAMS.thrust * Math.min(1.8, Math.max(1, Math.sqrt(profile.thrust / 7.4)))
+        ).toFixed(2),
+        mass: Math.round(50 * (profile.span / 10.4) ** 2),
+      };
+  spec = {
+    type,
+    params,
+    gears,
+    parts: geometry.boxes.map((b) => ({
+      name: b.name,
+      half: b.half.map((v) => v * M),
+      at: b.at.map((v) => v * M),
+    })),
+    com: geometry.com.map((v) => v * M),
+    size: { span: profile.span, length: profile.length, height: 2.4 * (profile.span / 10.4) },
+    sag,
+    wheelRadius: (left.r + right.r) / 2,
+  };
+  specs.set(type, spec);
+  return spec;
+}
 
 export class PlaneRig implements DebugRig {
   physics: PhysicsWorld;
   body: RigidBody;
   params: PlaneParams;
+  spec: PlaneSpec;
   /** Angle of attack, sideslip and speed (reference units) at the last step. */
   alpha = 0;
   beta = 0;
   speed = 0;
   stall = 1;
   /** Compression of each gear spring at the last step (0 when in the air). */
-  compression = [0, 0, 0];
+  compression: number[];
   pose: { p: number[]; q: number[] } | null = null;
   /** What the debug view draws: forces in newtons (world frame) and the gear springs. */
   debug = {
@@ -248,26 +273,28 @@ export class PlaneRig implements DebugRig {
    * with the decor copied once); by default the rig has its own. `canSleep`: parked
    * aircraft let the engine put them to sleep; a flown one is pushed every step.
    */
-  constructor(
-    RAPIER: Rapier,
-    params: PlaneParams = PLANE_PARAMS,
-    physics?: PhysicsWorld,
-    canSleep = false,
-  ) {
+  constructor(RAPIER: Rapier, type = 'fighter', physics?: PhysicsWorld, canSleep = false) {
+    const spec = planeSpec(type),
+      params = spec.params;
+    this.spec = spec;
     this.params = params;
+    this.compression = spec.gears.map(() => 0);
     this.physics = physics ?? new PhysicsWorld(RAPIER, { gravity: G * K });
     const m = params.mass,
-      span = 10.4 * K,
-      length = 8.2 * K,
-      height = 2.4 * K;
+      span = spec.size.span * K,
+      length = spec.size.length * K,
+      height = spec.size.height * K;
     this.body = this.physics.world.createRigidBody(
       RAPIER.RigidBodyDesc.dynamic()
         .setTranslation(0, 3 * K, 0)
         .setCanSleep(canSleep)
+        // In a shared world (gravity of the ground vehicles) the aircraft's own gravity is
+        // G in reference metres, that is G·K here.
+        .setGravityScale((G * K) / this.physics.gravity)
         .setCcdEnabled(true)
         .setAdditionalMassProperties(
           m,
-          { x: COM[0] * K, y: COM[1] * K, z: COM[2] * K },
+          { x: spec.com[0] * K, y: spec.com[1] * K, z: spec.com[2] * K },
           {
             x: (m * (height * height + length * length)) / 12,
             y: (m * (span * span + length * length)) / 12,
@@ -276,13 +303,11 @@ export class PlaneRig implements DebugRig {
           { x: 0, y: 0, z: 0, w: 1 },
         ),
     );
-    for (const part of PARTS)
+    for (const part of spec.parts)
       this.colliders.push(
         this.physics.world.createCollider(
-          RAPIER.ColliderDesc.cuboid(
-            ...(part.half.map((v) => v * M * K) as [number, number, number]),
-          )
-            .setTranslation(part.at[0] * M * K, part.at[1] * M * K, part.at[2] * M * K)
+          RAPIER.ColliderDesc.cuboid(...(part.half.map((v) => v * K) as [number, number, number]))
+            .setTranslation(part.at[0] * K, part.at[1] * K, part.at[2] * K)
             .setDensity(0)
             .setFriction(0.5)
             .setRestitution(0.05),
@@ -487,9 +512,9 @@ export class PlaneRig implements DebugRig {
     const down = { x: -up.x, y: -up.y, z: -up.z };
     let grounded = false,
       mainsDown = 0;
-    this.compression = [0, 0, 0];
+    this.compression = this.compression.map(() => 0);
     this.debug.gear = [];
-    GEARS.forEach((gear, i) => {
+    this.spec.gears.forEach((gear, i) => {
       const mount = rotate(q, { x: gear.x * K, y: gear.y * K, z: gear.z * K });
       const origin = { x: p.x + mount.x, y: p.y + mount.y, z: p.z + mount.z };
       const hit = this.physics.world.castRayAndGetNormal(

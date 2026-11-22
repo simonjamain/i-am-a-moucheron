@@ -3,26 +3,7 @@ import { BIPLANE_BOMBER_DATA } from './meshy-biplane-bomber-data.js';
 import { buildMeshyRig, gunMount } from './meshy-rig.ts';
 import type * as THREE from 'three';
 import type { Three } from './types.ts';
-import { GEAR_SAG, MODEL_TO_REF } from './plane-physics.ts';
-
-// Wheels (rig-biplane-wheels.mjs): two parts pivoting on their hubs, lifted by the spring
-// compression of the aircraft's physics (plane-physics.ts) and spun by the ground speed.
-export const WHEEL_RADIUS = 0.285; // model units
-export function poseBiplaneWheels(
-  model: THREE.Object3D,
-  compression: readonly number[],
-  spin = 0,
-): void {
-  const wheels = model.userData.wheels as THREE.Object3D[] | undefined;
-  if (!wheels) return;
-  wheels.forEach((wheel, i) => {
-    wheel.position.y = wheel.userData.restY + (compression[i] ?? 0) / MODEL_TO_REF;
-    wheel.rotation.x += spin;
-  });
-}
-/** What an aircraft that nobody simulates here shows: parked springs sag, flying ones extend. */
-export const parkedCompression = (landed: boolean): number[] =>
-  landed ? [GEAR_SAG, GEAR_SAG] : [0, 0];
+import { rigWheels } from './aircraft-wheels.ts';
 
 // Biplane fighter (M1 slot): propeller and one central machine gun, sculpted on
 // the hull, whose muzzle is the single pilot barrel. Damage shows as engine
@@ -36,10 +17,8 @@ export function makeBiplane(T: Three, scene: THREE.Object3D): THREE.Group {
     gunMeshes: [],
     pilotMuzzles: anchors.gun,
     vehicleType: 'fighter',
-    wheels: [nodes.wheelL, nodes.wheelR],
   };
-  for (const wheel of model.userData.wheels as THREE.Object3D[])
-    wheel.userData.restY = wheel.position.y;
+  rigWheels(model, nodes, 'fighter');
   scene.add(model);
   return model;
 }
@@ -56,6 +35,7 @@ export function makeBiplaneBomber(T: Three, scene: THREE.Object3D): THREE.Group 
     prop: nodes.prop,
     wing: new T.Object3D(),
   };
+  rigWheels(model, nodes, 'bomber');
   scene.add(model);
   return model;
 }

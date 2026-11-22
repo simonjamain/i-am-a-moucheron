@@ -132,9 +132,9 @@ export class TankRig implements DebugRig {
   readonly restLength: number;
   readonly mountY: number;
 
-  constructor(RAPIER: Rapier, params: TankParams = TANK_PHYSICS) {
+  constructor(RAPIER: Rapier, params: TankParams = TANK_PHYSICS, physics?: PhysicsWorld) {
     this.params = params;
-    this.physics = new PhysicsWorld(RAPIER);
+    this.physics = physics ?? new PhysicsWorld(RAPIER);
     const world = this.physics.world,
       m = params.mass;
     // The mass sits low and in the middle: no rollover at the speeds the tank reaches.
@@ -168,6 +168,11 @@ export class TankRig implements DebugRig {
     this.restLength = params.sag + params.droop;
     // The spring top is where the ground is at the springs' rest length plus the sag.
     this.mountY = -GROUND_CLEARANCE + (this.restLength - params.sag);
+  }
+
+  /** The rigid bodies of this rig (the parked-vehicle host puts them to sleep). */
+  get bodies(): RigidBody[] {
+    return [this.body];
   }
 
   /** Debug view (physics-debug.ts): the hull, each spring at rest length and compressed. */

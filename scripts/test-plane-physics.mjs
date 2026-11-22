@@ -6,10 +6,15 @@ import { mouseFlightControls } from '../src/mouse-flight.ts';
 import { MAP } from '../src/scale.ts';
 import { VEHICLES } from '../src/fleet.ts';
 import { BIPLANE_DATA } from '../src/meshy-biplane-data.js';
+import { BIPLANE_BOMBER_DATA } from '../src/meshy-biplane-bomber-data.js';
+import { M1_DATA } from '../src/meshy-m1-data.js';
+import { B3_DATA } from '../src/meshy-b3-data.js';
+import { MODEL_DATA as STUKA } from '../src/meshy-stuka-data.js';
+import { MODEL_DATA as SPITFIRE } from '../src/meshy-spitfire-data.js';
 import { loadRapier, toPhysics } from '../src/physics-world.ts';
 import {
-  GEARS,
-  GEAR_SAG,
+  PLANE_TYPES,
+  planeSpec,
   MODEL_TO_REF,
   K,
   PLANE_PARAMS,
@@ -44,7 +49,7 @@ const fly = (state, controls, seconds, rig = new PlaneRig(RAPIER), each = () => 
   const dt = 1 / 60;
   for (let t = 0; t < seconds; t += dt) {
     const c = typeof controls === 'function' ? controls(t, state, rig) : controls;
-    rig.step(state, c, [], dt, profile);
+    rig.step(state, c, [], dt, VEHICLES[rig.spec.type]);
     each(state, rig, t);
   }
   return rig;
@@ -221,11 +226,15 @@ for (const [name, yawDeg, pitchDeg] of [
   const hubs = ['wheelL', 'wheelR'].map((name) => BIPLANE_DATA.rig.find((n) => n.name === name));
   assert.ok(hubs.every(Boolean), 'the model has its two wheel parts');
   hubs.forEach((hub, i) => {
-    const gear = GEARS[i];
+    const gear = planeSpec('fighter').gears[i];
     assert.ok(Math.abs(gear.x - hub.pivot[0] * MODEL_TO_REF) < 0.05, 'wheel ' + i + ' across');
     assert.ok(Math.abs(gear.z - hub.pivot[2] * MODEL_TO_REF) < 0.05, 'wheel ' + i + ' along');
   });
-  assert.ok(Math.abs(GEARS[2].rest * 2 - GEARS[0].rest) < 1e-9, 'tail travel is half the mains');
+  const fighterGears = planeSpec('fighter').gears;
+  assert.ok(
+    Math.abs(fighterGears[2].rest * 2 - fighterGears[0].rest) < 1e-9,
+    'tail travel is half the mains',
+  );
   const parked = fresh({ y: 1.85, gas: 0 });
   const rig = fly(parked, none, 4, new PlaneRig(RAPIER));
   assert.ok(
@@ -233,11 +242,128 @@ for (const [name, yawDeg, pitchDeg] of [
     'rests on its three wheels',
   );
   assert.ok(
-    Math.abs(rig.compression[0] - GEAR_SAG) < 0.06,
+    Math.abs(rig.compression[0] - planeSpec('fighter').sag) < 0.06,
     'main springs sag about their static value',
   );
-  assert.ok(rig.compression[2] <= GEARS[2].rest, 'the tail spring stays within its travel');
+  assert.ok(rig.compression[2] <= fighterGears[2].rest, 'the tail spring stays within its travel');
   const e = new T.Euler().setFromQuaternion(new T.Quaternion(...parked.q), 'YXZ');
   assert.ok(e.x > 0.15 && e.x < 0.35, `three-point attitude, nose up (${e.x.toFixed(2)} rad)`);
+}
+// 10. Every aircraft flown by the engine: it has wheel parts that match its springs, rests
+// on three wheels, takes off, flies level when released at its trim speed, turns to the
+// mouse aim without stalling, and a dive is a hard impact.
+const MODELS = {
+  fighter: BIPLANE_DATA,
+  bomber: BIPLANE_BOMBER_DATA,
+  lightfighter: M1_DATA,
+  medbomber: B3_DATA,
+  interceptor: STUKA,
+  spitfire: SPITFIRE,
+};
+assert.deepEqual([...PLANE_TYPES].sort(), Object.keys(MODELS).sort(), 'every aircraft is covered');
+for (const type of PLANE_TYPES) {
+  const spec = planeSpec(type),
+    vehicle = VEHICLES[type],
+    vs = spec.params.stallSpeed;
+  const hubs = ['wheelL', 'wheelR'].map((name) => MODELS[type].rig.find((n) => n.name === name));
+  assert.ok(hubs.every(Boolean), type + ': the model has its two wheel parts');
+  hubs.forEach((hub, i) => {
+    assert.ok(
+      Math.abs(Math.abs(spec.gears[i].x) - Math.abs(hub.pivot[0]) * MODEL_TO_REF) < 0.15,
+      type + ' wheel across',
+    );
+    assert.ok(
+      Math.abs(spec.gears[i].z - hub.pivot[2] * MODEL_TO_REF) < 0.15,
+      type + ' wheel along',
+    );
+  });
+  assert.ok(
+    Math.abs(spec.gears[2].rest * 2 - spec.gears[0].rest) < 1e-9,
+    type + ': half tail travel',
+  );
+  const height = spec.gears[0].rest - spec.gears[0].y - spec.sag; // wheels' bottoms on the floor
+  const onGround = (gas = 0) => ({
+    p: [0, m(height + 0.05), 0],
+    q: [0, 0, 0, 1],
+    v: [0, 0, 0],
+    omega: [0, 0, 0],
+    hp: 100,
+    gas,
+    landed: true,
+  });
+  // Rests on three wheels, nose up, without damage.
+  {
+    const state = onGround(),
+      rig = fly(state, none, 6, new PlaneRig(RAPIER, type));
+    assert.ok(
+      rig.compression.every((c) => c > 0),
+      type + ': rests on its three wheels',
+    );
+    const e = new T.Euler().setFromQuaternion(new T.Quaternion(...state.q), 'YXZ');
+    assert.ok(e.x > 0.05 && e.x < 0.45, `${type}: nose-up rest attitude (${e.x.toFixed(2)} rad)`);
+    assert.ok(speedOf(state) < 0.5, type + ': stays put');
+  }
+  // Takes off: full throttle, pull back near flying speed.
+  {
+    const state = onGround(1);
+    let airborne = false;
+    fly(
+      state,
+      (t, s) => ({ pitch: speedOf(s) > 1.35 * vs ? 0.5 : 0, roll: 0, yaw: 0 }),
+      45,
+      new PlaneRig(RAPIER, type),
+      (s) => {
+        if (altitude(s) > height + 6) airborne = true;
+      },
+    );
+    assert.ok(airborne, type + ': takes off');
+  }
+  // Released at its trim speed (about 2.3 times the stall speed), it keeps its height.
+  {
+    const speed = 2.34 * vs,
+      state = fresh({ y: 80, speed, gas: 0.7 });
+    fly(state, none, 6, new PlaneRig(RAPIER, type));
+    assert.ok(
+      Math.abs(altitude(state) - 80) < 14,
+      `${type}: level flight (${altitude(state).toFixed(1)} m)`,
+    );
+  }
+  // Mouse aim: right and up by 60° and 15°, without stalling.
+  {
+    const state = fresh({ y: 90, speed: 2.34 * vs, gas: 0.8 });
+    const target = new T.Vector3(0, 0, -1).applyEuler(
+      new T.Euler((15 * Math.PI) / 180, (-60 * Math.PI) / 180, 0, 'YXZ'),
+    );
+    let best = Infinity,
+      slowest = Infinity;
+    fly(
+      state,
+      (t, s) => {
+        const q = new T.Quaternion(...s.q),
+          w = new T.Vector3(...s.omega).applyQuaternion(q.clone().invert());
+        return mouseFlightControls(T, { q, omega: w, direction: target }, {});
+      },
+      18,
+      new PlaneRig(RAPIER, type),
+      (s) => {
+        slowest = Math.min(slowest, speedOf(s));
+        best = Math.min(
+          best,
+          new T.Vector3(0, 0, -1).applyQuaternion(new T.Quaternion(...s.q)).angleTo(target),
+        );
+      },
+    );
+    assert.ok(best < 0.25, `${type}: the nose reaches the target (${best.toFixed(2)} rad)`);
+    assert.ok(slowest > vs * 0.8, `${type}: stays above stall speed (${slowest.toFixed(1)})`);
+  }
+  // A dive into the floor is a hard impact.
+  {
+    const state = fresh({ y: 30, speed: 2 * vs, pitch: -1.2, gas: 0.5, climb: -1.6 * vs });
+    let worst = 0;
+    fly(state, none, 6, new PlaneRig(RAPIER, type), (s) => {
+      worst = Math.max(worst, s.impact ?? 0);
+    });
+    assert.ok(worst > 12, `${type}: a dive hits hard (${worst.toFixed(1)} m/s)`);
+  }
 }
 console.log('test-plane-physics ok', { K: +K.toFixed(4), toPhysics: +toPhysics(m(1)).toFixed(4) });

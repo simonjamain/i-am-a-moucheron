@@ -204,6 +204,8 @@ const files = {
       'physics-world',
       'castor-physics',
       'tank-physics',
+      'aircraft-geometry',
+      'aircraft-wheels',
       'physics-debug',
       'plane-physics',
       'tank-recoil',

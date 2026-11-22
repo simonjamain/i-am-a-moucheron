@@ -118,9 +118,9 @@ export class CastorRig implements DebugRig {
   /** Vertical speed at the previous step. */
   fallSpeed = 0;
 
-  constructor(RAPIER: Rapier, params: CastorParams = CASTOR_PHYSICS) {
+  constructor(RAPIER: Rapier, params: CastorParams = CASTOR_PHYSICS, physics?: PhysicsWorld) {
     this.params = params;
-    this.physics = new PhysicsWorld(RAPIER);
+    this.physics = physics ?? new PhysicsWorld(RAPIER);
     const world = this.physics.world;
     // Mass sits low (just above the axles) so the vehicle does not roll over;
     // the hull collider itself is massless.
@@ -177,6 +177,11 @@ export class CastorRig implements DebugRig {
 
   // The game moves vehicles too (placement, respawn): follow its state when it
   // is not the one this rig wrote at the previous step.
+  /** The rigid bodies of this rig (the parked-vehicle host puts them to sleep). */
+  get bodies(): RigidBody[] {
+    return [this.body];
+  }
+
   /** Debug view (physics-debug.ts): the chassis and each wheel's spring. */
   debugDraw(sink: DebugSink): void {
     drawColliders(this.physics.world, [this.body], sink);
