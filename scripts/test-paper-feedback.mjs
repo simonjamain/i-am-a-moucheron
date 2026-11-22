@@ -15,7 +15,6 @@ if (process.argv[3] !== 'selection')
         signaturePoints: [],
         boardingBusy: false,
         boardingSelectionBusy: false,
-        soulBusy: false,
         sig: { setPointerCapture() {} },
         signaturePoint: (e) => [e.clientX, e.clientY],
         sound: { play() {} },

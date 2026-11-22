@@ -1,11 +1,6 @@
 import assert from 'node:assert/strict';
-import {
-  createSoul,
-  advanceArena,
-  mergeOwnedArena,
-  bodyMotion,
-  relayBodyReport,
-} from '../src/purgatory-physics.ts';
+import { mergeOwnedArena, bodyMotion, relayBodyReport } from '../src/walk-arena.ts';
+import { createSoul, advancePurgatory } from '../src/purgatory-queue.ts';
 for (const delay of [40, 160, 320, 1500]) {
   const b = createSoul({ id: 1, entity: 'me', kind: 'player' }, 0, 1000);
   b.x = 0;
@@ -23,7 +18,7 @@ for (const delay of [40, 160, 320, 1500]) {
     const me = a.bodies[0];
     me.input = { x: 1, z: 0 };
     me.inputAt = a.time;
-    advanceArena(a, a.time + 1000 / 60, 'me');
+    advancePurgatory(a, a.time + 1000 / 60, 'me');
     assert.ok(me.x >= previous);
     previous = me.x;
     if (tick % 6 === 0) {

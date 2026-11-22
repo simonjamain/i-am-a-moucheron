@@ -1,7 +1,7 @@
 // Issue #135: the walking collision is half as wide (players and furniture),
 // players still bump into each other, and shot volumes are unaffected.
 import assert from 'node:assert/strict';
-import { advanceArena, createSoul, SOUL_RADIUS } from '../src/purgatory-physics.ts';
+import { advancePurgatory, createSoul, SOUL_RADIUS } from '../src/purgatory-queue.ts';
 import { BASE_WALK_RADIUS, baseBody, footstepsAudible } from '../src/base.ts';
 import { stepWalker } from '../src/sortie.ts';
 import { OFFICE_LAYOUT } from '../src/layout.ts';
@@ -28,7 +28,7 @@ function arena(offset) {
   for (let t = 50; t <= 3000; t += 50) {
     for (const b of a.bodies)
       Object.assign(b, { input: { x: 0, z: b.entity === 'p1' ? 1 : -1 }, inputAt: t });
-    advanceArena(a, t);
+    advancePurgatory(a, t);
   }
   return a.bodies;
 }

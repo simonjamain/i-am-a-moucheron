@@ -34,6 +34,12 @@ original.pilots = original.pilots.map(({ contractClause, ...pilot }) => {
   assert.equal(contractClause, null, 'no contract clause in the fixture');
   return pilot;
 });
+// The retired fist fight's stun timer left the soul rows (it was never set).
+for (const key of ['souls', 'superSouls'])
+  original[key] = original[key].map(({ stunned_until, ...soul }) => {
+    assert.equal(stunned_until, undefined, 'no stun in the fixture');
+    return soul;
+  });
 const optimized = after.snapshot(room);
 const {
   rosterRevision,

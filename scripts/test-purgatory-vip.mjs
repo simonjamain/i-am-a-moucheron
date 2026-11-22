@@ -3,9 +3,9 @@
 // his first window is done, and the pass paid from the common fund at the wave's
 // price (refused when the fund cannot pay it).
 import assert from 'node:assert/strict';
+import { bodyMotion } from '../src/walk-arena.ts';
 import {
-  advanceArena,
-  bodyMotion,
+  advancePurgatory,
   createSoul,
   deskOccupant,
   inVipDesk,
@@ -15,7 +15,7 @@ import {
   VIP_GUARD,
   VIP_LANE,
   vipPrice,
-} from '../src/purgatory-physics.ts';
+} from '../src/purgatory-queue.ts';
 import { Game } from '../server/game.js';
 
 assert.deepEqual([0, 1, 2, 3, 7.9].map(vipPrice), [1, 1, 2, 3, 7], 'wave N costs N $');
@@ -27,9 +27,9 @@ function walkIn(vip) {
   Object.assign(b, { x: VIP_DESK.x, z: VIP_GATE_Z + 1.5, vip });
   const a = arena([b]);
   for (let t = 0; t < 4000; t += 50) {
-    b.input = { x: 0, z: -1, guard: false };
+    b.input = { x: 0, z: -1 };
     b.inputAt = a.time;
-    advanceArena(a, a.time + 50, 'p');
+    advancePurgatory(a, a.time + 50, 'p');
   }
   return b;
 }
@@ -56,7 +56,7 @@ vip.vip = true;
 // While the VIP signs, the insect at the first window waits.
 for (let t = 0; t < 3000; t += 100) {
   vip.inputAt = desk.time;
-  advanceArena(desk, desk.time + 100, null);
+  advancePurgatory(desk, desk.time + 100, null);
 }
 assert.equal(insect.gone, undefined, 'the insect waits for the VIP');
 assert.equal(deskOccupant(desk).id, vip.id);

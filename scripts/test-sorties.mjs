@@ -14,7 +14,8 @@ import {
   stepWalker,
   GEAR_HEIGHT,
 } from '../src/sortie.ts';
-import { createSoul, advanceArena, mergeOwnedArena } from '../src/purgatory-physics.ts';
+import { mergeOwnedArena } from '../src/walk-arena.ts';
+import { createSoul, advancePurgatory } from '../src/purgatory-queue.ts';
 assert.equal(BULLET_SPEED, MAP.metres(REFERENCE.bullet));
 assert.equal(FIRE_INTERVAL, 0.06);
 const scene = new T.Scene(),
@@ -57,7 +58,7 @@ host.z = 6;
 let arena = { epoch: 'p', host: 'host', time: 1000, bodies: [host, npc], events: [], eventSeq: 0 };
 for (let i = 0; i < 210; i++) {
   const stale = structuredClone(arena);
-  advanceArena(arena, arena.time + 1000 / 60, 'host');
+  advancePurgatory(arena, arena.time + 1000 / 60, 'host');
   if (i > 180) {
     const b = stale.bodies.find((b) => b.id === 2);
     b.gone = false;

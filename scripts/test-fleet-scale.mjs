@@ -9,7 +9,7 @@ import { createOffice } from '../src/office.ts';
 import { stepFlight } from '../src/flight.ts';
 import { spreadDirection, fuseRange, blastDamage, diveIntensity } from '../src/combat.ts';
 import { makeAntiaircraft, AA_STATIONS } from '../src/sortie.ts';
-import { bodyMotion } from '../src/purgatory-physics.ts';
+import { bodyMotion } from '../src/walk-arena.ts';
 assert.equal(MAP.ratio, 0.003);
 assert.equal(MAP.metres(1.8), 0.0054);
 assert.equal(OFFICE_LAYOUT.base.deckY, 0.00005);

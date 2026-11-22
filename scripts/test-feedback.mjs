@@ -7,7 +7,7 @@ import { nearestInsectHit, nearestMeshHit } from '../src/insect-hits.ts';
 import { INSECT_SCALE } from '../src/scale.ts';
 import { wavePlan, swarmFrame, entryStatus } from '../src/waves.js';
 import { PORTALS, MIN_SPAWN_DISTANCE } from '../src/routes.js';
-import { mergeOwnedArena } from '../src/purgatory-physics.ts';
+import { mergeOwnedArena } from '../src/walk-arena.ts';
 const scene = new T.Scene(),
   { insect } = createGraphics(T, scene),
   old = insect('midge'),
