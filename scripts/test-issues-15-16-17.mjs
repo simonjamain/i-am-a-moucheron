@@ -36,7 +36,10 @@ const ctx = vm.createContext({
   clockOffset: 0,
 });
 vm.runInContext(
-  source.slice(source.indexOf('const deliveryModels ='), source.indexOf('function remainingFuel()')),
+  source.slice(
+    source.indexOf('const deliveryModels ='),
+    source.indexOf('function remainingFuel()'),
+  ),
   ctx,
 );
 vm.runInContext('renderDeliveries()', ctx);
