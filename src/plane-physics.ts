@@ -58,9 +58,9 @@ export interface PlaneParams {
 }
 export const PLANE_PARAMS: Readonly<PlaneParams> = Object.freeze({
   stallSpeed: 17,
-  stallAngle: 0.38,
+  stallAngle: 0.3,
   liftSlope: 4.5,
-  zeroLift: 0.07,
+  zeroLift: 0.055,
   dragZero: 0.02,
   inducedDrag: 0.07,
   thrust: 3.2,

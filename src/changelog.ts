@@ -5,6 +5,12 @@ export interface ChangelogEntry {
 }
 export const PLAYER_CHANGELOG: ChangelogEntry[] = [
   {
+    version: 424,
+    changes: [
+      'Le biplan décolle un peu plus tôt : il se redresse tout seul en prenant de la vitesse.',
+    ],
+  },
+  {
     version: 423,
     changes: [
       'Le biplan repose sur ses vraies roues, qui suivent les ressorts ; la roulette arrière a moins de course.',
