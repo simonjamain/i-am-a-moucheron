@@ -110,10 +110,37 @@ export function dragCoefficient(alpha: number, params: PlaneParams = PLANE_PARAM
   return params.dragZero + params.inducedDrag * cl * cl + 0.9 * s * s * stalled;
 }
 
-// Control authority: low speed means little air over the surfaces (as stepFlight).
-export function authority(speed: number, profile?: Partial<VehicleProfile> | null): number {
+// Control authority per axis, from the air over the surfaces (quadratic: a surface at
+// half speed has a quarter of the force). With no airspeed there is none: on the ground
+// with the engine off the stick does nothing. The propeller blows air over the tail, so
+// elevator and rudder keep a little authority with power on; the ailerons only feel the
+// wings' airspeed. Very high speed stiffens the controls a little (as the old step did).
+export interface ControlAuthority {
+  pitch: number;
+  roll: number;
+  yaw: number;
+}
+export const PROPWASH = 14; // m/s of air at full throttle, standing still
+export function controlAuthority(
+  speed: number,
+  gas: number,
+  engine: boolean,
+  profile?: Partial<VehicleProfile> | null,
+  params: PlaneParams = PLANE_PARAMS,
+): ControlAuthority {
   const c = (v: number, lo: number, hi: number): number => Math.min(hi, Math.max(lo, v));
-  return c(speed / (profile?.authoritySpeed ?? 13), 0.12, 1) * c(38 / Math.max(speed, 38), 0.55, 1);
+  const reference = profile?.authoritySpeed ?? 13;
+  const wash = engine
+    ? PROPWASH * c(gas, 0, 1) * Math.max(0, 1 - (speed / params.thrustLimit) ** 2)
+    : 0;
+  const tail = Math.hypot(speed, wash);
+  const stiff = c(38 / Math.max(speed, 38), 0.55, 1);
+  const surface = (flow: number, full: number): number => c(flow / full, 0, 1) ** 2 * stiff;
+  return {
+    pitch: surface(tail, reference * 1.5),
+    yaw: surface(tail, reference * 1.5),
+    roll: surface(speed, reference * 2),
+  };
 }
 
 interface Gear {
@@ -131,7 +158,7 @@ const REST = 1.2;
 const GEARS: readonly Gear[] = [
   { x: -1.35, y: -0.75, z: -0.7, share: 0.4, grip: 1 },
   { x: 1.35, y: -0.75, z: -0.7, share: 0.4, grip: 1 },
-  { x: 0, y: -0.2, z: 3.5, share: 0.2, grip: 0.25 },
+  { x: 0, y: -0.2, z: 3.5, share: 0.2, grip: 0.15 },
 ];
 const SAG = 0.14; // static compression of a spring (reference metres)
 
@@ -352,15 +379,21 @@ export class PlaneRig implements DebugRig {
 
     // Rotation: the pilot sets target rates, the air makes the aircraft point along its
     // flight path and drops the nose in a stall.
-    const auth = authority(speed, profile),
+    const auth = controlAuthority(speed, gas, engine, profile, params),
       turn = profile?.turn ?? 1,
       response = 1 - Math.exp(-9 * dt);
     const wl = rotate(inverse, wp);
     const q2 = Math.min(3, (speed / params.stallSpeed) ** 2);
+    // On its wheels, the pitch and roll commands are set rates that would override the
+    // gear springs: they only count once there is real speed to lift the tail or a wing.
+    const onWheels = this.compression.some((c) => c > 0),
+      lift = onWheels
+        ? Math.min(1, Math.max(0, (speed - 0.5 * params.stallSpeed) / (0.4 * params.stallSpeed)))
+        : 1;
     const target = {
-      x: controls.pitch * 1.12 * auth * turn,
-      y: -controls.yaw * 0.8 * auth * turn,
-      z: controls.roll * 2.25 * auth * turn,
+      x: controls.pitch * 1.12 * auth.pitch * lift * turn,
+      y: -controls.yaw * 0.8 * auth.yaw * turn,
+      z: controls.roll * 2.25 * auth.roll * lift * turn,
     };
     let rx = wl.x + (target.x - wl.x) * response,
       ry = wl.y + (target.y - wl.y) * response,
@@ -451,8 +484,6 @@ export class PlaneRig implements DebugRig {
       grounded = true;
       if (i < 2) mainsDown++;
     });
-    // Taxiing: the rudder turns the aircraft on the ground at any speed.
-    if (grounded) ry = ry + (-controls.yaw * 0.7 - ry) * response;
     const wlOut = rotate(q, { x: rx, y: ry, z: rz });
     body.setAngvel(wlOut, true);
     this.physics.step(dt);

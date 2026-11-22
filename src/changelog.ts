@@ -5,6 +5,12 @@ export interface ChangelogEntry {
 }
 export const PLAYER_CHANGELOG: ChangelogEntry[] = [
   {
+    version: 418,
+    changes: [
+      'Au sol, le biplan ne répond plus aux gouvernes sans air : il faut rouler un peu, avec un filet de gaz, pour le diriger.',
+    ],
+  },
+  {
     version: 417,
     changes: [
       'Deux boutons discrets montrent les volumes de collision et la physique des engins, sans relancer la partie.',

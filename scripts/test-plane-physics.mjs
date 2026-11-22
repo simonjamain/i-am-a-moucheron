@@ -177,4 +177,37 @@ for (const [name, yawDeg, pitchDeg] of [
   );
   assert.ok(altitude(s) > 5, `${name}: does not fall out of the sky`);
 }
+// 8. On the ground the controls need air. Engine off and standing still, the stick does
+// nothing: no roll, no pitch, no turn. With a little power the propeller blows over the
+// rudder, so the aircraft can be pointed once it moves; the ailerons stay dead.
+{
+  const euler = (state) => new T.Euler().setFromQuaternion(new T.Quaternion(...state.q), 'YXZ');
+  const idle = fresh({ y: 1.85, gas: 0 });
+  fly(idle, { pitch: 1, roll: 1, yaw: 1 }, 3);
+  const e = euler(idle);
+  assert.ok(
+    Math.abs(e.z) < 0.02 && Math.abs(e.y) < 0.02,
+    'engine off: stick roll and rudder do nothing',
+  );
+  assert.ok(
+    Math.abs(e.x - euler(fresh({ y: 1.85 })).x) < 0.05 || Math.abs(e.x) < 0.3,
+    'no pitch authority',
+  );
+  assert.ok(speedOf(idle) < 0.5, 'and it stays put');
+  const aileron = fresh({ y: 1.85, gas: 0.35 });
+  let roll = 0;
+  fly(aileron, { pitch: 0, roll: 1, yaw: 0 }, 6, new PlaneRig(RAPIER), (state) => {
+    roll = Math.max(roll, Math.abs(euler(state).z));
+  });
+  assert.ok(
+    roll < 0.05,
+    `taxiing with full aileron does not roll the aircraft (${roll.toFixed(3)} rad)`,
+  );
+  const rudder = fresh({ y: 1.85, gas: 0.35 });
+  fly(rudder, { pitch: 0, roll: 0, yaw: 1 }, 6);
+  assert.ok(
+    Math.abs(euler(rudder).y) > 0.1,
+    'the rudder in the propeller wash turns it once it moves',
+  );
+}
 console.log('test-plane-physics ok', { K: +K.toFixed(4), toPhysics: +toPhysics(m(1)).toFixed(4) });

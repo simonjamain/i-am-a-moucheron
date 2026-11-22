@@ -25,11 +25,19 @@ par « instructeur », comme War Thunder ; déjà dans `src/mouse-flight.ts`).
 - **Stabilité** : l'air ramène le nez dans le sens de la trajectoire (tangage, lacet) et
   fait piquer du nez au décrochage.
 - **Gouvernes** : l'instructeur (ou les touches) donne tangage, roulis et lacet ; ils
-  fixent des vitesses angulaires visées (mêmes valeurs que l'ancien pas), rendues plus
-  faibles à basse vitesse (`authority`). Un décrochage vient donc de la vitesse perdue.
+  fixent des vitesses angulaires visées (mêmes valeurs que l'ancien pas) multipliées par
+  une autorité **par axe** (`controlAuthority`), quadratique avec l'air sur les surfaces :
+  sans vitesse, aucune autorité. L'hélice souffle sur l'empennage (`PROPWASH`, 14 m/s à
+  pleins gaz) : profondeur et direction gardent un peu d'effet avec de la puissance, les
+  ailerons ne sentent que la vitesse de l'avion. Moteur coupé à l'arrêt, le manche ne fait
+  rien. Sur ses roues, tangage et roulis ne comptent qu'à partir de la moitié de la vitesse
+  de décrochage (sinon ils écraseraient les ressorts du train). Un décrochage vient donc
+  de la vitesse perdue.
 - **Train** : trois ressorts à rayon (deux roues et la béquille), comme la suspension du
   char : ressort + amortisseur, adhérence latérale, frottement au roulement, freinage
-  quand la manette de gaz est à zéro. L'avion suit donc la pente d'un sol irrégulier
+  quand la manette de gaz est à zéro. La béquille est presque omnidirectionnelle (peu
+  d'adhérence latérale) : on s'oriente en avançant un peu, avec un filet de gaz sur la
+  direction ; il n'y a plus de rotation forcée à l'arrêt. L'avion suit donc la pente d'un sol irrégulier
   (`castRayAndGetNormal` sur le décor et les solides).
 - **Cellule** : cinq colliders (fuselage, deux ailes, empennage, dérive), CCD activé. Les
   impulsions de contact donnent `state.impact` (variation de vitesse en m/s de référence) :
