@@ -5,6 +5,12 @@ export interface ChangelogEntry {
 }
 export const PLAYER_CHANGELOG: ChangelogEntry[] = [
   {
+    version: 419,
+    changes: [
+      'Un biplan laissé par son pilote reste garé, freins serrés, même sur un sol penché : il ne se redresse plus tout seul.',
+    ],
+  },
+  {
     version: 418,
     changes: [
       'Au sol, le biplan ne répond plus aux gouvernes sans air : il faut rouler un peu, avec un filet de gaz, pour le diriger.',

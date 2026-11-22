@@ -193,9 +193,19 @@ export class PlaneRig implements DebugRig {
   };
   private colliders: import('@dimforge/rapier3d-compat').Collider[] = [];
 
-  constructor(RAPIER: Rapier, params: PlaneParams = PLANE_PARAMS) {
+  /**
+   * `physics`: a shared world (the server keeps all the parked aircraft of a room in one,
+   * with the decor copied once); by default the rig has its own. `canSleep`: parked
+   * aircraft let the engine put them to sleep; a flown one is pushed every step.
+   */
+  constructor(
+    RAPIER: Rapier,
+    params: PlaneParams = PLANE_PARAMS,
+    physics?: PhysicsWorld,
+    canSleep = false,
+  ) {
     this.params = params;
-    this.physics = new PhysicsWorld(RAPIER, { gravity: G * K });
+    this.physics = physics ?? new PhysicsWorld(RAPIER, { gravity: G * K });
     const m = params.mass,
       span = 10.4 * K,
       length = 8.2 * K,
@@ -203,7 +213,7 @@ export class PlaneRig implements DebugRig {
     this.body = this.physics.world.createRigidBody(
       RAPIER.RigidBodyDesc.dynamic()
         .setTranslation(0, 3 * K, 0)
-        .setCanSleep(false)
+        .setCanSleep(canSleep)
         .setCcdEnabled(true)
         .setAdditionalMassProperties(
           m,
@@ -262,9 +272,9 @@ export class PlaneRig implements DebugRig {
     let impact = 0,
       grounded = false;
     for (let i = 0; i < n; i++) {
-      const info = this.substep(state, controls, h, profile);
-      grounded = info.grounded;
-      impact = Math.max(impact, info.impact);
+      grounded = this.forces(state, controls, h, profile).grounded;
+      this.physics.step(h);
+      impact = Math.max(impact, this.impact());
     }
     const p = this.body.translation(),
       q = this.body.rotation(),
@@ -303,15 +313,27 @@ export class PlaneRig implements DebugRig {
     cross(sink, at, 0.06, DEBUG_COLORS.centre);
   }
 
-  private substep(
+  /** Lets the engine's own sleep (no push, no wake-up) take the parked aircraft. */
+  get asleep(): boolean {
+    return this.body.isSleeping();
+  }
+
+  /**
+   * Applies this step's forces (aerodynamics, thrust, gear) and the pilot's rates; the
+   * caller then steps the world. `parked`: nobody is aboard: no pilot, no engine, wheel
+   * brakes on, and the engine may put the body to sleep (nothing is applied to a sleeper).
+   */
+  forces(
     state: PlaneState,
     controls: PlaneControls,
     dt: number,
     profile?: Partial<VehicleProfile> | null,
-  ): { grounded: boolean; impact: number } {
+    parked = false,
+  ): { grounded: boolean } {
     const body = this.body,
       params = this.params,
       m = params.mass;
+    if (parked && body.isSleeping()) return { grounded: true };
     const q = body.rotation(),
       p = body.translation(),
       vp = body.linvel(),
@@ -323,8 +345,9 @@ export class PlaneRig implements DebugRig {
     const speed = Math.hypot(local.x, local.y, local.z);
     const gas = state.gas ?? 0,
       engine = state.fuelAvailable !== false && state.hp > 0;
-    body.resetForces(true);
-    body.resetTorques(true);
+    const wake = !parked; // a parked aircraft must be allowed to fall asleep
+    body.resetForces(wake);
+    body.resetTorques(wake);
 
     // Aerodynamics.
     this.speed = speed;
@@ -374,7 +397,7 @@ export class PlaneRig implements DebugRig {
     this.debug.thrust = asForce({ x: 0, y: 0, z: -thrust });
     body.addForce(
       { x: worldAccel.x * K * m, y: worldAccel.y * K * m, z: worldAccel.z * K * m },
-      true,
+      wake,
     );
 
     // Rotation: the pilot sets target rates, the air makes the aircraft point along its
@@ -470,25 +493,31 @@ export class PlaneRig implements DebugRig {
         az = fx * nrm.y - fy * nrm.x;
       const along = (point.x * fx + point.y * fy + point.z * fz) / K,
         across = (point.x * ax + point.y * ay + point.z * az) / K;
-      const braking = gas < 0.12 ? 0.55 : 0.02;
-      const long = -load * braking * Math.tanh(along / 1.5),
-        side = -load * gear.grip * 0.9 * Math.tanh(across / 0.8);
+      // Parked: full brakes and a stiff friction curve, so that a slope does not make
+      // the aircraft creep (it comes to rest, then the engine puts it to sleep).
+      const braking = parked ? 1 : gas < 0.12 ? 0.55 : 0.02,
+        soft = parked ? 0.05 : 1;
+      const long = -load * braking * Math.tanh(along / (1.5 * soft)),
+        side = -load * gear.grip * 0.9 * Math.tanh(across / (0.8 * soft));
       const push = {
         x: nrm.x * load + fx * long + ax * side,
         y: nrm.y * load + fy * long + ay * side,
         z: nrm.z * load + fz * long + az * side,
       };
-      body.addForceAtPoint(push, contact, true);
+      body.addForceAtPoint(push, contact, wake);
       record.hit = [contact.x, contact.y, contact.z];
       record.load = [push.x, push.y, push.z];
       grounded = true;
       if (i < 2) mainsDown++;
     });
-    const wlOut = rotate(q, { x: rx, y: ry, z: rz });
-    body.setAngvel(wlOut, true);
-    this.physics.step(dt);
+    // A parked aircraft on its wheels is left to the engine; in the air its rates still
+    // follow the aerodynamics (nose into the wind), without the pilot's targets.
+    if (!parked || !grounded) body.setAngvel(rotate(q, { x: rx, y: ry, z: rz }), true);
+    return { grounded: grounded && mainsDown > 0 };
+  }
 
-    // Strongest contact impulse of the airframe (the gear is rays, not colliders).
+  /** Strongest contact impulse of the airframe (the gear is rays, not colliders). */
+  impact(): number {
     let impulse = 0;
     for (const collider of this.colliders)
       this.physics.world.contactPairsWith(collider, (other) => {
@@ -497,6 +526,6 @@ export class PlaneRig implements DebugRig {
             impulse = Math.max(impulse, manifold.contactImpulse(i));
         });
       });
-    return { grounded: grounded && mainsDown > 0, impact: impulse / (m * K) };
+    return impulse / (this.params.mass * K);
   }
 }

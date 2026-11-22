@@ -44,6 +44,27 @@ par « instructeur », comme War Thunder ; déjà dans `src/mouse-flight.ts`).
   au-delà de 2,5 l'avion prend des dégâts, au-delà de `PLANE_CRASH_IMPACT` (16) il est
   détruit. Murs et plafond de la pièce gardent la règle à vitesse du client.
 
+## Avion garé : le serveur (`src/plane-host.ts`)
+
+Quand le pilote d'un biplan en sort (à l'arrêt ou en parachute), l'avion est marqué
+`hosted` par le serveur (`vehicle-exit`, `server/game.js`) et simulé **par le serveur** avec
+le même `PlaneRig` : moteur coupé, freins serrés (courbe de friction raide : pas de
+reptation sur une pente). Rapier tourne dans Node (`@dimforge/rapier3d-compat`, passé en
+dépendance de production ; chargé à la première sortie, le décor d'un plan est construit
+une fois par processus, environ 150 ms).
+
+- Un `PlaneHost` par room : un seul monde Rapier, le décor copié une fois, tous les avions
+  garés dedans. Pas pour les avions jamais utilisés (ils gardent leur état sans calcul).
+- **Sommeil** : laissé à Rapier (les forces n'appliquent pas de réveil pour un avion garé) :
+  au repos il s'endort et ne coûte plus rien ; un avion endormi n'envoie plus de mises à
+  jour. Dès qu'un pilote s'assoit, l'avion quitte le monde du serveur et le client reprend
+  l'autorité.
+- Un choc au-delà de `PLANE_CRASH_IMPACT` ou une sortie de la pièce détruit l'avion
+  (`hp = 0`). Les constructions posées par les joueurs ne sont pas encore dans ce monde
+  (seulement la pièce et le décor).
+- Le client hôte ne simule plus les biplans vides (`simulateVacantAircraft`) ; les autres
+  engins vides gardent leur simulation actuelle, à porter ensuite sur le même principe.
+
 ## Intégration
 
 `client.js` : `PLANE_RIGS` liste les types portés ; pour ceux-là, le pas de vol, la pose
