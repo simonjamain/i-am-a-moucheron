@@ -37,8 +37,10 @@ signature au guichet VIP.
 Les coups, gardes, esquives de combat, KO et le pistolet sont supprimés : l'âme est
 le personnage du bureau, mêmes modèle et animations, sans arme. Un PNJ est libéré
 (avec une seule récompense) quand Saint Pierre l'a servi. Les collisions et la marche
-restent actives. Aucun panneau d'interface : le décor (vigile, cordons, guichets)
-indique quoi faire, avec la ligne des commandes en bas d'écran.
+restent actives. Aucun panneau d'interface : le décor (vigile, cordons, guichets,
+plaques et pupitre) indique quoi faire, avec la ligne des commandes en bas d'écran.
+Le décor lui-même (nuage, ciel, mobilier, vigile) est décrit dans
+[décor du purgatoire](purgatory-scene.md) ; il n'ajoute aucun obstacle partagé.
 
 Le super purgatoire est une arène séparée, sans PNJ, avec cinq contrats.
 Voir [combat et mondes](combat-worlds.md) et [gameplay](gameplay.md).

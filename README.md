@@ -76,7 +76,7 @@ dépassés ; en cas de doute, le code et les références du thème font foi.
 
 - [gameplay](docs/gameplay.md) : règles et parcours joueur · [controls](docs/controls.md) : touches, pointeur · [comfort](docs/comfort.md), [clean-flight](docs/clean-flight.md), [field-update](docs/field-update.md), [multiplayer-return](docs/multiplayer-return.md) _(lots)_
 - [progression](docs/progression.md) : vagues, récompenses, achats · [enemy-power](docs/enemy-power.md) : puissance et budget · [economy-physics](docs/economy-physics.md) : économie, signatures, balistique · [stats](docs/stats.md) : statistiques des équipements
-- [combat-worlds](docs/combat-worlds.md) · [logistics-contracts](docs/logistics-contracts.md) · [purgatory-queue](docs/purgatory-queue.md) · [laboratory](docs/laboratory.md) (mode debug) · [office-layouts](docs/office-layouts.md)
+- [combat-worlds](docs/combat-worlds.md) · [logistics-contracts](docs/logistics-contracts.md) · [purgatory-queue](docs/purgatory-queue.md) · [purgatory-scene](docs/purgatory-scene.md) · [laboratory](docs/laboratory.md) (mode debug) · [office-layouts](docs/office-layouts.md)
 
 **Ennemis**
 

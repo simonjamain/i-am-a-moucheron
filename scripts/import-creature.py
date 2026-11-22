@@ -1,7 +1,8 @@
 """Import a rigged Meshy creature (no clip) into a local JS module.
 Usage: PYTHONPATH=scripts python3 scripts/import-creature.py <species> path/to/model.glb
 Species: ant (Red Ant Warrior), spider (Spotted Velvet Spider), roach (Low Poly
-Cockroach), spiderling (Grumpy Spider). User-supplied
+Cockroach), spiderling (Grumpy Spider), vip-guard (Guardian in Black, the
+purgatory's VIP lane guard: a person, posed by src/vip-guard-model.ts). User-supplied
 GLBs checked by SHA-256. Output keeps the skinned mesh, the Meshy SmartRig
 skeleton with its bind matrices and a 512 px JPEG copy of the 2K texture (the
 original stays in assets/originals/<species>/, outside Git). Gaits are
@@ -45,6 +46,12 @@ SPECIES = {
             ['Bone_025', 'Bone_024', 'Bone_023', 'Bone_022'],  # rear +X
             ['Bone_029', 'Bone_028', 'Bone_027', 'Bone_026'],  # rear -X
         ],
+    },
+    'vip-guard': {
+        'sha256': 'b12c89068da73b3befee5c88433e2638af02121b9cacbc95339dd4f667adafb0',
+        'output': 'src/vip-guard-data.js',
+        'constant': 'VIP_GUARD_DATA',
+        'label': 'Purgatory VIP lane guard (Meshy "Guardian in Black", rigged, no clip)',
     },
     'spiderling': {
         'sha256': 'eaeaff76e5384386dd19894b7acdf06a6513b675ecd9fd5d069891b4a5d996da',
