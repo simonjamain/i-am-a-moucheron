@@ -3,7 +3,7 @@ dist/
 .local/
 outputs/
 
-node_modules/
+/node_modules
 
 
 # Private Meshy originals and temporary optimization candidates
