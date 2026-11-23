@@ -196,7 +196,8 @@ export class OutlinePass {
     const base = this.colorTexture.sample(sampleUv);
     const coloured = mix(base.rgb, u.lineColor, line);
     // The sky is a clear colour, which a direct render never tone-maps.
-    const mapped = toneMapping(T.ACESFilmicToneMapping, u.exposure, coloured);
+    // The renderer's own tone mapping (none for a bare renderer), applied here by hand.
+    const mapped = toneMapping(renderer.toneMapping ?? T.NoToneMapping, u.exposure, coloured);
     const sky = depthAt(sampleUv).greaterThan(0.99999);
     this.material = fullscreenMaterial(T, vec4(select(sky, coloured, mapped.rgb), base.a));
     ({ scene: this.scene, camera: this.camera } = fullscreenScene(T, this.material));

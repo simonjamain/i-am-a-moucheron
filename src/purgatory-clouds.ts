@@ -51,7 +51,6 @@ export function createSkyDome(T: Three, radius: number): SkyDome {
   const {
     uniform,
     texture,
-    vec2,
     vec4,
     float,
     positionLocal,
@@ -81,7 +80,8 @@ export function createSkyDome(T: Three, radius: number): SkyDome {
   const sun = max(dir.dot(uniforms.sunDir.normalize()), 0);
   const lit = sky.add(uniforms.sunColor.mul(pow(sun, 900).mul(1.6).add(pow(sun, 12).mul(0.18))));
   // Cloud layer (premultiplied colour, linear) over the sky.
-  const layer = clouds.sample(vec2(screenUV.x, float(1).sub(screenUV.y)));
+  // screenUV and render-target rows both run top to bottom.
+  const layer = clouds.sample(screenUV);
   const final = select(
     uniforms.hasClouds.greaterThan(0.5),
     lit.mul(float(1).sub(layer.a)).add(layer.rgb),

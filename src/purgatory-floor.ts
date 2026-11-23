@@ -13,7 +13,14 @@ import type * as THREE from 'three/webgpu';
 import type { Three } from './types.ts';
 import { SKY_LOOK, SUN_DIRECTION } from './purgatory-clouds.ts';
 import { cloudNodes } from './cloud-nodes.ts';
-import { fullscreenMaterial, fullscreenScene, targetUv, tsl, type Node } from './gpu-passes.ts';
+import {
+  fullscreenMaterial,
+  fullscreenScene,
+  targetUv,
+  tsl,
+  withoutToneMapping,
+  type Node,
+} from './gpu-passes.ts';
 import type { CloudFloorSpec } from './purgatory-clouds.ts';
 
 /** Height of the mist's top over the walkable hall (scene units; a soul is 2.46). */
@@ -70,6 +77,7 @@ export function createFloorCloud(
     select,
     length,
     clamp,
+    toneMapping,
   } = tsl(T);
   const { hash3, noise, fbm, hg } = cloudNodes(T);
   const rect = (r: CloudFloorSpec) => new T.Vector4(r.minX, r.maxX, r.minZ, r.maxZ);
@@ -257,8 +265,10 @@ export function createFloorCloud(
   marchMaterial.blending = T.CustomBlending;
   marchMaterial.blendSrc = T.OneFactor;
   marchMaterial.blendDst = T.ZeroFactor;
-  // Composite of the half-resolution layer (premultiplied, linear) over the frame; the
-  // renderer tone-maps and encodes it like any other frame content.
+  // Composite of the half-resolution layer (premultiplied, linear) over the frame. The frame
+  // below is already tone-mapped (src/toon.ts), so the layer is tone-mapped here, and the
+  // renderer's own tone mapping is off while this draws.
+  const exposure = uniform(1);
   const layer = layerTexture.sample(targetUv(T));
   const compositeMaterial = fullscreenMaterial(
     T,
@@ -266,7 +276,10 @@ export function createFloorCloud(
       If(layer.a.lessThan(0.003), () => {
         Discard();
       });
-      return vec4(layer.rgb.div(layer.a), layer.a);
+      return vec4(
+        toneMapping(T.ACESFilmicToneMapping, exposure, layer.rgb.div(layer.a)).rgb,
+        layer.a,
+      );
     })(),
   );
   compositeMaterial.transparent = true;
@@ -309,7 +322,8 @@ export function createFloorCloud(
       renderer.setClearColor(clear, alpha);
       layerTexture.value = target.texture;
       renderer.autoClear = false;
-      renderer.render(compositeScene, screen);
+      exposure.value = renderer.toneMappingExposure;
+      withoutToneMapping(T, renderer, () => renderer.render(compositeScene, screen));
       renderer.autoClear = autoClear;
     },
     setMood(mood) {

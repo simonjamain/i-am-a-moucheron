@@ -36,10 +36,11 @@ try {
       import {MAP,ACTOR_UNIT} from '/scale.js';
       import {OFFICE_LAYOUT} from '/layout.js';
       import {TracerPool,updateTracer,TRACER_COLOR} from '/tracers.js';
-      import {installOfficeFog} from '/office-fog.js';
+      import {installOfficeFog,applyOfficeFog} from '/office-fog.js';
       import {ShopThumbnails} from '/shop-thumbs.js';
       installOfficeFog(T);
-      const renderer=new T.WebGLRenderer({antialias:true,preserveDrawingBuffer:true});
+      const renderer=new T.WebGPURenderer({antialias:true});
+      await renderer.init();
       renderer.setSize(1000,650);document.body.append(renderer.domElement);
       const scene=new T.Scene();scene.background=new T.Color('#829f91');
       scene.add(new T.HemisphereLight(0xffffff,0x445544,3));
@@ -54,7 +55,7 @@ try {
       window.shopBed=await shop.picture('bed');
       window.tracerView=(instanced=false,occluded=false,distance=.12)=>{
         document.getElementById('hudSample').hidden=false;
-        const s=new T.Scene();s.background=new T.Color('white');s.fog=new T.FogExp2('white',.018);
+        const s=new T.Scene();s.background=new T.Color('white');s.fog=new T.FogExp2('white',.018);if(distance>1)applyOfficeFog(T,s);
         const c=new T.PerspectiveCamera(40,1000/650,.00005,40);c.position.set(0,2.6,distance);c.lookAt(0,2.6,0);
         const pool=new TracerPool(T,s,8,{instanced});
         const trace=pool.acquire(new T.Vector3(.016,2.6,0),new T.Vector3(1,0,0),TRACER_COLOR);

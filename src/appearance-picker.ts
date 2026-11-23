@@ -6,7 +6,13 @@ import {
   CHARACTER_HEIGHT,
 } from './character-model.ts';
 import type * as THREE from 'three/webgpu';
-import { fullscreenMaterial, fullscreenScene, tsl, withoutToneMapping } from './gpu-passes.ts';
+import {
+  fullscreenMaterial,
+  fullscreenScene,
+  targetUv,
+  tsl,
+  withoutToneMapping,
+} from './gpu-passes.ts';
 import type { AppearanceId } from './character-appearances.ts';
 import type { Three } from './types.ts';
 
@@ -81,6 +87,28 @@ export function createAppearancePicker(
   tintMaterial.blendDst = T.OneMinusSrcAlphaFactor;
   tintMaterial.premultipliedAlpha = true;
   const { scene: tint, camera: flat } = fullscreenScene(T, tintMaterial);
+  // The turntable is drawn off screen, then composited with its own tone mapping: the frame
+  // under it is already tone-mapped, and the renderer's tone mapping would run over all of it.
+  const { texture, toneMapping } = tsl(T);
+  const exposure = uniform(1);
+  const figure = texture(new T.Texture());
+  const sample = figure.sample(targetUv(T));
+  const figureMaterial = fullscreenMaterial(
+    T,
+    vec4(
+      toneMapping(T.ACESFilmicToneMapping, exposure, sample.rgb.div(sample.a.max(0.0001))).rgb.mul(
+        sample.a,
+      ),
+      sample.a,
+    ),
+  );
+  figureMaterial.blending = T.CustomBlending;
+  figureMaterial.blendSrc = T.OneFactor;
+  figureMaterial.blendDst = T.OneMinusSrcAlphaFactor;
+  figureMaterial.premultipliedAlpha = true;
+  const { scene: figureScene } = fullscreenScene(T, figureMaterial);
+  let figureTarget: THREE.RenderTarget | null = null;
+  const clearColor = new T.Color();
   const nameOf = (id: AppearanceId) => APPEARANCES.find((a) => a.id === id)!.name;
   function show() {
     if (shown === value || !characterLoaded(value)) return;
@@ -160,17 +188,36 @@ export function createAppearancePicker(
       }
       const viewport = renderer.getViewport(new T.Vector4()),
         target = renderer.getRenderTarget();
+      // The turntable, off screen, in the size it will have on screen.
+      const ratio = renderer.getPixelRatio(),
+        pixels = [Math.max(1, Math.round(width * ratio)), Math.max(1, Math.round(height * ratio))];
+      if (!figureTarget || figureTarget.width !== pixels[0] || figureTarget.height !== pixels[1]) {
+        figureTarget?.dispose();
+        figureTarget = new T.RenderTarget(pixels[0], pixels[1], { samples: 4 });
+        figure.value = figureTarget.texture;
+      }
+      const clearAlpha = renderer.getClearAlpha();
+      renderer.getClearColor(clearColor);
+      renderer.setClearColor(0x000000, 0);
+      renderer.setRenderTarget(figureTarget);
+      renderer.clear();
+      renderer.render(scene, camera);
+      renderer.setClearColor(clearColor, clearAlpha);
       renderer.setRenderTarget(null);
-      renderer.setViewport(x, y, width, height);
-      renderer.setScissor(x, y, width, height);
+      // WebGPU viewport and scissor rectangles count from the upper left corner.
+      const top = view.height - y - height;
+      renderer.setViewport(x, top, width, height);
+      renderer.setScissor(x, top, width, height);
       renderer.setScissorTest(true);
       const autoClear = renderer.autoClear;
       renderer.autoClear = false;
       viewWidth.value = renderer.domElement.width;
       // Shade and panel colour over this frame's game image.
-      withoutToneMapping(T, renderer, () => renderer.render(tint, flat));
-      renderer.clearDepth();
-      renderer.render(scene, camera);
+      exposure.value = renderer.toneMappingExposure;
+      withoutToneMapping(T, renderer, () => {
+        renderer.render(tint, flat);
+        renderer.render(figureScene, flat);
+      });
       renderer.autoClear = autoClear;
       renderer.setScissorTest(false);
       renderer.setViewport(viewport);

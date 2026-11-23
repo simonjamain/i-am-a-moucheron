@@ -309,7 +309,13 @@ export class SelectionOutline {
     const ratio = renderer.getPixelRatio(),
       scissor = renderer.getScissorTest();
     renderer.setScissorTest(true);
-    renderer.setScissor(rect.x / ratio, rect.y / ratio, rect.w / ratio, rect.h / ratio);
+    // The scissor rectangle counts from the upper left corner (the rect from the lower left).
+    renderer.setScissor(
+      rect.x / ratio,
+      (size.y - rect.y - rect.h) / ratio,
+      rect.w / ratio,
+      rect.h / ratio,
+    );
     renderer.autoClear = false;
     withoutToneMapping(T, renderer, () => renderer.render(this.quad, this.camera));
     renderer.autoClear = autoClear;
