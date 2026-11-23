@@ -40,6 +40,10 @@ le personnage du bureau, mêmes modèle et animations, sans arme. Un PNJ est lib
 (avec une seule récompense) quand Saint Pierre l'a servi. Les collisions et la marche
 restent actives. Aucun panneau d'interface : le décor (vigile, cordons, guichets,
 plaques et pupitre) indique quoi faire, avec la ligne des commandes en bas d'écran.
+Saint Pierre et le vigile peuvent être tués depuis le ciel (10 000 points de vie,
+[ciel du purgatoire](purgatory-sky.md)) : leur âme rejoint alors la file. Vigile mort,
+le guichet VIP et le coupe-file sont fermés (`vipClosed`) ; Saint Pierre mort, personne
+n'est servi ni ne signe (`saintDown`, `deskOccupant` rend null).
 Le décor lui-même (nuage, ciel, mobilier, vigile) est décrit dans
 [décor du purgatoire](purgatory-scene.md) ; il n'ajoute aucun obstacle partagé.
 

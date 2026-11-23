@@ -9,6 +9,7 @@ export const SUITE = [
   'test-walk-arena',
   'test-walker-jump',
   'test-arena-frame',
+  'test-purgatory-sky',
   'test-fps-counter',
   'test-audio',
   'test-audio-library',

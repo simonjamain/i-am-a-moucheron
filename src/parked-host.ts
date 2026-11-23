@@ -1,5 +1,6 @@
 import type { World, RigidBody, Collider } from '@dimforge/rapier3d-compat';
 import { OFFICE_LAYOUT } from './layout.ts';
+import { outOfFlight } from './sky-passage.ts';
 import { MAP } from './scale.ts';
 import type { VehicleProfile } from './fleet.ts';
 import { PLANE_CRASH_IMPACT, PLANE_TYPES, PlaneRig, type PlaneState } from './plane-physics.ts';
@@ -221,9 +222,7 @@ export class ParkedHost {
         const destroyed =
           entry.impact >
             (entry.plane instanceof HeliRig ? HELI_CRASH_IMPACT : PLANE_CRASH_IMPACT) ||
-          world[1] > bounds.ceiling ||
-          Math.abs(world[0]) > bounds.x ||
-          Math.abs(world[2]) > bounds.z;
+          outOfFlight({ x: world[0], y: world[1], z: world[2] }, bounds);
         entry.impact = 0;
         // A body that fell asleep reports once more, then stays out of the updates.
         entry.reported = body.isSleeping();

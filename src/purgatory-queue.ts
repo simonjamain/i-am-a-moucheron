@@ -39,14 +39,32 @@ const inLane = (b: PlanarPoint): boolean => Math.abs(b.x) < LANE_HALF_WIDTH;
 export function soulSpawn(index: number): PlanarPoint {
   return { x: DESK.x, z: DESK.z + index * QUEUE_SPACING };
 }
-export function createSoul(s: WalkSeed, index: number, now: number): WalkBody {
+// ---------------------------------------------------------------- staff
+/**
+ * Saint Pierre and the VIP guard (docs/purgatory-sky.md): STAFF_HP points of life
+ * each. Killed, each walks the queue as a soul (kind 'enemy', enemyType its role),
+ * the size of a person. The guard's soul is served like the insects and goes back to
+ * its post; Saint Pierre cannot serve himself, so his soul waits until it is killed
+ * again (STAFF_HP once more), and then he goes back behind his desk.
+ */
+export const STAFF_HP = 10000;
+export type StaffRole = 'saint' | 'guard';
+export const STAFF_ROLES: readonly StaffRole[] = Object.freeze(['saint', 'guard']);
+export const isStaff = (type: unknown): type is StaffRole => type === 'saint' || type === 'guard';
+
+export function createSoul(
+  s: WalkSeed & { enemy_type?: string },
+  index: number,
+  now: number,
+): WalkBody {
+  const insect = s.kind === 'enemy' && !isStaff(s.enemy_type);
   // Bodies stand on the cloud's floor, at its height in the world.
   return {
     ...createWalker(
       s,
       soulSpawn(index),
       now,
-      s.kind === 'enemy' ? { r: INSECT_RADIUS, mass: INSECT_MASS } : { r: SOUL_RADIUS },
+      insect ? { r: INSECT_RADIUS, mass: INSECT_MASS } : { r: SOUL_RADIUS },
     ),
     y: PURGATORY_FRAME.originY,
   };
@@ -161,11 +179,14 @@ function mainWindowOccupant(a: Arena): WalkBody | null {
 }
 /** Body Saint Pierre serves now: the insect he started, else a VIP, else the queue. */
 export function deskOccupant(a: Arena): WalkBody | null {
+  // Saint Pierre is dead: nobody is served.
+  if (a.saintDown) return null;
   const main = mainWindowOccupant(a);
   if (main?.kind === 'enemy' && main.served > 0) return main;
   const d = (b: WalkBody): number => Math.hypot(b.x - VIP_DESK.x, b.z - VIP_DESK.z);
+  // The guard is dead: the VIP window is closed.
   const vip = a.bodies
-    .filter((b) => b.kind === 'player' && b.vip && inVipDesk(b))
+    .filter((b) => !a.vipClosed && b.kind === 'player' && b.vip && inVipDesk(b))
     .sort((x, y) => d(x) - d(y) || x.id - y.id)[0];
   return vip || main;
 }

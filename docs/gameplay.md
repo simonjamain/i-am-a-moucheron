@@ -499,6 +499,6 @@ Une DCA isolée reste à sec jusqu'à l'installation ou au passage d'un soutien.
   atteindre la vitesse de rotation (`LIFTOFF_SPEED`, 18 m/s). `scripts/test-takeoff.mjs`
   simule le roulage de toute la flotte.
 - Les couloirs des insectes volants (`src/routes.ts`) restent sous la couche de
-  nuages (`OFFICE_CLOUD_TOP`, qui n'a pas suivi le plafond de vol relevé) : au plus
+  nuages (`OFFICE_CLOUD_TOP`) ; ils ne montent jamais dans le [ciel du purgatoire](purgatory-sky.md) : au plus
   2,1 m, nuages dès 2,21 m. Les nuées restent visibles et suivent la trajectoire annoncée.
 - Limite : je n'ai pas fait d'essai en vraie partie ; la simulation reprend la logique du client.

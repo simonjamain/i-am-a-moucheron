@@ -63,6 +63,10 @@ const context = {
   action: (path, body) => sent.push({ path, body }),
   hitEffects: { burst() {} },
   combatEffects: { blast() {} },
+  // Saint Pierre's sky is not drawn in this test: nothing to hit there.
+  reportSkyHits: () => {},
+  skyBlast: () => [],
+  purgatoryTargets: () => [],
   sound: { play() {} },
   camera: {},
   me: { position: new T.Vector3() },

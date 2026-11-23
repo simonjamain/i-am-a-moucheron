@@ -164,7 +164,10 @@ for (const slow of [
   /drawImage|getImageData/,
 ])
   assert.doesNotMatch(picker, slow);
-assert.match(client, /toon\.render\(scene, camera\);\n\s+appearancePicker\.draw\(renderer, dt\);/);
+assert.match(
+  client,
+  /toon\.render\(scene, view\);[\s\S]{0,400}appearancePicker\.draw\(renderer, dt\);/,
+);
 assert.match(
   html,
   /\.appearance \{[^}]*box-shadow: 0 0 0 100vmax #102b29eb/,

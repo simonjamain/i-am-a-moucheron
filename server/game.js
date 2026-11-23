@@ -48,10 +48,14 @@ import {
   advancePurgatory,
   deskOccupant,
   inVipDesk,
+  isStaff,
   SOUL_ENTRANCE,
+  STAFF_HP,
+  STAFF_ROLES,
   VIP_LANE,
   vipPrice,
 } from '../src/purgatory-queue.ts';
+import { inSky, purgatorySolids } from '../src/sky-passage.ts';
 import {
   wavePlan,
   ENEMY_TYPES,
@@ -230,6 +234,8 @@ function roomState(code, now, layout = DEFAULT_LAYOUT_ID) {
     effectSeq: 0,
     base: { epoch: uid() },
     purgatory: { epoch: uid() },
+    // Saint Pierre and the VIP guard (docs/purgatory-sky.md): alive at their posts.
+    staff: { saint: { hp: STAFF_HP, down: false }, guard: { hp: STAFF_HP, down: false } },
   };
 }
 
@@ -546,7 +552,9 @@ export class Game {
   releaseSoul(r, s) {
     if (s.status !== 'waiting') return;
     s.status = 'gone';
-    if (s.kind === 'enemy') this.reward(r, ENEMY_TYPES[s.enemy_type].power);
+    // A freed staff soul goes back to its post, unhurt; an insect's pays the team.
+    if (isStaff(s.enemy_type)) r.staff[s.enemy_type] = { hp: STAFF_HP, down: false };
+    else if (s.kind === 'enemy') this.reward(r, ENEMY_TYPES[s.enemy_type].power);
   }
   reward(r, amount) {
     const credit = money(amount, r.balance.rewards);
@@ -559,9 +567,11 @@ export class Game {
     const a = r[realm],
       now = this.now();
     const rows = values(r.souls).filter((s) => s.realm === realm && s.status === 'waiting');
+    // Staff souls always walk the queue (shown before the insects).
     const shown = [
       ...rows.filter((s) => s.kind === 'player'),
-      ...rows.filter((s) => s.kind === 'enemy').slice(0, 24),
+      ...rows.filter((s) => isStaff(s.enemy_type)),
+      ...rows.filter((s) => s.kind === 'enemy' && !isStaff(s.enemy_type)).slice(0, 24),
     ];
     const ids = new Set(shown.map((s) => s.id));
     a.bodies = (a.bodies || []).filter((b) => ids.has(b.id));
@@ -579,12 +589,18 @@ export class Game {
       }
       b.paper = s.paper;
       b.vip = !!s.vip;
-      b.maxHealth = s.kind === 'enemy' ? ENEMY_TYPES[s.enemy_type].hp : 100;
+      b.maxHealth = isStaff(s.enemy_type)
+        ? STAFF_HP
+        : s.kind === 'enemy'
+          ? ENEMY_TYPES[s.enemy_type].hp
+          : 100;
       b.health =
         s.kind === 'enemy' ? b.maxHealth - s.damage : (r.pilots.get(s.entity)?.health ?? 100);
       b.enemyType = s.enemy_type;
     }
     a.obstacles = VIP_LANE;
+    a.saintDown = !!r.staff?.saint.down;
+    a.vipClosed = !!r.staff?.guard.down;
     a.host =
       shown
         .filter((s) => s.kind === 'player')
@@ -1134,6 +1150,7 @@ export class Game {
       souls,
       arena: r.purgatory,
       base: r.base,
+      staff: r.staff,
       damage: [],
     });
   }
@@ -1387,6 +1404,8 @@ export class Game {
     else if (path === 'hit') this.hit(r, p, b);
     else if (path === 'friendly-hit') this.friendly(r, p, b);
     else if (path === 'vip-pass') this.vipPass(r, p, b);
+    else if (path === 'purgatory-hit') this.purgatoryHit(r, p, b);
+    else if (path === 'soul-board') this.soulBoard(r, p, b);
     else if (path === 'blast') {
       requireGame(
         p.life === 'alive' &&
@@ -1460,6 +1479,11 @@ export class Game {
       'Construction réservée aux joueurs à pied et aux équipages des Castor.',
     );
     requireGame(b?.epoch === r.base.epoch, 'La partie a changé ; recommencez la pose.');
+    // Nothing is built on Saint Pierre's cloud, nor dropped from his sky (docs/purgatory-sky.md).
+    requireGame(
+      !inSky(airborne ? (vehicle.state.p?.[1] ?? 0) : (this.playerPosition(r, p)?.[1] ?? 0)),
+      'On ne construit rien dans le ciel de Saint Pierre.',
+    );
     const token = b.request;
     if (token !== undefined)
       requireGame(
@@ -1849,6 +1873,10 @@ export class Game {
     requireGame(
       b.epoch === r.base.epoch && b.incarnation === p.incarnation,
       'Corps ou partie périmés.',
+    );
+    requireGame(
+      !inSky(this.playerPosition(r, p)?.[1] ?? 0),
+      'On ne pose rien dans le ciel de Saint Pierre.',
     );
     // Use exactly the same placement rules as ordinary purchases, with a private
     // prepaid flag rather than crediting the wallet or temporarily removing an order.
@@ -2278,7 +2306,11 @@ export class Game {
     }
     const R = physicsEngine();
     if (!R) return; // still loading: the aircraft stays where it was left
-    r.parkedHost ??= new ParkedHost(R, decorFor(r.layout), this.fixedSolids ?? layoutSolids());
+    // Vacant aircraft also rest on Saint Pierre's cloud (docs/purgatory-sky.md).
+    r.parkedHost ??= new ParkedHost(R, decorFor(r.layout), [
+      ...(this.fixedSolids ?? layoutSolids()),
+      ...purgatorySolids(),
+    ]);
     r.parkedHost.sync(wanted);
     for (const u of r.parkedHost.step(now)) {
       const v = r.vehicles.get(u.id);
@@ -2625,11 +2657,77 @@ export class Game {
   }
   // VIP lane pass (docs/purgatory-queue.md): a signed slip, paid once from the
   // common fund at the wave's price; refused when the fund cannot pay it.
+  // Shots in Saint Pierre's sky (docs/purgatory-sky.md), reported by their shooter
+  // (trusted, cooperative game) and applied once per shot and target:
+  // - an insect's soul in the queue is freed at once, paying the team as if served;
+  // - Saint Pierre or the guard loses life (STAFF_HP); killed, his soul joins the queue;
+  // - a staff soul loses life too; freed at STAFF_HP, he goes back to his post.
+  // Players' souls are never hurt (no friendly fire on players).
+  purgatoryHit(r, p, b) {
+    requireGame(p.life === 'alive', 'Les âmes ne tirent pas.');
+    requireGame(typeof b.shot === 'string' && b.shot.length <= 160, 'Impact invalide.', 400);
+    const targets = Array.isArray(b.targets) ? b.targets.slice(0, 64) : [];
+    for (const target of targets) {
+      if (!Array.isArray(target)) continue;
+      const [kind, key, value] = target,
+        amount = Number.isFinite(value) ? Math.max(0, value) : 0;
+      if (kind === 'staff' && STAFF_ROLES.includes(key))
+        this.once(r, JSON.stringify(['staff', key, b.shot]), () => {
+          const staff = r.staff[key];
+          if (staff.down) return;
+          staff.hp = Math.max(0, staff.hp - amount);
+          if (staff.hp > 0) return;
+          staff.down = true;
+          this.soul(
+            r,
+            'enemy',
+            'staff:' + key,
+            key === 'saint' ? 'Saint Pierre' : 'Vigile',
+            'purgatory',
+            key,
+          );
+        });
+      else if (kind === 'soul' && Number.isInteger(key))
+        this.once(r, JSON.stringify(['soul', key, b.shot]), () => {
+          const soul = r.souls.get(key);
+          if (!soul || soul.status !== 'waiting' || soul.kind !== 'enemy') return;
+          if (isStaff(soul.enemy_type)) {
+            soul.damage = (soul.damage || 0) + amount;
+            if (soul.damage < STAFF_HP) return;
+          }
+          const body = r.purgatory.bodies?.find((x) => x.id === soul.id);
+          if (body) body.gone = true;
+          this.releaseSoul(r, soul);
+        });
+    }
+  }
+  // A soul climbs into an aircraft standing in Saint Pierre's sky (on the cloud): it
+  // leaves the queue and lives again, in that seat (docs/purgatory-sky.md).
+  soulBoard(r, p, b) {
+    requireGame(p.life === 'dead' && world(p) === 'purgatory', 'Seule une âme peut embarquer ici.');
+    const v = r.vehicles.get(b.vehicle);
+    requireGame(v && v.state.hp > 0 && inSky(v.state.p?.[1] ?? 0), 'Appareil hors du ciel.');
+    const seat = VEHICLES[v.type].seats.find((seat) => !v.seats.has(seat));
+    requireGame(seat, 'Aucune place libre.');
+    for (const s of r.souls.values())
+      if (s.kind === 'player' && s.entity === p.id && s.status === 'waiting') {
+        s.status = 'gone';
+        const body = r.purgatory.bodies?.find((x) => x.id === s.id);
+        if (body) body.gone = true;
+      }
+    p.life = 'alive';
+    p.health = 100;
+    p.incarnation++;
+    p.board_paper = 0;
+    p.state = initialState();
+    this.assign(r, p, v, seat);
+  }
   vipPass(r, p, b) {
     requireGame(
       p.life === 'dead' && world(p) === 'purgatory' && signature(b.signature),
       'Signez le coupe-file au purgatoire.',
     );
+    requireGame(!r.staff.guard.down, 'Le vigile est mort : l’accès VIP est fermé.');
     requireGame(
       b.epoch === r.base.epoch && b.incarnation === p.incarnation,
       'Partie ou décès périmés.',
@@ -2658,8 +2756,10 @@ export class Game {
       a = r[realm],
       s = body && r.souls.get(body.id),
       forms = 3;
+    requireGame(!r.staff.saint.down, 'Saint Pierre est mort : plus personne ne ressuscite.');
     requireGame(
-      body && (deskOccupant(a)?.id === body.id || (s?.vip && inVipDesk(body))),
+      body &&
+        (deskOccupant(a)?.id === body.id || (s?.vip && !r.staff.guard.down && inVipDesk(body))),
       'Placez votre corps dans la zone du guichet.',
     );
     requireGame(

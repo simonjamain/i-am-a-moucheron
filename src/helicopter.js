@@ -3,6 +3,7 @@ import { segmentBox } from './swept-geometry.ts';
 import { MAP, ACTOR_UNIT } from './scale.ts';
 import { PROJECTILES } from './projectiles.ts';
 import { OFFICE_LAYOUT } from './layout.ts';
+import { outOfFlight } from './sky-passage.ts';
 import { VEHICLE_ANCHORS } from './vehicle-anchors.ts';
 export const HELI = Object.freeze({
   gunInterval: 1 / 15,
@@ -153,9 +154,8 @@ export function stepHelicopter(T, state, controls, colliders, dt, profile) {
         segmentBox(before.toArray(), p.toArray(), b) !== null &&
         !(landed && Math.abs(b.max.y - support) < 1e-6),
     ) ||
-    p.y > OFFICE_LAYOUT.bounds.ceiling ||
-    Math.abs(p.x) > OFFICE_LAYOUT.bounds.x ||
-    Math.abs(p.z) > OFFICE_LAYOUT.bounds.z
+    // No ceiling: above the clouds lies Saint Pierre's sky (src/sky-passage.ts).
+    outOfFlight(p, OFFICE_LAYOUT.bounds)
   )
     state.hp = 0;
   Object.assign(state, {

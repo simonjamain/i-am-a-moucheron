@@ -135,6 +135,8 @@ const files = {
       'reload-hud',
       'office-fog',
       'arena-frame',
+      'sky-passage',
+      'sky-targets',
       'clipboard-model',
       'clipboard-data',
       'engine-smoke',

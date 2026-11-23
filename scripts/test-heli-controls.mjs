@@ -18,6 +18,8 @@ function client(key) {
   const c = vm.createContext({
     T,
     stepHelicopter,
+    // The sky passage (src/sky-passage.ts) never moves a flight that stays in the room.
+    flightPassage: () => false,
     // The physics engine has not loaded: the old step flies (the engine path: test-heli-physics).
     rapier: null,
     HELI_TYPES,

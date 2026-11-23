@@ -7,6 +7,9 @@ quelques meubles de salle d’attente. Les règles de marche, la file
 et le guichet ne changent pas ([file des purgatoires](purgatory-queue.md)) : le décor
 n’ajoute aucun obstacle partagé.
 
+Le purgatoire est aussi un lieu du ciel où l'on monte en avion, où l'on se pose et où
+l'on tire : [ciel du purgatoire](purgatory-sky.md).
+
 Code : `src/purgatory-scene.ts` (scène, mobilier, panneaux), `src/purgatory-clouds.ts`
 (ciel, nuages du ciel), `src/purgatory-floor.ts` (nuage-sol volumétrique),
 `src/saint-pierre-model.ts` et `src/vip-guard-model.ts` (personnages). `client.js` crée
