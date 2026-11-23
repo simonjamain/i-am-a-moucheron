@@ -2,7 +2,8 @@
 Usage: PYTHONPATH=scripts python3 scripts/import-creature.py <species> path/to/model.glb
 Species: ant (Red Ant Warrior), spider (Spotted Velvet Spider), roach (Low Poly
 Cockroach), spiderling (Grumpy Spider), vip-guard (Guardian in Black, the
-purgatory's VIP lane guard: a person, posed by src/vip-guard-model.ts). User-supplied
+purgatory's VIP lane guard: a person, posed by src/vip-guard-model.ts),
+saint-pierre (The Keeper of Wisdom, posed by src/saint-pierre-model.ts). User-supplied
 GLBs checked by SHA-256. Output keeps the skinned mesh, the Meshy SmartRig
 skeleton with its bind matrices and a 512 px JPEG copy of the 2K texture (the
 original stays in assets/originals/<species>/, outside Git). Gaits are
@@ -52,6 +53,12 @@ SPECIES = {
         'output': 'src/vip-guard-data.js',
         'constant': 'VIP_GUARD_DATA',
         'label': 'Purgatory VIP lane guard (Meshy "Guardian in Black", rigged, no clip)',
+    },
+    'saint-pierre': {
+        'sha256': '580e63d0bdda2567fb11ce02e7e9cd1bb3f189fa4bb61cafb1e1d39c6e6319d0',
+        'output': 'src/saint-pierre-data.js',
+        'constant': 'SAINT_PIERRE_DATA',
+        'label': 'Saint Pierre, at the purgatory counter (Meshy "The Keeper of Wisdom", rigged, no clip)',
     },
     'spiderling': {
         'sha256': 'eaeaff76e5384386dd19894b7acdf06a6513b675ecd9fd5d069891b4a5d996da',

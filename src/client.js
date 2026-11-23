@@ -2692,7 +2692,6 @@ async function submitPaper() {
 }
 // The purgatory's decor: an administration on a cloud (docs/purgatory-scene.md).
 const purgatory = createPurgatoryScene(T, {
-  humanoid,
   box: pm,
   shaders: !!renderer.isWebGLRenderer,
 });
@@ -2770,6 +2769,8 @@ function physicalPurgatory(dt, now) {
     vip: !!self.vip,
     deskServed: served?.id === self.id && !(self.vip && self.x > VIP_DESK.x / 2),
     vipServed: served?.id === self.id && !!self.vip,
+    servedAt: served ? { x: served.x, z: served.z } : null,
+    stamping: served?.kind === 'enemy' && served.served > 0,
   });
   const active = new Set();
   for (const b of soulArena.bodies) {
@@ -2800,7 +2801,7 @@ function physicalPurgatory(dt, now) {
     } else {
       // Insects hover in the queue.
       g.rotation.x = Math.sin(now * 0.009 + b.id) * 0.06;
-      g.position.y = Math.sin(now * 0.008 + b.id) * 0.08;
+      g.position.y = purgatory.hover + Math.sin(now * 0.008 + b.id) * 0.08;
     }
   }
   for (const b of soulArena.bodies)
@@ -5415,11 +5416,14 @@ function frame(now) {
       purgatory.prerender(renderer, observationCamera);
     }
     toon.render(observationRealm === 'office' ? scene : purgScene, observationCamera);
+    if (observationRealm !== 'office')
+      purgatory.postrender(renderer, observationCamera, toon.depthTexture());
   } else if (respawnAt && soulBody) {
     physicalPurgatory(dt, now);
     updateAimedGuard();
     purgatory.prerender(renderer, purgCamera);
     toon.render(purgScene, purgCamera);
+    purgatory.postrender(renderer, purgCamera, toon.depthTexture());
     postSelection.color = aimedGuard ? SIGNAL_COLOR : null;
     postSelection.render(purgScene, purgCamera);
   } else toon.render(scene, camera);
@@ -6972,6 +6976,8 @@ function observedPurgatory(dt) {
     vip: false,
     deskServed: false,
     vipServed: false,
+    servedAt: served ? { x: served.x, z: served.z } : null,
+    stamping: served?.kind === 'enemy' && served.served > 0,
   });
   const active = new Set();
   for (const body of arena?.bodies || []) {
@@ -6987,7 +6993,7 @@ function observedPurgatory(dt) {
       soulMeshes.set(body.id, model);
       model.rotation.y = body.face || 0;
     }
-    model.position.set(body.x, 0, body.z);
+    model.position.set(body.x, body.kind === 'player' ? 0 : purgatory.hover, body.z);
     if (body.kind === 'player') poseWalker(model, body, dt);
     else model.userData.animate?.(dt, { speed: walkSpeed(WALK_WORLDS.purgatory, body) });
   }

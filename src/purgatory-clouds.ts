@@ -296,6 +296,36 @@ export function createCloudFloor(
 }
 
 // -------------------------------------------------------- volumetric clouds
+/** Shared GLSL of every volumetric cloud: value noise, fBm, Henyey-Greenstein. */
+export const CLOUD_NOISE_GLSL = /* glsl */ `
+float hash3(vec3 p) {
+  p = fract(p * 0.3183099 + 0.1);
+  p *= 17.0;
+  return fract(p.x * p.y * p.z * (p.x + p.y + p.z));
+}
+float noise(vec3 x) {
+  vec3 i = floor(x), f = fract(x);
+  f = f * f * (3.0 - 2.0 * f);
+  return mix(mix(mix(hash3(i), hash3(i + vec3(1, 0, 0)), f.x),
+                 mix(hash3(i + vec3(0, 1, 0)), hash3(i + vec3(1, 1, 0)), f.x), f.y),
+             mix(mix(hash3(i + vec3(0, 0, 1)), hash3(i + vec3(1, 0, 1)), f.x),
+                 mix(hash3(i + vec3(0, 1, 1)), hash3(i + vec3(1, 1, 1)), f.x), f.y), f.z);
+}
+float fbm(vec3 p, int octaves) {
+  float s = 0.0, a = 0.5;
+  for (int i = 0; i < 4; i++) {
+    if (i >= octaves) break;
+    s += a * noise(p);
+    p = p * 2.03 + vec3(1.7, 9.2, 3.1);
+    a *= 0.5;
+  }
+  return s;
+}
+float hg(float c, float g) {
+  float g2 = g * g;
+  return (1.0 - g2) / (4.0 * PI * pow(1.0 + g2 - 2.0 * g * c, 1.5));
+}
+`;
 const CLOUD_VERTEX = /* glsl */ `
 varying vec3 vOrigin;
 varying vec3 vPos;
@@ -323,29 +353,7 @@ varying vec3 vPos;
 #include <common>
 #include <logdepthbuf_pars_fragment>
 
-float hash3(vec3 p) {
-  p = fract(p * 0.3183099 + 0.1);
-  p *= 17.0;
-  return fract(p.x * p.y * p.z * (p.x + p.y + p.z));
-}
-float noise(vec3 x) {
-  vec3 i = floor(x), f = fract(x);
-  f = f * f * (3.0 - 2.0 * f);
-  return mix(mix(mix(hash3(i), hash3(i + vec3(1, 0, 0)), f.x),
-                 mix(hash3(i + vec3(0, 1, 0)), hash3(i + vec3(1, 1, 0)), f.x), f.y),
-             mix(mix(hash3(i + vec3(0, 0, 1)), hash3(i + vec3(1, 0, 1)), f.x),
-                 mix(hash3(i + vec3(0, 1, 1)), hash3(i + vec3(1, 1, 1)), f.x), f.y), f.z);
-}
-float fbm(vec3 p, int octaves) {
-  float s = 0.0, a = 0.5;
-  for (int i = 0; i < 4; i++) {
-    if (i >= octaves) break;
-    s += a * noise(p);
-    p = p * 2.03 + vec3(1.7, 9.2, 3.1);
-    a *= 0.5;
-  }
-  return s;
-}
+${CLOUD_NOISE_GLSL}
 // Cumulus: a dome with a flatter base, eroded by noise.
 float cloud(vec3 p, int octaves) {
   float body = 1.0 - length(p * vec3(2.0, 2.4, 2.0));
@@ -359,10 +367,6 @@ vec2 hitBox(vec3 o, vec3 d) {
   vec3 a = (vec3(-0.5) - o) * inv, b = (vec3(0.5) - o) * inv;
   vec3 lo = min(a, b), hi = max(a, b);
   return vec2(max(max(lo.x, lo.y), lo.z), min(min(hi.x, hi.y), hi.z));
-}
-float hg(float c, float g) {
-  float g2 = g * g;
-  return (1.0 - g2) / (4.0 * PI * pow(1.0 + g2 - 2.0 * g * c, 1.5));
 }
 void main() {
   #include <logdepthbuf_fragment>
