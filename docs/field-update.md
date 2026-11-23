@@ -63,6 +63,31 @@ Les valeurs CHU-01 de cette livraison ont été remplacées par CHU-02 : gravit�
 par sous-pas, le parachute progressif et la déduplication restent. Constantes,
 mesures de chute et origine du changement : [physique actuelle](multiplayer-return.md#gravité-parachute-et-pistolet).
 
+**Saut.** Espace à pied, au sol, lance un saut (`jumpWalker`, `src/field-physics.ts`) : vitesse de
+décollage de 4,9 m/s de référence (apex d'environ 1,2 m, environ 1 s en l'air), même gravité que la
+chute, pas de dégât à l'atterrissage (sous la vitesse sûre). Le bureau l'intègre dans `stepWalker`
+(surfaces réelles sous le personnage) ; le purgatoire, plat, dans `stepFlatJump`. Les deux partagent le
+même départ de saut et les mêmes champs réseau (`y`, `vy`, `grounded`), donc les autres joueurs voient
+le saut. Un saut permet de monter sur les bureaux bas.
+
+**Chute libre.** Une descente plus rapide que `WALKER_FREEFALL_SPEED` (5,6 m/s ; un saut redescend à
+4,9 m/s au plus) est une chute libre : règles d'air de chute libre (`walk-arena.ts`), pose de chute libre
+et ouverture possible du parachute. Un saut garde le contrôle et la limite de vitesse du sol, et ne peut
+pas ouvrir le parachute ; replier un parachute ouvert reste possible à tout moment.
+
+**Animations** (`src/walker-air-pose.ts`, `character-model.ts`). Aucun clip de saut ni de chute n'existe
+dans les imports : les poses sont procédurales (directions d'os, indépendantes des axes locaux).
+
+- Saut : quatre images clés mélangées par la vitesse verticale (`rise`, 1 au décollage, 0 à l'apex, -1 à
+  la descente) : bras levés au décollage, genoux repliés et bras devant à l'apex, jambes tendues vers le
+  sol et bras écartés à la descente ; l'écrasement à l'atterrissage existait déjà.
+- Chute libre : corps penché presque à l'horizontale, face au sol, bras écartés avec les avant-bras vers
+  la tête, jambes en arrière et écartées (« boîte » du parachutiste). La transition depuis le saut est
+  progressive.
+- Parachute : bras levés au-dessus de la tête, jambes jointes.
+- Les poses se vérifient sur des rendus (`scripts/test-walker-jump.mjs` en vérifie la continuité, la
+  symétrie gauche-droite et les seuils). Le purgatoire et le bureau utilisent les mêmes poses.
+
 ## Départ, lits et contrats personnels
 
 La fin des trois papiers du purgatoire restaure 100 PV et recrée le corps dans

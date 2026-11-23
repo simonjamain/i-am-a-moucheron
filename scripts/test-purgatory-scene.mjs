@@ -17,6 +17,10 @@ import { propFootprint, modelBoxes } from '../src/office-props.ts';
 import { WALK_WORLDS } from '../src/scale.ts';
 import { VIP_GUARD as GUARD_RIG, VIP_GUARD_MODEL } from '../src/vip-guard-model.ts';
 import { VIP_GUARD_DATA } from '../src/vip-guard-data.js';
+import { SAINT_PIERRE_DATA } from '../src/saint-pierre-data.js';
+import { SaintPierre, SAINT_PIERRE_BONES, SAINT_PIERRE_MODEL } from '../src/saint-pierre-model.ts';
+import { FLOOR_MIST, createFloorCloud } from '../src/purgatory-floor.ts';
+import { PostHighlight, selectionRect } from '../src/post-highlight.ts';
 
 const U = WALK_WORLDS.purgatory.sceneScale;
 const walk = PURGATORY_RULES.bounds({ bodies: [] });
@@ -55,7 +59,20 @@ for (const c of SKY_CLOUDS) {
 // Furniture: nothing that blocks stands in the walkable hall, except the counter
 // behind its front edge (z < 0), and nothing crosses the VIP ropes.
 const props = purgatoryProps();
-assert.ok(props.length > 60, 'a furnished office: ' + props.length);
+assert.ok(props.length > 30 && props.length < 60, 'a sober decor: ' + props.length);
+// Beyond the counter and the back office, only what tells of a waiting room.
+const WAITING = new Set([
+  'Sofa_Grey',
+  'Coffee_Table',
+  'Paper_Stack_Small',
+  'Water_Cooler',
+  'Visitor_Chair_Grey',
+]);
+for (const p of props)
+  if (p.z * U > 0) assert.ok(WAITING.has(p.model), p.model + ' along the queue');
+assert.ok(
+  props.some((p) => p.model === 'Sofa_Grey') && props.some((p) => p.model === 'Water_Cooler'),
+);
 for (const p of props) {
   if (!modelBoxes(p.model).length) continue; // small items are walked over
   const box = propFootprint(p);
@@ -73,6 +90,11 @@ for (const d of desks) {
   assert.ok(box.max.z * U < 0, 'desk front behind the hall edge');
   assert.ok(box.min.z * U > COUNTER.saintZ, 'Saint Pierre stands behind the desks');
 }
+// Behind Saint Pierre: office equipment only, kept sober.
+const OFFICE_EQUIPMENT = new Set(['Whiteboard', 'Filing_Cabinet', 'Photocopier', 'Bookshelf']);
+const back = props.filter((p) => p.z * U < COUNTER.saintZ && Math.abs(p.x * U) < walk.maxX);
+assert.ok(back.length >= 2 && back.length <= 6, 'a sober back office: ' + back.length);
+for (const p of back) assert.ok(OFFICE_EQUIPMENT.has(p.model), p.model + ' behind Saint Pierre');
 const ropes = VIP_LANE.filter((o) => !o.vip);
 for (const p of props) {
   if (!modelBoxes(p.model).length) continue;
@@ -102,9 +124,65 @@ let travel = 0;
 for (let t = 0; t < 1; t += 0.05) travel = Math.max(travel, at(t).distanceTo(start));
 assert.ok(travel > 0.003 && travel < 0.15 * U, 'breath and look stay small: ' + travel);
 
+// Saint Pierre: a user-approved Meshy rig, breathing, walking when he moves to
+// the other window, turning his head toward the soul he serves, stamping.
+assert.equal(SAINT_PIERRE_DATA.source.sha256.slice(0, 8), '580e63d0');
+assert.equal(SAINT_PIERRE_DATA.source.bones, 39);
+const saint = new SaintPierre(T);
+saint.container.updateMatrixWorld(true);
+const saintSize = new T.Box3().setFromObject(saint.rig.mesh).getSize(new T.Vector3());
+near(saintSize.y, SAINT_PIERRE_MODEL.height * U, 0.1 * U, 'Saint Pierre height');
+const B = SAINT_PIERRE_BONES;
+const world = (name) => (
+  saint.container.updateMatrixWorld(true),
+  saint.rig.bones[name].getWorldPosition(new T.Vector3())
+);
+const idle = { speed: 0, look: 0, stamping: false };
+for (let i = 0; i < 30; i++) saint.update(1 / 30, i / 30, idle);
+const restFoot = world(B.legs[0][1]),
+  restHand = world(B.hands[1]),
+  restHead = world(B.head);
+// Walking: a knee leaves its rest place; standing again, it comes back.
+let kneeTravel = 0;
+for (let i = 0; i < 40; i++) {
+  saint.update(1 / 30, 1 + i / 30, { speed: 3, look: 0, stamping: false });
+  kneeTravel = Math.max(kneeTravel, world(B.legs[0][1]).distanceTo(restFoot));
+}
+assert.ok(kneeTravel > 0.05, 'legs step while he walks: ' + kneeTravel);
+for (let i = 0; i < 60; i++) saint.update(1 / 30, 3 + i / 30, idle);
+assert.ok(world(B.legs[0][1]).distanceTo(restFoot) < 0.03, 'standing again');
+// Stamping lifts the right hand (-X side) well above its rest height.
+let handLift = 0;
+for (let i = 0; i < 45; i++) {
+  saint.update(1 / 30, 5 + i / 30, { speed: 0, look: 0, stamping: true });
+  handLift = Math.max(handLift, world(B.hands[1]).y - restHand.y);
+}
+assert.ok(handLift > 0.3, 'the stamp goes up: ' + handLift);
+// Looking to his left (+X) turns the head that way.
+for (let i = 0; i < 40; i++)
+  saint.update(1 / 30, 7 + i / 30, { speed: 0, look: 0.8, stamping: false });
+const face = new T.Vector3(0, 0, 1).applyQuaternion(
+  saint.rig.bones[B.head].getWorldQuaternion(new T.Quaternion()),
+);
+const restFace = (() => {
+  for (let i = 0; i < 40; i++) saint.update(1 / 30, 9 + i / 30, idle);
+  return new T.Vector3(0, 0, 1).applyQuaternion(
+    saint.rig.bones[B.head].getWorldQuaternion(new T.Quaternion()),
+  );
+})();
+assert.ok(face.angleTo(restFace) > 0.4, 'the head turns: ' + face.angleTo(restFace));
+assert.ok(restHead.y > 1.6 && restHead.y < 2.6, 'head at a person height: ' + restHead.y);
+
+// The floor cloud: a soul walks half inside it (the mist's top below its
+// middle, above its ankles), the cloud billows beyond the hall.
+assert.ok(FLOOR_MIST.top > 0.3 && FLOOR_MIST.top < 1.23, 'mist up to the knees');
+assert.ok(FLOOR_MIST.dense < 0 && FLOOR_MIST.bottom < -3);
+const floorPass = createFloorCloud(T, PURGATORY_HALL, CLOUD_FLOOR);
+floorPass.setMood('super');
+floorPass.dispose();
+
 // The whole scene builds without a document (software renderer: no shaders).
 const built = createPurgatoryScene(T, {
-  humanoid: () => new T.Group(),
   box: (parent, w, h, d, color, x, y, z) => {
     const m = new T.Mesh(new T.BoxGeometry(w, h, d), new T.MeshBasicMaterial({ color }));
     m.position.set(x, y, z);
@@ -124,6 +202,51 @@ built.update(0.5, 1500, { super: true, saintX: 0, vip: true, deskServed: true, v
 assert.ok(built.saint.scale.x > 1.3, 'Super Saint-Pierre is taller');
 assert.ok(built.colliders.length >= 2);
 assert.ok(!built.scene.getObjectByName('purgatoire-nuages-ciel'), 'no shader clouds without WebGL');
+// The guard is aimed at like a vehicle post: a ray through him hits his mesh.
+built.scene.updateMatrixWorld(true);
+const centre = new T.Box3().setFromObject(built.guard).getCenter(new T.Vector3());
+const aim = new T.Raycaster(
+  new T.Vector3(centre.x, centre.y, centre.z + 6),
+  new T.Vector3(0, 0, -1),
+);
+assert.ok(aim.intersectObject(built.guard, true).length > 0, 'the guard can be aimed at');
+// Its outline mask is skinned on his own skeleton: it follows the breath and
+// the look instead of staying in the bind pose.
+const highlight = new PostHighlight(T, built.guard, {
+  seats: [],
+  local: [0, 0, 0],
+  radius: 0,
+  outline: { meshes: [] },
+});
+const masks = [];
+built.guard.traverse((o) => o.name === 'post-outline' && masks.push(o));
+const skin = built.scene.getObjectByName('vigile-vip-meshy');
+assert.equal(masks.length, 1, 'one mask for the guard mesh');
+assert.ok(
+  masks[0].isSkinnedMesh && masks[0].skeleton === skin.skeleton,
+  'mask on the guard skeleton',
+);
+assert.ok(masks[0].bindMatrix.equals(skin.bindMatrix));
+// The outline pass only covers the guard's part of the screen.
+const view = new T.PerspectiveCamera(62, 16 / 9, 0.1, 150);
+view.position.set(centre.x - 2, centre.y + 1, centre.z + 6);
+view.lookAt(centre);
+view.updateMatrixWorld();
+const screen = { x: 1920, y: 1080 };
+assert.equal(selectionRect(T, view, screen, 8), null, 'nothing shown, no pass');
+highlight.show();
+built.scene.updateMatrixWorld(true);
+const rect = selectionRect(T, view, screen, 8);
+assert.ok(
+  rect && rect.w * rect.h < 0.25 * screen.x * screen.y,
+  'a small rectangle: ' + JSON.stringify(rect),
+);
+const middle = new T.Vector3().copy(centre).project(view);
+const px = ((middle.x + 1) / 2) * screen.x,
+  py = ((middle.y + 1) / 2) * screen.y;
+assert.ok(px > rect.x && px < rect.x + rect.w && py > rect.y && py < rect.y + rect.h, 'around him');
+highlight.hide();
+assert.equal(selectionRect(T, view, screen, 8), null);
 const guardSpot = built.scene.getObjectByName('vigile-vip').position;
 assert.ok(Math.hypot(guardSpot.x - VIP_GUARD.x, guardSpot.z - VIP_GUARD.z) < 1e-9);
 

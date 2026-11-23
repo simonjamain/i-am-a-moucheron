@@ -56,13 +56,12 @@ du poste. Le HTML fournit uniquement le titre, la valeur principale et un
 conteneur par panneau. La vue du Flak lourd est calculée avec celle des autres
 postes dans `updateVehicles()`, avant le rendu de la scène.
 
-## Achats prépayés et salissure
+## Achats prépayés
 
 [Lisibilité et nettoyage](clean-flight.md) : `purchase-ui.js` réutilise les protections
 de signature de `BedUI` pour les bons. `equipment.ts` calcule prix et compteurs
-prépayés ; `server/game.js` possède commandes personnelles, poses, contacts et
-salissure. `vehicle-care.js` porte dégâts et rayon du jet ; les effets décoratifs
-restent côté client. `tank-reticle.js` réutilise l’intégrateur autoritaire des obus.
+prépayés ; `server/game.js` possède commandes personnelles, poses et contacts.
+`vehicle-care.js` porte les dégâts de contact ; les effets décoratifs restent côté client. `tank-reticle.js` réutilise l’intégrateur autoritaire des obus.
 `fleet.ts` / `graphics.js` / `logistics.ts` décrivent le Spitfire S6 et ses réserves.
 `test-clean-flight.mjs` couvre ce lot ; les tests natifs UDP exercent ses commandes
 entre deux pairs.

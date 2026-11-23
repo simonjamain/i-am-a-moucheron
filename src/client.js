@@ -34,7 +34,6 @@ import { HOWITZER } from '/howitzer-model.js';
 import { TracerPool, TRACER_COLOR } from '/tracers.js';
 import { PurchaseUI } from '/purchase-ui.js';
 import { purchaseCount } from '/equipment.js';
-import { WASH } from '/vehicle-care.js';
 import { HELI, stepHeliAim, stepHelicopter } from '/helicopter.js';
 import { HeliRig, HELI_TYPES } from '/heli-physics.js';
 import { RenderInterpolation } from '/render-interpolation.js';
@@ -63,6 +62,7 @@ import { stamp } from '/paper-form.js';
 import { RewardQueue } from '/rewards.js';
 import { SHOP, shopPrice, supportedPlacement } from '/equipment.js';
 import { stepBallisticVelocity, toggleParachute } from '/ballistics.js';
+import { jumpWalker, stepFlatJump } from '/field-physics.js';
 import { makeTracer, updateTracer } from '/tracers.js';
 import { wavePlan, swarmFrame, entryStatus, ENEMY_TYPES } from '/waves.js';
 import {
@@ -1074,6 +1074,10 @@ canvas.addEventListener('mousedown', (event) => {
     else cancelPlacement();
     return;
   }
+  if (event.button === 0 && respawnAt && aimedGuard && openVipPass()) {
+    event.preventDefault();
+    return;
+  }
   if (event.button === 0 && useAimedPost()) {
     event.preventDefault();
     return;
@@ -1534,7 +1538,6 @@ function accept(s, force = false) {
         Date.now() + clockOffset,
         colliders,
       );
-    if (e.kind === 'clean' && !respawnAt) addCleanStars(e);
     if (e.kind === 'piercing') hitEffects.burst(new T.Vector3().fromArray(e.p), camera);
     // Issue #108: Castor auto-turret shots are visible to everyone, from the
     // model's real muzzle: tracer, flash and recoil.
@@ -2073,6 +2076,21 @@ addEventListener('keydown', (event) => {
     toggleShop();
     return;
   }
+  // Space on foot: open the parachute when falling, else jump (office and purgatory).
+  let jumped = false;
+  if (
+    interactionKey === 'Space' &&
+    !event.repeat &&
+    respawnAt &&
+    soulArena &&
+    !sheetOpen('papers') &&
+    $('flightSettingsPanel').classList.contains('hidden') &&
+    (jumped = jumpPurgatory())
+  ) {
+    event.preventDefault();
+    sound.play('dash', camera.position, { ref: 8 });
+    return;
+  }
   if (
     interactionKey === 'Space' &&
     !event.repeat &&
@@ -2086,10 +2104,11 @@ addEventListener('keydown', (event) => {
     $('flightSettingsPanel').classList.contains('hidden') &&
     $('bank').classList.contains('hidden') &&
     $('shop').classList.contains('hidden') &&
-    toggleParachute(selfBase())
+    (toggleParachute(selfBase()) || (jumped = jumpWalker(selfBase())))
   ) {
     event.preventDefault();
     sound.play('dash', camera.position, { ref: 8 });
+    if (jumped) return;
     notify(
       selfBase().parachute
         ? 'Parachute ouvert · Espace pour replier'
@@ -2674,7 +2693,6 @@ async function submitPaper() {
 }
 // The purgatory's decor: an administration on a cloud (docs/purgatory-scene.md).
 const purgatory = createPurgatoryScene(T, {
-  humanoid,
   box: pm,
   shaders: !!renderer.isWebGLRenderer,
 });
@@ -2683,11 +2701,50 @@ const purgScene = purgatory.scene,
 const purgCamera = new T.PerspectiveCamera(62, innerWidth / innerHeight, 0.1, 150),
   soulMeshes = new Map();
 const soulStatus = new InsectStatus(T, purgScene, { scale: 1 });
+// The VIP guard is used like a post (docs/purgatory-scene.md): within his reach and
+// without a pass, the guard under the crosshair (or the free cursor) is outlined in
+// signal blue; a click, like the interaction key, opens the pass.
+let aimedGuard = false,
+  guardHighlight = null;
+const guardRay = new T.Raycaster();
+function updateAimedGuard() {
+  const body = vipSelf();
+  let next = false;
+  if (body && !body.vip && nearVipGuard(body) && !vipUI.opened) {
+    const rect = canvas.getBoundingClientRect();
+    const free = document.pointerLockElement !== canvas && aimMouse;
+    purgCamera.updateMatrixWorld();
+    guardRay.setFromCamera(
+      new T.Vector2(
+        free ? ((aimMouse[0] - rect.left) / rect.width) * 2 - 1 : 0,
+        free ? 1 - ((aimMouse[1] - rect.top) / rect.height) * 2 : 0,
+      ),
+      purgCamera,
+    );
+    next = guardRay.intersectObject(purgatory.guard, true).length > 0;
+  }
+  if (next !== aimedGuard) {
+    guardHighlight ??= new PostHighlight(T, purgatory.guard, {
+      seats: [],
+      local: [0, 0, 0],
+      radius: 0,
+      outline: { meshes: [] },
+    });
+    if (next) guardHighlight.show();
+    else guardHighlight.hide();
+  }
+  aimedGuard = next;
+}
 function soulSlot(i) {
   return { x: i % 2 ? 1.1 : -1.1, z: 3 + Math.floor(i / 2) * 2.8 };
 }
 function soulImpact(e) {
   if (e.kind === 'stamp') sound.play('stamp', { x: e.x, y: 1.2, z: e.z }, { ref: 7 });
+}
+// The purgatory walker jumps like the office one (src/field-physics.ts), on its flat floor.
+function jumpPurgatory() {
+  const self = soulArena?.bodies.find((b) => b.kind === 'player' && b.entity === id && !b.gone);
+  return !!self && jumpWalker(self, WALK_WORLDS.purgatory.sceneScale);
 }
 function physicalPurgatory(dt, now) {
   if (!soulArena || !snap) return;
@@ -2697,6 +2754,7 @@ function physicalPurgatory(dt, now) {
   self.inputAt = soulArena.time;
   remoteBodies(soulArena, isSuper() ? 'super' : 'soul');
   advancePurgatory(soulArena, soulArena.time + dt * 1000, id);
+  stepFlatJump(self, dt, WALK_WORLDS.purgatory.sceneScale);
 
   soulBody = { x: self.x, z: self.z, vx: self.vx, vz: self.vz, face: self.face };
   for (const event of snap.arena?.events || [])
@@ -2712,6 +2770,8 @@ function physicalPurgatory(dt, now) {
     vip: !!self.vip,
     deskServed: served?.id === self.id && !(self.vip && self.x > VIP_DESK.x / 2),
     vipServed: served?.id === self.id && !!self.vip,
+    servedAt: served ? { x: served.x, z: served.z } : null,
+    stamping: served?.kind === 'enemy' && served.served > 0,
   });
   const active = new Set();
   for (const b of soulArena.bodies) {
@@ -2726,13 +2786,23 @@ function physicalPurgatory(dt, now) {
       soulMeshes.set(b.id, g);
     }
     g.position.lerp(new T.Vector3(b.x, 0, b.z), 1 - Math.exp(-20 * dt));
+    // Height is not eased for our own body (it is simulated every frame): a jump keeps its apex.
+    if (b.kind === 'player')
+      g.position.y =
+        b.entity === id
+          ? b.y || 0
+          : g.position.y + ((b.y || 0) - g.position.y) * (1 - Math.exp(-30 * dt));
     if (b.kind === 'player') {
-      const speed = poseWalker(g, b, dt);
-      walkerSteps(b, speed, { x: b.x, y: 0.1, z: b.z }, 'step:' + b.id, 6);
+      const speed = poseWalker(g, b, dt, {
+        falling: b.grounded === false,
+        vy: (b.vy || 0) / WALK_WORLDS.purgatory.sceneScale,
+      });
+      if (b.grounded !== false)
+        walkerSteps(b, speed, { x: b.x, y: 0.1, z: b.z }, 'step:' + b.id, 6);
     } else {
       // Insects hover in the queue.
       g.rotation.x = Math.sin(now * 0.009 + b.id) * 0.06;
-      g.position.y = Math.sin(now * 0.008 + b.id) * 0.08;
+      g.position.y = purgatory.hover + Math.sin(now * 0.008 + b.id) * 0.08;
     }
   }
   for (const b of soulArena.bodies)
@@ -3429,6 +3499,8 @@ function updateBaseWorld(dt, now) {
     }
     const w = baseWorld(b);
     g.position.lerp(new T.Vector3(w.x, w.y, w.z), 1 - Math.exp(-20 * dt));
+    // Our own body is simulated every frame: its height is not eased, so a jump keeps its apex.
+    if (b.entity === id) g.position.y = w.y;
     if (!g.userData.chute) {
       const chute = new T.Group();
       const canopy = new T.Mesh(
@@ -3456,6 +3528,7 @@ function updateBaseWorld(dt, now) {
     const speed = poseWalker(g, b, dt, {
       falling: b.grounded === false,
       parachute: !!b.parachute,
+      vy: (b.vy || 0) / MAP.ratio,
     });
     if (!respawnAt) walkerSteps(b, speed, w, 'base-step:' + b.entity, 7);
   }
@@ -5374,10 +5447,16 @@ function frame(now) {
       purgatory.prerender(renderer, observationCamera);
     }
     toon.render(observationRealm === 'office' ? scene : purgScene, observationCamera);
+    if (observationRealm !== 'office')
+      purgatory.postrender(renderer, observationCamera, toon.depthTexture());
   } else if (respawnAt && soulBody) {
     physicalPurgatory(dt, now);
+    updateAimedGuard();
     purgatory.prerender(renderer, purgCamera);
     toon.render(purgScene, purgCamera);
+    purgatory.postrender(renderer, purgCamera, toon.depthTexture());
+    postSelection.color = aimedGuard ? SIGNAL_COLOR : null;
+    postSelection.render(purgScene, purgCamera);
   } else toon.render(scene, camera);
   appearancePicker.draw(renderer, dt);
   // Outline of the aimed post, over the office frame only (src/post-highlight.ts).
@@ -5399,7 +5478,6 @@ function frame(now) {
       );
     },
   );
-  updateVehicleCare(dt);
   updateTankReticle();
 }
 requestAnimationFrame(frame);
@@ -6817,174 +6895,7 @@ const purchaseUI = new PurchaseUI({
   },
 });
 
-let nextWashAt = 0,
-  washPending = false,
-  reticleKey = '';
-const sprays = new Map(),
-  cleanStars = [];
-function addCleanStars(e) {
-  if (Date.now() + clockOffset - e.at > 1500) return;
-  const positions = new Float32Array(24 * 3);
-  for (let i = 0; i < 24; i++) {
-    const a = i * 2.39996;
-    positions.set(
-      [
-        e.p[0] + Math.cos(a) * MAP.metres(3),
-        e.p[1] + MAP.metres(1 + (i % 4)),
-        e.p[2] + Math.sin(a) * MAP.metres(3),
-      ],
-      i * 3,
-    );
-  }
-  const geometry = new T.BufferGeometry().setAttribute(
-    'position',
-    new T.BufferAttribute(positions, 3),
-  );
-  const model = new T.Points(
-    geometry,
-    new T.PointsMaterial({
-      color: '#fff9a2',
-      size: MAP.metres(0.45),
-      transparent: true,
-      depthWrite: false,
-    }),
-  );
-  scene.add(model);
-  cleanStars.push({ model, life: 1 });
-  while (cleanStars.length > 16) {
-    const old = cleanStars.shift();
-    scene.remove(old.model);
-    old.model.geometry.dispose();
-    old.model.material.dispose();
-  }
-}
-function updateVehicleCare(dt) {
-  const now = performance.now();
-  for (const v of snap?.vehicles || []) {
-    const model = fleetModels.get(v.id);
-    if (model?.userData.paint)
-      model.userData.paint.color
-        .copy(model.userData.baseColor)
-        .lerp(new T.Color('#5b5131'), Math.min(1, v.dirt || 0) * 0.8);
-  }
-  const dirt = !respawnAt && myVehicle ? myVehicle.dirt || 0 : 0;
-  $('dirtView').style.opacity = String(Math.min(1, dirt) * WASH.maxOpacity);
-  $('dirtWarning').classList.toggle('hidden', dirt < WASH.warning);
-  const local =
-    joined &&
-    !spectating &&
-    !myVehicle &&
-    turretIndex < 0 &&
-    groundActive() &&
-    keys.Space &&
-    (respawnAt || selfBase()?.grounded !== false);
-  const active = new Map();
-  if (local) {
-    const origin = camera.position.clone();
-    const person = respawnAt
-      ? soulArena?.bodies.find((b) => b.entity === id && b.kind === 'player')
-      : selfBase();
-    const scale = respawnAt ? 1 : MAP.ratio;
-    if (person) {
-      const w = respawnAt ? person : baseWorld(person);
-      origin.set(w.x, (w.y || 0) + 0.9 * scale, w.z);
-    }
-    const direction = camera.getWorldDirection(new T.Vector3());
-    active.set(id, {
-      origin: origin.toArray(),
-      direction: direction.toArray(),
-      targetScene: respawnAt ? purgScene : scene,
-    });
-    if (!respawnAt && now >= nextWashAt && !washPending) {
-      nextWashAt = now + 200;
-      washPending = true;
-      const self = snap.pilots.find((p) => p.id === id);
-      api('wash', {
-        id,
-        direction: direction.toArray(),
-        ground: groundReport(),
-        epoch: snap.base.epoch,
-        incarnation: self.incarnation,
-      })
-        .then(accept)
-        .catch((e) => notify(e.message, 2))
-        .finally(() => {
-          washPending = false;
-        });
-    }
-  }
-  for (const p of snap?.pilots || [])
-    if (
-      p.id !== id &&
-      p.life === 'alive' &&
-      p.mode === 'foot' &&
-      p.state.washing &&
-      Date.now() + clockOffset - p.state.washing.at < 350
-    )
-      active.set(p.id, { ...p.state.washing, targetScene: scene });
-  for (const [key, stream] of active) {
-    let spray = sprays.get(key);
-    if (!spray || spray.parent !== stream.targetScene) {
-      if (spray) {
-        spray.parent.remove(spray);
-        spray.geometry.dispose();
-        spray.material.dispose();
-      }
-      const geometry = new T.BufferGeometry().setAttribute(
-        'position',
-        new T.BufferAttribute(new Float32Array(28 * 3), 3),
-      );
-      spray = new T.Points(
-        geometry,
-        new T.PointsMaterial({
-          color: '#f2dd73',
-          size: 0.001,
-          transparent: true,
-          opacity: 0.8,
-          depthWrite: false,
-        }),
-      );
-      stream.targetScene.add(spray);
-      sprays.set(key, spray);
-    }
-    const pos = spray.geometry.attributes.position;
-    const origin = new T.Vector3().fromArray(stream.origin),
-      direction = new T.Vector3().fromArray(stream.direction).normalize();
-    // Decorative particles stop at the first physical surface. Damage/cleaning remains server-owned.
-    let range = WASH.range;
-    const ray = new T.Ray(origin, direction);
-    range = Math.min(
-      range,
-      solidRayDistance(ray, range, stream.targetScene === scene ? colliders : purgColliders),
-    );
-    for (let i = 0; i < 28; i++) {
-      const t = ((now / 180 + i / 28) % 1) * range;
-      const point = origin.clone().addScaledVector(direction, t);
-      pos.setXYZ(i, point.x, point.y, point.z);
-    }
-    pos.needsUpdate = true;
-    spray.geometry.computeBoundingSphere();
-  }
-  for (const [key, spray] of sprays)
-    if (!active.has(key)) {
-      spray.parent.remove(spray);
-      spray.geometry.dispose();
-      spray.material.dispose();
-      sprays.delete(key);
-    }
-  for (let i = cleanStars.length - 1; i >= 0; i--) {
-    const star = cleanStars[i];
-    star.life -= dt;
-    star.model.material.opacity = Math.max(0, star.life);
-    star.model.position.y += dt * MAP.metres(2);
-    if (star.life <= 0) {
-      scene.remove(star.model);
-      star.model.geometry.dispose();
-      star.model.material.dispose();
-      cleanStars.splice(i, 1);
-    }
-  }
-}
+let reticleKey = '';
 // Gauge bars are plain boxes: native <progress> ignores a 4 px height in most browsers.
 function setBar(element, value, max) {
   const ratio = max > 0 ? Math.max(0, Math.min(1, value / max)) : 0;
@@ -7096,6 +7007,8 @@ function observedPurgatory(dt) {
     vip: false,
     deskServed: false,
     vipServed: false,
+    servedAt: served ? { x: served.x, z: served.z } : null,
+    stamping: served?.kind === 'enemy' && served.served > 0,
   });
   const active = new Set();
   for (const body of arena?.bodies || []) {
@@ -7111,7 +7024,7 @@ function observedPurgatory(dt) {
       soulMeshes.set(body.id, model);
       model.rotation.y = body.face || 0;
     }
-    model.position.set(body.x, 0, body.z);
+    model.position.set(body.x, body.kind === 'player' ? 0 : purgatory.hover, body.z);
     if (body.kind === 'player') poseWalker(model, body, dt);
     else model.userData.animate?.(dt, { speed: walkSpeed(WALK_WORLDS.purgatory, body) });
   }

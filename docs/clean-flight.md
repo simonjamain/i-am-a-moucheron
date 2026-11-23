@@ -41,7 +41,7 @@ surligné. Les saisies et formulaires neutralisent les raccourcis.
 | Tireur canon du tank                 | Canon HE/AP                | Coaxiale                                              |
 | Pilote d’avion                       | Mitrailleuses si présentes | Bombes si présentes                                   |
 | Autres postes de mitrailleurs et DCA | Tir                        | Tir, raccourci conservé                               |
-| À pied au bureau                     | —                          | Jet de nettoyage                                      |
+| À pied (bureau, purgatoire)          | —                          | Saut (au sol)                                         |
 | Personnage en chute                  | —                          | Ouverture/repli du parachute, un changement par appui |
 
 B n’a plus d’action d’arme. C maintenu au canon du tank conserve l’observation
@@ -79,7 +79,7 @@ la pièce depuis la version 227, libellés en mesures réelles depuis la version
 le canon ; durées de vol HE 13 s et AP 8 s pour les atteindre réellement. Les graduations hors écran ou trop rapprochées du centre/entre elles sont masquées ; HE/AP et zoom
 actualisent la projection. C masque la mire. Aucun ajustement automatique du canon.
 
-## Impacts et salissure
+## Impacts
 
 Le serveur balaie le déplacement de chaque coque contre les positions partagées
 des insectes, avec volumes sphériques bornés issus de leur taille. Il déduit
@@ -90,27 +90,8 @@ client supplémentaire n’inflige pas un second impact. La règle vaut aussi po
 le tank et les coques sans pilote ; décor et tirs conservent leurs règles distinctes.
 Les positions restent déclaratives dans le modèle coopératif du jeu.
 
-Chaque impact ajoute **0,18** de salissure, plafonnée à 1. La peinture extérieure
-brunit progressivement ; un voile taché couvre la vue de tous les occupants,
-avec opacité maximale **0,42**. À 0,55 apparaît discrètement le conseil de nettoyage.
-Sortir enlève le voile personnel ; la coque garde sa salissure pour le prochain
-occupant. Ce statut ne change aucune performance.
-
-À pied au sol, Espace maintenu produit un jet illimité dans la direction visée.
-Portée **2 mètres du décor**. Le serveur part de la taille du personnage, vérifie
-la première coque et les obstacles, puis retire 0,1 de salissure par seconde
-et par joueur : environ **10 s** pour une coque complètement sale, plus vite
-à plusieurs. Les purgatoires montrent le jet sans nettoyer les coques du bureau.
-Un occupant ne peut pas laver depuis son siège. La destruction rend la coque
-inlavable ; reset supprime les états.
-
-Le client envoie au plus cinq commandes de jet par seconde, une en cours ; le
-serveur borne le temps imputable à 0,25 s par rapport et par joueur. Il ne rattrape
-pas une longue interruption réseau. Les particules sont purement décoratives,
-28 points réutilisés par joueur actif, sans commande fiable par particule.
-La transition sale → propre produit un seul événement partagé et 24 étoiles
-finies. Limites : 16 groupes d’étoiles, 64 traceurs personnels, 128 projectiles
-lourds, 256 traceurs balistiques. Les matériaux sont libérés au retrait.
+Il n'y a plus de salissure ni de jet de nettoyage : un impact n'enlève que des points de
+vie à la coque. Espace à pied au sol sert à **sauter** (voir [commandes](controls.md)).
 
 ## Spitfire et identité sonore
 
@@ -137,12 +118,11 @@ avions, dont le Spitfire.
 `test-clean-flight.mjs` vérifie le domaine réel : prix, signature, concurrence,
 fonds, propriété et pose idempotente, remboursement, cadence/épuisement/recharge,
 les six dernières balles via les vrais `shoot`/`bullet`, autonomie complète,
-ratios physiques, contacts persistants/séparés et ennemis blessés, jet obstrué,
-coopération et événement propre unique. Il exerce les vrais gestionnaires clavier
+ratios physiques, contacts persistants/séparés et ennemis blessés. Il exerce les vrais gestionnaires clavier
 et de signature et compare la mire à l’intégration des obus.
 
 `test-udp-native.mjs` relie deux vrais pairs UDP : commandes fiables, achats,
-Spitfire, salissure partagée/nettoyage/étoiles et trace du pistolet observés par
+Spitfire et trace du pistolet observés par
 l’autre pair. Les fixtures préparent les positions dans la salle locale ; ce
 n’est pas une partie jouée sur Internet. Le test RAM traitait parfois une annexe
 avant sa position légale : cette fixture aléatoire a été corrigée sans changer

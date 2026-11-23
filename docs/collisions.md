@@ -37,8 +37,7 @@ travail avance par lots (note de reprise : [collisions en triangles](tasks/colli
    requêtes exactes, affichage en mode debug.
 2. Rayons sur les triangles, en deux temps :
    - **2a (version 408)**, rayons propres au client : impacts des tirs, exposition
-     aux explosions, recul de la caméra devant le décor, visée de l'hélicoptère, jet
-     d'eau (particules). `solidRayDistance` (`src/client.js`) prend l'impact le
+     aux explosions, recul de la caméra devant le décor, visée de l'hélicoptère. `solidRayDistance` (`src/client.js`) prend l'impact le
      plus proche parmi les boîtes restantes (coque, sol, constructions) et les
      triangles du décor ; les boîtes des objets du pack (marquées `decor` par
      `layoutPieces`) sont ignorées dès que le monde du décor existe ;

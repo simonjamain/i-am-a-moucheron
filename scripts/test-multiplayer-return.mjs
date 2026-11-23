@@ -310,7 +310,7 @@ assert.match(
   controlHints({ vehicle: { type: 'tank' }, seat: 'cannon' }),
   /Clic : canon.*Espace : coaxiale/,
 );
-assert.match(controlHints({}), /jet/);
+assert.match(controlHints({}), /sauter/);
 assert.match(controlHints({ airborne: true }), /parachute/);
 assert.deepEqual(
   cursorStats({

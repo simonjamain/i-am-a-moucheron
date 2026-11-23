@@ -9,12 +9,58 @@ export const WALKER_FALL = Object.freeze({
   safeImpact: 6 * MAP.ratio,
   fatalImpact: 20 * MAP.ratio,
 });
+/** The jump: take-off speed in reference m/s (apex about 1.2 m); scaled by the world's units. */
+export const WALKER_JUMP_SPEED = 4.9;
+/**
+ * Descent speed (reference m/s) from which a fall is a fall: the free-fall pose, free-fall air
+ * rules, and the canopy may open. A jump comes back down slower than this.
+ */
+export const WALKER_FREEFALL_SPEED = 5.6;
 /** Walker body integrated by stepWalkerFall (office metres, m/s). */
 export interface WalkerBody {
   y: number;
   vy: number;
   parachute?: boolean;
   canopyInflation?: number;
+}
+/**
+ * Starts a jump: only from the ground, with no canopy out. `scale` is scene units per reference
+ * metre (WALK_WORLDS[...].sceneScale). Returns false when the walker cannot jump now.
+ */
+export function jumpWalker(
+  body: WalkerBody & { grounded?: boolean },
+  scale: number = MAP.ratio,
+): boolean {
+  if (!body || body.grounded === false || body.parachute) return false;
+  body.vy = WALKER_JUMP_SPEED * scale;
+  body.grounded = false;
+  return true;
+}
+/**
+ * The jump on a flat floor at height `floor` (the purgatory has no relief): rise, fall, land. The
+ * office walker does the same in stepWalker, on the real surfaces under it.
+ */
+export function stepFlatJump(
+  body: WalkerBody & { grounded?: boolean },
+  dt: number,
+  scale: number,
+  floor = 0,
+): void {
+  if (body.grounded !== false) return;
+  const n = Math.max(1, Math.ceil(dt * 240)),
+    h = dt / n;
+  body.y ??= floor;
+  for (let i = 0; i < n; i++) {
+    const next = body.vy - 9.81 * scale * h;
+    body.y += ((body.vy + next) * h) / 2;
+    body.vy = next;
+    if (body.y <= floor) {
+      body.y = floor;
+      body.vy = 0;
+      body.grounded = true;
+      return;
+    }
+  }
 }
 export function impactDamage(speed: number): number {
   const { safeImpact, fatalImpact } = WALKER_FALL;

@@ -286,9 +286,9 @@ causes confirmées et tests : [retours terrain](field-update.md).
 
 Les installations passent par un bon payé à la signature, puis se posent avec E ;
 Échap conserve l’objet pour reprise depuis l’atelier. Les collisions avec un
-insecte coûtent 5 % de ses PV restants à la coque, une seule fois par impact, et
-la salissent pour tous ses occupants. À pied au sol, Espace maintient un jet qui
-nettoie à courte portée, plus vite à plusieurs. Le Spitfire acheté dispose de six
+insecte coûtent 5 % de ses PV restants à la coque, une seule fois par impact. À pied au sol,
+Espace fait **sauter** le personnage (bureau et purgatoire) ; en chute, il ouvre le parachute.
+Le Spitfire acheté dispose de six
 MG avec de petits décalages et de 1 000 balles communes, dernière salve partielle comprise. Les projectiles portent la couleur de leur
 coque ; seule la sirène de piqué du Stuka subsiste. Valeurs et limites :
 [lisibilité, commandes, nettoyage et Spitfire](clean-flight.md).

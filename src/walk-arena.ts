@@ -3,6 +3,8 @@
 // network relay. Each client simulates its own body; the host simulates the NPCs.
 // A world adds its own behaviour through WalkRules (the purgatory queue lives in
 // purgatory-queue.ts); nothing here knows about a particular world.
+import { MAP } from './scale.ts';
+import { WALKER_FREEFALL_SPEED } from './field-physics.ts';
 
 export type WalkKind = 'player' | 'enemy';
 /** Player id (pilot entity) owning a body or hosting the NPCs. */
@@ -270,7 +272,10 @@ export function advanceArena(
       dz /= n;
       if (dx || dz) b.face = Math.atan2(dx, dz);
       else if (b.kind === 'enemy') b.face = Math.PI;
-      const airborne = !!vertical && b.grounded === false;
+      // A jump keeps the ground's control and speed limit; only a real fall (faster than a jump
+      // ever comes down) is free fall.
+      const airborne =
+        !!vertical && b.grounded === false && (b.vy ?? 0) < -WALKER_FREEFALL_SPEED * MAP.ratio;
       const accel = b.kind === 'enemy' ? (rules.npcAcceleration ?? 14) : rules.acceleration,
         drag = airborne ? (b.parachute ? PARACHUTE_DRAG : FREE_FALL_DRAG) : DRAG;
       b.vx = (b.vx + dx * accel * dt) * Math.exp(-drag * dt);

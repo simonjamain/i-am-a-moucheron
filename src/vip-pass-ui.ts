@@ -42,7 +42,7 @@ export class VipPassUI extends BedUI {
     this.price = vipPrice(this.vipSnapshot().wave ?? 0);
     super.open({ slot: -1 }, self);
     if (!this.opened) return;
-    this.root.querySelector('h2')!.textContent = 'Coupe-file · Âmes humaines';
+    this.root.querySelector('h2')!.textContent = 'Coupe-file · Accès VIP';
     this.root.querySelector<HTMLElement>('[data-bed-text]')!.textContent =
       `Je sollicite l’accès à la file prioritaire pour ${money(this.price)}, prélevés une fois sur la caisse commune (tarif de la vague en cours). Les insectes de la file ordinaire conservent leur droit de ronchonner. Le vigile ne rend pas la monnaie et ne garantit pas la bonne humeur de Saint Pierre.`;
     const ledger = this.root.querySelector<HTMLElement>('[data-ledger]');

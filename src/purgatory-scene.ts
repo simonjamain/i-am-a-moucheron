@@ -17,12 +17,14 @@ import {
   createCloudFloor,
   createSkyClouds,
   createSkyDome,
-  seeded,
   SKY_LOOK,
   SUN_DIRECTION,
 } from './purgatory-clouds.ts';
 import type { CloudFloorSpec, SkyClouds, SkyDome } from './purgatory-clouds.ts';
 import { VIP_GUARD as GUARD_RIG, VIP_GUARD_MODEL } from './vip-guard-model.ts';
+import { SaintPierre } from './saint-pierre-model.ts';
+import { createFloorCloud, FLOOR_MIST } from './purgatory-floor.ts';
+import type { FloorCloud } from './purgatory-floor.ts';
 
 /** Scene units per metre (souls are drawn at their real 1.8 m). */
 const U = WALK_WORLDS.purgatory.sceneScale;
@@ -52,7 +54,6 @@ export const COUNTER = Object.freeze({
 export const PURGATORY_LOOK = Object.freeze({
   rope: '#9e2433',
   brass: '#d8b25a',
-  tape: '#d5ef73',
   zone: '#ffd979',
   zoneServed: '#d5ef73',
   board: '#6b5136',
@@ -69,7 +70,7 @@ const DESK_TOP = 0.74 * U;
 /**
  * Every office pack prop of the purgatory (scene units before the group's
  * metre scale). Pure, tested: nothing stands in the walkable hall except the
- * counter behind its edge and loose papers.
+ * counter behind its edge.
  */
 export function purgatoryProps(): Prop[] {
   const P: Prop[] = [];
@@ -89,62 +90,29 @@ export function purgatoryProps(): Prop[] {
     if (i !== 1) P.push(put(i === 2 ? 'Pen_Cup' : 'Mug', x + 0.8, z + 0.1, north, DESK_TOP));
   });
   P.push(put('Paper_Stack', COUNTER.desks[1] + 0.85, COUNTER.z + 0.25, north, DESK_TOP));
-  // The back office behind Saint Pierre.
+  // Behind Saint Pierre: office equipment only, kept sober.
   P.push(put('Whiteboard', 0, -5.4, south));
-  for (const x of [-7.2, -6.2, -5.2]) P.push(put('Filing_Cabinet', x, -4.6, south));
-  for (const x of [-3.4, 3.4]) P.push(put('Bookshelf', x, -5.2, south));
-  for (const x of [8.2, 9.2]) P.push(put('Filing_Cabinet', x, -4.6, south));
-  P.push(put('Water_Cooler', -9, -3.2, south));
-  P.push(put('Coat_Rack', 10.6, -2.8, south));
-  P.push(put('Plant_Tall', -11.2, -2.2, east));
-  P.push(put('Plant_Snake_Large', 11.8, -1.4, west));
-  P.push(put('File_Box', 6.4, -4.2, south));
-  P.push(put('File_Box', 6.5, -4.2, south, 0.275 * U));
-  P.push(put('File_Box_Empty', 5.6, -4.4, south + 0.4));
-  P.push(put('Trash_Bin', -1.4, -3.4, south));
-  P.push(put('Paper_Crumpled_Pile', -1.1, -3.2, south));
-  // The hall's edges, just beyond the walkable rectangle: they mark where the
-  // invisible wall stands. Left side faces +X, right side faces -X.
+  for (const x of [-6.2, -5.2]) P.push(put('Filing_Cabinet', x, -4.6, south));
+  P.push(put('Photocopier', 4.8, -4.4, south));
+  P.push(put('Filing_Cabinet', 8.2, -4.6, south));
+  // Along the queue, just beyond the walkable rectangle: only what tells of a
+  // waiting room (sofas, low tables, water fountains, visitor chairs). They
+  // also show where the invisible wall stands. Left side faces +X, right -X.
   const left = PURGATORY_HALL.minX - 1.5,
     right = PURGATORY_HALL.maxX + 1.5;
-  const rows: [OfficeModel, number][] = [
-    ['Plant_Snake_Large', 4],
-    ['Filing_Cabinet', 10],
-    ['Water_Cooler', 16],
-    ['Bookshelf', 23],
-    ['Plant_Tall', 30],
-    ['Vending_Machine', 38],
-    ['Filing_Cabinet', 46],
-    ['Plant_Snake_Large', 54],
-    ['Bookshelf', 62],
-    ['Plant_Tall', 72],
-    ['Filing_Cabinet', 82],
-  ];
-  rows.forEach(([model, z], i) => {
-    P.push(put(model, left - (model === 'Vending_Machine' ? 0.4 : 0), z, east));
-    const mirror = rows[(i + 5) % rows.length][0];
-    P.push(put(mirror, right + (mirror === 'Vending_Machine' ? 0.4 : 0), z + 3, west));
-  });
-  // A waiting corner on each side: sofa, low table, visitor chairs.
-  P.push(put('Sofa_Grey', left - 0.6, 20, east));
-  P.push(put('Coffee_Table', left + 0.9, 20, east));
-  P.push(put('Paper_Stack_Small', left + 0.9, 19.8, east + 0.5, 0.434 * U));
-  for (const z of [33, 34.2, 35.4]) P.push(put('Visitor_Chair_Grey', right, z, west));
-  P.push(put('Trash_Bin', right - 0.2, 36.6, west));
-  for (const z of [49, 50.2]) P.push(put('Visitor_Chair_Grey', left, z, east));
-  // A few lost sheets on the cloud (small: walked over).
-  for (let i = 0; i < 9; i++)
-    P.push(
-      put(
-        i % 3 ? 'Paper_Crumpled' : 'Paper_Crumpled_Sheet',
-        -8 + 16 * seeded(i + 200),
-        3 + 60 * seeded(i + 300),
-        TAUish(i),
-      ),
-    );
+  const lounge = (x: number, z: number, facing: number, side: number) => {
+    P.push(put('Sofa_Grey', x - side * 0.6, z, facing));
+    P.push(put('Coffee_Table', x + side * 0.9, z, facing));
+    P.push(put('Paper_Stack_Small', x + side * 0.9, z - 0.2, facing + 0.5, 0.434 * U));
+  };
+  lounge(left, 20, east, 1);
+  lounge(right, 56, west, -1);
+  P.push(put('Water_Cooler', left, 15, east));
+  P.push(put('Water_Cooler', right, 40, west));
+  for (const z of [32, 33.2, 34.4]) P.push(put('Visitor_Chair_Grey', right, z, west));
+  for (const z of [46, 47.2, 48.4]) P.push(put('Visitor_Chair_Grey', left, z, east));
   return P;
 }
-const TAUish = (i: number) => seeded(i + 400) * Math.PI * 2;
 
 // ------------------------------------------------------------------ signs
 function cssToken(name: string, fallback: string): string {
@@ -222,12 +190,7 @@ function floorMark(T: Three, text: string, width: number): THREE.Mesh {
   return mesh;
 }
 
-export interface PurgatoryHumanoid {
-  (color: string, saint?: boolean, appearance?: unknown): THREE.Object3D;
-}
 export interface PurgatorySceneOptions {
-  /** graphics.humanoid (Saint Pierre). */
-  humanoid: PurgatoryHumanoid;
   /** graphics.pm: a coloured box (parent, w, h, d, colour, x, y, z). */
   box(
     parent: THREE.Object3D,
@@ -250,15 +213,32 @@ export interface PurgatoryState {
   vip: boolean;
   deskServed: boolean;
   vipServed: boolean;
+  /** Where the soul or insect Saint Pierre serves stands (he looks at it). */
+  servedAt?: { x: number; z: number } | null;
+  /** He is stamping an insect's papers. */
+  stamping?: boolean;
 }
 export interface PurgatoryScene {
   scene: THREE.Scene;
   /** Camera blockers (counter, cloud floor). */
   colliders: THREE.Box3[];
   saint: THREE.Object3D;
+  /** The VIP lane's guard (aimed at and clicked to buy the pass). */
+  guard: THREE.Object3D;
+  /** Height the queue's insects hover at (above the floor mist). */
+  hover: number;
   update(dt: number, now: number, state: PurgatoryState): void;
   /** Draw the sky clouds' layer for this camera (before rendering the scene). */
   prerender(renderer: THREE.WebGLRenderer, camera: THREE.Camera): void;
+  /**
+   * Draw the floor cloud over the rendered frame, stopping at the scene depth
+   * (`depth`, the cartoon renderer's depth texture).
+   */
+  postrender(
+    renderer: THREE.WebGLRenderer,
+    camera: THREE.Camera,
+    depth: THREE.Texture | null,
+  ): void;
 }
 
 export function createPurgatoryScene(T: Three, options: PurgatorySceneOptions): PurgatoryScene {
@@ -276,28 +256,34 @@ export function createPurgatoryScene(T: Three, options: PurgatorySceneOptions): 
   const sun = new T.DirectionalLight(L.sun, 1.9);
   sun.position.set(...(SUN_DIRECTION.map((v) => v * 30) as [number, number, number]));
   scene.add(sun);
-  scene.add(createCloudFloor(T, CLOUD_FLOOR, PURGATORY_HALL));
-  let sky: SkyClouds | null = null;
-  if (options.shaders) sky = createSkyClouds(T);
+  // The ground: a volumetric cloud drawn after the scene (souls walk half inside
+  // it); without shaders, the cartoon cloud of puffs.
+  let sky: SkyClouds | null = null,
+    floorCloud: FloorCloud | null = null;
+  if (options.shaders) {
+    sky = createSkyClouds(T);
+    floorCloud = createFloorCloud(T, PURGATORY_HALL, CLOUD_FLOOR);
+  } else scene.add(createCloudFloor(T, CLOUD_FLOOR, PURGATORY_HALL));
+  /** Height of the marks that must show above the mist (rings, painted text). */
+  const markY = options.shaders ? FLOOR_MIST.top + 0.03 : 0.04;
   // Furniture of the office pack, at human scale.
   const furniture = new T.Group();
   furniture.name = 'purgatoire-mobilier';
   furniture.scale.setScalar(U);
   addOfficeProps(T, purgatoryProps(), furniture);
   scene.add(furniture);
-  // Queue lane tape on the cloud.
-  for (let z = 3; z < 65; z += 3)
-    for (const x of [-3, 3]) options.box(scene, 0.12, 0.03, 1.4, L.tape, x, 0.01, z);
   // Signs: the counter's front plate, swapped for Super Saint-Pierre.
+  // Name plates stand on the desks' front edge, above the mist.
   const plate = signBoard(
     T,
     ['SAINT PIERRE', 'Guichet des résurrections'],
     COUNTER.desks.length * 2.06 - 0.3,
-    0.62,
+    0.5,
   );
-  plate.mesh.position.set(0, 0.2, COUNTER.z + 0.53);
+  plate.mesh.position.set(0, DESK_TOP, COUNTER.z + 0.46);
   scene.add(plate.mesh);
-  const saint = options.humanoid('#eee9cf', true);
+  const saintPierre = new SaintPierre(T),
+    saint = saintPierre.container;
   saint.position.set(0, 0, COUNTER.saintZ);
   scene.add(saint);
   const deskZone = new T.Mesh(
@@ -305,10 +291,10 @@ export function createPurgatoryScene(T: Three, options: PurgatorySceneOptions): 
     new T.MeshBasicMaterial({ color: L.zone, side: T.DoubleSide, transparent: true, opacity: 0.8 }),
   );
   deskZone.rotation.x = -Math.PI / 2;
-  deskZone.position.set(0, 0.04, 1);
+  deskZone.position.set(0, markY, 1);
   scene.add(deskZone);
   const zoneMark = floorMark(T, 'PLACE AU GUICHET', 4);
-  zoneMark.position.set(0, 0.05, 2.7);
+  zoneMark.position.set(0, markY + 0.01, 2.7);
   scene.add(zoneMark);
   // VIP lane: ropes on brass posts from the physics' obstacles, its own plate,
   // a hanging sign over its desk, the guard at the gate.
@@ -342,16 +328,16 @@ export function createPurgatoryScene(T: Three, options: PurgatorySceneOptions): 
         o.z + (along ? t : 0),
       );
   }
-  const vipPlate = signBoard(T, ['FILE VIP', 'Âmes humaines'], 1.8, 0.62);
-  vipPlate.mesh.position.set(VIP_DESK.x, 0.2, COUNTER.z + 0.53);
+  const vipPlate = signBoard(T, ['ACCÈS VIP'], 1.8, 0.5);
+  vipPlate.mesh.position.set(VIP_DESK.x, DESK_TOP, COUNTER.z + 0.46);
   vipDecor.add(vipPlate.mesh);
   // A small standing sign by the gate, on the guard's side.
   const notice = signBoard(T, ['COUPE-FILE', 'Laissez-passer auprès du vigile'], 1.3, 0.5);
-  notice.mesh.position.y = 0.75;
+  notice.mesh.position.y = 1.05;
   const stand = new T.Group();
   stand.name = 'purgatoire-pupitre';
   stand.add(notice.mesh);
-  options.box(stand, 0.07, 0.8, 0.07, L.brass, 0, 0.4, -0.04);
+  options.box(stand, 0.07, 1.1, 0.07, L.brass, 0, 0.55, -0.04);
   options.box(stand, 0.5, 0.04, 0.5, L.brass, 0, 0.02, -0.04);
   stand.position.set(VIP_GUARD.x + 0.9, 0, VIP_GATE_Z + 1.4);
   stand.rotation.y = -0.35;
@@ -361,7 +347,7 @@ export function createPurgatoryScene(T: Three, options: PurgatorySceneOptions): 
     new T.MeshBasicMaterial({ color: L.zone, side: T.DoubleSide, transparent: true, opacity: 0.8 }),
   );
   vipZone.rotation.x = -Math.PI / 2;
-  vipZone.position.set(VIP_DESK.x, 0.04, VIP_DESK.z);
+  vipZone.position.set(VIP_DESK.x, markY, VIP_DESK.z);
   vipDecor.add(vipZone);
   const guard = GUARD_RIG.createRig(T);
   // Facing the lane's entrance (-X), beside the gate.
@@ -380,6 +366,8 @@ export function createPurgatoryScene(T: Three, options: PurgatorySceneOptions): 
       new T.Box3(new T.Vector3(-100, -0.3, -100), new T.Vector3(100, -0.05, 200)),
     ],
     saint,
+    guard: guard.container,
+    hover: options.shaders ? FLOOR_MIST.top * 0.75 : 0,
     update(dt, now, state) {
       const next = state.super ? 'super' : 'normal';
       if (next !== mood) {
@@ -388,6 +376,7 @@ export function createPurgatoryScene(T: Three, options: PurgatorySceneOptions): 
         fog.color.set(SKY_LOOK[mood].fog);
         (scene.background as THREE.Color).set(SKY_LOOK[mood].horizon);
         sky?.setMood(mood);
+        floorCloud?.setMood(mood);
         plate.setLines(
           state.super
             ? ['SUPER SAINT-PIERRE', 'Direction des récidives']
@@ -395,7 +384,15 @@ export function createPurgatoryScene(T: Three, options: PurgatorySceneOptions): 
         );
       }
       saint.scale.setScalar(state.super ? 1.4 : 1);
+      const before = saint.position.x;
       saint.position.x += (state.saintX - saint.position.x) * (1 - Math.exp(-3 * dt));
+      const at = state.servedAt;
+      saintPierre.update(dt, now / 1000, {
+        speed: dt > 0 ? Math.abs(saint.position.x - before) / dt : 0,
+        // Model facing +Z: a yaw toward the served soul, from where he stands.
+        look: at ? Math.atan2(at.x - saint.position.x, at.z - saint.position.z) : 0,
+        stamping: !!state.stamping,
+      });
       vipDecor.visible = !state.super;
       // The rope gate swings aside for this soul once its pass is paid.
       if (vipGate) vipGate.visible = !state.vip;
@@ -403,6 +400,9 @@ export function createPurgatoryScene(T: Three, options: PurgatorySceneOptions): 
       vipZone.material.color.set(state.vipServed ? L.zoneServed : L.zone);
       guard.pose(now / 1000 / VIP_GUARD_MODEL.cycle);
       sky?.update(now / 1000);
+    },
+    postrender(renderer, camera, depth) {
+      floorCloud?.render(renderer, camera, depth);
     },
     prerender(renderer, camera) {
       if (!sky || !dome) return;
