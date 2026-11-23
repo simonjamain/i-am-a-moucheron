@@ -683,6 +683,24 @@ Le découpage inclut les deux manchons supérieurs, situés plus en arrière.
 
 La culasse du Flak lourd fait partie du groupe inclinable avec le tube.
 
+## Porte-bloc du guichet
+
+Porte-bloc posé sur les bureaux de Saint Pierre ([décor du purgatoire](purgatory-scene.md#le-porte-bloc-du-guichet)),
+fourni par le propriétaire du projet. Ce n'est pas un modèle Meshy ; même discipline de
+provenance que le pack de bureau.
+
+- **Source** : `Clipboard.glb` (export `THREE.GLTFExporter`, 104 triangles, trois
+  matériaux unis « Brown 2 », « White », « Grey », sans texture), SHA-256
+  `502a61ce…d234e`, à déposer hors de Git dans `assets/originals/clipboard/`.
+- **Import** : `python3 -I scripts/import-clipboard.py assets/originals/clipboard/Clipboard.glb`
+  vérifie l'empreinte et écrit `src/clipboard-data.ts` (positions et normales en mètres,
+  triangles groupés par couleur de matériau ; 14 ko).
+- **Repère et échelle** : Y vers le haut, posé à plat, dessous à y = 0, centré en x et z,
+  pince vers −Z (le haut de la feuille, loin du lecteur). Échelle uniforme : la longueur
+  vaut 32 cm (porte-bloc réel), soit 21 × 2,3 × 32 cm.
+- **Rendu** : un maillage par matériau, couleurs d'origine (linéaires), ombres portées
+  (`createClipboard`, `src/clipboard-model.ts`).
+
 ## Cartoon Office Pack (BloxBits)
 
 Décor du bureau depuis la version 401 : **Cartoon Office Pack**, édition Extra, de

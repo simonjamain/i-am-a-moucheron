@@ -45,10 +45,10 @@ const BUILD = 'G / clic molette : construire';
 const LINE_TOOLS = ['barricade', 'sticky'];
 const ORIENTED_TOOLS = ['sugar'];
 const STATIONS: Readonly<Record<string, readonly string[]>> = {
-  dca: ['Clic / Espace : obus', 'Maj/Ctrl, [ ] ou molette : fusée'],
-  dcaRapid: ['Clic / Espace : balles'],
-  dcaHeavy: ['Clic / Espace : obus', 'Molette : proximité'],
-  antitank: ['Clic / Espace : obus anti-matériel'],
+  dca: ['Clic : obus', 'Maj/Ctrl, [ ] ou molette : fusée'],
+  dcaRapid: ['Clic : balles'],
+  dcaHeavy: ['Clic : obus', 'Molette : proximité'],
+  antitank: ['Clic : obus anti-matériel'],
 };
 
 function postsHint(type: string): string | null {
@@ -66,8 +66,7 @@ function buildingHints({
   if (air)
     return [
       'V : vue verticale · A/E : tourner',
-      'Clic / Entrée : ' +
-        (mode === 'repair' ? 'réparer' : mode === 'remove' ? 'enlever' : 'larguer'),
+      'Clic : ' + (mode === 'repair' ? 'réparer' : mode === 'remove' ? 'enlever' : 'larguer'),
       "G / clic molette : changer d'outil",
       'Échap : quitter',
     ];
@@ -80,9 +79,9 @@ function buildingHints({
     'Souris : viser',
     line
       ? castor
-        ? 'Clic / E : ' + (anchored ? 'arrêter' : 'démarrer') + ' la dépose (1 $ / 20 cm)'
-        : 'Clic / E : ' + (anchored ? 'poser la fin' : 'fixer le début')
-      : 'Clic / E : ' + verb,
+        ? 'Clic : ' + (anchored ? 'arrêter' : 'démarrer') + ' la dépose (1 $ / 20 cm)'
+        : 'Clic : ' + (anchored ? 'poser la fin' : 'fixer le début')
+      : 'Clic : ' + verb,
     ORIENTED_TOOLS.includes(mode) && 'R : orienter',
     "G / clic molette : changer d'outil",
     'Échap : quitter',
@@ -134,7 +133,7 @@ function vehicleHints(
             'C : vue libre',
             'Clic : roquettes',
           ]
-        : ['Souris : viser', 'Maj : MG', 'Ctrl : missile', 'Clic : tir / détonation']),
+        : ['Souris : viser', 'Clic : mitrailleuse', 'Espace : missile guidé / détonation']),
       'Clic droit : zoom',
       postsHint(type),
       AIR_EXIT,
@@ -157,10 +156,10 @@ function vehicleHints(
               'Souris : tourelle',
               'Clic : canon',
               'Espace : coaxiale',
-              'Maj HE / Ctrl AP',
+              'R : obus HE / AP',
               'C : observer',
             ]
-          : ['Souris : tourelle', 'Clic / Espace : MG']),
+          : ['Souris : tourelle', 'Clic : MG']),
       'Clic droit : zoom',
       postsHint(type),
       GROUND_EXIT,
@@ -177,7 +176,7 @@ function vehicleHints(
           !isBomber(type) && 'Clic : MG',
           supplies?.ammo?.bomb !== undefined && 'Espace : bombes',
         ]
-      : ['Souris : tourelle', 'Clic / Espace : MG']),
+      : ['Souris : tourelle', 'Clic : MG']),
     'Clic droit : zoom',
     postsHint(type),
     AIR_EXIT,
@@ -205,10 +204,10 @@ export function controlHintItems({
     return [
       'ZQSD / flèches : marcher',
       'Souris : orienter',
-      'Clic gauche / E : poser',
+      'Clic gauche : poser',
       'Clic droit / Échap : conserver',
     ];
-  const common = ['N : banque', 'Échap : curseur'];
+  const common = ['Tab : vague', 'N : banque', 'Échap : curseur'];
   let items: HintItem[];
   if (station)
     items = [
@@ -219,14 +218,19 @@ export function controlHintItems({
     ];
   else if (vehicle) items = vehicleHints(vehicle, seat, build);
   else if (dead)
-    items = ['ZQSD / flèches : marcher', 'Molette : zoom', 'Espace : sauter', 'E : formulaires'];
+    items = [
+      'ZQSD / flèches : marcher',
+      'Molette : zoom',
+      'Espace : sauter',
+      'Clic sur le porte-bloc : formulaires',
+    ];
   else if (airborne) items = ['ZQSD / flèches : diriger', 'Espace : parachute', 'Molette : zoom'];
   else
     items = [
       'ZQSD / flèches : marcher',
       'Molette : zoom',
       'Espace : sauter',
-      'E : interagir',
+      'Clic : utiliser ce qui est entouré',
       'P : achats',
       build && BUILD,
     ];

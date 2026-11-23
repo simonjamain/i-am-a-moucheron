@@ -30,7 +30,7 @@ ne dépend pas du collectif. Aucun indicateur moteur n'est ajouté à la DCA fix
 Les boutons souris utilisent `mousedown`/`mouseup` : contrairement à `pointerdown`,
 ils signalent chaque bouton lorsqu'on les combine. Cela permet clic gauche avec
 clic droit déjà tenu et relâchement indépendant, sans modifier cadences, autorisations,
-stocks ni règles du regard libre C. Les commandes clavier/manette restent les mêmes.
+stocks ni règles du regard libre C. Les commandes clavier et souris restent les mêmes.
 
 Le pistolet conserve ses dégâts immédiats et ses raycasts depuis la main.
 ARM-06 remplace le segment immobile de 90 ms par un effet qui avance à 820 m/s de

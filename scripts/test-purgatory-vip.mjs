@@ -6,6 +6,7 @@ import assert from 'node:assert/strict';
 import { bodyMotion } from '../src/walk-arena.ts';
 import {
   advancePurgatory,
+  clipboardWindow,
   createSoul,
   deskOccupant,
   inVipDesk,
@@ -98,6 +99,28 @@ for (let form = 1; form <= 3; form++) {
   });
 }
 assert.equal(room.pilots.get(a.id).life, 'alive', 'back to the base through the VIP window');
+
+// Clipboards (docs/purgatory-scene.md): a soul uses the clipboard of the window
+// where Saint Pierre serves it; a soul without the pass never gets the VIP one.
+{
+  const soul = (id, at, vip = false) =>
+    Object.assign(createSoul({ id, entity: 'p' + id, kind: 'player' }, 0, 0), { ...at, vip });
+  const atDesk = { x: 0, z: 1.1 },
+    atVip = { x: VIP_DESK.x, z: VIP_DESK.z };
+  const served = soul(1, atDesk);
+  assert.equal(clipboardWindow(arena([served]), served), 'desk', 'served at the main window');
+  const paid = soul(2, atVip, true);
+  assert.equal(clipboardWindow(arena([paid]), paid), 'vip', 'served at the VIP window');
+  const unpaid = soul(3, atVip, false);
+  assert.equal(clipboardWindow(arena([unpaid]), unpaid), null, 'no pass: no VIP clipboard');
+  // While a VIP is served, the soul at the main window waits: no clipboard.
+  const waiting = soul(4, atDesk);
+  assert.equal(clipboardWindow(arena([waiting, paid]), waiting), null, 'waits behind the VIP');
+  assert.equal(clipboardWindow(arena([waiting, paid]), paid), 'vip');
+  const far = soul(5, { x: 0, z: 9 });
+  assert.equal(clipboardWindow(arena([far]), far), null, 'not at a window');
+  assert.equal(clipboardWindow(arena([]), null), null);
+}
 console.log(
-  'Purgatory VIP: rope gate, VIP window after the insect in progress, pass at the wave price from the common fund, refused when short, signed at the VIP window.',
+  'Purgatory VIP: clipboards per window (none without the pass), rope gate, VIP window after the insect in progress, pass at the wave price from the common fund, refused when short, signed at the VIP window.',
 );

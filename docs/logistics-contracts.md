@@ -103,7 +103,7 @@ Des cercles qui se recouvrent n’accélèrent pas le remplissage.
 Stations supplémentaires et radars coûtent chacun **4, 6, 8… dollars**, avec des
 compteurs séparés. Les DCA conservent leur propre progression. L’atelier affiche
 le prix courant, fait signer le bon et débite une seule fois avant l’aperçu.
-E pose sans nouveau paiement ; Échap conserve l’achat pour reprise. Les trois installations
+Un clic gauche pose sans nouveau paiement ; Échap conserve l’achat pour reprise. Les trois installations
 utilisent une prévisualisation et un support solide ; le serveur contrôle aussi
 proximité, obstacles, appareils garés, chevauchements, fonds et prix concurrent.
 Une station exige une surface dégagée de 13 × 13 cm, suffisante pour l’envergure

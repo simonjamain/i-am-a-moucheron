@@ -4,7 +4,9 @@
 
 Pilote : Maj/Ctrl pour monter/descendre ; Z/S et Haut/Bas pour piquer/cabrer ;
 Q/D et Gauche/Droite pour le roulis. O/W ne sont plus des alias du pilote H2.
-Le copilote garde Maj/Ctrl pour ses armes. Mapping : [plus bas](#mapping-pilote-h2).
+Le copilote tire la mitrailleuse au clic et le missile guidé avec Espace
+(un second Espace le fait exploser), les deux en même temps si besoin ;
+Maj/Ctrl ne choisissent plus d'arme. Mapping : [plus bas](#mapping-pilote-h2).
 
 ## Historique — version 39
 
@@ -108,7 +110,7 @@ Une commande très ample conserve le sens demandé, sans détour par le chemin
 court d’une ancienne cible absolue.
 
 Menus et perte de focus abandonnent le déplacement en attente. Un changement de
-poste initialise les deux orientations ensemble. La manette reste une commande
+poste initialise les deux orientations ensemble. La souris reste une commande
 continue bornée ; les autres armes conservent leur visée actuelle. Rotation 360°,
 butées verticales, caméra/canon/tirs alignés et guidage missile sont conservés.
 La régression automatique couvre les cadences 30/60/144 Hz, arrêt/reprise et

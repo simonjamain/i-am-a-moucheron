@@ -100,9 +100,9 @@ Vitesse, parachute, rotation de caméra et commandes sont réinitialisés.
 Un lit coûte 15 $, puis +2 $ par lit acheté, sur la caisse commune. Sa pose réserve
 une surface de 6 × 4,2 m de référence, soit 18 × 12,6 mm du décor, avec support
 continu, place pour le corps et hauteur libre. Il peut être posé sur un meuble.
-Un cercle permet E puis un **contrat personnel signé**. Chaque joueur a un seul
+Viser le lit puis cliquer ouvre un **contrat personnel signé**. Chaque joueur a un seul
 lit actif, plusieurs joueurs peuvent signer le même lit. Signer un autre remplace
-le précédent ; E au lit actif propose la résiliation signée, sans téléportation.
+le précédent ; un clic sur le lit actif propose la résiliation signée, sans téléportation.
 
 La résurrection utilise le côté libre du lit après revalidation du support et
 des installations proches. Lit absent ou impraticable : retour au départ et
@@ -126,7 +126,7 @@ coaxiale possède son nœud de bouche, décalé de 0,30 unité de modèle (envir
 portée n’est pas artificiellement annulée. Les obus partent du même canon que le
 modèle, simulés par le tireur.
 
-C maintenu passe en observation à la troisième personne. La souris/manette
+C maintenu passe en observation à la troisième personne. La souris
 modifie l’observation, pas la tourelle ; MG et canon sont suspendus. Relâcher C,
 changer de siège, ouvrir un menu ou mourir quitte ce mode. Les autres postes
 gardent leur vue actuelle. Les tests vérifient bouche, parallaxe et invariance

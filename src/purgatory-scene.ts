@@ -24,6 +24,7 @@ import {
 import type { CloudFloorSpec, SkyClouds, SkyDome } from './purgatory-clouds.ts';
 import { VIP_GUARD as GUARD_RIG, VIP_GUARD_MODEL } from './vip-guard-model.ts';
 import { SaintPierre } from './saint-pierre-model.ts';
+import { createClipboard, CLIPBOARD_SIZE } from './clipboard-model.ts';
 import { createFloorCloud, FLOOR_MIST } from './purgatory-floor.ts';
 import type { FloorCloud } from './purgatory-floor.ts';
 
@@ -33,6 +34,8 @@ import type { FloorCloud } from './purgatory-floor.ts';
  * its root group, at PURGATORY_FRAME (src/arena-frame.ts).
  */
 const U = HUMANOID_UNITS / PERSON_HEIGHT;
+/** Room left beside a clipboard on the desk's front edge (local units). */
+const CLIPBOARD_GAP = CLIPBOARD_SIZE[0] * U + 0.15;
 /** The flat part of the cloud: the walkable rectangle of src/purgatory-queue.ts
  * (x ±10, z from 0) and the back office behind the counter. */
 export const PURGATORY_HALL: CloudFloorSpec = Object.freeze({
@@ -54,6 +57,12 @@ export const COUNTER = Object.freeze({
   desks: [-2.06, 0, 2.06],
   vipDesk: VIP_DESK.x,
   saintZ: -2.7,
+  /** Name plates stand on the desks' front edge, left of the clipboards. */
+  plateZ: -0.79,
+  /** Clipboard at each window: offset from the desk's middle, overhanging its front edge. */
+  clipboardX: 0.5,
+  clipboardZ: -0.85,
+  clipboardYaw: -0.18,
 });
 /** Colours chosen for this map (art direction: each map picks its own). */
 export const PURGATORY_LOOK = Object.freeze({
@@ -231,6 +240,8 @@ export interface PurgatoryScene {
   saint: THREE.Object3D;
   /** The VIP lane's guard (aimed at and clicked to buy the pass). */
   guard: THREE.Object3D;
+  /** The clipboards of the two windows (aimed at and clicked to open the papers). */
+  clipboards: { desk: THREE.Object3D; vip: THREE.Object3D };
   /** World height the queue's insects hover at (above the floor mist). */
   hover: number;
   update(dt: number, now: number, state: PurgatoryState): void;
@@ -290,14 +301,28 @@ export function createPurgatoryScene(T: Three, options: PurgatorySceneOptions): 
   scene.add(furniture);
   // Signs: the counter's front plate.
   // Name plates stand on the desks' front edge, above the mist.
+  // From the left desk's edge to the middle desk's clipboard.
+  const plateLeft = COUNTER.desks[0] - 0.88,
+    plateRight = COUNTER.clipboardX - CLIPBOARD_GAP / 2;
   const plate = signBoard(
     T,
     ['SAINT PIERRE', 'Guichet des résurrections'],
-    COUNTER.desks.length * 2.06 - 0.3,
+    plateRight - plateLeft,
     0.5,
   );
-  plate.mesh.position.set(0, DESK_TOP, COUNTER.z + 0.46);
+  plate.mesh.position.set((plateLeft + plateRight) / 2, DESK_TOP, COUNTER.plateZ);
   scene.add(plate.mesh);
+  // The clipboards that open the papers: at each serving window, turned toward
+  // the souls, beside the middle and overhanging the desk's front edge a little.
+  const clipboard = (x: number) => {
+    const c = createClipboard(T);
+    c.scale.setScalar(U);
+    c.position.set(x + COUNTER.clipboardX, DESK_TOP, COUNTER.clipboardZ);
+    c.rotation.y = COUNTER.clipboardYaw;
+    return c;
+  };
+  const deskClipboard = clipboard(0);
+  scene.add(deskClipboard);
   const saintPierre = new SaintPierre(T),
     saint = saintPierre.container;
   saint.position.set(0, 0, COUNTER.saintZ);
@@ -344,9 +369,13 @@ export function createPurgatoryScene(T: Three, options: PurgatorySceneOptions): 
         o.z + (along ? t : 0),
       );
   }
-  const vipPlate = signBoard(T, ['ACCÈS VIP'], 1.8, 0.5);
-  vipPlate.mesh.position.set(VIP_DESK.x, DESK_TOP, COUNTER.z + 0.46);
+  const vipLeft = VIP_DESK.x - 0.95,
+    vipRight = VIP_DESK.x + COUNTER.clipboardX - CLIPBOARD_GAP / 2;
+  const vipPlate = signBoard(T, ['ACCÈS VIP'], vipRight - vipLeft, 0.5);
+  vipPlate.mesh.position.set((vipLeft + vipRight) / 2, DESK_TOP, COUNTER.plateZ);
   vipDecor.add(vipPlate.mesh);
+  const vipClipboard = clipboard(VIP_DESK.x);
+  vipDecor.add(vipClipboard);
   // A small standing sign by the gate, on the guard's side.
   const notice = signBoard(T, ['COUPE-FILE', 'Laissez-passer auprès du vigile'], 1.3, 0.5);
   notice.mesh.position.y = 1.05;
@@ -393,6 +422,7 @@ export function createPurgatoryScene(T: Three, options: PurgatorySceneOptions): 
     ],
     saint,
     guard: guard.container,
+    clipboards: { desk: deskClipboard, vip: vipClipboard },
     hover: F.originY + (options.shaders ? FLOOR_MIST.top * 0.75 : 0) * unit,
     update(dt, now, state) {
       const before = saint.position.x;

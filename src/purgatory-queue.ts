@@ -169,6 +169,15 @@ export function deskOccupant(a: Arena): WalkBody | null {
     .sort((x, y) => d(x) - d(y) || x.id - y.id)[0];
   return vip || main;
 }
+/**
+ * The clipboard a player's soul may use now (docs/purgatory-scene.md): the one of
+ * the window where Saint Pierre serves it ('desk' or 'vip'), else none. A soul
+ * without the pass never gets the VIP clipboard.
+ */
+export function clipboardWindow(a: Arena, b: WalkBody | null | undefined): 'desk' | 'vip' | null {
+  if (!b || b.gone || b.kind !== 'player' || deskOccupant(a)?.id !== b.id) return null;
+  return b.vip && inVipDesk(b) ? 'vip' : 'desk';
+}
 /** Saint Pierre stamps the insect at his desk; players sign their papers themselves. */
 function serveDesk(a: Arena, now: number, ms: number, owned: (b: WalkBody) => boolean): void {
   a.desk = deskOccupant(a)?.id ?? null;

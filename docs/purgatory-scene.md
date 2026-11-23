@@ -101,12 +101,32 @@ Les anciens textes flottants sont remplacés par des objets du monde, peints aux
 couleurs des documents papier (`--paper`, `--ink`, police machine à écrire) :
 
 - une plaque posée au bord des bureaux du guichet, au-dessus de la brume : « SAINT
-  PIERRE · Guichet des résurrections » ;
-- une plaque « ACCÈS VIP » sur le bureau VIP (ouvert à toute âme qui paie) ;
+  PIERRE · Guichet des résurrections », qui s'arrête avant le porte-bloc du guichet ;
+- une plaque « ACCÈS VIP » sur le bureau VIP (ouvert à toute âme qui paie), à côté
+  de son porte-bloc ;
 - un pupitre « COUPE-FILE · Laissez-passer auprès du vigile » à côté de la barrière ;
 - « PLACE AU GUICHET » peint au sol devant le cercle du guichet.
 
 Les cercles du guichet changent toujours de teinte quand c’est son tour.
+
+## Le porte-bloc du guichet
+
+Sur chacun des deux guichets (celui de la file et le guichet VIP), un porte-bloc est
+posé à plat sur le bureau, tourné vers les âmes, un peu à droite du milieu et dépassant
+légèrement du bord avant (`COUNTER.clipboardX`, `clipboardZ`, `clipboardYaw`). C'est
+lui qui ouvre les formulaires : il remplace la touche E, retirée ([commandes](controls.md)).
+
+- Seul le porte-bloc du guichet où Saint Pierre **nous sert** s'utilise
+  (`clipboardWindow` dans `src/purgatory-queue.ts`, testé dans `test-purgatory-vip.mjs`) :
+  visé par le réticule (ou le curseur libéré), il est entouré du **bleu signal**, comme
+  le vigile ; un clic ouvre les formulaires. Ailleurs, rien ne s'entoure.
+- Une âme sans coupe-file n'utilise jamais le porte-bloc VIP : il ne s'entoure pas pour
+  elle et le clic n'y fait rien. Le serveur exige toujours, pour signer, d'être servi au
+  guichet (`sign`).
+- Les formulaires s'ouvrent encore d'eux-mêmes quand c'est notre tour ; le porte-bloc
+  sert surtout à les rouvrir après les avoir fermés.
+- Modèle fourni par le propriétaire du projet ([pipeline des assets](asset-pipeline.md#porte-bloc-du-guichet)),
+  32 × 21 cm, `src/clipboard-model.ts`.
 
 ## Saint Pierre
 
@@ -134,8 +154,8 @@ regard de chaque côté le long de la file.
 Le vigile s’utilise comme un poste d’engin ([règles d’interface](ui-guidelines.md)) :
 à portée (`nearVipGuard`) et sans coupe-file, le vigile visé par le réticule (ou par le
 curseur libéré avec Échap) est entouré du **bleu signal** (`PostHighlight`,
-`SelectionOutline`, comme pour monter dans un appareil) ; un clic ouvre le coupe-file,
-comme **E**. Une fois le coupe-file payé, ou hors de portée, il n’est plus entouré.
+`SelectionOutline`, comme pour monter dans un appareil) ; un clic ouvre le coupe-file.
+Une fois le coupe-file payé, ou hors de portée, il n’est plus entouré.
 Le masque du contour est animé par le squelette du vigile (respiration, regards), et le
 tracé ne couvre que son rectangle d’écran : sur l’écran plein du premier essai, le survol
 faisait passer une partie de 120 à 72 images/s (trace Chrome, travail JavaScript inchangé,

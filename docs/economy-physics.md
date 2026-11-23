@@ -20,13 +20,13 @@ occupancy and exclusive seat claims. This acknowledgement is not handwriting
 verification and adds no anti-cheat claim. All previous array-format submissions
 remain compatible. Text was already local and no image upload existed in v021.
 
-E only opens an equipment dossier while on foot, outside an equipment seat.
-A/E remain available for flight rudder. F exits equipment, with an optimistic
+On foot, a left click on the aimed post opens its dossier (E no longer
+interacts: A/E are only the flight rudder). F exits equipment, with an optimistic
 local transition and rollback if the server refuses. Sync responses are held
 while that transition is pending, avoiding a stale snapshot moving the player
 back into the cockpit. Entry still waits for authoritative seat allocation;
 network round-trip time cannot honestly be removed. There is no added boarding
-or exit timer. P toggles the workshop; a signed prepaid order opens placement, E (Enter alias) places, Escape retains the order for later. See [current purchase flow](clean-flight.md#prix-bon-signé-et-pose).
+or exit timer. P toggles the workshop; a signed prepaid order opens placement, a left click places, Escape retains the order for later. See [current purchase flow](clean-flight.md#prix-bon-signé-et-pose).
 
 Space toggles the canopy whenever the on-foot body is airborne, including with
 a free cursor. All exits and forced ejections start without a parachute. Exit

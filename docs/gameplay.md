@@ -283,7 +283,7 @@ causes confirmées et tests : [retours terrain](field-update.md).
 
 ## Lisibilité, nettoyage et Spitfire
 
-Les installations passent par un bon payé à la signature, puis se posent avec E ;
+Les installations passent par un bon payé à la signature, puis se posent d'un clic gauche ;
 Échap conserve l’objet pour reprise depuis l’atelier. Les collisions avec un
 insecte coûtent 5 % de ses PV restants à la coque, une seule fois par impact. À pied au sol,
 Espace fait **sauter** le personnage (bureau et purgatoire) ; en chute, il ouvre le parachute.
@@ -292,7 +292,7 @@ MG avec de petits décalages et de 1 000 balles communes, dernière salve partie
 coque ; seule la sirène de piqué du Stuka subsiste. Valeurs et limites :
 [lisibilité, commandes, nettoyage et Spitfire](clean-flight.md).
 
-Les achats de tous les véhicules utilisent désormais le bon signé et la pose par E,
+Les achats de tous les véhicules utilisent désormais le bon signé et la pose d'un clic,
 au sol ou sur mobilier, avec chasseur 5 $ et bombardier 5 $. Les bombes du B3
 ont le double du rayon de celles du Stuka. [Référence du dernier lot](multiplayer-return.md).
 
@@ -339,9 +339,9 @@ achetés. Échap quitte le mode de pose.
 
 Maintenez le bouton de la molette, dirigez la souris vers un outil puis relâchez
 pour le sélectionner. Au centre, le choix est annulé. Pour une barricade ou un
-ruban, le premier clic (ou E) fixe le début indiqué par un petit repère sans
+ruban, le premier clic fixe le début indiqué par un petit repère sans
 orientation. Visez ensuite la fin, en marchant si nécessaire, puis cliquez de
-nouveau (ou E). Les deux points déterminent seuls la longueur et l'orientation.
+nouveau. Les deux points déterminent seuls la longueur et l'orientation.
 Le bouton de confirmation suit ces mêmes deux étapes. Le mur coûte 0,25 $ par tronçon de 48 mm, avec portions en demi-briques facturées au prorata au centime ; le ruban garde 1 $ pour 20 cm. Les murs sont découpés en sections réparables et dessinés en deux rangées de briques de taille fixe, avec extrémités décalées emboîtables. R oriente le sucre et le ventilateur.
 Le sucre coûte
 3 $, une réparation 1 $, la suppression est gratuite. L’aperçu rouge et le message
@@ -447,8 +447,8 @@ Depuis la version 355, modèle, envergure, longueur et patins sont réduits de 3
 molette) et **larguent** les constructions du Castor, sauf les murs LEGO :
 sucre, ruban (un morceau de 10 cm), tourelle automatique
 et canon anti-matériel, au même prix (la Gatling s'obtient en améliorant la tourelle automatique). L'objet part **toujours à la
-verticale de l'hélicoptère** et **suit son cap** ; un aperçu transparent montre où il tombera. Clic gauche ou Entrée
-larguent, dans n'importe quelle condition de vol. La caisse est débitée au
+verticale de l'hélicoptère** et **suit son cap** ; un aperçu transparent montre où il tombera. Clic gauche
+largue, dans n'importe quelle condition de vol. La caisse est débitée au
 largage ; l'objet tombe comme les autres livraisons (1/3 m/s), puis le serveur
 le construit sur la première surface rencontrée : le sol ou un meuble. Si la
 place a été prise pendant la chute, le prix est remboursé. **Réparer** et

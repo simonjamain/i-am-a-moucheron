@@ -2,7 +2,6 @@ import './normal-dossiers.mjs';
 import assert from 'node:assert/strict';
 import * as T from '../vendor/three.webgpu.min.js';
 import { stepFlight } from '../src/flight.ts';
-import { readPad, deadzone } from '../src/input.ts';
 import { ASSETS } from '../server/assets.js';
 const state = () => ({
   q: new T.Quaternion(),
@@ -71,27 +70,9 @@ const barrel = state();
 barrel.roll = 1;
 barrel.pitch = 0.4;
 run(barrel, 60);
-assert.equal(deadzone(0.1), 0);
-assert.equal(deadzone(-1), -1);
-assert.equal(deadzone(NaN), 0);
-const buttons = Array.from({ length: 17 }, () => ({ value: 0 }));
-buttons[0].value = 1;
-buttons[7].value = 0.7;
-const gp = { connected: true, mapping: 'standard', axes: [0.8, 0.5, -0.7, 0], buttons };
-let p = readPad([null, gp]);
-assert.ok(p.connected && p.roll < 0 && p.pitch > 0 && p.yaw < 0 && p.fire && p.throttle === 0.7);
-assert.equal(readPad([null]).fire, false);
-assert.equal(readPad([{ ...gp, connected: false }]).roll, 0);
-assert.equal(readPad([{ ...gp, mapping: '' }]).connected, false);
-assert.equal(readPad([{ ...gp, axes: [0.05, -0.05, 0.02] }]).roll, 0);
-buttons[5].value = 1;
-assert.equal(readPad([{ ...gp, axes: [0, 0, 0] }]).yaw, 1);
-for (const path of ['flight', 'input']) {
-  assert.match(ASSETS['/' + path + '.js'] ?? '', /export /);
-}
+assert.match(ASSETS['/flight.js'] ?? '', /export /);
+// Mouse and keyboard only: the gamepad module is gone (docs/controls.md).
+assert.equal(ASSETS['/input.js'], undefined);
 console.log(
   'PASS: manual three axes, both full rolls, no auto-level, independent rudder, pitch, stall, damage, combined aerobatics and 60s stability.',
-);
-console.log(
-  'PASS: analog gamepad axes, dead zone, triggers, fire, shoulders, disconnect, unsupported mapping and served modules.',
 );

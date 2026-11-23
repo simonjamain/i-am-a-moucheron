@@ -251,7 +251,7 @@ export class DebugTools {
       ' · ' +
       name +
       (this.target
-        ? ' · Clic / E : poser'
+        ? ' · Clic : poser'
         : this.options.grounded[this.type]
           ? ' · Visez le sol ou un meuble'
           : ' · Visez un point de la pièce') +

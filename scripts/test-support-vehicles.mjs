@@ -69,7 +69,7 @@ for (const type of ['helicopter', 'flaktruck']) {
 assert.equal(canUseWeapon('helicopter', 'pilot', 'copilot'), false);
 assert.equal(canUseWeapon('helicopter', 'copilot', 'rocket'), false);
 assert.equal(canUseWeapon('flaktruck', 'pilot', 'proximity'), false);
-assert.deepEqual(contextKey({ type: 'helicopter' }, 'ControlLeft'), { heliWeapon: 'missile' });
+assert.equal(contextKey({ type: 'helicopter' }, 'ControlLeft'), null, 'the missile is on Space');
 assert.equal(cursorStats({ vehicle: { type: 'helicopter' }, hp: 200, ammo: 0, speed: 0 }).hp, 200);
 let state = { ...vehiclePad('helicopter'), p: [0, 1.5, 0], q: [0, 0, 0, 1], v: [0, 0, 0] };
 for (let i = 0; i < 1200; i++)

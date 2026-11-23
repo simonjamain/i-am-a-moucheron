@@ -22,10 +22,10 @@ La valeur existante affiche désormais les mètres réels. La jauge près du vis
 de 0,300 et 3,600 m. Elle suit le viseur et disparaît hors DCA.
 Dans un tank, Shift sélectionne HE et Ctrl AP ; ces touches ne changent aucune
 fusée de DCA. La conduite utilise Z/S ou flèches pour avancer/reculer, Q/D pour
-tourner. Au tireur canon, clic gauche tire HE/AP et Espace la coaxiale ; les autres postes gardent clic/Espace pour la MG. En avion, Espace maintient le largage des bombes. B ne tire plus.
+tourner. Au tireur canon, clic gauche tire l'obus choisi, R alterne HE/AP et Espace la coaxiale ; les autres postes tirent la MG au clic (Espace est l'arme secondaire, absente à ces postes). En avion, Espace maintient le largage des bombes. B ne tire plus.
 
 On monte en visant le poste lui-même (verrière, trappe, tourelle), de n’importe quel
-côté ; clic ou E ouvre directement le bon dossier
+côté ; un clic ouvre directement le bon dossier
 ([règles d’interface](ui-guidelines.md#monter-dans-un-engin--viser-le-poste)). Le serveur
 contrôle la proximité de l’engin et l’exclusivité du siège à la seconde signature. Les mutations et échanges à bord conservent leurs contrats.
 Les trois postes du tank ont des contrats adaptés, ajoutant 150 variantes au

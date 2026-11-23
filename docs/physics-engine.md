@@ -162,8 +162,8 @@ montent avec elle. `test-track-suspension.mjs` le contrôle.
   rotation de la tourelle, il tourne avec elle : `tankBarrelOrigin` en tient compte (lacet lu dans
   la visée, `turretPivot`, `gunPivot`, `gunLength` de `VEHICLE_ANCHORS`).
 - **Butée d'élévation** (version 375) : le canon du char monte à **30° au plus** dans le repère de
-  la caisse (`TANK_GUN_MAX_PITCH`, `src/armament.ts`), contre 77° avant : la souris, la manette et
-  le tactile s'arrêtent à cette butée. Le serveur ne la contrôle pas (voir
+  la caisse (`TANK_GUN_MAX_PITCH`, `src/armament.ts`), contre 77° avant : la souris s'arrête à
+  cette butée. Le serveur ne la contrôle pas (voir
   [confiance envers les clients](trust-model.md)). La mitrailleuse du toit et l'abaissement (−37°)
   ne changent pas.
 - **Vue du tireur** (`tankSight`, `SIGHT`) : l'œil est tout près du canon, derrière (0,4) et au-dessus

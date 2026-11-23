@@ -137,7 +137,6 @@ import {
   ControlFocus,
   airplaneSteering,
   equipmentExitAction,
-  equipmentEnterAllowed,
   gameKey,
   flightInput,
   lookDelta,
@@ -166,7 +165,13 @@ import {
 import { GameSound } from '/game-audio/game-sound.js';
 import { swarmAudioGroups } from '/game-audio/swarm.js';
 import { bodyMotion, mergeOwnedArena } from '/walk-arena.js';
-import { advancePurgatory, deskOccupant, nearVipGuard, VIP_DESK } from '/purgatory-queue.js';
+import {
+  advancePurgatory,
+  clipboardWindow,
+  deskOccupant,
+  nearVipGuard,
+  VIP_DESK,
+} from '/purgatory-queue.js';
 import { createPurgatoryScene } from '/purgatory-scene.js';
 import {
   flightClickAction,
@@ -239,7 +244,6 @@ import { stepFlight, ROLLING_FRICTION, LIFTOFF_SPEED } from '/flight.js';
 import { loadFlightTuning } from '/flight-tuning.js';
 import { FlightTuningUI } from '/flight-tuning-ui.js';
 import { ToonRenderer } from '/toon.js';
-import { readPad, neutralPad } from '/input.js';
 const $ = (id) => document.getElementById(id),
   canvas = $('view'),
   scene = new T.Scene();
@@ -485,15 +489,12 @@ let joined = false,
   localKills = new Set(),
   localEnemyDamage = new Map(),
   lastWave = -1;
-let pad = neutralPad(),
-  previousPad = neutralPad();
 let myVehicle = null,
   crewSeat = null,
   selectedVehicle = null,
   selectedSeat = 'pilot',
   flakRange = FLAK.range,
   selectedShell = 'he',
-  heliWeapon = 'copilot',
   missilePressed = false,
   mobileProximity = MOBILE_FUSE.initial;
 const fleetModels = new Map(),
@@ -621,12 +622,9 @@ function soulIntent() {
   if (!groundActive() || spectating) return { x: 0, z: 0 };
   let x =
       Number(!!(keys.ArrowRight || keys.KeyD)) -
-      Number(!!(keys.ArrowLeft || keys.KeyA || keys.KeyQ)) -
-      pad.roll,
+      Number(!!(keys.ArrowLeft || keys.KeyA || keys.KeyQ)),
     z =
-      Number(!!(keys.ArrowDown || keys.KeyS)) -
-      Number(!!(keys.ArrowUp || keys.KeyW || keys.KeyZ)) +
-      pad.pitch;
+      Number(!!(keys.ArrowDown || keys.KeyS)) - Number(!!(keys.ArrowUp || keys.KeyW || keys.KeyZ));
   const n = Math.max(1, Math.hypot(x, z)),
     c = Math.cos(groundView.yaw),
     sn = Math.sin(groundView.yaw);
@@ -740,7 +738,6 @@ function groundCamera(cam, position, dt, purg = false) {
     groundView.yaw = purg ? 0 : Math.PI;
     groundView.pitch = GROUND_VIEW_PITCH;
   }
-  if (groundActive()) groundView.yaw -= pad.yaw * dt * 1.8;
   const viewScale = (purg ? WALK_WORLDS.purgatory : WALK_WORLDS.office).sceneScale;
   const {
     target,
@@ -1085,7 +1082,7 @@ canvas.addEventListener('mousedown', (event) => {
     else cancelPlacement();
     return;
   }
-  if (event.button === 0 && respawnAt && aimedGuard && openVipPass()) {
+  if (event.button === 0 && respawnAt && aimedPurgatory?.use()) {
     event.preventDefault();
     return;
   }
@@ -1482,7 +1479,6 @@ function accept(s, force = false) {
           crewSeat === 'ventral' ? -0.65 : myVehicle.type === 'helicopter' ? -0.1 : 0.15;
         Object.assign(heliTurretAim, turretAim);
         missilePressed = false;
-        heliWeapon = 'copilot';
         resetMouseAim();
         sound.play('board', me.position, { ref: 10 });
         notify(VEHICLES[myVehicle.type].name + ' · ' + SEAT_NAMES[crewSeat], 3);
@@ -1976,13 +1972,7 @@ addEventListener('keydown', (event) => {
   )
     return;
   const interactionKey = gameKey(event);
-  if (
-    interactionKey === 'KeyV' &&
-    !event.repeat &&
-    !waveCouncil.button.hidden &&
-    canCapture() &&
-    !['castor', 'flyingcastor'].includes(myVehicle?.type)
-  ) {
+  if (event.code === 'Tab' && !event.repeat && !waveCouncil.button.hidden && canCapture()) {
     event.preventDefault();
     waveCouncil.button.click();
     return;
@@ -2005,23 +1995,13 @@ addEventListener('keydown', (event) => {
     if (groundDefenseUI.handleWheelKey(interactionKey, true, event.repeat)) event.preventDefault();
     return;
   }
-  // Castor volant: drops follow the helicopter's heading (no R), and A/E turn
-  // it in the vertical view, so only Enter (or a click) drops.
-  if (groundDefenseUI.active && canCapture() && myVehicle?.type === 'flyingcastor') {
-    if (interactionKey === 'Enter' || interactionKey === 'KeyR') {
-      event.preventDefault();
-      if (interactionKey === 'Enter' && !event.repeat) groundDefenseUI.press();
-      return;
-    }
-  } else if (groundDefenseUI.active && canCapture()) {
-    if (interactionKey === 'KeyR' || interactionKey === 'KeyE' || interactionKey === 'Enter') {
-      event.preventDefault();
-      if (!event.repeat) {
-        if (interactionKey === 'KeyR') groundDefenseUI.rotation += Math.PI / 4;
-        else groundDefenseUI.press();
-      }
-      return;
-    }
+  // Build tools: the click places (src/ground-defense-ui.ts); R orients, except from
+  // the Castor volant, whose drops follow the helicopter's heading.
+  if (groundDefenseUI.active && canCapture() && interactionKey === 'KeyR') {
+    event.preventDefault();
+    if (!event.repeat && myVehicle?.type !== 'flyingcastor')
+      groundDefenseUI.rotation += Math.PI / 4;
+    return;
   }
   if (interactionKey === 'KeyV' && myVehicle?.type === 'flyingcastor' && !event.repeat) {
     event.preventDefault();
@@ -2061,16 +2041,6 @@ addEventListener('keydown', (event) => {
   if (exitAction) {
     event.preventDefault();
     vehicleAction(exitAction, { state: localMotion() });
-    return;
-  }
-  if (debugTools.active && ['KeyE', 'Enter'].includes(interactionKey)) {
-    event.preventDefault();
-    if (!event.repeat && canCapture()) debugTools.press();
-    return;
-  }
-  if (placingEquipment && ['KeyE', 'Enter'].includes(interactionKey)) {
-    event.preventDefault();
-    if (!event.repeat && canCapture()) placePurchased();
     return;
   }
   if (interactionKey === 'KeyP' && !respawnAt && !event.repeat) {
@@ -2135,13 +2105,9 @@ addEventListener('keydown', (event) => {
   );
   if (contextual) {
     event.preventDefault();
-    if (contextual.fuse) {
-      // Held key: advanceFuse() sweeps the distance every frame until release.
-      keyBindings.set(event.code, code);
-      keys[code] = true;
-    } else if (contextual.heliWeapon) {
-      if (!activeMissile()) heliWeapon = contextual.heliWeapon;
-    } else selectedShell = contextual.shell;
+    // Held key: advanceFuse() sweeps the distance every frame until release.
+    keyBindings.set(event.code, code);
+    keys[code] = true;
     return;
   }
   keyBindings.set(event.code, code);
@@ -2153,7 +2119,6 @@ addEventListener('keydown', (event) => {
       'ArrowRight',
       'Space',
       'KeyZ',
-      'KeyO',
       'KeyW',
       'KeyS',
       'KeyQ',
@@ -2170,22 +2135,14 @@ addEventListener('keydown', (event) => {
     event.preventDefault();
   keys[code] = true;
 
-  if (respawnAt && code === 'KeyE' && !event.repeat) {
-    if (!openVipPass()) {
-      paperSuppressed = false;
-      renderPaper();
-    }
-  }
-  if (
-    equipmentEnterAllowed({ onFoot, vehicle: myVehicle, turret: turretIndex, dead: !!respawnAt }) &&
-    code === 'KeyE' &&
-    !event.repeat
-  )
-    interactVehicle();
   if (stations[turretIndex]?.kind === 'dca' && ['BracketLeft', 'BracketRight'].includes(code)) {
     flakRange = fuseRange(flakRange + (code === 'BracketRight' ? FLAK.step : -FLAK.step));
   }
-  if (code === 'KeyR' && !event.repeat) crash();
+  // R changes the tank gun's shell (HE ↔ AP); it never kills (former test shortcut).
+  if (code === 'KeyR' && !event.repeat && tankCannonSeat()) {
+    const ammo = myVehicle.supplies?.ammo || {};
+    selectedShell = availableShell(ammo, selectedShell === 'he' ? 'ap' : 'he') || selectedShell;
+  }
   if (code === 'Space' && !event.repeat) contextHUD.reveal();
 });
 addEventListener('keyup', (event) => {
@@ -2695,39 +2652,63 @@ const purgWorld = (p, up = 0) =>
     z: p.z,
     y: PURGATORY_FRAME.originY + up * PURGATORY_FRAME.unit,
   });
-// The VIP guard is used like a post (docs/purgatory-scene.md): within his reach and
-// without a pass, the guard under the crosshair (or the free cursor) is outlined in
-// signal blue; a click, like the interaction key, opens the pass.
-let aimedGuard = false,
-  guardHighlight = null;
-const guardRay = new T.Raycaster();
-function updateAimedGuard() {
+// The purgatory's posts are used like the office's (docs/purgatory-scene.md): the
+// guard (within his reach, without a pass) and the clipboard of the window where
+// Saint Pierre serves us. Under the crosshair (or the free cursor), the usable one
+// is outlined in signal blue; a click uses it. Nothing else is ever outlined.
+const purgatoryPosts = [
+  {
+    object: purgatory.guard,
+    usable: (body) => !body.vip && nearVipGuard(body) && !vipUI.opened,
+    use: openVipPass,
+  },
+  ...['desk', 'vip'].map((window) => ({
+    object: purgatory.clipboards[window],
+    usable: (body) => !sheetOpen('papers') && clipboardWindow(soulArena, body) === window,
+    use: openPurgatoryPapers,
+  })),
+];
+let aimedPurgatory = null;
+const purgatoryRay = new T.Raycaster();
+function openPurgatoryPapers() {
+  paperSuppressed = false;
+  renderPaper();
+  return true;
+}
+function updateAimedPurgatory() {
   const body = vipSelf();
-  let next = false;
-  if (body && !body.vip && nearVipGuard(body) && !vipUI.opened) {
+  let next = null;
+  const usable = body ? purgatoryPosts.filter((post) => post.usable(body)) : [];
+  if (usable.length) {
     const rect = canvas.getBoundingClientRect();
     const free = document.pointerLockElement !== canvas && aimMouse;
     purgCamera.updateMatrixWorld();
-    guardRay.setFromCamera(
+    purgatoryRay.setFromCamera(
       new T.Vector2(
         free ? ((aimMouse[0] - rect.left) / rect.width) * 2 - 1 : 0,
         free ? 1 - ((aimMouse[1] - rect.top) / rect.height) * 2 : 0,
       ),
       purgCamera,
     );
-    next = guardRay.intersectObject(purgatory.guard, true).length > 0;
+    const hit = purgatoryRay.intersectObjects(
+      usable.map((post) => post.object),
+      true,
+    )[0];
+    next = hit ? usable.find((post) => post.object.getObjectById(hit.object.id)) : null;
   }
-  if (next !== aimedGuard) {
-    guardHighlight ??= new PostHighlight(T, purgatory.guard, {
-      seats: [],
-      local: [0, 0, 0],
-      radius: 0,
-      outline: { meshes: [] },
-    });
-    if (next) guardHighlight.show();
-    else guardHighlight.hide();
+  if (next !== aimedPurgatory) {
+    aimedPurgatory?.highlight.hide();
+    if (next) {
+      next.highlight ??= new PostHighlight(T, next.object, {
+        seats: [],
+        local: [0, 0, 0],
+        radius: 0,
+        outline: { meshes: [] },
+      });
+      next.highlight.show();
+    }
   }
-  aimedGuard = next;
+  aimedPurgatory = next;
 }
 function soulSlot(i) {
   return { x: i % 2 ? 1.1 : -1.1, z: 3 + Math.floor(i / 2) * 2.8 };
@@ -3168,9 +3149,9 @@ function updateVehicles(dt) {
     }
   } else if (crew) {
     if (myVehicle.type === 'helicopter' && crewSeat === 'copilot') {
-      const pressed =
-        !!(mouseFire || pad.fire || uiWeaponFire) && controlFocus.active && canCapture();
-      if (pressed && !missilePressed && heliWeapon === 'missile') useHeliMissile();
+      // Space: the guided missile (a second press detonates it); the click keeps the MG.
+      const pressed = !!keys.Space && controlFocus.active && canCapture();
+      if (pressed && !missilePressed) useHeliMissile();
       missilePressed = pressed;
     } else missilePressed = false;
     const observing =
@@ -3178,19 +3159,14 @@ function updateVehicles(dt) {
     if (
       ['tank', 'flaktruck'].includes(myVehicle.type) &&
       crewSeat === 'cannon' &&
-      (mouseFire || pad.fire || uiWeaponFire) &&
+      (mouseFire || uiWeaponFire) &&
       !observing &&
       canCapture()
     )
       fireHeavy();
-    if (observing) {
-      freeLook.yaw -= pad.yaw * dt * 2;
-      freeLook.pitch = T.MathUtils.clamp(freeLook.pitch - pad.pitch * dt, -0.1, 1.2);
-    }
     if (controlFocus.active && !observing) {
-      turretAim.yaw -= pad.yaw * dt;
       turretAim.pitch = clampTurretPitch(
-        turretAim.pitch - pad.pitch * dt,
+        turretAim.pitch,
         crewSeat === 'ventral'
           ? -1.5
           : myVehicle?.type === 'helicopter'
@@ -3239,11 +3215,9 @@ function updateVehicles(dt) {
     $('crosshair').classList.remove('hidden', 'offscreen');
     shooting =
       myVehicle.type !== 'flaktruck' &&
-      (myVehicle.type !== 'helicopter' || (heliWeapon === 'copilot' && !activeMissile())) &&
       !observing &&
-      ((controlFocus.active &&
-        (scoped ? keys.Space || pad.heavy : mouseFire || keys.Space || pad.fire)) ||
-        (!scoped && uiWeaponFire)) &&
+      // The tank gunner's Space is the coaxial MG (secondary); everyone else fires with the click.
+      ((controlFocus.active && (scoped ? keys.Space : mouseFire)) || (!scoped && uiWeaponFire)) &&
       canCapture() &&
       hasAmmo();
     const burst = advanceAutomaticFire(
@@ -3302,9 +3276,8 @@ function updateVehicles(dt) {
     if (self) {
       if (controlFocus.active) {
         if (station.kind === 'dca') flakRange = advanceFuse(flakRange, keys, dt);
-        turretAim.yaw -= pad.yaw * dt * 1.5;
         turretAim.pitch = clampTurretPitch(
-          turretAim.pitch - pad.pitch * dt,
+          turretAim.pitch,
           howitzer ? HOWITZER.minPitch : -0.1,
           howitzer ? HOWITZER.maxPitch : 1.35,
         );
@@ -3325,9 +3298,7 @@ function updateVehicles(dt) {
         if (isFixedDca(station.kind)) gun.userData.pitch.getWorldQuaternion(camera.quaternion);
         else camera.lookAt(camera.position.clone().addScaledVector(dir, MAP.metres(100)));
       }
-      shooting =
-        ((controlFocus.active && (mouseFire || keys.Space || pad.fire)) || uiWeaponFire) &&
-        (station.ammo ?? 0) >= 1;
+      shooting = ((controlFocus.active && mouseFire) || uiWeaponFire) && (station.ammo ?? 0) >= 1;
       if (station.kind === 'dcaRapid') {
         fireRapidDca(station, gun, dir, dt, interval, shooting, true);
       } else if (shooting && performance.now() > gun.userData.shotAt) {
@@ -4803,13 +4774,12 @@ function physics(dt) {
     landed = state.landed;
     gas = state.gas;
     shooting = false;
-    if (myVehicle.type === 'helicopter' && active && !keys.KeyC && (mouseFire || pad.fire))
-      fireHeavy('rocket');
+    if (myVehicle.type === 'helicopter' && active && !keys.KeyC && mouseFire) fireHeavy('rocket');
     return;
   }
   if (VEHICLES[myVehicle.type].ground) {
     const active = controlFocus.active && canCapture(),
-      manual = flightInput(keys, pad, active);
+      manual = flightInput(keys, active);
     const state = { ...localMotion(), fuelAvailable: remainingFuel() > 0 };
     const drive = { forward: -manual.pitch, turn: manual.roll || -manual.yaw };
     if (!drivenRigs.has(myVehicle.type))
@@ -4829,11 +4799,7 @@ function physics(dt) {
     me.userData.trailer?.rotation.set(state.trailerPitch || 0, state.trailerAngle || 0, 0, 'YXZ');
     landed = state.landed;
     gas = state.gas;
-    shooting =
-      ['tank', 'castor'].includes(myVehicle.type) &&
-      active &&
-      hasAmmo() &&
-      (mouseFire || manual.fire);
+    shooting = ['tank', 'castor'].includes(myVehicle.type) && active && hasAmmo() && mouseFire;
     const burst = advanceAutomaticFire(
       cooldown,
       dt,
@@ -4853,9 +4819,8 @@ function physics(dt) {
     return;
   }
   const active = controlFocus.active && canCapture();
-  const manual = flightInput(keys, pad, active);
-  if (active && (keys.Space || pad.heavy) && myVehicle.supplies.ammo.bomb !== undefined)
-    fireHeavy('bomb');
+  const manual = flightInput(keys, active);
+  if (active && keys.Space && myVehicle.supplies.ammo.bomb !== undefined) fireHeavy('bomb');
   const assisted = active;
   const auto = assisted
     ? mouseFlightControls(T, { q: me.quaternion, omega, direction: mouseDirection }, flightTuning)
@@ -4966,8 +4931,7 @@ function physics(dt) {
   for (const prop of me.userData.props || [me.userData.prop])
     prop.rotation.z += dt * gas * (engine && remainingFuel() > 0 ? 70 : 0);
   $('stallWarning').classList.toggle('hidden', stall > 0.8);
-  shooting =
-    active && myVehicle && !isBomber(myVehicle.type) && hasAmmo() && (manual.fire || mouseFire);
+  shooting = active && myVehicle && !isBomber(myVehicle.type) && hasAmmo() && mouseFire;
   const burst = advanceAutomaticFire(
     cooldown,
     dt,
@@ -5279,32 +5243,6 @@ function frame(now) {
   bloodEffects.update(dt);
   combatEffects.update(dt, camera);
   crashEffects.update(dt, colliders);
-  previousPad = pad;
-  try {
-    pad = document.hasFocus() ? readPad(navigator.getGamepads?.()) : neutralPad();
-  } catch {
-    pad = neutralPad();
-  }
-  $('padStatus').textContent = pad.connected
-    ? '🎮 Manette active · 3 axes'
-    : '🎮 Appuyez sur un bouton de votre manette';
-  if (
-    joined &&
-    !spectating &&
-    controlFocus.active &&
-    onFoot &&
-    !myVehicle &&
-    turretIndex < 0 &&
-    !respawnAt &&
-    pad.heavy &&
-    !previousPad.heavy
-  )
-    interactVehicle();
-  if (joined && respawnAt && pad.heavy && !previousPad.heavy) {
-    paperSuppressed = false;
-    renderPaper();
-  }
-  if (joined && pad.start && !previousPad.start && !respawnAt) launchWave();
   if (joined) {
     renderDeliveries();
     enemies(Date.now());
@@ -5446,11 +5384,11 @@ function frame(now) {
       purgatory.postrender(renderer, observationCamera, toon.depthTexture());
   } else if (respawnAt && soulBody) {
     physicalPurgatory(dt, now);
-    updateAimedGuard();
+    updateAimedPurgatory();
     purgatory.prerender(renderer, purgCamera);
     toon.render(purgScene, purgCamera);
     purgatory.postrender(renderer, purgCamera, toon.depthTexture());
-    postSelection.color = aimedGuard ? SIGNAL_COLOR : null;
+    postSelection.color = aimedPurgatory ? SIGNAL_COLOR : null;
     postSelection.render(purgScene, purgCamera);
   } else toon.render(scene, camera);
   appearancePicker.draw(renderer, dt);
@@ -5982,7 +5920,7 @@ function heliGunnerView(mount, dir, up) {
   };
 }
 function currentAmmoKey() {
-  if (myVehicle?.type === 'helicopter') return crewSeat === 'pilot' ? 'rocket' : heliWeapon;
+  if (myVehicle?.type === 'helicopter') return crewSeat === 'pilot' ? 'rocket' : 'copilot';
   if (myVehicle?.type === 'flaktruck') return 'proximity';
   return myVehicle?.type === 'tank' && crewSeat === 'cannon' ? 'coax' : crewSeat;
 }
@@ -6832,7 +6770,7 @@ function beginPlacement(order) {
   ghost = ghosts[order.item];
   placingEquipment = true;
   $('shop').classList.add('hidden');
-  notify('Achat payé · clic gauche ou E : poser · clic droit ou Échap : conserver', 4);
+  notify('Achat payé · clic gauche : poser · clic droit ou Échap : conserver', 4);
   captureMouse();
 }
 async function placePurchased() {
