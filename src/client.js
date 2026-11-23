@@ -175,7 +175,7 @@ import {
   STAFF_ROLES,
   deskOccupant,
   nearVipGuard,
-  VIP_DESK,
+  saintWindowX,
 } from '/purgatory-queue.js';
 import { createPurgatoryScene } from '/purgatory-scene.js';
 import {
@@ -1405,7 +1405,7 @@ function accept(s, force = false) {
     soulBody = null;
     soulArenaRevision = -1;
     paperContext = '';
-    paperSuppressed = false;
+    paperSuppressed = true;
   }
   if (self && (worldChanged || self.mode === 'foot')) hp = self.health;
   if (self?.state.awaitingPurgatory && !spectating)
@@ -2408,7 +2408,7 @@ $('paperClose').onclick = (event) => {
   if (event?.isTrusted) captureMouse();
 };
 $('signSubmit').onclick = submitPaper;
-let paperSuppressed = false;
+let paperSuppressed = true;
 let paperSubmission = null;
 // Paper dossier (docs/ui-guidelines.md): every document is signed as it is; only
 // workshop orders ask for a motive.
@@ -2451,7 +2451,9 @@ function renderPaper() {
     const body = soulArena?.bodies.find((b) => b.entity === id && !b.gone);
     const owner = soulArena && deskOccupant(soulArena);
     eligible = !!body && owner?.id === body.id;
-    if (!eligible) paperSuppressed = false;
+    // The papers open only from the clipboard (openPurgatoryPapers), never by
+    // walking into the window's zone.
+    if (!eligible) paperSuppressed = true;
     context = 'purgatory';
     index = body?.paper || 0;
     eligible = eligible && !paperSuppressed;
@@ -2811,10 +2813,8 @@ function physicalPurgatory(dt, now) {
   // Saint Pierre walks behind the counter to the window he serves.
   const served = deskOccupant(soulArena);
   purgatory.update(dt, now, {
-    saintX: served && served.x > VIP_DESK.x / 2 ? VIP_DESK.x : 0,
+    saintX: saintWindowX(served),
     vip: !!self.vip,
-    deskServed: served?.id === self.id && !(self.vip && self.x > VIP_DESK.x / 2),
-    vipServed: served?.id === self.id && !!self.vip,
     servedAt: served ? { x: served.x, z: served.z } : null,
     stamping: served?.kind === 'enemy' && served.served > 0,
     ...staffSouls(soulArena),
@@ -7198,10 +7198,8 @@ function observedPurgatory(dt) {
   const arena = snap?.arena;
   const served = arena ? deskOccupant(arena) : null;
   purgatory.update(dt, performance.now(), {
-    saintX: served && served.x > VIP_DESK.x / 2 ? VIP_DESK.x : 0,
+    saintX: saintWindowX(served),
     vip: false,
-    deskServed: false,
-    vipServed: false,
     servedAt: served ? { x: served.x, z: served.z } : null,
     stamping: served?.kind === 'enemy' && served.served > 0,
     ...staffSouls(arena),

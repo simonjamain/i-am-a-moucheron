@@ -75,8 +75,14 @@ export function createSoul(
 // only lets players with the pass through. It ends at Saint Pierre's second
 // window, where he serves a VIP once the insect at his first window is done.
 // The pass is bought from the guard at the gate.
-export const VIP_DESK = Object.freeze({ x: 5.2, z: 1.1, r: 1 });
+export const VIP_DESK = Object.freeze({ x: 5.2, z: 1.1 });
 export const VIP_GATE_Z = 9.2;
+/**
+ * The VIP window's zone, invisible: the front half of the lane, between its ropes,
+ * from the desk to halfway to the gate. A soul with the pass standing there is
+ * served at the VIP window (Saint Pierre comes in front of it).
+ */
+export const VIP_ZONE = Object.freeze({ minX: 4, maxX: 6.4, maxZ: VIP_GATE_Z / 2 });
 export const VIP_LANE: readonly ArenaObstacle[] = Object.freeze([
   { x: 3.9, z: VIP_GATE_Z / 2, w: 0.12, d: VIP_GATE_Z },
   { x: 6.5, z: VIP_GATE_Z / 2, w: 0.12, d: VIP_GATE_Z },
@@ -93,7 +99,15 @@ export function vipPrice(wave: number): number {
   return Math.max(1, Math.floor(Number(wave) || 0));
 }
 export function inVipDesk(b: WalkBody): boolean {
-  return !b.gone && Math.hypot(b.x - VIP_DESK.x, b.z - VIP_DESK.z) < VIP_DESK.r;
+  return !b.gone && b.x > VIP_ZONE.minX && b.x < VIP_ZONE.maxX && b.z < VIP_ZONE.maxZ;
+}
+/**
+ * Where Saint Pierre stands behind the counter (arena x) to serve `served`: the
+ * middle of the main desk, or in front of the soul at the VIP desk.
+ */
+export function saintWindowX(served: PlanarPoint | null | undefined): number {
+  if (!served || served.x <= VIP_DESK.x / 2) return 0;
+  return Math.max(VIP_DESK.x - 0.6, Math.min(VIP_DESK.x + 0.6, served.x));
 }
 export function nearVipGuard(b: PlanarPoint): boolean {
   return Math.hypot(b.x - VIP_GUARD.x, b.z - VIP_GUARD.z) < VIP_GUARD.reach;
