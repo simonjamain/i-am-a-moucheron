@@ -1,6 +1,15 @@
-import type * as THREE from 'three';
+import type * as THREE from 'three/webgpu';
 import type { Three } from './types.ts';
 import type { SeatPost } from './seat-posts.ts';
+import {
+  freezeShadows,
+  fullscreenMaterial,
+  fullscreenScene,
+  targetUv,
+  tsl,
+  withoutToneMapping,
+  type Node,
+} from './gpu-passes.ts';
 
 // Hover outline of an aimable post (docs/ui-guidelines.md, « Monter dans un engin »),
 // drawn in screen space like the toon outlines (src/toon.ts): the post's parts are
@@ -24,35 +33,33 @@ export const SELECTION_LAYER = 7;
 export const SELECTION_WIDTH = 3;
 const MAX_RADIUS = 6;
 
-export function postMaskMaterial(T: Three): THREE.ShaderMaterial {
-  return new T.ShaderMaterial({
-    uniforms: {
-      clipCentre: { value: new T.Vector3() },
-      clipRadius: { value: 0 },
-    },
-    vertexShader: `
-      #include <skinning_pars_vertex>
-      varying vec3 vWorld;
-      void main() {
-        vec3 transformed = vec3(position);
-        #include <skinbase_vertex>
-        #include <skinning_vertex>
-        vec4 world = modelMatrix * vec4(transformed, 1.0);
-        vWorld = world.xyz;
-        gl_Position = projectionMatrix * viewMatrix * world;
-      }`,
-    fragmentShader: `
-      uniform vec3 clipCentre;
-      uniform float clipRadius;
-      varying vec3 vWorld;
-      void main() {
-        if (clipRadius > 0.0 && distance(vWorld, clipCentre) > clipRadius) discard;
-        gl_FragColor = vec4(1.0);
-      }`,
-    side: T.DoubleSide,
-    depthTest: false,
-    depthWrite: false,
+/** Uniforms of a mask material: the sphere that clips a shared hull around the post. */
+export interface PostMaskMaterial extends THREE.NodeMaterial {
+  uniforms: { clipCentre: { value: THREE.Vector3 }; clipRadius: { value: number } };
+}
+
+export function postMaskMaterial(T: Three): PostMaskMaterial {
+  const { uniform, vec4, positionWorld, Discard, If, Fn } = tsl(T);
+  const uniforms = { clipCentre: uniform(new T.Vector3()), clipRadius: uniform(0) };
+  // Skinning is added by the node material itself: the mask follows the animated model.
+  const material = new T.NodeMaterial() as PostMaskMaterial;
+  const fragment = Fn(() => {
+    If(
+      uniforms.clipRadius
+        .greaterThan(0)
+        .and(positionWorld.distance(uniforms.clipCentre).greaterThan(uniforms.clipRadius)),
+      () => {
+        Discard();
+      },
+    );
+    return vec4(1, 1, 1, 1);
   });
+  material.fragmentNode = fragment();
+  material.uniforms = uniforms;
+  material.side = T.DoubleSide;
+  material.depthTest = false;
+  material.depthWrite = false;
+  return material;
 }
 
 /** Mask meshes currently shown, whatever their post (bounds of the outline pass). */
@@ -63,7 +70,7 @@ export class PostHighlight {
   readonly post: SeatPost;
   private readonly T: Three;
   private readonly model: THREE.Object3D;
-  private readonly parts: { mesh: THREE.Mesh; material: THREE.ShaderMaterial }[] = [];
+  private readonly parts: { mesh: THREE.Mesh; material: PostMaskMaterial }[] = [];
 
   constructor(T: Three, model: THREE.Object3D, post: SeatPost) {
     this.post = post;
@@ -196,57 +203,60 @@ export class SelectionOutline {
   /** Line colour, or null when nothing is selected. */
   color: string | null = null;
   private readonly T: Three;
-  private readonly renderer: THREE.WebGLRenderer;
-  private target: THREE.WebGLRenderTarget | null = null;
-  private readonly material: THREE.ShaderMaterial;
-  private readonly quad: THREE.Scene;
+  private readonly renderer: THREE.WebGPURenderer;
+  private target: THREE.RenderTarget | null = null;
+  private material: THREE.NodeMaterial;
+  private quad: THREE.Scene;
   private readonly camera: THREE.Camera;
   private readonly size: THREE.Vector2;
+  private readonly uniforms: Record<'texel' | 'radius' | 'lineColor', Node>;
+  private readonly maskTexture: Node;
+  /** Half-width of the unrolled search square (grows with the line width). */
+  private reach = 0;
 
-  constructor(T: Three, renderer: THREE.WebGLRenderer) {
+  constructor(T: Three, renderer: THREE.WebGPURenderer) {
     this.T = T;
     this.renderer = renderer;
     this.size = new T.Vector2();
-    this.material = new T.ShaderMaterial({
-      uniforms: {
-        tMask: { value: null },
-        texel: { value: new T.Vector2() },
-        radius: { value: SELECTION_WIDTH },
-        lineColor: { value: new T.Color() },
-      },
-      vertexShader: `
-        varying vec2 vUv;
-        void main() {
-          vUv = uv;
-          gl_Position = vec4(position.xy, 0.0, 1.0);
-        }`,
-      fragmentShader: `
-        uniform sampler2D tMask;
-        uniform vec2 texel;
-        uniform float radius;
-        uniform vec3 lineColor;
-        varying vec2 vUv;
-        void main() {
-          if (texture2D(tMask, vUv).r > 0.5) discard;
-          float nearest = 1e3;
-          for (int y = -${MAX_RADIUS}; y <= ${MAX_RADIUS}; y++)
-            for (int x = -${MAX_RADIUS}; x <= ${MAX_RADIUS}; x++) {
-              vec2 o = vec2(float(x), float(y));
-              float d = length(o);
-              if (d > radius + 1.0 || d >= nearest) continue;
-              if (texture2D(tMask, vUv + o * texel).r > 0.5) nearest = d;
-            }
-          float alpha = clamp(radius + 0.5 - nearest, 0.0, 1.0);
-          if (alpha <= 0.0) discard;
-          gl_FragColor = vec4(lineColor, alpha);
-        }`,
-      transparent: true,
-      depthTest: false,
-      depthWrite: false,
-    });
-    this.quad = new T.Scene();
-    this.quad.add(new T.Mesh(new T.PlaneGeometry(2, 2), this.material));
-    this.camera = new T.Camera();
+    const { uniform, texture } = tsl(T);
+    this.uniforms = {
+      texel: uniform(new T.Vector2()),
+      radius: uniform(SELECTION_WIDTH),
+      lineColor: uniform(new T.Color()),
+    };
+    this.maskTexture = texture(new T.Texture());
+    this.material = this.build(MAX_RADIUS);
+    const { scene, camera } = fullscreenScene(T, this.material);
+    this.quad = scene;
+    this.camera = camera;
+    this.reach = MAX_RADIUS;
+  }
+
+  /**
+   * Outline material searching a square of half-width `reach` pixels (a disc of the line
+   * width inside it): the loops are unrolled, so the reach is fixed per material.
+   */
+  private build(reach: number): THREE.NodeMaterial {
+    const { vec2, vec4, float, select, min, max } = tsl(this.T);
+    const { texel, radius, lineColor } = this.uniforms;
+    const coord = targetUv(this.T);
+    const inside = this.maskTexture.sample(coord).r.greaterThan(0.5);
+    let nearest = float(1e3);
+    for (let y = -reach; y <= reach; y++)
+      for (let x = -reach; x <= reach; x++) {
+        const distance = Math.hypot(x, y);
+        if (distance > reach) continue;
+        const hit = this.maskTexture
+          .sample(coord.add(texel.mul(vec2(x, y))))
+          .r.greaterThan(0.5)
+          .and(radius.add(1).greaterThanEqual(distance));
+        nearest = min(nearest, select(hit, float(distance), float(1e3)));
+      }
+    const alpha = max(radius.add(0.5).sub(nearest), 0).clamp(0, 1);
+    // Display colours: tone mapping is switched off while this pass draws.
+    const material = fullscreenMaterial(this.T, vec4(lineColor, select(inside, float(0), alpha)));
+    material.transparent = true;
+    return material;
   }
 
   /** Draw the outline of the selected parts of `scene` over the current frame. */
@@ -257,43 +267,57 @@ export class SelectionOutline {
       size = renderer.getDrawingBufferSize(this.size);
     if (!this.target || this.target.width !== size.x || this.target.height !== size.y) {
       this.target?.dispose();
-      this.target = new T.WebGLRenderTarget(size.x, size.y, { depthBuffer: false });
+      this.target = new T.RenderTarget(size.x, size.y, { depthBuffer: false });
     }
     // Mask pass: only the selection layer, no background, no shadow update.
     const layers = camera.layers.mask,
       background = scene.background,
-      shadows = renderer.shadowMap.autoUpdate,
+      restoreShadows = freezeShadows(scene),
       clearColor = renderer.getClearColor(new T.Color()),
       clearAlpha = renderer.getClearAlpha(),
       autoClear = renderer.autoClear;
     camera.layers.set(SELECTION_LAYER);
     scene.background = null;
-    renderer.shadowMap.autoUpdate = false;
     renderer.setClearColor(0x000000, 0);
     renderer.setRenderTarget(this.target);
     renderer.clear();
     renderer.render(scene, camera);
     camera.layers.mask = layers;
     scene.background = background;
-    renderer.shadowMap.autoUpdate = shadows;
+    restoreShadows();
     renderer.setClearColor(clearColor, clearAlpha);
-    // Outline pass over the finished frame (its colour already in display space).
-    const uniforms = this.material.uniforms;
-    uniforms.tMask.value = this.target.texture;
+    // Outline pass over the finished frame.
+    const uniforms = this.uniforms;
+    this.maskTexture.value = this.target.texture;
     uniforms.texel.value.set(1 / size.x, 1 / size.y);
     uniforms.radius.value = Math.min(MAX_RADIUS, SELECTION_WIDTH * (size.y / 900));
-    uniforms.lineColor.value.set(this.color).convertLinearToSRGB();
+    uniforms.lineColor.value.set(this.color);
     renderer.setRenderTarget(null);
     const rect = selectionRect(T, camera, size, uniforms.radius.value + 2);
     if (!rect) return;
+    // The search square follows the line width (unrolled loops: fixed per material).
+    const reach = Math.min(MAX_RADIUS, Math.ceil(uniforms.radius.value + 1));
+    if (reach !== this.reach) {
+      this.reach = reach;
+      const material = this.build(reach);
+      (this.quad.children[0] as THREE.Mesh).material = material;
+      this.material.dispose();
+      this.material = material;
+    }
     // Only the pixels that can carry the line: the outline searches a disc of
     // the line width around each pixel.
     const ratio = renderer.getPixelRatio(),
       scissor = renderer.getScissorTest();
     renderer.setScissorTest(true);
-    renderer.setScissor(rect.x / ratio, rect.y / ratio, rect.w / ratio, rect.h / ratio);
+    // The scissor rectangle counts from the upper left corner (the rect from the lower left).
+    renderer.setScissor(
+      rect.x / ratio,
+      (size.y - rect.y - rect.h) / ratio,
+      rect.w / ratio,
+      rect.h / ratio,
+    );
     renderer.autoClear = false;
-    renderer.render(this.quad, this.camera);
+    withoutToneMapping(T, renderer, () => renderer.render(this.quad, this.camera));
     renderer.autoClear = autoClear;
     renderer.setScissorTest(scissor);
     renderer.setScissor(0, 0, size.x / ratio, size.y / ratio);

@@ -2,7 +2,7 @@
 // chevrons, built from the same predicted path the insects walk (#97).
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import * as T from '../vendor/three.module.min.js';
+import * as T from '../vendor/three.webgpu.min.js';
 import {
   PheromoneTrails,
   TRAIL,

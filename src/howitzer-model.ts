@@ -1,6 +1,6 @@
 import { HOWITZER_DATA as D } from './howitzer-data.ts';
 import { HOWITZER_LIMITS } from './howitzer-geometry.ts';
-import type * as THREE from 'three';
+import type * as THREE from 'three/webgpu';
 import type { Three, Vec3Like } from './types.ts';
 
 // Issue #113: the anti-materiel gun is the user-supplied Meshy howitzer, split

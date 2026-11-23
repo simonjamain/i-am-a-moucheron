@@ -1,4 +1,4 @@
-import * as T from '../vendor/three.module.min.js';
+import * as T from '../vendor/three.webgpu.min.js';
 import { createGraphics } from '../src/graphics.js';
 import { execFileSync } from 'node:child_process';
 import { writeFile } from 'node:fs/promises';

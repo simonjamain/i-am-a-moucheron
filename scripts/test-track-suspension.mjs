@@ -1,7 +1,7 @@
 // Deformable tank tracks: belts cut finely enough to bend, wheels and belts that follow the
 // terrain under them, unchanged on flat ground.
 import assert from 'node:assert/strict';
-import * as T from '../vendor/three.module.min.js';
+import * as T from '../vendor/three.webgpu.min.js';
 import { createGraphics } from '../src/graphics.js';
 import { tessellate } from '../src/tessellate.ts';
 import { AXLE_Z, TRACK_HALF } from '../src/tank-gear.ts';

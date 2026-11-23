@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import * as T from '../vendor/three.module.min.js';
+import * as T from '../vendor/three.webgpu.min.js';
 import { MODEL_DATA } from '../src/meshy-castor-data.ts';
 import { CASTOR_WHEEL_RADIUS } from '../src/castor-wheels.ts';
 import { createGraphics } from '../src/graphics.js';

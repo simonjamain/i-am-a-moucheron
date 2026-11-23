@@ -3,7 +3,7 @@
 // turn smoothly toward their facing.
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import * as T from '../vendor/three.module.min.js';
+import * as T from '../vendor/three.webgpu.min.js';
 import {
   APPEARANCES,
   DEFAULT_APPEARANCE,
@@ -155,11 +155,11 @@ assert.match(client, /appearance: appearancePicker\.value/);
 // Every walker (office and purgatories) turns smoothly toward its facing.
 assert.match(client, /turnToward\(g\.rotation\.y, walkerYaw\(world, body\.face \|\| 0\), dt\)/);
 assert.doesNotMatch(client, /g\.rotation\.y = Math\.PI - b\.face;\n\s+if \(!g\.userData\.chute\)/);
-// No second WebGL context nor read-back of the game canvas (each one left
+// No second GPU context nor read-back of the game canvas (each one left
 // Chrome several times slower for the whole game): draw straight into it.
 const picker = readFileSync('src/appearance-picker.ts', 'utf8');
 for (const slow of [
-  /new T\.WebGLRenderer/,
+  /new T\.WebGPURenderer/,
   /readRenderTargetPixels|readPixels/,
   /drawImage|getImageData/,
 ])

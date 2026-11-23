@@ -1,5 +1,5 @@
 import { MAP, FLAK } from './scale.ts';
-import type * as THREE from 'three';
+import type * as THREE from 'three/webgpu';
 import type { Three } from './types.ts';
 
 export function spreadDirection(

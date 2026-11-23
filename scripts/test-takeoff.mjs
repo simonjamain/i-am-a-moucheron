@@ -1,7 +1,7 @@
 // Every aircraft must take off from a flat surface, and air routes must stay
 // below the cloud layer that did not follow the raised flight ceiling.
 import assert from 'node:assert/strict';
-import * as T from '../vendor/three.module.min.js';
+import * as T from '../vendor/three.webgpu.min.js';
 import { stepFlight, ROLLING_FRICTION, LIFTOFF_SPEED } from '../src/flight.ts';
 import { VEHICLES } from '../src/fleet.ts';
 import { enemyRoute } from '../src/routes.ts';

@@ -1,6 +1,6 @@
 import './normal-dossiers.mjs';
 import assert from 'node:assert/strict';
-import * as T from '../vendor/three.module.min.js';
+import * as T from '../vendor/three.webgpu.min.js';
 import { createOffice } from '../src/office.ts';
 import { createGraphics } from '../src/graphics.js';
 import { aircraftPose } from '../src/base.ts';

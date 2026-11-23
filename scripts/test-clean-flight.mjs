@@ -5,7 +5,7 @@ import { GunSalvos } from '../src/salvos.ts';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
-import * as T from '../vendor/three.module.min.js';
+import * as T from '../vendor/three.webgpu.min.js';
 import { Game } from '../server/game.js';
 import { SHOP, shopPrice, purchaseCount, supportedPlacement } from '../src/equipment.ts';
 import { fullAmmo, advanceSupplies } from '../src/logistics.ts';
@@ -461,7 +461,7 @@ const fireContext = {
   performance,
   gunSalvos: new GunSalvos(),
   TracerPool,
-  renderer: { isWebGLRenderer: true },
+  renderer: { isWebGPURenderer: true },
   GunSalvos,
   scene: new T.Scene(),
   myVehicle: {

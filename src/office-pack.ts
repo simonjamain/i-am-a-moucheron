@@ -2,7 +2,7 @@
 // mesh per model, all sharing the pack's single atlas material. Geometry comes
 // from the embedded module (scripts/import-office-pack.py); licence of the models:
 // src/office-pack-LICENSE.md.
-import type * as THREE from 'three';
+import type * as THREE from 'three/webgpu';
 import type { Three } from './types.ts';
 import type { Prop, OfficeModel } from './office-props.ts';
 import { LAMP_LOOK } from './office-lights.ts';

@@ -184,7 +184,7 @@ console.log(
 
 // 6. Client tools (debug-tools.ts): shop columns, dummy damage readout,
 // hit-volume wireframes matching insect-hits.js, turret and sugar ranges.
-const T = await import('../vendor/three.module.min.js');
+const T = await import('../vendor/three.webgpu.min.js');
 const { DebugTools, DamageMeter, DAMAGE_WINDOW_S, formatDamage, MESH_COLLIDER_COLOR } =
   await import('../src/debug-tools.ts');
 const { nearestInsectHit } = await import('../src/insect-hits.ts');

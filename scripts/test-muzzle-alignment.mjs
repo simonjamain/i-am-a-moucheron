@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import * as T from '../vendor/three.module.min.js';
+import * as T from '../vendor/three.webgpu.min.js';
 import { createGraphics } from '../src/graphics.js';
 import { nextPilotMuzzle } from '../src/muzzle.ts';
 import { CombatEffects } from '../src/combat.ts';

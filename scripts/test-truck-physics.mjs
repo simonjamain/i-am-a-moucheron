@@ -2,7 +2,7 @@
 // against the model's vertices, driving, jackknife, walls and falls, run headless
 // against vendor/rapier.compat.mjs. Feel still needs a real drive (docs/physics-engine.md).
 import assert from 'node:assert/strict';
-import * as T from '../vendor/three.module.min.js';
+import * as T from '../vendor/three.webgpu.min.js';
 import { ACTOR_UNIT, MAP } from '../src/scale.ts';
 import { TRAILER_LIMITS, VEHICLES } from '../src/fleet.ts';
 import { MODEL_DATA } from '../src/meshy-flaktruck-data.ts';

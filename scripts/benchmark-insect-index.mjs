@@ -1,5 +1,5 @@
 import { performance } from 'node:perf_hooks';
-import * as T from '../vendor/three.module.min.js';
+import * as T from '../vendor/three.webgpu.min.js';
 import { createGraphics } from '../src/graphics.js';
 import { InsectIndex, nearestInsectHit } from '../src/insect-hits.ts';
 // CPU-only: each sample includes one index rebuild and 256 swept shot segments.

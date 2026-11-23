@@ -1,7 +1,7 @@
 // Castor V top view (camera above the truck, floor cursor) and the green
 // refuel spheres drawn with the radii the paid service really uses.
 import assert from 'node:assert/strict';
-import * as T from '../vendor/three.module.min.js';
+import * as T from '../vendor/three.webgpu.min.js';
 import {
   TOP_VIEW_CURSOR_LIMIT,
   TOP_VIEW_HEIGHT,

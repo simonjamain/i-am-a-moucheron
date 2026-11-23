@@ -3,7 +3,7 @@
 // and a two-bone leg solve (src/rigged-creature.ts) turns hip and knee so the
 // foot reaches its target. The cycle phase is one stride (0..1); the client
 // advances it with the distance travelled, so feet never slide on the floor.
-import type * as THREE from 'three';
+import type * as THREE from 'three/webgpu';
 import { GROUND_FOOT_DEPTH, GROUND_FOOT_CLEARANCE } from './scale.ts';
 import type { Three } from './types.ts';
 

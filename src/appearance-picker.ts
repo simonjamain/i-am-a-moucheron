@@ -5,7 +5,14 @@ import {
   characterLoaded,
   CHARACTER_HEIGHT,
 } from './character-model.ts';
-import type * as THREE from 'three';
+import type * as THREE from 'three/webgpu';
+import {
+  fullscreenMaterial,
+  fullscreenScene,
+  targetUv,
+  tsl,
+  withoutToneMapping,
+} from './gpu-passes.ts';
 import type { AppearanceId } from './character-appearances.ts';
 import type { Three } from './types.ts';
 
@@ -61,32 +68,47 @@ export function createAppearancePicker(
   key.position.set(1.5, 3, 4);
   scene.add(key);
   const camera = new T.PerspectiveCamera(26, 1, 0.1, 20);
-  const tint = new T.Scene(),
-    flat = new T.OrthographicCamera(-1, 1, 1, -1, 0, 1);
-  const tintMaterial = new T.ShaderMaterial({
-    uniforms: {
-      panel: { value: new T.Vector4(...rgb(PANEL_TINT.color), PANEL_TINT.alpha) },
-      shade: { value: new T.Vector4(...rgb(SIDE_SHADE.color), SIDE_SHADE.alpha) },
-      shadeEnd: { value: SIDE_SHADE.end },
-      viewWidth: { value: 1 },
-    },
-    vertexShader: 'void main() { gl_Position = vec4(position.xy, 0.0, 1.0); }',
-    fragmentShader: `
-          uniform vec4 panel, shade;
-          uniform float shadeEnd, viewWidth;
-          void main() {
-            float s = shade.a * clamp(1.0 - gl_FragCoord.x / (viewWidth * shadeEnd), 0.0, 1.0);
-            vec3 c = panel.rgb * panel.a + (1.0 - panel.a) * s * shade.rgb;
-            float k = (1.0 - panel.a) * (1.0 - s);
-            gl_FragColor = vec4(c, 1.0 - k); // premultiplied: c + k * game
-          }`,
-    blending: T.CustomBlending,
-    blendSrc: T.OneFactor,
-    blendDst: T.OneMinusSrcAlphaFactor,
-    depthTest: false,
-    depthWrite: false,
-  });
-  tint.add(new T.Mesh(new T.PlaneGeometry(2, 2), tintMaterial));
+  // Panel colour and side shade over the game image (display colours, premultiplied): the
+  // output goes through the renderer's own sRGB encoding, so the values are decoded first.
+  const { uniform, vec4, float, screenCoordinate, sRGBTransferEOTF } = tsl(T);
+  const panel = uniform(new T.Vector4(...rgb(PANEL_TINT.color), PANEL_TINT.alpha)),
+    shade_ = uniform(new T.Vector4(...rgb(SIDE_SHADE.color), SIDE_SHADE.alpha)),
+    viewWidth = uniform(1);
+  const s = shade_.a.mul(
+    float(1)
+      .sub(screenCoordinate.x.div(viewWidth.mul(SIDE_SHADE.end)))
+      .clamp(0, 1),
+  );
+  const c = panel.rgb.mul(panel.a).add(float(1).sub(panel.a).mul(s).mul(shade_.rgb));
+  const k = float(1).sub(panel.a).mul(float(1).sub(s));
+  const tintMaterial = fullscreenMaterial(T, vec4(sRGBTransferEOTF(c), float(1).sub(k)));
+  tintMaterial.blending = T.CustomBlending;
+  tintMaterial.blendSrc = T.OneFactor;
+  tintMaterial.blendDst = T.OneMinusSrcAlphaFactor;
+  tintMaterial.premultipliedAlpha = true;
+  const { scene: tint, camera: flat } = fullscreenScene(T, tintMaterial);
+  // The turntable is drawn off screen, then composited with its own tone mapping: the frame
+  // under it is already tone-mapped, and the renderer's tone mapping would run over all of it.
+  const { texture, toneMapping } = tsl(T);
+  const exposure = uniform(1);
+  const figure = texture(new T.Texture());
+  const sample = figure.sample(targetUv(T));
+  const figureMaterial = fullscreenMaterial(
+    T,
+    vec4(
+      toneMapping(T.ACESFilmicToneMapping, exposure, sample.rgb.div(sample.a.max(0.0001))).rgb.mul(
+        sample.a,
+      ),
+      sample.a,
+    ),
+  );
+  figureMaterial.blending = T.CustomBlending;
+  figureMaterial.blendSrc = T.OneFactor;
+  figureMaterial.blendDst = T.OneMinusSrcAlphaFactor;
+  figureMaterial.premultipliedAlpha = true;
+  const { scene: figureScene } = fullscreenScene(T, figureMaterial);
+  let figureTarget: THREE.RenderTarget | null = null;
+  const clearColor = new T.Color();
   const nameOf = (id: AppearanceId) => APPEARANCES.find((a) => a.id === id)!.name;
   function show() {
     if (shown === value || !characterLoaded(value)) return;
@@ -127,10 +149,10 @@ export function createAppearancePicker(
     },
     select,
     // Called once per game frame, after the frame is rendered, on the home screen.
-    draw(renderer: THREE.WebGLRenderer | null | undefined, dt: number) {
+    draw(renderer: THREE.WebGPURenderer | null | undefined, dt: number) {
       if (!active) return;
       // Software fallback renderer: an opaque selector, the name identifies the choice.
-      if (!renderer || !(renderer as { isWebGLRenderer?: boolean }).isWebGLRenderer)
+      if (!renderer || !(renderer as { isWebGPURenderer?: boolean }).isWebGPURenderer)
         return void root.classList.add('appearance-flat');
       show();
       const box = root.getBoundingClientRect(),
@@ -166,16 +188,36 @@ export function createAppearancePicker(
       }
       const viewport = renderer.getViewport(new T.Vector4()),
         target = renderer.getRenderTarget();
+      // The turntable, off screen, in the size it will have on screen.
+      const ratio = renderer.getPixelRatio(),
+        pixels = [Math.max(1, Math.round(width * ratio)), Math.max(1, Math.round(height * ratio))];
+      if (!figureTarget || figureTarget.width !== pixels[0] || figureTarget.height !== pixels[1]) {
+        figureTarget?.dispose();
+        figureTarget = new T.RenderTarget(pixels[0], pixels[1], { samples: 4 });
+        figure.value = figureTarget.texture;
+      }
+      const clearAlpha = renderer.getClearAlpha();
+      renderer.getClearColor(clearColor);
+      renderer.setClearColor(0x000000, 0);
+      renderer.setRenderTarget(figureTarget);
+      renderer.clear();
+      renderer.render(scene, camera);
+      renderer.setClearColor(clearColor, clearAlpha);
       renderer.setRenderTarget(null);
-      renderer.setViewport(x, y, width, height);
-      renderer.setScissor(x, y, width, height);
+      // WebGPU viewport and scissor rectangles count from the upper left corner.
+      const top = view.height - y - height;
+      renderer.setViewport(x, top, width, height);
+      renderer.setScissor(x, top, width, height);
       renderer.setScissorTest(true);
       const autoClear = renderer.autoClear;
       renderer.autoClear = false;
-      tintMaterial.uniforms.viewWidth.value = renderer.domElement.width;
-      renderer.render(tint, flat); // shade and panel colour over this frame's game image
-      renderer.clearDepth();
-      renderer.render(scene, camera);
+      viewWidth.value = renderer.domElement.width;
+      // Shade and panel colour over this frame's game image.
+      exposure.value = renderer.toneMappingExposure;
+      withoutToneMapping(T, renderer, () => {
+        renderer.render(tint, flat);
+        renderer.render(figureScene, flat);
+      });
       renderer.autoClear = autoClear;
       renderer.setScissorTest(false);
       renderer.setViewport(viewport);

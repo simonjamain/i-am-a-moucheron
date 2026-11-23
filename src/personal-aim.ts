@@ -1,4 +1,4 @@
-import type * as THREE from 'three';
+import type * as THREE from 'three/webgpu';
 import type { Three, XYZ } from './types.ts';
 export interface ShoulderView {
   target: THREE.Vector3;

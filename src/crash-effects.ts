@@ -1,4 +1,4 @@
-import type * as THREE from 'three';
+import type * as THREE from 'three/webgpu';
 import { rayCollider } from './oriented-collider.ts';
 import type { OrientedFrame } from './oriented-collider.ts';
 import { MAP } from './scale.ts';

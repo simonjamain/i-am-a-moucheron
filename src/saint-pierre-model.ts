@@ -10,7 +10,7 @@ import { defineCreature, TAU } from './rigged-creature.ts';
 import type { CreaturePose, CreatureRig } from './rigged-creature.ts';
 import { HUMANOID_UNITS, PERSON_HEIGHT } from './scale.ts';
 import type { Three } from './types.ts';
-import type * as THREE from 'three';
+import type * as THREE from 'three/webgpu';
 
 export const SAINT_PIERRE_MODEL = Object.freeze({
   /** Drawn height in metres. */

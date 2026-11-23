@@ -2,7 +2,7 @@
 // hand-placed props of every layout. See docs/office-layouts.md.
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
-import * as T from '../vendor/three.module.min.js';
+import * as T from '../vendor/three.webgpu.min.js';
 import { MODEL_DATA } from '../src/office-pack-data.ts';
 import { OFFICE_MODELS, OFFICE_PACK_UNIT } from '../src/office-pack-catalog.ts';
 import { propColliders, propFootprint, modelBoxes } from '../src/office-props.ts';

@@ -1,10 +1,11 @@
 // Damaged aircraft trail small smoke puffs from their engine(s), denser,
 // bigger and darker as their hit points drop. Purely visual: damage no longer
-// changes the shape of any aircraft. One point cloud (one draw call) holds
+// changes the shape of any aircraft. One instanced batch of quads (one draw call) holds
 // every puff; puffs stay where they were emitted, so a moving aircraft leaves
 // a trail behind it.
-import type * as THREE from 'three';
+import type * as THREE from 'three/webgpu';
 import { ACTOR_UNIT } from './scale.ts';
+import { tsl } from './gpu-passes.ts';
 import type { Three } from './types.ts';
 
 export const SMOKE_THRESHOLD = 0.15; // damage ratio below which nothing is emitted
@@ -62,35 +63,6 @@ export function engineAnchors(T: Three, model: THREE.Object3D): THREE.Object3D[]
   return engines;
 }
 
-const vertexShader = `
-  #include <common>
-  #include <logdepthbuf_pars_vertex>
-  attribute float size;
-  attribute float alpha;
-  attribute float shade;
-  uniform float scale;
-  varying float vAlpha;
-  varying float vShade;
-  void main() {
-    vec4 mv = modelViewMatrix * vec4(position, 1.0);
-    gl_PointSize = size * scale / max(-mv.z, 1e-6);
-    vAlpha = alpha;
-    vShade = shade;
-    gl_Position = projectionMatrix * mv;
-    #include <logdepthbuf_vertex>
-  }`;
-const fragmentShader = `
-  #include <common>
-  #include <logdepthbuf_pars_fragment>
-  varying float vAlpha;
-  varying float vShade;
-  void main() {
-    #include <logdepthbuf_fragment>
-    float r = length(gl_PointCoord - 0.5) * 2.0;
-    if (r > 1.0) discard;
-    gl_FragColor = vec4(vec3(vShade), vAlpha * (1.0 - r * r));
-  }`;
-
 interface SmokePuff extends SmokeLook {
   p: THREE.Vector3;
   v: THREE.Vector3;
@@ -110,8 +82,9 @@ export class EngineSmoke {
   sizes: Float32Array;
   alphas: Float32Array;
   shades: Float32Array;
-  material: THREE.ShaderMaterial;
-  points: THREE.Points<THREE.BufferGeometry, THREE.ShaderMaterial>;
+  material: THREE.SpriteNodeMaterial;
+  /** One camera-facing quad per puff, drawn instanced (WebGPU has no sized points). */
+  points: THREE.Mesh<THREE.InstancedBufferGeometry, THREE.SpriteNodeMaterial>;
 
   constructor(
     T: Three,
@@ -122,24 +95,31 @@ export class EngineSmoke {
     this.capacity = capacity;
     this.random = random;
     this.puffs = [];
-    const geometry = new T.BufferGeometry();
+    const geometry = new T.InstancedBufferGeometry().copy(
+      new T.PlaneGeometry(1, 1) as unknown as THREE.InstancedBufferGeometry,
+    );
     this.positions = new Float32Array(capacity * 3);
     this.sizes = new Float32Array(capacity);
     this.alphas = new Float32Array(capacity);
     this.shades = new Float32Array(capacity);
-    geometry.setAttribute('position', new T.BufferAttribute(this.positions, 3));
-    geometry.setAttribute('size', new T.BufferAttribute(this.sizes, 1));
-    geometry.setAttribute('alpha', new T.BufferAttribute(this.alphas, 1));
-    geometry.setAttribute('shade', new T.BufferAttribute(this.shades, 1));
-    geometry.setDrawRange(0, 0);
-    this.material = new T.ShaderMaterial({
-      uniforms: { scale: { value: 1 } },
-      vertexShader,
-      fragmentShader,
-      transparent: true,
-      depthWrite: false,
-    });
-    this.points = new T.Points(geometry, this.material);
+    geometry.setAttribute('offset', new T.InstancedBufferAttribute(this.positions, 3));
+    geometry.setAttribute('size', new T.InstancedBufferAttribute(this.sizes, 1));
+    geometry.setAttribute('alpha', new T.InstancedBufferAttribute(this.alphas, 1));
+    geometry.setAttribute('shade', new T.InstancedBufferAttribute(this.shades, 1));
+    geometry.instanceCount = 0;
+    // A grey disc, soft at the edge: the quad's own coordinates give the radius.
+    const { attribute, vec3, uv, length, float } = tsl(T);
+    const radius = length(uv().sub(0.5)).mul(2);
+    this.material = new T.SpriteNodeMaterial();
+    this.material.positionNode = attribute('offset', 'vec3');
+    this.material.scaleNode = attribute('size', 'float');
+    this.material.colorNode = vec3(attribute('shade', 'float'));
+    this.material.opacityNode = attribute('alpha', 'float').mul(
+      float(1).sub(radius.mul(radius)).max(0),
+    );
+    this.material.transparent = true;
+    this.material.depthWrite = false;
+    this.points = new T.Mesh(geometry, this.material);
     this.points.name = 'engine-smoke';
     this.points.frustumCulled = false;
     this.points.renderOrder = 5;
@@ -182,8 +162,8 @@ export class EngineSmoke {
     return emitted;
   }
 
-  // Age, drift and upload every puff; `scale` makes sizes perspective-correct.
-  update(dt: number, camera: THREE.Camera | null | undefined, viewportHeight: number): number {
+  // Age, drift and upload every puff (sizes are world units: the quads face the camera).
+  update(dt: number): number {
     this.puffs = this.puffs.filter((puff) => (puff.age += dt) < puff.life);
     this.puffs.forEach((puff, i) => {
       puff.p.addScaledVector(puff.v, dt);
@@ -194,18 +174,14 @@ export class EngineSmoke {
       this.shades[i] = puff.shade;
     });
     const geometry = this.points.geometry;
-    geometry.setDrawRange(0, this.puffs.length);
-    for (const name of ['position', 'size', 'alpha', 'shade'])
+    geometry.instanceCount = this.puffs.length;
+    for (const name of ['offset', 'size', 'alpha', 'shade'])
       geometry.attributes[name].needsUpdate = true;
-    if ((camera as THREE.PerspectiveCamera | null | undefined)?.isPerspectiveCamera)
-      this.material.uniforms.scale.value =
-        viewportHeight /
-        (2 * Math.tan(this.T.MathUtils.degToRad((camera as THREE.PerspectiveCamera).fov) / 2));
     return this.puffs.length;
   }
 
   clear(): void {
     this.puffs = [];
-    this.points.geometry.setDrawRange(0, 0);
+    this.points.geometry.instanceCount = 0;
   }
 }

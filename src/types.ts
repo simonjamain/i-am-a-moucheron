@@ -13,8 +13,11 @@ export interface XYZ {
   y: number;
   z: number;
 }
-/** The three.js namespace injected into scene modules (`createGraphics(T, scene)`). */
-export type Three = typeof import('three');
+/**
+ * The three.js namespace injected into scene modules (`createGraphics(T, scene)`): the WebGPU
+ * build, which also carries the core classes and TSL (`T.TSL`).
+ */
+export type Three = typeof import('three/webgpu');
 
 /**
  * Enemy species keys. Mirrors `ENEMY_TYPES` in waves.js (runtime source of truth);

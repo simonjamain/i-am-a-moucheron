@@ -1,7 +1,7 @@
 // Prepared solid targets (one matrix/mesh/box pass per frame) must give the same
 // hits as testing each model in turn with nearestMeshHit, for every ray.
 import assert from 'node:assert/strict';
-import * as T from '../vendor/three.module.min.js';
+import * as T from '../vendor/three.webgpu.min.js';
 import { nearestMeshHit, nearestSolidHit, solidTarget } from '../src/insect-hits.ts';
 
 let seed = 7;

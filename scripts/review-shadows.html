@@ -56,7 +56,7 @@
   </header>
   <canvas id="scene"></canvas>
   <script type="module">
-    import * as T from '../vendor/three.module.min.js';
+    import * as T from '../vendor/three.webgpu.min.js';
     import { createRenderer } from '../src/renderer.js';
     import { createOffice } from '../src/office.js';
     import { createGraphics } from '../src/graphics.js';
@@ -66,7 +66,7 @@
     const $ = (id) => document.getElementById(id),
       scene = new T.Scene();
     const renderer = createRenderer(T, $('scene'));
-    if (!renderer.isWebGLRenderer) {
+    if (!renderer.isWebGPURenderer) {
       $('status').className = 'error';
       $('status').textContent =
         'WebGL indisponible : comparaison visuelle et performance NON VALIDÉES.';

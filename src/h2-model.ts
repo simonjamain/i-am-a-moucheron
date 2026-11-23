@@ -1,6 +1,6 @@
 import { H2_DATA } from './meshy-h2-data.ts';
 import { buildMeshyRig, gunMount } from './meshy-rig.ts';
-import type * as THREE from 'three';
+import type * as THREE from 'three/webgpu';
 import type { Three } from './types.ts';
 
 // Remodelled H2: five-blade main rotor (Y axis), tail rotor (X axis) and the

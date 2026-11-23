@@ -1,4 +1,4 @@
-import type * as THREE from 'three';
+import type * as THREE from 'three/webgpu';
 import type { Three } from './types.ts';
 // Independent implementation of direction-based mouse aim and an aircraft instructor.
 // Camera/aim separation inspired by https://github.com/brihernandez/MouseFlight .

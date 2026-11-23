@@ -1,4 +1,4 @@
-import type * as THREE from 'three';
+import type * as THREE from 'three/webgpu';
 import { applyShadowPreset } from './shadow-settings.ts';
 import type { Three } from './types.ts';
 
@@ -15,11 +15,18 @@ type SoftwareMesh = THREE.Mesh<
   THREE.MeshBasicMaterial | THREE.MeshBasicMaterial[]
 >;
 
-export function createRenderer(T: Three, canvas: HTMLCanvasElement): THREE.WebGLRenderer {
+/** True for a GPU renderer (WebGPU, or its WebGL 2 backend); false for the 2D software stand-in. */
+export const isGpuRenderer = (renderer: unknown): boolean =>
+  (renderer as { isWebGPURenderer?: boolean } | null | undefined)?.isWebGPURenderer === true;
+
+export async function createRenderer(
+  T: Three,
+  canvas: HTMLCanvasElement,
+): Promise<THREE.WebGPURenderer> {
   // A lightweight software renderer keeps the prototype playable without WebGL.
   class SoftwareRenderer {
     ctx: CanvasRenderingContext2D | null;
-    shadowMap: Partial<THREE.WebGLShadowMap>;
+    shadowMap: { enabled?: boolean; type?: number };
     ratio: number;
     last: number;
     constructor(canvas: HTMLCanvasElement) {
@@ -144,12 +151,14 @@ export function createRenderer(T: Three, canvas: HTMLCanvasElement): THREE.WebGL
       ctx.globalAlpha = 1;
     }
   }
-  let renderer: THREE.WebGLRenderer;
+  let renderer: THREE.WebGPURenderer;
   try {
-    renderer = new T.WebGLRenderer({ canvas, antialias: true, logarithmicDepthBuffer: true });
+    // WebGPU where the browser has it, else the same renderer's WebGL 2 backend.
+    renderer = new T.WebGPURenderer({ canvas, antialias: true, logarithmicDepthBuffer: true });
+    await renderer.init();
   } catch (e) {
     // Duck-typed stand-in: callers only use the subset SoftwareRenderer implements.
-    renderer = new SoftwareRenderer(canvas) as unknown as THREE.WebGLRenderer;
+    renderer = new SoftwareRenderer(canvas) as unknown as THREE.WebGPURenderer;
   }
   renderer.setPixelRatio(Math.min(devicePixelRatio, 1.6));
   renderer.setSize(innerWidth, innerHeight);

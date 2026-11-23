@@ -1,7 +1,7 @@
 // Office layouts: every plan is playable (routes, spawn, colliders), a room keeps
 // the plan it was created with, and two rooms of different plans coexist.
 import assert from 'node:assert/strict';
-import * as T from '../vendor/three.module.min.js';
+import * as T from '../vendor/three.webgpu.min.js';
 import { Game } from '../server/game.js';
 import {
   LAYOUTS,

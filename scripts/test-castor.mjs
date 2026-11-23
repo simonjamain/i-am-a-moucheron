@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import * as T from '../vendor/three.module.min.js';
+import * as T from '../vendor/three.webgpu.min.js';
 import { SHOP, shopPrice } from '../src/equipment.ts';
 import { VEHICLES } from '../src/fleet.ts';
 import { fullAmmo, ammoCapacity } from '../src/logistics.ts';

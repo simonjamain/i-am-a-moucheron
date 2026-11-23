@@ -30,13 +30,12 @@ export class ShopThumbnails {
     this.T = T;
     this.cache = new Map();
     this.scene = new T.Scene();
-    this.renderer = new T.WebGLRenderer({
-      alpha: true,
-      antialias: true,
-      preserveDrawingBuffer: true,
+    this.renderer = new T.WebGPURenderer({ alpha: true, antialias: true });
+    // WebGPU needs an asynchronous start before the first picture.
+    this.started = Promise.resolve(this.renderer.init?.()).then(() => {
+      this.renderer.setPixelRatio(1);
+      this.renderer.setSize(width, height);
     });
-    this.renderer.setPixelRatio(1);
-    this.renderer.setSize(width, height);
     this.camera = new T.PerspectiveCamera(32, width / height, 0.01, 200);
     this.scene.add(new T.HemisphereLight(0xffffff, 0x556655, 1.5));
     const sun = new T.DirectionalLight(0xfff2d6, 2.2);
@@ -94,7 +93,14 @@ export class ShopThumbnails {
     this.camera.updateProjectionMatrix();
     this.camera.lookAt(center);
     this.renderer.render(this.scene, this.camera);
-    return this.renderer.domElement.toDataURL('image/png');
+    // A WebGPU canvas is read in the task that drew it: copy it to a 2D canvas.
+    const canvas = this.renderer.domElement;
+    if (typeof document === 'undefined' || !canvas.width) return canvas.toDataURL('image/png');
+    const copy = document.createElement('canvas');
+    copy.width = canvas.width;
+    copy.height = canvas.height;
+    copy.getContext('2d').drawImage(canvas, 0, 0);
+    return copy.toDataURL('image/png');
   }
   // Picture for an item: waits for its textures, then caches the result.
   picture(item, timeout = 4000) {
@@ -105,7 +111,7 @@ export class ShopThumbnails {
       const attempt = () => {
         if (this.ready(item) || Date.now() - started > timeout) {
           // One extra frame so the freshly decoded atlas is uploaded to the GPU.
-          requestAnimationFrame(() => resolve(this.render(item)));
+          this.started.then(() => requestAnimationFrame(() => resolve(this.render(item))));
         } else setTimeout(attempt, 100);
       };
       attempt();

@@ -1,7 +1,8 @@
-import type * as THREE from 'three';
+import type * as THREE from 'three/webgpu';
 import type { Three } from './types.ts';
+import { withoutToneMapping } from './gpu-passes.ts';
 
-// Compteur d'images par seconde, en haut à droite, dessiné dans le canvas WebGL (pas
+// Compteur d'images par seconde, en haut à droite, dessiné dans le canvas (pas
 // dans le HTML) : une texture de texte sur un plan, rendue par-dessus l'image du jeu
 // avec une caméra orthographique en pixels CSS. Le chiffre est mesuré sur une fenêtre
 // d'une demi-seconde et la texture n'est redessinée qu'à ce rythme.
@@ -35,7 +36,7 @@ export class FpsMeter {
 
 export interface FpsCounter {
   /** À appeler une fois par image, après le rendu du jeu. */
-  draw(renderer: THREE.WebGLRenderer, dt: number): void;
+  draw(renderer: THREE.WebGPURenderer, dt: number): void;
 }
 
 export function createFpsCounter(T: Three): FpsCounter {
@@ -91,7 +92,8 @@ export function createFpsCounter(T: Three): FpsCounter {
       const autoClear = renderer.autoClear;
       renderer.setRenderTarget(null);
       renderer.autoClear = false;
-      renderer.render(scene, camera);
+      // Display colours over a frame that is already tone-mapped.
+      withoutToneMapping(T, renderer, () => renderer.render(scene, camera));
       renderer.autoClear = autoClear;
       renderer.setRenderTarget(target);
     },

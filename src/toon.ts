@@ -1,131 +1,72 @@
 // Toon look for every player: stepped (cell-shaded) lighting plus dark outlines,
-// fixed by TOON_LOOK (no player setting). Lighting is patched into Three's lit
-// materials once, with a shared uniform, so switching it needs no recompilation.
+// fixed by TOON_LOOK (no player setting). Lighting is patched once into Three's lit
+// node materials (a TSL wrapper around the lighting models), with a shared uniform,
+// so switching it needs no recompilation.
 // Outlines are a post-process on the log depth buffer the game already uses:
 // a pixel just behind a nearer surface gets the line colour, flat slopes are
 // ignored (the Laplacian of inverse depth vanishes on planes).
-import type * as THREE from 'three';
+import type * as THREE from 'three/webgpu';
 import type { Three } from './types.ts';
 import { officeFogLayer } from './office-fog.ts';
+import {
+  fullscreenMaterial,
+  fullscreenScene,
+  targetUv,
+  tsl,
+  withoutToneMapping,
+  type Node,
+} from './gpu-passes.ts';
 
-export const toonUniform = { value: 0 };
+let toonBands: Node = null;
+/** Shared uniform of the stepped lighting (its `.value` is the band count; 0 = smooth). */
+export const toonUniform: { value: number } = { value: 0 };
 let installed = false;
-
-const STEP = `
-uniform float toonBands;
-float toonQuantize( const in float x ) {
-	if ( toonBands < 1.5 ) return x;
-	float b = x * toonBands;
-	float f = floor( b );
-	return ( f + smoothstep( 0.42, 0.58, b - f ) ) / toonBands;
-}
-`;
 
 export function installToonLighting(T: Three): boolean {
   if (installed) return false;
   installed = true;
-  const chunks = T.ShaderChunk as unknown as Record<string, string>;
-  const patch = (name: string, from: string, to: string, declare = false) => {
-    if (!chunks[name].includes(from)) throw Error('Three shader changed: ' + name);
-    chunks[name] = (declare ? STEP : '') + chunks[name].replaceAll(from, to);
-  };
-  patch(
-    'lights_pars_begin',
-    'float hemiDiffuseWeight = 0.5 * dotNL + 0.5;',
-    'float hemiDiffuseWeight = toonQuantize( 0.5 * dotNL + 0.5 );',
-    true,
-  );
-  for (const name of ['lights_physical_pars_fragment', 'lights_lambert_pars_fragment'])
-    patch(
-      name,
-      'float dotNL = saturate( dot( geometryNormal, directLight.direction ) );',
-      'float dotNL = toonQuantize( saturate( dot( geometryNormal, directLight.direction ) ) );',
-    );
-  // Every standard / lambert material shares one uniform (0 = smooth lighting).
-  for (const Material of [T.MeshStandardMaterial, T.MeshLambertMaterial])
-    Material.prototype.onBeforeCompile = function toonBind(
-      shader: THREE.WebGLProgramParametersWithUniforms,
-    ) {
-      shader.uniforms.toonBands = toonUniform;
+  const { uniform, Fn, select, smoothstep, max, mix, normalView, normalWorld } = tsl(T);
+  toonBands = uniform(0);
+  // Binds the public holder to the node: writing `.value` there drives the shader.
+  Object.defineProperty(toonUniform, 'value', {
+    get: () => toonBands.value as number,
+    set: (v: number) => {
+      toonBands.value = v;
+    },
+  });
+  const quantize = Fn(([x]: Node[]) => {
+    const b = x.mul(toonBands);
+    const f = b.floor();
+    const stepped = f.add(smoothstep(0.42, 0.58, b.sub(f))).div(toonBands);
+    return select(toonBands.lessThan(1.5), x, stepped);
+  });
+  // Direct light: the clamped N·L is quantised. Scaling the light colour by
+  // quantise(N·L) / N·L turns the model's own `N·L × colour` into the stepped term.
+  const T_ = T as unknown as Record<string, { prototype: Record<string, any> }>;
+  for (const name of ['PhysicalLightingModel', 'PhongLightingModel']) {
+    const proto = T_[name].prototype;
+    const direct = proto.direct;
+    proto.direct = function toonDirect(this: unknown, data: Record<string, Node>, builder: Node) {
+      const dotNL = normalView.dot(data.lightDirection).clamp();
+      const k = quantize(dotNL).div(max(dotNL, 1e-4));
+      return direct.call(this, { ...data, lightColor: data.lightColor.mul(k) }, builder);
     };
+  }
+  // Hemisphere light: the weight between sky and ground colour is quantised.
+  T_.HemisphereLightNode.prototype.setup = function toonHemisphere(
+    this: { colorNode: Node; groundColorNode: Node; lightDirectionNode: Node },
+    builder: Node,
+  ) {
+    const dotNL = normalWorld.dot(this.lightDirectionNode);
+    const weight = quantize(dotNL.mul(0.5).add(0.5));
+    builder.context.irradiance.addAssign(mix(this.groundColorNode, this.colorNode, weight));
+  };
   return true;
 }
 
 export function setToonBands(bands: number): void {
-  toonUniform.value = bands >= 2 ? Math.round(bands) : 0;
+  if (toonBands) toonBands.value = bands >= 2 ? Math.round(bands) : 0;
 }
-
-const vertexShader = `
-varying vec2 vUv;
-void main() {
-	vUv = uv;
-	gl_Position = vec4( position.xy, 0.0, 1.0 );
-}`;
-const fragmentShader = `
-uniform sampler2D tColor;
-uniform sampler2D tDepth;
-uniform vec2 texel;
-uniform float radius;
-uniform float logRange;
-uniform float threshold;
-uniform vec3 lineColor;
-// Fog of the scene, so that lines fade with the surface they outline:
-// 0 none, 1 office cloud layer (office-fog.ts), 2 linear, 3 exponential squared.
-uniform int fogMode;
-uniform float fogDensity;
-uniform float fogNear;
-uniform float fogFar;
-uniform float fogStart;
-uniform float fogThickness;
-uniform vec2 focal;
-uniform mat4 cameraWorld;
-uniform vec3 eye;
-varying vec2 vUv;
-// Inverse view depth from the logarithmic depth buffer: d = log2(1 + w) / log2(far + 1).
-float inverseDepth( const in vec2 uv ) {
-	float d = texture2D( tDepth, uv ).x;
-	return 1.0 / max( exp2( d * logRange ) - 1.0, 1e-7 );
-}
-void main() {
-	vec4 base = texture2D( tColor, vUv );
-	float centre = inverseDepth( vUv );
-	float strength = 0.0;
-	float nearest = centre;
-	for ( int i = 0; i < 4; i++ ) {
-		vec2 axis = i == 0 ? vec2( 1.0, 0.0 ) : i == 1 ? vec2( 0.0, 1.0 ) : i == 2 ? vec2( 0.7071, 0.7071 ) : vec2( 0.7071, -0.7071 );
-		vec2 step = axis * texel * radius;
-		float a = inverseDepth( vUv + step ), b = inverseDepth( vUv - step );
-		float laplacian = ( a + b - 2.0 * centre ) / centre;
-		strength = max( strength, laplacian );
-		nearest = max( nearest, max( a, b ) );
-	}
-	float line = smoothstep( threshold, threshold * 2.0, strength );
-	// The line belongs to the nearest outlined surface: it takes that surface's fog.
-	if ( fogMode > 0 && line > 0.0 ) {
-		float depth = 1.0 / nearest;
-		vec2 ndc = vUv * 2.0 - 1.0;
-		vec3 world = ( cameraWorld * vec4( ndc.x * depth / focal.x, ndc.y * depth / focal.y, - depth, 1.0 ) ).xyz;
-		float fog;
-		if ( fogMode == 2 ) fog = smoothstep( fogNear, fogFar, depth );
-		else {
-			float optical = fogDensity * fogDensity * depth * depth;
-			if ( fogMode == 1 ) {
-				float fa = max( 0.0, eye.y - fogStart ), fb = max( 0.0, world.y - fogStart );
-				float dy = world.y - eye.y;
-				float average = abs( dy ) < 0.000001 ? fa / fogThickness : ( fb * fb - fa * fa ) / ( 2.0 * fogThickness * dy );
-				optical += max( 0.0, average ) * length( world - eye ) * 9.0;
-			}
-			fog = 1.0 - exp( - optical );
-		}
-		line *= 1.0 - fog;
-	}
-	gl_FragColor = vec4( mix( base.rgb, lineColor, line ), base.a );
-	// The sky is a clear colour, which a direct render never tone-maps.
-	vec3 sky = gl_FragColor.rgb;
-	#include <tonemapping_fragment>
-	if ( texture2D( tDepth, vUv ).x > 0.99999 ) gl_FragColor.rgb = sky;
-	#include <colorspace_fragment>
-}`;
 
 export const OUTLINE_COLOR = '#1b1510';
 // The look of the game: three light bands, 1.5 px outlines (validated in play).
@@ -137,77 +78,143 @@ export interface ToonLook {
   toonOutline?: number;
 }
 
-interface OutlineUniforms {
-  [uniform: string]: THREE.IUniform;
-  tColor: THREE.IUniform<THREE.Texture | null>;
-  tDepth: THREE.IUniform<THREE.DepthTexture | null>;
-  texel: THREE.IUniform<THREE.Vector2>;
-  radius: THREE.IUniform<number>;
-  logRange: THREE.IUniform<number>;
-  threshold: THREE.IUniform<number>;
-  lineColor: THREE.IUniform<THREE.Color>;
-  fogMode: THREE.IUniform<number>;
-  fogDensity: THREE.IUniform<number>;
-  fogNear: THREE.IUniform<number>;
-  fogFar: THREE.IUniform<number>;
-  fogStart: THREE.IUniform<number>;
-  fogThickness: THREE.IUniform<number>;
-  focal: THREE.IUniform<THREE.Vector2>;
-  cameraWorld: THREE.IUniform<THREE.Matrix4>;
-  eye: THREE.IUniform<THREE.Vector3>;
-}
+/** Uniform nodes of the outline pass (each has a typed `.value`). */
+type OutlineUniforms = Record<string, Node>;
 
 export class OutlinePass {
   T: Three;
-  renderer: THREE.WebGLRenderer;
-  target: THREE.WebGLRenderTarget | null;
+  renderer: THREE.WebGPURenderer;
+  target: THREE.RenderTarget | null;
   size: [number, number];
-  material: THREE.ShaderMaterial & { uniforms: OutlineUniforms };
+  material: THREE.NodeMaterial;
+  uniforms: OutlineUniforms;
   scene: THREE.Scene;
   camera: THREE.Camera;
-  constructor(T: Three, renderer: THREE.WebGLRenderer) {
+  private colorTexture: Node;
+  private depthTexture: Node;
+  constructor(T: Three, renderer: THREE.WebGPURenderer) {
     this.T = T;
     this.renderer = renderer;
     this.target = null;
     this.size = [0, 0];
-    this.material = new T.ShaderMaterial({
-      uniforms: {
-        tColor: { value: null },
-        tDepth: { value: null },
-        texel: { value: new T.Vector2() },
-        radius: { value: 1 },
-        logRange: { value: 1 },
-        threshold: { value: 0.1 },
-        lineColor: { value: new T.Color(OUTLINE_COLOR) },
-        fogMode: { value: 0 },
-        fogDensity: { value: 0 },
-        fogNear: { value: 0 },
-        fogFar: { value: 1 },
-        fogStart: { value: 0 },
-        fogThickness: { value: 1 },
-        focal: { value: new T.Vector2(1, 1) },
-        cameraWorld: { value: new T.Matrix4() },
-        eye: { value: new T.Vector3() },
-      },
-      vertexShader,
-      fragmentShader,
-      depthTest: false,
-      depthWrite: false,
-    }) as THREE.ShaderMaterial & { uniforms: OutlineUniforms };
-    this.scene = new T.Scene();
-    this.scene.add(new T.Mesh(new T.PlaneGeometry(2, 2), this.material));
-    this.camera = new T.Camera();
+    const {
+      uniform,
+      texture,
+      uv,
+      vec2,
+      vec3,
+      vec4,
+      float,
+      select,
+      smoothstep,
+      mix,
+      max,
+      exp,
+      pow,
+      abs,
+      length,
+      toneMapping,
+    } = tsl(T);
+    const u: OutlineUniforms = {
+      texel: uniform(new T.Vector2()),
+      radius: uniform(1),
+      near: uniform(0.1),
+      far: uniform(40),
+      threshold: uniform(0.1),
+      lineColor: uniform(new T.Color(OUTLINE_COLOR)),
+      fogMode: uniform(0),
+      fogDensity: uniform(0),
+      fogNear: uniform(0),
+      fogFar: uniform(1),
+      fogStart: uniform(0),
+      fogThickness: uniform(1),
+      focal: uniform(new T.Vector2(1, 1)),
+      cameraWorld: uniform(new T.Matrix4()),
+      eye: uniform(new T.Vector3()),
+      exposure: uniform(1),
+    };
+    this.uniforms = u;
+    // Placeholder textures, swapped for the render target's once it exists.
+    const blank = new T.Texture();
+    const blankDepth = new T.DepthTexture(1, 1);
+    this.colorTexture = texture(blank);
+    this.depthTexture = texture(blankDepth);
+    const vUv = uv();
+    const sampleUv = targetUv(T);
+    const depthAt = (coord: Node) => this.depthTexture.sample(coord).r;
+    // Inverse view depth from the logarithmic depth buffer: d = log(w / near) / log(far / near).
+    const inverseDepth = (coord: Node) => {
+      const w = u.near.mul(pow(u.far.div(u.near), depthAt(coord)));
+      return float(1).div(max(w, 1e-7));
+    };
+    const centre = inverseDepth(sampleUv);
+    let strength: Node = float(0);
+    let nearest: Node = centre;
+    const axes = [
+      [1, 0],
+      [0, 1],
+      [0.7071, 0.7071],
+      [0.7071, -0.7071],
+    ];
+    for (const [x, y] of axes) {
+      const step = vec2(x, y).mul(u.texel).mul(u.radius);
+      const a = inverseDepth(sampleUv.add(step)),
+        b = inverseDepth(sampleUv.sub(step));
+      strength = max(strength, a.add(b).sub(centre.mul(2)).div(centre));
+      nearest = max(nearest, max(a, b));
+    }
+    let line: Node = smoothstep(u.threshold, u.threshold.mul(2), strength);
+    // The line belongs to the nearest outlined surface: it takes that surface's fog.
+    // Fog modes: 0 none, 1 office cloud layer (office-fog.ts), 2 linear, 3 exponential squared.
+    const depth = float(1).div(nearest);
+    const ndc = vUv.mul(2).sub(1);
+    const world = u.cameraWorld.mul(
+      vec4(ndc.x.mul(depth).div(u.focal.x), ndc.y.mul(depth).div(u.focal.y), depth.negate(), 1),
+    ).xyz;
+    const fa = max(0, u.eye.y.sub(u.fogStart)),
+      fb = max(0, world.y.sub(u.fogStart)),
+      dy = world.y.sub(u.eye.y);
+    const average = select(
+      abs(dy).lessThan(0.000001),
+      fa.div(u.fogThickness),
+      fb.mul(fb).sub(fa.mul(fa)).div(u.fogThickness.mul(2).mul(dy)),
+    );
+    const layer = select(
+      u.fogMode.equal(1),
+      max(0, average)
+        .mul(length(world.sub(u.eye)))
+        .mul(9),
+      0,
+    );
+    const optical = u.fogDensity.mul(u.fogDensity).mul(depth).mul(depth).add(layer);
+    const fogFactor = select(
+      u.fogMode.equal(2),
+      smoothstep(u.fogNear, u.fogFar, depth),
+      float(1).sub(exp(optical.negate())),
+    );
+    line = select(u.fogMode.greaterThan(0), line.mul(float(1).sub(fogFactor)), line);
+    const base = this.colorTexture.sample(sampleUv);
+    const coloured = mix(base.rgb, u.lineColor, line);
+    // The sky is a clear colour, which a direct render never tone-maps.
+    // The renderer's own tone mapping (none for a bare renderer), applied here by hand.
+    const mapped = toneMapping(renderer.toneMapping ?? T.NoToneMapping, u.exposure, coloured);
+    const sky = depthAt(sampleUv).greaterThan(0.99999);
+    this.material = fullscreenMaterial(T, vec4(select(sky, coloured, mapped.rgb), base.a));
+    ({ scene: this.scene, camera: this.camera } = fullscreenScene(T, this.material));
   }
   resize(width: number, height: number): void {
     if (this.target && this.size[0] === width && this.size[1] === height) return;
     const T = this.T;
     this.target?.dispose();
     this.target?.depthTexture?.dispose();
-    this.target = new T.WebGLRenderTarget(width, height, {
+    const depthTexture = new T.DepthTexture(width, height, T.FloatType);
+    this.target = new T.RenderTarget(width, height, {
       type: T.HalfFloatType,
       samples: 4,
-      depthTexture: new T.DepthTexture(width, height, T.FloatType),
+      depthTexture,
     });
+    this.colorTexture.value = this.target.texture;
+    this.depthTexture.value = depthTexture;
     this.size = [width, height];
   }
   // Draw `scene` with outlines of `thickness` pixels on screen.
@@ -218,19 +225,19 @@ export class OutlinePass {
     renderer.setRenderTarget(this.target);
     renderer.render(scene, camera);
     renderer.setRenderTarget(null);
-    const uniforms = this.material.uniforms,
-      target = this.target!;
-    uniforms.tColor.value = target.texture;
-    uniforms.tDepth.value = target.depthTexture;
-    uniforms.texel.value.set(1 / size.x, 1 / size.y);
-    uniforms.radius.value = thickness * (size.y / 900);
-    uniforms.logRange.value = Math.log2(camera.far + 1);
+    const u = this.uniforms;
+    u.texel.value.set(1 / size.x, 1 / size.y);
+    u.radius.value = thickness * (size.y / 900);
+    u.near.value = camera.near;
+    u.far.value = camera.far;
+    u.exposure.value = renderer.toneMappingExposure;
     this.fog(scene, camera);
-    renderer.render(this.scene, this.camera);
+    // The screen pass tone-maps by itself (the sky must stay a plain clear colour).
+    withoutToneMapping(this.T, renderer, () => renderer.render(this.scene, this.camera));
   }
   // Scene fog and camera, for the fading of lines (same formulas as materials).
   fog(scene: THREE.Scene, camera: THREE.PerspectiveCamera): void {
-    const u = this.material.uniforms,
+    const u = this.uniforms,
       fog = scene.fog as (THREE.Fog & THREE.FogExp2) | null,
       layer = officeFogLayer(this.T);
     u.fogMode.value = !fog ? 0 : fog.isFog ? 2 : layer ? 1 : 3;
@@ -258,19 +265,19 @@ export class OutlinePass {
 // Frame entry point: plain render unless the player asked for outlines.
 export class ToonRenderer {
   T: Three;
-  renderer: THREE.WebGLRenderer;
+  renderer: THREE.WebGPURenderer;
   pass: OutlinePass | null;
   bands: number;
   outline: number;
   available: boolean;
-  constructor(T: Three, renderer: THREE.WebGLRenderer, look: ToonLook = TOON_LOOK) {
+  constructor(T: Three, renderer: THREE.WebGPURenderer, look: ToonLook = TOON_LOOK) {
     this.T = T;
     this.renderer = renderer;
     this.pass = null;
     this.bands = 0;
     this.outline = 0;
-    // The software fallback renderer has no GL: leave it untouched.
-    this.available = (renderer as { isWebGLRenderer?: boolean }).isWebGLRenderer === true;
+    // The software fallback renderer has no GPU: leave it untouched.
+    this.available = (renderer as { isWebGPURenderer?: boolean }).isWebGPURenderer === true;
     if (this.available) installToonLighting(T);
     this.configure(look);
   }

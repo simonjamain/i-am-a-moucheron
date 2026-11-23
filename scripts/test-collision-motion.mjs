@@ -2,7 +2,7 @@
 // gear on a chair seat, crashes (touch and swept segment), the walker's support
 // and pushes, and the vehicles' Rapier worlds using the decor instead of boxes.
 import assert from 'node:assert/strict';
-import * as T from '../vendor/three.module.min.js';
+import * as T from '../vendor/three.webgpu.min.js';
 import { loadRapier, PhysicsWorld, toPhysics } from '../src/physics-world.ts';
 import { DecorCollision, sweptHitsDecor } from '../src/office-collision.ts';
 import { MODEL_DATA } from '../src/office-pack-data.ts';

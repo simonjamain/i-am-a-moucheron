@@ -1,4 +1,4 @@
-import type * as THREE from 'three';
+import type * as THREE from 'three/webgpu';
 import type { Three } from './types.ts';
 
 /** Enemy id keying the insect map (numeric or string, as the server sends it). */

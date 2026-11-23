@@ -1,8 +1,8 @@
-// Toon look (src/toon.js) for every player: stepped lighting patched once into
-// Three's lit materials, outlines as a depth post-process, a fixed look with no
-// player setting.
+// Toon look (src/toon.ts) for every player: stepped lighting patched once into
+// Three's lighting models (TSL), outlines as a depth post-process, a fixed look
+// with no player setting.
 import assert from 'node:assert/strict';
-import * as T from '../vendor/three.module.min.js';
+import * as T from '../vendor/three.webgpu.min.js';
 import {
   installToonLighting,
   setToonBands,
@@ -21,19 +21,14 @@ import {
   OFFICE_CLOUD_TOP,
 } from '../src/office-fog.ts';
 
-// Lighting: patched once, shared uniform, switchable without recompiling.
+// Lighting: patched once into the lighting models, shared uniform, switchable without
+// recompiling.
+const physical = T.PhysicalLightingModel.prototype.direct,
+  hemisphere = T.HemisphereLightNode.prototype.setup;
 assert.equal(installToonLighting(T), true);
 assert.equal(installToonLighting(T), false, 'installed once');
-for (const chunk of [
-  'lights_pars_begin',
-  'lights_physical_pars_fragment',
-  'lights_lambert_pars_fragment',
-])
-  assert.ok(T.ShaderChunk[chunk].includes('toonQuantize'), chunk + ' patched');
-assert.ok(T.ShaderChunk.lights_pars_begin.includes('uniform float toonBands;'));
-const shader = { uniforms: {} };
-new T.MeshStandardMaterial().onBeforeCompile(shader);
-assert.equal(shader.uniforms.toonBands, toonUniform, 'one shared uniform');
+assert.notEqual(T.PhysicalLightingModel.prototype.direct, physical, 'standard materials patched');
+assert.notEqual(T.HemisphereLightNode.prototype.setup, hemisphere, 'hemisphere light patched');
 setToonBands(3);
 assert.equal(toonUniform.value, 3);
 setToonBands(0);
@@ -44,7 +39,7 @@ assert.equal(toonUniform.value, 0, 'fewer than two bands means off');
 // Renderer wrapper: plain render unless outlines are asked, no GL pass without WebGL.
 const calls = [];
 const fake = (webgl) => ({
-  isWebGLRenderer: webgl,
+  isWebGPURenderer: webgl,
   render: (scene) => calls.push(['render', scene.name]),
   setRenderTarget: (target) => calls.push(['target', !!target]),
   getDrawingBufferSize: (v) => v.set(1600, 900),
@@ -69,9 +64,9 @@ assert.deepEqual(
   ],
   'scene into the target, then the outline pass on screen',
 );
-const uniforms = toon.pass.material.uniforms;
+const uniforms = toon.pass.uniforms;
 assert.equal(uniforms.radius.value, 1.5 * (900 / 900), 'thickness scales with the screen height');
-assert.ok(Math.abs(uniforms.logRange.value - Math.log2(41)) < 1e-12);
+assert.deepEqual([uniforms.near.value, uniforms.far.value], [camera.near, camera.far]);
 assert.deepEqual(toon.pass.size, [1600, 900]);
 assert.ok(toon.pass.target.depthTexture, 'depth texture for the edges');
 // Other looks stay available to the code (tests, tools): off means one plain render.
@@ -79,19 +74,19 @@ toon.configure({ toonShading: false, toonOutline: 0 });
 toon.render(scene, camera);
 assert.deepEqual(calls.splice(0), [['render', 'world']], 'off: a single plain render');
 assert.equal(toonUniform.value, 0);
-// The shader's depth decoding inverts the log depth buffer exactly.
-const decode = (d) => 2 ** (d * Math.log2(41)) - 1;
+// The shader's depth decoding inverts the log depth buffer exactly (d = log(w / near) / log(far / near)).
+const decode = (d, near, far) => near * (far / near) ** d;
 for (const w of [0.0002, 0.02, 0.37, 12, 39.9])
-  assert.ok(Math.abs(decode(Math.log2(1 + w) / Math.log2(41)) / w - 1) < 1e-9);
-const source = new OutlinePass(T, fake(true)).material.fragmentShader;
-for (const part of ['tonemapping_fragment', 'colorspace_fragment', 'inverseDepth', 'laplacian'])
-  assert.ok(source.includes(part), part);
-assert.ok(source.includes('sky'), 'the sky keeps its clear colour');
-
+  assert.ok(
+    Math.abs(decode(Math.log(w / 0.00005) / Math.log(40 / 0.00005), 0.00005, 40) / w - 1) < 1e-9,
+  );
+assert.ok(
+  new OutlinePass(T, fake(true)).material.fragmentNode?.isNode,
+  'outline shader is a node graph',
+);
 // Lines fade with the fog of the surface they outline (rods vanish into the clouds).
-assert.match(source, /line \*= 1\.0 - fog;/);
 const fogPass = new OutlinePass(T, fake(true));
-const fu = fogPass.material.uniforms;
+const fu = fogPass.uniforms;
 const eyeCam = new T.PerspectiveCamera(62, 16 / 9, 0.00005, 40);
 eyeCam.position.set(0.4, 1.6, 2.2);
 eyeCam.lookAt(-0.7, 2.3, 1.1);

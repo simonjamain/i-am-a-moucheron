@@ -1,7 +1,7 @@
 import { BIPLANE_DATA } from './meshy-biplane-data.ts';
 import { BIPLANE_BOMBER_DATA } from './meshy-biplane-bomber-data.ts';
 import { buildMeshyRig, gunMount } from './meshy-rig.ts';
-import type * as THREE from 'three';
+import type * as THREE from 'three/webgpu';
 import type { Three } from './types.ts';
 import { rigWheels } from './aircraft-wheels.ts';
 

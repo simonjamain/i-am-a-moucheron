@@ -1,4 +1,4 @@
-import type * as THREE from 'three';
+import type * as THREE from 'three/webgpu';
 import type { DynamicRayCastVehicleController, RigidBody, World } from '@dimforge/rapier3d-compat';
 import { rotate, toWorld } from './physics-world.ts';
 import type { Three } from './types.ts';

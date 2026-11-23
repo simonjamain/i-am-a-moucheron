@@ -5,9 +5,10 @@
 // ribbons belong to the world and everybody sees them on every aircraft. One geometry
 // and one draw call hold every ribbon; the points are emitted in the world and age
 // where they were left (like src/engine-smoke.ts).
-import type * as THREE from 'three';
+import type * as THREE from 'three/webgpu';
 import { AIRCRAFT_GEOMETRY } from './aircraft-geometry.ts';
 import { MAP } from './scale.ts';
+import { tsl } from './gpu-passes.ts';
 import type { Three } from './types.ts';
 
 /** Ribbons only form above this speed (reference m/s): a parked plane draws none. */
@@ -124,29 +125,6 @@ interface Ribbon {
   sinceLast: number;
 }
 
-const vertexShader = `
-  #include <common>
-  #include <logdepthbuf_pars_vertex>
-  attribute float alpha;
-  attribute float side;
-  varying float vAlpha;
-  varying float vSide;
-  void main() {
-    vAlpha = alpha;
-    vSide = side;
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-    #include <logdepthbuf_vertex>
-  }`;
-const fragmentShader = `
-  #include <common>
-  #include <logdepthbuf_pars_fragment>
-  varying float vAlpha;
-  varying float vSide;
-  void main() {
-    #include <logdepthbuf_fragment>
-    gl_FragColor = vec4(1.0, 1.0, 1.0, vAlpha * (1.0 - vSide * vSide));
-  }`;
-
 export class AirRibbons {
   T: Three;
   random: () => number;
@@ -157,7 +135,7 @@ export class AirRibbons {
   alphas = new Float32Array(MAX_RIBBONS * SAMPLES * 2);
   sides = new Float32Array(MAX_RIBBONS * SAMPLES * 2);
   indices = new Uint16Array(MAX_RIBBONS * (SAMPLES - 1) * 6);
-  mesh: THREE.Mesh<THREE.BufferGeometry, THREE.ShaderMaterial>;
+  mesh: THREE.Mesh<THREE.BufferGeometry, THREE.NodeMaterial>;
 
   constructor(T: Three, scene: THREE.Object3D, random: () => number = Math.random) {
     this.T = T;
@@ -168,13 +146,19 @@ export class AirRibbons {
     geometry.setAttribute('side', new T.BufferAttribute(this.sides, 1));
     geometry.setIndex(new T.BufferAttribute(this.indices, 1));
     geometry.setDrawRange(0, 0);
-    const material = new T.ShaderMaterial({
-      vertexShader,
-      fragmentShader,
-      transparent: true,
-      depthWrite: false,
-      side: T.DoubleSide,
-    });
+    // White ribbon, faded by the vertex alpha and towards its two edges.
+    const { attribute, vec4 } = tsl(T);
+    const edge = attribute('side', 'float');
+    const material = new T.NodeMaterial();
+    material.fragmentNode = vec4(
+      1,
+      1,
+      1,
+      attribute('alpha', 'float').mul(edge.mul(edge).oneMinus()),
+    );
+    material.transparent = true;
+    material.depthWrite = false;
+    material.side = T.DoubleSide;
     this.mesh = new T.Mesh(geometry, material);
     this.mesh.name = 'air-ribbons';
     this.mesh.frustumCulled = false;

@@ -1,7 +1,7 @@
 // Chase camera: the distance between a moving vehicle and its camera must not depend on the
 // length of the frame, or a long frame makes the vehicle hop back on screen.
 import assert from 'node:assert/strict';
-import * as T from '../vendor/three.module.min.js';
+import * as T from '../vendor/three.webgpu.min.js';
 import { followMoving } from '../src/camera-follow.ts';
 
 const speed = 60, // world units per second

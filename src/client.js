@@ -7,7 +7,7 @@ import { sweptHitsDecor } from '/office-collision.js';
 import { makeServiceStation, animateRadar, makeInstallationCollider } from '/station-model.js';
 import { ReloadHUD, seatReloads, heavyReadyAt, heavyLane, reloadProgress } from '/reload-hud.js';
 import { makeBed } from '/bed-model.js';
-import { officeFogOpacity, installOfficeFog, OFFICE_HAZE } from '/office-fog.js';
+import { officeFogOpacity, installOfficeFog, applyOfficeFog, OFFICE_HAZE } from '/office-fog.js';
 import { makeFortificationStation } from '/fortification-model.js';
 import { hullGunDirection } from '/hull-gun.js';
 import { placementFacing } from '/placement-aim.js';
@@ -240,6 +240,7 @@ const $ = (id) => document.getElementById(id),
 scene.background = new T.Color(OFFICE_HAZE);
 installOfficeFog(T);
 scene.fog = new T.FogExp2(OFFICE_HAZE, 0.018);
+applyOfficeFog(T, scene);
 // Issue #104: no visible audio controls. Sound starts at the standard volume as
 // soon as the browser allows it (first user gesture); old saved settings ignored.
 const audioSettings = { volume: 0.55, muted: false };
@@ -265,7 +266,7 @@ document.addEventListener('visibilitychange', () => {
   sound.visibility(document.hidden);
 });
 addEventListener('pagehide', () => sound.close());
-const renderer = createRenderer(T, canvas);
+const renderer = await createRenderer(T, canvas);
 const toon = new ToonRenderer(T, renderer);
 const postSelection = new SelectionOutline(T, renderer);
 
@@ -429,22 +430,25 @@ const insectIndex = new InsectIndex(T, insects);
 const groundMotion = new GroundMotionTrack();
 // Prepare animation textures cooperatively before starting the main loop.
 // Awaiting microtasks alone would still freeze the loading screen.
-const midgeVat = renderer.isWebGLRenderer ? await prepareCreatureVat(T, MIDGE) : null;
+const midgeVat = renderer.isWebGPURenderer ? await prepareCreatureVat(T, MIDGE) : null;
 const walkerVats = {};
-if (renderer.isWebGLRenderer)
+if (renderer.isWebGPURenderer)
   for (const [type, walker] of Object.entries(WALKERS))
     walkerVats[type] = await prepareCreatureVat(T, walker.creature);
 const flyerVats = {};
-if (renderer.isWebGLRenderer)
+if (renderer.isWebGPURenderer)
   for (const [type, flyer] of Object.entries(FLYERS))
     flyerVats[type] = await prepareCreatureVat(T, flyer.creature);
-const midgeBatch = new MidgeBatch(T, scene, { enabled: !!renderer.isWebGLRenderer, vat: midgeVat });
+const midgeBatch = new MidgeBatch(T, scene, {
+  enabled: !!renderer.isWebGPURenderer,
+  vat: midgeVat,
+});
 const walkerBatch = new WalkerBatch(T, scene, {
-  enabled: !!renderer.isWebGLRenderer,
+  enabled: !!renderer.isWebGPURenderer,
   vats: walkerVats,
 });
 const flyerBatch = new FlyerBatch(T, scene, {
-  enabled: !!renderer.isWebGLRenderer,
+  enabled: !!renderer.isWebGPURenderer,
   vats: flyerVats,
 });
 const midgeForward = new T.Vector3(0, 0, -1);
@@ -1910,7 +1914,7 @@ mountChangelog({
       $('renderInfoCopy').textContent = 'Copie impossible : sélectionnez le texte';
     }
   };
-  if (!renderer.isWebGLRenderer)
+  if (!renderer.isWebGPURenderer)
     notify(
       'La 3D n’est pas disponible dans ce navigateur : l’affichage est simplifié. Activez l’accélération matérielle de Chrome.',
       12,
@@ -2670,7 +2674,7 @@ async function submitPaper() {
 // The purgatory's decor: an administration on a cloud (docs/purgatory-scene.md).
 const purgatory = createPurgatoryScene(T, {
   box: pm,
-  shaders: !!renderer.isWebGLRenderer,
+  shaders: !!renderer.isWebGPURenderer,
 });
 const purgScene = purgatory.scene,
   purgColliders = purgatory.colliders;
@@ -4315,7 +4319,7 @@ function skidReport(now) {
   while (recentSkids.length && now - recentSkids[0].at > SKID_REPORT_MS) recentSkids.shift();
   return recentSkids.length ? recentSkids.slice(-8).map((k) => k.entry) : undefined;
 }
-const tracerPool = new TracerPool(T, scene, 256, { instanced: renderer.isWebGLRenderer === true });
+const tracerPool = new TracerPool(T, scene, 256, { instanced: renderer.isWebGPURenderer === true });
 const gunSalvos = new GunSalvos();
 let spitSoundAt = -Infinity;
 const aircraftFire = new AircraftFire(
@@ -5299,7 +5303,7 @@ function frame(now) {
     renderDeliveries();
     enemies(Date.now());
     updateOthers(dt);
-    engineSmoke.update(dt, camera, innerHeight);
+    engineSmoke.update(dt);
     airRibbons.update(dt, camera);
     updateOrdnance(dt);
     acc += dt;
@@ -5579,7 +5583,7 @@ function shopPicture(item, holder) {
       holder.replaceChildren(img);
     });
   } catch {
-    // No second WebGL context available: the card simply has no picture.
+    // No second GPU context available: the card simply has no picture.
   }
 }
 function shopCard(item) {
@@ -7030,7 +7034,7 @@ function observedPurgatory(dt) {
 // camera, through the real render path, while the loading screen still covers
 // the canvas; then expire them. Nothing else is touched: no sound, no network.
 function warmShaders() {
-  if (!renderer.isWebGLRenderer) return;
+  if (!renderer.isWebGPURenderer) return;
   const forward = new T.Vector3(0, 0, -1).applyQuaternion(camera.quaternion),
     at = camera.position.clone().addScaledVector(forward, 2);
   const tracers = [false, true].map((shell) => tracerPool.acquire(at, forward, '#ffffff', shell));

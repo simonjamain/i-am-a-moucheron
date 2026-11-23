@@ -2,7 +2,7 @@ import { BRICK_PITCH, HALF_BRICK, WALL_ROWS, wallLength } from './brick-rules.ts
 export { BRICK_PITCH } from './brick-rules.ts';
 import { BRICK_POSITIONS, BRICK_INDICES, BRICK_SOURCE } from './meshy-brick-data.ts';
 import type { WallStructure } from './brick-rules.ts';
-import type * as THREE from 'three';
+import type * as THREE from 'three/webgpu';
 import type { Three } from './types.ts';
 
 /** One brick of a wall run: centre x, row base y, width (office metres), palette index. */

@@ -4,7 +4,7 @@ import { GunSalvos, advanceAutomaticFire } from '../src/salvos.ts';
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import { readFileSync } from 'node:fs';
-import * as T from '../vendor/three.module.min.js';
+import * as T from '../vendor/three.webgpu.min.js';
 import { AircraftFire } from '../src/aircraft-fire.ts';
 
 const deferred = () => {
@@ -144,7 +144,7 @@ const context = vm.createContext({
   },
   clearTimeout: (id) => callbacks.delete(id),
   TracerPool,
-  renderer: { isWebGLRenderer: true },
+  renderer: { isWebGPURenderer: true },
   GunSalvos,
   scene: new T.Scene(),
   joined: true,

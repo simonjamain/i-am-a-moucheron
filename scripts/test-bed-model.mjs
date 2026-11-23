@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import { readFileSync } from 'node:fs';
-import * as T from '../vendor/three.module.min.js';
+import * as T from '../vendor/three.webgpu.min.js';
 import { MODEL_DATA } from '../src/meshy-bed-data.ts';
 import { makeBed } from '../src/bed-model.ts';
 import { makeInstallationCollider, makeServiceStation } from '../src/station-model.ts';
@@ -31,7 +31,7 @@ class Renderer {
   setSize() {}
   setPixelRatio() {}
 }
-const graphicsAPI = { ...T, WebGLRenderer: Renderer };
+const graphicsAPI = { ...T, WebGPURenderer: Renderer };
 const shop = new ShopThumbnails(graphicsAPI);
 const shopBed = makeBed(graphicsAPI).children[0];
 assert.equal(shop.models.get('bed').children[0].geometry, shopBed.geometry, 'shop uses real bed');

@@ -1,7 +1,7 @@
 // Issue #110: the Castor auto-turret is scaled down so its small articulated
 // cannon matches the Castor's gun; pivots, muzzle, preview and spacing follow.
 import assert from 'node:assert/strict';
-import * as T from '../vendor/three.module.min.js';
+import * as T from '../vendor/three.webgpu.min.js';
 import { createSentryModel, SENTRY_MUZZLE_HEIGHT, SENTRY_SCALE } from '../src/sentry-model.ts';
 import { makeCastorMeshy } from '../src/castor-model.ts';
 import { createGroundModel } from '../src/ground-model.ts';

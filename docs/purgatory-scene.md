@@ -29,7 +29,8 @@ Le sol est le **même nuage volumétrique** que ceux du ciel : on marche à moit
 - À 2,5 unités au-delà de la salle (`FLOOR_MIST.margin`), le nuage se gonfle en
   bourrelets de 3 unités environ ; son bord (`CLOUD_FLOOR`, ±16 en x, de −11 à 96 en z)
   s’effiloche, et son ventre descend jusqu’à −7.
-- Rendu : une passe d’écran après la scène (`createFloorCloud`), par lancer de rayons
+- Rendu : une passe d’écran après la scène (`createFloorCloud`, écrite en TSL, voir
+  [le rendu WebGPU](webgpu.md)), par lancer de rayons
   (bruit fractal animé, marche vers le soleil, Beer-poudre, Henyey-Greenstein). Chaque
   rayon s’arrête sur la surface opaque la plus proche, lue dans la profondeur
   logarithmique du rendu dessin animé (`ToonRenderer.depthTexture`) : une jambe dans la
@@ -45,7 +46,7 @@ Le sol est le **même nuage volumétrique** que ceux du ciel : on marche à moit
 - Ce qui doit rester lisible flotte au-dessus de la brume : cercles du guichet et
   marquage « PLACE AU GUICHET » (à la hauteur de la brume), insectes de la file
   (`hover`, aux trois quarts de cette hauteur), plaques posées sur les bureaux.
-- Sans WebGL (rendu logiciel de secours), l’ancien nuage dessin animé reste : dessus
+- Sans GPU (rendu logiciel de secours), l’ancien nuage dessin animé reste : dessus
   plat sur la salle et bosselé autour (`cloudHeight`), boules du bord (`cloudPuffs`).
 - Le **mur invisible** reste la borne de marche existante ; les meubles de salle
   d’attente juste au-delà (x = ±11,5) montrent où elle se trouve. On ne peut pas tomber
@@ -65,7 +66,7 @@ Le sol est le **même nuage volumétrique** que ceux du ciel : on marche à moit
   à part, avant l’image ; le dôme compose cette couche derrière la scène. Ils ne passent
   donc jamais devant le nuage-sol ni les meubles, ce qui est juste car aucun ne se
   trouve entre la caméra et le décor (`test-purgatory-scene.mjs` le vérifie).
-- Sans WebGL (rendu logiciel de secours), ni dôme ni nuages : le fond est uni.
+- Sans GPU (rendu logiciel de secours), ni dôme ni nuages : le fond est uni.
 
 ### Coût mesuré
 

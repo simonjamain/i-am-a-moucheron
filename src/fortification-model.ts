@@ -1,6 +1,6 @@
 import { MAP } from './scale.ts';
 import { createHowitzer } from './howitzer-model.ts';
-import type * as THREE from 'three';
+import type * as THREE from 'three/webgpu';
 import type { Three } from './types.ts';
 
 /** Placement of a fortification station (scaled reference coordinates). */

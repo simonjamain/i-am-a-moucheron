@@ -7,7 +7,7 @@
 // for the moving things: once the room is baked, the furniture no longer casts
 // into its shadow map, which keeps the landing shadows of aircraft and insects.
 // A layout without lamps keeps the legacy slanted sun on everything.
-import type * as THREE from 'three';
+import type * as THREE from 'three/webgpu';
 import type { Three } from './types.ts';
 import { type Prop } from './office-props.ts';
 import { applyShadowPreset } from './shadow-settings.ts';
@@ -144,22 +144,26 @@ export function lightRoom(T: Three, scene: THREE.Scene, lit: boolean): void {
  */
 export function bakeOfficeShadows(
   T: Three,
-  renderer: THREE.WebGLRenderer | null | undefined,
+  renderer: THREE.WebGPURenderer | null | undefined,
   root: THREE.Object3D,
 ): boolean {
   const cones: THREE.SpotLight[] = [];
   root.traverse((o) => {
     if ((o as THREE.SpotLight).isSpotLight && o.castShadow) cones.push(o as THREE.SpotLight);
   });
-  if (!cones.length || !(renderer as { isWebGLRenderer?: boolean } | null)?.isWebGLRenderer)
+  if (!cones.length || !(renderer as { isWebGPURenderer?: boolean } | null)?.isWebGPURenderer)
     return false;
   if (!renderer) return false;
   const parent = root.parent;
   const stage = new T.Scene();
   stage.add(root);
-  const target = new T.WebGLRenderTarget(1, 1);
+  const target = new T.RenderTarget(1, 1);
   const previous = renderer.getRenderTarget();
-  for (const c of cones) c.shadow.needsUpdate = true;
+  // One update now, then never again: the lamps' maps keep the room as it is.
+  for (const c of cones) {
+    c.shadow.autoUpdate = false;
+    c.shadow.needsUpdate = true;
+  }
   renderer.setRenderTarget(target);
   renderer.render(stage, new T.PerspectiveCamera());
   renderer.setRenderTarget(previous);

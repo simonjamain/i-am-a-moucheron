@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import * as T from '../vendor/three.module.min.js';
+import * as T from '../vendor/three.webgpu.min.js';
 import { createGraphics } from '../src/graphics.js';
 import { paintVehicle } from '../src/vehicle-livery.ts';
 import { ACTOR_UNIT } from '../src/scale.ts';

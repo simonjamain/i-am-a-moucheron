@@ -1,4 +1,4 @@
-import type * as THREE from 'three';
+import type * as THREE from 'three/webgpu';
 import type { Three } from './types.ts';
 // Return the world-space tip of the next visible pilot barrel.
 // Child nodes move with the gun mesh, hull transform and miniature scale.

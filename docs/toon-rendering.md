@@ -4,29 +4,34 @@ Depuis la version 278, le rendu « toon » est **le rendu du jeu pour tous les j
 trois paliers de lumière et des contours de 1,5 px (`TOON_LOOK` dans `src/toon.ts`),
 valeurs validées en partie lors du prototype de la version 277, où il était une option
 personnelle désactivée par défaut. Il n'existe plus de réglage joueur (les champs ont
-été retirés du panneau **Pilotage**). Il n'agit que sur le rendu WebGL ; le rendu logiciel
-de secours reste tel quel.
+été retirés du panneau **Pilotage**). Il n'agit que sur le rendu GPU (WebGPU, ou le backend WebGL 2 du même renderer :
+voir [le rendu WebGPU](webgpu.md)) ; le rendu logiciel de secours reste tel quel.
 
 ## Éclairage par paliers
 
-`installToonLighting` (`src/toon.ts`) modifie une fois, au démarrage, les chunks de
-shader de Three.js pour les matériaux éclairés (`MeshStandardMaterial` et
-`MeshLambertMaterial`, donc tous les modèles Meshy et le décor) : l'éclairage direct
-et la pondération de l'hémisphère passent par `toonQuantize`, qui découpe la lumière
-en _N_ paliers (3 dans le jeu) avec une transition anti-crénelage étroite. Une
-uniforme partagée (`toonBands`) vaut 3 ; à 0 l'éclairage redevient continu (usage
-outils et tests), sans recompiler de shader. Les textures Meshy gardent leurs ombres cuites ;
-l'effet est donc plus visible sur les surfaces unies et le décor.
+`installToonLighting` (`src/toon.ts`) enveloppe une fois, au démarrage, les modèles
+d'éclairage de Three.js (`PhysicalLightingModel` et `PhongLightingModel`, donc
+`MeshStandardMaterial` et `MeshLambertMaterial` : tous les modèles Meshy et le décor) :
+le N·L de chaque lumière directe est remplacé par `toonQuantize(N·L)` (la couleur de la
+lumière est multipliée par `quantifié / N·L`, ce que le modèle multiplie à nouveau par
+N·L), et la pondération de l'hémisphère (`HemisphereLightNode.setup`) passe par la même
+fonction. `toonQuantize` découpe la lumière en _N_ paliers (3 dans le jeu) avec une
+transition anti-crénelage étroite. Une uniforme TSL partagée (`toonUniform`) vaut 3 ; à 0
+l'éclairage redevient continu (usage outils et tests), sans recompiler de shader. Les
+textures Meshy gardent leurs ombres cuites ; l'effet est donc plus visible sur les
+surfaces unies et le décor.
 
 ## Contours
 
 `OutlinePass` rend la scène dans une cible HalfFloat (4 échantillons) avec texture de
-profondeur, puis une passe plein écran dessine le trait : la profondeur du
-`logarithmicDepthBuffer` du jeu est décodée en profondeur inverse, et un pixel situé
+profondeur, puis une passe plein écran (nœuds TSL) dessine le trait : la profondeur du
+`logarithmicDepthBuffer` du jeu (`d = log(w / near) / log(far / near)`) est décodée en
+profondeur inverse, et un pixel situé
 juste derrière une surface plus proche (laplacien de la profondeur inverse positif,
 nul sur un plan, même rasant) prend la couleur du trait (`#1b1510`). L'épaisseur
-(0 à 4 px) suit la hauteur de l'écran. La passe applique aussi le _tone mapping_ et la
-conversion sRGB, sauf au ciel (couleur de fond, jamais tone-mappée). Les effets
+(0 à 4 px) suit la hauteur de l'écran. La passe applique elle-même le _tone mapping_ du renderer (le tone mapping automatique
+est coupé pendant qu'elle dessine) et laisse la conversion sRGB au renderer, sauf au ciel
+(couleur de fond, jamais tone-mappée). Les effets
 transparents (fumée, sprites) n'écrivent pas de profondeur : ils n'ont pas de contour.
 Depuis la version 405, le trait **s'efface dans le brouillard** comme la surface
 qu'il borde : la passe reconstruit le point du monde de la surface la plus proche
@@ -37,7 +42,7 @@ dans les nuages n'y laisse donc plus de trait noir.
 Les contours ajoutent une passe plein écran et un rendu multi-échantillonné : la
 mesure des images par seconde reste à faire sur des machines réelles.
 
-`scripts/test-toon.mjs` vérifie le patch (une fois, uniforme partagée), l'enchaînement
+`scripts/test-toon.mjs` vérifie le patch (une fois, modèles d'éclairage enveloppés, uniforme partagée), l'enchaînement
 des passes avec un moteur simulé, le décodage de la profondeur et l'absence de réglage joueur ; le
 rendu a été vérifié hors partie avec un moteur logiciel.
 

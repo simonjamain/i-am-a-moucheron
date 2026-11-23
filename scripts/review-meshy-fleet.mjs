@@ -1,4 +1,4 @@
-import * as T from '../vendor/three.module.min.js';
+import * as T from '../vendor/three.webgpu.min.js';
 import { createGraphics } from '../src/graphics.js';
 import { mkdir, writeFile } from 'node:fs/promises';
 const current = createGraphics(T, new T.Scene());

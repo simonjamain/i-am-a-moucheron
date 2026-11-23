@@ -4,7 +4,7 @@ import { stepWalkerFall, impactDamage } from './field-physics.ts';
 import { MAP, ACTOR_UNIT, REFERENCE, FLAK } from './scale.ts';
 // Small vehicles keep their original dimensions; furniture uses the enlarged room.
 import { OFFICE_LAYOUT, ROOM_SCALE } from './layout.ts';
-import type * as THREE from 'three';
+import type * as THREE from 'three/webgpu';
 import type { Collider } from './oriented-collider.ts';
 import type { WalkerBody } from './field-physics.ts';
 import type { Three, XYZ } from './types.ts';

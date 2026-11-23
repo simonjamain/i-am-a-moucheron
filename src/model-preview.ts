@@ -1,6 +1,6 @@
 // Own only the preview's materials and procedural geometry. Cached Meshy buffers
 // and texture atlases remain owned by their model factory.
-import type * as THREE from 'three';
+import type * as THREE from 'three/webgpu';
 import type { Three } from './types.ts';
 
 /** Any lit or basic material; the preview tints the ones that carry a colour. */

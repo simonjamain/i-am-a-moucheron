@@ -1,7 +1,7 @@
 // The two helicopters as Rapier rigid bodies (src/heli-physics.ts), headless against the
 // vendor Rapier the browser loads. Feel still needs a real flight.
 import assert from 'node:assert/strict';
-import * as T from '../vendor/three.module.min.js';
+import * as T from '../vendor/three.webgpu.min.js';
 import { MAP } from '../src/scale.ts';
 import { VEHICLES } from '../src/fleet.ts';
 import { loadRapier } from '../src/physics-world.ts';

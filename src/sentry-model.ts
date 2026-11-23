@@ -4,7 +4,7 @@ import { MODEL_DATA as CANON } from './meshy-t01-canon-data.ts';
 import { MODEL_DATA as CAPTEUR } from './meshy-t01-capteur-data.ts';
 import { texturedMeshyParts } from './meshy-texture.ts';
 import type { MeshyTexturedData } from './meshy-texture.ts';
-import type * as THREE from 'three';
+import type * as THREE from 'three/webgpu';
 import type { Three, Vec3 } from './types.ts';
 
 // Approved G1 Castor T-01: four independent Meshy textured modules, preserved UVs.

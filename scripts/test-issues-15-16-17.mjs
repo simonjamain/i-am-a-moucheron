@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import { readFileSync } from 'node:fs';
-import * as T from '../vendor/three.module.min.js';
+import * as T from '../vendor/three.webgpu.min.js';
 import { MAP } from '../src/scale.ts';
 import * as delivery from '../src/delivery.ts';
 import { Game } from '../server/game.js';

@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import * as T from '../vendor/three.module.min.js';
+import * as T from '../vendor/three.webgpu.min.js';
 import { amortization, newBank, signLoan, settleLoans } from '../src/bank.ts';
 import { Game } from '../server/game.js';
 import { roomWorld, resolveHeavy } from './heavy-resolver.mjs';

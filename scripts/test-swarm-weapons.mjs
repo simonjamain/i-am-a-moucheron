@@ -1,6 +1,6 @@
 import './normal-dossiers.mjs';
 import assert from 'node:assert/strict';
-import * as T from '../vendor/three.module.min.js';
+import * as T from '../vendor/three.webgpu.min.js';
 import { wavePlan, waveBudget, swarmFrame, legacyCost } from '../src/waves.js';
 import { MAP, ACTOR_UNIT } from '../src/scale.ts';
 import { createGraphics } from '../src/graphics.js';

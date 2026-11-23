@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { stripTypeScriptTypes } from 'node:module';
-import * as Three from '../vendor/three.module.min.js';
+import * as Three from '../vendor/three.webgpu.min.js';
 
 // Execute the actual bootstrap with a deterministic clock and DOM/renderer adapters.
 // Real Three transforms; this checks lifecycle/trajectory, not pixels or GPU rendering.
@@ -11,7 +11,6 @@ const source = stripTypeScriptTypes(
 async function scenario({ reduced = false, readyAt = 0, fail = false, webgl = true } = {}) {
   let now = 0,
     disposed = false,
-    lost = false,
     removed = false,
     departureAt = null;
   const timers = [],
@@ -37,10 +36,11 @@ async function scenario({ reduced = false, readyAt = 0, fail = false, webgl = tr
   const T = {
     ...Three,
     DefaultLoadingManager: manager,
-    WebGLRenderer: class {
+    WebGPURenderer: class {
       constructor() {
-        if (!webgl) throw Error('No WebGL');
+        if (!webgl) throw Error('No GPU');
       }
+      async init() {}
       domElement = { remove() {} };
       setPixelRatio() {}
       setSize() {}
@@ -56,9 +56,6 @@ async function scenario({ reduced = false, readyAt = 0, fail = false, webgl = tr
       }
       dispose() {
         disposed = true;
-      }
-      forceContextLoss() {
-        lost = true;
       }
     },
   };
@@ -111,7 +108,7 @@ async function scenario({ reduced = false, readyAt = 0, fail = false, webgl = tr
   }
   assert.ok(removed);
   assert.equal(lobby.inert, false);
-  if (webgl) assert.ok(disposed && lost, 'temporary renderer cleaned up');
+  if (webgl) assert.ok(disposed, 'temporary renderer cleaned up');
   assert.ok(departureAt >= readyAt, 'wait for assets');
   {
     assert.ok(departureAt >= 900, 'cached loading still displays the fly');

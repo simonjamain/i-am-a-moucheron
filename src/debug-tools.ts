@@ -8,7 +8,7 @@
 //  - every collision volume of the room (walls, furniture, fans, built
 //    structures): wireframe edges over faintly tinted boxes.
 // The server stays authoritative (labCommand 'place' / 'clear-dummies').
-import type * as THREE from 'three';
+import type * as THREE from 'three/webgpu';
 import { DEBUG_ENEMY_TYPES, type DebugEnemyKind } from './debug-enemies.ts';
 import type { EnemyType, Three } from './types.ts';
 import { ENEMY_POWER } from './waves.js';

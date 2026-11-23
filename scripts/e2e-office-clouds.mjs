@@ -25,14 +25,16 @@ try {
       import * as T from '/three.js';
       import {createOffice} from '/office.js';
       import {createGraphics} from '/graphics.js';
-      import {installOfficeFog,OFFICE_HAZE} from '/office-fog.js';
+      import {installOfficeFog,applyOfficeFog,OFFICE_HAZE} from '/office-fog.js';
       import {ToonRenderer} from '/toon.js';
       installOfficeFog(T);
       const scene=new T.Scene();
       scene.background=new T.Color(OFFICE_HAZE);
       scene.fog=new T.FogExp2(OFFICE_HAZE,.018);
+      applyOfficeFog(T,scene);
       createOffice(T,scene,createGraphics(T,scene));
-      const renderer=new T.WebGLRenderer({antialias:true,logarithmicDepthBuffer:true,preserveDrawingBuffer:true});
+      const renderer=new T.WebGPURenderer({antialias:true,logarithmicDepthBuffer:true});
+      await renderer.init();
       renderer.setSize(1200,650);document.body.append(renderer.domElement);
       const toon=new ToonRenderer(T,renderer),camera=new T.PerspectiveCamera(62,1200/650,.00005,40);
       const read=document.createElement('canvas');read.width=1200;read.height=650;

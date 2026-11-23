@@ -2,7 +2,7 @@
 // room's solids, run headless against the same vendor/rapier.compat.mjs the
 // browser loads (?rapier). Feel still needs a real drive, see docs/physics-engine.md.
 import assert from 'node:assert/strict';
-import * as T from '../vendor/three.module.min.js';
+import * as T from '../vendor/three.webgpu.min.js';
 import { MAP, ACTOR_UNIT } from '../src/scale.ts';
 import { VEHICLES } from '../src/fleet.ts';
 import { colliderContainsXZ, orientedBox, rayCollider } from '../src/oriented-collider.ts';

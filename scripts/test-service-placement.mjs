@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import * as T from '../vendor/three.module.min.js';
+import * as T from '../vendor/three.webgpu.min.js';
 import { supportedPlacement } from '../src/equipment.ts';
 import { stepHelicopter } from '../src/helicopter.js';
 import { VEHICLES, vehiclePad, vehicleEntry, vehicleAccess } from '../src/fleet.ts';

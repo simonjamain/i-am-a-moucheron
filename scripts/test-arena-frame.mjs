@@ -2,7 +2,7 @@
 // deck and Saint Pierre's cloud are two arenas placed in office metres, walked by
 // the same walker and drawn at the same size.
 import assert from 'node:assert/strict';
-import * as T from '../vendor/three.module.min.js';
+import * as T from '../vendor/three.webgpu.min.js';
 import {
   arenaWorld,
   worldArena,

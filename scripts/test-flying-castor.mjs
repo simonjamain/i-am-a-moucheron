@@ -6,7 +6,7 @@ import { SENTRY } from '../src/ground-sentry.ts';
 // first surface below, floor or furniture. Same mobile support as the Castor.
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import * as T from '../vendor/three.module.min.js';
+import * as T from '../vendor/three.webgpu.min.js';
 import { MODEL_DATA } from '../src/meshy-flying-castor-data.ts';
 import { createGraphics } from '../src/graphics.js';
 import { ACTOR_UNIT } from '../src/scale.ts';

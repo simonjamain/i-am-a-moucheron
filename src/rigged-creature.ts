@@ -5,7 +5,7 @@
 // in model space around each bone's own pivot, so species code never depends
 // on the SmartRig bones' local axes.
 
-import type * as THREE from 'three';
+import type * as THREE from 'three/webgpu';
 import type { Three } from './types.ts';
 
 /** A typed-array constructor (Float32Array, Uint16Array, ...). */

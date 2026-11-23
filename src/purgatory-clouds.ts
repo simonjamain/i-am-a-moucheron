@@ -1,16 +1,18 @@
 // The purgatory's sky (docs/purgatory-scene.md): a blue dome, the cloud the
 // furniture stands on, and a few volumetric clouds drifting around it.
-// - The sky dome is a gradient shader (zenith, horizon, haze below).
+// - The sky dome is a gradient material (zenith, horizon, haze below), written in TSL.
 // - The ground cloud is a flat walkable top edged with puffs, lit by the
 //   cartoon shading like every other object.
-// - The sky clouds are raymarched in WebGL2, each inside its own box:
+// - The sky clouds are raymarched in a TSL fragment shader, each inside its own box:
 //   noise density, a short march toward the sun, Beer-powder absorption,
 //   two-lobe Henyey-Greenstein phase and a silver lining. They are drawn at
 //   half resolution into their own target (SkyClouds.render), before the
 //   frame, and the dome composites that layer behind everything else: the
 //   clouds never stand in front of the ground cloud or the furniture.
-import type * as THREE from 'three';
+import type * as THREE from 'three/webgpu';
 import type { Three } from './types.ts';
+import { cloudNodes } from './cloud-nodes.ts';
+import { tsl, type Node } from './gpu-passes.ts';
 
 /** Colours of the sky (linear tints are derived by three.js from sRGB). */
 export const SKY_LOOK = Object.freeze({
@@ -26,45 +28,6 @@ export const SKY_LOOK = Object.freeze({
 export const SUN_DIRECTION = Object.freeze([0.35, 0.8, 0.48]);
 
 // ------------------------------------------------------------------ dome
-const DOME_VERTEX = /* glsl */ `
-varying vec3 vDir;
-#include <common>
-#include <logdepthbuf_pars_vertex>
-void main() {
-  vDir = normalize(position);
-  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-  #include <logdepthbuf_vertex>
-}`;
-const DOME_FRAGMENT = /* glsl */ `
-uniform vec3 zenith;
-uniform vec3 horizon;
-uniform vec3 below;
-uniform vec3 sunColor;
-uniform vec3 sunDir;
-uniform sampler2D clouds;
-uniform vec2 screen;
-uniform float hasClouds;
-varying vec3 vDir;
-#include <common>
-#include <logdepthbuf_pars_fragment>
-void main() {
-  #include <logdepthbuf_fragment>
-  vec3 d = normalize(vDir);
-  float up = d.y;
-  vec3 c = up > 0.0
-    ? mix(horizon, zenith, pow(smoothstep(0.0, 1.0, up), 0.65))
-    : mix(horizon, below, smoothstep(0.0, -0.35, up));
-  float sun = max(dot(d, normalize(sunDir)), 0.0);
-  c += sunColor * (pow(sun, 900.0) * 1.6 + pow(sun, 12.0) * 0.18);
-  // Cloud layer (premultiplied colour, linear) over the sky.
-  if (hasClouds > 0.5) {
-    vec4 layer = texture2D(clouds, gl_FragCoord.xy / screen);
-    c = c * (1.0 - layer.a) + layer.rgb;
-  }
-  gl_FragColor = vec4(c, 1.0);
-  #include <tonemapping_fragment>
-  #include <colorspace_fragment>
-}`;
 
 export interface SkyDome {
   mesh: THREE.Mesh;
@@ -74,23 +37,50 @@ export interface SkyDome {
 /** A sphere drawn behind everything, following the camera (call follow()). */
 export function createSkyDome(T: Three, radius: number): SkyDome {
   const look = SKY_LOOK;
+  const {
+    uniform,
+    texture,
+    vec4,
+    float,
+    positionLocal,
+    screenUV,
+    mix,
+    smoothstep,
+    pow,
+    select,
+    max,
+  } = tsl(T);
   const uniforms = {
-    zenith: { value: new T.Color(look.zenith) },
-    horizon: { value: new T.Color(look.horizon) },
-    below: { value: new T.Color(look.below) },
-    sunColor: { value: new T.Color(look.sun) },
-    sunDir: { value: new T.Vector3(...SUN_DIRECTION).normalize() },
-    clouds: { value: null as THREE.Texture | null },
-    screen: { value: new T.Vector2(1, 1) },
-    hasClouds: { value: 0 },
+    zenith: uniform(new T.Color(look.zenith)),
+    horizon: uniform(new T.Color(look.horizon)),
+    below: uniform(new T.Color(look.below)),
+    sunColor: uniform(new T.Color(look.sun)),
+    sunDir: uniform(new T.Vector3(...SUN_DIRECTION).normalize()),
+    hasClouds: uniform(0),
   };
-  const material = new T.ShaderMaterial({
-    uniforms,
-    vertexShader: DOME_VERTEX,
-    fragmentShader: DOME_FRAGMENT,
-    side: T.BackSide,
-    depthWrite: false,
-  });
+  const clouds = texture(new T.Texture());
+  const dir = positionLocal.normalize();
+  const up = dir.y;
+  const sky = select(
+    up.greaterThan(0),
+    mix(uniforms.horizon, uniforms.zenith, pow(smoothstep(0, 1, up), 0.65)),
+    mix(uniforms.horizon, uniforms.below, smoothstep(0, -0.35, up)),
+  );
+  const sun = max(dir.dot(uniforms.sunDir.normalize()), 0);
+  const lit = sky.add(uniforms.sunColor.mul(pow(sun, 900).mul(1.6).add(pow(sun, 12).mul(0.18))));
+  // Cloud layer (premultiplied colour, linear) over the sky.
+  // screenUV and render-target rows both run top to bottom.
+  const layer = clouds.sample(screenUV);
+  const final = select(
+    uniforms.hasClouds.greaterThan(0.5),
+    lit.mul(float(1).sub(layer.a)).add(layer.rgb),
+    lit,
+  );
+  const material = new T.NodeMaterial();
+  material.fragmentNode = vec4(final, 1);
+  material.side = T.BackSide;
+  material.depthWrite = false;
+  material.fog = false;
   const mesh = new T.Mesh(new T.SphereGeometry(radius, 32, 16), material);
   mesh.name = 'purgatoire-ciel';
   mesh.renderOrder = -10;
@@ -98,10 +88,9 @@ export function createSkyDome(T: Three, radius: number): SkyDome {
   mesh.onBeforeRender = (_r, _s, camera) => mesh.position.copy(camera.position);
   return {
     mesh,
-    setClouds(layer, width, height) {
-      uniforms.clouds.value = layer;
+    setClouds(layer, _width, _height) {
+      if (layer) clouds.value = layer;
       uniforms.hasClouds.value = layer ? 1 : 0;
-      uniforms.screen.value.set(width, height);
     },
   };
 }
@@ -278,116 +267,6 @@ export function createCloudFloor(
 }
 
 // -------------------------------------------------------- volumetric clouds
-/** Shared GLSL of every volumetric cloud: value noise, fBm, Henyey-Greenstein. */
-export const CLOUD_NOISE_GLSL = /* glsl */ `
-float hash3(vec3 p) {
-  p = fract(p * 0.3183099 + 0.1);
-  p *= 17.0;
-  return fract(p.x * p.y * p.z * (p.x + p.y + p.z));
-}
-float noise(vec3 x) {
-  vec3 i = floor(x), f = fract(x);
-  f = f * f * (3.0 - 2.0 * f);
-  return mix(mix(mix(hash3(i), hash3(i + vec3(1, 0, 0)), f.x),
-                 mix(hash3(i + vec3(0, 1, 0)), hash3(i + vec3(1, 1, 0)), f.x), f.y),
-             mix(mix(hash3(i + vec3(0, 0, 1)), hash3(i + vec3(1, 0, 1)), f.x),
-                 mix(hash3(i + vec3(0, 1, 1)), hash3(i + vec3(1, 1, 1)), f.x), f.y), f.z);
-}
-float fbm(vec3 p, int octaves) {
-  float s = 0.0, a = 0.5;
-  for (int i = 0; i < 4; i++) {
-    if (i >= octaves) break;
-    s += a * noise(p);
-    p = p * 2.03 + vec3(1.7, 9.2, 3.1);
-    a *= 0.5;
-  }
-  return s;
-}
-float hg(float c, float g) {
-  float g2 = g * g;
-  return (1.0 - g2) / (4.0 * PI * pow(1.0 + g2 - 2.0 * g * c, 1.5));
-}
-`;
-const CLOUD_VERTEX = /* glsl */ `
-varying vec3 vOrigin;
-varying vec3 vPos;
-#include <common>
-#include <logdepthbuf_pars_vertex>
-void main() {
-  // Ray in the box's frame (unit cube, centred).
-  vOrigin = (inverse(modelMatrix) * vec4(cameraPosition, 1.0)).xyz;
-  vPos = position;
-  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-  #include <logdepthbuf_vertex>
-}`;
-const CLOUD_FRAGMENT = /* glsl */ `
-precision highp float;
-uniform float time;
-uniform float seed;
-uniform vec3 sunLocal;
-uniform vec3 sunColor;
-uniform vec3 shade;
-uniform vec3 tint;
-uniform float density;
-uniform float fade;
-varying vec3 vOrigin;
-varying vec3 vPos;
-#include <common>
-#include <logdepthbuf_pars_fragment>
-
-${CLOUD_NOISE_GLSL}
-// Cumulus: a dome with a flatter base, eroded by noise.
-float cloud(vec3 p, int octaves) {
-  float body = 1.0 - length(p * vec3(2.0, 2.4, 2.0));
-  float base = smoothstep(-0.42, -0.22, p.y);
-  vec3 n = p * 3.2 + vec3(seed * 7.0, 0.0, seed * 3.0) + vec3(time * 0.02, 0.0, time * 0.012);
-  float d = body + (fbm(n, octaves) - 0.5) * 0.9;
-  return clamp(d * base * density, 0.0, 1.0);
-}
-vec2 hitBox(vec3 o, vec3 d) {
-  vec3 inv = 1.0 / d;
-  vec3 a = (vec3(-0.5) - o) * inv, b = (vec3(0.5) - o) * inv;
-  vec3 lo = min(a, b), hi = max(a, b);
-  return vec2(max(max(lo.x, lo.y), lo.z), min(min(hi.x, hi.y), hi.z));
-}
-void main() {
-  #include <logdepthbuf_fragment>
-  vec3 rd = normalize(vPos - vOrigin);
-  vec2 t = hitBox(vOrigin, rd);
-  t.x = max(t.x, 0.0);
-  const int STEPS = 22;
-  float dt = (t.y - t.x) / float(STEPS);
-  float s = t.x + dt * hash3(vec3(gl_FragCoord.xy, time));
-  vec3 L = normalize(sunLocal);
-  float mu = dot(rd, L);
-  float phase = hg(mu, 0.55) * 0.7 + hg(mu, -0.3) * 0.3;
-  vec3 color = vec3(0.0);
-  float alpha = 0.0;
-  for (int i = 0; i < STEPS; i++) {
-    if (alpha > 0.97 || s > t.y) break;
-    vec3 p = vOrigin + rd * s;
-    float d = cloud(p, 3);
-    if (d > 0.01) {
-      float toward = 0.0;
-      for (int j = 1; j <= 2; j++) toward += 1.5 * cloud(p + L * 0.12 * float(j), 2);
-      float beer = exp(-toward * 2.4);
-      float powder = 1.0 - exp(-d * 6.0);
-      float light = beer * mix(1.0, powder, 0.5);
-      vec3 c = mix(shade, tint, light) + sunColor * phase * light * 1.3;
-      // Silver lining on thin edges facing the sun.
-      c += sunColor * pow(max(mu, 0.0), 6.0) * (1.0 - d) * 0.6;
-      float a = 1.0 - exp(-d * dt * 22.0);
-      color += c * a * (1.0 - alpha);
-      alpha += a * (1.0 - alpha);
-    }
-    s += dt;
-  }
-  if (alpha < 0.004) discard;
-  gl_FragColor = vec4(color / max(alpha, 1e-4), alpha * fade);
-  #include <tonemapping_fragment>
-  #include <colorspace_fragment>
-}`;
-
 export interface SkyCloudSpec {
   x: number;
   y: number;
@@ -418,45 +297,143 @@ export interface SkyClouds {
    * before the frame); returns the layer and the drawing buffer size.
    */
   render(
-    renderer: THREE.WebGLRenderer,
+    renderer: THREE.WebGPURenderer,
     camera: THREE.Camera,
   ): { texture: THREE.Texture; width: number; height: number };
 }
+/**
+ * Raymarched cumulus filling one box: the TSL fragment shader of a cloud with these
+ * (shared and per-cloud) uniform nodes. The box is drawn from the inside (back faces).
+ */
+function cloudMaterial(
+  T: Three,
+  shared: Record<'time' | 'sunColor' | 'shade' | 'tint', Node>,
+  seed: number,
+  sunLocal: THREE.Vector3,
+): THREE.NodeMaterial {
+  const {
+    Fn,
+    If,
+    Break,
+    Discard,
+    Loop,
+    uniform,
+    vec3,
+    vec4,
+    float,
+    positionLocal,
+    cameraPosition,
+    modelWorldMatrixInverse,
+    screenCoordinate,
+    smoothstep,
+    mix,
+    max,
+    min,
+    exp,
+    pow,
+  } = tsl(T);
+  const { hash3, fbm, hg } = cloudNodes(T);
+  const sunDir = uniform(sunLocal);
+  const density = uniform(1.6);
+  const fade = uniform(1);
+  // Cumulus: a dome with a flatter base, eroded by noise.
+  const cloud = (p: Node, octaves: number): Node => {
+    const body = float(1).sub(p.mul(vec3(2, 2.4, 2)).length());
+    const base = smoothstep(-0.42, -0.22, p.y);
+    const n = p
+      .mul(3.2)
+      .add(vec3(seed * 7, 0, seed * 3))
+      .add(vec3(shared.time.mul(0.02), 0, shared.time.mul(0.012)));
+    const d = body.add(fbm(n, octaves).sub(0.5).mul(0.9));
+    return d.mul(base).mul(density).clamp(0, 1);
+  };
+  const STEPS = 22;
+  const march = Fn(() => {
+    // Ray in the box's frame (unit cube, centred).
+    const origin = modelWorldMatrixInverse.mul(vec4(cameraPosition, 1)).xyz;
+    const rd = positionLocal.sub(origin).normalize();
+    const inv = vec3(1).div(rd);
+    const a = vec3(-0.5).sub(origin).mul(inv),
+      b = vec3(0.5).sub(origin).mul(inv);
+    const lo = min(a, b),
+      hi = max(a, b);
+    const near = max(max(max(lo.x, lo.y), lo.z), 0).toVar();
+    const far = min(min(hi.x, hi.y), hi.z);
+    const dt = far.sub(near).div(STEPS);
+    const s = near.add(dt.mul(hash3(vec3(screenCoordinate.xy, shared.time)))).toVar();
+    const L = sunDir.normalize();
+    const mu = rd.dot(L);
+    const phase = hg(mu, 0.55).mul(0.7).add(hg(mu, -0.3).mul(0.3));
+    const color = vec3(0).toVar();
+    const alpha = float(0).toVar();
+    Loop(STEPS, () => {
+      If(alpha.greaterThan(0.97).or(s.greaterThan(far)), () => {
+        Break();
+      });
+      const p = origin.add(rd.mul(s));
+      const d = cloud(p, 3);
+      If(d.greaterThan(0.01), () => {
+        const toward = cloud(p.add(L.mul(0.12)), 2)
+          .add(cloud(p.add(L.mul(0.24)), 2))
+          .mul(1.5);
+        const beer = exp(toward.mul(-2.4));
+        const powder = float(1).sub(exp(d.mul(-6)));
+        const light = beer.mul(mix(1, powder, 0.5));
+        const c = mix(shared.shade, shared.tint, light)
+          .add(shared.sunColor.mul(phase).mul(light).mul(1.3))
+          // Silver lining on thin edges facing the sun.
+          .add(
+            shared.sunColor
+              .mul(pow(max(mu, 0), 6))
+              .mul(float(1).sub(d))
+              .mul(0.6),
+          );
+        const a2 = float(1).sub(exp(d.mul(dt).mul(-22)));
+        color.addAssign(c.mul(a2).mul(float(1).sub(alpha)));
+        alpha.addAssign(a2.mul(float(1).sub(alpha)));
+      });
+      s.addAssign(dt);
+    });
+    If(alpha.lessThan(0.004), () => {
+      Discard();
+    });
+    return vec4(color.div(max(alpha, 1e-4)), alpha.mul(fade));
+  });
+  const material = new T.NodeMaterial();
+  material.fragmentNode = march();
+  material.transparent = true;
+  material.depthWrite = false;
+  material.side = T.BackSide;
+  material.fog = false;
+  return material;
+}
+
 /** Raymarched clouds, one box each (drawn after the opaque scene). */
 export function createSkyClouds(T: Three, specs: readonly SkyCloudSpec[] = SKY_CLOUDS): SkyClouds {
   const group = new T.Group();
   group.name = 'purgatoire-nuages-ciel';
   const layerScene = new T.Scene();
   layerScene.add(group);
-  let target: THREE.WebGLRenderTarget | null = null;
+  let target: THREE.RenderTarget | null = null;
   const size = new T.Vector2(),
     clear = new T.Color();
   const box = new T.BoxGeometry(1, 1, 1);
   const sun = new T.Vector3(...SUN_DIRECTION).normalize();
+  const { uniform } = tsl(T);
   const shared = {
-    time: { value: 0 },
-    sunColor: { value: new T.Color(SKY_LOOK.sun) },
-    shade: { value: new T.Color(SKY_LOOK.shade) },
-    tint: { value: new T.Color(SKY_LOOK.cloud) },
+    time: uniform(0),
+    sunColor: uniform(new T.Color(SKY_LOOK.sun)),
+    shade: uniform(new T.Color(SKY_LOOK.shade)),
+    tint: uniform(new T.Color(SKY_LOOK.cloud)),
   };
   specs.forEach((c, i) => {
-    const material = new T.ShaderMaterial({
-      uniforms: {
-        ...shared,
-        seed: { value: i * 1.37 + 0.5 },
-        // The box is only scaled: the sun direction in its frame.
-        sunLocal: {
-          value: new T.Vector3(sun.x * c.w, sun.y * c.h, sun.z * c.d).normalize(),
-        },
-        density: { value: 1.6 },
-        fade: { value: 1 },
-      },
-      vertexShader: CLOUD_VERTEX,
-      fragmentShader: CLOUD_FRAGMENT,
-      transparent: true,
-      depthWrite: false,
-      side: T.BackSide,
-    });
+    // The box is only scaled: the sun direction in its frame.
+    const material = cloudMaterial(
+      T,
+      shared,
+      i * 1.37 + 0.5,
+      new T.Vector3(sun.x * c.w, sun.y * c.h, sun.z * c.d).normalize(),
+    );
     const mesh = new T.Mesh(box, material);
     mesh.name = 'purgatoire-nuage-ciel-' + i;
     mesh.position.set(c.x, c.y, c.z);
@@ -478,7 +455,7 @@ export function createSkyClouds(T: Three, specs: readonly SkyCloudSpec[] = SKY_C
       renderer.getDrawingBufferSize(size);
       const w = Math.max(1, Math.round(size.x * CLOUD_LAYER_SCALE)),
         h = Math.max(1, Math.round(size.y * CLOUD_LAYER_SCALE));
-      if (!target) target = new T.WebGLRenderTarget(w, h, { type: T.HalfFloatType });
+      if (!target) target = new T.RenderTarget(w, h, { type: T.HalfFloatType });
       else if (target.width !== w || target.height !== h) target.setSize(w, h);
       const previous = renderer.getRenderTarget(),
         alpha = renderer.getClearAlpha();

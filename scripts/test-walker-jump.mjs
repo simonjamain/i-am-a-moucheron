@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { stepWalker } from '../src/sortie.ts';
 import { jumpWalker, WALKER_FALL, WALKER_JUMP_SPEED } from '../src/field-physics.ts';
-import * as T from '../vendor/three.module.min.js';
+import * as T from '../vendor/three.webgpu.min.js';
 import { createPurgatoryScene } from '../src/purgatory-scene.ts';
 import { PURGATORY_FRAME } from '../src/arena-frame.ts';
 import { createSoul } from '../src/purgatory-queue.ts';

@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import * as T from '../vendor/three.module.min.js';
+import * as T from '../vendor/three.webgpu.min.js';
 import { HULL_GUN_CONE, clampToCone, hullGunDirection } from '../src/hull-gun.ts';
 
 const deg = (r) => (r * 180) / Math.PI;

@@ -1,6 +1,6 @@
 import './normal-dossiers.mjs';
 import assert from 'node:assert/strict';
-import * as T from '../vendor/three.module.min.js';
+import * as T from '../vendor/three.webgpu.min.js';
 import { stepFlight } from '../src/flight.ts';
 import { readPad, deadzone } from '../src/input.ts';
 import { ASSETS } from '../server/assets.js';
