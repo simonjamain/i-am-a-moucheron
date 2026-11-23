@@ -297,3 +297,50 @@ console.log('Camera ray: surfaces, occlusion, reach; Meshy wall: variable count 
   );
   assert.ok(real, 'fallback rays are built with the supplied vector type');
 }
+
+// The preview stops inside the reach: the click that follows is accepted (a pose computed exactly
+// at the limit was refused by a strict distance check about once in two: the preview showed a
+// pose that the click could not place).
+{
+  const { reachClampedPlacement } = await import('../src/placement-aim.ts');
+  const { PLACEMENT_REACH, PLACEMENT_PREVIEW_FRACTION, PLACEMENT_SLACK } =
+    await import('../src/equipment.ts');
+  assert.ok(PLACEMENT_PREVIEW_FRACTION < 1 && PLACEMENT_SLACK > 0);
+  let refused = 0,
+    exactRefused = 0;
+  const n = 5000;
+  for (let i = 0; i < n; i++) {
+    const heading = Math.random() * 2 * Math.PI,
+      body = { x: Math.random() * 3 - 1.5, y: 0, z: Math.random() * 3 - 1.5 },
+      direction = { x: Math.sin(heading) * 0.4, y: 0.9, z: Math.cos(heading) * 0.4 },
+      floor = (o, d) => (d.y < 0 ? { x: o.x, y: 0, z: o.z } : null);
+    // The server's body is the last one reported: up to a centimetre away from the client's.
+    const known = {
+      x: body.x + (Math.random() - 0.5) * 0.00003,
+      z: body.z + (Math.random() - 0.5) * 0.00003,
+    };
+    const accepts = (p) =>
+      Math.hypot(known.x - p.x, known.z - p.z) <= PLACEMENT_REACH + PLACEMENT_SLACK;
+    const strictAccepts = (p) => Math.hypot(body.x - p.x, body.z - p.z) <= PLACEMENT_REACH;
+    const preview = reachClampedPlacement(
+      body,
+      { x: body.x, y: 0.05, z: body.z },
+      direction,
+      PLACEMENT_REACH * PLACEMENT_PREVIEW_FRACTION,
+      floor,
+    );
+    const atLimit = reachClampedPlacement(
+      body,
+      { x: body.x, y: 0.05, z: body.z },
+      direction,
+      PLACEMENT_REACH,
+      floor,
+    );
+    assert.ok(preview, 'looking too high still gives a preview');
+    if (!accepts(preview) || !strictAccepts(preview)) refused++;
+    if (!strictAccepts(atLimit)) exactRefused++;
+  }
+  assert.equal(refused, 0, 'a clamped preview is always a pose the server accepts');
+  assert.ok(exactRefused > 0, 'a pose exactly at the limit is refused by a strict check');
+}
+console.log('Placement preview stops inside the reach: the click always places it.');

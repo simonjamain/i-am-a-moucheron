@@ -143,4 +143,7 @@ Pas d'encart de pose : seules les indications en bas à gauche restent. Clic gau
 (ou E, Entrée) pose ; clic droit (ou Échap) conserve l'achat pour plus tard. Si la
 visée sort de la portée (regard trop haut, sol trop loin), l'aperçu se place à la
 distance maximale de pose, sur la première surface sous la caméra, et reste
-achetable (`reachClampedPlacement`, `src/placement-aim.ts`).
+achetable (`reachClampedPlacement`, `src/placement-aim.ts`). L'aperçu s'arrête à 97 % de la
+portée (`PLACEMENT_PREVIEW_FRACTION`, `src/equipment.ts`) et le serveur tolère 0,5 m de plus
+(`PLACEMENT_SLACK`) : un clic pose toujours ce que l'aperçu montre (une pose calculée
+exactement à la limite était refusée par une comparaison stricte environ une fois sur deux).

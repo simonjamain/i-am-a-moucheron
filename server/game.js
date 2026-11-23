@@ -60,7 +60,14 @@ import {
   assignMidgeSwarmSizes,
   MAX_OFFSPRING_ROSTER,
 } from '../src/waves.js';
-import { SHOP, shopPrice, supportedPlacement, decorTrust } from '../src/equipment.ts';
+import {
+  SHOP,
+  shopPrice,
+  supportedPlacement,
+  decorTrust,
+  PLACEMENT_REACH,
+  PLACEMENT_SLACK,
+} from '../src/equipment.ts';
 import { advancePaidService } from '../src/paid-service.ts';
 import { SENTRY, GATLING, isTurret, fireGroundSentries } from '../src/ground-sentry.ts';
 import { FORTIFICATIONS, isFortification } from '../src/ground-fortifications.ts';
@@ -1956,7 +1963,7 @@ export class Game {
         body &&
           !body.parachute &&
           body.grounded !== false &&
-          Math.hypot(w.x - b.position.x, w.z - b.position.z) <= MAP.metres(9),
+          Math.hypot(w.x - b.position.x, w.z - b.position.z) <= PLACEMENT_REACH + PLACEMENT_SLACK,
         'Placez l’équipement près de vous, depuis le sol.',
       );
       requireGame(
