@@ -25,14 +25,12 @@ try {
       import * as T from '/three.js';
       import {createOffice} from '/office.js';
       import {createGraphics} from '/graphics.js';
-      import {OFFICE_LAYOUT} from '/layout.js';
-      import {installOfficeFog,officeFogCeiling} from '/office-fog.js';
+      import {installOfficeFog,OFFICE_HAZE} from '/office-fog.js';
       import {ToonRenderer} from '/toon.js';
       installOfficeFog(T);
       const scene=new T.Scene();
-      scene.background=new T.Color('#829f91');
-      scene.fog=new T.FogExp2('#ffffff',.018);
-      scene.add(officeFogCeiling(T,OFFICE_LAYOUT.bounds));
+      scene.background=new T.Color(OFFICE_HAZE);
+      scene.fog=new T.FogExp2(OFFICE_HAZE,.018);
       createOffice(T,scene,createGraphics(T,scene));
       const renderer=new T.WebGLRenderer({antialias:true,logarithmicDepthBuffer:true,preserveDrawingBuffer:true});
       renderer.setSize(1200,650);document.body.append(renderer.domElement);
@@ -68,7 +66,7 @@ try {
   const above = await page.evaluate(() => window.captureCloud(Math.PI, 3.96, -0.3));
   assert.ok(Math.min(...above) > 245, 'chase camera just above flight limit still sees cloud');
   const clear = await page.evaluate(() => window.captureCloud(Math.PI, 0.95, 0));
-  assert.ok(Math.max(...clear) < 200, 'horizontal view below clouds stays clear');
+  assert.ok(Math.max(...clear) < 200, 'horizontal view south meets the wall, not a backdrop');
   await page.evaluate(() => window.captureCloud(Math.PI));
   if (process.env.CLOUD_SCREENSHOT) await page.screenshot({ path: process.env.CLOUD_SCREENSHOT });
   assert.deepEqual(errors, []);
