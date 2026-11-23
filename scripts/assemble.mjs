@@ -55,6 +55,7 @@ const files = {
       'character-model',
       'character-appearances',
       'appearance-picker',
+      'fps-counter',
       'character-data',
       'character-frontier-data',
       'character-sky-pilot-data',

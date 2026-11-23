@@ -143,6 +143,7 @@ import { renderInfo } from '/render-info.js';
 import { createGraphics } from '/graphics.js';
 import { availableAppearance, turnToward, loadCharacter } from '/character-model.js';
 import { createAppearancePicker } from '/appearance-picker.js';
+import { createFpsCounter } from '/fps-counter.js';
 import { MidgeBatch } from '/midge-batch.js';
 import { WalkerBatch } from '/walker-batch.js';
 import { createOffice } from '/office.js';
@@ -1227,6 +1228,7 @@ let storedAppearance = null;
 try {
   storedAppearance = localStorage.getItem('moucheron-appearance');
 } catch {}
+const fpsCounter = createFpsCounter(T);
 const appearancePicker = createAppearancePicker(T, {
   root: $('appearance'),
   shade: $('shade'),
@@ -5461,6 +5463,7 @@ function frame(now) {
   appearancePicker.draw(renderer, dt);
   // Outline of the aimed post, over the office frame only (src/post-highlight.ts).
   if (!spectating && !respawnAt) postSelection.render(scene, camera);
+  fpsCounter.draw(renderer, dt);
   updateAudio();
   gunSalvos.update(
     !spectating && canCapture() && myVehicle?.type === 'spitfire' && !respawnAt
