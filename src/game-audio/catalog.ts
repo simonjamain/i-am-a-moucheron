@@ -3,7 +3,7 @@
 import type { SoundDef, SoundOutput } from '../audio/index.ts';
 import { AUDIO_PROFILES, synthesize, type SoundKind } from './synth.ts';
 
-export const LOOP_KINDS = ['ambience', 'engine', 'dive', 'insect', 'gatling'] as const;
+export const LOOP_KINDS = ['ambience', 'engine', 'dive', 'insect', 'gatling', 'airflow'] as const;
 export type LoopKind = (typeof LOOP_KINDS)[number];
 export type OneShotKind = Exclude<SoundKind, LoopKind>;
 

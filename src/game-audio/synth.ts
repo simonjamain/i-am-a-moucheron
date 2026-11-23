@@ -20,6 +20,8 @@ const profiles = {
   dive: { duration: 1, level: 0.22 },
   engine: { duration: 1, level: 0.16 },
   insect: { duration: 1, level: 0.12 },
+  // Air rubbing along stalling wings: hissing noise, fluttering at whole hertz (seamless 1 s loop).
+  airflow: { duration: 1, level: 0.2 },
   shot: { duration: 0.13, level: 0.28 },
   // Seamless 1 s loop of twelve rounds (the Gatling's 12 rounds/s): one voice for a whole burst.
   gatling: { duration: 1, level: 0.24 },
@@ -86,6 +88,10 @@ export function synthesize(kind: SoundKind, sampleRate = 24000): Float32Array<Ar
           low * 0.25 * (0.6 + 0.4 * Math.sin(t * 12 * Math.PI * 2)));
     } else if (kind === 'dive')
       v = 0.4 * Math.sin(2 * Math.PI * 420 * t) + 0.2 * Math.sin(2 * Math.PI * 840 * t) + low * 0.2;
+    else if (kind === 'airflow')
+      v =
+        0.55 * (noise - low) * (0.72 + 0.28 * Math.sin(t * 7 * Math.PI * 2)) +
+        0.3 * low * (0.6 + 0.4 * Math.sin(t * 3 * Math.PI * 2));
     else if (kind === 'insect')
       v =
         0.3 * Math.sin(t * 210 * Math.PI * 2) + 0.12 * Math.sin(t * 420 * Math.PI * 2) + low * 0.25;
