@@ -9,7 +9,7 @@ import { activeLayout, layoutPieces, pieceBounds, LAYOUT_ROOM } from './layouts.
 import { addOfficeProps } from './office-pack.ts';
 import { ROD } from './office-props.ts';
 import { DecorCollision, solidTriangles } from './office-collision.ts';
-import { MODEL_DATA } from './office-pack-data.js';
+import { MODEL_DATA } from './office-pack-data.ts';
 import type * as THREE from 'three';
 import type { Rapier } from './physics-world.ts';
 import type { StationGraphics } from './sortie.ts';

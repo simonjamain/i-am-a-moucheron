@@ -1,5 +1,5 @@
-import { BIPLANE_DATA } from './meshy-biplane-data.js';
-import { BIPLANE_BOMBER_DATA } from './meshy-biplane-bomber-data.js';
+import { BIPLANE_DATA } from './meshy-biplane-data.ts';
+import { BIPLANE_BOMBER_DATA } from './meshy-biplane-bomber-data.ts';
 import { buildMeshyRig, gunMount } from './meshy-rig.ts';
 import type * as THREE from 'three';
 import type { Three } from './types.ts';

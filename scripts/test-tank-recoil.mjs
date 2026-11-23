@@ -8,9 +8,9 @@ import { loadRapier } from '../src/physics-world.ts';
 import { TankRig } from '../src/tank-physics.ts';
 import { GUN_RECOIL, applyGunRecoil, recoilAmount } from '../src/tank-recoil.ts';
 import { tankSight, SIGHT } from '../src/tank-view.js';
-import { MODEL_DATA } from '../src/meshy-tank-data.js';
+import { MODEL_DATA } from '../src/meshy-tank-data.ts';
 import { aimGun } from '../src/sortie.ts';
-import { VEHICLE_ANCHORS } from '../src/vehicle-anchors.js';
+import { VEHICLE_ANCHORS } from '../src/vehicle-anchors.ts';
 
 // Profile: quick back, slower return, nothing before the shot.
 assert.equal(recoilAmount(-1), 0);

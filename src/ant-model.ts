@@ -1,4 +1,4 @@
-import { ANT_DATA as D } from './ant-data.js';
+import { ANT_DATA as D } from './ant-data.ts';
 import { defineCreature, TAU } from './rigged-creature.ts';
 import type { CreatureHelpers } from './rigged-creature.ts';
 import { walkLegs, groundPresentation, REST_PHASES } from './walker-gait.ts';

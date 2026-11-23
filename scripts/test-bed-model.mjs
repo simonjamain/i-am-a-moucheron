@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import { readFileSync } from 'node:fs';
 import * as T from '../vendor/three.module.min.js';
-import { MODEL_DATA } from '../src/meshy-bed-data.js';
+import { MODEL_DATA } from '../src/meshy-bed-data.ts';
 import { makeBed } from '../src/bed-model.ts';
 import { makeInstallationCollider, makeServiceStation } from '../src/station-model.ts';
 import { bedSpawn, bedAccess } from '../src/beds.ts';

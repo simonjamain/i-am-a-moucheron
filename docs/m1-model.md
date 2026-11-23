@@ -21,7 +21,7 @@ L'historique ci-dessous décrit la version précédente.
   unités et le contact des roues à −1,05 unité.
 
 Le résultat embarque **les 27 707 triangles et les UV du GLB**, et une
-version JPEG 1 024 px de l'atlas original dans `src/meshy-m1-data.js`.
+version JPEG 1 024 px de l'atlas original dans `src/meshy-m1-data.ts`.
 Les couleurs de texture ne sont plus approximées sur les sommets comme avec
 l'ancien [convertisseur simplifié](../scripts/import-meshy-m1.py).
 Les positions, UV et indices sont encodés sur 16 bits. La texture est partagée

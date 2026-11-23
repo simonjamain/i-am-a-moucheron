@@ -30,7 +30,7 @@ import {
 import { loadRapier } from '../src/physics-world.ts';
 import { ParkedHost, isHosted } from '../src/parked-host.ts';
 import { DecorCollision } from '../src/office-collision.ts';
-import { MODEL_DATA } from '../src/office-pack-data.js';
+import { MODEL_DATA } from '../src/office-pack-data.ts';
 import {
   VEHICLES,
   vehiclePad,

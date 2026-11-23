@@ -58,7 +58,7 @@ par « instructeur », comme War Thunder ; déjà dans `src/mouse-flight.ts`).
   d'adhérence latérale) : on s'oriente en avançant un peu, avec un filet de gaz sur la
   direction ; il n'y a plus de rotation forcée à l'arrêt. L'avion suit donc la pente d'un sol irrégulier
   (`castRayAndGetNormal` sur le décor et les solides).
-- **Alignement sur le modèle** : la géométrie vient du modèle (`src/meshy-biplane-data.js`,
+- **Alignement sur le modèle** : la géométrie vient du modèle (`src/meshy-biplane-data.ts`,
   unités de modèle × `MODEL_TO_REF` = 1,857 m de référence) : moyeux des roues (x ±0,775,
   z −1,546), boîtes des ailes, du fuselage, du plan fixe et de la dérive mesurées sur les
   îlots du maillage, béquille au bas de la gouverne de direction (le modèle n'a pas de

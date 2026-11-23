@@ -1,7 +1,7 @@
 // Split wheels (and, for the tank, track belts) out of an articulated Meshy vehicle module
 // so that they can turn and steer. The source meshes are single textured meshes whose
 // pieces are welded islands (see import-meshy-vehicle.py); this script moves some islands
-// of an existing `src/meshy-<vehicle>-data.js` into their own parts. No triangle, UV or
+// of an existing `src/meshy-<vehicle>-data.ts` into their own parts. No triangle, UV or
 // texture changes: every island keeps its vertices, re-expressed in the part's local
 // frame (pivot at the island's centre, on the 0.0005 grid of the position encoding).
 //
@@ -19,7 +19,7 @@ const GRID = 0.0005;
 const near = (value, target, tolerance) => Math.abs(value - target) <= tolerance;
 const SPECS = {
   flaktruck: {
-    file: 'src/meshy-flaktruck-data.js',
+    file: 'src/meshy-flaktruck-data.ts',
     // Six tractor wheels (three axles), named in the physics order: for each axle from the
     // front, left (-x) then right (+x). Then the four trailer wheels.
     groups: [
@@ -62,7 +62,7 @@ const trackSide = (c) => Math.abs(c.centre[0]) > 0.6;
 const byFront = (a, b) =>
   Math.round(a.centre[2] * 3) - Math.round(b.centre[2] * 3) || a.centre[0] - b.centre[0];
 SPECS.tank = {
-  file: 'src/meshy-tank-data.js',
+  file: 'src/meshy-tank-data.ts',
   groups: [
     {
       from: 'body',

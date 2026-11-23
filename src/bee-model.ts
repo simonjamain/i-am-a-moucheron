@@ -1,4 +1,4 @@
-import { BEE_DATA as D } from './bee-data.js';
+import { BEE_DATA as D } from './bee-data.ts';
 import { defineCreature, TAU } from './rigged-creature.ts';
 import type { CreatureHelpers, CreaturePose } from './rigged-creature.ts';
 import type * as THREE from 'three';

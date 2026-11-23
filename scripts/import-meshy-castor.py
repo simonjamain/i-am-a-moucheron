@@ -21,7 +21,7 @@ from PIL import Image
 from trimesh.graph import connected_components
 
 SOURCE_NAME = 'Meshy_AI_Tactical_Rescue_Rover_1110083041_texture_1.glb'
-OUTPUT = Path('src/meshy-castor-data.js')
+OUTPUT = Path('src/meshy-castor-data.ts')
 # Calibrated game length (model units, multiplied by ACTOR_UNIT in game);
 # matches the previous Castor's 6.08 length so gameplay sizes are unchanged.
 GAME_LENGTH = 6.1

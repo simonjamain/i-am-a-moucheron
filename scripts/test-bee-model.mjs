@@ -3,7 +3,7 @@
 // ellipsoid hits (src/bee-model.ts, src/flyer-batch.js, scripts/import-bee.py).
 import assert from 'node:assert/strict';
 import * as T from '../vendor/three.module.min.js';
-import { BEE_DATA } from '../src/bee-data.js';
+import { BEE_DATA } from '../src/bee-data.ts';
 import { BEE, BEE_BONES, BEE_FLIGHT, BEE_HIT, beeFlightPose } from '../src/bee-model.ts';
 import { FLYERS, FlyerBatch } from '../src/flyer-batch.js';
 import { createGraphics } from '../src/graphics.js';

@@ -1,6 +1,6 @@
-import light from './fixed-dca-dca-data.js';
-import rapid from './fixed-dca-dcaRapid-data.js';
-import heavy from './fixed-dca-dcaHeavy-data.js';
+import light from './fixed-dca-dca-data.ts';
+import rapid from './fixed-dca-dcaRapid-data.ts';
+import heavy from './fixed-dca-dcaHeavy-data.ts';
 import { MAP } from './scale.ts';
 import type * as THREE from 'three';
 import type { Three, Vec3 } from './types.ts';

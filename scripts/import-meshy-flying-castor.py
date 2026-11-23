@@ -24,7 +24,7 @@ from meshy_provenance import verify_meshy_source
 
 SOURCE_NAME = 'Meshy_AI_Rescue_Rotorcraft_1113100652_texture.glb'
 SOURCE_SHA256 = 'dfcd21c08858057e13e78849a4156dd2f68c645edcd203f33acb7138806de691'
-OUTPUT = Path('src/meshy-flying-castor-data.js')
+OUTPUT = Path('src/meshy-flying-castor-data.ts')
 GAME_LENGTH = 9.0  # model units (x ACTOR_UNIT in game), nose to tail
 GEAR = 1.0  # model origin height above the skids' contact plane
 ROTOR_FLOOR = 0.165  # source units: rotor islands start above the pylon tops

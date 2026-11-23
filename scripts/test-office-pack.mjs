@@ -3,7 +3,7 @@
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
 import * as T from '../vendor/three.module.min.js';
-import { MODEL_DATA } from '../src/office-pack-data.js';
+import { MODEL_DATA } from '../src/office-pack-data.ts';
 import { OFFICE_MODELS, OFFICE_PACK_UNIT } from '../src/office-pack-catalog.ts';
 import { propColliders, propFootprint, modelBoxes } from '../src/office-props.ts';
 import {
@@ -22,7 +22,7 @@ const near = (a, b, eps, label) => assert.ok(Math.abs(a - b) <= eps, `${label}: 
 const { x: X, z: Z } = LAYOUT_ROOM;
 
 // Licence: the data module points to the notice; the notice names the author.
-const data = readFileSync('src/office-pack-data.js', 'utf8').slice(0, 400);
+const data = readFileSync('src/office-pack-data.ts', 'utf8').slice(0, 400);
 assert.match(data, /office-pack-LICENSE\.md/);
 assert.ok(existsSync('src/office-pack-LICENSE.md'));
 assert.match(readFileSync('src/office-pack-LICENSE.md', 'utf8'), /BloxBits[\s\S]*redistribution/);

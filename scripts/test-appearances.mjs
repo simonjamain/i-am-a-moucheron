@@ -84,7 +84,7 @@ for (const { id } of APPEARANCES) {
   assert.equal(c.gait(), 'run');
 }
 for (const id of ['frontier', 'sky-pilot', 'toby', 'sunny', 'aviator', 'signaler', 'operator']) {
-  const source = readFileSync('src/character-' + id + '-data.js', 'utf8');
+  const source = readFileSync('src/character-' + id + '-data.ts', 'utf8');
   const sha = /"sha256":"([0-9a-f]{64})"/.exec(source)[1];
   assert.ok(importer.includes(sha), id + ' provenance');
 }
