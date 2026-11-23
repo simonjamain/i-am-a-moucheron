@@ -22,7 +22,8 @@ Le sol est le **même nuage volumétrique** que ceux du ciel : on marche à moit
 
 - La salle (`PURGATORY_HALL`) reprend le rectangle de marche de `purgatory-queue.ts`
   (x de −10 à 10, z de 0 à 80 et plus), plus l’arrière du guichet. Les âmes marchent
-  toujours à y = 0 ; la brume monte jusqu’aux genoux (`FLOOR_MIST.top`, 0,95 unité pour
+  au niveau du sol du nuage, 150 m au-dessus du bureau dans le même monde
+  ([un seul monde](walking-network.md#un-seul-monde-pour-le-bureau-et-le-purgatoire)) ; la brume monte jusqu’aux genoux (`FLOOR_MIST.top`, 0,95 unité pour
   une âme de 2,46) et devient dense sous le sol (`FLOOR_MIST.dense`) : les jambes s’y
   perdent progressivement.
 - À 2,5 unités au-delà de la salle (`FLOOR_MIST.margin`), le nuage se gonfle en
@@ -81,7 +82,8 @@ Le passage à WebGPU est suivi à part.
 ## Mobilier et guichet
 
 - `purgatoryProps()` liste chaque meuble du pack, placé à la main en unités de la
-  scène puis ramené en mètres (`WALK_WORLDS.purgatory.sceneScale`). Aucun meuble
+  scène (2,46 pour une personne de 1,8 m), dans le groupe du décor que
+  `PURGATORY_FRAME` place dans le monde. Aucun meuble
   bloquant ne se trouve dans la salle de marche ni ne coupe les cordons VIP.
 - **Le guichet** : trois bureaux pour la file des insectes et un au guichet VIP, leur
   face tournée vers Saint Pierre (écran, clavier, lampe de son côté ; papiers, agrafeuse

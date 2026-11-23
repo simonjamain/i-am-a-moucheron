@@ -8,6 +8,7 @@ export const SUITE = [
   'test-flight-tuning',
   'test-walk-arena',
   'test-walker-jump',
+  'test-arena-frame',
   'test-fps-counter',
   'test-audio',
   'test-audio-library',
@@ -220,6 +221,7 @@ export const E2E = [
   'e2e-game-polish',
   'e2e-loading',
   'e2e-office-clouds',
+  'e2e-purgatory-walk',
   'e2e-contrast-bed',
 ];
 // Browser scenarios kept out of CI, each with its own npm script and reason

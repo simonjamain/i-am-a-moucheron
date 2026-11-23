@@ -1,7 +1,9 @@
 import type { Vec3, XYZ } from './types.ts';
-import { ACTOR_UNIT, WALK_WORLDS, walkAcceleration } from './scale.ts';
+import { ACTOR_UNIT, MAP, WALK_WORLDS, WALKER_RADIUS, walkAcceleration } from './scale.ts';
 import { OFFICE_LAYOUT } from './layout.ts';
 import { advanceArena, createWalker } from './walk-arena.ts';
+import { arenaWorld } from './arena-frame.ts';
+import type { ArenaFrame } from './arena-frame.ts';
 import type { Arena, WalkBody, WalkEntity, WalkRules } from './walk-arena.ts';
 
 /** Walk spawn stored in a pilot's state (where the pilot left its aircraft). */
@@ -45,13 +47,26 @@ export function aircraftBay(index: number): BayPosition {
     z = 4 + row * 3.6;
   return { x, z, entryX: x + (col === 9 ? -3.15 : 3.15), entryZ: z };
 }
+/** The office deck in the world: the active plan's base origin, in actor units. */
+export const OFFICE_FRAME: ArenaFrame = Object.freeze({
+  get originX() {
+    return OFFICE_LAYOUT.base.originX;
+  },
+  get originY() {
+    return OFFICE_LAYOUT.base.deckY;
+  },
+  get originZ() {
+    return OFFICE_LAYOUT.base.originZ;
+  },
+  unit: ACTOR_UNIT,
+  mirrorZ: true,
+});
 export function baseWorld(p: { x: number; y?: number; z: number }): XYZ {
-  const b = OFFICE_LAYOUT.base;
-  return { x: b.originX + p.x * ACTOR_UNIT, y: p.y ?? b.deckY, z: b.originZ - p.z * ACTOR_UNIT };
+  return arenaWorld(OFFICE_FRAME, p);
 }
-// Walking collision radius in actor units, for players and furniture alike.
-// Issue #135: half the former 0.32; shot hit volumes are separate.
-export const BASE_WALK_RADIUS = 0.16;
+// Walking collision radius in actor units, for players and furniture alike: the
+// same person as in the purgatory (scale.ts WALKER_RADIUS); shot hit volumes are separate.
+export const BASE_WALK_RADIUS = MAP.metres(WALKER_RADIUS) / ACTOR_UNIT;
 export function baseBody(p: BasePilot, now: number): BaseBody {
   const bay = aircraftBay(p.bay);
   const at = {

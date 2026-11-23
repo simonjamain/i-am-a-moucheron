@@ -24,8 +24,8 @@ export interface WalkerBody {
   canopyInflation?: number;
 }
 /**
- * Starts a jump: only from the ground, with no canopy out. `scale` is scene units per reference
- * metre (WALK_WORLDS[...].sceneScale). Returns false when the walker cannot jump now.
+ * Starts a jump: only from the ground, with no canopy out. `scale` is world units per reference
+ * metre (office metres everywhere, src/arena-frame.ts). Returns false when the walker cannot jump now.
  */
 export function jumpWalker(
   body: WalkerBody & { grounded?: boolean },
@@ -35,32 +35,6 @@ export function jumpWalker(
   body.vy = WALKER_JUMP_SPEED * scale;
   body.grounded = false;
   return true;
-}
-/**
- * The jump on a flat floor at height `floor` (the purgatory has no relief): rise, fall, land. The
- * office walker does the same in stepWalker, on the real surfaces under it.
- */
-export function stepFlatJump(
-  body: WalkerBody & { grounded?: boolean },
-  dt: number,
-  scale: number,
-  floor = 0,
-): void {
-  if (body.grounded !== false) return;
-  const n = Math.max(1, Math.ceil(dt * 240)),
-    h = dt / n;
-  body.y ??= floor;
-  for (let i = 0; i < n; i++) {
-    const next = body.vy - 9.81 * scale * h;
-    body.y += ((body.vy + next) * h) / 2;
-    body.vy = next;
-    if (body.y <= floor) {
-      body.y = floor;
-      body.vy = 0;
-      body.grounded = true;
-      return;
-    }
-  }
 }
 export function impactDamage(speed: number): number {
   const { safeImpact, fatalImpact } = WALKER_FALL;

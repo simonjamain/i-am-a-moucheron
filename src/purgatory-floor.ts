@@ -9,8 +9,11 @@
 //   frame.
 // - Below the walkable hall the top is low and flat; beyond it, the cloud billows
 //   up and its edge frays out. Shared physics is unchanged: souls walk at y = 0.
+// - The cloud is described in the decor's local units; the camera and the scene
+//   depth are in the world (office metres), turned local through the frame.
 import type * as THREE from 'three';
 import type { Three } from './types.ts';
+import type { ArenaFrame } from './arena-frame.ts';
 import { CLOUD_NOISE_GLSL, SKY_LOOK, SUN_DIRECTION } from './purgatory-clouds.ts';
 import type { CloudFloorSpec } from './purgatory-clouds.ts';
 
@@ -44,6 +47,7 @@ uniform float logRange;
 uniform mat4 projectionInverse;
 uniform mat4 cameraWorld;
 uniform vec3 eye;
+uniform float localScale; // local units per world unit
 uniform float time;
 uniform vec4 hall;   // minX, maxX, minZ, maxZ (flat top)
 uniform vec4 extent; // minX, maxX, minZ, maxZ (whole cloud)
@@ -99,7 +103,7 @@ void main() {
   vec3 viewDir = normalize(view.xyz / view.w);
   vec3 rd = normalize(mat3(cameraWorld) * viewDir);
   // Distance along the ray to the nearest opaque surface.
-  float tScene = sceneDepth(vUv - depthTexel * 0.5) / max(-viewDir.z, 1e-4);
+  float tScene = sceneDepth(vUv - depthTexel * 0.5) * localScale / max(-viewDir.z, 1e-4);
   float yTop = mist.x + mist.z + 0.5;
   // Slab [bottom, yTop].
   float t0, t1;
@@ -186,6 +190,7 @@ export function createFloorCloud(
   T: Three,
   hall: CloudFloorSpec,
   extent: CloudFloorSpec,
+  frame: ArenaFrame | null = null,
 ): FloorCloud {
   const rect = (r: CloudFloorSpec) => new T.Vector4(r.minX, r.maxX, r.minZ, r.maxZ);
   const uniforms = {
@@ -196,6 +201,7 @@ export function createFloorCloud(
     projectionInverse: { value: new T.Matrix4() },
     cameraWorld: { value: new T.Matrix4() },
     eye: { value: new T.Vector3() },
+    localScale: { value: frame ? 1 / frame.unit : 1 },
     time: { value: 0 },
     hall: { value: rect(hall) },
     extent: { value: rect(extent) },
@@ -261,6 +267,10 @@ export function createFloorCloud(
       uniforms.projectionInverse.value.copy(camera.projectionMatrixInverse);
       uniforms.cameraWorld.value.copy(camera.matrixWorld);
       uniforms.eye.value.setFromMatrixPosition(camera.matrixWorld);
+      if (frame)
+        uniforms.eye.value
+          .sub(new T.Vector3(frame.originX, frame.originY, frame.originZ))
+          .divideScalar(frame.unit);
       uniforms.time.value = (performance.now() - start) / 1000;
       const previous = renderer.getRenderTarget(),
         alpha = renderer.getClearAlpha(),

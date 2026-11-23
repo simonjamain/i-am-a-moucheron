@@ -130,6 +130,7 @@ const files = {
       'meshy-radar-data',
       'reload-hud',
       'office-fog',
+      'arena-frame',
       'engine-smoke',
       'air-ribbons',
       'toon',
