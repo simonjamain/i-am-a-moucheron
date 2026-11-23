@@ -9,7 +9,7 @@ Code :
 
 - `src/sky-passage.ts` : plancher du ciel, passage, blanc de la traversée, solides du nuage ;
 - `src/sky-targets.ts` : cibles des tirs ;
-- `src/purgatory-scene.ts` : lieu, mer de nuages, brume du ciel ;
+- `src/purgatory-scene.ts` : lieu, brume du ciel ;
 - `src/purgatory-queue.ts` : `STAFF_HP`, `isStaff`, guichets fermés ;
 - `server/game.js` : `purgatoryHit`, `soulBoard`, état `staff` ;
 - `client.js` : `setSkyView`, `flightPassage`, `purgatoryTargets`, `soulBoardingPosts`.
@@ -56,12 +56,15 @@ joueur reste une personne comme au bureau, quelle que soit la façon dont il est
 
 - Une seule scène : le décor du purgatoire (`purgatory.place`) est ajouté à celle du bureau.
   Selon l'altitude de la caméra (`inSky`), `setSkyView` montre le purgatoire (dôme du
-  ciel, mer de nuages, nuage de Saint Pierre, lumière du ciel, brume du ciel) ou le
+  ciel, nuage de Saint Pierre, lumière du ciel, brume du ciel) ou le
   bureau (pièce, lampes, brume du bureau). Les appareils, les tirs et les joueurs sont les
   mêmes objets dans les deux cas.
-- **Mer de nuages** : un disque pâle au plancher du ciel suit la caméra et cache ce qui
-  reste sous les nuages. La brume du ciel va de 400 m à 2,5 km réels : depuis le plancher
-  du ciel on voit le nuage de Saint Pierre au-dessus.
+- **Du bleu partout, même sous ses pieds** : le dôme du ciel est bleu aussi sous
+  l'horizon et il n'y a plus de mer de nuages. Vu d'en haut, la couche nuageuse du
+  bureau ne se voit pas : la brume du ciel (`createSkyFog`, en WebGPU) fond dans la
+  couleur du ciel tout ce qui est sous le plancher du ciel (sur 30 m réels) ou au-delà
+  de 400 m à 2,5 km réels. C'est seulement en plongeant vers le plancher que le blanc de
+  la traversée envahit peu à peu la vue (`passageWhiteness`, 60 m réels).
 - Le nuage-sol volumétrique est calculé jusqu'à 160 unités au-delà de sa surface, quelle
   que soit la distance de l'œil : on le voit de loin.
 - Les vivants dans le ciel voient les âmes, Saint Pierre et le vigile, avec leurs barres
@@ -101,6 +104,8 @@ le serveur fait confiance aux clients.
     VIP vide, où personne ne peut la faire signer (`saintIntent`). Il faut la tuer à
     nouveau (10 000 points de plus), puis il revient derrière son bureau et reprend
     son travail. Le vigile, lui, fait la queue comme tout le monde.
+- Le rôle du vigile s'appelle `vipGuard` (`STAFF_ROLES`) : `guard` est l'abeille, une
+  espèce d'insecte dont les âmes font la file comme les autres.
 - Les âmes des joueurs ne sont jamais blessées, et les âmes ne tirent pas.
 
 ## Vérification

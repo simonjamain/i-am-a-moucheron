@@ -27,6 +27,7 @@ import {
   createSoul,
   deskOccupant,
   inVipDesk,
+  isStaff,
 } from '../src/purgatory-queue.ts';
 import { Game } from '../server/game.js';
 
@@ -138,7 +139,7 @@ const call = (who, path, body = {}) => game.command('SKY', who.id, path, body);
 const P = room.pilots.get(pilot.id),
   S = room.pilots.get(soulPlayer.id);
 assert.deepEqual(room.staff.saint, { hp: STAFF_HP, down: false });
-assert.equal(game.snapshot(room).staff.guard.hp, STAFF_HP);
+assert.equal(game.snapshot(room).staff.vipGuard.hp, STAFF_HP);
 // A soul in the queue (the second player dies and enters the purgatory).
 game.kill(room, S, S.incarnation);
 call(S, 'enter-purgatory', { incarnation: S.incarnation });
@@ -164,14 +165,14 @@ const playerSoul = [...room.souls.values()].find(
 call(P, 'purgatory-hit', { shot: 's2', targets: [['soul', playerSoul.id, 999]] });
 assert.equal(playerSoul.status, 'waiting');
 // The guard: 10 000 life points; killed, his soul queues and the VIP lane closes.
-call(P, 'purgatory-hit', { shot: 'g1', targets: [['staff', 'guard', 6000]] });
-call(P, 'purgatory-hit', { shot: 'g1', targets: [['staff', 'guard', 6000]] });
-assert.equal(room.staff.guard.hp, 4000, 'each shot counts once');
-call(P, 'purgatory-hit', { shot: 'g2', targets: [['staff', 'guard', 6000]] });
-assert.ok(room.staff.guard.down);
+call(P, 'purgatory-hit', { shot: 'g1', targets: [['staff', 'vipGuard', 6000]] });
+call(P, 'purgatory-hit', { shot: 'g1', targets: [['staff', 'vipGuard', 6000]] });
+assert.equal(room.staff.vipGuard.hp, 4000, 'each shot counts once');
+call(P, 'purgatory-hit', { shot: 'g2', targets: [['staff', 'vipGuard', 6000]] });
+assert.ok(room.staff.vipGuard.down);
 game.arena(room, 'purgatory');
 assert.equal(room.purgatory.vipClosed, true);
-const guardSoul = [...room.souls.values()].find((s) => s.enemy_type === 'guard');
+const guardSoul = [...room.souls.values()].find((s) => s.enemy_type === 'vipGuard');
 assert.equal(guardSoul.status, 'waiting');
 assert.ok(
   room.purgatory.bodies.some((b) => b.id === guardSoul.id),
@@ -191,8 +192,15 @@ assert.throws(
 const before = room.dollars;
 call(P, 'purgatory-hit', { shot: 'g3', targets: [['soul', guardSoul.id, STAFF_HP]] });
 assert.equal(guardSoul.status, 'gone');
-assert.deepEqual(room.staff.guard, { hp: STAFF_HP, down: false });
+assert.deepEqual(room.staff.vipGuard, { hp: STAFF_HP, down: false });
 assert.equal(room.dollars, before, 'the guard is no insect: no reward');
+// A bee's soul (insect species 'guard') is an insect: never taken for the VIP guard.
+assert.ok(!isStaff('guard'), 'the bee is no staff');
+const bee = game.soul(room, 'enemy', 'w:bee', 'Abeille', 'purgatory', 'guard');
+call(P, 'purgatory-hit', { shot: 'bee', targets: [['soul', bee.id, 1]] });
+assert.equal(bee.status, 'gone');
+assert.ok(room.dollars > before, 'a freed bee pays the team');
+assert.deepEqual(room.staff.vipGuard, { hp: STAFF_HP, down: false });
 // Saint Pierre killed: nobody is served, nobody signs.
 call(P, 'purgatory-hit', { shot: 'p1', targets: [['staff', 'saint', STAFF_HP]] });
 assert.ok(room.staff.saint.down);

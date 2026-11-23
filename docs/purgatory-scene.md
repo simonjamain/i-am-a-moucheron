@@ -90,7 +90,8 @@ Le passage à WebGPU est suivi à part.
   bloquant ne se trouve dans la salle de marche ni ne coupe les cordons VIP.
 - **Le guichet** : trois bureaux pour la file des insectes et un au guichet VIP, leur
   face tournée vers Saint Pierre (écran, clavier, lampe de son côté ; papiers, agrafeuse
-  côté visiteurs). Leur bord avant reste derrière le bord de la salle (z < 0).
+  côté visiteurs). Le bureau de Saint Pierre, au milieu, reste nu : seul son porte-bloc
+  y est posé, bien en évidence. Leur bord avant reste derrière le bord de la salle (z < 0).
 - **L’arrière**, derrière Saint Pierre : uniquement de l’équipement de bureau, sans
   surcharge (tableau blanc, trois classeurs, une photocopieuse).
 - **Le long de la file**, rien que ce qui évoque une salle d’attente : deux coins salon
@@ -111,8 +112,8 @@ Pierre, son comptoir et les cordons suffisent. Les zones des guichets (`inDeskZo
 ## Le porte-bloc du guichet
 
 Sur chacun des deux guichets (celui de la file et le guichet VIP), un porte-bloc est
-posé à plat sur le bureau, tourné vers les âmes, un peu à droite du milieu et dépassant
-légèrement du bord avant (`COUNTER.clipboardX`, `clipboardZ`, `clipboardYaw`), 10 %
+posé à plat sur le bureau, tourné vers les âmes, juste à droite du milieu et dépassant
+légèrement du bord avant (`CLIPBOARD_AT` dans `src/purgatory-queue.ts`, `clipboardYaw`), 10 %
 plus grand que nature pour bien se voir (`CLIPBOARD_SCALE`). C'est
 lui qui ouvre les formulaires : il remplace la touche E, retirée ([commandes](controls.md)).
 
@@ -123,6 +124,11 @@ lui qui ouvre les formulaires : il remplace la touche E, retirée ([commandes](c
 - Une âme sans coupe-file n'utilise jamais le porte-bloc VIP : il ne s'entoure pas pour
   elle et le clic n'y fait rien. Le serveur exige toujours, pour signer, d'être servi au
   guichet (`sign`).
+- **Au guichet principal, aucune place à tenir** : une âme de joueur est au guichet dès
+  qu'elle est à portée d'interaction du porte-bloc (`nearDeskClipboard`, `PURGATORY_REACH`,
+  la même portée que le vigile, environ 2,6 m), d'où qu'elle vienne ; elle attend
+  seulement les insectes arrivés avant elle dans la file. Les insectes, eux, se
+  présentent toujours devant le milieu du bureau.
 - **Seul le porte-bloc ouvre les formulaires** : entrer dans la zone du guichet ne les
   ouvre jamais (`paperSuppressed` dans `client.js`), on clique quand on est prêt.
 - Au guichet VIP, toute la moitié avant de la file VIP, entre ses cordons, est la zone

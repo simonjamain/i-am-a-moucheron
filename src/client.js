@@ -2669,7 +2669,7 @@ function setSkyView(on) {
     if (light.isHemisphereLight || light.isDirectionalLight) light.visible = !on;
   scene.background = on ? purgatory.look.background : officeLook.background;
   scene.fog = on ? purgatory.look.fog : officeLook.fog;
-  scene.fogNode = on ? null : officeLook.fogNode;
+  scene.fogNode = on ? purgatory.look.fogNode : officeLook.fogNode;
 }
 // Where this player's flight came up from the office (null: it never did).
 let flightEntry = null;
@@ -7192,7 +7192,7 @@ function staffSouls(arena) {
     const b = arena?.bodies.find((b) => !b.gone && b.enemyType === role);
     return b ? { x: b.x, z: b.z, face: b.face } : null;
   };
-  return { saintSoul: soul('saint'), guardSoul: soul('guard') };
+  return { saintSoul: soul('saint'), guardSoul: soul('vipGuard') };
 }
 function observedPurgatory(dt) {
   const arena = snap?.arena;

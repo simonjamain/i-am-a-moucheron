@@ -10,6 +10,9 @@ import {
   createSoul,
   deskOccupant,
   inVipDesk,
+  nearDeskClipboard,
+  CLIPBOARD_AT,
+  PURGATORY_REACH,
   saintWindowX,
   SOUL_ENTRANCE,
   VIP_DESK,
@@ -132,6 +135,21 @@ assert.equal(room.pilots.get(a.id).life, 'alive', 'back to the base through the 
   assert.equal(saintWindowX(served), 0, 'main window: its middle');
   assert.equal(saintWindowX(paid), VIP_DESK.x, 'VIP window: in front of the soul');
   assert.equal(saintWindowX(lane), VIP_DESK.x - 0.6, 'kept behind the VIP desk');
+  // The main clipboard is used from anywhere within reach, without standing on a mark.
+  for (const at of [
+    { x: 2.4, z: 0.4 },
+    { x: -1.8, z: 1.6 },
+  ]) {
+    const side = soul(9, at);
+    assert.ok(nearDeskClipboard(side));
+    assert.equal(
+      clipboardWindow(arena([side]), side),
+      'desk',
+      'within reach: ' + JSON.stringify(at),
+    );
+  }
+  const beyond = soul(10, { x: 0, z: CLIPBOARD_AT.z + PURGATORY_REACH + 0.2 });
+  assert.equal(clipboardWindow(arena([beyond]), beyond), null, 'beyond reach');
   const far = soul(5, { x: 0, z: 9 });
   assert.equal(clipboardWindow(arena([far]), far), null, 'not at a window');
   assert.equal(clipboardWindow(arena([]), null), null);

@@ -48,9 +48,14 @@ export function soulSpawn(index: number): PlanarPoint {
  * again (STAFF_HP once more), and then he goes back behind his desk.
  */
 export const STAFF_HP = 10000;
-export type StaffRole = 'saint' | 'guard';
-export const STAFF_ROLES: readonly StaffRole[] = Object.freeze(['saint', 'guard']);
-export const isStaff = (type: unknown): type is StaffRole => type === 'saint' || type === 'guard';
+/**
+ * Saint Pierre and the VIP guard. The guard's role is 'vipGuard', never 'guard': that
+ * is an insect species (the bee), whose souls queue like the other insects.
+ */
+export type StaffRole = 'saint' | 'vipGuard';
+export const STAFF_ROLES: readonly StaffRole[] = Object.freeze(['saint', 'vipGuard']);
+export const isStaff = (type: unknown): type is StaffRole =>
+  type === 'saint' || type === 'vipGuard';
 
 export function createSoul(
   s: WalkSeed & { enemy_type?: string },
@@ -88,7 +93,18 @@ export const VIP_LANE: readonly ArenaObstacle[] = Object.freeze([
   { x: 6.5, z: VIP_GATE_Z / 2, w: 0.12, d: VIP_GATE_Z },
   { x: 5.2, z: VIP_GATE_Z, w: 2.72, d: 0.12, vip: true },
 ]);
-export const VIP_GUARD = Object.freeze({ x: 7.1, z: 9.9, reach: 3.5 });
+/** Interaction reach of a soul in the purgatory (arena units, about 2.6 m): guard, clipboard. */
+export const PURGATORY_REACH = 3.5;
+export const VIP_GUARD = Object.freeze({ x: 7.1, z: 9.9, reach: PURGATORY_REACH });
+/**
+ * Where each window's clipboard lies on its desk (src/purgatory-scene.ts): offset
+ * from the desk's middle (dx) and its z, just over the counter's front edge.
+ */
+export const CLIPBOARD_AT = Object.freeze({ dx: 0.3, z: -0.85 });
+/** A player's soul at the main window: within reach of its clipboard, anywhere. */
+export function nearDeskClipboard(b: PlanarPoint): boolean {
+  return Math.hypot(b.x - (DESK.x + CLIPBOARD_AT.dx), b.z - CLIPBOARD_AT.z) < PURGATORY_REACH;
+}
 /**
  * Where a player appears in the purgatory: by the sofa on the VIP side, from where
  * both queues show (no need to cross the insects' queue).
@@ -182,8 +198,14 @@ function keepQueueOrder(a: Arena, b: WalkBody): void {
 }
 
 // ---------------------------------------------------------------- desk
+/**
+ * At the main window: an insect in the zone in front of the desk; a player's soul
+ * anywhere within reach of the clipboard (it never needs to stand on a mark).
+ */
 export function inDeskZone(b: WalkBody): boolean {
-  return !b.gone && b.z >= 0.48 && Math.hypot(b.x - DESK.x, b.z - DESK.z) < DESK.r;
+  if (b.gone) return false;
+  if (b.kind === 'player') return nearDeskClipboard(b);
+  return b.z >= 0.48 && Math.hypot(b.x - DESK.x, b.z - DESK.z) < DESK.r;
 }
 /** Closest body at the insects' window; a player waits behind earlier insects. */
 function mainWindowOccupant(a: Arena): WalkBody | null {

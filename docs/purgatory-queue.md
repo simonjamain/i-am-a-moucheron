@@ -35,7 +35,8 @@ aux non-payants. Au second guichet, Saint Pierre finit l’insecte en cours
 signe ses trois documents. La zone de ce guichet est invisible : toute la moitié avant
 de la file VIP, entre ses cordons (`VIP_ZONE`, `inVipDesk`). Saint Pierre se déplace
 derrière le comptoir vers le guichet qu’il sert, et au guichet VIP en face de l'âme
-(`saintWindowX`). Pour les joueurs, seul le clic sur le porte-bloc ouvre les formulaires
+(`saintWindowX`). Au guichet principal, un joueur est servi dès qu'il est à portée du
+porte-bloc (`nearDeskClipboard`), sans place marquée. Pour les joueurs, seul le clic sur le porte-bloc ouvre les formulaires
 ([décor du purgatoire](purgatory-scene.md#le-porte-bloc-du-guichet)).
 `test-purgatory-vip.mjs` vérifie le cordon, la priorité, le prix, le refus et la
 signature au guichet VIP.

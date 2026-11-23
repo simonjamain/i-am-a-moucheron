@@ -236,7 +236,7 @@ function roomState(code, now, layout = DEFAULT_LAYOUT_ID) {
     base: { epoch: uid() },
     purgatory: { epoch: uid() },
     // Saint Pierre and the VIP guard (docs/purgatory-sky.md): alive at their posts.
-    staff: { saint: { hp: STAFF_HP, down: false }, guard: { hp: STAFF_HP, down: false } },
+    staff: { saint: { hp: STAFF_HP, down: false }, vipGuard: { hp: STAFF_HP, down: false } },
   };
 }
 
@@ -607,7 +607,7 @@ export class Game {
     }
     a.obstacles = VIP_LANE;
     a.saintDown = !!r.staff?.saint.down;
-    a.vipClosed = !!r.staff?.guard.down;
+    a.vipClosed = !!r.staff?.vipGuard.down;
     a.host =
       shown
         .filter((s) => s.kind === 'player')
@@ -2757,7 +2757,7 @@ export class Game {
       p.life === 'dead' && world(p) === 'purgatory' && signature(b.signature),
       'Signez le coupe-file au purgatoire.',
     );
-    requireGame(!r.staff.guard.down, 'Le vigile est mort : l’accès VIP est fermé.');
+    requireGame(!r.staff.vipGuard.down, 'Le vigile est mort : l’accès VIP est fermé.');
     requireGame(
       b.epoch === r.base.epoch && b.incarnation === p.incarnation,
       'Partie ou décès périmés.',
@@ -2789,7 +2789,7 @@ export class Game {
     requireGame(!r.staff.saint.down, 'Saint Pierre est mort : plus personne ne ressuscite.');
     requireGame(
       body &&
-        (deskOccupant(a)?.id === body.id || (s?.vip && !r.staff.guard.down && inVipDesk(body))),
+        (deskOccupant(a)?.id === body.id || (s?.vip && !r.staff.vipGuard.down && inVipDesk(body))),
       'Placez votre corps dans la zone du guichet.',
     );
     requireGame(
