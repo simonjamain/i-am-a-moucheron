@@ -17,7 +17,7 @@ import { controlHints, cursorStats } from '../src/live-hud.ts';
 import { GunSalvos } from '../src/salvos.ts';
 import { makeShotTrace, TracerPool } from '../src/tracers.ts';
 import { wavePlan, swarmFrame } from '../src/waves.js';
-import { enemyRoute } from '../src/routes.js';
+import { enemyRoute } from '../src/routes.ts';
 import { staticGroundFlow } from '../src/ground-defense.ts';
 import { blockedSegment } from '../src/route-navigation.ts';
 import { HEAVY, heavyDamage } from '../src/armament.ts';

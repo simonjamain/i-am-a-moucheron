@@ -87,4 +87,4 @@ comptées.
 
 `server/stats.ts` (registre, rapport, persistance), `server/stats-page.ts` (page),
 `server/game.js` (`statSeat`, `creditEnemy`, `sampleStats` et les points d'attribution),
-`src/paid-service.js` (`spentBy`). Test : `scripts/test-stats.mjs`.
+`src/paid-service.ts` (`spentBy`). Test : `scripts/test-stats.mjs`.

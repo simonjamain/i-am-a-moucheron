@@ -14,7 +14,7 @@ import {
   isLayoutId,
 } from '../src/layouts.ts';
 import { OFFICE_LAYOUT } from '../src/layout.ts';
-import { enemyRoute, PORTALS } from '../src/routes.js';
+import { enemyRoute, PORTALS } from '../src/routes.ts';
 import { blockedSegment } from '../src/route-navigation.ts';
 import { staticGroundFlow, groundGoal, groundStaticObstacles } from '../src/ground-defense.ts';
 import { createGraphics } from '../src/graphics.js';
@@ -23,7 +23,7 @@ import { OFFICE_CLOUD_TOP, FOG_START_RATIO } from '../src/office-fog.ts';
 import { prepareRoster } from '../server/wave-preparation.js';
 import { DEFAULT_BALANCE } from '../src/balance.js';
 import { advanceGroundCrowd } from '../src/ground-crowd.js';
-import { newGroundDefense, groundFlow } from '../src/ground-defense-state.js';
+import { newGroundDefense, groundFlow } from '../src/ground-defense-state.ts';
 
 assert.equal(LAYOUTS.length, 6, 'six plans');
 assert.equal(new Set(LAYOUTS.map((l) => l.id)).size, LAYOUTS.length, 'unique ids');

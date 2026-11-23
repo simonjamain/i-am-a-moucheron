@@ -5,6 +5,21 @@ import {
   characterLoaded,
   CHARACTER_HEIGHT,
 } from './character-model.ts';
+import type * as THREE from 'three';
+import type { AppearanceId } from './character-appearances.ts';
+import type { Three } from './types.ts';
+
+/** The home screen elements the selector drives. */
+export interface AppearancePickerOptions {
+  root: HTMLElement;
+  label: HTMLElement;
+  prev: HTMLElement;
+  next: HTMLElement;
+  shade?: HTMLElement | null;
+  initial?: unknown;
+  onChange?: (id: AppearanceId) => void;
+}
+type Character = ReturnType<typeof createCharacter>;
 
 // Home screen character selector: a small turntable of the chosen appearance
 // between the name/room fields and the join button, with previous/next arrows
@@ -28,12 +43,15 @@ export const SIDE_SHADE = Object.freeze({
   alpha: 0xee / 255,
   end: 0.85,
 });
-const rgb = (c) => c.map((v) => v / 255);
+const rgb = (c: readonly number[]) => c.map((v) => v / 255);
 const BAND = { top: 22, bottom: 4 }; // px taken by the title row, and the margin below
-export function createAppearancePicker(T, { root, label, prev, next, shade, initial, onChange }) {
+export function createAppearancePicker(
+  T: Three,
+  { root, label, prev, next, shade, initial, onChange }: AppearancePickerOptions,
+) {
   let value = appearanceId(initial),
-    shown = null,
-    character = null,
+    shown: AppearanceId | null = null,
+    character: Character | null = null,
     active = true,
     hole = '',
     yaw = -0.35;
@@ -69,7 +87,7 @@ export function createAppearancePicker(T, { root, label, prev, next, shade, init
     depthWrite: false,
   });
   tint.add(new T.Mesh(new T.PlaneGeometry(2, 2), tintMaterial));
-  const nameOf = (id) => APPEARANCES.find((a) => a.id === id).name;
+  const nameOf = (id: AppearanceId) => APPEARANCES.find((a) => a.id === id)!.name;
   function show() {
     if (shown === value || !characterLoaded(value)) return;
     if (character) scene.remove(character.container);
@@ -77,7 +95,7 @@ export function createAppearancePicker(T, { root, label, prev, next, shade, init
     scene.add(character.container);
     shown = value;
   }
-  function select(id) {
+  function select(id: unknown) {
     const chosen = (value = appearanceId(id));
     label.textContent = nameOf(value);
     root.dataset.appearance = value;
@@ -91,7 +109,7 @@ export function createAppearancePicker(T, { root, label, prev, next, shade, init
       });
     onChange?.(value);
   }
-  const step = (n) => select(nextAppearance(value, n));
+  const step = (n: number) => select(nextAppearance(value, n));
   prev.addEventListener('click', () => step(-1));
   next.addEventListener('click', () => step(1));
   root.addEventListener('keydown', (e) => {
@@ -109,10 +127,11 @@ export function createAppearancePicker(T, { root, label, prev, next, shade, init
     },
     select,
     // Called once per game frame, after the frame is rendered, on the home screen.
-    draw(renderer, dt) {
+    draw(renderer: THREE.WebGLRenderer | null | undefined, dt: number) {
       if (!active) return;
       // Software fallback renderer: an opaque selector, the name identifies the choice.
-      if (!renderer?.isWebGLRenderer) return void root.classList.add('appearance-flat');
+      if (!renderer || !(renderer as { isWebGLRenderer?: boolean }).isWebGLRenderer)
+        return void root.classList.add('appearance-flat');
       show();
       const box = root.getBoundingClientRect(),
         view = renderer.domElement.getBoundingClientRect();

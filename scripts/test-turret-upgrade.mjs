@@ -1,7 +1,7 @@
 // Amélioration des tourelles automatiques : arbre, règles serveur, portée de survol
 // et formulaire papier (signature, tampon REFUSÉ faute de fonds).
 import assert from 'node:assert/strict';
-import { newGroundDefense, groundCommand } from '../src/ground-defense-state.js';
+import { newGroundDefense, groundCommand } from '../src/ground-defense-state.ts';
 import {
   SENTRY,
   GATLING,

@@ -5,7 +5,7 @@ import {
   groundFlow,
   groundSnapshot,
   damageBarricade,
-} from '../src/ground-defense-state.js';
+} from '../src/ground-defense-state.ts';
 
 const state = newGroundDefense(),
   foot = [0, 0],

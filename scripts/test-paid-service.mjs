@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { fullAmmo, FUEL_SECONDS } from '../src/logistics.ts';
-import { advancePaidService, fairServiceShares, withinService } from '../src/paid-service.js';
+import { advancePaidService, fairServiceShares, withinService } from '../src/paid-service.ts';
 
 const station = { kind: 'refuel', x: 0, y: 0, z: 0 };
 const vehicle = (id, p = [0, 0.03, 0], type = 'fighter') => ({

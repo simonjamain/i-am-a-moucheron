@@ -1,10 +1,10 @@
 // Meshy rat: provenance, its own walking clip replayed through pose deltas,
 // paws on the ground lift, stride matching the planted paws, ellipsoid hits,
-// distance-driven proxy and VAT bake (src/rat-model.js, scripts/import-rat.py).
+// distance-driven proxy and VAT bake (src/rat-model.ts, scripts/import-rat.py).
 import assert from 'node:assert/strict';
 import * as T from '../vendor/three.module.min.js';
 import { RAT_DATA } from '../src/rat-data.js';
-import { RAT, RAT_BONES, RAT_HIT, RAT_MODEL, ratClipWorld, ratWorld } from '../src/rat-model.js';
+import { RAT, RAT_BONES, RAT_HIT, RAT_MODEL, ratClipWorld, ratWorld } from '../src/rat-model.ts';
 import { WALKERS, WalkerBatch, walkerStride } from '../src/walker-batch.js';
 import { createGraphics } from '../src/graphics.js';
 import { nearestInsectHit } from '../src/insect-hits.ts';

@@ -1,6 +1,6 @@
 import { appearanceId } from '../src/character-appearances.ts';
 import { prepareRoster, forecast } from './wave-preparation.js';
-import { feedingPoint } from '../src/ground-defense-state.js';
+import { feedingPoint } from '../src/ground-defense-state.ts';
 import { DEFAULT_BALANCE, money } from '../src/balance.js';
 import { deliveryStart, deliveryLanding, deliveryHeightAt } from '../src/delivery.ts';
 import {
@@ -10,10 +10,10 @@ import {
   groundFlow,
   damageBarricade,
   floorStructures,
-} from '../src/ground-defense-state.js';
+} from '../src/ground-defense-state.ts';
 import { advanceGroundCrowd } from '../src/ground-crowd.js';
 import { clampProximity } from '../src/mobile-flak.js';
-import { collisionDamage } from '../src/vehicle-care.js';
+import { collisionDamage } from '../src/vehicle-care.ts';
 import { purchaseCount } from '../src/equipment.ts';
 import { bedAccess, bedSpawn } from '../src/beds.ts';
 import { impactDamage } from '../src/field-physics.ts';
@@ -61,7 +61,7 @@ import {
   MAX_OFFSPRING_ROSTER,
 } from '../src/waves.js';
 import { SHOP, shopPrice, supportedPlacement, decorTrust } from '../src/equipment.ts';
-import { advancePaidService } from '../src/paid-service.js';
+import { advancePaidService } from '../src/paid-service.ts';
 import { SENTRY, GATLING, isTurret, fireGroundSentries } from '../src/ground-sentry.ts';
 import { FORTIFICATIONS, isFortification } from '../src/ground-fortifications.ts';
 import { FIXED_DCA, RAPID_DCA_DAMAGE, heavyDcaMuzzle, isFixedDca } from '../src/fixed-dca.ts';

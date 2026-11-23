@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import { timelineColumns, WaveCouncilUI } from '../src/wave-council-ui.js';
 import { predictedGroundPaths } from '../src/wave-ground-paths.js';
-import { groundFlow, groundCommand, newGroundDefense } from '../src/ground-defense-state.js';
-import { enemyRoute, portalExit, PORTALS } from '../src/routes.js';
+import { groundFlow, groundCommand, newGroundDefense } from '../src/ground-defense-state.ts';
+import { enemyRoute, portalExit, PORTALS } from '../src/routes.ts';
 
 const groups = [
   { ground: true, type: 'ant', portalIndex: 1, count: 5, spawn: 6 },

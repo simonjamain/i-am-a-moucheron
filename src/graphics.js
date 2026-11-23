@@ -14,7 +14,7 @@ import { makeB3 } from './b3-model.ts';
 import { makeCastorMeshy } from './castor-model.ts';
 import { makeFlyingCastorMeshy } from './flying-castor-model.ts';
 import { createCharacter, CHARACTER_HEIGHT, LEGACY_HEIGHT } from './character-model.ts';
-import { createMidgeRig } from './midge-model.js';
+import { createMidgeRig } from './midge-model.ts';
 import { WALKERS, walkerStride } from './walker-batch.js';
 import { FLYERS } from './flyer-batch.js';
 import { TAU } from './rigged-creature.ts';
