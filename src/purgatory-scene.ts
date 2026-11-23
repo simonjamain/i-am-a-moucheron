@@ -25,7 +25,7 @@ import {
 import type { CloudFloorSpec, SkyClouds, SkyDome } from './purgatory-clouds.ts';
 import { VIP_GUARD as GUARD_RIG, VIP_GUARD_MODEL } from './vip-guard-model.ts';
 import { SaintPierre } from './saint-pierre-model.ts';
-import { createClipboard, CLIPBOARD_SIZE } from './clipboard-model.ts';
+import { createClipboard } from './clipboard-model.ts';
 import { createFloorCloud, FLOOR_MIST } from './purgatory-floor.ts';
 import type { FloorCloud } from './purgatory-floor.ts';
 
@@ -35,8 +35,8 @@ import type { FloorCloud } from './purgatory-floor.ts';
  * its root group, at PURGATORY_FRAME (src/arena-frame.ts).
  */
 const U = HUMANOID_UNITS / PERSON_HEIGHT;
-/** Room left beside a clipboard on the desk's front edge (local units). */
-const CLIPBOARD_GAP = CLIPBOARD_SIZE[0] * U + 0.15;
+/** The clipboards lie a little larger than the model's real size, to be seen and clicked. */
+export const CLIPBOARD_SCALE = 1.1;
 /** The flat part of the cloud: the walkable rectangle of src/purgatory-queue.ts
  * (x ±10, z from 0) and the back office behind the counter. */
 export const PURGATORY_HALL: CloudFloorSpec = Object.freeze({
@@ -58,8 +58,6 @@ export const COUNTER = Object.freeze({
   desks: [-2.06, 0, 2.06],
   vipDesk: VIP_DESK.x,
   saintZ: -2.7,
-  /** Name plates stand on the desks' front edge, left of the clipboards. */
-  plateZ: -0.79,
   /** Clipboard at each window: offset from the desk's middle, overhanging its front edge. */
   clipboardX: 0.5,
   clipboardZ: -0.85,
@@ -69,8 +67,6 @@ export const COUNTER = Object.freeze({
 export const PURGATORY_LOOK = Object.freeze({
   rope: '#9e2433',
   brass: '#d8b25a',
-  zone: '#ffd979',
-  zoneServed: '#d5ef73',
   board: '#6b5136',
   hemisphereSky: '#dcecff',
   hemisphereGround: '#f4efe2',
@@ -182,30 +178,6 @@ function signBoard(
   mesh.castShadow = true;
   return { mesh, setLines: draw };
 }
-/** Text painted flat on the cloud (front reads from +Z). */
-function floorMark(T: Three, text: string, width: number): THREE.Mesh {
-  const canvas = typeof document === 'undefined' ? null : document.createElement('canvas');
-  const texture = canvas ? new T.CanvasTexture(canvas) : new T.Texture();
-  texture.colorSpace = T.SRGBColorSpace;
-  if (canvas) {
-    canvas.width = 1024;
-    canvas.height = 128;
-    const ctx = canvas.getContext('2d')!;
-    ctx.font = `bold 76px ${cssToken('--typewriter', 'monospace')}`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillStyle = PURGATORY_LOOK.zone;
-    ctx.fillText(text, 512, 64);
-  }
-  const mesh = new T.Mesh(
-    new T.PlaneGeometry(width, width / 8),
-    new T.MeshBasicMaterial({ map: texture, transparent: true, depthWrite: false }),
-  );
-  mesh.rotation.x = -Math.PI / 2;
-  mesh.name = 'purgatoire-marquage';
-  return mesh;
-}
-
 export interface PurgatorySceneOptions {
   /** graphics.pm: a coloured box (parent, w, h, d, colour, x, y, z). */
   box(
@@ -226,8 +198,6 @@ export interface PurgatoryState {
   saintX: number;
   /** The local soul holds the VIP pass (the gate opens for it). */
   vip: boolean;
-  deskServed: boolean;
-  vipServed: boolean;
   /** Where the soul or insect Saint Pierre serves stands (he looks at it). */
   servedAt?: { x: number; z: number } | null;
   /** He is stamping an insect's papers. */
@@ -323,32 +293,17 @@ export function createPurgatoryScene(T: Three, options: PurgatorySceneOptions): 
     sky.group.scale.setScalar(unit);
     floorCloud = createFloorCloud(T, PURGATORY_HALL, CLOUD_FLOOR, F);
   } else scene.add(createCloudFloor(T, CLOUD_FLOOR, PURGATORY_HALL));
-  /** Height of the marks that must show above the mist (rings, painted text). */
-  const markY = options.shaders ? FLOOR_MIST.top + 0.03 : 0.04;
   // Furniture of the office pack, at human scale.
   const furniture = new T.Group();
   furniture.name = 'purgatoire-mobilier';
   furniture.scale.setScalar(U);
   addOfficeProps(T, purgatoryProps(), furniture);
   scene.add(furniture);
-  // Signs: the counter's front plate.
-  // Name plates stand on the desks' front edge, above the mist.
-  // From the left desk's edge to the middle desk's clipboard.
-  const plateLeft = COUNTER.desks[0] - 0.88,
-    plateRight = COUNTER.clipboardX - CLIPBOARD_GAP / 2;
-  const plate = signBoard(
-    T,
-    ['SAINT PIERRE', 'Guichet des résurrections'],
-    plateRight - plateLeft,
-    0.5,
-  );
-  plate.mesh.position.set((plateLeft + plateRight) / 2, DESK_TOP, COUNTER.plateZ);
-  scene.add(plate.mesh);
   // The clipboards that open the papers: at each serving window, turned toward
   // the souls, beside the middle and overhanging the desk's front edge a little.
   const clipboard = (x: number) => {
     const c = createClipboard(T);
-    c.scale.setScalar(U);
+    c.scale.setScalar(U * CLIPBOARD_SCALE);
     c.position.set(x + COUNTER.clipboardX, DESK_TOP, COUNTER.clipboardZ);
     c.rotation.y = COUNTER.clipboardYaw;
     return c;
@@ -359,18 +314,9 @@ export function createPurgatoryScene(T: Three, options: PurgatorySceneOptions): 
     saint = saintPierre.container;
   saint.position.set(0, 0, COUNTER.saintZ);
   scene.add(saint);
-  const deskZone = new T.Mesh(
-    new T.RingGeometry(0.95, 1.28, 48),
-    new T.MeshBasicMaterial({ color: L.zone, side: T.DoubleSide, transparent: true, opacity: 0.8 }),
-  );
-  deskZone.rotation.x = -Math.PI / 2;
-  deskZone.position.set(0, markY, 1);
-  scene.add(deskZone);
-  const zoneMark = floorMark(T, 'PLACE AU GUICHET', 4);
-  zoneMark.position.set(0, markY + 0.01, 2.7);
-  scene.add(zoneMark);
-  // VIP lane: ropes on brass posts from the physics' obstacles, its own plate,
-  // a hanging sign over its desk, the guard at the gate.
+  // VIP lane: ropes on brass posts from the physics' obstacles, the guard at the
+  // gate. No plate nor ring: the lane says what it is, and the window's zone is
+  // invisible (src/purgatory-queue.ts, VIP_ZONE).
   const vipDecor = new T.Group();
   vipDecor.name = 'purgatoire-vip';
   scene.add(vipDecor);
@@ -401,11 +347,6 @@ export function createPurgatoryScene(T: Three, options: PurgatorySceneOptions): 
         o.z + (along ? t : 0),
       );
   }
-  const vipLeft = VIP_DESK.x - 0.95,
-    vipRight = VIP_DESK.x + COUNTER.clipboardX - CLIPBOARD_GAP / 2;
-  const vipPlate = signBoard(T, ['ACCÈS VIP'], vipRight - vipLeft, 0.5);
-  vipPlate.mesh.position.set((vipLeft + vipRight) / 2, DESK_TOP, COUNTER.plateZ);
-  vipDecor.add(vipPlate.mesh);
   const vipClipboard = clipboard(VIP_DESK.x);
   vipDecor.add(vipClipboard);
   // A small standing sign by the gate, on the guard's side.
@@ -419,13 +360,6 @@ export function createPurgatoryScene(T: Three, options: PurgatorySceneOptions): 
   stand.position.set(VIP_GUARD.x + 0.9, 0, VIP_GATE_Z + 1.4);
   stand.rotation.y = -0.35;
   vipDecor.add(stand);
-  const vipZone = new T.Mesh(
-    new T.RingGeometry(VIP_DESK.r - 0.3, VIP_DESK.r, 48),
-    new T.MeshBasicMaterial({ color: L.zone, side: T.DoubleSide, transparent: true, opacity: 0.8 }),
-  );
-  vipZone.rotation.x = -Math.PI / 2;
-  vipZone.position.set(VIP_DESK.x, markY, VIP_DESK.z);
-  vipDecor.add(vipZone);
   const guard = GUARD_RIG.createRig(T);
   // Facing the lane's entrance (-X), beside the gate.
   guard.container.position.set(VIP_GUARD.x, 0, VIP_GUARD.z);
@@ -478,8 +412,6 @@ export function createPurgatoryScene(T: Three, options: PurgatorySceneOptions): 
       }
       // The rope gate swings aside for this soul once its pass is paid.
       if (vipGate) vipGate.visible = !state.vip;
-      deskZone.material.color.set(state.deskServed ? L.zoneServed : L.zone);
-      vipZone.material.color.set(state.vipServed ? L.zoneServed : L.zone);
       guard.pose(now / 1000 / VIP_GUARD_MODEL.cycle);
       sky?.update(now / 1000);
     },

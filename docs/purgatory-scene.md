@@ -46,9 +46,8 @@ Le sol est le **même nuage volumétrique** que ceux du ciel : on marche à moit
   (il semblait suivre le joueur, les meubles lointains flottaient au-dessus du vide).
   Un rayon qui atteint la couche dense dans l’étendue du nuage sans s’être rempli est
   complété par la couleur de la surface : aucun trou vers le ciel.
-- Ce qui doit rester lisible flotte au-dessus de la brume : cercles du guichet et
-  marquage « PLACE AU GUICHET » (à la hauteur de la brume), insectes de la file
-  (`hover`, aux trois quarts de cette hauteur), plaques posées sur les bureaux.
+- Les insectes de la file flottent au-dessus de la brume (`hover`, aux trois quarts de
+  sa hauteur) pour rester lisibles.
 - Sans GPU (rendu logiciel de secours), l’ancien nuage dessin animé reste : dessus
   plat sur la salle et bosselé autour (`cloudHeight`), boules du bord (`cloudPuffs`).
 - Le **mur invisible** reste la borne de marche existante ; les meubles de salle
@@ -103,20 +102,18 @@ Le passage à WebGPU est suivi à part.
 Les anciens textes flottants sont remplacés par des objets du monde, peints aux
 couleurs des documents papier (`--paper`, `--ink`, police machine à écrire) :
 
-- une plaque posée au bord des bureaux du guichet, au-dessus de la brume : « SAINT
-  PIERRE · Guichet des résurrections », qui s'arrête avant le porte-bloc du guichet ;
-- une plaque « ACCÈS VIP » sur le bureau VIP (ouvert à toute âme qui paie), à côté
-  de son porte-bloc ;
-- un pupitre « COUPE-FILE · Laissez-passer auprès du vigile » à côté de la barrière ;
-- « PLACE AU GUICHET » peint au sol devant le cercle du guichet.
+- un pupitre « COUPE-FILE · Laissez-passer auprès du vigile » à côté de la barrière.
 
-Les cercles du guichet changent toujours de teinte quand c’est son tour.
+Ni plaque sur les bureaux, ni cercle ou marquage au sol devant les guichets : Saint
+Pierre, son comptoir et les cordons suffisent. Les zones des guichets (`inDeskZone`,
+`VIP_ZONE` dans `src/purgatory-queue.ts`) sont invisibles.
 
 ## Le porte-bloc du guichet
 
 Sur chacun des deux guichets (celui de la file et le guichet VIP), un porte-bloc est
 posé à plat sur le bureau, tourné vers les âmes, un peu à droite du milieu et dépassant
-légèrement du bord avant (`COUNTER.clipboardX`, `clipboardZ`, `clipboardYaw`). C'est
+légèrement du bord avant (`COUNTER.clipboardX`, `clipboardZ`, `clipboardYaw`), 10 %
+plus grand que nature pour bien se voir (`CLIPBOARD_SCALE`). C'est
 lui qui ouvre les formulaires : il remplace la touche E, retirée ([commandes](controls.md)).
 
 - Seul le porte-bloc du guichet où Saint Pierre **nous sert** s'utilise
@@ -126,8 +123,12 @@ lui qui ouvre les formulaires : il remplace la touche E, retirée ([commandes](c
 - Une âme sans coupe-file n'utilise jamais le porte-bloc VIP : il ne s'entoure pas pour
   elle et le clic n'y fait rien. Le serveur exige toujours, pour signer, d'être servi au
   guichet (`sign`).
-- Les formulaires s'ouvrent encore d'eux-mêmes quand c'est notre tour ; le porte-bloc
-  sert surtout à les rouvrir après les avoir fermés.
+- **Seul le porte-bloc ouvre les formulaires** : entrer dans la zone du guichet ne les
+  ouvre jamais (`paperSuppressed` dans `client.js`), on clique quand on est prêt.
+- Au guichet VIP, toute la moitié avant de la file VIP, entre ses cordons, est la zone
+  du guichet (`VIP_ZONE`) : une âme qui a le coupe-file et s'y tient est servie, Saint
+  Pierre vient derrière le bureau VIP en face d'elle (`saintWindowX`) et son porte-bloc
+  s'entoure de bleu.
 - Modèle fourni par le propriétaire du projet ([pipeline des assets](asset-pipeline.md#porte-bloc-du-guichet)),
   32 × 21 cm, `src/clipboard-model.ts`.
 

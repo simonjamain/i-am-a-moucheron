@@ -10,11 +10,13 @@ import {
   createSoul,
   deskOccupant,
   inVipDesk,
+  saintWindowX,
   SOUL_ENTRANCE,
   VIP_DESK,
   VIP_GATE_Z,
   VIP_GUARD,
   VIP_LANE,
+  VIP_ZONE,
   vipPrice,
 } from '../src/purgatory-queue.ts';
 import { Game } from '../server/game.js';
@@ -117,6 +119,19 @@ assert.equal(room.pilots.get(a.id).life, 'alive', 'back to the base through the 
   const waiting = soul(4, atDesk);
   assert.equal(clipboardWindow(arena([waiting, paid]), waiting), null, 'waits behind the VIP');
   assert.equal(clipboardWindow(arena([waiting, paid]), paid), 'vip');
+  // The VIP window's zone is the front half of the lane, invisible: a paid soul
+  // anywhere there is served, and Saint Pierre comes in front of it.
+  const lane = soul(6, { x: VIP_ZONE.minX + 0.2, z: VIP_ZONE.maxZ - 0.3 }, true);
+  assert.ok(inVipDesk(lane), 'the front half of the VIP lane is the window zone');
+  assert.equal(clipboardWindow(arena([lane]), lane), 'vip', 'served anywhere in the zone');
+  const back = soul(7, { x: VIP_DESK.x, z: VIP_ZONE.maxZ + 0.5 }, true);
+  assert.ok(!inVipDesk(back), 'the back of the lane is not the window');
+  assert.equal(clipboardWindow(arena([back]), back), null);
+  assert.ok(!inVipDesk(soul(8, { x: VIP_ZONE.maxX + 0.3, z: 1 }, true)), 'outside the ropes');
+  assert.equal(saintWindowX(null), 0, 'nobody served: the main desk');
+  assert.equal(saintWindowX(served), 0, 'main window: its middle');
+  assert.equal(saintWindowX(paid), VIP_DESK.x, 'VIP window: in front of the soul');
+  assert.equal(saintWindowX(lane), VIP_DESK.x - 0.6, 'kept behind the VIP desk');
   const far = soul(5, { x: 0, z: 9 });
   assert.equal(clipboardWindow(arena([far]), far), null, 'not at a window');
   assert.equal(clipboardWindow(arena([]), null), null);

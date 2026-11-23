@@ -32,8 +32,11 @@ signature seule, aucune case) : il coûte **le numéro de la vague en dollars** 
 Une âme qui a payé (`vip` sur son corps) traverse le cordon doré, seul obstacle réservé
 aux non-payants. Au second guichet, Saint Pierre finit l’insecte en cours
 (`served > 0`), puis sert l’âme VIP avant les insectes, qui attendent pendant qu’elle
-signe ses trois documents. Saint Pierre se déplace derrière le comptoir vers le
-guichet qu’il sert.
+signe ses trois documents. La zone de ce guichet est invisible : toute la moitié avant
+de la file VIP, entre ses cordons (`VIP_ZONE`, `inVipDesk`). Saint Pierre se déplace
+derrière le comptoir vers le guichet qu’il sert, et au guichet VIP en face de l'âme
+(`saintWindowX`). Pour les joueurs, seul le clic sur le porte-bloc ouvre les formulaires
+([décor du purgatoire](purgatory-scene.md#le-porte-bloc-du-guichet)).
 `test-purgatory-vip.mjs` vérifie le cordon, la priorité, le prix, le refus et la
 signature au guichet VIP.
 
@@ -41,7 +44,7 @@ Les coups, gardes, esquives de combat, KO et le pistolet sont supprimés : l'âm
 le personnage du bureau, mêmes modèle et animations, sans arme. Un PNJ est libéré
 (avec une seule récompense) quand Saint Pierre l'a servi. Les collisions et la marche
 restent actives. Aucun panneau d'interface : le décor (vigile, cordons, guichets,
-plaques et pupitre) indique quoi faire, avec la ligne des commandes en bas d'écran.
+porte-blocs et pupitre) indique quoi faire, avec la ligne des commandes en bas d'écran.
 Saint Pierre et le vigile peuvent être tués depuis le ciel (10 000 points de vie,
 [ciel du purgatoire](purgatory-sky.md)) : leur âme rejoint alors la file. Vigile mort,
 le guichet VIP et le coupe-file sont fermés (`vipClosed`) ; Saint Pierre mort, personne
