@@ -12,7 +12,7 @@ Output, in model metres (Y up, head +Z, about 1.25 m nose to tail tip):
 - the clip resampled at its 30 keys as world-space (model) rotation and
   position of every bone, divided by the Hips scale so the clip plays on the
   bind-size mesh (a uniform rescale: the look is unchanged). The clip walks in
-  place; src/rat-model.js turns it into pose deltas and the walker batch
+  place; src/rat-model.ts turns it into pose deltas and the walker batch
   drives its phase by distance;
 - a 512 px JPEG copy of the texture (original in assets/originals/rat/).
 """

@@ -2,7 +2,7 @@
 Usage: PYTHONPATH=scripts python3 scripts/import-midge.py path/to/angry-little-fly.glb
 User-supplied Meshy GLB, checked by SHA-256. The GLB carries a 38-bone Meshy
 SmartRig skeleton but no animation: the flight cycle is procedural
-(src/midge-model.js). Output keeps the skinned mesh, the skeleton with its bind
+(src/midge-model.ts). Output keeps the skinned mesh, the skeleton with its bind
 matrices plus two added wing bones, and a 512 px JPEG copy of the 2K texture (the original stays in
 assets/originals/midge/, outside Git).
 """

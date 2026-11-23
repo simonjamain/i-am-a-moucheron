@@ -2,7 +2,7 @@
 Usage: PYTHONPATH=scripts python3 scripts/import-mosquito.py path/to/mosquito.glb
 User-supplied Meshy GLB, checked by SHA-256. It carries a 62-bone Meshy
 SmartRig skeleton but no animation: the flight cycle is procedural
-(src/mosquito-model.js). Output keeps the skinned mesh, the skeleton with its
+(src/mosquito-model.ts). Output keeps the skinned mesh, the skeleton with its
 bind matrices and a 512 px JPEG copy of the texture (the original stays in
 assets/originals/mosquito/, outside Git). No geometry, UV or texture is changed.
 

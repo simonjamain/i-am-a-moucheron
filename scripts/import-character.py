@@ -5,7 +5,7 @@ skinned mesh, the Mixamo skeleton with its bind matrices, the idle/walk/run
 clips (rotations quantized to Int16, root translation only, constant scale
 tracks dropped) and a 1K JPEG copy of the base colour texture (the original
 stays in assets/originals/character/). Ids and output files are listed in
-CHARACTERS below and must match src/character-appearances.js.
+CHARACTERS below and must match src/character-appearances.ts.
 """
 import base64, io, json, struct, sys
 from pathlib import Path
@@ -14,7 +14,7 @@ from meshy_provenance import verify_meshy_source
 
 # id: (original SHA-256, output module, {gait: clip name in the GLB}). The Meshy
 # exports have no idle clip (their unnamed 3 s clip is a crouch-and-jump move,
-# and RunFast is unused): character-model.js lowers the arms from the bind pose.
+# and RunFast is unused): character-model.ts lowers the arms from the bind pose.
 GAITS = {'walk': 'Walking', 'run': 'Running'}
 CHARACTERS = {
     'cowboy': ('29cbb213d02d447ddd1624a4e2e4ffaf31c1c8d99715850f90c983b53b0eed0d',

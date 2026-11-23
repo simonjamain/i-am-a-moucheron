@@ -60,7 +60,7 @@
   `ReserveVehicle`) et l'epoch de base des instantanés (`BankSnapshot`,
   `BedSnapshot`, à élargir pour `purchase-ui.ts` qui étend `BedUI`).
 - Restent écrits à la main : 25 `.js` dans `src/` (dont `client.js`, ≈ 7 000
-  lignes, `waves.js`, `graphics.js`, `hud.js`), plus 44 modules de données générées,
+  lignes, `waves.js`, `graphics.js`, `hud.js`) ; les données générées sont en `.ts`,
   `server/game.js`, `server/index.js`, `server/wave-preparation.js` et les
   `scripts/*.mjs`. `npm run ts:migrate -- --leaves` donne la liste des modules
   prêts.
@@ -69,19 +69,25 @@
   sans passer par l'assembleur (défaut antérieur, non corrigé ici).
 - Hors de cet environnement : partie WebGL réelle et pilotage humain.
 
-## Décision en attente (utilisateur)
+## Décision prise : données générées en `.ts`
 
-**Données générées `src/*-data.js`** (Meshy, personnages) : proposition — faire
-émettre `.ts` par les générateurs, sans annotations, exclus de `tsc` si la
-vérification devient lente.
+Routine du 23 novembre 2026 : les 43 `src/*-data.js` et `src/vehicle-anchors.js`
+sont devenus des `.ts` sans annotation, et les importeurs (`scripts/import-*.py`,
+`attach-castor-rims.py`, `split-vehicle-parts.mjs`, `rig-*.mjs`,
+`measure-aircraft.mjs`) lisent et écrivent ces chemins. Mesures sur cette machine :
+`npm run typecheck` 0,84 s avant, 0,95 s après ; `node scripts/assemble.mjs`
+≈ 0,65 s avant, ≈ 0,78 s après ; `server/assets.js` identique octet pour octet
+(hors empreinte de build et un commentaire de chemin). L'exclusion de `tsc`
+envisagée n'est donc pas nécessaire. Règle : [TypeScript](../typescript.md#données-générées).
 
 ## Ordre conseillé
 
-1. Feuilles du graphe d'imports : `npm run ts:migrate -- --leaves` (liste à jour ;
-   `vehicle-anchors.ts` est généré par `import-meshy-vehicle.py`, voir la décision).
-2. Protocole : `ws-client` (`network`, `udp-client`, `server/session` faits).
-3. Domaine : `routes`, `waves` (puis dériver `EnemyType` de
-   `keyof typeof ENEMY_TYPES` et retirer la copie de `src/types.ts`).
+1. Feuilles du graphe d'imports : `npm run ts:migrate -- --leaves` (10 au lot 6 :
+   `waves`, `route-speed`, `wave-ground-paths`, les lots `*-batch`,
+   `ground-placement`, `ground-creatures`, `helicopter`, `wave-forecast-scene`).
+2. Protocole : fait (`network`, `udp-client`, `ws-client`, `server/session`).
+3. Domaine : `waves` (puis dériver `EnemyType` de `keyof typeof ENEMY_TYPES` et
+   retirer la copie de `src/types.ts` ; typer ses ennemis avec `RouteEnemy`).
 4. Serveur : `server/wave-preparation`, `game`, `index` (`session` fait) ; regrouper
    alors les types partagés relevés ci-dessus dans `src/types.ts`.
 5. Rendu/UI puis `client.js` (extraire des modules avant de migrer).

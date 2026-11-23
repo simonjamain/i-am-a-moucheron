@@ -7,7 +7,7 @@ saint-pierre (The Keeper of Wisdom, posed by src/saint-pierre-model.ts). User-su
 GLBs checked by SHA-256. Output keeps the skinned mesh, the Meshy SmartRig
 skeleton with its bind matrices and a 512 px JPEG copy of the 2K texture (the
 original stays in assets/originals/<species>/, outside Git). Gaits are
-procedural (src/ant-model.js, src/spider-model.js, src/roach-model.js).
+procedural (src/ant-model.ts, src/spider-model.ts, src/roach-model.ts).
 
 A species may list its leg chains (`legs`, bone names from hip to foot) and a
 body `hub` bone: each welded shell then keeps only the leg chain it belongs to,

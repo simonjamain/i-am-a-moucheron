@@ -30,7 +30,7 @@ base de données ni accès disque dans les opérations de jeu Node. Voir
 
 | Domaine              | Modules et référence                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Unités/décor         | `scale.ts`, `layouts.ts` (plans de bureau), `layout.ts`, `office.ts`, `office-props.ts` (objets placés, collisions), `office-pack.ts` (rendu instancié), `office-lights.ts` ([lampes et ombres](office-lighting.md)), `collision-mesh.ts`/`office-collision.ts` ([collisions en triangles](collisions.md)), `office-pack-catalog.ts`/`office-pack-data.js` (pack importé) ; [plans](office-layouts.md), [échelle](scale-fleet-weapons.md). |
+| Unités/décor         | `scale.ts`, `layouts.ts` (plans de bureau), `layout.ts`, `office.ts`, `office-props.ts` (objets placés, collisions), `office-pack.ts` (rendu instancié), `office-lights.ts` ([lampes et ombres](office-lighting.md)), `collision-mesh.ts`/`office-collision.ts` ([collisions en triangles](collisions.md)), `office-pack-catalog.ts`/`office-pack-data.ts` (pack importé) ; [plans](office-layouts.md), [échelle](scale-fleet-weapons.md). |
 | Géométrie            | `graphics.js`, modèles procéduraux ; `renderer.ts` pour WebGL/secours.                                                                                                                                                                                                                                                                                                                                                                     |
 | Vol et entrée        | `flight.ts`, `mouse-flight.ts`, `input.ts`, `control-focus.ts`, `fleet.ts`.                                                                                                                                                                                                                                                                                                                                                                |
 | Corps et purgatoire  | `walk-arena.ts` (moteur de marche commun), `base.ts` (bureau), `purgatory-queue.ts` (file, guichet, VIP), `purgatory-scene.ts` et `purgatory-clouds.ts` (décor : nuage, ciel, mobilier, vigile), `sortie.ts` ; [marche](walking-network.md), [file](purgatory-queue.md), [décor](purgatory-scene.md).                                                                                                                                      |
@@ -141,7 +141,7 @@ fiable `ground-defense` reste autoritaire dans `server/game.js` ; le déplacemen
 des terrestres associe `ground-crowd.js` (sous-pas communs et voisinage spatial)
 à `ground-creatures.js` (navigation individuelle, séparation douce et pièges). Voir [gameplay](gameplay.md#défenses-terrestres).
 
-`brick-wall.ts` répète en instances la brique 2×4 de `meshy-brick-data.js` (tenons vers +Y, dimensions `BRICK_PITCH`/`BRICK_ROW`/`BRICK_DEPTH`) selon la longueur des segments, recolorée par instance, sans modifier les collisions ni le coût serveur.
+`brick-wall.ts` répète en instances la brique 2×4 de `meshy-brick-data.ts` (tenons vers +Y, dimensions `BRICK_PITCH`/`BRICK_ROW`/`BRICK_DEPTH`) selon la longueur des segments, recolorée par instance, sans modifier les collisions ni le coût serveur.
 
 `character-appearances.ts` liste les huit personnages au choix (validés aussi par le serveur à la connexion) et `appearance-picker.ts` affiche le sélecteur de l'accueil ; `character-model.ts` anime le personnage joueur choisi (`character-data.ts` par défaut, les autres `character-<id>-data.ts` chargés à la demande) (squelette Mixamo, repos/marche/course, poses procédurales assis, chute et pistolet) ; `graphics.humanoid()` l'enveloppe dans le cadre invisible du pistolet ([pipeline d'assets](asset-pipeline.md#personnage-joueur-meshy--mixamo)).
 
@@ -149,12 +149,12 @@ des terrestres associe `ground-crowd.js` (sous-pas communs et voisinage spatial)
 
 `seat-posts.ts` (partagé client/serveur) donne les postes visables de chaque engin (un par siège, une cabine pour les passagers), leurs zones de visée, le choix du poste touché (`aimPost`) et la portée ; `post-highlight.ts` dessine le contour bleu signal du poste ou de l’installation survolés, en post-traitement à l’écran comme les contours du rendu dessin animé (masque des pièces du poste, puis trait autour de sa silhouette) ([règles d’interface](ui-guidelines.md#monter-dans-un-engin--viser-le-poste)).
 
-`biplane-model.ts`, `meshy-biplane-data.js` et `meshy-biplane-bomber-data.js` portent le [chasseur et le bombardier biplans](biplane-models.md) ; `fleet.ts` définit leurs postes (le bombardier : pilote et mitrailleur) et `vehicle-livery.ts` leurs plaques de nom.
+`biplane-model.ts`, `meshy-biplane-data.ts` et `meshy-biplane-bomber-data.ts` portent le [chasseur et le bombardier biplans](biplane-models.md) ; `fleet.ts` définit leurs postes (le bombardier : pilote et mitrailleur) et `vehicle-livery.ts` leurs plaques de nom.
 Les autres véhicules Meshy utilisent `meshy-texture.ts` pour le décodage
 commun des maillages UV et des atlas. Le Spitfire, le T3, le D2 (dans
 `graphics.js`), le H2 (`h2-model.ts`) et les deux biplans (`biplane-model.ts`) sont des
 hiérarchies articulées construites par `meshy-rig.ts` depuis les modules générés
-par `scripts/import-meshy-vehicle.py` ; `vehicle-anchors.js` donne à la physique
+par `scripts/import-meshy-vehicle.py` ; `vehicle-anchors.ts` donne à la physique
 (`tank-view.js`, `mobile-flak.js`, `truck-physics.ts`, `helicopter.js`) les pivots, bouches
 et enveloppes de ces modèles. Le Stuka (`graphics.js`) suit le même chemin depuis
 la version 266, les biplans depuis la version 275.
@@ -170,7 +170,7 @@ ravitaillement des stations fixes et des Castor, aux rayons de `logistics.ts`.
 Castor volant : `fleet.ts` le définit (un pilote, trois passagers, rotor et
 soutien via `isRotorcraft` / `isSupportVehicle`), `helicopter.js` le fait voler
 (lacet clavier pour la vue verticale), `flying-castor-model.ts` assemble le modèle
-Meshy (`meshy-flying-castor-data.js`, `scripts/import-meshy-flying-castor.py`).
+Meshy (`meshy-flying-castor-data.ts`, `scripts/import-meshy-flying-castor.py`).
 `airdrop.ts` partage cap, point et surface de largage entre le serveur
 (`Game.airdrop` et `advanceGroundDrops` dans `server/game.js`) et l'aperçu
 (`airdropPlacement` dans `ground-placement.js`, `GroundDefenseUI.updateAirdrop`
@@ -186,7 +186,7 @@ Les trois constructions propres au Castor, accessibles à leur seul prix en doll
 (plus de cartes d'ingénierie depuis la version 264), sont les tourelles automatiques T-01 et [Gatling](gatling-turret.md) (`ground-sentry.ts`),
 le canon antichar occupable (`ground-fortifications.ts`).
 `fortification-model.ts` dessine ce poste : c’est l'obusier
-Meshy articulé de `howitzer-model.ts` / `howitzer-data.js` (pointage lent, roues
+Meshy articulé de `howitzer-model.ts` / `howitzer-data.ts` (pointage lent, roues
 contrarotatives, élévation et recul, [pipeline d'assets](asset-pipeline.md#canon-anti-matériel-obusier-meshy)).
 `ground-defense-state.ts` contrôle leur placement et les collisions ;
 `server/game.js` crée les postes occupables, vérifie les signatures et les tirs,

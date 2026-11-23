@@ -125,8 +125,8 @@ console.log(
 if (changed.length) console.log(changed.map((f) => '  ' + f).join('\n'));
 console.log('Next: add types, then `npm run typecheck && npm test`.');
 
-// Hand-written modules whose local imports are all TypeScript (or generated
-// `-data.js`): migrating them never forces another rename first. Browser-absolute
+// Hand-written modules whose local imports are all TypeScript (generated data is
+// `.ts` too): migrating them never forces another rename first. Browser-absolute
 // imports (`'/scale.js'` in client.js) count as local.
 async function listLeaves() {
   const rows = [];

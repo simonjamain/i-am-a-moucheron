@@ -2,7 +2,7 @@
 Usage: PYTHONPATH=scripts python3 scripts/import-bee.py path/to/bee.glb
 User-supplied Meshy GLB, checked by SHA-256. It carries a 45-bone Meshy
 SmartRig skeleton but no animation: the flight cycle is procedural
-(src/bee-model.js). Output keeps the skinned mesh, the skeleton with its bind
+(src/bee-model.ts). Output keeps the skinned mesh, the skeleton with its bind
 matrices and a 512 px JPEG copy of the texture (the original stays in
 assets/originals/guard/, outside Git). No geometry, UV or texture is changed.
 
