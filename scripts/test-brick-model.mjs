@@ -2,7 +2,7 @@
 // recoloured by the game, proportioned like the reference and stacked by rows.
 import assert from 'node:assert/strict';
 import * as T from '../vendor/three.module.min.js';
-import { BRICK_SOURCE, BRICK_POSITIONS, BRICK_INDICES } from '../src/meshy-brick-data.js';
+import { BRICK_SOURCE, BRICK_POSITIONS, BRICK_INDICES } from '../src/meshy-brick-data.ts';
 import {
   BRICK_DEPTH,
   BRICK_HEIGHT,

@@ -1,4 +1,4 @@
-import { SPIDERLING_DATA as D } from './spiderling-data.js';
+import { SPIDERLING_DATA as D } from './spiderling-data.ts';
 import { defineCreature, TAU } from './rigged-creature.ts';
 import type { CreatureHelpers } from './rigged-creature.ts';
 import { walkLegs, groundPresentation, REST_PHASES } from './walker-gait.ts';

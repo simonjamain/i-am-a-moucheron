@@ -7,7 +7,7 @@ import { createGraphics } from '../src/graphics.js';
 import { ackermannAngle, animateDrivenWheels, animateRollingWheels } from '../src/castor-wheels.ts';
 import { wheelSteering } from '../src/castor-physics.ts';
 import { MODEL_UNIT } from '../src/physics-world.ts';
-import { MODEL_DATA } from '../src/meshy-flaktruck-data.js';
+import { MODEL_DATA } from '../src/meshy-flaktruck-data.ts';
 import {
   PIVOT_MODEL_Z,
   PIVOT_Z,

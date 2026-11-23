@@ -4,7 +4,7 @@
 //
 //   node scripts/rig-tank-gun.mjs [--dry-run]
 //
-// Works on the generated `src/meshy-tank-data.js` (already split by split-vehicle-parts.mjs): no
+// Works on the generated `src/meshy-tank-data.ts` (already split by split-vehicle-parts.mjs): no
 // triangle, UV or texture changes, islands only change node and frame. Refuses a module that
 // already has a `cannonBarrel`: restore it from git to redo.
 import { readFileSync, writeFileSync } from 'node:fs';
@@ -52,7 +52,7 @@ export function rigGun(data) {
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1]).href) {
-  const file = 'src/meshy-tank-data.js';
+  const file = 'src/meshy-tank-data.ts';
   const { MODEL_DATA } = await import(pathToFileURL(file).href.replace('file:///', 'file:///'));
   const result = rigGun(MODEL_DATA);
   const source = readFileSync(file, 'utf8').split('\n');

@@ -1,4 +1,4 @@
-import { MIDGE_DATA as D } from './midge-data.js';
+import { MIDGE_DATA as D } from './midge-data.ts';
 import { defineCreature, TAU } from './rigged-creature.ts';
 import type { CreatureHelpers, CreaturePose, CreatureRig } from './rigged-creature.ts';
 import type * as THREE from 'three';

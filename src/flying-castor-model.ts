@@ -1,4 +1,4 @@
-import { MODEL_DATA } from './meshy-flying-castor-data.js';
+import { MODEL_DATA } from './meshy-flying-castor-data.ts';
 import { texturedMeshyParts } from './meshy-texture.ts';
 import type * as THREE from 'three';
 import type { Three } from './types.ts';

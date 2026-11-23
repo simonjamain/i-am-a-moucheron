@@ -30,7 +30,7 @@ positions = read(p['attributes']['POSITION'])
 indices = read(p['indices'])
 meta = {'sourceTask': TASK, 'sourceSha256': SOURCE_SHA256, 'referenceSha256': REFERENCE_SHA256,
         'up': 'y', 'triangles': len(indices)//3, 'vertices': len(positions)//3}
-Path('src/meshy-brick-data.js').write_text(
+Path('src/meshy-brick-data.ts').write_text(
     '// Meshy image-to-3D task ' + TASK + ' (untextured 2x4 brick, studs along +Y); generated static geometry.\n'
     'export const BRICK_SOURCE=' + json.dumps(meta, separators=(',',':')) + ';\n'
     'export const BRICK_POSITIONS=' + json.dumps([round(x,5) for x in positions], separators=(',',':')) + ';\n'

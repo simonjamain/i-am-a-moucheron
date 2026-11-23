@@ -37,7 +37,7 @@ SHA-256 des GLB sources, dans l'ordre du tableau :
 ## Import, textures et mouvements
 
 `python3 scripts/import-meshy-textures.py NOM SOURCE.glb` recrée
-`src/meshy-NOM-data.js` pour `stuka`, `spitfire`, `tank` ou `flaktruck`.
+`src/meshy-NOM-data.ts` pour `stuka`, `spitfire`, `tank` ou `flaktruck`.
 Dépendances Python hors ligne : NumPy, trimesh, Pillow (SciPy requis pour H2).
 Les positions et UV sont quantifiés sur 16 bits, les faces restent indexées
 avec leurs séparations de texture. Le matériau utilise la carte de couleur d'origine,
@@ -123,7 +123,7 @@ sont stockés alignés sur −Z, ce qu'attend `aimGun`, et leurs bouches
   canon sculpté) ; envergure 7,7 conservée. Les anciennes bombes décoratives sous
   les ailes sont retirées. `src/meshy-fleet.js` (coques statiques) est supprimé.
 
-L'importeur écrit aussi `src/vehicle-anchors.js`, partagé par le client et le
+L'importeur écrit aussi `src/vehicle-anchors.ts`, partagé par le client et le
 serveur, pour que la physique suive le modèle : pivot et longueur du canon du T3
 (`tankBarrelOrigin`), attelage, pivot et longueur des canons du D2
 (`mobileBarrelOrigin`, `trailerGunPivot`), enveloppes de collision tracteur et
@@ -131,7 +131,7 @@ remorque (`sweptVehicle`, points de contact de `truck-physics.ts`), origines des
 et missiles du H2 (`heliWeaponOrigin`). Ces points ont changé avec les nouvelles
 proportions : les obus et roquettes partent des bouches dessinées.
 
-Depuis la version 363, `scripts/split-vehicle-parts.mjs` extrait du module `src/meshy-flaktruck-data.js`
+Depuis la version 363, `scripts/split-vehicle-parts.mjs` extrait du module `src/meshy-flaktruck-data.ts`
 les roues du D2 en pièces du rig (six de tracteur, quatre de remorque) pour qu'elles tournent
 et braquent (et, depuis la 365, du module du T3 ses chenilles, galets, barbotins et pignons) ; aucun triangle, UV ni texture ne change, le module garde l'empreinte de sa
 source et le script écrit sa trace dans son en-tête (voir
@@ -152,7 +152,7 @@ Le GLB est un seul maillage, mais **chaque pièce est un îlot séparé** (158 �
 
 - reconnaît les six pneus (îlots bas, plus de 60 faces, un par côté) et les cinq pièces de la tourelle de toit ; l'import échoue si ce compte diffère ;
 - tourne le modèle de −X (avant Meshy) vers −Z (avant du jeu), sans miroir, et l'échelonne à **6,1 unités de long** (longueur de l'ancien Castor) ; le contact des roues est à −0,8 (hauteur `gear`) ;
-- enregistre chaque pièce autour de son pivot dans `src/meshy-castor-data.js` : `body`, `wheel0`…`wheel5` (moyeu de chaque pneu, axe X, rayon 0,568 → `CASTOR_WHEEL_RADIUS` 0,57), `turret` (couronne, lacet autour de Y) et `gun` (tête et canon, élévation autour de X, au centre de la tête), avec la bouche à l'extrémité du canon ;
+- enregistre chaque pièce autour de son pivot dans `src/meshy-castor-data.ts` : `body`, `wheel0`…`wheel5` (moyeu de chaque pneu, axe X, rayon 0,568 → `CASTOR_WHEEL_RADIUS` 0,57), `turret` (couronne, lacet autour de Y) et `gun` (tête et canon, élévation autour de X, au centre de la tête), avec la bouche à l'extrémité du canon ;
 - conserve tous les triangles et UV d'origine ; seule la texture est réduite en JPEG 1 024 px (module de 449 Ko, contre 3,3 Mo pour les trois anciens).
 
 `src/castor-model.ts` crée ces pivots par Castor et partage géométries, matériau et atlas entre exemplaires. `scripts/test-castor-meshy.mjs` vérifie l'empreinte, les triangles, l'encombrement, le contact au sol, les moyeux et la bouche. Le mât caméra et l'antenne restent fixes dans la coque.
@@ -182,7 +182,7 @@ scripts/import-meshy-flying-castor.py SOURCE.glb` vérifie l'empreinte, puis :
 - tourne le modèle de −X vers −Z (avant du jeu), sans miroir, l'échelonne à
   **9 unités de long** et place le contact des patins à −1 (hauteur `gear`) ;
 - enregistre `body`, `rotorFront` et `rotorRear` dans
-  `src/meshy-flying-castor-data.js`, chaque rotor autour de son axe vertical
+  `src/meshy-flying-castor-data.ts`, chaque rotor autour de son axe vertical
   (centre du moyeu, base du rotor) ;
 - conserve les 2 767 triangles et leurs UV ; seule la texture passe en JPEG
   1 024 px (243 Ko ; module de 390 Ko).

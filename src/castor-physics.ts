@@ -1,6 +1,6 @@
 import type { DynamicRayCastVehicleController, RigidBody } from '@dimforge/rapier3d-compat';
 import { drawColliders, drawWheels, type DebugRig, type DebugSink } from './physics-debug.ts';
-import { MODEL_DATA } from './meshy-castor-data.js';
+import { MODEL_DATA } from './meshy-castor-data.ts';
 import { MAP } from './scale.ts';
 import { ackermannAngle } from './castor-wheels.ts';
 import type { VehicleProfile } from './fleet.ts';

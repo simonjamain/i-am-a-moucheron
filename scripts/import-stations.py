@@ -51,7 +51,7 @@ def main():
     image.resize((1024, 1024), Image.Resampling.LANCZOS).save(out, 'JPEG', quality=88, optimize=True)
     data = {'source': source.name, 'sourceSha256': sha, 'triangles': len(faces), 'bounds': np.round([points.min(0), points.max(0)], 4).tolist(), 'parts': parts,
         'texture': 'data:image/jpeg;base64,' + base64.b64encode(out.getvalue()).decode()}
-    target = Path(f'src/meshy-{kind}-data.js')
+    target = Path(f'src/meshy-{kind}-data.ts')
     target.write_text('// Imported by scripts/import-stations.py; source geometry and UV retained.\n// prettier-ignore\nexport const MODEL_DATA = ' + json.dumps(data, separators=(',', ':')) + ';\n')
     print(kind, sha, len(faces), 'triangles', len(out.getvalue()), 'atlas bytes', target.stat().st_size, 'JS bytes')
 

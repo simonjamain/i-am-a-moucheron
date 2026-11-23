@@ -1,4 +1,4 @@
-import { SPIDER_DATA as D } from './spider-data.js';
+import { SPIDER_DATA as D } from './spider-data.ts';
 import { defineCreature, TAU } from './rigged-creature.ts';
 import type { CreatureHelpers } from './rigged-creature.ts';
 import { walkLegs, groundPresentation, REST_PHASES } from './walker-gait.ts';

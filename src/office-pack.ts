@@ -7,7 +7,7 @@ import type { Three } from './types.ts';
 import type { Prop, OfficeModel } from './office-props.ts';
 import { LAMP_LOOK } from './office-lights.ts';
 import { texturedMeshyParts, type MeshyTexturedData } from './meshy-texture.ts';
-import { MODEL_DATA } from './office-pack-data.js';
+import { MODEL_DATA } from './office-pack-data.ts';
 
 const DATA = MODEL_DATA as unknown as MeshyTexturedData;
 

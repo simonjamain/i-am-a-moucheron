@@ -3,7 +3,7 @@
 // ellipsoid hits (src/mosquito-model.ts, src/flyer-batch.js, scripts/import-mosquito.py).
 import assert from 'node:assert/strict';
 import * as T from '../vendor/three.module.min.js';
-import { MOSQUITO_DATA } from '../src/mosquito-data.js';
+import { MOSQUITO_DATA } from '../src/mosquito-data.ts';
 import {
   MOSQUITO,
   MOSQUITO_BONES,

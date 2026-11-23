@@ -1,4 +1,4 @@
-import { RAT_DATA as D } from './rat-data.js';
+import { RAT_DATA as D } from './rat-data.ts';
 import { defineCreature } from './rigged-creature.ts';
 import type { CreaturePose } from './rigged-creature.ts';
 import { groundPresentation, REST_PHASES } from './walker-gait.ts';

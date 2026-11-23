@@ -1,4 +1,4 @@
-import { MOSQUITO_DATA as D } from './mosquito-data.js';
+import { MOSQUITO_DATA as D } from './mosquito-data.ts';
 import { defineCreature, TAU } from './rigged-creature.ts';
 import type { CreatureHelpers, CreaturePose } from './rigged-creature.ts';
 import type * as THREE from 'three';

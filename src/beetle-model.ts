@@ -1,4 +1,4 @@
-import { BEETLE_DATA as D } from './beetle-data.js';
+import { BEETLE_DATA as D } from './beetle-data.ts';
 import { defineCreature, TAU } from './rigged-creature.ts';
 import type { CreatureHelpers, CreaturePose } from './rigged-creature.ts';
 import type * as THREE from 'three';

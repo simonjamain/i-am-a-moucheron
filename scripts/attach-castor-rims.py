@@ -7,7 +7,7 @@ import json
 from pathlib import Path
 import numpy as np
 
-path = Path('src/meshy-castor-data.js')
+path = Path('src/meshy-castor-data.ts')
 text = path.read_text()
 prefix, raw = text.split('export const MODEL_DATA = ', 1)
 data = json.loads(raw.rstrip().removesuffix(';'))

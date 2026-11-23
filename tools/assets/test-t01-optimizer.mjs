@@ -36,7 +36,7 @@ const run = (...args) => {
 await mkdir(OUT, { recursive: true });
 const summary = [];
 for (const kind of kinds) {
-  const text = await readFile(`${SRC}/meshy-t01-${kind}-data.js`, 'utf8');
+  const text = await readFile(`${SRC}/meshy-t01-${kind}-data.ts`, 'utf8');
   const marker = 'export const MODEL_DATA = ';
   assert.ok(text.includes(marker));
   const data = JSON.parse(text.slice(text.indexOf(marker) + marker.length).trim().replace(/;$/, ''));
