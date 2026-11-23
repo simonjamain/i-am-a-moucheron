@@ -4,42 +4,57 @@ import { createOffice } from '../src/office.ts';
 import { createGraphics } from '../src/graphics.js';
 import { OFFICE_LAYOUT } from '../src/layout.ts';
 import {
-  officeFogCeiling,
+  OFFICE_HAZE,
   officeFogOpacity,
   fogOpticalDepth,
   installOfficeFog,
 } from '../src/office-fog.ts';
 import { stepHelicopter } from '../src/helicopter.js';
 import { VEHICLES, vehiclePad } from '../src/fleet.ts';
+import { LAYOUTS, LAYOUT_ROOM } from '../src/layouts.ts';
 
 const scene = new T.Scene();
-const office = createOffice(T, scene, createGraphics(T, scene));
-const colliderCount = office.colliders.length;
-const backdrop = officeFogCeiling(T, OFFICE_LAYOUT.bounds);
-scene.add(backdrop);
+createOffice(T, scene, createGraphics(T, scene));
 scene.updateMatrixWorld(true);
+// The room is closed by pack wall modules on all four sides (no backdrop box):
+// every horizontal view at insect height meets a wall, south included.
+const walls = [];
+scene.traverse((o) => o.isMesh && walls.push(o));
 const origin = new T.Vector3(0, 0.95, 0);
-// These rays go through the cloud layer on each side, rather than escaping
-// through the open south to the clear, unfogged scene background.
 for (const [x, z] of [
-  [0, -3.6],
-  [4.2, 0],
-  [0, 3.6],
-  [-4.2, 0],
+  [0, -1],
+  [1, 0],
+  [0, 1],
+  [-1, 0],
+  [0.7, 0.7],
+  [-0.7, 0.7],
 ]) {
-  const direction = new T.Vector3(x, 2.65, z).sub(origin).normalize();
-  const hit = new T.Raycaster(origin, direction).intersectObject(backdrop)[0];
-  assert.ok(hit, `cloud background must cover direction ${x},${z}`);
-  assert.ok(fogOpticalDepth(origin.y, hit.point.y, hit.distance) > 2);
+  const hit = new T.Raycaster(origin, new T.Vector3(x, 0, z).normalize()).intersectObjects(
+    walls,
+  )[0];
+  assert.ok(hit, `a wall closes direction ${x},${z}`);
+  assert.ok(hit.distance < 6.2, `wall at ${hit.distance} m in direction ${x},${z}`);
 }
-assert.equal(backdrop.material.fog, true);
-assert.equal(backdrop.userData.projectileSolid, false);
-assert.equal(office.colliders.length, colliderCount, 'atmosphere adds no solid surface');
 assert.equal(
-  new T.Raycaster(origin, new T.Vector3(0, -1, 0)).intersectObject(backdrop).length,
-  0,
-  'atmosphere has no floor',
+  scene.getObjectByName('office-fog-ceiling'),
+  undefined,
+  'no coloured backdrop box around the room',
 );
+const { x: X, z: Z, wall: H } = LAYOUT_ROOM;
+for (const layout of LAYOUTS) {
+  const south = layout.props.filter((p) => p.model === 'Wall' && p.z > Z);
+  assert.equal(south.length, 7, layout.id + ': seven south wall modules');
+  assert.ok(
+    layout.shellSolids.some((b) => b.min.z === Z && b.max.y === H && b.min.x < -X && b.max.x > X),
+    layout.id + ': south wall solid on the room boundary',
+  );
+  assert.equal(
+    layout.props.filter((p) => p.model === 'Wall_Corner').length,
+    4,
+    layout.id + ': four corners',
+  );
+}
+assert.equal(OFFICE_HAZE, '#ffffff', 'background above the walls is the haze itself');
 assert.equal(OFFICE_LAYOUT.bounds.ceiling, 3.95, 'one room metre above the former flight limit');
 assert.equal(officeFogOpacity(2), 0, 'layer does not move down');
 assert.ok(officeFogOpacity(2.8) > 0.1, 'layer does not move up with the flight limit');
@@ -59,5 +74,5 @@ for (const [height, alive] of [
   }
 }
 console.log(
-  'Clouds: four background directions, no solid floor, fixed cloud height and +1 m flight limit',
+  'Clouds: room closed on four sides, haze background, fixed cloud height and +1 m flight limit',
 );

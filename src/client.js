@@ -7,7 +7,7 @@ import { sweptHitsDecor } from '/office-collision.js';
 import { makeServiceStation, animateRadar, makeInstallationCollider } from '/station-model.js';
 import { ReloadHUD, seatReloads, heavyReadyAt, heavyLane, reloadProgress } from '/reload-hud.js';
 import { makeBed } from '/bed-model.js';
-import { officeFogOpacity, installOfficeFog, officeFogCeiling } from '/office-fog.js';
+import { officeFogOpacity, installOfficeFog, OFFICE_HAZE } from '/office-fog.js';
 import { makeFortificationStation } from '/fortification-model.js';
 import { hullGunDirection } from '/hull-gun.js';
 import { placementFacing } from '/placement-aim.js';
@@ -236,10 +236,9 @@ import { readPad, neutralPad } from '/input.js';
 const $ = (id) => document.getElementById(id),
   canvas = $('view'),
   scene = new T.Scene();
-scene.background = new T.Color('#829f91');
+scene.background = new T.Color(OFFICE_HAZE);
 installOfficeFog(T);
-scene.fog = new T.FogExp2('#ffffff', 0.018);
-scene.add(officeFogCeiling(T, OFFICE_LAYOUT.bounds));
+scene.fog = new T.FogExp2(OFFICE_HAZE, 0.018);
 // Issue #104: no visible audio controls. Sound starts at the standard volume as
 // soon as the browser allows it (first user gesture); old saved settings ignored.
 const audioSettings = { volume: 0.55, muted: false };

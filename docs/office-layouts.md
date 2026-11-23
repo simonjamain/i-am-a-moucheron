@@ -19,7 +19,7 @@ room, quel que soit son choix. Le dernier choix est mémorisé dans le navigateu
 | `bureau-direction` | Corbeille posée sur un bureau de direction ; le sol y accède par-dessous (bureaux ouverts côté pièce). |
 
 Tous : 3 trous au sol et 4 bouches d'aération sur les murs gauche, droit ou du
-fond (la pièce n'a pas de mur avant) ; passages bouchables de 0,5 à 0,9 m ; sol
+fond (le mur avant, au sud, reste plein) ; passages bouchables de 0,5 à 0,9 m ; sol
 et air visent la même corbeille. Les durées d'arrivée en l'air valent environ
 3 fois celles du sol : chaque vent fait un tour de pièce (circuit à ≈ 2 m de
 haut, sous la couche de nuages) avant de plonger vers la corbeille.
@@ -43,7 +43,8 @@ reprennent leurs volumes de jeu avec les mêmes meubles, en version plus sobre.
   Les volumes de jeu s'adaptent aux meubles, jamais l'inverse (bureau 1,51 × 0,76 m,
   plateau à 0,74 m ; bibliothèque 1,8 m ; panneau de box 1,4 m).
 - **Murs.** Modules du pack, face intérieure exactement sur les limites de la pièce
-  (x = ±4,2, z = −3,6), 2,7 m de haut avec plinthes ; fenêtres au fond (`windows`
+  (x = ±4,2, z = ±3,6), 2,7 m de haut avec plinthes ; la pièce est fermée sur ses
+  quatre côtés (mur sud de sept modules pleins, quatre angles) ; fenêtres au fond (`windows`
   choisit les modules), une porte de bureau fermée dans un module à elle (`door`),
   loin des entrées. Le haut des murs se fond dans les nuages : `OFFICE_CLOUD_TOP`
   vaut la hauteur des murs (2,7 m) et le voile commence toujours à 2,2125 m, donc

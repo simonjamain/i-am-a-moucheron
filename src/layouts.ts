@@ -269,7 +269,7 @@ function asFurniture(p: PropSpec): Furniture {
 
 // ---- room shell: wall modules of the office pack ----------------------------
 // Each wall is a row of 1.2 m modules whose body face is exactly on the room
-// boundary (x = ±4.2, z = −3.6). The pack's walls are 0.112 m thick with a
+// boundary (x = ±4.2, z = ±3.6): the room is closed on all four sides. The pack's walls are 0.112 m thick with a
 // 0.017 m skirting board (0.1 m high) on each side. Back-wall modules without a
 // vent are windows, one module holds the closed office door, vents are flush on
 // the wall face, centred on their air entry.
@@ -335,15 +335,26 @@ function roomShell(
       ghost: true,
     });
   }
-  for (const sx of [-1, 1])
+  // South wall: plain modules (no window, door or vent), facing the room.
+  for (let i = 0; i < 7; i++)
     props.push({
-      model: 'Wall_Corner',
-      x: sx * (X + WALL_BODY),
+      model: 'Wall',
+      x: -X + MODULE / 2 + i * MODULE,
       y: 0,
-      z: -Z - WALL_BODY,
-      yaw: 0,
+      z: Z + WALL_BODY,
+      yaw: FACE.north,
       ghost: true,
     });
+  for (const sx of [-1, 1])
+    for (const sz of [-1, 1])
+      props.push({
+        model: 'Wall_Corner',
+        x: sx * (X + WALL_BODY),
+        y: 0,
+        z: sz * (Z + WALL_BODY),
+        yaw: sz < 0 ? 0 : Math.PI,
+        ghost: true,
+      });
   if (door) {
     const doorProp: Prop =
       door.wall === 'back'
@@ -366,9 +377,11 @@ function roomShell(
     box(-X - T, 0, -Z - T, X + T, H, -Z),
     box(-X - T, 0, -Z, -X, H, Z),
     box(X, 0, -Z, X + T, H, Z),
+    box(-X - T, 0, Z, X + T, H, Z + T),
     box(-X, 0, -Z, X, SKIRTING_H, -Z + SKIRTING),
-    box(-X, 0, -Z + SKIRTING, -X + SKIRTING, SKIRTING_H, Z),
-    box(X - SKIRTING, 0, -Z + SKIRTING, X, SKIRTING_H, Z),
+    box(-X, 0, Z - SKIRTING, X, SKIRTING_H, Z),
+    box(-X, 0, -Z + SKIRTING, -X + SKIRTING, SKIRTING_H, Z - SKIRTING),
+    box(X - SKIRTING, 0, -Z + SKIRTING, X, SKIRTING_H, Z - SKIRTING),
   ];
   return { props, solids };
 }
