@@ -55,8 +55,14 @@ const {
   groundNavigationActive,
   layout,
   leakedPower,
+  staff,
   ...comparable
 } = optimized;
+// Saint Pierre and the guard arrived after the baseline (docs/purgatory-sky.md): alive.
+assert.deepEqual(staff, {
+  saint: { hp: 10000, down: false },
+  guard: { hp: 10000, down: false },
+});
 // Plans arrived after the baseline: the room carries its plan id, and the unused
 // raid duration left the snapshot.
 assert.equal(layout, 'diagonale', 'a default room uses the default plan');
