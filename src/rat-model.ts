@@ -1,6 +1,27 @@
 import { RAT_DATA as D } from './rat-data.js';
 import { defineCreature } from './rigged-creature.ts';
+import type { CreaturePose } from './rigged-creature.ts';
 import { groundPresentation, REST_PHASES } from './walker-gait.ts';
+import type * as THREE from 'three';
+import type { Three } from './types.ts';
+
+/** A bone's model-space rotation and position (one clip key, or the bind pose). */
+export interface RatBoneTransform {
+  q: THREE.Quaternion;
+  p: THREE.Vector3;
+}
+/** A hind toe: bone index and its dominant-weight vertices around the toe pivot. */
+interface RatToe {
+  index: number;
+  points: THREE.Vector3[];
+}
+interface RatClip {
+  frames: RatBoneTransform[][];
+  bind: RatBoneTransform[];
+  rest: THREE.Vector3[];
+  toes: RatToe[];
+  signs?: number[];
+}
 
 // Rat enemy: user-supplied Meshy "Low Poly Mouse" with its 27-bone skeleton
 // and its own walking clip (scripts/import-rat.py). Unlike the insects, whose
@@ -44,10 +65,10 @@ export const RAT_BONES = Object.freeze({
   ],
 });
 
-const bytes = (b64) => Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
-const clipCache = new WeakMap();
+const bytes = (b64: string) => Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+const clipCache = new WeakMap<Three, RatClip>();
 // Decoded clip and bind transforms, per three.js instance.
-function clip(T) {
+function clip(T: Three): RatClip {
   let c = clipCache.get(T);
   if (c) return c;
   const raw = bytes(D.clip.transforms);
@@ -82,7 +103,7 @@ function clip(T) {
   const joints = bytes(D.joints);
   const toes = RAT_BONES.paws.slice(2).map((chain) => {
     const i = D.bones.findIndex((b) => b.name === chain[3]);
-    const points = [];
+    const points: THREE.Vector3[] = [];
     for (let v = 0; v < joints.length / 4; v++)
       if (joints[v * 4] === i)
         points.push(new T.Vector3().fromArray(positions, v * 3).sub(bind[i].p));
@@ -95,7 +116,7 @@ function clip(T) {
 
 // Model-space world transforms of every bone at loop phase t, as in the clip
 // (key interpolation).
-export function ratClipWorld(T, t) {
+export function ratClipWorld(T: Three, t: number): RatBoneTransform[] {
   const { frames } = clip(T);
   const x = (((t % 1) + 1) % 1) * frames.length;
   const a = Math.floor(x) % frames.length,
@@ -108,7 +129,13 @@ export function ratClipWorld(T, t) {
 }
 
 // Lowest toe point (model y) for a toe world rotation q and pivot p.
-function toeLow(T, toe, bindQ, q, p) {
+function toeLow(
+  T: Three,
+  toe: RatToe,
+  bindQ: THREE.Quaternion,
+  q: THREE.Quaternion,
+  p: THREE.Vector3,
+): number {
   const turn = q.clone().multiply(bindQ.clone().invert());
   const v = new T.Vector3();
   let low = Infinity;
@@ -117,7 +144,13 @@ function toeLow(T, toe, bindQ, q, p) {
 }
 // Smallest turn about the model X axis, in direction `sign`, that lifts a toe
 // above the sole plane (angle Infinity when none does).
-function liftToe(T, toe, bindQ, w, sign) {
+function liftToe(
+  T: Three,
+  toe: RatToe,
+  bindQ: THREE.Quaternion,
+  w: RatBoneTransform,
+  sign: number,
+): { angle: number; q: THREE.Quaternion } {
   if (toeLow(T, toe, bindQ, w.q, w.p) >= RAT_MODEL.sole) return { angle: 0, q: w.q };
   const axis = new T.Vector3(sign, 0, 0);
   let best = { angle: Infinity, q: w.q },
@@ -135,12 +168,12 @@ function liftToe(T, toe, bindQ, w, sign) {
 // always the same way for a given paw (the one needing the least over the
 // clip). The front toes whirl too fast during their swing for a smooth fix;
 // they keep the clip and dip a little into the ground at lift-off.
-export function ratWorld(T, t) {
+export function ratWorld(T: Three, t: number): RatBoneTransform[] {
   const c = clip(T);
   const { bind, toes } = c;
   if (!c.signs)
     c.signs = toes.map((toe) => {
-      const worst = (sign) =>
+      const worst = (sign: number) =>
         Math.max(
           ...c.frames.map(
             (frame) => liftToe(T, toe, bind[toe.index].q, frame[toe.index], sign).angle,
@@ -151,7 +184,7 @@ export function ratWorld(T, t) {
   const world = ratClipWorld(T, t);
   toes.forEach((toe, k) => {
     const w = world[toe.index];
-    w.q = liftToe(T, toe, bind[toe.index].q, w, c.signs[k]).q;
+    w.q = liftToe(T, toe, bind[toe.index].q, w, c.signs![k]).q;
   });
   return world;
 }
@@ -159,11 +192,11 @@ export function ratWorld(T, t) {
 // inverse(parent bind) * delta * bind, so the world rotation of a bone is the
 // product of its ancestors' deltas times its bind rotation; positions are
 // offsets of the local translation expressed in the parent's bind axes.
-export function ratWalkPose(T, t) {
+export function ratWalkPose(T: Three, t: number): CreaturePose {
   const { bind, rest } = clip(T);
   const world = ratWorld(T, t);
   const total = world.map((w, i) => w.q.clone().multiply(bind[i].q.clone().invert()));
-  const pose = {};
+  const pose: CreaturePose = {};
   D.bones.forEach((bone, i) => {
     const parent = bone.parent;
     const rotation =

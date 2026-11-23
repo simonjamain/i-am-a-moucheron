@@ -1,5 +1,8 @@
 import { BEE_DATA as D } from './bee-data.js';
 import { defineCreature, TAU } from './rigged-creature.ts';
+import type { CreatureHelpers, CreaturePose } from './rigged-creature.ts';
+import type * as THREE from 'three';
+import type { Three } from './types.ts';
 
 // Bee (`guard`): user-supplied Meshy "Angry Low Poly Bee" with its 45-bone
 // SmartRig (no clip). Weights are cleaned at import (scripts/import-bee.py):
@@ -53,7 +56,7 @@ export const BEE_BONES = Object.freeze({
 });
 
 // Presentation matrix: model metres (feet at y = 0, head +Z) -> game units.
-export function presentation(T) {
+export function presentation(T: Three): THREE.Matrix4 {
   const [x, y, z] = BEE_MODEL.centre;
   const s = BEE_MODEL.scale;
   return new T.Matrix4()
@@ -64,8 +67,8 @@ export function presentation(T) {
 
 // Bind-pose span of a wing pair (model space): hinge -> farthest vertex, and
 // the hinge itself.
-const spans = new WeakMap();
-export function wingSpan(T, side) {
+const spans = new WeakMap<Three, THREE.Vector3[]>();
+export function wingSpan(T: Three, side: number): THREE.Vector3 {
   let list = spans.get(T);
   if (!list) {
     const geometry = BEE.geometry(T);
@@ -90,11 +93,15 @@ export function wingSpan(T, side) {
 }
 
 // Model-space rotation deltas of the flight cycle at loop phase t in [0, 1).
-export function beeFlightPose(T, t, { euler: e } = BEE.helpers(T)) {
+export function beeFlightPose(
+  T: Three,
+  t: number,
+  { euler: e }: Pick<CreatureHelpers, 'euler'> = BEE.helpers(T),
+): CreaturePose {
   const F = BEE_FLIGHT;
   const beat = TAU * F.beats * t;
   const slow = TAU * t;
-  const pose = {};
+  const pose: CreaturePose = {};
   const stroke = Math.cos(beat);
   const elevation = F.wingDown + ((F.wingUp - F.wingDown) * (1 + stroke)) / 2;
   const sweep = F.wingSweep - F.wingSweepRange * Math.sin(beat);

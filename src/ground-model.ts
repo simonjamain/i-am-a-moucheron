@@ -2,9 +2,28 @@ import { splitBarricade } from './ground-defense.ts';
 import { createBrickWall } from './brick-wall.ts';
 import { createSentryModel } from './sentry-model.ts';
 import { createGatlingModel } from './gatling-model.ts';
+import type { WallStructure } from './brick-rules.ts';
+import type * as THREE from 'three';
+import type { Three, Vec2 } from './types.ts';
+
+type WallEnds = Pick<WallStructure, 'a' | 'b' | 'hp'>;
+
+/** A placed structure or a placement preview; the fields read depend on `kind`
+ * (sugar/sentry/gatling: position, angle, radius; walls and sticky: a, b, hp). */
+export interface GroundModelStructure {
+  kind: string;
+  position: readonly number[];
+  angle?: number;
+  radius: number;
+  a: Vec2;
+  b: Vec2;
+  hp: number;
+  id?: string | number;
+  wholeWall?: boolean;
+}
 
 // One model factory for both placed structures and placement previews.
-export function createGroundModel(T, structure) {
+export function createGroundModel(T: Three, structure: GroundModelStructure): THREE.Group {
   const group = new T.Group();
   if (structure.kind === 'sugar') {
     const [x, z] = structure.position;
@@ -57,7 +76,10 @@ export function createGroundModel(T, structure) {
     for (const segment of structure.wholeWall
       ? [structure]
       : splitBarricade(structure.a, structure.b, structure.id || 'preview'))
-      group.add(createBrickWall(T, { ...segment, hp: structure.hp }));
+      group.add(
+        // splitBarricade returns plain number[] endpoints; brick walls read [x, z].
+        createBrickWall(T, { ...segment, hp: structure.hp } as WallEnds),
+      );
   } else {
     const dx = structure.b[0] - structure.a[0];
     const dz = structure.b[1] - structure.a[1];

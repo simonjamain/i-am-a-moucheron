@@ -1,6 +1,12 @@
 import { ROACH_DATA as D } from './roach-data.js';
 import { defineCreature, TAU } from './rigged-creature.ts';
+import type { CreatureHelpers } from './rigged-creature.ts';
 import { walkLegs, groundPresentation, REST_PHASES } from './walker-gait.ts';
+import type { GaitHelpers, Pose } from './walker-gait.ts';
+import type { Three } from './types.ts';
+
+// lowest() of the creature helpers may return null; the gait expects a bone tip.
+type WalkerHelpers = CreatureHelpers & GaitHelpers;
 
 // Cockroach enemy: user-supplied Meshy "Low Poly Cockroach" with its 40-bone
 // SmartRig (no clip). Cross-leg weights are cleaned at import
@@ -44,11 +50,11 @@ export const ROACH_BONES = Object.freeze({
   ],
 });
 
-export function roachWalkPose(T, t, h) {
+export function roachWalkPose(T: Three, t: number, h: WalkerHelpers): Pose {
   const e = h.euler;
   const step = TAU * 2 * t; // two steps per cycle
   const cycle = TAU * t;
-  const pose = {};
+  const pose: Pose = {};
   // Low body: a slight bounce on each step, roll towards the planted tripod.
   const body = {
     pivot: h.bind(ROACH_BONES.root),

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { performance } from 'node:perf_hooks';
 import { MAP, INSECT_SCALE, enemySizeFactor, GROUND_FOOT_DEPTH } from '../src/scale.ts';
-import { enemyRoute, enemyRoutePosition } from '../src/routes.js';
+import { enemyRoute, enemyRoutePosition } from '../src/routes.ts';
 import { scaleRoster, DEFAULT_BALANCE } from '../src/balance.js';
 import {
   legacyCost,

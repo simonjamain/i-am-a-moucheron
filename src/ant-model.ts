@@ -1,6 +1,12 @@
 import { ANT_DATA as D } from './ant-data.js';
 import { defineCreature, TAU } from './rigged-creature.ts';
+import type { CreatureHelpers } from './rigged-creature.ts';
 import { walkLegs, groundPresentation, REST_PHASES } from './walker-gait.ts';
+import type { GaitHelpers, Pose } from './walker-gait.ts';
+import type { Three } from './types.ts';
+
+// lowest() of the creature helpers may return null; the gait expects a bone tip.
+type WalkerHelpers = CreatureHelpers & GaitHelpers;
 
 // Ant enemy: user-supplied Meshy "Red Ant Warrior" with its 52-bone SmartRig
 // (no clip). The walk is an alternating tripod gait: front-left, mid-right and
@@ -43,11 +49,11 @@ export const ANT_BONES = Object.freeze({
   ],
 });
 
-export function antWalkPose(T, t, h) {
+export function antWalkPose(T: Three, t: number, h: WalkerHelpers): Pose {
   const e = h.euler;
   const step = TAU * 2 * t; // two steps per cycle
   const cycle = TAU * t;
-  const pose = {};
+  const pose: Pose = {};
   // Body: small bounce on each step, slight roll towards the planted tripod.
   const body = {
     pivot: h.bind(ANT_BONES.root),

@@ -11,6 +11,41 @@ import {
   SERVICE_RADIUS,
   SERVICE_SECONDS,
 } from './logistics.ts';
+import type { AmmoLoad, Installation, SupplyBalance } from './logistics.ts';
+import type { GroundDefenseState } from './ground-defense-state.ts';
+
+/** The vehicle fields read and refilled by the paid service. */
+export interface ServicedVehicle {
+  type: string;
+  state: { p: readonly number[]; hp: number; engine?: number; wing?: number };
+  supplies: { servicing?: boolean; fuel: number; ammo: AmmoLoad; revision: number };
+}
+/** Installations that also hold ammunition and HP (fixed DCA guns, fortifications). */
+export interface ServicedInstallation extends Installation {
+  ammo?: number;
+  hp?: number;
+}
+interface ServiceSource {
+  p: readonly number[];
+  radius: number;
+}
+interface ServiceNeed {
+  cost: number;
+  apply: (fraction: number) => void;
+}
+interface ServiceJob {
+  owner: string;
+  needs: ServiceNeed[];
+  cost: number;
+  mark: () => void;
+}
+export interface PaidServiceResult {
+  dollars: number;
+  spent: number;
+  /** Dollars paid per kind of equipment (vehicle type, gun or wall kind). */
+  spentBy: Record<string, number>;
+  recipients: number;
+}
 
 export const SERVICE_RATES = Object.freeze({
   hp: 0.01,
@@ -21,7 +56,7 @@ export const SERVICE_RATES = Object.freeze({
   missile: 0.5,
 });
 
-export function ammoServiceRate(key) {
+export function ammoServiceRate(key: string): number {
   if (key === 'missile') return SERVICE_RATES.missile;
   if (key === 'bomb') return SERVICE_RATES.bomb;
   if (['rocket', 'he', 'ap', 'proximity'].includes(key)) return SERVICE_RATES.shell;
@@ -29,7 +64,10 @@ export function ammoServiceRate(key) {
 }
 
 // No landed/velocity checks: stations work for aircraft in flight.
-function serviceSources(installations, fleet) {
+function serviceSources(
+  installations: readonly Installation[],
+  fleet: readonly ServicedVehicle[],
+): ServiceSource[] {
   return [
     ...installations
       .filter((s) => s.kind === 'refuel')
@@ -40,7 +78,11 @@ function serviceSources(installations, fleet) {
   ];
 }
 
-export function withinService(v, installations, fleet = []) {
+export function withinService(
+  v: ServicedVehicle,
+  installations: readonly Installation[],
+  fleet: readonly ServicedVehicle[] = [],
+): boolean {
   if (v.state.hp <= 0) return false;
   if (isSupportVehicle(v.type)) return true;
   const sources = serviceSources(installations, fleet);
@@ -50,7 +92,7 @@ export function withinService(v, installations, fleet = []) {
 }
 
 // Max-min fairness by dollars spent per recipient, not by number of guns.
-export function fairServiceShares(needs, dollars) {
+export function fairServiceShares(needs: readonly number[], dollars: number): number[] {
   const shares = needs.map(() => 0);
   let budget = Math.max(0, Number.isFinite(dollars) ? dollars : 0);
   let active = needs
@@ -77,33 +119,38 @@ export function fairServiceShares(needs, dollars) {
 // Server-only transaction: all sources and consumers share the same room budget.
 // Called once per second by the authoritative room, never per client snapshot.
 export function advancePaidService(
-  fleet,
-  installations,
-  dollars,
-  balance = {},
-  seconds = 1,
-  groundDefense = null,
-) {
+  fleet: readonly ServicedVehicle[],
+  installations: readonly ServicedInstallation[],
+  dollars: number,
+  balance: Partial<SupplyBalance> = {},
+  seconds: number = 1,
+  groundDefense: Pick<GroundDefenseState, 'structures' | 'revision'> | null = null,
+): PaidServiceResult {
   const dt = Math.max(0, Math.min(5, Number.isFinite(seconds) ? seconds : 0));
-  const jobs = [];
+  const jobs: ServiceJob[] = [];
   for (const v of fleet) {
     v.supplies.servicing = withinService(v, installations, fleet);
     if (!v.supplies.servicing || !dt) continue;
-    const needs = [];
-    const maxHP = VEHICLES[v.type]?.maxHP || 100;
+    const needs: ServiceNeed[] = [];
+    const maxHP =
+      (VEHICLES as Record<string, { maxHP?: number } | undefined>)[v.type]?.maxHP || 100;
     const hp = Math.min(Math.max(0, maxHP - v.state.hp), maxHP * dt * 0.1);
     if (hp > 0) needs.push({ cost: hp * SERVICE_RATES.hp, apply: (f) => (v.state.hp += hp * f) });
-    for (const key of ['engine', 'wing']) {
+    for (const key of ['engine', 'wing'] as const) {
       if (!Number.isFinite(v.state[key])) continue;
-      const change = Math.min(Math.max(0, 1 - v.state[key]), dt * 0.1);
-      if (change > 0) needs.push({ cost: change, apply: (f) => (v.state[key] += change * f) });
+      const change = Math.min(Math.max(0, 1 - v.state[key]!), dt * 0.1);
+      if (change > 0) needs.push({ cost: change, apply: (f) => (v.state[key]! += change * f) });
     }
     const cap = FUEL_SECONDS * (balance.fuel ?? 1);
     const fuel = Math.min(Math.max(0, cap - v.supplies.fuel), (cap * dt) / SERVICE_SECONDS);
     if (fuel > 0)
       needs.push({ cost: fuel * SERVICE_RATES.fuel, apply: (f) => (v.supplies.fuel += fuel * f) });
     for (const [key, current] of Object.entries(v.supplies.ammo || {})) {
-      const capAmmo = ammoCapacity(v.type, key, balance.ammo === undefined ? null : balance);
+      const capAmmo = ammoCapacity(
+        v.type,
+        key,
+        balance.ammo === undefined ? null : (balance as SupplyBalance),
+      );
       const amount = Math.min(Math.max(0, capAmmo - current), (capAmmo * dt) / SERVICE_SECONDS);
       if (amount > 0)
         needs.push({
@@ -119,23 +166,28 @@ export function advancePaidService(
   if (dt) {
     const sources = serviceSources(installations, fleet);
     for (const gun of installations) {
-      const fortification = FORTIFICATIONS[gun.kind];
-      const capacity = fortification?.ammo ?? FIXED_DCA[gun.kind]?.ammo;
-      if (!capacity || !Number.isFinite(gun.ammo) || gun.ammo >= capacity || gun.hp === 0) continue;
+      const fortification = (FORTIFICATIONS as Record<string, { ammo: number } | undefined>)[
+        gun.kind
+      ];
+      const capacity =
+        fortification?.ammo ??
+        (FIXED_DCA as Record<string, { ammo: number } | undefined>)[gun.kind]?.ammo;
+      if (!capacity || !Number.isFinite(gun.ammo) || gun.ammo! >= capacity || gun.hp === 0)
+        continue;
       if (
         !sources.some(
           ({ p, radius }) => Math.hypot(gun.x - p[0], gun.y - p[1], gun.z - p[2]) <= radius,
         )
       )
         continue;
-      const quantity = Math.min(capacity - gun.ammo, (capacity * dt) / SERVICE_SECONDS);
+      const quantity = Math.min(capacity - gun.ammo!, (capacity * dt) / SERVICE_SECONDS);
       const cost =
         quantity * (gun.kind === 'dcaRapid' ? SERVICE_RATES.machineGun : SERVICE_RATES.shell);
       if (cost > 0)
         jobs.push({
           owner: gun.kind,
           cost,
-          needs: [{ cost, apply: (fraction) => (gun.ammo += quantity * fraction) }],
+          needs: [{ cost, apply: (fraction) => (gun.ammo! += quantity * fraction) }],
           mark: () => {},
         });
     }
@@ -152,23 +204,23 @@ export function advancePaidService(
         !['barricade', 'sentry', 'gatling', 'antitank'].includes(wall.kind) ||
         !Number.isFinite(wall.hp) ||
         !Number.isFinite(wall.maxHp) ||
-        wall.hp <= 0 ||
-        wall.hp >= wall.maxHp
+        wall.hp! <= 0 ||
+        wall.hp! >= wall.maxHp!
       )
         continue;
       if (
         !sources.some(({ p, radius }) =>
           isTurret(wall.kind) || wall.kind === 'antitank'
             ? Math.hypot(
-                wall.position[0] - p[0],
+                wall.position![0] - p[0],
                 p[1] - levelOf(wall) - 0.025,
-                wall.position[1] - p[2],
+                wall.position![1] - p[2],
               ) <= radius
-            : Math.hypot(distanceToSegment([p[0], p[2]], wall.a, wall.b), p[1] - 0.01) <= radius,
+            : Math.hypot(distanceToSegment([p[0], p[2]], wall.a!, wall.b!), p[1] - 0.01) <= radius,
         )
       )
         continue;
-      const amount = Math.min(wall.maxHp - wall.hp, wall.maxHp * dt * 0.1);
+      const amount = Math.min(wall.maxHp! - wall.hp!, wall.maxHp! * dt * 0.1);
       const cost = amount * SERVICE_RATES.hp;
       jobs.push({
         owner: wall.kind,
@@ -177,7 +229,7 @@ export function advancePaidService(
           {
             cost,
             apply: (fraction) => {
-              wall.hp = Math.min(wall.maxHp, wall.hp + amount * fraction);
+              wall.hp = Math.min(wall.maxHp!, wall.hp! + amount * fraction);
               wallsChanged = true;
             },
           },
@@ -186,21 +238,21 @@ export function advancePaidService(
       });
     }
     for (const sentry of groundDefense.structures) {
-      if (!isTurret(sentry.kind) || sentry.hp <= 0) continue;
+      if (!isTurret(sentry.kind) || sentry.hp! <= 0) continue;
       const capacity = turretSpec(sentry.kind).ammo;
-      if (sentry.ammo >= capacity) continue;
+      if (sentry.ammo! >= capacity) continue;
       if (
         !sources.some(
           ({ p, radius }) =>
             Math.hypot(
-              sentry.position[0] - p[0],
+              sentry.position![0] - p[0],
               p[1] - levelOf(sentry) - 0.025,
-              sentry.position[1] - p[2],
+              sentry.position![1] - p[2],
             ) <= radius,
         )
       )
         continue;
-      const amount = Math.min(capacity - sentry.ammo, (capacity * dt) / SERVICE_SECONDS);
+      const amount = Math.min(capacity - sentry.ammo!, (capacity * dt) / SERVICE_SECONDS);
       const cost = amount * SERVICE_RATES.machineGun;
       if (cost > 0)
         jobs.push({
@@ -210,8 +262,8 @@ export function advancePaidService(
             {
               cost,
               apply: (fraction) => {
-                sentry.ammo += amount * fraction;
-                groundDefense.revision++;
+                sentry.ammo! += amount * fraction;
+                groundDefense!.revision++;
               },
             },
           ],
@@ -225,7 +277,7 @@ export function advancePaidService(
   );
   let spent = 0;
   // Dollars paid per kind of equipment (vehicle type, gun or wall kind): statistics.
-  const spentBy = {};
+  const spentBy: Record<string, number> = {};
   for (const [index, job] of jobs.entries()) {
     const paid = Math.min(job.cost, shares[index]);
     if (paid <= 0) continue;
@@ -234,7 +286,7 @@ export function advancePaidService(
     spent += paid;
     if (job.owner) spentBy[job.owner] = (spentBy[job.owner] || 0) + paid;
   }
-  if (wallsChanged) groundDefense.revision++;
+  if (wallsChanged) groundDefense!.revision++;
   return {
     dollars: Math.round((dollars - spent) * 1e6) / 1e6,
     spent,

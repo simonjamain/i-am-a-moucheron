@@ -28,7 +28,7 @@ time builds a roster from an increasing integer budget. Aerial costs are 1 / 2 /
 health is 100 / 70 / 400 / 800 PV for midge / mosquito / guard (bee) / brute (beetle).
 Mosquitoes unlock on wave 3, guards on 5, brutes on 8. The former « voltigeur »
 (`dart`) was removed in version 312. Ants (from wave 1) and roaches (wave 3) add ground variants;
-see `waves.js` for the complete catalog and `routes.js` for entry sources. They have distinct size, colour, speed and
+see `waves.js` for the complete catalog and `routes.ts` for entry sources. They have distinct size, colour, speed and
 infestation cost. Budget is capped at 2400 and the source population at 180; at
 that ceiling, remaining budget is consolidated into one brute with its normal 800 PV. The
 first wave has twenty midges plus four ants and follows extended room-wide routes, with timing derived from the actual route.

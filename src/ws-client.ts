@@ -7,11 +7,21 @@
 // over UDP, which the game always tries first.
 import { TCP_PATH } from './udp-protocol.ts';
 import { UdpClient } from './udp-client.ts';
+import type { UdpClientOptions } from './udp-client.ts';
 
 const encoder = new TextEncoder();
 
+export interface WsClientOptions extends Omit<UdpClientOptions, 'Peer'> {
+  /** WebSocket constructor (the `ws` package in Node tests). */
+  Socket?: typeof WebSocket;
+  url?: string;
+}
+
 export class WsClient extends UdpClient {
-  constructor({ Socket = globalThis.WebSocket, url, ...options } = {}) {
+  Socket: typeof WebSocket | undefined;
+  url: string;
+  socket?: WebSocket;
+  constructor({ Socket = globalThis.WebSocket, url, ...options }: WsClientOptions = {}) {
     super({ ...options, Peer: null });
     this.Socket = Socket;
     this.url =
@@ -21,12 +31,12 @@ export class WsClient extends UdpClient {
         TCP_PATH;
     this.enabled = !!Socket;
   }
-  async connect() {
+  override async connect(): Promise<this> {
     if (!this.Socket) throw Error('Ce navigateur ne prend pas en charge WebSocket.');
     const socket = (this.socket = new this.Socket(this.url));
     socket.binaryType = 'arraybuffer';
     try {
-      await new Promise((resolve, reject) => {
+      await new Promise<void>((resolve, reject) => {
         const timer = setTimeout(() => reject(Error('Serveur injoignable en TCP.')), this.timeout);
         socket.onopen = () => {
           clearTimeout(timer);
@@ -48,24 +58,24 @@ export class WsClient extends UdpClient {
     socket.onclose = () => this.fail(Error('Connexion TCP fermée par le serveur.'));
     return this;
   }
-  ready() {
+  override ready(): boolean {
     return !this.closed && this.protocol === 'tcp' && this.socket?.readyState === 1;
   }
-  buffered() {
-    return this.socket.bufferedAmount;
+  override buffered(): number {
+    return this.socket!.bufferedAmount;
   }
-  transmit(data) {
-    this.socket.send(data);
+  override transmit(data: string): void {
+    this.socket!.send(data);
   }
   // Stale motion is skipped rather than queued behind a congested stream.
-  motionReady() {
-    return this.ready() && this.socket.bufferedAmount <= 16384;
+  override motionReady(): boolean {
+    return this.ready() && this.socket!.bufferedAmount <= 16384;
   }
-  transmitMotion(data) {
-    this.socket.send(encoder.encode(data));
+  override transmitMotion(data: string): void {
+    this.socket!.send(encoder.encode(data));
   }
-  async measure() {}
-  stop() {
+  override async measure(): Promise<void> {}
+  override stop(): void {
     const open = !this.closed;
     super.stop();
     if (open) this.socket?.close();

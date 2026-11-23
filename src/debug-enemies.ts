@@ -7,7 +7,7 @@
 //    path-find from the floor below the aimed point; flyers fly straight to the
 //    nearest point of a vent's usual corridor, then follow it (routes.js).
 import { ENEMY_TYPES, assignMidgeSwarmSizes, enemyTravelSpeed } from './waves.js';
-import { routeDuration } from './routes.js';
+import { routeDuration, type RouteEnemy } from './routes.ts';
 import { GROUND_BOUNDS } from './ground-defense.ts';
 import { GROUND_FOOT_DEPTH, INSECT_SCALE, enemySizeFactor } from './scale.ts';
 import type { EnemyType, Vec3 } from './types.ts';
@@ -49,7 +49,7 @@ interface Balance {
 }
 type Profile = { ground?: boolean; size: number; hp: number; speedMps: number };
 // Roster entries are plain objects shared with waves.js (untyped JavaScript).
-type RosterEntry = Record<string, unknown> & { id: number; type: EnemyType };
+type RosterEntry = Record<string, unknown> & RouteEnemy & { id: number; type: EnemyType };
 
 const fail = (message: string): never => {
   throw new Error(message);

@@ -1,10 +1,10 @@
 // Midges are drawn in one batch, with cheap Object3D proxies for gameplay; proxies
 // stay outside the render scene so thousands of midges share a single draw call.
 // Every midge uses the rigged Meshy model through a vertex animation texture
-// (src/creature-batch.js, cycle in src/midge-model.js), whatever its distance: there
+// (src/creature-batch.js, cycle in src/midge-model.ts), whatever its distance: there
 // is deliberately no level of detail. A future one will be uniform for all creatures.
 import { MIDGE_HIT_TOLERANCE, MIDGE_SPHERE_RADIUS } from './scale.ts';
-import { MIDGE, MIDGE_FLIGHT } from './midge-model.js';
+import { MIDGE, MIDGE_FLIGHT } from './midge-model.ts';
 import { CreatureBatch } from './creature-batch.ts';
 
 export class MidgeBatch {
