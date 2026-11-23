@@ -279,6 +279,10 @@ export class ToonRenderer {
     this.outline = toonOutline;
     if (this.available) setToonBands(this.bands);
   }
+  /** Depth of the last frame drawn with outlines (log depth buffer), else null. */
+  depthTexture(): THREE.Texture | null {
+    return (this.outline > 0 && this.pass?.target?.depthTexture) || null;
+  }
   render(scene: THREE.Scene, camera: THREE.PerspectiveCamera): void {
     if (!this.available || !(this.outline > 0)) {
       this.renderer.render(scene, camera);
