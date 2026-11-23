@@ -206,7 +206,6 @@ export interface PurgatorySceneOptions {
   shaders: boolean;
 }
 export interface PurgatoryState {
-  super: boolean;
   /** x Saint Pierre walks to (the window he serves). */
   saintX: number;
   /** The local soul holds the VIP pass (the gate opens for it). */
@@ -249,8 +248,8 @@ export function createPurgatoryScene(T: Three, options: PurgatorySceneOptions): 
   // Without shaders (software renderer) the sky is a plain colour.
   const dome: SkyDome | null = options.shaders ? createSkyDome(T, 140) : null;
   if (dome) scene.add(dome.mesh);
-  scene.background = new T.Color(SKY_LOOK.normal.horizon);
-  const fog = new T.Fog(SKY_LOOK.normal.fog, 60, 135);
+  scene.background = new T.Color(SKY_LOOK.horizon);
+  const fog = new T.Fog(SKY_LOOK.fog, 60, 135);
   scene.fog = fog;
   scene.add(new T.HemisphereLight(L.hemisphereSky, L.hemisphereGround, 1.5));
   const sun = new T.DirectionalLight(L.sun, 1.9);
@@ -272,7 +271,7 @@ export function createPurgatoryScene(T: Three, options: PurgatorySceneOptions): 
   furniture.scale.setScalar(U);
   addOfficeProps(T, purgatoryProps(), furniture);
   scene.add(furniture);
-  // Signs: the counter's front plate, swapped for Super Saint-Pierre.
+  // Signs: the counter's front plate.
   // Name plates stand on the desks' front edge, above the mist.
   const plate = signBoard(
     T,
@@ -355,7 +354,6 @@ export function createPurgatoryScene(T: Three, options: PurgatorySceneOptions): 
   guard.container.rotation.y = -Math.PI / 2;
   guard.mesh.castShadow = true;
   vipDecor.add(guard.container);
-  let mood: 'normal' | 'super' = 'normal';
   return {
     scene,
     colliders: [
@@ -369,21 +367,6 @@ export function createPurgatoryScene(T: Three, options: PurgatorySceneOptions): 
     guard: guard.container,
     hover: options.shaders ? FLOOR_MIST.top * 0.75 : 0,
     update(dt, now, state) {
-      const next = state.super ? 'super' : 'normal';
-      if (next !== mood) {
-        mood = next;
-        dome?.setMood(mood);
-        fog.color.set(SKY_LOOK[mood].fog);
-        (scene.background as THREE.Color).set(SKY_LOOK[mood].horizon);
-        sky?.setMood(mood);
-        floorCloud?.setMood(mood);
-        plate.setLines(
-          state.super
-            ? ['SUPER SAINT-PIERRE', 'Direction des récidives']
-            : ['SAINT PIERRE', 'Guichet des résurrections'],
-        );
-      }
-      saint.scale.setScalar(state.super ? 1.4 : 1);
       const before = saint.position.x;
       saint.position.x += (state.saintX - saint.position.x) * (1 - Math.exp(-3 * dt));
       const at = state.servedAt;
@@ -393,7 +376,6 @@ export function createPurgatoryScene(T: Three, options: PurgatorySceneOptions): 
         look: at ? Math.atan2(at.x - saint.position.x, at.z - saint.position.z) : 0,
         stamping: !!state.stamping,
       });
-      vipDecor.visible = !state.super;
       // The rope gate swings aside for this soul once its pass is paid.
       if (vipGate) vipGate.visible = !state.vip;
       deskZone.material.color.set(state.deskServed ? L.zoneServed : L.zone);

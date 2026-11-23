@@ -178,7 +178,6 @@ assert.ok(restHead.y > 1.6 && restHead.y < 2.6, 'head at a person height: ' + re
 assert.ok(FLOOR_MIST.top > 0.3 && FLOOR_MIST.top < 1.23, 'mist up to the knees');
 assert.ok(FLOOR_MIST.dense < 0 && FLOOR_MIST.bottom < -3);
 const floorPass = createFloorCloud(T, PURGATORY_HALL, CLOUD_FLOOR);
-floorPass.setMood('super');
 floorPass.dispose();
 
 // The whole scene builds without a document (software renderer: no shaders).
@@ -192,14 +191,13 @@ const built = createPurgatoryScene(T, {
   shaders: false,
 });
 built.update(0.016, 1000, {
-  super: false,
   saintX: 0,
   vip: false,
   deskServed: false,
   vipServed: false,
 });
-built.update(0.5, 1500, { super: true, saintX: 0, vip: true, deskServed: true, vipServed: false });
-assert.ok(built.saint.scale.x > 1.3, 'Super Saint-Pierre is taller');
+built.update(0.5, 1500, { saintX: 0, vip: true, deskServed: true, vipServed: false });
+assert.equal(built.saint.scale.x, 1, 'one Saint Pierre, at his own size');
 assert.ok(built.colliders.length >= 2);
 assert.ok(!built.scene.getObjectByName('purgatoire-nuages-ciel'), 'no shader clouds without WebGL');
 // The guard is aimed at like a vehicle post: a ray through him hits his mesh.

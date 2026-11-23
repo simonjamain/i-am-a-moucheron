@@ -28,6 +28,8 @@ before.advance = () => {};
 after.advance = () => {};
 // The baseline still reads the annex records removed since (malicious contracts).
 room.dossiers = new Map();
+// The baseline still reads the super purgatory's arena, removed since.
+room.super = { bodies: [] };
 const { dossiers, ...original } = before.snapshot(room);
 assert.deepEqual(dossiers, [], 'no annex record in the fixture');
 original.pilots = original.pilots.map(({ contractClause, ...pilot }) => {
@@ -35,11 +37,15 @@ original.pilots = original.pilots.map(({ contractClause, ...pilot }) => {
   return pilot;
 });
 // The retired fist fight's stun timer left the soul rows (it was never set).
-for (const key of ['souls', 'superSouls'])
-  original[key] = original[key].map(({ stunned_until, ...soul }) => {
-    assert.equal(stunned_until, undefined, 'no stun in the fixture');
-    return soul;
-  });
+original.souls = original.souls.map(({ stunned_until, ...soul }) => {
+  assert.equal(stunned_until, undefined, 'no stun in the fixture');
+  return soul;
+});
+// The super purgatory was removed: its souls and arena left the snapshot.
+assert.deepEqual(original.superSouls, [], 'no super purgatory soul in the fixture');
+assert.equal(original.superArena, null);
+delete original.superSouls;
+delete original.superArena;
 const optimized = after.snapshot(room);
 const {
   rosterRevision,

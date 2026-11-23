@@ -16,16 +16,15 @@ fige position, orientation et champ de vue de la caméra au décès, tout en con
 La petite fenêtre « Accéder au purgatoire » déclenche `enter-purgatory`, protégé
 par incarnation et idempotent. Un clic répété ne crée pas de deuxième âme.
 
-La même observation sépare mort au purgatoire et accès au super purgatoire. Une
-mort au super purgatoire reste une nouvelle incarnation sur place, avec les cinq
-papiers réinitialisés. Reset supprime l’observation. Après une coupure, le
+Une mort au purgatoire passe par la même observation ; l’accès recrée l’âme en fin
+de file, avec ses trois papiers réinitialisés. Reset supprime l’observation. Après une coupure, le
 navigateur reprend automatiquement **le même pilote** (vie, observation, siège,
 papiers) s’il se reconnecte dans les 30 s ; voir
 [la reprise de session](udp-server.md#transport-et-fiabilité). Au-delà, ou après un
 rechargement de page, une nouvelle connexion est un nouveau joueur, sans restaurer
 la vie ou l’observation de l’ancien, qui expire sans fabriquer une résurrection.
 Le secret de reprise conserve alors le contrat de lit et la couleur, pas une vie active.
-Les règles de trois/cinq signatures restent inchangées après l’accès volontaire.
+Les trois signatures restent dues après l’accès volontaire.
 
 ## HUD et aide permanente
 

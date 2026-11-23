@@ -845,7 +845,7 @@ function localMotion() {
     missile: ownMissileMotion(),
     ground: self
       ? {
-          scene: respawnAt ? (isSuper() ? 'super' : 'soul') : 'base',
+          scene: respawnAt ? 'soul' : 'base',
           epoch: a.epoch,
           body: bodyMotion(self),
         }
@@ -1393,19 +1393,9 @@ function accept(s, force = false) {
     paperContext = '';
     paperSuppressed = false;
   }
-  if (self?.state.realm === 'super' && self.life === 'dead' && !self.state.awaitingPurgatory) {
-    s.arena = s.superArena;
-    s.souls = s.superSouls;
-  }
   if (self && (worldChanged || self.mode === 'foot')) hp = self.health;
   if (self?.state.awaitingPurgatory && !spectating)
-    freezeObservation(
-      previousSelf?.state?.realm === 'super'
-        ? 'super'
-        : previousSelf?.life === 'dead'
-          ? 'purgatory'
-          : 'office',
-    );
+    freezeObservation(previousSelf?.life === 'dead' ? 'purgatory' : 'office');
   if (!self?.state.awaitingPurgatory && !deathPending) spectating = false;
   $('deathWatch').classList.toggle('hidden', !spectating);
   if (self?.life === 'dead') {
@@ -2332,9 +2322,6 @@ function renderPurgatory() {
   }
   renderPaper();
 }
-function isSuper() {
-  return snap?.pilots.find((p) => p.id === id)?.state.realm === 'super';
-}
 // Paper dossier state.
 let paperShown = false,
   paperLingerUntil = 0,
@@ -2454,15 +2441,9 @@ function paperInkHint() {
 }
 const contractBook = new ContractBook();
 const documents = Object.fromEntries(
-  [
-    'equipment',
-    'boarding',
-    'purgatory',
-    'super',
-    'change',
-    'exchange-request',
-    'exchange-accept',
-  ].map((context) => [context, CONTRACTS[contractKey(context)]]),
+  ['equipment', 'boarding', 'purgatory', 'change', 'exchange-request', 'exchange-accept'].map(
+    (context) => [context, CONTRACTS[contractKey(context)]],
+  ),
 );
 let activeTransfer = null;
 
@@ -2495,7 +2476,7 @@ function renderPaper() {
     const owner = soulArena && deskOccupant(soulArena);
     eligible = !!body && owner?.id === body.id;
     if (!eligible) paperSuppressed = false;
-    context = isSuper() ? 'super' : 'purgatory';
+    context = 'purgatory';
     index = body?.paper || 0;
     eligible = eligible && !paperSuppressed;
   } else if (onFoot && !myVehicle && turretIndex < 0) {
@@ -2591,10 +2572,9 @@ function renderPaper() {
     total = documents[context].length;
   $('paperTitle').textContent = doc.title;
   $('paperCode').textContent = doc.code + ' / ' + room;
-  $('paperIssuer').textContent = !['purgatory', 'super'].includes(context)
-    ? 'Base Alpha · Service des mini-pilotes'
-    : isSuper()
-      ? 'Super Saint-Pierre · Direction des récidives'
+  $('paperIssuer').textContent =
+    context !== 'purgatory'
+      ? 'Base Alpha · Service des mini-pilotes'
       : 'Guichet de Saint Pierre · Service des âmes';
   $('paperBody').textContent = doc.text;
   $('paperOwner').textContent = pilot?.name || 'Pilote';
@@ -2607,21 +2587,17 @@ function renderPaper() {
             'Appareil') +
           ' · ' +
           SEAT_NAMES[selectedSeat]
-        : isSuper()
-          ? 'Retour au purgatoire classique'
-          : 'Retour à la base Alpha';
+        : 'Retour à la base Alpha';
   $('paperProgress').textContent = `${index + 1} sur ${total}`;
 
   $('signSubmit').disabled = !inkReady() || boardingBusy;
   $('signSubmit').textContent = boardingBusy
     ? 'Signature apposée…'
-    : !['purgatory', 'super'].includes(context) && index === 1
+    : context !== 'purgatory' && index === 1
       ? 'Signer et monter à bord →'
       : context === 'purgatory' && index === 2
         ? 'Signer et revenir à la base →'
-        : context === 'super' && index === 4
-          ? 'Signer et retourner au purgatoire →'
-          : 'Déposer le document signé →';
+        : 'Déposer le document signé →';
 }
 async function submitPaper() {
   if (boardingBusy || !inkReady()) return;
@@ -2634,9 +2610,7 @@ async function submitPaper() {
           : 'exchange-request'
         : 'change'
       : respawnAt
-        ? isSuper()
-          ? 'super'
-          : 'purgatory'
+        ? 'purgatory'
         : selectedEquipment !== null
           ? 'equipment'
           : 'boarding',
@@ -2753,7 +2727,7 @@ function physicalPurgatory(dt, now) {
   if (!self) return;
   self.input = soulIntent();
   self.inputAt = soulArena.time;
-  remoteBodies(soulArena, isSuper() ? 'super' : 'soul');
+  remoteBodies(soulArena, 'soul');
   advancePurgatory(soulArena, soulArena.time + dt * 1000, id);
   stepFlatJump(self, dt, WALK_WORLDS.purgatory.sceneScale);
 
@@ -2766,8 +2740,7 @@ function physicalPurgatory(dt, now) {
   // Saint Pierre walks behind the counter to the window he serves.
   const served = deskOccupant(soulArena);
   purgatory.update(dt, now, {
-    super: isSuper(),
-    saintX: !isSuper() && served && served.x > VIP_DESK.x / 2 ? VIP_DESK.x : 0,
+    saintX: served && served.x > VIP_DESK.x / 2 ? VIP_DESK.x : 0,
     vip: !!self.vip,
     deskServed: served?.id === self.id && !(self.vip && self.x > VIP_DESK.x / 2),
     vipServed: served?.id === self.id && !!self.vip,
@@ -6775,7 +6748,7 @@ const vipUI = new VipPassUI({
   },
 });
 function vipSelf() {
-  if (!respawnAt || isSuper() || spectating) return null;
+  if (!respawnAt || spectating) return null;
   return soulArena?.bodies.find((b) => b.kind === 'player' && b.entity === id && !b.gone) || null;
 }
 // Refit order of an automatic turret (docs/gatling-turret.md): signed on paper, paid
@@ -7001,11 +6974,10 @@ function soulInsect(type = 'midge') {
 }
 
 function observedPurgatory(dt) {
-  const arena = observationRealm === 'super' ? snap?.superArena : snap?.arena;
+  const arena = snap?.arena;
   const served = arena ? deskOccupant(arena) : null;
   purgatory.update(dt, performance.now(), {
-    super: observationRealm === 'super',
-    saintX: observationRealm !== 'super' && served && served.x > VIP_DESK.x / 2 ? VIP_DESK.x : 0,
+    saintX: served && served.x > VIP_DESK.x / 2 ? VIP_DESK.x : 0,
     vip: false,
     deskServed: false,
     vipServed: false,

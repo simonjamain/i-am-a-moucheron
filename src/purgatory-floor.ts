@@ -179,7 +179,6 @@ export interface FloorCloud {
    * scene depth `depth` (the cartoon renderer's target; null: no occlusion).
    */
   render(renderer: THREE.WebGLRenderer, camera: THREE.Camera, depth: THREE.Texture | null): void;
-  setMood(mood: 'normal' | 'super'): void;
   dispose(): void;
 }
 
@@ -204,7 +203,7 @@ export function createFloorCloud(
       value: new T.Vector4(FLOOR_MIST.top, FLOOR_MIST.dense, FLOOR_MIST.billows, FLOOR_MIST.bottom),
     },
     sunDir: { value: new T.Vector3(...SUN_DIRECTION).normalize() },
-    sunColor: { value: new T.Color(SKY_LOOK.normal.sun) },
+    sunColor: { value: new T.Color(SKY_LOOK.sun) },
     shade: { value: new T.Color(SKY_LOOK.shade) },
     tint: { value: new T.Color(SKY_LOOK.cloud) },
   };
@@ -277,9 +276,6 @@ export function createFloorCloud(
       renderer.autoClear = false;
       renderer.render(compositeScene, screen);
       renderer.autoClear = autoClear;
-    },
-    setMood(mood) {
-      uniforms.sunColor.value.set(SKY_LOOK[mood].sun);
     },
     dispose() {
       target?.dispose();
