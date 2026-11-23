@@ -191,7 +191,7 @@ import {
 import { loadRapier } from '/physics-world.js';
 import { CastorRig } from '/castor-physics.js';
 import { TankRig } from '/tank-physics.js';
-import { PlaneRig, PLANE_CRASH_IMPACT, PLANE_TYPES } from '/plane-physics.js';
+import { PlaneRig, PLANE_CRASH_IMPACT, PLANE_TYPES, planeSpec } from '/plane-physics.js';
 import { parkedCompression, poseWheels } from '/aircraft-wheels.js';
 import { PhysicsOverlay } from '/physics-debug.js';
 import { updateSuspension } from '/track-suspension.js';
@@ -212,6 +212,7 @@ import {
 } from '/castor-wheels.js';
 import { ServiceZones, serviceZoneList } from '/service-zones.js';
 import { EngineSmoke, damageRatio } from '/engine-smoke.js';
+import { AirRibbons } from '/air-ribbons.js';
 import { shopColumns } from '/shop-catalog.js';
 import { ShopThumbnails } from '/shop-thumbs.js';
 import {
@@ -2692,7 +2693,6 @@ async function submitPaper() {
 }
 // The purgatory's decor: an administration on a cloud (docs/purgatory-scene.md).
 const purgatory = createPurgatoryScene(T, {
-  humanoid,
   box: pm,
   shaders: !!renderer.isWebGLRenderer,
 });
@@ -2770,6 +2770,8 @@ function physicalPurgatory(dt, now) {
     vip: !!self.vip,
     deskServed: served?.id === self.id && !(self.vip && self.x > VIP_DESK.x / 2),
     vipServed: served?.id === self.id && !!self.vip,
+    servedAt: served ? { x: served.x, z: served.z } : null,
+    stamping: served?.kind === 'enemy' && served.served > 0,
   });
   const active = new Set();
   for (const b of soulArena.bodies) {
@@ -2800,7 +2802,7 @@ function physicalPurgatory(dt, now) {
     } else {
       // Insects hover in the queue.
       g.rotation.x = Math.sin(now * 0.009 + b.id) * 0.06;
-      g.position.y = Math.sin(now * 0.008 + b.id) * 0.08;
+      g.position.y = purgatory.hover + Math.sin(now * 0.008 + b.id) * 0.08;
     }
   }
   for (const b of soulArena.bodies)
@@ -3454,6 +3456,8 @@ $('fusePlus').onclick = () => (flakRange = fuseRange(flakRange + FLAK.step));
 
 const serviceZones = new ServiceZones(T, scene);
 const engineSmoke = new EngineSmoke(T, scene);
+// Ribbons of air over the wings of every plane, from the approach of the stall (docs/air-ribbons.md).
+const airRibbons = new AirRibbons(T, scene);
 function updateBaseWorld(dt, now) {
   if (!baseArena || !snap) return;
   for (const event of snap.base?.events || [])
@@ -4112,6 +4116,16 @@ function updateOthers(dt) {
     // Damage shows as engine smoke, never as a change of shape.
     if (!VEHICLES[v.type].ground && g.visible)
       engineSmoke.emit(g, damageRatio(isSelf ? hp : v.state.hp, VEHICLES[v.type].maxHP || 100), dt);
+    if (PLANE_TYPES.has(v.type))
+      airRibbons.emit(
+        v.id,
+        v.type,
+        g,
+        isSelf ? vel : new T.Vector3().fromArray(motion.v || [0, 0, 0]),
+        planeSpec(v.type).params,
+        g.visible && v.state.hp > 0 && !(isSelf ? landed : (motion.landed ?? v.state.landed)),
+        dt,
+      );
     for (const prop of g.userData.props || [g.userData.prop])
       if (!isSelf)
         prop.rotation.z +=
@@ -4249,6 +4263,7 @@ function updateOthers(dt) {
       });
       fleetModels.delete(k);
       poseSmoothers.delete(k);
+      airRibbons.forget(k);
       others.delete(k);
       for (const key of [...postHighlights.keys()])
         if (key.startsWith(k + ':')) postHighlights.delete(key);
@@ -5168,6 +5183,21 @@ function updateAudio() {
         });
       }
     }
+    // Air rubbing along stalling wings: silent in normal flight, hissing as the stall nears.
+    for (const v of snap?.vehicles || []) {
+      const flow = airRibbons.levels.get(v.id),
+        g = fleetModels.get(v.id);
+      if (!flow || flow.level < 0.03 || !g?.visible || !v.seats.length) continue;
+      const own = myVehicle?.id === v.id;
+      const key = 'airflow-' + v.id;
+      keep.add(key);
+      sound.loop(key, 'airflow', own ? me.position : g.position, {
+        rate: 0.8 + 0.5 * flow.level,
+        level: flow.level ** 1.4,
+        ref: own ? 14 : 10,
+        ...(own ? { priority: 2 } : {}),
+      });
+    }
     // Stable audio regions for dense swarms: refresh positions/gain at 10 Hz.
     // Existing HRTF panners smooth motion between audio refreshes.
     const audioTime = performance.now();
@@ -5285,6 +5315,7 @@ function frame(now) {
     enemies(Date.now());
     updateOthers(dt);
     engineSmoke.update(dt, camera, innerHeight);
+    airRibbons.update(dt, camera);
     updateOrdnance(dt);
     acc += dt;
     // The vehicle I drive is shown between its last two physics steps (src/render-interpolation.ts):
@@ -5373,6 +5404,7 @@ function frame(now) {
     $('altitudeFog').style.opacity = 0;
     serviceZones.update([]);
     engineSmoke.clear();
+    airRibbons.clear();
     const lobbyBase = OFFICE_LAYOUT.base;
     camera.position.set(
       lobbyBase.originX + 0.15 + Math.sin(now * 0.00008) * 0.08,
@@ -5415,11 +5447,14 @@ function frame(now) {
       purgatory.prerender(renderer, observationCamera);
     }
     toon.render(observationRealm === 'office' ? scene : purgScene, observationCamera);
+    if (observationRealm !== 'office')
+      purgatory.postrender(renderer, observationCamera, toon.depthTexture());
   } else if (respawnAt && soulBody) {
     physicalPurgatory(dt, now);
     updateAimedGuard();
     purgatory.prerender(renderer, purgCamera);
     toon.render(purgScene, purgCamera);
+    purgatory.postrender(renderer, purgCamera, toon.depthTexture());
     postSelection.color = aimedGuard ? SIGNAL_COLOR : null;
     postSelection.render(purgScene, purgCamera);
   } else toon.render(scene, camera);
@@ -6972,6 +7007,8 @@ function observedPurgatory(dt) {
     vip: false,
     deskServed: false,
     vipServed: false,
+    servedAt: served ? { x: served.x, z: served.z } : null,
+    stamping: served?.kind === 'enemy' && served.served > 0,
   });
   const active = new Set();
   for (const body of arena?.bodies || []) {
@@ -6987,7 +7024,7 @@ function observedPurgatory(dt) {
       soulMeshes.set(body.id, model);
       model.rotation.y = body.face || 0;
     }
-    model.position.set(body.x, 0, body.z);
+    model.position.set(body.x, body.kind === 'player' ? 0 : purgatory.hover, body.z);
     if (body.kind === 'player') poseWalker(model, body, dt);
     else model.userData.animate?.(dt, { speed: walkSpeed(WALK_WORLDS.purgatory, body) });
   }

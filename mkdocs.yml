@@ -123,6 +123,7 @@ nav:
       - Serveur UDP: udp-server.md
       - Physique Rapier: physics-engine.md
       - Vol du biplan sur Rapier: plane-physics.md
+      - Rubans d'air et décrochage: air-ribbons.md
       - Vol des hélicoptères sur Rapier: heli-physics.md
       - Types de projectiles: projectiles.md
       - Affichage de la physique: physics-debug.md

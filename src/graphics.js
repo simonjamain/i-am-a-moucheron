@@ -346,9 +346,8 @@ export function createGraphics(T, scene) {
   // `appearance`: id from character-appearances.ts (default if unknown or not
   // loaded yet). userData.setAppearance(id) swaps the model in place, keeping
   // everything attached to the group.
-  // `saint`: true for Saint Pierre (blocky, until his own model).
-  function humanoid(color, saint = false, appearance) {
-    if (saint) return legacyHumanoid(color, true);
+  // The second argument is no longer used (it chose the former blocky Saint Pierre).
+  function humanoid(color, _unused = false, appearance) {
     const g = new T.Group();
     let character;
     function wear(id) {
@@ -371,50 +370,6 @@ export function createGraphics(T, scene) {
     wear(appearance);
     return g;
   }
-  function legacyHumanoid(color, saint = false) {
-    const g = new T.Group(),
-      rig = new T.Group();
-    g.add(rig);
-    const shirt = pm(rig, 0.8, 1.05, 0.5, color, 0, 1.3);
-    shirt.userData.personalCloth = true;
-    const head = ball(0, 2.12, 0, 0.34, '#edc7a0', rig);
-    for (const x of [-0.13, 0.13]) ball(x, 2.17, 0.3, 0.045, '#263a43', rig);
-    pm(rig, 0.12, 0.13, 0.13, '#d5aa88', 0, 2.02, 0.34);
-    const legs = [];
-    for (const x of [-0.23, 0.23]) {
-      const pivot = new T.Group();
-      pivot.position.set(x, 0.85, 0);
-      rig.add(pivot);
-      pm(pivot, 0.28, 0.72, 0.3, '#304552', 0, -0.35);
-      pm(pivot, 0.32, 0.18, 0.5, '#233441', 0, -0.7, 0.1);
-      legs.push(pivot);
-    }
-    const arms = [];
-    for (const x of [-0.5, 0.5]) {
-      const pivot = new T.Group();
-      pivot.position.set(x, 1.7, 0.1);
-      rig.add(pivot);
-      const sleeve = pm(pivot, 0.26, 0.42, 0.28, color, 0, -0.2);
-      sleeve.userData.personalCloth = true;
-      const elbow = new T.Group();
-      elbow.position.y = -0.4;
-      pivot.add(elbow);
-      const forearm = pm(elbow, 0.24, 0.36, 0.26, color, 0, -0.18);
-      forearm.userData.personalCloth = true;
-      ball(0, -0.43, 0.05, 0.2, saint ? '#edc7a0' : '#e5b75c', elbow);
-      arms.push({ pivot, elbow });
-    }
-    g.userData = { rig, legs, arms, lean: 0, leanV: 0 };
-    if (saint) {
-      pm(rig, 0.65, 0.38, 0.6, '#eeeece', 0, 1.93, 0.1);
-      const halo = new T.Mesh(new T.TorusGeometry(0.5, 0.05, 8, 24), mat('#ffda65'));
-      halo.rotation.x = Math.PI / 2;
-      halo.position.y = 2.8;
-      rig.add(halo);
-    }
-    return g;
-  }
-
   return {
     mat,
     box,

@@ -182,6 +182,7 @@ export const SUITE = [
   'test-shot-effects',
   'test-sentry-meshy',
   'test-gatling',
+  'test-air-ribbons',
   'test-turret-upgrade',
   'test-castor-fortifications',
   'test-flying-castor',
