@@ -237,7 +237,7 @@ export class SelectionOutline {
    * width inside it): the loops are unrolled, so the reach is fixed per material.
    */
   private build(reach: number): THREE.NodeMaterial {
-    const { vec4, float, select, min, max } = tsl(this.T);
+    const { vec2, vec4, float, select, min, max } = tsl(this.T);
     const { texel, radius, lineColor } = this.uniforms;
     const coord = targetUv(this.T);
     const inside = this.maskTexture.sample(coord).r.greaterThan(0.5);
@@ -247,7 +247,7 @@ export class SelectionOutline {
         const distance = Math.hypot(x, y);
         if (distance > reach) continue;
         const hit = this.maskTexture
-          .sample(coord.add(texel.mul([x, y])))
+          .sample(coord.add(texel.mul(vec2(x, y))))
           .r.greaterThan(0.5)
           .and(radius.add(1).greaterThanEqual(distance));
         nearest = min(nearest, select(hit, float(distance), float(1e3)));

@@ -173,9 +173,9 @@ export class CreatureBatch {
   name: string;
   capacity: number;
   count: number;
-  mesh: THREE.InstancedMesh<THREE.InstancedBufferGeometry, THREE.MeshStandardNodeMaterial> | null;
+  mesh: THREE.InstancedMesh<THREE.BufferGeometry, THREE.MeshStandardNodeMaterial> | null;
   vat: CreatureVat;
-  geometry: THREE.InstancedBufferGeometry;
+  geometry: THREE.BufferGeometry;
   uniforms: VatUniforms;
   material: THREE.MeshStandardNodeMaterial;
   shadows: boolean;
@@ -196,7 +196,7 @@ export class CreatureBatch {
     this.mesh = null;
     this.vat = vat || createVat(T, creature);
     const source = creature.geometry(T);
-    this.geometry = new T.InstancedBufferGeometry();
+    this.geometry = new T.BufferGeometry();
     this.geometry.setIndex(source.index);
     // Position is only read for bounds; the vertex shader fetches the VAT.
     this.geometry.setAttribute('position', source.attributes.position);

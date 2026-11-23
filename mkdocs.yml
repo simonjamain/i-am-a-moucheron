@@ -82,6 +82,7 @@ nav:
       - Écrans intégrés: ecrans.md
       - Écran de chargement: loading-screen.md
       - Rendu dessin animé: toon-rendering.md
+      - Rendu WebGPU: webgpu.md
       - Ombres d’atterrissage: shadow-visibility.md
       - Éclairage du bureau: office-lighting.md
       - Collisions sur les triangles: collisions.md

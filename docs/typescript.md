@@ -33,8 +33,9 @@ dans `src/`, `server/` et `scripts/`. L'état et la prochaine étape sont suivis
    (`verbatimModuleSyntax`). Les URL absolues du navigateur dans `client.js`
    (`'/scale.js'`) restent en `.js`.
 3. **Three.js** : les modules reçoivent l'espace de noms injecté `T` ; le typer
-   `T: Three` (`src/types.ts`) et les objets avec `import type * as THREE from 'three'`
-   (types `@types/three` alignés sur la révision embarquée r170). Aucun import
+   `T: Three` (`src/types.ts`) et les objets avec `import type * as THREE from 'three/webgpu'`
+   (types `@types/three` alignés sur la révision embarquée r187 ; `Three` est le build WebGPU,
+   qui contient aussi les classes de base et `T.TSL`). Aucun import
    d'exécution de `'three'` : le navigateur charge toujours `vendor/`.
 4. **Champs de classe** déclarés (`samples: ClockSample[];`) avant le constructeur.
 5. **Tables exhaustives** : typer `Record<EnemyType, …>` ou `Record<VehicleType, …>`
