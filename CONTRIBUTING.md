@@ -1,98 +1,65 @@
 # Contribuer au jeu
 
+Règles de travail des agents : [AGENTS](AGENTS.md). Contrôles à exécuter :
+[operations](docs/operations.md).
+
 ## Prendre une tâche
 
-Proposer idées et bugs dans les issues GitHub ; préciser le comportement attendu,
-la reproduction ou les critères d'acceptation. Les issues GitHub sont le seul
-suivi des tâches : chercher les doublons et les PR en cours avant d'en ouvrir une.
+Les issues GitHub sont le seul suivi des tâches : y proposer idées et bugs avec
+comportement attendu, reproduction ou critères d'acceptation, après avoir cherché
+les doublons et les PR en cours.
 
-Annoncer sa prise en charge dans la discussion de la tâche et ouvrir une branche
-par contribution. Vérifier les tâches et PR en cours qui touchent les mêmes
-systèmes. En cas d'interaction, convenir d'un ordre ou d'une interface commune.
-Les contributions indépendantes continuent en parallèle. Chaque personne utilise
-son propre environnement et ses agents, en suivant [AGENTS](AGENTS.md).
-
-## Développer et reprendre
-
-Garder une PR ciblée, testable et accompagnée des références mises à jour.
-Discuter en amont une évolution du protocole réseau, de l'autorité physique ou
-une refonte transversale. Décrire les hypothèses nécessaires dans la tâche.
-Pour interrompre ou transmettre un travail, suivre
+Annoncer sa prise en charge dans l'issue et ouvrir une branche par contribution.
+Si une autre tâche ou PR touche les mêmes systèmes, convenir d'un ordre ou d'une
+interface commune ; les contributions indépendantes avancent en parallèle.
+Discuter en amont une évolution du protocole réseau, de l'autorité physique ou une
+refonte transversale. Pour interrompre ou transmettre un travail, suivre
 [les notes de reprise](docs/tasks/README.md).
 
-## Vérifier et proposer la fusion
+## Préparer la PR
 
-Exécuter les contrôles adaptés décrits dans [operations](docs/operations.md),
-puis relire le diff contre les critères d'acceptation. Renseigner le modèle de PR :
-commandes et résultats, limites, scénario à tester et état de l'environnement.
-Pour le pilotage, le rendu, les interactions ou le réseau, prévoir un essai réel
-en jeu ; un contrôle automatisé ne suffit pas à valider les sensations.
+Garder une PR ciblée, testable, avec les références mises à jour. Renseigner le
+modèle de PR : commit testé, commandes et résultats, build Docker, limites, scénario
+d'essai en jeu. Pour le pilotage, le rendu, les interactions ou le réseau, prévoir un
+essai réel en jeu ; un contrôle automatisé ne valide pas les sensations. Un essai
+humain impossible est décrit comme tel, jamais présenté comme exécuté.
 
-L'auteur est responsable des corrections et de l'adaptation de sa branche jusqu'à
-la fusion. Après une mise à jour depuis `main` ou une résolution de conflit,
-relancer les contrôles concernés ; si le comportement testé change, renouveler
-l'essai en jeu. Identifier le commit testé pour éviter une validation périmée.
-La fusion est autonome par défaut : l'agent qui a réalisé la contribution
-fusionne sa PR dès qu'elle est prête, sans demander de validation manuelle à
-l'utilisateur. Avant cela, il doit constater la réussite des contrôles requis
-sur le dernier commit (notamment `Docker build`), relire le diff et les critères
-d'acceptation, et vérifier l'absence de conflit. Utiliser **squash** si autorisé.
-Activer l'**auto-merge** en squash sur la PR terminée : GitHub la fusionne dès que
-les contrôles requis de `main` passent (fusion directe seulement si la PR est déjà
-fusionnable). L'auteur reste responsable jusqu'à la fusion effective.
-Si une autre PR est fusionnée avant la vôtre, l'auto-merge reste bloqué par un conflit alors
-que tous les contrôles sont verts : le workflow `Conflict alert` pose alors le label `conflit`
-et un commentaire sur la PR. Dès ce message (ou si `mergeable_state` vaut `dirty`), intégrer
-`origin/main`, résoudre, relancer les contrôles concernés et pousser, sans attendre.
-Le numéro de version et les nouveautés ne produisent plus de conflit : ne pas éditer `VERSION`
-(généré) et ajouter un fragment `changelog.d/` neuf ([détail](docs/changelog.md)).
-Les essais humains impossibles à réaliser sont décrits honnêtement dans la PR ;
-ils ne doivent pas être présentés comme exécutés. Si un contrôle requis échoue,
-reste absent ou si GitHub bloque la fusion, laisser la PR ouverte et signaler
-le blocage. Ne jamais contourner les protections ni les permissions GitHub.
-Après fusion, vérifier la fermeture des issues concernées et le résultat sur `main`.
-Il n'y a pas de circuit de validation supplémentaire extérieur à GitHub.
+Clôturer les issues : écrire `Closes #123` dans la description (un mot-clé par issue) ;
+pour une contribution partielle, `Refs #123` et les critères restants dans l'issue
+([liens PR–issue](https://docs.github.com/fr/issues/tracking-your-work-with-issues/using-issues/linking-a-pull-request-to-an-issue)).
 
-## Clôturer une issue à la fusion
+## Vérifier et fusionner
 
-Quand une PR vers `main` termine une issue, écrire `Closes #123` dans la
-description de la PR, en remplaçant 123 par son numéro. Pour plusieurs issues,
-répéter le mot-clé pour chacune. Pour une contribution partielle, écrire
-`Refs #123` et indiquer dans l’issue les critères qui restent à couvrir.
+La fusion est autonome : l'agent auteur fusionne sa PR sans validation manuelle
+préalable de l'utilisateur.
 
-Après la fusion, vérifier sur GitHub que chaque issue livrée est fermée. Si elle
-est encore ouverte, la fermer comme terminée après avoir vérifié le contenu de
-`main`. Mentionner la PR fusionnée et conserver les limites des essais dans la PR.
-Voir la [documentation GitHub sur les liens entre PR et issues](https://docs.github.com/fr/issues/tracking-your-work-with-issues/using-issues/linking-a-pull-request-to-an-issue).
+1. Relire le diff contre les critères d'acceptation ; constater les contrôles
+   requis réussis sur le dernier commit, `Docker build` compris, et l'absence de
+   conflit.
+2. Activer l'**auto-merge** en **squash** (`enable_pr_auto_merge`, `SQUASH`) : GitHub
+   fusionne dès que les contrôles requis de `main` passent. Si GitHub répond que la
+   PR est déjà fusionnable, la fusionner directement en squash. Ne pas activer
+   l'auto-merge tant qu'un essai, un contrôle ou une relecture reste à faire.
+3. Rester responsable jusqu'à la fusion effective : corriger un contrôle rouge ;
+   après une mise à jour depuis `main`, relancer les contrôles concernés et
+   renouveler l'essai en jeu si le comportement testé change.
+4. Après fusion, vérifier `main` et la fermeture des issues livrées (les fermer comme
+   terminées sinon, en citant la PR).
 
-## Environnements temporaires : cible à configurer
+**Conflits.** Quand une autre PR fusionne avant la vôtre, le workflow `Conflict alert`
+pose le label `conflit` et commente la PR (aussi visible par `mergeable_state: dirty`) :
+intégrer `origin/main`, résoudre, relancer les contrôles et pousser sans attendre.
+Version et nouveautés ne provoquent pas de conflit ([détail](docs/changelog.md)).
 
-Le dépôt ne fournit pas encore de workflow de déploiement temporaire. Jusqu'à
-sa mise en place, indiquer « indisponible » et donner une procédure locale ;
-ne pas annoncer un lien de test automatique.
+**Blocage.** Contrôle rouge ou absent, conflit non résolu, permission insuffisante :
+laisser la PR ouverte, documenter précisément le blocage et le signaler. Ne jamais
+contourner les protections ni les permissions GitHub. Il n'existe pas d'autre circuit
+de validation que GitHub.
 
-Le fonctionnement retenu est un environnement par PR, construit et mis à jour
-par GitHub Actions, avec client et serveur isolés des autres PR et de la
-production. La pipeline publiera le lien et le commit déployé, puis supprimera
-l'environnement à la fermeture de la PR. Prévoir HTTPS, négociation WebRTC,
-allocation de plages UDP distinctes, limites de ressources et nettoyage des
-échecs. Le mécanisme devra gérer les contributions externes sans leur exposer
-les secrets de déploiement ni un accès d'administration au VPS.
+## Environnements temporaires : non configurés
 
-Les agents consultent les résultats de la pipeline ; l'infrastructure est
-configurée une fois par les mainteneurs. Le déploiement sur VPS et ses secrets
-restent à configurer séparément. La production est déployée à partir de l’image
-`latest` publiée sur GHCR à chaque commit sur `main`.
-
-## Sources de la méthode
-
-Ces recommandations sont adaptées au projet ; elles ne constituent pas une
-mesure comparative des agents ou une garantie de correction.
-
-- [Claude Code : bonnes pratiques](https://code.claude.com/docs/en/best-practices) :
-  instructions courtes, procédures à la demande et vérifications exécutables.
-- [Anthropic : agents sur plusieurs sessions](https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents) :
-  progression incrémentale, notes de reprise et essais de bout en bout.
-
-Consultées le 30 octobre 2026. Les notes séparées par tâche et le parcours de PR
-sont des choix de ce projet pour permettre les contributions parallèles.
+Aucun workflow ne déploie encore d'environnement par PR : indiquer « indisponible »
+dans la PR et donner une procédure locale. Cible retenue : un environnement isolé par
+PR, construit par GitHub Actions (HTTPS, WebRTC, plage UDP propre, nettoyage à la
+fermeture), sans exposer les secrets de déploiement aux contributions externes. La
+production suit l'image `latest` publiée depuis `main` ([déploiement](docs/operations.md#déploiement)).

@@ -41,10 +41,8 @@ Le bouton **Nouveautés** et le [site de documentation](site.md) affichent le m�
 `npm test` (`test-changelog`, `test-build-info`) vérifie le format des fragments, le calcul
 des versions et le rendu.
 
-## Conflits quand plusieurs agents travaillent
+## Conflits entre PR
 
-Le workflow [`conflict-alert`](../.github/workflows/conflict-alert.yml) s'exécute à chaque
-push sur `main`. Pour chaque PR ouverte qui n'est plus fusionnable, il pose le label
-`conflit` et un commentaire qui réveille l'agent abonné ; le label disparaît quand le
-conflit est résolu. L'agent doit alors intégrer `origin/main`, résoudre, relancer les
-contrôles concernés et pousser (voir [CONTRIBUTING](../CONTRIBUTING.md)).
+Version et nouveautés ne créent pas de conflit. Les autres conflits sont signalés par le
+workflow [`conflict-alert`](../.github/workflows/conflict-alert.yml) (label `conflit`) ;
+procédure : [CONTRIBUTING](../CONTRIBUTING.md#vérifier-et-fusionner).

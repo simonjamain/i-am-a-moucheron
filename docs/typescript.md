@@ -72,7 +72,7 @@ aux URL du navigateur ni aux noms construits dynamiquement : relire le diff.
 Migrer de préférence des feuilles du graphe d'imports (modules sans import local
 non migré ; `npm run ts:migrate -- --leaves` les liste, plus petites d'abord), par lots cohérents, puis remonter vers `client.js` et `server/game.js`.
 
-Pièges vus au lot 4 :
+## Pièges connus
 
 - Un test qui lit le texte d'un module et l'exécute (`new AsyncFunction(source)`)
   doit d'abord effacer les types avec `stripTypeScriptTypes` (exemple :
@@ -83,9 +83,6 @@ Pièges vus au lot 4 :
   non-régression : effacer les types, passer Prettier et comparer à l'ancien `.js`
   (`git show <base>:src/<m>.js`). Seuls des champs de classe déclarés ou des alias
   doivent apparaître.
-
-Pièges vus au lot 5 :
-
 - Les tests passent souvent un faux `document` sans `createElementNS` ni
   `activeElement` : typer ce paramètre par une petite interface locale
   (`BankDocument`) plutôt que `Document`, pour garder ces tests exécutables.
@@ -94,14 +91,5 @@ Pièges vus au lot 5 :
 - Les propriétés DOM typées `string` reçoivent parfois des nombres (`input.min = 0`) :
   garder la valeur d'origine sous `as unknown as string` plutôt que convertir, et
   signaler la conversion à faire dans une contribution dédiée.
-- Le typage révèle des défauts (une liste d'aide qui contenait `false`) : les
-  corriger à part, avec un test de régression et une entrée de changelog, jamais
+- Le typage révèle des défauts : les corriger à part, avec un test de régression et une entrée de changelog, jamais
   silencieusement pendant la migration.
-
-## Écart avec la consigne précédente
-
-`docs/code-structure.md` décrivait « JavaScript ESM natif » et `README.md`
-Node 22.13+. La base exige désormais Node 22.18+ (effacement des types activé par
-défaut) et devient mixte JS/TS pendant la migration. Le choix « pas de bundler »
-est conservé : les URL de contenu et le Dockerfile restent
-identiques ; seule la lecture des sources par l'assembleur change.

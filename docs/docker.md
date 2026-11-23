@@ -1,17 +1,14 @@
 # Construire et exécuter avec Docker
 
-La référence de livraison est le dépôt GitHub (voir [l’exploitation](operations.md)). Le dépôt fournit aussi un `Dockerfile` pour
-construire localement la même version du serveur Node/UDP. Le workflow de
-[publication](../.github/workflows/docker.yml) construit et publie sur GHCR à
-chaque push sur `main` : `ghcr.io/simonjamain/i-am-a-moucheron:latest` et un
-tag `sha-<SHA complet>` pour retrouver le commit publié.
+Le `Dockerfile` construit l'image du serveur Node/UDP. Publication automatique depuis
+`main` : [déploiement](operations.md#déploiement).
 
 ## Construction et démarrage
 
-Depuis la racine du dépôt :
+Depuis la racine du dépôt, avec l'historique Git complet :
 
 ```sh
-node scripts/build-info.ts   # VERSION et nouveautés (historique Git complet requis)
+node scripts/build-info.ts   # VERSION et nouveautés : Docker n'a pas accès à .git
 docker build -t i-am-a-moucheron:local .
 docker run -d --name i-am-a-moucheron --restart unless-stopped --init \
   --read-only --tmpfs /tmp:size=16m,mode=1777 --cap-drop ALL \
@@ -22,72 +19,37 @@ docker run -d --name i-am-a-moucheron --restart unless-stopped --init \
 curl http://127.0.0.1:3000/healthz
 ```
 
-Remplacer `ADRESSE_IP_PUBLIQUE` par l’adresse réelle de la VM. La plage
-`41000–41099/UDP` doit être publiée sans changement de numéros et autorisée par
-les pare-feu de la VM et de l’hébergeur. HTTP peut passer par un proxy HTTPS ; le
-trafic de jeu UDP ne passe pas par ce proxy. Les variables et vérifications réseau
-sont détaillées dans le [guide du serveur UDP](udp-server.md).
+- `ADRESSE_IP_PUBLIQUE` : adresse réelle de la VM. La plage `41000–41099/UDP` est
+  publiée sans changement de numéros et ouverte dans les pare-feu de la VM et de
+  l'hébergeur. HTTP peut passer par un proxy HTTPS ; l'UDP de jeu, non.
+- Réseau d'entreprise n'autorisant que des ports connus : publier un seul port partagé
+  (`-e UDP_MUX_PORT=41000 -e UDP_ADVERTISE_PORT=3478 -p 3478:41000/udp`) ;
+  `UDP_ADVERTISE_PORT` égale le port publié côté hôte
+  ([port UDP unique](udp-server.md#port-udp-unique-réseaux-dentreprise)).
+- [Statistiques](stats.md) persistantes : monter un volume inscriptible par l'utilisateur
+  `node` et définir `STATS_FILE` (`-v moucheron-stats:/stats -e STATS_FILE=/stats/stats.json`).
+- `/healthz` valide HTTP, pas l'UDP : vérifier l'UDP avec deux joueurs sur des réseaux
+  distincts. Autres variables : [serveur UDP](udp-server.md).
 
-Pour un réseau d'entreprise qui ne laisse sortir l'UDP que vers des ports
-connus, publier un seul port partagé, par exemple sur 3478 ou 443 :
+`compose.yaml` et `compose.traefik.yaml` référencent l'ancien tag local
+`i-am-a-moucheron:2026.10.29-udp.2`, qui n'est plus produit : utiliser les commandes
+ci-dessus ou l'image GHCR `latest`.
 
-```sh
-docker run … -e UDP_ADVERTISE_ADDRESS=ADRESSE_IP_PUBLIQUE \
-  -e UDP_MUX_PORT=41000 -e UDP_ADVERTISE_PORT=3478 \
-  -p 127.0.0.1:3000:3000/tcp -p 3478:41000/udp i-am-a-moucheron:local
-```
+## Contrôle de contribution
 
-`UDP_ADVERTISE_PORT` doit égaler le port publié côté hôte ; voir
-[le port UDP unique](udp-server.md#port-udp-unique-réseaux-dentreprise).
+Chaque contribution construit l'image avec la commande ci-dessus et rapporte résultat et
+commit testé dans la PR ; si Docker manque localement, le signaler et attendre le
+contrôle **Docker build** de la PR (`docker-build.yml`). Ce contrôle tourne sur toutes
+les PR et groupes de fusion, documentaires compris, sans publier ni utiliser de secret :
+il construit l'image `linux/amd64`, la démarre et vérifie `/healthz` et le 410 de
+`/api/join` (sans tester l'UDP). Sur `main`, seul `docker.yml` reconstruit et publie.
 
-Pour conserver les [statistiques](stats.md) d'une version à l'autre, monter un volume
-inscriptible par l'utilisateur `node` et définir `STATS_FILE` (par exemple
-`-v moucheron-stats:/stats -e STATS_FILE=/stats/stats.json`) ; la page `/stats` les affiche.
+Le caractère obligatoire de **Docker build** avant fusion dépend de la protection de
+`main` (ruleset GitHub), réglée par un administrateur et non lisible depuis une
+contribution ; un workflow seul ne rend pas un contrôle obligatoire. Si la fusion est
+bloquée, laisser la PR ouverte.
 
-Une seule instance conserve toutes les salles en RAM. Redémarrer ou recréer le
-conteneur efface les parties en cours. Le contrôle `/healthz` valide HTTP, pas la
-connectivité UDP : la vérifier avec deux joueurs sur des réseaux distincts.
+## Outil de modèles GLB
 
-`compose.yaml` et `compose.traefik.yaml` référencent encore l’ancien tag local
-`i-am-a-moucheron:2026.10.29-udp.2`, qui n’est plus produit : ils ne suivent pas
-l’état courant. Utiliser la commande `docker build` / `docker run` ci-dessus ou
-l’image GHCR `latest`.
-
-## Contrôle de contribution et protection de main
-
-Chaque contribution construit l’image complète avec la commande `docker build`
-ci-dessus. Rapporter le résultat et le commit testé dans la PR. Si Docker manque
-localement, le signaler et attendre le résultat de GitHub Actions.
-
-Le workflow [Docker build validation](../.github/workflows/docker-build.yml)
-exécute le contrôle **Docker build** sur toutes les PR et les groupes de fusion. Il construit et charge l’image `linux/amd64` sans la
-publier ni utiliser de secrets de déploiement. Aucun filtre de fichiers ne saute
-le contrôle sur les contributions documentaires. Le job démarre ensuite l'image construite et contrôle `/healthz` et le refus 410
-de `/api/join` (sans tester UDP). Le workflow de publication
-GHCR reste distinct et ne se déclenche que sur les pushs sur `main` : les
-branches de contribution et les tags Git ne publient aucune image. Sur `main`,
-seul le workflow de publication reconstruit l’image, sans doubler le build de
-vérification. Les exécutions de publication ne sont pas annulées par les pushs
-suivants ; leur succès et le tag SHA permettent de vérifier chaque livraison.
-
-Pour bloquer effectivement la fusion, un administrateur doit configurer dans
-GitHub une protection ou un ruleset actif sur `main` : exiger une PR et le
-status check **Docker build** (application GitHub Actions), avec une branche à
-jour avant fusion. Conserver les autres protections existantes. Appliquer la
-règle aux administrateurs et éviter les exceptions de contournement si toutes
-les fusions doivent être bloquées en cas d’échec. Le fichier de workflow seul
-ne peut pas rendre un contrôle obligatoire.
-
-Les agents n'ont pas les droits d'administration : cette protection n'est pas
-lisible ni modifiable depuis une contribution. Vérifier son activation dans les
-paramètres du dépôt ; si la fusion est bloquée, laisser la PR ouverte.
-
-Référence : [contrôles obligatoires GitHub](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches#require-status-checks-before-merging).
-
-## Outillage de modèles GLB (hors VPS de jeu)
-
-L'image Docker de développement Meshy est distincte de l'image du serveur.
-Elle est construite et utilisée à la demande par `compose.assets.yaml`.
-La CI vérifie le même outil sur une fixture texturée et GHCR le publiera
-après fusion sur `main`, sans aucun service permanent.
-Voir [pipeline d'assets](asset-pipeline.md).
+L'image de développement Meshy est distincte de celle du serveur et ne tourne pas sur le
+VPS : [pipeline d'assets](asset-pipeline.md).
