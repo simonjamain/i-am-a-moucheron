@@ -18,7 +18,6 @@ import { tsl, type Node } from './gpu-passes.ts';
 export const SKY_LOOK = Object.freeze({
   zenith: '#2f7fd8',
   horizon: '#a9d6fb',
-  below: '#e3f1fd',
   sun: '#fff6df',
   fog: '#bfe0fb',
   cloud: '#e4ebf4',
@@ -53,7 +52,6 @@ export function createSkyDome(T: Three, radius: number): SkyDome {
   const uniforms = {
     zenith: uniform(new T.Color(look.zenith)),
     horizon: uniform(new T.Color(look.horizon)),
-    below: uniform(new T.Color(look.below)),
     sunColor: uniform(new T.Color(look.sun)),
     sunDir: uniform(new T.Vector3(...SUN_DIRECTION).normalize()),
     hasClouds: uniform(0),
@@ -61,11 +59,9 @@ export function createSkyDome(T: Three, radius: number): SkyDome {
   const clouds = texture(new T.Texture());
   const dir = positionLocal.normalize();
   const up = dir.y;
-  const sky = select(
-    up.greaterThan(0),
-    mix(uniforms.horizon, uniforms.zenith, pow(smoothstep(0, 1, up), 0.65)),
-    mix(uniforms.horizon, uniforms.below, smoothstep(0, -0.35, up)),
-  );
+  // Blue all around, below the horizon too (docs/purgatory-sky.md): the sky has no
+  // ground, and the office's clouds only show by whitening the view near them.
+  const sky = mix(uniforms.horizon, uniforms.zenith, pow(smoothstep(0, 1, up.abs()), 0.65));
   const sun = max(dir.dot(uniforms.sunDir.normalize()), 0);
   const lit = sky.add(uniforms.sunColor.mul(pow(sun, 900).mul(1.6).add(pow(sun, 12).mul(0.18))));
   // Cloud layer (premultiplied colour, linear) over the sky.
@@ -93,6 +89,24 @@ export function createSkyDome(T: Three, radius: number): SkyDome {
       uniforms.hasClouds.value = layer ? 1 : 0;
     },
   };
+}
+
+/**
+ * The sky's haze as a fog node (WebGPU): things melt into the sky's own colour in
+ * their direction (the dome's gradient), with distance (`near` to `far`) and below
+ * the sky floor (`floor`, over `depth`): what lies under the office's clouds never
+ * shows from the sky, which stays blue all around.
+ */
+export function createSkyFog(T: Three, near: number, far: number, floor: number, depth: number) {
+  const { uniform, positionWorld, cameraPosition, mix, smoothstep, pow, max, fog } = tsl(T);
+  const zenith = uniform(new T.Color(SKY_LOOK.zenith)),
+    horizon = uniform(new T.Color(SKY_LOOK.horizon));
+  const ray = positionWorld.sub(cameraPosition);
+  const up = ray.normalize().y;
+  const color = mix(horizon, zenith, pow(smoothstep(0, 1, up.abs()), 0.65));
+  const range = smoothstep(near, far, ray.length());
+  const under = smoothstep(floor, floor - depth, positionWorld.y);
+  return fog(color, max(range, under));
 }
 
 // ------------------------------------------------------------ ground cloud

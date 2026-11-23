@@ -61,6 +61,14 @@ for (const c of SKY_CLOUDS) {
 // behind its front edge (z < 0), and nothing crosses the VIP ropes.
 const props = purgatoryProps();
 assert.ok(props.length > 30 && props.length < 60, 'a sober decor: ' + props.length);
+// Saint Pierre's own desk is bare: only its clipboard lies on it.
+assert.deepEqual(
+  props
+    .filter((p) => Math.abs(p.x * U) < 1 && Math.abs(p.z * U - COUNTER.z) < 0.6)
+    .map((p) => p.model),
+  ['Desk'],
+  "Saint Pierre's desk holds nothing",
+);
 // Beyond the counter and the back office, only what tells of a waiting room.
 const WAITING = new Set([
   'Sofa_Grey',
@@ -197,7 +205,10 @@ built.update(0.016, 1000, {
   deskServed: false,
   vipServed: false,
 });
-built.update(0.5, 1500, { saintX: 0, vip: true, deskServed: true, vipServed: false });
+built.update(0.5, 1500, { saintX: 0, vip: true });
+// No sea of clouds, no plates nor floor rings: the sky is blue all around.
+for (const name of ['purgatoire-mer-de-nuages', 'purgatoire-marquage'])
+  assert.ok(!built.scene.getObjectByName(name), name + ' removed');
 assert.equal(built.saint.scale.x, 1, 'one Saint Pierre, at his own size');
 assert.ok(built.colliders.length >= 2);
 assert.ok(!built.scene.getObjectByName('purgatoire-nuages-ciel'), 'no shader clouds without WebGL');

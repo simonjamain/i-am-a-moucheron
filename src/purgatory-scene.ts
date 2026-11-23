@@ -14,11 +14,12 @@ import { addOfficeProps } from './office-pack.ts';
 import { HUMANOID_UNITS, MAP, PERSON_HEIGHT } from './scale.ts';
 import { PURGATORY_FRAME } from './arena-frame.ts';
 import { PURGATORY_CLOUD, SKY_FLOOR, purgatorySolids } from './sky-passage.ts';
-import { VIP_DESK, VIP_GATE_Z, VIP_GUARD, VIP_LANE } from './purgatory-queue.ts';
+import { CLIPBOARD_AT, VIP_DESK, VIP_GATE_Z, VIP_GUARD, VIP_LANE } from './purgatory-queue.ts';
 import {
   createCloudFloor,
   createSkyClouds,
   createSkyDome,
+  createSkyFog,
   SKY_LOOK,
   SUN_DIRECTION,
 } from './purgatory-clouds.ts';
@@ -59,8 +60,8 @@ export const COUNTER = Object.freeze({
   vipDesk: VIP_DESK.x,
   saintZ: -2.7,
   /** Clipboard at each window: offset from the desk's middle, overhanging its front edge. */
-  clipboardX: 0.5,
-  clipboardZ: -0.85,
+  clipboardX: CLIPBOARD_AT.dx,
+  clipboardZ: CLIPBOARD_AT.z,
   clipboardYaw: -0.18,
 });
 /** Colours chosen for this map (art direction: each map picks its own). */
@@ -90,6 +91,8 @@ export function purgatoryProps(): Prop[] {
   const desks = [...COUNTER.desks, COUNTER.vipDesk];
   desks.forEach((x, i) => {
     P.push(put('Desk', x, COUNTER.z, north));
+    // Saint Pierre's own desk stays bare: only the clipboard lies on it.
+    if (x === 0) return;
     const z = COUNTER.z;
     // His side (-Z): screen and keyboard; the visitors' side (+Z): the papers.
     P.push(put(i % 2 ? 'CRT_Monitor_Off' : 'CRT_Monitor', x + 0.35, z - 0.2, north, DESK_TOP));
@@ -97,10 +100,8 @@ export function purgatoryProps(): Prop[] {
     P.push(put(i === 3 ? 'Banker_Lamp' : 'Desk_Lamp', x - 0.75, z - 0.25, north, DESK_TOP));
     P.push(put(i % 2 ? 'Paper_Stack_Tall' : 'Paper_Tray', x - 0.5, z + 0.28, north, DESK_TOP));
     P.push(put('Stapler', x + 0.1, z + 0.32, north + 0.3, DESK_TOP));
-    if (i === 1) P.push(put('Desk_Phone', x - 0.1, z - 0.3, north, DESK_TOP));
-    if (i !== 1) P.push(put(i === 2 ? 'Pen_Cup' : 'Mug', x + 0.8, z + 0.1, north, DESK_TOP));
+    P.push(put(i === 2 ? 'Pen_Cup' : 'Mug', x + 0.8, z + 0.1, north, DESK_TOP));
   });
-  P.push(put('Paper_Stack', COUNTER.desks[1] + 0.85, COUNTER.z + 0.25, north, DESK_TOP));
   // Behind Saint Pierre: office equipment only, kept sober.
   P.push(put('Whiteboard', 0, -5.4, south));
   for (const x of [-6.2, -5.2]) P.push(put('Filing_Cabinet', x, -4.6, south));
@@ -215,7 +216,8 @@ export interface PurgatoryScene {
   /** Everything of the purgatory, in world coordinates: sky dome and decor. */
   place: THREE.Group;
   /** The sky's look, for the world scene while the camera is in the sky. */
-  look: { background: THREE.Color; fog: THREE.Fog };
+  /** The sky's look; `fogNode` (WebGPU) also melts what lies under the sky floor. */
+  look: { background: THREE.Color; fog: THREE.Fog; fogNode: THREE.Node | null };
   /** The decor's group: local units (arena units), placed at PURGATORY_FRAME. */
   root: THREE.Group;
   /** World boxes: the counter and the cloud's walkable floor (walker, camera). */
@@ -261,23 +263,23 @@ export function createPurgatoryScene(T: Three, options: PurgatorySceneOptions): 
   const dome: SkyDome | null = options.shaders ? createSkyDome(T, 140 * unit) : null;
   if (dome) place.add(dome.mesh);
   // The sky's haze: far enough to see Saint Pierre's cloud from the sky floor (150 m
-  // below it) and aircraft around, near enough to melt the sea of clouds' horizon.
+  // below it) and aircraft around, near enough to melt what lies far away.
   const look = {
     background: new T.Color(SKY_LOOK.horizon),
     fog: new T.Fog(SKY_LOOK.fog, MAP.metres(400), MAP.metres(2500)),
+    fogNode: options.shaders
+      ? (createSkyFog(
+          T,
+          MAP.metres(400),
+          MAP.metres(2500),
+          SKY_FLOOR,
+          MAP.metres(30),
+        ) as THREE.Node)
+      : null,
   };
-  // The sea of clouds at the sky floor (docs/purgatory-sky.md): it hides the office
-  // under it and follows the camera, so that the sky has no end.
-  const sea = new T.Mesh(
-    new T.CircleGeometry(MAP.metres(20000), 48),
-    new T.MeshBasicMaterial({ color: SKY_LOOK.below, fog: true }),
-  );
-  sea.name = 'purgatoire-mer-de-nuages';
-  sea.rotation.x = -Math.PI / 2;
-  sea.position.y = SKY_FLOOR;
-  place.add(sea);
   world.background = look.background;
   world.fog = look.fog;
+  world.fogNode = look.fogNode;
   scene.add(new T.HemisphereLight(L.hemisphereSky, L.hemisphereGround, 1.5));
   const sun = new T.DirectionalLight(L.sun, 1.9);
   sun.position.set(...(SUN_DIRECTION.map((v) => v * 30) as [number, number, number]));
@@ -422,8 +424,6 @@ export function createPurgatoryScene(T: Three, options: PurgatorySceneOptions): 
       // Follow the camera now (a matrix updated in onBeforeRender lags one frame).
       camera.updateMatrixWorld();
       const eye = new T.Vector3().setFromMatrixPosition(camera.matrixWorld);
-      sea.position.set(eye.x, SKY_FLOOR, eye.z);
-      sea.updateMatrixWorld();
       if (dome) {
         dome.mesh.position.copy(eye);
         dome.mesh.updateMatrixWorld();
