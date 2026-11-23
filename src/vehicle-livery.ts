@@ -1,7 +1,7 @@
 // Issue #106: no per-player or per-vehicle colour identity. Meshy models keep
 // their textures untouched; procedural models keep their original base colour,
 // on a private material so dirt can still tint it.
-import type * as THREE from 'three';
+import type * as THREE from 'three/webgpu';
 import type { Three } from './types.ts';
 
 type InscriptionMesh = THREE.Mesh<THREE.PlaneGeometry, THREE.MeshBasicMaterial>;

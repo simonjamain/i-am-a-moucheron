@@ -6,7 +6,7 @@
 // The walking rules (bounds, ropes, desks) stay in src/purgatory-queue.ts: the
 // furniture stands outside the walkable rectangle or behind the counter, so the
 // shared physics is unchanged.
-import type * as THREE from 'three';
+import type * as THREE from 'three/webgpu';
 import type { Three } from './types.ts';
 import type { Prop, OfficeModel } from './office-props.ts';
 import { FACE } from './office-props.ts';
@@ -229,13 +229,13 @@ export interface PurgatoryScene {
   hover: number;
   update(dt: number, now: number, state: PurgatoryState): void;
   /** Draw the sky clouds' layer for this camera (before rendering the scene). */
-  prerender(renderer: THREE.WebGLRenderer, camera: THREE.Camera): void;
+  prerender(renderer: THREE.WebGPURenderer, camera: THREE.Camera): void;
   /**
    * Draw the floor cloud over the rendered frame, stopping at the scene depth
    * (`depth`, the cartoon renderer's depth texture).
    */
   postrender(
-    renderer: THREE.WebGLRenderer,
+    renderer: THREE.WebGPURenderer,
     camera: THREE.Camera,
     depth: THREE.Texture | null,
   ): void;

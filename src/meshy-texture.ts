@@ -1,6 +1,6 @@
 // Shared loader for offline-embedded Meshy UV atlases. No runtime GLTF decoder.
 // Instances share immutable geometry and the original atlas; moving groups are local.
-import type * as THREE from 'three';
+import type * as THREE from 'three/webgpu';
 import type { Three } from './types.ts';
 
 /** One embedded part: base64 int16 positions, uint16 UVs and uint16 indices. */

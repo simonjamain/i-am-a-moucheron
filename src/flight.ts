@@ -1,4 +1,4 @@
-import type * as THREE from 'three';
+import type * as THREE from 'three/webgpu';
 import type { Three } from './types.ts';
 // Miniature fighter tuning inspired by a Merlin Spitfire's turn-fighting role.
 // Units belong to the desk arena; these are not measured Spitfire coefficients.

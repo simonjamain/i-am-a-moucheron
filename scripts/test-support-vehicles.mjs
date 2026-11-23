@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { performance } from 'node:perf_hooks';
-import * as T from '../vendor/three.module.min.js';
+import * as T from '../vendor/three.webgpu.min.js';
 import { Game } from '../server/game.js';
 import { resolveHeavy, detonateHeavy, roomWorld } from './heavy-resolver.mjs';
 import { stepHeavy } from '../src/heavy-sim.js';

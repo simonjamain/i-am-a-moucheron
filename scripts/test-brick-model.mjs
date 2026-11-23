@@ -1,7 +1,7 @@
 // Issue #99: approved 2×4 LEGO brick (Meshy image-to-3D, untextured), studs up,
 // recoloured by the game, proportioned like the reference and stacked by rows.
 import assert from 'node:assert/strict';
-import * as T from '../vendor/three.module.min.js';
+import * as T from '../vendor/three.webgpu.min.js';
 import { BRICK_SOURCE, BRICK_POSITIONS, BRICK_INDICES } from '../src/meshy-brick-data.ts';
 import {
   BRICK_DEPTH,

@@ -1,7 +1,7 @@
 // Rubans d'air : état de l'air selon l'incidence, ancrages sur les ailes, rubans
 // invisibles en vol normal puis naissants à l'approche du décrochage, son associé.
 import assert from 'node:assert/strict';
-import * as T from '../vendor/three.module.min.js';
+import * as T from '../vendor/three.webgpu.min.js';
 import {
   AirRibbons,
   CALM,

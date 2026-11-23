@@ -7,7 +7,8 @@ import { CASTOR_SERVICE_RADIUS, SERVICE_RADIUS } from './logistics.ts';
 import { isSupportVehicle } from './fleet.ts';
 import type { Installation } from './logistics.ts';
 import type { Three, Vec3Like } from './types.ts';
-import type * as THREE from 'three';
+import type * as THREE from 'three/webgpu';
+import { tsl } from './gpu-passes.ts';
 
 /** A refuel installation, optionally bound to a numbered placement slot. */
 export type ZoneInstallation = Installation & { slot?: number | string };
@@ -49,43 +50,23 @@ export function serviceZoneList(
   ];
 }
 
-function zoneMaterial(T: Three): THREE.ShaderMaterial {
-  return new T.ShaderMaterial({
-    uniforms: { color: { value: new T.Color(ZONE_COLOR) } },
-    vertexShader: `
-      #include <common>
-      #include <logdepthbuf_pars_vertex>
-      varying vec3 vNormal;
-      varying vec3 vView;
-      void main() {
-        vec4 mv = modelViewMatrix * vec4(position, 1.0);
-        vNormal = normalize(normalMatrix * normal);
-        vView = normalize(-mv.xyz);
-        gl_Position = projectionMatrix * mv;
-        #include <logdepthbuf_vertex>
-      }`,
-    fragmentShader: `
-      #include <common>
-      #include <logdepthbuf_pars_fragment>
-      uniform vec3 color;
-      varying vec3 vNormal;
-      varying vec3 vView;
-      void main() {
-        #include <logdepthbuf_fragment>
-        float rim = 1.0 - abs(dot(normalize(vNormal), normalize(vView)));
-        gl_FragColor = vec4(color, 0.05 + 0.4 * pow(rim, 2.5));
-      }`,
-    transparent: true,
-    depthWrite: false,
-    side: T.DoubleSide,
-  });
+function zoneMaterial(T: Three): THREE.NodeMaterial {
+  const { uniform, vec4, normalView, positionViewDirection, pow } = tsl(T);
+  const rim = normalView.normalize().dot(positionViewDirection.normalize()).abs().oneMinus();
+  const material = new T.NodeMaterial();
+  material.fragmentNode = vec4(uniform(new T.Color(ZONE_COLOR)), pow(rim, 2.5).mul(0.4).add(0.05));
+  material.transparent = true;
+  material.depthWrite = false;
+  material.side = T.DoubleSide;
+  material.fog = false;
+  return material;
 }
 
 export class ServiceZones {
   T: Three;
   scene: THREE.Object3D;
   geometry: THREE.SphereGeometry;
-  material: THREE.ShaderMaterial;
+  material: THREE.NodeMaterial;
   meshes: Map<string, THREE.Mesh>;
   constructor(T: Three, scene: THREE.Object3D) {
     this.T = T;

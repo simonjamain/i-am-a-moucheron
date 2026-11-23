@@ -1,6 +1,6 @@
 import './normal-dossiers.mjs';
 import assert from 'node:assert/strict';
-import * as T from '../vendor/three.module.min.js';
+import * as T from '../vendor/three.webgpu.min.js';
 import { MAP, mapScale, ACTOR_UNIT, HUMAN_SCALE, REFERENCE, FLAK } from '../src/scale.ts';
 import { VEHICLES, vehiclePad, vehicleEntry } from '../src/fleet.ts';
 import { OFFICE_LAYOUT } from '../src/layout.ts';

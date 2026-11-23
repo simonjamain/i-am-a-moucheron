@@ -3,7 +3,7 @@
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import { readFileSync } from 'node:fs';
-import * as T from '../vendor/three.module.min.js';
+import * as T from '../vendor/three.webgpu.min.js';
 import { HEAVY, heavyInterval } from '../src/armament.ts';
 import { heavyReadyAt, heavyLane } from '../src/reload-hud.js';
 const source = readFileSync('src/client.js', 'utf8');

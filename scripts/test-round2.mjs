@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import * as T from '../vendor/three.module.min.js';
+import * as T from '../vendor/three.webgpu.min.js';
 import { wheelPose } from '../src/castor-wheels.ts';
 import { stepHelicopter } from '../src/helicopter.js';
 import { VEHICLES, vehiclePad } from '../src/fleet.ts';

@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import * as T from '../vendor/three.module.min.js';
+import * as T from '../vendor/three.webgpu.min.js';
 import { createGraphics } from '../src/graphics.js';
 import { InsectIndex, nearestInsectHit } from '../src/insect-hits.ts';
 const scene = new T.Scene();

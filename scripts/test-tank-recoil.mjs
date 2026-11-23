@@ -1,7 +1,7 @@
 // Tank main gun: visual recoil of the barrel, physical kick on the hull, gunner's view over the
 // shoulder, and a tank left alone that stands still.
 import assert from 'node:assert/strict';
-import * as T from '../vendor/three.module.min.js';
+import * as T from '../vendor/three.webgpu.min.js';
 import { createGraphics } from '../src/graphics.js';
 import { VEHICLES, vehicleUnit } from '../src/fleet.ts';
 import { loadRapier } from '../src/physics-world.ts';

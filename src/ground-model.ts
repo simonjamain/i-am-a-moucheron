@@ -3,7 +3,7 @@ import { createBrickWall } from './brick-wall.ts';
 import { createSentryModel } from './sentry-model.ts';
 import { createGatlingModel } from './gatling-model.ts';
 import type { WallStructure } from './brick-rules.ts';
-import type * as THREE from 'three';
+import type * as THREE from 'three/webgpu';
 import type { Three, Vec2 } from './types.ts';
 
 type WallEnds = Pick<WallStructure, 'a' | 'b' | 'hp'>;

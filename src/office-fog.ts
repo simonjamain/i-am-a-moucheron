@@ -1,6 +1,6 @@
 // Uniform horizontal layer, kept at its original altitude when the flight limit
 // rises. Integrating along each view ray makes it visible from below and inside.
-import type * as THREE from 'three';
+import type * as THREE from 'three/webgpu';
 import type { Three } from './types.ts';
 
 /** Flight bounds: half extents x/z and ceiling height, office metres. */
@@ -43,30 +43,52 @@ export const officeFogLayer = (T: Three): { start: number; thickness: number } |
   installed.get(T) ?? null;
 export function installOfficeFog(T: Three, cloudTop: number = OFFICE_CLOUD_TOP): void {
   if (installed.has(T)) return;
-  T.ShaderChunk.fog_pars_vertex += '\n#ifdef USE_FOG\nvarying vec3 vOfficeFogPosition;\n#endif';
-  T.ShaderChunk.fog_vertex += `
-#ifdef USE_FOG
-  vOfficeFogPosition = cameraPosition + vec3(
-    dot(viewMatrix[0].xyz, mvPosition.xyz),
-    dot(viewMatrix[1].xyz, mvPosition.xyz),
-    dot(viewMatrix[2].xyz, mvPosition.xyz));
-#endif`;
-  T.ShaderChunk.fog_pars_fragment += '\n#ifdef USE_FOG\nvarying vec3 vOfficeFogPosition;\n#endif';
   const start = cloudTop * FOG_START_RATIO,
     thickness = cloudTop - start;
   installed.set(T, { start, thickness });
-  T.ShaderChunk.fog_fragment = T.ShaderChunk.fog_fragment.replace(
-    'float fogFactor = 1.0 - exp( - fogDensity * fogDensity * vFogDepth * vFogDepth );',
-    `
-    float fogStart = ${start.toFixed(7)};
-    float fogThickness = ${thickness.toFixed(7)};
-    float fogA = max(0.0, cameraPosition.y - fogStart);
-    float fogB = max(0.0, vOfficeFogPosition.y - fogStart);
-    float fogDY = vOfficeFogPosition.y - cameraPosition.y;
-    float fogAverage = abs(fogDY) < 0.000001 ? fogA / fogThickness : (fogB*fogB - fogA*fogA) / (2.0 * fogThickness * fogDY);
-    float fogDistance = length(vOfficeFogPosition - cameraPosition);
-    float fogFactor = 1.0 - exp(-max(0.0, fogAverage) * fogDistance * 9.0 - fogDensity*fogDensity*vFogDepth*vFogDepth);`,
+}
+
+/**
+ * Give `scene` (whose `fog` is a FogExp2) the cloud layer: the optical depth of the haze
+ * integrated along each view ray, added to the usual exponential-squared distance fog.
+ * Written as the scene's fog node, evaluated per fragment from its world position.
+ */
+export function applyOfficeFog(T: Three, scene: THREE.Scene): void {
+  const layer = installed.get(T),
+    fog = scene.fog as THREE.FogExp2 | null;
+  if (!layer || !fog?.isFogExp2) return;
+  const {
+    reference,
+    positionWorld,
+    positionView,
+    cameraPosition,
+    float,
+    select,
+    abs,
+    max,
+    length,
+    exp,
+    fog: fogEffect,
+  } = (T as unknown as { TSL: Record<string, any> }).TSL; // eslint-disable-line @typescript-eslint/no-explicit-any
+  const density = reference('density', 'float', fog),
+    color = reference('color', 'color', fog);
+  const a = max(0, cameraPosition.y.sub(layer.start)),
+    b = max(0, positionWorld.y.sub(layer.start)),
+    dy = positionWorld.y.sub(cameraPosition.y);
+  const average = select(
+    abs(dy).lessThan(0.000001),
+    a.div(layer.thickness),
+    b
+      .mul(b)
+      .sub(a.mul(a))
+      .div(dy.mul(2 * layer.thickness)),
   );
+  const viewZ = positionView.z.negate();
+  const optical = max(0, average)
+    .mul(length(positionWorld.sub(cameraPosition)))
+    .mul(9)
+    .add(density.mul(density).mul(viewZ).mul(viewZ));
+  scene.fogNode = fogEffect(color, float(1).sub(exp(optical.negate())));
 }
 
 // The clear scene background does not run material fog shaders. Enclose its

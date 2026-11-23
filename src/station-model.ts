@@ -3,7 +3,7 @@ import { MODEL_DATA as REFUEL } from './meshy-refuel-data.ts';
 import { MODEL_DATA as RADAR } from './meshy-radar-data.ts';
 import { texturedMeshyParts } from './meshy-texture.ts';
 import type { OrientedBox3 } from './oriented-collider.ts';
-import type * as THREE from 'three';
+import type * as THREE from 'three/webgpu';
 import type { Three } from './types.ts';
 
 export type ServiceStationKind = 'radar' | 'refuel';

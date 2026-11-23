@@ -2,7 +2,7 @@ import { RAT_DATA as D } from './rat-data.ts';
 import { defineCreature } from './rigged-creature.ts';
 import type { CreaturePose } from './rigged-creature.ts';
 import { groundPresentation, REST_PHASES } from './walker-gait.ts';
-import type * as THREE from 'three';
+import type * as THREE from 'three/webgpu';
 import type { Three } from './types.ts';
 
 /** A bone's model-space rotation and position (one clip key, or the bind pose). */

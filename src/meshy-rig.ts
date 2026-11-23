@@ -1,6 +1,6 @@
 import { texturedMeshyParts } from './meshy-texture.ts';
 import type { MeshyPartData, MeshyTexturedData } from './meshy-texture.ts';
-import type * as THREE from 'three';
+import type * as THREE from 'three/webgpu';
 import type { Three } from './types.ts';
 
 /** A pivot of `data.rig`, placed in its parent's frame ('body' is the root). */

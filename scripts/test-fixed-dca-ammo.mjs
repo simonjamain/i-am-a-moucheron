@@ -5,7 +5,7 @@ import { ACTOR_UNIT, FLAK, MAP } from '../src/scale.ts';
 import { FIXED_DCA_AMMO } from '../src/ground-ammo.ts';
 import { advancePaidService } from '../src/paid-service.ts';
 import { newGroundDefense } from '../src/ground-defense-state.ts';
-import * as T from '../vendor/three.module.min.js';
+import * as T from '../vendor/three.webgpu.min.js';
 import { HEAVY } from '../src/armament.ts';
 import { stepHeavy } from '../src/heavy-sim.js';
 import { shopPrice } from '../src/equipment.ts';

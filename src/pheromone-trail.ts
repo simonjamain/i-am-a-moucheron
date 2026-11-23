@@ -1,7 +1,7 @@
 // Issue #107: readable ground pheromone trails. A soft ribbon on the floor over a
 // darker underlay (contrast on light and dark floors) and chevrons that slide
 // toward the bin to show the direction. Geometry helpers are pure and testable.
-import type * as THREE from 'three';
+import type * as THREE from 'three/webgpu';
 import type { Three, Vec3Like } from './types.ts';
 
 /** Floor polyline [[x, y, z], …] (only x and z are read). */

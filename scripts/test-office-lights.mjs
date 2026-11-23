@@ -2,7 +2,7 @@
 // layout, lamp shadows rendered once without the moving things. See
 // docs/office-lighting.md.
 import assert from 'node:assert/strict';
-import * as T from '../vendor/three.module.min.js';
+import * as T from '../vendor/three.webgpu.min.js';
 import { LAYOUTS, setActiveLayout } from '../src/layouts.ts';
 import { propColliders, ROD } from '../src/office-props.ts';
 import { officeLamps, bakeOfficeShadows, LAMP_LOOK } from '../src/office-lights.ts';
@@ -86,7 +86,7 @@ scene.add(mover);
 const calls = [];
 let current = 'screen';
 const renderer = {
-  isWebGLRenderer: true,
+  isWebGPURenderer: true,
   getRenderTarget: () => current,
   setRenderTarget: (t) => (current = t),
   render(stage) {
@@ -99,7 +99,7 @@ assert.ok(office.root.children.some((o) => o.isMesh && o.castShadow));
 assert.equal(bakeOfficeShadows(T, null, office.root), false, 'no renderer, nothing baked');
 assert.equal(office.bakeShadows(renderer), true);
 assert.equal(calls.length, 1);
-assert.ok(calls[0].target.isWebGLRenderTarget && !calls[0].mover && !calls[0].sun);
+assert.ok(calls[0].target.isRenderTarget && !calls[0].mover && !calls[0].sun);
 assert.equal(current, 'screen', 'render target restored');
 assert.equal(office.root.parent, scene, 'room back in the scene');
 assert.ok(lights(office.root, (o) => o.isMesh && o.castShadow).length === 0);

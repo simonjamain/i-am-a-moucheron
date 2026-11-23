@@ -152,7 +152,7 @@ console.log(
 // stops at the first insect (no piercing bonus any more).
 const { readFileSync } = await import('node:fs');
 const { runInNewContext } = await import('node:vm');
-const T = await import('../vendor/three.module.min.js');
+const T = await import('../vendor/three.webgpu.min.js');
 const { nearestInsectHit, nearestSolidHit } = await import('../src/insect-hits.ts');
 const { bounce } = await import('../src/ricochet.ts');
 const { vehicleMaterial, insectMaterial } = await import('../src/materials.ts');

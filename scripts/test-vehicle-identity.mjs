@@ -2,7 +2,7 @@
 // and no seat marker: posts are aimed at directly (src/seat-posts.ts).
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import * as T from '../vendor/three.module.min.js';
+import * as T from '../vendor/three.webgpu.min.js';
 import { paintVehicle } from '../src/vehicle-livery.ts';
 
 // Procedural model: the original base colour is kept for every sequence.

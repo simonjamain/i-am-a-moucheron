@@ -2,7 +2,7 @@
 // traverse (whole gun, wheels counter-rotating), an elevation (cradle on its
 // trunnion, -5°..+40°) and a tube recoil on each shot.
 import assert from 'node:assert/strict';
-import * as T from '../vendor/three.module.min.js';
+import * as T from '../vendor/three.webgpu.min.js';
 import { HOWITZER_DATA } from '../src/howitzer-data.ts';
 import { createHowitzer, HOWITZER, HOWITZER_SCALE } from '../src/howitzer-model.ts';
 import { makeFortificationStation } from '../src/fortification-model.ts';

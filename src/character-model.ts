@@ -1,6 +1,6 @@
 import { CHARACTER_DATA as COWBOY } from './character-data.ts';
 import { DEFAULT_APPEARANCE, appearanceId } from './character-appearances.ts';
-import type * as THREE from 'three';
+import type * as THREE from 'three/webgpu';
 import type { AppearanceId } from './character-appearances.ts';
 import { airPose, riseOf, isFreeFall, FREE_FALL_LEAN } from './walker-air-pose.ts';
 import type { RiggedMeshData, TypedArrayType } from './rigged-creature.ts';

@@ -97,7 +97,7 @@ for (const type of ['bomber', 'tank']) {
   assert.equal(vehicle.seats.size, type === 'bomber' ? 2 : 3);
 }
 
-const T = await import('../vendor/three.module.min.js');
+const T = await import('../vendor/three.webgpu.min.js');
 const { stepWalker } = await import('../src/sortie.ts');
 const { impactDamage, WALKER_FALL } = await import('../src/field-physics.ts');
 function fall(height, openAt = null, dt = 1 / 120) {

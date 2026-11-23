@@ -1,7 +1,7 @@
 // The physics view (src/physics-debug.ts): every rig describes its colliders, springs and
 // forces; the overlay turns them into coloured world-space lines.
 import assert from 'node:assert/strict';
-import * as T from '../vendor/three.module.min.js';
+import * as T from '../vendor/three.webgpu.min.js';
 import { loadRapier } from '../src/physics-world.ts';
 import { DEBUG_COLORS, PhysicsOverlay } from '../src/physics-debug.ts';
 import { PlaneRig } from '../src/plane-physics.ts';

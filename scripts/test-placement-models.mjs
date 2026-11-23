@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import * as T from '../vendor/three.module.min.js';
+import * as T from '../vendor/three.webgpu.min.js';
 import { ModelPreview } from '../src/model-preview.ts';
 import { createGroundModel } from '../src/ground-model.ts';
 import { makeFortificationStation } from '../src/fortification-model.ts';

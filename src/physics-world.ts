@@ -1,6 +1,6 @@
 import type RAPIER from '@dimforge/rapier3d-compat';
 import type { Collider as RapierCollider, World } from '@dimforge/rapier3d-compat';
-import type * as THREE from 'three';
+import type * as THREE from 'three/webgpu';
 import { ACTOR_UNIT, MAP } from './scale.ts';
 import { colliderBounds } from './oriented-collider.ts';
 import type { OrientedFrame } from './oriented-collider.ts';

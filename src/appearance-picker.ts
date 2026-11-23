@@ -5,7 +5,8 @@ import {
   characterLoaded,
   CHARACTER_HEIGHT,
 } from './character-model.ts';
-import type * as THREE from 'three';
+import type * as THREE from 'three/webgpu';
+import { fullscreenMaterial, fullscreenScene, tsl, withoutToneMapping } from './gpu-passes.ts';
 import type { AppearanceId } from './character-appearances.ts';
 import type { Three } from './types.ts';
 
@@ -61,32 +62,25 @@ export function createAppearancePicker(
   key.position.set(1.5, 3, 4);
   scene.add(key);
   const camera = new T.PerspectiveCamera(26, 1, 0.1, 20);
-  const tint = new T.Scene(),
-    flat = new T.OrthographicCamera(-1, 1, 1, -1, 0, 1);
-  const tintMaterial = new T.ShaderMaterial({
-    uniforms: {
-      panel: { value: new T.Vector4(...rgb(PANEL_TINT.color), PANEL_TINT.alpha) },
-      shade: { value: new T.Vector4(...rgb(SIDE_SHADE.color), SIDE_SHADE.alpha) },
-      shadeEnd: { value: SIDE_SHADE.end },
-      viewWidth: { value: 1 },
-    },
-    vertexShader: 'void main() { gl_Position = vec4(position.xy, 0.0, 1.0); }',
-    fragmentShader: `
-          uniform vec4 panel, shade;
-          uniform float shadeEnd, viewWidth;
-          void main() {
-            float s = shade.a * clamp(1.0 - gl_FragCoord.x / (viewWidth * shadeEnd), 0.0, 1.0);
-            vec3 c = panel.rgb * panel.a + (1.0 - panel.a) * s * shade.rgb;
-            float k = (1.0 - panel.a) * (1.0 - s);
-            gl_FragColor = vec4(c, 1.0 - k); // premultiplied: c + k * game
-          }`,
-    blending: T.CustomBlending,
-    blendSrc: T.OneFactor,
-    blendDst: T.OneMinusSrcAlphaFactor,
-    depthTest: false,
-    depthWrite: false,
-  });
-  tint.add(new T.Mesh(new T.PlaneGeometry(2, 2), tintMaterial));
+  // Panel colour and side shade over the game image (display colours, premultiplied): the
+  // output goes through the renderer's own sRGB encoding, so the values are decoded first.
+  const { uniform, vec4, float, screenCoordinate, sRGBTransferEOTF } = tsl(T);
+  const panel = uniform(new T.Vector4(...rgb(PANEL_TINT.color), PANEL_TINT.alpha)),
+    shade_ = uniform(new T.Vector4(...rgb(SIDE_SHADE.color), SIDE_SHADE.alpha)),
+    viewWidth = uniform(1);
+  const s = shade_.a.mul(
+    float(1)
+      .sub(screenCoordinate.x.div(viewWidth.mul(SIDE_SHADE.end)))
+      .clamp(0, 1),
+  );
+  const c = panel.rgb.mul(panel.a).add(float(1).sub(panel.a).mul(s).mul(shade_.rgb));
+  const k = float(1).sub(panel.a).mul(float(1).sub(s));
+  const tintMaterial = fullscreenMaterial(T, vec4(sRGBTransferEOTF(c), float(1).sub(k)));
+  tintMaterial.blending = T.CustomBlending;
+  tintMaterial.blendSrc = T.OneFactor;
+  tintMaterial.blendDst = T.OneMinusSrcAlphaFactor;
+  tintMaterial.premultipliedAlpha = true;
+  const { scene: tint, camera: flat } = fullscreenScene(T, tintMaterial);
   const nameOf = (id: AppearanceId) => APPEARANCES.find((a) => a.id === id)!.name;
   function show() {
     if (shown === value || !characterLoaded(value)) return;
@@ -127,10 +121,10 @@ export function createAppearancePicker(
     },
     select,
     // Called once per game frame, after the frame is rendered, on the home screen.
-    draw(renderer: THREE.WebGLRenderer | null | undefined, dt: number) {
+    draw(renderer: THREE.WebGPURenderer | null | undefined, dt: number) {
       if (!active) return;
       // Software fallback renderer: an opaque selector, the name identifies the choice.
-      if (!renderer || !(renderer as { isWebGLRenderer?: boolean }).isWebGLRenderer)
+      if (!renderer || !(renderer as { isWebGPURenderer?: boolean }).isWebGPURenderer)
         return void root.classList.add('appearance-flat');
       show();
       const box = root.getBoundingClientRect(),
@@ -172,8 +166,9 @@ export function createAppearancePicker(
       renderer.setScissorTest(true);
       const autoClear = renderer.autoClear;
       renderer.autoClear = false;
-      tintMaterial.uniforms.viewWidth.value = renderer.domElement.width;
-      renderer.render(tint, flat); // shade and panel colour over this frame's game image
+      viewWidth.value = renderer.domElement.width;
+      // Shade and panel colour over this frame's game image.
+      withoutToneMapping(T, renderer, () => renderer.render(tint, flat));
       renderer.clearDepth();
       renderer.render(scene, camera);
       renderer.autoClear = autoClear;

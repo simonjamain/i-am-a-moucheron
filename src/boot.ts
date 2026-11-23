@@ -1,7 +1,7 @@
 // This entry has no static imports: the HTML loading screen paints before any
 // game modules arrive. Load the detailed fly first, then the full game graph.
 // (Type-only imports are erased: still no static import at runtime.)
-import type * as THREE from 'three';
+import type * as THREE from 'three/webgpu';
 import type { Three } from './types.ts';
 
 /** The part of the midge rig the loading screen animates. */
@@ -25,7 +25,7 @@ try {
   await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
   // Browser URLs served by scripts/assemble.mjs: tsc has no module behind them.
   const [T, { createMidgeRig }] = (await Promise.all([
-    // @ts-expect-error browser-only URL (vendor/three.module.min.js)
+    // @ts-expect-error browser-only URL (vendor/three.webgpu.min.js)
     import('/three.js'),
     // @ts-expect-error browser-only URL (src/midge-model.ts)
     import('/midge-model.js'),
@@ -49,7 +49,8 @@ try {
     error(url);
   };
   try {
-    const renderer = new T.WebGLRenderer({ antialias: true, alpha: true });
+    const renderer = new T.WebGPURenderer({ antialias: true, alpha: true });
+    await renderer.init();
     loading.prepend(renderer.domElement);
     renderer.setPixelRatio(Math.min(1.5, devicePixelRatio));
     const scene = new T.Scene();
@@ -114,11 +115,10 @@ try {
     stop = () => {
       active = false;
       renderer.dispose();
-      renderer.forceContextLoss();
       renderer.domElement.remove();
     };
   } catch {
-    // The game has a software fallback; lack of WebGL must not block loading.
+    // A missing GPU backend must not block loading: the game has a software fallback.
   }
   // @ts-expect-error browser-only URL (src/client.js)
   const module = (await import('/client.js')) as { homeReady: Promise<unknown> };

@@ -31,7 +31,7 @@ assert.equal(make({ aim, mode: 'repair' }).price, 1);
 console.log('Camera placement: anchors, direction independence, validation and targeting OK');
 
 // Exercise the actual controller with Three.js, without requiring a GPU.
-const T = await import('../vendor/three.module.min.js');
+const T = await import('../vendor/three.webgpu.min.js');
 const { GroundDefenseUI } = await import('../src/ground-defense-ui.js');
 class Element {
   constructor(tag) {

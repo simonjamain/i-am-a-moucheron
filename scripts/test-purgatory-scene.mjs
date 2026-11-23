@@ -3,7 +3,7 @@
 // the cloud is flat where souls walk and wider than the hall, the sky clouds stay
 // clear of it, and the VIP guard's idle pose is a small, looping breath.
 import assert from 'node:assert/strict';
-import * as T from '../vendor/three.module.min.js';
+import * as T from '../vendor/three.webgpu.min.js';
 import {
   CLOUD_FLOOR,
   COUNTER,

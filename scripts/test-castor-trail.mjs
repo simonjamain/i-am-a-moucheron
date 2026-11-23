@@ -1,7 +1,7 @@
 // Issue #99: the Castor lays its LEGO wall progressively and visibly, one brick
 // at a time behind the truck, and walls/tape are billed 1 $ per 20 cm pro rata.
 import assert from 'node:assert/strict';
-import * as T from '../vendor/three.module.min.js';
+import * as T from '../vendor/three.webgpu.min.js';
 import { GroundDefenseUI, BRICK_PITCH, TRAIL_MAX, trailBricks } from '../src/ground-defense-ui.js';
 import { groundCommand, lengthPrice, newGroundDefense } from '../src/ground-defense-state.ts';
 

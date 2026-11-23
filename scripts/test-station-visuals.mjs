@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import * as T from '../vendor/three.module.min.js';
+import * as T from '../vendor/three.webgpu.min.js';
 import { makeServiceStation, animateRadar } from '../src/station-model.ts';
 import { ShopThumbnails } from '../src/shop-thumbs.js';
 
@@ -29,7 +29,7 @@ class Renderer {
   setPixelRatio() {}
   setSize() {}
 }
-const graphicsAPI = { ...T, WebGLRenderer: Renderer };
+const graphicsAPI = { ...T, WebGPURenderer: Renderer };
 const shop = new ShopThumbnails(graphicsAPI);
 for (const kind of ['refuel', 'radar']) {
   const actual = makeServiceStation(graphicsAPI, kind);

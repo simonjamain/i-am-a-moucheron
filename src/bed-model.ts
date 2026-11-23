@@ -1,6 +1,6 @@
 import { MODEL_DATA } from './meshy-bed-data.ts';
 import { texturedMeshyParts } from './meshy-texture.ts';
-import type * as THREE from 'three';
+import type * as THREE from 'three/webgpu';
 import type { Three } from './types.ts';
 
 // One static, open drawer bed. Its original geometry and atlas are shared by

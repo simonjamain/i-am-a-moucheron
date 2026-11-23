@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
-import * as T from '../vendor/three.module.min.js';
+import * as T from '../vendor/three.webgpu.min.js';
 import { stepHeavy, heavyImpact } from '../src/heavy-sim.js';
 import { HEAVY } from '../src/armament.ts';
 import { MAP } from '../src/scale.ts';

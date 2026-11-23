@@ -1,5 +1,5 @@
 import { colliderContainsXZ, type Collider } from './oriented-collider.ts';
-import type * as THREE from 'three';
+import type * as THREE from 'three/webgpu';
 import { AXLE_Z, GROUND_Y } from './tank-gear.ts';
 import { tessellate } from './tessellate.ts';
 

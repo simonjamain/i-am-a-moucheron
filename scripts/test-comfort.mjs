@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import * as T from '../vendor/three.module.min.js';
+import * as T from '../vendor/three.webgpu.min.js';
 import { Game } from '../server/game.js';
 import { VEHICLES, EXIT_LIFT, vehiclePad, vehicleEntry, vehicleAccess } from '../src/fleet.ts';
 import { stepHelicopter } from '../src/helicopter.js';

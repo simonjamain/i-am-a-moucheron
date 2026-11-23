@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import * as T from '../vendor/three.module.min.js';
+import * as T from '../vendor/three.webgpu.min.js';
 import { MIDGE } from '../src/midge-model.ts';
 import { WALKERS, WalkerBatch } from '../src/walker-batch.js';
 import { MidgeBatch } from '../src/midge-batch.js';

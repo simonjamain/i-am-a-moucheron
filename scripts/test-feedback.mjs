@@ -1,6 +1,6 @@
 import './normal-dossiers.mjs';
 import assert from 'node:assert/strict';
-import * as T from '../vendor/three.module.min.js';
+import * as T from '../vendor/three.webgpu.min.js';
 import { createGraphics } from '../src/graphics.js';
 import { InsectStatus, insectScale, woundState } from '../src/insect-status.ts';
 import { nearestInsectHit, nearestMeshHit } from '../src/insect-hits.ts';

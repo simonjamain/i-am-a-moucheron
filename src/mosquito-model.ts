@@ -1,7 +1,7 @@
 import { MOSQUITO_DATA as D } from './mosquito-data.ts';
 import { defineCreature, TAU } from './rigged-creature.ts';
 import type { CreatureHelpers, CreaturePose } from './rigged-creature.ts';
-import type * as THREE from 'three';
+import type * as THREE from 'three/webgpu';
 import type { Three } from './types.ts';
 
 // Mosquito: user-supplied Meshy "Low Poly Mosquito" with its 62-bone SmartRig

@@ -2,7 +2,7 @@
 // paws on the ground lift, stride matching the planted paws, ellipsoid hits,
 // distance-driven proxy and VAT bake (src/rat-model.ts, scripts/import-rat.py).
 import assert from 'node:assert/strict';
-import * as T from '../vendor/three.module.min.js';
+import * as T from '../vendor/three.webgpu.min.js';
 import { RAT_DATA } from '../src/rat-data.ts';
 import { RAT, RAT_BONES, RAT_HIT, RAT_MODEL, ratClipWorld, ratWorld } from '../src/rat-model.ts';
 import { WALKERS, WalkerBatch, walkerStride } from '../src/walker-batch.js';

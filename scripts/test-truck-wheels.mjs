@@ -2,7 +2,7 @@
 // front ones steered by the angle the driver asks for (at a standstill too, and shared with the
 // other players), the four rear ones and the trailer's fixed, all of them spinning.
 import assert from 'node:assert/strict';
-import * as T from '../vendor/three.module.min.js';
+import * as T from '../vendor/three.webgpu.min.js';
 import { createGraphics } from '../src/graphics.js';
 import { ackermannAngle, animateDrivenWheels, animateRollingWheels } from '../src/castor-wheels.ts';
 import { wheelSteering } from '../src/castor-physics.ts';

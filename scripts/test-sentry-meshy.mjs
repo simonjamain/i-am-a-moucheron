@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import * as T from '../vendor/three.module.min.js';
+import * as T from '../vendor/three.webgpu.min.js';
 import { MODEL_DATA as SOCLE } from '../src/meshy-t01-socle-data.ts';
 import { MODEL_DATA as TETE } from '../src/meshy-t01-tete-data.ts';
 import { MODEL_DATA as CANON } from '../src/meshy-t01-canon-data.ts';

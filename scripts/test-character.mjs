@@ -1,7 +1,7 @@
 // Issue #111: the player character (Meshy + Mixamo skeleton) replaces the
 // procedural humanoid without changing the hit volumes; nobody carries a weapon.
 import assert from 'node:assert/strict';
-import * as T from '../vendor/three.module.min.js';
+import * as T from '../vendor/three.webgpu.min.js';
 import { CHARACTER_DATA } from '../src/character-data.ts';
 import {
   createCharacter,

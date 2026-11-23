@@ -1,6 +1,6 @@
 // Two bounded-cost presets for the same lights, meshes and 2048² shadow map.
 // "landing" remains a candidate until the issue #11 WebGL comparison is accepted.
-import type * as THREE from 'three';
+import type * as THREE from 'three/webgpu';
 import type { Three } from './types.ts';
 
 export interface ShadowPreset {
@@ -20,7 +20,7 @@ export const SHADOW_PRESETS: Readonly<Record<ShadowPresetName, Readonly<ShadowPr
   });
 export function applyShadowPreset(
   T: Three,
-  renderer: THREE.WebGLRenderer | null | undefined,
+  renderer: THREE.WebGPURenderer | null | undefined,
   scene: THREE.Scene | null | undefined,
   name: string = 'landing',
 ): Readonly<ShadowPreset> {
@@ -34,7 +34,6 @@ export function applyShadowPreset(
         : preset.filter === 'pcf'
           ? T.PCFShadowMap
           : T.PCFSoftShadowMap;
-    renderer.shadowMap.needsUpdate = true;
   }
   if (scene) {
     for (const light of scene.children) {

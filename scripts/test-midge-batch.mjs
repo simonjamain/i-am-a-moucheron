@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { performance } from 'node:perf_hooks';
-import * as T from '../vendor/three.module.min.js';
+import * as T from '../vendor/three.webgpu.min.js';
 import { MidgeBatch } from '../src/midge-batch.js';
 import { nearestInsectHit, InsectIndex } from '../src/insect-hits.ts';
 

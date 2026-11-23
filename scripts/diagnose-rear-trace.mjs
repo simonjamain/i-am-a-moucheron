@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import * as T from '../vendor/three.module.min.js';
+import * as T from '../vendor/three.webgpu.min.js';
 import { makeShotTrace } from '../src/tracers.ts';
 import { MAP } from '../src/scale.ts';
 const scene = new T.Scene(),

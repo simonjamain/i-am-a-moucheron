@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import * as T from '../vendor/three.module.min.js';
+import * as T from '../vendor/three.webgpu.min.js';
 import { TracerPool, updateTracer } from '../src/tracers.ts';
 const scene = new T.Scene();
 const pool = new TracerPool(T, scene, 8, { instanced: true });

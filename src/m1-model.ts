@@ -1,6 +1,6 @@
 import { M1_DATA } from './meshy-m1-data.ts';
 import { buildMeshyRig } from './meshy-rig.ts';
-import type * as THREE from 'three';
+import type * as THREE from 'three/webgpu';
 import type { Three } from './types.ts';
 import { rigWheels } from './aircraft-wheels.ts';
 

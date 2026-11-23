@@ -2,7 +2,7 @@ import light from './fixed-dca-dca-data.ts';
 import rapid from './fixed-dca-dcaRapid-data.ts';
 import heavy from './fixed-dca-dcaHeavy-data.ts';
 import { MAP } from './scale.ts';
-import type * as THREE from 'three';
+import type * as THREE from 'three/webgpu';
 import type { Three, Vec3 } from './types.ts';
 
 const data = { dca: light, dcaRapid: rapid, dcaHeavy: heavy };

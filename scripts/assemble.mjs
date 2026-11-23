@@ -28,7 +28,11 @@ const files = {
   '/ui-review.html': 'docs/ui-review.html',
   '/client.js': moduleSource('client'),
   '/boot.js': moduleSource('boot'),
-  '/three.js': 'vendor/three.module.min.js',
+  // Three.js WebGPU build (renders with WebGPU, or WebGL 2 where it is missing) and the two
+  // modules it imports: core and TSL. See vendor/README.md.
+  '/three.js': 'vendor/three.webgpu.min.js',
+  '/three.core.min.js': 'vendor/three.core.min.js',
+  '/three.tsl.min.js': 'vendor/three.tsl.min.js',
   // Physics engine, loaded on demand (see docs/physics-engine.md).
   '/rapier.js': 'vendor/rapier.compat.mjs',
   ...Object.fromEntries(
@@ -132,6 +136,8 @@ const files = {
       'engine-smoke',
       'air-ribbons',
       'toon',
+      'gpu-passes',
+      'cloud-nodes',
       'shop-catalog',
       'shop-thumbs',
       'reserve-feedback',

@@ -3,7 +3,7 @@
 // truck's heading, so the driver sees the whole building reach around it. The mouse moves a cursor on the floor instead of
 // orbiting the camera: placement previews and the light machine gun both aim
 // at that floor point.
-import type * as THREE from 'three';
+import type * as THREE from 'three/webgpu';
 import type { Three } from './types.ts';
 
 /** Floor cursor in normalised screen coordinates (-1..1). */

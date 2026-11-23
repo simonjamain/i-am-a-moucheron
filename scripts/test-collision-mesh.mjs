@@ -209,7 +209,7 @@ decor.dispose();
 
 // The client's rays (solidRayDistance, src/client.js): the pack props' boxes give
 // way to their triangles once the decor world is built; shell and floor stay boxes.
-const T = await import('../vendor/three.module.min.js');
+const T = await import('../vendor/three.webgpu.min.js');
 const { rayCollider } = await import('../src/oriented-collider.ts');
 const { createOffice } = await import('../src/office.ts');
 const { createGraphics } = await import('../src/graphics.js');

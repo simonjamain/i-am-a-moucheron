@@ -1,6 +1,6 @@
 import { MODEL_DATA } from './meshy-castor-data.ts';
 import { texturedMeshyParts } from './meshy-texture.ts';
-import type * as THREE from 'three';
+import type * as THREE from 'three/webgpu';
 import type { Three } from './types.ts';
 
 // The remodelled Castor is one Meshy mesh whose movable pieces are separate

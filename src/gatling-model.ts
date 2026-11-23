@@ -1,7 +1,7 @@
 import { MODEL_DATA } from './meshy-gatling-data.ts';
 import { texturedMeshyParts } from './meshy-texture.ts';
 import { GATLING } from './ground-sentry.ts';
-import type * as THREE from 'three';
+import type * as THREE from 'three/webgpu';
 import type { Three } from './types.ts';
 
 // Gatling auto-turret: one Meshy atlas split into four rigid pieces (fixed tripod, head,

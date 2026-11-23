@@ -10,7 +10,7 @@ import { addOfficeProps } from './office-pack.ts';
 import { ROD } from './office-props.ts';
 import { DecorCollision, solidTriangles } from './office-collision.ts';
 import { MODEL_DATA } from './office-pack-data.ts';
-import type * as THREE from 'three';
+import type * as THREE from 'three/webgpu';
 import type { Rapier } from './physics-world.ts';
 import type { StationGraphics } from './sortie.ts';
 import type { Three } from './types.ts';
@@ -124,7 +124,7 @@ export function createOffice(T: Three, scene: THREE.Scene, { box, cyl }: Station
     },
     solidObjects,
     // Renders the lamps' shadows once, with the room alone (see office-lights.ts).
-    bakeShadows: (renderer: THREE.WebGLRenderer | null | undefined) =>
+    bakeShadows: (renderer: THREE.WebGPURenderer | null | undefined) =>
       bakeOfficeShadows(T, renderer, root),
     // Removes the room from the scene. Pack geometries are shared: keep them.
     dispose() {

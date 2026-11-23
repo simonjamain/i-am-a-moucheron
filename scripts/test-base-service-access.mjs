@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import * as T from '../vendor/three.module.min.js';
+import * as T from '../vendor/three.webgpu.min.js';
 import { initialStation } from '../server/game.js';
 import { makeServiceStation, makeRefuelCollider } from '../src/station-model.ts';
 import { VEHICLES, vehicleEntry, vehiclePad } from '../src/fleet.ts';

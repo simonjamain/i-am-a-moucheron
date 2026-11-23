@@ -2,7 +2,7 @@
 // driving, walls, steps and falls, run headless against vendor/rapier.compat.mjs.
 // Feel still needs a real drive, see docs/physics-engine.md.
 import assert from 'node:assert/strict';
-import * as T from '../vendor/three.module.min.js';
+import * as T from '../vendor/three.webgpu.min.js';
 import { ACTOR_UNIT, MAP } from '../src/scale.ts';
 import { VEHICLES, vehicleScale, vehicleUnit } from '../src/fleet.ts';
 import { MODEL_DATA } from '../src/meshy-tank-data.ts';

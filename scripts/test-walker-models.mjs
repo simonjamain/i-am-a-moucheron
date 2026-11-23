@@ -2,7 +2,7 @@
 // walk cycles (tripod / alternating tetrapod), distance-driven gait proxies,
 // ellipsoid hits and the shared VAT bake (src/walker-gait.ts, src/walker-batch.js).
 import assert from 'node:assert/strict';
-import * as T from '../vendor/three.module.min.js';
+import * as T from '../vendor/three.webgpu.min.js';
 import { ANT_DATA } from '../src/ant-data.ts';
 import { SPIDER_DATA } from '../src/spider-data.ts';
 import { ROACH_DATA } from '../src/roach-data.ts';

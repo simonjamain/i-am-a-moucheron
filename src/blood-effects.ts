@@ -1,4 +1,4 @@
-import type * as THREE from 'three';
+import type * as THREE from 'three/webgpu';
 import { MAP } from './scale.ts';
 import type { Three } from './types.ts';
 

@@ -2,7 +2,7 @@
 // never changes an aircraft's shape any more (no shrinking wings).
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import * as T from '../vendor/three.module.min.js';
+import * as T from '../vendor/three.webgpu.min.js';
 import { createGraphics } from '../src/graphics.js';
 import {
   EngineSmoke,
@@ -62,12 +62,12 @@ plane.updateMatrixWorld(true);
 const engine = plane.userData.engines[0].getWorldPosition(new T.Vector3());
 assert.ok(smoke.puffs[0].p.distanceTo(engine) < 0.3 * ACTOR_UNIT);
 const y0 = smoke.puffs[0].p.y,
-  alive = smoke.update(0.1, new T.PerspectiveCamera(62, 1.5, 0.001, 40), 800);
+  alive = smoke.update(0.1);
 assert.equal(alive, heavy);
 assert.ok(smoke.puffs[0].p.y > y0, 'smoke rises');
-assert.equal(smoke.points.geometry.drawRange.count, heavy);
+assert.equal(smoke.points.geometry.instanceCount, heavy);
 assert.ok(smoke.alphas[0] > 0 && smoke.alphas[0] < 1);
-smoke.update(10, null, 800);
+smoke.update(10);
 assert.equal(smoke.puffs.length, 0, 'puffs fade out');
 // Bounded memory, whatever the number of burning aircraft.
 const small = new EngineSmoke(T, scene, { capacity: 20 });

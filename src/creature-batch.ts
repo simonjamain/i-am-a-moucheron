@@ -5,8 +5,9 @@
 // and no per-instance skeleton. The optional shared clock (`time`) advances
 // every instance together (midge wing beat); ground walkers keep time = 0 and
 // drive their own phase from the distance they travel.
-import type * as THREE from 'three';
+import type * as THREE from 'three/webgpu';
 import type { Three } from './types.ts';
+import { tsl, type Node } from './gpu-passes.ts';
 
 const TEXTURE_WIDTH = 1024;
 
@@ -47,12 +48,11 @@ export interface CreatureBatchOptions {
   vat?: CreatureVat | null;
 }
 
+/** Uniform nodes of the vertex animation (each has a typed `.value`). */
 interface VatUniforms {
-  vatTexture: THREE.IUniform<THREE.DataTexture>;
-  vatTime: THREE.IUniform<number>;
-  vatFrames: THREE.IUniform<number>;
-  vatCount: THREE.IUniform<number>;
-  [uniform: string]: THREE.IUniform;
+  vatTime: { value: number };
+  vatFrames: { value: number };
+  vatCount: { value: number };
 }
 
 function* vatSteps(T: Three, bake: CreatureBake): Generator<undefined, CreatureVat, unknown> {
@@ -108,38 +108,62 @@ export async function prepareCreatureVat(
   return drain(vatSteps(T, baked));
 }
 
-function vatShader(
+/**
+ * Node material of a batch: position and normal come from the vertex animation texture
+ * (frame by instance phase), then go through the instance's own matrix. The instance
+ * matrices are read from the interleaved attribute `vatM` (four vec4 columns) because a
+ * node material applies the instancing before `positionNode`, which replaces the position.
+ */
+function vatMaterial(
+  T: Three,
+  vat: CreatureVat,
   uniforms: VatUniforms,
-): (shader: THREE.WebGLProgramParametersWithUniforms) => void {
-  return (shader) => {
-    Object.assign(shader.uniforms, uniforms);
-    shader.vertexShader = shader.vertexShader
-      .replace(
-        '#include <common>',
-        `#include <common>
-uniform highp sampler2D vatTexture;
-uniform float vatTime;
-uniform float vatFrames;
-uniform float vatCount;
-attribute float vatVertex;
-attribute float vatPhase;
-vec3 vatFetch(float frame, float row) {
-  int i = int(row * vatFrames * vatCount + frame * vatCount + vatVertex);
-  return texelFetch(vatTexture, ivec2(i % ${TEXTURE_WIDTH}, i / ${TEXTURE_WIDTH}), 0).xyz;
-}
-vec3 vatSample(float row) {
-  float f = fract(vatTime + vatPhase) * vatFrames;
-  float a = floor(f);
-  float b = mod(a + 1.0, vatFrames);
-  return mix(vatFetch(a, row), vatFetch(b, row), f - a);
-}`,
-      )
-      .replace(
-        '#include <beginnormal_vertex>',
-        'vec3 objectNormal = normalize(vatSample(1.0));\n#ifdef USE_TANGENT\nvec3 objectTangent = vec3(tangent.xyz);\n#endif',
-      )
-      .replace('#include <begin_vertex>', 'vec3 transformed = vatSample(0.0);');
+  texture: THREE.Texture | null,
+): THREE.MeshStandardNodeMaterial {
+  const {
+    uniform,
+    texture: textureNode,
+    attribute,
+    int,
+    ivec2,
+    vec4,
+    mat4,
+    floor,
+    fract,
+    mod,
+    mix,
+    transformNormal,
+    transformNormalToView,
+  } = tsl(T);
+  const frames = uniform(vat.frames),
+    count = uniform(vat.count),
+    time = uniform(0);
+  uniforms.vatFrames = frames;
+  uniforms.vatCount = count;
+  uniforms.vatTime = time;
+  const vatTexture = textureNode(vat.texture);
+  const vertex = attribute('vatVertex', 'float'),
+    phase = attribute('vatPhase', 'float');
+  const fetch = (frame: Node, row: number) => {
+    const i = frames.mul(count).mul(row).add(frame.mul(count)).add(vertex);
+    const x = mod(i, TEXTURE_WIDTH),
+      y = floor(i.div(TEXTURE_WIDTH));
+    return vatTexture.load(ivec2(int(x), int(y))).xyz;
   };
+  const sample = (row: number) => {
+    const f = fract(time.add(phase)).mul(frames);
+    const a = floor(f);
+    return mix(fetch(a, row), fetch(mod(a.add(1), frames), row), f.sub(a));
+  };
+  const matrix = mat4(...[0, 1, 2, 3].map((k) => attribute('vatM' + k, 'vec4')));
+  const material = new T.MeshStandardNodeMaterial({
+    map: texture,
+    roughness: 0.75,
+    side: T.DoubleSide,
+  });
+  material.positionNode = matrix.mul(vec4(sample(0), 1)).xyz;
+  material.normalNode = transformNormalToView(transformNormal(sample(1).normalize(), matrix));
+  return material;
 }
 
 export class CreatureBatch {
@@ -149,14 +173,14 @@ export class CreatureBatch {
   name: string;
   capacity: number;
   count: number;
-  mesh: THREE.InstancedMesh<THREE.InstancedBufferGeometry, THREE.MeshStandardMaterial> | null;
+  mesh: THREE.InstancedMesh<THREE.InstancedBufferGeometry, THREE.MeshStandardNodeMaterial> | null;
   vat: CreatureVat;
   geometry: THREE.InstancedBufferGeometry;
   uniforms: VatUniforms;
-  material: THREE.MeshStandardMaterial;
+  material: THREE.MeshStandardNodeMaterial;
   shadows: boolean;
-  depthMaterial?: THREE.MeshDepthMaterial;
   phases?: THREE.InstancedBufferAttribute;
+  matrixBuffer?: THREE.InstancedInterleavedBuffer;
   constructor(
     T: Three,
     scene: THREE.Object3D,
@@ -185,26 +209,9 @@ export class CreatureBatch {
         1,
       ),
     );
-    this.uniforms = {
-      vatTexture: { value: this.vat.texture },
-      vatTime: { value: 0 },
-      vatFrames: { value: this.vat.frames },
-      vatCount: { value: this.vat.count },
-    };
-    this.material = new T.MeshStandardMaterial({
-      map: creature.texture(T),
-      roughness: 0.75,
-      side: T.DoubleSide,
-    });
-    this.material.customProgramCacheKey = () => 'vat-' + name;
-    this.material.onBeforeCompile = vatShader(this.uniforms);
+    this.uniforms = {} as VatUniforms;
+    this.material = vatMaterial(T, this.vat, this.uniforms, creature.texture(T));
     this.shadows = shadows;
-    if (shadows) {
-      // Shadows need the same displacement in the depth pass.
-      this.depthMaterial = new T.MeshDepthMaterial({ depthPacking: T.RGBADepthPacking });
-      this.depthMaterial.customProgramCacheKey = () => 'vat-depth-' + name;
-      this.depthMaterial.onBeforeCompile = vatShader(this.uniforms);
-    }
   }
   ensure(needed: number): void {
     if (this.capacity >= needed) return;
@@ -220,7 +227,18 @@ export class CreatureBatch {
     this.mesh.instanceMatrix.setUsage(this.T.DynamicDrawUsage);
     this.mesh.frustumCulled = false;
     this.mesh.castShadow = this.shadows;
-    if (this.depthMaterial) this.mesh.customDepthMaterial = this.depthMaterial;
+    // The same instance matrices, as vertex attributes the material reads (see vatMaterial).
+    this.matrixBuffer = new this.T.InstancedInterleavedBuffer(
+      this.mesh.instanceMatrix.array,
+      16,
+      1,
+    );
+    this.matrixBuffer.setUsage(this.T.DynamicDrawUsage);
+    for (let k = 0; k < 4; k++)
+      this.geometry.setAttribute(
+        'vatM' + k,
+        new this.T.InterleavedBufferAttribute(this.matrixBuffer, 4, k * 4),
+      );
     this.mesh.userData.projectileSolid = false;
     this.scene.add(this.mesh);
     this.capacity = capacity;
@@ -242,6 +260,7 @@ export class CreatureBatch {
     this.uniforms.vatTime.value = ((time % 1) + 1) % 1;
     if (this.count) {
       this.mesh.instanceMatrix.needsUpdate = true;
+      this.matrixBuffer!.needsUpdate = true;
       this.phases!.needsUpdate = true;
     }
   }
@@ -251,7 +270,6 @@ export class CreatureBatch {
     this.capacity = 0;
     this.count = 0;
     this.material.dispose();
-    this.depthMaterial?.dispose();
     this.vat.texture.dispose();
   }
 }

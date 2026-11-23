@@ -1,7 +1,7 @@
 // Meshy midge: provenance, added wing bones, procedural flight cycle and its
 // vertex animation bake (src/midge-model.ts, src/midge-batch.js).
 import assert from 'node:assert/strict';
-import * as T from '../vendor/three.module.min.js';
+import * as T from '../vendor/three.webgpu.min.js';
 import { MIDGE_DATA } from '../src/midge-data.ts';
 import {
   createMidgeRig,

@@ -1,4 +1,4 @@
-import type * as THREE from 'three';
+import type * as THREE from 'three/webgpu';
 import { MODEL_TO_REF, planeSpec } from './plane-physics.ts';
 
 // The main wheels of the aircraft (rig-biplane-wheels.mjs, rig-aircraft-wheels.mjs): parts

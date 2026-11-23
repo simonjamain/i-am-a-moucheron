@@ -1,4 +1,4 @@
-import type * as THREE from 'three';
+import type * as THREE from 'three/webgpu';
 // Castor 6×6 wheel kinematics (model units; the vehicle model is scaled by
 // ACTOR_UNIT). Rolling without slipping: each wheel spins at its own ground
 // speed, forward speed plus the yaw contribution of its lateral offset, so a
