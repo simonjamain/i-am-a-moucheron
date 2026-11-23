@@ -143,3 +143,4 @@ nav:
           - tasks/collision-triangles.md
           - tasks/scaling-plan.md
           - tasks/typescript-migration.md
+          - tasks/webgpu-migration.md
