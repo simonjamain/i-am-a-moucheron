@@ -1,6 +1,12 @@
 import { SPIDER_DATA as D } from './spider-data.js';
 import { defineCreature, TAU } from './rigged-creature.ts';
+import type { CreatureHelpers } from './rigged-creature.ts';
 import { walkLegs, groundPresentation, REST_PHASES } from './walker-gait.ts';
+import type { GaitHelpers, Pose } from './walker-gait.ts';
+import type { Three } from './types.ts';
+
+// lowest() of the creature helpers may return null; the gait expects a bone tip.
+type WalkerHelpers = CreatureHelpers & GaitHelpers;
 
 // Egg-laying spider: user-supplied Meshy "Spotted Velvet Spider" with its
 // 30-bone SmartRig (no clip). The walk is an alternating tetrapod gait: legs
@@ -35,11 +41,11 @@ export const SPIDER_BONES = Object.freeze({
   ],
 });
 
-export function spiderWalkPose(T, t, h) {
+export function spiderWalkPose(T: Three, t: number, h: WalkerHelpers): Pose {
   const e = h.euler;
   const step = TAU * 2 * t;
   const cycle = TAU * t;
-  const pose = {};
+  const pose: Pose = {};
   // Heavy body: a low bounce on each step and a slow roll towards the planted set.
   const body = {
     pivot: h.bind(SPIDER_BONES.root),

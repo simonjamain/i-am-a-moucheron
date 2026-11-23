@@ -22,7 +22,7 @@ import { SHOP_CATEGORIES } from '../src/shop-catalog.ts';
 import { canUseWeapon } from '../src/armament.ts';
 import { fullAmmo, CASTOR_SERVICE_RADIUS } from '../src/logistics.ts';
 import { CONTRACTS, contractKey } from '../src/contracts.ts';
-import { withinService } from '../src/paid-service.js';
+import { withinService } from '../src/paid-service.ts';
 import { serviceZoneList } from '../src/service-zones.ts';
 import { stepHelicopter, HELI } from '../src/helicopter.js';
 import { DELIVERY_SPEED, deliveryHeightAt } from '../src/delivery.ts';
@@ -34,7 +34,7 @@ import {
   headingOf,
 } from '../src/airdrop.ts';
 import { airdropPlacement } from '../src/ground-placement.js';
-import { navigationStructures, floorStructures } from '../src/ground-defense-state.js';
+import { navigationStructures, floorStructures } from '../src/ground-defense-state.ts';
 import { controlHintItems } from '../src/live-hud.ts';
 import { Game } from '../server/game.js';
 import { OFFICE_SOLIDS } from '../server/assets.js';

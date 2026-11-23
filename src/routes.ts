@@ -1,10 +1,34 @@
 import { floorPath, blockedSegment } from './route-navigation.ts';
 import { staticGroundFlow } from './ground-defense.ts';
 import { activeLayout } from './layouts.ts';
+
+/** A route point: [x, y, z] in metres (a fresh array, mutable by the caller). */
+export type RoutePoint = number[];
+export interface RouteSample {
+  p: RoutePoint;
+  distance: number;
+}
+export interface EnemyRoute {
+  samples: RouteSample[];
+  length: number;
+  portal: number;
+  points: RoutePoint[];
+}
+/** Fields of an enemy that choose and time its route. */
+export interface RouteEnemy {
+  ground?: boolean;
+  routeSeed?: number;
+  portalIndex?: number;
+  approach?: string;
+  airStart?: readonly number[] | null;
+  spawnPoint?: readonly number[] | null;
+  travelSpeed?: number;
+  speedMps?: number;
+}
 export const MIN_SPAWN_DISTANCE = 3;
 // Portals describe the decorative vent/hole, not the first living position.
 export const VISIBLE_SPAWN_INSET = 0.04;
-export function portalExit(portal) {
+export function portalExit(portal: readonly number[]): RoutePoint {
   const p = [...portal];
   if (Math.abs(p[0]) > 4) p[0] -= Math.sign(p[0]) * VISIBLE_SPAWN_INSET;
   else if (p[2] < -3.4) p[2] += VISIBLE_SPAWN_INSET;
@@ -21,16 +45,16 @@ export const PORTALS = {
   },
 };
 // Routes depend on the layout: the cache key carries its id.
-const routeCache = new Map();
+const routeCache = new Map<string, EnemyRoute>();
 // Flight path from a vent: the layout's own course. Flight routes stay below the
 // cloud layer (OFFICE_CLOUD_TOP): swarms remain readable, never veiled.
-function airPoints(portal) {
-  const course = activeLayout().airRoutes[portal].map((p) => [...p]);
+function airPoints(portal: number): RoutePoint[] {
+  const course: RoutePoint[] = activeLayout().airRoutes[portal].map((p) => [...p]);
   course[0] = portalExit(course[0]);
   return liftOverFurniture(course);
 }
 // Raise detours above static furniture; final descent is next to the bin.
-function liftOverFurniture(points) {
+function liftOverFurniture(points: RoutePoint[]): RoutePoint[] {
   for (let i = 1; i < points.length; i++)
     if (blockedSegment(points[i - 1], points[i])) {
       points.splice(
@@ -44,24 +68,25 @@ function liftOverFurniture(points) {
   return points;
 }
 const SEGMENT_SAMPLES = 48;
-function sampleRoute(points, portal) {
-  const samples = [{ p: points[0], distance: 0 }];
+function sampleRoute(points: RoutePoint[], portal: number): EnemyRoute {
+  const samples: RouteSample[] = [{ p: points[0], distance: 0 }];
   for (let i = 0; i < points.length - 1; i++) {
     const b = points[i],
       c = points[i + 1];
     for (let n = 1; n <= SEGMENT_SAMPLES; n++) {
       const t = n / SEGMENT_SAMPLES;
       const p = b.map((v, j) => v + (c[j] - v) * t);
-      const prev = samples.at(-1);
+      const prev = samples.at(-1)!;
       samples.push({ p, distance: prev.distance + Math.hypot(...p.map((v, j) => v - prev.p[j])) });
     }
   }
-  return { samples, length: samples.at(-1).distance, portal, points };
+  return { samples, length: samples.at(-1)!.distance, portal, points };
 }
 // A flyer placed in the room (debug mode): straight to the nearest point of a
 // vent's usual course (over furniture if needed), then the rest of that course.
-function joinCorridor(start) {
-  let best = null;
+function joinCorridor(start: readonly number[]): { portal: number; points: RoutePoint[] } {
+  let best: { d: number; portal: number; points: RoutePoint[]; k: number; p: RoutePoint } | null =
+    null;
   for (let portal = 0; portal < PORTALS.air.length; portal++) {
     const points = airPoints(portal),
       { samples } = sampleRoute(points, portal);
@@ -70,17 +95,19 @@ function joinCorridor(start) {
       if (!best || d < best.d) best = { d, portal, points, k, p: samples[k].p };
     }
   }
-  const segment = Math.ceil(best.k / SEGMENT_SAMPLES) - 1;
-  const rest = best.points.slice(segment + 1);
-  const join = best.k % SEGMENT_SAMPLES === 0 ? [] : [best.p];
-  return { portal: best.portal, points: liftOverFurniture([[...start], ...join, ...rest]) };
+  const segment = Math.ceil(best!.k / SEGMENT_SAMPLES) - 1;
+  const rest = best!.points.slice(segment + 1);
+  const join = best!.k % SEGMENT_SAMPLES === 0 ? [] : [best!.p];
+  return { portal: best!.portal, points: liftOverFurniture([[...start], ...join, ...rest]) };
 }
-export function enemyRoute(enemy) {
+export function enemyRoute(enemy: RouteEnemy): EnemyRoute {
   const portalCount = enemy.ground ? PORTALS.ground.length : PORTALS.air.length;
   const seed = (Math.imul(enemy.routeSeed || 1, 1664525) + 1013904223) >>> 0;
   let portal =
-    Number.isInteger(enemy.portalIndex) && enemy.portalIndex >= 0 && enemy.portalIndex < portalCount
-      ? enemy.portalIndex
+    Number.isInteger(enemy.portalIndex) &&
+    enemy.portalIndex! >= 0 &&
+    enemy.portalIndex! < portalCount
+      ? enemy.portalIndex!
       : enemy.approach === 'intro'
         ? enemy.ground
           ? 0
@@ -95,8 +122,8 @@ export function enemyRoute(enemy) {
       : enemy.spawnPoint
         ? 'brood:' + enemy.spawnPoint.join(':')
         : (enemy.ground ? 'ground:' : 'air:') + portal);
-  if (routeCache.has(key)) return routeCache.get(key);
-  let points;
+  if (routeCache.has(key)) return routeCache.get(key)!;
+  let points: RoutePoint[];
   if (enemy.airStart) ({ portal, points } = joinCorridor(enemy.airStart));
   else if (enemy.ground || enemy.spawnPoint) {
     // Most direct floor path to the bin around furniture: the same smoothed flow
@@ -106,17 +133,20 @@ export function enemyRoute(enemy) {
       : portalExit(PORTALS.ground[portal]);
     const floor = staticGroundFlow()
       .smoothRoute([start[0], start[2]])
-      ?.map(([x, z]) => [x, 0.0007, z]);
-    points = floor || floorPath(start, [layout.groundGoal[0], 0.0007, layout.groundGoal[1]]);
+      ?.map(([x, z]): RoutePoint => [x, 0.0007, z]);
+    // floorPath returns fresh arrays (typed ArrayLike there).
+    points =
+      floor ||
+      (floorPath(start, [layout.groundGoal[0], 0.0007, layout.groundGoal[1]]) as RoutePoint[]);
     points[0] = start;
     points.push(...layout.groundFinish.map((p) => [...p]));
   } else points = airPoints(portal);
   const route = sampleRoute(points, portal);
-  if (routeCache.size > 256) routeCache.delete(routeCache.keys().next().value);
+  if (routeCache.size > 256) routeCache.delete(routeCache.keys().next().value!);
   routeCache.set(key, route);
   return route;
 }
-export function enemyRoutePosition(enemy, u) {
+export function enemyRoutePosition(enemy: RouteEnemy, u: number): RoutePoint {
   const route = enemyRoute(enemy),
     distance = Math.max(0, Math.min(1, u)) * route.length;
   let lo = 1,
@@ -131,8 +161,8 @@ export function enemyRoutePosition(enemy, u) {
     t = (distance - a.distance) / Math.max(1e-12, b.distance - a.distance);
   return a.p.map((v, j) => v + (b.p[j] - v) * t);
 }
-export function routeDuration(enemy) {
+export function routeDuration(enemy: RouteEnemy): number {
   const speed = enemy.travelSpeed ?? enemy.speedMps;
-  if (!Number.isFinite(speed) || speed <= 0) throw Error('Vitesse ennemie invalide.');
-  return enemyRoute(enemy).length / speed;
+  if (!Number.isFinite(speed) || speed! <= 0) throw Error('Vitesse ennemie invalide.');
+  return enemyRoute(enemy).length / speed!;
 }

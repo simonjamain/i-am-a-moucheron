@@ -27,7 +27,7 @@ try {
   const [T, { createMidgeRig }] = (await Promise.all([
     // @ts-expect-error browser-only URL (vendor/three.module.min.js)
     import('/three.js'),
-    // @ts-expect-error browser-only URL (src/midge-model.js)
+    // @ts-expect-error browser-only URL (src/midge-model.ts)
     import('/midge-model.js'),
   ])) as [Three, { createMidgeRig(T: Three): LoadingFly }];
   let pending = 0;

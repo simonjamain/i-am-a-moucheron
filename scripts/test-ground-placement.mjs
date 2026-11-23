@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { groundPlacement } from '../src/ground-placement.js';
-import { newGroundDefense, groundCommand } from '../src/ground-defense-state.js';
+import { newGroundDefense, groundCommand } from '../src/ground-defense-state.ts';
 const defense = newGroundDefense();
 const foot = { x: 0, z: 0, y: 0, face: 0, grounded: true };
 const make = (overrides = {}) =>

@@ -5,9 +5,9 @@
 // The wing beat follows the shared clock, each proxy keeps its own loop offset.
 // A new flying species needs its model module and one entry below.
 import { CreatureBatch } from './creature-batch.ts';
-import { BEETLE, BEETLE_FLIGHT, BEETLE_HIT } from './beetle-model.js';
-import { BEE, BEE_FLIGHT, BEE_HIT } from './bee-model.js';
-import { MOSQUITO, MOSQUITO_FLIGHT, MOSQUITO_HIT } from './mosquito-model.js';
+import { BEETLE, BEETLE_FLIGHT, BEETLE_HIT } from './beetle-model.ts';
+import { BEE, BEE_FLIGHT, BEE_HIT } from './bee-model.ts';
+import { MOSQUITO, MOSQUITO_FLIGHT, MOSQUITO_HIT } from './mosquito-model.ts';
 import { FLYER_HIT_TOLERANCE } from './scale.ts';
 import { hitUserData } from './insect-hits.ts';
 

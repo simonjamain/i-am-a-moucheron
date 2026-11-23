@@ -96,7 +96,7 @@ them; ready unoccupied aircraft from older releases are moved to the new pads.
 
 ## Enemy variety and models
 
-`routes.js` declares four wall-vent entries and three floor-level holes, drawn
+`routes.ts` declares four wall-vent entries and three floor-level holes, drawn
 in the office. A seeded director generates smooth three-dimensional routes per
 cluster, with isolated individuals and mid-route branches that later rejoin.
 Routes are sampled by arc length for consistent speed and shared arrival timing.

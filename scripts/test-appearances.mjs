@@ -19,7 +19,7 @@ import {
   CHARACTER_HEIGHT,
 } from '../src/character-model.ts';
 import { createGraphics } from '../src/graphics.js';
-import { PANEL_TINT, SIDE_SHADE } from '../src/appearance-picker.js';
+import { PANEL_TINT, SIDE_SHADE } from '../src/appearance-picker.ts';
 import { Game } from '../server/game.js';
 import { OFFICE_SOLIDS } from '../server/assets.js';
 
@@ -157,7 +157,7 @@ assert.match(client, /turnToward\(g\.rotation\.y, walkerYaw\(world, body\.face \
 assert.doesNotMatch(client, /g\.rotation\.y = Math\.PI - b\.face;\n\s+if \(!g\.userData\.chute\)/);
 // No second WebGL context nor read-back of the game canvas (each one left
 // Chrome several times slower for the whole game): draw straight into it.
-const picker = readFileSync('src/appearance-picker.js', 'utf8');
+const picker = readFileSync('src/appearance-picker.ts', 'utf8');
 for (const slow of [
   /new T\.WebGLRenderer/,
   /readRenderTargetPixels|readPixels/,

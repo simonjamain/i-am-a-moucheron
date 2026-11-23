@@ -4,7 +4,7 @@ import { SHOP, shopPrice } from '../src/equipment.ts';
 import { VEHICLES } from '../src/fleet.ts';
 import { fullAmmo, ammoCapacity } from '../src/logistics.ts';
 import { canUseWeapon } from '../src/armament.ts';
-import { withinService, advancePaidService } from '../src/paid-service.js';
+import { withinService, advancePaidService } from '../src/paid-service.ts';
 import { createGraphics } from '../src/graphics.js';
 import { CastorRig } from '../src/castor-physics.ts';
 import { loadRapier } from '../src/physics-world.ts';

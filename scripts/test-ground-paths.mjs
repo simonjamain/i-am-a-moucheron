@@ -9,9 +9,9 @@ import {
   groundFlow,
   newGroundDefense,
   groundGoal,
-} from '../src/ground-defense-state.js';
+} from '../src/ground-defense-state.ts';
 import { distanceToSegment } from '../src/ground-defense.ts';
-import { enemyRoute, PORTALS, portalExit } from '../src/routes.js';
+import { enemyRoute, PORTALS, portalExit } from '../src/routes.ts';
 import { blockedSegment } from '../src/route-navigation.ts';
 
 const floor = (points) => points.map(([x, , z]) => [x, z]);

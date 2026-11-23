@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
-import { advancePaidService } from '../src/paid-service.js';
-import { newGroundDefense, damageBarricade } from '../src/ground-defense-state.js';
+import { advancePaidService } from '../src/paid-service.ts';
+import { newGroundDefense, damageBarricade } from '../src/ground-defense-state.ts';
 import { Game } from '../server/game.js';
 
 const station = { kind: 'refuel', x: 0, y: 0.01, z: 0 };

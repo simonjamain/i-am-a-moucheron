@@ -1,6 +1,6 @@
 import { chooseBait, distanceToSegment, finishMeal, stickyTraversal } from './ground-defense.ts';
-import { enemyRoutePosition } from './routes.js';
-import { feedingPoint, GROUND_BAIT_TYPES, groundGoal } from './ground-defense-state.js';
+import { enemyRoutePosition } from './routes.ts';
+import { feedingPoint, GROUND_BAIT_TYPES, groundGoal } from './ground-defense-state.ts';
 
 export const GROUND_BODY_SIZES = Object.freeze({
   ant: 'small',

@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import * as T from '../vendor/three.module.min.js';
 import { stepFlight, ROLLING_FRICTION, LIFTOFF_SPEED } from '../src/flight.ts';
 import { VEHICLES } from '../src/fleet.ts';
-import { enemyRoute } from '../src/routes.js';
+import { enemyRoute } from '../src/routes.ts';
 import { OFFICE_CLOUD_TOP, FOG_START_RATIO } from '../src/office-fog.ts';
 
 const dt = 1 / 60;

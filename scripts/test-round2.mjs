@@ -11,7 +11,7 @@ import { nearestWeaponMuzzle } from '../src/muzzle.ts';
 import { makeServiceStation } from '../src/station-model.ts';
 import { fogOpticalDepth, officeFogOpacity } from '../src/office-fog.ts';
 import { brickLayout, BRICK_PITCH, BRICK_HEIGHT, BRICK_ROW } from '../src/brick-wall.ts';
-import { groundCommand, newGroundDefense, lengthPrice } from '../src/ground-defense-state.js';
+import { groundCommand, newGroundDefense, lengthPrice } from '../src/ground-defense-state.ts';
 const wheel = { x: -1, z: -2 },
   opts = { scale: 0.003, turnRate: 1, frontZ: -2 };
 assert.equal(

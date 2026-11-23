@@ -5,16 +5,16 @@
 // distance travelled, so feet stay planted whatever the server speed. A
 // creature that stops (glue, bait, stall) settles into the nearest planted pose.
 import { CreatureBatch } from './creature-batch.ts';
-import { ANT, ANT_BONES, ANT_HIT, ANT_MODEL } from './ant-model.js';
-import { SPIDER, SPIDER_BONES, SPIDER_HIT, SPIDER_MODEL } from './spider-model.js';
-import { ROACH, ROACH_BONES, ROACH_HIT, ROACH_MODEL } from './roach-model.js';
-import { RAT, RAT_BONES, RAT_HIT, RAT_MODEL } from './rat-model.js';
+import { ANT, ANT_BONES, ANT_HIT, ANT_MODEL } from './ant-model.ts';
+import { SPIDER, SPIDER_BONES, SPIDER_HIT, SPIDER_MODEL } from './spider-model.ts';
+import { ROACH, ROACH_BONES, ROACH_HIT, ROACH_MODEL } from './roach-model.ts';
+import { RAT, RAT_BONES, RAT_HIT, RAT_MODEL } from './rat-model.ts';
 import {
   SPIDERLING,
   SPIDERLING_BONES,
   SPIDERLING_HIT,
   SPIDERLING_MODEL,
-} from './spiderling-model.js';
+} from './spiderling-model.ts';
 import { nearestRest } from './walker-gait.ts';
 import { TAU } from './rigged-creature.ts';
 

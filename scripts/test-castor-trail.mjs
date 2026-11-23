@@ -3,7 +3,7 @@
 import assert from 'node:assert/strict';
 import * as T from '../vendor/three.module.min.js';
 import { GroundDefenseUI, BRICK_PITCH, TRAIL_MAX, trailBricks } from '../src/ground-defense-ui.js';
-import { groundCommand, lengthPrice, newGroundDefense } from '../src/ground-defense-state.js';
+import { groundCommand, lengthPrice, newGroundDefense } from '../src/ground-defense-state.ts';
 
 // Pro-rata price: exact length, to the cent, never rounded up to 20 cm.
 assert.equal(lengthPrice('barricade', 0.2), 1);

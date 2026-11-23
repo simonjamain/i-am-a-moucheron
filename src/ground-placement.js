@@ -1,4 +1,4 @@
-import { GROUND_BOUNDS, groundCommand } from './ground-defense-state.js';
+import { GROUND_BOUNDS, groundCommand } from './ground-defense-state.ts';
 import { distanceToSegment } from './ground-defense.ts';
 import { airdropCommand } from './airdrop.ts';
 

@@ -154,7 +154,7 @@ ne sont pas affichés : ils ne sont lus que par les lecteurs d'écran.
   affichée vers la direction de marche (constante de temps 1/12 s).
 - Intégration : `graphics.humanoid(color, saint, appearance)` renvoie un groupe qui
   porte le modèle et l'échange sur place au changement d'apparence. Le sélecteur de
-  l'accueil (`src/appearance-picker.js`) dessine, après chaque image, directement
+  l'accueil (`src/appearance-picker.ts`) dessine, après chaque image, directement
   dans le canevas du jeu (viewport et ciseaux sur son rectangle) ; la page laisse ce
   rectangle transparent (couleur du panneau en `box-shadow`, trou de masque dans
   l'ombre latérale) et un quadrilatère y recompose, sur l'image du jeu, l'ombre
@@ -183,7 +183,7 @@ Premier modèle d'animal ; modèle « Angry Little Fly » fourni par l'utilisate
   8 bits renormalisés, texture JPEG 512 px de 72 Ko). Pas de simplification :
   modèle déjà léger, monobloc articulé (l'outil Docker le refuserait sans
   régions), et il n'y a volontairement aucun niveau de détail (voir Rendu).
-- Vol (`src/midge-model.js`) : cycle procédural posé sur les os, boucle de 1 s
+- Vol (`src/midge-model.ts`) : cycle procédural posé sur les os, boucle de 1 s
   contenant 7 battements (7 Hz). Ailes : élévation de −11° à +54°, balayage
   avant/arrière et torsion aux retournements (pointe en huit). Corps qui monte à
   chaque battement et tangue lentement, abdomen ondulant, tête et antennes
@@ -277,7 +277,7 @@ fourmi ; il remplace le cafard procédural (anciennement une fourmi agrandie).
   de pattes et un os moyeu (`Bone_001`), et chaque coque soudée ne garde que sa
   propre chaîne, le reste allant au moyeu (537 influences). Géométrie, UV et
   texture inchangées ; fourmi et araignée ne sont pas concernées.
-- Marche (`src/roach-model.js`) : démarche tripode comme la fourmi, foulée
+- Marche (`src/roach-model.ts`) : démarche tripode comme la fourmi, foulée
   0,6 m-modèle, corps bas, abdomen qui balance, tête qui hoche, longues antennes
   qui balaient en ondulant ; cadence apparente plafonnée à 9 cycles/s.
 - Échelle : facteur 0,52 (2,1 unités antennes comprises, comme la fourmi ; le
@@ -309,7 +309,7 @@ rejoue un clip au lieu d'une démarche calculée.
   (« Armature|Unreal Take|baselayer », 1 s, 31 clés, sur place) est rééchantillonné
   en transformations monde de chaque os aux 30 clés, divisées par l'échelle de
   `Hips` (remise à l'échelle uniforme, aspect inchangé).
-- Cycle (`src/rat-model.js`) : la pose interpole les clés et les convertit en deltas
+- Cycle (`src/rat-model.ts`) : la pose interpole les clés et les convertit en deltas
   pour `rigged-creature` ; le test vérifie que chaque os retombe sur le clip.
   Seule retouche : au décollement, les orteils arrière pointent vers le bas, 8 cm
   sous les semelles posées ; ils pivotent sur l'axe latéral juste assez pour rester
@@ -345,7 +345,7 @@ supprimé). Même chaîne que l'araignée pondeuse.
   `alias` de l'espèce replie `Bone_008`/`007`/`006` sur `Bone_014`/`013`/`012`
   (107 influences). Puis chaque coque ne garde que sa chaîne, le reste allant au
   moyeu `Bone_001` (435 influences). Ant, araignée et cafard ne sont pas concernés.
-- Marche (`src/spiderling-model.js`) : démarche tétrapode des six pattes à trois os,
+- Marche (`src/spiderling-model.ts`) : démarche tétrapode des six pattes à trois os,
   foulée 0,7 m-modèle, cadence plafonnée à 10 cycles/s. La paire avant, courte (deux
   os), plongeait sous le sol avec le calcul de pas : elle est animée à part, en
   palpes levées qui tâtent le sol. Présentation relevée de 0,025 unité comme le
@@ -415,7 +415,7 @@ Modèle fourni par l'utilisateur, déjà riggé par Meshy, sans clip ; il rempla
   thorax les poids qu'elle portait sur les os de pattes animés (223 influences),
   pour que les pattes ne tirent jamais la carapace. Pas de simplification :
   modèle très léger, monobloc articulé.
-- Vol (`src/beetle-model.js`) : boucle de 1 s, 6 battements (plus lent et lourd
+- Vol (`src/beetle-model.ts`) : boucle de 1 s, 6 battements (plus lent et lourd
   que le moucheron), 60 images. Ailes de −14° à +46° avec balayage avant/arrière et
   torsion aux retournements. Comme une cétoine, il vole **élytres fermées** : elles
   font partie de la coque du corps, les ouvrir déchirerait le maillage. Corps cabré
@@ -455,7 +455,7 @@ Modèle fourni par l'utilisateur, déjà riggé par Meshy, sans clip ; il rempla
   et les antennes cèdent au parent de chaque chaîne leurs poids sur les os d'ailes et
   de pattes (531 influences) ; chaque patte ne garde que sa chaîne (140 influences
   rendues à son moyeu). Géométrie, UV et texture inchangés, pas de simplification.
-- Vol (`src/bee-model.js`) : boucle de 1 s, 12 battements (bourdonnement plus vif que
+- Vol (`src/bee-model.ts`) : boucle de 1 s, 12 battements (bourdonnement plus vif que
   le scarabée), 6 images par battement, 72 images. Ailes de −20° à +52° avec balayage
   et torsion, abdomen abaissé qui pompe deux fois par boucle, tête et antennes qui
   frémissent, pattes pendantes.
@@ -486,7 +486,7 @@ il remplace le moustique procédural. Même chaîne que l'abeille.
   chaque chaîne leurs poids sur les os d'ailes et de pattes (250 influences) ;
   chaque patte ne garde que sa chaîne (118 influences rendues à son moyeu).
   Géométrie, UV et texture inchangées, pas de simplification.
-- Vol (`src/mosquito-model.js`) : boucle de 1 s, 15 battements étroits et rapides,
+- Vol (`src/mosquito-model.ts`) : boucle de 1 s, 15 battements étroits et rapides,
   4 images par battement, 60 images. Abdomen qui ondule, tête qui frémit, six longues
   pattes pendantes, la paire avant tendue vers l'avant, les autres traînant derrière.
 - Rendu et collision : entrée `mosquito` de `FLYERS`. Facteur 1 : environ 3,6

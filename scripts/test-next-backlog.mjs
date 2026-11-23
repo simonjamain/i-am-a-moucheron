@@ -12,7 +12,7 @@ import { MAP, ACTOR_UNIT, REFERENCE } from '../src/scale.ts';
 import { TankRig } from '../src/tank-physics.ts';
 import { loadRapier } from '../src/physics-world.ts';
 import { wavePlan } from '../src/waves.js';
-import { enemyRoute } from '../src/routes.js';
+import { enemyRoute } from '../src/routes.ts';
 import { blockedSegment } from '../src/route-navigation.ts';
 import { createGraphics } from '../src/graphics.js';
 import { CrashEffects } from '../src/crash-effects.ts';
