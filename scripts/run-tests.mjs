@@ -5,6 +5,8 @@
 //   npm test -- --bail           start no new script after the first failure
 //   npm test -- --jobs=1         one script at a time (default: one per CPU)
 //   npm test -- --list           print the suite without running it
+//   npm run e2e                  the real-Chromium scenarios (E2E), one at a time
+//   npm run e2e -- loading       only the browser scenarios whose name contains a fragment
 //
 // Each script runs in its own Node process. Scripts are independent: servers listen
 // on port 0 or on distinct fixed UDP ranges, temporary files go to mkdtemp. Each
@@ -54,17 +56,23 @@ export async function runScripts(files, { jobs = 1, bail = false, onDone = () =>
 }
 
 async function main() {
-  const { SUITE } = await import('./suite.mjs');
+  const { SUITE, E2E } = await import('./suite.mjs');
   const args = process.argv.slice(2);
   const flags = new Set(args.filter((a) => a.startsWith('--')));
   const filters = args.filter((a) => !a.startsWith('--'));
+  // Browser scenarios render WebGL on the CPU and time out when they share it: serial.
+  const list = flags.has('--e2e') ? E2E : SUITE;
   const jobsFlag = args.find((a) => a.startsWith('--jobs='));
-  const jobs = jobsFlag ? Number(jobsFlag.slice('--jobs='.length)) : availableParallelism();
+  const jobs = jobsFlag
+    ? Number(jobsFlag.slice('--jobs='.length))
+    : flags.has('--e2e')
+      ? 1
+      : availableParallelism();
   if (!Number.isInteger(jobs) || jobs < 1) {
     console.error('--jobs=N expects a positive integer');
     process.exit(2);
   }
-  const selected = filters.length ? SUITE.filter((n) => filters.some((f) => n.includes(f))) : SUITE;
+  const selected = filters.length ? list.filter((n) => filters.some((f) => n.includes(f))) : list;
   if (flags.has('--list')) {
     console.log(selected.join('\n'));
     process.exit(0);
@@ -103,7 +111,7 @@ async function main() {
     console.error(failures.map((r) => `  node ${r.file}`).join('\n'));
     process.exit(1);
   }
-  console.log(`\n${selected.length} suite script(s) passed in ${seconds} s (${jobs} job(s)).`);
+  console.log(`\n${selected.length} script(s) passed in ${seconds} s (${jobs} job(s)).`);
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1]).href) await main();

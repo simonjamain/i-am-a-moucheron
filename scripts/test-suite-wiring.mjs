@@ -3,7 +3,7 @@
 // dédiée listée ici avec sa raison (et dans OUTSIDE_SUITE).
 import assert from 'node:assert/strict';
 import { readdirSync, readFileSync } from 'node:fs';
-import { SUITE, OUTSIDE_SUITE } from './suite.mjs';
+import { SUITE, OUTSIDE_SUITE, E2E, E2E_MANUAL } from './suite.mjs';
 
 const pkg = JSON.parse(readFileSync('package.json', 'utf8'));
 assert.equal(pkg.scripts.test, 'node scripts/run-tests.mjs', 'npm test passe par run-tests.mjs');
@@ -29,4 +29,32 @@ for (const [file, script] of Object.entries(dedicated)) {
 // Chaque script de la suite doit exister ; ce message désigne directement le fichier.
 for (const name of SUITE)
   assert.ok(scripts.includes(name + '.mjs'), `scripts/${name}.mjs introuvable`);
-console.log(`suite wiring: ${files.length} test scripts, ${SUITE.length} in npm test`);
+// Même garde pour les scénarios navigateur : un e2e-*.mjs absent de `npm run e2e` (et donc
+// de la CI) n'est plus exécuté et pourrit sans bruit (e2e-loading l'a montré).
+assert.equal(
+  pkg.scripts.e2e,
+  'node scripts/run-tests.mjs --e2e',
+  'npm run e2e passe par le lanceur',
+);
+const manualE2e = {
+  // Sélecteur de plans : 135 s en local, expire sur le runner CI (90 s d'attente de page).
+  'e2e-layouts': 'e2e:layouts',
+};
+assert.deepEqual([...E2E_MANUAL].sort(), Object.keys(manualE2e).sort());
+const e2eFiles = scripts.filter((f) => /^e2e-.*\.mjs$/.test(f)).map((f) => f.slice(0, -4));
+const e2eOrphans = e2eFiles.filter((f) => !E2E.includes(f) && !(f in manualE2e));
+assert.deepEqual(
+  e2eOrphans,
+  [],
+  `Scénarios absents de E2E (scripts/suite.mjs) : ${e2eOrphans.join(', ')}`,
+);
+assert.equal(new Set(E2E).size, E2E.length, 'Scénario listé deux fois dans E2E');
+for (const name of E2E) assert.ok(e2eFiles.includes(name), `scripts/${name}.mjs introuvable`);
+for (const [file, script] of Object.entries(manualE2e))
+  assert.ok(
+    pkg.scripts[script]?.includes(`scripts/${file}.mjs`),
+    `${script} ne lance plus ${file}`,
+  );
+console.log(
+  `suite wiring: ${files.length} test scripts, ${SUITE.length} in npm test, ${E2E.length}/${e2eFiles.length} browser scenarios in npm run e2e`,
+);

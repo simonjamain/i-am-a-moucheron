@@ -15,5 +15,5 @@ Three et le moucheron Meshy animé, qui virevolte autour du texte.
   pour ne pas figer l'animation du loader ; les données produites sont identiques.
 - Le contexte WebGL du loader est détruit après la transition.
 
-Contrôles : `test-loading-preparation.mjs`, `npm run e2e:loading` (Chromium).
+Contrôles : `test-loading-preparation.mjs`, `npm run e2e -- loading` (Chromium, dans la CI navigateur).
 Les pauses dues aux shaders, au décodage ou au pilote GPU ne sont pas couvertes.
