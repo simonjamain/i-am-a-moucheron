@@ -62,7 +62,8 @@ import { stamp } from '/paper-form.js';
 import { RewardQueue } from '/rewards.js';
 import { SHOP, shopPrice, supportedPlacement } from '/equipment.js';
 import { stepBallisticVelocity, toggleParachute } from '/ballistics.js';
-import { jumpWalker, stepFlatJump } from '/field-physics.js';
+import { jumpWalker } from '/field-physics.js';
+import { PURGATORY_FRAME, arenaWorld } from '/arena-frame.js';
 import { makeTracer, updateTracer } from '/tracers.js';
 import { wavePlan, swarmFrame, entryStatus, ENEMY_TYPES } from '/waves.js';
 import {
@@ -2673,9 +2674,17 @@ const purgatory = createPurgatoryScene(T, {
 });
 const purgScene = purgatory.scene,
   purgColliders = purgatory.colliders;
-const purgCamera = new T.PerspectiveCamera(62, innerWidth / innerHeight, 0.1, 150),
+// Saint Pierre's cloud lies in the office's world (src/arena-frame.ts): same camera range.
+const purgCamera = new T.PerspectiveCamera(62, innerWidth / innerHeight, 0.00005, 40),
   soulMeshes = new Map();
-const soulStatus = new InsectStatus(T, purgScene, { scale: 1 });
+const soulStatus = new InsectStatus(T, purgScene, { scale: PURGATORY_FRAME.unit });
+/** World position of a point of the purgatory arena, `up` local units above its floor. */
+const purgWorld = (p, up = 0) =>
+  arenaWorld(PURGATORY_FRAME, {
+    x: p.x,
+    z: p.z,
+    y: PURGATORY_FRAME.originY + up * PURGATORY_FRAME.unit,
+  });
 // The VIP guard is used like a post (docs/purgatory-scene.md): within his reach and
 // without a pass, the guard under the crosshair (or the free cursor) is outlined in
 // signal blue; a click, like the interaction key, opens the pass.
@@ -2714,12 +2723,12 @@ function soulSlot(i) {
   return { x: i % 2 ? 1.1 : -1.1, z: 3 + Math.floor(i / 2) * 2.8 };
 }
 function soulImpact(e) {
-  if (e.kind === 'stamp') sound.play('stamp', { x: e.x, y: 1.2, z: e.z }, { ref: 7 });
+  if (e.kind === 'stamp') sound.play('stamp', purgWorld(e, 1.2), { ref: 7 });
 }
-// The purgatory walker jumps like the office one (src/field-physics.ts), on its flat floor.
+// The soul jumps and walks exactly like the office walker (src/sortie.ts stepWalker).
 function jumpPurgatory() {
   const self = soulArena?.bodies.find((b) => b.kind === 'player' && b.entity === id && !b.gone);
-  return !!self && jumpWalker(self, WALK_WORLDS.purgatory.sceneScale);
+  return !!self && jumpWalker(self);
 }
 function physicalPurgatory(dt, now) {
   if (!soulArena || !snap) return;
@@ -2729,7 +2738,7 @@ function physicalPurgatory(dt, now) {
   self.inputAt = soulArena.time;
   remoteBodies(soulArena, 'soul');
   advancePurgatory(soulArena, soulArena.time + dt * 1000, id);
-  stepFlatJump(self, dt, WALK_WORLDS.purgatory.sceneScale);
+  stepWalker(self, dt, purgColliders, null, PURGATORY_FRAME);
 
   soulBody = { x: self.x, z: self.z, vx: self.vx, vz: self.vz, face: self.face };
   for (const event of snap.arena?.events || [])
@@ -2755,28 +2764,30 @@ function physicalPurgatory(dt, now) {
     if (!g) {
       g =
         b.kind === 'player' ? makeWalker(b.entity, WALK_WORLDS.purgatory) : soulInsect(b.enemyType);
-      g.position.set(b.x, 0, b.z);
+      g.position.copy(purgWorld(b));
       purgScene.add(g);
       soulMeshes.set(b.id, g);
     }
-    g.position.lerp(new T.Vector3(b.x, 0, b.z), 1 - Math.exp(-20 * dt));
+    const floorY = b.y ?? PURGATORY_FRAME.originY;
+    const at = purgWorld(b);
+    g.position.x += (at.x - g.position.x) * (1 - Math.exp(-20 * dt));
+    g.position.z += (at.z - g.position.z) * (1 - Math.exp(-20 * dt));
     // Height is not eased for our own body (it is simulated every frame): a jump keeps its apex.
     if (b.kind === 'player')
       g.position.y =
         b.entity === id
-          ? b.y || 0
-          : g.position.y + ((b.y || 0) - g.position.y) * (1 - Math.exp(-30 * dt));
+          ? floorY
+          : g.position.y + (floorY - g.position.y) * (1 - Math.exp(-30 * dt));
     if (b.kind === 'player') {
       const speed = poseWalker(g, b, dt, {
         falling: b.grounded === false,
-        vy: (b.vy || 0) / WALK_WORLDS.purgatory.sceneScale,
+        vy: (b.vy || 0) / MAP.ratio,
       });
-      if (b.grounded !== false)
-        walkerSteps(b, speed, { x: b.x, y: 0.1, z: b.z }, 'step:' + b.id, 6);
+      if (b.grounded !== false) walkerSteps(b, speed, purgWorld(b, 0.1), 'step:' + b.id, 6);
     } else {
       // Insects hover in the queue.
       g.rotation.x = Math.sin(now * 0.009 + b.id) * 0.06;
-      g.position.y = purgatory.hover + Math.sin(now * 0.008 + b.id) * 0.08;
+      g.position.y = purgatory.hover + Math.sin(now * 0.008 + b.id) * 0.08 * PURGATORY_FRAME.unit;
     }
   }
   for (const b of soulArena.bodies)
@@ -2799,7 +2810,7 @@ function physicalPurgatory(dt, now) {
       });
       soulMeshes.delete(k);
     }
-  const rendered = soulMeshes.get(self.id)?.position || new T.Vector3(self.x, 0, self.z);
+  const rendered = soulMeshes.get(self.id)?.position || new T.Vector3().copy(purgWorld(self));
   groundCamera(purgCamera, rendered, dt, true);
   renderPurgatory();
 }
@@ -5080,7 +5091,7 @@ function updateAudio() {
     activeCamera = purg ? purgCamera : camera,
     sceneName = purg ? 'purgatory' : 'flight',
     changed = sound.scene !== sceneName;
-  sound.distanceScale = purg ? 1 : ACTOR_UNIT;
+  sound.distanceScale = purg ? PURGATORY_FRAME.unit : ACTOR_UNIT;
   sound.setScene(sceneName);
   activeCamera.updateMatrixWorld();
   sound.listener(
@@ -5089,7 +5100,7 @@ function updateAudio() {
     new T.Vector3(0, 1, 0).applyQuaternion(activeCamera.quaternion),
   );
   if (changed) {
-    const pos = purg ? { x: soulBody?.x || 0, y: 1.3, z: soulBody?.z || 4 } : me.position;
+    const pos = purg ? purgWorld({ x: soulBody?.x || 0, z: soulBody?.z || 4 }, 1.3) : me.position;
     sound.play('spawn', pos, { ref: purg ? 8 : 16, level: 0.65 });
   }
   const keep = new Set();
@@ -5202,7 +5213,7 @@ function updateAudio() {
     for (const b of (soulArena?.bodies || []).filter((b) => b.kind === 'enemy' && !b.gone)) {
       const key = 'soul-bug-' + b.id;
       keep.add(key);
-      sound.loop(key, 'insect', { x: b.x, y: 0.9, z: b.z }, { ref: 5, level: 0.6, rate: 0.8 });
+      sound.loop(key, 'insect', purgWorld(b, 0.9), { ref: 5, level: 0.6, rate: 0.8 });
     }
   }
   sound.keep(keep);
@@ -6968,6 +6979,8 @@ function soulInsect(type = 'midge') {
     longest = Math.max(size.x, size.z, 1e-6),
     wanted = Math.min(1.9, Math.max(0.45, 0.8 * Math.sqrt(ENEMY_TYPES[type].size)));
   model.scale.multiplyScalar(wanted / longest);
+  // Sized in the purgatory's local units, drawn in the world.
+  outer.scale.setScalar(PURGATORY_FRAME.unit);
   outer.userData.disposables = model.userData.disposables;
   outer.userData.animate = (dt, info) => model.userData.animate?.(dt, info);
   return outer;
@@ -6998,7 +7011,9 @@ function observedPurgatory(dt) {
       soulMeshes.set(body.id, model);
       model.rotation.y = body.face || 0;
     }
-    model.position.set(body.x, body.kind === 'player' ? 0 : purgatory.hover, body.z);
+    model.position.copy(purgWorld(body));
+    if (body.kind === 'player') model.position.y = body.y ?? PURGATORY_FRAME.originY;
+    else model.position.y = purgatory.hover;
     if (body.kind === 'player') poseWalker(model, body, dt);
     else model.userData.animate?.(dt, { speed: walkSpeed(WALK_WORLDS.purgatory, body) });
   }

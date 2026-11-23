@@ -65,9 +65,10 @@ mesures de chute et origine du changement : [physique actuelle](multiplayer-retu
 
 **Saut.** Espace à pied, au sol, lance un saut (`jumpWalker`, `src/field-physics.ts`) : vitesse de
 décollage de 4,9 m/s de référence (apex d'environ 1,2 m, environ 1 s en l'air), même gravité que la
-chute, pas de dégât à l'atterrissage (sous la vitesse sûre). Le bureau l'intègre dans `stepWalker`
-(surfaces réelles sous le personnage) ; le purgatoire, plat, dans `stepFlatJump`. Les deux partagent le
-même départ de saut et les mêmes champs réseau (`y`, `vy`, `grounded`), donc les autres joueurs voient
+chute, pas de dégât à l'atterrissage (sous la vitesse sûre). Le bureau comme le purgatoire l'intègrent
+dans `stepWalker` (surfaces réelles sous le personnage ; au purgatoire, le sol du nuage et le
+guichet, voir [un seul monde](walking-network.md#un-seul-monde-pour-le-bureau-et-le-purgatoire)).
+Les deux partagent le même départ de saut et les mêmes champs réseau (`y`, `vy`, `grounded`), donc les autres joueurs voient
 le saut. Un saut permet de monter sur les bureaux bas.
 
 **Chute libre.** Une descente plus rapide que `WALKER_FREEFALL_SPEED` (5,6 m/s ; un saut redescend à

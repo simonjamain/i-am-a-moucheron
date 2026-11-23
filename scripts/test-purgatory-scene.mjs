@@ -14,7 +14,7 @@ import {
 import { SKY_CLOUDS, cloudHeight, cloudPuffs, createCloudFloor } from '../src/purgatory-clouds.ts';
 import { PURGATORY_RULES, VIP_GUARD, VIP_LANE } from '../src/purgatory-queue.ts';
 import { propFootprint, modelBoxes } from '../src/office-props.ts';
-import { WALK_WORLDS } from '../src/scale.ts';
+import { HUMANOID_UNITS, PERSON_HEIGHT } from '../src/scale.ts';
 import { VIP_GUARD as GUARD_RIG, VIP_GUARD_MODEL } from '../src/vip-guard-model.ts';
 import { VIP_GUARD_DATA } from '../src/vip-guard-data.ts';
 import { SAINT_PIERRE_DATA } from '../src/saint-pierre-data.ts';
@@ -22,7 +22,8 @@ import { SaintPierre, SAINT_PIERRE_BONES, SAINT_PIERRE_MODEL } from '../src/sain
 import { FLOOR_MIST, createFloorCloud } from '../src/purgatory-floor.ts';
 import { PostHighlight, selectionRect } from '../src/post-highlight.ts';
 
-const U = WALK_WORLDS.purgatory.sceneScale;
+// The decor's local units per metre (its root group places it in the world).
+const U = HUMANOID_UNITS / PERSON_HEIGHT;
 const walk = PURGATORY_RULES.bounds({ bodies: [] });
 
 // The flat part covers the walkable rectangle of the shared physics.

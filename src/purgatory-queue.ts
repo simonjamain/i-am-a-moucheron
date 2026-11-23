@@ -2,7 +2,15 @@
 // insects' physical queue, Saint Pierre's desk and the paid VIP lane
 // (docs/purgatory-queue.md). Shared by the server (authority on souls and
 // signatures) and the clients (each simulates its own soul, the host the insects).
-import { WALK_WORLDS, walkAcceleration } from './scale.ts';
+import {
+  ACTOR_UNIT,
+  PERSON_HEIGHT,
+  HUMANOID_UNITS,
+  WALK_WORLDS,
+  WALKER_RADIUS,
+  walkAcceleration,
+} from './scale.ts';
+import { PURGATORY_FRAME } from './arena-frame.ts';
 import { advanceArena, createWalker } from './walk-arena.ts';
 import type {
   Arena,
@@ -17,7 +25,7 @@ import type {
 
 // Movement radius only (hits use meshes elsewhere). Issue #135 halved it so the
 // slimmer character no longer snags on other players.
-export const SOUL_RADIUS = 0.24,
+export const SOUL_RADIUS = (WALKER_RADIUS * HUMANOID_UNITS) / PERSON_HEIGHT,
   INSECT_RADIUS = 0.43,
   INSECT_MASS = 0.65;
 export const QUEUE_SPACING = 1.85;
@@ -32,12 +40,16 @@ export function soulSpawn(index: number): PlanarPoint {
   return { x: DESK.x, z: DESK.z + index * QUEUE_SPACING };
 }
 export function createSoul(s: WalkSeed, index: number, now: number): WalkBody {
-  return createWalker(
-    s,
-    soulSpawn(index),
-    now,
-    s.kind === 'enemy' ? { r: INSECT_RADIUS, mass: INSECT_MASS } : { r: SOUL_RADIUS },
-  );
+  // Bodies stand on the cloud's floor, at its height in the world.
+  return {
+    ...createWalker(
+      s,
+      soulSpawn(index),
+      now,
+      s.kind === 'enemy' ? { r: INSECT_RADIUS, mass: INSECT_MASS } : { r: SOUL_RADIUS },
+    ),
+    y: PURGATORY_FRAME.originY,
+  };
 }
 
 // ---------------------------------------------------------------- VIP lane
@@ -176,6 +188,8 @@ function serveDesk(a: Arena, now: number, ms: number, owned: (b: WalkBody) => bo
 export const PURGATORY_RULES: WalkRules = Object.freeze({
   // A soul walks exactly like a person in the office (scale.ts, walkAcceleration).
   acceleration: walkAcceleration(WALK_WORLDS.purgatory),
+  // Heights are world heights of the same person as in the office.
+  verticalUnit: ACTOR_UNIT,
   npcAcceleration: 14,
   bounds: (a: Arena): ArenaBounds => ({
     minX: -10,
