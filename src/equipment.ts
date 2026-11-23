@@ -5,6 +5,17 @@ import { MAP } from './scale.ts';
 import type { Collider } from './oriented-collider.ts';
 import type { VehicleProfile } from './fleet.ts';
 
+/** How far from the builder equipment can be placed (horizontally), in world units. */
+export const PLACEMENT_REACH = MAP.metres(9);
+/** The preview stops a little inside the reach, so that the click that follows is accepted. */
+export const PLACEMENT_PREVIEW_FRACTION = 0.97;
+/**
+ * The server accepts a pose a little beyond the reach: the body it knows is the last one
+ * reported, the client's own may be a step ahead, and a pose computed exactly at the limit is
+ * refused by a strict comparison about once in two.
+ */
+export const PLACEMENT_SLACK = MAP.metres(0.5);
+
 /** A shop entry: a vehicle bought to place, or a fixed installation. */
 export interface ShopItem {
   name: string;

@@ -60,7 +60,13 @@ import { BloodEffects } from '/blood-effects.js';
 import { CONTRACTS, ContractBook, contractKey } from '/contracts.js';
 import { stamp } from '/paper-form.js';
 import { RewardQueue } from '/rewards.js';
-import { SHOP, shopPrice, supportedPlacement } from '/equipment.js';
+import {
+  SHOP,
+  shopPrice,
+  supportedPlacement,
+  PLACEMENT_REACH,
+  PLACEMENT_PREVIEW_FRACTION,
+} from '/equipment.js';
 import { stepBallisticVelocity, toggleParachute } from '/ballistics.js';
 import { jumpWalker } from '/field-physics.js';
 import { PURGATORY_FRAME, arenaWorld } from '/arena-frame.js';
@@ -5671,12 +5677,12 @@ function updatePlacement() {
     return;
   }
   const w = { ...baseWorld(body), face: body.face };
-  const reach = MAP.metres(9);
+  const reach = PLACEMENT_REACH;
   const p = reachClampedPlacement(
       w,
       camera.position,
       camera.getWorldDirection(new T.Vector3()),
-      reach,
+      reach * PLACEMENT_PREVIEW_FRACTION,
       (origin, direction) => aimPlacement(w, origin, direction, reach),
       (x, y, z) => new T.Vector3(x, y, z),
     ),

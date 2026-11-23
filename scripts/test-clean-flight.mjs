@@ -7,7 +7,14 @@ import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
 import * as T from '../vendor/three.webgpu.min.js';
 import { Game } from '../server/game.js';
-import { SHOP, shopPrice, purchaseCount, supportedPlacement } from '../src/equipment.ts';
+import {
+  SHOP,
+  shopPrice,
+  purchaseCount,
+  supportedPlacement,
+  PLACEMENT_REACH,
+  PLACEMENT_SLACK,
+} from '../src/equipment.ts';
 import { fullAmmo, advanceSupplies } from '../src/logistics.ts';
 import { HEAVY, heavyInterval } from '../src/armament.ts';
 import { VEHICLES, LIGHT_FIGHTER, vehicleEntry, isRotorcraft } from '../src/fleet.ts';
@@ -117,6 +124,35 @@ assert.throws(
   /près/,
 );
 assert.equal(r.dollars, cash);
+// The reach: a pose at the limit (and a little beyond, the body the server knows being the last
+// one reported) is judged on its surface, not refused as too far; well beyond it is refused. The
+// poses are lifted off their surface so that none of them is actually placed.
+{
+  const message = (distance) => {
+    try {
+      command('place-purchase', {
+        ...poseBody,
+        token: 'purchase-bed',
+        position: { ...position, x: position.x + distance, y: position.y + 0.01 },
+      });
+    } catch (error) {
+      return error.message;
+    }
+    return '';
+  };
+  const surface = /surface/;
+  assert.match(message(PLACEMENT_REACH), surface, 'at the reach: judged on its surface');
+  assert.match(
+    message(PLACEMENT_REACH + PLACEMENT_SLACK / 2),
+    surface,
+    'within the slack: judged on its surface',
+  );
+  assert.match(
+    message(PLACEMENT_REACH + 2 * PLACEMENT_SLACK),
+    /près/,
+    'beyond the slack: refused as too far',
+  );
+}
 assert.ok(!r.purchases.get('purchase-bed').placed, 'invalid/cancelled pose stays owned');
 const oldCash = r.dollars;
 r.dollars = 0;
