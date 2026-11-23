@@ -8,7 +8,7 @@
 import { SAINT_PIERRE_DATA as D } from './saint-pierre-data.ts';
 import { defineCreature, TAU } from './rigged-creature.ts';
 import type { CreaturePose, CreatureRig } from './rigged-creature.ts';
-import { WALK_WORLDS } from './scale.ts';
+import { HUMANOID_UNITS, PERSON_HEIGHT } from './scale.ts';
 import type { Three } from './types.ts';
 import type * as THREE from 'three/webgpu';
 
@@ -100,12 +100,12 @@ export function saintPose(T: Three, _t: number): CreaturePose {
 
 export const SAINT_PIERRE = defineCreature(D, {
   name: 'saint-pierre',
-  // Model metres to purgatory scene units, at his drawn height.
+  // Model metres to the purgatory decor's local units (src/purgatory-scene.ts), at his drawn height.
   presentation: (T) =>
     new T.Matrix4().makeScale(
       ...(Array(3).fill(
         (SAINT_PIERRE_MODEL.height / SAINT_PIERRE_MODEL.modelHeight) *
-          WALK_WORLDS.purgatory.sceneScale,
+          (HUMANOID_UNITS / PERSON_HEIGHT),
       ) as [number, number, number]),
     ),
   pose: saintPose,
@@ -115,7 +115,7 @@ export const SAINT_PIERRE = defineCreature(D, {
 
 /** Scene units per model metre, at his drawn height. */
 const SCALE =
-  (SAINT_PIERRE_MODEL.height / SAINT_PIERRE_MODEL.modelHeight) * WALK_WORLDS.purgatory.sceneScale;
+  (SAINT_PIERRE_MODEL.height / SAINT_PIERRE_MODEL.modelHeight) * (HUMANOID_UNITS / PERSON_HEIGHT);
 
 export interface SaintState {
   /** Horizontal speed (scene units/s). */

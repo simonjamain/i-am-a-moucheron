@@ -136,13 +136,7 @@ function requireGame(ok, message, status = 409) {
   if (!ok) throw Object.assign(new Error(message), { status });
 }
 const world = (p) =>
-  p.state.awaitingPurgatory
-    ? 'observation'
-    : p.life === 'alive'
-      ? 'office'
-      : p.state.realm === 'super'
-        ? 'super'
-        : 'purgatory';
+  p.state.awaitingPurgatory ? 'observation' : p.life === 'alive' ? 'office' : 'purgatory';
 const signature = (s) => s === true;
 const SENTRY_SOURCE = Object.freeze({ item: 'sentry', seat: 'auto', weapon: 'sentry' });
 const GATLING_SOURCE = Object.freeze({ item: 'gatling', seat: 'auto', weapon: 'gatling' });
@@ -229,7 +223,6 @@ function roomState(code, now, layout = DEFAULT_LAYOUT_ID) {
     effectSeq: 0,
     base: { epoch: uid() },
     purgatory: { epoch: uid() },
-    super: { epoch: uid() },
   };
 }
 
@@ -584,8 +577,7 @@ export class Game {
         s.kind === 'enemy' ? b.maxHealth - s.damage : (r.pilots.get(s.entity)?.health ?? 100);
       b.enemyType = s.enemy_type;
     }
-    // The VIP lane's ropes stand only in the ordinary purgatory.
-    if (realm === 'purgatory') a.obstacles = VIP_LANE;
+    a.obstacles = VIP_LANE;
     a.host =
       shown
         .filter((s) => s.kind === 'player')
@@ -850,7 +842,6 @@ export class Game {
     this.fleet(r);
     this.base(r);
     this.arena(r, 'purgatory');
-    this.arena(r, 'super');
     r.effects = r.effects.filter((e) => e.at > now - 15000);
     r.damageEvents = r.damageEvents.filter((e) => e.at > now - 15000).slice(-256);
     for (const [id, s] of r.souls) if (s.status === 'gone') r.souls.delete(id);
@@ -1063,16 +1054,13 @@ export class Game {
         const { token, item, owner, price } = order;
         purchases.push({ token, item, owner, price });
       }
-    const bodies = {
-      purgatory: new Map(r.purgatory.bodies.map((b) => [b.id, b])),
-      super: new Map(r.super.bodies.map((b) => [b.id, b])),
-    };
-    const souls = { purgatory: [], super: [] };
+    const bodies = new Map(r.purgatory.bodies.map((b) => [b.id, b]));
+    const souls = [];
     for (const soul of r.souls.values()) {
       if (soul.status !== 'waiting') continue;
-      const body = bodies[soul.realm]?.get(soul.id);
+      const body = bodies.get(soul.id);
       if (body)
-        souls[soul.realm].push({
+        souls.push({
           ...soul,
           hp: body.health,
           body,
@@ -1136,10 +1124,8 @@ export class Game {
       leakedPower: r.phase === 'combat' ? money(arrivedPower) : 0,
       now,
       sentAt: now,
-      souls: souls.purgatory,
+      souls,
       arena: r.purgatory,
-      superSouls: souls.super,
-      superArena: r.super.bodies.length ? r.super : null,
       base: r.base,
       damage: [],
     });
@@ -1167,11 +1153,12 @@ export class Game {
     if (p.state.awaitingPurgatory) return;
     if (incarnation !== undefined && incarnation !== null && incarnation !== p.incarnation) return;
     if (incarnation == null && p.life === 'dead') return;
-    const before = world(p),
-      realm = before === 'office' ? 'purgatory' : 'super';
+    // A death in the purgatory sends the soul back to the end of the queue
+    // (papers to sign again), after the same observation as an office death.
+    const before = world(p);
     const deathPosition = this.playerPosition(r, p) || p.state.p;
     this.release(r, p);
-    for (const arena of [r.base, r.purgatory, r.super])
+    for (const arena of [r.base, r.purgatory])
       if (arena.bodies) arena.bodies = arena.bodies.filter((b) => b.entity !== p.id);
     for (const s of r.souls.values())
       if (s.kind === 'player' && s.entity === p.id) s.status = 'gone';
@@ -1182,12 +1169,11 @@ export class Game {
     p.board_paper = 0;
     p.state = {
       ...initialState(),
-      realm,
-      awaitingPurgatory: before !== 'super',
+      realm: 'purgatory',
+      awaitingPurgatory: true,
       observationRealm: before,
       deathPosition,
     };
-    if (before === 'super') this.soul(r, 'player', p.id, p.name, realm);
   }
   sync(r, p, b) {
     if (p.state.awaitingPurgatory) return;
@@ -2664,7 +2650,7 @@ export class Game {
       body = this.arena(r, realm, p, b.ground),
       a = r[realm],
       s = body && r.souls.get(body.id),
-      forms = realm === 'super' ? 5 : 3;
+      forms = 3;
     requireGame(
       body && (deskOccupant(a)?.id === body.id || (s?.vip && inVipDesk(body))),
       'Placez votre corps dans la zone du guichet.',
@@ -2691,34 +2677,28 @@ export class Game {
       p.incarnation++;
       p.mode = 'foot';
       p.board_paper = 0;
-      p.life = realm === 'super' ? 'dead' : 'alive';
+      p.life = 'alive';
       p.state = initialState();
-      if (realm !== 'super') {
-        const bed = r.equipment.find((e) => e.kind === 'bed' && e.slot === p.bedId),
-          destination = bedSpawn(bed, this.solids, r.equipment, values(r.vehicles));
-        const start = baseBody({ id: p.id, name: p.name, bay: p.bay }, this.now());
-        const spawn = destination || {
-          x: start.x,
-          z: start.z,
-          y: start.y,
-          airborne: false,
-          vy: 0,
-          vx: 0,
-          vz: 0,
-          parachute: false,
-        };
-        p.state.walkSpawn = spawn;
-        const w = baseWorld(spawn);
-        p.state.p = [w.x, w.y, w.z];
-        p.state.v = [0, 0, 0];
-        if (p.bedId !== null && p.bedId !== undefined && !destination)
-          p.state.spawnMessage = 'Lit absent ou impraticable : retour à la zone de départ.';
-      }
+      const bed = r.equipment.find((e) => e.kind === 'bed' && e.slot === p.bedId),
+        destination = bedSpawn(bed, this.solids, r.equipment, values(r.vehicles));
+      const start = baseBody({ id: p.id, name: p.name, bay: p.bay }, this.now());
+      const spawn = destination || {
+        x: start.x,
+        z: start.z,
+        y: start.y,
+        airborne: false,
+        vy: 0,
+        vx: 0,
+        vz: 0,
+        parachute: false,
+      };
+      p.state.walkSpawn = spawn;
+      const w = baseWorld(spawn);
+      p.state.p = [w.x, w.y, w.z];
+      p.state.v = [0, 0, 0];
+      if (p.bedId !== null && p.bedId !== undefined && !destination)
+        p.state.spawnMessage = 'Lit absent ou impraticable : retour à la zone de départ.';
       r.base.bodies = (r.base.bodies || []).filter((body) => body.entity !== p.id);
-      if (realm === 'super') {
-        p.state.realm = 'purgatory';
-        this.soul(r, 'player', p.id, p.name);
-      }
     }
   }
 }

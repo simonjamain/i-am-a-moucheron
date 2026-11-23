@@ -8,6 +8,8 @@ import type * as THREE from 'three/webgpu';
 import type { Collider } from './oriented-collider.ts';
 import type { WalkerBody } from './field-physics.ts';
 import type { Three, XYZ } from './types.ts';
+import { OFFICE_FRAME } from './base.ts';
+import type { ArenaFrame } from './arena-frame.ts';
 
 /** A manned station (fixed anti-aircraft gun, fortification, howitzer…). */
 export interface Station extends XYZ {
@@ -184,18 +186,23 @@ export function resolveLanding(
   omega.z *= 0.7;
   return { landed: true, contact: true };
 }
-// World-space walking / deployed parachute. Ownership stays on the client.
+// World-space walking / deployed parachute, in any walking arena (`frame`: the
+// office deck by default, Saint Pierre's cloud). Heights are world heights of the
+// same person everywhere (ACTOR_UNIT); only the arena's planar axes come from the
+// frame. Ownership stays on the client.
 export function stepWalker(
   body: Walker,
   dt: number,
   allColliders: readonly Collider[],
   decor?: DecorQuery | null,
+  frame: ArenaFrame = OFFICE_FRAME,
 ): WalkerImpact | null {
   const colliders = withoutDecor(allColliders, decor);
-  const origin = OFFICE_LAYOUT.base;
-  let x = origin.originX + body.x * ACTOR_UNIT,
-    z = origin.originZ - body.z * ACTOR_UNIT;
-  body.y ??= origin.deckY;
+  // World z = originZ + side * arena z.
+  const side = frame.mirrorZ ? -1 : 1;
+  let x = frame.originX + body.x * frame.unit,
+    z = frame.originZ + side * body.z * frame.unit;
+  body.y ??= frame.originY;
   body.vy ??= 0;
   const previousY = body.y;
   let top = 0;
@@ -236,24 +243,24 @@ export function stepWalker(
   // Chest-height walls stop the walker. Walkable tabletops do not block it.
   for (const box of colliders) {
     if (box.max.y < body.y + 0.25 * ACTOR_UNIT || box.min.y > body.y + 1.7 * ACTOR_UNIT) continue;
-    const pushed = colliderPushXZ(box, x, z, body.r * ACTOR_UNIT);
+    const pushed = colliderPushXZ(box, x, z, body.r * frame.unit);
     if (!pushed) continue;
     x = pushed.x;
     z = pushed.z;
-    // Body z is opposite world z. Remove only velocity into the contact face.
-    const normalSpeed = body.vx * pushed.nx - body.vz * pushed.nz;
+    // Remove only velocity into the contact face (world z = side * body z).
+    const normalSpeed = body.vx * pushed.nx + side * body.vz * pushed.nz;
     if (!box.oriented) {
       if (pushed.nx) body.vx = 0;
       else body.vz = 0;
     } else if (normalSpeed < 0) {
       body.vx -= normalSpeed * pushed.nx;
-      body.vz += normalSpeed * pushed.nz;
+      body.vz -= side * normalSpeed * pushed.nz;
     }
   }
   // The decor's faces near the legs, chest and head push the walker out, like the
   // sides of the boxes; what lies under or over it (support, a table top) does not.
   if (decor) {
-    const radius = body.r * ACTOR_UNIT;
+    const radius = body.r * frame.unit;
     for (const h of [0.4, 0.9, 1.5]) {
       const near = decor.nearest([x, body.y + h * ACTOR_UNIT, z], radius);
       if (!near) continue;
@@ -265,16 +272,15 @@ export function stepWalker(
         nz = dz / flat;
       x = near.point[0] + nx * radius;
       z = near.point[2] + nz * radius;
-      // Body z is opposite world z. Remove only velocity into the contact face.
-      const normalSpeed = body.vx * nx - body.vz * nz;
+      const normalSpeed = body.vx * nx + side * body.vz * nz;
       if (normalSpeed < 0) {
         body.vx -= normalSpeed * nx;
-        body.vz += normalSpeed * nz;
+        body.vz -= side * normalSpeed * nz;
       }
     }
   }
-  body.x = (x - origin.originX) / ACTOR_UNIT;
-  body.z = (origin.originZ - z) / ACTOR_UNIT;
+  body.x = (x - frame.originX) / frame.unit;
+  body.z = (frame.mirrorZ ? frame.originZ - z : z - frame.originZ) / frame.unit;
   return impact;
 }
 export function makeAntiaircraft(

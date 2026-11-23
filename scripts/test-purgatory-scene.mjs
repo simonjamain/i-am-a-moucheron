@@ -14,7 +14,7 @@ import {
 import { SKY_CLOUDS, cloudHeight, cloudPuffs, createCloudFloor } from '../src/purgatory-clouds.ts';
 import { PURGATORY_RULES, VIP_GUARD, VIP_LANE } from '../src/purgatory-queue.ts';
 import { propFootprint, modelBoxes } from '../src/office-props.ts';
-import { WALK_WORLDS } from '../src/scale.ts';
+import { HUMANOID_UNITS, PERSON_HEIGHT } from '../src/scale.ts';
 import { VIP_GUARD as GUARD_RIG, VIP_GUARD_MODEL } from '../src/vip-guard-model.ts';
 import { VIP_GUARD_DATA } from '../src/vip-guard-data.ts';
 import { SAINT_PIERRE_DATA } from '../src/saint-pierre-data.ts';
@@ -22,7 +22,8 @@ import { SaintPierre, SAINT_PIERRE_BONES, SAINT_PIERRE_MODEL } from '../src/sain
 import { FLOOR_MIST, createFloorCloud } from '../src/purgatory-floor.ts';
 import { PostHighlight, selectionRect } from '../src/post-highlight.ts';
 
-const U = WALK_WORLDS.purgatory.sceneScale;
+// The decor's local units per metre (its root group places it in the world).
+const U = HUMANOID_UNITS / PERSON_HEIGHT;
 const walk = PURGATORY_RULES.bounds({ bodies: [] });
 
 // The flat part covers the walkable rectangle of the shared physics.
@@ -178,7 +179,6 @@ assert.ok(restHead.y > 1.6 && restHead.y < 2.6, 'head at a person height: ' + re
 assert.ok(FLOOR_MIST.top > 0.3 && FLOOR_MIST.top < 1.23, 'mist up to the knees');
 assert.ok(FLOOR_MIST.dense < 0 && FLOOR_MIST.bottom < -3);
 const floorPass = createFloorCloud(T, PURGATORY_HALL, CLOUD_FLOOR);
-floorPass.setMood('super');
 floorPass.dispose();
 
 // The whole scene builds without a document (software renderer: no shaders).
@@ -192,14 +192,13 @@ const built = createPurgatoryScene(T, {
   shaders: false,
 });
 built.update(0.016, 1000, {
-  super: false,
   saintX: 0,
   vip: false,
   deskServed: false,
   vipServed: false,
 });
-built.update(0.5, 1500, { super: true, saintX: 0, vip: true, deskServed: true, vipServed: false });
-assert.ok(built.saint.scale.x > 1.3, 'Super Saint-Pierre is taller');
+built.update(0.5, 1500, { saintX: 0, vip: true, deskServed: true, vipServed: false });
+assert.equal(built.saint.scale.x, 1, 'one Saint Pierre, at his own size');
 assert.ok(built.colliders.length >= 2);
 assert.ok(!built.scene.getObjectByName('purgatoire-nuages-ciel'), 'no shader clouds without WebGL');
 // The guard is aimed at like a vehicle post: a ray through him hits his mesh.

@@ -73,6 +73,7 @@ Le [lot suivant de lisibilité et nettoyage](clean-flight.md) précise les comma
 contextuelles actuelles, les effets partagés et les nouvelles collisions de coque.
 
 Avant création d’une âme de joueur, une [observation volontaire](multiplayer-return.md#mort-et-observation-volontaire)
-neutralise les actions sans conserver de corps actif. La récidive super → super reste immédiate.
+neutralise les actions sans conserver de corps actif.
+Mourir au purgatoire passe par la même observation, puis renvoie l’âme en fin de file.
 
 Nouveaux PV : moustique 70, rat 5 000, araignée pondeuse 1 200, bébé araignée 20. Voir [bestiaire](enemy-bestiary.md) pour la naissance et les conséquences des 100 points potentiels d'infestation.

@@ -22,7 +22,8 @@ const { office, purgatory } = WALK_WORLDS;
 
 // Model size: 1.8 m in scene units of each world.
 near(humanoidScale(office), HUMAN_SCALE, 1e-15, 'office humanoid scale');
-near(humanoidScale(purgatory), 1, 1e-12, 'the purgatory is drawn in humanoid units');
+// The purgatory lies in the office's world (src/arena-frame.ts): the same person, same size.
+near(humanoidScale(purgatory), HUMAN_SCALE, 1e-15, 'the purgatory draws the same person');
 // Camera: the shoulder camera's scale is scene units per metre in both worlds.
 for (const world of [office, purgatory])
   near(humanoidScale(world) * 2.46, world.sceneScale * 1.8, 1e-12, 'person = 1.8 camera metres');

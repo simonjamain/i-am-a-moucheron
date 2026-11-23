@@ -264,21 +264,21 @@ assert.ok(
   !JSON.stringify(rejoined.snapshot).includes(bedJoin.resumeKey),
   'resume secret never appears in shared snapshots',
 );
-function revive(p, superFirst = false) {
+function revive(p, diesAgain = false) {
   bedGame.kill(bedRoom, p, p.incarnation);
   bedGame.command('BEDS', p.id, 'enter-purgatory', { incarnation: p.incarnation });
-  if (superFirst) {
+  if (diesAgain) {
+    // A death in the purgatory: back to the end of the queue, same purgatory.
     bedGame.kill(bedRoom, p, p.incarnation);
+    assert.equal(p.state.realm, 'purgatory');
     bedGame.command('BEDS', p.id, 'enter-purgatory', { incarnation: p.incarnation });
   }
-  for (const realm of superFirst ? ['super', 'purgatory'] : ['purgatory']) {
-    bedGame.arena(bedRoom, realm);
-    const b = bedRoom[realm].bodies.find((b) => b.entity === p.id);
-    b.x = 0;
-    b.z = 1.1;
-    for (let form = 1; form <= (realm === 'super' ? 5 : 3); form++)
-      bedGame.command('BEDS', p.id, 'sign', { form, signature: true });
-  }
+  bedGame.arena(bedRoom, 'purgatory');
+  const b = bedRoom.purgatory.bodies.find((b) => b.entity === p.id);
+  b.x = 0;
+  b.z = 1.1;
+  for (let form = 1; form <= 3; form++)
+    bedGame.command('BEDS', p.id, 'sign', { form, signature: true });
   assert.equal(p.life, 'alive');
   assert.equal(p.health, 100);
 }

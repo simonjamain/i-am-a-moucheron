@@ -57,7 +57,7 @@ extra.sync(motionRoom, elected, {
 });
 assert.deepEqual(parkedBiplan.state.p, before, 'the server alone moves a parked aircraft');
 assert.equal(snapshot50.souls.length, 0);
-assert.equal(snapshot50.superSouls.length, 0);
+assert.equal(snapshot50.superSouls, undefined, 'no super purgatory');
 assert.equal(snapshot50.leaked, 0);
 assert.ok(Object.values(snapshot50.pendingInstallations).every((count) => count === 0));
 assert.equal(new Game().rooms.size, 0, 'restarting has no state to restore');
@@ -183,7 +183,7 @@ for (let i = 0; i < 10; i++)
   call(a.id, 'friendly-hit', { target: b.id, incarnation: 1, shot: 's' + i });
 assert.equal(room.pilots.get(b.id).state.realm, 'purgatory', 'souls are unarmed');
 game.kill(room, room.pilots.get(b.id), room.pilots.get(b.id).incarnation);
-assert.equal(room.pilots.get(b.id).state.realm, 'super');
+assert.equal(room.pilots.get(b.id).state.realm, 'purgatory', 'a purgatory death stays there');
 assert.throws(() => call(b.id, 'death', { incarnation: 1 }), /purgatoire/);
 call(b.id, 'enter-purgatory', { incarnation: room.pilots.get(b.id).incarnation });
 assert.equal(room.pilots.get(b.id).incarnation, 2, 'old death discarded');
@@ -201,8 +201,6 @@ function signAll(id, realm, count) {
     });
   }
 }
-signAll(b.id, 'super', 5);
-assert.equal(room.pilots.get(b.id).state.realm, 'purgatory');
 // Keep the other player away from the counter.
 const abody = room.purgatory.bodies.find((x) => x.entity === a.id);
 if (abody) abody.z = 20;

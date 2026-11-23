@@ -61,8 +61,8 @@ const walker = (x) => ({
 const free = walker(0.3);
 stepWalker(free, 1 / 60, [crate]);
 near(free.x, 0.3, 1e-9, 'passes beside the crate');
-// 0.1 from the crate: still blocked, at the slim radius.
-const blocked = walker(0.4);
+// Closer than the slim radius: still blocked.
+const blocked = walker(0.5 - BASE_WALK_RADIUS / 2);
 stepWalker(blocked, 1 / 60, [crate]);
 near(blocked.x, 0.5 - BASE_WALK_RADIUS, 1e-9, 'walls still block');
 // Footsteps: on the ground only, never falling or under the parachute.

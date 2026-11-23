@@ -9,8 +9,11 @@
 //   frame.
 // - Below the walkable hall the top is low and flat; beyond it, the cloud billows
 //   up and its edge frays out. Shared physics is unchanged: souls walk at y = 0.
+// - The cloud is described in the decor's local units; the camera and the scene
+//   depth are in the world (office metres), turned local through the frame.
 import type * as THREE from 'three/webgpu';
 import type { Three } from './types.ts';
+import type { ArenaFrame } from './arena-frame.ts';
 import { SKY_LOOK, SUN_DIRECTION } from './purgatory-clouds.ts';
 import { cloudNodes } from './cloud-nodes.ts';
 import {
@@ -43,7 +46,6 @@ export interface FloorCloud {
    * scene depth `depth` (the cartoon renderer's target; null: no occlusion).
    */
   render(renderer: THREE.WebGPURenderer, camera: THREE.Camera, depth: THREE.Texture | null): void;
-  setMood(mood: 'normal' | 'super'): void;
   dispose(): void;
 }
 
@@ -51,6 +53,7 @@ export function createFloorCloud(
   T: Three,
   hall: CloudFloorSpec,
   extent: CloudFloorSpec,
+  frame: ArenaFrame | null = null,
 ): FloorCloud {
   const {
     Fn,
@@ -93,6 +96,7 @@ export function createFloorCloud(
     projectionInverse: uniform(new T.Matrix4()),
     cameraWorld: uniform(new T.Matrix4()),
     eye: uniform(new T.Vector3()),
+    localScale: uniform(frame ? 1 / frame.unit : 1), // local units per world unit
     time: uniform(0),
     hall: uniform(flat), // minX, maxX, minZ, maxZ (flat top)
     extent: uniform(rect(extent)), // minX, maxX, minZ, maxZ (whole cloud)
@@ -101,7 +105,7 @@ export function createFloorCloud(
       new T.Vector4(FLOOR_MIST.top, FLOOR_MIST.dense, FLOOR_MIST.billows, FLOOR_MIST.bottom),
     ),
     sunDir: uniform(new T.Vector3(...SUN_DIRECTION).normalize()),
-    sunColor: uniform(new T.Color(SKY_LOOK.normal.sun)),
+    sunColor: uniform(new T.Color(SKY_LOOK.sun)),
     shade: uniform(new T.Color(SKY_LOOK.shade)),
     tint: uniform(new T.Color(SKY_LOOK.cloud)),
   };
@@ -170,9 +174,9 @@ export function createFloorCloud(
     const eye = u.eye;
     // Distance along the ray to the nearest opaque surface.
     const sampleUv = targetUv(T);
-    const tScene = sceneDepth(sampleUv.sub(u.depthTexel.mul(0.5))).div(
-      max(viewDir.z.negate(), 1e-4),
-    );
+    const tScene = sceneDepth(sampleUv.sub(u.depthTexel.mul(0.5)))
+      .mul(u.localScale)
+      .div(max(viewDir.z.negate(), 1e-4));
     const yTop = mist.x.add(mist.z).add(0.5);
     // Slab [bottom, yTop].
     const flatRay = abs(rd.y).lessThan(1e-5);
@@ -309,6 +313,10 @@ export function createFloorCloud(
       u.projectionInverse.value.copy(camera.projectionMatrixInverse);
       u.cameraWorld.value.copy(camera.matrixWorld);
       u.eye.value.setFromMatrixPosition(camera.matrixWorld);
+      if (frame)
+        u.eye.value
+          .sub(new T.Vector3(frame.originX, frame.originY, frame.originZ))
+          .divideScalar(frame.unit);
       u.time.value = (performance.now() - start) / 1000;
       const previous = renderer.getRenderTarget(),
         alpha = renderer.getClearAlpha(),
@@ -325,9 +333,6 @@ export function createFloorCloud(
       exposure.value = renderer.toneMappingExposure;
       withoutToneMapping(T, renderer, () => renderer.render(compositeScene, screen));
       renderer.autoClear = autoClear;
-    },
-    setMood(mood) {
-      u.sunColor.value.set(SKY_LOOK[mood].sun);
     },
     dispose() {
       target?.dispose();

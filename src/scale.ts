@@ -37,6 +37,11 @@ export const ACTOR_UNIT = MAP.metres(10.4 / 5.6);
 export const PERSON_HEIGHT = 1.8;
 export const HUMANOID_UNITS = 2.46;
 export const HUMAN_SCALE = MAP.metres(PERSON_HEIGHT / HUMANOID_UNITS);
+/**
+ * Walking collision radius of a person, in reference metres, the same in every
+ * world (issue #135 halved it; the purgatory's 0.24 units for a 2.46-unit person).
+ */
+export const WALKER_RADIUS = (0.24 * PERSON_HEIGHT) / HUMANOID_UNITS;
 export const MIDGE_SIZE_FACTOR = 1.35 * 1.5 * 3;
 // Office presentation/hit geometry factors. Keep wave budget/HP independent.
 export const ENEMY_SIZE_FACTORS: Readonly<Record<EnemyType, number>> = Object.freeze({
@@ -114,9 +119,10 @@ export const WALK_WORLDS: Readonly<Record<'office' | 'purgatory', WalkWorld>> = 
     arenaMetres: ACTOR_UNIT / MAP.ratio,
     mirrorZ: true,
   }),
-  // The purgatory scene is drawn in the humanoid's own units.
+  // Saint Pierre's cloud lies in the same world (src/arena-frame.ts); only its
+  // arena keeps the humanoid's own units for the queue's rules.
   purgatory: Object.freeze({
-    sceneScale: HUMANOID_UNITS / PERSON_HEIGHT,
+    sceneScale: MAP.ratio,
     arenaMetres: PERSON_HEIGHT / HUMANOID_UNITS,
     mirrorZ: false,
   }),

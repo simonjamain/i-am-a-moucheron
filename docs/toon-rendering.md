@@ -60,8 +60,9 @@ commence à **2,2125 m** (`OFFICE_FOG_START`) et s'épaissit jusqu'au haut des m
 croît avec la hauteur et les matériaux calculent l'épaisseur traversée par chaque
 rayon : regarder vers le haut depuis le sol révèle la couche. Un voile blanc
 uniforme monte entre 40 % et 100 % du plafond (jusqu'à 85 % d'opacité) ; le HUD
-reste devant. Une enveloppe visuelle non solide (haut et quatre côtés, sud compris)
-termine les rayons de fond dans le même brouillard et ne crée aucun collider. Le
+reste devant. La pièce est fermée par quatre murs du pack ; au-dessus d'eux, le fond
+de scène a la couleur du brouillard (`OFFICE_HAZE`, blanc) : il n'y a plus d'enveloppe
+colorée autour de la pièce (l'ancienne laissait voir un mur vert-de-gris au sud). Le
 purgatoire garde son brouillard linéaire, sans voile d'altitude.
 Contrôles : `test-office-clouds.mjs` ; rendu réel : `e2e-office-clouds.mjs`
 (Playwright + Chromium, hors `npm test`, dans `npm run e2e` et sa CI ; variables `PLAYWRIGHT_PATH`,

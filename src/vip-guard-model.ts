@@ -6,7 +6,7 @@
 import { VIP_GUARD_DATA as D } from './vip-guard-data.ts';
 import { defineCreature, TAU } from './rigged-creature.ts';
 import type { CreaturePose, CreatureHelpers } from './rigged-creature.ts';
-import { WALK_WORLDS } from './scale.ts';
+import { HUMANOID_UNITS, PERSON_HEIGHT } from './scale.ts';
 import type { Three } from './types.ts';
 
 export const VIP_GUARD_MODEL = Object.freeze({
@@ -48,11 +48,11 @@ export function guardIdlePose(T: Three, t: number, h: CreatureHelpers): Creature
 
 export const VIP_GUARD = defineCreature(D, {
   name: 'vigile-vip',
-  // Model metres to purgatory scene units, at the guard's drawn height.
+  // Model metres to the purgatory decor's local units (src/purgatory-scene.ts), at the guard's drawn height.
   presentation: (T) =>
     new T.Matrix4().makeScale(
       ...(Array(3).fill(
-        (VIP_GUARD_MODEL.height / VIP_GUARD_MODEL.modelHeight) * WALK_WORLDS.purgatory.sceneScale,
+        (VIP_GUARD_MODEL.height / VIP_GUARD_MODEL.modelHeight) * (HUMANOID_UNITS / PERSON_HEIGHT),
       ) as [number, number, number]),
     ),
   pose: guardIdlePose,

@@ -3,13 +3,9 @@
 import type * as THREE from 'three/webgpu';
 import type { Three } from './types.ts';
 
-/** Flight bounds: half extents x/z and ceiling height, office metres. */
-export interface FogBounds {
-  x: number;
-  z: number;
-  ceiling: number;
-}
 export const OFFICE_DISTANCE_FOG = 0.018;
+/** Haze colour; also the scene background, seen only above the closed room's walls. */
+export const OFFICE_HAZE = '#ffffff';
 /** Altitude where the haze begins: air routes stay below it (test-layouts). */
 export const OFFICE_FOG_START = 2.2125;
 /** Top of the cloud layer: the top of the office walls (layouts.ts WALL_HEIGHT). */
@@ -89,26 +85,4 @@ export function applyOfficeFog(T: Three, scene: THREE.Scene): void {
     .mul(9)
     .add(density.mul(density).mul(viewZ).mul(viewZ));
   scene.fogNode = fogEffect(color, float(1).sub(exp(optical.negate())));
-}
-
-// The clear scene background does not run material fog shaders. Enclose its
-// rays on every side, including the open south, with a non-solid backdrop.
-// Keep the chase camera inside the atmosphere even near the flight bounds.
-export function officeFogCeiling(T: Three, bounds: FogBounds): THREE.Mesh {
-  const margin = 0.25,
-    width = (bounds.x + margin) * 2,
-    depth = (bounds.z + margin) * 2,
-    height = bounds.ceiling + margin,
-    material = new T.MeshBasicMaterial({ color: '#829f91', side: T.DoubleSide, fog: true }),
-    geometry = new T.BoxGeometry(width, height, depth);
-  // Leave the bottom open: this is atmosphere, never a floor or a collider.
-  const indices = Array.from(geometry.index!.array),
-    bottom = geometry.groups[3]; // BoxGeometry face order: +X, −X, +Y, −Y, +Z, −Z.
-  geometry.setIndex(indices.filter((_, i) => i < bottom.start || i >= bottom.start + bottom.count));
-  geometry.clearGroups();
-  const mesh = new T.Mesh(geometry, material);
-  mesh.name = 'office-fog-ceiling';
-  mesh.position.y = height / 2;
-  mesh.userData.projectileSolid = false;
-  return mesh;
 }

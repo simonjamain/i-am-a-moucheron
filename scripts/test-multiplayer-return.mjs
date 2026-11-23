@@ -48,13 +48,18 @@ assert.equal(
   [...r.souls.values()].filter((s) => s.kind === 'player' && s.status === 'waiting').length,
   1,
 );
+// A death in the purgatory: the same observation, then a new soul at the end
+// of the same queue (the old one is gone).
 game.kill(r, p, p.incarnation);
 assert.equal(p.state.awaitingPurgatory, true);
-assert.equal(p.state.realm, 'super');
+assert.equal(p.state.realm, 'purgatory');
+assert.equal(p.state.observationRealm, 'purgatory');
+assert.equal(
+  [...r.souls.values()].filter((s) => s.kind === 'player' && s.status === 'waiting').length,
+  0,
+);
 cmd('enter-purgatory', { incarnation: p.incarnation });
-game.kill(r, p, p.incarnation);
-assert.equal(p.state.awaitingPurgatory, false);
-assert.equal(p.state.realm, 'super');
+assert.equal(p.state.realm, 'purgatory');
 assert.equal(
   [...r.souls.values()].filter((s) => s.kind === 'player' && s.status === 'waiting').length,
   1,
@@ -67,7 +72,7 @@ const beforeColor = p.colorSequence;
 const rejoin = game.join({ code: r.code, resumeKey: joined.resumeKey, name: p.name });
 assert.equal(r.pilots.get(rejoin.id).colorSequence, beforeColor);
 console.log(
-  'Observation: immediate seat/body removal, no soul before click, inactive controls, idempotent click, super-super rule, reset and stable identity colour.',
+  'Observation: immediate seat/body removal, no soul before click, inactive controls, idempotent click, death in the purgatory back to the queue, reset and stable identity colour.',
 );
 
 // One ready reserve per starter; active and returned hulls are never removed.

@@ -70,9 +70,10 @@ restore retired melee actions. See [combat and worlds](combat-worlds.md).
 
 ## Collisions de marche et pas (issue #135)
 
-Le rayon de déplacement des personnages est réduit de moitié : `BASE_WALK_RADIUS`
-= 0,16 unité d'acteur au bureau (au lieu de 0,32), `SOUL_RADIUS` = 0,24 au
-purgatoire (au lieu de 0,48). Il sert aux collisions entre joueurs (qui restent
+Le rayon de déplacement des personnages est réduit de moitié, puis unifié : un
+seul rayon en mètres, `WALKER_RADIUS` (0,176 m, `src/scale.ts`), soit `SOUL_RADIUS`
+= 0,24 unité au purgatoire (au lieu de 0,48) et `BASE_WALK_RADIUS` ≈ 0,095 unité
+d'acteur au bureau (0,32 à l'origine, puis 0,16). Il sert aux collisions entre joueurs (qui restent
 solides, jamais traversables) et avec le mobilier (`stepWalker`). Les volumes de
 tir sont distincts (maillages, sphères de `playerPosition`) et inchangés. Les corps
 existants reprennent ce rayon à la prochaine réconciliation. Les sons de pas ne se
@@ -90,13 +91,44 @@ Tout le reste en découle :
 - taille du modèle (`humanoidScale`, 1,8 m) ;
 - cadrage de la caméra d'épaule (`groundCamera`, même champ de vision de 62°) ;
 - accélération (`walkAcceleration`, course de référence de 6 m/s, environ 6,4 m/s atteints) ;
-- vitesse donnée à l'animation (`walkSpeed`).
+- vitesse donnée à l'animation (`walkSpeed`) ;
+- rayon de collision (`WALKER_RADIUS`) ;
+- saut, chute et appui au sol (`stepWalker`, `src/sortie.ts`).
 
 Au client, `makeWalker`, `poseWalker` et `walkerSteps` créent, orientent, animent et
 font marcher tous les personnages à pied. Le purgatoire n'a donc plus de caméra plus
 proche, de champ plus étroit, ni d'allure à mi-chemin entre marche et course (il
 plafonnait à 3,15 m/s). `scripts/test-walk-worlds.mjs` vérifie taille, cadrage et
 vitesse de pointe identiques.
+
+## Un seul monde pour le bureau et le purgatoire
+
+Le purgatoire n'est plus une scène à part, dans ses propres unités : c'est un lieu du
+même monde que le bureau, en mètres du bureau. Le nuage de Saint Pierre flotte
+au-dessus de la pièce, environ 150 m réels plus haut que l'ancien plafond de vol
+(`PURGATORY_FRAME` dans `src/arena-frame.ts` : sol à 3,95 + 0,45 = 4,40 m du bureau,
+centré sur la pièce). C'est la base du [ciel du purgatoire](https://github.com/simonjamain/i-am-a-moucheron/issues/344) :
+un appareil pourra y monter sans changer de repère.
+
+- Chaque lieu de marche garde ses coordonnées planes d'arène pour ses règles (places
+  de la file, baies du hangar) ; un **repère** (`ArenaFrame` : origine, mètres par unité,
+  axe z inversé ou non) les place dans le monde. `OFFICE_FRAME` (`src/base.ts`) suit
+  l'origine du plan actif, en unités d'acteur, z inversé ; `PURGATORY_FRAME` garde
+  l'unité historique de la file (2,46 unités pour une personne de 1,8 m).
+- La hauteur `y` d'un corps est une hauteur du monde dans les deux lieux. Une âme
+  marche, saute et retombe avec `stepWalker`, comme au bureau, sur les boîtes du
+  purgatoire (sol du nuage, guichet) ; l'ancien saut à plat `stepFlatJump` est retiré.
+- Le décor (`createPurgatoryScene`) est construit dans les unités de l'arène, dans un
+  groupe placé et mis à l'échelle par le repère ; ciel, brume, nuages du ciel et
+  nuage-sol sont convertis vers le monde. Les âmes, les insectes de la file, la
+  caméra d'épaule et les sons sont en mètres du bureau, comme au bureau.
+- Le rendu reste séparé : le client dessine la scène du bureau ou celle du
+  purgatoire, jamais les deux.
+
+`scripts/test-arena-frame.mjs` vérifie l'altitude, les repères, le rayon commun, la
+place du décor et la marche d'une âme contre le guichet ; le scénario navigateur
+`scripts/e2e-purgatory-walk.mjs` meurt, entre au purgatoire, marche et saute sur le
+nuage.
 
 ## Verification
 

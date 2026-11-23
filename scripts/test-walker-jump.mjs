@@ -1,10 +1,14 @@
 import assert from 'node:assert/strict';
 import { stepWalker } from '../src/sortie.ts';
-import { jumpWalker, stepFlatJump, WALKER_FALL, WALKER_JUMP_SPEED } from '../src/field-physics.ts';
+import { jumpWalker, WALKER_FALL, WALKER_JUMP_SPEED } from '../src/field-physics.ts';
+import * as T from '../vendor/three.webgpu.min.js';
+import { createPurgatoryScene } from '../src/purgatory-scene.ts';
+import { PURGATORY_FRAME } from '../src/arena-frame.ts';
+import { createSoul } from '../src/purgatory-queue.ts';
 import { toggleParachute } from '../src/ballistics.ts';
 import { advanceBase, OFFICE_RULES } from '../src/base.ts';
 import { createWalker } from '../src/walk-arena.ts';
-import { MAP, WALK_WORLDS } from '../src/scale.ts';
+import { MAP } from '../src/scale.ts';
 import { airPose, jumpPose, riseOf, isFreeFall, FREE_FALL_LEAN } from '../src/walker-air-pose.ts';
 import { WALKER_FREEFALL_SPEED } from '../src/field-physics.ts';
 import { OFFICE_LAYOUT } from '../src/layout.ts';
@@ -65,22 +69,35 @@ assert.equal(toggleParachute(slow), false, 'too slow to open');
 slow.parachute = true;
 assert.equal(toggleParachute(slow), true, 'an open canopy always folds');
 
-// Purgatory: flat floor, same take-off, in its own units.
-const scale = WALK_WORLDS.purgatory.sceneScale;
-const soul = { y: 0, vy: 0, grounded: true };
-assert.equal(jumpWalker(soul, scale), true);
-let top = 0;
-for (let i = 0; i < 200 && !soul.grounded; i++) {
-  stepFlatJump(soul, 1 / 60, scale);
+// Purgatory: the same walker on Saint Pierre's cloud (src/arena-frame.ts), with the
+// cloud's own floor: same take-off, same apex in reference metres, lands on the cloud.
+const decor = createPurgatoryScene(T, {
+  box: (parent, w, h, d, color, x, y, z) => {
+    const m = new T.Mesh(new T.BoxGeometry(w, h, d), new T.MeshBasicMaterial({ color }));
+    m.position.set(x, y, z);
+    parent.add(m);
+    return m;
+  },
+  shaders: false,
+});
+const soul = { ...createSoul({ id: 1, entity: 'p', kind: 'player' }, 0, 0), grounded: true };
+for (let i = 0; i < 10; i++) stepWalker(soul, 1 / 60, decor.colliders, null, PURGATORY_FRAME);
+const floor = soul.y;
+assert.ok(
+  soul.grounded && Math.abs(floor - PURGATORY_FRAME.originY) < 0.001,
+  'stands on the cloud',
+);
+assert.equal(jumpWalker(soul), true);
+let top = floor;
+for (let i = 0; i < 200 && (i === 0 || !soul.grounded); i++) {
+  stepWalker(soul, 1 / 60, decor.colliders, null, PURGATORY_FRAME);
   top = Math.max(top, soul.y);
 }
-assert.ok(soul.grounded && soul.y === 0 && soul.vy === 0, 'lands on the floor');
+assert.ok(soul.grounded && Math.abs(soul.y - floor) < 1e-9, 'lands back on the cloud');
 assert.ok(
-  Math.abs(top / scale - 1.22) < 0.08,
-  'same apex in reference metres (' + top / scale + ')',
+  Math.abs((top - floor) / MAP.ratio - 1.22) < 0.08,
+  'same apex as in the office, in reference metres (' + (top - floor) / MAP.ratio + ')',
 );
-stepFlatJump(soul, 1 / 60, scale);
-assert.equal(soul.y, 0, 'nothing moves while grounded');
 
 // A running jump keeps the ground's control and speed limit (a real fall has its own air rules).
 const at = { x: 0, z: 0 };

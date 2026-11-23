@@ -206,15 +206,15 @@ n’est actuellement intégré. Les événements importants ont des indications 
 dont les vagues, les signatures et les tirs. La prise en charge graphique de
 secours permet un diagnostic, sans garantir le rendu WebGL final.
 
-## Contrats, changements de poste et récidive
+## Contrats et changements de poste
 
 Le titre affiché est « i am a moucheron ». Le catalogue embarqué contient dix
-variantes pour chacun de 65 documents/contextes, soit 650 variantes de documents, avec les contrats adaptés aux trois postes du tank :
-pilote, mitrailleurs dorsal, arrière et ventral, DCA, trois documents classiques, cinq
-supérieurs et mutation/demande/acceptation d’échange pour chaque poste embarqué.
+variantes pour chacun de 76 documents/contextes, soit 760 variantes de documents, avec les contrats adaptés aux trois postes du tank :
+pilote, mitrailleurs dorsal, arrière et ventral, DCA, les trois documents du purgatoire
+et mutation/demande/acceptation d’échange pour chaque poste embarqué.
 Le texte reste stable pendant la signature ; la variante immédiatement précédente
-est évitée pendant la session. Les contrats supérieurs sont nettement plus longs
-et leur corps est intégralement consultable par défilement.
+est évitée pendant la session. Le corps d’un contrat est intégralement consultable
+par défilement.
 
 À bord d’un appareil à plusieurs places, les touches physiques Digit1–Digit7
 ou le panneau des postes demandent un changement contractuel. Échap libère le curseur.
@@ -225,11 +225,10 @@ cet instant. Au sol comme en vol, quitter le cockpit pour un autre poste d’avi
 aucun pilote automatique (l’hélicoptère possède sa propre assistance au stationnaire) : un client désigné continue la physique avec commandes
 neutres et les derniers gaz, jusqu’à reprise des commandes ou crash.
 
-Mourir au purgatoire ouvre aussi une observation avant le bouton d’accès au super
-purgatoire, réservé aux joueurs, avec super Saint-Pierre. Cinq signatures ramènent au purgatoire classique, dont les trois
-signatures sont à refaire. Mourir au super purgatoire recrée le corps au même
-endroit et réinitialise les cinq documents, sans monde supplémentaire. Chaque
-transition restaure 100 PV ; tuer un joueur ne rapporte jamais d’argent.
+Mourir au purgatoire ouvre la même observation que mourir au bureau ; « Accéder au
+purgatoire » recrée alors l’âme en fin de file, avec ses trois documents à
+signer de nouveau. Il n’existe qu’un purgatoire. Chaque transition restaure 100 PV ;
+tuer un joueur ne rapporte jamais d’argent.
 
 Voir [combat et mondes](combat-worlds.md) pour les valeurs et garanties réseau.
 

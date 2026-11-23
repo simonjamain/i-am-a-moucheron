@@ -22,7 +22,8 @@ Le sol est le **même nuage volumétrique** que ceux du ciel : on marche à moit
 
 - La salle (`PURGATORY_HALL`) reprend le rectangle de marche de `purgatory-queue.ts`
   (x de −10 à 10, z de 0 à 80 et plus), plus l’arrière du guichet. Les âmes marchent
-  toujours à y = 0 ; la brume monte jusqu’aux genoux (`FLOOR_MIST.top`, 0,95 unité pour
+  au niveau du sol du nuage, 150 m au-dessus du bureau dans le même monde
+  ([un seul monde](walking-network.md#un-seul-monde-pour-le-bureau-et-le-purgatoire)) ; la brume monte jusqu’aux genoux (`FLOOR_MIST.top`, 0,95 unité pour
   une âme de 2,46) et devient dense sous le sol (`FLOOR_MIST.dense`) : les jambes s’y
   perdent progressivement.
 - À 2,5 unités au-delà de la salle (`FLOOR_MIST.margin`), le nuage se gonfle en
@@ -65,7 +66,6 @@ Le sol est le **même nuage volumétrique** que ceux du ciel : on marche à moit
   donc jamais devant le nuage-sol ni les meubles, ce qui est juste car aucun ne se
   trouve entre la caméra et le décor (`test-purgatory-scene.mjs` le vérifie).
 - Sans WebGL (rendu logiciel de secours), ni dôme ni nuages : le fond est uni.
-- Au super purgatoire, le ciel passe au crépuscule (`SKY_LOOK.super`), la brume suit.
 
 ### Coût mesuré
 
@@ -82,7 +82,8 @@ Le passage à WebGPU est suivi à part.
 ## Mobilier et guichet
 
 - `purgatoryProps()` liste chaque meuble du pack, placé à la main en unités de la
-  scène puis ramené en mètres (`WALK_WORLDS.purgatory.sceneScale`). Aucun meuble
+  scène (2,46 pour une personne de 1,8 m), dans le groupe du décor que
+  `PURGATORY_FRAME` place dans le monde. Aucun meuble
   bloquant ne se trouve dans la salle de marche ni ne coupe les cordons VIP.
 - **Le guichet** : trois bureaux pour la file des insectes et un au guichet VIP, leur
   face tournée vers Saint Pierre (écran, clavier, lampe de son côté ; papiers, agrafeuse
@@ -99,8 +100,7 @@ Les anciens textes flottants sont remplacés par des objets du monde, peints aux
 couleurs des documents papier (`--paper`, `--ink`, police machine à écrire) :
 
 - une plaque posée au bord des bureaux du guichet, au-dessus de la brume : « SAINT
-  PIERRE · Guichet des résurrections », « SUPER SAINT-PIERRE · Direction des récidives »
-  au super purgatoire ;
+  PIERRE · Guichet des résurrections » ;
 - une plaque « ACCÈS VIP » sur le bureau VIP (ouvert à toute âme qui paie) ;
 - un pupitre « COUPE-FILE · Laissez-passer auprès du vigile » à côté de la barrière ;
 - « PLACE AU GUICHET » peint au sol devant le cercle du guichet.
@@ -112,7 +112,7 @@ Les cercles du guichet changent toujours de teinte quand c’est son tour.
 Modèle Meshy « The Keeper of Wisdom » fourni par l’utilisateur (vieillard à longue barbe
 blanche, robe, clé à la ceinture), squelette SmartRig de 39 os, sans animation
 ([pipeline des assets](asset-pipeline.md#saint-pierre)). `src/saint-pierre-model.ts` le
-dessine à 1,85 m (×1,4 au super purgatoire) et l’anime en procédural (`SaintPierre`) :
+dessine à 1,85 m et l’anime en procédural (`SaintPierre`) :
 
 - une respiration lente (4 s) ;
 - la tête tournée vers l’âme ou l’insecte qu’il sert (`servedAt`) ;

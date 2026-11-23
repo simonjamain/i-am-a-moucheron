@@ -16,21 +16,11 @@ import { tsl, type Node } from './gpu-passes.ts';
 
 /** Colours of the sky (linear tints are derived by three.js from sRGB). */
 export const SKY_LOOK = Object.freeze({
-  normal: {
-    zenith: '#2f7fd8',
-    horizon: '#a9d6fb',
-    below: '#e3f1fd',
-    sun: '#fff6df',
-    fog: '#bfe0fb',
-  },
-  // Super Saint-Pierre: the same sky at dusk.
-  super: {
-    zenith: '#2d1d4f',
-    horizon: '#b07fb8',
-    below: '#e9cfe0',
-    sun: '#ffd2a8',
-    fog: '#d9bfd8',
-  },
+  zenith: '#2f7fd8',
+  horizon: '#a9d6fb',
+  below: '#e3f1fd',
+  sun: '#fff6df',
+  fog: '#bfe0fb',
   cloud: '#e4ebf4',
   shade: '#a3badb',
 });
@@ -41,13 +31,12 @@ export const SUN_DIRECTION = Object.freeze([0.35, 0.8, 0.48]);
 
 export interface SkyDome {
   mesh: THREE.Mesh;
-  setMood(mood: 'normal' | 'super'): void;
   /** Show this cloud layer (screen-sized, premultiplied) behind the scene. */
   setClouds(layer: THREE.Texture | null, width: number, height: number): void;
 }
 /** A sphere drawn behind everything, following the camera (call follow()). */
 export function createSkyDome(T: Three, radius: number): SkyDome {
-  const look = SKY_LOOK.normal;
+  const look = SKY_LOOK;
   const {
     uniform,
     texture,
@@ -99,13 +88,6 @@ export function createSkyDome(T: Three, radius: number): SkyDome {
   mesh.onBeforeRender = (_r, _s, camera) => mesh.position.copy(camera.position);
   return {
     mesh,
-    setMood(mood) {
-      const l = SKY_LOOK[mood];
-      uniforms.zenith.value.set(l.zenith);
-      uniforms.horizon.value.set(l.horizon);
-      uniforms.below.value.set(l.below);
-      uniforms.sunColor.value.set(l.sun);
-    },
     setClouds(layer, _width, _height) {
       if (layer) clouds.value = layer;
       uniforms.hasClouds.value = layer ? 1 : 0;
@@ -310,7 +292,6 @@ export const CLOUD_LAYER_SCALE = 0.5;
 export interface SkyClouds {
   group: THREE.Group;
   update(time: number): void;
-  setMood(mood: 'normal' | 'super'): void;
   /**
    * Draw the clouds seen by `camera` into the half-resolution layer (call it
    * before the frame); returns the layer and the drawing buffer size.
@@ -441,7 +422,7 @@ export function createSkyClouds(T: Three, specs: readonly SkyCloudSpec[] = SKY_C
   const { uniform } = tsl(T);
   const shared = {
     time: uniform(0),
-    sunColor: uniform(new T.Color(SKY_LOOK.normal.sun)),
+    sunColor: uniform(new T.Color(SKY_LOOK.sun)),
     shade: uniform(new T.Color(SKY_LOOK.shade)),
     tint: uniform(new T.Color(SKY_LOOK.cloud)),
   };
@@ -469,9 +450,6 @@ export function createSkyClouds(T: Three, specs: readonly SkyCloudSpec[] = SKY_C
         const base = mesh.userData.base as THREE.Vector3;
         mesh.position.x = base.x + Math.sin(time * 0.02 + i) * 4;
       });
-    },
-    setMood(mood) {
-      shared.sunColor.value.set(SKY_LOOK[mood].sun);
     },
     render(renderer, camera) {
       renderer.getDrawingBufferSize(size);
