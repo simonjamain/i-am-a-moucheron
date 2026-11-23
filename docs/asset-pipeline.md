@@ -369,7 +369,7 @@ sans clip : aucune génération ni crédit Meshy de notre côté.
   `580e63d0…19d0`), 1 495 triangles, 1 832 sommets, SmartRig de 39 os, texture PNG 2K
   réduite en JPEG 512 px (97 Ko). Pieds à y = 0, 1,7 m, face vers +Z.
 - Import : `PYTHONPATH=scripts python3 scripts/import-creature.py saint-pierre <GLB>`
-  écrit `src/saint-pierre-data.js` (219 Ko).
+  écrit `src/saint-pierre-data.ts` (219 Ko).
 - Pose (`src/saint-pierre-model.ts`) : respiration, regard, marche et tampon procéduraux
   par `defineCreature`. Os utilisés : bassin `Bone_000`, colonne `Bone_003`, poitrine
   `Bone_002`, cou `Bone_020`, tête `Bone_019` ; bras gauche (+X) `Bone_025` → `Bone_021`,

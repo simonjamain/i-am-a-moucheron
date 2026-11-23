@@ -56,7 +56,7 @@ SPECIES = {
     },
     'saint-pierre': {
         'sha256': '580e63d0bdda2567fb11ce02e7e9cd1bb3f189fa4bb61cafb1e1d39c6e6319d0',
-        'output': 'src/saint-pierre-data.js',
+        'output': 'src/saint-pierre-data.ts',
         'constant': 'SAINT_PIERRE_DATA',
         'label': 'Saint Pierre, at the purgatory counter (Meshy "The Keeper of Wisdom", rigged, no clip)',
     },

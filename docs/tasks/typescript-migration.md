@@ -71,7 +71,7 @@
 
 ## Décision prise : données générées en `.ts`
 
-Routine du 23 novembre 2026 : les 43 `src/*-data.js` et `src/vehicle-anchors.js`
+Routine du 23 novembre 2026 : les 44 `src/*-data.js` et `src/vehicle-anchors.js`
 sont devenus des `.ts` sans annotation, et les importeurs (`scripts/import-*.py`,
 `attach-castor-rims.py`, `split-vehicle-parts.mjs`, `rig-*.mjs`,
 `measure-aircraft.mjs`) lisent et écrivent ces chemins. Mesures sur cette machine :
