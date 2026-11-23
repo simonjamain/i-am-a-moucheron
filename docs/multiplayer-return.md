@@ -6,25 +6,26 @@ La composition de vague décrite dans ce lot a ensuite été densifiée : voir
 Lot MORT-01 à RAD-02, Node/RAM/UDP, 29 octobre 2026. Les spécifications du backlog
 sont les décisions validées ; ce document décrit leur réalisation et ses limites.
 
-## Mort et observation volontaire
+## Mort et passage au purgatoire
 
+Mourir n'est qu'un passage ([ciel du purgatoire](purgatory-sky.md#la-mort-un-passage)).
 Le serveur retire immédiatement le joueur des sièges et des corps actifs. Son
-état `awaitingPurgatory` le laisse mort sans âme matérialisée et refuse toutes ses
-actions, sauf synchronisation, accès au purgatoire et remise à zéro. Le client
-fige position, orientation et champ de vue de la caméra au décès, tout en continuant
-à afficher et recevoir la partie. Aucune minuterie n’impose la transition.
-La petite fenêtre « Accéder au purgatoire » déclenche `enter-purgatory`, protégé
-par incarnation et idempotent. Un clic répété ne crée pas de deuxième âme.
+état `awaitingPurgatory` le laisse sans corps et refuse toutes ses actions, sauf
+synchronisation, accès au purgatoire et remise à zéro. Le client garde la caméra
+sur la scène : le personnage, en fantôme translucide, monte vers le ciel (2,6 s),
+puis un fondu au noir (0,7 s) ; à sa fin, le client envoie lui-même
+`enter-purgatory`, protégé par incarnation et idempotent (un envoi répété ne crée
+pas de deuxième âme), et le fondu s'ouvre sur l'âme au purgatoire.
 
-Une mort au purgatoire passe par la même observation ; l’accès recrée l’âme en fin
-de file, avec ses trois papiers réinitialisés. Reset supprime l’observation. Après une coupure, le
+Une mort au purgatoire fait le même passage ; l’accès recrée l’âme à l'entrée,
+avec ses trois papiers réinitialisés. Reset supprime l’observation. Après une coupure, le
 navigateur reprend automatiquement **le même pilote** (vie, observation, siège,
 papiers) s’il se reconnecte dans les 30 s ; voir
 [la reprise de session](udp-server.md#transport-et-fiabilité). Au-delà, ou après un
 rechargement de page, une nouvelle connexion est un nouveau joueur, sans restaurer
 la vie ou l’observation de l’ancien, qui expire sans fabriquer une résurrection.
 Le secret de reprise conserve alors le contrat de lit et la couleur, pas une vie active.
-Les trois signatures restent dues après l’accès volontaire.
+Les trois signatures restent dues après le passage.
 
 ## HUD et aide permanente
 
@@ -182,7 +183,7 @@ unissent leur couverture ; suppression/reset retirent le radar et son effet.
 Node, réserve, chaque modèle posé au sol, stocks et décalages, chutes, visée,
 intersections, cache visuel, couverture, parcours et rayons d’explosion.
 `test-udp-native.mjs` utilise deux vrais pairs UDP, avec refus d’action en observation,
-accès volontaire répété sans deuxième âme, achat/pose et effets communs.
+accès au purgatoire répété sans deuxième âme, achat/pose et effets communs.
 La suite complète conserve les anciens parcours, avec attentes adaptées aux
 nouvelles règles demandées, plutôt que l’ancien budget, rayon ou temps de chute.
 

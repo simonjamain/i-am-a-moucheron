@@ -31,6 +31,8 @@ export interface ControlHintContext {
   airborne?: boolean;
   placing?: boolean;
   observing?: boolean;
+  /** In Saint Pierre's sky: no bank, workshop nor construction. */
+  heaven?: boolean;
   build?: boolean;
   wheel?: boolean;
   building?: BuildingHintContext | null;
@@ -192,11 +194,12 @@ export function controlHintItems({
   airborne = false,
   placing = false,
   observing = false,
+  heaven = false,
   build = false,
   wheel = false,
   building = null,
 }: ControlHintContext = {}): HintItem[] {
-  if (observing) return ['Observation · Accéder au purgatoire avec le bouton'];
+  if (observing) return ['Votre âme monte au ciel…'];
   if (wheel)
     return ['Souris : choisir un outil', 'Relâcher G / clic molette : valider', 'Échap : annuler'];
   if (building) return buildingHints(building).filter(Boolean);
@@ -207,7 +210,10 @@ export function controlHintItems({
       'Clic gauche : poser',
       'Clic droit / Échap : conserver',
     ];
-  const common = ['Tab : vague', 'N : banque', 'Échap : curseur'];
+  const common = heaven
+    ? ['Tab : vague', 'Échap : curseur']
+    : ['Tab : vague', 'N : banque', 'Échap : curseur'];
+  build = build && !heaven;
   let items: HintItem[];
   if (station)
     items = [

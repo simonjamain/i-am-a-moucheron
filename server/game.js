@@ -56,6 +56,7 @@ import {
   vipPrice,
 } from '../src/purgatory-queue.ts';
 import { inSky, purgatorySolids } from '../src/sky-passage.ts';
+import { PURGATORY_FRAME, worldArena } from '../src/arena-frame.ts';
 import {
   wavePlan,
   ENEMY_TYPES,
@@ -582,9 +583,15 @@ export class Game {
       let b = a.bodies.find((b) => b.id === s.id);
       if (!b) {
         b = createSoul(s, i, now);
-        // Players appear before both queues: the insects' (free) and the VIP lane.
-        if (s.kind === 'player')
-          Object.assign(b, { x: SOUL_ENTRANCE.x, z: SOUL_ENTRANCE.z + (i % 4) * 0.6 });
+        // Players appear by the sofa on the VIP side, from where both queues show; one
+        // who stepped out of an aircraft on the cloud, there. Saint Pierre's soul comes
+        // in by the same entrance and heads for the VIP window (purgatory-queue.ts).
+        if (s.kind === 'player' || s.enemy_type === 'saint')
+          Object.assign(b, {
+            x: s.spawn?.x ?? SOUL_ENTRANCE.x,
+            z: s.spawn?.z ?? SOUL_ENTRANCE.z + (i % 4) * 0.6,
+            face: -Math.PI / 2,
+          });
         a.bodies.push(b);
       }
       b.paper = s.paper;
@@ -2058,6 +2065,13 @@ export class Game {
       const occupants = [p];
       for (const mate of occupants) {
         const pos = grounded ? e : { x: v.state.p[0], y: v.state.p[1], z: v.state.p[2] };
+        // Stepping out on Saint Pierre's cloud: one joins the purgatory's queue, like a
+        // soul (docs/purgatory-sky.md); signing at his desk leads back down.
+        if (grounded && inSky(pos.y)) {
+          this.release(r, mate);
+          this.toPurgatory(r, mate, pos);
+          continue;
+        }
         mate.state.walkSpawn = {
           x: (pos.x - OFFICE_LAYOUT.base.originX) / ACTOR_UNIT,
           z: (OFFICE_LAYOUT.base.originZ - pos.z) / ACTOR_UNIT,
@@ -2700,6 +2714,22 @@ export class Game {
           this.releaseSoul(r, soul);
         });
     }
+  }
+  // A player on foot on Saint Pierre's cloud is in the purgatory (docs/purgatory-sky.md):
+  // a soul of the queue, whatever brought him there, standing where he stepped out.
+  toPurgatory(r, p, world) {
+    for (const arena of [r.base, r.purgatory])
+      if (arena.bodies) arena.bodies = arena.bodies.filter((b) => b.entity !== p.id);
+    for (const s of r.souls.values())
+      if (s.kind === 'player' && s.entity === p.id) s.status = 'gone';
+    p.life = 'dead';
+    p.incarnation++;
+    p.mode = 'foot';
+    p.board_paper = 0;
+    p.state = { ...initialState(), realm: 'purgatory', awaitingPurgatory: false };
+    const at = worldArena(PURGATORY_FRAME, world.x, world.z),
+      soul = this.soul(r, 'player', p.id, p.name);
+    soul.spawn = { x: Math.max(-9.5, Math.min(9.5, at.x)), z: Math.max(0.5, Math.min(78, at.z)) };
   }
   // A soul climbs into an aircraft standing in Saint Pierre's sky (on the cloud): it
   // leaves the queue and lives again, in that seat (docs/purgatory-sky.md).

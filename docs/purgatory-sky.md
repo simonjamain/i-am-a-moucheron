@@ -14,6 +14,26 @@ Code :
 - `server/game.js` : `purgatoryHit`, `soulBoard`, état `staff` ;
 - `client.js` : `setSkyView`, `flightPassage`, `purgatoryTargets`, `soulBoardingPosts`.
 
+## La mort, un passage
+
+Pour un joueur, mourir n'est qu'une téléportation vers le nuage de Saint Pierre, et
+signer chez lui une téléportation vers le bas (lit ou zone de départ) : là-haut, un
+joueur reste une personne comme au bureau, quelle que soit la façon dont il est arrivé.
+
+- **Mourir** (au bureau, dans le ciel ou au purgatoire) : la caméra reste sur la scène,
+  le personnage monte vers le ciel en fantôme translucide, la caméra le suit, puis
+  fondu au noir ; le client entre seul au purgatoire et le fondu s'ouvre sur l'âme
+  (`startDeathSequence`, `updateDeathSequence` dans `client.js`).
+- **On apparaît près du canapé côté VIP** (`SOUL_ENTRANCE`), d'où l'on voit la longueur
+  des deux files.
+- **Descendre d'un appareil posé sur le nuage, c'est rejoindre la file** (`toPurgatory`) :
+  on apparaît là où l'on est sorti, sans passage. On y fait la queue (ou le coupe-file)
+  comme tout le monde, et signer chez Saint Pierre redescend au bureau, même sans avion.
+- **Remonter dans un appareil posé** se fait d'un clic (`soul-board`) : on est à bord,
+  et l'on redescend en volant.
+- **Dans le ciel, ni banque, ni atelier, ni construction**, que l'on soit arrivé mort ou
+  vivant (`inHeaven`, boutons masqués, aide sans N ni G) ; ils reviennent au bureau.
+
 ## Monter et redescendre
 
 - **Le plafond de vol n'existe plus.** Le plancher du ciel (`SKY_FLOOR`) est l'ancien
@@ -56,8 +76,8 @@ Code :
 - **Rien ne se construit dans le ciel** : constructions, pose d'un achat et largages du
   Castor volant sont refusés au-dessus du plancher du ciel.
 - **Une âme embarque** dans un appareil posé dans le ciel, une place libre et à moins de
-  8 m : le viser l'entoure de bleu, un clic (`soul-board`) la fait quitter la file et
-  revivre à ce poste, sans formulaires.
+  8 m : le viser l'entoure de bleu, un clic (`soul-board`) lui fait quitter la file
+  pour ce poste, sans formulaires.
 - **Refuge** : les insectes suivent leurs couloirs sous les nuages et ne poursuivent
   personne ; aucun ne monte dans le ciel.
 - **Mourir là-haut** est une mort ordinaire : l'âme rejoint la file.
@@ -77,8 +97,10 @@ le serveur fait confiance aux clients.
   - Le vigile mort ferme l'accès VIP : coupe-file et guichet VIP refusés. Son âme est
     servie comme un insecte, puis il revient à son poste, sans récompense.
   - Saint Pierre mort ne sert plus personne : plus de résurrection, plus de tampon. Son
-    âme ne peut pas signer pour elle-même : il faut la tuer à nouveau dans la file
-    (10 000 points de plus), puis il revient derrière son bureau.
+    âme entre par la file VIP (elle passe le cordon doré) et attend devant le guichet
+    VIP vide, où personne ne peut la faire signer (`saintIntent`). Il faut la tuer à
+    nouveau (10 000 points de plus), puis il revient derrière son bureau et reprend
+    son travail. Le vigile, lui, fait la queue comme tout le monde.
 - Les âmes des joueurs ne sont jamais blessées, et les âmes ne tirent pas.
 
 ## Vérification

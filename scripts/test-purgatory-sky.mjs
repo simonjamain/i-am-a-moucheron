@@ -15,11 +15,19 @@ import {
   skyPassage,
 } from '../src/sky-passage.ts';
 import { nearestSkyTarget, raySphere, skyBlast } from '../src/sky-targets.ts';
-import { OFFICE_CEILING, PURGATORY_FRAME } from '../src/arena-frame.ts';
+import { OFFICE_CEILING, PURGATORY_FRAME, worldArena } from '../src/arena-frame.ts';
 import { LAYOUTS } from '../src/layouts.ts';
 import { MAP } from '../src/scale.ts';
 import { createPurgatoryScene } from '../src/purgatory-scene.ts';
-import { STAFF_HP, deskOccupant } from '../src/purgatory-queue.ts';
+import {
+  STAFF_HP,
+  SOUL_ENTRANCE,
+  VIP_LANE,
+  advancePurgatory,
+  createSoul,
+  deskOccupant,
+  inVipDesk,
+} from '../src/purgatory-queue.ts';
 import { Game } from '../server/game.js';
 
 const near = (a, b, eps, label) => assert.ok(Math.abs(a - b) < eps, `${label}: ${a} vs ${b}`);
@@ -220,8 +228,48 @@ assert.equal(S.life, 'alive');
 assert.equal(S.vehicle_id, parked.id);
 assert.equal(S.seat, 'pilot');
 assert.equal(playerSoul.status, 'gone', 'the soul left the queue');
+// Stepping out on the cloud is joining the queue (no life or death up there): one
+// stands where one stepped out, and signing at Saint Pierre's desk leads back down.
+parked.state.landed = true;
+parked.state.v = [0, 0, 0];
+call(S, 'vehicle-exit', {});
+assert.equal(S.life, 'dead');
+assert.equal(S.state.awaitingPurgatory, false, 'no death passage: straight into the queue');
+game.arena(room, 'purgatory');
+const stepped = room.purgatory.bodies.find((b) => b.entity === S.id && b.kind === 'player');
+const where = worldArena(PURGATORY_FRAME, parked.state.p[0], parked.state.p[2]);
+assert.ok(stepped && Math.hypot(stepped.x - where.x, stepped.z - where.z) < 4, 'by the aircraft');
+// Players who die appear by the sofa on the VIP side, from where both queues show.
+game.kill(room, P, P.incarnation);
+call(P, 'enter-purgatory', { incarnation: P.incarnation });
+game.arena(room, 'purgatory');
+const arrived = room.purgatory.bodies.find((b) => b.entity === P.id && b.kind === 'player');
+assert.ok(arrived.x > 6.5, 'right of the VIP lane');
+assert.ok(Math.abs(arrived.z - SOUL_ENTRANCE.z) < 2.5);
 
+// Saint Pierre's soul takes the VIP lane, through its gate, to the empty VIP window.
+{
+  const saint = createSoul(
+    { id: 900, entity: 'staff:saint', kind: 'enemy', enemy_type: 'saint' },
+    0,
+    0,
+  );
+  Object.assign(saint, { ...SOUL_ENTRANCE, enemyType: 'saint' });
+  const arena = {
+    bodies: [saint],
+    time: 0,
+    events: [],
+    eventSeq: 0,
+    obstacles: VIP_LANE,
+    saintDown: true,
+  };
+  for (let t = 0; t < 30000; t += 100) advancePurgatory(arena, arena.time + 100);
+  assert.ok(inVipDesk(saint), 'he waits at the VIP window: ' + [saint.x, saint.z]);
+  assert.equal(deskOccupant(arena), null, 'and nobody serves him');
+}
 // Nothing is built in the sky.
+P.life = 'alive';
+P.state.awaitingPurgatory = false;
 P.mode = 'foot';
 P.vehicle_id = null;
 game.base(room);

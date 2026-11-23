@@ -1096,7 +1096,7 @@ canvas.addEventListener('mousedown', (event) => {
     event.preventDefault();
     return;
   }
-  if (event.button === 1 && groundDefenseUI.openWheel()) {
+  if (event.button === 1 && !inHeaven() && groundDefenseUI.openWheel()) {
     event.preventDefault();
     return;
   }
@@ -1411,7 +1411,8 @@ function accept(s, force = false) {
   if (self?.state.awaitingPurgatory && !spectating)
     freezeObservation(previousSelf?.life === 'dead' ? 'purgatory' : 'office');
   if (!self?.state.awaitingPurgatory && !deathPending) spectating = false;
-  $('deathWatch').classList.toggle('hidden', !spectating);
+  // The death passage speaks through the scene and the bottom-left line (no panel).
+  $('deathWatch').classList.add('hidden');
   if (self?.life === 'dead') {
     respawnAt = 1;
     hp = self.health ?? 100;
@@ -1998,6 +1999,7 @@ addEventListener('keydown', (event) => {
   )
     return;
   if (interactionKey === 'KeyG') {
+    if (!event.repeat && heavenRefuses()) return;
     if (groundDefenseUI.handleWheelKey(interactionKey, true, event.repeat)) event.preventDefault();
     return;
   }
@@ -5506,6 +5508,8 @@ function frame(now) {
   tracerPool.flush();
   // One world, one scene (src/arena-frame.ts): the camera's altitude chooses whether
   // the office or Saint Pierre's sky is drawn (src/sky-passage.ts).
+  trackSelfPosition();
+  updateDeathSequence(dt);
   const dead = !!respawnAt && !!soulBody && !spectating;
   if (dead) {
     physicalPurgatory(dt, now);
@@ -5595,7 +5599,18 @@ for (const [kind, model] of Object.entries(ghosts)) {
     }
   });
 }
+// In Saint Pierre's sky (dead or alive): no bank, no workshop, no construction
+// (docs/purgatory-sky.md); they come back in the office.
+function inHeaven() {
+  return !!respawnAt || skyView;
+}
+function heavenRefuses() {
+  if (!inHeaven()) return false;
+  notify('Ni banque, ni atelier, ni construction dans le ciel de Saint Pierre', 2);
+  return true;
+}
 function toggleShop() {
+  if ($('shop').classList.contains('hidden') && heavenRefuses()) return;
   if (
     flightTuningUI.opened ||
     bankUI.opened ||
@@ -6615,6 +6630,8 @@ function updateContextHUD() {
     $('cursorStats').style.top = 'calc(' + ($('crosshair').style.top || '50%') + ' + 22px)';
   }
   $('commandHelp').classList.toggle('hidden', !joined);
+  // No bank nor workshop in Saint Pierre's sky (docs/purgatory-sky.md).
+  for (const button of ['shopOpen', 'bankOpen']) $(button).hidden = inHeaven();
   const builder = castorBuilder(),
     castorBuilding = !!builder;
   $('commandHelp').textContent = controlHints({
@@ -6622,6 +6639,7 @@ function updateContextHUD() {
     seat: crewSeat,
     station: turretIndex >= 0 ? stations[turretIndex]?.kind || 'dca' : null,
     dead: !!respawnAt,
+    heaven: inHeaven(),
     airborne: selfBase()?.grounded === false,
     placing: placingEquipment,
     observing: spectating,
@@ -6797,6 +6815,7 @@ const bankUI = new BankUI({
 });
 function toggleBank() {
   if (spectating) return;
+  if (!bankUI.opened && heavenRefuses()) return;
   if (
     flightTuningUI.opened ||
     bedUI.opened ||
@@ -7030,27 +7049,107 @@ function freezeObservation(realm) {
   gunSalvos.clear();
   for (const name of ['papers', 'paperBackdrop', 'bank', 'bedPanel', 'purchasePanel', 'shop'])
     $(name).classList.add('hidden');
-  $('deathWatch').classList.remove('hidden');
+  startDeathSequence(realm);
 }
-let enteringPurgatory = false;
-$('enterPurgatory').onclick = async () => {
-  if (enteringPurgatory || !snap?.pilots.find((p) => p.id === id)?.state.awaitingPurgatory) return;
+// Death is a passage, not an end (docs/purgatory-sky.md): the camera stays on the
+// scene while the character, a translucent ghost, rises toward the sky; then a fade
+// to black, and the purgatory opens on the soul, by the sofa on the VIP side.
+const DEATH_RISE = 2.6, // seconds of rising
+  DEATH_FADE = 0.7; // seconds of each fade
+let deathSequence = null,
+  enteringPurgatory = false;
+// Where this player was at the last frame (bodies are gone once the death is known).
+const lastSelfPosition = new T.Vector3();
+function trackSelfPosition() {
+  if (spectating) return;
+  if (respawnAt) {
+    const b = soulArena?.bodies.find((b) => b.entity === id && !b.gone);
+    if (b) lastSelfPosition.copy(purgWorld(b)).setY(b.y ?? PURGATORY_FRAME.originY);
+    return;
+  }
+  const body = selfBase();
+  if (onFoot && !myVehicle && body) lastSelfPosition.copy(baseWorld(body));
+  else if (myVehicle) lastSelfPosition.copy(me.position);
+}
+function deathPoint() {
+  return lastSelfPosition.clone();
+}
+function startDeathSequence(realm) {
+  endDeathSequence();
+  const ghost = makeWalker(id, WALK_WORLDS.office);
+  ghost.traverse((o) => {
+    if (!o.isMesh) return;
+    const ghostly = (m) => {
+      const c = m.clone();
+      c.transparent = true;
+      c.opacity = 0.45;
+      c.depthWrite = false;
+      return c;
+    };
+    o.material = Array.isArray(o.material) ? o.material.map(ghostly) : ghostly(o.material);
+    o.castShadow = false;
+  });
+  const from = deathPoint();
+  ghost.position.copy(from);
+  scene.add(ghost);
+  deathSequence = { start: performance.now(), ghost, from, sent: false, arrived: 0 };
+  $('deathFade').style.opacity = 0;
+}
+function endDeathSequence() {
+  if (!deathSequence) return;
+  scene.remove(deathSequence.ghost);
+  deathSequence.ghost.traverse((o) => {
+    if (!o.isMesh) return;
+    for (const m of [o.material].flat()) m.dispose();
+  });
+  deathSequence = null;
+  $('deathFade').style.opacity = 0;
+}
+async function enterPurgatory() {
+  const self = snap?.pilots.find((p) => p.id === id);
+  if (enteringPurgatory || !self?.state.awaitingPurgatory) return;
   enteringPurgatory = true;
-  $('enterPurgatory').disabled = true;
   try {
-    accept(
-      await api('enter-purgatory', {
-        id,
-        incarnation: snap.pilots.find((p) => p.id === id).incarnation,
-      }),
-    );
+    accept(await api('enter-purgatory', { id, incarnation: self.incarnation }));
   } catch (e) {
     notify(e.message, 3);
+    if (deathSequence) deathSequence.sent = false; // tried again next frame
   } finally {
     enteringPurgatory = false;
-    $('enterPurgatory').disabled = false;
   }
-};
+}
+function updateDeathSequence(dt) {
+  const d = deathSequence;
+  if (!d) return;
+  const t = (performance.now() - d.start) / 1000;
+  // Rising faster and faster, fading a little, the camera following it.
+  d.ghost.position.y = d.from.y + MAP.metres(1.2) * t * t;
+  d.ghost.userData.animate?.(dt, { speed: 0, falling: true, vy: 2 });
+  if (spectating && observationCamera) {
+    const look = new T.Matrix4().lookAt(
+      observationCamera.position,
+      d.ghost.position,
+      T.Object3D.DEFAULT_UP,
+    );
+    observationCamera.quaternion.slerp(
+      new T.Quaternion().setFromRotationMatrix(look),
+      1 - Math.exp(-3 * dt),
+    );
+    observationCamera.updateMatrixWorld();
+  }
+  let black = Math.max(0, Math.min(1, (t - DEATH_RISE) / DEATH_FADE));
+  if (black >= 1 && !d.sent) {
+    d.sent = true;
+    enterPurgatory();
+  }
+  // In the purgatory (the soul is there): the fade opens on it.
+  if (!spectating && respawnAt && soulBody) {
+    d.arrived ||= performance.now();
+    black = 1 - (performance.now() - d.arrived) / 1000 / DEATH_FADE;
+    if (black <= 0) return endDeathSequence();
+  }
+  $('deathFade').style.opacity = String(Math.max(0, Math.min(1, black)));
+}
 // The real insect model, standing in the purgatory queue: the rig faces -Z, the
 // soul's heading is +Z, so it sits in a turned pivot, and it is fitted to the
 // soul's size (the office scale would make a rat fill the room).

@@ -1832,6 +1832,15 @@
       #cursorAmmo {
         display: block;
       }
+      /* Fade to black of the death passage (docs/purgatory-sky.md). */
+      #deathFade {
+        position: fixed;
+        inset: 0;
+        z-index: 79;
+        background: var(--dark);
+        opacity: 0;
+        pointer-events: none;
+      }
       #deathWatch {
         position: fixed;
         right: 20px;
@@ -2231,10 +2240,10 @@
       ><span id="cursorFuel" class="bar"><i></i></span> <span id="cursorGasLabel"></span
       ><span id="cursorGas" class="bar"><i></i></span>
     </div>
-    <div id="deathWatch" class="hidden" role="dialog" aria-label="Observation après décès">
-      <p>Vous êtes mort. La partie continue.</p>
-      <button id="enterPurgatory">Accéder au purgatoire</button>
+    <div id="deathWatch" class="hidden" role="status" aria-live="polite">
+      <p>Votre âme monte au ciel de Saint Pierre…</p>
     </div>
+    <div id="deathFade" aria-hidden="true"></div>
     <p class="previewNote">Aperçu des composants intégrés · Données de démonstration · Aucune partie multijoueur ni transaction réelle. Les signatures fonctionnent sur une caisse temporaire réinitialisée au rechargement.</p>
   <script type="module">
   import { controlHints, cursorStats, cursorAmmoText } from '/live-hud.js';
@@ -2275,6 +2284,6 @@
     if(read){document.getElementById('aimDistance').textContent=read.metres.toFixed(3)+' m';document.getElementById('aimGauge').value=read.fraction}
   }
   for(const button of document.querySelectorAll('[data-demo]'))button.onclick=()=>display(Number(button.dataset.demo));
-  document.getElementById('enterPurgatory').onclick=()=>{document.getElementById('deathWatch').classList.add('hidden');document.querySelector('.previewNote').textContent='Démonstration : accès volontaire au purgatoire. En jeu, le serveur crée une seule âme après confirmation.'};
+  
   display(0); setInterval(()=>{if(model&&!bank.opened&&!bedUI.opened)hud.update(model);bank.render()},100);
   </script></html>
