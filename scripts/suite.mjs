@@ -8,6 +8,7 @@ export const SUITE = [
   'test-flight-tuning',
   'test-walk-arena',
   'test-walker-jump',
+  'test-fps-counter',
   'test-audio',
   'test-audio-library',
   'test-audio-boundary',

@@ -25,6 +25,8 @@ voulu, tant que l’information vitale reste accessible quand on en a besoin.
 
 Seul le **viseur** est permanent. Tout le reste doit justifier sa présence à l’écran.
 
+Exception demandée : le **compteur d’images par seconde**, en haut à droite, outil de diagnostic. Il est dessiné dans le canvas WebGL (`src/fps-counter.ts`), pas dans le HTML, discret (texte papier sur fond sombre translucide).
+
 ### Pistes par information
 
 | Information             | Pistes dans le monde ou sur un document                                           |
