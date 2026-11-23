@@ -145,7 +145,7 @@ fixes et véhicules terrestres n’affichent ni parachute ni « sauter ».
 Les informations de coque et munitions sont près du viseur ; l’aide de contexte
 reste en bas à gauche, sans panneaux temporaires. Après mort, toute commande de
 jeu est neutralisée ; cliquer « Accéder au purgatoire » pour créer son âme et
-reprendre les contrôles. Même attente avant le super purgatoire. Le regard à
+reprendre les contrôles. Même attente après une mort au purgatoire. Le regard à
 pied va presque à ±87°, sans retournement. Tous les véhicules achetés passent
 par signature puis pose E ; annulation/reprise identique aux installations.
 Voir [retours multijoueurs](multiplayer-return.md).

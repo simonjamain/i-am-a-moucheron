@@ -31,7 +31,7 @@ Une âme qui a payé (`vip` sur son corps) traverse le cordon doré, seul obstac
 aux non-payants. Au second guichet, Saint Pierre finit l’insecte en cours
 (`served > 0`), puis sert l’âme VIP avant les insectes, qui attendent pendant qu’elle
 signe ses trois documents. Saint Pierre se déplace derrière le comptoir vers le
-guichet qu’il sert. Le super purgatoire n’a ni insectes ni file VIP.
+guichet qu’il sert.
 `test-purgatory-vip.mjs` vérifie le cordon, la priorité, le prix, le refus et la
 signature au guichet VIP.
 
@@ -43,7 +43,7 @@ plaques et pupitre) indique quoi faire, avec la ligne des commandes en bas d'éc
 Le décor lui-même (nuage, ciel, mobilier, vigile) est décrit dans
 [décor du purgatoire](purgatory-scene.md) ; il n'ajoute aucun obstacle partagé.
 
-Le super purgatoire est une arène séparée, sans PNJ, avec cinq contrats.
+Il n’y a qu’un purgatoire : y mourir renvoie l’âme en fin de file.
 Voir [combat et mondes](combat-worlds.md) et [gameplay](gameplay.md).
 `test-purgatory-queue.mjs` vérifie la file de douze PNJ, le démêlage d’un ancien
 attroupement, l’attente derrière le signataire et le retour à la place après

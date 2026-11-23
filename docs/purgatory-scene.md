@@ -65,7 +65,6 @@ Le sol est le **même nuage volumétrique** que ceux du ciel : on marche à moit
   donc jamais devant le nuage-sol ni les meubles, ce qui est juste car aucun ne se
   trouve entre la caméra et le décor (`test-purgatory-scene.mjs` le vérifie).
 - Sans WebGL (rendu logiciel de secours), ni dôme ni nuages : le fond est uni.
-- Au super purgatoire, le ciel passe au crépuscule (`SKY_LOOK.super`), la brume suit.
 
 ### Coût mesuré
 
@@ -99,8 +98,7 @@ Les anciens textes flottants sont remplacés par des objets du monde, peints aux
 couleurs des documents papier (`--paper`, `--ink`, police machine à écrire) :
 
 - une plaque posée au bord des bureaux du guichet, au-dessus de la brume : « SAINT
-  PIERRE · Guichet des résurrections », « SUPER SAINT-PIERRE · Direction des récidives »
-  au super purgatoire ;
+  PIERRE · Guichet des résurrections » ;
 - une plaque « ACCÈS VIP » sur le bureau VIP (ouvert à toute âme qui paie) ;
 - un pupitre « COUPE-FILE · Laissez-passer auprès du vigile » à côté de la barrière ;
 - « PLACE AU GUICHET » peint au sol devant le cercle du guichet.
@@ -112,7 +110,7 @@ Les cercles du guichet changent toujours de teinte quand c’est son tour.
 Modèle Meshy « The Keeper of Wisdom » fourni par l’utilisateur (vieillard à longue barbe
 blanche, robe, clé à la ceinture), squelette SmartRig de 39 os, sans animation
 ([pipeline des assets](asset-pipeline.md#saint-pierre)). `src/saint-pierre-model.ts` le
-dessine à 1,85 m (×1,4 au super purgatoire) et l’anime en procédural (`SaintPierre`) :
+dessine à 1,85 m et l’anime en procédural (`SaintPierre`) :
 
 - une respiration lente (4 s) ;
 - la tête tournée vers l’âme ou l’insecte qu’il sert (`servedAt`) ;

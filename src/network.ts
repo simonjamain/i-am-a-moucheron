@@ -30,7 +30,7 @@ export interface MotionState {
   wing: number;
   engine: number;
   fire: boolean;
-  ground?: { scene: 'base' | 'soul' | 'super'; epoch: string; body: GroundBody };
+  ground?: { scene: 'base' | 'soul'; epoch: string; body: GroundBody };
   soul?: SoulBody;
 }
 export type MotionSource = 'http' | 'rtc';
@@ -102,7 +102,7 @@ export function validMotion(s: any): s is MotionState {
     [0, 1].includes(s.engine) &&
     typeof s.fire === 'boolean' &&
     (!s.ground ||
-      (['base', 'soul', 'super'].includes(s.ground.scene) &&
+      (['base', 'soul'].includes(s.ground.scene) &&
         typeof s.ground.epoch === 'string' &&
         s.ground.body &&
         ['x', 'z', 'vx', 'vz', 'face'].every(

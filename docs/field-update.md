@@ -91,7 +91,7 @@ dans les imports : les poses sont procédurales (directions d'os, indépendantes
 ## Départ, lits et contrats personnels
 
 La fin des trois papiers du purgatoire restaure 100 PV et recrée le corps dans
-la zone de départ. Le super purgatoire ramène d’abord au purgatoire classique.
+la zone de départ.
 L’ancien corps local est retiré lors du changement d’incarnation : ses coordonnées
 ne doivent pas gagner contre la nouvelle destination dans la fusion des snapshots.
 Vitesse, parachute, rotation de caméra et commandes sont réinitialisés.

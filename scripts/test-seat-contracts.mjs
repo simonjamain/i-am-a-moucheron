@@ -26,11 +26,10 @@ for (const [key, forms] of Object.entries(CONTRACTS))
     const first = book.get(key, i, 'first');
     assert.strictEqual(book.get(key, i, 'first'), first);
     assert.notEqual(book.get(key, i, 'second').text, first.text);
-    if (key.startsWith('super:'))
-      assert.ok(
-        first.text.length >
-          3 * Math.max(...CONTRACTS['purgatory:soul'].flat().map((v) => v.text.length)),
-      );
   }
-assert.equal(docs, 81);
-console.log('PASS: reward sounds and 810 contract variants.');
+assert.equal(docs, 76);
+assert.ok(
+  !Object.keys(CONTRACTS).some((key) => key.startsWith('super:')),
+  'no super purgatory forms',
+);
+console.log('PASS: reward sounds and 760 contract variants.');
