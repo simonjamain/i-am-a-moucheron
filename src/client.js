@@ -7,7 +7,7 @@ import { sweptHitsDecor } from '/office-collision.js';
 import { makeServiceStation, animateRadar, makeInstallationCollider } from '/station-model.js';
 import { ReloadHUD, seatReloads, heavyReadyAt, heavyLane, reloadProgress } from '/reload-hud.js';
 import { makeBed } from '/bed-model.js';
-import { officeFogOpacity, installOfficeFog, applyOfficeFog, OFFICE_HAZE } from '/office-fog.js';
+import { installOfficeFog, applyOfficeFog, OFFICE_HAZE } from '/office-fog.js';
 import { makeFortificationStation } from '/fortification-model.js';
 import { hullGunDirection } from '/hull-gun.js';
 import { placementFacing } from '/placement-aim.js';
@@ -70,6 +70,8 @@ import {
 import { stepBallisticVelocity, toggleParachute } from '/ballistics.js';
 import { jumpWalker } from '/field-physics.js';
 import { PURGATORY_FRAME, arenaWorld } from '/arena-frame.js';
+import { inSky, outOfFlight, passageWhiteness, skyPassage } from '/sky-passage.js';
+import { nearestSkyTarget, skyBlast } from '/sky-targets.js';
 import { makeTracer, updateTracer } from '/tracers.js';
 import { wavePlan, swarmFrame, entryStatus, ENEMY_TYPES } from '/waves.js';
 import {
@@ -168,6 +170,9 @@ import { bodyMotion, mergeOwnedArena } from '/walk-arena.js';
 import {
   advancePurgatory,
   clipboardWindow,
+  isStaff,
+  STAFF_HP,
+  STAFF_ROLES,
   deskOccupant,
   nearVipGuard,
   VIP_DESK,
@@ -343,7 +348,8 @@ function applyLayout(planId) {
   office = createOffice(T, scene, { box, cyl, ball });
   office.bakeShadows(renderer);
   office.buildDecor(rapier);
-  colliders.splice(0, colliders.length, ...office.colliders);
+  colliders.splice(0, colliders.length, ...office.colliders, ...purgatory.colliders);
+  office.root.visible = !skyView;
 }
 // Nearest solid along a ray (unit direction), within `far`: the boxes (shell,
 // floor, constructions, and the pack props until the decor world is built), then
@@ -2639,8 +2645,41 @@ const purgatory = createPurgatoryScene(T, {
   box: pm,
   shaders: !!renderer.isWebGPURenderer,
 });
-const purgScene = purgatory.scene,
+// One world (src/arena-frame.ts): the purgatory's place is part of the office's scene,
+// drawn when the camera is in Saint Pierre's sky (setSkyView), and its cloud and counter
+// are solids like the office's (aircraft land on the cloud, walkers stand on it).
+scene.add(purgatory.place);
+purgatory.place.visible = false;
+// Souls and the queue's insects belong to the purgatory's place (world coordinates).
+const purgScene = purgatory.place,
   purgColliders = purgatory.colliders;
+colliders.push(...purgColliders);
+const officeLook = { background: scene.background, fog: scene.fog, fogNode: scene.fogNode };
+let skyView = false;
+function setSkyView(on) {
+  if (on === skyView) return;
+  skyView = on;
+  purgatory.place.visible = on;
+  office.root.visible = !on;
+  for (const light of scene.children)
+    if (light.isHemisphereLight || light.isDirectionalLight) light.visible = !on;
+  scene.background = on ? purgatory.look.background : officeLook.background;
+  scene.fog = on ? purgatory.look.fog : officeLook.fog;
+  scene.fogNode = on ? null : officeLook.fogNode;
+}
+// Where this player's flight came up from the office (null: it never did).
+let flightEntry = null;
+/** Sky passage of the local flight: true when it was moved back over the room. */
+function flightPassage(previousY, p) {
+  const base = OFFICE_LAYOUT.base;
+  const passage = skyPassage(previousY, p, flightEntry, OFFICE_LAYOUT.bounds, {
+    x: base.originX,
+    z: base.originZ,
+  });
+  flightEntry = passage.entry;
+  if (passage.crossed === 'up') notify('Au-dessus des nuages · le ciel de Saint Pierre', 3);
+  return passage.moved;
+}
 // Saint Pierre's cloud lies in the office's world (src/arena-frame.ts): same camera range.
 const purgCamera = new T.PerspectiveCamera(62, innerWidth / innerHeight, 0.00005, 40),
   soulMeshes = new Map();
@@ -2675,10 +2714,40 @@ function openPurgatoryPapers() {
   renderPaper();
   return true;
 }
+// An aircraft standing in Saint Pierre's sky (on the cloud), with a free seat and
+// within reach: a soul climbs aboard and lives again (docs/purgatory-sky.md).
+const boardingPosts = new Map();
+function soulBoardingPosts(body) {
+  const at = new T.Vector3().copy(purgWorld(body));
+  const posts = [];
+  for (const v of snap?.vehicles || []) {
+    const model = fleetModels.get(v.id);
+    if (!model?.visible || !(v.state.hp > 0) || !inSky(v.state.p?.[1] ?? 0)) continue;
+    const taken = new Set((v.seats || []).map((s) => s.seat));
+    if (!VEHICLES[v.type]?.seats.some((seat) => !taken.has(seat))) continue;
+    if (at.distanceTo(new T.Vector3().fromArray(v.state.p)) > MAP.metres(8)) continue;
+    let post = boardingPosts.get(v.id);
+    if (!post || post.object !== model) {
+      post = {
+        object: model,
+        usable: () => true,
+        use: () => {
+          action('soul-board', { vehicle: v.id });
+          return true;
+        },
+      };
+      boardingPosts.set(v.id, post);
+    }
+    posts.push(post);
+  }
+  return posts;
+}
 function updateAimedPurgatory() {
   const body = vipSelf();
   let next = null;
-  const usable = body ? purgatoryPosts.filter((post) => post.usable(body)) : [];
+  const usable = body
+    ? [...purgatoryPosts.filter((post) => post.usable(body)), ...soulBoardingPosts(body)]
+    : [];
   if (usable.length) {
     const rect = canvas.getBoundingClientRect();
     const free = document.pointerLockElement !== canvas && aimMouse;
@@ -2746,10 +2815,11 @@ function physicalPurgatory(dt, now) {
     vipServed: served?.id === self.id && !!self.vip,
     servedAt: served ? { x: served.x, z: served.z } : null,
     stamping: served?.kind === 'enemy' && served.served > 0,
+    ...staffSouls(soulArena),
   });
   const active = new Set();
   for (const b of soulArena.bodies) {
-    if (b.gone) continue;
+    if (b.gone || isStaff(b.enemyType)) continue;
     active.add(b.id);
     let g = soulMeshes.get(b.id);
     if (!g) {
@@ -2782,14 +2852,16 @@ function physicalPurgatory(dt, now) {
     }
   }
   for (const b of soulArena.bodies)
-    if (b.kind === 'enemy' && !b.gone) {
+    if (b.kind === 'enemy' && !b.gone && !isStaff(b.enemyType)) {
       const g = soulMeshes.get(b.id);
       g?.userData.animate?.(dt, { speed: walkSpeed(WALK_WORLDS.purgatory, b) });
       if (g) soulStatus.update(b.id, g, b.health, b.maxHealth || 100, purgCamera, now / 1000);
     }
-  soulStatus.keep(
-    new Set(soulArena.bodies.filter((b) => b.kind === 'enemy' && !b.gone).map((b) => b.id)),
+  const statusKeep = new Set(
+    soulArena.bodies.filter((b) => b.kind === 'enemy' && !b.gone).map((b) => b.id),
   );
+  staffStatus(soulArena, purgCamera, now, statusKeep);
+  soulStatus.keep(statusKeep);
   for (const [k, g] of soulMeshes)
     if (!active.has(k)) {
       purgScene.remove(g);
@@ -3442,7 +3514,23 @@ function updateBaseWorld(dt, now) {
   remoteBodies(baseArena, 'base');
   advanceBase(baseArena, baseArena.time + dt * 1000, id);
   if (body && onFoot && !respawnAt && turretIndex < 0) {
+    const fromY = body.y ?? OFFICE_LAYOUT.base.deckY;
     const impact = stepWalker(body, dt, colliders, office.decor);
+    // Off the edge of Saint Pierre's cloud: the fall leads back into the office,
+    // above the base (src/sky-passage.ts).
+    const w = baseWorld(body),
+      fall = { x: w.x, y: body.y, z: w.z };
+    if (
+      skyPassage(fromY, fall, null, OFFICE_LAYOUT.bounds, {
+        x: OFFICE_LAYOUT.base.originX,
+        z: OFFICE_LAYOUT.base.originZ,
+      }).moved
+    ) {
+      body.x = (fall.x - OFFICE_LAYOUT.base.originX) / ACTOR_UNIT;
+      body.z = (OFFICE_LAYOUT.base.originZ - fall.z) / ACTOR_UNIT;
+      body.y = fall.y;
+      notify('Chute du nuage · Espace : parachute', 3);
+    }
     if (impact?.damage)
       action('fall-impact', {
         speed: impact.speed,
@@ -4412,8 +4500,37 @@ function shoot(forward) {
   const muzzle = nextPilotMuzzle(T, me);
   if (muzzle) bullet(muzzle, spreadDirection(T, forward), TRACER_COLOR, true);
 }
+// Targets of shots in Saint Pierre's sky (docs/purgatory-sky.md), drawn only there.
+function purgatoryTargets() {
+  if (!skyView || !snap?.arena) return [];
+  const u = PURGATORY_FRAME.unit,
+    out = [];
+  for (const b of snap.arena.bodies) {
+    if (b.gone || b.kind !== 'enemy' || isStaff(b.enemyType)) continue;
+    const g = soulMeshes.get(b.id);
+    const c = g ? g.position : new T.Vector3().copy(purgWorld(b)).setY(purgatory.hover);
+    out.push({ kind: 'soul', key: b.id, center: c.toArray(), radius: 0.8 * u, staff: false });
+  }
+  for (const role of STAFF_ROLES) {
+    const soul = snap.arena.bodies.find((b) => !b.gone && b.enemyType === role);
+    if (!soul && snap.staff?.[role]?.down) continue;
+    const c = (role === 'saint' ? purgatory.saint : purgatory.guard)
+      .getWorldPosition(new T.Vector3())
+      .add(new T.Vector3(0, 1.3 * u, 0));
+    out.push(
+      soul
+        ? { kind: 'soul', key: soul.id, center: c.toArray(), radius: 0.9 * u, staff: true }
+        : { kind: 'staff', key: role, center: c.toArray(), radius: 0.9 * u, staff: true },
+    );
+  }
+  return out;
+}
+function reportSkyHits(shot, targets) {
+  if (targets.length) action('purgatory-hit', { shot, targets });
+}
 function explosion(b, point) {
   const radius = MAP.metres(FLAK.lightRadius);
+  reportSkyHits(b.shot, skyBlast(purgatoryTargets(), point.toArray(), radius));
   combatEffects.blast(point, radius);
   effectSeen.add(b.shot);
   sound.play('crash', point, { ref: 22 });
@@ -4623,6 +4740,24 @@ function stepProjectileSlice(dt) {
         insectIndex,
       );
       hit = insect || blocker;
+      // Saint Pierre's sky: the queue's souls, Saint Pierre and the guard (src/sky-targets.ts).
+      const soulHit = !b.shell
+        ? nearestSkyTarget(
+            purgatoryTargets(),
+            origin.toArray(),
+            dir.toArray(),
+            hit?.distance ?? distance,
+          )
+        : null;
+      if (soulHit) {
+        const point = origin.clone().addScaledVector(dir, soulHit.distance);
+        hitEffects.burst(point, camera, { key: b.shot });
+        sound.play('impact', point, { ref: 12 });
+        reportSkyHits(b.shot, [[soulHit.target.kind, soulHit.target.key, b.baseDamage ?? 75]]);
+        b.life = 0;
+        hit = null;
+        distance = soulHit.distance;
+      }
       const skid = hit && !b.shell ? ricochetOf(b, hit, dir) : null;
       if (skid) {
         skid.apply(hit.distance);
@@ -4760,6 +4895,10 @@ function physics(dt) {
         .fromArray(state.omega)
         .applyQuaternion(me.quaternion.clone().fromArray(state.q).invert());
     } else stepHelicopter(T, state, heliControls, colliders, dt, VEHICLES[myVehicle.type]);
+    {
+      const at = { x: state.p[0], y: state.p[1], z: state.p[2] };
+      if (flightPassage(me.position.y, at)) state.p = [at.x, at.y, at.z];
+    }
     if (keyboardOnly) mouseDirection.set(0, 0, -1).applyQuaternion(me.quaternion);
     if (state.hp <= 0) {
       crash();
@@ -4942,13 +5081,13 @@ function physics(dt) {
   for (let shot = 0; shot < burst.shots; shot++) shoot(forward);
   damageCd -= dt;
   const p = me.position;
+  // Through the clouds into Saint Pierre's sky and back (src/sky-passage.ts).
+  if (flightPassage(previousPosition.y, p)) previousPosition.copy(p);
   let collision =
     !!landing.hard ||
     (!usePlane && p.y < 0.4 * ACTOR_UNIT) ||
     (usePlane && landing.impact > 2.5) ||
-    p.y > OFFICE_LAYOUT.bounds.ceiling ||
-    Math.abs(p.x) > OFFICE_LAYOUT.bounds.x ||
-    Math.abs(p.z) > OFFICE_LAYOUT.bounds.z;
+    outOfFlight(p, OFFICE_LAYOUT.bounds);
   // Props collide on their real triangles once the decor world is built: the
   // padded point touching a triangle, or the step's segment crossing one.
   if (!collision && !usePlane && office.decor)
@@ -5365,32 +5504,26 @@ function frame(now) {
   walkerBatch.flush(insects);
   flyerBatch.flush(insects, now);
   tracerPool.flush();
-  const fogCamera =
-    spectating && observationCamera
-      ? observationRealm === 'office'
-        ? observationCamera
-        : null
-      : respawnAt
-        ? null
-        : camera;
-  $('altitudeFog').style.opacity = joined && fogCamera ? officeFogOpacity(fogCamera.position.y) : 0;
-  if (spectating && observationCamera) {
-    if (observationRealm !== 'office') {
-      observedPurgatory(dt);
-      purgatory.prerender(renderer, observationCamera);
-    }
-    toon.render(observationRealm === 'office' ? scene : purgScene, observationCamera);
-    if (observationRealm !== 'office')
-      purgatory.postrender(renderer, observationCamera, toon.depthTexture());
-  } else if (respawnAt && soulBody) {
+  // One world, one scene (src/arena-frame.ts): the camera's altitude chooses whether
+  // the office or Saint Pierre's sky is drawn (src/sky-passage.ts).
+  const dead = !!respawnAt && !!soulBody && !spectating;
+  if (dead) {
     physicalPurgatory(dt, now);
     updateAimedPurgatory();
-    purgatory.prerender(renderer, purgCamera);
-    toon.render(purgScene, purgCamera);
-    purgatory.postrender(renderer, purgCamera, toon.depthTexture());
+  }
+  const view = spectating && observationCamera ? observationCamera : dead ? purgCamera : camera;
+  const sky = joined && inSky(view.position.y);
+  setSkyView(sky);
+  // The queue's souls, Saint Pierre and the guard, seen from the sky by the living.
+  if (sky && !dead) observedPurgatory(dt);
+  $('altitudeFog').style.opacity = joined && !dead ? passageWhiteness(view.position.y) : 0;
+  if (sky) purgatory.prerender(renderer, view);
+  toon.render(scene, view);
+  if (sky) purgatory.postrender(renderer, view, toon.depthTexture());
+  if (dead) {
     postSelection.color = aimedPurgatory ? SIGNAL_COLOR : null;
-    postSelection.render(purgScene, purgCamera);
-  } else toon.render(scene, camera);
+    postSelection.render(scene, view);
+  }
   appearancePicker.draw(renderer, dt);
   // Outline of the aimed post, over the office frame only (src/post-highlight.ts).
   if (!spectating && !respawnAt) postSelection.render(scene, camera);
@@ -6213,6 +6346,11 @@ function finishHeavy(projectile, impact, world) {
     return;
   }
   const report = heavyImpact(projectile, impact.hit, impact.frames, impact.point, world);
+  if (report.kind !== 'piercing')
+    reportSkyHits(
+      projectile.shot,
+      skyBlast(purgatoryTargets(), report.p, Math.max(report.radius || 0, MAP.metres(4))),
+    );
   showHeavyImpact(report);
   action('heavy-impact', report);
 }
@@ -6934,6 +7072,29 @@ function soulInsect(type = 'midge') {
   return outer;
 }
 
+// Life bars of Saint Pierre and the guard: hurt at their posts, or as souls in the queue.
+function staffStatus(arena, view, now, keep) {
+  for (const role of STAFF_ROLES) {
+    const anchor = role === 'saint' ? purgatory.saint : purgatory.guard;
+    const soul = arena?.bodies.find((b) => !b.gone && b.enemyType === role);
+    const staff = snap?.staff?.[role];
+    if (soul) {
+      soulStatus.update(soul.id, anchor, soul.health, STAFF_HP, view, now / 1000);
+      keep.add(soul.id);
+    } else if (staff && !staff.down && staff.hp < STAFF_HP) {
+      soulStatus.update('staff:' + role, anchor, staff.hp, STAFF_HP, view, now / 1000);
+      keep.add('staff:' + role);
+    }
+  }
+}
+/** Saint Pierre's and the guard's souls in the queue, when killed (docs/purgatory-sky.md). */
+function staffSouls(arena) {
+  const soul = (role) => {
+    const b = arena?.bodies.find((b) => !b.gone && b.enemyType === role);
+    return b ? { x: b.x, z: b.z, face: b.face } : null;
+  };
+  return { saintSoul: soul('saint'), guardSoul: soul('guard') };
+}
 function observedPurgatory(dt) {
   const arena = snap?.arena;
   const served = arena ? deskOccupant(arena) : null;
@@ -6944,10 +7105,12 @@ function observedPurgatory(dt) {
     vipServed: false,
     servedAt: served ? { x: served.x, z: served.z } : null,
     stamping: served?.kind === 'enemy' && served.served > 0,
+    ...staffSouls(arena),
   });
   const active = new Set();
   for (const body of arena?.bodies || []) {
-    if (body.entity === id || body.gone) continue;
+    // Saint Pierre and the guard walk as themselves (purgatory.update).
+    if (body.entity === id || body.gone || isStaff(body.enemyType)) continue;
     active.add(body.id);
     let model = soulMeshes.get(body.id);
     if (!model) {
@@ -6970,6 +7133,17 @@ function observedPurgatory(dt) {
       purgScene.remove(model);
       soulMeshes.delete(key);
     }
+  const keep = new Set(
+    (arena?.bodies || []).filter((b) => b.kind === 'enemy' && !b.gone).map((b) => b.id),
+  );
+  const view = spectating && observationCamera ? observationCamera : camera;
+  for (const b of arena?.bodies || []) {
+    const g = soulMeshes.get(b.id);
+    if (g && b.kind === 'enemy' && !b.gone)
+      soulStatus.update(b.id, g, b.health, b.maxHealth || 100, view, performance.now() / 1000);
+  }
+  staffStatus(arena, view, performance.now(), keep);
+  soulStatus.keep(keep);
 }
 
 // Shader programs are compiled the first time a material is drawn, which froze

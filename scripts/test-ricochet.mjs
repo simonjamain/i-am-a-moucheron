@@ -133,6 +133,10 @@ function fly(angle, bounces = 0, slices = 1, owned = true) {
   const colliders = [new T.Box3(new T.Vector3(-50, -2, -500), new T.Vector3(50, 0, 500))];
   runInNewContext(step + `;for (let i = 0; i < ${slices}; i++) stepProjectileSlice(0.05)`, {
     T,
+    // Saint Pierre's sky is not drawn in this test: nothing to hit there.
+    nearestSkyTarget: () => null,
+    purgatoryTargets: () => [],
+    reportSkyHits: () => {},
     rayCollider,
     colliderNormal: (await_box, point) => [0, 1, 0],
     nearestSolidHit,

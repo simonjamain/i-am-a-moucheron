@@ -186,7 +186,9 @@ export function createFloorCloud(
     const a = yTop.sub(eye.y).div(rd.y),
       b = mist.w.sub(eye.y).div(rd.y);
     const t0 = select(flatRay, float(0), max(min(a, b), 0));
-    const t1 = min(min(select(flatRay, float(200), max(a, b)), tScene), 160);
+    // The march spans at most 160 units past the cloud's surface, however far the
+    // eye (the cloud is seen from Saint Pierre's sky, hundreds of units below it).
+    const t1 = min(min(select(flatRay, float(200), max(a, b)), tScene), t0.add(160));
     If(t0.greaterThanEqual(t1), () => {
       Discard();
     });

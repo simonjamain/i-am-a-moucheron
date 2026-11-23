@@ -107,8 +107,8 @@ Le purgatoire n'est plus une scène à part, dans ses propres unités : c'est un
 même monde que le bureau, en mètres du bureau. Le nuage de Saint Pierre flotte
 au-dessus de la pièce, environ 150 m réels plus haut que l'ancien plafond de vol
 (`PURGATORY_FRAME` dans `src/arena-frame.ts` : sol à 3,95 + 0,45 = 4,40 m du bureau,
-centré sur la pièce). C'est la base du [ciel du purgatoire](https://github.com/simonjamain/i-am-a-moucheron/issues/344) :
-un appareil pourra y monter sans changer de repère.
+centré sur la pièce). C'est la base du [ciel du purgatoire](purgatory-sky.md) : un appareil y monte sans
+changer de repère.
 
 - Chaque lieu de marche garde ses coordonnées planes d'arène pour ses règles (places
   de la file, baies du hangar) ; un **repère** (`ArenaFrame` : origine, mètres par unité,

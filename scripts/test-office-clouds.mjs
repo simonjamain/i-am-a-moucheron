@@ -74,17 +74,21 @@ assert.ok(hazy.fogNode?.isNode, 'cloud layer installed as a fog node');
 const plain = new T.Scene();
 applyOfficeFog(T, plain);
 assert.equal(plain.fogNode, undefined, 'no exponential fog, no cloud layer');
-for (const [height, alive] of [
+// No flight ceiling any more: above the clouds lies Saint Pierre's sky
+// (src/sky-passage.ts), boundless; under it, the room's walls still bound flights.
+for (const [height, alive, x = 0] of [
   [3.2, true],
   [3.94, true],
-  [3.96, false],
+  [3.96, true],
+  [12, true, 30],
+  [3.2, false, 5],
 ]) {
   for (const type of ['helicopter']) {
-    const state = { ...vehiclePad(type), p: [0, height, 0], q: [0, 0, 0, 1], v: [0, 0, 0] };
+    const state = { ...vehiclePad(type), p: [x, height, 0], q: [0, 0, 0, 1], v: [0, 0, 0] };
     stepHelicopter(T, state, {}, [], 1 / 120, VEHICLES[type]);
-    assert.equal(state.hp > 0, alive, `${type} at ${height} m`);
+    assert.equal(state.hp > 0, alive, `${type} at ${height} m, x ${x}`);
   }
 }
 console.log(
-  'Clouds: room closed on four sides, haze background, fixed cloud height and +1 m flight limit',
+  'Clouds: room closed on four sides, haze background, fixed cloud height, the sky above the clouds',
 );

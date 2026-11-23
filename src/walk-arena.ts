@@ -87,6 +87,10 @@ export interface Arena {
   bounds?: ArenaBounds;
   obstacles?: ArenaObstacle[];
   revision?: number;
+  /** Saint Pierre is dead (docs/purgatory-sky.md): nobody is served at his desk. */
+  saintDown?: boolean;
+  /** The VIP guard is dead: the VIP window is closed. */
+  vipClosed?: boolean;
 }
 
 export interface PlanarPoint {

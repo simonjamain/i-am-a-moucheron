@@ -11,8 +11,9 @@ import type { Three } from './types.ts';
 import type { Prop, OfficeModel } from './office-props.ts';
 import { FACE } from './office-props.ts';
 import { addOfficeProps } from './office-pack.ts';
-import { ACTOR_UNIT, HUMANOID_UNITS, PERSON_HEIGHT } from './scale.ts';
+import { HUMANOID_UNITS, MAP, PERSON_HEIGHT } from './scale.ts';
 import { PURGATORY_FRAME } from './arena-frame.ts';
+import { PURGATORY_CLOUD, SKY_FLOOR, purgatorySolids } from './sky-passage.ts';
 import { VIP_DESK, VIP_GATE_Z, VIP_GUARD, VIP_LANE } from './purgatory-queue.ts';
 import {
   createCloudFloor,
@@ -46,10 +47,10 @@ export const PURGATORY_HALL: CloudFloorSpec = Object.freeze({
 });
 /** The cloud: wider than the hall, so its edge is never reached. */
 export const CLOUD_FLOOR: CloudFloorSpec = Object.freeze({
-  minX: -16,
-  maxX: 16,
-  minZ: -11,
-  maxZ: 96,
+  minX: PURGATORY_CLOUD.minX,
+  maxX: PURGATORY_CLOUD.maxX,
+  minZ: PURGATORY_CLOUD.minZ,
+  maxZ: PURGATORY_CLOUD.maxZ,
 });
 /** Saint Pierre's counter: three desks for the queue, one for the VIP lane. */
 export const COUNTER = Object.freeze({
@@ -230,9 +231,20 @@ export interface PurgatoryState {
   servedAt?: { x: number; z: number } | null;
   /** He is stamping an insect's papers. */
   stamping?: boolean;
+  /**
+   * Killed (docs/purgatory-sky.md): Saint Pierre or the guard then walks the queue
+   * as a soul, at this arena point, instead of standing at his post.
+   */
+  saintSoul?: { x: number; z: number; face?: number } | null;
+  guardSoul?: { x: number; z: number; face?: number } | null;
 }
 export interface PurgatoryScene {
+  /** A scene holding `place` alone (tests, review pages); the game moves `place` into its world. */
   scene: THREE.Scene;
+  /** Everything of the purgatory, in world coordinates: sky dome and decor. */
+  place: THREE.Group;
+  /** The sky's look, for the world scene while the camera is in the sky. */
+  look: { background: THREE.Color; fog: THREE.Fog };
   /** The decor's group: local units (arena units), placed at PURGATORY_FRAME. */
   root: THREE.Group;
   /** World boxes: the counter and the cloud's walkable floor (walker, camera). */
@@ -261,6 +273,9 @@ export interface PurgatoryScene {
 export function createPurgatoryScene(T: Three, options: PurgatorySceneOptions): PurgatoryScene {
   const world = new T.Scene();
   world.name = 'purgatoire';
+  const place = new T.Group();
+  place.name = 'purgatoire-lieu';
+  world.add(place);
   const F = PURGATORY_FRAME,
     unit = F.unit;
   // Everything below is built in local (arena) units inside this group.
@@ -268,14 +283,30 @@ export function createPurgatoryScene(T: Three, options: PurgatorySceneOptions): 
   scene.name = 'purgatoire-repere';
   scene.position.set(F.originX, F.originY, F.originZ);
   scene.scale.setScalar(unit);
-  world.add(scene);
+  place.add(scene);
   const L = PURGATORY_LOOK;
   // Sky: dome, light from the sun direction, haze far away (world distances).
   // Without shaders (software renderer) the sky is a plain colour.
   const dome: SkyDome | null = options.shaders ? createSkyDome(T, 140 * unit) : null;
-  if (dome) world.add(dome.mesh);
-  world.background = new T.Color(SKY_LOOK.horizon);
-  world.fog = new T.Fog(SKY_LOOK.fog, 60 * unit, 135 * unit);
+  if (dome) place.add(dome.mesh);
+  // The sky's haze: far enough to see Saint Pierre's cloud from the sky floor (150 m
+  // below it) and aircraft around, near enough to melt the sea of clouds' horizon.
+  const look = {
+    background: new T.Color(SKY_LOOK.horizon),
+    fog: new T.Fog(SKY_LOOK.fog, MAP.metres(400), MAP.metres(2500)),
+  };
+  // The sea of clouds at the sky floor (docs/purgatory-sky.md): it hides the office
+  // under it and follows the camera, so that the sky has no end.
+  const sea = new T.Mesh(
+    new T.CircleGeometry(MAP.metres(20000), 48),
+    new T.MeshBasicMaterial({ color: SKY_LOOK.below, fog: true }),
+  );
+  sea.name = 'purgatoire-mer-de-nuages';
+  sea.rotation.x = -Math.PI / 2;
+  sea.position.y = SKY_FLOOR;
+  place.add(sea);
+  world.background = look.background;
+  world.fog = look.fog;
   scene.add(new T.HemisphereLight(L.hemisphereSky, L.hemisphereGround, 1.5));
   const sun = new T.DirectionalLight(L.sun, 1.9);
   sun.position.set(...(SUN_DIRECTION.map((v) => v * 30) as [number, number, number]));
@@ -403,37 +434,47 @@ export function createPurgatoryScene(T: Three, options: PurgatorySceneOptions): 
   scene.updateMatrixWorld(true);
   return {
     scene: world,
+    place,
+    look,
     root: scene,
-    colliders: [
-      new T.Box3(
-        new T.Vector3(-3.2, 0, COUNTER.z - 0.55),
-        new T.Vector3(6.3, 1.05, COUNTER.z + 0.55),
-      ).applyMatrix4(scene.matrixWorld),
-      // The walkable floor: its top keeps a walker's feet at the cloud's height
-      // (src/sortie.ts stands bodies 0.05 actor unit above a support).
-      new T.Box3(
-        new T.Vector3(F.originX - 100 * unit, F.originY - 0.3 * unit, F.originZ - 100 * unit),
-        new T.Vector3(
-          F.originX + 100 * unit,
-          F.originY - 0.05 * ACTOR_UNIT,
-          F.originZ + 200 * unit,
+    colliders: purgatorySolids().map(
+      (b) =>
+        new T.Box3(
+          new T.Vector3(b.min.x, b.min.y, b.min.z),
+          new T.Vector3(b.max.x, b.max.y, b.max.z),
         ),
-      ),
-    ],
+    ),
     saint,
     guard: guard.container,
     clipboards: { desk: deskClipboard, vip: vipClipboard },
     hover: F.originY + (options.shaders ? FLOOR_MIST.top * 0.75 : 0) * unit,
     update(dt, now, state) {
-      const before = saint.position.x;
-      saint.position.x += (state.saintX - saint.position.x) * (1 - Math.exp(-3 * dt));
-      const at = state.servedAt;
+      const before = saint.position.clone();
+      const ease = 1 - Math.exp(-12 * dt);
+      if (state.saintSoul) {
+        // Killed: his soul walks the queue like the others (it waits to be killed again).
+        saint.position.x += (state.saintSoul.x - saint.position.x) * ease;
+        saint.position.z += (state.saintSoul.z - saint.position.z) * ease;
+        saint.rotation.y = state.saintSoul.face ?? Math.PI;
+      } else {
+        saint.position.x += (state.saintX - saint.position.x) * (1 - Math.exp(-3 * dt));
+        saint.position.z = COUNTER.saintZ;
+        saint.rotation.y = 0;
+      }
+      const at = state.saintSoul ? null : state.servedAt;
       saintPierre.update(dt, now / 1000, {
-        speed: dt > 0 ? Math.abs(saint.position.x - before) / dt : 0,
+        speed: dt > 0 ? before.distanceTo(saint.position) / dt : 0,
         // Model facing +Z: a yaw toward the served soul, from where he stands.
         look: at ? Math.atan2(at.x - saint.position.x, at.z - saint.position.z) : 0,
-        stamping: !!state.stamping,
+        stamping: !!state.stamping && !state.saintSoul,
       });
+      if (state.guardSoul) {
+        guard.container.position.set(state.guardSoul.x, 0, state.guardSoul.z);
+        guard.container.rotation.y = state.guardSoul.face ?? Math.PI;
+      } else {
+        guard.container.position.set(VIP_GUARD.x, 0, VIP_GUARD.z);
+        guard.container.rotation.y = -Math.PI / 2;
+      }
       // The rope gate swings aside for this soul once its pass is paid.
       if (vipGate) vipGate.visible = !state.vip;
       deskZone.material.color.set(state.deskServed ? L.zoneServed : L.zone);
@@ -445,6 +486,15 @@ export function createPurgatoryScene(T: Three, options: PurgatorySceneOptions): 
       floorCloud?.render(renderer, camera, depth);
     },
     prerender(renderer, camera) {
+      // Follow the camera now (a matrix updated in onBeforeRender lags one frame).
+      camera.updateMatrixWorld();
+      const eye = new T.Vector3().setFromMatrixPosition(camera.matrixWorld);
+      sea.position.set(eye.x, SKY_FLOOR, eye.z);
+      sea.updateMatrixWorld();
+      if (dome) {
+        dome.mesh.position.copy(eye);
+        dome.mesh.updateMatrixWorld();
+      }
       if (!sky || !dome) return;
       const layer = sky.render(renderer, camera);
       dome.setClouds(layer.texture, layer.width, layer.height);

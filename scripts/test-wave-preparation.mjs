@@ -190,6 +190,10 @@ for (const wall of [false, true]) {
   const colliders = wall ? [new T.Box3(new T.Vector3(1.8, -1, -1), new T.Vector3(1.9, 1, 1))] : [];
   runInNewContext(step + ';stepProjectileSlice(.5);stepProjectileSlice(3);', {
     T,
+    // Saint Pierre's sky is not drawn in this test: nothing to hit there.
+    nearestSkyTarget: () => null,
+    purgatoryTargets: () => [],
+    reportSkyHits: () => {},
     rayCollider,
     colliderNormal,
     nearestSolidHit,
