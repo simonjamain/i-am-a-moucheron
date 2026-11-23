@@ -118,10 +118,18 @@ void main() {
   vec3 color = vec3(0.0);
   float alpha = 0.0;
   float t = t0 + 0.15 * hash3(vec3(gl_FragCoord.xy, fract(time)));
-  for (int i = 0; i < 40; i++) {
+  for (int i = 0; i < 64; i++) {
     if (alpha > 0.97 || t > t1) break;
-    float dt = 0.12 + 0.06 * t;
     vec3 p = eye + rd * t;
+    // Above the cloud's surface here: jump down to it (empty-space skipping),
+    // so that far rays still reach the cloud within the step budget.
+    float surface = topAt(p.xz) + 0.5;
+    if (p.y > surface) {
+      if (rd.y > -0.002 && p.y > yTop) break;
+      t += rd.y < -0.002 ? clamp((p.y - surface) / -rd.y, 0.1, 12.0) : 1.0;
+      continue;
+    }
+    float dt = 0.1 + 0.03 * t;
     float d = density(p, 3);
     if (d > 0.01) {
       float toward = 1.8 * density(p + L * 0.7, 1);
@@ -138,11 +146,14 @@ void main() {
     }
     t += dt;
   }
-  // A ray that crossed the dense layer without filling up: the rest is cloud.
-  if (alpha < 0.97 && t1 > t0 && tScene > t1) {
-    vec3 last = eye + rd * t1;
-    if (last.y < mist.y && boxSd(last.xz, extent) < -3.0) {
-      color += shade * (1.0 - alpha);
+  // A ray that reaches the dense layer (inside the cloud's extent) before any
+  // opaque surface without filling up: the rest is cloud, never a hole to the sky.
+  if (alpha < 0.97 && rd.y < 0.0) {
+    float tDense = (mist.y - eye.y) / rd.y;
+    vec3 under = eye + rd * tDense;
+    if (tDense > 0.0 && tDense < tScene && boxSd(under.xz, extent) < -3.0) {
+      // Lit like the mist's surface seen from afar.
+      color += (mix(shade, tint, 0.8) + sunColor * 0.2) * (1.0 - alpha);
       alpha = 1.0;
     }
   }

@@ -35,8 +35,12 @@ Le sol est le **même nuage volumétrique** que ceux du ciel : on marche à moit
   brume n’est couverte que par le nuage devant elle. La passe est calculée à **40 %** de
   la résolution (`FLOOR_LAYER_SCALE`) en gardant la profondeur la plus lointaine de
   chaque pixel (pas de halo couleur ciel autour des silhouettes), puis composée sur
-  l’image. Un rayon qui traverse la couche dense sans se remplir est complété par le
-  nuage : aucun trou vers le ciel.
+  l’image. Au-dessus de la surface du nuage, un rayon saute directement jusqu’à elle
+  (saut d’espace vide) avant de marcher à pas fins (64 pas au plus) : sans ce saut, les
+  pas s’épuisaient vers 19 unités et le nuage n’était dessiné qu’autour de la caméra
+  (il semblait suivre le joueur, les meubles lointains flottaient au-dessus du vide).
+  Un rayon qui atteint la couche dense dans l’étendue du nuage sans s’être rempli est
+  complété par la couleur de la surface : aucun trou vers le ciel.
 - Ce qui doit rester lisible flotte au-dessus de la brume : cercles du guichet et
   marquage « PLACE AU GUICHET » (à la hauteur de la brume), insectes de la file
   (`hover`, aux trois quarts de cette hauteur), plaques posées sur les bureaux.
@@ -70,7 +74,8 @@ exagère le coût par pixel par rapport à une vraie carte graphique : ancien d�
 8,0 images/s ; nouveau décor sans nuages 5,0 ; nuages en pleine résolution 3,7 ; nuages
 en demi-résolution 4,3. Nuage-sol volumétrique : 4,3 à 5,3 avec le nuage dessin animé,
 2,3 avec le nuage-sol à demi-résolution (56 pas, deux échantillons de lumière), 3,7 à
-4,0 dans sa version retenue (40 % de résolution, 40 pas, un échantillon). Le coût sur
+4,0 avec 40 % de résolution, 40 pas et un échantillon ; 4,7 avec le saut d’espace vide
+(nuage dessiné jusqu’au bout de la salle). Le coût sur
 carte graphique réelle reste à mesurer en partie.
 Le passage à WebGPU est suivi à part.
 
