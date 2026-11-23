@@ -23,16 +23,25 @@ l'incidence : rien ne passe par le réseau.
 
 ## Rubans
 
-Quatre rubans par avion, placés d'après `AIRCRAFT_GEOMETRY` : un au bord de fuite
-de chaque bout d'aile, un au milieu de chaque aile, sur l'extrados. Les points sont
-émis dans le monde et y restent (comme la fumée des moteurs) ; une bande qui fait
-face à la caméra les relie, une seule géométrie et un seul tracé pour tous les
-avions (96 rubans au plus, 17 points chacun).
+Deux rubans par avion, un à chaque bout d'aile, placés d'après `AIRCRAFT_GEOMETRY` :
+l'origine est **à l'intérieur de l'aile** (90 % de la demi-envergure, en avant du bord
+de fuite) pour que le départ carré du ruban reste caché dans le modèle. Les points sont
+émis dans le monde et y restent (comme la fumée des moteurs) ; une bande qui fait face
+à la caméra les relie, une seule géométrie et un seul tracé pour tous les avions
+(48 rubans au plus, 17 points chacun).
 
 - **Vol normal** : aucun ruban.
-- **Approche** : fins, translucides, courts, presque droits (`ribbonLook`).
-- **Décrochage** : plus larges, plus longs, plus marqués ; les points dérivent de la
-  ligne de l'aile en ondulations et tourbillons de plus en plus forts.
+- **Approche et décrochage** : seule l'**opacité** augmente avec l'incidence ; la
+  largeur reste constante (`WIDTH`). Le ruban s'allonge un peu et ondule de plus en plus.
+- **Fin du ruban** : l'opacité décroît selon l'âge **et** selon la position dans le
+  ruban, de sorte que le point le plus ancien qu'un ruban puisse porter est déjà
+  invisible : la queue s'éteint sans coupure franche.
+- **Turbulence arrondie** : les points émis dérivent de la ligne de l'aile (sinus),
+  puis une courbe de Catmull-Rom _centripète_ passe par eux, avec 4 morceaux par
+  segment (69 échantillons par ruban). Ce tracé reste lisse malgré peu de points, ne
+  fait ni boucle ni angle quand des points sont très inégalement espacés (un point
+  tout juste émis près de l'aile), et coûte quelques dizaines de sommets par ruban,
+  dans le même appel de dessin.
 - **Au sol, détruit, caché** : aucun ruban, ceux qui restent se dissipent.
 
 Seuls les avions à voilure en ont (`PLANE_TYPES`) ; hélicoptères, chars et camions n'en
