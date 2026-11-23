@@ -205,6 +205,22 @@ export const SUITE = [
   'test-run-tests',
   'test-registries',
   'test-typescript',
+  'test-format',
+  'test-docs-links',
 ];
 // Run by a dedicated npm script (see `dedicated` in scripts/test-suite-wiring.mjs).
 export const OUTSIDE_SUITE = ['test-udp-capacity-50'];
+// Real-Chromium scenarios run by `npm run e2e` (run-tests.mjs --e2e) and the CI job
+// « Real Chromium over WebRTC UDP/TCP ». Playwright is required, so not in npm test.
+export const E2E = [
+  'e2e-browser-resume',
+  'e2e-browser-motion',
+  'e2e-browser-tcp-fallback',
+  'e2e-game-polish',
+  'e2e-loading',
+  'e2e-office-clouds',
+  'e2e-contrast-bed',
+];
+// Browser scenarios kept out of CI, each with its own npm script and reason
+// (see `manualE2e` in scripts/test-suite-wiring.mjs).
+export const E2E_MANUAL = ['e2e-layouts'];

@@ -1,5 +1,8 @@
 // Real browser loading regression: delayed game graph, animated detailed fly,
 // successful readiness, and retry after a failed module request. In npm run e2e (CI), not npm test.
+// The exit lasts 1.4 s and Playwright can notice it hundreds of milliseconds late on a
+// loaded CPU, so the departure is sampled inside the page (every 30 ms, from the first
+// script of each navigation) rather than read after fixed delays.
 import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
 import { mkdir } from 'node:fs/promises';
@@ -15,6 +18,42 @@ const browser = await chromium.launch({
 });
 try {
   const page = await browser.newPage({ viewport: { width: 960, height: 540 } });
+  await page.addInitScript(() => {
+    const samples = [];
+    Object.defineProperty(window, '__departure', { value: samples });
+    const tick = () => {
+      const loading = document.getElementById('loading');
+      const lobby = document.getElementById('lobby');
+      if (!loading && samples.length) return samples.push({ removed: true, inert: lobby?.inert });
+      if (loading?.classList.contains('departing'))
+        samples.push({
+          alpha: Number(getComputedStyle(loading).backgroundColor.match(/, ([\d.]+)\)$/)?.[1] ?? 1),
+          text: Number(getComputedStyle(loading.querySelector('strong')).opacity),
+          canvas: loading.querySelectorAll('canvas').length,
+          inert: lobby?.inert,
+        });
+      setTimeout(tick, 30);
+    };
+    tick();
+  });
+  // Waits for the overlay to leave, then returns what the page saw while it departed.
+  const departure = async () => {
+    await page.locator('#loading').waitFor({ state: 'detached' });
+    await page.waitForFunction(() => window.__departure.at(-1)?.removed);
+    const samples = await page.evaluate(() => window.__departure);
+    const during = samples.slice(0, -1);
+    assert.ok(during.length > 0, 'departure observed before removal');
+    assert.ok(
+      during.every((s) => s.canvas === 1),
+      'detailed fly stays on screen during departure',
+    );
+    assert.ok(
+      during.every((s) => s.inert === true),
+      'menu not clickable during departure',
+    );
+    assert.equal(samples.at(-1).inert, false, 'menu clickable after departure');
+    return during;
+  };
   const errors = [];
   page.on('pageerror', (e) => errors.push(e.message));
   let release;
@@ -39,32 +78,25 @@ try {
     timeout: 60000,
   });
   assert.equal(await page.locator('#lobby').isVisible(), true);
-  await page.locator('#loading.departing').waitFor();
-  assert.equal(await page.locator('#lobby').evaluate((el) => el.inert), true);
-  await page.waitForTimeout(650);
-  const fade = await page.locator('#loading').evaluate((el) => ({
-    background: getComputedStyle(el).backgroundColor,
-    text: Number(getComputedStyle(el.querySelector('strong')).opacity),
-  }));
-  assert.ok(fade.text < 0.1, 'loading label fades out');
-  const alpha = Number(fade.background.match(/, ([\d.]+)\)$/)?.[1]);
-  assert.ok(alpha > 0 && alpha < 1, 'dark background reveals the menu gradually');
   const flight = await page.screenshot({ path: 'work/loader-departure.png' });
   await page.waitForTimeout(250);
   assert.ok(!flight.equals(await page.screenshot()), 'departure continues moving');
-  await page.locator('#loading').waitFor({ state: 'detached' });
-  assert.equal(await page.locator('#lobby').evaluate((el) => el.inert), false);
+  const cold = await departure();
+  assert.ok(
+    cold.some((s) => s.alpha > 0 && s.alpha < 1),
+    'dark background reveals the menu gradually: ' + cold.map((s) => s.alpha).join(' '),
+  );
+  assert.ok(
+    cold.some((s) => s.text < 0.1),
+    'loading label fades out',
+  );
   // Warm resources: the exit must still play rather than being removed at readiness.
   await page.unroute('**/client.js');
   await page.reload({ waitUntil: 'commit' });
-  await page.locator('#loading.departing').waitFor();
-  assert.equal(await page.locator('#loading canvas').count(), 1);
-  await page.locator('#loading').waitFor({ state: 'detached' });
+  await departure();
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.reload({ waitUntil: 'commit' });
-  await page.locator('#loading.departing').waitFor();
-  assert.equal(await page.locator('#loading canvas').count(), 1);
-  await page.locator('#loading').waitFor({ state: 'detached' });
+  await departure();
   assert.equal(await page.locator('#lobby').isVisible(), true);
   assert.deepEqual(errors, []);
   await page.close();

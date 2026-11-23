@@ -50,8 +50,7 @@ Voir [le guide du serveur UDP](docs/udp-server.md) pour les variables et les tes
 Le serveur Node/UDP est l'unique runtime du jeu.
 
 ```sh
-npm run format:check
-npm test
+npm test   # inclut tsc, format:check et les liens Markdown
 npm run build
 node scripts/validate-artifact.mjs
 ```

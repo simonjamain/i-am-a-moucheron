@@ -64,5 +64,5 @@ reste devant. Une enveloppe visuelle non solide (haut et quatre côtés, sud com
 termine les rayons de fond dans le même brouillard et ne crée aucun collider. Le
 purgatoire garde son brouillard linéaire, sans voile d'altitude.
 Contrôles : `test-office-clouds.mjs` ; rendu réel : `e2e-office-clouds.mjs`
-(Playwright + Chromium, hors `npm test` ; variables `PLAYWRIGHT_PATH`,
+(Playwright + Chromium, hors `npm test`, dans `npm run e2e` et sa CI ; variables `PLAYWRIGHT_PATH`,
 `CHROMIUM_PATH`, `CLOUD_SCREENSHOT`).
