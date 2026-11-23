@@ -1,5 +1,5 @@
 // End-to-end check (npm run e2e and CI job browser-e2e; not part of npm test): a
-// real Chromium dies, enters the purgatory and walks on Saint Pierre's cloud with
+// real Chromium dies, fades into the purgatory and walks on Saint Pierre's cloud with
 // the office walker (src/arena-frame.ts, src/sortie.ts stepWalker). The body the
 // server receives stands on the cloud, 150 m above the office, moves when the
 // player walks and leaves the floor when it jumps.
@@ -71,7 +71,13 @@ try {
   const room = app.game.rooms.get('CIEL');
   const [pilot] = room.pilots.values();
   app.game.kill(room, pilot, pilot.incarnation);
-  await page.locator('#enterPurgatory').click({ timeout: 20000 });
+  // Death is a passage (docs/purgatory-sky.md): the ghost rises, the screen fades to
+  // black, and the client enters the purgatory by itself.
+  await until(
+    async () => Number(await page.evaluate(() => getComputedStyle(deathFade).opacity)) > 0.9,
+    15000,
+    'fade to black',
+  );
   const body = () =>
     room.purgatory.bodies?.find((b) => b.entity === pilot.id && b.kind === 'player');
   await until(async () => Number.isFinite(body()?.y), 20000, 'soul body reported');

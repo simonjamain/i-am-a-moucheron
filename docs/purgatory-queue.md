@@ -17,7 +17,9 @@ l’ordre d’arrivée (un joueur ne double pas un insecte arrivé avant lui).
 
 ## File VIP (coupe-file payant)
 
-Une âme de joueur apparaît à l’entrée (`SOUL_ENTRANCE`), devant les deux files. La file
+Une âme de joueur apparaît à l’entrée (`SOUL_ENTRANCE`), près du canapé côté VIP, d'où
+l'on voit les deux files (sans traverser celle des insectes) ; un joueur qui descend
+d'un appareil sur le nuage apparaît là où il en est sorti. La file
 des insectes reste gratuite : on peut s’y placer, notamment quand elle est vide. À sa
 droite, une **file VIP** bordée de cordons (`VIP_LANE`) mène au second guichet de
 Saint Pierre (`VIP_DESK`). Un cordon doré la ferme ; un vigile (`VIP_GUARD`) se tient
@@ -53,5 +55,5 @@ Voir [combat et mondes](combat-worlds.md) et [gameplay](gameplay.md).
 attroupement, l’attente derrière le signataire et le retour à la place après
 bousculade. Les tests de combat sont dans `test-backlog.mjs`.
 
-Les joueurs morts ne rejoignent la file qu’après [accès volontaire](multiplayer-return.md#mort-et-observation-volontaire).
+Les joueurs morts ne rejoignent la file qu’après le [passage au purgatoire](multiplayer-return.md#mort-et-passage-au-purgatoire).
 L’observation ne réserve aucune place ni corps au guichet.

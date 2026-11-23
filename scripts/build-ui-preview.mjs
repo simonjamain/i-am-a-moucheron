@@ -65,7 +65,7 @@ export function uiPreview(html) {
     if(read){document.getElementById('aimDistance').textContent=read.metres.toFixed(3)+' m';document.getElementById('aimGauge').value=read.fraction}
   }
   for(const button of document.querySelectorAll('[data-demo]'))button.onclick=()=>display(Number(button.dataset.demo));
-  document.getElementById('enterPurgatory').onclick=()=>{document.getElementById('deathWatch').classList.add('hidden');document.querySelector('.previewNote').textContent='Démonstration : accès volontaire au purgatoire. En jeu, le serveur crée une seule âme après confirmation.'};
+  
   display(0); setInterval(()=>{if(model&&!bank.opened&&!bedUI.opened)hud.update(model);bank.render()},100);
   </script></html>`;
 }

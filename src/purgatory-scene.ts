@@ -121,7 +121,8 @@ export function purgatoryProps(): Prop[] {
     P.push(put('Paper_Stack_Small', x + side * 0.9, z - 0.2, facing + 0.5, 0.434 * U));
   };
   lounge(left, 20, east, 1);
-  lounge(right, 56, west, -1);
+  // The right one by the souls' entrance (SOUL_ENTRANCE), on the VIP side.
+  lounge(right, 14, west, -1);
   P.push(put('Water_Cooler', left, 15, east));
   P.push(put('Water_Cooler', right, 40, west));
   for (const z of [32, 33.2, 34.4]) P.push(put('Visitor_Chair_Grey', right, z, west));

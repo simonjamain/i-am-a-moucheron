@@ -83,8 +83,11 @@ export const VIP_LANE: readonly ArenaObstacle[] = Object.freeze([
   { x: 5.2, z: VIP_GATE_Z, w: 2.72, d: 0.12, vip: true },
 ]);
 export const VIP_GUARD = Object.freeze({ x: 7.1, z: 9.9, reach: 3.5 });
-/** Where a player's soul appears: before both queues, near the guard. */
-export const SOUL_ENTRANCE = Object.freeze({ x: 4.2, z: 11 });
+/**
+ * Where a player appears in the purgatory: by the sofa on the VIP side, from where
+ * both queues show (no need to cross the insects' queue).
+ */
+export const SOUL_ENTRANCE = Object.freeze({ x: 8.6, z: 13.5 });
 /** Price of the pass in dollars: the wave number (wave 1: 1 $). */
 export function vipPrice(wave: number): number {
   return Math.max(1, Math.floor(Number(wave) || 0));
@@ -107,7 +110,7 @@ function insectAhead(a: Arena, b: WalkBody): WalkBody[] {
 // in the lane; tickets never grant exclusive access to the signing desk.
 export function queueTargets(a: Arena): Map<number, PlanarPoint> {
   const insects = a.bodies
-    .filter((b) => b.kind === 'enemy' && !b.gone)
+    .filter((b) => b.kind === 'enemy' && !b.gone && b.enemyType !== 'saint')
     .sort((a, b) => (a.queueTicket ?? a.id) - (b.queueTicket ?? b.id) || a.id - b.id);
   const players = a.bodies.filter((b) => b.kind === 'player' && !b.gone && inLane(b));
   const targets = new Map<number, PlanarPoint>();
@@ -199,6 +202,23 @@ export function clipboardWindow(a: Arena, b: WalkBody | null | undefined): 'desk
   if (!b || b.gone || b.kind !== 'player' || deskOccupant(a)?.id !== b.id) return null;
   return b.vip && inVipDesk(b) ? 'vip' : 'desk';
 }
+/**
+ * Saint Pierre's soul (docs/purgatory-sky.md) takes the VIP lane, through its gate, and
+ * waits at the VIP window, where nobody can sign for him.
+ */
+export function saintIntent(b: PlanarPoint): PlanarPoint {
+  const inLane = b.x > 3.9 && b.x < 6.5 && b.z < VIP_GATE_Z + 0.3;
+  const target = inLane
+    ? { x: VIP_DESK.x, z: VIP_DESK.z }
+    : Math.abs(b.x - VIP_DESK.x) < 0.4
+      ? { x: VIP_DESK.x, z: VIP_DESK.z }
+      : { x: VIP_DESK.x, z: VIP_GATE_Z + 1 };
+  const dx = target.x - b.x,
+    dz = target.z - b.z,
+    d = Math.hypot(dx, dz);
+  if (d < 0.2) return { x: 0, z: 0 };
+  return { x: dx / Math.max(1, d), z: dz / Math.max(1, d) };
+}
 /** Saint Pierre stamps the insect at his desk; players sign their papers themselves. */
 function serveDesk(a: Arena, now: number, ms: number, owned: (b: WalkBody) => boolean): void {
   a.desk = deskOccupant(a)?.id ?? null;
@@ -233,10 +253,13 @@ export const PURGATORY_RULES: WalkRules = Object.freeze({
       const b = a.bodies.find((b) => b.id === id)!;
       intents.set(id, queueIntent(a, b, place));
     }
+    for (const b of a.bodies)
+      if (!b.gone && b.enemyType === 'saint') intents.set(b.id, saintIntent(b));
     return intents;
   },
   constrain: keepQueueOrder,
-  passes: (b: WalkBody, o: ArenaObstacle): boolean => !!(o.vip && b.vip),
+  passes: (b: WalkBody, o: ArenaObstacle): boolean =>
+    !!(o.vip && (b.vip || b.enemyType === 'saint')),
   afterStep: serveDesk,
 });
 

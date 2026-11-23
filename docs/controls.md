@@ -168,8 +168,9 @@ fixes et véhicules terrestres n’affichent ni parachute ni « sauter ».
 
 Les informations de coque et munitions sont près du viseur ; l’aide de contexte
 reste en bas à gauche, sans panneaux temporaires. Après mort, toute commande de
-jeu est neutralisée ; cliquer « Accéder au purgatoire » pour créer son âme et
-reprendre les contrôles. Même attente après une mort au purgatoire. Le regard à
+jeu est neutralisée pendant le passage au purgatoire (fantôme qui monte, fondu au
+noir), qui s'enchaîne seul ([ciel du purgatoire](purgatory-sky.md#la-mort-un-passage)).
+Dans le ciel de Saint Pierre, ni banque (N), ni atelier (P), ni construction (G). Le regard à
 pied va presque à ±87°, sans retournement. Tous les véhicules achetés passent
 par signature puis pose au clic ; annulation/reprise identique aux installations.
 Voir [retours multijoueurs](multiplayer-return.md).

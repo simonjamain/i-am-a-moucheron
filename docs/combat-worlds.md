@@ -72,8 +72,8 @@ purgatoires et leurs nombres de signatures restent inchangés.
 Le [lot suivant de lisibilité et nettoyage](clean-flight.md) précise les commandes
 contextuelles actuelles, les effets partagés et les nouvelles collisions de coque.
 
-Avant création d’une âme de joueur, une [observation volontaire](multiplayer-return.md#mort-et-observation-volontaire)
+Avant création d’une âme de joueur, le [passage au purgatoire](multiplayer-return.md#mort-et-passage-au-purgatoire)
 neutralise les actions sans conserver de corps actif.
-Mourir au purgatoire passe par la même observation, puis renvoie l’âme en fin de file.
+Mourir au purgatoire fait le même passage, puis renvoie l’âme à l'entrée.
 
 Nouveaux PV : moustique 70, rat 5 000, araignée pondeuse 1 200, bébé araignée 20. Voir [bestiaire](enemy-bestiary.md) pour la naissance et les conséquences des 100 points potentiels d'infestation.
