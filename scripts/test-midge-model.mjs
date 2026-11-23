@@ -1,15 +1,15 @@
 // Meshy midge: provenance, added wing bones, procedural flight cycle and its
-// vertex animation bake (src/midge-model.js, src/midge-batch.js).
+// vertex animation bake (src/midge-model.ts, src/midge-batch.js).
 import assert from 'node:assert/strict';
 import * as T from '../vendor/three.module.min.js';
-import { MIDGE_DATA } from '../src/midge-data.js';
+import { MIDGE_DATA } from '../src/midge-data.ts';
 import {
   createMidgeRig,
   bakeFlight,
   flightPose,
   MIDGE_FLIGHT,
   MIDGE_BONES,
-} from '../src/midge-model.js';
+} from '../src/midge-model.ts';
 import { MIDGE_SPHERE_RADIUS } from '../src/scale.ts';
 
 const world = (o) => o.getWorldPosition(new T.Vector3());

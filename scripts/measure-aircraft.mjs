@@ -10,11 +10,11 @@ import { pathToFileURL } from 'node:url';
 import { components, decode } from './split-vehicle-parts.mjs';
 
 export const MODELS = {
-  bomber: ['meshy-biplane-bomber-data.js', 'BIPLANE_BOMBER_DATA'],
-  lightfighter: ['meshy-m1-data.js', 'M1_DATA'],
-  medbomber: ['meshy-b3-data.js', 'B3_DATA'],
-  interceptor: ['meshy-stuka-data.js', 'MODEL_DATA'],
-  spitfire: ['meshy-spitfire-data.js', 'MODEL_DATA'],
+  bomber: ['meshy-biplane-bomber-data.ts', 'BIPLANE_BOMBER_DATA'],
+  lightfighter: ['meshy-m1-data.ts', 'M1_DATA'],
+  medbomber: ['meshy-b3-data.ts', 'B3_DATA'],
+  interceptor: ['meshy-stuka-data.ts', 'MODEL_DATA'],
+  spitfire: ['meshy-spitfire-data.ts', 'MODEL_DATA'],
 };
 // The medium bomber's fuselage island also holds the dorsal turret and the fin: one box around
 // it all is far too bulky. Three volumes instead, nose / body / fin, fitted on the model.

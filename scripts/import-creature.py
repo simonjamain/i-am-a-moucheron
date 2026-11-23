@@ -7,7 +7,7 @@ saint-pierre (The Keeper of Wisdom, posed by src/saint-pierre-model.ts). User-su
 GLBs checked by SHA-256. Output keeps the skinned mesh, the Meshy SmartRig
 skeleton with its bind matrices and a 512 px JPEG copy of the 2K texture (the
 original stays in assets/originals/<species>/, outside Git). Gaits are
-procedural (src/ant-model.js, src/spider-model.js, src/roach-model.js).
+procedural (src/ant-model.ts, src/spider-model.ts, src/roach-model.ts).
 
 A species may list its leg chains (`legs`, bone names from hip to foot) and a
 body `hub` bone: each welded shell then keeps only the leg chain it belongs to,
@@ -23,19 +23,19 @@ from meshy_provenance import verify_meshy_source
 SPECIES = {
     'ant': {
         'sha256': '12064094b4fe8ea01f88eabab6760b1ac71d635dc80425d3a92cdc81edb2b4cd',
-        'output': 'src/ant-data.js',
+        'output': 'src/ant-data.ts',
         'constant': 'ANT_DATA',
         'label': 'Ant enemy (Meshy "Red Ant Warrior", rigged, no clip)',
     },
     'spider': {
         'sha256': 'e8d8f32d7739467f6758b4220dc373bfcbacae42a004fdc4d29bbfc36d1c3faa',
-        'output': 'src/spider-data.js',
+        'output': 'src/spider-data.ts',
         'constant': 'SPIDER_DATA',
         'label': 'Spider enemy (Meshy "Spotted Velvet Spider", rigged, no clip)',
     },
     'roach': {
         'sha256': '4ca70cae6e412b2787c81aa7cddd49c7f382b501859a1a8fc29ab3644c155fc3',
-        'output': 'src/roach-data.js',
+        'output': 'src/roach-data.ts',
         'constant': 'ROACH_DATA',
         'label': 'Cockroach enemy (Meshy "Low Poly Cockroach", rigged, no clip)',
         'hub': 'Bone_001',
@@ -50,19 +50,19 @@ SPECIES = {
     },
     'vip-guard': {
         'sha256': 'b12c89068da73b3befee5c88433e2638af02121b9cacbc95339dd4f667adafb0',
-        'output': 'src/vip-guard-data.js',
+        'output': 'src/vip-guard-data.ts',
         'constant': 'VIP_GUARD_DATA',
         'label': 'Purgatory VIP lane guard (Meshy "Guardian in Black", rigged, no clip)',
     },
     'saint-pierre': {
         'sha256': '580e63d0bdda2567fb11ce02e7e9cd1bb3f189fa4bb61cafb1e1d39c6e6319d0',
-        'output': 'src/saint-pierre-data.js',
+        'output': 'src/saint-pierre-data.ts',
         'constant': 'SAINT_PIERRE_DATA',
         'label': 'Saint Pierre, at the purgatory counter (Meshy "The Keeper of Wisdom", rigged, no clip)',
     },
     'spiderling': {
         'sha256': 'eaeaff76e5384386dd19894b7acdf06a6513b675ecd9fd5d069891b4a5d996da',
-        'output': 'src/spiderling-data.js',
+        'output': 'src/spiderling-data.ts',
         'constant': 'SPIDERLING_DATA',
         'label': 'Spiderling enemy (Meshy "Grumpy Spider", rigged, no clip)',
         'hub': 'Bone_001',

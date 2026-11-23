@@ -6,8 +6,8 @@ dist/
 src/route-obstacles.js
 docs/ui-review.html
 # Fichiers générés par les scripts d import (ne pas éditer à la main) ou par assemble.mjs
-src/character-*data.js
-src/howitzer-data.js
-src/meshy-brick-data.js
+src/character-*data.ts
+src/howitzer-data.ts
+src/meshy-brick-data.ts
 docs/ui-review.html
 src/changelog-recent.ts

@@ -1,4 +1,4 @@
-import { MODEL_DATA } from './meshy-gatling-data.js';
+import { MODEL_DATA } from './meshy-gatling-data.ts';
 import { texturedMeshyParts } from './meshy-texture.ts';
 import { GATLING } from './ground-sentry.ts';
 import type * as THREE from 'three';

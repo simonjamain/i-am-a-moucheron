@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import WebSocket from 'ws';
 import { PeerConnection, cleanup } from 'node-datachannel';
 import { createGameServer } from '../server/index.js';
-import { WsClient } from '../src/ws-client.js';
+import { WsClient } from '../src/ws-client.ts';
 import {
   PROTOCOL,
   COMMAND_CHANNEL,

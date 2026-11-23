@@ -1,7 +1,7 @@
 import { ACTOR_UNIT } from './scale.ts';
 import { vehicleUnit } from './fleet.ts';
 import { rotateLocal } from './helicopter.js';
-import { VEHICLE_ANCHORS } from './vehicle-anchors.js';
+import { VEHICLE_ANCHORS } from './vehicle-anchors.ts';
 // Position of the gunner's eye relative to the gun's pivot, in model units.
 export const SIGHT = Object.freeze({ behind: 0.4, above: 0.75, left: 0 });
 export function tankSight(T, mount, direction, up, observation = null) {

@@ -4,7 +4,7 @@ import { Worker, isMainThread, parentPort, workerData } from 'node:worker_thread
 import { prepareRoster } from '../server/wave-preparation.js';
 import { DEFAULT_BALANCE } from '../src/balance.js';
 import { advanceGroundCrowd } from '../src/ground-crowd.js';
-import { newGroundDefense, groundFlow } from '../src/ground-defense-state.js';
+import { newGroundDefense, groundFlow } from '../src/ground-defense-state.ts';
 import { swarmFrame } from '../src/waves.js';
 import { INSECT_SCALE, enemySizeFactor } from '../src/scale.ts';
 

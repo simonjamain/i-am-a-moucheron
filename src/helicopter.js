@@ -3,7 +3,7 @@ import { segmentBox } from './swept-geometry.ts';
 import { MAP, ACTOR_UNIT } from './scale.ts';
 import { PROJECTILES } from './projectiles.ts';
 import { OFFICE_LAYOUT } from './layout.ts';
-import { VEHICLE_ANCHORS } from './vehicle-anchors.js';
+import { VEHICLE_ANCHORS } from './vehicle-anchors.ts';
 export const HELI = Object.freeze({
   gunInterval: 1 / 15,
   gunDamage: PROJECTILES.mg.damage,

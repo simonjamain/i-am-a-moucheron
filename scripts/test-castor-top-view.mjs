@@ -12,7 +12,7 @@ import {
 } from '../src/castor-top-view.ts';
 import { ServiceZones, serviceZoneList } from '../src/service-zones.ts';
 import { CASTOR_SERVICE_RADIUS, SERVICE_RADIUS } from '../src/logistics.ts';
-import { withinService } from '../src/paid-service.js';
+import { withinService } from '../src/paid-service.ts';
 
 // A truck standing on a 5 cm high deck, heading +X (east): the view stays north-up.
 const truck = new T.Vector3(1, 0.05, 2);

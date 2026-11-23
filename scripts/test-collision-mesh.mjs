@@ -10,7 +10,7 @@ import {
   boxTriangles,
 } from '../src/office-collision.ts';
 import { loadRapier } from '../src/physics-world.ts';
-import { MODEL_DATA } from '../src/office-pack-data.js';
+import { MODEL_DATA } from '../src/office-pack-data.ts';
 import { OFFICE_MODELS } from '../src/office-pack-catalog.ts';
 import { LAYOUTS } from '../src/layouts.ts';
 import { ROD } from '../src/office-props.ts';

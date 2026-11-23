@@ -1,5 +1,8 @@
-import { MIDGE_DATA as D } from './midge-data.js';
+import { MIDGE_DATA as D } from './midge-data.ts';
 import { defineCreature, TAU } from './rigged-creature.ts';
+import type { CreatureHelpers, CreaturePose, CreatureRig } from './rigged-creature.ts';
+import type * as THREE from 'three';
+import type { Three } from './types.ts';
 
 // Midge enemy: user-supplied Meshy "Angry Little Fly" with its SmartRig skeleton
 // plus two wing bones added at import. The GLB has no clip: the flight cycle
@@ -48,7 +51,7 @@ export const MIDGE_BONES = Object.freeze({
 });
 
 // Presentation matrix: model metres (feet at y = 0, head +Z) -> game midge units.
-export function presentation(T) {
+export function presentation(T: Three): THREE.Matrix4 {
   const [x, y, z] = MIDGE_MODEL.centre;
   return new T.Matrix4()
     .makeRotationY(Math.PI)
@@ -57,8 +60,8 @@ export function presentation(T) {
 }
 
 // Bind-pose span of a wing (model space): hinge -> farthest vertex of its shell.
-const spans = new WeakMap();
-function wingSpan(T, side) {
+const spans = new WeakMap<Three, THREE.Vector3[]>();
+function wingSpan(T: Three, side: number): THREE.Vector3 {
   let list = spans.get(T);
   if (!list) {
     const geometry = MIDGE.geometry(T);
@@ -83,11 +86,15 @@ function wingSpan(T, side) {
 
 // Model-space rotation deltas of the flight cycle at loop phase t in [0, 1).
 // The fly faces +Z, Y is up, so +X is its left side.
-export function flightPose(T, t, { euler: e } = MIDGE.helpers(T)) {
+export function flightPose(
+  T: Three,
+  t: number,
+  { euler: e }: Pick<CreatureHelpers, 'euler'> = MIDGE.helpers(T),
+): CreaturePose {
   const F = MIDGE_FLIGHT;
   const beat = TAU * F.beats * t; // wing stroke angle
   const slow = TAU * t; // one secondary sway per loop
-  const pose = {};
+  const pose: CreaturePose = {};
   // Stroke: cos = 1 at the top. `sweep` is the angle behind the lateral axis:
   // the wing moves forward during the downstroke (sin > 0) and back on the
   // upstroke, pushing air backwards (forward flight), and pitches (twists
@@ -150,15 +157,18 @@ export const MIDGE = defineCreature(D, {
 
 // One rigged midge (SkinnedMesh): corpses, previews and non-WebGL fallback.
 // `pose(t)` applies the flight cycle at loop phase t.
-export function createMidgeRig(T, material) {
-  const rig = MIDGE.createRig(T, material);
+export interface MidgeRig extends CreatureRig {
+  animate(ms: number, phase?: number): CreatureRig;
+}
+export function createMidgeRig(T: Three, material?: THREE.Material | null): MidgeRig {
+  const rig = MIDGE.createRig(T, material) as MidgeRig;
   // Flight cycle at time `ms` for a midge whose roster phase is in radians.
-  rig.animate = (ms, phase = 0) => rig.pose(ms / 1000 / MIDGE_FLIGHT.loop + phase / TAU);
+  rig.animate = (ms: number, phase = 0) => rig.pose(ms / 1000 / MIDGE_FLIGHT.loop + phase / TAU);
   return rig;
 }
 
-export const bakeFlight = (T, frames) => MIDGE.bake(T, frames);
-export const midgeTexture = (T) => MIDGE.texture(T);
-export const midgeGeometry = (T) => MIDGE.geometry(T);
-export const midgeBoneIndex = (name) => MIDGE.boneIndex(name);
+export const bakeFlight = (T: Three, frames?: number) => MIDGE.bake(T, frames);
+export const midgeTexture = (T: Three) => MIDGE.texture(T);
+export const midgeGeometry = (T: Three) => MIDGE.geometry(T);
+export const midgeBoneIndex = (name: string) => MIDGE.boneIndex(name);
 export const MIDGE_SOURCE = D.source;

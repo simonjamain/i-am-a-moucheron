@@ -7,7 +7,7 @@ import { supportedPlacement } from '../src/equipment.ts';
 import { OFFICE_LAYOUT } from '../src/layout.ts';
 import { createGraphics } from '../src/graphics.js';
 import { createOffice } from '../src/office.ts';
-import { enemyRoute, enemyRoutePosition, PORTALS } from '../src/routes.js';
+import { enemyRoute, enemyRoutePosition, PORTALS } from '../src/routes.ts';
 import { wavePlan, swarmFrame } from '../src/waves.js';
 import { CombatEffects } from '../src/combat.ts';
 const reference = new T.Vector3(820, 0, 0),

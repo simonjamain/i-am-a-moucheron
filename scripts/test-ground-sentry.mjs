@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
 import { Game } from '../server/game.js';
 import { VEHICLES } from '../src/fleet.ts';
-import { newGroundDefense, groundCommand } from '../src/ground-defense-state.js';
+import { newGroundDefense, groundCommand } from '../src/ground-defense-state.ts';
 import { SENTRY, fireGroundSentries } from '../src/ground-sentry.ts';
-import { advancePaidService } from '../src/paid-service.js';
+import { advancePaidService } from '../src/paid-service.ts';
 
 const defense = newGroundDefense();
 assert.throws(

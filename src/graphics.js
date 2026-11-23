@@ -1,10 +1,10 @@
 import { hitUserData } from './insect-hits.ts';
 import { buildMeshyRig, gunMount } from './meshy-rig.ts';
 import { rigWheels } from './aircraft-wheels.ts';
-import { MODEL_DATA as SPITFIRE } from './meshy-spitfire-data.js';
-import { MODEL_DATA as TANK } from './meshy-tank-data.js';
-import { MODEL_DATA as FLAKTRUCK } from './meshy-flaktruck-data.js';
-import { MODEL_DATA as STUKA } from './meshy-stuka-data.js';
+import { MODEL_DATA as SPITFIRE } from './meshy-spitfire-data.ts';
+import { MODEL_DATA as TANK } from './meshy-tank-data.ts';
+import { MODEL_DATA as FLAKTRUCK } from './meshy-flaktruck-data.ts';
+import { MODEL_DATA as STUKA } from './meshy-stuka-data.ts';
 import { AXLE_PARTS } from './tank-gear.ts';
 import { prepareBelts, prepareSuspension } from './track-suspension.ts';
 import { makeH2 } from './h2-model.ts';
@@ -14,7 +14,7 @@ import { makeB3 } from './b3-model.ts';
 import { makeCastorMeshy } from './castor-model.ts';
 import { makeFlyingCastorMeshy } from './flying-castor-model.ts';
 import { createCharacter, CHARACTER_HEIGHT, LEGACY_HEIGHT } from './character-model.ts';
-import { createMidgeRig } from './midge-model.js';
+import { createMidgeRig } from './midge-model.ts';
 import { WALKERS, walkerStride } from './walker-batch.js';
 import { FLYERS } from './flyer-batch.js';
 import { TAU } from './rigged-creature.ts';
@@ -174,7 +174,7 @@ export function createGraphics(T, scene) {
     return makeH2(T, scene, color, box, mat);
   }
   // Remodelled D2: truck towing an articulated trailer whose carriage yaws
-  // and whose twin guns elevate; pivots match src/vehicle-anchors.js.
+  // and whose twin guns elevate; pivots match src/vehicle-anchors.ts.
   function makeFlakTruck() {
     const { root: g, nodes, anchors } = buildMeshyRig(T, FLAKTRUCK, 'flaktruck');
     g.userData = {

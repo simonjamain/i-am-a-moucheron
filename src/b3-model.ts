@@ -1,4 +1,4 @@
-import { B3_DATA } from './meshy-b3-data.js';
+import { B3_DATA } from './meshy-b3-data.ts';
 import { buildMeshyRig, gunMount } from './meshy-rig.ts';
 import type * as THREE from 'three';
 import type { Three } from './types.ts';

@@ -1,6 +1,6 @@
 import { MAP, INSECT_SCALE, enemySizeFactor, GROUND_FOOT_DEPTH } from './scale.ts';
 import { powerTable } from './enemy-power.ts';
-import { enemyRoutePosition, routeDuration } from './routes.js';
+import { enemyRoutePosition, routeDuration } from './routes.ts';
 const SPECIES = {
   ant: {
     name: 'Fourmi',

@@ -1,16 +1,16 @@
 // Meshy mosquito: provenance, rigid wings, body freed from the wing
 // and leg bones, procedural flight cycle, VAT bake, batched proxies and
-// ellipsoid hits (src/mosquito-model.js, src/flyer-batch.js, scripts/import-mosquito.py).
+// ellipsoid hits (src/mosquito-model.ts, src/flyer-batch.js, scripts/import-mosquito.py).
 import assert from 'node:assert/strict';
 import * as T from '../vendor/three.module.min.js';
-import { MOSQUITO_DATA } from '../src/mosquito-data.js';
+import { MOSQUITO_DATA } from '../src/mosquito-data.ts';
 import {
   MOSQUITO,
   MOSQUITO_BONES,
   MOSQUITO_FLIGHT,
   MOSQUITO_HIT,
   mosquitoFlightPose,
-} from '../src/mosquito-model.js';
+} from '../src/mosquito-model.ts';
 import { FLYERS, FlyerBatch } from '../src/flyer-batch.js';
 import { createGraphics } from '../src/graphics.js';
 import { nearestInsectHit } from '../src/insect-hits.ts';

@@ -7,7 +7,7 @@ import {
   swarmFrame,
   wavePlan,
 } from '../src/waves.js';
-import { enemyRoute, enemyRoutePosition, routeDuration } from '../src/routes.js';
+import { enemyRoute, enemyRoutePosition, routeDuration } from '../src/routes.ts';
 import { DEFAULT_BALANCE, retimeRoster, scaleRoster } from '../src/balance.js';
 
 // The game office is in world metres, not creature-scaled dimensions.

@@ -1,9 +1,9 @@
 import { WALL_SEGMENT, HALF_BRICK, wallLength, wallVisualRuns } from './brick-rules.ts';
-import { createGroundModel } from './ground-model.js';
+import { createGroundModel } from './ground-model.ts';
 import { ModelPreview } from './model-preview.ts';
 import { groundPlacement, airdropPlacement } from './ground-placement.js';
 import { deliveryHeightAt } from './delivery.ts';
-import { lengthPrice } from './ground-defense-state.js';
+import { lengthPrice } from './ground-defense-state.ts';
 import { BRICK_PITCH } from './brick-wall.ts';
 import {
   sentryAimAngles,

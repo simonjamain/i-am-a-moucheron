@@ -82,7 +82,7 @@ Les jobs CI de benchmark et de capacité (`50-player snapshot comparison`,
 performances ; ils ne remplacent pas les tests de règles.
 `npm run format:check` est la seule commande de format, en local et
 en CI (job `Full game regression and formatting`) ; les données générées
-(`src/*data.js` importées, `docs/ui-review.html`) sont dans `.prettierignore`.
+(`src/*data.ts` importées, `docs/ui-review.html`) sont dans `.prettierignore`.
 Le job `Docker build` démarre l'image construite et vérifie `/healthz`
 (`ok`, `storage=ram`, `transport=webrtc-udp`) et le 410 de `/api/join` : il prouve
 que l'image démarre, pas les pairs UDP dans le conteneur, WebGL ni le WAN.

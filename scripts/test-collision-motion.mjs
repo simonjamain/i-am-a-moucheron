@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import * as T from '../vendor/three.module.min.js';
 import { loadRapier, PhysicsWorld, toPhysics } from '../src/physics-world.ts';
 import { DecorCollision, sweptHitsDecor } from '../src/office-collision.ts';
-import { MODEL_DATA } from '../src/office-pack-data.js';
+import { MODEL_DATA } from '../src/office-pack-data.ts';
 import { LAYOUTS, layoutSolids, setActiveLayout } from '../src/layouts.ts';
 import { resolveLanding, stepWalker } from '../src/sortie.ts';
 import { ACTOR_UNIT, MAP } from '../src/scale.ts';

@@ -1,5 +1,5 @@
-import { PORTALS, portalExit } from './routes.js';
-import { groundFlow, navigationStructures, previewStructures } from './ground-defense-state.js';
+import { PORTALS, portalExit } from './routes.ts';
+import { groundFlow, navigationStructures, previewStructures } from './ground-defense-state.ts';
 
 // A placement draft is local. Only the next authoritative snapshot changes
 // the paths shown to the other players. The server walks the same smoothed

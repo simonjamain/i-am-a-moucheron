@@ -18,7 +18,7 @@ ne changent pas : ils dérivent de l'ancien chasseur léger conservé comme réf
 
 `scripts/import-meshy-vehicle.py biplane|biplanebomber SOURCE.glb` conserve chaque
 triangle et les UV d'origine (atlas JPEG 1 024 px) et écrit
-`src/meshy-biplane-data.js` et `src/meshy-biplane-bomber-data.js` ; `src/biplane-model.ts`
+`src/meshy-biplane-data.ts` et `src/meshy-biplane-bomber-data.ts` ; `src/biplane-model.ts`
 construit les rigs. Les fichiers `m1-model.ts`, `b3-model.ts` et leurs données, retirés en 275,
 sont restaurés en 327 pour les deux avions d'achat.
 

@@ -133,7 +133,7 @@ data = {
     'parts': out_parts,
     'texture': 'data:image/jpeg;base64,' + base64.b64encode(out.getvalue()).decode(),
 }
-Path('src/howitzer-data.js').write_text(
+Path('src/howitzer-data.ts').write_text(
     '// Anti-materiel howitzer (issue #113): user-supplied Meshy GLB split into moving\n'
     '// parts by scripts/import-howitzer.py. Do not edit by hand.\n'
     'export const HOWITZER_DATA = ' + json.dumps(data, separators=(',', ':')) + ';\n')

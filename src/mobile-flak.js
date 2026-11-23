@@ -1,7 +1,7 @@
 import { rotateLocal } from './helicopter.js';
 import { VEHICLES } from './fleet.ts';
 import { MAP, ACTOR_UNIT } from './scale.ts';
-import { VEHICLE_ANCHORS } from './vehicle-anchors.js';
+import { VEHICLE_ANCHORS } from './vehicle-anchors.ts';
 
 // D2 geometry shared with its model: trailer hitch, gun pivot and hulls.
 const D2 = VEHICLE_ANCHORS.flaktruck;

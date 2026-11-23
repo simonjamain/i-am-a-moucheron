@@ -6,7 +6,7 @@ import { FORTIFICATIONS } from '../src/ground-fortifications.ts';
 import { stationAccess, stationEntryOffset, stationExit } from '../src/sortie.ts';
 import { ACTOR_UNIT, MAP } from '../src/scale.ts';
 import { OFFICE_LAYOUT } from '../src/layout.ts';
-import { advancePaidService } from '../src/paid-service.js';
+import { advancePaidService } from '../src/paid-service.ts';
 
 let now = 100000;
 const game = new Game({ now: () => now });

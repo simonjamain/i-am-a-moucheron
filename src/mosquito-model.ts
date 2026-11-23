@@ -1,5 +1,8 @@
-import { MOSQUITO_DATA as D } from './mosquito-data.js';
+import { MOSQUITO_DATA as D } from './mosquito-data.ts';
 import { defineCreature, TAU } from './rigged-creature.ts';
+import type { CreatureHelpers, CreaturePose } from './rigged-creature.ts';
+import type * as THREE from 'three';
+import type { Three } from './types.ts';
 
 // Mosquito: user-supplied Meshy "Low Poly Mosquito" with its 62-bone SmartRig
 // (no clip). Weights are cleaned at import (scripts/import-mosquito.py): each
@@ -50,7 +53,7 @@ export const MOSQUITO_BONES = Object.freeze({
 });
 
 // Presentation matrix: model metres (feet at y = 0, head +Z) -> game units.
-export function presentation(T) {
+export function presentation(T: Three): THREE.Matrix4 {
   const [x, y, z] = MOSQUITO_MODEL.centre;
   const s = MOSQUITO_MODEL.scale;
   return new T.Matrix4()
@@ -60,8 +63,8 @@ export function presentation(T) {
 }
 
 // Bind-pose span of a wing (model space): hinge -> farthest vertex.
-const spans = new WeakMap();
-export function wingSpan(T, side) {
+const spans = new WeakMap<Three, THREE.Vector3[]>();
+export function wingSpan(T: Three, side: number): THREE.Vector3 {
   let list = spans.get(T);
   if (!list) {
     const geometry = MOSQUITO.geometry(T);
@@ -86,11 +89,15 @@ export function wingSpan(T, side) {
 }
 
 // Model-space rotation deltas of the flight cycle at loop phase t in [0, 1).
-export function mosquitoFlightPose(T, t, { euler: e } = MOSQUITO.helpers(T)) {
+export function mosquitoFlightPose(
+  T: Three,
+  t: number,
+  { euler: e }: Pick<CreatureHelpers, 'euler'> = MOSQUITO.helpers(T),
+): CreaturePose {
   const F = MOSQUITO_FLIGHT;
   const beat = TAU * F.beats * t;
   const slow = TAU * t;
-  const pose = {};
+  const pose: CreaturePose = {};
   const stroke = Math.cos(beat);
   const elevation = F.wingDown + ((F.wingUp - F.wingDown) * (1 + stroke)) / 2;
   const sweep = F.wingSweep - F.wingSweepRange * Math.sin(beat);

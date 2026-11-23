@@ -1,4 +1,4 @@
-import { PORTALS, portalExit } from './routes.js';
+import { PORTALS, portalExit } from './routes.ts';
 import { activeLayout } from './layouts.ts';
 import { PheromoneTrails } from './pheromone-trail.ts';
 

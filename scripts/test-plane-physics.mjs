@@ -5,12 +5,12 @@ import * as T from '../vendor/three.module.min.js';
 import { mouseFlightControls } from '../src/mouse-flight.ts';
 import { MAP } from '../src/scale.ts';
 import { VEHICLES } from '../src/fleet.ts';
-import { BIPLANE_DATA } from '../src/meshy-biplane-data.js';
-import { BIPLANE_BOMBER_DATA } from '../src/meshy-biplane-bomber-data.js';
-import { M1_DATA } from '../src/meshy-m1-data.js';
-import { B3_DATA } from '../src/meshy-b3-data.js';
-import { MODEL_DATA as STUKA } from '../src/meshy-stuka-data.js';
-import { MODEL_DATA as SPITFIRE } from '../src/meshy-spitfire-data.js';
+import { BIPLANE_DATA } from '../src/meshy-biplane-data.ts';
+import { BIPLANE_BOMBER_DATA } from '../src/meshy-biplane-bomber-data.ts';
+import { M1_DATA } from '../src/meshy-m1-data.ts';
+import { B3_DATA } from '../src/meshy-b3-data.ts';
+import { MODEL_DATA as STUKA } from '../src/meshy-stuka-data.ts';
+import { MODEL_DATA as SPITFIRE } from '../src/meshy-spitfire-data.ts';
 import { loadRapier, toPhysics } from '../src/physics-world.ts';
 import {
   PLANE_TYPES,

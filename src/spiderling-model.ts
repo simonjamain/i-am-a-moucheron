@@ -1,6 +1,12 @@
-import { SPIDERLING_DATA as D } from './spiderling-data.js';
+import { SPIDERLING_DATA as D } from './spiderling-data.ts';
 import { defineCreature, TAU } from './rigged-creature.ts';
+import type { CreatureHelpers } from './rigged-creature.ts';
 import { walkLegs, groundPresentation, REST_PHASES } from './walker-gait.ts';
+import type { GaitHelpers, Pose } from './walker-gait.ts';
+import type { Three } from './types.ts';
+
+// lowest() of the creature helpers may return null; the gait expects a bone tip.
+type WalkerHelpers = CreatureHelpers & GaitHelpers;
 
 // Spiderling (hatched by an egg-laying spider): user-supplied Meshy "Grumpy
 // Spider" with its 29-bone SmartRig (no clip). Same walker chain as the big
@@ -47,11 +53,11 @@ export const SPIDERLING_BONES = Object.freeze({
   ],
 });
 
-export function spiderlingWalkPose(T, t, h) {
+export function spiderlingWalkPose(T: Three, t: number, h: WalkerHelpers): Pose {
   const e = h.euler;
   const step = TAU * 2 * t;
   const cycle = TAU * t;
-  const pose = {};
+  const pose: Pose = {};
   // Light body: a quick bounce on each step and a small roll.
   const body = {
     pivot: h.bind(SPIDERLING_BONES.root),

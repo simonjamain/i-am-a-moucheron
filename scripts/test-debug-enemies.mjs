@@ -2,9 +2,9 @@
 // take every hit and keep the wave open until removed; live enemies keep their
 // HP and speed and head for the bin (walkers on the floor, flyers through the
 // nearest corridor). Server rules, roster entries and routes
-// (src/debug-enemies.ts, server/game.js labCommand, src/routes.js).
+// (src/debug-enemies.ts, server/game.js labCommand, src/routes.ts).
 import { modelTriangles } from '../src/office-collision.ts';
-import { MODEL_DATA } from '../src/office-pack-data.js';
+import { MODEL_DATA } from '../src/office-pack-data.ts';
 import { OFFICE_LAYOUT } from '../src/layout.ts';
 import assert from 'node:assert/strict';
 import { Game } from '../server/game.js';
@@ -17,7 +17,7 @@ import {
 } from '../src/debug-enemies.ts';
 import { ENEMY_TYPES, swarmFrame } from '../src/waves.js';
 import { DEFAULT_BALANCE } from '../src/balance.js';
-import { enemyRoute, PORTALS } from '../src/routes.js';
+import { enemyRoute, PORTALS } from '../src/routes.ts';
 import { fireGroundSentries, SENTRY } from '../src/ground-sentry.ts';
 import { GROUND_BOUNDS } from '../src/ground-defense.ts';
 

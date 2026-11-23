@@ -22,7 +22,7 @@ L'historique ci-dessous décrit la version précédente.
 
 Le modèle livré contient **27 902 triangles** (hors canon articulé), son atlas
 JPEG d'origine ramené à 1 024 px et ses UV. Les UV, indices et positions sont
-compactés en 16 bits dans `src/meshy-h2-data.js`. Un seul jeu de matériaux et
+compactés en 16 bits dans `src/meshy-h2-data.ts`. Un seul jeu de matériaux et
 de géométries est partagé ; chaque appareil possède sa propre articulation
 et sa pastille. Les cartes PBR additionnelles ne sont pas chargées.
 

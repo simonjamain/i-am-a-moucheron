@@ -19,10 +19,10 @@ import { stepFlight } from '../src/flight.ts';
 import { swarmAudioGroups } from '../src/game-audio/swarm.ts';
 import { AircraftFire } from '../src/aircraft-fire.ts';
 import { wavePlan, swarmFrame } from '../src/waves.js';
-import { collisionDamage } from '../src/vehicle-care.js';
+import { collisionDamage } from '../src/vehicle-care.ts';
 import { ballisticMarks } from '../src/tank-reticle.js';
 import { integrateOrdnance } from '../src/ordnance.js';
-import { PurchaseUI } from '../src/purchase-ui.js';
+import { PurchaseUI } from '../src/purchase-ui.ts';
 let now = 100000;
 const game = new Game({ now: () => now, solids: OFFICE_SOLIDS });
 const a = game.join({ code: 'CLEAN', name: 'A' }),

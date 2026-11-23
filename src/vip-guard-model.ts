@@ -3,7 +3,7 @@
 // stands at the rope gate: a slow breath lifts his chest and shoulders, and
 // every few seconds he looks along the queue then back. The model faces +Z,
 // feet at y = 0 (model metres).
-import { VIP_GUARD_DATA as D } from './vip-guard-data.js';
+import { VIP_GUARD_DATA as D } from './vip-guard-data.ts';
 import { defineCreature, TAU } from './rigged-creature.ts';
 import type { CreaturePose, CreatureHelpers } from './rigged-creature.ts';
 import { WALK_WORLDS } from './scale.ts';

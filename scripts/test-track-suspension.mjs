@@ -141,7 +141,7 @@ for (const wheel of g.userData.runningGear) {
   );
   assert.ok(Math.max(-box.min.x, box.max.x) > 0.12, 'hub in the wheel: ' + wheel.name);
 }
-const { MODEL_DATA } = await import('../src/meshy-tank-data.js');
+const { MODEL_DATA } = await import('../src/meshy-tank-data.ts');
 const { rigHubs } = await import('./rig-tank-hubs.mjs');
 assert.throws(() => rigHubs(MODEL_DATA), /already done|expected one hub/, 'hubs already moved');
 console.log('track suspension ok');

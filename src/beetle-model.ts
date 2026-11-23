@@ -1,5 +1,8 @@
-import { BEETLE_DATA as D } from './beetle-data.js';
+import { BEETLE_DATA as D } from './beetle-data.ts';
 import { defineCreature, TAU } from './rigged-creature.ts';
+import type { CreatureHelpers, CreaturePose } from './rigged-creature.ts';
+import type * as THREE from 'three';
+import type { Three } from './types.ts';
 
 // Armoured beetle (`brute`): user-supplied Meshy "Low Poly Cockroach" (a blue
 // and orange beetle) with its 48-bone SmartRig plus two hind-wing bones added at
@@ -47,7 +50,7 @@ export const BEETLE_BONES = Object.freeze({
 });
 
 // Presentation matrix: model metres (feet at y = 0, head +Z) -> game units.
-export function presentation(T) {
+export function presentation(T: Three): THREE.Matrix4 {
   const [x, y, z] = BEETLE_MODEL.centre;
   const s = BEETLE_MODEL.scale;
   return new T.Matrix4()
@@ -57,8 +60,8 @@ export function presentation(T) {
 }
 
 // Bind-pose span of a hind wing (model space): hinge -> farthest vertex.
-const spans = new WeakMap();
-export function wingSpan(T, side) {
+const spans = new WeakMap<Three, THREE.Vector3[]>();
+export function wingSpan(T: Three, side: number): THREE.Vector3 {
   let list = spans.get(T);
   if (!list) {
     const geometry = BEETLE.geometry(T);
@@ -82,11 +85,15 @@ export function wingSpan(T, side) {
 }
 
 // Model-space rotation deltas of the flight cycle at loop phase t in [0, 1).
-export function beetleFlightPose(T, t, { euler: e } = BEETLE.helpers(T)) {
+export function beetleFlightPose(
+  T: Three,
+  t: number,
+  { euler: e }: Pick<CreatureHelpers, 'euler'> = BEETLE.helpers(T),
+): CreaturePose {
   const F = BEETLE_FLIGHT;
   const beat = TAU * F.beats * t; // wing stroke angle
   const slow = TAU * t; // one secondary sway per loop
-  const pose = {};
+  const pose: CreaturePose = {};
   // Stroke: cos = 1 at the top. The wing moves forward on the downstroke
   // (sin > 0) and back on the upstroke, and twists about its span at the turns.
   const stroke = Math.cos(beat);

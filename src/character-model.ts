@@ -1,4 +1,4 @@
-import { CHARACTER_DATA as COWBOY } from './character-data.js';
+import { CHARACTER_DATA as COWBOY } from './character-data.ts';
 import { DEFAULT_APPEARANCE, appearanceId } from './character-appearances.ts';
 import type * as THREE from 'three';
 import type { AppearanceId } from './character-appearances.ts';
@@ -17,7 +17,7 @@ export interface CharacterClipData {
   duration: number;
   tracks: readonly CharacterTrackData[];
 }
-/** An imported appearance (character-*-data.js). */
+/** An imported appearance (character-*-data.ts). */
 export interface CharacterData extends RiggedMeshData {
   clips: Record<string, CharacterClipData>;
 }
@@ -61,13 +61,13 @@ export const GAIT = Object.freeze({ walk: 0.35, run: 3, walkClip: 1.4, runClip: 
 
 // Literal specifiers so scripts/assemble.mjs can version and check them.
 const LOADERS: Partial<Record<AppearanceId, () => Promise<{ CHARACTER_DATA: CharacterData }>>> = {
-  frontier: () => import('./character-frontier-data.js'),
-  'sky-pilot': () => import('./character-sky-pilot-data.js'),
-  toby: () => import('./character-toby-data.js'),
-  sunny: () => import('./character-sunny-data.js'),
-  aviator: () => import('./character-aviator-data.js'),
-  signaler: () => import('./character-signaler-data.js'),
-  operator: () => import('./character-operator-data.js'),
+  frontier: () => import('./character-frontier-data.ts'),
+  'sky-pilot': () => import('./character-sky-pilot-data.ts'),
+  toby: () => import('./character-toby-data.ts'),
+  sunny: () => import('./character-sunny-data.ts'),
+  aviator: () => import('./character-aviator-data.ts'),
+  signaler: () => import('./character-signaler-data.ts'),
+  operator: () => import('./character-operator-data.ts'),
 };
 const DATA = new Map<AppearanceId, CharacterData>([[DEFAULT_APPEARANCE, COWBOY]]);
 const pending = new Map<AppearanceId, Promise<AppearanceId>>();

@@ -5,11 +5,11 @@ import { readFileSync } from 'node:fs';
 import * as T from '../vendor/three.module.min.js';
 import { Game } from '../server/game.js';
 import { VEHICLES } from '../src/fleet.ts';
-import { newGroundDefense, groundCommand } from '../src/ground-defense-state.js';
+import { newGroundDefense, groundCommand } from '../src/ground-defense-state.ts';
 import { SENTRY, GATLING, fireGroundSentries } from '../src/ground-sentry.ts';
-import { advancePaidService } from '../src/paid-service.js';
+import { advancePaidService } from '../src/paid-service.ts';
 import { AIRDROP_KINDS, airdropCommand } from '../src/airdrop.ts';
-import { MODEL_DATA } from '../src/meshy-gatling-data.js';
+import { MODEL_DATA } from '../src/meshy-gatling-data.ts';
 import {
   createGatlingModel,
   stepGatlingSpin,
@@ -20,7 +20,7 @@ import {
 } from '../src/gatling-model.ts';
 import { GroundDefenseUI } from '../src/ground-defense-ui.js';
 import { synthesize, AUDIO_PROFILES } from '../src/game-audio/synth.ts';
-import { createGroundModel } from '../src/ground-model.js';
+import { createGroundModel } from '../src/ground-model.ts';
 import { swarmFrame } from '../src/waves.js';
 
 // --- Règles demandées -------------------------------------------------------

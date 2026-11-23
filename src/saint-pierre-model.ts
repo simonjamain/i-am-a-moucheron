@@ -5,7 +5,7 @@
 // soul he serves, a short walk when he moves to the other window, and the right
 // arm stamping while he serves an insect. The model faces +Z (the souls), +X is
 // his left side; feet at y = 0 (model metres).
-import { SAINT_PIERRE_DATA as D } from './saint-pierre-data.js';
+import { SAINT_PIERRE_DATA as D } from './saint-pierre-data.ts';
 import { defineCreature, TAU } from './rigged-creature.ts';
 import type { CreaturePose, CreatureRig } from './rigged-creature.ts';
 import { WALK_WORLDS } from './scale.ts';

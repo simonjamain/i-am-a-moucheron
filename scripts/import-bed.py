@@ -41,7 +41,7 @@ def main():
         'doubleSided': True, 'parts': [part],
         'texture': 'data:image/jpeg;base64,' + base64.b64encode(atlas.getvalue()).decode(),
     }
-    output = Path('src/meshy-bed-data.js')
+    output = Path('src/meshy-bed-data.ts')
     output.write_text('// Imported by scripts/import-bed.py; original triangles and UV retained.\n// prettier-ignore\nexport const MODEL_DATA = ' + json.dumps(data, separators=(',', ':')) + ';\n')
     print(json.dumps({'sourceSha256': sha, 'triangles': len(faces), 'bounds': data['bounds'], 'textureBytes': len(atlas.getvalue()), 'moduleBytes': output.stat().st_size}))
 

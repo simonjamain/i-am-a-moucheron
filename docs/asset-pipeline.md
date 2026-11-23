@@ -107,7 +107,7 @@ Premier asset passé par la règle ci-dessus ([issue #99](https://github.com/sim
   En jeu : pas `BRICK_PITCH` = 24 mm, rangée `BRICK_ROW` = 6 mm (corps), profondeur
   `BRICK_DEPTH` = 12 mm ; tenons visibles sur la rangée supérieure.
 - Import : `PYTHONPATH=scripts python3 scripts/import-meshy-brick.py <GLB>` vérifie
-  l'empreinte et écrit `src/meshy-brick-data.js` ; `scripts/test-brick-model.mjs`
+  l'empreinte et écrit `src/meshy-brick-data.ts` ; `scripts/test-brick-model.mjs`
   contrôle provenance, orientation et proportions.
 
 ## Personnage joueur (Meshy + Mixamo)
@@ -132,7 +132,7 @@ ne sont pas affichés : ils ne sont lus que par les lecteurs d'écran.
 
 - Import : `PYTHONPATH=scripts python3 scripts/import-character.py <id> <GLB>`
   vérifie l'empreinte (table `CHARACTERS` du script) et écrit
-  `src/character-data.js` (défaut, 493 Ko) ou `src/character-<id>-data.js`
+  `src/character-data.ts` (défaut, 493 Ko) ou `src/character-<id>-data.ts`
   (310 à 415 Ko) : positions/UV float32, poids sur 8 bits, rotations quantifiées en
   int16, translation des hanches seule, texture de base 1024 px en JPEG (les cartes
   métal/rugosité et normales des originaux ne sont pas reprises). Clips gardés :
@@ -154,7 +154,7 @@ ne sont pas affichés : ils ne sont lus que par les lecteurs d'écran.
   affichée vers la direction de marche (constante de temps 1/12 s).
 - Intégration : `graphics.humanoid(color, saint, appearance)` renvoie un groupe qui
   porte le modèle et l'échange sur place au changement d'apparence. Le sélecteur de
-  l'accueil (`src/appearance-picker.js`) dessine, après chaque image, directement
+  l'accueil (`src/appearance-picker.ts`) dessine, après chaque image, directement
   dans le canevas du jeu (viewport et ciseaux sur son rectangle) ; la page laisse ce
   rectangle transparent (couleur du panneau en `box-shadow`, trou de masque dans
   l'ombre latérale) et un quadrilatère y recompose, sur l'image du jeu, l'ombre
@@ -179,11 +179,11 @@ Premier modèle d'animal ; modèle « Angry Little Fly » fourni par l'utilisate
   sommets les plus internes de la coque, et y lie ces sommets à 100 %.
   Aucune géométrie, UV ni texture n'est modifiée.
 - Import : `PYTHONPATH=scripts python3 scripts/import-midge.py <GLB>` vérifie
-  l'empreinte et écrit `src/midge-data.js` (192 Ko : positions/UV float32, poids
+  l'empreinte et écrit `src/midge-data.ts` (192 Ko : positions/UV float32, poids
   8 bits renormalisés, texture JPEG 512 px de 72 Ko). Pas de simplification :
   modèle déjà léger, monobloc articulé (l'outil Docker le refuserait sans
   régions), et il n'y a volontairement aucun niveau de détail (voir Rendu).
-- Vol (`src/midge-model.js`) : cycle procédural posé sur les os, boucle de 1 s
+- Vol (`src/midge-model.ts`) : cycle procédural posé sur les os, boucle de 1 s
   contenant 7 battements (7 Hz). Ailes : élévation de −11° à +54°, balayage
   avant/arrière et torsion aux retournements (pointe en huit). Corps qui monte à
   chaque battement et tangue lentement, abdomen ondulant, tête et antennes
@@ -221,7 +221,7 @@ un `InstancedMesh` par espèce, ombres via un matériau de profondeur dédié).
   (`e8d8f32d…3faa`, 1 471 triangles, 30 os). Tête vers +Z, Y vers le haut, pieds à
   y = 0, textures PNG 2K réduites en JPEG 512 px (66 et 57 Ko).
 - Import : `PYTHONPATH=scripts python3 scripts/import-creature.py ant|spider <GLB>`
-  écrit `src/ant-data.js` (199 Ko) et `src/spider-data.js` (166 Ko). Aucune
+  écrit `src/ant-data.ts` (199 Ko) et `src/spider-data.ts` (166 Ko). Aucune
   géométrie, UV ni os ajouté ; pas de simplification (modèles légers, monoblocs
   articulés que l'outil Docker refuserait sans régions).
 - Os (`ANT_BONES`, `SPIDER_BONES`) : fourmi — 6 pattes hanche/genou/tarse,
@@ -272,12 +272,12 @@ fourmi ; il remplace le cafard procédural (anciennement une fourmi agrandie).
   quatre os (hanche, genou/tibia, tarse, pied), tête, antennes à cinq segments,
   abdomen à deux segments. Texture JPEG 512 px (58 Ko).
 - Import : `PYTHONPATH=scripts python3 scripts/import-creature.py roach <GLB>` écrit
-  `src/roach-data.js`. Le rig Meshy répartissait des poids sur les os de pattes
+  `src/roach-data.ts`. Le rig Meshy répartissait des poids sur les os de pattes
   voisines et portait la carapace par les hanches : l'espèce déclare ses chaînes
   de pattes et un os moyeu (`Bone_001`), et chaque coque soudée ne garde que sa
   propre chaîne, le reste allant au moyeu (537 influences). Géométrie, UV et
   texture inchangées ; fourmi et araignée ne sont pas concernées.
-- Marche (`src/roach-model.js`) : démarche tripode comme la fourmi, foulée
+- Marche (`src/roach-model.ts`) : démarche tripode comme la fourmi, foulée
   0,6 m-modèle, corps bas, abdomen qui balance, tête qui hoche, longues antennes
   qui balaient en ondulant ; cadence apparente plafonnée à 9 cycles/s.
 - Échelle : facteur 0,52 (2,1 unités antennes comprises, comme la fourmi ; le
@@ -304,12 +304,12 @@ rejoue un clip au lieu d'une démarche calculée.
   os). Export Blender : armature à l'échelle 0,01 tournée depuis Z-haut, et
   échelle constante 1,8233 sur `Hips` pendant le clip. Texture JPEG 512 px (54 Ko).
 - Import : `PYTHONPATH=scripts python3 scripts/import-rat.py <GLB>` écrit
-  `src/rat-data.js`. Squelette de repos sans échelle (mètres-modèle, ×100) et
+  `src/rat-data.ts`. Squelette de repos sans échelle (mètres-modèle, ×100) et
   matrices de liaison recalculées ; poids, UV et géométrie inchangés. Le clip
   (« Armature|Unreal Take|baselayer », 1 s, 31 clés, sur place) est rééchantillonné
   en transformations monde de chaque os aux 30 clés, divisées par l'échelle de
   `Hips` (remise à l'échelle uniforme, aspect inchangé).
-- Cycle (`src/rat-model.js`) : la pose interpole les clés et les convertit en deltas
+- Cycle (`src/rat-model.ts`) : la pose interpole les clés et les convertit en deltas
   pour `rigged-creature` ; le test vérifie que chaque os retombe sur le clip.
   Seule retouche : au décollement, les orteils arrière pointent vers le bas, 8 cm
   sous les semelles posées ; ils pivotent sur l'axe latéral juste assez pour rester
@@ -340,12 +340,12 @@ supprimé). Même chaîne que l'araignée pondeuse.
   `eaeaff76…96da`), 280 triangles, 524 sommets, SmartRig de 29 os, texture JPEG
   512 px (47 Ko). Tête vers +Z.
 - Import : `PYTHONPATH=scripts python3 scripts/import-creature.py spiderling <GLB>`
-  écrit `src/spiderling-data.js`. Meshy a donné à la patte 2 +X deux chaînes d'os
+  écrit `src/spiderling-data.ts`. Meshy a donné à la patte 2 +X deux chaînes d'os
   superposées (mêmes pivots) et réparti sa coque entre elles : la nouvelle option
   `alias` de l'espèce replie `Bone_008`/`007`/`006` sur `Bone_014`/`013`/`012`
   (107 influences). Puis chaque coque ne garde que sa chaîne, le reste allant au
   moyeu `Bone_001` (435 influences). Ant, araignée et cafard ne sont pas concernés.
-- Marche (`src/spiderling-model.js`) : démarche tétrapode des six pattes à trois os,
+- Marche (`src/spiderling-model.ts`) : démarche tétrapode des six pattes à trois os,
   foulée 0,7 m-modèle, cadence plafonnée à 10 cycles/s. La paire avant, courte (deux
   os), plongeait sous le sol avec le calcul de pas : elle est animée à part, en
   palpes levées qui tâtent le sol. Présentation relevée de 0,025 unité comme le
@@ -369,7 +369,7 @@ sans clip : aucune génération ni crédit Meshy de notre côté.
   `580e63d0…19d0`), 1 495 triangles, 1 832 sommets, SmartRig de 39 os, texture PNG 2K
   réduite en JPEG 512 px (97 Ko). Pieds à y = 0, 1,7 m, face vers +Z.
 - Import : `PYTHONPATH=scripts python3 scripts/import-creature.py saint-pierre <GLB>`
-  écrit `src/saint-pierre-data.js` (219 Ko).
+  écrit `src/saint-pierre-data.ts` (219 Ko).
 - Pose (`src/saint-pierre-model.ts`) : respiration, regard, marche et tampon procéduraux
   par `defineCreature`. Os utilisés : bassin `Bone_000`, colonne `Bone_003`, poitrine
   `Bone_002`, cou `Bone_020`, tête `Bone_019` ; bras gauche (+X) `Bone_025` → `Bone_021`,
@@ -389,7 +389,7 @@ aucune génération ni crédit Meshy de notre côté.
   `b12c8906…afb0`), 1 479 triangles, 1 871 sommets, SmartRig de 48 os, texture PNG
   2K réduite en JPEG 512 px (80 Ko). Pieds à y = 0, 1,7 m auréole comprise.
 - Import : `PYTHONPATH=scripts python3 scripts/import-creature.py vip-guard <GLB>`
-  écrit `src/vip-guard-data.js` (197 Ko).
+  écrit `src/vip-guard-data.ts` (197 Ko).
 - Pose (`src/vip-guard-model.ts`) : attente procédurale par `defineCreature`
   (respiration, regards), aucune pièce mobile autre que le squelette. Os utilisés :
   colonne `Bone_005`, poitrine `Bone_004`, cou `Bone_029`, tête `Bone_028`, épaules
@@ -407,7 +407,7 @@ Modèle fourni par l'utilisateur, déjà riggé par Meshy, sans clip ; il rempla
   598 triangles, 872 sommets, SmartRig de 48 os, texture PNG 2K réduite en JPEG
   512 px (58 Ko). Tête vers +Z, Y vers le haut, pieds à y = 0.
 - Import : `PYTHONPATH=scripts python3 scripts/import-beetle.py <GLB>` écrit
-  `src/beetle-data.js` (124 Ko). Deux corrections de poids, sans toucher géométrie,
+  `src/beetle-data.ts` (124 Ko). Deux corrections de poids, sans toucher géométrie,
   UV ni texture : chaque aile membraneuse (coque séparée de 28 et 29 sommets, pondérée
   par Meshy sur un mélange d'os d'aile, d'élytre et de patte) reçoit son os
   `Wing_L` (+X) ou `Wing_R` (−X), enfant du thorax `Bone_002`, charnière aux sommets
@@ -415,7 +415,7 @@ Modèle fourni par l'utilisateur, déjà riggé par Meshy, sans clip ; il rempla
   thorax les poids qu'elle portait sur les os de pattes animés (223 influences),
   pour que les pattes ne tirent jamais la carapace. Pas de simplification :
   modèle très léger, monobloc articulé.
-- Vol (`src/beetle-model.js`) : boucle de 1 s, 6 battements (plus lent et lourd
+- Vol (`src/beetle-model.ts`) : boucle de 1 s, 6 battements (plus lent et lourd
   que le moucheron), 60 images. Ailes de −14° à +46° avec balayage avant/arrière et
   torsion aux retournements. Comme une cétoine, il vole **élytres fermées** : elles
   font partie de la coque du corps, les ouvrir déchirerait le maillage. Corps cabré
@@ -448,14 +448,14 @@ Modèle fourni par l'utilisateur, déjà riggé par Meshy, sans clip ; il rempla
   Bee »), SHA-256 `a126aa44…2821d`. 582 triangles, 874 sommets, SmartRig de 45 os,
   texture réduite en JPEG 512 px (73 Ko). Tête vers +Z, Y vers le haut.
 - Import : `PYTHONPATH=scripts python3 scripts/import-bee.py <GLB>` écrit
-  `src/bee-data.js`. Treize coques soudées : corps, six pattes, deux antennes et
+  `src/bee-data.ts`. Treize coques soudées : corps, six pattes, deux antennes et
   quatre ailes. Les os d'ailes Meshy (`Bone_026` à +X, `Bone_028` à −X, enfants du
   thorax) sont gardés ; l'aile antérieure et la postérieure de chaque côté suivent
   l'os racine à 100 %, comme les ailes d'une abeille accrochées entre elles. Le corps
   et les antennes cèdent au parent de chaque chaîne leurs poids sur les os d'ailes et
   de pattes (531 influences) ; chaque patte ne garde que sa chaîne (140 influences
   rendues à son moyeu). Géométrie, UV et texture inchangés, pas de simplification.
-- Vol (`src/bee-model.js`) : boucle de 1 s, 12 battements (bourdonnement plus vif que
+- Vol (`src/bee-model.ts`) : boucle de 1 s, 12 battements (bourdonnement plus vif que
   le scarabée), 6 images par battement, 72 images. Ailes de −20° à +52° avec balayage
   et torsion, abdomen abaissé qui pompe deux fois par boucle, tête et antennes qui
   frémissent, pattes pendantes.
@@ -480,13 +480,13 @@ il remplace le moustique procédural. Même chaîne que l'abeille.
   `c13dff6e…1c15`), 478 triangles, 815 sommets, SmartRig de 62 os, texture JPEG
   512 px (54 Ko). Tête et trompe vers +Z, Y vers le haut.
 - Import : `PYTHONPATH=scripts python3 scripts/import-mosquito.py <GLB>` écrit
-  `src/mosquito-data.js`. Douze coques soudées : corps, six pattes, deux ailes, yeux
+  `src/mosquito-data.ts`. Douze coques soudées : corps, six pattes, deux ailes, yeux
   et trompe. Chaque aile (chaîne Meshy de trois os, `Bone_034` à +X, `Bone_037` à
   −X) suit son os racine à 100 %. Le corps et les pièces de tête cèdent au parent de
   chaque chaîne leurs poids sur les os d'ailes et de pattes (250 influences) ;
   chaque patte ne garde que sa chaîne (118 influences rendues à son moyeu).
   Géométrie, UV et texture inchangées, pas de simplification.
-- Vol (`src/mosquito-model.js`) : boucle de 1 s, 15 battements étroits et rapides,
+- Vol (`src/mosquito-model.ts`) : boucle de 1 s, 15 battements étroits et rapides,
   4 images par battement, 60 images. Abdomen qui ondule, tête qui frémit, six longues
   pattes pendantes, la paire avant tendue vers l'avant, les autres traînant derrière.
 - Rendu et collision : entrée `mosquito` de `FLYERS`. Facteur 1 : environ 3,6
@@ -515,7 +515,7 @@ Modèle fourni par l'utilisateur pour l'[issue #113](https://github.com/simonjam
   1 315 triangles, roue gauche 356, roue droite 372, berceau élevable (culasse,
   cylindres de recul, anneau des tourillons et bouclier) 558, tube reculant avec
   frein de bouche 321. Normales et UV d'origine conservés, texture en JPEG 1K
-  (167 Ko), module `src/howitzer-data.js` de 399 Ko.
+  (167 Ko), module `src/howitzer-data.ts` de 399 Ko.
 - Pivots : milieu de l'essieu (rotation horizontale de tout le canon, roues de
   rayon 0,082 en sens inverse, sans glissement), tourillons en (0,157 ; 0,045)
   dans le berceau en U, bouche au centre de la face du frein de bouche.
@@ -603,7 +603,7 @@ Le GLB original demeure requis lors d'une intégration :
 
 ```sh
 python3 scripts/import-meshy-textures.py stuka assets/optimized/stuka.glb \
-  /tmp/meshy-stuka-data.js assets/originals/stuka.glb
+  /tmp/meshy-stuka-data.ts assets/originals/stuka.glb
 python3 scripts/import-meshy-b3.py assets/optimized/b3.glb assets/originals/b3.glb
 ```
 
@@ -699,7 +699,7 @@ pas, mais la même discipline de provenance oui.
   `assets/originals/office-pack/Cartoon_Office_Pack_Extra_All.glb` (SHA-256
   `5de660c5…3aab`, vérifié par le script). 179 objets, une seule texture.
 - **Import** : `python3 scripts/import-office-pack.py <source.glb>` écrit
-  `src/office-pack-data.js` (géométrie quantifiée à 0,5 mm, UV et indices, atlas PNG
+  `src/office-pack-data.ts` (géométrie quantifiée à 0,5 mm, UV et indices, atlas PNG
   d'origine ; triangles soudés par position et UV) et `src/office-pack-catalog.ts`
   (bornes et triangles par modèle, données pures pour le serveur et les plans).
 - **Repère et échelle** : Y vers le haut, mètres, origine du modèle conservée (centre

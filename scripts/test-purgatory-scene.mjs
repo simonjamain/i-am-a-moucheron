@@ -16,8 +16,8 @@ import { PURGATORY_RULES, VIP_GUARD, VIP_LANE } from '../src/purgatory-queue.ts'
 import { propFootprint, modelBoxes } from '../src/office-props.ts';
 import { WALK_WORLDS } from '../src/scale.ts';
 import { VIP_GUARD as GUARD_RIG, VIP_GUARD_MODEL } from '../src/vip-guard-model.ts';
-import { VIP_GUARD_DATA } from '../src/vip-guard-data.js';
-import { SAINT_PIERRE_DATA } from '../src/saint-pierre-data.js';
+import { VIP_GUARD_DATA } from '../src/vip-guard-data.ts';
+import { SAINT_PIERRE_DATA } from '../src/saint-pierre-data.ts';
 import { SaintPierre, SAINT_PIERRE_BONES, SAINT_PIERRE_MODEL } from '../src/saint-pierre-model.ts';
 import { FLOOR_MIST, createFloorCloud } from '../src/purgatory-floor.ts';
 import { PostHighlight, selectionRect } from '../src/post-highlight.ts';

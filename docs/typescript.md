@@ -48,6 +48,15 @@ dans `src/`, `server/` et `scripts/`. L'état et la prochaine étape sont suivis
    allocations des chemins chauds. Préférer `readonly number[]` à une conversion
    (`Array.from`) quand une fonction reçoit des tableaux.
 
+## Données générées
+
+Les modules de données produits par les importeurs (`src/*-data.ts`, Meshy et
+personnages ; `src/vehicle-anchors.ts`) sont des `.ts` **sans annotation** : `tsc`
+infère leurs types littéraux (≈ 14 Mo, `npm run typecheck` reste sous la seconde
+avec `tsc` 7) et l'assembleur les sert comme les autres modules. Les scripts
+`scripts/import-*.py`, `split-vehicle-parts.mjs` et `rig-*.mjs` écrivent
+directement ces chemins `.ts`. Ne jamais les éditer à la main ; les régénérer.
+
 ## Migrer un module
 
 ```sh

@@ -5,7 +5,7 @@ skinned mesh, the Mixamo skeleton with its bind matrices, the idle/walk/run
 clips (rotations quantized to Int16, root translation only, constant scale
 tracks dropped) and a 1K JPEG copy of the base colour texture (the original
 stays in assets/originals/character/). Ids and output files are listed in
-CHARACTERS below and must match src/character-appearances.js.
+CHARACTERS below and must match src/character-appearances.ts.
 """
 import base64, io, json, struct, sys
 from pathlib import Path
@@ -14,25 +14,25 @@ from meshy_provenance import verify_meshy_source
 
 # id: (original SHA-256, output module, {gait: clip name in the GLB}). The Meshy
 # exports have no idle clip (their unnamed 3 s clip is a crouch-and-jump move,
-# and RunFast is unused): character-model.js lowers the arms from the bind pose.
+# and RunFast is unused): character-model.ts lowers the arms from the bind pose.
 GAITS = {'walk': 'Walking', 'run': 'Running'}
 CHARACTERS = {
     'cowboy': ('29cbb213d02d447ddd1624a4e2e4ffaf31c1c8d99715850f90c983b53b0eed0d',
-               'src/character-data.js', None),
+               'src/character-data.ts', None),
     'frontier': ('abc715dfbe7c31946911a081958d81468f078a8f74aebd9ee45d4458a8fdb27a',
-                 'src/character-frontier-data.js', GAITS),
+                 'src/character-frontier-data.ts', GAITS),
     'sky-pilot': ('740ecc0ad9ea87c08934f28429bb9d448e4ffe339c29761e640247133174ed8f',
-                  'src/character-sky-pilot-data.js', GAITS),
+                  'src/character-sky-pilot-data.ts', GAITS),
     'toby': ('db97a0ab4d533900aa2704c2110b6c99dd074a732b61380237fba03d6ac82b1a',
-             'src/character-toby-data.js', GAITS),
+             'src/character-toby-data.ts', GAITS),
     'sunny': ('da6fd6ce732c40cb35d8efd9ec4983b1d2a463acc3e97f4725e4e4003ad68d49',
-              'src/character-sunny-data.js', GAITS),
+              'src/character-sunny-data.ts', GAITS),
     'aviator': ('222ea403e1cacf45addd54a3079bbefc7837cc3b80c27b82bee11490d3bd5f5e',
-                'src/character-aviator-data.js', GAITS),
+                'src/character-aviator-data.ts', GAITS),
     'signaler': ('4e79dbe4e0bd71dced09ed914d48e08300963497f72552dcf9620f62d358bead',
-                 'src/character-signaler-data.js', GAITS),
+                 'src/character-signaler-data.ts', GAITS),
     'operator': ('99385d02e3423bc8e63bfe8f764958f0221080d30ac2dd97262098f88a0b602b',
-                 'src/character-operator-data.js', GAITS),
+                 'src/character-operator-data.ts', GAITS),
 }
 ident = sys.argv[1]
 SOURCE_SHA256, OUTPUT, CLIPS = CHARACTERS[ident]
