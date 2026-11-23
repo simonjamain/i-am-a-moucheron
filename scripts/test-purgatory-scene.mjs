@@ -12,7 +12,7 @@ import {
   purgatoryProps,
 } from '../src/purgatory-scene.ts';
 import { SKY_CLOUDS, cloudHeight, cloudPuffs, createCloudFloor } from '../src/purgatory-clouds.ts';
-import { PURGATORY_RULES, VIP_GUARD, VIP_LANE } from '../src/purgatory-queue.ts';
+import { PURGATORY_RULES, VIP_DESK, VIP_GUARD, VIP_LANE } from '../src/purgatory-queue.ts';
 import { propFootprint, modelBoxes } from '../src/office-props.ts';
 import { HUMANOID_UNITS, PERSON_HEIGHT } from '../src/scale.ts';
 import { VIP_GUARD as GUARD_RIG, VIP_GUARD_MODEL } from '../src/vip-guard-model.ts';
@@ -209,6 +209,34 @@ const aim = new T.Raycaster(
   new T.Vector3(0, 0, -1),
 );
 assert.ok(aim.intersectObject(built.guard, true).length > 0, 'the guard can be aimed at');
+// The clipboards: one per window, on its desk, overhanging the front edge a little
+// toward the souls (who aim at it and click to open the papers).
+for (const [window, x] of [
+  ['desk', 0],
+  ['vip', VIP_DESK.x],
+]) {
+  const clip = built.clipboards[window];
+  const box = new T.Box3().setFromObject(clip);
+  const local = (v) => v.clone().sub(built.root.position).divideScalar(built.root.scale.x);
+  const lo = local(box.min),
+    hi = local(box.max);
+  assert.ok(lo.x > x && hi.x < x + 1.03, window + ' clipboard on its desk, beside the middle');
+  assert.ok(Math.abs(lo.y - 0.74 * U) < 0.01, window + ' clipboard lies on the desk top');
+  const front = COUNTER.z + 0.379 * U;
+  assert.ok(hi.z > front && hi.z < front + 0.2, window + ' clipboard overhangs the front edge');
+  const ray = new T.Raycaster(
+    new T.Vector3()
+      .addVectors(box.min, box.max)
+      .multiplyScalar(0.5)
+      .setY(box.max.y + 1),
+    new T.Vector3(0, -1, 0),
+  );
+  assert.ok(ray.intersectObject(clip, true).length > 0, window + ' clipboard can be aimed at');
+}
+assert.ok(
+  built.scene.getObjectByName('purgatoire-vip').getObjectById(built.clipboards.vip.id),
+  'the VIP clipboard belongs to the VIP decor',
+);
 // Its outline mask is skinned on his own skeleton: it follows the breath and
 // the look instead of staying in the bind pose.
 const highlight = new PostHighlight(T, built.guard, {

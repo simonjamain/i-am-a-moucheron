@@ -9,7 +9,7 @@ ou de partie WAN n'est revendiqué.
 
 ## Achat, accès et réserves
 
-Les deux véhicules passent par le bon signé, paiement unique et pose par E sur
+Les deux véhicules passent par le bon signé, paiement unique et pose d'un clic sur
 support libre. Aucune réserve gratuite. Destruction définitive, postes exclusifs,
 mutations et échanges signés, teinte, nettoyage et tirs alliés suivent les règles
 communes. Les quatre nouveaux rôles ont leurs contrats propres, soit 200 variantes
@@ -55,8 +55,9 @@ véhicule, sans viser indépendamment avec la souris. Le copilote vise avec une
 vue première personne où la MG reste visible. Rotation horizontale complète sur 360°,
 de −83° environ à 0° vertical, depuis la tourelle sous le nez, avec couverture arrière sous la cabine, sans élévation à travers le fuselage.
 La tourelle suit la souris avec une vitesse plafonnée à 180°/s ; caméra, MG
-et guidage utilisent sa direction réelle, pas une direction de souris instantanée. Maj choisit la MG, Ctrl les missiles.
-Le clic utilise l'arme choisie ; maintenir le clic tire la MG ou les roquettes.
+et guidage utilisent sa direction réelle, pas une direction de souris instantanée. Le clic tire la MG (maintenir le clic : rafale) ; Espace lance le
+missile guidé, un second Espace le fait exploser ; les deux s'utilisent en même temps.
+Au pilote, maintenir le clic tire les roquettes.
 
 Le missile part latéralement. Le pilote ne récupère aucune arme du copilote.
 La caméra reste au poste : le missile tourne vers le point visé, à **1,2 rad/s

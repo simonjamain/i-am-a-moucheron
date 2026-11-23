@@ -28,7 +28,6 @@ for (const file of [
   'audio/manager',
   'game-audio/game-sound',
   'flight',
-  'input',
   'walk-arena',
   'purgatory-queue',
   'mouse-flight',

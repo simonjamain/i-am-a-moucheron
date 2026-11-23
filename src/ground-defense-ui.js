@@ -440,7 +440,7 @@ export class GroundDefenseUI {
       !c.error,
     );
     if (c.startOnly) {
-      this.status.textContent = 'Clic ou E : fixer le début · Échap : quitter';
+      this.status.textContent = 'Clic : fixer le début · Échap : quitter';
       this.status.disabled = this.busy;
     }
   }
@@ -481,8 +481,7 @@ export class GroundDefenseUI {
     const verb =
       this.mode === 'repair' ? 'Réparer' : this.mode === 'remove' ? 'Enlever' : 'Larguer';
     this.status.textContent =
-      c.error ||
-      (this.busy ? 'Envoi…' : `Clic / Entrée · ${verb} · ${c.price} $ · Échap : quitter`);
+      c.error || (this.busy ? 'Envoi…' : `Clic · ${verb} · ${c.price} $ · Échap : quitter`);
     this.status.disabled = !!c.error || this.busy;
     if (!Number.isFinite(c.landingY)) return;
     const line = this.dropLine;

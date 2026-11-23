@@ -398,7 +398,8 @@ c.canCapture = () => true;
 c.placingEquipment = true;
 handler({ ...event, code: 'KeyE', repeat: true });
 handler({ ...event, code: 'KeyE' });
-assert.equal(placed, 1);
+handler({ ...event, code: 'Enter' });
+assert.equal(placed, 0, 'E and Enter no longer place: the click does');
 console.log(
   'Input/reticle: actual physical key handlers, contract request path, repeat/modal/text guards; HE/AP ticks agree with authoritative integrator.',
 );

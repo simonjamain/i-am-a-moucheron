@@ -10,8 +10,9 @@ par type. La station gratuite est exclue. L’erreur « Poser · 30 $ » était 
 HTML fixe ; l’encart de pose a ensuite été supprimé (les indications sont en bas à gauche).
 
 Pour DCA, station, radar et lit : atelier → bon avec prix courant → signature
-au relâchement → confirmation serveur → aperçu de pose directement. E pose,
-Entrée reste un alias ; maintenir E ne multiplie pas les poses. Le lieu doit être
+au relâchement → confirmation serveur → aperçu de pose directement. Le clic gauche
+pose ; maintenir le clic ne multiplie pas les poses (E et Entrée ne posent plus,
+[commandes](controls.md)). Le lieu doit être
 valide et le serveur revérifie support, proximité, chevauchements et capacité.
 Aucune seconde signature, aucun second débit. Une pose invalide conserve l’achat.
 Échap annule l’aperçu ; l’atelier propose « Déjà payé · Reprendre la pose ».
@@ -140,7 +141,7 @@ CPU des triangles réels, sans capture WebGL.
 ## Pose : visée hors de portée, clic gauche / droit
 
 Pas d'encart de pose : seules les indications en bas à gauche restent. Clic gauche
-(ou E, Entrée) pose ; clic droit (ou Échap) conserve l'achat pour plus tard. Si la
+pose ; clic droit (ou Échap) conserve l'achat pour plus tard. Si la
 visée sort de la portée (regard trop haut, sol trop loin), l'aperçu se place à la
 distance maximale de pose, sur la première surface sous la caméra, et reste
 achetable (`reachClampedPlacement`, `src/placement-aim.ts`). L'aperçu s'arrête à 97 % de la

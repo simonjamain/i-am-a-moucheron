@@ -1,7 +1,6 @@
 // Pointer ownership is explicit: UI/escape releases it; only a new user gesture
 // (canvas click, joining, closing a panel) may request it again. Desktop-first:
-// mouse and keyboard only, no touch mode.
-import type { PadState } from './input.ts';
+// mouse and keyboard only, no touch mode and no gamepad.
 
 /** The canvas and document subsets used (tests pass plain objects). */
 export interface FocusCanvas {
@@ -90,33 +89,22 @@ export interface FlightInput {
   roll: number;
   yaw: number;
   throttle: number;
-  fire: boolean;
 }
-export function flightInput(
-  keys: KeyMap,
-  pad: Pick<PadState, 'pitch' | 'roll' | 'yaw' | 'throttle' | 'fire'>,
-  active = true,
-): FlightInput {
-  if (!active) return { pitch: 0, roll: 0, yaw: 0, throttle: 0, fire: false };
-  const axis = (positive: boolean, negative: boolean, analog = 0): number =>
-    Math.max(-1, Math.min(1, Number(positive) - Number(negative) + analog));
+export function flightInput(keys: KeyMap, active = true): FlightInput {
+  if (!active) return { pitch: 0, roll: 0, yaw: 0, throttle: 0 };
+  const axis = (positive: boolean, negative: boolean): number =>
+    Number(positive) - Number(negative);
   return {
-    pitch: axis(
-      !!(keys.ArrowDown || keys.KeyS),
-      !!(keys.ArrowUp || keys.KeyZ || keys.KeyW),
-      pad.pitch,
-    ),
-    roll: axis(!!(keys.ArrowLeft || keys.KeyQ), !!(keys.ArrowRight || keys.KeyD), pad.roll),
-    yaw: axis(!!keys.KeyE, !!keys.KeyA, pad.yaw),
+    pitch: axis(!!(keys.ArrowDown || keys.KeyS), !!(keys.ArrowUp || keys.KeyZ || keys.KeyW)),
+    roll: axis(!!(keys.ArrowLeft || keys.KeyQ), !!(keys.ArrowRight || keys.KeyD)),
+    yaw: axis(!!keys.KeyE, !!keys.KeyA),
     throttle: axis(
       !!(keys.ShiftLeft || keys.ShiftRight),
       !!(keys.ControlLeft || keys.ControlRight),
-      pad.throttle,
     ),
-    fire: pad.fire,
   };
 }
-// Manual keyboard or gamepad input overrides the mouse instructor on its axis.
+// Manual keyboard input overrides the mouse instructor on its axis.
 // On release the mouse takes over that axis again.
 type Steering = Pick<FlightInput, 'pitch' | 'roll' | 'yaw'>;
 export function airplaneSteering(assisted: Steering, manual: Steering): Steering {
@@ -163,18 +151,4 @@ export function equipmentExitAction({
 }): 'vehicle-exit' | 'turret' | null {
   if (key !== 'KeyF' || repeat || dead || formOpen) return null;
   return vehicle ? 'vehicle-exit' : turret >= 0 ? 'turret' : null;
-}
-
-export function equipmentEnterAllowed({
-  onFoot,
-  vehicle,
-  turret = -1,
-  dead = false,
-}: {
-  onFoot?: unknown;
-  vehicle?: unknown;
-  turret?: number;
-  dead?: boolean;
-}): boolean {
-  return !!onFoot && !vehicle && turret < 0 && !dead;
 }

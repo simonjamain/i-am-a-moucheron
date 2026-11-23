@@ -36,8 +36,8 @@ assert.deepEqual(contextKey({ turret: true }, 'ControlRight'), { fuse: -1 });
 // while focus is captured. Focus loss and seat changes clear held keys.
 const client = readFileSync('src/client.js', 'utf8');
 const handler = client.slice(
-  client.indexOf('if (contextual.fuse) {'),
-  client.indexOf('} else if (contextual.heliWeapon)'),
+  client.indexOf('if (contextual) {'),
+  client.indexOf('keyBindings.set(event.code, code);\n  if ('),
 );
 assert.match(handler, /keyBindings\.set\(event\.code, code\);\s*keys\[code\] = true;/);
 assert.doesNotMatch(handler, /flakRange/);

@@ -21,7 +21,7 @@ Une âme de joueur apparaît à l’entrée (`SOUL_ENTRANCE`), devant les deux f
 des insectes reste gratuite : on peut s’y placer, notamment quand elle est vide. À sa
 droite, une **file VIP** bordée de cordons (`VIP_LANE`) mène au second guichet de
 Saint Pierre (`VIP_DESK`). Un cordon doré la ferme ; un vigile (`VIP_GUARD`) se tient
-à côté. Un clic sur lui, entouré de bleu quand on le vise à portée, ou **E** près de lui
+à côté. Un clic sur lui, entouré de bleu quand on le vise à portée,
 ouvre un petit contrat papier, le coupe-file (`src/vip-pass-ui.ts`,
 signature seule, aucune case) : il coûte **le numéro de la vague en dollars** (vague 1 :
 1 $, vague 3 : 3 $ ; `vipPrice`), prélevés une fois sur la caisse commune. Le serveur

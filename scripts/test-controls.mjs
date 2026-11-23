@@ -4,41 +4,37 @@ import {
   ControlFocus,
   airplaneSteering,
   equipmentExitAction,
-  equipmentEnterAllowed,
   gameKey,
   flightInput,
   lookDelta,
   lookScale,
   BASE_FOV,
 } from '../src/control-focus.ts';
-import { neutralPad } from '../src/input.ts';
-const pad = neutralPad();
 for (const [letter, arrow, axis] of [
   ['KeyZ', 'ArrowUp', 'pitch'],
   ['KeyS', 'ArrowDown', 'pitch'],
   ['KeyQ', 'ArrowLeft', 'roll'],
   ['KeyD', 'ArrowRight', 'roll'],
 ]) {
-  assert.equal(
-    flightInput({ [letter]: true }, pad)[axis],
-    flightInput({ [arrow]: true }, pad)[axis],
-  );
+  assert.equal(flightInput({ [letter]: true })[axis], flightInput({ [arrow]: true })[axis]);
 }
-assert.equal(flightInput({ KeyZ: true, KeyS: false }, pad).throttle, 0);
-assert.equal(flightInput({ ShiftLeft: true }, pad).throttle, 1);
-assert.equal(flightInput({ ControlRight: true }, pad).throttle, -1);
-assert.equal(flightInput({ KeyA: true }, pad).yaw, -1);
-assert.equal(flightInput({ KeyQ: true }, pad).yaw, 0);
+assert.equal(flightInput({ KeyZ: true, KeyS: false }).throttle, 0);
+assert.equal(flightInput({ ShiftLeft: true }).throttle, 1);
+assert.equal(flightInput({ ControlRight: true }).throttle, -1);
+assert.equal(flightInput({ KeyA: true }).yaw, -1);
+assert.equal(flightInput({ KeyQ: true }).yaw, 0);
 assert.equal(gameKey({ key: 'z', code: 'KeyW' }), 'KeyZ');
 assert.equal(gameKey({ key: 'Q', code: 'KeyA' }), 'KeyQ');
 assert.equal(gameKey({ key: 'a', code: 'KeyQ' }), 'KeyA');
-assert.deepEqual(
-  flightInput({ KeyZ: true, ShiftLeft: true, Space: true }, { ...pad, roll: 1, fire: true }, false),
-  { pitch: 0, roll: 0, yaw: 0, throttle: 0, fire: false },
-);
+assert.deepEqual(flightInput({ KeyZ: true, ShiftLeft: true, Space: true }, false), {
+  pitch: 0,
+  roll: 0,
+  yaw: 0,
+  throttle: 0,
+});
 // Regression: client previously read manual input but sent mouse-only axes to flight physics.
 const assisted = { pitch: 0.4, roll: -0.6, yaw: 0.7 };
-assert.deepEqual(airplaneSteering(assisted, flightInput({}, pad)), assisted);
+assert.deepEqual(airplaneSteering(assisted, flightInput({})), assisted);
 for (const [key, axis] of [
   ['KeyZ', 'pitch'],
   ['ArrowUp', 'pitch'],
@@ -51,20 +47,16 @@ for (const [key, axis] of [
   ['KeyA', 'yaw'],
   ['KeyE', 'yaw'],
 ]) {
-  const manual = flightInput({ [key]: true }, pad);
+  const manual = flightInput({ [key]: true });
   const steering = airplaneSteering(assisted, manual);
   assert.equal(steering[axis], manual[axis], key + ' must override mouse assistance');
   for (const other of ['pitch', 'roll', 'yaw'].filter((name) => name !== axis))
     assert.equal(steering[other], assisted[other], other + ' remains assisted');
 }
 assert.deepEqual(
-  airplaneSteering(assisted, flightInput({ KeyZ: true, KeyA: true }, pad, false)),
+  airplaneSteering(assisted, flightInput({ KeyZ: true, KeyA: true }, false)),
   assisted,
   'released pointer/form input cannot steer',
-);
-assert.deepEqual(
-  airplaneSteering(assisted, flightInput({}, { ...pad, pitch: -0.25, roll: 0.75, yaw: -0.5 })),
-  { pitch: -0.25, roll: 0.75, yaw: -0.5 },
 );
 assert.ok(
   readFileSync(new URL('../src/client.js', import.meta.url), 'utf8').includes(
@@ -172,13 +164,33 @@ assert.equal(equipmentExitAction({ key: 'KeyF', vehicle: {}, formOpen: true }), 
 assert.equal(equipmentExitAction({ key: 'KeyF', vehicle: {}, repeat: true }), null);
 console.log('PASS: F exits all bomber seats even when crew mode is onFoot or cursor is free.');
 
-for (const seat of ['pilot', 'dorsal', 'tail'])
-  assert.equal(equipmentEnterAllowed({ onFoot: seat !== 'pilot', vehicle: { seat } }), false);
-assert.equal(equipmentEnterAllowed({ onFoot: true, turret: 0 }), false);
-assert.equal(equipmentEnterAllowed({ onFoot: true }), true);
-assert.equal(flightInput({ KeyE: true }, pad).yaw, 1);
-assert.equal(flightInput({ KeyA: true }, pad).yaw, -1);
-console.log('PASS: E only enters on foot, never exits or steals aircraft rudder A/E.');
+assert.equal(flightInput({ KeyE: true }).yaw, 1);
+assert.equal(flightInput({ KeyA: true }).yaw, -1);
+// Harmonised controls (docs/controls.md): one verb per input. The click uses what is
+// outlined (E no longer interacts: A/E are only the rudder), R never kills, Tab opens
+// the wave window, Space is a secondary weapon (never the gunners' fire), no gamepad.
+{
+  const client = readFileSync(new URL('../src/client.js', import.meta.url), 'utf8');
+  assert.doesNotMatch(
+    client,
+    /code === 'KeyE'|'KeyE', 'Enter'|interactionKey === 'KeyE'/,
+    'E interacts no more',
+  );
+  assert.doesNotMatch(client, /KeyR'[^\n]*crash\(\)/, 'R never kills');
+  assert.match(
+    client,
+    /event\.code === 'Tab'[^\n]*waveCouncil|event\.code === 'Tab' &&/,
+    'Tab opens the wave window',
+  );
+  assert.doesNotMatch(
+    client,
+    /interactionKey === 'KeyV' &&\s*!event\.repeat &&\s*!waveCouncil/,
+    'V only switches views',
+  );
+  assert.doesNotMatch(client, /readPad|getGamepads|\bpad\./, 'no gamepad');
+  assert.doesNotMatch(client, /mouseFire \|\| keys\.Space/, "Space is not the gunners' fire");
+}
+console.log('PASS: A/E only steer, the click interacts, R never kills, Tab: wave, no gamepad.');
 
 // Zoomed view: a mouse count must move the picture by the same number of pixels.
 assert.equal(lookScale(BASE_FOV), 1);

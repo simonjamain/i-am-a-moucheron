@@ -51,7 +51,7 @@ concurrents. Les coques achetées n’entrent jamais dans cette réserve gratuit
 
 Tous les modèles sont vendus aux prix de [progression](progression.md#revenus-et-prix) ;
 `shopPrice` reste partagé. Achat **à pied**, signature du
-bon puis aperçu et E pour poser, au sol ou sur mobilier réellement porteur.
+bon puis aperçu et clic gauche pour poser, au sol ou sur mobilier réellement porteur.
 Aucun appareil acheté n’apparaît automatiquement à Alpha. La route publique
 `buy` refuse désormais les véhicules : passer par `purchase-sign` et
 `place-purchase`. Les anciens tests d’armes préparent leurs coques directement

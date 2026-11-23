@@ -25,14 +25,15 @@ const foot = controlHints({ build: true });
 for (const expected of [
   /Molette : zoom/,
   /G \/ clic molette : construire/,
-  /E : interagir/,
+  /Clic : utiliser ce qui est entouré/,
   /Espace : sauter/,
   /P : achats/,
 ])
   assert.match(foot, expected);
 assert.match(controlHints({ airborne: true }), /Espace : parachute.*Molette : zoom/);
 const purgatory = controlHints({ dead: true, build: false });
-assert.match(purgatory, /E : formulaires/);
+assert.match(purgatory, /Clic sur le porte-bloc : formulaires/);
+assert.doesNotMatch(foot + purgatory, /\bE :/, 'E interacts no more');
 assert.doesNotMatch(purgatory, /construire|achats/);
 
 // Construction wheel and active tools, on foot and from the Castor.
@@ -46,12 +47,12 @@ assert.match(
   /arrêter la dépose/,
 );
 assert.match(controlHints({ building: { mode: 'sugar' } }), /R : orienter/);
-assert.match(controlHints({ building: { mode: 'repair' } }), /Clic \/ E : réparer/);
+assert.match(controlHints({ building: { mode: 'repair' } }), /Clic : réparer/);
 assert.doesNotMatch(controlHints({ building: { mode: 'barricade' } }), /false/);
 
 // Fixed stations: DCA fuse and heavy cannon, all left with F.
 assert.match(controlHints({ turret: true }), /fusée/);
-assert.match(controlHints({ station: 'dca' }), /Clic \/ Espace : obus.*fusée/);
+assert.match(controlHints({ station: 'dca' }), /Clic : obus.*fusée/);
 for (const station of ['antitank']) {
   const text = controlHints({ station });
   assert.doesNotMatch(text, /fusée|parachute|sauter/);
@@ -92,13 +93,12 @@ const client = readFileSync('src/client.js', 'utf8');
 const call = client.slice(client.indexOf("$('commandHelp').textContent = controlHints({"));
 for (const field of ['station:', 'build: groundDefenseUI.available()', 'wheel:', 'building:'])
   assert.ok(call.slice(0, 900).includes(field), field);
-const council = client.indexOf("interactionKey === 'KeyV' &&");
+// Tab opens the wave window everywhere; V only switches the Castors' views.
+const council = client.indexOf("event.code === 'Tab'");
 assert.ok(
-  client
-    .slice(council, council + 250)
-    .includes("!['castor', 'flyingcastor'].includes(myVehicle?.type)"),
+  council > 0 && client.slice(council, council + 200).includes('waveCouncil.button.click()'),
 );
-assert.ok(council < client.indexOf("interactionKey === 'KeyV' && myVehicle?.type === 'castor'"));
+assert.match(controlHints({}), /Tab : vague/);
 
 console.log(
   'Control hints: foot, building, stations, Castor and every vehicle seat match their inputs.',

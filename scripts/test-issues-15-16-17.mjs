@@ -101,8 +101,7 @@ console.log('#17: current director source stats, route seeds, and fixed room-met
 
 // #16: real keyboard handler must not swallow pilot Shift/Ctrl as weapon selection.
 const { contextKey } = await import('../src/equipment-controls.ts');
-const { gameKey, equipmentExitAction, equipmentEnterAllowed } =
-  await import('../src/control-focus.ts');
+const { gameKey, equipmentExitAction } = await import('../src/control-focus.ts');
 let keyHandler;
 const input = {
   addEventListener: (_, h) => (keyHandler = h),
@@ -128,7 +127,6 @@ const input = {
   placingEquipment: false,
   gameKey,
   equipmentExitAction,
-  equipmentEnterAllowed,
   contextKey,
   activeMissile: () => null,
   keys: {},
@@ -147,15 +145,13 @@ for (const code of ['ShiftLeft', 'ShiftRight', 'ControlLeft', 'ControlRight'])
   keyHandler({ code, target: { tagName: 'CANVAS' }, preventDefault() {} });
 assert.ok(Object.values(input.keys).every(Boolean));
 assert.equal(Object.keys(input.keys).length, 4);
+// The copilot's weapons no longer use Shift/Ctrl (click: MG, Space: missile).
 input.crewSeat = 'copilot';
 input.keys = {};
 keyHandler({ code: 'ControlLeft', target: { tagName: 'CANVAS' }, preventDefault() {} });
-assert.equal(input.heliWeapon, 'missile');
-assert.equal(input.keys.ControlLeft, undefined);
-keyHandler({ code: 'ShiftLeft', target: { tagName: 'CANVAS' }, preventDefault() {} });
-assert.equal(input.heliWeapon, 'copilot');
+assert.equal(input.heliWeapon, undefined);
 console.log(
-  '#16 real keyboard routing: pilot modifiers reach flight, copilot modifiers select weapons.',
+  '#16 real keyboard routing: pilot modifiers reach flight, copilot modifiers select nothing.',
 );
 
 // #15: actual signed purchase/sync/snapshot path with two clients, not a direct

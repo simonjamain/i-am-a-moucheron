@@ -58,7 +58,7 @@ zoom.press('dca');
 zoom.reset();
 assert.equal(zoom.fov('dca'), 62);
 assert.deepEqual(contextKey({ turret: true }, 'ShiftLeft'), { fuse: 1 });
-assert.deepEqual(contextKey({ type: 'tank' }, 'ControlLeft'), { shell: 'ap' });
+assert.equal(contextKey({ type: 'tank' }, 'ControlLeft'), null, 'the tank shell is on R');
 assert.equal(rangeReadout(300).metres, 300);
 assert.equal(rangeReadout(100).fraction, 0);
 assert.equal(rangeReadout(1200).fraction, 1);
