@@ -1,4 +1,4 @@
-import { MODEL_DATA } from './meshy-tank-data.js';
+import { MODEL_DATA } from './meshy-tank-data.ts';
 
 // The medium tank's running gear in the model, read from the rig parts made by
 // scripts/split-vehicle-parts.mjs: six axles from the front, each with its left (-x) and right

@@ -11,7 +11,7 @@ Every source triangle and UV is kept; only the texture is resized. Geometry is
 stored in each node's local frame (guns aligned on -Z, as aimGun expects), and
 anchors (muzzles, weapon origins) are exported in their node's frame. The
 numbers the physics shares with the model (gun pivots, barrel lengths, trailer
-hitch and hulls, helicopter weapon origins) go to src/vehicle-anchors.js.
+hitch and hulls, helicopter weapon origins) go to src/vehicle-anchors.ts.
 """
 import base64
 import hashlib
@@ -26,7 +26,7 @@ import trimesh
 from PIL import Image
 from trimesh.graph import connected_components
 
-ANCHORS_FILE = Path('src/vehicle-anchors.js')
+ANCHORS_FILE = Path('src/vehicle-anchors.ts')
 
 
 # ---------------------------------------------------------------- loading
@@ -222,7 +222,7 @@ def ids(*values):
 
 SPECS = {
     'spitfire': dict(
-        output='src/meshy-spitfire-data.js', export='MODEL_DATA',
+        output='src/meshy-spitfire-data.ts', export='MODEL_DATA',
         fit=('x', 6.2), gear=1.05,
         nodes=[
             dict(name='prop', select=lambda i: i.c[0] < -0.3, pivot=('center', 'largest')),
@@ -232,7 +232,7 @@ SPECS = {
         anchors=[dict(name='gun', node='wing', each=SPITFIRE_GUN)],
     ),
     'tank': dict(
-        output='src/meshy-tank-data.js', export='MODEL_DATA',
+        output='src/meshy-tank-data.ts', export='MODEL_DATA',
         fit=('z', 4.3), gear=0.8,
         nodes=[
             # Main gun: barrel, mantlet and coaxial gun elevate together.
@@ -258,7 +258,7 @@ SPECS = {
                                  gunLength=r4(H.pivot('cannonGun')[2] - H.front(2)[2])),
     ),
     'flaktruck': dict(
-        output='src/meshy-flaktruck-data.js', export='MODEL_DATA',
+        output='src/meshy-flaktruck-data.ts', export='MODEL_DATA',
         fit=('z', 8.6), gear=0.8,
         nodes=[
             dict(name='cannonGun', parent='cannon', select=ids(12, 13, 50),
@@ -274,7 +274,7 @@ SPECS = {
         shared=lambda H, m: FLAK_SHARED(H, m),
     ),
     'helicopter': dict(
-        output='src/meshy-h2-data.js', export='H2_DATA',
+        output='src/meshy-h2-data.ts', export='H2_DATA',
         fit=('z', 7.5), gear=1.1,
         nodes=[
             dict(name='rotor', select=lambda i: i.c[1] > 0.095 and i.c[0] < 0.3,
@@ -293,7 +293,7 @@ SPECS = {
         ),
     ),
     'bomber': dict(
-        output='src/meshy-b3-data.js', export='B3_DATA',
+        output='src/meshy-b3-data.ts', export='B3_DATA',
         fit=('x', 11.3), gear=1.45,
         nodes=[
             dict(name='wing', select=ids(22, 23), pivot=('origin',)),
@@ -326,7 +326,7 @@ SPECS = {
     # Biplane fighter (replaces the M1 light fighter): propeller; the single
     # central machine gun stays sculpted on the hull and fires from its muzzle.
     'biplane': dict(
-        output='src/meshy-biplane-data.js', export='BIPLANE_DATA',
+        output='src/meshy-biplane-data.ts', export='BIPLANE_DATA',
         fit=('x', 5.6), gear=1.05,
         nodes=[dict(name='prop', select=lambda i: i.c[0] < -0.33, pivot=('center', 'largest'))],
         anchors=[dict(name='gun', node='body', fn=lambda H: [H.front(0)])],
@@ -335,7 +335,7 @@ SPECS = {
     # The ring stays in the hull; the gun yaws and elevates on the barrel axis,
     # pointing backward at rest.
     'biplanebomber': dict(
-        output='src/meshy-biplane-bomber-data.js', export='BIPLANE_BOMBER_DATA',
+        output='src/meshy-biplane-bomber-data.ts', export='BIPLANE_BOMBER_DATA',
         fit=('x', 11.3), gear=1.45,
         nodes=[
             dict(name='prop', select=lambda i: i.c[0] < -0.325 and i.sz[1] > 0.02,
@@ -350,7 +350,7 @@ SPECS = {
     # Stuka: gull wings (separate islands), propeller; the belly bomb stays on
     # the hull. Its two wing guns fire from the leading edge at 40 % span.
     'interceptor': dict(
-        output='src/meshy-stuka-data.js', export='MODEL_DATA',
+        output='src/meshy-stuka-data.ts', export='MODEL_DATA',
         fit=('x', 7.7), gear=1.05,
         nodes=[
             dict(name='prop', select=lambda i: abs(i.c[0] + 0.335) < 0.01 and i.n > 30,

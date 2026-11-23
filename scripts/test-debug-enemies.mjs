@@ -4,7 +4,7 @@
 // nearest corridor). Server rules, roster entries and routes
 // (src/debug-enemies.ts, server/game.js labCommand, src/routes.ts).
 import { modelTriangles } from '../src/office-collision.ts';
-import { MODEL_DATA } from '../src/office-pack-data.js';
+import { MODEL_DATA } from '../src/office-pack-data.ts';
 import { OFFICE_LAYOUT } from '../src/layout.ts';
 import assert from 'node:assert/strict';
 import { Game } from '../server/game.js';

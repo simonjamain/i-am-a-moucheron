@@ -23,7 +23,7 @@ Domaine partagé (serveur et client) :
 
 Rendu et interface :
 
-6. Modèle : `src/<espèce>-model.js` (+ `-data.js` généré), puis entrée dans
+6. Modèle : `src/<espèce>-model.js` (+ `-data.ts` généré), puis entrée dans
    `WALKERS` (`src/walker-batch.js`) ou `FLYERS` (`src/flyer-batch.js`), et dans la
    liste d'assets de `scripts/assemble.mjs`.
 7. `src/wave-forecast-scene.js` — symbole dans `speciesSymbols` ;

@@ -2,7 +2,7 @@ import type { DynamicRayCastVehicleController, RigidBody } from '@dimforge/rapie
 import { drawColliders, drawWheels, type DebugRig, type DebugSink } from './physics-debug.ts';
 import { MAP } from './scale.ts';
 import { TRAILER_LIMITS, type VehicleProfile } from './fleet.ts';
-import { MODEL_DATA } from './meshy-flaktruck-data.js';
+import { MODEL_DATA } from './meshy-flaktruck-data.ts';
 import { wheelSteering, type Wheel } from './castor-physics.ts';
 import {
   FALL_KILL_SPEED,

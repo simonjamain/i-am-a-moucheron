@@ -26,7 +26,7 @@ export const WHEEL_SPEC = {
 };
 
 if (import.meta.url === pathToFileURL(process.argv[1]).href) {
-  const file = 'src/meshy-biplane-data.js';
+  const file = 'src/meshy-biplane-data.ts';
   const { BIPLANE_DATA } = await import(pathToFileURL(file).href);
   const result = split(BIPLANE_DATA, WHEEL_SPEC);
   const header = readFileSync(file, 'utf8')

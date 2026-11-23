@@ -10,14 +10,14 @@ import { VEHICLES, vehicleUnit } from '../src/fleet.ts';
 import { tankBarrelOrigin } from '../src/tank-view.js';
 import { mobileBarrelOrigin, trailerGunPivot } from '../src/mobile-flak.js';
 import { heliWeaponOrigin } from '../src/helicopter.js';
-import { VEHICLE_ANCHORS } from '../src/vehicle-anchors.js';
-import { MODEL_DATA as SPITFIRE } from '../src/meshy-spitfire-data.js';
-import { MODEL_DATA as TANK } from '../src/meshy-tank-data.js';
-import { MODEL_DATA as FLAKTRUCK } from '../src/meshy-flaktruck-data.js';
-import { H2_DATA } from '../src/meshy-h2-data.js';
-import { BIPLANE_BOMBER_DATA } from '../src/meshy-biplane-bomber-data.js';
-import { BIPLANE_DATA } from '../src/meshy-biplane-data.js';
-import { MODEL_DATA as STUKA } from '../src/meshy-stuka-data.js';
+import { VEHICLE_ANCHORS } from '../src/vehicle-anchors.ts';
+import { MODEL_DATA as SPITFIRE } from '../src/meshy-spitfire-data.ts';
+import { MODEL_DATA as TANK } from '../src/meshy-tank-data.ts';
+import { MODEL_DATA as FLAKTRUCK } from '../src/meshy-flaktruck-data.ts';
+import { H2_DATA } from '../src/meshy-h2-data.ts';
+import { BIPLANE_BOMBER_DATA } from '../src/meshy-biplane-bomber-data.ts';
+import { BIPLANE_DATA } from '../src/meshy-biplane-data.ts';
+import { MODEL_DATA as STUKA } from '../src/meshy-stuka-data.ts';
 
 const SOURCES = {
   spitfire: [SPITFIRE, 'b18e5558feef75463354dee45037b11ed640a4de6f9f0c71cd6e9dbf484026c4', 3002],

@@ -1,4 +1,4 @@
-import { H2_DATA } from './meshy-h2-data.js';
+import { H2_DATA } from './meshy-h2-data.ts';
 import { buildMeshyRig, gunMount } from './meshy-rig.ts';
 import type * as THREE from 'three';
 import type { Three } from './types.ts';

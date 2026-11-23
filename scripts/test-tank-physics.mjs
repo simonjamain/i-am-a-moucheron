@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import * as T from '../vendor/three.module.min.js';
 import { ACTOR_UNIT, MAP } from '../src/scale.ts';
 import { VEHICLES, vehicleScale, vehicleUnit } from '../src/fleet.ts';
-import { MODEL_DATA } from '../src/meshy-tank-data.js';
+import { MODEL_DATA } from '../src/meshy-tank-data.ts';
 import { GRAVITY, MODEL_UNIT, loadRapier, toPhysics, toWorld } from '../src/physics-world.ts';
 import {
   GROUND_CLEARANCE,

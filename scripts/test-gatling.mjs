@@ -9,7 +9,7 @@ import { newGroundDefense, groundCommand } from '../src/ground-defense-state.ts'
 import { SENTRY, GATLING, fireGroundSentries } from '../src/ground-sentry.ts';
 import { advancePaidService } from '../src/paid-service.ts';
 import { AIRDROP_KINDS, airdropCommand } from '../src/airdrop.ts';
-import { MODEL_DATA } from '../src/meshy-gatling-data.js';
+import { MODEL_DATA } from '../src/meshy-gatling-data.ts';
 import {
   createGatlingModel,
   stepGatlingSpin,

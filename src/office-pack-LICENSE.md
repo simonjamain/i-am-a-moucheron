@@ -1,6 +1,6 @@
 # Cartoon Office Pack — licence et conditions d'usage
 
-Les modèles 3D et la texture contenus dans `src/office-pack-data.js` (et décrits
+Les modèles 3D et la texture contenus dans `src/office-pack-data.ts` (et décrits
 par `src/office-pack-catalog.ts`) proviennent du **Cartoon Office Pack** (édition
 Extra) de **BloxBits** : <https://bloxbits.itch.io/cartoon-office-pack>.
 

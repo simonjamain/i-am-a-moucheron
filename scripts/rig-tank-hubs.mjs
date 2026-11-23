@@ -59,7 +59,7 @@ export function rigHubs(data) {
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1]).href) {
-  const file = 'src/meshy-tank-data.js';
+  const file = 'src/meshy-tank-data.ts';
   const { MODEL_DATA } = await import(pathToFileURL(file).href);
   const result = rigHubs(MODEL_DATA);
   const header = readFileSync(file, 'utf8')

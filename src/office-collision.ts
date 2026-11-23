@@ -43,7 +43,7 @@ const SHAPES: Partial<Record<OfficeModel, CollisionShape>> = {
 };
 export const collisionShape = (model: OfficeModel): CollisionShape => SHAPES[model] ?? 'mesh';
 
-/** Embedded model data (office-pack-data.js): int16 positions, uint16 indices. */
+/** Embedded model data (office-pack-data.ts): int16 positions, uint16 indices. */
 export interface PackData {
   parts: readonly { part: string; positions: string; indices: string }[];
 }

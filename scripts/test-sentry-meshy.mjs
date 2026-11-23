@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
 import * as T from '../vendor/three.module.min.js';
-import { MODEL_DATA as SOCLE } from '../src/meshy-t01-socle-data.js';
-import { MODEL_DATA as TETE } from '../src/meshy-t01-tete-data.js';
-import { MODEL_DATA as CANON } from '../src/meshy-t01-canon-data.js';
-import { MODEL_DATA as CAPTEUR } from '../src/meshy-t01-capteur-data.js';
+import { MODEL_DATA as SOCLE } from '../src/meshy-t01-socle-data.ts';
+import { MODEL_DATA as TETE } from '../src/meshy-t01-tete-data.ts';
+import { MODEL_DATA as CANON } from '../src/meshy-t01-canon-data.ts';
+import { MODEL_DATA as CAPTEUR } from '../src/meshy-t01-capteur-data.ts';
 import {
   createSentryModel,
   SENTRY_MAX_ELEVATION,

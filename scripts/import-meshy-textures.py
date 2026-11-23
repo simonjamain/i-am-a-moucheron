@@ -17,12 +17,12 @@ import numpy as np
 import trimesh
 
 CONFIG = {
-    'm1': ('f576a15791f513c5af145556f9c499d4a2ae64b4c4d4fc16f75e4b8077ce66c6','meshy-m1-data.js','M1_DATA'),
-    'h2': ('148472fadbaf69bdb02fa365a7c3581e04d550eff2f55c6177e3d25183b513de','meshy-h2-data.js','H2_DATA'),
-    'stuka': ('a98ad764232edf10d892e2eb4496a062cc82f4ea6147c17a2873e6ca7e029d95','meshy-stuka-data.js','MODEL_DATA'),
-    'spitfire': ('8e3bf0b0d947cb57e74deb0ce713c67acdecd8ed22790de6cf23fdbb735785f9','meshy-spitfire-data.js','MODEL_DATA'),
-    'tank': ('6aca60a17506abd27334d3450392b6df3d0a3b6d2250e608aaefc0fcda0eb0bb','meshy-tank-data.js','MODEL_DATA'),
-    'flaktruck': ('d8ec0b4f3f0e1e205c0bff1f8cd2b18dedd52dec93521e283d8f3e6ef7067bac','meshy-flaktruck-data.js','MODEL_DATA'),
+    'm1': ('f576a15791f513c5af145556f9c499d4a2ae64b4c4d4fc16f75e4b8077ce66c6','meshy-m1-data.ts','M1_DATA'),
+    'h2': ('148472fadbaf69bdb02fa365a7c3581e04d550eff2f55c6177e3d25183b513de','meshy-h2-data.ts','H2_DATA'),
+    'stuka': ('a98ad764232edf10d892e2eb4496a062cc82f4ea6147c17a2873e6ca7e029d95','meshy-stuka-data.ts','MODEL_DATA'),
+    'spitfire': ('8e3bf0b0d947cb57e74deb0ce713c67acdecd8ed22790de6cf23fdbb735785f9','meshy-spitfire-data.ts','MODEL_DATA'),
+    'tank': ('6aca60a17506abd27334d3450392b6df3d0a3b6d2250e608aaefc0fcda0eb0bb','meshy-tank-data.ts','MODEL_DATA'),
+    'flaktruck': ('d8ec0b4f3f0e1e205c0bff1f8cd2b18dedd52dec93521e283d8f3e6ef7067bac','meshy-flaktruck-data.ts','MODEL_DATA'),
 }
 
 
@@ -135,7 +135,7 @@ def main():
     source=Path(sys.argv[2])
     expected,filename,export=CONFIG[name]
     digest=hashlib.sha256(source.read_bytes()).hexdigest()
-    # Optional verified derivative input: name INPUT.glb OUT.js ORIGINAL.glb
+    # Optional verified derivative input: name INPUT.glb OUT.ts ORIGINAL.glb
     original_source=Path(sys.argv[4]) if len(sys.argv)>4 else None
     verify_meshy_source(source,expected,original_source)
     scene=trimesh.load(source,force='scene')

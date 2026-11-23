@@ -4,7 +4,7 @@
 import { FLYER_HIT_TOLERANCE } from '../src/scale.ts';
 import assert from 'node:assert/strict';
 import * as T from '../vendor/three.module.min.js';
-import { BEETLE_DATA } from '../src/beetle-data.js';
+import { BEETLE_DATA } from '../src/beetle-data.ts';
 import {
   BEETLE,
   BEETLE_BONES,

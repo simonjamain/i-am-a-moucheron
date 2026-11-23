@@ -26,7 +26,7 @@ python3 scripts/import-meshy-t01.py \
   --sources assets/originals/t01 --output src --texture-size 1024
 ```
 
-Cette commande ne modifie pas les GLB d'origine. Elle génère `src/meshy-t01-*-data.js` avec les atlas, UV, positions et indices encodés, selon le même modèle offline que les véhicules Meshy du jeu. Le runtime n'a pas besoin de décodeur GLB/CDN.
+Cette commande ne modifie pas les GLB d'origine. Elle génère `src/meshy-t01-*-data.ts` avec les atlas, UV, positions et indices encodés, selon le même modèle offline que les véhicules Meshy du jeu. Le runtime n'a pas besoin de décodeur GLB/CDN.
 
 Pour explorer une réduction **supplémentaire** avec l'outillage gratuit, voir [le pipeline d'assets](asset-pipeline.md) et tester les variantes sur des **copies de chaque pièce indépendante** avant de renouveler les SHA approuvés. Éviter de réduire sans test visuel les embases, logement de canon et jonction des pivots. Il faut comparer les originaux et les dérivés dans un navigateur ; l'environnement ayant créé cette PR ne dispose pas de Docker pour exécuter l'outil localement sur ces quatre GLB.
 
@@ -46,7 +46,7 @@ Le code partage les géométries et matériaux des modèles entre toutes les tou
 
 Le job GitHub Actions `Asset tool Docker and UV tests` reconstruit temporairement
 des GLB à partir des **positions, indices et UV réellement issus des quatre GLB
-Meshy** déjà intégrés dans `src/meshy-t01-*-data.js`. Il lance le conteneur
+Meshy** déjà intégrés dans `src/meshy-t01-*-data.ts`. Il lance le conteneur
 glTF Transform + meshoptimizer avec `--ratio 0.75 --error 0.005`, puis
 compare et valide chaque variante. Il publie
 l'artifact `t01-meshy-geometry-optimization` avec les nombres mesurés.

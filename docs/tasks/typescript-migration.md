@@ -15,7 +15,7 @@
 - Migrés : 121 fichiers `.ts` dans `src/` (liste : `ls src/*.ts`), `server/session.ts`,
   `server/stats.ts`, `server/stats-page.ts`, `scripts/audio-library-types.ts`.
 - Lot 5 (v413, routine du 22 novembre 2026) : les 22 feuilles prêtes (toutes sauf
-  `vehicle-anchors.js`, généré).
+  `vehicle-anchors.ts`, généré).
   - Protocole : `udp-client`, `server/session`.
   - Domaine : `contracts`, `ground-defense`, `service-zones`, `base`,
     `route-navigation`, `reserve-feedback`, `changelog`.
@@ -78,7 +78,7 @@ vérification devient lente.
 ## Ordre conseillé
 
 1. Feuilles du graphe d'imports : `npm run ts:migrate -- --leaves` (liste à jour ;
-   `vehicle-anchors.js` est généré par `import-meshy-vehicle.py`, voir la décision).
+   `vehicle-anchors.ts` est généré par `import-meshy-vehicle.py`, voir la décision).
 2. Protocole : `ws-client` (`network`, `udp-client`, `server/session` faits).
 3. Domaine : `routes`, `waves` (puis dériver `EnemyType` de
    `keyof typeof ENEMY_TYPES` et retirer la copie de `src/types.ts`).

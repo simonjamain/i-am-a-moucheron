@@ -1,11 +1,11 @@
 import assert from 'node:assert/strict';
-import { BIPLANE_DATA } from '../src/meshy-biplane-data.js';
-import { BIPLANE_BOMBER_DATA } from '../src/meshy-biplane-bomber-data.js';
-import { H2_DATA } from '../src/meshy-h2-data.js';
-import { MODEL_DATA as STUKA } from '../src/meshy-stuka-data.js';
-import { MODEL_DATA as SPITFIRE } from '../src/meshy-spitfire-data.js';
-import { MODEL_DATA as TANK } from '../src/meshy-tank-data.js';
-import { MODEL_DATA as TRUCK } from '../src/meshy-flaktruck-data.js';
+import { BIPLANE_DATA } from '../src/meshy-biplane-data.ts';
+import { BIPLANE_BOMBER_DATA } from '../src/meshy-biplane-bomber-data.ts';
+import { H2_DATA } from '../src/meshy-h2-data.ts';
+import { MODEL_DATA as STUKA } from '../src/meshy-stuka-data.ts';
+import { MODEL_DATA as SPITFIRE } from '../src/meshy-spitfire-data.ts';
+import { MODEL_DATA as TANK } from '../src/meshy-tank-data.ts';
+import { MODEL_DATA as TRUCK } from '../src/meshy-flaktruck-data.ts';
 
 for (const [name, data] of [
   ['Biplane fighter', BIPLANE_DATA],
