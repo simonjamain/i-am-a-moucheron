@@ -44,7 +44,8 @@ assert.ok(ONSET_START > 0.3 && ONSET_START < 0.8);
 // Plus l'air est perturbé, plus le ruban est large, long et ondulé.
 const calmLook = ribbonLook(near),
   stallLook = ribbonLook(deep);
-assert.ok(stallLook.width > calmLook.width && stallLook.life > calmLook.life);
+assert.equal(stallLook.width, calmLook.width, 'la largeur ne change pas avec le décrochage');
+assert.ok(stallLook.life > calmLook.life);
 assert.ok(stallLook.wobble > 5 * calmLook.wobble && stallLook.opacity > calmLook.opacity);
 
 // Angle d'incidence depuis la vitesse et l'orientation (nez vers -Z, dessus +Y).
@@ -56,13 +57,13 @@ assert.ok(sinking.alpha > 0.3, 'le nez au-dessus de la trajectoire : incidence p
 const pitched = new T.Quaternion().setFromAxisAngle(new T.Vector3(1, 0, 0), 0.4);
 assert.ok(attackAngle(T, pitched, new T.Vector3(0, 0, -1)).alpha > 0.35, 'nez cabré');
 
-// Ancrages : quatre rubans par avion, symétriques, aux bouts d'aile réels.
+// Ancrages : un ruban par bout d'aile, à l'intérieur de l'aile.
 for (const type of PLANE_TYPES) {
   const anchors = wingAnchors(type);
-  assert.equal(anchors.length, 4, type);
-  const [right, left, midRight, midLeft] = anchors;
-  assert.ok(right[0] > 0 && left[0] < 0 && midRight[0] > 0 && midLeft[0] < 0, type + ' côtés');
-  assert.ok(Math.abs(right[0]) > Math.abs(midRight[0]), type + ' : bout plus loin que le milieu');
+  assert.equal(anchors.length, 2, type);
+  const [right, left] = anchors;
+  assert.ok(right[0] > 0 && left[0] < 0, type + ' côtés');
+  assert.ok(Math.abs(right[0] + left[0]) < 0.1, type + ' symétrique');
   // A model unit is about 1.9 reference metres: the tips stand at the same share of the span.
   const ratio = (right[0] - left[0]) / planeSpec(type).size.span;
   assert.ok(ratio > 0.45 && ratio < 0.6, type + ' : bouts d’aile à l’envergure, ' + ratio);
@@ -94,7 +95,7 @@ for (let i = 0; i < 90; i++) step(params.stallAngle * 0.85 - params.zeroLift);
 const approach = ribbons.mesh.geometry.drawRange.count;
 const approachAlpha = Math.max(...ribbons.mesh.geometry.attributes.alpha.array);
 assert.ok(approach > 0, 'à l’approche du décrochage les rubans naissent');
-assert.equal(ribbons.ribbons.size, 4, 'un ruban par bout d’aile et par milieu d’aile');
+assert.equal(ribbons.ribbons.size, 2, 'un ruban par bout d’aile');
 for (let i = 0; i < 90; i++) step(params.stallAngle + 0.25);
 const stalled = ribbons.mesh.geometry.drawRange.count;
 assert.ok(stalled >= approach);
@@ -109,6 +110,39 @@ assert.ok(
   Math.max(...ribbons.mesh.geometry.attributes.alpha.array) <= 0.71,
   'translucides, jamais opaques',
 );
+// La fin du ruban disparaît progressivement : le point le plus ancien est invisible.
+{
+  const alpha = ribbons.mesh.geometry.attributes.alpha.array;
+  const count = ribbons.mesh.geometry.index.array.length;
+  const used = new Set(
+    ribbons.mesh.geometry.index.array.slice(0, ribbons.mesh.geometry.drawRange.count),
+  );
+  const lastVertices = [...used].sort((a, b) => a - b).slice(-2);
+  const peak = Math.max(...alpha);
+  for (const v of lastVertices) assert.ok(alpha[v] < 0.05 * peak, 'la queue s’éteint, ' + alpha[v]);
+  assert.ok(count > 0);
+  // Turbulence arrondie : l'axe du ruban ne fait aucun angle saillant entre deux pièces.
+  const pos = ribbons.mesh.geometry.attributes.position.array;
+  const centre = (k) => [0, 1, 2].map((c) => (pos[2 * k * 3 + c] + pos[(2 * k + 1) * 3 + c]) / 2);
+  let worst = 0;
+  // The first of the two equal ribbons: its samples come first in the buffer.
+  const pieces = ribbons.mesh.geometry.drawRange.count / 6 / 2 + 1;
+  for (let k = 1; k < pieces - 1; k++) {
+    const a = centre(k - 1),
+      b = centre(k),
+      c = centre(k + 1);
+    const u = b.map((v, i) => v - a[i]),
+      w = c.map((v, i) => v - b[i]);
+    // Hops much shorter than the ribbon's width (0.5 mm) are invisible.
+    if (Math.hypot(...u) < 5e-5 || Math.hypot(...w) < 5e-5) continue;
+    const dot =
+      u.reduce((s2, v, i) => s2 + v * w[i], 0) / (Math.hypot(...u) * Math.hypot(...w) || 1);
+    const ang = Math.acos(Math.min(1, Math.max(-1, dot)));
+    worst = Math.max(worst, ang);
+  }
+  assert.ok(pieces > 60, 'chaque segment est tracé en plusieurs morceaux d’une courbe lisse');
+  assert.ok(worst < 0.3, 'courbe arrondie, virage max ' + worst);
+}
 // Dès que l'incidence redevient normale les points vieillissent puis disparaissent.
 for (let i = 0; i < 400; i++) step(0.05);
 assert.equal(ribbons.ribbons.size, 0, 'rubans dissipés');

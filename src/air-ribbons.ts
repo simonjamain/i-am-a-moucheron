@@ -17,7 +17,14 @@ export const ONSET_START = 0.55;
 /** Angle (rad) over which the stall deepens past the stall angle (plane-physics.ts). */
 export const STALL_SPAN = 0.2;
 const POINTS = 18;
-const MAX_RIBBONS = 96;
+const MAX_RIBBONS = 48;
+/** Each emitted segment is drawn as this many pieces of a smooth curve (Catmull-Rom). */
+const SUBDIV = 4;
+const SAMPLES = (POINTS - 1) * SUBDIV + 1;
+/** Ribbons per plane: one at each wingtip. */
+const PER_PLANE = 2;
+/** Constant width of a ribbon, in model units (only the opacity grows with the stall). */
+const WIDTH = 0.16;
 const SPACING = 0.45; // model units between two emitted points
 const MAX_STEP = 0.07; // seconds: also emit a point when the plane hardly moves
 
@@ -72,13 +79,17 @@ export interface RibbonLook {
 export function ribbonLook(flow: Airflow): RibbonLook {
   return {
     opacity: 0.1 + 0.6 * flow.level,
-    width: 0.14 + 0.22 * flow.onset + 0.35 * flow.stalled,
+    width: WIDTH,
     life: 0.55 + 0.45 * flow.onset + 0.9 * flow.stalled,
     wobble: 0.04 * flow.onset + 0.7 * flow.stalled,
   };
 }
 
-/** Where the ribbons leave the wings, in model units: both tips, then both mid-wings. */
+/**
+ * Where the ribbons leave the wings, in model units: both wingtips, a little inside the
+ * wing (and ahead of its trailing edge) so the square start of the ribbon stays hidden
+ * in the model.
+ */
 export function wingAnchors(type: string): readonly (readonly [number, number, number])[] {
   const boxes = AIRCRAFT_GEOMETRY[type]?.boxes ?? [];
   let right: (typeof boxes)[number] | null = null,
@@ -89,16 +100,11 @@ export function wingAnchors(type: string): readonly (readonly [number, number, n
   }
   if (!right || !left) return [];
   const tip = (box: typeof right, side: 1 | -1): [number, number, number] => [
-    side * (side > 0 ? box.at[0] + box.half[0] : box.half[0] - box.at[0]) * 0.97,
+    side * (side > 0 ? box.at[0] + box.half[0] : box.half[0] - box.at[0]) * 0.9,
     box.at[1],
-    box.at[2] + box.half[2] * 0.9,
+    box.at[2] + box.half[2] * 0.5,
   ];
-  const mid = (box: typeof right, side: 1 | -1): [number, number, number] => [
-    side * (side > 0 ? box.at[0] + box.half[0] : box.half[0] - box.at[0]) * 0.5,
-    box.at[1] + box.half[1],
-    box.at[2],
-  ];
-  return [tip(right, 1), tip(left, -1), mid(right, 1), mid(left, -1)];
+  return [tip(right, 1), tip(left, -1)];
 }
 
 interface RibbonPoint {
@@ -147,10 +153,10 @@ export class AirRibbons {
   ribbons = new Map<string, Ribbon>();
   /** Airflow of each aircraft at its last emission (read by the sound). */
   levels = new Map<string, Airflow>();
-  positions = new Float32Array(MAX_RIBBONS * POINTS * 2 * 3 + 6);
-  alphas = new Float32Array(MAX_RIBBONS * POINTS * 2 + 2);
-  sides = new Float32Array(MAX_RIBBONS * POINTS * 2 + 2);
-  indices = new Uint16Array(MAX_RIBBONS * (POINTS - 1) * 6);
+  positions = new Float32Array(MAX_RIBBONS * SAMPLES * 2 * 3);
+  alphas = new Float32Array(MAX_RIBBONS * SAMPLES * 2);
+  sides = new Float32Array(MAX_RIBBONS * SAMPLES * 2);
+  indices = new Uint16Array(MAX_RIBBONS * (SAMPLES - 1) * 6);
   mesh: THREE.Mesh<THREE.BufferGeometry, THREE.ShaderMaterial>;
 
   constructor(T: Three, scene: THREE.Object3D, random: () => number = Math.random) {
@@ -244,7 +250,7 @@ export class AirRibbons {
   /** Forgets an aircraft that left the room. */
   forget(id: string): void {
     this.levels.delete(id);
-    for (let i = 0; i < 4; i++) this.ribbons.delete(id + ':' + i);
+    for (let i = 0; i < PER_PLANE; i++) this.ribbons.delete(id + ':' + i);
   }
 
   /** Ages every point, drops the dead ones and rebuilds the strip facing the camera. */
@@ -254,7 +260,6 @@ export class AirRibbons {
     const tangent = new T.Vector3(),
       view = new T.Vector3(),
       sideways = new T.Vector3(),
-      point = new T.Vector3(),
       up = new T.Vector3(0, 1, 0);
     let vertex = 0,
       index = 0;
@@ -270,47 +275,88 @@ export class AirRibbons {
       if (ribbon.live) chain.push({ p: ribbon.head.clone(), look: ribbon.look, age: 0, seed: 0 });
       for (const p of ribbon.points)
         chain.push({ p: new T.Vector3(p.x, p.y, p.z), look: p.look, age: p.age, seed: p.seed });
-      if (chain.length < 2) continue;
-      if (vertex + chain.length * 2 > MAX_RIBBONS * POINTS * 2) break;
-      const first = vertex;
-      chain.forEach((c, i) => {
-        const prev = chain[Math.max(0, i - 1)].p,
-          next = chain[Math.min(chain.length - 1, i + 1)].p;
-        tangent.copy(next).sub(prev);
+      const n = chain.length;
+      if (n < 2) continue;
+      if (vertex + SAMPLES * 2 > MAX_RIBBONS * SAMPLES * 2) break;
+      // Each emitted point drifts off the line of the wing, more as the stall deepens, and
+      // fades along the ribbon: the oldest point a ribbon can hold is already invisible,
+      // so nothing is cut off while it is still visible.
+      const bent = chain.map((c, i) => {
+        tangent.copy(chain[Math.min(n - 1, i + 1)].p).sub(chain[Math.max(0, i - 1)].p);
         if (tangent.lengthSq() < 1e-12) tangent.set(0, 0, -1);
         tangent.normalize();
-        const life = c.look.life,
-          u = Math.min(1, c.age / life),
-          grow = Math.min(1, c.age * 3);
-        // The air drifts off the line of the wing: more and more as the stall deepens.
         sideways.crossVectors(tangent, up);
         if (sideways.lengthSq() < 1e-8) sideways.set(1, 0, 0);
         sideways.normalize();
-        point.copy(c.p);
-        const wobble = c.look.wobble * ribbon.unit * grow;
-        point.addScaledVector(sideways, Math.sin(c.age * 9 + c.seed) * wobble);
-        point.addScaledVector(up, Math.cos(c.age * 7 + c.seed * 1.7) * wobble * 0.6);
-        view.copy(eye).sub(point);
+        const wobble = c.look.wobble * ribbon.unit * Math.min(1, c.age * 3);
+        const p = c.p.clone();
+        p.addScaledVector(sideways, Math.sin(c.age * 9 + c.seed) * wobble);
+        p.addScaledVector(up, Math.cos(c.age * 7 + c.seed * 1.7) * wobble * 0.6);
+        const t = Math.max(Math.min(1, c.age / c.look.life), Math.min(1, i / (POINTS - 1)));
+        return {
+          p,
+          alpha: c.look.opacity * (1 - t) ** 1.6,
+          half: 0.5 * c.look.width * ribbon.unit,
+        };
+      });
+      // A smooth curve through the points (centripetal Catmull-Rom, SUBDIV pieces per
+      // segment): the turbulence stays round however few points are emitted, and unevenly
+      // spaced points (one just emitted next to the wing) never make a loop or a kink.
+      const curve: { p: THREE.Vector3; alpha: number; half: number }[] = [];
+      for (let i = 0; i < n - 1; i++) {
+        const p1 = bent[i],
+          p2 = bent[i + 1];
+        // Ends of the ribbon extend their last segment in a straight line.
+        const p0 = i > 0 ? bent[i - 1].p : p1.p.clone().multiplyScalar(2).sub(p2.p),
+          p3 = i + 2 < n ? bent[i + 2].p : p2.p.clone().multiplyScalar(2).sub(p1.p);
+        const t1 = Math.sqrt(Math.max(1e-9, p0.distanceTo(p1.p))),
+          t2 = t1 + Math.sqrt(Math.max(1e-9, p1.p.distanceTo(p2.p))),
+          t3 = t2 + Math.sqrt(Math.max(1e-9, p2.p.distanceTo(p3)));
+        for (let k = 0; k < SUBDIV; k++) {
+          const f = k / SUBDIV,
+            t = t1 + (t2 - t1) * f;
+          const lerp = (a: THREE.Vector3, b: THREE.Vector3, ta: number, tb: number) =>
+            a
+              .clone()
+              .multiplyScalar((tb - t) / (tb - ta))
+              .addScaledVector(b, (t - ta) / (tb - ta));
+          const a1 = lerp(p0, p1.p, 0, t1),
+            a2 = lerp(p1.p, p2.p, t1, t2),
+            a3 = lerp(p2.p, p3, t2, t3);
+          const b1 = lerp(a1, a2, 0, t2),
+            b2 = lerp(a2, a3, t1, t3);
+          curve.push({
+            p: lerp(b1, b2, t1, t2),
+            alpha: p1.alpha + (p2.alpha - p1.alpha) * f,
+            half: p1.half + (p2.half - p1.half) * f,
+          });
+        }
+      }
+      curve.push(bent[n - 1]);
+      const first = vertex;
+      curve.forEach((c, i) => {
+        tangent.copy(curve[Math.min(curve.length - 1, i + 1)].p).sub(curve[Math.max(0, i - 1)].p);
+        if (tangent.lengthSq() < 1e-12) tangent.set(0, 0, -1);
+        tangent.normalize();
+        view.copy(eye).sub(c.p);
         sideways.crossVectors(tangent, view);
         if (sideways.lengthSq() < 1e-12) sideways.set(0, 1, 0);
         sideways.normalize();
-        const half = 0.5 * c.look.width * ribbon.unit * (1 + 0.9 * u);
-        const alpha = c.look.opacity * (1 - u) ** 1.3;
         for (const s of [-1, 1]) {
           this.positions.set(
             [
-              point.x + sideways.x * half * s,
-              point.y + sideways.y * half * s,
-              point.z + sideways.z * half * s,
+              c.p.x + sideways.x * c.half * s,
+              c.p.y + sideways.y * c.half * s,
+              c.p.z + sideways.z * c.half * s,
             ],
             vertex * 3,
           );
-          this.alphas[vertex] = alpha;
+          this.alphas[vertex] = c.alpha;
           this.sides[vertex] = s;
           vertex++;
         }
       });
-      for (let k = 0; k < chain.length - 1; k++) {
+      for (let k = 0; k < curve.length - 1; k++) {
         const a = first + k * 2;
         this.indices.set([a, a + 1, a + 2, a + 1, a + 3, a + 2], index);
         index += 6;
