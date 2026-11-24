@@ -107,6 +107,38 @@ assert.equal(
 assert.equal(query.nearest([0, ay, 0], 5), 2, 'decor nearest');
 query.sync(solids, { raycast: () => null, nearest: () => null });
 assert.equal(query.hit([0, ay, toWorld(-30)], [0, 0, 1], toWorld(50)), null, 'skipped boxes');
+// Placement: flat tops under a footprint, highest first, and the headroom above them.
+{
+  const table = box(toWorld(-3), toWorld(1), toWorld(-3), toWorld(3), toWorld(2), toWorld(3));
+  const floor = box(toWorld(-30), toWorld(-1), toWorld(-30), toWorld(30), 0, toWorld(30));
+  const roof = box(toWorld(-3), toWorld(4), toWorld(-3), toWorld(3), toWorld(5), toWorld(3));
+  const world = new SolidQuery(RAPIER);
+  world.sync([floor, table, roof]);
+  const q = {
+    x: 0,
+    y: toWorld(2),
+    z: 0,
+    angle: 0.4,
+    rx: toWorld(1),
+    rz: toWorld(1.5),
+    height: toWorld(1.5),
+  };
+  const tops = world.supports(q, toWorld(1), toWorld(6));
+  assert.equal(tops.length, 2, 'the table top and the floor under it');
+  assert.ok(Math.abs(tops[0] - toWorld(2)) < 1e-6 && Math.abs(tops[1]) < 1e-6, 'highest first');
+  assert.equal(world.clear(q, tops[0]), true, 'free headroom above the table');
+  assert.equal(
+    world.clear({ ...q, height: toWorld(2.5) }, tops[0]),
+    false,
+    'the roof 2 m above blocks 2.5 m',
+  );
+  const edge = world.supports({ ...q, x: toWorld(2.5) }, toWorld(1), toWorld(6));
+  assert.ok(
+    edge.every((y) => Math.abs(y) < 1e-6),
+    'over the table edge only the floor carries it',
+  );
+  world.dispose();
+}
 query.dispose();
 
 console.log(

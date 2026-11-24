@@ -1,8 +1,7 @@
 import { MAP, ACTOR_UNIT } from './scale.ts';
 import { VEHICLES } from './fleet.ts';
 import { supportedPlacement } from './equipment.ts';
-import type { OccupiedSpot, PlacementPoint } from './equipment.ts';
-import type { Collider } from './oriented-collider.ts';
+import type { OccupiedSpot, PlacementGround, PlacementPoint } from './equipment.ts';
 import type { VehicleProfile, VehicleType } from './fleet.ts';
 import type { Vec3Like } from './types.ts';
 
@@ -40,30 +39,24 @@ export function deliveryHeightAt(delivery: Delivery, now: number): number {
 }
 export function deliveryLanding(
   delivery: Delivery,
-  solids: readonly Collider[],
+  ground: PlacementGround | null,
   occupied: readonly OccupiedSpot[] = [],
 ): PlacementPoint | null {
-  const allSolids: Collider[] = [
-    ...solids,
-    { min: { x: -4.15, y: -0.1, z: -3.55 }, max: { x: 4.15, y: 0, z: 3.55 } },
-  ];
-  const surfaces = allSolids.filter((b) => b.max.y <= delivery.y).sort((a, b) => b.max.y - a.max.y);
-  for (const box of surfaces) {
-    const point = supportedPlacement(
-      { x: delivery.x, y: box.max.y, z: delivery.z },
-      allSolids,
-      occupied,
-      delivery.item,
-    );
-    if (point && point.y <= delivery.y + 0.0001) return point;
-  }
-  return null;
+  const point = supportedPlacement(
+    { x: delivery.x, y: delivery.y, z: delivery.z },
+    ground,
+    occupied,
+    delivery.item,
+    // Anything below, however far: it falls from the carrier's height.
+    { up: 0, down: delivery.y + 1 },
+  );
+  return point && point.y <= delivery.y + 0.0001 ? point : null;
 }
 export function deliveryStart(
   carrier: DeliveryCarrier,
   item: string,
   sequence: number,
-  solids: readonly Collider[],
+  ground: PlacementGround | null,
   occupied: readonly OccupiedSpot[],
 ): Delivery | null {
   const profile = PROFILES[item];
@@ -84,7 +77,7 @@ export function deliveryStart(
     };
     if (Math.abs(d.x) > 4 || Math.abs(d.z) > 3.4) continue;
     if (occupied.some((s) => Math.hypot(s.x - d.x, s.z - d.z) < spacing)) continue;
-    if (deliveryLanding(d, solids, occupied)) return d;
+    if (deliveryLanding(d, ground, occupied)) return d;
   }
   return null;
 }

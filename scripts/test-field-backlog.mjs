@@ -6,6 +6,7 @@ import { VEHICLES, vehicleEntry, vehicleAccess } from '../src/fleet.ts';
 import { ACTOR_UNIT } from '../src/scale.ts';
 import { OFFICE_LAYOUT } from '../src/layout.ts';
 import { walkerWorld } from './walker-harness.mjs';
+import { solidQuery } from './solid-harness.mjs';
 const source = readFileSync('src/client.js', 'utf8');
 const eligibility =
   source.slice(
@@ -226,7 +227,7 @@ for (const collider of OFFICE_SOLIDS) {
     z: (collider.min.z + collider.max.z) / 2,
     y: collider.max.y + 0.00005,
   };
-  const proposed = supportedPlacement(point, OFFICE_SOLIDS, [], 'bed');
+  const proposed = supportedPlacement(point, solidQuery(OFFICE_SOLIDS), [], 'bed');
   if (proposed && proposed.y < 0.7 && Math.abs(proposed.x) > 1) {
     placement = proposed;
     break;
@@ -284,7 +285,7 @@ function revive(p, diesAgain = false) {
   assert.equal(p.health, 100);
 }
 revive(bedPilot, true);
-assert.deepEqual(bedPilot.state.walkSpawn, bedSpawn(bed, OFFICE_SOLIDS, bedRoom.equipment));
+assert.deepEqual(bedPilot.state.walkSpawn, bedSpawn(bed));
 walkTo(bedPilot, placement);
 bedGame.command('BEDS', bedPilot.id, 'bed-contract', {
   ...contract,

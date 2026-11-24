@@ -60,7 +60,7 @@ for (const angle of [0, Math.PI / 4, Math.PI / 2, -Math.PI / 3]) {
   model.rotation.y = angle;
   model.scale.setScalar(MAP.ratio);
   const collider = makeInstallationCollider(T, model);
-  const spawn = bedSpawn(station, [floor], [station]);
+  const spawn = bedSpawn(station);
   assert.ok(spawn);
   const point = baseWorld(spawn);
   assert.ok(bedAccess(point, station), 'respawn stays near the bed');

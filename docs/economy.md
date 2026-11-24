@@ -34,12 +34,14 @@ débité une seule fois quel que soit le poste signataire et hors limite de 24.
 
 ## Poser
 
-`supportedPlacement` (`src/equipment.ts`) est le même test côté navigateur et serveur :
-appui de toute l’emprise, hauteur libre, à portée (`PLACEMENT_REACH`, 9 m de référence)
-d’un marcheur vivant au sol, à l’écart des appareils garés et des autres installations.
-Les boîtes de collision viennent du plan actif ([plans](office-layouts.md)) ; sur les
-meubles du pack, le serveur accepte la hauteur de surface déclarée par le client si elle
-tombe dans la boîte du meuble (`decorTrust`, voir [collisions](collisions.md)).
+`supportedPlacement` (`src/equipment.ts`) juge la pose dans le navigateur (aperçu vert ou
+rouge) : appui de toute l’emprise, hauteur libre, à portée (`PLACEMENT_REACH`, 9 m de
+référence) d’un marcheur vivant au sol, à l’écart des appareils garés et des autres
+installations. Les solides viennent du plan actif ([plans](office-layouts.md)), interrogés
+dans Rapier ([collisions](collisions.md)). Le serveur n’en juge pas : il enregistre la
+pose envoyée (limite de 24 équipements comprise), le joueur est cru
+([confiance](trust-model.md)). Les colis parachutés, eux, atterrissent selon le serveur
+(`deliveryLanding`, même test).
 
 La zone de service d’une station n’est pas un obstacle : une station peut se poser près
 d’un appareil immobilisé, et un équipement dans sa zone ; seul le socle de la station

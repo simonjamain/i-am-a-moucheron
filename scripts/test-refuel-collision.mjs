@@ -5,6 +5,7 @@ import { stepWalker } from '../src/sortie.ts';
 import { MAP, ACTOR_UNIT } from '../src/scale.ts';
 import { OFFICE_LAYOUT } from '../src/layout.ts';
 import { walkerWorld } from './walker-harness.mjs';
+import { solidQuery } from './solid-harness.mjs';
 for (const angle of [Math.PI / 4, -Math.PI / 4, Math.PI / 3]) {
   const station = makeServiceStation(T, 'refuel');
   station.scale.setScalar(MAP.ratio);
@@ -108,7 +109,7 @@ const roof = makeRefuelCollider(T, roofStation);
 const falseRoof = { x: roof.min.x + 0.0091, y: roof.max.y, z: roof.min.z + 0.0066, angle: 0 };
 assert.equal(roof.containsPoint(new T.Vector3(falseRoof.x, falseRoof.y, falseRoof.z)), false);
 assert.equal(
-  supportedPlacement(falseRoof, [roof], [], 'bed'),
+  supportedPlacement(falseRoof, solidQuery([roof]), [], 'bed'),
   null,
   'empty diagonal corner must not support a placement',
 );

@@ -5737,7 +5737,7 @@ function updatePlacement() {
       body.grounded !== false && p
         ? supportedPlacement(
             { ...p, angle: placementFacing(w, p) },
-            colliders,
+            solids(),
             [
               ...stations,
               ...(snap?.vehicles || [])
@@ -5750,7 +5750,6 @@ function updatePlacement() {
                 })),
             ],
             placementKind,
-            office.decor ?? undefined,
           )
         : null;
   placementCandidate = candidate;

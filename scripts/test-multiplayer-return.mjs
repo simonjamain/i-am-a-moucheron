@@ -22,6 +22,7 @@ import { staticGroundFlow } from '../src/ground-defense.ts';
 import { blockedSegment } from '../src/route-navigation.ts';
 import { HEAVY, heavyDamage } from '../src/armament.ts';
 import { createOrdnance } from '../src/ordnance.js';
+import { solidQuery } from './solid-harness.mjs';
 let now = 100000;
 const game = new Game({ now: () => now, solids: OFFICE_SOLIDS });
 const joined = game.join({ code: 'RETURN', name: 'Jean Dupont' }),
@@ -132,7 +133,7 @@ for (const [index, type] of Object.keys(VEHICLES).entries()) {
     for (let z = 2.7; z > 1.5 && !position; z -= 0.2) {
       const candidate = supportedPlacement(
         { x, y: 0, z },
-        OFFICE_SOLIDS,
+        solidQuery(OFFICE_SOLIDS),
         [...r.vehicles.values()].map((v) => ({
           x: v.state.p[0],
           y: v.state.p[1],

@@ -17,6 +17,8 @@ aussi dans `AGENTS.md`.
 
 Ces contrôles ne visent pas un tricheur ; ils gardent la partie cohérente et la salle en vie :
 
+- **Pose d'équipement** : le serveur n'en juge pas le support ni la portée ; le joueur pose où il veut
+  (aperçu et test côté navigateur, `supportedPlacement`). Il garde la limite de 24 installations.
 - **Règles de jeu partagées** : sièges et occupation, stocks et munitions (un tir en consomme),
   argent, contrats, signatures, tarifs, ordre des documents, proximité requise pour monter à
   bord ou s'asseoir.

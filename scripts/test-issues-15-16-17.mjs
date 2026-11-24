@@ -4,8 +4,9 @@ import { readFileSync } from 'node:fs';
 import * as T from '../vendor/three.webgpu.min.js';
 import { MAP } from '../src/scale.ts';
 import * as delivery from '../src/delivery.ts';
-import { Game } from '../server/game.js';
+import { Game, loadServerPhysics } from '../server/game.js';
 import { wavePlan, ENEMY_TYPES } from '../src/waves.ts';
+await loadServerPhysics();
 const source = readFileSync('src/client.js', 'utf8');
 // #15: execute the real crate renderer between authoritative snapshots.
 let now = 100000;
@@ -203,7 +204,7 @@ for (const surfaceY of [0, 0.9]) {
   }
   assert.equal(room.deliveries.length, 0);
   assert.equal(room.equipment.length, 1);
-  assert.ok(Math.abs(room.equipment[0].y - surfaceY - 0.00005) < 1e-9);
+  assert.ok(Math.abs(room.equipment[0].y - surfaceY - 0.00005) < 1e-6); // Rapier: 32 bits
   game.snapshot(room);
   assert.equal(room.equipment.length, 1, 'single deployment');
   game.command(room.code, p.id, 'reset', { epoch: room.base.epoch });

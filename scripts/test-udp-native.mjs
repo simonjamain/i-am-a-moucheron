@@ -7,6 +7,7 @@ import { PeerConnection, cleanup } from 'node-datachannel';
 import { createGameServer } from '../server/index.js';
 import { decodeMotionBatch } from '../src/motion-wire.ts';
 import { ReplyAssembler, PROTOCOL, COMMAND_CHANNEL, MOTION_CHANNEL } from '../src/udp-protocol.ts';
+import { solidQuery } from './solid-harness.mjs';
 
 const app = createGameServer({
   portBegin: 42000,
@@ -168,7 +169,12 @@ try {
     incarnation: person.incarnation,
   });
   assert.equal(purchased.status, 200);
-  const position = supportedPlacement({ x: 1.5, y: 0, z: 2.8 }, OFFICE_SOLIDS, [], 'spitfire');
+  const position = supportedPlacement(
+    { x: 1.5, y: 0, z: 2.8 },
+    solidQuery(OFFICE_SOLIDS),
+    [],
+    'spitfire',
+  );
   assert.ok(position);
   Object.assign(app.game.base(gameRoom, person), {
     x: (position.x - OFFICE_LAYOUT.base.originX) / ACTOR_UNIT,
