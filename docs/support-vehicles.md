@@ -63,7 +63,8 @@ assisté de jeu sur un corps Rapier (`src/heli-physics.ts`), pas une simulation 
   abandonne l'excédent, sans cible à rattraper ; une souris immobile arrête la tourelle.
   Caméra, MG et guidage suivent la direction réelle de la tourelle. Le clic tire la MG,
   Espace lance le missile ; un second appui distinct sur Espace le fait exploser. MG et
-  missile s'utilisent en même temps.
+  missile s'utilisent en même temps : le serveur accepte les rapports de tirs de la MG pendant
+  le vol du missile (un refus bloquait la MG du client jusqu'à la sortie du poste).
 - **Missile.** Il vise le point regardé par le copilote, à 1,2 rad/s au plus, sans
   acquisition de cible. Fin sans explosion après sa durée de vie ; détruit sans dégâts
   avec la coque. Sortie, transfert, mort ou déconnexion du copilote rompt le guidage et
