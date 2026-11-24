@@ -1,504 +1,253 @@
-# Gameplay actuel
+# Gameplay
 
-Référence consolidée le 30 octobre 2026, comportement du runtime Node courant.
-Mettre à jour les sections concernées lorsque le comportement change.
+Vue d’ensemble des règles et du parcours joueur. Chaque section renvoie à la
+référence détaillée de son sujet ; les touches sont dans [commandes](controls.md).
+Valeurs par défaut de la room : `src/balance.js` ; catalogue et prix : `src/equipment.ts`.
 
-Index : [commandes](controls.md) · [économie et signatures](economy-physics.md) · [réseau](walking-network.md) ·
-[écran de chargement](loading-screen.md) · [viseurs, traçantes et brouillard](toon-rendering.md).
+## Principe
 
-## Session réseau
+Jeu coopératif à la troisième personne : les joueurs d’une room défendent la
+poubelle d’un bureau contre des vagues d’insectes, à pied, en avion, en hélicoptère,
+en char ou depuis des installations. La partie vit en mémoire du serveur Node et
+disparaît à son redémarrage. Les mouvements sont simulés par chaque client et
+relayés par WebRTC/UDP (repli WebSocket) ; signatures, achats et impacts passent
+par un canal fiable. Voir [réseau et corps partagés](walking-network.md),
+[serveur UDP](udp-server.md) et [confiance envers les clients](trust-model.md).
 
-Le serveur Node utilise WebRTC sur UDP. Les mouvements sont locaux,
-relayés par le serveur à 20 Hz ; signatures, achats, impacts et changements de
-monde passent sur un canal fiable avec confirmation. Un réseau sans UDP joue en
-TCP sur un WebSocket, moins fluide en cas de pertes. Toute la partie reste en mémoire et
-un redémarrage la supprime. Voir le [guide UDP](udp-server.md).
-
-## Boucle de jeu
-
-Les joueurs rejoignent une salle coopérative, apparaissent à pied au sol près de la
-corbeille (le [plan du bureau](office-layouts.md) est choisi à la création de la room)
-et utilisent une caméra à la troisième personne. Ils rejoignent physiquement un
-équipement, remplissent son dossier et en prennent un siège. Les avions ont du carburant et
-des munitions limités, à compléter en se posant et s’arrêtant dans une station. L’objectif est de
-protéger la poubelle contre les insectes ; les arrivées ennemies augmentent
-l’infestation. La mort ouvre une observation à caméra fixe ; un clic volontaire donne accès au purgatoire et à la paperasse de retour en jeu.
-
-Avant chaque vague, le serveur annonce les entrées et les horaires des groupes. La préparation dure une minute par défaut ; tout joueur peut lancer la vague avant la fin du compte à rebours. Il n'y a ni vote ni plan à débloquer entre les vagues (retirés en version 264) : équipements et véhicules s'achètent simplement à leur prix en dollars. La première vague part des fourmis et des moucherons, complétés par n’importe quelle espèce que son budget permet (aucun déblocage), puis son budget, exprimé en **puissance**, est multiplié par 1,5 à chaque étape, sans plafond, et par `N^0,9` pour `N` joueurs. La frise et le bouton de vague affichent la puissance de la vague annoncée. Voir [progression](progression.md) et [équilibrage](enemy-power.md#unité-commune). Des groupes aériens arrivent depuis
-plusieurs aérations, se séparent et se rejoignent ; fourmis et cafards sortent
-de trous et marchent vers la poubelle par le chemin le plus direct qui contourne le
-mobilier et les barricades (voir [navigation terrestre](#navigation-terrestre)).
-La durée nominale des trajets dépend de leur longueur à vitesse conservée.
-
-Les règles de la room sont fixes : l'ancien panneau **Équilibrage et nuées** est retiré
-(voir [historique](enemy-power.md)).
-
-## Mode debug
-
-Le bouton **Debug : OFF / ON** du HUD est un interrupteur direct, commun à la room :
-un clic l'active, le suivant le désactive. Actif : argent illimité, toutes les
-constructions débloquées, aucun dégât de chute et défaite
-impossible. Les dégâts de la poubelle restent calculés et le HUD affiche ses PV,
-même négatifs (« -75 / 20 PV »). Désactiver réinitialise la partie aux règles normales.
-Pendant une vague, le marchand (P) propose en plus deux colonnes pour poser un ennemi
-au point visé : **Mannequins** (immobiles, invulnérables, avec le dernier dégât reçu
-affiché en gros) et **Ennemis réels**. Les hitbox des ennemis, la portée des
-tourelles et du sucre, et les volumes de collision du décor (murs, meubles,
-ventilateurs, constructions : fil de fer cyan sur faces légèrement teintées) sont
-toujours visibles.
-Voir [mode debug](laboratory.md).
+Le décor est en mètres réels ; personnages, véhicules et distances de référence
+sont multipliés par le ratio de carte (3/1000 au bureau : un personnage de 1,80 m
+mesure 5,4 mm). Durées et vitesses angulaires ne sont pas mises à l’échelle. Voir
+[unités et flotte](scale-fleet-weapons.md).
 
 ## Accueil et noms
 
-L'accueil affiche le titre **I am a moucheron**, le formulaire et l'indication « Base
-Alpha », sur le bureau 3D animé ; aucun slogan, badge ni mention de prototype, et
-plus d'étiquette flottante « BASE ALPHA · 3 / 1000 » dans la scène. Le numéro de
-version, en haut à gauche, ouvre les **Nouveautés**. Entre les champs pseudo/code et
-« Rejoindre la base », un sélecteur montre le **personnage** choisi qui pivote doucement ;
-les flèches (ou ←/→ quand il a le focus) parcourent les huit modèles (sans cadre ni
-nom affiché, sur le fond du panneau), le choix est
-mémorisé dans le navigateur et visible par tous les joueurs (purgatoire, bureau, DCA).
-La mention « Même code, même partie » a été retirée, et la ligne de message sous le
-bouton n'occupe de place que lorsqu'elle affiche un message. En jeu, le modèle tourne vers
-sa direction de marche en douceur (environ un quart de seconde pour un demi-tour). Il n'y a plus de réglage audio visible : le son
-démarre au volume standard dès la première interaction autorisée par le navigateur.
+L’accueil montre le titre **I am a moucheron**, les champs pseudo et code de room,
+un sélecteur de **personnage** (huit modèles de `src/character-appearances.ts`,
+mémorisés dans le navigateur et visibles par tous) et « Rejoindre la base ». Le
+numéro de version, en haut à gauche, ouvre les [Nouveautés](changelog.md). Le
+lien d’invitation est l’adresse avec `?room=`. Le [plan du bureau](office-layouts.md)
+est choisi à la création de la room. Le son démarre à la première interaction.
 
-Noms validés (version 276, sans préfixe ni suffixe de code) : **Chasseur biplan**,
-**Bombardier biplan**, **Hélicoptère d’attaque au sol**, **Char moyen**, **Castor**,
-**Anti-air mobile**, **Spitfire**, DCA fixe **Flak léger**, canon lourd **Canon
-anti-matériel** ; la tourelle automatique et le Stuka gardent leur nom
-(`src/fleet.ts`, `src/equipment.ts`, `src/ground-fortifications.ts`). Les sigles
-M1, B3, H2, T3, D2, G1 et S6 ne s'affichent plus en jeu : ils ne subsistent que comme
-désignations internes dans les commentaires, tests et documents techniques. Aucun
-« filet de leurre » n'existe dans le jeu.
+Noms affichés en jeu (`src/fleet.ts`, `src/equipment.ts`, `src/ground-fortifications.ts`) :
+**Chasseur biplan**, **Bombardier biplan**, **Chasseur léger**, **Bombardier moyen**,
+**Stuka**, **Spitfire**, **Hélicoptère d’attaque au sol**, **Castor volant**,
+**Char moyen**, **Castor**, **Anti-air mobile**, **Flak léger**, **DCA haute
+cadence**, **Flak lourd**, **Canon anti-matériel**, **Tourelle auto** (et sa
+variante Gatling). Les sigles internes (M1, B3, H2, T3, D2, G1, S6) ne s’affichent
+pas en jeu.
 
-## Équipements et combat
+## Parcours du joueur
 
-Un chasseur biplan, un bombardier biplan (pilote et mitrailleur dorsal) et un char moyen
-sont disponibles au départ, en nombre illimité. Le **Chasseur léger** (monoplace, 15 $) et
-le **Bombardier moyen** (pilote, mitrailleurs dorsal, de queue et ventral, 50 bombes,
-15 $) s'achètent en plus au marchand. Un exemplaire de réserve prêt
-par type initial est conservé ; dès son décollage, un successeur gratuit apparaît sans supprimer les avions utilisés. Les achats fournissent un Stuka, un Spitfire,
-un tank, un hélicoptère biplace ou une DCA mobile, dont la destruction est définitive. Les sièges sont exclusifs.
+1. **Arrivée à pied** près de la corbeille, sans arme, au bureau comme au
+   purgatoire : marcher, sauter, ouvrir le parachute en chute
+   ([corps partagés](walking-network.md), [chute](economy-physics.md)).
+2. **Monter dans un engin** : viser le poste (cockpit, trappe, tourelle) ou
+   l’installation (DCA fixe, canon, lit), entouré de bleu signal s’il est libre,
+   puis cliquer pour ouvrir son dossier de deux documents à signer
+   ([viser le poste](ui-guidelines.md), [contrats](logistics-contracts.md)). La
+   signature part au relâchement d’un trait valide ; le serveur attribue le siège.
+   On peut monter dans un véhicule en mouvement s’il reste à portée.
+3. **Changer de poste** à bord : touches 1–7 ou panneau des postes, par contrat
+   (place libre) ou échange signé par les deux occupants. Quitter le cockpit ne
+   crée aucun pilote automatique : un client continue la physique avec commandes
+   neutres et derniers gaz.
+4. **Sortir** (F) : à l’arrêt au sol, le joueur apparaît à la portière, contre la
+   coque à hauteur de son siège (`doorOffset`, `EXIT_LIFT` dans `src/fleet.ts`,
+   même fonction au client et au serveur) ; en mouvement ou en vol, à la position
+   de l’engin avec sa vitesse, en chute libre.
+5. **Acheter et poser** depuis l’atelier (P) ; emprunter au banquier (N).
+6. **Mourir** : passage au purgatoire, file de Saint Pierre, trois papiers, puis
+   retour au départ ou au lit choisi.
 
-Chaque accès publié aux équipements, y compris une nouvelle entrée, passe par un
-dossier de deux documents obligatoires, sur papier, signés tels quels (seul le bon de
-commande de l’atelier demande un motif). Il n’y a plus de
-cercle au sol : on vise directement le poste (cockpit, trappe, tourelle) ou l’installation
-(DCA fixe, canon, lit), qui s’entoure de bleu signal s’il est libre (ou d’un contour clair
-avec le nom de son occupant), et un clic ouvre son dossier, de n’importe quel côté
-([règles d’interface](ui-guidelines.md#monter-dans-un-engin--viser-le-poste)). La signature s’effectue à la souris
-ou au toucher et part automatiquement au relâchement d’un trait valide. Le tampon
-est immédiat ; la réponse serveur confirme le document et l’attribution du siège.
-Aucune archive des documents signés n’est conservée (retirée en version 394) : la
-signature n’existe que sur la feuille, le temps de son tampon. Dès qu’un dossier est
-terminé (siège attribué, changement de poste, retour à la base), la souris est
-recapturée, même pendant que la feuille tamponnée quitte l’écran.
+## Vagues
 
-Le pilotage par défaut vise un point à la souris avec assistance, inspiré du
-principe de War Thunder. Z/S et les flèches haut/bas pilotent le tangage, Q/D et
-les flèches gauche/droite le roulis, et A/E le lacet. Sur hélicoptère, Q/D forcent le roulis sans figer le tangage, qui continue de suivre la hauteur
-de la souris tant que Z/S ne sont pas touchés. Une commande manuelle
-remplace l'assistance souris sur son axe tant qu'elle est active, sans désactiver
-les autres axes assistés ; voir [commandes](controls.md). Avec le zoom (clic droit), la
-sensibilité de la souris suit le champ de vision (`lookScale`, `src/control-focus.ts`) :
-un cran de souris déplace l'image du même nombre de pixels, zoomé ou non. Un avion
-peut rouler et se poser si sa vitesse, sa descente et son attitude le permettent.
-On peut en sortir à tout moment : à l’arrêt et au contact du sol, à la portière ; sinon (en
-mouvement, au sol ou en vol) à la position de l’engin, avec sa vitesse. Toute sortie
-en mouvement commence en chute libre avec la vitesse héritée ; le parachute s’ouvre et se
-replie manuellement. On peut de même monter dans un véhicule qui roule, s’il est à portée
-à chaque étape (il peut s’éloigner avant la signature).
+Avant chaque vague, le serveur annonce entrées, horaires et puissance des groupes.
+Délai initial 60 s, pause entre vagues 180 s (`initialDelay`, `pause`). La fenêtre
+**Vague** (bandeau ou Tab) montre la frise des arrivées (repères **S** sol et **A**
+air), la piste de phéromones du trajet terrestre et les nuages colorés des couloirs
+aériens (`src/pheromone-trail.ts`) ; **Lancer la vague maintenant** est ouvert à
+tous pendant la préparation. Il n’y a ni vote ni plan à débloquer.
 
-Les équipements commandés depuis un appareil descendent dans un colis sous
-parachute à **1/3 m/s dans le décor** (trois fois moins vite qu'avant la version
-292), jusqu'à une surface porteuse disponible.
-Le serveur y déploie l'équipement une seule fois ; le colis n'est pas utilisable
-en vol. Voir [colis parachutés](logistics-contracts.md#colis-parachutés).
+Le budget d’une vague, en **puissance**, vaut `32 × 1,5^(n−1) × N^0,9` pour `N`
+joueurs (`directorBudget`, `server/wave-preparation.js`), sans plafond : toute
+espèce dont la puissance tient dans le budget peut être appelée. La poubelle a
+20 PV ; chaque arrivée ennemie augmente l’infestation et la partie est perdue à 20.
+Voir [progression](progression.md), [puissance des ennemis](enemy-power.md),
+[bestiaire](enemy-bestiary.md) et [visibilité](enemy-visibility.md).
 
-Le tank a un pilote/MG avant (orientable à la souris dans un cône de ±15° autour de l'avant de la coque, `src/hull-gun.ts`) ; le réticule secondaire (munitions, rechargement) marque la direction réelle de l'arme, le principal la visée souhaitée, un tireur canon/coaxiale et un mitrailleur supérieur.
-Le Stuka et le pilote du bombardier larguent des bombes en maintenant Espace
-(0,5 s ; 6 et 50 bombes respectivement). Le clic gauche sert aux MG ; au canon du
-tank, clic gauche tire HE/AP et Espace la coaxiale. B est supprimé. Les stocks, commandes et dégâts sont détaillés
-dans [véhicules et banque](vehicles-bank.md). Le HUD affiche les statistiques de coque près du viseur et une aide permanente
-en bas à gauche. Les anciens panneaux repliables sont masqués ; la jauge DCA reste. Le banquier (bouton ou N) présente sur un prospectus
-en papier trois emplacements de prêts partagés, consultables et signables dans tous les
-postes et mondes ; il n’y a pas de remboursement anticipé.
+Les volants partent de quatre aérations par deux couloirs à altitudes différentes,
+sous le plafond de nuages du bureau (`src/routes.ts`). Les terrestres sortent de
+trous et marchent vers la poubelle (voir [navigation terrestre](#navigation-terrestre)).
 
-Chaque impact infligeant des dégâts à un insecte déclenche une gerbe de grosses gouttes
-rouges, y compris sur un coup fatal. Cet effet purement visuel fonctionne aussi à partir
-des augmentations de dégâts reçues des autres joueurs (une gerbe au maximum par
-actualisation serveur), sans modifier les PV, le réseau ni la balistique.
-Les gouttes retombent, disparaissent rapidement et sont regroupées dans un seul
-maillage instancié plafonné à 240 particules. Les murs et les véhicules gardent
-leurs effets d'étincelles habituels ; aucun sang n'est ajouté aux joueurs.
-Les mitrailleuses tirent des traceurs légèrement dispersés depuis leurs canons.
-La cadence locale rattrape les images retardées sans attendre les confirmations
-réseau ; les rafales vues à distance suivent une cadence approximative plutôt
-qu'un tir aléatoire à chaque image. Voir [stocks et réseau](vehicles-bank.md).
-Les projectiles subissent gravité et traînée et sont supprimés après impact ou
-expiration. Le Flak léger tire des obus à éclatement réglable en distance. La DCA haute cadence
-et le Flak lourd complètent les [DCA fixes](scale-fleet-weapons.md#dca-fixes-pilotées). Le tir allié inflige des dégâts. Les joueurs ont 100 PV ; une résurrection restaure tous les PV.
-Depuis la version 267, un avion endommagé ne change plus de forme (plus d'ailes
-qui rétrécissent) : son ou ses moteurs laissent échapper de petits panaches de
-fumée, à partir de 15 % de dégâts, de plus en plus nombreux, gros et sombres à
-mesure que ses PV baissent (`src/engine-smoke.ts`, un seul nuage de points pour
-tous les avions, plafonné à 1 500 panaches). Depuis la version 268, les dégâts
-n'ont plus aucun malus de pilotage : moteur et ailes restent pleinement
-efficaces, seule la fumée trahit l'état de l'avion. Les insectes
-tués tombent et s’estompent avant suppression. Voir [physique](economy-physics.md)
-et [armement](scale-fleet-weapons.md).
+## Engins
 
-## Barre du haut
+Le chasseur biplan, le bombardier biplan (pilote et mitrailleur dorsal) et le char
+moyen sont gratuits : chaque type garde un exemplaire de réserve prêt et un
+successeur apparaît dès que la réserve est utilisée ou détruite. Les autres engins
+s’achètent et leur destruction est définitive. Sièges exclusifs.
 
-Depuis la version 272, l'écran de jeu garde une seule barre en haut (`#topBar`) :
-à gauche vague, présence ennemie, infestation, « Préparer la vague », argent et boutons
-Équipement (P) / Banquier (N) ; à droite l'état de connexion, Pilotage et Debug. La
-liste des pilotes et les messages passent juste dessous. Les écrans étroits (tactile)
-ne sont plus traités à part.
+| Engin                        | Prix | Particularités                                         |
+| ---------------------------- | ---: | ------------------------------------------------------ |
+| Chasseur / bombardier biplan |  5 $ | exemplaires supplémentaires ; 30 bombes au bombardier  |
+| Char moyen                   |  5 $ | pilote/MG avant, canon HE/AP + coaxiale, MG supérieure |
+| Chasseur léger               | 15 $ | monoplace, deux MG de nez                              |
+| Bombardier moyen             | 15 $ | pilote et trois mitrailleurs, 50 bombes                |
+| Castor                       | 15 $ | camion monoplace, MG, soutien 50 cm, construction      |
+| Anti-air mobile              | 15 $ | conducteur et canon à fusée de proximité               |
+| Stuka                        | 25 $ | 6 bombes, sirène de piqué                              |
+| Castor volant                | 35 $ | pilote et trois passagers, largages, soutien 50 cm     |
+| Hélicoptère d’attaque au sol | 50 $ | pilote (roquettes) et copilote (MG, missile guidé)     |
+| Spitfire                     | 75 $ | six MG, 1 000 balles, vitesse +75 %, rotation +45 %    |
 
-## Atelier de la base (menu d'achat, P)
+Les avions ont cinq minutes de carburant à plein gaz (`FUEL_SECONDS`) et des
+munitions limitées ; ils roulent, décollent dès `LIFTOFF_SPEED` (`src/flight.ts`)
+et se posent si vitesse, descente et attitude le permettent. Détails :
+[pilotage et véhicules](vehicles-bank.md), [hélicoptère et DCA mobile](support-vehicles.md),
+[commandes du H2](helicopter-controls.md), [biplans](biplane-models.md),
+[physique au sol](physics-engine.md), [physique de l’avion](plane-physics.md).
 
-Depuis la version 271 (cartes simplifiées en 273), l'atelier range les achats en trois colonnes — Aéronefs,
-Véhicules au sol, Installations — triées du plus faible (haut) au plus
-fort (bas) selon le prix de base. Chaque carte est un bouton unique (on clique directement dessus ; pas de bouton « Signer le bon » ni de description) qui montre une image du modèle (rendue
-une fois par `src/shop-thumbs.js` à partir des vrais modèles 3D), son nom et son prix (ou « Acquis » / « Déjà payé »). L'ordre
-et les catégories vivent dans `src/shop-catalog.ts` ; un nouvel article non classé
-apparaît dans une colonne « Autres » (`scripts/test-shop-catalog.mjs`).
+## Achats et pose
 
-## Purgatoire et économie
+L’atelier (P) range ses cartes en trois colonnes, Aéronefs, Véhicules au sol et
+Installations, du moins cher au plus cher (`src/shop-catalog.ts`, colonne
+« Autres » pour un article non classé). Chaque carte affiche une vignette rendue
+depuis le vrai modèle (`src/shop-thumbs.js`), le nom et le prix. Un clic ouvre le
+bon de commande ; signé, il est payé par la caisse commune puis ouvre l’aperçu de
+pose. Lit 15 $, radar 10 $, station 20 $, Flak léger 5 $ (plafonné à 40 $) coûtent
+2 $ de plus par exemplaire posé ou payé (`shopPrice`) ; DCA haute cadence 50 $,
+Flak lourd 30 $. Règles des bons, remboursements et pose : [économie](economy-physics.md).
 
-L’accès au bureau de Saint Pierre dépend de la présence physique dans sa zone.
-L’ordre de la file guide les PNJ sans donner une priorité abstraite de signature.
-Pour éviter d’attendre derrière des dizaines d’insectes, un joueur peut payer au vigile
-un **coupe-file** (numéro de la vague en dollars, sur la caisse commune) et passer par
-la file VIP, servie dès que Saint Pierre a fini l’insecte en cours
-([file VIP](purgatory-queue.md#file-vip-coupe-file-payant)).
-Les collisions permettent de se bousculer. Personne ne porte d'arme à pied, ni au
-bureau ni au purgatoire : l'âme est le même
-personnage, avec les mêmes animations, qu'au bureau. Voir [file physique](purgatory-queue.md).
+L’aperçu montre le vrai modèle transparent, rouge si la pose est refusée ; le
+serveur revérifie support, hauteur libre, proximité et chevauchements. Une visée
+hors de portée place l’aperçu à 97 % de la portée sur la première surface sous la
+caméra (`reachClampedPlacement`, `src/placement-aim.ts` ;
+`PLACEMENT_PREVIEW_FRACTION`), et le serveur tolère `PLACEMENT_SLACK` de plus :
+un clic pose ce que l’aperçu montre. Les véhicules font face au personnage. Un
+achat commandé depuis un appareil descend dans un colis sous parachute à 1/3 m/s
+(`DELIVERY_SPEED`) ([colis parachutés](logistics-contracts.md)).
 
-Aucune prime de vague n'est versée (supprimée par l'issue #210) : les âmes libérées
-sont la seule source de revenu liée aux vagues, et un ennemi raté ne rapporte rien.
-Les prix de certaines installations montent avec le nombre déjà posé (voir [progression](progression.md#revenus-et-prix)).
-Chaque PNJ accepté par Saint Pierre ou tué au purgatoire est définitivement
-libéré et rapporte, une seule fois, **la puissance de son espèce** en dollars
-communs (1 $ pour un moucheron, 24,47 $ pour un rat). Un ennemi abattu dans le
-bureau ne rapporte pas directement d’argent. Chaque dollar déclenche une courte
-sonnerie chez tous les joueurs présents, même dans les autres mondes. Le service des PNJ
-continue côté serveur sans joueur humain au purgatoire. Le menu P permet d’acheter
-une DCA, un radar ou une station à placer sur un support solide, un Stuka, un Spitfire, un tank, etc.
-Il n'y a plus d'améliorations achetables. Les prix sont définis
-par `src/equipment.ts` ; [économie](economy-physics.md) détaille les garanties.
-La remise à zéro efface monnaie et installations : aucune
-progression permanente entre parties n’est implémentée.
+## Service, radar et stations
 
-## Échelle et présentation
+Les stations de ravitaillement, le Castor et le Castor volant servent tout ce qui
+est dans leur sphère de 50 cm (`SERVICE_RADIUS`), même en mouvement ou en vol :
+PV (10 % par seconde), carburant, munitions, DCA fixes, tourelles, canons et murs
+LEGO. Le
+service est payé au prorata par la caisse commune et partagé équitablement
+quand l’argent manque (`src/paid-service.ts`). La station « Ravitaillement Alpha »
+est offerte au départ ; son service reste payant.
+Sans radar, la carte ne montre aucun ennemi ; chaque radar révèle un cylindre de
+2 m de rayon. Voir [logistique](logistics-contracts.md).
 
-Le décor est en mètres réels. Personnages, véhicules et quantités linéaires de
-référence utilisent le ratio de carte, actuellement 3/1000 pour le bureau : un
-personnage de référence de 1,80 m mesure donc 5,4 mm. Le purgatoire utilise son
-propre ratio. Les durées et vitesses angulaires ne se multiplient pas par ce ratio.
+## Combat
 
-Les modèles sont des géométries procédurales Three.js ; les sons sont synthétisés
-avec Web Audio et spatialisés. Les modèles Meshy sont embarqués localement ; aucun enregistrement sonore externe
-n’est actuellement intégré. Les événements importants ont des indications sonores,
-dont les vagues, les signatures et les tirs. La prise en charge graphique de
-secours permet un diagnostic, sans garantir le rendu WebGL final.
+Les projectiles subissent gravité et traînée ; le tir allié blesse. Les joueurs
+ont 100 PV, restaurés à chaque retour. Un insecte touché projette une gerbe de
+gouttes rouges (`src/blood-effects.ts`, 240 particules au plus), tué il tombe et
+s’estompe. Un avion endommagé fume dès 15 % de dégâts (`src/engine-smoke.ts`) sans
+perdre en pilotage. Une coque qui percute un insecte perd 5 % des PV restants de
+celui-ci, une fois par contact (`src/vehicle-care.ts`). Voir
+[combat et mondes](combat-worlds.md), [armement](scale-fleet-weapons.md),
+[projectiles](projectiles.md) et [collisions](collisions.md).
 
-## Contrats et changements de poste
+## Argent et banque
 
-Le titre affiché est « i am a moucheron ». Le catalogue embarqué contient dix
-variantes pour chacun de 76 documents/contextes, soit 760 variantes de documents, avec les contrats adaptés aux trois postes du tank :
-pilote, mitrailleurs dorsal, arrière et ventral, DCA, les trois documents du purgatoire
-et mutation/demande/acceptation d’échange pour chaque poste embarqué.
-Le texte reste stable pendant la signature ; la variante immédiatement précédente
-est évitée pendant la session. Le corps d’un contrat est intégralement consultable
-par défilement.
+Aucune prime de vague : un insecte abattu au bureau ne rapporte rien ; son âme,
+acceptée par Saint Pierre ou tuée au purgatoire, rapporte une fois sa puissance en
+dollars communs (`releaseSoul`, `server/game.js`), avec une sonnerie chez tous les
+joueurs. Tuer un joueur ne rapporte jamais. Le banquier (N, ou bouton) propose sur
+un prospectus trois prêts partagés, à taux fixe par vague, prélevés à chaque fin de
+vague, sans remboursement anticipé ([banque](vehicles-bank.md)). La remise à zéro
+efface monnaie, prêts, installations, véhicules et vagues ; aucune progression ne
+survit à une partie.
 
-À bord d’un appareil à plusieurs places, les touches physiques Digit1–Digit7
-ou le panneau des postes demandent un changement contractuel. Échap libère le curseur.
-Un siège libre demande un contrat ; un siège occupé demande la signature initiale
-du demandeur puis celle du destinataire. Refuser, partir ou se déconnecter annule
-la demande. Les postes sont conservés jusqu’au transfert atomique et revalidés à
-cet instant. Au sol comme en vol, quitter le cockpit pour un autre poste d’avion ne crée
-aucun pilote automatique (l’hélicoptère possède sa propre assistance au stationnaire) : un client désigné continue la physique avec commandes
-neutres et les derniers gaz, jusqu’à reprise des commandes ou crash.
+## Mort et purgatoire
 
-Mourir au purgatoire ouvre la même observation que mourir au bureau ; « Accéder au
-purgatoire » recrée alors l’âme en fin de file, avec ses trois documents à
-signer de nouveau. Il n’existe qu’un purgatoire. Chaque transition restaure 100 PV ;
-tuer un joueur ne rapporte jamais d’argent.
-
-Voir [combat et mondes](combat-worlds.md) pour les valeurs et garanties réseau.
-
-## Retours de partie
-
-Noms flottants retirés, moucherons agrandis (facteur 6,075, tolérance de tir +20 %),
-blessures visibles et sons de chute : voir [visibilité des ennemis](enemy-visibility.md).
-Alertes de réserves à 25 % et zéro : bloc discret rouge lentement pulsé (animation
-coupée si mouvement réduit) ; « Missile en vol » est prioritaire sur l'épuisement.
-Un appareil vivant, posé et arrêté en station récupère moteur et ailes avec ses PV.
-Le contact des roues est permis si l'axe haut > 0,88 et la descente < 5 m/s de
-référence ; une vitesse verticale positive ou la souris à cabrer au-delà de 18 m/s
-permet le décollage.
-
-## Stations de service
-
-Repair Bay (ravitaillement, sphère verte = rayon réel du service payant) et Signal
-Sentinel (radar, antenne tournant à 1 rad/s) reposent à y=0. Repair Bay mesure ~36 mm
-de large ; sa collision orientée tourne avec le modèle. La station Alpha est reculée
-de 40 mm vers le nord et 6 mm vers l'ouest pour dégager les cercles d'accès du
-bombardier. Les personnages distinguent chute libre, parachute et réception (0,38 s).
-
-## Identification, contrats et ravitaillement
-
-Les appareils ont une teinte persistante et les pseudos de leur équipage inscrits
-sur la carrosserie. Les annexes malicieuses (clauses piégées) ont été retirées en
-version 264 : aucun contrat ne modifie plus commandes, visée, cadence ou dégâts.
-
-Les avions disposent de cinq minutes de carburant à plein gaz et d’environ une
-minute de tir par poste armé. Une station initiale à Alpha, reculée vers le nord pour dégager les postes du
-bombardier, répare et recharge les véhicules
-à portée, automatiquement et contre paiement, même en mouvement ou en vol. Les
-stations achetées fournissent le même service. La caisse commune paie au prorata
-les PV, le carburant et chaque catégorie de munitions ; en cas de fonds insuffisants,
-la somme est répartie équitablement entre les véhicules éligibles.
-Voir [le tarif et les limites du lot G1](economy-physics.md#tarification-automatique-des-stations-lot-préparatoire-g1-castor). Stations supplémentaires et radars sont
-vendus 5 $ (flak léger), 10 $ (radar), 15 $ (lit) et 20 $ (station), puis +2 $ par exemplaire de leur type. Sans radar, aucun ennemi sur
-la carte ; chaque radar révèle ceux dans un cylindre de rayon 2 m, à toutes hauteurs, sans masquer la scène.
-Voir [logistique et contrats](logistics-contracts.md) pour les valeurs, garanties
-et limites de vérification.
-
-## Retours terrain intégrés
-
-La chute utilise la gravité humaine multipliée par le ratio du personnage,
-un parachute progressif et des dégâts d’impact verticaux. Le retour après
-purgatoire se fait au départ, sauf contrat personnel de lit signé (en visant le lit).
-Les lits s’achètent 4 $, puis +2 $ ; plusieurs joueurs peuvent signer le même.
-Le tireur canon du tank utilise une lunette ; C maintenu observe sans tourner
-la tourelle et suspend les tirs. Les nouvelles offres de prêt sont à 10–20 %
-par vague ; les contrats signés gardent leurs conditions. Détails, valeurs,
-causes confirmées et tests : [retours terrain](field-update.md).
-
-## Lisibilité, nettoyage et Spitfire
-
-Les installations passent par un bon payé à la signature, puis se posent d'un clic gauche ;
-Échap conserve l’objet pour reprise depuis l’atelier. Les collisions avec un
-insecte coûtent 5 % de ses PV restants à la coque, une seule fois par impact. À pied au sol,
-Espace fait **sauter** le personnage (bureau et purgatoire) ; en chute, il ouvre le parachute.
-Le Spitfire acheté dispose de six
-MG avec de petits décalages et de 1 000 balles communes, dernière salve partielle comprise. Les projectiles portent la couleur de leur
-coque ; seule la sirène de piqué du Stuka subsiste. Valeurs et limites :
-[lisibilité, commandes, nettoyage et Spitfire](clean-flight.md).
-
-Les achats de tous les véhicules utilisent désormais le bon signé et la pose d'un clic,
-au sol ou sur mobilier, avec chasseur 5 $ et bombardier 5 $. Les bombes du B3
-ont le double du rayon de celles du Stuka. [Référence du dernier lot](multiplayer-return.md).
-
-## Hélicoptère et camion DCA
-
-H2 : pilote et copilote, souris pour incliner, Z/O/Haut pour monter, S/Bas pour descendre et retour
-assisté au stationnaire. C observe et suspend les roquettes. Le copilote dispose
-d’une MG et d’un missile guidé manuellement depuis son poste, avec détonation au
-second clic. D2 : conducteur et tireur sur semi-remorque, obus à fusée armée à
-0,3 s uniquement ; proximité réglée à la molette, sans explosion d’impact propre.
-Valeurs, choix, garanties réseau et vérifications restantes :
-[référence du lot](support-vehicles.md).
-
-Le [correctif de visibilité](enemy-visibility.md) place les apparitions devant les
-aérations et recrée les bons modèles aux changements de vague. Les moucherons
-sont trois fois plus gros que dans la livraison précédente.
-
-Les six espèces utilisent désormais des dimensions contrôlées en pixels :
-[facteurs et mesures](enemy-visibility.md). Les terrestres sont relevés selon
-leurs pattes, avec une marge de navigation adaptée à leur corps élargi. Les PV et primes restent inchangés ; la première vague suit maintenant le même
-tirage que les suivantes, avec au moins deux fourmis et des moucherons en nuées ×5.
-L'ancienne composition fixe 20 + 4 est décrite dans [les nuées densifiées](dense-swarms.md).
-VAG-07 réduit taille et vitesse des fourmis, selon le lot confort.
-
-Références détaillées de cette période : [confort de jeu](comfort.md) (réparation,
-zoom, jauges, radar, remise à zéro), [nuées densifiées](dense-swarms.md),
-[commandes H2](helicopter-controls.md). Les réglages d’équilibrage par room n’existent
-plus : voir [puissance et budget des vagues](enemy-power.md).
-
-## Rat, moustique et araignée pondeuse
-
-Le rat géant possède 10 000 PV et avance lentement. Le moustique possède 150 PV et esquive selon des oscillations déterministes. L'araignée pondeuse possède 1 200 PV : elle libère **100 bébés araignées** de 10 PV à sa mort, au lieu du site de décès, avec une trajectoire dispersée et rapide vers la poubelle. Chaque bébé survivant inflige à la poubelle sa puissance (0,08), soit environ 8 pour la portée complète. Les bébés morts passent au purgatoire comme les autres ennemis. Tous les ennemis sont disponibles dès la vague 1 : leur puissance, comparée au budget de la vague, décide seule s'ils peuvent être appelés. Voir [bestiaire](enemy-bestiary.md).
-
-Les [vitesses physiques des espèces](enemy-bestiary.md#vitesse-physique-dans-la-pièce) sont explicites en m/s dans le bureau, indépendantes de la taille des insectes et du nombre de membres de la nuée. L'accélération cachée des bébés araignées et les oscillations trop rapides des moustiques ont été corrigées.
+Mourir lance un passage automatique : le fantôme monte, fondu au noir, puis l’âme
+apparaît dans le ciel de Saint Pierre ([ciel du purgatoire](purgatory-sky.md)). Le
+service au guichet suit la file physique des âmes, joueurs et insectes ; un
+**coupe-file** payé au vigile (numéro de la vague en dollars) ouvre la file VIP
+([file du purgatoire](purgatory-queue.md), [décor](purgatory-scene.md)). Les trois
+papiers signés renvoient au départ, ou au lit dont on a signé le contrat personnel
+en le visant ; un lit absent ou impraticable renvoie au départ. Dans le ciel, ni
+banque, ni atelier, ni construction.
 
 ## Défenses terrestres
 
-À pied au sol du bureau, maintenir **G** (ou le clic molette) pour la roue de
-construction puis choisir barricade, sucre, ruban, réparation ou suppression. La
-caméra reste en troisième personne. Un aperçu suit le point visé au centre de la caméra, indépendamment de la direction
-de marche. Visez une surface proche ; une paroi ou un point hors de portée ne
-permet pas de poser. Ce principe s'applique aussi aux équipements et véhicules
-achetés. Échap quitte le mode de pose.
+À pied au sol du bureau ou au volant du Castor, maintenir **G** (ou le clic molette)
+ouvre la roue de construction (`src/ground-defense-ui.js`) : barricade, sucre,
+ruban, réparer, enlever, tourelle auto, canon anti-matériel. L’aperçu suit le point
+visé par la caméra ; une paroi ou un point hors de portée refuse la pose.
 
-Maintenez le bouton de la molette, dirigez la souris vers un outil puis relâchez
-pour le sélectionner. Au centre, le choix est annulé. Pour une barricade ou un
-ruban, le premier clic fixe le début indiqué par un petit repère sans
-orientation. Visez ensuite la fin, en marchant si nécessaire, puis cliquez de
-nouveau. Les deux points déterminent seuls la longueur et l'orientation.
-Le bouton de confirmation suit ces mêmes deux étapes. Le mur coûte 0,25 $ par tronçon de 48 mm, avec portions en demi-briques facturées au prorata au centime ; le ruban garde 1 $ pour 20 cm. Les murs sont découpés en sections réparables et dessinés en deux rangées de briques de taille fixe, avec extrémités décalées emboîtables. R oriente le sucre et le ventilateur.
-Le sucre coûte
-3 $, une réparation 1 $, la suppression est gratuite. L’aperçu rouge et le message
-signalent un refus ; le serveur revalide position, caisse et occupation avant
-paiement. La pose exige le sol du bureau, sans parachute. Les défenses sont
-partagées par room et effacées à sa remise à zéro. Les terrestres utilisent
-toujours la navigation serveur, qui tient compte des barricades, appâts
-et rubans ; les volants gardent leurs parcours. Le radar conserve les constructions et rayons
-d’appât ; il ne sert pas à construire. Le rendu et le confort de pose demandent
-encore un essai WebGL/UDP en partie réelle.
+| Construction        | Prix                    | Règle                                                                       |
+| ------------------- | ----------------------- | --------------------------------------------------------------------------- |
+| Barricade (LEGO)    | 0,25 $ / 48 mm, prorata | deux rangées de briques, sections réparables (`src/brick-rules.ts`)         |
+| Ruban               | 1 $ / 20 cm             | colle les terrestres                                                        |
+| Sucre               | 3 $                     | détourne les terrestres entrés dans son rayon ; R l’oriente                 |
+| Tourelle auto       | 5 $                     | 180 balles, tir serveur ; améliorable en [Gatling](gatling-turret.md)       |
+| Canon anti-matériel | 14 $                    | poste signé, 50 obus, élévation −5° à +40° (`src/ground-fortifications.ts`) |
+| Réparer / enlever   | 1 $ / gratuit           | sur la construction visée                                                   |
+
+Barricade et ruban se posent en deux clics (début, puis fin) ; au Castor, un clic
+démarre la dépose continue derrière le camion et un second l’arrête, la section
+commencée étant facturée au prorata. Le serveur revalide position, caisse et
+occupation avant paiement (`src/ground-defense-state.ts`). Les murs LEGO
+endommagés sont réparés dans les zones de service (10 % des PV par seconde, 1 $
+par 100 PV). Les défenses sont partagées par room. Une construction posée sur un
+meuble garde sa hauteur et tire depuis là, mais ne gêne pas les insectes au sol.
+Tourelles et canons se rechargent seulement aux zones de service, contre paiement.
 
 ### Navigation terrestre
 
-Le serveur simule chaque insecte terrestre dès le début du combat, avec ou sans
-défense. Une grille de 5 cm (`buildGroundFlow`, `src/ground-defense.ts`) bloque le
-mobilier au sol et les barricades ; elle n'est reconstruite qu'à un
-changement de `navigationRevision`. Le trajet est lissé à angle libre : depuis sa
-position, l'insecte vise le point le plus lointain de la descente encore visible
-en ligne droite, avec une marge d'environ une demi-case, et garde ce point jusqu'à
-l'atteindre. L'aperçu du conseil de vague (`smoothRoute`) enchaîne les mêmes points :
-la piste de phéromones orange (chevrons vers la poubelle) indique le trajet de référence. Chaque insecte s'en écarte localement pour éviter ses voisins. Un brouillon de barricade
-montre le détour avant validation. Sans chemin, l'aperçu affiche
-« Passage fermé » ; les cafards, araignées et rats attaquent alors la barricade la
-plus proche. Le sucre détourne seulement les insectes entrés dans son rayon et
-n'est pas tracé. La route nominale (`enemyRoute`) suit aussi ce champ sur un bureau
-vide, ce qui fixe la durée nominale du trajet. `scripts/test-ground-paths.mjs` couvre ces cas.
+Le serveur simule chaque insecte terrestre. Une grille de 5 cm (`GROUND_CELL`,
+`buildGroundFlow` dans `src/ground-defense.ts`) bloque mobilier au sol et
+barricades ; elle est reconstruite à chaque changement de `navigationRevision`.
+L’insecte vise le point le plus lointain encore visible en ligne droite sur la
+descente du champ ; `smoothRoute` enchaîne les mêmes points pour la piste de la
+fenêtre de vague, et la route nominale (`enemyRoute`, `src/routes.ts`) en déduit
+la durée du trajet. Un brouillon de barricade montre le détour ; sans chemin,
+l’aperçu affiche « Passage fermé » et cafards, araignées et rats attaquent la
+barricade la plus proche.
 
-Les groupes ne sont plus dessinés en files décalées : leurs positions affichées et
-leurs volumes de tir suivent les positions simulées. `ground-crowd.js` partage une
-grille de voisinage par sous-pas (50 ms maximum). Chaque individu suit son propre
-point de passage et possède un espace personnel souple proportionnel à sa taille :
-il ralentit derrière un voisin et cherche à le contourner. Les groupes se forment
-ainsi autour de leur destination commune, sans attraction artificielle vers un centre.
-Les écarts doivent conserver un passage libre vers le point visé ; ils ne poussent
-pas un insecte à travers le mobilier ou une défense. La vitesse reste plafonnée à
-celle du bestiaire ; la foule peut retarder une arrivée. Le sucre et la colle gardent
-leurs pauses, les morts et les arrivés sont exclus du voisinage. Un chevauchement
-bref reste possible à la sortie d'un trou ou dans une foule comprimée : ce sont des
-contacts souples, pas des corps rigides. Les tests `test-ground-crowd.mjs` et
-`test-ground-spread.mjs` vérifient séparation, passages, pauses et arrivées.
+`src/ground-crowd.js` sépare les individus par sous-pas de 50 ms au plus : espace
+personnel souple proportionnel à la taille, ralentissement derrière un voisin,
+contournement, sans pousser à travers mobilier ou défenses ; la vitesse reste
+celle du [bestiaire](enemy-bestiary.md). Sucre et ruban gardent leurs pauses.
 
-## Défense aérienne
+## Castor et Castor volant
 
-Quatre aérations alimentent deux couloirs qui se croisent à des altitudes différentes.
-Le nuage de phéromones de chaque entrée apparaît en couleur avant le passage des
-insectes. Les volants conservent une dispersion propre autour du couloir.
+**Castor** : camion à six roues sur [physique Rapier](physics-engine.md), MG légère,
+soutien 50 cm. **V** bascule la vue de dessus (`src/castor-top-view.ts`) : nord en
+haut, viseur au sol à la souris pour construire et tirer, molette pour la hauteur.
+Les roues suivent la vitesse du sol de leur côté (`src/castor-wheels.ts`). Modèle :
+[flotte Meshy](meshy-fleet.md), briques : [pipeline d’assets](asset-pipeline.md).
 
-Le ventilateur, qui déviait ces couloirs, est retiré du jeu (version 319) : la
-roue de construction et le Castor volant ne le proposent plus et le serveur refuse
-sa pose. Les volants suivent toujours leur couloir sans déformation.
+**Castor volant** : hélicoptère logistique à rotors en tandem, sans arme, 200 PV,
+pilotage de l’hélicoptère d’attaque ([physique](heli-physics.md)). Tous les occupants
+ouvrent la roue et **larguent** sucre, ruban (10 cm, `AIRDROP_TAPE`), tourelle ou
+canon, à la verticale de l’appareil et selon son cap (`AIRDROP_KINDS`,
+`src/airdrop.ts`) ; l’objet tombe à 1/3 m/s et se construit sur la première surface
+rencontrée, prix remboursé si la place a été prise. **V** donne à chaque occupant la
+vue verticale du point de largage.
 
-Le [bombardier biplan à deux places](biplane-models.md) conserve son camouflage Meshy ; la plaque de nom de chaque occupant est collée sur son fuselage.
+## Mode debug
 
-## G1 Castor (première étape, version 179)
+Le bouton **Debug : OFF / ON** est commun à la room : argent illimité, aucun dégât
+de chute, défaite impossible, hitbox et volumes de collision visibles, ennemis à
+poser depuis l’atelier pendant une vague. Le désactiver remet la partie à zéro.
+Voir [mode debug](laboratory.md).
 
-Le **G1 Castor** est un camion monoplace à six roues, achetable pour **15 $** avec le bon signé des véhicules. Z/S et Q/D permettent de conduire ; la souris vise sa mitrailleuse légère (500 balles à 40 dégâts, recharges payantes). **V** bascule une **vue de dessus** : caméra à 40 cm à la verticale du camion, nord (axe −Z, le haut du radar) en haut de l’écran quel que soit le cap du camion, et viseur au sol déplacé à la souris pour poser les défenses dans les 24 cm de portée et tirer (`src/castor-top-view.ts`). Vitesse maximale 52 (deux fois le
-réglage initial), avec une accélération forte au départ qui décroît près du
-maximum. Les six roues roulent à la vitesse du sol de leur côté (sens, marche
-arrière et arrêt compris) ; au pivot sur place, gauche et droite tournent en sens
-opposés et les roues avant braquent selon la vitesse de rotation
-(`src/castor-wheels.ts`, `scripts/test-castor-wheels.mjs`). Plus rapide que le tank, il possède un rayon de soutien sphérique de **50 cm**, matérialisé en jeu par une sphère verte translucide (comme les 50 cm des stations de ravitaillement fixes, `src/service-zones.ts`), qui peut soigner et ravitailler les alliés en mouvement ou en vol et se réapprovisionner lui-même. Le service utilise la caisse commune.
+## Présentation
 
-**La construction en roulant est disponible depuis la version 188.** Le Castor utilise désormais **ses trois modèles Meshy texturés** : châssis, tourelle et roues indépendantes. Les couleurs originales sont préservées, sans pastille d’identification ([flotte Meshy](meshy-fleet.md)). Voir [l'issue #76](https://github.com/simonjamain/i-am-a-moucheron/issues/76).
+Modèles Three.js procéduraux et [modèles Meshy](asset-pipeline.md) embarqués ; sons
+synthétisés et spatialisés ([audio](audio.md)). HUD : une barre en haut (vague,
+ennemis, infestation, argent, atelier, banquier, connexion, Pilotage, Debug), les
+informations de poste près du viseur et l’aide contextuelle en bas à gauche
+([règles d’interface](ui-guidelines.md), [aide contextuelle](controls.md#aide-contextuelle)).
 
-### Construction depuis le Castor (version 188)
+## Vérifier
 
-Au sol, le pilote du Castor ouvre la roue des défenses par **clic molette**.
-Pour les murs **LEGO** et les **rubans**, un clic gauche démarre la pose en
-continu **derrière le véhicule** pendant la conduite ; un deuxième clic l'arrête.
-Le Castor valide des sections LEGO de 48 mm (0,25 $) ; l’aperçu, visible derrière le camion avant même le premier clic, ajoute les demi-briques entre deux validations, sur deux rangées. Le ruban conserve des sections de 20 cm à 1 $.
-L'arrêt valide la section commencée, facturée au prorata (`scripts/test-castor-trail.mjs`).
-Les briques sont des 2×4 LEGO (image de référence validée par l'utilisateur, modèle
-Meshy non texturé recoloré en jeu, tenons vers le haut, profondeur moitié de la
-longueur) ; voir [pipeline d'assets](asset-pipeline.md#brique-lego-24-du-mur-castor).
-Le serveur vérifie chaque pose, les collisions et les fonds de la caisse commune.
-Un changement de poste, une sortie, un échec de placement ou un déplacement trop
-brutal interrompt la construction. Les autres pièges, la réparation et la
-suppression restent ponctuels, avec la visée de caméra depuis la cabine.
-
-Ce système conserve la validation serveur et ne permet pas de construire sur les
-surfaces surélevées depuis le Castor dans cette première version. Les véritables
-modèles Meshy du châssis, de la tourelle et des roues sont déjà intégrés ; la
-correction des six roues est conservée.
-
-### Constructions du Castor
-
-Au volant du Castor, on peut construire un canon antichar lourd (14 $), sans plan à débloquer : seul le prix compte. Le canon est prévu pour les boss terrestres. Ce canon est un obusier à taille humaine qui pivote lentement sur ses roues, s’élève de −5° à +40° et recule à chaque tir. Il tire un obus simulé par le tireur, comme le canon du tank (gravité, obstacles, impact direct), mais plus rapide (750 m/s), plus puissant (800 dégâts au cœur de l’impact, pleins sur la cible touchée) et à petite explosion (5 m) ; il n’a pas de fusée de DCA. L’ouverture du dossier (en visant le canon) et les signatures partagent la même portée autour du poste, au même niveau : 6 m pour le canon. Chaque poste a ses propres textes et contrats. Le poste demande la signature d’un dossier, dispose de 50 obus finis et se rechargent uniquement auprès des sources de service payantes.
-
-La « Tourelle automatique du Castor » se construit pour 5 $ au volant du G1, sans plan à débloquer. Elle tire automatiquement (180 balles finies) et se recharge contre paiement auprès du Castor ou des stations. Aucun tir ni achat à distance. Son modèle définitif combine quatre modules Meshy texturés (socle fixe, tête qui pivote sur 360°, canon unique inclinable de −10° à +90° et capteur/radar séparé). Les géométries et UV Meshy sont conservés, avec une copie des textures rééchantillonnée en WebP 1K pour le navigateur ; voir [l'asset T-01](t01-asset.md). Les déplacements visuels suivent la dernière cible validée par le serveur ; les dégâts et les munitions restent autoritaires côté serveur. Le GLB texturé définitif doit être importé séparément après vérification des parties mobiles et de leurs UV.
-
-## Castor volant (version 292)
-
-Le **Castor volant** est un hélicoptère logistique à deux rotors en tandem,
-acheté **35 $** (colonne Aéronefs). Il a **un pilote et trois passagers**, aucune
-arme, 200 PV, le pilotage assisté de l'hélicoptère d'attaque (souris pour
-l'inclinaison, Z/S/Q/D, Maj/Ctrl) et le même **soutien sphérique de 50 cm** que
-le Castor : soins, carburant, munitions et réparation des barricades, payés par
-la caisse commune, pour lui-même et pour ce qui l'entoure.
-Depuis la version 355, modèle, envergure, longueur et patins sont réduits de 30 %
-(`FLYING_CASTOR_SCALE`, `src/flying-castor-model.ts`) ; la sphère de soutien ne change pas.
-
-**Tous les occupants** (pilote et passagers) ouvrent la roue (**G** / clic
-molette) et **larguent** les constructions du Castor, sauf les murs LEGO :
-sucre, ruban (un morceau de 10 cm), tourelle automatique
-et canon anti-matériel, au même prix (la Gatling s'obtient en améliorant la tourelle automatique). L'objet part **toujours à la
-verticale de l'hélicoptère** et **suit son cap** ; un aperçu transparent montre où il tombera. Clic gauche
-largue, dans n'importe quelle condition de vol. La caisse est débitée au
-largage ; l'objet tombe comme les autres livraisons (1/3 m/s), puis le serveur
-le construit sur la première surface rencontrée : le sol ou un meuble. Si la
-place a été prise pendant la chute, le prix est remboursé. **Réparer** et
-**Enlever** visent la construction la plus proche sous l'hélicoptère (10 cm),
-qui doit se trouver à moins de 27 cm à l'horizontale.
-
-**V** bascule la **vue verticale** pour chaque occupant : la caméra regarde à
-la verticale du point de largage, le nez de l'appareil en haut de l'écran, à
-12 cm au-dessus de la surface d'arrivée (molette : 5 à 80 cm). Le pilote y
-pilote **au clavier seulement** : Z/S/Q/D pour avancer et glisser, **A/E** pour
-tourner l'appareil (et donc l'objet à larguer), Maj/Ctrl pour l'altitude ; la
-souris ne dirige plus. Hors de cette vue, les passagers regardent autour de
-l'appareil avec la souris.
-
-Les constructions posées sur un meuble gardent leur hauteur : tourelles et
-postes y tirent depuis leur emplacement réel, et le soutien les mesure en 3D.
-Les insectes au sol ne les rencontrent pas : une barricade sur un bureau ne bloque
-pas leur chemin, un ruban ou du sucre sur un meuble ne les retient pas. Voir
-[la flotte Meshy](meshy-fleet.md#castor-volant--hélicoptère-meshy-version-292).
-
-### Réparation automatique des barricades (version 192)
-
-Les stations fixes et les Castor en état de marche réparent désormais les **murs
-LEGO endommagés** dans leur zone de soutien : 50 cm autour d'une station comme
-autour d'un Castor. Pour chaque segment, le serveur cherche la portion du mur la
-plus proche, même si le centre du segment est plus loin. Les réparations sont
-progressives, à **10 % des PV maximum du segment par seconde**, et coûtent
-**1 $ par 100 PV réellement rendus**. Les véhicules et les barricades se
-partagent équitablement l'argent disponible. Sans argent, rien n'est réparé.
-Un segment entièrement détruit reste détruit : la réparation automatique ne
-réinstalle pas d'obstacle disparu, conformément aux règles de navigation.
-
-### Munitions limitées des DCA fixes (version 193)
-
-Les **DCA fixes** disposent désormais de **120 obus maximum**, contre des tirs
-précédemment illimités. Chaque coup consomme un obus validé par le serveur ; les
-tirs réémis avec le même identifiant ne sont pas facturés deux fois. Une DCA
-vidée ne peut plus tirer. Elle récupère ses obus automatiquement seulement si
-une **station de ravitaillement ou un Castor vivant** est à sa portée. Le tarif
-est le même que pour les autres obus, **1 $ pour 10 unités** ; en cas de manque
-d'argent, elle reçoit une part équitable avec les véhicules et les barricades.
-Une DCA isolée reste à sec jusqu'à l'installation ou au passage d'un soutien.
-
-## Décollage et trajectoires aériennes (v305)
-
-- Tous les avions décollent depuis une surface plane : la résistance au roulement
-  (`ROLLING_FRICTION`, `src/flight.ts`) laisse les deux biplans, moins puissants,
-  atteindre la vitesse de rotation (`LIFTOFF_SPEED`, 18 m/s). `scripts/test-takeoff.mjs`
-  simule le roulage de toute la flotte.
-- Les couloirs des insectes volants (`src/routes.ts`) restent sous la couche de
-  nuages (`OFFICE_CLOUD_TOP`) ; ils ne montent jamais dans le [ciel du purgatoire](purgatory-sky.md) : au plus
-  2,1 m, nuages dès 2,21 m. Les nuées restent visibles et suivent la trajectoire annoncée.
-- Limite : je n'ai pas fait d'essai en vraie partie ; la simulation reprend la logique du client.
+`npm test -- <fragment>` pour : `test-shop-catalog`, `test-ground-paths`,
+`test-ground-crowd`, `test-ground-spread`, `test-castor-wheels`, `test-castor-trail`,
+`test-takeoff`, `test-boarding`, `test-seat-posts`, `test-clean-flight`,
+`test-multiplayer-return`, `test-comfort`, `test-field-backlog`, `test-udp-native`.
+Le ressenti (pilotage, lisibilité, confort de pose) demande une vraie partie WebGL/UDP.

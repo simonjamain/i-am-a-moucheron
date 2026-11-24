@@ -1,71 +1,97 @@
-# Éclairage du bureau
+# Éclairage et ombres du bureau
 
-Depuis la version 403, un plan peut être éclairé par ses propres lampes au lieu du
-soleil oblique historique. `diagonale` est le premier : deux **ventilateurs de
-plafond lumineux** (modèle `Ceiling_Fan` du [Cartoon Office Pack](office-layouts.md#décor--le-cartoon-office-pack))
-et la lampe de bureau de l'îlot A. Code : `src/office-lights.ts`, appelé par
-`src/office.ts` ; contrôle : `scripts/test-office-lights.mjs`.
+Lumières, ombres portées et préréglages d'ombre de la salle de jeu. Code :
+`src/office-lights.ts` (appelé par `src/office.ts`), `src/shadow-settings.ts` ;
+les paliers du [rendu dessin animé](toon-rendering.md) s'appliquent à chaque lumière.
 
-## Suspensions sous les nuages
+## Deux éclairages selon le plan
 
-- Chaque ventilateur pend à une tige fine qui monte dans les nuages (`ROD`, 1,2 m
-  au-dessus de son point d'accroche, `src/office-props.ts`). Point d'accroche à
-  `FAN_TOP` = 2,34 m : pales entre 1,99 et 2,04 m, sous le voile (2,2125 m), moyeu
-  jusqu'à 1,86 m. Ce sont des **obstacles de pilotage voulus**.
-- Collisions : la tige, le moyeu, et le disque balayé par les pales (rayon 0,75 m),
-  approché par un carré et une croix. Le disque vaut aussi pour un ventilateur
-  qui tournera plus tard.
-- Emplacements choisis pour rester hors des trajectoires des ennemis : (−0,7 ; 1,1)
-  entre les îlots et (−0,85 ; −0,95) devant le tableau blanc. Deux points de plongée
-  de Diagonale ont été décalés de 25 à 30 cm. Le test exige au moins 15 cm entre
-  chaque collider de ventilateur et chaque trajectoire (17 cm au plus près).
+- **Soleil oblique** (plans sans lampes) : ciel hémisphérique et soleil incliné
+  (`LAMP_LOOK.legacySky`, `legacySun`), carte d'ombre 2048² ; tout le décor et les objets
+  mobiles projettent.
+- **Lampes** (plan `diagonale` seulement) : deux **ventilateurs de plafond lumineux**
+  (modèle `Ceiling_Fan` du [Cartoon Office Pack](office-layouts.md#décor--le-cartoon-office-pack))
+  et un ciel atténué ; le soleil devient presque vertical et ne porte plus que les objets
+  mobiles, dont l'ombre tombe sous eux et aide à juger l'altitude à l'atterrissage.
 
-## Lumières
+Les lampes de bureau (`Desk_Lamp`) s'allument dans tous les plans.
 
-| Source                        | Réglage (`LAMP_LOOK`)                                                                                                  | Ombre                                                 |
-| ----------------------------- | ---------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- |
-| Ventilateur                   | cône chaud `#ffcf8f`, 20 cd, demi-angle 1,15 rad, pénombre 0,95, depuis le globe (0,45 m sous l'accroche), vers le bas | carte 1024², flou PCF 4 texels, **calculée une fois** |
-| Globe du ventilateur          | verre de l'atlas émissif dans la couleur du cône, ×1,6 (`GLOWING`, `src/office-pack.ts`)                               | —                                                     |
-| Lampe de bureau (`Desk_Lamp`) | point chaud `#ffc27a`, 0,8 cd, sous l'abat-jour                                                                        | aucune                                                |
-| Ciel (hémisphère)             | `#f3efe2` / `#6b6a5a`, 0,75                                                                                            | —                                                     |
-| Soleil                        | `#e6ecfb`, 1,6, presque à la verticale                                                                                 | carte 2048², **objets mobiles seulement**             |
+| Source               | Réglage (`LAMP_LOOK`)                                                                                      | Ombre                                                 |
+| -------------------- | ---------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- |
+| Ventilateur          | cône `#ffcf8f`, intensité 20, demi-angle 1,15 rad, pénombre 0,95, depuis le globe (0,45 m sous l'accroche) | carte 1024², flou PCF 4 texels, **calculée une fois** |
+| Globe du ventilateur | verre de l'atlas émissif dans la couleur du cône (`GLOWING`, `src/office-pack.ts`)                         | —                                                     |
+| Lampe de bureau      | point `#ffc27a`, 0,8, sous l'abat-jour                                                                     | aucune                                                |
+| Ciel (hémisphère)    | `#f3efe2` / `#6b6a5a`, 0,75                                                                                | —                                                     |
+| Soleil               | `#e6ecfb`, 1,6, presque vertical                                                                           | carte 2048², **objets mobiles seulement**             |
 
-Un plan sans ventilateur garde le soleil oblique et le préréglage `landing`
-([ombres d'atterrissage](shadow-visibility.md)). Les lampes de bureau s'allument
-dans tous les plans. Les paliers du rendu dessin animé s'appliquent à chaque
-lumière ([rendu dessin animé](toon-rendering.md)).
+## Ventilateurs suspendus
 
-## Ombres calculées une fois
+- Chaque ventilateur pend à une tige qui monte dans les nuages (`ROD` = 1,2 m,
+  `src/office-props.ts`) depuis `FAN_TOP` = 2,34 m (`src/layouts.ts`) : pales entre 1,99
+  et 2,04 m, sous la couche de nuages (2,2125 m). Ce sont des **obstacles de pilotage**.
+- Collisions : tige, moyeu et disque balayé par les pales (rayon 0,75 m, approché par un
+  carré et une croix), valable aussi pour un ventilateur qui tournerait.
+- Emplacements (−0,7 ; 1,1) et (−0,85 ; −0,95), hors des trajectoires des ennemis : le
+  test exige au moins 15 cm entre chaque collider et chaque trajectoire.
+
+## Ombres des lampes calculées une fois
 
 `createOffice` crée les cônes avec `shadow.autoUpdate = false`. Le client appelle
-ensuite `office.bakeShadows(renderer)` (à l'ouverture et à chaque changement de
-plan). Cet appel rend une seule fois la pièce **seule** (sans avion, insecte ni
-personnage) dans une cible hors écran, ce qui remplit les cartes d'ombre des cônes.
-Les objets de la pièce cessent ensuite de projeter dans la carte du soleil, qui ne
-contient plus que les objets mobiles. Leur ombre tombe presque à la verticale,
-sous eux, ce qui aide à juger l'altitude à l'atterrissage. Sans appel (outils,
-moteur logiciel), les cônes se calculent à la première image.
+`office.bakeShadows(renderer)` à l'ouverture et à chaque changement de plan : la pièce
+**seule** (sans avion, insecte ni personnage) est rendue une fois hors écran, ce qui
+remplit les cartes des cônes, puis les objets de la pièce cessent de projeter dans la
+carte du soleil. Sans cet appel (outils, moteur logiciel), les cônes se calculent à la
+première image. Après l'ouverture, le coût restant est la lecture des deux cartes à
+chaque image.
 
-## Mesures
+## Préréglages d'ombre
 
-Rendu WebGL logiciel (SwiftShader), Diagonale, 1280 × 720, cinq images, vue de jeu :
+`SHADOW_PRESETS` (`src/shadow-settings.ts`) fixe le filtrage et les intensités du ciel et
+du soleil ; `applyShadowPreset` est appliqué par `src/renderer.ts` (filtrage) et
+`src/office-lights.ts` (intensités), avec `landing` par défaut :
 
-| Version                                      | Image (toon) |
-| -------------------------------------------- | ------------ |
-| v401, soleil oblique, tout projette          | 375–385 ms   |
-| v403, deux cônes ombrés + soleil des mobiles | 535–555 ms   |
-| v403 sans ombre de cône (essai)              | ≈ 460 ms     |
+| Préréglage | Filtrage                | Ciel | Soleil |
+| ---------- | ----------------------- | ---: | -----: |
+| `landing`  | `PCFShadowMap`, 1 texel |  1,5 |      4 |
+| `baseline` | `PCFSoftShadowMap`      |  2,5 |      3 |
 
-Le calcul des cartes ne coûte plus rien après l'ouverture. Le coût restant est la
-lecture des deux cartes des cônes, pixel par pixel, à chaque image. Deux lumières
-d'appoint autour des globes (≈ 60 ms) ont été retirées pour cette raison. Le moteur
-logiciel exagère ce coût ; reste à mesurer sur de vrais GPU. Piste suivante si besoin :
-une texture de lumière cuite pour le sol et les murs, qui supprimerait cette lecture.
+`landing` donne des ombres sombres et contrastées sous les appareils, aux bords
+légèrement adoucis ; un rayon de 1,5 ou 2 texels éclaircit trop les petites ombres. Le
+plan à lampes remplace ensuite ciel et soleil par ceux de `LAMP_LOOK`.
+
+### Comparer deux préréglages
+
+`scripts/review-shadows.html` compare `baseline` et `landing` avec les vrais modules :
+servir la racine du dépôt en local (`python3 -m http.server 8080 --bind 127.0.0.1`, à ne
+pas exposer) et ouvrir `http://127.0.0.1:8080/scripts/review-shadows.html` dans un
+navigateur WebGL.
+
+1. Garder matériel, navigateur, fenêtre et résolution constants, outils de
+   développement fermés.
+2. Comparer sur le bureau puis le sol, aux hauteurs 0,006 / 0,04 / 0,15 m : appui des
+   roues et patins, contraste, artefacts.
+3. « Mesurer A/B/B/A » : sept véhicules, 120 insectes, caméra fixe, trajectoire
+   déterministe ; chaque phase chauffe 120 images puis en mesure 600.
+4. Exporter le JSON (temps d'image médian/p95/min/max, soumission CPU, temps GPU si
+   l'extension existe — nul sinon, ce qui ne vaut pas « zéro coût » —, appels de dessin,
+   triangles, matériel). Une perte de contexte invalide l'essai.
+
+Le comparateur ne prouve ni performance maximale ni confort en partie.
+
+## Vérifier
+
+- `scripts/test-office-lights.mjs` : lampes du plan, ventilateurs, collisions et
+  distance aux trajectoires, cuisson unique des ombres.
+- `scripts/test-shadow-settings.mjs` : préréglages et inventaire de la scène (mêmes
+  maillages, projecteurs, receveurs et carte 2048² pour les deux préréglages).
+- `scripts/test-shadow-review.mjs` : instrumentation du comparateur.
+- Rendu et coût réels à juger sur un GPU : SwiftShader exagère la lecture des cartes
+  d'ombre des cônes.
 
 ## Limites
 
-- Les ventilateurs ne tournent pas encore. Le flux d'air qui ferait plonger les
-  insectes, et les plateformes lumineuses où se poser, restent des idées à venir.
-- Un objet construit en partie (fortification…) n'entre pas dans les ombres des
-  cônes : il n'a que l'ombre du soleil, comme les objets mobiles.
-- Seul `diagonale` a ses lampes ; les cinq autres plans gardent le soleil oblique.
+- Les ventilateurs ne tournent pas ; le flux d'air sur les insectes et les plateformes
+  lumineuses restent des idées.
+- Un objet construit en partie (fortification…) n'entre pas dans les ombres des cônes :
+  il n'a que l'ombre du soleil, comme les objets mobiles.
+- Seul `diagonale` a des ventilateurs ; les cinq autres plans gardent le soleil oblique.

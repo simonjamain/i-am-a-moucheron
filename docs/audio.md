@@ -5,8 +5,7 @@ API (`src/audio/`) et par son adaptateur propre au jeu (`src/game-audio/`). Le
 jeu demande autant de sons qu'il veut ; seules les voix au meilleur score sont
 réellement jouées, les autres boucles restent virtuelles et presque gratuites.
 Tout reste côté client : le serveur n'en sait rien et aucun message réseau
-n'est ajouté. La spécification de travail et les décisions sont dans le document
-partagé « Gestionnaire de voix audio — synthèse et spécification ».
+n'est ajouté.
 
 ## Bibliothèque `src/audio/`
 
@@ -48,16 +47,17 @@ Contrat :
 
 - `synth.ts` : les sons synthétisés (aucun fichier audio) et leurs niveaux.
 - `catalog.ts` : catalogue ; boucles `ambience`, `engine`, `dive`, `insect`, `gatling`, `airflow`
-  (frottement d'air du décrochage : [rubans d'air](air-ribbons.md)) pilotées par `{ rate, level }` (la boucle `gatling` de 1 s, douze impulsions sans couture, remplace
-  un son par tir : voir [la Gatling](gatling-turret.md#son-continu)).
+  (frottement d'air du décrochage : [rubans d'air](air-ribbons.md)) pilotées par
+  `{ rate, level }` ; la boucle `gatling` dure 1 s, douze impulsions sans couture
+  ([la Gatling](gatling-turret.md#son-continu)).
 - `scores.ts` : score = priorité du son × niveau × atténuation inverse
   (`ref`, roll-off 1,3, distance max 200 ou 55 au purgatoire). Les sons d'interface
   (récompense, compte à rebours) passent avant le combat, l'ambiance en dernier.
 - `game-sound.ts` : `GameSound`, façade appelée par `client.js` : `play`,
   `loop` puis `keep` à chaque image, `followOnce`/`moveFollowing`/`endFollowing`
-  pour les corps qui tombent. 48 voix réelles au total (avant : 24 ponctuels,
-  20 boucles et 16 suiveurs en plafonds séparés). Tous les sons spatialisés gardent
-  le rendu HRTF d'avant ; le moteur du joueur a une priorité doublée.
+  pour les corps qui tombent. 48 voix réelles au total (`MAX_VOICES`), tous types
+  confondus. Les sons spatialisés du jeu sont rendus en HRTF ; le moteur du joueur a
+  une priorité doublée.
 - `swarm.ts` : regroupement des nuées en 5 émetteurs ([performances](performance.md#son-des-grandes-nuées)).
 
 ## Vérifications
@@ -71,7 +71,8 @@ des fondus, ni le coût HRTF sur une machine modeste.
 
 ## Bourdonnements et arrivées
 
-Six sources de bourdonnement au plus (niveau 0,12, distance de référence 20 unités
-acteur), chacune réduite par la racine du nombre de sources. Une nouvelle arrivée
-d'ennemis (comparaison des identifiants entre deux snapshots, sans rejouer le
-premier) donne un signal bref placé à l'auditeur. Valeurs à confirmer à l'écoute.
+Au bureau, les nuées sont regroupées par `swarmAudioGroups` (`swarm.ts`) en cinq
+boucles `insect` au plus (cellules de 40 m, portée 1 500 m, distance de référence 20),
+recalculées à 10 Hz ; les régions déjà jouées sont préférées pour éviter les sauts.
+Une nouvelle arrivée d'ennemis dans la vague donne un `tick` bref placé à l'auditeur
+(clé par vague, jamais rejoué). Niveaux à confirmer à l'écoute.

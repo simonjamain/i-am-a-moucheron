@@ -1,293 +1,147 @@
-# Controls and pointer ownership
+# Commandes et prise du pointeur
 
-The game is **desktop-first** (version 265): mouse and keyboard only. There is
-no touch mode and no gamepad (removed; joystick and gamepad may come back later):
-no on-screen arrows or weapon buttons, and the mouse is always captured with
-Pointer Lock, whatever pointer the browser reports as primary (a touch-screen PC
-behaves like any other PC).
+Le jeu se joue au clavier et à la souris, sur ordinateur : pas de mode tactile ni de
+manette, aucune commande affichée à l’écran. La souris est toujours capturée par
+Pointer Lock, quel que soit le pointeur principal du navigateur. Les règles de jeu
+derrière chaque commande sont dans [gameplay](gameplay.md).
 
-## One verb per input
+Sources : `src/client.js` (gestionnaires clavier et souris), `src/control-focus.ts`
+(capture, `gameKey`, `flightInput`, `airplaneSteering`, `lookScale`,
+`equipmentExitAction`), `src/equipment-controls.ts` (fusée de la DCA fixe, zoom
+maintenu), `src/live-hud.ts` (aide contextuelle).
 
-Each input keeps one meaning; the context only changes what it acts on.
+## Un verbe par entrée
 
-| Input              | Verb                                        | Examples                                                                                                                                       |
-| ------------------ | ------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| ZQSD / arrows      | Move or steer                               | walk, drive, pitch and roll                                                                                                                    |
-| Mouse              | Look and aim                                | camera, turret, instructor heading                                                                                                             |
-| Left click         | Main action                                 | primary weapon; on foot or as a soul, use what is outlined in signal blue (post, bed, guard, clipboard); in a tool, place                      |
-| Right click (held) | Zoom                                        | posts and vehicles; in placement, keep the order (like Escape)                                                                                 |
-| Space              | Secondary action                            | jump or parachute on foot; bombs (pilots), coaxial MG (tank gunner), guided missile (H2 copilot); nothing at a post without a secondary weapon |
-| Shift / Ctrl       | More / less                                 | throttle, climb / descent, fixed DCA fuse                                                                                                      |
-| R                  | Change or turn                              | tank shell HE ↔ AP; orient the sugar in a build tool. R never kills                                                                            |
-| A / E              | Yaw                                         | aircraft rudder; the Castor volant in its vertical view. E no longer interacts                                                                 |
-| F                  | Leave                                       | exit any seat; jump out in flight                                                                                                              |
-| C (held)           | Free look                                   | airplane, H2 pilot, tank gunner                                                                                                                |
-| V                  | Change view                                 | Castor top view, Castor volant vertical view                                                                                                   |
-| Tab                | Wave window                                 | next wave, from everywhere                                                                                                                     |
-| 1–7                | Change seat                                 | signed contract                                                                                                                                |
-| G / middle click   | Build wheel                                 | on foot, Castor driver, Castor volant                                                                                                          |
-| P / N / Escape     | Workshop / bank / free the cursor and close |                                                                                                                                                |
+Chaque entrée garde un seul sens ; le contexte change seulement ce sur quoi elle agit.
 
-Keyboard letters use `KeyboardEvent.key`, with a physical-code fallback, so ZQSD
-means the printed AZERTY letters. Key-up remembers the original physical-to-logical
-mapping, including modifier changes while a key is held.
+| Entrée              | Verbe                        | Exemples                                                                                                         |
+| ------------------- | ---------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| ZQSD / flèches      | Déplacer, diriger            | marcher, conduire, tangage et roulis                                                                             |
+| Souris              | Regarder, viser              | caméra, tourelle, cap visé par l’instructeur de vol                                                              |
+| Clic gauche         | Action principale            | arme principale ; à pied ou en âme, utiliser ce qui est entouré de bleu (poste, lit, vigile, porte-bloc) ; poser |
+| Clic droit maintenu | Zoom                         | postes et véhicules ; pendant une pose, conserver l’achat (comme Échap)                                          |
+| Espace              | Action secondaire            | sauter ou parachute à pied ; bombes (pilotes), coaxiale (canonnier du char), missile guidé (copilote du H2)      |
+| Maj / Ctrl          | Plus / moins                 | gaz, montée / descente, fusée de la DCA fixe                                                                     |
+| R                   | Changer, tourner             | obus HE ↔ AP du char ; orienter le sucre                                                                         |
+| A / E               | Lacet                        | gouverne de direction ; rotation du Castor volant en vue verticale                                               |
+| F                   | Sortir                       | quitter tout siège ou poste ; sauter en vol                                                                      |
+| C maintenu          | Regard libre                 | avion, pilote du H2, canonnier du char                                                                           |
+| V                   | Changer de vue               | vue de dessus du Castor, vue verticale du Castor volant                                                          |
+| Tab                 | Fenêtre de vague             | partout, quand le bandeau de vague est affiché                                                                   |
+| 1–7                 | Changer de poste             | contrat ou échange signé                                                                                         |
+| G / clic molette    | Roue de construction         | à pied, conducteur du Castor, occupants du Castor volant                                                         |
+| Molette             | Régler                       | distance de caméra, gaz, fusée, hauteur des vues verticales                                                      |
+| P / N               | Atelier / banquier           | P hors purgatoire et ciel ; N depuis tous les postes, sauf dans le ciel                                          |
+| Échap               | Libérer le curseur et fermer | ferme le menu ouvert, annule la pose et l’outil de construction                                                  |
 
-| Input                      | Flight action                                                                            |
-| -------------------------- | ---------------------------------------------------------------------------------------- |
-| Z / Up, S / Down           | Airplane pitch down / up while held; H2 pitch remains.                                   |
-| Q / Left, D / Right        | Airplane roll left / right while held; ground movement remains.                          |
-| A / E                      | Airplane rudder left / right while held.                                                 |
-| Shift / Control            | Increase / decrease throttle.                                                            |
-| C held + mouse             | Free camera look; mouse aim is unchanged.                                                |
-| Left click                 | Machine guns; Space holds bomb release when equipped.                                    |
-| Tab                        | Open the next wave window.                                                               |
-| Escape                     | Release cursor and neutralize control input/fire. Physics and current throttle continue. |
-| Canvas click after release | Request capture and resume, without firing on that click.                                |
+Les lettres utilisent `KeyboardEvent.key`, avec repli sur le code physique
+(`gameKey`) : ZQSD désigne les lettres imprimées d’un clavier AZERTY.
+Le relâchement retrouve la touche logique enregistrée à l’appui, même si un
+modificateur a changé entre-temps. Les chiffres utilisent les touches physiques
+`Digit1`–`Digit7`, sans Maj. Champs de saisie, formulaires, Alt et Méta suspendent
+les raccourcis. Il n’existe pas de touche d’interaction : E n’est que le lacet.
 
-## Other contexts
+## Par contexte
 
-| Context                     | Input                          | Action                                   |
-| --------------------------- | ------------------------------ | ---------------------------------------- |
-| On foot                     | ZQSD / arrows + mouse          | Third-person movement and camera         |
-| On foot, post aimed at      | Left click                     | Open the equipment dossier               |
-| Any equipment seat          | F                              | Exit (grounded aircraft must be stopped) |
-| Airborne character          | Space                          | Open / retract parachute                 |
-| Alive                       | P                              | Open / close purchase menu               |
-| Placement preview           | Left click / right click, Esc  | Confirm / keep the order                 |
-| DCA                         | [ / ], Shift / Ctrl held       | Step / continuous airburst distance      |
-| On foot (office, purgatory) | Grounded Space                 | Jump                                     |
-| Multi-seat vehicle          | Physical Digit1–Digit7 / panel | Contractual change or exchange           |
-| Purgatory, served at window | Click the window's clipboard   | Open the paperwork                       |
-| Tank gunner                 | R                              | Shell HE ↔ AP                            |
-| H2 copilot                  | Space (again: detonate)        | Guided missile; the click keeps the MG   |
-| Paperwork                   | Release valid ink stroke       | Submit and stamp automatically           |
+| Contexte                    | Commandes                                                                                                                                                                       |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| À pied (bureau, purgatoire) | ZQSD + souris ; Espace au sol : saut ; Espace en chute : ouvrir / replier le parachute ; molette : distance de caméra ; clic : poste visé                                       |
+| Avion, pilote               | souris : cap ; Z/S tangage, Q/D roulis, A/E lacet ; Maj/Ctrl ou molette : gaz ; clic : MG (sauf bombardiers) ; Espace maintenu : bombes                                         |
+| Avion, mitrailleur          | souris : tourelle ; clic : MG                                                                                                                                                   |
+| Hélicoptère, pilote         | souris : inclinaison ; Z/S tangage, Q/D roulis ; Maj monter, Ctrl descendre ; relâcher : retour au stationnaire ; clic maintenu : roquettes ; C : regard libre (sans roquettes) |
+| Hélicoptère, copilote       | souris : viser ; clic : MG ; Espace : missile guidé, second appui : détonation ; MG et missile ensemble                                                                         |
+| Castor volant, pilote       | comme le pilote d’hélicoptère ; V : vue verticale, pilotage au clavier seul, A/E pour tourner ; G : larguer                                                                     |
+| Castor volant, passager     | souris : regarder ; V : vue verticale ; G puis clic : larguer                                                                                                                   |
+| Char, pilote                | Z/S avancer / reculer, Q/D tourner ; souris : MG avant dans un cône de ±15° (`HULL_GUN_CONE`) ; clic : MG                                                                       |
+| Char, canonnier             | souris : tourelle ; clic : canon ; Espace : coaxiale ; R : HE ↔ AP ; C maintenu : observer à la troisième personne, armes suspendues                                            |
+| Char, tireur supérieur      | souris : tourelle ; clic : MG                                                                                                                                                   |
+| Castor                      | Z/S, Q/D ; souris + clic : MG ; V : vue de dessus (viseur au sol, molette : hauteur) ; G : construire                                                                           |
+| Anti-air mobile             | conducteur : Z/S, Q/D ; canonnier : souris, clic : obus, molette : fusée de proximité 0,5–20 m (`MOBILE_FUSE`)                                                                  |
+| Flak léger                  | clic : obus ; Maj/Ctrl maintenus : fusée en continu ; [ ] ou molette : pas de 25 m (`FLAK.step`)                                                                                |
+| DCA haute cadence           | clic : balles                                                                                                                                                                   |
+| Flak lourd                  | clic : obus ; molette : proximité                                                                                                                                               |
+| Canon anti-matériel         | souris : pointage ; clic : obus                                                                                                                                                 |
+| Atelier, pose d’un achat    | clic gauche : poser ; clic droit ou Échap : conserver l’achat payé pour plus tard                                                                                               |
+| Outil de construction       | clic : poser, ou fixer début puis fin (barricade, ruban) ; R : orienter le sucre ; G : changer d’outil ; Échap : quitter                                                        |
+| Purgatoire                  | clic sur le porte-bloc du guichet, le vigile ou un appareil posé ; Espace : saut                                                                                                |
+| Papiers                     | relâcher un trait d’encre valide : signature et tampon automatiques                                                                                                             |
 
-E no longer interacts anywhere: A/E are only the rudder (yaw). Manual input
-overrides the mouse instructor on its axis only; the remaining axes stay
-assisted, and mouse assistance resumes on release. F is the exit key for aircraft
-pilots, gunners and DCA occupants. Forms and text inputs suspend gameplay shortcuts.
+Sur tous les postes : clic droit maintenu pour zoomer, F pour sortir, 1–7 pour
+changer de poste quand l’engin en a plusieurs. Au pilote d’avion, une commande
+manuelle remplace l’instructeur souris sur son seul axe (`airplaneSteering`) ;
+les autres axes restent assistés et l’assistance reprend au relâchement. Les
+commandes du H2 sont détaillées dans [commandes du H2](helicopter-controls.md).
 
-Chase cameras (on foot, vehicles, Castor volant passengers) never end behind a solid: a ray from
-the followed point to the wanted eye pulls the eye in before the first obstacle, immediately, and
-it eases back out once the way is free (`src/camera-clearance.ts`, `test-camera-clearance.mjs`).
-A vehicle inside a box keeps a camera inside that box. Gunner views and the vertical view (V)
-are not concerned.
-Captured mouse movement directly orbits the ground character camera. Pointer lock is requested after joining,
-when closing a panel, or by a canvas click. Browsers require user activation and
-may reject a request after an asynchronous join/signature; a canvas click is the
-recovery path. There is no automatic reacquisition after Escape or blur.
+Flak léger : Maj maintenu allonge la fusée, Ctrl la raccourcit, de 100 à 1 200 m
+de référence (30 cm à 3,60 m du bureau) en environ 3 s ; relâcher arrête aussitôt
+et les deux touches ensemble s’annulent (`advanceFuse`, `FUSE_RATE`).
 
-Forms/help release pointer ownership and clear held inputs. A late native lock
-request is cancelled if paperwork opens before it completes. Closing paperwork
-with Escape does not request capture. An explicit close or final signature may
-resume capture; intermediate signatures retain the free cursor.
+Lunette du canonnier du char : graduations `TANK_MARKS` de 15 cm à 9 m du bureau,
+calculées par `ballisticMarks` (`src/tank-reticle.js`) avec la même intégration
+que le serveur pour l’obus choisi ; C les masque.
 
-`control-focus.ts` owns this lifecycle and the testable keyboard mapping. Flight
-physics continues with neutral control surfaces while UI owns the pointer.
-`test-controls.mjs` covers AZERTY mapping, throttle separation, airplane manual
-overrides and client integration, suspended inputs, capture/release, and the
-pending-capture/form race.
+## Souris, zoom et caméras
 
-## À pied et postes
+Les boutons souris passent par `mousedown` / `mouseup`, qui signalent chaque
+bouton séparément : clic gauche et clic droit se combinent et se relâchent
+indépendamment. Le zoom maintenu (`HoldZoom`) passe le champ de vision de 62° à
+28° ; la sensibilité suit le champ de vision (`lookScale`) pour qu’un cran de
+souris déplace l’image du même nombre de pixels, zoomé ou non.
 
-Personne ne porte d'arme à pied, au bureau comme au purgatoire : le personnage
-marche et court les mains libres, avec le même modèle et les mêmes animations
-partout. Espace en chute conserve la commande de parachute.
-Un clic sur ce qui est entouré de bleu ouvre le dossier : poste, lit, vigile, ou porte-bloc
-du guichet où Saint Pierre nous sert ([décor du purgatoire](purgatory-scene.md#le-porte-bloc-du-guichet)).
-Touches physiques Digit1–Digit7 ou panneau « Postes » : même contrat pour changer de siège ou proposer un
-échange. Espace au sol fait sauter ; en chute, il garde le parachute. Le destinataire signe pour accepter ou utilise « Refuser l’échange ».
-Les commandes de mêlée et de KO sont retirées.
+À pied, la caméra pivote à `SHOULDER_HEIGHT` au-dessus des pieds, regard limité à
+±1,52 rad ; la molette règle la distance (`GROUND_VIEW_DISTANCE`, au plus près par
+défaut ; `src/personal-aim.ts`). Les caméras de poursuite (à pied, véhicules,
+passagers du Castor volant) ne finissent jamais derrière un solide : un rayon du
+point suivi vers l’œil voulu ramène l’œil avant le premier obstacle, puis il
+s’éloigne en douceur quand la voie est libre (`src/camera-clearance.ts`). Les vues
+de tireur et les vues verticales ne sont pas concernées.
 
-Les documents ne se déchirent plus. Aucun contrat ne modifie les
-commandes (annexes malicieuses retirées en version 264). Voir
-[logistique et contrats](logistics-contracts.md).
+## Prise du pointeur
 
-## Nouveau lot Node : zoom et armes lourdes
+La capture est demandée après l’arrivée en jeu, à la fermeture d’un panneau ou par
+un clic sur le canevas (ce clic ne tire pas). Le navigateur exige un geste de
+l’utilisateur et peut refuser une demande arrivée après une signature asynchrone :
+le clic sur le canevas sert alors de reprise. Aucune reprise automatique après
+Échap ou une perte de focus.
 
-Clic droit maintenu : zoom dans un poste avec pointeur capturé ; relâcher restaure
-la vue. DCA : Shift maintenu augmente la fusée en continu, Ctrl maintenu la réduit
-(de 30 cm à 3,60 m du bureau en environ 3 s), relâcher arrête aussitôt et les deux
-touches ensemble s'annulent ; distance réelle affichée en direct.
-`advanceFuse()` (`src/equipment-controls.ts`) porte ce réglage, couvert par
-`scripts/test-fuse-continuous.mjs`. Molette et [ ] gardent des pas de 25 m. Tank : Z/S ou flèches pour avancer/reculer, Q/D pour tourner ; **R** alterne
-HE et AP. Au tireur principal, clic gauche tire le canon et Espace la coaxiale. Les graduations
-de la lunette vont de 15 cm à 9 m du bureau (l'autre bout de la pièce), échantillonnées sur la trajectoire réelle de l'obus choisi (HE/AP,
-même intégration que le serveur) ; obus HE 13 s et AP 8 s de vol maximal. Aux pilotes,
-clic gauche tire la MG et Espace maintenu largue les bombes disponibles toutes les
-0,5 s. B est supprimé. Les autres mitrailleurs et DCA tirent au clic (Espace est l'arme secondaire, qu'ils n'ont pas). À pied, sans
-cercle au sol, clic gauche sur le poste visé (au centre de l’écran, ou sous le curseur
-libéré) ouvre son dossier : poste d’un engin, DCA fixe, canon anti-matériel ou lit.
-Les mutations à bord restent dans le menu des postes. Voir [référence du lot](vehicles-bank.md).
-
-Le banquier s’ouvre avec **N** ou le bouton Banquier, depuis tous les postes et
-mondes (sa « ligne directe »). Cocher une offre, puis l’objet du prêt, puis signer et
-relâcher dépose le contrat. Échap ferme. La souris est libérée et les commandes
-neutralisées pendant la consultation ; la partie continue. Les rails contextuels
-s’ouvrent au réglage/événement et au survol/focus.
-
-## Retours terrain
-
-Au sol près d’un lit, le viser puis cliquer ouvre le contrat personnel ; au lit actif,
-la résiliation signée. Après purgatoire, retour au lit valide ou au départ.
-Au canon du tank : vue de lunette, **C maintenu** pour observer à la troisième
-personne sans déplacer le canon ; les tirs sont suspendus jusqu’au relâchement.
-Espace permet plusieurs cycles d’ouverture/fermeture du parachute ; une ouverture
-tardive ne supprime pas la vitesse instantanément. Les dégâts dépendent de la
-vitesse verticale à l’impact. Voir [retours terrain](field-update.md).
-
-Le [lot lisibilité et nettoyage](clean-flight.md) détaille les bons signés, la pose au clic,
-les touches physiques et les nouvelles commandes du Spitfire.
-
-## HUD épuré (issue #135)
-
-Plus de panneau d'instructions à pied à gauche, ni d'aide plein écran (bouton
-« Aide », « Commandes ? », touche H retirée), ni de
-bouton « Défense », « Recommencer la partie » ou nom de room copiant le lien. Le
-lien d'invitation reste celui de la barre d'adresse (`?room=`). Aucune commande
-tactile n'est affichée, même sur un écran tactile (jeu desktop-first).
-Le radar, ancré en haut et à droite, est agrandi vers le bas et la gauche dans
-l'espace libéré (211 px au lieu de 150, même carré). Le bouton **Debug : OFF / ON**
-est un interrupteur direct ([mode debug](laboratory.md)).
+Échap, un menu ou un formulaire libèrent le pointeur et effacent les commandes
+maintenues ; la physique continue avec gouvernes neutres et gaz courants. Une
+demande de capture encore en attente est annulée si des papiers s’ouvrent. Fermer
+des papiers avec Échap ne recapture pas ; une fermeture explicite ou la signature
+finale d’un dossier recapture, les signatures intermédiaires laissent le curseur
+libre. `ControlFocus` (`src/control-focus.ts`) porte ce cycle.
 
 ## Aide contextuelle
 
-`controlHintItems()` dans `src/live-hud.ts` est la source unique de l’aide affichée
-en bas à gauche (`#commandHelp`). `client.js` lui transmet le véhicule et le siège,
-le type de poste fixe occupé (DCA, canon antichar), l’état à pied,
-en chute ou au purgatoire, la disponibilité de la construction, la roue ouverte
-et l’outil actif (avec son point d’ancrage). L’aide change donc à l’entrée, à la
-sortie et au changement de poste. À pied : molette pour le zoom caméra (au plus près par défaut, dézoom jusqu'à 9 ; la caméra pivote à 1,85 de haut et peut regarder le ciel en restant au ras du sol, `shoulderCamera` dans `src/personal-aim.ts`), **G** ou
-clic molette pour la roue de construction. Au Castor : conduite Z/S Q/D, clic
-pour la mitrailleuse, **G**/clic molette, **V** vue de dessus (prioritaire sur le
-raccourci de la fenêtre « Prochaine vague » pour le conducteur), **F** pour sortir. Les postes
-fixes et véhicules terrestres n’affichent ni parachute ni « sauter ».
-`scripts/test-control-hints.mjs` vérifie chaque rôle et chaque siège de `VEHICLES`.
-
-## HUD et observation courants
-
-Les informations de coque et munitions sont près du viseur ; l’aide de contexte
-reste en bas à gauche, sans panneaux temporaires. Après mort, toute commande de
-jeu est neutralisée pendant le passage au purgatoire (fantôme qui monte, fondu au
-noir), qui s'enchaîne seul ([ciel du purgatoire](purgatory-sky.md#la-mort-un-passage)).
-Dans le ciel de Saint Pierre, ni banque (N), ni atelier (P), ni construction (G). Le regard à
-pied va presque à ±87°, sans retournement. Tous les véhicules achetés passent
-par signature puis pose au clic ; annulation/reprise identique aux installations.
-Voir [retours multijoueurs](multiplayer-return.md).
-
-## Hélicoptère et DCA mobile
-
-Hélicoptère, pilote : souris pour incliner, Maj/Ctrl pour monter/descendre, Z/S et Haut/Bas pour piquer/cabrer, Q/D et Gauche/Droite pour le roulis,
-relâchement pour revenir progressivement au stationnaire. C maintenu pour le
-regard libre (sans roquettes), clic maintenu pour les roquettes dans l’axe du H2.
-Copilote : souris pour viser, clic pour la MG, **Espace** pour le missile guidé (second
-appui : détonation) ; on peut guider le missile et tirer à la MG en même temps.
-Camion : conduite Z/S et Q/D au conducteur ; souris et clic au tireur, molette
-pour la proximité (1,5 mm à 6 cm du bureau). 1/2 : mutations signées.
-Les réserves, butées et unités sont détaillées dans [véhicules d’appui](support-vehicles.md).
-
-Le [lot confort de jeu, version 37](comfort.md) précise réparation, zoom, jauges,
-radar à pied, remise à zéro, fourmis et projectiles du pistolet courants.
-
-Le [mapping pilote H2 actuel](helicopter-controls.md#mapping-pilote-h2) retire les anciens alias O/W sans changer les armes du copilote.
+`controlHintItems()` (`src/live-hud.ts`) est la source unique de l’aide affichée en
+bas à gauche (`#commandHelp`). `client.js` lui transmet véhicule et siège, poste
+fixe occupé, état à pied, en chute, en observation ou dans le ciel, disponibilité
+de la construction, roue ouverte et outil actif. Chaque contexte ne liste que les
+entrées réellement routées ; postes fixes et véhicules terrestres n’affichent ni
+parachute ni saut.
 
 ## Réglages personnels des avions
 
-Depuis une room, ouvrir **Pilotage** à côté de **Debug**. Tous les joueurs
-peuvent configurer leurs propres avions, indépendamment des règles de la room.
-Le bouton **Enregistrer et appliquer** applique immédiatement les préférences,
-sauvegardées dans le `localStorage` du navigateur (`moucheron-flight-tuning:v1`).
-Elles persistent entre rooms et rechargements sur le même profil navigateur,
-sans compte ni synchronisation serveur. L’échec du stockage est signalé ; les
-valeurs restent alors actives pour la session. **Valeurs par défaut** prépare la
-réinitialisation, à confirmer avec le bouton d’enregistrement.
+Le bouton **Pilotage**, à côté de **Debug**, ouvre les réglages propres au joueur
+(`src/flight-tuning-ui.ts`) : sensibilité de la souris, réactivité en tangage,
+roulis et lacet de l’instructeur, inclinaison automatique en virage, freinage de
+rotation, **rattrapage final du viseur** (1,4 × par défaut ; 1 × le désactive) et
+inversion verticale de la souris en avion. **Enregistrer et appliquer** les applique
+et les garde dans le `localStorage` (`moucheron-flight-tuning:v1`,
+`src/flight-tuning.ts`), par profil de navigateur ; un échec de stockage est
+signalé et les valeurs restent actives pour la session. **Valeurs par défaut**
+prépare la réinitialisation, à confirmer par l’enregistrement.
 
-Les curseurs multiplient la sensibilité souris, les réponses de tangage,
-roulis et lacet de l'instructeur, l'inclinaison automatique en virage et le
-freinage de rotation. **Rattrapage final du viseur**, à **1,4 × par défaut**,
-renforce progressivement les commandes quand l'écart au point visé se réduit,
-sans téléporter l'avion ni toucher à sa physique. Régler à **1 ×** retrouve
-le comportement de l'instructeur avant cette amélioration.
-L’option d’inversion verticale ne touche que la visée souris en avion.
+Ces réglages ne touchent ni les commandes clavier, ni le H2, les véhicules
+terrestres, les tourelles, les autres joueurs ou les règles de la room. Le panneau
+libère le pointeur ; Échap le ferme sans recapture, le bouton fermer recapture. La
+partie continue pendant son ouverture. L’instructeur est dans `src/mouse-flight.ts`.
 
-Ces réglages ne modifient **ni les commandes manuelles au clavier**,
-ni le pilotage H2, les véhicules terrestres, les tourelles, les autres joueurs,
-l’autorité du serveur ou l’équilibrage de la room. Le menu relâche le pointeur
-et neutralise les commandes maintenues ; **Échap** le ferme sans recapture
-automatique, tandis que le bouton fermer peut reprendre la capture. La partie
-continue pendant l'ouverture du panneau.
+## Vérifier
 
-Sources : `flight-tuning.ts` (plages et stockage), `flight-tuning-ui.ts`
-(panneau), `mouse-flight.ts` (instructeur) et
-`test-flight-tuning.mjs` (régression). La sensation du pilotage reste à
-valider dans une vraie partie WebGL/UDP.
-
-## Prochaine vague
-
-Ouvrez le bandeau **Vague** en haut de l’écran, ou appuyez sur **Tab**, partout
-(V ne sert plus qu'aux vues : dessus du Castor, verticale du Castor volant). La frise
-regroupe les arrivées simultanées dans une même colonne. Les repères **S** (sol)
-et **A** (air) et les silhouettes reprennent ceux des entrées dans le bureau.
-Le trajet terrestre confirmé apparaît comme une piste de phéromones orange
-semi-transparente bordée de sombre, parcourue de chevrons blancs qui glissent vers
-la poubelle : c'est le chemin réellement marché tant que la carte ne change pas.
-Pendant la pose d’une barricade, la piste claire à chevrons orange
-montre le détour proposé avant le clic de validation. Les trajets aériens gardent
-leurs nuages colorés par aération (`src/pheromone-trail.ts`, version 239).
-
-Il n'y a ni vote ni carte de plan (version 264) : la fenêtre annonce seulement la
-vague. **Lancer la vague maintenant** est disponible pour tout joueur pendant la
-préparation ; sinon la vague part à la fin du compte à rebours
-([progression](progression.md)). **Replier** ou **Échap** permet de repartir construire.
-
-## Défenses terrestres
-
-Le conducteur du Castor peut poser, sans plan à débloquer, un « Canon lourd » (14 $). Descendez, approchez du poste et utilisez la commande d’interaction pour signer le dossier et occuper le siège ; utilisez la visée et le tir habituels, puis la même commande pour sortir. Le canon lourd pivote lentement (45°/s, roues en sens inverse) vers la visée, entre −5° et +40° d’élévation, et tire là où pointe réellement son tube un obus sans fusée (comme le tank), simulé par le tireur ; la caméra se place derrière la culasse. Les munitions se rechargent de manière payante à proximité d’une station ou du Castor.
-
-Le conducteur du Castor peut choisir, sans plan à débloquer, « Tourelle auto » dans la roue de construction et la poser d’un clic (5 $). La tourelle consomme ses 180 balles (60 dégâts chacune) ; le service de recharge est payant et local. La « Tourelle auto Gatling » (25 $, 12 tirs/s, 1 000 balles, tir continu sans son par tir) n'est plus à l'achat : on y arrive en visant la tourelle de base à pied (contour bleu) puis clic gauche pour signer l'ordre de refonte ([la Gatling](gatling-turret.md#amélioration)).
-
-**G** ou clic molette (roue de construction) à pied ou au poste conducteur du Castor au sol, puis choix d’un outil ; il n’y a plus de bouton « Défense » (issue #135) : aperçu au point visé par la caméra
-indépendamment de la marche, clic gauche pour valider, R pour orienter le sucre, Échap
-pour quitter. Prix, conditions et navigation : [gameplay](gameplay.md#défenses-terrestres).
-
-Maintenir **G** ou le **clic molette** : orienter vers un secteur puis relâcher pour choisir, à pied ou au volant du Castor au sol. Les autres postes de véhicule ne peuvent pas construire. Clic gauche : fixer un début sans orientation, viser la fin (en marchant si nécessaire), puis cliquer à nouveau pour poser le mur ou le ruban. Le sucre, la réparation et la suppression demandent un seul clic.
-
-Sur le [bombardier biplan](biplane-models.md), **1** et **2** demandent le poste de pilote et celui de mitrailleur (qui regarde vers l'arrière au début), avec signature.
-
-G1 Castor : Z/S avancer/reculer, Q/D tourner (conduite physique : départ progressif, freinage en appuyant à l’opposé du mouvement, braquage qui se ferme avec la vitesse, marche arrière plus lente ; voir [la physique Rapier](physics-engine.md)), souris et clic gauche pour tirer avec la mitrailleuse légère, **V** bascule la vue de dessus : la caméra se place à la verticale du camion (le nord en haut de l’écran, quel que soit le cap du camion ; l’est à droite) et la souris déplace un viseur au sol ; l’aperçu de construction et la mitrailleuse visent ce point. La molette zoome entre 0,15 et 0,8 m au-dessus du camion. V de nouveau revient à la vue de conduite. Le soutien à 50 cm est automatique et payant. Pendant la conduite, **G** ou le clic molette ouvre la roue de construction. Clic gauche démarre/arrête la dépose des murs LEGO et rubans : les briques apparaissent une à une derrière le camion (hauteur fixe de deux rangées), chaque section LEGO de 48 mm est validée par le serveur et l’arrêt conserve la section commencée. Facturation au prorata au centime : 0,25 $ pour 48 mm de LEGO, 1 $ pour 20 cm de ruban ; les autres pièges se posent au point visé. Échap interrompt la construction.
-
-Castor volant : le pilote vole comme l'hélicoptère d'attaque (souris, Z/S/Q/D,
-Maj/Ctrl) ; 2 à 4 demandent les places de passager. **V** bascule, pour chaque
-occupant, la vue verticale : la caméra regarde le point de largage à la
-verticale, nez en haut de l'écran, molette pour la hauteur (5 à 80 cm au-dessus
-de la surface d'arrivée). Le pilote y pilote au clavier seulement, **A/E**
-tournant l'appareil. **G**/clic molette ouvre la roue pour tous les occupants ;
-clic gauche largue l'objet choisi, tourné comme l'appareil (pas de R ; A/E tournent
-l'appareil). Hors vue verticale, les passagers regardent autour
-de l'appareil avec la souris.
-
-DCA fixe : le nombre d'obus restants (sur 120) est affiché près de l'état du
-poste. Un clic gauche déclenche un tir tant qu'il reste des munitions.
-Rechargement automatique auprès d'une station ou d'un Castor à portée, depuis
-la caisse commune ; aucun achat de munitions à distance.
-
-## Aperçu de pose
-
-Les constructions montrent leur vrai modèle transparent avant confirmation, avec
-un état rouge si la pose est refusée. Les véhicules font face au personnage ;
-leur orientation est conservée par le serveur. La surface porteuse est vérifiée
-avec l’emprise tournée du véhicule. Les constructions à pied et depuis le Castor
-emploient les mêmes modèles que les objets posés.
-
-## Sortie d'un véhicule
-
-**F** fait sortir de tout véhicule posé et à peu près immobile : le joueur apparaît
-contre la carlingue ou le châssis, à hauteur de son siège (pilote vers l'avant,
-mitrailleur dorsal vers l'arrière), et non plus au bout des ailes ou du rotor, ce
-qui le faisait tomber quand l'appareil était garé au bord du vide.
-Le décalage latéral est `doorOffset` (`src/fleet.ts`) : demi-largeur de la coque
-(`HULL_HALF_WIDTH` pour les avions et l'hélicoptère, la moitié de l'envergure pour les
-véhicules terrestres et le Castor volant) plus 1 m de marge. Le serveur et le client
-utilisent la même fonction, avec le siège réellement occupé. Le joueur apparaît
-`EXIT_LIFT` (0,3 unité d'acteur) au-dessus de la surface sous l'appareil et retombe sur
-le vrai support : posé sur un meuble, un pied sous la surface le ferait traverser.
+`npm test -- controls` (`test-controls.mjs` : AZERTY, gaz, priorités manuelles,
+sortie F, un verbe par entrée, `lookScale`), `test-pointer-capture`,
+`test-control-hints` (chaque rôle et siège de `VEHICLES`), `test-fuse-continuous`,
+`test-camera-clearance`, `test-flight-tuning`, `test-flight`, `test-mouse-flight`,
+`test-heli-controls`. Le confort réel (Pointer Lock, sensations) se juge en partie
+WebGL.

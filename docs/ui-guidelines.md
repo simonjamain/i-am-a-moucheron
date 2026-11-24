@@ -147,8 +147,8 @@ membre d’équipage.
 
 Couleurs, polices, tailles, espacements et rayons se définissent **une seule fois** en
 variables CSS (`:root` de `src/index.html`) et se réutilisent partout, y compris dans le
-JavaScript. État hérité à résorber : environ 290 couleurs écrites en dur dans `src/`,
-une vingtaine de tailles de texte, quatre polices et des rayons de 3 à 12 px.
+JavaScript. État hérité à résorber : quelques centaines de couleurs écrites
+en dur dans `src/`, de nombreuses tailles de texte et des rayons de 3 à 12 px.
 Une nouvelle couleur ou taille écrite en dur n’est pas acceptée ; toute reprise d’écran
 migre ses valeurs vers les jetons. Le **bleu signal `#2ec4d6`** est le jeton partagé par
 l’interface et le monde 3D pour tout ce qui s’utilise ([couleurs](art-direction.md#couleurs)).

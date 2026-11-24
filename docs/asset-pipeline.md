@@ -1,14 +1,92 @@
-# Pipeline des assets Meshy — outillage Docker local et CI
+# Pipeline des assets 3D
 
-Le jeu embarque des modules JS dérivés de GLB Meshy ; l'outillage ci-dessous est
-un **outil de développement ponctuel**, sans serveur, port, GPU, coût Meshy ni
-déploiement sur le VPS. Il n'est pas intégré au conteneur du jeu.
+Comment un modèle 3D entre dans le jeu : règle de validation des modèles Meshy,
+import hors ligne vers des modules TypeScript, outil Docker d'optimisation et contrôles.
+La provenance, les pivots et les dimensions de chaque modèle intégré sont dans le
+[catalogue des modèles](models.md) ; l'ajout d'une espèce ou d'un véhicule suit
+[ajouter du contenu](adding-content.md).
 
-## Exécuter
+## Règle pour tout nouveau modèle Meshy
 
-Prérequis sur l'hôte : Docker et Docker Compose, **pas Node ni Python**.
-L'image Docker utilise Node 22, glTF Transform (lecture/écriture GLB) et
-meshoptimizer (simplification d'indices géométriques).
+Cette règle s'applique **avant** toute génération et avant l'outillage ci-dessous.
+
+1. **Propositions visuelles validées.** Présenter des images conformes à la
+   [direction artistique](art-direction.md) (low poly, couleurs militaires lisibles à
+   l'échelle miniature, cohérence avec la flotte). Aucune génération Meshy (modèle,
+   texture, rig) n'est lancée sans l'accord explicite de l'utilisateur sur ces images ;
+   consigner le lien ou la référence de cette validation dans la PR.
+2. **Une référence isolée par pièce.** Chaque pièce mobile (châssis, roue, rotor,
+   tourelle, canon, capteur…) a sa propre image de référence, avec les vues utiles
+   (face, profil, dessus, 3/4). Ne jamais envoyer une planche multi-vues ou
+   multi-pièces comme une seule pièce.
+3. **Articulations séparées dès la génération.** Générer les pièces mobiles comme des
+   modèles distincts (ou au moins des îlots de maillage séparés), puis documenter pour
+   chacune : pivot (point de rotation dans le repère du modèle), axe(s) et amplitude,
+   dimensions visées et échelle d'import, origine des projectiles ou effets (bouche).
+4. **Conserver et vérifier.** Garder UV, textures et sources originales (tâche Meshy,
+   SHA-256), puis vérifier le rendu sous plusieurs angles, chaque pièce mobile à ses
+   butées, l'intégration en jeu (collision, aperçu de pose, tir) et les performances
+   avec plusieurs exemplaires. Une simplification n'est adoptée qu'après ces contrôles.
+
+Un modèle fourni déjà fait par l'utilisateur (personnages, créatures, remodelages de
+véhicules) ne coûte aucune génération, mais suit les points 3 et 4.
+
+### Checklist de PR pour un asset Meshy
+
+- [ ] Images proposées et **validées par l'utilisateur** avant génération (référence).
+- [ ] Une image de référence isolée par pièce mobile.
+- [ ] Tâches Meshy et SHA-256 des sources conservés.
+- [ ] Pivots, axes, amplitudes et dimensions documentés par pièce.
+- [ ] UV et textures d'origine préservées ; rendu comparé sous plusieurs angles.
+- [ ] Pièces mobiles testées à leurs butées ; origine de tir à la vraie bouche.
+- [ ] Mesures avant/après (triangles, octets, FPS si possible) et essai en jeu.
+
+## Importer un modèle dans le jeu
+
+Le navigateur ne lit jamais de GLB : un script Python hors ligne
+(`scripts/import-*.py`) convertit l'original en module `src/*-data.ts` embarqué par
+l'assembleur. Conventions communes :
+
+- **Originaux hors Git**, dans `assets/originals/<modèle>/` (ignoré). Le script
+  vérifie l'empreinte SHA-256 de la source approuvée (`scripts/meshy_provenance.py`)
+  et refuse tout autre fichier ; le module généré l'inscrit dans son en-tête ou son
+  champ `sourceSha256`. Ne jamais modifier un module `*-data.ts` à la main.
+- **Géométrie intacte** : tous les triangles et UV d'origine sont gardés ; les pièces
+  mobiles sont séparées par îlots ou coques déconnectées (connectivité soudée, sans
+  tenir compte des coutures UV), jamais par simplification. L'import échoue si le
+  découpage attendu (nombre d'îlots, de roues…) ne correspond pas.
+- **Texture** : seule la carte de couleur est reprise, réduite en JPEG (ou WebP pour
+  la T-01) de 512 à 1 024 px ; positions, UV et indices sont quantifiés. Les autres
+  cartes PBR ne sont pas chargées.
+- **Repère** : avant Meshy (souvent −X ou +Z) tourné vers −Z du jeu sans miroir,
+  Y vers le haut, contact au sol à −`gear` pour les véhicules ; échelle fixée par
+  l'envergure ou la longueur du profil de `src/fleet.ts`.
+- **Squelettes** : les créatures gardent le rig Meshy (os et matrices de liaison) ;
+  l'import peut corriger des poids ou ajouter des os d'ailes, sans toucher géométrie,
+  UV ni texture. L'animation est procédurale (`src/rigged-creature.ts`) sauf clip
+  fourni.
+- **Retouches de rig** : `scripts/split-vehicle-parts.mjs`, `rig-aircraft-wheels.mjs`,
+  `rig-biplane-wheels.mjs`, `rig-tank-gun.mjs`, `rig-tank-hubs.mjs` et
+  `attach-castor-rims.py` réorganisent les pièces d'un module existant (roues,
+  chenilles, tube) sans changer triangle, UV ni texture, et l'inscrivent dans son
+  en-tête ([physique Rapier](physics-engine.md#roues-et-chenilles-dans-les-modèles)).
+
+Dépendances Python de l'import seulement : NumPy, trimesh, Pillow (SciPy pour
+certains scripts). Exemple : `PYTHONPATH=scripts python3 scripts/import-midge.py
+assets/originals/midge/angry-little-fly.glb`. Chaque modèle a un test
+`scripts/test-<modèle>*.mjs` (provenance, triangles, UV, pivots, contact au sol).
+
+`scripts/import-meshy-textures.py`, `import-meshy-b3.py`, `import-meshy-h2.py`,
+`import-meshy-m1.py` et `import-meshy-fleet.py` sont des importeurs de **sources
+antérieures** (empreintes et masques propres à d'anciennes tâches Meshy) : ils ne
+reproduisent pas les modules actuels et ne doivent pas être relancés sur eux.
+
+## Outil Docker d'optimisation
+
+Outil de développement ponctuel (`compose.assets.yaml`, `tools/assets/`), sans réseau,
+port, GPU, coût Meshy ni déploiement ; il n'est pas intégré au conteneur du jeu.
+Prérequis sur l'hôte : Docker et Docker Compose (pas Node ni Python). L'image utilise
+Node 22, glTF Transform et meshoptimizer.
 
 ```sh
 mkdir -p assets/originals assets/optimized
@@ -22,561 +100,32 @@ docker compose -f compose.assets.yaml run --rm optimizer \
   validate '/assets/originals/modèle.glb' '/assets/optimized/modèle.glb'
 ```
 
-Par défaut, les noms de parties tels que `turret`, `rotor`, `prop`, `wheel`
-et `canon` sont **exclus de la simplification** ; on peut fournir un motif
-`--protect 'rotor|tail|gun'`. Pour un GLB monobloc, l'outil exige des boîtes de protection explicites
-(`--regions /assets/originals/zones.json`), sinon `--allow-monobloc` n'est
-utilisable que pour une exploration sans validation des pièces mobiles.
-
-Le profil prudent par défaut cible **75 % des triangles restants**
-(`--ratio 0.75`, `--error 0.001`). Pour comparer d’autres variantes,
-essayer `--ratio 0.5` ou `--ratio 0.25` sur des copies ; la réduction
-réelle peut être moindre et n’est jamais garantie. `--error 0.001` limite la déformation géométrique
-relative ; les bordures sont verrouillées. Pas de modification des coordonnées
-UV, positions, normales, textures ou matériaux : seul le tableau des indices
-des triangles peut changer. Il est possible qu'aucune simplification ne soit
-réalisable dans ces contraintes. Les textures ne sont pas recompressées. Un fichier GLB peut **grossir**, même
-avec moins de triangles (en-têtes et représentation des buffers) : le rapport
-le signale et aucun gain de taille ou de FPS n'est garanti.
-
-Sur Linux, si votre UID/GID hôte diffère de 1000, exécuter
-`export ASSETS_UID=$(id -u) ASSETS_GID=$(id -g)` avant les commandes Compose.
-Le conteneur conserve un utilisateur non-root et écrit avec les droits du
-propriétaire du répertoire de sortie, sans modifier les originaux.
-
-Les originaux sont montés en lecture seule. Les sorties sont créées dans
-`assets/optimized` et ne remplacent pas des fichiers existants (sauf demande
-explicite `--overwrite`). Définir `ASSETS_ORIGINALS` et `ASSETS_OUTPUTS` pour
-utiliser d'autres dossiers. Les sorties sont écrites par l'utilisateur non-root
-`node` (UID 1000) : donner les droits d'écriture au répertoire de sortie.
-Ne pas ajouter les originaux privés ou les variantes temporaires dans Git.
-
-Chaque exécution produit un `.glb` et un `.glb.report.json` avec SHA-256
-source/dérivé, versions, triangle count, tailles, réduction et avertissements.
-La commande `validate` relit les deux fichiers et compare nœuds, matériaux,
-octets des images, attributs de sommets et intégrité des indices. Ce contrôle
-ne remplace PAS une comparaison visuelle à angles équivalents ni un essai en jeu.
-
-## Règle pour tout nouveau modèle Meshy
-
-Cette règle s'applique **avant** l'outillage décrit ci-dessus et le complète
-([issue #109](https://github.com/simonjamain/i-am-a-moucheron/issues/109), outillage
-de l'[issue #78](https://github.com/simonjamain/i-am-a-moucheron/issues/78)).
-
-1. **Propositions visuelles validées.** Présenter des images dans la direction
-   artistique du jeu (low-poly, couleurs militaires lisibles à l'échelle miniature,
-   cohérence avec la flotte existante). Aucune génération Meshy (modèle, texture,
-   rig) n'est lancée sans l'accord explicite de l'utilisateur sur ces images ;
-   consigner le lien ou la référence de cette validation dans la PR.
-2. **Une référence isolée par pièce.** Chaque pièce mobile (châssis, roue, rotor,
-   tourelle, canon, capteur…) dispose de sa propre image de référence, avec les
-   vues utiles (face, profil, dessus, 3/4). Ne jamais envoyer une planche
-   multi-vues ou multi-pièces comme une seule pièce.
-3. **Articulations séparées dès la génération.** Générer les pièces mobiles comme
-   des modèles distincts, puis documenter pour chacune : pivot (point de rotation
-   dans le repère du modèle), axe(s) et amplitude, dimensions réelles visées et
-   échelle d'import, origine des projectiles ou effets (bouche de canon).
-4. **Conserver et vérifier.** Garder UV, textures et sources originales (tâche
-   Meshy, SHA-256), puis vérifier le rendu sous plusieurs angles, chaque pièce
-   mobile à ses butées, l'intégration en jeu (collision, aperçu de pose, tir) et
-   les performances avec plusieurs exemplaires. Une simplification n'est adoptée
-   qu'après ces contrôles (voir ci-dessous).
-
-### Checklist de PR pour un asset Meshy
-
-- [ ] Images proposées et **validées par l'utilisateur** avant génération (référence).
-- [ ] Une image de référence isolée par pièce mobile.
-- [ ] Tâches Meshy et SHA-256 des sources conservés.
-- [ ] Pivots, axes, amplitudes et dimensions documentés par pièce.
-- [ ] UV et textures d'origine préservées ; rendu comparé sous plusieurs angles.
-- [ ] Pièces mobiles testées à leurs butées ; origine de tir à la vraie bouche.
-- [ ] Mesures avant/après (triangles, octets, FPS si possible) et essai en jeu.
-
-## Brique LEGO 2×4 du mur Castor
-
-Premier asset passé par la règle ci-dessus ([issue #99](https://github.com/simonjamain/i-am-a-moucheron/issues/99)).
-
-- Référence : image unique d'une brique 2×4 rouge isolée, vue 3/4, **validée par
-  l'utilisateur** (SHA-256 `67e97d4a…c425`, conservée hors dépôt dans
-  `assets/originals/brick-2x4/`). Pièce sans articulation : une seule référence suffit.
-- Génération : Meshy image-to-3D, tâche `01a1ba16-7dde-758d-82fb-74eb5b54fa80`,
-  `smart-topology` cible 1 000 triangles, **sans texture** (le jeu colore chaque
-  instance), 5 crédits. GLB d'origine SHA-256 `42c02791…65c7`, 844 triangles,
-  505 sommets ; aucune simplification nécessaire (rendu instancié).
-- Axes et dimensions : tenons vers +Y, longueur X, profondeur Z (rapport 2:1).
-  En jeu : pas `BRICK_PITCH` = 24 mm, rangée `BRICK_ROW` = 6 mm (corps), profondeur
-  `BRICK_DEPTH` = 12 mm ; tenons visibles sur la rangée supérieure.
-- Import : `PYTHONPATH=scripts python3 scripts/import-meshy-brick.py <GLB>` vérifie
-  l'empreinte et écrit `src/meshy-brick-data.ts` ; `scripts/test-brick-model.mjs`
-  contrôle provenance, orientation et proportions.
-
-## Personnage joueur (Meshy + Mixamo)
-
-Huit modèles fournis et validés par l'utilisateur ([issue #111](https://github.com/simonjamain/i-am-a-moucheron/issues/111)
-pour le premier, cinq ajoutés en version 280, l'opératrice en version 282, l'opérateur en version 283), déjà générés, riggés et animés par
-l'utilisateur dans Meshy/Mixamo : aucune génération ni crédit Meshy de notre côté.
-Le joueur choisit le sien à l'accueil (`src/character-appearances.ts`, ordre du
-sélecteur ; le premier sert de défaut et de repli pour une valeur inconnue). Les noms
-ne sont pas affichés : ils ne sont lus que par les lecteurs d'écran.
-
-| Id          | Nom          | Original (`assets/originals/character/`, hors dépôt) | SHA-256         | Os  | Triangles |
-| ----------- | ------------ | ---------------------------------------------------- | --------------- | --- | --------- |
-| `cowboy`    | Aventurier   | `cowboy-boy.glb`                                     | `29cbb213…ed0d` | 44  | 1 556     |
-| `frontier`  | Aventurière  | `curly-frontier-girl.glb`                            | `abc715df…b27a` | 44  | 1 554     |
-| `sky-pilot` | Aviateur     | `little-sky-pilot.glb`                               | `740ecc0a…ed8f` | 44  | 1 536     |
-| `toby`      | Mécanicien   | `toolbox-toby.glb`                                   | `db97a0ab…1a`   | 44  | 1 562     |
-| `sunny`     | Mécanicienne | `sunny-workshop-girl.glb`                            | `da6fd6ce…8d49` | 60  | 1 562     |
-| `aviator`   | Aviatrice    | `little-aviator.glb`                                 | `222ea403…f5e`  | 44  | 1 690     |
-| `signaler`  | Opérateur    | `skyline-signaler.glb`                               | `4e79dbe4…bead` | 46  | 1 662     |
-| `operator`  | Opératrice   | `headset-engineer.glb`                               | `99385d02…602b` | 42  | 1 670     |
-
-- Import : `PYTHONPATH=scripts python3 scripts/import-character.py <id> <GLB>`
-  vérifie l'empreinte (table `CHARACTERS` du script) et écrit
-  `src/character-data.ts` (défaut, 493 Ko) ou `src/character-<id>-data.ts`
-  (310 à 415 Ko) : positions/UV float32, poids sur 8 bits, rotations quantifiées en
-  int16, translation des hanches seule, texture de base 1024 px en JPEG (les cartes
-  métal/rugosité et normales des originaux ne sont pas reprises). Clips gardés :
-  `Idle_12`, `Walking`, `Running` pour le défaut ; `Walking`, `Running` pour les
-  sept autres. Leur clip sans nom de 3 s est un saut accroupi, pas un repos, et
-  `RunFast` n'est pas utilisé : ils ne sont pas importés.
-- Chargement : seul le défaut est inclus dans le graphe initial ; les autres sont
-  des `import()` dynamiques (versionnés par `scripts/assemble.mjs`), chargés quand
-  le sélecteur les montre ou qu'un joueur les porte. En attendant, le défaut est
-  affiché puis remplacé sur place (`humanoid().userData.setAppearance`).
-- Rendu : `src/character-model.ts` partage géométrie, matériau et clips par
-  apparence ; chaque joueur possède ses os et son mixeur. Tous les modèles sont
-  ramenés à la même hauteur (1,7 m modèle) par une racine mise à l'échelle.
-  Allure : repos sous 0,35 m/s, course dès 3 m/s, vitesse de lecture liée à la
-  vitesse réelle. Sans clip de repos, une pose de liaison à une clé sert de repos et
-  les bras sont baissés le long du corps. Les poses absentes (assis en DCA, chute ou
-  parachute) orientent les os en espace monde ; personne n'a d'arme et les joueurs
-  gardent les clips, au bureau comme au purgatoire. `turnToward()` lisse l'orientation
-  affichée vers la direction de marche (constante de temps 1/12 s).
-- Intégration : `graphics.humanoid(color, saint, appearance)` renvoie un groupe qui
-  porte le modèle et l'échange sur place au changement d'apparence. Le sélecteur de
-  l'accueil (`src/appearance-picker.ts`) dessine, après chaque image, directement
-  dans le canevas du jeu (viewport et ciseaux sur son rectangle) ; la page laisse ce
-  rectangle transparent (couleur du panneau en `box-shadow`, trou de masque dans
-  l'ombre latérale) et un quadrilatère y recompose, sur l'image du jeu, l'ombre
-  latérale puis le panneau à 92 % (`SIDE_SHADE`, `PANEL_TINT`) : le sélecteur n'a
-  ni cadre ni fond propre (écart mesuré ≤ 1/255 avec le panneau autour). Un second contexte WebGL ou une relecture de pixels
-  (`drawImage`, `readPixels`) laissaient Chrome 3 à 4 fois plus lent pendant toute
-  la partie (mesure SwiftShader : 1,4–3 contre 6 images/s), d'où ce choix.
-  `scripts/test-character.mjs` et `scripts/test-appearances.mjs` couvrent ces points.
-
-## Moucheron Meshy (squelette et vol)
-
-Premier modèle d'animal ; modèle « Angry Little Fly » fourni par l'utilisateur
-(Meshy, déjà riggé), donc sans génération ni crédit Meshy de notre côté.
-
-- Original : `assets/originals/midge/angry-little-fly.glb` (hors dépôt), SHA-256
-  `5db0deca…f404`. Un maillage de 1 624 triangles, 1 967 sommets, squelette Meshy
-  « SmartRig » de 38 os (6 pattes, tête, antennes, abdomen), texture PNG 2K,
-  **aucun clip**. Axes : tête vers +Z, Y vers le haut, pieds à y = 0.
-- Ailes : le rig Meshy les pondère sur l'os de l'abdomen. Chaque aile étant une
-  coque séparée (107 et 121 sommets), `scripts/import-midge.py` ajoute les os
-  `Wing_L` (+X) et `Wing_R` (−X), enfants du thorax `Bone_003`, avec charnière aux
-  sommets les plus internes de la coque, et y lie ces sommets à 100 %.
-  Aucune géométrie, UV ni texture n'est modifiée.
-- Import : `PYTHONPATH=scripts python3 scripts/import-midge.py <GLB>` vérifie
-  l'empreinte et écrit `src/midge-data.ts` (192 Ko : positions/UV float32, poids
-  8 bits renormalisés, texture JPEG 512 px de 72 Ko). Pas de simplification :
-  modèle déjà léger, monobloc articulé (l'outil Docker le refuserait sans
-  régions), et il n'y a volontairement aucun niveau de détail (voir Rendu).
-- Vol (`src/midge-model.ts`) : cycle procédural posé sur les os, boucle de 1 s
-  contenant 7 battements (7 Hz). Ailes : élévation de −11° à +54°, balayage
-  avant/arrière et torsion aux retournements (pointe en huit). Corps qui monte à
-  chaque battement et tangue lentement, abdomen ondulant, tête et antennes
-  mobiles, pattes repliées sous le corps qui traînent vers l'arrière.
-- Rendu (`src/midge-batch.ts`) : le cycle est skinné une fois sur CPU en
-  84 images (positions et normales, demi-flottants, 2,6 Mo de texture GPU) ; un
-  seul `InstancedMesh` lit cette texture d'animation de sommets avec une phase par
-  moucheron. **Aucun niveau de détail** (retiré en version 429) : tous les
-  moucherons vivants, proches ou lointains, utilisent le modèle Meshy, sans
-  plafond ni distance. Un futur niveau de détail devra être uniforme pour toutes
-  les créatures et fera partie du pipeline d'assets. Cadavres et rendu sans WebGL : `SkinnedMesh` réel du même rig.
-  Les collisions restent la sphère `MIDGE_SPHERE_RADIUS` (inchangée).
-- Échelle : facteur 0,8 et thorax à l'origine, soit un corps de 18 mm en jeu
-  (16 mm auparavant), tête vers −Z comme le cap appliqué par le client.
-- Mesures anciennes (SwiftShader, rendu logiciel, 960×540, indicatif, avec les
-  ellipsoïdes de loin désormais retirés) : 300 moucherons 136 ms/image contre
-  43 ms en ellipsoïdes. Non représentatives d'un GPU réel, que les tests
-  automatisés ne mesurent pas ; le coût sans niveau de détail reste à constater
-  en jeu.
-- Vérification : `scripts/test-midge-model.mjs` (provenance, os d'ailes,
-  orientation, battement symétrique, boucle sans raccord) et
-  `scripts/test-midge-batch.mjs` (modèle Meshy pour tous, phases, un seul lot).
-
-![Poses du cycle de vol](midge-model-review.jpg)
-
-## Fourmi et araignée pondeuse Meshy (marche)
-
-Deux modèles fournis par l'utilisateur, déjà riggés par Meshy, sans clip ; ils
-suivent la même chaîne que le moucheron, généralisée dans `src/rigged-creature.ts`
-(décodage, rig, cuisson) et `src/creature-batch.ts` (texture d'animation de sommets,
-un `InstancedMesh` par espèce, ombres via un matériau de profondeur dédié).
-
-- Originaux hors dépôt : `assets/originals/ant/red-ant-warrior.glb` (SHA-256
-  `12064094…b4cd`, 2 074 triangles, 52 os) et `assets/originals/spider/spotted-velvet-spider.glb`
-  (`e8d8f32d…3faa`, 1 471 triangles, 30 os). Tête vers +Z, Y vers le haut, pieds à
-  y = 0, textures PNG 2K réduites en JPEG 512 px (66 et 57 Ko).
-- Import : `PYTHONPATH=scripts python3 scripts/import-creature.py ant|spider <GLB>`
-  écrit `src/ant-data.ts` (199 Ko) et `src/spider-data.ts` (166 Ko). Aucune
-  géométrie, UV ni os ajouté ; pas de simplification (modèles légers, monoblocs
-  articulés que l'outil Docker refuserait sans régions).
-- Os (`ANT_BONES`, `SPIDER_BONES`) : fourmi — 6 pattes hanche/genou/tarse,
-  gastre à trois segments, tête, antennes à deux segments, mandibules ; araignée —
-  8 pattes hanche/genou/tarse, céphalothorax, abdomen à deux segments.
-- Marche (`src/walker-gait.ts`) : pieds plantés qui reculent à la vitesse du corps
-  pendant 60 % du cycle, levés en arc pendant les 40 % restants, résolus par une
-  cinématique inverse à deux os par patte (`solveLeg`). Fourmi : démarche tripode
-  (avant-gauche, milieu-droit, arrière-gauche ensemble) ; araignée : tétrapode
-  alternée (pattes 1 et 3 d'un côté avec 2 et 4 de l'autre). Les avant-pattes,
-  qui pointent vers l'avant, ont leur foulée recentrée vers l'arrière (`centre`).
-  Corps : rebond à chaque pas, léger roulis ; gastre/abdomen qui balancent ; tête,
-  antennes et mandibules de la fourmi animées. Poses de repos (tous pieds posés)
-  aux phases 0,45 et 0,95.
-- Phase pilotée par la distance (`src/walker-batch.ts`) : chaque proxy avance sa
-  phase de `distance / foulée` (foulée 0,5 m-modèle fourmi, 0,6 araignée, ×0,6
-  d'échelle) et s'oriente dans le plan du sol vers son déplacement ; à l'arrêt
-  (colle, appât, calage réseau) il glisse vers la pose de repos la plus proche. La
-  cadence apparente est plafonnée (8 cycles/s fourmi, 5 araignée) : au-delà, les
-  pieds glissent un peu plutôt que de papilloter.
-- Échelle et sol : facteur 0,6 ; fourmi 17 × 12 mm, araignée 45 × 48 mm en jeu
-  (anciennes : 15 × 12 et 42 × 48). La présentation place les pieds à
-  `−GROUND_FOOT_DEPTH + GROUND_FOOT_CLEARANCE` : le relèvement partagé de
-  `swarmFrame()` reste inchangé et les pieds dégagent le plancher.
-- Collision : ellipsoïde du corps sans les pattes (`ANT_HIT`, `SPIDER_HIT`),
-  suivi par `insect-hits.ts` (`hitEllipsoid`, `hitCentre`) pour le tir, l'index
-  spatial et le contact des aéronefs ; identique entre proxys instanciés et rigs.
-- Rendu de secours (`graphics.insect`) : `SkinnedMesh` réel du même rig pour les
-  cadavres (posés dans la foulée en cours), les âmes du purgatoire (qui marchent à
-  leur vitesse physique) et le rendu sans WebGL.
-- Vérification : `scripts/test-walker-models.mjs` (provenance, orientation, pieds
-  jamais sous le plancher, pieds plantés sans glissement ni dérive latérale, boucle,
-  cuisson, proxys, cap de cadence, collisions ellipsoïdales) ; `test-enemy-readability`
-  et `test-enemy-visibility` couvrent les tailles et le dégagement du sol.
-- Limites : FPS sur GPU réel non mesurés (une nuée peut compter plusieurs
-  centaines de fourmis : 2 074 triangles chacune, un seul appel de dessin) ; pas de
-  niveau de détail ; une créature arrêtée est figée (antennes comprises).
-
-![Poses de marche](walkers-model-review.jpg)
-
-### Cafard (version 308)
-
-Modèle Meshy « Low Poly Cockroach » fourni par l'utilisateur, même chaîne que la
-fourmi ; il remplace le cafard procédural (anciennement une fourmi agrandie).
-
-- Original hors dépôt : `assets/originals/roach/low-poly-cockroach.glb` (SHA-256
-  `4ca70cae…5fc3`), 490 triangles, 813 sommets, SmartRig de 40 os : 6 pattes à
-  quatre os (hanche, genou/tibia, tarse, pied), tête, antennes à cinq segments,
-  abdomen à deux segments. Texture JPEG 512 px (58 Ko).
-- Import : `PYTHONPATH=scripts python3 scripts/import-creature.py roach <GLB>` écrit
-  `src/roach-data.ts`. Le rig Meshy répartissait des poids sur les os de pattes
-  voisines et portait la carapace par les hanches : l'espèce déclare ses chaînes
-  de pattes et un os moyeu (`Bone_001`), et chaque coque soudée ne garde que sa
-  propre chaîne, le reste allant au moyeu (537 influences). Géométrie, UV et
-  texture inchangées ; fourmi et araignée ne sont pas concernées.
-- Marche (`src/roach-model.ts`) : démarche tripode comme la fourmi, foulée
-  0,6 m-modèle, corps bas, abdomen qui balance, tête qui hoche, longues antennes
-  qui balaient en ondulant ; cadence apparente plafonnée à 9 cycles/s.
-- Échelle : facteur 0,52 (2,1 unités antennes comprises, comme la fourmi ; le
-  facteur d'espèce et la taille de vague restent ceux du cafard). Les tibias
-  courent presque à plat jusqu'au pied : en pivotant sur le pied planté, leur
-  autre extrémité plonge. La présentation relève donc le modèle de 0,035 unité
-  (`ROACH_MODEL.raise`) pour qu'aucun sommet ne passe sous la ligne des pieds.
-- Collision : ellipsoïde du corps sans pattes ni antennes (`ROACH_HIT`).
-- Vérification : `scripts/test-walker-models.mjs` couvre aussi le cafard (pieds
-  plantés, sol, boucle, cuisson, zone de tir) ; rendu WebGL instancié contrôlé
-  hors jeu.
-
-![Poses de marche du cafard et rendu instancié](roach-model-review.jpg)
-
-### Rat (version 310)
-
-Modèle Meshy « Low Poly Mouse » fourni par l'utilisateur **avec son propre clip de
-marche** ; il remplace le rat procédural. C'est le premier ennemi dont le cycle
-rejoue un clip au lieu d'une démarche calculée.
-
-- Original hors dépôt : `assets/originals/rat/mouse-walking.glb` (SHA-256
-  `fa7bf0c8…3eae`), 420 triangles, 698 sommets, un seul maillage soudé, squelette
-  de 27 os (bassin, poitrine, tête, queue à cinq segments, quatre pattes à quatre
-  os). Export Blender : armature à l'échelle 0,01 tournée depuis Z-haut, et
-  échelle constante 1,8233 sur `Hips` pendant le clip. Texture JPEG 512 px (54 Ko).
-- Import : `PYTHONPATH=scripts python3 scripts/import-rat.py <GLB>` écrit
-  `src/rat-data.ts`. Squelette de repos sans échelle (mètres-modèle, ×100) et
-  matrices de liaison recalculées ; poids, UV et géométrie inchangés. Le clip
-  (« Armature|Unreal Take|baselayer », 1 s, 31 clés, sur place) est rééchantillonné
-  en transformations monde de chaque os aux 30 clés, divisées par l'échelle de
-  `Hips` (remise à l'échelle uniforme, aspect inchangé).
-- Cycle (`src/rat-model.ts`) : la pose interpole les clés et les convertit en deltas
-  pour `rigged-creature` ; le test vérifie que chaque os retombe sur le clip.
-  Seule retouche : au décollement, les orteils arrière pointent vers le bas, 8 cm
-  sous les semelles posées ; ils pivotent sur l'axe latéral juste assez pour rester
-  au-dessus du plan des semelles, ce qui permet de poser les pattes au sol. Les
-  orteils avant tournoient trop vite pendant l'élan pour une correction lisse : ils
-  gardent le clip et peuvent plonger jusqu'à 0,2 unité sous la ligne des pieds au
-  décollement, et les pattes avant posées flottent d'environ 0,08 unité.
-- Marche : entrée `rat` de `WALKERS` marquée `clip`, phase pilotée par la distance
-  (foulée 0,35 m-modèle, vitesse des pattes arrière posées), cadence plafonnée à
-  4 boucles/s.
-- Échelle : facteur 3,5, environ 4,4 unités queue comprise comme l'ancien rat ;
-  corps centré sur le proxy, queue derrière. Zone de tir : ellipsoïde du corps et de
-  la tête sans queue ni pattes (`RAT_HIT`).
-- Vérification : `scripts/test-rat-model.mjs` (provenance, clip rejoué os par os,
-  boucle, semelles arrière sur la ligne des pieds, foulée, tirs, proxy, cuisson) ;
-  rendu WebGL instancié contrôlé hors jeu. Le rendu en partie réelle reste à juger,
-  en particulier les pattes avant.
-
-![Poses de marche du rat](rat-model-review.jpg)
-
-### Bébé araignée (version 317)
-
-Modèle Meshy « Grumpy Spider » fourni par l'utilisateur, déjà riggé, sans clip ; il
-remplace les bébés procéduraux (sphères et boîtes d’un ancien module de lot,
-supprimé). Même chaîne que l'araignée pondeuse.
-
-- Original hors dépôt : `assets/originals/spiderling/grumpy-spider.glb` (SHA-256
-  `eaeaff76…96da`), 280 triangles, 524 sommets, SmartRig de 29 os, texture JPEG
-  512 px (47 Ko). Tête vers +Z.
-- Import : `PYTHONPATH=scripts python3 scripts/import-creature.py spiderling <GLB>`
-  écrit `src/spiderling-data.ts`. Meshy a donné à la patte 2 +X deux chaînes d'os
-  superposées (mêmes pivots) et réparti sa coque entre elles : la nouvelle option
-  `alias` de l'espèce replie `Bone_008`/`007`/`006` sur `Bone_014`/`013`/`012`
-  (107 influences). Puis chaque coque ne garde que sa chaîne, le reste allant au
-  moyeu `Bone_001` (435 influences). Ant, araignée et cafard ne sont pas concernés.
-- Marche (`src/spiderling-model.ts`) : démarche tétrapode des six pattes à trois os,
-  foulée 0,7 m-modèle, cadence plafonnée à 10 cycles/s. La paire avant, courte (deux
-  os), plongeait sous le sol avec le calcul de pas : elle est animée à part, en
-  palpes levées qui tâtent le sol. Présentation relevée de 0,025 unité comme le
-  cafard. Facteur 0,5 (2,1 unités pattes écartées, comme les autres marcheurs).
-- Rendu : entrée `spiderling` de `WALKERS`, un `InstancedMesh` par espèce (100
-  bébés en un appel de dessin, contrôlé hors jeu). Zone de tir : ellipsoïde du corps
-  et du haut des pattes, rayons 1,05 × 0,6 × 1,1, proche de l'ancienne sphère de
-  1,2 unité pour que ces petites nuées rapides restent aussi faciles à toucher.
-- Vérification : `scripts/test-walker-models.mjs` (provenance, chaîne repliée,
-  pieds plantés, sol, palpes au-dessus du sol, boucle, cuisson, tirs, proxy et
-  repli riggé). Le rendu de grosses éclosions en partie réelle reste à juger.
-
-![Poses de marche du bébé araignée](spiderling-model-review.jpg)
-
-### Saint Pierre
-
-Modèle Meshy « The Keeper of Wisdom » fourni et validé par l'utilisateur, déjà riggé,
-sans clip : aucune génération ni crédit Meshy de notre côté.
-
-- Original hors dépôt : `assets/originals/saint-pierre/keeper-of-wisdom.glb` (SHA-256
-  `580e63d0…19d0`), 1 495 triangles, 1 832 sommets, SmartRig de 39 os, texture PNG 2K
-  réduite en JPEG 512 px (97 Ko). Pieds à y = 0, 1,7 m, face vers +Z.
-- Import : `PYTHONPATH=scripts python3 scripts/import-creature.py saint-pierre <GLB>`
-  écrit `src/saint-pierre-data.ts` (219 Ko).
-- Pose (`src/saint-pierre-model.ts`) : respiration, regard, marche et tampon procéduraux
-  par `defineCreature`. Os utilisés : bassin `Bone_000`, colonne `Bone_003`, poitrine
-  `Bone_002`, cou `Bone_020`, tête `Bone_019` ; bras gauche (+X) `Bone_025` → `Bone_021`,
-  droit `Bone_030` → `Bone_026` ; jambes `Bone_013`/`Bone_012` et `Bone_018`/`Bone_017`.
-  La barbe (`Bone_033` à `Bone_038`) et la clé (`Bone_004` à `Bone_008`) suivent leurs
-  parents sans pose propre.
-- Intégration : [décor du purgatoire](purgatory-scene.md#saint-pierre), vérifié par
-  `scripts/test-purgatory-scene.mjs`.
-
-### Vigile de la file VIP
-
-Modèle Meshy « Guardian in Black » fourni et validé par l'utilisateur (ange en
-costume noir, lunettes noires, oreillette, ailes et auréole), déjà riggé, sans clip :
-aucune génération ni crédit Meshy de notre côté.
-
-- Original hors dépôt : `assets/originals/vip-guard/guardian-in-black.glb` (SHA-256
-  `b12c8906…afb0`), 1 479 triangles, 1 871 sommets, SmartRig de 48 os, texture PNG
-  2K réduite en JPEG 512 px (80 Ko). Pieds à y = 0, 1,7 m auréole comprise.
-- Import : `PYTHONPATH=scripts python3 scripts/import-creature.py vip-guard <GLB>`
-  écrit `src/vip-guard-data.ts` (197 Ko).
-- Pose (`src/vip-guard-model.ts`) : attente procédurale par `defineCreature`
-  (respiration, regards), aucune pièce mobile autre que le squelette. Os utilisés :
-  colonne `Bone_005`, poitrine `Bone_004`, cou `Bone_029`, tête `Bone_028`, épaules
-  `Bone_021`/`Bone_026`. Les ailes (`Bone_030` à `Bone_035`) restent immobiles.
-- Intégration : un seul exemplaire au purgatoire ([décor](purgatory-scene.md#le-vigile-de-la-file-vip)),
-  vérifié par `scripts/test-purgatory-scene.mjs`.
-
-## Scarabée Meshy (vol, version 307)
-
-Modèle fourni par l'utilisateur, déjà riggé par Meshy, sans clip ; il remplace le
-« bourdon blindé » procédural de l'espèce `brute`, renommée « Scarabée ».
-
-- Original hors dépôt : `assets/originals/beetle/low-poly-beetle.glb` (fichier Meshy
-  « Low Poly Cockroach », un scarabée bleu et orange), SHA-256 `a7d151ca…aa1f`.
-  598 triangles, 872 sommets, SmartRig de 48 os, texture PNG 2K réduite en JPEG
-  512 px (58 Ko). Tête vers +Z, Y vers le haut, pieds à y = 0.
-- Import : `PYTHONPATH=scripts python3 scripts/import-beetle.py <GLB>` écrit
-  `src/beetle-data.ts` (124 Ko). Deux corrections de poids, sans toucher géométrie,
-  UV ni texture : chaque aile membraneuse (coque séparée de 28 et 29 sommets, pondérée
-  par Meshy sur un mélange d'os d'aile, d'élytre et de patte) reçoit son os
-  `Wing_L` (+X) ou `Wing_R` (−X), enfant du thorax `Bone_002`, charnière aux sommets
-  les plus internes, à 100 % ; la coque du corps (tête, élytres, abdomen) cède au
-  thorax les poids qu'elle portait sur les os de pattes animés (223 influences),
-  pour que les pattes ne tirent jamais la carapace. Pas de simplification :
-  modèle très léger, monobloc articulé.
-- Vol (`src/beetle-model.ts`) : boucle de 1 s, 6 battements (plus lent et lourd
-  que le moucheron), 60 images. Ailes de −14° à +46° avec balayage avant/arrière et
-  torsion aux retournements. Comme une cétoine, il vole **élytres fermées** : elles
-  font partie de la coque du corps, les ouvrir déchirerait le maillage. Corps cabré
-  de 7°, léger rebond à chaque battement, roulis lent ; six pattes pendantes,
-  repliées vers l'arrière, qui pagaient doucement.
-- Rendu (`src/flyer-batch.ts`) : texture d'animation de sommets cuite au chargement,
-  un `InstancedMesh` par espèce, battement sur l'horloge partagée avec un décalage
-  de boucle par insecte ; le client oriente le proxy vers son déplacement 3D comme
-  un moucheron. Cadavres, âmes du purgatoire et rendu sans WebGL : `SkinnedMesh`
-  réel du même rig (`graphics.insect`). D'autres volants s'ajoutent par une
-  entrée de `FLYERS` : l'abeille (309) et le moustique (311) l'ont fait.
-- Échelle et collision : facteur 0,75, corps de 2,2 unités et 2,9 d'envergure ;
-  depuis la version 318, le facteur d'espèce `brute` (3,559 dans `scale.ts`)
-  lui donne 17 mm de haut au bureau. Zone de tir : ellipsoïde de
-  la carapace sans ailes ni pattes (`BEETLE_HIT`), partagé par le proxy et le rig.
-- Vérification : `scripts/test-beetle-model.mjs` (provenance, os d'ailes rigides,
-  carapace rigide pendant tout le cycle, orientation, battement symétrique, boucle
-  sans raccord, pattes pendantes, cuisson, proxys et tirs ellipsoïdaux). Rendu
-  WebGL contrôlé hors jeu (8 scarabées instanciés en un appel de dessin, phases
-  décalées) ; la lisibilité en partie réelle reste à juger.
-
-![Poses du cycle de vol et rendu instancié](beetle-model-review.jpg)
-
-### Abeille (version 309)
-
-Modèle fourni par l'utilisateur, déjà riggé par Meshy, sans clip ; il remplace la
-« carapace » procédurale de l'espèce `guard`, renommée « Abeille ».
-
-- Original hors dépôt : `assets/originals/guard/bee.glb` (Meshy « Angry Low Poly
-  Bee »), SHA-256 `a126aa44…2821d`. 582 triangles, 874 sommets, SmartRig de 45 os,
-  texture réduite en JPEG 512 px (73 Ko). Tête vers +Z, Y vers le haut.
-- Import : `PYTHONPATH=scripts python3 scripts/import-bee.py <GLB>` écrit
-  `src/bee-data.ts`. Treize coques soudées : corps, six pattes, deux antennes et
-  quatre ailes. Les os d'ailes Meshy (`Bone_026` à +X, `Bone_028` à −X, enfants du
-  thorax) sont gardés ; l'aile antérieure et la postérieure de chaque côté suivent
-  l'os racine à 100 %, comme les ailes d'une abeille accrochées entre elles. Le corps
-  et les antennes cèdent au parent de chaque chaîne leurs poids sur les os d'ailes et
-  de pattes (531 influences) ; chaque patte ne garde que sa chaîne (140 influences
-  rendues à son moyeu). Géométrie, UV et texture inchangés, pas de simplification.
-- Vol (`src/bee-model.ts`) : boucle de 1 s, 12 battements (bourdonnement plus vif que
-  le scarabée), 6 images par battement, 72 images. Ailes de −20° à +52° avec balayage
-  et torsion, abdomen abaissé qui pompe deux fois par boucle, tête et antennes qui
-  frémissent, pattes pendantes.
-- Rendu et collision : entrée `guard` de `FLYERS` (même chaîne que le scarabée).
-  Facteur 0,75, corps de 1,6 unité dard compris ; depuis la version 318, le
-  facteur d'espèce `guard` (5,265 dans `scale.ts`) lui donne 15 mm de haut au
-  bureau. Zone de tir : ellipsoïde du corps
-  sans ailes, pattes ni antennes (`BEE_HIT`).
-- Vérification : `scripts/test-bee-model.mjs` (provenance, ailes rigides, aucun poids
-  du corps sur les ailes, orientation, battement symétrique, boucle sans raccord,
-  pattes pendantes, cuisson, proxys et tirs). Rendu WebGL instancié contrôlé hors jeu
-  avec des scarabées dans la même scène ; la lisibilité en partie réelle reste à juger.
-
-![Poses du cycle de vol de l'abeille](bee-model-review.jpg)
-
-### Moustique (version 311)
-
-Modèle Meshy « Low Poly Mosquito » fourni par l'utilisateur, déjà riggé, sans clip ;
-il remplace le moustique procédural. Même chaîne que l'abeille.
-
-- Original hors dépôt : `assets/originals/mosquito/mosquito.glb` (SHA-256
-  `c13dff6e…1c15`), 478 triangles, 815 sommets, SmartRig de 62 os, texture JPEG
-  512 px (54 Ko). Tête et trompe vers +Z, Y vers le haut.
-- Import : `PYTHONPATH=scripts python3 scripts/import-mosquito.py <GLB>` écrit
-  `src/mosquito-data.ts`. Douze coques soudées : corps, six pattes, deux ailes, yeux
-  et trompe. Chaque aile (chaîne Meshy de trois os, `Bone_034` à +X, `Bone_037` à
-  −X) suit son os racine à 100 %. Le corps et les pièces de tête cèdent au parent de
-  chaque chaîne leurs poids sur les os d'ailes et de pattes (250 influences) ;
-  chaque patte ne garde que sa chaîne (118 influences rendues à son moyeu).
-  Géométrie, UV et texture inchangées, pas de simplification.
-- Vol (`src/mosquito-model.ts`) : boucle de 1 s, 15 battements étroits et rapides,
-  4 images par battement, 60 images. Abdomen qui ondule, tête qui frémit, six longues
-  pattes pendantes, la paire avant tendue vers l'avant, les autres traînant derrière.
-- Rendu et collision : entrée `mosquito` de `FLYERS`. Facteur 1 : environ 3,6
-  unités trompe comprise et 3,4 d'envergure, pour garder une silhouette lisible
-  (6×2 pixels à 2 m, `test-enemy-readability`) ; depuis la version 318, le facteur d'espèce `mosquito` (7,368 dans
-  `scale.ts`) lui donne 12 mm de haut au bureau. Zone de tir : ellipsoïde du corps sans ailes, pattes ni
-  trompe (`MOSQUITO_HIT`). Les esquives erratiques de `waves.ts` sont inchangées.
-- Vérification : `scripts/test-mosquito-model.mjs` (provenance, ailes rigides, aucun
-  poids du corps sur les ailes, orientation, battement symétrique, boucle, pattes
-  pendantes, cuisson, proxys et tirs). Rendu WebGL instancié contrôlé hors jeu avec
-  des abeilles ; la lisibilité en partie réelle reste à juger.
-
-![Poses du cycle de vol du moustique](mosquito-model-review.jpg)
-
-## Canon anti-matériel (obusier Meshy)
-
-Modèle fourni par l'utilisateur pour l'[issue #113](https://github.com/simonjamain/i-am-a-moucheron/issues/113)
-(volet canon anti-matériel ; la DCA mobile D2 reste à faire).
-
-- Original : `assets/originals/howitzer/field-howitzer.glb` (hors dépôt), SHA-256
-  `5d30ba36…6c5c`, un seul maillage « topologie intelligente » de 2 922 triangles,
-  texture PNG 2K. Axes du modèle : tube vers −X, essieu selon Z, Y vers le haut.
-- Découpage sans coupe : le maillage contient 77 coques déconnectées, chacune
-  affectée entière à une pièce par `scripts/import-howitzer.py` (règles par boîte
-  englobante, comptes verrouillés) : affût fixe (flèches, berceau en U, essieu)
-  1 315 triangles, roue gauche 356, roue droite 372, berceau élevable (culasse,
-  cylindres de recul, anneau des tourillons et bouclier) 558, tube reculant avec
-  frein de bouche 321. Normales et UV d'origine conservés, texture en JPEG 1K
-  (167 Ko), module `src/howitzer-data.ts` de 399 Ko.
-- Pivots : milieu de l'essieu (rotation horizontale de tout le canon, roues de
-  rayon 0,082 en sens inverse, sans glissement), tourillons en (0,157 ; 0,045)
-  dans le berceau en U, bouche au centre de la face du frein de bouche.
-- Échelle joueur : roues de 1,10 m (mètres de référence), soit un canon d'environ
-  6,4 m de long et 2 m de haut à côté du joueur de 1,80 m ; emprise de pose et
-  collision 0,0105 (rayon balayé par la bouche, 3,4 m).
-- Mouvements (`src/howitzer-model.ts`) : pointage 45°/s, élévation 30°/s entre
-  −5° et +40° (au-delà, la culasse traverserait les flèches) ; le tir part dans la
-  direction réelle du tube. Recul de 30 % du tube en 0,06 s, retour en 0,6 s,
-  secousse de 6 cm de l'affût. `scripts/test-howitzer.mjs` couvre ces points.
-- Tir : `src/howitzer-geometry.ts` (sans three.js) reprend les pivots mesurés sur
-  le modèle pour que l'obus `HEAVY.antitank` parte de la vraie bouche ; le test
-  vérifie l'écart modèle/géométrie (< 2 cm). L'obus est simulé par le tireur
-  (`src/heavy-sim.js`) ; `scripts/test-antitank-shell.mjs` couvre sa balistique,
-  la sortie de bouche à l'horizontale et l'impact.
-
-## Intégration Meshy au jeu
-
-1. Télécharger le modèle Meshy **approuvé** et en conserver l'original/empreinte.
-2. **Séparer d'abord les pièces mobiles** lorsque Meshy a produit un monobloc.
-   L'importeur historique fait cette segmentation au moyen de masques propres
-   au modèle ; réduire avant de segmenter risque de retirer les surfaces d'une
-   tourelle et de modifier ses pivots.
-3. Optimiser les morceaux non critiques, comparer la silhouette, les textures,
-   le canon/rotor, l'orientation et les dimensions ; refuser une variante qui
-   dégrade une fonctionnalité. Il est permis de garder l'original.
-4. Conserver SHA-256, paramètres de réduction et rapport dans la PR. Adapter
-   l'importeur du modèle **concerné**, vérifier UV et pivots à nouveau.
-5. Relancer les tests du modèle, la suite du jeu, le build de distribution et le
-   build Docker du jeu ; mesurer si possible plusieurs exemplaires en WebGL.
-   Ne pas conclure à un gain de FPS à partir du seul nombre de triangles.
-
-Les scripts historiques `scripts/import-meshy-textures.py` et
-`scripts/import-meshy-b3.py` vérifient des SHA-256 d'originaux et, pour
-certaines pièces, des masques dépendant de la géométrie. **Ne pas supprimer
-ces contraintes ni remplacer les modèles déjà approuvés automatiquement.**
-La conversion bout-en-bout d'un Meshy monobloc nécessite une étape
-supplémentaire de séparation/reconstruction GLB par pièce ; l'outillage
-actuel refuse ces fichiers par défaut, volontairement.
-
-## CI et livraison
-
-`assets-check.yml` construit **la même image Docker** que Compose et exécute
-son `selftest` : fixture texturée, tourelle protégée, réduction effective,
-conservation des UV et des images, refus des sorties dangereuses. Le job Compose
-exporte aussi cette fixture vers les volumes réels, exécute `optimize` et
-`validate`, puis conserve le rapport JSON comme artifact GitHub Actions. Les PR ne
-poussent aucun fichier ni image. `assets-publish.yml` publie séparément
-l'image sur GHCR après push sur `main` touchant les outils ; pas avant.
-La CI ne valide pas la qualité visuelle de tous les modèles Meshy.
-
-Documentation amont :
-
-- [glTF Transform](https://gltf-transform.dev/)
-- [meshoptimizer](https://github.com/zeux/meshoptimizer)
-- [Docker Compose run](https://docs.docker.com/reference/cli/docker/compose/run/)
-
-## Protection des régions dans un GLB monobloc
-
-Placer un fichier `zones.json` dans le dossier des originaux. Exemple (à
-recalibrer sur **les coordonnées du GLB**, pas celles du jeu) :
+- **Profil prudent** par défaut : `--ratio 0.75 --error 0.001` (75 % des triangles
+  visés, déformation relative bornée, bordures verrouillées). Essayer `--ratio 0.5` ou
+  `0.25` sur des copies ; la réduction réelle peut être moindre ou nulle.
+- **Seul le tableau des indices change** : UV, positions, normales, textures et
+  matériaux restent intacts, les textures ne sont pas recompressées. Un GLB peut
+  **grossir** malgré moins de triangles ; aucun gain de taille ou de FPS n'est garanti.
+- **Pièces protégées** : les maillages dont le nom correspond à
+  `rotor|prop|turret|tourelle|canon|barrel|wheel|roue|hinge|pivot|gun` ne sont pas
+  simplifiés ; `--protect REGEX` remplace ce motif.
+- **GLB monobloc** : refusé sans boîtes de protection `--regions zones.json` (voir
+  ci-dessous) ; `--allow-monobloc` permet une exploration sans validation des pièces
+  mobiles, refusée ensuite par les importeurs.
+- **Fichiers** : originaux montés en lecture seule ; sorties dans `assets/optimized`
+  sans écraser l'existant (sauf `--overwrite`). `ASSETS_ORIGINALS` et `ASSETS_OUTPUTS`
+  changent ces dossiers. Le conteneur tourne en UID 1000 : sous Linux, exporter
+  `ASSETS_UID=$(id -u) ASSETS_GID=$(id -g)` si besoin. Ne pas versionner originaux ni
+  variantes.
+- **Rapport** : chaque sortie a un `.glb.report.json` (SHA-256 source/dérivé, versions,
+  triangles, tailles, avertissements). `validate` compare nœuds, matériaux, octets des
+  images, attributs de sommets et indices ; il ne remplace **pas** une comparaison
+  visuelle à angles équivalents ni un essai en jeu.
+
+### Protection des régions dans un GLB monobloc
+
+Un fichier `zones.json` dans le dossier des originaux déclare des boîtes, dans **les
+coordonnées du GLB** (pas celles du jeu) :
 
 ```json
 {
@@ -587,152 +136,66 @@ recalibrer sur **les coordonnées du GLB**, pas celles du jeu) :
 }
 ```
 
-Les triangles dont la boîte englobante chevauche une région sont copiés
-**à l'identique**, tandis que les autres triangles sont simplifiés avec leurs
-frontières verrouillées. Valider le résultat avec le même argument `--regions`.
-Les boîtes doivent être établies/revues pour chaque modèle : elles ne remplacent
-pas une segmentation réelle des meshes articulés ni une inspection visuelle.
+Les triangles dont la boîte englobante chevauche une région sont copiés à
+l'identique ; les autres sont simplifiés, frontières verrouillées. Valider avec le
+même `--regions`. Les boîtes se revoient pour chaque modèle et ne remplacent ni une
+segmentation des pièces articulées ni une inspection visuelle.
 
-## Réintégrer un dérivé dans les scripts Python du jeu
+### Réintégrer un dérivé
 
-Un fichier `optimisé.glb` n'est accepté par un importeur Meshy que si son
-`optimisé.glb.report.json` correspond aux empreintes du dérivé **et de l'original
-approuvé**, et si les régions critiques d'un GLB monobloc ont été déclarées.
-La variante exploratoire `--allow-monobloc` est refusée par les importeurs.
-Le GLB original demeure requis lors d'une intégration :
+`verify_meshy_source(source, sha, original)` (`scripts/meshy_provenance.py`) accepte
+un `optimisé.glb` seulement si l'original approuvé est fourni, si le
+`optimisé.glb.report.json` correspond aux deux empreintes, s'il n'est pas issu de
+`--allow-monobloc` et si un monobloc a déclaré ses régions. Les importeurs actuels
+n'appellent cette fonction qu'avec l'empreinte de l'original : intégrer un dérivé
+demande d'adapter l'importeur du modèle concerné (passer l'original), puis de
+revérifier UV, pivots et armes. Démarche :
 
-```sh
-python3 scripts/import-meshy-textures.py stuka assets/optimized/stuka.glb \
-  /tmp/meshy-stuka-data.ts assets/originals/stuka.glb
-python3 scripts/import-meshy-b3.py assets/optimized/b3.glb assets/originals/b3.glb
-```
+1. Séparer d'abord les pièces mobiles (l'importeur), optimiser ensuite les seules
+   pièces non critiques ; réduire avant de segmenter peut retirer des surfaces d'une
+   tourelle et déplacer ses pivots.
+2. Comparer silhouette, textures, canon ou rotor, orientation et dimensions ; refuser
+   une variante qui dégrade une fonction. Garder l'original est permis.
+3. Consigner SHA-256, paramètres et rapport dans la PR ; relancer les tests du modèle,
+   `npm test`, le build Docker du jeu, et mesurer plusieurs exemplaires en WebGL. Ne
+   pas conclure à un gain de FPS sur le seul nombre de triangles.
 
-Les dépendances Python `trimesh`, NumPy et Pillow restent nécessaires **pour
-l'importation vers le jeu uniquement** ; Docker + Compose suffisent pour produire
-et valider le GLB. Les masques d'extraction des pièces du modèle d'origine
-peuvent toujours nécessiter un réajustement spécifique après simplification.
-Ne pas remplacer les modules d'une flotte validée sans comparaison visuelle,
-vérification des pivots/armes et tests de régression. Le nouvel import est opt-in.
+## CI
 
-## Exemple concret : tourelle T-01 du Castor
+`.github/workflows/assets-check.yml` (job « Asset tool Docker and UV tests ») construit
+la même image que Compose et exécute son `selftest` (fixture texturée, tourelle
+protégée, réduction effective, UV et images conservés, refus des sorties dangereuses),
+puis `optimize` et `validate` à travers de vrais montages Compose. Il essaie aussi
+l'optimiseur sur les géométries des quatre modules T-01 reconstruites en GLB de test
+(`tools/assets/test-t01-optimizer.mjs`, artifact `t01-meshy-geometry-optimization`) et
+lance `scripts/test-meshy-provenance.py`. Ces variantes sont exploratoires et jamais
+utilisées en jeu. `assets-publish.yml` publie l'image de l'outil sur GHCR après un push
+sur `main` touchant l'outillage. La CI ne juge pas la qualité visuelle des modèles.
 
-[Quatre modules Meshy T-01 et leur import contrôlé](t01-asset.md) : import
-depuis quatre GLB originaux au SHA-256 vérifié, textures source 2K
-rééchantillonnées en WebP 1K pour l'exécution. La géométrie reste intacte
-(13 626 triangles au total) : les pivots indépendants et les UV sont prioritaires
-sur un taux de réduction arbitraire. Toute simplification supplémentaire doit
-être mesurée et validée sur une copie avant substitution.
-
-## Castor volant (hélicoptère Meshy) — version 292
-
-GLB fourni et approuvé par l'utilisateur, importé sans simplification (2 767
-triangles, rotors séparés par îlots) : provenance, import et vérifications dans
-[la flotte Meshy](meshy-fleet.md#castor-volant--hélicoptère-meshy-version-292).
-
-## Lit de réapparition Drawer Bed — version 291
-
-GLB fourni et approuvé par l’utilisateur pour intégration, sans nouvelle génération
-ni crédit Meshy. Source locale hors Git : `assets/originals/bed/drawer-bed.glb`,
-nom original `Meshy_AI_Drawer_Bed_1113100645_texture.glb`, SHA-256
-`3ddaba9b3f39927101d6a16a429083a0a13811f8b18484e2a0f05a8cf9e64e49`.
-Le tiroir est déjà ouvert : aucune articulation ni animation à reconstruire.
-
-- Source : 310 triangles, 698 sommets, un maillage statique, UV et texture PNG 2K,
-  1 534 620 octets. Y vers le haut, grande longueur X, pieds ramenés à Y=0.
-- L’outil Docker a testé le profil prudent (0,75 / erreur 0,001), avec
-  `--allow-monobloc` justifié par ce modèle fixe : 304 triangles, attributs/UV/images
-  validés inchangés, mais 1 536 300 octets. Seuls six triangles disparaissent et le
-  GLB grossit : la variante est écartée, l’original est importé intégralement.
-- Import reproductible : `python scripts/import-bed.py SOURCE.glb` (NumPy,
-  trimesh et Pillow comme les imports de stations). L’empreinte source est
-  vérifiée. Positions quantifiées à 0,0005 unité modèle ; UV conservés, avec
-  inversion V adaptée au chargeur existant ; copie de texture JPEG 1K de
-  149 936 octets. Module embarqué : 212 160 octets, aucune lecture GLB en jeu.
-- Dimensions en jeu : **12 × 3,381 × 5,55 mm** (X/Y/Z), facteur MAP=0,003.
-  Géométrie et matériau partagés entre lits, fantômes et achat. La collision locale
-  tourne avec le modèle. La réapparition est à 2,6 unités modèle du centre côté
-  +X, tournée avec le lit, hors du lit et du rayon du personnage.
-- Vérifications : `test-bed-model.mjs` contrôle provenance, UV, géométrie commune,
-  modèle réellement utilisé par le client et l’achat, collisions et réapparition
-  à plusieurs angles. La comparaison WebGL montre le vrai atlas et les proportions.
-
-![Lit Drawer Bed texturé](drawer-bed-290.png)
-
-## DCA fixes (Meshy)
-
-Les trois GLB fournis par l’utilisateur sont les sources de `scripts/import-fixed-dca.py`.
-Le script vérifie leur empreinte SHA-256, transforme l’axe des tubes vers −Z et
-sépare l’embase, le bloc orientable et les canons par coques. Il réaligne les
-tubes à l’horizontale au repos pour que l’élévation en jeu suive la visée.
-Les UV et les normales sont conservés. La texture de couleur devient un JPEG de
-1024 px au plus. Aucune décimation n’a été appliquée aux coques articulées.
-
-| Modèle            | Source                                                | Triangles embase / bloc orientable / tubes |
-| ----------------- | ----------------------------------------------------- | -----------------------------------------: |
-| Flak léger        | `Meshy_AI_Twin_Thunder_Cannon_1114220423_texture.glb` |                          1 030 / 965 / 342 |
-| DCA haute cadence | `Meshy_AI_Quad_Flak_Sentinel_1114215256_texture.glb`  |                          970 / 1 108 / 248 |
-| Flak lourd        | `Meshy_AI_Ironclad_Howitzer_1114215249_texture.glb`   |                          778 / 1 092 / 306 |
-
-Reproduire l’import avec `python scripts/import-fixed-dca.py TYPE SOURCE.glb`
-et les types `dca`, `dcaRapid` et `dcaHeavy`. Les bouches et pivots du modèle
-sont exprimés en mètres de référence. Le modèle partage ses maillages et sa
-texture entre les exemplaires.
-
-Les quatre manchons de la DCA haute cadence suivent les tubes en élévation.
-Le découpage inclut les deux manchons supérieurs, situés plus en arrière.
-
-La culasse du Flak lourd fait partie du groupe inclinable avec le tube.
-
-## Porte-bloc du guichet
-
-Porte-bloc posé sur les bureaux de Saint Pierre ([décor du purgatoire](purgatory-scene.md#le-porte-bloc-du-guichet)),
-fourni par le propriétaire du projet. Ce n'est pas un modèle Meshy ; même discipline de
-provenance que le pack de bureau.
-
-- **Source** : `Clipboard.glb` (export `THREE.GLTFExporter`, 104 triangles, trois
-  matériaux unis « Brown 2 », « White », « Grey », sans texture), SHA-256
-  `502a61ce…d234e`, à déposer hors de Git dans `assets/originals/clipboard/`.
-- **Import** : `python3 -I scripts/import-clipboard.py assets/originals/clipboard/Clipboard.glb`
-  vérifie l'empreinte et écrit `src/clipboard-data.ts` (positions et normales en mètres,
-  triangles groupés par couleur de matériau ; 14 ko).
-- **Repère et échelle** : Y vers le haut, posé à plat, dessous à y = 0, centré en x et z,
-  pince vers −Z (le haut de la feuille, loin du lecteur). Échelle uniforme : la longueur
-  vaut 32 cm (porte-bloc réel), soit 21 × 2,3 × 32 cm.
-- **Rendu** : un maillage par matériau, couleurs d'origine (linéaires), ombres portées
-  (`createClipboard`, `src/clipboard-model.ts`).
+Documentation amont : [glTF Transform](https://gltf-transform.dev/),
+[meshoptimizer](https://github.com/zeux/meshoptimizer),
+[Docker Compose run](https://docs.docker.com/reference/cli/docker/compose/run/).
 
 ## Cartoon Office Pack (BloxBits)
 
-Décor du bureau depuis la version 401 : **Cartoon Office Pack**, édition Extra, de
-BloxBits (<https://bloxbits.itch.io/cartoon-office-pack>), acheté par le propriétaire
-du projet. Ce n'est pas un modèle Meshy : la règle de validation Meshy ne s'applique
-pas, mais la même discipline de provenance oui.
+Le décor du bureau est le **Cartoon Office Pack**, édition Extra, de BloxBits
+(<https://bloxbits.itch.io/cartoon-office-pack>), acheté par le propriétaire du projet.
+Ce n'est pas un modèle Meshy : la règle de validation Meshy ne s'applique pas, mais la
+discipline de provenance oui.
 
-- **Licence** : usage autorisé dans le jeu et modifications permises ; revente et
-  redistribution des fichiers interdites. D'où [`src/office-pack-LICENSE.md`](../src/office-pack-LICENSE.md)
+- **Licence** : usage dans le jeu et modifications permises ; revente et redistribution
+  des fichiers interdites. D'où [`src/office-pack-LICENSE.md`](../src/office-pack-LICENSE.md)
   à côté du module généré : modèles réservés à ce jeu, aucune licence du dépôt ne s'y
   applique. Les fichiers d'origine (FBX, GLB complet) restent **hors de Git**.
-- **Source** : le GLB converti depuis le FBX du pack (même géométrie, triangle pour
-  triangle ; le GLB embarque en plus l'atlas 1024 px), à déposer dans
-  `assets/originals/office-pack/Cartoon_Office_Pack_Extra_All.glb` (SHA-256
-  `5de660c5…3aab`, vérifié par le script). 179 objets, une seule texture.
-- **Import** : `python3 scripts/import-office-pack.py <source.glb>` écrit
-  `src/office-pack-data.ts` (géométrie quantifiée à 0,5 mm, UV et indices, atlas PNG
-  d'origine ; triangles soudés par position et UV) et `src/office-pack-catalog.ts`
-  (bornes et triangles par modèle, données pures pour le serveur et les plans).
-- **Repère et échelle** : Y vers le haut, mètres, origine du modèle conservée (centre
-  au sol pour les meubles, dos pour les objets muraux) ; face avant vers +X. Échelle
-  uniforme : un module de mur (5,4 unités du pack) vaut exactement 1,2 m, donc
-  2,7 m de haut ; aucune déformation.
-- **Seulement ce qui sert** : `MODELS` liste les objets placés par les plans (68 en
-  version 403 avec le ventilateur de plafond, 67 632 triangles, 2,2 Mo de module,
-  environ 0,9 Mo compressé) ;
-  `test-office-pack.mjs` refuse un modèle importé inutilisé. Pour en utiliser un
-  autre, l'ajouter à la liste et relancer l'import avec la source.
-- **Rendu** : un `InstancedMesh` par modèle, un seul matériau (l'atlas) pour tout le
-  pack, ombres portées et reçues ([plans](office-layouts.md#décor--le-cartoon-office-pack)).
-- **Mesures** (plan `diagonale`, rendu logiciel SwiftShader 1280 × 720, même scénario
-  avant/après) : appels de dessin 78 → 53, triangles 6 300 → 81 000, temps d'image du
-  rendu toon logiciel 180 → 370 ms, construction de la scène 9 → 190 ms (une fois,
-  décodage du module). Le rendu logiciel n'est pas représentatif d'un GPU réel, où
-  80 000 triangles restent modestes ; à confirmer en partie.
+- **Import** : `python3 scripts/import-office-pack.py
+assets/originals/office-pack/Cartoon_Office_Pack_Extra_All.glb` (SHA-256
+  `5de660c5…3aab`, GLB converti du FBX, atlas unique de 1 024 px) écrit
+  `src/office-pack-data.ts` (géométrie quantifiée à 0,5 mm, UV, atlas) et
+  `src/office-pack-catalog.ts` (bornes et triangles par modèle, pour le serveur et les
+  plans).
+- **Repère et échelle** : Y vers le haut, mètres, origine du modèle conservée, face
+  avant vers +X ; un module de mur (5,4 unités du pack) vaut 1,2 m, soit 2,7 m de haut.
+- **Seulement ce qui sert** : `MODELS` (dans le script) liste les objets placés par les
+  plans ; `scripts/test-office-pack.mjs` refuse un modèle importé inutilisé. Pour en
+  ajouter un, l'ajouter à la liste et relancer l'import. Rendu et placement :
+  [plans du bureau](office-layouts.md#décor--le-cartoon-office-pack).
