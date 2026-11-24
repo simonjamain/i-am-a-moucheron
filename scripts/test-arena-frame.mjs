@@ -17,6 +17,7 @@ import { ACTOR_UNIT, MAP, PERSON_HEIGHT, HUMANOID_UNITS, WALKER_RADIUS } from '.
 import { createSoul, SOUL_RADIUS } from '../src/purgatory-queue.ts';
 import { createPurgatoryScene } from '../src/purgatory-scene.ts';
 import { stepWalker } from '../src/sortie.ts';
+import { walkerWorld } from './walker-harness.mjs';
 
 const near = (a, b, eps, label) => assert.ok(Math.abs(a - b) < eps, `${label}: ${a} vs ${b}`);
 
@@ -75,11 +76,12 @@ assert.equal(soul.y, PURGATORY_FRAME.originY, 'a soul is created on the cloud');
 Object.assign(soul, { x: 0, z: 0.5, vz: -2 });
 for (let i = 0; i < 60; i++) {
   soul.z += soul.vz / 60;
-  stepWalker(soul, 1 / 60, scene.colliders, null, PURGATORY_FRAME);
+  stepWalker(soul, 1 / 60, walkerWorld(scene.colliders), PURGATORY_FRAME);
 }
 const counter = scene.colliders[0];
 const front = worldArena(PURGATORY_FRAME, 0, counter.max.z).z;
 assert.ok(soul.grounded, 'still standing on the cloud');
-near(soul.z, front + SOUL_RADIUS, 1e-6, 'the counter stops the soul');
+// Rapier's character controller keeps a thin contact skin (0.005 actor units) off the wall.
+near(soul.z, front + SOUL_RADIUS, 0.02, 'the counter stops the soul');
 assert.ok(soul.vz >= 0, 'no speed into the counter');
 console.log('Arena frames: one world, cloud 150 m above the office, same walker and radius.');

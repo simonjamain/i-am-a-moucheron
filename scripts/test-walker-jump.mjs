@@ -12,6 +12,7 @@ import { MAP } from '../src/scale.ts';
 import { airPose, jumpPose, riseOf, isFreeFall, FREE_FALL_LEAN } from '../src/walker-air-pose.ts';
 import { WALKER_FREEFALL_SPEED } from '../src/field-physics.ts';
 import { OFFICE_LAYOUT } from '../src/layout.ts';
+import { walkerWorld } from './walker-harness.mjs';
 
 // Office: a walker standing on the deck jumps, rises about 0.6 m, comes back, lands unhurt.
 const start = () => ({
@@ -27,7 +28,7 @@ const start = () => ({
 });
 const body = start();
 const floors = [{ min: { x: -50, y: -1, z: -50 }, max: { x: 50, y: 0, z: 50 } }];
-stepWalker(body, 1 / 60, floors, null);
+stepWalker(body, 1 / 60, walkerWorld(floors));
 const ground = body.y;
 assert.equal(body.grounded, true);
 assert.equal(jumpWalker(body), true);
@@ -37,7 +38,7 @@ let apex = ground,
   damage = 0,
   steps = 0;
 while (!body.grounded && steps++ < 600) {
-  const impact = stepWalker(body, 1 / 60, floors, null);
+  const impact = stepWalker(body, 1 / 60, walkerWorld(floors));
   apex = Math.max(apex, body.y);
   if (impact) damage += impact.damage;
 }
@@ -53,11 +54,11 @@ assert.equal(jumpWalker(chute), false);
 
 // The canopy needs a real fall: a jump's descent never opens it.
 const hop = start();
-stepWalker(hop, 1 / 60, floors, null);
+stepWalker(hop, 1 / 60, walkerWorld(floors));
 jumpWalker(hop);
 let opened = false;
 for (let i = 0; i < 90 && !hop.grounded; i++) {
-  stepWalker(hop, 1 / 60, floors, null);
+  stepWalker(hop, 1 / 60, walkerWorld(floors));
   if (toggleParachute(hop)) opened = true;
 }
 assert.equal(opened, false, 'a jump does not open the parachute');
@@ -81,7 +82,8 @@ const decor = createPurgatoryScene(T, {
   shaders: false,
 });
 const soul = { ...createSoul({ id: 1, entity: 'p', kind: 'player' }, 0, 0), grounded: true };
-for (let i = 0; i < 10; i++) stepWalker(soul, 1 / 60, decor.colliders, null, PURGATORY_FRAME);
+for (let i = 0; i < 10; i++)
+  stepWalker(soul, 1 / 60, walkerWorld(decor.colliders), PURGATORY_FRAME);
 const floor = soul.y;
 assert.ok(
   soul.grounded && Math.abs(floor - PURGATORY_FRAME.originY) < 0.001,
@@ -90,10 +92,10 @@ assert.ok(
 assert.equal(jumpWalker(soul), true);
 let top = floor;
 for (let i = 0; i < 200 && (i === 0 || !soul.grounded); i++) {
-  stepWalker(soul, 1 / 60, decor.colliders, null, PURGATORY_FRAME);
+  stepWalker(soul, 1 / 60, walkerWorld(decor.colliders), PURGATORY_FRAME);
   top = Math.max(top, soul.y);
 }
-assert.ok(soul.grounded && Math.abs(soul.y - floor) < 1e-9, 'lands back on the cloud');
+assert.ok(soul.grounded && Math.abs(soul.y - floor) < 1e-5, 'lands back on the cloud');
 assert.ok(
   Math.abs((top - floor) / MAP.ratio - 1.22) < 0.08,
   'same apex as in the office, in reference metres (' + (top - floor) / MAP.ratio + ')',

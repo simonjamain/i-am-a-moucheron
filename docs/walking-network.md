@@ -64,7 +64,8 @@ par mètre (`sceneScale`) et ses mètres par unité d'arène (`arenaMetres`). En
 découlent la taille du modèle (`humanoidScale`, 1,8 m), l'accélération
 (`walkAcceleration`, course de référence de 6 m/s), la vitesse d'animation
 (`walkSpeed`), le rayon de collision et le saut, la chute et l'appui au sol
-(`stepWalker`, `src/sortie.ts`). Côté client (`src/client.js`), `groundCamera`
+(`stepWalker`, `src/sortie.ts`, qui déplace une capsule avec le contrôleur de
+personnage de Rapier dans `WalkerWorld`). Côté client (`src/client.js`), `groundCamera`
 cadre la caméra d'épaule (champ de 62° dans les deux mondes) et `makeWalker`,
 `poseWalker` et `walkerSteps` créent, orientent, animent et font marcher tous
 les personnages à pied.

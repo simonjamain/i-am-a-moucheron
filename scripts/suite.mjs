@@ -149,6 +149,7 @@ export const SUITE = [
   'test-castor',
   'test-castor-physics',
   'test-solid-query',
+  'test-walker-world',
   'test-tank-physics',
   'test-tank-wheels',
   'test-track-suspension',

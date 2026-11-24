@@ -56,27 +56,6 @@ export function colliderContainsXZ(box: Collider, x: number, z: number, margin =
     p[2] <= b.max.z + margin
   );
 }
-export function colliderPushXZ(
-  box: Collider,
-  x: number,
-  z: number,
-  radius: number,
-): { x: number; z: number; nx: number; nz: number } | null {
-  const p = colliderPoint(box, [x, 0, z]),
-    b = colliderBounds(box);
-  const px = Math.min(p[0] - b.min.x + radius, b.max.x + radius - p[0]);
-  const pz = Math.min(p[2] - b.min.z + radius, b.max.z + radius - p[2]);
-  if (px <= 0 || pz <= 0) return null;
-  let dx = 0,
-    dz = 0;
-  if (px < pz) dx = (p[0] < (b.min.x + b.max.x) / 2 ? -1 : 1) * px;
-  else dz = (p[2] < (b.min.z + b.max.z) / 2 ? -1 : 1) * pz;
-  const f = box.oriented;
-  const wx = f ? f.c * dx + f.s * dz : dx;
-  const wz = f ? -f.s * dx + f.c * dz : dz;
-  const length = Math.hypot(wx, wz);
-  return { x: x + wx, z: z + wz, nx: wx / length, nz: wz / length };
-}
 export function rayCollider(
   T: Three,
   ray: THREE.Ray,

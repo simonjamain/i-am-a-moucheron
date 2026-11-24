@@ -231,6 +231,7 @@ const files = {
       'fleet',
       'physics-world',
       'solid-query',
+      'walker-world',
       'castor-physics',
       'tank-physics',
       'aircraft-geometry',

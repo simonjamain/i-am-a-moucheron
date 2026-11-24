@@ -1,4 +1,5 @@
-import { colliderContainsXZ, colliderPushXZ } from './oriented-collider.ts';
+import { colliderContainsXZ } from './oriented-collider.ts';
+import type { WalkerShape, WalkerWorld } from './walker-world.ts';
 import { isFortification } from './ground-fortifications.ts';
 import { stepWalkerFall, impactDamage } from './field-physics.ts';
 import { MAP, ACTOR_UNIT, REFERENCE, FLAK } from './scale.ts';
@@ -125,10 +126,6 @@ export function stationExit(station: Station): XYZ {
 /** The decor's triangle colliders, as used by the walker and the landing gear. */
 export interface DecorQuery {
   supportBelow(x: number, from: number, z: number, depth: number, flat?: number): number | null;
-  nearest(
-    point: readonly number[],
-    radius?: number,
-  ): { distance: number; point: readonly number[] } | null;
 }
 /** The colliders without the boxes of the pack props when the decor stands for them. */
 export const withoutDecor = <C extends Collider>(
@@ -186,101 +183,92 @@ export function resolveLanding(
   omega.z *= 0.7;
   return { landed: true, contact: true };
 }
+// Where a walker was left by its last step (world metres): the next step moves it from there,
+// through the solids, to wherever the arena's integration put it. A jump of more than
+// TELEPORT (sky passage, respawn) is a placement, not a movement.
+const resolved = new WeakMap<object, XYZ>();
+const TELEPORT = 0.5;
+// The walker's capsule, in actor units (ACTOR_UNIT): its reference point hovers 0.05 above the
+// ground, its head is 1.7 up, and it climbs steps of 0.15 (a desk's edge, a stair).
+const walkerShape = (radius: number): WalkerShape => ({
+  radius,
+  height: 1.7 * ACTOR_UNIT,
+  hover: 0.05 * ACTOR_UNIT,
+  step: 0.15 * ACTOR_UNIT,
+});
 // World-space walking / deployed parachute, in any walking arena (`frame`: the
 // office deck by default, Saint Pierre's cloud). Heights are world heights of the
 // same person everywhere (ACTOR_UNIT); only the arena's planar axes come from the
-// frame. Ownership stays on the client.
+// frame. Ownership stays on the client. Collisions with the room (floor, walls, props,
+// steps) are Rapier's character controller (walker-world.ts); gravity, the jump and the
+// parachute are field-physics.ts.
 export function stepWalker(
   body: Walker,
   dt: number,
-  allColliders: readonly Collider[],
-  decor?: DecorQuery | null,
+  world: WalkerWorld,
   frame: ArenaFrame = OFFICE_FRAME,
 ): WalkerImpact | null {
-  const colliders = withoutDecor(allColliders, decor);
   // World z = originZ + side * arena z.
   const side = frame.mirrorZ ? -1 : 1;
-  let x = frame.originX + body.x * frame.unit,
+  const x = frame.originX + body.x * frame.unit,
     z = frame.originZ + side * body.z * frame.unit;
   body.y ??= frame.originY;
   body.vy ??= 0;
-  const previousY = body.y;
-  let top = 0;
-  for (const box of colliders) {
-    if (colliderContainsXZ(box, x, z) && box.max.y <= previousY + 0.15 * ACTOR_UNIT)
-      top = Math.max(top, box.max.y);
+  // Planar start: where the last step left it, unless something placed it elsewhere (a respawn,
+  // the sky passage, a test). Height always starts from the body's own, which others may set.
+  const last = resolved.get(body),
+    swept = !!last && Math.hypot(x - last.x, z - last.z) < TELEPORT,
+    from = { x: swept ? last.x : x, y: body.y, z: swept ? last.z : z };
+  const shape = walkerShape(body.r * frame.unit);
+  // A body placed at floor level (spawn, teleport) is first set on the surface below it.
+  if (!swept && body.grounded === true) from.y = world.settle(from, shape);
+  const delta = { x: x - from.x, y: 0, z: z - from.z };
+  const standing = body.grounded === true;
+  if (!standing) {
+    // Falling, rising or under the canopy: the game's rules give the vertical travel.
+    const y0 = body.y;
+    stepWalkerFall(body as Walker & { y: number }, dt);
+    delta.y = body.y - y0;
+    body.y = y0;
   }
-  if (decor) {
-    const from = previousY + 0.15 * ACTOR_UNIT;
-    const surface = decor.supportBelow(x, from, z, from);
-    if (surface !== null) top = Math.max(top, surface);
-  }
+  const moved = world.move(from, delta, shape, standing);
   let impact: WalkerImpact | null = null;
-  const contactY = top + 0.05 * ACTOR_UNIT;
-  const supported = body.grounded && Math.abs(previousY - contactY) < 0.15 * ACTOR_UNIT;
-  if (supported) {
-    body.y = contactY;
+  if (standing) {
     body.vy = 0;
     body.parachute = false;
     body.canopyInflation = 0;
+    // Walked off an edge: free fall from here.
+    body.grounded = moved.grounded;
+  } else if (moved.grounded && delta.y <= 0 && body.vy <= 0) {
+    const speed = Math.max(0, -body.vy);
+    impact = { speed, damage: impactDamage(speed) };
+    body.canopyInflation = 0;
+    body.vy = 0;
+    body.parachute = false;
+    body.grounded = true;
   } else {
     body.grounded = false;
-    const steps = Math.max(1, Math.ceil(dt * 240));
-    for (let step = 0; step < steps; step++) {
-      stepWalkerFall(body, dt / steps);
-      if (body.y <= contactY) {
-        const speed = Math.max(0, -body.vy);
-        impact = { speed, damage: impactDamage(speed) };
-        body.canopyInflation = 0;
-        body.y = contactY;
-        body.vy = 0;
-        body.parachute = false;
-        body.grounded = true;
-        break;
-      }
+    // A ceiling stops the rise.
+    if (delta.y > 0 && moved.y - from.y < delta.y * 0.5) body.vy = Math.min(body.vy, 0);
+  }
+  // What the walls took of the movement is no longer speed (world z = side * body z).
+  const lostX = delta.x - (moved.x - from.x),
+    lostZ = delta.z - (moved.z - from.z),
+    lost = Math.hypot(lostX, lostZ);
+  // Rapier's float noise is not a wall: only a real part of the movement counts.
+  if (lost > 0.02 * Math.hypot(delta.x, delta.z)) {
+    const nx = lostX / lost,
+      nz = lostZ / lost,
+      along = body.vx * nx + side * body.vz * nz;
+    if (along > 0) {
+      body.vx -= along * nx;
+      body.vz -= side * along * nz;
     }
   }
-  // Chest-height walls stop the walker. Walkable tabletops do not block it.
-  for (const box of colliders) {
-    if (box.max.y < body.y + 0.25 * ACTOR_UNIT || box.min.y > body.y + 1.7 * ACTOR_UNIT) continue;
-    const pushed = colliderPushXZ(box, x, z, body.r * frame.unit);
-    if (!pushed) continue;
-    x = pushed.x;
-    z = pushed.z;
-    // Remove only velocity into the contact face (world z = side * body z).
-    const normalSpeed = body.vx * pushed.nx + side * body.vz * pushed.nz;
-    if (!box.oriented) {
-      if (pushed.nx) body.vx = 0;
-      else body.vz = 0;
-    } else if (normalSpeed < 0) {
-      body.vx -= normalSpeed * pushed.nx;
-      body.vz -= side * normalSpeed * pushed.nz;
-    }
-  }
-  // The decor's faces near the legs, chest and head push the walker out, like the
-  // sides of the boxes; what lies under or over it (support, a table top) does not.
-  if (decor) {
-    const radius = body.r * frame.unit;
-    for (const h of [0.4, 0.9, 1.5]) {
-      const near = decor.nearest([x, body.y + h * ACTOR_UNIT, z], radius);
-      if (!near) continue;
-      const dx = x - near.point[0],
-        dz = z - near.point[2];
-      const flat = Math.hypot(dx, dz);
-      if (flat < 1e-7 || flat < 0.5 * near.distance) continue;
-      const nx = dx / flat,
-        nz = dz / flat;
-      x = near.point[0] + nx * radius;
-      z = near.point[2] + nz * radius;
-      const normalSpeed = body.vx * nx + side * body.vz * nz;
-      if (normalSpeed < 0) {
-        body.vx -= normalSpeed * nx;
-        body.vz -= side * normalSpeed * nz;
-      }
-    }
-  }
-  body.x = (x - frame.originX) / frame.unit;
-  body.z = (frame.mirrorZ ? frame.originZ - z : z - frame.originZ) / frame.unit;
+  body.y = moved.y;
+  body.x = (moved.x - frame.originX) / frame.unit;
+  body.z = (frame.mirrorZ ? frame.originZ - moved.z : moved.z - frame.originZ) / frame.unit;
+  resolved.set(body, { x: moved.x, y: moved.y, z: moved.z });
   return impact;
 }
 export function makeAntiaircraft(

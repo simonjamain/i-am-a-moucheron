@@ -62,6 +62,7 @@ export function loadRapier(
   return loading;
 }
 
+const FLOOR_CELLS = 40;
 const MIN_HALF = 0.005; // metres: thinner solids would be degenerate cuboids
 // A solid's geometry as numbers (box corners, then yaw frame), to spot a moved box without
 // building strings every step.
@@ -104,13 +105,26 @@ export class PhysicsWorld {
   decor: { addTo(world: World): RapierCollider[] } | null = null;
   decorColliders: RapierCollider[] = [];
 
-  constructor(RAPIER: Rapier, { gravity = GRAVITY } = {}) {
+  /**
+   * `floorHalf`: a flat heightfield floor (physics metres from the centre) instead of the huge
+   * slab: a shape cast against a very wide cuboid loses precision (a character controller ends
+   * centimetres inside it), a heightfield made of small cells does not.
+   */
+  constructor(RAPIER: Rapier, { gravity = GRAVITY, floorHalf = 0 } = {}) {
     this.R = RAPIER;
     this.gravity = gravity;
     this.world = new RAPIER.World({ x: 0, y: -gravity, z: 0 });
     // The office floor (y = 0) is a wide slab, not a box of the layout.
     this.floor = this.world.createCollider(
-      RAPIER.ColliderDesc.cuboid(5000, 1, 5000).setTranslation(0, -1, 0).setFriction(1),
+      (floorHalf > 0
+        ? RAPIER.ColliderDesc.heightfield(
+            FLOOR_CELLS,
+            FLOOR_CELLS,
+            new Float32Array((FLOOR_CELLS + 1) ** 2),
+            { x: 2 * floorHalf, y: 1, z: 2 * floorHalf },
+          )
+        : RAPIER.ColliderDesc.cuboid(5000, 1, 5000).setTranslation(0, -1, 0)
+      ).setFriction(1),
     );
   }
 

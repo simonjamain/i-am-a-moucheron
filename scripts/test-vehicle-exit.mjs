@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { VEHICLES, HULL_HALF_WIDTH, doorOffset, vehicleEntry } from '../src/fleet.ts';
 import { MAP } from '../src/scale.ts';
+import { walkerWorld } from './walker-harness.mjs';
 
 // Leaving a vehicle puts the player beside the hull, never at the wingtip or the rotor tip.
 for (const type of Object.keys(VEHICLES)) {
@@ -50,7 +51,7 @@ console.log('Vehicle exit: door beside the hull for every vehicle and seat');
     };
   const settle = (y) => {
     const body = { x: 0, z: 0, y, vy: 0, grounded: true };
-    for (let i = 0; i < 60; i++) stepWalker(body, 1 / 60, [desk], null);
+    for (let i = 0; i < 60; i++) stepWalker(body, 1 / 60, walkerWorld([desk]));
     return body.y;
   };
   assert.ok(settle(top + EXIT_LIFT) > top, 'sortie sur un meuble : reste dessus');

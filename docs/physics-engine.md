@@ -3,8 +3,11 @@
 Tous les engins roulent ou volent sur **Rapier** (Rust compilé en WebAssembly) :
 véhicules au sol (ici), [avions](plane-physics.md) et
 [hélicoptères](heli-physics.md). Le décor du bureau y collisionne sur ses
-triangles ([collisions](collisions.md)). La marche garde sa physique écrite à la
-main (`stepWalker`, `src/sortie.ts`), comme la balistique. `helicopter.ts` ne
+triangles ([collisions](collisions.md)). La marche passe par le contrôleur de personnage
+de Rapier (`WalkerWorld`, `stepWalker` dans `src/sortie.ts`) ; la poussée entre
+marcheurs, l'intégration plane et les règles des mondes restent dans
+`walk-arena.ts`, et la balistique garde son calcul (seuls ses rayons contre les
+boîtes passent par `SolidQuery`). `helicopter.ts` ne
 fait voler un hélicoptère que tant que Rapier n'est pas chargé. Le bouton
 « Physique » dessine corps, ressorts et forces : [affichage de la
 physique](physics-debug.md).

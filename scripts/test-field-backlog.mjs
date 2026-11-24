@@ -5,6 +5,7 @@ import { Game } from '../server/game.js';
 import { VEHICLES, vehicleEntry, vehicleAccess } from '../src/fleet.ts';
 import { ACTOR_UNIT } from '../src/scale.ts';
 import { OFFICE_LAYOUT } from '../src/layout.ts';
+import { walkerWorld } from './walker-harness.mjs';
 const source = readFileSync('src/client.js', 'utf8');
 const eligibility =
   source.slice(
@@ -116,7 +117,7 @@ function fall(height, openAt = null, dt = 1 / 120) {
     impact;
   while (elapsed < 120) {
     if (openAt !== null && elapsed >= openAt) body.parachute = true;
-    impact = stepWalker(body, dt, []);
+    impact = stepWalker(body, dt, walkerWorld([]));
     elapsed += dt;
     if (impact) break;
   }
@@ -370,4 +371,8 @@ const standing = {
   vz: 0,
 };
 for (let frame = 0; frame < 20; frame++)
-  assert.equal(stepWalker(standing, 0.25, []), null, 'low FPS standing still is not a fall impact');
+  assert.equal(
+    stepWalker(standing, 0.25, walkerWorld([])),
+    null,
+    'low FPS standing still is not a fall impact',
+  );
