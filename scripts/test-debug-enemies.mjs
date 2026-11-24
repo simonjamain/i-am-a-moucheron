@@ -187,7 +187,8 @@ console.log(
 const T = await import('../vendor/three.webgpu.min.js');
 const { DebugTools, DamageMeter, DAMAGE_WINDOW_S, formatDamage, MESH_COLLIDER_COLOR } =
   await import('../src/debug-tools.ts');
-const { nearestInsectHit } = await import('../src/insect-hits.ts');
+const { nearestInsectHit, hitboxes } = await import('./insect-harness.mjs');
+const { toWorld } = await import('../src/physics-world.ts');
 const { WalkerBatch } = await import('../src/walker-batch.ts');
 const { SENTRY: SENTRY_RULES } = await import('../src/ground-sentry.ts');
 const meter = new DamageMeter();
@@ -252,23 +253,23 @@ assert.ok(
 tools.cancel();
 await tools.press();
 assert.equal(commands.length, 2, 'no placement once cancelled');
-// Hit volume wireframe = the ellipsoid the shots test (point on its surface).
+// Hit volume wireframe: the capsule the shots test, drawn from its Rapier world.
 const walkers = new WalkerBatch(T, scene, { shadows: false });
 const model = walkers.create('ant', 0.3);
 model.position.set(0.3, 0.1, -0.2);
 model.quaternion.setFromAxisAngle(new T.Vector3(0, 1, 0), 0.7);
 model.scale.setScalar(0.02);
-tools.showHitboxes([model], true);
-assert.equal(tools.hitboxes.count, 1);
-const m = new T.Matrix4();
-tools.hitboxes.getMatrixAt(0, m);
-const surface = new T.Vector3(0, 1, 0).applyMatrix4(m);
-const above = surface.clone().add(new T.Vector3(0, 0.05, 0));
-const down = new T.Vector3(0, -1, 0);
-const hit = nearestInsectHit(T, above, down, new Map([[1, model]]), 1);
-assert.ok(hit && Math.abs(hit.point.y - surface.y) < 1e-6, 'wireframe top = hit surface');
-tools.showHitboxes([model], false);
-assert.equal(tools.hitboxes.count, 0, 'hidden outside debug mode');
+hitboxes.sync(new Map([[1, model]]));
+const volumeEdges = [];
+hitboxes.debugDraw((a, b) => volumeEdges.push([a, b]));
+assert.ok(volumeEdges.length > 8, 'the volume is drawn');
+const top = Math.max(...volumeEdges.flatMap(([a, b]) => [a[1], b[1]]));
+const above = new T.Vector3(0.3, 1, -0.2);
+const hit = nearestInsectHit(T, above, new T.Vector3(0, -1, 0), new Map([[1, model]]), 2);
+assert.ok(
+  hit && Math.abs(hit.point.y - toWorld(top)) < 3e-4,
+  'wireframe top = hit surface ' + hit?.point.y + ' ' + toWorld(top),
+);
 // Treadmill: a dummy walks in place, facing its placer.
 const phase = model.userData.walkPhase;
 walkers.treadmill(model, [1, 0, 0], 0.08, 0.1);

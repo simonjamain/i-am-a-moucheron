@@ -4,7 +4,7 @@ import { pathToFileURL } from 'node:url';
 import { performance } from 'node:perf_hooks';
 import * as T from '../vendor/three.webgpu.min.js';
 import { createGraphics } from '../src/graphics.js';
-import { nearestInsectHit } from '../src/insect-hits.ts';
+import { nearestInsectHit } from './insect-harness.mjs';
 import { TracerPool } from '../src/tracers.ts';
 import { enemyRoute } from '../src/routes.ts';
 const baseline = '94c54a4cd98f4956a0bc9c48a8a630cd5fbc5936';
@@ -51,6 +51,7 @@ for (const clients of [1, 3]) {
     for (let i = 0; i < rays; i++) oldHits.nearestInsectHit(T, origin, direction, insects, 0.02);
   });
   const after = median(() => {
+    // The client synchronises the hit volumes once a frame, then every ray reads them.
     for (let i = 0; i < rays; i++) nearestInsectHit(T, origin, direction, insects, 0.02);
   });
   perf.push({

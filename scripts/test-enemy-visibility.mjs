@@ -1,6 +1,5 @@
 import { ServerClock } from '../src/server-clock.ts';
 import { GroundMotionTrack } from '../src/ground-motion.ts';
-import { InsectIndex } from '../src/insect-hits.ts';
 import assert from 'node:assert/strict';
 import * as T from '../vendor/three.webgpu.min.js';
 import { createGraphics } from '../src/graphics.js';
@@ -77,7 +76,7 @@ const state = {
   T,
   scene,
   insects: models,
-  insectIndex: new InsectIndex(T, models),
+  insectBoxes: () => null,
   groundMotion: new GroundMotionTrack(),
   insect: graphics.insect,
   // This isolated VM exercises the non-WebGL fallback; its renderer does not

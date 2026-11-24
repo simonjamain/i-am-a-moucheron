@@ -10,7 +10,7 @@ import { SPIDERLING_DATA } from '../src/spiderling-data.ts';
 import { WALKERS, WalkerBatch, walkerStride } from '../src/walker-batch.ts';
 import { footCycle, nearestRest, REST_PHASES, SWING } from '../src/walker-gait.ts';
 import { createGraphics } from '../src/graphics.js';
-import { nearestInsectHit, insectContact, InsectIndex } from '../src/insect-hits.ts';
+import { nearestInsectHit, insectContact } from './insect-harness.mjs';
 import { GROUND_FOOT_DEPTH, GROUND_FOOT_CLEARANCE, INSECT_SCALE } from '../src/scale.ts';
 import { insectScale } from '../src/insect-status.ts';
 
@@ -235,12 +235,6 @@ assert.equal(
 );
 assert.ok(insectContact(T, new T.Vector3(0, 0.18 * ant.scale.x, 0), ant, 0), 'contact at centre');
 assert.ok(!insectContact(T, new T.Vector3(0, 2 * ant.scale.x, 0), ant, 0), 'no contact above');
-const index = new InsectIndex(T, insects);
-for (const o of [origin, side, wide])
-  assert.equal(
-    nearestInsectHit(T, o, dir, insects, 3, null, index)?.id,
-    nearestInsectHit(T, o, dir, insects, 3)?.id,
-  );
 const graphics = createGraphics(T, new T.Scene());
 const rigged = graphics.insect('ant');
 rigged.scale.copy(ant.scale);

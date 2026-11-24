@@ -65,7 +65,7 @@ recalcule.
 Tous les moucherons vivants sont dessinés en un seul appel par `MidgeBatch`
 (`src/midge-batch.ts`) ; chaque ennemi garde un objet léger hors scène (identifiant,
 position, PV, effets). Les tirs légers testent la sphère du moucheron par intersection
-rayon–sphère exacte, avec présélection `InsectIndex` ; les armes lourdes utilisent le
+rayon–sphère dans Rapier (`InsectHitboxes`, `src/insect-hitboxes.ts`) ; les armes lourdes utilisent le
 même rayon après une boîte englobante balayée. Mesures de charge :
 [performances](performance.md).
 

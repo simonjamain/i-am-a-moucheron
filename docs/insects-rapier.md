@@ -1,8 +1,7 @@
 # Insectes et Rapier : plan de migration
 
 État des lieux et plan pour passer ce qui touche aux insectes (déplacements, impacts de
-tirs, navigation) sur le moteur [Rapier](physics-engine.md), comme le reste du jeu. Rien
-n'est encore migré ici : ce document fixe l'ordre, les mesures et les risques.
+tirs, navigation) sur le moteur [Rapier](physics-engine.md), comme le reste du jeu. Les tirs et les âmes du purgatoire sont migrés ; la navigation reste à faire. Ce document fixe l'ordre, les mesures et les risques.
 
 ## Ce qui existe
 
@@ -13,7 +12,7 @@ n'est encore migré ici : ce document fixe l'ordre, les mesures et les risques.
 | Insectes au sol             | `ground-creatures.ts`, `ground-defense.ts`                         | Serveur seul, à état : appâts, repas, rubans, barricades ; champs de flux (`GroundFlow`) sur une grille.              |
 | Impacts des tirs            | `insect-hits.ts` (`InsectIndex`)                                   | Grille spatiale de 8 cm construite au premier tir de l'image, sphères conservatrices.                                 |
 | Obus lourds, proximité      | `heavy-sim.js`                                                     | Segment contre sphères de chaque insecte (phase large `sweptSphereMayTouch`).                                         |
-| Âmes ennemies du purgatoire | `walk-arena.ts`, `purgatory-queue.ts`                              | Intégration plane, poussée entre corps, obstacles rectangulaires.                                                     |
+| Âmes ennemies du purgatoire | `purgatory-queue.ts`                                               | **Migré** : places par formule, sans collision entre elles.                                                           |
 
 ## Mesures (Rapier 0.21, conteneur de développement)
 
@@ -28,47 +27,49 @@ corps et par image, puis un pas. Les valeurs sont des temps CPU ; elles ne disen
 
 Conclusions :
 
-- Refléter **tous** les insectes volants dans Rapier à chaque image coûte 1,6 à 5 ms chez
-  chaque client pour une nuée dense, alors que `InsectIndex` ne se construit que les images
-  où l'on tire. À ne pas faire telle quelle.
+- Ces billes sont des corps cinématiques ; les volumes de tir réels n'ont **pas de corps**
+  (colliders libres, `InsectHitboxes`) : 0,8 ms par image pour 900 insectes et 2,3 ms pour
+  3 000, mesurés par `npm run bench:collisions`. Ce coût est payé à chaque image, tir ou non.
 - Un rayon Rapier contre l'ensemble est très bon marché (2 à 5 µs) : le coût est la mise à
   jour des positions, pas la requête.
 - Un pas de contrôleur de personnage coûte environ 13 µs ([marche](collisions.md)) : le
   faire pour quelques centaines d'insectes au sol sur le serveur tient dans le budget.
 
-## Plan, dans l'ordre
+## Décisions
 
-Chaque étape est une PR indépendante, avec ses tests et sa doc, mesurée avant et après.
+- **Tirs : fait.** Les insectes volants (et au sol) ont un volume de tir dans Rapier : une
+  sphère pour le moucheron, une capsule pour les autres espèces, replacés à **chaque
+  image** (le jeu doit rester aussi fluide en tirant qu'en ne tirant pas). Ils ne servent
+  qu'aux tirs : pas de collision entre insectes ni avec les joueurs (à voir plus tard, par
+  exemple un avion qui percute une nuée). `InsectIndex` et les tests de sphères maison ont
+  disparu. Les obus lourds gardent leur test sur les positions de nuée de chaque sous-pas.
+- **Âmes du purgatoire : fait.** Pas de détection d'obstacles entre elles : une place par
+  formule (voir [file du purgatoire](purgatory-queue.md)), toutes montrées, y compris
+  au-delà du bord du nuage. Seul le joueur est arrêté par elles. Leurs volumes de tir
+  sont des sphères dans un monde Rapier (`SkyTargets`).
+
+## Reste à faire, dans l'ordre
 
 1. **Routes et navigation sur les mêmes solides que le reste** (faible risque).
    `blockedSegment` et le `free` de `floorPath` passent par un `SolidQuery` du plan
    (`castShape` d'une sphère du rayon de dégagement : 18 mm en l'air, 25 mm au sol), donc
-   par les **triangles** du décor et non plus ses boîtes. Les meubles à pieds minces
-   (chaises, ventilateurs) deviennent franchissables ou bloquants comme ils le sont pour les
-   joueurs. La grille de passage (51 × 43 cases) est cuite une fois par plan, puis l'A\*
-   n'appelle plus que la grille ; le lissage des couloirs garde un `castShape`. Risque :
-   **déterminisme**. Serveur et clients calculent les mêmes routes depuis la même graine ; le
-   résultat de Rapier doit être identique chez tous (même version WebAssembly, mêmes flottants
-   32 bits). Test : comparer les routes de chaque plan entre Node et un navigateur, et
-   figer le résultat dans un test de non-régression. Repli : le serveur cuit les routes et les
-   envoie dans le snapshot du plan.
+   par les **triangles** du décor et non plus ses boîtes. La grille de passage (51 × 43
+   cases) est cuite une fois par plan, puis l'A\* n'appelle plus que la grille ; le lissage
+   des couloirs garde un `castShape`. Risque : **déterminisme**. Serveur et clients
+   calculent les mêmes routes depuis la même graine ; le résultat de Rapier doit être
+   identique chez tous. Test : comparer les routes de chaque plan entre Node et un
+   navigateur et figer le résultat. Repli : le serveur cuit les routes et les envoie.
 2. **Insectes au sol sur le contrôleur de personnage** (risque moyen). Le serveur déplace
    chaque insecte au sol avec un `WalkerWorld` du plan (capsule de la taille de l'espèce,
    `autostep` de la hauteur de patte) : fin de la poussée maison, glissement le long des
    meubles et des barricades. Les champs de flux gardent le _but_ ; Rapier garde le _corps_.
    Les barricades (briques) entrent comme colliders ; les rubans collants restent une règle.
-3. **Cibles de tir dans Rapier, à la demande** (gain à mesurer). Plutôt que de refléter
-   les 3 000 insectes : au premier tir de l'image, ne créer des colliders sphère que pour
-   ceux que `InsectIndex` juge proches du segment, les retirer à l'image suivante. Les
-   obus lourds et les rayons de caméra n'ont alors plus de code de sphères propre. À adopter
-   seulement si la mesure bat la grille actuelle ; sinon garder la grille et n'y changer
-   que l'API.
-4. **Âmes ennemies du purgatoire** (après 2). Même contrôleur que les marcheurs : leurs
-   obstacles (guichet, bureau) deviennent des boîtes du monde du purgatoire, comme pour les
-   joueurs. La poussée entre corps de `walk-arena.ts` peut alors passer aux colliders des
-   marcheurs eux-mêmes.
-5. **Nettoyage** : retirer `swept-geometry.ts`, `oriented-collider.ts` et les tests
-   boîte par boîte devenus inutiles.
+   Les règles d'écartement entre insectes (sans collision) restent des règles.
+3. **Collision joueur / insecte** (à voir) : les volumes de tir existent déjà ; un avion
+   qui percute une nuée est une requête de forme (`InsectHitboxes.contact`).
+4. **Nettoyage** : retirer `swept-geometry.ts`, `oriented-collider.ts` et les tests
+   boîte par boîte devenus inutiles ; les obus lourds sur les volumes de tir si on accepte
+   de les replacer à l'heure de chaque sous-pas.
 
 ## Pathfinding
 

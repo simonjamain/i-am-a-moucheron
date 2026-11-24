@@ -270,7 +270,8 @@ pieds à y = 0 dans la source.
 Les scripts s'appellent avec `PYTHONPATH=scripts python3 scripts/<script> [espèce] <GLB>`
 et écrivent `src/<espèce>-data.ts` ; la pose est dans `src/<espèce>-model.ts`. Les zones
 de tir sont des ellipsoïdes du corps sans pattes ni ailes (sphère pour le scarabée),
-partagées entre proxys instanciés et rigs (`src/insect-hits.ts`). Le facteur d'espèce
+partagées entre proxys instanciés et rigs ; les tirs les testent sous forme de capsules
+(sphères pour le moucheron), dans Rapier (`src/insect-hitboxes.ts`). Le facteur d'espèce
 de `src/scale.ts` fixe ensuite la taille au bureau.
 
 ### Corrections de rig à l'import

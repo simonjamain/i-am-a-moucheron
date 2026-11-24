@@ -11,12 +11,18 @@ et les tirs dans [ciel du purgatoire](purgatory-sky.md).
 - Il n’y a qu’un purgatoire. Un joueur mort y arrive après le
   [passage](purgatory-sky.md#la-mort-un-passage) ; y mourir renvoie l’âme à l’entrée.
 - L’âme d’un joueur est le personnage du bureau, mêmes modèle et animations, sans arme.
-  Les âmes d’insectes sont les modèles des insectes tués, à l’échelle de l’âme ; la file
-  en montre au plus 24 à la fois.
-- Les insectes réservent des places espacées (`QUEUE_SPACING`) au centre ; un joueur
-  réserve l’espace en s’y tenant réellement, sans ticket abstrait. La file respecte
-  l’ordre d’arrivée : un joueur ne double pas un insecte arrivé avant lui. Un insecte
-  bousculé garde sa place et la rejoint par les allées latérales ; il ne riposte jamais.
+  Les âmes d’insectes sont les modèles des insectes tués, à l’échelle de l’âme ; **toutes**
+  sont montrées, la file peut dépasser le bord du nuage et se prolonger dans le ciel.
+  Seules les premières places (48) sont animées, les suivantes restent immobiles.
+- Les places des insectes sont une **formule** (`queueTargets`, `placeSouls`) : dans
+  l'ordre d'arrivée (ticket puis identifiant), une place tous les `QUEUE_SPACING` au centre
+  depuis le guichet, en sautant la place d'un joueur qui s'y tient réellement, sans ticket
+  abstrait. Une âme d'insecte (`fixed`) ne marche pas, ne contourne rien, ne détecte aucun
+  obstacle, n'entre en collision avec aucune autre âme et n'est jamais poussée ; seul le
+  joueur est arrêté par elle. La file respecte l'ordre d'arrivée : un joueur ne double
+  pas un insecte arrivé avant lui. Les insectes ne ripostent jamais.
+- Sur le réseau, les âmes d'insectes voyagent en courtes lignes (`queue` de l'arène,
+  `queueView` / `expandQueue`) : chaque client en retrouve le corps et la place par la formule.
 - Saint Pierre met 1,5 s à servir un insecte (`INSECT_SERVICE_MS`) ; l’âme servie est
   libérée et rapporte une fois sa récompense ([économie](economy.md#revenus)). Une âme
   libérée n’est jamais réintroduite par un ancien rapport.
@@ -60,8 +66,9 @@ quoi faire, avec la ligne des commandes en bas d’écran.
 
 ## Vérifier
 
-- `scripts/test-purgatory-queue.mjs` : file de douze insectes, démêlage d’un
-  attroupement, attente derrière le signataire, retour à la place après bousculade.
+- `scripts/test-purgatory-queue.mjs` : file de douze insectes, attroupement remis en
+  place, attente derrière le signataire, mille âmes placées par la formule sans se
+  chevaucher, place faite à un joueur.
 - `scripts/test-purgatory-vip.mjs` : cordon, priorité, prix, refus, signature au guichet
   VIP, porte-bloc utilisable selon le guichet.
 - `scripts/test-walk-worlds.mjs` : marche commune au bureau et au purgatoire.

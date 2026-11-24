@@ -14,7 +14,8 @@ import {
   roomEntry,
   skyPassage,
 } from '../src/sky-passage.ts';
-import { nearestSkyTarget, raySphere, skyBlast } from '../src/sky-targets.ts';
+import { SkyTargets } from '../src/sky-targets.ts';
+import { loadRapier } from '../src/physics-world.ts';
 import { OFFICE_CEILING, PURGATORY_FRAME, worldArena } from '../src/arena-frame.ts';
 import { LAYOUTS } from '../src/layouts.ts';
 import { MAP } from '../src/scale.ts';
@@ -109,24 +110,32 @@ for (const layout of LAYOUTS)
 }
 
 // ---------------------------------------------------------------- what shots hit
-near(raySphere([0, 0, 0], [1, 0, 0], 10, [5, 0, 0], 1), 4, 1e-12, 'sphere ahead');
-assert.equal(raySphere([0, 0, 0], [1, 0, 0], 3, [5, 0, 0], 1), null, 'beyond the step');
-assert.equal(raySphere([0, 0, 0], [-1, 0, 0], 10, [5, 0, 0], 1), null, 'behind');
-assert.equal(raySphere([5, 0, 0], [1, 0, 0], 10, [5, 0, 0], 1), 0, 'inside');
 {
+  const R = await loadRapier(() => import('../vendor/rapier.compat.mjs'));
+  const sky = new SkyTargets(T, R);
   const targets = [
     { kind: 'soul', key: 7, center: [6, 0, 0], radius: 0.5, staff: false },
     { kind: 'staff', key: 'saint', center: [3, 0, 0], radius: 0.5, staff: true },
   ];
-  assert.equal(nearestSkyTarget(targets, [0, 0, 0], [1, 0, 0], 10).target.key, 'saint');
-  assert.equal(nearestSkyTarget(targets, [0, 0, 0], [0, 1, 0], 10), null);
-  const blast = skyBlast(targets, [3, 0, 0], 2);
+  sky.sync(targets);
+  const ahead = sky.nearest(new T.Vector3(), new T.Vector3(1, 0, 0), 10);
+  assert.equal(ahead.target.key, 'saint');
+  near(ahead.distance, 2.5, 1e-4, 'sphere ahead');
+  assert.equal(sky.nearest(new T.Vector3(), new T.Vector3(0, 1, 0), 10), null);
+  assert.equal(sky.nearest(new T.Vector3(), new T.Vector3(1, 0, 0), 2), null, 'beyond the step');
+  const blast = sky.blast(new T.Vector3(3, 0, 0), 2);
   assert.deepEqual(
     blast.map((h) => h[1]),
     ['saint'],
     'only what the blast reaches',
   );
   assert.ok(blast[0][2] > 0);
+  sky.sync([targets[0]]);
+  assert.equal(
+    sky.nearest(new T.Vector3(), new T.Vector3(1, 0, 0), 10).target.key,
+    7,
+    'a target that left is gone',
+  );
 }
 
 // ---------------------------------------------------------------- the server

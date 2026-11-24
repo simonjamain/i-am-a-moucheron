@@ -230,6 +230,7 @@ const files = {
       'fleet',
       'physics-world',
       'solid-query',
+      'insect-hitboxes',
       'walker-world',
       'castor-physics',
       'tank-physics',

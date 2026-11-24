@@ -75,7 +75,7 @@ Le serveur n'a ni base de données ni accès disque en jeu (seules les
 | Domaine           | Modules                                                                                                                                                                                                                  |
 | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Espèces et vagues | `waves.ts` (profils, trajectoires de nuée), `routes.ts`, `route-navigation.ts`, `enemy-power.ts`, `balance.js` ; [bestiaire](enemy-bestiary.md), [puissance](progression.md).                                            |
-| Touches           | `insect-hits.ts` (`InsectIndex`, cibles solides), `swept-broadphase.ts` (contacts véhicule–ennemi du serveur) ; [performances](performance.md).                                                                          |
+| Touches           | `insect-hitboxes.ts` (volumes de tir des insectes dans Rapier), `insect-hits.ts` (cibles solides), `swept-broadphase.ts` (contacts véhicule–ennemi du serveur) ; [performances](performance.md).                         |
 | Au sol            | `ground-crowd.js` (sous-pas, voisinage), `ground-creatures.ts` (navigation, pièges), `pheromone-trail.ts`, `wave-forecast-scene.ts`, `wave-ground-paths.ts`, `wave-ground-worker.ts` (chemins annoncés, dans un worker). |
 | Rendu des espèces | `rigged-creature.ts`, `midge-batch.ts`, `flyer-batch.ts`, `walker-batch.ts`, `creature-batch.ts`, `walker-gait.ts`, `*-model.ts` par espèce ([pipeline d'assets](asset-pipeline.md)).                                    |
 

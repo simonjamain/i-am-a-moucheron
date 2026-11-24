@@ -63,13 +63,16 @@ export function createSoul(
   now: number,
 ): WalkBody {
   const insect = s.kind === 'enemy' && !isStaff(s.enemy_type);
-  // Bodies stand on the cloud's floor, at its height in the world.
+  // Bodies stand on the cloud's floor, at its height in the world. The queue's souls (the
+  // insects and the guard's) have their place by a formula and do not collide with each other.
   return {
     ...createWalker(
       s,
       soulSpawn(index),
       now,
-      insect ? { r: INSECT_RADIUS, mass: INSECT_MASS } : { r: SOUL_RADIUS },
+      insect
+        ? { r: INSECT_RADIUS, mass: INSECT_MASS, fixed: true }
+        : { r: SOUL_RADIUS, fixed: s.kind === 'enemy' && s.enemy_type !== 'saint' },
     ),
     y: PURGATORY_FRAME.originY,
   };
@@ -136,54 +139,40 @@ function insectAhead(a: Arena, b: WalkBody): WalkBody[] {
     (other) => other.kind === 'enemy' && !other.gone && inLane(other) && other.id < b.id,
   );
 }
-// Each insect has a distinct place. Players reserve space by actually standing
-// in the lane; tickets never grant exclusive access to the signing desk.
-export function queueTargets(a: Arena): Map<number, PlanarPoint> {
-  const insects = a.bodies
+/**
+ * The queue's places, by a formula: the souls in ticket order (then id) stand one every
+ * QUEUE_SPACING along the lane from the desk, leaving the place of a player who stands in the
+ * lane. They are never pushed (a player is), never walk round anything, and may stand beyond
+ * the cloud's edge in the air.
+ */
+function queueOrder(a: Arena): WalkBody[] {
+  return a.bodies
     .filter((b) => b.kind === 'enemy' && !b.gone && b.enemyType !== 'saint')
     .sort((a, b) => (a.queueTicket ?? a.id) - (b.queueTicket ?? b.id) || a.id - b.id);
-  const players = a.bodies.filter((b) => b.kind === 'player' && !b.gone && inLane(b));
-  const targets = new Map<number, PlanarPoint>();
-  let z = DESK.z;
-  for (const b of insects) {
-    while (players.some((p) => Math.abs(p.z - z) < QUEUE_SPACING * 0.85)) z += QUEUE_SPACING;
-    targets.set(b.id, { x: 0, z });
-    z += QUEUE_SPACING;
-  }
-  return targets;
 }
-/** Unit intent of an insect toward its place, using the side aisles to pass. */
-function queueIntent(a: Arena, b: WalkBody, target: PlanarPoint | undefined): PlanarPoint {
-  if (!target) return { x: 0, z: 0 };
-  let z = target.z;
-  // A person physically standing ahead is never bypassed automatically.
-  if (z < b.z)
-    for (const other of a.bodies) {
-      if (other.kind !== 'player' || other.gone || !inLane(other)) continue;
-      if (other.z < b.z && other.z > z) z = Math.max(z, other.z + QUEUE_SPACING);
-    }
-  let x = 0;
-  const travelling = Math.abs(z - b.z) > 0.3;
-  const blocked = a.bodies.some(
-    (other) =>
-      other.id !== b.id &&
-      !other.gone &&
-      inLane(other) &&
-      other.z > Math.min(z, b.z) + 0.1 &&
-      other.z < Math.max(z, b.z) - 0.1,
-  );
-  // Use the side aisles to regain a displaced place or return to the tail.
-  // Commit to the aisle until level with the reserved place, then rejoin.
-  if (travelling && (blocked || Math.abs(b.x) > 1.2)) {
-    x = Math.abs(b.x) > 0.2 ? Math.sign(b.x) * 2.1 : z > b.z ? 2.1 : -2.1;
-    if (Math.abs(b.x - x) > 0.15) z = b.z;
+function queuePlaces(a: Arena): [WalkBody, PlanarPoint][] {
+  const players = a.bodies.filter((b) => b.kind === 'player' && !b.gone && inLane(b));
+  let z = DESK.z;
+  return queueOrder(a).map((b) => {
+    while (players.some((p) => Math.abs(p.z - z) < QUEUE_SPACING * 0.85)) z += QUEUE_SPACING;
+    const place = { x: 0, z };
+    z += QUEUE_SPACING;
+    return [b, place];
+  });
+}
+export function queueTargets(a: Arena): Map<number, PlanarPoint> {
+  return new Map(queuePlaces(a).map(([b, place]) => [b.id, place]));
+}
+/** Puts every soul of the queue on its place (no walking, no obstacles, no pushing). */
+function placeSouls(a: Arena): void {
+  for (const [b, place] of queuePlaces(a)) {
+    if (!b.fixed) continue;
+    b.x = place.x;
+    b.z = place.z;
+    b.vx = 0;
+    b.vz = 0;
+    b.face = Math.PI;
   }
-  const dx = x - b.x,
-    dz = z - b.z,
-    d = Math.hypot(dx, dz);
-  if (d < 0.08) return { x: 0, z: 0 };
-  const scale = Math.max(1, d);
-  return { x: dx / scale, z: dz / scale };
 }
 /** The side aisle is an entrance, not a shortcut past waiting insects. */
 function keepQueueOrder(a: Arena, b: WalkBody): void {
@@ -285,10 +274,6 @@ export const PURGATORY_RULES: WalkRules = Object.freeze({
   }),
   steer(a: Arena): Map<number, PlanarPoint> {
     const intents = new Map<number, PlanarPoint>();
-    for (const [id, place] of queueTargets(a)) {
-      const b = a.bodies.find((b) => b.id === id)!;
-      intents.set(id, queueIntent(a, b, place));
-    }
     for (const b of a.bodies)
       if (!b.gone && b.enemyType === 'saint') intents.set(b.id, saintIntent(b));
     return intents;
@@ -296,9 +281,54 @@ export const PURGATORY_RULES: WalkRules = Object.freeze({
   constrain: keepQueueOrder,
   passes: (b: WalkBody, o: ArenaObstacle): boolean =>
     !!(o.vip && (b.vip || b.enemyType === 'saint')),
-  afterStep: serveDesk,
+  afterStep(a: Arena, now: number, ms: number, owned: (b: WalkBody) => boolean): void {
+    placeSouls(a);
+    serveDesk(a, now, ms, owned);
+  },
 });
 
 export function advancePurgatory(a: Arena, to: number, owner: WalkEntity = null): Arena {
   return advanceArena(a, to, PURGATORY_RULES, owner);
+}
+
+// ---------------------------------------------------------------- wire
+/** A queue soul on the wire: [id, entity, enemyType, ticket, health, maxHealth, served]. */
+export type QueueRow = [number, WalkEntity, string | undefined, number, number, number, number];
+/** An arena as snapshots carry it: the places of the queue's souls travel as short rows. */
+export type ArenaWire = Arena & { queue?: QueueRow[] };
+
+/**
+ * The arena for a snapshot: the queue's souls (which stand where a formula puts them) as
+ * rows of seven numbers or words instead of whole bodies, so that a long queue stays cheap.
+ */
+export function queueView(a: Arena): ArenaWire {
+  const bodies: WalkBody[] = [],
+    queue: QueueRow[] = [];
+  for (const b of a.bodies)
+    if (b.fixed && b.kind === 'enemy')
+      queue.push([
+        b.id,
+        b.entity,
+        b.enemyType,
+        b.queueTicket,
+        b.health ?? 0,
+        b.maxHealth ?? 0,
+        b.served,
+      ]);
+    else bodies.push(b);
+  return { ...a, bodies, queue };
+}
+/** The arena of a snapshot with the queue's souls as bodies again, on their places. */
+export function expandQueue(a: ArenaWire): Arena {
+  const { queue, ...arena } = a;
+  if (!queue) return arena;
+  const bodies = [...arena.bodies];
+  queue.forEach(([id, entity, type, ticket, health, maxHealth, served], i) => {
+    const b = createSoul({ id, entity, kind: 'enemy', enemy_type: type }, i, arena.time ?? 0);
+    Object.assign(b, { queueTicket: ticket, health, maxHealth, served, enemyType: type });
+    bodies.push(b);
+  });
+  const expanded = { ...arena, bodies };
+  placeSouls(expanded);
+  return expanded;
 }

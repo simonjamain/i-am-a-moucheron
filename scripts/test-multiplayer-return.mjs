@@ -12,7 +12,7 @@ import { fullAmmo, inRadarCoverage } from '../src/logistics.ts';
 import { WALKER_FALL, stepWalkerFall, impactDamage } from '../src/field-physics.ts';
 import { createGraphics } from '../src/graphics.js';
 import { insectScale } from '../src/insect-status.ts';
-import { nearestInsectHit } from '../src/insect-hits.ts';
+import { nearestInsectHit } from './insect-harness.mjs';
 import { controlHints, cursorStats } from '../src/live-hud.ts';
 import { GunSalvos } from '../src/salvos.ts';
 import { makeShotTrace, TracerPool } from '../src/tracers.ts';

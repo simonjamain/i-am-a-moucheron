@@ -7,7 +7,7 @@ import { RAT_DATA } from '../src/rat-data.ts';
 import { RAT, RAT_BONES, RAT_HIT, RAT_MODEL, ratClipWorld, ratWorld } from '../src/rat-model.ts';
 import { WALKERS, WalkerBatch, walkerStride } from '../src/walker-batch.ts';
 import { createGraphics } from '../src/graphics.js';
-import { nearestInsectHit } from '../src/insect-hits.ts';
+import { nearestInsectHit } from './insect-harness.mjs';
 import { GROUND_FOOT_DEPTH, GROUND_FOOT_CLEARANCE, INSECT_SCALE } from '../src/scale.ts';
 import { insectScale } from '../src/insect-status.ts';
 

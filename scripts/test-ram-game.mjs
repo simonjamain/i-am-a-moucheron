@@ -90,7 +90,7 @@ s = game.snapshot(room);
 assert.equal(s.phase, 'prep');
 assert.equal(s.dollars, 0, 'no wave stipend: only freed souls pay');
 assert.equal(s.kills.length, total);
-assert.equal(s.souls.length, Math.min(total, 24));
+assert.equal(s.arena.queue.length, total, 'every freed soul stands in the queue');
 assert.equal(s.enemyDamage[0], 150);
 room.dollars = 30;
 for (const gone of ['engine', 'weapons'])
@@ -282,7 +282,7 @@ assert.ok(game.rooms.get('SESSION').pilots.has(owner));
 // Terminal records are removed; only materialized souls enter snapshots.
 for (let i = 0; i < 100; i++) game.soul(sessionRoom, 'enemy', 'e' + i, 'Moucheron');
 let capped = game.snapshot(sessionRoom);
-assert.equal(capped.souls.length, 24);
+assert.equal(capped.arena.queue.length, 100, 'all of them stand in the queue (no longer 24)');
 for (const soul of sessionRoom.souls.values()) soul.status = 'gone';
 oldVehicle.state.hp = 0;
 oldVehicle.ready = 0;

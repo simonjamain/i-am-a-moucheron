@@ -22,8 +22,8 @@ code garde le nom `lab` (commande serveur `lab`, `src/lab-ui.ts`).
   teintées à 12 % d’opacité (`showColliders`, `src/debug-tools.ts`) ; les triangles de
   collision des objets du décor s’y ajoutent en fil de fer jaune
   ([collisions en triangles](collisions.md)). L’affichage se refait quand elles changent.
-- Toujours visibles : la **hitbox** de chaque ennemi en fil de fer rose (l’ellipsoïde ou
-  la sphère que les tirs testent, `src/insect-hits.ts`, tolérance comprise) ; la
+- Toujours visibles : la **hitbox** de chaque ennemi en fil de fer rose (la capsule ou
+  la sphère que les tirs testent, `src/insect-hitboxes.ts`, tolérance comprise) ; la
   **portée des tourelles automatiques**, bulle orange de 42 cm de rayon centrée 2,5 cm
   au-dessus du support, avec un cercle à sa base ; le **rayon d’attraction du sucre**,
   cercle jaune au sol.
