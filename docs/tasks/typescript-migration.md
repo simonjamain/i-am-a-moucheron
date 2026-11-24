@@ -51,16 +51,34 @@
   - Types locaux à centraliser plus tard : `WalkerHelpers` (répété dans quatre
     modèles, à placer dans `walker-gait.ts`), `GroundStructure`/`GroundCommand`
     (`ground-defense-state.ts`, pour `server/game.js`, `ground-placement.js`,
-    `ground-defense-ui.js`), `RouteEnemy` (pour `waves.js`),
+    `ground-defense-ui.js`), `RouteEnemy` (fait : `WaveEnemy` l'étend),
     `GroundModelStructure`, `MidgeRig` (même forme que `LoadingFly` de `boot.ts`),
     `ServicedVehicle` (rejoint le véhicule « type + supplies »).
+- Lot 7 (routine du 24 novembre 2026) : les 10 feuilles du lot 6, plus le worker.
+  - Domaine : `waves` (`SPECIES … satisfies Record<string, SpeciesStats>`,
+    **`EnemyType` dérivé** de ses clés et seulement réexporté par `src/types.ts` ;
+    roster typé `WaveEnemy`, qui étend `RouteEnemy` ; `debug-enemies.ts` l'utilise),
+    `ground-creatures` (`GroundUnit`, `GroundWorld`), `ground-placement`
+    (`PlacementPreview` ; recherche de la construction visée factorisée dans
+    `nearestStructure`), `wave-ground-paths`, `helicopter` (`HelicopterState`,
+    `HelicopterControls`, `HeliAim`).
+  - Rendu : `midge-batch`, `flyer-batch` (`FlyerType`), `walker-batch`
+    (`WalkerType`), `wave-forecast-scene` (`ForecastGroup`, `TextLabel`),
+    `wave-ground-worker` (URL servie inchangée).
+  - `route-speed.js` **supprimé** : aucun importeur, et il lisait `enemy.speed`,
+    champ disparu des profils ; la calibration qu'il gardait vit dans `speedMps`.
+  - `groundFlow` n'exige plus qu'un `Pick<GroundDefenseState, 'structures'>`.
+  - Aucun `any`. Contrôle d'équivalence passé : seuls champs déclarés, commentaires,
+    variables locales non nulles (`detail`, `root`, `batches`) et les deux
+    réécritures ci-dessus diffèrent. `scripts/test-dense-swarms.mjs` efface
+    désormais les types avant d'évaluer `swarmFrame`.
 - Candidats pour `src/types.ts` relevés au lot 5 : `StatusError`
   (`Error & { status?: number }`, défini deux fois), `Timer`, `SessionPlayer`
   (utilisé par `server/index.js`), le véhicule « type + supplies » (`HudVehicle`,
   `ReserveVehicle`) et l'epoch de base des instantanés (`BankSnapshot`,
   `BedSnapshot`, à élargir pour `purchase-ui.ts` qui étend `BedUI`).
-- Restent écrits à la main : 25 `.js` dans `src/` (dont `client.js`, ≈ 7 000
-  lignes, `waves.js`, `graphics.js`, `hud.js`) ; les données générées sont en `.ts`,
+- Restent écrits à la main : 14 `.js` dans `src/` (dont `client.js`, ≈ 7 000
+  lignes, `graphics.js`, `hud.js`, `ground-defense-ui.js`, `heavy-sim.js`) ; les données générées sont en `.ts`,
   `server/game.js`, `server/index.js`, `server/wave-preparation.js` et les
   `scripts/*.mjs`. `npm run ts:migrate -- --leaves` donne la liste des modules
   prêts.
@@ -82,12 +100,12 @@ envisagée n'est donc pas nécessaire. Règle : [TypeScript](../typescript.md#do
 
 ## Ordre conseillé
 
-1. Feuilles du graphe d'imports : `npm run ts:migrate -- --leaves` (10 au lot 6 :
-   `waves`, `route-speed`, `wave-ground-paths`, les lots `*-batch`,
-   `ground-placement`, `ground-creatures`, `helicopter`, `wave-forecast-scene`).
+1. Feuilles du graphe d'imports : `npm run ts:migrate -- --leaves` (8 après le
+   lot 7 : `tank-view`, `ground-crowd`, `wave-council-ui`, `mobile-flak`,
+   `reload-hud`, `balance`, `graphics`, `ground-defense-ui`). `balance` d'abord :
+   `RosterBalance` (`waves.ts`) en est un sous-ensemble à remplacer par son type.
 2. Protocole : fait (`network`, `udp-client`, `ws-client`, `server/session`).
-3. Domaine : `waves` (puis dériver `EnemyType` de `keyof typeof ENEMY_TYPES` et
-   retirer la copie de `src/types.ts` ; typer ses ennemis avec `RouteEnemy`).
+3. Domaine : fait pour `waves` (`EnemyType` dérivé, `WaveEnemy`).
 4. Serveur : `server/wave-preparation`, `game`, `index` (`session` fait) ; regrouper
    alors les types partagés relevés ci-dessus dans `src/types.ts`.
 5. Rendu/UI puis `client.js` (extraire des modules avant de migrer).

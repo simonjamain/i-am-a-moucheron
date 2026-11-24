@@ -3,14 +3,14 @@
 Les règles d’une room sont fixes : `DEFAULT_BALANCE` (`src/balance.js`) donne les
 multiplicateurs (dégâts, vitesses, prix, pauses, caisse initiale…) appliqués à toutes
 les rooms. Le panneau de réglage par room, `balance` et `debug-spawn` n’existent plus ;
-les tests composent un roster exact avec `debugSwarmRoster` (`src/waves.js`).
+les tests composent un roster exact avec `debugSwarmRoster` (`src/waves.ts`).
 
 ## Unité commune
 
 Issue #210. La **puissance** mesure ennemis, vagues, récompenses et dégâts à la
 poubelle : un joueur de puissance 1 élimine un ennemi de puissance 1 pendant une
 vague. Elle est **calculée** par `computeEnemyPower` (`src/enemy-power.ts`), jamais
-saisie, et exposée par `ENEMY_POWER` / `ENEMY_TYPES[type].power` (`src/waves.js`).
+saisie, et exposée par `ENEMY_POWER` / `ENEMY_TYPES[type].power` (`src/waves.ts`).
 
 ```
 puissance = PV/PV_réf × vitesse/vitesse_réf × √(taille_réf/taille)

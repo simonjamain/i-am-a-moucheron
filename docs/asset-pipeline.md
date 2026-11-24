@@ -188,7 +188,7 @@ Premier modèle d'animal ; modèle « Angry Little Fly » fourni par l'utilisate
   avant/arrière et torsion aux retournements (pointe en huit). Corps qui monte à
   chaque battement et tangue lentement, abdomen ondulant, tête et antennes
   mobiles, pattes repliées sous le corps qui traînent vers l'arrière.
-- Rendu (`src/midge-batch.js`) : le cycle est skinné une fois sur CPU en
+- Rendu (`src/midge-batch.ts`) : le cycle est skinné une fois sur CPU en
   84 images (positions et normales, demi-flottants, 2,6 Mo de texture GPU) ; un
   seul `InstancedMesh` lit cette texture d'animation de sommets avec une phase par
   moucheron. **Aucun niveau de détail** (retiré en version 429) : tous les
@@ -236,7 +236,7 @@ un `InstancedMesh` par espèce, ombres via un matériau de profondeur dédié).
   Corps : rebond à chaque pas, léger roulis ; gastre/abdomen qui balancent ; tête,
   antennes et mandibules de la fourmi animées. Poses de repos (tous pieds posés)
   aux phases 0,45 et 0,95.
-- Phase pilotée par la distance (`src/walker-batch.js`) : chaque proxy avance sa
+- Phase pilotée par la distance (`src/walker-batch.ts`) : chaque proxy avance sa
   phase de `distance / foulée` (foulée 0,5 m-modèle fourmi, 0,6 araignée, ×0,6
   d'échelle) et s'oriente dans le plan du sol vers son déplacement ; à l'arrêt
   (colle, appât, calage réseau) il glisse vers la pose de repos la plus proche. La
@@ -421,7 +421,7 @@ Modèle fourni par l'utilisateur, déjà riggé par Meshy, sans clip ; il rempla
   font partie de la coque du corps, les ouvrir déchirerait le maillage. Corps cabré
   de 7°, léger rebond à chaque battement, roulis lent ; six pattes pendantes,
   repliées vers l'arrière, qui pagaient doucement.
-- Rendu (`src/flyer-batch.js`) : texture d'animation de sommets cuite au chargement,
+- Rendu (`src/flyer-batch.ts`) : texture d'animation de sommets cuite au chargement,
   un `InstancedMesh` par espèce, battement sur l'horloge partagée avec un décalage
   de boucle par insecte ; le client oriente le proxy vers son déplacement 3D comme
   un moucheron. Cadavres, âmes du purgatoire et rendu sans WebGL : `SkinnedMesh`
@@ -493,7 +493,7 @@ il remplace le moustique procédural. Même chaîne que l'abeille.
   unités trompe comprise et 3,4 d'envergure, pour garder une silhouette lisible
   (6×2 pixels à 2 m, `test-enemy-readability`) ; depuis la version 318, le facteur d'espèce `mosquito` (7,368 dans
   `scale.ts`) lui donne 12 mm de haut au bureau. Zone de tir : ellipsoïde du corps sans ailes, pattes ni
-  trompe (`MOSQUITO_HIT`). Les esquives erratiques de `waves.js` sont inchangées.
+  trompe (`MOSQUITO_HIT`). Les esquives erratiques de `waves.ts` sont inchangées.
 - Vérification : `scripts/test-mosquito-model.mjs` (provenance, ailes rigides, aucun
   poids du corps sur les ailes, orientation, battement symétrique, boucle, pattes
   pendantes, cuisson, proxys et tirs). Rendu WebGL instancié contrôlé hors jeu avec

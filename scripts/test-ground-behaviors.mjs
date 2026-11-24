@@ -1,6 +1,6 @@
 import { feedingPoint } from '../src/ground-defense-state.ts';
 import assert from 'node:assert/strict';
-import { advanceGroundUnit } from '../src/ground-creatures.js';
+import { advanceGroundUnit } from '../src/ground-creatures.ts';
 import { newGroundDefense, groundFlow } from '../src/ground-defense-state.ts';
 
 const unit = (p = [0, 0]) => ({

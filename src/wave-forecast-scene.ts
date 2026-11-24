@@ -1,8 +1,26 @@
 import { PORTALS, portalExit } from './routes.ts';
 import { activeLayout } from './layouts.ts';
 import { PheromoneTrails } from './pheromone-trail.ts';
+import type * as THREE from 'three/webgpu';
+import type { EnemyType, Three } from './types.ts';
+import type { GroundStructure } from './ground-defense-state.ts';
+import type { PlacementPreview } from './ground-placement.ts';
+import type { PredictedGroundPath } from './wave-ground-paths.ts';
 
-export const speciesSymbols = {
+/** Announced pack of the prepared wave (server/wave-preparation.js). */
+export interface ForecastGroup {
+  type: EnemyType;
+  portalIndex: number;
+  ground?: boolean;
+}
+/** Snapshot fields read by the forecast. */
+export interface ForecastSnapshot {
+  preparation?: { id: unknown; groups?: readonly ForecastGroup[] } | null;
+  groundDefense: { navigationRevision: number; structures: readonly GroundStructure[] };
+}
+export type TextLabel = (text: string, color?: string, scale?: number) => THREE.Object3D;
+
+export const speciesSymbols: Readonly<Record<EnemyType, string>> = {
   ant: '🐜',
   roach: '🪳',
   rat: '🐀',
@@ -13,10 +31,15 @@ export const speciesSymbols = {
   brute: '🪲🛡',
   mosquito: '🦟',
 };
-export const entranceLabel = (group) => (group.ground ? 'S' : 'A') + (group.portalIndex + 1);
+export const entranceLabel = (group: { ground?: boolean; portalIndex: number }): string =>
+  (group.ground ? 'S' : 'A') + (group.portalIndex + 1);
 
-function dispose(group) {
-  for (const child of [...group.children]) {
+type Disposable = THREE.Object3D & {
+  geometry?: THREE.BufferGeometry;
+  material?: THREE.Material & { map?: THREE.Texture | null };
+};
+function dispose(group: THREE.Object3D): void {
+  for (const child of [...group.children] as Disposable[]) {
     child.geometry?.dispose();
     child.material?.map?.dispose();
     child.material?.dispose();
@@ -25,7 +48,20 @@ function dispose(group) {
 }
 
 export class WaveForecastScene {
-  constructor(T, scene, textLabel) {
+  T: Three;
+  textLabel: TextLabel;
+  markers: THREE.Group;
+  lines: THREE.Group;
+  trails: PheromoneTrails;
+  prepId?: unknown;
+  key?: string | null;
+  rendered?: string | null;
+  busy?: boolean;
+  nextAt?: number;
+  draft?: boolean;
+  worker?: Worker;
+  entrances!: ForecastGroup[];
+  constructor(T: Three, scene: THREE.Object3D, textLabel: TextLabel) {
     this.T = T;
     this.textLabel = textLabel;
     this.markers = new T.Group();
@@ -33,7 +69,11 @@ export class WaveForecastScene {
     scene.add(this.markers, this.lines);
     this.trails = new PheromoneTrails(T, scene);
   }
-  update(snap, candidate, now) {
+  update(
+    snap: ForecastSnapshot | null | undefined,
+    candidate: PlacementPreview | null | undefined,
+    now: number,
+  ): void {
     const prep = snap?.preparation;
     if (this.prepId !== prep?.id) {
       this.prepId = prep?.id;
@@ -43,13 +83,13 @@ export class WaveForecastScene {
       dispose(this.lines);
       this.trails.clear();
     }
-    if (!prep || !this.entrances.length) return;
+    if (!snap || !prep || !this.entrances.length) return;
     this.trails.animate(now / 1000);
-    let cmd = !candidate?.error && candidate?.command;
+    let cmd = (!candidate?.error && candidate?.command) || null;
     if (
       cmd?.action === 'repair' ||
       (cmd?.action === 'remove' &&
-        !snap.groundDefense.structures.some((s) => s.id === cmd.id && s.kind === 'barricade'))
+        !snap.groundDefense.structures.some((s) => s.id === cmd!.id && s.kind === 'barricade'))
     )
       cmd = null;
     // While walking, coalesce requests. The expensive navigation grid is built
@@ -66,7 +106,9 @@ export class WaveForecastScene {
       this.worker = new Worker(new URL('./wave-ground-worker.js', import.meta.url), {
         type: 'module',
       });
-      this.worker.onmessage = ({ data }) => {
+      this.worker.onmessage = ({
+        data,
+      }: MessageEvent<{ key: string; paths: PredictedGroundPath[] }>) => {
         this.busy = false;
         if (this.key !== data.key) return;
         this.rendered = data.key;
@@ -85,13 +127,13 @@ export class WaveForecastScene {
       command: cmd || null,
     });
   }
-  drawMarkers(groups) {
+  drawMarkers(groups: readonly ForecastGroup[]): void {
     dispose(this.markers);
-    const portals = new Map();
+    const portals = new Map<string, { group: ForecastGroup; symbols: Set<string> }>();
     for (const group of groups) {
       const id = entranceLabel(group);
       if (!portals.has(id)) portals.set(id, { group, symbols: new Set() });
-      portals.get(id).symbols.add(speciesSymbols[group.type]);
+      portals.get(id)!.symbols.add(speciesSymbols[group.type]);
     }
     this.entrances = [];
     for (const [id, { group, symbols }] of portals) {
@@ -106,11 +148,11 @@ export class WaveForecastScene {
       if (group.ground) this.entrances.push(group);
     }
   }
-  drawPaths(paths) {
+  drawPaths(paths: readonly PredictedGroundPath[]): void {
     dispose(this.lines);
     this.trails.set(
       paths.filter((path) => path.points.length).map((path) => path.points),
-      this.draft,
+      !!this.draft,
     );
     for (const path of paths) {
       if (path.points.length) continue;

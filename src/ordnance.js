@@ -1,5 +1,5 @@
 export { segmentBox } from './swept-geometry.ts';
-import { heliWeaponOrigin } from './helicopter.js';
+import { heliWeaponOrigin } from './helicopter.ts';
 import { mobileBarrelOrigin, clampProximity } from './mobile-flak.js';
 import { tankBarrelOrigin } from './tank-view.js';
 import { MAP } from './scale.ts';

@@ -25,7 +25,7 @@ import { createGraphics } from '../src/graphics.js';
 import { stepFlight } from '../src/flight.ts';
 import { swarmAudioGroups } from '../src/game-audio/swarm.ts';
 import { AircraftFire } from '../src/aircraft-fire.ts';
-import { wavePlan, swarmFrame } from '../src/waves.js';
+import { wavePlan, swarmFrame } from '../src/waves.ts';
 import { collisionDamage } from '../src/vehicle-care.ts';
 import { ballisticMarks } from '../src/tank-reticle.js';
 import { integrateOrdnance } from '../src/ordnance.js';

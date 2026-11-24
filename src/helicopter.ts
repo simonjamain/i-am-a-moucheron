@@ -5,6 +5,44 @@ import { PROJECTILES } from './projectiles.ts';
 import { OFFICE_LAYOUT } from './layout.ts';
 import { outOfFlight } from './sky-passage.ts';
 import { VEHICLE_ANCHORS } from './vehicle-anchors.ts';
+import type { Collider } from './oriented-collider.ts';
+import type { Three, Vec3 } from './types.ts';
+
+/** Gunner aim: yaw (any angle, wrapped) and pitch (clamped to the turret range). */
+export interface HeliAim {
+  yaw: number;
+  pitch: number;
+}
+/** Simulated rotorcraft state, mutated in place by `stepHelicopter`. */
+export interface HelicopterState {
+  p: number[];
+  v: number[];
+  q: number[];
+  hp: number;
+  engine?: boolean;
+  fuelAvailable?: boolean;
+  rotorPower?: number;
+  collective?: number;
+  landed?: boolean;
+  gas?: number;
+  omega?: number[];
+}
+/** Pilot input: either a camera `direction` or explicit pitch/roll/yaw axes in [-1, 1]. */
+export interface HelicopterControls {
+  occupied?: boolean;
+  collective?: number;
+  direction?: readonly number[] | null;
+  yaw?: number;
+  pitch?: number;
+  roll?: number;
+}
+export interface HelicopterProfile {
+  /** Top speed, in model metres per second. */
+  maxSpeed: number;
+  /** Height of the landing gear under the origin. */
+  gear: number;
+}
+
 export const HELI = Object.freeze({
   gunInterval: 1 / 15,
   gunDamage: PROJECTILES.mg.damage,
@@ -17,14 +55,14 @@ export const HELI = Object.freeze({
   // Keyboard turn rate (A/E) when no mouse direction steers (Castor volant vertical view).
   yawRate: 1.4,
 });
-export function clampHeliAim(aim) {
+export function clampHeliAim<A extends HeliAim>(aim: A): A {
   aim.yaw = Math.atan2(Math.sin(aim.yaw), Math.cos(aim.yaw));
   aim.pitch = Math.max(HELI.minPitch, Math.min(HELI.maxPitch, aim.pitch));
   return aim;
 }
 // Pending relative input is consumed once. Excess mouse motion is discarded,
 // never carried as a target to chase after the pointer stops.
-export function stepHeliAim(actual, pending, dt) {
+export function stepHeliAim(actual: HeliAim, pending: HeliAim, dt: number): HeliAim {
   const yaw = pending.yaw - actual.yaw;
   const pitch = Math.max(HELI.minPitch, Math.min(HELI.maxPitch, pending.pitch)) - actual.pitch;
   const distance = Math.hypot(yaw, pitch);
@@ -37,7 +75,7 @@ export function stepHeliAim(actual, pending, dt) {
   Object.assign(pending, actual);
   return actual;
 }
-export function rotateLocal(q, [x, y, z]) {
+export function rotateLocal(q: readonly number[], [x, y, z]: readonly number[]): Vec3 {
   const [qx, qy, qz, qw] = q,
     tx = 2 * (qy * z - qz * y),
     ty = 2 * (qz * x - qx * z),
@@ -48,7 +86,11 @@ export function rotateLocal(q, [x, y, z]) {
     z + qw * tz + qx * ty - qy * tx,
   ];
 }
-export function heliWeaponOrigin(vehicle, weapon, side = 1) {
+export function heliWeaponOrigin(
+  vehicle: { state: { p: readonly number[]; q: readonly number[] } },
+  weapon: string,
+  side = 1,
+): number[] {
   // Front of the H2's rocket pods and missile rails, mirrored for side -1.
   const [x, y, z] = VEHICLE_ANCHORS.helicopter[weapon === 'rocket' ? 'rocket' : 'missile'];
   const local = [side * x, y, z];
@@ -60,7 +102,14 @@ export function heliWeaponOrigin(vehicle, weapon, side = 1) {
 }
 // Rotorcraft instructor: tilt accelerates horizontally, collective controls
 // vertical speed; neutral input levels and brakes progressively to a hover.
-export function stepHelicopter(T, state, controls, colliders, dt, profile) {
+export function stepHelicopter<S extends HelicopterState>(
+  T: Three,
+  state: S,
+  controls: HelicopterControls,
+  colliders: readonly Collider[],
+  dt: number,
+  profile: HelicopterProfile,
+): S {
   if (state.hp <= 0) return state;
   const p = new T.Vector3().fromArray(state.p),
     before = p.clone(),
@@ -71,10 +120,10 @@ export function stepHelicopter(T, state, controls, colliders, dt, profile) {
   const rotorTarget = powered && controls.occupied !== false ? 1 : 0;
   rotorPower += (rotorTarget - rotorPower) * (1 - Math.exp(-dt * (rotorTarget ? 2 : 0.8)));
   const input = powered ? Math.max(-1, Math.min(1, controls.collective || 0)) : 0;
-  let collective = Number.isFinite(state.collective) ? state.collective : 0;
+  let collective = Number.isFinite(state.collective) ? state.collective! : 0;
   collective += (input - collective) * (1 - Math.exp(-dt * 2.5));
   const dir = controls.direction
-    ? new T.Vector3().fromArray(controls.direction).normalize()
+    ? new T.Vector3().fromArray(controls.direction as number[]).normalize()
     : new T.Vector3(0, 0, -1).applyQuaternion(q);
   const yaw = controls.direction
     ? Math.atan2(-dir.x, -dir.z)
@@ -171,7 +220,11 @@ export function stepHelicopter(T, state, controls, colliders, dt, profile) {
   return state;
 }
 // Bounded turn towards the gunner's aim point; no target acquisition.
-export function steerMissile(projectile, target, dt) {
+export function steerMissile(
+  projectile: { p: readonly number[]; v: number[] },
+  target: readonly number[],
+  dt: number,
+): void {
   const speed = Math.hypot(...projectile.v),
     desired = target.map((v, i) => v - projectile.p[i]);
   const n = Math.hypot(...desired);

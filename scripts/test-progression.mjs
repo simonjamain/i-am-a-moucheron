@@ -1,6 +1,6 @@
 import './normal-dossiers.mjs';
 import assert from 'node:assert/strict';
-import { wavePlan, waveBudget, legacyCost } from '../src/waves.js';
+import { wavePlan, waveBudget, legacyCost } from '../src/waves.ts';
 assert.deepEqual(
   Array.from({ length: 8 }, (_, i) => waveBudget(i + 1)),
   [8, 10, 14, 18, 24, 30, 38, 46],

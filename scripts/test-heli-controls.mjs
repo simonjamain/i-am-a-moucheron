@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import { readFileSync } from 'node:fs';
 import * as T from '../vendor/three.webgpu.min.js';
-import { stepHelicopter } from '../src/helicopter.js';
+import { stepHelicopter } from '../src/helicopter.ts';
 import { HELI_TYPES, HeliRig } from '../src/heli-physics.ts';
 import { MAP } from '../src/scale.ts';
 import { VEHICLES, vehiclePad, isRotorcraft } from '../src/fleet.ts';

@@ -13,7 +13,7 @@ et sa remorque aussi ; l'ancienne conduite au sol (`tank.js`) est supprimée.
 
 Migration en cours : tous les véhicules (au sol, avions, hélicoptères) sont sur Rapier
 ([avions](plane-physics.md), [hélicoptères](heli-physics.md)). La marche garde sa physique
-d'origine (`sortie.ts`) ; `helicopter.js` ne sert plus qu'avant le chargement de Rapier. Elle est obsolète : chaque migration en retire le code correspondant, et à
+d'origine (`sortie.ts`) ; `helicopter.ts` ne sert plus qu'avant le chargement de Rapier. Elle est obsolète : chaque migration en retire le code correspondant, et à
 terme elle disparaît entièrement.
 
 ## Décision et périmètre

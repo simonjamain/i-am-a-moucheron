@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { performance } from 'node:perf_hooks';
 import * as T from '../vendor/three.webgpu.min.js';
-import { MidgeBatch } from '../src/midge-batch.js';
+import { MidgeBatch } from '../src/midge-batch.ts';
 import { nearestInsectHit, InsectIndex } from '../src/insect-hits.ts';
 
 const scene = new T.Scene();

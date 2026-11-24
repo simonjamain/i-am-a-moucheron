@@ -268,7 +268,6 @@ const files = {
       'ballistics',
       'equipment',
       'routes',
-      'route-speed',
       'route-navigation',
       'layouts',
       // Folder modules (the audio library and its game adapter) keep their path.

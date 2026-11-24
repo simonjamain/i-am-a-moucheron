@@ -1,4 +1,4 @@
-import { assignMidgeSwarmSizes } from './waves.js';
+import { assignMidgeSwarmSizes } from './waves.ts';
 
 // Room-local settings. No mutable module-level gameplay configuration.
 export const BALANCE_FIELDS = Object.freeze({

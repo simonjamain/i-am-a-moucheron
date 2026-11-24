@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { stripTypeScriptTypes } from 'node:module';
 import { readFileSync } from 'node:fs';
 import { performance } from 'node:perf_hooks';
 import { MAP, INSECT_SCALE, enemySizeFactor, GROUND_FOOT_DEPTH } from '../src/scale.ts';
@@ -14,7 +15,7 @@ import {
   groundLaneDisplacement,
   debugSwarmRoster,
   MAX_WAVE_POPULATION,
-} from '../src/waves.js';
+} from '../src/waves.ts';
 import { Game } from '../server/game.js';
 import { encodeReply, ReplyAssembler } from '../src/udp-protocol.ts';
 const input = [
@@ -142,7 +143,8 @@ for (const members of midgeFlocks.values())
   assert.ok(members.every((e) => e.swarmSize === members.length));
 // Compare the exact spatial algorithm with the previous exhaustive neighbour
 // loop, on sparse and dense frames. No visual approximation or skipped peers.
-const source = readFileSync('src/waves.js', 'utf8');
+// The module is TypeScript: erase its types (positions kept) before evaluating it.
+const source = stripTypeScriptTypes(readFileSync('src/waves.ts', 'utf8'));
 let exhaustive = source
   .slice(source.indexOf('export function swarmFrame'))
   .replace('export function swarmFrame', 'function exhaustiveFrame');

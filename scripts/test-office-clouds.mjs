@@ -11,7 +11,7 @@ import {
   applyOfficeFog,
   officeFogLayer,
 } from '../src/office-fog.ts';
-import { stepHelicopter } from '../src/helicopter.js';
+import { stepHelicopter } from '../src/helicopter.ts';
 import { VEHICLES, vehiclePad } from '../src/fleet.ts';
 import { LAYOUTS, LAYOUT_ROOM } from '../src/layouts.ts';
 

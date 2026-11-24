@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { Game, IMPACT_GRACE_MS } from '../server/game.js';
 import { HEAVY } from '../src/armament.ts';
-import { debugSwarmRoster } from '../src/waves.js';
+import { debugSwarmRoster } from '../src/waves.ts';
 
 // Heavy weapons are simulated by their shooter; the server records launches,
 // applies the shooter's impact report once, capped by the launch's power.

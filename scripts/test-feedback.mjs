@@ -5,7 +5,7 @@ import { createGraphics } from '../src/graphics.js';
 import { InsectStatus, insectScale, woundState } from '../src/insect-status.ts';
 import { nearestInsectHit, nearestMeshHit } from '../src/insect-hits.ts';
 import { INSECT_SCALE } from '../src/scale.ts';
-import { wavePlan, swarmFrame, entryStatus } from '../src/waves.js';
+import { wavePlan, swarmFrame, entryStatus } from '../src/waves.ts';
 import { PORTALS, MIN_SPAWN_DISTANCE } from '../src/routes.ts';
 import { mergeOwnedArena } from '../src/walk-arena.ts';
 const scene = new T.Scene(),

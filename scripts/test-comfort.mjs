@@ -3,10 +3,10 @@ import { readFileSync } from 'node:fs';
 import * as T from '../vendor/three.webgpu.min.js';
 import { Game } from '../server/game.js';
 import { VEHICLES, EXIT_LIFT, vehiclePad, vehicleEntry, vehicleAccess } from '../src/fleet.ts';
-import { stepHelicopter } from '../src/helicopter.js';
+import { stepHelicopter } from '../src/helicopter.ts';
 import { fullAmmo } from '../src/logistics.ts';
 import { MAP, ENEMY_SIZE_FACTORS } from '../src/scale.ts';
-import { wavePlan } from '../src/waves.js';
+import { wavePlan } from '../src/waves.ts';
 import { makeShotTrace, moveShotTrace, advanceShotTrace } from '../src/tracers.ts';
 const close = (a, b) => assert.ok(Math.abs(a - b) < 1e-8, `${a} != ${b}`);
 // The rounded subtraction really fails before the H2 landing fix.

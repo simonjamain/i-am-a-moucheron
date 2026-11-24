@@ -21,7 +21,7 @@ tester et livrer, puis la référence métier concernée. `AGENTS.md` décrit la
 | `src/network.ts`                           | Validation de mouvement et interpolation ; `PeerMotion` est le transport historique des pairs.   |
 | `src/ground-motion.ts`                     | Historique et interpolation visuelle des positions des ennemis terrestres reçues du serveur.     |
 
-Les moucherons de grande nuée utilisent `src/midge-batch.js` (modèle Meshy animé par texture de sommets pour tous les moucherons, sans niveau de détail, proxies logiques légers ; voir `src/midge-model.ts` et [le pipeline d'assets](asset-pipeline.md#moucheron-meshy-squelette-et-vol)). Les fourmis et araignées pondeuses suivent la même chaîne (`src/rigged-creature.ts`, `src/creature-batch.ts`, `src/walker-gait.ts`, `src/walker-batch.js`, `src/ant-model.ts`, `src/spider-model.ts`, `src/roach-model.ts`, `src/spiderling-model.ts`, `src/rat-model.ts` qui rejoue un clip) avec une marche pilotée par la distance ; le scarabée volant (`brute`) l'abeille (`guard`) et le moustique aussi, via `src/flyer-batch.js`, `src/beetle-model.ts`, `src/bee-model.ts` et `src/mosquito-model.ts`, avec un battement d'ailes sur l'horloge partagée ; `waves.js` (trajectoires indépendantes) et `insect-hits.ts` (collisions sphériques). Le navigateur possède ses mouvements et raycasts dans un modèle coopératif.
+Les moucherons de grande nuée utilisent `src/midge-batch.ts` (modèle Meshy animé par texture de sommets pour tous les moucherons, sans niveau de détail, proxies logiques légers ; voir `src/midge-model.ts` et [le pipeline d'assets](asset-pipeline.md#moucheron-meshy-squelette-et-vol)). Les fourmis et araignées pondeuses suivent la même chaîne (`src/rigged-creature.ts`, `src/creature-batch.ts`, `src/walker-gait.ts`, `src/walker-batch.ts`, `src/ant-model.ts`, `src/spider-model.ts`, `src/roach-model.ts`, `src/spiderling-model.ts`, `src/rat-model.ts` qui rejoue un clip) avec une marche pilotée par la distance ; le scarabée volant (`brute`) l'abeille (`guard`) et le moustique aussi, via `src/flyer-batch.ts`, `src/beetle-model.ts`, `src/bee-model.ts` et `src/mosquito-model.ts`, avec un battement d'ailes sur l'horloge partagée ; `waves.ts` (trajectoires indépendantes) et `insect-hits.ts` (collisions sphériques). Le navigateur possède ses mouvements et raycasts dans un modèle coopératif.
 Le serveur possède les transactions et simule les armes lourdes. Il n’y a ni
 base de données ni accès disque dans les opérations de jeu Node. Voir
 [réseau](walking-network.md) et [serveur UDP](udp-server.md).
@@ -38,7 +38,7 @@ base de données ni accès disque dans les opérations de jeu Node. Voir
 | Armes                | `ballistics.ts`, `combat.ts`, `projectiles.ts`, `armament.ts`, `ordnance.js`, `aircraft-fire.ts`, `tracers.ts`, `muzzle.ts`, `insect-hits.ts`.                                                                                                                                                                                                                                                                                             |
 | Tourelles auto       | `ground-sentry.ts` (règles, tir serveur), `sentry-model.ts`, `gatling-model.ts`, `ground-defense-ui.js` (visée, rotation, tirs étalés, voix) ; [Gatling](gatling-turret.md), [T-01](t01-asset.md).                                                                                                                                                                                                                                         |
 | Visée/caméras        | `personal-aim.ts` pour épaule/main ; `tank-reticle.js` pour les trajectoires de mire ; `tank-view.js` pour lunette, observation et bouche serveur.                                                                                                                                                                                                                                                                                         |
-| Vagues               | `enemy-power.ts` calcule la puissance des espèces ([équilibrage](enemy-power.md#unité-commune)) ; `server/wave-preparation.js` tire et conserve la vague annoncée (sans vote ni plans depuis la version 264) ; `wave-council-ui.js` l'affiche avec le lancement anticipé. `waves.js`, `routes.ts`, `route-speed.js`, `route-navigation.ts` ; obstacles dérivés du plan actif (`layouts.ts`).                                               |
+| Vagues               | `enemy-power.ts` calcule la puissance des espèces ([équilibrage](enemy-power.md#unité-commune)) ; `server/wave-preparation.js` tire et conserve la vague annoncée (sans vote ni plans depuis la version 264) ; `wave-council-ui.js` l'affiche avec le lancement anticipé. `waves.ts`, `routes.ts`, `route-navigation.ts` ; obstacles dérivés du plan actif (`layouts.ts`).                                                                 |
 | Économie/réserves    | `equipment.ts`, `logistics.ts`, `bank.ts`, `rewards.ts` ; [logistique](logistics-contracts.md).                                                                                                                                                                                                                                                                                                                                            |
 | Contrats             | `contracts.ts`, gestion des papiers dans le client (annexes malicieuses retirées).                                                                                                                                                                                                                                                                                                                                                         |
 | Lits                 | `beds.ts` : accès et support ; `bed-ui.ts` : document personnel et signature.                                                                                                                                                                                                                                                                                                                                                              |
@@ -94,7 +94,7 @@ le [lot courant](multiplayer-return.md), complété par les vrais pairs UDP.
 
 ## Véhicules d’appui
 
-`helicopter.js` porte le pilotage assisté, butées, origines et guidage borné.
+`helicopter.ts` porte le pilotage assisté, butées, origines et guidage borné.
 `mobile-flak.js` porte unités de proximité et enveloppes de coque orientées ;
 `swept-geometry.ts` centralise les intersections balayées exactes (`mobile-flak.js` s'en sert pour le long camion articulé, tracteur et remorque).
 `server/game.js` possède lancement/débit, armement différé et détonation fiable ;
@@ -108,7 +108,7 @@ le facteur du moucheron ; `client.js` recrée les meshes par vague/espèce.
 `test-enemy-visibility.mjs` couvre la [visibilité courante](enemy-visibility.md).
 
 `scale.ts` centralise les six facteurs d’insectes, partagés par géométrie et
-volumes de collision serveur. `waves.js` relève les corps terrestres au-dessus
+volumes de collision serveur. `waves.ts` relève les corps terrestres au-dessus
 du support ; `route-navigation.ts` adapte leur marge. `test-enemy-readability.mjs`
 mesure les silhouettes projetées et les vrais corps au sol.
 
@@ -131,15 +131,15 @@ navigateur par `flight-tuning.ts` et présentés par `flight-tuning-ui.ts`.
 Leur portée et leurs commandes sont décrites dans
 [les réglages personnels des avions](controls.md#réglages-personnels-des-avions).
 
-Le [bestiaire](enemy-bestiary.md) s'appuie sur `waves.js` et `routes.ts` (profils, origine de naissance, trajectoires), `server/game.js` (mort unique et roster révisé), `graphics.js` (repli riggé des modèles Meshy) et `walker-batch.js` (bébés araignées instanciés comme les autres marcheurs).
+Le [bestiaire](enemy-bestiary.md) s'appuie sur `waves.ts` et `routes.ts` (profils, origine de naissance, trajectoires), `server/game.js` (mort unique et roster révisé), `graphics.js` (repli riggé des modèles Meshy) et `walker-batch.ts` (bébés araignées instanciés comme les autres marcheurs).
 
 `ground-defense-ui.js` affiche le menu, l’aperçu de pose en troisième personne et
 les constructions ; `placement-aim.ts` calcule la surface visée pour les défenses et les achats.
-`ground-placement.js` détermine les deux extrémités depuis ce point
+`ground-placement.ts` détermine les deux extrémités depuis ce point
 et prévalide sur une copie de l’état avec `ground-defense-state.ts`. La commande
 fiable `ground-defense` reste autoritaire dans `server/game.js` ; le déplacement
 des terrestres associe `ground-crowd.js` (sous-pas communs et voisinage spatial)
-à `ground-creatures.js` (navigation individuelle, séparation douce et pièges). Voir [gameplay](gameplay.md#défenses-terrestres).
+à `ground-creatures.ts` (navigation individuelle, séparation douce et pièges). Voir [gameplay](gameplay.md#défenses-terrestres).
 
 `brick-wall.ts` répète en instances la brique 2×4 de `meshy-brick-data.ts` (tenons vers +Y, dimensions `BRICK_PITCH`/`BRICK_ROW`/`BRICK_DEPTH`) selon la longueur des segments, recolorée par instance, sans modifier les collisions ni le coût serveur.
 
@@ -155,7 +155,7 @@ commun des maillages UV et des atlas. Le Spitfire, le T3, le D2 (dans
 `graphics.js`), le H2 (`h2-model.ts`) et les deux biplans (`biplane-model.ts`) sont des
 hiérarchies articulées construites par `meshy-rig.ts` depuis les modules générés
 par `scripts/import-meshy-vehicle.py` ; `vehicle-anchors.ts` donne à la physique
-(`tank-view.js`, `mobile-flak.js`, `truck-physics.ts`, `helicopter.js`) les pivots, bouches
+(`tank-view.js`, `mobile-flak.js`, `truck-physics.ts`, `helicopter.ts`) les pivots, bouches
 et enveloppes de ces modèles. Le Stuka (`graphics.js`) suit le même chemin depuis
 la version 266, les biplans depuis la version 275.
 
@@ -168,12 +168,12 @@ conduite et la visée. `service-zones.ts` dessine les sphères vertes de
 ravitaillement des stations fixes et des Castor, aux rayons de `logistics.ts`.
 
 Castor volant : `fleet.ts` le définit (un pilote, trois passagers, rotor et
-soutien via `isRotorcraft` / `isSupportVehicle`), `helicopter.js` le fait voler
+soutien via `isRotorcraft` / `isSupportVehicle`), `helicopter.ts` le fait voler
 (lacet clavier pour la vue verticale), `flying-castor-model.ts` assemble le modèle
 Meshy (`meshy-flying-castor-data.ts`, `scripts/import-meshy-flying-castor.py`).
 `airdrop.ts` partage cap, point et surface de largage entre le serveur
 (`Game.airdrop` et `advanceGroundDrops` dans `server/game.js`) et l'aperçu
-(`airdropPlacement` dans `ground-placement.js`, `GroundDefenseUI.updateAirdrop`
+(`airdropPlacement` dans `ground-placement.ts`, `GroundDefenseUI.updateAirdrop`
 et `renderDrops`). Les constructions sur un meuble portent `y` ; `floorStructures`
 et `navigationStructures` les retirent de ce que voient les insectes au sol.
 

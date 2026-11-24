@@ -11,7 +11,7 @@ import { HoldZoom, contextKey, rangeReadout } from '../src/equipment-controls.ts
 import { MAP, ACTOR_UNIT, REFERENCE } from '../src/scale.ts';
 import { TankRig } from '../src/tank-physics.ts';
 import { loadRapier } from '../src/physics-world.ts';
-import { wavePlan } from '../src/waves.js';
+import { wavePlan } from '../src/waves.ts';
 import { enemyRoute } from '../src/routes.ts';
 import { blockedSegment } from '../src/route-navigation.ts';
 import { createGraphics } from '../src/graphics.js';

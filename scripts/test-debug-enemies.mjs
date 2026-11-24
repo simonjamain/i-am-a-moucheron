@@ -15,7 +15,7 @@ import {
   debugPlacement,
   standingHeight,
 } from '../src/debug-enemies.ts';
-import { ENEMY_TYPES, swarmFrame } from '../src/waves.js';
+import { ENEMY_TYPES, swarmFrame } from '../src/waves.ts';
 import { DEFAULT_BALANCE } from '../src/balance.js';
 import { enemyRoute, PORTALS } from '../src/routes.ts';
 import { fireGroundSentries, SENTRY } from '../src/ground-sentry.ts';
@@ -188,7 +188,7 @@ const T = await import('../vendor/three.webgpu.min.js');
 const { DebugTools, DamageMeter, DAMAGE_WINDOW_S, formatDamage, MESH_COLLIDER_COLOR } =
   await import('../src/debug-tools.ts');
 const { nearestInsectHit } = await import('../src/insect-hits.ts');
-const { WalkerBatch } = await import('../src/walker-batch.js');
+const { WalkerBatch } = await import('../src/walker-batch.ts');
 const { SENTRY: SENTRY_RULES } = await import('../src/ground-sentry.ts');
 const meter = new DamageMeter();
 assert.equal(meter.update(0, 0), false);

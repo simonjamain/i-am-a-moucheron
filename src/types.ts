@@ -20,9 +20,8 @@ export interface XYZ {
 export type Three = typeof import('three/webgpu');
 
 /**
- * Enemy species keys. Mirrors `ENEMY_TYPES` in waves.js (runtime source of truth);
- * scripts/test-registries.mjs fails if they diverge. Exhaustive tables typed
- * `Record<EnemyType, …>` then make tsc list every place a new species must be added.
+ * Enemy species keys, derived from the `SPECIES` registry of waves.ts (`keyof`), re-exported
+ * here for convenience. Exhaustive tables typed `Record<EnemyType, …>` make tsc list every
+ * place a new species must be added.
  */
-export type EnemyType =
-  'ant' | 'roach' | 'midge' | 'guard' | 'mosquito' | 'rat' | 'spider' | 'spiderling' | 'brute';
+export type { EnemyType } from './waves.ts';

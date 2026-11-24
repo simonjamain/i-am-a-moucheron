@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import * as T from '../vendor/three.webgpu.min.js';
 import { supportedPlacement } from '../src/equipment.ts';
-import { stepHelicopter } from '../src/helicopter.js';
+import { stepHelicopter } from '../src/helicopter.ts';
 import { VEHICLES, vehiclePad, vehicleEntry, vehicleAccess } from '../src/fleet.ts';
 const floor = { min: { x: -1, y: -0.1, z: -1 }, max: { x: 1, y: 0, z: 1 } };
 const point = { x: 0, y: 0, z: 0 };

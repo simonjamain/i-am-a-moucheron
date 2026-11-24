@@ -43,7 +43,8 @@ dans `src/`, `server/` et `scripts/`. L'état et la prochaine étape sont suivis
    est lui-même en TypeScript, dériver le type de ses clés
    (`export type VehicleType = keyof typeof VEHICLES`, objet vérifié par
    `satisfies Record<string, VehicleProfile>`) plutôt que de recopier une union
-   dans `src/types.ts`. Voir
+   dans `src/types.ts` (fait pour `EnemyType`, dérivé de `SPECIES` dans `waves.ts`
+   et seulement réexporté par `src/types.ts`). Voir
    [ajouter du contenu](adding-content.md).
 6. **Comportement identique** : une migration ne change ni la logique ni les
    allocations des chemins chauds. Préférer `readonly number[]` à une conversion
@@ -98,6 +99,16 @@ Pièges vus au lot 5 :
 - Le typage révèle des défauts (une liste d'aide qui contenait `false`) : les
   corriger à part, avec un test de régression et une entrée de changelog, jamais
   silencieusement pendant la migration.
+
+Pièges vus au lot 7 :
+
+- Un objet construit en deux temps (littéral puis `x.travelSpeed = …`) garde son
+  ordre de clés, visible dans les instantanés JSON : typer le brouillon, puis
+  `Object.assign(brouillon, { champ: … })` plutôt que réordonner le littéral.
+- Un worker (`new Worker(new URL('./wave-ground-worker.js', import.meta.url))`)
+  garde son URL servie en `.js` ; seul son fichier source devient `.ts`.
+- `scripts/test-dense-swarms.mjs` évalue le texte de `swarmFrame` : même remède
+  que pour `test-loading-exit.mjs` (`stripTypeScriptTypes`).
 
 ## Écart avec la consigne précédente
 
