@@ -1,7 +1,6 @@
 # Construire et exécuter avec Docker
 
-La référence de livraison est le dépôt GitHub (voir [l’exploitation](operations.md)). Le dépôt fournit aussi un `Dockerfile` pour
-construire localement la même version du serveur Node/UDP. Le workflow de
+Le `Dockerfile` construit localement la même version du serveur Node/UDP. Le workflow de
 [publication](../.github/workflows/docker.yml) construit et publie sur GHCR à
 chaque push sur `main` : `ghcr.io/simonjamain/i-am-a-moucheron:latest` et un
 tag `sha-<SHA complet>` pour retrouver le commit publié.
@@ -55,39 +54,28 @@ l’image GHCR `latest`.
 
 ## Contrôle de contribution et protection de main
 
-Chaque contribution construit l’image complète avec la commande `docker build`
-ci-dessus. Rapporter le résultat et le commit testé dans la PR. Si Docker manque
-localement, le signaler et attendre le résultat de GitHub Actions.
+Chaque contribution construit l'image complète avec la commande `docker build` ci-dessus
+et rapporte le résultat et le commit testé dans la PR ; sans Docker local, attendre le
+contrôle GitHub Actions.
 
-Le workflow [Docker build validation](../.github/workflows/docker-build.yml)
-exécute le contrôle **Docker build** sur toutes les PR et les groupes de fusion. Il construit et charge l’image `linux/amd64` sans la
-publier ni utiliser de secrets de déploiement. Aucun filtre de fichiers ne saute
-le contrôle sur les contributions documentaires. Le job démarre ensuite l'image construite et contrôle `/healthz` et le refus 410
-de `/api/join` (sans tester UDP). Le workflow de publication
-GHCR reste distinct et ne se déclenche que sur les pushs sur `main` : les
-branches de contribution et les tags Git ne publient aucune image. Sur `main`,
-seul le workflow de publication reconstruit l’image, sans doubler le build de
-vérification. Les exécutions de publication ne sont pas annulées par les pushs
-suivants ; leur succès et le tag SHA permettent de vérifier chaque livraison.
+Le workflow [Docker build validation](../.github/workflows/docker-build.yml) exécute le
+contrôle **Docker build** sur toutes les PR et les groupes de fusion, sans filtre de
+fichiers : il construit l'image `linux/amd64` sans la publier ni utiliser de secret, la
+démarre et vérifie `/healthz` et le 410 de `/api/join` (pas l'UDP). Seul le workflow de
+publication reconstruit l'image sur `main` ; ses exécutions ne sont pas annulées par les
+pushs suivants, et le tag SHA identifie chaque livraison.
 
-Pour bloquer effectivement la fusion, un administrateur doit configurer dans
-GitHub une protection ou un ruleset actif sur `main` : exiger une PR et le
-status check **Docker build** (application GitHub Actions), avec une branche à
-jour avant fusion. Conserver les autres protections existantes. Appliquer la
-règle aux administrateurs et éviter les exceptions de contournement si toutes
-les fusions doivent être bloquées en cas d’échec. Le fichier de workflow seul
-ne peut pas rendre un contrôle obligatoire.
-
-Les agents n'ont pas les droits d'administration : cette protection n'est pas
-lisible ni modifiable depuis une contribution. Vérifier son activation dans les
-paramètres du dépôt ; si la fusion est bloquée, laisser la PR ouverte.
-
-Référence : [contrôles obligatoires GitHub](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches#require-status-checks-before-merging).
+Le fichier de workflow ne rend pas un contrôle obligatoire : c'est la protection (ou le
+ruleset) de `main`, configurée par un administrateur, qui exige la PR et le status check
+**Docker build** avec une branche à jour. Les agents ne peuvent ni la lire ni la modifier ;
+si la fusion est bloquée, laisser la PR ouverte
+([contrôles obligatoires GitHub](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches#require-status-checks-before-merging)).
 
 ## Outillage de modèles GLB (hors VPS de jeu)
 
 L'image Docker de développement Meshy est distincte de l'image du serveur.
 Elle est construite et utilisée à la demande par `compose.assets.yaml`.
-La CI vérifie le même outil sur une fixture texturée et GHCR le publiera
-après fusion sur `main`, sans aucun service permanent.
+La CI (`assets-check.yml`) vérifie l'outil sur une fixture texturée ; `assets-publish.yml`
+le publie sur GHCR quand `tools/assets/` ou `compose.assets.yaml` change sur `main`. Aucun
+service permanent.
 Voir [pipeline d'assets](asset-pipeline.md).
