@@ -141,7 +141,10 @@ export const VEHICLES = {
     name: 'Spitfire',
     maxSpeed: LIGHT_FIGHTER.maxSpeed * 1.75,
     thrust: 70,
-    turn: LIGHT_FIGHTER.turn * 1.45,
+    // Lifts and turns at a modest speed: stall at 20 % of the top speed (it was 32 %), a quicker stick.
+    turn: LIGHT_FIGHTER.turn * 1.7,
+    stallFraction: 0.2,
+    authoritySpeed: 9,
     span: 11.2,
     length: 7,
   },

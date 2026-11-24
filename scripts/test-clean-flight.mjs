@@ -267,8 +267,8 @@ function flight(profile, speed) {
 // Ratios are measured against the original light fighter, the reference of the derived planes.
 const reference = flight(LIGHT_FIGHTER, 30),
   fast = flight(VEHICLES.spitfire, 30);
-assert.ok(Math.abs(fast.omega.x / reference.omega.x - 1.45) < 1e-10);
-assert.ok(Math.abs(fast.omega.z / reference.omega.z - 1.45) < 1e-10);
+assert.ok(Math.abs(fast.omega.x / reference.omega.x - 1.7) < 1e-10);
+assert.ok(Math.abs(fast.omega.z / reference.omega.z - 1.7) < 1e-10);
 assert.ok(
   Math.abs(
     flight(VEHICLES.spitfire, 200).vel.length() / flight(LIGHT_FIGHTER, 200).vel.length() - 1.75,
