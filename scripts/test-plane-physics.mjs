@@ -397,3 +397,40 @@ console.log('test-plane-physics ok', { K: +K.toFixed(4), toPhysics: +toPhysics(m
     'the Spitfire steers at 20 m/s',
   );
 }
+
+// The room's walls are contacts of the engine, like any decor: an aircraft flying into any of
+// the four (the room has no front wall in the model) is stopped in the room and feels the
+// speed change as an impact above the crash threshold. Nothing else is needed to crash.
+{
+  const { PLANE_CRASH_IMPACT } = await import('../src/plane-physics.ts');
+  for (const heading of [
+    [0, 0, 1],
+    [0, 0, -1],
+    [1, 0, 0],
+    [-1, 0, 0],
+  ]) {
+    const s = {
+      p: [0, 1.0, 0],
+      q: [0, 0, 0, 1],
+      v: heading.map((c) => c * m(40)),
+      omega: [0, 0, 0],
+      hp: 100,
+      gas: 1,
+      landed: false,
+    };
+    const rig = new PlaneRig(RAPIER);
+    let worst = 0;
+    for (let i = 0; i < 2400; i++) {
+      rig.step(s, none, [], 1 / 60, VEHICLES.fighter);
+      worst = Math.max(worst, s.impact);
+    }
+    assert.ok(
+      Math.abs(s.p[0]) < 4.4 && Math.abs(s.p[2]) < 3.8,
+      'stays inside the walls ' + heading,
+    );
+    assert.ok(
+      worst > PLANE_CRASH_IMPACT,
+      'a wall hit crashes: ' + worst.toFixed(1) + ' ' + heading,
+    );
+  }
+}

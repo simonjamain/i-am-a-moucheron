@@ -160,6 +160,31 @@ export class PhysicsWorld {
     this.decorColliders = decor ? decor.addTo(this.world) : [];
   }
 
+  private walled = false;
+  /**
+   * Invisible walls round the room (inner faces at ±halfX and ±halfZ, game metres, up to
+   * `height`), once per world: the room has no front wall, and an aircraft that leaves it
+   * must meet a contact like any other, not a rule of its own.
+   */
+  addRoomWalls(halfX: number, halfZ: number, height: number): void {
+    if (this.walled) return;
+    this.walled = true;
+    const R = this.R,
+      thick = toPhysics(1),
+      h = toPhysics(height) / 2,
+      hx = toPhysics(halfX),
+      hz = toPhysics(halfZ);
+    const wall = (x: number, z: number, ex: number, ez: number): void => {
+      this.world.createCollider(
+        R.ColliderDesc.cuboid(ex, h, ez).setTranslation(x, h, z).setFriction(0.4),
+      );
+    };
+    wall(hx + thick, 0, thick, hz + 2 * thick);
+    wall(-hx - thick, 0, thick, hz + 2 * thick);
+    wall(0, hz + thick, hx + 2 * thick, thick);
+    wall(0, -hz - thick, hx + 2 * thick, thick);
+  }
+
   /** Mirrors the game's solids; returns true when a solid was added, moved or removed. */
   sync(allColliders: readonly Solid[]): boolean {
     // With the decor's triangles here, the pack props' boxes are left out.

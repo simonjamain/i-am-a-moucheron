@@ -38,7 +38,7 @@ comme au bureau.
 ## Monter et redescendre
 
 - **Pas de plafond de vol.** Le plancher du ciel (`SKY_FLOOR`, 3,95 m du bureau) sépare
-  les deux lieux. En dessous, les murs de la pièce bornent le vol (`outOfFlight`) ;
+  les deux lieux. En dessous, les murs de la pièce bornent le vol (contacts du moteur pour les avions, `outOfFlight` pour les hélicoptères) ;
   au-dessus, le ciel n’a de limite ni en hauteur ni sur les côtés.
 - **La traversée blanchit** (`passageWhiteness`, voile `#altitudeFog` devant l’image) : le
   voile du bureau s’épaissit jusqu’au blanc complet au plancher du ciel, puis s’éclaircit
