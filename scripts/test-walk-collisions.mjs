@@ -6,6 +6,7 @@ import { BASE_WALK_RADIUS, baseBody, footstepsAudible } from '../src/base.ts';
 import { stepWalker } from '../src/sortie.ts';
 import { OFFICE_LAYOUT } from '../src/layout.ts';
 import { ACTOR_UNIT } from '../src/scale.ts';
+import { walkerWorld } from './walker-harness.mjs';
 
 assert.ok(BASE_WALK_RADIUS <= 0.32 / 2, 'office: at most half the former 0.32');
 assert.ok(SOUL_RADIUS <= 0.48 / 2, 'purgatory: at most half the former 0.48');
@@ -59,12 +60,13 @@ const walker = (x) => ({
 });
 // 0.2 from the crate: free now (the former 0.32 radius pushed it back to 0.18).
 const free = walker(0.3);
-stepWalker(free, 1 / 60, [crate]);
+stepWalker(free, 1 / 60, walkerWorld([crate]));
 near(free.x, 0.3, 1e-9, 'passes beside the crate');
 // Closer than the slim radius: still blocked.
 const blocked = walker(0.5 - BASE_WALK_RADIUS / 2);
-stepWalker(blocked, 1 / 60, [crate]);
-near(blocked.x, 0.5 - BASE_WALK_RADIUS, 1e-9, 'walls still block');
+stepWalker(blocked, 1 / 60, walkerWorld([crate]));
+// The character controller stops a contact skin (0.005 actor units) short of the wall.
+near(blocked.x, 0.5 - BASE_WALK_RADIUS, 0.01, 'walls still block');
 // Footsteps: on the ground only, never falling or under the parachute.
 assert.equal(footstepsAudible({ grounded: true, parachute: false }, 2), true);
 assert.equal(footstepsAudible({ grounded: true }, 0.3), false, 'too slow');
@@ -81,7 +83,7 @@ const lander = {
   r: BASE_WALK_RADIUS,
 };
 assert.equal(footstepsAudible(lander, 2), false, 'descending');
-for (let i = 0; i < 600 && !lander.grounded; i++) stepWalker(lander, 1 / 60, []);
+for (let i = 0; i < 600 && !lander.grounded; i++) stepWalker(lander, 1 / 60, walkerWorld([]));
 assert.ok(lander.grounded && !lander.parachute, 'landed');
 assert.equal(footstepsAudible(lander, 2), true, 'steps resume after landing');
 console.log(

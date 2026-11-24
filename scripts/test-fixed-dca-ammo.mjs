@@ -16,6 +16,7 @@ import { makeInstallationCollider } from '../src/station-model.ts';
 import { colliderContainsXZ } from '../src/oriented-collider.ts';
 import { aimGun, stepWalker } from '../src/sortie.ts';
 import { Game } from '../server/game.js';
+import { walkerWorld } from './walker-harness.mjs';
 
 const station = { kind: 'refuel', x: 0, y: 0.01, z: 0 };
 const gun = { kind: 'dca', x: 0, y: 0.01, z: 0.08, slot: 0, ammo: 0 };
@@ -278,7 +279,7 @@ const stationClient = readFileSync('src/client.js', 'utf8');
     new T.Vector3(originX - 1, deckY - 0.1, originZ - 1),
     new T.Vector3(originX + 1, deckY, originZ + 1),
   );
-  stepWalker(body, 1 / 60, [deck, collision]);
+  stepWalker(body, 1 / 60, walkerWorld([deck, collision]));
   assert.equal(body.x, 0, 'Flak beside the spawn must not push the walker');
   assert.equal(body.z, 0);
 }

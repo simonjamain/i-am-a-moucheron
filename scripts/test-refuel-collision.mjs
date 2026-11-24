@@ -4,6 +4,7 @@ import { makeServiceStation, makeRefuelCollider } from '../src/station-model.ts'
 import { stepWalker } from '../src/sortie.ts';
 import { MAP, ACTOR_UNIT } from '../src/scale.ts';
 import { OFFICE_LAYOUT } from '../src/layout.ts';
+import { walkerWorld } from './walker-harness.mjs';
 for (const angle of [Math.PI / 4, -Math.PI / 4, Math.PI / 3]) {
   const station = makeServiceStation(T, 'refuel');
   station.scale.setScalar(MAP.ratio);
@@ -22,7 +23,7 @@ for (const angle of [Math.PI / 4, -Math.PI / 4, Math.PI / 3]) {
     parachute: false,
   };
   const before = [body.x, body.z];
-  stepWalker(body, 1 / 60, [collider]);
+  stepWalker(body, 1 / 60, walkerWorld([collider]));
   assert.ok(
     Math.hypot(body.x - before[0], body.z - before[1]) < 1e-8,
     'empty corner of diagonal station must not push the walker',

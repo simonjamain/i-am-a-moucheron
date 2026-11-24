@@ -67,8 +67,12 @@ dès que le monde du décor existe.
   un triangle ou quand le segment parcouru depuis l'image précédente en traverse
   un (`sweptHitsDecor`) ; il se pose (`resolveLanding`, `src/sortie.ts`) sur la
   surface tournée vers le haut sous lui (`supportBelow`).
-- **Marche** (`stepWalker`) : appui sur la vraie surface ; les faces proches des
-  jambes, de la poitrine et de la tête repoussent le marcheur.
+- **Marche** (`stepWalker`) : le **contrôleur de personnage de Rapier** déplace une
+  capsule dans `WalkerWorld` (`src/walker-world.ts` : sol, boîtes de la coque et des
+  constructions, triangles du décor). Il glisse le long des murs, monte les marches
+  de 0,15 unité d'acteur et reste collé au sol en descendant ; il garde un mince jeu
+  de contact (0,005 unité d'acteur) devant un mur. Gravité, saut et parachute restent
+  les règles de `field-physics.ts`.
 - **Engins Rapier** (avions, hélicoptères, char, camion, Castor) :
   `PhysicsWorld.useDecor` copie les triangles dans le monde de l'engin et en retire
   les boîtes des meubles.

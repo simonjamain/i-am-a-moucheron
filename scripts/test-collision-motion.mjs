@@ -11,6 +11,7 @@ import { resolveLanding, stepWalker } from '../src/sortie.ts';
 import { ACTOR_UNIT, MAP } from '../src/scale.ts';
 import { OFFICE_LAYOUT } from '../src/layout.ts';
 import { VEHICLES } from '../src/fleet.ts';
+import { walkerWorld } from './walker-harness.mjs';
 
 const RAPIER = await loadRapier(() => import('../vendor/rapier.compat.mjs'));
 setActiveLayout('diagonale');
@@ -96,13 +97,13 @@ const walkerAt = (x, y, z) => ({
 });
 const desk = layout.props.find((p) => p.model === 'Desk');
 const onDesk = walkerAt(desk.x, 0.74 + 0.05 * ACTOR_UNIT, desk.z + 0.2);
-stepWalker(onDesk, 1 / 60, boxes, decor);
+stepWalker(onDesk, 1 / 60, walkerWorld(boxes, decor));
 assert.ok(onDesk.grounded && Math.abs(onDesk.y - (0.74 + 0.05 * ACTOR_UNIT)) < 1e-4, 'on the desk');
 const shelf = layout.props.find((p) => p.model === 'Bookshelf');
 const front = decor.raycast([shelf.x, 0.9 * ACTOR_UNIT, shelf.z + 1], [0, 0, -1], 2);
 const tight = walkerAt(front.point[0], 0, front.point[2] + 0.1 * ACTOR_UNIT);
 tight.vz = -1;
-stepWalker(tight, 1 / 60, boxes, decor);
+stepWalker(tight, 1 / 60, walkerWorld(boxes, decor));
 const worldZ = origin.originZ - tight.z * ACTOR_UNIT;
 assert.ok(worldZ - front.point[2] > 0.3 * ACTOR_UNIT, 'pushed out of the shelf');
 

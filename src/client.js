@@ -4,6 +4,7 @@ import { WALKERS } from '/walker-batch.js';
 import { FLYERS, FlyerBatch } from '/flyer-batch.js';
 import { colliderContainsXZ } from '/oriented-collider.js';
 import { SolidQuery } from '/solid-query.js';
+import { WalkerWorld } from '/walker-world.js';
 import { sweptHitsDecor } from '/office-collision.js';
 import { makeServiceStation, animateRadar, makeInstallationCollider } from '/station-model.js';
 import { ReloadHUD, seatReloads, heavyReadyAt, heavyLane, reloadProgress } from '/reload-hud.js';
@@ -371,6 +372,20 @@ function solids() {
     solidWorldSize = colliders.length;
   }
   return solidWorld;
+}
+// Where people walk: the same solids and the decor's triangles for Rapier's character
+// controller (walker-world.ts), refreshed like the ray queries.
+let walkWorld = null,
+  walkWorldSize = -1,
+  walkWorldFrame = -1;
+function walkers() {
+  if (!walkWorld) walkWorld = new WalkerWorld(rapier);
+  if (walkWorldFrame !== frameIndex || walkWorldSize !== colliders.length) {
+    walkWorld.sync(colliders, office.decor);
+    walkWorldFrame = frameIndex;
+    walkWorldSize = colliders.length;
+  }
+  return walkWorld;
 }
 const solidRayOrigin = [0, 0, 0],
   solidRayDirection = [0, 0, 0];
@@ -2789,7 +2804,7 @@ function physicalPurgatory(dt, now) {
   self.inputAt = soulArena.time;
   remoteBodies(soulArena, 'soul');
   advancePurgatory(soulArena, soulArena.time + dt * 1000, id);
-  stepWalker(self, dt, purgColliders, null, PURGATORY_FRAME);
+  stepWalker(self, dt, walkers(), PURGATORY_FRAME);
 
   soulBody = { x: self.x, z: self.z, vx: self.vx, vz: self.vz, face: self.face };
   for (const event of snap.arena?.events || [])
@@ -3504,7 +3519,7 @@ function updateBaseWorld(dt, now) {
   advanceBase(baseArena, baseArena.time + dt * 1000, id);
   if (body && onFoot && !respawnAt && turretIndex < 0) {
     const fromY = body.y ?? OFFICE_LAYOUT.base.deckY;
-    const impact = stepWalker(body, dt, colliders, office.decor);
+    const impact = stepWalker(body, dt, walkers());
     // Off the edge of Saint Pierre's cloud: the fall leads back into the office,
     // above the base (src/sky-passage.ts).
     const w = baseWorld(body),

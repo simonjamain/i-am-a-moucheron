@@ -16,6 +16,7 @@ import {
 } from '../src/sortie.ts';
 import { mergeOwnedArena } from '../src/walk-arena.ts';
 import { createSoul, advancePurgatory } from '../src/purgatory-queue.ts';
+import { walkerWorld } from './walker-harness.mjs';
 assert.equal(BULLET_SPEED, MAP.metres(REFERENCE.bullet));
 assert.equal(FIRE_INTERVAL, 0.06);
 const scene = new T.Scene(),
@@ -47,7 +48,7 @@ const st = AA_STATIONS[0],
     r: 0.32,
     parachute: true,
   };
-for (let i = 0; i < 300; i++) stepWalker(walker, 1 / 60, office.colliders);
+for (let i = 0; i < 300; i++) stepWalker(walker, 1 / 60, walkerWorld(office.colliders));
 assert.ok(Math.abs(walker.y - base.deckY) < ACTOR_UNIT * 0.1);
 assert.equal(walker.parachute, false);
 // The NPC's locally completed service must survive every stale merge until ack.
@@ -73,10 +74,10 @@ console.log(
 );
 
 const falling = { x: 0, z: 0, y: 20, vy: 0, r: 0.32, parachute: false };
-stepWalker(falling, 0.1, []);
+stepWalker(falling, 0.1, walkerWorld([]));
 const firstDrop = 20 - falling.y,
   firstSpeed = falling.vy;
-stepWalker(falling, 0.1, []);
+stepWalker(falling, 0.1, walkerWorld([]));
 assert.ok(20 - falling.y - firstDrop > firstDrop * 2.5, 'free fall must accelerate');
 assert.ok(Math.abs(falling.vy) > Math.abs(firstSpeed) * 1.9);
 const terminal = WALKER_FALL.terminal,
@@ -86,8 +87,8 @@ const analyticY =
 assert.ok(Math.abs(falling.y - analyticY) < 0.001);
 const lowFps = { x: 0, z: 0, y: 2, vy: 0, r: 0.32, parachute: true },
   highFps = { ...lowFps };
-for (let i = 0; i < 30; i++) stepWalker(lowFps, 0.1, []);
-for (let i = 0; i < 360; i++) stepWalker(highFps, 1 / 120, []);
+for (let i = 0; i < 30; i++) stepWalker(lowFps, 0.1, walkerWorld([]));
+for (let i = 0; i < 360; i++) stepWalker(highFps, 1 / 120, walkerWorld([]));
 assert.ok(Math.abs(lowFps.y - highFps.y) < 1e-9);
 assert.ok(Math.abs(lowFps.vy + WALKER_FALL.canopyTerminal) < 0.001);
 const runner = createSoul({ id: 1, entity: 'runner', kind: 'player' }, 0, 1000);
