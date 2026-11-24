@@ -210,23 +210,27 @@ decor.dispose();
 // The client's rays (solidRayDistance, src/client.js): the pack props' boxes give
 // way to their triangles once the decor world is built; shell and floor stay boxes.
 const T = await import('../vendor/three.webgpu.min.js');
-const { rayCollider } = await import('../src/oriented-collider.ts');
 const { createOffice } = await import('../src/office.ts');
 const { createGraphics } = await import('../src/graphics.js');
 const { setActiveLayout } = await import('../src/layouts.ts');
-const { runInNewContext } = await import('node:vm');
-const { readFileSync } = await import('node:fs');
 setActiveLayout('diagonale');
 const scene = new T.Scene();
 const office = createOffice(T, scene, createGraphics(T, scene));
-const source = readFileSync('src/client.js', 'utf8');
-const helper = source.slice(
-  source.indexOf('const solidRayPoint ='),
-  source.indexOf("let me = makePlane('#e3ebc0');"),
-);
-const context = { T, rayCollider, office, colliders: office.colliders };
-runInNewContext(helper + ';this.solidRayDistance = solidRayDistance;', context);
-const { solidRayDistance } = context;
+const { SolidQuery } = await import('../src/solid-query.ts');
+// What the client does (solidRayHit): the boxes in a Rapier world, minus the pack props'
+// boxes once the decor world exists, then the decor's triangles.
+const query = new SolidQuery(RAPIER);
+const solidRayDistance = (ray, far) => {
+  query.sync(office.colliders, office.decor ? (box) => box.decor : undefined);
+  const o = ray.origin.toArray(),
+    d = ray.direction.toArray();
+  let best = query.distance(o, d, far);
+  if (office.decor) {
+    const hit = office.decor.raycast(o, d, Math.min(far, best));
+    if (hit && hit.distance < best) best = hit.distance;
+  }
+  return best <= far ? best : Infinity;
+};
 assert.ok(office.colliders.some((b) => b.decor) && office.colliders.some((b) => !b.decor));
 const ray = (o, d) => new T.Ray(new T.Vector3(...o), new T.Vector3(...d).normalize());
 const cast = (o, d, far = 10) => solidRayDistance(ray(o, d), far);
@@ -240,8 +244,9 @@ assert.ok(before < 0.15 && after > 0.4, `copier slot: ${before} -> ${after}`);
 const seatRay = [chair.frame.x, 2, chair.frame.z];
 assert.ok(Math.abs(2 - cast(seatRay, [0, -1, 0]) - seat.point[1]) < 1e-6, 'chair seat');
 // Shell walls and the floor are still boxes.
-assert.ok(Math.abs(cast([0, 1, 0], [0, -1, 0]) - 1) < 1e-9, 'floor');
-assert.ok(Math.abs(cast([2.5, 2.0, 0], [0, 0, -1]) - 3.6) < 1e-6, 'back wall face');
+// Rapier works in 32-bit floats: a few micrometres of the office are plenty.
+assert.ok(Math.abs(cast([0, 1, 0], [0, -1, 0]) - 1) < 1e-5, 'floor');
+assert.ok(Math.abs(cast([2.5, 2.0, 0], [0, 0, -1]) - 3.6) < 1e-5, 'back wall face');
 assert.equal(cast([0, 3.5, 0], [0, 1, 0]), Infinity, 'nothing above the clouds');
 office.dispose();
 assert.equal(office.decor, null, 'decor world freed with the plan');

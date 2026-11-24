@@ -2,13 +2,22 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { runInNewContext } from 'node:vm';
 import * as T from '../vendor/three.webgpu.min.js';
+import { loadRapier } from '../src/physics-world.ts';
+import { SolidQuery } from '../src/solid-query.ts';
 import { nearestInsectHit, nearestSolidHit } from '../src/insect-hits.ts';
-import { rayCollider } from '../src/oriented-collider.ts';
+import { colliderNormal } from '../src/oriented-collider.ts';
 import { MAP } from '../src/scale.ts';
 import { bounce, grazingAngle, ricochetLimit, MAX_BOUNCES, SPEED_LOSS } from '../src/ricochet.ts';
 import { MATERIALS, vehicleMaterial, insectMaterial } from '../src/materials.ts';
 import { PROJECTILES } from '../src/projectiles.ts';
-import { colliderNormal } from '../src/oriented-collider.ts';
+
+// What the client's solidRayHit does for boxes: Rapier ray queries (src/solid-query.ts).
+const RAPIER = await loadRapier(() => import('../vendor/rapier.compat.mjs'));
+const solidQuery = new SolidQuery(RAPIER);
+const boxHitter = (colliders) => (ray, far) => {
+  solidQuery.sync(colliders);
+  return solidQuery.hit(ray.origin.toArray(), ray.direction.toArray(), far);
+};
 
 const deg = (a) => (a * Math.PI) / 180;
 // Floor (normal up); direction at `a` degrees from the surface, moving along -z and down.
@@ -106,9 +115,10 @@ console.log(
 
 // The live projectile step: a shallow bullet skids off the floor, a steep one hits it.
 const src = readFileSync('src/client.js', 'utf8');
-const step =
-  src.slice(src.indexOf('const solidRayPoint ='), src.indexOf("let me = makePlane('#e3ebc0');")) +
-  src.slice(src.indexOf('function contactOf('), src.indexOf('// Fixed timestep flight:'));
+const step = src.slice(
+  src.indexOf('function contactOf('),
+  src.indexOf('// Fixed timestep flight:'),
+);
 function fly(angle, bounces = 0, slices = 1, owned = true) {
   const model = new T.Object3D();
   model.userData.dispose = () => {};
@@ -137,8 +147,7 @@ function fly(angle, bounces = 0, slices = 1, owned = true) {
     nearestSkyTarget: () => null,
     purgatoryTargets: () => [],
     reportSkyHits: () => {},
-    rayCollider,
-    colliderNormal: (await_box, point) => [0, 1, 0],
+    solidRayHit: boxHitter(colliders),
     nearestSolidHit,
     projectileRay: new T.Raycaster(),
     office: { decor: null },

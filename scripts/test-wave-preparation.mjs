@@ -1,4 +1,3 @@
-import { rayCollider, colliderNormal } from '../src/oriented-collider.ts';
 import assert from 'node:assert/strict';
 import { Game } from '../server/game.js';
 import {
@@ -153,14 +152,24 @@ console.log(
 const { readFileSync } = await import('node:fs');
 const { runInNewContext } = await import('node:vm');
 const T = await import('../vendor/three.webgpu.min.js');
+const { loadRapier } = await import('../src/physics-world.ts');
+const { SolidQuery } = await import('../src/solid-query.ts');
+// What the client's solidRayHit does for boxes: Rapier ray queries (src/solid-query.ts).
+const RAPIER = await loadRapier(() => import('../vendor/rapier.compat.mjs'));
+const solidQuery = new SolidQuery(RAPIER);
+const boxHitter = (colliders) => (ray, far) => {
+  solidQuery.sync(colliders);
+  return solidQuery.hit(ray.origin.toArray(), ray.direction.toArray(), far);
+};
 const { nearestInsectHit, nearestSolidHit } = await import('../src/insect-hits.ts');
 const { bounce } = await import('../src/ricochet.ts');
 const { vehicleMaterial, insectMaterial } = await import('../src/materials.ts');
 const { MAP } = await import('../src/scale.ts');
 const src = readFileSync('src/client.js', 'utf8');
-const step =
-  src.slice(src.indexOf('const solidRayPoint ='), src.indexOf("let me = makePlane('#e3ebc0');")) +
-  src.slice(src.indexOf('function contactOf('), src.indexOf('// Fixed timestep flight:'));
+const step = src.slice(
+  src.indexOf('function contactOf('),
+  src.indexOf('// Fixed timestep flight:'),
+);
 for (const wall of [false, true]) {
   const scene = new T.Scene(),
     insects = new Map(),
@@ -194,8 +203,7 @@ for (const wall of [false, true]) {
     nearestSkyTarget: () => null,
     purgatoryTargets: () => [],
     reportSkyHits: () => {},
-    rayCollider,
-    colliderNormal,
+    solidRayHit: boxHitter(colliders),
     nearestSolidHit,
     projectileRay: new T.Raycaster(),
     office: { decor: null },

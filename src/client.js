@@ -2,7 +2,8 @@ import { prepareCreatureVat } from '/creature-batch.js';
 import { MIDGE } from '/midge-model.js';
 import { WALKERS } from '/walker-batch.js';
 import { FLYERS, FlyerBatch } from '/flyer-batch.js';
-import { rayCollider, colliderContainsXZ, colliderNormal } from '/oriented-collider.js';
+import { colliderContainsXZ } from '/oriented-collider.js';
+import { SolidQuery } from '/solid-query.js';
 import { sweptHitsDecor } from '/office-collision.js';
 import { makeServiceStation, animateRadar, makeInstallationCollider } from '/station-model.js';
 import { ReloadHUD, seatReloads, heavyReadyAt, heavyLane, reloadProgress } from '/reload-hud.js';
@@ -355,42 +356,33 @@ function applyLayout(planId) {
 // floor, constructions, and the pack props until the decor world is built), then
 // the props' real triangles (office.decor, see office-collision.ts). Infinity
 // when nothing is hit. Purgatory boxes have no decor world.
-const solidRayPoint = new T.Vector3();
-function solidRayDistance(ray, far, boxes = colliders) {
-  const decor = boxes === colliders ? office.decor : null;
-  let best = Infinity;
-  for (const box of boxes) {
-    if (decor && box.decor) continue;
-    const p = rayCollider(T, ray, box, solidRayPoint);
-    if (p) best = Math.min(best, ray.origin.distanceTo(p));
+// The boxes live in a Rapier world (solid-query.ts), refreshed once a frame and whenever the
+// list changes length; the props' triangles are queried in the decor world.
+let solidWorld = null,
+  solidWorldSize = -1,
+  solidWorldFrame = -1,
+  frameIndex = 0;
+function solids() {
+  if (!rapier) return null;
+  if (!solidWorld) solidWorld = new SolidQuery(rapier);
+  if (solidWorldFrame !== frameIndex || solidWorldSize !== colliders.length) {
+    solidWorld.sync(colliders, office.decor ? (box) => box.decor : undefined);
+    solidWorldFrame = frameIndex;
+    solidWorldSize = colliders.length;
   }
-  if (decor && best > 0) {
-    const hit = decor.raycast(ray.origin.toArray(), ray.direction.toArray(), Math.min(far, best));
-    if (hit) best = Math.min(best, hit.distance);
-  }
-  return best <= far ? best : Infinity;
+  return solidWorld;
 }
-// Like solidRayDistance, with the unit normal of the surface met (a projectile ricochets on it).
-const solidRayBest = new T.Vector3();
-function solidRayHit(ray, far, boxes = colliders) {
-  const decor = boxes === colliders ? office.decor : null;
-  let best = Infinity,
-    bestBox = null,
-    normal = null;
-  for (const box of boxes) {
-    if (decor && box.decor) continue;
-    const p = rayCollider(T, ray, box, solidRayPoint);
-    if (!p) continue;
-    const d = ray.origin.distanceTo(p);
-    if (d < best) {
-      best = d;
-      bestBox = box;
-      solidRayBest.copy(p);
-    }
-  }
-  if (bestBox) normal = colliderNormal(bestBox, solidRayBest.toArray());
+const solidRayOrigin = [0, 0, 0],
+  solidRayDirection = [0, 0, 0];
+function solidRayHit(ray, far) {
+  ray.origin.toArray(solidRayOrigin);
+  ray.direction.toArray(solidRayDirection);
+  const box = solids()?.hit(solidRayOrigin, solidRayDirection, far);
+  let best = box ? box.distance : Infinity,
+    normal = box ? box.normal : null;
+  const decor = office.decor;
   if (decor && best > 0) {
-    const hit = decor.raycast(ray.origin.toArray(), ray.direction.toArray(), Math.min(far, best));
+    const hit = decor.raycast(solidRayOrigin, solidRayDirection, Math.min(far, best));
     if (hit && hit.distance < best) {
       best = hit.distance;
       normal = hit.normal;
@@ -398,19 +390,18 @@ function solidRayHit(ray, far, boxes = colliders) {
   }
   return best <= far ? { distance: best, normal } : null;
 }
+function solidRayDistance(ray, far) {
+  return solidRayHit(ray, far)?.distance ?? Infinity;
+}
 // Camera clearance (camera-clearance.ts): the nearest solid between a followed point and
 // the wanted eye, in the office or in the purgatory.
-function castCamera(boxes) {
+function castCamera() {
   return (o, d, far) =>
-    solidRayDistance(
-      new T.Ray(new T.Vector3(o.x, o.y, o.z), new T.Vector3(d.x, d.y, d.z)),
-      far,
-      boxes,
-    );
+    solidRayDistance(new T.Ray(new T.Vector3(o.x, o.y, o.z), new T.Vector3(d.x, d.y, d.z)), far);
 }
 // Chase camera: follows the wanted eye (eased), but never ends behind a solid.
 function followClear(target, wanted, velocity, dt) {
-  const cast = castCamera(colliders);
+  const cast = castCamera();
   const eye = clearEye(target, wanted, cast);
   followMoving(camera.position, eye, velocity, 10, dt);
   const safe = clearEye(target, camera.position, cast);
@@ -425,11 +416,7 @@ function aimPlacement(body, origin, direction, reach) {
   if (!decor) return placementAim(body, origin, direction, colliders, reach);
   const boxes = colliders.filter((b) => !b.decor);
   const boxPoint = placementAim(body, origin, direction, boxes, reach);
-  const boxHit = solidRayDistance(
-    new T.Ray(origin.clone(), direction.clone().normalize()),
-    1e3,
-    boxes,
-  );
+  const boxHit = solidRayDistance(new T.Ray(origin.clone(), direction.clone().normalize()), 1e3);
   const hit = decor.raycast(origin.toArray(), direction.clone().normalize().toArray(), boxHit);
   if (!hit) return boxPoint;
   if (hit.normal[1] < 0.7) return null;
@@ -753,7 +740,7 @@ function groundCamera(cam, position, dt, purg = false) {
   } = shoulderCamera(T, position, groundView.yaw, groundView.pitch, groundView.distance, viewScale);
   // Pull the camera in before solid office furniture instead of looking through it, also
   // after the easing (a pulled-in camera must not glide through the obstacle).
-  const cast = castCamera(purg ? purgColliders : colliders);
+  const cast = castCamera();
   desired.copy(clearEye(target, desired, cast));
   if (changed) cam.position.copy(desired);
   else cam.position.lerp(desired, 1 - Math.exp(-14 * dt));
@@ -5364,6 +5351,7 @@ const meTarget = {
 };
 function frame(now) {
   requestAnimationFrame(frame);
+  frameIndex++;
   const dt = Math.min(Math.max(0, (now - prev) / 1000), 0.25);
   prev = now;
   const zoomFov = holdZoom.fov(zoomScope());

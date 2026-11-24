@@ -230,6 +230,7 @@ const files = {
       'enemy-power',
       'fleet',
       'physics-world',
+      'solid-query',
       'castor-physics',
       'tank-physics',
       'aircraft-geometry',
