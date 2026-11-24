@@ -5076,11 +5076,12 @@ function physics(dt) {
   const p = me.position;
   // Through the clouds into Saint Pierre's sky and back (src/sky-passage.ts).
   if (flightPassage(previousPosition.y, p)) previousPosition.copy(p);
-  let collision =
-    !!landing.hard ||
-    (!usePlane && p.y < 0.4 * ACTOR_UNIT) ||
-    (usePlane && landing.impact > 2.5) ||
-    outOfFlight(p, OFFICE_LAYOUT.bounds);
+  // With the physics engine, only its contacts (walls and floor included) hurt: the speed
+  // change of the contact is the damage, and nothing else moves the aircraft. The old step
+  // (before the engine has loaded) keeps its own rules.
+  let collision = usePlane
+    ? landing.impact > 2.5
+    : !!landing.hard || p.y < 0.4 * ACTOR_UNIT || outOfFlight(p, OFFICE_LAYOUT.bounds);
   // Anything solid (boxes, props' triangles) within 0.3 of the point, or crossed by the step; the
   // surface it has just landed on is below that padding.
   if (!collision && !usePlane) {
@@ -5091,10 +5092,9 @@ function physics(dt) {
       !!ground?.segment(previousPosition.toArray(), p.toArray()) ||
       ground?.nearest([p.x, p.y + lift, p.z], pad) != null;
   }
-  if (collision && damageCd <= 0) {
-    // The engine reports the speed change of a real contact; the room's walls and ceiling
-    // (not solids of the physics world) keep the speed-based rule.
-    const impact = usePlane && landing.impact > 2.5 ? landing.impact * 2 : vel.length() / MAP.ratio;
+  // A destroying impact never waits for the cooldown of a lighter one.
+  if (collision && (damageCd <= 0 || (usePlane && landing.hard))) {
+    const impact = usePlane ? landing.impact * 2 : vel.length() / MAP.ratio;
     sound.play(impact > 30 ? 'crash' : 'impact', p, { ref: 12 });
     hp = Math.max(0, hp - impact * 2.1);
     damageCd = 0.65;
@@ -5102,8 +5102,10 @@ function physics(dt) {
       crash();
       return;
     }
-    vel.multiplyScalar(-0.45);
-    p.addScaledVector(vel, 0.2);
+    if (!usePlane) {
+      vel.multiplyScalar(-0.45);
+      p.addScaledVector(vel, 0.2);
+    }
   }
 }
 const radar = $('radar').getContext('2d');
