@@ -25,7 +25,7 @@ for (let i = 0; i < 240; i++)
     T,
     state,
     { direction: [0, 0.3, -Math.sqrt(0.91)] },
-    [],
+    null,
     1 / 120,
     VEHICLES.helicopter,
   );

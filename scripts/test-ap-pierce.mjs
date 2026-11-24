@@ -2,6 +2,7 @@
 // and only stops on the scenery; the HE shell and the mobile AA blast are checked too.
 import assert from 'node:assert/strict';
 import { stepHeavy } from '../src/heavy-sim.js';
+import { solidView } from './solid-harness.mjs';
 import { HEAVY, TANK_MG, CASTOR_GUN_DAMAGE, AP_PIERCE_KEEP, heavyDamage } from '../src/armament.ts';
 import { FLAK, MAP } from '../src/scale.ts';
 
@@ -39,7 +40,7 @@ const run = (solids) => {
     bonus: 1,
   };
   const world = {
-    solids,
+    ...solidView(solids),
     vehicles: [],
     players: [],
     equipment: [],

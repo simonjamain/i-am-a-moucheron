@@ -5,12 +5,13 @@
 // impact report. Assertions about trajectories and damage keep their meaning.
 import { stepHeavy, heavyImpact } from '../src/heavy-sim.js';
 import { swarmFrame } from '../src/waves.ts';
+import { solidView } from './solid-harness.mjs';
 
 export function roomWorld(game, r) {
   const plan = game.plan(r),
     cache = new Map();
   return {
-    solids: game.solids,
+    ...solidView(game.solids),
     roster: plan.roster,
     killed: (i) => r.kills.has(i),
     frames: (time, projectile) => {

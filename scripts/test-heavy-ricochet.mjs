@@ -1,12 +1,13 @@
 import assert from 'node:assert/strict';
 import { stepHeavy } from '../src/heavy-sim.js';
+import { solidView } from './solid-harness.mjs';
 import { MAX_BOUNCES } from '../src/ricochet.ts';
 import { MAP } from '../src/scale.ts';
 
 // Shells with a ricochet angle (ap 10°, he 5°) bounce on the floor in the heavy simulation, as
 // bullets do; the others explode as before. The shooter notes each bounce for the server.
 const world = (extra = {}) => ({
-  solids: [],
+  ...solidView([]),
   roster: [],
   killed: () => false,
   frames: () => [],

@@ -2,10 +2,8 @@ import { prepareCreatureVat } from '/creature-batch.js';
 import { MIDGE } from '/midge-model.js';
 import { WALKERS } from '/walker-batch.js';
 import { FLYERS, FlyerBatch } from '/flyer-batch.js';
-import { colliderContainsXZ } from '/oriented-collider.js';
 import { SolidQuery } from '/solid-query.js';
 import { WalkerWorld } from '/walker-world.js';
-import { sweptHitsDecor } from '/office-collision.js';
 import { makeServiceStation, animateRadar, makeInstallationCollider } from '/station-model.js';
 import { ReloadHUD, seatReloads, heavyReadyAt, heavyLane, reloadProgress } from '/reload-hud.js';
 import { makeBed } from '/bed-model.js';
@@ -115,7 +113,6 @@ import {
   activeLayout,
   setActiveLayout,
   isLayoutId,
-  layoutSolids,
   layoutThumbnail,
 } from '/layouts.js';
 import {
@@ -125,7 +122,6 @@ import {
   stationAccess,
   stationExit,
   resolveLanding,
-  withoutDecor,
   stepWalker,
   GEAR_HEIGHT,
 } from '/sortie.js';
@@ -367,7 +363,7 @@ function solids() {
   if (!rapier) return null;
   if (!solidWorld) solidWorld = new SolidQuery(rapier);
   if (solidWorldFrame !== frameIndex || solidWorldSize !== colliders.length) {
-    solidWorld.sync(colliders, office.decor ? (box) => box.decor : undefined);
+    solidWorld.sync(colliders, office.decor);
     solidWorldFrame = frameIndex;
     solidWorldSize = colliders.length;
   }
@@ -392,18 +388,7 @@ const solidRayOrigin = [0, 0, 0],
 function solidRayHit(ray, far) {
   ray.origin.toArray(solidRayOrigin);
   ray.direction.toArray(solidRayDirection);
-  const box = solids()?.hit(solidRayOrigin, solidRayDirection, far);
-  let best = box ? box.distance : Infinity,
-    normal = box ? box.normal : null;
-  const decor = office.decor;
-  if (decor && best > 0) {
-    const hit = decor.raycast(solidRayOrigin, solidRayDirection, Math.min(far, best));
-    if (hit && hit.distance < best) {
-      best = hit.distance;
-      normal = hit.normal;
-    }
-  }
-  return best <= far ? { distance: best, normal } : null;
+  return solids()?.hit(solidRayOrigin, solidRayDirection, far) ?? null;
 }
 function solidRayDistance(ray, far) {
   return solidRayHit(ray, far)?.distance ?? Infinity;
@@ -422,21 +407,10 @@ function followClear(target, wanted, velocity, dt) {
   const safe = clearEye(target, camera.position, cast);
   camera.position.set(safe.x, safe.y, safe.z);
 }
-// Placement aim on top faces (placement-aim.ts), on the props' real triangles once
-// the decor world is built: a top face of a prop (normal up) is a candidate
-// point, any other face of a prop blocks the aim. Shell, floor and constructions
-// stay boxes.
+// Placement aim on top faces (placement-aim.ts): the boxes and, once the decor world is
+// built, the props' real triangles (solid-query.ts).
 function aimPlacement(body, origin, direction, reach) {
-  const decor = office.decor;
-  if (!decor) return placementAim(body, origin, direction, colliders, reach);
-  const boxes = colliders.filter((b) => !b.decor);
-  const boxPoint = placementAim(body, origin, direction, boxes, reach);
-  const boxHit = solidRayDistance(new T.Ray(origin.clone(), direction.clone().normalize()), 1e3);
-  const hit = decor.raycast(origin.toArray(), direction.clone().normalize().toArray(), boxHit);
-  if (!hit) return boxPoint;
-  if (hit.normal[1] < 0.7) return null;
-  const [x, y, z] = hit.point;
-  return Math.hypot(x - body.x, z - body.z) <= reach + 1e-8 ? { x, y, z } : null;
+  return placementAim(body, origin, direction, solids(), reach);
 }
 let me = makePlane('#e3ebc0');
 me.scale.setScalar(ACTOR_UNIT);
@@ -1543,7 +1517,7 @@ function accept(s, force = false) {
         e,
         vehicleModel({ id: e.vehicle, type: e.type, supplies: { sequence: 0 } }),
         Date.now() + clockOffset,
-        colliders,
+        solids(),
       );
     if (e.kind === 'piercing') hitEffects.burst(new T.Vector3().fromArray(e.p), camera);
     // Issue #108: Castor auto-turret shots are visible to everyone, from the
@@ -1869,7 +1843,7 @@ const groundDefenseUI = new GroundDefenseUI({
     const ray = castorTopView()
       ? topViewRay(T, camera, topCursor)
       : { origin: camera.position, direction: camera.getWorldDirection(new T.Vector3()) };
-    return placementAim(builder, ray.origin, ray.direction, colliders, 0.24);
+    return aimPlacement(builder, ray.origin, ray.direction, 0.24);
   },
   foot: () => {
     const builder = castorBuilder();
@@ -4111,7 +4085,7 @@ function updateOthers(dt) {
       );
     }
     if (g.userData.suspension)
-      updateSuspension(g, g.userData.suspension, g.userData.tracks, colliders, TRACK_HALF, dt);
+      updateSuspension(g, g.userData.suspension, g.userData.tracks, solids(), TRACK_HALF, dt);
     if (g.userData.runningGear) {
       const forward = new T.Vector3(0, 0, -1).applyQuaternion(g.quaternion);
       const velocity = isSelf ? vel : new T.Vector3().fromArray(motion.v);
@@ -4898,7 +4872,7 @@ function physics(dt) {
       omega
         .fromArray(state.omega)
         .applyQuaternion(me.quaternion.clone().fromArray(state.q).invert());
-    } else stepHelicopter(T, state, heliControls, colliders, dt, VEHICLES[myVehicle.type]);
+    } else stepHelicopter(T, state, heliControls, solids(), dt, VEHICLES[myVehicle.type]);
     {
       const at = { x: state.p[0], y: state.p[1], z: state.p[2] };
       if (flightPassage(me.position.y, at)) state.p = [at.x, at.y, at.z];
@@ -5049,9 +5023,8 @@ function physics(dt) {
         gear: VEHICLES[myVehicle?.type || 'fighter'].gear,
       },
       previousPosition,
-      colliders,
+      solids(),
       dt,
-      office.decor,
     );
     landed = landing.landed;
     if (landed) {
@@ -5092,30 +5065,16 @@ function physics(dt) {
     (!usePlane && p.y < 0.4 * ACTOR_UNIT) ||
     (usePlane && landing.impact > 2.5) ||
     outOfFlight(p, OFFICE_LAYOUT.bounds);
-  // Props collide on their real triangles once the decor world is built: the
-  // padded point touching a triangle, or the step's segment crossing one.
-  if (!collision && !usePlane && office.decor)
-    collision = sweptHitsDecor(
-      office.decor,
-      previousPosition.toArray(),
-      p.toArray(),
-      0.3 * ACTOR_UNIT,
-    );
-  if (!collision && !usePlane)
-    for (const b of withoutDecor(colliders, office.decor))
-      if (
-        !(
-          landed &&
-          Math.abs(p.y - (b.max.y + VEHICLES[myVehicle?.type || 'fighter'].gear)) < 0.2 * ACTOR_UNIT
-        ) &&
-        b
-          .clone()
-          .expandByScalar(0.3 * ACTOR_UNIT)
-          .containsPoint(p)
-      ) {
-        collision = true;
-        break;
-      }
+  // Anything solid (boxes, props' triangles) within 0.3 of the point, or crossed by the step; the
+  // surface it has just landed on is below that padding.
+  if (!collision && !usePlane) {
+    const ground = solids();
+    const pad = 0.3 * ACTOR_UNIT,
+      lift = landed ? 0.2 * ACTOR_UNIT : 0;
+    collision =
+      !!ground?.segment(previousPosition.toArray(), p.toArray()) ||
+      ground?.nearest([p.x, p.y + lift, p.z], pad) != null;
+  }
   if (collision && damageCd <= 0) {
     // The engine reports the speed change of a real contact; the room's walls and ceiling
     // (not solids of the physics world) keep the speed-based rule.
@@ -5386,7 +5345,7 @@ function frame(now) {
   hitEffects.update(dt, camera);
   bloodEffects.update(dt);
   combatEffects.update(dt, camera);
-  crashEffects.update(dt, colliders);
+  crashEffects.update(dt, solids());
   if (joined) {
     renderDeliveries();
     enemies(Date.now());
@@ -5871,13 +5830,12 @@ function updateFallingEnemies(dt) {
     c.v.y -= MAP.metres(REFERENCE.gravity) * dt;
     c.v.multiplyScalar(Math.exp(-0.35 * dt));
     c.g.position.addScaledVector(c.v, dt);
-    let floor = 0;
-    for (const b of colliders)
-      if (
-        colliderContainsXZ(b, c.g.position.x, c.g.position.z) &&
-        b.max.y <= previous + INSECT_SCALE
-      )
-        floor = Math.max(floor, b.max.y);
+    // The top of whatever it falls onto, from just above where it was.
+    const from = previous + INSECT_SCALE;
+    const floor = Math.max(
+      0,
+      solids()?.surfaceBelow(c.g.position.x, from, c.g.position.z, from + 1, 0) ?? 0,
+    );
     if (c.g.position.y < floor + INSECT_SCALE * 0.25) {
       c.g.position.y = floor + INSECT_SCALE * 0.25;
       c.v.set(0, 0, 0);
@@ -6247,29 +6205,9 @@ function heavyWorld() {
     players.push({ id: p.id, p: [w.x, w.y + MAP.metres(0.9), w.z] });
   }
   return {
-    // Props are hit on their triangles (decorRay) once the decor world exists.
-    solids: office.decor ? layoutSolids().filter((b) => !b.decor) : layoutSolids(),
-    decorRay: (a, b) => {
-      const decor = office.decor;
-      if (!decor) return null;
-      const length = Math.hypot(b[0] - a[0], b[1] - a[1], b[2] - a[2]);
-      if (length < 1e-12) return null;
-      const dir = [(b[0] - a[0]) / length, (b[1] - a[1]) / length, (b[2] - a[2]) / length];
-      const hit = decor.raycast(a, dir, length);
-      return hit ? hit.distance / length : null;
-    },
-    // The same ray, with the prop's surface normal (a shell with a ricochet angle bounces on it).
-    decorHit: (a, b) => {
-      const decor = office.decor;
-      if (!decor) return null;
-      const length = Math.hypot(b[0] - a[0], b[1] - a[1], b[2] - a[2]);
-      if (length < 1e-12) return null;
-      const dir = [(b[0] - a[0]) / length, (b[1] - a[1]) / length, (b[2] - a[2]) / length];
-      const hit = decor.raycast(a, dir, length);
-      return hit ? { t: hit.distance / length, normal: hit.normal } : null;
-    },
-    // Distance to the nearest prop triangle within `radius`, or null (proximity fuses).
-    decorNearest: (point, radius) => office.decor?.nearest(point, radius)?.distance ?? null,
+    // Boxes and props (their triangles once the decor world exists), in Rapier (solid-query.ts).
+    solidSegment: (a, b) => solids()?.segment(a, b) ?? null,
+    solidNearest: (point, radius) => solids()?.nearest(point, radius) ?? null,
     roster,
     killed: (i) => kills.has(i),
     frames: (time, projectile) => {

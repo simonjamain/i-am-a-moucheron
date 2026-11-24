@@ -37,21 +37,24 @@ dès que le monde du décor existe.
 
 ## Ce qui utilise les triangles
 
-- **Rayons du client** : impacts des tirs, exposition aux explosions, recul de la
-  caméra, visée de l'hélicoptère. `solidRayHit` (`src/client.js`) prend l'impact
-  le plus proche parmi les boîtes restantes (coque, sol, constructions, purgatoire) et
-  les triangles. Les boîtes sont interrogées dans un monde Rapier (`SolidQuery`,
-  `src/solid-query.ts`), resynchronisé une fois par image et quand la liste change de
-  taille ; le résultat est le même que l'ancien test boîte par boîte (comparé dans
-  `scripts/test-solid-query.mjs`). Un rayon coûte environ 5 µs : avec la dizaine de boîtes
-  du bureau, ce n'est pas plus rapide que l'ancien parcours (environ 1 µs), l'intérêt est
-  de n'avoir qu'un seul moteur de requêtes. Les débris d'un avion écrasé
-  (`crash-effects.ts`) testent encore leurs boîtes à la main.
-- **Projectiles lourds** : obus, roquettes et missiles avancent par sous-pas de
-  1/120 s ; `stepHeavy` (`src/heavy-sim.js`) tire un rayon le long de chaque
-  sous-pas (`world.decorRay`). Une fusée de proximité armée lit la distance au
-  triangle le plus proche (`world.decorNearest`) et explose quand cette distance,
-  entrée dans le rayon de proximité, recommence à croître. Ennemis, joueurs,
+- **Requêtes sur les solides** : `SolidQuery` (`src/solid-query.ts`) est le point d'entrée
+  unique des rayons, segments et distances au plus proche. Il interroge dans un monde
+  Rapier les boîtes (coque, sol, constructions, purgatoire) et, une fois le monde du
+  décor construit, les triangles des meubles (leurs boîtes sont alors ignorées). Le client
+  le resynchronise une fois par image et quand la liste change de taille ; `hit` (rayon),
+  `segment` (pas d'un projectile), `nearest` (distance au plus proche) et `surfaceBelow`
+  (dessus de ce qui se trouve sous un point) en sont les réponses, comparées à l'ancien
+  test boîte par boîte dans `scripts/test-solid-query.mjs`. Un rayon coûte environ 5 µs :
+  l'intérêt est de n'avoir qu'un seul moteur, non un gain de vitesse.
+- **Rayons du client** : impacts des tirs, exposition aux explosions, recul de la caméra,
+  visée de l'hélicoptère, visée de la pose (`placementAim`).
+- **Projectiles lourds** : obus, roquettes et missiles avancent par sous-pas de 1/120 s ;
+  `stepHeavy` (`src/heavy-sim.js`) demande au monde le premier solide rencontré sur chaque
+  sous-pas (`world.solidSegment`, normale comprise pour le ricochet). Une fusée de
+  proximité armée lit la distance au solide le plus proche (`world.solidNearest`) et explose
+  quand cette distance, entrée dans le rayon de proximité, recommence à croître ; le point
+  d'explosion est alors le passage le plus proche de la course (recherche par
+  échantillonnage). L'obstruction d'un souffle est le même segment. Ennemis, joueurs,
   véhicules et postes restent des sphères ou des coques.
 - **Pose d'équipement** : `supportedPlacement` (`src/equipment.ts`) prend un appui
   `DecorSupport`. Le client cherche une surface plane et horizontale sous le centre
@@ -63,10 +66,12 @@ dès que le monde du décor existe.
   équipement ordinaire sur le clavier. Côté serveur, `decorTrust` accepte la
   hauteur envoyée si elle tombe dans la boîte d'un meuble sous le centre
   ([confiance](trust-model.md)).
-- **Vol** : l'avion s'écrase quand son point, gonflé de 0,3 unité d'acteur, touche
-  un triangle ou quand le segment parcouru depuis l'image précédente en traverse
-  un (`sweptHitsDecor`) ; il se pose (`resolveLanding`, `src/sortie.ts`) sur la
-  surface tournée vers le haut sous lui (`supportBelow`).
+- **Vol** : l'avion s'écrase quand son point, gonflé de 0,3 unité d'acteur, touche un solide
+  (`SolidQuery.nearest`) ou quand le segment parcouru depuis l'image précédente en traverse
+  un (`SolidQuery.segment`) ; il se pose (`resolveLanding`, `src/sortie.ts`) sur le dessus de
+  ce qui se trouve sous lui (`surfaceBelow`). Le pas de l'hélicoptère d'avant le
+  chargement de Rapier (`stepHelicopter`), les débris d'un avion écrasé et la suspension des
+  chenilles utilisent les mêmes requêtes.
 - **Marche** (`stepWalker`) : le **contrôleur de personnage de Rapier** déplace une
   capsule dans `WalkerWorld` (`src/walker-world.ts` : sol, boîtes de la coque et des
   constructions, triangles du décor). Il glisse le long des murs, monte les marches
@@ -82,8 +87,6 @@ dès que le monde du décor existe.
 - Calculs du serveur seul : largages (`airdrop.ts`), livraisons (`delivery.ts`),
   apparitions sur les lits (`beds.ts`), constructions du Castor.
 - Navigation des insectes au sol (`ground-defense.ts`, `ground-creatures.ts`).
-- Effets visuels : débris des crashs (`crash-effects.ts`), suspension des chenilles
-  (`track-suspension.ts`).
 
 ## Affichage
 

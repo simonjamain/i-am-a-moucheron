@@ -76,7 +76,36 @@ assert.ok(query.distance([ax, ay, az], [0, 0, 1], toWorld(10)) < Infinity, 'move
 solids.pop();
 query.sync(solids);
 assert.equal(query.distance([ax, ay, az], [0, 0, 1], toWorld(10)), Infinity, 'removed box');
-query.sync(solids, () => true);
+// Segments and nearest distances use the same solids.
+query.sync(solids);
+const wall = query.segment([0, ay, toWorld(-30)], [0, ay, toWorld(30)]);
+const wallRay = query.hit([0, ay, toWorld(-30)], [0, 0, 1], toWorld(60));
+assert.ok(wall && wallRay, 'a segment across the room meets a solid');
+assert.ok(
+  Math.abs(wall.t * toWorld(60) - wallRay.distance) < 1e-6,
+  'segment fraction = ray distance',
+);
+assert.equal(query.segment([0, ay, toWorld(-30)], [0, ay, toWorld(-30)]), null, 'empty segment');
+const where = [0, ay, toWorld(-30) + wallRay.distance];
+assert.ok(
+  query.nearest([where[0], where[1], where[2] - toWorld(0.5)], toWorld(1)) <= toWorld(0.5) + 1e-4,
+  'nearest distance',
+);
+assert.equal(query.nearest([0, toWorld(500), 0], toWorld(1)), null, 'nothing within the radius');
+// The props' triangles come from the decor world, and their boxes then drop out.
+solids.forEach((box) => (box.decor = true));
+const prop = {
+  raycast: () => ({ distance: 3, normal: [0, 1, 0] }),
+  nearest: () => ({ distance: 2 }),
+};
+query.sync(solids, prop);
+assert.equal(
+  query.hit([0, ay, toWorld(-30)], [0, 0, 1], toWorld(50)).distance,
+  3,
+  'decor triangles',
+);
+assert.equal(query.nearest([0, ay, 0], 5), 2, 'decor nearest');
+query.sync(solids, { raycast: () => null, nearest: () => null });
 assert.equal(query.hit([0, ay, toWorld(-30)], [0, 0, 1], toWorld(50)), null, 'skipped boxes');
 query.dispose();
 

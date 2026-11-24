@@ -73,26 +73,26 @@ assert.equal(contextKey({ type: 'helicopter' }, 'ControlLeft'), null, 'the missi
 assert.equal(cursorStats({ vehicle: { type: 'helicopter' }, hp: 200, ammo: 0, speed: 0 }).hp, 200);
 let state = { ...vehiclePad('helicopter'), p: [0, 1.5, 0], q: [0, 0, 0, 1], v: [0, 0, 0] };
 for (let i = 0; i < 1200; i++)
-  stepHelicopter(T, state, { collective: 0 }, [], 1 / 120, VEHICLES.helicopter);
+  stepHelicopter(T, state, { collective: 0 }, null, 1 / 120, VEHICLES.helicopter);
 near(state.p[1], 1.5);
 assert.equal(state.hp, 200);
 for (let i = 0; i < 120; i++)
-  stepHelicopter(T, state, { collective: 1 }, [], 1 / 120, VEHICLES.helicopter);
+  stepHelicopter(T, state, { collective: 1 }, null, 1 / 120, VEHICLES.helicopter);
 assert.ok(state.p[1] > 1.5);
 assert.ok(state.v[1] > 0);
 const afterClimb = state.p[1];
 for (let i = 0; i < 1200; i++)
-  stepHelicopter(T, state, { collective: 0 }, [], 1 / 120, VEHICLES.helicopter);
+  stepHelicopter(T, state, { collective: 0 }, null, 1 / 120, VEHICLES.helicopter);
 const stableY = state.p[1];
 for (let i = 0; i < 240; i++)
-  stepHelicopter(T, state, { collective: 0 }, [], 1 / 120, VEHICLES.helicopter);
+  stepHelicopter(T, state, { collective: 0 }, null, 1 / 120, VEHICLES.helicopter);
 near(state.p[1], stableY, 1e-5);
 assert.ok(stableY > afterClimb);
 state.v = [MAP.metres(10), 0, 0];
-for (let i = 0; i < 240; i++) stepHelicopter(T, state, {}, [], 1 / 120, VEHICLES.helicopter);
+for (let i = 0; i < 240; i++) stepHelicopter(T, state, {}, null, 1 / 120, VEHICLES.helicopter);
 assert.ok(state.v[0] > 0 && state.v[0] < MAP.metres(10));
 state.fuelAvailable = false;
-stepHelicopter(T, state, { collective: 1 }, [], 1 / 120, VEHICLES.helicopter);
+stepHelicopter(T, state, { collective: 1 }, null, 1 / 120, VEHICLES.helicopter);
 assert.ok(state.v[1] < 0);
 const aim = clampHeliAim({ yaw: 3, pitch: 1 });
 assert.equal(aim.yaw, 3);
@@ -220,7 +220,8 @@ resolveHeavy(game, room, { now: now + 20 });
 assert.equal(room.effects.length, effects, 'no explosion on radius entry');
 resolveHeavy(game, room, { now: now + 80 });
 assert.equal(room.effects.length, effects + 1, 'one explosion at closest passage');
-assert.ok(Math.abs(shot.p[0] - 1.01) < 0.0001, 'closest passage includes gravity');
+// Rapier measures distances in 32 bits: the end of the plateau is found within a millimetre.
+assert.ok(Math.abs(shot.p[0] - 1.01) < 0.001, 'closest passage includes gravity');
 resolveHeavy(game, room, { now: now + 100 });
 assert.equal(room.effects.length, effects + 1);
 game.solids = [];

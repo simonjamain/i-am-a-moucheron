@@ -217,19 +217,11 @@ setActiveLayout('diagonale');
 const scene = new T.Scene();
 const office = createOffice(T, scene, createGraphics(T, scene));
 const { SolidQuery } = await import('../src/solid-query.ts');
-// What the client does (solidRayHit): the boxes in a Rapier world, minus the pack props'
-// boxes once the decor world exists, then the decor's triangles.
+// What the client does (solidRayHit): the boxes and the decor's triangles in one query.
 const query = new SolidQuery(RAPIER);
 const solidRayDistance = (ray, far) => {
-  query.sync(office.colliders, office.decor ? (box) => box.decor : undefined);
-  const o = ray.origin.toArray(),
-    d = ray.direction.toArray();
-  let best = query.distance(o, d, far);
-  if (office.decor) {
-    const hit = office.decor.raycast(o, d, Math.min(far, best));
-    if (hit && hit.distance < best) best = hit.distance;
-  }
-  return best <= far ? best : Infinity;
+  query.sync(office.colliders, office.decor);
+  return query.distance(ray.origin.toArray(), ray.direction.toArray(), far);
 };
 assert.ok(office.colliders.some((b) => b.decor) && office.colliders.some((b) => !b.decor));
 const ray = (o, d) => new T.Ray(new T.Vector3(...o), new T.Vector3(...d).normalize());

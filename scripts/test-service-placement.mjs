@@ -3,6 +3,7 @@ import * as T from '../vendor/three.webgpu.min.js';
 import { supportedPlacement } from '../src/equipment.ts';
 import { stepHelicopter } from '../src/helicopter.ts';
 import { VEHICLES, vehiclePad, vehicleEntry, vehicleAccess } from '../src/fleet.ts';
+import { solidQuery } from './solid-harness.mjs';
 const floor = { min: { x: -1, y: -0.1, z: -1 }, max: { x: 1, y: 0, z: 1 } };
 const point = { x: 0, y: 0, z: 0 };
 const failures = [];
@@ -30,7 +31,8 @@ check('station body still blocks placement', () =>
 );
 check('new helicopter stays boardable after neutral physics', () => {
   const state = { ...vehiclePad('helicopter'), p: [0, VEHICLES.helicopter.gear + 0.00005, 0] };
-  for (let i = 0; i < 120; i++) stepHelicopter(T, state, {}, [floor], 1 / 120, VEHICLES.helicopter);
+  for (let i = 0; i < 120; i++)
+    stepHelicopter(T, state, {}, solidQuery([floor]), 1 / 120, VEHICLES.helicopter);
   assert.equal(state.landed, true);
   for (const seat of VEHICLES.helicopter.seats) {
     const e = vehicleEntry({ type: 'helicopter', state }, seat);

@@ -85,7 +85,7 @@ for (const [height, alive, x = 0] of [
 ]) {
   for (const type of ['helicopter']) {
     const state = { ...vehiclePad(type), p: [x, height, 0], q: [0, 0, 0, 1], v: [0, 0, 0] };
-    stepHelicopter(T, state, {}, [], 1 / 120, VEHICLES[type]);
+    stepHelicopter(T, state, {}, null, 1 / 120, VEHICLES[type]);
     assert.equal(state.hp > 0, alive, `${type} at ${height} m, x ${x}`);
   }
 }

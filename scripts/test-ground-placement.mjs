@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { groundPlacement } from '../src/ground-placement.ts';
 import { newGroundDefense, groundCommand } from '../src/ground-defense-state.ts';
+import { solidQuery } from './solid-harness.mjs';
 const defense = newGroundDefense();
 const foot = { x: 0, z: 0, y: 0, face: 0, grounded: true };
 const make = (overrides = {}) =>
@@ -194,27 +195,25 @@ const floor = { min: { x: -4, y: -0.1, z: -4 }, max: { x: 4, y: 0, z: 4 } };
 const eye = { x: 0, y: 0.04, z: 0.04 };
 const direction = { x: 0, y: -1, z: -2 };
 const body = { x: 0, y: 0, z: 0, face: 0, grounded: true };
-const aimed = placementAim(body, eye, direction, [floor], 0.24);
-assert.deepEqual(aimed, { x: 0, y: 0, z: -0.04 });
-assert.deepEqual(placementAim({ ...body, face: 2 }, eye, direction, [floor], 0.24), aimed);
-assert.equal(placementAim(body, eye, { x: 0, y: 1, z: 0 }, [floor], 0.24), null);
-assert.equal(placementAim(body, eye, { x: 1, y: 0, z: 0 }, [floor], 0.24), null);
-assert.equal(placementAim(body, eye, direction, [floor], 0.027), null);
-const obstruction = { min: { x: -0.01, y: 0, z: 0 }, max: { x: 0.01, y: 0.03, z: 0.01 } };
+const ground = solidQuery([floor]),
+  blocked = solidQuery([floor, obstructionBox()]);
+function obstructionBox() {
+  return { min: { x: -0.01, y: 0, z: 0 }, max: { x: 0.01, y: 0.03, z: 0.01 } };
+}
+const aimed = placementAim(body, eye, direction, ground, 0.24);
+// Rapier answers in 32 bits: the aimed point is within a micrometre of the exact one.
+const near = (a, b) => ['x', 'y', 'z'].every((k) => Math.abs(a[k] - b[k]) < 1e-7);
+assert.ok(near(aimed, { x: 0, y: 0, z: -0.04 }), JSON.stringify(aimed));
+assert.deepEqual(placementAim({ ...body, face: 2 }, eye, direction, ground, 0.24), aimed);
+assert.equal(placementAim(body, eye, { x: 0, y: 1, z: 0 }, ground, 0.24), null);
+assert.equal(placementAim(body, eye, { x: 1, y: 0, z: 0 }, ground, 0.24), null);
+assert.equal(placementAim(body, eye, direction, ground, 0.027), null);
 assert.equal(
-  placementAim(body, eye, direction, [floor, obstruction], 0.24),
+  placementAim(body, eye, direction, blocked, 0.24),
   null,
   'side blocks target behind it',
 );
-assert.ok(
-  placementAim(
-    body,
-    { x: 0, y: 0.04, z: 0.005 },
-    { x: 0, y: -1, z: 0 },
-    [floor, obstruction],
-    0.24,
-  ),
-);
+assert.ok(placementAim(body, { x: 0, y: 0.04, z: 0.005 }, { x: 0, y: -1, z: 0 }, blocked, 0.24));
 for (const mode of ['sugar', 'repair', 'remove']) {
   const a = groundPlacement({ foot: body, mode, aim: aimed, defense, dollars: 100 });
   const b = groundPlacement({

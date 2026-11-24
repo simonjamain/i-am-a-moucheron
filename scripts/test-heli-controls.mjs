@@ -49,7 +49,7 @@ function client(key) {
     heliCollective: 0,
     heliRotorPower: 1,
     mouseDirection: new T.Vector3(0, 0, -1),
-    colliders: [],
+    solids: () => null,
     pad: { fire: false },
     mouseFire: false,
     shooting: false,

@@ -1,11 +1,9 @@
-import { colliderContainsXZ } from './oriented-collider.ts';
-import { segmentBox } from './swept-geometry.ts';
+import type { SolidProbe } from './solid-query.ts';
 import { MAP, ACTOR_UNIT } from './scale.ts';
 import { PROJECTILES } from './projectiles.ts';
 import { OFFICE_LAYOUT } from './layout.ts';
 import { outOfFlight } from './sky-passage.ts';
 import { VEHICLE_ANCHORS } from './vehicle-anchors.ts';
-import type { Collider } from './oriented-collider.ts';
 import type { Three, Vec3 } from './types.ts';
 
 /** Gunner aim: yaw (any angle, wrapped) and pitch (clamped to the turret range). */
@@ -106,7 +104,7 @@ export function stepHelicopter<S extends HelicopterState>(
   T: Three,
   state: S,
   controls: HelicopterControls,
-  colliders: readonly Collider[],
+  ground: SolidProbe | null,
   dt: number,
   profile: HelicopterProfile,
 ): S {
@@ -184,10 +182,10 @@ export function stepHelicopter<S extends HelicopterState>(
   }
   if (powered && v.length() > max) v.setLength(max);
   p.addScaledVector(v, dt);
-  let support = 0;
-  for (const b of colliders)
-    if (before.y - profile.gear >= b.max.y - MAP.metres(0.15) && colliderContainsXZ(b, p.x, p.z))
-      support = Math.max(support, b.max.y);
+  // The top of whatever stands under it, from just above where its skids were.
+  const rise = MAP.metres(0.15),
+    start = before.y - profile.gear + rise;
+  const support = ground ? Math.max(0, ground.surfaceBelow(p.x, start, p.z, start + 1, 0)) : 0;
   let landed = false;
   if (p.y - profile.gear <= support + (state.landed ? MAP.metres(0.03) : 1e-9) && v.y <= 0) {
     if (v.y < -MAP.metres(8)) state.hp = 0;
@@ -197,12 +195,15 @@ export function stepHelicopter<S extends HelicopterState>(
     v.z *= Math.exp(-dt * 4);
     landed = true;
   }
+  // A solid met on the way is a crash, except the surface it has just landed on.
+  const wall = ground?.segment(before.toArray(), p.toArray());
   if (
-    colliders.some(
-      (b) =>
-        segmentBox(before.toArray(), p.toArray(), b) !== null &&
-        !(landed && Math.abs(b.max.y - support) < 1e-6),
-    ) ||
+    (wall &&
+      !(
+        landed &&
+        wall.normal[1] > 0.99 &&
+        Math.abs(before.y + (p.y - before.y) * wall.t - support) < MAP.metres(0.01)
+      )) ||
     // No ceiling: above the clouds lies Saint Pierre's sky (src/sky-passage.ts).
     outOfFlight(p, OFFICE_LAYOUT.bounds)
   )
