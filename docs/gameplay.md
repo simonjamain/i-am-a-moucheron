@@ -53,8 +53,13 @@ pas en jeu.
    neutres et derniers gaz.
 4. **Sortir** (F) : à l’arrêt au sol, le joueur apparaît à la portière, contre la
    coque à hauteur de son siège (`doorOffset`, `EXIT_LIFT` dans `src/fleet.ts`,
-   même fonction au client et au serveur) ; en mouvement ou en vol, à la position
-   de l’engin avec sa vitesse, en chute libre.
+   même fonction au client et au serveur). Si une personne ne peut pas y tenir debout
+   (un écran, une lampe ou une boîte à la portière, ou le bord du bureau), il apparaît
+   sur l’emplacement libre le plus proche, cherché autour de l’engin en partant de la
+   portière, hors de la coque (`exitSpot`, `src/exit-spot.ts`, avec les requêtes du
+   décor : surface plane dessous, place pour le corps dessus ; test sur le vrai bureau
+   dans `test-exit-spot.mjs`). En mouvement ou en vol, à la position de l’engin avec sa
+   vitesse, en chute libre.
 5. **Acheter et poser** depuis l’atelier (P) ; emprunter au banquier (N).
 6. **Mourir** : passage au purgatoire, file de Saint Pierre, trois papiers, puis
    retour au départ ou au lit choisi.

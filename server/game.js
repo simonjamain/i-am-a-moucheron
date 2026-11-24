@@ -29,6 +29,7 @@ import {
 } from '../src/layouts.ts';
 import { loadRapier } from '../src/physics-world.ts';
 import { ParkedHost, isHosted } from '../src/parked-host.ts';
+import { exitSpot } from '../src/exit-spot.ts';
 import { DecorCollision } from '../src/office-collision.ts';
 import { MODEL_DATA } from '../src/office-pack-data.ts';
 import {
@@ -2061,7 +2062,8 @@ export class Game {
         v.hosted = true;
         v.state = { ...v.state, gas: 0 };
       }
-      const e = vehicleEntry(v, p.seat);
+      // At the door, or the nearest free spot when a prop or a desk's edge is there (exit-spot.ts).
+      const e = grounded ? exitSpot(v, p.seat, decorFor(r.layout)) : vehicleEntry(v, p.seat);
       const occupants = [p];
       for (const mate of occupants) {
         const pos = grounded ? e : { x: v.state.p[0], y: v.state.p[1], z: v.state.p[2] };
