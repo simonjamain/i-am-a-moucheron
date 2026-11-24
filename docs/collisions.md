@@ -38,9 +38,15 @@ dès que le monde du décor existe.
 ## Ce qui utilise les triangles
 
 - **Rayons du client** : impacts des tirs, exposition aux explosions, recul de la
-  caméra, visée de l'hélicoptère. `solidRayDistance` (`src/client.js`) prend
-  l'impact le plus proche parmi les boîtes restantes (coque, sol, constructions)
-  et les triangles.
+  caméra, visée de l'hélicoptère. `solidRayHit` (`src/client.js`) prend l'impact
+  le plus proche parmi les boîtes restantes (coque, sol, constructions, purgatoire) et
+  les triangles. Les boîtes sont interrogées dans un monde Rapier (`SolidQuery`,
+  `src/solid-query.ts`), resynchronisé une fois par image et quand la liste change de
+  taille ; le résultat est le même que l'ancien test boîte par boîte (comparé dans
+  `scripts/test-solid-query.mjs`). Un rayon coûte environ 5 µs : avec la dizaine de boîtes
+  du bureau, ce n'est pas plus rapide que l'ancien parcours (environ 1 µs), l'intérêt est
+  de n'avoir qu'un seul moteur de requêtes. Les débris d'un avion écrasé
+  (`crash-effects.ts`) testent encore leurs boîtes à la main.
 - **Projectiles lourds** : obus, roquettes et missiles avancent par sous-pas de
   1/120 s ; `stepHeavy` (`src/heavy-sim.js`) tire un rayon le long de chaque
   sous-pas (`world.decorRay`). Une fusée de proximité armée lit la distance au

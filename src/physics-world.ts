@@ -63,12 +63,27 @@ export function loadRapier(
 }
 
 const MIN_HALF = 0.005; // metres: thinner solids would be degenerate cuboids
-const signature = (box: Solid): string => {
+// A solid's geometry as numbers (box corners, then yaw frame), to spot a moved box without
+// building strings every step.
+const SIG_LENGTH = 10;
+function signature(box: Solid, into: Float64Array = new Float64Array(SIG_LENGTH)): Float64Array {
   const f = box.oriented;
-  return (
-    [box.min.x, box.min.y, box.min.z, box.max.x, box.max.y, box.max.z].join(',') +
-    (f ? '|' + [f.x, f.z, f.c, f.s].join(',') : '')
-  );
+  into[0] = box.min.x;
+  into[1] = box.min.y;
+  into[2] = box.min.z;
+  into[3] = box.max.x;
+  into[4] = box.max.y;
+  into[5] = box.max.z;
+  into[6] = f ? f.x : NaN;
+  into[7] = f ? f.z : NaN;
+  into[8] = f ? f.c : NaN;
+  into[9] = f ? f.s : NaN;
+  return into;
+}
+const sameSignature = (a: Float64Array, b: Float64Array): boolean => {
+  for (let i = 0; i < SIG_LENGTH; i++)
+    if (a[i] !== b[i] && !(a[i] !== a[i] && b[i] !== b[i])) return false;
+  return true;
 };
 
 // Fixed solids of the room in a Rapier world. `colliders` is the game's list of
@@ -77,7 +92,8 @@ const signature = (box: Solid): string => {
 export class PhysicsWorld {
   R: Rapier;
   world: World;
-  solids = new Map<Solid, { collider: RapierCollider; signature: string }>();
+  solids = new Map<Solid, { collider: RapierCollider; signature: Float64Array }>();
+  private scratch = new Float64Array(SIG_LENGTH);
   floor: RapierCollider;
   /** Gravity of the world (m/s²). */
   gravity: number;
@@ -130,24 +146,31 @@ export class PhysicsWorld {
     this.decorColliders = decor ? decor.addTo(this.world) : [];
   }
 
-  sync(allColliders: readonly Solid[]): void {
+  /** Mirrors the game's solids; returns true when a solid was added, moved or removed. */
+  sync(allColliders: readonly Solid[]): boolean {
     // With the decor's triangles here, the pack props' boxes are left out.
     const colliders = this.decor
       ? allColliders.filter((b) => !(b as Solid & { decor?: boolean }).decor)
       : allColliders;
-    const live = new Set(colliders);
-    for (const [box, entry] of this.solids)
-      if (!live.has(box)) {
-        this.world.removeCollider(entry.collider, false);
-        this.solids.delete(box);
-      }
-    for (const box of colliders) {
-      const known = this.solids.get(box),
-        now = signature(box);
-      if (known?.signature === now) continue;
-      if (known) this.world.removeCollider(known.collider, false);
-      this.solids.set(box, { collider: this.addSolid(box), signature: now });
+    let changed = false;
+    {
+      const live = new Set(colliders);
+      for (const [box, entry] of this.solids)
+        if (!live.has(box)) {
+          this.world.removeCollider(entry.collider, false);
+          this.solids.delete(box);
+          changed = true;
+        }
     }
+    for (const box of colliders) {
+      const known = this.solids.get(box);
+      signature(box, this.scratch);
+      if (known && sameSignature(known.signature, this.scratch)) continue;
+      if (known) this.world.removeCollider(known.collider, false);
+      this.solids.set(box, { collider: this.addSolid(box), signature: signature(box) });
+      changed = true;
+    }
+    return changed;
   }
 
   step(dt: number): void {
