@@ -243,6 +243,7 @@ const files = {
       'tank-recoil',
       'camera-follow',
       'camera-clearance',
+      'exit-spot',
       'tank-gear',
       'tessellate',
       'track-suspension',

@@ -49,6 +49,7 @@ import { tankSight } from '/tank-view.js';
 import { applyGunRecoil, recoilAmount } from '/tank-recoil.js';
 import { followMoving } from '/camera-follow.js';
 import { clearEye } from '/camera-clearance.js';
+import { exitSpot } from '/exit-spot.js';
 import { shoulderCamera, GROUND_VIEW_DISTANCE, GROUND_VIEW_PITCH } from '/personal-aim.js';
 import { BankUI } from '/bank-ui.js';
 import { ContextHUD, equipmentHUD } from '/hud.js';
@@ -88,7 +89,6 @@ import {
   VEHICLES,
   SEAT_NAMES,
   vehiclePad,
-  vehicleEntry,
   vehicleAccess,
   pilotFireInterval,
   isRotorcraft,
@@ -2998,7 +2998,7 @@ function optimisticExit() {
       : true,
     p = vehicle
       ? grounded
-        ? vehicleEntry({ ...vehicle, state: pose }, crewSeat)
+        ? exitSpot({ ...vehicle, state: pose }, crewSeat, office.decor)
         : { x: pose.p[0], y: pose.p[1], z: pose.p[2] }
       : stationExit(stations[turretIndex]);
   const walkSpawn = {
