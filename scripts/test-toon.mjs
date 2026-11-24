@@ -1,9 +1,9 @@
-// Toon look (src/toon.ts) for every player: stepped lighting patched once into
-// Three's lighting models (TSL), outlines as a depth post-process, a fixed look
-// with no player setting.
+// Toon look (src/toon.ts) for every player: Three's native toon lighting model plugged into
+// the lit materials, outlines as a depth post-process, a fixed look with no player setting.
 import assert from 'node:assert/strict';
 import * as T from '../vendor/three.webgpu.min.js';
 import {
+  toonLookFromQuery,
   installToonLighting,
   setToonBands,
   toonUniform,
@@ -21,20 +21,32 @@ import {
   OFFICE_CLOUD_TOP,
 } from '../src/office-fog.ts';
 
-// Lighting: patched once into the lighting models, shared uniform, switchable without
-// recompiling.
-const physical = T.PhysicalLightingModel.prototype.direct,
-  hemisphere = T.HemisphereLightNode.prototype.setup;
+// Lighting: Three's native toon model plugged once into the lit node materials, with a
+// shared gradient texture, switchable without recompiling.
+const model = T.MeshStandardNodeMaterial.prototype.setupLightingModel;
 assert.equal(installToonLighting(T), true);
 assert.equal(installToonLighting(T), false, 'installed once');
-assert.notEqual(T.PhysicalLightingModel.prototype.direct, physical, 'standard materials patched');
-assert.notEqual(T.HemisphereLightNode.prototype.setup, hemisphere, 'hemisphere light patched');
+assert.notEqual(T.MeshStandardNodeMaterial.prototype.setupLightingModel, model, 'standard patched');
+const lit = new T.MeshStandardNodeMaterial();
+assert.equal(
+  lit.setupLightingModel().constructor,
+  new T.MeshToonNodeMaterial().setupLightingModel().constructor,
+  'the native toon model',
+);
+assert.ok(lit.gradientMap.isDataTexture, 'shared gradient texture');
 setToonBands(3);
 assert.equal(toonUniform.value, 3);
+const levels = (t) => new Set(t.image.data).size;
+assert.equal(levels(lit.gradientMap), 3, 'three light bands in the ramp');
 setToonBands(0);
+assert.ok(levels(lit.gradientMap) > 20, 'smooth ramp');
 assert.equal(toonUniform.value, 0, 'smooth lighting by default');
 setToonBands(1);
 assert.equal(toonUniform.value, 0, 'fewer than two bands means off');
+
+assert.equal(toonLookFromQuery('?outline=false').toonOutline, 0, 'outline=false disables lines');
+assert.equal(toonLookFromQuery('?plan=2').toonOutline, 1.5);
+assert.equal(toonLookFromQuery('').toonOutline, 1.5);
 
 // Renderer wrapper: plain render unless outlines are asked, no GL pass without WebGL.
 const calls = [];
@@ -124,7 +136,7 @@ scene.fog = null;
 for (const key of Object.keys(DEFAULT_FLIGHT_TUNING)) assert.ok(!/toon/i.test(key), key);
 assert.ok(!('toonOutline' in normalizeFlightTuning({ toonOutline: 4 })));
 const client = readFileSync('src/client.js', 'utf8');
-assert.match(client, /new ToonRenderer\(T, renderer\)/);
+assert.match(client, /new ToonRenderer\(T, renderer, toonLookFromQuery\(location\.search\)\)/);
 assert.doesNotMatch(client, /toon\.configure/);
 assert.equal(
   (client.match(/renderer\.render\(/g) || []).length,

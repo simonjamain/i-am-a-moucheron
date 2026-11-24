@@ -1,7 +1,7 @@
 // Toon look for every player: stepped (cell-shaded) lighting plus dark outlines,
-// fixed by TOON_LOOK (no player setting). Lighting is patched once into Three's lit
-// node materials (a TSL wrapper around the lighting models), with a shared uniform,
-// so switching it needs no recompilation.
+// fixed by TOON_LOOK (no player setting). Lighting is Three's own toon lighting model,
+// plugged once into its lit node materials with a shared gradient texture, so
+// switching the band count needs no recompilation.
 // Outlines are a post-process on the log depth buffer the game already uses:
 // a pixel just behind a nearer surface gets the line colour, flat slopes are
 // ignored (the Laplacian of inverse depth vanishes on planes).
@@ -17,60 +17,76 @@ import {
   type Node,
 } from './gpu-passes.ts';
 
-let toonBands: Node = null;
 /** Shared uniform of the stepped lighting (its `.value` is the band count; 0 = smooth). */
 export const toonUniform: { value: number } = { value: 0 };
 let installed = false;
+const RAMP = 64;
+let ramp: THREE.DataTexture | null = null;
 
+// Fills the gradient texture read by Three's own toon lighting model (brightness against
+// N·L / 2 + 0.5, so the lit half is the upper half): `bands` hard steps over the lit
+// half, from none to full light, or a smooth ramp when below 2.
+function paintRamp(bands: number): void {
+  if (!ramp) return;
+  const data = ramp.image.data as Uint8Array;
+  for (let i = 0; i < RAMP; i++) {
+    const lit = Math.max(0, ((i + 0.5) / RAMP - 0.5) * 2);
+    const level = bands >= 2 ? Math.min(Math.floor(lit * bands), bands - 1) / (bands - 1) : lit;
+    data[i] = Math.round(255 * level);
+  }
+  ramp.needsUpdate = true;
+}
+
+/**
+ * Switches every lit node material to Three's native toon lighting model (the one of
+ * MeshToonNodeMaterial) with a shared gradient texture, so the whole scene is stepped
+ * without converting each material. Idempotent.
+ */
 export function installToonLighting(T: Three): boolean {
   if (installed) return false;
   installed = true;
-  const { uniform, Fn, select, smoothstep, max, mix, normalView, normalWorld } = tsl(T);
-  toonBands = uniform(0);
-  // Binds the public holder to the node: writing `.value` there drives the shader.
+  ramp = new T.DataTexture(new Uint8Array(RAMP), RAMP, 1, T.RedFormat);
+  ramp.magFilter = ramp.minFilter = T.LinearFilter;
+  ramp.generateMipmaps = false;
+  ramp.colorSpace = T.NoColorSpace;
+  // Binds the public holder to the band count: writing `.value` repaints the ramp.
+  let bands = 0;
   Object.defineProperty(toonUniform, 'value', {
-    get: () => toonBands.value as number,
+    get: () => bands,
     set: (v: number) => {
-      toonBands.value = v;
+      bands = v;
+      paintRamp(v);
     },
   });
-  const quantize = Fn(([x]: Node[]) => {
-    const b = x.mul(toonBands);
-    const f = b.floor();
-    const stepped = f.add(smoothstep(0.42, 0.58, b.sub(f))).div(toonBands);
-    return select(toonBands.lessThan(1.5), x, stepped);
-  });
-  // Direct light: the clamped N·L is quantised. Scaling the light colour by
-  // quantise(N·L) / N·L turns the model's own `N·L × colour` into the stepped term.
-  const T_ = T as unknown as Record<string, { prototype: Record<string, any> }>;
-  for (const name of ['PhysicalLightingModel', 'PhongLightingModel']) {
+  paintRamp(0);
+  const toonModel = new T.MeshToonNodeMaterial().setupLightingModel();
+  const T_ = T as unknown as Record<string, { prototype: Record<string, unknown> }>;
+  for (const name of [
+    'MeshStandardNodeMaterial',
+    'MeshPhysicalNodeMaterial',
+    'MeshPhongNodeMaterial',
+    'MeshLambertNodeMaterial',
+  ]) {
     const proto = T_[name].prototype;
-    const direct = proto.direct;
-    proto.direct = function toonDirect(this: unknown, data: Record<string, Node>, builder: Node) {
-      const dotNL = normalView.dot(data.lightDirection).clamp();
-      const k = quantize(dotNL).div(max(dotNL, 1e-4));
-      return direct.call(this, { ...data, lightColor: data.lightColor.mul(k) }, builder);
-    };
+    proto.setupLightingModel = () => toonModel;
+    Object.defineProperty(proto, 'gradientMap', { get: () => ramp, configurable: true });
   }
-  // Hemisphere light: the weight between sky and ground colour is quantised.
-  T_.HemisphereLightNode.prototype.setup = function toonHemisphere(
-    this: { colorNode: Node; groundColorNode: Node; lightDirectionNode: Node },
-    builder: Node,
-  ) {
-    const dotNL = normalWorld.dot(this.lightDirectionNode);
-    const weight = quantize(dotNL.mul(0.5).add(0.5));
-    builder.context.irradiance.addAssign(mix(this.groundColorNode, this.colorNode, weight));
-  };
   return true;
 }
 
 export function setToonBands(bands: number): void {
-  if (toonBands) toonBands.value = bands >= 2 ? Math.round(bands) : 0;
+  if (installed) toonUniform.value = bands >= 2 ? Math.round(bands) : 0;
 }
 
 export const OUTLINE_COLOR = '#1b1510';
 // The look of the game: three light bands, 1.5 px outlines (validated in play).
 export const TOON_LOOK = Object.freeze({ toonShading: true, toonBands: 3, toonOutline: 1.5 });
+
+/** The game look, minus outlines when the page is opened with `?outline=false` (to measure their cost). */
+export function toonLookFromQuery(search: string): ToonLook {
+  const off = new URLSearchParams(search).get('outline') === 'false';
+  return off ? { ...TOON_LOOK, toonOutline: 0 } : TOON_LOOK;
+}
 
 export interface ToonLook {
   toonShading?: boolean;

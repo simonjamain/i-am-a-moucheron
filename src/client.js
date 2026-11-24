@@ -248,7 +248,7 @@ import * as T from '/three.js';
 import { stepFlight, ROLLING_FRICTION, LIFTOFF_SPEED } from '/flight.js';
 import { loadFlightTuning } from '/flight-tuning.js';
 import { FlightTuningUI } from '/flight-tuning-ui.js';
-import { ToonRenderer } from '/toon.js';
+import { ToonRenderer, toonLookFromQuery } from '/toon.js';
 const $ = (id) => document.getElementById(id),
   canvas = $('view'),
   scene = new T.Scene();
@@ -282,7 +282,7 @@ document.addEventListener('visibilitychange', () => {
 });
 addEventListener('pagehide', () => sound.close());
 const renderer = await createRenderer(T, canvas);
-const toon = new ToonRenderer(T, renderer);
+const toon = new ToonRenderer(T, renderer, toonLookFromQuery(location.search));
 const postSelection = new SelectionOutline(T, renderer);
 
 const camera = new T.PerspectiveCamera(62, innerWidth / innerHeight, 0.00005, 40);

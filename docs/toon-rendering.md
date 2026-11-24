@@ -7,17 +7,17 @@ Il n'agit que sur le rendu GPU (WebGPU, ou le backend WebGL 2 du même renderer 
 
 ## Éclairage par paliers
 
-`installToonLighting` (`src/toon.ts`) enveloppe une fois, au démarrage, les modèles
-d'éclairage de Three.js (`PhysicalLightingModel` et `PhongLightingModel`, donc
-`MeshStandardMaterial` et `MeshLambertMaterial` : tous les modèles Meshy et le décor) :
-le N·L de chaque lumière directe est remplacé par `toonQuantize(N·L)` (la couleur de la
-lumière est multipliée par `quantifié / N·L`, ce que le modèle multiplie à nouveau par
-N·L), et la pondération de l'hémisphère (`HemisphereLightNode.setup`) passe par la même
-fonction. `toonQuantize` découpe la lumière en _N_ paliers (3 dans le jeu) avec une
-transition anti-crénelage étroite. Une uniforme TSL partagée (`toonUniform`) vaut 3 ; à 0
-l'éclairage redevient continu (usage outils et tests), sans recompiler de shader. Les
-textures Meshy gardent leurs ombres cuites ; l'effet est donc plus visible sur les
-surfaces unies et le décor.
+`installToonLighting` (`src/toon.ts`) branche une fois, au démarrage, le **modèle d'éclairage
+toon natif de Three.js** (celui de `MeshToonNodeMaterial`) dans les matériaux à nœuds
+éclairés (`MeshStandardNodeMaterial`, `MeshPhysicalNodeMaterial`, `MeshPhongNodeMaterial`,
+`MeshLambertNodeMaterial`, donc tous les modèles Meshy et le décor, sans convertir chaque
+matériau) et leur donne une `gradientMap` partagée : une petite texture 64 × 1 qui associe
+une luminosité à N·L. `paintRamp` la remplit en _N_ paliers durs sur la moitié éclairée (3
+dans le jeu), ou en rampe continue sous 2 paliers (usage outils et tests) : changer le
+nombre de paliers repeint la texture, sans recompiler de shader (`toonUniform.value`,
+`setToonBands`). La lumière d'hémisphère reste continue (remplissage). Les textures Meshy
+gardent leurs ombres cuites ; l'effet est donc plus visible sur les surfaces unies et le
+décor. Le modèle toon n'a pas de reflet spéculaire : les métaux Meshy sont mats.
 
 ## Contours
 
@@ -37,11 +37,16 @@ reconstruit le point du monde de la surface la plus proche autour du pixel
 matériaux (couche de nuages du bureau, `officeFogLayer`, plus le brouillard de
 distance ; brouillard linéaire au purgatoire). Une tige qui monte dans les nuages n'y
 laisse donc pas de trait noir.
+Ajouter `?outline=false` à l'adresse de la page supprime les contours (`toonLookFromQuery`) :
+la scène est alors rendue directement, sans cible intermédiaire, ce qui permet de mesurer
+leur coût. Le `ToonOutlinePassNode` natif de Three.js n'est pas utilisé : il dessine une coque
+inversée (chaque maillage toon deux fois), ignore le brouillard et la profondeur logarithmique
+du jeu, et la surbrillance de sélection réutilise la profondeur de la passe maison.
 Les contours ajoutent une passe plein écran et un rendu multi-échantillonné : la
 mesure des images par seconde reste à faire sur des machines réelles.
 
-`scripts/test-toon.mjs` vérifie le patch (une fois, modèles d'éclairage enveloppés,
-uniforme partagée), l'enchaînement des passes avec un moteur simulé, le décodage de la
+`scripts/test-toon.mjs` vérifie le branchement (une fois, modèle toon natif, texture
+de paliers partagée), le paramètre `outline=false`, l'enchaînement des passes avec un moteur simulé, le décodage de la
 profondeur et l'absence de réglage joueur.
 
 ## Viseurs et traçantes
