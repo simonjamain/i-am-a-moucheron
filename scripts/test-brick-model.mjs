@@ -47,3 +47,10 @@ wall.getMatrixAt(0, m);
 m.decompose(new T.Vector3(), new T.Quaternion(), s);
 assert.ok(Math.abs(s.z - BRICK_DEPTH) < 1e-6 && Math.abs(s.y - BRICK_HEIGHT) < 1e-6);
 console.log('Brick model: approved Meshy 2×4, studs up, recoloured, 2:1 depth, row-stacked.');
+
+// Every wall shares one brick geometry and material (rebuilding walls must stay cheap).
+const wallA = createBrickWall(T, { a: [0, 0], b: [1, 0], hp: 10 }),
+  wallB = createBrickWall(T, { a: [0, 0], b: [2, 0], hp: 10 });
+assert.equal(wallA.geometry, wallB.geometry, 'shared geometry');
+assert.equal(wallA.material, wallB.material, 'shared material');
+assert.equal(wallA.geometry.userData.shared, true, 'marked so disposal keeps it');

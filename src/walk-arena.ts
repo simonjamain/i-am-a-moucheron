@@ -295,9 +295,17 @@ export function advanceArena(
     }
     const bounds = a.bounds || rules.bounds?.(a) || DEFAULT_BOUNDS;
     for (let pass = 0; pass < 3; pass++) {
-      for (let i = 0; i < a.bodies.length; i++)
-        for (let j = i + 1; j < a.bodies.length; j++)
-          collide(a.bodies[i], a.bodies[j], owned, vertical || 1);
+      // Broad phase: most pairs are far apart, so the cheap planar test comes before the call.
+      const bodies = a.bodies;
+      for (let i = 0; i < bodies.length; i++) {
+        const p = bodies[i];
+        for (let j = i + 1; j < bodies.length; j++) {
+          const q = bodies[j],
+            reach = p.r + q.r;
+          if (Math.abs(q.x - p.x) >= reach || Math.abs(q.z - p.z) >= reach) continue;
+          collide(p, q, owned, vertical || 1);
+        }
+      }
       for (const b of a.bodies) {
         if (!owned(b)) continue;
         rules.constrain?.(a, b);

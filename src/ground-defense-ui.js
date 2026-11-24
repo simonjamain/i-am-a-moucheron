@@ -686,8 +686,9 @@ export class GroundDefenseUI {
       // Meshy T-01 / howitzer geometry and atlases are shared by every copy.
       if (part.userData?.meshyShared) return;
       if (part.isInstancedMesh) part.dispose();
-      part.geometry?.dispose();
-      if (!part.userData?.sharedMaterial) part.material?.dispose();
+      if (!part.geometry?.userData?.shared) part.geometry?.dispose();
+      if (!part.userData?.sharedMaterial && !part.material?.userData?.sharedMaterial)
+        part.material?.dispose();
     });
   }
   rebuild(structures) {
