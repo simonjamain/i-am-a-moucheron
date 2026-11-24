@@ -4114,7 +4114,7 @@ function updateOthers(dt) {
         dt,
       );
     }
-    if (g.userData.wheels) {
+    if (g.userData.wheels && !g.userData.fixedWheels) {
       const forward = new T.Vector3(0, 0, -1).applyQuaternion(g.quaternion);
       const velocity = isSelf ? vel : new T.Vector3().fromArray(motion.v);
       animateCastorWheels(
