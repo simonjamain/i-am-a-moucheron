@@ -13,11 +13,12 @@ import { deliveryLanding, DELIVERY_SPEED } from '../src/delivery.ts';
 import { wavePlan } from '../src/waves.ts';
 import { createOrdnance } from '../src/ordnance.js';
 import { createSoul, inDeskZone, deskOccupant, advancePurgatory } from '../src/purgatory-queue.ts';
+import { solidQuery } from './solid-harness.mjs';
 const floor = { min: { x: -4, y: -0.1, z: -3 }, max: { x: 4, y: 0, z: 3 } };
 for (const occupied of [false, true]) {
   const s = { ...vehiclePad('helicopter'), p: [0, 1, 0], q: [0, 0, 0, 1], landed: false };
   for (let i = 0; i < 240; i++)
-    stepHelicopter(T, s, { occupied }, [floor], 1 / 120, VEHICLES.helicopter);
+    stepHelicopter(T, s, { occupied }, solidQuery([floor]), 1 / 120, VEHICLES.helicopter);
   assert.equal(s.hp, 200);
   assert.ok(occupied ? Math.abs(s.p[1] - 1) < 1e-8 : s.p[1] < 0.99);
   if (!occupied) {
@@ -27,7 +28,7 @@ for (const occupied of [false, true]) {
         T,
         s,
         { occupied: true, collective: 1 },
-        [floor],
+        solidQuery([floor]),
         1 / 120,
         VEHICLES.helicopter,
       );
@@ -42,12 +43,20 @@ const landing = {
   gear: VEHICLES.fighter.gear,
 };
 assert.equal(
-  resolveLanding(T, landing, new T.Vector3(0, VEHICLES.fighter.gear + 0.0001, 0), [floor], 1 / 120)
-    .landed,
+  resolveLanding(
+    T,
+    landing,
+    new T.Vector3(0, VEHICLES.fighter.gear + 0.0001, 0),
+    solidQuery([floor]),
+    1 / 120,
+  ).landed,
   true,
 );
 landing.vel.y = MAP.metres(1);
-assert.equal(resolveLanding(T, landing, landing.position.clone(), [floor], 1 / 120).landed, false);
+assert.equal(
+  resolveLanding(T, landing, landing.position.clone(), solidQuery([floor]), 1 / 120).landed,
+  false,
+);
 let now = 10000;
 const game = new Game({ now: () => now, solids: [floor] });
 const joined = game.join({ code: 'RETURNS', name: 'Tester' });

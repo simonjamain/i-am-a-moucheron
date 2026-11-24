@@ -1,4 +1,4 @@
-import { colliderContainsXZ } from './oriented-collider.ts';
+import type { SolidProbe } from './solid-query.ts';
 import type { WalkerShape, WalkerWorld } from './walker-world.ts';
 import { isFortification } from './ground-fortifications.ts';
 import { stepWalkerFall, impactDamage } from './field-physics.ts';
@@ -6,7 +6,6 @@ import { MAP, ACTOR_UNIT, REFERENCE, FLAK } from './scale.ts';
 // Small vehicles keep their original dimensions; furniture uses the enlarged room.
 import { OFFICE_LAYOUT, ROOM_SCALE } from './layout.ts';
 import type * as THREE from 'three/webgpu';
-import type { Collider } from './oriented-collider.ts';
 import type { WalkerBody } from './field-physics.ts';
 import type { Three, XYZ } from './types.ts';
 import { OFFICE_FRAME } from './base.ts';
@@ -123,53 +122,26 @@ export function stationExit(station: Station): XYZ {
     z: station.z,
   };
 }
-/** The decor's triangle colliders, as used by the walker and the landing gear. */
-export interface DecorQuery {
-  supportBelow(x: number, from: number, z: number, depth: number, flat?: number): number | null;
-}
-/** The colliders without the boxes of the pack props when the decor stands for them. */
-export const withoutDecor = <C extends Collider>(
-  colliders: readonly C[],
-  decor: unknown,
-): readonly C[] =>
-  decor ? colliders.filter((b) => !(b as C & { decor?: boolean }).decor) : colliders;
 // Swept contact with horizontal surfaces. Hard, inverted and side-on arrivals
 // remain crashes; a gentle wheels-first touchdown becomes rolling contact.
 export function resolveLanding(
   T: Three,
   state: LandingState,
   previous: XYZ,
-  allColliders: readonly Collider[],
+  ground: SolidProbe | null,
   dt: number,
-  decor?: DecorQuery | null,
 ): LandingResult {
-  // With the decor world, props land on their real surfaces, not their boxes.
-  const colliders = withoutDecor(allColliders, decor);
   const { position: p, vel, q, omega } = state;
   const gear = state.gear ?? GEAR_HEIGHT;
   const up = new T.Vector3(0, 1, 0).applyQuaternion(q);
-  const surfaces: Collider[] = [
-    {
-      min: { x: -OFFICE_LAYOUT.bounds.x, y: -0.08, z: -OFFICE_LAYOUT.bounds.z },
-      max: { x: OFFICE_LAYOUT.bounds.x, y: 0, z: OFFICE_LAYOUT.bounds.z },
-    },
-    ...colliders,
-  ];
+  // The top of whatever the wheels are about to touch (floor, furniture, boxes), found by a
+  // ray down: wheels between 0.12 above and 0.1 below contact.
   let top = -Infinity;
-  for (const box of surfaces) {
-    if (!colliderContainsXZ(box, p.x, p.z, -0.5 * ACTOR_UNIT)) continue;
-    const y = box.max.y + gear;
-    if (previous.y >= y - 0.12 * ACTOR_UNIT && p.y <= y + 0.1 * ACTOR_UNIT && y > top) top = y;
-  }
-  if (decor) {
-    // Same window as the boxes: wheels between 0.12 above and 0.1 below contact.
-    const from = Math.max(previous.y, p.y) - gear + 0.12 * ACTOR_UNIT;
-    const surface = decor.supportBelow(p.x, from, p.z, from - (p.y - gear - 0.1 * ACTOR_UNIT));
-    if (surface !== null) {
-      const y = surface + gear;
-      if (previous.y >= y - 0.12 * ACTOR_UNIT && p.y <= y + 0.1 * ACTOR_UNIT && y > top) top = y;
-    }
-  }
+  const from = Math.max(previous.y, p.y) - gear + 0.12 * ACTOR_UNIT;
+  const reach = from - (p.y - gear - 0.1 * ACTOR_UNIT);
+  const surface = Math.max(0, ground ? ground.surfaceBelow(p.x, from, p.z, reach, 0) : 0);
+  const y = surface + gear;
+  if (previous.y >= y - 0.12 * ACTOR_UNIT && p.y <= y + 0.1 * ACTOR_UNIT) top = y;
   if (!Number.isFinite(top) || vel.y > 0) return { landed: false, contact: false };
   const safe = up.y > 0.88 && vel.y > -MAP.metres(5);
   if (!safe) return { landed: false, contact: true, hard: true };

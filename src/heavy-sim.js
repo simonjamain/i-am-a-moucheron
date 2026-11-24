@@ -5,7 +5,9 @@
 // tells the other players. This module is the shared simulation, moved from the
 // server unchanged; it works on a `world` view supplied by the caller:
 //
-//   solids                 office boxes ({ min, max } with x/y/z)
+//   solidSegment(a, b)     first solid met by the step a→b: { t, normal } or null (boxes and
+//                          prop triangles, see SolidQuery)
+//   solidNearest(p, r)     distance to the nearest solid within r, or null (proximity fuses)
 //   frames(time)           enemy samples indexed like `roster` ([] outside combat)
 //   roster, killed(i)      enemy profiles and already defeated indices
 //   vehicles               [{ id, type, state: { p, q, hp } }]
@@ -16,18 +18,16 @@
 import { MAP, enemySizeFactor, INSECT_SCALE, MIDGE_SPHERE_RADIUS } from './scale.ts';
 import { AP_PIERCE_KEEP, HEAVY, heavyDamage } from './armament.ts';
 import { VEHICLES } from './fleet.ts';
-import { integrateOrdnance, segmentSphere, segmentBox } from './ordnance.js';
+import { integrateOrdnance, segmentSphere } from './ordnance.js';
 import { sweptSphereMayTouch } from './swept-broadphase.ts';
 import { PROJECTILES } from './projectiles.ts';
 import { bounce } from './ricochet.ts';
 import { vehicleMaterial, insectMaterial } from './materials.ts';
-import { colliderNormal } from './oriented-collider.ts';
 import { steerMissile } from './helicopter.ts';
 import {
   sweptVehicle,
   proximityRadius,
   fuseSegment,
-  sweptBoxProximity,
   sweptSphereProximity,
   closestSphereProximity,
 } from './mobile-flak.js';
@@ -55,25 +55,6 @@ export function stepHeavy(projectile, end, world) {
   }
   const profile = HEAVY[projectile.weapon];
   end = Math.min(end, projectile.at + profile.lifetime * 1000);
-  // The boxes the shell can reach before `end`; recomputed after a ricochet, which turns it.
-  const reachable = () => {
-    const horizon = Math.max(0, (end - projectile.updated) / 1000);
-    const lower = projectile.p.map(
-      (v, i) =>
-        v +
-        Math.min(0, projectile.v[i]) * horizon -
-        (i === 1 ? MAP.metres(9.81) * horizon * horizon : 0),
-    );
-    const upper = projectile.p.map((v, i) => v + Math.max(0, projectile.v[i]) * horizon);
-    return world.solids.filter(
-      (box) =>
-        projectile.weapon === 'missile' ||
-        ['x', 'y', 'z'].every(
-          (key, i) => box.max[key] >= lower[i] - 0.001 && box.min[key] <= upper[i] + 0.001,
-        ),
-    );
-  };
-  let nearbySolids = reachable();
   // Only the shells with a ricochet angle (src/projectiles.ts) look for surface normals.
   const skids = PROJECTILES[projectile.weapon]?.ricochetMaxAngle > 0;
   let impact = null;
@@ -98,12 +79,9 @@ export function stepHeavy(projectile, end, world) {
     const consider = (t, target) => {
       if (t !== null && t >= 0 && t <= 1 && (!hit || t < hit.t)) hit = { t, ...target };
     };
-    for (const solid of nearbySolids)
-      consider(segmentBox(a, b, solid), { solid: true, box: skids ? solid : undefined });
-    // The props' real triangles (a ray along the step, like any bullet).
-    const prop = skids ? (world.decorHit?.(a, b) ?? null) : null;
-    if (prop) consider(prop.t, { solid: true, normal: prop.normal });
-    else consider(world.decorRay?.(a, b) ?? null, { solid: true });
+    // Boxes and the props' real triangles (a ray along the step, like any bullet).
+    const wall = world.solidSegment?.(a, b) ?? null;
+    if (wall) consider(wall.t, { solid: true, normal: wall.normal });
     if (b[1] <= 0)
       consider(a[1] / Math.max(1e-12, a[1] - b[1]), { solid: true, normal: [0, 1, 0] });
     const frames = world.frames(projectile.updated, projectile);
@@ -153,7 +131,6 @@ export function stepHeavy(projectile, end, world) {
       const result = skid(projectile, hit, a, b, point, world, frames);
       if (result) {
         if (result === 'spent') projectile.done = true;
-        else nearbySolids = reachable();
         continue;
       }
     }
@@ -183,13 +160,7 @@ function skid(projectile, hit, a, b, point, world) {
       : hit.enemy !== undefined
         ? insectMaterial(world.roster[hit.enemy]?.type)
         : null;
-  const normal =
-    hit.normal ??
-    (hit.box
-      ? colliderNormal(hit.box, point)
-      : hit.centre
-        ? point.map((v, i) => v - hit.centre[i])
-        : null);
+  const normal = hit.normal ?? (hit.centre ? point.map((v, i) => v - hit.centre[i]) : null);
   if (!material || !normal) return false;
   const direction = b.map((v, i) => v - a[i]);
   const result = bounce(direction, normal, projectile.weapon, material, projectile.bounces ?? 0);
@@ -218,20 +189,34 @@ function skid(projectile, hit, a, b, point, world) {
   return true;
 }
 
+// Where, along the straight run from `from` to `to`, `distance` is least; on a plateau of equal
+// distance (flying along a face), its far end. Distances are sampled: ternary search for the
+// least, then bisection for the end of the plateau.
+function closestPassage(distance, from, to, tolerance) {
+  const at = (t) => from.map((v, i) => v + (to[i] - v) * t);
+  let lo = 0,
+    hi = 1;
+  for (let i = 0; i < 24; i++) {
+    const m1 = lo + (hi - lo) / 3,
+      m2 = hi - (hi - lo) / 3;
+    if (distance(at(m1)) < distance(at(m2))) hi = m2;
+    else lo = m1;
+  }
+  const least = distance(at(lo)) + tolerance;
+  if (distance(at(1)) <= least) return at(1);
+  hi = 1;
+  for (let i = 0; i < 24; i++) {
+    const mid = (lo + hi) / 2;
+    if (distance(at(mid)) <= least) lo = mid;
+    else hi = mid;
+  }
+  return at(lo);
+}
+
 function stepProximity(projectile, end, world) {
   const profile = HEAVY[projectile.weapon];
   end = Math.min(end, projectile.at + profile.lifetime * 1000);
   const radius = proximityRadius(projectile.proximity);
-  const horizon = Math.max(0, (end - projectile.updated) / 1000);
-  const nearby = world.solids.filter((box) =>
-    ['x', 'y', 'z'].every((key, i) => {
-      const reach =
-        Math.abs(projectile.v[i]) * horizon +
-        (i === 1 ? MAP.metres(9.81) * horizon * horizon : 0) +
-        radius;
-      return box.max[key] >= projectile.p[i] - reach && box.min[key] <= projectile.p[i] + reach;
-    }),
-  );
   let impact = null;
   while (projectile.updated < end && !projectile.done) {
     const ageBefore = projectile.age;
@@ -246,33 +231,41 @@ function stepProximity(projectile, end, world) {
     const frames = world.frames(projectile.updated, projectile);
     const armed = fuseSegment(a, b, ageBefore, projectile.age);
     let hit = null;
-    const consider = (t, kind) => {
-      if (t !== null && (!hit || t < hit.t)) hit = { t, kind };
+    const consider = (t, kind, point) => {
+      if (t !== null && (!hit || t < hit.t)) hit = { t, kind, point };
     };
-    const solid = (box) => {
-      const contact = segmentBox(a, b, box);
-      // A contact strictly before arming is inert, including on thin geometry.
+    // Boxes and props, on their real surfaces: a ray along the step is a contact (inert
+    // before arming); once armed, the fuse waits for the closest approach inside the
+    // radius, so it fires as the shell moves away. The floor is the plane y = 0.
+    const touch = world.solidSegment?.(a, b)?.t ?? null;
+    const flat = b[1] <= 0 ? a[1] / Math.max(1e-12, a[1] - b[1]) : null;
+    for (const contact of [touch, flat])
       if (contact !== null && (!armed || contact < armed.t - 1e-12)) consider(contact, 'inert');
-      if (armed) {
-        const t = sweptBoxProximity(armed.a, b, box, radius, true);
-        if (t !== null) consider(armed.t + t * (1 - armed.t), 'fuse');
+    if (armed) {
+      const wall = world.solidNearest?.(b, radius) ?? null;
+      const near = b[1] <= radius ? Math.min(wall ?? Infinity, Math.max(0, b[1])) : wall;
+      const before = projectile.solidNear,
+        from = projectile.solidFrom;
+      if (near === null) {
+        delete projectile.solidNear;
+        delete projectile.solidFrom;
+      } else {
+        projectile.solidNear = near;
+        projectile.solidFrom = a;
       }
-    };
-    for (const box of nearby) solid(box);
-    // Props, on their real triangles: a ray along the step is a contact (inert
-    // before arming, like a box); once armed, the fuse waits for the closest
-    // approach inside the radius, so it fires as the shell moves away.
-    const touch = world.decorRay?.(a, b) ?? null;
-    if (touch !== null && (!armed || touch < armed.t - 1e-12)) consider(touch, 'inert');
-    if (armed && world.decorNearest) {
-      const near = world.decorNearest(b, radius);
-      const before = projectile.decorNear;
-      if (near === null) delete projectile.decorNear;
-      else projectile.decorNear = near;
+      // Moving away after coming within the radius: the fuse fires where the passage was closest.
       if (before !== undefined && (near === null || near > before + radius * 1e-4))
-        consider(armed.t, 'fuse');
+        consider(
+          armed.t,
+          'fuse',
+          closestPassage(
+            (q) => Math.min(world.solidNearest?.(q, Infinity) ?? Infinity, Math.max(0, q[1])),
+            from ?? a,
+            b,
+            radius * 1e-4,
+          ),
+        );
     }
-    solid({ min: { x: -100, y: -100, z: -100 }, max: { x: 100, y: 0, z: 100 } });
     const previousFrames =
       armed && frames.length ? world.frames(projectile.updated - dt * 1000, projectile) : [];
     const sphere = (centre, size, own = false, previous = centre) => {
@@ -324,7 +317,7 @@ function stepProximity(projectile, end, world) {
       );
     if (hit) {
       projectile.done = true;
-      projectile.p = a.map((v, i) => v + (b[i] - v) * hit.t);
+      projectile.p = hit.point ?? a.map((v, i) => v + (b[i] - v) * hit.t);
       if (hit.kind === 'fuse') impact = { hit: {}, point: projectile.p, frames };
     }
   }
@@ -361,14 +354,11 @@ export function heavyImpact(projectile, hit, frames, point, world) {
   const damage = (position) => {
     const distance = Math.hypot(...point.map((v, i) => v - position[i]));
     if (distance > profile.radius * (projectile.radiusFactor || 1)) return 0;
-    const obstructed = world.solids.some((box) => {
-      const t = segmentBox(
-        point.map((v, i) => v + (i === 1 ? MAP.metres(0.05) : 0)),
-        position,
-        box,
-      );
-      return t !== null && t > 0.001 && t < 0.999;
-    });
+    const wall = world.solidSegment?.(
+      point.map((v, i) => v + (i === 1 ? MAP.metres(0.05) : 0)),
+      position,
+    );
+    const obstructed = !!wall && wall.t > 0.001 && wall.t < 0.999;
     return obstructed
       ? 0
       : heavyDamage(weapon, distance, projectile.bonus, projectile.radiusFactor || 1);

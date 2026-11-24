@@ -1,6 +1,5 @@
 import type * as THREE from 'three/webgpu';
-import { rayCollider } from './oriented-collider.ts';
-import type { OrientedFrame } from './oriented-collider.ts';
+import type { SolidProbe } from './solid-query.ts';
 import { MAP } from './scale.ts';
 import type { Three } from './types.ts';
 
@@ -12,7 +11,6 @@ export interface CrashEvent {
   q: number[];
   v: number[];
 }
-export type CrashCollider = THREE.Box3 & { oriented?: OrientedFrame };
 export interface CrashEffectsOptions {
   sound?: (name: 'fall' | 'crash', position: THREE.Vector3) => void;
   blast?: (position: THREE.Vector3) => void;
@@ -61,7 +59,7 @@ export class CrashEffects {
     event: CrashEvent,
     source: THREE.Object3D,
     now: number,
-    colliders: readonly CrashCollider[] = [],
+    ground: SolidProbe | null = null,
   ): void {
     if (this.seen.has(event.vehicle) || now - event.at > 20000) return;
     this.seen.add(event.vehicle);
@@ -91,7 +89,7 @@ export class CrashEffects {
     let elapsed = Math.max(0, (now - event.at) / 1000);
     while (elapsed > 0 && this.items.has(event.vehicle)) {
       const dt = Math.min(1 / 120, elapsed);
-      this.update(dt, colliders, event.vehicle, true);
+      this.update(dt, ground, event.vehicle, true);
       elapsed -= dt;
     }
     if (now - event.at < 500 && this.items.has(event.vehicle)) this.sound?.('fall', root.position);
@@ -109,12 +107,7 @@ export class CrashEffects {
     }
     this.items.delete(id);
   }
-  update(
-    dt: number,
-    colliders: readonly CrashCollider[],
-    only: string | null = null,
-    silent = false,
-  ): void {
+  update(dt: number, ground: SolidProbe | null, only: string | null = null, silent = false): void {
     const T = this.T;
     for (const [id, item] of this.items) {
       if (only !== null && id !== only) continue;
@@ -124,20 +117,12 @@ export class CrashEffects {
         item.v.y -= MAP.metres(9.81) * dt;
         item.root.position.addScaledVector(item.v, dt);
         const delta = item.root.position.clone().sub(start),
-          length = delta.length(),
-          ray = new T.Ray(start, delta.clone().normalize());
-        let point: THREE.Vector3 | null =
-          item.root.position.y <= 0
-            ? new T.Vector3(item.root.position.x, 0, item.root.position.z)
-            : null;
-        for (const box of colliders) {
-          const p = rayCollider(T, ray, box, new T.Vector3());
-          if (
-            p &&
-            p.distanceTo(start) <= length &&
-            (!point || p.distanceTo(start) < point.distanceTo(start))
-          )
-            point = p;
+          end = item.root.position;
+        let point: THREE.Vector3 | null = end.y <= 0 ? new T.Vector3(end.x, 0, end.z) : null;
+        const wall = delta.lengthSq() > 0 ? ground?.segment(start.toArray(), end.toArray()) : null;
+        if (wall) {
+          const p = start.clone().addScaledVector(delta, wall.t);
+          if (!point || p.distanceTo(start) < point.distanceTo(start)) point = p;
         }
         item.root.rotateZ(dt * 1.4);
         item.root.rotateX(dt * 0.8);

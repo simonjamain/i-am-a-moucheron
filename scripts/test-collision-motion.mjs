@@ -12,6 +12,7 @@ import { ACTOR_UNIT, MAP } from '../src/scale.ts';
 import { OFFICE_LAYOUT } from '../src/layout.ts';
 import { VEHICLES } from '../src/fleet.ts';
 import { walkerWorld } from './walker-harness.mjs';
+import { solidQuery } from './solid-harness.mjs';
 
 const RAPIER = await loadRapier(() => import('../vendor/rapier.compat.mjs'));
 setActiveLayout('diagonale');
@@ -46,7 +47,7 @@ const descend = (withDecor) => {
   const previous = state.position.clone();
   state.position.y -= 0.1 * ACTOR_UNIT;
   return [
-    resolveLanding(T, state, previous, boxes, 1 / 60, withDecor ? decor : null),
+    resolveLanding(T, state, previous, solidQuery(boxes, withDecor ? decor : null), 1 / 60),
     state.position.y,
   ];
 };

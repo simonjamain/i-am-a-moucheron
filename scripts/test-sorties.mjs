@@ -17,6 +17,7 @@ import {
 import { mergeOwnedArena } from '../src/walk-arena.ts';
 import { createSoul, advancePurgatory } from '../src/purgatory-queue.ts';
 import { walkerWorld } from './walker-harness.mjs';
+import { solidQuery } from './solid-harness.mjs';
 assert.equal(BULLET_SPEED, MAP.metres(REFERENCE.bullet));
 assert.equal(FIRE_INTERVAL, 0.06);
 const scene = new T.Scene(),
@@ -28,16 +29,19 @@ const previous = new T.Vector3(0, GEAR_HEIGHT + MAP.metres(0.2), 0),
     q: new T.Quaternion(),
     omega: new T.Vector3(),
   };
-assert.equal(resolveLanding(T, state, previous, office.colliders, 1 / 120).landed, true);
+assert.equal(
+  resolveLanding(T, state, previous, solidQuery(office.colliders), 1 / 120).landed,
+  true,
+);
 assert.equal(state.vel.y, 0);
 assert.ok(Math.abs(state.position.y - GEAR_HEIGHT) < 1e-9);
 state.position.y = 0;
 state.vel.y = -MAP.metres(8);
-assert.equal(resolveLanding(T, state, previous, office.colliders, 1 / 120).hard, true);
+assert.equal(resolveLanding(T, state, previous, solidQuery(office.colliders), 1 / 120).hard, true);
 state.position.y = 0;
 state.vel.y = -MAP.metres(1);
 state.q.setFromAxisAngle(new T.Vector3(0, 0, 1), Math.PI);
-assert.equal(resolveLanding(T, state, previous, office.colliders, 1 / 120).hard, true);
+assert.equal(resolveLanding(T, state, previous, solidQuery(office.colliders), 1 / 120).hard, true);
 const st = AA_STATIONS[0],
   base = OFFICE_LAYOUT.base,
   walker = {

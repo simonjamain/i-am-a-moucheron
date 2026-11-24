@@ -6,9 +6,10 @@ véhicules au sol (ici), [avions](plane-physics.md) et
 triangles ([collisions](collisions.md)). La marche passe par le contrôleur de personnage
 de Rapier (`WalkerWorld`, `stepWalker` dans `src/sortie.ts`) ; la poussée entre
 marcheurs, l'intégration plane et les règles des mondes restent dans
-`walk-arena.ts`, et la balistique garde son calcul (seuls ses rayons contre les
-boîtes passent par `SolidQuery`). `helicopter.ts` ne
-fait voler un hélicoptère que tant que Rapier n'est pas chargé. Le bouton
+`walk-arena.ts`. Tous les rayons, segments et distances contre les solides (tirs,
+obus lourds, caméra, visée de pose, atterrissage, débris, chenilles) passent par
+`SolidQuery` ; la balistique garde son calcul des trajectoires et des cibles
+(ennemis, joueurs, véhicules). `helicopter.ts` ne fait voler un hélicoptère que tant que Rapier n'est pas chargé. Le bouton
 « Physique » dessine corps, ressorts et forces : [affichage de la
 physique](physics-debug.md).
 

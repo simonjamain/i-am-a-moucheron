@@ -9,6 +9,7 @@ import { baseWorld } from '../src/base.ts';
 import { debugSwarmRoster, swarmFrame } from '../src/waves.ts';
 import { layoutSolids } from '../src/layouts.ts';
 const ROUTE_OBSTACLES = layoutSolids();
+import { solidQuery } from './solid-harness.mjs';
 import { howitzerMuzzle } from '../src/howitzer-geometry.ts';
 import { DEFAULT_BALANCE } from '../src/balance.js';
 
@@ -41,7 +42,7 @@ const context = {
   heavyImpact,
   swarmFrame,
   baseWorld,
-  layoutSolids: () => ROUTE_OBSTACLES,
+  solids: () => solidQuery(ROUTE_OBSTACLES),
   office: { decor: null },
   id: 'shooter',
   myVehicle: null,

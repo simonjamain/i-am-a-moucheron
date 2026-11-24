@@ -1,4 +1,4 @@
-import { colliderContainsXZ, type Collider } from './oriented-collider.ts';
+import type { SolidProbe } from './solid-query.ts';
 import type * as THREE from 'three/webgpu';
 import { AXLE_Z, GROUND_Y } from './tank-gear.ts';
 import { tessellate } from './tessellate.ts';
@@ -12,15 +12,12 @@ import { tessellate } from './tessellate.ts';
 export const WHEEL_TRAVEL = 0.18;
 /** Height of the terrain below (x, z), searched from `fromY` down: the highest top that is under. */
 export function terrainHeight(
-  colliders: readonly Collider[],
+  ground: SolidProbe | null,
   x: number,
   z: number,
   fromY: number,
 ): number {
-  let best = 0;
-  for (const box of colliders)
-    if (box.max.y <= fromY && box.max.y > best && colliderContainsXZ(box, x, z)) best = box.max.y;
-  return best;
+  return ground ? Math.max(0, ground.surfaceBelow(x, fromY, z, fromY + 1, 0)) : 0;
 }
 
 /**
@@ -31,7 +28,7 @@ export function terrainHeight(
  * above the ground at rest.
  */
 export function axleOffsets(
-  colliders: readonly Collider[],
+  ground: SolidProbe | null,
   position: readonly number[],
   yaw: number,
   side: -1 | 1,
@@ -49,7 +46,7 @@ export function axleOffsets(
     // Model +z is the back; yaw turns the model about y (three.js convention).
     const wx = position[0] + x * cos + zz * sin,
       wz = position[2] - x * sin + zz * cos;
-    const rise = terrainHeight(colliders, wx, wz, baseY + WHEEL_TRAVEL * unit + 1e-6) - baseY;
+    const rise = terrainHeight(ground, wx, wz, baseY + WHEEL_TRAVEL * unit + 1e-6) - baseY;
     out[i] = Math.max(-WHEEL_TRAVEL, Math.min(WHEEL_TRAVEL, rise / unit));
   });
   return out;
@@ -159,7 +156,7 @@ export function updateSuspension(
   g: THREE.Object3D,
   suspension: Suspension,
   tracks: readonly THREE.Object3D[],
-  colliders: readonly Collider[],
+  ground: SolidProbe | null,
   trackX: number,
   dt: number,
 ): void {
@@ -172,7 +169,7 @@ export function updateSuspension(
   const k = Math.min(1, dt * RESPONSE);
   const raw: number[] = [];
   ([-1, 1] as const).forEach((side, s) => {
-    axleOffsets(colliders, position, yaw, side, trackX, unit, -GROUND_Y, raw);
+    axleOffsets(ground, position, yaw, side, trackX, unit, -GROUND_Y, raw);
     const smooth = suspension.sides[s];
     for (let i = 0; i < raw.length; i++) smooth[i] += (raw[i] - smooth[i]) * k;
     suspension.axles.forEach((pair, i) => {

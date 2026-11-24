@@ -38,6 +38,7 @@ import { navigationStructures, floorStructures } from '../src/ground-defense-sta
 import { controlHintItems } from '../src/live-hud.ts';
 import { Game } from '../server/game.js';
 import { OFFICE_SOLIDS } from '../server/assets.js';
+import { solidQuery } from './solid-harness.mjs';
 
 const near = (a, b, eps, label) => assert.ok(Math.abs(a - b) < eps, label + ': ' + a + ' vs ' + b);
 
@@ -121,7 +122,14 @@ assert.ok(
 const floor = { min: { x: -4, y: -0.1, z: -3 }, max: { x: 4, y: 0, z: 3 } };
 const state = { p: [0, 1, 0], q: [0, 0, 0, 1], v: [0, 0, 0], hp: 200, engine: 1, wing: 1 };
 for (let i = 0; i < 120; i++)
-  stepHelicopter(T, state, { yaw: 1, pitch: 0, roll: 0, direction: null }, [floor], 1 / 120, spec);
+  stepHelicopter(
+    T,
+    state,
+    { yaw: 1, pitch: 0, roll: 0, direction: null },
+    solidQuery([floor]),
+    1 / 120,
+    spec,
+  );
 const turned = headingOf(state.q);
 assert.ok(turned < -0.6 && turned > -HELI.yawRate, 'E turns right, about yawRate rad/s: ' + turned);
 assert.ok(Math.abs(state.p[1] - 1) < 0.01, 'turning in place keeps the hover');

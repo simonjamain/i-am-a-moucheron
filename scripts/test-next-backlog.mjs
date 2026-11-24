@@ -302,14 +302,14 @@ crashes.add(
   now,
 );
 assert.equal(crashes.items.size, 1);
-for (let i = 0; i < 600; i++) crashes.update(1 / 120, []);
+for (let i = 0; i < 600; i++) crashes.update(1 / 120, null);
 assert.equal(impacts, 1);
 assert.equal(crashes.items.size, 0);
 crashes.add(
   { vehicle: 'late', at: now - 10000, p: [0, 0.001, 0], q: [0, 0, 0, 1], v: [0, -0.1, 0] },
   model,
   now,
-  [],
+  null,
 );
 assert.equal(crashes.items.size, 0, 'late snapshots do not replay a finished crash');
 const falling = { ...state, p: [0, 0.1, 0], v: [0, -0.01, 0], landed: false, hp: 100 };

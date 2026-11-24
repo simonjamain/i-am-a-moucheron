@@ -35,15 +35,15 @@ near(down.pitch, HELI.minPitch);
 const state = { ...vehiclePad('helicopter'), p: [0, 2, 0], q: [0, 0, 0, 1], landed: false };
 const direction = [0, -Math.sin(HELI.maxTilt), -Math.cos(HELI.maxTilt)];
 for (let i = 0; i < 480; i++)
-  stepHelicopter(T, state, { direction, collective: 0 }, [], 1 / 120, VEHICLES.helicopter);
+  stepHelicopter(T, state, { direction, collective: 0 }, null, 1 / 120, VEHICLES.helicopter);
 const euler = new T.Euler().setFromQuaternion(new T.Quaternion().fromArray(state.q), 'YXZ');
 assert.ok(Math.abs(euler.x) > (44 * Math.PI) / 180);
 assert.equal(state.hp, 200);
 const descent = { ...vehiclePad('helicopter'), p: [0, 2, 0], q: [0, 0, 0, 1], landed: false };
 for (let i = 0; i < 480; i++)
-  stepHelicopter(T, descent, { collective: -1 }, [], 1 / 120, VEHICLES.helicopter);
+  stepHelicopter(T, descent, { collective: -1 }, null, 1 / 120, VEHICLES.helicopter);
 assert.ok(descent.v[1] < -MAP.metres(29));
-for (let i = 0; i < 1200; i++) stepHelicopter(T, descent, {}, [], 1 / 120, VEHICLES.helicopter);
+for (let i = 0; i < 1200; i++) stepHelicopter(T, descent, {}, null, 1 / 120, VEHICLES.helicopter);
 assert.ok(Math.abs(descent.v[1]) < MAP.metres(0.001));
 assert.equal(descent.hp, 200);
 console.log(

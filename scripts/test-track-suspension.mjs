@@ -12,6 +12,7 @@ import {
   updateSuspension,
   WHEEL_TRAVEL,
 } from '../src/track-suspension.ts';
+import { solidQuery } from './solid-harness.mjs';
 
 // Tessellation: long edges split, area and UV mapping kept, no crack (shared edges).
 const mesh = {
@@ -50,7 +51,7 @@ assert.ok(longest <= 1 + 1e-6, 'edges at most 1: ' + longest);
 // Terrain: flat ground gives no offset; a block under one axle raises only it.
 const unit = vehicleUnit('tank');
 const hull = [0, 0.8 * unit, 0];
-const flat = axleOffsets([], hull, 0, -1, TRACK_HALF, unit, 0.8);
+const flat = axleOffsets(null, hull, 0, -1, TRACK_HALF, unit, 0.8);
 assert.ok(
   flat.every((v) => v === 0),
   'flat ground',
@@ -59,17 +60,16 @@ const block = {
   min: { x: -5, y: 0, z: AXLE_Z[2] * unit - 0.1 * unit },
   max: { x: 5, y: 0.1 * unit, z: AXLE_Z[2] * unit + 0.1 * unit },
 };
-const bumped = axleOffsets([block], hull, 0, -1, TRACK_HALF, unit, 0.8);
+const bumped = axleOffsets(solidQuery([block]), hull, 0, -1, TRACK_HALF, unit, 0.8);
 assert.ok(Math.abs(bumped[2] - 0.1) < 1e-6, 'bump under the third axle ' + bumped[2]);
 assert.equal(bumped[0], 0);
 const high = { ...block, max: { ...block.max, y: 5 * unit } };
-assert.equal(
-  axleOffsets([high], hull, 0, -1, TRACK_HALF, unit, 0.8)[2],
-  0,
+assert.ok(
+  Math.abs(axleOffsets(solidQuery([high]), hull, 0, -1, TRACK_HALF, unit, 0.8)[2]) < 1e-6,
   'a wall is not a floor',
 );
 // A hull far above the ground lets the wheels hang.
-assert.equal(axleOffsets([], [0, 3 * unit, 0], 0, 1, TRACK_HALF, unit, 0.8)[0], -WHEEL_TRAVEL);
+assert.equal(axleOffsets(null, [0, 3 * unit, 0], 0, 1, TRACK_HALF, unit, 0.8)[0], -WHEEL_TRAVEL);
 
 // Belt displacement: the bottom run follows, the top run stays; linear between axles.
 assert.equal(
@@ -118,13 +118,15 @@ const bottomSum = (node) => {
 };
 const before = bottomSum(tracks[0]),
   restY = suspension.rest.map((r) => r.slice());
-updateSuspension(g, suspension, tracks, [], TRACK_HALF, 1);
+updateSuspension(g, suspension, tracks, null, TRACK_HALF, 1);
 assert.equal(bottomSum(tracks[0]), before, 'flat ground leaves the belt as modelled');
 const step = {
   min: { x: -5, y: 0, z: AXLE_Z[2] * unit - 0.1 * unit },
   max: { x: 5, y: 0.1 * unit, z: AXLE_Z[2] * unit + 0.1 * unit },
 };
-for (let i = 0; i < 60; i++) updateSuspension(g, suspension, tracks, [step], TRACK_HALF, 1 / 60);
+const stepGround = solidQuery([step]);
+for (let i = 0; i < 60; i++)
+  updateSuspension(g, suspension, tracks, stepGround, TRACK_HALF, 1 / 60);
 assert.ok(bottomSum(tracks[0]) > before, 'the belt is pushed up');
 assert.ok(top(tracks[0]) < 1, 'finite');
 assert.ok(

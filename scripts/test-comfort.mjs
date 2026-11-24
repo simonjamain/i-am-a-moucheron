@@ -8,16 +8,17 @@ import { fullAmmo } from '../src/logistics.ts';
 import { MAP, ENEMY_SIZE_FACTORS } from '../src/scale.ts';
 import { wavePlan } from '../src/waves.ts';
 import { makeShotTrace, moveShotTrace, advanceShotTrace } from '../src/tracers.ts';
+import { solidQuery } from './solid-harness.mjs';
 const close = (a, b) => assert.ok(Math.abs(a - b) < 1e-8, `${a} != ${b}`);
 // The rounded subtraction really fails before the H2 landing fix.
-const support = 0.0001,
+const support = 0.00021,
   gear = VEHICLES.helicopter.gear;
 const h = vehiclePad('helicopter');
 h.p = [0, support + gear, 0];
 assert.ok(h.p[1] - gear > support);
 const boxes = [new T.Box3(new T.Vector3(-1, 0, -1), new T.Vector3(1, support, 1))];
 for (let i = 0; i < 120; i++)
-  stepHelicopter(T, h, { collective: 0 }, boxes, 1 / 120, VEHICLES.helicopter);
+  stepHelicopter(T, h, { collective: 0 }, solidQuery(boxes), 1 / 120, VEHICLES.helicopter);
 assert.equal(h.landed, true);
 assert.equal(h.hp, 200);
 for (const seat of VEHICLES.helicopter.seats) {

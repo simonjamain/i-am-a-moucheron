@@ -17,10 +17,10 @@ for (const hz of [30, 60, 120]) {
     new T.Vector3(0, 1, 0)
       .applyQuaternion(new T.Quaternion().fromArray(state.q))
       .angleTo(new T.Vector3(0, 1, 0));
-  stepHelicopter(T, state, { pitch: 1, roll: 1 }, [], 1 / hz, VEHICLES.helicopter);
+  stepHelicopter(T, state, { pitch: 1, roll: 1 }, null, 1 / hz, VEHICLES.helicopter);
   assert.ok(tilt() > 0 && tilt() < 0.1, 'tilt builds progressively');
   for (let i = 0; i < hz * 4; i++) {
-    stepHelicopter(T, state, { pitch: 1, roll: 1 }, [], 1 / hz, VEHICLES.helicopter);
+    stepHelicopter(T, state, { pitch: 1, roll: 1 }, null, 1 / hz, VEHICLES.helicopter);
     assert.ok(tilt() <= Math.PI / 4 + 1e-8, 'diagonal tilt stays within 45 degrees');
   }
   for (let i = 0; i < hz * 4; i++)
@@ -28,7 +28,7 @@ for (const hz of [30, 60, 120]) {
       T,
       state,
       { pitch: 0, roll: 0, direction: [0, -0.8, -0.6] },
-      [],
+      null,
       1 / hz,
       VEHICLES.helicopter,
     );
@@ -122,7 +122,7 @@ for (let i = 0; i < 120; i++) {
     T,
     turning,
     { pitch: Math.cos(4.8), roll: Math.sin(4.8), direction: [-Math.sin(2.8), 0, -Math.cos(2.8)] },
-    [],
+    null,
     1 / 60,
     VEHICLES.helicopter,
   );
