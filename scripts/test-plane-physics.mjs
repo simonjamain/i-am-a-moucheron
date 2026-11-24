@@ -21,6 +21,7 @@ import {
   PlaneRig,
   liftCoefficient,
   dragCoefficient,
+  controlAuthority,
 } from '../src/plane-physics.ts';
 
 const RAPIER = await loadRapier(() => import('../vendor/rapier.compat.mjs'));
@@ -381,3 +382,18 @@ for (const type of PLANE_TYPES) {
   }
 }
 console.log('test-plane-physics ok', { K: +K.toFixed(4), toPhysics: +toPhysics(m(1)).toFixed(4) });
+
+// The Spitfire lifts at a modest speed: its stall speed is a fifth of its top speed, well
+// under the third the other planes have, and its control surfaces bite from a lower speed.
+{
+  const spit = planeSpec('spitfire').params.stallSpeed;
+  assert.ok(
+    spit <= 0.2 * VEHICLES.spitfire.maxSpeed + 0.05,
+    'Spitfire stalls at 20 % of top speed',
+  );
+  assert.ok(spit < 0.32 * VEHICLES.spitfire.maxSpeed * 0.7, 'and well below the old 32 %');
+  assert.ok(
+    controlAuthority(20, 1, true, VEHICLES.spitfire, planeSpec('spitfire').params).pitch > 0.6,
+    'the Spitfire steers at 20 m/s',
+  );
+}

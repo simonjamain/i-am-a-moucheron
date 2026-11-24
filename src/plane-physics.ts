@@ -220,7 +220,7 @@ export function planeSpec(type: string): PlaneSpec {
     ? PLANE_PARAMS
     : {
         ...PLANE_PARAMS,
-        stallSpeed: +(0.32 * maxSpeed).toFixed(1),
+        stallSpeed: +((profile.stallFraction ?? 0.32) * maxSpeed).toFixed(1),
         thrustLimit: +(1.33 * maxSpeed).toFixed(1),
         // A stronger engine accelerates harder (the Spitfire's is nine times the biplane's).
         thrust: +(
