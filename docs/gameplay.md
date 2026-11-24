@@ -122,12 +122,12 @@ pose. Lit 15 $, radar 10 $, station 20 $, Flak léger 5 $ (plafonné à 40 $) co
 2 $ de plus par exemplaire posé ou payé (`shopPrice`) ; DCA haute cadence 50 $,
 Flak lourd 30 $. Règles des bons, remboursements et pose : [économie](economy.md).
 
-L’aperçu montre le vrai modèle transparent, rouge si la pose est refusée ; le
-serveur revérifie support, hauteur libre, proximité et chevauchements. Une visée
+L’aperçu montre le vrai modèle transparent, rouge si la pose est refusée ; seul le
+navigateur juge support, hauteur libre, proximité et chevauchements, le serveur
+fait confiance au joueur ([confiance](trust-model.md)). Une visée
 hors de portée place l’aperçu à 97 % de la portée sur la première surface sous la
 caméra (`reachClampedPlacement`, `src/placement-aim.ts` ;
-`PLACEMENT_PREVIEW_FRACTION`), et le serveur tolère `PLACEMENT_SLACK` de plus :
-un clic pose ce que l’aperçu montre. Les véhicules font face au personnage. Un
+`PLACEMENT_PREVIEW_FRACTION`) : un clic pose ce que l’aperçu montre. Les véhicules font face au personnage. Un
 achat commandé depuis un appareil descend dans un colis sous parachute à 1/3 m/s
 (`DELIVERY_SPEED`) ([colis parachutés](logistics-contracts.md)).
 

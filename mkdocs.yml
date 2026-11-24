@@ -112,6 +112,7 @@ nav:
       - Vol des hélicoptères sur Rapier: heli-physics.md
       - Rubans d'air et décrochage: air-ribbons.md
       - Collisions sur les triangles: collisions.md
+      - Insectes et Rapier (plan): insects-rapier.md
       - Affichage de la physique: physics-debug.md
       - Performances: performance.md
       - TypeScript: typescript.md

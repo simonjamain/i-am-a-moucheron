@@ -1,4 +1,4 @@
-import type { Collider } from './oriented-collider.ts';
+import type { SolidProbe } from './solid-query.ts';
 import type { Vec2 } from './types.ts';
 
 // Castor volant airdrops (shared by the server and the client preview). Every
@@ -28,20 +28,12 @@ export function headingOf(q: readonly number[]): number {
 
 // Top of the highest solid under (x, z) that is not above `fromY`; 0 = floor.
 export function airdropSurface(
-  solids: readonly Partial<Collider>[] | null | undefined,
+  ground: SolidProbe | null | undefined,
   x: number,
   z: number,
   fromY: number,
 ): number {
-  let top = 0;
-  for (const box of solids || []) {
-    const max = box.max,
-      min = box.min;
-    if (!max || !min || max.y > fromY + 1e-6 || max.y <= top) continue;
-    if (x < min.x || x > max.x || z < min.z || z > max.z) continue;
-    top = max.y;
-  }
-  return top;
+  return ground ? Math.max(0, ground.surfaceBelow(x, fromY + 1e-6, z, fromY + 1, 0)) : 0;
 }
 
 // Build command of a drop: centred under the helicopter, along its heading.

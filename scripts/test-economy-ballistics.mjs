@@ -10,6 +10,7 @@ import { createOffice } from '../src/office.ts';
 import { enemyRoute, enemyRoutePosition, PORTALS } from '../src/routes.ts';
 import { wavePlan, swarmFrame } from '../src/waves.ts';
 import { CombatEffects } from '../src/combat.ts';
+import { solidQuery } from './solid-harness.mjs';
 const reference = new T.Vector3(820, 0, 0),
   small = reference.clone().multiplyScalar(MAP.ratio);
 for (let i = 0; i < 120; i++) {
@@ -40,9 +41,12 @@ assert.equal(toggleParachute(falling), false);
 const scene = new T.Scene(),
   graphics = createGraphics(T, scene),
   office = createOffice(T, scene, { ...graphics, textLabel: () => new T.Group() });
-assert.ok(supportedPlacement({ x: -2.5, y: 0.74005, z: 1.5 }, office.colliders), 'on a desk top');
+assert.ok(
+  supportedPlacement({ x: -2.5, y: 0.74005, z: 1.5 }, solidQuery(office.colliders)),
+  'on a desk top',
+);
 assert.equal(
-  supportedPlacement({ x: 0, y: 2, z: 0 }, office.colliders),
+  supportedPlacement({ x: 0, y: 2, z: 0 }, solidQuery(office.colliders)),
   null,
   'no floating installations',
 );
@@ -52,7 +56,7 @@ const cartons = office.colliders.filter(
 );
 assert.ok(cartons.length);
 assert.ok(
-  supportedPlacement({ x: 2.75, y: 0.27505, z: 0.2 }, office.colliders),
+  supportedPlacement({ x: 2.75, y: 0.27505, z: 0.2 }, solidQuery(office.colliders)),
   'cartons support a whole gun base',
 );
 const fx = new CombatEffects(T, scene);

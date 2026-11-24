@@ -1,8 +1,6 @@
-import { footprintInsideCollider, footprintOverlapsCollider } from './oriented-collider.ts';
 import { VEHICLES } from './fleet.ts';
 import { FIXED_DCA } from './fixed-dca.ts';
 import { MAP } from './scale.ts';
-import type { Collider } from './oriented-collider.ts';
 import type { VehicleProfile } from './fleet.ts';
 
 /** How far from the builder equipment can be placed (horizontally), in world units. */
@@ -194,53 +192,22 @@ export interface FootprintQuery {
    */
   rugged?: boolean;
 }
-/**
- * The office pack props as placement support, on their real triangles (see
- * docs/collisions.md). The client answers with the decor's collision world; the
- * server trusts the height the client sent (decorTrust). With it, the props'
- * boxes (marked `decor`) no longer support nor block placements.
- */
-export interface DecorSupport {
-  /** Height of the decor surface carrying the whole footprint, or null. */
-  surface(q: FootprintQuery): number | null;
-  /** True when no decor stands in the headroom above `y`. */
+/** What a placement needs from the solids (SolidQuery, src/solid-query.ts). */
+export interface PlacementGround {
+  /** Flat tops carrying the whole footprint, highest first. */
+  supports(q: FootprintQuery, up: number, down: number): number[];
+  /** True when nothing stands in the headroom above `y`. */
   clear(q: FootprintQuery, y: number): boolean;
-}
-/** Collider that may be the box of a pack prop (layouts.ts marks them). */
-type MaybeDecor = Collider & { decor?: boolean };
-/**
- * Server side of DecorSupport: accepts the height `claimed` by the client when it
- * lies within the box of a prop under the footprint centre (clients are trusted).
- */
-export function decorTrust(colliders: readonly Collider[], claimed: number): DecorSupport {
-  return {
-    surface: (q) =>
-      Number.isFinite(claimed) &&
-      (colliders as readonly MaybeDecor[]).some(
-        (b) =>
-          b.decor &&
-          q.x >= b.min.x &&
-          q.x <= b.max.x &&
-          q.z >= b.min.z &&
-          q.z <= b.max.z &&
-          claimed >= b.min.y - 1e-4 &&
-          claimed <= b.max.y + 1e-4,
-      )
-        ? claimed
-        : null,
-    clear: () => true,
-  };
 }
 export function supportedPlacement(
   point: PlacementPoint,
-  allColliders: readonly Collider[],
+  ground: PlacementGround | null,
   occupied: readonly OccupiedSpot[] = [],
   kind = 'dca',
-  decor?: DecorSupport,
+  /** How far above and below the aimed height a support is looked for (world units). */
+  window = { up: MAP.metres(2), down: MAP.metres(6) },
 ): PlacementPoint | null {
-  const colliders = decor
-    ? (allColliders as readonly MaybeDecor[]).filter((b) => !b.decor)
-    : allColliders;
+  if (!ground) return null;
   const profile = VEHICLE_BY_KEY[kind];
   const dca = FIXED_DCA_BY_KEY[kind];
   const localRx = profile
@@ -253,8 +220,7 @@ export function supportedPlacement(
       : kind === 'refuel'
         ? MAP.metres(3.7)
         : MAP.metres(kind === 'bed' ? 2.1 : (dca?.clearance ?? 1.5)),
-    height = MAP.metres(profile ? 4 : kind === 'refuel' ? 6.3 : (dca?.height ?? 3.2)),
-    eps = 1e-5;
+    height = MAP.metres(profile ? 4 : kind === 'refuel' ? 6.3 : (dca?.height ?? 3.2));
   const angle = Number.isFinite(point.angle) ? (point.angle as number) : 0;
   const rx = Math.abs(Math.cos(angle)) * localRx + Math.abs(Math.sin(angle)) * localRz;
   const rz = Math.abs(Math.sin(angle)) * localRx + Math.abs(Math.cos(angle)) * localRz;
@@ -268,38 +234,11 @@ export function supportedPlacement(
     height,
     ...(profile ? { rugged: true } : {}),
   };
-  const boxSurfaces: { max: { y: number } }[] = colliders.filter(
-    (box) =>
-      point.x - rx >= box.min.x &&
-      point.x + rx <= box.max.x &&
-      point.z - rz >= box.min.z &&
-      point.z + rz <= box.max.z &&
-      (!box.oriented || footprintInsideCollider(box, point, localRx, localRz, angle)) &&
-      box.max.y <= point.y + MAP.metres(2) &&
-      box.max.y >= point.y - MAP.metres(6),
-  );
-  const decorY = decor?.surface(query);
-  const surfaces =
-    decorY != null && decorY <= point.y + MAP.metres(2) && decorY >= point.y - MAP.metres(6)
-      ? [...boxSurfaces, { max: { y: decorY } }]
-      : boxSurfaces;
-  surfaces.sort((a, b) => b.max.y - a.max.y);
-  for (const surface of surfaces) {
-    const y = surface.max.y;
-    const blocked = colliders.some(
-      (box) =>
-        box !== surface &&
-        box.max.y > y + eps &&
-        box.min.y < y + height &&
-        box.max.x > point.x - rx &&
-        box.min.x < point.x + rx &&
-        box.max.z > point.z - rz &&
-        box.min.z < point.z + rz &&
-        (!box.oriented || footprintOverlapsCollider(box, point, localRx, localRz, angle)),
-    );
+  const surfaces = ground.supports(query, window.up, window.down);
+  for (const y of surfaces) {
+    const blocked = !ground.clear(query, y);
     if (
       blocked ||
-      (decor && !decor.clear(query, y)) ||
       occupied.some(
         (s) =>
           Math.abs(s.y - y) < height &&

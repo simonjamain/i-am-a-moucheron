@@ -36,9 +36,10 @@ import {
 import { airdropPlacement } from '../src/ground-placement.ts';
 import { navigationStructures, floorStructures } from '../src/ground-defense-state.ts';
 import { controlHintItems } from '../src/live-hud.ts';
-import { Game } from '../server/game.js';
+import { Game, loadServerPhysics } from '../server/game.js';
 import { OFFICE_SOLIDS } from '../server/assets.js';
 import { solidQuery } from './solid-harness.mjs';
+await loadServerPhysics();
 
 const near = (a, b, eps, label) => assert.ok(Math.abs(a - b) < eps, label + ': ' + a + ' vs ' + b);
 
@@ -145,8 +146,8 @@ near(Math.atan2(-(tape.a[0] - tape.b[0]), -(tape.a[1] - tape.b[1])), yaw, 1e-9, 
 assert.equal(airdropCommand('sentry', { x: 1, z: 2, yaw }).angle, yaw);
 assert.deepEqual(AIRDROP_KINDS, ['sugar', 'sticky', 'sentry', 'antitank']);
 const desk = [-2.5, 1.5]; // free end of a desk of island A, top at 0.74 m
-near(airdropSurface(OFFICE_SOLIDS, ...desk, 1.3), 0.74, 1e-6, 'desk top');
-near(airdropSurface(OFFICE_SOLIDS, ...desk, 0.5), 0, 1e-6, 'under the desk: floor');
+near(airdropSurface(solidQuery(OFFICE_SOLIDS), ...desk, 1.3), 0.74, 1e-6, 'desk top');
+near(airdropSurface(solidQuery(OFFICE_SOLIDS), ...desk, 0.5), 0, 1e-6, 'under the desk: floor');
 assert.match(
   airdropPlacement({
     builder: { x: 0, z: 0, yaw: 0, landingY: 0 },
@@ -204,7 +205,7 @@ const drop = s.groundDefense.drops[0];
 assert.deepEqual(drop.command.a, [0.5, 0.3], 'client coordinates ignored: below the helicopter');
 near(drop.angle, yaw, 1e-9, 'turned like the helicopter');
 near(drop.fromY, 0.6, 1e-9, 'falls from the helicopter');
-assert.equal(drop.landingY, airdropSurface(OFFICE_SOLIDS, 0.5, 0.3, 0.6));
+assert.equal(drop.landingY, airdropSurface(solidQuery(OFFICE_SOLIDS), 0.5, 0.3, 0.6));
 s = run(guest, { action: 'build', kind: 'sentry', a: [3, 3], request: 'air:sentry:1' });
 assert.equal(s.dollars, 100 - SENTRY.cost, 'retry not charged twice');
 const fall = (drop.fromY - drop.landingY) / DELIVERY_SPEED;

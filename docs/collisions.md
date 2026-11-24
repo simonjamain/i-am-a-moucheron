@@ -56,16 +56,18 @@ dès que le monde du décor existe.
   d'explosion est alors le passage le plus proche de la course (recherche par
   échantillonnage). L'obstruction d'un souffle est le même segment. Ennemis, joueurs,
   véhicules et postes restent des sphères ou des coques.
-- **Pose d'équipement** : `supportedPlacement` (`src/equipment.ts`) prend un appui
-  `DecorSupport`. Le client cherche une surface plane et horizontale sous le centre
-  et les quatre coins de l'emprise (normales au-delà de 0,95, écart de hauteur
-  d'au plus 2 mm) et vérifie le volume libre au-dessus ; `aimPlacement` vise une
-  face supérieure d'un meuble. Les **appareils** (`rugged`) se contentent d'une
+- **Pose d'équipement** : `supportedPlacement` (`src/equipment.ts`) interroge `SolidQuery`.
+  `supports` cherche, par rayons vers le bas, une surface plane et horizontale sous le
+  centre et les quatre coins de l'emprise (normales au-delà de 0,95, écart de hauteur
+  d'au plus 2 mm), boîtes puis triangles du décor, la plus haute d'abord ; `clear`
+  vérifie le volume libre au-dessus (une boîte Rapier de l'emprise) ; `aimPlacement` vise
+  une face supérieure d'un meuble. Les **appareils** (`rugged`) se contentent d'une
   surface inclinée de 60° au plus sous le centre, coins dans le vide permis : on
   pose un appareil sur un clavier ou les pales d'un ventilateur, mais aucun
-  équipement ordinaire sur le clavier. Côté serveur, `decorTrust` accepte la
-  hauteur envoyée si elle tombe dans la boîte d'un meuble sous le centre
-  ([confiance](trust-model.md)).
+  équipement ordinaire sur le clavier. Le serveur ne juge pas la pose d'un joueur
+  ([confiance](trust-model.md)) ; il utilise le même test, dans son propre `SolidQuery`
+  par plan, pour les largages du Castor volant (`airdropSurface`) et l'atterrissage des
+  colis (`deliveryLanding`).
 - **Vol** : l'avion s'écrase quand son point, gonflé de 0,3 unité d'acteur, touche un solide
   (`SolidQuery.nearest`) ou quand le segment parcouru depuis l'image précédente en traverse
   un (`SolidQuery.segment`) ; il se pose (`resolveLanding`, `src/sortie.ts`) sur le dessus de
@@ -84,9 +86,8 @@ dès que le monde du décor existe.
 
 ## Restent sur les boîtes
 
-- Calculs du serveur seul : largages (`airdrop.ts`), livraisons (`delivery.ts`),
-  apparitions sur les lits (`beds.ts`), constructions du Castor.
-- Navigation des insectes au sol (`ground-defense.ts`, `ground-creatures.ts`).
+- Navigation des insectes au sol (`ground-defense.ts`, `ground-creatures.ts`, `route-navigation.ts`) :
+  [plan de migration](insects-rapier.md).
 
 ## Affichage
 

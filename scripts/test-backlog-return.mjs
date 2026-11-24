@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import * as T from '../vendor/three.webgpu.min.js';
-import { Game } from '../server/game.js';
+import { Game, loadServerPhysics } from '../server/game.js';
 import { resolveHeavy } from './heavy-resolver.mjs';
 import { VEHICLES, vehiclePad } from '../src/fleet.ts';
 import { stepHelicopter } from '../src/helicopter.ts';
@@ -14,6 +14,7 @@ import { wavePlan } from '../src/waves.ts';
 import { createOrdnance } from '../src/ordnance.js';
 import { createSoul, inDeskZone, deskOccupant, advancePurgatory } from '../src/purgatory-queue.ts';
 import { solidQuery } from './solid-harness.mjs';
+await loadServerPhysics();
 const floor = { min: { x: -4, y: -0.1, z: -3 }, max: { x: 4, y: 0, z: 3 } };
 for (const occupied of [false, true]) {
   const s = { ...vehiclePad('helicopter'), p: [0, 1, 0], q: [0, 0, 0, 1], landed: false };
@@ -158,12 +159,14 @@ assert.equal(
   Object.values(SHOP).filter((x) => ['placement', 'vehicle'].includes(x.kind)).length,
 );
 assert.equal(DELIVERY_SPEED, 1 / 3, 'airdrops fall at a third of a world metre per second');
-assert.equal(
-  deliveryLanding({ item: 'dca', x: 0, y: 1, z: 0 }, [
-    floor,
-    { min: { x: -1, y: 0, z: -1 }, max: { x: 1, y: 0.5, z: 1 } },
-  ]).y,
-  0.50005,
+// Rapier answers in 32 bits: the landing height is within a micrometre.
+assert.ok(
+  Math.abs(
+    deliveryLanding(
+      { item: 'dca', x: 0, y: 1, z: 0 },
+      solidQuery([floor, { min: { x: -1, y: 0, z: -1 }, max: { x: 1, y: 0.5, z: 1 } }]),
+    ).y - 0.50005,
+  ) < 1e-6,
 );
 now += 6000;
 game.advanceDeliveries(room, now);
@@ -180,8 +183,11 @@ assert.equal(deskOccupant(queue).id, 1, 'cannot sign before earlier insect');
 queued.gone = true;
 assert.equal(deskOccupant(queue).id, 2, 'no delay after release');
 assert.equal(purchaseCount({ equipment: [], deliveries: [{ item: 'radar' }] }, 'radar'), 1);
-const blocked = deliveryLanding({ item: 'dca', x: 0, y: 0.01, z: 0 }, [
-  floor,
-  { min: { x: -0.01, y: 0.001, z: -0.01 }, max: { x: 0.01, y: 0.02, z: 0.01 } },
-]);
+const blocked = deliveryLanding(
+  { item: 'dca', x: 0, y: 0.01, z: 0 },
+  solidQuery([
+    floor,
+    { min: { x: -0.01, y: 0.001, z: -0.01 }, max: { x: 0.01, y: 0.02, z: 0.01 } },
+  ]),
+);
 assert.equal(blocked, null, 'a collider above the current parcel still blocks headroom');

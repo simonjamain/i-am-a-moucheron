@@ -16,8 +16,9 @@ import { OFFICE_LAYOUT } from '../src/layout.ts';
 import { makeInstallationCollider } from '../src/station-model.ts';
 import { colliderContainsXZ } from '../src/oriented-collider.ts';
 import { aimGun, stepWalker } from '../src/sortie.ts';
-import { Game } from '../server/game.js';
+import { Game, loadServerPhysics } from '../server/game.js';
 import { walkerWorld } from './walker-harness.mjs';
+await loadServerPhysics();
 
 const station = { kind: 'refuel', x: 0, y: 0.01, z: 0 };
 const gun = { kind: 'dca', x: 0, y: 0.01, z: 0.08, slot: 0, ammo: 0 };

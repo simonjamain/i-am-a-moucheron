@@ -43,6 +43,7 @@ import {
 } from '../src/fleet.ts';
 import { AIRDROP_KINDS, airdropCommand, airdropSurface, headingOf } from '../src/airdrop.ts';
 import { baseWorld, baseBody, reconcileBase } from '../src/base.ts';
+import { SolidQuery } from '../src/solid-query.ts';
 import { relayBodyReport } from '../src/walk-arena.ts';
 import {
   createSoul,
@@ -66,14 +67,7 @@ import {
   assignMidgeSwarmSizes,
   MAX_OFFSPRING_ROSTER,
 } from '../src/waves.ts';
-import {
-  SHOP,
-  shopPrice,
-  supportedPlacement,
-  decorTrust,
-  PLACEMENT_REACH,
-  PLACEMENT_SLACK,
-} from '../src/equipment.ts';
+import { SHOP, shopPrice } from '../src/equipment.ts';
 import { advancePaidService } from '../src/paid-service.ts';
 import { SENTRY, GATLING, isTurret, fireGroundSentries } from '../src/ground-sentry.ts';
 import { FORTIFICATIONS, isFortification } from '../src/ground-fortifications.ts';
@@ -133,6 +127,17 @@ function physicsEngine() {
     },
   );
   return rapier;
+}
+// Airdrops and deliveries query the solids synchronously: the server awaits this at start-up.
+export const loadServerPhysics = () => (physicsEngine(), rapierLoading);
+// One query world per layout for the airdrops and deliveries (boxes and props' triangles).
+const grounds = new Map();
+function groundFor(layoutId, solids) {
+  if (!rapier) return null;
+  let ground = grounds.get(layoutId);
+  if (!ground) grounds.set(layoutId, (ground = new SolidQuery(rapier)));
+  ground.sync(solids, decorFor(layoutId));
+  return ground;
 }
 const decors = new Map();
 function decorFor(layoutId) {
@@ -1367,11 +1372,7 @@ export class Game {
       );
       requireGame(signature(b.signature), 'Signez le contrat personnel.');
       if (b.cancel) requireGame(p.bedId === bed.slot, 'Ce lit n’est pas votre point actif.');
-      else
-        requireGame(
-          bedSpawn(bed, this.solids, r.equipment, values(r.vehicles)),
-          'Lit impraticable.',
-        );
+      else requireGame(bedSpawn(bed), 'Lit impraticable.');
       p.bedId = b.cancel ? null : bed.slot;
       r.bedContracts.set(r.identityTokens.get(p.id), p.bedId);
     } else if (path === 'fall-impact') {
@@ -1596,7 +1597,7 @@ export class Game {
     const [x, y, z] = vehicle.state.p;
     const fromY = y - VEHICLES.flyingcastor.gear;
     const command = airdropCommand(kind, { x, z, yaw: headingOf(vehicle.state.q) });
-    const landingY = airdropSurface(this.solids, x, z, Math.max(0, fromY));
+    const landingY = airdropSurface(groundFor(r.layout, this.solids), x, z, Math.max(0, fromY));
     let price;
     try {
       price = groundCommand(
@@ -1817,7 +1818,7 @@ export class Game {
     const carrier = r.vehicles.get(p.vehicle_id);
     const drop =
       carrier &&
-      deliveryStart(carrier, b.item, r.deliveries.length, this.solids, [
+      deliveryStart(carrier, b.item, r.deliveries.length, groundFor(r.layout, this.solids), [
         ...r.equipment,
         ...r.deliveries,
         ...values(r.vehicles).map((v) => ({ x: v.state.p[0], y: v.state.p[1], z: v.state.p[2] })),
@@ -1846,7 +1847,7 @@ export class Game {
   }
   advanceDeliveries(r, now) {
     for (const delivery of r.deliveries) {
-      const landing = deliveryLanding(delivery, this.solids, [
+      const landing = deliveryLanding(delivery, groundFor(r.layout, this.solids), [
         ...r.equipment,
         initialStation(),
         ...values(r.vehicles)
@@ -1993,43 +1994,18 @@ export class Game {
           (b.position.angle === undefined || Number.isFinite(b.position.angle)),
         'Posez cet équipement à pied.',
       );
-      const body = this.base(r, p, b.ground),
-        w = body && baseWorld(body);
-      requireGame(
-        body &&
-          !body.parachute &&
-          body.grounded !== false &&
-          Math.hypot(w.x - b.position.x, w.z - b.position.z) <= PLACEMENT_REACH + PLACEMENT_SLACK,
-        'Placez l’équipement près de vous, depuis le sol.',
-      );
+      // The player puts it where they want: where it stands is the client's business (trust).
       requireGame(
         r.equipment.length + values(r.purchases).filter((o) => !o.placed && o !== prepaid).length <
           24,
         'Limite de 24 équipements atteinte.',
       );
-      const placement = supportedPlacement(
-        { ...b.position, y: w.y },
-        this.solids,
-        [
-          ...r.equipment,
-          initialStation(),
-          ...values(r.vehicles)
-            .filter((v) => v.state.landed)
-            .map((v) => ({
-              x: v.state.p[0],
-              y: v.state.p[1],
-              z: v.state.p[2],
-              clearance: (VEHICLES[v.type].span * ACTOR_UNIT) / 2,
-            })),
-        ],
-        b.item,
-        // On furniture, the client found the surface on the props' triangles.
-        decorTrust(this.solids, b.position.y - 0.00005),
-      );
-      requireGame(
-        placement && Math.abs(placement.y - b.position.y) <= 0.0003,
-        'La base entière doit reposer sur une surface libre.',
-      );
+      const placement = {
+        x: b.position.x,
+        y: b.position.y,
+        z: b.position.z,
+        ...(b.position.angle === undefined ? {} : { angle: b.position.angle }),
+      };
       if (item.kind === 'vehicle') this.createVehicle(r, b.item, 'purchase', placement);
       else this.installEquipment(r, b.item, placement);
     } else if (item.kind === 'vehicle') this.createVehicle(r, b.item);
@@ -2808,7 +2784,7 @@ export class Game {
       p.life = 'alive';
       p.state = initialState();
       const bed = r.equipment.find((e) => e.kind === 'bed' && e.slot === p.bedId),
-        destination = bedSpawn(bed, this.solids, r.equipment, values(r.vehicles));
+        destination = bedSpawn(bed);
       const start = baseBody({ id: p.id, name: p.name, bay: p.bay }, this.now());
       const spawn = destination || {
         x: start.x,

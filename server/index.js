@@ -3,7 +3,7 @@ import { pathToFileURL } from 'node:url';
 import { PeerConnection } from 'node-datachannel';
 import { WebSocketServer } from 'ws';
 import { ASSETS, BUILD_VERSION, GAME_VERSION } from './assets.js';
-import { Game, SNAPSHOT_SHARE_MS } from './game.js';
+import { Game, SNAPSHOT_SHARE_MS, loadServerPhysics } from './game.js';
 import { GameSession } from './session.ts';
 import { StatsLedger } from './stats.ts';
 import { STATS_PAGE } from './stats-page.ts';
@@ -462,6 +462,8 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
     const index = process.argv.indexOf(name);
     return index >= 0 ? process.argv[index + 1] : fallback;
   };
+  // The airdrops and deliveries query the solids synchronously: the physics engine is ready first.
+  await loadServerPhysics();
   const port = Number(process.env.PORT || argument('--port', 3000));
   const host = process.env.HOST || argument('--host', '0.0.0.0');
   const app = createGameServer({

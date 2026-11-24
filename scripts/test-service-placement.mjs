@@ -18,16 +18,29 @@ function check(name, fn) {
 }
 check('station next to parked aircraft within service radius', () =>
   assert.ok(
-    supportedPlacement(point, [floor], [{ x: 0.06, y: 0, z: 0, clearance: 0.03 }], 'refuel'),
+    supportedPlacement(
+      point,
+      solidQuery([floor]),
+      [{ x: 0.06, y: 0, z: 0, clearance: 0.03 }],
+      'refuel',
+    ),
   ),
 );
 check('equipment inside station service radius', () =>
   assert.ok(
-    supportedPlacement({ ...point, x: 0.04 }, [floor], [{ ...point, kind: 'refuel' }], 'dca'),
+    supportedPlacement(
+      { ...point, x: 0.04 },
+      solidQuery([floor]),
+      [{ ...point, kind: 'refuel' }],
+      'dca',
+    ),
   ),
 );
 check('station body still blocks placement', () =>
-  assert.equal(supportedPlacement(point, [floor], [{ ...point, kind: 'refuel' }], 'dca'), null),
+  assert.equal(
+    supportedPlacement(point, solidQuery([floor]), [{ ...point, kind: 'refuel' }], 'dca'),
+    null,
+  ),
 );
 check('new helicopter stays boardable after neutral physics', () => {
   const state = { ...vehiclePad('helicopter'), p: [0, VEHICLES.helicopter.gear + 0.00005, 0] };

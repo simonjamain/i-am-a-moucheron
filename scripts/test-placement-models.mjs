@@ -9,6 +9,7 @@ import { supportedPlacement } from '../src/equipment.ts';
 import { Game } from '../server/game.js';
 import { VEHICLES } from '../src/fleet.ts';
 import { MAP } from '../src/scale.ts';
+import { solidQuery } from './solid-harness.mjs';
 
 const scene = new T.Scene();
 const graphics = createGraphics(T, scene);
@@ -100,8 +101,11 @@ const floor = {
   min: { x: -rx - 0.00001, y: -0.1, z: -rz - 0.00001 },
   max: { x: rx + 0.00001, y: 0, z: rz + 0.00001 },
 };
-assert.ok(supportedPlacement({ x: 0, y: 0, z: 0, angle: 0 }, [floor], [], type));
-assert.equal(supportedPlacement({ x: 0, y: 0, z: 0, angle: Math.PI / 2 }, [floor], [], type), null);
+assert.ok(supportedPlacement({ x: 0, y: 0, z: 0, angle: 0 }, solidQuery([floor]), [], type));
+assert.equal(
+  supportedPlacement({ x: 0, y: 0, z: 0, angle: Math.PI / 2 }, solidQuery([floor]), [], type),
+  null,
+);
 console.log(
   'Placement models: real geometry, transparent states, cache ownership, exact poses and rotated footprints OK',
 );
