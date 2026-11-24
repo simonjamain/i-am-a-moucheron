@@ -111,5 +111,5 @@ Le tireur rapporte ses coups (`purgatory-hit`), comptés une fois par tir et par
 - `scripts/test-office-clouds.mjs` : absence de plafond.
 - `scripts/e2e-purgatory-walk.mjs` : le purgatoire dans la scène unique.
 
-Restent à essayer en partie réelle : la montée en vol, et le coût des deux nuages
-volumétriques vus de loin sur une carte graphique.
+Restent à essayer en partie réelle : la montée en vol, et le coût des nuages
+volumétriques du ciel sur une carte graphique.
