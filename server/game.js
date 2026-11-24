@@ -2496,17 +2496,6 @@ export class Game {
         ammoCapacity(v.type, weapon),
       'Poste armé requis.',
     );
-    if (v.type === 'helicopter')
-      requireGame(
-        !r.ordnance.some(
-          (s) =>
-            s.weapon === 'missile' &&
-            s.vehicle === v.id &&
-            s.shooter === p.id &&
-            s.occupation === p.occupation,
-        ),
-        'Guidage en cours.',
-      );
     let allowed = false;
     for (const shot of shots) {
       const key = p.id + ':' + shot;

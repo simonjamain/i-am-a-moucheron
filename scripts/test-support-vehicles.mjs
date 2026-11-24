@@ -274,6 +274,21 @@ assert.equal(missile.occupation, gunner.occupation);
 // Its 30 m blast would kill the crew at the muzzle: detonate it far away.
 missile.p = [0, 2, -20];
 assert.throws(() => fire(gunner, heli, 'missile', 'second-guided'), /déjà/);
+// The click keeps the machine gun while the missile flies (Space launches it): its reports are
+// accepted during the guidance. They were refused ("Guidage en cours"), and the client, which
+// blocks a weapon after a definitive refusal, could no longer fire it until the player left the
+// seat and came back.
+{
+  const gunRounds = heli.supplies.ammo.copilot;
+  gunner.seen = now;
+  const reply = game.command(room.code, gunner.id, 'aircraft-fire', {
+    vehicle: heli.id,
+    seat: 'copilot',
+    shots: ['mg-during-guidance'],
+  });
+  assert.equal(reply.allowed, true, 'machine gun reports are accepted while the missile flies');
+  assert.equal(heli.supplies.ammo.copilot, gunRounds - 1);
+}
 // Only the shooter's impact report counts: the pilot cannot detonate it.
 detonateHeavy(game, room, 'guided', pilot.id);
 assert.ok(room.ordnance.includes(missile), 'a report from another player is ignored');
