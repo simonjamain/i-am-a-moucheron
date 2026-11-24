@@ -204,6 +204,7 @@ export const SUITE = [
   'test-tracer-contrast',
   'test-udp-mux',
   'test-aircraft-wheels',
+  'test-exit-spot',
   'test-build-info',
   'test-conflict-alert',
   'test-suite-wiring',

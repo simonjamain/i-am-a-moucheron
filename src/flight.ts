@@ -5,6 +5,8 @@ import type { Three } from './types.ts';
 /** Aerodynamic overrides from a VEHICLES entry; omitted fields use the fighter defaults. */
 export interface FlightProfile {
   authoritySpeed?: number;
+  /** Plane physics: stall speed as a fraction of the top speed (0.32 by default; lower lifts at a lower speed). */
+  stallFraction?: number;
   turn?: number;
   stallAngle?: number;
   liftBase?: number;

@@ -92,7 +92,7 @@ assert.equal(VEHICLES.helicopter.maxSpeed, 70 * 0.6);
 assert.equal(light.thrust, 9);
 
 // Level top speed is 25 % below the light fighter's; control and lift last to lower speeds.
-const base = { ...VEHICLES.spitfire, thrust: 12, maxSpeed: 70, turn: 1 };
+const base = { ...VEHICLES.lightfighter, thrust: 12, maxSpeed: 70, turn: 1 };
 const state = (profile, velocity, gas = 1) => ({
   q: new T.Quaternion(),
   vel: new T.Vector3(...velocity),
