@@ -70,11 +70,24 @@ nav:
   - Le jeu:
       - Règles et parcours: gameplay.md
       - Commandes: controls.md
-      - Vagues et magasin: progression.md
+      - Vagues, puissance et magasin: progression.md
       - Bestiaire: enemy-bestiary.md
-      - Combat, mondes et contrats: combat-worlds.md
       - Plans de bureau: office-layouts.md
       - Nouveautés: nouveautes.md
+  - Règles détaillées:
+      - Caisse, achats et services: economy.md
+      - Banque: bank.md
+      - Dossiers, réserves et livraisons: logistics-contracts.md
+      - Combat, PV et sièges: combat-worlds.md
+      - Flotte, échelle et armement: scale-fleet-weapons.md
+      - Hélicoptère H2 et DCA mobile D2: support-vehicles.md
+      - Tourelle Gatling: gatling-turret.md
+      - Projectiles: projectiles.md
+      - 'Nuées : composition et mouvement': dense-swarms.md
+      - Statistiques des équipements: stats.md
+      - File du purgatoire: purgatory-queue.md
+      - Ciel du purgatoire: purgatory-sky.md
+      - Mode debug: laboratory.md
   - Conception:
       - Direction artistique: art-direction.md
       - Règles d’interface: ui-guidelines.md
@@ -83,51 +96,22 @@ nav:
       - Écran de chargement: loading-screen.md
       - Rendu dessin animé: toon-rendering.md
       - Rendu WebGPU: webgpu.md
-      - Ombres d’atterrissage: shadow-visibility.md
-      - Éclairage du bureau: office-lighting.md
-      - Collisions sur les triangles: collisions.md
-      - Visibilité des ennemis: enemy-visibility.md
-      - Audio: audio.md
-      - Pipeline des assets Meshy: asset-pipeline.md
-      - Modèles:
-          - Flotte Meshy texturée: meshy-fleet.md
-          - Chasseur M1: m1-model.md
-          - Bombardier B3: b3-model.md
-          - Hélicoptère H2: h2-model.md
-          - Biplans: biplane-models.md
-          - Tourelle T-01: t01-asset.md
-          - Tourelle Gatling: gatling-turret.md
-  - Règles détaillées:
-      - Économie, signatures et balistique: economy-physics.md
-      - Puissance des ennemis: enemy-power.md
-      - Statistiques des équipements: stats.md
-      - Unités, flotte et armes: scale-fleet-weapons.md
-      - Véhicules et banque: vehicles-bank.md
-      - Véhicules de soutien: support-vehicles.md
-      - Commandes de l’hélicoptère: helicopter-controls.md
-      - Nuées et équipement: swarm-equipment.md
-      - Nuées denses: dense-swarms.md
-      - Logistique et feuillets: logistics-contracts.md
-      - File des purgatoires: purgatory-queue.md
+      - Éclairage et ombres du bureau: office-lighting.md
       - Décor du purgatoire: purgatory-scene.md
-      - Ciel du purgatoire: purgatory-sky.md
-      - Mode debug: laboratory.md
-      - Retours de terrain (lots):
-          - Confort: comfort.md
-          - Lisibilité et Spitfire: clean-flight.md
-          - Accès, visée et chutes: field-update.md
-          - Multijoueur et HUD: multiplayer-return.md
+      - Audio: audio.md
+      - Pipeline des assets 3D: asset-pipeline.md
+      - Catalogue des modèles 3D: models.md
   - Technique:
       - Présentation du projet: projet.md
       - Carte du code: code-structure.md
       - Confiance envers les clients: trust-model.md
-      - Réseau et corps partagés: walking-network.md
-      - Serveur UDP: udp-server.md
+      - Autorité et corps partagés: walking-network.md
+      - Serveur et transport: udp-server.md
       - Physique Rapier: physics-engine.md
-      - Vol du biplan sur Rapier: plane-physics.md
-      - Rubans d'air et décrochage: air-ribbons.md
+      - Vol des avions sur Rapier: plane-physics.md
       - Vol des hélicoptères sur Rapier: heli-physics.md
-      - Types de projectiles: projectiles.md
+      - Rubans d'air et décrochage: air-ribbons.md
+      - Collisions sur les triangles: collisions.md
       - Affichage de la physique: physics-debug.md
       - Performances: performance.md
       - TypeScript: typescript.md
@@ -142,6 +126,4 @@ nav:
       - Santé de la documentation: sante.md
       - Tâches en cours:
           - tasks/README.md
-          - tasks/collision-triangles.md
-          - tasks/scaling-plan.md
           - tasks/typescript-migration.md

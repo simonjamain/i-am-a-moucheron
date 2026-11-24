@@ -3,7 +3,7 @@
 Référence des espèces ennemies : statistiques, comportement, modèles, volumes de tir
 et lisibilité. La composition des vagues et le mouvement des groupes sont dans
 [les nuées](dense-swarms.md) ; le calcul de la puissance et le budget des vagues dans
-[puissance des ennemis](enemy-power.md) et [progression](progression.md). Ajouter une
+[puissance des ennemis](progression.md#unité-commune) et [progression](progression.md). Ajouter une
 espèce : [ajouter du contenu](adding-content.md).
 
 ## Espèces
@@ -13,17 +13,17 @@ la puissance calculée (`src/enemy-power.ts`). La puissance est la seule mesure 
 ennemi : coût dans le budget de vague, dollars rapportés par son âme au purgatoire,
 dégâts infligés à la poubelle s'il l'atteint.
 
-| Clé          | Nom               |     PV | Puissance | Vitesse (m/s) | Déplacement | Particularité                         |
-| ------------ | ----------------- | -----: | --------: | ------------: | ----------- | ------------------------------------- |
-| `ant`        | Fourmi            |    100 |      0,58 |         0,085 | sol         | grandes colonnes                      |
-| `roach`      | Cafard            |    400 |      1,38 |        0,0625 | sol         | attaque les barricades (6 PV/s)             |
-| `midge`      | Moucheron         |    100 |      1,00 |          0,11 | air         | nuées denses                          |
-| `guard`      | Abeille           |    600 |      4,03 |        0,0875 | air         |                                       |
-| `mosquito`   | Moustique         |    150 |      2,06 |         0,115 | air         | esquives erratiques                   |
-| `brute`      | Scarabée          |  1 500 |      6,93 |          0,07 | air         | carapace (ricochets)                  |
-| `spider`     | Araignée pondeuse |  1 200 |     10,94 |         0,055 | sol         | 100 bébés à sa mort ; barricades (10 PV/s)  |
-| `spiderling` | Bébé araignée     |     10 |      0,08 |         0,075 | sol         | naissance uniquement                  |
-| `rat`        | Rat               | 10 000 |     24,47 |       0,08075 | sol         | très gros, lent ; barricades (30 PV/s)      |
+| Clé          | Nom               |     PV | Puissance | Vitesse (m/s) | Déplacement | Particularité                              |
+| ------------ | ----------------- | -----: | --------: | ------------: | ----------- | ------------------------------------------ |
+| `ant`        | Fourmi            |    100 |      0,58 |         0,085 | sol         | grandes colonnes                           |
+| `roach`      | Cafard            |    400 |      1,38 |        0,0625 | sol         | attaque les barricades (6 PV/s)            |
+| `midge`      | Moucheron         |    100 |      1,00 |          0,11 | air         | nuées denses                               |
+| `guard`      | Abeille           |    600 |      4,03 |        0,0875 | air         |                                            |
+| `mosquito`   | Moustique         |    150 |      2,06 |         0,115 | air         | esquives erratiques                        |
+| `brute`      | Scarabée          |  1 500 |      6,93 |          0,07 | air         | carapace (ricochets)                       |
+| `spider`     | Araignée pondeuse |  1 200 |     10,94 |         0,055 | sol         | 100 bébés à sa mort ; barricades (10 PV/s) |
+| `spiderling` | Bébé araignée     |     10 |      0,08 |         0,075 | sol         | naissance uniquement                       |
+| `rat`        | Rat               | 10 000 |     24,47 |       0,08075 | sol         | très gros, lent ; barricades (30 PV/s)     |
 
 - **Vitesse.** `speedMps` est une vitesse de progression en mètres du bureau par
   seconde, indépendante de la taille du modèle, de l'effectif du groupe, du numéro de
@@ -52,30 +52,13 @@ naissance peut être partielle.
 
 ## Modèles, tailles et volumes de tir
 
-Chaque espèce a un modèle Meshy riggé (`src/<espèce>-data.ts`, cycle dans
-`src/<espèce>-model.ts`, chaîne commune `src/rigged-creature.ts`). Le rendu est
-instancié, un `InstancedMesh` par espèce lisant une texture d'animation de sommets
-(`src/creature-batch.ts`) : `MidgeBatch` (`src/midge-batch.ts`) pour les moucherons,
-`src/flyer-batch.ts` pour les autres volants, `src/walker-batch.ts` pour les marcheurs.
-Il n'y a pas de niveau de détail. Les cadavres, les âmes du purgatoire et le rendu sans
-WebGL utilisent un `SkinnedMesh` du même rig. Provenance et import des modèles :
-[pipeline d'assets](asset-pipeline.md).
-
-| Espèce        | Modèle Meshy          | Animation                                         | Volume de tir                        |
-| ------------- | --------------------- | ------------------------------------------------- | ------------------------------------ |
-| Moucheron     | Angry Little Fly      | battement d'ailes, pattes, antennes               | sphère `MIDGE_SPHERE_RADIUS`         |
-| Fourmi        | Red Ant Warrior       | marche tripode à pieds plantés                    | ellipsoïde du corps `ANT_HIT`        |
-| Pondeuse      | Spotted Velvet Spider | marche tétrapode alternée                         | ellipsoïde `SPIDER_HIT`              |
-| Bébé araignée | Grumpy Spider         | marche à pieds plantés, palpes qui tâtent le sol  | ellipsoïde `SPIDERLING_HIT`          |
-| Cafard        | Low Poly Cockroach    | marche tripode, longues antennes                  | ellipsoïde `ROACH_HIT`               |
-| Rat           | Low Poly Mouse        | clip de marche fourni avec le modèle              | ellipsoïde `RAT_HIT`                 |
-| Abeille       | Angry Low Poly Bee    | bourdonnement rapide, abdomen qui pompe           | ellipsoïde `BEE_HIT`                 |
-| Scarabée      | fourni par le joueur  | élytres fermées, ailes battantes, pattes pendantes | sphère `BEETLE_HIT` (rayon 0,86)     |
-| Moustique     | Low Poly Mosquito     | battement rapide, longues pattes pendantes        | ellipsoïde `MOSQUITO_HIT`            |
-
-Pour les marcheurs, la phase de marche avance avec la distance parcourue
-(`src/walker-gait.ts`) : les pieds restent plantés quelle que soit la vitesse reçue du
-serveur, et une créature arrêtée (colle, appât) revient à une pose de repos.
+Chaque espèce a un modèle Meshy riggé, dessiné en un `InstancedMesh` par espèce
+(`MidgeBatch`, `src/flyer-batch.ts`, `src/walker-batch.ts`), sans niveau de détail.
+Modèles, provenance, import, animations et zones de tir (`ANT_HIT`, `BEETLE_HIT`…) :
+[catalogue des modèles](models.md#créatures). La zone de tir est un ellipsoïde du corps
+sans pattes ni ailes, une sphère pour le moucheron (`MIDGE_SPHERE_RADIUS`) et le
+scarabée. La phase de marche des terrestres avance avec la distance parcourue : les
+pieds restent plantés quelle que soit la vitesse reçue du serveur.
 
 **Tailles.** `ENEMY_SIZE_FACTORS` (`src/scale.ts`, lu par `enemySizeFactor()`) agrandit
 d'un même rapport le modèle, sa zone de tir et le rayon de collision des armes lourdes,

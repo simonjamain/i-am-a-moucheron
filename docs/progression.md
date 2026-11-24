@@ -73,7 +73,7 @@ Le lancement initial dure 60 s et les pauses entre vagues 180 s (`initialDelay`,
 elle démarre seule. Il n’y a ni vote ni plan à débloquer entre les vagues.
 
 La caisse initiale vaut 0 $. Dès la première préparation, l’équipe peut signer l’une des
-offres de la banque (12 à 40 $, voir [banque](vehicles-bank.md)) ; les échéances sont
+offres de la banque (12 à 40 $, voir [banque](bank.md)) ; les échéances sont
 dues à chaque fin de vague. Toute la partie vit en RAM : une remise à zéro ou un
 redémarrage efface vague, caisse, achats et objets.
 

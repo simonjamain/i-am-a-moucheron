@@ -40,7 +40,7 @@ pas en jeu.
 
 1. **Arrivée à pied** près de la corbeille, sans arme, au bureau comme au
    purgatoire : marcher, sauter, ouvrir le parachute en chute
-   ([corps partagés](walking-network.md), [chute](economy-physics.md)).
+   ([corps partagés](walking-network.md), [chute](walking-network.md#saut-chute-et-parachute)).
 2. **Monter dans un engin** : viser le poste (cockpit, trappe, tourelle) ou
    l’installation (DCA fixe, canon, lit), entouré de bleu signal s’il est libre,
    puis cliquer pour ouvrir son dossier de deux documents à signer
@@ -72,8 +72,8 @@ Le budget d’une vague, en **puissance**, vaut `32 × 1,5^(n−1) × N^0,9` pou
 joueurs (`directorBudget`, `server/wave-preparation.js`), sans plafond : toute
 espèce dont la puissance tient dans le budget peut être appelée. La poubelle a
 20 PV ; chaque arrivée ennemie augmente l’infestation et la partie est perdue à 20.
-Voir [progression](progression.md), [puissance des ennemis](enemy-power.md),
-[bestiaire](enemy-bestiary.md) et [visibilité](enemy-visibility.md).
+Voir [progression](progression.md), [puissance des ennemis](progression.md#unité-commune),
+[bestiaire](enemy-bestiary.md) et [visibilité](enemy-bestiary.md#lisibilité-et-retours-visuels).
 
 Les volants partent de quatre aérations par deux couloirs à altitudes différentes,
 sous le plafond de nuages du bureau (`src/routes.ts`). Les terrestres sortent de
@@ -102,8 +102,8 @@ s’achètent et leur destruction est définitive. Sièges exclusifs.
 Les avions ont cinq minutes de carburant à plein gaz (`FUEL_SECONDS`) et des
 munitions limitées ; ils roulent, décollent dès `LIFTOFF_SPEED` (`src/flight.ts`)
 et se posent si vitesse, descente et attitude le permettent. Détails :
-[pilotage et véhicules](vehicles-bank.md), [hélicoptère et DCA mobile](support-vehicles.md),
-[commandes du H2](helicopter-controls.md), [biplans](biplane-models.md),
+[pilotage et véhicules](scale-fleet-weapons.md), [hélicoptère et DCA mobile](support-vehicles.md),
+[commandes du H2](support-vehicles.md#h2--pilotage), [biplans](models.md),
 [physique au sol](physics-engine.md), [physique de l’avion](plane-physics.md).
 
 ## Achats et pose
@@ -115,7 +115,7 @@ depuis le vrai modèle (`src/shop-thumbs.js`), le nom et le prix. Un clic ouvre 
 bon de commande ; signé, il est payé par la caisse commune puis ouvre l’aperçu de
 pose. Lit 15 $, radar 10 $, station 20 $, Flak léger 5 $ (plafonné à 40 $) coûtent
 2 $ de plus par exemplaire posé ou payé (`shopPrice`) ; DCA haute cadence 50 $,
-Flak lourd 30 $. Règles des bons, remboursements et pose : [économie](economy-physics.md).
+Flak lourd 30 $. Règles des bons, remboursements et pose : [économie](economy.md).
 
 L’aperçu montre le vrai modèle transparent, rouge si la pose est refusée ; le
 serveur revérifie support, hauteur libre, proximité et chevauchements. Une visée
@@ -156,7 +156,7 @@ acceptée par Saint Pierre ou tuée au purgatoire, rapporte une fois sa puissanc
 dollars communs (`releaseSoul`, `server/game.js`), avec une sonnerie chez tous les
 joueurs. Tuer un joueur ne rapporte jamais. Le banquier (N, ou bouton) propose sur
 un prospectus trois prêts partagés, à taux fixe par vague, prélevés à chaque fin de
-vague, sans remboursement anticipé ([banque](vehicles-bank.md)). La remise à zéro
+vague, sans remboursement anticipé ([banque](bank.md)). La remise à zéro
 efface monnaie, prêts, installations, véhicules et vagues ; aucune progression ne
 survit à une partie.
 
@@ -219,7 +219,7 @@ celle du [bestiaire](enemy-bestiary.md). Sucre et ruban gardent leurs pauses.
 soutien 50 cm. **V** bascule la vue de dessus (`src/castor-top-view.ts`) : nord en
 haut, viseur au sol à la souris pour construire et tirer, molette pour la hauteur.
 Les roues suivent la vitesse du sol de leur côté (`src/castor-wheels.ts`). Modèle :
-[flotte Meshy](meshy-fleet.md), briques : [pipeline d’assets](asset-pipeline.md).
+[flotte Meshy](models.md#castor-volant), briques : [pipeline d’assets](asset-pipeline.md).
 
 **Castor volant** : hélicoptère logistique à rotors en tandem, sans arme, 200 PV,
 pilotage de l’hélicoptère d’attaque ([physique](heli-physics.md)). Tous les occupants

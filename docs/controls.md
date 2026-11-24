@@ -70,7 +70,7 @@ Sur tous les postes : clic droit maintenu pour zoomer, F pour sortir, 1–7 pour
 changer de poste quand l’engin en a plusieurs. Au pilote d’avion, une commande
 manuelle remplace l’instructeur souris sur son seul axe (`airplaneSteering`) ;
 les autres axes restent assistés et l’assistance reprend au relâchement. Les
-commandes du H2 sont détaillées dans [commandes du H2](helicopter-controls.md).
+commandes du H2 sont détaillées dans [commandes du H2](support-vehicles.md#h2--pilotage).
 
 Flak léger : Maj maintenu allonge la fusée, Ctrl la raccourcit, de 100 à 1 200 m
 de référence (30 cm à 3,60 m du bureau) en environ 3 s ; relâcher arrête aussitôt

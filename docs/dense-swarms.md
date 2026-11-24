@@ -3,7 +3,7 @@
 Comment une vague devient un roster d'ennemis et comment ces ennemis se déplacent.
 Les espèces sont décrites dans [le bestiaire](enemy-bestiary.md), le budget et la
 montée en difficulté dans [progression](progression.md) et
-[puissance des ennemis](enemy-power.md).
+[puissance des ennemis](progression.md#unité-commune).
 
 ## Composition d'une vague
 

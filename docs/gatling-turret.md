@@ -1,6 +1,6 @@
 # Tourelle automatique Gatling
 
-La Gatling est l'**amélioration** de la tourelle automatique [T-01](t01-asset.md) : elle
+La Gatling est l'**amélioration** de la tourelle automatique [T-01](models.md#tourelle-t-01) : elle
 ne s'achète pas (ni à la roue d'outils du Castor, ni par largage du Castor volant) et
 s'obtient en refondant une T-01 posée. Même comportement que la T-01 : elle tire sur
 l'ennemi le plus proche à portée, se répare et se recharge aux sources de service
@@ -25,15 +25,15 @@ et ajouter son type de tourelle, le formulaire suit.
 
 ## Règles
 
-| Valeur            | Gatling (`GATLING`) | T-01 (`SENTRY`) |
-| ----------------- | ------------------- | --------------- |
-| Prix              | 25 $ (refonte)      | 5 $             |
-| Points de vie     | 150                 | 150             |
-| Dégâts par tir    | 30                  | 60              |
+| Valeur            | Gatling (`GATLING`) | T-01 (`SENTRY`)    |
+| ----------------- | ------------------- | ------------------ |
+| Prix              | 25 $ (refonte)      | 5 $                |
+| Points de vie     | 150                 | 150                |
+| Dégâts par tir    | 30                  | 60                 |
 | Cadence           | 12 tirs par seconde | 2 tirs par seconde |
-| Munitions         | 1 000 (≈ 83 s)      | 180             |
-| Portée            | 0,42 m              | 0,42 m          |
-| Empreinte de pose | 2 cm                | 2 cm            |
+| Munitions         | 1 000 (≈ 83 s)      | 180                |
+| Portée            | 0,42 m              | 0,42 m             |
+| Empreinte de pose | 2 cm                | 2 cm               |
 
 Le plafond de **12 tourelles par salle** est partagé entre les deux types ; recharge et
 réparation utilisent la capacité de chaque type (`turretSpec`).
@@ -59,7 +59,7 @@ Une boucle de 1 s sans couture (douze impulsions, `gatling` dans
 vitesse du faisceau. Seules les trois Gatling les plus proches de l'auditeur ont une
 voix (`gatlingSounds`). Voir [audio](audio.md).
 
-## Modèle et animation
+## Modèle Meshy et animation
 
 Source : export Meshy « Sentinel Sentry » (`Meshy_AI_Sentinel_Sentry_1121103608_texture.glb`,
 SHA-256 `a2a4e7eb9b42aed070b12c1a004ef4b998275b205c033f451f8dda9b39c07920`,
@@ -73,12 +73,12 @@ toucher aux UV, en quatre pièces rigides partageant un atlas WebP 1 024 × 1 02
 python3 scripts/import-meshy-gatling.py --source Meshy_AI_Sentinel_Sentry_1121103608_texture.glb --output src
 ```
 
-| Pièce    | Triangles | Rôle                                                              |
-| -------- | --------: | ----------------------------------------------------------------- |
-| `socle`  |       590 | trépied et couronne, fixes                                        |
-| `tete`   |       896 | boîtier, radar, caisse et bande de munitions                      |
-| `anneau` |        80 | base circulaire du faisceau : suit l'élévation, ne tourne pas     |
-| `rotor`  |       382 | les six canons et leurs colliers : seule pièce qui tourne         |
+| Pièce    | Triangles | Rôle                                                          |
+| -------- | --------: | ------------------------------------------------------------- |
+| `socle`  |       590 | trépied et couronne, fixes                                    |
+| `tete`   |       896 | boîtier, radar, caisse et bande de munitions                  |
+| `anneau` |        80 | base circulaire du faisceau : suit l'élévation, ne tourne pas |
+| `rotor`  |       382 | les six canons et leurs colliers : seule pièce qui tourne     |
 
 L'original incline le faisceau d'environ 2,25° : l'import ajuste l'axe sur les six
 canons et le redresse sur l'horizontale avant de le poser sur son pivot (centre de

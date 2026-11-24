@@ -18,11 +18,11 @@ règle de confiance dans [confiance envers les clients](trust-model.md).
   contrats, stocks, argent. Il stocke et relaie les corps rapportés et
   n'avance jamais l'arène du bureau. Il simule lui-même les insectes au sol,
   les tourelles automatiques et les engins sans pilote
-  ([véhicule sans pilote](physics-engine.md#engins-sans-pilote-le-serveur)).
+  ([véhicule sans pilote](physics-engine.md#engins-sans-pilote--le-serveur)).
 - **Tirs** : projectiles et munitions sont prédits immédiatement, puis débités
   par lots idempotents ; les réponses ne créent pas de projectiles
   ([logistique](logistics-contracts.md)). Les armes lourdes sont simulées par
-  leur tireur, qui rapporte leurs impacts ([véhicules et armes](vehicles-bank.md)).
+  leur tireur, qui rapporte leurs impacts ([véhicules et armes](scale-fleet-weapons.md)).
 - **Dégâts** : enregistrés à part du mouvement, avec un identifiant
   d'incarnation et un registre d'impacts idempotent ; un rapport de mouvement
   ne peut pas réinitialiser les dégâts ([combat et mondes](combat-worlds.md)).
@@ -75,6 +75,19 @@ au bureau. Il sert aux collisions entre joueurs (solides, jamais traversables)
 et avec le mobilier ; les volumes de tir sont distincts. Les pas ne sonnent
 qu'avec un appui au sol (`footstepsAudible`), jamais en chute libre ni sous
 parachute.
+
+## Saut, chute et parachute
+
+`src/field-physics.ts` porte la physique verticale du marcheur, en mètres de référence
+convertis par `MAP.ratio` : `jumpWalker` lance un saut depuis le sol seulement, sans voile
+(`WALKER_JUMP_SPEED` 4,9 m/s, sommet vers 1,2 m) ; `WALKER_FALL` fixe gravité (9,81), vitesse
+terminale (54 m/s, 5,5 m/s sous voile), gonflement de la voile (0,25 s) et seuils d'impact
+(sans dégât jusqu'à 6 m/s, mortel à 20 m/s, `impactDamage` quadratique entre les deux).
+`src/sortie.ts` intègre la chute par sous-pas (`stepWalkerFall`). La chute libre commence
+au-delà de `WALKER_FREEFALL_SPEED` (5,6 m/s de descente), qu'un simple saut n'atteint pas :
+c'est aussi la condition pour ouvrir le parachute (`toggleParachute`, `src/ballistics.ts`).
+Les poses en l'air (impulsion, chute libre à plat ventre, suspension sous voile) sont
+procédurales : `src/walker-air-pose.ts`.
 
 ## Un seul monde pour le bureau et le purgatoire
 

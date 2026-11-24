@@ -60,7 +60,7 @@ Leur horodatage ne recule jamais et la mise à jour est conditionnée à la rév
 | Anti-air mobile   | 100 obus                                                    |
 | Castor            | 500 balles ; Castor volant sans arme                        |
 
-Cadences et équilibre des armes : [véhicules et banque](vehicles-bank.md#stocks-et-équilibre-initial)
+Cadences et équilibre des armes : [véhicules et banque](scale-fleet-weapons.md#armement)
 et [véhicules d’appui](support-vehicles.md). Stocks des DCA fixes et recharge payante :
 [économie](economy.md#service-payant). Le HUD montre les secondes de carburant à plein
 gaz, les munitions du poste et l’indication de service.

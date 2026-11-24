@@ -7,7 +7,8 @@ dans Git. Lire [README](README.md) et [CONTRIBUTING](CONTRIBUTING.md), puis seul
 documents de la tâche :
 
 - carte des modules : [code-structure](docs/code-structure.md) ;
-- règles de jeu et parcours joueur : [gameplay](docs/gameplay.md), qui renvoie aux règles détaillées ;
+- règles de jeu et parcours joueur : [gameplay](docs/gameplay.md), qui renvoie aux règles détaillées
+  (achats : [economy](docs/economy.md) ; signatures et réserves : [logistics-contracts](docs/logistics-contracts.md)) ;
 - réseau, autorité, corps partagés : [walking-network](docs/walking-network.md) et [udp-server](docs/udp-server.md) ;
 - contrôles, CI, déploiement : [operations](docs/operations.md) ;
 - nouvelle espèce ou nouveau véhicule : [ajouter du contenu](docs/adding-content.md) ;

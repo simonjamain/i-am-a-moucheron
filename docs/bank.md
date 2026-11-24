@@ -2,7 +2,7 @@
 
 La banque prête de l'argent à la caisse commune contre des échéances prélevées à chaque
 fin de vague. Règles dans `src/bank.ts`, guichet dans `src/bank-ui.ts`, commande
-`bank-sign` dans `server/game.js`. Monnaie et achats : [économie](economy-physics.md) ;
+`bank-sign` dans `server/game.js`. Monnaie et achats : [économie](economy.md) ;
 revenus : [progression](progression.md).
 
 ## Offres

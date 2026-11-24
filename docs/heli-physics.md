@@ -3,12 +3,12 @@
 L'hélicoptère d'attaque et le Castor volant (`HELI_TYPES`) sont des corps rigides Rapier
 (`src/heli-physics.ts`, classe `HeliRig`), sur le même schéma que les avions
 ([plane-physics.md](plane-physics.md)) : unités « mètres de référence », monde partagé du serveur
-pour les engins vides ([engins sans pilote](physics-engine.md#engins-sans-pilote-le-serveur)), train à ressorts par rayons, volumes mesurés sur le modèle.
+pour les engins vides ([engins sans pilote](physics-engine.md#engins-sans-pilote--le-serveur)), train à ressorts par rayons, volumes mesurés sur le modèle.
 Le pas `stepHelicopter` (`src/helicopter.ts`) ne sert que tant que Rapier n'est pas chargé.
 
 ## Pilotage
 
-Le pilotage « instructeur » ([commandes](helicopter-controls.md)) : la souris donne l'assiette cible
+Le pilotage « instructeur » ([commandes](support-vehicles.md#h2--pilotage)) : la souris donne l'assiette cible
 (45° au plus, un seul budget pour tangage et roulis), le collectif une vitesse verticale
 (montée 8 m/s, descente jusqu'à 30 m/s), le neutre tient le stationnaire ; A/E tournent
 (1,4 rad/s) quand la vue verticale est active. Ce pilotage s'exerce sur un corps rigide :

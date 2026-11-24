@@ -1,12 +1,12 @@
 # Flotte, échelle et armement
 
 Référence commune des engins : échelle des acteurs, catalogue des véhicules, cycle de
-vie et postes, armement et DCA fixes. Détails par famille :
-[biplans](biplane-models.md), [M1](m1-model.md), [modèles Meshy de la flotte](meshy-fleet.md),
-[H2 et D2](support-vehicles.md), [physique de l'avion](plane-physics.md),
+vie et postes, armement et DCA fixes. Détails :
+[modèles des véhicules](models.md#véhicules), [H2 et D2](support-vehicles.md),
+[physique de l'avion](plane-physics.md),
 [physique au sol](physics-engine.md). Projectiles et réseau des tirs :
 [projectiles](projectiles.md). Réserves, ravitaillement et contrats :
-[logistique](logistics-contracts.md). Achat et pose : [économie](economy-physics.md).
+[logistique](logistics-contracts.md). Achat et pose : [économie](economy.md).
 
 ## Échelle
 
@@ -34,19 +34,19 @@ Profils dans `VEHICLES` (`src/fleet.ts`), prix dans `SHOP` (`src/equipment.ts`),
 de l'atelier dans `src/shop-catalog.ts`. Vitesses maximales en m/s de référence ; PV de
 coque 100 sauf mention.
 
-| Clé            | Nom                   | Prix | Postes                                   | Vitesse max | Armement                                |
-| -------------- | --------------------- | ---: | ---------------------------------------- | ----------: | --------------------------------------- |
-| `fighter`      | Chasseur biplan       |  5 $ | pilote                                   |        52,5 | une MG centrale                         |
-| `bomber`       | Bombardier biplan     |  5 $ | pilote, mitrailleur dorsal               |        52,5 | bombes (pilote), MG dorsale             |
-| `tank`         | Char moyen            |  5 $ | conducteur, tireur principal, mitrailleur supérieur |          32 | MG, canon HE/AP + coaxiale, MG          |
-| `lightfighter` | Chasseur léger        | 15 $ | pilote                                   |          70 | deux MG de nez                          |
-| `medbomber`    | Bombardier moyen      | 15 $ | pilote, dorsal, queue, ventral           |        52,5 | bombes, trois MG                        |
-| `castor`       | Castor                | 15 $ | pilote                                   |          52 | MG ; soutien et construction            |
-| `flaktruck`    | Anti-air mobile (D2)  | 15 $ | conducteur, tireur                       |          66 | canon à fusée de proximité              |
-| `interceptor`  | Stuka                 | 25 $ | pilote                                   |          54 | MG, bombes                              |
-| `flyingcastor` | Castor volant         | 35 $ | pilote, trois passagers                  |          42 | aucun ; largages et soutien (200 PV)    |
-| `helicopter`   | Hélicoptère H2        | 50 $ | pilote, copilote                         |          42 | roquettes, MG, missile (200 PV)         |
-| `spitfire`     | Spitfire              | 75 $ | pilote                                   |       122,5 | six MG en salves                        |
+| Clé            | Nom                  | Prix | Postes                                              | Vitesse max | Armement                             |
+| -------------- | -------------------- | ---: | --------------------------------------------------- | ----------: | ------------------------------------ |
+| `fighter`      | Chasseur biplan      |  5 $ | pilote                                              |        52,5 | une MG centrale                      |
+| `bomber`       | Bombardier biplan    |  5 $ | pilote, mitrailleur dorsal                          |        52,5 | bombes (pilote), MG dorsale          |
+| `tank`         | Char moyen           |  5 $ | conducteur, tireur principal, mitrailleur supérieur |          32 | MG, canon HE/AP + coaxiale, MG       |
+| `lightfighter` | Chasseur léger       | 15 $ | pilote                                              |          70 | deux MG de nez                       |
+| `medbomber`    | Bombardier moyen     | 15 $ | pilote, dorsal, queue, ventral                      |        52,5 | bombes, trois MG                     |
+| `castor`       | Castor               | 15 $ | pilote                                              |          52 | MG ; soutien et construction         |
+| `flaktruck`    | Anti-air mobile (D2) | 15 $ | conducteur, tireur                                  |          66 | canon à fusée de proximité           |
+| `interceptor`  | Stuka                | 25 $ | pilote                                              |          54 | MG, bombes                           |
+| `flyingcastor` | Castor volant        | 35 $ | pilote, trois passagers                             |          42 | aucun ; largages et soutien (200 PV) |
+| `helicopter`   | Hélicoptère H2       | 50 $ | pilote, copilote                                    |          42 | roquettes, MG, missile (200 PV)      |
+| `spitfire`     | Spitfire             | 75 $ | pilote                                              |       122,5 | six MG en salves                     |
 
 Le chasseur léger (`LIGHT_FIGHTER`) reste la référence dont dérivent Stuka, Spitfire et
 hélicoptères. Le char est 20 % plus grand que son dessin (`VEHICLE_SCALE`). Carburant :
@@ -92,21 +92,21 @@ Stocks pleins par `fullAmmo()` (`src/logistics.ts`), cadences dans `src/fleet.ts
 `src/armament.ts` et `src/client.js`, dégâts par type dans [projectiles](projectiles.md).
 Une MG a environ 60 s de tir nominal (90 s pour celles du char).
 
-| Engin / poste                       | Arme (type)          |  Stock | Cadence |
-| ----------------------------------- | -------------------- | -----: | ------: |
-| Chasseur biplan, pilote             | MG (`mg`)            |    500 |  0,12 s |
-| Chasseur léger, Stuka, pilote       | MG (`mg`)            |  1 000 |  0,06 s |
-| Spitfire, pilote                    | six MG (`mg`)        |  1 000 |  salves |
-| Mitrailleurs des bombardiers        | MG (`mg`)            |    667 |  0,09 s |
-| Stuka, pilote                       | bombes (`bomb`)      |      6 |   0,5 s |
-| Bombardier moyen, pilote            | bombes (`bomb`)      |     50 |   0,5 s |
-| Bombardier biplan, pilote           | bombes (`bomb`)      |     30 |     1 s |
-| Char, conducteur                    | MG (`mgLight`)       |  1 000 |  0,09 s |
-| Char, tireur principal              | coaxiale (`coax`)    |  1 500 |  0,06 s |
-| Char, tireur principal              | obus HE / AP         | 30 + 30 |    2 s |
-| Char, mitrailleur supérieur         | MG (`mg`)            |  1 500 |  0,06 s |
-| Castor, pilote                      | MG (`castorGun`)     |    500 |  0,16 s |
-| H2, D2                              | voir [H2 et D2](support-vehicles.md) |        |         |
+| Engin / poste                 | Arme (type)                          |   Stock | Cadence |
+| ----------------------------- | ------------------------------------ | ------: | ------: |
+| Chasseur biplan, pilote       | MG (`mg`)                            |     500 |  0,12 s |
+| Chasseur léger, Stuka, pilote | MG (`mg`)                            |   1 000 |  0,06 s |
+| Spitfire, pilote              | six MG (`mg`)                        |   1 000 |  salves |
+| Mitrailleurs des bombardiers  | MG (`mg`)                            |     667 |  0,09 s |
+| Stuka, pilote                 | bombes (`bomb`)                      |       6 |   0,5 s |
+| Bombardier moyen, pilote      | bombes (`bomb`)                      |      50 |   0,5 s |
+| Bombardier biplan, pilote     | bombes (`bomb`)                      |      30 |     1 s |
+| Char, conducteur              | MG (`mgLight`)                       |   1 000 |  0,09 s |
+| Char, tireur principal        | coaxiale (`coax`)                    |   1 500 |  0,06 s |
+| Char, tireur principal        | obus HE / AP                         | 30 + 30 |     2 s |
+| Char, mitrailleur supérieur   | MG (`mg`)                            |   1 500 |  0,06 s |
+| Castor, pilote                | MG (`castorGun`)                     |     500 |  0,16 s |
+| H2, D2                        | voir [H2 et D2](support-vehicles.md) |         |         |
 
 - Les pilotes des bombardiers n'ont pas de MG ; Espace largue les bombes. Les bombes des
   bombardiers ont un rayon double (`radiusFactor`).
@@ -127,11 +127,11 @@ signature de leur dossier (`equipment-select`, `equipment-sign`). Une station ou
 Castor à portée les recharge automatiquement, contre paiement. Profils dans `FIXED_DCA`
 (`src/fixed-dca.ts`).
 
-| Poste             | Prix                                    | Stock        | Tir                                                                                              |
-| ----------------- | --------------------------------------- | ------------ | ------------------------------------------------------------------------------------------------ |
-| Flak léger        | 5 $, +2 $ par exemplaire, au plus 40 $  | 120 obus     | deux tubes alternés, 0,7 s ; éclatement à distance programmée, souffle 30 m (80 → 20), 200 au contact |
-| DCA haute cadence | 50 $                                    | 1 000 balles | quatre MG de Spitfire alternées, un départ toutes les 15 ms, 62 par balle                        |
-| Flak lourd        | 30 $                                    | 120 obus     | un obus par seconde, fusée de proximité de la DCA mobile, souffle 40 m (240 → 60)                |
+| Poste             | Prix                                   | Stock        | Tir                                                                                                   |
+| ----------------- | -------------------------------------- | ------------ | ----------------------------------------------------------------------------------------------------- |
+| Flak léger        | 5 $, +2 $ par exemplaire, au plus 40 $ | 120 obus     | deux tubes alternés, 0,7 s ; éclatement à distance programmée, souffle 30 m (80 → 20), 200 au contact |
+| DCA haute cadence | 50 $                                   | 1 000 balles | quatre MG de Spitfire alternées, un départ toutes les 15 ms, 62 par balle                             |
+| Flak lourd        | 30 $                                   | 120 obus     | un obus par seconde, fusée de proximité de la DCA mobile, souffle 40 m (240 → 60)                     |
 
 - Azimut libre, élévation de +5° à +90° (`FLAK.minPitch`, `flakPitchAllowed`). Deux
   articulations séparées (lacet, tourillon) ; boucliers et plateaux suivent l'azimut.

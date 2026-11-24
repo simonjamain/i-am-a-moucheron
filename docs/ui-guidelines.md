@@ -62,7 +62,7 @@ remplir, signatures, tampons, cachets « APPROUVÉ ».
   légèrement irrégulière. Aucune case n’est cochée d’office ; un formulaire peut exiger
   une ou plusieurs coches avant signature.
 - **Signer** se fait à la souris, en traçant sa signature (mécanisme existant :
-  [signatures](economy-physics.md#input-and-signatures)) ; c’est le geste qui valide, à
+  [signatures](logistics-contracts.md#signer)) ; c’est le geste qui valide, à
   la place d’un bouton.
 
 Tous les documents du jeu sont en papier :

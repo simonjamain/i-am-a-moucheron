@@ -3,14 +3,14 @@
 Référence de l'hélicoptère d'attaque au sol (`helicopter`, H2) et de l'anti-air mobile
 (`flaktruck`, D2) : commandes, armes et fusée de proximité. Règles communes de la
 flotte (achat, postes, destruction, ravitaillement) : [flotte](scale-fleet-weapons.md) ;
-projectiles : [projectiles](projectiles.md) ; modèle du H2 : [h2-model](h2-model.md) ;
+projectiles : [projectiles](projectiles.md) ; modèles : [catalogue des modèles](models.md#véhicules) ;
 physique : [vol des hélicoptères](heli-physics.md) et
 [camion DCA sur Rapier](physics-engine.md).
 
-| Véhicule | Prix | Postes               | Coque  | Vitesse max (m/s de référence) | Carburant               |
-| -------- | ---: | -------------------- | -----: | -----------------------------: | ----------------------- |
-| H2       | 50 $ | pilote, copilote     | 200 PV |                             42 | 300 s en vol            |
-| D2       | 15 $ | conducteur, tireur   | 100 PV |                             66 | 300 s à pleine commande |
+| Véhicule | Prix | Postes             |  Coque | Vitesse max (m/s de référence) | Carburant               |
+| -------- | ---: | ------------------ | -----: | -----------------------------: | ----------------------- |
+| H2       | 50 $ | pilote, copilote   | 200 PV |                             42 | 300 s en vol            |
+| D2       | 15 $ | conducteur, tireur | 100 PV |                             66 | 300 s à pleine commande |
 
 Les deux s'achètent avec un bon signé et se posent sur un support libre ; ils n'ont pas
 de réserve gratuite et leur destruction est définitive. Le carburant du H2 ne s'use
@@ -21,17 +21,17 @@ qu'en vol, quelle que soit la poussée demandée (`advanceSupplies`, `src/logist
 Le pilote commande une assiette et une vitesse verticale ; le modèle est un pilotage
 assisté de jeu sur un corps Rapier (`src/heli-physics.ts`), pas une simulation de rotor.
 
-| Touches              | Commande                         |
-| -------------------- | -------------------------------- |
-| Maj gauche ou droite | Monter (8 m/s de référence)      |
-| Ctrl gauche ou droit | Descendre (jusqu'à 30 m/s)       |
-| Z ou flèche Haut     | Piquer                           |
-| S ou flèche Bas      | Cabrer                           |
-| Q ou flèche Gauche   | Roulis à gauche                  |
-| D ou flèche Droite   | Roulis à droite                  |
-| Souris               | Cap et assiette visés            |
+| Touches              | Commande                           |
+| -------------------- | ---------------------------------- |
+| Maj gauche ou droite | Monter (8 m/s de référence)        |
+| Ctrl gauche ou droit | Descendre (jusqu'à 30 m/s)         |
+| Z ou flèche Haut     | Piquer                             |
+| S ou flèche Bas      | Cabrer                             |
+| Q ou flèche Gauche   | Roulis à gauche                    |
+| D ou flèche Droite   | Roulis à droite                    |
+| Souris               | Cap et assiette visés              |
 | C maintenu           | Regard libre, roquettes suspendues |
-| Clic maintenu        | Roquettes                        |
+| Clic maintenu        | Roquettes                          |
 
 - Tangage et roulis partagent un budget de 45° (`HELI.maxTilt`), y compris en
   diagonale. Une touche de tangage ou de roulis prend la priorité sur la souris pour son
@@ -47,11 +47,11 @@ assisté de jeu sur un corps Rapier (`src/heli-physics.ts`), pas une simulation 
 
 ## H2 : armes
 
-| Poste / arme       | Stock | Cadence                    | Projectile                        |
-| ------------------ | ----: | -------------------------- | --------------------------------- |
-| Pilote, roquettes  |    30 | 0,3 s                      | `rocket` : 120 → 30, rayon 12 m   |
-| Copilote, MG       | 1 000 | 15 balles/s                | `mg` : 75                         |
-| Copilote, missiles |    10 | un seul en vol à la fois   | `missile` : 360 → 70, rayon 30 m  |
+| Poste / arme       | Stock | Cadence                  | Projectile                       |
+| ------------------ | ----: | ------------------------ | -------------------------------- |
+| Pilote, roquettes  |    30 | 0,3 s                    | `rocket` : 120 → 30, rayon 12 m  |
+| Copilote, MG       | 1 000 | 15 balles/s              | `mg` : 75                        |
+| Copilote, missiles |    10 | un seul en vol à la fois | `missile` : 360 → 70, rayon 30 m |
 
 - **Roquettes.** Elles partent dans l'axe avant de l'hélicoptère (−Z local transformé
   par son quaternion), alternativement des lanceurs gauche et droit, avec la vitesse de
