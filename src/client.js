@@ -4607,11 +4607,11 @@ function flushRapidImpacts(now) {
 // The ground vehicles (Castor, medium tank, anti-air truck) are driven by the Rapier physics engine, loaded behind
 // the loading screen (see homeReady): the module, the rig of the vehicle type we drive,
 // and one rig per empty vehicle of these types that this client simulates as the room's
-// host. The aircraft still use their original physics (see docs/physics-engine.md).
+// host (see docs/physics-engine.md).
 let rapier = null;
 const RAPIER_RIGS = { castor: CastorRig, tank: TankRig, flaktruck: TruckRig };
-// The biplane is flown by the same engine (src/plane-physics.ts); the other aircraft still
-// use the arcade flight step until they are ported.
+// The fixed-wing aircraft (PLANE_TYPES) are flown by the same engine (src/plane-physics.ts,
+// docs/plane-physics.md) and the helicopters by src/heli-physics.ts.
 let planeRig = null;
 let heliRig = null;
 const drivenRigs = new Map();

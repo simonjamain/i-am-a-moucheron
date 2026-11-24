@@ -1,184 +1,133 @@
 # Décor du purgatoire
 
-Le purgatoire est une administration posée sur un nuage, en plein ciel bleu. Il garde
-l’esprit du bureau : le guichet de Saint Pierre est fait des meubles du **Cartoon Office
-Pack** (les mêmes que la carte principale), à taille humaine ; le long de la file, seuls
-quelques meubles de salle d’attente. Les règles de marche, la file
-et le guichet ne changent pas ([file des purgatoires](purgatory-queue.md)) : le décor
-n’ajoute aucun obstacle partagé.
-
-Le purgatoire est aussi un lieu du ciel où l'on monte en avion, où l'on se pose et où
-l'on tire : [ciel du purgatoire](purgatory-sky.md).
+Le purgatoire est une administration posée sur un nuage, en plein ciel bleu, environ
+150 m réels au-dessus du bureau dans le même monde
+([un seul monde](walking-network.md#un-seul-monde-pour-le-bureau-et-le-purgatoire)). Le
+guichet de Saint Pierre est fait des meubles du **Cartoon Office Pack** (ceux de la carte
+principale), à taille humaine ; le long de la file, seuls quelques meubles de salle
+d’attente. Le décor n’ajoute aucun obstacle de marche : règles de la file dans
+[file du purgatoire](purgatory-queue.md), vol, atterrissage et tirs dans
+[ciel du purgatoire](purgatory-sky.md).
 
 Code : `src/purgatory-scene.ts` (scène, mobilier, panneaux), `src/purgatory-clouds.ts`
-(ciel, nuages du ciel), `src/purgatory-floor.ts` (nuage-sol volumétrique),
-`src/saint-pierre-model.ts` et `src/vip-guard-model.ts` (personnages). `client.js` crée
-la scène avec `createPurgatoryScene`, l’anime avec `update()`, dessine la couche des
-nuages du ciel avec `prerender()` avant l’image, puis le nuage-sol avec `postrender()`
-juste après.
+(dôme et nuages du ciel), `src/purgatory-floor.ts` (nuage-sol volumétrique),
+`src/saint-pierre-model.ts`, `src/vip-guard-model.ts` et `src/clipboard-model.ts`.
+`client.js` crée la scène avec `createPurgatoryScene`, l’anime avec `update()`, dessine
+la couche des nuages du ciel avec `prerender()` avant l’image, puis le nuage-sol avec
+`postrender()` juste après. Les shaders sont écrits en TSL ([rendu WebGPU](webgpu.md)).
 
 ![Arrivée au purgatoire et vue vers le guichet](purgatory-scene-review.jpg)
 
 ## Le nuage-sol
 
-Le sol est le **même nuage volumétrique** que ceux du ciel : on marche à moitié dedans.
+On marche à moitié dans un nuage volumétrique, le même que ceux du ciel.
 
-- La salle (`PURGATORY_HALL`) reprend le rectangle de marche de `purgatory-queue.ts`
-  (x de −10 à 10, z de 0 à 80 et plus), plus l’arrière du guichet. Les âmes marchent
-  au niveau du sol du nuage, 150 m au-dessus du bureau dans le même monde
-  ([un seul monde](walking-network.md#un-seul-monde-pour-le-bureau-et-le-purgatoire)) ; la brume monte jusqu’aux genoux (`FLOOR_MIST.top`, 0,95 unité pour
-  une âme de 2,46) et devient dense sous le sol (`FLOOR_MIST.dense`) : les jambes s’y
-  perdent progressivement.
+- La partie plate (`PURGATORY_HALL`, x de −10 à 10, z de −8 à 90) couvre le rectangle de
+  marche de la file et l’arrière du guichet. La brume monte jusqu’aux genoux
+  (`FLOOR_MIST.top`, 0,95 unité pour une âme de 2,46) et devient dense sous le sol
+  (`FLOOR_MIST.dense`).
 - À 2,5 unités au-delà de la salle (`FLOOR_MIST.margin`), le nuage se gonfle en
-  bourrelets de 3 unités environ ; son bord (`CLOUD_FLOOR`, ±16 en x, de −11 à 96 en z)
-  s’effiloche, et son ventre descend jusqu’à −7.
-- Rendu : une passe d’écran après la scène (`createFloorCloud`, écrite en TSL, voir
-  [le rendu WebGPU](webgpu.md)), par lancer de rayons
-  (bruit fractal animé, marche vers le soleil, Beer-poudre, Henyey-Greenstein). Chaque
-  rayon s’arrête sur la surface opaque la plus proche, lue dans la profondeur
-  logarithmique du rendu dessin animé (`ToonRenderer.depthTexture`) : une jambe dans la
-  brume n’est couverte que par le nuage devant elle. La passe est calculée à **40 %** de
-  la résolution (`FLOOR_LAYER_SCALE`) en gardant la profondeur la plus lointaine de
-  chaque pixel (pas de halo couleur ciel autour des silhouettes), puis composée sur
-  l’image. Au-dessus de la surface du nuage, un rayon saute directement jusqu’à elle
-  (saut d’espace vide) avant de marcher à pas fins (64 pas au plus) : sans ce saut, les
-  pas s’épuisaient vers 19 unités et le nuage n’était dessiné qu’autour de la caméra
-  (il semblait suivre le joueur, les meubles lointains flottaient au-dessus du vide).
-  Un rayon qui atteint la couche dense dans l’étendue du nuage sans s’être rempli est
-  complété par la couleur de la surface : aucun trou vers le ciel.
-- Les insectes de la file flottent au-dessus de la brume (`hover`, aux trois quarts de
-  sa hauteur) pour rester lisibles.
-- Sans GPU (rendu logiciel de secours), l’ancien nuage dessin animé reste : dessus
+  bourrelets ; son bord (`CLOUD_FLOOR` = `PURGATORY_CLOUD`, ±16 en x, de −11 à 96 en z)
+  s’effiloche et son ventre descend jusqu’à −7. Ce volume est aussi le solide du nuage
+  (`purgatorySolids`).
+- Rendu (`createFloorCloud`) : passe d’écran après la scène, par lancer de rayons (bruit
+  fractal animé, marche vers le soleil, Beer-poudre, Henyey-Greenstein). Chaque rayon
+  s’arrête sur la surface opaque la plus proche, lue dans la profondeur du rendu dessin
+  animé (`ToonRenderer.depthTexture`) : une jambe n’est couverte que par la brume devant
+  elle. Calcul à 40 % de la résolution (`FLOOR_LAYER_SCALE`) en gardant la profondeur la
+  plus lointaine de chaque pixel (pas de halo autour des silhouettes). Au-dessus de la
+  surface, un rayon saute jusqu’à elle avant de marcher à pas fins (64 au plus), sur au
+  plus 160 unités : le nuage se voit de loin. Un rayon qui atteint la couche dense sans
+  s’être rempli prend la couleur de la surface : aucun trou vers le ciel.
+- Les insectes de la file flottent au-dessus de la brume (`hover`, aux trois quarts de sa
+  hauteur).
+- Sans shaders (rendu logiciel de secours), un nuage dessin animé le remplace : dessus
   plat sur la salle et bosselé autour (`cloudHeight`), boules du bord (`cloudPuffs`).
-- Le **mur invisible** reste la borne de marche existante ; les meubles de salle
-  d’attente juste au-delà (x = ±11,5) montrent où elle se trouve. On ne peut pas tomber
-  du nuage.
+- La borne de marche est un mur invisible ; les meubles de salle d’attente juste au-delà
+  (x = ±11,5) montrent où elle se trouve.
 
-## Ciel et nuages volumétriques
+## Ciel et nuages
 
-- Le ciel est un dôme dessiné derrière tout (`createSkyDome`) : zénith bleu, horizon
-  clair, brume pâle sous l’horizon, halo et disque du soleil dans la direction
-  `SUN_DIRECTION`, partagée avec la lumière.
-- Huit petits nuages (`SKY_CLOUDS`) flottent autour, au-dessus et en dessous du
-  nuage-sol. Chacun est **calculé par lancer de rayons en WebGL2** dans sa boîte :
-  densité en cumulus (dôme à base aplatie érodé par un bruit fractal), courte marche
-  vers le soleil, absorption Beer-poudre, diffusion Henyey-Greenstein à deux lobes et
-  liseré argenté. Ils dérivent lentement.
-- Les nuages sont calculés à **demi-résolution** (`CLOUD_LAYER_SCALE`) dans une cible
-  à part, avant l’image ; le dôme compose cette couche derrière la scène. Ils ne passent
-  donc jamais devant le nuage-sol ni les meubles, ce qui est juste car aucun ne se
-  trouve entre la caméra et le décor (`test-purgatory-scene.mjs` le vérifie).
-- Sans GPU (rendu logiciel de secours), ni dôme ni nuages : le fond est uni.
+- Un dôme dessiné derrière tout (`createSkyDome`) : bleu du zénith à l’horizon, bleu
+  aussi sous l’horizon, halo et disque du soleil dans la direction `SUN_DIRECTION`,
+  partagée avec la lumière. Brume du ciel : [ce que l’on voit](purgatory-sky.md#ce-que-lon-voit).
+- Huit nuages (`SKY_CLOUDS`) flottent autour, au-dessus et en dessous du nuage-sol, chacun
+  calculé par lancer de rayons dans sa boîte : cumulus (dôme à base aplatie érodé par un
+  bruit fractal), courte marche vers le soleil, Beer-poudre, Henyey-Greenstein à deux
+  lobes et liseré argenté. Ils dérivent lentement.
+- Ils sont calculés à demi-résolution (`CLOUD_LAYER_SCALE`) dans une cible à part, avant
+  l’image ; le dôme compose cette couche derrière la scène. Ils ne passent donc jamais
+  devant le nuage-sol ni les meubles, ce qui est juste car aucun ne se trouve entre la
+  caméra et le décor.
+- Sans shaders, ni dôme ni nuages : le fond est uni.
 
-### Coût mesuré
-
-Mesures en rendu logiciel (Chromium SwiftShader, 1280 × 720, vue d’arrivée), qui
-exagère le coût par pixel par rapport à une vraie carte graphique : ancien décor 7,3 à
-8,0 images/s ; nouveau décor sans nuages 5,0 ; nuages en pleine résolution 3,7 ; nuages
-en demi-résolution 4,3. Nuage-sol volumétrique : 4,3 à 5,3 avec le nuage dessin animé,
-2,3 avec le nuage-sol à demi-résolution (56 pas, deux échantillons de lumière), 3,7 à
-4,0 avec 40 % de résolution, 40 pas et un échantillon ; 4,7 avec le saut d’espace vide
-(nuage dessiné jusqu’au bout de la salle). Le coût sur
-carte graphique réelle reste à mesurer en partie.
-Le passage à WebGPU est suivi à part.
+Le coût sur carte graphique réelle reste à mesurer ; le rendu logiciel n’en donne qu’un
+ordre de grandeur.
 
 ## Mobilier et guichet
 
-- `purgatoryProps()` liste chaque meuble du pack, placé à la main en unités de la
-  scène (2,46 pour une personne de 1,8 m), dans le groupe du décor que
-  `PURGATORY_FRAME` place dans le monde. Aucun meuble
-  bloquant ne se trouve dans la salle de marche ni ne coupe les cordons VIP.
-- **Le guichet** : trois bureaux pour la file des insectes et un au guichet VIP, leur
-  face tournée vers Saint Pierre (écran, clavier, lampe de son côté ; papiers, agrafeuse
-  côté visiteurs). Le bureau de Saint Pierre, au milieu, reste nu : seul son porte-bloc
-  y est posé, bien en évidence. Leur bord avant reste derrière le bord de la salle (z < 0).
-- **L’arrière**, derrière Saint Pierre : uniquement de l’équipement de bureau, sans
-  surcharge (tableau blanc, trois classeurs, une photocopieuse).
-- **Le long de la file**, rien que ce qui évoque une salle d’attente : deux coins salon
-  (canapé, table basse et sa pile de magazines), deux fontaines à eau, deux rangées de
-  chaises visiteurs. Aucune fourniture de bureau hors du guichet.
-
-## Signalétique
-
-Les anciens textes flottants sont remplacés par des objets du monde, peints aux
-couleurs des documents papier (`--paper`, `--ink`, police machine à écrire) :
-
-- un pupitre « COUPE-FILE · Laissez-passer auprès du vigile » à côté de la barrière.
-
-Ni plaque sur les bureaux, ni cercle ou marquage au sol devant les guichets : Saint
-Pierre, son comptoir et les cordons suffisent. Les zones des guichets (`inDeskZone`,
-`VIP_ZONE` dans `src/purgatory-queue.ts`) sont invisibles.
+- `purgatoryProps()` liste chaque meuble du pack, placé à la main en unités de la scène
+  (2,46 pour une personne de 1,8 m) ; `PURGATORY_FRAME` place le groupe dans le monde.
+  Aucun meuble bloquant ne se trouve dans la salle de marche ni ne coupe les cordons VIP.
+- **Le guichet** (`COUNTER`) : trois bureaux pour la file des insectes et un au guichet
+  VIP, tournés vers Saint Pierre (écran, clavier, lampe de son côté ; papiers, agrafeuse
+  côté visiteurs). Le bureau du milieu reste nu : seul son porte-bloc y est posé. Leur
+  bord avant reste derrière le bord de la salle (z < 0).
+- **L’arrière** : tableau blanc, trois classeurs, une photocopieuse.
+- **Le long de la file** : deux coins salon (canapé, table basse et magazines), deux
+  fontaines à eau, deux rangées de chaises visiteurs ; aucune fourniture de bureau.
+- **Signalétique** : un seul pupitre « COUPE-FILE · Laissez-passer auprès du vigile »,
+  peint aux couleurs des documents papier (`--paper`, `--ink`, police machine à écrire).
+  Ni plaque sur les bureaux ni marquage au sol : les zones des guichets (`inDeskZone`,
+  `VIP_ZONE`) sont invisibles.
 
 ## Le porte-bloc du guichet
 
-Sur chacun des deux guichets (celui de la file et le guichet VIP), un porte-bloc est
-posé à plat sur le bureau, tourné vers les âmes, juste à droite du milieu et dépassant
-légèrement du bord avant (`CLIPBOARD_AT` dans `src/purgatory-queue.ts`, `clipboardYaw`), 10 %
-plus grand que nature pour bien se voir (`CLIPBOARD_SCALE`). C'est
-lui qui ouvre les formulaires : il remplace la touche E, retirée ([commandes](controls.md)).
+Sur chacun des deux guichets (file et VIP), un porte-bloc est posé à plat, tourné vers les
+âmes, juste à droite du milieu et dépassant du bord avant (`CLIPBOARD_AT` dans
+`src/purgatory-queue.ts`, `clipboardYaw`), 10 % plus grand que nature (`CLIPBOARD_SCALE`).
+Modèle 32 × 21 cm ([catalogue des modèles](models.md#purgatoire)).
 
-- Seul le porte-bloc du guichet où Saint Pierre **nous sert** s'utilise
-  (`clipboardWindow` dans `src/purgatory-queue.ts`, testé dans `test-purgatory-vip.mjs`) :
-  visé par le réticule (ou le curseur libéré), il est entouré du **bleu signal**, comme
-  le vigile ; un clic ouvre les formulaires. Ailleurs, rien ne s'entoure.
-- Une âme sans coupe-file n'utilise jamais le porte-bloc VIP : il ne s'entoure pas pour
-  elle et le clic n'y fait rien. Le serveur exige toujours, pour signer, d'être servi au
-  guichet (`sign`).
-- **Au guichet principal, aucune place à tenir** : une âme de joueur est au guichet dès
-  qu'elle est à portée d'interaction du porte-bloc (`nearDeskClipboard`, `PURGATORY_REACH`,
-  la même portée que le vigile, environ 2,6 m), d'où qu'elle vienne ; elle attend
-  seulement les insectes arrivés avant elle dans la file. Les insectes, eux, se
+- Seul le porte-bloc du guichet où Saint Pierre **nous sert** s’utilise
+  (`clipboardWindow`) : visé par le réticule (ou le curseur libéré), il est entouré du
+  **bleu signal** ; un clic ouvre les formulaires. Ailleurs, rien ne s’entoure.
+- Une âme sans coupe-file n’utilise jamais le porte-bloc VIP.
+- Au guichet principal, aucune place à tenir : il suffit d’être à portée du porte-bloc
+  (`nearDeskClipboard`, environ 2,6 m, la portée du vigile). Les insectes, eux, se
   présentent toujours devant le milieu du bureau.
-- **Seul le porte-bloc ouvre les formulaires** : entrer dans la zone du guichet ne les
-  ouvre jamais (`paperSuppressed` dans `client.js`), on clique quand on est prêt.
-- Au guichet VIP, toute la moitié avant de la file VIP, entre ses cordons, est la zone
-  du guichet (`VIP_ZONE`) : une âme qui a le coupe-file et s'y tient est servie, Saint
-  Pierre vient derrière le bureau VIP en face d'elle (`saintWindowX`) et son porte-bloc
-  s'entoure de bleu.
-- Modèle fourni par le propriétaire du projet ([pipeline des assets](asset-pipeline.md#porte-bloc-du-guichet)),
-  32 × 21 cm, `src/clipboard-model.ts`.
+- Entrer dans la zone du guichet n’ouvre jamais les formulaires (`paperSuppressed` dans
+  `client.js`) : on clique quand on est prêt.
 
 ## Saint Pierre
 
-Modèle Meshy « The Keeper of Wisdom » fourni par l’utilisateur (vieillard à longue barbe
-blanche, robe, clé à la ceinture), squelette SmartRig de 39 os, sans animation
-([pipeline des assets](asset-pipeline.md#saint-pierre)). `src/saint-pierre-model.ts` le
-dessine à 1,85 m et l’anime en procédural (`SaintPierre`) :
+Modèle Meshy rigué sans animation ([catalogue des modèles](models.md#purgatoire)),
+dessiné à 1,85 m et animé en procédural par `SaintPierre` :
 
-- une respiration lente (4 s) ;
+- une respiration lente ;
 - la tête tournée vers l’âme ou l’insecte qu’il sert (`servedAt`) ;
-- quand il change de guichet, des pas qui suivent la distance parcourue (jambes, bras
-  en balancier, léger rebond) ;
-- pendant qu’il sert un insecte (`stamping`), le bras droit lève le tampon et l’abat,
-  environ 1,4 fois par seconde ; le bruit du tampon final reste celui du guichet.
+- quand il change de guichet, des pas qui suivent la distance parcourue ;
+- pendant qu’il sert un insecte (`stamping`), le bras droit abat le tampon environ
+  1,4 fois par seconde ; le bruit du tampon final reste celui du guichet.
 
 ## Le vigile de la file VIP
 
-Modèle Meshy « Guardian in Black » fourni par l’utilisateur (ange en costume noir,
-lunettes noires, oreillette, ailes et auréole), squelette SmartRig de 48 os, sans
-animation ([pipeline des assets](asset-pipeline.md#vigile-de-la-file-vip)).
-`src/vip-guard-model.ts` le dessine à 1,95 m (une tête de plus que les âmes) et lui
-donne une attente en boucle de 12 s : trois respirations (poitrine et épaules) et un
-regard de chaque côté le long de la file.
+Modèle Meshy rigué sans animation ([catalogue des modèles](models.md#purgatoire)),
+dessiné à 1,95 m (une tête de plus que les âmes), avec une attente en boucle : trois
+respirations et un regard de chaque côté le long de la file.
 
-Le vigile s’utilise comme un poste d’engin ([règles d’interface](ui-guidelines.md)) :
-à portée (`nearVipGuard`) et sans coupe-file, le vigile visé par le réticule (ou par le
-curseur libéré avec Échap) est entouré du **bleu signal** (`PostHighlight`,
-`SelectionOutline`, comme pour monter dans un appareil) ; un clic ouvre le coupe-file.
-Une fois le coupe-file payé, ou hors de portée, il n’est plus entouré.
-Le masque du contour est animé par le squelette du vigile (respiration, regards), et le
-tracé ne couvre que son rectangle d’écran : sur l’écran plein du premier essai, le survol
-faisait passer une partie de 120 à 72 images/s (trace Chrome, travail JavaScript inchangé,
-carte graphique saturée) ; en rendu logiciel, la cadence au survol passe de 3,0 à 5,5
-images/s (6,0 sans survol).
+Il s’utilise comme un poste d’engin ([règles d’interface](ui-guidelines.md)) : à portée
+(`nearVipGuard`) et sans coupe-file, le vigile visé est entouré du **bleu signal**
+(`PostHighlight`, `SelectionOutline`) ; un clic ouvre le coupe-file. Le masque du contour
+suit son squelette et le tracé ne couvre que son rectangle d’écran, pour limiter le coût
+du survol.
 
 ![Vigile visé, entouré du bleu signal](purgatory-guard-hover.jpg)
 
-## Vérification
+## Vérifier
 
-`scripts/test-purgatory-scene.mjs` : salle plate là où l’on marche, nuage plus large
-que la salle, boules sous le sol de la salle, nuages du ciel à l’écart du nuage-sol et
-dans la portée de la caméra, brume jusqu’aux genoux, aucun meuble bloquant dans la
-salle ni sur les cordons, rien que la salle d’attente le long de la file, bureaux du
-guichet, provenance et taille du vigile et de Saint Pierre, pas, tampon et regard de
-Saint Pierre, construction de la scène sans document ni shader.
+`scripts/test-purgatory-scene.mjs` : salle plate là où l’on marche, nuage plus large que
+la salle, nuages du ciel à l’écart du nuage-sol et dans la portée de la caméra, brume
+jusqu’aux genoux, aucun meuble bloquant dans la salle ni sur les cordons, mobilier de la
+file et du guichet, provenance et taille du vigile et de Saint Pierre, pas, tampon et
+regard, construction de la scène sans document ni shader. `scripts/e2e-purgatory-walk.mjs`
+rend le purgatoire dans le navigateur.

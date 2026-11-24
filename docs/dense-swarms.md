@@ -1,112 +1,82 @@
-# Nuées de moucherons — version 38
+# Nuées : composition et mouvement
 
-Le directeur Node compte désormais chaque individu dans le [budget annoncé](progression.md). Les sections de version qui suivent décrivent les états historiques du directeur.
+Comment une vague devient un roster d'ennemis et comment ces ennemis se déplacent.
+Les espèces sont décrites dans [le bestiaire](enemy-bestiary.md), le budget et la
+montée en difficulté dans [progression](progression.md) et
+[puissance des ennemis](progression.md#unité-commune).
 
-Demande du 30 octobre 2026 : cinq fois plus de moucherons, toujours regroupés.
-Le directeur compose sa vague initiale selon le budget et les déblocages habituels,
-puis chaque moucheron devient un groupe de cinq. Les fourmis et les autres espèces
-ne sont pas multipliées. La première vague contient donc **20 moucherons et
-4 fourmis**, au lieu de 4 + 4 ; sa prime commune reste 4 $.
+## Composition d'une vague
 
-`MIDGE_SWARM_MULTIPLIER` dans `src/waves.ts` centralise le facteur. Les cinq membres
-conservent trajet, branche, vitesse, durée, taille, PV et dégâts du moucheron source.
-Leurs phases de mouvement sont réparties et leurs départs décalés de 0 à 0,28 s :
-ils restent sur le même parcours de nuée, sans étaler la vague cinq fois plus
-longtemps. Chaque membre possède un identifiant distinct, peut être blessé ou tué
-indépendamment et compte pour la fin de vague. Un arrivant coûte toujours un point
-d'infestation, une âme libérée rapporte toujours un dollar ; le changement augmente
-donc aussi la menace et les revenus potentiels, sans modifier ces règles.
-Une première vague complètement ignorée peut désormais entraîner la défaite.
+Le roster est tiré par `prepareRoster()` (`server/wave-preparation.js`) en meutes
+(`PACKS`) : règles de tirage, tailles, colosse et calendrier dans
+[progression](progression.md#composition). Les volants attendent 2 s à leur entrée, les
+terrestres 0,4 s, et les membres d'une meute sortent l'un après l'autre (`memberGap`).
+Le réglage de population de la salle (`scaleRoster`, `src/balance.js`) agrandit ou
+réduit l'effectif en le répartissant sur toute la composition.
 
-Le budget affiché reste le budget du directeur **avant densification** ; la somme
-des coûts des insectes finaux est supérieure. Le plafond du directeur reste 180
-sources (avec consolidation du reliquat en bourdon), ce qui borne la population
-finale à 900. Ce plafond est une limite de données, pas une promesse de FPS à 900.
-Les plafonds de corps tombants (80), d'âmes visibles au purgatoire (24 PNJ), de
-sons et d'armes lourdes restent actifs.
+`wavePlan()` (`src/waves.ts`) est un générateur déterministe de repli, utilisé quand
+aucun roster n'a encore été reçu ; il multiplie chaque moucheron source par
+`MIDGE_SWARM_MULTIPLIER` (5). `debugSwarmRoster()` construit des nuées exactes pour les
+tests.
 
-## Calcul et contrôles
+## Trajets
 
-`swarmFrame()` utilise une grille spatiale de cellules égales au rayon de voisinage,
-avec les 27 cellules adjacentes et le même filtrage de distance exact. Les voisins
-sont additionnés dans l'ordre des identifiants : résultat identique à la recherche
-exhaustive, déterministe entre clients et lors d'une connexion tardive. Il n'y a
-ni sous-échantillonnage ni limite supprimant des moucherons à l'affichage.
-Une concentration extrême dans une cellule reste un cas quadratique local.
+Les trajets (`src/routes.ts`) partent des aérations périphériques
+(voir [lisibilité](enemy-bestiary.md#lisibilité-et-retours-visuels)) et sont
+paramétrés par longueur d'arc, partagés par le client et le serveur, y compris
+l'échéance d'arrivée à la poubelle. Les volants font des détours en altitude avant la
+descente finale. La route nominale des terrestres suit une grille A\* simplifiée par
+visibilité (`src/route-navigation.ts`), générée depuis les colliders du bureau, avec une
+marge de 25 mm (18 mm pour les volants) ; les aérations ne bloquent pas leur propre
+sortie. En jeu, le serveur guide chaque terrestre sur un champ de flux qui tient compte
+des barricades : voir [navigation terrestre](gameplay.md#navigation-terrestre).
 
-`test-dense-swarms.mjs` contrôle les groupes ×5 sur plusieurs graines et vagues,
-les espèces inchangées, les identifiants, budgets sources, trajets et durées,
-la parité exacte des positions avec le calcul exhaustif, les dégâts après
-l'ancien indice 180, le dernier ennemi, la prime unique et le découpage réseau.
-Il imprime une mesure CPU comparative, sans la confondre avec WebGL ou le WAN.
-Les tests de visibilité conservent les contrôles du mobilier, des aérations et
-des pieds au sol sur la population densifiée. La suite conserve aussi deux pairs
-UDP natifs. Le confort de tir et les FPS restent à observer en partie sur la VM.
+## Mouvement des volants
 
-Livraison Node/RAM/UDP : après déploiement, recharger les navigateurs, comme
-décrit dans [l'exploitation](operations.md).
+`swarmFrame()` (`src/waves.ts`) calcule les positions directement depuis le temps de
+jeu absolu, sans historique d'images : tous les clients, y compris ceux qui arrivent
+en retard, voient la même nuée sans serveur temps réel dédié.
 
-Depuis l'uniformisation ultérieure de la génération des vagues, la première vague
-n'impose plus les anciennes quantités 20 + 4 : deux fourmis restent garanties,
-les autres sources sont tirées au sort avec le budget 8, puis les moucherons sont
-multipliés par cinq. Les groupes suivent la même cadence à toutes les vagues.
-Voir [progression](progression.md) ; les nombres ci-dessus décrivent la version 38.
+- **Moucherons** (et bébés araignées) : décalage procédural autour de la route, tiré de
+  l'identifiant et de `routeSeed` (`midgeDisplacement`), avec une petite oscillation
+  temporelle et une enveloppe qui s'annule à l'entrée et à l'arrivée. L'étendue dépend
+  de la taille du groupe (`swarmSpread`, bornée à 20 fois le rayon de base en vol,
+  8 au sol), pas l'agitation individuelle. Aucun moucheron ne dépend de ses voisins :
+  en supprimer un ne déplace aucun survivant.
+- **Moustiques** : esquives erratiques locales, sans dominer la vitesse de progression.
+- **Autres espèces** : pilotage de groupe borné inspiré des
+  [Boids de Craig Reynolds](https://www.red3d.com/cwr/boids/) (séparation, cohésion,
+  alignement) entre voisins à moins de 24 m de référence, trouvés par une grille
+  spatiale et sommés dans l'ordre des identifiants (résultat identique sur tous les
+  clients). La correction est plafonnée et s'éteint aux extrémités du trajet.
+- **Terrestres** : le serveur simule leur position (`groundAgents`, foule de
+  `src/ground-crowd.js`) ; `swarmFrame()` reprend cette pose autoritaire. Sans pose, le repli place les membres d'une meute en files côte à côte
+  (`GROUND_LANES`). Affichage côté client :
+  [bestiaire](enemy-bestiary.md#mouvement-des-terrestres-côté-client).
 
-## Nuées procédurales indépendantes — première version intégrée
+## Réseau et rendu
 
-L'issue #39 décrit l'objectif de montée à **1 000, 5 000 puis 10 000 moucherons
-actifs**, sans promettre des FPS mesurés sur le navigateur ou le VPS.
+Le roster complet part dans la réponse fiable à la première synchronisation, après un
+changement de vague ou une révision (`rosterRevision`, naissances, ennemis de debug) ;
+les `sync` intermédiaires l'omettent et le client garde le précédent. Morts et dégâts
+sont transmis normalement. Les volants n'envoient aucune position : chaque client les
+recalcule.
 
-- `swarmFrame()` conserve le trajet initial des sources, mais la position de
-  chaque moucheron ajoute un décalage mathématique issu de son ID stable et de
-  `routeSeed`, avec une phase dépendant du temps et une enveloppe décroissant
-  aux extrémités du trajet. Les moucherons ne dépendent plus du voisinage des
-  autres insectes. Supprimer un individu ne décale aucun survivant.
-- Les autres espèces gardent leur steering de voisinage sur grille, entre
-  elles uniquement. Le mouvement est reproductible à temps et roster donnés
-  et ne nécessite pas d'état par frame ni d'envoi de positions réseau.
-- Les moucherons ont une sphère de collision commune, en coordonnées locales
-  de modèle (rayon `MIDGE_SPHERE_RADIUS` dans `scale.ts`). Les tirs légers et
-  la présélection `InsectIndex` utilisent l'intersection rayon–sphère exacte.
-  Les projectiles lourds serveur utilisent le même rayon et écartent les
-  candidats impossibles avec une boîte englobante balayée.
-- Sur WebGL, `MidgeBatch` rassemble tous les moucherons vivants dans
-  **un seul mesh instancié** (modèle Meshy animé, sans niveau de détail). Chaque ennemi
-  conserve un objet léger avec son identifiant, sa position, son mouvement,
-  ses PV et ses effets ; seuls les corps tombants (plafond 80) recréent un
-  modèle complet. Le moteur de secours 2D conserve les modèles ordinaires.
-- Les réponses fiables UDP envoient le roster complet à la première
-  synchronisation, après changement de vague ou de révision d'équilibrage.
-  Les réponses `sync` intermédiaires l'omettent et le navigateur réutilise
-  le roster du snapshot précédent. Les morts, dégâts, achats et autres états
-  partagés restent transmis normalement.
+Tous les moucherons vivants sont dessinés en un seul appel par `MidgeBatch`
+(`src/midge-batch.ts`) ; chaque ennemi garde un objet léger hors scène (identifiant,
+position, PV, effets). Les tirs légers testent la sphère du moucheron par intersection
+rayon–sphère exacte, avec présélection `InsectIndex` ; les armes lourdes utilisent le
+même rayon après une boîte englobante balayée. Mesures de charge :
+[performances](performance.md).
 
-### Contrôles et limites
+## Vérifier
 
-`node scripts/test-dense-swarms.mjs` compare le voisinage restant à son
-parcours exhaustif, vérifie l'invariance des positions après suppression
-d'un moucheron et exécute des échantillons CPU de 1k/5k/10k.
+- `npm test -- wave-preparation` : meutes, budget, colosse, départs.
+- `npm test -- dense-swarms` : parité du voisinage avec le parcours exhaustif,
+  invariance après suppression d'un moucheron, échantillons CPU 1k/5k/10k.
+- `npm test -- midge-batch` : instances, matrices, collisions, suppressions.
+- `npm test -- roster-sync` : omission du roster inchangé, resynchronisation.
+- `npm test -- ground-paths` et `npm test -- ground-crowd` : chemins et foule au sol.
 
-`node scripts/test-midge-batch.mjs` couvre les instances 10k, leurs matrices,
-les collisions et suppressions. `node scripts/test-roster-sync.mjs` vérifie
-l'omission des rosters inchangés et la resynchronisation après révision/vague.
-La suite `npm test` couvre aussi les dégâts, les projectiles, l'équilibrage
-de room et les deux clients UDP natifs.
-
-**Ne pas confondre benchmark CPU et débit réellement jouable** : avec 10 000
-ennemis, la taille du premier snapshot, les effets des blessures, la charge
-du navigateur, le débit des armes lourdes, la réception et le rendu GPU
-demandent encore des mesures en conditions réelles et plusieurs joueurs.
-Le comportement de pilotage et des tourelles multijoueurs ne change pas dans
-ce chantier. Il n'y a pas de nouveau plafond imposé au réglage de population.
-
-## Correction de la vitesse physique — suite au retour de partie
-
-La vitesse de progression est désormais fixée par espèce dans `ENEMY_TYPES.speedMps` : mètres de la pièce/seconde, quelle que soit la taille de l'insecte ou de sa formation. Les anciennes calibrations sur la longueur des itinéraires historiques ne gouvernent plus la durée des vagues ; la durée d'un ennemi vient de la longueur de **son trajet réel** divisée par sa vitesse explicite. Les oscillations locales restent petites, et le moustique utilise une fréquence d'esquive réduite. Les bébés araignées utilisent leur propre vitesse, sans accélération cachée.
-Voir [bestiaire](enemy-bestiary.md) et `scripts/test-enemy-speeds.mjs`.
-
-## Souffle des ventilateurs (retiré)
-
-Le ventilateur et son champ de souffle (`air-current.ts`, `air-trails.js`,
-`scripts/test-air-fans.mjs`) sont retirés en version 319 : les couloirs aériens
-ne sont plus déformés. L'historique Git conserve l'implémentation.
+Un benchmark CPU n'est pas une mesure jouable : taille du premier snapshot, rendu GPU
+et réseau à plusieurs joueurs restent à mesurer en partie réelle.

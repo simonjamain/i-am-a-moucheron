@@ -3,7 +3,6 @@
 Référence de l’identité visuelle, sonore et du ton du jeu. Toute contribution visible
 (modèle, décor, effet, son, texte, menu) s’y conforme ; une exception se justifie dans
 sa PR. L’interface a sa propre référence : [règles d’interface](ui-guidelines.md).
-Décisions prises après la planche visuelle n°1 (palettes rendues avec le moteur du jeu).
 
 ## En une phrase
 
@@ -96,16 +95,16 @@ et disparaîtront avec la reprise des écrans.
 ## Machines et assets
 
 - Pièces mobiles séparées, pivots crédibles, mouvements inspirés du réel ; règles de
-  production : [pipeline des assets](asset-pipeline.md) et
-  [ajouter du contenu](adding-content.md).
+  production : [pipeline des assets](asset-pipeline.md), [catalogue des modèles](models.md)
+  et [ajouter du contenu](adding-content.md).
 - Usure légère et marquages plutôt que surfaces neuves et unies.
 - Une machine doit montrer son état : dégâts (fumée, trous, pièces qui pendent),
   carburant, munitions, poste occupé (personnage visible à son poste) — voir les règles
   d’interface.
 - Chaque poste occupable est une pièce identifiable du modèle (verrière, tourelle,
   trappe) : c’est lui qu’on vise pour monter.
-- Proposer tout nouveau visuel au regard de cette page **avant** génération (règle Meshy
-  d’[AGENTS](../AGENTS.md)).
+- Proposer tout nouveau visuel au regard de cette page **avant** génération
+  ([règle Meshy](asset-pipeline.md#règle-pour-tout-nouveau-modèle-meshy)).
 
 ## Son
 

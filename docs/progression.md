@@ -1,100 +1,125 @@
-# Progression des vagues et du magasin
+# Vagues, puissance et magasin
 
-Réglage du 29 octobre 2026. L’objectif est un achat utile presque à chaque vague
-pour l’équipe, sans dépendre du délai de service des âmes. Les PV et dégâts des
-armes restent ceux de [combat-worlds](combat-worlds.md).
+Le directeur de vagues (`server/wave-preparation.js`) compose chaque vague à partir
+d’un budget de **puissance** ; les âmes libérées rapportent cette même puissance en
+dollars, que l’équipe dépense au magasin. PV et dégâts des espèces : voir le
+[bestiaire](enemy-bestiary.md) ; garanties d’achat et services payants : voir
+[économie](economy.md).
 
-## Départ et montée en difficulté
+## Unité commune
 
-Le directeur Node tire la composition **dès l’annonce de la vague**. Chaque insecte consomme sa **puissance** (calculée, voir [équilibrage](enemy-power.md#unité-commune)). Le budget est `32 × 1,5^(n−1) × N^0,9` pour `N` joueurs de la room (joueurs au purgatoire compris, compté à l'annonce de la vague), **sans plafond** et sans lien avec l'argent gagné. Pour un joueur, les vagues 1, 2, 5, 10 et 15 valent environ 32, 38, 66, 165 et 411 de puissance. Les puissances étant fractionnaires, le roster dépense le budget à moins de 0,6 près ; au-delà de la population technique de 900, le reliquat renforce (PV et puissance) le dernier paquet de l'espèce la plus forte. Depuis la version 274, la vague est composée de **paquets** compacts
-(`PACKS` et `packSize` dans `server/wave-preparation.js`) : les insectes bon marché
-arrivent en foules — fourmis de 8 à 200, moucherons de 20 à 400, moustiques de 6 à 60,
-croissant avec le budget — et jamais presque seuls ; plus une espèce est grosse et
-puissante, plus son paquet est petit (cafards 2 à 8, abeilles 1 à 4,
-scarabées 1 à 2, araignées et rats seuls). Une première colonne de fourmis sort à 0 s,
-la nuée de moucherons à 1–2 s ; le reste suit à intervalles courts (les ennemis isolés
-arrivent par grappes). Les foules d'une même espèce partagent le plus souvent
-entrée et parcours ; les espèces fortes ont chacune le leur. Le reliquat de budget
-grossit un paquet existant au lieu de créer de petits groupes. Les membres d'un
-paquet partent l'un après l'autre (`memberGap`) ; la prévision annonce un groupe par
-paquet. Au sol, les créatures quittent l'entrée à intervalles courts, puis
-suivent individuellement la navigation et évitent doucement leurs voisins ; voir
-[navigation terrestre](gameplay.md#navigation-terrestre). Les positions réelles
-remplacent les anciennes files d'affichage. Le tirage n'a plus de déblocage par vague (seule la puissance restante décide) et borne à 900 la population avant le multiplicateur de room. La difficulté affichée (« MENACE ») additionne les puissances du roster réellement envoyé. La progression seule ne modifie ni les PV individuels ni les dégâts.
+La **puissance** mesure ennemis, vagues, récompenses et dégâts à la poubelle : un
+joueur de puissance 1 élimine un ennemi de puissance 1 pendant une vague. Elle est
+**calculée** par `computeEnemyPower` (`src/enemy-power.ts`), jamais saisie, et exposée
+par `ENEMY_POWER` / `ENEMY_TYPES[type].power` (`src/waves.ts`).
 
-Le lancement initial dure 60 secondes par défaut et les pauses entre vagues 180 secondes (3 minutes). Le bandeau affiche la prochaine vague et sa frise (entrées, horaires, espèces). Tout joueur peut lancer la vague annoncée avant l’échéance ; à l’échéance, elle démarre seule.
+```
+puissance = PV/PV_réf × vitesse/vitesse_réf × √(taille_réf/taille)
+          × (terrestre : 1/1,5) × powerFactor (1 par défaut)
+          + descendance (count × puissance du petit)
+```
 
-Depuis la version 264, il n’y a **plus de vote ni de cartes de plans** entre les vagues, ni les améliorations d’équipe qui en découlaient (sucre parfumé, balles traversantes, renfort, colle renforcée). Les constructions du Castor (tourelle automatique, canon antichar) ne demandent plus de plan : leur prix en dollars suffit. Les commandes `wave-vote` et `wave-buy` n’existent plus. La caisse initiale vaut 0 $ par défaut. Dès la première préparation, l’équipe peut signer l’une des trois offres de la banque (12 à 40 $) pour financer ses premières constructions. Les échéances restent dues à chaque fin de vague. La remise à zéro efface les objets.
+L’étalon `POWER_REFERENCE` (PV 100, 0,11 m/s, taille 1, volant) est figé : la formule
+ne lit jamais `ENEMY_TYPES.midge`. Pour rendre le jeu plus facile ou plus dur, agir
+sur la progression ou l’économie, pas sur l’étalon.
+
+| Usage           | Règle                                                                       |
+| --------------- | --------------------------------------------------------------------------- |
+| Budget de vague | `W(1) × g^(n−1) × N^e`, sans plafond                                        |
+| Récompense      | puissance de l’espèce par âme libérée × réglage `rewards`                   |
+| Dégâts poubelle | puissance de l’ennemi qui l’atteint ; défaite à 20 d’infestation            |
+| Affichage       | puissance de la vague (frise), puissance par espèce (mode debug, bestiaire) |
+
+## Budget de vague
+
+`directorBudget` vaut `32 × 1,5^(n−1) × N^0,9` (`firstWavePower`, `waveGrowth`,
+`playerExponent` de `DEFAULT_BALANCE`), sans plafond et sans lien avec l’argent gagné.
+`N` compte tous les pilotes de la room, purgatoire compris, au moment où la vague est
+préparée. Pour un joueur, les vagues 1, 2, 5, 10 et 15 valent environ 32, 48, 162,
+1 230 et 9 340 de puissance.
+
+Les règles d’une room sont fixes : `DEFAULT_BALANCE` (`src/balance.js`) donne les
+multiplicateurs (dégâts, vitesses, prix, récompenses, pauses, caisse initiale…) de
+toutes les rooms ; aucune commande ne les modifie. Les tests composent un roster exact
+avec `debugSwarmRoster` (`src/waves.ts`).
+
+## Composition
+
+`prepareRoster` tire la composition **dès l’annonce** de la vague, ce qui alimente la
+frise (entrées, horaires, espèces) et la « MENACE », somme des puissances du roster
+réellement envoyé.
+
+- **Paquets.** La vague est faite de paquets compacts (`PACKS`, `packSize`) dont la
+  taille croît avec le budget : moucherons de 20 à 400, fourmis de 8 à 200, moustiques
+  de 6 à 60, cafards 2 à 8, abeilles 1 à 4, scarabées 1 à 2, araignées et rats seuls.
+  Une colonne de fourmis sort à 0 s, une nuée de moucherons à 1–2 s ; le reste suit à
+  intervalles courts, les ennemis isolés arrivant par grappes.
+- **Aucun déblocage.** Toute espèce dont la puissance tient dans le budget restant peut
+  être tirée dès la vague 1 ; les espèces fortes sont tirées plus souvent quand le budget
+  grandit (`ENEMY_UNLOCK_WAVE` ne sert plus qu’à l’ordre de tirage).
+- **Parcours.** Les foules d’une même espèce partagent le plus souvent entrée et
+  parcours ; les espèces fortes ont chacune le leur. Les membres d’un paquet partent l’un
+  après l’autre (`memberGap`) ; la prévision annonce un groupe par paquet. Au sol, voir
+  [navigation terrestre](gameplay.md#navigation-terrestre).
+- **Reliquat.** Les puissances étant fractionnaires, le budget est dépensé à moins d’une
+  espèce près. Un petit reliquat d’espèce de foule grossit un paquet existant. Au-delà
+  de la population technique (`MAX_WAVE_POPULATION`, 900), le reste renforce PV et
+  puissance du dernier paquet de l’espèce la plus forte (« colosse »).
+
+## Calendrier
+
+Le lancement initial dure 60 s et les pauses entre vagues 180 s (`initialDelay`,
+`pause`). Tout joueur peut lancer la vague annoncée avant l’échéance ; à l’échéance,
+elle démarre seule. Il n’y a ni vote ni plan à débloquer entre les vagues.
+
+La caisse initiale vaut 0 $. Dès la première préparation, l’équipe peut signer l’une des
+offres de la banque (12 à 40 $, voir [banque](bank.md)) ; les échéances sont
+dues à chaque fin de vague. Toute la partie vit en RAM : une remise à zéro ou un
+redémarrage efface vague, caisse, achats et objets.
 
 ## Revenus et prix
 
-Le directeur Node ne verse **aucune prime de vague** (`waveStipend` et l'affichage
-`waveReward` sont supprimés). Les âmes libérées par Saint-Pierre
-rapportent **la puissance de leur espèce** en dollars (multipliée par le réglage
-`rewards`) ; tuer dans le bureau ne crédite rien directement. Une vague de puissance
-W rapporte donc au plus W $. L'ancienne prime `min(20, 3 + n)` n'existe plus.
+Il n’y a **aucune prime de vague** : seules les âmes libérées par Saint Pierre (ou
+abattues dans son ciel) rapportent la puissance de leur espèce, une seule fois ; tuer
+dans le bureau ne crédite rien directement. Une vague de puissance W rapporte donc au
+plus W $. La monnaie appartient à la salle.
 
-| Achat                              | Prix                                               |
-| ---------------------------------- | -------------------------------------------------- |
-| Chasseur biplan supplémentaire     | 5 $                                                |
-| Bombardier biplan supplémentaire   | 5 $                                                |
-| Char moyen supplémentaire          | 5 $                                                |
-| Flak léger, exemplaires successifs | 5 $, 7 $, 9 $… +2 $ par installation, plafond 40 $ |
-| Radar                              | 10 $, +2 $ par installation                        |
-| Lit de réapparition                | 15 $, +2 $ par installation                        |
-| Station de ravitaillement          | 20 $, +2 $ par installation                        |
-| Castor                             | 15 $                                               |
-| Anti-air mobile                    | 15 $                                               |
-| Stuka                              | 25 $                                               |
-| Flak lourd                         | 30 $                                               |
-| Castor volant                      | 35 $                                               |
-| Hélicoptère d’attaque au sol       | 50 $                                               |
-| DCA haute cadence                  | 50 $                                               |
-| Spitfire                           | 75 $                                               |
+Les prix viennent de `SHOP` et `shopPrice` (`src/equipment.ts`), partagés par
+l’affichage et le serveur ; la colonne du magasin est dans `src/shop-catalog.ts`.
 
-Il n’y a plus d’améliorations achetables (motorisation, munitions renforcées) :
-la colonne du magasin, leurs prix et leur code ont disparu. Le chasseur, le
-bombardier et le char moyen ont chacun une **réserve gratuite et infinie** au sol
-à Alpha (voir [réserves](multiplayer-return.md#réserves-gratuites-et-achats-de-véhicules)).
+| Achat                            | Prix                                   |
+| -------------------------------- | -------------------------------------- |
+| Chasseur biplan supplémentaire   | 5 $                                    |
+| Bombardier biplan supplémentaire | 5 $                                    |
+| Char moyen                       | 5 $                                    |
+| Flak léger                       | 5 $, +2 $ par exemplaire, plafond 40 $ |
+| Radar                            | 10 $, +2 $ par exemplaire              |
+| Lit de réapparition              | 15 $, +2 $ par exemplaire              |
+| Station de ravitaillement        | 20 $, +2 $ par exemplaire              |
+| Chasseur léger, bombardier moyen | 15 $ chacun                            |
+| Castor, anti-air mobile          | 15 $ chacun                            |
+| Stuka d’attaque au sol           | 25 $                                   |
+| Flak lourd                       | 30 $                                   |
+| Castor volant                    | 35 $                                   |
+| Hélicoptère d’attaque au sol     | 50 $                                   |
+| DCA haute cadence                | 50 $                                   |
+| Spitfire                         | 75 $                                   |
 
-Sans revenu d’âme, les primes ne financent plus rien : seules les âmes libérées
-rapportent. La monnaie appartient à la salle.
+Les paliers comptent les exemplaires posés, les colis en cours et les bons payés non
+posés (`purchaseCount`) ; la station gratuite d’Alpha ne compte pas. Le chasseur, le
+bombardier biplan et le char ont aussi une **réserve gratuite** au sol à Alpha (voir
+[engins](gameplay.md#engins)). Il n’y a
+pas d’amélioration achetable. Les constructions du Castor ont leur propre tarif
+(murs au tronçon, voir [économie](economy.md#constructions-au-tronçon)).
 
-`shopPrice` est partagé entre affichage et serveur. La transaction revalide le
-niveau et le nombre d’installations posées ou prépayées avant de débiter : deux achats concurrents
-ne peuvent pas obtenir le même ancien tarif. Un tarif affiché devenu obsolète
-est refusé avant débit pour laisser le joueur confirmer le nouveau prix. Un retry conserve sa transaction
-initiale. Le compteur sonore reste distinct du solde dépensable. Reset efface
-tout l'état de la partie (en RAM, sans migration).
+## Vérifier
 
-## Vérifications
+- `scripts/test-enemy-power.mjs` : formule, étalon, descendance, budget, récompenses,
+  dégâts à la poubelle.
+- `scripts/test-wave-preparation.mjs` : prévision, budget, paquets, lancement anticipé
+  par tout joueur ou à l’échéance, absence de vote et de plans, remise à zéro.
+- `scripts/test-progression.mjs` : ancien tirage `wavePlan` (`src/waves.ts`), encore
+  utilisé par `Game.plan` comme repli quand aucune vague n’a été préparée.
+- `scripts/test-shop-catalog.mjs` : catalogue du magasin.
 
-`test-progression.mjs` exerce 40 tirages sur les douze premières vagues, les
-plafonds d’élites, la durée initiale, un parcours d’achats sans revenus d’âmes,
-les prix par palier,
-une vague entièrement manquée, la défaite et le reset. Les tests d’économie
-existants gardent leurs contrôles de placement et d’achats concurrents.
-Le ressenti des trajectoires et du combat reste à confirmer en partie réelle.
-
-Les portails restent à au moins trois mètres du décor de la corbeille ;
-[visibilité des ennemis](enemy-visibility.md#blessures-et-apparitions) précise les premières images et la connexion tardive.
-
-Sur Node, les primes et commandes sont dédupliquées en RAM. Les noms de tables
-et migrations mentionnés plus haut décrivent l'ancien modèle à base de données,
-abandonné. La progression disparaît au redémarrage.
-
-Installations Node : le [bon signé](clean-flight.md#prix-bon-signé-et-pose) débite
-avant la pose ; annuler l’aperçu ne fait pas perdre l’objet payé.
-
-Historique VAG-04/VAG-05 : [parcours et budget](multiplayer-return.md#parcours-et-fourmis-précoces),
-budget initial 8, autrefois quatre fourmis en vague 1 ; le directeur historique garantissait
-deux fourmis à toutes les vagues, avec coûts/PV inchangés.
-Les achats de chasseur et bombardier supplémentaires coûtent 8 $ et 16 $.
-
-Le H2 coûte 30 $, le camion D2 20 $, sans remplacement gratuit. Voir
-[les véhicules d’appui](support-vehicles.md) pour les choix d’équilibrage.
-
-Le [lot confort de jeu, version 37](comfort.md) précise réparation, zoom, jauges,
-radar à pied, remise à zéro, fourmis et projectiles du pistolet courants.
-
-Colis : [logistique](logistics-contracts.md#colis-parachutés) ; H2 : [commandes](helicopter-controls.md#mapping-pilote-h2).
+Le ressenti des vagues reste à confirmer en partie réelle.

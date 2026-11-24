@@ -1,13 +1,13 @@
 # Confiance envers les clients
 
 **Règle pérenne : on fait confiance aux joueurs.** Flight Lab est un jeu coopératif sans enjeu :
-aucun code ne cherche à détecter, empêcher ou limiter la triche d'un client. Décidé le
-20 novembre 2026 (version 376) ; la règle figure dans `AGENTS.md`.
+aucun code ne cherche à détecter, empêcher ou limiter la triche d'un client. La règle figure
+aussi dans `AGENTS.md`.
 
 ## Ce que cela veut dire
 
 - Le client est autoritaire sur ce qu'il simule : positions, vitesses, visées, tirs, impacts et
-  dégâts déclarés (voir [walking-network](walking-network.md) et [combat-worlds](combat-worlds.md)).
+  dégâts déclarés (voir [autorité et corps partagés](walking-network.md) et [combat et mondes](combat-worlds.md)).
 - Le serveur **n'ajoute pas** de contrôle de plausibilité : pas de butée d'élévation d'un canon, pas
   de cadence minimale entre deux tirs, pas de plafond sur les dégâts d'un impact, pas de limite de vitesse ou de saut de position.
 - Le client garde ses butées et ses délais pour le confort de jeu (visée, rechargement affiché),
@@ -34,10 +34,3 @@ Ces contrôles ne visent pas un tricheur ; ils gardent la partie cohérente et l
 - Une vérification de cohérence entre états partagés reste légitime : la justifier par la
   cohérence (deux joueurs, un siège), pas par la triche.
 - Face à un doute, appliquer la règle : faire confiance, et le consigner ici si c'est durable.
-
-## Historique
-
-Version 376 : retrait des contrôles anti-triche existants du serveur (`server/game.js`) : butées
-d'élévation de la DCA, du copilote et du canon, cadence minimale des armes lourdes, des DCA fixes
-et du missile, plafond des dégâts d'un impact, trace exigée avant un impact de pistolet.
-Les tests correspondants vérifient désormais l'acceptation.

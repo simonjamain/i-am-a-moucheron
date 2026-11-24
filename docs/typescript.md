@@ -74,20 +74,17 @@ aux URL du navigateur ni aux noms construits dynamiquement : relire le diff.
 Migrer de préférence des feuilles du graphe d'imports (modules sans import local
 non migré ; `npm run ts:migrate -- --leaves` les liste, plus petites d'abord), par lots cohérents, puis remonter vers `client.js` et `server/game.js`.
 
-Pièges vus au lot 4 :
+## Pièges connus
 
 - Un test qui lit le texte d'un module et l'exécute (`new AsyncFunction(source)`)
   doit d'abord effacer les types avec `stripTypeScriptTypes` (exemple :
   `scripts/test-loading-exit.mjs`).
-- Le script réécrit aussi les exemples de commandes dans la doc : les relire.
+- Le script réécrit aussi les chemins des commentaires et les exemples de la doc : les relire.
 - Pour un gros lot, répartir les fichiers entre agents, chacun limité à ses
   fichiers, sans modifier `src/types.ts` en parallèle. Contrôle de
   non-régression : effacer les types, passer Prettier et comparer à l'ancien `.js`
   (`git show <base>:src/<m>.js`). Seuls des champs de classe déclarés ou des alias
   doivent apparaître.
-
-Pièges vus au lot 5 :
-
 - Les tests passent souvent un faux `document` sans `createElementNS` ni
   `activeElement` : typer ce paramètre par une petite interface locale
   (`BankDocument`) plutôt que `Document`, pour garder ces tests exécutables.
@@ -99,9 +96,6 @@ Pièges vus au lot 5 :
 - Le typage révèle des défauts (une liste d'aide qui contenait `false`) : les
   corriger à part, avec un test de régression et une entrée de changelog, jamais
   silencieusement pendant la migration.
-
-Pièges vus au lot 7 :
-
 - Un objet construit en deux temps (littéral puis `x.travelSpeed = …`) garde son
   ordre de clés, visible dans les instantanés JSON : typer le brouillon, puis
   `Object.assign(brouillon, { champ: … })` plutôt que réordonner le littéral.
@@ -109,11 +103,3 @@ Pièges vus au lot 7 :
   garde son URL servie en `.js` ; seul son fichier source devient `.ts`.
 - `scripts/test-dense-swarms.mjs` évalue le texte de `swarmFrame` : même remède
   que pour `test-loading-exit.mjs` (`stripTypeScriptTypes`).
-
-## Écart avec la consigne précédente
-
-`docs/code-structure.md` décrivait « JavaScript ESM natif » et `README.md`
-Node 22.13+. La base exige désormais Node 22.18+ (effacement des types activé par
-défaut) et devient mixte JS/TS pendant la migration. Le choix « pas de bundler »
-est conservé : les URL de contenu et le Dockerfile restent
-identiques ; seule la lecture des sources par l'assembleur change.

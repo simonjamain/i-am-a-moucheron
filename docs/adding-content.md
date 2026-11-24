@@ -13,7 +13,7 @@ Domaine partagé (serveur et client) :
 1. `src/waves.ts` — profil dans `SPECIES` (`name`, `hp`, `size`, `speedMps`,
    `color`, `ground` pour un marcheur, `offspringOnly` pour une progéniture,
    `onDeath` pour une ponte, `powerFactor` en correction rare ; la puissance est
-   calculée, jamais saisie : [équilibrage](enemy-power.md)) ; vague d'apparition dans
+   calculée, jamais saisie : [équilibrage](progression.md#unité-commune)) ; vague d'apparition dans
    `ENEMY_UNLOCK_WAVE` (ordre des clés = ordre de tirage) ; coût du directeur
    historique dans `LEGACY_COST` ; `GROUND_LANES` pour un marcheur.
 2. `EnemyType` est dérivé des clés de `SPECIES` (`keyof typeof SPECIES`, réexporté
@@ -60,4 +60,4 @@ sans liste de types à recopier ailleurs.
    postes visables de chaque siège dans `src/seat-posts.ts` (`scripts/test-seat-posts.mjs`
    exige un poste par siège).
 7. Autorité : `server/game.js` pour toute arme lourde ou règle simulée au serveur.
-8. Documenter dans [véhicules et banque](vehicles-bank.md) et, si le joueur le voit, un fragment `changelog.d/` ([nouveautés](changelog.md)).
+8. Documenter dans [la flotte](scale-fleet-weapons.md) et, si le joueur le voit, un fragment `changelog.d/` ([nouveautés](changelog.md)).

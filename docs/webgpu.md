@@ -3,7 +3,7 @@
 Le jeu s'affiche avec `WebGPURenderer` de Three.js : **WebGPU** quand le navigateur
 l'offre, sinon le **backend WebGL 2 du même renderer** (choisi automatiquement par
 Three.js). Sans l'un ni l'autre, le rendu logiciel 2D de secours (`src/renderer.ts`)
-reste. Il n'existe plus de chemin `WebGLRenderer` ni de GLSL écrit à la main : tous les
+reste. Il n'y a ni `WebGLRenderer` ni GLSL écrit à la main : tous les
 effets sont des matériaux à nœuds (**TSL**, _Three Shading Language_), qui tournent sur
 les deux backends.
 
@@ -13,8 +13,7 @@ les deux backends.
 `three.webgpu.min.js` (servi sous `/three.js`, avec le renderer, les matériaux à nœuds
 et `T.TSL`), `three.core.min.js` et `three.tsl.min.js`. Les modules reçoivent toujours
 l'espace de noms `T` ; `Three` (`src/types.ts`) est le type du build WebGPU. Les tests
-Node importent le même fichier. Le build WebGPU pèse environ 0,5 Mo de plus que l'ancien
-`three.module.min.js` une fois les trois fichiers servis.
+Node importent le même fichier.
 
 ## Démarrage
 
@@ -78,12 +77,11 @@ renderer de la même façon. `isGpuRenderer` distingue le renderer GPU du rendu 
 
 ## Limites connues
 
-- Performances non mesurées sur de vraies machines (les essais ont tourné sur SwiftShader,
-  rendu logiciel) : à comparer à l'ancien rendu avant de conclure.
+- Performances non mesurées sur de vraies machines (les essais tournent sur SwiftShader,
+  rendu logiciel).
 - WebGPU compile les pipelines à la première utilisation : une saccade peut apparaître
   à la première apparition d'un effet.
-- Le brouillard est mélangé en espace linéaire (dans la cible HDR du rendu toon, comme
-  avant) ; un rendu direct sur le canvas, sans passe de contours, le mélange aussi en
-  linéaire, ce qui l'éclaircit par rapport à l'ancien rendu direct.
-- La tuile du sélecteur de personnage et le contour de sélection mélangent désormais en
-  linéaire et non en sRGB : l'écart de teinte est léger.
+- Le brouillard est mélangé en espace linéaire, dans la cible HDR du rendu toon comme
+  dans un rendu direct sur le canvas sans passe de contours.
+- La tuile du sélecteur de personnage et le contour de sélection mélangent en linéaire
+  et non en sRGB.

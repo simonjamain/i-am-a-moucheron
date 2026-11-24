@@ -5,7 +5,7 @@ import { WALKER_FREEFALL_SPEED, WALKER_JUMP_SPEED } from './field-physics.ts';
  * left, y: up, z: forward; `side` is +1 for the left limbs, -1 for the right). The skeleton is
  * posed procedurally, so these are the whole animation: a jump is three keyframes blended by the
  * vertical speed (`rise`), a free fall is the skydiver's face-down "box", and the canopy hangs
- * the arms up. See docs/field-update.md.
+ * the arms up. See docs/walking-network.md.
  */
 export type Dir = readonly [number, number, number];
 export interface AirPose {

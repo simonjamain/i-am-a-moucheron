@@ -62,7 +62,7 @@ remplir, signatures, tampons, cachets « APPROUVÉ ».
   légèrement irrégulière. Aucune case n’est cochée d’office ; un formulaire peut exiger
   une ou plusieurs coches avant signature.
 - **Signer** se fait à la souris, en traçant sa signature (mécanisme existant :
-  [signatures](economy-physics.md#input-and-signatures)) ; c’est le geste qui valide, à
+  [signatures](logistics-contracts.md#signer)) ; c’est le geste qui valide, à
   la place d’un bouton.
 
 Tous les documents du jeu sont en papier :
@@ -147,8 +147,8 @@ membre d’équipage.
 
 Couleurs, polices, tailles, espacements et rayons se définissent **une seule fois** en
 variables CSS (`:root` de `src/index.html`) et se réutilisent partout, y compris dans le
-JavaScript. État hérité à résorber : environ 290 couleurs écrites en dur dans `src/`,
-une vingtaine de tailles de texte, quatre polices et des rayons de 3 à 12 px.
+JavaScript. État hérité à résorber : quelques centaines de couleurs écrites
+en dur dans `src/`, de nombreuses tailles de texte et des rayons de 3 à 12 px.
 Une nouvelle couleur ou taille écrite en dur n’est pas acceptée ; toute reprise d’écran
 migre ses valeurs vers les jetons. Le **bleu signal `#2ec4d6`** est le jeton partagé par
 l’interface et le monde 3D pour tout ce qui s’utilise ([couleurs](art-direction.md#couleurs)).

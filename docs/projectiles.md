@@ -1,120 +1,164 @@
-# Types de projectiles
+# Projectiles
 
-`src/projectiles.ts` est le **catalogue** des projectiles. Une arme ne porte plus ses
-statistiques de munition : elle référence un type et garde ce qui lui appartient (cadence,
-chargeur, recul, et plus tard un `speedFactor` pour un canon plus long ou plus court).
+Catalogue des projectiles, ricochets, simulation par le tireur et affichage chez les
+autres joueurs. Les armes qui les tirent (cadences, stocks, postes) sont dans
+[la flotte](scale-fleet-weapons.md#armement), [l'hélicoptère et la DCA mobile](support-vehicles.md)
+et [les tourelles automatiques](gatling-turret.md).
 
-## Ce que porte un type
+## Catalogue
 
-| Champ                      | Sens                                                                                                                                                 |
-| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `damage`, `edge`, `radius` | Dégâts au centre, au bord du souffle, rayon du souffle (mètres de référence).                                                                        |
-| `speed`                    | Vitesse nominale en m/s de référence ; l'arme la multiplie par son `speedFactor`.                                                                    |
-| `lifetime`                 | Durée de vol en secondes.                                                                                                                            |
-| `drag`                     | Loi de traînée (`bullet`, `shell`) ou aucune (bombe, missile).                                                                                       |
-| `speedExponent`            | Part de la vitesse dans les dégâts : `damage × (vitesse / nominale) ^ exposant`. 1 pour une balle (cinétique), 0 pour une bombe ou un obus explosif. |
-| `color`                    | Couleur neutre du corps d'un obus, identique pour tous les joueurs.                                                                                  |
+`PROJECTILES` (`src/projectiles.ts`) décrit ce qu'est un projectile, indépendamment de
+l'arme : une arme référence un type et ne garde que ce qui lui appartient (cadence,
+stock, recul). Les distances et vitesses sont en mètres de référence
+([échelle](scale-fleet-weapons.md#échelle)).
 
-`projectileDamage(id, vitesse)` applique l'exposant. Il n'est pas encore branché sur les
-tirs : les dégâts de balle sont fixés par le serveur (`friendly` dans `server/game.js`) et
-ne dépendent pas de la vitesse du porteur.
+| Champ                      | Sens                                                                                      |
+| -------------------------- | ----------------------------------------------------------------------------------------- |
+| `damage`, `edge`, `radius` | Dégâts au centre, au bord du souffle, rayon du souffle (0 : pas d'explosion).             |
+| `speed`                    | Vitesse nominale à la bouche.                                                             |
+| `lifetime`                 | Durée de vol en secondes.                                                                 |
+| `drag`                     | Loi de traînée (`bullet`, `shell`) ou aucune (`null`).                                    |
+| `speedExponent`            | Part de la vitesse dans les dégâts : `damage × (vitesse / nominale) ^ exposant`.          |
+| `ricochetMaxAngle`         | Plus grand angle rasant (en degrés depuis la surface) qui permet un ricochet ; 0 jamais.  |
+| `color`                    | Couleur neutre du corps d'un obus, identique pour tous ; les balles utilisent le traceur. |
 
-## Types actuels
+| Type        |          Dégâts (centre → bord) | Rayon (m) |      Vitesse (m/s) | Durée (s) | Ricochet | Armes                                      |
+| ----------- | ------------------------------: | --------: | -----------------: | --------: | -------: | ------------------------------------------ |
+| `mg`        |                              75 |         — |                820 |         3 |      20° | chasseurs, MG du H2, MG supérieure du char |
+| `mgLight`   |                              33 |         — |                820 |         3 |      20° | MG du conducteur du char                   |
+| `coax`      |                              50 |         — |                820 |         3 |      20° | coaxiale du char                           |
+| `castorGun` |                              40 |         — |                820 |         3 |      20° | Castor                                     |
+| `rapidDca`  |                              62 |         — |                820 |         3 |      20° | DCA haute cadence                          |
+| `flak`      | 200 direct ; 80 → 20 en souffle |        30 |                800 |       4,5 |       0° | Flak léger                                 |
+| `proximity` |                         80 → 20 |        30 |                560 |         9 |       0° | DCA mobile                                 |
+| `dcaHeavy`  |                        240 → 60 |        40 |                560 |         9 |       0° | Flak lourd                                 |
+| `rocket`    |                        120 → 30 |        12 |                180 |         9 |       0° | roquettes du H2                            |
+| `missile`   |                        360 → 70 |        30 |                100 |        15 |       0° | missile guidé du H2                        |
+| `bomb`      |                        240 → 60 |        20 | vitesse de l'avion |      52,5 |       0° | Stuka, bombardiers (rayon ×2)              |
+| `he`        |                        320 → 30 |        20 |                320 |      19,5 |       5° | obus explosif du char                      |
+| `ap`        |                             800 |         — |                600 |        12 |      10° | obus perforant du char                     |
+| `antitank`  |                        800 → 90 |         5 |                750 |        12 |       0° | canon anti-matériel                        |
 
-Aucune valeur n'a changé en introduisant le catalogue (`scripts/test-projectiles.mjs` les
-fige). Les types d'armes lourdes alimentent `HEAVY` (`armament.ts`), les balles
-alimentent `TANK_MG`, `CASTOR_GUN_DAMAGE`, `RAPID_DCA_DAMAGE` et `HELI.gunDamage`.
+`projectileDamage(id, vitesse)` applique `speedExponent` ; il n'est pas encore branché
+sur les tirs. Les armes lourdes lisent leur type via `HEAVY` (`src/armament.ts`), les
+balles via `TANK_MG`, `CASTOR_GUN_DAMAGE`, `RAPID_DCA_DAMAGE` et `HELI.gunDamage`.
+`REFERENCE.bullet` (820) et `REFERENCE.shell` (800) sont dans `src/scale.ts` ; la DCA
+mobile et le Flak lourd tirent à 70 % de `shell`.
 
-| Type                                                                         |                Dégâts | Vitesse (m/s) | Durée (s) | Armes                                              |
-| ---------------------------------------------------------------------------- | --------------------: | ------------: | --------: | -------------------------------------------------- |
-| `mg`                                                                         |                    75 |           820 |         2 | chasseurs, hélicoptère, mitrailleuse haute du tank |
-| `mgLight`                                                                    |                    33 |           820 |         2 | mitrailleuse du conducteur du tank                 |
-| `coax`                                                                       |                    50 |           820 |         2 | mitrailleuse coaxiale du tank                      |
-| `castorGun`                                                                  |                    40 |           820 |         2 | Castor                                             |
-| `rapidDca`                                                                   |                    62 |           820 |         2 | DCA à cadence rapide                               |
-| `flak`                                                                       |                   200 |           800 |         3 | DCA légère (obus fusant, souffle 30 m)             |
-| `rocket`, `missile`, `proximity`, `dcaHeavy`, `bomb`, `he`, `ap`, `antitank` | voir `projectiles.ts` |               |           | armes lourdes                                      |
+Règles particulières :
+
+- **Souffle** (`heavyDamage`) : décroissance linéaire du centre au bord, occultée par le
+  décor ; les explosions blessent aussi alliés et coques.
+- **Bombe** : hérite de la vitesse de l'avion et tombe ; un piqué (avant de l'avion
+  plus bas que −0,65) multiplie les dégâts par 1,35 ; le rayon double pour les
+  bombardiers (`radiusFactor`).
+- **Obus perforant** : sans souffle, il traverse les ennemis en appliquant ses dégâts à
+  chacun puis en garde 80 % (`AP_PIERCE_KEEP`) ; il s'arrête sur le décor, une coque ou
+  un joueur, et seul lui tue net un joueur touché.
+- **Missile** : guidé vers le point visé par le copilote (au plus 1,2 rad/s,
+  `steerMissile`), un seul en vol par hélicoptère, détruit avec son hélicoptère.
+- **Fusées de proximité** (DCA mobile, Flak lourd) : voir
+  [la DCA mobile](support-vehicles.md#dca-mobile-d2).
+
+## Balistique
+
+Balles et obus suivent `stepBallisticVelocity` (`src/ballistics.ts`) : gravité et traînée
+quadratique `dv/dt = g − k|v|v`, intégrées en demi-pas, avec `BALLISTICS.bullet` 0,0007 et
+`BALLISTICS.shell` 0,00015 (mètres de référence, divisés par `MAP.ratio`). La chute des
+personnages est décrite dans [corps partagés](walking-network.md#saut-chute-et-parachute) ;
+`stepFall`, du même module, n'est plus appelé que par son test. Test :
+`scripts/test-economy-ballistics.mjs`.
 
 ## Ricochet
 
-Règle (`src/ricochet.ts`, matériaux dans `src/materials.ts`) : à l'impact, on mesure l'angle entre
-la trajectoire et la surface (0° tangent, 90° de plein fouet). Le seuil est le **minimum** de
-`ricochetMaxAngle` du type et de celui du matériau. Sous le seuil (et seuil > 0), la balle ricoche ;
-au-dessus, elle touche comme avant (dégâts).
+`bounce()` (`src/ricochet.ts`) mesure l'angle entre la trajectoire et la surface (0°
+rasant, 90° de plein fouet). Le seuil est le **minimum** de `ricochetMaxAngle` du type
+et du matériau touché (`MATERIALS`, `src/materials.ts`). Sous le seuil (seuil > 0), le
+projectile ricoche ; au-dessus, il touche normalement.
 
-- **Réflexion parfaite**, sans aléatoire. La vitesse est multipliée par `1 − 0,6 × angle / seuil` :
-  un tir parfaitement rasant garde toute sa vitesse, un tir juste sous le seuil en garde 40 %.
-- Un ricochet **n'inflige aucun dégât** à la cible touchée. La balle continue et peut toucher
-  n'importe qui plus loin, alliés compris.
-- **5 rebonds au maximum** ; le contact éligible suivant arrête la balle, sans dégât.
-- Effet : même éclat d'impact que pour une balle qui touche, et le son `ricochet`.
-- Les durées de vie des types ont été allongées de 50 % (balles 2 → 3 s, flak 3 → 4,5 s, armes lourdes
-  × 1,5), sans autre changement de balistique.
+- Réflexion parfaite, sans aléatoire ; la vitesse est multipliée par
+  `1 − 0,6 × angle / seuil` (`SPEED_LOSS`).
+- Un ricochet n'inflige aucun dégât ; le projectile continue et peut toucher plus loin,
+  alliés compris. Même éclat d'impact qu'un tir au but, son `ricochet`.
+- Au plus 5 ricochets (`MAX_BOUNCES`) ; le contact éligible suivant arrête le
+  projectile sans dégât.
 
-| Type                                                              | Angle max |
-| ----------------------------------------------------------------- | --------: |
-| balles (`mg`, `mgLight`, `coax`, `castorGun`, `rapidDca`)         |       20° |
-| `ap` (obus perforant)                                             |       10° |
-| `he` (obus explosif)                                              |        5° |
-| flak, roquette, missile, bombe, proximité, `dcaHeavy`, `antitank` |        0° |
+| Matériau   | Angle max | Porté par                                      |
+| ---------- | --------: | ---------------------------------------------- |
+| `decor`    |       10° | murs, sol, meubles, objets                     |
+| `armor`    |       90° | le char : seule la limite du projectile compte |
+| `hull`     |        0° | les autres véhicules (`vehicleMaterial`)       |
+| `carapace` |       12° | le scarabée (`insectMaterial`)                 |
+| `flesh`    |        0° | les autres insectes et les joueurs             |
 
-| Matériau   | Angle max | Porté par                                                    |
-| ---------- | --------: | ------------------------------------------------------------ |
-| `decor`    |       10° | murs, sol, meubles, objets (un seul matériau pour l'instant) |
-| `armor`    |       90° | le tank : seule la limite de la balle compte                 |
-| `hull`     |        0° | les autres véhicules (un matériau par type de véhicule)      |
-| `carapace` |       12° | le scarabée                                                  |
-| `flesh`    |        0° | les autres insectes et les joueurs                           |
+Un nouveau matériau (papier, bois, verre…) s'ajoute à `MATERIALS` puis s'affecte à des
+objets, sans toucher à la balistique.
 
-Un matériau fin (papier, bois, métal, verre...) se déclare en ajoutant une entrée à `MATERIALS` et en
-l'affectant à des objets ; aucun code de balistique ne change.
+Les obus `he` et `ap` ricochent aussi, dans `stepHeavy` (`src/heavy-sim.js`) : sol,
+boîtes et triangles du décor, coques (normale du centre vers l'impact) et insectes. À
+un ricochet l'obus ne détone pas. Le tireur envoie `heavy-bounce` (`shot`, `p`, `v`,
+`age`, `updated`, `bounces`) ; le serveur remplace le départ enregistré (le rebond le
+plus récent l'emporte) et les autres joueurs repartent de ce nouveau départ.
 
-**Armes lourdes.** L'obus perforant (`ap`, 10°) et l'obus explosif (`he`, 5°) ricochent aussi, dans
-`stepHeavy` (`heavy-sim.js`) : sol, boîtes et triangles du décor, coques de véhicules (sphère : normale du
-centre vers l'impact) et insectes. La règle est la même (`src/ricochet.ts`) ; à un ricochet l'obus ne
-détone pas, repart réfléchi et ralenti, et s'arrête sans explosion au contact éligible suivant après 5
-rebonds (le tireur annonce alors une fin sans impact). Le tireur envoie `heavy-bounce` (`shot`, `p`,
-`v`, `age`, `updated`, `bounces`) : le serveur remplace la position et la vitesse de l'enregistrement du
-tir (le dernier rebond l'emporte, seul le tireur peut le faire), et les autres joueurs, qui font voler
-l'obus depuis cet enregistrement, repartent de ce nouveau départ. Les armes à angle 0 (roquette, missile,
-bombe, flak, proximité, `antitank`) n'ont jamais cherché de normale : leur chemin n'a pas changé.
+## Simulation par le tireur
 
-## Balles des autres joueurs
+Chaque joueur simule **ses propres** tirs : trajectoire, collisions et dégâts sont
+calculés dans son navigateur, puis rapportés au serveur, qui les applique une seule
+fois (identifiants de tir idempotents). Voir [confiance envers les clients](trust-model.md).
 
-Chaque joueur simule **ses propres** balles (collisions, dégâts). Les autres ne reçoivent pas les balles :
-ils les rejouent pour l'affichage, sans jamais blesser.
+- **Balles.** Prédites et débitées localement (`src/aircraft-fire.ts`), confirmées par
+  lots : regroupement pendant 50 ms, 32 tirs au plus par lot, huit lots en attente au
+  plus, file bornée à 512 tirs ; un lot perdu est renvoyé avec les mêmes identifiants.
+  Les touches d'ennemis arrivent par `hit`, les touches de joueurs et de coques par
+  `friendly-hit`.
+- **Armes lourdes** (`src/heavy-sim.js`, partagé par tous les clients) : le tireur crée
+  le projectile dès l'appui depuis la bouche affichée et envoie `heavy-fire`
+  (`antitank-fire` / `heavy-dca-fire` pour les canons fixes) ; le serveur débite le
+  stock et enregistre le départ. Le tireur envoie ensuite `heavy-impact` avec les dégâts
+  par ennemi, coque et joueur, ou `fizzle` pour une fin sans explosion. Le serveur
+  oublie un départ sans rapport 3 s après sa fin de vie (`IMPACT_GRACE_MS`) et garde au
+  plus `MAX_ORDNANCE` départs par salle.
+- Les autres joueurs font voler l'obus depuis le départ enregistré ; un missile guidé
+  est dessiné à la position relayée dans le mouvement du tireur.
 
-- **Compteur de tirs.** L'état de mouvement du tireur porte `rounds`, le nombre de balles tirées depuis le
-  début (champ propre du relais binaire, +5 octets par état relayé, +100 octets/s par joueur à 20 Hz ;
-  `scripts/benchmark-motion-rounds.mjs`). Un spectateur (`src/remote-rounds.ts`) transforme chaque nouveau
-  numéro en un traceur, cadencé par l'intervalle de l'arme, et lui donne ce numéro comme identité : le
-  compte est exact, plus de dérive d'une minuterie locale. Le Spitfire (salves de six canons) garde son
-  ancienne cadence locale et ses traceurs n'ont pas d'identité.
-- **Décor fixe.** Le traceur d'un autre joueur s'arrête sur le sol, les murs et les objets, avec l'éclat
-  d'impact, ou **ricoche** selon la même règle déterministe que chez le tireur : sans rien envoyer, tout le
-  monde voit le même rebond sur ce qui ne bouge pas.
-- **Surfaces mobiles (tank, scarabée).** Leur position diffère un peu d'un écran à l'autre : c'est le tireur
-  qui décide. Il ajoute à son état de mouvement `skids`, la liste des ricochets des 600 dernières ms
-  (`[numéro de balle, rebond, position (3), vitesse (3)]`, huit au plus, +40 octets chacun). La liste est
-  répétée dans les états suivants (canal sans garantie de livraison) ; le spectateur applique chaque
-  entrée une seule fois et seulement à la balle qui porte ce numéro. Le serveur ne vérifie que la forme.
-- Version du lot binaire de mouvement : 6.
+## Tirs des autres joueurs
 
-**Limites actuelles.**
+Les autres joueurs ne reçoivent pas les balles : ils les rejouent pour l'affichage,
+sans jamais blesser.
 
-- Les balles du **Spitfire** n'ont pas d'identité : leurs ricochets sur les surfaces mobiles ne sont pas
-  rejoués chez les autres (ceux sur le décor fixe le sont).
-- Les balles des tourelles, de la DCA et des mitrailleuses d'hélicoptère-sentinelle emploient d'autres
-  chemins d'affichage et n'ont pas de numéro.
-- Le traceur d'un autre part du canon **affiché** (retardé de 60 à 350 ms), pas de la position exacte du
-  tireur ; sa dispersion (0,17°) n'est pas rejouée. L'identité et le compte sont exacts, pas le pixel.
-- Un traceur lancé depuis l'intérieur d'un obstacle (avion affiché dans un mur) s'arrête à la sortie.
-- Coût d'un test de collision avec le décor par traceur distant et par pas : mesuré sur boîtes seulement
-  (pas sur les triangles du décor réel). Aucun essai en jeu à plusieurs.
-- Aucune mesure de performance sur un grand nombre de balles qui ricochent.
+- **Compteur.** L'état de mouvement du tireur porte `rounds`, le nombre de balles tirées.
+  `RemoteRounds` (`src/remote-rounds.ts`) transforme chaque nouveau numéro en un
+  traceur, cadencé par l'intervalle de l'arme, avec ce numéro pour identité. Les salves
+  du Spitfire gardent leur propre cadence locale, sans identité.
+- **Décor fixe.** Le traceur distant s'arrête sur le décor ou ricoche selon la même règle
+  déterministe que chez le tireur.
+- **Surfaces mobiles** (char, scarabée). Le tireur ajoute à son mouvement `skids`, les
+  ricochets de ses 600 dernières ms (`[numéro, rebond, position(3), vitesse(3)]`, huit au
+  plus), répétés tant qu'ils sont récents ; le spectateur applique chaque entrée une
+  fois, à la balle de ce numéro.
+- Format du lot binaire de mouvement : `MOTION_BATCH_VERSION` (`src/motion-wire.ts`).
 
-## Suite prévue
+Limites : les balles du Spitfire, des tourelles et de la DCA n'ont pas de numéro, donc
+pas de ricochets rejoués sur les surfaces mobiles ; le traceur distant part du canon
+**affiché** (retardé), sans la dispersion du tireur.
 
-1. **Harmonisation** : cinq types de balle pour des tirs très proches. À valider avec le
-   propriétaire du jeu avant tout changement de valeur.
-2. **Pénétration** : résistance d'un matériau et pénétration d'un type, comparées à part du seuil d'angle.
+## Traceurs
+
+`src/tracers.ts` dessine chaque balle comme un cœur clair non éclairé et un halo
+additif coloré : traînée de 11 m de référence (7 m pour un obus), largeur projetée
+minimale pour rester lisible de loin. La collision utilise le segment balayé réel, pas
+la taille visuelle. Les traceurs sont instanciés et plafonnés (256), tous de la même
+couleur (`TRACER_COLOR`). Effets de bouche, flammes et fumées des
+roquettes et missiles (`src/missile-exhaust.ts`) : purement visuels, sans message
+réseau.
+
+## Vérifier
+
+- `npm test -- projectiles` : valeurs du catalogue.
+- `npm test -- ricochet`, `npm test -- heavy-ricochet` : règle et obus lourds.
+- `npm test -- remote-rounds` : compteur, traceurs et `skids` distants.
+- `npm test -- aircraft-fire` : lots de balles et reprises.
+- `npm test -- heavy-impact`, `npm test -- client-heavy`, `npm test -- ap-pierce` :
+  armes lourdes simulées par le tireur.
+- `npm test -- shot-effects`, `npm test -- instanced-tracers` : effets et traceurs.
+- `node scripts/benchmark-motion-rounds.mjs` : coût du compteur dans le relais de mouvement.
