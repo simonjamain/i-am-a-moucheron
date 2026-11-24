@@ -9,7 +9,7 @@ boucle `airflow`).
 ## État de l'air
 
 `airflow(alpha, speed, wing)` lit l'incidence comme le fait le vol sur Rapier
-([vol du biplan](plane-physics.md)) : `|α + zeroLift|` face à `stallAngle` du type.
+([vol des avions](plane-physics.md)) : `|α + zeroLift|` face à `stallAngle` du type.
 
 | Valeur    | Définition                                                         |
 | --------- | ------------------------------------------------------------------ |
@@ -28,7 +28,7 @@ l'origine est **à l'intérieur de l'aile** (90 % de la demi-envergure, en avant
 de fuite) pour que le départ carré du ruban reste caché dans le modèle. Les points sont
 émis dans le monde et y restent (comme la fumée des moteurs) ; une bande qui fait face
 à la caméra les relie, une seule géométrie et un seul tracé pour tous les avions
-(48 rubans au plus, 17 points chacun).
+(48 rubans au plus, 18 points chacun).
 
 - **Vol normal** : aucun ruban.
 - **Approche et décrochage** : seule l'**opacité** augmente avec l'incidence ; la
@@ -53,3 +53,7 @@ Boucle de bruit filtré `airflow` de 1 s (`synth.ts`, sans couture), jouée sur 
 avion à voilure habité. Niveau = `level^1,4` (muet en vol normal), hauteur de 0,8 à
 1,3 selon le niveau ; spatialisée comme le moteur (`ref` 14 pour son propre avion,
 10 pour les autres).
+
+## Vérifier
+
+`scripts/test-air-ribbons.mjs`. L'aspect et le son se jugent en vol, à l'approche du décrochage.

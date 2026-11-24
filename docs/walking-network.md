@@ -1,176 +1,112 @@
-# Transport actuel et corps partagés
+# Autorité et corps partagés
 
-Le serveur Node est en RAM et reçoit tous les événements de jeu par WebRTC/UDP.
-Le canal `motion-v2` est sans retransmission, non ordonné, envoyé à 20 Hz par
-chaque navigateur ; à partir de 40 pilotes présents dans la room serveur, une
-mise à jour sur deux est relayée, soit 10 Hz vers les autres joueurs. Le serveur
-continue de valider et d'appliquer les 20 mises à jour/s. Cela réduit le débit
-relayé, avec une interpolation distante moins fréquente ; le canal
-`commands-v1` est fiable et ordonné. Le serveur relaie les mouvements, sans
-maillage entre navigateurs : depuis la version 252, toutes les 50 ms, il envoie
-à tous les joueurs d'une salle les mêmes lots binaires (`src/motion-wire.ts`)
-contenant les mouvements acceptés depuis le lot précédent ; chacun ignore sa
-propre entrée. Le navigateur envoie toujours son mouvement en JSON, avec son
-heure de capture : les récepteurs placent les échantillons à cette heure et
-adaptent leur délai d'affichage ; voir
-[performances](performance.md#interpolation-des-joueurs-distants-à-lheure-de-capture-version-256). Les commandes portent un identifiant croissant et
-reçoivent leur résultat d'exécution. Identité de session, incarnation et numéro
-d'occupation empêchent une ancienne position de modifier un nouveau corps ou
-un nouveau poste. Aucun repli HTTP ne transporte du gameplay ; un réseau sans
-UDP joue avec le même protocole sur un WebSocket (secours TCP).
-Voir [déploiement et garanties UDP](udp-server.md).
+Qui simule quoi dans une partie à plusieurs, et comment les corps des joueurs
+sont partagés. Le transport (canaux, lots de mouvements, commandes fiables,
+reprise de session) est décrit dans [serveur et transport](udp-server.md) ; la
+règle de confiance dans [confiance envers les clients](trust-model.md).
 
-Le navigateur reste propriétaire de sa physique, les autres corps sont des
-proxies interpolés. Le serveur conserve en mémoire les règles, PV, contrats,
-sièges et stocks. Les PNJ sont simulés par le joueur désigné au purgatoire ;
-sans joueur, le serveur poursuit leur service à chaque tick de salle (250 ms).
-Les tirs d'avion restent prédits immédiatement, puis débités par lots fiables.
-Les armes lourdes sont aussi simulées par leur tireur, qui rapporte leurs impacts ;
-voir [véhicules et armes](vehicles-bank.md).
+## Répartition
 
-# Cooperative client-owned character physics
+- **Chaque navigateur possède sa physique** : son corps au bureau et au
+  purgatoire, son engin piloté, ses visées et ses tirs. Mouvement et collisions
+  sont calculés localement, sans attendre le serveur ; il n'y a ni rejeu ni
+  réconciliation serveur du mouvement local.
+- **Les autres corps sont des proxies cinématiques** interpolés (`MotionTrack`,
+  `src/network.ts`). Une collision ne déplace que le corps local : on peut se
+  pousser approximativement, sans simulation rigide globale déterministe.
+- **Le serveur** (`server/game.js`) garde les règles partagées : PV, sièges,
+  contrats, stocks, argent. Il stocke et relaie les corps rapportés et
+  n'avance jamais l'arène du bureau. Il simule lui-même les insectes au sol,
+  les tourelles automatiques et les engins sans pilote
+  ([véhicule sans pilote](physics-engine.md#engins-sans-pilote-le-serveur)).
+- **Tirs** : projectiles et munitions sont prédits immédiatement, puis débités
+  par lots idempotents ; les réponses ne créent pas de projectiles
+  ([logistique](logistics-contracts.md)). Les armes lourdes sont simulées par
+  leur tireur, qui rapporte leurs impacts ([véhicules et armes](vehicles-bank.md)).
+- **Dégâts** : enregistrés à part du mouvement, avec un identifiant
+  d'incarnation et un registre d'impacts idempotent ; un rapport de mouvement
+  ne peut pas réinitialiser les dégâts ([combat et mondes](combat-worlds.md)).
 
-**Modules.** `src/walk-arena.ts` is the walking engine shared by every world: bodies
-(`WalkBody`), fixed-step movement, collisions, bounds, obstacles and the network relay
-(`bodyMotion`, `mergeOwnedArena`, `relayBodyReport`). A world plugs its behaviour in
-through `WalkRules`: `OFFICE_RULES` (`src/base.ts`: falls, no NPC) and
-`PURGATORY_RULES` (`src/purgatory-queue.ts`: insects' queue, Saint Pierre's desk,
-VIP lane). A relayed body carries motion only (position, speed, facing, input, queue
-state); the old fist-fight state (KO, guard, attack, dash) is gone, and the motion
-wire is at version 5.
+Un snapshot accepté fusionne présence, papiers et corps distants, mais conserve
+le corps local et le temps de simulation pour la même époque d'arène et le même
+identifiant de corps. Une nouvelle incarnation (réapparition, reset) recrée un
+corps neuf, y compris au bureau pour ne pas garder le lieu de mort. Identité de
+session, incarnation et numéro d'occupation empêchent une ancienne position de
+modifier un nouveau corps ou un nouveau poste.
 
-Each player's browser owns its body at the base and in purgatory, as it already
-owns its aircraft. Movement and collision response are
-computed locally, without waiting for an HTTP response. Accepted snapshots merge
-membership, papers and remote bodies but preserve the local body and simulation
-time for the same arena epoch and body ID. Reset/respawn initializes a fresh body.
-There is no server replay or reconciliation of local movement.
+Les formulaires envoient le dernier rapport de corps : le serveur utilise cette
+position (de confiance) pour les contrôles de proximité, vérifie l'accusé de
+signature et l'ordre des documents, et sérialise signatures et embarquements.
 
-The server stores and relays reported player body states. It never advances the
-base arena. When no human owns purgatory NPCs, it advances their service using
-`advancePurgatory`; this exception does not integrate player-owned movement. Form submissions carry the latest body report; the server uses
-that trusted position for proximity checks, validates signature acknowledgement and document order,
-and serializes signatures/boarding as before. This deliberately trusts players
-rather than attempting to prevent movement cheating.
+## PNJ du purgatoire
 
-Remote player bodies use the lossy RTC motion channel and its
-interpolation: 20 Hz normally, 10 Hz relayed in rooms with at least 40 pilots
-(the sender still transmits 20 Hz). No gameplay HTTP fallback is provided. They are kinematic proxies in the local
-integrator: collision response moves only the locally owned body. This permits
-approximate shared pushing, not a globally deterministic rigid-body simulation.
+Le premier joueur connecté présent au purgatoire, par ordre lexicographique
+d'identifiant, simule les PNJ ; le serveur publie cet hôte (`arena.host`). Un
+changement d'hôte importe le dernier snapshot des PNJ ; un hôte déconnecté
+expire après le délai de présence (12 s). Sans joueur au purgatoire, le serveur
+fait avancer le service avec `advancePurgatory` (`src/purgatory-queue.ts`) à
+chaque requête et à chaque tick ; cette exception n'intègre aucun mouvement de
+joueur. Un onglet en arrière-plan ralentit un hôte humain.
 
-The lexicographically first connected player soul owns NPC physics. The server
-publishes that host ID. Host changes import the latest NPC snapshot; a disconnected
-host expires after the existing 12-second presence timeout. When no player is in purgatory, the server advances NPC service on requests,
-including rewards. Background-tab throttling can reduce a human host’s updates.
+## Moteur de marche commun
 
-Combat damage is persisted separately from body motion, with an incarnation
-identifier and idempotent hit ledger. Movement reports cannot reset damage or
-restore retired melee actions. See [combat and worlds](combat-worlds.md).
+`src/walk-arena.ts` est le moteur de tous les mondes où l'on marche : corps
+(`WalkBody`), mouvement à pas fixe, collisions, limites, obstacles et relais
+réseau (`bodyMotion`, `mergeOwnedArena`, `relayBodyReport`). Chaque monde ajoute
+son comportement par des `WalkRules` : `OFFICE_RULES` (`src/base.ts` : chutes,
+aucun PNJ) et `PURGATORY_RULES` (`src/purgatory-queue.ts` : file des insectes,
+guichet de Saint Pierre, file VIP). Un corps relayé ne porte que du mouvement
+(position, vitesse, orientation, intention, état dans la file).
 
-## Collisions de marche et pas (issue #135)
+Bureau et purgatoire partagent la même description d'un marcheur
+(`WALK_WORLDS`, `src/scale.ts`) : chaque monde ne donne que ses unités de scène
+par mètre (`sceneScale`) et ses mètres par unité d'arène (`arenaMetres`). En
+découlent la taille du modèle (`humanoidScale`, 1,8 m), l'accélération
+(`walkAcceleration`, course de référence de 6 m/s), la vitesse d'animation
+(`walkSpeed`), le rayon de collision et le saut, la chute et l'appui au sol
+(`stepWalker`, `src/sortie.ts`). Côté client (`src/client.js`), `groundCamera`
+cadre la caméra d'épaule (champ de 62° dans les deux mondes) et `makeWalker`,
+`poseWalker` et `walkerSteps` créent, orientent, animent et font marcher tous
+les personnages à pied.
 
-Le rayon de déplacement des personnages est réduit de moitié, puis unifié : un
-seul rayon en mètres, `WALKER_RADIUS` (0,176 m, `src/scale.ts`), soit `SOUL_RADIUS`
-= 0,24 unité au purgatoire (au lieu de 0,48) et `BASE_WALK_RADIUS` ≈ 0,095 unité
-d'acteur au bureau (0,32 à l'origine, puis 0,16). Il sert aux collisions entre joueurs (qui restent
-solides, jamais traversables) et avec le mobilier (`stepWalker`). Les volumes de
-tir sont distincts (maillages, sphères de `playerPosition`) et inchangés. Les corps
-existants reprennent ce rayon à la prochaine réconciliation. Les sons de pas ne se
-jouent qu'avec un appui au sol (`footstepsAudible`) : jamais en chute libre ni sous
-parachute. `scripts/test-walk-collisions.mjs` vérifie croisement, solidité, mobilier
-et pas.
-
-## Un seul marcheur pour tous les mondes
-
-Bureau et purgatoires partagent la même description d'un personnage à pied
-(`WALK_WORLDS` dans `src/scale.ts`). Chaque monde ne donne que ses unités :
-unités de scène par mètre (`sceneScale`) et mètres par unité d'arène (`arenaMetres`).
-Tout le reste en découle :
-
-- taille du modèle (`humanoidScale`, 1,8 m) ;
-- cadrage de la caméra d'épaule (`groundCamera`, même champ de vision de 62°) ;
-- accélération (`walkAcceleration`, course de référence de 6 m/s, environ 6,4 m/s atteints) ;
-- vitesse donnée à l'animation (`walkSpeed`) ;
-- rayon de collision (`WALKER_RADIUS`) ;
-- saut, chute et appui au sol (`stepWalker`, `src/sortie.ts`).
-
-Au client, `makeWalker`, `poseWalker` et `walkerSteps` créent, orientent, animent et
-font marcher tous les personnages à pied. Le purgatoire n'a donc plus de caméra plus
-proche, de champ plus étroit, ni d'allure à mi-chemin entre marche et course (il
-plafonnait à 3,15 m/s). `scripts/test-walk-worlds.mjs` vérifie taille, cadrage et
-vitesse de pointe identiques.
+Le rayon de déplacement est unique, en mètres de référence : `WALKER_RADIUS`
+(0,176 m), soit `SOUL_RADIUS` = 0,24 unité au purgatoire et `BASE_WALK_RADIUS`
+au bureau. Il sert aux collisions entre joueurs (solides, jamais traversables)
+et avec le mobilier ; les volumes de tir sont distincts. Les pas ne sonnent
+qu'avec un appui au sol (`footstepsAudible`), jamais en chute libre ni sous
+parachute.
 
 ## Un seul monde pour le bureau et le purgatoire
 
-Le purgatoire n'est plus une scène à part, dans ses propres unités : c'est un lieu du
-même monde que le bureau, en mètres du bureau. Le nuage de Saint Pierre flotte
-au-dessus de la pièce, environ 150 m réels plus haut que l'ancien plafond de vol
-(`PURGATORY_FRAME` dans `src/arena-frame.ts` : sol à 3,95 + 0,45 = 4,40 m du bureau,
-centré sur la pièce). C'est la base du [ciel du purgatoire](purgatory-sky.md) : un appareil y monte sans
-changer de repère.
+Le purgatoire est un lieu du même monde que le bureau, en mètres du bureau : le
+nuage de Saint Pierre flotte au-dessus de la pièce, 150 m de référence plus haut
+que le plafond (`PURGATORY_FRAME`, `src/arena-frame.ts` : sol à
+`OFFICE_CEILING` + `PURGATORY_ALTITUDE`, centré sur la pièce). Un appareil y
+monte sans changer de repère ([ciel du purgatoire](purgatory-sky.md)).
 
-- Chaque lieu de marche garde ses coordonnées planes d'arène pour ses règles (places
-  de la file, baies du hangar) ; un **repère** (`ArenaFrame` : origine, mètres par unité,
-  axe z inversé ou non) les place dans le monde. `OFFICE_FRAME` (`src/base.ts`) suit
-  l'origine du plan actif, en unités d'acteur, z inversé ; `PURGATORY_FRAME` garde
-  l'unité historique de la file (2,46 unités pour une personne de 1,8 m).
-- La hauteur `y` d'un corps est une hauteur du monde dans les deux lieux. Une âme
-  marche, saute et retombe avec `stepWalker`, comme au bureau, sur les boîtes du
-  purgatoire (sol du nuage, guichet) ; l'ancien saut à plat `stepFlatJump` est retiré.
-- Le décor (`createPurgatoryScene`) est construit dans les unités de l'arène, dans un
-  groupe placé et mis à l'échelle par le repère ; ciel, brume, nuages du ciel et
-  nuage-sol sont convertis vers le monde. Les âmes, les insectes de la file, la
-  caméra d'épaule et les sons sont en mètres du bureau, comme au bureau.
-- Le rendu reste séparé : le client dessine la scène du bureau ou celle du
-  purgatoire, jamais les deux.
+- Chaque lieu garde ses coordonnées planes d'arène pour ses règles (places de la
+  file, baies du hangar) ; un **repère** (`ArenaFrame` : origine, mètres par
+  unité, axe z inversé ou non) les place dans le monde. `OFFICE_FRAME`
+  (`src/base.ts`) suit l'origine du plan actif, en unités d'acteur, z inversé ;
+  `PURGATORY_FRAME` garde l'unité de la file (2,46 unités pour 1,8 m).
+- La hauteur `y` d'un corps est une hauteur du monde dans les deux lieux. Une
+  âme marche, saute et retombe avec `stepWalker` sur les boîtes du purgatoire
+  (sol du nuage, guichet).
+- Le décor (`createPurgatoryScene`) est construit en unités d'arène dans un
+  groupe placé par le repère ; âmes, insectes de la file, caméra et sons sont en
+  mètres du bureau.
+- Le client dessine la scène du bureau ou celle du purgatoire, jamais les deux.
 
-`scripts/test-arena-frame.mjs` vérifie l'altitude, les repères, le rayon commun, la
-place du décor et la marche d'une âme contre le guichet ; le scénario navigateur
-`scripts/e2e-purgatory-walk.mjs` meurt, entre au purgatoire, marche et saute sur le
-nuage.
+## Vérifier
 
-## Verification
+- `scripts/test-client-authority.mjs` : un snapshot ancien (retards de 40 à
+  1 500 ms) n'écrase pas la position du propriétaire ; métadonnées et reset.
+- `scripts/test-client-physics.mjs` : le pas local ne déplace jamais un proxy.
+- `scripts/test-walk-collisions.mjs`, `scripts/test-walk-worlds.mjs`,
+  `scripts/test-walker-jump.mjs` : rayon, solidité, mobilier, pas, cadrage et
+  vitesse identiques.
+- `scripts/test-arena-frame.mjs` : altitude, repères, décor, marche d'une âme
+  contre le guichet ; scénario navigateur `scripts/e2e-purgatory-walk.mjs`.
 
-- `scripts/test-client-authority.mjs`: old snapshots delayed by 40/160/320/1500 ms
-  cannot overwrite the owning player's position; metadata and reset checks.
-- `scripts/test-client-physics.mjs`: remote proxies are never moved by the local
-  integrator.
-- Existing flight, network, physics, audio, boarding and pointer tests still run.
-- Browser smoke check in software rendering fallback: join, local walking and
-  purgatory transitions and document controls. The cloud browser cannot create WebGL;
-  subjective high-frame-rate multiplayer smoothness remains unverified.
-
-The previous time-based reconciliation implementation and its synthetic delayed-
-snapshot test have been replaced, rather than layered onto client authority.
-
-Aircraft fuel and ammunition are persisted separately from client motion, with
-conditional elapsed-time updates and atomic projectile debits. Owner changes do
-not reset them. See [logistics and contracts](logistics-contracts.md), including
-the immediate shot prediction and batched debits.
-
-## Tirs d’avion
-
-Les projectiles et le décompte local de munitions sont prédits sans attendre HTTP.
-Les débits sont rapportés par lots idempotents en arrière-plan ; les réponses ne
-créent pas de projectiles. Le modèle de confiance reste coopératif, comme les
-mouvements et impacts. Voir [logistique et contrats](logistics-contracts.md).
-
-## Incarnation, chute et retour courant
-
-Sur Node, une nouvelle incarnation recrée aussi le corps local du bureau pour
-éviter de conserver le lieu de mort. Un rapport d’impact vertical est dédupliqué
-par joueur/incarnation/tir. Les destinations signées et le secret privé de reprise
-du contrat de lit sont détaillés dans [retours terrain](field-update.md).
-
-Le [lot suivant de lisibilité et nettoyage](clean-flight.md) précise les commandes
-contextuelles actuelles, les effets partagés et les nouvelles collisions de coque.
-
-La mort possède un état [de passage sans corps](multiplayer-return.md#mort-et-passage-au-purgatoire),
-avec snapshots maintenus mais commandes neutralisées. La gravité du personnage
-est maintenant mise à l’échelle ; le serveur garde les impacts dédupliqués.
-
-Les [véhicules d’appui](support-vehicles.md) ajoutent l’angle d’articulation et le
-collectif aux mouvements partagés, ainsi que le point visé du copilote. Lancement
-et détonation restent fiables ; guidage et effets ne multiplient pas les commandes.
-Le transport et l’autorité coopérative demeurent inchangés.
+Le ressenti multijoueur à haute fréquence d'images reste à vérifier en partie
+réelle.

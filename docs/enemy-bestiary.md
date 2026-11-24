@@ -1,95 +1,130 @@
 # Bestiaire
 
-| Ennemi            |     PV | Déblocage            | Particularité                              |
-| ----------------- | -----: | -------------------- | ------------------------------------------ |
-| Moustique         |    150 | dès la vague 1       | zigzag rapide                              |
-| Araignée pondeuse |  1 200 | dès la vague 1       | 100 bébés sur mort                         |
-| Rat géant         | 10 000 | dès la vague 1       | très gros, lent, puissance 24,47           |
-| Bébé araignée     |     10 | naissance uniquement | dispersion, vitesse élevée, puissance 0,08 |
+Référence des espèces ennemies : statistiques, comportement, modèles, volumes de tir
+et lisibilité. La composition des vagues et le mouvement des groupes sont dans
+[les nuées](dense-swarms.md) ; le calcul de la puissance et le budget des vagues dans
+[puissance des ennemis](enemy-power.md) et [progression](progression.md). Ajouter une
+espèce : [ajouter du contenu](adding-content.md).
 
-Il n'y a plus de vague de déblocage : tous les ennemis (hors bébés araignées) peuvent être tirés dès la première vague, et seule la puissance de la vague décide s'ils tiennent dans son budget restant. La vague 1 (32) peut ainsi appeler une pondeuse (10,94), mais pas encore un rat (24,47) une fois les essaims d'ouverture servis.
+## Espèces
 
-La mort d'une pondeuse génère sur le serveur une naissance **exactement une fois**, aussi bien par arme légère que lourde. Cent nouveaux identifiants sont ajoutés au roster, avec départ légèrement échelonné, point d'origine correspondant au décès, navigation au sol et variation procédurale sans dépendance aux voisins. Les bébés passent eux aussi au purgatoire et rapportent leur puissance, et **chaque bébé qui atteint la poubelle ajoute sa puissance (0,08) à l'infestation**. Leur apparition est bornée techniquement par un roster de 20 000 entités : en cas de stress-test anormal au plafond, la naissance peut être partielle.
+Les statistiques sont saisies dans `SPECIES` (`src/waves.ts`) ; `ENEMY_TYPES` y ajoute
+la puissance calculée (`src/enemy-power.ts`). La puissance est la seule mesure d'un
+ennemi : coût dans le budget de vague, dollars rapportés par son âme au purgatoire,
+dégâts infligés à la poubelle s'il l'atteint.
 
-Les fourmis et les araignées pondeuses utilisent les modèles Meshy « Red Ant Warrior » et « Spotted Velvet Spider » avec une marche à pieds plantés (démarche tripode et tétrapode alternée), dont la phase suit la distance parcourue ; voir [le pipeline d'assets](asset-pipeline.md#fourmi-et-araignée-pondeuse-meshy-marche). Leur zone de tir devient un ellipsoïde du corps, sans les pattes. Le cafard suit la même chaîne avec le modèle Meshy « Low Poly Cockroach » (démarche tripode, longues antennes) ; voir [le cafard](asset-pipeline.md#cafard-version-308). Les moucherons utilisent le modèle Meshy « Angry Little Fly » animé (battement d'ailes, pattes et antennes) près de la caméra et des ellipsoïdes au loin ; voir [le pipeline d'assets](asset-pipeline.md#moucheron-meshy-squelette-et-vol). Leur zone de tir est inchangée. Le scarabée (`brute`, anciennement « bourdon blindé ») utilise un modèle Meshy fourni par l'utilisateur, élytres fermées et ailes battantes, pattes pendantes ; voir [le pipeline d'assets](asset-pipeline.md#scarabée-meshy-vol-version-307). Sa zone de tir est une sphère parfaite (rayon 0,86 unité d'insecte, centrée sur le corps, de même volume que l'ancienne ellipsoïde) : le test de tir par sphère, sans matrice, est environ cinq fois plus rapide que celui par ellipsoïde. Le rat géant rejoue le clip de marche fourni avec son modèle Meshy « Low Poly Mouse » ; voir [le rat](asset-pipeline.md#rat-version-310). Le moustique utilise le modèle Meshy « Low Poly Mosquito » (battement rapide, longues pattes pendantes) ; voir [le moustique](asset-pipeline.md#moustique-version-311). L'abeille (`guard`, anciennement « carapace ») suit la même chaîne avec le modèle Meshy « Angry Low Poly Bee » (bourdonnement rapide, abdomen qui pompe) ; voir [l'abeille](asset-pipeline.md#abeille-version-309).
+| Clé          | Nom               |     PV | Puissance | Vitesse (m/s) | Déplacement | Particularité                         |
+| ------------ | ----------------- | -----: | --------: | ------------: | ----------- | ------------------------------------- |
+| `ant`        | Fourmi            |    100 |      0,58 |         0,085 | sol         | grandes colonnes                      |
+| `roach`      | Cafard            |    400 |      1,38 |        0,0625 | sol         | attaque les barricades (6 PV/s)             |
+| `midge`      | Moucheron         |    100 |      1,00 |          0,11 | air         | nuées denses                          |
+| `guard`      | Abeille           |    600 |      4,03 |        0,0875 | air         |                                       |
+| `mosquito`   | Moustique         |    150 |      2,06 |         0,115 | air         | esquives erratiques                   |
+| `brute`      | Scarabée          |  1 500 |      6,93 |          0,07 | air         | carapace (ricochets)                  |
+| `spider`     | Araignée pondeuse |  1 200 |     10,94 |         0,055 | sol         | 100 bébés à sa mort ; barricades (10 PV/s)  |
+| `spiderling` | Bébé araignée     |     10 |      0,08 |         0,075 | sol         | naissance uniquement                  |
+| `rat`        | Rat               | 10 000 |     24,47 |       0,08075 | sol         | très gros, lent ; barricades (30 PV/s)      |
 
-Les bébés utilisent le modèle Meshy « Grumpy Spider » dans la chaîne des marcheurs : un seul `InstancedMesh` animé (marche à pieds plantés, palpes avant qui tâtent le sol), des objets légers pour les impacts et une zone de tir proche de l'ancienne sphère ; voir [le bébé araignée](asset-pipeline.md#bébé-araignée-version-317). Les moustiques ont une oscillation erratique reproductible localement. Les gros rats rejouent le clip Meshy de leur modèle ; leur passage dans les couloirs de mobilier demande un contrôle en vrai jeu.
+- **Vitesse.** `speedMps` est une vitesse de progression en mètres du bureau par
+  seconde, indépendante de la taille du modèle, de l'effectif du groupe, du numéro de
+  vague et de la longueur du trajet. Seul le réglage « Vitesse ennemis » de la salle
+  (`balance.enemySpeed`) la multiplie (`enemyTravelSpeed`). La durée d'un trajet est
+  sa longueur réelle divisée par cette vitesse, plus l'attente d'entrée.
+- **Disponibilité.** Le directeur des vagues (`server/wave-preparation.js`) peut tirer
+  toute espèce dès la vague 1 : seule la puissance restante du budget décide
+  ([progression](progression.md#composition)). `ENEMY_UNLOCK_WAVE` ne fixe plus que la
+  liste et l'ordre de tirage, et les déblocages du générateur de repli `wavePlan()`.
+- **Attaques au sol.** Cafard, pondeuse et rat endommagent la barricade la plus proche
+  quand elle bloque leur route (`GROUND_ATTACK_DAMAGE`, `src/ground-creatures.ts`) ; les
+  défenses au sol sont décrites dans [le gameplay](gameplay.md).
+- **Réglages de salle.** PV et vitesse sont multipliés par `balance.enemyHP` et
+  `balance.enemySpeed` (`src/balance.js`).
 
-Les changements du roster sont diffusés via `rosterRevision`, y compris aux joueurs arrivant tard.
+## Araignée pondeuse et bébés
 
-Le voltigeur (`dart`), petit volant rapide débloqué en vague 2, a été retiré du jeu en version 312 : plus de profil, de paquet, de vague ni d'apparition de débogage. `scripts/test-enemy-bestiary.mjs` vérifie qu'aucune vague ne le réintroduit.
+La mort d'une pondeuse, par arme légère ou lourde, déclenche côté serveur **une seule**
+naissance (`spawnOffspring`) : 100 bébés au point de décès, départs échelonnés de
+20 ms, route `brood` vers la poubelle. Le roster est révisé (`rosterRevision`), y
+compris pour les joueurs arrivés en retard. Les bébés passent au purgatoire comme les
+autres ennemis ; chaque bébé qui atteint la poubelle y ajoute sa puissance (0,08). Le
+roster de naissance est borné à `MAX_OFFSPRING_ROSTER` (20 000) : au plafond, une
+naissance peut être partielle.
 
-## Puissance
+## Modèles, tailles et volumes de tir
 
-Valeurs calculées avec les statistiques actuelles (voir
-[équilibrage](enemy-power.md#unité-commune)) :
+Chaque espèce a un modèle Meshy riggé (`src/<espèce>-data.ts`, cycle dans
+`src/<espèce>-model.ts`, chaîne commune `src/rigged-creature.ts`). Le rendu est
+instancié, un `InstancedMesh` par espèce lisant une texture d'animation de sommets
+(`src/creature-batch.ts`) : `MidgeBatch` (`src/midge-batch.ts`) pour les moucherons,
+`src/flyer-batch.ts` pour les autres volants, `src/walker-batch.ts` pour les marcheurs.
+Il n'y a pas de niveau de détail. Les cadavres, les âmes du purgatoire et le rendu sans
+WebGL utilisent un `SkinnedMesh` du même rig. Provenance et import des modèles :
+[pipeline d'assets](asset-pipeline.md).
 
-| Espèce            | Puissance                       |
-| ----------------- | ------------------------------- |
-| Moucheron         | 1,00                            |
-| Fourmi            | 0,58                            |
-| Moustique         | 2,06                            |
-| Cafard            | 1,38                            |
-| Abeille           | 4,03                            |
-| Scarabée          | 6,93                            |
-| Araignée pondeuse | 10,94 (2,64 + 100 bébés × 0,08) |
-| Bébé araignée     | 0,08                            |
-| Rat géant         | 24,47                           |
+| Espèce        | Modèle Meshy          | Animation                                         | Volume de tir                        |
+| ------------- | --------------------- | ------------------------------------------------- | ------------------------------------ |
+| Moucheron     | Angry Little Fly      | battement d'ailes, pattes, antennes               | sphère `MIDGE_SPHERE_RADIUS`         |
+| Fourmi        | Red Ant Warrior       | marche tripode à pieds plantés                    | ellipsoïde du corps `ANT_HIT`        |
+| Pondeuse      | Spotted Velvet Spider | marche tétrapode alternée                         | ellipsoïde `SPIDER_HIT`              |
+| Bébé araignée | Grumpy Spider         | marche à pieds plantés, palpes qui tâtent le sol  | ellipsoïde `SPIDERLING_HIT`          |
+| Cafard        | Low Poly Cockroach    | marche tripode, longues antennes                  | ellipsoïde `ROACH_HIT`               |
+| Rat           | Low Poly Mouse        | clip de marche fourni avec le modèle              | ellipsoïde `RAT_HIT`                 |
+| Abeille       | Angry Low Poly Bee    | bourdonnement rapide, abdomen qui pompe           | ellipsoïde `BEE_HIT`                 |
+| Scarabée      | fourni par le joueur  | élytres fermées, ailes battantes, pattes pendantes | sphère `BEETLE_HIT` (rayon 0,86)     |
+| Moustique     | Low Poly Mosquito     | battement rapide, longues pattes pendantes        | ellipsoïde `MOSQUITO_HIT`            |
 
-Tout ennemi tué (bébés araignées compris) devient une âme au purgatoire, où il apparaît sous son vrai modèle. Une âme libérée rapporte cette puissance en dollars et un ennemi qui atteint la
-poubelle lui inflige autant de dégâts. Les cartes du mode debug l'affichent.
+Pour les marcheurs, la phase de marche avance avec la distance parcourue
+(`src/walker-gait.ts`) : les pieds restent plantés quelle que soit la vitesse reçue du
+serveur, et une créature arrêtée (colle, appât) revient à une pose de repos.
 
-## Tailles en jeu
+**Tailles.** `ENEMY_SIZE_FACTORS` (`src/scale.ts`, lu par `enemySizeFactor()`) agrandit
+d'un même rapport le modèle, sa zone de tir et le rayon de collision des armes lourdes,
+identiques pour tous les joueurs ; PV, puissance et vitesse n'en dépendent pas. Ce sont
+des choix de lisibilité, pas des proportions biologiques. Au repos, ailes et pattes
+comprises, l'abeille mesure 15 mm, le scarabée 17 mm et le moustique 12 mm au bureau.
+Les volants ont une tolérance de tir `FLYER_HIT_TOLERANCE` (1,3), le moucheron
+`MIDGE_HIT_TOLERANCE`.
 
-Hauteur au bureau, modèle au repos, ailes et pattes comprises (version 318) :
-abeille 15 mm, scarabée 17 mm, moustique 12 mm. Elles se règlent par le facteur
-d'espèce `ENEMY_SIZE_FACTORS` (`src/scale.ts`), qui agrandit d'un même rapport le
-modèle, sa zone de tir (ellipsoïde dans le repère du modèle) et le rayon de
-collision des armes lourdes côté serveur. `scripts/test-enemy-readability.mjs`
-vérifie ces trois hauteurs et que la zone de tir suit le modèle.
+**Au sol.** `swarmFrame()` relève les terrestres de la profondeur de leurs pattes
+(`GROUND_FOOT_DEPTH`, multipliée par l'échelle de l'espèce) ; les modèles riggés
+posent leurs pieds `GROUND_FOOT_CLEARANCE` plus haut. Le même relèvement est calculé
+côté client et serveur.
 
-## Vérification
+## Lisibilité et retours visuels
 
-`node scripts/test-enemy-bestiary.mjs` vérifie éclosions, identifiants, doublons, infestations et profils. Les contrôles Docker et la suite de tests Node sont complétés par un essai manuel WebGL/UDP, nécessaire pour l'animation, la fluidité et la navigation des gros animaux.
+- **Apparitions.** Les points d'entrée (aérations décoratives) sont sur la périphérie,
+  à plus de 3 m de la poubelle. `portalExit()` (`src/routes.ts`) décale le premier
+  point vivant de `VISIBLE_SPAWN_INSET` (4 cm) vers l'intérieur : un insecte n'attend
+  jamais dans le panneau plein d'une aération. Le décor garde son occultation normale ;
+  aucun marqueur ne traverse les meubles.
+- **Changement de vague.** Le modèle d'un ennemi est rattaché à sa vague et à son
+  espèce : un identifiant réutilisé par une autre espèce libère l'ancienne géométrie.
+- **Connexion tardive.** Un ennemi déjà en route n'est pas replacé au mur ; le client
+  annonce une découverte tardive de la vague.
+- **Blessures** (`src/insect-status.ts`). Un insecte blessé (0 < PV < max), âmes du
+  purgatoire comprises, porte une barre de PV sans texte et des volutes de fumée ; des
+  flammes s'ajoutent à 30 % de PV ou moins. Ces objets sont hors des surfaces de tir.
+- **Chute.** Une mort aérienne visible joue un son de chute de 4 s qui suit le corps
+  jusqu'à l'impact.
 
-## Vitesse physique dans la pièce
+## Mouvement des terrestres côté client
 
-Chaque profil possède `speedMps`, vitesse de progression en **mètres de la pièce par seconde**. Ce nombre ne dépend pas de la taille du modèle 3D, de l'effectif de la nuée, du numéro de vague, ni de la longueur d'un ancien parcours. Seul le multiplicateur « Vitesse ennemis » de la room le modifie. La durée se calcule sur le trajet effectivement emprunté : distance / vitesse.
+Le serveur simule les terrestres (`groundAgents` du snapshot : position, cap, arrivée).
+Le client les affiche avec 300 ms de retard (`GROUND_VISUAL_DELAY_MS`,
+`src/ground-motion.ts`) en interpolant un historique borné de poses horodatées, sans
+extrapolation : sans nouvelle réponse, la dernière pose est conservée et aucune
+barricade n'est traversée par anticipation. L'historique repart à zéro au changement de
+vague, de monde ou de phase.
 
-| Espèce        | Vitesse m/s | Espèce            | Vitesse m/s |
-| ------------- | ----------: | ----------------- | ----------: |
-| Fourmi        |       0,085 | Cafard            |      0,0625 |
-| Moucheron     |        0,11 | Abeille           |      0,0875 |
-| Scarabée      |        0,07 | Moustique         |       0,115 |
-| Rat géant     |     0,08075 | Araignée pondeuse |       0,055 |
-| Bébé araignée |       0,075 |                   |             |
+## Vérifier
 
-Les bébés araignées n'ont plus de multiplicateur caché ×1,8. Les moustiques restent imprévisibles mais leurs oscillations locales ont été ralenties. Les mouvements secondaires de groupe sont des petits écarts autour de la progression à vitesse fixe, pas une deuxième vitesse liée aux dimensions du modèle. `scripts/test-enemy-speeds.mjs` vérifie les valeurs, le chemin réel, les nuées de 10 à 5 000 ennemis, les bébés et le multiplicateur de room. Les sensations de jeu et les FPS WebGL nécessitent une validation en partie réelle.
+- `npm test -- enemy-bestiary` : naissances, identifiants, doublons, infestation, profils.
+- `npm test -- enemy-speeds` : vitesses, trajet réel, nuées de 10 à 5 000, bébés,
+  multiplicateur de salle.
+- `npm test -- enemy-readability` : tailles projetées, hauteurs, zones de tir, pieds au sol.
+- `npm test -- enemy-visibility` : aérations, modèles entre vagues, corps hors du mobilier.
+- `npm test -- ground-motion` : interpolation des terrestres.
+- `npm test -- feedback` : blessures, apparitions, découverte tardive.
 
-## Ralentissement général (version 123)
-
-La vitesse de progression de toutes les espèces, y compris les bébés araignées et les ennemis générés manuellement, est réduite de 50 % par rapport aux valeurs précédentes. Le multiplicateur « Vitesse ennemis » de la room continue de s'appliquer normalement aux nouvelles vitesses de base. Les durées des trajets sont recalculées sur la distance réelle.
-
-## Rats plus rapides (version 125)
-
-Les rats géants progressent désormais à 0,08075 m/s, soit 70 % plus vite que leur vitesse précédente de 0,0475 m/s. Les autres espèces sont inchangées. Le multiplicateur de vitesse de la room reste applicable aux rats comme aux autres ennemis.
-
-## Fluidité des ennemis terrestres (version 161)
-
-Le serveur conserve l'autorité sur les positions, le contournement, les attaques
-et les arrêts sur colle ou sucre. Le navigateur recevait des positions de
-`groundAgents` environ toutes les 100 ms à pied et 250 ms dans un véhicule,
-puis les affectait directement aux modèles à chaque image : ceux-ci restaient
-immobiles entre deux réponses avant de bondir à la suivante.
-
-Le client affiche maintenant une interpolation linéaire sur 300 ms d'historique
-horodaté de positions serveur, avec une mémoire bornée. En l'absence de nouvelle
-réponse, la dernière position connue est conservée sans extrapolation : il n'y
-a pas de traversée spéculative des barricades. Les nouvelles créatures sont
-initialisées à leur vraie position, et l'historique est réinitialisé au changement
-de vague, de monde ou de phase. Les routes aériennes ne sont pas modifiées.
-
-`node scripts/test-ground-motion.mjs` simule des réponses espacées de 250 ms et
-contrôle les sauts de position, l'immobilisation, les arrivées et les changements
-de vague. Cette régression numérique ne remplace pas un essai WebGL/UDP réel,
-notamment pour juger de la latence de présentation et des FPS sous forte charge.
+Ces contrôles ne remplacent pas un essai WebGL/UDP réel pour l'animation, la fluidité
+et la circulation des gros animaux entre les meubles.

@@ -1,14 +1,13 @@
-# Serveur Node : RAM, UDP et secours TCP
+# Serveur Node : déploiement et transport
 
-Décision validée le 29 octobre 2026 : aucune base de données. Révisée le
-16 novembre 2026 (version 306) : les réseaux qui bloquent l'UDP sortant
-(réseaux d'entreprise) jouent en TCP sur un WebSocket, voir
-[secours TCP](#secours-tcp-websocket). La livraison est l’image Docker `latest` publiée à chaque commit sur `main`
-(voir [le guide Docker](docker.md) et [l’exploitation](operations.md)).
+Un seul processus Node garde toutes les salles en RAM, sans base de données :
+un redémarrage efface monnaie, joueurs, vagues et achats. Le gameplay passe par
+WebRTC sur UDP, avec un secours TCP par WebSocket ; aucune action de jeu ne
+passe en HTTP (`/api/*` répond 410). Livraison : l'image Docker `latest` publiée
+à chaque commit sur `main` ([Docker](docker.md), [exploitation](operations.md)).
+Qui simule quoi : [autorité et corps partagés](walking-network.md).
 
-## Démarrage sur une VM
-
-Installer Node 22.18+ et les dépendances depuis le dépôt :
+## Démarrage et variables
 
 ```sh
 npm ci
@@ -16,224 +15,199 @@ npm start
 ```
 
 Le processus sert le client et sa signalisation sur HTTP 3000. Mettre ce port
-derrière un proxy HTTPS (nécessaire à WebRTC hors localhost), en conservant
-l'en-tête Host original. Exposer **41000–41099/UDP directement** vers la VM.
-Un proxy HTTP comme Traefik ne transporte pas les paquets ICE/DTLS/SCTP de jeu.
-Une seule instance Node possède les salles ; ne pas répartir les requêtes de
-négociation entre plusieurs processus qui auraient des mémoires distinctes.
+derrière un proxy HTTPS (nécessaire à WebRTC hors localhost) qui conserve
+l'en-tête Host. Exposer **41000–41099/UDP directement** vers la VM : un proxy
+HTTP comme Traefik ne transporte pas l'ICE/DTLS/SCTP. Une seule instance
+possède les salles ; ne pas répartir la négociation entre plusieurs processus.
 
-| Variable                | Valeur par défaut      | Usage                                                                                 |
+| Variable                | Défaut                 | Usage                                                                                 |
 | ----------------------- | ---------------------- | ------------------------------------------------------------------------------------- |
 | `HOST`                  | `0.0.0.0`              | Adresse d'écoute HTTP                                                                 |
-| `PORT`                  | `3000`                 | Port HTTP, accessible par le proxy HTTPS                                              |
+| `PORT`                  | `3000`                 | Port HTTP, joint par le proxy HTTPS                                                   |
 | `UDP_PORT_BEGIN`        | `41000`                | Premier port UDP ICE                                                                  |
 | `UDP_PORT_END`          | `41099`                | Dernier port UDP ICE                                                                  |
 | `UDP_MUX_PORT`          | vide                   | Port UDP unique partagé par toutes les connexions ; remplace la plage s'il est défini |
-| `UDP_ADVERTISE_PORT`    | vide                   | Port UDP public annoncé aux navigateurs si Docker ou un NAT change le numéro          |
-| `UDP_BIND_ADDRESS`      | découverte automatique | IP locale de l'interface UDP ; `127.0.0.1` pour tests locaux                          |
-| `UDP_ADVERTISE_ADDRESS` | vide                   | IP publique à annoncer si la VM est derrière un NAT avec redirection des mêmes ports  |
+| `UDP_ADVERTISE_PORT`    | vide                   | Port UDP public annoncé si Docker ou un NAT change le numéro                          |
+| `UDP_BIND_ADDRESS`      | découverte automatique | IP locale de l'interface UDP ; `127.0.0.1` pour les tests locaux                      |
+| `UDP_ADVERTISE_ADDRESS` | vide                   | IP publique annoncée si la VM est derrière un NAT qui redirige les mêmes ports        |
 | `STUN_SERVER`           | vide                   | Serveur STUN optionnel, par exemple `stun:stun.cloudflare.com:3478`                   |
-| `STATS_FILE`            | vide                   | Fichier de persistance des [statistiques](stats.md) (volume Docker à monter)          |
+| `TCP_FALLBACK`          | activé                 | `0` désactive la route WebSocket `/ws`                                                |
+| `STATS_FILE`            | vide                   | Fichier de persistance des [statistiques](stats.md) (volume Docker)                   |
 | `STATS_TOKEN`           | vide                   | Jeton exigé par `/stats` et `/stats.json` ; sans jeton, routes publiques              |
 
-Exemple, en remplaçant l'adresse documentaire par l'IP réelle de la VM :
+Exemple : `UDP_ADVERTISE_ADDRESS=203.0.113.10 PORT=3000 npm start`.
 
-```sh
-UDP_ADVERTISE_ADDRESS=203.0.113.10 PORT=3000 npm start
-```
+Sans IP publique joignable, configurer une redirection UDP conservant les ports
+ou un STUN adapté ; aucun relais TURN n'est configuré. `GET /healthz` indique
+`storage: ram`, `transport: webrtc-udp`, le nombre de salles et de connexions,
+`tcpFallback` et `tcpConnections` : il vérifie le processus, pas l'ouverture du
+pare-feu UDP. Le serveur accepte au plus 128 connexions (`maxConnections`) et
+16 négociations simultanées.
 
 ### Port UDP unique (réseaux d'entreprise)
 
-Beaucoup de réseaux d'entreprise bloquent l'UDP sortant sauf sur quelques ports
-connus (443 pour HTTP/3, 3478 pour STUN/TURN). Avec `UDP_MUX_PORT`, toutes les
-connexions WebRTC partagent un seul port (multiplexage ICE de libdatachannel) :
-le serveur reconnaît chaque joueur à son identifiant ICE puis à son adresse.
-La plage de 100 ports ne limite plus les connexions (le plafond de 128 reste).
-Coût mesuré nul (`UDP_MUX_PORT=44000 npm run test:capacity`, 50 pairs : même
-durée de connexion, même relais, même mémoire qu'en plage). Toutes les connexions
-partagent le tampon de réception d'une seule socket ; en cas de pertes sous
-forte charge, augmenter `net.core.rmem_max`/`rmem_default` de la VM.
+Beaucoup de réseaux d'entreprise ne laissent sortir l'UDP que sur quelques ports
+(443 pour HTTP/3, 3478 pour STUN/TURN). Avec `UDP_MUX_PORT`, toutes les
+connexions partagent un port (multiplexage ICE de libdatachannel) ; le serveur
+reconnaît chaque joueur à son identifiant ICE puis à son adresse. Elles
+partagent alors le tampon de réception d'une seule socket : en cas de pertes
+sous forte charge, augmenter `net.core.rmem_max`/`rmem_default` de la VM.
 
-Le port annoncé dans la réponse SDP doit être celui que le navigateur joint.
-Si Docker publie un autre numéro (`-p 443:41000/udp`), définir
-`UDP_ADVERTISE_PORT=443`. Si le reverse proxy de la VM sert HTTP/3, il occupe
-déjà l'UDP 443 de son adresse : choisir 3478, ou désactiver HTTP/3 sur le proxy.
-Un réseau qui bloque tout l'UDP passe par le [secours TCP](#secours-tcp-websocket).
-Diagnostic : le partage de connexion 4G fonctionne, `h3` apparaît ou non dans la
-colonne Protocol des DevTools, et `tcpdump -ni any udp port PORT` sur la VM
-montre si les paquets du joueur arrivent.
+Le port annoncé dans la réponse SDP doit être celui que joint le navigateur : si
+Docker publie un autre numéro (`-p 443:41000/udp`), définir
+`UDP_ADVERTISE_PORT=443`. Un reverse proxy qui sert HTTP/3 occupe déjà l'UDP 443
+de son adresse : choisir 3478 ou désactiver HTTP/3. Diagnostic : le partage de
+connexion 4G fonctionne, `h3` apparaît ou non dans la colonne Protocol des
+DevTools, `tcpdump -ni any udp port PORT` montre si les paquets arrivent.
 
-Sans IP publique directement joignable, configurer une redirection UDP conservant
-les ports ou un STUN adapté. Aucun relais TURN n'est configuré. Si l'UDP échoue,
-le navigateur bascule sur le secours TCP ; aucune action ne part en HTTP.
-`GET /healthz` indique `storage: ram` et `transport: webrtc-udp` ; cela vérifie le
-processus, pas l'ouverture du pare-feu UDP. L'indication « UDP » en jeu nécessite
-les statistiques ICE du navigateur et la vérification du serveur.
+## Transport et fiabilité
+
+Le navigateur utilise WebRTC natif, le serveur `node-datachannel`
+(libdatachannel). La connexion est navigateur–serveur, jamais entre joueurs.
+HTTP (`POST /rtc/offer`) n'échange que l'offre/réponse SDP ; ensuite deux canaux
+SCTP/DTLS sur UDP (`src/udp-protocol.ts`) :
+
+| Canal         | Livraison                        | Contenu                                                                     |
+| ------------- | -------------------------------- | --------------------------------------------------------------------------- |
+| `motion-v2`   | non ordonné, zéro retransmission | mouvement du joueur (JSON montant), lots binaires partagés (descendant)     |
+| `commands-v1` | fiable et ordonné                | entrée en salle, `sync`, signatures, achats, tirs, dégâts, changements de monde |
+
+Le serveur désactive ICE/TCP et filtre les candidats TCP du SDP ; client et
+serveur contrôlent la paire sélectionnée et ferment la connexion si elle n'est
+pas UDP. L'identité vient de la connexion, jamais du champ `id` d'une requête.
+
+### Mouvements
+
+Le navigateur envoie son mouvement toutes les 50 ms (20 Hz) avec son heure de
+capture `at`. Le serveur valide chaque mouvement (`validMotion`, incarnation,
+occupation, siège), l'applique (`Game.sync`) puis l'encode une fois en binaire
+(`encodeMotionState`, `src/motion-wire.ts`) : masque de présence sur un schéma de
+champs, flottants 32 bits, quaternion en entiers 16 bits, UUID sur 16 octets,
+complément JSON pour tout champ hors schéma. Toutes les 50 ms
+(`MOTION_FLUSH_MS`, `server/index.js`), le dernier mouvement accepté de chaque
+joueur part à **tous** les joueurs de la salle dans les mêmes paquets
+(`encodeMotionBatch`, version `MOTION_BATCH_VERSION`), découpés sous
+1 100 octets ; chaque entrée porte son âge dans le lot et l'heure de capture.
+Chacun ignore sa propre entrée. Un destinataire dont la file dépasse 64 Ko saute
+le lot. À partir de 40 pilotes dans la salle, seul un mouvement sur deux est
+relayé (10 Hz vers les autres), mais tous sont appliqués
+(`server/session.ts`). Un mouvement plus ancien que le dernier reçu est ignoré.
+Changer le schéma du lot change sa version : une page ouverte sur l'ancienne
+version doit être rechargée.
+
+### Commandes fiables
+
+Chaque commande a un identifiant croissant lié à sa connexion ; son résultat
+confirme le traitement, avec un statut d'erreur éventuel. Une répétition renvoie
+le résultat conservé ; après éviction du cache, les anciens identifiants sont
+refusés et jamais réexécutés : pas de double exécution pendant la vie de la
+session (pas après un redémarrage). Achats, tirs et impacts ont en plus leurs
+identifiants métier. Une commande sans confirmation après 20 s ferme la
+connexion, sans réessai automatique. Au-delà de 120 commandes/s, une commande
+reçoit 429 sans être exécutée ni mise en cache ; le client garde la connexion et
+réessaie au `sync` suivant (au-delà de 60 mouvements/s, les mouvements en trop
+sont ignorés). Une commande malformée ou trop grosse (`MAX_COMMAND_BYTES`) ferme
+la connexion.
+
+Les réponses sont découpées en blocs de 12 000 caractères (4 Mio au plus) puis
+réassemblées (`encodeReplyText`, `ReplyAssembler`). Le client envoie un `sync`
+toutes les 100 ms à pied et 250 ms en engin.
+
+### Contenu des réponses `sync`
+
+Pour réduire le volume du canal fiable, chaque connexion garde une base de
+synchronisation (`src/snapshot-wire.ts`) :
+
+- **Roster** : la liste des insectes part entière, groupée par nuée, au premier
+  état et à chaque changement de vague, d'équilibrage ou de révision ; un ajout
+  d'apparitions à un roster inchangé part en tranche. Morts et dégâts n'envoient
+  que les nouveaux indices et valeurs modifiées.
+- **Patchs** : les autres champs d'un snapshot de salle (`join` et réponses
+  portant `rosterRevision`) partent en `$patch` contre la réponse précédente de
+  la connexion (valeur remplacée, clés retirées, longueur de liste) ; une liste
+  de valeurs simples (`p`, `q`, `v`) est renvoyée entière dès qu'elle change.
+  Les autres réponses (par exemple `aircraft-fire`) partent telles quelles. Une
+  réponse rejouée ne modifie jamais la base.
+- **Snapshot partagé** : en production (`SNAPSHOT_SHARE_MS`, 50 ms,
+  `server/game.js`), les `sync` d'une salle réutilisent la partie « salle »
+  construite au plus 50 ms plus tôt ; roster, dégâts reçus et heure restent
+  propres à chaque réponse. Toute autre commande ou changement de clé de roster
+  la reconstruit.
+- **Positions distantes à 1 Hz** : position, vitesse et visée des autres joueurs
+  (`pilots[].state`, leur véhicule, leur corps dans `base`) ne sont rafraîchies
+  qu'une fois par seconde (`MOTION_REFRESH_MS`) ; elles circulent à 20 Hz sur
+  `motion-v2` et ne servent qu'en secours si ce canal se tait. Les champs de jeu
+  et toute discontinuité (vie, siège, mode, véhicule) partent tout de suite.
+- **Insectes au sol** : `groundAgentsView` n'envoie que `p` (arrondi à 1e-6),
+  `dir` (1e-4) et `arrived` ; le serveur garde l'état complet.
+
+Les limites de file et de message ne déclenchent aucun autre transport. Pour
+diagnostiquer une coupure, distinguer saturation ou erreur d'encodage,
+expiration de commande, perte ICE et charge CPU du serveur.
+
+### Reprise de session
+
+Le serveur de production crée son `Game` avec `resumable: true`. Un pilote sans
+message disparaît de la liste après 12 s (`PRESENCE_MS`) et garde corps, siège,
+vie et papiers jusqu'à 30 s (`RESUME_MS`). L'état WebRTC `disconnected` est
+souvent transitoire : le serveur attend `DISCONNECT_GRACE_MS` (10 s) avant de
+fermer, le client abandonne après `RECONNECT_AFTER_MS` (5 s) ; `failed` et
+`closed` ferment aussitôt. Le navigateur ouvre alors une connexion neuve et
+envoie `join` avec `resume` et son `resumeKey`, pendant 25 s au plus
+(`RECONNECT_WINDOW_MS`), sans recharger la page ; la physique locale continue.
+Le serveur rattache la connexion au même pilote et ferme l'ancienne ; une clé
+fausse ou un pilote expiré reçoit 410 et le jeu demande de recharger. À
+`pagehide`, le navigateur envoie `leave`, qui libère aussitôt siège et pilote.
+Les commandes en cours au moment de la coupure sont perdues.
 
 ## Secours TCP (WebSocket)
 
 Le navigateur essaie toujours l'UDP d'abord. Si les canaux ne s'ouvrent pas en
-5 s (`UDP_OPEN_MS` dans `src/client.js`), par exemple sur un réseau d'entreprise
-qui ne laisse sortir que HTTPS, il ouvre un WebSocket sur `/ws` (même domaine,
-même proxy HTTPS : Traefik relaie les WebSocket sans configuration) avec le même
-protocole : trames texte pour les commandes fiables et leurs réponses, trames
-binaires pour les mouvements (JSON montant, lots binaires partagés descendants).
-Session, reprise, limites et confirmations sont celles de l'UDP ; un joueur TCP
-et un joueur UDP partagent la même salle et les mêmes lots de mouvements.
-Après un échec UDP, les reconnexions de la page vont directement en TCP. Le HUD
-affiche « TCP (SECOURS) ». Sur TCP, un paquet perdu retarde tout ce qui suit :
-le jeu est moins fluide sur un réseau qui perd des paquets ; un lot de
-mouvements est sauté si plus de 64 Ko attendent déjà vers ce joueur.
+5 s (`UDP_OPEN_MS`, `src/client.js`), il ouvre un WebSocket sur `/ws` (même
+domaine, même proxy HTTPS) avec le même protocole : trames texte pour les
+commandes et réponses, trames binaires pour les mouvements. Session, reprise,
+limites et lots de mouvements sont les mêmes ; joueurs TCP et UDP partagent la
+salle. Après un échec UDP, les reconnexions de la page vont directement en TCP.
+Le HUD affiche « TCP (SECOURS) ». Sur TCP, un paquet perdu retarde tout ce qui
+suit : le jeu est moins fluide sur un réseau qui perd des paquets.
 
-`TCP_FALLBACK=0` désactive la route `/ws`. `/healthz` indique `tcpFallback` et
-`tcpConnections`. Contrôles : `node scripts/test-tcp-fallback.mjs` (WebSocket
-réel, salle mixte avec un pair UDP natif, reprise, refus d'origine) et
-`npm run e2e:tcp` (Chromium dont l'UDP ne reçoit aucune réponse : bascule,
-commandes et mouvements, reprise directe en TCP, `leave`).
+## État en mémoire
 
-## Transport et fiabilité
+`server/game.js` garde objets, `Map` et `Set` par salle ; ses opérations sont
+synchrones, sans SQL, disque ni attente réseau. Le tick de `server/index.js`
+avance chaque salle active toutes les 250 ms et ferme une connexion muette
+depuis 15 s. Les salles inactives expirent après 30 minutes. Les engins détruits
+sans occupant sont retirés après 15 s. Au plus 24 PNJ matérialisés entrent dans
+les snapshots, en plus des joueurs. Les registres d'impacts et de tirs sont
+limités à 128 000 entrées : la limite refuse de nouveaux éléments (429) sans
+oublier les doublons ; une partie exceptionnellement longue peut demander une
+remise à zéro.
 
-Le navigateur utilise WebRTC natif, le serveur `node-datachannel` (libdatachannel).
-La connexion est navigateur–serveur ; les joueurs ne se connectent pas entre eux.
-HTTP échange uniquement l'offre/réponse SDP, puis le gameplay utilise deux canaux
-SCTP/DTLS sur UDP :
-
-| Canal         | Livraison                        | Contenu                                                                                         |
-| ------------- | -------------------------------- | ----------------------------------------------------------------------------------------------- |
-| `motion-v2`   | non ordonné, zéro retransmission | positions, orientation et visée à 20 Hz (lots binaires partagés vers les navigateurs)           |
-| `commands-v1` | fiable et ordonné                | entrée en salle, synchronisations, signatures, achats, dégâts, réserves et changements de monde |
-
-**Relais des mouvements en lots binaires (version 252).** Chaque navigateur
-envoie son mouvement en JSON à 20 Hz. Le serveur valide puis encode une seule
-fois chaque mouvement accepté (`encodeMotionState`) : masque de présence sur un
-schéma de champs, flottants 32 bits pour positions et vitesses, quaternion en
-entiers 16 bits, nombres entiers et horodatages exacts, UUID sur 16 octets, et
-complément JSON pour tout champ inconnu ou valeur hors schéma (aucune perte de
-champ). Toutes les 50 ms (`MOTION_FLUSH_MS`), les mouvements de la salle reçus
-depuis le lot précédent partent à **tous** ses joueurs dans les mêmes paquets
-binaires, découpés sous 1 100 octets pour éviter la fragmentation UDP ; chaque
-entrée indique son âge dans le lot, retranché par le navigateur de l'heure de
-réception. Un destinataire dont la file dépasse 64 Ko saute le lot. La règle
-des 10 Hz à partir de 40 pilotes s'applique toujours.
-
-Le serveur désactive ICE/TCP et filtre les candidats TCP du SDP. Client et serveur
-contrôlent le protocole de la paire sélectionnée. En cas de changement vers un
-transport non confirmé UDP, la connexion est fermée.
-
-Chaque commande a un identifiant croissant lié à sa connexion DTLS. Son résultat
-confirme le traitement métier, avec son statut d'erreur éventuel. Une répétition
-renvoie le résultat conservé ; après éviction du cache, les anciens identifiants
-sont refusés et ne sont jamais exécutés à nouveau. Cela garantit l'absence de
-double exécution pendant la vie de la session, pas après redémarrage du serveur.
-Achats, tirs et impacts ont également leurs identifiants métier. Une commande
-sans confirmation ferme la connexion après 20 s : son résultat peut être incertain,
-il n'y a pas de réessai automatique sur une nouvelle session.
-
-**Reprise de session (version 250).** Le serveur de production crée son `Game`
-avec `resumable: true`. Quand une connexion se ferme, le pilote n'est plus
-expiré sur-le-champ : il disparaît de la liste des joueurs après 12 s sans
-message (`PRESENCE_MS`) et garde son corps, son siège, sa vie et ses papiers
-jusqu'à 30 s (`RESUME_MS`). Le navigateur détecte aussitôt la fermeture d'un
-canal de données, ou abandonne une connexion `disconnected` depuis 5 s
-(`RECONNECT_AFTER_MS`). Il ouvre alors une connexion neuve et envoie `join` avec
-`resume` (son identifiant de pilote) et son `resumeKey`, pendant 25 s au plus,
-sans recharger la page ; la physique locale continue entre-temps. Le serveur
-rattache la connexion au même pilote et ferme l'ancienne ; une clé fausse ou un
-pilote expiré reçoit 410, sans création d'un autre pilote, et le jeu demande de
-recharger. À la fermeture de la page (`pagehide`), le navigateur envoie `leave`
-(sans attendre de réponse) : le siège et le pilote sont libérés aussitôt. Si ce
-message ne part pas, l'expiration à 30 s s'applique. Les commandes en cours au
-moment de la coupure sont perdues (leur promesse est rejetée), comme avant.
-
-L'état WebRTC `disconnected` est souvent transitoire (contrôles ICE perdus,
-changement de réseau). Client et serveur attendent `DISCONNECT_GRACE_MS`
-(10 s) avant de fermer ; `failed` et `closed` ferment immédiatement. Au-delà de
-120 commandes/s, une commande est refusée avec le statut 429, sans exécution
-ni mise en cache, au lieu de fermer la session ; le client garde la connexion
-et réessaie au `sync` suivant. Un message malformé ou trop gros ferme toujours.
-
-Les réponses volumineuses sont découpées puis réassemblées. Les files, messages,
-cadences et caches sont bornés ; la saturation ne déclenche aucun autre transport.
-Les paquets de mouvement dépassés sont ignorés ; incarnation, poste et génération
-d'occupation protègent contre une position ancienne reçue après un transfert.
-Le navigateur simule toujours sa physique et prédit ses tirs immédiatement.
-Le modèle reste coopératif, sans validation anti-triche des positions/impacts.
-
-## État et exploitation
-
-`server/game.js` garde des objets, Map et Set par salle. Ses opérations sont
-synchrones : aucun accès SQL, disque ou attente réseau dans une transaction de
-jeu. L'identité vient de la connexion, pas du champ `id` d'une requête du joueur.
-Les corps restent sous autorité client ; les règles, sièges et réserves sont
-sous autorité du serveur. Le tick de maintenance est de 250 ms par salle.
-
-Un redémarrage efface tout : monnaie, joueurs, vagues et achats. Les connexions
-doivent être recréées ; une reprise de session ne survit pas à un redémarrage. Les salles inactives expirent après 30 minutes ; les
-joueurs disparaissent après 12 secondes sans activité et sont supprimés après
-30 secondes (reprise possible entre-temps). Les corps détruits sans occupant
-sont retirés après 15 secondes et les âmes libérées sont supprimées. Au maximum
-24 PNJ matérialisés sont inclus dans les snapshots, en plus des joueurs.
-Les identifiants d'impacts et de tirs ont une limite de 128 000 par registre :
-la limite atteinte refuse de nouveaux éléments, sans oublier les doublons.
-Une partie exceptionnellement longue peut nécessiter une remise à zéro.
-
-Aucun domaine ni serveur externe n'est configuré par le dépôt. L'assemblage produit
-`server/assets.js` (non versionné), importé par Node.
-
-## Vérifications
+## Vérifier
 
 ```sh
 npm run test:udp
 npm test
 ```
 
-`test-ram-game.mjs` vérifie le domaine en mémoire et les transitions de jeu.
-`test-udp-client.mjs` vérifie le contrat navigateur avec un pair simulé, y compris
-refus TCP, fermeture et absence de repli HTTP. `test-udp-native.mjs` connecte
-deux vrais pairs natifs au serveur HTTP/UDP local, contrôle la paire UDP,
-la réplication, les confirmations idempotentes et la reprise d'un pilote par une
-nouvelle connexion. `test-resume.mjs` couvre les règles de reprise du domaine.
-`test-motion-wire.mjs` vérifie le codec et les lots. `npm run e2e:motion`
-(manuel) fait rejoindre deux Chromium et vérifie la réception et le décodage des
-lots binaires dans la page. `npm run e2e:resume` (manuel, Playwright requis) fait rejoindre un vrai Chromium,
-coupe sa connexion côté serveur et vérifie la reprise du même pilote puis
-`leave` ; dans un conteneur dont l'interface n'est pas `127.0.0.1`, passer son
-adresse : `node scripts/e2e-browser-resume.mjs 192.0.2.2`.
+`test:udp` regroupe `test-ram-game.mjs` (domaine en mémoire),
+`test-motion-capacity.mjs`, `test-udp-client.mjs` (contrat navigateur, refus
+TCP, absence de repli HTTP), `test-udp-native.mjs` (deux vrais pairs natifs :
+paire UDP, réplication, confirmations idempotentes, reprise),
+`test-udp-mux.mjs` et `test-tcp-fallback.mjs` (WebSocket réel, salle mixte,
+reprise, refus d'origine). Codecs : `test-motion-wire.mjs`,
+`test-snapshot-wire.mjs`, `test-snapshot-patch.mjs`, `test-roster-sync.mjs`,
+`test-shared-snapshot.mjs`, `test-ground-view.mjs`, `test-udp-reply-encoding.mjs`,
+`test-fire-reply.mjs` ; reprise du domaine : `test-resume.mjs`. Scénarios
+Chromium (`npm run e2e`, aussi en CI) : `e2e:resume`, `e2e:motion`, `e2e:tcp` ;
+dans un conteneur dont l'interface n'est pas `127.0.0.1`, passer son adresse
+(`node scripts/e2e-browser-resume.mjs 192.0.2.2`). Capacité :
+[performances](performance.md#mesurer-la-capacité).
 
-La réussite locale ne mesure pas la latence Internet, les NAT mobiles ni la
-charge maximale de la VM. Après installation, faire un essai à deux navigateurs
-sur des réseaux distincts et vérifier « UDP » dans les deux interfaces.
-Un navigateur dont l'UDP est bloqué rejoint désormais la partie en TCP
-(`npm run e2e:tcp`) ; cela ne valide pas une partie sur Internet.
+Ces essais locaux ne mesurent ni la latence Internet, ni les NAT mobiles, ni la
+charge maximale de la VM : après installation, jouer à deux navigateurs sur des
+réseaux distincts et vérifier « UDP » dans les deux interfaces.
 
-Références : [WebRTC Data Channels, RFC 8831](https://www.rfc-editor.org/rfc/rfc8831),
+Références : [RFC 8831](https://www.rfc-editor.org/rfc/rfc8831),
 [API node-datachannel](https://github.com/murat-dogan/node-datachannel/blob/master/API.md),
-[configuration des canaux navigateur](https://www.w3.org/TR/webrtc/#dom-rtcdatachannelinit).
-
-## Snapshots et saturation du canal fiable
-
-Le protocole applicatif garde les deux canaux WebRTC ; le contenu du canal
-fiable utilise désormais des groupes de roster compacts et des mises à jour
-différentielles des morts/dégâts, par connexion. Le changement de vague,
-d'équilibrage ou de liste d'ennemis réinitialise la base de synchronisation.
-Toute nouvelle connexion reçoit l'état complet. Une apparition peut ajouter seulement la tranche d'insectes nouvellement créés,
-sans renvoyer les membres précédents si le roster est append-only. Une liste
-inchangée n'est pas copiée pour les commandes courantes.
-
-Depuis la version 248, les autres champs du snapshot voyagent eux aussi en
-patch contre la réponse précédente de la connexion (`$patch`) ; voir
-[performances](performance.md#réponses-sync-en-patchs-structurels-version-248).
-
-Depuis la version 249, les `sync` d'une salle partagent un snapshot construit
-au plus 50 ms plus tôt, et la position des autres joueurs n'y est rafraîchie
-qu'à 1 Hz (elle circule à 20 Hz sur `motion-v2`) ; voir
-[performances](performance.md#snapshot-partagé-et-positions-distantes-à-1-hz-version-249).
-
-Cette optimisation réduit la charge attendue, mais les limites de file, de
-message, les délais de confirmation et l'obligation UDP restent inchangés.
-Pour diagnostiquer une coupure, distinguer erreur d'encodage/saturation,
-expiration de commande, perte de connexion ICE ou charge CPU du serveur.
-
-Une réponse ancienne rejouée par identifiant de commande n'abaisse jamais
-la base différentielle du réassembleur ; les réponses inédites gardent l'ordre
-du canal fiable. La confirmation rejouée n'applique pas de nouveau changement.
+[`RTCDataChannelInit`](https://www.w3.org/TR/webrtc/#dom-rtcdatachannelinit).

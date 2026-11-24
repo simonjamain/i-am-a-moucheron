@@ -1,163 +1,119 @@
-# Hélicoptère et DCA mobile
+# Hélicoptère H2 et DCA mobile D2
 
-Implémentation du 30 octobre 2026 sur **Node/RAM/WebRTC UDP**. Les sept tâches
-métier HEL-01 à HEL-05 et DCM-01/DCM-02 sont implémentées et couvertes par les
-contrôles de domaine. HEL-06 et DCM-03 gardent leur validation finale **en cours** :
-les échanges entre deux pairs UDP natifs sont vérifiés, mais le réseau du navigateur
-de contrôle refuse UDP. Aucun essai humain de pilotage, d'écoute, de rendu WebGL
-ou de partie WAN n'est revendiqué.
+Référence de l'hélicoptère d'attaque au sol (`helicopter`, H2) et de l'anti-air mobile
+(`flaktruck`, D2) : commandes, armes et fusée de proximité. Règles communes de la
+flotte (achat, postes, destruction, ravitaillement) : [flotte](scale-fleet-weapons.md) ;
+projectiles : [projectiles](projectiles.md) ; modèle du H2 : [h2-model](h2-model.md) ;
+physique : [vol des hélicoptères](heli-physics.md) et
+[camion DCA sur Rapier](physics-engine.md).
 
-## Achat, accès et réserves
+| Véhicule | Prix | Postes               | Coque  | Vitesse max (m/s de référence) | Carburant               |
+| -------- | ---: | -------------------- | -----: | -----------------------------: | ----------------------- |
+| H2       | 50 $ | pilote, copilote     | 200 PV |                             42 | 300 s en vol            |
+| D2       | 15 $ | conducteur, tireur   | 100 PV |                             66 | 300 s à pleine commande |
 
-Les deux véhicules passent par le bon signé, paiement unique et pose d'un clic sur
-support libre. Aucune réserve gratuite. Destruction définitive, postes exclusifs,
-mutations et échanges signés, teinte, nettoyage et tirs alliés suivent les règles
-communes. Les quatre nouveaux rôles ont leurs contrats propres, soit 200 variantes
-supplémentaires et **600 variantes** au total. Les stations habituelles remplissent
-carburant et chaque stock en dix secondes, véhicule posé et arrêté.
+Les deux s'achètent avec un bon signé et se posent sur un support libre ; ils n'ont pas
+de réserve gratuite et leur destruction est définitive. Le carburant du H2 ne s'use
+qu'en vol, quelle que soit la poussée demandée (`advanceSupplies`, `src/logistics.ts`).
 
-| Véhicule       | Prix |  Coque |              Vitesse de référence | Carburant                           |
-| -------------- | ---: | -----: | --------------------------------: | ----------------------------------- |
-| Hélicoptère H2 | 50 $ | 200 PV | 42 m/s (60 % du chasseur initial) | 300 s en vol                        |
-| DCA mobile D2  | 15 $ | 100 PV |                            10 m/s | 300 s à pleine commande de conduite |
+## H2 : pilotage
 
-Les valeurs D2 non imposées sont des choix d'équilibrage. Son articulation est
-cinématique : angle de remorque limité à ±0,65 rad, redressement proportionnel au
-roulage, sans simulation séparée de masse/attelage. Les enveloppes de collision
-couvrent tracteur et remorque ; ce n'est pas une simulation de poids lourd.
+Le pilote commande une assiette et une vitesse verticale ; le modèle est un pilotage
+assisté de jeu sur un corps Rapier (`src/heli-physics.ts`), pas une simulation de rotor.
 
-## Hélicoptère
+| Touches              | Commande                         |
+| -------------------- | -------------------------------- |
+| Maj gauche ou droite | Monter (8 m/s de référence)      |
+| Ctrl gauche ou droit | Descendre (jusqu'à 30 m/s)       |
+| Z ou flèche Haut     | Piquer                           |
+| S ou flèche Bas      | Cabrer                           |
+| Q ou flèche Gauche   | Roulis à gauche                  |
+| D ou flèche Droite   | Roulis à droite                  |
+| Souris               | Cap et assiette visés            |
+| C maintenu           | Regard libre, roquettes suspendues |
+| Clic maintenu        | Roquettes                        |
 
-Le modèle procédural montre un cockpit avant bas, un second cockpit plus haut,
-un rotor, une queue et deux lanceurs latéraux. Pilote devant, copilote derrière.
-La souris demande le cap et l'inclinaison ; Maj augmente la poussée et Ctrl la
-diminue. Z/S et Haut/Bas forcent le tangage ; Q/D et Gauche/Droite forcent le roulis.
-O/W ne sont plus des commandes pilote.
-Au relâchement des touches verticales, la poussée revient progressivement au neutre ; l'assistance
-amortit la vitesse verticale et freine le mouvement horizontal. Sans pilote ou
-pointeur actif, l'assistance redresse et freine, sans trajectoire automatique.
-La physique est un modèle assisté de jeu, pas une simulation aérodynamique de rotor.
+- Tangage et roulis partagent un budget de 45° (`HELI.maxTilt`), y compris en
+  diagonale. Une touche de tangage ou de roulis prend la priorité sur la souris pour son
+  axe pendant l'appui ; la souris garde l'axe non forcé. Les touches opposées se
+  neutralisent, les alias ne se cumulent pas.
+- Au relâchement de Maj/Ctrl, le collectif revient au neutre : l'assistance tient le
+  stationnaire et freine progressivement. `heliCollective` (`src/client.js`) garde
+  l'état du pilote local entre les réponses réseau et part dans le mouvement.
+- Menu, perte de focus ou pointeur non capturé neutralisent toutes les commandes.
+- Sans carburant ou sans pilote, il ne reste que la gravité ; un choc à plus de 8 m/s
+  détruit la coque (`HELI_CRASH_IMPACT`, détail dans [vol des hélicoptères](heli-physics.md)).
+- En vue verticale, la souris ne pilote plus : A/E tournent (1,4 rad/s, `HELI.yawRate`).
 
-C maintenu conserve la consigne de pilotage pendant le regard libre et suspend
-les roquettes. Perte de focus ou menu coupe les tirs ; sans carburant, gravité et
-collisions continuent, sans stationnaire. Une arrivée verticale au sol au-delà
-de 8 m/s de référence détruit la coque. Le carburant dure cinq minutes de vol,
-indépendamment de la poussée collective demandée.
+## H2 : armes
 
-| Poste / arme       | Stock | Cadence                               | Dégâts et rayon de référence  |
-| ------------------ | ----: | ------------------------------------- | ----------------------------- |
-| Pilote, roquettes  |    30 | au moins 0,3 s                        | Roquette : 120→30, rayon 12 m |
-| Copilote, MG       | 1 000 | 15 balles/s                           | 75                            |
-| Copilote, missiles |    10 | un en vol, puis 2 s après destruction | Missile : 360→70, rayon 30 m  |
+| Poste / arme       | Stock | Cadence                    | Projectile                        |
+| ------------------ | ----: | -------------------------- | --------------------------------- |
+| Pilote, roquettes  |    30 | 0,3 s                      | `rocket` : 120 → 30, rayon 12 m   |
+| Copilote, MG       | 1 000 | 15 balles/s                | `mg` : 75                         |
+| Copilote, missiles |    10 | un seul en vol à la fois   | `missile` : 360 → 70, rayon 30 m  |
 
-Les roquettes alternent leurs origines gauche/droite et partent dans l'axe du
-véhicule, sans viser indépendamment avec la souris. Le copilote vise avec une
-vue première personne où la MG reste visible. Rotation horizontale complète sur 360°,
-de −83° environ à 0° vertical, depuis la tourelle sous le nez, avec couverture arrière sous la cabine, sans élévation à travers le fuselage.
-La tourelle suit la souris avec une vitesse plafonnée à 180°/s ; caméra, MG
-et guidage utilisent sa direction réelle, pas une direction de souris instantanée. Le clic tire la MG (maintenir le clic : rafale) ; Espace lance le
-missile guidé, un second Espace le fait exploser ; les deux s'utilisent en même temps.
-Au pilote, maintenir le clic tire les roquettes.
+- **Roquettes.** Elles partent dans l'axe avant de l'hélicoptère (−Z local transformé
+  par son quaternion), alternativement des lanceurs gauche et droit, avec la vitesse de
+  l'appareil ajoutée ; la caméra ne les dirige pas.
+- **Copilote.** Vue première personne à la tourelle sous le nez, MG visible. Rotation
+  horizontale complète, de −83° à 0° en vertical (`HELI.minPitch`, `HELI.maxPitch`). La
+  tourelle tourne au plus à π rad/s, budget commun au lacet et au tangage
+  (`stepHeliAim`) : chaque mise à jour consomme le déplacement de souris reçu et
+  abandonne l'excédent, sans cible à rattraper ; une souris immobile arrête la tourelle.
+  Caméra, MG et guidage suivent la direction réelle de la tourelle. Le clic tire la MG,
+  Espace lance le missile ; un second appui distinct sur Espace le fait exploser. MG et
+  missile s'utilisent en même temps.
+- **Missile.** Il vise le point regardé par le copilote, à 1,2 rad/s au plus, sans
+  acquisition de cible. Fin sans explosion après sa durée de vie ; détruit sans dégâts
+  avec la coque. Sortie, transfert, mort ou déconnexion du copilote rompt le guidage et
+  la détonation ; revenir au poste ne le récupère pas.
+- Le pilote n'a aucune arme du copilote. Les éclairs de bouche suivent les ancres
+  physiques des lanceurs et du canon (`src/vehicle-anchors.ts`).
 
-Le missile part latéralement. Le pilote ne récupère aucune arme du copilote.
-La caméra reste au poste : le missile tourne vers le point visé, à **1,2 rad/s
-maximum**, sans acquisition de cible. Un second appui distinct fait exploser le
-missile ; maintenir le clic de lancement ne le fait pas exploser. Impact : une
-explosion. Après dix secondes : suppression sans explosion. Changement d'arme
-bloqué pendant le vol. Sortie, transfert, mort ou déconnexion du copilote rompt
-le guidage et la détonation ; revenir au poste ne récupère pas l'ancien missile.
-La destruction de coque supprime le missile sans dégâts supplémentaires.
+## DCA mobile D2
 
-Le serveur intègre les armes lourdes à pas de 1/120 s au maximum. Le point visé
-et la direction arrivent par le canal de mouvement existant. Stocks, lancement
-et détonation utilisent les commandes fiables, liées à la génération d'occupation.
-Les effets ne produisent aucun second impact.
+Le conducteur conduit sans arme ; le tireur sert un canon unique, utilisable en
+roulant. Tracteur 6×4 et remorque sont deux corps Rapier attelés
+(`src/truck-physics.ts`) ; le jeu accepte un angle de remorque borné par
+`TRAILER_LIMITS` (`src/fleet.ts`). Azimut libre, élévation de +5° à +90° par rapport au
+châssis (`flakPitchAllowed`).
 
-### Effets des roquettes et du missile (version 240)
+**Obus** (`proximity`) : 100 obus, 560 m/s de référence plus la vitesse du camion,
+un départ toutes les 0,8 s, durée de vie 9 s. Souffle de 30 m de référence, 80 au centre
+et 20 au bord, occulté par le décor, alliés compris.
 
-`src/missile-exhaust.ts` applique un profil par projectile (`EXHAUST_PROFILES`) : fumée
-plus sombre et plus épaisse qu'auparavant, flamme plus grande et plus vive, et halo
-additif de taille constante à l'écran, visible de loin. Le missile guidé a la traînée la
-plus dense et un halo plus grand qui pulse. Cadences, dégâts, guidage et vitesses sont
-inchangés ([issue #108](https://github.com/simonjamain/i-am-a-moucheron/issues/108),
-`scripts/test-shot-effects.mjs`).
-Depuis la version 269, chaque panache est un sprite de fumée doux (texture à lobes,
-rotation et dérive propres, apparition progressive, gonflement rapide puis stable) et
-non plus une sphère (durée de vie 3 à 5 s depuis la version 270, plafond de 900 panaches) ; l'espacement est resserré pour une traînée continue.
+**Fusée** (`MOBILE_FUSE`, `src/mobile-flak.js`) : la molette du tireur règle la
+distance de détection, de 0,5 à 20 m de référence par pas de 0,5 (5 m au départ),
+affichée en distance réelle du bureau (1,5 mm à 6 cm). Le réglage est copié au départ de
+chaque obus ; la molette ne change ni les gaz ni le zoom.
 
-## DCA mobile
+- La fusée s'arme à 0,3 s. Avant, tout contact est inerte ; le camion tireur est ignoré
+  pour laisser sortir l'obus.
+- Armé, l'obus qui entre dans la distance de détection d'un objet physique (sol,
+  mobilier sur ses triangles, installations, ennemis, joueurs, véhicules, camion tireur
+  compris) attend que la distance recommence à augmenter : l'explosion part au passage
+  au plus près. Un contact direct après armement explose aussitôt.
+- Sans déclenchement, l'obus expire sans explosion.
+- La détection et le souffle sont indépendants : un grand réglage peut déclencher loin
+  de la cible sans la blesser.
+- Le balayage se fait par segment depuis l'instant d'armement : boîtes du décor à coins
+  arrondis, enveloppes orientées des coques (articulées pour le camion), sphères pour
+  personnages et insectes, avec mouvement relatif des insectes pendant le pas.
 
-Le conducteur conduit sans arme. Le tireur vise un canon unique, utilisable en
-roulant ; molette : proximité, pas de **0,5 m**, valeur initiale **5 m**, bornes
-**0,5–20 m de référence** en interne. Le curseur affiche la distance réelle du
-décor (1,5 mm–6,0 cm, version 237). La molette du tireur ne
-change ni les gaz ni le zoom. L’azimut est libre et l’élévation va de **+5° à +90°**
-par rapport au châssis du camion.
+Le Flak lourd fixe utilise la même fusée de proximité
+([DCA fixes](scale-fleet-weapons.md#dca-fixes)).
 
-100 obus, vitesse initiale propre **560 m/s** de référence (70 % de la DCA fixe),
-intervalle minimum **0,8 s**, durée maximale **6 s**. L'obus hérite aussi de la
-vitesse du camion. Le réglage est copié au départ de chaque projectile.
+## Vérifier
 
-La fusée s'arme à **0,300 s**. Avant : impact inerte, sans explosion ni dégâts.
-Après : entrée dans le rayon d’un objet physique, y compris sol, mobilier,
-installations, ennemis, joueurs, véhicules alliés et camion tireur, ne déclenche pas encore
-l’explosion : l’obus attend que sa distance à cet objet commence à augmenter.
-Le premier passage au plus près rencontré déclenche l’explosion, même avec
-plusieurs objets dans le rayon. Un contact direct après armement est déjà une
-distance minimale et provoque l’explosion. Le camion tireur est exclu uniquement des impacts avant l'armement
-pour laisser l'obus sortir de son canon ; il redevient détectable à 0,3 s.
-Sans déclenchement : expiration inerte. Aucun impact direct à 200 dégâts ni
-éclatement programmé en distance n'est hérité de la DCA fixe.
+- `npm test -- support-vehicles` : caractéristiques, contrats, réserves et recharge,
+  stationnaire, freinage, panne, guidage, roquettes alternées, exclusivité, cadences,
+  armement à 0,299/0,300/0,301 s, mur fin, rayon, camion tireur, explosion unique,
+  expiration, perte de coque et remise à zéro.
+- `npm test -- heli-controls` : vraie branche `physics()` du client, collectif, menus et
+  focus, direction des roquettes sous plusieurs attitudes.
+- `npm test -- heli-handling` : inclinaison, descente, freinage, tourelle 360° et
+  vitesse bornée à 30/60/144 Hz, arrêt et inversion après grande impulsion.
+- `npm test -- heli-physics`, `npm test -- truck-physics` : corps Rapier.
 
-Le rayon des dégâts reste **8 m de référence**, indépendant de la détection,
-avec 80 au centre, 20 au bord, zéro au-delà, occultation du décor et dégâts alliés.
-Un grand réglage peut donc déclencher loin de la cible sans la blesser.
-
-Le segment est coupé à l'instant d'armement. La détection balaie la trajectoire,
-avec recherche du minimum de distance aux boîtes du décor (coins arrondis) ; les coques utilisent
-des enveloppes orientées, articulées pour le camion, et les personnages/insectes
-des volumes simplifiés comme les autres armes. Les éléments décoratifs et labels
-ne sont pas des objets physiques. Un filtrage spatial élimine d'abord les
-obstacles hors de portée du segment. Le déplacement des insectes est pris en compte entre les deux instants du pas
-par mouvement relatif. Les autres objets utilisent les derniers snapshots
-coopératifs, sans historique continu de toutes les géométries.
-
-## Vérifications et reprise
-
-`node scripts/test-support-vehicles.mjs` couvre caractéristiques, contrats,
-réserves/recharge, stationnaire et poussée, freinage, panne, guidage borné,
-roquettes alternées, exclusivité, cadences et stocks, instant d'armement
-0,299/0,300/0,301 s, mur fin, rayon, camion tireur, explosion unique, expiration,
-perte de coque et reset. Les tests communs couvrent signature/pose de tous les
-types et transferts contractuels. `test-udp-native.mjs` exerce aussi ces armes
-avec deux vrais pairs UDP : stocks, paramètres, PV 200, observation et refus du
-conducteur de tirer le canon.
-
-Mesure CPU synthétique sur cette session : 128 projectiles de proximité, chacun
-sur 250 ms simulées et 256 boîtes, environ 570 ms avant filtrage spatial,
-puis 20–30 ms après. Ce scénario est reproductible dans le test ; il ne mesure
-ni les FPS, ni 100 joueurs, ni la charge Internet. Le serveur borne à 128 les
-armes lourdes simultanées. Les projectiles et effets restent nettoyés et bornés.
-
-L'aperçu `/ui-review.html` expose les quatre postes avec les composants HUD réels.
-Le navigateur charge le client, puis affiche « UDP indisponible sur ce réseau ».
-La validation finale demande encore, sur une VM UDP joignable, une partie solo
-puis pilote/copilote, une conduite/tir simultanés, l'entrée tardive, les changements
-de poste et les morts, l'écoute et le confort visuel des modèles et du pilotage.
-**Aucune VM externe n'a été provisionnée ni déployée.** Voir
-[le guide UDP](udp-server.md) ; recharger les navigateurs après chaque déploiement.
-
-Le [lot confort de jeu, version 37](comfort.md) précise réparation, zoom, jauges,
-radar à pied, remise à zéro, fourmis et projectiles du pistolet courants.
-
-La [correction des commandes H2](helicopter-controls.md) détaille les défauts
-reproduits, le collectif local, la jauge au neutre et les tests de roquettes.
-
-## Accès après pose du H2
-
-Un H2 neuf conserve son état posé malgré la marge de pose de 0,05 mm : la
-physique recale les patins au support proche avant de masquer les cercles des
-deux postes. Cette tolérance ne rappelle pas au sol un hélicoptère en vol.
-
-Le [modèle visuel H2 issu du croquis](h2-model.md) précise la provenance Meshy,
-les rotors animés et les limites des vérifications de rendu.
+Le ressenti du pilotage à deux et le rendu WebGL restent à juger en partie réelle.
