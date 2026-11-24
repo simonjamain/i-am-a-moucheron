@@ -47,18 +47,18 @@ Leur horodatage ne recule jamais et la mise à jour est conditionnée à la rév
   posé. À zéro, seule la poussée cesse.
 - **Munitions** (`fullAmmo`, `ammoCapacity`) :
 
-| Appareil             | Réserves                                                   |
-| -------------------- | ---------------------------------------------------------- |
-| Chasseur biplan      | 500 balles (une toutes les 0,12 s)                         |
-| Chasseur léger       | 1 000 balles (0,06 s)                                      |
-| Bombardier biplan    | mitrailleur dorsal 667 balles, 30 bombes ; pilote sans arme |
-| Bombardier moyen     | trois mitrailleurs à 667 balles, 50 bombes                 |
-| Stuka                | 1 000 balles, 6 bombes                                     |
-| Spitfire             | 1 000 balles, six départs par salve                        |
-| Char moyen           | MG 1 000 / 1 500 / 1 500, 30 obus HE, 30 obus AP           |
-| Hélicoptère          | 30 roquettes, 10 missiles, 1 000 balles (copilote)         |
-| Anti-air mobile      | 100 obus                                                   |
-| Castor               | 500 balles ; Castor volant sans arme                       |
+| Appareil          | Réserves                                                    |
+| ----------------- | ----------------------------------------------------------- |
+| Chasseur biplan   | 500 balles (une toutes les 0,12 s)                          |
+| Chasseur léger    | 1 000 balles (0,06 s)                                       |
+| Bombardier biplan | mitrailleur dorsal 667 balles, 30 bombes ; pilote sans arme |
+| Bombardier moyen  | trois mitrailleurs à 667 balles, 50 bombes                  |
+| Stuka             | 1 000 balles, 6 bombes                                      |
+| Spitfire          | 1 000 balles, six départs par salve                         |
+| Char moyen        | MG 1 000 / 1 500 / 1 500, 30 obus HE, 30 obus AP            |
+| Hélicoptère       | 30 roquettes, 10 missiles, 1 000 balles (copilote)          |
+| Anti-air mobile   | 100 obus                                                    |
+| Castor            | 500 balles ; Castor volant sans arme                        |
 
 Cadences et équilibre des armes : [véhicules et banque](vehicles-bank.md#stocks-et-équilibre-initial)
 et [véhicules d’appui](support-vehicles.md). Stocks des DCA fixes et recharge payante :

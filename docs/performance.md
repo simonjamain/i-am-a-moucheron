@@ -102,23 +102,23 @@ logique du [gestionnaire de voix](audio.md). Aucun message réseau n'est ajouté
   suivi pour une cible qui avance : le retard reste `v/k` quelle que soit la
   durée de l'image.
 - **Engins des autres** : `PoseSmoother` (`src/pose-smoother.ts`) affiche cible
-  + erreur : un saut de source (flux réseau ou état serveur) est absorbé puis
-  l'erreur décroît (τ = 0,2 s) sans recul. La rotation reste suivie par `slerp`.
+  - erreur : un saut de source (flux réseau ou état serveur) est absorbé puis
+    l'erreur décroît (τ = 0,2 s) sans recul. La rotation reste suivie par `slerp`.
 
 ## Mesurer
 
 Les temps sont des temps CPU dépendant de la machine ; ils ne mesurent ni FPS,
 ni GPU, ni WAN.
 
-| Commande                                    | Mesure                                                                                                   |
-| ------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| `npm run bench:room-sync`                   | Réponse `sync` complète (commande, simulation, snapshot, encodage, découpage) pour N joueurs et E ennemis, horloge simulée à 4 `sync`/s. Arguments : `node scripts/benchmark-room-sync.mjs 50 900`. |
-| `npm run bench:collisions`                  | `InsectIndex` contre parcours direct, populations dispersées ou concentrées.                             |
-| `npm run bench:swarm-50`                    | 50 segments de véhicules contre 900 sphères, avec et sans phase large (CI).                              |
-| `npm run bench:udp-replies`                 | Encodage des réponses de vagues réelles, premier envoi et rejeu.                                         |
-| `npm run bench:tracers`                     | Objets de rendu, triangles et préparation des matrices des traceurs.                                     |
-| `node scripts/benchmark-motion-rounds.mjs`  | Taille d'un mouvement binaire avec compteur de tirs et ricochets.                                         |
-| `node scripts/review-return-performance.mjs` | Coût des rayons et traceurs, routes : réécrit `docs/return-performance.json` et `docs/routes-return.svg`. |
+| Commande                                     | Mesure                                                                                                                                                                                              |
+| -------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `npm run bench:room-sync`                    | Réponse `sync` complète (commande, simulation, snapshot, encodage, découpage) pour N joueurs et E ennemis, horloge simulée à 4 `sync`/s. Arguments : `node scripts/benchmark-room-sync.mjs 50 900`. |
+| `npm run bench:collisions`                   | `InsectIndex` contre parcours direct, populations dispersées ou concentrées.                                                                                                                        |
+| `npm run bench:swarm-50`                     | 50 segments de véhicules contre 900 sphères, avec et sans phase large (CI).                                                                                                                         |
+| `npm run bench:udp-replies`                  | Encodage des réponses de vagues réelles, premier envoi et rejeu.                                                                                                                                    |
+| `npm run bench:tracers`                      | Objets de rendu, triangles et préparation des matrices des traceurs.                                                                                                                                |
+| `node scripts/benchmark-motion-rounds.mjs`   | Taille d'un mouvement binaire avec compteur de tirs et ricochets.                                                                                                                                   |
+| `node scripts/review-return-performance.mjs` | Coût des rayons et traceurs, routes : réécrit `docs/return-performance.json` et `docs/routes-return.svg`.                                                                                           |
 
 Ordre de grandeur (`bench:room-sync`, conteneur de développement) : à 50 joueurs
 et 900 ennemis, environ 1 ms et 4 Ko par `sync` courant, 95 Ko pour le premier.

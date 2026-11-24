@@ -67,9 +67,9 @@ Le navigateur utilise WebRTC natif, le serveur `node-datachannel`
 HTTP (`POST /rtc/offer`) n'échange que l'offre/réponse SDP ; ensuite deux canaux
 SCTP/DTLS sur UDP (`src/udp-protocol.ts`) :
 
-| Canal         | Livraison                        | Contenu                                                                     |
-| ------------- | -------------------------------- | --------------------------------------------------------------------------- |
-| `motion-v2`   | non ordonné, zéro retransmission | mouvement du joueur (JSON montant), lots binaires partagés (descendant)     |
+| Canal         | Livraison                        | Contenu                                                                         |
+| ------------- | -------------------------------- | ------------------------------------------------------------------------------- |
+| `motion-v2`   | non ordonné, zéro retransmission | mouvement du joueur (JSON montant), lots binaires partagés (descendant)         |
 | `commands-v1` | fiable et ordonné                | entrée en salle, `sync`, signatures, achats, tirs, dégâts, changements de monde |
 
 Le serveur désactive ICE/TCP et filtre les candidats TCP du SDP ; client et

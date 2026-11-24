@@ -45,13 +45,13 @@ de la pièce, `FALL_KILL_SPEED`), indépendante de la gravité.
 
 ## Modules
 
-| Module                  | Rôle                                                                                                                                                                                                    |
-| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Module                  | Rôle                                                                                                                                                                                                      |
+| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `src/physics-world.ts`  | Unités, `loadRapier`, `PhysicsWorld` : sol et boîtes `colliders` du jeu en solides fixes (boîtes orientées en cuboïdes tournés, liste comparée à chaque pas) ; `useDecor` y copie les triangles du décor. |
-| `src/castor-physics.ts` | `CastorRig` : châssis, six roues à rayon et ressort (positions et rayon tirés du modèle), conduite. Réglages : `CASTOR_PHYSICS`.                                                                       |
-| `src/tank-physics.ts`   | `TankRig` : coque sur douze ressorts (un par galet), chenilles. Réglages : `TANK_PHYSICS`.                                                                                                             |
-| `src/truck-physics.ts`  | `TruckRig` : tracteur 6x4 et remorque sur une rotule, roues à ressort. Réglages : `TRUCK_PHYSICS`.                                                                                                     |
-| `src/parked-host.ts`    | `ParkedHost` : monde du serveur pour les engins sans pilote.                                                                                                                                            |
+| `src/castor-physics.ts` | `CastorRig` : châssis, six roues à rayon et ressort (positions et rayon tirés du modèle), conduite. Réglages : `CASTOR_PHYSICS`.                                                                          |
+| `src/tank-physics.ts`   | `TankRig` : coque sur douze ressorts (un par galet), chenilles. Réglages : `TANK_PHYSICS`.                                                                                                                |
+| `src/truck-physics.ts`  | `TruckRig` : tracteur 6x4 et remorque sur une rotule, roues à ressort. Réglages : `TRUCK_PHYSICS`.                                                                                                        |
+| `src/parked-host.ts`    | `ParkedHost` : monde du serveur pour les engins sans pilote.                                                                                                                                              |
 
 Chaque rig lit et écrit le contrat d'état commun (`p`, `q`, `v`, `omega`) ;
 `physics()` dans `client.js` le fait avancer pour l'engin piloté. Le quaternion

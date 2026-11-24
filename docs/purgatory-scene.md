@@ -86,7 +86,7 @@ ordre de grandeur.
 Sur chacun des deux guichets (file et VIP), un porte-bloc est posé à plat, tourné vers les
 âmes, juste à droite du milieu et dépassant du bord avant (`CLIPBOARD_AT` dans
 `src/purgatory-queue.ts`, `clipboardYaw`), 10 % plus grand que nature (`CLIPBOARD_SCALE`).
-Modèle 32 × 21 cm ([pipeline des assets](asset-pipeline.md#porte-bloc-du-guichet)).
+Modèle 32 × 21 cm ([catalogue des modèles](models.md#purgatoire)).
 
 - Seul le porte-bloc du guichet où Saint Pierre **nous sert** s’utilise
   (`clipboardWindow`) : visé par le réticule (ou le curseur libéré), il est entouré du
@@ -100,7 +100,7 @@ Modèle 32 × 21 cm ([pipeline des assets](asset-pipeline.md#porte-bloc-du-guich
 
 ## Saint Pierre
 
-Modèle Meshy rigué sans animation ([pipeline des assets](asset-pipeline.md#saint-pierre)),
+Modèle Meshy rigué sans animation ([catalogue des modèles](models.md#purgatoire)),
 dessiné à 1,85 m et animé en procédural par `SaintPierre` :
 
 - une respiration lente ;
@@ -111,7 +111,7 @@ dessiné à 1,85 m et animé en procédural par `SaintPierre` :
 
 ## Le vigile de la file VIP
 
-Modèle Meshy rigué sans animation ([pipeline des assets](asset-pipeline.md#vigile-de-la-file-vip)),
+Modèle Meshy rigué sans animation ([catalogue des modèles](models.md#purgatoire)),
 dessiné à 1,95 m (une tête de plus que les âmes), avec une attente en boucle : trois
 respirations et un regard de chaque côté le long de la file.
 

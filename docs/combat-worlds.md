@@ -31,8 +31,8 @@ y mourir renvoie l’âme à l’entrée de la file. Dans le ciel de Saint Pierr
 touchent âmes d’insectes, Saint Pierre et le vigile (`purgatory-hit`) : voir
 [tirer dans le ciel](purgatory-sky.md#tirer-dans-le-ciel). Une âme d’insecte est libérée
 une seule fois, par le service ou par un tir, et rapporte la puissance de son espèce
-([économie](economy.md#revenus)). Dégâts de chute et retour au lit :
-[retours terrain](field-update.md).
+([économie](economy.md#revenus)). Dégâts de chute : [physique au sol](physics-engine.md) ; retour au lit :
+[gameplay](gameplay.md#mort-et-purgatoire).
 
 ## Échanges de poste
 

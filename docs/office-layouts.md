@@ -26,8 +26,7 @@ haut, sous la couche de nuages) avant de plonger vers la corbeille.
 
 ## Décor : le Cartoon Office Pack
 
-Depuis la version 401, chaque plan est meublé avec les modèles du **Cartoon Office
-Pack** de BloxBits (pack acheté, licence et import : [pipeline des
+Chaque plan est meublé avec les modèles du **Cartoon Office Pack** de BloxBits (pack acheté, licence et import : [pipeline des
 assets](asset-pipeline.md#cartoon-office-pack-bloxbits)). `diagonale` est le bureau
 complet de référence : îlots de postes de travail encombrés, archives et leur
 couloir, tableau blanc, coin cuisine avec distributeur, coin attente, porte et son
@@ -47,8 +46,8 @@ reprennent leurs volumes de jeu avec les mêmes meubles, en version plus sobre.
   quatre côtés (mur sud de sept modules pleins, quatre angles) ; fenêtres au fond (`windows`
   choisit les modules), une porte de bureau fermée dans un module à elle (`door`),
   loin des entrées. Le haut des murs se fond dans les nuages : `OFFICE_CLOUD_TOP`
-  vaut la hauteur des murs (2,7 m) et le voile commence toujours à 2,2125 m, donc
-  les trajectoires des ennemis n'ont pas bougé.
+  vaut la hauteur des murs (2,7 m) et le voile commence à 2,2125 m
+  (`OFFICE_FOG_START`, `src/office-fog.ts`).
 - **Entrées collées au mur.** Chaque bouche d'aération est la grille du pack, posée
   à fleur de la face du mur et centrée sur son entrée ; chaque trou de souris est une
   arche sombre sur la plinthe, au pied du mur.
@@ -59,46 +58,45 @@ reprennent leurs volumes de jeu avec les mêmes meubles, en version plus sobre.
 
 ## Données et code
 
-`src/layouts.ts` est la seule source : données pures (pas de Three.js), importées
-par le client, le serveur Node et les Web Workers.
-Chaque plan décrit :
+`src/layouts.ts` est la seule source : données pures (pas de Three.js), importées par
+le client, le serveur Node et les Web Workers. Chaque entrée de `LAYOUTS` décrit :
 
 - `props` : les modèles placés à la main, avec `put(modèle, x, z, orientation,
 { y, kind, label })`, `onProp`/`besideProp` (relatif à un bureau : écran, clavier,
-  chaise…), `onWall` (objet mural) et les assemblages `station`, `island`,
-  `partition` (murs intérieurs). Un modèle regarde +X dans son repère ; `FACE`
-  donne l'orientation vers `east`, `north`, `west` ou `south`. `kind` et `label`
-  font figurer le meuble sur la vignette ;
-- `door` (mur et module de la porte) et `windows` (modules vitrés du fond) ;
+  chaise…), `onWall` (objet mural), `hanging` (lampes) et les assemblages `station`,
+  `island`, `partition` (murs intérieurs). Un modèle regarde +X dans son repère ; `FACE`
+  (`src/office-props.ts`) donne l'orientation vers `east`, `north`, `west` ou `south`.
+  `kind` et `label` font figurer le meuble sur la vignette ;
+- `door` (mur et position de la porte) et `windows` (modules vitrés du fond) ;
 - `furniture` (facultatif) : volumes colorés alignés sur les axes, pour ébaucher un
   plan avant de le meubler (`FURNITURE_KINDS`) ;
-- `bin` (position, `y` = hauteur du support), `groundGoal` (où les rampants
-  s'arrêtent au sol) et `groundFinish` (la montée finale) ;
-- `portals.ground` / `portals.air`, et `airRoutes` (waypoints par vent, y
-  compris le tour de circuit) ;
-- `base` : origine de la zone d'apparition au sol près de la corbeille (la
-  « base » n'est plus matérialisée : pas de piste, plus de bureau de départ) ;
-- `hidden` et `passages` : repères pour la vignette/revue, sans effet de jeu.
+- `bin` (position, `y` = hauteur du support), `goal` (où les rampants s'arrêtent au
+  sol) et `finish` (la montée finale) ;
+- `ground` / `air` (entrées), `airPaths` (waypoints par vent) et `circuit` (tour de
+  pièce des volants) ;
+- `spawn` et `yaw` : zone d'apparition au sol près de la corbeille ;
+- `hidden` et `passages` : repères pour la vignette et la revue, sans effet de jeu.
 
-Le plan construit expose aussi `props` complet (coque, bouches, corbeille et objets)
-et `shellSolids` (corps des murs et plinthes). Les **boîtes de collision** des
-modèles viennent de `src/office-props.ts` : boîtes mesurées sur le modèle pour les
+Le plan construit (`OfficeLayout`) expose `groundGoal`, `groundFinish`, `portals`,
+`airRoutes`, `base` (repère de départ, station Alpha), `props` complet (coque,
+bouches, corbeille et objets) et `shellSolids` (murs et plinthes). Les **boîtes de
+collision** des modèles viennent de `src/office-props.ts` : boîtes mesurées pour les
 meubles sous lesquels on passe (bureau : plateau, caisson, panneau ; table basse ;
-comptoir sans son robinet), boîte englobante pour les autres, aucune pour les petits
-objets (moins de 15 cm de côté) et les objets plats au mur. Elles suivent l'orientation
-du modèle ; les boîtes jointives (rangée de bibliothèques, murs) sont fusionnées pour
-ne laisser aucune couture où un insecte resterait accroché.
+comptoir), boîte englobante pour les autres, aucune pour les petits objets (moins de
+15 cm de côté) et les objets plats au mur. Elles suivent l'orientation du modèle ; les
+boîtes jointives sont fusionnées pour ne laisser aucune couture où un insecte resterait
+accroché. Les avions, tirs et poses utilisent en plus les triangles des modèles
+([collisions](collisions.md)).
 
-`layoutPieces(layout)` produit les primitives (sol, volumes d'ébauche) et les
-boîtes des modèles ; les colliders sont exactement ces boîtes (`layoutSolids`).
-`office.ts` dessine le sol, les ébauches et les modèles (`office-pack.ts` : un
-`InstancedMesh` par modèle, un seul matériau pour tout le pack). Les modules lisent la disposition **active**
-(`activeLayout()`) : `OFFICE_LAYOUT`, `PORTALS`, `groundGoal()`,
-`groundStaticObstacles()`, `staticGroundFlow()`, `enemyRoute()` et
-`blockedSegment()` suivent le plan actif, et leurs caches sont indexés par id de
-plan. Le serveur active le plan de la room avant chaque opération
-(`Game.use(room)`), le client à la connexion ou au choix dans l'accueil
-(`applyLayout`). Le snapshot porte `layout` (id).
+`layoutPieces(layout)` produit les primitives (sol, ébauches) et les boîtes des
+modèles ; les colliders sont exactement ces boîtes (`layoutSolids`). `office.ts`
+dessine le sol, les ébauches et les modèles (`office-pack.ts` : un `InstancedMesh` par
+modèle, un seul matériau pour tout le pack). Les modules lisent la disposition
+**active** (`activeLayout()`) : `OFFICE_LAYOUT`, `PORTALS`, `groundGoal()`,
+`groundStaticObstacles()`, `staticGroundFlow()`, `enemyRoute()` et `blockedSegment()`
+suivent le plan actif, et leurs caches sont indexés par id de plan. Le serveur active
+le plan de la room avant chaque opération (`Game.use(room)`), le client à la connexion
+ou au choix dans l'accueil (`applyLayout`). Le snapshot porte `layout` (id).
 
 ## Ajouter ou modifier un plan
 
@@ -120,12 +118,9 @@ plan. Le serveur active le plan de la room avant chaque opération
 
 ## Limites connues
 
-- Essais UDP réels non faits ; le décor a été vérifié en rendu WebGL logiciel
-  (captures), pas encore en vraie partie ni sur un vrai GPU.
 - Seul `diagonale` est un bureau complet ; les cinq autres plans attendent leur
   aménagement détaillé.
-- Panneaux du pack en anglais (« RECEPTION », « ACCOUNTING »…) non utilisés tant
-  qu'ils ne sont pas retexturés en français.
-- Les stations fixes historiques (`AA_STATIONS`) restent sur le plan par défaut.
-- Les plans `ilots` et `fronts` ne respectent pas la distance de 6 m entre entrées
-  et corbeille (impossible au centre).
+- Les panneaux du pack en anglais (« RECEPTION », « ACCOUNTING »…) ne sont pas utilisés
+  tant qu'ils ne sont pas retexturés en français.
+- Le décor n'a été vérifié qu'en rendu logiciel (captures), pas sur un vrai GPU en
+  partie UDP.

@@ -18,7 +18,7 @@ le son des gains, est distinct du solde dépensable.
 ## Acheter : le bon signé
 
 Un achat passe par un bon de commande signé (`purchase-sign`, parcours décrit dans
-[le bon signé](clean-flight.md#prix-bon-signé-et-pose)) :
+[achats et pose](gameplay.md#achats-et-pose)) :
 
 - le bon est identifié par sa référence `request` : un retry de la même référence ne
   débite jamais deux fois ;
@@ -56,14 +56,14 @@ vivants (terrestre et volant), chacun dans une sphère de **0,50 m réel**
 d’être arrêté : un appareil en vol ou qui roule est servi. Un véhicule de soutien se
 sert lui-même.
 
-| Fourniture (`SERVICE_RATES`)  | Prix                                   |
-| ----------------------------- | -------------------------------------- |
+| Fourniture (`SERVICE_RATES`)  | Prix                                     |
+| ----------------------------- | ---------------------------------------- |
 | PV (coque, barricades, tours) | 1 $ / 100 PV ; moteur/aile au même tarif |
-| Carburant                     | 1 $ / 60 s                             |
-| Balles                        | 1 $ / 1 000                            |
-| Obus, roquettes               | 1 $ / 10                               |
-| Bombes                        | 1 $ / 5                                |
-| Missiles                      | 1 $ / 2                                |
+| Carburant                     | 1 $ / 60 s                               |
+| Balles                        | 1 $ / 1 000                              |
+| Obus, roquettes               | 1 $ / 10                                 |
+| Bombes                        | 1 $ / 5                                  |
+| Missiles                      | 1 $ / 2                                  |
 
 - Débit : une réserve se remplit en `SERVICE_SECONDS` (10 s) du vide au plein ; les PV
   remontent d’au plus 10 % du maximum par seconde.
@@ -85,14 +85,14 @@ sert lui-même.
 Les constructions du Castor se paient à la signature ; les longueurs suivent
 `lengthPrice` (`src/ground-defense-state.ts`) au centime près.
 
-| Construction              | Prix                                              |
-| ------------------------- | ------------------------------------------------- |
+| Construction              | Prix                                               |
+| ------------------------- | -------------------------------------------------- |
 | Mur de briques            | 0,25 $ par tronçon de 48 mm (`WALL_SEGMENT_PRICE`) |
-| Ruban collant             | 1 $ par 20 cm                                     |
-| Sucre                     | 3 $                                               |
-| Tourelle automatique T-01 | 5 $                                               |
-| Canon anti-matériel       | 14 $                                              |
-| Gatling                   | 25 $                                              |
+| Ruban collant             | 1 $ par 20 cm                                      |
+| Sucre                     | 3 $                                                |
+| Tourelle automatique T-01 | 5 $                                                |
+| Canon anti-matériel       | 14 $                                               |
+| Gatling                   | 25 $                                               |
 
 Mur (`src/brick-rules.ts`) : briques de 24 mm (demi-brique 12 mm), deux rangées
 décalées. La longueur validée est arrondie vers le bas au pas de 12 mm ; une portion

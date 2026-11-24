@@ -28,12 +28,12 @@ et par processus pour les engins sans pilote (`decorFor`, `server/game.js`).
 Les boîtes des objets du pack (marquées `decor` par `layoutPieces`) sont ignorées
 dès que le monde du décor existe.
 
-| Modèles                                                                                                                | Forme                                                                     |
-| ---------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
-| Tous par défaut (meubles, objets de bureau, clavier et touches, photocopieuse et sa fente de sortie, ventilateurs)       | triangles du modèle                                                       |
-| Piles de feuilles, boules de papier                                                                                    | boîtes de `office-props.ts` (beaucoup de petits coins, approximés exprès) |
-| Bouches d'aération, porte, feuille isolée au sol                                                                       | rien : à fleur du mur de la coque, ou à plat                              |
-| Murs de la coque (modules du pack)                                                                                     | boîtes de la coque (`shellSolids`)                                        |
+| Modèles                                                                                                            | Forme                                                                     |
+| ------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------- |
+| Tous par défaut (meubles, objets de bureau, clavier et touches, photocopieuse et sa fente de sortie, ventilateurs) | triangles du modèle                                                       |
+| Piles de feuilles, boules de papier                                                                                | boîtes de `office-props.ts` (beaucoup de petits coins, approximés exprès) |
+| Bouches d'aération, porte, feuille isolée au sol                                                                   | rien : à fleur du mur de la coque, ou à plat                              |
+| Murs de la coque (modules du pack)                                                                                 | boîtes de la coque (`shellSolids`)                                        |
 
 ## Ce qui utilise les triangles
 

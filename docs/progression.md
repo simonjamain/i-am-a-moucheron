@@ -87,28 +87,28 @@ plus W $. La monnaie appartient à la salle.
 Les prix viennent de `SHOP` et `shopPrice` (`src/equipment.ts`), partagés par
 l’affichage et le serveur ; la colonne du magasin est dans `src/shop-catalog.ts`.
 
-| Achat                             | Prix                                    |
-| --------------------------------- | --------------------------------------- |
-| Chasseur biplan supplémentaire    | 5 $                                     |
-| Bombardier biplan supplémentaire  | 5 $                                     |
-| Char moyen                        | 5 $                                     |
-| Flak léger                        | 5 $, +2 $ par exemplaire, plafond 40 $  |
-| Radar                             | 10 $, +2 $ par exemplaire               |
-| Lit de réapparition               | 15 $, +2 $ par exemplaire               |
-| Station de ravitaillement         | 20 $, +2 $ par exemplaire               |
-| Chasseur léger, bombardier moyen  | 15 $ chacun                             |
-| Castor, anti-air mobile           | 15 $ chacun                             |
-| Stuka d’attaque au sol            | 25 $                                    |
-| Flak lourd                        | 30 $                                    |
-| Castor volant                     | 35 $                                    |
-| Hélicoptère d’attaque au sol      | 50 $                                    |
-| DCA haute cadence                 | 50 $                                    |
-| Spitfire                          | 75 $                                    |
+| Achat                            | Prix                                   |
+| -------------------------------- | -------------------------------------- |
+| Chasseur biplan supplémentaire   | 5 $                                    |
+| Bombardier biplan supplémentaire | 5 $                                    |
+| Char moyen                       | 5 $                                    |
+| Flak léger                       | 5 $, +2 $ par exemplaire, plafond 40 $ |
+| Radar                            | 10 $, +2 $ par exemplaire              |
+| Lit de réapparition              | 15 $, +2 $ par exemplaire              |
+| Station de ravitaillement        | 20 $, +2 $ par exemplaire              |
+| Chasseur léger, bombardier moyen | 15 $ chacun                            |
+| Castor, anti-air mobile          | 15 $ chacun                            |
+| Stuka d’attaque au sol           | 25 $                                   |
+| Flak lourd                       | 30 $                                   |
+| Castor volant                    | 35 $                                   |
+| Hélicoptère d’attaque au sol     | 50 $                                   |
+| DCA haute cadence                | 50 $                                   |
+| Spitfire                         | 75 $                                   |
 
 Les paliers comptent les exemplaires posés, les colis en cours et les bons payés non
 posés (`purchaseCount`) ; la station gratuite d’Alpha ne compte pas. Le chasseur, le
 bombardier biplan et le char ont aussi une **réserve gratuite** au sol à Alpha (voir
-[réserves](multiplayer-return.md#réserves-gratuites-et-achats-de-véhicules)). Il n’y a
+[engins](gameplay.md#engins)). Il n’y a
 pas d’amélioration achetable. Les constructions du Castor ont leur propre tarif
 (murs au tronçon, voir [économie](economy.md#constructions-au-tronçon)).
 
