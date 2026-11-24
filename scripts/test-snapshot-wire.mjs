@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { DEFAULT_BALANCE } from '../src/balance.js';
-import { debugSwarmRoster, wavePlan } from '../src/waves.js';
+import { debugSwarmRoster, wavePlan } from '../src/waves.ts';
 import {
   packRoster,
   unpackRoster,

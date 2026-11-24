@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { PROJECTILES, projectileDamage } from '../src/projectiles.ts';
 import { HEAVY, TANK_MG, CASTOR_GUN_DAMAGE } from '../src/armament.ts';
 import { RAPID_DCA_DAMAGE } from '../src/fixed-dca.ts';
-import { HELI } from '../src/helicopter.js';
+import { HELI } from '../src/helicopter.ts';
 import { MAP, REFERENCE, FLAK } from '../src/scale.ts';
 
 // The catalogue must keep every weapon exactly as it was before (values frozen here).

@@ -179,7 +179,10 @@ export function previewStructures(
     }));
   return [];
 }
-export function groundFlow(state: GroundDefenseState, goal: GroundPoint = groundGoal()) {
+export function groundFlow(
+  state: Pick<GroundDefenseState, 'structures'>,
+  goal: GroundPoint = groundGoal(),
+) {
   return buildGroundFlow({
     bounds: GROUND_BOUNDS,
     cellSize: GROUND_CELL,

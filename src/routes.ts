@@ -127,7 +127,7 @@ export function enemyRoute(enemy: RouteEnemy): EnemyRoute {
   if (enemy.airStart) ({ portal, points } = joinCorridor(enemy.airStart));
   else if (enemy.ground || enemy.spawnPoint) {
     // Most direct floor path to the bin around furniture: the same smoothed flow
-    // field the server walks (ground-creatures.js) and the forecast draws.
+    // field the server walks (ground-creatures.ts) and the forecast draws.
     const start = enemy.spawnPoint
       ? [enemy.spawnPoint[0], 0.0007, enemy.spawnPoint[2]]
       : portalExit(PORTALS.ground[portal]);

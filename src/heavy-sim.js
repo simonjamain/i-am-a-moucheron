@@ -22,7 +22,7 @@ import { PROJECTILES } from './projectiles.ts';
 import { bounce } from './ricochet.ts';
 import { vehicleMaterial, insectMaterial } from './materials.ts';
 import { colliderNormal } from './oriented-collider.ts';
-import { steerMissile } from './helicopter.js';
+import { steerMissile } from './helicopter.ts';
 import {
   sweptVehicle,
   proximityRadius,

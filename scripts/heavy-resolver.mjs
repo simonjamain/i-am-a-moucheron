@@ -4,7 +4,7 @@
 // state (the view the former server simulation used), and send the shooter's
 // impact report. Assertions about trajectories and damage keep their meaning.
 import { stepHeavy, heavyImpact } from '../src/heavy-sim.js';
-import { swarmFrame } from '../src/waves.js';
+import { swarmFrame } from '../src/waves.ts';
 
 export function roomWorld(game, r) {
   const plan = game.plan(r),

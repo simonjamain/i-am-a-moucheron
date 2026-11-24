@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import { readFileSync } from 'node:fs';
 import * as T from '../vendor/three.webgpu.min.js';
-import { HELI, stepHelicopter, stepHeliAim } from '../src/helicopter.js';
+import { HELI, stepHelicopter, stepHeliAim } from '../src/helicopter.ts';
 import { VEHICLES, vehiclePad, isRotorcraft } from '../src/fleet.ts';
 import { MAP } from '../src/scale.ts';
 const near = (a, b) => assert.ok(Math.abs(a - b) < 1e-7, `${a} != ${b}`);

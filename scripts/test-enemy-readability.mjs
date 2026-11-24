@@ -1,10 +1,10 @@
 import assert from 'node:assert/strict';
 import * as T from '../vendor/three.webgpu.min.js';
 import { createGraphics } from '../src/graphics.js';
-import { ENEMY_TYPES, wavePlan, swarmFrame } from '../src/waves.js';
+import { ENEMY_TYPES, wavePlan, swarmFrame } from '../src/waves.ts';
 import { INSECT_SCALE } from '../src/scale.ts';
 import { insectScale } from '../src/insect-status.ts';
-import { WALKERS } from '../src/walker-batch.js';
+import { WALKERS } from '../src/walker-batch.ts';
 const graphics = createGraphics(T, new T.Scene());
 const camera = new T.PerspectiveCamera(62, 1920 / 1080, 0.00005, 40);
 const rows = [];

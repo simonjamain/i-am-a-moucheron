@@ -1,30 +1,65 @@
 import { GROUND_BOUNDS, groundCommand } from './ground-defense-state.ts';
+import type { GroundCommand, GroundDefenseState, GroundStructure } from './ground-defense-state.ts';
 import { distanceToSegment } from './ground-defense.ts';
+import type { GroundPoint } from './ground-defense.ts';
 import { airdropCommand } from './airdrop.ts';
+
+/** What a preview shows: the aimed point, the command it would send, its price or why not. */
+export interface PlacementPreview {
+  center?: [number, number];
+  command?: GroundCommand;
+  price?: number;
+  error?: string;
+  /** Wall or tape: first click recorded, waiting for the far end. */
+  startOnly?: boolean;
+  landingY?: number;
+  target?: GroundStructure | null;
+}
+
+const errorMessage = (error: unknown): string => (error as Error).message;
+
+// Construction whose footprint (point or segment) is closest to `center`, within `range`.
+function nearestStructure(
+  defense: { structures?: readonly GroundStructure[] } | null | undefined,
+  center: GroundPoint,
+  range: number,
+): GroundStructure | undefined {
+  return (defense?.structures || [])
+    .map((s) => ({
+      s,
+      d: s.position
+        ? Math.hypot(center[0] - s.position[0], center[1] - s.position[1])
+        : distanceToSegment(center, s.a!, s.b!),
+    }))
+    .filter(({ d }) => d < range)
+    .sort((a, b) => a.d - b.d)[0]?.s;
+}
 
 // Castor volant: every drop is centred straight below the helicopter and turned
 // like it; repair/remove target the construction closest to that point.
 export const AIRDROP_TARGET_RANGE = 0.1;
-export function airdropPlacement({ builder, mode, defense, dollars }) {
+export function airdropPlacement({
+  builder,
+  mode,
+  defense,
+  dollars,
+}: {
+  builder?: { x?: number; z?: number; yaw?: number; landingY?: number } | null;
+  mode: string;
+  defense: GroundDefenseState;
+  dollars: number;
+}): PlacementPreview {
   const { x, z, yaw, landingY } = builder || {};
   if (![x, z, yaw, landingY].every(Number.isFinite)) return { error: 'Position inconnue.' };
-  const center = [x, z];
+  const center: [number, number] = [x!, z!];
   if (mode === 'barricade') return { center, error: 'Le Castor volant ne largue pas de mur LEGO.' };
-  let command,
-    target = null;
+  let command: GroundCommand,
+    target: GroundStructure | null | undefined = null;
   if (mode === 'repair' || mode === 'remove') {
-    target = (defense?.structures || [])
-      .map((s) => ({
-        s,
-        d: s.position
-          ? Math.hypot(x - s.position[0], z - s.position[1])
-          : distanceToSegment(center, s.a, s.b),
-      }))
-      .filter(({ d }) => d < AIRDROP_TARGET_RANGE)
-      .sort((a, b) => a.d - b.d)[0]?.s;
+    target = nearestStructure(defense, center, AIRDROP_TARGET_RANGE);
     if (!target) return { center, error: 'Survolez une construction (10 cm).' };
     command = { action: mode, id: target.id };
-  } else command = airdropCommand(mode, { x, z, yaw });
+  } else command = airdropCommand(mode, { x: x!, z: z!, yaw: yaw! });
   try {
     const result = groundCommand(structuredClone(defense), command, center, dollars, Date.now(), {
       castor: true,
@@ -32,7 +67,7 @@ export function airdropPlacement({ builder, mode, defense, dollars }) {
     });
     return { center, command, price: result.price, landingY, target };
   } catch (error) {
-    return { center, command, landingY, target, error: error.message };
+    return { center, command, landingY, target, error: errorMessage(error) };
   }
 }
 
@@ -46,7 +81,16 @@ export function groundPlacement({
   dollars,
   aim,
   castor = false,
-}) {
+}: {
+  foot?: { grounded?: boolean; parachute?: unknown; x: number; y: number; z: number } | null;
+  mode: string;
+  rotation?: number;
+  anchor?: GroundPoint | null;
+  defense: GroundDefenseState;
+  dollars: number;
+  aim?: { x: number; y: number; z: number } | null;
+  castor?: boolean;
+}): PlacementPreview {
   if (!foot || !foot.grounded || foot.parachute || foot.y >= 0.025)
     return { error: 'Rejoignez le sol du bureau.' };
   if (
@@ -59,23 +103,15 @@ export function groundPlacement({
     aim.z > GROUND_BOUNDS[3]
   )
     return { error: 'Visez une surface proche au sol.' };
-  const center = [aim.x, aim.z];
+  const center: [number, number] = [aim.x, aim.z];
   if (['barricade', 'sticky'].includes(mode)) {
     if (!anchor) return { center, startOnly: true };
     if (Math.hypot(center[0] - anchor[0], center[1] - anchor[1]) < 0.002)
       return { center, error: 'Visez la fin du mur, à distance du début.' };
   }
-  let command;
+  let command: GroundCommand;
   if (mode === 'repair' || mode === 'remove') {
-    const target = (defense?.structures || [])
-      .map((s) => ({
-        s,
-        d: s.position
-          ? Math.hypot(center[0] - s.position[0], center[1] - s.position[1])
-          : distanceToSegment(center, s.a, s.b),
-      }))
-      .filter(({ d }) => d < 0.035)
-      .sort((a, b) => a.d - b.d)[0]?.s;
+    const target = nearestStructure(defense, center, 0.035);
     if (!target) return { center, error: 'Visez une construction proche devant vous.' };
     command = { action: mode, id: target.id };
   } else if (['sugar', 'sentry', 'gatling', 'antitank'].includes(mode))
@@ -99,6 +135,6 @@ export function groundPlacement({
     );
     return { center, command, price: result.price };
   } catch (error) {
-    return { center, command, error: error.message };
+    return { center, command, error: errorMessage(error) };
   }
 }

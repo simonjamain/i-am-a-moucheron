@@ -1,21 +1,64 @@
 import { chooseBait, distanceToSegment, finishMeal, stickyTraversal } from './ground-defense.ts';
 import { enemyRoutePosition } from './routes.ts';
 import { feedingPoint, GROUND_BAIT_TYPES, groundGoal } from './ground-defense-state.ts';
+import type { GroundStructure } from './ground-defense-state.ts';
+import type { GroundFlow, GroundPoint } from './ground-defense.ts';
+import type { EnemyType } from './types.ts';
+import type { WaveEnemy } from './waves.ts';
 
-export const GROUND_BODY_SIZES = Object.freeze({
+/** Server-walked pose of one ground creature, serialized in snapshots ([x, z] plane). */
+export interface GroundUnit {
+  id: number;
+  p: number[];
+  dir: number[];
+  /** Bait types already eaten: an insect never returns to the same treat. */
+  tasted: string[];
+  baitId: string | null;
+  eatingUntil: number;
+  stuckUntil: number;
+  stickyInside: string[];
+  arrived: boolean;
+  attackId: string | null;
+}
+/** Roster fields the walk reads (a `WaveEnemy`). */
+export type GroundEnemy = Pick<
+  WaveEnemy,
+  'id' | 'type' | 'spawn' | 'entryHold' | 'duration' | 'travelSpeed' | 'speedMps'
+> &
+  Parameters<typeof enemyRoutePosition>[0];
+/** Room services the walk needs: structures, flow fields, wall damage, crowd push. */
+export interface GroundWorld {
+  structures: readonly GroundStructure[];
+  goalFlow: GroundFlow | null | undefined;
+  baitFlow(bait: GroundStructure): GroundFlow | null | undefined;
+  damageWall(id: string, amount: number): void;
+  separation?: (unit: GroundUnit, enemy: GroundEnemy) => readonly number[];
+}
+type Segment = GroundStructure & { a: number[]; b: number[] };
+type Tape = Segment & { width: number };
+type Bait = GroundStructure & { type: string; position: number[]; radius: number };
+
+export const GROUND_BODY_SIZES: Readonly<Partial<Record<EnemyType, string>>> = Object.freeze({
   ant: 'small',
   spiderling: 'small',
   roach: 'medium',
   spider: 'medium',
   rat: 'large',
 });
-export const GROUND_ATTACK_DAMAGE = Object.freeze({ roach: 6, spider: 10, rat: 30 });
+export const GROUND_ATTACK_DAMAGE: Readonly<Partial<Record<EnemyType, number>>> = Object.freeze({
+  roach: 6,
+  spider: 10,
+  rat: 30,
+});
 
 // Server-only steering memory; kept out of the serialized unit snapshot.
-const waypoints = new WeakMap();
-const dist = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]);
+const waypoints = new WeakMap<
+  GroundUnit,
+  { target: string; flow: GroundFlow | null | undefined; point: GroundPoint }
+>();
+const dist = (a: GroundPoint, b: GroundPoint): number => Math.hypot(a[0] - b[0], a[1] - b[1]);
 
-export function groundUnit(enemy, elapsed) {
+export function groundUnit(enemy: GroundEnemy, elapsed: number): GroundUnit {
   const age = Math.max(0, elapsed - enemy.spawn - (enemy.entryHold || 0));
   const travelTime = Math.max(0.001, enemy.duration - (enemy.entryHold || 0));
   const fraction = Math.min(1, age / travelTime);
@@ -33,11 +76,15 @@ export function groundUnit(enemy, elapsed) {
     attackId: null,
   };
 }
-function cross(a, b, c) {
+function cross(a: GroundPoint, b: GroundPoint, c: GroundPoint): number {
   return (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]);
 }
 // Check the swept segment, not only frame endpoints, to catch narrow sticky tape.
-export function crossedSticky(a, b, tape) {
+export function crossedSticky(
+  a: GroundPoint,
+  b: GroundPoint,
+  tape: { a: GroundPoint; b: GroundPoint; width: number },
+): boolean {
   const c = tape.a;
   const d = tape.b;
   const width = tape.width / 2;
@@ -57,19 +104,27 @@ export function crossedSticky(a, b, tape) {
     distanceToSegment(d, a, b) <= width
   );
 }
-function closestWall(p, structures) {
-  return structures
-    .filter((s) => s.kind === 'barricade' && s.hp > 0)
+function closestWall(
+  p: GroundPoint,
+  structures: readonly GroundStructure[],
+): { item: Segment; d: number } | undefined {
+  return (structures.filter((s) => s.kind === 'barricade' && s.hp! > 0) as Segment[])
     .map((s) => ({ item: s, d: distanceToSegment(p, s.a, s.b) }))
     .sort((a, b) => a.d - b.d || (a.item.id < b.item.id ? -1 : 1))[0];
 }
-export function advanceGroundUnit(unit, enemy, elapsed, dt, world) {
+export function advanceGroundUnit(
+  unit: GroundUnit,
+  enemy: GroundEnemy,
+  elapsed: number,
+  dt: number,
+  world: GroundWorld,
+): GroundUnit {
   if (unit.arrived || dt <= 0) return unit;
   const speed = enemy.travelSpeed ?? enemy.speedMps;
   if (!Number.isFinite(speed) || speed <= 0) throw Error('Invalid ground speed');
   const structures = world.structures;
-  const baits = structures.filter((s) => s.kind === 'sugar');
-  const tapes = structures.filter((s) => s.kind === 'sticky');
+  const baits = structures.filter((s) => s.kind === 'sugar') as Bait[];
+  const tapes = structures.filter((s) => s.kind === 'sticky') as Tape[];
   const size = GROUND_BODY_SIZES[enemy.type];
   if (!size) throw Error('Unsupported ground species');
   let remaining = dt;
@@ -104,7 +159,8 @@ export function advanceGroundUnit(unit, enemy, elapsed, dt, world) {
     const goal = bait ? feedingPoint(bait) : groundGoal();
     if (dist(unit.p, goal) < (bait ? 0.003 : 0.025)) {
       if (bait) {
-        unit.eatingUntil = time + (GROUND_BAIT_TYPES[bait.type]?.mealSeconds ?? 4);
+        unit.eatingUntil =
+          time + (GROUND_BAIT_TYPES[bait.type as keyof typeof GROUND_BAIT_TYPES]?.mealSeconds ?? 4);
         continue;
       }
       unit.arrived = true;
@@ -115,7 +171,7 @@ export function advanceGroundUnit(unit, enemy, elapsed, dt, world) {
     // changes, so the walked polyline is the forecast polyline.
     const held = waypoints.get(unit);
     const target = bait ? 'bait:' + bait.id : 'goal';
-    let next;
+    let next: GroundPoint | null | undefined;
     if (held && held.target === target && held.flow === flow && dist(unit.p, held.point) > 0.000001)
       next = held.point;
     else {
@@ -137,7 +193,10 @@ export function advanceGroundUnit(unit, enemy, elapsed, dt, world) {
         remaining = 0;
         break;
       }
-      const middle = [(wall.item.a[0] + wall.item.b[0]) / 2, (wall.item.a[1] + wall.item.b[1]) / 2];
+      const middle: GroundPoint = [
+        (wall.item.a[0] + wall.item.b[0]) / 2,
+        (wall.item.a[1] + wall.item.b[1]) / 2,
+      ];
       next = middle;
     } else unit.attackId = null;
     const delta = dist(unit.p, next);
@@ -169,7 +228,7 @@ export function advanceGroundUnit(unit, enemy, elapsed, dt, world) {
       if (
         Math.abs(sideways) > 1e-6 &&
         flow.clear(unit.p, destination) &&
-        flow.clear(destination, next)
+        flow.clear(destination, next!)
       )
         direction = candidate.map((v) => v / length);
     }

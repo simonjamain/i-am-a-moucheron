@@ -11,7 +11,7 @@
 import type * as THREE from 'three/webgpu';
 import { DEBUG_ENEMY_TYPES, type DebugEnemyKind } from './debug-enemies.ts';
 import type { EnemyType, Three } from './types.ts';
-import { ENEMY_POWER } from './waves.js';
+import { ENEMY_POWER } from './waves.ts';
 
 /** Hit volume as insect-hits.js tests it: ellipsoid or sphere proxy. */
 export interface HitProxy {

@@ -1,13 +1,13 @@
 // Meshy ant, egg-laying spider, spiderling and cockroach: provenance, rig orientation, planted-foot
 // walk cycles (tripod / alternating tetrapod), distance-driven gait proxies,
-// ellipsoid hits and the shared VAT bake (src/walker-gait.ts, src/walker-batch.js).
+// ellipsoid hits and the shared VAT bake (src/walker-gait.ts, src/walker-batch.ts).
 import assert from 'node:assert/strict';
 import * as T from '../vendor/three.webgpu.min.js';
 import { ANT_DATA } from '../src/ant-data.ts';
 import { SPIDER_DATA } from '../src/spider-data.ts';
 import { ROACH_DATA } from '../src/roach-data.ts';
 import { SPIDERLING_DATA } from '../src/spiderling-data.ts';
-import { WALKERS, WalkerBatch, walkerStride } from '../src/walker-batch.js';
+import { WALKERS, WalkerBatch, walkerStride } from '../src/walker-batch.ts';
 import { footCycle, nearestRest, REST_PHASES, SWING } from '../src/walker-gait.ts';
 import { createGraphics } from '../src/graphics.js';
 import { nearestInsectHit, insectContact, InsectIndex } from '../src/insect-hits.ts';

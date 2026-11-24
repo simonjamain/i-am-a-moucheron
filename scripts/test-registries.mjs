@@ -1,15 +1,15 @@
-// Per-species tables must stay in step with ENEMY_TYPES (src/waves.js), and
+// Per-species tables must stay in step with ENEMY_TYPES (src/waves.ts), and
 // per-vehicle tables with VEHICLES (src/fleet.ts).
 // Adding an enemy: follow docs/adding-content.md; this test names every table
 // still missing the new key. tsc enforces the same for `Record<EnemyType, …>`.
 import assert from 'node:assert/strict';
-import { ENEMY_TYPES, ENEMY_UNLOCK_WAVE, GROUND_LANES } from '../src/waves.js';
+import { ENEMY_TYPES, ENEMY_UNLOCK_WAVE, GROUND_LANES } from '../src/waves.ts';
 import { ENEMY_SIZE_FACTORS } from '../src/scale.ts';
-import { speciesSymbols } from '../src/wave-forecast-scene.js';
+import { speciesSymbols } from '../src/wave-forecast-scene.ts';
 import { PACKS } from '../server/wave-preparation.js';
-import { GROUND_BODY_SIZES, GROUND_ATTACK_DAMAGE } from '../src/ground-creatures.js';
-import { WALKERS } from '../src/walker-batch.js';
-import { FLYERS } from '../src/flyer-batch.js';
+import { GROUND_BODY_SIZES, GROUND_ATTACK_DAMAGE } from '../src/ground-creatures.ts';
+import { WALKERS } from '../src/walker-batch.ts';
+import { FLYERS } from '../src/flyer-batch.ts';
 import { VEHICLES } from '../src/fleet.ts';
 import { SHOP } from '../src/equipment.ts';
 import { SHOP_CATEGORIES } from '../src/shop-catalog.ts';
@@ -30,16 +30,16 @@ const expectKeys = (name, table, expected) =>
   assert.deepEqual(keys(table), expected, `${name} must list exactly: ${expected.join(', ')}`);
 
 expectKeys('ENEMY_SIZE_FACTORS (src/scale.ts)', ENEMY_SIZE_FACTORS, all);
-expectKeys('speciesSymbols (src/wave-forecast-scene.js)', speciesSymbols, all);
-expectKeys('ENEMY_UNLOCK_WAVE (src/waves.js)', ENEMY_UNLOCK_WAVE, drawn);
+expectKeys('speciesSymbols (src/wave-forecast-scene.ts)', speciesSymbols, all);
+expectKeys('ENEMY_UNLOCK_WAVE (src/waves.ts)', ENEMY_UNLOCK_WAVE, drawn);
 expectKeys('PACKS (server/wave-preparation.js)', PACKS, drawn);
-expectKeys('GROUND_LANES (src/waves.js)', GROUND_LANES, ground);
-expectKeys('GROUND_BODY_SIZES (src/ground-creatures.js)', GROUND_BODY_SIZES, ground);
+expectKeys('GROUND_LANES (src/waves.ts)', GROUND_LANES, ground);
+expectKeys('GROUND_BODY_SIZES (src/ground-creatures.ts)', GROUND_BODY_SIZES, ground);
 // Every ground species walks in WalkerBatch (spiderlings too, since v317);
 // the midge has its own batch.
-expectKeys('WALKERS (src/walker-batch.js)', WALKERS, ground);
+expectKeys('WALKERS (src/walker-batch.ts)', WALKERS, ground);
 expectKeys(
-  'FLYERS (src/flyer-batch.js)',
+  'FLYERS (src/flyer-batch.ts)',
   FLYERS,
   flying.filter((t) => t !== 'midge'),
 );

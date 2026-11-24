@@ -1,4 +1,4 @@
-import { ENEMY_TYPES } from '../src/waves.js';
+import { ENEMY_TYPES } from '../src/waves.ts';
 import assert from 'node:assert/strict';
 import { Game } from '../server/game.js';
 import { baseWorld } from '../src/base.ts';

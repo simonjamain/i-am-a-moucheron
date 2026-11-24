@@ -113,10 +113,10 @@ sa fin de vie ; un obus encore en vol à la mort de son tireur garde son effet.
 ## Trajets et crashs
 
 Les nouveaux trajets gardent la vitesse **effective** des anciennes vagues,
-y compris celle résultant de leur ancien plafonnement temporel. `route-speed.js`
-conserve uniquement ce calcul de calibration ; ces anciens chemins ne sont pas
-suivis. La durée actuelle est le temps d’entrée plus longueur du nouveau trajet
-divisée par cette vitesse. Les longues routes ne sont plus accélérées pour
+y compris celle résultant de leur ancien plafonnement temporel : elle est
+désormais écrite dans `speedMps` (`src/waves.ts`) ; l'ancien calcul de calibration
+(`route-speed`, sans appelant) a été retiré. La durée actuelle est le temps d’entrée
+plus longueur du nouveau trajet divisée par cette vitesse. Les longues routes ne sont plus accélérées pour
 rentrer dans un délai artificiel. Les apparitions restent périphériques.
 
 Les terrestres suivent une grille A\* puis une simplification avec visibilité

@@ -11,7 +11,7 @@ import {
   ribbonGeometry,
   sampleAt,
 } from '../src/pheromone-trail.ts';
-import { predictedGroundPaths } from '../src/wave-ground-paths.js';
+import { predictedGroundPaths } from '../src/wave-ground-paths.ts';
 
 const path = [
   [0, 0.003, 0],
@@ -75,7 +75,7 @@ trails.set(paths, true);
 assert.equal(trails.paths[0].objects[1].material.color.getHexString(), TRAIL.draft.slice(1));
 
 // The forecast scene draws these ribbons from the predicted paths and animates them.
-const forecast = readFileSync('src/wave-forecast-scene.js', 'utf8');
+const forecast = readFileSync('src/wave-forecast-scene.ts', 'utf8');
 assert.match(forecast, /this\.trails\.set\(/);
 assert.match(forecast, /this\.trails\.animate\(now \/ 1000\)/);
 assert.doesNotMatch(forecast, /new T\.Line\(/, 'no more 1-pixel lines');

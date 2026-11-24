@@ -9,7 +9,7 @@ import { ACTOR_UNIT } from '../src/scale.ts';
 import { VEHICLES, vehicleUnit } from '../src/fleet.ts';
 import { tankBarrelOrigin } from '../src/tank-view.js';
 import { mobileBarrelOrigin, trailerGunPivot } from '../src/mobile-flak.js';
-import { heliWeaponOrigin } from '../src/helicopter.js';
+import { heliWeaponOrigin } from '../src/helicopter.ts';
 import { VEHICLE_ANCHORS } from '../src/vehicle-anchors.ts';
 import { MODEL_DATA as SPITFIRE } from '../src/meshy-spitfire-data.ts';
 import { MODEL_DATA as TANK } from '../src/meshy-tank-data.ts';

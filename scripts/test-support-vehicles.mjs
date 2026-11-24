@@ -16,7 +16,7 @@ import {
   clampHeliAim,
   steerMissile,
   heliWeaponOrigin,
-} from '../src/helicopter.js';
+} from '../src/helicopter.ts';
 import {
   MOBILE_FUSE,
   fuseSegment,

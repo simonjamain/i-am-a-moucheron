@@ -6,7 +6,7 @@ import {
   spawnOffspring,
   swarmFrame,
   wavePlan,
-} from '../src/waves.js';
+} from '../src/waves.ts';
 import { enemyRoute, enemyRoutePosition, routeDuration } from '../src/routes.ts';
 import { DEFAULT_BALANCE, retimeRoster, scaleRoster } from '../src/balance.js';
 

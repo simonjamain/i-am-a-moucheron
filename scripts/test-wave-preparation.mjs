@@ -9,7 +9,7 @@ import {
   PACKS,
 } from '../server/wave-preparation.js';
 import { DEFAULT_BALANCE } from '../src/balance.js';
-import { ENEMY_TYPES } from '../src/waves.js';
+import { ENEMY_TYPES } from '../src/waves.ts';
 
 // Deterministic PRNG (mulberry32): a failure names its seed and replays exactly.
 const seeded = (seed) => {

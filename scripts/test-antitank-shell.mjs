@@ -7,7 +7,7 @@ import { resolveHeavy } from './heavy-resolver.mjs';
 import { HEAVY, heavyDamage } from '../src/armament.ts';
 import { FORTIFICATIONS } from '../src/ground-fortifications.ts';
 import { howitzerMuzzle } from '../src/howitzer-geometry.ts';
-import { debugSwarmRoster, swarmFrame } from '../src/waves.js';
+import { debugSwarmRoster, swarmFrame } from '../src/waves.ts';
 import { MAP } from '../src/scale.ts';
 
 const shell = HEAVY.antitank;

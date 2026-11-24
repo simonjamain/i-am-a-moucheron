@@ -1,6 +1,6 @@
 import './normal-dossiers.mjs';
 import assert from 'node:assert/strict';
-import { ENEMY_TYPES } from '../src/waves.js';
+import { ENEMY_TYPES } from '../src/waves.ts';
 import { blastDamage } from '../src/combat.ts';
 assert.deepEqual(Object.fromEntries(Object.entries(ENEMY_TYPES).map(([k, v]) => [k, v.hp])), {
   ant: 100,

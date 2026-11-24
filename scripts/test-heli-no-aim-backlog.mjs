@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { stepHeliAim, HELI } from '../src/helicopter.js';
+import { stepHeliAim, HELI } from '../src/helicopter.ts';
 for (const hz of [30, 60, 144]) {
   const actual = { yaw: 0, pitch: -0.2 },
     pending = { yaw: 100, pitch: -1 };

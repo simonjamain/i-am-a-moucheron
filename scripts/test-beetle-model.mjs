@@ -1,6 +1,6 @@
 // Meshy armoured beetle (`brute`): provenance, added wing bones, rigid closed
 // elytra, procedural flight cycle, VAT bake, batched proxies and ellipsoid hits
-// (src/beetle-model.ts, src/flyer-batch.js, scripts/import-beetle.py).
+// (src/beetle-model.ts, src/flyer-batch.ts, scripts/import-beetle.py).
 import { FLYER_HIT_TOLERANCE } from '../src/scale.ts';
 import assert from 'node:assert/strict';
 import * as T from '../vendor/three.webgpu.min.js';
@@ -12,10 +12,10 @@ import {
   BEETLE_HIT,
   beetleFlightPose,
 } from '../src/beetle-model.ts';
-import { FLYERS, FlyerBatch } from '../src/flyer-batch.js';
+import { FLYERS, FlyerBatch } from '../src/flyer-batch.ts';
 import { createGraphics } from '../src/graphics.js';
 import { nearestInsectHit } from '../src/insect-hits.ts';
-import { ENEMY_TYPES } from '../src/waves.js';
+import { ENEMY_TYPES } from '../src/waves.ts';
 
 const world = (o) => o.getWorldPosition(new T.Vector3());
 const bytes = (b64) => Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));

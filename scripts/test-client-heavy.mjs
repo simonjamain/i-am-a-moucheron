@@ -6,7 +6,7 @@ import { stepHeavy, heavyImpact } from '../src/heavy-sim.js';
 import { HEAVY } from '../src/armament.ts';
 import { MAP } from '../src/scale.ts';
 import { baseWorld } from '../src/base.ts';
-import { debugSwarmRoster, swarmFrame } from '../src/waves.js';
+import { debugSwarmRoster, swarmFrame } from '../src/waves.ts';
 import { layoutSolids } from '../src/layouts.ts';
 const ROUTE_OBSTACLES = layoutSolids();
 import { howitzerMuzzle } from '../src/howitzer-geometry.ts';

@@ -4,7 +4,7 @@ L'hélicoptère d'attaque et le Castor volant (`HELI_TYPES`) sont des corps rigi
 (`src/heli-physics.ts`, classe `HeliRig`), sur le même schéma que les avions
 ([plane-physics.md](plane-physics.md)) : unités « mètres de référence », monde partagé du serveur
 pour les engins vides (`ParkedHost`), train à ressorts par rayons, volumes mesurés sur le modèle.
-L'ancien pas (`stepHelicopter`, `src/helicopter.js`) ne sert plus que le temps que Rapier charge.
+L'ancien pas (`stepHelicopter`, `src/helicopter.ts`) ne sert plus que le temps que Rapier charge.
 
 ## Pilotage conservé, corps réel
 

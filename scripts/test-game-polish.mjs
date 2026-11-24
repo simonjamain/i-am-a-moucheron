@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import * as T from '../vendor/three.webgpu.min.js';
-import { stepHelicopter, HELI } from '../src/helicopter.js';
+import { stepHelicopter, HELI } from '../src/helicopter.ts';
 import { VEHICLES, vehiclePad } from '../src/fleet.ts';
 import { CastorRig } from '../src/castor-physics.ts';
 import { loadRapier } from '../src/physics-world.ts';

@@ -5,7 +5,7 @@ import * as T from '../vendor/three.webgpu.min.js';
 import { MAP } from '../src/scale.ts';
 import * as delivery from '../src/delivery.ts';
 import { Game } from '../server/game.js';
-import { wavePlan, ENEMY_TYPES } from '../src/waves.js';
+import { wavePlan, ENEMY_TYPES } from '../src/waves.ts';
 const source = readFileSync('src/client.js', 'utf8');
 // #15: execute the real crate renderer between authoritative snapshots.
 let now = 100000;

@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { advanceGroundUnit, crossedSticky, GROUND_ATTACK_DAMAGE } from '../src/ground-creatures.js';
+import { advanceGroundUnit, crossedSticky, GROUND_ATTACK_DAMAGE } from '../src/ground-creatures.ts';
 import { newGroundDefense, groundFlow, groundGoal } from '../src/ground-defense-state.ts';
 
 const state = newGroundDefense();

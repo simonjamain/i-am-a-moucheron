@@ -64,7 +64,7 @@ import {
   spawnOffspring,
   assignMidgeSwarmSizes,
   MAX_OFFSPRING_ROSTER,
-} from '../src/waves.js';
+} from '../src/waves.ts';
 import {
   SHOP,
   shopPrice,

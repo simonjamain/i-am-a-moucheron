@@ -8,7 +8,7 @@ puis chaque moucheron devient un groupe de cinq. Les fourmis et les autres espè
 ne sont pas multipliées. La première vague contient donc **20 moucherons et
 4 fourmis**, au lieu de 4 + 4 ; sa prime commune reste 4 $.
 
-`MIDGE_SWARM_MULTIPLIER` dans `src/waves.js` centralise le facteur. Les cinq membres
+`MIDGE_SWARM_MULTIPLIER` dans `src/waves.ts` centralise le facteur. Les cinq membres
 conservent trajet, branche, vitesse, durée, taille, PV et dégâts du moucheron source.
 Leurs phases de mouvement sont réparties et leurs départs décalés de 0 à 0,28 s :
 ils restent sur le même parcours de nuée, sans étaler la vague cinq fois plus

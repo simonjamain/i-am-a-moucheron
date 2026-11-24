@@ -157,10 +157,10 @@ avec plusieurs avions, dégâts, latence et fluidité.
 
 ## Nuées procédurales à forte population
 
-`src/waves.js` saute le voisinage de groupe pour les moucherons : positions
+`src/waves.ts` saute le voisinage de groupe pour les moucherons : positions
 calculées directement depuis ID, route et temps, avec une complexité
 essentiellement linéaire par trame moucheron. Les autres espèces conservent
-la grille de voisinage existante. `src/midge-batch.js` réduit les meshes
+la grille de voisinage existante. `src/midge-batch.ts` réduit les meshes
 WebGL **vivants** des moucherons à un seul lot instancié (modèle Meshy pour tous, sans niveau de détail), sans rendre les
 collisions dépendantes du rendu. `src/insect-hits.ts` utilise le rayon
 mathématique de la sphère pour les intersections et le même index spatial.

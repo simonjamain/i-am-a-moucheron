@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { Game } from '../server/game.js';
 import { PACKS, prepareRoster } from '../server/wave-preparation.js';
 import { DEFAULT_BALANCE } from '../src/balance.js';
-import { ENEMY_TYPES, debugSwarmRoster, swarmFrame, wavePlan } from '../src/waves.js';
+import { ENEMY_TYPES, debugSwarmRoster, swarmFrame, wavePlan } from '../src/waves.ts';
 
 assert.equal(ENEMY_TYPES.rat.hp, 10000);
 assert.equal(ENEMY_TYPES.mosquito.hp, 150);

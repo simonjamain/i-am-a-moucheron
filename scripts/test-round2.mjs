@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import * as T from '../vendor/three.webgpu.min.js';
 import { wheelPose } from '../src/castor-wheels.ts';
-import { stepHelicopter } from '../src/helicopter.js';
+import { stepHelicopter } from '../src/helicopter.ts';
 import { VEHICLES, vehiclePad } from '../src/fleet.ts';
 import { CombatEffects } from '../src/combat.ts';
 import { makeBiplaneBomber } from '../src/biplane-model.ts';

@@ -1,5 +1,5 @@
 import { INSECT_SCALE, enemySizeFactor } from './scale.ts';
-import { advanceGroundUnit, groundUnit } from './ground-creatures.js';
+import { advanceGroundUnit, groundUnit } from './ground-creatures.ts';
 
 // Soft personal space in room metres, distinct from projectile hit volumes.
 export const groundRadius = (enemy) =>

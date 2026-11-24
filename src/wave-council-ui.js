@@ -1,5 +1,5 @@
-import { ENEMY_TYPES } from './waves.js';
-import { speciesSymbols, entranceLabel } from './wave-forecast-scene.js';
+import { ENEMY_TYPES } from './waves.ts';
+import { speciesSymbols, entranceLabel } from './wave-forecast-scene.ts';
 
 const powerLabel = (power) => String(Math.round(power * 10) / 10).replace('.', ',');
 

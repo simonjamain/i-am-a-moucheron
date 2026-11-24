@@ -2,8 +2,8 @@
 // and defenses, and the preparation forecast is the path walked during the wave.
 import assert from 'node:assert/strict';
 import { Game } from '../server/game.js';
-import { predictedGroundPaths } from '../src/wave-ground-paths.js';
-import { advanceGroundUnit } from '../src/ground-creatures.js';
+import { predictedGroundPaths } from '../src/wave-ground-paths.ts';
+import { advanceGroundUnit } from '../src/ground-creatures.ts';
 import {
   groundCommand,
   groundFlow,

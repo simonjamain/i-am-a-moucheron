@@ -1,14 +1,14 @@
 // Meshy bee (`guard`): provenance, rigid wing pairs, body freed from the wing
 // and leg bones, procedural flight cycle, VAT bake, batched proxies and
-// ellipsoid hits (src/bee-model.ts, src/flyer-batch.js, scripts/import-bee.py).
+// ellipsoid hits (src/bee-model.ts, src/flyer-batch.ts, scripts/import-bee.py).
 import assert from 'node:assert/strict';
 import * as T from '../vendor/three.webgpu.min.js';
 import { BEE_DATA } from '../src/bee-data.ts';
 import { BEE, BEE_BONES, BEE_FLIGHT, BEE_HIT, beeFlightPose } from '../src/bee-model.ts';
-import { FLYERS, FlyerBatch } from '../src/flyer-batch.js';
+import { FLYERS, FlyerBatch } from '../src/flyer-batch.ts';
 import { createGraphics } from '../src/graphics.js';
 import { nearestInsectHit } from '../src/insect-hits.ts';
-import { ENEMY_TYPES } from '../src/waves.js';
+import { ENEMY_TYPES } from '../src/waves.ts';
 
 const world = (o) => o.getWorldPosition(new T.Vector3());
 const bytes = (b64) => Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));

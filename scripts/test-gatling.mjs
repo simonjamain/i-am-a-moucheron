@@ -21,7 +21,7 @@ import {
 import { GroundDefenseUI } from '../src/ground-defense-ui.js';
 import { synthesize, AUDIO_PROFILES } from '../src/game-audio/synth.ts';
 import { createGroundModel } from '../src/ground-model.ts';
-import { swarmFrame } from '../src/waves.js';
+import { swarmFrame } from '../src/waves.ts';
 
 // --- Règles demandées -------------------------------------------------------
 assert.equal(GATLING.cost, 25);

@@ -10,23 +10,26 @@ Pour un modèle Meshy, suivre d'abord [le pipeline d'assets](asset-pipeline.md).
 
 Domaine partagé (serveur et client) :
 
-1. `src/waves.js` — profil dans `ENEMY_TYPES` (`name`, `cost`, `hp`, `size`,
-   `speedMps`, `leak`, `color`, `ground` pour un marcheur, `offspringOnly` pour une
-   progéniture, `onDeath` pour une ponte) ; vague d'apparition dans
-   `ENEMY_UNLOCK_WAVE` (ordre des clés = ordre de tirage) ; `GROUND_LANES` pour
-   un marcheur.
-2. `src/types.ts` — ajouter la clé à `EnemyType`, puis suivre les erreurs de `tsc`.
+1. `src/waves.ts` — profil dans `SPECIES` (`name`, `hp`, `size`, `speedMps`,
+   `color`, `ground` pour un marcheur, `offspringOnly` pour une progéniture,
+   `onDeath` pour une ponte, `powerFactor` en correction rare ; la puissance est
+   calculée, jamais saisie : [équilibrage](enemy-power.md)) ; vague d'apparition dans
+   `ENEMY_UNLOCK_WAVE` (ordre des clés = ordre de tirage) ; coût du directeur
+   historique dans `LEGACY_COST` ; `GROUND_LANES` pour un marcheur.
+2. `EnemyType` est dérivé des clés de `SPECIES` (`keyof typeof SPECIES`, réexporté
+   par `src/types.ts`) : rien à recopier. Lancer `npm run typecheck` et compléter
+   chaque table `Record<EnemyType, …>` que `tsc` signale.
 3. `src/scale.ts` — facteur de taille dans `ENEMY_SIZE_FACTORS` (rendu et collisions).
 4. `server/wave-preparation.js` — taille de meute dans `PACKS` (espèce tirée).
-5. `src/ground-creatures.js` — gabarit `GROUND_BODY_SIZES` (marcheur) et, s'il
+5. `src/ground-creatures.ts` — gabarit `GROUND_BODY_SIZES` (marcheur) et, s'il
    attaque, `GROUND_ATTACK_DAMAGE`.
 
 Rendu et interface :
 
-6. Modèle : `src/<espèce>-model.js` (+ `-data.ts` généré), puis entrée dans
-   `WALKERS` (`src/walker-batch.js`) ou `FLYERS` (`src/flyer-batch.js`), et dans la
+6. Modèle : `src/<espèce>-model.ts` (+ `-data.ts` généré), puis entrée dans
+   `WALKERS` (`src/walker-batch.ts`) ou `FLYERS` (`src/flyer-batch.ts`), et dans la
    liste d'assets de `scripts/assemble.mjs`.
-7. `src/wave-forecast-scene.js` — symbole dans `speciesSymbols` ;
+7. `src/wave-forecast-scene.ts` — symbole dans `speciesSymbols` ;
    `src/debug-enemies.ts` — place dans `DEBUG_ENEMY_TYPES` (cartes du mode debug,
    vérifié par `scripts/test-debug-enemies.mjs`).
 8. Vérifier les cas particuliers par nom d'espèce : `grep -n "'midge'\|'spiderling'" src server`.

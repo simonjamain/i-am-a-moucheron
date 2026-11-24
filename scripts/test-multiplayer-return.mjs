@@ -16,7 +16,7 @@ import { nearestInsectHit } from '../src/insect-hits.ts';
 import { controlHints, cursorStats } from '../src/live-hud.ts';
 import { GunSalvos } from '../src/salvos.ts';
 import { makeShotTrace, TracerPool } from '../src/tracers.ts';
-import { wavePlan, swarmFrame } from '../src/waves.js';
+import { wavePlan, swarmFrame } from '../src/waves.ts';
 import { enemyRoute } from '../src/routes.ts';
 import { staticGroundFlow } from '../src/ground-defense.ts';
 import { blockedSegment } from '../src/route-navigation.ts';
