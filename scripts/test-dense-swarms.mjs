@@ -275,7 +275,7 @@ kill(firstTotal - 1, 'last');
 snapshot = game.snapshot(r);
 assert.equal(snapshot.phase, 'prep');
 assert.equal(snapshot.dollars, 0, 'no wave stipend: only freed souls pay');
-assert.equal(snapshot.souls.length, Math.min(firstTotal, 24));
+assert.equal(snapshot.arena.queue.length, firstTotal, 'every freed soul stands in the queue');
 r.wave = 99;
 r.balance.population = 4; // Even the most expensive possible composition exceeds 180 enemies.
 game.startWave(r); // Build the room-local plan through the same transition as a real wave.

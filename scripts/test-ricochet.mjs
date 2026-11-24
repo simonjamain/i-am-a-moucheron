@@ -4,7 +4,8 @@ import { runInNewContext } from 'node:vm';
 import * as T from '../vendor/three.webgpu.min.js';
 import { loadRapier } from '../src/physics-world.ts';
 import { SolidQuery } from '../src/solid-query.ts';
-import { nearestInsectHit, nearestSolidHit } from '../src/insect-hits.ts';
+import { nearestSolidHit } from '../src/insect-hits.ts';
+import { insectBoxesFor } from './insect-harness.mjs';
 import { colliderNormal } from '../src/oriented-collider.ts';
 import { MAP } from '../src/scale.ts';
 import { bounce, grazingAngle, ricochetLimit, MAX_BOUNCES, SPEED_LOSS } from '../src/ricochet.ts';
@@ -144,7 +145,7 @@ function fly(angle, bounces = 0, slices = 1, owned = true) {
   runInNewContext(step + `;for (let i = 0; i < ${slices}; i++) stepProjectileSlice(0.05)`, {
     T,
     // Saint Pierre's sky is not drawn in this test: nothing to hit there.
-    nearestSkyTarget: () => null,
+    nearestSkyHit: () => null,
     purgatoryTargets: () => [],
     reportSkyHits: () => {},
     solidRayHit: boxHitter(colliders),
@@ -156,8 +157,7 @@ function fly(angle, bounces = 0, slices = 1, owned = true) {
     trails,
     colliders,
     insects: new Map(),
-    nearestInsectHit,
-    insectIndex: null,
+    insectBoxes: () => insectBoxesFor(new Map()),
     camera: null,
     stepBallisticVelocity() {},
     action() {

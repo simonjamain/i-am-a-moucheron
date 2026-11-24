@@ -111,7 +111,7 @@ export const SUITE = [
   'test-backlog-return',
   'test-heli-no-aim-backlog',
   'test-issues-15-16-17',
-  'test-insect-index',
+  'test-insect-hitboxes',
   'test-swept-broadphase',
   'test-contact-frames',
   'test-udp-reply-encoding',

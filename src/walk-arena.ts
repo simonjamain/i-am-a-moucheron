@@ -46,6 +46,11 @@ export interface WalkBody {
   paper?: unknown;
   /** Player who paid the VIP lane's pass. */
   vip?: boolean;
+  /**
+   * Put in place by the world's rules (a queue place): never moved by the arena, never pushed,
+   * blocks the bodies that move, ignores every obstacle and every other fixed body.
+   */
+  fixed?: boolean;
 }
 
 export interface ArenaEvent {
@@ -138,7 +143,7 @@ export function createWalker(
   s: WalkSeed,
   at: PlanarPoint,
   now: number,
-  shape: { r: number; mass?: number },
+  shape: { r: number; mass?: number; fixed?: boolean },
 ): WalkBody {
   return {
     id: s.id,
@@ -156,6 +161,7 @@ export function createWalker(
     inputAt: now,
     queueTicket: s.id,
     served: 0,
+    ...(shape.fixed ? { fixed: true } : {}),
   };
 }
 
@@ -168,6 +174,7 @@ function collide(
   if (
     a.gone ||
     b.gone ||
+    (a.fixed && b.fixed) ||
     Math.abs((a.y ?? 0) - (b.y ?? 0)) > 1.7 * verticalUnit ||
     (!owned(a) && !owned(b))
   )
@@ -184,9 +191,12 @@ function collide(
   }
   const nx = dx / d,
     nz = dz / d,
-    ia = owned(a) ? 1 / a.mass : 0,
-    ib = owned(b) ? 1 / b.mass : 0,
-    penetration = ((r - d) * 0.8) / (ia + ib);
+    ia = owned(a) && !a.fixed ? 1 / a.mass : 0,
+    ib = owned(b) && !b.fixed ? 1 / b.mass : 0,
+    movable = ia + ib;
+  // Neither can move here (a fixed body against a body this client does not simulate).
+  if (!(movable > 0)) return;
+  const penetration = ((r - d) * 0.8) / movable;
   a.x -= nx * penetration * ia;
   a.z -= nz * penetration * ia;
   b.x += nx * penetration * ib;
@@ -261,7 +271,7 @@ export function advanceArena(
       now = a.time + ms;
     const intents = rules.steer?.(a, now);
     for (const b of a.bodies) {
-      if (b.gone || !owned(b)) continue;
+      if (b.gone || b.fixed || !owned(b)) continue;
       let dx = 0,
         dz = 0;
       if (b.kind === 'enemy') {
@@ -296,18 +306,21 @@ export function advanceArena(
     const bounds = a.bounds || rules.bounds?.(a) || DEFAULT_BOUNDS;
     for (let pass = 0; pass < 3; pass++) {
       // Broad phase: most pairs are far apart, so the cheap planar test comes before the call.
+      // Fixed bodies (queue places) meet only the bodies that move: the pairs among them are not tried.
       const bodies = a.bodies;
       for (let i = 0; i < bodies.length; i++) {
         const p = bodies[i];
-        for (let j = i + 1; j < bodies.length; j++) {
-          const q = bodies[j],
-            reach = p.r + q.r;
+        if (p.fixed) continue;
+        for (let j = 0; j < bodies.length; j++) {
+          const q = bodies[j];
+          if (j === i || (!q.fixed && j < i)) continue;
+          const reach = p.r + q.r;
           if (Math.abs(q.x - p.x) >= reach || Math.abs(q.z - p.z) >= reach) continue;
           collide(p, q, owned, vertical || 1);
         }
       }
       for (const b of a.bodies) {
-        if (!owned(b)) continue;
+        if (b.fixed || !owned(b)) continue;
         rules.constrain?.(a, b);
         keepInside(b, bounds);
         for (const o of a.obstacles || []) {

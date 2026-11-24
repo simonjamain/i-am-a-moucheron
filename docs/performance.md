@@ -42,11 +42,15 @@ positions distantes à 1 Hz) fait partie du protocole : voir
 
 ## Client : tirs et collisions
 
-- **`InsectIndex`** (`src/insect-hits.ts`) : grille spatiale de 8 cm parcourue le
-  long du segment de tir, construite au premier tir de l'image. Mêmes sphères
-  conservatrices, intersections, tolérance du moucheron et ordre des impacts que
-  le parcours exhaustif. Le parcours direct reste utilisé sous 128 insectes et
-  pour les rayons très longs, populations concentrées ou modèles surdimensionnés.
+- **`InsectHitboxes`** (`src/insect-hitboxes.ts`) : un volume de tir par insecte vivant dans
+  un monde Rapier du client, une sphère pour le moucheron, une capsule le long du plus
+  long rayon de l'ellipsoïde pour les autres espèces (tolérance de l'espèce comprise). Les
+  volumes n'ont pas de corps et sont replacés sur leur modèle à **chaque image**, que l'on
+  tire ou non : le coût est donc constant (environ 0,8 ms pour 900 insectes, 2,3 ms pour
+  3 000, `npm run bench:collisions`), puis un rayon coûte 2 µs quelle que soit la nuée.
+  Aucune collision n'est simulée, ni entre insectes ni avec les joueurs. Les obus lourds
+  gardent leur test rayon–sphère sur les positions de nuée à l'heure de chaque sous-pas
+  (`heavy-sim.js`).
 - **Cibles solides** : `solidTarget` / `nearestSolidHit` préparent une fois par
   image, à la demande de `stepProjectiles`, les matrices, maillages solides et
   la boîte monde (agrandie de 30 % pour la pose animée) de chaque véhicule et
@@ -113,7 +117,7 @@ ni GPU, ni WAN.
 | Commande                                     | Mesure                                                                                                                                                                                              |
 | -------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `npm run bench:room-sync`                    | Réponse `sync` complète (commande, simulation, snapshot, encodage, découpage) pour N joueurs et E ennemis, horloge simulée à 4 `sync`/s. Arguments : `node scripts/benchmark-room-sync.mjs 50 900`. |
-| `npm run bench:collisions`                   | `InsectIndex` contre parcours direct, populations dispersées ou concentrées.                                                                                                                        |
+| `npm run bench:collisions`                   | Volumes de tir des insectes : replacement par image et rayon pour 100, 900 et 3 000.                                                                                                                |
 | `npm run bench:swarm-50`                     | 50 segments de véhicules contre 900 sphères, avec et sans phase large (CI).                                                                                                                         |
 | `npm run bench:udp-replies`                  | Encodage des réponses de vagues réelles, premier envoi et rejeu.                                                                                                                                    |
 | `npm run bench:tracers`                      | Objets de rendu, triangles et préparation des matrices des traceurs.                                                                                                                                |
@@ -145,8 +149,8 @@ commandes, débit, pertes, FPS client).
 
 ### Tests de non-régression
 
-`test-insect-index.mjs` et `test-solid-targets.mjs` comparent les impacts au
-parcours exhaustif ; `test-swept-broadphase.mjs` la phase large à
+`test-insect-hitboxes.mjs` couvre les volumes de tir des insectes et `test-solid-targets.mjs`
+compare les impacts au parcours exhaustif ; `test-swept-broadphase.mjs` la phase large à
 `segmentSphere` ; `test-contact-frames.mjs` le cache de contacts ;
 `test-instanced-tracers.mjs` les traceurs ; `test-dense-swarms.mjs`,
 `test-midge-batch.mjs` les nuées ; `test-audio.mjs` (10 000 individus) et

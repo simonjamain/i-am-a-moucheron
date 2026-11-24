@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { performance } from 'node:perf_hooks';
 import * as T from '../vendor/three.webgpu.min.js';
 import { MidgeBatch } from '../src/midge-batch.ts';
-import { nearestInsectHit, InsectIndex } from '../src/insect-hits.ts';
+import { nearestInsectHit } from './insect-harness.mjs';
 
 const scene = new T.Scene();
 const batch = new MidgeBatch(T, scene);
@@ -50,14 +50,13 @@ assert.equal(
 );
 // Check that a packed ray still returns the earliest midge, independent of insertion order.
 for (let id = 2; id < 300; id++) add(id, 0, 0, -1.5 - id * 0.01);
-const indexed = new InsectIndex(T, insects);
 const origin = new T.Vector3(0, 0, 0),
   direction = new T.Vector3(0, 0, -1);
-assert.equal(nearestInsectHit(T, origin, direction, insects, 6, null, indexed)?.id, 0);
+assert.equal(nearestInsectHit(T, origin, direction, insects, 6)?.id, 0);
 insects.delete(0);
 batch.flush(insects, 350);
 assert.equal(batch.detail.mesh.count, 299);
-assert.equal(nearestInsectHit(T, origin, direction, insects, 6, null, indexed)?.id, 2);
+assert.equal(nearestInsectHit(T, origin, direction, insects, 6)?.id, 2);
 assert.equal(nearestInsectHit(T, origin, direction, insects, 6)?.id, 2);
 // Resizing must preserve correct matrices and avoid one scene object per insect.
 for (let id = 300; id < 10000; id++)

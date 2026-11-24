@@ -86,7 +86,7 @@ comme au bureau.
 
 Les tirs des vivants (balles, obus de DCA, bombes, roquettes, missiles) touchent dans le
 ciel les âmes d’insectes de la file, Saint Pierre et le vigile (`purgatoryTargets`,
-sphères ; balles : `nearestSkyTarget`, explosions : `skyBlast`, dégâts de souffle usuels).
+sphères dans un monde Rapier (`SkyTargets`, `src/sky-targets.ts`) ; balles : `SkyTargets.nearest`, explosions : `SkyTargets.blast`, dégâts de souffle usuels).
 Le tireur rapporte ses coups (`purgatory-hit`), comptés une fois par tir et par cible.
 
 - **Une âme d’insecte touchée est libérée aussitôt**, comme servie au guichet : elle

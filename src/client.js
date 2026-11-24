@@ -72,7 +72,7 @@ import { stepBallisticVelocity, toggleParachute } from '/ballistics.js';
 import { jumpWalker } from '/field-physics.js';
 import { PURGATORY_FRAME, arenaWorld } from '/arena-frame.js';
 import { inSky, outOfFlight, passageWhiteness, skyPassage } from '/sky-passage.js';
-import { nearestSkyTarget, skyBlast } from '/sky-targets.js';
+import { SkyTargets } from '/sky-targets.js';
 import { makeTracer, updateTracer } from '/tracers.js';
 import { wavePlan, swarmFrame, entryStatus, ENEMY_TYPES } from '/waves.js';
 import {
@@ -125,14 +125,8 @@ import {
   stepWalker,
   GEAR_HEIGHT,
 } from '/sortie.js';
-import {
-  InsectIndex,
-  nearestInsectHit,
-  nearestSolidHit,
-  solidTarget,
-  HitEffects,
-  insectContact,
-} from '/insect-hits.js';
+import { nearestSolidHit, solidTarget, HitEffects } from '/insect-hits.js';
+import { InsectHitboxes } from '/insect-hitboxes.js';
 import {
   ControlFocus,
   airplaneSteering,
@@ -167,6 +161,7 @@ import { swarmAudioGroups } from '/game-audio/swarm.js';
 import { bodyMotion, mergeOwnedArena } from '/walk-arena.js';
 import {
   advancePurgatory,
+  expandQueue,
   clipboardWindow,
   isStaff,
   STAFF_HP,
@@ -174,6 +169,7 @@ import {
   deskOccupant,
   nearVipGuard,
   saintWindowX,
+  QUEUE_SPACING,
 } from '/purgatory-queue.js';
 import { createPurgatoryScene } from '/purgatory-scene.js';
 import {
@@ -418,7 +414,13 @@ me.visible = false;
 const others = new Map(),
   insects = new Map(),
   trails = [];
-const insectIndex = new InsectIndex(T, insects);
+// The insects' hit volumes (sphere for a midge, capsule for the others) in a Rapier world, moved
+// onto their models every frame (insect-hitboxes.ts); only shots look at them.
+let insectHitboxes = null;
+function insectBoxes() {
+  if (!insectHitboxes && rapier) insectHitboxes = new InsectHitboxes(T, rapier);
+  return insectHitboxes;
+}
 const groundMotion = new GroundMotionTrack();
 // Prepare animation textures cooperatively before starting the main loop.
 // Awaiting microtasks alone would still freeze the loading screen.
@@ -753,7 +755,12 @@ function groundReport() {
   return {
     epoch: a.epoch,
     body: bodyMotion(self),
-    npcs: a.host === id ? a.bodies.filter((b) => b.kind === 'enemy').map(bodyMotion) : [],
+    // The queue's places are a formula everyone computes: only the souls being served or
+    // gone are news.
+    npcs:
+      a.host === id
+        ? a.bodies.filter((b) => b.kind === 'enemy' && (b.served > 0 || b.gone)).map(bodyMotion)
+        : [],
   };
 }
 function acceptGround(snapshot, previous, purg = false) {
@@ -1592,6 +1599,8 @@ function accept(s, force = false) {
     sound.play('clear', camera.position, { ref: 8 });
   if (!respawnAt && previous && previous.phase !== 'lost' && s.phase === 'lost')
     sound.play('defeat', camera.position, { ref: 10 });
+  // The queue's souls travel as short rows: bodies again, on their places (purgatory-queue.ts).
+  if (s.arena?.queue) s.arena = expandQueue(s.arena);
   if (s.arena && s.arena.revision > soulArenaRevision) {
     if (soulArena?.epoch !== s.arena.epoch) soulEventSeen = 0;
     soulArena = acceptGround(s.arena, soulArena, true);
@@ -2832,7 +2841,9 @@ function physicalPurgatory(dt, now) {
   for (const b of soulArena.bodies)
     if (b.kind === 'enemy' && !b.gone && !isStaff(b.enemyType)) {
       const g = soulMeshes.get(b.id);
-      g?.userData.animate?.(dt, { speed: walkSpeed(WALK_WORLDS.purgatory, b) });
+      // A long queue stands still beyond the first places, which are the ones in view.
+      if (b.z < ANIMATED_QUEUE)
+        g?.userData.animate?.(dt, { speed: walkSpeed(WALK_WORLDS.purgatory, b) });
       if (g) soulStatus.update(b.id, g, b.health, b.maxHealth || 100, purgCamera, now / 1000);
     }
   const statusKeep = new Set(
@@ -2855,6 +2866,8 @@ function physicalPurgatory(dt, now) {
   groundCamera(purgCamera, rendered, dt, true);
   renderPurgatory();
 }
+// The queue's places that are animated (arena units from the desk): the rest stand still.
+const ANIMATED_QUEUE = 48 * QUEUE_SPACING;
 const turrets = [];
 let stations = [];
 
@@ -3934,7 +3947,7 @@ function enemies(now) {
       for (const material of g.userData.disposables || []) material.dispose();
       insects.delete(i);
     }
-  insectIndex.invalidate();
+  insectBoxes()?.sync(insects, localKills);
   $('enemies').textContent =
     snap.phase === 'combat' && snap.total > snap.kills.length + snap.leaked
       ? 'Ennemis restants'
@@ -4503,12 +4516,29 @@ function purgatoryTargets() {
   }
   return out;
 }
+// The sky's targets as volumes in Rapier (sky-targets.ts), brought up to date once a frame.
+let skyTargets = null,
+  skyTargetsFrame = -1;
+function skyBoxes() {
+  if (!skyTargets && rapier) skyTargets = new SkyTargets(T, rapier);
+  if (skyTargets && skyTargetsFrame !== frameIndex) {
+    skyTargetsFrame = frameIndex;
+    skyTargets.sync(purgatoryTargets());
+  }
+  return skyTargets;
+}
+function nearestSkyHit(origin, dir, far) {
+  return skyBoxes()?.nearest(origin, dir, far) ?? null;
+}
+function skyBlastHits(point, radius) {
+  return skyBoxes()?.blast(point, radius) ?? [];
+}
 function reportSkyHits(shot, targets) {
   if (targets.length) action('purgatory-hit', { shot, targets });
 }
 function explosion(b, point) {
   const radius = MAP.metres(FLAK.lightRadius);
-  reportSkyHits(b.shot, skyBlast(purgatoryTargets(), point.toArray(), radius));
+  reportSkyHits(b.shot, skyBlastHits(point, radius));
   combatEffects.blast(point, radius);
   effectSeen.add(b.shot);
   sound.play('crash', point, { ref: 22 });
@@ -4708,25 +4738,11 @@ function stepProjectileSlice(dt) {
           normal: wallHit.normal,
         };
       const blocker = hit;
-      const insect = nearestInsectHit(
-        T,
-        origin,
-        dir,
-        insects,
-        blocker?.distance ?? distance,
-        localKills,
-        insectIndex,
-      );
+      const insect =
+        insectBoxes()?.nearest(origin, dir, blocker?.distance ?? distance, localKills) ?? null;
       hit = insect || blocker;
       // Saint Pierre's sky: the queue's souls, Saint Pierre and the guard (src/sky-targets.ts).
-      const soulHit = !b.shell
-        ? nearestSkyTarget(
-            purgatoryTargets(),
-            origin.toArray(),
-            dir.toArray(),
-            hit?.distance ?? distance,
-          )
-        : null;
+      const soulHit = !b.shell ? nearestSkyHit(origin, dir, hit?.distance ?? distance) : null;
       if (soulHit) {
         const point = origin.clone().addScaledVector(dir, soulHit.distance);
         hitEffects.burst(point, camera, { key: b.shot });
@@ -6303,7 +6319,7 @@ function finishHeavy(projectile, impact, world) {
   if (report.kind !== 'piercing')
     reportSkyHits(
       projectile.shot,
-      skyBlast(purgatoryTargets(), report.p, Math.max(report.radius || 0, MAP.metres(4))),
+      skyBlastHits(new T.Vector3(...report.p), Math.max(report.radius || 0, MAP.metres(4))),
     );
   showHeavyImpact(report);
   action('heavy-impact', report);
@@ -6676,6 +6692,8 @@ const debugTools = new DebugTools({
 // volumes (hit boxes, collision boxes, ranges) and the physics (rigid bodies, springs,
 // forces, see physics-debug.ts). Each button remembers its state in this browser.
 const physicsOverlay = new PhysicsOverlay(T, scene);
+// The enemies' hit volumes ("Volumes" view), drawn from their Rapier world.
+const hitVolumesOverlay = new PhysicsOverlay(T, scene);
 const views = { volumes: false, physics: false };
 function setupViewToggles() {
   for (const [key, id] of [
@@ -6715,7 +6733,7 @@ function updateDebugTools() {
   physicsOverlay.update(physicsRigs(), joined && views.physics);
   if (debugTools.active && !lab) debugTools.cancel();
   else if (debugTools.active) debugTools.render();
-  debugTools.showHitboxes(insects.values(), on);
+  hitVolumesOverlay.update(on && insectBoxes() ? [insectBoxes()] : [], on);
   debugTools.showRanges(snap?.groundDefense?.structures, on);
   debugTools.showColliders(colliders, on, office.decorWire);
   if (snap)

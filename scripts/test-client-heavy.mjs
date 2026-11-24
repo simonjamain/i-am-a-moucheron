@@ -66,7 +66,7 @@ const context = {
   combatEffects: { blast() {} },
   // Saint Pierre's sky is not drawn in this test: nothing to hit there.
   reportSkyHits: () => {},
-  skyBlast: () => [],
+  skyBlastHits: () => [],
   purgatoryTargets: () => [],
   sound: { play() {} },
   camera: {},

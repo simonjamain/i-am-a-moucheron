@@ -110,7 +110,6 @@ export class DebugTools {
   target: THREE.Vector3 | null = null;
   marker: THREE.Group;
   status: HTMLDivElement;
-  hitboxes: THREE.InstancedMesh;
   ranges: THREE.Group;
   rangeKey = '';
   colliders: THREE.Group;
@@ -141,30 +140,10 @@ export class DebugTools {
     this.status = document.createElement('div');
     this.status.className = 'debugPlacement hidden';
     document.body.append(this.status);
-    this.hitboxes = this.hitboxMesh(64);
     this.ranges = new T.Group();
     this.colliders = new T.Group();
     this.colliders.name = 'debug-colliders';
-    scene.add(this.marker, this.hitboxes, this.ranges, this.colliders);
-  }
-  hitboxMesh(capacity: number): THREE.InstancedMesh {
-    const T = this.T;
-    const mesh = new T.InstancedMesh(
-      new T.IcosahedronGeometry(1, 2),
-      new T.MeshBasicMaterial({
-        color: 0xff5ad2,
-        wireframe: true,
-        transparent: true,
-        opacity: 0.55,
-        depthWrite: false,
-      }),
-      capacity,
-    );
-    mesh.count = 0;
-    mesh.frustumCulled = false;
-    mesh.renderOrder = 10;
-    mesh.userData.projectileSolid = false;
-    return mesh;
+    scene.add(this.marker, this.ranges, this.colliders);
   }
   get active(): boolean {
     return !!this.kind;
@@ -277,48 +256,6 @@ export class DebugTools {
     } finally {
       this.busy = false;
     }
-  }
-
-  // Wireframe of every enemy's hit volume (insect-hits.js tolerance included).
-  showHitboxes(models: Iterable<HitProxy>, enabled: boolean): void {
-    if (!enabled) {
-      this.hitboxes.count = 0;
-      return;
-    }
-    const T = this.T;
-    const list = [...models];
-    if (list.length > this.hitboxes.instanceMatrix.count) {
-      const old = this.hitboxes;
-      this.hitboxes = this.hitboxMesh(Math.max(list.length, old.instanceMatrix.count * 2));
-      old.parent?.add(this.hitboxes);
-      old.removeFromParent();
-      old.geometry.dispose();
-      (old.material as THREE.Material).dispose();
-      old.dispose();
-    }
-    let n = 0;
-    const s = new T.Vector3();
-    for (const model of list) {
-      const u = model.userData,
-        tolerance = u.hitTolerance || 1;
-      if (u.hitEllipsoid) {
-        const [cx, cy, cz] = u.hitCentre || [0, 0, 0];
-        const [rx, ry, rz] = u.hitEllipsoid;
-        this.matrix.compose(model.position, model.quaternion, model.scale);
-        this.local
-          .makeScale(rx * tolerance, ry * tolerance, rz * tolerance)
-          .setPosition(cx, cy, cz);
-        this.matrix.multiply(this.local);
-      } else if (u.sphereRadius) {
-        const r =
-          ((u.sphereRadius * tolerance) / 1.2) *
-          Math.max(Math.abs(model.scale.x), Math.abs(model.scale.y), Math.abs(model.scale.z));
-        this.matrix.compose(model.position, model.quaternion, s.set(r, r, r));
-      } else continue;
-      this.hitboxes.setMatrixAt(n++, this.matrix);
-    }
-    this.hitboxes.count = n;
-    this.hitboxes.instanceMatrix.needsUpdate = true;
   }
 
   // Collision volumes: boxes (one batch of edges and one of faces) and the

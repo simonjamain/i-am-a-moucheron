@@ -47,6 +47,7 @@ import { SolidQuery } from '../src/solid-query.ts';
 import { relayBodyReport } from '../src/walk-arena.ts';
 import {
   createSoul,
+  queueView,
   advancePurgatory,
   deskOccupant,
   inVipDesk,
@@ -578,7 +579,7 @@ export class Game {
     const shown = [
       ...rows.filter((s) => s.kind === 'player'),
       ...rows.filter((s) => isStaff(s.enemy_type)),
-      ...rows.filter((s) => s.kind === 'enemy' && !isStaff(s.enemy_type)).slice(0, 24),
+      ...rows.filter((s) => s.kind === 'enemy' && !isStaff(s.enemy_type)),
     ];
     const ids = new Set(shown.map((s) => s.id));
     a.bodies = (a.bodies || []).filter((b) => ids.has(b.id));
@@ -1093,7 +1094,8 @@ export class Game {
     const bodies = new Map(r.purgatory.bodies.map((b) => [b.id, b]));
     const souls = [];
     for (const soul of r.souls.values()) {
-      if (soul.status !== 'waiting') continue;
+      // The queue's insects travel as short rows in the arena (queueView): only the people here.
+      if (soul.status !== 'waiting' || soul.kind !== 'player') continue;
       const body = bodies.get(soul.id);
       if (body)
         souls.push({
@@ -1161,7 +1163,7 @@ export class Game {
       now,
       sentAt: now,
       souls,
-      arena: r.purgatory,
+      arena: queueView(r.purgatory),
       base: r.base,
       staff: r.staff,
       damage: [],

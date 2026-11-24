@@ -161,7 +161,8 @@ const boxHitter = (colliders) => (ray, far) => {
   solidQuery.sync(colliders);
   return solidQuery.hit(ray.origin.toArray(), ray.direction.toArray(), far);
 };
-const { nearestInsectHit, nearestSolidHit } = await import('../src/insect-hits.ts');
+const { insectBoxesFor } = await import('./insect-harness.mjs');
+const { nearestSolidHit } = await import('../src/insect-hits.ts');
 const { bounce } = await import('../src/ricochet.ts');
 const { vehicleMaterial, insectMaterial } = await import('../src/materials.ts');
 const { MAP } = await import('../src/scale.ts');
@@ -200,7 +201,7 @@ for (const wall of [false, true]) {
   runInNewContext(step + ';stepProjectileSlice(.5);stepProjectileSlice(3);', {
     T,
     // Saint Pierre's sky is not drawn in this test: nothing to hit there.
-    nearestSkyTarget: () => null,
+    nearestSkyHit: () => null,
     purgatoryTargets: () => [],
     reportSkyHits: () => {},
     solidRayHit: boxHitter(colliders),
@@ -212,8 +213,7 @@ for (const wall of [false, true]) {
     trails,
     colliders,
     insects,
-    nearestInsectHit,
-    insectIndex: null,
+    insectBoxes: () => insectBoxesFor(insects),
     camera: null,
     stepBallisticVelocity() {},
     action() {},

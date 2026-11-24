@@ -13,7 +13,7 @@
     "check:docs": "node scripts/check-docs.mjs",
     "test:capacity": "node scripts/assemble.mjs && node scripts/test-udp-capacity-50.mjs",
     "bench:swarm-50": "node scripts/benchmark-swept-broadphase.mjs",
-    "bench:collisions": "node scripts/benchmark-insect-index.mjs",
+    "bench:collisions": "node scripts/benchmark-insect-hitboxes.mjs",
     "bench:udp-replies": "node scripts/benchmark-udp-replies.mjs",
     "bench:tracers": "node scripts/benchmark-tracers.mjs",
     "bench:room-sync": "node scripts/benchmark-room-sync.mjs",
