@@ -219,10 +219,11 @@ export class ParkedHost {
           v = body.linvel(),
           w = body.angvel();
         const world = [toWorld(p.x), toWorld(p.y), toWorld(p.z)];
+        // Aeroplanes meet the room's walls in the engine; helicopters keep the bounds rule.
+        const heli = entry.plane instanceof HeliRig;
         const destroyed =
-          entry.impact >
-            (entry.plane instanceof HeliRig ? HELI_CRASH_IMPACT : PLANE_CRASH_IMPACT) ||
-          outOfFlight({ x: world[0], y: world[1], z: world[2] }, bounds);
+          entry.impact > (heli ? HELI_CRASH_IMPACT : PLANE_CRASH_IMPACT) ||
+          (heli && outOfFlight({ x: world[0], y: world[1], z: world[2] }, bounds));
         entry.impact = 0;
         // A body that fell asleep reports once more, then stays out of the updates.
         entry.reported = body.isSleeping();

@@ -14,6 +14,11 @@ const left = node(0.5),
   right = node(0.5);
 rigWheels(plane, { wheelL: left, wheelR: right }, 'fighter');
 assert.equal(left.userData.restY, 0.5);
+assert.equal(
+  plane.userData.fixedWheels,
+  true,
+  'aircraft hubs are fixed: the client does not steer them',
+);
 poseWheels(plane, parkedCompression(plane, false));
 assert.equal(left.position.y, 0.5, 'flying: wheels at rest height');
 const sag = planeSpec('fighter').sag;
@@ -28,5 +33,6 @@ poseWheels(castor, parkedCompression(castor, false));
 castor.userData.wheels.forEach((wheel, i) => {
   assert.equal(wheel.position.y, 0.1 * i, 'castor wheel ' + i + ' keeps its height');
   assert.ok(!('restY' in wheel.userData));
+  assert.ok(!castor.userData.fixedWheels, 'the Castor wheels do steer');
 });
 console.log('Aircraft wheels: rigged wheels follow the springs, other wheel sets are not touched.');

@@ -69,7 +69,11 @@ la souris par « instructeur », `src/mouse-flight.ts`).
 - **Cellule** : un collider par boîte mesurée, CCD activé. Les impulsions de
   contact donnent `state.impact` (variation de vitesse en m/s de référence) :
   au-delà de 2,5 l'avion prend des dégâts, au-delà de `PLANE_CRASH_IMPACT` (16) il
-  est détruit.
+  est détruit. C'est la seule source de dégâts de collision : le client ne compare plus
+  de vitesse d'approche et ne repousse plus l'avion après un choc.
+- **Murs** : quatre murs invisibles (`PhysicsWorld.addRoomWalls`, faces intérieures
+  aux murs de `LAYOUT_ROOM`, jusqu'au plancher du ciel) ferment la pièce, côté ouvert
+  compris : un choc contre un mur est un contact comme un autre.
 
 ## Intégration
 
