@@ -96,6 +96,16 @@ assert.deepEqual(
 assert.equal(comparable.initialStation.x, base.originX + base.refuelOffsetX);
 assert.equal(comparable.initialStation.z, base.originZ + base.refuelOffsetZ);
 original.initialStation = comparable.initialStation;
+// The queue's insects left `souls` (the client only reads the people there) and `arena.bodies`:
+// they travel as short rows in `arena.queue`, every one of them (the baseline showed 24).
+original.souls = original.souls.filter((soul) => soul.kind === 'player');
+original.arena = {
+  ...original.arena,
+  bodies: original.arena.bodies.filter((body) => body.kind !== 'enemy'),
+};
+const { queue, ...arenaWithoutQueue } = comparable.arena;
+assert.equal(queue.length, 80, "all of the fixture's insect souls stand in the queue");
+comparable.arena = arenaWithoutQueue;
 assert.deepEqual(
   comparable,
   original,
