@@ -27,8 +27,6 @@ import type { CloudFloorSpec, SkyClouds, SkyDome } from './purgatory-clouds.ts';
 import { VIP_GUARD as GUARD_RIG, VIP_GUARD_MODEL } from './vip-guard-model.ts';
 import { SaintPierre } from './saint-pierre-model.ts';
 import { createClipboard } from './clipboard-model.ts';
-import { createFloorCloud, FLOOR_MIST } from './purgatory-floor.ts';
-import type { FloorCloud } from './purgatory-floor.ts';
 
 /**
  * Local units per metre: the decor is built in the purgatory arena's units (a
@@ -227,20 +225,11 @@ export interface PurgatoryScene {
   guard: THREE.Object3D;
   /** The clipboards of the two windows (aimed at and clicked to open the papers). */
   clipboards: { desk: THREE.Object3D; vip: THREE.Object3D };
-  /** World height the queue's insects hover at (above the floor mist). */
+  /** World height the queue's insects hover at (the cloud's floor). */
   hover: number;
   update(dt: number, now: number, state: PurgatoryState): void;
   /** Draw the sky clouds' layer for this camera (before rendering the scene). */
   prerender(renderer: THREE.WebGPURenderer, camera: THREE.Camera): void;
-  /**
-   * Draw the floor cloud over the rendered frame, stopping at the scene depth
-   * (`depth`, the cartoon renderer's depth texture).
-   */
-  postrender(
-    renderer: THREE.WebGPURenderer,
-    camera: THREE.Camera,
-    depth: THREE.Texture | null,
-  ): void;
 }
 
 export function createPurgatoryScene(T: Three, options: PurgatorySceneOptions): PurgatoryScene {
@@ -284,17 +273,16 @@ export function createPurgatoryScene(T: Three, options: PurgatorySceneOptions): 
   const sun = new T.DirectionalLight(L.sun, 1.9);
   sun.position.set(...(SUN_DIRECTION.map((v) => v * 30) as [number, number, number]));
   scene.add(sun, sun.target);
-  // The ground: a volumetric cloud drawn after the scene (souls walk half inside
-  // it); without shaders, the cartoon cloud of puffs.
-  let sky: SkyClouds | null = null,
-    floorCloud: FloorCloud | null = null;
+  // The ground: the cartoon cloud (flat top over the hall, puffs around), on which
+  // the souls walk. With shaders, volumetric clouds float in the sky around it.
+  scene.add(createCloudFloor(T, CLOUD_FLOOR, PURGATORY_HALL));
+  let sky: SkyClouds | null = null;
   if (options.shaders) {
     sky = createSkyClouds(T);
     // The clouds' own layer scene: the same placement as the decor.
     sky.group.position.set(F.originX, F.originY, F.originZ);
     sky.group.scale.setScalar(unit);
-    floorCloud = createFloorCloud(T, PURGATORY_HALL, CLOUD_FLOOR, F);
-  } else scene.add(createCloudFloor(T, CLOUD_FLOOR, PURGATORY_HALL));
+  }
   // Furniture of the office pack, at human scale.
   const furniture = new T.Group();
   furniture.name = 'purgatoire-mobilier';
@@ -384,7 +372,7 @@ export function createPurgatoryScene(T: Three, options: PurgatorySceneOptions): 
     saint,
     guard: guard.container,
     clipboards: { desk: deskClipboard, vip: vipClipboard },
-    hover: F.originY + (options.shaders ? FLOOR_MIST.top * 0.75 : 0) * unit,
+    hover: F.originY,
     update(dt, now, state) {
       const before = saint.position.clone();
       const ease = 1 - Math.exp(-12 * dt);
@@ -416,9 +404,6 @@ export function createPurgatoryScene(T: Three, options: PurgatorySceneOptions): 
       if (vipGate) vipGate.visible = !state.vip;
       guard.pose(now / 1000 / VIP_GUARD_MODEL.cycle);
       sky?.update(now / 1000);
-    },
-    postrender(renderer, camera, depth) {
-      floorCloud?.render(renderer, camera, depth);
     },
     prerender(renderer, camera) {
       // Follow the camera now (a matrix updated in onBeforeRender lags one frame).

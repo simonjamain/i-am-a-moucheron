@@ -19,7 +19,6 @@ import { VIP_GUARD as GUARD_RIG, VIP_GUARD_MODEL } from '../src/vip-guard-model.
 import { VIP_GUARD_DATA } from '../src/vip-guard-data.ts';
 import { SAINT_PIERRE_DATA } from '../src/saint-pierre-data.ts';
 import { SaintPierre, SAINT_PIERRE_BONES, SAINT_PIERRE_MODEL } from '../src/saint-pierre-model.ts';
-import { FLOOR_MIST, createFloorCloud } from '../src/purgatory-floor.ts';
 import { PostHighlight, selectionRect } from '../src/post-highlight.ts';
 
 // The decor's local units per metre (its root group places it in the world).
@@ -181,13 +180,6 @@ const restFace = (() => {
 })();
 assert.ok(face.angleTo(restFace) > 0.4, 'the head turns: ' + face.angleTo(restFace));
 assert.ok(restHead.y > 1.6 && restHead.y < 2.6, 'head at a person height: ' + restHead.y);
-
-// The floor cloud: a soul walks half inside it (the mist's top below its
-// middle, above its ankles), the cloud billows beyond the hall.
-assert.ok(FLOOR_MIST.top > 0.3 && FLOOR_MIST.top < 1.23, 'mist up to the knees');
-assert.ok(FLOOR_MIST.dense < 0 && FLOOR_MIST.bottom < -3);
-const floorPass = createFloorCloud(T, PURGATORY_HALL, CLOUD_FLOOR);
-floorPass.dispose();
 
 // The whole scene builds without a document (software renderer: no shaders).
 const built = createPurgatoryScene(T, {
