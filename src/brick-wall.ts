@@ -22,7 +22,15 @@ const BODY_SHARE = 0.787;
 export const BRICK_HEIGHT = BRICK_ROW / BODY_SHARE;
 
 // Normalize one brick to a unit box resting on y = 0, studs up.
+// Built once per Three build and shared by every wall: it is never disposed (`userData.shared`).
+const brickCache = new WeakMap<object, THREE.BufferGeometry>();
 export function brickGeometry(T: Three): THREE.BufferGeometry {
+  let cached = brickCache.get(T);
+  if (!cached) brickCache.set(T, (cached = buildBrickGeometry(T)));
+  return cached;
+}
+
+function buildBrickGeometry(T: Three): THREE.BufferGeometry {
   const geometry = new T.BufferGeometry();
   geometry.setAttribute('position', new T.Float32BufferAttribute(BRICK_POSITIONS, 3));
   geometry.setIndex(BRICK_INDICES);
@@ -34,6 +42,7 @@ export function brickGeometry(T: Three): THREE.BufferGeometry {
   geometry.translate(-center.x, -box.min.y, -center.z);
   geometry.scale(1 / size.x, 1 / size.y, 1 / size.z);
   geometry.computeVertexNormals();
+  geometry.userData.shared = true;
   return geometry;
 }
 
@@ -55,13 +64,24 @@ export function brickLayout(length: number): BrickPlacement[] {
   }
   return bricks;
 }
+const brickMaterials = new WeakMap<object, THREE.MeshLambertMaterial>();
+function brickMaterial(T: Three): THREE.MeshLambertMaterial {
+  let m = brickMaterials.get(T);
+  if (!m) {
+    m = new T.MeshLambertMaterial();
+    m.userData.sharedMaterial = true;
+    brickMaterials.set(T, m);
+  }
+  return m;
+}
+
 export function createBrickWall(
   T: Three,
   structure: Pick<WallStructure, 'a' | 'b' | 'hp'>,
 ): THREE.InstancedMesh {
   const length = Math.hypot(structure.b[0] - structure.a[0], structure.b[1] - structure.a[1]);
   const bricks = brickLayout(length);
-  const mesh = new T.InstancedMesh(brickGeometry(T), new T.MeshLambertMaterial(), bricks.length);
+  const mesh = new T.InstancedMesh(brickGeometry(T), brickMaterial(T), bricks.length);
   const transform = new T.Object3D();
   const palette = ['#cc4938', '#e5b63e', '#417dab', '#609254'];
   bricks.forEach((brick, i) => {
