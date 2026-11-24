@@ -5526,7 +5526,6 @@ function frame(now) {
   $('altitudeFog').style.opacity = joined && !dead ? passageWhiteness(view.position.y) : 0;
   if (sky) purgatory.prerender(renderer, view);
   toon.render(scene, view);
-  if (sky) purgatory.postrender(renderer, view, toon.depthTexture());
   if (dead) {
     postSelection.color = aimedPurgatory ? SIGNAL_COLOR : null;
     postSelection.render(scene, view);

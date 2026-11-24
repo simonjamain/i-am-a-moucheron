@@ -57,7 +57,6 @@ renderer de la même façon. `isGpuRenderer` distingue le renderer GPU du rendu 
 | Aides communes (passe plein écran, `targetUv`, tone mapping, ombres gelées) | `src/gpu-passes.ts`                                                 |
 | Bruit, fBm, phase de Henyey-Greenstein                                      | `src/cloud-nodes.ts`                                                |
 | Dôme du ciel, nuages du ciel                                                | `src/purgatory-clouds.ts` ([purgatoire](purgatory-scene.md))        |
-| Nuage-sol (lancer de rayons)                                                | `src/purgatory-floor.ts`                                            |
 | Contour de sélection d'un poste                                             | `src/post-highlight.ts`                                             |
 | Lots de créatures animés par texture                                        | `src/creature-batch.ts`                                             |
 | Rubans d'air, fumée des moteurs, zones de service                           | `src/air-ribbons.ts`, `src/engine-smoke.ts`, `src/service-zones.ts` |

@@ -10,39 +10,24 @@ d’attente. Le décor n’ajoute aucun obstacle de marche : règles de la file 
 [ciel du purgatoire](purgatory-sky.md).
 
 Code : `src/purgatory-scene.ts` (scène, mobilier, panneaux), `src/purgatory-clouds.ts`
-(dôme et nuages du ciel), `src/purgatory-floor.ts` (nuage-sol volumétrique),
+(dôme et nuages du ciel, nuage-sol),
 `src/saint-pierre-model.ts`, `src/vip-guard-model.ts` et `src/clipboard-model.ts`.
 `client.js` crée la scène avec `createPurgatoryScene`, l’anime avec `update()`, dessine
-la couche des nuages du ciel avec `prerender()` avant l’image, puis le nuage-sol avec
-`postrender()` juste après. Les shaders sont écrits en TSL ([rendu WebGPU](webgpu.md)).
+la couche des nuages du ciel avec `prerender()` avant l’image. Les shaders sont écrits en TSL ([rendu WebGPU](webgpu.md)).
 
 ![Arrivée au purgatoire et vue vers le guichet](purgatory-scene-review.jpg)
 
 ## Le nuage-sol
 
-On marche à moitié dans un nuage volumétrique, le même que ceux du ciel.
+On marche sur un nuage dessin animé (`createCloudFloor` dans `src/purgatory-clouds.ts`),
+le même avec ou sans carte graphique. Le nuage-sol volumétrique, dans lequel on marchait
+à moitié, a été retiré à la demande du propriétaire du projet.
 
-- La partie plate (`PURGATORY_HALL`, x de −10 à 10, z de −8 à 90) couvre le rectangle de
-  marche de la file et l’arrière du guichet. La brume monte jusqu’aux genoux
-  (`FLOOR_MIST.top`, 0,95 unité pour une âme de 2,46) et devient dense sous le sol
-  (`FLOOR_MIST.dense`).
-- À 2,5 unités au-delà de la salle (`FLOOR_MIST.margin`), le nuage se gonfle en
-  bourrelets ; son bord (`CLOUD_FLOOR` = `PURGATORY_CLOUD`, ±16 en x, de −11 à 96 en z)
-  s’effiloche et son ventre descend jusqu’à −7. Ce volume est aussi le solide du nuage
-  (`purgatorySolids`).
-- Rendu (`createFloorCloud`) : passe d’écran après la scène, par lancer de rayons (bruit
-  fractal animé, marche vers le soleil, Beer-poudre, Henyey-Greenstein). Chaque rayon
-  s’arrête sur la surface opaque la plus proche, lue dans la profondeur du rendu dessin
-  animé (`ToonRenderer.depthTexture`) : une jambe n’est couverte que par la brume devant
-  elle. Calcul à 40 % de la résolution (`FLOOR_LAYER_SCALE`) en gardant la profondeur la
-  plus lointaine de chaque pixel (pas de halo autour des silhouettes). Au-dessus de la
-  surface, un rayon saute jusqu’à elle avant de marcher à pas fins (64 au plus), sur au
-  plus 160 unités : le nuage se voit de loin. Un rayon qui atteint la couche dense sans
-  s’être rempli prend la couleur de la surface : aucun trou vers le ciel.
-- Les insectes de la file flottent au-dessus de la brume (`hover`, aux trois quarts de sa
-  hauteur).
-- Sans shaders (rendu logiciel de secours), un nuage dessin animé le remplace : dessus
-  plat sur la salle et bosselé autour (`cloudHeight`), boules du bord (`cloudPuffs`).
+- Dessus plat sur la partie où l’on marche (`PURGATORY_HALL`, x de −10 à 10, z de −8 à
+  90), bosselé autour (`cloudHeight`), boules sur le bord (`cloudPuffs`) ; son étendue
+  (`CLOUD_FLOOR` = `PURGATORY_CLOUD`, ±16 en x, de −11 à 96 en z, ventre jusqu’à −7) est
+  aussi le solide du nuage (`purgatorySolids`).
+- Les insectes de la file flottent juste au-dessus du sol (`hover`).
 - La borne de marche est un mur invisible ; les meubles de salle d’attente juste au-delà
   (x = ±11,5) montrent où elle se trouve.
 
@@ -126,8 +111,7 @@ du survol.
 ## Vérifier
 
 `scripts/test-purgatory-scene.mjs` : salle plate là où l’on marche, nuage plus large que
-la salle, nuages du ciel à l’écart du nuage-sol et dans la portée de la caméra, brume
-jusqu’aux genoux, aucun meuble bloquant dans la salle ni sur les cordons, mobilier de la
+la salle, nuages du ciel à l’écart du nuage-sol et dans la portée de la caméra, aucun meuble bloquant dans la salle ni sur les cordons, mobilier de la
 file et du guichet, provenance et taille du vigile et de Saint Pierre, pas, tampon et
 regard, construction de la scène sans document ni shader. `scripts/e2e-purgatory-walk.mjs`
 rend le purgatoire dans le navigateur.

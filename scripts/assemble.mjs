@@ -214,7 +214,6 @@ const files = {
       'purgatory-clouds',
       'vip-guard-model',
       'vip-guard-data',
-      'purgatory-floor',
       'saint-pierre-model',
       'saint-pierre-data',
       'base',
