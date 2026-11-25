@@ -76,13 +76,14 @@ relatifs de `src/`, `server/`, `scripts/`, chemins lus par les tests
 (`'src/scale.js'`) et mentions Markdown. Il ne touche ni
 aux URL du navigateur ni aux noms construits dynamiquement : relire le diff.
 Migrer de préférence des feuilles du graphe d'imports (modules sans import local
-non migré ; `npm run ts:migrate -- --leaves` les liste, plus petites d'abord), par lots cohérents, puis remonter vers `client.js` et `server/game.js`.
+non migré ; `npm run ts:migrate -- --leaves` les liste, plus petites d'abord), par lots
+cohérents, puis remonter vers `client.js` et `server/game.js`.
 
 ## Pièges connus
 
 - Un test qui lit le texte d'un module et l'exécute (`new AsyncFunction(source)`)
-  doit d'abord effacer les types avec `stripTypeScriptTypes` (exemple :
-  `scripts/test-loading-exit.mjs`).
+  doit d'abord effacer les types avec `stripTypeScriptTypes` (exemples :
+  `scripts/test-loading-exit.mjs`, `scripts/test-dense-swarms.mjs` pour `swarmFrame`).
 - Le script réécrit aussi les chemins des commentaires et les exemples de la doc : les relire.
 - Pour un gros lot, répartir les fichiers entre agents, chacun limité à ses
   fichiers, sans modifier `src/types.ts` en parallèle. Contrôle de
@@ -105,5 +106,3 @@ non migré ; `npm run ts:migrate -- --leaves` les liste, plus petites d'abord), 
   `Object.assign(brouillon, { champ: … })` plutôt que réordonner le littéral.
 - Un worker (`new Worker(new URL('./wave-ground-worker.js', import.meta.url))`)
   garde son URL servie en `.js` ; seul son fichier source devient `.ts`.
-- `scripts/test-dense-swarms.mjs` évalue le texte de `swarmFrame` : même remède
-  que pour `test-loading-exit.mjs` (`stripTypeScriptTypes`).

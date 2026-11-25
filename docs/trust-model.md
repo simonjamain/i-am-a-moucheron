@@ -1,6 +1,6 @@
 # Confiance envers les clients
 
-**Règle pérenne : on fait confiance aux joueurs.** Flight Lab est un jeu coopératif sans enjeu :
+**Règle pérenne : on fait confiance aux joueurs.** i am a moucheron est un jeu coopératif sans enjeu :
 aucun code ne cherche à détecter, empêcher ou limiter la triche d'un client. La règle figure
 aussi dans `AGENTS.md`.
 
