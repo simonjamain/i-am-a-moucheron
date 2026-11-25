@@ -58,7 +58,8 @@ l'assembleur. Conventions communes :
   tenir compte des coutures UV), jamais par simplification. L'import échoue si le
   découpage attendu (nombre d'îlots, de roues…) ne correspond pas.
 - **Texture** : seule la carte de couleur est reprise, réduite à 1 024 px (512 px pour
-  les créatures) en JPEG, ou en WebP pour la T-01 et la Gatling ; les autres cartes PBR
+  les créatures) en JPEG, ou en WebP pour la T-01 et la Gatling (atlas PNG d'origine pour le décor du
+  bureau) ; les autres cartes PBR
   ne sont pas chargées. Positions, UV et indices sont le plus souvent quantifiés
   (entiers 16 bits), selon l'importeur.
 - **Repère** : Y vers le haut ; l'avant d'un véhicule ou d'une arme (souvent −X ou +Z
