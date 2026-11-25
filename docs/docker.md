@@ -45,7 +45,8 @@ inscriptible par l'utilisateur `node` et définir `STATS_FILE` (par exemple
 
 Une seule instance conserve toutes les salles en RAM. Redémarrer ou recréer le
 conteneur efface les parties en cours. Le contrôle `/healthz` valide HTTP, pas la
-connectivité UDP : la vérifier avec deux joueurs sur des réseaux distincts.
+connectivité UDP : `node scripts/smoke-image.ts http://127.0.0.1:3000` joue une courte
+partie en local, et deux joueurs sur des réseaux distincts valident le WAN.
 
 `compose.yaml` et `compose.traefik.yaml` référencent encore l’ancien tag local
 `i-am-a-moucheron:2026.10.29-udp.2`, qui n’est plus produit : ils ne suivent pas
@@ -60,8 +61,13 @@ contrôle GitHub Actions.
 
 Le workflow [Docker build validation](../.github/workflows/docker-build.yml) exécute le
 contrôle **Docker build** sur toutes les PR et les groupes de fusion, sans filtre de
-fichiers : il construit l'image `linux/amd64` sans la publier ni utiliser de secret, la
-démarre et vérifie `/healthz` et le 410 de `/api/join` (pas l'UDP). Seul le workflow de
+fichiers : il construit l'image `linux/amd64` sans la publier ni utiliser de secret, puis
+la démarre en lecture seule avec la plage UDP publiée, et ensuite avec un port UDP unique.
+Chaque fois, [`smoke-image.ts`](../scripts/smoke-image.ts) vérifie `/healthz` et le 410
+de `/api/join`, puis fait jouer deux pairs WebRTC natifs en UDP : ils rejoignent la salle,
+lancent la mission et reçoivent les mouvements de l'autre. Le client écoute seulement sur
+127.0.0.1 : sans port publié ni adresse annoncée, la partie échoue. Ce contrôle ne prouve
+ni le WAN ni le navigateur. Seul le workflow de
 publication reconstruit l'image sur `main` ; ses exécutions ne sont pas annulées par les
 pushs suivants, et le tag SHA identifie chaque livraison.
 

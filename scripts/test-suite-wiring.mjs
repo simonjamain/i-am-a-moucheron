@@ -55,6 +55,19 @@ for (const [file, script] of Object.entries(manualE2e))
     pkg.scripts[script]?.includes(`scripts/${file}.mjs`),
     `${script} ne lance plus ${file}`,
   );
+// Les jobs de PR doivent continuer à lancer ces contrôles : une étape retirée du workflow
+// laisserait la CI verte sans rien vérifier (docs/operations.md#intégration-continue).
+const ci = readFileSync('.github/workflows/docker-build.yml', 'utf8');
+for (const [job, command] of [
+  ['docker-build', 'node scripts/smoke-image.ts'],
+  ['game-regression', 'npm test'],
+  ['game-regression', 'node scripts/validate-artifact.mjs'],
+  ['browser-e2e', 'npm run e2e'],
+]) {
+  const block = ci.split(/\n  (?=[a-z0-9-]+:\n)/).find((b) => b.startsWith(job + ':'));
+  assert.ok(block, `job ${job} absent de docker-build.yml`);
+  assert.ok(block.includes(command), `job ${job} ne lance plus « ${command} »`);
+}
 console.log(
   `suite wiring: ${files.length} test scripts, ${SUITE.length} in npm test, ${E2E.length}/${e2eFiles.length} browser scenarios in npm run e2e`,
 );
