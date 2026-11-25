@@ -4,7 +4,7 @@ import * as T from '../vendor/three.webgpu.min.js';
 import { MAP, mapScale, ACTOR_UNIT, HUMAN_SCALE, REFERENCE, FLAK } from '../src/scale.ts';
 import { VEHICLES, vehiclePad, vehicleEntry } from '../src/fleet.ts';
 import { OFFICE_LAYOUT } from '../src/layout.ts';
-import { createGraphics } from '../src/graphics.js';
+import { createGraphics } from '../src/graphics.ts';
 import { createOffice } from '../src/office.ts';
 import { stepFlight } from '../src/flight.ts';
 import { spreadDirection, fuseRange, blastDamage, diveIntensity } from '../src/combat.ts';

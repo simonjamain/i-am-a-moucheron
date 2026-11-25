@@ -43,7 +43,7 @@ console.log(
 // Execute the comparator scene setup with the real models: its insects must
 // have the same miniature scale as the game, rather than raw metre-sized meshes.
 const T = await import('../vendor/three.webgpu.min.js');
-const { createGraphics } = await import('../src/graphics.js');
+const { createGraphics } = await import('../src/graphics.ts');
 const { ACTOR_UNIT, INSECT_SCALE } = await import('../src/scale.ts');
 const { insectScale } = await import('../src/insect-status.ts');
 const setup = source.slice(source.indexOf('const $ ='), source.indexOf('let variant ='));

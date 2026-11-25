@@ -3,7 +3,7 @@
 // bigger than the other vehicles' unit.
 import assert from 'node:assert/strict';
 import * as T from '../vendor/three.webgpu.min.js';
-import { createGraphics } from '../src/graphics.js';
+import { createGraphics } from '../src/graphics.ts';
 import { animateTrackedWheels } from '../src/castor-wheels.ts';
 import { ACTOR_UNIT } from '../src/scale.ts';
 import { VEHICLES, vehicleScale, vehicleUnit } from '../src/fleet.ts';

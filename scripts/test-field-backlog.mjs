@@ -154,7 +154,7 @@ console.log(
 );
 
 const { shoulderView } = await import('../src/personal-aim.ts');
-const { createGraphics } = await import('../src/graphics.js');
+const { createGraphics } = await import('../src/graphics.ts');
 for (const scale of [0.003, 1])
   for (const yaw of [0, Math.PI / 2, Math.PI, -Math.PI / 2]) {
     const view = shoulderView(T, { x: 0, y: 0, z: 0 }, yaw, 0.24, 5.8, scale),
@@ -165,7 +165,7 @@ for (const scale of [0.003, 1])
     const p = new T.Vector3(0, 1.5 * scale, 0).project(cam);
     assert.ok(Math.abs(p.x) > 0.06, 'shoulder camera clears centre of body');
   }
-const { tankSight, tankBarrelOrigin } = await import('../src/tank-view.js');
+const { tankSight, tankBarrelOrigin } = await import('../src/tank-view.ts');
 const { vehicleUnit } = await import('../src/fleet.ts');
 const tank = createGraphics(T, new T.Scene()).makeTank('#777');
 tank.scale.setScalar(vehicleUnit('tank'));

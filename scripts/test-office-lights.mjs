@@ -7,7 +7,7 @@ import { LAYOUTS, setActiveLayout } from '../src/layouts.ts';
 import { propColliders, ROD } from '../src/office-props.ts';
 import { officeLamps, bakeOfficeShadows, LAMP_LOOK } from '../src/office-lights.ts';
 import { OFFICE_CLOUD_TOP, OFFICE_FOG_START } from '../src/office-fog.ts';
-import { createGraphics } from '../src/graphics.js';
+import { createGraphics } from '../src/graphics.ts';
 import { createOffice } from '../src/office.ts';
 import { GLOW_INTENSITY } from '../src/office-pack.ts';
 import { OFFICE_MODELS } from '../src/office-pack-catalog.ts';

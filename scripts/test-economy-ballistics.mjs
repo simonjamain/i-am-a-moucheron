@@ -5,7 +5,7 @@ import { stepFall, stepBallisticVelocity, toggleParachute, HUMAN_AERO } from '..
 import { MAP } from '../src/scale.ts';
 import { supportedPlacement } from '../src/equipment.ts';
 import { OFFICE_LAYOUT } from '../src/layout.ts';
-import { createGraphics } from '../src/graphics.js';
+import { createGraphics } from '../src/graphics.ts';
 import { createOffice } from '../src/office.ts';
 import { enemyRoute, enemyRoutePosition, PORTALS } from '../src/routes.ts';
 import { wavePlan, swarmFrame } from '../src/waves.ts';

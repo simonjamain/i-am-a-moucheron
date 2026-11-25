@@ -24,8 +24,8 @@ import {
   sweptSphereProximity,
   closestSphereProximity,
   proximityRadius,
-} from '../src/mobile-flak.js';
-import { createGraphics } from '../src/graphics.js';
+} from '../src/mobile-flak.ts';
+import { createGraphics } from '../src/graphics.ts';
 import { TruckRig } from '../src/truck-physics.ts';
 import { loadRapier } from '../src/physics-world.ts';
 import { validMotion } from '../src/network.ts';

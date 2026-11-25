@@ -18,7 +18,7 @@ import {
   turnToward,
   CHARACTER_HEIGHT,
 } from '../src/character-model.ts';
-import { createGraphics } from '../src/graphics.js';
+import { createGraphics } from '../src/graphics.ts';
 import { PANEL_TINT, SIDE_SHADE } from '../src/appearance-picker.ts';
 import { Game } from '../server/game.js';
 import { OFFICE_SOLIDS } from '../server/assets.js';

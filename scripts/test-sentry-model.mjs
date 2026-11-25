@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import * as T from '../vendor/three.webgpu.min.js';
-import { GroundDefenseUI } from '../src/ground-defense-ui.js';
+import { GroundDefenseUI } from '../src/ground-defense-ui.ts';
 import {
   createSentryModel,
   sentryAimAngles,

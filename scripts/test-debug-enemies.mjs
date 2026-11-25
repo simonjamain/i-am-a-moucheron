@@ -16,7 +16,7 @@ import {
   standingHeight,
 } from '../src/debug-enemies.ts';
 import { ENEMY_TYPES, swarmFrame } from '../src/waves.ts';
-import { DEFAULT_BALANCE } from '../src/balance.js';
+import { DEFAULT_BALANCE } from '../src/balance.ts';
 import { enemyRoute, PORTALS } from '../src/routes.ts';
 import { fireGroundSentries, SENTRY } from '../src/ground-sentry.ts';
 import { GROUND_BOUNDS } from '../src/ground-defense.ts';

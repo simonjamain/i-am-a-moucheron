@@ -5,6 +5,7 @@ import { stepWalkerFall, impactDamage } from './field-physics.ts';
 import { MAP, ACTOR_UNIT, REFERENCE, FLAK } from './scale.ts';
 // Small vehicles keep their original dimensions; furniture uses the enlarged room.
 import { OFFICE_LAYOUT, ROOM_SCALE } from './layout.ts';
+import type { Graphics } from './graphics.ts';
 import type * as THREE from 'three/webgpu';
 import type { WalkerBody } from './field-physics.ts';
 import type { Three, XYZ } from './types.ts';
@@ -43,29 +44,8 @@ export interface WalkerImpact {
   speed: number;
   damage: number;
 }
-/** Mesh builders from createGraphics (graphics.js). */
-export interface StationGraphics {
-  box(
-    x: number,
-    y: number,
-    z: number,
-    w: number,
-    h: number,
-    d: number,
-    c: string,
-    parent?: THREE.Object3D,
-  ): THREE.Mesh;
-  cyl(
-    x: number,
-    y: number,
-    z: number,
-    rt: number,
-    rb: number,
-    h: number,
-    c: string,
-    parent?: THREE.Object3D,
-  ): THREE.Mesh;
-}
+/** Mesh builders from createGraphics (`graphics.ts`). */
+export type StationGraphics = Pick<Graphics, 'box' | 'cyl'>;
 export const BULLET_SPEED = MAP.metres(REFERENCE.bullet),
   FIRE_INTERVAL = 0.06,
   GEAR_HEIGHT = 1.05 * ACTOR_UNIT;

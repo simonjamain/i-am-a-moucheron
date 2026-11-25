@@ -1,4 +1,5 @@
 import { MAP, INSECT_SCALE, enemySizeFactor, GROUND_FOOT_DEPTH } from './scale.ts';
+import type { Balance } from './balance.ts';
 import { powerTable } from './enemy-power.ts';
 import { enemyRoutePosition, routeDuration } from './routes.ts';
 import type { RouteEnemy } from './routes.ts';
@@ -15,10 +16,8 @@ export interface SpeciesStats extends PowerStats {
 /** One ENEMY_TYPES entry: the typed-in statistics plus the computed power. */
 export type EnemyProfile = Readonly<SpeciesStats & { power: number }>;
 /** Live director tuning shared by the roster builders (subset of `Balance`). */
-export interface RosterBalance {
-  enemyHP: number;
-  enemySpeed: number;
-}
+/** The room settings a roster reads (`Balance` lives in `balance.ts`). */
+export type RosterBalance = Pick<Balance, 'enemyHP' | 'enemySpeed'>;
 /**
  * One roster entry: a species profile copied onto a scheduled, routed enemy.
  * Server, clients and tests share this shape (snapshots carry it as is).

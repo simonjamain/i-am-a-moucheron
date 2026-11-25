@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { timelineColumns, WaveCouncilUI } from '../src/wave-council-ui.js';
+import { timelineColumns, WaveCouncilUI } from '../src/wave-council-ui.ts';
 import { predictedGroundPaths } from '../src/wave-ground-paths.ts';
 import { groundFlow, groundCommand, newGroundDefense } from '../src/ground-defense-state.ts';
 import { enemyRoute, portalExit, PORTALS } from '../src/routes.ts';

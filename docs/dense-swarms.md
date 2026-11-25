@@ -11,7 +11,7 @@ Le roster est tiré par `prepareRoster()` (`server/wave-preparation.js`) en meut
 (`PACKS`) : règles de tirage, tailles, colosse et calendrier dans
 [progression](progression.md#composition). Les volants attendent 2 s à leur entrée, les
 terrestres 0,4 s, et les membres d'une meute sortent l'un après l'autre (`memberGap`).
-Le réglage de population de la salle (`scaleRoster`, `src/balance.js`) agrandit ou
+Le réglage de population de la salle (`scaleRoster`, `src/balance.ts`) agrandit ou
 réduit l'effectif en le répartissant sur toute la composition.
 
 `wavePlan()` (`src/waves.ts`) est un générateur déterministe de repli, utilisé quand
@@ -50,7 +50,7 @@ en retard, voient la même nuée sans serveur temps réel dédié.
   spatiale et sommés dans l'ordre des identifiants (résultat identique sur tous les
   clients). La correction est plafonnée et s'éteint aux extrémités du trajet.
 - **Terrestres** : le serveur simule leur position (`groundAgents`, foule de
-  `src/ground-crowd.js`) ; `swarmFrame()` reprend cette pose autoritaire. Sans pose, le repli place les membres d'une meute en files côte à côte
+  `src/ground-crowd.ts`) ; `swarmFrame()` reprend cette pose autoritaire. Sans pose, le repli place les membres d'une meute en files côte à côte
   (`GROUND_LANES`). Affichage côté client :
   [bestiaire](enemy-bestiary.md#mouvement-des-terrestres-côté-client).
 

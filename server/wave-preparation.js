@@ -1,7 +1,7 @@
 import { randomInt } from 'node:crypto';
 import { ENEMY_TYPES, ENEMY_UNLOCK_WAVE, MAX_WAVE_POPULATION } from '../src/waves.ts';
 import { routeDuration } from '../src/routes.ts';
-import { scaleRoster, DEFAULT_BALANCE } from '../src/balance.js';
+import { scaleRoster, DEFAULT_BALANCE } from '../src/balance.ts';
 
 const unlock = ENEMY_UNLOCK_WAVE;
 

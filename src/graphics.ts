@@ -18,20 +18,41 @@ import { createMidgeRig } from './midge-model.ts';
 import { WALKERS, walkerStride } from './walker-batch.ts';
 import { FLYERS } from './flyer-batch.ts';
 import { TAU } from './rigged-creature.ts';
+import type { CreatureRig } from './rigged-creature.ts';
 import {
   FLYER_HIT_TOLERANCE,
   GROUND_LEGS,
   MIDGE_HIT_TOLERANCE,
   MIDGE_SPHERE_RADIUS,
 } from './scale.ts';
-export function createGraphics(T, scene) {
-  const materials = new Map();
-  function mat(c) {
+import type * as THREE from 'three/webgpu';
+import type { Three } from './types.ts';
+import type { WalkerType } from './walker-batch.ts';
+import type { FlyerType } from './flyer-batch.ts';
+
+/** A colour accepted by `MeshStandardMaterial({ color })`. */
+type Color = THREE.ColorRepresentation;
+type Character = ReturnType<typeof createCharacter>;
+/** The model factory every scene module receives (`createGraphics(T, scene)`). */
+export type Graphics = ReturnType<typeof createGraphics>;
+
+export function createGraphics(T: Three, scene: THREE.Object3D) {
+  const materials = new Map<Color, THREE.MeshStandardMaterial>();
+  function mat(c: Color): THREE.MeshStandardMaterial {
     if (!materials.has(c))
       materials.set(c, new T.MeshStandardMaterial({ color: c, roughness: 0.75 }));
-    return materials.get(c);
+    return materials.get(c)!;
   }
-  function box(x, y, z, w, h, d, c, parent = scene) {
+  function box(
+    x: number,
+    y: number,
+    z: number,
+    w: number,
+    h: number,
+    d: number,
+    c: Color,
+    parent: THREE.Object3D = scene,
+  ) {
     const m = new T.Mesh(new T.BoxGeometry(w, h, d), mat(c));
     m.position.set(x, y, z);
     m.castShadow = true;
@@ -39,7 +60,16 @@ export function createGraphics(T, scene) {
     parent.add(m);
     return m;
   }
-  function cyl(x, y, z, rt, rb, h, c, parent = scene) {
+  function cyl(
+    x: number,
+    y: number,
+    z: number,
+    rt: number,
+    rb: number,
+    h: number,
+    c: Color,
+    parent: THREE.Object3D = scene,
+  ) {
     const m = new T.Mesh(new T.CylinderGeometry(rt, rb, h, 28), mat(c));
     m.position.set(x, y, z);
     m.castShadow = true;
@@ -47,18 +77,25 @@ export function createGraphics(T, scene) {
     parent.add(m);
     return m;
   }
-  function ball(x, y, z, r, c, parent = scene) {
+  function ball(
+    x: number,
+    y: number,
+    z: number,
+    r: number,
+    c: Color,
+    parent: THREE.Object3D = scene,
+  ) {
     const m = new T.Mesh(new T.SphereGeometry(r, 12, 8), mat(c));
     m.position.set(x, y, z);
     m.castShadow = true;
     parent.add(m);
     return m;
   }
-  function textLabel(text, color = '#d5ef73', scale = 12) {
+  function textLabel(text: string, color = '#d5ef73', scale = 12): THREE.Sprite {
     const c = document.createElement('canvas');
     c.width = 1024;
     c.height = 128;
-    const ctx = c.getContext('2d');
+    const ctx = c.getContext('2d')!;
     ctx.font = 'bold 70px sans-serif';
     ctx.textAlign = 'center';
     ctx.fillStyle = color;
@@ -70,8 +107,9 @@ export function createGraphics(T, scene) {
     s.scale.set(scale, scale / 8, 1);
     return s;
   }
-  function makePlane(color) {
-    return makeBiplane(T, scene, color, box, mat);
+  // `color` is kept for callers; the Meshy biplane carries its own livery.
+  function makePlane(color?: Color) {
+    return makeBiplane(T, scene);
   }
   // Remodelled Spitfire: real propeller, wings and six wing-gun muzzles.
   function makeSpitfire() {
@@ -90,7 +128,7 @@ export function createGraphics(T, scene) {
     return g;
   }
   function makeBomber() {
-    return makeBiplaneBomber(T, scene, box);
+    return makeBiplaneBomber(T, scene);
   }
   // The original light fighter and four-seat medium bomber (shop purchases).
   function makeLightFighter() {
@@ -144,9 +182,10 @@ export function createGraphics(T, scene) {
       ...[0, 1].map((i) => nodes['sprocket' + i]),
     ];
     for (const wheel of gear) {
-      const geometry = wheel.children.find((c) => c.isMesh).geometry;
+      const geometry = (wheel.children.find((c) => (c as THREE.Mesh).isMesh) as THREE.Mesh)
+        .geometry;
       geometry.computeBoundingBox();
-      wheel.userData.radius = (geometry.boundingBox.max.y - geometry.boundingBox.min.y) / 2;
+      wheel.userData.radius = (geometry.boundingBox!.max.y - geometry.boundingBox!.min.y) / 2;
     }
     // Deformable tracks: own, finely cut belt geometry, and wheels that ride the terrain.
     const tracks = [nodes.trackL, nodes.trackR];
@@ -170,8 +209,9 @@ export function createGraphics(T, scene) {
   function makeFlyingCastor() {
     return makeFlyingCastorMeshy(T, scene);
   }
-  function makeHelicopter(color) {
-    return makeH2(T, scene, color, box, mat);
+  // `color` is kept for callers; the Meshy H2 carries its own livery.
+  function makeHelicopter(color?: Color) {
+    return makeH2(T, scene);
   }
   // Remodelled D2: truck towing an articulated trailer whose carriage yaws
   // and whose twin guns elevate; pivots match src/vehicle-anchors.ts.
@@ -191,13 +231,13 @@ export function createGraphics(T, scene) {
     return g;
   }
 
-  function insect(type = 'midge') {
+  function insect(type: string = 'midge'): THREE.Group {
     const g = new T.Group();
     g.userData.hitTolerance = type === 'midge' ? MIDGE_HIT_TOLERANCE : 1;
-    if (WALKERS[type]) {
+    if ((WALKERS as Record<string, unknown>)[type]) {
       // Rigged Meshy walkers (corpses, purgatory souls, non-WebGL fallback).
       // Living WebGL walkers are drawn by WalkerBatch; hits use the ellipsoid.
-      const walker = WALKERS[type];
+      const walker = WALKERS[type as WalkerType];
       const rig = walker.creature.createRig(T);
       rig.mesh.castShadow = true;
       g.add(rig.container);
@@ -212,21 +252,23 @@ export function createGraphics(T, scene) {
         hitCentre: [...walker.hit.centre],
         walk: rig,
         // Purgatory souls: walk at their physical speed (world units per second).
-        animate(dt, { speed = 0 } = {}) {
-          if (speed > 1e-6) rig.pose(rig.phase + (speed * dt) / walkerStride(type, g.scale.x));
+        animate(dt: number, { speed = 0 }: { speed?: number } = {}) {
+          if (speed > 1e-6)
+            rig.pose(rig.phase + (speed * dt) / walkerStride(type as WalkerType, g.scale.x));
         },
       };
       scene.add(g);
       return g;
     }
-    if (FLYERS[type]) {
+    if ((FLYERS as Record<string, unknown>)[type]) {
       // Rigged Meshy flyers (corpses, purgatory souls, non-WebGL fallback).
       // Living WebGL flyers are drawn by FlyerBatch; hits use the ellipsoid.
-      const flyer = FLYERS[type];
-      const rig = flyer.creature.createRig(T);
+      const flyer = FLYERS[type as FlyerType];
+      const rig: CreatureRig & { animate?: (ms: number, phase?: number) => CreatureRig } =
+        flyer.creature.createRig(T);
       rig.mesh.castShadow = true;
       // Flight cycle at time `ms` for a flyer whose roster phase is in radians.
-      rig.animate = (ms, phase = 0) => rig.pose(ms / 1000 / flyer.flight.loop + phase / TAU);
+      rig.animate = (ms: number, phase = 0) => rig.pose(ms / 1000 / flyer.flight.loop + phase / TAU);
       g.add(rig.container);
       g.userData = {
         enemyType: type,
@@ -238,7 +280,7 @@ export function createGraphics(T, scene) {
         ...hitUserData(flyer.hit),
         flight: rig,
         // Purgatory souls keep beating their wings.
-        animate(dt) {
+        animate(dt: number) {
           rig.pose(rig.phase + dt / flyer.flight.loop);
         },
       };
@@ -274,7 +316,7 @@ export function createGraphics(T, scene) {
       );
       shell.scale.set(0.7, 0.45, 1.3);
       const head = ball(0, 0, -0.55, 0.25, '#e0bc72', g),
-        legs = [];
+        legs: THREE.Mesh[] = [];
       if (type === 'ant') ball(0, 0, 0.5, 0.3, '#d59b4d', g);
       for (const side of [-1, 1])
         for (let i = 0; i < 3; i++) {
@@ -306,9 +348,11 @@ export function createGraphics(T, scene) {
       0.18,
       -0.55,
       0.3,
-      {
-        midge: '#c6b96e',
-      }[type],
+      (
+        {
+          midge: '#c6b96e',
+        } as Record<string, string>
+      )[type],
       g,
     );
     const wm = new T.MeshStandardMaterial({
@@ -317,7 +361,7 @@ export function createGraphics(T, scene) {
       opacity: 0.55,
       side: T.DoubleSide,
     });
-    const wings = [];
+    const wings: THREE.Mesh[] = [];
     for (const s of [-1, 1]) {
       const w = new T.Mesh(new T.SphereGeometry(1, 8, 6), wm);
       w.scale.set(1, 0.025, 0.45);
@@ -332,7 +376,16 @@ export function createGraphics(T, scene) {
     scene.add(g);
     return g;
   }
-  function pm(parent, w, h, d, color, x = 0, y = 0, z = 0) {
+  function pm(
+    parent: THREE.Object3D,
+    w: number,
+    h: number,
+    d: number,
+    color: Color,
+    x = 0,
+    y = 0,
+    z = 0,
+  ) {
     const m = new T.Mesh(
       new T.BoxGeometry(w, h, d),
       new T.MeshStandardMaterial({ color, roughness: 0.8 }),
@@ -347,10 +400,10 @@ export function createGraphics(T, scene) {
   // loaded yet). userData.setAppearance(id) swaps the model in place, keeping
   // everything attached to the group.
   // The second argument is no longer used (it chose the former blocky Saint Pierre).
-  function humanoid(color, _unused = false, appearance) {
+  function humanoid(color?: Color, _unused = false, appearance?: unknown): THREE.Group {
     const g = new T.Group();
-    let character;
-    function wear(id) {
+    let character: Character;
+    function wear(id: unknown) {
       if (character) g.remove(character.container);
       character = createCharacter(T, id);
       character.container.scale.setScalar(LEGACY_HEIGHT / CHARACTER_HEIGHT);
@@ -359,11 +412,11 @@ export function createGraphics(T, scene) {
       g.userData.appearance = character.appearance;
     }
     g.userData = {
-      setAppearance(id) {
+      setAppearance(id: unknown) {
         if (id !== character.appearance) wear(id);
       },
       // state: { speed, seated, falling, parachute }
-      animate(dt, state = {}) {
+      animate(dt: number, state: Parameters<Character['update']>[1] = {}) {
         character.update(dt, state);
       },
     };

@@ -10,7 +10,7 @@ import { OFFICE_LAYOUT } from '../src/layout.ts';
 import { OFFICE_SOLIDS } from '../server/assets.js';
 import { fullAmmo, inRadarCoverage } from '../src/logistics.ts';
 import { WALKER_FALL, stepWalkerFall, impactDamage } from '../src/field-physics.ts';
-import { createGraphics } from '../src/graphics.js';
+import { createGraphics } from '../src/graphics.ts';
 import { insectScale } from '../src/insect-status.ts';
 import { nearestInsectHit } from './insect-harness.mjs';
 import { controlHints, cursorStats } from '../src/live-hud.ts';

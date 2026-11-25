@@ -2,11 +2,19 @@ import { rotateLocal } from './helicopter.ts';
 import { VEHICLES } from './fleet.ts';
 import { MAP, ACTOR_UNIT } from './scale.ts';
 import { VEHICLE_ANCHORS } from './vehicle-anchors.ts';
+import type { VehicleType } from './fleet.ts';
+import type { Vec3 } from './types.ts';
+
+/** Vehicle fields the flak geometry reads (a room vehicle or snapshot entry). */
+export interface FlakVehicle {
+  type: VehicleType;
+  state: { p: readonly number[]; q: readonly number[]; trailerAngle?: number };
+}
 
 // D2 geometry shared with its model: trailer hitch, gun pivot and hulls.
 const D2 = VEHICLE_ANCHORS.flaktruck;
 // Gun pivot in the vehicle frame for a trailer angle (trailer yaws at the hitch).
-export function trailerGunPivot(angle) {
+export function trailerGunPivot(angle: number): Vec3 {
   const [x, y, z] = D2.gunOffset,
     c = Math.cos(angle),
     s = Math.sin(angle);
@@ -25,12 +33,12 @@ export const MOBILE_FUSE = Object.freeze({
   initial: 5,
   armedAt: 0.3,
 });
-export const clampProximity = (value) =>
+export const clampProximity = (value: number | undefined | null): number =>
   Math.max(
     MOBILE_FUSE.min,
-    Math.min(MOBILE_FUSE.max, Number.isFinite(value) ? value : MOBILE_FUSE.initial),
+    Math.min(MOBILE_FUSE.max, Number.isFinite(value) ? (value as number) : MOBILE_FUSE.initial),
   );
-export function mobileBarrelOrigin(vehicle, direction) {
+export function mobileBarrelOrigin(vehicle: FlakVehicle, direction: readonly number[]): number[] {
   const q = vehicle.state.q;
   const angle = vehicle.state.trailerAngle || 0;
   const local = trailerGunPivot(angle).map((v) => v * ACTOR_UNIT);
@@ -47,7 +55,12 @@ export function mobileBarrelOrigin(vehicle, direction) {
   ];
   return vehicle.state.p.map((v, i) => v + offset[i] + direction[i] * D2.gunLength * ACTOR_UNIT);
 }
-export function fuseSegment(a, b, ageBefore, ageAfter) {
+export function fuseSegment(
+  a: readonly number[],
+  b: readonly number[],
+  ageBefore: number,
+  ageAfter: number,
+): { a: number[]; t: number } | null {
   if (ageAfter < MOBILE_FUSE.armedAt - 1e-12) return null;
   const t = Math.max(
     0,
@@ -55,14 +68,20 @@ export function fuseSegment(a, b, ageBefore, ageAfter) {
   );
   return { a: a.map((v, i) => v + (b[i] - v) * t), t };
 }
-export const proximityRadius = (value) => MAP.metres(clampProximity(value));
+export const proximityRadius = (value: number | undefined | null): number => MAP.metres(clampProximity(value));
 
 // Physical hull envelopes; decorative labels and projectiles are not colliders.
 // Test in local coordinates so an articulated trailer follows its own axis.
-export function sweptVehicle(a, b, vehicle, radius = 0, closest = false) {
+export function sweptVehicle(
+  a: readonly number[],
+  b: readonly number[],
+  vehicle: FlakVehicle,
+  radius = 0,
+  closest = false,
+): number | null {
   const q = vehicle.state.q,
     inverse = [-q[0], -q[1], -q[2], q[3]];
-  const local = (p) =>
+  const local = (p: readonly number[]) =>
     rotateLocal(
       inverse,
       p.map((v, i) => v - vehicle.state.p[i]),
@@ -89,20 +108,20 @@ export function sweptVehicle(a, b, vehicle, radius = 0, closest = false) {
       radius,
       closest,
     );
-  const scale = (lo, hi) => ({
+  const scale = (lo: readonly number[], hi: readonly number[]) => ({
     min: { x: lo[0] * ACTOR_UNIT, y: lo[1] * ACTOR_UNIT, z: lo[2] * ACTOR_UNIT },
     max: { x: hi[0] * ACTOR_UNIT, y: hi[1] * ACTOR_UNIT, z: hi[2] * ACTOR_UNIT },
   });
-  const tractor = sweptBoxProximity(A, B, scale(...D2.tractorBox), radius, closest);
+  const tractor = sweptBoxProximity(A, B, scale(...(D2.tractorBox as [number[], number[]])), radius, closest);
   const angle = -(vehicle.state.trailerAngle || 0),
     c = Math.cos(angle),
     sn = Math.sin(angle);
   // Trailer frame: origin at the hitch, rotated with the trailer.
-  const trailer = (p) => {
+  const trailer = (p: readonly number[]): Vec3 => {
     const x = p[0] - D2.hitch[0] * ACTOR_UNIT,
       z = p[2] - D2.hitch[2] * ACTOR_UNIT;
     return [c * x + sn * z, p[1] - D2.hitch[1] * ACTOR_UNIT, -sn * x + c * z];
   };
-  const t = sweptBoxProximity(trailer(A), trailer(B), scale(...D2.trailerBox), radius, closest);
+  const t = sweptBoxProximity(trailer(A), trailer(B), scale(...(D2.trailerBox as [number[], number[]])), radius, closest);
   return tractor === null ? t : t === null ? tractor : Math.min(tractor, t);
 }

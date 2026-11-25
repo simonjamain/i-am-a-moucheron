@@ -30,7 +30,7 @@ import {
   fuseSegment,
   sweptSphereProximity,
   closestSphereProximity,
-} from './mobile-flak.js';
+} from './mobile-flak.ts';
 
 function enemyRadius(enemy) {
   return enemy.type === 'midge' || enemy.type === 'spiderling'

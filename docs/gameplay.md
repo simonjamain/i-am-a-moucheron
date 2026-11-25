@@ -2,7 +2,7 @@
 
 Vue d’ensemble des règles et du parcours joueur. Chaque section renvoie à la
 référence détaillée de son sujet ; les touches sont dans [commandes](controls.md).
-Valeurs par défaut de la room : `src/balance.js` ; catalogue et prix : `src/equipment.ts`.
+Valeurs par défaut de la room : `src/balance.ts` ; catalogue et prix : `src/equipment.ts`.
 
 ## Principe
 
@@ -179,7 +179,7 @@ banque, ni atelier, ni construction.
 ## Défenses terrestres
 
 À pied au sol du bureau ou au volant du Castor, maintenir **G** (ou le clic molette)
-ouvre la roue de construction (`src/ground-defense-ui.js`) : barricade, sucre,
+ouvre la roue de construction (`src/ground-defense-ui.ts`) : barricade, sucre,
 ruban, réparer, enlever, tourelle auto, canon anti-matériel. L’aperçu suit le point
 visé par la caméra ; une paroi ou un point hors de portée refuse la pose.
 
@@ -213,7 +213,7 @@ la durée du trajet. Un brouillon de barricade montre le détour ; sans chemin,
 l’aperçu affiche « Passage fermé » et cafards, araignées et rats attaquent la
 barricade la plus proche.
 
-`src/ground-crowd.js` sépare les individus par sous-pas de 50 ms au plus : espace
+`src/ground-crowd.ts` sépare les individus par sous-pas de 50 ms au plus : espace
 personnel souple proportionnel à la taille, ralentissement derrière un voisin,
 contournement, sans pousser à travers mobilier ou défenses ; la vitesse reste
 celle du [bestiaire](enemy-bestiary.md). Sucre et ruban gardent leurs pauses.

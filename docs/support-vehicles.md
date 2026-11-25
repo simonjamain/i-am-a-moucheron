@@ -84,7 +84,7 @@ châssis (`flakPitchAllowed`).
 un départ toutes les 0,8 s, durée de vie 9 s. Souffle de 30 m de référence, 80 au centre
 et 20 au bord, occulté par le décor, alliés compris.
 
-**Fusée** (`MOBILE_FUSE`, `src/mobile-flak.js`) : la molette du tireur règle la
+**Fusée** (`MOBILE_FUSE`, `src/mobile-flak.ts`) : la molette du tireur règle la
 distance de détection, de 0,5 à 20 m de référence par pas de 0,5 (5 m au départ),
 affichée en distance réelle du bureau (1,5 mm à 6 cm). Le réglage est copié au départ de
 chaque obus ; la molette ne change ni les gaz ni le zoom.

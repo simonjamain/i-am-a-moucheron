@@ -1,5 +1,5 @@
 import * as T from '../vendor/three.webgpu.min.js';
-import { createGraphics } from '../src/graphics.js';
+import { createGraphics } from '../src/graphics.ts';
 import { mkdir, writeFile } from 'node:fs/promises';
 const current = createGraphics(T, new T.Scene());
 function panel(model, x, y, size, title) {

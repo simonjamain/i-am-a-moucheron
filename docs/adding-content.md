@@ -56,7 +56,7 @@ sans liste de types à recopier ailleurs.
    tableau des rôles pour les sièges spécifiques).
 5. Armes et réserves : `src/armament.ts` (nouvelle arme lourde : entrée `HEAVY`, forme
    `HeavyWeapon`), `src/logistics.ts`, `src/ordnance.js`.
-6. Rendu et HUD : `src/graphics.js` (modèle), `src/hud.js`, `src/shop-thumbs.js` ;
+6. Rendu et HUD : `src/graphics.ts` (modèle), `src/hud.js`, `src/shop-thumbs.js` ;
    postes visables de chaque siège dans `src/seat-posts.ts` (`scripts/test-seat-posts.mjs`
    exige un poste par siège).
 7. Autorité : `server/game.js` pour toute arme lourde ou règle simulée au serveur.

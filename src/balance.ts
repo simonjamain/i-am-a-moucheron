@@ -1,4 +1,14 @@
 import { assignMidgeSwarmSizes } from './waves.ts';
+import type { WaveEnemy } from './waves.ts';
+
+/** One tunable room setting: its form label, validation grid and default value. */
+export interface BalanceField {
+  label: string;
+  min: number;
+  step: number;
+  value: number;
+  when: string;
+}
 
 // Room-local settings. No mutable module-level gameplay configuration.
 export const BALANCE_FIELDS = Object.freeze({
@@ -114,17 +124,22 @@ export const BALANCE_FIELDS = Object.freeze({
     value: 180,
     when: 'Pause en cours, préavis minimum de 5 secondes',
   },
-});
-export const DEFAULT_BALANCE = Object.freeze(
+} satisfies Record<string, BalanceField>);
+export type BalanceKey = keyof typeof BALANCE_FIELDS;
+/** A room's full settings, one number per field (`room.balance`). */
+export type Balance = Record<BalanceKey, number>;
+export const DEFAULT_BALANCE: Readonly<Balance> = Object.freeze(
   Object.fromEntries(Object.entries(BALANCE_FIELDS).map(([key, field]) => [key, field.value])),
-);
-export function validateBalance(patch) {
+) as Readonly<Balance>;
+export function validateBalance(patch: unknown): Partial<Balance> {
   if (!patch || typeof patch !== 'object' || Array.isArray(patch))
     throw Error('Réglages invalides.');
   for (const [key, value] of Object.entries(patch)) {
-    const field = Object.hasOwn(BALANCE_FIELDS, key) && BALANCE_FIELDS[key];
+    const field: BalanceField | false =
+      Object.hasOwn(BALANCE_FIELDS, key) && BALANCE_FIELDS[key as BalanceKey];
     if (
       !field ||
+      typeof value !== 'number' ||
       !Number.isFinite(value) ||
       value < field.min ||
       Math.abs((value - field.min) / field.step - Math.round((value - field.min) / field.step)) >
@@ -132,10 +147,13 @@ export function validateBalance(patch) {
     )
       throw Error('Réglage invalide : ' + key);
   }
-  return patch;
+  return patch as Partial<Balance>;
 }
-export const money = (value, factor = 1) => Math.round(value * factor * 100) / 100;
-export function scaleRoster(plan, balance) {
+export const money = (value: number, factor = 1): number => Math.round(value * factor * 100) / 100;
+export function scaleRoster<E extends WaveEnemy>(
+  plan: { budget: number; roster: readonly E[] },
+  balance: Pick<Balance, 'population' | 'enemyHP' | 'enemySpeed'>,
+): { budget: number; roster: E[] } {
   const original = plan.roster;
   const count = Math.max(1, Math.round(original.length * balance.population));
   // Spread reduced populations across the original composition rather than removing late species.
@@ -156,7 +174,7 @@ export function scaleRoster(plan, balance) {
   });
   return { budget: plan.budget, roster: assignMidgeSwarmSizes(roster) };
 }
-export function retimeRoster(roster, time, ratio) {
+export function retimeRoster(roster: readonly WaveEnemy[], time: number, ratio: number): void {
   for (const enemy of roster) {
     // Scale the entire age and duration together, preserving route progress and entry hold.
     if (time >= enemy.spawn) enemy.spawn = time - (time - enemy.spawn) / ratio;

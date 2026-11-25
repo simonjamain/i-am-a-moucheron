@@ -5,7 +5,7 @@ import { VEHICLES } from '../src/fleet.ts';
 import { fullAmmo, ammoCapacity } from '../src/logistics.ts';
 import { canUseWeapon } from '../src/armament.ts';
 import { withinService, advancePaidService } from '../src/paid-service.ts';
-import { createGraphics } from '../src/graphics.js';
+import { createGraphics } from '../src/graphics.ts';
 import { CastorRig } from '../src/castor-physics.ts';
 import { loadRapier } from '../src/physics-world.ts';
 import { ACTOR_UNIT } from '../src/scale.ts';

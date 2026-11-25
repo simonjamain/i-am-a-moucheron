@@ -8,7 +8,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import * as T from '../vendor/three.webgpu.min.js';
 import { MODEL_DATA } from '../src/meshy-flying-castor-data.ts';
-import { createGraphics } from '../src/graphics.js';
+import { createGraphics } from '../src/graphics.ts';
 import { ACTOR_UNIT } from '../src/scale.ts';
 import {
   VEHICLES,
@@ -281,7 +281,7 @@ assert.match(
 );
 assert.match(client, /if \(airView\(\)\) return; \/\/ vertical view: keyboard only/);
 assert.match(client, /hull\.visible = !\(airView\(\) && myVehicle\?\.id === v\.id\)/);
-const ui = readFileSync('src/ground-defense-ui.js', 'utf8');
+const ui = readFileSync('src/ground-defense-ui.ts', 'utf8');
 assert.match(ui, /renderDrops\(snap\)/);
 assert.match(ui, /deliveryHeightAt\(drop, now\)/);
 assert.ok(
