@@ -12,8 +12,12 @@ déclarées par les clients ([confiance](trust-model.md)).
 Chaque âme d’insecte libérée (servie par Saint Pierre ou abattue dans son ciel) crédite
 une fois la puissance de son espèce (`releaseSoul`, `reward`) ; le passage de l’âme à
 l’état `gone` garantit le crédit unique. Sans joueur au purgatoire, le serveur sert
-lui-même la file ([file](purgatory-queue.md)). Le compteur `rewardCount`, qui déclenche
-le son des gains, est distinct du solde dépensable.
+lui-même la file ([file](purgatory-queue.md)).
+
+Le son des gains suit le compteur `rewardCount` (dollars entiers gagnés), distinct du
+solde dépensable. `RewardQueue` (`src/rewards.ts`) prend une base au chargement, ignore
+les compteurs qui reculent et joue une note de machine à sous par dollar, espacées de
+290 ms, sans superposition.
 
 ## Acheter : le bon signé
 
@@ -58,14 +62,14 @@ vivants (terrestre et volant), chacun dans une sphère de **0,50 m réel**
 d’être arrêté : un appareil en vol ou qui roule est servi. Un véhicule de soutien se
 sert lui-même.
 
-| Fourniture (`SERVICE_RATES`)  | Prix                                     |
-| ----------------------------- | ---------------------------------------- |
-| PV (coque, barricades, tours) | 1 $ / 100 PV ; moteur/aile au même tarif |
-| Carburant                     | 1 $ / 60 s                               |
-| Balles                        | 1 $ / 1 000                              |
-| Obus, roquettes               | 1 $ / 10                                 |
-| Bombes                        | 1 $ / 5                                  |
-| Missiles                      | 1 $ / 2                                  |
+| Fourniture (`SERVICE_RATES`)  | Prix                                            |
+| ----------------------------- | ----------------------------------------------- |
+| PV (coque, barricades, tours) | 1 $ / 100 PV ; moteur ou aile : 1 $ de 0 à neuf |
+| Carburant                     | 1 $ / 60 s                                      |
+| Balles                        | 1 $ / 1 000                                     |
+| Obus, roquettes               | 1 $ / 10                                        |
+| Bombes                        | 1 $ / 5                                         |
+| Missiles                      | 1 $ / 2                                         |
 
 - Débit : une réserve se remplit en `SERVICE_SECONDS` (10 s) du vide au plein ; les PV
   remontent d’au plus 10 % du maximum par seconde.
@@ -84,8 +88,9 @@ sert lui-même.
 
 ## Constructions au tronçon
 
-Les constructions du Castor se paient à la signature ; les longueurs suivent
-`lengthPrice` (`src/ground-defense-state.ts`) au centime près.
+Les constructions de la roue (à pied, au Castor ou en largage du Castor volant) sont
+débitées à la commande par `groundCommand` (`src/ground-defense-state.ts`) ; les
+longueurs suivent `lengthPrice` au centime près.
 
 | Construction              | Prix                                               |
 | ------------------------- | -------------------------------------------------- |
@@ -94,7 +99,8 @@ Les constructions du Castor se paient à la signature ; les longueurs suivent
 | Sucre                     | 3 $                                                |
 | Tourelle automatique T-01 | 5 $                                                |
 | Canon anti-matériel       | 14 $                                               |
-| Gatling                   | 25 $                                               |
+| Gatling (amélioration)    | 25 $                                               |
+| Réparer / enlever         | 1 $ (remise à neuf complète) / gratuit             |
 
 Mur (`src/brick-rules.ts`) : briques de 24 mm (demi-brique 12 mm), deux rangées
 décalées. La longueur validée est arrondie vers le bas au pas de 12 mm ; une portion
@@ -112,6 +118,7 @@ limites et règles de pose restent appliquées.
 ## Vérifier
 
 - `scripts/test-paid-service.mjs` : sources, tarifs, partage équitable, caisse vide.
+- `scripts/test-seat-contracts.mjs` : séquence sonore des gains (`RewardQueue`).
 - `scripts/test-fixed-dca-ammo.mjs` : stocks et recharge des DCA fixes.
 - `scripts/test-castor-repair.mjs` : réparation des barricades et tourelles.
 - `scripts/test-service-placement.mjs`, `scripts/test-ground-placement.mjs` : pose dans

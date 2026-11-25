@@ -56,7 +56,8 @@ purgatoire ([file](docs/purgatory-queue.md), [ciel](docs/purgatory-sky.md), [dé
 [autorité et corps partagés](docs/walking-network.md) · [serveur et transport](docs/udp-server.md) ·
 physique ([Rapier](docs/physics-engine.md), [avions](docs/plane-physics.md),
 [hélicoptères](docs/heli-physics.md), [rubans d'air](docs/air-ribbons.md),
-[collisions](docs/collisions.md), [affichage debug](docs/physics-debug.md)) ·
+[collisions](docs/collisions.md), [insectes](docs/insects-rapier.md),
+[affichage debug](docs/physics-debug.md)) ·
 [performances](docs/performance.md) · [TypeScript](docs/typescript.md) ·
 [ajouter du contenu](docs/adding-content.md)
 

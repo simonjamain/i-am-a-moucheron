@@ -99,23 +99,23 @@ logique du [gestionnaire de voix](audio.md). Aucun message réseau n'est ajouté
 - **Caméra de poursuite** : `followMoving` (`src/camera-follow.ts`) résout le
   suivi pour une cible qui avance : le retard reste `v/k` quelle que soit la
   durée de l'image.
-- **Engins des autres** : `PoseSmoother` (`src/pose-smoother.ts`) affiche cible
-  - erreur : un saut de source (flux réseau ou état serveur) est absorbé puis
-    l'erreur décroît (τ = 0,2 s) sans recul. La rotation reste suivie par `slerp`.
+- **Engins des autres** : `PoseSmoother` (`src/pose-smoother.ts`) affiche la cible plus une
+  erreur : un saut de source (flux réseau ou état serveur) est absorbé, puis l'erreur décroît
+  (τ = 0,2 s) sans recul. La rotation reste suivie par `slerp`.
 
 ## Mesurer
 
 Les temps sont des temps CPU dépendant de la machine ; ils ne mesurent ni FPS,
 ni GPU, ni WAN.
 
-| Commande                                     | Mesure                                                                                                                                                                                              |
-| -------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `npm run bench:room-sync`                    | Réponse `sync` complète (commande, simulation, snapshot, encodage, découpage) pour N joueurs et E ennemis, horloge simulée à 4 `sync`/s. Arguments : `node scripts/benchmark-room-sync.mjs 50 900`. |
-| `npm run bench:collisions`                   | Volumes de tir des insectes : replacement par image et rayon pour 100, 900 et 3 000.                                                                                                                |
-| `npm run bench:swarm-50`                     | 50 segments de véhicules contre 900 sphères, avec et sans phase large (CI).                                                                                                                         |
-| `npm run bench:udp-replies`                  | Encodage des réponses de vagues réelles, premier envoi et rejeu.                                                                                                                                    |
-| `npm run bench:tracers`                      | Objets de rendu, triangles et préparation des matrices des traceurs.                                                                                                                                |
-| `node scripts/benchmark-motion-rounds.mjs`   | Taille d'un mouvement binaire avec compteur de tirs et ricochets.                                                                                                                                   |
+| Commande                                   | Mesure                                                                                                                                                                                              |
+| ------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `npm run bench:room-sync`                  | Réponse `sync` complète (commande, simulation, snapshot, encodage, découpage) pour N joueurs et E ennemis, horloge simulée à 4 `sync`/s. Arguments : `node scripts/benchmark-room-sync.mjs 50 900`. |
+| `npm run bench:collisions`                 | Volumes de tir des insectes : replacement par image et rayon pour 100, 900 et 3 000.                                                                                                                |
+| `npm run bench:swarm-50`                   | 50 segments de véhicules contre 900 sphères, avec et sans phase large (CI).                                                                                                                         |
+| `npm run bench:udp-replies`                | Encodage des réponses de vagues réelles, premier envoi et rejeu.                                                                                                                                    |
+| `npm run bench:tracers`                    | Objets de rendu, triangles et préparation des matrices des traceurs.                                                                                                                                |
+| `node scripts/benchmark-motion-rounds.mjs` | Taille d'un mouvement binaire avec compteur de tirs et ricochets.                                                                                                                                   |
 
 Ordre de grandeur (`bench:room-sync`, conteneur de développement) : à 50 joueurs
 et 900 ennemis, environ 1,4 ms et 4 Ko par `sync` courant, 90 Ko pour le premier.

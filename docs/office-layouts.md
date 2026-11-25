@@ -26,8 +26,8 @@ haut, sous la couche de nuages) avant de plonger vers la corbeille.
 
 ## Décor : le Cartoon Office Pack
 
-Chaque plan est meublé avec les modèles du **Cartoon Office Pack** de BloxBits (pack acheté, licence et import : [pipeline des
-assets](asset-pipeline.md#cartoon-office-pack-bloxbits)). `diagonale` est le bureau
+Chaque plan est meublé avec les modèles du **Cartoon Office Pack** de BloxBits (pack acheté, licence et import : [catalogue des
+modèles](models.md#cartoon-office-pack-bloxbits)). `diagonale` est le bureau
 complet de référence : îlots de postes de travail encombrés, archives et leur
 couloir, tableau blanc, coin cuisine avec distributeur, coin attente, porte et son
 couloir, habillage mural (horloge, calendrier, tableau en liège, extincteur, prises)

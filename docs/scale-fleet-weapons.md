@@ -82,9 +82,11 @@ la poussée sans figer le vol.
   plus, dix débris chacune, chute bornée à 16 s, disparition 4 s après l'impact). Une
   connexion tardive reconstruit la phase atteinte sans rejouer les sons. Ces effets ne
   sont pas des surfaces de collision.
-
-Les identités visuelles (pastilles, teintes, inscriptions) sont décrites dans
-[logistique](logistics-contracts.md).
+- **Plaques des occupants.** Aucune couleur d’identité par joueur ou par appareil : les
+  modèles gardent leurs couleurs (`paintVehicle`, `src/vehicle-livery.ts`). Les noms des
+  occupants sont des plaques fixées aux deux flancs de la carrosserie, près de chaque
+  poste ; elles suivent l’appareil et ne font pas face à la caméra. Un changement
+  d’équipage remplace leurs textures ; un équipage identique les réutilise.
 
 ## Armement
 

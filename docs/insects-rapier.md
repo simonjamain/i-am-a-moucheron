@@ -3,15 +3,15 @@
 Ce qui, chez les insectes, passe par le moteur [Rapier](physics-engine.md) et ce qui reste
 calculé par le jeu.
 
-| Sujet                       | Où                                                                 | Calcul                                                                                                                |
-| --------------------------- | ------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------- |
-| Volumes de tir              | `insect-hitboxes.ts` (`InsectHitboxes`)                            | **Rapier** : un collider sans corps par insecte vivant, replacé sur son modèle à chaque image.                        |
+| Sujet                        | Où                                                                 | Calcul                                                                                                                |
+| ---------------------------- | ------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------- |
+| Volumes de tir               | `insect-hitboxes.ts` (`InsectHitboxes`)                            | **Rapier** : un collider sans corps par insecte vivant, replacé sur son modèle à chaque image.                        |
 | Cibles du ciel du purgatoire | `sky-targets.ts` (`SkyTargets`)                                    | **Rapier** : une sphère par âme d'insecte, Saint Pierre et le garde VIP, dans un monde `InsectHitboxes`.              |
-| Insectes volants            | `waves.ts` (`swarmFrame`, `midgeDisplacement`), `routes.ts`        | Position en forme fermée depuis identifiant, route et heure du serveur : identique chez tous, sans état.              |
-| Tracé des routes            | `routes.ts`, `route-navigation.ts` (`blockedSegment`, `floorPath`) | Segments contre les **boîtes** (décor compris, sans ses triangles), A\* sur une grille de 16 cm pour la route au sol. |
-| Insectes au sol             | `ground-creatures.ts`, `ground-defense.ts`                         | Serveur seul, à état : appâts, repas, rubans, barricades ; champs de flux (`GroundFlow`) sur une grille.              |
-| Obus lourds, proximité      | `heavy-sim.js`                                                     | Segment contre la sphère de chaque insecte à l'heure du sous-pas (phase large `sweptSphereMayTouch`).                 |
-| Âmes ennemies du purgatoire | `purgatory-queue.ts`                                               | Une place par formule, sans collision entre elles ([file du purgatoire](purgatory-queue.md)).                         |
+| Insectes volants             | `waves.ts` (`swarmFrame`, `midgeDisplacement`), `routes.ts`        | Position en forme fermée depuis identifiant, route et heure du serveur : identique chez tous, sans état.              |
+| Tracé des routes             | `routes.ts`, `route-navigation.ts` (`blockedSegment`, `floorPath`) | Segments contre les **boîtes** (décor compris, sans ses triangles), A\* sur une grille de 16 cm pour la route au sol. |
+| Insectes au sol              | `ground-creatures.ts`, `ground-defense.ts`                         | Serveur seul, à état : appâts, repas, rubans, barricades ; champs de flux (`GroundFlow`) sur une grille.              |
+| Obus lourds, proximité       | `heavy-sim.js`                                                     | Segment contre la sphère de chaque insecte à l'heure du sous-pas (phase large `sweptSphereMayTouch`).                 |
+| Âmes ennemies du purgatoire  | `purgatory-queue.ts`                                               | Une place par formule, sans collision entre elles ([file du purgatoire](purgatory-queue.md)).                         |
 
 ## Volumes de tir
 

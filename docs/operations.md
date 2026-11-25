@@ -10,8 +10,7 @@ n'affirment pas une installation sur le VPS sans accès et résultat vérifiés.
 
 Le serveur Node garde les salles en RAM : un redémarrage, donc chaque déploiement, efface
 les parties. HTTP sert les assets, `/healthz` et la négociation WebRTC ; le gameplay passe
-en UDP, avec un secours TCP WebSocket ; les anciennes routes HTTP (`/api/join`…) renvoient
-410. HTTPS, IP annoncée, pare-feu et plage UDP : [serveur UDP](udp-server.md). Image
+en UDP, avec un secours TCP WebSocket ; les anciennes routes HTTP (`/api/join`…) renvoient 410. HTTPS, IP annoncée, pare-feu et plage UDP : [serveur UDP](udp-server.md). Image
 locale : [Docker](docker.md).
 
 ## Lancer en local

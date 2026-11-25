@@ -24,8 +24,8 @@ en tire :
   selon l'envergure.
 
 Les roues principales sont des pièces du modèle (`wheelL` / `wheelR`, moyeux
-compris, `scripts/rig-biplane-wheels.mjs`, `scripts/rig-aircraft-wheels.mjs`) :
-`poseWheels` (`src/aircraft-wheels.ts`) les monte selon la compression des
+compris, `scripts/rig-biplane-wheels.mjs`, `scripts/rig-aircraft-wheels.mjs`), fixes en
+direction : `poseWheels` (`src/aircraft-wheels.ts`) les monte selon la compression des
 ressorts et les fait tourner avec la vitesse au sol ; les avions des autres
 joueurs montrent les ressorts affaissés au sol et détendus en vol
 (`parkedCompression`).
@@ -69,8 +69,8 @@ la souris par « instructeur », `src/mouse-flight.ts`).
 - **Cellule** : un collider par boîte mesurée, CCD activé. Les impulsions de
   contact donnent `state.impact` (variation de vitesse en m/s de référence) :
   au-delà de 2,5 l'avion prend des dégâts, au-delà de `PLANE_CRASH_IMPACT` (16) il
-  est détruit. C'est la seule source de dégâts de collision : le client ne compare plus
-  de vitesse d'approche et ne repousse plus l'avion après un choc.
+  est détruit. C'est la seule source de dégâts de collision de l'avion : ni vitesse
+  d'approche comparée, ni repoussée après un choc.
 - **Murs** : quatre murs invisibles (`PhysicsWorld.addRoomWalls`, faces intérieures
   aux murs de `LAYOUT_ROOM`, jusqu'au plancher du ciel) ferment la pièce, côté ouvert
   compris : un choc contre un mur est un contact comme un autre.

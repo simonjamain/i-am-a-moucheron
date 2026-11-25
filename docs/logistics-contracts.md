@@ -28,14 +28,6 @@ Saint Pierre ([file](purgatory-queue.md)). Un dossier ne contient que ses docume
 obligatoires ; chaque poste tire avec la cadence et les dégâts de son arme. Échanger de
 poste dans un appareil : voir [sièges](combat-worlds.md#échanges-de-poste).
 
-## Plaques des occupants
-
-Aucune couleur d’identité par joueur ou par appareil : les modèles gardent leurs
-couleurs (`paintVehicle`, `src/vehicle-livery.ts`). Les noms des occupants sont des
-plaques fixées aux deux flancs de la carrosserie, près de chaque poste ; elles suivent
-l’appareil et ne font pas face à la caméra. Un changement d’équipage remplace leurs
-textures ; un équipage identique les réutilise.
-
 ## Réserves des appareils
 
 Les réserves appartiennent à l’appareil, pas au pilote : changer de siège, sortir, se
@@ -60,7 +52,7 @@ Leur horodatage ne recule jamais et la mise à jour est conditionnée à la rév
 | Anti-air mobile   | 100 obus                                                    |
 | Castor            | 500 balles ; Castor volant sans arme                        |
 
-Cadences et équilibre des armes : [véhicules et banque](scale-fleet-weapons.md#armement)
+Cadences et équilibre des armes : [armement](scale-fleet-weapons.md#armement)
 et [véhicules d’appui](support-vehicles.md). Stocks des DCA fixes et recharge payante :
 [économie](economy.md#service-payant). Le HUD montre les secondes de carburant à plein
 gaz, les munitions du poste et l’indication de service.
@@ -91,15 +83,15 @@ détection. La scène 3D n’est jamais masquée.
 
 ## Colis parachutés
 
-Un bon signé depuis un véhicule devient un colis (`deliveryStart`). Sa hauteur dépend de
-l’instant de largage et de sa hauteur initiale : serveur et client utilisent le même
-calcul (`src/delivery.ts`, `DELIVERY_SPEED`), le client l’évalue entre les snapshots
+Un bon signé depuis un véhicule devient un colis (`deliveryStart`) qui descend sous
+parachute à 1/3 m/s (`DELIVERY_SPEED`). Sa hauteur dépend de l’instant de largage et de
+sa hauteur initiale : serveur et client utilisent le même calcul (`src/delivery.ts`), le
+client l’évalue entre les snapshots
 jusqu’à la surface de réception publiée par le serveur. Seul le serveur supprime le colis
 et crée l’équipement, une seule fois : la première surface portant toute l’emprise avec
 la hauteur libre le reçoit, sans dégâts ; un contact latéral ne reçoit pas. Débit unique
 quel que soit le poste signataire ; les paliers de prix comptent les colis en cours ; la
-limite de 24 équipements ne concerne que la pose à pied. Vitesse de descente : voir
-[gameplay](gameplay.md).
+limite de 24 équipements ne concerne que la pose à pied.
 
 ## Vérifier
 

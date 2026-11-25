@@ -9,9 +9,10 @@ les deux backends.
 
 ## Ce qui est chargé
 
-`vendor/` contient trois fichiers minifiés (voir [vendor/README](../vendor/README.md)) :
-`three.webgpu.min.js` (servi sous `/three.js`, avec le renderer, les matériaux à nœuds
-et `T.TSL`), `three.core.min.js` et `three.tsl.min.js`. Les modules reçoivent toujours
+`vendor/` contient trois builds minifiés de Three.js, à côté de Rapier (voir
+[vendor/README](../vendor/README.md)) : `three.webgpu.min.js` (servi sous `/three.js` par
+`scripts/assemble.mjs`, avec le renderer, les matériaux à nœuds et `T.TSL`),
+`three.core.min.js` et `three.tsl.min.js`. Les modules reçoivent toujours
 l'espace de noms `T` ; `Three` (`src/types.ts`) est le type du build WebGPU. Les tests
 Node importent le même fichier.
 

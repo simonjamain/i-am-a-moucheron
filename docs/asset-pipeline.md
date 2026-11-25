@@ -47,29 +47,32 @@ Le navigateur ne lit jamais de GLB : un script Python hors ligne
 (`scripts/import-*.py`) convertit l'original en module `src/*-data.ts` embarqué par
 l'assembleur. Conventions communes :
 
-- **Originaux hors Git**, dans `assets/originals/<modèle>/` (ignoré). Le script
-  vérifie l'empreinte SHA-256 de la source approuvée (`scripts/meshy_provenance.py`)
-  et refuse tout autre fichier ; le module généré l'inscrit dans son en-tête ou son
-  champ `sourceSha256`. Ne jamais modifier un module `*-data.ts` à la main.
+- **Originaux hors Git**, dans `assets/originals/<modèle>/` (ignoré). La plupart des
+  importeurs épinglent le SHA-256 de la source approuvée et refusent tout autre fichier
+  (`verify_meshy_source` de `scripts/meshy_provenance.py`, ou comparaison directe) ;
+  `import-meshy-vehicle.py` et `import-meshy-castor.py` l'inscrivent seulement. Le module
+  généré porte l'empreinte dans son en-tête ou son champ `sourceSha256`. Ne jamais
+  modifier un module `*-data.ts` à la main.
 - **Géométrie intacte** : tous les triangles et UV d'origine sont gardés ; les pièces
   mobiles sont séparées par îlots ou coques déconnectées (connectivité soudée, sans
   tenir compte des coutures UV), jamais par simplification. L'import échoue si le
   découpage attendu (nombre d'îlots, de roues…) ne correspond pas.
-- **Texture** : seule la carte de couleur est reprise, réduite en JPEG (ou WebP pour
-  la T-01) de 512 à 1 024 px ; positions, UV et indices sont quantifiés. Les autres
-  cartes PBR ne sont pas chargées.
-- **Repère** : avant Meshy (souvent −X ou +Z) tourné vers −Z du jeu sans miroir,
-  Y vers le haut, contact au sol à −`gear` pour les véhicules ; échelle fixée par
-  l'envergure ou la longueur du profil de `src/fleet.ts`.
+- **Texture** : seule la carte de couleur est reprise, réduite à 1 024 px (512 px pour
+  les créatures) en JPEG, ou en WebP pour la T-01 et la Gatling ; les autres cartes PBR
+  ne sont pas chargées. Positions, UV et indices sont le plus souvent quantifiés
+  (entiers 16 bits), selon l'importeur.
+- **Repère** : Y vers le haut ; l'avant d'un véhicule ou d'une arme (souvent −X ou +Z
+  chez Meshy) est tourné vers −Z du jeu sans miroir, contact au sol à −`gear` pour les
+  véhicules, échelle fixée par l'envergure ou la longueur du profil de `src/fleet.ts`.
 - **Squelettes** : les créatures gardent le rig Meshy (os et matrices de liaison) ;
   l'import peut corriger des poids ou ajouter des os d'ailes, sans toucher géométrie,
   UV ni texture. L'animation est procédurale (`src/rigged-creature.ts`) sauf clip
   fourni.
-- **Retouches de rig** : `scripts/split-vehicle-parts.mjs`, `rig-aircraft-wheels.mjs`,
-  `rig-biplane-wheels.mjs`, `rig-tank-gun.mjs`, `rig-tank-hubs.mjs` et
-  `attach-castor-rims.py` réorganisent les pièces d'un module existant (roues,
+- **Retouches de rig** : des scripts `scripts/rig-*.mjs`, `split-vehicle-parts.mjs` et
+  `attach-castor-rims.py` réorganisent ensuite les pièces d'un module existant (roues,
   chenilles, tube) sans changer triangle, UV ni texture, et l'inscrivent dans son
-  en-tête ([physique Rapier](physics-engine.md#roues-et-chenilles-dans-les-modèles)).
+  en-tête ; détail par véhicule dans le [catalogue](models.md#véhicules) et la
+  [physique Rapier](physics-engine.md#roues-et-chenilles-dans-les-modèles).
 
 Dépendances Python de l'import seulement : NumPy, trimesh, Pillow (SciPy pour
 certains scripts). Exemple : `PYTHONPATH=scripts python3 scripts/import-midge.py
@@ -77,9 +80,12 @@ assets/originals/midge/angry-little-fly.glb`. Chaque modèle a un test
 `scripts/test-<modèle>*.mjs` (provenance, triangles, UV, pivots, contact au sol).
 
 `scripts/import-meshy-textures.py`, `import-meshy-b3.py`, `import-meshy-h2.py`,
-`import-meshy-m1.py` et `import-meshy-fleet.py` sont des importeurs de **sources
-antérieures** (empreintes et masques propres à d'anciennes tâches Meshy) : ils ne
-reproduisent pas les modules actuels et ne doivent pas être relancés sur eux.
+`import-meshy-m1.py` et `import-meshy-fleet.py` ne produisent aucun module actuel
+(empreintes et masques d'anciennes tâches Meshy) : ne pas les relancer.
+
+Un asset acheté ou fourni hors Meshy (décor du bureau, porte-bloc) échappe à la règle
+de validation Meshy mais suit la même discipline : original hors Git, empreinte
+épinglée, licence respectée ([catalogue](models.md#cartoon-office-pack-bloxbits)).
 
 ## Outil Docker d'optimisation
 
@@ -175,27 +181,3 @@ sur `main` touchant l'outillage. La CI ne juge pas la qualité visuelle des mod�
 Documentation amont : [glTF Transform](https://gltf-transform.dev/),
 [meshoptimizer](https://github.com/zeux/meshoptimizer),
 [Docker Compose run](https://docs.docker.com/reference/cli/docker/compose/run/).
-
-## Cartoon Office Pack (BloxBits)
-
-Le décor du bureau est le **Cartoon Office Pack**, édition Extra, de BloxBits
-(<https://bloxbits.itch.io/cartoon-office-pack>), acheté par le propriétaire du projet.
-Ce n'est pas un modèle Meshy : la règle de validation Meshy ne s'applique pas, mais la
-discipline de provenance oui.
-
-- **Licence** : usage dans le jeu et modifications permises ; revente et redistribution
-  des fichiers interdites. D'où [`src/office-pack-LICENSE.md`](../src/office-pack-LICENSE.md)
-  à côté du module généré : modèles réservés à ce jeu, aucune licence du dépôt ne s'y
-  applique. Les fichiers d'origine (FBX, GLB complet) restent **hors de Git**.
-- **Import** : `python3 scripts/import-office-pack.py
-assets/originals/office-pack/Cartoon_Office_Pack_Extra_All.glb` (SHA-256
-  `5de660c5…3aab`, GLB converti du FBX, atlas unique de 1 024 px) écrit
-  `src/office-pack-data.ts` (géométrie quantifiée à 0,5 mm, UV, atlas) et
-  `src/office-pack-catalog.ts` (bornes et triangles par modèle, pour le serveur et les
-  plans).
-- **Repère et échelle** : Y vers le haut, mètres, origine du modèle conservée, face
-  avant vers +X ; un module de mur (5,4 unités du pack) vaut 1,2 m, soit 2,7 m de haut.
-- **Seulement ce qui sert** : `MODELS` (dans le script) liste les objets placés par les
-  plans ; `scripts/test-office-pack.mjs` refuse un modèle importé inutilisé. Pour en
-  ajouter un, l'ajouter à la liste et relancer l'import. Rendu et placement :
-  [plans du bureau](office-layouts.md#décor--le-cartoon-office-pack).
