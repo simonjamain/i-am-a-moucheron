@@ -42,15 +42,9 @@ positions distantes à 1 Hz) fait partie du protocole : voir
 
 ## Client : tirs et collisions
 
-- **`InsectHitboxes`** (`src/insect-hitboxes.ts`) : un volume de tir par insecte vivant dans
-  un monde Rapier du client, une sphère pour le moucheron, une capsule le long du plus
-  long rayon de l'ellipsoïde pour les autres espèces (tolérance de l'espèce comprise). Les
-  volumes n'ont pas de corps et sont replacés sur leur modèle à **chaque image**, que l'on
-  tire ou non : le coût est donc constant (environ 0,8 ms pour 900 insectes, 2,3 ms pour
-  3 000, `npm run bench:collisions`), puis un rayon coûte 2 µs quelle que soit la nuée.
-  Aucune collision n'est simulée, ni entre insectes ni avec les joueurs. Les obus lourds
-  gardent leur test rayon–sphère sur les positions de nuée à l'heure de chaque sous-pas
-  (`heavy-sim.js`).
+- **Volumes de tir des insectes** : `InsectHitboxes` replace un collider Rapier par insecte
+  vivant à chaque image, que l'on tire ou non : coût constant, puis un rayon de quelques µs
+  quelle que soit la nuée ([insectes et Rapier](insects-rapier.md)).
 - **Cibles solides** : `solidTarget` / `nearestSolidHit` préparent une fois par
   image, à la demande de `stepProjectiles`, les matrices, maillages solides et
   la boîte monde (agrandie de 30 % pour la pose animée) de chaque véhicule et
@@ -122,10 +116,9 @@ ni GPU, ni WAN.
 | `npm run bench:udp-replies`                  | Encodage des réponses de vagues réelles, premier envoi et rejeu.                                                                                                                                    |
 | `npm run bench:tracers`                      | Objets de rendu, triangles et préparation des matrices des traceurs.                                                                                                                                |
 | `node scripts/benchmark-motion-rounds.mjs`   | Taille d'un mouvement binaire avec compteur de tirs et ricochets.                                                                                                                                   |
-| `node scripts/review-return-performance.mjs` | Coût des rayons et traceurs, routes : réécrit `docs/return-performance.json` et `docs/routes-return.svg`.                                                                                           |
 
 Ordre de grandeur (`bench:room-sync`, conteneur de développement) : à 50 joueurs
-et 900 ennemis, environ 1 ms et 4 Ko par `sync` courant, 95 Ko pour le premier.
+et 900 ennemis, environ 1,4 ms et 4 Ko par `sync` courant, 90 Ko pour le premier.
 
 ### Mesurer la capacité
 
