@@ -63,7 +63,7 @@ physique ([Rapier](docs/physics-engine.md), [avions](docs/plane-physics.md),
 
 **Rendu, son et modèles** — [direction artistique](docs/art-direction.md) ·
 [règles d’interface](docs/ui-guidelines.md) · [écran de chargement](docs/loading-screen.md) ·
-[rendu dessin animé](docs/toon-rendering.md) · [WebGPU](docs/webgpu.md) ·
+[WebGPU](docs/webgpu.md) ·
 [éclairage et ombres](docs/office-lighting.md) · [audio](docs/audio.md) ·
 [pipeline des assets 3D](docs/asset-pipeline.md) · [catalogue des modèles](docs/models.md)
 

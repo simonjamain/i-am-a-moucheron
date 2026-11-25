@@ -141,7 +141,6 @@ const files = {
       'clipboard-data',
       'engine-smoke',
       'air-ribbons',
-      'toon',
       'gpu-passes',
       'cloud-nodes',
       'shop-catalog',

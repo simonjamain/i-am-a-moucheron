@@ -166,7 +166,7 @@ for (const slow of [
   assert.doesNotMatch(picker, slow);
 assert.match(
   client,
-  /toon\.render\(scene, view\);[\s\S]{0,400}appearancePicker\.draw\(renderer, dt\);/,
+  /renderer\.render\(scene, view\);[\s\S]{0,400}appearancePicker\.draw\(renderer, dt\);/,
 );
 assert.match(
   html,

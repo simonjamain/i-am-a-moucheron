@@ -12,7 +12,7 @@ import {
 } from './gpu-passes.ts';
 
 // Hover outline of an aimable post (docs/ui-guidelines.md, « Monter dans un engin »),
-// drawn in screen space like the toon outlines (src/toon.ts): the post's parts are
+// drawn in screen space over the finished frame: the post's parts are
 // rendered alone, white on black, into a mask (layer SELECTION_LAYER, never seen by
 // the game camera); a full-screen pass then draws a line around the mask's silhouette
 // over the finished frame. The whole part stands out from its vehicle, even across
@@ -29,7 +29,7 @@ export const SIGNAL_COLOR = '#2ec4d6';
 export const TAKEN_COLOR = '#ece8dc';
 /** Layer of the mask meshes: rendered only by SelectionOutline. */
 export const SELECTION_LAYER = 7;
-/** Line width in pixels at 900 px of screen height (toon outlines: 1.5). */
+/** Line width in pixels at 900 px of screen height. */
 export const SELECTION_WIDTH = 3;
 const MAX_RADIUS = 6;
 

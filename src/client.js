@@ -242,7 +242,6 @@ import * as T from '/three.js';
 import { stepFlight, ROLLING_FRICTION, LIFTOFF_SPEED } from '/flight.js';
 import { loadFlightTuning } from '/flight-tuning.js';
 import { FlightTuningUI } from '/flight-tuning-ui.js';
-import { ToonRenderer, toonLookFromQuery } from '/toon.js';
 const $ = (id) => document.getElementById(id),
   canvas = $('view'),
   scene = new T.Scene();
@@ -276,7 +275,6 @@ document.addEventListener('visibilitychange', () => {
 });
 addEventListener('pagehide', () => sound.close());
 const renderer = await createRenderer(T, canvas);
-const toon = new ToonRenderer(T, renderer, toonLookFromQuery(location.search));
 const postSelection = new SelectionOutline(T, renderer);
 
 const camera = new T.PerspectiveCamera(62, innerWidth / innerHeight, 0.00005, 40);
@@ -5502,7 +5500,7 @@ function frame(now) {
   if (sky && !dead) observedPurgatory(dt);
   $('altitudeFog').style.opacity = joined && !dead ? passageWhiteness(view.position.y) : 0;
   if (sky) purgatory.prerender(renderer, view);
-  toon.render(scene, view);
+  renderer.render(scene, view);
   if (dead) {
     postSelection.color = aimedPurgatory ? SIGNAL_COLOR : null;
     postSelection.render(scene, view);
@@ -7217,7 +7215,7 @@ function warmShaders() {
   bloodEffects.burst(at);
   combatEffects.muzzle(at, forward);
   combatEffects.blast(at);
-  toon.render(scene, camera);
+  renderer.render(scene, camera);
   for (const tracer of tracers) tracer?.userData.dispose();
   tracerPool.flush();
   hitEffects.update(10, camera);

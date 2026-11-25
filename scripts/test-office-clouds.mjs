@@ -9,7 +9,6 @@ import {
   fogOpticalDepth,
   installOfficeFog,
   applyOfficeFog,
-  officeFogLayer,
 } from '../src/office-fog.ts';
 import { stepHelicopter } from '../src/helicopter.ts';
 import { VEHICLES, vehiclePad } from '../src/fleet.ts';
@@ -63,9 +62,6 @@ assert.ok(officeFogOpacity(2.8) > 0.1, 'layer does not move up with the flight l
 assert.equal(officeFogOpacity(3.8), 0.65, 'haze remains above the former ceiling');
 assert.ok(fogOpticalDepth(3.2, 3.2, 1) > 9, 'new flyable space stays inside the clouds');
 installOfficeFog(T);
-const layer = officeFogLayer(T);
-assert.ok(Math.abs(layer.start - 2.2125) < 1e-9, 'the layer starts at its fixed altitude');
-assert.ok(Math.abs(layer.thickness - 0.4875) < 1e-9, 'and ends at the top of the walls');
 // The haze is the scene's fog node, evaluated per fragment from world positions.
 const hazy = new T.Scene();
 hazy.fog = new T.FogExp2('#ffffff', 0.018);

@@ -1,7 +1,7 @@
 import type * as THREE from 'three/webgpu';
 import type { Three } from './types.ts';
 
-// Small helpers shared by the screen-space passes written in TSL (outlines, selection
+// Small helpers shared by the screen-space passes written in TSL (selection
 // outline, purgatory layers, character picker). See docs/webgpu.md.
 
 // TSL nodes are chained dynamically; the generic typings are too loose to follow.

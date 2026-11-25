@@ -34,9 +34,6 @@ export function fogOpticalDepth(
   return Math.max(0, distance) * average * 9;
 }
 const installed = new WeakMap<Three, { start: number; thickness: number }>();
-/** Cloud layer installed in this Three (start and thickness, metres), if any. */
-export const officeFogLayer = (T: Three): { start: number; thickness: number } | null =>
-  installed.get(T) ?? null;
 export function installOfficeFog(T: Three, cloudTop: number = OFFICE_CLOUD_TOP): void {
   if (installed.has(T)) return;
   const start = cloudTop * FOG_START_RATIO,

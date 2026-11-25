@@ -30,7 +30,6 @@ export const SUITE = [
   'test-shop-catalog',
   'test-ground-spread',
   'test-ground-crowd',
-  'test-toon',
   'test-takeoff',
   'test-vehicle-identity',
   'test-meshy-textures',

@@ -2,7 +2,7 @@
 
 Lumières, ombres portées et préréglages d'ombre de la salle de jeu. Code :
 `src/office-lights.ts` (appelé par `src/office.ts`), `src/shadow-settings.ts` ;
-les paliers du [rendu dessin animé](toon-rendering.md) s'appliquent à chaque lumière.
+la lumière est continue, sans paliers.
 
 ## Deux éclairages selon le plan
 
@@ -95,3 +95,22 @@ Le comparateur ne prouve ni performance maximale ni confort en partie.
 - Un objet construit en partie (fortification…) n'entre pas dans les ombres des cônes :
   il n'a que l'ombre du soleil, comme les objets mobiles.
 - Seul `diagonale` a des ventilateurs ; les cinq autres plans gardent le soleil oblique.
+
+## Brouillard spatial et plafond
+
+Le brouillard de distance blanc est léger (`OFFICE_DISTANCE_FOG` = 0,018,
+`src/office-fog.ts`). La couche de nuages
+commence à **2,2125 m** (`OFFICE_FOG_START`) et s'épaissit jusqu'au haut des murs,
+**2,7 m** (`OFFICE_CLOUD_TOP`, hauteur des murs du pack de bureau) ; au-delà de
+**3,95 m** (`SKY_FLOOR`, `src/sky-passage.ts`), on entre dans le
+[ciel du purgatoire](purgatory-sky.md). La densité
+croît avec la hauteur et les matériaux calculent l'épaisseur traversée par chaque
+rayon : regarder vers le haut depuis le sol révèle la couche. Un voile blanc
+d'écran (`#altitudeFog`, `passageWhiteness`) suit la hauteur de la caméra : jusqu'à
+65 % d'opacité entre le début de la couche et le haut des murs (`officeFogOpacity`),
+puis blanc complet à l'approche de `SKY_FLOOR` ; le HUD reste devant. La pièce est fermée par quatre murs du pack ; au-dessus d'eux, le fond
+de scène a la couleur du brouillard (`OFFICE_HAZE`, blanc), sans enveloppe colorée
+autour de la pièce. Le purgatoire garde son brouillard linéaire, sans voile d'altitude.
+Contrôles : `test-office-clouds.mjs` ; rendu réel : `e2e-office-clouds.mjs`
+(Playwright + Chromium, hors `npm test`, dans `npm run e2e` et sa CI ; variables `PLAYWRIGHT_PATH`,
+`CHROMIUM_PATH`, `CLOUD_SCREENSHOT`).
