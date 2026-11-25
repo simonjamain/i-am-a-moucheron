@@ -68,7 +68,8 @@ export function fuseSegment(
   );
   return { a: a.map((v, i) => v + (b[i] - v) * t), t };
 }
-export const proximityRadius = (value: number | undefined | null): number => MAP.metres(clampProximity(value));
+export const proximityRadius = (value: number | undefined | null): number =>
+  MAP.metres(clampProximity(value));
 
 // Physical hull envelopes; decorative labels and projectiles are not colliders.
 // Test in local coordinates so an articulated trailer follows its own axis.
@@ -112,7 +113,13 @@ export function sweptVehicle(
     min: { x: lo[0] * ACTOR_UNIT, y: lo[1] * ACTOR_UNIT, z: lo[2] * ACTOR_UNIT },
     max: { x: hi[0] * ACTOR_UNIT, y: hi[1] * ACTOR_UNIT, z: hi[2] * ACTOR_UNIT },
   });
-  const tractor = sweptBoxProximity(A, B, scale(...(D2.tractorBox as [number[], number[]])), radius, closest);
+  const tractor = sweptBoxProximity(
+    A,
+    B,
+    scale(...(D2.tractorBox as [number[], number[]])),
+    radius,
+    closest,
+  );
   const angle = -(vehicle.state.trailerAngle || 0),
     c = Math.cos(angle),
     sn = Math.sin(angle);
@@ -122,6 +129,12 @@ export function sweptVehicle(
       z = p[2] - D2.hitch[2] * ACTOR_UNIT;
     return [c * x + sn * z, p[1] - D2.hitch[1] * ACTOR_UNIT, -sn * x + c * z];
   };
-  const t = sweptBoxProximity(trailer(A), trailer(B), scale(...(D2.trailerBox as [number[], number[]])), radius, closest);
+  const t = sweptBoxProximity(
+    trailer(A),
+    trailer(B),
+    scale(...(D2.trailerBox as [number[], number[]])),
+    radius,
+    closest,
+  );
   return tractor === null ? t : t === null ? tractor : Math.min(tractor, t);
 }

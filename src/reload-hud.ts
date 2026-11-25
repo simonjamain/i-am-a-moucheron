@@ -17,7 +17,6 @@ export interface ReloadArc {
   progress: number;
 }
 
-
 export const heavyLane = (weapon: string): HeavyLane =>
   weapon === 'bomb' ? 'bomb' : weapon === 'missile' ? 'missile' : 'cannon';
 export function heavyReadyAt(

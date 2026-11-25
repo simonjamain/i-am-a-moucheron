@@ -268,7 +268,8 @@ export function createGraphics(T: Three, scene: THREE.Object3D) {
         flyer.creature.createRig(T);
       rig.mesh.castShadow = true;
       // Flight cycle at time `ms` for a flyer whose roster phase is in radians.
-      rig.animate = (ms: number, phase = 0) => rig.pose(ms / 1000 / flyer.flight.loop + phase / TAU);
+      rig.animate = (ms: number, phase = 0) =>
+        rig.pose(ms / 1000 / flyer.flight.loop + phase / TAU);
       g.add(rig.container);
       g.userData = {
         enemyType: type,
