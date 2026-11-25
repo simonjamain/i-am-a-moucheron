@@ -61,19 +61,17 @@ dès que le monde du décor existe.
   centre et les quatre coins de l'emprise (normales au-delà de 0,95, écart de hauteur
   d'au plus 2 mm), boîtes puis triangles du décor, la plus haute d'abord ; `clear`
   vérifie le volume libre au-dessus (une boîte Rapier de l'emprise) ; `aimPlacement` vise
-  une face supérieure d'un meuble. Les **appareils** (`rugged`) se contentent d'une
-  surface inclinée de 60° au plus sous le centre, coins dans le vide permis : on
+  une face supérieure d'un meuble. Sur les triangles du décor, les **appareils** (`rugged`)
+  se contentent d'une surface inclinée de 60° au plus sous le centre, coins dans le vide permis : on
   pose un appareil sur un clavier ou les pales d'un ventilateur, mais aucun
   équipement ordinaire sur le clavier. Le serveur ne juge pas la pose d'un joueur
   ([confiance](trust-model.md)) ; il utilise le même test, dans son propre `SolidQuery`
   par plan, pour les largages du Castor volant (`airdropSurface`) et l'atterrissage des
   colis (`deliveryLanding`).
-- **Vol** : l'avion s'écrase quand son point, gonflé de 0,3 unité d'acteur, touche un solide
-  (`SolidQuery.nearest`) ou quand le segment parcouru depuis l'image précédente en traverse
-  un (`SolidQuery.segment`) ; il se pose (`resolveLanding`, `src/sortie.ts`) sur le dessus de
-  ce qui se trouve sous lui (`surfaceBelow`). Le pas de l'hélicoptère d'avant le
-  chargement de Rapier (`stepHelicopter`), les débris d'un avion écrasé et la suspension des
-  chenilles utilisent les mêmes requêtes.
+- **Débris et chenilles** : les débris d'un avion écrasé (`CrashEffects`) et la suspension
+  cosmétique des chenilles (`updateSuspension`) lisent `SolidQuery`. Les pas de vol de secours
+  d'avant le chargement de Rapier (`stepFlight` avec `resolveLanding`, `stepHelicopter`)
+  aussi ; en jeu, avions et hélicoptères volent dans leur monde Rapier (dernier point).
 - **Marche** (`stepWalker`) : le **contrôleur de personnage de Rapier** déplace une
   capsule dans `WalkerWorld` (`src/walker-world.ts` : sol, boîtes de la coque et des
   constructions, triangles du décor). Il glisse le long des murs, monte les marches
@@ -86,8 +84,8 @@ dès que le monde du décor existe.
 
 ## Restent sur les boîtes
 
-- Navigation des insectes au sol (`ground-defense.ts`, `ground-creatures.ts`, `route-navigation.ts`) :
-  [plan de migration](insects-rapier.md).
+- Routes des insectes et navigation au sol (`route-navigation.ts`, `ground-defense.ts`,
+  `ground-creatures.ts`) : [insectes et Rapier](insects-rapier.md).
 
 ## Affichage
 
@@ -101,7 +99,7 @@ fer jaune (`MESH_COLLIDER_COLOR`, `src/debug-tools.ts`), en plus des boîtes cya
 compare chaque rayon à un test sur tous les triangles, vérifie points les plus
 proches, objets tournés, formes approchées et fente de la photocopieuse ouverte ;
 il affiche nombre de triangles et temps (sur Diagonale : 79 objets, 80 168
-triangles, construction d'environ 170 ms sous Node, rayon à travers la pièce
-d'environ 15 µs). `scripts/test-collision-motion.mjs` couvre atterrissage, crash,
+triangles, construction d'environ 180 ms sous Node, rayon à travers la pièce
+d'environ 16 µs). `scripts/test-collision-motion.mjs` couvre atterrissage, crash,
 marche et mondes des véhicules. Le ressenti en vol sur les triangles reste à
 juger en partie.

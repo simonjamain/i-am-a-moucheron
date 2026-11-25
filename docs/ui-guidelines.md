@@ -84,8 +84,10 @@ pas de motif (elle ne juge pas, elle prélève) : une seule case reconnaît que 
 sur l’équipe pendant ses vagues. L’**ordre de refonte** d’une tourelle propose une case par variante de son arbre ; signé sans assez d’argent dans la caisse, il reçoit le tampon « REFUSÉ » et rien n’est envoyé. Les autres documents se signent tels quels. Une signature
 acceptée reçoit le tampon « APPROUVÉ » sur la feuille, qui s’efface pendant que la partie
 reprend.
-Composant partagé : `src/paper-form.ts` (cases, coche au crayon, tampons) ; le lit et
-le bon de commande en héritent par `src/bed-ui.ts`, le dossier est rendu par `renderPaper`
+Composant partagé : `src/paper-form.ts` (cases, coche au crayon, tampons). `BedUI`
+(`src/bed-ui.ts`, contrat du lit) sert de base au bon de commande (`src/purchase-ui.ts`),
+au coupe-file VIP (`src/vip-pass-ui.ts`) et à l'ordre de refonte (`src/upgrade-ui.ts`) ;
+le dossier est rendu par `renderPaper`
 (`src/client.js`) et le prospectus bancaire par `src/bank-ui.ts` (coupons cochés au crayon,
 tampons « SIGNÉ » et « PAYÉ » sur le contrat et ses échéances). Le banquier s’ouvre à
 distance (touche N, « ligne directe ») ; un guichet visable dans le bureau viendra avec les

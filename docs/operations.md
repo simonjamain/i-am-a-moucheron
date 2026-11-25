@@ -56,9 +56,7 @@ Données générées exclues de Prettier : voir `.prettierignore`.
 ## Scénarios navigateur
 
 `npm run e2e` (`run-tests.mjs --e2e`) exécute un à un les scénarios Chromium de la liste
-`E2E` de `scripts/suite.mjs` (reprise de pilote, mouvements partagés, repli TCP, chute vue
-par un second client, écran de chargement, nuages WebGL, marche au purgatoire, contraste
-HUD/lit/traçantes) ; `npm run e2e -- <fragment>` filtre. Ils exigent Playwright et Chromium,
+`E2E` de `scripts/suite.mjs` ; `npm run e2e -- <fragment>` filtre. Ils exigent Playwright et Chromium,
 installés à la volée par la CI, pas par le projet. `e2e-layouts` (`npm run e2e:layouts`,
 plus de deux minutes) reste manuel : il expire sur le runner CI.
 

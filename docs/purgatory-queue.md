@@ -26,8 +26,8 @@ et les tirs dans [ciel du purgatoire](purgatory-sky.md).
 - Saint Pierre met 1,5 s à servir un insecte (`INSECT_SERVICE_MS`) ; l’âme servie est
   libérée et rapporte une fois sa récompense ([économie](economy.md#revenus)). Une âme
   libérée n’est jamais réintroduite par un ancien rapport.
-- Autorité : quand un joueur est au purgatoire, le client du premier joueur (`host`)
-  simule les insectes ; sinon le serveur les avance lui-même. Les déplacements des
+- Autorité : quand un joueur est au purgatoire, le client de l'âme de joueur au plus
+  petit identifiant (`host`) simule les insectes ; sinon le serveur les avance lui-même. Les déplacements des
   joueurs restent côté client, sans correction imposée.
 - La marche est bornée à un rectangle (x de −10 à 10, z de 0 à au moins 80) ; le décor
   n’ajoute aucun obstacle partagé hormis les cordons VIP (`VIP_LANE`).

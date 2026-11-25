@@ -22,7 +22,7 @@ En conséquence :
    l'adresse ci-dessus.
 5. Les fichiers d'origine (FBX, GLB complet) ne sont jamais versionnés : ils restent
    hors de Git, dans `assets/originals/office-pack/` (voir
-   [le pipeline d'assets](../docs/asset-pipeline.md#cartoon-office-pack-bloxbits)).
+   [le catalogue des modèles](../docs/models.md#cartoon-office-pack-bloxbits)).
 
 © BloxBits pour les modèles et la texture. Les conversions, placements et
 collisions propres au jeu relèvent du projet « I am a moucheron ».

@@ -15,3 +15,6 @@ server/assets.js
 src/changelog-recent.ts
 # Captures des scénarios navigateur (e2e-loading)
 /work/
+
+# Cache Python des importeurs
+__pycache__/

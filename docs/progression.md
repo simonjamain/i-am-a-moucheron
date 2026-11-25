@@ -56,7 +56,8 @@ réellement envoyé.
   intervalles courts, les ennemis isolés arrivant par grappes.
 - **Aucun déblocage.** Toute espèce dont la puissance tient dans le budget restant peut
   être tirée dès la vague 1 ; les espèces fortes sont tirées plus souvent quand le budget
-  grandit (`ENEMY_UNLOCK_WAVE` ne sert plus qu’à l’ordre de tirage).
+  grandit. Le directeur ne lit dans `ENEMY_UNLOCK_WAVE` que la liste et l’ordre des
+  espèces ; ses numéros de vague ne servent qu’au repli `wavePlan`.
 - **Parcours.** Les foules d’une même espèce partagent le plus souvent entrée et
   parcours ; les espèces fortes ont chacune le leur. Les membres d’un paquet partent l’un
   après l’autre (`memberGap`) ; la prévision annonce un groupe par paquet. Au sol, voir
@@ -70,19 +71,19 @@ réellement envoyé.
 
 Le lancement initial dure 60 s et les pauses entre vagues 180 s (`initialDelay`,
 `pause`). Tout joueur peut lancer la vague annoncée avant l’échéance ; à l’échéance,
-elle démarre seule. Il n’y a ni vote ni plan à débloquer entre les vagues.
+elle démarre seule.
 
-La caisse initiale vaut 0 $. Dès la première préparation, l’équipe peut signer l’une des
+La caisse initiale vaut 0 $ (`startingMoney`). Dès la première préparation, l’équipe peut signer l’une des
 offres de la banque (12 à 40 $, voir [banque](bank.md)) ; les échéances sont
 dues à chaque fin de vague. Toute la partie vit en RAM : une remise à zéro ou un
 redémarrage efface vague, caisse, achats et objets.
 
 ## Revenus et prix
 
-Il n’y a **aucune prime de vague** : seules les âmes libérées par Saint Pierre (ou
-abattues dans son ciel) rapportent la puissance de leur espèce, une seule fois ; tuer
-dans le bureau ne crédite rien directement. Une vague de puissance W rapporte donc au
-plus W $. La monnaie appartient à la salle.
+Il n’y a **aucune prime de vague** : seules les âmes libérées rapportent la puissance
+de leur espèce ([revenus](economy.md#revenus)). L’âme d’une araignée pondeuse paie sa
+puissance descendance comprise, puis chaque âme de bébé paie la sienne ; l’âme d’un
+colosse paie la puissance de base de son espèce. La monnaie appartient à la salle.
 
 Les prix viennent de `SHOP` et `shopPrice` (`src/equipment.ts`), partagés par
 l’affichage et le serveur ; la colonne du magasin est dans `src/shop-catalog.ts`.
@@ -117,7 +118,7 @@ pas d’amélioration achetable. Les constructions du Castor ont leur propre tar
 - `scripts/test-enemy-power.mjs` : formule, étalon, descendance, budget, récompenses,
   dégâts à la poubelle.
 - `scripts/test-wave-preparation.mjs` : prévision, budget, paquets, lancement anticipé
-  par tout joueur ou à l’échéance, absence de vote et de plans, remise à zéro.
+  par tout joueur ou à l’échéance, remise à zéro.
 - `scripts/test-progression.mjs` : ancien tirage `wavePlan` (`src/waves.ts`), encore
   utilisé par `Game.plan` comme repli quand aucune vague n’a été préparée.
 - `scripts/test-shop-catalog.mjs` : catalogue du magasin.

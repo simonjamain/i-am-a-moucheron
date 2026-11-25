@@ -26,8 +26,9 @@ profondeur, puis une passe plein écran (nœuds TSL) dessine le trait : la profo
 `logarithmicDepthBuffer` du jeu (`d = log(w / near) / log(far / near)`) est décodée en
 profondeur inverse, et un pixel situé
 juste derrière une surface plus proche (laplacien de la profondeur inverse positif,
-nul sur un plan, même rasant) prend la couleur du trait (`#1b1510`). L'épaisseur
-(0 à 4 px) suit la hauteur de l'écran. La passe applique elle-même le _tone mapping_ du renderer (le tone mapping automatique
+nul sur un plan, même rasant) prend la couleur du trait (`OUTLINE_COLOR`, `#1b1510`).
+L'épaisseur (1,5 px pour une image de 900 px de haut) est proportionnelle à la hauteur
+de l'image. La passe applique elle-même le _tone mapping_ du renderer (le tone mapping automatique
 est coupé pendant qu'elle dessine) et laisse la conversion sRGB au renderer, sauf au ciel
 (couleur de fond, jamais tone-mappée). Les effets
 transparents (fumée, sprites) n'écrivent pas de profondeur : ils n'ont pas de contour.

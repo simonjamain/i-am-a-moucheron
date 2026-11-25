@@ -13,7 +13,7 @@ d'interaction des postes ; un clic gauche ouvre l'**ordre de refonte** (`src/upg
 un document papier : une case par variante de l'arbre, jamais cochée d'office, puis la
 signature, verrouillée tant qu'aucune case n'est cochée. Sans assez d'argent dans la
 caisse commune, le tampon « REFUSÉ » s'affiche et rien n'est envoyé. La portée est celle
-des postes de véhicules (demi-taille de la tourelle + `POST_REACH`, `upgradeInReach`) ;
+des postes de véhicules (empreinte de la tourelle + `POST_REACH`, `upgradeInReach`) ;
 tous les joueurs peuvent améliorer.
 
 Le serveur (`groundCommand`, action `upgrade`) change le type pour la variante choisie,
@@ -85,11 +85,11 @@ canons et le redresse sur l'horizontale avant de le poser sur son pivot (centre 
 l'ouverture du boîtier), pour que les canons ne « nagent » pas en tournant. Pivot et
 bouches sont enregistrés dans les données.
 
-**Hiérarchie** (`src/gatling-model.ts`) : `socle` fixe → `lacet` → `elevation-canon`
-(pivot horizontal au sommet de la couronne, sur l'axe de lacet), qui porte toute la
-partie supérieure : la tête et `ensemble-canons` (`anneau-faisceau`, puis
-`rotation-barillet` avec `faisceau-canons` et les six bouches). Le recul ne déplace que
-`ensemble-canons`.
+**Hiérarchie** (`src/gatling-model.ts`) : `socle-fixe`, puis `rotation-horizontale`
+(lacet) → `elevation-canon` (pivot horizontal au sommet de la couronne, sur l'axe de
+lacet), qui porte toute la partie supérieure : `tete-gatling` et `ensemble-canons`
+(`anneau-faisceau`, `bouche-canon`, puis `rotation-barillet` avec `faisceau-canons` et
+les six `bouche-barillet-*`). Le recul ne déplace que `ensemble-canons`.
 
 - Échelle `GATLING_SCALE = 0,021` : 16 mm de haut, canons de 8 mm.
 - Élévation de −10° à +45° (`GATLING_MIN_ELEVATION`, `GATLING_MAX_ELEVATION`) ; au-delà,

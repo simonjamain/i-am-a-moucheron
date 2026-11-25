@@ -26,8 +26,8 @@ haut, sous la couche de nuages) avant de plonger vers la corbeille.
 
 ## Décor : le Cartoon Office Pack
 
-Chaque plan est meublé avec les modèles du **Cartoon Office Pack** de BloxBits (pack acheté, licence et import : [pipeline des
-assets](asset-pipeline.md#cartoon-office-pack-bloxbits)). `diagonale` est le bureau
+Chaque plan est meublé avec les modèles du **Cartoon Office Pack** de BloxBits (pack acheté, licence et import : [catalogue des
+modèles](models.md#cartoon-office-pack-bloxbits)). `diagonale` est le bureau
 complet de référence : îlots de postes de travail encombrés, archives et leur
 couloir, tableau blanc, coin cuisine avec distributeur, coin attente, porte et son
 couloir, habillage mural (horloge, calendrier, tableau en liège, extincteur, prises)
@@ -35,8 +35,7 @@ et désordre au sol (boules de papier autour de la corbeille). Les cinq autres p
 reprennent leurs volumes de jeu avec les mêmes meubles, en version plus sobre.
 
 - **Liste finie, placée à la main.** Chaque objet d'un plan est écrit dans
-  `src/layouts.ts` ; il n'y a aucun tirage aléatoire (le test le vérifie). Si
-  l'aléatoire vient un jour, il portera sur toute la carte, pas sur le seul désordre.
+  `src/layouts.ts` ; il n'y a aucun tirage aléatoire (le test le vérifie).
 - **Proportions du pack conservées.** Une seule échelle uniforme : un module de mur
   du pack mesure exactement 1,2 m, la pièce fait donc 7 × 6 modules (8,4 × 7,2 m).
   Les volumes de jeu s'adaptent aux meubles, jamais l'inverse (bureau 1,51 × 0,76 m,
@@ -118,8 +117,6 @@ ou au choix dans l'accueil (`applyLayout`). Le snapshot porte `layout` (id).
 
 ## Limites connues
 
-- Seul `diagonale` est un bureau complet ; les cinq autres plans attendent leur
-  aménagement détaillé.
 - Les panneaux du pack en anglais (« RECEPTION », « ACCOUNTING »…) ne sont pas utilisés
   tant qu'ils ne sont pas retexturés en français.
 - Le décor n'a été vérifié qu'en rendu logiciel (captures), pas sur un vrai GPU en

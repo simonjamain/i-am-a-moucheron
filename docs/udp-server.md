@@ -177,8 +177,7 @@ suit : le jeu est moins fluide sur un réseau qui perd des paquets.
 synchrones, sans SQL, disque ni attente réseau. Le tick de `server/index.js`
 avance chaque salle active toutes les 250 ms et ferme une connexion muette
 depuis 15 s. Les salles inactives expirent après 30 minutes. Les engins détruits
-sans occupant sont retirés après 15 s. Au plus 24 PNJ matérialisés entrent dans
-les snapshots, en plus des joueurs. Les registres d'impacts et de tirs sont
+sans occupant sont retirés après 15 s. Les registres d'impacts et de tirs sont
 limités à 128 000 entrées : la limite refuse de nouveaux éléments (429) sans
 oublier les doublons ; une partie exceptionnellement longue peut demander une
 remise à zéro.

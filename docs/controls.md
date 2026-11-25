@@ -22,7 +22,7 @@ Chaque entrée garde un seul sens ; le contexte change seulement ce sur quoi ell
 | Clic droit maintenu | Zoom                         | postes et véhicules ; pendant une pose, conserver l’achat (comme Échap)                                          |
 | Espace              | Action secondaire            | sauter ou parachute à pied ; bombes (pilotes), coaxiale (canonnier du char), missile guidé (copilote du H2)      |
 | Maj / Ctrl          | Plus / moins                 | gaz, montée / descente, fusée de la DCA fixe                                                                     |
-| R                   | Changer, tourner             | obus HE ↔ AP du char ; orienter le sucre                                                                         |
+| R                   | Changer, tourner             | obus HE ↔ AP du char ; tourner sucre, tourelle ou canon avant la pose                                            |
 | A / E               | Lacet                        | gouverne de direction ; rotation du Castor volant en vue verticale                                               |
 | F                   | Sortir                       | quitter tout siège ou poste ; sauter en vol                                                                      |
 | C maintenu          | Regard libre                 | avion, pilote du H2, canonnier du char                                                                           |
@@ -62,7 +62,7 @@ les raccourcis. Il n’existe pas de touche d’interaction : E n’est que le l
 | Flak lourd                  | clic : obus ; molette : proximité                                                                                                                                               |
 | Canon anti-matériel         | souris : pointage ; clic : obus                                                                                                                                                 |
 | Atelier, pose d’un achat    | clic gauche : poser ; clic droit ou Échap : conserver l’achat payé pour plus tard                                                                                               |
-| Outil de construction       | clic : poser, ou fixer début puis fin (barricade, ruban) ; R : orienter le sucre ; G : changer d’outil ; Échap : quitter                                                        |
+| Outil de construction       | clic : poser, ou fixer début puis fin (barricade, ruban) ; R : tourner de 45° ; G : changer d’outil ; Échap : quitter                                                           |
 | Purgatoire                  | clic sur le porte-bloc du guichet, le vigile ou un appareil posé ; Espace : saut                                                                                                |
 | Papiers                     | relâcher un trait d’encre valide : signature et tampon automatiques                                                                                                             |
 
