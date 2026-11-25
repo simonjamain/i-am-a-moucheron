@@ -27,6 +27,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
+          cache: npm
 
       - name: Compute VERSION and recent news from Git history (needs full history)
         run: node scripts/build-info.ts --strict
@@ -46,22 +47,34 @@ jobs:
           cache-from: type=gha,scope=docker-validation
           cache-to: type=gha,scope=docker-validation,mode=max
 
-      - name: Smoke-test the built Node/UDP image
+      - name: Install the native WebRTC client used by the smoke test
+        run: npm ci
+
+      - name: Play a WebRTC/UDP game against the built image (documented layout, then one shared UDP port)
         shell: bash
         run: |
           set -euo pipefail
-          cid="$(docker run --rm -d -p 127.0.0.1::3000/tcp i-am-a-moucheron:check)"
-          trap 'docker logs "$cid" || true; docker rm -f "$cid" >/dev/null 2>&1 || true' EXIT
-          port="$(docker port "$cid" 3000/tcp | sed -n '1s/.*://p')"
-          test -n "$port"
-          ready=0
-          for attempt in {1..30}; do
-            if curl -fsS "http://127.0.0.1:$port/healthz" -o "$RUNNER_TEMP/health.json"; then ready=1; break; fi
-            sleep 1
-          done
-          test "$ready" -eq 1
-          node -e 'const a=require("node:assert/strict");const h=JSON.parse(require("node:fs").readFileSync(process.env.RUNNER_TEMP+"/health.json","utf8"));a.deepEqual([h.ok,h.storage,h.transport],[true,"ram","webrtc-udp"])'
-          test "$(curl -sS -o /dev/null -w '%{http_code}' -X POST "http://127.0.0.1:$port/api/join")" = "410"
+          # Two native peers join over UDP, start the mission and relay motion
+          # (scripts/smoke-image.ts). The client binds to 127.0.0.1 so only the
+          # published UDP ports and the advertised address can carry the game.
+          play() {
+            cid="$(docker run --rm -d --init --read-only --tmpfs /tmp:size=16m,mode=1777 \
+              --cap-drop ALL --security-opt no-new-privileges \
+              -e UDP_ADVERTISE_ADDRESS=127.0.0.1 "$@" \
+              -p 127.0.0.1:3000:3000/tcp i-am-a-moucheron:check)"
+            trap 'docker logs "$cid" || true; docker rm -f "$cid" >/dev/null 2>&1 || true' EXIT
+            ready=0
+            for attempt in {1..30}; do
+              if curl -fsS http://127.0.0.1:3000/healthz >/dev/null; then ready=1; break; fi
+              sleep 1
+            done
+            test "$ready" -eq 1
+            timeout 60 node scripts/smoke-image.ts http://127.0.0.1:3000
+            docker rm -f "$cid" >/dev/null
+            trap - EXIT
+          }
+          play -p 127.0.0.1:41000-41099:41000-41099/udp
+          play -e UDP_MUX_PORT=41000 -e UDP_ADVERTISE_PORT=3478 -p 127.0.0.1:3478:41000/udp
 
   snapshot-benchmark:
     name: 50-player snapshot comparison

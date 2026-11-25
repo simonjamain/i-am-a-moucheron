@@ -93,7 +93,8 @@ Le serveur n'a ni base de données ni accès disque en jeu (seules les
 
 Les commandes courantes sont celles de `package.json` ; les tests sont listés dans
 `scripts/suite.mjs` (lancés par `scripts/run-tests.mjs`), les scénarios navigateur
-dans sa liste `E2E`. Les importeurs d'assets (`scripts/import-*.py`,
+dans sa liste `E2E` ; `scripts/smoke-image.ts` joue une partie UDP contre l'image Docker
+démarrée ([Docker](docker.md#contrôle-de-contribution-et-protection-de-main)). Les importeurs d'assets (`scripts/import-*.py`,
 `split-vehicle-parts.mjs`, `rig-*.mjs`, `measure-aircraft.mjs`) génèrent les modules
 `src/*-data.ts` et `src/vehicle-anchors.ts` ([pipeline d'assets](asset-pipeline.md)).
 `scripts/build-ui-preview.mjs` produit `/ui-review.html` ; `scripts/check-docs.mjs`
