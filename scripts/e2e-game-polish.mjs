@@ -91,18 +91,25 @@ try {
     10000,
     'remote character model',
   );
+  // A 0.12 drop (about 40 reference metres) is fatal without a canopy. Alpha's own page
+  // opens it after 0.05 of free fall (about 2 s, still slowed to a safe landing): waiting
+  // for Bravo to see the fall first (UDP, then a CDP round trip) took longer than the
+  // whole drop on a loaded runner, and Alpha died.
   await pages[0].evaluate(() => {
     const b = polishTest.self();
     b.y += 0.12;
     b.vy = 0;
     b.grounded = false;
     b.parachute = false;
+    const top = b.y;
+    const open = setInterval(() => {
+      const body = polishTest.self();
+      if (!body || top - body.y < 0.05) return;
+      body.parachute = true;
+      clearInterval(open);
+    }, 5);
   });
   await until(() => pages[1].evaluate(() => phases.includes('fall')), 10000, 'remote freefall');
-  await pages[0].evaluate(() => {
-    const b = polishTest.self();
-    b.parachute = true;
-  });
   await until(
     () => pages[1].evaluate(() => phases.includes('parachute')),
     10000,
@@ -119,6 +126,7 @@ try {
       phases.indexOf('parachute') < phases.lastIndexOf('landing'),
     JSON.stringify(phases),
   );
+  assert.equal(room.pilots.get(alpha).life, 'alive', 'a canopy landing survives the drop');
   console.log('Remote character phases over UDP:', phases);
   await pages[0].evaluate(() => {
     const b = polishTest.self();
