@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import * as T from '../vendor/three.webgpu.min.js';
 import { EXHAUST_PROFILES, MissileExhaust } from '../src/missile-exhaust.ts';
-import { GroundDefenseUI } from '../src/ground-defense-ui.js';
+import { GroundDefenseUI } from '../src/ground-defense-ui.ts';
 import { newGroundDefense } from '../src/ground-defense-state.ts';
 
 const luminance = (hex) => new T.Color(hex).getHSL({}).l;

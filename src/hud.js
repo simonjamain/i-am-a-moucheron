@@ -3,7 +3,7 @@ import { FIXED_DCA } from './fixed-dca.ts';
 import { FORTIFICATIONS } from './ground-fortifications.ts';
 import { rangeReadout } from './equipment-controls.ts';
 import { MAP } from './scale.ts';
-import { MOBILE_FUSE } from './mobile-flak.js';
+import { MOBILE_FUSE } from './mobile-flak.ts';
 import { formatDistance, formatSpeed } from './units.ts';
 
 const count = (value) => Math.max(0, Math.floor(value || 0));

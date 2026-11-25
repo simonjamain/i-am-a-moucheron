@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { POWER_REFERENCE, computeEnemyPower, powerTable } from '../src/enemy-power.ts';
 import { ENEMY_TYPES, ENEMY_POWER, enemyPower } from '../src/waves.ts';
-import { BALANCE_FIELDS, DEFAULT_BALANCE, validateBalance } from '../src/balance.js';
+import { BALANCE_FIELDS, DEFAULT_BALANCE, validateBalance } from '../src/balance.ts';
 import { directorBudget, prepareRoster } from '../server/wave-preparation.js';
 import { Game } from '../server/game.js';
 

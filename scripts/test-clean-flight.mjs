@@ -14,7 +14,7 @@ import { VEHICLES, LIGHT_FIGHTER, vehicleEntry, isRotorcraft } from '../src/flee
 import { MAP, ACTOR_UNIT } from '../src/scale.ts';
 import { OFFICE_LAYOUT } from '../src/layout.ts';
 import { OFFICE_SOLIDS } from '../server/assets.js';
-import { createGraphics } from '../src/graphics.js';
+import { createGraphics } from '../src/graphics.ts';
 import { stepFlight } from '../src/flight.ts';
 import { swarmAudioGroups } from '../src/game-audio/swarm.ts';
 import { AircraftFire } from '../src/aircraft-fire.ts';

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import * as T from '../vendor/three.webgpu.min.js';
 import { MODEL_DATA } from '../src/meshy-castor-data.ts';
 import { CASTOR_WHEEL_RADIUS } from '../src/castor-wheels.ts';
-import { createGraphics } from '../src/graphics.js';
+import { createGraphics } from '../src/graphics.ts';
 import { paintVehicle } from '../src/vehicle-livery.ts';
 
 // One remodelled Meshy source, split into islands by scripts/import-meshy-castor.py.

@@ -3,12 +3,12 @@
 // (tank and D2 shell origins, D2 hulls, H2 weapon origins) match what is drawn.
 import assert from 'node:assert/strict';
 import * as T from '../vendor/three.webgpu.min.js';
-import { createGraphics } from '../src/graphics.js';
+import { createGraphics } from '../src/graphics.ts';
 import { aimGun } from '../src/sortie.ts';
 import { ACTOR_UNIT } from '../src/scale.ts';
 import { VEHICLES, vehicleUnit } from '../src/fleet.ts';
-import { tankBarrelOrigin } from '../src/tank-view.js';
-import { mobileBarrelOrigin, trailerGunPivot } from '../src/mobile-flak.js';
+import { tankBarrelOrigin } from '../src/tank-view.ts';
+import { mobileBarrelOrigin, trailerGunPivot } from '../src/mobile-flak.ts';
 import { heliWeaponOrigin } from '../src/helicopter.ts';
 import { VEHICLE_ANCHORS } from '../src/vehicle-anchors.ts';
 import { MODEL_DATA as SPITFIRE } from '../src/meshy-spitfire-data.ts';

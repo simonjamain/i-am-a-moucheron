@@ -46,7 +46,11 @@ dans `src/`, `server/` et `scripts/`. L'état et la prochaine étape sont suivis
    dans `src/types.ts` (fait pour `EnemyType`, dérivé de `SPECIES` dans `waves.ts`
    et seulement réexporté par `src/types.ts`). Voir
    [ajouter du contenu](adding-content.md).
-6. **Comportement identique** : une migration ne change ni la logique ni les
+6. **Type d'une fabrique** : exporter `ReturnType<typeof fabrique>` depuis son module
+   (`export type Graphics = ReturnType<typeof createGraphics>` dans `graphics.ts`) et le
+   restreindre chez l'appelant (`Pick<Graphics, 'box' | 'cyl'>`) plutôt que recopier les
+   signatures dans une interface locale.
+7. **Comportement identique** : une migration ne change ni la logique ni les
    allocations des chemins chauds. Préférer `readonly number[]` à une conversion
    (`Array.from`) quand une fonction reçoit des tableaux.
 

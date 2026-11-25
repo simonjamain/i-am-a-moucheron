@@ -2,8 +2,8 @@
 import assert from 'node:assert/strict';
 import { Worker, isMainThread, parentPort, workerData } from 'node:worker_threads';
 import { prepareRoster } from '../server/wave-preparation.js';
-import { DEFAULT_BALANCE } from '../src/balance.js';
-import { advanceGroundCrowd } from '../src/ground-crowd.js';
+import { DEFAULT_BALANCE } from '../src/balance.ts';
+import { advanceGroundCrowd } from '../src/ground-crowd.ts';
 import { newGroundDefense, groundFlow } from '../src/ground-defense-state.ts';
 import { swarmFrame } from '../src/waves.ts';
 import { INSECT_SCALE, enemySizeFactor } from '../src/scale.ts';

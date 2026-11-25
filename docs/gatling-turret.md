@@ -49,7 +49,7 @@ pas touchée une seconde fois dans le même tick.
 Le serveur publie **un effet `sentry-shot` par tourelle et par tick**, avec
 `turret: 'gatling'` et `shots` (1 à 3) ; la T-01 garde un effet par tir. Le client étale
 les tirs à la cadence de l'arme (`noteGatlingBurst` / `takeGatlingShots`,
-`src/ground-defense-ui.js`, au plus deux par image) : un traceur et un éclair par tir,
+`src/ground-defense-ui.ts`, au plus deux par image) : un traceur et un éclair par tir,
 depuis le canon du haut du faisceau, sans son par tir.
 
 ## Son continu

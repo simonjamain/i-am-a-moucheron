@@ -18,7 +18,7 @@ import {
   GATLING_SCALE,
   GATLING_MAX_ELEVATION,
 } from '../src/gatling-model.ts';
-import { GroundDefenseUI } from '../src/ground-defense-ui.js';
+import { GroundDefenseUI } from '../src/ground-defense-ui.ts';
 import { synthesize, AUDIO_PROFILES } from '../src/game-audio/synth.ts';
 import { createGroundModel } from '../src/ground-model.ts';
 import { swarmFrame } from '../src/waves.ts';

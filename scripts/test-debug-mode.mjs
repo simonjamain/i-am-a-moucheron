@@ -4,7 +4,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync, existsSync } from 'node:fs';
 import { Game } from '../server/game.js';
-import { DEFAULT_BALANCE } from '../src/balance.js';
+import { DEFAULT_BALANCE } from '../src/balance.ts';
 
 let now = 500000;
 const game = new Game({ now: () => now });

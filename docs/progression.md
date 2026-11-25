@@ -38,7 +38,7 @@ sur la progression ou l’économie, pas sur l’étalon.
 préparée. Pour un joueur, les vagues 1, 2, 5, 10 et 15 valent environ 32, 48, 162,
 1 230 et 9 340 de puissance.
 
-Les règles d’une room sont fixes : `DEFAULT_BALANCE` (`src/balance.js`) donne les
+Les règles d’une room sont fixes : `DEFAULT_BALANCE` (`src/balance.ts`) donne les
 multiplicateurs (dégâts, vitesses, prix, récompenses, pauses, caisse initiale…) de
 toutes les rooms ; aucune commande ne les modifie. Les tests composent un roster exact
 avec `debugSwarmRoster` (`src/waves.ts`).

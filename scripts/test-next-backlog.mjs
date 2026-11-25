@@ -14,7 +14,7 @@ import { loadRapier } from '../src/physics-world.ts';
 import { wavePlan } from '../src/waves.ts';
 import { enemyRoute } from '../src/routes.ts';
 import { blockedSegment } from '../src/route-navigation.ts';
-import { createGraphics } from '../src/graphics.js';
+import { createGraphics } from '../src/graphics.ts';
 import { CrashEffects } from '../src/crash-effects.ts';
 import { OFFICE_SOLIDS } from '../server/assets.js';
 

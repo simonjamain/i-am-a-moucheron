@@ -2,7 +2,7 @@
 // at a time behind the truck, and walls/tape are billed 1 $ per 20 cm pro rata.
 import assert from 'node:assert/strict';
 import * as T from '../vendor/three.webgpu.min.js';
-import { GroundDefenseUI, BRICK_PITCH, TRAIL_MAX, trailBricks } from '../src/ground-defense-ui.js';
+import { GroundDefenseUI, BRICK_PITCH, TRAIL_MAX, trailBricks } from '../src/ground-defense-ui.ts';
 import { groundCommand, lengthPrice, newGroundDefense } from '../src/ground-defense-state.ts';
 
 // Pro-rata price: exact length, to the cent, never rounded up to 20 cm.

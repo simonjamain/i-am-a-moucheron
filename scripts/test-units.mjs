@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { formatDistance, formatSpeed } from '../src/units.ts';
 import { MAP, FLAK, ACTOR_UNIT } from '../src/scale.ts';
-import { MOBILE_FUSE } from '../src/mobile-flak.js';
+import { MOBILE_FUSE } from '../src/mobile-flak.ts';
 import { GROUND_BOUNDS } from '../src/ground-defense.ts';
 import { equipmentHUD } from '../src/hud.js';
 import { cursorAmmoText } from '../src/live-hud.ts';

@@ -111,7 +111,7 @@ souris, pas le châssis.
   (`cannonGun` porte masque et mitrailleuse coaxiale, `cannonBarrel` le tube) ;
   `tankBarrelOrigin` en tient compte. Élévation de 30° au plus
   (`TANK_GUN_MAX_PITCH`, `src/armament.ts`), butée côté client seulement.
-- **Vue du tireur** (`tankSight`, `SIGHT` dans `tank-view.js`) : l'œil est derrière
+- **Vue du tireur** (`tankSight`, `SIGHT` dans `tank-view.ts`) : l'œil est derrière
   (0,4) et au-dessus (0,75) du pivot, dans le repère du canon : il monte avec le
   tube et reste au-dessus du toit à toute élévation, sans suivre le recul.
 - **Chenilles déformables (cosmétiques)** : un char distant n'a pas de ressorts ;

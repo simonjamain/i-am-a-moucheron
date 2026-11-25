@@ -38,7 +38,7 @@ dégâts infligés à la poubelle s'il l'atteint.
   quand elle bloque leur route (`GROUND_ATTACK_DAMAGE`, `src/ground-creatures.ts`) ; les
   défenses au sol sont décrites dans [le gameplay](gameplay.md).
 - **Réglages de salle.** PV et vitesse sont multipliés par `balance.enemyHP` et
-  `balance.enemySpeed` (`src/balance.js`).
+  `balance.enemySpeed` (`src/balance.ts`).
 
 ## Araignée pondeuse et bébés
 

@@ -1,7 +1,7 @@
 import { appearanceId } from '../src/character-appearances.ts';
 import { prepareRoster, forecast } from './wave-preparation.js';
 import { feedingPoint } from '../src/ground-defense-state.ts';
-import { DEFAULT_BALANCE, money } from '../src/balance.js';
+import { DEFAULT_BALANCE, money } from '../src/balance.ts';
 import { deliveryStart, deliveryLanding, deliveryHeightAt } from '../src/delivery.ts';
 import {
   newGroundDefense,
@@ -11,8 +11,8 @@ import {
   damageBarricade,
   floorStructures,
 } from '../src/ground-defense-state.ts';
-import { advanceGroundCrowd } from '../src/ground-crowd.js';
-import { clampProximity } from '../src/mobile-flak.js';
+import { advanceGroundCrowd } from '../src/ground-crowd.ts';
+import { clampProximity } from '../src/mobile-flak.ts';
 import { collisionDamage } from '../src/vehicle-care.ts';
 import { purchaseCount } from '../src/equipment.ts';
 import { bedAccess, bedSpawn } from '../src/beds.ts';

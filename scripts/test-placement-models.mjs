@@ -3,7 +3,7 @@ import * as T from '../vendor/three.webgpu.min.js';
 import { ModelPreview } from '../src/model-preview.ts';
 import { createGroundModel } from '../src/ground-model.ts';
 import { makeFortificationStation } from '../src/fortification-model.ts';
-import { createGraphics } from '../src/graphics.js';
+import { createGraphics } from '../src/graphics.ts';
 import { placementFacing } from '../src/placement-aim.ts';
 import { supportedPlacement } from '../src/equipment.ts';
 import { Game } from '../server/game.js';

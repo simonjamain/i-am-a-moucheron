@@ -11,7 +11,7 @@ import { layoutSolids } from '../src/layouts.ts';
 const ROUTE_OBSTACLES = layoutSolids();
 import { solidQuery } from './solid-harness.mjs';
 import { howitzerMuzzle } from '../src/howitzer-geometry.ts';
-import { DEFAULT_BALANCE } from '../src/balance.js';
+import { DEFAULT_BALANCE } from '../src/balance.ts';
 
 // Runs the client's real shooter code (heavyWorld, updateLocalHeavy,
 // finishHeavy): the heavy gun's shell flies in the shooter's browser, hits the

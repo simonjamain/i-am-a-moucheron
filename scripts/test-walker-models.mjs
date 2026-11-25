@@ -9,7 +9,7 @@ import { ROACH_DATA } from '../src/roach-data.ts';
 import { SPIDERLING_DATA } from '../src/spiderling-data.ts';
 import { WALKERS, WalkerBatch, walkerStride } from '../src/walker-batch.ts';
 import { footCycle, nearestRest, REST_PHASES, SWING } from '../src/walker-gait.ts';
-import { createGraphics } from '../src/graphics.js';
+import { createGraphics } from '../src/graphics.ts';
 import { nearestInsectHit, insectContact } from './insect-harness.mjs';
 import { GROUND_FOOT_DEPTH, GROUND_FOOT_CLEARANCE, INSECT_SCALE } from '../src/scale.ts';
 import { insectScale } from '../src/insect-status.ts';
