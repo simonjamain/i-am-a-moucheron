@@ -50,10 +50,12 @@ idempotence) et la protection de la salle. Détail : [confiance envers les clien
   migration d'un `.js` : [TypeScript](docs/typescript.md).
 - Un nouveau `scripts/test-*.mjs` s'ajoute à `scripts/suite.mjs` (`test-suite-wiring.mjs`
   le vérifie) ; un nouveau `scripts/e2e-*.mjs` à sa liste `E2E`.
-- Fichiers générés, jamais édités ni committés : `VERSION`, `server/assets.js`,
-  `src/changelog-recent.ts`, `dist/`, `docs/ui-review.html` et les `src/*-data.ts` des
-  importeurs. Le numéro de version vient de Git : un clone superficiel demande
-  `git fetch --unshallow` ([version et nouveautés](docs/changelog.md)).
+- Fichiers générés, jamais édités à la main. Ignorés par Git : `VERSION`,
+  `server/assets.js`, `src/changelog-recent.ts`, `dist/`. Versionnés mais régénérés :
+  `docs/ui-review.html` (par l'assembleur), les `src/*-data.ts` et
+  `src/vehicle-anchors.ts` (par les importeurs, [pipeline](docs/asset-pipeline.md)). Le
+  numéro de version vient de Git : un clone superficiel demande `git fetch --unshallow`
+  ([version et nouveautés](docs/changelog.md)).
 
 ## Documentation
 
@@ -78,10 +80,10 @@ note selon [le modèle de reprise](docs/tasks/README.md) et la supprimer à la c
 ## Nouveaux assets Meshy
 
 Règle pérenne : proposer des visuels conformes à la [direction artistique](docs/art-direction.md)
-et obtenir la **validation de l'utilisateur avant toute génération**. Ensuite, une image de
-référence isolée et une génération séparée par pièce mobile (roue, rotor, tourelle, canon),
-pivots et dimensions documentés, source approuvée et provenance SHA-256 conservées, jamais
-de simplification aveugle d'un GLB monobloc articulé. Étapes et checklist :
+et obtenir la **validation de l'utilisateur avant toute génération**. Ensuite, une
+image de référence isolée et une génération séparée par pièce mobile (roue, rotor, tourelle, canon) ;
+pivots, axes et dimensions documentés ; source approuvée et provenance SHA-256 conservées ;
+jamais de simplification aveugle d'un GLB monobloc articulé. Étapes et checklist :
 [pipeline d'assets](docs/asset-pipeline.md#règle-pour-tout-nouveau-modèle-meshy).
 
 ## Livraison et fusion

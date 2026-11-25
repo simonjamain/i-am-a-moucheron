@@ -80,10 +80,6 @@ certains scripts). Exemple : `PYTHONPATH=scripts python3 scripts/import-midge.py
 assets/originals/midge/angry-little-fly.glb`. Chaque modèle a un test
 `scripts/test-<modèle>*.mjs` (provenance, triangles, UV, pivots, contact au sol).
 
-`scripts/import-meshy-textures.py`, `import-meshy-b3.py`, `import-meshy-h2.py`,
-`import-meshy-m1.py` et `import-meshy-fleet.py` ne produisent aucun module actuel
-(empreintes et masques d'anciennes tâches Meshy) : ne pas les relancer.
-
 Un asset acheté ou fourni hors Meshy (décor du bureau, porte-bloc) échappe à la règle
 de validation Meshy mais suit la même discipline : original hors Git, empreinte
 épinglée, licence respectée ([catalogue](models.md#cartoon-office-pack-bloxbits)).
