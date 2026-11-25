@@ -6,19 +6,17 @@ véhicules au sol (ici), [avions](plane-physics.md) et
 triangles ([collisions](collisions.md)). La marche passe par le contrôleur de personnage
 de Rapier (`WalkerWorld`, `stepWalker` dans `src/sortie.ts`) ; la poussée entre
 marcheurs, l'intégration plane et les règles des mondes restent dans
-`walk-arena.ts`. Tous les rayons, segments et distances contre les solides (tirs,
-obus lourds, caméra, visée de pose, atterrissage, débris, chenilles) passent par
-`SolidQuery` ; la balistique garde son calcul des trajectoires et des cibles
-(ennemis, joueurs, véhicules). `helicopter.ts` ne fait voler un hélicoptère que tant que Rapier n'est pas chargé. Le bouton
-« Physique » dessine corps, ressorts et forces : [affichage de la
-physique](physics-debug.md).
+`walk-arena.ts`. Rayons, segments et distances contre les solides passent par
+`SolidQuery` ([collisions](collisions.md#ce-qui-utilise-les-triangles)) ; les
+volumes de tir des insectes sont aussi dans Rapier ([insectes et
+Rapier](insects-rapier.md)). Le bouton « Physique » dessine corps, ressorts et
+forces : [affichage de la physique](physics-debug.md).
 
 Rapier a été préféré à ammo.js (API lourde, mémoire gérée à la main), cannon-es
 (JavaScript pur, peu actif) et Jolt : il fournit contrôleur de véhicule à roues,
 détection continue et build déterministe, et tourne sous Node (tests et engins
 sans pilote). Il ne remplace ni l'aérodynamique (forces écrites par le jeu), ni
-les touches des tirs sur les ennemis ([performances](performance.md)), ni les
-ennemis eux-mêmes.
+le mouvement des ennemis.
 
 ## Chargement
 
@@ -28,7 +26,9 @@ servi sur `/rapier.js` et chargé par `loadRapier` pendant l'écran de chargemen
 (`homeReady` l'attend) ; un échec est une erreur de démarrage. Le serveur Node ne
 compresse pas les ressources : sur une connexion lente, ces 4,3 Mo allongent le
 premier chargement (URL versionnée, téléchargée une fois). Le serveur charge
-`@dimforge/rapier3d-compat` à la première sortie d'un pilote.
+`@dimforge/rapier3d-compat` au démarrage, avant d'écouter (`loadServerPhysics`,
+`server/game.js`) : largages et livraisons interrogent les solides de façon
+synchrone.
 
 ## Unités : l'échelle humaine
 
@@ -90,8 +90,8 @@ souris, pas le châssis.
   (`fleet.ts`, `vehicleUnit(type)`). Par similitude de Froude, masses en taille³,
   vitesses en √taille et taux de rotation en 1/√taille : profil `maxSpeed` 32,
   `turn` 1,2. Les longueurs du rig suivent `TANK_SCALE`.
-- **Suspension** : douze ressorts à rayon ; affaissement de 4 cm au repos,
-  amortissement à 45 %. Le char pique au freinage, se cabre en accélérant et
+- **Suspension** : douze ressorts à rayon ; affaissement d'environ 5 cm au repos
+  (`sag`, 4 cm × `TANK_SCALE`), amortissement à 45 %. Le char pique au freinage, se cabre en accélérant et
   penche en virage. `rig.wheelCompression` expose chaque ressort.
 - **Chenilles** : Z/S poussent ou tirent les deux chenilles ; Q/D ajoutent une
   différence de poussée à toute vitesse (asservissement du taux de lacet) ; Q ou D
@@ -111,7 +111,7 @@ souris, pas le châssis.
   (`cannonGun` porte masque et mitrailleuse coaxiale, `cannonBarrel` le tube) ;
   `tankBarrelOrigin` en tient compte. Élévation de 30° au plus
   (`TANK_GUN_MAX_PITCH`, `src/armament.ts`), butée côté client seulement.
-- **Vue du tireur** (`tankSight`, `SIGHT` dans `tank-view.js`) : l'œil est derrière
+- **Vue du tireur** (`tankSight`, `SIGHT` dans `tank-view.ts`) : l'œil est derrière
   (0,4) et au-dessus (0,75) du pivot, dans le repère du canon : il monte avec le
   tube et reste au-dessus du toit à toute élévation, sans suivre le recul.
 - **Chenilles déformables (cosmétiques)** : un char distant n'a pas de ressorts ;

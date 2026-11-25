@@ -56,9 +56,7 @@ Données générées exclues de Prettier : voir `.prettierignore`.
 ## Scénarios navigateur
 
 `npm run e2e` (`run-tests.mjs --e2e`) exécute un à un les scénarios Chromium de la liste
-`E2E` de `scripts/suite.mjs` (reprise de pilote, mouvements partagés, repli TCP, chute vue
-par un second client, écran de chargement, nuages WebGL, marche au purgatoire, contraste
-HUD/lit/traçantes) ; `npm run e2e -- <fragment>` filtre. Ils exigent Playwright et Chromium,
+`E2E` de `scripts/suite.mjs` ; `npm run e2e -- <fragment>` filtre. Ils exigent Playwright et Chromium,
 installés à la volée par la CI, pas par le projet. `e2e-layouts` (`npm run e2e:layouts`,
 plus de deux minutes) reste manuel : il expire sur le runner CI.
 
@@ -77,6 +75,12 @@ npm run e2e                            # si Chromium/Playwright est disponible
 node scripts/build-info.ts && docker build -t i-am-a-moucheron:local .
 ```
 
+`npm run e2e` tourne là où `node -e "require('playwright')"` réussit (environ 3 min en
+série). Pour jouer contre l'image construite comme le fait la CI, la démarrer avec
+`-e UDP_ADVERTISE_ADDRESS=127.0.0.1 -p 127.0.0.1:3000:3000/tcp
+-p 127.0.0.1:41000-41099:41000-41099/udp`, puis lancer
+`node scripts/smoke-image.ts http://127.0.0.1:3000`.
+
 `npm run build` produit dans `dist/` un runtime Node autonome (`npm ci --omit=dev &&
 npm start`) ; le validateur vérifie la syntaxe ESM du serveur, les imports locaux et les
 assets, pas l'installation des dépendances natives. Le build Docker est exigé même pour
@@ -86,24 +90,26 @@ une contribution documentaire ([Docker](docker.md)).
 | ------------ | ------------------------ | ----------------------------------------------------------- | ----------------------- |
 | Itération    | `npm test -- <fragment>` | règles, physique, protocole du système touché               | le reste de la suite    |
 | Avant PR     | commandes ci-dessus      | domaine Node, pairs UDP natifs en loopback, types, artefact | WebGL, navigateur, WAN  |
-| CI de PR     | workflows ci-dessous     | idem, image qui démarre, Chromium réel en loopback          | rendu GPU, confort, WAN |
+| CI de PR     | workflows ci-dessous     | idem, partie UDP contre l'image, Chromium réel en loopback  | rendu GPU, confort, WAN |
 | Après fusion | essai humain sur le VPS  | partie réelle                                               | —                       |
 
 ## Intégration continue
 
-| Workflow / job                                                                                              | Rôle                                                                                                                     |
-| ----------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| `Docker build validation` › `Docker build`                                                                  | construit l'image, la démarre, vérifie `/healthz` (`ok`, `storage=ram`, `transport=webrtc-udp`) et le 410 de `/api/join` |
-| › `Full game regression and formatting`                                                                     | `npm test`, `npm run build`, `validate-artifact.mjs`                                                                     |
-| › `Real Chromium over WebRTC UDP/TCP`                                                                       | `npm run e2e`                                                                                                            |
-| › `50-player snapshot comparison`, `50 native UDP peers`, `Physics contact regression and 50x900 benchmark` | mesures de capacité ([performances](performance.md)), pas des tests de règles                                            |
-| `Docs site`                                                                                                 | site de documentation en mode strict ; publication depuis `main` ([site](site.md))                                       |
-| `Meshy asset tooling validation`                                                                            | outil GLB ([pipeline d'assets](asset-pipeline.md))                                                                       |
-| `Conflict alert`                                                                                            | à chaque push sur `main`, label `conflit` et commentaire sur les PR devenues conflictuelles                              |
-| `Build and publish Docker image`                                                                            | publication GHCR sur `main` ([déploiement](#déploiement))                                                                |
+| Workflow / job                                                                                              | Rôle                                                                                        |
+| ----------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| `Docker build validation` › `Docker build`                                                                  | construit l'image et y joue (`smoke-image.ts`) : plage UDP publiée, puis port UDP unique    |
+| › `Full game regression and formatting`                                                                     | `npm test`, `npm run build`, `validate-artifact.mjs`                                        |
+| › `Real Chromium over WebRTC UDP/TCP`                                                                       | `npm run e2e`                                                                               |
+| › `50-player snapshot comparison`, `50 native UDP peers`, `Physics contact regression and 50x900 benchmark` | mesures de capacité ([performances](performance.md)), pas des tests de règles               |
+| `Docs site`                                                                                                 | site de documentation en mode strict ; publication depuis `main` ([site](site.md))          |
+| `Meshy asset tooling validation`                                                                            | outil GLB ([pipeline d'assets](asset-pipeline.md))                                          |
+| `Conflict alert`                                                                                            | à chaque push sur `main`, label `conflit` et commentaire sur les PR devenues conflictuelles |
+| `Build and publish Docker image`                                                                            | publication GHCR sur `main` ([déploiement](#déploiement))                                   |
 
 Les contrôles requis pour fusionner sont configurés dans la protection de `main`, hors du
 dépôt ([Docker](docker.md#contrôle-de-contribution-et-protection-de-main)).
+`test-suite-wiring.mjs` vérifie que les jobs de PR lancent toujours `smoke-image.ts`,
+`npm test`, `validate-artifact.mjs` et `npm run e2e`.
 
 ## Limites de validation
 

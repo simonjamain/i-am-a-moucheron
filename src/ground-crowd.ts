@@ -1,15 +1,32 @@
 import { INSECT_SCALE, enemySizeFactor } from './scale.ts';
 import { advanceGroundUnit, groundUnit } from './ground-creatures.ts';
+import type { GroundEnemy, GroundUnit, GroundWorld } from './ground-creatures.ts';
+import type { Vec2 } from './types.ts';
+
+/** A walking roster entry, as the crowd reads it (a `WaveEnemy`). */
+export type CrowdEnemy = GroundEnemy & { size?: number; ground?: boolean; dummy?: boolean };
+interface CrowdEntry {
+  unit: GroundUnit;
+  enemy: CrowdEnemy;
+  availableAt: number;
+}
+interface Neighbour {
+  id: number;
+  p: number[];
+  radius: number;
+}
 
 // Soft personal space in room metres, distinct from projectile hit volumes.
-export const groundRadius = (enemy) =>
+export const groundRadius = (enemy: { size?: number; type: string }): number =>
   INSECT_SCALE * (enemy.size ?? 1) * enemySizeFactor(enemy.type) * 0.9;
 const CELL = 0.1;
-const key = (x, z) => x + ':' + z;
+const key = (x: number, z: number): string => x + ':' + z;
 
 // Freeze neighbours for each substep: results do not depend on update order.
-export function crowdSeparation(entries) {
-  const grid = new Map();
+export function crowdSeparation(
+  entries: readonly Pick<CrowdEntry, 'unit' | 'enemy'>[],
+): (unit: GroundUnit, enemy: CrowdEnemy) => Vec2 {
+  const grid = new Map<string, Neighbour[]>();
   let maxRadius = 0;
   for (const { unit, enemy } of entries) {
     if (unit.arrived) continue;
@@ -18,9 +35,9 @@ export function crowdSeparation(entries) {
     const p = [...unit.p],
       cell = key(Math.floor(p[0] / CELL), Math.floor(p[1] / CELL));
     if (!grid.has(cell)) grid.set(cell, []);
-    grid.get(cell).push({ id: unit.id, p, radius });
+    grid.get(cell)!.push({ id: unit.id, p, radius });
   }
-  return (unit, enemy) => {
+  return (unit: GroundUnit, enemy: CrowdEnemy): Vec2 => {
     const radius = groundRadius(enemy),
       range = Math.ceil(((radius + maxRadius) * 1.5) / CELL);
     const x = Math.floor(unit.p[0] / CELL),
@@ -60,7 +77,14 @@ export function crowdSeparation(entries) {
   };
 }
 
-export function advanceGroundCrowd(agents, roster, kills, previous, elapsed, world) {
+export function advanceGroundCrowd(
+  agents: Record<number, GroundUnit>,
+  roster: readonly CrowdEnemy[],
+  kills: { has(index: number): boolean },
+  previous: number,
+  elapsed: number,
+  world: Omit<GroundWorld, 'separation'>,
+): void {
   const ground = roster.flatMap((enemy, index) =>
     enemy.ground && !enemy.dummy && !kills.has(index)
       ? [{ enemy, availableAt: enemy.spawn + (enemy.entryHold || 0) }]
@@ -71,13 +95,13 @@ export function advanceGroundCrowd(agents, roster, kills, previous, elapsed, wor
   let time = previous;
   do {
     const end = Math.min(elapsed, time + 0.05),
-      entries = [];
+      entries: CrowdEntry[] = [];
     for (const { enemy, availableAt } of ground) {
       if (end < availableAt) continue;
       const unit = (agents[enemy.id] ||= groundUnit(enemy, Math.max(previous, availableAt)));
       if (!unit.arrived) entries.push({ unit, enemy, availableAt });
     }
-    const stepWorld = { ...world, separation: crowdSeparation(entries) };
+    const stepWorld: GroundWorld = { ...world, separation: crowdSeparation(entries) };
     for (const { unit, enemy, availableAt } of entries)
       advanceGroundUnit(
         unit,

@@ -1,7 +1,8 @@
 # Rubans d'air et frottement du décrochage
 
-Rien n'est affiché sur l'écran pour prévenir d'un décrochage : l'avertissement vit
-dans le monde. À l'approche du décrochage, des **rubans d'air** blancs quittent les
+L'approche du décrochage s'annonce dans le monde, pas sur l'écran : le texte
+« DÉCROCHAGE » du HUD (`stallWarning`) n'apparaît qu'une fois l'avion décroché
+(`PlaneRig.stall` sous 0,8). À l'approche du décrochage, des **rubans d'air** blancs quittent les
 ailes de l'avion, et un **frottement d'air** de plus en plus présent se fait entendre.
 Tout le monde les voit et les entend sur tous les avions (`src/air-ribbons.ts`,
 boucle `airflow`).

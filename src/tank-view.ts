@@ -2,12 +2,32 @@ import { ACTOR_UNIT } from './scale.ts';
 import { vehicleUnit } from './fleet.ts';
 import { rotateLocal } from './helicopter.ts';
 import { VEHICLE_ANCHORS } from './vehicle-anchors.ts';
+import type * as THREE from 'three/webgpu';
+import type { Three } from './types.ts';
+
+/** Free-look angles of the commander's observation view, in radians. */
+export interface TankObservation {
+  yaw: number;
+  pitch: number;
+}
+export interface TankSight {
+  eye: THREE.Vector3;
+  target: THREE.Vector3;
+  muzzle: THREE.Vector3;
+  observing: boolean;
+}
 // Position of the gunner's eye relative to the gun's pivot, in model units.
 export const SIGHT = Object.freeze({ behind: 0.4, above: 0.75, left: 0 });
-export function tankSight(T, mount, direction, up, observation = null) {
+export function tankSight(
+  T: Three,
+  mount: THREE.Object3D,
+  direction: THREE.Vector3,
+  up: THREE.Vector3,
+  observation: TankObservation | null = null,
+): TankSight {
   mount.updateWorldMatrix(true, true);
-  const muzzle = mount.userData.muzzle.getWorldPosition(new T.Vector3());
-  const coax = mount.userData.coaxMuzzle.getWorldPosition(new T.Vector3());
+  const muzzle: THREE.Vector3 = mount.userData.muzzle.getWorldPosition(new T.Vector3());
+  const coax: THREE.Vector3 = mount.userData.coaxMuzzle.getWorldPosition(new T.Vector3());
   if (observation) {
     const center = mount.getWorldPosition(new T.Vector3()).addScaledVector(up, ACTOR_UNIT * 2);
     const offset = new T.Vector3(
@@ -40,7 +60,10 @@ export function tankSight(T, mount, direction, up, observation = null) {
 // Shell origin: the gun's elevation pivot plus the barrel along the aim, the same points the T3
 // model draws. The pivot is at the turret's front, so it swings with the turret's yaw (the turret
 // turns about its own centre): the yaw is read from the aim, like `aimGun` does.
-export function tankBarrelOrigin(vehicle, direction) {
+export function tankBarrelOrigin(
+  vehicle: { state: { p: readonly number[]; q: readonly number[] } },
+  direction: readonly number[],
+): number[] {
   const { gunPivot, gunLength, turretPivot } = VEHICLE_ANCHORS.tank;
   const unit = vehicleUnit('tank');
   const q = vehicle.state.q;

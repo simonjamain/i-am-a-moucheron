@@ -8,7 +8,7 @@ import {
   wavePlan,
 } from '../src/waves.ts';
 import { enemyRoute, enemyRoutePosition, routeDuration } from '../src/routes.ts';
-import { DEFAULT_BALANCE, retimeRoster, scaleRoster } from '../src/balance.js';
+import { DEFAULT_BALANCE, retimeRoster, scaleRoster } from '../src/balance.ts';
 
 // The game office is in world metres, not creature-scaled dimensions.
 const expected = {

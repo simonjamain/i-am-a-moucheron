@@ -5,7 +5,7 @@ import vm from 'node:vm';
 import { readFileSync } from 'node:fs';
 import * as T from '../vendor/three.webgpu.min.js';
 import { HEAVY, heavyInterval } from '../src/armament.ts';
-import { heavyReadyAt, heavyLane } from '../src/reload-hud.js';
+import { heavyReadyAt, heavyLane } from '../src/reload-hud.ts';
 const source = readFileSync('src/client.js', 'utf8');
 const code = source.slice(
   source.indexOf('async function fireHeavy('),

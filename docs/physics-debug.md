@@ -4,7 +4,7 @@ Deux boutons discrets à côté de « Debug » dans l'en-tête, **indépendants 
 la room** (qui remet la partie à zéro) ; chacun est local au navigateur et mémorisé
 (`localStorage`, `view.volumes` / `view.physics`) :
 
-- **Volumes** : hit boxes des ennemis, boîtes et triangles de collision du décor
+- **Volumes** : volumes de tir des insectes ([Rapier](insects-rapier.md)), boîtes et triangles de collision du décor
   ([collisions](collisions.md)), portées des défenses. Le mode debug de la room ne les
   affiche pas : le bouton est seul à décider.
 - **Physique** : les corps rigides Rapier des engins, vus par `src/physics-debug.ts`

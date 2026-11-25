@@ -1,10 +1,30 @@
 import { canUseWeapon, heavyInterval, TANK_MG } from './armament.ts';
 import { HELI } from './helicopter.ts';
 import { pilotFireInterval } from './fleet.ts';
+import type { VehicleType } from './fleet.ts';
 
-export const heavyLane = (weapon) =>
+/** Vehicle fields the reload arcs read (a room vehicle as the client sees it). */
+export interface ReloadVehicle {
+  type: VehicleType;
+  state: { hp: number };
+  nextMissileAt?: number;
+  lastHeavy?: Partial<Record<HeavyLane, number>>;
+}
+export type HeavyLane = 'bomb' | 'missile' | 'cannon';
+/** One reload ring: the weapon and its readiness in [0, 1]. */
+export interface ReloadArc {
+  weapon: string;
+  progress: number;
+}
+
+export const heavyLane = (weapon: string): HeavyLane =>
   weapon === 'bomb' ? 'bomb' : weapon === 'missile' ? 'missile' : 'cannon';
-export function heavyReadyAt(vehicle, weapon, fireRate = 1, predicted = 0) {
+export function heavyReadyAt(
+  vehicle: ReloadVehicle,
+  weapon: string,
+  fireRate = 1,
+  predicted = 0,
+): number {
   return Math.max(
     predicted,
     weapon === 'missile'
@@ -13,7 +33,7 @@ export function heavyReadyAt(vehicle, weapon, fireRate = 1, predicted = 0) {
           (heavyInterval(weapon, vehicle.type) * 1000) / fireRate,
   );
 }
-export function reloadProgress(now, readyAt, duration) {
+export function reloadProgress(now: number, readyAt: number, duration: number): number {
   return duration > 0
     ? Math.max(0, Math.min(1, 1 - (readyAt - now) / duration))
     : now >= readyAt
@@ -29,9 +49,17 @@ export function seatReloads({
   automaticCooldown = 0,
   predicted = () => 0,
   missileInFlight = false,
-}) {
+}: {
+  vehicle: ReloadVehicle | null | undefined;
+  seat: string;
+  now: number;
+  fireRate?: number;
+  automaticCooldown?: number;
+  predicted?: (weapon: string) => number;
+  missileInFlight?: boolean;
+}): ReloadArc[] {
   if (!vehicle || vehicle.state.hp <= 0) return [];
-  const arcs = [];
+  const arcs: ReloadArc[] = [];
   const auto = vehicle.type === 'tank' && seat === 'cannon' ? 'coax' : seat;
   if (
     canUseWeapon(vehicle.type, seat, auto) &&
@@ -42,7 +70,7 @@ export function seatReloads({
       vehicle.type === 'helicopter'
         ? HELI.gunInterval
         : vehicle.type === 'tank'
-          ? TANK_MG[auto]?.interval || 0.09
+          ? TANK_MG[auto as keyof typeof TANK_MG]?.interval || 0.09
           : vehicle.type === 'castor'
             ? 0.16
             : seat === 'pilot'
@@ -73,12 +101,15 @@ export function seatReloads({
 }
 
 export class ReloadHUD {
-  constructor(root) {
+  root: Element;
+  signature: string;
+  circles: SVGElement[];
+  constructor(root: Element) {
     this.root = root;
     this.signature = '';
     this.circles = [];
   }
-  update(arcs) {
+  update(arcs: readonly ReloadArc[]): void {
     const signature = arcs.map((a) => a.weapon).join(':');
     if (signature === this.signature) {
       this.circles.forEach((circle, i) =>
@@ -95,7 +126,7 @@ export class ReloadHUD {
     for (const [i, arc] of arcs.entries()) {
       const circle = document.createElementNS(ns, 'circle');
       const radius = 19 + i * 5;
-      circle.setAttribute('r', radius);
+      circle.setAttribute('r', radius as unknown as string);
       circle.setAttribute('pathLength', '1');
       circle.setAttribute('stroke-dasharray', `${arc.progress} 1`);
       circle.setAttribute('stroke', ['#d5ef73', '#f4cd81', '#a4e5f4'][i % 3]);

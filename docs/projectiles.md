@@ -39,8 +39,7 @@ stock, recul). Les distances et vitesses sont en mètres de référence
 | `ap`        |                             800 |         — |                600 |        12 |      10° | obus perforant du char                     |
 | `antitank`  |                        800 → 90 |         5 |                750 |        12 |       0° | canon anti-matériel                        |
 
-`projectileDamage(id, vitesse)` applique `speedExponent` ; il n'est pas encore branché
-sur les tirs. Les armes lourdes lisent leur type via `HEAVY` (`src/armament.ts`), les
+`projectileDamage(id, vitesse)` applique `speedExponent` ; aucun tir ne l'appelle. Les armes lourdes lisent leur type via `HEAVY` (`src/armament.ts`), les
 balles via `TANK_MG`, `CASTOR_GUN_DAMAGE`, `RAPID_DCA_DAMAGE` et `HELI.gunDamage`.
 `REFERENCE.bullet` (820) et `REFERENCE.shell` (800) sont dans `src/scale.ts` ; la DCA
 mobile et le Flak lourd tirent à 70 % de `shell`.
@@ -66,7 +65,7 @@ Balles et obus suivent `stepBallisticVelocity` (`src/ballistics.ts`) : gravité 
 quadratique `dv/dt = g − k|v|v`, intégrées en demi-pas, avec `BALLISTICS.bullet` 0,0007 et
 `BALLISTICS.shell` 0,00015 (mètres de référence, divisés par `MAP.ratio`). La chute des
 personnages est décrite dans [corps partagés](walking-network.md#saut-chute-et-parachute) ;
-`stepFall`, du même module, n'est plus appelé que par son test. Test :
+`stepFall`, du même module, n'est appelé que par son test. Test :
 `scripts/test-economy-ballistics.mjs`.
 
 ## Ricochet
@@ -115,7 +114,7 @@ fois (identifiants de tir idempotents). Voir [confiance envers les clients](trus
   le projectile dès l'appui depuis la bouche affichée et envoie `heavy-fire`
   (`antitank-fire` / `heavy-dca-fire` pour les canons fixes) ; le serveur débite le
   stock et enregistre le départ. Le tireur envoie ensuite `heavy-impact` avec les dégâts
-  par ennemi, coque et joueur, ou `fizzle` pour une fin sans explosion. Le serveur
+  par ennemi, coque et joueur, ou avec `fizzle: true` pour une fin sans explosion. Le serveur
   oublie un départ sans rapport 3 s après sa fin de vie (`IMPACT_GRACE_MS`) et garde au
   plus `MAX_ORDNANCE` départs par salle.
 - Les autres joueurs font voler l'obus depuis le départ enregistré ; un missile guidé

@@ -17,12 +17,12 @@ import { OFFICE_LAYOUT } from '../src/layout.ts';
 import { enemyRoute, PORTALS } from '../src/routes.ts';
 import { blockedSegment } from '../src/route-navigation.ts';
 import { staticGroundFlow, groundGoal, groundStaticObstacles } from '../src/ground-defense.ts';
-import { createGraphics } from '../src/graphics.js';
+import { createGraphics } from '../src/graphics.ts';
 import { createOffice } from '../src/office.ts';
 import { OFFICE_CLOUD_TOP, FOG_START_RATIO } from '../src/office-fog.ts';
 import { prepareRoster } from '../server/wave-preparation.js';
-import { DEFAULT_BALANCE } from '../src/balance.js';
-import { advanceGroundCrowd } from '../src/ground-crowd.js';
+import { DEFAULT_BALANCE } from '../src/balance.ts';
+import { advanceGroundCrowd } from '../src/ground-crowd.ts';
 import { newGroundDefense, groundFlow } from '../src/ground-defense-state.ts';
 
 assert.equal(LAYOUTS.length, 6, 'six plans');

@@ -11,7 +11,7 @@ import {
   installationCount,
 } from '../src/logistics.ts';
 import { shopPrice } from '../src/equipment.ts';
-import { createGraphics } from '../src/graphics.js';
+import { createGraphics } from '../src/graphics.ts';
 import { paintVehicle, updateInscriptions } from '../src/vehicle-livery.ts';
 import * as T from '../vendor/three.webgpu.min.js';
 // Documents can no longer be torn: no tear button nor handler.

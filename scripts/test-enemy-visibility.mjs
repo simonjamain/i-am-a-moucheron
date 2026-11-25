@@ -2,7 +2,7 @@ import { ServerClock } from '../src/server-clock.ts';
 import { GroundMotionTrack } from '../src/ground-motion.ts';
 import assert from 'node:assert/strict';
 import * as T from '../vendor/three.webgpu.min.js';
-import { createGraphics } from '../src/graphics.js';
+import { createGraphics } from '../src/graphics.ts';
 import { ENEMY_TYPES, wavePlan, swarmFrame } from '../src/waves.ts';
 import { insectScale } from '../src/insect-status.ts';
 import { INSECT_SCALE } from '../src/scale.ts';

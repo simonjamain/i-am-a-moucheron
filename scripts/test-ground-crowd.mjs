@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { advanceGroundCrowd, crowdSeparation, groundRadius } from '../src/ground-crowd.js';
+import { advanceGroundCrowd, crowdSeparation, groundRadius } from '../src/ground-crowd.ts';
 import { buildGroundFlow } from '../src/ground-defense.ts';
 import { swarmFrame } from '../src/waves.ts';
 
@@ -115,7 +115,7 @@ console.log(
 const { groundFlow, newGroundDefense, groundCommand } =
   await import('../src/ground-defense-state.ts');
 const { prepareRoster } = await import('../server/wave-preparation.js');
-const { DEFAULT_BALANCE } = await import('../src/balance.js');
+const { DEFAULT_BALANCE } = await import('../src/balance.ts');
 let seed = 42;
 const draw = (n) => {
   seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;

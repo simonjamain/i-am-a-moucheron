@@ -14,6 +14,8 @@ export function rigWheels(
   const wheels = [nodes.wheelL, nodes.wheelR];
   for (const wheel of wheels) wheel.userData.restY = wheel.position.y;
   model.userData.wheels = wheels;
+  // The hubs are fixed: no steering (the Castor's wheel animation turns what is not flagged).
+  model.userData.fixedWheels = true;
   model.userData.wheelRadius = planeSpec(type).wheelRadius;
   model.userData.gearSag = planeSpec(type).sag;
 }

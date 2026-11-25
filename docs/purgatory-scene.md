@@ -20,8 +20,7 @@ la couche des nuages du ciel avec `prerender()` avant l’image. Les shaders son
 ## Le nuage-sol
 
 On marche sur un nuage dessin animé (`createCloudFloor` dans `src/purgatory-clouds.ts`),
-le même avec ou sans carte graphique. Le nuage-sol volumétrique, dans lequel on marchait
-à moitié, a été retiré à la demande du propriétaire du projet.
+le même avec ou sans carte graphique.
 
 - Dessus plat sur la partie où l’on marche (`PURGATORY_HALL`, x de −10 à 10, z de −8 à
   90), bosselé autour (`cloudHeight`), boules sur le bord (`cloudPuffs`) ; son étendue

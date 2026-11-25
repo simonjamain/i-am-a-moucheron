@@ -1,11 +1,10 @@
 # Catalogue des modèles 3D
 
 Provenance, import et articulations de chaque modèle intégré. Règles communes
-(validation Meshy, conventions d'import, optimisation) : [pipeline des assets](asset-pipeline.md).
-Tous les originaux sont **hors Git** (`assets/originals/…`) ; leur SHA-256 complet est
-épinglé dans le script d'import et recopié dans l'en-tête ou le champ `sourceSha256` du
-module généré (abrégé ici). Sauf mention, tous les triangles et UV d'origine sont gardés
-et aucune simplification n'est appliquée.
+(validation Meshy, conventions d'import, originaux hors Git, optimisation) :
+[pipeline des assets](asset-pipeline.md). Les SHA-256 sont abrégés ici ; l'empreinte
+complète est dans l'en-tête ou le champ `sourceSha256` du module généré. Sauf mention,
+tous les triangles et UV d'origine sont gardés, sans simplification.
 
 ## Véhicules
 
@@ -15,17 +14,17 @@ est la livrée : aucune couleur par joueur ni pastille n'est ajoutée, et les d�
 voient par la fumée, jamais par un changement de forme. Règles de jeu, postes et
 armement : [flotte et armes](scale-fleet-weapons.md).
 
-| Id (`src/fleet.ts`)   | Source (SHA-256)                                    | Triangles | Import                                                  | Module, rig                                             |
+| Id (`src/fleet.ts`)   | Source inscrite (SHA-256)                           | Triangles | Import                                                  | Module, rig                                             |
 | --------------------- | --------------------------------------------------- | --------: | ------------------------------------------------------- | ------------------------------------------------------- |
-| `fighter`             | `chasseur_biplan.glb` (`4ca14796…228a`)             |     2 702 | `import-meshy-vehicle.py biplane`                       | `meshy-biplane-data.ts`, `biplane-model.ts`             |
-| `bomber`              | `bombardier_biplan.glb` (`62a9205e…8023`)           |     1 762 | `import-meshy-vehicle.py biplanebomber`                 | `meshy-biplane-bomber-data.ts`, `biplane-model.ts`      |
-| `lightfighter` (M1)   | `Meshy_AI_Olive_Scout_Plane` (`d4115c13…7387`)      |     2 357 | ancienne entrée `fighter` de l'importeur (voir limites) | `meshy-m1-data.ts`, `m1-model.ts`                       |
+| `fighter`             | `613c3ebe-chasseur_biplan.glb` (`4ca14796…228a`)    |     2 702 | `import-meshy-vehicle.py biplane`                       | `meshy-biplane-data.ts`, `biplane-model.ts`             |
+| `bomber`              | `c4732118-bombardier_biplan.glb` (`62a9205e…8023`)  |     1 762 | `import-meshy-vehicle.py biplanebomber`                 | `meshy-biplane-bomber-data.ts`, `biplane-model.ts`      |
+| `lightfighter` (M1)   | `scout2.glb` (`d4115c13…7387`)                      |     2 357 | ancienne entrée `fighter` de l'importeur (voir limites) | `meshy-m1-data.ts`, `m1-model.ts`                       |
 | `medbomber` (B3)      | `bomber.glb` (`a50363b8…4307`)                      |     5 797 | `import-meshy-vehicle.py bomber`                        | `meshy-b3-data.ts`, `b3-model.ts`                       |
-| `interceptor` (Stuka) | `Meshy_AI_Desert_Sparrow` (`6290811f…9ade`)         |     3 261 | `import-meshy-vehicle.py interceptor`                   | `meshy-stuka-data.ts`, `meshy-rig.ts`                   |
-| `spitfire`            | `Meshy_AI_Vintage_Fighter_Plane` (`b18e5558…26c4`)  |     3 002 | `import-meshy-vehicle.py spitfire`                      | `meshy-spitfire-data.ts`, `meshy-rig.ts`                |
-| `tank` (T3)           | `Meshy_AI_Desert_Vanguard` (`fb105cc1…86e9`)        |     3 833 | `import-meshy-vehicle.py tank`                          | `meshy-tank-data.ts`, `meshy-rig.ts`                    |
-| `flaktruck` (D2)      | `Meshy_AI_Towable_Anti_Aircraft` (`3861d4bf…18ed`)  |     4 689 | `import-meshy-vehicle.py flaktruck`                     | `meshy-flaktruck-data.ts`, `meshy-rig.ts`               |
-| `helicopter` (H2)     | `Meshy_AI_Desert_Viper_Helicopt` (`488832fc…6a9a`)  |     5 102 | `import-meshy-vehicle.py helicopter`                    | `meshy-h2-data.ts`, `h2-model.ts`                       |
+| `interceptor` (Stuka) | `sparrow.glb` (`6290811f…9ade`)                     |     3 261 | `import-meshy-vehicle.py interceptor`                   | `meshy-stuka-data.ts`, `meshy-rig.ts`                   |
+| `spitfire`            | `spitfire.glb` (`b18e5558…26c4`)                    |     3 002 | `import-meshy-vehicle.py spitfire`                      | `meshy-spitfire-data.ts`, `meshy-rig.ts`                |
+| `tank` (T3)           | `tank.glb` (`fb105cc1…86e9`)                        |     3 833 | `import-meshy-vehicle.py tank`                          | `meshy-tank-data.ts`, `meshy-rig.ts`                    |
+| `flaktruck` (D2)      | `flak.glb` (`3861d4bf…18ed`)                        |     4 689 | `import-meshy-vehicle.py flaktruck`                     | `meshy-flaktruck-data.ts`, `meshy-rig.ts`               |
+| `helicopter` (H2)     | `heli.glb` (`488832fc…6a9a`)                        |     5 102 | `import-meshy-vehicle.py helicopter`                    | `meshy-h2-data.ts`, `h2-model.ts`                       |
 | `castor` (G1)         | `Meshy_AI_Tactical_Rescue_Rover…` (`b211b423…c466`) |     3 700 | `import-meshy-castor.py`                                | `meshy-castor-data.ts`, `castor-model.ts`               |
 | `flyingcastor`        | `Meshy_AI_Rescue_Rotorcraft…` (`dfcd21c0…e691`)     |     2 767 | `import-meshy-flying-castor.py`                         | `meshy-flying-castor-data.ts`, `flying-castor-model.ts` |
 
@@ -41,7 +40,8 @@ les sommets pour retrouver les îlots, puis range chacun dans un nœud articulé
 spécification du véhicule (sélection d'îlots, pivots, sens des canons). L'avant Meshy −X
 est tourné vers −Z sans miroir ; l'échelle est calée sur l'envergure (biplans 5,6 et
 11,3, M1 5,6, B3 11,3, Spitfire 6,2, Stuka 7,7) ou la longueur (T3 4,3, D2 8,6, H2 7,5),
-roues au niveau −`gear`. La texture 4 096 px devient un JPEG de 1 024 px. `--debug`
+roues au niveau −`gear`. La texture devient un JPEG de 1 024 px. L'empreinte n'est pas
+épinglée : elle est seulement inscrite dans l'en-tête du module. `--debug`
 exporte îlots et groupes pour un rendu de contrôle surligné.
 
 `src/meshy-rig.ts` construit la hiérarchie (`data.rig`) : chaque nœud est un pivot dans
@@ -80,13 +80,14 @@ moyeux du T3 dans leurs roues.
 
 ### Castor G1
 
-`python3 scripts/import-meshy-castor.py SOURCE.glb` trouve les 158 îlots, reconnaît les
-six pneus et les cinq pièces de la tourelle de toit (l'import échoue sinon), tourne le
+`python3 scripts/import-meshy-castor.py SOURCE.glb` (empreinte inscrite, non épinglée)
+soude les îlots, reconnaît les six pneus et les cinq pièces de la tourelle de toit (l'import échoue sinon), tourne le
 modèle de −X vers −Z, l'échelonne à 6,1 unités de long avec le contact des roues à −0,8,
-et enregistre `body`, `wheel0`…`wheel5` (moyeu, axe X, rayon 0,568 →
-`CASTOR_WHEEL_RADIUS`), `turret` (lacet) et `gun` (élévation), bouche au bout du canon.
-Texture 2 048 px → JPEG 1 024 px. `scripts/attach-castor-rims.py` rattache les six
-enjoliveurs extérieurs à leur pneu. Le mât caméra et l'antenne restent dans la coque.
+et enregistre `body`, `wheel0`…`wheel5` (moyeu, axe X, rayon mesuré `wheelRadius` 0,568 ; la cinématique
+utilise `CASTOR_WHEEL_RADIUS` = 0,57 de `src/castor-wheels.ts`), `turret` (lacet) et
+`gun` (élévation), bouche au bout du canon. Texture → JPEG 1 024 px.
+`scripts/attach-castor-rims.py` rattache ensuite au pneu voisin les six enjoliveurs
+extérieurs (53 triangles). Le mât caméra et l'antenne restent dans la coque.
 
 ### Castor volant
 
@@ -201,8 +202,9 @@ scripts/import-meshy-brick.py <GLB>` écrit `src/meshy-brick-data.ts` ; contrôl
 (tiroir déjà ouvert). L'outil Docker n'en retirait que six triangles en grossissant le
 fichier : l'original est importé. `python3 scripts/import-bed.py SOURCE.glb` écrit
 `src/meshy-bed-data.ts` (positions quantifiées à 0,0005, texture JPEG 1K). En jeu
-`src/bed-model.ts` : 12 × 3,381 × 5,55 mm, géométrie partagée entre lits, fantômes et
-achat ; réapparition à 2,6 unités modèle du centre côté +X, tournée avec le lit.
+`makeBed` (`src/bed-model.ts`) : 12 × 3,381 × 5,55 mm, géométrie partagée entre lits
+posés, aperçus de pose et vignettes d'achat ; réapparition à 2,6 m de référence du
+centre, côté +X du lit et tournée avec lui (`bedSpawn`, `src/beds.ts`).
 Contrôle : `test-bed-model.mjs`.
 
 ![Lit texturé](drawer-bed-290.png)
@@ -228,7 +230,7 @@ les noms ne sont lus que par les lecteurs d'écran.
   `src/character-data.ts` (défaut) ou `src/character-<id>-data.ts` : positions/UV
   float32, poids sur 8 bits, rotations int16, translation des hanches seule, texture de
   base JPEG 1 024 px. Clips gardés : `Idle_12`, `Walking`, `Running` pour le défaut ;
-  `Walking`, `Running` pour les autres.
+  `Walking`, `Running` pour les autres, plus tout clip de chute présent.
 - Chargement : seul le défaut est dans le graphe initial ; les autres sont des `import()`
   dynamiques, chargés quand le sélecteur les montre ou qu'un joueur les porte, le défaut
   étant affiché puis remplacé sur place (`setAppearance`).
@@ -257,13 +259,13 @@ pieds à y = 0 dans la source.
 
 | Espèce             | Modèle Meshy                      | SHA-256         | Triangles / os | Import                          | Échelle | Zone de tir           |
 | ------------------ | --------------------------------- | --------------- | -------------- | ------------------------------- | ------: | --------------------- |
-| moucheron          | Angry Little Fly                  | `5db0deca…f404` | 1 624 / 38     | `import-midge.py`               |     0,8 | `MIDGE_SPHERE_RADIUS` |
+| moucheron          | Angry Little Fly                  | `5db0deca…f404` | 1 624 / 40     | `import-midge.py`               |     0,8 | `MIDGE_SPHERE_RADIUS` |
 | fourmi             | Red Ant Warrior                   | `12064094…b4cd` | 2 074 / 52     | `import-creature.py ant`        |     0,6 | `ANT_HIT`             |
 | araignée           | Spotted Velvet Spider             | `e8d8f32d…3faa` | 1 471 / 30     | `import-creature.py spider`     |     0,6 | `SPIDER_HIT`          |
 | cafard             | Low Poly Cockroach                | `4ca70cae…5fc3` | 490 / 40       | `import-creature.py roach`      |    0,52 | `ROACH_HIT`           |
 | bébé araignée      | Grumpy Spider                     | `eaeaff76…96da` | 280 / 29       | `import-creature.py spiderling` |     0,5 | `SPIDERLING_HIT`      |
 | rat                | Low Poly Mouse                    | `fa7bf0c8…3eae` | 420 / 27       | `import-rat.py`                 |     3,5 | `RAT_HIT`             |
-| scarabée (`brute`) | « Low Poly Cockroach » (scarabée) | `a7d151ca…aa1f` | 598 / 48       | `import-beetle.py`              |    0,75 | `BEETLE_HIT` (sphère) |
+| scarabée (`brute`) | « Low Poly Cockroach » (scarabée) | `a7d151ca…aa1f` | 598 / 50       | `import-beetle.py`              |    0,75 | `BEETLE_HIT` (sphère) |
 | abeille (`guard`)  | Angry Low Poly Bee                | `a126aa44…821d` | 582 / 45       | `import-bee.py`                 |    0,75 | `BEE_HIT`             |
 | moustique          | Low Poly Mosquito                 | `c13dff6e…1c15` | 478 / 62       | `import-mosquito.py`            |       1 | `MOSQUITO_HIT`        |
 
@@ -275,6 +277,8 @@ partagées entre proxys instanciés et rigs ; les tirs les testent sous forme de
 de `src/scale.ts` fixe ensuite la taille au bureau.
 
 ### Corrections de rig à l'import
+
+Les comptes d'os du tableau sont ceux des modules, os ajoutés compris.
 
 - **Moucheron** : ailes pondérées par Meshy sur l'abdomen ; l'import ajoute `Wing_L`
   (+X) et `Wing_R` (−X), enfants du thorax `Bone_003`, charnière aux sommets les plus
@@ -299,7 +303,7 @@ de `src/scale.ts` fixe ensuite la taille au bureau.
   abeille 12, moustique 15), battement sur l'horloge partagée avec une phase par insecte ;
   le client oriente le proxy vers son déplacement.
 - **Marcheurs** (`walker-gait.ts`, `walker-batch.ts`) : pieds plantés pendant 60 % du
-  cycle puis levés en arc, cinématique inverse à deux os (`solveLeg`) ; fourmi et cafard
+  cycle (`SWING` = 0,4 en l'air) puis levés en arc, cinématique inverse à deux os (`solveLeg`) ; fourmi et cafard
   en tripode, araignée et bébé en tétrapode alternée ; phase avancée de
   `distance / foulée` et plafonnée (`maxRate`), glissement vers une pose de repos à
   l'arrêt. Le cafard et le bébé sont relevés (`raise`) pour qu'aucun sommet ne passe
@@ -342,6 +346,31 @@ Contrôles : `test-midge-model.mjs`, `test-midge-batch.mjs`, `test-walker-models
 
 Intégration et contrôles : [décor du purgatoire](purgatory-scene.md),
 `test-purgatory-scene.mjs`.
+
+## Cartoon Office Pack (BloxBits)
+
+Le décor du bureau est le **Cartoon Office Pack**, édition Extra, de BloxBits
+(<https://bloxbits.itch.io/cartoon-office-pack>), acheté par le propriétaire du projet.
+Ce n'est pas un modèle Meshy : la règle de validation Meshy ne s'applique pas, la
+discipline de provenance oui.
+
+- **Licence** : usage dans le jeu et modifications permises ; revente et redistribution
+  des fichiers interdites. D'où [`src/office-pack-LICENSE.md`](../src/office-pack-LICENSE.md)
+  à côté du module généré : modèles réservés à ce jeu, aucune licence du dépôt ne s'y
+  applique. Les fichiers d'origine (FBX, GLB complet) restent **hors de Git**.
+- **Import** : `python3 scripts/import-office-pack.py
+assets/originals/office-pack/Cartoon_Office_Pack_Extra_All.glb` (SHA-256 épinglé
+  `5de660c5…3aab`, GLB converti du FBX, 179 objets, atlas unique de 1 024 px) écrit
+  `src/office-pack-data.ts` (positions int16 à 0,5 mm, UV, atlas PNG d'origine) et
+  `src/office-pack-catalog.ts` (bornes et triangles par modèle, pour le serveur et les
+  plans).
+- **Repère et échelle** : Y vers le haut, mètres, origine de chaque objet conservée
+  (centre au sol pour un meuble, face arrière pour un objet mural, tourné vers +X) ; un
+  module de mur (5,4 unités du pack) vaut 1,2 m, pour 2,7 m de haut (`WALL_HEIGHT`).
+- **Seulement ce qui sert** : `MODELS` (dans le script) liste les objets placés par les
+  plans ; `scripts/test-office-pack.mjs` refuse un modèle importé inutilisé. Pour en
+  ajouter un, l'ajouter à la liste et relancer l'import. Rendu et placement :
+  [plans du bureau](office-layouts.md#décor--le-cartoon-office-pack).
 
 ## Limites connues
 

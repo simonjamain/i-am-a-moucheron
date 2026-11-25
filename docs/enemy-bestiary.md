@@ -30,15 +30,15 @@ dégâts infligés à la poubelle s'il l'atteint.
   vague et de la longueur du trajet. Seul le réglage « Vitesse ennemis » de la salle
   (`balance.enemySpeed`) la multiplie (`enemyTravelSpeed`). La durée d'un trajet est
   sa longueur réelle divisée par cette vitesse, plus l'attente d'entrée.
-- **Disponibilité.** Le directeur des vagues (`server/wave-preparation.js`) peut tirer
-  toute espèce dès la vague 1 : seule la puissance restante du budget décide
-  ([progression](progression.md#composition)). `ENEMY_UNLOCK_WAVE` ne fixe plus que la
-  liste et l'ordre de tirage, et les déblocages du générateur de repli `wavePlan()`.
+- **Disponibilité.** Toute espèce peut sortir dès la vague 1 : seule la puissance restante
+  du budget décide ([progression](progression.md#composition)). `ENEMY_UNLOCK_WAVE` fixe
+  seulement la liste et l'ordre de tirage, et les déblocages du générateur de repli
+  `wavePlan()`.
 - **Attaques au sol.** Cafard, pondeuse et rat endommagent la barricade la plus proche
   quand elle bloque leur route (`GROUND_ATTACK_DAMAGE`, `src/ground-creatures.ts`) ; les
   défenses au sol sont décrites dans [le gameplay](gameplay.md).
 - **Réglages de salle.** PV et vitesse sont multipliés par `balance.enemyHP` et
-  `balance.enemySpeed` (`src/balance.js`).
+  `balance.enemySpeed` (`src/balance.ts`).
 
 ## Araignée pondeuse et bébés
 
@@ -53,11 +53,13 @@ naissance peut être partielle.
 ## Modèles, tailles et volumes de tir
 
 Chaque espèce a un modèle Meshy riggé, dessiné en un `InstancedMesh` par espèce
-(`MidgeBatch`, `src/flyer-batch.ts`, `src/walker-batch.ts`), sans niveau de détail.
+(`MidgeBatch`, `FlyerBatch`, `WalkerBatch` : `src/midge-batch.ts`, `src/flyer-batch.ts`,
+`src/walker-batch.ts`), sans niveau de détail.
 Modèles, provenance, import, animations et zones de tir (`ANT_HIT`, `BEETLE_HIT`…) :
-[catalogue des modèles](models.md#créatures). La zone de tir est un ellipsoïde du corps
-sans pattes ni ailes, une sphère pour le moucheron (`MIDGE_SPHERE_RADIUS`) et le
-scarabée. La phase de marche des terrestres avance avec la distance parcourue : les
+[catalogue des modèles](models.md#créatures). La zone de tir part d'un ellipsoïde du corps
+sans pattes ni ailes, testé comme la sphère ou la capsule qui le contient (`capsuleOf`,
+`src/insect-hitboxes.ts`) ; le moucheron (`MIDGE_SPHERE_RADIUS`) et le scarabée ont une
+sphère. La phase de marche des terrestres avance avec la distance parcourue : les
 pieds restent plantés quelle que soit la vitesse reçue du serveur.
 
 **Tailles.** `ENEMY_SIZE_FACTORS` (`src/scale.ts`, lu par `enemySizeFactor()`) agrandit

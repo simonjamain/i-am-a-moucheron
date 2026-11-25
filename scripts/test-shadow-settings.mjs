@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import * as T from '../vendor/three.webgpu.min.js';
 import { applyShadowPreset } from '../src/shadow-settings.ts';
 import { createOffice } from '../src/office.ts';
-import { createGraphics } from '../src/graphics.js';
+import { createGraphics } from '../src/graphics.ts';
 const scene = new T.Scene();
 createOffice(T, scene, { ...createGraphics(T, scene), textLabel: () => new T.Group() });
 const renderer = { shadowMap: {} };

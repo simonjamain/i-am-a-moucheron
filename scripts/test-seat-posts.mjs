@@ -6,7 +6,7 @@ import { VEHICLES, vehicleAccess, vehicleEntry } from '../src/fleet.ts';
 import { MAP, ACTOR_UNIT } from '../src/scale.ts';
 import { OFFICE_LAYOUT } from '../src/layout.ts';
 import { SEAT_POSTS, aimPost, freeSeat, pickPost, postReach } from '../src/seat-posts.ts';
-import { createGraphics } from '../src/graphics.js';
+import { createGraphics } from '../src/graphics.ts';
 import { PostHighlight, SELECTION_LAYER } from '../src/post-highlight.ts';
 
 // Ray picking: nearest post along the ray, never behind, inside a sphere counts.

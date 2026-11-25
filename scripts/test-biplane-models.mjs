@@ -2,7 +2,7 @@
 // gunner mount) and the gameplay numbers asked for when they replaced the M1 / B3.
 import assert from 'node:assert/strict';
 import * as T from '../vendor/three.webgpu.min.js';
-import { createGraphics } from '../src/graphics.js';
+import { createGraphics } from '../src/graphics.ts';
 import { paintVehicle } from '../src/vehicle-livery.ts';
 import { BIPLANE_DATA } from '../src/meshy-biplane-data.ts';
 import { BIPLANE_BOMBER_DATA } from '../src/meshy-biplane-bomber-data.ts';

@@ -3,7 +3,7 @@
 // other players), the four rear ones and the trailer's fixed, all of them spinning.
 import assert from 'node:assert/strict';
 import * as T from '../vendor/three.webgpu.min.js';
-import { createGraphics } from '../src/graphics.js';
+import { createGraphics } from '../src/graphics.ts';
 import { ackermannAngle, animateDrivenWheels, animateRollingWheels } from '../src/castor-wheels.ts';
 import { wheelSteering } from '../src/castor-physics.ts';
 import { MODEL_UNIT } from '../src/physics-world.ts';

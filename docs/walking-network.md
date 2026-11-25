@@ -40,7 +40,7 @@ signature et l'ordre des documents, et sérialise signatures et embarquements.
 
 ## PNJ du purgatoire
 
-Le premier joueur connecté présent au purgatoire, par ordre lexicographique
+Le premier joueur présent au purgatoire, par ordre lexicographique
 d'identifiant, simule les PNJ ; le serveur publie cet hôte (`arena.host`). Un
 changement d'hôte importe le dernier snapshot des PNJ ; un hôte déconnecté
 expire après le délai de présence (12 s). Sans joueur au purgatoire, le serveur
@@ -84,7 +84,7 @@ convertis par `MAP.ratio` : `jumpWalker` lance un saut depuis le sol seulement, 
 (`WALKER_JUMP_SPEED` 4,9 m/s, sommet vers 1,2 m) ; `WALKER_FALL` fixe gravité (9,81), vitesse
 terminale (54 m/s, 5,5 m/s sous voile), gonflement de la voile (0,25 s) et seuils d'impact
 (sans dégât jusqu'à 6 m/s, mortel à 20 m/s, `impactDamage` quadratique entre les deux).
-`src/sortie.ts` intègre la chute par sous-pas (`stepWalkerFall`). La chute libre commence
+`stepWalker` (`src/sortie.ts`) intègre la chute par sous-pas avec `stepWalkerFall`. La chute libre commence
 au-delà de `WALKER_FREEFALL_SPEED` (5,6 m/s de descente), qu'un simple saut n'atteint pas :
 c'est aussi la condition pour ouvrir le parachute (`toggleParachute`, `src/ballistics.ts`).
 Les poses en l'air (impulsion, chute libre à plat ventre, suspension sous voile) sont

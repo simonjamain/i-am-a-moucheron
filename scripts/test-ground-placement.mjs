@@ -33,7 +33,7 @@ console.log('Camera placement: anchors, direction independence, validation and t
 
 // Exercise the actual controller with Three.js, without requiring a GPU.
 const T = await import('../vendor/three.webgpu.min.js');
-const { GroundDefenseUI } = await import('../src/ground-defense-ui.js');
+const { GroundDefenseUI } = await import('../src/ground-defense-ui.ts');
 class Element {
   constructor(tag) {
     this.tag = tag;

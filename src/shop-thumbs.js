@@ -1,6 +1,6 @@
 // Small 3D pictures of every shop item, drawn once by a private renderer from
 // the real in-game vehicle and service-station models.
-import { createGraphics } from './graphics.js';
+import { createGraphics } from './graphics.ts';
 import { makeFixedDca } from './fixed-dca-model.ts';
 import { makeBed } from './bed-model.ts';
 import { makeServiceStation } from './station-model.ts';

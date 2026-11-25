@@ -10,7 +10,7 @@ import {
   LEGACY_HEIGHT,
   GAIT,
 } from '../src/character-model.ts';
-import { createGraphics } from '../src/graphics.js';
+import { createGraphics } from '../src/graphics.ts';
 import { HUMAN_SCALE, MAP } from '../src/scale.ts';
 
 const near = (a, b, eps, label) => assert.ok(Math.abs(a - b) < eps, label + ': ' + a + ' vs ' + b);

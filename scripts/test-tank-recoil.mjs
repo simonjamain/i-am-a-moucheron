@@ -2,12 +2,12 @@
 // shoulder, and a tank left alone that stands still.
 import assert from 'node:assert/strict';
 import * as T from '../vendor/three.webgpu.min.js';
-import { createGraphics } from '../src/graphics.js';
+import { createGraphics } from '../src/graphics.ts';
 import { VEHICLES, vehicleUnit } from '../src/fleet.ts';
 import { loadRapier } from '../src/physics-world.ts';
 import { TankRig } from '../src/tank-physics.ts';
 import { GUN_RECOIL, applyGunRecoil, recoilAmount } from '../src/tank-recoil.ts';
-import { tankSight, SIGHT } from '../src/tank-view.js';
+import { tankSight, SIGHT } from '../src/tank-view.ts';
 import { MODEL_DATA } from '../src/meshy-tank-data.ts';
 import { aimGun } from '../src/sortie.ts';
 import { VEHICLE_ANCHORS } from '../src/vehicle-anchors.ts';

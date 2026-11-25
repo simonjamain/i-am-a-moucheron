@@ -2,6 +2,8 @@ import type { RigidBody } from '@dimforge/rapier3d-compat';
 import { ACTOR_UNIT, MAP } from './scale.ts';
 import { VEHICLES, type VehicleProfile } from './fleet.ts';
 import { AIRCRAFT_GEOMETRY } from './aircraft-geometry.ts';
+import { LAYOUT_ROOM } from './layouts.ts';
+import { OFFICE_CEILING as SKY_FLOOR } from './arena-frame.ts';
 import {
   DEBUG_COLORS,
   arrow,
@@ -280,6 +282,7 @@ export class PlaneRig implements DebugRig {
     this.params = params;
     this.compression = spec.gears.map(() => 0);
     this.physics = physics ?? new PhysicsWorld(RAPIER, { gravity: G * K });
+    this.physics.addRoomWalls(LAYOUT_ROOM.x, LAYOUT_ROOM.z, SKY_FLOOR);
     const m = params.mass,
       span = spec.size.span * K,
       length = spec.size.length * K,

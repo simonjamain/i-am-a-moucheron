@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { stepHeavy } from '../src/heavy-sim.js';
-import { proximityRadius } from '../src/mobile-flak.js';
+import { proximityRadius } from '../src/mobile-flak.ts';
 import { MAX_ORDNANCE } from '../server/game.js';
 
 // Heavy shots hit the props' triangles through world.solidSegment (a ray along each

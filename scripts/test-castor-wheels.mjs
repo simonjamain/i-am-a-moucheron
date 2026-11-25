@@ -10,7 +10,7 @@ import {
   trackGroundMotion,
   wheelPose,
 } from '../src/castor-wheels.ts';
-import { createGraphics } from '../src/graphics.js';
+import { createGraphics } from '../src/graphics.ts';
 import { VEHICLES } from '../src/fleet.ts';
 import { CastorRig } from '../src/castor-physics.ts';
 import { loadRapier } from '../src/physics-world.ts';

@@ -7,7 +7,7 @@ import { loadRapier } from '../src/physics-world.ts';
 import { MAP } from '../src/scale.ts';
 import { createCharacter, LANDING_DURATION, loadCharacter } from '../src/character-model.ts';
 import { makeServiceStation, animateRadar } from '../src/station-model.ts';
-import { seatReloads, reloadProgress } from '../src/reload-hud.js';
+import { seatReloads, reloadProgress } from '../src/reload-hud.ts';
 import { zoomTopView, TOP_VIEW_HEIGHT } from '../src/castor-top-view.ts';
 import { officeFogOpacity } from '../src/office-fog.ts';
 

@@ -13,7 +13,7 @@ import {
   beetleFlightPose,
 } from '../src/beetle-model.ts';
 import { FLYERS, FlyerBatch } from '../src/flyer-batch.ts';
-import { createGraphics } from '../src/graphics.js';
+import { createGraphics } from '../src/graphics.ts';
 import { nearestInsectHit } from './insect-harness.mjs';
 import { ENEMY_TYPES } from '../src/waves.ts';
 

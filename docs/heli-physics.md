@@ -39,13 +39,13 @@ vol, il tombe), les freins sont serrés, et il s'endort au sol une fois le rotor
 
 ## Géométrie
 
-`HELI_GEOMETRY` (en unités du modèle, relevée sur les îlots du maillage avec
-`scripts/split-vehicle-parts.mjs`) : moyeux des roues ou patins, sol, centre de masse (la part de
-poids portée par chaque ressort suit le centre de masse), boîtes et disques. Le Castor volant
-a son profil `gear` aligné sur ses patins (1 unité). Les boîtes sont ajustées à la main d'après les
+`HELI_GEOMETRY` (en unités du modèle, relevée sur les îlots du maillage) : moyeux des roues ou
+patins, sol, centre de masse (la part de poids portée par chaque ressort suit le centre de
+masse), boîtes et disques. Le Castor volant, dessiné à l'échelle 0,7 de son maillage, a son
+profil `gear` (0,7 unité d'acteur) aligné sur ses patins. Les boîtes sont ajustées à la main d'après les
 îlots, comme celles du biplan : à vérifier avec le bouton « Physique ».
 
-## Non fait
+## Limites
 
 Effet de sol, décrochage de pale, effet de couple du rotor, tangage différentiel du tandem :
 le Castor volant a le comportement de l'hélicoptère d'attaque avec ses volumes. Les
