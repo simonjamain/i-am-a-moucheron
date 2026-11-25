@@ -26,7 +26,6 @@ try {
       import {createOffice} from '/office.js';
       import {createGraphics} from '/graphics.js';
       import {installOfficeFog,applyOfficeFog,OFFICE_HAZE} from '/office-fog.js';
-      import {ToonRenderer} from '/toon.js';
       installOfficeFog(T);
       const scene=new T.Scene();
       scene.background=new T.Color(OFFICE_HAZE);
@@ -36,13 +35,13 @@ try {
       const renderer=new T.WebGPURenderer({antialias:true,logarithmicDepthBuffer:true});
       await renderer.init();
       renderer.setSize(1200,650);document.body.append(renderer.domElement);
-      const toon=new ToonRenderer(T,renderer),camera=new T.PerspectiveCamera(62,1200/650,.00005,40);
+      const camera=new T.PerspectiveCamera(62,1200/650,.00005,40);
       const read=document.createElement('canvas');read.width=1200;read.height=650;
       const ctx=read.getContext('2d');
       window.captureCloud=(yaw,height=.95,pitch=.4)=>{
         camera.position.set(0,height,0);
         camera.lookAt(Math.sin(yaw)*4,height+pitch*4,-Math.cos(yaw)*4);
-        toon.render(scene,camera);ctx.drawImage(renderer.domElement,0,0);
+        renderer.render(scene,camera);ctx.drawImage(renderer.domElement,0,0);
         return Array.from(ctx.getImageData(600,300,1,1).data).slice(0,3);
       };
       window.ready=true;

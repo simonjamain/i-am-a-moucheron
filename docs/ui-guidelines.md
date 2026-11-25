@@ -121,8 +121,7 @@ Castor volant donne la première des trois places passagers libre), contour dans
 `src/post-highlight.ts`. Le rayon retient d’abord la pièce réellement touchée (la
 mitrailleuse sur le toit plutôt que la tourelle qui l’entoure) ; les sphères de visée
 ajoutent de la marge autour des petites pièces, sauf si l’engin les cache. Le contour est
-tracé à l’écran, par-dessus l’image, autour de la silhouette du poste (comme les contours du
-[rendu dessin animé](toon-rendering.md)) : aucun volume n’est ajouté au modèle. Ce tracé
+tracé à l’écran, par-dessus l’image, autour de la silhouette du poste : aucun volume n’est ajouté au modèle. Ce tracé
 cherche, pour chaque pixel, le masque dans un disque de la largeur du trait : il ne couvre
 donc que le rectangle d’écran des pièces surlignées, élargi du trait (`selectionRect`), et
 non tout l’écran, coûteux en haute résolution. Un modèle animé par squelette (le vigile du
@@ -179,3 +178,13 @@ texte ; les étapes restent à concevoir.
 - Utilise-t-il uniquement les jetons visuels ?
 - Ce qui s’utilise est-il un objet réel, signalé au survol par le bleu signal ?
 - Le texte suit-il le [ton des textes](art-direction.md#ton-des-textes) ?
+
+## Viseurs et traçantes
+
+Le cercle et le point central du viseur des canons et de la consigne souris sont
+blancs opaques avec un liseré sombre ; aucun réglage en jeu. Les traçantes ont un
+cœur ambre/orange et un contour brun sombre en mélange normal, dessinés dans cet
+ordre (contour puis cœur), y compris en rendu instancié. La largeur projetée du
+cœur vise au moins 2 pixels ; seule la largeur change, jamais la trajectoire ni
+les collisions. Brouillard et obstacles masquent toujours les tirs.
+Contrôles : `test-tracer-contrast.mjs`, `test-instanced-tracers.mjs`.

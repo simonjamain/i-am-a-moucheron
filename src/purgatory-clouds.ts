@@ -2,7 +2,7 @@
 // furniture stands on, and a few volumetric clouds drifting around it.
 // - The sky dome is a gradient material (zenith, horizon, haze below), written in TSL.
 // - The ground cloud is a flat walkable top edged with puffs, lit by the
-//   cartoon shading like every other object.
+//   same lighting as every other object.
 // - The sky clouds are raymarched in a TSL fragment shader, each inside its own box:
 //   noise density, a short march toward the sun, Beer-powder absorption,
 //   two-lobe Henyey-Greenstein phase and a silver lining. They are drawn at

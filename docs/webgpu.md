@@ -44,7 +44,7 @@ renderer de la même façon. `isGpuRenderer` distingue le renderer GPU du rendu 
   donne la coordonnée à utiliser pour lire une cible depuis un écran plein.
 - **Un rendu vers le canvas passe par une cible intermédiaire** : le renderer y dessine
   en linéaire, puis applique le tone mapping et la conversion sRGB à chaque `render()`.
-  Une passe dessinée **par-dessus** une image déjà tone-mappée (contours, nuages du sol,
+  Une passe dessinée **par-dessus** une image déjà tone-mappée (nuages du sol,
   tuile du sélecteur, compteur d'images, contour de sélection) s'enveloppe donc dans
   `withoutToneMapping` et applique elle-même `toneMapping` à ses propres couleurs
   quand elles sont en HDR.
@@ -53,7 +53,6 @@ renderer de la même façon. `isGpuRenderer` distingue le renderer GPU du rendu 
 
 | Sujet                                                                       | Fichier                                                             |
 | --------------------------------------------------------------------------- | ------------------------------------------------------------------- |
-| Éclairage par paliers, contours, brouillard des traits                      | `src/toon.ts` ([rendu toon](toon-rendering.md))                     |
 | Couche de nuages du bureau (`scene.fogNode`)                                | `src/office-fog.ts`                                                 |
 | Aides communes (passe plein écran, `targetUv`, tone mapping, ombres gelées) | `src/gpu-passes.ts`                                                 |
 | Bruit, fBm, phase de Henyey-Greenstein                                      | `src/cloud-nodes.ts`                                                |
@@ -81,7 +80,6 @@ renderer de la même façon. `isGpuRenderer` distingue le renderer GPU du rendu 
   rendu logiciel).
 - WebGPU compile les pipelines à la première utilisation : une saccade peut apparaître
   à la première apparition d'un effet.
-- Le brouillard est mélangé en espace linéaire, dans la cible HDR du rendu toon comme
-  dans un rendu direct sur le canvas sans passe de contours.
+- Le brouillard est mélangé en espace linéaire, dans un rendu direct sur le canvas.
 - La tuile du sélecteur de personnage et le contour de sélection mélangent en linéaire
   et non en sRGB.

@@ -44,8 +44,8 @@ La paperasse est **militaire**, pas propre au bureau : elle reste cohérente sur
 
 ## Rendu
 
-- **Dessin animé, low poly, chaleureux** : [rendu dessin animé](toon-rendering.md) à
-  trois paliers de lumière et contours brun sombre, pour tous les joueurs.
+- **Dessin animé, low poly, chaleureux** : modèles aux formes simples et textures
+  douces, éclairés normalement, sans contours ni paliers de lumière.
 - Formes simples et lisibles à distance ; le détail sert la mécanique (pièces mobiles,
   marquages), pas la surcharge.
 - Lumière d’intérieur chaude ; le brouillard et le voile d’altitude restent légers.
@@ -57,7 +57,7 @@ La paperasse est **militaire**, pas propre au bureau : elle reste cohérente sur
 
 Pas de palette imposée au décor : chaque carte choisit ses teintes. Ce qui est fixé :
 
-- **Le style** est commun à toutes les cartes (rendu, formes, contours).
+- **Le style** est commun à toutes les cartes (rendu, formes).
 - **Des tons pastels**, doux et peu saturés, pour le décor.
 - **Le contraste de clarté** : les engins mêlent crème, sable et olive ; le sol reste
   nettement plus sombre ou plus froid que leurs carlingues, sinon ils s’y noient.
