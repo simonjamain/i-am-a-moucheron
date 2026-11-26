@@ -1,5 +1,5 @@
 import { appearanceId } from '../src/character-appearances.ts';
-import { prepareRoster, forecast } from './wave-preparation.js';
+import { prepareRoster, forecast } from './wave-preparation.ts';
 import { feedingPoint } from '../src/ground-defense-state.ts';
 import { DEFAULT_BALANCE, money } from '../src/balance.ts';
 import { deliveryStart, deliveryLanding, deliveryHeightAt } from '../src/delivery.ts';
@@ -76,7 +76,7 @@ import { FIXED_DCA, RAPID_DCA_DAMAGE, heavyDcaMuzzle, isFixedDca } from '../src/
 import {
   fullAmmo,
   ammoCapacity,
-  advanceSupplies,
+  burnFuel,
   FUEL_SECONDS,
   installationCount,
 } from '../src/logistics.ts';
@@ -89,7 +89,7 @@ import { newBank, signLoan, settleLoans } from '../src/bank.ts';
 import { canUseWeapon, HEAVY, TANK_MG, availableShell } from '../src/armament.ts';
 import { PROJECTILES } from '../src/projectiles.ts';
 import { sweptSphereMayTouch } from '../src/swept-broadphase.ts';
-import { createOrdnance, segmentSphere } from '../src/ordnance.js';
+import { createOrdnance, segmentSphere } from '../src/ordnance.ts';
 import { StatsLedger } from './stats.ts';
 
 const uid = () => randomUUID();
@@ -150,6 +150,12 @@ function decorFor(layoutId) {
     decors.set(layoutId, decor);
   }
   return decor;
+}
+// Damage an impact declares. Clients are trusted (docs/trust-model.md): no ceiling, only a
+// finite number; 0 for anything else, so the caller's default applies.
+function declaredDamage(amount) {
+  const value = Number(amount);
+  return Number.isFinite(value) ? value : 0;
 }
 function requireGame(ok, message, status = 409) {
   if (!ok) throw Object.assign(new Error(message), { status });
@@ -450,9 +456,12 @@ export class Game {
       }
     for (const v of r.vehicles.values()) {
       const now = Math.max(this.now(), v.updated);
+      // Fuel burns here; refuelling and rearming are the paid service below.
       v.supplies = {
         ...v.supplies,
-        ...advanceSupplies(v.supplies, v.state, v.type, [], (now - v.updated) / 1000, r.balance),
+        fuel: burnFuel(v.supplies.fuel, v.state, v.type, (now - v.updated) / 1000, r.balance),
+        ammo: { ...v.supplies.ammo },
+        servicing: false,
         revision: v.supplies.revision + 1,
       };
       v.updated = now;
@@ -687,8 +696,8 @@ export class Game {
         ? { id: index, p: frame.p, dead: false }
         : null,
     );
-    // A Gatling fires up to two rounds per server tick: one effect per turret
-    // and tick carries the count, the client spreads the rounds over time.
+    // A Gatling may owe several rounds per server tick (dueShots in ground-sentry.ts):
+    // one effect per turret and tick carries the count, the client spreads them over time.
     const bursts = new Map();
     const fired = fireGroundSentries(
       r.groundDefense.structures,
@@ -2278,7 +2287,7 @@ export class Game {
     // A parked tank (nobody drives it) recoils on the server's physics.
     if (v.type === 'tank' && selected !== 'bomb') r.parkedHost?.kick(v.id, direction);
   }
-  // Heavy weapons are simulated by their shooter (src/heavy-sim.js): the room
+  // Heavy weapons are simulated by their shooter (src/heavy-sim.ts): the room
   // keeps each launch (origin, velocity, time) for the other players' display
   // and forgets it on its impact report or after its lifetime plus a delay.
   // Parked vehicles (the pilot left them): the room's physics world brings them to rest
@@ -2574,7 +2583,7 @@ export class Game {
     if (rapid ? !this.rapidImpactAllowed(r, p, b.shot) : p.mode === 'foot') return;
     const damage = rapid
       ? RAPID_DCA_DAMAGE
-      : Math.max(1, Math.min(800, Number(b.amount) || PROJECTILES.mg.damage));
+      : Math.max(1, declaredDamage(b.amount) || PROJECTILES.mg.damage);
     const amount = damage * r.balance.damage;
     this.once(
       r,
@@ -2601,7 +2610,7 @@ export class Game {
       (rapid
         ? RAPID_DCA_DAMAGE
         : p.mode === 'turret'
-          ? Math.max(0, Math.min(200, Math.round(Number(b.amount) || 80)))
+          ? Math.max(0, Math.round(declaredDamage(b.amount) || 80))
           : (tankDamage ?? PROJECTILES.mg.damage)) * r.balance.damage;
     if (b.vehicle) {
       const v = r.vehicles.get(b.vehicle);

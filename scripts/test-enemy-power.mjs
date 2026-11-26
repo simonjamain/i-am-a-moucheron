@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import { POWER_REFERENCE, computeEnemyPower, powerTable } from '../src/enemy-power.ts';
 import { ENEMY_TYPES, ENEMY_POWER, enemyPower } from '../src/waves.ts';
 import { BALANCE_FIELDS, DEFAULT_BALANCE, validateBalance } from '../src/balance.ts';
-import { directorBudget, prepareRoster } from '../server/wave-preparation.js';
+import { directorBudget, prepareRoster } from '../server/wave-preparation.ts';
 import { Game } from '../server/game.js';
 
 const near = (actual, expected, epsilon = 0.005) =>
@@ -61,7 +61,7 @@ assert.equal(powerTable(boosted).roach, ENEMY_POWER.roach);
 // `cost` and `leak` are gone from species, waves and the source.
 for (const [type, profile] of Object.entries(ENEMY_TYPES))
   assert.ok(!('cost' in profile) && !('leak' in profile), type);
-for (const file of ['server/game.js', 'server/wave-preparation.js', 'src/client.js']) {
+for (const file of ['server/game.js', 'server/wave-preparation.ts', 'src/client.js']) {
   const text = readFileSync(file, 'utf8');
   assert.doesNotMatch(text, /waveStipend|waveReward/, file + ' has no wave stipend');
   assert.doesNotMatch(text, /ENEMY_TYPES\[[^\]]+\]\.(cost|leak)|\be\.leak\b|\.cost\b.*ENEMY/, file);

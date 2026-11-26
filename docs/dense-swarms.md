@@ -7,7 +7,7 @@ montée en difficulté dans [progression](progression.md) et
 
 ## Composition d'une vague
 
-Le roster est tiré par `prepareRoster()` (`server/wave-preparation.js`) en meutes
+Le roster est tiré par `prepareRoster()` (`server/wave-preparation.ts`) en meutes
 (`PACKS`) : règles de tirage, tailles, colosse et calendrier dans
 [progression](progression.md#composition). Les volants attendent 2 s à leur entrée, les
 terrestres 0,4 s, et les membres d'une meute sortent l'un après l'autre (`memberGap`).

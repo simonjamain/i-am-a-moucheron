@@ -3,13 +3,14 @@ import { performance } from 'node:perf_hooks';
 import * as T from '../vendor/three.webgpu.min.js';
 import { Game } from '../server/game.js';
 import { resolveHeavy, detonateHeavy, roomWorld } from './heavy-resolver.mjs';
-import { stepHeavy } from '../src/heavy-sim.js';
+import { stepHeavy } from '../src/heavy-sim.ts';
 import { VEHICLES, vehiclePad, LIGHT_FIGHTER } from '../src/fleet.ts';
 import { HEAVY, canUseWeapon, heavyDamage } from '../src/armament.ts';
 import { MAP, REFERENCE, FLAK } from '../src/scale.ts';
 import { SHOP, supportedPlacement } from '../src/equipment.ts';
-import { fullAmmo, advanceSupplies } from '../src/logistics.ts';
-import { createOrdnance } from '../src/ordnance.js';
+import { fullAmmo, burnFuel } from '../src/logistics.ts';
+import { advancePaidService } from '../src/paid-service.ts';
+import { createOrdnance } from '../src/ordnance.ts';
 import {
   HELI,
   stepHelicopter,
@@ -33,6 +34,11 @@ import { contractKey, ContractBook } from '../src/contracts.ts';
 import { controlHints, cursorStats, cursorAmmoText } from '../src/live-hud.ts';
 import { contextKey } from '../src/equipment-controls.ts';
 import { OFFICE_SOLIDS } from '../server/assets.js';
+// Paid service at a station until full (two 5 s steps cover SERVICE_SECONDS).
+const serviceFull = (vehicle, station) => {
+  for (let i = 0; i < 2; i++) advancePaidService([vehicle], [station], 1e6, {}, 5);
+  return vehicle.supplies;
+};
 const near = (a, b, eps = 1e-8) => assert.ok(Math.abs(a - b) < eps, `${a} != ${b}`);
 assert.equal(SHOP.helicopter.cost, 50);
 assert.equal(VEHICLES.helicopter.maxSpeed, LIGHT_FIGHTER.maxSpeed * 0.6);
@@ -56,12 +62,13 @@ for (const type of ['helicopter', 'flaktruck']) {
     assert.match(controlHints({ vehicle: { type }, seat }), /postes/);
   }
   const ammo = Object.fromEntries(Object.keys(fullAmmo(type)).map((k) => [k, 0]));
-  const serviced = advanceSupplies(
-    { fuel: 0, ammo },
-    { ...state, p: [0, VEHICLES[type].gear, 0], v: [0, 0, 0], landed: true },
-    type,
-    [{ kind: 'refuel', x: 0, y: 0, z: 0 }],
-    10,
+  const serviced = serviceFull(
+    {
+      type,
+      state: { ...state, p: [0, VEHICLES[type].gear, 0], v: [0, 0, 0], hp: VEHICLES[type].maxHP },
+      supplies: { fuel: 0, ammo, revision: 0 },
+    },
+    { kind: 'refuel', x: 0, y: 0, z: 0 },
   );
   assert.deepEqual(serviced.ammo, fullAmmo(type));
   assert.equal(serviced.fuel, 300);
@@ -101,14 +108,13 @@ const guided = { p: [0, 1, 0], v: [0, 0, -1] };
 steerMissile(guided, [10, 1, 0], 0.1);
 near(Math.hypot(...guided.v), 1);
 near(Math.acos(-guided.v[2]), HELI.missileTurn * 0.1);
-const fuel = advanceSupplies(
-  { fuel: 300, ammo: fullAmmo('helicopter') },
+const fuel = burnFuel(
+  300,
   { ...vehiclePad('helicopter'), p: [0, 1, 0], landed: false, gas: 0.1 },
   'helicopter',
-  [],
   300,
 );
-assert.equal(fuel.fuel, 0);
+assert.equal(fuel, 0);
 console.log(
   'H2: characteristics, role contracts, stores, ten-second service, fuel, hover/climb/braking, loss of power, turn limit and HUD.',
 );

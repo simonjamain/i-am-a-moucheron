@@ -1,4 +1,4 @@
-// The solid queries a heavy-weapon world gives src/heavy-sim.js (world.solidSegment,
+// The solid queries a heavy-weapon world gives src/heavy-sim.ts (world.solidSegment,
 // world.solidNearest), answered by Rapier over the given boxes (src/solid-query.ts), like the
 // browser does. Synchronised when the view is made: take a new one after the boxes change.
 import { loadRapier } from '../src/physics-world.ts';

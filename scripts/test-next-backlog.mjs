@@ -3,9 +3,10 @@ import * as T from '../vendor/three.webgpu.min.js';
 import { amortization, newBank, signLoan, settleLoans } from '../src/bank.ts';
 import { Game } from '../server/game.js';
 import { roomWorld, resolveHeavy } from './heavy-resolver.mjs';
-import { heavyImpact } from '../src/heavy-sim.js';
+import { heavyImpact } from '../src/heavy-sim.ts';
 import { VEHICLES, vehicleEntry, vehicleAccess } from '../src/fleet.ts';
-import { fullAmmo, advanceSupplies, SERVICE_SECONDS } from '../src/logistics.ts';
+import { fullAmmo } from '../src/logistics.ts';
+import { advancePaidService } from '../src/paid-service.ts';
 import { TANK_MG, HEAVY, availableShell, heavyDamage } from '../src/armament.ts';
 import { HoldZoom, contextKey, rangeReadout } from '../src/equipment-controls.ts';
 import { MAP, ACTOR_UNIT, REFERENCE } from '../src/scale.ts';
@@ -17,6 +18,11 @@ import { blockedSegment } from '../src/route-navigation.ts';
 import { createGraphics } from '../src/graphics.ts';
 import { CrashEffects } from '../src/crash-effects.ts';
 import { OFFICE_SOLIDS } from '../server/assets.js';
+// Paid service at a station until full (two 5 s steps cover SERVICE_SECONDS).
+const serviceFull = (vehicle, station) => {
+  for (let i = 0; i < 2; i++) advancePaidService([vehicle], [station], 1e6, {}, 5);
+  return vehicle.supplies;
+};
 
 for (const [principal, rate, waves] of [
   [1200, 0.04, 4],
@@ -177,12 +183,9 @@ const supply = {
   ammo: Object.fromEntries(Object.keys(fullAmmo('tank')).map((k) => [k, 0])),
 };
 const station = { kind: 'refuel', x: pos[0], y: pos[1] - VEHICLES.tank.gear, z: pos[2] };
-const restored = advanceSupplies(
-  supply,
-  { ...tank.state, landed: true, v: [0, 0, 0] },
-  'tank',
-  [station],
-  SERVICE_SECONDS,
+const restored = serviceFull(
+  { type: 'tank', state: { ...tank.state, v: [0, 0, 0] }, supplies: { ...supply, revision: 0 } },
+  station,
 );
 assert.deepEqual(restored.ammo, fullAmmo('tank'));
 game.assign(r, p, stuka, 'pilot', null);

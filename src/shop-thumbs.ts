@@ -4,8 +4,14 @@ import { createGraphics } from './graphics.ts';
 import { makeFixedDca } from './fixed-dca-model.ts';
 import { makeBed } from './bed-model.ts';
 import { makeServiceStation } from './station-model.ts';
+import type * as THREE from 'three/webgpu';
+import type { Graphics } from './graphics.ts';
+import type { FixedDcaModelKind } from './fixed-dca-model.ts';
+import type { Three } from './types.ts';
 
-const VEHICLE_MODELS = {
+type InstallationKind = 'bed' | 'refuel' | 'radar' | FixedDcaModelKind;
+
+const VEHICLE_MODELS: Readonly<Record<string, keyof Graphics>> = {
   fighter: 'makePlane',
   bomber: 'makeBomber',
   lightfighter: 'makeLightFighter',
@@ -19,14 +25,21 @@ const VEHICLE_MODELS = {
   flyingcastor: 'makeFlyingCastor',
 };
 
-function installation(T, kind) {
+function installation(T: Three, kind: InstallationKind): THREE.Group {
   if (kind === 'radar' || kind === 'refuel') return makeServiceStation(T, kind);
   if (kind === 'bed') return makeBed(T);
   return makeFixedDca(T, { kind });
 }
 
 export class ShopThumbnails {
-  constructor(T, { width = 240, height = 150 } = {}) {
+  T: Three;
+  cache: Map<string, Promise<string | null>>;
+  scene: THREE.Scene;
+  renderer: THREE.WebGPURenderer;
+  started: Promise<void>;
+  camera: THREE.PerspectiveCamera;
+  models: Map<string, THREE.Object3D>;
+  constructor(T: Three, { width = 240, height = 150 } = {}) {
     this.T = T;
     this.cache = new Map();
     this.scene = new T.Scene();
@@ -44,8 +57,8 @@ export class ShopThumbnails {
     const graphics = createGraphics(T, this.scene);
     this.models = new Map();
     for (const [item, make] of Object.entries(VEHICLE_MODELS))
-      this.models.set(item, graphics[make]());
-    for (const kind of ['bed', 'refuel', 'radar', 'dca', 'dcaRapid', 'dcaHeavy']) {
+      this.models.set(item, (graphics[make] as () => THREE.Object3D)());
+    for (const kind of ['bed', 'refuel', 'radar', 'dca', 'dcaRapid', 'dcaHeavy'] as const) {
       const model = installation(T, kind);
       this.scene.add(model);
       this.models.set(kind, model);
@@ -57,20 +70,21 @@ export class ShopThumbnails {
       model.scale.setScalar(1);
     }
   }
-  has(item) {
+  has(item: string): boolean {
     return this.models.has(item);
   }
   // True once every texture used by the item's model has finished decoding.
-  ready(item) {
+  ready(item: string): boolean {
     let ok = true;
     this.models.get(item)?.traverse((o) => {
-      const map = o.material?.map;
+      const map = (o as THREE.Mesh<THREE.BufferGeometry, THREE.MeshStandardMaterial>).material
+        ?.map as { image?: { complete?: boolean } } | null | undefined;
       // A texture has no image until its file is loaded and decoded.
       if (map && (!map.image || map.image.complete === false)) ok = false;
     });
     return ok;
   }
-  render(item) {
+  render(item: string): string | null {
     const T = this.T,
       model = this.models.get(item);
     if (!model) return null;
@@ -99,15 +113,15 @@ export class ShopThumbnails {
     const copy = document.createElement('canvas');
     copy.width = canvas.width;
     copy.height = canvas.height;
-    copy.getContext('2d').drawImage(canvas, 0, 0);
+    copy.getContext('2d')!.drawImage(canvas, 0, 0);
     return copy.toDataURL('image/png');
   }
   // Picture for an item: waits for its textures, then caches the result.
-  picture(item, timeout = 4000) {
+  picture(item: string, timeout = 4000): Promise<string | null> {
     if (!this.has(item)) return Promise.resolve(null);
-    if (this.cache.has(item)) return this.cache.get(item);
+    if (this.cache.has(item)) return this.cache.get(item)!;
     const started = Date.now();
-    const promise = new Promise((resolve) => {
+    const promise = new Promise<string | null>((resolve) => {
       const attempt = () => {
         if (this.ready(item) || Date.now() - started > timeout) {
           // One extra frame so the freshly decoded atlas is uploaded to the GPU.

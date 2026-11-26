@@ -1,4 +1,4 @@
-// Manned engineer structures, purchased by a Castor pilot after a team card unlock.
+// Manned engineer structures, built from a Castor (docs/gameplay.md, « Défenses terrestres »).
 export const FORTIFICATIONS = Object.freeze({
   antitank: Object.freeze({
     name: 'Canon anti-matériel',

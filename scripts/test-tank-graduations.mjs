@@ -1,9 +1,9 @@
 // Issue #103: tank sight graduations reach the far end of the office and sit on
 // the authoritative shell trajectory (same integrator and step as the server).
 import assert from 'node:assert/strict';
-import { ballisticMarks, TANK_MARKS } from '../src/tank-reticle.js';
+import { ballisticMarks, TANK_MARKS } from '../src/tank-reticle.ts';
 import { HEAVY } from '../src/armament.ts';
-import { integrateOrdnance } from '../src/ordnance.js';
+import { integrateOrdnance } from '../src/ordnance.ts';
 import { GROUND_BOUNDS } from '../src/ground-defense.ts';
 import { MAP } from '../src/scale.ts';
 

@@ -49,7 +49,7 @@ dès que le monde du décor existe.
 - **Rayons du client** : impacts des tirs, exposition aux explosions, recul de la caméra,
   visée de l'hélicoptère, visée de la pose (`placementAim`).
 - **Projectiles lourds** : obus, roquettes et missiles avancent par sous-pas de 1/120 s ;
-  `stepHeavy` (`src/heavy-sim.js`) demande au monde le premier solide rencontré sur chaque
+  `stepHeavy` (`src/heavy-sim.ts`) demande au monde le premier solide rencontré sur chaque
   sous-pas (`world.solidSegment`, normale comprise pour le ricochet). Une fusée de
   proximité armée lit la distance au solide le plus proche (`world.solidNearest`) et explose
   quand cette distance, entrée dans le rayon de proximité, recommence à croître ; le point

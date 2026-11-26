@@ -1,7 +1,7 @@
 services:
   moucheron:
-    image: i-am-a-moucheron:2026.10.29-udp.2
-    pull_policy: never
+    # Published by .github/workflows/docker.yml; MOUCHERON_IMAGE=i-am-a-moucheron:local for a local build.
+    image: '${MOUCHERON_IMAGE:-ghcr.io/simonjamain/i-am-a-moucheron:latest}'
     restart: unless-stopped
     init: true
     ports:

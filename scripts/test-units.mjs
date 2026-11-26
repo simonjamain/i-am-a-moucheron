@@ -5,7 +5,7 @@ import { formatDistance, formatSpeed } from '../src/units.ts';
 import { MAP, FLAK, ACTOR_UNIT } from '../src/scale.ts';
 import { MOBILE_FUSE } from '../src/mobile-flak.ts';
 import { GROUND_BOUNDS } from '../src/ground-defense.ts';
-import { equipmentHUD } from '../src/hud.js';
+import { equipmentHUD } from '../src/hud.ts';
 import { cursorAmmoText } from '../src/live-hud.ts';
 import { fullAmmo } from '../src/logistics.ts';
 
@@ -37,7 +37,7 @@ assert.equal(equipmentHUD({ turret: true, range: 1000 }).left[1], '3,00 m');
 const truck = { id: 't', type: 'flaktruck', supplies: { ammo: fullAmmo('flaktruck') } };
 assert.match(equipmentHUD({ vehicle: truck, seat: 'cannon' }).right[3], /1,5 mm–6,0 cm/);
 assert.match(cursorAmmoText({ vehicle: truck, seat: 'cannon', proximity: 5 }), /1,5 cm$/);
-for (const file of ['src/client.js', 'src/hud.js', 'src/live-hud.ts', 'src/index.html'])
+for (const file of ['src/client.js', 'src/hud.ts', 'src/live-hud.ts', 'src/index.html'])
   assert.doesNotMatch(readFileSync(file, 'utf8'), /km\/h|m réf\.|mètres de référence/, file);
 const client = readFileSync('src/client.js', 'utf8');
 assert.doesNotMatch(client, /MAP\.ratio\) \* 3\.6|MAP\.reference\(me\.position\.y\)/);

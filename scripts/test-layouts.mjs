@@ -20,7 +20,7 @@ import { staticGroundFlow, groundGoal, groundStaticObstacles } from '../src/grou
 import { createGraphics } from '../src/graphics.ts';
 import { createOffice } from '../src/office.ts';
 import { OFFICE_CLOUD_TOP, FOG_START_RATIO } from '../src/office-fog.ts';
-import { prepareRoster } from '../server/wave-preparation.js';
+import { prepareRoster } from '../server/wave-preparation.ts';
 import { DEFAULT_BALANCE } from '../src/balance.ts';
 import { advanceGroundCrowd } from '../src/ground-crowd.ts';
 import { newGroundDefense, groundFlow } from '../src/ground-defense-state.ts';

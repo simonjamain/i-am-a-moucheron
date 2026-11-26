@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { segmentSphere } from '../src/ordnance.js';
+import { segmentSphere } from '../src/ordnance.ts';
 import { sweptSphereMayTouch } from '../src/swept-broadphase.ts';
 
 // Conservative bounding box: false positives allowed, false negatives not.

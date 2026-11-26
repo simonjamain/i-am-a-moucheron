@@ -93,7 +93,7 @@ projectile ricoche ; au-dessus, il touche normalement.
 Un nouveau matériau (papier, bois, verre…) s'ajoute à `MATERIALS` puis s'affecte à des
 objets, sans toucher à la balistique.
 
-Les obus `he` et `ap` ricochent aussi, dans `stepHeavy` (`src/heavy-sim.js`) : sol,
+Les obus `he` et `ap` ricochent aussi, dans `stepHeavy` (`src/heavy-sim.ts`) : sol,
 boîtes et triangles du décor, coques (normale du centre vers l'impact) et insectes. À
 un ricochet l'obus ne détone pas. Le tireur envoie `heavy-bounce` (`shot`, `p`, `v`,
 `age`, `updated`, `bounces`) ; le serveur remplace le départ enregistré (le rebond le
@@ -110,7 +110,7 @@ fois (identifiants de tir idempotents). Voir [confiance envers les clients](trus
   plus, file bornée à 512 tirs ; un lot perdu est renvoyé avec les mêmes identifiants.
   Les touches d'ennemis arrivent par `hit`, les touches de joueurs et de coques par
   `friendly-hit`.
-- **Armes lourdes** (`src/heavy-sim.js`, partagé par tous les clients) : le tireur crée
+- **Armes lourdes** (`src/heavy-sim.ts`, partagé par tous les clients) : le tireur crée
   le projectile dès l'appui depuis la bouche affichée et envoie `heavy-fire`
   (`antitank-fire` / `heavy-dca-fire` pour les canons fixes) ; le serveur débite le
   stock et enregistre le départ. Le tireur envoie ensuite `heavy-impact` avec les dégâts

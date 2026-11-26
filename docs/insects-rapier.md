@@ -10,7 +10,7 @@ calculé par le jeu.
 | Insectes volants             | `waves.ts` (`swarmFrame`, `midgeDisplacement`), `routes.ts`        | Position en forme fermée depuis identifiant, route et heure du serveur : identique chez tous, sans état.              |
 | Tracé des routes             | `routes.ts`, `route-navigation.ts` (`blockedSegment`, `floorPath`) | Segments contre les **boîtes** (décor compris, sans ses triangles), A\* sur une grille de 16 cm pour la route au sol. |
 | Insectes au sol              | `ground-creatures.ts`, `ground-defense.ts`                         | Serveur seul, à état : appâts, repas, rubans, barricades ; champs de flux (`GroundFlow`) sur une grille.              |
-| Obus lourds, proximité       | `heavy-sim.js`                                                     | Segment contre la sphère de chaque insecte à l'heure du sous-pas (phase large `sweptSphereMayTouch`).                 |
+| Obus lourds, proximité       | `heavy-sim.ts`                                                     | Segment contre la sphère de chaque insecte à l'heure du sous-pas (phase large `sweptSphereMayTouch`).                 |
 | Âmes ennemies du purgatoire  | `purgatory-queue.ts`                                               | Une place par formule, sans collision entre elles ([file du purgatoire](purgatory-queue.md)).                         |
 
 ## Volumes de tir

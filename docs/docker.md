@@ -48,10 +48,15 @@ conteneur efface les parties en cours. Le contrôle `/healthz` valide HTTP, pas 
 connectivité UDP : `node scripts/smoke-image.ts http://127.0.0.1:3000` joue une courte
 partie en local, et deux joueurs sur des réseaux distincts valident le WAN.
 
-`compose.yaml` et `compose.traefik.yaml` référencent encore l’ancien tag local
-`i-am-a-moucheron:2026.10.29-udp.2`, qui n’est plus produit : ils ne suivent pas
-l’état courant. Utiliser la commande `docker build` / `docker run` ci-dessus ou
-l’image GHCR `latest`.
+`compose.yaml` (et `compose.traefik.yaml` pour un Traefik existant) démarre l’image GHCR
+`ghcr.io/simonjamain/i-am-a-moucheron:latest` avec la plage UDP 41000–41099 ; renseigner
+`UDP_ADVERTISE_ADDRESS` dans `.env` (voir `.env.example`). Pour essayer un build local,
+définir `MOUCHERON_IMAGE=i-am-a-moucheron:local` :
+
+```sh
+docker compose up -d                                          # production
+docker compose -f compose.yaml -f compose.traefik.yaml up -d  # derrière Traefik
+```
 
 ## Contrôle de contribution et protection de main
 

@@ -1,6 +1,6 @@
 # Vagues, puissance et magasin
 
-Le directeur de vagues (`server/wave-preparation.js`) compose chaque vague à partir
+Le directeur de vagues (`server/wave-preparation.ts`) compose chaque vague à partir
 d’un budget de **puissance** ; les âmes libérées rapportent cette même puissance en
 dollars, que l’équipe dépense au magasin. PV et dégâts des espèces : voir le
 [bestiaire](enemy-bestiary.md) ; garanties d’achat et services payants : voir

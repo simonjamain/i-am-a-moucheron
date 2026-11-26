@@ -156,7 +156,7 @@ export const isEnemyType = (type: unknown): type is EnemyType =>
   typeof type === 'string' && Object.hasOwn(ENEMY_TYPES, type);
 export const enemyPower = (type: string): number => ENEMY_POWER[type];
 // First wave where the legacy wavePlan() may draw each species (offspring excluded).
-// The live director (server/wave-preparation.js) ignores it: every species is
+// The live director (server/wave-preparation.ts) ignores it: every species is
 // available from wave 1 and only the wave's power decides; key order is the draw order.
 export const ENEMY_UNLOCK_WAVE: Readonly<Partial<Record<EnemyType, number>>> = Object.freeze({
   ant: 1,
@@ -275,7 +275,7 @@ export function expandMidgeSwarms(roster: readonly WaveEnemy[]): WaveEnemy[] {
   );
 }
 // Integer point costs of the seeded `wavePlan` director, independent from the
-// power model that prices the rosters drawn by server/wave-preparation.js.
+// power model that prices the rosters drawn by server/wave-preparation.ts.
 const LEGACY_COST: Readonly<Record<EnemyType, number>> = Object.freeze({
   ant: 1,
   roach: 4,

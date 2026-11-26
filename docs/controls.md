@@ -77,7 +77,7 @@ de référence (30 cm à 3,60 m du bureau) en environ 3 s ; relâcher arrête au
 et les deux touches ensemble s’annulent (`advanceFuse`, `FUSE_RATE`).
 
 Lunette du canonnier du char : graduations `TANK_MARKS` de 15 cm à 9 m du bureau,
-calculées par `ballisticMarks` (`src/tank-reticle.js`) avec la même intégration
+calculées par `ballisticMarks` (`src/tank-reticle.ts`) avec la même intégration
 que le serveur pour l’obus choisi ; C les masque.
 
 ## Souris, zoom et caméras

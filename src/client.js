@@ -6065,7 +6065,7 @@ function nextHeavyTime(vehicle, weapon) {
     predictedReadyAt(vehicle, weapon),
   );
 }
-// Heavy weapons are simulated by their shooter (src/heavy-sim.js): the shell
+// Heavy weapons are simulated by their shooter (src/heavy-sim.ts): the shell
 // leaves the displayed muzzle at once, flies and collides in this browser, and
 // its impact (damage included, friends too) is reported to the server, which
 // only debits ammunition and cadence and informs the other players.

@@ -125,8 +125,8 @@ function pickTarget<E extends SentryTarget>(
 }
 
 // Rounds a turret owes at `now`. The T-01 keeps its historic "one round, then
-// wait" cadence; the Gatling keeps an exact schedule so 6 rounds/s survive the
-// coarse server tick (a tick may owe two rounds).
+// wait" cadence; the Gatling keeps an exact schedule so its 12 rounds/s survive the
+// coarse server tick (a tick may owe several rounds).
 function dueShots(sentry: SentryStructure, spec: TurretSpec, now: number): number {
   const elapsed = now - (sentry.lastShotAt ?? -Infinity);
   if (elapsed < spec.intervalMs) return 0;

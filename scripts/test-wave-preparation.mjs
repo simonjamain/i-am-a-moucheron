@@ -6,7 +6,7 @@ import {
   directorBudget,
   packSize,
   PACKS,
-} from '../server/wave-preparation.js';
+} from '../server/wave-preparation.ts';
 import { DEFAULT_BALANCE } from '../src/balance.ts';
 import { ENEMY_TYPES } from '../src/waves.ts';
 

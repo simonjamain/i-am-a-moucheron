@@ -1,9 +1,9 @@
 // Test helper: plays the shooter's part for heavy weapons. Since heavy weapons
-// are simulated by the player who fires them (src/heavy-sim.js), domain tests
+// are simulated by the player who fires them (src/heavy-sim.ts), domain tests
 // fly each recorded launch with the shared simulation, against the room's own
 // state (the view the former server simulation used), and send the shooter's
 // impact report. Assertions about trajectories and damage keep their meaning.
-import { stepHeavy, heavyImpact } from '../src/heavy-sim.js';
+import { stepHeavy, heavyImpact } from '../src/heavy-sim.ts';
 import { swarmFrame } from '../src/waves.ts';
 import { solidView } from './solid-harness.mjs';
 

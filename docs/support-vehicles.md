@@ -14,7 +14,7 @@ physique : [vol des hélicoptères](heli-physics.md) et
 
 Les deux s'achètent avec un bon signé et se posent sur un support libre ; ils n'ont pas
 de réserve gratuite et leur destruction est définitive. Le carburant du H2 ne s'use
-qu'en vol, quelle que soit la poussée demandée (`advanceSupplies`, `src/logistics.ts`).
+qu'en vol, quelle que soit la poussée demandée (`burnFuel`, `src/logistics.ts`).
 
 ## H2 : pilotage
 

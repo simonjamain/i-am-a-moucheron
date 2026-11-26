@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import * as T from '../vendor/three.webgpu.min.js';
 import { makeServiceStation, animateRadar } from '../src/station-model.ts';
-import { ShopThumbnails } from '../src/shop-thumbs.js';
+import { ShopThumbnails } from '../src/shop-thumbs.ts';
 
 const radar = makeServiceStation(T, 'radar');
 const base = radar.children[0];

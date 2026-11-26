@@ -2,7 +2,7 @@ import { ENEMY_TYPES } from './waves.ts';
 import { speciesSymbols, entranceLabel } from './wave-forecast-scene.ts';
 import type { ForecastGroup } from './wave-forecast-scene.ts';
 
-/** One announced group of the next wave (`server/wave-preparation.js`). */
+/** One announced group of the next wave (`server/wave-preparation.ts`). */
 export interface CouncilGroup extends ForecastGroup {
   spawn: number;
   count: number;

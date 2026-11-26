@@ -44,7 +44,7 @@ const card = client.slice(
 assert.match(card, /createElement\('button'\)/);
 assert.match(card, /card\.onclick/);
 assert.doesNotMatch(card, /description|Signer le bon|createElement\('p'\)/);
-const thumbs = readFileSync('src/shop-thumbs.js', 'utf8');
+const thumbs = readFileSync('src/shop-thumbs.ts', 'utf8');
 for (const item of [
   'fighter',
   'bomber',

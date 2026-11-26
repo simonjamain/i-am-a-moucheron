@@ -7,7 +7,7 @@ import type { GroundStructure } from './ground-defense-state.ts';
 import type { PlacementPreview } from './ground-placement.ts';
 import type { PredictedGroundPath } from './wave-ground-paths.ts';
 
-/** Announced pack of the prepared wave (server/wave-preparation.js). */
+/** Announced pack of the prepared wave (server/wave-preparation.ts). */
 export interface ForecastGroup {
   type: EnemyType;
   portalIndex: number;

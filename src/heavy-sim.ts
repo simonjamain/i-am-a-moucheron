@@ -18,7 +18,7 @@
 import { MAP, enemySizeFactor, INSECT_SCALE, MIDGE_SPHERE_RADIUS } from './scale.ts';
 import { AP_PIERCE_KEEP, HEAVY, heavyDamage } from './armament.ts';
 import { VEHICLES } from './fleet.ts';
-import { integrateOrdnance, segmentSphere } from './ordnance.js';
+import { integrateOrdnance, segmentSphere } from './ordnance.ts';
 import { sweptSphereMayTouch } from './swept-broadphase.ts';
 import { PROJECTILES } from './projectiles.ts';
 import { bounce } from './ricochet.ts';
@@ -31,8 +31,97 @@ import {
   sweptSphereProximity,
   closestSphereProximity,
 } from './mobile-flak.ts';
+import type { OrdnanceState } from './ordnance.ts';
+import type { VehicleType } from './fleet.ts';
+import type { ProjectileId } from './projectiles.ts';
+import type { Vec3 } from './types.ts';
 
-function enemyRadius(enemy) {
+type Vec = readonly number[];
+/** One enemy sample of `world.frames` (null for an enemy not on the field). */
+export interface HeavyFrame {
+  p: number[];
+}
+export interface HeavyVehicle {
+  id: string;
+  type: VehicleType;
+  state: { p: number[]; q: number[]; hp: number };
+}
+/** The caller's view of the room (see the header comment). */
+export interface HeavyWorld {
+  solidSegment?: (a: Vec, b: Vec) => { t: number; normal?: number[] } | null;
+  solidNearest?: (p: Vec, radius: number) => number | null;
+  frames: (time: number, projectile: HeavyProjectile) => readonly (HeavyFrame | null | undefined)[];
+  roster: readonly ({ type: string; size: number } | undefined)[];
+  killed: (index: number) => boolean;
+  vehicles: readonly HeavyVehicle[];
+  players: readonly { id: unknown; p: number[] }[];
+  equipment: readonly { x: number; y: number; z: number; slot?: unknown }[];
+  guidance?: (projectile: HeavyProjectile) => number[] | null;
+  missileLost?: (projectile: HeavyProjectile) => boolean;
+}
+/** A ricochet noted for the shooter to report (`heavy-bounce`). */
+export interface HeavySkid {
+  p: number[];
+  v: number[];
+  age: number;
+  updated: number;
+  bounces: number;
+  at: number[];
+}
+/** A heavy projectile in flight (createOrdnance), mutated by stepHeavy. */
+export interface HeavyProjectile extends OrdnanceState {
+  weapon: string;
+  shot?: unknown;
+  vehicle?: string;
+  shooter?: unknown;
+  station?: unknown;
+  /** Server-clock ms of the shot and of the last simulated step. */
+  at: number;
+  updated: number;
+  done?: boolean;
+  proximity?: number;
+  bonus?: number;
+  radiusFactor?: number;
+  /** AP shell: enemies already crossed (index → where they stood), and the new ones to report. */
+  pierced?: Record<number, number[]>;
+  fresh?: [number, number, number[]][];
+  bounces?: number;
+  skids?: HeavySkid[];
+  solidNear?: number;
+  solidFrom?: number[];
+}
+/** What a step struck: a solid, an enemy, a vehicle or a player. */
+export interface HeavyHit {
+  t?: number;
+  solid?: boolean;
+  normal?: number[];
+  enemy?: number;
+  centre?: number[];
+  vehicle?: string;
+  kind?: string;
+  player?: unknown;
+}
+export interface HeavyImpactPoint {
+  hit: HeavyHit;
+  point: number[];
+  frames: readonly (HeavyFrame | null | undefined)[];
+}
+type Hit = HeavyHit & { t: number };
+const HEAVY_BY_WEAPON: Readonly<Record<string, (typeof HEAVY)[keyof typeof HEAVY]>> = HEAVY;
+/** Damage report sent by the shooter (`heavy-impact`). */
+export interface HeavyReport {
+  shot: unknown;
+  weapon: string;
+  p: number[];
+  kind: 'piercing' | 'blast';
+  radius: number;
+  enemies: [number, number, number[] | null][];
+  vehicles: [string, number][];
+  players: [unknown, number][];
+  kills: unknown[];
+}
+
+function enemyRadius(enemy: { type: string; size: number }): number {
   return enemy.type === 'midge' || enemy.type === 'spiderling'
     ? INSECT_SCALE *
         enemy.size *
@@ -44,7 +133,11 @@ function enemyRadius(enemy) {
 // Advances `projectile` (mutated) up to `end` (ms on the server clock). Returns
 // the impact { hit, point, frames } when it detonates or hits something; sets
 // projectile.done on impact or at the end of its lifetime.
-export function stepHeavy(projectile, end, world) {
+export function stepHeavy(
+  projectile: HeavyProjectile,
+  end: number,
+  world: HeavyWorld,
+): HeavyImpactPoint | null {
   if (projectile.done) return null;
   if (projectile.weapon === 'proximity' || projectile.weapon === 'dcaHeavy')
     return stepProximity(projectile, end, world);
@@ -53,11 +146,13 @@ export function stepHeavy(projectile, end, world) {
     projectile.done = true;
     return null;
   }
-  const profile = HEAVY[projectile.weapon];
+  const profile = HEAVY_BY_WEAPON[projectile.weapon];
   end = Math.min(end, projectile.at + profile.lifetime * 1000);
   // Only the shells with a ricochet angle (src/projectiles.ts) look for surface normals.
-  const skids = PROJECTILES[projectile.weapon]?.ricochetMaxAngle > 0;
-  let impact = null;
+  const skids =
+    ((PROJECTILES as Record<string, { ricochetMaxAngle?: number } | undefined>)[projectile.weapon]
+      ?.ricochetMaxAngle ?? 0) > 0;
+  let impact: HeavyImpactPoint | null = null;
   while (projectile.updated < end && !projectile.done) {
     const dt = Math.min(1 / 120, (end - projectile.updated) / 1000);
     if (projectile.weapon === 'missile') {
@@ -75,8 +170,8 @@ export function stepHeavy(projectile, end, world) {
     const a = integrateOrdnance(projectile, dt),
       b = projectile.p;
     projectile.updated += dt * 1000;
-    let hit = null;
-    const consider = (t, target) => {
+    let hit = null as Hit | null;
+    const consider = (t: number | null, target: HeavyHit) => {
       if (t !== null && t >= 0 && t <= 1 && (!hit || t < hit.t)) hit = { t, ...target };
     };
     // Boxes and the props' real triangles (a ray along the step, like any bullet).
@@ -85,19 +180,20 @@ export function stepHeavy(projectile, end, world) {
     if (b[1] <= 0)
       consider(a[1] / Math.max(1e-12, a[1] - b[1]), { solid: true, normal: [0, 1, 0] });
     const frames = world.frames(projectile.updated, projectile);
-    const crossings = [];
+    const crossings: { t: number; index: number; p: number[] }[] = [];
     for (let i = 0; i < frames.length; i++) {
       if (!frames[i] || world.killed(i)) continue;
-      const radius = enemyRadius(world.roster[i]);
+      const radius = enemyRadius(world.roster[i]!);
       // Cheap swept-AABB rejection before the exact segment/sphere calculation.
-      if (!sweptSphereMayTouch(a, b, frames[i].p, radius)) continue;
-      const t = segmentSphere(a, b, frames[i].p, radius);
+      const frame = frames[i]!;
+      if (!sweptSphereMayTouch(a, b, frame.p, radius)) continue;
+      const t = segmentSphere(a, b, frame.p, radius);
       // The armour-piercing shell goes through enemies: it only notes them
       // (once each, where they stood) and flies on until a wall or a vehicle.
       if (projectile.weapon === 'ap') {
         if (t !== null && t >= 0 && t <= 1 && !projectile.pierced?.[i])
-          crossings.push({ t, index: i, p: frames[i].p });
-      } else consider(t, { enemy: i, centre: skids ? frames[i].p : undefined });
+          crossings.push({ t, index: i, p: frame.p });
+      } else consider(t, { enemy: i, centre: skids ? frame.p : undefined });
     }
     for (const v of world.vehicles)
       if (v.id !== projectile.vehicle && v.state.hp > 0)
@@ -127,15 +223,17 @@ export function stepHeavy(projectile, end, world) {
         ]);
       });
     if (hit && skids) {
-      const point = a.map((v, i) => v + (b[i] - v) * hit.t);
-      const result = skid(projectile, hit, a, b, point, world, frames);
+      const at = hit.t;
+      const point = a.map((v, i) => v + (b[i] - v) * at);
+      const result = skid(projectile, hit, a, b, point, world);
       if (result) {
         if (result === 'spent') projectile.done = true;
         continue;
       }
     }
     if (hit) {
-      const point = a.map((v, i) => v + (b[i] - v) * hit.t);
+      const at = hit.t;
+      const point = a.map((v, i) => v + (b[i] - v) * at);
       projectile.p = point;
       projectile.done = true;
       impact = { hit, point, frames };
@@ -152,7 +250,14 @@ export function stepHeavy(projectile, end, world) {
 // A contact of a shell that may ricochet (src/ricochet.ts). Returns false when it hits as usual,
 // 'spent' when it stops harmlessly after its last bounce, or true when it flew on, turned: the
 // ricochet is noted in `projectile.skids` for the shooter to report (heavy-bounce).
-function skid(projectile, hit, a, b, point, world) {
+function skid(
+  projectile: HeavyProjectile,
+  hit: Hit,
+  a: Vec,
+  b: Vec,
+  point: number[],
+  world: HeavyWorld,
+): boolean | 'spent' {
   const material = hit.solid
     ? 'decor'
     : hit.vehicle
@@ -160,10 +265,17 @@ function skid(projectile, hit, a, b, point, world) {
       : hit.enemy !== undefined
         ? insectMaterial(world.roster[hit.enemy]?.type)
         : null;
-  const normal = hit.normal ?? (hit.centre ? point.map((v, i) => v - hit.centre[i]) : null);
+  const centre = hit.centre;
+  const normal = hit.normal ?? (centre ? point.map((v, i) => v - centre[i]) : null);
   if (!material || !normal) return false;
   const direction = b.map((v, i) => v - a[i]);
-  const result = bounce(direction, normal, projectile.weapon, material, projectile.bounces ?? 0);
+  const result = bounce(
+    direction as unknown as Vec3,
+    normal as unknown as Vec3,
+    projectile.weapon as ProjectileId,
+    material,
+    projectile.bounces ?? 0,
+  );
   if (!result) return false;
   if (result.kind === 'spent') {
     projectile.p = point;
@@ -192,8 +304,13 @@ function skid(projectile, hit, a, b, point, world) {
 // Where, along the straight run from `from` to `to`, `distance` is least; on a plateau of equal
 // distance (flying along a face), its far end. Distances are sampled: ternary search for the
 // least, then bisection for the end of the plateau.
-function closestPassage(distance, from, to, tolerance) {
-  const at = (t) => from.map((v, i) => v + (to[i] - v) * t);
+function closestPassage(
+  distance: (p: number[]) => number,
+  from: Vec,
+  to: Vec,
+  tolerance: number,
+): number[] {
+  const at = (t: number) => from.map((v, i) => v + (to[i] - v) * t);
   let lo = 0,
     hi = 1;
   for (let i = 0; i < 24; i++) {
@@ -213,11 +330,15 @@ function closestPassage(distance, from, to, tolerance) {
   return at(lo);
 }
 
-function stepProximity(projectile, end, world) {
-  const profile = HEAVY[projectile.weapon];
+function stepProximity(
+  projectile: HeavyProjectile,
+  end: number,
+  world: HeavyWorld,
+): HeavyImpactPoint | null {
+  const profile = HEAVY_BY_WEAPON[projectile.weapon];
   end = Math.min(end, projectile.at + profile.lifetime * 1000);
   const radius = proximityRadius(projectile.proximity);
-  let impact = null;
+  let impact: HeavyImpactPoint | null = null;
   while (projectile.updated < end && !projectile.done) {
     const ageBefore = projectile.age;
     const dt = Math.min(
@@ -230,8 +351,8 @@ function stepProximity(projectile, end, world) {
     projectile.updated += dt * 1000;
     const frames = world.frames(projectile.updated, projectile);
     const armed = fuseSegment(a, b, ageBefore, projectile.age);
-    let hit = null;
-    const consider = (t, kind, point) => {
+    let hit = null as { t: number; kind: string; point?: number[] } | null;
+    const consider = (t: number | null, kind: string, point?: number[]) => {
       if (t !== null && (!hit || t < hit.t)) hit = { t, kind, point };
     };
     // Boxes and props, on their real surfaces: a ray along the step is a contact (inert
@@ -268,7 +389,7 @@ function stepProximity(projectile, end, world) {
     }
     const previousFrames =
       armed && frames.length ? world.frames(projectile.updated - dt * 1000, projectile) : [];
-    const sphere = (centre, size, own = false, previous = centre) => {
+    const sphere = (centre: Vec, size: number, own = false, previous: Vec = centre) => {
       const contact = sweptSphereProximity(a, b, centre, size);
       if (!own && contact !== null && (!armed || contact < armed.t - 1e-12))
         consider(contact, 'inert');
@@ -284,10 +405,10 @@ function stepProximity(projectile, end, world) {
         sphere(
           f.p,
           MAP.metres(
-            world.roster[i].size *
+            world.roster[i]!.size *
               0.7 *
-              (enemySizeFactor(world.roster[i].type) *
-                (world.roster[i].type === 'midge' ? 1.2 : 1)),
+              (enemySizeFactor(world.roster[i]!.type) *
+                (world.roster[i]!.type === 'midge' ? 1.2 : 1)),
           ),
           false,
           previousFrames[i]?.p || f.p,
@@ -317,7 +438,8 @@ function stepProximity(projectile, end, world) {
       );
     if (hit) {
       projectile.done = true;
-      projectile.p = hit.point ?? a.map((v, i) => v + (b[i] - v) * hit.t);
+      const at = hit.t;
+      projectile.p = hit.point ?? a.map((v, i) => v + (b[i] - v) * at);
       if (hit.kind === 'fuse') impact = { hit: {}, point: projectile.p, frames };
     }
   }
@@ -328,10 +450,16 @@ function stepProximity(projectile, end, world) {
 // Damage of an impact, as the shooter reports it. Same rules as before the
 // move: direct hit (AP shell, heavy gun), blast with falloff and obstruction
 // by office solids, friends included.
-export function heavyImpact(projectile, hit, frames, point, world) {
+export function heavyImpact(
+  projectile: HeavyProjectile,
+  hit: HeavyHit,
+  frames: readonly (HeavyFrame | null | undefined)[],
+  point: number[],
+  world: Pick<HeavyWorld, 'roster' | 'killed' | 'solidSegment' | 'vehicles' | 'players'>,
+): HeavyReport {
   const weapon = projectile.weapon,
-    profile = HEAVY[weapon],
-    report = {
+    profile = HEAVY_BY_WEAPON[weapon],
+    report: HeavyReport = {
       shot: projectile.shot,
       weapon,
       p: point,
@@ -342,16 +470,16 @@ export function heavyImpact(projectile, hit, frames, point, world) {
       players: [],
       kills: [],
     };
-  const enemy = (index, amount) => {
+  const enemy = (index: number, amount: number) => {
     if (!world.roster[index] || world.killed(index)) return;
     report.enemies.push([index, amount, frames[index]?.p || null]);
   };
   if (weapon === 'ap') {
-    if (hit.vehicle) report.vehicles.push([hit.vehicle, profile.damage * projectile.bonus]);
+    if (hit.vehicle) report.vehicles.push([hit.vehicle, profile.damage * projectile.bonus!]);
     if (hit.player) report.kills.push(hit.player);
     return report;
   }
-  const damage = (position) => {
+  const damage = (position: Vec) => {
     const distance = Math.hypot(...point.map((v, i) => v - position[i]));
     if (distance > profile.radius * (projectile.radiusFactor || 1)) return 0;
     const wall = world.solidSegment?.(
@@ -366,8 +494,9 @@ export function heavyImpact(projectile, hit, frames, point, world) {
   // The heavy gun's small blast is narrower than a large insect: the target it
   // strikes takes the full charge, the blast only reaches the others.
   const direct = weapon === 'antitank';
-  if (direct && hit.enemy !== undefined) enemy(hit.enemy, profile.damage * projectile.bonus);
-  if (direct && hit.vehicle) report.vehicles.push([hit.vehicle, profile.damage * projectile.bonus]);
+  if (direct && hit.enemy !== undefined) enemy(hit.enemy, profile.damage * projectile.bonus!);
+  if (direct && hit.vehicle)
+    report.vehicles.push([hit.vehicle, profile.damage * projectile.bonus!]);
   frames.forEach((f, i) => {
     if (f && !(direct && hit.enemy === i)) {
       const n = damage(f.p);

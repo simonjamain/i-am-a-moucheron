@@ -114,7 +114,7 @@ console.log(
 // Real office paths: all three portals, then a navigation revision mid-wave.
 const { groundFlow, newGroundDefense, groundCommand } =
   await import('../src/ground-defense-state.ts');
-const { prepareRoster } = await import('../server/wave-preparation.js');
+const { prepareRoster } = await import('../server/wave-preparation.ts');
 const { DEFAULT_BALANCE } = await import('../src/balance.ts');
 let seed = 42;
 const draw = (n) => {

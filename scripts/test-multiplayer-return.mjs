@@ -21,7 +21,7 @@ import { enemyRoute } from '../src/routes.ts';
 import { staticGroundFlow } from '../src/ground-defense.ts';
 import { blockedSegment } from '../src/route-navigation.ts';
 import { HEAVY, heavyDamage } from '../src/armament.ts';
-import { createOrdnance } from '../src/ordnance.js';
+import { createOrdnance } from '../src/ordnance.ts';
 import { solidQuery } from './solid-harness.mjs';
 let now = 100000;
 const game = new Game({ now: () => now, solids: OFFICE_SOLIDS });

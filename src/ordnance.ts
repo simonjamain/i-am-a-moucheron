@@ -5,10 +5,42 @@ import { tankBarrelOrigin } from './tank-view.ts';
 import { MAP } from './scale.ts';
 import { HEAVY } from './armament.ts';
 import { isBomber } from './fleet.ts';
-export const add = (a, b) => a.map((v, i) => v + b[i]);
-const sub = (a, b) => a.map((v, i) => v - b[i]);
-const dot = (a, b) => a.reduce((n, v, i) => n + v * b[i], 0);
-export function segmentSphere(a, b, centre, radius) {
+import type { HeavyKind } from './armament.ts';
+import type { VehicleType } from './fleet.ts';
+
+type Vec = readonly number[];
+/** A heavy projectile in flight (rocket, missile, shell, bomb), simulated by heavy-sim.js. */
+export interface OrdnanceState {
+  /** Rockets and missiles fly straight; anything else (or nothing) falls and slows. */
+  weapon?: string;
+  p: number[];
+  v: number[];
+  age: number;
+}
+/** The firing vehicle as createOrdnance reads it (server vehicle record). */
+export interface OrdnanceVehicle {
+  id: string;
+  type: VehicleType;
+  state: { p: number[]; q: number[]; v: number[]; trailerAngle?: number };
+  supplies: { sequence: number };
+  rocketSide?: number;
+  proximity?: number;
+  seats?: { get?: (seat: string) => unknown };
+  missileOccupation?: unknown;
+}
+export interface OrdnanceRequest {
+  shot: unknown;
+  weapon: HeavyKind;
+  vehicle: OrdnanceVehicle;
+  shooter: unknown;
+  direction: number[];
+  now: number;
+  wave: unknown;
+}
+export const add = (a: Vec, b: Vec): number[] => a.map((v, i) => v + b[i]);
+const sub = (a: Vec, b: Vec): number[] => a.map((v, i) => v - b[i]);
+const dot = (a: Vec, b: Vec): number => a.reduce((n, v, i) => n + v * b[i], 0);
+export function segmentSphere(a: Vec, b: Vec, centre: Vec, radius: number): number | null {
   for (let i = 0; i < 3; i++)
     if (centre[i] + radius < Math.min(a[i], b[i]) || centre[i] - radius > Math.max(a[i], b[i]))
       return null;
@@ -23,9 +55,9 @@ export function segmentSphere(a, b, centre, radius) {
     );
   return Math.hypot(...sub(p, centre)) <= radius ? t : null;
 }
-export function integrateOrdnance(projectile, dt) {
+export function integrateOrdnance(projectile: OrdnanceState, dt: number): number[] {
   const before = [...projectile.p];
-  if (['rocket', 'missile'].includes(projectile.weapon)) {
+  if (projectile.weapon === 'rocket' || projectile.weapon === 'missile') {
     projectile.p = add(
       projectile.p,
       projectile.v.map((v) => v * dt),
@@ -43,7 +75,15 @@ export function integrateOrdnance(projectile, dt) {
   projectile.age += dt;
   return before;
 }
-export function createOrdnance({ shot, weapon, vehicle, shooter, direction, now, wave }) {
+export function createOrdnance({
+  shot,
+  weapon,
+  vehicle,
+  shooter,
+  direction,
+  now,
+  wave,
+}: OrdnanceRequest) {
   const profile = HEAVY[weapon],
     q = vehicle.state.q;
   const forward = [
