@@ -26,10 +26,11 @@ code générique.
 1. **Tableaux denses dès le début.** Chaque champ numérique d'un composant est un tableau typé
    (`Float32Array`, `Uint16Array`…) indexé par une table dense d'entités. Pas d'allocation par
    entité ni par image ; les systèmes parcourent des blocs contigus.
-2. **Un accès `get`/`set` autour du stockage.** Le code lit et écrit par `world.get(Health, e)`
-   et `world.set(Health, e, hp)`, jamais par indice brut ; le stockage reste modifiable sans
-   toucher aux systèmes. Les boucles chaudes disposent d'un parcours par blocs. Priorité :
-   performance, puis lisibilité.
+2. **Le composant est son propre stockage, avec `get`/`set`.** Le code lit et écrit par
+   `health.get(e)` et `health.set(e, hp)`, sans passer par le monde (pas d'indirection, typage
+   par composant) et jamais par indice brut ; le stockage reste modifiable sans toucher aux
+   systèmes. Les boucles chaudes parcourent les tableaux par blocs (`health.hp[i]`).
+   Priorité : performance, puis lisibilité.
 3. **Variation par composition.** Pas de `kind === '…'` dans un système : une tourelle Gatling
    est une entité avec une cadence rapide, pas un cas particulier du système de tir.
 4. **Rapier reste maître des corps dynamiques.** Un composant `Body` porte seulement le
