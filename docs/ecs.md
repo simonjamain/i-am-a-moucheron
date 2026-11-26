@@ -66,13 +66,18 @@ code générique.
 L'exemple de référence est la première tranche migrée (les tourelles) ; copier ce qui
 marche vaut mieux que suivre une règle.
 
-## Où l'ECS rapporte, où il ne rapporte pas
+## Périmètre : tout le jeu, un seul système
 
-Le gain vient des types **nombreux** : essaims, projectiles, particules, créatures au sol. Pour
-quelques dizaines de tourelles ou d'engins, les tableaux denses ne changent rien de mesurable.
-Les engins (`PlaneRig`, `HeliRig`, `TankRig`, `CastorRig`, `TruckRig`) mêlent état, forces et
-handles Rapier, et Rapier domine leur coût : les convertir en composants a un coût élevé pour un
-gain faible. Ils migrent en dernier, et seulement si une mesure le justifie.
+Pas de cohabitation durable entre une architecture à objets et l'ECS : le but est un système
+unique, que l'on n'aura pas à refactorer à nouveau. Tout le jeu y entre, engins pilotés compris
+(`PlaneRig`, `HeliRig`, `TankRig`, `CastorRig`, `TruckRig`), puisque ce sont eux qui éprouvent les
+points durs : Rapier, transfert d'autorité, réplication. Le style reste lisible pour qui préfère
+les classes : un composant est un objet de stockage (`health.get(e)`), un système est une classe
+avec `update(dt)` ; ce qui disparaît est l'héritage de comportement.
+
+Le réseau est un goulot de première classe, au même titre que le calcul : la réplication par
+deltas de composants, la priorité par intérêt et la quantification sont conçues avec le modèle
+de données, pas ajoutées après.
 
 ## Engins sans pilote (`parked-host.ts`)
 
@@ -93,9 +98,16 @@ valables seulement si plusieurs types d'entités en ont besoin.
 
 ## Migration
 
-Coexistence avec l'ancien code, une tranche à la fois, sans réécriture d'un bloc. Ordre
-proposé : tourelles, créatures au sol, engins sans pilote, puis engins pilotés. Mesurer avant
-et après chaque tranche performante ([performance](performance.md)).
+La coexistence avec l'ancien code est transitoire : une tranche à la fois, et chaque PR
+supprime l'ancien code de la tranche qu'elle migre. Pour que le modèle n'ait pas à être
+refait, il est validé d'abord sur ses cas les plus durs, avant toute migration large :
+
+1. un engin piloté (Rapier, transfert d'autorité à la montée et à la descente, réplication) ;
+2. un type très nombreux (créatures au sol : stockage dense, réplication, interpolation).
+
+Viennent ensuite les tourelles, les projectiles, le reste des engins, puis `server/game.js` et
+`src/client.js` par domaine. Chaque tranche se mesure avant et après
+([performance](performance.md)) ; les traces d'une session de jeu servent de référence.
 
 ## Points ouverts
 
