@@ -66,6 +66,31 @@ code générique.
 L'exemple de référence est la première tranche migrée (les tourelles) ; copier ce qui
 marche vaut mieux que suivre une règle.
 
+## Où l'ECS rapporte, où il ne rapporte pas
+
+Le gain vient des types **nombreux** : essaims, projectiles, particules, créatures au sol. Pour
+quelques dizaines de tourelles ou d'engins, les tableaux denses ne changent rien de mesurable.
+Les engins (`PlaneRig`, `HeliRig`, `TankRig`, `CastorRig`, `TruckRig`) mêlent état, forces et
+handles Rapier, et Rapier domine leur coût : les convertir en composants a un coût élevé pour un
+gain faible. Ils migrent en dernier, et seulement si une mesure le justifie.
+
+## Engins sans pilote (`parked-host.ts`)
+
+La physique du serveur est celle du client : les mêmes rigs, pilotés sans interface. Le module
+actuel mélange six responsabilités qui se séparent sans attendre l'ECS :
+
+1. le monde Rapier (création, décor, avancement, vidage différé) ;
+2. le registre des engins simulés (`sync`) ;
+3. la fabrique de rigs par type ;
+4. l'horloge à pas fixe avec rattrapage plafonné ;
+5. le sommeil (compteur de calme, vitesse résiduelle remise à zéro, mise en veille) ;
+6. la règle de destruction et le rapport d'état.
+
+Les points 1, 4 et 5 sont communs au client et au serveur ; le point 3 devient une table de
+définitions par type, sans `if` en chaîne ; seul le point 2 est propre au serveur (les engins
+dont il est propriétaire). Hypothèse à vérifier : des composants `Rest` et `Crash` partagés,
+valables seulement si plusieurs types d'entités en ont besoin.
+
 ## Migration
 
 Coexistence avec l'ancien code, une tranche à la fois, sans réécriture d'un bloc. Ordre
