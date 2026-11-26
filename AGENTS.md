@@ -49,7 +49,8 @@ idempotence) et la protection de la salle. Détail : [confiance envers les clien
 - Tout nouveau module s'écrit en TypeScript (types effacés, sans compilation) ; règles et
   migration d'un `.js` : [TypeScript](docs/typescript.md).
 - Un nouveau `scripts/test-*.mjs` s'ajoute à `scripts/suite.mjs` (`test-suite-wiring.mjs`
-  le vérifie) ; un nouveau `scripts/e2e-*.mjs` à sa liste `E2E`.
+  le vérifie) ; un nouveau `scripts/e2e-*.mjs` à sa liste `E2E` (ou
+  `E2E_MANUAL` avec sa commande npm s'il ne peut pas tourner en CI).
 - Fichiers générés, jamais édités à la main. Ignorés par Git : `VERSION`,
   `server/assets.js`, `src/changelog-recent.ts`, `dist/`. Versionnés mais régénérés :
   `docs/ui-review.html` (par l'assembleur), les `src/*-data.ts` et

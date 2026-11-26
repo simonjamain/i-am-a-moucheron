@@ -2,14 +2,14 @@
 
 Le numéro de version et les nouveautés montrées aux joueurs se déduisent de l'historique
 Git. Aucun fichier partagé n'est modifié par plusieurs PR : deux contributions en
-parallèle ne peuvent plus se mettre en conflit sur le numéro ou sur le changelog.
+parallèle ne se mettent pas en conflit sur le numéro ou sur le changelog.
 
 ## Numéro de version
 
 - La version est un entier : `437 + nombre de commits` de `main` (première parentée)
   depuis le commit de référence `BASELINE` de `scripts/build-info.ts`.
 - Les PR sont fusionnées en squash : une PR fusionnée = un commit = un numéro.
-- `VERSION` n'est **plus versionné** : `node scripts/build-info.ts` l'écrit (ignoré par
+- `VERSION` n'est **pas versionné** : `node scripts/build-info.ts` l'écrit (ignoré par
   Git). L'assembleur le fait aussi, donc `npm test`, `npm start` et les builds le
   régénèrent seuls. Ne jamais l'éditer ni le committer.
 - Sur une branche, le numéro compte aussi les commits non fusionnés : il sert de repère
