@@ -5,8 +5,51 @@ import { rangeReadout } from './equipment-controls.ts';
 import { MAP } from './scale.ts';
 import { MOBILE_FUSE } from './mobile-flak.ts';
 import { formatDistance, formatSpeed } from './units.ts';
+import type { Shell } from './armament.ts';
 
-const count = (value) => Math.max(0, Math.floor(value || 0));
+/** The vehicle fields read by the equipment HUD (a room vehicle or snapshot entry). */
+export interface EquipmentVehicle {
+  id: string;
+  type: string;
+  supplies?: { ammo?: Partial<Record<string, number>>; servicing?: unknown } | null;
+}
+/** What the player is using this frame, as client.js gathers it. */
+export interface EquipmentOptions {
+  vehicle?: EquipmentVehicle | null;
+  seat?: string | null;
+  turret?: boolean;
+  station?: string;
+  stationAmmo?: number;
+  dead?: boolean;
+  hp?: number;
+  speed?: number;
+  altitude?: number;
+  gas?: number;
+  fuel?: number;
+  ammo?: number;
+  shell?: Shell;
+  range?: number;
+  proximity?: number;
+  ready?: boolean;
+  stall?: boolean;
+}
+/** Two HUD rails: label, summary, then detail rows (shown while expanded). */
+export interface EquipmentModel {
+  scope: string;
+  left: string[];
+  right: string[];
+  readout?: { metres: number; fraction: number };
+  alert?: string;
+}
+type Side = 'left' | 'right';
+interface Rail {
+  side: Side;
+  label: Element;
+  summary: Element;
+  details: Element;
+}
+
+const count = (value: number | undefined | null): number => Math.max(0, Math.floor(value || 0));
 function equipmentModel({
   vehicle,
   seat,
@@ -25,7 +68,7 @@ function equipmentModel({
   proximity = MOBILE_FUSE.initial,
   ready = true,
   stall = false,
-}) {
+}: EquipmentOptions): EquipmentModel | null {
   if (dead || (!vehicle && !turret)) return null;
   const health = `${Math.round(hp)} PV`;
   if (turret && station === 'antitank') {
@@ -76,6 +119,7 @@ function equipmentModel({
       readout,
     };
   }
+  if (!vehicle) return null; // unreachable: no vehicle implies a turret
   if (vehicle.type === 'flyingcastor')
     return {
       scope: vehicle.id + ':' + seat,
@@ -130,7 +174,7 @@ function equipmentModel({
       `Carburant ${Math.ceil(fuel)} s · ${stall && !tank ? 'DÉCROCHAGE' : service}`,
     ],
     active = availableShell(supplies, shell),
-    heavy = count(supplies[active]);
+    heavy = count(active ? supplies[active] : undefined);
   if (tank && seat === 'cannon')
     return {
       scope: vehicle.id + ':' + seat,
@@ -172,14 +216,14 @@ function equipmentModel({
   };
 }
 
-export function equipmentHUD(options) {
+export function equipmentHUD(options: EquipmentOptions): EquipmentModel | null {
   const model = equipmentModel(options);
   if (model)
     model.alert = [
       Math.floor((options.hp ?? 100) / 10),
-      options.fuel < 30,
+      (options.fuel as number) < 30,
       !!options.stall,
-      options.ammo < 1,
+      (options.ammo as number) < 1,
       !!options.vehicle?.supplies?.servicing,
     ].join(':');
   return model;
@@ -188,19 +232,24 @@ export function equipmentHUD(options) {
 // Details open for a short time on meaningful changes; per-frame speed updates
 // must not keep them expanded indefinitely.
 export class ContextHUD {
-  constructor(root, clock = () => performance.now()) {
+  root: Element;
+  rails: Rail[];
+  clock: () => number;
+  signature: string;
+  until: number;
+  constructor(root: Element, clock = () => performance.now()) {
     this.root = root;
-    this.rails = ['left', 'right'].map((side) => ({
+    this.rails = (['left', 'right'] as const).map((side) => ({
       side,
-      label: root.querySelector(`[data-hud="${side}-0"]`),
-      summary: root.querySelector(`[data-hud="${side}-1"]`),
-      details: root.querySelector(`[data-hud-details="${side}"]`),
+      label: root.querySelector(`[data-hud="${side}-0"]`)!,
+      summary: root.querySelector(`[data-hud="${side}-1"]`)!,
+      details: root.querySelector(`[data-hud-details="${side}"]`)!,
     }));
     this.clock = clock;
     this.signature = '';
     this.until = 0;
   }
-  update(model) {
+  update(model: EquipmentModel | null): void {
     this.root.classList.toggle('hidden', !model);
     if (!model) {
       this.signature = '';
@@ -236,7 +285,7 @@ export class ContextHUD {
       }
     }
   }
-  reveal() {
+  reveal(): void {
     this.until = this.clock() + 2500;
   }
 }

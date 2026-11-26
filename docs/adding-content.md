@@ -20,7 +20,7 @@ Domaine partagé (serveur et client) :
    par `src/types.ts`) : rien à recopier. Lancer `npm run typecheck` et compléter
    chaque table `Record<EnemyType, …>` que `tsc` signale.
 3. `src/scale.ts` — facteur de taille dans `ENEMY_SIZE_FACTORS` (rendu et collisions).
-4. `server/wave-preparation.js` — taille de meute dans `PACKS` (espèce tirée).
+4. `server/wave-preparation.ts` — taille de meute dans `PACKS` (espèce tirée).
 5. `src/ground-creatures.ts` — gabarit `GROUND_BODY_SIZES` (marcheur) et, s'il
    attaque, `GROUND_ATTACK_DAMAGE`.
 
@@ -55,8 +55,8 @@ sans liste de types à recopier ailleurs.
 4. `src/contracts.ts` — contrats d'embarquement de chaque siège (`contractKey`,
    tableau des rôles pour les sièges spécifiques).
 5. Armes et réserves : `src/armament.ts` (nouvelle arme lourde : entrée `HEAVY`, forme
-   `HeavyWeapon`), `src/logistics.ts`, `src/ordnance.js`.
-6. Rendu et HUD : `src/graphics.ts` (modèle), `src/hud.js`, `src/shop-thumbs.js` ;
+   `HeavyWeapon`), `src/logistics.ts`, `src/ordnance.ts`.
+6. Rendu et HUD : `src/graphics.ts` (modèle), `src/hud.ts`, `src/shop-thumbs.ts` ;
    postes visables de chaque siège dans `src/seat-posts.ts` (`scripts/test-seat-posts.mjs`
    exige un poste par siège).
 7. Autorité : `server/game.js` pour toute arme lourde ou règle simulée au serveur.

@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 import { ENEMY_TYPES, ENEMY_UNLOCK_WAVE, GROUND_LANES } from '../src/waves.ts';
 import { ENEMY_SIZE_FACTORS } from '../src/scale.ts';
 import { speciesSymbols } from '../src/wave-forecast-scene.ts';
-import { PACKS } from '../server/wave-preparation.js';
+import { PACKS } from '../server/wave-preparation.ts';
 import { GROUND_BODY_SIZES, GROUND_ATTACK_DAMAGE } from '../src/ground-creatures.ts';
 import { WALKERS } from '../src/walker-batch.ts';
 import { FLYERS } from '../src/flyer-batch.ts';
@@ -32,7 +32,7 @@ const expectKeys = (name, table, expected) =>
 expectKeys('ENEMY_SIZE_FACTORS (src/scale.ts)', ENEMY_SIZE_FACTORS, all);
 expectKeys('speciesSymbols (src/wave-forecast-scene.ts)', speciesSymbols, all);
 expectKeys('ENEMY_UNLOCK_WAVE (src/waves.ts)', ENEMY_UNLOCK_WAVE, drawn);
-expectKeys('PACKS (server/wave-preparation.js)', PACKS, drawn);
+expectKeys('PACKS (server/wave-preparation.ts)', PACKS, drawn);
 expectKeys('GROUND_LANES (src/waves.ts)', GROUND_LANES, ground);
 expectKeys('GROUND_BODY_SIZES (src/ground-creatures.ts)', GROUND_BODY_SIZES, ground);
 // Every ground species walks in WalkerBatch (spiderlings too, since v317);

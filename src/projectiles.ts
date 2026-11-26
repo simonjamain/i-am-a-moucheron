@@ -102,7 +102,7 @@ export const PROJECTILES = Object.freeze({
     ricochetMaxAngle: 0,
     speedExponent: 0,
   }),
-  // Heavy ordnance, simulated by its shooter (src/heavy-sim.js).
+  // Heavy ordnance, simulated by its shooter (src/heavy-sim.ts).
   rocket: type({
     damage: 120,
     edge: 30,

@@ -61,7 +61,7 @@ renderer de la même façon. `isGpuRenderer` distingue le renderer GPU du rendu 
 | Lots de créatures animés par texture                                        | `src/creature-batch.ts`                                             |
 | Rubans d'air, fumée des moteurs, zones de service                           | `src/air-ribbons.ts`, `src/engine-smoke.ts`, `src/service-zones.ts` |
 | Sélecteur de personnage de l'accueil                                        | `src/appearance-picker.ts`                                          |
-| Vignettes de la boutique                                                    | `src/shop-thumbs.js` (renderer à part)                              |
+| Vignettes de la boutique                                                    | `src/shop-thumbs.ts` (renderer à part)                              |
 | Rapport « Rendu » du bouton Nouveautés                                      | `src/render-info.ts`                                                |
 
 ## Vérifier

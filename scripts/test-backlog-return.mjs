@@ -11,7 +11,7 @@ import { SHOP, shopPrice, purchaseCount } from '../src/equipment.ts';
 import { reserveAlerts, missileStatus, ArrivalSignals } from '../src/reserve-feedback.ts';
 import { deliveryLanding, DELIVERY_SPEED } from '../src/delivery.ts';
 import { wavePlan } from '../src/waves.ts';
-import { createOrdnance } from '../src/ordnance.js';
+import { createOrdnance } from '../src/ordnance.ts';
 import { createSoul, inDeskZone, deskOccupant, advancePurgatory } from '../src/purgatory-queue.ts';
 import { solidQuery } from './solid-harness.mjs';
 await loadServerPhysics();

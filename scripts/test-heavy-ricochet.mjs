@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { stepHeavy } from '../src/heavy-sim.js';
+import { stepHeavy } from '../src/heavy-sim.ts';
 import { solidView } from './solid-harness.mjs';
 import { MAX_BOUNCES } from '../src/ricochet.ts';
 import { MAP } from '../src/scale.ts';

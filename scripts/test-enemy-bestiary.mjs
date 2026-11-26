@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { Game } from '../server/game.js';
-import { PACKS, prepareRoster } from '../server/wave-preparation.js';
+import { PACKS, prepareRoster } from '../server/wave-preparation.ts';
 import { DEFAULT_BALANCE } from '../src/balance.ts';
 import { ENEMY_TYPES, debugSwarmRoster, swarmFrame, wavePlan } from '../src/waves.ts';
 

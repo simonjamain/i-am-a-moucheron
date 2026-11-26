@@ -6,7 +6,7 @@ import { MODEL_DATA } from '../src/meshy-bed-data.ts';
 import { makeBed } from '../src/bed-model.ts';
 import { makeInstallationCollider, makeServiceStation } from '../src/station-model.ts';
 import { bedSpawn, bedAccess } from '../src/beds.ts';
-import { ShopThumbnails } from '../src/shop-thumbs.js';
+import { ShopThumbnails } from '../src/shop-thumbs.ts';
 import { MAP, ACTOR_UNIT } from '../src/scale.ts';
 import { baseWorld } from '../src/base.ts';
 assert.equal(

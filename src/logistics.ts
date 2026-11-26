@@ -1,4 +1,3 @@
-import { MAP } from './scale.ts';
 import { VEHICLES, pilotFireInterval, isRotorcraft, isBomber } from './fleet.ts';
 import { TANK_MG } from './armament.ts';
 import type { VehicleProfile } from './fleet.ts';
@@ -91,58 +90,27 @@ export function inRadarCoverage(
     (s) => s.kind === 'radar' && Math.hypot(position.x - s.x, position.z - s.z) <= 2,
   );
 }
-export function serviceEligible(
-  state: SupplyState,
-  installations: readonly Installation[],
-  type: string,
-): boolean {
-  return (
-    !!state.landed &&
-    state.hp > 0 &&
-    Math.hypot(...state.v) <= MAP.metres(0.001) &&
-    installations.some(
-      (s) =>
-        s.kind === 'refuel' &&
-        Math.abs(state.p[1] - PROFILES[type]!.gear - s.y) <= MAP.metres(0.3) &&
-        Math.hypot(state.p[0] - s.x, state.p[2] - s.z) <= SERVICE_RADIUS,
-    )
-  );
-}
-export function advanceSupplies(
-  supply: Supplies,
+/**
+ * Fuel left after `dt` seconds of flight or driving. Refuelling is the paid service
+ * (`advancePaidService`, src/paid-service.ts); this only burns: rotorcraft burn 1/s while
+ * airborne whatever the thrust, the others in proportion to their throttle.
+ */
+export function burnFuel(
+  fuel: number,
   state: SupplyState,
   type: string,
-  installations: readonly Installation[],
   dt: number,
   balance: SupplyBalance | null = null,
-): Supplies & { servicing: boolean } {
+): number {
   const capacity = FUEL_SECONDS * (balance?.fuel ?? 1);
-  const servicing = serviceEligible(state, installations, type);
-  const fuel = Math.max(
-    0,
-    Math.min(
-      capacity,
-      supply.fuel +
-        (servicing
-          ? capacity / SERVICE_SECONDS
-          : state.engine
-            ? isRotorcraft(type)
-              ? state.landed
-                ? 0
-                : -1
-              : -Math.max(0, Math.min(1, state.gas ?? (state.landed ? 0 : 0.65)))
-            : 0) *
-          dt,
-    ),
-  );
-  const ammo = { ...supply.ammo };
-  if (servicing)
-    for (const seat of Object.keys(fullAmmo(type, balance)))
-      ammo[seat] = Math.min(
-        ammoCapacity(type, seat, balance),
-        (ammo[seat] || 0) + (ammoCapacity(type, seat, balance) * dt) / SERVICE_SECONDS,
-      );
-  return { fuel, ammo, servicing };
+  const rate = state.engine
+    ? isRotorcraft(type)
+      ? state.landed
+        ? 0
+        : -1
+      : -Math.max(0, Math.min(1, state.gas ?? (state.landed ? 0 : 0.65)))
+    : 0;
+  return Math.max(0, Math.min(capacity, fuel + rate * dt));
 }
 export function vehicleHue(sequence: number): number {
   return (((sequence * 137.50776405003785) % 360) + 360) % 360;

@@ -110,7 +110,7 @@ et se posent si vitesse, descente et attitude le permettent. Détails :
 L’atelier (P) range ses cartes en trois colonnes, Aéronefs, Véhicules au sol et
 Installations, du moins cher au plus cher (`src/shop-catalog.ts`, colonne
 « Autres » pour un article non classé). Chaque carte affiche une vignette rendue
-depuis le vrai modèle (`src/shop-thumbs.js`), le nom et le prix. Un clic ouvre le
+depuis le vrai modèle (`src/shop-thumbs.ts`), le nom et le prix. Un clic ouvre le
 bon de commande ; signé, il est payé par la caisse commune puis ouvre l’aperçu de
 pose. Prix et paliers : [revenus et prix](progression.md#revenus-et-prix) ; règles des
 bons, remboursements et pose : [économie](economy.md).

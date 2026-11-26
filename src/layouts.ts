@@ -775,8 +775,7 @@ export const LAYOUTS = Object.freeze([
     id: 'cloison',
     circuit: [-2.1, 0.2, 1.5, 2.4],
     name: 'Cloison et porte',
-    summary:
-      'Une cloison pleine coupe la pièce en deux ; une seule porte, pour le sol et l’airCourse.',
+    summary: 'Une cloison pleine coupe la pièce en deux ; une seule porte, pour le sol et l’air.',
     bin: { x: 3.4, z: -2.9 },
     goal: [2.85, -2.9],
     spawn: [2.6, -1.5],
@@ -865,8 +864,7 @@ export const LAYOUTS = Object.freeze([
     id: 'fronts',
     circuit: [0, 0.2, 2.9, 2.25],
     name: 'Deux fronts',
-    summary:
-      'Le sol arrive par la gauche, l’airCourse par la droite ; corbeille au fond au centre.',
+    summary: 'Le sol arrive par la gauche, l’air par la droite ; corbeille au fond au centre.',
     bin: { x: 0, z: -3.05 },
     goal: [0, -2.5],
     spawn: [0, -2.5],

@@ -1,7 +1,7 @@
 // Ground packs spread through physical avoidance, with no display-only lanes.
 import assert from 'node:assert/strict';
 import { Worker, isMainThread, parentPort, workerData } from 'node:worker_threads';
-import { prepareRoster } from '../server/wave-preparation.js';
+import { prepareRoster } from '../server/wave-preparation.ts';
 import { DEFAULT_BALANCE } from '../src/balance.ts';
 import { advanceGroundCrowd } from '../src/ground-crowd.ts';
 import { newGroundDefense, groundFlow } from '../src/ground-defense-state.ts';

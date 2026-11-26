@@ -4,8 +4,7 @@ import { VEHICLES, pilotFireInterval, isRotorcraft } from '../src/fleet.ts';
 import {
   fullAmmo,
   ammoCapacity,
-  advanceSupplies,
-  serviceEligible,
+  burnFuel,
   inRadarCoverage,
   vehicleHue,
   installationCount,
@@ -21,17 +20,11 @@ assert.doesNotMatch(readFileSync('src/index.html', 'utf8'), /paperTear|Déchirer
 for (const type of Object.keys(VEHICLES)) {
   const ammo = fullAmmo(type),
     state = { p: [0, 1, 0], v: [0, 0, -0.1], landed: false, hp: 100, engine: 1, gas: 1 };
-  let supply = { fuel: 300, ammo };
-  for (let i = 0; i < 3000; i++) supply = advanceSupplies(supply, state, type, [], 0.1);
-  assert.ok(supply.fuel < 1e-8);
-  assert.equal(
-    advanceSupplies({ fuel: 300, ammo }, { ...state, gas: 0.5 }, type, [], 300).fuel,
-    isRotorcraft(type) ? 0 : 150,
-  );
-  assert.equal(
-    advanceSupplies({ fuel: 100, ammo }, { ...state, engine: 0 }, type, [], 300).fuel,
-    100,
-  );
+  let fuel = 300;
+  for (let i = 0; i < 3000; i++) fuel = burnFuel(fuel, state, type, 0.1);
+  assert.ok(fuel < 1e-8);
+  assert.equal(burnFuel(300, { ...state, gas: 0.5 }, type, 300), isRotorcraft(type) ? 0 : 150);
+  assert.equal(burnFuel(100, { ...state, engine: 0 }, type, 300), 100);
   for (const seat of VEHICLES[type].seats.filter(
     () => !['tank', 'spitfire', 'helicopter', 'flaktruck', 'castor'].includes(type),
   ))
@@ -41,23 +34,6 @@ for (const type of Object.keys(VEHICLES)) {
           ammoCapacity(type, seat) * (seat === 'pilot' ? pilotFireInterval(type) : 0.09) - 60,
         ) < 0.05,
     );
-  const station = { kind: 'refuel', x: 0, y: 0.9, z: 0 };
-  const parked = { ...state, p: [0, 0.9 + VEHICLES[type].gear, 0], v: [0, 0, 0], landed: true };
-  assert.ok(serviceEligible(parked, [station], type));
-  for (const bad of [
-    { ...parked, landed: false },
-    { ...parked, v: [0.001, 0, 0] },
-    { ...parked, p: [0.501, parked.p[1], 0] },
-    { ...parked, p: [0, parked.p[1] + 0.1, 0] },
-  ])
-    assert.ok(!serviceEligible(bad, [station], type));
-  const empty = { fuel: 0, ammo: Object.fromEntries(Object.keys(ammo).map((s) => [s, 0])) };
-  const half = advanceSupplies(empty, parked, type, [station, station], 5);
-  assert.equal(half.fuel, 150);
-  const full = advanceSupplies(half, parked, type, [station], 5);
-  assert.equal(full.fuel, 300);
-  assert.deepEqual(full.ammo, ammo);
-  assert.deepEqual(advanceSupplies(full, parked, type, [station], 30).ammo, ammo);
 }
 const radar = { kind: 'radar', x: 0, y: 0, z: 0 };
 assert.ok(!inRadarCoverage({ x: 0, y: 0, z: 0 }, []));

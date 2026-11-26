@@ -7,7 +7,7 @@ import { advancePaidService } from '../src/paid-service.ts';
 import { newGroundDefense } from '../src/ground-defense-state.ts';
 import * as T from '../vendor/three.webgpu.min.js';
 import { HEAVY } from '../src/armament.ts';
-import { stepHeavy } from '../src/heavy-sim.js';
+import { stepHeavy } from '../src/heavy-sim.ts';
 import { solidView } from './solid-harness.mjs';
 import { shopPrice } from '../src/equipment.ts';
 import { heavyDcaMuzzle, RAPID_DCA_DAMAGE } from '../src/fixed-dca.ts';

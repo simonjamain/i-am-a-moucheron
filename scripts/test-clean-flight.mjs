@@ -8,7 +8,8 @@ import vm from 'node:vm';
 import * as T from '../vendor/three.webgpu.min.js';
 import { Game } from '../server/game.js';
 import { SHOP, shopPrice, purchaseCount, supportedPlacement } from '../src/equipment.ts';
-import { fullAmmo, advanceSupplies } from '../src/logistics.ts';
+import { fullAmmo } from '../src/logistics.ts';
+import { advancePaidService } from '../src/paid-service.ts';
 import { HEAVY, heavyInterval } from '../src/armament.ts';
 import { VEHICLES, LIGHT_FIGHTER, vehicleEntry, isRotorcraft } from '../src/fleet.ts';
 import { MAP, ACTOR_UNIT } from '../src/scale.ts';
@@ -20,10 +21,15 @@ import { swarmAudioGroups } from '../src/game-audio/swarm.ts';
 import { AircraftFire } from '../src/aircraft-fire.ts';
 import { wavePlan, swarmFrame } from '../src/waves.ts';
 import { collisionDamage } from '../src/vehicle-care.ts';
-import { ballisticMarks } from '../src/tank-reticle.js';
-import { integrateOrdnance } from '../src/ordnance.js';
+import { ballisticMarks } from '../src/tank-reticle.ts';
+import { integrateOrdnance } from '../src/ordnance.ts';
 import { PurchaseUI } from '../src/purchase-ui.ts';
 import { solidQuery } from './solid-harness.mjs';
+// Paid service at a station until full (two 5 s steps cover SERVICE_SECONDS).
+const serviceFull = (vehicle, station) => {
+  for (let i = 0; i < 2; i++) advancePaidService([vehicle], [station], 1e6, {}, 5);
+  return vehicle.supplies;
+};
 let now = 100000;
 const game = new Game({ now: () => now, solids: OFFICE_SOLIDS });
 const a = game.join({ code: 'CLEAN', name: 'A' }),
@@ -150,12 +156,13 @@ assert.throws(
   /vide/,
 );
 assert.equal(fullAmmo('interceptor').bomb, 6);
-const filled = advanceSupplies(
-  bomber.supplies,
-  { ...bomber.state, p: [0, 0.9 + VEHICLES.bomber.gear, 0], v: [0, 0, 0], landed: true },
-  'bomber',
-  [{ kind: 'refuel', x: 0, y: 0.9, z: 0 }],
-  10,
+const filled = serviceFull(
+  {
+    type: 'bomber',
+    state: { ...bomber.state, p: [0, 0.9 + VEHICLES.bomber.gear, 0] },
+    supplies: { ...bomber.supplies, ammo: { ...bomber.supplies.ammo } },
+  },
+  { kind: 'refuel', x: 0, y: 0.9, z: 0 },
 );
 assert.equal(filled.ammo.bomb, 30);
 assert.equal(HEAVY.bomb.interval, 0.5, 'Stuka rack cadence unchanged');

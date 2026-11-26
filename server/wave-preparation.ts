@@ -2,12 +2,61 @@ import { randomInt } from 'node:crypto';
 import { ENEMY_TYPES, ENEMY_UNLOCK_WAVE, MAX_WAVE_POPULATION } from '../src/waves.ts';
 import { routeDuration } from '../src/routes.ts';
 import { scaleRoster, DEFAULT_BALANCE } from '../src/balance.ts';
+import type { Balance } from '../src/balance.ts';
+import type { EnemyProfile, EnemyType, WaveEnemy } from '../src/waves.ts';
+
+/** Integer draw in [0, max): `crypto.randomInt` by default, seeded in tests. */
+export type Draw = (max: number) => number;
+interface PackSize {
+  min: number;
+  max: number;
+  /** Most packs of that species in one wave (swarms only). */
+  groups?: number;
+}
+interface PackRoute {
+  portalIndex: number;
+  routeSeed: number;
+  branch: number;
+}
+interface Pack extends PackRoute {
+  type: EnemyType;
+  count: number;
+  spawn: number;
+  boost?: number;
+}
+/** A roster member with the index of its pack (members of a pack are contiguous). */
+export type PreparedEnemy = WaveEnemy & { group: number };
+/**
+ * One announced group of the wave (`room.preparation.groups`); the client reads a subset
+ * (`ForecastGroup` in src/wave-forecast-scene.ts).
+ */
+export interface PreparedGroup {
+  type: EnemyType;
+  portalIndex?: number;
+  routeSeed?: number;
+  branch?: unknown;
+  approach?: string;
+  ground: boolean;
+  spawn: number;
+  count: number;
+}
+type ForecastEnemy = Pick<
+  WaveEnemy,
+  'type' | 'portalIndex' | 'routeSeed' | 'approach' | 'ground' | 'spawn'
+> & {
+  branch?: unknown;
+  group?: number;
+};
 
 const unlock = ENEMY_UNLOCK_WAVE;
 
 // Wave budget in power: W(n) = W(1) × g^(n − 1), times N^exponent for N players.
 // No ceiling: defeat is meant to be unavoidable. It never depends on money earned.
-export function directorBudget(wave, players = 1, balance = DEFAULT_BALANCE) {
+export function directorBudget(
+  wave: number,
+  players = 1,
+  balance: Pick<Balance, 'firstWavePower' | 'waveGrowth' | 'playerExponent'> = DEFAULT_BALANCE,
+): number {
   const n = Math.max(1, Math.floor(players) || 1);
   return (
     balance.firstWavePower *
@@ -19,7 +68,7 @@ export function directorBudget(wave, players = 1, balance = DEFAULT_BALANCE) {
 // Pack sizes: cheap insects come in big swarms (never nearly alone), and the
 // bigger and stronger a species is, the more it walks alone. Sizes grow with
 // the wave budget, from `min` on the first wave to `max` at a reference power of 2 400.
-export const PACKS = Object.freeze({
+export const PACKS: Readonly<Partial<Record<EnemyType, PackSize>>> = Object.freeze({
   midge: { min: 20, max: 400, groups: 3 },
   ant: { min: 8, max: 200, groups: 2 },
   mosquito: { min: 6, max: 60, groups: 2 },
@@ -34,13 +83,13 @@ export const PACKS = Object.freeze({
 // appear just before leaving, one after the other, at the same overall pace.
 const PORTAL_HOLD = 2,
   GROUND_HOLD = 0.4;
-const holdFor = (profile) => (profile.ground ? GROUND_HOLD : PORTAL_HOLD);
-const SWARM_TYPES = new Set(['ant', 'midge', 'mosquito']);
+const holdFor = (profile: EnemyProfile): number => (profile.ground ? GROUND_HOLD : PORTAL_HOLD);
+const SWARM_TYPES: ReadonlySet<string> = new Set(['ant', 'midge', 'mosquito']);
 // Only crowds share an entrance and a path; strong species each walk their own.
-const SHARED_ROUTE = new Set(['ant', 'midge', 'mosquito']);
+const SHARED_ROUTE: ReadonlySet<string> = new Set(['ant', 'midge', 'mosquito']);
 
-export function packSize(type, budget, draw = randomInt) {
-  const { min, max } = PACKS[type];
+export function packSize(type: EnemyType, budget: number, draw: Draw = randomInt): number {
+  const { min, max } = PACKS[type]!;
   const progress = Math.min(
     1,
     Math.max(0, Math.log(Math.max(1, budget / 32)) / Math.log(2400 / 32)),
@@ -51,25 +100,34 @@ export function packSize(type, budget, draw = randomInt) {
 
 // Seconds between two members leaving a portal; local soft avoidance spreads
 // ground creatures after emergence. Big swarms leave faster.
-export function memberGap(type, count) {
-  const gaps = { ant: [0.04, 0.09], midge: [0.003, 0.01], mosquito: [0.01, 0.02] };
+export function memberGap(type: EnemyType, count: number): number {
+  const gaps: Partial<Record<EnemyType, [number, number]>> = {
+    ant: [0.04, 0.09],
+    midge: [0.003, 0.01],
+    mosquito: [0.01, 0.02],
+  };
   const [lowest, highest] = gaps[type] || [0.1, 0.1 * Math.max(1, ENEMY_TYPES[type].power / 4)];
   return Math.max(lowest, Math.min(highest, 8 / Math.max(1, count)));
 }
 
-export function prepareRoster(wave, balance, draw = randomInt, players = 1) {
+export function prepareRoster(
+  wave: number,
+  balance: Balance,
+  draw: Draw = randomInt,
+  players = 1,
+): { budget: number; roster: PreparedEnemy[] } {
   const difficulty = 1 + Math.round((wave - 1) * balance.progression);
   const budget = directorBudget(difficulty, players, balance);
   // No unlock wave: a species is drawn whenever its power fits what is left of the budget.
-  const types = Object.keys(unlock);
+  const types = Object.keys(unlock) as EnemyType[];
   const maxPower = Math.max(...types.map((type) => ENEMY_TYPES[type].power));
   // Phase 1: plan packs. Few, large packs on shared routes keep a wave compact.
-  const packs = [],
-    routes = new Map();
+  const packs: Pack[] = [],
+    routes = new Map<EnemyType, PackRoute>();
   let remaining = budget,
     planned = 0,
     spawn = 0;
-  function pack(type, count, at) {
+  function pack(type: EnemyType, count: number, at: number): void {
     const profile = ENEMY_TYPES[type];
     let route = routes.get(type);
     // Packs of one species mostly follow the same entrance and path.
@@ -85,24 +143,24 @@ export function prepareRoster(wave, balance, draw = randomInt, players = 1) {
     remaining -= profile.power * count;
     planned += count;
   }
-  const grow = (type, count) => {
+  const grow = (type: EnemyType, count: number): void => {
     // Small remainders of a swarm species join an existing pack of that species.
-    const target = packs.findLast((p) => p.type === type);
+    const target = packs.findLast((p) => p.type === type)!;
     target.count += count;
     remaining -= ENEMY_TYPES[type].power * count;
     planned += count;
   };
   // Opening packs take a share of the budget each, never less than a real swarm.
-  const opening = (type, share) =>
+  const opening = (type: EnemyType, share: number): number =>
     Math.max(
       1,
       Math.min(
         packSize(type, budget, draw),
-        Math.max(PACKS[type].min, Math.floor((budget * share) / ENEMY_TYPES[type].power)),
+        Math.max(PACKS[type]!.min, Math.floor((budget * share) / ENEMY_TYPES[type].power)),
         Math.floor(remaining / ENEMY_TYPES[type].power),
       ),
     );
-  const full = new Set();
+  const full = new Set<EnemyType>();
   pack('ant', opening('ant', 0.25), 0);
   pack('midge', opening('midge', 0.35), 1 + draw(2));
   while (remaining > 0) {
@@ -120,15 +178,15 @@ export function prepareRoster(wave, balance, draw = randomInt, players = 1) {
     if (!eligible.length) break;
     const open = eligible.filter(
       (type) =>
-        !PACKS[type].groups || packs.filter((p) => p.type === type).length < PACKS[type].groups,
+        !PACKS[type]!.groups || packs.filter((p) => p.type === type).length < PACKS[type]!.groups!,
     );
     const choices = open.length ? open : eligible;
-    let type;
+    let type: EnemyType;
     if (spare > 0) {
       // Stronger species are drawn more often as the budget grows.
       const weights = choices.map((t) => ENEMY_TYPES[t].power ** 0.5);
       let roll = (draw(1000) / 1000) * weights.reduce((a, b) => a + b, 0);
-      type = choices.find((t, i) => (roll -= weights[i]) < 0) || choices.at(-1);
+      type = choices.find((t, i) => (roll -= weights[i]) < 0) || choices.at(-1)!;
     } else type = eligible.reduce((a, b) => (ENEMY_TYPES[a].power >= ENEMY_TYPES[b].power ? a : b));
     const cost = ENEMY_TYPES[type].power;
     const count = Math.min(
@@ -136,9 +194,9 @@ export function prepareRoster(wave, balance, draw = randomInt, players = 1) {
       Math.max(1, spare > 0 ? spare : slots),
       packSize(type, budget, draw),
     );
-    if (SWARM_TYPES.has(type) && count < PACKS[type].min && packs.some((p) => p.type === type)) {
+    if (SWARM_TYPES.has(type) && count < PACKS[type]!.min && packs.some((p) => p.type === type)) {
       // A swarm never outgrows its maximum: that species is done for this wave.
-      if (packs.findLast((p) => p.type === type).count + count > PACKS[type].max) full.add(type);
+      if (packs.findLast((p) => p.type === type)!.count + count > PACKS[type]!.max) full.add(type);
       else grow(type, count);
       continue;
     }
@@ -157,15 +215,15 @@ export function prepareRoster(wave, balance, draw = randomInt, players = 1) {
     const strongest = packs.reduce((a, b) =>
       ENEMY_TYPES[a.type].power >= ENEMY_TYPES[b.type].power ? a : b,
     );
-    const colossus = packs.findLast((p) => p.type === strongest.type);
+    const colossus = packs.findLast((p) => p.type === strongest.type)!;
     colossus.boost = 1 + remaining / (colossus.count * ENEMY_TYPES[colossus.type].power);
     remaining = 0;
   }
   // Phase 2: members of a pack are contiguous, so ids follow pack order.
-  const roster = [];
+  const roster: PreparedEnemy[] = [];
   packs.forEach((p, group) => {
     const profile = ENEMY_TYPES[p.type];
-    const base = {
+    const draft = {
       type: p.type,
       ...profile,
       hp: profile.hp * (p.boost || 1),
@@ -179,7 +237,7 @@ export function prepareRoster(wave, balance, draw = randomInt, players = 1) {
       entryHold: holdFor(profile),
       travelSpeed: profile.speedMps,
     };
-    base.duration = base.entryHold + routeDuration(base);
+    const base = Object.assign(draft, { duration: draft.entryHold + routeDuration(draft) });
     for (let member = 0; member < p.count; member++) {
       const id = roster.length;
       roster.push({
@@ -193,8 +251,8 @@ export function prepareRoster(wave, balance, draw = randomInt, players = 1) {
   const scaled = scaleRoster({ budget, roster }, balance);
   // Copies added by room population join their announced pack; members leave
   // the portal one after the other so that none starts on top of another.
-  const sizes = new Map(),
-    started = new Map();
+  const sizes = new Map<number, number>(),
+    started = new Map<number, number>();
   for (const enemy of scaled.roster) sizes.set(enemy.group, (sizes.get(enemy.group) || 0) + 1);
   for (const enemy of scaled.roster) {
     const index = started.get(enemy.group) || 0;
@@ -202,20 +260,20 @@ export function prepareRoster(wave, balance, draw = randomInt, players = 1) {
     enemy.spawn =
       packs[enemy.group].spawn +
       (enemy.ground ? PORTAL_HOLD - GROUND_HOLD : 0) +
-      index * memberGap(enemy.type, sizes.get(enemy.group));
+      index * memberGap(enemy.type, sizes.get(enemy.group)!);
   }
   scaled.budget = scaled.roster.reduce((sum, enemy) => sum + enemy.power, 0);
   return scaled;
 }
 
-export function forecast(roster) {
-  const groups = new Map();
+export function forecast(roster: readonly ForecastEnemy[]): PreparedGroup[] {
+  const groups = new Map<unknown, PreparedGroup>();
   for (const enemy of roster) {
     const { type, portalIndex, routeSeed, branch, approach, ground = false, spawn } = enemy;
     const key = enemy.group ?? [type, portalIndex, routeSeed, branch, spawn].join(':');
     if (!groups.has(key))
       groups.set(key, { type, portalIndex, routeSeed, branch, approach, ground, spawn, count: 0 });
-    const group = groups.get(key);
+    const group = groups.get(key)!;
     group.count++;
     group.spawn = Math.min(group.spawn, spawn);
   }
